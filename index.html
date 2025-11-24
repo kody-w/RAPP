@@ -1922,8 +1922,8 @@
 
       /* Hide less critical buttons on mobile */
       .header-actions > a[href*="localFirstTools"],
+      .header-actions > a[href*="agent_store"],
       .header-actions #collab-os-button,
-      .header-actions #agent-store-button,
       .header-actions #archive-chat {
         display: none;
       }
@@ -2407,15 +2407,15 @@
       </div>
       <div class="header-actions">
         <!-- Navigation/Browse -->
-        <a href="localFirstTools/index.html" class="header-button" title="Open App Store" style="display: flex; align-items: center; text-decoration: none; color: inherit;">
+        <a href="localFirstTools/" class="header-button" title="Open App Store" style="display: flex; align-items: center; text-decoration: none; color: inherit;">
           <i class="fas fa-th"></i>
         </a>
         <a href="RAPP-Production-Guide.html" target="_blank" class="header-button" title="RAPP Production Guide - Complete Documentation" style="display: flex; align-items: center; text-decoration: none; color: inherit;">
           <i class="fas fa-book"></i>
         </a>
-        <button class="header-button" id="agent-store-button" title="Open Agent Marketplace">
+        <a href="agent_store.html" class="header-button" title="Open Agent Marketplace" style="display: flex; align-items: center; text-decoration: none; color: inherit;">
           <i class="fas fa-store"></i>
-        </button>
+        </a>
 
         <!-- AI Features -->
         <button class="header-button" id="collab-os-button" title="Launch Collaborative AI OS">
@@ -6094,11 +6094,6 @@
         // Collaborative OS button
         document.getElementById('collab-os-button').addEventListener('click', () => {
           this.launchCollaborativeOS();
-        });
-
-        // Agent Store button
-        document.getElementById('agent-store-button').addEventListener('click', () => {
-          this.launchAgentStore();
         });
 
         // Live Order Taking button

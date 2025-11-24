@@ -3,25 +3,23 @@
 
 ## 🎓 New to RAPP? Start Here!
 
-### 📚 **[RAPP Production Guide](./RAPP-Production-Guide.html)** - Complete Framework Documentation
-**The comprehensive guide for building production AI agents with the Rapid Agent Prototype Pattern (RAPP)**
+### 🌐 **Live Applications** - Try RAPP Now (No Installation Required)
 
-Open `RAPP-Production-Guide.html` in your browser for the full interactive documentation including:
-- 📖 **14-Step Process** - From discovery call to production deployment with validation checkpoints
-- 🏗️ **Architecture Deep-Dive** - Stateless intelligence layer, memory persistence, hot-loading agents
-- 👥 **Team Scaling** - Station-based workflow for managing 20+ concurrent projects
-- 🛠️ **Interactive Tools** - Project tracker, chat animation studio, agent development utilities
-- 📊 **ROI & Metrics** - Real-world examples showing 20x faster development cycles
-- 🗺️ **Roadmap** - EOY 2025 priorities and automation goals
+**📚 Documentation & Learning:**
+- **[RAPP Production Guide](https://microsoft.github.io/aibast-agents-library/)** - Complete 14-step framework documentation
+  - Architecture deep-dive, team scaling strategies, ROI metrics, interactive tools
 
----
+**🚀 Main Applications:**
+- **[RAPP Chat Interface](https://kody-w.github.io/RAPP/)** - Full-featured AI chat with multi-user support, voice synthesis, and agent orchestration
+- **[Local-First App Store](https://kody-w.github.io/RAPP/localFirstTools/)** - Browse and use 40+ productivity tools and utilities
+- **[Agent Marketplace](https://kody-w.github.io/RAPP/agent-store.html)** - Discover, install, and manage AI agents for any use case
 
-**For Non-Technical Users:** Visit our **[Interactive Demos](https://kody-w.github.io/RAPP/)** to:
-- 🎯 **Try live agent demonstrations** - See RAPP in action without installing anything
-- 🖼️ **View visual examples** - See real-world use cases and agent capabilities
-- 💡 **Browse the agent gallery** - Discover pre-built agents for common tasks
+**🤖 Specialized Tools:**
+- **[Collaborative AI OS](https://kody-w.github.io/RAPP/collaborative-ai-os.html)** - Multi-agent workspace with real-time collaboration
+- **[Live Order Taking](https://kody-w.github.io/RAPP/live-order-stack.html)** - Voice-enabled order management system
+- **[Image Analysis Studio](https://kody-w.github.io/RAPP/image-analysis.html)** - AI-powered image understanding and insights
 
-**For Developers:** Continue below for one-click deployment instructions.
+**For Developers:** Continue below for one-click deployment instructions to run your own instance.
 
 ---
 
