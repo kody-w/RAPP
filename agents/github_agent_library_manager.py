@@ -15,9 +15,9 @@ class GitHubAgentLibraryManager(BasicAgent):
     """
     
     # GitHub repository configuration
-    GITHUB_REPO = "kody-w/AI-Agent-Templates"
+    GITHUB_REPO = "kody-w/RAPP"
     GITHUB_BRANCH = "main"
-    GITHUB_RAW_BASE = f"https://raw.githubusercontent.com/{GITHUB_REPO}/{GITHUB_BRANCH}"
+    GITHUB_RAW_BASE = f"https://raw.githubusercontent.com/{GITHUB_REPO}/{GITHUB_BRANCH}/AI-Agent-Templates"
     GITHUB_API_BASE = f"https://api.github.com/repos/{GITHUB_REPO}"
     
     def __init__(self):
@@ -30,8 +30,8 @@ class GitHubAgentLibraryManager(BasicAgent):
                 "properties": {
                     "action": {
                         "type": "string",
-                        "description": "Action to perform: 'discover' (browse ALL 65+ available agents with no parameters needed), 'search' (find specific agents - REQUIRES search_query parameter with keyword like 'email' or 'sales'), 'install' (download and install an agent - REQUIRES agent_id from search/discover results, NEVER guess the agent_id), 'list_installed' (show installed GitHub agents - no parameters), 'update' (update an agent - REQUIRES agent_id), 'remove' (uninstall agent - REQUIRES agent_id), 'get_info' (detailed agent info - REQUIRES agent_id), 'sync_manifest' (refresh catalogue from GitHub - no parameters), 'create_group' (create a GUID-based agent group - REQUIRES agent_ids list), 'list_groups' (show all GUID-based agent groups - no parameters), 'get_group_info' (get details about a specific GUID group - REQUIRES guid parameter). CRITICAL: Before calling 'install', you MUST call 'search' or 'discover' first to get the exact agent_id.",
-                        "enum": ["discover", "search", "install", "list_installed", "update", "remove", "get_info", "sync_manifest", "create_group", "list_groups", "get_group_info"]
+                        "description": "Action to perform: 'discover' (browse ALL 65+ available agents with no parameters needed), 'search' (find specific agents - REQUIRES search_query parameter with keyword like 'email' or 'sales'), 'install' (download and install an agent - REQUIRES agent_id from search/discover results, NEVER guess the agent_id), 'list_installed' (show installed GitHub agents - no parameters), 'update' (update an agent - REQUIRES agent_id), 'remove' (uninstall agent - REQUIRES agent_id), 'get_info' (detailed agent info - REQUIRES agent_id), 'sync_manifest' (refresh catalogue from GitHub - no parameters), 'create_group' (create a GUID-based agent group - REQUIRES agent_ids list), 'list_groups' (show all GUID-based agent groups - no parameters), 'get_group_info' (get details about a specific GUID group - REQUIRES guid parameter), 'browse_stack_files' (list ALL files in an agent stack - REQUIRES stack_path), 'download_file' (download any file from library - REQUIRES file_path), 'install_stack_complete' (download entire stack with all files - REQUIRES stack_path). CRITICAL: Before calling 'install', you MUST call 'search' or 'discover' first to get the exact agent_id.",
+                        "enum": ["discover", "search", "install", "list_installed", "update", "remove", "get_info", "sync_manifest", "create_group", "list_groups", "get_group_info", "browse_stack_files", "download_file", "install_stack_complete"]
                     },
                     "agent_id": {
                         "type": "string",
@@ -68,6 +68,18 @@ class GitHubAgentLibraryManager(BasicAgent):
                     "force": {
                         "type": "boolean",
                         "description": "OPTIONAL: Set to true to reinstall an agent even if it already exists. Default is false. Use when updating/fixing an installed agent."
+                    },
+                    "stack_path": {
+                        "type": "string",
+                        "description": "REQUIRED for browse_stack_files and install_stack_complete: Path to agent stack in library (e.g., 'agent_stacks/b2b_sales_stacks/deal_progression_stack'). Get from discover/search results."
+                    },
+                    "file_path": {
+                        "type": "string",
+                        "description": "REQUIRED for download_file: Relative path to any file in the library (e.g., 'agent_stacks/b2b_sales_stacks/deal_progression_stack/demos/dashboard.html', 'docs/guide.md'). Downloads to appropriate local directory."
+                    },
+                    "destination": {
+                        "type": "string",
+                        "description": "OPTIONAL for download_file: Local destination directory. Defaults to smart routing (agents/, dashboards/, docs/, etc.) based on file type."
                     }
                 },
                 "required": ["action"]
@@ -155,6 +167,12 @@ class GitHubAgentLibraryManager(BasicAgent):
                 return self._list_agent_groups()
             elif action == 'get_group_info':
                 return self._get_group_info(kwargs)
+            elif action == 'browse_stack_files':
+                return self._browse_stack_files(kwargs)
+            elif action == 'download_file':
+                return self._download_file(kwargs)
+            elif action == 'install_stack_complete':
+                return self._install_stack_complete(kwargs)
             else:
                 return f"Error: Unknown action '{action}'"
         except Exception as e:
@@ -936,3 +954,338 @@ The local cache has been refreshed with the latest agent library data."""
         except Exception as e:
             logging.error(f"Error getting group info: {str(e)}")
             return f"Error: {str(e)}"
+    # ===========================
+    # GENERIC FILE BROWSING & DOWNLOAD
+    # ===========================
+
+    def _browse_stack_files(self, params):
+        """Browse ALL files in an agent stack (agents, UI apps/tools/dashboards, docs, configs, etc.)
+
+        UI files include:
+        - Dashboards: Real-time data visualization
+        - Demos: Interactive demonstrations
+        - Tools: Structured UI for agent operations (forms, buttons, dropdowns)
+        - Apps: Full line-of-business applications
+
+        All HTML/JS/CSS files are UI components that provide structured interfaces to agents.
+        Users interact with UI instead of chat - UI structures commands to RAPP backend.
+        """
+        stack_path = params.get('stack_path')
+        if not stack_path:
+            return "Error: stack_path is required"
+
+        try:
+            # Use GitHub API to list directory contents
+            api_url = f"{self.GITHUB_API_BASE}/contents/AI-Agent-Templates/{stack_path}"
+            response = requests.get(api_url, timeout=10)
+            response.raise_for_status()
+
+            contents = response.json()
+
+            # Organize files by type
+            files_by_type = {
+                'agents': [],      # Python agent files
+                'ui': [],          # ALL UI files: dashboards, demos, tools, apps (HTML/JS/CSS)
+                'docs': [],        # Documentation (MD files)
+                'config': [],      # Configuration files
+                'other': []        # Everything else
+            }
+
+            def categorize_files(items, current_path=""):
+                for item in items:
+                    item_path = f"{current_path}/{item['name']}" if current_path else item['name']
+
+                    if item['type'] == 'file':
+                        file_info = {
+                            'name': item['name'],
+                            'path': f"{stack_path}/{item_path}",
+                            'size': item.get('size', 0),
+                            'download_url': item.get('download_url', '')
+                        }
+
+                        # Categorize by file type
+                        if item_path.endswith('.py'):
+                            files_by_type['agents'].append(file_info)
+                        elif item_path.endswith(('.html', '.js', '.css')):
+                            # All UI files: dashboards, demos, tools, apps
+                            files_by_type['ui'].append(file_info)
+                        elif item_path.endswith('.md'):
+                            files_by_type['docs'].append(file_info)
+                        elif item_path.endswith(('.json', '.txt', '.yml', '.yaml', '.env', '.ini')):
+                            files_by_type['config'].append(file_info)
+                        else:
+                            files_by_type['other'].append(file_info)
+                    elif item['type'] == 'dir':
+                        # Recursively browse subdirectories
+                        sub_url = f"{self.GITHUB_API_BASE}/contents/AI-Agent-Templates/{stack_path}/{item_path}"
+                        try:
+                            sub_response = requests.get(sub_url, timeout=10)
+                            sub_response.raise_for_status()
+                            categorize_files(sub_response.json(), item_path)
+                        except:
+                            pass  # Skip inaccessible directories
+
+            categorize_files(contents)
+
+            # Format response
+            total_files = sum(len(files) for files in files_by_type.values())
+
+            response_text = f"# 📁 Agent Stack Files: {stack_path}\n\n"
+            response_text += f"**Total Files:** {total_files}\n\n"
+
+            if files_by_type['agents']:
+                response_text += f"## 🤖 Agent Files ({len(files_by_type['agents'])})\n"
+                for f in files_by_type['agents']:
+                    response_text += f"- **{f['name']}** ({self._format_size(f['size'])})\n"
+                    response_text += f"  Path: `{f['path']}`\n"
+                    response_text += f"  Download: `action='download_file', file_path='{f['path']}'`\n\n"
+
+            if files_by_type['ui']:
+                response_text += f"## 🎨 UI Applications & Tools ({len(files_by_type['ui'])})\n"
+                response_text += f"_Dashboards, demos, tools, and apps - structured interfaces for agent operations_\n\n"
+                for f in files_by_type['ui']:
+                    response_text += f"- **{f['name']}** ({self._format_size(f['size'])})\n"
+                    response_text += f"  Path: `{f['path']}`\n"
+
+                    # Add hint about what type of UI this might be
+                    name_lower = f['name'].lower()
+                    if 'demo' in name_lower:
+                        response_text += f"  Type: Demo/Showcase\n"
+                    elif 'dashboard' in name_lower:
+                        response_text += f"  Type: Real-time Dashboard\n"
+                    elif 'tool' in name_lower or 'manager' in name_lower:
+                        response_text += f"  Type: Interactive Tool\n"
+                    elif 'app' in name_lower:
+                        response_text += f"  Type: Line-of-Business App\n"
+                    else:
+                        response_text += f"  Type: UI Component\n"
+
+                    response_text += f"  Download: `action='download_file', file_path='{f['path']}'`\n\n"
+
+            if files_by_type['docs']:
+                response_text += f"## 📚 Documentation ({len(files_by_type['docs'])})\n"
+                for f in files_by_type['docs']:
+                    response_text += f"- **{f['name']}** ({self._format_size(f['size'])})\n"
+                    response_text += f"  Path: `{f['path']}`\n"
+                    response_text += f"  Download: `action='download_file', file_path='{f['path']}'`\n\n"
+
+            if files_by_type['config']:
+                response_text += f"## ⚙️ Configuration Files ({len(files_by_type['config'])})\n"
+                for f in files_by_type['config']:
+                    response_text += f"- **{f['name']}** ({self._format_size(f['size'])})\n"
+                    response_text += f"  Path: `{f['path']}`\n"
+                    response_text += f"  Download: `action='download_file', file_path='{f['path']}'`\n\n"
+
+            if files_by_type['other']:
+                response_text += f"## 📄 Other Files ({len(files_by_type['other'])})\n"
+                for f in files_by_type['other']:
+                    response_text += f"- **{f['name']}** ({self._format_size(f['size'])})\n"
+                    response_text += f"  Path: `{f['path']}`\n"
+                    response_text += f"  Download: `action='download_file', file_path='{f['path']}'`\n\n"
+
+            response_text += f"\n## 💾 Download Complete Stack\n"
+            response_text += f"Download everything:\n"
+            response_text += f"`action='install_stack_complete', stack_path='{stack_path}'`\n"
+
+            return response_text
+
+        except Exception as e:
+            logging.error(f"Error browsing stack files: {str(e)}")
+            return f"Error: Unable to browse stack files: {str(e)}"
+
+    def _download_file(self, params):
+        """Download any file from the library with smart routing to local directories"""
+        file_path = params.get('file_path')
+        destination = params.get('destination')
+
+        if not file_path:
+            return "Error: file_path is required"
+
+        try:
+            # Construct download URL
+            download_url = f"{self.GITHUB_RAW_BASE}/{file_path}"
+
+            # Download file
+            response = requests.get(download_url, timeout=30)
+            response.raise_for_status()
+            file_content = response.text
+
+            # Smart routing: determine destination based on file type if not specified
+            filename = file_path.split('/')[-1]
+            file_lower = filename.lower()
+
+            if not destination:
+                if filename.endswith('.py'):
+                    destination = 'agents'
+                elif filename.endswith('.html'):
+                    # All HTML goes to dashboards: demos, dashboards, tools, apps, UI components
+                    destination = 'dashboards'
+                elif filename.endswith(('.js', '.css')):
+                    # Supporting UI files also go to dashboards
+                    destination = 'dashboards'
+                elif filename.endswith('.md'):
+                    destination = 'docs'
+                elif filename.endswith(('.json', '.yml', '.yaml', '.txt', '.env', '.ini')):
+                    destination = 'config'
+                else:
+                    destination = 'downloads'
+
+            # For Azure storage, write to appropriate share
+            try:
+                success = self.storage_manager.write_file(destination, filename, file_content)
+                storage_location = f"Azure Storage: {destination}/{filename}"
+            except:
+                success = False
+                storage_location = "Not saved to Azure storage"
+
+            # Format response
+            response_text = f"# ✅ File Downloaded\n\n"
+            response_text += f"**File:** {filename}\n"
+            response_text += f"**Source:** `{file_path}`\n"
+            response_text += f"**Destination:** `{destination}/`\n"
+            response_text += f"**Size:** {self._format_size(len(file_content))}\n\n"
+
+            response_text += f"## 📥 Storage\n"
+            if success:
+                response_text += f"- ✅ Saved to: {storage_location}\n"
+            else:
+                response_text += f"- ⚠️ Azure storage: {storage_location}\n"
+
+            response_text += f"\n## 📋 Local Installation\n"
+            response_text += f"For local development, download manually:\n"
+            response_text += f"```bash\n"
+            response_text += f"curl -o {destination}/{filename} {download_url}\n"
+            response_text += f"```\n"
+
+            return response_text
+
+        except Exception as e:
+            logging.error(f"Error downloading file: {str(e)}")
+            return f"Error: Unable to download file: {str(e)}"
+
+    def _install_stack_complete(self, params):
+        """Download entire agent stack with ALL files (batteries included)"""
+        stack_path = params.get('stack_path')
+        if not stack_path:
+            return "Error: stack_path is required"
+
+        try:
+            # First, browse to get all files
+            browse_result = self._browse_stack_files(params)
+            if browse_result.startswith("Error"):
+                return browse_result
+
+            # Get file list from GitHub API
+            api_url = f"{self.GITHUB_API_BASE}/contents/AI-Agent-Templates/{stack_path}"
+            response = requests.get(api_url, timeout=10, params={'recursive': '1'})
+            response.raise_for_status()
+
+            all_files = []
+
+            def collect_files(items, current_path=""):
+                for item in items:
+                    item_path = f"{current_path}/{item['name']}" if current_path else item['name']
+
+                    if item['type'] == 'file':
+                        all_files.append({
+                            'name': item['name'],
+                            'path': f"AI-Agent-Templates/{stack_path}/{item_path}",
+                            'download_url': item.get('download_url', ''),
+                            'size': item.get('size', 0)
+                        })
+                    elif item['type'] == 'dir':
+                        sub_url = f"{self.GITHUB_API_BASE}/contents/AI-Agent-Templates/{stack_path}/{item_path}"
+                        try:
+                            sub_response = requests.get(sub_url, timeout=10)
+                            sub_response.raise_for_status()
+                            collect_files(sub_response.json(), item_path)
+                        except:
+                            pass
+
+            collect_files(response.json())
+
+            # Download all files
+            downloaded = []
+            failed = []
+
+            for file_info in all_files:
+                try:
+                    # Download file
+                    file_response = requests.get(file_info['download_url'], timeout=30)
+                    file_response.raise_for_status()
+
+                    # Smart routing
+                    filename = file_info['name']
+                    if filename.endswith('.py'):
+                        dest = 'agents'
+                    elif filename.endswith('.html'):
+                        dest = 'dashboards'
+                    elif filename.endswith('.md'):
+                        dest = 'docs'
+                    else:
+                        dest = 'downloads'
+
+                    # Try to save
+                    try:
+                        self.storage_manager.write_file(dest, filename, file_response.text)
+                        downloaded.append(f"{dest}/{filename}")
+                    except:
+                        downloaded.append(f"{filename} (download only)")
+
+                except Exception as e:
+                    failed.append(f"{file_info['name']}: {str(e)}")
+
+            # Format response
+            response_text = f"# ✅ Complete Stack Installation\n\n"
+            response_text += f"**Stack:** {stack_path}\n"
+            response_text += f"**Total Files:** {len(all_files)}\n"
+            response_text += f"**Downloaded:** {len(downloaded)}\n"
+            response_text += f"**Failed:** {len(failed)}\n\n"
+
+            if downloaded:
+                response_text += f"## ✅ Successfully Downloaded\n"
+                for file_path in downloaded[:20]:  # Show first 20
+                    response_text += f"- {file_path}\n"
+                if len(downloaded) > 20:
+                    response_text += f"- ... and {len(downloaded) - 20} more files\n"
+                response_text += "\n"
+
+            if failed:
+                response_text += f"## ⚠️ Failed Downloads\n"
+                for error in failed[:10]:  # Show first 10
+                    response_text += f"- {error}\n"
+                response_text += "\n"
+
+            response_text += f"## 📂 Files Organized By Type\n"
+            response_text += f"- **Agents (.py):** `agents/` directory - Backend agent logic\n"
+            response_text += f"- **UI Files (.html/.js/.css):** `dashboards/` directory - User interfaces\n"
+            response_text += f"  - Dashboards: Real-time data visualization\n"
+            response_text += f"  - Demos: Interactive demonstrations\n"
+            response_text += f"  - Tools: Structured forms/buttons for agent operations\n"
+            response_text += f"  - Apps: Full line-of-business applications\n"
+            response_text += f"- **Docs (.md):** `docs/` directory - Documentation\n"
+            response_text += f"- **Config (.json/.yml):** `config/` directory - Configuration files\n\n"
+
+            response_text += f"## 🚀 Next Steps\n"
+            response_text += f"1. **Restart RAPP:** `./run.sh` to load new agents\n"
+            response_text += f"2. **Use UI Tools:** Open `dashboards/*.html` in browser\n"
+            response_text += f"   - Structured interfaces for agent operations\n"
+            response_text += f"   - No chat needed - use forms, buttons, dropdowns\n"
+            response_text += f"   - UI calls RAPP backend automatically\n"
+            response_text += f"3. **Review docs:** Check `docs/` for detailed guides\n"
+            response_text += f"4. **Configure:** Edit `config/` files as needed\n"
+
+            return response_text
+
+        except Exception as e:
+            logging.error(f"Error installing complete stack: {str(e)}")
+            return f"Error: Unable to install complete stack: {str(e)}"
+
+    def _format_size(self, size_bytes):
+        """Format file size in human-readable format"""
+        if size_bytes < 1024:
+            return f"{size_bytes}B"
+        elif size_bytes < 1024 * 1024:
+            return f"{size_bytes / 1024:.1f}KB"
+        else:
+            return f"{size_bytes / (1024 * 1024):.1f}MB"

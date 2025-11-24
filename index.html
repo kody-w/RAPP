@@ -2103,6 +2103,17 @@
         <a href="localFirstTools/index.html" class="header-button" title="Open App Store" style="display: flex; align-items: center; text-decoration: none; color: inherit;">
           <i class="fas fa-th"></i>
         </a>
+        <button class="header-button" id="collab-os-button" title="Launch Collaborative AI OS" style="position: relative;">
+          <i class="fas fa-robot"></i>
+          <span style="position: absolute; top: -4px; right: -4px; width: 8px; height: 8px; background: #00ff00; border-radius: 50%; box-shadow: 0 0 10px #00ff00; animation: pulse 2s infinite;"></span>
+        </button>
+        <button class="header-button" id="agent-store-button" title="Open Agent Marketplace" style="position: relative;">
+          <i class="fas fa-store"></i>
+          <span style="position: absolute; top: -4px; right: -4px; width: 8px; height: 8px; background: #ff4081; border-radius: 50%; box-shadow: 0 0 10px #ff4081; animation: pulse 2s infinite;"></span>
+        </button>
+        <button class="header-button" id="pin-tool-button" title="Pin a Tool">
+          <i class="fas fa-thumbtack"></i>
+        </button>
         <button class="header-button" id="archive-chat">
           <i class="fas fa-archive"></i>
         </button>
@@ -2132,16 +2143,19 @@
     </aside>
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
-    <!-- Chat Container -->
-    <main class="chat-container">
-      <div class="chat-messages-wrapper">
-        <div class="chat-messages" id="chat-messages">
-          <!-- Loading Indicator will be appended here dynamically -->
-        </div>
-      </div>
-    </main>
+    <!-- Split View Container -->
+    <div class="split-view-container">
+      <!-- Main Chat Section -->
+      <div class="split-view-main">
+        <main class="chat-container">
+          <div class="chat-messages-wrapper">
+            <div class="chat-messages" id="chat-messages">
+              <!-- Loading Indicator will be appended here dynamically -->
+            </div>
+          </div>
+        </main>
 
-    <!-- Input Container -->
+        <!-- Input Container -->
     <div class="input-container" id="input-container">
       <button class="input-button secondary" id="upload-image">
         <i class="fas fa-image"></i>
@@ -2158,6 +2172,35 @@
         <i class="fas fa-paper-plane"></i>
       </button>
     </div>
+      </div>
+      <!-- End Main Chat Section -->
+
+      <!-- Split View Divider -->
+      <div class="split-view-divider" id="split-view-divider"></div>
+
+      <!-- Split View Tool Panel -->
+      <div class="split-view-tool" id="split-view-tool">
+        <div class="split-view-tool-header">
+          <div class="split-view-tool-title">
+            <i class="fas fa-cube"></i>
+            <span id="split-view-tool-name">Tool</span>
+          </div>
+          <div class="split-view-tool-actions">
+            <button class="split-view-tool-button" id="split-view-fullscreen" title="Toggle Fullscreen">
+              <i class="fas fa-expand"></i>
+            </button>
+            <button class="split-view-tool-button" id="split-view-refresh" title="Refresh Tool">
+              <i class="fas fa-sync-alt"></i>
+            </button>
+            <button class="split-view-tool-button" id="split-view-close" title="Close Tool">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+        <iframe class="split-view-tool-iframe" id="split-view-tool-iframe" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+      </div>
+    </div>
+    <!-- End Split View Container -->
 
     <!-- Float Buttons -->
     <div class="float-buttons">
@@ -2382,6 +2425,26 @@
               <i class="fas fa-code-branch"></i> Continue from Here
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tool Gallery Modal -->
+  <div class="tool-gallery-modal" id="tool-gallery-modal">
+    <div class="tool-gallery-content">
+      <div class="tool-gallery-header">
+        <h2 class="tool-gallery-title">Select a Tool to Pin</h2>
+        <button class="tool-gallery-close" id="tool-gallery-close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="tool-gallery-search">
+        <input type="text" id="tool-gallery-search-input" placeholder="Search tools...">
+      </div>
+      <div class="tool-gallery-body">
+        <div class="tool-gallery-grid" id="tool-gallery-grid">
+          <!-- Tools will be dynamically loaded here -->
         </div>
       </div>
     </div>
@@ -4380,6 +4443,23 @@
         const message = this.userInput.value.trim();
         if (!message && !this.pendingImage) return;
 
+        // Check for OS launch commands
+        const lowerMsg = message.toLowerCase();
+        const osCommands = ['open os', 'launch os', 'collaborative os', 'start workspace', 'open workspace', 'collab os'];
+        if (osCommands.some(cmd => lowerMsg.includes(cmd))) {
+          this.userInput.value = '';
+          this.launchCollaborativeOS();
+          return;
+        }
+
+        // Check for Agent Store commands
+        const storeCommands = ['open store', 'agent store', 'agent marketplace', 'open marketplace', 'browse agents', 'agent shop'];
+        if (storeCommands.some(cmd => lowerMsg.includes(cmd))) {
+          this.userInput.value = '';
+          this.launchAgentStore();
+          return;
+        }
+
         // Check for @mentions in message
         const mentionRegex = /@(\w+)/g;
         let targetEndpoint = null;
@@ -5056,6 +5136,384 @@
         speechSynthesis.getVoices();
       };
     }
+
+    // ========================================
+    // Split View Manager
+    // ========================================
+    class SplitViewController {
+      constructor() {
+        this.splitViewTool = document.getElementById('split-view-tool');
+        this.splitViewDivider = document.getElementById('split-view-divider');
+        this.splitViewMain = document.querySelector('.split-view-main');
+        this.splitViewIframe = document.getElementById('split-view-tool-iframe');
+        this.splitViewToolName = document.getElementById('split-view-tool-name');
+        this.toolGalleryModal = document.getElementById('tool-gallery-modal');
+        this.toolGalleryGrid = document.getElementById('tool-gallery-grid');
+        this.toolGallerySearchInput = document.getElementById('tool-gallery-search-input');
+
+        this.isDragging = false;
+        this.isFullscreen = false;
+        this.currentTool = null;
+        this.tools = [];
+
+        this.init();
+      }
+
+      init() {
+        // Load saved state
+        this.loadState();
+
+        // Load tools from localFirstTools
+        this.loadTools();
+
+        // Setup event listeners
+        this.setupEventListeners();
+
+        // Restore pinned tool if any
+        if (this.currentTool) {
+          this.pinTool(this.currentTool);
+        }
+      }
+
+      loadState() {
+        const savedState = localStorage.getItem('splitViewState');
+        if (savedState) {
+          const state = JSON.parse(savedState);
+          this.currentTool = state.currentTool;
+          if (state.splitRatio) {
+            this.splitViewMain.style.flex = state.splitRatio;
+          }
+        }
+      }
+
+      saveState() {
+        const state = {
+          currentTool: this.currentTool,
+          splitRatio: this.splitViewMain.style.flex || '1'
+        };
+        localStorage.setItem('splitViewState', JSON.stringify(state));
+      }
+
+      async loadTools() {
+        try {
+          // Fetch the localFirstTools index.html to parse available tools
+          const response = await fetch('localFirstTools/index.html');
+          const html = await response.text();
+
+          // Parse HTML to extract tools
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+
+          // Look for tool links in the index
+          const links = doc.querySelectorAll('a[href$=".html"]');
+          this.tools = Array.from(links).map(link => {
+            const href = link.getAttribute('href');
+            const name = link.textContent.trim() || href.split('/').pop().replace('.html', '');
+            return {
+              name: name,
+              path: 'localFirstTools/' + href,
+              icon: this.getIconForTool(name)
+            };
+          });
+
+          // If no tools found in index, try to load from common directories
+          if (this.tools.length === 0) {
+            this.tools = this.getDefaultTools();
+          }
+
+          this.renderToolGallery();
+        } catch (error) {
+          console.error('Error loading tools:', error);
+          // Fallback to default tools
+          this.tools = this.getDefaultTools();
+          this.renderToolGallery();
+        }
+      }
+
+      getDefaultTools() {
+        return [
+          { name: 'Todo List', path: 'localFirstTools/productivity/todo-list.html', icon: 'fa-tasks' },
+          { name: 'Note Taking', path: 'localFirstTools/productivity/note-taking.html', icon: 'fa-sticky-note' },
+          { name: 'Calculator', path: 'localFirstTools/utilities/calculator.html', icon: 'fa-calculator' },
+          { name: 'Timer', path: 'localFirstTools/utilities/timer.html', icon: 'fa-clock' },
+          { name: 'Code Editor', path: 'localFirstTools/development/code-editor.html', icon: 'fa-code' },
+          { name: 'Markdown Editor', path: 'localFirstTools/development/markdown-editor.html', icon: 'fa-markdown' }
+        ];
+      }
+
+      getIconForTool(name) {
+        const iconMap = {
+          'todo': 'fa-tasks',
+          'note': 'fa-sticky-note',
+          'calculator': 'fa-calculator',
+          'timer': 'fa-clock',
+          'code': 'fa-code',
+          'markdown': 'fa-markdown',
+          'calendar': 'fa-calendar',
+          'budget': 'fa-dollar-sign',
+          'password': 'fa-key',
+          'game': 'fa-gamepad',
+          'chart': 'fa-chart-bar',
+          'drawing': 'fa-palette'
+        };
+
+        const lowerName = name.toLowerCase();
+        for (const [key, icon] of Object.entries(iconMap)) {
+          if (lowerName.includes(key)) {
+            return icon;
+          }
+        }
+        return 'fa-cube';
+      }
+
+      renderToolGallery() {
+        this.toolGalleryGrid.innerHTML = '';
+
+        const searchTerm = this.toolGallerySearchInput.value.toLowerCase();
+        const filteredTools = this.tools.filter(tool =>
+          tool.name.toLowerCase().includes(searchTerm)
+        );
+
+        filteredTools.forEach(tool => {
+          const toolItem = document.createElement('div');
+          toolItem.className = 'tool-gallery-item';
+          toolItem.innerHTML = `
+            <div class="tool-gallery-item-icon">
+              <i class="fas ${tool.icon}"></i>
+            </div>
+            <div class="tool-gallery-item-name">${tool.name}</div>
+            <div class="tool-gallery-item-desc">${tool.path.split('/').slice(-2).join('/')}</div>
+          `;
+          toolItem.addEventListener('click', () => {
+            this.pinTool(tool);
+            this.closeToolGallery();
+          });
+          this.toolGalleryGrid.appendChild(toolItem);
+        });
+      }
+
+      setupEventListeners() {
+        // Collaborative OS button
+        document.getElementById('collab-os-button').addEventListener('click', () => {
+          this.launchCollaborativeOS();
+        });
+
+        // Agent Store button
+        document.getElementById('agent-store-button').addEventListener('click', () => {
+          this.launchAgentStore();
+        });
+
+        // Pin tool button
+        document.getElementById('pin-tool-button').addEventListener('click', () => {
+          this.openToolGallery();
+        });
+
+        // Tool gallery close
+        document.getElementById('tool-gallery-close').addEventListener('click', () => {
+          this.closeToolGallery();
+        });
+
+        // Close modal on backdrop click
+        this.toolGalleryModal.addEventListener('click', (e) => {
+          if (e.target === this.toolGalleryModal) {
+            this.closeToolGallery();
+          }
+        });
+
+        // Tool gallery search
+        this.toolGallerySearchInput.addEventListener('input', () => {
+          this.renderToolGallery();
+        });
+
+        // Close tool button
+        document.getElementById('split-view-close').addEventListener('click', () => {
+          this.closeTool();
+        });
+
+        // Refresh tool button
+        document.getElementById('split-view-refresh').addEventListener('click', () => {
+          this.refreshTool();
+        });
+
+        // Fullscreen button
+        document.getElementById('split-view-fullscreen').addEventListener('click', () => {
+          this.toggleFullscreen();
+        });
+
+        // Divider drag
+        this.splitViewDivider.addEventListener('mousedown', (e) => {
+          this.startDragging(e);
+        });
+
+        document.addEventListener('mousemove', (e) => {
+          if (this.isDragging) {
+            this.onDrag(e);
+          }
+        });
+
+        document.addEventListener('mouseup', () => {
+          this.stopDragging();
+        });
+
+        // Escape to close tool gallery
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && this.toolGalleryModal.classList.contains('active')) {
+            this.closeToolGallery();
+          }
+        });
+      }
+
+      openToolGallery() {
+        this.toolGalleryModal.classList.add('active');
+        this.toolGallerySearchInput.value = '';
+        this.renderToolGallery();
+        this.toolGallerySearchInput.focus();
+      }
+
+      closeToolGallery() {
+        this.toolGalleryModal.classList.remove('active');
+      }
+
+      launchCollaborativeOS() {
+        // Open Collaborative OS in new window
+        const osWindow = window.open(
+          'localFirstTools/apps/ai-tools/collaborative-ai-os.html',
+          'CollaborativeOS',
+          'width=1200,height=800,menubar=no,toolbar=no,location=no,status=no'
+        );
+
+        // Add notification message to chat
+        const message = {
+          role: 'assistant',
+          content: `🤖 **Collaborative AI OS Launched!**\n\nI've opened the shared workspace environment where we can collaborate in real-time.\n\n**What you can do:**\n- **Command Center**: Send me commands that I'll execute\n- **Activity Feed**: Watch my actions as they happen\n- **Terminal**: Run commands together\n- **File Manager**: Share files between us\n- **AI Chat**: Talk to me directly in the OS\n\n**Try these commands in the OS:**\n- "open terminal"\n- "system status"\n- "show activity"\n- "list files"\n\nThe OS should be opening in a new window now. I'll be waiting there! 🚀`
+        };
+
+        // Add message to current conversation
+        this.addMessageToUI(message);
+
+        // Close tool gallery if open
+        if (this.toolGalleryModal.classList.contains('active')) {
+          this.closeToolGallery();
+        }
+
+        // Track analytics if available
+        if (typeof gtag !== 'undefined') {
+          gtag('event', 'launch_collaborative_os', {
+            'event_category': 'engagement',
+            'event_label': 'header_button'
+          });
+        }
+      }
+
+      launchAgentStore() {
+        // Open Agent Store in new window
+        const storeWindow = window.open(
+          'agent_store.html',
+          'AgentStore',
+          'width=1400,height=900,menubar=no,toolbar=no,location=no,status=no'
+        );
+
+        // Add notification message to chat
+        const message = {
+          role: 'assistant',
+          content: `🛒 **Agent Marketplace Opened!**\n\nBrowse and download AI agents from the marketplace.\n\n**What you'll find:**\n- **🤖 Pre-built Agents**: Ready-to-use AI agents for various tasks\n- **📦 Agent Stacks**: Complete solutions with multiple agents\n- **🎨 Demo Apps**: Interactive demonstrations\n- **📚 Documentation**: Setup guides and examples\n- **🔧 Custom Agents**: Upload and manage your own agents\n\n**Popular Categories:**\n- B2B Sales (Account Intelligence, Deal Progression)\n- Customer Service (Support Bot, Sentiment Analysis)\n- Development (Code Assistant, Documentation Generator)\n- Business Intelligence (Analytics, Reporting)\n\n**How to use:**\n1. Browse the catalog\n2. Add agents to your cart\n3. Export download script\n4. Run script to install agents\n5. Restart RAPP to load new agents\n\nThe marketplace is opening now! 🚀`
+        };
+
+        // Add message to current conversation
+        this.addMessageToUI(message);
+
+        // Close tool gallery if open
+        if (this.toolGalleryModal.classList.contains('active')) {
+          this.closeToolGallery();
+        }
+
+        // Track analytics if available
+        if (typeof gtag !== 'undefined') {
+          gtag('event', 'launch_agent_store', {
+            'event_category': 'engagement',
+            'event_label': 'header_button'
+          });
+        }
+      }
+
+      pinTool(tool) {
+        this.currentTool = tool;
+        this.splitViewTool.classList.add('active');
+        this.splitViewToolName.textContent = tool.name;
+        this.splitViewIframe.src = tool.path;
+        this.saveState();
+      }
+
+      closeTool() {
+        this.splitViewTool.classList.remove('active');
+        this.splitViewIframe.src = '';
+        this.currentTool = null;
+        this.isFullscreen = false;
+        this.splitViewMain.style.display = '';
+        this.splitViewDivider.style.display = '';
+        document.getElementById('split-view-fullscreen').querySelector('i').className = 'fas fa-expand';
+        this.saveState();
+      }
+
+      refreshTool() {
+        if (this.currentTool) {
+          this.splitViewIframe.src = this.splitViewIframe.src;
+        }
+      }
+
+      toggleFullscreen() {
+        this.isFullscreen = !this.isFullscreen;
+        if (this.isFullscreen) {
+          this.splitViewMain.style.display = 'none';
+          this.splitViewDivider.style.display = 'none';
+          document.getElementById('split-view-fullscreen').querySelector('i').className = 'fas fa-compress';
+        } else {
+          this.splitViewMain.style.display = '';
+          this.splitViewDivider.style.display = '';
+          document.getElementById('split-view-fullscreen').querySelector('i').className = 'fas fa-expand';
+        }
+      }
+
+      startDragging(e) {
+        this.isDragging = true;
+        e.preventDefault();
+      }
+
+      onDrag(e) {
+        if (!this.isDragging) return;
+
+        const container = document.querySelector('.split-view-container');
+        const containerRect = container.getBoundingClientRect();
+        const mouseX = e.clientX - containerRect.left;
+        const containerWidth = containerRect.width;
+
+        // Calculate flex values
+        const mainWidth = mouseX;
+        const toolWidth = containerWidth - mouseX - 4; // 4px for divider
+
+        // Minimum width constraints (300px)
+        if (mainWidth >= 300 && toolWidth >= 300) {
+          const mainFlex = mainWidth / containerWidth;
+          const toolFlex = toolWidth / containerWidth;
+
+          this.splitViewMain.style.flex = mainFlex.toFixed(3);
+          this.splitViewTool.style.flex = toolFlex.toFixed(3);
+        }
+      }
+
+      stopDragging() {
+        if (this.isDragging) {
+          this.isDragging = false;
+          this.saveState();
+        }
+      }
+    }
+
+    // Initialize Split View Controller
+    const splitViewController = new SplitViewController();
+
+    // Make it globally accessible if needed
+    window.splitViewController = splitViewController;
   </script>
 </body>
 
