@@ -410,11 +410,15 @@ class Assistant:
             return {'triggered': False}
 
     def get_agent_metadata(self):
-        agents_metadata = []
+        """Returns agent metadata in the tools format for newer OpenAI API"""
+        tools = []
         for agent in self.known_agents.values():
             if hasattr(agent, 'metadata'):
-                agents_metadata.append(agent.metadata)
-        return agents_metadata
+                tools.append({
+                    "type": "function",
+                    "function": agent.metadata
+                })
+        return tools
 
     def reload_agents(self, agent_objects):
         known_agents = {}
@@ -554,8 +558,8 @@ Revenue's up 12 percent and customers are happier - looking good for Q3.
             response = self.client.chat.completions.create(
                 model=deployment_name,
                 messages=messages,
-                functions=self.get_agent_metadata(),
-                function_call="auto"
+                tools=self.get_agent_metadata(),
+                tool_choice="auto"
             )
             return response
         except Exception as e:
@@ -739,18 +743,22 @@ Revenue's up 12 percent and customers are happier - looking good for Q3.
                 assistant_msg = response.choices[0].message
                 msg_contents = assistant_msg.content or ""  # Ensure content is never None
 
-                if not assistant_msg.function_call:
+                # Check for tool calls (new API format)
+                if not assistant_msg.tool_calls:
                     formatted_response, voice_response = self.parse_response_with_voice(msg_contents)
                     return formatted_response, voice_response, "\n".join(map(str, agent_logs))
 
-                agent_name = str(assistant_msg.function_call.name)
+                # Get the first tool call
+                tool_call = assistant_msg.tool_calls[0]
+                tool_call_id = tool_call.id
+                agent_name = str(tool_call.function.name)
                 agent = self.known_agents.get(agent_name)
 
                 if not agent:
                     return f"Agent '{agent_name}' does not exist", "I couldn't find that agent.", ""
 
-                # Process function call arguments
-                json_data = ensure_string_function_args(assistant_msg.function_call)
+                # Process tool call arguments
+                json_data = ensure_string_function_args(tool_call.function)
                 logging.info(f"JSON data before parsing: {json_data}")
 
                 try:
@@ -783,10 +791,24 @@ Revenue's up 12 percent and customers are happier - looking good for Q3.
                 except Exception as e:
                     return f"Error parsing parameters: {str(e)}", "I hit an error processing that.", ""
 
-                # Add the function result to messages
+                # Add the assistant's message with tool call to conversation history
                 messages.append({
-                    "role": "function",
-                    "name": agent_name,
+                    "role": "assistant",
+                    "content": msg_contents,
+                    "tool_calls": [{
+                        "id": tool_call_id,
+                        "type": "function",
+                        "function": {
+                            "name": agent_name,
+                            "arguments": json_data
+                        }
+                    }]
+                })
+
+                # Add the tool result to messages (new API format)
+                messages.append({
+                    "role": "tool",
+                    "tool_call_id": tool_call_id,
                     "content": result
                 })
                 

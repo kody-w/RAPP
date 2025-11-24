@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RAPP Distributed Mesh Network - Live Demo</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      color: #fff;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .hero h1 {
+      font-size: 42px;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      font-size: 18px;
+      opacity: 0.8;
+    }
+
+    .status-bar {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 30px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    }
+
+    .stat-card {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 36px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      opacity: 0.7;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 1200px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
+    }
+
+    .card-title {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .card-title i {
+      color: #667eea;
+    }
+
+    .mesh-visualization {
+      position: relative;
+      height: 400px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .node {
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .node:hover {
+      transform: scale(1.1);
+    }
+
+    .node.chrome {
+      background: linear-gradient(135deg, #4285f4, #34a853);
+    }
+
+    .node.firefox {
+      background: linear-gradient(135deg, #ff7139, #e66000);
+    }
+
+    .node.safari {
+      background: linear-gradient(135deg, #006aff, #0099ff);
+    }
+
+    .node.edge {
+      background: linear-gradient(135deg, #0078d4, #00bcf2);
+    }
+
+    .node.unknown {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+    }
+
+    .node .browser-icon {
+      font-size: 24px;
+      margin-bottom: 4px;
+    }
+
+    .node.self {
+      animation: pulse 2s ease-in-out infinite;
+      box-shadow: 0 0 30px rgba(102, 126, 234, 0.6);
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        box-shadow: 0 0 30px rgba(102, 126, 234, 0.6);
+      }
+      50% {
+        box-shadow: 0 0 50px rgba(102, 126, 234, 1);
+      }
+    }
+
+    .connection {
+      position: absolute;
+      height: 2px;
+      background: linear-gradient(90deg, rgba(102, 126, 234, 0.5), rgba(118, 75, 162, 0.5));
+      transform-origin: left center;
+      pointer-events: none;
+      animation: flow 2s linear infinite;
+    }
+
+    @keyframes flow {
+      0% {
+        opacity: 0.3;
+      }
+      50% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0.3;
+      }
+    }
+
+    .peer-list {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .peer-item {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .peer-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .peer-info {
+      flex: 1;
+    }
+
+    .peer-name {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .peer-status {
+      font-size: 12px;
+      opacity: 0.7;
+    }
+
+    .peer-badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .peer-badge.connected {
+      background: rgba(76, 175, 80, 0.2);
+      color: #4caf50;
+    }
+
+    .peer-badge.discovered {
+      background: rgba(255, 152, 0, 0.2);
+      color: #ff9800;
+    }
+
+    .log-container {
+      height: 300px;
+      overflow-y: auto;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 12px;
+      padding: 16px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+    }
+
+    .log-entry {
+      margin-bottom: 8px;
+      display: flex;
+      gap: 12px;
+    }
+
+    .log-time {
+      color: #667eea;
+      flex-shrink: 0;
+    }
+
+    .log-message.success {
+      color: #4caf50;
+    }
+
+    .log-message.info {
+      color: #2196f3;
+    }
+
+    .log-message.warning {
+      color: #ff9800;
+    }
+
+    .log-message.error {
+      color: #f44336;
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .state-display {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 16px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .instructions {
+      background: rgba(102, 126, 234, 0.1);
+      border: 1px solid rgba(102, 126, 234, 0.3);
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 20px;
+    }
+
+    .instructions h3 {
+      margin-bottom: 16px;
+      color: #667eea;
+    }
+
+    .instructions ol {
+      margin-left: 24px;
+    }
+
+    .instructions li {
+      margin-bottom: 12px;
+      line-height: 1.6;
+    }
+
+    .instructions strong {
+      color: #f093fb;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="hero">
+      <h1><i class="fas fa-project-diagram"></i> RAPP Distributed Mesh Network</h1>
+      <p>Real-time state synchronization across ALL browser instances using WebRTC</p>
+    </div>
+
+    <div class="status-bar">
+      <div class="stat-card">
+        <div class="stat-value" id="connected-count">0</div>
+        <div class="stat-label">Connected Peers</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="operation-count">0</div>
+        <div class="stat-label">Operations</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="sync-count">0</div>
+        <div class="stat-label">Syncs</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="node-id-display">-</div>
+        <div class="stat-label">This Node</div>
+      </div>
+    </div>
+
+    <div class="main-grid">
+      <div class="card">
+        <div class="card-title">
+          <i class="fas fa-network-wired"></i>
+          Mesh Visualization
+        </div>
+        <div class="mesh-visualization" id="mesh-viz"></div>
+        <div class="controls">
+          <button class="btn btn-primary" onclick="addUser()">
+            <i class="fas fa-user-plus"></i> Add User
+          </button>
+          <button class="btn btn-primary" onclick="addChat()">
+            <i class="fas fa-comment-plus"></i> Add Chat
+          </button>
+          <button class="btn btn-secondary" onclick="openNewWindow()">
+            <i class="fas fa-window-restore"></i> Open New Window
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <i class="fas fa-users"></i>
+          Peers (<span id="peer-count">0</span>)
+        </div>
+        <div class="peer-list" id="peer-list"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <i class="fas fa-terminal"></i>
+        Activity Log
+      </div>
+      <div class="log-container" id="activity-log"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <i class="fas fa-database"></i>
+        Current State
+      </div>
+      <div class="state-display">
+        <pre id="state-display">Loading...</pre>
+      </div>
+    </div>
+
+    <div class="instructions">
+      <h3><i class="fas fa-rocket"></i> How to Test Cross-Browser Mesh</h3>
+      <ol>
+        <li><strong>Open in Multiple Browsers:</strong> Open this page in Chrome, Firefox, Safari, and Edge simultaneously</li>
+        <li><strong>Watch Mesh Formation:</strong> All browsers will automatically discover each other via localStorage signaling</li>
+        <li><strong>Establish WebRTC Connections:</strong> Peer-to-peer data channels connect all browsers (watch the visualization!)</li>
+        <li><strong>Make Changes:</strong> Click "Add User" or "Add Chat" in ANY browser</li>
+        <li><strong>See Real-Time Sync:</strong> Watch the change propagate to ALL other browsers instantly via the mesh</li>
+        <li><strong>Test Resilience:</strong> Close one browser and see the mesh continue working with remaining nodes</li>
+        <li><strong>Check Operation Log:</strong> See distributed operations, vector clocks, and consensus</li>
+      </ol>
+    </div>
+  </div>
+
+  <script src="distributed-rapp-mesh.js"></script>
+  <script>
+    // Mock AppState for demo
+    class DemoAppState {
+      constructor() {
+        this.users = {};
+        this.chats = {};
+        this.settings = { theme: 'dark' };
+        this.endpoints = [];
+        this.currentUser = null;
+        this.currentChatId = null;
+      }
+
+      saveUsers() {
+        localStorage.setItem('demo-users', JSON.stringify(this.users));
+      }
+
+      saveChats() {
+        localStorage.setItem('demo-chats', JSON.stringify(this.chats));
+      }
+
+      saveSettings() {
+        localStorage.setItem('demo-settings', JSON.stringify(this.settings));
+      }
+
+      saveEndpoints() {
+        localStorage.setItem('demo-endpoints', JSON.stringify(this.endpoints));
+      }
+    }
+
+    // Initialize
+    let mesh, appState;
+    let syncCount = 0;
+
+    function init() {
+      appState = new DemoAppState();
+      window.appState = appState;
+
+      mesh = new DistributedRAPPMesh(appState, {
+        quorumSize: 1,
+        syncInterval: 3000
+      });
+
+      // Setup event handlers
+      mesh.onPeerJoined((peerId) => {
+        addLog('success', `✓ Peer joined: ${peerId}`);
+        updateVisualization();
+        updatePeerList();
+        updateStats();
+      });
+
+      mesh.onPeerLeft((peerId) => {
+        addLog('warning', `Peer left: ${peerId}`);
+        updateVisualization();
+        updatePeerList();
+        updateStats();
+      });
+
+      mesh.onOperationReceived((operation) => {
+        addLog('info', `← Received: ${operation.type} (${operation.id})`);
+        updateStateDisplay();
+        updateStats();
+      });
+
+      mesh.onStateSync((peerId) => {
+        syncCount++;
+        addLog('info', `↻ Synced with ${peerId}`);
+        updateStats();
+      });
+
+      mesh.onConsensusReached((opId) => {
+        addLog('success', `✓ Consensus: ${opId}`);
+      });
+
+      // Display node ID
+      document.getElementById('node-id-display').textContent =
+        mesh.detectBrowser().name.substr(0, 6);
+
+      // Start update loops
+      setInterval(() => {
+        updateVisualization();
+        updatePeerList();
+        updateStats();
+        updateStateDisplay();
+      }, 1000);
+
+      addLog('success', 'Distributed mesh initialized!');
+      addLog('info', `Node ID: ${mesh.nodeId}`);
+      addLog('info', 'Capabilities: ' + JSON.stringify(mesh.nodeCapabilities));
+    }
+
+    function addUser() {
+      const userId = `user-${Date.now()}`;
+      const user = {
+        id: userId,
+        name: `User ${Math.floor(Math.random() * 1000)}`,
+        email: `user${Math.floor(Math.random() * 1000)}@example.com`,
+        createdAt: new Date().toISOString(),
+        lastActive: new Date().toISOString(),
+        chats: []
+      };
+
+      appState.users[userId] = user;
+      appState.saveUsers();
+
+      addLog('success', `→ Created user: ${user.name}`);
+    }
+
+    function addChat() {
+      const chatId = `chat-${Date.now()}`;
+      const userId = Object.keys(appState.users)[0] || 'user-default';
+
+      if (!appState.chats[userId]) {
+        appState.chats[userId] = {};
+      }
+
+      const chat = {
+        id: chatId,
+        title: `Chat ${Math.floor(Math.random() * 100)}`,
+        messages: [
+          { role: 'user', content: 'Hello from the mesh!', timestamp: Date.now() }
+        ],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        archived: false
+      };
+
+      appState.chats[userId][chatId] = chat;
+      appState.saveChats();
+
+      addLog('success', `→ Created chat: ${chat.title}`);
+    }
+
+    function openNewWindow() {
+      window.open(window.location.href, '_blank', 'width=1000,height=800');
+      addLog('info', 'Opened new window - it will join the mesh automatically');
+    }
+
+    function updateVisualization() {
+      const viz = document.getElementById('mesh-viz');
+      const status = mesh.getMeshStatus();
+
+      // Clear previous
+      viz.innerHTML = '';
+
+      const allNodes = [
+        { id: mesh.nodeId, browser: mesh.nodeCapabilities.browser, self: true },
+        ...status.connectedPeers.map(p => ({ ...p, self: false })),
+        ...status.discoveredPeers.map(p => ({ ...p, self: false, discovered: true }))
+      ];
+
+      const centerX = viz.offsetWidth / 2;
+      const centerY = viz.offsetHeight / 2;
+      const radius = Math.min(centerX, centerY) - 60;
+
+      // Position nodes in a circle
+      allNodes.forEach((node, index) => {
+        const angle = (index / allNodes.length) * 2 * Math.PI - Math.PI / 2;
+        const x = centerX + radius * Math.cos(angle) - 40;
+        const y = centerY + radius * Math.sin(angle) - 40;
+
+        const nodeEl = document.createElement('div');
+        nodeEl.className = `node ${getBrowserClass(node.browser.name)} ${node.self ? 'self' : ''}`;
+        nodeEl.style.left = `${x}px`;
+        nodeEl.style.top = `${y}px`;
+        nodeEl.title = node.id;
+
+        nodeEl.innerHTML = `
+          <div class="browser-icon">${getBrowserIcon(node.browser.name)}</div>
+          <div>${node.browser.name}</div>
+        `;
+
+        viz.appendChild(nodeEl);
+
+        // Draw connections (only for connected peers)
+        if (node.self) {
+          status.connectedPeers.forEach((peer, peerIndex) => {
+            const peerAngle = ((peerIndex + 1) / allNodes.length) * 2 * Math.PI - Math.PI / 2;
+            const peerX = centerX + radius * Math.cos(peerAngle);
+            const peerY = centerY + radius * Math.sin(peerAngle);
+
+            const dx = peerX - (x + 40);
+            const dy = peerY - (y + 40);
+            const length = Math.sqrt(dx * dx + dy * dy);
+            const angle = Math.atan2(dy, dx);
+
+            const connection = document.createElement('div');
+            connection.className = 'connection';
+            connection.style.left = `${x + 40}px`;
+            connection.style.top = `${y + 40}px`;
+            connection.style.width = `${length}px`;
+            connection.style.transform = `rotate(${angle}rad)`;
+
+            viz.appendChild(connection);
+          });
+        }
+      });
+    }
+
+    function getBrowserClass(browserName) {
+      const name = (browserName || '').toLowerCase();
+      if (name.includes('chrome')) return 'chrome';
+      if (name.includes('firefox')) return 'firefox';
+      if (name.includes('safari')) return 'safari';
+      if (name.includes('edge')) return 'edge';
+      return 'unknown';
+    }
+
+    function getBrowserIcon(browserName) {
+      const name = (browserName || '').toLowerCase();
+      if (name.includes('chrome')) return '🔵';
+      if (name.includes('firefox')) return '🦊';
+      if (name.includes('safari')) return '🧭';
+      if (name.includes('edge')) return '🌊';
+      return '🌐';
+    }
+
+    function updatePeerList() {
+      const peerList = document.getElementById('peer-list');
+      const status = mesh.getMeshStatus();
+
+      const allPeers = [
+        ...status.connectedPeers.map(p => ({ ...p, connected: true })),
+        ...status.discoveredPeers
+      ];
+
+      if (allPeers.length === 0) {
+        peerList.innerHTML = '<div style="opacity: 0.5; text-align: center; padding: 20px;">No peers detected yet. Open in another browser!</div>';
+        return;
+      }
+
+      peerList.innerHTML = allPeers.map(peer => `
+        <div class="peer-item">
+          <div class="peer-icon ${getBrowserClass(peer.browser.name)}">
+            ${getBrowserIcon(peer.browser.name)}
+          </div>
+          <div class="peer-info">
+            <div class="peer-name">${peer.browser.name} ${peer.browser.version}</div>
+            <div class="peer-status">${peer.id.substr(0, 30)}...</div>
+            <div class="peer-status">CPU: ${peer.capabilities?.cpuScore?.toFixed(0) || 'N/A'} | Cores: ${peer.capabilities?.cpuCores || 'N/A'}</div>
+          </div>
+          <div class="peer-badge ${peer.connected ? 'connected' : 'discovered'}">
+            ${peer.connected ? '✓ Connected' : '○ Discovered'}
+          </div>
+        </div>
+      `).join('');
+
+      document.getElementById('peer-count').textContent = allPeers.length;
+    }
+
+    function updateStats() {
+      const status = mesh.getMeshStatus();
+
+      document.getElementById('connected-count').textContent = status.connectedPeers.length;
+      document.getElementById('operation-count').textContent = status.operationLogSize;
+      document.getElementById('sync-count').textContent = syncCount;
+    }
+
+    function updateStateDisplay() {
+      const state = {
+        users: Object.keys(appState.users).length,
+        chats: Object.values(appState.chats).reduce((sum, userChats) => sum + Object.keys(userChats).length, 0),
+        vectorClock: mesh.vectorClock,
+        operationLog: mesh.operationLog.length,
+        meshStatus: mesh.getMeshStatus()
+      };
+
+      document.getElementById('state-display').textContent = JSON.stringify(state, null, 2);
+    }
+
+    function addLog(type, message) {
+      const log = document.getElementById('activity-log');
+      const timestamp = new Date().toLocaleTimeString();
+
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      entry.innerHTML = `
+        <div class="log-time">[${timestamp}]</div>
+        <div class="log-message ${type}">${message}</div>
+      `;
+
+      log.appendChild(entry);
+      log.scrollTop = log.scrollHeight;
+
+      // Keep only last 100 logs
+      while (log.children.length > 100) {
+        log.removeChild(log.firstChild);
+      }
+    }
+
+    // Initialize on load
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(init, 100);
+    });
+  </script>
+</body>
+</html>
