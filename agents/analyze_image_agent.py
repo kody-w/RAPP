@@ -11,7 +11,7 @@ class AnalyzeImageAgent(BasicAgent):
         self.name = "AnalyzeImage"
         self.metadata = {
             "name": self.name,
-            "description": "Analyzes an image using Vision AI. Can accept an image URL (including Azure File Storage URLs), or a Base64 encoded image string. For best results, upload the image first using UploadImage agent.",
+            "description": "Analyzes an image using Azure OpenAI's multimodal capabilities (gpt-5-chat). Can accept an image URL (including Azure File Storage URLs), or a Base64 encoded image string. For best results, upload the image first using UploadImage agent.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -159,8 +159,9 @@ class AnalyzeImageAgent(BasicAgent):
             ]
 
             # Request analysis from the model
+            # Use the standard deployment - gpt-5-chat is multimodal
             response = client.chat.completions.create(
-                model=os.environ.get('AZURE_OPENAI_DEPLOYMENT_NAME', 'gpt-4o'),
+                model=os.environ.get('AZURE_OPENAI_DEPLOYMENT_NAME', 'gpt-5-chat'),
                 messages=messages,
                 temperature=0.7,
                 max_tokens=800

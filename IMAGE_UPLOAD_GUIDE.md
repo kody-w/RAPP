@@ -114,15 +114,16 @@ AZURE_FILES_SHARE_NAME="your-share-name"
 # Azure OpenAI (for image analysis)
 AZURE_OPENAI_API_KEY="your-api-key"
 AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com/"
-AZURE_OPENAI_API_VERSION="2024-02-01"
-AZURE_OPENAI_DEPLOYMENT_NAME="gpt-4o"  # Must support vision
+AZURE_OPENAI_API_VERSION="2025-01-01-preview"
+AZURE_OPENAI_DEPLOYMENT_NAME="gpt-5-chat"  # Multimodal model
 ```
 
 ### Azure OpenAI Model Requirements
 
-The analyze agent requires a vision-capable model:
-- **Recommended**: `gpt-4o`, `gpt-4-vision`, `gpt-4-turbo`
-- **Not Compatible**: `gpt-3.5-turbo`, `gpt-4` (non-vision)
+The analyze agent works with multimodal models:
+- **Primary**: `gpt-5-chat` (multimodal by default)
+- **Also Compatible**: `gpt-4o`, `gpt-4-vision`, `gpt-4-turbo`
+- **Not Compatible**: `gpt-3.5-turbo`, `gpt-4` (non-multimodal)
 
 ## Error Handling
 
@@ -192,7 +193,7 @@ result = analyze_agent.perform(
 
 1. Verify Azure OpenAI endpoint is configured
 2. Check API key is valid
-3. Ensure deployment supports vision (gpt-4o/gpt-4-vision)
+3. Ensure deployment is multimodal (gpt-5-chat, gpt-4o, etc.)
 4. Check Azure OpenAI quota/limits
 
 ### SAS Token Expired
