@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contract Analysis & Comparison Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .data-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+        }
+
+        .data-controls button {
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .data-controls button:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            background: white;
+            border-radius: 12px;
+            padding: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px 24px;
+            border: none;
+            background: transparent;
+            color: #666;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .contracts-input {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .contract-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .contract-panel h2 {
+            color: #667eea;
+            margin-bottom: 16px;
+            font-size: 20px;
+        }
+
+        .input-method {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .input-method button {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .input-method button.active {
+            border-color: #667eea;
+            background: #f0f4ff;
+            color: #667eea;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 300px;
+            padding: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            resize: vertical;
+            margin-bottom: 12px;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .analysis-results {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 200px 1fr 1fr;
+            gap: 1px;
+            background: #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .grid-header, .grid-cell {
+            background: white;
+            padding: 16px;
+        }
+
+        .grid-header {
+            background: #f8f9fa;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .grid-cell {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #667eea;
+            margin: 24px 0 16px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .risk-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+
+        .risk-high {
+            background: #fee;
+            color: #c00;
+        }
+
+        .risk-medium {
+            background: #ffeaa7;
+            color: #856404;
+        }
+
+        .risk-low {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .obligation-item, .risk-item, .term-item {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .annotation-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            margin-top: 8px;
+            font-size: 13px;
+        }
+
+        @media (max-width: 968px) {
+            .contracts-input {
+                grid-template-columns: 1fr;
+            }
+
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .grid-header:first-child {
+                display: none;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .data-controls {
+                position: static;
+                margin-bottom: 20px;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="data-controls">
+        <button onclick="exportData()">Export Analysis</button>
+        <button onclick="document.getElementById('importFile').click()">Import Analysis</button>
+        <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>📄 Contract Analysis & Comparison Tool</h1>
+            <p class="subtitle">Extract obligations, identify risks, and compare contracts side-by-side</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('input')">Input Contracts</button>
+            <button class="tab" onclick="switchTab('analysis')">Analysis Results</button>
+            <button class="tab" onclick="switchTab('comparison')">Side-by-Side Comparison</button>
+        </div>
+
+        <div id="input-tab" class="tab-content active">
+            <div class="contracts-input">
+                <div class="contract-panel">
+                    <h2>Contract A</h2>
+                    <input type="text" id="contractA-name" placeholder="Contract Name (e.g., Vendor Agreement 2024)" value="Contract A">
+                    <textarea id="contractA-text" placeholder="Paste contract text here or upload a file...
+
+You can paste the full text of your contract, including all clauses, terms, and conditions. The analysis engine will automatically extract:
+• Key obligations and responsibilities
+• Important dates and deadlines
+• Payment terms
+• Risk factors and liability clauses
+• Termination conditions
+• Parties involved"></textarea>
+                    <input type="file" id="contractA-file" accept=".txt,.pdf" style="display: none;" onchange="handleFileUpload(event, 'A')">
+                    <button class="btn btn-secondary" onclick="document.getElementById('contractA-file').click()">Upload File</button>
+                </div>
+
+                <div class="contract-panel">
+                    <h2>Contract B</h2>
+                    <input type="text" id="contractB-name" placeholder="Contract Name (e.g., Service Agreement 2025)" value="Contract B">
+                    <textarea id="contractB-text" placeholder="Paste second contract text here for comparison...
+
+You can paste the full text of your second contract to compare against Contract A. The tool will:
+• Highlight differences in key terms
+• Compare obligations and responsibilities
+• Identify unique risks in each contract
+• Show payment term differences
+• Compare termination conditions"></textarea>
+                    <input type="file" id="contractB-file" accept=".txt,.pdf" style="display: none;" onchange="handleFileUpload(event, 'B')">
+                    <button class="btn btn-secondary" onclick="document.getElementById('contractB-file').click()">Upload File</button>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="analyzeContracts()" style="font-size: 16px; padding: 16px 48px;">
+                    🔍 Analyze Contracts
+                </button>
+            </div>
+        </div>
+
+        <div id="analysis-tab" class="tab-content">
+            <div id="analysis-results" class="analysis-results">
+                <div class="empty-state">
+                    <div class="empty-state-icon">📊</div>
+                    <h3>No Analysis Yet</h3>
+                    <p>Enter contracts in the Input tab and click "Analyze Contracts" to see results</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="comparison-tab" class="tab-content">
+            <div id="comparison-results" class="analysis-results">
+                <div class="empty-state">
+                    <div class="empty-state-icon">⚖️</div>
+                    <h3>No Comparison Available</h3>
+                    <p>Analyze both contracts to see a side-by-side comparison</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const APP_NAME = 'contract-analyzer';
+        let appData = {
+            contractA: { name: 'Contract A', text: '', analysis: null },
+            contractB: { name: 'Contract B', text: '', analysis: null }
+        };
+
+        // Load saved data
+        function loadData() {
+            const saved = localStorage.getItem(APP_NAME);
+            if (saved) {
+                try {
+                    appData = JSON.parse(saved);
+                    document.getElementById('contractA-name').value = appData.contractA.name || 'Contract A';
+                    document.getElementById('contractA-text').value = appData.contractA.text || '';
+                    document.getElementById('contractB-name').value = appData.contractB.name || 'Contract B';
+                    document.getElementById('contractB-text').value = appData.contractB.text || '';
+                } catch (e) {
+                    console.error('Error loading data:', e);
+                }
+            }
+        }
+
+        function saveData() {
+            appData.contractA.name = document.getElementById('contractA-name').value;
+            appData.contractA.text = document.getElementById('contractA-text').value;
+            appData.contractB.name = document.getElementById('contractB-name').value;
+            appData.contractB.text = document.getElementById('contractB-text').value;
+            localStorage.setItem(APP_NAME, JSON.stringify(appData));
+        }
+
+        function exportData() {
+            saveData();
+            const dataStr = JSON.stringify(appData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `contract-analysis-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    appData = JSON.parse(e.target.result);
+                    saveData();
+                    location.reload();
+                } catch (error) {
+                    alert('Invalid JSON file');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function handleFileUpload(event, contract) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                document.getElementById(`contract${contract}-text`).value = text;
+            };
+            reader.readAsText(file);
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(`${tab}-tab`).classList.add('active');
+        }
+
+        // Analysis Engine
+        function analyzeContract(text, name) {
+            const analysis = {
+                name: name,
+                text: text,
+                obligations: extractObligations(text),
+                dates: extractDates(text),
+                payments: extractPayments(text),
+                risks: identifyRisks(text),
+                parties: extractParties(text),
+                termination: extractTermination(text),
+                wordCount: text.split(/\s+/).length
+            };
+            return analysis;
+        }
+
+        function extractObligations(text) {
+            const obligations = [];
+            const patterns = [
+                /shall\s+([^.]{10,100})/gi,
+                /must\s+([^.]{10,100})/gi,
+                /required\s+to\s+([^.]{10,100})/gi,
+                /agrees?\s+to\s+([^.]{10,100})/gi,
+                /responsible\s+for\s+([^.]{10,100})/gi,
+                /will\s+(?:provide|perform|deliver|maintain)\s+([^.]{10,100})/gi
+            ];
+
+            patterns.forEach(pattern => {
+                let match;
+                while ((match = pattern.exec(text)) !== null) {
+                    const obligation = match[0].trim();
+                    if (obligation.length > 20 && obligation.length < 200) {
+                        obligations.push({
+                            text: obligation,
+                            type: getObligationType(obligation)
+                        });
+                    }
+                }
+            });
+
+            return obligations.slice(0, 15); // Limit to top 15
+        }
+
+        function getObligationType(text) {
+            if (/payment|pay|compensat|fee|invoice/i.test(text)) return 'Payment';
+            if (/deliver|provide|supply/i.test(text)) return 'Delivery';
+            if (/maintain|support|service/i.test(text)) return 'Maintenance';
+            if (/confidential|secret|proprietary/i.test(text)) return 'Confidentiality';
+            if (/indemnif|liable|responsibility/i.test(text)) return 'Liability';
+            return 'General';
+        }
+
+        function extractDates(text) {
+            const dates = [];
+            const datePatterns = [
+                /\b(\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4})\b/g,
+                /\b((?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4})\b/gi,
+                /\b(\d{1,2}\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})\b/gi,
+                /within\s+(\d+\s+(?:days?|weeks?|months?|years?))/gi,
+                /(?:deadline|due date|expiration|termination date)[\s:]+([^\n.]{5,50})/gi
+            ];
+
+            datePatterns.forEach(pattern => {
+                let match;
+                while ((match = pattern.exec(text)) !== null) {
+                    dates.push(match[1].trim());
+                }
+            });
+
+            return [...new Set(dates)].slice(0, 10);
+        }
+
+        function extractPayments(text) {
+            const payments = [];
+            const paymentPatterns = [
+                /\$[\d,]+(?:\.\d{2})?/g,
+                /(?:payment|fee|cost|price|charge)[\s:]+([^\n.]{10,100})/gi,
+                /(?:invoice|billing)[\s:]+([^\n.]{10,100})/gi
+            ];
+
+            paymentPatterns.forEach(pattern => {
+                let match;
+                while ((match = pattern.exec(text)) !== null) {
+                    payments.push(match[0].trim());
+                }
+            });
+
+            return [...new Set(payments)].slice(0, 10);
+        }
+
+        function identifyRisks(text) {
+            const risks = [];
+            const riskKeywords = {
+                high: [
+                    'unlimited liability', 'no cap', 'indemnify', 'hold harmless',
+                    'automatic renewal', 'non-compete', 'exclusive rights',
+                    'irreversible', 'perpetual', 'waive', 'forfeit'
+                ],
+                medium: [
+                    'penalty', 'liquidated damages', 'breach', 'default',
+                    'force majeure', 'arbitration', 'governing law',
+                    'confidential', 'proprietary', 'intellectual property'
+                ],
+                low: [
+                    'notice period', 'termination', 'amendment',
+                    'assignment', 'modification', 'severability'
+                ]
+            };
+
+            Object.entries(riskKeywords).forEach(([level, keywords]) => {
+                keywords.forEach(keyword => {
+                    const regex = new RegExp(`([^.]*${keyword}[^.]*\\.?)`, 'gi');
+                    let match;
+                    while ((match = regex.exec(text)) !== null) {
+                        risks.push({
+                            level: level,
+                            text: match[1].trim(),
+                            keyword: keyword
+                        });
+                    }
+                });
+            });
+
+            return risks.slice(0, 20);
+        }
+
+        function extractParties(text) {
+            const parties = [];
+            const partyPatterns = [
+                /(?:party|parties)[\s:]+([^\n.]{10,100})/gi,
+                /between\s+([^,\n]{5,50})\s+and\s+([^,\n]{5,50})/gi,
+                /(?:vendor|client|contractor|service provider|customer)[\s:]+([^\n.]{5,50})/gi
+            ];
+
+            partyPatterns.forEach(pattern => {
+                let match;
+                while ((match = pattern.exec(text)) !== null) {
+                    if (match[1]) parties.push(match[1].trim());
+                    if (match[2]) parties.push(match[2].trim());
+                }
+            });
+
+            return [...new Set(parties)].slice(0, 5);
+        }
+
+        function extractTermination(text) {
+            const termination = [];
+            const terminationPatterns = [
+                /terminat(?:ion|e)[\s:]+([^\n.]{10,150})/gi,
+                /(?:cancel|cancellation)[\s:]+([^\n.]{10,150})/gi,
+                /(?:notice period|notice required)[\s:]+([^\n.]{10,100})/gi
+            ];
+
+            terminationPatterns.forEach(pattern => {
+                let match;
+                while ((match = pattern.exec(text)) !== null) {
+                    termination.push(match[0].trim());
+                }
+            });
+
+            return [...new Set(termination)].slice(0, 5);
+        }
+
+        function analyzeContracts() {
+            const textA = document.getElementById('contractA-text').value.trim();
+            const textB = document.getElementById('contractB-text').value.trim();
+            const nameA = document.getElementById('contractA-name').value || 'Contract A';
+            const nameB = document.getElementById('contractB-name').value || 'Contract B';
+
+            if (!textA && !textB) {
+                alert('Please enter at least one contract to analyze');
+                return;
+            }
+
+            if (textA) {
+                appData.contractA.analysis = analyzeContract(textA, nameA);
+            }
+            if (textB) {
+                appData.contractB.analysis = analyzeContract(textB, nameB);
+            }
+
+            saveData();
+            displayAnalysisResults();
+            displayComparisonResults();
+
+            // Switch to analysis tab
+            document.querySelectorAll('.tab')[1].click();
+        }
+
+        function displayAnalysisResults() {
+            const container = document.getElementById('analysis-results');
+            let html = '';
+
+            if (appData.contractA.analysis) {
+                html += generateAnalysisHTML(appData.contractA.analysis, 'A');
+            }
+
+            if (appData.contractB.analysis) {
+                html += generateAnalysisHTML(appData.contractB.analysis, 'B');
+            }
+
+            container.innerHTML = html || '<div class="empty-state"><div class="empty-state-icon">📊</div><h3>No Analysis Yet</h3></div>';
+        }
+
+        function generateAnalysisHTML(analysis, contract) {
+            const riskCounts = {
+                high: analysis.risks.filter(r => r.level === 'high').length,
+                medium: analysis.risks.filter(r => r.level === 'medium').length,
+                low: analysis.risks.filter(r => r.level === 'low').length
+            };
+
+            return `
+                <div class="contract-analysis">
+                    <h2 class="section-title">${analysis.name}</h2>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value">${analysis.wordCount.toLocaleString()}</div>
+                            <div class="stat-label">Words</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${analysis.obligations.length}</div>
+                            <div class="stat-label">Obligations</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${analysis.risks.length}</div>
+                            <div class="stat-label">Risks Identified</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${riskCounts.high}</div>
+                            <div class="stat-label">High Risk Items</div>
+                        </div>
+                    </div>
+
+                    <h3 class="section-title">Key Obligations</h3>
+                    ${analysis.obligations.map(ob => `
+                        <div class="obligation-item">
+                            <strong>${ob.type}:</strong> ${ob.text}
+                        </div>
+                    `).join('') || '<p style="color: #999;">No obligations identified</p>'}
+
+                    <h3 class="section-title">Risk Factors</h3>
+                    ${analysis.risks.map(risk => `
+                        <div class="risk-item">
+                            <span class="risk-badge risk-${risk.level}">${risk.level.toUpperCase()}</span>
+                            ${risk.text}
+                        </div>
+                    `).join('') || '<p style="color: #999;">No risks identified</p>'}
+
+                    <h3 class="section-title">Important Dates & Deadlines</h3>
+                    ${analysis.dates.map(date => `
+                        <div class="term-item">📅 ${date}</div>
+                    `).join('') || '<p style="color: #999;">No dates found</p>'}
+
+                    <h3 class="section-title">Payment Terms</h3>
+                    ${analysis.payments.map(payment => `
+                        <div class="term-item">💰 ${payment}</div>
+                    `).join('') || '<p style="color: #999;">No payment terms found</p>'}
+
+                    <h3 class="section-title">Termination Conditions</h3>
+                    ${analysis.termination.map(term => `
+                        <div class="term-item">⚠️ ${term}</div>
+                    `).join('') || '<p style="color: #999;">No termination clauses found</p>'}
+
+                    <h3 class="section-title">Parties Involved</h3>
+                    ${analysis.parties.map(party => `
+                        <div class="term-item">👤 ${party}</div>
+                    `).join('') || '<p style="color: #999;">No parties identified</p>'}
+                </div>
+            `;
+        }
+
+        function displayComparisonResults() {
+            const container = document.getElementById('comparison-results');
+
+            if (!appData.contractA.analysis || !appData.contractB.analysis) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚖️</div><h3>Analyze Both Contracts</h3><p>Both contracts need to be analyzed for comparison</p></div>';
+                return;
+            }
+
+            const a = appData.contractA.analysis;
+            const b = appData.contractB.analysis;
+
+            const html = `
+                <h2 class="section-title">Side-by-Side Comparison</h2>
+
+                <div class="comparison-grid">
+                    <div class="grid-header">Metric</div>
+                    <div class="grid-header">${a.name}</div>
+                    <div class="grid-header">${b.name}</div>
+
+                    <div class="grid-cell"><strong>Word Count</strong></div>
+                    <div class="grid-cell">${a.wordCount.toLocaleString()}</div>
+                    <div class="grid-cell">${b.wordCount.toLocaleString()}</div>
+
+                    <div class="grid-cell"><strong>Obligations</strong></div>
+                    <div class="grid-cell">${a.obligations.length} identified</div>
+                    <div class="grid-cell">${b.obligations.length} identified</div>
+
+                    <div class="grid-cell"><strong>Total Risks</strong></div>
+                    <div class="grid-cell">${a.risks.length} risks</div>
+                    <div class="grid-cell">${b.risks.length} risks</div>
+
+                    <div class="grid-cell"><strong>High Risks</strong></div>
+                    <div class="grid-cell">
+                        <span class="risk-badge risk-high">${a.risks.filter(r => r.level === 'high').length}</span>
+                    </div>
+                    <div class="grid-cell">
+                        <span class="risk-badge risk-high">${b.risks.filter(r => r.level === 'high').length}</span>
+                    </div>
+
+                    <div class="grid-cell"><strong>Payment Terms</strong></div>
+                    <div class="grid-cell">${a.payments.length} terms found</div>
+                    <div class="grid-cell">${b.payments.length} terms found</div>
+
+                    <div class="grid-cell"><strong>Important Dates</strong></div>
+                    <div class="grid-cell">${a.dates.length} dates</div>
+                    <div class="grid-cell">${b.dates.length} dates</div>
+
+                    <div class="grid-cell"><strong>Termination Clauses</strong></div>
+                    <div class="grid-cell">${a.termination.length} clauses</div>
+                    <div class="grid-cell">${b.termination.length} clauses</div>
+                </div>
+
+                <h3 class="section-title">Key Differences in Obligations</h3>
+                <div class="comparison-grid">
+                    <div class="grid-header">Category</div>
+                    <div class="grid-header">${a.name}</div>
+                    <div class="grid-header">${b.name}</div>
+
+                    ${generateObligationComparison(a, b)}
+                </div>
+
+                <h3 class="section-title">Risk Comparison</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 16px;">
+                    <div>
+                        <h4 style="color: #667eea; margin-bottom: 12px;">${a.name} - High Risks</h4>
+                        ${a.risks.filter(r => r.level === 'high').map(r => `
+                            <div class="risk-item">
+                                <span class="risk-badge risk-high">HIGH</span>
+                                ${r.text}
+                            </div>
+                        `).join('') || '<p style="color: #999;">No high risks</p>'}
+                    </div>
+                    <div>
+                        <h4 style="color: #667eea; margin-bottom: 12px;">${b.name} - High Risks</h4>
+                        ${b.risks.filter(r => r.level === 'high').map(r => `
+                            <div class="risk-item">
+                                <span class="risk-badge risk-high">HIGH</span>
+                                ${r.text}
+                            </div>
+                        `).join('') || '<p style="color: #999;">No high risks</p>'}
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        function generateObligationComparison(a, b) {
+            const types = [...new Set([...a.obligations.map(o => o.type), ...b.obligations.map(o => o.type)])];
+
+            return types.map(type => {
+                const aObs = a.obligations.filter(o => o.type === type);
+                const bObs = b.obligations.filter(o => o.type === type);
+
+                return `
+                    <div class="grid-cell"><strong>${type}</strong></div>
+                    <div class="grid-cell">${aObs.length} obligations</div>
+                    <div class="grid-cell">${bObs.length} obligations</div>
+                `;
+            }).join('');
+        }
+
+        // Auto-save on input
+        document.getElementById('contractA-text').addEventListener('input', saveData);
+        document.getElementById('contractB-text').addEventListener('input', saveData);
+        document.getElementById('contractA-name').addEventListener('input', saveData);
+        document.getElementById('contractB-name').addEventListener('input', saveData);
+
+        // Initialize
+        loadData();
+        if (appData.contractA.analysis || appData.contractB.analysis) {
+            displayAnalysisResults();
+            displayComparisonResults();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+{
+  "_schema": "ai-config-v1",
+  "_description": "Standardized AI configuration for localFirstTools applications",
+  "endpoints": {
+    "default": {
+      "id": "default",
+      "name": "Local Default Bot",
+      "url": "http://localhost:7071/api/businessinsightbot_function",
+      "key": "",
+      "guid": "",
+      "active": false,
+      "provider": "custom"
+    }
+  },
+  "speech": {
+    "azureTTSKey": "",
+    "azureTTSRegion": "eastus",
+    "ttsVoiceName": "en-US-JennyNeural",
+    "ttsProvider": "azure",
+    "speechRecognitionLang": "en-US",
+    "enableSpeech": true
+  },
+  "llm": {
+    "provider": "custom",
+    "model": "gpt-4",
+    "temperature": 0.7,
+    "maxTokens": 2000,
+    "systemPrompt": ""
+  },
+  "apiKeys": {
+    "openai": "",
+    "anthropic": "",
+    "azure": "",
+    "google": ""
+  },
+  "preferences": {
+    "theme": "dark",
+    "autoSave": true,
+    "voiceEnabled": true,
+    "notifications": true
+  },
+  "metadata": {
+    "exportDate": "",
+    "version": "1.0.0",
+    "appName": "",
+    "lastModified": ""
+  }
+}

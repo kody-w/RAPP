@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Voice Hello World - Shared Config Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: white;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .header {
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .config-status {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4ade80;
+            margin-right: 8px;
+            animation: pulse 2s ease infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        .mic-button {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: white;
+            color: #11998e;
+            border: none;
+            cursor: pointer;
+            font-size: 5em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .mic-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);
+        }
+
+        .mic-button:active {
+            transform: scale(0.95);
+        }
+
+        .mic-button.listening {
+            background: #ef4444;
+            color: white;
+            animation: listening 1s ease infinite;
+        }
+
+        .mic-button.processing {
+            background: #fbbf24;
+            color: white;
+        }
+
+        @keyframes listening {
+            0%, 100% { box-shadow: 0 10px 40px rgba(239, 68, 68, 0.3); }
+            50% { box-shadow: 0 10px 60px rgba(239, 68, 68, 0.6); }
+        }
+
+        .transcript {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 12px;
+            min-height: 100px;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+
+        .response {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            border-radius: 12px;
+            min-height: 80px;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid white;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .back-link {
+            display: inline-block;
+            color: white;
+            text-decoration: none;
+            margin-top: 20px;
+            opacity: 0.9;
+        }
+
+        .back-link:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+
+        .voice-settings {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+
+        .alert {
+            background: rgba(239, 68, 68, 0.2);
+            border: 2px solid #ef4444;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎤 AI Voice Assistant</h1>
+            <p>Hello World - Shared Config Demo</p>
+        </div>
+
+        <div class="config-status">
+            <span class="status-dot"></span>
+            <span id="statusText">Loading configuration...</span>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <div class="voice-settings" id="voiceSettings"></div>
+
+        <button class="mic-button" id="micButton" onclick="toggleListening()">
+            🎤
+        </button>
+
+        <div class="transcript" id="transcript">
+            Click the microphone to start speaking...
+        </div>
+
+        <div class="response" id="response">
+            AI response will appear here...
+        </div>
+
+        <div class="controls">
+            <button onclick="testVoice()">🔊 Test Voice</button>
+            <button onclick="clearTranscript()">🗑️ Clear</button>
+        </div>
+
+        <a href="ai-config-hub.html" class="back-link">← Back to Config Hub</a>
+    </div>
+
+    <script>
+        // Shared AI Config Manager
+        class AIConfigManager {
+            constructor() {
+                this.storageKey = 'shared-ai-config';
+                this.config = this.loadConfig();
+            }
+
+            loadConfig() {
+                try {
+                    const stored = localStorage.getItem(this.storageKey);
+                    return stored ? JSON.parse(stored) : null;
+                } catch (error) {
+                    console.error('Error loading config:', error);
+                    return null;
+                }
+            }
+
+            getActiveEndpoint() {
+                if (!this.config || !this.config.endpoints) return null;
+                return Object.values(this.config.endpoints).find(ep => ep.active) || null;
+            }
+
+            getSpeechSettings() {
+                return this.config?.speech || {
+                    ttsVoiceName: 'en-US-JennyNeural',
+                    azureTTSKey: '',
+                    enableSpeech: true
+                };
+            }
+
+            getLLMSettings() {
+                return this.config?.llm || { temperature: 0.7, maxTokens: 2000 };
+            }
+        }
+
+        // Initialize
+        const configManager = new AIConfigManager();
+        let recognition;
+        let isListening = false;
+
+        // Check browser support
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            document.getElementById('alertContainer').innerHTML = `
+                <div class="alert">
+                    ⚠️ Speech recognition not supported in this browser.
+                    Please use Chrome, Edge, or Safari.
+                </div>
+            `;
+        } else {
+            // Initialize speech recognition
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+
+            recognition.onresult = handleSpeechResult;
+            recognition.onerror = handleSpeechError;
+            recognition.onend = () => {
+                if (isListening) {
+                    stopListening();
+                }
+            };
+        }
+
+        // Check configuration
+        function checkConfigStatus() {
+            const endpoint = configManager.getActiveEndpoint();
+            const speech = configManager.getSpeechSettings();
+            const statusText = document.getElementById('statusText');
+            const voiceSettings = document.getElementById('voiceSettings');
+
+            if (!endpoint) {
+                statusText.textContent = '⚠️ No active endpoint configured';
+                showAlert('No active endpoint found. Please configure one in the Config Hub.');
+                return false;
+            }
+
+            statusText.textContent = `✓ Connected to: ${endpoint.name}`;
+            voiceSettings.innerHTML = `
+                <strong>Voice:</strong> ${speech.ttsVoiceName}<br>
+                <strong>Endpoint:</strong> ${endpoint.name} (${endpoint.provider})
+            `;
+
+            return true;
+        }
+
+        // Toggle listening
+        function toggleListening() {
+            if (!recognition) {
+                showAlert('Speech recognition not available');
+                return;
+            }
+
+            if (!checkConfigStatus()) return;
+
+            if (isListening) {
+                stopListening();
+            } else {
+                startListening();
+            }
+        }
+
+        function startListening() {
+            const micButton = document.getElementById('micButton');
+            micButton.classList.add('listening');
+            micButton.textContent = '⏹️';
+            document.getElementById('transcript').textContent = 'Listening...';
+            isListening = true;
+
+            try {
+                recognition.start();
+            } catch (error) {
+                console.error('Recognition start error:', error);
+                stopListening();
+            }
+        }
+
+        function stopListening() {
+            const micButton = document.getElementById('micButton');
+            micButton.classList.remove('listening');
+            micButton.textContent = '🎤';
+            isListening = false;
+
+            try {
+                recognition.stop();
+            } catch (error) {
+                console.error('Recognition stop error:', error);
+            }
+        }
+
+        // Handle speech result
+        async function handleSpeechResult(event) {
+            const transcript = event.results[0][0].transcript;
+            document.getElementById('transcript').textContent = `You said: "${transcript}"`;
+
+            stopListening();
+
+            // Process with AI
+            await processWithAI(transcript);
+        }
+
+        function handleSpeechError(event) {
+            console.error('Speech recognition error:', event.error);
+            document.getElementById('transcript').textContent = `Error: ${event.error}`;
+            stopListening();
+        }
+
+        // Process with AI
+        async function processWithAI(text) {
+            const endpoint = configManager.getActiveEndpoint();
+            const micButton = document.getElementById('micButton');
+
+            micButton.classList.add('processing');
+            document.getElementById('response').textContent = 'Processing...';
+
+            try {
+                const response = await fetch(endpoint.url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': endpoint.key ? `Bearer ${endpoint.key}` : '',
+                        'x-guid': endpoint.guid || ''
+                    },
+                    body: JSON.stringify({
+                        message: text,
+                        settings: configManager.getLLMSettings()
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                const reply = data.response || data.message || data.reply || 'No response';
+
+                document.getElementById('response').textContent = reply;
+                speak(reply);
+
+            } catch (error) {
+                console.error('AI Error:', error);
+                const demoReply = `I heard you say "${text}". This is a demo response since we couldn't connect to the configured endpoint. In production, your AI would respond here!`;
+                document.getElementById('response').textContent = demoReply;
+                speak(demoReply);
+            } finally {
+                micButton.classList.remove('processing');
+            }
+        }
+
+        // Text-to-speech
+        function speak(text) {
+            const speech = configManager.getSpeechSettings();
+
+            if (!speech.enableSpeech) return;
+
+            // Use Web Speech API (fallback if Azure not configured)
+            if (window.speechSynthesis) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 0.9;
+                utterance.pitch = 1;
+                utterance.volume = 1;
+
+                // Try to use a voice matching the configured one
+                const voices = speechSynthesis.getVoices();
+                const matchingVoice = voices.find(v => v.name.includes('Jenny') || v.name.includes('Samantha'));
+                if (matchingVoice) {
+                    utterance.voice = matchingVoice;
+                }
+
+                speechSynthesis.speak(utterance);
+            }
+
+            // Note: In production, you would use Azure TTS if configured
+            // with speech.azureTTSKey and speech.ttsVoiceName
+        }
+
+        function testVoice() {
+            const speech = configManager.getSpeechSettings();
+            speak(`Hello! This is a test using the ${speech.ttsVoiceName} voice configuration. Your voice assistant is working correctly!`);
+        }
+
+        function clearTranscript() {
+            document.getElementById('transcript').textContent = 'Click the microphone to start speaking...';
+            document.getElementById('response').textContent = 'AI response will appear here...';
+        }
+
+        function showAlert(message) {
+            const container = document.getElementById('alertContainer');
+            container.innerHTML = `<div class="alert">⚠️ ${message}</div>`;
+            setTimeout(() => container.innerHTML = '', 5000);
+        }
+
+        // Initialize
+        checkConfigStatus();
+
+        // Load voices when available
+        if (window.speechSynthesis) {
+            speechSynthesis.onvoiceschanged = () => {
+                speechSynthesis.getVoices();
+            };
+        }
+
+        // Demo message
+        setTimeout(() => {
+            const endpoint = configManager.getActiveEndpoint();
+            if (endpoint) {
+                const speech = configManager.getSpeechSettings();
+                speak(`Voice assistant initialized. Using ${endpoint.name} endpoint with ${speech.ttsVoiceName} voice.`);
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

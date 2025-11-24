@@ -1,0 +1,3097 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baldur's Gate Campaign - D&D Adventure</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* Main Game Container */
+        #gameContainer {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        #renderCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%);
+        }
+
+        /* Main Menu */
+        #mainMenu {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #2a2a4e 0%, #1a1a3e 100%);
+            border: 2px solid #4a4a7e;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            z-index: 1000;
+        }
+
+        #mainMenu h1 {
+            color: #ffd700;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        #mainMenu h2 {
+            color: #c0c0c0;
+            font-size: 1.2em;
+            margin-bottom: 30px;
+        }
+
+        .menuButton {
+            display: block;
+            width: 250px;
+            padding: 15px;
+            margin: 10px auto;
+            background: linear-gradient(135deg, #4a4a7e 0%, #3a3a6e 100%);
+            border: 1px solid #6a6a9e;
+            color: #fff;
+            font-size: 1.1em;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .menuButton:hover {
+            background: linear-gradient(135deg, #5a5a8e 0%, #4a4a7e 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(74, 74, 126, 0.5);
+        }
+
+        /* Character Creation */
+        #characterCreation {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #2a2a4e 0%, #1a1a3e 100%);
+            border: 2px solid #4a4a7e;
+            border-radius: 15px;
+            padding: 30px;
+            width: 600px;
+            max-width: 90vw;
+            max-height: 80vh;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        #characterCreation h2 {
+            color: #ffd700;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .creationSection {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+        }
+
+        .creationSection h3 {
+            color: #c0c0c0;
+            margin-bottom: 10px;
+        }
+
+        .creationOption {
+            display: inline-block;
+            padding: 8px 15px;
+            margin: 5px;
+            background: #3a3a6e;
+            border: 1px solid #5a5a8e;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .creationOption:hover {
+            background: #4a4a7e;
+        }
+
+        .creationOption.selected {
+            background: #5a5a8e;
+            border-color: #ffd700;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+
+        /* HUD Elements */
+        #gameHUD {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: none;
+            z-index: 100;
+        }
+
+        .hudPanel {
+            position: absolute;
+            background: rgba(20, 20, 40, 0.95);
+            border: 1px solid #4a4a7e;
+            border-radius: 10px;
+            padding: 15px;
+            pointer-events: auto;
+        }
+
+        #partyPanel {
+            top: 10px;
+            left: 10px;
+            width: 300px;
+        }
+
+        .characterCard {
+            background: rgba(0,0,0,0.5);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #3a3a6e;
+        }
+
+        .characterCard.active {
+            border-color: #ffd700;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+
+        .healthBar {
+            height: 20px;
+            background: #2a2a2a;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 5px 0;
+        }
+
+        .healthFill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff4444 0%, #ff6666 100%);
+            transition: width 0.3s;
+        }
+
+        .manaBar {
+            height: 15px;
+            background: #2a2a2a;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 5px 0;
+        }
+
+        .manaFill {
+            height: 100%;
+            background: linear-gradient(90deg, #4444ff 0%, #6666ff 100%);
+            transition: width 0.3s;
+        }
+
+        #actionPanel {
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+        }
+
+        .actionButton {
+            width: 80px;
+            height: 80px;
+            background: rgba(40, 40, 80, 0.9);
+            border: 2px solid #6a6a9e;
+            border-radius: 10px;
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            font-size: 0.9em;
+        }
+
+        .actionButton:hover {
+            background: rgba(60, 60, 100, 0.9);
+            transform: translateY(-3px);
+        }
+
+        .actionButton.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #initiativeTracker {
+            top: 10px;
+            right: 10px;
+            width: 200px;
+        }
+
+        .initiativeEntry {
+            display: flex;
+            align-items: center;
+            padding: 5px;
+            margin: 5px 0;
+            background: rgba(0,0,0,0.5);
+            border-radius: 5px;
+        }
+
+        .initiativeEntry.current {
+            background: rgba(255, 215, 0, 0.2);
+            border: 1px solid #ffd700;
+        }
+
+        #dialogueBox {
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            max-width: 90vw;
+            display: none;
+        }
+
+        .dialogueOption {
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #4a4a7e;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .dialogueOption:hover {
+            background: rgba(74, 74, 126, 0.3);
+            border-color: #ffd700;
+        }
+
+        #combatLog {
+            bottom: 10px;
+            right: 10px;
+            width: 300px;
+            height: 200px;
+            overflow-y: auto;
+            font-size: 0.9em;
+        }
+
+        .logEntry {
+            padding: 3px 5px;
+            margin: 2px 0;
+            background: rgba(0,0,0,0.3);
+            border-radius: 3px;
+        }
+
+        .logEntry.damage { color: #ff6666; }
+        .logEntry.heal { color: #66ff66; }
+        .logEntry.info { color: #6666ff; }
+
+        /* Inventory */
+        #inventoryPanel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 500px;
+            background: rgba(20, 20, 40, 0.98);
+            border: 2px solid #4a4a7e;
+            border-radius: 15px;
+            padding: 20px;
+            display: none;
+            z-index: 200;
+        }
+
+        .inventoryGrid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .inventorySlot {
+            width: 80px;
+            height: 80px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #3a3a6e;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .inventorySlot.occupied {
+            background: rgba(40, 40, 80, 0.5);
+        }
+
+        .itemIcon {
+            font-size: 2em;
+        }
+
+        .itemRarity-common { border-color: #888; }
+        .itemRarity-uncommon { border-color: #66ff66; }
+        .itemRarity-rare { border-color: #6666ff; }
+        .itemRarity-epic { border-color: #ff66ff; }
+        .itemRarity-legendary { border-color: #ffd700; }
+
+        /* Spell Book */
+        #spellbookPanel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 700px;
+            height: 500px;
+            background: rgba(20, 20, 40, 0.98);
+            border: 2px solid #4a4a7e;
+            border-radius: 15px;
+            padding: 20px;
+            display: none;
+            z-index: 200;
+        }
+
+        .spellSlots {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .spellSlot {
+            width: 30px;
+            height: 30px;
+            border: 2px solid #6a6a9e;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.5);
+        }
+
+        .spellSlot.available {
+            background: radial-gradient(circle, #6666ff 0%, #4444ff 100%);
+        }
+
+        .spellEntry {
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #3a3a6e;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .spellEntry:hover {
+            background: rgba(74, 74, 126, 0.3);
+            border-color: #6a6a9e;
+        }
+
+        /* Settings Panel */
+        #settingsPanel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(20, 20, 40, 0.95);
+            border: 1px solid #4a4a7e;
+            border-radius: 10px;
+            padding: 15px;
+            display: none;
+            z-index: 300;
+        }
+
+        .settingRow {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+
+        .toggleSwitch {
+            width: 50px;
+            height: 25px;
+            background: #3a3a6e;
+            border-radius: 25px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .toggleSwitch.active {
+            background: #5a5a8e;
+        }
+
+        .toggleSwitch::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            top: 2.5px;
+            left: 2.5px;
+            transition: transform 0.3s;
+        }
+
+        .toggleSwitch.active::after {
+            transform: translateX(25px);
+        }
+
+        /* View Mode Toggle */
+        #viewModeToggle {
+            position: absolute;
+            top: 10px;
+            right: 230px;
+            background: rgba(20, 20, 40, 0.95);
+            border: 1px solid #4a4a7e;
+            border-radius: 10px;
+            padding: 10px 20px;
+            cursor: pointer;
+            z-index: 150;
+            display: none;
+        }
+
+        #viewModeToggle:hover {
+            background: rgba(40, 40, 60, 0.95);
+            border-color: #ffd700;
+        }
+
+        /* Multiplayer Panel */
+        #multiplayerPanel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px;
+            background: rgba(20, 20, 40, 0.98);
+            border: 2px solid #4a4a7e;
+            border-radius: 15px;
+            padding: 20px;
+            display: none;
+            z-index: 250;
+        }
+
+        #roomCode {
+            font-size: 2em;
+            text-align: center;
+            padding: 10px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 8px;
+            margin: 10px 0;
+            color: #ffd700;
+        }
+
+        #chatBox {
+            height: 200px;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+
+        #chatInput {
+            width: 100%;
+            padding: 10px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #4a4a7e;
+            border-radius: 5px;
+            color: #fff;
+        }
+
+        /* Data Controls */
+        .dataControls {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1001;
+            display: flex;
+            gap: 10px;
+        }
+
+        .dataControls button {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #4a4a7e 0%, #3a3a6e 100%);
+            border: 1px solid #6a6a9e;
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s;
+        }
+
+        .dataControls button:hover {
+            background: linear-gradient(135deg, #5a5a8e 0%, #4a4a7e 100%);
+            transform: translateY(-2px);
+        }
+
+        /* Dice Roller */
+        #diceRoller {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(20, 20, 40, 0.95);
+            border: 1px solid #4a4a7e;
+            border-radius: 10px;
+            padding: 15px;
+            z-index: 150;
+            display: none;
+        }
+
+        .diceButton {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            margin: 5px;
+            background: rgba(40, 40, 80, 0.9);
+            border: 1px solid #6a6a9e;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1.2em;
+            cursor: pointer;
+            text-align: center;
+            line-height: 50px;
+        }
+
+        .diceButton:hover {
+            background: rgba(60, 60, 100, 0.9);
+            transform: scale(1.1);
+        }
+
+        #diceResult {
+            text-align: center;
+            font-size: 2em;
+            color: #ffd700;
+            margin-top: 10px;
+        }
+
+        /* Loading Screen */
+        #loadingScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .loadingSpinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #3a3a6e;
+            border-top: 5px solid #ffd700;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            #characterCreation {
+                width: 95vw;
+                padding: 15px;
+            }
+
+            #partyPanel {
+                width: 250px;
+            }
+
+            .actionButton {
+                width: 60px;
+                height: 60px;
+                font-size: 0.8em;
+            }
+
+            #dialogueBox {
+                width: 90vw;
+                bottom: 80px;
+            }
+
+            #combatLog {
+                display: none;
+            }
+
+            #inventoryPanel,
+            #spellbookPanel {
+                width: 90vw;
+                height: 80vh;
+            }
+        }
+
+        /* Touch Controls for Mobile */
+        .touchControl {
+            position: fixed;
+            width: 120px;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: none;
+            z-index: 500;
+        }
+
+        @media (pointer: coarse) {
+            .touchControl {
+                display: block;
+            }
+
+            #touchJoystick {
+                bottom: 30px;
+                left: 30px;
+            }
+
+            #touchActions {
+                bottom: 30px;
+                right: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="renderCanvas"></canvas>
+
+        <!-- Data Controls -->
+        <div class="dataControls">
+            <button onclick="exportData()">Export Save</button>
+            <button onclick="document.getElementById('importFile').click()">Import Save</button>
+            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+        </div>
+
+        <!-- Main Menu -->
+        <div id="mainMenu">
+            <h1>Baldur's Gate Campaign</h1>
+            <h2>A D&D 5e Adventure</h2>
+            <button class="menuButton" onclick="startNewGame()">New Campaign</button>
+            <button class="menuButton" onclick="loadGame()">Continue Campaign</button>
+            <button class="menuButton" onclick="startMultiplayer()">Multiplayer</button>
+            <button class="menuButton" onclick="openSettings()">Settings</button>
+        </div>
+
+        <!-- Character Creation -->
+        <div id="characterCreation">
+            <h2>Create Your Hero</h2>
+
+            <div class="creationSection">
+                <h3>Name</h3>
+                <input type="text" id="characterName" placeholder="Enter character name" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.5); border: 1px solid #4a4a7e; border-radius: 5px; color: #fff;">
+            </div>
+
+            <div class="creationSection">
+                <h3>Race</h3>
+                <div id="raceOptions">
+                    <div class="creationOption" data-race="human">Human</div>
+                    <div class="creationOption" data-race="elf">Elf</div>
+                    <div class="creationOption" data-race="dwarf">Dwarf</div>
+                    <div class="creationOption" data-race="halfling">Halfling</div>
+                </div>
+            </div>
+
+            <div class="creationSection">
+                <h3>Class</h3>
+                <div id="classOptions">
+                    <div class="creationOption" data-class="fighter">Fighter</div>
+                    <div class="creationOption" data-class="wizard">Wizard</div>
+                    <div class="creationOption" data-class="rogue">Rogue</div>
+                    <div class="creationOption" data-class="cleric">Cleric</div>
+                    <div class="creationOption" data-class="ranger">Ranger</div>
+                </div>
+            </div>
+
+            <div class="creationSection">
+                <h3>Ability Scores (Point Buy - 27 Points)</h3>
+                <div id="abilityScores">
+                    <div>STR: <span id="strScore">8</span> <button onclick="adjustAbility('str', 1)">+</button> <button onclick="adjustAbility('str', -1)">-</button></div>
+                    <div>DEX: <span id="dexScore">8</span> <button onclick="adjustAbility('dex', 1)">+</button> <button onclick="adjustAbility('dex', -1)">-</button></div>
+                    <div>CON: <span id="conScore">8</span> <button onclick="adjustAbility('con', 1)">+</button> <button onclick="adjustAbility('con', -1)">-</button></div>
+                    <div>INT: <span id="intScore">8</span> <button onclick="adjustAbility('int', 1)">+</button> <button onclick="adjustAbility('int', -1)">-</button></div>
+                    <div>WIS: <span id="wisScore">8</span> <button onclick="adjustAbility('wis', 1)">+</button> <button onclick="adjustAbility('wis', -1)">-</button></div>
+                    <div>CHA: <span id="chaScore">8</span> <button onclick="adjustAbility('cha', 1)">+</button> <button onclick="adjustAbility('cha', -1)">-</button></div>
+                    <div>Points Remaining: <span id="pointsRemaining">27</span></div>
+                </div>
+            </div>
+
+            <div class="creationSection">
+                <h3>Background</h3>
+                <div id="backgroundOptions">
+                    <div class="creationOption" data-background="soldier">Soldier</div>
+                    <div class="creationOption" data-background="criminal">Criminal</div>
+                    <div class="creationOption" data-background="noble">Noble</div>
+                    <div class="creationOption" data-background="sage">Sage</div>
+                </div>
+            </div>
+
+            <button class="menuButton" onclick="confirmCharacter()">Create Character</button>
+            <button class="menuButton" onclick="cancelCharacterCreation()">Cancel</button>
+        </div>
+
+        <!-- Game HUD -->
+        <div id="gameHUD">
+            <!-- Party Panel -->
+            <div id="partyPanel" class="hudPanel">
+                <h3 style="color: #ffd700; margin-bottom: 10px;">Party</h3>
+                <div id="partyList"></div>
+            </div>
+
+            <!-- Initiative Tracker -->
+            <div id="initiativeTracker" class="hudPanel">
+                <h3 style="color: #ffd700; margin-bottom: 10px;">Initiative</h3>
+                <div id="initiativeList"></div>
+            </div>
+
+            <!-- Action Panel -->
+            <div id="actionPanel" class="hudPanel">
+                <div class="actionButton" onclick="performAction('move')">
+                    <span>⬆</span>
+                    <span>Move</span>
+                </div>
+                <div class="actionButton" onclick="performAction('attack')">
+                    <span>⚔️</span>
+                    <span>Attack</span>
+                </div>
+                <div class="actionButton" onclick="performAction('cast')">
+                    <span>✨</span>
+                    <span>Cast</span>
+                </div>
+                <div class="actionButton" onclick="performAction('dash')">
+                    <span>💨</span>
+                    <span>Dash</span>
+                </div>
+                <div class="actionButton" onclick="performAction('endTurn')">
+                    <span>⏩</span>
+                    <span>End Turn</span>
+                </div>
+            </div>
+
+            <!-- Dialogue Box -->
+            <div id="dialogueBox" class="hudPanel">
+                <div id="dialogueSpeaker" style="font-weight: bold; color: #ffd700; margin-bottom: 10px;"></div>
+                <div id="dialogueText" style="margin-bottom: 15px;"></div>
+                <div id="dialogueOptions"></div>
+            </div>
+
+            <!-- Combat Log -->
+            <div id="combatLog" class="hudPanel">
+                <h4 style="color: #c0c0c0; margin-bottom: 10px;">Combat Log</h4>
+                <div id="logEntries"></div>
+            </div>
+
+            <!-- View Mode Toggle -->
+            <div id="viewModeToggle" onclick="toggleViewMode()">
+                <span id="viewModeText">3D Mode</span> 🔄
+            </div>
+        </div>
+
+        <!-- Inventory Panel -->
+        <div id="inventoryPanel">
+            <h2 style="color: #ffd700;">Inventory</h2>
+            <button onclick="closeInventory()" style="position: absolute; top: 10px; right: 10px;">✖</button>
+            <div class="inventoryGrid" id="inventoryGrid"></div>
+            <div style="margin-top: 20px;">
+                Gold: <span id="goldAmount" style="color: #ffd700;">0</span>
+            </div>
+        </div>
+
+        <!-- Spellbook Panel -->
+        <div id="spellbookPanel">
+            <h2 style="color: #ffd700;">Spellbook</h2>
+            <button onclick="closeSpellbook()" style="position: absolute; top: 10px; right: 10px;">✖</button>
+            <div class="spellSlots">
+                <div>Level 1:</div>
+                <div class="spellSlot available"></div>
+                <div class="spellSlot available"></div>
+                <div class="spellSlot"></div>
+            </div>
+            <div id="spellList"></div>
+        </div>
+
+        <!-- Settings Panel -->
+        <div id="settingsPanel">
+            <h3 style="color: #ffd700; margin-bottom: 15px;">Settings</h3>
+            <div class="settingRow">
+                <span>Sound Effects</span>
+                <div class="toggleSwitch active" onclick="toggleSetting('sound')"></div>
+            </div>
+            <div class="settingRow">
+                <span>Music</span>
+                <div class="toggleSwitch active" onclick="toggleSetting('music')"></div>
+            </div>
+            <div class="settingRow">
+                <span>Auto-Save</span>
+                <div class="toggleSwitch active" onclick="toggleSetting('autosave')"></div>
+            </div>
+            <button class="menuButton" onclick="closeSettings()">Close</button>
+        </div>
+
+        <!-- Multiplayer Panel -->
+        <div id="multiplayerPanel">
+            <h2 style="color: #ffd700;">Multiplayer</h2>
+            <div id="hostSection">
+                <button class="menuButton" onclick="hostGame()">Host Game</button>
+                <div id="roomCode" style="display: none;"></div>
+            </div>
+            <div id="joinSection" style="margin-top: 20px;">
+                <input type="text" id="joinCode" placeholder="Enter room code" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.5); border: 1px solid #4a4a7e; border-radius: 5px; color: #fff; margin-bottom: 10px;">
+                <button class="menuButton" onclick="joinGame()">Join Game</button>
+            </div>
+            <div id="playerList" style="margin-top: 20px;"></div>
+            <div id="chatBox"></div>
+            <input type="text" id="chatInput" placeholder="Type message..." onkeypress="sendChat(event)">
+            <button class="menuButton" onclick="closeMultiplayer()">Close</button>
+        </div>
+
+        <!-- Dice Roller -->
+        <div id="diceRoller">
+            <h4 style="color: #c0c0c0; margin-bottom: 10px;">Dice Roller</h4>
+            <div>
+                <div class="diceButton" onclick="rollDice(4)">d4</div>
+                <div class="diceButton" onclick="rollDice(6)">d6</div>
+                <div class="diceButton" onclick="rollDice(8)">d8</div>
+                <div class="diceButton" onclick="rollDice(10)">d10</div>
+                <div class="diceButton" onclick="rollDice(12)">d12</div>
+                <div class="diceButton" onclick="rollDice(20)">d20</div>
+                <div class="diceButton" onclick="rollDice(100)">d100</div>
+            </div>
+            <div id="diceResult"></div>
+        </div>
+
+        <!-- Loading Screen -->
+        <div id="loadingScreen">
+            <div class="loadingSpinner"></div>
+        </div>
+
+        <!-- Touch Controls -->
+        <div id="touchJoystick" class="touchControl"></div>
+        <div id="touchActions" class="touchControl"></div>
+    </div>
+
+    <script>
+        // ===== GAME ENGINE CORE =====
+        const APP_NAME = 'baldurs-gate-campaign';
+
+        // Game State Management
+        let gameState = {
+            viewMode: '2D', // '2D' or '3D'
+            currentScene: 'mainMenu',
+            campaign: {
+                act: 1,
+                quest: 1,
+                completedQuests: []
+            },
+            party: [],
+            enemies: [],
+            npcs: [],
+            combat: {
+                active: false,
+                turn: 0,
+                initiative: [],
+                currentCharacterIndex: 0,
+                round: 1
+            },
+            dialogue: {
+                active: false,
+                npcName: '',
+                text: '',
+                options: []
+            },
+            inventory: [],
+            gold: 100,
+            settings: {
+                sound: true,
+                music: true,
+                autosave: true
+            },
+            multiplayer: {
+                active: false,
+                isHost: false,
+                roomCode: '',
+                players: [],
+                peer: null,
+                connections: []
+            }
+        };
+
+        // Character Classes Configuration
+        const CHARACTER_CLASSES = {
+            fighter: {
+                hitDice: 10,
+                primaryAbility: 'str',
+                savingThrows: ['str', 'con'],
+                skillsNum: 2,
+                skills: ['Athletics', 'Intimidation', 'Survival', 'History'],
+                startingHP: 10,
+                features: {
+                    1: ['Fighting Style', 'Second Wind'],
+                    2: ['Action Surge'],
+                    3: ['Martial Archetype'],
+                    4: ['Ability Score Improvement'],
+                    5: ['Extra Attack']
+                },
+                spellcasting: false
+            },
+            wizard: {
+                hitDice: 6,
+                primaryAbility: 'int',
+                savingThrows: ['int', 'wis'],
+                skillsNum: 2,
+                skills: ['Arcana', 'History', 'Investigation', 'Medicine', 'Religion'],
+                startingHP: 6,
+                features: {
+                    1: ['Spellcasting', 'Arcane Recovery'],
+                    2: ['Arcane Tradition'],
+                    3: [],
+                    4: ['Ability Score Improvement'],
+                    5: []
+                },
+                spellcasting: true,
+                spellSlots: {
+                    1: [2, 0, 0, 0, 0],
+                    2: [3, 0, 0, 0, 0],
+                    3: [4, 2, 0, 0, 0],
+                    4: [4, 3, 0, 0, 0],
+                    5: [4, 3, 2, 0, 0]
+                }
+            },
+            rogue: {
+                hitDice: 8,
+                primaryAbility: 'dex',
+                savingThrows: ['dex', 'int'],
+                skillsNum: 4,
+                skills: ['Acrobatics', 'Athletics', 'Deception', 'Insight', 'Intimidation', 'Investigation', 'Perception', 'Performance', 'Persuasion', 'Sleight of Hand', 'Stealth'],
+                startingHP: 8,
+                features: {
+                    1: ['Expertise', 'Sneak Attack', 'Thieves\' Cant'],
+                    2: ['Cunning Action'],
+                    3: ['Roguish Archetype'],
+                    4: ['Ability Score Improvement'],
+                    5: ['Uncanny Dodge']
+                },
+                spellcasting: false
+            },
+            cleric: {
+                hitDice: 8,
+                primaryAbility: 'wis',
+                savingThrows: ['wis', 'cha'],
+                skillsNum: 2,
+                skills: ['History', 'Insight', 'Medicine', 'Persuasion', 'Religion'],
+                startingHP: 8,
+                features: {
+                    1: ['Spellcasting', 'Divine Domain'],
+                    2: ['Channel Divinity'],
+                    3: [],
+                    4: ['Ability Score Improvement'],
+                    5: ['Destroy Undead']
+                },
+                spellcasting: true,
+                spellSlots: {
+                    1: [2, 0, 0, 0, 0],
+                    2: [3, 0, 0, 0, 0],
+                    3: [4, 2, 0, 0, 0],
+                    4: [4, 3, 0, 0, 0],
+                    5: [4, 3, 2, 0, 0]
+                }
+            },
+            ranger: {
+                hitDice: 10,
+                primaryAbility: 'dex',
+                savingThrows: ['str', 'dex'],
+                skillsNum: 3,
+                skills: ['Animal Handling', 'Athletics', 'Insight', 'Investigation', 'Nature', 'Perception', 'Stealth', 'Survival'],
+                startingHP: 10,
+                features: {
+                    1: ['Favored Enemy', 'Natural Explorer'],
+                    2: ['Fighting Style', 'Spellcasting'],
+                    3: ['Ranger Archetype', 'Primeval Awareness'],
+                    4: ['Ability Score Improvement'],
+                    5: ['Extra Attack']
+                },
+                spellcasting: true,
+                spellSlots: {
+                    1: [0, 0, 0, 0, 0],
+                    2: [2, 0, 0, 0, 0],
+                    3: [3, 0, 0, 0, 0],
+                    4: [3, 0, 0, 0, 0],
+                    5: [4, 2, 0, 0, 0]
+                }
+            }
+        };
+
+        // Race Configurations
+        const RACES = {
+            human: {
+                abilityScoreIncrease: { all: 1 },
+                size: 'Medium',
+                speed: 30,
+                features: ['Versatile']
+            },
+            elf: {
+                abilityScoreIncrease: { dex: 2 },
+                size: 'Medium',
+                speed: 30,
+                features: ['Darkvision', 'Keen Senses', 'Fey Ancestry', 'Trance']
+            },
+            dwarf: {
+                abilityScoreIncrease: { con: 2 },
+                size: 'Medium',
+                speed: 25,
+                features: ['Darkvision', 'Dwarven Resilience', 'Stonecunning']
+            },
+            halfling: {
+                abilityScoreIncrease: { dex: 2 },
+                size: 'Small',
+                speed: 25,
+                features: ['Lucky', 'Brave', 'Halfling Nimbleness']
+            }
+        };
+
+        // Spell Database
+        const SPELLS = {
+            cantrips: {
+                firebolt: {
+                    name: 'Fire Bolt',
+                    level: 0,
+                    school: 'Evocation',
+                    castTime: 'Action',
+                    range: 120,
+                    damage: '1d10',
+                    damageType: 'fire',
+                    description: 'Hurl a mote of fire at a creature or object.'
+                },
+                sacredFlame: {
+                    name: 'Sacred Flame',
+                    level: 0,
+                    school: 'Evocation',
+                    castTime: 'Action',
+                    range: 60,
+                    damage: '1d8',
+                    damageType: 'radiant',
+                    savingThrow: 'dex',
+                    description: 'Flame-like radiance descends on a creature.'
+                }
+            },
+            level1: {
+                magicMissile: {
+                    name: 'Magic Missile',
+                    level: 1,
+                    school: 'Evocation',
+                    castTime: 'Action',
+                    range: 120,
+                    damage: '3d4+3',
+                    damageType: 'force',
+                    description: 'Three glowing darts of magical force.'
+                },
+                cureWounds: {
+                    name: 'Cure Wounds',
+                    level: 1,
+                    school: 'Evocation',
+                    castTime: 'Action',
+                    range: 'Touch',
+                    healing: '1d8',
+                    description: 'A creature regains hit points.'
+                },
+                shield: {
+                    name: 'Shield',
+                    level: 1,
+                    school: 'Abjuration',
+                    castTime: 'Reaction',
+                    duration: '1 round',
+                    effect: '+5 AC',
+                    description: 'Invisible barrier of magical force.'
+                }
+            },
+            level2: {
+                scorchingRay: {
+                    name: 'Scorching Ray',
+                    level: 2,
+                    school: 'Evocation',
+                    castTime: 'Action',
+                    range: 120,
+                    damage: '2d6',
+                    damageType: 'fire',
+                    attacks: 3,
+                    description: 'Create three rays of fire.'
+                },
+                holdPerson: {
+                    name: 'Hold Person',
+                    level: 2,
+                    school: 'Enchantment',
+                    castTime: 'Action',
+                    range: 60,
+                    savingThrow: 'wis',
+                    duration: 'Concentration, up to 1 minute',
+                    description: 'Paralyze a humanoid.'
+                }
+            },
+            level3: {
+                fireball: {
+                    name: 'Fireball',
+                    level: 3,
+                    school: 'Evocation',
+                    castTime: 'Action',
+                    range: 150,
+                    damage: '8d6',
+                    damageType: 'fire',
+                    areaOfEffect: '20-foot radius',
+                    savingThrow: 'dex',
+                    description: 'A bright streak explodes in a fiery eruption.'
+                },
+                counterspell: {
+                    name: 'Counterspell',
+                    level: 3,
+                    school: 'Abjuration',
+                    castTime: 'Reaction',
+                    range: 60,
+                    description: 'Attempt to interrupt a spell being cast.'
+                }
+            }
+        };
+
+        // Campaign Data
+        const CAMPAIGN = {
+            acts: {
+                1: {
+                    name: 'Shadows of Thornhaven',
+                    quests: [
+                        {
+                            id: 1,
+                            name: 'Village Under Attack',
+                            description: 'Goblins are attacking the village! Defend the innocent!',
+                            objectives: ['Defeat 5 goblins', 'Save 3 villagers'],
+                            enemies: ['goblin', 'goblin', 'goblin', 'goblin', 'goblin'],
+                            xpReward: 250,
+                            goldReward: 50
+                        },
+                        {
+                            id: 2,
+                            name: 'Burning Buildings',
+                            description: 'The goblins have set fire to several buildings. Rescue the trapped villagers!',
+                            objectives: ['Rescue villagers from 3 buildings', 'Put out the fires'],
+                            enemies: ['goblin', 'goblin', 'goblinArcher'],
+                            xpReward: 300,
+                            goldReward: 75
+                        },
+                        {
+                            id: 3,
+                            name: 'Investigate the Forest',
+                            description: 'Track the goblins back to their camp in the forest.',
+                            objectives: ['Find the goblin camp', 'Discover who leads them'],
+                            enemies: ['goblin', 'goblin', 'hobgoblin', 'goblinShaman'],
+                            xpReward: 400,
+                            goldReward: 100
+                        },
+                        {
+                            id: 4,
+                            name: 'Cult Symbols',
+                            description: 'Strange symbols have been found. What dark force guides the goblins?',
+                            objectives: ['Investigate cult symbols', 'Find cult documents'],
+                            enemies: ['cultist', 'cultist', 'goblinShaman'],
+                            xpReward: 350,
+                            goldReward: 125
+                        },
+                        {
+                            id: 5,
+                            name: 'The Goblin Chieftain',
+                            description: 'Face the goblin chieftain and end the threat to Thornhaven.',
+                            objectives: ['Defeat the Goblin Chieftain'],
+                            enemies: ['goblinChieftain', 'hobgoblin', 'goblin', 'goblin'],
+                            xpReward: 600,
+                            goldReward: 200,
+                            boss: true
+                        }
+                    ]
+                },
+                2: {
+                    name: 'The Cult Rises',
+                    quests: [
+                        {
+                            id: 6,
+                            name: 'Journey to Silverkeep',
+                            description: 'Travel to the great city to investigate the cult.',
+                            objectives: ['Reach Silverkeep safely', 'Avoid or defeat bandits'],
+                            enemies: ['bandit', 'bandit', 'banditLeader'],
+                            xpReward: 450,
+                            goldReward: 150
+                        },
+                        {
+                            id: 7,
+                            name: 'Tavern Information',
+                            description: 'Gather information about the cult from the locals.',
+                            objectives: ['Talk to 3 NPCs', 'Win a bar brawl', 'Get cult hideout location'],
+                            enemies: ['thug', 'thug', 'thug'],
+                            xpReward: 400,
+                            goldReward: 100
+                        },
+                        {
+                            id: 8,
+                            name: 'Infiltrate the Hideout',
+                            description: 'Sneak or fight your way into the cult\'s underground hideout.',
+                            objectives: ['Enter the hideout', 'Avoid detection or fight guards'],
+                            enemies: ['cultist', 'cultist', 'cultGuard', 'cultGuard'],
+                            xpReward: 500,
+                            goldReward: 175
+                        },
+                        {
+                            id: 9,
+                            name: 'Rescue the Nobles',
+                            description: 'The cult has captured several nobles for a dark ritual.',
+                            objectives: ['Free 4 captured nobles', 'Defeat cult jailers'],
+                            enemies: ['cultEnforcer', 'cultist', 'cultist', 'darkPriest'],
+                            xpReward: 550,
+                            goldReward: 250
+                        },
+                        {
+                            id: 10,
+                            name: 'Stop the Summoning',
+                            description: 'The cult prepares to summon a dark entity. Stop them!',
+                            objectives: ['Disrupt the ritual', 'Defeat the dark priests'],
+                            enemies: ['darkPriest', 'darkPriest', 'cultist', 'cultist', 'cultist'],
+                            xpReward: 600,
+                            goldReward: 300
+                        },
+                        {
+                            id: 11,
+                            name: 'The Cult Assassin',
+                            description: 'A deadly assassin blocks your path to the cult leader.',
+                            objectives: ['Defeat the Cult Assassin'],
+                            enemies: ['cultAssassin', 'shadowSpawn', 'shadowSpawn'],
+                            xpReward: 700,
+                            goldReward: 350,
+                            boss: true
+                        }
+                    ]
+                },
+                3: {
+                    name: 'The Final Ritual',
+                    quests: [
+                        {
+                            id: 12,
+                            name: 'Ancient Temple',
+                            description: 'Journey to the ancient temple where the final ritual will occur.',
+                            objectives: ['Reach the temple', 'Overcome environmental hazards'],
+                            enemies: ['templeGuardian', 'animatedStatue', 'animatedStatue'],
+                            xpReward: 650,
+                            goldReward: 300
+                        },
+                        {
+                            id: 13,
+                            name: 'Deadly Traps',
+                            description: 'Navigate the temple\'s ancient traps and puzzles.',
+                            objectives: ['Solve 3 puzzles', 'Survive trap gauntlet'],
+                            enemies: ['animatedArmor', 'animatedArmor', 'trapConstruct'],
+                            xpReward: 600,
+                            goldReward: 250
+                        },
+                        {
+                            id: 14,
+                            name: 'Waves of Cultists',
+                            description: 'The cult\'s full force guards the inner sanctum.',
+                            objectives: ['Survive 3 waves of enemies', 'Reach the sanctum'],
+                            enemies: ['cultist', 'cultist', 'darkPriest', 'cultEnforcer', 'cultEnforcer'],
+                            xpReward: 750,
+                            goldReward: 400
+                        },
+                        {
+                            id: 15,
+                            name: 'Confront the Leader',
+                            description: 'Face the cult\'s high priest before the ritual completes.',
+                            objectives: ['Defeat the High Priest', 'Stop the ritual'],
+                            enemies: ['highPriest', 'darkPriest', 'cultEnforcer'],
+                            xpReward: 800,
+                            goldReward: 500
+                        },
+                        {
+                            id: 16,
+                            name: 'The Dark Entity',
+                            description: 'The ritual is complete! Face the summoned dark entity!',
+                            objectives: ['Defeat the Dark Entity', 'Save the realm'],
+                            enemies: ['darkEntity', 'possessedHighPriest', 'shadowSpawn', 'shadowSpawn'],
+                            xpReward: 1500,
+                            goldReward: 1000,
+                            boss: true,
+                            finalBoss: true
+                        }
+                    ]
+                }
+            }
+        };
+
+        // Enemy Templates
+        const ENEMIES = {
+            goblin: {
+                name: 'Goblin',
+                hp: 7,
+                ac: 15,
+                speed: 30,
+                str: 8,
+                dex: 14,
+                con: 10,
+                int: 10,
+                wis: 8,
+                cha: 8,
+                attacks: [
+                    { name: 'Scimitar', bonus: 4, damage: '1d6+2', type: 'slashing' },
+                    { name: 'Shortbow', bonus: 4, damage: '1d6+2', type: 'piercing', range: 80 }
+                ],
+                cr: 0.25,
+                xp: 50
+            },
+            hobgoblin: {
+                name: 'Hobgoblin',
+                hp: 11,
+                ac: 18,
+                speed: 30,
+                str: 13,
+                dex: 12,
+                con: 12,
+                int: 10,
+                wis: 10,
+                cha: 9,
+                attacks: [
+                    { name: 'Longsword', bonus: 3, damage: '1d8+1', type: 'slashing' },
+                    { name: 'Longbow', bonus: 3, damage: '1d8+1', type: 'piercing', range: 150 }
+                ],
+                cr: 0.5,
+                xp: 100
+            },
+            goblinChieftain: {
+                name: 'Goblin Chieftain',
+                hp: 45,
+                ac: 17,
+                speed: 30,
+                str: 15,
+                dex: 14,
+                con: 14,
+                int: 12,
+                wis: 11,
+                cha: 12,
+                attacks: [
+                    { name: 'Greatsword', bonus: 5, damage: '2d6+3', type: 'slashing' },
+                    { name: 'Javelin', bonus: 5, damage: '1d6+3', type: 'piercing', range: 30 }
+                ],
+                abilities: ['Multiattack (2 attacks)', 'Rally (bonus action, allies gain advantage)'],
+                cr: 2,
+                xp: 450,
+                boss: true
+            },
+            cultist: {
+                name: 'Cultist',
+                hp: 9,
+                ac: 12,
+                speed: 30,
+                str: 11,
+                dex: 12,
+                con: 10,
+                int: 10,
+                wis: 11,
+                cha: 10,
+                attacks: [
+                    { name: 'Scimitar', bonus: 3, damage: '1d6+1', type: 'slashing' }
+                ],
+                spells: ['sacredFlame'],
+                cr: 0.125,
+                xp: 25
+            },
+            darkPriest: {
+                name: 'Dark Priest',
+                hp: 27,
+                ac: 13,
+                speed: 25,
+                str: 10,
+                dex: 10,
+                con: 12,
+                int: 13,
+                wis: 16,
+                cha: 13,
+                attacks: [
+                    { name: 'Mace', bonus: 2, damage: '1d6', type: 'bludgeoning' }
+                ],
+                spells: ['sacredFlame', 'inflictWounds', 'holdPerson', 'spiritualWeapon'],
+                spellSlots: [4, 3, 2],
+                cr: 2,
+                xp: 450
+            },
+            cultAssassin: {
+                name: 'Cult Assassin',
+                hp: 78,
+                ac: 15,
+                speed: 35,
+                str: 11,
+                dex: 16,
+                con: 14,
+                int: 13,
+                wis: 11,
+                cha: 10,
+                attacks: [
+                    { name: 'Shortsword', bonus: 6, damage: '1d6+3', type: 'piercing' },
+                    { name: 'Shortsword (offhand)', bonus: 6, damage: '1d6+3', type: 'piercing' }
+                ],
+                abilities: ['Sneak Attack (3d6)', 'Cunning Action', 'Evasion', 'Assassinate'],
+                cr: 5,
+                xp: 1800,
+                boss: true
+            },
+            darkEntity: {
+                name: 'Dark Entity',
+                hp: 150,
+                ac: 18,
+                speed: 40,
+                str: 20,
+                dex: 14,
+                con: 18,
+                int: 16,
+                wis: 15,
+                cha: 17,
+                attacks: [
+                    { name: 'Shadow Claw', bonus: 9, damage: '2d10+5', type: 'necrotic' },
+                    { name: 'Void Breath', bonus: 0, damage: '12d6', type: 'necrotic', aoe: true, recharge: 5 }
+                ],
+                abilities: ['Legendary Resistance (3/Day)', 'Magic Resistance', 'Shadow Step', 'Frightful Presence'],
+                legendaryActions: 3,
+                cr: 10,
+                xp: 5900,
+                boss: true,
+                finalBoss: true
+            }
+        };
+
+        // Renderer Base Class
+        class Renderer {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.width = window.innerWidth;
+                this.height = window.innerHeight;
+                this.camera = { x: 0, y: 0, zoom: 1 };
+            }
+
+            resize() {
+                this.width = window.innerWidth;
+                this.height = window.innerHeight;
+                this.canvas.width = this.width;
+                this.canvas.height = this.height;
+            }
+
+            render(gameState) {
+                // To be implemented by subclasses
+            }
+
+            handleClick(x, y) {
+                // Convert screen coordinates to world coordinates
+                const worldX = (x - this.width / 2) / this.camera.zoom + this.camera.x;
+                const worldY = (y - this.height / 2) / this.camera.zoom + this.camera.y;
+                return { x: worldX, y: worldY };
+            }
+        }
+
+        // 2D Renderer
+        class Renderer2D extends Renderer {
+            constructor(canvas) {
+                super(canvas);
+                this.ctx = canvas.getContext('2d');
+                this.gridSize = 50;
+                this.resize();
+            }
+
+            render(gameState) {
+                const ctx = this.ctx;
+
+                // Clear canvas
+                ctx.fillStyle = '#0a0a0a';
+                ctx.fillRect(0, 0, this.width, this.height);
+
+                // Save context
+                ctx.save();
+
+                // Apply camera transform
+                ctx.translate(this.width / 2, this.height / 2);
+                ctx.scale(this.camera.zoom, this.camera.zoom);
+                ctx.translate(-this.camera.x, -this.camera.y);
+
+                // Draw grid
+                this.drawGrid();
+
+                // Draw map/environment
+                this.drawEnvironment(gameState);
+
+                // Draw characters
+                this.drawCharacters(gameState);
+
+                // Draw enemies
+                this.drawEnemies(gameState);
+
+                // Draw effects
+                this.drawEffects(gameState);
+
+                // Restore context
+                ctx.restore();
+
+                // Draw UI overlay
+                this.drawUIOverlay(gameState);
+            }
+
+            drawGrid() {
+                const ctx = this.ctx;
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                ctx.lineWidth = 1;
+
+                const startX = Math.floor(this.camera.x / this.gridSize) * this.gridSize - this.width;
+                const endX = startX + this.width * 2;
+                const startY = Math.floor(this.camera.y / this.gridSize) * this.gridSize - this.height;
+                const endY = startY + this.height * 2;
+
+                for (let x = startX; x <= endX; x += this.gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, startY);
+                    ctx.lineTo(x, endY);
+                    ctx.stroke();
+                }
+
+                for (let y = startY; y <= endY; y += this.gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(startX, y);
+                    ctx.lineTo(endX, y);
+                    ctx.stroke();
+                }
+            }
+
+            drawEnvironment(gameState) {
+                const ctx = this.ctx;
+
+                // Draw basic environment based on current quest
+                if (gameState.campaign.act === 1 && gameState.campaign.quest <= 2) {
+                    // Village environment
+                    ctx.fillStyle = 'rgba(139, 69, 19, 0.3)';
+                    ctx.fillRect(-500, -300, 200, 150);
+                    ctx.fillRect(-250, -350, 200, 150);
+                    ctx.fillRect(100, -300, 200, 150);
+
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                    ctx.font = '12px sans-serif';
+                    ctx.fillText('House', -450, -225);
+                    ctx.fillText('Inn', -200, -275);
+                    ctx.fillText('Shop', 150, -225);
+                } else if (gameState.campaign.act === 1 && gameState.campaign.quest >= 3) {
+                    // Forest environment
+                    ctx.fillStyle = 'rgba(34, 139, 34, 0.3)';
+                    for (let i = 0; i < 20; i++) {
+                        const x = Math.sin(i * 0.8) * 300 - 100;
+                        const y = Math.cos(i * 0.8) * 300 - 100;
+                        ctx.beginPath();
+                        ctx.arc(x, y, 30, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            }
+
+            drawCharacters(gameState) {
+                const ctx = this.ctx;
+
+                gameState.party.forEach((char, index) => {
+                    const x = char.position?.x || index * 60 - 100;
+                    const y = char.position?.y || 0;
+
+                    // Draw character circle
+                    ctx.fillStyle = this.getClassColor(char.class);
+                    ctx.beginPath();
+                    ctx.arc(x, y, 20, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Draw character initial
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 16px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(char.name[0].toUpperCase(), x, y);
+
+                    // Draw health bar
+                    const healthPerc = char.currentHP / char.maxHP;
+                    ctx.fillStyle = '#333';
+                    ctx.fillRect(x - 25, y - 35, 50, 5);
+                    ctx.fillStyle = this.getHealthColor(healthPerc);
+                    ctx.fillRect(x - 25, y - 35, 50 * healthPerc, 5);
+                });
+            }
+
+            drawEnemies(gameState) {
+                const ctx = this.ctx;
+
+                gameState.enemies.forEach((enemy, index) => {
+                    const x = enemy.position?.x || index * 60 + 200;
+                    const y = enemy.position?.y || 0;
+
+                    // Draw enemy shape
+                    ctx.fillStyle = '#ff4444';
+                    ctx.beginPath();
+                    ctx.moveTo(x, y - 20);
+                    ctx.lineTo(x + 17, y + 10);
+                    ctx.lineTo(x - 17, y + 10);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    // Draw enemy type
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '10px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(enemy.name, x, y + 25);
+
+                    // Draw health bar
+                    const healthPerc = enemy.currentHP / enemy.hp;
+                    ctx.fillStyle = '#333';
+                    ctx.fillRect(x - 25, y - 35, 50, 5);
+                    ctx.fillStyle = this.getHealthColor(healthPerc);
+                    ctx.fillRect(x - 25, y - 35, 50 * healthPerc, 5);
+                });
+            }
+
+            drawEffects(gameState) {
+                // Draw spell effects, movement indicators, etc.
+                const ctx = this.ctx;
+
+                if (gameState.combat.selectedAction === 'move' && gameState.combat.moveTarget) {
+                    ctx.strokeStyle = 'rgba(100, 200, 255, 0.5)';
+                    ctx.lineWidth = 3;
+                    ctx.setLineDash([10, 5]);
+
+                    const char = gameState.party[gameState.combat.currentCharacterIndex];
+                    if (char && char.position) {
+                        ctx.beginPath();
+                        ctx.moveTo(char.position.x, char.position.y);
+                        ctx.lineTo(gameState.combat.moveTarget.x, gameState.combat.moveTarget.y);
+                        ctx.stroke();
+                    }
+
+                    ctx.setLineDash([]);
+                }
+            }
+
+            drawUIOverlay(gameState) {
+                // Additional UI elements that don't transform with camera
+                const ctx = this.ctx;
+
+                if (gameState.combat.active) {
+                    // Draw turn indicator
+                    ctx.fillStyle = 'rgba(255, 215, 0, 0.8)';
+                    ctx.font = 'bold 20px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(`Round ${gameState.combat.round}`, this.width / 2, 30);
+                }
+            }
+
+            getClassColor(className) {
+                const colors = {
+                    fighter: '#cc6633',
+                    wizard: '#6666ff',
+                    rogue: '#666666',
+                    cleric: '#ffcc33',
+                    ranger: '#33cc33'
+                };
+                return colors[className] || '#999999';
+            }
+
+            getHealthColor(percentage) {
+                if (percentage > 0.6) return '#33ff33';
+                if (percentage > 0.3) return '#ffff33';
+                return '#ff3333';
+            }
+        }
+
+        // 3D Renderer (Simplified for single file)
+        class Renderer3D extends Renderer {
+            constructor(canvas) {
+                super(canvas);
+                this.ctx = canvas.getContext('2d');
+                this.resize();
+
+                // Simplified 3D without Three.js for single file constraint
+                this.projection = {
+                    fov: 60,
+                    near: 0.1,
+                    far: 1000
+                };
+            }
+
+            render(gameState) {
+                const ctx = this.ctx;
+
+                // Clear canvas
+                ctx.fillStyle = '#0a0a0a';
+                ctx.fillRect(0, 0, this.width, this.height);
+
+                // Isometric projection
+                ctx.save();
+                ctx.translate(this.width / 2, this.height / 2);
+
+                // Draw 3D-like environment
+                this.draw3DEnvironment(gameState);
+
+                // Draw 3D-like characters
+                this.draw3DCharacters(gameState);
+
+                // Draw 3D-like enemies
+                this.draw3DEnemies(gameState);
+
+                ctx.restore();
+            }
+
+            draw3DEnvironment(gameState) {
+                const ctx = this.ctx;
+
+                // Draw isometric grid
+                ctx.strokeStyle = 'rgba(100, 100, 200, 0.3)';
+                ctx.lineWidth = 1;
+
+                for (let x = -10; x <= 10; x++) {
+                    for (let z = -10; z <= 10; z++) {
+                        const screenPos = this.worldToScreen(x * 50, 0, z * 50);
+                        const screenPos2 = this.worldToScreen((x + 1) * 50, 0, z * 50);
+                        const screenPos3 = this.worldToScreen((x + 1) * 50, 0, (z + 1) * 50);
+                        const screenPos4 = this.worldToScreen(x * 50, 0, (z + 1) * 50);
+
+                        ctx.beginPath();
+                        ctx.moveTo(screenPos.x, screenPos.y);
+                        ctx.lineTo(screenPos2.x, screenPos2.y);
+                        ctx.lineTo(screenPos3.x, screenPos3.y);
+                        ctx.lineTo(screenPos4.x, screenPos4.y);
+                        ctx.closePath();
+                        ctx.stroke();
+                    }
+                }
+
+                // Draw 3D buildings/trees
+                if (gameState.campaign.act === 1 && gameState.campaign.quest <= 2) {
+                    // Village buildings
+                    this.drawCube(-200, 0, -100, 100, 80, 100, 'rgba(139, 69, 19, 0.6)');
+                    this.drawCube(100, 0, -150, 120, 90, 120, 'rgba(160, 82, 45, 0.6)');
+                }
+            }
+
+            draw3DCharacters(gameState) {
+                const ctx = this.ctx;
+
+                gameState.party.forEach((char, index) => {
+                    const x = char.position?.x || index * 60 - 100;
+                    const z = char.position?.y || 0;
+
+                    // Draw character as 3D capsule
+                    this.drawCapsule(x, 20, z, 15, 40, this.getClassColor(char.class));
+
+                    // Draw name
+                    const screenPos = this.worldToScreen(x, 60, z);
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 12px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(char.name, screenPos.x, screenPos.y - 10);
+
+                    // Draw health bar
+                    const healthPerc = char.currentHP / char.maxHP;
+                    ctx.fillStyle = '#333';
+                    ctx.fillRect(screenPos.x - 25, screenPos.y - 25, 50, 5);
+                    ctx.fillStyle = this.getHealthColor(healthPerc);
+                    ctx.fillRect(screenPos.x - 25, screenPos.y - 25, 50 * healthPerc, 5);
+                });
+            }
+
+            draw3DEnemies(gameState) {
+                const ctx = this.ctx;
+
+                gameState.enemies.forEach((enemy, index) => {
+                    const x = enemy.position?.x || index * 60 + 200;
+                    const z = enemy.position?.y || 0;
+
+                    // Draw enemy as 3D pyramid
+                    this.drawPyramid(x, 0, z, 20, 35, '#ff4444');
+
+                    // Draw name
+                    const screenPos = this.worldToScreen(x, 40, z);
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '10px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(enemy.name, screenPos.x, screenPos.y + 10);
+
+                    // Draw health bar
+                    const healthPerc = enemy.currentHP / enemy.hp;
+                    ctx.fillStyle = '#333';
+                    ctx.fillRect(screenPos.x - 25, screenPos.y - 20, 50, 5);
+                    ctx.fillStyle = this.getHealthColor(healthPerc);
+                    ctx.fillRect(screenPos.x - 25, screenPos.y - 20, 50 * healthPerc, 5);
+                });
+            }
+
+            worldToScreen(x, y, z) {
+                // Isometric projection
+                const isoX = (x - z) * Math.cos(Math.PI / 6);
+                const isoY = y + (x + z) * Math.sin(Math.PI / 6);
+
+                return {
+                    x: isoX * this.camera.zoom - this.camera.x,
+                    y: -isoY * this.camera.zoom - this.camera.y
+                };
+            }
+
+            drawCube(x, y, z, width, height, depth, color) {
+                const ctx = this.ctx;
+                ctx.fillStyle = color;
+
+                // Calculate vertices
+                const vertices = [
+                    this.worldToScreen(x, y, z),
+                    this.worldToScreen(x + width, y, z),
+                    this.worldToScreen(x + width, y, z + depth),
+                    this.worldToScreen(x, y, z + depth),
+                    this.worldToScreen(x, y + height, z),
+                    this.worldToScreen(x + width, y + height, z),
+                    this.worldToScreen(x + width, y + height, z + depth),
+                    this.worldToScreen(x, y + height, z + depth)
+                ];
+
+                // Draw faces
+                // Top face
+                ctx.beginPath();
+                ctx.moveTo(vertices[4].x, vertices[4].y);
+                ctx.lineTo(vertices[5].x, vertices[5].y);
+                ctx.lineTo(vertices[6].x, vertices[6].y);
+                ctx.lineTo(vertices[7].x, vertices[7].y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // Front face
+                ctx.beginPath();
+                ctx.moveTo(vertices[0].x, vertices[0].y);
+                ctx.lineTo(vertices[1].x, vertices[1].y);
+                ctx.lineTo(vertices[5].x, vertices[5].y);
+                ctx.lineTo(vertices[4].x, vertices[4].y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // Right face
+                ctx.beginPath();
+                ctx.moveTo(vertices[1].x, vertices[1].y);
+                ctx.lineTo(vertices[2].x, vertices[2].y);
+                ctx.lineTo(vertices[6].x, vertices[6].y);
+                ctx.lineTo(vertices[5].x, vertices[5].y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            }
+
+            drawCapsule(x, y, z, radius, height, color) {
+                const ctx = this.ctx;
+                ctx.fillStyle = color;
+
+                // Simplified capsule as cylinder with spheres
+                const bottom = this.worldToScreen(x, y, z);
+                const top = this.worldToScreen(x, y + height, z);
+
+                // Draw cylinder body
+                ctx.beginPath();
+                ctx.moveTo(bottom.x - radius, bottom.y);
+                ctx.lineTo(bottom.x + radius, bottom.y);
+                ctx.lineTo(top.x + radius, top.y);
+                ctx.lineTo(top.x - radius, top.y);
+                ctx.closePath();
+                ctx.fill();
+
+                // Draw top sphere
+                ctx.beginPath();
+                ctx.arc(top.x, top.y, radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw bottom sphere
+                ctx.beginPath();
+                ctx.arc(bottom.x, bottom.y, radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            drawPyramid(x, y, z, size, height, color) {
+                const ctx = this.ctx;
+                ctx.fillStyle = color;
+
+                // Calculate vertices
+                const base1 = this.worldToScreen(x - size, y, z - size);
+                const base2 = this.worldToScreen(x + size, y, z - size);
+                const base3 = this.worldToScreen(x + size, y, z + size);
+                const base4 = this.worldToScreen(x - size, y, z + size);
+                const apex = this.worldToScreen(x, y + height, z);
+
+                // Draw faces
+                ctx.beginPath();
+                ctx.moveTo(base1.x, base1.y);
+                ctx.lineTo(base2.x, base2.y);
+                ctx.lineTo(apex.x, apex.y);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.moveTo(base2.x, base2.y);
+                ctx.lineTo(base3.x, base3.y);
+                ctx.lineTo(apex.x, apex.y);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            getClassColor(className) {
+                const colors = {
+                    fighter: '#cc6633',
+                    wizard: '#6666ff',
+                    rogue: '#666666',
+                    cleric: '#ffcc33',
+                    ranger: '#33cc33'
+                };
+                return colors[className] || '#999999';
+            }
+
+            getHealthColor(percentage) {
+                if (percentage > 0.6) return '#33ff33';
+                if (percentage > 0.3) return '#ffff33';
+                return '#ff3333';
+            }
+        }
+
+        // Game Engine
+        class GameEngine {
+            constructor() {
+                this.canvas = document.getElementById('renderCanvas');
+                this.renderer = null;
+                this.currentCharacter = null;
+                this.selectedTarget = null;
+                this.animationFrame = null;
+
+                this.initializeRenderer();
+                this.setupEventListeners();
+                this.loadGameState();
+            }
+
+            initializeRenderer() {
+                if (gameState.viewMode === '3D') {
+                    this.renderer = new Renderer3D(this.canvas);
+                } else {
+                    this.renderer = new Renderer2D(this.canvas);
+                }
+
+                this.renderer.resize();
+            }
+
+            toggleViewMode() {
+                gameState.viewMode = gameState.viewMode === '3D' ? '2D' : '3D';
+                document.getElementById('viewModeText').textContent = gameState.viewMode + ' Mode';
+
+                // Preserve camera state
+                const oldCamera = this.renderer.camera;
+
+                // Switch renderer
+                this.initializeRenderer();
+                this.renderer.camera = oldCamera;
+
+                // Save preference
+                this.saveGameState();
+            }
+
+            setupEventListeners() {
+                // Window resize
+                window.addEventListener('resize', () => {
+                    this.renderer.resize();
+                });
+
+                // Mouse controls
+                this.canvas.addEventListener('click', (e) => {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    this.handleClick(x, y);
+                });
+
+                // Keyboard controls
+                document.addEventListener('keydown', (e) => {
+                    this.handleKeyboard(e);
+                });
+
+                // Touch controls for mobile
+                let touchStart = null;
+                this.canvas.addEventListener('touchstart', (e) => {
+                    touchStart = {
+                        x: e.touches[0].clientX,
+                        y: e.touches[0].clientY
+                    };
+                });
+
+                this.canvas.addEventListener('touchmove', (e) => {
+                    if (!touchStart) return;
+
+                    const deltaX = e.touches[0].clientX - touchStart.x;
+                    const deltaY = e.touches[0].clientY - touchStart.y;
+
+                    this.renderer.camera.x -= deltaX / this.renderer.camera.zoom;
+                    this.renderer.camera.y -= deltaY / this.renderer.camera.zoom;
+
+                    touchStart = {
+                        x: e.touches[0].clientX,
+                        y: e.touches[0].clientY
+                    };
+                });
+
+                // Mouse wheel zoom
+                this.canvas.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    const zoomSpeed = 0.1;
+                    const delta = e.deltaY > 0 ? -zoomSpeed : zoomSpeed;
+                    this.renderer.camera.zoom = Math.max(0.5, Math.min(2, this.renderer.camera.zoom + delta));
+                });
+            }
+
+            handleClick(x, y) {
+                const worldPos = this.renderer.handleClick(x, y);
+
+                if (gameState.combat.active) {
+                    if (gameState.combat.selectedAction === 'move') {
+                        this.moveCharacter(worldPos);
+                    } else if (gameState.combat.selectedAction === 'attack') {
+                        this.selectTarget(worldPos);
+                    }
+                }
+            }
+
+            handleKeyboard(e) {
+                // Camera movement
+                const moveSpeed = 20;
+                switch(e.key) {
+                    case 'ArrowUp':
+                    case 'w':
+                        this.renderer.camera.y -= moveSpeed;
+                        break;
+                    case 'ArrowDown':
+                    case 's':
+                        this.renderer.camera.y += moveSpeed;
+                        break;
+                    case 'ArrowLeft':
+                    case 'a':
+                        this.renderer.camera.x -= moveSpeed;
+                        break;
+                    case 'ArrowRight':
+                    case 'd':
+                        this.renderer.camera.x += moveSpeed;
+                        break;
+                    case 'v':
+                        this.toggleViewMode();
+                        break;
+                    case 'i':
+                        this.toggleInventory();
+                        break;
+                    case 'Escape':
+                        this.closeAllPanels();
+                        break;
+                }
+            }
+
+            startGameLoop() {
+                const gameLoop = () => {
+                    this.update();
+                    this.render();
+                    this.animationFrame = requestAnimationFrame(gameLoop);
+                };
+                gameLoop();
+            }
+
+            update() {
+                // Update game logic
+                if (gameState.combat.active) {
+                    this.updateCombat();
+                }
+
+                // Update AI
+                this.updateAI();
+
+                // Auto-save
+                if (gameState.settings.autosave && Date.now() % 30000 < 100) {
+                    this.saveGameState();
+                }
+            }
+
+            render() {
+                this.renderer.render(gameState);
+            }
+
+            updateCombat() {
+                // Check for combat end conditions
+                if (gameState.enemies.length === 0 && gameState.combat.active) {
+                    this.endCombat(true);
+                } else if (gameState.party.every(char => char.currentHP <= 0)) {
+                    this.endCombat(false);
+                }
+            }
+
+            updateAI() {
+                if (!gameState.combat.active) return;
+
+                const currentChar = gameState.combat.initiative[gameState.combat.currentCharacterIndex];
+                if (!currentChar || !currentChar.isAI) return;
+
+                // Simple AI behavior
+                setTimeout(() => {
+                    if (currentChar.type === 'enemy') {
+                        this.performEnemyAI(currentChar);
+                    } else {
+                        this.performCompanionAI(currentChar);
+                    }
+                }, 1000);
+            }
+
+            performEnemyAI(enemy) {
+                // Find closest player character
+                let closestChar = null;
+                let closestDist = Infinity;
+
+                gameState.party.forEach(char => {
+                    if (char.currentHP <= 0) return;
+                    const dist = this.getDistance(enemy.position, char.position);
+                    if (dist < closestDist) {
+                        closestDist = dist;
+                        closestChar = char;
+                    }
+                });
+
+                if (!closestChar) {
+                    this.endTurn();
+                    return;
+                }
+
+                // Move towards target if too far
+                if (closestDist > 50) {
+                    const moveDir = this.normalize({
+                        x: closestChar.position.x - enemy.position.x,
+                        y: closestChar.position.y - enemy.position.y
+                    });
+
+                    enemy.position.x += moveDir.x * enemy.speed;
+                    enemy.position.y += moveDir.y * enemy.speed;
+
+                    this.addCombatLog(`${enemy.name} moves closer`, 'info');
+                }
+
+                // Attack if in range
+                if (closestDist <= 50) {
+                    this.performEnemyAttack(enemy, closestChar);
+                }
+
+                this.endTurn();
+            }
+
+            performEnemyAttack(enemy, target) {
+                const attack = enemy.attacks[0];
+                const attackRoll = this.rollDice(20) + attack.bonus;
+
+                if (attackRoll >= target.ac) {
+                    const damage = this.rollDamage(attack.damage);
+                    target.currentHP -= damage;
+                    this.addCombatLog(`${enemy.name} hits ${target.name} for ${damage} damage!`, 'damage');
+                } else {
+                    this.addCombatLog(`${enemy.name} misses ${target.name}`, 'info');
+                }
+
+                this.updatePartyDisplay();
+            }
+
+            performCompanionAI(companion) {
+                // Companion AI: heal if needed, otherwise attack
+                const needsHealing = gameState.party.find(char => char.currentHP < char.maxHP * 0.5);
+
+                if (needsHealing && companion.class === 'cleric' && companion.spellSlots[0] > 0) {
+                    // Cast healing spell
+                    companion.spellSlots[0]--;
+                    const healing = this.rollDice(8) + this.getModifier(companion.wis);
+                    needsHealing.currentHP = Math.min(needsHealing.currentHP + healing, needsHealing.maxHP);
+                    this.addCombatLog(`${companion.name} heals ${needsHealing.name} for ${healing} HP`, 'heal');
+                } else {
+                    // Attack nearest enemy
+                    const nearestEnemy = gameState.enemies[0];
+                    if (nearestEnemy) {
+                        this.performCharacterAttack(companion, nearestEnemy);
+                    }
+                }
+
+                this.endTurn();
+            }
+
+            performCharacterAttack(character, target) {
+                const attackBonus = this.getModifier(character.str) + character.proficiencyBonus;
+                const attackRoll = this.rollDice(20) + attackBonus;
+
+                if (attackRoll >= target.ac) {
+                    const damage = this.rollDice(8) + this.getModifier(character.str);
+                    target.currentHP -= damage;
+                    this.addCombatLog(`${character.name} hits ${target.name} for ${damage} damage!`, 'damage');
+
+                    if (target.currentHP <= 0) {
+                        this.removeEnemy(target);
+                        this.addCombatLog(`${target.name} is defeated!`, 'info');
+                    }
+                } else {
+                    this.addCombatLog(`${character.name} misses ${target.name}`, 'info');
+                }
+            }
+
+            getDistance(pos1, pos2) {
+                if (!pos1 || !pos2) return Infinity;
+                const dx = pos2.x - pos1.x;
+                const dy = pos2.y - pos1.y;
+                return Math.sqrt(dx * dx + dy * dy);
+            }
+
+            normalize(vec) {
+                const len = Math.sqrt(vec.x * vec.x + vec.y * vec.y);
+                if (len === 0) return { x: 0, y: 0 };
+                return { x: vec.x / len, y: vec.y / len };
+            }
+
+            removeEnemy(enemy) {
+                const index = gameState.enemies.indexOf(enemy);
+                if (index > -1) {
+                    gameState.enemies.splice(index, 1);
+                }
+
+                // Remove from initiative
+                const initIndex = gameState.combat.initiative.findIndex(e => e === enemy);
+                if (initIndex > -1) {
+                    gameState.combat.initiative.splice(initIndex, 1);
+                    if (gameState.combat.currentCharacterIndex >= initIndex) {
+                        gameState.combat.currentCharacterIndex--;
+                    }
+                }
+            }
+
+            rollDice(sides) {
+                return Math.floor(Math.random() * sides) + 1;
+            }
+
+            rollDamage(diceStr) {
+                // Parse dice string like "1d6+2" or "2d8"
+                const match = diceStr.match(/(\d+)d(\d+)([+-]\d+)?/);
+                if (!match) return 0;
+
+                const count = parseInt(match[1]);
+                const sides = parseInt(match[2]);
+                const modifier = match[3] ? parseInt(match[3]) : 0;
+
+                let total = modifier;
+                for (let i = 0; i < count; i++) {
+                    total += this.rollDice(sides);
+                }
+                return Math.max(0, total);
+            }
+
+            getModifier(score) {
+                return Math.floor((score - 10) / 2);
+            }
+
+            saveGameState() {
+                localStorage.setItem(APP_NAME, JSON.stringify(gameState));
+            }
+
+            loadGameState() {
+                const saved = localStorage.getItem(APP_NAME);
+                if (saved) {
+                    const loaded = JSON.parse(saved);
+                    // Merge with default state to ensure all properties exist
+                    gameState = { ...gameState, ...loaded };
+                }
+            }
+
+            startCombat(enemies) {
+                gameState.combat.active = true;
+                gameState.enemies = enemies.map(enemyType => {
+                    const template = ENEMIES[enemyType];
+                    return {
+                        ...template,
+                        currentHP: template.hp,
+                        position: {
+                            x: Math.random() * 300 + 100,
+                            y: Math.random() * 200 - 100
+                        },
+                        isAI: true,
+                        type: 'enemy'
+                    };
+                });
+
+                // Roll initiative
+                this.rollInitiative();
+
+                // Show combat HUD
+                document.getElementById('gameHUD').style.display = 'block';
+                document.getElementById('initiativeTracker').style.display = 'block';
+                document.getElementById('combatLog').style.display = 'block';
+                document.getElementById('diceRoller').style.display = 'block';
+
+                this.updateInitiativeDisplay();
+                this.updatePartyDisplay();
+
+                this.addCombatLog('Combat begins!', 'info');
+            }
+
+            rollInitiative() {
+                const combatants = [];
+
+                // Add party members
+                gameState.party.forEach(char => {
+                    const init = this.rollDice(20) + this.getModifier(char.dex);
+                    combatants.push({
+                        ...char,
+                        initiative: init,
+                        type: 'party'
+                    });
+                });
+
+                // Add enemies
+                gameState.enemies.forEach(enemy => {
+                    const init = this.rollDice(20) + this.getModifier(enemy.dex);
+                    combatants.push({
+                        ...enemy,
+                        initiative: init,
+                        type: 'enemy'
+                    });
+                });
+
+                // Sort by initiative (highest first)
+                combatants.sort((a, b) => b.initiative - a.initiative);
+
+                gameState.combat.initiative = combatants;
+                gameState.combat.currentCharacterIndex = 0;
+            }
+
+            endCombat(victory) {
+                gameState.combat.active = false;
+
+                if (victory) {
+                    // Award XP and loot
+                    const quest = this.getCurrentQuest();
+                    if (quest) {
+                        this.awardXP(quest.xpReward);
+                        gameState.gold += quest.goldReward;
+                        this.addCombatLog(`Victory! Gained ${quest.xpReward} XP and ${quest.goldReward} gold!`, 'info');
+
+                        // Mark quest complete
+                        gameState.campaign.completedQuests.push(`${gameState.campaign.act}-${quest.id}`);
+
+                        // Advance to next quest
+                        this.advanceQuest();
+                    }
+                } else {
+                    this.addCombatLog('Defeat... Try again!', 'damage');
+                    // Respawn at last checkpoint
+                    this.respawnParty();
+                }
+
+                // Hide combat UI
+                setTimeout(() => {
+                    document.getElementById('initiativeTracker').style.display = 'none';
+                    document.getElementById('combatLog').style.display = 'none';
+                }, 3000);
+            }
+
+            getCurrentQuest() {
+                const act = CAMPAIGN.acts[gameState.campaign.act];
+                if (!act) return null;
+                return act.quests.find(q => q.id === gameState.campaign.quest);
+            }
+
+            advanceQuest() {
+                const act = CAMPAIGN.acts[gameState.campaign.act];
+                const currentQuestIndex = act.quests.findIndex(q => q.id === gameState.campaign.quest);
+
+                if (currentQuestIndex < act.quests.length - 1) {
+                    // Next quest in current act
+                    gameState.campaign.quest = act.quests[currentQuestIndex + 1].id;
+                    this.startQuest();
+                } else if (gameState.campaign.act < 3) {
+                    // Next act
+                    gameState.campaign.act++;
+                    gameState.campaign.quest = CAMPAIGN.acts[gameState.campaign.act].quests[0].id;
+                    this.showActTransition();
+                } else {
+                    // Game complete!
+                    this.showVictory();
+                }
+
+                this.saveGameState();
+            }
+
+            startQuest() {
+                const quest = this.getCurrentQuest();
+                if (!quest) return;
+
+                // Show quest intro
+                this.showDialogue('Quest Master', quest.description, [
+                    { text: 'Begin Quest', action: () => {
+                        this.closeDialogue();
+                        if (quest.enemies && quest.enemies.length > 0) {
+                            this.startCombat(quest.enemies);
+                        }
+                    }}
+                ]);
+            }
+
+            showDialogue(speaker, text, options) {
+                gameState.dialogue.active = true;
+                gameState.dialogue.npcName = speaker;
+                gameState.dialogue.text = text;
+                gameState.dialogue.options = options;
+
+                const dialogueBox = document.getElementById('dialogueBox');
+                document.getElementById('dialogueSpeaker').textContent = speaker;
+                document.getElementById('dialogueText').textContent = text;
+
+                const optionsDiv = document.getElementById('dialogueOptions');
+                optionsDiv.innerHTML = '';
+
+                options.forEach(option => {
+                    const optionDiv = document.createElement('div');
+                    optionDiv.className = 'dialogueOption';
+                    optionDiv.textContent = option.text;
+                    optionDiv.onclick = option.action;
+                    optionsDiv.appendChild(optionDiv);
+                });
+
+                dialogueBox.style.display = 'block';
+            }
+
+            closeDialogue() {
+                gameState.dialogue.active = false;
+                document.getElementById('dialogueBox').style.display = 'none';
+            }
+
+            showActTransition() {
+                const actName = CAMPAIGN.acts[gameState.campaign.act].name;
+                this.showDialogue('Narrator', `Act ${gameState.campaign.act}: ${actName}`, [
+                    { text: 'Continue', action: () => {
+                        this.closeDialogue();
+                        this.startQuest();
+                    }}
+                ]);
+            }
+
+            showVictory() {
+                this.showDialogue('Victory!', 'Congratulations! You have completed the campaign and saved the realm from the dark entity!', [
+                    { text: 'Return to Main Menu', action: () => {
+                        location.reload();
+                    }}
+                ]);
+            }
+
+            awardXP(amount) {
+                gameState.party.forEach(char => {
+                    char.xp += amount;
+
+                    // Check for level up
+                    const xpForNextLevel = char.level * 1000;
+                    if (char.xp >= xpForNextLevel) {
+                        this.levelUp(char);
+                    }
+                });
+            }
+
+            levelUp(character) {
+                character.level++;
+
+                // Increase HP
+                const classData = CHARACTER_CLASSES[character.class];
+                const hpIncrease = this.rollDice(classData.hitDice) + this.getModifier(character.con);
+                character.maxHP += Math.max(1, hpIncrease);
+                character.currentHP = character.maxHP;
+
+                // Increase proficiency bonus
+                character.proficiencyBonus = Math.ceil(character.level / 4) + 1;
+
+                // Add spell slots if spellcaster
+                if (classData.spellcasting && classData.spellSlots[character.level]) {
+                    character.spellSlots = classData.spellSlots[character.level];
+                }
+
+                this.addCombatLog(`${character.name} reached level ${character.level}!`, 'info');
+            }
+
+            respawnParty() {
+                // Restore party to half HP
+                gameState.party.forEach(char => {
+                    char.currentHP = Math.max(1, Math.floor(char.maxHP / 2));
+                });
+
+                // Reset to last checkpoint
+                this.startQuest();
+            }
+
+            updatePartyDisplay() {
+                const partyList = document.getElementById('partyList');
+                partyList.innerHTML = '';
+
+                gameState.party.forEach((char, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'characterCard';
+                    if (gameState.combat.active && gameState.combat.initiative[gameState.combat.currentCharacterIndex] === char) {
+                        card.className += ' active';
+                    }
+
+                    card.innerHTML = `
+                        <div style="font-weight: bold; color: #ffd700;">${char.name}</div>
+                        <div style="font-size: 0.9em; color: #c0c0c0;">Level ${char.level} ${char.class}</div>
+                        <div class="healthBar">
+                            <div class="healthFill" style="width: ${(char.currentHP / char.maxHP) * 100}%"></div>
+                        </div>
+                        <div style="font-size: 0.8em;">${char.currentHP} / ${char.maxHP} HP</div>
+                        ${char.class === 'wizard' || char.class === 'cleric' ? `
+                        <div class="manaBar">
+                            <div class="manaFill" style="width: ${(char.spellSlots[0] / 3) * 100}%"></div>
+                        </div>
+                        ` : ''}
+                    `;
+
+                    card.onclick = () => this.selectCharacter(char);
+                    partyList.appendChild(card);
+                });
+            }
+
+            updateInitiativeDisplay() {
+                const initList = document.getElementById('initiativeList');
+                initList.innerHTML = '';
+
+                gameState.combat.initiative.forEach((combatant, index) => {
+                    const entry = document.createElement('div');
+                    entry.className = 'initiativeEntry';
+                    if (index === gameState.combat.currentCharacterIndex) {
+                        entry.className += ' current';
+                    }
+
+                    entry.innerHTML = `
+                        <span style="width: 30px; text-align: center;">${combatant.initiative}</span>
+                        <span style="flex: 1; margin-left: 10px;">${combatant.name}</span>
+                    `;
+
+                    initList.appendChild(entry);
+                });
+            }
+
+            selectCharacter(character) {
+                this.currentCharacter = character;
+                // Update UI to show selected character
+            }
+
+            endTurn() {
+                gameState.combat.currentCharacterIndex++;
+                if (gameState.combat.currentCharacterIndex >= gameState.combat.initiative.length) {
+                    gameState.combat.currentCharacterIndex = 0;
+                    gameState.combat.round++;
+                }
+
+                this.updateInitiativeDisplay();
+                this.updatePartyDisplay();
+            }
+
+            addCombatLog(message, type = 'info') {
+                const logEntries = document.getElementById('logEntries');
+                const entry = document.createElement('div');
+                entry.className = `logEntry ${type}`;
+                entry.textContent = message;
+                logEntries.appendChild(entry);
+                logEntries.scrollTop = logEntries.scrollHeight;
+
+                // Limit log entries
+                while (logEntries.children.length > 50) {
+                    logEntries.removeChild(logEntries.firstChild);
+                }
+            }
+
+            closeAllPanels() {
+                document.getElementById('inventoryPanel').style.display = 'none';
+                document.getElementById('spellbookPanel').style.display = 'none';
+                document.getElementById('settingsPanel').style.display = 'none';
+                document.getElementById('multiplayerPanel').style.display = 'none';
+            }
+
+            toggleInventory() {
+                const panel = document.getElementById('inventoryPanel');
+                panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+                if (panel.style.display === 'block') {
+                    this.updateInventoryDisplay();
+                }
+            }
+
+            updateInventoryDisplay() {
+                const grid = document.getElementById('inventoryGrid');
+                grid.innerHTML = '';
+
+                // Create 20 inventory slots
+                for (let i = 0; i < 20; i++) {
+                    const slot = document.createElement('div');
+                    slot.className = 'inventorySlot';
+
+                    if (gameState.inventory[i]) {
+                        const item = gameState.inventory[i];
+                        slot.className += ` occupied itemRarity-${item.rarity}`;
+                        slot.innerHTML = `<span class="itemIcon">${item.icon}</span>`;
+                        slot.title = `${item.name}\n${item.description}`;
+                    }
+
+                    grid.appendChild(slot);
+                }
+
+                document.getElementById('goldAmount').textContent = gameState.gold;
+            }
+        }
+
+        // Character Creation
+        let characterCreationData = {
+            name: '',
+            race: '',
+            class: '',
+            abilities: {
+                str: 8,
+                dex: 8,
+                con: 8,
+                int: 8,
+                wis: 8,
+                cha: 8
+            },
+            pointsRemaining: 27,
+            background: ''
+        };
+
+        function startNewGame() {
+            document.getElementById('mainMenu').style.display = 'none';
+            document.getElementById('characterCreation').style.display = 'block';
+        }
+
+        function loadGame() {
+            const saved = localStorage.getItem(APP_NAME);
+            if (saved) {
+                gameState = JSON.parse(saved);
+                startGame();
+            } else {
+                alert('No saved game found!');
+            }
+        }
+
+        function cancelCharacterCreation() {
+            document.getElementById('characterCreation').style.display = 'none';
+            document.getElementById('mainMenu').style.display = 'block';
+        }
+
+        function adjustAbility(ability, delta) {
+            const current = characterCreationData.abilities[ability];
+            const newValue = current + delta;
+
+            if (newValue < 8 || newValue > 15) return;
+
+            // Calculate point cost
+            let cost = 0;
+            if (delta > 0) {
+                if (current >= 13) cost = 2;
+                else cost = 1;
+            } else {
+                if (current > 13) cost = -2;
+                else cost = -1;
+            }
+
+            if (characterCreationData.pointsRemaining - cost < 0) return;
+
+            characterCreationData.abilities[ability] = newValue;
+            characterCreationData.pointsRemaining -= cost;
+
+            document.getElementById(ability + 'Score').textContent = newValue;
+            document.getElementById('pointsRemaining').textContent = characterCreationData.pointsRemaining;
+        }
+
+        function confirmCharacter() {
+            characterCreationData.name = document.getElementById('characterName').value || 'Hero';
+
+            if (!characterCreationData.race || !characterCreationData.class || !characterCreationData.background) {
+                alert('Please select a race, class, and background!');
+                return;
+            }
+
+            // Create character
+            const character = createCharacter(
+                characterCreationData.name,
+                characterCreationData.race,
+                characterCreationData.class,
+                characterCreationData.abilities,
+                characterCreationData.background
+            );
+
+            // Add to party
+            gameState.party = [character];
+
+            // Add companion NPCs
+            gameState.party.push(
+                createCharacter('Elara', 'elf', 'cleric', null, 'sage', true),
+                createCharacter('Thorin', 'dwarf', 'fighter', null, 'soldier', true),
+                createCharacter('Lyra', 'halfling', 'rogue', null, 'criminal', true)
+            );
+
+            // Start game
+            startGame();
+        }
+
+        function createCharacter(name, race, charClass, abilities = null, background, isAI = false) {
+            const classData = CHARACTER_CLASSES[charClass];
+            const raceData = RACES[race];
+
+            // Generate random abilities if not provided
+            if (!abilities) {
+                abilities = {
+                    str: 10 + Math.floor(Math.random() * 6),
+                    dex: 10 + Math.floor(Math.random() * 6),
+                    con: 10 + Math.floor(Math.random() * 6),
+                    int: 10 + Math.floor(Math.random() * 6),
+                    wis: 10 + Math.floor(Math.random() * 6),
+                    cha: 10 + Math.floor(Math.random() * 6)
+                };
+            }
+
+            // Apply racial bonuses
+            if (raceData.abilityScoreIncrease.all) {
+                Object.keys(abilities).forEach(ability => {
+                    abilities[ability] += raceData.abilityScoreIncrease.all;
+                });
+            } else {
+                Object.keys(raceData.abilityScoreIncrease).forEach(ability => {
+                    if (abilities[ability] !== undefined) {
+                        abilities[ability] += raceData.abilityScoreIncrease[ability];
+                    }
+                });
+            }
+
+            const conModifier = Math.floor((abilities.con - 10) / 2);
+            const maxHP = classData.startingHP + conModifier;
+
+            return {
+                name: name,
+                race: race,
+                class: charClass,
+                background: background,
+                level: 1,
+                xp: 0,
+                ...abilities,
+                maxHP: maxHP,
+                currentHP: maxHP,
+                ac: 10 + Math.floor((abilities.dex - 10) / 2),
+                speed: raceData.speed,
+                proficiencyBonus: 2,
+                spellSlots: classData.spellcasting ? classData.spellSlots[1] : null,
+                position: { x: 0, y: 0 },
+                isAI: isAI
+            };
+        }
+
+        function startGame() {
+            document.getElementById('characterCreation').style.display = 'none';
+            document.getElementById('mainMenu').style.display = 'none';
+            document.getElementById('gameHUD').style.display = 'block';
+            document.getElementById('viewModeToggle').style.display = 'block';
+
+            // Initialize game engine
+            window.gameEngine = new GameEngine();
+
+            // Start first quest
+            gameState.campaign.act = 1;
+            gameState.campaign.quest = 1;
+
+            gameEngine.updatePartyDisplay();
+            gameEngine.startGameLoop();
+            gameEngine.startQuest();
+        }
+
+        // UI Functions
+        function performAction(action) {
+            if (!gameState.combat.active) return;
+
+            const currentChar = gameState.combat.initiative[gameState.combat.currentCharacterIndex];
+            if (!currentChar || currentChar.type !== 'party' || currentChar.isAI) return;
+
+            switch(action) {
+                case 'move':
+                    gameState.combat.selectedAction = 'move';
+                    gameEngine.addCombatLog('Click to move', 'info');
+                    break;
+                case 'attack':
+                    gameState.combat.selectedAction = 'attack';
+                    gameEngine.addCombatLog('Select a target', 'info');
+                    break;
+                case 'cast':
+                    document.getElementById('spellbookPanel').style.display = 'block';
+                    updateSpellbook();
+                    break;
+                case 'dash':
+                    currentChar.position.x += 60;
+                    gameEngine.addCombatLog(`${currentChar.name} dashes!`, 'info');
+                    gameEngine.endTurn();
+                    break;
+                case 'endTurn':
+                    gameEngine.endTurn();
+                    break;
+            }
+        }
+
+        function rollDice(sides) {
+            const result = Math.floor(Math.random() * sides) + 1;
+            document.getElementById('diceResult').textContent = `d${sides}: ${result}`;
+
+            // Animate result
+            const resultDiv = document.getElementById('diceResult');
+            resultDiv.style.transform = 'scale(1.5)';
+            setTimeout(() => {
+                resultDiv.style.transform = 'scale(1)';
+            }, 300);
+
+            return result;
+        }
+
+        function toggleViewMode() {
+            gameEngine.toggleViewMode();
+        }
+
+        function closeInventory() {
+            document.getElementById('inventoryPanel').style.display = 'none';
+        }
+
+        function closeSpellbook() {
+            document.getElementById('spellbookPanel').style.display = 'none';
+        }
+
+        function updateSpellbook() {
+            const spellList = document.getElementById('spellList');
+            spellList.innerHTML = '';
+
+            const currentChar = gameState.party[0]; // Simplified for example
+            if (!currentChar) return;
+
+            // Show cantrips
+            Object.values(SPELLS.cantrips).forEach(spell => {
+                const entry = document.createElement('div');
+                entry.className = 'spellEntry';
+                entry.innerHTML = `
+                    <strong>${spell.name}</strong> (Cantrip)<br>
+                    ${spell.description}<br>
+                    Damage: ${spell.damage || 'N/A'}
+                `;
+                entry.onclick = () => castSpell(spell);
+                spellList.appendChild(entry);
+            });
+
+            // Show level 1 spells if character has slots
+            if (currentChar.spellSlots && currentChar.spellSlots[0] > 0) {
+                Object.values(SPELLS.level1).forEach(spell => {
+                    const entry = document.createElement('div');
+                    entry.className = 'spellEntry';
+                    entry.innerHTML = `
+                        <strong>${spell.name}</strong> (Level 1)<br>
+                        ${spell.description}<br>
+                        ${spell.damage ? `Damage: ${spell.damage}` : ''}
+                        ${spell.healing ? `Healing: ${spell.healing}` : ''}
+                    `;
+                    entry.onclick = () => castSpell(spell);
+                    spellList.appendChild(entry);
+                });
+            }
+        }
+
+        function castSpell(spell) {
+            const currentChar = gameState.combat.initiative[gameState.combat.currentCharacterIndex];
+
+            if (spell.level > 0) {
+                // Use spell slot
+                if (currentChar.spellSlots[spell.level - 1] <= 0) {
+                    gameEngine.addCombatLog('No spell slots remaining!', 'info');
+                    return;
+                }
+                currentChar.spellSlots[spell.level - 1]--;
+            }
+
+            // Apply spell effect
+            gameEngine.addCombatLog(`${currentChar.name} casts ${spell.name}!`, 'info');
+
+            // Simplified spell effects
+            if (spell.damage && gameState.enemies.length > 0) {
+                const damage = gameEngine.rollDamage(spell.damage);
+                gameState.enemies[0].currentHP -= damage;
+                gameEngine.addCombatLog(`Deals ${damage} ${spell.damageType} damage!`, 'damage');
+            }
+
+            if (spell.healing) {
+                const healing = gameEngine.rollDice(8) + gameEngine.getModifier(currentChar.wis);
+                currentChar.currentHP = Math.min(currentChar.maxHP, currentChar.currentHP + healing);
+                gameEngine.addCombatLog(`Heals for ${healing} HP!`, 'heal');
+            }
+
+            closeSpellbook();
+            gameEngine.endTurn();
+        }
+
+        // Settings
+        function openSettings() {
+            document.getElementById('settingsPanel').style.display = 'block';
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsPanel').style.display = 'none';
+        }
+
+        function toggleSetting(setting) {
+            gameState.settings[setting] = !gameState.settings[setting];
+            const toggle = event.target;
+            toggle.classList.toggle('active');
+        }
+
+        // Multiplayer
+        function startMultiplayer() {
+            document.getElementById('mainMenu').style.display = 'none';
+            document.getElementById('multiplayerPanel').style.display = 'block';
+        }
+
+        function hostGame() {
+            // Generate room code
+            const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+            gameState.multiplayer.roomCode = roomCode;
+            gameState.multiplayer.isHost = true;
+
+            document.getElementById('roomCode').textContent = roomCode;
+            document.getElementById('roomCode').style.display = 'block';
+
+            // Initialize PeerJS (would need CDN in real implementation)
+            // For single file, we'll simulate
+            gameState.multiplayer.players = [{ name: 'Host (You)', id: 'host' }];
+            updatePlayerList();
+        }
+
+        function joinGame() {
+            const code = document.getElementById('joinCode').value.toUpperCase();
+            if (!code) {
+                alert('Please enter a room code');
+                return;
+            }
+
+            gameState.multiplayer.roomCode = code;
+            gameState.multiplayer.isHost = false;
+
+            // Simulate joining
+            gameState.multiplayer.players = [
+                { name: 'Host', id: 'host' },
+                { name: 'You', id: 'player1' }
+            ];
+            updatePlayerList();
+        }
+
+        function updatePlayerList() {
+            const playerList = document.getElementById('playerList');
+            playerList.innerHTML = '<h4 style="color: #ffd700;">Players:</h4>';
+
+            gameState.multiplayer.players.forEach(player => {
+                const div = document.createElement('div');
+                div.style.padding = '5px';
+                div.textContent = player.name;
+                playerList.appendChild(div);
+            });
+        }
+
+        function sendChat(event) {
+            if (event.key === 'Enter') {
+                const input = document.getElementById('chatInput');
+                const message = input.value;
+                if (!message) return;
+
+                const chatBox = document.getElementById('chatBox');
+                const msgDiv = document.createElement('div');
+                msgDiv.textContent = `You: ${message}`;
+                chatBox.appendChild(msgDiv);
+                chatBox.scrollTop = chatBox.scrollHeight;
+
+                input.value = '';
+
+                // Broadcast to other players (simulated)
+            }
+        }
+
+        function closeMultiplayer() {
+            document.getElementById('multiplayerPanel').style.display = 'none';
+            document.getElementById('mainMenu').style.display = 'block';
+        }
+
+        // Data Import/Export
+        function exportData() {
+            const dataStr = JSON.stringify(gameState, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${APP_NAME}-save-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    gameState = JSON.parse(e.target.result);
+                    localStorage.setItem(APP_NAME, JSON.stringify(gameState));
+                    alert('Save imported successfully!');
+                    location.reload();
+                } catch (error) {
+                    alert('Invalid save file');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Event listeners for character creation
+        document.addEventListener('DOMContentLoaded', () => {
+            // Race selection
+            document.querySelectorAll('[data-race]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('[data-race]').forEach(b => b.classList.remove('selected'));
+                    e.target.classList.add('selected');
+                    characterCreationData.race = e.target.dataset.race;
+                });
+            });
+
+            // Class selection
+            document.querySelectorAll('[data-class]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('[data-class]').forEach(b => b.classList.remove('selected'));
+                    e.target.classList.add('selected');
+                    characterCreationData.class = e.target.dataset.class;
+                });
+            });
+
+            // Background selection
+            document.querySelectorAll('[data-background]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('[data-background]').forEach(b => b.classList.remove('selected'));
+                    e.target.classList.add('selected');
+                    characterCreationData.background = e.target.dataset.background;
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat Hello World - Shared Config Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            height: 700px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .header h1 {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .config-status {
+            font-size: 0.85em;
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4ade80;
+            animation: pulse 2s ease infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            line-height: 1.5;
+        }
+
+        .message.user .message-content {
+            background: #667eea;
+            color: white;
+        }
+
+        .message.assistant .message-content {
+            background: white;
+            border: 1px solid #e0e0e0;
+        }
+
+        .message.system .message-content {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            font-size: 0.9em;
+            max-width: 100%;
+            text-align: center;
+        }
+
+        .input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .back-link {
+            display: inline-block;
+            color: white;
+            text-decoration: none;
+            font-size: 0.9em;
+            margin-top: 10px;
+            opacity: 0.9;
+        }
+
+        .back-link:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+
+        .config-info {
+            background: rgba(0, 0, 0, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 0.85em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💬 AI Chat Hello World</h1>
+            <div class="config-status">
+                <span class="status-dot"></span>
+                <span id="statusText">Loading configuration...</span>
+            </div>
+            <div class="config-info" id="configInfo"></div>
+            <a href="ai-config-hub.html" class="back-link">← Back to Config Hub</a>
+        </div>
+
+        <div class="chat-container" id="chatContainer">
+            <div class="message system">
+                <div class="message-content">
+                    Welcome! This app uses the shared AI configuration token.
+                    Configure your endpoints in the Config Hub.
+                </div>
+            </div>
+        </div>
+
+        <div class="input-container">
+            <input type="text" id="messageInput" placeholder="Type your message..."
+                   onkeypress="if(event.key==='Enter') sendMessage()">
+            <button id="sendBtn" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        // Shared AI Config Manager
+        class AIConfigManager {
+            constructor() {
+                this.storageKey = 'shared-ai-config';
+                this.config = this.loadConfig();
+            }
+
+            loadConfig() {
+                try {
+                    const stored = localStorage.getItem(this.storageKey);
+                    return stored ? JSON.parse(stored) : null;
+                } catch (error) {
+                    console.error('Error loading config:', error);
+                    return null;
+                }
+            }
+
+            getActiveEndpoint() {
+                if (!this.config || !this.config.endpoints) return null;
+                return Object.values(this.config.endpoints).find(ep => ep.active) || null;
+            }
+
+            getLLMSettings() {
+                return this.config?.llm || { temperature: 0.7, maxTokens: 2000 };
+            }
+        }
+
+        // Initialize
+        const configManager = new AIConfigManager();
+        const chatContainer = document.getElementById('chatContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+
+        // Check configuration status
+        function checkConfigStatus() {
+            const endpoint = configManager.getActiveEndpoint();
+            const statusText = document.getElementById('statusText');
+            const configInfo = document.getElementById('configInfo');
+
+            if (!endpoint) {
+                statusText.textContent = '⚠️ No active endpoint configured';
+                configInfo.innerHTML = '<strong>Action Required:</strong> Configure an endpoint in the Config Hub';
+                addSystemMessage('No active endpoint found. Please configure one in the Config Hub.');
+                sendBtn.disabled = true;
+                return false;
+            }
+
+            statusText.textContent = `✓ Connected to: ${endpoint.name}`;
+            configInfo.innerHTML = `
+                <strong>Endpoint:</strong> ${endpoint.name}<br>
+                <strong>Provider:</strong> ${endpoint.provider}<br>
+                <strong>URL:</strong> ${endpoint.url.substring(0, 50)}...
+            `;
+            sendBtn.disabled = false;
+            return true;
+        }
+
+        // Add message to chat
+        function addMessage(content, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.innerHTML = `<div class="message-content">${content}</div>`;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function addSystemMessage(content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message system';
+            messageDiv.innerHTML = `<div class="message-content">${content}</div>`;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Send message
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            const endpoint = configManager.getActiveEndpoint();
+            if (!endpoint) {
+                addSystemMessage('Error: No active endpoint. Please configure in Config Hub.');
+                return;
+            }
+
+            // Add user message
+            addMessage(message, 'user');
+            messageInput.value = '';
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '<span class="loading"></span>';
+
+            try {
+                // Make API call to configured endpoint
+                const response = await fetch(endpoint.url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': endpoint.key ? `Bearer ${endpoint.key}` : '',
+                        'x-guid': endpoint.guid || ''
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        settings: configManager.getLLMSettings()
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                const reply = data.response || data.message || data.reply || 'No response from server';
+
+                addMessage(reply, 'assistant');
+
+            } catch (error) {
+                console.error('Error:', error);
+                addSystemMessage(`Error: ${error.message}. Using demo response instead.`);
+
+                // Demo fallback response
+                const demoResponses = [
+                    "Hello! I'm running in demo mode. Configure a real endpoint in the Config Hub to connect to your AI service.",
+                    "This is a demonstration response. Your message was: '" + message + "'. Set up your API endpoint to get real AI responses!",
+                    "Demo mode active! In production, I would process your query using the configured endpoint: " + endpoint.url
+                ];
+                addMessage(demoResponses[Math.floor(Math.random() * demoResponses.length)], 'assistant');
+
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Send';
+            }
+        }
+
+        // Initialize on load
+        checkConfigStatus();
+        messageInput.focus();
+
+        // Demonstrate the shared config
+        setTimeout(() => {
+            const endpoint = configManager.getActiveEndpoint();
+            if (endpoint) {
+                addSystemMessage(`🎯 Using shared configuration: "${endpoint.name}" endpoint is active!`);
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

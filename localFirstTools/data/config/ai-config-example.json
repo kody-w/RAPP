@@ -1,0 +1,57 @@
+{
+  "_schema": "ai-config-v1",
+  "_description": "Example AI configuration with production endpoints",
+  "endpoints": {
+    "default": {
+      "id": "default",
+      "name": "Local Default Bot",
+      "url": "http://localhost:7071/api/businessinsightbot_function",
+      "key": "",
+      "guid": "c0p110t0-aaaa-bbbb-cccc-123456789abc",
+      "active": false,
+      "provider": "custom"
+    },
+    "edb8d78f-c20c-4b98-94b2-459e732f9580": {
+      "id": "edb8d78f-c20c-4b98-94b2-459e732f9580",
+      "name": "Production Bot",
+      "url": "https://azfbusinessbot.azurewebsites.net/api/businessinsightbot_function",
+      "key": "YOUR_AZURE_FUNCTION_KEY_HERE",
+      "guid": "c0p110t0-aaaa-bbbb-cccc-123456789abc",
+      "active": true,
+      "provider": "azure"
+    }
+  },
+  "speech": {
+    "azureTTSKey": "YOUR_AZURE_TEXT_TO_SPEECH_KEY_HERE",
+    "azureTTSRegion": "eastus",
+    "ttsVoiceName": "en-US-JennyNeural",
+    "ttsProvider": "azure",
+    "speechRecognitionLang": "en-US",
+    "enableSpeech": true
+  },
+  "llm": {
+    "provider": "azure",
+    "model": "gpt-4",
+    "temperature": 0.7,
+    "maxTokens": 2000,
+    "systemPrompt": "You are a helpful business insights assistant."
+  },
+  "apiKeys": {
+    "openai": "",
+    "anthropic": "",
+    "azure": "YOUR_AZURE_FUNCTION_KEY_HERE",
+    "google": ""
+  },
+  "preferences": {
+    "theme": "dark",
+    "autoSave": true,
+    "voiceEnabled": true,
+    "notifications": true
+  },
+  "metadata": {
+    "exportDate": "2025-11-24T01:53:48.362Z",
+    "version": "1.0.0",
+    "appName": "business-insights-bot",
+    "lastModified": "2025-11-24T01:53:48.362Z"
+  }
+}

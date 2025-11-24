@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Configuration Hub - Shared Settings Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: white;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .card h2 {
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .card p {
+            opacity: 0.9;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #1e3c72;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            background: white;
+            transform: scale(1.02);
+        }
+
+        button.secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        button.secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .status-bar {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .status-item {
+            text-align: center;
+        }
+
+        .status-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #4ade80;
+        }
+
+        .status-label {
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .endpoint-list {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .endpoint-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 4px solid transparent;
+        }
+
+        .endpoint-item.active {
+            border-left-color: #4ade80;
+            background: rgba(74, 222, 128, 0.2);
+        }
+
+        .endpoint-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .endpoint-url {
+            font-size: 0.85em;
+            opacity: 0.8;
+            word-break: break-all;
+        }
+
+        .app-launcher {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 25px;
+            border-radius: 12px;
+            margin-top: 30px;
+        }
+
+        .app-launcher h2 {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .app-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .app-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .app-card:hover {
+            transform: translateY(-3px);
+            border-color: #4ade80;
+            box-shadow: 0 5px 20px rgba(74, 222, 128, 0.3);
+        }
+
+        .app-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .app-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .app-desc {
+            font-size: 0.85em;
+            opacity: 0.8;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #1e3c72;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-content h3 {
+            margin-bottom: 20px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 14px;
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #4ade80;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            animation: slideIn 0.3s ease;
+        }
+
+        .alert.success {
+            background: rgba(74, 222, 128, 0.2);
+            border: 1px solid #4ade80;
+        }
+
+        .alert.error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 AI Configuration Hub</h1>
+            <p>Centralized management for all your AI-enabled applications</p>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-grid">
+                <div class="status-item">
+                    <div class="status-value" id="endpointCount">0</div>
+                    <div class="status-label">Total Endpoints</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-value" id="activeEndpoint">None</div>
+                    <div class="status-label">Active Endpoint</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-value" id="apiKeyCount">0</div>
+                    <div class="status-label">API Keys Set</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-value" id="configVersion">1.0</div>
+                    <div class="status-label">Config Version</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Controls -->
+        <div class="grid">
+            <div class="card">
+                <h2>📤 Export Configuration</h2>
+                <p>Download your current AI configuration as a JSON file to import into other apps.</p>
+                <button onclick="exportConfig()">Download Config Token</button>
+            </div>
+
+            <div class="card">
+                <h2>📥 Import Configuration</h2>
+                <p>Load a previously saved configuration file to restore all settings.</p>
+                <button onclick="document.getElementById('importFile').click()">Upload Config Token</button>
+                <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importConfig(event)">
+            </div>
+
+            <div class="card">
+                <h2>➕ Add Endpoint</h2>
+                <p>Configure a new API endpoint for your AI applications to use.</p>
+                <button onclick="openAddEndpointModal()">Add New Endpoint</button>
+            </div>
+
+            <div class="card">
+                <h2>⚙️ Configure Settings</h2>
+                <p>Adjust speech, LLM, and other advanced settings for all apps.</p>
+                <button onclick="openSettingsModal()">Open Settings</button>
+            </div>
+        </div>
+
+        <!-- Current Endpoints -->
+        <div class="card">
+            <h2>🌐 Configured Endpoints</h2>
+            <p>These endpoints are available to all connected applications</p>
+            <div class="endpoint-list" id="endpointList">
+                <p style="text-align: center; opacity: 0.7;">No endpoints configured</p>
+            </div>
+        </div>
+
+        <!-- App Launcher -->
+        <div class="app-launcher">
+            <h2>🚀 Launch Connected Applications</h2>
+            <p style="text-align: center; margin-bottom: 20px; opacity: 0.9;">
+                All these apps share the same configuration token
+            </p>
+            <div class="app-grid">
+                <div class="app-card" onclick="launchApp('ai-chat-hello-world.html')">
+                    <div class="app-icon">💬</div>
+                    <div class="app-name">AI Chat</div>
+                    <div class="app-desc">Simple chat interface</div>
+                </div>
+                <div class="app-card" onclick="launchApp('ai-voice-hello-world.html')">
+                    <div class="app-icon">🎤</div>
+                    <div class="app-name">Voice Assistant</div>
+                    <div class="app-desc">Speech-enabled AI</div>
+                </div>
+                <div class="app-card" onclick="launchApp('ai-business-hello-world.html')">
+                    <div class="app-icon">💼</div>
+                    <div class="app-name">Business Insights</div>
+                    <div class="app-desc">Your actual bot!</div>
+                </div>
+                <div class="app-card" onclick="window.open('ai-config-demo.html', '_blank')">
+                    <div class="app-icon">🔧</div>
+                    <div class="app-name">Full Demo</div>
+                    <div class="app-desc">Complete config tool</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Endpoint Modal -->
+    <div class="modal" id="addEndpointModal">
+        <div class="modal-content">
+            <h3>➕ Add New Endpoint</h3>
+            <label>Endpoint Name</label>
+            <input type="text" id="newEndpointName" placeholder="My Production Bot">
+
+            <label>API URL</label>
+            <input type="text" id="newEndpointUrl" placeholder="https://api.example.com/bot">
+
+            <label>API Key</label>
+            <input type="password" id="newEndpointKey" placeholder="your-api-key-here">
+
+            <label>GUID (Optional)</label>
+            <input type="text" id="newEndpointGuid" placeholder="optional-guid">
+
+            <label>Provider</label>
+            <select id="newEndpointProvider">
+                <option value="custom">Custom</option>
+                <option value="azure">Azure</option>
+                <option value="openai">OpenAI</option>
+                <option value="anthropic">Anthropic</option>
+            </select>
+
+            <button onclick="addEndpoint()">Add Endpoint</button>
+            <button class="secondary" onclick="closeModal('addEndpointModal')">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <h3>⚙️ Advanced Settings</h3>
+
+            <h4 style="margin: 20px 0 10px 0;">Speech Settings</h4>
+            <label>Azure TTS Key</label>
+            <input type="password" id="azureTTSKey" placeholder="Azure TTS API Key">
+
+            <label>Azure Region</label>
+            <input type="text" id="azureRegion" placeholder="eastus">
+
+            <label>TTS Voice</label>
+            <select id="ttsVoice">
+                <option value="en-US-JennyNeural">Jenny (US Female)</option>
+                <option value="en-US-AriaNeural">Aria (US Female)</option>
+                <option value="en-US-GuyNeural">Guy (US Male)</option>
+                <option value="en-GB-SoniaNeural">Sonia (UK Female)</option>
+            </select>
+
+            <h4 style="margin: 20px 0 10px 0;">LLM Settings</h4>
+            <label>Model</label>
+            <input type="text" id="llmModel" placeholder="gpt-4">
+
+            <label>Temperature (0-2)</label>
+            <input type="number" id="llmTemp" min="0" max="2" step="0.1" value="0.7">
+
+            <label>Max Tokens</label>
+            <input type="number" id="llmTokens" value="2000">
+
+            <button onclick="saveSettings()">Save Settings</button>
+            <button class="secondary" onclick="closeModal('settingsModal')">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        // AI Config Manager Class
+        class AIConfigManager {
+            constructor(appName = 'ai-config-hub') {
+                this.appName = appName;
+                this.storageKey = 'shared-ai-config'; // Shared across all apps!
+                this.config = this.loadConfig();
+            }
+
+            getDefaultConfig() {
+                return {
+                    _schema: "ai-config-v1",
+                    _description: "Standardized AI configuration for localFirstTools applications",
+                    endpoints: {},
+                    speech: {
+                        azureTTSKey: "",
+                        azureTTSRegion: "eastus",
+                        ttsVoiceName: "en-US-JennyNeural",
+                        ttsProvider: "azure",
+                        speechRecognitionLang: "en-US",
+                        enableSpeech: true
+                    },
+                    llm: {
+                        provider: "custom",
+                        model: "gpt-4",
+                        temperature: 0.7,
+                        maxTokens: 2000,
+                        systemPrompt: ""
+                    },
+                    apiKeys: {
+                        openai: "",
+                        anthropic: "",
+                        azure: "",
+                        google: ""
+                    },
+                    preferences: {
+                        theme: "dark",
+                        autoSave: true,
+                        voiceEnabled: true,
+                        notifications: true
+                    },
+                    metadata: {
+                        exportDate: "",
+                        version: "1.0.0",
+                        appName: this.appName,
+                        lastModified: new Date().toISOString()
+                    }
+                };
+            }
+
+            loadConfig() {
+                try {
+                    const stored = localStorage.getItem(this.storageKey);
+                    if (stored) {
+                        const config = JSON.parse(stored);
+                        if (config._schema === "ai-config-v1") {
+                            return config;
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading config:', error);
+                }
+                return this.getDefaultConfig();
+            }
+
+            saveConfig() {
+                try {
+                    this.config.metadata.lastModified = new Date().toISOString();
+                    localStorage.setItem(this.storageKey, JSON.stringify(this.config));
+                    return true;
+                } catch (error) {
+                    console.error('Error saving config:', error);
+                    return false;
+                }
+            }
+
+            exportConfig() {
+                const exportData = { ...this.config };
+                exportData.metadata.exportDate = new Date().toISOString();
+                const dataStr = JSON.stringify(exportData, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(dataBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `ai-config-token-${new Date().toISOString().split('T')[0]}.json`;
+                link.click();
+                URL.revokeObjectURL(url);
+            }
+
+            importConfig(jsonData) {
+                try {
+                    const imported = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
+                    if (imported._schema !== "ai-config-v1") {
+                        throw new Error('Invalid schema');
+                    }
+                    this.config = { ...this.getDefaultConfig(), ...imported };
+                    this.saveConfig();
+                    return true;
+                } catch (error) {
+                    console.error('Import error:', error);
+                    return false;
+                }
+            }
+
+            addEndpoint(endpoint) {
+                const id = endpoint.id || this.generateId();
+                this.config.endpoints[id] = {
+                    id,
+                    name: endpoint.name || 'Unnamed',
+                    url: endpoint.url || '',
+                    key: endpoint.key || '',
+                    guid: endpoint.guid || '',
+                    active: endpoint.active || false,
+                    provider: endpoint.provider || 'custom'
+                };
+                this.saveConfig();
+                return id;
+            }
+
+            removeEndpoint(id) {
+                delete this.config.endpoints[id];
+                this.saveConfig();
+            }
+
+            setActiveEndpoint(id) {
+                Object.values(this.config.endpoints).forEach(ep => ep.active = false);
+                if (this.config.endpoints[id]) {
+                    this.config.endpoints[id].active = true;
+                    this.saveConfig();
+                }
+            }
+
+            getActiveEndpoint() {
+                return Object.values(this.config.endpoints).find(ep => ep.active) || null;
+            }
+
+            getAllEndpoints() {
+                return Object.values(this.config.endpoints);
+            }
+
+            updateSpeechSettings(settings) {
+                this.config.speech = { ...this.config.speech, ...settings };
+                this.saveConfig();
+            }
+
+            updateLLMSettings(settings) {
+                this.config.llm = { ...this.config.llm, ...settings };
+                this.saveConfig();
+            }
+
+            generateId() {
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+                    const r = Math.random() * 16 | 0;
+                    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+                });
+            }
+
+            getConfig() {
+                return { ...this.config };
+            }
+        }
+
+        // Initialize
+        const configManager = new AIConfigManager();
+        window.configManager = configManager;
+
+        // UI Functions
+        function updateUI() {
+            updateStats();
+            updateEndpointList();
+            loadSettingsToForm();
+        }
+
+        function updateStats() {
+            const endpoints = configManager.getAllEndpoints();
+            const active = configManager.getActiveEndpoint();
+            const apiKeys = Object.values(configManager.config.apiKeys).filter(k => k.length > 0);
+
+            document.getElementById('endpointCount').textContent = endpoints.length;
+            document.getElementById('activeEndpoint').textContent = active ? active.name : 'None';
+            document.getElementById('apiKeyCount').textContent = apiKeys.length;
+            document.getElementById('configVersion').textContent = configManager.config.metadata.version;
+        }
+
+        function updateEndpointList() {
+            const container = document.getElementById('endpointList');
+            const endpoints = configManager.getAllEndpoints();
+
+            if (endpoints.length === 0) {
+                container.innerHTML = '<p style="text-align: center; opacity: 0.7;">No endpoints configured</p>';
+                return;
+            }
+
+            container.innerHTML = endpoints.map(ep => `
+                <div class="endpoint-item ${ep.active ? 'active' : ''}" onclick="setActive('${ep.id}')">
+                    <div class="endpoint-name">${ep.name} ${ep.active ? '✓' : ''}</div>
+                    <div class="endpoint-url">${ep.url}</div>
+                    <div style="margin-top: 8px; display: flex; gap: 5px;">
+                        <button style="width: auto; padding: 5px 10px; font-size: 12px; margin: 0;"
+                                onclick="event.stopPropagation(); deleteEndpoint('${ep.id}')">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function setActive(id) {
+            configManager.setActiveEndpoint(id);
+            updateUI();
+            showAlert('Endpoint activated!', 'success');
+        }
+
+        function deleteEndpoint(id) {
+            if (confirm('Delete this endpoint?')) {
+                configManager.removeEndpoint(id);
+                updateUI();
+                showAlert('Endpoint deleted', 'success');
+            }
+        }
+
+        function exportConfig() {
+            configManager.exportConfig();
+            showAlert('Configuration exported!', 'success');
+        }
+
+        function importConfig(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                if (configManager.importConfig(e.target.result)) {
+                    updateUI();
+                    showAlert('Configuration imported successfully!', 'success');
+                } else {
+                    showAlert('Failed to import configuration', 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function openAddEndpointModal() {
+            document.getElementById('addEndpointModal').classList.add('active');
+        }
+
+        function openSettingsModal() {
+            document.getElementById('settingsModal').classList.add('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function addEndpoint() {
+            const name = document.getElementById('newEndpointName').value;
+            const url = document.getElementById('newEndpointUrl').value;
+            const key = document.getElementById('newEndpointKey').value;
+            const guid = document.getElementById('newEndpointGuid').value;
+            const provider = document.getElementById('newEndpointProvider').value;
+
+            if (!name || !url) {
+                showAlert('Please enter name and URL', 'error');
+                return;
+            }
+
+            configManager.addEndpoint({ name, url, key, guid, provider });
+
+            // Clear form
+            document.getElementById('newEndpointName').value = '';
+            document.getElementById('newEndpointUrl').value = '';
+            document.getElementById('newEndpointKey').value = '';
+            document.getElementById('newEndpointGuid').value = '';
+
+            closeModal('addEndpointModal');
+            updateUI();
+            showAlert('Endpoint added!', 'success');
+        }
+
+        function loadSettingsToForm() {
+            const speech = configManager.config.speech;
+            const llm = configManager.config.llm;
+
+            document.getElementById('azureTTSKey').value = speech.azureTTSKey || '';
+            document.getElementById('azureRegion').value = speech.azureTTSRegion || 'eastus';
+            document.getElementById('ttsVoice').value = speech.ttsVoiceName || 'en-US-JennyNeural';
+            document.getElementById('llmModel').value = llm.model || 'gpt-4';
+            document.getElementById('llmTemp').value = llm.temperature || 0.7;
+            document.getElementById('llmTokens').value = llm.maxTokens || 2000;
+        }
+
+        function saveSettings() {
+            configManager.updateSpeechSettings({
+                azureTTSKey: document.getElementById('azureTTSKey').value,
+                azureTTSRegion: document.getElementById('azureRegion').value,
+                ttsVoiceName: document.getElementById('ttsVoice').value
+            });
+
+            configManager.updateLLMSettings({
+                model: document.getElementById('llmModel').value,
+                temperature: parseFloat(document.getElementById('llmTemp').value),
+                maxTokens: parseInt(document.getElementById('llmTokens').value)
+            });
+
+            closeModal('settingsModal');
+            showAlert('Settings saved!', 'success');
+        }
+
+        function showAlert(message, type) {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert ${type}`;
+            alert.textContent = message;
+            container.appendChild(alert);
+            setTimeout(() => alert.remove(), 3000);
+        }
+
+        function launchApp(filename) {
+            window.open(filename, '_blank');
+        }
+
+        // Initialize on load
+        updateUI();
+    </script>
+</body>
+</html>

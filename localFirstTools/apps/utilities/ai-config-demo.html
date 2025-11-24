@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Config Demo - Standardized Configuration Example</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            background: #667eea;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: #6c757d;
+        }
+
+        button.secondary:hover {
+            background: #5a6268;
+        }
+
+        button.danger {
+            background: #dc3545;
+        }
+
+        button.danger:hover {
+            background: #c82333;
+        }
+
+        input, select, textarea {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .endpoint-card {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .endpoint-card.active {
+            border-color: #28a745;
+            background: #f0fff4;
+        }
+
+        .endpoint-card h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .endpoint-info {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .badge.active {
+            background: #28a745;
+            color: white;
+        }
+
+        .badge.inactive {
+            background: #6c757d;
+            color: white;
+        }
+
+        .config-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 AI Configuration Demo</h1>
+        <p class="subtitle">Demonstration of the standardized AI configuration system for localFirstTools</p>
+
+        <!-- Stats -->
+        <div class="section">
+            <h2>📊 Configuration Stats</h2>
+            <div class="grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="endpointCount">0</div>
+                    <div class="stat-label">Endpoints</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="activeCount">0</div>
+                    <div class="stat-label">Active</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="apiKeyCount">0</div>
+                    <div class="stat-label">API Keys Set</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Import/Export -->
+        <div class="section">
+            <h2>💾 Import/Export Configuration</h2>
+            <div class="controls" id="ai-config-controls">
+                <!-- Auto-generated by createAIConfigUI() -->
+            </div>
+        </div>
+
+        <!-- Add Endpoint -->
+        <div class="section">
+            <h2>➕ Add New Endpoint</h2>
+            <div class="form-group">
+                <label>Endpoint Name</label>
+                <input type="text" id="newEndpointName" placeholder="Production Bot">
+            </div>
+            <div class="form-group">
+                <label>API URL</label>
+                <input type="text" id="newEndpointUrl" placeholder="https://api.example.com/bot">
+            </div>
+            <div class="form-group">
+                <label>API Key</label>
+                <input type="password" id="newEndpointKey" placeholder="your-api-key">
+            </div>
+            <div class="form-group">
+                <label>GUID (Optional)</label>
+                <input type="text" id="newEndpointGuid" placeholder="c0p110t0-aaaa-bbbb-cccc-123456789abc">
+            </div>
+            <div class="form-group">
+                <label>Provider</label>
+                <select id="newEndpointProvider">
+                    <option value="custom">Custom</option>
+                    <option value="azure">Azure</option>
+                    <option value="openai">OpenAI</option>
+                    <option value="anthropic">Anthropic</option>
+                </select>
+            </div>
+            <button onclick="addNewEndpoint()">Add Endpoint</button>
+        </div>
+
+        <!-- Endpoints List -->
+        <div class="section">
+            <h2>🌐 Configured Endpoints</h2>
+            <div id="endpointsList"></div>
+        </div>
+
+        <!-- Speech Settings -->
+        <div class="section">
+            <h2>🎤 Speech Settings</h2>
+            <div class="form-group">
+                <label>Azure TTS Key</label>
+                <input type="password" id="azureTTSKey" placeholder="Azure TTS API Key">
+            </div>
+            <div class="form-group">
+                <label>Azure Region</label>
+                <input type="text" id="azureTTSRegion" placeholder="eastus">
+            </div>
+            <div class="form-group">
+                <label>TTS Voice Name</label>
+                <select id="ttsVoiceName">
+                    <option value="en-US-JennyNeural">Jenny (US)</option>
+                    <option value="en-US-AriaNeural">Aria (US)</option>
+                    <option value="en-US-GuyNeural">Guy (US)</option>
+                    <option value="en-GB-SoniaNeural">Sonia (UK)</option>
+                </select>
+            </div>
+            <button onclick="updateSpeechSettings()">Update Speech Settings</button>
+        </div>
+
+        <!-- LLM Settings -->
+        <div class="section">
+            <h2>🧠 LLM Settings</h2>
+            <div class="form-group">
+                <label>Model</label>
+                <input type="text" id="llmModel" placeholder="gpt-4">
+            </div>
+            <div class="form-group">
+                <label>Temperature (0-2)</label>
+                <input type="number" id="llmTemperature" min="0" max="2" step="0.1" value="0.7">
+            </div>
+            <div class="form-group">
+                <label>Max Tokens</label>
+                <input type="number" id="llmMaxTokens" value="2000">
+            </div>
+            <div class="form-group">
+                <label>System Prompt</label>
+                <textarea id="llmSystemPrompt" rows="3" placeholder="You are a helpful assistant"></textarea>
+            </div>
+            <button onclick="updateLLMSettings()">Update LLM Settings</button>
+        </div>
+
+        <!-- Current Config View -->
+        <div class="section">
+            <h2>📄 Current Configuration</h2>
+            <button onclick="refreshConfigView()">Refresh View</button>
+            <button class="secondary" onclick="copyConfigToClipboard()">Copy to Clipboard</button>
+            <button class="danger" onclick="resetConfig()">Reset to Defaults</button>
+            <div id="configView" class="config-output" style="margin-top: 15px;"></div>
+        </div>
+
+        <div id="statusMessage"></div>
+    </div>
+
+    <script>
+        // ============ AI CONFIG MANAGER ============
+        // (Paste the full AIConfigManager class code here from ai-config-manager.js)
+
+        class AIConfigManager {
+            constructor(appName = 'ai-app') {
+                this.appName = appName;
+                this.storageKey = `${appName}-ai-config`;
+                this.config = this.loadConfig();
+            }
+
+            getDefaultConfig() {
+                return {
+                    _schema: "ai-config-v1",
+                    _description: "Standardized AI configuration for localFirstTools applications",
+                    endpoints: {
+                        default: {
+                            id: "default",
+                            name: "Local Default Bot",
+                            url: "http://localhost:7071/api/businessinsightbot_function",
+                            key: "",
+                            guid: "",
+                            active: false,
+                            provider: "custom"
+                        }
+                    },
+                    speech: {
+                        azureTTSKey: "",
+                        azureTTSRegion: "eastus",
+                        ttsVoiceName: "en-US-JennyNeural",
+                        ttsProvider: "azure",
+                        speechRecognitionLang: "en-US",
+                        enableSpeech: true
+                    },
+                    llm: {
+                        provider: "custom",
+                        model: "gpt-4",
+                        temperature: 0.7,
+                        maxTokens: 2000,
+                        systemPrompt: ""
+                    },
+                    apiKeys: {
+                        openai: "",
+                        anthropic: "",
+                        azure: "",
+                        google: ""
+                    },
+                    preferences: {
+                        theme: "dark",
+                        autoSave: true,
+                        voiceEnabled: true,
+                        notifications: true
+                    },
+                    metadata: {
+                        exportDate: "",
+                        version: "1.0.0",
+                        appName: this.appName,
+                        lastModified: new Date().toISOString()
+                    }
+                };
+            }
+
+            loadConfig() {
+                try {
+                    const stored = localStorage.getItem(this.storageKey);
+                    if (stored) {
+                        const config = JSON.parse(stored);
+                        if (config._schema === "ai-config-v1") {
+                            return config;
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading AI config:', error);
+                }
+                return this.getDefaultConfig();
+            }
+
+            saveConfig() {
+                try {
+                    this.config.metadata.lastModified = new Date().toISOString();
+                    localStorage.setItem(this.storageKey, JSON.stringify(this.config));
+                    return true;
+                } catch (error) {
+                    console.error('Error saving AI config:', error);
+                    return false;
+                }
+            }
+
+            exportConfig() {
+                try {
+                    const exportData = { ...this.config };
+                    exportData.metadata.exportDate = new Date().toISOString();
+
+                    const dataStr = JSON.stringify(exportData, null, 2);
+                    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                    const url = URL.createObjectURL(dataBlob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `${this.appName}-ai-config-${new Date().toISOString().split('T')[0]}.json`;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                    return true;
+                } catch (error) {
+                    console.error('Error exporting AI config:', error);
+                    return false;
+                }
+            }
+
+            importConfig(jsonData) {
+                try {
+                    const imported = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
+                    if (imported._schema !== "ai-config-v1") {
+                        throw new Error('Invalid configuration schema');
+                    }
+                    this.config = this.mergeWithDefaults(imported);
+                    this.saveConfig();
+                    return true;
+                } catch (error) {
+                    console.error('Error importing AI config:', error);
+                    return false;
+                }
+            }
+
+            importFromFile(event) {
+                const file = event.target.files[0];
+                if (!file) return Promise.reject('No file selected');
+
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const success = this.importConfig(e.target.result);
+                            if (success) {
+                                resolve(this.config);
+                            } else {
+                                reject('Failed to import configuration');
+                            }
+                        } catch (error) {
+                            reject(error);
+                        }
+                    };
+                    reader.onerror = () => reject('Error reading file');
+                    reader.readAsText(file);
+                });
+            }
+
+            mergeWithDefaults(imported) {
+                const defaults = this.getDefaultConfig();
+                return {
+                    ...defaults,
+                    ...imported,
+                    metadata: {
+                        ...defaults.metadata,
+                        ...imported.metadata,
+                        appName: this.appName
+                    }
+                };
+            }
+
+            addEndpoint(endpoint) {
+                if (!endpoint.id) {
+                    endpoint.id = this.generateId();
+                }
+                this.config.endpoints[endpoint.id] = {
+                    id: endpoint.id,
+                    name: endpoint.name || 'Unnamed Endpoint',
+                    url: endpoint.url || '',
+                    key: endpoint.key || '',
+                    guid: endpoint.guid || '',
+                    active: endpoint.active || false,
+                    provider: endpoint.provider || 'custom'
+                };
+                this.saveConfig();
+                return endpoint.id;
+            }
+
+            removeEndpoint(endpointId) {
+                if (this.config.endpoints[endpointId]) {
+                    delete this.config.endpoints[endpointId];
+                    this.saveConfig();
+                    return true;
+                }
+                return false;
+            }
+
+            setActiveEndpoint(endpointId) {
+                Object.values(this.config.endpoints).forEach(ep => ep.active = false);
+                if (this.config.endpoints[endpointId]) {
+                    this.config.endpoints[endpointId].active = true;
+                    this.saveConfig();
+                    return true;
+                }
+                return false;
+            }
+
+            getActiveEndpoint() {
+                return Object.values(this.config.endpoints).find(ep => ep.active) || null;
+            }
+
+            getAllEndpoints() {
+                return Object.values(this.config.endpoints);
+            }
+
+            updateSpeechSettings(settings) {
+                this.config.speech = { ...this.config.speech, ...settings };
+                this.saveConfig();
+            }
+
+            getSpeechSettings() {
+                return this.config.speech;
+            }
+
+            updateLLMSettings(settings) {
+                this.config.llm = { ...this.config.llm, ...settings };
+                this.saveConfig();
+            }
+
+            getLLMSettings() {
+                return this.config.llm;
+            }
+
+            setAPIKey(provider, key) {
+                this.config.apiKeys[provider] = key;
+                this.saveConfig();
+            }
+
+            getAPIKey(provider) {
+                return this.config.apiKeys[provider] || '';
+            }
+
+            updatePreferences(prefs) {
+                this.config.preferences = { ...this.config.preferences, ...prefs };
+                this.saveConfig();
+            }
+
+            getPreferences() {
+                return this.config.preferences;
+            }
+
+            generateId() {
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    const r = Math.random() * 16 | 0;
+                    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+            }
+
+            resetToDefaults() {
+                this.config = this.getDefaultConfig();
+                this.saveConfig();
+            }
+
+            getConfig() {
+                return { ...this.config };
+            }
+        }
+
+        function createAIConfigUI(aiConfig, containerId = 'ai-config-controls') {
+            const container = document.getElementById(containerId);
+            if (!container) {
+                console.error(`Container #${containerId} not found`);
+                return;
+            }
+
+            container.innerHTML = `
+                <button onclick="window.aiConfigManager.exportConfig(); showStatus('Configuration exported!', 'success')">
+                    📤 Export Configuration
+                </button>
+                <button onclick="document.getElementById('ai-config-import').click()">
+                    📥 Import Configuration
+                </button>
+                <input type="file"
+                       id="ai-config-import"
+                       accept=".json"
+                       style="display: none;"
+                       onchange="handleAIConfigImport(event)">
+            `;
+        }
+
+        function handleAIConfigImport(event) {
+            if (!window.aiConfigManager) {
+                console.error('AIConfigManager not initialized');
+                return;
+            }
+
+            window.aiConfigManager.importFromFile(event)
+                .then(() => {
+                    showStatus('Configuration imported successfully! Reloading...', 'success');
+                    setTimeout(() => location.reload(), 1500);
+                })
+                .catch(error => {
+                    showStatus(`Failed to import: ${error}`, 'error');
+                });
+        }
+
+        // ============ DEMO APP FUNCTIONS ============
+
+        // Initialize
+        const aiConfig = new AIConfigManager('ai-config-demo');
+        window.aiConfigManager = aiConfig;
+
+        // Initialize UI
+        document.addEventListener('DOMContentLoaded', () => {
+            createAIConfigUI(aiConfig, 'ai-config-controls');
+            loadFormValues();
+            refreshEndpointsList();
+            refreshConfigView();
+            updateStats();
+        });
+
+        function loadFormValues() {
+            const speech = aiConfig.getSpeechSettings();
+            const llm = aiConfig.getLLMSettings();
+
+            document.getElementById('azureTTSKey').value = speech.azureTTSKey || '';
+            document.getElementById('azureTTSRegion').value = speech.azureTTSRegion || 'eastus';
+            document.getElementById('ttsVoiceName').value = speech.ttsVoiceName || 'en-US-JennyNeural';
+            document.getElementById('llmModel').value = llm.model || 'gpt-4';
+            document.getElementById('llmTemperature').value = llm.temperature || 0.7;
+            document.getElementById('llmMaxTokens').value = llm.maxTokens || 2000;
+            document.getElementById('llmSystemPrompt').value = llm.systemPrompt || '';
+        }
+
+        function addNewEndpoint() {
+            const name = document.getElementById('newEndpointName').value;
+            const url = document.getElementById('newEndpointUrl').value;
+            const key = document.getElementById('newEndpointKey').value;
+            const guid = document.getElementById('newEndpointGuid').value;
+            const provider = document.getElementById('newEndpointProvider').value;
+
+            if (!name || !url) {
+                showStatus('Please enter endpoint name and URL', 'error');
+                return;
+            }
+
+            aiConfig.addEndpoint({
+                name: name,
+                url: url,
+                key: key,
+                guid: guid,
+                provider: provider,
+                active: false
+            });
+
+            // Clear form
+            document.getElementById('newEndpointName').value = '';
+            document.getElementById('newEndpointUrl').value = '';
+            document.getElementById('newEndpointKey').value = '';
+            document.getElementById('newEndpointGuid').value = '';
+
+            refreshEndpointsList();
+            refreshConfigView();
+            updateStats();
+            showStatus('Endpoint added successfully!', 'success');
+        }
+
+        function refreshEndpointsList() {
+            const container = document.getElementById('endpointsList');
+            const endpoints = aiConfig.getAllEndpoints();
+
+            if (endpoints.length === 0) {
+                container.innerHTML = '<p style="color: #999;">No endpoints configured. Add one above!</p>';
+                return;
+            }
+
+            container.innerHTML = endpoints.map(ep => `
+                <div class="endpoint-card ${ep.active ? 'active' : ''}">
+                    <h3>
+                        ${ep.name}
+                        <span class="badge ${ep.active ? 'active' : 'inactive'}">
+                            ${ep.active ? 'ACTIVE' : 'INACTIVE'}
+                        </span>
+                    </h3>
+                    <div class="endpoint-info">🔗 URL: ${ep.url}</div>
+                    <div class="endpoint-info">🏷️ Provider: ${ep.provider}</div>
+                    <div class="endpoint-info">🔑 Key: ${ep.key ? '••••••••' : 'Not set'}</div>
+                    ${ep.guid ? `<div class="endpoint-info">🆔 GUID: ${ep.guid}</div>` : ''}
+                    <div style="margin-top: 10px;">
+                        ${!ep.active ? `<button onclick="activateEndpoint('${ep.id}')">Activate</button>` : ''}
+                        <button class="danger" onclick="deleteEndpoint('${ep.id}')">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function activateEndpoint(id) {
+            aiConfig.setActiveEndpoint(id);
+            refreshEndpointsList();
+            refreshConfigView();
+            updateStats();
+            showStatus('Endpoint activated!', 'success');
+        }
+
+        function deleteEndpoint(id) {
+            if (confirm('Are you sure you want to delete this endpoint?')) {
+                aiConfig.removeEndpoint(id);
+                refreshEndpointsList();
+                refreshConfigView();
+                updateStats();
+                showStatus('Endpoint deleted!', 'success');
+            }
+        }
+
+        function updateSpeechSettings() {
+            aiConfig.updateSpeechSettings({
+                azureTTSKey: document.getElementById('azureTTSKey').value,
+                azureTTSRegion: document.getElementById('azureTTSRegion').value,
+                ttsVoiceName: document.getElementById('ttsVoiceName').value
+            });
+            refreshConfigView();
+            showStatus('Speech settings updated!', 'success');
+        }
+
+        function updateLLMSettings() {
+            aiConfig.updateLLMSettings({
+                model: document.getElementById('llmModel').value,
+                temperature: parseFloat(document.getElementById('llmTemperature').value),
+                maxTokens: parseInt(document.getElementById('llmMaxTokens').value),
+                systemPrompt: document.getElementById('llmSystemPrompt').value
+            });
+            refreshConfigView();
+            showStatus('LLM settings updated!', 'success');
+        }
+
+        function refreshConfigView() {
+            const config = aiConfig.getConfig();
+            document.getElementById('configView').textContent = JSON.stringify(config, null, 2);
+        }
+
+        function copyConfigToClipboard() {
+            const config = JSON.stringify(aiConfig.getConfig(), null, 2);
+            navigator.clipboard.writeText(config).then(() => {
+                showStatus('Configuration copied to clipboard!', 'success');
+            });
+        }
+
+        function resetConfig() {
+            if (confirm('Are you sure you want to reset to default configuration? This cannot be undone.')) {
+                aiConfig.resetToDefaults();
+                loadFormValues();
+                refreshEndpointsList();
+                refreshConfigView();
+                updateStats();
+                showStatus('Configuration reset to defaults!', 'success');
+            }
+        }
+
+        function updateStats() {
+            const endpoints = aiConfig.getAllEndpoints();
+            const activeEndpoints = endpoints.filter(ep => ep.active);
+            const apiKeys = Object.values(aiConfig.getConfig().apiKeys).filter(k => k.length > 0);
+
+            document.getElementById('endpointCount').textContent = endpoints.length;
+            document.getElementById('activeCount').textContent = activeEndpoints.length;
+            document.getElementById('apiKeyCount').textContent = apiKeys.length;
+        }
+
+        function showStatus(message, type) {
+            const container = document.getElementById('statusMessage');
+            container.innerHTML = `<div class="status ${type}">${message}</div>`;
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
