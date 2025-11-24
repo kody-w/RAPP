@@ -62,6 +62,7 @@ Click "➕ Add Endpoint" and enter:
 Name: Production Bot
 URL: https://azfbusinessbot.azurewebsites.net/api/businessinsightbot_function
 API Key: YOUR_AZURE_FUNCTION_KEY_HERE
+# Get this from Azure Portal > Function App > Function Keys > Copy default key
 GUID: c0p110t0-aaaa-bbbb-cccc-123456789abc
 Provider: azure
 ```
@@ -79,6 +80,7 @@ Provider: custom
 Click "⚙️ Configure Settings" and add:
 ```
 Azure TTS Key: YOUR_AZURE_TEXT_TO_SPEECH_KEY_HERE
+# Get this from Azure Portal > Text to Speech service > Keys and Endpoint
 Azure Region: eastus
 TTS Voice: en-US-JennyNeural
 LLM Model: gpt-4
