@@ -102,11 +102,14 @@ curl -X POST http://localhost:7071/api/businessinsightbot_function \
 
 ### File Organization
 
-- `agents/` - Agent implementations (auto-loaded)
+- `agents/` - Production agent implementations (auto-loaded, deployed to Azure)
+- `.rapp/` - Development/meta-agents for repo management (NOT deployed)
+  - `.rapp/agents/` - Repository steward, agent generator, etc.
+  - `.rapp/templates/` - Code generation templates
 - `utils/` - Shared utilities (storage, helpers)
 - `docs/` - Documentation (GitHub Pages source)
 - `demos/` - Example implementations and tests
-- `tools/` - Development and maintenance scripts
+- `tools/` - Development and maintenance scripts (includes CLI for .rapp agents)
 - `power-platform/` - Microsoft 365 integration assets
 - `AI-Agent-Templates/` - Pre-built agent library organized by use case
 
@@ -152,11 +155,21 @@ shared = storage.load_shared_memory("shared_key")
 
 ### Adding a New Agent
 
+**Manual approach:**
 1. Create file in `agents/your_agent.py`
 2. Inherit from `BasicAgent`
 3. Implement required methods
 4. No registration needed - auto-loaded on startup
 5. Test locally, then deploy
+
+**Using Agent Generator (recommended):**
+```bash
+python tools/run_rapp_agent.py agent_generator \
+  --name "my_agent" \
+  --description "summarizes customer emails"
+```
+
+This generates a fully-structured agent file with all boilerplate code.
 
 ### Modifying Function App Behavior
 
@@ -200,11 +213,34 @@ shared = storage.load_shared_memory("shared_key")
 - **Azure OpenAI**: Preferred AI backend
 - **Application Insights**: Logging and monitoring
 
+## Development Tools (.rapp Directory)
+
+The `.rapp/` directory contains meta-agents for development tasks:
+
+### Repository Steward
+Monitors codebase health, runs audits, checks dependencies:
+```bash
+python tools/run_rapp_agent.py repository_steward --action full
+python tools/run_rapp_agent.py repository_steward --action dependencies
+python tools/run_rapp_agent.py repository_steward --action security
+```
+
+### Agent Generator
+Creates new agents from templates with proper structure:
+```bash
+python tools/run_rapp_agent.py agent_generator \
+  --name "agent_name" \
+  --description "what it does"
+```
+
+**Note:** `.rapp/` agents are NOT deployed to Azure (excluded in `.funcignore`)
+
 ## Troubleshooting
 
 - Check logs in Azure Portal → Function App → Log Stream
 - Verify environment variables in Configuration settings
 - Test locally first with `./run.sh` before deploying
+- Run repository health check: `python tools/run_rapp_agent.py repository_steward`
 - Review `docs/TROUBLESHOOTING.md` for common issues
 
 ## Code Generation Tips

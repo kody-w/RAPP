@@ -52,3 +52,6 @@ run.ps1
 
 # Power Platform solutions (keep versioned zips)
 !power-platform/*.zip
+
+# Development agents (keep in version control but don't deploy)
+# .rapp/ - intentionally tracked for team collaboration

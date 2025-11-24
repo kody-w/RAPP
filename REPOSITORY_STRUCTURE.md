@@ -74,6 +74,7 @@ RAPP/
 │   ├── README.md                 # Tools documentation
 │   ├── generate_agent_catalog.py # Agent catalog generator
 │   ├── agent_catalog_generated.js
+│   ├── run_rapp_agent.py         # CLI for running .rapp agents
 │   └── test_agent_store_urls.sh
 │
 ├── power-platform/               # Power Platform integration
@@ -94,12 +95,22 @@ RAPP/
 │   ├── apps/                     # Tool applications
 │   └── scripts/                  # Utility scripts
 │
+├── .rapp/                        # Repository-specific RAPP agents (dev tools)
+│   ├── README.md                 # .rapp directory documentation
+│   ├── agents/                   # Meta-agents for development
+│   │   ├── __init__.py           # Package initialization
+│   │   ├── repository_steward.py # Repository health monitoring
+│   │   └── agent_generator.py    # Agent scaffolding tool
+│   └── templates/                # Code generation templates
+│       └── agent_template.py     # Base agent template
+│
 ├── .claude/                      # Claude Code agent definitions
 │   └── agents/
 │       ├── 343-guilty-spark.md   # Repository steward agent
 │       └── m365-demo-builder.md  # M365 demo builder agent
 │
 ├── .github/                      # GitHub configuration
+│   ├── copilot-instructions.md   # GitHub Copilot instructions
 │   └── workflows/                # CI/CD workflows
 │
 ├── .venv/                        # Python virtual environment (gitignored)
@@ -240,6 +251,26 @@ Microsoft Power Platform integration:
 - [/docs/guides/STATIC_MIGRATION_COMPLETE.md](/docs/guides/STATIC_MIGRATION_COMPLETE.md) - Static migration
 
 ## Recent Changes (2025-11-24)
+
+### New: .rapp Directory for Development Agents
+
+**Added `.rapp/` directory:**
+- Repository-specific meta-agents for development tasks
+- Not deployed to Azure (excluded in `.funcignore`)
+- Contains development tools and agent generators
+- **Key agents:**
+  - `repository_steward.py` - Repository health monitoring and audits
+  - `agent_generator.py` - Scaffolds new agents from templates
+- **CLI tool:** `tools/run_rapp_agent.py` for easy execution
+- Complete documentation in `.rapp/README.md`
+
+### New: GitHub Copilot Instructions
+
+**Added `.github/copilot-instructions.md`:**
+- Comprehensive guidance for GitHub Copilot
+- Project architecture and patterns
+- Development guidelines and best practices
+- Code generation tips specific to RAPP
 
 ### Repository Cleanup and Organization
 

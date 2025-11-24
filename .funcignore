@@ -1,1 +1,11 @@
 .venv
+.rapp/
+.claude/
+.github/
+demos/
+docs/
+tools/
+AI-Agent-Templates/
+localFirstTools/
+*.md
+!README.md
