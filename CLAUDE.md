@@ -236,8 +236,8 @@ Required settings:
 - `AZURE_OPENAI_API_VERSION`: API version (e.g., "2025-01-01-preview")
 - `AzureWebJobsStorage`: Azure Storage connection string for file shares
 - `AZURE_FILES_SHARE_NAME`: Name of the Azure File Share (unique per deployment)
-- `ASSISTANT_NAME`: Bot display name (default: "RAPP")
-- `CHARACTERISTIC_DESCRIPTION`: Bot personality and capabilities description (default: "Rapid Agent Prototyping Platform - A flexible AI agent framework")
+- `ASSISTANT_NAME`: Digital Twin identity name (default: "Digital Twin") - Used in system prompt
+- `CHARACTERISTIC_DESCRIPTION`: Digital Twin personality and capabilities (default: "Your personalized AI digital twin that learns from you, maintains persistent memory of your context and preferences, and evolves to serve as your intelligent counterpart across all interactions") - Used in system prompt
 
 **Example local.settings.json structure:**
 ```json
@@ -251,8 +251,8 @@ Required settings:
     "AZURE_OPENAI_DEPLOYMENT_NAME": "gpt-4o",
     "AZURE_OPENAI_API_VERSION": "2025-01-01-preview",
     "AZURE_FILES_SHARE_NAME": "your-unique-share-name",
-    "ASSISTANT_NAME": "RAPP",
-    "CHARACTERISTIC_DESCRIPTION": "Rapid Agent Prototyping Platform - A flexible AI agent framework"
+    "ASSISTANT_NAME": "Digital Twin",
+    "CHARACTERISTIC_DESCRIPTION": "Your personalized AI digital twin that learns from you, maintains persistent memory of your context and preferences, and evolves to serve as your intelligent counterpart across all interactions"
   }
 }
 ```

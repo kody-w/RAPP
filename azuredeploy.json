@@ -62,16 +62,16 @@
     },
     "assistantName": {
       "type": "string",
-      "defaultValue": "RAPP",
+      "defaultValue": "Digital Twin",
       "metadata": {
-        "description": "Name for the AI Assistant"
+        "description": "Name for the AI Digital Twin"
       }
     },
     "characteristicDescription": {
       "type": "string",
-      "defaultValue": "Rapid Agent Prototyping Platform - A flexible AI agent framework",
+      "defaultValue": "Your personalized AI digital twin that learns from you, maintains persistent memory of your context and preferences, and evolves to serve as your intelligent counterpart across all interactions",
       "metadata": {
-        "description": "Description of the assistant's characteristics"
+        "description": "Description of the digital twin's characteristics and capabilities"
       }
     },
     "openAILocation": {

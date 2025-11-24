@@ -375,10 +375,10 @@ When integrating with Power Platform:
 
 ## 🛠️ Customization
 
-### Change Your Bot's Personality
-Edit these in Azure Portal → Function App → Configuration:
-- `ASSISTANT_NAME` - Your bot's name
-- `CHARACTERISTIC_DESCRIPTION` - Your bot's personality
+### Customize Your Digital Twin's Identity
+Edit these in Azure Portal → Function App → Configuration (these go directly into the AI system prompt):
+- `ASSISTANT_NAME` - Your Digital Twin's name (default: "Digital Twin")
+- `CHARACTERISTIC_DESCRIPTION` - Your Digital Twin's personality and capabilities (default: "Your personalized AI digital twin that learns from you, maintains persistent memory of your context and preferences, and evolves to serve as your intelligent counterpart across all interactions")
 
 ### Add Custom Agents
 Create new file in `agents/` folder:

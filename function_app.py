@@ -230,8 +230,8 @@ def load_agents_from_folder(user_guid=None):
 class Assistant:
     def __init__(self, declared_agents):
         self.config = {
-            'assistant_name': str(os.environ.get('ASSISTANT_NAME', 'RAPP')),
-            'characteristic_description': str(os.environ.get('CHARACTERISTIC_DESCRIPTION', 'Rapid Agent Prototyping Platform - A flexible AI agent framework'))
+            'assistant_name': str(os.environ.get('ASSISTANT_NAME', 'Digital Twin')),
+            'characteristic_description': str(os.environ.get('CHARACTERISTIC_DESCRIPTION', 'Your personalized AI digital twin that learns from you, maintains persistent memory of your context and preferences, and evolves to serve as your intelligent counterpart across all interactions'))
         }
 
         try:
