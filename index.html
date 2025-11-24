@@ -4929,7 +4929,7 @@
           label.className = "message-label";
           label.innerHTML = role === "user"
             ? "You"
-            : `Assistant${endpointName ? ` <span class="endpoint-badge"><i class="fas fa-server"></i> ${endpointName}</span>` : ''}`;
+            : `${appState.currentUser.username}'s Assistant${endpointName ? `<span class="endpoint-badge"><i class="fas fa-server"></i>${endpointName}</span>` : ''}`;
 
           const messageContent = document.createElement("div");
           messageContent.className = "message-content";
