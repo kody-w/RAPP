@@ -1,0 +1,365 @@
+<!--
+  RAPP P2P Transfer - Integration Snippet
+
+  Add this snippet to your index.html to enable P2P transfer functionality.
+
+  STEP 1: Add the script before closing </body> tag
+  STEP 2: Ensure AppState is exposed as window.appState
+  STEP 3: Reload and test
+-->
+
+<!-- ============================================ -->
+<!-- STEP 1: Add before closing </body> tag -->
+<!-- ============================================ -->
+
+  <!-- P2P Transfer System -->
+  <script src="p2p-transfer.js"></script>
+</body>
+</html>
+
+
+<!-- ============================================ -->
+<!-- STEP 2: Verify AppState Exposure -->
+<!-- ============================================ -->
+
+<!--
+  Find where AppState is initialized (usually near the bottom of index.html)
+  and ensure it's exposed globally like this:
+-->
+
+<script>
+  // Initialize app state
+  const appState = new AppState();
+
+  // CRITICAL: Expose AppState globally for P2P system
+  window.appState = appState;
+
+  // Rest of your initialization code...
+</script>
+
+
+<!-- ============================================ -->
+<!-- OPTIONAL: Custom UI Integration -->
+<!-- ============================================ -->
+
+<!--
+  If you want more control over button placement,
+  manually create the container in your header:
+-->
+
+<header class="header">
+  <div class="header-left">
+    <!-- Your existing left-side buttons -->
+  </div>
+
+  <div class="header-right">
+    <!-- Your existing right-side buttons -->
+
+    <!-- P2P controls will be inserted here automatically -->
+    <div class="header-actions"></div>
+  </div>
+</header>
+
+
+<!-- ============================================ -->
+<!-- OPTIONAL: Custom Styling -->
+<!-- ============================================ -->
+
+<!--
+  Add custom styles to match your theme:
+-->
+
+<style>
+  /* Customize P2P button appearance */
+  .p2p-button {
+    background: var(--primary) !important;
+    font-family: inherit !important;
+  }
+
+  /* Adjust for mobile */
+  @media (max-width: 768px) {
+    .p2p-controls {
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .p2p-button span {
+      display: none; /* Hide text on mobile, show only icons */
+    }
+  }
+
+  /* Match your color scheme */
+  .p2p-notification {
+    font-family: inherit;
+  }
+
+  body.dark .p2p-button {
+    background: var(--primary-dark) !important;
+  }
+</style>
+
+
+<!-- ============================================ -->
+<!-- VERIFICATION: Test in Console -->
+<!-- ============================================ -->
+
+<!--
+  After integration, open DevTools Console (F12) and verify:
+
+  1. Check initialization:
+     console.log(window.rappP2P);
+     // Should show: {transfer: LocalP2PTransfer, stateTransfer: RAPPStateTransfer, ui: P2PTransferUI}
+
+  2. Check AppState:
+     console.log(window.appState);
+     // Should show your AppState instance with users, chats, etc.
+
+  3. Test peer discovery:
+     window.rappP2P.transfer.getActivePeers();
+     // Should show array of peer windows (empty if only one window open)
+
+  4. Test state export:
+     window.rappP2P.stateTransfer.exportCurrentState();
+     // Should show complete application state
+-->
+
+
+<!-- ============================================ -->
+<!-- MINIMAL INTEGRATION EXAMPLE -->
+<!-- ============================================ -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>RAPP Chat with P2P Transfer</title>
+  <!-- Your existing stylesheets -->
+</head>
+<body>
+
+  <!-- Your existing app structure -->
+  <div id="app">
+    <header class="header">
+      <div class="header-actions">
+        <!-- P2P buttons will appear here -->
+      </div>
+    </header>
+
+    <main id="chat-container">
+      <!-- Your chat UI -->
+    </main>
+  </div>
+
+  <!-- Your existing scripts -->
+  <script src="your-app.js"></script>
+
+  <!-- Initialize AppState -->
+  <script>
+    // Your existing AppState initialization
+    const appState = new AppState();
+    window.appState = appState; // CRITICAL: Expose globally
+
+    // Your other initialization code...
+  </script>
+
+  <!-- ADD THIS: P2P Transfer System -->
+  <script src="p2p-transfer.js"></script>
+
+</body>
+</html>
+
+
+<!-- ============================================ -->
+<!-- ADVANCED: Event Listeners -->
+<!-- ============================================ -->
+
+<!--
+  Hook into P2P events for custom behavior:
+-->
+
+<script>
+  // Wait for P2P to initialize
+  window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      if (window.rappP2P) {
+
+        // Listen for incoming state transfers
+        window.rappP2P.transfer.onTransfer((state, source) => {
+          console.log('Received state from:', source);
+          console.log('State data:', state);
+
+          // Custom handling (optional)
+          // The system already handles this automatically
+        });
+
+        // Listen for peer discovery
+        window.rappP2P.transfer.onPresence((peerId, data) => {
+          console.log('New peer detected:', peerId);
+
+          // Custom notification (optional)
+          showCustomNotification(`New window connected: ${peerId.substr(0, 10)}...`);
+        });
+
+        // Listen for transfer acknowledgments
+        window.rappP2P.transfer.onAcknowledgment((ack, source) => {
+          if (ack.success) {
+            console.log('Transfer successful to:', source);
+          } else {
+            console.error('Transfer failed:', ack.message);
+          }
+        });
+
+      }
+    }, 500);
+  });
+</script>
+
+
+<!-- ============================================ -->
+<!-- ADVANCED: Auto-Sync Mode (Experimental) -->
+<!-- ============================================ -->
+
+<!--
+  Enable automatic state synchronization across all windows.
+  WARNING: This broadcasts on EVERY state change. Use with caution.
+-->
+
+<script>
+  // Auto-sync implementation (add after P2P initialization)
+  function enableAutoSync() {
+    if (!window.appState || !window.rappP2P) {
+      console.error('AppState or P2P system not available');
+      return;
+    }
+
+    // Override save methods to broadcast changes
+    const originalSaveChats = window.appState.saveChats.bind(window.appState);
+    const originalSaveUsers = window.appState.saveUsers.bind(window.appState);
+    const originalSaveSettings = window.appState.saveSettings.bind(window.appState);
+
+    window.appState.saveChats = function() {
+      originalSaveChats();
+      window.rappP2P.stateTransfer.sendCurrentState(); // Broadcast to all peers
+    };
+
+    window.appState.saveUsers = function() {
+      originalSaveUsers();
+      window.rappP2P.stateTransfer.sendCurrentState();
+    };
+
+    window.appState.saveSettings = function() {
+      originalSaveSettings();
+      window.rappP2P.stateTransfer.sendCurrentState();
+    };
+
+    console.log('Auto-sync enabled. All state changes will be broadcast.');
+  }
+
+  // Call this to enable (not recommended for production)
+  // enableAutoSync();
+</script>
+
+
+<!-- ============================================ -->
+<!-- TROUBLESHOOTING CHECKLIST -->
+<!-- ============================================ -->
+
+<!--
+  If P2P transfer is not working, check:
+
+  ✓ p2p-transfer.js is loaded (check Network tab)
+  ✓ No JavaScript errors in console
+  ✓ window.appState is defined
+  ✓ window.rappP2P is defined
+  ✓ BroadcastChannel is supported: 'BroadcastChannel' in window
+  ✓ Both windows are on same origin (same domain + port)
+  ✓ Header element exists with class "header-actions"
+  ✓ Browser allows window.open() (check popup blocker)
+
+  Debug commands:
+
+  // Check system status
+  console.log('AppState:', window.appState);
+  console.log('P2P System:', window.rappP2P);
+  console.log('BroadcastChannel Support:', 'BroadcastChannel' in window);
+
+  // Check active peers
+  console.log('Active Peers:', window.rappP2P.transfer.getActivePeers());
+
+  // Manually broadcast
+  window.rappP2P.stateTransfer.sendCurrentState();
+
+  // Check localStorage fallback
+  localStorage.setItem('test-p2p', 'working');
+  console.log(localStorage.getItem('test-p2p'));
+-->
+
+
+<!-- ============================================ -->
+<!-- PERFORMANCE TIPS -->
+<!-- ============================================ -->
+
+<!--
+  Optimize for large states:
+-->
+
+<script>
+  // Debounce state broadcasts (if using auto-sync)
+  function debouncedBroadcast(delay = 1000) {
+    let timeout;
+    return function() {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        window.rappP2P.stateTransfer.sendCurrentState();
+      }, delay);
+    };
+  }
+
+  const broadcast = debouncedBroadcast(1000);
+
+  // Use in place of direct broadcast
+  window.appState.saveChats = function() {
+    localStorage.setItem("chatAppChats", JSON.stringify(this.chats));
+    broadcast(); // Debounced
+  };
+</script>
+
+
+<!-- ============================================ -->
+<!-- SECURITY: Filter Sensitive Data -->
+<!-- ============================================ -->
+
+<!--
+  Remove sensitive fields before transfer:
+-->
+
+<script>
+  // Add to RAPPStateTransfer.exportCurrentState()
+  function exportSecureState() {
+    const state = window.rappP2P.stateTransfer.exportCurrentState();
+
+    // Remove sensitive data
+    if (state.settings) {
+      delete state.settings.apiKey;
+      delete state.settings.password;
+      delete state.settings.token;
+    }
+
+    // Remove private chats
+    if (state.chats) {
+      Object.keys(state.chats).forEach(userId => {
+        Object.keys(state.chats[userId]).forEach(chatId => {
+          if (state.chats[userId][chatId].private) {
+            delete state.chats[userId][chatId];
+          }
+        });
+      });
+    }
+
+    return state;
+  }
+
+  // Use this for manual transfers
+  // const secureState = exportSecureState();
+  // window.rappP2P.transfer.transferState(secureState);
+</script>

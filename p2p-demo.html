@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RAPP P2P Transfer Demo</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #742774;
+      --primary-dark: #4f1c4f;
+      --success: #4caf50;
+      --error: #f44336;
+      --info: #2196f3;
+      --gray-20: #f3f2f1;
+      --gray-30: #edebe9;
+      --gray-40: #e1dfdd;
+      --gray-60: #c8c6c4;
+      --gray-80: #605e5c;
+      --gray-100: #323130;
+      --radius: 8px;
+      --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+      color: var(--gray-100);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .hero {
+      text-align: center;
+      color: white;
+      margin-bottom: 40px;
+    }
+
+    .hero h1 {
+      font-size: 48px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .hero p {
+      font-size: 20px;
+      opacity: 0.9;
+      margin-bottom: 32px;
+    }
+
+    .demo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+
+    .demo-card {
+      background: white;
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow-medium);
+    }
+
+    .demo-card h2 {
+      font-size: 24px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .demo-card h2 i {
+      color: var(--primary);
+    }
+
+    .demo-card p {
+      color: var(--gray-80);
+      margin-bottom: 16px;
+      line-height: 1.6;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .button:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(116, 39, 116, 0.4);
+    }
+
+    .button-secondary {
+      background: var(--gray-40);
+      color: var(--gray-100);
+    }
+
+    .button-secondary:hover {
+      background: var(--gray-60);
+    }
+
+    .state-display {
+      background: var(--gray-20);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-top: 16px;
+      font-family: monospace;
+      font-size: 14px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .state-display pre {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: var(--gray-20);
+      border-radius: 20px;
+      font-size: 14px;
+      margin-top: 16px;
+    }
+
+    .status-badge.online {
+      background: rgba(76, 175, 80, 0.1);
+      color: var(--success);
+    }
+
+    .status-indicator {
+      width: 8px;
+      height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.3;
+      }
+    }
+
+    .peer-list {
+      margin-top: 16px;
+    }
+
+    .peer-item {
+      background: var(--gray-20);
+      border-radius: var(--radius);
+      padding: 12px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .peer-id {
+      font-family: monospace;
+      font-size: 12px;
+      color: var(--gray-80);
+    }
+
+    .log {
+      background: var(--gray-100);
+      color: #4caf50;
+      border-radius: var(--radius);
+      padding: 16px;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 16px;
+    }
+
+    .log div {
+      margin-bottom: 4px;
+    }
+
+    .log .error {
+      color: var(--error);
+    }
+
+    .log .info {
+      color: var(--info);
+    }
+
+    .instructions {
+      background: white;
+      border-radius: var(--radius);
+      padding: 32px;
+      box-shadow: var(--shadow-medium);
+      margin-top: 40px;
+    }
+
+    .instructions h2 {
+      color: var(--primary);
+      margin-bottom: 16px;
+    }
+
+    .instructions ol {
+      margin-left: 24px;
+    }
+
+    .instructions li {
+      margin-bottom: 12px;
+      line-height: 1.6;
+    }
+
+    .instructions code {
+      background: var(--gray-20);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="hero">
+      <h1><i class="fas fa-network-wired"></i> RAPP P2P Transfer Demo</h1>
+      <p>Experience zero-server local P2P state transfer between browser windows</p>
+      <div class="status-badge online">
+        <div class="status-indicator"></div>
+        <span>P2P Channel Active</span>
+      </div>
+    </div>
+
+    <div class="demo-grid">
+      <!-- State Management -->
+      <div class="demo-card">
+        <h2><i class="fas fa-database"></i> Current State</h2>
+        <p>Manage your application state with buttons below</p>
+
+        <button class="button" onclick="generateRandomState()">
+          <i class="fas fa-random"></i> Generate Random State
+        </button>
+
+        <div class="state-display">
+          <pre id="current-state">No state generated yet</pre>
+        </div>
+      </div>
+
+      <!-- P2P Actions -->
+      <div class="demo-card">
+        <h2><i class="fas fa-share-alt"></i> P2P Actions</h2>
+        <p>Transfer state between windows using P2P</p>
+
+        <button class="button" onclick="broadcastState()" style="margin-bottom: 12px;">
+          <i class="fas fa-broadcast-tower"></i> Broadcast State to All
+        </button>
+
+        <button class="button button-secondary" onclick="openNewWindow()">
+          <i class="fas fa-external-link-alt"></i> Open in New Window
+        </button>
+
+        <div id="peer-count" class="status-badge" style="margin-top: 16px;">
+          <i class="fas fa-users"></i>
+          <span>Active Windows: <strong id="peer-number">0</strong></span>
+        </div>
+      </div>
+
+      <!-- Peer Discovery -->
+      <div class="demo-card">
+        <h2><i class="fas fa-radar"></i> Peer Discovery</h2>
+        <p>See other windows running this demo in real-time</p>
+
+        <div class="status-badge">
+          <span>Your Window ID:</span>
+        </div>
+        <div class="peer-id" id="window-id" style="margin-top: 8px; font-size: 14px;">Loading...</div>
+
+        <div class="peer-list">
+          <strong>Active Peers:</strong>
+          <div id="peer-list-container" style="margin-top: 8px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Activity Log -->
+    <div class="demo-card">
+      <h2><i class="fas fa-terminal"></i> Activity Log</h2>
+      <p>Real-time P2P communication events</p>
+      <div class="log" id="activity-log">
+        <div class="info">[System] Initializing P2P transfer system...</div>
+      </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="instructions">
+      <h2><i class="fas fa-graduation-cap"></i> How to Test P2P Transfer</h2>
+      <ol>
+        <li><strong>Generate State:</strong> Click "Generate Random State" to create test data in this window</li>
+        <li><strong>Open New Window:</strong> Click "Open in New Window" to launch a second instance of this demo</li>
+        <li><strong>Watch Peer Discovery:</strong> Both windows will automatically detect each other via BroadcastChannel</li>
+        <li><strong>Broadcast State:</strong> In the first window, click "Broadcast State to All" to send data to all open windows</li>
+        <li><strong>Observe Transfer:</strong> The second window will receive and display the state in real-time</li>
+        <li><strong>Try Multiple Windows:</strong> Open 3-4 windows to see mesh P2P networking in action</li>
+      </ol>
+
+      <h2 style="margin-top: 32px;"><i class="fas fa-code"></i> Integration with RAPP</h2>
+      <p style="margin-bottom: 16px;">To add this to your RAPP installation:</p>
+      <ol>
+        <li>Include <code>p2p-transfer.js</code> in your <code>index.html</code> before the closing <code>&lt;/body&gt;</code> tag</li>
+        <li>The system will automatically initialize when <code>AppState</code> is available</li>
+        <li>P2P controls will appear in your header navigation</li>
+        <li>Transfer complete conversation history, user sessions, and settings between windows</li>
+      </ol>
+    </div>
+  </div>
+
+  <script src="p2p-transfer.js"></script>
+  <script>
+    // Mock AppState for demo
+    class DemoAppState {
+      constructor() {
+        this.users = {};
+        this.chats = {};
+        this.settings = {
+          theme: 'light',
+          voiceEnabled: false
+        };
+        this.endpoints = [];
+        this.currentUser = null;
+        this.currentChatId = null;
+      }
+
+      saveUsers() {
+        localStorage.setItem('demo-users', JSON.stringify(this.users));
+      }
+
+      saveChats() {
+        localStorage.setItem('demo-chats', JSON.stringify(this.chats));
+      }
+
+      saveSettings() {
+        localStorage.setItem('demo-settings', JSON.stringify(this.settings));
+      }
+
+      saveEndpoints() {
+        localStorage.setItem('demo-endpoints', JSON.stringify(this.endpoints));
+      }
+    }
+
+    // Initialize demo
+    let p2pTransfer, stateTransfer, appState;
+
+    function initDemo() {
+      appState = new DemoAppState();
+      window.appState = appState;
+
+      p2pTransfer = new LocalP2PTransfer({ channelName: 'rapp-p2p-demo' });
+      stateTransfer = new RAPPStateTransfer(appState, p2pTransfer);
+
+      // Override notification to use log
+      stateTransfer.showNotification = (type, message) => {
+        addLog(type, message);
+      };
+
+      // Show window ID
+      document.getElementById('window-id').textContent = p2pTransfer.windowId;
+
+      // Update peer list periodically
+      setInterval(updatePeerDisplay, 1000);
+
+      // Listen for state transfers
+      p2pTransfer.onTransfer((state, source) => {
+        addLog('success', `Received state from ${source.substr(0, 15)}...`);
+        document.getElementById('current-state').textContent = JSON.stringify(state, null, 2);
+      });
+
+      // Listen for presence
+      p2pTransfer.onPresence((peerId, data) => {
+        addLog('info', `Peer detected: ${peerId.substr(0, 15)}...`);
+      });
+
+      // Check for transfer on load
+      stateTransfer.checkForTransfer();
+
+      addLog('success', 'P2P system initialized successfully!');
+    }
+
+    function generateRandomState() {
+      const randomUser = {
+        id: `user-${Date.now()}`,
+        name: `User ${Math.floor(Math.random() * 1000)}`,
+        email: `user${Math.floor(Math.random() * 1000)}@example.com`,
+        createdAt: new Date().toISOString()
+      };
+
+      const randomChat = {
+        id: `chat-${Date.now()}`,
+        title: `Chat ${Math.floor(Math.random() * 100)}`,
+        messages: [
+          { role: 'user', content: 'Hello, this is a test message!' },
+          { role: 'assistant', content: 'This is a response from the assistant.' }
+        ],
+        createdAt: new Date().toISOString()
+      };
+
+      appState.users[randomUser.id] = randomUser;
+      appState.chats[randomChat.id] = randomChat;
+      appState.currentUser = randomUser.id;
+      appState.currentChatId = randomChat.id;
+
+      const stateJson = JSON.stringify(appState, null, 2);
+      document.getElementById('current-state').textContent = stateJson;
+
+      addLog('success', 'Generated random state');
+    }
+
+    function broadcastState() {
+      if (!appState.currentUser) {
+        addLog('error', 'No state to broadcast. Generate state first!');
+        return;
+      }
+
+      const state = stateTransfer.exportCurrentState();
+      p2pTransfer.transferState(state);
+      addLog('success', `Broadcasting state to ${p2pTransfer.getActivePeers().length} peers`);
+    }
+
+    function openNewWindow() {
+      const newWindow = window.open(window.location.href, '_blank', 'width=800,height=900');
+      if (newWindow) {
+        addLog('success', 'Opened new window');
+      } else {
+        addLog('error', 'Failed to open window. Check popup blocker.');
+      }
+    }
+
+    function updatePeerDisplay() {
+      const peers = p2pTransfer.getActivePeers();
+      document.getElementById('peer-number').textContent = peers.length;
+
+      const peerListContainer = document.getElementById('peer-list-container');
+      if (peers.length === 0) {
+        peerListContainer.innerHTML = '<div style="color: var(--gray-60); font-size: 14px; padding: 8px 0;">No other windows detected</div>';
+      } else {
+        peerListContainer.innerHTML = peers.map(peer => `
+          <div class="peer-item">
+            <div class="peer-id">${peer.id.substr(0, 25)}...</div>
+            <div style="font-size: 11px; color: var(--gray-60);">${Math.round((Date.now() - peer.lastSeen) / 1000)}s ago</div>
+          </div>
+        `).join('');
+      }
+    }
+
+    function addLog(type, message) {
+      const log = document.getElementById('activity-log');
+      const timestamp = new Date().toLocaleTimeString();
+      const logEntry = document.createElement('div');
+      logEntry.className = type;
+      logEntry.textContent = `[${timestamp}] ${message}`;
+      log.appendChild(logEntry);
+      log.scrollTop = log.scrollHeight;
+
+      // Keep only last 50 logs
+      while (log.children.length > 50) {
+        log.removeChild(log.firstChild);
+      }
+    }
+
+    // Initialize on load
+    window.addEventListener('DOMContentLoaded', () => {
+      // Wait a bit for p2p-transfer.js to load
+      setTimeout(initDemo, 100);
+    });
+  </script>
+</body>
+</html>
