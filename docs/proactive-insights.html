@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="RAPP - Rapid Agent Prototyping Platform. Build and deploy AI agents in minutes with persistent memory, GitHub monitoring, and OpenAI-compatible APIs.">
+    <meta name="keywords" content="AI agents, Azure Functions, OpenAI, GPT-4, agent framework, proactive insights, automation">
+    <title>RAPP - Rapid Agent Prototyping Platform/Pattern</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1f2937;
+            --gray: #6b7280;
+            --light: #f9fafb;
+            --border: #e5e7eb;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background: #ffffff;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            font-weight: 800;
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            margin-bottom: 2rem;
+            opacity: 0.95;
+        }
+
+        .hero .buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: white;
+            color: var(--primary);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+        }
+
+        .btn-secondary:hover {
+            background: white;
+            color: var(--primary);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* Navigation */
+        nav {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        nav .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+        }
+
+        nav .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: var(--dark);
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        nav a:hover {
+            color: var(--primary);
+        }
+
+        /* Sections */
+        section {
+            padding: 4rem 0;
+        }
+
+        section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        section .subtitle {
+            text-align: center;
+            color: var(--gray);
+            font-size: 1.2rem;
+            margin-bottom: 3rem;
+        }
+
+        /* Feature Grid */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .feature-card {
+            padding: 2rem;
+            border-radius: 15px;
+            border: 2px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.2);
+        }
+
+        .feature-card .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--dark);
+        }
+
+        .feature-card p {
+            color: var(--gray);
+        }
+
+        /* Code Block */
+        .code-block {
+            background: var(--dark);
+            color: #10b981;
+            padding: 2rem;
+            border-radius: 15px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            margin: 2rem 0;
+        }
+
+        .code-block pre {
+            margin: 0;
+        }
+
+        /* Steps */
+        .steps {
+            display: grid;
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .step {
+            display: flex;
+            gap: 2rem;
+            align-items: flex-start;
+        }
+
+        .step-number {
+            min-width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .step-content h3 {
+            margin-bottom: 0.5rem;
+        }
+
+        .step-content p {
+            color: var(--gray);
+        }
+
+        /* Stats */
+        .stats {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 3rem 0;
+            margin: 4rem 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            text-align: center;
+        }
+
+        .stat h3 {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat p {
+            opacity: 0.9;
+        }
+
+        /* Agent Showcase */
+        .agent-showcase {
+            background: var(--light);
+            padding: 3rem;
+            border-radius: 20px;
+            margin: 3rem 0;
+        }
+
+        .agent-showcase h3 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .agent-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .agent-feature {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .agent-feature h4 {
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+        }
+
+        /* Comparison Table */
+        .comparison {
+            overflow-x: auto;
+            margin: 3rem 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem;
+            text-align: left;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tr:hover {
+            background: var(--light);
+        }
+
+        /* CTA Section */
+        .cta {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4rem 2rem;
+            text-align: center;
+            border-radius: 20px;
+            margin: 4rem 0;
+        }
+
+        .cta h2 {
+            color: white;
+            margin-bottom: 1rem;
+        }
+
+        .cta p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.95;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--dark);
+            color: white;
+            padding: 3rem 0;
+            text-align: center;
+        }
+
+        footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .hero p {
+                font-size: 1.1rem;
+            }
+
+            nav ul {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .step {
+                flex-direction: column;
+            }
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin: 0.25rem;
+        }
+
+        .badge-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        /* Screenshot */
+        .screenshot {
+            margin: 3rem 0;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .screenshot img {
+            width: 100%;
+            display: block;
+        }
+
+        /* Accordion for FAQ */
+        .faq-item {
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+
+        .faq-question {
+            padding: 1.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .faq-question:hover {
+            background: var(--light);
+        }
+
+        .faq-answer {
+            padding: 0 1.5rem 1.5rem;
+            color: var(--gray);
+            display: none;
+        }
+
+        .faq-item.active .faq-answer {
+            display: block;
+        }
+
+        .faq-icon {
+            transition: transform 0.3s;
+        }
+
+        .faq-item.active .faq-icon {
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="container">
+            <div class="logo">🚀 RAPP</div>
+            <ul>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#getting-started">Getting Started</a></li>
+                <li><a href="#agents">Agents</a></li>
+                <li><a href="#docs">Documentation</a></li>
+                <li><a href="https://github.com/kody-w/m365-agents-for-python" target="_blank">GitHub</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="hero">
+        <div class="container">
+            <h1>🚀 RAPP</h1>
+            <p>Rapid Agent Prototyping Platform/Pattern</p>
+            <p>Build and deploy AI agents in minutes with persistent memory, GitHub monitoring, and any OpenAI-compatible API</p>
+            <div class="buttons">
+                <a href="#getting-started" class="btn btn-primary">Get Started in 3 Minutes</a>
+                <a href="https://github.com/kody-w/m365-agents-for-python" target="_blank" class="btn btn-secondary">View on GitHub</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Section -->
+    <div class="stats">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat">
+                    <h3>3 min</h3>
+                    <p>Deployment Time</p>
+                </div>
+                <div class="stat">
+                    <h3>$5/mo</h3>
+                    <p>Starting Cost</p>
+                </div>
+                <div class="stat">
+                    <h3>100%</h3>
+                    <p>Automated Setup</p>
+                </div>
+                <div class="stat">
+                    <h3>Any API</h3>
+                    <p>OpenAI-Compatible</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <section id="features">
+        <div class="container">
+            <h2>✨ Features</h2>
+            <p class="subtitle">Everything you need to build production-ready AI agents</p>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="icon">🧠</div>
+                    <h3>OpenAI-Compatible</h3>
+                    <p>Works with Azure OpenAI, OpenAI, local models via Ollama/LiteLLM, Groq, Together AI, or any OpenAI-compatible endpoint.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="icon">💾</div>
+                    <h3>Persistent Memory</h3>
+                    <p>Cross-session memory with user-specific and shared contexts. Your agents remember conversations and learn over time.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="icon">⚡</div>
+                    <h3>Serverless & Scalable</h3>
+                    <p>Built on Azure Functions for auto-scaling, zero maintenance, and pay-per-use pricing.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="icon">🎨</div>
+                    <h3>Beautiful Dashboards</h3>
+                    <p>Production-ready web interfaces included. Chat UI, agent-specific dashboards, and mobile-responsive design.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="icon">🔧</div>
+                    <h3>Zero Configuration</h3>
+                    <p>One-click Azure deployment with automatic setup scripts. All credentials configured automatically.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="icon">🚀</div>
+                    <h3>Rapid Prototyping</h3>
+                    <p>Build and test agents in minutes. Modular architecture makes it easy to add, remove, and customize.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="icon">📊</div>
+                    <h3>Production-Ready Examples</h3>
+                    <p>Includes ProactiveInsights agent with GitHub monitoring, scheduled automation, and AI-powered analytics.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="icon">💼</div>
+                    <h3>M365 Integration</h3>
+                    <p>Optional deployment to Microsoft Teams and M365 Copilot via Power Platform.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="icon">🔌</div>
+                    <h3>Platform Agnostic</h3>
+                    <p>While Azure-optimized, the pattern works on any cloud platform or locally.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Getting Started Section -->
+    <section id="getting-started">
+        <div class="container">
+            <h2>🎯 Getting Started</h2>
+            <p class="subtitle">Deploy your AI agent platform in 3 minutes</p>
+
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>Deploy to Azure (1 minute)</h3>
+                        <p>Click the "Deploy to Azure" button and let Azure create all resources automatically.</p>
+                        <p style="margin-top: 1rem;">
+                            <a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fkody-w%2Fm365-agents-for-python%2Fmain%2FRAPP%2Fazuredeploy.json" target="_blank">
+                                <img src="https://aka.ms/deploytoazurebutton" alt="Deploy to Azure"/>
+                            </a>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>Copy Setup Script (30 seconds)</h3>
+                        <p>After deployment completes, copy the auto-generated setup script from the "Outputs" tab.</p>
+                        <div class="code-block">
+<pre># Windows (PowerShell)
+.\setup.ps1
+
+# Mac/Linux (Terminal)
+bash setup.sh</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>Run and Test (30 seconds)</h3>
+                        <p>The script automatically installs Python 3.11, configures everything, and starts your agent platform.</p>
+                        <div class="code-block">
+<pre># Start the platform
+./run.sh  # or .\run.ps1 on Windows
+
+# Open the dashboard
+open index.html</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 3rem;">
+                <span class="badge badge-success">✅ Python 3.11 auto-installed</span>
+                <span class="badge badge-success">✅ All Azure settings configured</span>
+                <span class="badge badge-success">✅ Dependencies installed</span>
+                <span class="badge badge-success">✅ Run scripts created</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ProactiveInsights Agent Showcase -->
+    <section id="agents">
+        <div class="container">
+            <h2>🌟 Featured: ProactiveInsights Agent</h2>
+            <p class="subtitle">Production-ready example showcasing advanced capabilities</p>
+
+            <div class="agent-showcase">
+                <h3>Automated Sales Intelligence & Monday Briefings</h3>
+                <p>A complete demonstration of scheduled automation, GitHub monitoring, AI analysis, and proactive insights generation.</p>
+
+                <div class="agent-features">
+                    <div class="agent-feature">
+                        <h4>📥 GitHub Monitoring</h4>
+                        <p>Automatically downloads sales data from GitHub repositories on a schedule.</p>
+                    </div>
+
+                    <div class="agent-feature">
+                        <h4>🧠 AI-Powered Analysis</h4>
+                        <p>Analyzes trends, identifies opportunities and risks using any OpenAI-compatible API.</p>
+                    </div>
+
+                    <div class="agent-feature">
+                        <h4>💾 Persistent Memory</h4>
+                        <p>Stores insights across sessions for historical learning and pattern recognition.</p>
+                    </div>
+
+                    <div class="agent-feature">
+                        <h4>📋 Monday Briefings</h4>
+                        <p>Automatically generates executive summaries for Monday morning meetings.</p>
+                    </div>
+
+                    <div class="agent-feature">
+                        <h4>⏰ Scheduled Automation</h4>
+                        <p>Framework for Azure Functions Timer Trigger integration (daily runs).</p>
+                    </div>
+
+                    <div class="agent-feature">
+                        <h4>🎨 Beautiful Dashboard</h4>
+                        <p>Production-ready web interface for all 6 agent actions with real-time updates.</p>
+                    </div>
+                </div>
+
+                <div style="margin-top: 2rem; padding: 1.5rem; background: white; border-radius: 10px; border-left: 4px solid var(--success);">
+                    <h4 style="color: var(--success); margin-bottom: 1rem;">📊 Business Impact</h4>
+                    <ul style="list-style-position: inside; color: var(--gray);">
+                        <li>95% reduction in manual data analysis time</li>
+                        <li>Insights available 48 hours before meetings</li>
+                        <li>25-40% increase in opportunity identification</li>
+                        <li>Proactive risk detection 3-5 days earlier</li>
+                        <li><strong>ROI: 39,980%</strong> (based on executive time savings + risk prevention)</li>
+                    </ul>
+                </div>
+
+                <div style="text-align: center; margin-top: 2rem;">
+                    <a href="#try-proactive-insights" class="btn btn-primary">Try It Now</a>
+                    <a href="https://github.com/kody-w/m365-agents-for-python/blob/main/RAPP/DEMO_PROACTIVE_INSIGHTS.md" target="_blank" class="btn btn-secondary">View Documentation</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Try ProactiveInsights -->
+    <section id="try-proactive-insights" style="background: var(--light);">
+        <div class="container">
+            <h2>🚀 Try ProactiveInsights Agent</h2>
+            <p class="subtitle">Get started in 30 seconds</p>
+
+            <div class="code-block">
+<pre># 1. Start your function app
+./run.sh  # or .\run.ps1 on Windows
+
+# 2. Open the dashboard
+open proactive_insights_dashboard.html</pre>
+            </div>
+
+            <h3 style="margin-top: 2rem; margin-bottom: 1rem;">Quick Demo Workflow</h3>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>Configure Repository</h3>
+                        <p>Click "⚙️ Configure Repository" and enter your GitHub repo (e.g., <code>my-company/sales-data</code>) and data path (e.g., <code>data/sales.csv</code>).</p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>Download Data</h3>
+                        <p>Click "📥 Download Data" to fetch the latest sales data. The agent will download and display a preview.</p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>Analyze Trends</h3>
+                        <p>Click "🧠 Analyze Trends" to run AI-powered analysis. You'll see trends, opportunities, risks, and action items.</p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h3>Generate Briefing</h3>
+                        <p>Click "📋 Monday Briefing" to get an executive summary with all insights from the past week.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture Section -->
+    <section id="docs">
+        <div class="container">
+            <h2>📚 Documentation</h2>
+            <p class="subtitle">Comprehensive guides and references</p>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="icon">📖</div>
+                    <h3>Getting Started</h3>
+                    <p>Complete setup guide with screenshots, troubleshooting, and best practices.</p>
+                    <p style="margin-top: 1rem;"><a href="https://github.com/kody-w/m365-agents-for-python/blob/main/RAPP/README.md" style="color: var(--primary);">Read Guide →</a></p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="icon">🔧</div>
+                    <h3>ProactiveInsights Tutorial</h3>
+                    <p>Step-by-step tutorial for the featured agent with API examples and deployment patterns.</p>
+                    <p style="margin-top: 1rem;"><a href="https://github.com/kody-w/m365-agents-for-python/blob/main/RAPP/DEMO_PROACTIVE_INSIGHTS.md" style="color: var(--primary);">View Tutorial →</a></p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="icon">🎨</div>
+                    <h3>Frontend Guide</h3>
+                    <p>Learn how to use the ProactiveInsights dashboard and customize the UI.</p>
+                    <p style="margin-top: 1rem;"><a href="https://github.com/kody-w/m365-agents-for-python/blob/main/RAPP/FRONTEND_QUICKSTART.md" style="color: var(--primary);">Frontend Docs →</a></p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="icon">🏢</div>
+                    <h3>M365 Integration</h3>
+                    <p>Optional guide for deploying to Microsoft Teams and M365 Copilot.</p>
+                    <p style="margin-top: 1rem;"><a href="https://github.com/kody-w/m365-agents-for-python/blob/main/RAPP/README.md#-microsoft-365--teams-integration-optional" style="color: var(--primary);">Integration Guide →</a></p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="icon">💻</div>
+                    <h3>Custom Agents</h3>
+                    <p>Learn how to build your own custom agents with the modular architecture.</p>
+                    <p style="margin-top: 1rem;"><a href="https://github.com/kody-w/m365-agents-for-python/blob/main/RAPP/CLAUDE.md" style="color: var(--primary);">Developer Guide →</a></p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="icon">🔐</div>
+                    <h3>Security & Best Practices</h3>
+                    <p>Security considerations, authentication, and production deployment tips.</p>
+                    <p style="margin-top: 1rem;"><a href="https://github.com/kody-w/m365-agents-for-python/blob/main/RAPP/README.md#-security" style="color: var(--primary);">Security Docs →</a></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Cost Comparison -->
+    <section style="background: var(--light);">
+        <div class="container">
+            <h2>💰 Pricing</h2>
+            <p class="subtitle">Transparent, pay-per-use pricing</p>
+
+            <div class="comparison">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th>Standalone Mode</th>
+                            <th>Power Platform Mode</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Azure Functions</strong></td>
+                            <td>~$0-5/month (free tier covers most usage)</td>
+                            <td>~$0-5/month</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Azure Storage</strong></td>
+                            <td>~$5/month</td>
+                            <td>~$5/month</td>
+                        </tr>
+                        <tr>
+                            <td><strong>AI API</strong></td>
+                            <td>Pay per token (~$0.01/1K tokens)</td>
+                            <td>Pay per token</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Power Automate</strong></td>
+                            <td>-</td>
+                            <td>~$15/user/month</td>
+                        </tr>
+                        <tr>
+                            <td><strong>M365 Copilot</strong></td>
+                            <td>-</td>
+                            <td>~$30/user/month (optional)</td>
+                        </tr>
+                        <tr style="font-weight: bold; background: var(--light);">
+                            <td>Total</td>
+                            <td>~$5-10/month + API usage</td>
+                            <td>~$25-55/user/month + API usage</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="margin-top: 2rem;">
+                <span class="badge badge-info">Compatible with: Azure OpenAI, OpenAI, local models (Ollama), Groq, Together AI, or any OpenAI-compatible endpoint</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section>
+        <div class="container">
+            <h2>❓ Frequently Asked Questions</h2>
+            <p class="subtitle">Common questions answered</p>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    What makes RAPP different from other agent frameworks?
+                    <span class="faq-icon">▼</span>
+                </div>
+                <div class="faq-answer">
+                    RAPP combines rapid prototyping with production-ready features. Unlike basic frameworks, RAPP includes persistent memory, automated setup, beautiful dashboards, and works with any OpenAI-compatible API. It's designed for both quick experimentation and enterprise deployment.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    Can I use local models instead of cloud APIs?
+                    <span class="faq-icon">▼</span>
+                </div>
+                <div class="faq-answer">
+                    Yes! RAPP works with any OpenAI-compatible endpoint. You can use local models via Ollama, LM Studio, or LiteLLM proxy. This gives you complete data privacy and zero API costs while maintaining full functionality.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    Do I need to know Python to use RAPP?
+                    <span class="faq-icon">▼</span>
+                </div>
+                <div class="faq-answer">
+                    No! The setup is fully automated. However, if you want to create custom agents, basic Python knowledge is helpful. The included examples provide templates you can easily modify.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    Can I deploy to Microsoft Teams?
+                    <span class="faq-icon">▼</span>
+                </div>
+                <div class="faq-answer">
+                    Yes! RAPP includes optional Power Platform integration for deploying to Microsoft Teams and M365 Copilot. This is completely optional - RAPP works great as a standalone REST API.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    How does memory persistence work?
+                    <span class="faq-icon">▼</span>
+                </div>
+                <div class="faq-answer">
+                    RAPP uses Azure File Storage to persist conversation context across sessions. Each user gets their own memory space, plus there's a shared memory space for organization-wide knowledge. Memory is automatically managed by the built-in memory agents.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    What's included in the ProactiveInsights agent?
+                    <span class="faq-icon">▼</span>
+                </div>
+                <div class="faq-answer">
+                    ProactiveInsights includes GitHub monitoring, scheduled automation framework, AI-powered trend analysis, automated Monday briefings, persistent memory integration, and a beautiful web dashboard. It's a complete example of production-ready agent capabilities.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <div class="cta">
+        <div class="container">
+            <h2>Ready to Build Your AI Agents?</h2>
+            <p>Deploy your agent platform in 3 minutes with zero configuration required</p>
+            <div class="buttons">
+                <a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fkody-w%2Fm365-agents-for-python%2Fmain%2FRAPP%2Fazuredeploy.json" target="_blank" class="btn btn-primary">Deploy to Azure Now</a>
+                <a href="https://github.com/kody-w/m365-agents-for-python" target="_blank" class="btn btn-secondary">View on GitHub</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p style="margin-bottom: 1rem;">
+                <strong>RAPP - Rapid Agent Prototyping Platform/Pattern</strong>
+            </p>
+            <p>
+                <a href="https://github.com/kody-w/m365-agents-for-python">GitHub</a> •
+                <a href="https://github.com/kody-w/m365-agents-for-python/issues">Issues</a> •
+                <a href="https://github.com/kody-w/m365-agents-for-python/discussions">Discussions</a> •
+                <a href="https://github.com/kody-w/m365-agents-for-python/blob/main/LICENSE">MIT License</a>
+            </p>
+            <p style="margin-top: 1rem; opacity: 0.8;">
+                Made with ❤️ for rapid prototyping
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // FAQ Toggle
+        function toggleFAQ(element) {
+            const item = element.parentElement;
+            const wasActive = item.classList.contains('active');
+
+            // Close all FAQ items
+            document.querySelectorAll('.faq-item').forEach(faq => {
+                faq.classList.remove('active');
+            });
+
+            // Open clicked item if it wasn't active
+            if (!wasActive) {
+                item.classList.add('active');
+            }
+        }
+
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

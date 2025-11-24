@@ -1756,6 +1756,304 @@
     input[type="file"] {
       display: none;
     }
+
+    /* Split View Styles */
+    .split-view-container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .split-view-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 300px;
+      transition: flex 0.3s ease;
+    }
+
+    .split-view-divider {
+      width: 4px;
+      background: var(--gray-30);
+      cursor: col-resize;
+      position: relative;
+      transition: background 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .split-view-divider:hover {
+      background: var(--primary);
+    }
+
+    .split-view-divider::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -4px;
+      right: -4px;
+      bottom: 0;
+    }
+
+    body.dark .split-view-divider {
+      background: var(--gray-40);
+    }
+
+    .split-view-tool {
+      display: none;
+      flex-direction: column;
+      min-width: 300px;
+      background: var(--gray-20);
+      transition: flex 0.3s ease;
+    }
+
+    .split-view-tool.active {
+      display: flex;
+      flex: 1;
+    }
+
+    body.dark .split-view-tool {
+      background: var(--gray-30);
+    }
+
+    .split-view-tool-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-m);
+      background: var(--gray-30);
+      border-bottom: 1px solid var(--gray-40);
+    }
+
+    body.dark .split-view-tool-header {
+      background: var(--gray-40);
+      border-bottom-color: var(--gray-50);
+    }
+
+    .split-view-tool-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--gray-100);
+      display: flex;
+      align-items: center;
+      gap: var(--space-s);
+    }
+
+    .split-view-tool-actions {
+      display: flex;
+      gap: var(--space-s);
+    }
+
+    .split-view-tool-button {
+      background: var(--gray-40);
+      border: none;
+      color: var(--gray-80);
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-small);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 12px;
+    }
+
+    body.dark .split-view-tool-button {
+      background: var(--gray-50);
+    }
+
+    .split-view-tool-button:hover {
+      background: var(--primary);
+      color: white;
+    }
+
+    .split-view-tool-iframe {
+      flex: 1;
+      border: none;
+      width: 100%;
+      background: white;
+    }
+
+    body.dark .split-view-tool-iframe {
+      background: var(--gray-20);
+    }
+
+    /* Tool Gallery Modal */
+    .tool-gallery-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 10000;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-l);
+    }
+
+    .tool-gallery-modal.active {
+      display: flex;
+    }
+
+    .tool-gallery-content {
+      background: white;
+      border-radius: var(--radius-large);
+      max-width: 900px;
+      width: 100%;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: var(--shadow-large);
+    }
+
+    body.dark .tool-gallery-content {
+      background: var(--gray-20);
+    }
+
+    .tool-gallery-header {
+      padding: var(--space-l);
+      border-bottom: 1px solid var(--gray-30);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    body.dark .tool-gallery-header {
+      border-bottom-color: var(--gray-40);
+    }
+
+    .tool-gallery-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--gray-100);
+    }
+
+    .tool-gallery-close {
+      background: none;
+      border: none;
+      color: var(--gray-60);
+      cursor: pointer;
+      font-size: 24px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-small);
+      transition: var(--transition);
+    }
+
+    .tool-gallery-close:hover {
+      background: var(--gray-30);
+      color: var(--gray-100);
+    }
+
+    .tool-gallery-search {
+      padding: var(--space-m) var(--space-l);
+      border-bottom: 1px solid var(--gray-30);
+    }
+
+    body.dark .tool-gallery-search {
+      border-bottom-color: var(--gray-40);
+    }
+
+    .tool-gallery-search input {
+      width: 100%;
+      padding: var(--space-m);
+      border: 1px solid var(--gray-30);
+      border-radius: var(--radius);
+      font-size: 14px;
+      background: var(--gray-10);
+      color: var(--gray-100);
+    }
+
+    body.dark .tool-gallery-search input {
+      background: var(--gray-30);
+      border-color: var(--gray-40);
+    }
+
+    .tool-gallery-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: var(--space-l);
+    }
+
+    .tool-gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: var(--space-m);
+    }
+
+    .tool-gallery-item {
+      background: var(--gray-10);
+      border: 1px solid var(--gray-30);
+      border-radius: var(--radius);
+      padding: var(--space-m);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    body.dark .tool-gallery-item {
+      background: var(--gray-30);
+      border-color: var(--gray-40);
+    }
+
+    .tool-gallery-item:hover {
+      background: var(--gray-20);
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-medium);
+    }
+
+    body.dark .tool-gallery-item:hover {
+      background: var(--gray-40);
+    }
+
+    .tool-gallery-item-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--primary);
+      color: white;
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin-bottom: var(--space-m);
+    }
+
+    .tool-gallery-item-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--gray-100);
+      margin-bottom: var(--space-xs);
+    }
+
+    .tool-gallery-item-desc {
+      font-size: 13px;
+      color: var(--gray-60);
+      line-height: 1.4;
+    }
+
+    /* Responsive adjustments for split view */
+    @media (max-width: 1024px) {
+      .split-view-tool.active {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 100;
+      }
+
+      .split-view-divider {
+        display: none;
+      }
+    }
   </style>
 </head>
 
