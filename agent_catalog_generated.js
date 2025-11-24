@@ -8,7 +8,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '⚡'
             },
@@ -21,7 +21,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '⚡'
             },
@@ -34,7 +34,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '⚡'
             },
@@ -47,7 +47,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '⚡'
             },
@@ -60,7 +60,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '⚡'
             },
@@ -73,7 +73,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🛒'
             },
@@ -86,7 +86,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🛒'
             },
@@ -99,7 +99,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🛒'
             },
@@ -112,7 +112,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🛒'
             },
@@ -125,7 +125,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🛒'
             },
@@ -138,7 +138,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🛒'
             },
@@ -151,7 +151,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🏪'
             },
@@ -164,7 +164,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🏪'
             },
@@ -177,7 +177,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🏪'
             },
@@ -190,7 +190,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🏪'
             },
@@ -203,7 +203,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🏪'
             },
@@ -216,7 +216,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '📊'
             },
@@ -229,7 +229,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '📊'
             },
@@ -242,7 +242,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '📊'
             },
@@ -255,7 +255,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '📊'
             },
@@ -268,7 +268,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '📊'
             },
@@ -281,7 +281,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '2.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '💼'
             },
@@ -294,7 +294,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '💼'
             },
@@ -307,7 +307,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '2.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '💼'
             },
@@ -320,7 +320,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '💼'
             },
@@ -333,7 +333,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '💼'
             },
@@ -346,7 +346,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🏭'
             },
@@ -359,7 +359,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🏭'
             },
@@ -372,7 +372,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🏭'
             },
@@ -385,7 +385,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🏭'
             },
@@ -398,7 +398,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🏭'
             },
@@ -411,7 +411,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🚀'
             },
@@ -424,7 +424,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🚀'
             },
@@ -437,7 +437,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🚀'
             },
@@ -450,7 +450,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🚀'
             },
@@ -463,7 +463,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🚀'
             },
@@ -476,7 +476,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🏥'
             },
@@ -489,7 +489,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🏥'
             },
@@ -502,7 +502,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🏥'
             },
@@ -515,7 +515,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🏥'
             },
@@ -528,7 +528,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🏥'
             },
@@ -541,7 +541,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🏛️'
             },
@@ -554,7 +554,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🏛️'
             },
@@ -567,7 +567,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🏛️'
             },
@@ -580,7 +580,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🏛️'
             },
@@ -593,7 +593,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🏛️'
             },
@@ -606,7 +606,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '💰'
             },
@@ -619,7 +619,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '💰'
             },
@@ -632,7 +632,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '💰'
             },
@@ -645,7 +645,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '💰'
             },
@@ -658,7 +658,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '💰'
             },
@@ -671,7 +671,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '💰'
             },
@@ -684,7 +684,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '💰'
             },
@@ -697,7 +697,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '💰'
             },
@@ -710,7 +710,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '💰'
             },
@@ -723,7 +723,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '💰'
             },
@@ -788,7 +788,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🔧'
             },
@@ -957,7 +957,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🏢'
             },
@@ -970,7 +970,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🏢'
             },
@@ -983,7 +983,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🏢'
             },
@@ -996,7 +996,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🏢'
             },
@@ -1009,7 +1009,7 @@
                 rating: 4.5,
                 installs: 1000,
                 version: '1.0.0',
-                author: 'RAPP Community',
+                author: 'Kody Wildfeuer',
                 sizeKb: 100,
                 icon: '🏢'
             },

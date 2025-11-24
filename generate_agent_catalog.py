@@ -61,7 +61,7 @@ def parse_metadata_files():
                     'rating': metadata.get('rating', 4.5),
                     'installs': metadata.get('installs', 1000),
                     'version': metadata.get('version', '1.0.0'),
-                    'author': metadata.get('author', 'RAPP Community'),
+                    'author': metadata.get('author', 'Kody Wildfeuer'),
                     'sizeKb': metadata.get('size_kb', 100),
                     'icon': category_info['icon']
                 }
