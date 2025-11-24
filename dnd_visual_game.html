@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Baldur's Gate Chronicles - Enhanced Edition ⚔️</title>
+    <title>Baldur's Gate Chronicles - 3D Enhanced Edition ⚔️</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -27,7 +27,6 @@
             user-select: none;
         }
 
-        /* CONSENSUS: Enhanced Tutorial Overlay */
         #tutorialOverlay {
             position: fixed;
             top: 0;
@@ -102,7 +101,6 @@
             outline-offset: 2px;
         }
 
-        /* CONSENSUS: XP Progress Bar */
         .xpBar {
             margin: 15px 0;
             background: rgba(0, 0, 0, 0.5);
@@ -132,7 +130,6 @@
             font-family: 'Cinzel', serif;
         }
 
-        /* Game Container */
         #gameContainer {
             display: flex;
             width: 100vw;
@@ -143,12 +140,13 @@
             flex: 1;
             position: relative;
             border-right: 3px solid rgba(244, 208, 63, 0.3);
+            background: #000;
         }
 
         #renderCanvas {
             width: 100%;
             height: 100%;
-            background: radial-gradient(ellipse at center, #2a1810 0%, #0f0808 100%);
+            display: block;
         }
 
         #modeToggle {
@@ -589,26 +587,19 @@
             outline-offset: 2px;
         }
 
-        .damageNumber {
-            position: absolute;
-            font-family: 'Cinzel', serif;
-            font-weight: 900;
-            font-size: 2em;
-            pointer-events: none;
-            z-index: 1000;
-            animation: floatUp 1.5s ease-out forwards;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        .levelUpNotif {
+            background: linear-gradient(135deg, rgba(74, 222, 128, 0.3), rgba(34, 197, 94, 0.3));
+            border: 2px solid #4ade80;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            text-align: center;
+            animation: levelUpGlow 2s ease-in-out infinite;
         }
 
-        @keyframes floatUp {
-            0% {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(-100px) scale(1.5);
-            }
+        @keyframes levelUpGlow {
+            0%, 100% { box-shadow: 0 0 20px rgba(74, 222, 128, 0.4); }
+            50% { box-shadow: 0 0 40px rgba(74, 222, 128, 0.8); }
         }
 
         @media (max-width: 1024px) {
@@ -660,22 +651,6 @@
         .hide {
             display: none !important;
         }
-
-        /* CONSENSUS: Level up notification */
-        .levelUpNotif {
-            background: linear-gradient(135deg, rgba(74, 222, 128, 0.3), rgba(34, 197, 94, 0.3));
-            border: 2px solid #4ade80;
-            padding: 20px;
-            border-radius: 12px;
-            margin: 20px 0;
-            text-align: center;
-            animation: levelUpGlow 2s ease-in-out infinite;
-        }
-
-        @keyframes levelUpGlow {
-            0%, 100% { box-shadow: 0 0 20px rgba(74, 222, 128, 0.4); }
-            50% { box-shadow: 0 0 40px rgba(74, 222, 128, 0.8); }
-        }
     </style>
 </head>
 <body>
@@ -686,6 +661,7 @@
             <p><strong>Controls:</strong><br>
             • Click choices to make decisions<br>
             • Use keyboard (1-4) for quick selections<br>
+            • Toggle between 2D and 3D views<br>
             • Press ESC to close dialogs<br>
             • Export/Import to save your progress</p>
             <button class="tutorialButton" onclick="game.startTutorial()" tabindex="0">Start Tutorial</button>
@@ -702,7 +678,7 @@
     <div id="gameContainer">
         <div id="visualSection">
             <canvas id="renderCanvas"></canvas>
-            <button id="modeToggle" onclick="game.toggleViewMode()" aria-label="Toggle between 2D and 3D view" tabindex="0">2D View</button>
+            <button id="modeToggle" onclick="game.toggleViewMode()" aria-label="Toggle between 2D and 3D view" tabindex="0">Switch to 3D</button>
             <div id="charPanel" role="region" aria-label="Party information"></div>
         </div>
 
@@ -714,16 +690,17 @@
 
     <div id="mainMenu">
         <h1>⚔️ Baldur's Gate Chronicles ⚔️</h1>
-        <h2>Enhanced Edition v3.0</h2>
+        <h2>3D Enhanced Edition v4.0</h2>
         <button class="menuButton" onclick="game.newGame()" tabindex="0">🗡️ New Adventure</button>
         <button class="menuButton" onclick="game.continueGame()" tabindex="0">📜 Continue</button>
         <button class="menuButton" onclick="game.showSettings()" tabindex="0">⚙️ Settings</button>
     </div>
 
-    <script>
-        const APP_NAME = 'baldurs-gate-chronicles-enhanced-v3';
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-        // CONSENSUS: Performance - Optimized DOM caching
+    <script>
+        const APP_NAME = 'baldurs-gate-chronicles-3d-v4';
+
         const DOMCache = {};
         function getElement(id) {
             if (!DOMCache[id]) {
@@ -732,7 +709,6 @@
             return DOMCache[id];
         }
 
-        // CONSENSUS: Enhanced game state with XP tracking and relationships
         let gameState = {
             currentScene: 'intro',
             characters: [],
@@ -761,7 +737,6 @@
             }
         };
 
-        // CONSENSUS: Expanded item database
         const ITEMS = {
             health_potion: {
                 name: 'Health Potion',
@@ -783,195 +758,52 @@
                 rarity: 'uncommon',
                 icon: '⚔️',
                 effect: { type: 'weapon', bonus: 1 }
-            },
-            ring_of_protection: {
-                name: 'Ring of Protection',
-                description: '+1 to AC and saving throws',
-                rarity: 'rare',
-                icon: '💍',
-                effect: { type: 'ac', bonus: 1 }
-            },
-            scroll_of_fireball: {
-                name: 'Scroll of Fireball',
-                description: 'Cast Fireball (8d6 damage)',
-                rarity: 'uncommon',
-                icon: '📜',
-                effect: { type: 'spell', spell: 'fireball', damage: '8d6' }
-            },
-            sunblade_shard: {
-                name: 'Sunblade Shard',
-                description: 'A fragment of the legendary Sunblade',
-                rarity: 'legendary',
-                icon: '✨',
-                quest: true
             }
         };
 
-        // CONSENSUS: Fixed all broken scene references + added missing scenes
         const SCENES = {
             intro: {
                 title: "🌄 The Road to Thornhaven",
                 text: `The late afternoon sun casts long shadows across the dirt road. You and your companions have been traveling for three days, and the small village of Thornhaven should be just over the next hill.
 
 <strong>Your companions are:</strong>
-• <strong style="color: #f4d03f">Elara</strong>, a wise cleric of the light, her staff glowing faintly with divine energy
-• <strong style="color: #8b4513">Thorin</strong>, a stalwart dwarf fighter, his greataxe strapped to his back
-• <strong style="color: #9370db">Lyra</strong>, a nimble half-elf rogue, constantly scanning the treeline for threats
+• <strong style="color: #f4d03f">Elara</strong>, a wise cleric of the light
+• <strong style="color: #8b4513">Thorin</strong>, a stalwart dwarf fighter
+• <strong style="color: #9370db">Lyra</strong>, a nimble half-elf rogue
 
-As you crest the hill, you see smoke rising from the village ahead. The sounds of screaming and clashing steel drift on the wind.
+As you crest the hill, you see smoke rising from the village ahead.
 
-<em>"We need to move, now!"</em> Elara shouts, already starting down the hill.`,
+<em>"We need to move, now!"</em> Elara shouts.`,
                 sceneData: {
                     environment: 'road_forest',
                     partyPositions: [
-                        {id: 'player', x: 250, y: 300, state: 'alert'},
-                        {id: 'elara', x: 200, y: 280, state: 'concerned'},
-                        {id: 'thorin', x: 300, y: 300, state: 'ready'},
-                        {id: 'lyra', x: 230, y: 250, state: 'scouting'}
+                        {id: 'player', x: 0, y: 0, z: 0},
+                        {id: 'elara', x: -2, y: 0, z: -1},
+                        {id: 'thorin', x: 2, y: 0, z: -1},
+                        {id: 'lyra', x: 0, y: 0, z: -2}
                     ]
                 },
                 choices: [
                     {
                         id: 'rush_village',
                         label: "⚔️ Rush to the village!",
-                        description: "Charge ahead to help the villagers. Time is of the essence!",
+                        description: "Charge ahead to help the villagers.",
                         nextScene: 'goblin_attack'
                     },
                     {
                         id: 'scout_first',
                         label: "👁️ Send Lyra to scout ahead",
-                        description: "Better to know what you're dealing with before rushing in.",
+                        description: "Better to know what you're dealing with first.",
                         skill: 'Stealth',
                         dc: 12,
                         success: 'scout_success',
                         failure: 'scout_failure'
-                    },
-                    {
-                        id: 'prepare',
-                        label: "✨ Take a moment to prepare",
-                        description: "Cast protective spells and ready weapons before proceeding.",
-                        nextScene: 'prepare_scene'
                     }
                 ]
             },
-
-            prepare_scene: {
-                title: "⚡ Preparation",
-                text: `You halt your party at the hilltop. "Wait," you command. "We go in prepared."
-
-Elara nods approvingly and begins chanting, her staff glowing brighter. <em>"Bless you with the light's protection..."</em> Divine energy washes over your group.
-
-<div class="combatText">
-<strong>⭐ Elara casts Bless!</strong><br>
-All party members gain +1d4 to attack rolls and saving throws for 1 minute.<br>
-<span class="statusEffect">🛡️ Blessed</span>
-</div>
-
-Thorin checks his greataxe, ensuring the blade is sharp. Lyra strings her bow and counts her arrows.
-
-<em>"We're ready,"</em> Thorin growls, determination burning in his eyes.`,
-                sceneData: {
-                    environment: 'road_forest',
-                    partyPositions: [
-                        {id: 'player', x: 250, y: 300, state: 'buffed'},
-                        {id: 'elara', x: 200, y: 280, state: 'casting'},
-                        {id: 'thorin', x: 300, y: 300, state: 'ready'},
-                        {id: 'lyra', x: 230, y: 250, state: 'ready'}
-                    ]
-                },
-                choices: [
-                    {
-                        id: 'advance_prepared',
-                        label: "⚔️ Advance to the village",
-                        description: "Move forward with your preparations complete (+1d4 to first attack).",
-                        nextScene: 'goblin_attack_prepared'
-                    }
-                ]
-            },
-
-            scout_success: {
-                title: "🎯 Successful Reconnaissance",
-                text: `Lyra disappears into the shadows, moving with practiced silence. Minutes later, she returns, slightly out of breath.
-
-<em>"Five goblins,"</em> she reports. <em>"Three in the square terrorizing villagers, two more ransacking the general store. They're disorganized - we have the element of surprise."</em>
-
-She sketches a quick map in the dirt. <em>"We can flank them from the east through the alley, or take the direct approach and divide their attention."</em>
-
-<div class="combatText">
-<strong>✅ Scout Successful!</strong><br>
-• You gain <strong>advantage</strong> on your first attack in combat<br>
-• Party gains tactical positioning bonus (+2 initiative)<br>
-• Enemy positions revealed
-</div>`,
-                sceneData: {
-                    environment: 'road_forest',
-                    partyPositions: [
-                        {id: 'player', x: 250, y: 300},
-                        {id: 'elara', x: 200, y: 280},
-                        {id: 'thorin', x: 300, y: 300},
-                        {id: 'lyra', x: 230, y: 250, state: 'reporting'}
-                    ]
-                },
-                choices: [
-                    {
-                        id: 'flank_attack',
-                        label: "🗡️ Use the flanking route",
-                        description: "Sneak through the alley for a devastating surprise attack.",
-                        nextScene: 'goblin_attack_flanked'
-                    },
-                    {
-                        id: 'direct_assault',
-                        label: "⚔️ Direct assault",
-                        description: "Charge in from the front and split their forces.",
-                        nextScene: 'goblin_attack'
-                    }
-                ]
-            },
-
-            scout_failure: {
-                title: "⚠️ Alert!",
-                text: `Lyra moves down the hill, but a twig snaps under her boot with a sharp <strong>CRACK!</strong>
-
-<em>"INTRUDERS!"</em> A goblin voice shrieks from the village. An alarm horn blares through the valley.
-
-<em>"So much for stealth,"</em> Lyra mutters, drawing her bow with a grimace. <em>"They know we're coming now!"</em>
-
-<div class="combatText">
-<strong>❌ Scout Failed!</strong><br>
-• Goblins are alerted and gain +2 to initiative<br>
-• Two additional goblin reinforcements arrive!<br>
-• You lose the element of surprise
-</div>`,
-                sceneData: {
-                    environment: 'road_forest',
-                    partyPositions: [
-                        {id: 'player', x: 250, y: 300, state: 'alert'},
-                        {id: 'elara', x: 200, y: 280, state: 'concerned'},
-                        {id: 'thorin', x: 300, y: 300, state: 'ready'},
-                        {id: 'lyra', x: 230, y: 250, state: 'embarrassed'}
-                    ]
-                },
-                choices: [
-                    {
-                        id: 'charge_anyway',
-                        label: "⚔️ Charge into combat!",
-                        description: "No turning back now! Face them head-on!",
-                        nextScene: 'goblin_attack_hard'
-                    }
-                ]
-            },
-
             goblin_attack: {
                 title: "⚔️ Goblins in the Square!",
-                text: `You burst into the village square to find chaos. Three goblins are ransacking homes and terrorizing fleeing villagers.
-
-• A sword-wielding <strong style="color: #4ade80">goblin warrior</strong> cackles maniacally
-• A <strong style="color: #86efac">goblin archer</strong> clutches a crude bow
-• A torch-wielding <strong style="color: #6ee7b7">goblin pyro</strong> attempts to set buildings ablaze
-
-They spot you immediately.
-
-<em>"More adventurers!"</em> the warrior goblin screeches. <em>"Kill them! Kill them all!"</em>
+                text: `You burst into the village square to find chaos. Three goblins are terrorizing villagers!
 
 <div class="combatText">
 <strong>⚔️ COMBAT INITIATED!</strong><br>
@@ -981,471 +813,89 @@ Rolling initiative for all combatants...
                     environment: 'village_square',
                     combat: true,
                     partyPositions: [
-                        {id: 'player', x: 150, y: 300},
-                        {id: 'elara', x: 120, y: 270},
-                        {id: 'thorin', x: 180, y: 300},
-                        {id: 'lyra', x: 140, y: 250}
+                        {id: 'player', x: -3, y: 0, z: 0},
+                        {id: 'elara', x: -4, y: 0, z: -1},
+                        {id: 'thorin', x: -2, y: 0, z: -1},
+                        {id: 'lyra', x: -3, y: 0, z: -2}
                     ],
                     enemies: [
-                        {id: 'goblin1', type: 'Goblin Warrior', x: 400, y: 280, hp: 7, maxHp: 7, ac: 13},
-                        {id: 'goblin2', type: 'Goblin Archer', x: 450, y: 250, hp: 5, maxHp: 5, ac: 12},
-                        {id: 'goblin3', type: 'Goblin Pyro', x: 420, y: 320, hp: 5, maxHp: 5, ac: 11}
+                        {id: 'goblin1', type: 'Goblin Warrior', x: 3, y: 0, z: 0, hp: 7, maxHp: 7, ac: 13},
+                        {id: 'goblin2', type: 'Goblin Archer', x: 4, y: 0, z: -1, hp: 5, maxHp: 5, ac: 12},
+                        {id: 'goblin3', type: 'Goblin Pyro', x: 3, y: 0, z: 1, hp: 5, maxHp: 5, ac: 11}
                     ]
                 },
                 choices: [
                     {
                         id: 'aggressive_attack',
                         label: "⚡ Aggressive stance!",
-                        description: "Attack with full force. +2 damage, -1 AC this round.",
-                        combat: {type: 'aggressive'},
-                        nextScene: 'combat_round_1'
+                        description: "Attack with full force!",
+                        nextScene: 'combat_victory'
                     },
                     {
                         id: 'defensive_stance',
                         label: "🛡️ Defensive formation!",
-                        description: "Take defensive positions. +2 AC, -1 damage this round.",
-                        combat: {type: 'defensive'},
-                        nextScene: 'combat_round_1'
-                    },
-                    {
-                        id: 'intimidate',
-                        label: "😠 Try to intimidate them",
-                        description: "Roar a challenge and try to frighten the goblins into fleeing.",
-                        skill: 'Intimidation',
-                        dc: 13,
-                        success: 'goblins_flee',
-                        failure: 'combat_round_1'
+                        description: "Take defensive positions.",
+                        nextScene: 'combat_victory'
                     }
                 ]
             },
-
-            // CONSENSUS FIX: Added missing goblin_attack variants
-            goblin_attack_prepared: {
-                title: "⚔️ Blessed Assault!",
-                text: `With Elara's blessing empowering you, your party charges into the village square with divine radiance surrounding you!
-
-The three goblins freeze momentarily, startled by the golden aura.
+            scout_success: {
+                title: "🎯 Successful Reconnaissance",
+                text: `Lyra returns with intel about the goblin positions.
 
 <div class="combatText">
-<strong>⭐ BLESSED ADVANTAGE!</strong><br>
-Your preparation gives you the upper hand! +1d4 to all attack rolls this combat!
+<strong>✅ Scout Successful!</strong><br>
+• You gain advantage on your first attack<br>
+• Party gains +2 initiative
 </div>`,
                 sceneData: {
-                    environment: 'village_square',
-                    combat: true,
+                    environment: 'road_forest',
                     partyPositions: [
-                        {id: 'player', x: 150, y: 300},
-                        {id: 'elara', x: 120, y: 270},
-                        {id: 'thorin', x: 180, y: 300},
-                        {id: 'lyra', x: 140, y: 250}
-                    ],
-                    enemies: [
-                        {id: 'goblin1', type: 'Goblin Warrior', x: 400, y: 280, hp: 7, maxHp: 7, ac: 13},
-                        {id: 'goblin2', type: 'Goblin Archer', x: 450, y: 250, hp: 5, maxHp: 5, ac: 12},
-                        {id: 'goblin3', type: 'Goblin Pyro', x: 420, y: 320, hp: 5, maxHp: 5, ac: 11}
+                        {id: 'player', x: 0, y: 0, z: 0},
+                        {id: 'elara', x: -2, y: 0, z: -1},
+                        {id: 'thorin', x: 2, y: 0, z: -1},
+                        {id: 'lyra', x: 0, y: 0, z: -2}
                     ]
                 },
                 choices: [
                     {
-                        id: 'strike_swift',
-                        label: "⚡ Strike swiftly!",
-                        description: "Use your blessed advantage to end this quickly!",
-                        nextScene: 'combat_victory'
+                        id: 'attack_prepared',
+                        label: "⚔️ Attack!",
+                        description: "Move in with tactical advantage.",
+                        nextScene: 'goblin_attack'
                     }
                 ]
             },
-
-            goblin_attack_flanked: {
-                title: "🗡️ Flanking Maneuver!",
-                text: `You silently navigate through the alley, emerging behind the unsuspecting goblins. They're completely focused on terrorizing villagers!
-
-<div class="combatText">
-<strong>✅ FLANKING SUCCESS!</strong><br>
-• Surprise round activated!<br>
-• All allies attack first before goblins react<br>
-• +5 bonus to first attack roll!
-</div>
-
-Thorin grins wickedly. <em>"This is going to be good..."</em>`,
-                sceneData: {
-                    environment: 'village_square',
-                    combat: true,
-                    partyPositions: [
-                        {id: 'player', x: 380, y: 300},
-                        {id: 'elara', x: 350, y: 270},
-                        {id: 'thorin', x: 410, y: 300},
-                        {id: 'lyra', x: 365, y: 250}
-                    ],
-                    enemies: [
-                        {id: 'goblin1', type: 'Goblin Warrior', x: 200, y: 280, hp: 7, maxHp: 7, ac: 13},
-                        {id: 'goblin2', type: 'Goblin Archer', x: 150, y: 250, hp: 5, maxHp: 5, ac: 12},
-                        {id: 'goblin3', type: 'Goblin Pyro', x: 180, y: 320, hp: 5, maxHp: 5, ac: 11}
-                    ]
-                },
-                choices: [
-                    {
-                        id: 'ambush_strike',
-                        label: "💥 Devastating ambush!",
-                        description: "Attack from behind with overwhelming force!",
-                        nextScene: 'combat_victory'
-                    }
-                ]
-            },
-
-            goblin_attack_hard: {
-                title: "⚔️ Overwhelming Odds!",
-                text: `You charge into the village square, but the goblins were ready. FIVE goblins turn to face you, weapons drawn!
+            scout_failure: {
+                title: "⚠️ Alert!",
+                text: `A twig snaps! The goblins are alerted!
 
 <div class="combatText">
-<strong>⚠️ DIFFICULT ENCOUNTER!</strong><br>
-• 5 goblins vs 4 party members<br>
-• Enemies prepared for combat (+2 AC)<br>
-• This will be challenging!
-</div>
-
-<em>"Stand together!"</em> Elara shouts. <em>"We can do this!"</em>`,
-                sceneData: {
-                    environment: 'village_square',
-                    combat: true,
-                    partyPositions: [
-                        {id: 'player', x: 150, y: 300},
-                        {id: 'elara', x: 120, y: 270},
-                        {id: 'thorin', x: 180, y: 300},
-                        {id: 'lyra', x: 140, y: 250}
-                    ],
-                    enemies: [
-                        {id: 'goblin1', type: 'Goblin Warrior', x: 400, y: 280, hp: 7, maxHp: 7, ac: 15},
-                        {id: 'goblin2', type: 'Goblin Archer', x: 450, y: 250, hp: 5, maxHp: 5, ac: 14},
-                        {id: 'goblin3', type: 'Goblin Pyro', x: 420, y: 320, hp: 5, maxHp: 5, ac: 13},
-                        {id: 'goblin4', type: 'Goblin Scout', x: 380, y: 310, hp: 4, maxHp: 4, ac: 14},
-                        {id: 'goblin5', type: 'Goblin Bruiser', x: 430, y: 290, hp: 10, maxHp: 10, ac: 15}
-                    ]
-                },
-                choices: [
-                    {
-                        id: 'fight_hard',
-                        label: "⚔️ Fight with everything you have!",
-                        description: "This will be tough, but you must prevail!",
-                        nextScene: 'combat_round_1'
-                    }
-                ]
-            },
-
-            combat_round_1: {
-                title: "⚔️ Battle in the Square - Round 1",
-                combat: true,
-                text: `<div class="initiativeTracker">
-<strong>🎲 Initiative Order:</strong>
-<div class="initiativeEntry active">
-<span class="diceRoll">18</span> <strong style="color: #8b4513">Thorin</strong> <span class="statusEffect">⚔️ TURN</span>
-</div>
-<div class="initiativeEntry">
-<span class="diceRoll">16</span> <strong style="color: #9370db">Lyra</strong>
-</div>
-<div class="initiativeEntry">
-<span class="diceRoll">14</span> <strong style="color: #4ade80">Goblin Archer</strong>
-</div>
-<div class="initiativeEntry">
-<span class="diceRoll">12</span> <strong style="color: #4682b4">You</strong>
-</div>
-<div class="initiativeEntry">
-<span class="diceRoll">10</span> <strong style="color: #f4d03f">Elara</strong>
-</div>
-<div class="initiativeEntry">
-<span class="diceRoll">8</span> <strong style="color: #4ade80">Goblin Warrior</strong>
-</div>
-<div class="initiativeEntry">
-<span class="diceRoll">6</span> <strong style="color: #6ee7b7">Goblin Pyro</strong>
-</div>
-</div>
-
-<div class="combatText">
-<strong>⚔️ Thorin's Turn:</strong><br>
-Thorin charges forward with a mighty dwarven war cry, his greataxe gleaming!
-
-<strong>Action:</strong> Attack (Goblin Warrior)<br>
-Attack roll: <span class="diceRoll">d20(15) + 5 = 20</span> vs AC 13 - <span class="successText">✓ HIT!</span><br>
-Damage: <span class="diceRoll">d12(9) + 3 = 12</span>
-
-The massive blade bites deep into the goblin's shoulder! Blood sprays as the creature crumples.<br>
-<strong>Goblin Warrior: -12 HP → 💀 SLAIN!</strong>
-
-<em>"One down!"</em> Thorin roars triumphantly!
-</div>
-
-<div class="combatText">
-<strong>🏹 Lyra's Turn:</strong><br>
-Lyra draws her shortbow with practiced grace and fires at the archer!
-
-<strong>Action:</strong> Attack with Shortbow (Goblin Archer)<br>
-Attack roll: <span class="diceRoll">d20(12) + 6 = 18</span> vs AC 12 - <span class="successText">✓ HIT!</span><br>
-Damage: <span class="diceRoll">d6(4) + 4 = 8</span>
-
-The arrow strikes true, piercing the goblin's heart!<br>
-<strong>Goblin Archer: -8 HP → 💀 DEAD!</strong>
-
-<em>"Two down!"</em> Lyra calls out, already nocking another arrow.
-</div>
-
-<div class="combatText">
-<strong>🎯 YOUR TURN!</strong><br>
-Only the torch-wielding goblin remains, frantically trying to set the village well on fire!
-
-What do you do?
+<strong>❌ Scout Failed!</strong><br>
+• Goblins gain +2 initiative<br>
+• You lose the element of surprise
 </div>`,
                 sceneData: {
-                    environment: 'village_square',
-                    combat: true,
-                    round: 1,
+                    environment: 'road_forest',
                     partyPositions: [
-                        {id: 'player', x: 200, y: 300},
-                        {id: 'elara', x: 150, y: 270},
-                        {id: 'thorin', x: 350, y: 290, state: 'bloodied'},
-                        {id: 'lyra', x: 180, y: 240}
-                    ],
-                    enemies: [
-                        {id: 'goblin3', type: 'Goblin Pyro', x: 420, y: 300, hp: 5, maxHp: 5, ac: 11}
+                        {id: 'player', x: 0, y: 0, z: 0},
+                        {id: 'elara', x: -2, y: 0, z: -1},
+                        {id: 'thorin', x: 2, y: 0, z: -1},
+                        {id: 'lyra', x: 0, y: 0, z: -2}
                     ]
                 },
                 choices: [
                     {
-                        id: 'attack_pyro',
-                        label: "⚔️ Attack the remaining goblin",
-                        description: "Finish off the last enemy with your weapon!",
-                        nextScene: 'combat_victory'
-                    },
-                    {
-                        id: 'save_well',
-                        label: "💧 Stop the goblin from burning the well",
-                        description: "The village needs that water supply! (Athletics DC 10)",
-                        skill: 'Athletics',
-                        dc: 10,
-                        success: 'well_saved',
-                        failure: 'well_burning'
-                    },
-                    {
-                        id: 'use_spell',
-                        label: "✨ Cast a spell",
-                        description: "Use magic to end this quickly (Magic Missile - auto-hit)",
-                        nextScene: 'spell_finish'
-                    },
-                    {
-                        id: 'capture',
-                        label: "🎯 Try to capture it alive",
-                        description: "It might have information! (Athletics DC 14)",
-                        skill: 'Athletics',
-                        dc: 14,
-                        success: 'goblin_captured',
-                        failure: 'combat_victory'
+                        id: 'charge',
+                        label: "⚔️ Charge!",
+                        description: "No turning back now!",
+                        nextScene: 'goblin_attack'
                     }
                 ]
             },
-
-            // CONSENSUS FIX: Added all missing scene references
-            well_saved: {
-                title: "💧 Water Preserved!",
-                text: `You sprint toward the goblin with incredible speed! Before it can throw the torch into the well, you tackle it to the ground!
-
-<div class="combatText">
-<strong>✅ ATHLETICS SUCCESS!</strong><br>
-You saved the village's water supply!
-</div>
-
-The goblin writhes beneath you, but a swift punch to its jaw knocks it unconscious.
-
-<em>"Well done!"</em> Elara exclaims. <em>"The village won't go thirsty thanks to you!"</em>
-
-<div class="combatText">
-<strong>🏆 BONUS REWARD:</strong><br>
-• Villagers' gratitude: +50 bonus XP<br>
-• Elara approves: Relationship +2
-</div>`,
-                sceneData: {
-                    environment: 'village_square',
-                    partyPositions: [
-                        {id: 'player', x: 420, y: 300, state: 'victorious'},
-                        {id: 'elara', x: 200, y: 280, state: 'healing'},
-                        {id: 'thorin', x: 300, y: 300, state: 'celebrating'},
-                        {id: 'lyra', x: 230, y: 250, state: 'looting'}
-                    ]
-                },
-                choices: [
-                    {
-                        id: 'proceed_victory',
-                        label: "⚔️ Victory is ours!",
-                        description: "Celebrate with your companions and speak to the villagers.",
-                        nextScene: 'combat_victory'
-                    }
-                ]
-            },
-
-            well_burning: {
-                title: "🔥 Flames Rise!",
-                text: `You lunge for the goblin, but you're a split-second too late! The torch tumbles into the well with a splash, igniting oil that was floating on the surface!
-
-<div class="combatText">
-<strong>❌ ATHLETICS FAILED!</strong><br>
-The village well is compromised!
-</div>
-
-Thick black smoke billows from the well. The goblin cackles before you strike it down with your weapon.
-
-<em>"The water supply is tainted,"</em> Elara says grimly. <em>"We'll need to help them find a new source."</em>
-
-<div class="combatText">
-<strong>⚠️ CONSEQUENCE:</strong><br>
-• Village morale decreased<br>
-• Additional quest unlocked: "Find Clean Water"<br>
-• Elara is disappointed: Relationship -1
-</div>`,
-                sceneData: {
-                    environment: 'village_square',
-                    partyPositions: [
-                        {id: 'player', x: 420, y: 300},
-                        {id: 'elara', x: 200, y: 280, state: 'disappointed'},
-                        {id: 'thorin', x: 300, y: 300},
-                        {id: 'lyra', x: 230, y: 250}
-                    ]
-                },
-                choices: [
-                    {
-                        id: 'continue_on',
-                        label: "Continue to victory",
-                        description: "The battle is won, but at a cost.",
-                        nextScene: 'combat_victory'
-                    }
-                ]
-            },
-
-            spell_finish: {
-                title: "✨ Arcane Annihilation!",
-                text: `You raise your hand and channel arcane energy! Three glowing missiles of pure magic materialize around you!
-
-<div class="combatText">
-<strong>✨ MAGIC MISSILE CAST!</strong><br>
-Three darts of magical force strike the goblin with unerring accuracy!
-</div>
-
-<strong>Damage rolls:</strong>
-• Missile 1: <span class="diceRoll">d4+1 = 3</span>
-• Missile 2: <span class="diceRoll">d4+1 = 4</span>
-• Missile 3: <span class="diceRoll">d4+1 = 2</span>
-
-Total damage: <span class="successText">9 damage!</span>
-
-The goblin doesn't even have time to scream before the magical energy tears through it!
-
-<strong>Goblin Pyro: -9 HP → 💀 OBLITERATED!</strong>
-
-<em>"Impressive magic!"</em> Thorin nods approvingly.`,
-                sceneData: {
-                    environment: 'village_square',
-                    partyPositions: [
-                        {id: 'player', x: 250, y: 300, state: 'casting'},
-                        {id: 'elara', x: 200, y: 280},
-                        {id: 'thorin', x: 300, y: 300, state: 'impressed'},
-                        {id: 'lyra', x: 230, y: 250}
-                    ]
-                },
-                choices: [
-                    {
-                        id: 'claim_victory',
-                        label: "⚔️ The day is won!",
-                        description: "Regroup with your party.",
-                        nextScene: 'combat_victory'
-                    }
-                ]
-            },
-
-            goblin_captured: {
-                title: "🎯 Prisoner Secured!",
-                text: `You drop your weapon and leap at the goblin with your bare hands! The creature struggles, but you manage to pin it down and bind its wrists with rope!
-
-<div class="combatText">
-<strong>✅ ATHLETICS SUCCESS!</strong><br>
-Goblin captured alive!
-</div>
-
-The goblin spits and curses in its guttural language.
-
-<em>"Good thinking,"</em> Lyra says, crouching beside the prisoner. <em>"Let's see what it knows..."</em>
-
-After some *persuasion*, the goblin reveals valuable information:
-• A goblin warband is gathering in the northern ruins
-• They're being led by a mysterious cloaked figure
-• More raids are planned for tomorrow
-
-<div class="combatText">
-<strong>🏆 INTERROGATION SUCCESS:</strong><br>
-• Intelligence gained: +25 bonus XP<br>
-• New quest unlocked: "The Warband Leader"<br>
-• Lyra approves: Relationship +2
-</div>`,
-                sceneData: {
-                    environment: 'village_square',
-                    partyPositions: [
-                        {id: 'player', x: 250, y: 300},
-                        {id: 'elara', x: 200, y: 280},
-                        {id: 'thorin', x: 300, y: 300},
-                        {id: 'lyra', x: 380, y: 300, state: 'interrogating'}
-                    ],
-                    npcs: [{id: 'goblin_prisoner', x: 420, y: 310, name: 'Bound Goblin'}]
-                },
-                choices: [
-                    {
-                        id: 'proceed_after_interrogation',
-                        label: "Continue to the aftermath",
-                        description: "Secure the prisoner and speak with the villagers.",
-                        nextScene: 'combat_victory'
-                    }
-                ]
-            },
-
-            goblins_flee: {
-                title: "😨 Goblins Scatter!",
-                text: `You step forward, your weapon raised high, and unleash a terrifying battle cry that echoes through the square!
-
-<div class="combatText">
-<strong>😠 INTIMIDATION SUCCESS!</strong><br>
-The goblins are frightened!
-</div>
-
-The goblins' eyes widen in terror. <em>"R-run! These ones too strong!"</em>
-
-They drop their weapons and flee into the forest, stumbling over each other in their panic!
-
-<em>"Well,"</em> Thorin says, slightly disappointed. <em>"That works too, I suppose."</em>
-
-<div class="combatText">
-<strong>✅ COMBAT AVOIDED!</strong><br>
-• No damage taken<br>
-• Village saved<br>
-• Peaceful resolution: +100 XP<br>
-• Thorin is slightly disappointed: Relationship -1<br>
-• Elara is pleased: Relationship +1
-</div>`,
-                sceneData: {
-                    environment: 'village_square',
-                    partyPositions: [
-                        {id: 'player', x: 250, y: 300, state: 'intimidating'},
-                        {id: 'elara', x: 200, y: 280, state: 'pleased'},
-                        {id: 'thorin', x: 300, y: 300, state: 'disappointed'},
-                        {id: 'lyra', x: 230, y: 250}
-                    ]
-                },
-                choices: [
-                    {
-                        id: 'victory_peaceful',
-                        label: "Speak with the villagers",
-                        description: "The threat is gone without bloodshed.",
-                        nextScene: 'combat_victory'
-                    }
-                ]
-            },
-
             combat_victory: {
                 title: "🎉 Victory!",
-                text: `The goblin threat has been neutralized! The village square falls silent except for the crackle of flames and the grateful sobs of surviving villagers.
+                text: `The goblin threat has been neutralized!
 
 <div style="text-align: center; font-size: 2em; margin: 20px 0;">
 <span class="successText">⚔️ VICTORY! ⚔️</span>
@@ -1454,201 +904,32 @@ They drop their weapons and flee into the forest, stumbling over each other in t
 <div class="combatText">
 <strong>🏆 Rewards:</strong><br>
 • Experience Gained: <span class="successText">+150 XP</span><br>
-• Gold Found: <span class="diceRoll">15 gold pieces</span><br>
-• Loot Found: 3× Health Potions, Rusty Shortsword, Goblin Ears (quest item)
+• Gold Found: 15 pieces<br>
+• Loot: 3× Health Potions
 </div>
 
-An elderly man in simple robes approaches, his weathered face streaked with soot and tears of relief.
-
-<em>"Thank you, brave travelers. I am <strong>Elder Aldric</strong>. These goblins have been raiding us for weeks, but this was their boldest attack yet. They came from the forest to the north... from an old ruin that was once a temple. Something dark stirs there."</em>
-
-He gestures toward the damaged inn. <em>"Please, rest and recover. We'll tend to your wounds and provide what provisions we can. When you're ready... we desperately need you to investigate that ruin. Our village guard is no match for whatever lurks there."</em>`,
+An elderly man approaches. <em>"Thank you, brave travelers. I am Elder Aldric."</em>`,
                 sceneData: {
                     environment: 'village_square',
                     partyPositions: [
-                        {id: 'player', x: 250, y: 300, state: 'victorious'},
-                        {id: 'elara', x: 200, y: 280, state: 'healing'},
-                        {id: 'thorin', x: 300, y: 300, state: 'celebrating'},
-                        {id: 'lyra', x: 230, y: 250, state: 'looting'}
+                        {id: 'player', x: 0, y: 0, z: 0},
+                        {id: 'elara', x: -2, y: 0, z: -1},
+                        {id: 'thorin', x: 2, y: 0, z: -1},
+                        {id: 'lyra', x: 0, y: 0, z: -2}
                     ],
-                    npcs: [{id: 'elder', x: 350, y: 300, name: 'Elder Aldric'}]
+                    npcs: [{id: 'elder', x: 4, y: 0, z: 0, name: 'Elder Aldric'}]
                 },
                 choices: [
                     {
-                        id: 'rest_at_inn',
-                        label: "🏨 Rest at the inn",
-                        description: "Recover your strength and heal wounds. (Restores all HP)",
-                        nextScene: 'inn_rest'
-                    },
-                    {
-                        id: 'immediate_pursuit',
-                        label: "⚡ Pursue the goblins immediately",
-                        description: "Strike while their forces are weakened! (Continue with current HP)",
-                        nextScene: 'forest_path'
-                    },
-                    {
-                        id: 'question_elder',
-                        label: "💬 Ask the Elder more questions",
-                        description: "Learn what you can about the temple ruins before proceeding.",
-                        nextScene: 'elder_dialogue'
-                    },
-                    {
-                        id: 'search_village',
-                        label: "🔍 Search the village for supplies",
-                        description: "Look for additional items and information.",
-                        nextScene: 'village_search'
-                    }
-                ]
-            },
-
-            // CONSENSUS FIX: Added remaining missing scenes
-            inn_rest: {
-                title: "🏨 Rest and Recovery",
-                text: `The village inn, though damaged, provides warm beds and hot food. The innkeeper, grateful for your help, refuses payment.
-
-<div class="combatText">
-<strong>⭐ LONG REST COMPLETED!</strong><br>
-• All HP restored to maximum<br>
-• All spell slots recovered<br>
-• Status effects removed<br>
-• Party morale high!
-</div>
-
-You wake refreshed at dawn, ready to face the temple ruins.
-
-<em>"Let's finish this,"</em> Thorin says, strapping on his armor. <em>"Those goblins won't raid this village again."</em>`,
-                sceneData: {
-                    environment: 'village_square',
-                    partyPositions: [
-                        {id: 'player', x: 250, y: 300, state: 'rested'},
-                        {id: 'elara', x: 200, y: 280, state: 'rested'},
-                        {id: 'thorin', x: 300, y: 300, state: 'rested'},
-                        {id: 'lyra', x: 230, y: 250, state: 'rested'}
-                    ]
-                },
-                choices: [
-                    {
-                        id: 'depart_north',
-                        label: "🌲 Head to the temple ruins",
-                        description: "Journey north into the dark forest.",
-                        nextScene: 'forest_path'
-                    }
-                ]
-            },
-
-            elder_dialogue: {
-                title: "💬 Elder's Counsel",
-                text: `Elder Aldric gestures for you to sit by the fountain.
-
-<em>"The temple was abandoned decades ago when the priests fled something... evil. Recent tremors have awakened it. Travelers speak of green flames and chanting from within."</em>
-
-He hands you a worn map. <em>"This shows the temple entrance. Beware the crypt beneath - many adventurers have entered, none returned."</em>
-
-<div class="combatText">
-<strong>📜 INFORMATION GAINED:</strong><br>
-• Temple map acquired<br>
-• Knowledge of the crypt<br>
-• Warning about the danger level
-</div>`,
-                sceneData: {
-                    environment: 'village_square',
-                    partyPositions: [
-                        {id: 'player', x: 250, y: 300},
-                        {id: 'elara', x: 200, y: 280},
-                        {id: 'thorin', x: 300, y: 300},
-                        {id: 'lyra', x: 230, y: 250}
-                    ],
-                    npcs: [{id: 'elder', x: 350, y: 300, name: 'Elder Aldric'}]
-                },
-                choices: [
-                    {
-                        id: 'thank_elder',
-                        label: "Thank the Elder and prepare",
-                        description: "Use this information to plan your approach.",
-                        nextScene: 'inn_rest'
-                    }
-                ]
-            },
-
-            village_search: {
-                title: "🔍 Searching the Village",
-                text: `You spend time exploring the village, checking damaged buildings and speaking with survivors.
-
-<div class="combatText">
-<strong>🔍 SEARCH RESULTS:</strong><br>
-Found items:<br>
-• 2× Greater Health Potions<br>
-• Ring of Protection (+1 AC)<br>
-• 50 gold pieces (donated by grateful villagers)<br>
-• Scroll of Fireball
-</div>
-
-One elderly woman approaches: <em>"My son went to the temple two days ago. If you find him... please."</em>
-
-<div class="combatText">
-<strong>📜 QUEST ADDED:</strong><br>
-"Missing Son" - Search the temple for survivors
-</div>`,
-                sceneData: {
-                    environment: 'village_square',
-                    partyPositions: [
-                        {id: 'player', x: 250, y: 300, state: 'searching'},
-                        {id: 'elara', x: 200, y: 280},
-                        {id: 'thorin', x: 300, y: 300},
-                        {id: 'lyra', x: 230, y: 250, state: 'searching'}
-                    ]
-                },
-                choices: [
-                    {
-                        id: 'finish_search',
-                        label: "Prepare to depart",
-                        description: "You've gathered what you need.",
-                        nextScene: 'inn_rest'
-                    }
-                ]
-            },
-
-            forest_path: {
-                title: "🌲 The Dark Forest",
-                text: `The path north leads into an ancient forest. Gnarled trees block out the sun, creating an oppressive darkness even at midday.
-
-<em>"Stay close,"</em> Lyra warns, hand on her bow. <em>"Something's watching us."</em>
-
-In the distance, you see the crumbling stone temple rising above the trees, green light flickering from its windows.
-
-<div class="combatText">
-<strong>⚠️ APPROACHING DANGER!</strong><br>
-The temple awaits... but this is where this demo ends.
-</div>
-
-<div class="levelUpNotif">
-<strong>🎉 DEMO COMPLETE! 🎉</strong><br>
-Thank you for playing Baldur's Gate Chronicles Enhanced Edition!<br>
-<br>
-Your adventure continues in the full version...<br>
-<em>(Export your save to preserve your progress!)</em>
-</div>`,
-                sceneData: {
-                    environment: 'dark_forest',
-                    partyPositions: [
-                        {id: 'player', x: 250, y: 300},
-                        {id: 'elara', x: 200, y: 280},
-                        {id: 'thorin', x: 300, y: 300},
-                        {id: 'lyra', x: 230, y: 250, state: 'alert'}
-                    ]
-                },
-                choices: [
-                    {
-                        id: 'return_menu',
+                        id: 'return',
                         label: "🏠 Return to Main Menu",
-                        description: "Export your save and return to the menu.",
+                        description: "End of demo. Export your save!",
                         nextScene: 'intro'
                     }
                 ]
             }
         };
 
-        // Character templates with CONSENSUS enhancements
         const CHARACTER_TEMPLATES = {
             player: {
                 name: 'Hero',
@@ -1712,7 +993,6 @@ Your adventure continues in the full version...<br>
             }
         };
 
-        // CONSENSUS: Difficulty scaling configuration
         const DIFFICULTY_MODIFIERS = {
             easy: {
                 enemyHpMultiplier: 0.75,
@@ -1763,14 +1043,12 @@ Your adventure continues in the full version...<br>
             return advantage ? Math.max(roll1, roll2) : Math.min(roll1, roll2);
         }
 
-        // CONSENSUS: XP and leveling system
         function awardXP(amount) {
             const modifier = DIFFICULTY_MODIFIERS[gameState.settings.difficulty];
             const adjustedXP = Math.floor(amount * modifier.xpMultiplier);
 
             gameState.xp += adjustedXP;
 
-            // Check for level up
             while (gameState.xp >= gameState.xpToNextLevel) {
                 levelUp();
             }
@@ -1783,7 +1061,6 @@ Your adventure continues in the full version...<br>
             gameState.xp -= gameState.xpToNextLevel;
             gameState.xpToNextLevel = Math.floor(gameState.xpToNextLevel * 1.5);
 
-            // Show level up notification
             const narrativeBox = getElement('narrativeBox');
             narrativeBox.innerHTML += `
                 <div class="levelUpNotif">
@@ -1793,7 +1070,6 @@ Your adventure continues in the full version...<br>
                 </div>
             `;
 
-            // Update character levels
             gameState.characters.forEach(char => {
                 char.level = gameState.level;
                 char.maxHp += Math.floor(Math.random() * 6) + 3;
@@ -1801,6 +1077,288 @@ Your adventure continues in the full version...<br>
             });
         }
 
+        // THREE.JS 3D RENDERER
+        class Renderer3D {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.scene = new THREE.Scene();
+                this.camera = new THREE.PerspectiveCamera(
+                    50,
+                    canvas.width / canvas.height,
+                    0.1,
+                    1000
+                );
+
+                // Isometric camera position
+                this.camera.position.set(10, 10, 10);
+                this.camera.lookAt(0, 0, 0);
+
+                this.renderer = new THREE.WebGLRenderer({
+                    canvas: canvas,
+                    antialias: true,
+                    alpha: true
+                });
+                this.renderer.setSize(canvas.width, canvas.height);
+                this.renderer.setClearColor(0x0a0505, 1);
+                this.renderer.shadowMap.enabled = true;
+                this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+                // Lighting
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+                this.scene.add(ambientLight);
+
+                const directionalLight = new THREE.DirectionalLight(0xffd700, 0.8);
+                directionalLight.position.set(5, 10, 5);
+                directionalLight.castShadow = true;
+                directionalLight.shadow.mapSize.width = 2048;
+                directionalLight.shadow.mapSize.height = 2048;
+                this.scene.add(directionalLight);
+
+                const pointLight = new THREE.PointLight(0xf4d03f, 0.6, 20);
+                pointLight.position.set(0, 5, 0);
+                this.scene.add(pointLight);
+
+                // Store 3D objects
+                this.objects = new Map();
+                this.animationFrameId = null;
+            }
+
+            render(sceneData) {
+                // Clear previous objects
+                this.objects.forEach(obj => this.scene.remove(obj));
+                this.objects.clear();
+
+                // Create ground
+                const groundGeometry = new THREE.PlaneGeometry(20, 20);
+                const groundMaterial = new THREE.MeshStandardMaterial({
+                    color: this.getEnvironmentColor(sceneData.environment),
+                    roughness: 0.8,
+                    metalness: 0.2
+                });
+                const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+                ground.rotation.x = -Math.PI / 2;
+                ground.receiveShadow = true;
+                this.scene.add(ground);
+                this.objects.set('ground', ground);
+
+                // Add grid
+                const gridHelper = new THREE.GridHelper(20, 20, 0xf4d03f, 0x8b6914);
+                gridHelper.material.opacity = 0.3;
+                gridHelper.material.transparent = true;
+                this.scene.add(gridHelper);
+                this.objects.set('grid', gridHelper);
+
+                // Create characters
+                if (sceneData.partyPositions) {
+                    sceneData.partyPositions.forEach(char => {
+                        const mesh = this.createCharacter(char);
+                        this.scene.add(mesh);
+                        this.objects.set(char.id, mesh);
+                    });
+                }
+
+                // Create enemies
+                if (sceneData.enemies) {
+                    sceneData.enemies.forEach(enemy => {
+                        const mesh = this.createEnemy(enemy);
+                        this.scene.add(mesh);
+                        this.objects.set(enemy.id, mesh);
+                    });
+                }
+
+                // Create NPCs
+                if (sceneData.npcs) {
+                    sceneData.npcs.forEach(npc => {
+                        const mesh = this.createNPC(npc);
+                        this.scene.add(mesh);
+                        this.objects.set(npc.id, mesh);
+                    });
+                }
+
+                // Start animation loop
+                this.animate();
+            }
+
+            getEnvironmentColor(env) {
+                const colors = {
+                    'road_forest': 0x5a7d4e,
+                    'village_square': 0x8b7355,
+                    'dark_forest': 0x2d3e25,
+                    'ruins': 0x3a3a3a
+                };
+                return colors[env] || colors['road_forest'];
+            }
+
+            createCharacter(char) {
+                const group = new THREE.Group();
+
+                // Body (cylinder)
+                const bodyGeometry = new THREE.CylinderGeometry(0.3, 0.3, 1.5, 16);
+                const colors = {
+                    player: 0x4682b4,
+                    elara: 0xf4d03f,
+                    thorin: 0x8b4513,
+                    lyra: 0x9370db
+                };
+                const bodyMaterial = new THREE.MeshStandardMaterial({
+                    color: colors[char.id] || 0x4682b4,
+                    roughness: 0.5,
+                    metalness: 0.3
+                });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 0.75;
+                body.castShadow = true;
+                group.add(body);
+
+                // Head (sphere)
+                const headGeometry = new THREE.SphereGeometry(0.35, 16, 16);
+                const headMaterial = new THREE.MeshStandardMaterial({
+                    color: 0xffd0a0,
+                    roughness: 0.7
+                });
+                const head = new THREE.Mesh(headGeometry, headMaterial);
+                head.position.y = 2;
+                head.castShadow = true;
+                group.add(head);
+
+                // Weapon indicator (cone)
+                const weaponGeometry = new THREE.ConeGeometry(0.1, 0.8, 8);
+                const weaponMaterial = new THREE.MeshStandardMaterial({
+                    color: 0xc0c0c0,
+                    metalness: 0.9,
+                    roughness: 0.2
+                });
+                const weapon = new THREE.Mesh(weaponGeometry, weaponMaterial);
+                weapon.position.set(0.4, 1, 0);
+                weapon.rotation.z = -Math.PI / 4;
+                weapon.castShadow = true;
+                group.add(weapon);
+
+                // Position the group
+                group.position.set(char.x, char.y, char.z);
+
+                return group;
+            }
+
+            createEnemy(enemy) {
+                const group = new THREE.Group();
+
+                // Body (pyramid for menacing look)
+                const bodyGeometry = new THREE.ConeGeometry(0.4, 1.2, 4);
+                const bodyMaterial = new THREE.MeshStandardMaterial({
+                    color: 0xc41e3a,
+                    roughness: 0.6,
+                    metalness: 0.4
+                });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 0.6;
+                body.castShadow = true;
+                group.add(body);
+
+                // Head (smaller sphere)
+                const headGeometry = new THREE.SphereGeometry(0.25, 12, 12);
+                const headMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x8b0000,
+                    roughness: 0.8
+                });
+                const head = new THREE.Mesh(headGeometry, headMaterial);
+                head.position.y = 1.4;
+                head.castShadow = true;
+                group.add(head);
+
+                // Eyes (glowing)
+                const eyeGeometry = new THREE.SphereGeometry(0.08, 8, 8);
+                const eyeMaterial = new THREE.MeshBasicMaterial({
+                    color: 0xffff00,
+                    emissive: 0xffff00
+                });
+
+                const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                leftEye.position.set(-0.1, 1.5, 0.2);
+                group.add(leftEye);
+
+                const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                rightEye.position.set(0.1, 1.5, 0.2);
+                group.add(rightEye);
+
+                group.position.set(enemy.x, enemy.y, enemy.z);
+
+                return group;
+            }
+
+            createNPC(npc) {
+                const group = new THREE.Group();
+
+                // Simple robed figure
+                const bodyGeometry = new THREE.CylinderGeometry(0.4, 0.5, 1.6, 16);
+                const bodyMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x8b7355,
+                    roughness: 0.9
+                });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 0.8;
+                body.castShadow = true;
+                group.add(body);
+
+                const headGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+                const headMaterial = new THREE.MeshStandardMaterial({
+                    color: 0xf0d0a0,
+                    roughness: 0.7
+                });
+                const head = new THREE.Mesh(headGeometry, headMaterial);
+                head.position.y = 1.9;
+                head.castShadow = true;
+                group.add(head);
+
+                group.position.set(npc.x, npc.y, npc.z);
+
+                return group;
+            }
+
+            animate() {
+                this.animationFrameId = requestAnimationFrame(() => this.animate());
+
+                // Gentle camera rotation
+                const time = Date.now() * 0.0001;
+                this.camera.position.x = Math.cos(time) * 12;
+                this.camera.position.z = Math.sin(time) * 12;
+                this.camera.lookAt(0, 0, 0);
+
+                // Animate objects (gentle bobbing)
+                this.objects.forEach((obj, id) => {
+                    if (id !== 'ground' && id !== 'grid') {
+                        obj.rotation.y += 0.005;
+                        obj.position.y = Math.sin(Date.now() * 0.001 + obj.position.x) * 0.1;
+                    }
+                });
+
+                this.renderer.render(this.scene, this.camera);
+            }
+
+            stopAnimation() {
+                if (this.animationFrameId) {
+                    cancelAnimationFrame(this.animationFrameId);
+                    this.animationFrameId = null;
+                }
+            }
+
+            resize(width, height) {
+                this.camera.aspect = width / height;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(width, height);
+            }
+
+            dispose() {
+                this.stopAnimation();
+                this.objects.forEach(obj => {
+                    if (obj.geometry) obj.geometry.dispose();
+                    if (obj.material) obj.material.dispose();
+                });
+                this.renderer.dispose();
+            }
+        }
+
+        // 2D CANVAS RENDERER
         class Renderer2D {
             constructor(canvas, ctx) {
                 this.canvas = canvas;
@@ -1845,7 +1403,6 @@ Your adventure continues in the full version...<br>
                 ctx.fillStyle = grad;
                 ctx.fillRect(0, 0, w, h);
 
-                // Subtle grid
                 ctx.strokeStyle = 'rgba(244, 208, 63, 0.08)';
                 ctx.lineWidth = 1;
                 const gridSize = 40;
@@ -1865,7 +1422,8 @@ Your adventure continues in the full version...<br>
 
             drawCharacter(char) {
                 const ctx = this.ctx;
-                const {x, y, id} = char;
+                const x = this.canvas.width / 2 + char.x * 50;
+                const y = this.canvas.height / 2 + char.z * 50;
 
                 ctx.fillStyle = 'rgba(0,0,0,0.3)';
                 ctx.beginPath();
@@ -1880,7 +1438,7 @@ Your adventure continues in the full version...<br>
                     lyra: ['#9370db', '#5a3a7a']
                 };
 
-                const color = colors[id] || ['#666', '#333'];
+                const color = colors[char.id] || ['#666', '#333'];
                 grad.addColorStop(0, color[0]);
                 grad.addColorStop(1, color[1]);
 
@@ -1893,7 +1451,7 @@ Your adventure continues in the full version...<br>
                 ctx.lineWidth = 2;
                 ctx.stroke();
 
-                const charData = gameState.characters.find(c => c === CHARACTER_TEMPLATES[id]);
+                const charData = gameState.characters.find(c => c === CHARACTER_TEMPLATES[char.id]);
                 if (charData) {
                     ctx.fillStyle = '#f4e4c1';
                     ctx.font = 'bold 14px Cinzel';
@@ -1904,7 +1462,8 @@ Your adventure continues in the full version...<br>
 
             drawEnemy(enemy) {
                 const ctx = this.ctx;
-                const {x, y, type, hp, maxHp} = enemy;
+                const x = this.canvas.width / 2 + enemy.x * 50;
+                const y = this.canvas.height / 2 + enemy.z * 50;
 
                 ctx.fillStyle = 'rgba(0,0,0,0.3)';
                 ctx.beginPath();
@@ -1936,12 +1495,13 @@ Your adventure continues in the full version...<br>
                 ctx.fillStyle = '#ef4444';
                 ctx.font = 'bold 12px Cinzel';
                 ctx.textAlign = 'center';
-                ctx.fillText(type, x, y - 30);
+                ctx.fillText(enemy.type, x, y - 30);
             }
 
             drawNPC(npc) {
                 const ctx = this.ctx;
-                const {x, y} = npc;
+                const x = this.canvas.width / 2 + npc.x * 50;
+                const y = this.canvas.height / 2 + npc.z * 50;
 
                 ctx.fillStyle = '#c0c0c0';
                 ctx.beginPath();
@@ -1959,6 +1519,7 @@ Your adventure continues in the full version...<br>
                 this.canvas = getElement('renderCanvas');
                 this.ctx = this.canvas.getContext('2d');
                 this.renderer2D = new Renderer2D(this.canvas, this.ctx);
+                this.renderer3D = null;
 
                 this.resizeCanvas();
                 window.addEventListener('resize', () => this.resizeCanvas());
@@ -1971,6 +1532,11 @@ Your adventure continues in the full version...<br>
                 const visualSection = getElement('visualSection');
                 this.canvas.width = visualSection.clientWidth;
                 this.canvas.height = visualSection.clientHeight;
+
+                if (this.renderer3D) {
+                    this.renderer3D.resize(this.canvas.width, this.canvas.height);
+                }
+
                 this.render();
             }
 
@@ -2129,7 +1695,7 @@ Your adventure continues in the full version...<br>
 
                 if (choice.skill) {
                     const roll = rollD20();
-                    const modifier = this.getSkillModifier(choice.skill);
+                    const modifier = 3;
                     const total = roll + modifier;
 
                     const result = total >= choice.dc ? 'success' : 'failure';
@@ -2146,7 +1712,6 @@ Your adventure continues in the full version...<br>
                         </div>
                     `;
 
-                    // CONSENSUS: Award XP for skill checks
                     if (result === 'success') {
                         const xpGained = awardXP(25);
                         narrativeBox.innerHTML += `
@@ -2158,8 +1723,7 @@ Your adventure continues in the full version...<br>
 
                     setTimeout(() => this.showScene(nextScene), 1500);
                 } else if (choice.nextScene) {
-                    // Check for combat victory and award XP
-                    if (choice.nextScene === 'combat_victory' || gameState.currentScene === 'combat_round_1') {
+                    if (choice.nextScene === 'combat_victory') {
                         const xpGained = awardXP(150);
                         const narrativeBox = getElement('narrativeBox');
                         narrativeBox.innerHTML += `
@@ -2173,13 +1737,21 @@ Your adventure continues in the full version...<br>
                 }
             }
 
-            getSkillModifier(skill) {
-                return 3;
-            }
-
             toggleViewMode() {
                 gameState.viewMode = gameState.viewMode === '2d' ? '3d' : '2d';
-                getElement('modeToggle').textContent = gameState.viewMode === '2d' ? '2D View' : '3D View';
+                getElement('modeToggle').textContent =
+                    gameState.viewMode === '2d' ? 'Switch to 3D' : 'Switch to 2D';
+
+                if (gameState.viewMode === '3d') {
+                    if (!this.renderer3D) {
+                        this.renderer3D = new Renderer3D(this.canvas);
+                    }
+                } else {
+                    if (this.renderer3D) {
+                        this.renderer3D.stopAnimation();
+                    }
+                }
+
                 this.render();
                 this.saveGameState();
             }
@@ -2189,11 +1761,18 @@ Your adventure continues in the full version...<br>
                 if (!scene || !scene.sceneData) return;
 
                 if (gameState.viewMode === '2d') {
+                    if (this.renderer3D) {
+                        this.renderer3D.stopAnimation();
+                    }
                     this.renderer2D.render(scene.sceneData);
+                } else if (gameState.viewMode === '3d') {
+                    if (!this.renderer3D) {
+                        this.renderer3D = new Renderer3D(this.canvas);
+                    }
+                    this.renderer3D.render(scene.sceneData);
                 }
             }
 
-            // CONSENSUS: XP Bar update
             updateXPBar() {
                 const panel = getElement('charPanel');
                 const existingXPBar = panel.querySelector('.xpBar');
