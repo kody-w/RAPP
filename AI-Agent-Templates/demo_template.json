@@ -1,0 +1,92 @@
+{
+  "demo_name": "Agent_Demo_Template",
+  "demo_version": "1.0",
+  "agent_name": "ExampleAgent",
+  "agent_description": "Brief description of what this agent does",
+  "description": "Interactive demonstration showing how the agent works in real scenarios",
+  "trigger_phrases": [
+    "show me an example",
+    "how does this work",
+    "demo this agent"
+  ],
+  "conversation_flow": [
+    {
+      "step_number": 1,
+      "description": "User asks initial question",
+      "user_message": "Hello, can you help me with X?",
+      "agent_response": [
+        {
+          "type": "text",
+          "content": "Welcome! I can absolutely help you with that. Let me show you what I can do."
+        },
+        {
+          "type": "agent_call",
+          "agent": "ExampleAgent",
+          "description": "Analyzing your request",
+          "display_result": {
+            "intro_text": "I've analyzed your request and here's what I found:",
+            "format": "generic",
+            "data": {
+              "result": "Sample result data",
+              "confidence": "95%",
+              "recommendations": [
+                "First recommendation",
+                "Second recommendation",
+                "Third recommendation"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "step_number": 2,
+      "description": "User asks follow-up question",
+      "user_message": "Can you show me more details?",
+      "agent_response": [
+        {
+          "type": "text",
+          "content": "Of course! Here are the detailed results:"
+        },
+        {
+          "type": "agent_call",
+          "agent": "ExampleAgent",
+          "description": "Fetching detailed analysis",
+          "display_result": {
+            "intro_text": "Here's a comprehensive breakdown:",
+            "format": "generic",
+            "data": {
+              "detailed_metrics": {
+                "metric1": "value1",
+                "metric2": "value2",
+                "metric3": "value3"
+              },
+              "insights": [
+                "Key insight #1",
+                "Key insight #2"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "step_number": 3,
+      "description": "Demo completion",
+      "user_message": "Thank you, that's helpful!",
+      "agent_response": [
+        {
+          "type": "text",
+          "content": "You're welcome! This demo showed how the agent can help you accomplish your goals. To use this agent for real:\n\n1. Install the agent from the RAPP Agent Store\n2. Configure your environment variables\n3. Run the agent with your actual data\n\nVisit github.com/kody-w/RAPP for installation instructions."
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "RAPP",
+    "created": "2025-11-24",
+    "tags": ["demo", "example", "template"],
+    "demo_type": "static_scripted",
+    "duration_minutes": 2
+  }
+}

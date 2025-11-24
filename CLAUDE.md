@@ -111,11 +111,14 @@ The complete solution spans multiple layers when deployed with Power Platform in
 ### Core Components
 
 **function_app.py (main entry point):**
-- Azure Function HTTP trigger endpoint: `businessinsightbot_function`
-- `Assistant` class orchestrates the AI conversation flow
+- Two Azure Function HTTP trigger endpoints:
+  - `businessinsightbot_function`: Main conversational endpoint (function_app.py:1268)
+  - `agent_manager`: Agent configuration and preset management API (function_app.py:804)
+- `Assistant` class orchestrates the AI conversation flow (function_app.py:230)
 - Dynamic agent loading from both local `agents/` folder and Azure File Storage (`agents/` and `multi_agents/` shares)
 - GUID-based user context management with default GUID: `c0p110t0-aaaa-bbbb-cccc-123456789abc`
 - Dual-response system: formatted markdown response + concise voice response (split by `|||VOICE|||` delimiter)
+- Demo system: Scripted conversation flows triggered by specific phrases (function_app.py:364-701)
 
 **Agent System:**
 - All agents inherit from `BasicAgent` (agents/basic_agent.py)
@@ -126,38 +129,59 @@ The complete solution spans multiple layers when deployed with Power Platform in
   - `GithubAgentLibraryManager`: Manages agent library downloads and installations
   - `ScriptedDemoAgent`: Provides interactive demos and walkthroughs
 - Custom agents can be added to `agents/` folder or uploaded to Azure File Storage
+- Agent discovery is optimized via `agent_manifest.json` which caches metadata for faster loading (function_app.py:903-968)
 
 **Agent Filtering (Per-User):**
 - Users can enable/disable specific agents via `agent_config/{user_guid}/enabled_agents.json`
 - Format: JSON array of agent filenames (e.g., `["context_memory_agent.py", "manage_memory_agent.py"]`)
 - If no config exists, all agents are loaded by default
 - Useful for limiting functionality per user or testing specific agents
+- Managed through the Agent Manager API endpoint
+
+**Agent Manager API:**
+The `agent_manager` endpoint provides REST API for agent configuration:
+- `GET /api/agent_manager?action=list_agents` - List all available agents with metadata
+- `GET /api/agent_manager?action=get_config&user_guid=xxx` - Get user's agent configuration
+- `POST /api/agent_manager` with `action=save_config` - Save agent configuration
+- `GET /api/agent_manager?action=list_presets` - List agent combination presets
+- `POST /api/agent_manager` with `action=save_preset` - Save new preset
 
 **Memory System:**
 - Dual-layer memory: shared (all users) + user-specific (per GUID)
 - Storage: Azure File Share via `AzureFileStorageManager` (utils/azure_file_storage.py)
 - User context switching: Send a GUID as the first message or in `user_input` to load user-specific memory
 - Memory trimming: Conversation history limited to last 20 messages to prevent memory overflow
+- Shared memories stored in `shared_memories/memory.json`
+- User-specific memories in `memory/{guid}/user_memory.json`
+
+**Demo/Scripted Conversation System:**
+- Demos are JSON files stored in Azure File Storage `demos/` directory
+- Each demo defines `trigger_phrases` that activate the scripted conversation
+- Demo data includes a `conversation_flow` array of steps
+- State is extracted from conversation history (stateless design)
+- Users can exit demos with "exit demo", "stop demo", "end demo", or "cancel demo"
+- ScriptedDemoAgent (if loaded) handles canned responses for each step
 
 ### Request Flow
 
 **Standalone Mode (Direct API):**
 1. HTTP request → `businessinsightbot_function` endpoint
-2. Load agents from local folder + Azure File Storage
+2. Load agents from local folder + Azure File Storage (with per-user filtering)
 3. Create `Assistant` instance with user GUID (from request or default)
 4. Initialize context memory (shared + user-specific)
-5. Prepare messages with system prompt containing memory contexts
-6. Call Azure OpenAI with function definitions (agent metadata)
-7. If function called: execute agent → add result to conversation → get final response
-8. Parse response into formatted + voice parts
-9. Return JSON: `{"assistant_response": "...", "voice_response": "...", "agent_logs": "...", "user_guid": "..."}`
+5. Check for demo triggers or active demo state
+6. Prepare messages with system prompt containing memory contexts
+7. Call Azure OpenAI with function definitions (agent metadata)
+8. If function called: execute agent → add result to conversation → get final response
+9. Parse response into formatted + voice parts
+10. Return JSON: `{"assistant_response": "...", "voice_response": "...", "agent_logs": "...", "user_guid": "..."}`
 
 **Power Platform Mode (Teams/M365 Copilot):**
 1. User message in Teams/M365 Copilot → Copilot Studio
 2. Copilot Studio processes intent → triggers Power Automate flow
 3. Power Automate enriches with user context (Office 365 profile)
 4. HTTP POST to Azure Function with user context
-5. Azure Function processes (steps 2-8 from above)
+5. Azure Function processes (steps 2-10 from above)
 6. Response returns to Power Automate
 7. Power Automate formats response for Copilot Studio
 8. Copilot Studio displays in Teams/M365 Copilot chat
@@ -180,18 +204,26 @@ The complete solution spans multiple layers when deployed with Power Platform in
 ### Key Design Patterns
 
 **String Safety:**
-- All message content sanitized via `ensure_string_content()` to prevent None/undefined errors
-- Function arguments stringified via `ensure_string_function_args()`
+- All message content sanitized via `ensure_string_content()` to prevent None/undefined errors (function_app.py:21-50)
+- Function arguments stringified via `ensure_string_function_args()` (function_app.py:52-70)
 - Default values for all potentially None values
 
 **CORS Handling:**
-- All responses include CORS headers via `build_cors_response()`
+- All responses include CORS headers via `build_cors_response()` (function_app.py:72-83)
 - OPTIONS preflight requests supported
 
 **Error Handling:**
-- Retry logic (max 3 attempts) for OpenAI API calls
-- Agent loading failures logged but don't crash the app
-- Graceful degradation when memory initialization fails
+- Retry logic (max 3 attempts) for OpenAI API calls (function_app.py:566, retry_count)
+- Agent loading failures logged but don't crash the app (function_app.py:100, 158)
+- Graceful degradation when memory initialization fails (function_app.py:298-301)
+
+**Agent Loading Strategy:**
+- Local `agents/` folder loaded first
+- Azure File Storage `agents/` share loaded next (overlays local)
+- Azure File Storage `multi_agents/` share loaded last
+- Files written to `/tmp/agents` and `/tmp/multi_agents` for module loading
+- Per-user agent filtering applied if `enabled_agents.json` exists
+- Manifest-based loading optimized for performance
 
 ## Configuration
 
@@ -203,6 +235,7 @@ Required settings:
 - `AZURE_OPENAI_DEPLOYMENT_NAME`: Model deployment name (e.g., "gpt-4o", "gpt-5-chat")
 - `AZURE_OPENAI_API_VERSION`: API version (e.g., "2025-01-01-preview")
 - `AzureWebJobsStorage`: Azure Storage connection string for file shares
+- `AZURE_FILES_SHARE_NAME`: Name of the Azure File Share (unique per deployment)
 - `ASSISTANT_NAME`: Bot display name (default: "RAPP")
 - `CHARACTERISTIC_DESCRIPTION`: Bot personality and capabilities description (default: "Rapid Agent Prototyping Platform - A flexible AI agent framework")
 
@@ -217,6 +250,7 @@ Required settings:
     "AZURE_OPENAI_ENDPOINT": "https://your-resource.openai.azure.com/",
     "AZURE_OPENAI_DEPLOYMENT_NAME": "gpt-4o",
     "AZURE_OPENAI_API_VERSION": "2025-01-01-preview",
+    "AZURE_FILES_SHARE_NAME": "your-unique-share-name",
     "ASSISTANT_NAME": "RAPP",
     "CHARACTERISTIC_DESCRIPTION": "Rapid Agent Prototyping Platform - A flexible AI agent framework"
   }
@@ -554,23 +588,23 @@ class PersonalizedAgent(BasicAgent):
 - **Function keys should be rotated** regularly for security
 - **Monitor API usage** to avoid unexpected costs
 - **RAPP is platform-agnostic** - while examples show Azure deployment, the pattern works on any cloud platform
+- **Agent manifest system** (`agent_manifest.json`) caches agent metadata for faster loading - regenerate when adding new agents
 
 ## Utilities
 
 **AzureFileStorageManager** (`utils/azure_file_storage.py`):
 - Core utility for reading/writing files to Azure File Storage
-- Methods: `read_file(share_name, file_path)`, `write_file(share_name, file_path, content)`, `list_files(share_name)`
+- Methods: `read_file(directory, filename)`, `write_file(directory, filename, content)`, `list_files(directory)`
 - Handles connection strings, retries, and error handling
-
-**AgentManager** (`utils/agent_manager.py`):
-- Helper utilities for agent management and coordination
-- Used for multi-agent orchestration scenarios
+- Supports both text and binary file operations
+- Memory context management via `set_memory_context(guid)` method
+- SAS token generation for temporary download URLs via `generate_download_url()`
 
 ## Common Development Patterns
 
 **Testing a new agent locally:**
 1. Create agent file in `agents/` folder (e.g., `my_test_agent.py`)
-2. Restart the function: `func start`
+2. Restart the function: `func start` (or `./run.sh` / `.\run.ps1`)
 3. Test via API call with test user GUID
 4. Check logs for agent loading confirmation
 
@@ -591,10 +625,48 @@ class MyAgent(BasicAgent):
 ```python
 # Read current memory
 storage = AzureFileStorageManager()
-user_memory = storage.read_file('memory/users', f'{user_guid}_context.txt')
+storage.set_memory_context(user_guid)  # Set context for specific user
+user_memory = storage.read_json()  # Reads from user's memory file
 
-# Append to memory
-new_content = f"\n[{datetime.now()}] User updated preferences: dark mode enabled"
-updated_memory = (user_memory or "") + new_content
-storage.write_file('memory/users', f'{user_guid}_context.txt', updated_memory)
+# Write to memory
+storage.set_memory_context(user_guid)
+memory_data = {"facts": ["User prefers dark mode"], "preferences": {}}
+storage.write_json(memory_data)
+```
+
+**Creating a demo/scripted conversation:**
+```python
+# Upload demo JSON to Azure Storage demos/ directory
+demo_data = {
+    "trigger_phrases": ["start demo", "show me a demo"],
+    "conversation_flow": [
+        {
+            "step": 1,
+            "user_input_pattern": ".*",
+            "canned_response": "Welcome to the demo! Let me show you around..."
+        },
+        {
+            "step": 2,
+            "user_input_pattern": ".*",
+            "canned_response": "Here's the next step..."
+        }
+    ]
+}
+
+storage = AzureFileStorageManager()
+storage.write_file('demos', 'my_demo.json', json.dumps(demo_data))
+```
+
+**Using the Agent Manager API:**
+```bash
+# List all available agents
+curl http://localhost:7071/api/agent_manager?action=list_agents
+
+# Get user's current configuration
+curl http://localhost:7071/api/agent_manager?action=get_config&user_guid=USER_GUID
+
+# Save agent configuration
+curl -X POST http://localhost:7071/api/agent_manager \
+  -H "Content-Type: application/json" \
+  -d '{"action": "save_config", "user_guid": "USER_GUID", "enabled_agents": ["context_memory_agent.py"]}'
 ```

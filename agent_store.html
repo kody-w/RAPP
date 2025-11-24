@@ -2933,40 +2933,82 @@ Once downloaded:
 
         // Load stack metadata from GitHub
         async function loadStackMetadata(agent) {
+            const categoryDir = CATEGORY_TO_DIR[agent.category] || 'general_stacks';
+            const agentIdWithUnderscores = agent.id.replace(/-/g, '_');
+            const stackName = agentIdWithUnderscores + '_stack';
+
             try {
-                const categoryDir = CATEGORY_TO_DIR[agent.category] || 'general_stacks';
-                const agentIdWithUnderscores = agent.id.replace(/-/g, '_');
-                const stackName = agentIdWithUnderscores + '_stack';
                 const metadataUrl = `${GITHUB_CONFIG.rawUrl}/agent_stacks/${categoryDir}/${stackName}/metadata.json`;
 
                 const response = await fetch(metadataUrl);
                 if (response.ok) {
                     const metadata = await response.json();
                     console.log(`✅ Loaded metadata for ${agent.id}:`, metadata);
+
+                    // Check if demo file exists and add demo info
+                    const demoFileName = `${agentIdWithUnderscores}_demo.html`;
+                    const demoUrl = `${GITHUB_CONFIG.rawUrl}/agent_stacks/${categoryDir}/${stackName}/demos/${demoFileName}`;
+
+                    try {
+                        const demoCheck = await fetch(demoUrl, { method: 'HEAD' });
+                        if (demoCheck.ok) {
+                            metadata.demo = {
+                                available: true,
+                                title: `${agent.name} Interactive Demo`,
+                                description: 'Experience this stack with an interactive demonstration showcasing real-world scenarios.',
+                                url: demoUrl
+                            };
+                            console.log(`✅ Demo found for ${agent.id}:`, demoUrl);
+                        }
+                    } catch (demoError) {
+                        console.log(`ℹ️ No demo available for ${agent.id}`);
+                    }
+
                     return metadata;
                 }
             } catch (error) {
                 console.warn(`⚠️ Could not load metadata for ${agent.id}:`, error);
             }
 
-            // Return default metadata
+            // Return default metadata with demo check
+            const demoFileName = `${agentIdWithUnderscores}_demo.html`;
+            const demoUrl = `${GITHUB_CONFIG.rawUrl}/agent_stacks/${categoryDir}/${stackName}/demos/${demoFileName}`;
+
+            // Try to check if demo exists even if metadata fails
+            let demoAvailable = false;
+            try {
+                const demoCheck = await fetch(demoUrl, { method: 'HEAD' });
+                demoAvailable = demoCheck.ok;
+                if (demoAvailable) {
+                    console.log(`✅ Demo found for ${agent.id} (no metadata):`, demoUrl);
+                }
+            } catch (e) {
+                console.log(`ℹ️ No demo available for ${agent.id}`);
+            }
+
             return {
-                components: [],
+                components: [{
+                    name: agent.name,
+                    type: 'Agent',
+                    description: agent.shortDescription
+                }],
                 technicalRequirements: {
                     platforms: ['Windows', 'macOS', 'Linux'],
-                    dependencies: ['Python 3.8+', 'requests', 'json'],
-                    apiKeys: ['D365_CE_API_KEY', 'SALESFORCE_API_KEY']
+                    dependencies: ['Python 3.11+', 'Azure Functions', 'requests'],
+                    apiKeys: ['AZURE_OPENAI_API_KEY', 'AZURE_OPENAI_ENDPOINT']
                 },
                 benefits: [
-                    'Improves citizen satisfaction',
-                    'Reduces response times',
-                    'Increases efficiency'
+                    'Automates complex workflows',
+                    'Integrates with Microsoft 365',
+                    'Reduces manual processing time'
                 ],
-                demo: {
+                demo: demoAvailable ? {
                     available: true,
-                    title: 'Try the Demo',
-                    description: 'Experience this stack with an interactive demonstration.',
-                    url: `${GITHUB_CONFIG.baseUrl}/blob/${GITHUB_CONFIG.branch}/${GITHUB_CONFIG.subPath}/agent_stacks/${CATEGORY_TO_DIR[agent.category] || 'general_stacks'}/${agent.id.replace(/-/g, '_')}_stack/demos/${agent.id.replace(/-/g, '_')}_demo.html`
+                    title: `${agent.name} Interactive Demo`,
+                    description: 'Experience this stack with an interactive demonstration showcasing real-world scenarios.',
+                    url: demoUrl
+                } : {
+                    available: false
                 }
             };
         }

@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Demo - Interactive Demonstration</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .demo-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        .demo-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .demo-header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .demo-header p {
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+
+        .chat-area {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .message {
+            display: flex;
+            gap: 1rem;
+            max-width: 85%;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .message.assistant {
+            align-self: flex-start;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .message.assistant .message-avatar {
+            background: #e5e7eb;
+        }
+
+        .message-content {
+            background: white;
+            padding: 1rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            line-height: 1.6;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message.assistant .message-content {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+        }
+
+        .agent-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-top: 1rem;
+        }
+
+        .data-display {
+            background: #fef3c7;
+            border: 1px solid #fbbf24;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .data-display h4 {
+            color: #92400e;
+            margin-bottom: 0.5rem;
+        }
+
+        .data-display pre {
+            background: white;
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 0.9rem;
+        }
+
+        .demo-controls {
+            padding: 1.5rem 2rem;
+            background: #f9fafb;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+        }
+
+        .btn-secondary:hover {
+            background: #f3f4f6;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            vertical-align: middle;
+            margin-left: 0.5rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .demo-info {
+            background: #e0e7ff;
+            border: 1px solid #6366f1;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .demo-info strong {
+            color: #3730a3;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            border: 1px solid #ef4444;
+            color: #991b1b;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1 id="demoTitle">🤖 Agent Demo</h1>
+            <p id="demoDescription">Loading demonstration...</p>
+        </div>
+
+        <div class="chat-area" id="chatArea">
+            <div class="demo-info">
+                <strong>📺 Interactive Demo Mode</strong><br>
+                This is a static demonstration showing how the agent works. Click "Next Step" to progress through the scenario.
+            </div>
+        </div>
+
+        <div class="demo-controls">
+            <button class="btn btn-secondary" id="resetBtn" onclick="resetDemo()">🔄 Reset</button>
+            <button class="btn btn-primary" id="nextBtn" onclick="nextStep()">▶️ Next Step</button>
+            <button class="btn btn-secondary" id="autoplayBtn" onclick="toggleAutoplay()">⏸️ Pause</button>
+        </div>
+    </div>
+
+    <script>
+        // Configuration - Update these for each agent
+        const GITHUB_REPO = 'kody-w/RAPP';
+        const GITHUB_BRANCH = 'main';
+        const DEMO_JSON_PATH = 'AI-Agent-Templates/agent_stacks/CATEGORY/AGENT_NAME_stack/demos/AGENT_NAME_demo.json';
+
+        // Demo state
+        let demoData = null;
+        let currentStep = 0;
+        let isPlaying = false;
+        let autoplayInterval = null;
+
+        // Load demo JSON on page load
+        async function loadDemoData() {
+            try {
+                // Try to get demo path from URL parameter
+                const urlParams = new URLSearchParams(window.location.search);
+                const customPath = urlParams.get('demo');
+
+                const jsonPath = customPath || DEMO_JSON_PATH;
+                const jsonUrl = `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/${jsonPath}`;
+
+                console.log('Loading demo from:', jsonUrl);
+
+                const response = await fetch(jsonUrl);
+                if (!response.ok) {
+                    throw new Error(`Failed to load demo: ${response.status}`);
+                }
+
+                demoData = await response.json();
+
+                // Update header
+                document.getElementById('demoTitle').textContent = `🤖 ${demoData.agent_name || 'Agent'} Demo`;
+                document.getElementById('demoDescription').textContent = demoData.description || 'Interactive demonstration';
+
+                console.log('Demo loaded successfully:', demoData);
+
+                // Start demo
+                showStep(0);
+            } catch (error) {
+                console.error('Error loading demo:', error);
+                showError('Failed to load demo. Make sure the demo JSON file exists in the repository.');
+            }
+        }
+
+        function showError(message) {
+            const chatArea = document.getElementById('chatArea');
+            chatArea.innerHTML = `
+                <div class="error-message">
+                    <strong>❌ Error</strong><br>
+                    ${message}<br><br>
+                    <small>Demo path: ${DEMO_JSON_PATH}</small>
+                </div>
+            `;
+            document.getElementById('nextBtn').disabled = true;
+        }
+
+        function showStep(stepIndex) {
+            if (!demoData || !demoData.conversation_flow) return;
+
+            const steps = demoData.conversation_flow;
+            if (stepIndex >= steps.length) {
+                endDemo();
+                return;
+            }
+
+            const step = steps[stepIndex];
+            const chatArea = document.getElementById('chatArea');
+
+            // Show user message
+            addMessage('user', step.user_message);
+
+            // Show agent response after delay
+            setTimeout(() => {
+                showAgentResponse(step.agent_response);
+
+                // Enable next button
+                currentStep = stepIndex + 1;
+                updateControls();
+            }, 1000);
+        }
+
+        function addMessage(sender, content) {
+            const chatArea = document.getElementById('chatArea');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+
+            const avatar = sender === 'user' ? '👤' : '🤖';
+
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${avatar}</div>
+                <div class="message-content">${content}</div>
+            `;
+
+            chatArea.appendChild(messageDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function showAgentResponse(response) {
+            if (typeof response === 'string') {
+                addMessage('assistant', response);
+                return;
+            }
+
+            if (Array.isArray(response)) {
+                response.forEach((block, index) => {
+                    setTimeout(() => {
+                        processResponseBlock(block);
+                    }, index * 500);
+                });
+            }
+        }
+
+        function processResponseBlock(block) {
+            if (typeof block === 'string') {
+                addMessage('assistant', block);
+                return;
+            }
+
+            if (block.type === 'text') {
+                addMessage('assistant', block.content);
+            } else if (block.type === 'agent_call') {
+                showAgentCall(block);
+            } else {
+                // Generic data display
+                addMessage('assistant', `<pre>${JSON.stringify(block, null, 2)}</pre>`);
+            }
+        }
+
+        function showAgentCall(agentCall) {
+            let content = '';
+
+            // Show intro text
+            if (agentCall.display_result && agentCall.display_result.intro_text) {
+                content += agentCall.display_result.intro_text + '<br><br>';
+            }
+
+            // Show data
+            if (agentCall.display_result && agentCall.display_result.data) {
+                const data = agentCall.display_result.data;
+                content += '<div class="data-display">';
+                content += '<h4>📊 Results</h4>';
+                content += '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                content += '</div>';
+            }
+
+            // Add agent badge
+            content += `<div class="agent-badge">🔧 ${agentCall.agent}</div>`;
+
+            addMessage('assistant', content);
+        }
+
+        function nextStep() {
+            if (!demoData) return;
+
+            if (currentStep < demoData.conversation_flow.length) {
+                showStep(currentStep);
+            }
+        }
+
+        function resetDemo() {
+            const chatArea = document.getElementById('chatArea');
+            chatArea.innerHTML = `
+                <div class="demo-info">
+                    <strong>📺 Interactive Demo Mode</strong><br>
+                    This is a static demonstration showing how the agent works. Click "Next Step" to progress through the scenario.
+                </div>
+            `;
+            currentStep = 0;
+            isPlaying = false;
+            clearInterval(autoplayInterval);
+            updateControls();
+        }
+
+        function toggleAutoplay() {
+            isPlaying = !isPlaying;
+
+            if (isPlaying) {
+                document.getElementById('autoplayBtn').textContent = '⏸️ Pause';
+                autoplayInterval = setInterval(() => {
+                    if (currentStep < demoData.conversation_flow.length) {
+                        nextStep();
+                    } else {
+                        toggleAutoplay();
+                    }
+                }, 3000);
+            } else {
+                document.getElementById('autoplayBtn').textContent = '▶️ Autoplay';
+                clearInterval(autoplayInterval);
+            }
+        }
+
+        function updateControls() {
+            const nextBtn = document.getElementById('nextBtn');
+            if (currentStep >= demoData.conversation_flow.length) {
+                nextBtn.textContent = '✓ Demo Complete';
+                nextBtn.disabled = true;
+            } else {
+                nextBtn.textContent = '▶️ Next Step';
+                nextBtn.disabled = false;
+            }
+        }
+
+        function endDemo() {
+            addMessage('assistant', `
+                <strong>🎉 Demo Complete!</strong><br><br>
+                This demonstration showed how the ${demoData.agent_name || 'agent'} works in action.<br><br>
+                <strong>To use this agent for real:</strong><br>
+                1. Visit the <a href="https://kody-w.github.io/RAPP/agent_store.html" target="_blank">RAPP Agent Store</a><br>
+                2. Add the agent to your cart<br>
+                3. Follow the installation instructions<br><br>
+                <a href="https://github.com/kody-w/RAPP" target="_blank">View on GitHub →</a>
+            `);
+
+            document.getElementById('nextBtn').textContent = '✓ Demo Complete';
+            document.getElementById('nextBtn').disabled = true;
+        }
+
+        // Load demo on page load
+        window.addEventListener('DOMContentLoaded', loadDemoData);
+    </script>
+</body>
+</html>
