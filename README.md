@@ -1,4 +1,5 @@
 # RAPP - Rapid Agent Prototyping Platform/Pattern
+## Build Your Digital Twin - AI That Knows You
 <a href='https://codespaces.new/kody-w/RAPP?quickstart=1'><img src='https://github.com/codespaces/badge.svg' alt='Open in GitHub Codespaces' style='max-width: 100%;'></a>
 
 ## 🎓 New to RAPP? Start Here!
@@ -10,7 +11,7 @@
   - Architecture deep-dive, team scaling strategies, ROI metrics, interactive tools
 
 **🚀 Main Applications:**
-- **[RAPP Chat Interface](https://kody-w.github.io/RAPP/)** - Full-featured AI chat with multi-user support, voice synthesis, and agent orchestration
+- **[RAPP Chat Interface](https://kody-w.github.io/RAPP/)** - Your personalized Digital Twin with persistent memory, voice synthesis, and multi-agent orchestration
 - **[Local-First App Store](https://kody-w.github.io/RAPP/localFirstTools/)** - Browse and use 40+ productivity tools and utilities
 - **[Agent Marketplace](https://kody-w.github.io/RAPP/agent-store.html)** - Discover, install, and manage AI agents for any use case
 
