@@ -763,7 +763,7 @@
     }
 
     body.dark .header-button {
-      color: var(--gray-50);
+      color: var(--gray-100);
     }
 
     body.dark .header-button:hover {
@@ -1402,7 +1402,7 @@
 
     body.dark .input-field {
       background: var(--gray-30);
-      color: var(--gray-10);
+      color: var(--gray-130);
       border-color: var(--gray-40);
     }
 
@@ -1508,6 +1508,27 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
+    }
+
+    .upload-status {
+      margin-top: var(--space-s);
+      padding: var(--space-xs) var(--space-s);
+      background: rgba(116, 39, 116, 0.1);
+      border-radius: var(--radius);
+      font-size: 13px;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+    }
+
+    body.dark .upload-status {
+      background: rgba(116, 39, 116, 0.2);
+      color: #bb86fc;
+    }
+
+    .upload-status i {
+      font-size: 14px;
     }
 
     .image-preview-remove {
@@ -4902,13 +4923,71 @@
         });
       }
 
-      handleImageUpload(file) {
+      async handleImageUpload(file) {
         if (!file || !file.type.startsWith("image/")) return;
 
         const reader = new FileReader();
-        reader.onload = (e) => {
-          this.pendingImage = e.target.result;
-          this.showImagePreview(e.target.result);
+        reader.onload = async (e) => {
+          const imageData = e.target.result;
+          this.showImagePreview(imageData);
+
+          // Show uploading status
+          const uploadStatus = document.createElement('div');
+          uploadStatus.className = 'upload-status';
+          uploadStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading image to storage...';
+          this.imagePreviewContainer.appendChild(uploadStatus);
+
+          try {
+            // Step 1: Upload to Azure File Storage
+            const endpoint = appState.getActiveEndpoint();
+            if (!endpoint || !endpoint.url) {
+              throw new Error("Please configure an endpoint first");
+            }
+
+            const uploadResponse = await fetch(endpoint.url, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-functions-key": endpoint.key,
+              },
+              body: JSON.stringify({
+                user_input: `Please upload this image: ${file.name}`,
+                conversation_history: [],
+                user_guid: endpoint.guid,
+                image_data: imageData
+              }),
+            });
+
+            if (!uploadResponse.ok) {
+              throw new Error(`Upload failed: ${uploadResponse.status}`);
+            }
+
+            const uploadData = await uploadResponse.json();
+            const responseText = uploadData.assistant_response || "";
+
+            // Extract URL from response
+            const urlMatch = responseText.match(/URL:\s*(https?:\/\/[^\s]+)/);
+            if (urlMatch && urlMatch[1]) {
+              this.pendingImage = urlMatch[1]; // Store the Azure Storage URL
+              uploadStatus.innerHTML = '<i class="fas fa-check"></i> Image uploaded successfully!';
+              uploadStatus.style.color = '#4ade80';
+
+              // Auto-fill prompt to analyze
+              if (!this.userInput.value.trim()) {
+                this.userInput.value = 'Please analyze this image';
+              }
+
+              setTimeout(() => uploadStatus.remove(), 3000);
+            } else {
+              throw new Error("Could not extract image URL from upload response");
+            }
+
+          } catch (error) {
+            console.error("Image upload error:", error);
+            uploadStatus.innerHTML = `<i class="fas fa-times"></i> Upload failed: ${error.message}`;
+            uploadStatus.style.color = '#ef4444';
+            this.pendingImage = imageData; // Fallback to base64
+          }
         };
         reader.readAsDataURL(file);
       }

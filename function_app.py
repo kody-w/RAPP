@@ -1309,6 +1309,53 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     # Extract user_guid if provided in the request
     user_guid = req_body.get('user_guid')
 
+    # Check for image_data in request - handle image upload first
+    image_data = req_body.get('image_data')
+    if image_data:
+        try:
+            # Import UploadImageAgent
+            from agents.upload_image_agent import UploadImageAgent
+
+            upload_agent = UploadImageAgent()
+            # Extract filename from user_input if present
+            filename = None
+            if "upload this image:" in user_input.lower():
+                parts = user_input.split("upload this image:", 1)
+                if len(parts) > 1:
+                    filename = parts[1].strip()
+
+            # Upload the image
+            upload_result = upload_agent.perform(
+                image_data=image_data,
+                filename=filename
+            )
+
+            # Return the upload result immediately
+            return func.HttpResponse(
+                json.dumps({
+                    "assistant_response": upload_result,
+                    "voice_response": "Image uploaded successfully",
+                    "agent_logs": "UploadImage agent executed",
+                    "user_guid": user_guid or DEFAULT_USER_GUID
+                }),
+                status_code=200,
+                mimetype="application/json",
+                headers=cors_headers
+            )
+        except Exception as e:
+            logging.error(f"Error uploading image: {str(e)}")
+            return func.HttpResponse(
+                json.dumps({
+                    "assistant_response": f"Error uploading image: {str(e)}",
+                    "voice_response": "Image upload failed",
+                    "agent_logs": f"UploadImage error: {str(e)}",
+                    "user_guid": user_guid or DEFAULT_USER_GUID
+                }),
+                status_code=500,
+                mimetype="application/json",
+                headers=cors_headers
+            )
+
     # Skip validation if input is just a GUID to load memory
     is_guid_only = re.match(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', user_input.strip(), re.IGNORECASE)
 
