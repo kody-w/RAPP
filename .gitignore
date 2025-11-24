@@ -15,6 +15,20 @@ local.settings.json
 .func/
 func-cli/
 
+# Secrets and credentials
+*.key
+*.pem
+*.pfx
+*.p12
+.env
+.env.local
+.env.production
+*-config.json
+!*-config.example.json
+!local.settings.json.example
+credentials.json
+secrets.json
+
 # IDE
 
 .idea/

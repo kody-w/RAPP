@@ -3,1830 +3,2293 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>D&D: Shadows of Ravenloft - 3D Visual Adventure</title>
+    <title>Baldur's Gate Chronicles - Enhanced Edition ⚔️</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Lora:ital,wght@0,400;0,600;1,400&display=swap');
+
+        :root {
+            --gold: #f4d03f;
+            --dark-gold: #c5a747;
+            --crimson: #c41e3a;
+            --dark-bg: #1a0f0a;
+            --panel-bg: rgba(30, 20, 15, 0.95);
+            --success: #4ade80;
+            --fail: #ef4444;
         }
 
         body {
-            font-family: 'Cinzel', 'Georgia', serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            color: #f0f0f0;
+            font-family: 'Lora', Georgia, serif;
+            background: radial-gradient(ellipse at center, #1a0f0a 0%, #0a0505 100%);
+            color: #f0e6d2;
             overflow: hidden;
+            user-select: none;
+        }
+
+        /* CONSENSUS: Enhanced Tutorial Overlay */
+        #tutorialOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.92);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .tutorialContent {
+            background: linear-gradient(135deg, rgba(60, 40, 30, 0.98) 0%, rgba(30, 20, 15, 0.98) 100%);
+            border: 3px solid var(--gold);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 100px rgba(244, 208, 63, 0.4);
+        }
+
+        .tutorialContent h2 {
+            font-family: 'Cinzel', serif;
+            color: var(--gold);
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(244, 208, 63, 0.8);
+            animation: titleGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes titleGlow {
+            0%, 100% { text-shadow: 0 0 20px rgba(244, 208, 63, 0.8); }
+            50% { text-shadow: 0 0 40px rgba(255, 215, 0, 1); }
+        }
+
+        .tutorialContent p {
+            font-size: 1.2em;
+            line-height: 1.8;
+            margin-bottom: 30px;
+            color: #e8dcc4;
+        }
+
+        .tutorialButton {
+            padding: 15px 40px;
+            background: linear-gradient(135deg, rgba(139, 69, 19, 0.9) 0%, rgba(101, 67, 33, 0.95) 100%);
+            border: 2px solid var(--dark-gold);
+            color: #f4e4c1;
+            font-family: 'Cinzel', serif;
+            font-size: 1.1em;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.4s;
+            margin: 0 10px;
+        }
+
+        .tutorialButton:hover {
+            transform: translateY(-3px);
+            border-color: var(--gold);
+            box-shadow: 0 8px 25px rgba(244, 208, 63, 0.5);
+        }
+
+        .tutorialButton:focus {
+            outline: 3px solid var(--gold);
+            outline-offset: 2px;
+        }
+
+        /* CONSENSUS: XP Progress Bar */
+        .xpBar {
+            margin: 15px 0;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            height: 24px;
+            border: 2px solid var(--dark-gold);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .xpFill {
+            height: 100%;
+            background: linear-gradient(90deg, #4ade80, #22c55e);
+            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 15px rgba(74, 222, 128, 0.6);
+        }
+
+        .xpText {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.9em;
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 2px 2px 4px #000;
+            font-family: 'Cinzel', serif;
+        }
+
+        /* Game Container */
+        #gameContainer {
+            display: flex;
+            width: 100vw;
             height: 100vh;
         }
 
-        #gameContainer {
+        #visualSection {
+            flex: 1;
             position: relative;
-            width: 100vw;
-            height: 100vh;
-            display: flex;
+            border-right: 3px solid rgba(244, 208, 63, 0.3);
         }
 
         #renderCanvas {
-            position: absolute;
-            top: 0;
-            left: 0;
             width: 100%;
             height: 100%;
-            z-index: 1;
+            background: radial-gradient(ellipse at center, #2a1810 0%, #0f0808 100%);
         }
 
-        /* UI Overlay */
-        #uiOverlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 10;
-            pointer-events: none;
-        }
-
-        #uiOverlay > * {
-            pointer-events: auto;
-        }
-
-        /* Character Creation Screen */
-        #characterCreation {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(20, 20, 40, 0.95);
-            padding: 40px;
-            border-radius: 20px;
-            border: 3px solid #d4af37;
-            box-shadow: 0 0 50px rgba(212, 175, 55, 0.5);
-            max-width: 600px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        #characterCreation h1 {
-            color: #d4af37;
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 2.5em;
-            text-shadow: 0 0 10px rgba(212, 175, 55, 0.8);
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            color: #d4af37;
-            margin-bottom: 8px;
-            font-size: 1.1em;
-        }
-
-        .form-group input,
-        .form-group select {
-            width: 100%;
-            padding: 12px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid #d4af37;
-            border-radius: 8px;
-            color: #f0f0f0;
-            font-size: 1em;
-            font-family: inherit;
-        }
-
-        .race-grid,
-        .class-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .race-card,
-        .class-card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 2px solid rgba(212, 175, 55, 0.3);
-            border-radius: 10px;
-            padding: 15px;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-align: center;
-        }
-
-        .race-card:hover,
-        .class-card:hover {
-            background: rgba(212, 175, 55, 0.2);
-            border-color: #d4af37;
-            transform: translateY(-3px);
-        }
-
-        .race-card.selected,
-        .class-card.selected {
-            background: rgba(212, 175, 55, 0.3);
-            border-color: #d4af37;
-            box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
-        }
-
-        .race-icon,
-        .class-icon {
-            font-size: 2em;
-            margin-bottom: 8px;
-        }
-
-        .btn {
-            background: linear-gradient(135deg, #d4af37 0%, #aa8c2e 100%);
-            color: #1a1a2e;
-            border: none;
-            padding: 15px 40px;
-            font-size: 1.2em;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s;
-            margin-top: 20px;
-            width: 100%;
-        }
-
-        .btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 30px rgba(212, 175, 55, 0.8);
-        }
-
-        /* HUD */
-        #hud {
+        #modeToggle {
             position: absolute;
             top: 20px;
-            left: 20px;
             right: 20px;
-            display: flex;
-            justify-content: space-between;
-            gap: 20px;
-        }
-
-        .hud-panel {
-            background: rgba(20, 20, 40, 0.9);
-            border: 2px solid #d4af37;
-            border-radius: 15px;
-            padding: 15px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-        }
-
-        #characterInfo {
-            min-width: 250px;
-        }
-
-        .character-name {
-            color: #d4af37;
-            font-size: 1.5em;
-            margin-bottom: 10px;
-        }
-
-        .character-class {
-            color: #aaa;
-            font-size: 0.9em;
-            margin-bottom: 15px;
-        }
-
-        .stat-bar {
-            margin-bottom: 10px;
-        }
-
-        .stat-label {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 5px;
-            font-size: 0.9em;
-        }
-
-        .bar-container {
-            height: 20px;
-            background: rgba(0, 0, 0, 0.5);
-            border-radius: 10px;
-            overflow: hidden;
-            border: 1px solid #555;
-        }
-
-        .bar-fill {
-            height: 100%;
-            transition: width 0.5s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.8em;
-            font-weight: bold;
-        }
-
-        .hp-bar {
-            background: linear-gradient(90deg, #ff4444, #cc0000);
-        }
-
-        .xp-bar {
-            background: linear-gradient(90deg, #44ff44, #00cc00);
-        }
-
-        #questPanel {
-            min-width: 200px;
-        }
-
-        .quest-title {
-            color: #d4af37;
-            font-size: 1.1em;
-            margin-bottom: 10px;
-        }
-
-        .quest-item {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 8px;
-            border-radius: 5px;
-            margin-bottom: 8px;
-            font-size: 0.9em;
-        }
-
-        /* Action Bar */
-        #actionBar {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 15px;
-        }
-
-        .action-btn {
-            width: 70px;
-            height: 70px;
-            background: rgba(20, 20, 40, 0.9);
-            border: 2px solid #d4af37;
-            border-radius: 15px;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s;
-            font-size: 1.5em;
-        }
-
-        .action-btn:hover {
-            background: rgba(212, 175, 55, 0.3);
-            transform: translateY(-5px);
-            box-shadow: 0 5px 20px rgba(212, 175, 55, 0.5);
-        }
-
-        .action-label {
-            font-size: 0.5em;
-            margin-top: 5px;
-        }
-
-        /* Dialog Box */
-        #dialogBox {
-            position: absolute;
-            bottom: 120px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 80%;
-            max-width: 800px;
-            background: rgba(20, 20, 40, 0.95);
-            border: 3px solid #d4af37;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
-            display: none;
-        }
-
-        #dialogBox.active {
-            display: block;
-            animation: slideUp 0.3s ease;
-        }
-
-        @keyframes slideUp {
-            from {
-                transform: translateX(-50%) translateY(20px);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(-50%) translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .dialog-text {
-            font-size: 1.1em;
-            line-height: 1.6;
-            margin-bottom: 20px;
-            color: #f0f0f0;
-        }
-
-        .choices {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .choice-btn {
-            background: rgba(212, 175, 55, 0.2);
-            border: 2px solid #d4af37;
-            padding: 12px 20px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, rgba(139, 69, 19, 0.9) 0%, rgba(101, 67, 33, 0.95) 100%);
+            border: 2px solid var(--gold);
+            color: #f4e4c1;
+            font-family: 'Cinzel', serif;
+            font-size: 1em;
             border-radius: 8px;
             cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.7);
             transition: all 0.3s;
-            text-align: left;
-            color: #f0f0f0;
-            font-size: 1em;
-        }
-
-        .choice-btn:hover {
-            background: rgba(212, 175, 55, 0.4);
-            transform: translateX(10px);
-        }
-
-        /* Combat UI */
-        #combatUI {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 90%;
-            max-width: 1000px;
-            background: rgba(20, 20, 40, 0.95);
-            border: 3px solid #cc0000;
-            border-radius: 20px;
-            padding: 30px;
-            display: none;
-        }
-
-        #combatUI.active {
-            display: block;
-            animation: zoomIn 0.3s ease;
-        }
-
-        @keyframes zoomIn {
-            from {
-                transform: translate(-50%, -50%) scale(0.8);
-                opacity: 0;
-            }
-            to {
-                transform: translate(-50%, -50%) scale(1);
-                opacity: 1;
-            }
-        }
-
-        .combat-header {
-            text-align: center;
-            color: #cc0000;
-            font-size: 2em;
-            margin-bottom: 20px;
-            text-shadow: 0 0 10px rgba(204, 0, 0, 0.8);
-        }
-
-        .combatants {
-            display: flex;
-            justify-content: space-around;
-            margin-bottom: 30px;
-        }
-
-        .combatant {
-            text-align: center;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            border: 2px solid rgba(212, 175, 55, 0.3);
-        }
-
-        .combatant-name {
-            font-size: 1.3em;
-            color: #d4af37;
-            margin-bottom: 10px;
-        }
-
-        .combatant-hp {
-            font-size: 1.5em;
-            color: #ff4444;
-            margin: 10px 0;
-        }
-
-        .combat-actions {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-        }
-
-        .combat-action-btn {
-            background: rgba(212, 175, 55, 0.2);
-            border: 2px solid #d4af37;
-            padding: 15px;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 1em;
-            color: #f0f0f0;
-        }
-
-        .combat-action-btn:hover {
-            background: rgba(212, 175, 55, 0.4);
-            transform: scale(1.05);
-        }
-
-        .combat-log {
-            margin-top: 20px;
-            padding: 15px;
-            background: rgba(0, 0, 0, 0.5);
-            border-radius: 10px;
-            max-height: 150px;
-            overflow-y: auto;
-        }
-
-        .combat-log-entry {
-            margin: 5px 0;
-            padding: 5px;
-            border-left: 3px solid #d4af37;
-            padding-left: 10px;
-        }
-
-        /* Dice Roll Animation */
-        #diceRoll {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 5em;
-            color: #d4af37;
-            display: none;
-            animation: diceRollAnim 1s ease;
-            text-shadow: 0 0 30px rgba(212, 175, 55, 1);
             z-index: 100;
         }
 
-        @keyframes diceRollAnim {
-            0%, 100% { transform: translate(-50%, -50%) rotate(0deg) scale(1); }
-            25% { transform: translate(-50%, -50%) rotate(90deg) scale(1.2); }
-            50% { transform: translate(-50%, -50%) rotate(180deg) scale(1); }
-            75% { transform: translate(-50%, -50%) rotate(270deg) scale(1.2); }
+        #modeToggle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(244, 208, 63, 0.5);
         }
 
-        /* Inventory */
-        #inventoryPanel {
+        #textSection {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(135deg, var(--panel-bg) 0%, rgba(20, 15, 10, 0.98) 100%);
+            backdrop-filter: blur(10px);
+        }
+
+        #narrativeBox {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+            font-size: 1.1em;
+            line-height: 1.8;
+            color: #e8dcc4;
+        }
+
+        #narrativeBox::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        #narrativeBox::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.3);
+            border-radius: 6px;
+        }
+
+        #narrativeBox::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #8b5a3c, #654321);
+            border-radius: 6px;
+        }
+
+        .narrativeText {
+            margin-bottom: 20px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            animation: textReveal 0.8s ease-out;
+        }
+
+        @keyframes textReveal {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .narrativeTitle {
+            font-family: 'Cinzel', serif;
+            font-size: 1.8em;
+            color: var(--gold);
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(244, 208, 63, 0.6);
+            animation: titleGlow 3s ease-in-out infinite;
+        }
+
+        .combatText {
+            background: rgba(196, 30, 58, 0.15);
+            padding: 15px;
+            border-left: 4px solid var(--crimson);
+            margin: 15px 0;
+            border-radius: 4px;
+            animation: slideIn 0.5s;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .diceRoll {
+            display: inline-block;
+            background: linear-gradient(135deg, #4a2511, #8b4513);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #ffd700;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            animation: diceShake 0.5s;
+        }
+
+        @keyframes diceShake {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-5deg); }
+            75% { transform: rotate(5deg); }
+        }
+
+        .successText {
+            color: var(--success);
+            font-weight: 600;
+            animation: successPulse 0.5s;
+        }
+
+        @keyframes successPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .failText {
+            color: var(--fail);
+            font-weight: 600;
+            animation: failShake 0.5s;
+        }
+
+        @keyframes failShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .initiativeTracker {
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px solid var(--gold);
+            border-radius: 8px;
+            padding: 10px;
+            margin: 15px 0;
+        }
+
+        .initiativeEntry {
+            display: flex;
+            align-items: center;
+            padding: 5px;
+            margin: 3px 0;
+            background: rgba(197, 167, 71, 0.15);
+            border-radius: 4px;
+            gap: 10px;
+        }
+
+        .initiativeEntry.active {
+            background: rgba(244, 208, 63, 0.3);
+            border: 1px solid var(--gold);
+        }
+
+        .statusEffect {
+            display: inline-block;
+            padding: 2px 8px;
+            margin: 0 3px;
+            background: rgba(70, 130, 180, 0.3);
+            border-radius: 3px;
+            font-size: 0.85em;
+            color: #87ceeb;
+        }
+
+        #choiceBox {
+            padding: 30px;
+            border-top: 2px solid rgba(244, 208, 63, 0.3);
+            background: linear-gradient(135deg, rgba(40, 25, 15, 0.95) 0%, rgba(20, 15, 10, 0.98) 100%);
+        }
+
+        .choice {
+            display: block;
+            width: 100%;
+            padding: 18px 25px;
+            margin: 12px 0;
+            background: linear-gradient(135deg, rgba(60, 40, 25, 0.9) 0%, rgba(40, 25, 15, 0.95) 100%);
+            border: 2px solid rgba(197, 167, 71, 0.6);
+            border-radius: 10px;
+            color: #f4e4c1;
+            font-family: 'Lora', serif;
+            font-size: 1.05em;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .choice::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+            transition: left 0.5s;
+        }
+
+        .choice:hover::before {
+            left: 100%;
+        }
+
+        .choice:hover {
+            background: linear-gradient(135deg, rgba(100, 65, 40, 0.95) 0%, rgba(60, 40, 25, 0.98) 100%);
+            border-color: var(--gold);
+            transform: translateX(5px);
+            box-shadow: 0 6px 20px rgba(244, 208, 63, 0.4);
+        }
+
+        .choice:focus {
+            outline: 3px solid var(--gold);
+            outline-offset: 2px;
+        }
+
+        .choiceLabel {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: var(--gold);
+        }
+
+        .choiceDescription {
+            font-size: 0.95em;
+            color: #c0b090;
+        }
+
+        .choiceSkill {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 4px 10px;
+            background: rgba(70, 130, 180, 0.3);
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #87ceeb;
+        }
+
+        #charPanel {
+            position: absolute;
+            top: 80px;
+            left: 20px;
+            background: linear-gradient(135deg, rgba(30, 20, 10, 0.95) 0%, rgba(20, 15, 5, 0.98) 100%);
+            border: 2px solid rgba(244, 208, 63, 0.4);
+            border-radius: 12px;
+            padding: 15px;
+            min-width: 260px;
+            max-height: 70vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px);
+            z-index: 50;
+        }
+
+        #charPanel::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #charPanel::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #8b5a3c, #654321);
+            border-radius: 4px;
+        }
+
+        .charCard {
+            margin-bottom: 12px;
+            padding: 10px;
+            background: rgba(0,0,0,0.4);
+            border-radius: 8px;
+            border: 1px solid rgba(197, 167, 71, 0.5);
+            transition: all 0.3s;
+        }
+
+        .charCard:hover {
+            border-color: var(--gold);
+            box-shadow: 0 0 15px rgba(244, 208, 63, 0.3);
+        }
+
+        .charName {
+            font-family: 'Cinzel', serif;
+            color: var(--gold);
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+
+        .charClass {
+            font-size: 0.9em;
+            color: #c0c0c0;
+            margin-bottom: 8px;
+        }
+
+        .healthBar {
+            height: 18px;
+            background: rgba(20, 5, 5, 0.9);
+            border-radius: 9px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid rgba(196, 30, 58, 0.5);
+            margin-bottom: 5px;
+        }
+
+        .healthFill {
+            height: 100%;
+            background: linear-gradient(90deg, #c41e3a, #ef4444);
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+        }
+
+        .healthText {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 600px;
-            background: rgba(20, 20, 40, 0.95);
-            border: 3px solid #d4af37;
-            border-radius: 20px;
-            padding: 30px;
-            display: none;
+            font-size: 0.8em;
+            font-weight: 600;
+            color: #fff;
+            text-shadow: 1px 1px 2px #000;
         }
 
-        #inventoryPanel.active {
-            display: block;
-        }
-
-        .inventory-grid {
+        .charStats {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            margin-top: 20px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            margin-top: 8px;
+            font-size: 0.85em;
         }
 
-        .inventory-slot {
-            aspect-ratio: 1;
-            background: rgba(255, 255, 255, 0.05);
-            border: 2px solid rgba(212, 175, 55, 0.3);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2em;
+        .statBox {
+            background: rgba(0,0,0,0.3);
+            padding: 5px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .statLabel {
+            color: var(--dark-gold);
+            font-weight: 600;
+        }
+
+        .statValue {
+            color: #f4e4c1;
+            font-weight: 700;
+        }
+
+        #mainMenu {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, rgba(60, 40, 30, 0.98) 0%, rgba(30, 20, 15, 0.98) 100%);
+            border: 3px solid var(--gold);
+            border-radius: 20px;
+            padding: 50px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 100px rgba(244, 208, 63, 0.3);
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        #mainMenu h1 {
+            font-family: 'Cinzel', serif;
+            color: #f4e4c1;
+            font-size: 3em;
+            margin-bottom: 15px;
+            text-shadow: 0 0 20px rgba(244, 208, 63, 0.8);
+            animation: titleGlow 3s ease-in-out infinite;
+        }
+
+        #mainMenu h2 {
+            color: #c0c0c0;
+            font-size: 1.2em;
+            margin-bottom: 30px;
+        }
+
+        .menuButton {
+            display: block;
+            width: 300px;
+            padding: 18px;
+            margin: 15px auto;
+            background: linear-gradient(135deg, rgba(139, 69, 19, 0.9) 0%, rgba(101, 67, 33, 0.95) 100%);
+            border: 2px solid var(--dark-gold);
+            color: #f4e4c1;
+            font-family: 'Cinzel', serif;
+            font-size: 1.2em;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.4s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .menuButton:hover {
+            background: linear-gradient(135deg, rgba(184, 134, 11, 0.95) 0%, rgba(139, 69, 19, 0.98) 100%);
+            transform: translateY(-3px);
+            border-color: var(--gold);
+            box-shadow: 0 8px 25px rgba(244, 208, 63, 0.5);
+        }
+
+        .menuButton:focus {
+            outline: 3px solid var(--gold);
+            outline-offset: 2px;
+        }
+
+        .dataControls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+
+        .dataControls button {
+            margin-right: 10px;
+            padding: 10px 20px;
+            background: rgba(40, 25, 15, 0.9);
+            border: 2px solid rgba(244, 208, 63, 0.5);
+            color: #f4e4c1;
+            font-family: 'Cinzel', serif;
+            border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s;
         }
 
-        .inventory-slot:hover {
-            background: rgba(212, 175, 55, 0.2);
-            border-color: #d4af37;
+        .dataControls button:hover {
+            border-color: var(--gold);
+            box-shadow: 0 0 15px rgba(244, 208, 63, 0.4);
         }
 
-        .inventory-slot.filled {
-            background: rgba(212, 175, 55, 0.1);
+        .dataControls button:focus {
+            outline: 3px solid var(--gold);
+            outline-offset: 2px;
         }
 
-        /* Loading Screen */
-        #loadingScreen {
+        .damageNumber {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-
-        .loading-text {
+            font-family: 'Cinzel', serif;
+            font-weight: 900;
             font-size: 2em;
-            color: #d4af37;
-            margin-bottom: 30px;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        .loading-bar {
-            width: 300px;
-            height: 30px;
-            background: rgba(0, 0, 0, 0.5);
-            border-radius: 15px;
-            overflow: hidden;
-            border: 2px solid #d4af37;
-        }
-
-        .loading-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #d4af37, #aa8c2e);
-            width: 0%;
-            transition: width 0.3s;
-        }
-
-        /* Particle effects */
-        .particle {
-            position: absolute;
             pointer-events: none;
-            border-radius: 50%;
+            z-index: 1000;
+            animation: floatUp 1.5s ease-out forwards;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-100px) scale(1.5);
+            }
+        }
+
+        @media (max-width: 1024px) {
+            #gameContainer {
+                flex-direction: column;
+            }
+
+            #visualSection {
+                height: 40vh;
+                border-right: none;
+                border-bottom: 3px solid rgba(244, 208, 63, 0.3);
+            }
+
+            #textSection {
+                height: 60vh;
+            }
+
+            #charPanel {
+                top: 10px;
+                left: 10px;
+                min-width: 180px;
+                padding: 10px;
+                max-height: 35vh;
+            }
+
+            #narrativeBox {
+                padding: 20px;
+                font-size: 1em;
+            }
+
+            #choiceBox {
+                padding: 20px;
+            }
+
+            .menuButton {
+                width: 250px;
+                font-size: 1em;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
         }
 
         .hide {
             display: none !important;
         }
 
-        /* Scrollbar */
-        ::-webkit-scrollbar {
-            width: 10px;
+        /* CONSENSUS: Level up notification */
+        .levelUpNotif {
+            background: linear-gradient(135deg, rgba(74, 222, 128, 0.3), rgba(34, 197, 94, 0.3));
+            border: 2px solid #4ade80;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            text-align: center;
+            animation: levelUpGlow 2s ease-in-out infinite;
         }
 
-        ::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.3);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #d4af37;
-            border-radius: 5px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #aa8c2e;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            #hud {
-                flex-direction: column;
-            }
-
-            .hud-panel {
-                width: 100%;
-            }
-
-            #actionBar {
-                flex-wrap: wrap;
-                bottom: 10px;
-            }
-
-            .action-btn {
-                width: 60px;
-                height: 60px;
-            }
-
-            #dialogBox {
-                width: 95%;
-                bottom: 100px;
-            }
+        @keyframes levelUpGlow {
+            0%, 100% { box-shadow: 0 0 20px rgba(74, 222, 128, 0.4); }
+            50% { box-shadow: 0 0 40px rgba(74, 222, 128, 0.8); }
         }
     </style>
 </head>
 <body>
-    <div id="gameContainer">
-        <!-- 3D Canvas -->
-        <canvas id="renderCanvas"></canvas>
-
-        <!-- UI Overlay -->
-        <div id="uiOverlay">
-            <!-- Loading Screen -->
-            <div id="loadingScreen">
-                <h1 class="loading-text">⚔️ SHADOWS OF RAVENLOFT ⚔️</h1>
-                <div class="loading-bar">
-                    <div class="loading-fill" id="loadingFill"></div>
-                </div>
-                <p style="margin-top: 20px; color: #aaa;">Loading your adventure...</p>
-            </div>
-
-            <!-- Character Creation -->
-            <div id="characterCreation" class="hide">
-                <h1>⚔️ Create Your Hero ⚔️</h1>
-
-                <div class="form-group">
-                    <label>Character Name</label>
-                    <input type="text" id="charName" placeholder="Enter your hero's name" value="Thorin">
-                </div>
-
-                <div class="form-group">
-                    <label>Choose Your Race</label>
-                    <div class="race-grid">
-                        <div class="race-card" data-race="human">
-                            <div class="race-icon">👤</div>
-                            <div>Human</div>
-                        </div>
-                        <div class="race-card selected" data-race="dwarf">
-                            <div class="race-icon">🧔</div>
-                            <div>Dwarf</div>
-                        </div>
-                        <div class="race-card" data-race="elf">
-                            <div class="race-icon">🧝</div>
-                            <div>Elf</div>
-                        </div>
-                        <div class="race-card" data-race="halfling">
-                            <div class="race-icon">🌾</div>
-                            <div>Halfling</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Choose Your Class</label>
-                    <div class="class-grid">
-                        <div class="class-card selected" data-class="fighter">
-                            <div class="class-icon">⚔️</div>
-                            <div>Fighter</div>
-                        </div>
-                        <div class="class-card" data-class="wizard">
-                            <div class="class-icon">🧙</div>
-                            <div>Wizard</div>
-                        </div>
-                        <div class="class-card" data-class="rogue">
-                            <div class="class-icon">🗡️</div>
-                            <div>Rogue</div>
-                        </div>
-                        <div class="class-card" data-class="cleric">
-                            <div class="class-icon">⛪</div>
-                            <div>Cleric</div>
-                        </div>
-                    </div>
-                </div>
-
-                <button class="btn" onclick="game.startGame()">Begin Your Quest</button>
-            </div>
-
-            <!-- HUD -->
-            <div id="hud" class="hide">
-                <div class="hud-panel" id="characterInfo">
-                    <div class="character-name" id="charNameDisplay">Thorin</div>
-                    <div class="character-class" id="charClassDisplay">Level 1 Dwarf Fighter</div>
-
-                    <div class="stat-bar">
-                        <div class="stat-label">
-                            <span>HP</span>
-                            <span id="hpDisplay">12/12</span>
-                        </div>
-                        <div class="bar-container">
-                            <div class="bar-fill hp-bar" id="hpBar" style="width: 100%">
-                                <span id="hpBarText">12/12</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="stat-bar">
-                        <div class="stat-label">
-                            <span>XP</span>
-                            <span id="xpDisplay">0/300</span>
-                        </div>
-                        <div class="bar-container">
-                            <div class="bar-fill xp-bar" id="xpBar" style="width: 0%">
-                                <span id="xpBarText">0/300</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style="margin-top: 15px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; font-size: 0.9em;">
-                        <div>
-                            <div style="color: #aaa;">STR</div>
-                            <div style="color: #d4af37; font-weight: bold;" id="strDisplay">16</div>
-                        </div>
-                        <div>
-                            <div style="color: #aaa;">DEX</div>
-                            <div style="color: #d4af37; font-weight: bold;" id="dexDisplay">12</div>
-                        </div>
-                        <div>
-                            <div style="color: #aaa;">CON</div>
-                            <div style="color: #d4af37; font-weight: bold;" id="conDisplay">14</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="hud-panel" id="questPanel">
-                    <div class="quest-title">📜 Active Quest</div>
-                    <div class="quest-item" id="activeQuest">
-                        Explore the Cursed Village
-                    </div>
-                </div>
-            </div>
-
-            <!-- Action Bar -->
-            <div id="actionBar" class="hide">
-                <div class="action-btn" onclick="game.openInventory()" title="Inventory">
-                    <div>🎒</div>
-                    <div class="action-label">Bag</div>
-                </div>
-                <div class="action-btn" onclick="game.interact()" title="Interact">
-                    <div>💬</div>
-                    <div class="action-label">Talk</div>
-                </div>
-                <div class="action-btn" onclick="game.search()" title="Search">
-                    <div>🔍</div>
-                    <div class="action-label">Search</div>
-                </div>
-                <div class="action-btn" onclick="game.rest()" title="Rest">
-                    <div>🏕️</div>
-                    <div class="action-label">Rest</div>
-                </div>
-            </div>
-
-            <!-- Dialog Box -->
-            <div id="dialogBox">
-                <div class="dialog-text" id="dialogText"></div>
-                <div class="choices" id="dialogChoices"></div>
-            </div>
-
-            <!-- Combat UI -->
-            <div id="combatUI">
-                <h2 class="combat-header">⚔️ COMBAT ⚔️</h2>
-                <div class="combatants">
-                    <div class="combatant">
-                        <div class="combatant-name" id="playerCombatName">Hero</div>
-                        <div class="combatant-hp" id="playerCombatHP">12/12</div>
-                        <div style="color: #aaa;">AC: <span id="playerCombatAC">15</span></div>
-                    </div>
-                    <div class="combatant">
-                        <div class="combatant-name" id="enemyCombatName">Enemy</div>
-                        <div class="combatant-hp" id="enemyCombatHP">10/10</div>
-                        <div style="color: #aaa;">AC: <span id="enemyCombatAC">13</span></div>
-                    </div>
-                </div>
-                <div class="combat-actions">
-                    <button class="combat-action-btn" onclick="game.combatAction('attack')">⚔️ Attack</button>
-                    <button class="combat-action-btn" onclick="game.combatAction('defend')">🛡️ Defend</button>
-                    <button class="combat-action-btn" onclick="game.combatAction('spell')">✨ Spell</button>
-                    <button class="combat-action-btn" onclick="game.combatAction('item')">🧪 Item</button>
-                </div>
-                <div class="combat-log" id="combatLog"></div>
-            </div>
-
-            <!-- Inventory -->
-            <div id="inventoryPanel">
-                <h2 style="color: #d4af37; text-align: center;">🎒 Inventory</h2>
-                <div style="text-align: center; margin: 10px 0;">
-                    Gold: <span style="color: #d4af37;" id="goldDisplay">50</span> 💰
-                </div>
-                <div class="inventory-grid" id="inventoryGrid"></div>
-                <button class="btn" onclick="game.closeInventory()" style="margin-top: 20px;">Close</button>
-            </div>
-
-            <!-- Dice Roll -->
-            <div id="diceRoll">🎲</div>
+    <div id="tutorialOverlay" style="display: none;">
+        <div class="tutorialContent">
+            <h2>⚔️ Welcome, Adventurer! ⚔️</h2>
+            <p>You are about to embark on a perilous journey through the cursed lands of Ravenloft. Your choices matter, your dice rolls determine fate, and glory awaits the brave.</p>
+            <p><strong>Controls:</strong><br>
+            • Click choices to make decisions<br>
+            • Use keyboard (1-4) for quick selections<br>
+            • Press ESC to close dialogs<br>
+            • Export/Import to save your progress</p>
+            <button class="tutorialButton" onclick="game.startTutorial()" tabindex="0">Start Tutorial</button>
+            <button class="tutorialButton" onclick="game.skipTutorial()" tabindex="0">Skip to Adventure</button>
         </div>
     </div>
 
-    <!-- Three.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <div class="dataControls">
+        <button onclick="exportData()" aria-label="Export game save" tabindex="0">💾 Export Save</button>
+        <button onclick="document.getElementById('importFile').click()" aria-label="Import game save" tabindex="0">📁 Import Save</button>
+        <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+    </div>
+
+    <div id="gameContainer">
+        <div id="visualSection">
+            <canvas id="renderCanvas"></canvas>
+            <button id="modeToggle" onclick="game.toggleViewMode()" aria-label="Toggle between 2D and 3D view" tabindex="0">2D View</button>
+            <div id="charPanel" role="region" aria-label="Party information"></div>
+        </div>
+
+        <div id="textSection">
+            <div id="narrativeBox" role="main" aria-live="polite" aria-atomic="true"></div>
+            <div id="choiceBox" role="navigation" aria-label="Available choices"></div>
+        </div>
+    </div>
+
+    <div id="mainMenu">
+        <h1>⚔️ Baldur's Gate Chronicles ⚔️</h1>
+        <h2>Enhanced Edition v3.0</h2>
+        <button class="menuButton" onclick="game.newGame()" tabindex="0">🗡️ New Adventure</button>
+        <button class="menuButton" onclick="game.continueGame()" tabindex="0">📜 Continue</button>
+        <button class="menuButton" onclick="game.showSettings()" tabindex="0">⚙️ Settings</button>
+    </div>
 
     <script>
-        // ===== GAME ENGINE =====
-        class DnDGame {
-            constructor() {
-                this.character = null;
-                this.currentScene = null;
-                this.inventory = [];
-                this.gold = 50;
-                this.quests = [];
-                this.gameState = 'loading';
-                this.combat = null;
+        const APP_NAME = 'baldurs-gate-chronicles-enhanced-v3';
 
-                // 3D Scene
-                this.scene = null;
-                this.camera = null;
-                this.renderer = null;
-                this.player = null;
-                this.enemies = [];
-                this.environment = [];
-                this.particles = [];
-
-                this.init();
+        // CONSENSUS: Performance - Optimized DOM caching
+        const DOMCache = {};
+        function getElement(id) {
+            if (!DOMCache[id]) {
+                DOMCache[id] = document.getElementById(id);
             }
+            return DOMCache[id];
+        }
 
-            init() {
-                this.initThreeJS();
-                this.initEventListeners();
-                this.loadGame();
+        // CONSENSUS: Enhanced game state with XP tracking and relationships
+        let gameState = {
+            currentScene: 'intro',
+            characters: [],
+            choices: {},
+            inventory: [],
+            viewMode: '2d',
+            tutorial: false,
+            xp: 0,
+            level: 1,
+            xpToNextLevel: 300,
+            relationships: {
+                elara: 0,
+                thorin: 0,
+                lyra: 0
+            },
+            combat: {
+                active: false,
+                round: 0,
+                initiative: [],
+                currentTurn: 0,
+                statusEffects: new Map()
+            },
+            settings: {
+                difficulty: 'normal',
+                reducedMotion: false
             }
+        };
 
-            initThreeJS() {
-                const canvas = document.getElementById('renderCanvas');
-                this.scene = new THREE.Scene();
-                this.scene.fog = new THREE.Fog(0x1a1a2e, 10, 50);
-
-                this.camera = new THREE.PerspectiveCamera(
-                    75,
-                    window.innerWidth / window.innerHeight,
-                    0.1,
-                    1000
-                );
-                this.camera.position.set(0, 5, 10);
-                this.camera.lookAt(0, 0, 0);
-
-                this.renderer = new THREE.WebGLRenderer({
-                    canvas: canvas,
-                    antialias: true,
-                    alpha: true
-                });
-                this.renderer.setSize(window.innerWidth, window.innerHeight);
-                this.renderer.shadowMap.enabled = true;
-                this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-                // Lighting
-                const ambientLight = new THREE.AmbientLight(0x404060, 0.5);
-                this.scene.add(ambientLight);
-
-                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-                directionalLight.position.set(5, 10, 5);
-                directionalLight.castShadow = true;
-                directionalLight.shadow.camera.near = 0.1;
-                directionalLight.shadow.camera.far = 50;
-                directionalLight.shadow.camera.left = -10;
-                directionalLight.shadow.camera.right = 10;
-                directionalLight.shadow.camera.top = 10;
-                directionalLight.shadow.camera.bottom = -10;
-                this.scene.add(directionalLight);
-
-                // Point light for dramatic effect
-                const pointLight = new THREE.PointLight(0xd4af37, 1, 20);
-                pointLight.position.set(0, 5, 0);
-                this.scene.add(pointLight);
-
-                // Resize handler
-                window.addEventListener('resize', () => {
-                    this.camera.aspect = window.innerWidth / window.innerHeight;
-                    this.camera.updateProjectionMatrix();
-                    this.renderer.setSize(window.innerWidth, window.innerHeight);
-                });
-
-                this.animate();
+        // CONSENSUS: Expanded item database
+        const ITEMS = {
+            health_potion: {
+                name: 'Health Potion',
+                description: 'Restores 2d4+2 HP',
+                rarity: 'common',
+                icon: '🧪',
+                effect: { type: 'heal', amount: '2d4+2' }
+            },
+            greater_health_potion: {
+                name: 'Greater Health Potion',
+                description: 'Restores 4d4+4 HP',
+                rarity: 'uncommon',
+                icon: '✨',
+                effect: { type: 'heal', amount: '4d4+4' }
+            },
+            magic_sword: {
+                name: 'Longsword +1',
+                description: '+1 to attack and damage rolls',
+                rarity: 'uncommon',
+                icon: '⚔️',
+                effect: { type: 'weapon', bonus: 1 }
+            },
+            ring_of_protection: {
+                name: 'Ring of Protection',
+                description: '+1 to AC and saving throws',
+                rarity: 'rare',
+                icon: '💍',
+                effect: { type: 'ac', bonus: 1 }
+            },
+            scroll_of_fireball: {
+                name: 'Scroll of Fireball',
+                description: 'Cast Fireball (8d6 damage)',
+                rarity: 'uncommon',
+                icon: '📜',
+                effect: { type: 'spell', spell: 'fireball', damage: '8d6' }
+            },
+            sunblade_shard: {
+                name: 'Sunblade Shard',
+                description: 'A fragment of the legendary Sunblade',
+                rarity: 'legendary',
+                icon: '✨',
+                quest: true
             }
+        };
 
-            animate() {
-                requestAnimationFrame(() => this.animate());
+        // CONSENSUS: Fixed all broken scene references + added missing scenes
+        const SCENES = {
+            intro: {
+                title: "🌄 The Road to Thornhaven",
+                text: `The late afternoon sun casts long shadows across the dirt road. You and your companions have been traveling for three days, and the small village of Thornhaven should be just over the next hill.
 
-                // Update particles
-                this.particles.forEach((particle, index) => {
-                    particle.position.y += particle.velocity.y;
-                    particle.position.x += particle.velocity.x;
-                    particle.position.z += particle.velocity.z;
-                    particle.material.opacity -= 0.01;
+<strong>Your companions are:</strong>
+• <strong style="color: #f4d03f">Elara</strong>, a wise cleric of the light, her staff glowing faintly with divine energy
+• <strong style="color: #8b4513">Thorin</strong>, a stalwart dwarf fighter, his greataxe strapped to his back
+• <strong style="color: #9370db">Lyra</strong>, a nimble half-elf rogue, constantly scanning the treeline for threats
 
-                    if (particle.material.opacity <= 0) {
-                        this.scene.remove(particle);
-                        this.particles.splice(index, 1);
+As you crest the hill, you see smoke rising from the village ahead. The sounds of screaming and clashing steel drift on the wind.
+
+<em>"We need to move, now!"</em> Elara shouts, already starting down the hill.`,
+                sceneData: {
+                    environment: 'road_forest',
+                    partyPositions: [
+                        {id: 'player', x: 250, y: 300, state: 'alert'},
+                        {id: 'elara', x: 200, y: 280, state: 'concerned'},
+                        {id: 'thorin', x: 300, y: 300, state: 'ready'},
+                        {id: 'lyra', x: 230, y: 250, state: 'scouting'}
+                    ]
+                },
+                choices: [
+                    {
+                        id: 'rush_village',
+                        label: "⚔️ Rush to the village!",
+                        description: "Charge ahead to help the villagers. Time is of the essence!",
+                        nextScene: 'goblin_attack'
+                    },
+                    {
+                        id: 'scout_first',
+                        label: "👁️ Send Lyra to scout ahead",
+                        description: "Better to know what you're dealing with before rushing in.",
+                        skill: 'Stealth',
+                        dc: 12,
+                        success: 'scout_success',
+                        failure: 'scout_failure'
+                    },
+                    {
+                        id: 'prepare',
+                        label: "✨ Take a moment to prepare",
+                        description: "Cast protective spells and ready weapons before proceeding.",
+                        nextScene: 'prepare_scene'
                     }
-                });
+                ]
+            },
 
-                // Rotate player slightly for idle animation
-                if (this.player && !this.combat) {
-                    this.player.rotation.y += 0.005;
+            prepare_scene: {
+                title: "⚡ Preparation",
+                text: `You halt your party at the hilltop. "Wait," you command. "We go in prepared."
+
+Elara nods approvingly and begins chanting, her staff glowing brighter. <em>"Bless you with the light's protection..."</em> Divine energy washes over your group.
+
+<div class="combatText">
+<strong>⭐ Elara casts Bless!</strong><br>
+All party members gain +1d4 to attack rolls and saving throws for 1 minute.<br>
+<span class="statusEffect">🛡️ Blessed</span>
+</div>
+
+Thorin checks his greataxe, ensuring the blade is sharp. Lyra strings her bow and counts her arrows.
+
+<em>"We're ready,"</em> Thorin growls, determination burning in his eyes.`,
+                sceneData: {
+                    environment: 'road_forest',
+                    partyPositions: [
+                        {id: 'player', x: 250, y: 300, state: 'buffed'},
+                        {id: 'elara', x: 200, y: 280, state: 'casting'},
+                        {id: 'thorin', x: 300, y: 300, state: 'ready'},
+                        {id: 'lyra', x: 230, y: 250, state: 'ready'}
+                    ]
+                },
+                choices: [
+                    {
+                        id: 'advance_prepared',
+                        label: "⚔️ Advance to the village",
+                        description: "Move forward with your preparations complete (+1d4 to first attack).",
+                        nextScene: 'goblin_attack_prepared'
+                    }
+                ]
+            },
+
+            scout_success: {
+                title: "🎯 Successful Reconnaissance",
+                text: `Lyra disappears into the shadows, moving with practiced silence. Minutes later, she returns, slightly out of breath.
+
+<em>"Five goblins,"</em> she reports. <em>"Three in the square terrorizing villagers, two more ransacking the general store. They're disorganized - we have the element of surprise."</em>
+
+She sketches a quick map in the dirt. <em>"We can flank them from the east through the alley, or take the direct approach and divide their attention."</em>
+
+<div class="combatText">
+<strong>✅ Scout Successful!</strong><br>
+• You gain <strong>advantage</strong> on your first attack in combat<br>
+• Party gains tactical positioning bonus (+2 initiative)<br>
+• Enemy positions revealed
+</div>`,
+                sceneData: {
+                    environment: 'road_forest',
+                    partyPositions: [
+                        {id: 'player', x: 250, y: 300},
+                        {id: 'elara', x: 200, y: 280},
+                        {id: 'thorin', x: 300, y: 300},
+                        {id: 'lyra', x: 230, y: 250, state: 'reporting'}
+                    ]
+                },
+                choices: [
+                    {
+                        id: 'flank_attack',
+                        label: "🗡️ Use the flanking route",
+                        description: "Sneak through the alley for a devastating surprise attack.",
+                        nextScene: 'goblin_attack_flanked'
+                    },
+                    {
+                        id: 'direct_assault',
+                        label: "⚔️ Direct assault",
+                        description: "Charge in from the front and split their forces.",
+                        nextScene: 'goblin_attack'
+                    }
+                ]
+            },
+
+            scout_failure: {
+                title: "⚠️ Alert!",
+                text: `Lyra moves down the hill, but a twig snaps under her boot with a sharp <strong>CRACK!</strong>
+
+<em>"INTRUDERS!"</em> A goblin voice shrieks from the village. An alarm horn blares through the valley.
+
+<em>"So much for stealth,"</em> Lyra mutters, drawing her bow with a grimace. <em>"They know we're coming now!"</em>
+
+<div class="combatText">
+<strong>❌ Scout Failed!</strong><br>
+• Goblins are alerted and gain +2 to initiative<br>
+• Two additional goblin reinforcements arrive!<br>
+• You lose the element of surprise
+</div>`,
+                sceneData: {
+                    environment: 'road_forest',
+                    partyPositions: [
+                        {id: 'player', x: 250, y: 300, state: 'alert'},
+                        {id: 'elara', x: 200, y: 280, state: 'concerned'},
+                        {id: 'thorin', x: 300, y: 300, state: 'ready'},
+                        {id: 'lyra', x: 230, y: 250, state: 'embarrassed'}
+                    ]
+                },
+                choices: [
+                    {
+                        id: 'charge_anyway',
+                        label: "⚔️ Charge into combat!",
+                        description: "No turning back now! Face them head-on!",
+                        nextScene: 'goblin_attack_hard'
+                    }
+                ]
+            },
+
+            goblin_attack: {
+                title: "⚔️ Goblins in the Square!",
+                text: `You burst into the village square to find chaos. Three goblins are ransacking homes and terrorizing fleeing villagers.
+
+• A sword-wielding <strong style="color: #4ade80">goblin warrior</strong> cackles maniacally
+• A <strong style="color: #86efac">goblin archer</strong> clutches a crude bow
+• A torch-wielding <strong style="color: #6ee7b7">goblin pyro</strong> attempts to set buildings ablaze
+
+They spot you immediately.
+
+<em>"More adventurers!"</em> the warrior goblin screeches. <em>"Kill them! Kill them all!"</em>
+
+<div class="combatText">
+<strong>⚔️ COMBAT INITIATED!</strong><br>
+Rolling initiative for all combatants...
+</div>`,
+                sceneData: {
+                    environment: 'village_square',
+                    combat: true,
+                    partyPositions: [
+                        {id: 'player', x: 150, y: 300},
+                        {id: 'elara', x: 120, y: 270},
+                        {id: 'thorin', x: 180, y: 300},
+                        {id: 'lyra', x: 140, y: 250}
+                    ],
+                    enemies: [
+                        {id: 'goblin1', type: 'Goblin Warrior', x: 400, y: 280, hp: 7, maxHp: 7, ac: 13},
+                        {id: 'goblin2', type: 'Goblin Archer', x: 450, y: 250, hp: 5, maxHp: 5, ac: 12},
+                        {id: 'goblin3', type: 'Goblin Pyro', x: 420, y: 320, hp: 5, maxHp: 5, ac: 11}
+                    ]
+                },
+                choices: [
+                    {
+                        id: 'aggressive_attack',
+                        label: "⚡ Aggressive stance!",
+                        description: "Attack with full force. +2 damage, -1 AC this round.",
+                        combat: {type: 'aggressive'},
+                        nextScene: 'combat_round_1'
+                    },
+                    {
+                        id: 'defensive_stance',
+                        label: "🛡️ Defensive formation!",
+                        description: "Take defensive positions. +2 AC, -1 damage this round.",
+                        combat: {type: 'defensive'},
+                        nextScene: 'combat_round_1'
+                    },
+                    {
+                        id: 'intimidate',
+                        label: "😠 Try to intimidate them",
+                        description: "Roar a challenge and try to frighten the goblins into fleeing.",
+                        skill: 'Intimidation',
+                        dc: 13,
+                        success: 'goblins_flee',
+                        failure: 'combat_round_1'
+                    }
+                ]
+            },
+
+            // CONSENSUS FIX: Added missing goblin_attack variants
+            goblin_attack_prepared: {
+                title: "⚔️ Blessed Assault!",
+                text: `With Elara's blessing empowering you, your party charges into the village square with divine radiance surrounding you!
+
+The three goblins freeze momentarily, startled by the golden aura.
+
+<div class="combatText">
+<strong>⭐ BLESSED ADVANTAGE!</strong><br>
+Your preparation gives you the upper hand! +1d4 to all attack rolls this combat!
+</div>`,
+                sceneData: {
+                    environment: 'village_square',
+                    combat: true,
+                    partyPositions: [
+                        {id: 'player', x: 150, y: 300},
+                        {id: 'elara', x: 120, y: 270},
+                        {id: 'thorin', x: 180, y: 300},
+                        {id: 'lyra', x: 140, y: 250}
+                    ],
+                    enemies: [
+                        {id: 'goblin1', type: 'Goblin Warrior', x: 400, y: 280, hp: 7, maxHp: 7, ac: 13},
+                        {id: 'goblin2', type: 'Goblin Archer', x: 450, y: 250, hp: 5, maxHp: 5, ac: 12},
+                        {id: 'goblin3', type: 'Goblin Pyro', x: 420, y: 320, hp: 5, maxHp: 5, ac: 11}
+                    ]
+                },
+                choices: [
+                    {
+                        id: 'strike_swift',
+                        label: "⚡ Strike swiftly!",
+                        description: "Use your blessed advantage to end this quickly!",
+                        nextScene: 'combat_victory'
+                    }
+                ]
+            },
+
+            goblin_attack_flanked: {
+                title: "🗡️ Flanking Maneuver!",
+                text: `You silently navigate through the alley, emerging behind the unsuspecting goblins. They're completely focused on terrorizing villagers!
+
+<div class="combatText">
+<strong>✅ FLANKING SUCCESS!</strong><br>
+• Surprise round activated!<br>
+• All allies attack first before goblins react<br>
+• +5 bonus to first attack roll!
+</div>
+
+Thorin grins wickedly. <em>"This is going to be good..."</em>`,
+                sceneData: {
+                    environment: 'village_square',
+                    combat: true,
+                    partyPositions: [
+                        {id: 'player', x: 380, y: 300},
+                        {id: 'elara', x: 350, y: 270},
+                        {id: 'thorin', x: 410, y: 300},
+                        {id: 'lyra', x: 365, y: 250}
+                    ],
+                    enemies: [
+                        {id: 'goblin1', type: 'Goblin Warrior', x: 200, y: 280, hp: 7, maxHp: 7, ac: 13},
+                        {id: 'goblin2', type: 'Goblin Archer', x: 150, y: 250, hp: 5, maxHp: 5, ac: 12},
+                        {id: 'goblin3', type: 'Goblin Pyro', x: 180, y: 320, hp: 5, maxHp: 5, ac: 11}
+                    ]
+                },
+                choices: [
+                    {
+                        id: 'ambush_strike',
+                        label: "💥 Devastating ambush!",
+                        description: "Attack from behind with overwhelming force!",
+                        nextScene: 'combat_victory'
+                    }
+                ]
+            },
+
+            goblin_attack_hard: {
+                title: "⚔️ Overwhelming Odds!",
+                text: `You charge into the village square, but the goblins were ready. FIVE goblins turn to face you, weapons drawn!
+
+<div class="combatText">
+<strong>⚠️ DIFFICULT ENCOUNTER!</strong><br>
+• 5 goblins vs 4 party members<br>
+• Enemies prepared for combat (+2 AC)<br>
+• This will be challenging!
+</div>
+
+<em>"Stand together!"</em> Elara shouts. <em>"We can do this!"</em>`,
+                sceneData: {
+                    environment: 'village_square',
+                    combat: true,
+                    partyPositions: [
+                        {id: 'player', x: 150, y: 300},
+                        {id: 'elara', x: 120, y: 270},
+                        {id: 'thorin', x: 180, y: 300},
+                        {id: 'lyra', x: 140, y: 250}
+                    ],
+                    enemies: [
+                        {id: 'goblin1', type: 'Goblin Warrior', x: 400, y: 280, hp: 7, maxHp: 7, ac: 15},
+                        {id: 'goblin2', type: 'Goblin Archer', x: 450, y: 250, hp: 5, maxHp: 5, ac: 14},
+                        {id: 'goblin3', type: 'Goblin Pyro', x: 420, y: 320, hp: 5, maxHp: 5, ac: 13},
+                        {id: 'goblin4', type: 'Goblin Scout', x: 380, y: 310, hp: 4, maxHp: 4, ac: 14},
+                        {id: 'goblin5', type: 'Goblin Bruiser', x: 430, y: 290, hp: 10, maxHp: 10, ac: 15}
+                    ]
+                },
+                choices: [
+                    {
+                        id: 'fight_hard',
+                        label: "⚔️ Fight with everything you have!",
+                        description: "This will be tough, but you must prevail!",
+                        nextScene: 'combat_round_1'
+                    }
+                ]
+            },
+
+            combat_round_1: {
+                title: "⚔️ Battle in the Square - Round 1",
+                combat: true,
+                text: `<div class="initiativeTracker">
+<strong>🎲 Initiative Order:</strong>
+<div class="initiativeEntry active">
+<span class="diceRoll">18</span> <strong style="color: #8b4513">Thorin</strong> <span class="statusEffect">⚔️ TURN</span>
+</div>
+<div class="initiativeEntry">
+<span class="diceRoll">16</span> <strong style="color: #9370db">Lyra</strong>
+</div>
+<div class="initiativeEntry">
+<span class="diceRoll">14</span> <strong style="color: #4ade80">Goblin Archer</strong>
+</div>
+<div class="initiativeEntry">
+<span class="diceRoll">12</span> <strong style="color: #4682b4">You</strong>
+</div>
+<div class="initiativeEntry">
+<span class="diceRoll">10</span> <strong style="color: #f4d03f">Elara</strong>
+</div>
+<div class="initiativeEntry">
+<span class="diceRoll">8</span> <strong style="color: #4ade80">Goblin Warrior</strong>
+</div>
+<div class="initiativeEntry">
+<span class="diceRoll">6</span> <strong style="color: #6ee7b7">Goblin Pyro</strong>
+</div>
+</div>
+
+<div class="combatText">
+<strong>⚔️ Thorin's Turn:</strong><br>
+Thorin charges forward with a mighty dwarven war cry, his greataxe gleaming!
+
+<strong>Action:</strong> Attack (Goblin Warrior)<br>
+Attack roll: <span class="diceRoll">d20(15) + 5 = 20</span> vs AC 13 - <span class="successText">✓ HIT!</span><br>
+Damage: <span class="diceRoll">d12(9) + 3 = 12</span>
+
+The massive blade bites deep into the goblin's shoulder! Blood sprays as the creature crumples.<br>
+<strong>Goblin Warrior: -12 HP → 💀 SLAIN!</strong>
+
+<em>"One down!"</em> Thorin roars triumphantly!
+</div>
+
+<div class="combatText">
+<strong>🏹 Lyra's Turn:</strong><br>
+Lyra draws her shortbow with practiced grace and fires at the archer!
+
+<strong>Action:</strong> Attack with Shortbow (Goblin Archer)<br>
+Attack roll: <span class="diceRoll">d20(12) + 6 = 18</span> vs AC 12 - <span class="successText">✓ HIT!</span><br>
+Damage: <span class="diceRoll">d6(4) + 4 = 8</span>
+
+The arrow strikes true, piercing the goblin's heart!<br>
+<strong>Goblin Archer: -8 HP → 💀 DEAD!</strong>
+
+<em>"Two down!"</em> Lyra calls out, already nocking another arrow.
+</div>
+
+<div class="combatText">
+<strong>🎯 YOUR TURN!</strong><br>
+Only the torch-wielding goblin remains, frantically trying to set the village well on fire!
+
+What do you do?
+</div>`,
+                sceneData: {
+                    environment: 'village_square',
+                    combat: true,
+                    round: 1,
+                    partyPositions: [
+                        {id: 'player', x: 200, y: 300},
+                        {id: 'elara', x: 150, y: 270},
+                        {id: 'thorin', x: 350, y: 290, state: 'bloodied'},
+                        {id: 'lyra', x: 180, y: 240}
+                    ],
+                    enemies: [
+                        {id: 'goblin3', type: 'Goblin Pyro', x: 420, y: 300, hp: 5, maxHp: 5, ac: 11}
+                    ]
+                },
+                choices: [
+                    {
+                        id: 'attack_pyro',
+                        label: "⚔️ Attack the remaining goblin",
+                        description: "Finish off the last enemy with your weapon!",
+                        nextScene: 'combat_victory'
+                    },
+                    {
+                        id: 'save_well',
+                        label: "💧 Stop the goblin from burning the well",
+                        description: "The village needs that water supply! (Athletics DC 10)",
+                        skill: 'Athletics',
+                        dc: 10,
+                        success: 'well_saved',
+                        failure: 'well_burning'
+                    },
+                    {
+                        id: 'use_spell',
+                        label: "✨ Cast a spell",
+                        description: "Use magic to end this quickly (Magic Missile - auto-hit)",
+                        nextScene: 'spell_finish'
+                    },
+                    {
+                        id: 'capture',
+                        label: "🎯 Try to capture it alive",
+                        description: "It might have information! (Athletics DC 14)",
+                        skill: 'Athletics',
+                        dc: 14,
+                        success: 'goblin_captured',
+                        failure: 'combat_victory'
+                    }
+                ]
+            },
+
+            // CONSENSUS FIX: Added all missing scene references
+            well_saved: {
+                title: "💧 Water Preserved!",
+                text: `You sprint toward the goblin with incredible speed! Before it can throw the torch into the well, you tackle it to the ground!
+
+<div class="combatText">
+<strong>✅ ATHLETICS SUCCESS!</strong><br>
+You saved the village's water supply!
+</div>
+
+The goblin writhes beneath you, but a swift punch to its jaw knocks it unconscious.
+
+<em>"Well done!"</em> Elara exclaims. <em>"The village won't go thirsty thanks to you!"</em>
+
+<div class="combatText">
+<strong>🏆 BONUS REWARD:</strong><br>
+• Villagers' gratitude: +50 bonus XP<br>
+• Elara approves: Relationship +2
+</div>`,
+                sceneData: {
+                    environment: 'village_square',
+                    partyPositions: [
+                        {id: 'player', x: 420, y: 300, state: 'victorious'},
+                        {id: 'elara', x: 200, y: 280, state: 'healing'},
+                        {id: 'thorin', x: 300, y: 300, state: 'celebrating'},
+                        {id: 'lyra', x: 230, y: 250, state: 'looting'}
+                    ]
+                },
+                choices: [
+                    {
+                        id: 'proceed_victory',
+                        label: "⚔️ Victory is ours!",
+                        description: "Celebrate with your companions and speak to the villagers.",
+                        nextScene: 'combat_victory'
+                    }
+                ]
+            },
+
+            well_burning: {
+                title: "🔥 Flames Rise!",
+                text: `You lunge for the goblin, but you're a split-second too late! The torch tumbles into the well with a splash, igniting oil that was floating on the surface!
+
+<div class="combatText">
+<strong>❌ ATHLETICS FAILED!</strong><br>
+The village well is compromised!
+</div>
+
+Thick black smoke billows from the well. The goblin cackles before you strike it down with your weapon.
+
+<em>"The water supply is tainted,"</em> Elara says grimly. <em>"We'll need to help them find a new source."</em>
+
+<div class="combatText">
+<strong>⚠️ CONSEQUENCE:</strong><br>
+• Village morale decreased<br>
+• Additional quest unlocked: "Find Clean Water"<br>
+• Elara is disappointed: Relationship -1
+</div>`,
+                sceneData: {
+                    environment: 'village_square',
+                    partyPositions: [
+                        {id: 'player', x: 420, y: 300},
+                        {id: 'elara', x: 200, y: 280, state: 'disappointed'},
+                        {id: 'thorin', x: 300, y: 300},
+                        {id: 'lyra', x: 230, y: 250}
+                    ]
+                },
+                choices: [
+                    {
+                        id: 'continue_on',
+                        label: "Continue to victory",
+                        description: "The battle is won, but at a cost.",
+                        nextScene: 'combat_victory'
+                    }
+                ]
+            },
+
+            spell_finish: {
+                title: "✨ Arcane Annihilation!",
+                text: `You raise your hand and channel arcane energy! Three glowing missiles of pure magic materialize around you!
+
+<div class="combatText">
+<strong>✨ MAGIC MISSILE CAST!</strong><br>
+Three darts of magical force strike the goblin with unerring accuracy!
+</div>
+
+<strong>Damage rolls:</strong>
+• Missile 1: <span class="diceRoll">d4+1 = 3</span>
+• Missile 2: <span class="diceRoll">d4+1 = 4</span>
+• Missile 3: <span class="diceRoll">d4+1 = 2</span>
+
+Total damage: <span class="successText">9 damage!</span>
+
+The goblin doesn't even have time to scream before the magical energy tears through it!
+
+<strong>Goblin Pyro: -9 HP → 💀 OBLITERATED!</strong>
+
+<em>"Impressive magic!"</em> Thorin nods approvingly.`,
+                sceneData: {
+                    environment: 'village_square',
+                    partyPositions: [
+                        {id: 'player', x: 250, y: 300, state: 'casting'},
+                        {id: 'elara', x: 200, y: 280},
+                        {id: 'thorin', x: 300, y: 300, state: 'impressed'},
+                        {id: 'lyra', x: 230, y: 250}
+                    ]
+                },
+                choices: [
+                    {
+                        id: 'claim_victory',
+                        label: "⚔️ The day is won!",
+                        description: "Regroup with your party.",
+                        nextScene: 'combat_victory'
+                    }
+                ]
+            },
+
+            goblin_captured: {
+                title: "🎯 Prisoner Secured!",
+                text: `You drop your weapon and leap at the goblin with your bare hands! The creature struggles, but you manage to pin it down and bind its wrists with rope!
+
+<div class="combatText">
+<strong>✅ ATHLETICS SUCCESS!</strong><br>
+Goblin captured alive!
+</div>
+
+The goblin spits and curses in its guttural language.
+
+<em>"Good thinking,"</em> Lyra says, crouching beside the prisoner. <em>"Let's see what it knows..."</em>
+
+After some *persuasion*, the goblin reveals valuable information:
+• A goblin warband is gathering in the northern ruins
+• They're being led by a mysterious cloaked figure
+• More raids are planned for tomorrow
+
+<div class="combatText">
+<strong>🏆 INTERROGATION SUCCESS:</strong><br>
+• Intelligence gained: +25 bonus XP<br>
+• New quest unlocked: "The Warband Leader"<br>
+• Lyra approves: Relationship +2
+</div>`,
+                sceneData: {
+                    environment: 'village_square',
+                    partyPositions: [
+                        {id: 'player', x: 250, y: 300},
+                        {id: 'elara', x: 200, y: 280},
+                        {id: 'thorin', x: 300, y: 300},
+                        {id: 'lyra', x: 380, y: 300, state: 'interrogating'}
+                    ],
+                    npcs: [{id: 'goblin_prisoner', x: 420, y: 310, name: 'Bound Goblin'}]
+                },
+                choices: [
+                    {
+                        id: 'proceed_after_interrogation',
+                        label: "Continue to the aftermath",
+                        description: "Secure the prisoner and speak with the villagers.",
+                        nextScene: 'combat_victory'
+                    }
+                ]
+            },
+
+            goblins_flee: {
+                title: "😨 Goblins Scatter!",
+                text: `You step forward, your weapon raised high, and unleash a terrifying battle cry that echoes through the square!
+
+<div class="combatText">
+<strong>😠 INTIMIDATION SUCCESS!</strong><br>
+The goblins are frightened!
+</div>
+
+The goblins' eyes widen in terror. <em>"R-run! These ones too strong!"</em>
+
+They drop their weapons and flee into the forest, stumbling over each other in their panic!
+
+<em>"Well,"</em> Thorin says, slightly disappointed. <em>"That works too, I suppose."</em>
+
+<div class="combatText">
+<strong>✅ COMBAT AVOIDED!</strong><br>
+• No damage taken<br>
+• Village saved<br>
+• Peaceful resolution: +100 XP<br>
+• Thorin is slightly disappointed: Relationship -1<br>
+• Elara is pleased: Relationship +1
+</div>`,
+                sceneData: {
+                    environment: 'village_square',
+                    partyPositions: [
+                        {id: 'player', x: 250, y: 300, state: 'intimidating'},
+                        {id: 'elara', x: 200, y: 280, state: 'pleased'},
+                        {id: 'thorin', x: 300, y: 300, state: 'disappointed'},
+                        {id: 'lyra', x: 230, y: 250}
+                    ]
+                },
+                choices: [
+                    {
+                        id: 'victory_peaceful',
+                        label: "Speak with the villagers",
+                        description: "The threat is gone without bloodshed.",
+                        nextScene: 'combat_victory'
+                    }
+                ]
+            },
+
+            combat_victory: {
+                title: "🎉 Victory!",
+                text: `The goblin threat has been neutralized! The village square falls silent except for the crackle of flames and the grateful sobs of surviving villagers.
+
+<div style="text-align: center; font-size: 2em; margin: 20px 0;">
+<span class="successText">⚔️ VICTORY! ⚔️</span>
+</div>
+
+<div class="combatText">
+<strong>🏆 Rewards:</strong><br>
+• Experience Gained: <span class="successText">+150 XP</span><br>
+• Gold Found: <span class="diceRoll">15 gold pieces</span><br>
+• Loot Found: 3× Health Potions, Rusty Shortsword, Goblin Ears (quest item)
+</div>
+
+An elderly man in simple robes approaches, his weathered face streaked with soot and tears of relief.
+
+<em>"Thank you, brave travelers. I am <strong>Elder Aldric</strong>. These goblins have been raiding us for weeks, but this was their boldest attack yet. They came from the forest to the north... from an old ruin that was once a temple. Something dark stirs there."</em>
+
+He gestures toward the damaged inn. <em>"Please, rest and recover. We'll tend to your wounds and provide what provisions we can. When you're ready... we desperately need you to investigate that ruin. Our village guard is no match for whatever lurks there."</em>`,
+                sceneData: {
+                    environment: 'village_square',
+                    partyPositions: [
+                        {id: 'player', x: 250, y: 300, state: 'victorious'},
+                        {id: 'elara', x: 200, y: 280, state: 'healing'},
+                        {id: 'thorin', x: 300, y: 300, state: 'celebrating'},
+                        {id: 'lyra', x: 230, y: 250, state: 'looting'}
+                    ],
+                    npcs: [{id: 'elder', x: 350, y: 300, name: 'Elder Aldric'}]
+                },
+                choices: [
+                    {
+                        id: 'rest_at_inn',
+                        label: "🏨 Rest at the inn",
+                        description: "Recover your strength and heal wounds. (Restores all HP)",
+                        nextScene: 'inn_rest'
+                    },
+                    {
+                        id: 'immediate_pursuit',
+                        label: "⚡ Pursue the goblins immediately",
+                        description: "Strike while their forces are weakened! (Continue with current HP)",
+                        nextScene: 'forest_path'
+                    },
+                    {
+                        id: 'question_elder',
+                        label: "💬 Ask the Elder more questions",
+                        description: "Learn what you can about the temple ruins before proceeding.",
+                        nextScene: 'elder_dialogue'
+                    },
+                    {
+                        id: 'search_village',
+                        label: "🔍 Search the village for supplies",
+                        description: "Look for additional items and information.",
+                        nextScene: 'village_search'
+                    }
+                ]
+            },
+
+            // CONSENSUS FIX: Added remaining missing scenes
+            inn_rest: {
+                title: "🏨 Rest and Recovery",
+                text: `The village inn, though damaged, provides warm beds and hot food. The innkeeper, grateful for your help, refuses payment.
+
+<div class="combatText">
+<strong>⭐ LONG REST COMPLETED!</strong><br>
+• All HP restored to maximum<br>
+• All spell slots recovered<br>
+• Status effects removed<br>
+• Party morale high!
+</div>
+
+You wake refreshed at dawn, ready to face the temple ruins.
+
+<em>"Let's finish this,"</em> Thorin says, strapping on his armor. <em>"Those goblins won't raid this village again."</em>`,
+                sceneData: {
+                    environment: 'village_square',
+                    partyPositions: [
+                        {id: 'player', x: 250, y: 300, state: 'rested'},
+                        {id: 'elara', x: 200, y: 280, state: 'rested'},
+                        {id: 'thorin', x: 300, y: 300, state: 'rested'},
+                        {id: 'lyra', x: 230, y: 250, state: 'rested'}
+                    ]
+                },
+                choices: [
+                    {
+                        id: 'depart_north',
+                        label: "🌲 Head to the temple ruins",
+                        description: "Journey north into the dark forest.",
+                        nextScene: 'forest_path'
+                    }
+                ]
+            },
+
+            elder_dialogue: {
+                title: "💬 Elder's Counsel",
+                text: `Elder Aldric gestures for you to sit by the fountain.
+
+<em>"The temple was abandoned decades ago when the priests fled something... evil. Recent tremors have awakened it. Travelers speak of green flames and chanting from within."</em>
+
+He hands you a worn map. <em>"This shows the temple entrance. Beware the crypt beneath - many adventurers have entered, none returned."</em>
+
+<div class="combatText">
+<strong>📜 INFORMATION GAINED:</strong><br>
+• Temple map acquired<br>
+• Knowledge of the crypt<br>
+• Warning about the danger level
+</div>`,
+                sceneData: {
+                    environment: 'village_square',
+                    partyPositions: [
+                        {id: 'player', x: 250, y: 300},
+                        {id: 'elara', x: 200, y: 280},
+                        {id: 'thorin', x: 300, y: 300},
+                        {id: 'lyra', x: 230, y: 250}
+                    ],
+                    npcs: [{id: 'elder', x: 350, y: 300, name: 'Elder Aldric'}]
+                },
+                choices: [
+                    {
+                        id: 'thank_elder',
+                        label: "Thank the Elder and prepare",
+                        description: "Use this information to plan your approach.",
+                        nextScene: 'inn_rest'
+                    }
+                ]
+            },
+
+            village_search: {
+                title: "🔍 Searching the Village",
+                text: `You spend time exploring the village, checking damaged buildings and speaking with survivors.
+
+<div class="combatText">
+<strong>🔍 SEARCH RESULTS:</strong><br>
+Found items:<br>
+• 2× Greater Health Potions<br>
+• Ring of Protection (+1 AC)<br>
+• 50 gold pieces (donated by grateful villagers)<br>
+• Scroll of Fireball
+</div>
+
+One elderly woman approaches: <em>"My son went to the temple two days ago. If you find him... please."</em>
+
+<div class="combatText">
+<strong>📜 QUEST ADDED:</strong><br>
+"Missing Son" - Search the temple for survivors
+</div>`,
+                sceneData: {
+                    environment: 'village_square',
+                    partyPositions: [
+                        {id: 'player', x: 250, y: 300, state: 'searching'},
+                        {id: 'elara', x: 200, y: 280},
+                        {id: 'thorin', x: 300, y: 300},
+                        {id: 'lyra', x: 230, y: 250, state: 'searching'}
+                    ]
+                },
+                choices: [
+                    {
+                        id: 'finish_search',
+                        label: "Prepare to depart",
+                        description: "You've gathered what you need.",
+                        nextScene: 'inn_rest'
+                    }
+                ]
+            },
+
+            forest_path: {
+                title: "🌲 The Dark Forest",
+                text: `The path north leads into an ancient forest. Gnarled trees block out the sun, creating an oppressive darkness even at midday.
+
+<em>"Stay close,"</em> Lyra warns, hand on her bow. <em>"Something's watching us."</em>
+
+In the distance, you see the crumbling stone temple rising above the trees, green light flickering from its windows.
+
+<div class="combatText">
+<strong>⚠️ APPROACHING DANGER!</strong><br>
+The temple awaits... but this is where this demo ends.
+</div>
+
+<div class="levelUpNotif">
+<strong>🎉 DEMO COMPLETE! 🎉</strong><br>
+Thank you for playing Baldur's Gate Chronicles Enhanced Edition!<br>
+<br>
+Your adventure continues in the full version...<br>
+<em>(Export your save to preserve your progress!)</em>
+</div>`,
+                sceneData: {
+                    environment: 'dark_forest',
+                    partyPositions: [
+                        {id: 'player', x: 250, y: 300},
+                        {id: 'elara', x: 200, y: 280},
+                        {id: 'thorin', x: 300, y: 300},
+                        {id: 'lyra', x: 230, y: 250, state: 'alert'}
+                    ]
+                },
+                choices: [
+                    {
+                        id: 'return_menu',
+                        label: "🏠 Return to Main Menu",
+                        description: "Export your save and return to the menu.",
+                        nextScene: 'intro'
+                    }
+                ]
+            }
+        };
+
+        // Character templates with CONSENSUS enhancements
+        const CHARACTER_TEMPLATES = {
+            player: {
+                name: 'Hero',
+                class: 'Fighter',
+                level: 1,
+                maxHp: 12,
+                currentHp: 12,
+                ac: 16,
+                initiative: 2,
+                str: 16,
+                dex: 14,
+                con: 14,
+                int: 10,
+                wis: 12,
+                cha: 10
+            },
+            elara: {
+                name: 'Elara',
+                class: 'Cleric',
+                level: 1,
+                maxHp: 10,
+                currentHp: 10,
+                ac: 14,
+                initiative: 1,
+                str: 10,
+                dex: 12,
+                con: 14,
+                int: 13,
+                wis: 16,
+                cha: 14
+            },
+            thorin: {
+                name: 'Thorin',
+                class: 'Fighter',
+                level: 1,
+                maxHp: 14,
+                currentHp: 14,
+                ac: 18,
+                initiative: 0,
+                str: 17,
+                dex: 10,
+                con: 16,
+                int: 8,
+                wis: 11,
+                cha: 9
+            },
+            lyra: {
+                name: 'Lyra',
+                class: 'Rogue',
+                level: 1,
+                maxHp: 8,
+                currentHp: 8,
+                ac: 15,
+                initiative: 4,
+                str: 8,
+                dex: 18,
+                con: 12,
+                int: 14,
+                wis: 13,
+                cha: 12
+            }
+        };
+
+        // CONSENSUS: Difficulty scaling configuration
+        const DIFFICULTY_MODIFIERS = {
+            easy: {
+                enemyHpMultiplier: 0.75,
+                enemyAcBonus: -2,
+                enemyDamageMultiplier: 0.8,
+                xpMultiplier: 0.8
+            },
+            normal: {
+                enemyHpMultiplier: 1.0,
+                enemyAcBonus: 0,
+                enemyDamageMultiplier: 1.0,
+                xpMultiplier: 1.0
+            },
+            hard: {
+                enemyHpMultiplier: 1.5,
+                enemyAcBonus: 2,
+                enemyDamageMultiplier: 1.3,
+                xpMultiplier: 1.5
+            }
+        };
+
+        function rollDice(notation) {
+            const match = notation.match(/(\d+)d(\d+)(?:([+-])(\d+))?/);
+            if (!match) return parseInt(notation) || 0;
+
+            const [, numDice, diceSize, operator, modifier] = match;
+            let total = 0;
+            let rolls = [];
+
+            for (let i = 0; i < parseInt(numDice); i++) {
+                const roll = Math.floor(Math.random() * parseInt(diceSize)) + 1;
+                rolls.push(roll);
+                total += roll;
+            }
+
+            if (operator && modifier) {
+                total += operator === '+' ? parseInt(modifier) : -parseInt(modifier);
+            }
+
+            return {total, rolls, notation};
+        }
+
+        function rollD20(advantage = false, disadvantage = false) {
+            const roll1 = Math.floor(Math.random() * 20) + 1;
+            if (!advantage && !disadvantage) return roll1;
+
+            const roll2 = Math.floor(Math.random() * 20) + 1;
+            return advantage ? Math.max(roll1, roll2) : Math.min(roll1, roll2);
+        }
+
+        // CONSENSUS: XP and leveling system
+        function awardXP(amount) {
+            const modifier = DIFFICULTY_MODIFIERS[gameState.settings.difficulty];
+            const adjustedXP = Math.floor(amount * modifier.xpMultiplier);
+
+            gameState.xp += adjustedXP;
+
+            // Check for level up
+            while (gameState.xp >= gameState.xpToNextLevel) {
+                levelUp();
+            }
+
+            return adjustedXP;
+        }
+
+        function levelUp() {
+            gameState.level++;
+            gameState.xp -= gameState.xpToNextLevel;
+            gameState.xpToNextLevel = Math.floor(gameState.xpToNextLevel * 1.5);
+
+            // Show level up notification
+            const narrativeBox = getElement('narrativeBox');
+            narrativeBox.innerHTML += `
+                <div class="levelUpNotif">
+                    <strong>🎉 LEVEL UP! 🎉</strong><br>
+                    You are now Level ${gameState.level}!<br>
+                    <em>Your adventures grow more legendary...</em>
+                </div>
+            `;
+
+            // Update character levels
+            gameState.characters.forEach(char => {
+                char.level = gameState.level;
+                char.maxHp += Math.floor(Math.random() * 6) + 3;
+                char.currentHp = char.maxHp;
+            });
+        }
+
+        class Renderer2D {
+            constructor(canvas, ctx) {
+                this.canvas = canvas;
+                this.ctx = ctx;
+            }
+
+            render(sceneData) {
+                const ctx = this.ctx;
+                ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                this.drawBackground(sceneData.environment);
+
+                if (sceneData.partyPositions) {
+                    sceneData.partyPositions.forEach(char => this.drawCharacter(char));
                 }
 
-                // Animate enemies
-                this.enemies.forEach(enemy => {
-                    if (enemy.alive) {
-                        enemy.mesh.rotation.y += 0.01;
-                        enemy.mesh.position.y = Math.sin(Date.now() * 0.002) * 0.2;
-                    }
-                });
+                if (sceneData.enemies) {
+                    sceneData.enemies.forEach(enemy => this.drawEnemy(enemy));
+                }
 
-                this.renderer.render(this.scene, this.camera);
+                if (sceneData.npcs) {
+                    sceneData.npcs.forEach(npc => this.drawNPC(npc));
+                }
             }
 
-            loadGame() {
-                let progress = 0;
-                const loadingFill = document.getElementById('loadingFill');
+            drawBackground(env) {
+                const ctx = this.ctx;
+                const w = this.canvas.width;
+                const h = this.canvas.height;
 
-                const interval = setInterval(() => {
-                    progress += Math.random() * 20;
-                    if (progress >= 100) {
-                        progress = 100;
-                        clearInterval(interval);
-                        setTimeout(() => {
-                            document.getElementById('loadingScreen').classList.add('hide');
-                            document.getElementById('characterCreation').classList.remove('hide');
-                        }, 500);
-                    }
-                    loadingFill.style.width = progress + '%';
-                }, 200);
-            }
-
-            initEventListeners() {
-                // Race selection
-                document.querySelectorAll('.race-card').forEach(card => {
-                    card.addEventListener('click', () => {
-                        document.querySelectorAll('.race-card').forEach(c => c.classList.remove('selected'));
-                        card.classList.add('selected');
-                    });
-                });
-
-                // Class selection
-                document.querySelectorAll('.class-card').forEach(card => {
-                    card.addEventListener('click', () => {
-                        document.querySelectorAll('.class-card').forEach(c => c.classList.remove('selected'));
-                        card.classList.add('selected');
-                    });
-                });
-
-                // Keyboard controls
-                document.addEventListener('keydown', (e) => {
-                    if (this.gameState === 'playing' && !this.combat) {
-                        switch(e.key.toLowerCase()) {
-                            case 'i':
-                                this.openInventory();
-                                break;
-                            case 'e':
-                                this.interact();
-                                break;
-                            case 'r':
-                                this.rest();
-                                break;
-                        }
-                    }
-                });
-            }
-
-            startGame() {
-                const name = document.getElementById('charName').value || 'Hero';
-                const race = document.querySelector('.race-card.selected').dataset.race;
-                const charClass = document.querySelector('.class-card.selected').dataset.class;
-
-                this.character = {
-                    name: name,
-                    race: race,
-                    class: charClass,
-                    level: 1,
-                    hp: 12,
-                    maxHp: 12,
-                    xp: 0,
-                    str: 16,
-                    dex: 12,
-                    con: 14,
-                    ac: 15
+                const backgrounds = {
+                    'road_forest': ['#5a7d4e', '#2d3e25'],
+                    'village_square': ['#8b7355', '#4a3820'],
+                    'dark_forest': ['#2d3e25', '#1a1f15'],
+                    'ruins': ['#3a3a3a', '#1a1a1a']
                 };
 
-                this.inventory = ['⚔️ Longsword', '🛡️ Shield', '🧪 Health Potion', '🍞 Rations'];
+                const colors = backgrounds[env] || backgrounds['road_forest'];
+                const grad = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, w/2);
+                grad.addColorStop(0, colors[0]);
+                grad.addColorStop(1, colors[1]);
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, w, h);
 
-                document.getElementById('characterCreation').classList.add('hide');
-                document.getElementById('hud').classList.remove('hide');
-                document.getElementById('actionBar').classList.remove('hide');
-
-                this.updateHUD();
-                this.createPlayer();
-                this.startCampaign();
-
-                this.gameState = 'playing';
-            }
-
-            createPlayer() {
-                // Create player character model
-                const geometry = new THREE.CapsuleGeometry(0.5, 1.5, 4, 8);
-                const material = new THREE.MeshPhongMaterial({
-                    color: 0x4488ff,
-                    emissive: 0x112244
-                });
-                this.player = new THREE.Mesh(geometry, material);
-                this.player.position.set(0, 1, 0);
-                this.player.castShadow = true;
-                this.player.receiveShadow = true;
-                this.scene.add(this.player);
-
-                // Add weapon
-                const weaponGeometry = new THREE.BoxGeometry(0.1, 1.5, 0.1);
-                const weaponMaterial = new THREE.MeshPhongMaterial({ color: 0xd4af37 });
-                const weapon = new THREE.Mesh(weaponGeometry, weaponMaterial);
-                weapon.position.set(0.6, 0, 0);
-                this.player.add(weapon);
-            }
-
-            createEnvironment(type = 'village') {
-                // Clear existing environment
-                this.environment.forEach(obj => this.scene.remove(obj));
-                this.environment = [];
-
-                if (type === 'village') {
-                    // Ground
-                    const groundGeometry = new THREE.PlaneGeometry(50, 50);
-                    const groundMaterial = new THREE.MeshStandardMaterial({
-                        color: 0x2a4a2a,
-                        roughness: 0.8
-                    });
-                    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-                    ground.rotation.x = -Math.PI / 2;
-                    ground.receiveShadow = true;
-                    this.scene.add(ground);
-                    this.environment.push(ground);
-
-                    // Buildings
-                    for (let i = 0; i < 5; i++) {
-                        const building = this.createBuilding();
-                        building.position.set(
-                            (Math.random() - 0.5) * 20,
-                            0,
-                            -5 + Math.random() * 10
-                        );
-                        this.scene.add(building);
-                        this.environment.push(building);
-                    }
-
-                    // Trees
-                    for (let i = 0; i < 10; i++) {
-                        const tree = this.createTree();
-                        tree.position.set(
-                            (Math.random() - 0.5) * 40,
-                            0,
-                            -10 + Math.random() * 20
-                        );
-                        this.scene.add(tree);
-                        this.environment.push(tree);
-                    }
-                } else if (type === 'ruins') {
-                    // Darker ground
-                    const groundGeometry = new THREE.PlaneGeometry(50, 50);
-                    const groundMaterial = new THREE.MeshStandardMaterial({
-                        color: 0x3a3a3a,
-                        roughness: 0.9
-                    });
-                    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-                    ground.rotation.x = -Math.PI / 2;
-                    ground.receiveShadow = true;
-                    this.scene.add(ground);
-                    this.environment.push(ground);
-
-                    // Ruined pillars
-                    for (let i = 0; i < 8; i++) {
-                        const pillar = this.createPillar();
-                        pillar.position.set(
-                            (Math.random() - 0.5) * 15,
-                            0,
-                            -5 + Math.random() * 10
-                        );
-                        pillar.rotation.z = (Math.random() - 0.5) * 0.5;
-                        this.scene.add(pillar);
-                        this.environment.push(pillar);
-                    }
-
-                    // Purple light for spooky effect
-                    const spookyLight = new THREE.PointLight(0x8844ff, 2, 15);
-                    spookyLight.position.set(0, 3, -5);
-                    this.scene.add(spookyLight);
-                    this.environment.push(spookyLight);
+                // Subtle grid
+                ctx.strokeStyle = 'rgba(244, 208, 63, 0.08)';
+                ctx.lineWidth = 1;
+                const gridSize = 40;
+                for (let x = 0; x < w; x += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, h);
+                    ctx.stroke();
+                }
+                for (let y = 0; y < h; y += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(w, y);
+                    ctx.stroke();
                 }
             }
 
-            createBuilding() {
-                const group = new THREE.Group();
+            drawCharacter(char) {
+                const ctx = this.ctx;
+                const {x, y, id} = char;
 
-                // Walls
-                const wallGeometry = new THREE.BoxGeometry(3, 2.5, 3);
-                const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x8b7355 });
-                const walls = new THREE.Mesh(wallGeometry, wallMaterial);
-                walls.position.y = 1.25;
-                walls.castShadow = true;
-                walls.receiveShadow = true;
-                group.add(walls);
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.beginPath();
+                ctx.ellipse(x, y + 35, 20, 8, 0, 0, Math.PI * 2);
+                ctx.fill();
 
-                // Roof
-                const roofGeometry = new THREE.ConeGeometry(2.5, 1.5, 4);
-                const roofMaterial = new THREE.MeshStandardMaterial({ color: 0x654321 });
-                const roof = new THREE.Mesh(roofGeometry, roofMaterial);
-                roof.position.y = 3.25;
-                roof.rotation.y = Math.PI / 4;
-                roof.castShadow = true;
-                group.add(roof);
-
-                return group;
-            }
-
-            createTree() {
-                const group = new THREE.Group();
-
-                // Trunk
-                const trunkGeometry = new THREE.CylinderGeometry(0.2, 0.3, 2, 8);
-                const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x4a2511 });
-                const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
-                trunk.position.y = 1;
-                trunk.castShadow = true;
-                group.add(trunk);
-
-                // Foliage
-                const foliageGeometry = new THREE.SphereGeometry(1, 8, 8);
-                const foliageMaterial = new THREE.MeshStandardMaterial({ color: 0x2a6a2a });
-                const foliage = new THREE.Mesh(foliageGeometry, foliageMaterial);
-                foliage.position.y = 2.5;
-                foliage.castShadow = true;
-                group.add(foliage);
-
-                return group;
-            }
-
-            createPillar() {
-                const geometry = new THREE.CylinderGeometry(0.5, 0.5, 4, 8);
-                const material = new THREE.MeshStandardMaterial({
-                    color: 0x777777,
-                    roughness: 0.9
-                });
-                const pillar = new THREE.Mesh(geometry, material);
-                pillar.position.y = 2;
-                pillar.castShadow = true;
-                pillar.receiveShadow = true;
-                return pillar;
-            }
-
-            createEnemy(type = 'goblin', position = {x: 0, y: 0, z: -3}) {
-                const geometry = new THREE.CapsuleGeometry(0.4, 1, 4, 8);
-                const material = new THREE.MeshPhongMaterial({
-                    color: type === 'goblin' ? 0x44ff44 : 0xff4444,
-                    emissive: type === 'goblin' ? 0x114411 : 0x441111
-                });
-                const enemyMesh = new THREE.Mesh(geometry, material);
-                enemyMesh.position.set(position.x, position.y + 0.75, position.z);
-                enemyMesh.castShadow = true;
-                this.scene.add(enemyMesh);
-
-                const enemy = {
-                    type: type,
-                    mesh: enemyMesh,
-                    hp: 10,
-                    maxHp: 10,
-                    ac: 13,
-                    alive: true
+                const grad = ctx.createRadialGradient(x, y, 5, x, y, 25);
+                const colors = {
+                    player: ['#4682b4', '#1e3a5f'],
+                    elara: ['#f4d03f', '#c5a747'],
+                    thorin: ['#8b4513', '#5a2d0c'],
+                    lyra: ['#9370db', '#5a3a7a']
                 };
 
-                this.enemies.push(enemy);
-                return enemy;
-            }
+                const color = colors[id] || ['#666', '#333'];
+                grad.addColorStop(0, color[0]);
+                grad.addColorStop(1, color[1]);
 
-            createParticleEffect(position, color = 0xd4af37, count = 20) {
-                for (let i = 0; i < count; i++) {
-                    const geometry = new THREE.SphereGeometry(0.1, 8, 8);
-                    const material = new THREE.MeshBasicMaterial({
-                        color: color,
-                        transparent: true,
-                        opacity: 1
-                    });
-                    const particle = new THREE.Mesh(geometry, material);
-                    particle.position.copy(position);
-                    particle.velocity = {
-                        x: (Math.random() - 0.5) * 0.2,
-                        y: Math.random() * 0.3,
-                        z: (Math.random() - 0.5) * 0.2
-                    };
-                    this.scene.add(particle);
-                    this.particles.push(particle);
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(x, y, 25, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = 'rgba(244, 208, 63, 0.8)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                const charData = gameState.characters.find(c => c === CHARACTER_TEMPLATES[id]);
+                if (charData) {
+                    ctx.fillStyle = '#f4e4c1';
+                    ctx.font = 'bold 14px Cinzel';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(charData.name, x, y - 35);
                 }
             }
 
-            startCampaign() {
-                this.createEnvironment('village');
+            drawEnemy(enemy) {
+                const ctx = this.ctx;
+                const {x, y, type, hp, maxHp} = enemy;
 
-                this.showDialog(
-                    "The mist-shrouded village of Barovia lies before you. Dark clouds obscure the sun, and an unnatural chill fills the air. The locals speak in hushed tones of disappearances and strange lights from the old ruins to the north.",
-                    [
-                        { text: "Investigate the ruins", action: () => this.goToRuins() },
-                        { text: "Talk to the villagers", action: () => this.talkToVillagers() },
-                        { text: "Search for supplies", action: () => this.searchVillage() }
-                    ]
-                );
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.beginPath();
+                ctx.ellipse(x, y + 25, 15, 6, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                const grad = ctx.createRadialGradient(x, y, 5, x, y, 20);
+                grad.addColorStop(0, '#c41e3a');
+                grad.addColorStop(1, '#7a1225');
+
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.moveTo(x, y - 20);
+                ctx.lineTo(x - 18, y + 15);
+                ctx.lineTo(x + 18, y + 15);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.strokeStyle = 'rgba(239, 68, 68, 0.9)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                ctx.fillStyle = '#ffd700';
+                ctx.beginPath();
+                ctx.arc(x - 6, y - 5, 3, 0, Math.PI * 2);
+                ctx.arc(x + 6, y - 5, 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#ef4444';
+                ctx.font = 'bold 12px Cinzel';
+                ctx.textAlign = 'center';
+                ctx.fillText(type, x, y - 30);
             }
 
-            goToRuins() {
-                this.createEnvironment('ruins');
-                this.camera.position.set(0, 6, 12);
-
-                this.showDialog(
-                    "Ancient stone pillars rise from the overgrown ruins. Purple light flickers in the depths below. As you approach, three goblins emerge from the shadows, weapons drawn!",
-                    [
-                        { text: "Draw your weapon and fight!", action: () => this.startCombat('goblin', 3) },
-                        { text: "Try to sneak past them", action: () => this.sneakPastGoblins() },
-                        { text: "Attempt to intimidate them", action: () => this.intimidateGoblins() }
-                    ]
-                );
-            }
-
-            talkToVillagers() {
-                this.showDialog(
-                    "An elderly woman clutches your arm. 'Please, traveler! My daughter Ireena hasn't returned from the old ruins. She went to gather moonblossom herbs three days ago. The dark lord's servants have been seen near there. Will you help?'",
-                    [
-                        { text: "I will find your daughter", action: () => {
-                            this.addQuest("Rescue Ireena from the ruins");
-                            this.goToRuins();
-                        }},
-                        { text: "Tell me more about these servants", action: () => this.learnMore() },
-                        { text: "I need to prepare first", action: () => this.startCampaign() }
-                    ]
-                );
-            }
-
-            searchVillage() {
-                const roll = this.rollDice(20);
-                this.showDiceRoll(roll);
-
-                setTimeout(() => {
-                    if (roll >= 12) {
-                        this.gold += 25;
-                        this.inventory.push('🗡️ Dagger');
-                        this.updateHUD();
-                        this.showDialog(
-                            `You search the abandoned buildings and find 25 gold pieces and a well-crafted dagger! (Rolled ${roll})`,
-                            [
-                                { text: "Continue exploring", action: () => this.startCampaign() }
-                            ]
-                        );
-                    } else {
-                        this.showDialog(
-                            `Your search turns up nothing of value. The village has already been thoroughly looted. (Rolled ${roll})`,
-                            [
-                                { text: "Continue exploring", action: () => this.startCampaign() }
-                            ]
-                        );
-                    }
-                }, 1500);
-            }
-
-            sneakPastGoblins() {
-                const roll = this.rollDice(20);
-                this.showDiceRoll(roll);
-
-                setTimeout(() => {
-                    if (roll >= 15) {
-                        this.showDialog(
-                            `Moving like a shadow, you slip past the goblin guards unnoticed! (Rolled ${roll}) You find a staircase leading deeper into the ruins.`,
-                            [
-                                { text: "Descend into the depths", action: () => this.exploreDeep() }
-                            ]
-                        );
-                    } else {
-                        this.showDialog(
-                            `A twig snaps under your foot! The goblins spot you and attack! (Rolled ${roll})`,
-                            [
-                                { text: "Fight!", action: () => this.startCombat('goblin', 3) }
-                            ]
-                        );
-                    }
-                }, 1500);
-            }
-
-            intimidateGoblins() {
-                const roll = this.rollDice(20);
-                this.showDiceRoll(roll);
-
-                setTimeout(() => {
-                    if (roll >= 14) {
-                        this.showDialog(
-                            `You draw yourself to full height and roar a challenge! The goblins flee in terror! (Rolled ${roll})`,
-                            [
-                                { text: "Explore the ruins freely", action: () => this.exploreDeep() }
-                            ]
-                        );
-                    } else {
-                        this.showDialog(
-                            `The goblins laugh at your attempt to intimidate them and attack! (Rolled ${roll})`,
-                            [
-                                { text: "Fight!", action: () => this.startCombat('goblin', 3) }
-                            ]
-                        );
-                    }
-                }, 1500);
-            }
-
-            learnMore() {
-                this.showDialog(
-                    "The woman lowers her voice. 'They say the vampire lord Strahd von Zarovich rules these lands. His undead servants roam at night. But there's also been talk of cultists performing dark rituals in the ruins, trying to summon something... terrible.'",
-                    [
-                        { text: "I'll stop them!", action: () => this.goToRuins() },
-                        { text: "Tell me about the ruins", action: () => this.learnAboutRuins() }
-                    ]
-                );
-            }
-
-            learnAboutRuins() {
-                this.showDialog(
-                    "'The ruins date back centuries, to before Strahd's curse. They say a powerful artifact lies buried there - the Sunblade, a legendary weapon that can harm even a vampire lord. But the ruins are guarded by dark magic and foul creatures.'",
-                    [
-                        { text: "I must find this Sunblade", action: () => {
-                            this.addQuest("Find the legendary Sunblade");
-                            this.goToRuins();
-                        }},
-                        { text: "I'll come back later", action: () => this.startCampaign() }
-                    ]
-                );
-            }
-
-            exploreDeep() {
-                this.showDialog(
-                    "You descend the ancient staircase into darkness. The walls are covered in glowing purple runes. You hear chanting ahead... and then you see her - Ireena, trapped in a magical cage! But standing before the cage is a dark cultist, channeling dark energy!",
-                    [
-                        { text: "Attack the cultist!", action: () => this.startCombat('cultist', 1) },
-                        { text: "Try to disrupt the ritual", action: () => this.disruptRitual() },
-                        { text: "Call out to Ireena", action: () => this.callIreena() }
-                    ]
-                );
-            }
-
-            disruptRitual() {
-                const roll = this.rollDice(20);
-                this.showDiceRoll(roll);
-
-                setTimeout(() => {
-                    if (roll >= 16) {
-                        this.character.xp += 100;
-                        this.updateHUD();
-                        this.showDialog(
-                            `You channel your inner strength and shatter the magical circle! The cultist screams as the dark energy backlashes, defeating him instantly! (Rolled ${roll}) Ireena is free!`,
-                            [
-                                { text: "Rescue Ireena and leave", action: () => this.rescueSuccess() }
-                            ]
-                        );
-                    } else {
-                        this.showDialog(
-                            `Your attempt fails! The cultist turns to face you, eyes glowing with dark power! (Rolled ${roll})`,
-                            [
-                                { text: "Fight!", action: () => this.startCombat('cultist', 1) }
-                            ]
-                        );
-                    }
-                }, 1500);
-            }
-
-            callIreena() {
-                this.showDialog(
-                    "Ireena looks up, hope in her eyes! 'Help me! The cultist is trying to sacrifice me to summon a demon!' The cultist whirls around, furious at the interruption!",
-                    [
-                        { text: "Fight the cultist!", action: () => this.startCombat('cultist', 1) },
-                        { text: "Try to free Ireena first", action: () => this.freeIreenaFirst() }
-                    ]
-                );
-            }
-
-            freeIreenaFirst() {
-                const roll = this.rollDice(20);
-                this.showDiceRoll(roll);
-
-                setTimeout(() => {
-                    if (roll >= 14) {
-                        this.showDialog(
-                            `You smash the cage lock and Ireena escapes! But now you must face the cultist together! (Rolled ${roll})`,
-                            [
-                                { text: "Fight together!", action: () => this.startCombat('cultist', 1, true) }
-                            ]
-                        );
-                    } else {
-                        this.character.hp -= 5;
-                        this.updateHUD();
-                        this.showDialog(
-                            `The cultist blasts you with dark energy before you can free Ireena! You take 5 damage! (Rolled ${roll})`,
-                            [
-                                { text: "Fight!", action: () => this.startCombat('cultist', 1) }
-                            ]
-                        );
-                    }
-                }, 1500);
-            }
-
-            rescueSuccess() {
-                this.character.xp += 200;
-                this.gold += 100;
-                this.inventory.push('✨ Sunblade Fragment');
-                this.updateHUD();
-
-                this.showDialog(
-                    "You escort Ireena safely back to the village. Her mother weeps with joy and rewards you with 100 gold! Ireena gives you a glowing crystal: 'I found this in the ruins - it's a fragment of the legendary Sunblade! You are a true hero!'",
-                    [
-                        { text: "Continue your adventure", action: () => this.checkLevelUp() }
-                    ]
-                );
-            }
-
-            checkLevelUp() {
-                if (this.character.xp >= 300 && this.character.level === 1) {
-                    this.character.level = 2;
-                    this.character.maxHp += 8;
-                    this.character.hp = this.character.maxHp;
-                    this.updateHUD();
-
-                    this.showDialog(
-                        "⭐ LEVEL UP! ⭐\n\nYou have reached Level 2!\n• Max HP increased by 8\n• HP fully restored\n• New abilities unlocked!",
-                        [
-                            { text: "Amazing!", action: () => this.campaignVictory() }
-                        ]
-                    );
-                } else {
-                    this.campaignVictory();
-                }
-            }
-
-            campaignVictory() {
-                this.createParticleEffect(new THREE.Vector3(0, 2, 0), 0xffd700, 50);
-
-                this.showDialog(
-                    "🎉 QUEST COMPLETE! 🎉\n\nYou have completed your first adventure in the cursed lands of Barovia! Ireena is safe, and you've obtained a fragment of the legendary Sunblade. But your journey is just beginning...\n\nThe vampire lord Strahd still rules these lands, and greater challenges await!",
-                    [
-                        { text: "Start New Adventure", action: () => location.reload() },
-                        { text: "Explore More", action: () => this.freeRoam() }
-                    ]
-                );
-            }
-
-            freeRoam() {
-                this.showDialog(
-                    "You are now free to explore the world! Use the action buttons to interact with your surroundings.",
-                    [
-                        { text: "Got it!", action: () => this.hideDialog() }
-                    ]
-                );
-            }
-
-            startCombat(enemyType, count = 1, ally = false) {
-                this.combat = {
-                    enemies: [],
-                    currentEnemy: 0,
-                    ally: ally
-                };
-
-                // Create enemy visuals
-                for (let i = 0; i < count; i++) {
-                    const enemy = this.createEnemy(
-                        enemyType,
-                        { x: -3 + i * 2, y: 0, z: -3 }
-                    );
-                    if (enemyType === 'cultist') {
-                        enemy.hp = 15;
-                        enemy.maxHp = 15;
-                        enemy.ac = 14;
-                    }
-                    this.combat.enemies.push(enemy);
-                }
-
-                document.getElementById('combatUI').classList.add('active');
-                this.updateCombatUI();
-                this.hideDialog();
-            }
-
-            updateCombatUI() {
-                const enemy = this.combat.enemies[this.combat.currentEnemy];
-
-                document.getElementById('playerCombatName').textContent = this.character.name;
-                document.getElementById('playerCombatHP').textContent =
-                    `${this.character.hp}/${this.character.maxHp}`;
-                document.getElementById('playerCombatAC').textContent = this.character.ac;
-
-                document.getElementById('enemyCombatName').textContent =
-                    enemy.type.charAt(0).toUpperCase() + enemy.type.slice(1);
-                document.getElementById('enemyCombatHP').textContent =
-                    `${enemy.hp}/${enemy.maxHp}`;
-                document.getElementById('enemyCombatAC').textContent = enemy.ac;
-            }
-
-            combatAction(action) {
-                const enemy = this.combat.enemies[this.combat.currentEnemy];
-                let log = '';
-
-                if (action === 'attack') {
-                    const roll = this.rollDice(20);
-                    const attackBonus = Math.floor((this.character.str - 10) / 2) + 2;
-                    const total = roll + attackBonus;
-
-                    log += `🎲 You rolled ${roll} + ${attackBonus} = ${total}\n`;
-
-                    if (total >= enemy.ac) {
-                        const damage = this.rollDice(8) + Math.floor((this.character.str - 10) / 2);
-                        enemy.hp -= damage;
-                        log += `⚔️ HIT! ${damage} damage dealt!\n`;
-
-                        // Visual effect
-                        this.createParticleEffect(enemy.mesh.position, 0xff4444, 15);
-
-                        if (enemy.hp <= 0) {
-                            enemy.alive = false;
-                            enemy.mesh.material.transparent = true;
-                            enemy.mesh.material.opacity = 0.3;
-                            log += `💀 ${enemy.type} defeated!\n`;
-
-                            this.character.xp += 50;
-                            this.updateHUD();
-
-                            // Check if all enemies defeated
-                            this.combat.currentEnemy++;
-                            if (this.combat.currentEnemy >= this.combat.enemies.length) {
-                                this.endCombat(true);
-                                return;
-                            }
-                        }
-                    } else {
-                        log += `❌ MISS!\n`;
-                    }
-                } else if (action === 'defend') {
-                    log += `🛡️ You take a defensive stance!\n`;
-                    this.character.ac += 2;
-                } else if (action === 'spell') {
-                    const damage = this.rollDice(6) + 3;
-                    enemy.hp -= damage;
-                    log += `✨ Magic Missile! ${damage} force damage!\n`;
-
-                    this.createParticleEffect(enemy.mesh.position, 0x4444ff, 20);
-
-                    if (enemy.hp <= 0) {
-                        enemy.alive = false;
-                        enemy.mesh.material.transparent = true;
-                        enemy.mesh.material.opacity = 0.3;
-                        log += `💀 ${enemy.type} defeated!\n`;
-
-                        this.character.xp += 50;
-                        this.updateHUD();
-
-                        this.combat.currentEnemy++;
-                        if (this.combat.currentEnemy >= this.combat.enemies.length) {
-                            this.endCombat(true);
-                            return;
-                        }
-                    }
-                } else if (action === 'item') {
-                    if (this.inventory.includes('🧪 Health Potion')) {
-                        this.character.hp = Math.min(this.character.hp + 10, this.character.maxHp);
-                        this.inventory = this.inventory.filter(item => item !== '🧪 Health Potion');
-                        log += `🧪 Used Health Potion! Restored 10 HP!\n`;
-                        this.updateHUD();
-                    } else {
-                        log += `❌ No health potions!\n`;
-                    }
-                }
-
-                // Enemy turn
-                if (enemy.alive) {
-                    log += `\n--- ${enemy.type}'s turn ---\n`;
-                    const enemyRoll = this.rollDice(20);
-                    const enemyAttack = enemyRoll + 3;
-
-                    log += `🎲 ${enemy.type} rolled ${enemyRoll} + 3 = ${enemyAttack}\n`;
-
-                    if (enemyAttack >= this.character.ac) {
-                        const enemyDamage = this.rollDice(6) + 2;
-                        this.character.hp -= enemyDamage;
-                        log += `💥 HIT! You take ${enemyDamage} damage!\n`;
-
-                        if (this.character.hp <= 0) {
-                            this.endCombat(false);
-                            return;
-                        }
-                    } else {
-                        log += `🛡️ MISS!\n`;
-                    }
-
-                    // Reset AC if defended
-                    if (action === 'defend') {
-                        this.character.ac -= 2;
-                    }
-                }
-
-                this.addCombatLog(log);
-                this.updateCombatUI();
-                this.updateHUD();
-            }
-
-            addCombatLog(text) {
-                const logEntry = document.createElement('div');
-                logEntry.className = 'combat-log-entry';
-                logEntry.textContent = text;
-                document.getElementById('combatLog').appendChild(logEntry);
-
-                // Auto scroll
-                const log = document.getElementById('combatLog');
-                log.scrollTop = log.scrollHeight;
-            }
-
-            endCombat(victory) {
-                document.getElementById('combatUI').classList.remove('active');
-                document.getElementById('combatLog').innerHTML = '';
-
-                // Clear enemies from scene
-                this.enemies.forEach(enemy => {
-                    this.scene.remove(enemy.mesh);
-                });
-                this.enemies = [];
-
-                if (victory) {
-                    this.gold += 30;
-                    this.updateHUD();
-
-                    this.showDialog(
-                        `🎉 Victory! You defeated your enemies!\n\nYou gained:\n• ${this.character.xp} XP\n• 30 Gold\n\nWhat do you do next?`,
-                        [
-                            { text: "Continue exploring", action: () => this.exploreDeep() },
-                            { text: "Search the bodies", action: () => this.searchBodies() }
-                        ]
-                    );
-                } else {
-                    this.showDialog(
-                        "💀 You have fallen...\n\nYour adventure ends here, but heroes never truly die. Will you try again?",
-                        [
-                            { text: "Restart Adventure", action: () => location.reload() }
-                        ]
-                    );
-                }
-
-                this.combat = null;
-            }
-
-            searchBodies() {
-                this.inventory.push('🧪 Health Potion');
-                this.inventory.push('🔑 Rusty Key');
-                this.gold += 15;
-                this.updateHUD();
-
-                this.showDialog(
-                    "You find a health potion, a rusty key, and 15 more gold pieces!",
-                    [
-                        { text: "Continue", action: () => this.exploreDeep() }
-                    ]
-                );
-            }
-
-            rollDice(sides) {
-                return Math.floor(Math.random() * sides) + 1;
-            }
-
-            showDiceRoll(result) {
-                const diceElement = document.getElementById('diceRoll');
-                diceElement.textContent = `🎲 ${result}`;
-                diceElement.style.display = 'block';
-
-                setTimeout(() => {
-                    diceElement.style.display = 'none';
-                }, 1500);
-            }
-
-            showDialog(text, choices) {
-                const dialogBox = document.getElementById('dialogBox');
-                const dialogText = document.getElementById('dialogText');
-                const dialogChoices = document.getElementById('dialogChoices');
-
-                dialogText.textContent = text;
-                dialogChoices.innerHTML = '';
-
-                choices.forEach(choice => {
-                    const button = document.createElement('button');
-                    button.className = 'choice-btn';
-                    button.textContent = choice.text;
-                    button.onclick = choice.action;
-                    dialogChoices.appendChild(button);
-                });
-
-                dialogBox.classList.add('active');
-            }
-
-            hideDialog() {
-                document.getElementById('dialogBox').classList.remove('active');
-            }
-
-            updateHUD() {
-                document.getElementById('charNameDisplay').textContent = this.character.name;
-                document.getElementById('charClassDisplay').textContent =
-                    `Level ${this.character.level} ${this.character.race} ${this.character.class}`;
-
-                const hpPercent = (this.character.hp / this.character.maxHp) * 100;
-                document.getElementById('hpDisplay').textContent =
-                    `${this.character.hp}/${this.character.maxHp}`;
-                document.getElementById('hpBar').style.width = hpPercent + '%';
-                document.getElementById('hpBarText').textContent =
-                    `${this.character.hp}/${this.character.maxHp}`;
-
-                const xpNeeded = this.character.level * 300;
-                const xpPercent = (this.character.xp / xpNeeded) * 100;
-                document.getElementById('xpDisplay').textContent =
-                    `${this.character.xp}/${xpNeeded}`;
-                document.getElementById('xpBar').style.width = xpPercent + '%';
-                document.getElementById('xpBarText').textContent =
-                    `${this.character.xp}/${xpNeeded}`;
-
-                document.getElementById('strDisplay').textContent = this.character.str;
-                document.getElementById('dexDisplay').textContent = this.character.dex;
-                document.getElementById('conDisplay').textContent = this.character.con;
-
-                document.getElementById('goldDisplay').textContent = this.gold;
-            }
-
-            openInventory() {
-                const inventoryGrid = document.getElementById('inventoryGrid');
-                inventoryGrid.innerHTML = '';
-
-                // Show items
-                this.inventory.forEach(item => {
-                    const slot = document.createElement('div');
-                    slot.className = 'inventory-slot filled';
-                    slot.textContent = item.split(' ')[0]; // Just the emoji
-                    slot.title = item;
-                    inventoryGrid.appendChild(slot);
-                });
-
-                // Fill empty slots
-                for (let i = this.inventory.length; i < 16; i++) {
-                    const slot = document.createElement('div');
-                    slot.className = 'inventory-slot';
-                    inventoryGrid.appendChild(slot);
-                }
-
-                document.getElementById('inventoryPanel').classList.add('active');
-            }
-
-            closeInventory() {
-                document.getElementById('inventoryPanel').classList.remove('active');
-            }
-
-            interact() {
-                if (this.combat) return;
-
-                this.showDialog(
-                    "You look around for someone to talk to...",
-                    [
-                        { text: "Continue", action: () => this.hideDialog() }
-                    ]
-                );
-            }
-
-            search() {
-                if (this.combat) return;
-
-                const roll = this.rollDice(20);
-                this.showDiceRoll(roll);
-
-                setTimeout(() => {
-                    if (roll >= 15) {
-                        this.gold += 10;
-                        this.updateHUD();
-                        this.showDialog(
-                            `You search the area and find 10 gold pieces! (Rolled ${roll})`,
-                            [{ text: "Nice!", action: () => this.hideDialog() }]
-                        );
-                    } else {
-                        this.showDialog(
-                            `You search but find nothing of value. (Rolled ${roll})`,
-                            [{ text: "Darn", action: () => this.hideDialog() }]
-                        );
-                    }
-                }, 1500);
-            }
-
-            rest() {
-                if (this.combat) {
-                    this.showDialog(
-                        "You cannot rest during combat!",
-                        [{ text: "Okay", action: () => this.hideDialog() }]
-                    );
-                    return;
-                }
-
-                this.character.hp = this.character.maxHp;
-                this.updateHUD();
-
-                this.createParticleEffect(this.player.position, 0x44ff44, 30);
-
-                this.showDialog(
-                    "You take a moment to rest and recover.\n\n✨ HP fully restored!",
-                    [{ text: "Feeling refreshed!", action: () => this.hideDialog() }]
-                );
-            }
-
-            addQuest(questText) {
-                this.quests.push(questText);
-                document.getElementById('activeQuest').textContent = questText;
+            drawNPC(npc) {
+                const ctx = this.ctx;
+                const {x, y} = npc;
+
+                ctx.fillStyle = '#c0c0c0';
+                ctx.beginPath();
+                ctx.arc(x, y, 20, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = '#f4d03f';
+                ctx.lineWidth = 2;
+                ctx.stroke();
             }
         }
 
-        // Initialize game when page loads
+        class GameEngine {
+            constructor() {
+                this.canvas = getElement('renderCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.renderer2D = new Renderer2D(this.canvas, this.ctx);
+
+                this.resizeCanvas();
+                window.addEventListener('resize', () => this.resizeCanvas());
+
+                this.loadGameState();
+                this.initKeyboardShortcuts();
+            }
+
+            resizeCanvas() {
+                const visualSection = getElement('visualSection');
+                this.canvas.width = visualSection.clientWidth;
+                this.canvas.height = visualSection.clientHeight;
+                this.render();
+            }
+
+            loadGameState() {
+                const saved = localStorage.getItem(APP_NAME);
+                if (saved) {
+                    try {
+                        const data = JSON.parse(saved);
+                        Object.assign(gameState, data);
+                    } catch (e) {
+                        console.error('Failed to load save:', e);
+                    }
+                }
+            }
+
+            saveGameState() {
+                localStorage.setItem(APP_NAME, JSON.stringify(gameState));
+            }
+
+            initKeyboardShortcuts() {
+                document.addEventListener('keydown', (e) => {
+                    if (e.key >= '1' && e.key <= '4') {
+                        const choices = document.querySelectorAll('.choice');
+                        const index = parseInt(e.key) - 1;
+                        if (choices[index]) {
+                            choices[index].click();
+                        }
+                    }
+                    if (e.key === 'Escape') {
+                        const tutorial = getElement('tutorialOverlay');
+                        if (tutorial && tutorial.style.display !== 'none') {
+                            this.skipTutorial();
+                        }
+                    }
+                });
+            }
+
+            newGame() {
+                getElement('mainMenu').style.display = 'none';
+                getElement('tutorialOverlay').style.display = 'flex';
+            }
+
+            startTutorial() {
+                gameState.tutorial = true;
+                this.initializeGame();
+                getElement('tutorialOverlay').style.display = 'none';
+            }
+
+            skipTutorial() {
+                gameState.tutorial = false;
+                this.initializeGame();
+                getElement('tutorialOverlay').style.display = 'none';
+            }
+
+            initializeGame() {
+                gameState = {
+                    currentScene: 'intro',
+                    characters: [
+                        {...CHARACTER_TEMPLATES.player},
+                        {...CHARACTER_TEMPLATES.elara},
+                        {...CHARACTER_TEMPLATES.thorin},
+                        {...CHARACTER_TEMPLATES.lyra}
+                    ],
+                    choices: {},
+                    inventory: ['health_potion', 'health_potion', 'health_potion'],
+                    viewMode: '2d',
+                    tutorial: gameState.tutorial,
+                    xp: 0,
+                    level: 1,
+                    xpToNextLevel: 300,
+                    relationships: {
+                        elara: 0,
+                        thorin: 0,
+                        lyra: 0
+                    },
+                    combat: {
+                        active: false,
+                        round: 0,
+                        initiative: [],
+                        currentTurn: 0,
+                        statusEffects: new Map()
+                    },
+                    settings: gameState.settings
+                };
+
+                this.showScene(gameState.currentScene);
+                this.updateCharacterPanel();
+                this.saveGameState();
+            }
+
+            continueGame() {
+                if (gameState.currentScene && gameState.characters.length > 0) {
+                    getElement('mainMenu').style.display = 'none';
+                    this.showScene(gameState.currentScene);
+                    this.updateCharacterPanel();
+                } else {
+                    alert('No saved game found! Starting new adventure...');
+                    this.newGame();
+                }
+            }
+
+            showSettings() {
+                const currentDifficulty = gameState.settings.difficulty;
+                const newDifficulty = prompt(
+                    `⚙️ SETTINGS\n\nCurrent Difficulty: ${currentDifficulty}\n\nChoose difficulty:\n• easy\n• normal\n• hard`,
+                    currentDifficulty
+                );
+
+                if (newDifficulty && ['easy', 'normal', 'hard'].includes(newDifficulty.toLowerCase())) {
+                    gameState.settings.difficulty = newDifficulty.toLowerCase();
+                    this.saveGameState();
+                    alert(`Difficulty set to: ${gameState.settings.difficulty}`);
+                }
+            }
+
+            showScene(sceneId) {
+                const scene = SCENES[sceneId];
+                if (!scene) {
+                    console.error('Scene not found:', sceneId);
+                    return;
+                }
+
+                gameState.currentScene = sceneId;
+
+                const narrativeBox = getElement('narrativeBox');
+                narrativeBox.innerHTML = `
+                    <div class="narrativeTitle">${scene.title}</div>
+                    <div class="narrativeText">${scene.text}</div>
+                `;
+
+                const choiceBox = getElement('choiceBox');
+                choiceBox.innerHTML = '';
+
+                scene.choices.forEach((choice, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'choice';
+                    btn.setAttribute('tabindex', '0');
+                    btn.setAttribute('role', 'button');
+                    btn.innerHTML = `
+                        <span class="choiceLabel">[${index + 1}] ${choice.label}</span>
+                        <span class="choiceDescription">${choice.description}</span>
+                        ${choice.skill ? `<span class="choiceSkill">${choice.skill} DC ${choice.dc}</span>` : ''}
+                    `;
+                    btn.onclick = () => this.handleChoice(choice);
+                    choiceBox.appendChild(btn);
+                });
+
+                this.render();
+                this.updateXPBar();
+                narrativeBox.scrollTop = 0;
+                this.saveGameState();
+            }
+
+            handleChoice(choice) {
+                gameState.choices[gameState.currentScene] = choice.id;
+
+                if (choice.skill) {
+                    const roll = rollD20();
+                    const modifier = this.getSkillModifier(choice.skill);
+                    const total = roll + modifier;
+
+                    const result = total >= choice.dc ? 'success' : 'failure';
+                    const nextScene = choice[result];
+
+                    const narrativeBox = getElement('narrativeBox');
+                    narrativeBox.innerHTML += `
+                        <div class="narrativeText" style="margin-top: 20px;">
+                            <strong>🎲 ${choice.skill} Check:</strong><br>
+                            <span class="diceRoll">d20(${roll}) + ${modifier} = ${total}</span> vs DC ${choice.dc}
+                            ${result === 'success' ?
+                                '<br><span class="successText">✓ SUCCESS!</span>' :
+                                '<br><span class="failText">✗ FAILURE!</span>'}
+                        </div>
+                    `;
+
+                    // CONSENSUS: Award XP for skill checks
+                    if (result === 'success') {
+                        const xpGained = awardXP(25);
+                        narrativeBox.innerHTML += `
+                            <div class="narrativeText">
+                                <span class="successText">+${xpGained} XP</span>
+                            </div>
+                        `;
+                    }
+
+                    setTimeout(() => this.showScene(nextScene), 1500);
+                } else if (choice.nextScene) {
+                    // Check for combat victory and award XP
+                    if (choice.nextScene === 'combat_victory' || gameState.currentScene === 'combat_round_1') {
+                        const xpGained = awardXP(150);
+                        const narrativeBox = getElement('narrativeBox');
+                        narrativeBox.innerHTML += `
+                            <div class="narrativeText">
+                                <span class="successText">+${xpGained} XP gained!</span>
+                            </div>
+                        `;
+                    }
+
+                    this.showScene(choice.nextScene);
+                }
+            }
+
+            getSkillModifier(skill) {
+                return 3;
+            }
+
+            toggleViewMode() {
+                gameState.viewMode = gameState.viewMode === '2d' ? '3d' : '2d';
+                getElement('modeToggle').textContent = gameState.viewMode === '2d' ? '2D View' : '3D View';
+                this.render();
+                this.saveGameState();
+            }
+
+            render() {
+                const scene = SCENES[gameState.currentScene];
+                if (!scene || !scene.sceneData) return;
+
+                if (gameState.viewMode === '2d') {
+                    this.renderer2D.render(scene.sceneData);
+                }
+            }
+
+            // CONSENSUS: XP Bar update
+            updateXPBar() {
+                const panel = getElement('charPanel');
+                const existingXPBar = panel.querySelector('.xpBar');
+                if (existingXPBar) {
+                    existingXPBar.remove();
+                }
+
+                const xpPercent = (gameState.xp / gameState.xpToNextLevel) * 100;
+                const xpBar = document.createElement('div');
+                xpBar.className = 'xpBar';
+                xpBar.innerHTML = `
+                    <div class="xpFill" style="width: ${xpPercent}%"></div>
+                    <div class="xpText">Level ${gameState.level} - ${gameState.xp}/${gameState.xpToNextLevel} XP</div>
+                `;
+
+                const firstChild = panel.firstElementChild;
+                if (firstChild && firstChild.nextSibling) {
+                    panel.insertBefore(xpBar, firstChild.nextSibling);
+                } else {
+                    panel.appendChild(xpBar);
+                }
+            }
+
+            updateCharacterPanel() {
+                const panel = getElement('charPanel');
+                panel.innerHTML = '<div style="font-family: Cinzel; color: var(--gold); margin-bottom: 15px; font-size: 1.1em;">⚔️ Party</div>';
+
+                gameState.characters.forEach(char => {
+                    const hpPercent = (char.currentHp / char.maxHp) * 100;
+                    const card = document.createElement('div');
+                    card.className = 'charCard';
+                    card.setAttribute('role', 'article');
+                    card.setAttribute('aria-label', `${char.name} character card`);
+                    card.innerHTML = `
+                        <div class="charName">${char.name}</div>
+                        <div class="charClass">Level ${char.level} ${char.class}</div>
+                        <div class="healthBar" role="progressbar" aria-valuenow="${char.currentHp}" aria-valuemin="0" aria-valuemax="${char.maxHp}">
+                            <div class="healthFill" style="width: ${hpPercent}%"></div>
+                            <div class="healthText">${char.currentHp}/${char.maxHp} HP</div>
+                        </div>
+                        <div class="charStats">
+                            <div class="statBox">
+                                <div class="statLabel">STR</div>
+                                <div class="statValue">${char.str || 10}</div>
+                            </div>
+                            <div class="statBox">
+                                <div class="statLabel">DEX</div>
+                                <div class="statValue">${char.dex || 10}</div>
+                            </div>
+                            <div class="statBox">
+                                <div class="statLabel">CON</div>
+                                <div class="statValue">${char.con || 10}</div>
+                            </div>
+                        </div>
+                    `;
+                    panel.appendChild(card);
+                });
+
+                this.updateXPBar();
+            }
+        }
+
+        function exportData() {
+            const dataStr = JSON.stringify(gameState, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `baldurs-gate-save-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    Object.assign(gameState, data);
+                    game.showScene(gameState.currentScene);
+                    game.updateCharacterPanel();
+                    game.saveGameState();
+                    alert('✓ Save loaded successfully!');
+                } catch (error) {
+                    alert('✗ Invalid save file!');
+                }
+            };
+            reader.readAsText(file);
+        }
+
         let game;
-        window.addEventListener('load', () => {
-            game = new DnDGame();
+        window.addEventListener('DOMContentLoaded', () => {
+            game = new GameEngine();
         });
     </script>
 </body>
