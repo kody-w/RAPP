@@ -855,13 +855,14 @@
     </div>
 
     <script>
-        // GitHub Configuration - Static agent store pulls directly from repository
+        // GitHub Configuration - Static agent store pulls from RAPP repository
         const GITHUB_CONFIG = {
-            owner: 'kody-w',
-            repo: 'AI-Agent-Templates',
+            owner: 'kody-w',  // Update this to your GitHub username
+            repo: 'RAPP',
             branch: 'main',
-            baseUrl: 'https://github.com/kody-w/AI-Agent-Templates',
-            rawUrl: 'https://raw.githubusercontent.com/kody-w/AI-Agent-Templates/main'
+            subPath: 'AI-Agent-Templates',
+            baseUrl: 'https://github.com/kody-w/RAPP',
+            rawUrl: 'https://raw.githubusercontent.com/kody-w/RAPP/main/AI-Agent-Templates'
         };
 
         // Category mapping to directory structure
@@ -1937,14 +1938,18 @@
         // Helper: Get GitHub directory path for an agent
         function getAgentGitHubPath(agentId, category) {
             const categoryDir = CATEGORY_TO_DIR[category] || 'general_stacks';
-            const stackName = agentId + '_stack';
+            // Convert hyphens to underscores for GitHub path
+            const agentIdWithUnderscores = agentId.replace(/-/g, '_');
+            const stackName = agentIdWithUnderscores + '_stack';
             return `${GITHUB_CONFIG.baseUrl}/tree/${GITHUB_CONFIG.branch}/agent_stacks/${categoryDir}/${stackName}`;
         }
 
         // Helper: Get GitHub raw file URL for an agent
         function getAgentRawUrl(agentId, category, filename) {
             const categoryDir = CATEGORY_TO_DIR[category] || 'general_stacks';
-            const stackName = agentId + '_stack';
+            // Convert hyphens to underscores for GitHub path
+            const agentIdWithUnderscores = agentId.replace(/-/g, '_');
+            const stackName = agentIdWithUnderscores + '_stack';
             return `${GITHUB_CONFIG.rawUrl}/agent_stacks/${categoryDir}/${stackName}/${filename}`;
         }
 
@@ -2245,12 +2250,16 @@ mkdir -p agents
                 cart.forEach((item, index) => {
                     const agent = agents.find(a => a.id === item.id);
                     const categoryDir = CATEGORY_TO_DIR[agent.category] || 'general_stacks';
-                    const stackName = agent.id + '_stack';
+
+                    // Agent ID uses hyphens for display, but filenames use underscores
+                    const agentIdWithUnderscores = agent.id.replace(/-/g, '_');
+                    const stackName = agentIdWithUnderscores + '_stack';
+                    const agentFileName = agentIdWithUnderscores + '_agent.py';
                     const baseUrl = `${GITHUB_CONFIG.rawUrl}/agent_stacks/${categoryDir}/${stackName}`;
 
                     downloadScript += `# ${index + 1}. ${agent.name}\n`;
                     downloadScript += `echo "Installing: ${agent.name}..."\n`;
-                    downloadScript += `curl -sSL "${baseUrl}/agents/${agent.id}_agent.py" -o "agents/${agent.id}_agent.py"\n`;
+                    downloadScript += `curl -sSL "${baseUrl}/agents/${agentFileName}" -o "agents/${agentFileName}"\n`;
                     downloadScript += `echo "✓ ${agent.name} installed"\n\n`;
                 });
 
@@ -2278,7 +2287,12 @@ echo ""
                     agents: cart.map(item => {
                         const agent = agents.find(a => a.id === item.id);
                         const categoryDir = CATEGORY_TO_DIR[agent.category] || 'general_stacks';
-                        const stackName = agent.id + '_stack';
+
+                        // Agent ID uses hyphens for display, but filenames use underscores
+                        const agentIdWithUnderscores = item.id.replace(/-/g, '_');
+                        const stackName = agentIdWithUnderscores + '_stack';
+                        const agentFileName = agentIdWithUnderscores + '_agent.py';
+                        const demoFileName = agentIdWithUnderscores + '_demo.html';
                         const baseUrl = `${GITHUB_CONFIG.rawUrl}/agent_stacks/${categoryDir}/${stackName}`;
 
                         return {
@@ -2287,9 +2301,9 @@ echo ""
                             category: item.category,
                             version: agent.version,
                             githubUrl: getAgentGitHubPath(item.id, item.category),
-                            agentFile: `${baseUrl}/agents/${item.id}_agent.py`,
+                            agentFile: `${baseUrl}/agents/${agentFileName}`,
                             metadataFile: `${baseUrl}/metadata.json`,
-                            demoFile: `${baseUrl}/demos/${item.id}_demo.html`
+                            demoFile: `${baseUrl}/demos/${demoFileName}`
                         };
                     }),
                     installInstructions: `
@@ -2406,6 +2420,72 @@ Once downloaded:
                 return (num / 1000).toFixed(1) + 'K';
             }
             return num.toString();
+        }
+
+        // Chat functions (informational only - no backend)
+        function toggleChat() {
+            const chatPanel = document.querySelector('.chat-panel');
+            chatPanel.style.display = chatPanel.style.display === 'none' ? 'flex' : 'none';
+        }
+
+        function handleChatKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendChatMessage();
+            }
+        }
+
+        function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            // Add user message
+            addChatMessage('user', message);
+            input.value = '';
+
+            // Generate informational response
+            setTimeout(() => {
+                const response = getChatResponse(message);
+                addChatMessage('assistant', response);
+            }, 500);
+        }
+
+        function addChatMessage(role, content) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${role}`;
+
+            messageDiv.innerHTML = `
+                <div class="message-avatar ${role}">${role === 'user' ? '👤' : '🤖'}</div>
+                <div class="message-content">${content}</div>
+            `;
+
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function getChatResponse(message) {
+            const lowerMsg = message.toLowerCase();
+
+            if (lowerMsg.includes('install') || lowerMsg.includes('download')) {
+                return `To install agents:\n\n1. Add agents to your cart\n2. Click "Export Cart" \n3. Download the install.sh script\n4. Run: chmod +x install.sh && ./install.sh\n5. Copy agents to your RAPP agents/ directory\n\nAll agents are pulled directly from GitHub - no backend required!`;
+            }
+
+            if (lowerMsg.includes('github') || lowerMsg.includes('repository')) {
+                return `All agents are sourced from the GitHub repository:\n\n${GITHUB_CONFIG.baseUrl}\n\nClick "📁 Browse Files" on any agent card to view its source code on GitHub.`;
+            }
+
+            if (lowerMsg.includes('category') || lowerMsg.includes('filter')) {
+                return `You can filter agents by:\n\n• Category (12 industries)\n• Search keywords\n• Sort by popularity, rating, or name\n\nUse the filters at the top of the page!`;
+            }
+
+            if (lowerMsg.includes('cart')) {
+                return `Your cart allows you to:\n\n• Add multiple agents\n• Export all at once\n• Download installation scripts\n\nClick the cart icon (🛒) to view your selections!`;
+            }
+
+            return `This is a static agent marketplace powered by GitHub.\n\nFeatures:\n• 78 agent stacks from AI-Agent-Templates\n• Direct GitHub integration\n• No backend required\n• Automated installation scripts\n\nTry asking about:\n- How to install agents\n- GitHub repository\n- Filtering agents\n- Using the cart`;
         }
 
         // Close modal on escape
