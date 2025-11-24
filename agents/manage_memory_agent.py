@@ -10,7 +10,7 @@ class ManageMemoryAgent(BasicAgent):
         self.name = 'ManageMemory'
         self.metadata = {
             "name": self.name,
-            "description": "Manages memories in the conversation system. This agent allows me to save important information to our memory system for future reference.",
+            "description": "Stores PERSISTENT memories in the three-tier memory architecture. Saves to: (1) USER-SPECIFIC memory (GUID-based, personal, survives across all user's sessions), or (2) GLOBAL knowledge (universal, accessible to all users). Use this for information that should be REMEMBERED LONG-TERM. Session context (current conversation) is ephemeral and doesn't need explicit storage.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -51,14 +51,16 @@ class ManageMemoryAgent(BasicAgent):
         importance = kwargs.get('importance', 3)
         tags = kwargs.get('tags', [])
         user_guid = kwargs.get('user_guid')
-        
+
         if not content:
             return "Error: No content provided for memory storage."
-        
-        # Explicitly set memory context to the user's GUID if provided
-        # This ensures consistent storage location with ContextMemoryAgent
+
+        # THREE-TIER MEMORY ARCHITECTURE:
+        # - If user_guid provided: Stores to USER-SPECIFIC memory (tier 2 - persistent, GUID-based)
+        # - If user_guid is None: Stores to GLOBAL knowledge (tier 3 - persistent, universal)
+        # - Session context (tier 1) is ephemeral and managed automatically in the system prompt
         self.storage_manager.set_memory_context(user_guid)
-        
+
         # Store the memory
         return self.store_memory(memory_type, content, importance, tags)
 
@@ -87,10 +89,16 @@ class ManageMemoryAgent(BasicAgent):
         
         # Write back to storage
         self.storage_manager.write_json(memory_data)
-        
-        # Return success message
-        memory_location = f"for user {self.storage_manager.current_guid}" if self.storage_manager.current_guid else "in shared memory"
-        return f"Successfully stored {memory_type} memory {memory_location}: \"{content}\""
+
+        # Return success message with clear memory tier indication
+        if self.storage_manager.current_guid:
+            memory_tier = f"USER-SPECIFIC memory (GUID: {self.storage_manager.current_guid})"
+            persistence = "This will persist across all your sessions"
+        else:
+            memory_tier = "GLOBAL knowledge (universal, all users)"
+            persistence = "This will be accessible to all Digital Twin instances"
+
+        return f"✓ Stored {memory_type} in {memory_tier}: \"{content}\"\n{persistence}"
     
     def retrieve_memories_by_tags(self, tags, user_guid=None):
         """Retrieve memories that match specific tags"""

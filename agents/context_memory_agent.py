@@ -9,7 +9,7 @@ class ContextMemoryAgent(BasicAgent):
         self.name = 'ContextMemory'
         self.metadata = {
             "name": self.name,
-            "description": "Recalls and provides context based on stored memories of the past interactions with the user.",
+            "description": "Recalls PERSISTENT memories from the three-tier memory architecture. Can retrieve from: (1) USER-SPECIFIC memory (GUID-based, personal, cross-session), or (2) GLOBAL knowledge (universal, all users). NOTE: Session context (current conversation) is already available in the system prompt - this agent is for recalling LONG-TERM memories only.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -59,9 +59,9 @@ class ContextMemoryAgent(BasicAgent):
         
         if not memory_data:
             if self.storage_manager.current_guid:
-                return f"I don't have any memories stored yet for user ID {self.storage_manager.current_guid}."
+                return f"No USER-SPECIFIC memories found for GUID {self.storage_manager.current_guid}. (Note: Session context is already in the prompt, and global knowledge is separate.)"
             else:
-                return "I don't have any memories stored in the shared memory yet."
+                return "No GLOBAL knowledge memories stored yet. (Note: Session context and user-specific memories are in separate tiers.)"
                 
         # For legacy format - UUIDs as keys are the ONLY format we support
         # Convert legacy format to a list we can process
@@ -104,9 +104,13 @@ class ContextMemoryAgent(BasicAgent):
                     
             if not memory_lines:
                 return "No memories found."
-                
-            memory_source = f"for user ID {self.storage_manager.current_guid}" if self.storage_manager.current_guid else "from shared memory"
-            return f"All memories {memory_source}:\n" + "\n".join(memory_lines)
+
+            if self.storage_manager.current_guid:
+                memory_tier = f"USER-SPECIFIC memory (GUID: {self.storage_manager.current_guid})"
+            else:
+                memory_tier = "GLOBAL knowledge (universal)"
+
+            return f"All persistent memories from {memory_tier}:\n" + "\n".join(memory_lines)
             
         # Filter by keywords if provided
         if keywords and len(keywords) > 0:
@@ -152,9 +156,13 @@ class ContextMemoryAgent(BasicAgent):
                 
         if not memory_lines:
             return "No matching memories found."
-            
-        memory_source = f"for user ID {self.storage_manager.current_guid}" if self.storage_manager.current_guid else "from shared memory"
-        return f"Here's what I remember {memory_source}:\n" + "\n".join(memory_lines)
+
+        if self.storage_manager.current_guid:
+            memory_tier = f"USER-SPECIFIC memory (GUID: {self.storage_manager.current_guid})"
+        else:
+            memory_tier = "GLOBAL knowledge"
+
+        return f"Persistent memories from {memory_tier}:\n" + "\n".join(memory_lines)
     
     def _summarize_memory_item(self, item):
         """Helper to summarize various memory item formats"""
