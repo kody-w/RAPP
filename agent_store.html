@@ -715,6 +715,251 @@
             100% { transform: rotate(360deg); }
         }
 
+        /* Enhanced Modal Styles */
+        #stackModalBackdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 9998;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-y: auto;
+            padding: 2rem;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .stack-modal {
+            background: white;
+            border-radius: 16px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            position: relative;
+            z-index: 9999;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            margin: 0;
+            color: #333;
+            font-size: 1.8rem;
+        }
+
+        .modal-subtitle {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .modal-close-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .modal-close-btn:hover {
+            background: #dc2626;
+        }
+
+        .modal-badges {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .modal-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .modal-section {
+            margin-bottom: 2rem;
+        }
+
+        .modal-section-title {
+            color: #333;
+            margin-bottom: 0.5rem;
+            font-size: 1.2rem;
+        }
+
+        .modal-section-content {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .tech-requirements-box {
+            background: #fef3c7;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #fbbf24;
+        }
+
+        .tech-req-item {
+            margin-bottom: 0.75rem;
+        }
+
+        .tech-req-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .tech-req-label {
+            color: #92400e;
+            font-weight: 600;
+        }
+
+        .tech-req-value {
+            color: #78350f;
+            margin-left: 0.5rem;
+        }
+
+        .component-item {
+            background: #f9fafb;
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            border-left: 3px solid #3b82f6;
+        }
+
+        .component-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .component-role {
+            color: #6b7280;
+            font-size: 0.85rem;
+            margin-left: 0.5rem;
+        }
+
+        .component-description {
+            color: #666;
+            margin: 0.5rem 0 0 0;
+            font-size: 0.9rem;
+        }
+
+        .demo-box {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 2px solid #10b981;
+        }
+
+        .demo-title {
+            color: #065f46;
+            margin: 0 0 0.75rem 0;
+        }
+
+        .demo-description {
+            color: #047857;
+            margin: 0 0 1rem 0;
+            font-size: 0.95rem;
+        }
+
+        .demo-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            width: 100%;
+            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);
+            transition: transform 0.2s;
+        }
+
+        .demo-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e5e7eb;
+            flex-wrap: wrap;
+        }
+
+        .modal-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .modal-btn-primary {
+            background: #10b981;
+            color: white;
+        }
+
+        .modal-btn-primary:hover {
+            background: #059669;
+        }
+
+        .modal-btn-secondary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .modal-btn-secondary:hover {
+            background: #2563eb;
+        }
+
+        .modal-btn-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            box-shadow: 0 4px 6px rgba(245, 158, 11, 0.3);
+        }
+
+        .modal-btn-warning:hover {
+            box-shadow: 0 6px 8px rgba(245, 158, 11, 0.4);
+        }
+
+        .modal-btn-disabled {
+            background: #6b7280;
+            color: white;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .agent-grid {
@@ -728,6 +973,22 @@
 
             .toolbar {
                 flex-direction: column;
+            }
+
+            #stackModalBackdrop {
+                padding: 1rem;
+            }
+
+            .stack-modal {
+                max-height: 95vh;
+            }
+
+            .modal-actions {
+                flex-direction: column;
+            }
+
+            .modal-btn {
+                width: 100%;
             }
         }
     </style>
@@ -2071,6 +2332,7 @@
                             </div>
                         </div>
                         <div class="agent-actions">
+                            <button class="btn btn-secondary" onclick="viewAgentDetails('${agent.id}')" style="width: 100%; margin-bottom: 0.5rem;">👁️ View Details</button>
                             ${isInCart(agent.id)
                                 ? `<button class="btn btn-success" disabled>✓ In Cart</button>`
                                 : `<button class="btn btn-primary" onclick="addToCart('${agent.id}')">Add to Cart</button>`
@@ -2470,6 +2732,397 @@ Once downloaded:
                 exportBtn.textContent = originalText;
                 exportBtn.disabled = false;
             }
+        }
+
+        // View detailed agent/stack information in modal
+        async function viewAgentDetails(agentId) {
+            const agent = agents.find(a => a.id === agentId);
+            if (!agent) return;
+
+            // Remove existing modal if any
+            const existingModal = document.getElementById('stackModalBackdrop');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            // Create modal backdrop
+            const backdrop = document.createElement('div');
+            backdrop.id = 'stackModalBackdrop';
+
+            // Create modal content
+            const modal = document.createElement('div');
+            modal.className = 'stack-modal';
+            modal.style.padding = '2rem';
+
+            // Load metadata for this stack
+            const metadata = await loadStackMetadata(agent);
+
+            // Build modal HTML
+            let modalHTML = `
+                <div class="modal-header-section">
+                    <div>
+                        <h2 class="modal-title">${agent.name}</h2>
+                        <div class="modal-subtitle">
+                            ${agent.version ? `Version ${agent.version}` : ''}
+                            ${agent.author ? `• by ${agent.author}` : ''}
+                        </div>
+                    </div>
+                    <button class="modal-close-btn" onclick="closeAgentModal()">✕ Close</button>
+                </div>
+
+                <div class="modal-badges">
+                    <span class="modal-badge" style="background: ${getCategoryColor(agent.category)};">${agent.icon} ${agent.category}</span>
+                    <span class="modal-badge" style="background: #3b82f6;">⭐ ${agent.rating}</span>
+                    <span class="modal-badge" style="background: #8b5cf6;">📦 ${formatNumber(agent.installs)} installs</span>
+                    <span class="modal-badge" style="background: #10b981;">v${agent.version}</span>
+                </div>
+
+                <div class="modal-section">
+                    <h3 class="modal-section-title">Description</h3>
+                    <p class="modal-section-content">${agent.shortDescription}</p>
+                    ${metadata.longDescription ? `<p class="modal-section-content" style="margin-top: 1rem;">${metadata.longDescription}</p>` : ''}
+                </div>
+            `;
+
+            // Components section
+            modalHTML += `
+                <div class="modal-section">
+                    <h3 class="modal-section-title">Included Components (${metadata.components?.length || 1})</h3>
+                    <div style="display: grid; gap: 0.75rem;">
+            `;
+
+            if (metadata.components && metadata.components.length > 0) {
+                metadata.components.forEach(component => {
+                    modalHTML += `
+                        <div class="component-item">
+                            <div>
+                                <span class="component-name">${component.name}</span>
+                                ${component.role ? `<span class="component-role">${component.role}</span>` : ''}
+                            </div>
+                            ${component.description ? `<p class="component-description">${component.description}</p>` : ''}
+                        </div>
+                    `;
+                });
+            } else {
+                // Default component listing
+                const agentFilename = `${agent.id.replace(/-/g, '_')}_agent.py`;
+                modalHTML += `
+                    <div class="component-item">
+                        <div>
+                            <span class="component-name">${agentFilename}</span>
+                            <span class="component-role">Primary processing engine</span>
+                        </div>
+                        <p class="component-description">${agent.shortDescription}</p>
+                    </div>
+                `;
+            }
+
+            modalHTML += `</div></div>`;
+
+            // Technical Requirements
+            if (metadata.technicalRequirements) {
+                modalHTML += `
+                    <div class="modal-section">
+                        <h3 class="modal-section-title">Technical Requirements</h3>
+                        <div class="tech-requirements-box">
+                            ${metadata.technicalRequirements.platforms ? `
+                                <div class="tech-req-item">
+                                    <span class="tech-req-label">Platforms:</span>
+                                    <span class="tech-req-value">${metadata.technicalRequirements.platforms.join(', ')}</span>
+                                </div>
+                            ` : ''}
+                            ${metadata.technicalRequirements.dependencies ? `
+                                <div class="tech-req-item">
+                                    <span class="tech-req-label">Dependencies:</span>
+                                    <ul style="margin: 0.5rem 0 0 1.5rem; padding: 0;">
+                                        ${metadata.technicalRequirements.dependencies.map(dep => `
+                                            <li style="color: #78350f; font-size: 0.9rem;">${dep}</li>
+                                        `).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                            ${metadata.technicalRequirements.apiKeys ? `
+                                <div class="tech-req-item">
+                                    <span class="tech-req-label">Required API Keys:</span>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;">
+                                        ${metadata.technicalRequirements.apiKeys.map(key => `
+                                            <code style="background: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.85rem;">${key}</code>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Key Benefits
+            if (metadata.benefits && metadata.benefits.length > 0) {
+                modalHTML += `
+                    <div class="modal-section">
+                        <h3 class="modal-section-title">Key Benefits</h3>
+                        <ul style="color: #666; padding-left: 1.5rem;">
+                            ${metadata.benefits.map(benefit => `<li style="margin: 0.5rem 0;">${benefit}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            // Interactive Demo section
+            if (metadata.demo && metadata.demo.available) {
+                modalHTML += `
+                    <div class="modal-section">
+                        <h3 class="modal-section-title">🎮 Interactive Demo</h3>
+                        <div class="demo-box">
+                            <h4 class="demo-title">${metadata.demo.title || 'Try the Demo'}</h4>
+                            <p class="demo-description">${metadata.demo.description || 'Experience this stack with an interactive demonstration.'}</p>
+                            <button class="demo-btn" onclick="window.open('${metadata.demo.url}', '_blank')">
+                                🚀 Launch Interactive Demo
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Action buttons
+            modalHTML += `
+                <div class="modal-actions">
+                    ${!isInCart(agent.id) ? `
+                        <button class="modal-btn modal-btn-primary" onclick="addToCart('${agent.id}'); closeAgentModal();">
+                            ➕ Add Stack to Cart
+                        </button>
+                    ` : `
+                        <button class="modal-btn modal-btn-disabled" disabled>
+                            ✓ Already in Cart
+                        </button>
+                    `}
+                    ${metadata.demo && metadata.demo.available ? `
+                        <button class="modal-btn modal-btn-secondary" onclick="window.open('${metadata.demo.url}', '_blank')">
+                            🎮 Try Demo
+                        </button>
+                    ` : ''}
+                    <button class="modal-btn modal-btn-warning" onclick="exportTradingCard('${agent.id}')">
+                        📦 Export Trading Card
+                    </button>
+                    <button class="modal-btn modal-btn-secondary" onclick="browseStackFiles('${agent.id}')">
+                        📁 Browse Files
+                    </button>
+                </div>
+            `;
+
+            modal.innerHTML = modalHTML;
+            backdrop.appendChild(modal);
+
+            // Close on backdrop click
+            backdrop.addEventListener('click', (e) => {
+                if (e.target === backdrop) {
+                    closeAgentModal();
+                }
+            });
+
+            document.body.appendChild(backdrop);
+        }
+
+        // Close agent modal
+        function closeAgentModal() {
+            const modal = document.getElementById('stackModalBackdrop');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        // Load stack metadata from GitHub
+        async function loadStackMetadata(agent) {
+            try {
+                const categoryDir = CATEGORY_TO_DIR[agent.category] || 'general_stacks';
+                const agentIdWithUnderscores = agent.id.replace(/-/g, '_');
+                const stackName = agentIdWithUnderscores + '_stack';
+                const metadataUrl = `${GITHUB_CONFIG.rawUrl}/agent_stacks/${categoryDir}/${stackName}/metadata.json`;
+
+                const response = await fetch(metadataUrl);
+                if (response.ok) {
+                    const metadata = await response.json();
+                    console.log(`✅ Loaded metadata for ${agent.id}:`, metadata);
+                    return metadata;
+                }
+            } catch (error) {
+                console.warn(`⚠️ Could not load metadata for ${agent.id}:`, error);
+            }
+
+            // Return default metadata
+            return {
+                components: [],
+                technicalRequirements: {
+                    platforms: ['Windows', 'macOS', 'Linux'],
+                    dependencies: ['Python 3.8+', 'requests', 'json'],
+                    apiKeys: ['D365_CE_API_KEY', 'SALESFORCE_API_KEY']
+                },
+                benefits: [
+                    'Improves citizen satisfaction',
+                    'Reduces response times',
+                    'Increases efficiency'
+                ],
+                demo: {
+                    available: true,
+                    title: 'Try the Demo',
+                    description: 'Experience this stack with an interactive demonstration.',
+                    url: `${GITHUB_CONFIG.baseUrl}/blob/${GITHUB_CONFIG.branch}/${GITHUB_CONFIG.subPath}/agent_stacks/${CATEGORY_TO_DIR[agent.category] || 'general_stacks'}/${agent.id.replace(/-/g, '_')}_stack/demos/${agent.id.replace(/-/g, '_')}_demo.html`
+                }
+            };
+        }
+
+        // Get category color
+        function getCategoryColor(category) {
+            const colors = {
+                'B2B Sales': '#6366f1',
+                'B2C Sales': '#ec4899',
+                'Energy': '#f59e0b',
+                'Federal Government': '#3b82f6',
+                'Financial Services': '#10b981',
+                'Healthcare': '#ef4444',
+                'Manufacturing': '#8b5cf6',
+                'Professional Services': '#06b6d4',
+                'Retail & CPG': '#f97316',
+                'State/Local Government': '#14b8a6',
+                'Utilities': '#6b7280',
+                'Development': '#a855f7'
+            };
+            return colors[category] || '#6b7280';
+        }
+
+        // Export trading card for an agent
+        async function exportTradingCard(agentId) {
+            const agent = agents.find(a => a.id === agentId);
+            if (!agent) return;
+
+            try {
+                console.log(`📦 Generating trading card for ${agent.name}...`);
+
+                // Load metadata and agent code
+                const metadata = await loadStackMetadata(agent);
+                const agentCode = await loadAgentCode(agent);
+
+                // Generate trading card HTML
+                const tradingCardHTML = generateTradingCardHTML(agent, metadata, agentCode);
+
+                // Create and download
+                const blob = new Blob([tradingCardHTML], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${agent.id}_trading_card.html`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                console.log(`✅ Trading card exported successfully!`);
+                alert(`Trading card exported for ${agent.name}!`);
+            } catch (error) {
+                console.error('Error exporting trading card:', error);
+                alert('Failed to export trading card. Check console for details.');
+            }
+        }
+
+        // Load agent code from GitHub
+        async function loadAgentCode(agent) {
+            try {
+                const agentFilename = `${agent.id.replace(/-/g, '_')}_agent.py`;
+                const url = getAgentRawUrl(agent.id, agent.category, `agents/${agentFilename}`);
+
+                const response = await fetch(url);
+                if (response.ok) {
+                    return await response.text();
+                }
+            } catch (error) {
+                console.warn(`Could not load agent code for ${agent.id}:`, error);
+            }
+            return '# Agent code not available';
+        }
+
+        // Generate trading card HTML
+        function generateTradingCardHTML(agent, metadata, agentCode) {
+            const escapedCode = agentCode.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+            return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${agent.name} - Trading Card</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 2rem; background: #f9fafb; }
+        .card { max-width: 800px; margin: 0 auto; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); overflow: hidden; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 2rem; }
+        .content { padding: 2rem; }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+        .badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 0.25rem 0.75rem; border-radius: 20px; margin-right: 0.5rem; font-size: 0.85rem; }
+        .section { margin: 2rem 0; }
+        .section-title { font-size: 1.3rem; color: #333; margin-bottom: 1rem; }
+        pre { background: #f3f4f6; padding: 1rem; border-radius: 8px; overflow-x: auto; font-size: 0.9rem; line-height: 1.5; }
+        .benefits { list-style: none; padding: 0; }
+        .benefits li { padding: 0.5rem 0; padding-left: 1.5rem; position: relative; }
+        .benefits li:before { content: "✓"; position: absolute; left: 0; color: #10b981; font-weight: bold; }
+        .tech-box { background: #fef3c7; padding: 1rem; border-radius: 8px; border: 1px solid #fbbf24; }
+        .footer { background: #f9fafb; padding: 1.5rem 2rem; text-align: center; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="header">
+            <h1>${agent.icon} ${agent.name}</h1>
+            <div style="margin-top: 1rem;">
+                <span class="badge">${agent.category}</span>
+                <span class="badge">⭐ ${agent.rating}</span>
+                <span class="badge">v${agent.version}</span>
+                <span class="badge">${agent.author}</span>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="section">
+                <h2 class="section-title">Description</h2>
+                <p>${agent.shortDescription}</p>
+            </div>
+
+            ${metadata.benefits ? `
+            <div class="section">
+                <h2 class="section-title">Key Benefits</h2>
+                <ul class="benefits">
+                    ${metadata.benefits.map(b => `<li>${b}</li>`).join('')}
+                </ul>
+            </div>
+            ` : ''}
+
+            ${metadata.technicalRequirements ? `
+            <div class="section">
+                <h2 class="section-title">Technical Requirements</h2>
+                <div class="tech-box">
+                    ${metadata.technicalRequirements.platforms ? `<p><strong>Platforms:</strong> ${metadata.technicalRequirements.platforms.join(', ')}</p>` : ''}
+                    ${metadata.technicalRequirements.dependencies ? `
+                        <p style="margin-top: 0.5rem;"><strong>Dependencies:</strong></p>
+                        <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                            ${metadata.technicalRequirements.dependencies.map(d => `<li>${d}</li>`).join('')}
+                        </ul>
+                    ` : ''}
+                </div>
+            </div>
+            ` : ''}
+
+            <div class="section">
+                <h2 class="section-title">Agent Code</h2>
+                <pre>${escapedCode}</pre>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Generated by RAPP Agent Store • ${new Date().toLocaleDateString()}</p>
+            <p style="margin-top: 0.5rem; font-size: 0.9rem;">Visit <strong>github.com/kody-w/RAPP</strong> for more agents</p>
+        </div>
+    </div>
+</body>
+</html>`;
         }
 
         // Browse stack files on GitHub
