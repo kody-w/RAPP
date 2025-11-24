@@ -1,5 +1,5 @@
 # RAPP - Rapid Agent Prototyping Platform/Pattern
-<a href='https://codespaces.new/kody-w/m365-agents-for-python?quickstart=1'><img src='https://github.com/codespaces/badge.svg' alt='Open in GitHub Codespaces' style='max-width: 100%;'></a>
+<a href='https://codespaces.new/kody-w/RAPP?quickstart=1'><img src='https://github.com/codespaces/badge.svg' alt='Open in GitHub Codespaces' style='max-width: 100%;'></a>
 
 ## 🎓 New to RAPP? Start Here!
 
@@ -16,7 +16,7 @@
 ## 🚀 One-Click Setup - Fully Automated!
 
 ### Step 1: Deploy to Azure (1 minute)
-<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fkody-w%2Fm365-agents-for-python%2Fmain%2FRAPP%2Fazuredeploy.json" target="_blank">
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fkody-w%2FRAPP%2Fmain%2Fazuredeploy.json" target="_blank">
   <img src="https://aka.ms/deploytoazurebutton" alt="Deploy to Azure"/>
 </a>
 
