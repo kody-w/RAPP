@@ -1932,8 +1932,18 @@
 
                 console.log('🔍 Loading agent catalog from manifest.json...');
 
-                // Try to load from manifest.json first (GitHub raw URL)
-                const manifestUrl = `https://raw.githubusercontent.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/manifest.json`;
+                // Detect local vs production environment
+                const isLocal = window.location.hostname === 'localhost' ||
+                               window.location.hostname === '127.0.0.1' ||
+                               window.location.protocol === 'file:';
+
+                // Try local manifest first if running locally, otherwise use GitHub URL
+                const manifestUrl = isLocal
+                    ? 'manifest.json'  // Relative path for local development
+                    : `https://raw.githubusercontent.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/manifest.json`;
+
+                console.log(`   Environment: ${isLocal ? 'Local' : 'Production'}`);
+                console.log(`   Loading from: ${manifestUrl}`);
 
                 const response = await fetch(manifestUrl);
 
