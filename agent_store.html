@@ -883,9 +883,9 @@
             'Utilities': 'general_stacks'
         };
 
-        // Agent catalog (static, loaded from generate_agent_catalog.py)
+        // Agent catalog - loaded dynamically from manifest.json
         let agents = [];
-        let manifestLoading = false; // No async loading needed
+        let manifestLoading = true;
 
         // Shopping cart for agents
         let cart = JSON.parse(localStorage.getItem('rapp_agent_cart')) || [];
@@ -897,8 +897,8 @@
         // Chat conversation history (deprecated in static mode)
         let chatHistory = [];
 
-        // Sample data for initial display
-        const sampleAgents = [
+        // Minimal fallback data for offline mode (kept small)
+        const fallbackAgents = [
             {
                 id: 'permit-license-management',
                 name: 'Permit & License Management Agent Stack',
@@ -1901,18 +1901,18 @@
                 icon: '🏢'
             },
             {
-                id: 'citizen-service-request',
-                name: 'Citizen Service Request Agent Stack',
-                category: 'State/Local Government',
-                shortDescription: '24/7 intake and routing of non-emergency issues',
-                tags: [],
-                rating: 4.5,
-                installs: 1000,
+                id: 'sample-loading',
+                name: 'Loading Agents...',
+                category: 'Utilities',
+                shortDescription: 'Loading agent catalog from GitHub...',
+                tags: ['loading'],
+                rating: 0,
+                installs: 0,
                 version: '1.0.0',
                 author: 'RAPP',
-                sizeKb: 100,
-                icon: '🏢'
-            },
+                sizeKb: 0,
+                icon: '⏳'
+            }
         ];
 
 
@@ -1923,18 +1923,84 @@
             updateCartCount();
         });
 
-        // Load agent catalog from static data (no backend required)
-        function loadAgentCatalog() {
-            // Static catalog loaded from generate_agent_catalog.py
-            // All 78 agents from AI-Agent-Templates are embedded in sampleAgents
-            agents = sampleAgents;
+        // Load agent catalog from manifest.json (recommended pattern)
+        async function loadAgentCatalog() {
+            try {
+                // Show loading state with fallback data
+                agents = fallbackAgents;
+                renderAgents();
 
-            console.log(`✅ Loaded ${agents.length} agents from static catalog`);
+                console.log('🔍 Loading agent catalog from manifest.json...');
 
-            manifestLoading = false;
-            renderAgents();
-            document.getElementById('totalAgents').textContent = agents.length;
-            updateInstallStats();
+                // Try to load from manifest.json first (GitHub raw URL)
+                const manifestUrl = `https://raw.githubusercontent.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/manifest.json`;
+
+                const response = await fetch(manifestUrl);
+
+                if (!response.ok) {
+                    throw new Error(`Manifest not found (HTTP ${response.status})`);
+                }
+
+                const manifest = await response.json();
+
+                // Validate manifest structure
+                if (!manifest.agents || !Array.isArray(manifest.agents)) {
+                    throw new Error('Invalid manifest format');
+                }
+
+                agents = manifest.agents;
+
+                console.log(`✅ Loaded ${agents.length} agents from manifest.json`);
+                console.log(`   Version: ${manifest.version}`);
+                console.log(`   Generated: ${manifest.generated}`);
+                console.log(`   Categories: ${manifest.categories?.length || 'N/A'}`);
+
+                manifestLoading = false;
+                renderAgents();
+                document.getElementById('totalAgents').textContent = agents.length;
+                updateInstallStats();
+
+            } catch (error) {
+                console.error('❌ Failed to load manifest:', error);
+                console.warn('⚠️ Falling back to embedded data');
+
+                // Fallback: Load from embedded JavaScript file
+                try {
+                    const response = await fetch('agent_catalog_generated.js');
+                    const jsCode = await response.text();
+
+                    // Extract sampleAgents from JavaScript file
+                    eval(jsCode);
+                    if (typeof sampleAgents !== 'undefined') {
+                        agents = sampleAgents;
+                        console.log(`✅ Loaded ${agents.length} agents from fallback JavaScript`);
+                    } else {
+                        throw new Error('sampleAgents not found in fallback file');
+                    }
+                } catch (fallbackError) {
+                    console.error('❌ Fallback also failed:', fallbackError);
+
+                    // Final fallback: Show error state
+                    agents = [{
+                        id: 'error-loading',
+                        name: 'Failed to Load Agents',
+                        category: 'Error',
+                        shortDescription: 'Unable to load agent catalog. Please check your internet connection and try refreshing the page.',
+                        tags: ['error'],
+                        rating: 0,
+                        installs: 0,
+                        version: '0.0.0',
+                        author: 'System',
+                        sizeKb: 0,
+                        icon: '❌'
+                    }];
+                }
+
+                manifestLoading = false;
+                renderAgents();
+                document.getElementById('totalAgents').textContent = agents.length;
+                updateInstallStats();
+            }
         }
 
         // Helper: Get GitHub directory path for an agent

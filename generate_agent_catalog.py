@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """
 Generate agent catalog from AI-Agent-Templates metadata.json files
+Outputs both manifest.json (recommended) and JavaScript fallback
 """
 import json
 import os
+import argparse
 from pathlib import Path
+from datetime import datetime
 
 def parse_metadata_files():
     """Parse all metadata.json files and generate agent catalog"""
@@ -74,34 +77,60 @@ def parse_metadata_files():
 
     return agents
 
+def generate_manifest(agents):
+    """Generate manifest.json (recommended pattern)"""
+    return {
+        'version': '2.0',
+        'generated': datetime.now().isoformat(),
+        'repository': 'kody-w/RAPP',
+        'totalAgents': len(agents),
+        'agents': agents,
+        'categories': list(set(agent['category'] for agent in agents)),
+        'metadata': {
+            'format': 'RAPP Agent Manifest',
+            'compatibleWith': ['agent_store.html', 'index.html'],
+            'updateFrequency': 'on-push'
+        }
+    }
+
 def generate_javascript_array(agents):
-    """Generate JavaScript array code for agent_store.html"""
-    js_code = "        const sampleAgents = [\n"
+    """Generate JavaScript array code for agent_store.html (fallback only)"""
+    js_code = "// Generated fallback data - Use manifest.json as primary source\n"
+    js_code += "// This is kept as offline fallback only\n"
+    js_code += "const sampleAgents = [\n"
 
     for agent in agents:
         # Escape quotes in strings
         name = agent['name'].replace("'", "\\'")
         desc = agent['shortDescription'].replace("'", "\\'")
 
-        js_code += "            {\n"
-        js_code += f"                id: '{agent['id']}',\n"
-        js_code += f"                name: '{name}',\n"
-        js_code += f"                category: '{agent['category']}',\n"
-        js_code += f"                shortDescription: '{desc}',\n"
-        js_code += f"                tags: {json.dumps(agent['tags'])},\n"
-        js_code += f"                rating: {agent['rating']},\n"
-        js_code += f"                installs: {agent['installs']},\n"
-        js_code += f"                version: '{agent['version']}',\n"
-        js_code += f"                author: '{agent['author']}',\n"
-        js_code += f"                sizeKb: {agent['sizeKb']},\n"
-        js_code += f"                icon: '{agent['icon']}'\n"
-        js_code += "            },\n"
+        js_code += "    {\n"
+        js_code += f"        id: '{agent['id']}',\n"
+        js_code += f"        name: '{name}',\n"
+        js_code += f"        category: '{agent['category']}',\n"
+        js_code += f"        shortDescription: '{desc}',\n"
+        js_code += f"        tags: {json.dumps(agent['tags'])},\n"
+        js_code += f"        rating: {agent['rating']},\n"
+        js_code += f"        installs: {agent['installs']},\n"
+        js_code += f"        version: '{agent['version']}',\n"
+        js_code += f"        author: '{agent['author']}',\n"
+        js_code += f"        sizeKb: {agent['sizeKb']},\n"
+        js_code += f"        icon: '{agent['icon']}'\n"
+        js_code += "    },\n"
 
-    js_code += "        ];\n"
+    js_code += "];\n"
 
     return js_code
 
 def main():
+    # Parse arguments
+    parser = argparse.ArgumentParser(description='Generate agent catalog from metadata')
+    parser.add_argument('--format', choices=['manifest', 'javascript', 'both'],
+                       default='both', help='Output format (default: both)')
+    parser.add_argument('--output', default='manifest.json',
+                       help='Output filename for manifest (default: manifest.json)')
+    args = parser.parse_args()
+
     print("🔍 Parsing metadata files...")
     agents = parse_metadata_files()
 
@@ -124,20 +153,43 @@ def main():
     for cat, count in sorted(by_category.items()):
         print(f"  {cat}: {count} agents")
 
-    # Generate JavaScript
-    print(f"\n💾 Generating JavaScript array...")
-    js_code = generate_javascript_array(agents)
+    # Generate outputs based on format
+    if args.format in ['manifest', 'both']:
+        print(f"\n💾 Generating manifest.json (recommended pattern)...")
+        manifest = generate_manifest(agents)
 
-    # Save to file
-    output_file = "agent_catalog_generated.js"
-    with open(output_file, 'w') as f:
-        f.write(js_code)
+        with open(args.output, 'w') as f:
+            json.dump(manifest, f, indent=2)
 
-    print(f"✅ Saved to {output_file}")
-    print(f"\n📋 Statistics for agent_store.html:")
+        print(f"✅ Saved manifest to {args.output}")
+        print(f"   Version: {manifest['version']}")
+        print(f"   Generated: {manifest['generated']}")
+        print(f"   Total Agents: {manifest['totalAgents']}")
+        print(f"   Categories: {len(manifest['categories'])}")
+
+    if args.format in ['javascript', 'both']:
+        print(f"\n💾 Generating JavaScript fallback...")
+        js_code = generate_javascript_array(agents)
+
+        output_file = "agent_catalog_generated.js"
+        with open(output_file, 'w') as f:
+            f.write(js_code)
+
+        print(f"✅ Saved JavaScript fallback to {output_file}")
+        print(f"   (Use manifest.json as primary source)")
+
+    print(f"\n📋 Summary:")
     print(f"  Total Agents: {len(agents)}")
     print(f"  Total Installs: {total_installs // 1000}K")
     print(f"  Average Rating: {avg_rating:.1f}")
+    print(f"\n🚀 Next Steps:")
+    if args.format in ['manifest', 'both']:
+        print(f"  1. Commit {args.output} to your repository")
+        print(f"  2. Update agent_store.html to load from manifest")
+        print(f"  3. Deploy to GitHub Pages")
+    if args.format == 'javascript':
+        print(f"  1. Commit agent_catalog_generated.js")
+        print(f"  2. Consider migrating to manifest.json pattern")
 
 if __name__ == '__main__':
     main()
