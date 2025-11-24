@@ -65,7 +65,9 @@ class ScriptedDemoAgent(BasicAgent):
         }
         self.storage_manager = AzureFileStorageManager()
         self.demo_directory = "demos"
+        self.demo_scripts_directory = "demo_scripts"  # For generated HTML scripts
         self.loaded_demo_cache = {}  # Cache loaded demos
+        self._html_template_cache = None  # Cache HTML template
 
         # Optional: Initialize AgentManager if available (for local agent lookup)
         if AGENT_MANAGER_AVAILABLE:
@@ -78,9 +80,218 @@ class ScriptedDemoAgent(BasicAgent):
 
         super().__init__(name=self.name, metadata=self.metadata)
 
+    def _find_demo_for_guid(self, user_guid):
+        """
+        Check all demo files to find one configured for auto-trigger with this GUID.
+
+        Demo files can include an "auto_trigger_guids" field:
+        {
+            "demo_name": "My Demo",
+            "auto_trigger_guids": ["guid-1", "guid-2", "test-guid"],
+            "trigger_phrases": [...],
+            "conversation_flow": [...]
+        }
+
+        Returns:
+            Demo name if found, None otherwise
+        """
+        try:
+            # Ensure the demos directory exists
+            self.storage_manager.ensure_directory_exists(self.demo_directory)
+
+            # List all demo files
+            files = self.storage_manager.list_files(self.demo_directory)
+
+            for file_info in files:
+                if hasattr(file_info, 'name') and file_info.name.endswith('.json'):
+                    demo_name = file_info.name.replace('.json', '')
+
+                    # Load the demo file
+                    demo_data = self._read_demo_file(demo_name)
+                    if not demo_data:
+                        continue
+
+                    # Check if this demo has auto_trigger_guids configured
+                    auto_trigger_guids = demo_data.get('auto_trigger_guids', [])
+                    if user_guid in auto_trigger_guids:
+                        logging.info(f"Found demo '{demo_name}' configured for auto-trigger with GUID '{user_guid}'")
+                        return demo_name
+
+            return None
+
+        except Exception as e:
+            logging.error(f"Error finding demo for GUID: {str(e)}")
+            return None
+
+    def _load_html_template(self):
+        """
+        Load the HTML template for demo scripts.
+        Looks for 'demo_script_template.html' in the root share or demos directory.
+        """
+        if self._html_template_cache is not None:
+            return self._html_template_cache
+
+        try:
+            # Try to load from root share first
+            template_content = self.storage_manager.read_file('', 'demo_script_template.html')
+
+            if not template_content:
+                # Try demos directory
+                template_content = self.storage_manager.read_file(self.demo_directory, 'demo_script_template.html')
+
+            if template_content:
+                self._html_template_cache = template_content
+                logging.info("HTML template loaded successfully")
+                return template_content
+            else:
+                logging.warning("HTML template not found in Azure File Storage")
+                return None
+
+        except Exception as e:
+            logging.error(f"Error loading HTML template: {str(e)}")
+            return None
+
+    def _generate_script_html(self, demo_data, user_guid):
+        """
+        Generate an HTML script page from demo data.
+
+        Args:
+            demo_data: The demo JSON data
+            user_guid: User GUID (to show in auto-trigger info if applicable)
+
+        Returns:
+            HTML string or None if template not available
+        """
+        template = self._load_html_template()
+        if not template:
+            logging.warning("Cannot generate script HTML: template not available")
+            return None
+
+        try:
+            demo_name = demo_data.get('demo_name', 'Demo')
+            demo_description = demo_data.get('description', 'Interactive demonstration')
+            conversation_flow = demo_data.get('conversation_flow', [])
+            auto_trigger_guids = demo_data.get('auto_trigger_guids', [])
+
+            # Generate auto-trigger info box if applicable
+            auto_trigger_info = ""
+            if auto_trigger_guids:
+                guid_list = ", ".join([f"<code>{g}</code>" for g in auto_trigger_guids])
+                auto_trigger_info = f"""
+                <div class="info-box">
+                    <strong>🎯 Auto-Trigger Mode Enabled</strong>
+                    This demo automatically triggers for the following GUIDs: {guid_list}
+                    {f'<br><br>You are currently using GUID: <code>{user_guid}</code>' if user_guid in auto_trigger_guids else ''}
+                </div>
+                """
+
+            # Generate conversation steps HTML
+            steps_html = []
+            for step in conversation_flow:
+                step_num = step.get('step_number', 0)
+                description = step.get('description', f'Step {step_num}')
+                user_message = step.get('user_message', '')
+
+                # Handle agent_response (can be string or complex structure)
+                agent_response = step.get('agent_response', '')
+                if isinstance(agent_response, list):
+                    # For complex responses, just show a preview
+                    agent_response_text = "[Complex response with multiple content blocks - see live demo]"
+                elif isinstance(agent_response, str):
+                    agent_response_text = agent_response
+                else:
+                    agent_response_text = str(agent_response)
+
+                step_html = f"""
+                <div class="step">
+                    <div class="step-number">{step_num}</div>
+                    <div class="step-description">{description}</div>
+                    <div class="step-content">
+                        <div class="message-block user-message">
+                            <div class="label">You should say:</div>
+                            <div class="text">{user_message}</div>
+                        </div>
+                        <div class="message-block agent-response">
+                            <div class="label">Expected Response:</div>
+                            <div class="text">{agent_response_text[:500]}{'...' if len(agent_response_text) > 500 else ''}</div>
+                        </div>
+                    </div>
+                </div>
+                """
+                steps_html.append(step_html)
+
+            # Replace template placeholders
+            html = template.replace('{{DEMO_NAME}}', demo_name)
+            html = html.replace('{{DEMO_DESCRIPTION}}', demo_description)
+            html = html.replace('{{AUTO_TRIGGER_INFO}}', auto_trigger_info)
+            html = html.replace('{{CONVERSATION_STEPS}}', '\n'.join(steps_html))
+
+            return html
+
+        except Exception as e:
+            logging.error(f"Error generating script HTML: {str(e)}")
+            import traceback
+            logging.error(traceback.format_exc())
+            return None
+
+    def _save_and_share_script(self, demo_name, demo_data, user_guid):
+        """
+        Generate HTML script, save to Azure File Storage, and return a shareable link.
+
+        Args:
+            demo_name: Name of the demo
+            demo_data: Demo JSON data
+            user_guid: User GUID
+
+        Returns:
+            Dict with script_url and message, or None if failed
+        """
+        try:
+            # Generate HTML
+            html_content = self._generate_script_html(demo_data, user_guid)
+            if not html_content:
+                return None
+
+            # Ensure directory exists
+            self.storage_manager.ensure_directory_exists(self.demo_scripts_directory)
+
+            # Create unique filename
+            safe_demo_name = demo_name.replace(' ', '_').replace('/', '_')
+            filename = f"{safe_demo_name}_script.html"
+
+            # Save to Azure File Storage
+            self.storage_manager.write_file(self.demo_scripts_directory, filename, html_content)
+            logging.info(f"Saved script HTML: {self.demo_scripts_directory}/{filename}")
+
+            # Generate SAS URL for download (valid for 7 days)
+            download_url = self.storage_manager.generate_download_url(
+                self.demo_scripts_directory,
+                filename,
+                expiry_hours=168  # 7 days
+            )
+
+            if download_url:
+                return {
+                    "script_url": download_url,
+                    "message": f"📄 Demo script available: [View Script]({download_url})",
+                    "filename": filename
+                }
+            else:
+                logging.warning("Could not generate download URL")
+                return None
+
+        except Exception as e:
+            logging.error(f"Error saving and sharing script: {str(e)}")
+            import traceback
+            logging.error(traceback.format_exc())
+            return None
+
     def perform(self, **kwargs):
         """
         Main entry point for the agent. Routes to appropriate handler based on action.
+
+        Auto-demo mode: If user_guid matches an "auto_trigger_guids" field in any demo,
+        automatically triggers that demo regardless of user input or action.
         """
         action = kwargs.get('action', 'list_demos')
         demo_name = kwargs.get('demo_name', '')
@@ -88,6 +299,29 @@ class ScriptedDemoAgent(BasicAgent):
         user_guid = kwargs.get('user_guid', 'c0p110t0-aaaa-bbbb-cccc-123456789abc')
 
         try:
+            # Check if this GUID is configured for auto-demo in any demo file
+            auto_demo_name = self._find_demo_for_guid(user_guid)
+            if auto_demo_name:
+                logging.info(f"Auto-demo mode activated for GUID {user_guid} -> demo: {auto_demo_name}")
+
+                # Load demo data to generate script
+                demo_data = self._read_demo_file(auto_demo_name)
+
+                # Generate and share the script HTML
+                script_info = self._save_and_share_script(auto_demo_name, demo_data, user_guid)
+
+                # Force demo response regardless of action or user input
+                # Use user_input if provided, otherwise use a default
+                demo_user_input = user_input if user_input else "continue"
+                demo_response = self.get_response_for_user_input(auto_demo_name, demo_user_input, user_guid)
+
+                # Append script link to response if available
+                if script_info:
+                    demo_response = f"{demo_response}\n\n{script_info['message']}"
+
+                return demo_response
+
+            # Normal mode: handle action-based routing
             if action == 'list_demos':
                 return self.list_available_demos()
             elif action == 'load_demo':

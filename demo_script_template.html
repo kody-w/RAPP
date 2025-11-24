@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{DEMO_NAME}} - Demo Script</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.95;
+            line-height: 1.5;
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 8px;
+        }
+
+        .info-box strong {
+            color: #667eea;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .intro {
+            text-align: center;
+            margin-bottom: 40px;
+            color: #555;
+            font-size: 18px;
+            line-height: 1.6;
+        }
+
+        .step {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .step:hover {
+            border-color: #667eea;
+            transform: translateX(4px);
+            box-shadow: -4px 4px 12px rgba(102, 126, 234, 0.1);
+        }
+
+        .step-number {
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .step-description {
+            color: #667eea;
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 12px;
+            margin-top: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .step-content {
+            display: grid;
+            gap: 16px;
+        }
+
+        .message-block {
+            padding: 16px;
+            border-radius: 8px;
+        }
+
+        .user-message {
+            background: white;
+            border: 2px solid #667eea;
+        }
+
+        .user-message .label {
+            color: #667eea;
+            font-weight: 700;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .user-message .label::before {
+            content: "💬";
+        }
+
+        .user-message .text {
+            color: #333;
+            font-size: 16px;
+            font-weight: 500;
+            font-family: 'Courier New', monospace;
+            background: #f0f4ff;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 3px solid #667eea;
+        }
+
+        .agent-response {
+            background: #e8f5e9;
+            border: 2px solid #4caf50;
+        }
+
+        .agent-response .label {
+            color: #2e7d32;
+            font-weight: 700;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .agent-response .label::before {
+            content: "🤖";
+        }
+
+        .agent-response .text {
+            color: #1b5e20;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 30px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .footer strong {
+            color: #667eea;
+        }
+
+        .tips {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 30px 0;
+        }
+
+        .tips h3 {
+            color: #856404;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tips h3::before {
+            content: "💡";
+            font-size: 24px;
+        }
+
+        .tips ul {
+            margin-left: 20px;
+            color: #856404;
+        }
+
+        .tips li {
+            margin: 8px 0;
+            line-height: 1.5;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            .step:hover {
+                transform: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .header {
+                padding: 24px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .step {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{{DEMO_NAME}}</h1>
+            <p>{{DEMO_DESCRIPTION}}</p>
+        </div>
+
+        <div class="content">
+            <div class="intro">
+                Follow this script to guide your conversation through the demo. Each step shows what you should say and what response to expect.
+            </div>
+
+            {{AUTO_TRIGGER_INFO}}
+
+            <div class="tips">
+                <h3>Tips for Success</h3>
+                <ul>
+                    <li><strong>Follow the flow:</strong> Type the suggested user messages to get the scripted responses</li>
+                    <li><strong>Flexibility:</strong> The AI uses fuzzy matching, so slight variations in your message will still work</li>
+                    <li><strong>Natural pace:</strong> Take your time between steps to let the audience absorb the information</li>
+                    <li><strong>Stay on script:</strong> Going off-script may result in unexpected responses</li>
+                </ul>
+            </div>
+
+            {{CONVERSATION_STEPS}}
+        </div>
+
+        <div class="footer">
+            <strong>Generated by RAPP ScriptedDemoAgent</strong><br>
+            This script guide helps you deliver consistent, professional demonstrations
+        </div>
+    </div>
+</body>
+</html>

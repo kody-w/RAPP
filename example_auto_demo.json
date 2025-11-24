@@ -1,0 +1,48 @@
+{
+  "demo_name": "Example Auto-Trigger Demo",
+  "description": "This demo automatically triggers for specific GUIDs",
+
+  "auto_trigger_guids": [
+    "test-demo-guid-123",
+    "sales-demo-prod",
+    "my-custom-guid"
+  ],
+
+  "trigger_phrases": [
+    "start demo",
+    "show me a demo"
+  ],
+
+  "conversation_flow": [
+    {
+      "step_number": 1,
+      "description": "Welcome message",
+      "user_message": "hello",
+      "agent_response": "Welcome! This demo is automatically triggered for your GUID. No matter what you type, you'll get responses from this demo."
+    },
+    {
+      "step_number": 2,
+      "description": "Show capabilities",
+      "user_message": "what can you do",
+      "agent_response": "I can demonstrate various features! Since your GUID is configured for auto-demo mode, this conversation will always use this scripted demo flow."
+    },
+    {
+      "step_number": 3,
+      "description": "Explain the feature",
+      "user_message": "how does this work",
+      "agent_response": "The ScriptedDemoAgent checks each demo file for an 'auto_trigger_guids' array. If your GUID matches, the demo triggers automatically - regardless of what you type!"
+    },
+    {
+      "step_number": 4,
+      "description": "Next steps",
+      "user_message": "continue",
+      "agent_response": "You can add any GUIDs to the 'auto_trigger_guids' array in your demo JSON file. Multiple demos can have different GUIDs configured."
+    },
+    {
+      "step_number": 5,
+      "description": "Closing",
+      "user_message": "thanks",
+      "agent_response": "You're welcome! To use this feature, just add your GUID to the 'auto_trigger_guids' array in any demo JSON file in Azure File Storage."
+    }
+  ]
+}

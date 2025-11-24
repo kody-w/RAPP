@@ -314,7 +314,7 @@
           ],
           "cors": {
             "allowedOrigins": [
-              "https://ms.portal.azure.com"
+              "*"
             ]
           }
         }
