@@ -3,13 +3,25 @@
 
 ## 🎓 New to RAPP? Start Here!
 
-**Non-technical users:** Visit our **[Interactive Documentation & Demos](https://kody-w.github.io/RAPP/)** to:
+### 📚 **[RAPP Production Guide](./RAPP-Production-Guide.html)** - Complete Framework Documentation
+**The comprehensive guide for building production AI agents with the Rapid Agent Prototype Pattern (RAPP)**
+
+Open `RAPP-Production-Guide.html` in your browser for the full interactive documentation including:
+- 📖 **14-Step Process** - From discovery call to production deployment with validation checkpoints
+- 🏗️ **Architecture Deep-Dive** - Stateless intelligence layer, memory persistence, hot-loading agents
+- 👥 **Team Scaling** - Station-based workflow for managing 20+ concurrent projects
+- 🛠️ **Interactive Tools** - Project tracker, chat animation studio, agent development utilities
+- 📊 **ROI & Metrics** - Real-world examples showing 20x faster development cycles
+- 🗺️ **Roadmap** - EOY 2025 priorities and automation goals
+
+---
+
+**For Non-Technical Users:** Visit our **[Interactive Demos](https://kody-w.github.io/RAPP/)** to:
 - 🎯 **Try live agent demonstrations** - See RAPP in action without installing anything
-- 📖 **Explore easy-to-follow guides** - Understand what RAPP can do for your business
 - 🖼️ **View visual examples** - See real-world use cases and agent capabilities
 - 💡 **Browse the agent gallery** - Discover pre-built agents for common tasks
 
-**Developers:** Continue below for deployment instructions.
+**For Developers:** Continue below for one-click deployment instructions.
 
 ---
 
