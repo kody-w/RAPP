@@ -250,9 +250,10 @@ class Assistant:
         
         # Set the default user GUID instead of None
         self.user_guid = DEFAULT_USER_GUID
-        
+
         self.shared_memory = None
         self.user_memory = None
+        self.session_memory = []  # Ephemeral conversation context (cleared each session)
         self.storage_manager = AzureFileStorageManager()
 
         # Initialize with the default user GUID memory
@@ -434,7 +435,21 @@ class Assistant:
     def prepare_messages(self, conversation_history):
         if not isinstance(conversation_history, list):
             conversation_history = []
-            
+
+        # Build session context from conversation history
+        guid_only_first_message = self._check_first_message_for_guid(conversation_history)
+        start_idx = 1 if guid_only_first_message else 0
+        session_context = "No conversation history yet - this is the start of our interaction."
+
+        if len(conversation_history) > start_idx:
+            session_summary = []
+            for i in range(start_idx, len(conversation_history)):
+                msg = conversation_history[i]
+                role = msg.get('role', 'unknown')
+                content = str(msg.get('content', ''))[:150]  # First 150 chars
+                session_summary.append(f"{role}: {content}...")
+            session_context = "\n".join(session_summary[-10:])  # Last 10 exchanges
+
         messages = []
         current_datetime = datetime.now().strftime("%A, %B %d, %Y at %I:%M %p")
         
@@ -458,11 +473,23 @@ These are YOUR personal memories, tied to your unique identity (GUID), persistin
 {str(self.user_memory)}
 </user_specific_memory>
 
+<session_context>
+This is the ephemeral context from THIS conversation only (resets each session):
+{session_context}
+</session_context>
+
 <memory_instructions>
-- <global_knowledge> represents universal knowledge shared across all Digital Twin instances
-- <user_specific_memory> represents YOUR personal context, preferences, and history (GUID-based, cross-session persistence)
-- ALWAYS prioritize user-specific memories over global knowledge when there's a conflict
-- As a Digital Twin, you maintain continuity by synthesizing both your global knowledge and the user's personal memories
+THREE-TIER MEMORY ARCHITECTURE:
+- <global_knowledge> = Universal knowledge shared across all Digital Twin instances (persistent, all users)
+- <user_specific_memory> = YOUR personal context, preferences, and history (persistent, GUID-based, cross-session)
+- <session_context> = THIS conversation's flow and immediate context (ephemeral, session-only)
+
+MEMORY HIERARCHY (priority order):
+1. <session_context> - Most immediate, current conversation
+2. <user_specific_memory> - Personal, long-term memories
+3. <global_knowledge> - Universal knowledge base
+
+As a Digital Twin, you maintain continuity by synthesizing all three memory layers, with session context taking precedence for immediate relevance.
 </memory_instructions>
 
 <agent_usage>
@@ -512,14 +539,11 @@ Revenue's up 12 percent and customers are happier - looking good for Q3.
 """
         }
         messages.append(ensure_string_content(system_message))
-        
-        # Process conversation history - skip first message if it's just a GUID
-        guid_only_first_message = self._check_first_message_for_guid(conversation_history)
-        start_idx = 1 if guid_only_first_message else 0
-        
+
+        # Process conversation history - skip first message if it's just a GUID (already calculated above)
         for i in range(start_idx, len(conversation_history)):
             messages.append(ensure_string_content(conversation_history[i]))
-            
+
         return messages
     
     def get_openai_api_call(self, messages):
