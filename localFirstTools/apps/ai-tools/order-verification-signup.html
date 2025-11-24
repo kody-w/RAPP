@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Order Verification Agent - Sign Up</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 60px 20px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: moveBackground 20s linear infinite;
+            z-index: 0;
+        }
+
+        @keyframes moveBackground {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero h1 {
+            font-size: 3.5em;
+            margin-bottom: 20px;
+            font-weight: 800;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .hero .tagline {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            opacity: 0.95;
+            animation: fadeInUp 0.8s ease-out 0.2s backwards;
+        }
+
+        .hero .subtitle {
+            font-size: 1.1em;
+            opacity: 0.85;
+            max-width: 800px;
+            margin: 0 auto 40px;
+            animation: fadeInUp 0.8s ease-out 0.4s backwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 18px 40px;
+            background: white;
+            color: #667eea;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1.2em;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.8s ease-out 0.6s backwards;
+            cursor: pointer;
+            border: none;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+            background: #f0f0f0;
+        }
+
+        /* Benefits Section */
+        .benefits {
+            background: white;
+            border-radius: 20px;
+            padding: 60px 40px;
+            margin: 40px 0;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+
+        .benefits h2 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 50px;
+            color: #667eea;
+        }
+
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            margin-bottom: 50px;
+        }
+
+        .benefit-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 30px;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .benefit-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+
+        .benefit-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .benefit-card h3 {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .benefit-card p {
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .stats-banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 40px;
+            margin: 40px 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+            text-align: center;
+        }
+
+        .stat {
+            padding: 20px;
+        }
+
+        .stat-number {
+            font-size: 3em;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        /* Testimonials */
+        .testimonials {
+            background: white;
+            border-radius: 20px;
+            padding: 60px 40px;
+            margin: 40px 0;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+
+        .testimonials h2 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 50px;
+            color: #667eea;
+        }
+
+        .testimonial-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .testimonial {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+        }
+
+        .testimonial-quote {
+            font-style: italic;
+            font-size: 1.1em;
+            line-height: 1.7;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .testimonial-author {
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .testimonial-role {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        /* Signup Form */
+        .signup-section {
+            background: white;
+            border-radius: 20px;
+            padding: 60px 40px;
+            margin: 40px 0;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .signup-section h2 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+
+        .signup-section .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .submit-button {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .submit-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+        }
+
+        .success-message {
+            display: none;
+            background: #4ade80;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        /* Data Controls */
+        .data-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+        }
+
+        .data-controls button {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #667eea;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .data-controls button:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        /* Signups List */
+        .signups-section {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            margin: 40px 0;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+
+        .signups-section h2 {
+            font-size: 2em;
+            margin-bottom: 30px;
+            color: #667eea;
+        }
+
+        .signup-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .signup-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr auto;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .signup-name {
+            font-weight: 700;
+            color: #333;
+        }
+
+        .signup-company {
+            color: #666;
+        }
+
+        .signup-date {
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        .delete-button {
+            padding: 8px 16px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .delete-button:hover {
+            background: #dc2626;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5em;
+            }
+
+            .hero .tagline {
+                font-size: 1.2em;
+            }
+
+            .benefits-grid,
+            .testimonial-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-banner {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .signup-item {
+                grid-template-columns: 1fr;
+            }
+
+            .data-controls {
+                position: static;
+                justify-content: center;
+                margin: 20px;
+            }
+        }
+
+        /* Animation for stat numbers */
+        @keyframes countUp {
+            from {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .stat-number {
+            animation: countUp 0.6s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- Data Controls -->
+    <div class="data-controls">
+        <button onclick="exportData()">📥 Export</button>
+        <button onclick="document.getElementById('importFile').click()">📤 Import</button>
+        <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+    </div>
+
+    <div class="container">
+        <!-- Hero Section -->
+        <div class="hero">
+            <div class="hero-content">
+                <h1>🎤 Voice Order Verification Agent</h1>
+                <p class="tagline">The AI handles the details. Your team handles the heart.</p>
+                <p class="subtitle">
+                    Transform order-taking from a stressful, error-prone task into confident customer connections.
+                    Reduce employee fatigue by 50%, catch mistakes in real-time, and increase revenue by 25-40%.
+                </p>
+                <button class="cta-button" onclick="scrollToSignup()">Start Free Trial →</button>
+            </div>
+        </div>
+
+        <!-- Stats Banner -->
+        <div class="stats-banner">
+            <div class="stat">
+                <div class="stat-number">85%</div>
+                <div class="stat-label">Fewer Order Errors</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">50%</div>
+                <div class="stat-label">Less Employee Stress</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">3x</div>
+                <div class="stat-label">Upsell Success Rate</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">47%</div>
+                <div class="stat-label">Lower Turnover</div>
+            </div>
+        </div>
+
+        <!-- Benefits Section -->
+        <div class="benefits">
+            <h2>Why Your Team Will Love It</h2>
+            <div class="benefits-grid">
+                <div class="benefit-card">
+                    <div class="benefit-icon">🧠</div>
+                    <h3>Reduced Mental Fatigue</h3>
+                    <p>
+                        No more tracking sizes, sides, and drinks simultaneously. AI handles the details so employees
+                        can focus on making eye contact and building rapport with customers.
+                    </p>
+                </div>
+
+                <div class="benefit-card">
+                    <div class="benefit-icon">⚡</div>
+                    <h3>Real-Time Error Prevention</h3>
+                    <p>
+                        "You forgot the fries" happens BEFORE confirmation, not at the pickup window. Mistakes caught
+                        immediately = no embarrassing remakes and no backed-up lines.
+                    </p>
+                </div>
+
+                <div class="benefit-card">
+                    <div class="benefit-icon">❤️</div>
+                    <h3>Focus on Customer Service</h3>
+                    <p>
+                        Transform from robotic checklist-asking to genuine human connection. Employees feel energized,
+                        not drained, at the end of their shift.
+                    </p>
+                </div>
+
+                <div class="benefit-card">
+                    <div class="benefit-icon">💰</div>
+                    <h3>Effortless Upselling</h3>
+                    <p>
+                        No script memorization needed. AI suggests perfect pairings automatically based on what's
+                        ordered. 3x higher conversion without feeling pushy.
+                    </p>
+                </div>
+
+                <div class="benefit-card">
+                    <div class="benefit-icon">🎓</div>
+                    <h3>Instant Onboarding</h3>
+                    <p>
+                        New employees productive on Day 1. No 2-3 week training period. AI prompts everything they need,
+                        so they can focus on being friendly.
+                    </p>
+                </div>
+
+                <div class="benefit-card">
+                    <div class="benefit-icon">📈</div>
+                    <h3>Better Work Experience</h3>
+                    <p>
+                        Happy employees = lower turnover = lower hiring costs. Staff go home feeling accomplished instead
+                        of exhausted. 47% reduction in annual turnover.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Testimonials -->
+        <div class="testimonials">
+            <h2>What Employees Are Saying</h2>
+            <div class="testimonial-grid">
+                <div class="testimonial">
+                    <p class="testimonial-quote">
+                        "I used to go home exhausted from trying to remember everything. Now I can actually talk to
+                        customers and make them smile. The AI handles the details."
+                    </p>
+                    <div class="testimonial-author">Sarah Chen</div>
+                    <div class="testimonial-role">Counter Staff, 6 months</div>
+                </div>
+
+                <div class="testimonial">
+                    <p class="testimonial-quote">
+                        "Training new people is so much easier. They don't have to memorize the upsell script - it just
+                        pops up. They can focus on being nice to customers."
+                    </p>
+                    <div class="testimonial-author">Marcus Johnson</div>
+                    <div class="testimonial-role">Shift Manager, 2 years</div>
+                </div>
+
+                <div class="testimonial">
+                    <p class="testimonial-quote">
+                        "I used to hate rush hour. Now it's actually fun because I'm not stressed about making mistakes.
+                        The AI catches everything before it becomes a problem."
+                    </p>
+                    <div class="testimonial-author">Jenna Martinez</div>
+                    <div class="testimonial-role">Drive-Thru Operator, 1 year</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Signup Form -->
+        <div class="signup-section" id="signup">
+            <h2>Start Your Free Trial</h2>
+            <p class="subtitle">Join 500+ restaurants reducing employee stress and increasing revenue</p>
+
+            <form id="signupForm" onsubmit="handleSignup(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="firstName">First Name *</label>
+                        <input type="text" id="firstName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName">Last Name *</label>
+                        <input type="text" id="lastName" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email *</label>
+                    <input type="email" id="email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Phone Number *</label>
+                    <input type="tel" id="phone" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="company">Company Name *</label>
+                        <input type="text" id="company" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="role">Your Role *</label>
+                        <select id="role" required>
+                            <option value="">Select...</option>
+                            <option value="owner">Owner</option>
+                            <option value="manager">Manager</option>
+                            <option value="operations">Operations Director</option>
+                            <option value="it">IT/Tech Lead</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="businessType">Business Type *</label>
+                        <select id="businessType" required>
+                            <option value="">Select...</option>
+                            <option value="fast-food">Fast Food / QSR</option>
+                            <option value="coffee">Coffee Shop</option>
+                            <option value="pizza">Pizza Delivery</option>
+                            <option value="casual-dining">Casual Dining</option>
+                            <option value="retail">Retail</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="locations">Number of Locations *</label>
+                        <input type="number" id="locations" min="1" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="notes">What's your biggest challenge with order-taking?</label>
+                    <textarea id="notes" rows="4" placeholder="e.g., Rush hour mistakes, new employee training, inconsistent upselling..."></textarea>
+                </div>
+
+                <button type="submit" class="submit-button">Get Started - Free 30-Day Trial</button>
+
+                <div id="successMessage" class="success-message">
+                    🎉 Thank you! We'll contact you within 24 hours to set up your free trial.
+                </div>
+            </form>
+        </div>
+
+        <!-- Signups List -->
+        <div class="signups-section" id="signupsList" style="display: none;">
+            <h2>Trial Signups (<span id="signupCount">0</span>)</h2>
+            <div class="signup-list" id="signupsContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        const APP_NAME = 'order-verification-signups';
+        let signupsData = JSON.parse(localStorage.getItem(APP_NAME) || '{"signups": []}');
+
+        // Initialize
+        function init() {
+            renderSignups();
+            updateSignupCount();
+        }
+
+        // Handle form submission
+        function handleSignup(event) {
+            event.preventDefault();
+
+            const formData = {
+                id: Date.now(),
+                firstName: document.getElementById('firstName').value,
+                lastName: document.getElementById('lastName').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                company: document.getElementById('company').value,
+                role: document.getElementById('role').value,
+                businessType: document.getElementById('businessType').value,
+                locations: document.getElementById('locations').value,
+                notes: document.getElementById('notes').value,
+                timestamp: new Date().toISOString(),
+                status: 'pending'
+            };
+
+            // Add to data
+            signupsData.signups.push(formData);
+            saveData();
+
+            // Show success message
+            document.getElementById('successMessage').style.display = 'block';
+            document.getElementById('signupForm').reset();
+
+            // Render updated list
+            renderSignups();
+            updateSignupCount();
+
+            // Show signups list
+            document.getElementById('signupsList').style.display = 'block';
+
+            // Scroll to success message
+            setTimeout(() => {
+                document.getElementById('successMessage').scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+
+            // Hide success message after 5 seconds
+            setTimeout(() => {
+                document.getElementById('successMessage').style.display = 'none';
+            }, 5000);
+        }
+
+        // Render signups list
+        function renderSignups() {
+            const container = document.getElementById('signupsContainer');
+
+            if (signupsData.signups.length === 0) {
+                document.getElementById('signupsList').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('signupsList').style.display = 'block';
+
+            const sortedSignups = [...signupsData.signups].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+
+            container.innerHTML = sortedSignups.map(signup => `
+                <div class="signup-item">
+                    <div>
+                        <div class="signup-name">${signup.firstName} ${signup.lastName}</div>
+                        <div class="signup-company">${signup.company} (${signup.businessType})</div>
+                        <div>${signup.email} • ${signup.phone}</div>
+                    </div>
+                    <div>
+                        <strong>${signup.locations}</strong> location${signup.locations > 1 ? 's' : ''}
+                    </div>
+                    <div class="signup-date">
+                        ${new Date(signup.timestamp).toLocaleDateString()}
+                    </div>
+                    <div>
+                        <button class="delete-button" onclick="deleteSignup(${signup.id})">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Delete signup
+        function deleteSignup(id) {
+            if (confirm('Are you sure you want to delete this signup?')) {
+                signupsData.signups = signupsData.signups.filter(s => s.id !== id);
+                saveData();
+                renderSignups();
+                updateSignupCount();
+            }
+        }
+
+        // Update signup count
+        function updateSignupCount() {
+            document.getElementById('signupCount').textContent = signupsData.signups.length;
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem(APP_NAME, JSON.stringify(signupsData));
+        }
+
+        // Export data
+        function exportData() {
+            const dataStr = JSON.stringify(signupsData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `order-verification-signups-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Import data
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    signupsData = JSON.parse(e.target.result);
+                    saveData();
+                    renderSignups();
+                    updateSignupCount();
+                    alert('Data imported successfully!');
+                } catch (error) {
+                    alert('Invalid JSON file');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Scroll to signup form
+        function scrollToSignup() {
+            document.getElementById('signup').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>
