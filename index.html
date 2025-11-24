@@ -6223,6 +6223,221 @@
         }
       }
 
+      // Live Order Taking Methods
+      openLiveOrder() {
+        // Check if Azure Speech is configured
+        if (!voiceManager.azureKey || !voiceManager.isSdkLoaded) {
+          this.showNotification(
+            'Azure Speech API key required. Please configure in Settings.',
+            'error'
+          );
+          return;
+        }
+
+        // Initialize live order state
+        this.liveOrderState = {
+          fullTranscript: '',
+          currentOrder: [],
+          total: 0,
+          isActive: true
+        };
+
+        // Open modal
+        document.getElementById('live-order-modal').classList.add('active');
+
+        // Reset UI
+        document.getElementById('live-order-transcript').innerHTML =
+          '<span style="color: var(--gray-80); font-style: italic;">Listening... speak your order now</span>';
+        document.getElementById('live-order-feedback').innerHTML =
+          '<span style="color: var(--gray-80); font-style: italic;">AI listening for order details...</span>';
+        document.getElementById('live-order-summary').innerHTML =
+          '<div style="color: var(--gray-80); font-style: italic;">No items yet...</div>';
+        document.getElementById('live-order-total').textContent = '0.00';
+
+        // Start continuous listening
+        voiceManager.startContinuousListening(
+          // Interim callback (while speaking)
+          (fullTranscript, interimText) => {
+            this.updateLiveOrderTranscript(fullTranscript, interimText, true);
+          },
+          // Final callback (phrase complete)
+          (fullTranscript, finalText) => {
+            this.updateLiveOrderTranscript(fullTranscript, finalText, false);
+            this.analyzeLiveOrder(fullTranscript);
+          },
+          // Error callback
+          (error) => {
+            console.error('Live order error:', error);
+            this.showNotification('Speech recognition error: ' + error, 'error');
+          }
+        );
+
+        soundManager.playReceiveSound();
+      }
+
+      updateLiveOrderTranscript(fullTranscript, latestText, isInterim) {
+        const transcriptEl = document.getElementById('live-order-transcript');
+
+        if (isInterim) {
+          // Show interim results in gray
+          transcriptEl.innerHTML = `${fullTranscript}<span style="color: var(--gray-60); font-style: italic;">${latestText}</span>`;
+        } else {
+          // Show final results
+          transcriptEl.textContent = fullTranscript;
+          this.liveOrderState.fullTranscript = fullTranscript;
+        }
+
+        // Auto-scroll to bottom
+        transcriptEl.scrollTop = transcriptEl.scrollHeight;
+      }
+
+      async analyzeLiveOrder(transcript) {
+        if (!transcript || !this.liveOrderState.isActive) return;
+
+        try {
+          // Show analyzing status
+          const feedbackEl = document.getElementById('live-order-feedback');
+          feedbackEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing order...';
+
+          // Call order verification agent
+          const response = await fetch(appState.endpoints[appState.activeEndpoint].url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              user_input: `@OrderVerification customer_input="${transcript}" business_type="fast_food" enable_upsell=true`,
+              conversation_history: [],
+              user_guid: appState.currentUser.id
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to analyze order');
+          }
+
+          const data = await response.json();
+
+          // Extract order analysis from response
+          this.updateLiveOrderUI(data.assistant_response);
+
+        } catch (error) {
+          console.error('Order analysis error:', error);
+          const feedbackEl = document.getElementById('live-order-feedback');
+          feedbackEl.innerHTML = '<span style="color: var(--error);">⚠️ Could not analyze order. Please try again.</span>';
+        }
+      }
+
+      updateLiveOrderUI(agentResponse) {
+        if (!agentResponse) return;
+
+        // Update feedback section with agent response
+        const feedbackEl = document.getElementById('live-order-feedback');
+
+        // Parse the markdown response
+        const feedbackHTML = marked.parse(agentResponse);
+        feedbackEl.innerHTML = feedbackHTML;
+
+        // Extract order items and total from response
+        this.extractOrderDetails(agentResponse);
+
+        // Auto-scroll feedback
+        feedbackEl.scrollTop = feedbackEl.scrollHeight;
+      }
+
+      extractOrderDetails(response) {
+        // Extract items from the response (parse the markdown)
+        const summaryEl = document.getElementById('live-order-summary');
+        const totalEl = document.getElementById('live-order-total');
+
+        // Look for "I heard you order:" section
+        const orderMatch = response.match(/\*\*I heard you order:\*\*([\s\S]*?)(?=\*\*|$)/);
+        if (orderMatch) {
+          const orderText = orderMatch[1].trim();
+          summaryEl.innerHTML = orderText.replace(/^- /gm, '• ');
+        }
+
+        // Extract total
+        const totalMatch = response.match(/\*\*Current Total: \$(\d+\.\d{2})\*\*/);
+        if (totalMatch) {
+          totalEl.textContent = totalMatch[1];
+          this.liveOrderState.total = parseFloat(totalMatch[1]);
+        }
+      }
+
+      closeLiveOrder() {
+        // Stop listening
+        voiceManager.stopContinuousListening();
+
+        // Close modal
+        document.getElementById('live-order-modal').classList.remove('active');
+
+        // Mark as inactive
+        if (this.liveOrderState) {
+          this.liveOrderState.isActive = false;
+        }
+
+        soundManager.playSendSound();
+      }
+
+      cancelLiveOrder() {
+        // Confirm cancellation
+        if (this.liveOrderState && this.liveOrderState.total > 0) {
+          const confirmed = confirm('Are you sure you want to cancel this order?');
+          if (!confirmed) return;
+        }
+
+        this.closeLiveOrder();
+        this.showNotification('Order cancelled', 'info');
+      }
+
+      async confirmLiveOrder() {
+        if (!this.liveOrderState || !this.liveOrderState.fullTranscript) {
+          this.showNotification('No order to confirm', 'error');
+          return;
+        }
+
+        // Stop listening
+        voiceManager.stopContinuousListening();
+
+        // Create order summary message
+        const orderMessage = {
+          role: 'user',
+          content: `📝 Order placed: ${this.liveOrderState.fullTranscript}`
+        };
+
+        // Create confirmation message
+        const confirmMessage = {
+          role: 'assistant',
+          content: `✅ **Order Confirmed!**\n\n**Total: $${this.liveOrderState.total.toFixed(2)}**\n\n${document.getElementById('live-order-summary').innerText}\n\nYour order has been placed successfully. Order number: #${Math.floor(Math.random() * 10000)}\n\n*Thank you for your order!*`
+        };
+
+        // Add messages to chat
+        this.addMessageToUI(orderMessage);
+        this.addMessageToUI(confirmMessage);
+
+        // Save to chat history
+        const currentChat = appState.chats[appState.currentChatId];
+        if (currentChat) {
+          currentChat.messages.push(orderMessage);
+          currentChat.messages.push(confirmMessage);
+          currentChat.updatedAt = new Date().toISOString();
+          appState.saveChats();
+        }
+
+        // Close modal
+        document.getElementById('live-order-modal').classList.remove('active');
+
+        // Show success notification
+        this.showNotification('Order confirmed successfully!', 'success');
+        soundManager.playReceiveSound();
+
+        // Speak confirmation if enabled
+        if (voiceManager.enabled && voiceManager.autoSpeak) {
+          voiceManager.speak(`Order confirmed. Total is $${this.liveOrderState.total.toFixed(2)}. Thank you!`);
+        }
+      }
+
       pinTool(tool) {
         this.currentTool = tool;
         this.splitViewTool.classList.add('active');

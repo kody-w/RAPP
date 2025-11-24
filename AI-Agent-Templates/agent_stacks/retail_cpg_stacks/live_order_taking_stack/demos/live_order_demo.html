@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Live Order Taking - Interactive Demo</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, system-ui,
+          sans-serif;
+        background: #faf9f8;
+        height: 100vh;
+        display: flex;
+        overflow: hidden;
+        color: #323130;
+      }
+
+      /* Sidebar */
+      .sidebar {
+        width: 260px;
+        background: #ffffff;
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid #edebe9;
+      }
+
+      .sidebar-header {
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-bottom: 1px solid #edebe9;
+        height: 48px;
+      }
+
+      .copilot-icon {
+        width: 24px;
+        height: 24px;
+        background: linear-gradient(
+          135deg,
+          #b4a0ff 0%,
+          #ff7eb9 50%,
+          #7ee7fc 100%
+        );
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+
+      .copilot-icon::before {
+        content: "";
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        background: white;
+        border-radius: 2px;
+        opacity: 0.9;
+      }
+
+      .sidebar-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #323130;
+      }
+
+      .nav-section {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+      }
+
+      .nav-item {
+        padding: 12px;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        font-size: 14px;
+        color: #323130;
+        transition: background 0.2s;
+        border-radius: 6px;
+      }
+
+      .nav-item:hover {
+        background: #f3f2f1;
+      }
+
+      .nav-item.active {
+        background: #e6f3ff;
+        color: #0078d4;
+        font-weight: 600;
+      }
+
+      .nav-icon {
+        font-size: 18px;
+        width: 24px;
+        text-align: center;
+      }
+
+      .info-section {
+        padding: 16px;
+        border-top: 1px solid #edebe9;
+        font-size: 12px;
+        color: #605e5c;
+        line-height: 1.6;
+      }
+
+      .info-title {
+        font-weight: 600;
+        color: #323130;
+        margin-bottom: 8px;
+        font-size: 13px;
+      }
+
+      /* Main Content */
+      .main-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: #faf9f8;
+      }
+
+      .content-header {
+        height: 60px;
+        padding: 0 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #ffffff;
+        border-bottom: 1px solid #edebe9;
+      }
+
+      .header-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: #323130;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        background: #e6f3ff;
+        color: #0078d4;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .status-badge.listening {
+        background: #dcf5e6;
+        color: #107c41;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.7;
+        }
+      }
+
+      .mic-icon {
+        width: 12px;
+        height: 12px;
+        background: #107c41;
+        border-radius: 50%;
+        animation: micPulse 1.5s infinite;
+      }
+
+      @keyframes micPulse {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.2);
+        }
+      }
+
+      .demo-controls {
+        display: flex;
+        gap: 8px;
+      }
+
+      .control-btn {
+        padding: 8px 16px;
+        border: 1px solid #d2d0ce;
+        border-radius: 6px;
+        background: white;
+        color: #323130;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+      }
+
+      .control-btn:hover {
+        background: #f3f2f1;
+        border-color: #605e5c;
+      }
+
+      .control-btn.primary {
+        background: #0078d4;
+        color: white;
+        border-color: #0078d4;
+      }
+
+      .control-btn.primary:hover {
+        background: #106ebe;
+      }
+
+      .control-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      /* Three Panel Layout */
+      .panels-container {
+        flex: 1;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 16px;
+        padding: 20px;
+        overflow: hidden;
+      }
+
+      .panel {
+        background: white;
+        border: 1px solid #edebe9;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      .panel-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #edebe9;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #faf9f8;
+      }
+
+      .panel-icon {
+        font-size: 20px;
+      }
+
+      .panel-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #323130;
+      }
+
+      .panel-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+      }
+
+      /* Live Transcript Panel */
+      .transcript-line {
+        margin-bottom: 12px;
+        padding: 10px 12px;
+        background: #f3f2f1;
+        border-radius: 6px;
+        font-size: 14px;
+        line-height: 1.6;
+        color: #323130;
+        animation: fadeIn 0.3s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .transcript-line.typing {
+        background: #e6f3ff;
+        border-left: 3px solid #0078d4;
+      }
+
+      .typing-cursor {
+        display: inline-block;
+        width: 2px;
+        height: 14px;
+        background: #0078d4;
+        margin-left: 2px;
+        animation: blink 1s infinite;
+      }
+
+      @keyframes blink {
+        0%,
+        50% {
+          opacity: 1;
+        }
+        51%,
+        100% {
+          opacity: 0;
+        }
+      }
+
+      /* AI Feedback Panel */
+      .feedback-item {
+        margin-bottom: 16px;
+        padding: 14px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        line-height: 1.6;
+        animation: slideIn 0.4s ease;
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateX(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      .feedback-item.warning {
+        background: #fff4ce;
+        border-left: 4px solid #ffaa44;
+        color: #8a5000;
+      }
+
+      .feedback-item.info {
+        background: #e6f3ff;
+        border-left: 4px solid #0078d4;
+        color: #005a9e;
+      }
+
+      .feedback-item.success {
+        background: #dcf5e6;
+        border-left: 4px solid #107c41;
+        color: #0e5c2f;
+      }
+
+      .feedback-icon {
+        font-size: 16px;
+        margin-right: 8px;
+      }
+
+      /* Order Summary Panel */
+      .order-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid #edebe9;
+        animation: slideIn 0.4s ease;
+      }
+
+      .item-name {
+        font-size: 14px;
+        color: #323130;
+        font-weight: 500;
+      }
+
+      .item-price {
+        font-size: 14px;
+        color: #605e5c;
+        font-weight: 600;
+      }
+
+      .order-total {
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 2px solid #323130;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .total-label {
+        font-size: 18px;
+        font-weight: 700;
+        color: #323130;
+      }
+
+      .total-amount {
+        font-size: 24px;
+        font-weight: 700;
+        color: #107c41;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #a19f9d;
+      }
+
+      .empty-state i {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.3;
+      }
+
+      /* Action Buttons */
+      .action-buttons {
+        padding: 20px;
+        border-top: 1px solid #edebe9;
+        display: flex;
+        gap: 12px;
+      }
+
+      .action-btn {
+        flex: 1;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .action-btn.cancel {
+        background: #f3f2f1;
+        color: #323130;
+        border: 1px solid #d2d0ce;
+      }
+
+      .action-btn.cancel:hover {
+        background: #e1dfdd;
+      }
+
+      .action-btn.confirm {
+        background: #107c41;
+        color: white;
+      }
+
+      .action-btn.confirm:hover {
+        background: #0e5c2f;
+      }
+
+      .action-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      /* Responsive */
+      @media (max-width: 1200px) {
+        .panels-container {
+          grid-template-columns: 1fr;
+          grid-template-rows: auto auto auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <div class="copilot-icon"></div>
+        <span class="sidebar-title">Live Order Taking</span>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-item active">
+          <i class="nav-icon fas fa-shopping-cart"></i>
+          <span>Order Demo</span>
+        </div>
+        <div class="nav-item">
+          <i class="nav-icon fas fa-microphone"></i>
+          <span>Voice Settings</span>
+        </div>
+        <div class="nav-item">
+          <i class="nav-icon fas fa-history"></i>
+          <span>Order History</span>
+        </div>
+        <div class="nav-item">
+          <i class="nav-icon fas fa-cog"></i>
+          <span>Settings</span>
+        </div>
+      </div>
+
+      <div class="info-section">
+        <div class="info-title">About This Demo</div>
+        <p>
+          This interactive demo showcases real-time voice order processing with
+          AI-powered verification and intelligent feedback. Watch as the system
+          listens, analyzes, and provides helpful suggestions to complete your
+          order.
+        </p>
+        <br />
+        <p><strong>Key Features:</strong></p>
+        <ul style="margin-left: 16px; margin-top: 8px">
+          <li>Live transcript display</li>
+          <li>AI verification feedback</li>
+          <li>Intelligent upselling</li>
+          <li>Real-time order summary</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <div class="content-header">
+        <div class="header-title">
+          <i class="fas fa-hamburger"></i>
+          Drive-Thru Order Demo
+          <span class="status-badge" id="statusBadge">
+            <i class="fas fa-circle"></i>
+            Ready
+          </span>
+        </div>
+        <div class="demo-controls">
+          <button class="control-btn" id="skipBtn" onclick="skipToNext()">
+            <i class="fas fa-forward"></i>
+            Skip
+          </button>
+          <button class="control-btn primary" id="playBtn" onclick="togglePlay()">
+            <i class="fas fa-play"></i>
+            Play Demo
+          </button>
+          <button class="control-btn" id="resetBtn" onclick="resetDemo()">
+            <i class="fas fa-redo"></i>
+            Reset
+          </button>
+        </div>
+      </div>
+
+      <!-- Three Panel Layout -->
+      <div class="panels-container">
+        <!-- Live Transcript Panel -->
+        <div class="panel">
+          <div class="panel-header">
+            <i class="panel-icon fas fa-closed-captioning"></i>
+            <span class="panel-title">Live Transcript</span>
+          </div>
+          <div class="panel-content" id="transcriptPanel">
+            <div class="empty-state">
+              <i class="fas fa-microphone"></i>
+              <p>Waiting for customer...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Feedback Panel -->
+        <div class="panel">
+          <div class="panel-header">
+            <i class="panel-icon fas fa-robot"></i>
+            <span class="panel-title">AI Feedback</span>
+          </div>
+          <div class="panel-content" id="feedbackPanel">
+            <div class="empty-state">
+              <i class="fas fa-brain"></i>
+              <p>AI is ready to assist...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Order Summary Panel -->
+        <div class="panel">
+          <div class="panel-header">
+            <i class="panel-icon fas fa-receipt"></i>
+            <span class="panel-title">Order Summary</span>
+          </div>
+          <div class="panel-content" id="orderPanel">
+            <div class="empty-state">
+              <i class="fas fa-shopping-bag"></i>
+              <p>No items yet...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <button class="action-btn cancel" onclick="cancelOrder()">
+          <i class="fas fa-times"></i>
+          Cancel Order
+        </button>
+        <button class="action-btn confirm" id="confirmBtn" onclick="confirmOrder()" disabled>
+          <i class="fas fa-check"></i>
+          Confirm Order
+        </button>
+      </div>
+    </div>
+
+    <script>
+      // Demo Script
+      const demoScript = [
+        {
+          step: 1,
+          transcript: "I'll have a Big Mac",
+          typingSpeed: 60,
+          feedback: {
+            type: "warning",
+            icon: "fas fa-exclamation-triangle",
+            message:
+              "I notice you didn't order any sides. Did you want fries with that?",
+          },
+          order: [{ item: "Big Mac", price: 5.99 }],
+          delay: 1500,
+        },
+        {
+          step: 2,
+          transcript: "Oh yeah, medium fries please",
+          typingSpeed: 60,
+          feedback: {
+            type: "info",
+            icon: "fas fa-info-circle",
+            message:
+              "No drink with that? What size drink would you like?",
+          },
+          order: [
+            { item: "Big Mac", price: 5.99 },
+            { item: "Medium Fries", price: 2.49 },
+          ],
+          delay: 1500,
+        },
+        {
+          step: 3,
+          transcript: "And a large Coke",
+          typingSpeed: 60,
+          feedback: {
+            type: "success",
+            icon: "fas fa-check-circle",
+            message:
+              "Perfect! That pairs great with your meal. Upgrade to large fries for just 50 cents more?",
+          },
+          order: [
+            { item: "Big Mac", price: 5.99 },
+            { item: "Medium Fries", price: 2.49 },
+            { item: "Large Coke", price: 2.29 },
+          ],
+          delay: 1500,
+        },
+        {
+          step: 4,
+          transcript: "No thanks, that's it",
+          typingSpeed: 60,
+          feedback: {
+            type: "success",
+            icon: "fas fa-check-double",
+            message:
+              "Order complete! Total is $10.77. Please pull forward to the window.",
+          },
+          order: [
+            { item: "Big Mac", price: 5.99 },
+            { item: "Medium Fries", price: 2.49 },
+            { item: "Large Coke", price: 2.29 },
+          ],
+          delay: 1500,
+          final: true,
+        },
+      ];
+
+      // State
+      let currentStep = 0;
+      let isPlaying = false;
+      let isPaused = false;
+
+      // DOM Elements
+      const statusBadge = document.getElementById("statusBadge");
+      const playBtn = document.getElementById("playBtn");
+      const confirmBtn = document.getElementById("confirmBtn");
+      const transcriptPanel = document.getElementById("transcriptPanel");
+      const feedbackPanel = document.getElementById("feedbackPanel");
+      const orderPanel = document.getElementById("orderPanel");
+
+      // Update Status Badge
+      function updateStatus(status, text) {
+        if (status === "listening") {
+          statusBadge.className = "status-badge listening";
+          statusBadge.innerHTML =
+            '<div class="mic-icon"></div>' + text;
+        } else {
+          statusBadge.className = "status-badge";
+          statusBadge.innerHTML = '<i class="fas fa-circle"></i>' + text;
+        }
+      }
+
+      // Type Text Animation
+      async function typeText(text, element, speed = 50) {
+        let currentText = "";
+        for (let char of text) {
+          currentText += char;
+          element.innerHTML =
+            currentText + '<span class="typing-cursor"></span>';
+          await new Promise((resolve) => setTimeout(resolve, speed));
+        }
+        element.innerHTML = currentText;
+      }
+
+      // Add Transcript Line
+      async function addTranscript(text, speed = 60) {
+        transcriptPanel.innerHTML = "";
+
+        const line = document.createElement("div");
+        line.className = "transcript-line typing";
+        transcriptPanel.appendChild(line);
+
+        await typeText(text, line, speed);
+        line.classList.remove("typing");
+      }
+
+      // Add Feedback
+      async function addFeedback(feedbackData) {
+        feedbackPanel.innerHTML = "";
+
+        const feedback = document.createElement("div");
+        feedback.className = `feedback-item ${feedbackData.type}`;
+        feedback.innerHTML = `
+          <i class="${feedbackData.icon} feedback-icon"></i>
+          ${feedbackData.message}
+        `;
+
+        feedbackPanel.appendChild(feedback);
+      }
+
+      // Update Order Summary
+      function updateOrder(items) {
+        orderPanel.innerHTML = "";
+
+        items.forEach((item) => {
+          const orderItem = document.createElement("div");
+          orderItem.className = "order-item";
+          orderItem.innerHTML = `
+            <span class="item-name">${item.item}</span>
+            <span class="item-price">$${item.price.toFixed(2)}</span>
+          `;
+          orderPanel.appendChild(orderItem);
+        });
+
+        // Calculate total
+        const total = items.reduce((sum, item) => sum + item.price, 0);
+
+        const totalDiv = document.createElement("div");
+        totalDiv.className = "order-total";
+        totalDiv.innerHTML = `
+          <span class="total-label">Total:</span>
+          <span class="total-amount">$${total.toFixed(2)}</span>
+        `;
+        orderPanel.appendChild(totalDiv);
+      }
+
+      // Play Step
+      async function playStep(step) {
+        const stepData = demoScript[step];
+
+        // Update status to listening
+        updateStatus("listening", "Listening...");
+
+        // Add transcript with typing effect
+        await addTranscript(stepData.transcript, stepData.typingSpeed);
+
+        // Wait for delay
+        await new Promise((resolve) => setTimeout(resolve, stepData.delay));
+
+        // Update status to processing
+        updateStatus("processing", "Processing...");
+
+        // Wait a bit
+        await new Promise((resolve) => setTimeout(resolve, 800));
+
+        // Add AI feedback
+        await addFeedback(stepData.feedback);
+
+        // Update order summary
+        updateOrder(stepData.order);
+
+        // Update status
+        if (stepData.final) {
+          updateStatus("complete", "Order Complete");
+          confirmBtn.disabled = false;
+          playBtn.innerHTML = '<i class="fas fa-redo"></i> Replay';
+          isPlaying = false;
+        } else {
+          updateStatus("listening", "Listening...");
+        }
+      }
+
+      // Toggle Play/Pause
+      async function togglePlay() {
+        if (!isPlaying) {
+          isPlaying = true;
+          playBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
+
+          // Clear panels
+          if (currentStep === 0) {
+            transcriptPanel.innerHTML = "";
+            feedbackPanel.innerHTML = "";
+            orderPanel.innerHTML = "";
+          }
+
+          // Play through steps
+          while (currentStep < demoScript.length && isPlaying) {
+            await playStep(currentStep);
+
+            if (demoScript[currentStep].final) {
+              break;
+            }
+
+            currentStep++;
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+          }
+        } else {
+          isPlaying = false;
+          playBtn.innerHTML = '<i class="fas fa-play"></i> Play';
+          updateStatus("paused", "Paused");
+        }
+      }
+
+      // Skip to Next Step
+      function skipToNext() {
+        if (isPlaying && currentStep < demoScript.length - 1) {
+          currentStep++;
+        }
+      }
+
+      // Reset Demo
+      function resetDemo() {
+        isPlaying = false;
+        currentStep = 0;
+        confirmBtn.disabled = true;
+
+        playBtn.innerHTML = '<i class="fas fa-play"></i> Play Demo';
+        updateStatus("ready", "Ready");
+
+        transcriptPanel.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-microphone"></i>
+            <p>Waiting for customer...</p>
+          </div>
+        `;
+
+        feedbackPanel.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-brain"></i>
+            <p>AI is ready to assist...</p>
+          </div>
+        `;
+
+        orderPanel.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-shopping-bag"></i>
+            <p>No items yet...</p>
+          </div>
+        `;
+      }
+
+      // Cancel Order
+      function cancelOrder() {
+        if (confirm("Are you sure you want to cancel this order?")) {
+          resetDemo();
+        }
+      }
+
+      // Confirm Order
+      function confirmOrder() {
+        const total = demoScript[demoScript.length - 1].order.reduce(
+          (sum, item) => sum + item.price,
+          0
+        );
+
+        alert(
+          `Order confirmed!\n\nTotal: $${total.toFixed(
+            2
+          )}\n\nThank you for using the Live Order Taking System!`
+        );
+
+        resetDemo();
+      }
+    </script>
+  </body>
+</html>
