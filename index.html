@@ -5168,11 +5168,15 @@
         this.showLoadingIndicator();
 
         try {
-          const response = await fetch(endpoint.url, {
+          // Construct full URL with function key as query parameter
+          const fullUrl = endpoint.key
+            ? `${endpoint.url}${endpoint.url.includes('?') ? '&' : '?'}code=${endpoint.key}`
+            : endpoint.url;
+
+          const response = await fetch(fullUrl, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "x-functions-key": endpoint.key,
             },
             body: JSON.stringify({
               user_input: message || "Please analyze this image",
@@ -5294,11 +5298,15 @@
               throw new Error("Please configure an endpoint first");
             }
 
-            const uploadResponse = await fetch(endpoint.url, {
+            // Construct full URL with function key as query parameter
+            const fullUploadUrl = endpoint.key
+              ? `${endpoint.url}${endpoint.url.includes('?') ? '&' : '?'}code=${endpoint.key}`
+              : endpoint.url;
+
+            const uploadResponse = await fetch(fullUploadUrl, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
-                "x-functions-key": endpoint.key,
               },
               body: JSON.stringify({
                 user_input: `Please upload this image: ${file.name}`,
@@ -6300,7 +6308,12 @@
           feedbackEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing order...';
 
           // Call order verification agent
-          const response = await fetch(appState.endpoints[appState.activeEndpoint].url, {
+          const endpoint = appState.endpoints[appState.activeEndpoint];
+          const fullOrderUrl = endpoint.key
+            ? `${endpoint.url}${endpoint.url.includes('?') ? '&' : '?'}code=${endpoint.key}`
+            : endpoint.url;
+
+          const response = await fetch(fullOrderUrl, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
