@@ -1,0 +1,21 @@
+{
+  "agents": [
+    "calendar_agent.py",
+    "motivational_quote_skill.py",
+    "context_memory_agent.py",
+    "fixed_beehiiv_agent.py",
+    "powerpoint_agent.py",
+    "m365_demo_updater_agent.py",
+    "basic_agent.py",
+    "adaptive_card_agent.py",
+    "duckduckgo_search_agent.py",
+    "manage_memory_agent.py",
+    "fetch_random_wikipedia_article_skill.py",
+    "image_generation_agent.py",
+    "dynamics365_demo_data_seeder_agent.py",
+    "salesforce_query_agent.py",
+    "code_review_agent.py",
+    "meeting_prep_agent.py",
+    "hacker_news_agent.py"
+  ]
+}
