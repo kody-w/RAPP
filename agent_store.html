@@ -1123,7 +1123,8 @@
             branch: 'main',
             subPath: 'AI-Agent-Templates',
             baseUrl: 'https://github.com/kody-w/RAPP',
-            rawUrl: 'https://raw.githubusercontent.com/kody-w/RAPP/main/AI-Agent-Templates'
+            rawUrl: 'https://raw.githubusercontent.com/kody-w/RAPP/main/AI-Agent-Templates',
+            pagesUrl: 'https://kody-w.github.io/RAPP/AI-Agent-Templates'  // GitHub Pages for demos
         };
 
         // Category mapping to directory structure
@@ -2948,8 +2949,8 @@ Once downloaded:
                     // Check if demo file exists and add demo info
                     const demoFileName = `${agentIdWithUnderscores}_demo.html`;
                     const rawDemoUrl = `${GITHUB_CONFIG.rawUrl}/agent_stacks/${categoryDir}/${stackName}/demos/${demoFileName}`;
-                    // Use htmlpreview.github.io to properly render HTML
-                    const renderableDemoUrl = `https://htmlpreview.github.io/?${rawDemoUrl}`;
+                    // Use GitHub Pages URL to serve demos directly (like localFirstTools)
+                    const demoUrl = `${GITHUB_CONFIG.pagesUrl}/agent_stacks/${categoryDir}/${stackName}/demos/${demoFileName}`;
 
                     try {
                         const demoCheck = await fetch(rawDemoUrl, { method: 'HEAD' });
@@ -2958,9 +2959,9 @@ Once downloaded:
                                 available: true,
                                 title: `${agent.name} Interactive Demo`,
                                 description: 'Experience this stack with an interactive demonstration showcasing real-world scenarios.',
-                                url: renderableDemoUrl
+                                url: demoUrl
                             };
-                            console.log(`✅ Demo found for ${agent.id}:`, renderableDemoUrl);
+                            console.log(`✅ Demo found for ${agent.id}:`, demoUrl);
                         }
                     } catch (demoError) {
                         console.log(`ℹ️ No demo available for ${agent.id}`);
@@ -2975,8 +2976,8 @@ Once downloaded:
             // Return default metadata with demo check
             const demoFileName = `${agentIdWithUnderscores}_demo.html`;
             const rawDemoUrl = `${GITHUB_CONFIG.rawUrl}/agent_stacks/${categoryDir}/${stackName}/demos/${demoFileName}`;
-            // Use htmlpreview.github.io to properly render HTML
-            const renderableDemoUrl = `https://htmlpreview.github.io/?${rawDemoUrl}`;
+            // Use GitHub Pages URL to serve demos directly (like localFirstTools)
+            const demoUrl = `${GITHUB_CONFIG.pagesUrl}/agent_stacks/${categoryDir}/${stackName}/demos/${demoFileName}`;
 
             // Try to check if demo exists even if metadata fails
             let demoAvailable = false;
@@ -2984,7 +2985,7 @@ Once downloaded:
                 const demoCheck = await fetch(rawDemoUrl, { method: 'HEAD' });
                 demoAvailable = demoCheck.ok;
                 if (demoAvailable) {
-                    console.log(`✅ Demo found for ${agent.id} (no metadata):`, renderableDemoUrl);
+                    console.log(`✅ Demo found for ${agent.id} (no metadata):`, demoUrl);
                 }
             } catch (e) {
                 console.log(`ℹ️ No demo available for ${agent.id}`);
@@ -3010,7 +3011,7 @@ Once downloaded:
                     available: true,
                     title: `${agent.name} Interactive Demo`,
                     description: 'Experience this stack with an interactive demonstration showcasing real-world scenarios.',
-                    url: renderableDemoUrl
+                    url: demoUrl
                 } : {
                     available: false
                 }
