@@ -1,0 +1,1647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D&D Campaign Manager - 3D Visual</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0f;
+            color: #e4e4e4;
+            overflow: hidden;
+        }
+
+        #root {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        #three-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .ui-overlay > * {
+            pointer-events: auto;
+        }
+
+        .header {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            background: rgba(10, 10, 20, 0.85);
+            backdrop-filter: blur(20px);
+            padding: 20px 40px;
+            border-radius: 15px;
+            border: 2px solid rgba(78, 205, 196, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        }
+
+        .header h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2em;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ffd93d 50%, #4ecdc4 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 3s linear infinite;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 0% center; }
+            100% { background-position: 200% center; }
+        }
+
+        .header p {
+            color: #a0a0c0;
+            font-size: 0.9em;
+        }
+
+        .party-panel {
+            position: absolute;
+            left: 20px;
+            top: 120px;
+            width: 280px;
+            max-height: calc(100vh - 140px);
+            overflow-y: auto;
+            background: rgba(15, 15, 30, 0.9);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(78, 205, 196, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        }
+
+        .enemy-panel {
+            position: absolute;
+            right: 20px;
+            top: 120px;
+            width: 280px;
+            max-height: calc(100vh - 140px);
+            overflow-y: auto;
+            background: rgba(15, 15, 30, 0.9);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        }
+
+        .panel-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #4ecdc4;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .character-card {
+            background: linear-gradient(135deg, rgba(78, 205, 196, 0.15), rgba(78, 205, 196, 0.05));
+            border: 2px solid rgba(78, 205, 196, 0.3);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .character-card:hover {
+            transform: translateX(5px);
+            border-color: #4ecdc4;
+            box-shadow: 0 4px 20px rgba(78, 205, 196, 0.3);
+        }
+
+        .character-card.active {
+            border-color: #ffd93d;
+            box-shadow: 0 0 30px rgba(255, 217, 61, 0.5);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+
+        .enemy-card {
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.2), rgba(255, 107, 107, 0.05));
+            border: 2px solid rgba(255, 107, 107, 0.4);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .enemy-card:hover {
+            transform: translateX(-5px);
+            border-color: #ff6b6b;
+            box-shadow: 0 4px 20px rgba(255, 107, 107, 0.4);
+        }
+
+        .enemy-card.selected {
+            border-color: #ffd93d;
+            box-shadow: 0 0 25px rgba(255, 217, 61, 0.6);
+        }
+
+        .enemy-card.defeated {
+            opacity: 0.4;
+            filter: grayscale(100%);
+            cursor: not-allowed;
+        }
+
+        .char-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .char-info {
+            font-size: 0.85em;
+            color: #a0a0c0;
+            margin-bottom: 8px;
+        }
+
+        .health-bar {
+            background: rgba(0, 0, 0, 0.4);
+            height: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #ee5a6f);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75em;
+            font-weight: 600;
+            color: white;
+        }
+
+        .controls-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 15, 30, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(78, 205, 196, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn-attack {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .btn-attack:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(255, 107, 107, 0.6);
+        }
+
+        .btn-special {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-special:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-skip {
+            background: linear-gradient(135deg, #a0a0c0 0%, #808090 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(160, 160, 192, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .turn-indicator {
+            background: linear-gradient(135deg, #ffd93d, #f39c12);
+            color: #1a1a2e;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(255, 217, 61, 0.4);
+        }
+
+        .modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1e1e3c, #16213e);
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+            border: 2px solid rgba(78, 205, 196, 0.3);
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-content h2 {
+            color: #4ecdc4;
+            margin-bottom: 25px;
+            font-size: 2em;
+            font-weight: 600;
+            font-family: 'Cinzel', serif;
+        }
+
+        .quest-grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .quest-card {
+            background: linear-gradient(135deg, rgba(255, 217, 61, 0.15), rgba(255, 217, 61, 0.05));
+            border: 2px solid rgba(255, 217, 61, 0.3);
+            padding: 20px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .quest-card:hover {
+            border-color: #ffd93d;
+            box-shadow: 0 4px 20px rgba(255, 217, 61, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .quest-title {
+            color: #ffd93d;
+            font-weight: 600;
+            font-size: 1.3em;
+            margin-bottom: 10px;
+        }
+
+        .quest-description {
+            color: #c0c0d0;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .quest-reward {
+            color: #4ecdc4;
+            font-weight: 500;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #a0a0c0;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid rgba(78, 205, 196, 0.3);
+            border-radius: 10px;
+            background: rgba(15, 15, 30, 0.6);
+            color: #e4e4e4;
+            font-size: 1em;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #4ecdc4;
+            box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.1);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 25px;
+        }
+
+        .combat-log {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(10, 10, 20, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 15px 25px;
+            border-radius: 10px;
+            border: 2px solid rgba(78, 205, 196, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #ffd93d;
+            animation: slideIn 0.5s ease-out;
+            pointer-events: none;
+            max-width: 80%;
+            text-align: center;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        .victory-screen {
+            text-align: center;
+        }
+
+        .victory-screen h2 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            animation: victoryBounce 0.5s ease-out;
+        }
+
+        @keyframes victoryBounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: rgba(78, 205, 196, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid rgba(78, 205, 196, 0.3);
+        }
+
+        .stat-label {
+            color: #a0a0c0;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            color: #ffd93d;
+            font-size: 2em;
+            font-weight: 700;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #4ecdc4, #44a08d);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // Game Constants
+        const CLASSES = ['Warrior', 'Mage', 'Rogue', 'Cleric', 'Ranger'];
+        const RACES = ['Human', 'Elf', 'Dwarf', 'Halfling', 'Dragonborn'];
+
+        const CAMPAIGN_SCENARIOS = [
+            {
+                id: 1,
+                name: "The Goblin Cave",
+                description: "A band of goblins has been raiding nearby villages. Track them to their cave and end their threat.",
+                environment: 'cave',
+                enemies: [
+                    { name: "Goblin Scout", hp: 15, maxHp: 15, ac: 13, attack: 5, color: 0x88cc88 },
+                    { name: "Goblin Warrior", hp: 20, maxHp: 20, ac: 14, attack: 6, color: 0x66aa66 },
+                    { name: "Goblin Chief", hp: 35, maxHp: 35, ac: 16, attack: 8, color: 0x44aa44 }
+                ],
+                xpReward: 100,
+                goldReward: 50
+            },
+            {
+                id: 2,
+                name: "Ancient Ruins",
+                description: "Mysterious ruins have been discovered. Explore them to uncover ancient secrets and treasures.",
+                environment: 'ruins',
+                enemies: [
+                    { name: "Skeleton", hp: 18, maxHp: 18, ac: 13, attack: 5, color: 0xcccccc },
+                    { name: "Zombie", hp: 25, maxHp: 25, ac: 12, attack: 6, color: 0x88aa88 },
+                    { name: "Wraith", hp: 30, maxHp: 30, ac: 15, attack: 7, color: 0x8888cc }
+                ],
+                xpReward: 150,
+                goldReward: 75
+            },
+            {
+                id: 3,
+                name: "Dragon's Lair",
+                description: "A young dragon has taken residence in the mountains. Defeat it before it becomes a true menace.",
+                environment: 'lair',
+                enemies: [
+                    { name: "Kobold Minion", hp: 12, maxHp: 12, ac: 12, attack: 4, color: 0xcc8844 },
+                    { name: "Kobold Shaman", hp: 20, maxHp: 20, ac: 13, attack: 6, color: 0xaa6633 },
+                    { name: "Young Dragon", hp: 80, maxHp: 80, ac: 18, attack: 12, color: 0xff4444 }
+                ],
+                xpReward: 300,
+                goldReward: 200
+            }
+        ];
+
+        // Three.js Scene Manager
+        class SceneManager {
+            constructor(container) {
+                this.container = container;
+                this.scene = new THREE.Scene();
+                this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                this.characters = [];
+                this.enemies = [];
+                this.particles = [];
+
+                this.init();
+            }
+
+            init() {
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setClearColor(0x0a0a0f, 1);
+                this.container.appendChild(this.renderer.domElement);
+
+                // Camera position
+                this.camera.position.set(0, 15, 25);
+                this.camera.lookAt(0, 0, 0);
+
+                // Lighting
+                const ambientLight = new THREE.AmbientLight(0x4ecdc4, 0.5);
+                this.scene.add(ambientLight);
+
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                directionalLight.position.set(5, 10, 5);
+                directionalLight.castShadow = true;
+                this.scene.add(directionalLight);
+
+                const pointLight1 = new THREE.PointLight(0xff6b6b, 1, 50);
+                pointLight1.position.set(-10, 5, 0);
+                this.scene.add(pointLight1);
+
+                const pointLight2 = new THREE.PointLight(0x4ecdc4, 1, 50);
+                pointLight2.position.set(10, 5, 0);
+                this.scene.add(pointLight2);
+
+                // Ground
+                this.createGround();
+
+                // Background stars
+                this.createStars();
+
+                // Handle window resize
+                window.addEventListener('resize', () => this.onWindowResize(), false);
+
+                this.animate();
+            }
+
+            createGround() {
+                const geometry = new THREE.PlaneGeometry(50, 50);
+                const material = new THREE.MeshStandardMaterial({
+                    color: 0x1a1a2e,
+                    roughness: 0.8,
+                    metalness: 0.2
+                });
+                const ground = new THREE.Mesh(geometry, material);
+                ground.rotation.x = -Math.PI / 2;
+                ground.position.y = 0;
+                ground.receiveShadow = true;
+                this.scene.add(ground);
+
+                // Grid
+                const gridHelper = new THREE.GridHelper(50, 50, 0x4ecdc4, 0x2a2a3e);
+                gridHelper.position.y = 0.01;
+                this.scene.add(gridHelper);
+            }
+
+            createStars() {
+                const starGeometry = new THREE.BufferGeometry();
+                const starVertices = [];
+
+                for (let i = 0; i < 1000; i++) {
+                    const x = (Math.random() - 0.5) * 200;
+                    const y = Math.random() * 100 + 20;
+                    const z = (Math.random() - 0.5) * 200;
+                    starVertices.push(x, y, z);
+                }
+
+                starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
+
+                const starMaterial = new THREE.PointsMaterial({
+                    color: 0x4ecdc4,
+                    size: 0.3,
+                    transparent: true,
+                    opacity: 0.8
+                });
+
+                const stars = new THREE.Points(starGeometry, starMaterial);
+                this.scene.add(stars);
+            }
+
+            createCharacter(character, index, isEnemy = false) {
+                const group = new THREE.Group();
+
+                // Body
+                const bodyGeometry = new THREE.CapsuleGeometry(0.5, 1.5, 4, 8);
+                const bodyMaterial = new THREE.MeshStandardMaterial({
+                    color: isEnemy ? character.color : 0x4ecdc4,
+                    roughness: 0.5,
+                    metalness: 0.3
+                });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 1.5;
+                body.castShadow = true;
+                group.add(body);
+
+                // Head
+                const headGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+                const headMaterial = new THREE.MeshStandardMaterial({
+                    color: isEnemy ? character.color : 0xffddaa,
+                    roughness: 0.6
+                });
+                const head = new THREE.Mesh(headGeometry, headMaterial);
+                head.position.y = 2.8;
+                head.castShadow = true;
+                group.add(head);
+
+                // Weapon
+                const weaponGeometry = new THREE.CylinderGeometry(0.05, 0.05, 2, 8);
+                const weaponMaterial = new THREE.MeshStandardMaterial({
+                    color: 0xcccccc,
+                    metalness: 0.8
+                });
+                const weapon = new THREE.Mesh(weaponGeometry, weaponMaterial);
+                weapon.position.set(0.5, 1.5, 0);
+                weapon.rotation.z = Math.PI / 4;
+                group.add(weapon);
+
+                // Position
+                const xPos = isEnemy ? 8 : -8;
+                const zPos = (index - 1) * 3;
+                group.position.set(xPos, 0, zPos);
+
+                // Name tag (sprite)
+                const canvas = document.createElement('canvas');
+                canvas.width = 256;
+                canvas.height = 64;
+                const context = canvas.getContext('2d');
+                context.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                context.fillRect(0, 0, 256, 64);
+                context.font = 'Bold 20px Inter';
+                context.fillStyle = isEnemy ? '#ff6b6b' : '#4ecdc4';
+                context.textAlign = 'center';
+                context.fillText(character.name, 128, 40);
+
+                const texture = new THREE.CanvasTexture(canvas);
+                const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+                const sprite = new THREE.Sprite(spriteMaterial);
+                sprite.position.y = 4;
+                sprite.scale.set(2, 0.5, 1);
+                group.add(sprite);
+
+                this.scene.add(group);
+
+                const charData = {
+                    group,
+                    body,
+                    head,
+                    weapon,
+                    sprite,
+                    character
+                };
+
+                if (isEnemy) {
+                    this.enemies.push(charData);
+                } else {
+                    this.characters.push(charData);
+                }
+
+                return charData;
+            }
+
+            clearCharacters() {
+                [...this.characters, ...this.enemies].forEach(char => {
+                    this.scene.remove(char.group);
+                });
+                this.characters = [];
+                this.enemies = [];
+            }
+
+            animateAttack(attacker, target, callback) {
+                const startPos = attacker.group.position.clone();
+                const targetPos = target.group.position.clone();
+                const midPoint = new THREE.Vector3().lerpVectors(startPos, targetPos, 0.5);
+
+                let progress = 0;
+                const speed = 0.05;
+
+                const animate = () => {
+                    progress += speed;
+
+                    if (progress < 0.5) {
+                        // Move towards target
+                        attacker.group.position.lerpVectors(startPos, midPoint, progress * 2);
+                        attacker.weapon.rotation.z += 0.3;
+                    } else if (progress < 1) {
+                        // Return to start
+                        attacker.group.position.lerpVectors(midPoint, startPos, (progress - 0.5) * 2);
+                        attacker.weapon.rotation.z += 0.3;
+                    } else {
+                        // Reset and callback
+                        attacker.group.position.copy(startPos);
+                        attacker.weapon.rotation.z = Math.PI / 4;
+                        if (callback) callback();
+                        return;
+                    }
+
+                    requestAnimationFrame(animate);
+                };
+
+                animate();
+
+                // Hit effect at midpoint
+                setTimeout(() => this.createHitEffect(targetPos), 500);
+            }
+
+            animateSpell(attacker, target, spellType, callback) {
+                const startPos = attacker.group.position.clone();
+                const targetPos = target.group.position.clone();
+
+                // Create spell projectile
+                const geometry = new THREE.SphereGeometry(0.3, 16, 16);
+                const material = new THREE.MeshBasicMaterial({
+                    color: spellType === 'heal' ? 0x4ecdc4 : 0xff6b6b,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                const projectile = new THREE.Mesh(geometry, material);
+                projectile.position.copy(startPos);
+                projectile.position.y = 2;
+                this.scene.add(projectile);
+
+                // Glow effect
+                const glowGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+                const glowMaterial = new THREE.MeshBasicMaterial({
+                    color: spellType === 'heal' ? 0x4ecdc4 : 0xff6b6b,
+                    transparent: true,
+                    opacity: 0.3
+                });
+                const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                projectile.add(glow);
+
+                let progress = 0;
+                const speed = 0.03;
+
+                const animate = () => {
+                    progress += speed;
+
+                    if (progress < 1) {
+                        projectile.position.lerpVectors(startPos, targetPos, progress);
+                        projectile.position.y = 2 + Math.sin(progress * Math.PI) * 3;
+                        projectile.rotation.x += 0.2;
+                        projectile.rotation.y += 0.2;
+                        glow.scale.set(1 + Math.sin(progress * 10) * 0.3, 1 + Math.sin(progress * 10) * 0.3, 1 + Math.sin(progress * 10) * 0.3);
+                        requestAnimationFrame(animate);
+                    } else {
+                        this.scene.remove(projectile);
+                        this.createSpellEffect(targetPos, spellType);
+                        if (callback) callback();
+                    }
+                };
+
+                animate();
+            }
+
+            createHitEffect(position) {
+                const particleCount = 20;
+                const geometry = new THREE.BufferGeometry();
+                const positions = [];
+                const velocities = [];
+
+                for (let i = 0; i < particleCount; i++) {
+                    positions.push(position.x, position.y + 2, position.z);
+                    velocities.push(
+                        (Math.random() - 0.5) * 0.3,
+                        Math.random() * 0.3,
+                        (Math.random() - 0.5) * 0.3
+                    );
+                }
+
+                geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+
+                const material = new THREE.PointsMaterial({
+                    color: 0xff6b6b,
+                    size: 0.3,
+                    transparent: true,
+                    opacity: 1
+                });
+
+                const particles = new THREE.Points(geometry, material);
+                this.scene.add(particles);
+
+                let life = 1;
+                const animate = () => {
+                    life -= 0.02;
+
+                    if (life > 0) {
+                        const positions = particles.geometry.attributes.position.array;
+                        for (let i = 0; i < particleCount; i++) {
+                            positions[i * 3] += velocities[i * 3];
+                            positions[i * 3 + 1] += velocities[i * 3 + 1] - 0.02;
+                            positions[i * 3 + 2] += velocities[i * 3 + 2];
+                        }
+                        particles.geometry.attributes.position.needsUpdate = true;
+                        material.opacity = life;
+                        requestAnimationFrame(animate);
+                    } else {
+                        this.scene.remove(particles);
+                    }
+                };
+
+                animate();
+            }
+
+            createSpellEffect(position, spellType) {
+                const color = spellType === 'heal' ? 0x4ecdc4 : 0xff6b6b;
+
+                const geometry = new THREE.TorusGeometry(1, 0.1, 16, 100);
+                const material = new THREE.MeshBasicMaterial({
+                    color: color,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                const torus = new THREE.Mesh(geometry, material);
+                torus.position.copy(position);
+                torus.position.y = 0.5;
+                torus.rotation.x = Math.PI / 2;
+                this.scene.add(torus);
+
+                let scale = 0.1;
+                let opacity = 0.8;
+
+                const animate = () => {
+                    scale += 0.1;
+                    opacity -= 0.02;
+
+                    if (opacity > 0) {
+                        torus.scale.set(scale, scale, scale);
+                        material.opacity = opacity;
+                        requestAnimationFrame(animate);
+                    } else {
+                        this.scene.remove(torus);
+                    }
+                };
+
+                animate();
+            }
+
+            highlightCharacter(char, active) {
+                if (active) {
+                    char.body.material.emissive = new THREE.Color(0xffd93d);
+                    char.body.material.emissiveIntensity = 0.5;
+                } else {
+                    char.body.material.emissive = new THREE.Color(0x000000);
+                    char.body.material.emissiveIntensity = 0;
+                }
+            }
+
+            animateVictory() {
+                this.characters.forEach((char, index) => {
+                    setTimeout(() => {
+                        let jumpHeight = 0;
+                        let jumpSpeed = 0.2;
+                        let direction = 1;
+
+                        const jump = () => {
+                            jumpHeight += jumpSpeed * direction;
+                            char.group.position.y = jumpHeight;
+                            char.group.rotation.y += 0.1;
+
+                            if (jumpHeight > 2) direction = -1;
+                            if (jumpHeight < 0 && direction === -1) {
+                                char.group.position.y = 0;
+                                return;
+                            }
+
+                            requestAnimationFrame(jump);
+                        };
+
+                        jump();
+                    }, index * 200);
+                });
+            }
+
+            onWindowResize() {
+                this.camera.aspect = window.innerWidth / window.innerHeight;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+
+            animate() {
+                requestAnimationFrame(() => this.animate());
+
+                // Gentle camera sway
+                const time = Date.now() * 0.0005;
+                this.camera.position.x = Math.sin(time) * 2;
+
+                this.renderer.render(this.scene, this.camera);
+            }
+        }
+
+        // AI Bot Logic
+        class AIBot {
+            constructor(character) {
+                this.character = character;
+            }
+
+            decideCombatAction(enemies, allies) {
+                const aliveEnemies = enemies.filter(e => e.hp > 0);
+                if (aliveEnemies.length === 0) return null;
+
+                const roll = Math.random();
+                const needsHealing = this.character.hp < this.character.maxHp * 0.3;
+
+                if (needsHealing && roll < 0.3 && this.character.class === 'Cleric') {
+                    return { type: 'special', target: this.character };
+                }
+
+                if (roll < 0.8) {
+                    const target = aliveEnemies.reduce((weakest, current) =>
+                        current.hp < weakest.hp ? current : weakest
+                    );
+                    return { type: 'attack', target };
+                } else {
+                    const target = aliveEnemies[Math.floor(Math.random() * aliveEnemies.length)];
+                    return { type: 'special', target };
+                }
+            }
+        }
+
+        // Character Creation Component
+        function CharacterCreationModal({ onCreateCharacter, onCancel }) {
+            const [name, setName] = useState('');
+            const [race, setRace] = useState(RACES[0]);
+            const [charClass, setCharClass] = useState(CLASSES[0]);
+
+            return (
+                <div className="modal">
+                    <div className="modal-content">
+                        <h2>⚔️ Create Your Hero</h2>
+
+                        <div className="form-group">
+                            <label>Character Name:</label>
+                            <input
+                                type="text"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                placeholder="Enter a heroic name..."
+                                autoFocus
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label>Race:</label>
+                            <select value={race} onChange={(e) => setRace(e.target.value)}>
+                                {RACES.map(r => <option key={r} value={r}>{r}</option>)}
+                            </select>
+                        </div>
+
+                        <div className="form-group">
+                            <label>Class:</label>
+                            <select value={charClass} onChange={(e) => setCharClass(e.target.value)}>
+                                {CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
+                            </select>
+                        </div>
+
+                        <div className="modal-buttons">
+                            <button className="btn btn-skip" onClick={onCancel}>
+                                <span>Cancel</span>
+                            </button>
+                            <button
+                                className="btn btn-attack"
+                                onClick={() => onCreateCharacter({name, race, class: charClass})}
+                                disabled={!name}
+                            >
+                                <span>Create Hero</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Quest Selection Modal
+        function QuestSelectionModal({ onSelectQuest, onCancel }) {
+            return (
+                <div className="modal">
+                    <div className="modal-content">
+                        <h2>🗺️ Choose Your Quest</h2>
+                        <div className="quest-grid">
+                            {CAMPAIGN_SCENARIOS.map(scenario => (
+                                <div
+                                    key={scenario.id}
+                                    className="quest-card"
+                                    onClick={() => onSelectQuest(scenario)}
+                                >
+                                    <div className="quest-title">{scenario.name}</div>
+                                    <div className="quest-description">{scenario.description}</div>
+                                    <div className="quest-reward">
+                                        ⭐ Rewards: {scenario.xpReward} XP, {scenario.goldReward} Gold
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="modal-buttons">
+                            <button className="btn btn-skip" onClick={onCancel}>
+                                <span>Cancel</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Victory Modal
+        function VictoryModal({ scenario, onContinue }) {
+            return (
+                <div className="modal">
+                    <div className="modal-content victory-screen">
+                        <h2>🎉 Victory! 🎉</h2>
+                        <p style={{color: '#a0a0c0', marginBottom: '20px'}}>
+                            The party has defeated all enemies in {scenario.name}!
+                        </p>
+                        <div className="stats-grid">
+                            <div className="stat-box">
+                                <div className="stat-label">Experience Gained</div>
+                                <div className="stat-value">⭐ {scenario.xpReward}</div>
+                            </div>
+                            <div className="stat-box">
+                                <div className="stat-label">Gold Earned</div>
+                                <div className="stat-value">🪙 {scenario.goldReward}</div>
+                            </div>
+                        </div>
+                        <div className="modal-buttons">
+                            <button className="btn btn-attack" onClick={onContinue}>
+                                <span>Continue Adventure</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Main App Component
+        function App() {
+            const [showCharacterCreation, setShowCharacterCreation] = useState(true);
+            const [showQuestSelection, setShowQuestSelection] = useState(false);
+            const [showVictory, setShowVictory] = useState(false);
+            const [characters, setCharacters] = useState([]);
+            const [currentScenario, setCurrentScenario] = useState(null);
+            const [enemies, setEnemies] = useState([]);
+            const [currentTurn, setCurrentTurn] = useState(0);
+            const [inCombat, setInCombat] = useState(false);
+            const [selectedTarget, setSelectedTarget] = useState(null);
+            const [combatMessage, setCombatMessage] = useState('');
+
+            const sceneRef = useRef(null);
+            const sceneManagerRef = useRef(null);
+            const threeCharactersRef = useRef([]);
+            const threeEnemiesRef = useRef([]);
+
+            useEffect(() => {
+                if (sceneRef.current && !sceneManagerRef.current) {
+                    sceneManagerRef.current = new SceneManager(sceneRef.current);
+                }
+            }, []);
+
+            const rollDice = (sides) => {
+                return Math.floor(Math.random() * sides) + 1;
+            };
+
+            const showMessage = (message, duration = 2000) => {
+                setCombatMessage(message);
+                setTimeout(() => setCombatMessage(''), duration);
+            };
+
+            const createCharacter = (charData) => {
+                const newChar = {
+                    id: Date.now(),
+                    ...charData,
+                    hp: 100,
+                    maxHp: 100,
+                    level: 1,
+                    xp: 0,
+                    gold: 0,
+                    stats: {
+                        strength: rollDice(20),
+                        dexterity: rollDice(20),
+                        constitution: rollDice(20),
+                        intelligence: rollDice(20),
+                        wisdom: rollDice(20),
+                        charisma: rollDice(20)
+                    }
+                };
+
+                setCharacters([newChar]);
+                setShowCharacterCreation(false);
+                setTimeout(() => createAIPartyMembers(newChar), 500);
+            };
+
+            const createAIPartyMembers = (playerChar) => {
+                const botNames = ['Thorin', 'Elara', 'Grimm'];
+                const botClasses = ['Warrior', 'Mage', 'Cleric'];
+
+                const bots = botNames.map((name, index) => ({
+                    id: Date.now() + index + 1,
+                    name,
+                    race: RACES[Math.floor(Math.random() * RACES.length)],
+                    class: botClasses[index],
+                    hp: 100,
+                    maxHp: 100,
+                    level: 1,
+                    xp: 0,
+                    gold: 0,
+                    isBot: true,
+                    stats: {
+                        strength: rollDice(20),
+                        dexterity: rollDice(20),
+                        constitution: rollDice(20),
+                        intelligence: rollDice(20),
+                        wisdom: rollDice(20),
+                        charisma: rollDice(20)
+                    }
+                }));
+
+                setCharacters([playerChar, ...bots]);
+                setShowQuestSelection(true);
+            };
+
+            const startScenario = (scenario) => {
+                setCurrentScenario(scenario);
+                const enemyList = scenario.enemies.map(e => ({...e, id: Math.random()}));
+                setEnemies(enemyList);
+                setInCombat(true);
+                setCurrentTurn(0);
+                setSelectedTarget(null);
+                setShowQuestSelection(false);
+
+                // Create 3D characters
+                if (sceneManagerRef.current) {
+                    sceneManagerRef.current.clearCharacters();
+
+                    threeCharactersRef.current = characters.map((char, index) =>
+                        sceneManagerRef.current.createCharacter(char, index, false)
+                    );
+
+                    threeEnemiesRef.current = enemyList.map((enemy, index) =>
+                        sceneManagerRef.current.createCharacter(enemy, index, true)
+                    );
+                }
+
+                showMessage(`⚔️ ${scenario.name} - Combat Begins!`, 3000);
+            };
+
+            const performAttack = (attacker, target, attackerIndex, targetIndex, isPlayerAttacker) => {
+                const attackRoll = rollDice(20);
+                const damage = rollDice(8) + Math.floor(attacker.stats?.strength / 2 || 5);
+
+                showMessage(`${attacker.name} attacks ${target.name}!`, 1500);
+
+                // Animate attack
+                const attacker3D = isPlayerAttacker ? threeCharactersRef.current[attackerIndex] : threeEnemiesRef.current[attackerIndex];
+                const target3D = isPlayerAttacker ? threeEnemiesRef.current[targetIndex] : threeCharactersRef.current[targetIndex];
+
+                if (sceneManagerRef.current && attacker3D && target3D) {
+                    sceneManagerRef.current.animateAttack(attacker3D, target3D, () => {
+                        if (attackRoll + Math.floor(attacker.stats?.strength / 2 || 5) >= (target.ac || 10)) {
+                            target.hp -= damage;
+                            showMessage(`💥 Hit! ${damage} damage!`, 2000);
+
+                            if (target.hp <= 0) {
+                                target.hp = 0;
+                                showMessage(`☠️ ${target.name} defeated!`, 2000);
+
+                                // Fade out defeated enemy
+                                if (target3D && target3D.group) {
+                                    let opacity = 1;
+                                    const fadeOut = () => {
+                                        opacity -= 0.02;
+                                        if (opacity > 0) {
+                                            target3D.body.material.opacity = opacity;
+                                            target3D.head.material.opacity = opacity;
+                                            target3D.body.material.transparent = true;
+                                            target3D.head.material.transparent = true;
+                                            requestAnimationFrame(fadeOut);
+                                        }
+                                    };
+                                    fadeOut();
+                                }
+                            }
+
+                            updateCombatEntities(attacker, target, isPlayerAttacker, targetIndex);
+                        } else {
+                            showMessage(`❌ Miss!`, 1500);
+                        }
+
+                        setTimeout(() => {
+                            setSelectedTarget(null);
+                            nextTurn();
+                        }, 2000);
+                    });
+                }
+            };
+
+            const performSpecialAbility = (character, target, charIndex, targetIndex, isPlayerAttacker) => {
+                const abilityRoll = rollDice(20);
+                let damage = rollDice(12) + Math.floor(character.stats?.intelligence / 2 || 6);
+
+                const attacker3D = isPlayerAttacker ? threeCharactersRef.current[charIndex] : threeEnemiesRef.current[charIndex];
+                const target3D = character.class === 'Cleric' ? attacker3D : (isPlayerAttacker ? threeEnemiesRef.current[targetIndex] : threeCharactersRef.current[targetIndex]);
+
+                if (character.class === 'Mage') {
+                    showMessage(`${character.name} casts Fireball! 🔥`, 1500);
+                    damage *= 1.5;
+                } else if (character.class === 'Cleric') {
+                    showMessage(`${character.name} channels divine energy! ✨`, 1500);
+                    character.hp = Math.min(character.hp + damage, character.maxHp);
+
+                    if (sceneManagerRef.current && attacker3D) {
+                        sceneManagerRef.current.animateSpell(attacker3D, attacker3D, 'heal', () => {
+                            showMessage(`💚 Healed for ${damage} HP!`, 2000);
+                            updateCombatEntities(character, null, isPlayerAttacker, -1);
+                            setTimeout(() => {
+                                setSelectedTarget(null);
+                                nextTurn();
+                            }, 2000);
+                        });
+                    }
+                    return;
+                } else if (character.class === 'Rogue') {
+                    showMessage(`${character.name} performs sneak attack! 🗡️`, 1500);
+                    damage *= 2;
+                }
+
+                if (sceneManagerRef.current && attacker3D && target3D) {
+                    sceneManagerRef.current.animateSpell(attacker3D, target3D, 'attack', () => {
+                        if (abilityRoll >= (target.ac || 10)) {
+                            target.hp -= Math.floor(damage);
+                            showMessage(`✨ Critical! ${Math.floor(damage)} damage!`, 2000);
+
+                            if (target.hp <= 0) {
+                                target.hp = 0;
+                                showMessage(`☠️ ${target.name} defeated!`, 2000);
+
+                                if (target3D && target3D.group) {
+                                    let opacity = 1;
+                                    const fadeOut = () => {
+                                        opacity -= 0.02;
+                                        if (opacity > 0) {
+                                            target3D.body.material.opacity = opacity;
+                                            target3D.head.material.opacity = opacity;
+                                            target3D.body.material.transparent = true;
+                                            target3D.head.material.transparent = true;
+                                            requestAnimationFrame(fadeOut);
+                                        }
+                                    };
+                                    fadeOut();
+                                }
+                            }
+
+                            updateCombatEntities(character, target, isPlayerAttacker, targetIndex);
+                        } else {
+                            showMessage(`❌ Ability missed!`, 1500);
+                        }
+
+                        setTimeout(() => {
+                            setSelectedTarget(null);
+                            nextTurn();
+                        }, 2000);
+                    });
+                }
+            };
+
+            const updateCombatEntities = (attacker, target, isPlayerAttacker, targetIndex) => {
+                if (isPlayerAttacker) {
+                    setCharacters(prev => prev.map(c =>
+                        c.id === attacker.id ? {...attacker} : c
+                    ));
+                    if (target && targetIndex >= 0) {
+                        setEnemies(prev => prev.map((e, i) =>
+                            i === targetIndex ? {...target} : e
+                        ));
+                    }
+                } else {
+                    setEnemies(prev => prev.map(e =>
+                        e.id === attacker.id ? {...attacker} : e
+                    ));
+                    if (target && targetIndex >= 0) {
+                        setCharacters(prev => prev.map((c, i) =>
+                            i === targetIndex ? {...target} : c
+                        ));
+                    }
+                }
+            };
+
+            const nextTurn = () => {
+                if (enemies.every(e => e.hp <= 0)) {
+                    endCombat(true);
+                    return;
+                }
+
+                if (characters.every(c => c.hp <= 0)) {
+                    endCombat(false);
+                    return;
+                }
+
+                const allCombatants = [...characters, ...enemies].filter(c => c.hp > 0);
+                const nextTurnIndex = (currentTurn + 1) % allCombatants.length;
+                setCurrentTurn(nextTurnIndex);
+
+                const currentCombatant = allCombatants[nextTurnIndex];
+
+                // Highlight current character
+                threeCharactersRef.current.forEach(char => {
+                    if (sceneManagerRef.current) {
+                        sceneManagerRef.current.highlightCharacter(char, char.character.id === currentCombatant.id);
+                    }
+                });
+                threeEnemiesRef.current.forEach(enemy => {
+                    if (sceneManagerRef.current) {
+                        sceneManagerRef.current.highlightCharacter(enemy, enemy.character.id === currentCombatant.id);
+                    }
+                });
+
+                // AI turn
+                if (currentCombatant.isBot || characters.every(c => c.id !== currentCombatant.id)) {
+                    setTimeout(() => {
+                        const isEnemy = enemies.some(e => e.id === currentCombatant.id);
+                        const bot = new AIBot(currentCombatant);
+                        const action = bot.decideCombatAction(
+                            isEnemy ? characters : enemies,
+                            isEnemy ? enemies : characters
+                        );
+
+                        if (action) {
+                            const attackerIndex = isEnemy ?
+                                enemies.findIndex(e => e.id === currentCombatant.id) :
+                                characters.findIndex(c => c.id === currentCombatant.id);
+
+                            const targetIndex = isEnemy ?
+                                characters.findIndex(c => c.id === action.target.id) :
+                                enemies.findIndex(e => e.id === action.target.id);
+
+                            if (action.type === 'attack') {
+                                performAttack(currentCombatant, action.target, attackerIndex, targetIndex, !isEnemy);
+                            } else {
+                                performSpecialAbility(currentCombatant, action.target, attackerIndex, targetIndex, !isEnemy);
+                            }
+                        }
+                    }, 1500);
+                }
+            };
+
+            const endCombat = (victory) => {
+                setInCombat(false);
+
+                if (victory) {
+                    setCharacters(prev => prev.map(c => ({
+                        ...c,
+                        xp: c.xp + currentScenario.xpReward,
+                        gold: c.gold + currentScenario.goldReward,
+                        hp: c.maxHp
+                    })));
+
+                    if (sceneManagerRef.current) {
+                        sceneManagerRef.current.animateVictory();
+                    }
+
+                    setTimeout(() => setShowVictory(true), 2000);
+                } else {
+                    showMessage('💀 Defeat...', 3000);
+                }
+            };
+
+            const handlePlayerAttack = () => {
+                if (!selectedTarget) {
+                    showMessage('⚠️ Select a target!', 1500);
+                    return;
+                }
+
+                const currentCombatant = [...characters, ...enemies].filter(c => c.hp > 0)[currentTurn];
+                const attackerIndex = characters.findIndex(c => c.id === currentCombatant.id);
+                const targetIndex = enemies.findIndex(e => e.id === selectedTarget.id);
+
+                performAttack(currentCombatant, selectedTarget, attackerIndex, targetIndex, true);
+            };
+
+            const handlePlayerSpecial = () => {
+                const currentCombatant = [...characters, ...enemies].filter(c => c.hp > 0)[currentTurn];
+                const attackerIndex = characters.findIndex(c => c.id === currentCombatant.id);
+
+                if (currentCombatant.class === 'Cleric') {
+                    performSpecialAbility(currentCombatant, currentCombatant, attackerIndex, -1, true);
+                } else {
+                    if (!selectedTarget) {
+                        showMessage('⚠️ Select a target!', 1500);
+                        return;
+                    }
+                    const targetIndex = enemies.findIndex(e => e.id === selectedTarget.id);
+                    performSpecialAbility(currentCombatant, selectedTarget, attackerIndex, targetIndex, true);
+                }
+            };
+
+            const allCombatants = [...characters, ...enemies].filter(c => c.hp > 0);
+            const currentCombatant = allCombatants[currentTurn];
+            const isPlayerTurn = currentCombatant && !currentCombatant.isBot && characters.some(c => c.id === currentCombatant.id);
+
+            return (
+                <>
+                    <div id="three-container" ref={sceneRef}></div>
+
+                    <div className="ui-overlay">
+                        <div className="header">
+                            <h1>⚔️ D&D CAMPAIGN MANAGER ⚔️</h1>
+                            <p>Epic 3D Adventures Await</p>
+                        </div>
+
+                        {characters.length > 0 && (
+                            <div className="party-panel">
+                                <div className="panel-title">⚔️ Party</div>
+                                {characters.map((char) => (
+                                    <div
+                                        key={char.id}
+                                        className={`character-card ${currentCombatant?.id === char.id ? 'active' : ''}`}
+                                    >
+                                        <div className="char-name">
+                                            {char.name} {char.isBot && '🤖'}
+                                        </div>
+                                        <div className="char-info">
+                                            Lv.{char.level} {char.race} {char.class}
+                                        </div>
+                                        <div className="health-bar">
+                                            <div
+                                                className="health-fill"
+                                                style={{width: `${(char.hp / char.maxHp) * 100}%`}}
+                                            >
+                                                {char.hp}/{char.maxHp}
+                                            </div>
+                                        </div>
+                                        <div style={{fontSize: '0.8em', color: '#a0a0c0', marginTop: '5px'}}>
+                                            XP: {char.xp} | Gold: {char.gold} 🪙
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {inCombat && enemies.length > 0 && (
+                            <div className="enemy-panel">
+                                <div className="panel-title" style={{color: '#ff6b6b'}}>💀 Enemies</div>
+                                {enemies.map((enemy, index) => (
+                                    <div
+                                        key={enemy.id}
+                                        className={`enemy-card ${selectedTarget?.id === enemy.id ? 'selected' : ''} ${enemy.hp <= 0 ? 'defeated' : ''}`}
+                                        onClick={() => {
+                                            if (enemy.hp > 0 && isPlayerTurn) {
+                                                setSelectedTarget(enemy);
+                                            }
+                                        }}
+                                    >
+                                        <div className="char-name" style={{color: '#ff6b6b'}}>
+                                            {enemy.name}
+                                        </div>
+                                        <div className="health-bar">
+                                            <div
+                                                className="health-fill"
+                                                style={{width: `${(enemy.hp / enemy.maxHp) * 100}%`}}
+                                            >
+                                                {enemy.hp}/{enemy.maxHp}
+                                            </div>
+                                        </div>
+                                        <div style={{fontSize: '0.8em', color: '#a0a0c0', marginTop: '5px'}}>
+                                            🛡️ AC: {enemy.ac} | ⚔️ ATK: +{enemy.attack}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {inCombat && isPlayerTurn && (
+                            <div className="controls-panel">
+                                <div className="turn-indicator">
+                                    🎯 {currentCombatant.name}'s Turn
+                                </div>
+                                <button
+                                    className="btn btn-attack"
+                                    onClick={handlePlayerAttack}
+                                    disabled={!selectedTarget}
+                                >
+                                    <span>⚔️ Attack</span>
+                                </button>
+                                <button
+                                    className="btn btn-special"
+                                    onClick={handlePlayerSpecial}
+                                    disabled={!selectedTarget && currentCombatant.class !== 'Cleric'}
+                                >
+                                    <span>✨ Special</span>
+                                </button>
+                                <button
+                                    className="btn btn-skip"
+                                    onClick={() => {
+                                        setSelectedTarget(null);
+                                        nextTurn();
+                                    }}
+                                >
+                                    <span>⏭️ Skip</span>
+                                </button>
+                            </div>
+                        )}
+
+                        {!inCombat && characters.length > 0 && !showVictory && (
+                            <div className="controls-panel">
+                                <button
+                                    className="btn btn-attack"
+                                    onClick={() => setShowQuestSelection(true)}
+                                >
+                                    <span>🗺️ Select Quest</span>
+                                </button>
+                            </div>
+                        )}
+
+                        {combatMessage && (
+                            <div className="combat-log">
+                                {combatMessage}
+                            </div>
+                        )}
+
+                        {showCharacterCreation && (
+                            <CharacterCreationModal
+                                onCreateCharacter={createCharacter}
+                                onCancel={() => {}}
+                            />
+                        )}
+
+                        {showQuestSelection && (
+                            <QuestSelectionModal
+                                onSelectQuest={startScenario}
+                                onCancel={() => setShowQuestSelection(false)}
+                            />
+                        )}
+
+                        {showVictory && currentScenario && (
+                            <VictoryModal
+                                scenario={currentScenario}
+                                onContinue={() => {
+                                    setShowVictory(false);
+                                    setCurrentScenario(null);
+                                    setEnemies([]);
+                                    if (sceneManagerRef.current) {
+                                        sceneManagerRef.current.clearCharacters();
+                                    }
+                                }}
+                            />
+                        )}
+                    </div>
+                </>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
