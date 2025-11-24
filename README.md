@@ -1,10 +1,10 @@
-# Copilot Agent 365 - Enterprise AI Assistant
-<a href='https://codespaces.new/kody-w/Copilot-Agent-365?quickstart=1'><img src='https://github.com/codespaces/badge.svg' alt='Open in GitHub Codespaces' style='max-width: 100%;'></a>
+# RAPP - Rapid Agent Prototyping Platform/Pattern
+<a href='https://codespaces.new/kody-w/m365-agents-for-python?quickstart=1'><img src='https://github.com/codespaces/badge.svg' alt='Open in GitHub Codespaces' style='max-width: 100%;'></a>
 
 ## 🚀 One-Click Setup - Fully Automated!
 
 ### Step 1: Deploy to Azure (1 minute)
-<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fkody-w%2FCopilot-Agent-365%2Fmain%2Fazuredeploy.json" target="_blank">
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fkody-w%2Fm365-agents-for-python%2Fmain%2FRAPP%2Fazuredeploy.json" target="_blank">
   <img src="https://aka.ms/deploytoazurebutton" alt="Deploy to Azure"/>
 </a>
 
@@ -35,20 +35,22 @@ If you get a security error, first run: `Set-ExecutionPolicy RemoteSigned -Scope
 bash setup.sh
 ```
 
-**That's it!** Your AI assistant is now running both in Azure and locally with all settings automatically configured. 🎉
+**That's it!** Your RAPP agent platform is now running both in Azure and locally with all settings automatically configured. 🎉
 
 ---
 
 ## ✨ What You Get
 
-- 🧠 **GPT-4 Powered** - Latest Azure OpenAI models
+- 🧠 **OpenAI-Compatible** - Works with any OpenAI-compatible API (Azure OpenAI, OpenAI, local models, etc.)
 - 💾 **Persistent Memory** - Remembers conversations across sessions
 - 🔐 **Enterprise Security** - Function-level authentication
 - ⚡ **Auto-scaling** - Serverless Azure Functions
 - 🎨 **Web Chat Interface** - Beautiful UI included
 - 🔧 **Zero Configuration** - All Azure settings automatically configured
-- 💼 **Microsoft 365 Integration** - Optional deployment to Teams & M365 Copilot (via Power Platform)
+- 🚀 **Rapid Prototyping** - Quickly build and test AI agents for any use case
+- 💼 **Optional M365 Integration** - Deploy to Teams & M365 Copilot via Power Platform
 - 🤖 **Multi-Channel Support** - Web, Teams, M365 Copilot, or direct API access
+- 🔌 **Platform Agnostic** - While Azure-optimized, the pattern works anywhere
 
 ## 🎯 Key Features
 
@@ -94,22 +96,22 @@ Once setup is complete, you can start your bot anytime with:
 
 ### Windows
 ```powershell
-cd Copilot-Agent-365
+cd RAPP
 .\run.ps1
 ```
 
 ### Mac/Linux
 ```bash
-cd Copilot-Agent-365
+cd RAPP
 ./run.sh
 ```
 
 Then:
 - **Local API**: http://localhost:7071/api/businessinsightbot_function
-- **Web Chat**: Open `client/index.html` in your browser
+- **Web Chat**: Open `index.html` in your browser
 - **Azure URL**: Automatically shown after setup (includes auth key)
 
-## 💬 Test Your Bot
+## 💬 Test Your Agent Platform
 
 ### PowerShell (Windows)
 ```powershell
@@ -128,13 +130,13 @@ curl -X POST http://localhost:7071/api/businessinsightbot_function \
 
 ## 🚀 Microsoft 365 & Teams Integration (Optional)
 
-Your bot can run in two modes:
-- **Standalone Mode** (what you just set up): Direct REST API access via Azure Functions
-- **Power Platform Mode**: Full Microsoft 365 integration with Teams chat and M365 Copilot
+RAPP can run in two modes:
+- **Standalone Mode** (primary pattern): Direct REST API access via Azure Functions
+- **Power Platform Mode** (optional): Full Microsoft 365 integration with Teams chat and M365 Copilot
 
 ### Why Integrate with Microsoft 365?
 
-Deploy your AI assistant where your users already work:
+Deploy your AI agents where your users already work:
 - 💬 **Microsoft Teams** - Chat directly in Teams channels or personal chats
 - 🤖 **M365 Copilot** - Deploy as a declarative agent in Microsoft 365 Copilot
 - 👤 **User Context** - Automatically access user profile info (name, email, department)
@@ -159,8 +161,8 @@ Deploy your AI assistant where your users already work:
 
 #### Step 1: Download Power Platform Solution
 
-1. Go to [Copilot-Agent-365 Releases](https://github.com/kody-w/Copilot-Agent-365/releases)
-2. Download `Copilot365_PowerPlatform_Solution.zip`
+1. Go to [RAPP Releases](https://github.com/kody-w/m365-agents-for-python/releases)
+2. Download `RAPP_PowerPlatform_Solution.zip`
 3. Open [Power Apps](https://make.powerapps.com)
 4. Navigate to **Solutions** → **Import Solution**
 5. Upload the ZIP file and follow the wizard
@@ -168,7 +170,7 @@ Deploy your AI assistant where your users already work:
 #### Step 2: Configure Power Automate Flow
 
 1. Open Power Automate: [flow.microsoft.com](https://flow.microsoft.com)
-2. Go to **My flows** → Find **"Copilot365-Backend-Connector"**
+2. Go to **My flows** → Find **"RAPP-Backend-Connector"**
 3. Edit the flow and update the HTTP action:
    - **URI**: `https://your-function-app.azurewebsites.net/api/businessinsightbot_function`
    - **Headers**:
@@ -362,7 +364,7 @@ The setup script automatically includes:
 ## 📁 Project Structure
 
 ```
-Copilot-Agent-365/
+RAPP/
 ├── function_app.py            # Main Azure Function
 ├── agents/                    # AI agents
 │   ├── basic_agent.py        # Base agent class
@@ -370,12 +372,10 @@ Copilot-Agent-365/
 │   └── manage_memory_agent.py
 ├── utils/                     # Utilities
 │   └── azure_file_storage.py
-├── client/                    # Web UI
-│   └── index.html
+├── index.html                 # Web UI
 ├── requirements.txt           # Python dependencies
 ├── host.json                  # Azure Functions config
 ├── run.ps1                    # Windows run script (auto-created)
-├── run.bat                    # Windows batch script (auto-created)
 ├── run.sh                     # Mac/Linux run script (auto-created)
 └── local.settings.json        # Azure settings (auto-created with YOUR values)
 ```
@@ -423,18 +423,18 @@ Copilot-Agent-365/
 
 ## 🆕 What's New
 
+### Version 3.0 - RAPP Rebranding & Platform Focus
+- 🚀 **RAPP Platform** - Rebranded as Rapid Agent Prototyping Platform/Pattern
+- 🎯 **Standalone First** - Standalone mode is now the primary deployment pattern
+- 🔌 **Platform Agnostic** - Pattern works on any cloud platform, not just Azure
+- 📚 **Clarified Focus** - Rapid agent prototyping for any use case
+- 💡 **Optional M365** - Power Platform integration positioned as optional enhancement
+
 ### Version 2.1 - Power Platform Integration
 - 🚀 **Microsoft 365 Integration** - Deploy to Teams and M365 Copilot
 - 🤖 **Dual-mode support** - Run standalone or with Power Platform
 - 👤 **User context enrichment** - Automatic Office 365 profile integration
 - 📚 **Comprehensive guides** - Full setup documentation for both modes
-
-### Version 2.0 - Full Automation
-- ✨ **Auto-configuration** - No manual editing of settings
-- 🔧 **Python path fix** - Handles "Program Files" spaces
-- 🐍 **Python 3.11 auto-install** - Windows script installs if missing
-- 📦 **Fixed package versions** - Prevents compatibility issues
-- 🚀 **True one-click deploy** - Everything configured automatically
 
 ## 🗺️ Product Roadmap
 
@@ -590,7 +590,7 @@ Copilot-Agent-365/
 
 ### Request a Feature
 
-Have an idea? [Submit a feature request](https://github.com/kody-w/Copilot-Agent-365/issues/new?labels=enhancement) or join our [discussions](https://github.com/kody-w/Copilot-Agent-365/discussions) to shape the future of Copilot Agent 365!
+Have an idea? [Submit a feature request](https://github.com/kody-w/m365-agents-for-python/issues/new?labels=enhancement) or join our [discussions](https://github.com/kody-w/m365-agents-for-python/discussions) to shape the future of RAPP!
 
 ## 🤝 Contributing
 
@@ -606,23 +606,25 @@ MIT License - See [LICENSE](LICENSE)
 
 ## 🆘 Support
 
-- **Issues**: [GitHub Issues](https://github.com/kody-w/Copilot-Agent-365/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/kody-w/Copilot-Agent-365/discussions)
+- **Issues**: [GitHub Issues](https://github.com/kody-w/m365-agents-for-python/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/kody-w/m365-agents-for-python/discussions)
 
-## 🌟 Why This Project?
+## 🌟 Why RAPP?
 
-This project makes enterprise AI accessible to everyone by:
-- **Removing complexity** - One-click deployment with zero configuration
-- **Handling all setup** - Automatically installs and configures everything
-- **Providing memory** - Your AI remembers context across conversations
-- **Enabling customization** - Easy to add your own agents and features
+RAPP makes AI agent development accessible to everyone by:
+- **Rapid Prototyping** - Build and test AI agents in minutes, not days
+- **Zero Configuration** - One-click deployment with automatic setup
+- **Persistent Memory** - Your agents remember context across conversations
+- **Modular Design** - Easy to add, remove, and customize agents
+- **Platform Agnostic** - Pattern works anywhere, not tied to specific cloud
+- **Production Ready** - Enterprise-grade security and scalability built-in
 
 ---
 
 <p align="center">
-  <strong>Deploy your own AI assistant in under 3 minutes!</strong>
+  <strong>Build and deploy AI agents in under 3 minutes!</strong>
   <br><br>
-  <a href="https://github.com/kody-w/Copilot-Agent-365">⭐ Star this repo</a> if it helped you!
+  <a href="https://github.com/kody-w/m365-agents-for-python">⭐ Star this repo</a> if it helped you!
   <br><br>
-  Made with ❤️ for the community
+  Made with ❤️ for rapid prototyping
 </p>

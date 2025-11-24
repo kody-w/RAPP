@@ -1,10 +1,10 @@
-# Copilot Agent 365 - GitHub Pages
+# RAPP - GitHub Pages
 
 Live Demo: **https://kody-w.github.io/RAPP/**
 
 ## 🌐 GitHub Pages Deployment
 
-This folder contains the static GitHub Pages deployment of the Copilot Agent 365 platform.
+This folder contains the static GitHub Pages deployment of the RAPP (Rapid Agent Prototyping Platform).
 
 ### What's Included
 
@@ -230,4 +230,4 @@ Visit: **https://kody-w.github.io/RAPP/**
 
 ---
 
-Built with ❤️ using Azure Functions, OpenAI GPT-4, and GitHub Pages
+Built with ❤️ using Azure Functions, OpenAI-compatible APIs, and GitHub Pages

@@ -4,11 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Copilot Agent 365 is an enterprise AI assistant built on Azure Functions with GPT-4 integration. It features a modular agent architecture with persistent memory across sessions using Azure File Storage. The system supports multi-user conversations with user-specific and shared memory contexts.
+RAPP (Rapid Agent Prototyping Platform/Pattern) is a flexible AI agent framework built on Azure Functions with OpenAI-compatible API integration. It features a modular agent architecture with persistent memory across sessions using Azure File Storage. The system supports multi-user conversations with user-specific and shared memory contexts, enabling rapid prototyping and deployment of AI agents for any use case. Works with Azure OpenAI, OpenAI, or any OpenAI-compatible endpoint.
 
 **Deployment Options:**
-- **Standalone Mode**: Direct API access via Azure Functions (REST endpoint)
-- **Power Platform Integration**: Full Microsoft 365 integration via Copilot Studio, Power Automate, Teams, and M365 Copilot
+- **Standalone Mode**: Direct API access via Azure Functions (REST endpoint) - Primary deployment pattern
+- **Power Platform Integration**: Optional Microsoft 365 integration via Copilot Studio, Power Automate, Teams, and M365 Copilot
 
 ## Development Commands
 
@@ -105,7 +105,7 @@ The complete solution spans multiple layers when deployed with Power Platform in
 
 **Data Layer:**
 - Azure Storage (agent memory and file storage)
-- Azure OpenAI (GPT-4o for AI processing)
+- OpenAI-Compatible API (Azure OpenAI, OpenAI, or local models for AI processing)
 - CRM Systems (business data)
 
 ### Core Components
@@ -203,8 +203,8 @@ Required settings:
 - `AZURE_OPENAI_DEPLOYMENT_NAME`: Model deployment name (e.g., "gpt-4o", "gpt-5-chat")
 - `AZURE_OPENAI_API_VERSION`: API version (e.g., "2025-01-01-preview")
 - `AzureWebJobsStorage`: Azure Storage connection string for file shares
-- `ASSISTANT_NAME`: Bot display name (default: "Copilot Agent 365")
-- `CHARACTERISTIC_DESCRIPTION`: Bot personality and capabilities description
+- `ASSISTANT_NAME`: Bot display name (default: "RAPP")
+- `CHARACTERISTIC_DESCRIPTION`: Bot personality and capabilities description (default: "Rapid Agent Prototyping Platform - A flexible AI agent framework")
 
 **Example local.settings.json structure:**
 ```json
@@ -217,8 +217,8 @@ Required settings:
     "AZURE_OPENAI_ENDPOINT": "https://your-resource.openai.azure.com/",
     "AZURE_OPENAI_DEPLOYMENT_NAME": "gpt-4o",
     "AZURE_OPENAI_API_VERSION": "2025-01-01-preview",
-    "ASSISTANT_NAME": "My Custom Assistant",
-    "CHARACTERISTIC_DESCRIPTION": "A helpful enterprise AI assistant"
+    "ASSISTANT_NAME": "RAPP",
+    "CHARACTERISTIC_DESCRIPTION": "Rapid Agent Prototyping Platform - A flexible AI agent framework"
   }
 }
 ```
@@ -401,11 +401,11 @@ The solution includes a Power Automate flow that connects Copilot Studio to your
 
 ### Power Automate Flow Details
 
-**Flow Name:** Talk to MAC (Migration Assessment Copilot)
+**Flow Name:** RAPP Backend Connector
 
 **Trigger:** When Copilot Studio calls the flow
 - Receives user input and conversation context
-- Passes Office 365 user information
+- Passes Office 365 user information (if using Power Platform integration)
 
 **Actions:**
 1. **Initialize Variables** - Set up conversation tracking
@@ -547,12 +547,13 @@ class PersonalizedAgent(BasicAgent):
 - **Never commit `local.settings.json`** - contains secrets
 - **Python 3.11 required** - Python 3.13+ causes Azure Functions compatibility issues
 - **Agent files from Azure Storage** are loaded into `/tmp/agents` and `/tmp/multi_agents` at runtime
-- **Default GUID** is used when no user GUID provided to maintain backward compatibility
+- **Default GUID** (`c0p110t0-aaaa-bbbb-cccc-123456789abc`) is used when no user GUID provided
 - **Response format** must include `|||VOICE|||` delimiter for proper voice/formatted response splitting
 - **Memory context** automatically switches based on user GUID in request
-- **Power Platform integration** is optional - system works standalone via REST API
+- **Power Platform integration** is optional - RAPP works standalone via REST API as primary pattern
 - **Function keys should be rotated** regularly for security
 - **Monitor API usage** to avoid unexpected costs
+- **RAPP is platform-agnostic** - while examples show Azure deployment, the pattern works on any cloud platform
 
 ## Utilities
 

@@ -1,6 +1,6 @@
-# Copilot Agent 365 - Complete Documentation
+# RAPP - Complete Documentation
 
-Welcome to the complete documentation for Copilot Agent 365, an enterprise AI assistant platform built on Azure Functions with GPT-4 integration and Microsoft 365 capabilities.
+Welcome to the complete documentation for RAPP (Rapid Agent Prototyping Platform), a flexible AI agent framework built on Azure Functions with OpenAI-compatible API integration and optional Microsoft 365 capabilities.
 
 ## 📚 Documentation Index
 
@@ -34,20 +34,22 @@ Welcome to the complete documentation for Copilot Agent 365, an enterprise AI as
 - Deploying to production? → [Deployment Guide](DEPLOYMENT.md)
 - Security concerns? → [Security Best Practices](SECURITY.md)
 
-## 🌟 What is Copilot Agent 365?
+## 🌟 What is RAPP?
 
-Copilot Agent 365 is an enterprise-grade AI assistant that can be deployed in two modes:
+RAPP (Rapid Agent Prototyping Platform/Pattern) is a flexible AI agent framework that can be deployed in two modes:
 
-1. **Standalone Mode**: Direct REST API access via Azure Functions
-2. **Power Platform Mode**: Full Microsoft 365 integration with Teams and M365 Copilot
+1. **Standalone Mode**: Direct REST API access via Azure Functions (primary pattern)
+2. **Power Platform Mode**: Optional Microsoft 365 integration with Teams and M365 Copilot
 
 ### Key Features
 
-- 🧠 **GPT-4 Powered** - Latest Azure OpenAI models
+- 🧠 **OpenAI-Compatible** - Works with any OpenAI-compatible API (Azure OpenAI, OpenAI, local models)
 - 💾 **Persistent Memory** - Remembers context across sessions
 - 🤖 **Modular Agents** - Extensible agent architecture
-- 💼 **M365 Integration** - Optional Teams and M365 Copilot deployment
+- 🚀 **Rapid Prototyping** - Build and test agents quickly
+- 💼 **Optional M365 Integration** - Deploy to Teams and M365 Copilot if needed
 - 🔐 **Enterprise Security** - Function-level authentication
+- 🔌 **Platform Agnostic** - Pattern works on any cloud platform
 - ⚡ **Auto-scaling** - Serverless architecture
 
 ## 🎯 Common Use Cases

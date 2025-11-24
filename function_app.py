@@ -230,8 +230,8 @@ def load_agents_from_folder(user_guid=None):
 class Assistant:
     def __init__(self, declared_agents):
         self.config = {
-            'assistant_name': str(os.environ.get('ASSISTANT_NAME', 'BusinessInsightBot')),
-            'characteristic_description': str(os.environ.get('CHARACTERISTIC_DESCRIPTION', 'helpful business assistant'))
+            'assistant_name': str(os.environ.get('ASSISTANT_NAME', 'RAPP')),
+            'characteristic_description': str(os.environ.get('CHARACTERISTIC_DESCRIPTION', 'Rapid Agent Prototyping Platform - A flexible AI agent framework'))
         }
 
         try:
@@ -443,7 +443,7 @@ class Assistant:
             "role": "system",
             "content": f"""
 <identity>
-You are a Microsoft Copilot assistant named {str(self.config.get('assistant_name', 'Assistant'))}, operating within Microsoft Teams.
+You are an AI assistant named {str(self.config.get('assistant_name', 'Assistant'))}, part of the RAPP (Rapid Agent Prototyping Platform). You can operate via direct API, web interface, Microsoft Teams, or M365 Copilot depending on how users access you.
 </identity>
 
 <shared_memory_output>

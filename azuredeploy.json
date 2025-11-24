@@ -8,7 +8,7 @@
     },
     "functionAppName": {
       "type": "string",
-      "defaultValue": "[concat('copilot365-', uniqueString(resourceGroup().id))]",
+      "defaultValue": "[concat('rapp-', uniqueString(resourceGroup().id))]",
       "metadata": {
         "description": "Name of the Function App (must be globally unique)"
       }
@@ -62,14 +62,14 @@
     },
     "assistantName": {
       "type": "string",
-      "defaultValue": "Copilot Agent 365",
+      "defaultValue": "RAPP",
       "metadata": {
         "description": "Name for the AI Assistant"
       }
     },
     "characteristicDescription": {
       "type": "string",
-      "defaultValue": "Enterprise AI assistant integrated with Microsoft 365",
+      "defaultValue": "Rapid Agent Prototyping Platform - A flexible AI agent framework",
       "metadata": {
         "description": "Description of the assistant's characteristics"
       }
