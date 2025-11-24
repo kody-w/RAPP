@@ -2947,18 +2947,20 @@ Once downloaded:
 
                     // Check if demo file exists and add demo info
                     const demoFileName = `${agentIdWithUnderscores}_demo.html`;
-                    const demoUrl = `${GITHUB_CONFIG.rawUrl}/agent_stacks/${categoryDir}/${stackName}/demos/${demoFileName}`;
+                    const rawDemoUrl = `${GITHUB_CONFIG.rawUrl}/agent_stacks/${categoryDir}/${stackName}/demos/${demoFileName}`;
+                    // Use htmlpreview.github.io to properly render HTML
+                    const renderableDemoUrl = `https://htmlpreview.github.io/?${rawDemoUrl}`;
 
                     try {
-                        const demoCheck = await fetch(demoUrl, { method: 'HEAD' });
+                        const demoCheck = await fetch(rawDemoUrl, { method: 'HEAD' });
                         if (demoCheck.ok) {
                             metadata.demo = {
                                 available: true,
                                 title: `${agent.name} Interactive Demo`,
                                 description: 'Experience this stack with an interactive demonstration showcasing real-world scenarios.',
-                                url: demoUrl
+                                url: renderableDemoUrl
                             };
-                            console.log(`✅ Demo found for ${agent.id}:`, demoUrl);
+                            console.log(`✅ Demo found for ${agent.id}:`, renderableDemoUrl);
                         }
                     } catch (demoError) {
                         console.log(`ℹ️ No demo available for ${agent.id}`);
@@ -2972,15 +2974,17 @@ Once downloaded:
 
             // Return default metadata with demo check
             const demoFileName = `${agentIdWithUnderscores}_demo.html`;
-            const demoUrl = `${GITHUB_CONFIG.rawUrl}/agent_stacks/${categoryDir}/${stackName}/demos/${demoFileName}`;
+            const rawDemoUrl = `${GITHUB_CONFIG.rawUrl}/agent_stacks/${categoryDir}/${stackName}/demos/${demoFileName}`;
+            // Use htmlpreview.github.io to properly render HTML
+            const renderableDemoUrl = `https://htmlpreview.github.io/?${rawDemoUrl}`;
 
             // Try to check if demo exists even if metadata fails
             let demoAvailable = false;
             try {
-                const demoCheck = await fetch(demoUrl, { method: 'HEAD' });
+                const demoCheck = await fetch(rawDemoUrl, { method: 'HEAD' });
                 demoAvailable = demoCheck.ok;
                 if (demoAvailable) {
-                    console.log(`✅ Demo found for ${agent.id} (no metadata):`, demoUrl);
+                    console.log(`✅ Demo found for ${agent.id} (no metadata):`, renderableDemoUrl);
                 }
             } catch (e) {
                 console.log(`ℹ️ No demo available for ${agent.id}`);
@@ -3006,7 +3010,7 @@ Once downloaded:
                     available: true,
                     title: `${agent.name} Interactive Demo`,
                     description: 'Experience this stack with an interactive demonstration showcasing real-world scenarios.',
-                    url: demoUrl
+                    url: renderableDemoUrl
                 } : {
                     available: false
                 }
