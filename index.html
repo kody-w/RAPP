@@ -1010,7 +1010,7 @@
       overflow-y: auto;
       overflow-x: hidden;
       padding: var(--space-xl);
-      padding-bottom: calc(var(--input-container-height) + var(--safe-area-bottom) + var(--space-xl));
+      padding-bottom: calc(var(--input-container-height) + var(--safe-area-bottom) + 100px);
       scroll-behavior: smooth;
       position: relative;
     }
@@ -2360,6 +2360,603 @@
         display: none;
       }
     }
+
+    /* ============================================ */
+    /* P2P MESH NETWORK STYLES */
+    /* ============================================ */
+
+    .mesh-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(5px);
+      z-index: 10000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .mesh-modal.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .mesh-panel {
+      background: var(--gray-20);
+      border-radius: 16px;
+      width: 90%;
+      max-width: 1200px;
+      max-height: 90vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      animation: slideUp 0.3s ease;
+    }
+
+    body.dark .mesh-panel {
+      background: var(--gray-30);
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(40px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .mesh-header {
+      padding: 24px;
+      border-bottom: 2px solid var(--gray-40);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    body.dark .mesh-header {
+      border-bottom-color: var(--gray-50);
+    }
+
+    .mesh-title {
+      font-size: 24px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--primary);
+    }
+
+    .mesh-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: var(--gray-80);
+      cursor: pointer;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+    }
+
+    .mesh-close:hover {
+      background: var(--gray-40);
+      color: var(--gray-100);
+    }
+
+    .mesh-content {
+      padding: 24px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .mesh-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .mesh-stat-card {
+      background: var(--gray-30);
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      border: 2px solid var(--gray-40);
+    }
+
+    body.dark .mesh-stat-card {
+      background: var(--gray-40);
+      border-color: var(--gray-50);
+    }
+
+    .mesh-stat-value {
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+
+    .mesh-stat-label {
+      font-size: 12px;
+      color: var(--gray-80);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .mesh-section {
+      margin-bottom: 32px;
+    }
+
+    .mesh-section-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--gray-100);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .mesh-peers {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+    }
+
+    .mesh-peer {
+      background: var(--gray-30);
+      border: 2px solid var(--gray-40);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: all 0.2s ease;
+    }
+
+    body.dark .mesh-peer {
+      background: var(--gray-40);
+      border-color: var(--gray-50);
+    }
+
+    .mesh-peer:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .mesh-peer-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .mesh-peer-icon.chrome {
+      background: linear-gradient(135deg, #4285f4, #34a853);
+    }
+
+    .mesh-peer-icon.firefox {
+      background: linear-gradient(135deg, #ff7139, #e66000);
+    }
+
+    .mesh-peer-icon.safari {
+      background: linear-gradient(135deg, #006aff, #0099ff);
+    }
+
+    .mesh-peer-icon.edge {
+      background: linear-gradient(135deg, #0078d4, #00bcf2);
+    }
+
+    .mesh-peer-icon.unknown {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    }
+
+    .mesh-peer-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .mesh-peer-name {
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: var(--gray-100);
+    }
+
+    .mesh-peer-id {
+      font-size: 11px;
+      font-family: monospace;
+      color: var(--gray-80);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mesh-peer-status {
+      font-size: 12px;
+      margin-top: 4px;
+      color: var(--gray-80);
+    }
+
+    .mesh-peer-badge {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+
+    .mesh-peer-badge.connected {
+      background: rgba(76, 175, 80, 0.15);
+      color: #4caf50;
+      border: 1px solid rgba(76, 175, 80, 0.3);
+    }
+
+    .mesh-peer-badge.discovered {
+      background: rgba(255, 152, 0, 0.15);
+      color: #ff9800;
+      border: 1px solid rgba(255, 152, 0, 0.3);
+    }
+
+    .mesh-log {
+      background: var(--gray-100);
+      color: #4caf50;
+      border-radius: 12px;
+      padding: 16px;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    body.dark .mesh-log {
+      background: var(--gray-20);
+    }
+
+    .mesh-log-entry {
+      margin-bottom: 8px;
+      display: flex;
+      gap: 12px;
+    }
+
+    .mesh-log-time {
+      color: var(--primary);
+      flex-shrink: 0;
+    }
+
+    .mesh-log-message.success {
+      color: #4caf50;
+    }
+
+    .mesh-log-message.info {
+      color: #2196f3;
+    }
+
+    .mesh-log-message.warning {
+      color: #ff9800;
+    }
+
+    .mesh-log-message.error {
+      color: #f44336;
+    }
+
+    .mesh-actions {
+      display: flex;
+      gap: 12px;
+      padding: 20px 24px;
+      border-top: 2px solid var(--gray-40);
+    }
+
+    body.dark .mesh-actions {
+      border-top-color: var(--gray-50);
+    }
+
+    .mesh-btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+
+    .mesh-btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .mesh-btn-primary:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(116, 39, 116, 0.3);
+    }
+
+    .mesh-btn-secondary {
+      background: var(--gray-40);
+      color: var(--gray-100);
+    }
+
+    .mesh-btn-secondary:hover {
+      background: var(--gray-50);
+    }
+
+    .mesh-notification {
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      background: white;
+      border: 2px solid var(--gray-30);
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      z-index: 10001;
+      opacity: 0;
+      transform: translateX(400px);
+      transition: all 0.3s ease;
+      max-width: 400px;
+    }
+
+    body.dark .mesh-notification {
+      background: var(--gray-30);
+      border-color: var(--gray-50);
+    }
+
+    .mesh-notification.active {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .mesh-notification.success {
+      border-left: 4px solid #4caf50;
+    }
+
+    .mesh-notification.error {
+      border-left: 4px solid #f44336;
+    }
+
+    .mesh-notification.info {
+      border-left: 4px solid #2196f3;
+    }
+
+    .mesh-notification i {
+      font-size: 20px;
+    }
+
+    .mesh-notification.success i {
+      color: #4caf50;
+    }
+
+    .mesh-notification.error i {
+      color: #f44336;
+    }
+
+    .mesh-notification.info i {
+      color: #2196f3;
+    }
+
+    /* Mesh Status Banner */
+    .mesh-status-banner {
+      position: fixed;
+      top: var(--header-height);
+      left: 0;
+      right: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 16px 20px;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 9999;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      animation: slideDown 0.3s ease;
+      gap: 20px;
+    }
+
+    .mesh-status-banner.active {
+      display: flex;
+    }
+
+    .mesh-banner-content {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex: 1;
+    }
+
+    .mesh-banner-icon {
+      font-size: 24px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .mesh-banner-text {
+      flex: 1;
+    }
+
+    .mesh-banner-title {
+      font-weight: 700;
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+
+    .mesh-banner-subtitle {
+      font-size: 13px;
+      opacity: 0.9;
+    }
+
+    .mesh-banner-peers {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .mesh-banner-peer-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .mesh-banner-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .mesh-banner-btn {
+      padding: 8px 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .mesh-banner-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    .mesh-banner-close {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: background 0.2s ease;
+    }
+
+    .mesh-banner-close:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Live Sync Indicator */
+    .mesh-sync-indicator {
+      position: fixed;
+      top: calc(var(--header-height) + 10px);
+      right: 20px;
+      background: #4caf50;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      z-index: 10000;
+      box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+      animation: slideInRight 0.3s ease;
+    }
+
+    .mesh-sync-indicator.active {
+      display: flex;
+    }
+
+    .mesh-sync-spinner {
+      width: 12px;
+      height: 12px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(100px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    /* Mesh Active Indicator on Header Button */
+    #mesh-status-btn.mesh-active {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      animation: pulseGlow 2s ease-in-out infinite;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% {
+        box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7);
+      }
+      50% {
+        box-shadow: 0 0 20px 10px rgba(102, 126, 234, 0);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .mesh-panel {
+        width: 95%;
+        max-height: 95vh;
+      }
+
+      .mesh-stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .mesh-peers {
+        grid-template-columns: 1fr;
+      }
+
+      .mesh-actions {
+        flex-direction: column;
+      }
+
+      .mesh-notification {
+        left: 20px;
+        right: 20px;
+        max-width: none;
+      }
+    }
   </style>
 </head>
 
@@ -2431,6 +3028,12 @@
         </button>
         <button class="header-button" id="archive-chat">
           <i class="fas fa-archive"></i>
+        </button>
+
+        <!-- P2P Mesh Controls -->
+        <button class="header-button" id="mesh-status-btn" title="P2P Mesh Network" style="position: relative;">
+          <i class="fas fa-project-diagram"></i>
+          <span id="mesh-peer-count" style="position: absolute; top: -4px; right: -4px; background: #4caf50; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; font-weight: 600; display: none; align-items: center; justify-content: center;">0</span>
         </button>
 
         <!-- Settings -->
@@ -2865,6 +3468,105 @@
   <input type="file" id="chat-import-input" accept=".json" />
   <input type="file" id="data-import-input" accept=".json" />
   <input type="file" id="settings-import-input" accept=".json" />
+
+  <!-- P2P Mesh Network Modal -->
+  <div id="mesh-modal" class="mesh-modal">
+    <div class="mesh-panel">
+      <div class="mesh-header">
+        <div class="mesh-title">
+          <i class="fas fa-project-diagram"></i>
+          Distributed P2P Mesh Network
+        </div>
+        <button class="mesh-close" id="mesh-close-btn">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="mesh-content">
+        <div class="mesh-stats">
+          <div class="mesh-stat-card">
+            <div class="mesh-stat-value" id="mesh-connected-count">0</div>
+            <div class="mesh-stat-label">Connected Browsers</div>
+          </div>
+          <div class="mesh-stat-card">
+            <div class="mesh-stat-value" id="mesh-operation-count">0</div>
+            <div class="mesh-stat-label">Operations Synced</div>
+          </div>
+          <div class="mesh-stat-card">
+            <div class="mesh-stat-value" id="mesh-sync-count">0</div>
+            <div class="mesh-stat-label">State Synchronizations</div>
+          </div>
+          <div class="mesh-stat-card">
+            <div class="mesh-stat-value" id="mesh-node-browser">-</div>
+            <div class="mesh-stat-label">This Browser</div>
+          </div>
+        </div>
+
+        <div class="mesh-section">
+          <div class="mesh-section-title">
+            <i class="fas fa-users"></i>
+            Connected Browsers (<span id="mesh-peer-list-count">0</span>)
+          </div>
+          <div class="mesh-peers" id="mesh-peer-list">
+            <div style="text-align: center; padding: 40px; color: var(--gray-80); grid-column: 1 / -1;">
+              <i class="fas fa-info-circle" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
+              <p>No other browsers detected yet.</p>
+              <p style="margin-top: 8px; font-size: 14px;">Open RAPP in Chrome, Firefox, Safari, or Edge to form a mesh network!</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mesh-section">
+          <div class="mesh-section-title">
+            <i class="fas fa-terminal"></i>
+            Activity Log
+          </div>
+          <div class="mesh-log" id="mesh-activity-log">
+            <div class="mesh-log-entry">
+              <div class="mesh-log-time">[--:--:--]</div>
+              <div class="mesh-log-message info">Initializing P2P mesh network...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mesh-actions">
+        <button class="mesh-btn mesh-btn-primary" id="mesh-open-new-window">
+          <i class="fas fa-window-restore"></i>
+          Open in New Browser Window
+        </button>
+        <button class="mesh-btn mesh-btn-secondary" id="mesh-force-sync">
+          <i class="fas fa-sync"></i>
+          Force Sync Now
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mesh Status Banner -->
+  <div id="mesh-status-banner" class="mesh-status-banner">
+    <div class="mesh-banner-content">
+      <div class="mesh-banner-icon">🔀</div>
+      <div class="mesh-banner-text">
+        <div class="mesh-banner-title">P2P Mesh Network Active!</div>
+        <div class="mesh-banner-subtitle" id="mesh-banner-subtitle">Connected to <span id="mesh-banner-count">0</span> browser(s)</div>
+      </div>
+      <div class="mesh-banner-peers" id="mesh-banner-peers"></div>
+    </div>
+    <div class="mesh-banner-actions">
+      <button class="mesh-banner-btn" id="mesh-banner-test">🧪 Test Sync</button>
+      <button class="mesh-banner-btn" id="mesh-banner-view">📊 View Details</button>
+    </div>
+    <button class="mesh-banner-close" id="mesh-banner-close">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+
+  <!-- Live Sync Indicator -->
+  <div id="mesh-sync-indicator" class="mesh-sync-indicator">
+    <div class="mesh-sync-spinner"></div>
+    <span>Syncing...</span>
+  </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"></script>
 
@@ -4983,7 +5685,12 @@
         }
 
         if (animate) {
-          this.scrollToBottom();
+          // Use requestAnimationFrame to ensure DOM has updated before scrolling
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              this.scrollToBottom();
+            });
+          });
         }
       }
 
@@ -6547,6 +7254,343 @@
 
     // Make it globally accessible if needed
     window.splitViewController = splitViewController;
+  </script>
+
+  <!-- DISTRIBUTED P2P MESH NETWORK SYSTEM -->
+  <script src="distributed-rapp-mesh.js"></script>
+  <script>
+  (function() {
+    'use strict';
+
+    console.log('[RAPP Mesh] Loading UI controller...');
+
+    // Mesh UI Controller
+    class MeshUI {
+      constructor(mesh) {
+        this.mesh = mesh;
+        this.modal = document.getElementById('mesh-modal');
+        this.banner = document.getElementById('mesh-status-banner');
+        this.syncIndicator = document.getElementById('mesh-sync-indicator');
+        this.meshButton = document.getElementById('mesh-status-btn');
+        this.bannerDismissed = false;
+        this.firstPeerConnected = false;
+        this.setupEventListeners();
+        this.startUpdateLoop();
+      }
+
+      setupEventListeners() {
+        // Modal controls
+        this.meshButton.addEventListener('click', () => {
+          this.showModal();
+        });
+
+        document.getElementById('mesh-close-btn').addEventListener('click', () => {
+          this.hideModal();
+        });
+
+        this.modal.addEventListener('click', (e) => {
+          if (e.target === this.modal) this.hideModal();
+        });
+
+        // Banner controls
+        document.getElementById('mesh-banner-close').addEventListener('click', () => {
+          this.hideBanner();
+          this.bannerDismissed = true;
+        });
+
+        document.getElementById('mesh-banner-view').addEventListener('click', () => {
+          this.showModal();
+        });
+
+        document.getElementById('mesh-banner-test').addEventListener('click', () => {
+          this.testSync();
+        });
+
+        // Mesh actions
+        document.getElementById('mesh-open-new-window').addEventListener('click', () => {
+          window.open(window.location.href, '_blank', 'width=1200,height=800');
+          this.showNotification('info', 'New window opened - will join mesh automatically!');
+        });
+
+        document.getElementById('mesh-force-sync').addEventListener('click', () => {
+          this.showSyncIndicator();
+          this.mesh.peers.forEach((peer, peerId) => {
+            if (peer.state === 'connected') {
+              this.mesh.syncStateToPeer(peerId);
+            }
+          });
+          this.showNotification('success', 'Force sync triggered to all peers');
+        });
+
+        // Mesh events
+        this.mesh.onPeerJoined((peerId) => {
+          this.addLog('success', `✓ Browser connected: ${peerId.substr(0, 20)}...`);
+          this.showNotification('success', '🎉 New browser joined the mesh!');
+          this.updatePeerDisplay();
+          this.updateBanner();
+          this.activateMeshButton();
+
+          // Auto-show banner on first peer
+          if (!this.firstPeerConnected) {
+            this.firstPeerConnected = true;
+            setTimeout(() => {
+              if (!this.bannerDismissed) {
+                this.showBanner();
+              }
+              // Auto-open modal on first connection
+              setTimeout(() => {
+                this.showModal();
+                this.showNotification('info', '💡 The mesh modal shows real-time sync status!');
+              }, 2000);
+            }, 500);
+          } else if (!this.bannerDismissed) {
+            this.showBanner();
+          }
+        });
+
+        this.mesh.onPeerLeft((peerId) => {
+          this.addLog('warning', `Browser disconnected: ${peerId.substr(0, 20)}...`);
+          this.updatePeerDisplay();
+          this.updateBanner();
+
+          const status = this.mesh.getMeshStatus();
+          if (status.connectedPeers.length === 0) {
+            this.deactivateMeshButton();
+            this.hideBanner();
+          }
+        });
+
+        this.mesh.onOperationReceived((op) => {
+          this.addLog('info', `← Received: ${op.type}`);
+          this.showSyncIndicator();
+          this.showNotification('info', `✨ Synced: ${op.type.replace('_', ' ')}`);
+        });
+
+        this.mesh.onStateSync((peerId) => {
+          this.addLog('info', `↻ Synced with ${peerId.substr(0, 20)}...`);
+          this.showSyncIndicator();
+        });
+      }
+
+      testSync() {
+        const testChat = {
+          id: `test-${Date.now()}`,
+          title: `🧪 Test Chat from ${this.mesh.nodeCapabilities.browser.name}`,
+          messages: [
+            {
+              role: 'user',
+              content: `This is a test message from ${this.mesh.nodeCapabilities.browser.name} at ${new Date().toLocaleTimeString()}`,
+              timestamp: Date.now()
+            },
+            {
+              role: 'assistant',
+              content: `✅ P2P Mesh is working! This message synced across all browsers instantly.`,
+              timestamp: Date.now() + 100
+            }
+          ],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          archived: false
+        };
+
+        const userId = Object.keys(window.appState.users)[0] || 'test-user';
+
+        if (!window.appState.chats[userId]) {
+          window.appState.chats[userId] = {};
+        }
+
+        window.appState.chats[userId][testChat.id] = testChat;
+        window.appState.saveChats();
+
+        this.showNotification('success', '🧪 Test data synced! Check other browsers!');
+        this.addLog('success', `🧪 Created test chat: ${testChat.title}`);
+      }
+
+      showBanner() {
+        this.banner.classList.add('active');
+      }
+
+      hideBanner() {
+        this.banner.classList.remove('active');
+      }
+
+      updateBanner() {
+        const status = this.mesh.getMeshStatus();
+        document.getElementById('mesh-banner-count').textContent = status.connectedPeers.length;
+
+        const peersContainer = document.getElementById('mesh-banner-peers');
+        peersContainer.innerHTML = status.connectedPeers.slice(0, 4).map(peer => `
+          <div class="mesh-banner-peer-icon">
+            ${this.getBrowserIcon(peer.browser.name)}
+          </div>
+        `).join('');
+
+        if (status.connectedPeers.length > 4) {
+          peersContainer.innerHTML += `<div class="mesh-banner-peer-icon">+${status.connectedPeers.length - 4}</div>`;
+        }
+      }
+
+      showSyncIndicator() {
+        this.syncIndicator.classList.add('active');
+        setTimeout(() => {
+          this.syncIndicator.classList.remove('active');
+        }, 1500);
+      }
+
+      activateMeshButton() {
+        this.meshButton.classList.add('mesh-active');
+      }
+
+      deactivateMeshButton() {
+        this.meshButton.classList.remove('mesh-active');
+      }
+
+      showModal() {
+        this.modal.classList.add('active');
+        this.updatePeerDisplay();
+      }
+
+      hideModal() {
+        this.modal.classList.remove('active');
+      }
+
+      startUpdateLoop() {
+        setInterval(() => {
+          this.updateStats();
+          this.updatePeerCount();
+        }, 1000);
+      }
+
+      updateStats() {
+        const status = this.mesh.getMeshStatus();
+        document.getElementById('mesh-connected-count').textContent = status.connectedPeers.length;
+        document.getElementById('mesh-operation-count').textContent = status.operationLogSize;
+        document.getElementById('mesh-sync-count').textContent = status.syncCount;
+        document.getElementById('mesh-node-browser').textContent = status.browser.name.substr(0, 6);
+      }
+
+      updatePeerCount() {
+        const status = this.mesh.getMeshStatus();
+        const badge = document.getElementById('mesh-peer-count');
+        if (status.connectedPeers.length > 0) {
+          badge.textContent = status.connectedPeers.length;
+          badge.style.display = 'flex';
+        } else {
+          badge.style.display = 'none';
+        }
+      }
+
+      updatePeerDisplay() {
+        const status = this.mesh.getMeshStatus();
+        const container = document.getElementById('mesh-peer-list');
+        const countEl = document.getElementById('mesh-peer-list-count');
+
+        countEl.textContent = status.connectedPeers.length;
+
+        if (status.connectedPeers.length === 0) {
+          container.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: var(--gray-80); grid-column: 1 / -1;">
+              <i class="fas fa-info-circle" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
+              <p>No other browsers detected yet.</p>
+              <p style="margin-top: 8px; font-size: 14px;">Open RAPP in Chrome, Firefox, Safari, or Edge!</p>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = status.connectedPeers.map(peer => `
+          <div class="mesh-peer">
+            <div class="mesh-peer-icon ${this.getBrowserClass(peer.browser.name)}">
+              ${this.getBrowserIcon(peer.browser.name)}
+            </div>
+            <div class="mesh-peer-info">
+              <div class="mesh-peer-name">${peer.browser.name} ${peer.browser.version}</div>
+              <div class="mesh-peer-id">${peer.id}</div>
+              <div class="mesh-peer-status">Last sync: ${Math.round((Date.now() - peer.lastSync) / 1000)}s ago</div>
+            </div>
+            <div class="mesh-peer-badge connected">✓ Connected</div>
+          </div>
+        `).join('');
+      }
+
+      getBrowserClass(name) {
+        const n = (name || '').toLowerCase();
+        if (n.includes('chrome')) return 'chrome';
+        if (n.includes('firefox')) return 'firefox';
+        if (n.includes('safari')) return 'safari';
+        if (n.includes('edge')) return 'edge';
+        return 'unknown';
+      }
+
+      getBrowserIcon(name) {
+        const n = (name || '').toLowerCase();
+        if (n.includes('chrome')) return '🔵';
+        if (n.includes('firefox')) return '🦊';
+        if (n.includes('safari')) return '🧭';
+        if (n.includes('edge')) return '🌊';
+        return '🌐';
+      }
+
+      addLog(type, message) {
+        const log = document.getElementById('mesh-activity-log');
+        const timestamp = new Date().toLocaleTimeString();
+        const entry = document.createElement('div');
+        entry.className = 'mesh-log-entry';
+        entry.innerHTML = `
+          <div class="mesh-log-time">[${timestamp}]</div>
+          <div class="mesh-log-message ${type}">${message}</div>
+        `;
+        log.appendChild(entry);
+        log.scrollTop = log.scrollHeight;
+
+        while (log.children.length > 50) {
+          log.removeChild(log.firstChild);
+        }
+      }
+
+      showNotification(type, message) {
+        const notification = document.createElement('div');
+        notification.className = `mesh-notification ${type}`;
+        let icon = type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle';
+        notification.innerHTML = `<i class="fas fa-${icon}"></i><span>${message}</span>`;
+        document.body.appendChild(notification);
+        setTimeout(() => notification.classList.add('active'), 10);
+        setTimeout(() => {
+          notification.classList.remove('active');
+          setTimeout(() => notification.remove(), 300);
+        }, 3000);
+      }
+    }
+
+    // Initialize mesh when AppState is ready
+    function initMesh() {
+      if (typeof window.appState === 'undefined') {
+        setTimeout(initMesh, 100);
+        return;
+      }
+
+      console.log('[RAPP Mesh] Initializing...');
+
+      const mesh = new DistributedRAPPMesh(window.appState, {
+        quorumSize: 1,
+        syncInterval: 3000
+      });
+
+      const meshUI = new MeshUI(mesh);
+
+      window.rappMesh = mesh;
+      window.rappMeshUI = meshUI;
+
+      console.log('[RAPP Mesh] ✓ System initialized');
+      console.log('[RAPP Mesh] Open RAPP in other browsers to form mesh!');
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initMesh);
+    } else {
+      initMesh();
+    }
+  })();
   </script>
 </body>
 
