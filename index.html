@@ -1010,7 +1010,7 @@
       overflow-y: auto;
       overflow-x: hidden;
       padding: var(--space-xl);
-      padding-bottom: calc(var(--input-container-height) + var(--safe-area-bottom) + 100px);
+      padding-bottom: 200px;
       scroll-behavior: smooth;
       position: relative;
     }
@@ -1203,7 +1203,7 @@
       color: var(--gray-100);
     }
 
-    /* Voice message indicator */
+    /* Voice message indicator with broadcast animation */
     .voice-message {
       display: none;
       align-items: center;
@@ -1214,19 +1214,114 @@
       border-radius: var(--radius);
       font-size: 13px;
       color: var(--primary);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
     }
 
     .voice-message.active {
       display: flex;
     }
 
+    .voice-message:hover {
+      background: rgba(var(--primary-rgb), 0.15);
+      transform: translateY(-1px);
+    }
+
+    .voice-message-icon {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      flex-shrink: 0;
+    }
+
+    /* Pulsing broadcast animation */
+    .voice-message:not(.expanded) .voice-message-icon::before {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: var(--primary);
+      opacity: 0;
+      animation: broadcastPulse 2s ease-out infinite;
+    }
+
+    .voice-message:not(.expanded) .voice-message-icon::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: var(--primary);
+      opacity: 0;
+      animation: broadcastPulse 2s ease-out infinite 1s;
+    }
+
+    @keyframes broadcastPulse {
+      0% {
+        transform: scale(1);
+        opacity: 0.6;
+      }
+      50% {
+        opacity: 0.3;
+      }
+      100% {
+        transform: scale(2.5);
+        opacity: 0;
+      }
+    }
+
     .voice-message i {
       font-size: 14px;
+      position: relative;
+      z-index: 1;
+      animation: iconPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes iconPulse {
+      0%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.1);
+      }
+    }
+
+    .voice-message.expanded i {
+      animation: none;
+      transform: scale(1);
+    }
+
+    .voice-message-content {
+      max-width: 0;
+      opacity: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      transition: max-width 0.4s ease, opacity 0.3s ease;
+    }
+
+    .voice-message.expanded .voice-message-content {
+      max-width: 500px;
+      opacity: 1;
     }
 
     body.dark .voice-message {
       background: rgba(116, 39, 116, 0.15);
       color: #bb86fc;
+    }
+
+    body.dark .voice-message:hover {
+      background: rgba(116, 39, 116, 0.25);
+    }
+
+    body.dark .voice-message:not(.expanded) .voice-message-icon::before,
+    body.dark .voice-message:not(.expanded) .voice-message-icon::after {
+      background: #bb86fc;
     }
 
     /* Better visibility for lists and quotes in dark mode */
@@ -5670,9 +5765,19 @@
           const voiceMessage = document.createElement("div");
           voiceMessage.className = "voice-message active";
           voiceMessage.innerHTML = `
-            <i class="fas fa-volume-up"></i>
-            <span>Voice: "${voiceResponse}"</span>
+            <div class="voice-message-icon">
+              <i class="fas fa-volume-up"></i>
+            </div>
+            <div class="voice-message-content">
+              <span>Voice: "${voiceResponse}"</span>
+            </div>
           `;
+
+          // Add click handler to toggle expansion
+          voiceMessage.addEventListener('click', () => {
+            voiceMessage.classList.toggle('expanded');
+          });
+
           messageWrapper.appendChild(voiceMessage);
         }
 
