@@ -1943,7 +1943,7 @@
             // Convert hyphens to underscores for GitHub path
             const agentIdWithUnderscores = agentId.replace(/-/g, '_');
             const stackName = agentIdWithUnderscores + '_stack';
-            return `${GITHUB_CONFIG.baseUrl}/tree/${GITHUB_CONFIG.branch}/agent_stacks/${categoryDir}/${stackName}`;
+            return `${GITHUB_CONFIG.baseUrl}/tree/${GITHUB_CONFIG.branch}/${GITHUB_CONFIG.subPath}/agent_stacks/${categoryDir}/${stackName}`;
         }
 
         // Helper: Get GitHub raw file URL for an agent
