@@ -897,30 +897,67 @@ def agent_manager(req: func.HttpRequest) -> func.HttpResponse:
         )
 
 def handle_list_agents(cors_headers):
-    """List all available agents with their metadata"""
+    """List all available agents with their metadata from manifest"""
     try:
-        # Load all agents without filtering
-        agents = load_agents_from_folder(user_guid=None)
+        # Try to load from manifest first (faster and more comprehensive)
+        manifest_path = os.path.join(os.path.dirname(__file__), 'agent_manifest.json')
 
-        agent_list = []
-        for agent_name, agent in agents.items():
-            agent_info = {
-                'name': agent.name,
-                'metadata': agent.metadata,
-                'description': agent.metadata.get('description', 'No description available'),
-                'parameters': agent.metadata.get('parameters', {}),
-                'category': categorize_agent(agent.name)
-            }
-            agent_list.append(agent_info)
+        if os.path.exists(manifest_path):
+            with open(manifest_path, 'r') as f:
+                manifest = json.loads(f.read())
 
-        # Sort by category then name
-        agent_list.sort(key=lambda x: (x['category'], x['name']))
+            # Convert manifest format to API format
+            agent_list = []
+            for agent_name, agent_info in manifest['agents'].items():
+                agent_list.append({
+                    'name': agent_info['name'],
+                    'filename': agent_info['filename'],
+                    'metadata': agent_info['metadata'],
+                    'description': agent_info['description'] or agent_info.get('file_docstring', 'No description'),
+                    'parameters': agent_info.get('parameters', {}),
+                    'category': agent_info['category'],
+                    'tags': agent_info.get('tags', []),
+                    'use_cases': agent_info.get('use_cases', []),
+                    'capabilities': agent_info.get('capabilities', [])
+                })
 
-        return func.HttpResponse(
-            json.dumps({'agents': agent_list}),
-            mimetype="application/json",
-            headers=cors_headers
-        )
+            # Already sorted by category in manifest
+            return func.HttpResponse(
+                json.dumps({
+                    'agents': agent_list,
+                    'source': 'manifest',
+                    'statistics': manifest.get('statistics', {})
+                }),
+                mimetype="application/json",
+                headers=cors_headers
+            )
+        else:
+            # Fallback to dynamic loading if manifest doesn't exist
+            logging.warning("Manifest not found, falling back to dynamic agent loading")
+            agents = load_agents_from_folder(user_guid=None)
+
+            agent_list = []
+            for agent_name, agent in agents.items():
+                agent_info = {
+                    'name': agent.name,
+                    'metadata': agent.metadata,
+                    'description': agent.metadata.get('description', 'No description available'),
+                    'parameters': agent.metadata.get('parameters', {}),
+                    'category': categorize_agent(agent.name)
+                }
+                agent_list.append(agent_info)
+
+            # Sort by category then name
+            agent_list.sort(key=lambda x: (x['category'], x['name']))
+
+            return func.HttpResponse(
+                json.dumps({
+                    'agents': agent_list,
+                    'source': 'dynamic'
+                }),
+                mimetype="application/json",
+                headers=cors_headers
+            )
     except Exception as e:
         logging.error(f"Error listing agents: {str(e)}")
         return func.HttpResponse(
@@ -1018,25 +1055,58 @@ def handle_save_config(req_body, cors_headers):
         )
 
 def handle_list_presets(cors_headers):
-    """List all agent combination presets"""
+    """List all agent combination presets from manifest or storage"""
     try:
-        storage_manager = AzureFileStorageManager()
+        # Try to load from manifest first (includes auto-generated presets)
+        manifest_path = os.path.join(os.path.dirname(__file__), 'agent_manifest.json')
 
-        # Try to read presets from storage
-        try:
-            presets_content = storage_manager.read_file('agent_config', 'presets.json')
-            if presets_content:
-                presets = json.loads(presets_content)
-            else:
+        if os.path.exists(manifest_path):
+            with open(manifest_path, 'r') as f:
+                manifest = json.loads(f.read())
+                presets = manifest.get('suggested_presets', [])
+
+            # Also try to add custom presets from storage
+            storage_manager = AzureFileStorageManager()
+            try:
+                presets_content = storage_manager.read_file('agent_config', 'presets.json')
+                if presets_content:
+                    custom_presets = json.loads(presets_content)
+                    # Add custom presets that aren't auto-generated
+                    for preset in custom_presets:
+                        if not preset.get('auto_generated', False):
+                            presets.append(preset)
+            except:
+                pass
+
+            return func.HttpResponse(
+                json.dumps({
+                    'presets': presets,
+                    'source': 'manifest'
+                }),
+                mimetype="application/json",
+                headers=cors_headers
+            )
+        else:
+            # Fallback to storage or defaults
+            storage_manager = AzureFileStorageManager()
+
+            try:
+                presets_content = storage_manager.read_file('agent_config', 'presets.json')
+                if presets_content:
+                    presets = json.loads(presets_content)
+                else:
+                    presets = get_default_presets()
+            except:
                 presets = get_default_presets()
-        except:
-            presets = get_default_presets()
 
-        return func.HttpResponse(
-            json.dumps({'presets': presets}),
-            mimetype="application/json",
-            headers=cors_headers
-        )
+            return func.HttpResponse(
+                json.dumps({
+                    'presets': presets,
+                    'source': 'storage'
+                }),
+                mimetype="application/json",
+                headers=cors_headers
+            )
     except Exception as e:
         logging.error(f"Error listing presets: {str(e)}")
         return func.HttpResponse(

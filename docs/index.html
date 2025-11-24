@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Copilot Agent 365 - AI Agent Management Platform</title>
+    <meta name="description" content="Enterprise AI assistant with modular agent architecture, persistent memory, and multi-user support">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 60px;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        .header h1 {
+            font-size: 56px;
+            margin-bottom: 16px;
+            font-weight: 700;
+            text-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 20px;
+            opacity: 0.95;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.8s ease;
+            animation-fill-mode: both;
+        }
+
+        .card:nth-child(1) { animation-delay: 0.1s; }
+        .card:nth-child(2) { animation-delay: 0.2s; }
+        .card:nth-child(3) { animation-delay: 0.3s; }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.4);
+        }
+
+        .card-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            font-size: 28px;
+            margin-bottom: 12px;
+            color: #333;
+        }
+
+        .card p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .card-features {
+            list-style: none;
+            margin-bottom: 24px;
+        }
+
+        .card-features li {
+            padding: 8px 0;
+            color: #555;
+            display: flex;
+            align-items: center;
+        }
+
+        .card-features li:before {
+            content: "✓";
+            color: #4caf50;
+            font-weight: bold;
+            margin-right: 12px;
+            font-size: 18px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 14px 32px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-top: 60px;
+        }
+
+        .feature {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            animation: fadeInUp 0.8s ease;
+            animation-fill-mode: both;
+        }
+
+        .feature:nth-child(1) { animation-delay: 0.4s; }
+        .feature:nth-child(2) { animation-delay: 0.5s; }
+        .feature:nth-child(3) { animation-delay: 0.6s; }
+        .feature:nth-child(4) { animation-delay: 0.7s; }
+
+        .feature-icon {
+            font-size: 40px;
+            margin-bottom: 16px;
+        }
+
+        .feature h3 {
+            font-size: 20px;
+            margin-bottom: 12px;
+            color: #333;
+        }
+
+        .feature p {
+            color: #666;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        .stats {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 40px;
+            margin: 60px 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+            animation: fadeIn 1s ease;
+        }
+
+        .stat {
+            text-align: center;
+            color: white;
+        }
+
+        .stat-value {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .stat-label {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 80px;
+            opacity: 0.9;
+        }
+
+        .footer a {
+            color: white;
+            text-decoration: underline;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 36px;
+            }
+
+            .header p {
+                font-size: 16px;
+            }
+
+            .cards {
+                grid-template-columns: 1fr;
+            }
+
+            .stats {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚡ Copilot Agent 365</h1>
+            <p>Enterprise AI Assistant with Modular Agent Architecture</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value">8</div>
+                <div class="stat-label">AI Agents</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">6</div>
+                <div class="stat-label">Categories</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">9</div>
+                <div class="stat-label">Presets</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">∞</div>
+                <div class="stat-label">Extensibility</div>
+            </div>
+        </div>
+
+        <div class="cards">
+            <div class="card">
+                <div class="card-icon">🎛️</div>
+                <h2>Agent Manager</h2>
+                <p>Visual interface for managing AI agent combinations, configurations, and presets.</p>
+                <ul class="card-features">
+                    <li>Auto-discovery of agents</li>
+                    <li>Dynamic categorization</li>
+                    <li>Per-user configurations</li>
+                    <li>Metadata preview</li>
+                    <li>9 auto-generated presets</li>
+                </ul>
+                <a href="agent_manager_static.html" class="btn">Open Agent Manager</a>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">💬</div>
+                <h2>Chat Interface</h2>
+                <p>Multi-user chat application with voice support and persistent memory across sessions.</p>
+                <ul class="card-features">
+                    <li>Voice synthesis</li>
+                    <li>Multi-user support</li>
+                    <li>Persistent memory</li>
+                    <li>Markdown rendering</li>
+                    <li>Code highlighting</li>
+                </ul>
+                <a href="../index.html" class="btn btn-secondary">Open Chat</a>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">📚</div>
+                <h2>Documentation</h2>
+                <p>Comprehensive guides for deployment, development, and extending the system.</p>
+                <ul class="card-features">
+                    <li>Quick start guide</li>
+                    <li>API documentation</li>
+                    <li>Agent development</li>
+                    <li>Power Platform setup</li>
+                    <li>Best practices</li>
+                </ul>
+                <a href="https://github.com/kody-w/RAPP" class="btn" target="_blank">View on GitHub</a>
+            </div>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature">
+                <div class="feature-icon">🧠</div>
+                <h3>Memory Agents</h3>
+                <p>Context and conversation memory management across sessions</p>
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon">🛒</div>
+                <h3>Commerce Agents</h3>
+                <p>Order verification, upselling, and customer service automation</p>
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon">📊</div>
+                <h3>Analytics Agents</h3>
+                <p>Contract analysis and data insights generation</p>
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon">🎮</div>
+                <h3>Entertainment</h3>
+                <p>Interactive D&D dungeon master with full 5e mechanics</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Built with Azure Functions, OpenAI GPT-4, and Azure Storage</p>
+            <p style="margin-top: 12px;">
+                <a href="https://github.com/kody-w/RAPP">GitHub Repository</a> •
+                <a href="../CLAUDE.md">Documentation</a> •
+                <a href="../AGENT_MANAGER_QUICKSTART.md">Quick Start</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

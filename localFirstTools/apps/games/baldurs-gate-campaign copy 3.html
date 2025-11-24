@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baldur's Gate Chronicles - Text Adventure with Visual Scenes</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap');
+
+        body {
+            font-family: 'Lora', Georgia, serif;
+            background: radial-gradient(ellipse at center, #1a0f0a 0%, #0a0505 100%);
+            color: #f0e6d2;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* Layout: Split screen - Visual (left) | Text (right) */
+        #gameContainer {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* Left: Visual Scene */
+        #visualSection {
+            flex: 1;
+            position: relative;
+            border-right: 3px solid rgba(212, 175, 55, 0.3);
+        }
+
+        #renderCanvas {
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, #2a1810 0%, #0f0808 100%);
+        }
+
+        #modeToggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, rgba(139, 69, 19, 0.9) 0%, rgba(101, 67, 33, 0.95) 100%);
+            border: 2px solid #d4af37;
+            color: #f4e4c1;
+            font-family: 'Cinzel', serif;
+            font-size: 1em;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.7), 0 0 20px rgba(212, 175, 55, 0.3);
+            transition: all 0.3s;
+            z-index: 100;
+        }
+
+        #modeToggle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5);
+        }
+
+        /* Right: Text Narrative */
+        #textSection {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(135deg, rgba(30, 20, 15, 0.98) 0%, rgba(20, 15, 10, 0.98) 100%);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Narrative Display */
+        #narrativeBox {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+            font-size: 1.1em;
+            line-height: 1.8;
+            color: #e8dcc4;
+        }
+
+        #narrativeBox::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        #narrativeBox::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.3);
+            border-radius: 6px;
+        }
+
+        #narrativeBox::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #8b5a3c, #654321);
+            border-radius: 6px;
+        }
+
+        .narrativeText {
+            margin-bottom: 20px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .narrativeTitle {
+            font-family: 'Cinzel', serif;
+            font-size: 1.8em;
+            color: #d4af37;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+        }
+
+        .combatText {
+            background: rgba(139, 0, 0, 0.2);
+            padding: 15px;
+            border-left: 4px solid #8b0000;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        .diceRoll {
+            display: inline-block;
+            background: linear-gradient(135deg, #4a2511, #8b4513);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #ffd700;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .successText {
+            color: #90ee90;
+            font-weight: 600;
+        }
+
+        .failText {
+            color: #ff6b6b;
+            font-weight: 600;
+        }
+
+        /* Choice Buttons */
+        #choiceBox {
+            padding: 30px;
+            border-top: 2px solid rgba(212, 175, 55, 0.3);
+            background: linear-gradient(135deg, rgba(40, 25, 15, 0.95) 0%, rgba(20, 15, 10, 0.98) 100%);
+        }
+
+        .choice {
+            display: block;
+            width: 100%;
+            padding: 18px 25px;
+            margin: 12px 0;
+            background: linear-gradient(135deg, rgba(60, 40, 25, 0.9) 0%, rgba(40, 25, 15, 0.95) 100%);
+            border: 2px solid rgba(139, 105, 20, 0.6);
+            border-radius: 10px;
+            color: #f4e4c1;
+            font-family: 'Lora', serif;
+            font-size: 1.05em;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .choice::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+            transition: left 0.5s;
+        }
+
+        .choice:hover::before {
+            left: 100%;
+        }
+
+        .choice:hover {
+            background: linear-gradient(135deg, rgba(100, 65, 40, 0.95) 0%, rgba(60, 40, 25, 0.98) 100%);
+            border-color: #d4af37;
+            transform: translateX(5px);
+            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+        }
+
+        .choiceLabel {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #d4af37;
+        }
+
+        .choiceDescription {
+            font-size: 0.95em;
+            color: #c0b090;
+        }
+
+        .choiceSkill {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 4px 10px;
+            background: rgba(70, 130, 180, 0.3);
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #87ceeb;
+        }
+
+        /* Character Panel */
+        #charPanel {
+            position: absolute;
+            top: 80px;
+            left: 20px;
+            background: linear-gradient(135deg, rgba(30, 20, 10, 0.95) 0%, rgba(20, 15, 5, 0.98) 100%);
+            border: 2px solid rgba(212, 175, 55, 0.4);
+            border-radius: 12px;
+            padding: 15px;
+            min-width: 220px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px);
+            z-index: 50;
+        }
+
+        .charCard {
+            margin-bottom: 12px;
+            padding: 10px;
+            background: rgba(0,0,0,0.4);
+            border-radius: 8px;
+            border: 1px solid rgba(139, 105, 20, 0.5);
+        }
+
+        .charName {
+            font-family: 'Cinzel', serif;
+            color: #d4af37;
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+
+        .charClass {
+            font-size: 0.9em;
+            color: #c0c0c0;
+            margin-bottom: 8px;
+        }
+
+        .healthBar {
+            height: 18px;
+            background: rgba(20, 5, 5, 0.9);
+            border-radius: 9px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid rgba(139, 0, 0, 0.5);
+        }
+
+        .healthFill {
+            height: 100%;
+            background: linear-gradient(90deg, #c41e3a, #ff6b6b);
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 10px rgba(255, 70, 70, 0.5);
+        }
+
+        .healthText {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.8em;
+            font-weight: 600;
+            color: #fff;
+            text-shadow: 1px 1px 2px #000;
+        }
+
+        /* Main Menu */
+        #mainMenu {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, rgba(60, 40, 30, 0.98) 0%, rgba(30, 20, 15, 0.98) 100%);
+            border: 3px solid #d4af37;
+            border-radius: 20px;
+            padding: 50px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 100px rgba(212, 175, 55, 0.3);
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        #mainMenu h1 {
+            font-family: 'Cinzel', serif;
+            color: #f4e4c1;
+            font-size: 3em;
+            margin-bottom: 15px;
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.8);
+            animation: titleGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes titleGlow {
+            0%, 100% { text-shadow: 0 0 20px rgba(212, 175, 55, 0.8); }
+            50% { text-shadow: 0 0 40px rgba(255, 215, 0, 1); }
+        }
+
+        #mainMenu h2 {
+            color: #c0c0c0;
+            font-size: 1.2em;
+            margin-bottom: 30px;
+        }
+
+        .menuButton {
+            display: block;
+            width: 300px;
+            padding: 18px;
+            margin: 15px auto;
+            background: linear-gradient(135deg, rgba(139, 69, 19, 0.9) 0%, rgba(101, 67, 33, 0.95) 100%);
+            border: 2px solid #8b6914;
+            color: #f4e4c1;
+            font-family: 'Cinzel', serif;
+            font-size: 1.2em;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.4s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .menuButton:hover {
+            background: linear-gradient(135deg, rgba(184, 134, 11, 0.95) 0%, rgba(139, 69, 19, 0.98) 100%);
+            transform: translateY(-3px);
+            border-color: #d4af37;
+            box-shadow: 0 8px 25px rgba(212, 175, 55, 0.5);
+        }
+
+        /* Data Controls */
+        .dataControls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+
+        .dataControls button {
+            margin-right: 10px;
+            padding: 10px 20px;
+            background: rgba(40, 25, 15, 0.9);
+            border: 2px solid rgba(212, 175, 55, 0.5);
+            color: #f4e4c1;
+            font-family: 'Cinzel', serif;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .dataControls button:hover {
+            border-color: #d4af37;
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 1024px) {
+            #gameContainer {
+                flex-direction: column;
+            }
+
+            #visualSection {
+                height: 40vh;
+                border-right: none;
+                border-bottom: 3px solid rgba(212, 175, 55, 0.3);
+            }
+
+            #textSection {
+                height: 60vh;
+            }
+
+            #charPanel {
+                top: 10px;
+                left: 10px;
+                min-width: 180px;
+                padding: 10px;
+            }
+
+            #narrativeBox {
+                padding: 20px;
+                font-size: 1em;
+            }
+
+            #choiceBox {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Data Controls -->
+    <div class="dataControls">
+        <button onclick="exportData()">Export Save</button>
+        <button onclick="document.getElementById('importFile').click()">Import Save</button>
+        <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+    </div>
+
+    <!-- Main Game Container -->
+    <div id="gameContainer">
+        <!-- Visual Scene (Left) -->
+        <div id="visualSection">
+            <canvas id="renderCanvas"></canvas>
+            <button id="modeToggle" onclick="game.toggleViewMode()">Toggle 2D/3D</button>
+
+            <!-- Character Panel -->
+            <div id="charPanel"></div>
+        </div>
+
+        <!-- Text Narrative (Right) -->
+        <div id="textSection">
+            <div id="narrativeBox"></div>
+            <div id="choiceBox"></div>
+        </div>
+    </div>
+
+    <!-- Main Menu -->
+    <div id="mainMenu">
+        <h1>Baldur's Gate Chronicles</h1>
+        <h2>A Text Adventure with Visual Scenes</h2>
+        <button class="menuButton" onclick="game.newGame()">New Adventure</button>
+        <button class="menuButton" onclick="game.continueGame()">Continue</button>
+        <button class="menuButton" onclick="game.showMultiplayer()">Multiplayer</button>
+    </div>
+
+    <script>
+        const APP_NAME = 'baldurs-gate-chronicles';
+
+        // Game State
+        let gameState = {
+            currentScene: 'intro',
+            characters: [],
+            choices: {},
+            inventory: [],
+            viewMode: '2d', // '2d' or '3d'
+            playMode: 'single' // 'single' or 'multi'
+        };
+
+        // Scene Database (Text + Visual Descriptors)
+        const SCENES = {
+            intro: {
+                title: "The Road to Thornhaven",
+                text: `The late afternoon sun casts long shadows across the dirt road. You and your companions have been traveling for three days, and the small village of Thornhaven should be just over the next hill.
+
+Your companions are:
+• Elara, a wise cleric of the light, her staff glowing faintly with divine energy
+• Thorin, a stalwart dwarf fighter, his greataxe strapped to his back
+• Lyra, a nimble half-elf rogue, constantly scanning the treeline for threats
+
+As you crest the hill, you see smoke rising from the village ahead. The sounds of screaming and clashing steel drift on the wind.`,
+                sceneData: {
+                    environment: 'road_forest',
+                    time: 'afternoon',
+                    lighting: 'golden_hour',
+                    weather: 'clear',
+                    partyPositions: [
+                        {id: 'player', x: 250, y: 300, state: 'alert'},
+                        {id: 'elara', x: 200, y: 280, state: 'concerned'},
+                        {id: 'thorin', x: 300, y: 300, state: 'ready'},
+                        {id: 'lyra', x: 230, y: 250, state: 'scouting'}
+                    ],
+                    objects: ['hill', 'trees', 'smoke_distance'],
+                    mood: 'foreboding'
+                },
+                choices: [
+                    {
+                        id: 'rush_village',
+                        label: "Rush to the village!",
+                        description: "Charge ahead to help the villagers. Time is of the essence!",
+                        nextScene: 'goblin_attack'
+                    },
+                    {
+                        id: 'scout_first',
+                        label: "Send Lyra to scout ahead",
+                        description: "Better to know what you're dealing with before rushing in.",
+                        skill: 'Stealth',
+                        dc: 12,
+                        success: 'scout_success',
+                        failure: 'scout_failure'
+                    },
+                    {
+                        id: 'prepare',
+                        label: "Take a moment to prepare",
+                        description: "Cast protective spells and ready weapons.",
+                        nextScene: 'prepare_scene'
+                    }
+                ]
+            },
+
+            goblin_attack: {
+                title: "Goblins in the Square!",
+                text: `You burst into the village square to find chaos. Three goblins are ransacking homes and terrorizing fleeing villagers. One goblin waves a crude sword, another clutches a torch, and the third nocks an arrow in a makeshift bow.
+
+They spot you immediately.
+
+"More adventurers!" the sword-wielding goblin cackles. "Kill them!"`,
+                sceneData: {
+                    environment: 'village_square',
+                    time: 'afternoon',
+                    lighting: 'smoky',
+                    combat: true,
+                    partyPositions: [
+                        {id: 'player', x: 150, y: 300},
+                        {id: 'elara', x: 120, y: 270},
+                        {id: 'thorin', x: 180, y: 300},
+                        {id: 'lyra', x: 140, y: 250}
+                    ],
+                    enemies: [
+                        {id: 'goblin1', type: 'goblin_warrior', x: 400, y: 280, hp: 7, maxHp: 7},
+                        {id: 'goblin2', type: 'goblin_archer', x: 450, y: 250, hp: 5, maxHp: 5},
+                        {id: 'goblin3', type: 'goblin_pyro', x: 420, y: 320, hp: 5, maxHp: 5}
+                    ],
+                    objects: ['burning_house', 'well', 'cart'],
+                    mood: 'tense'
+                },
+                choices: [
+                    {
+                        id: 'aggressive_attack',
+                        label: "Charge forward!",
+                        description: "Attack aggressively. +2 damage, -1 AC this round.",
+                        combat: {type: 'aggressive', dmgBonus: 2, acPenalty: 1},
+                        nextScene: 'combat_round_1'
+                    },
+                    {
+                        id: 'defensive_stance',
+                        label: "Defensive formation!",
+                        description: "Take defensive positions. +2 AC, -1 damage this round.",
+                        combat: {type: 'defensive', acBonus: 2, dmgPenalty: 1},
+                        nextScene: 'combat_round_1_def'
+                    },
+                    {
+                        id: 'intimidate',
+                        label: "Try to intimidate them",
+                        description: "Roar a challenge and try to frighten the goblins into fleeing.",
+                        skill: 'Intimidation',
+                        dc: 13,
+                        success: 'goblins_flee',
+                        failure: 'combat_round_1'
+                    }
+                ]
+            },
+
+            combat_round_1: {
+                title: "Battle in the Square - Round 1",
+                combat: true,
+                text: `**Initiative:**
+<span class="diceRoll">Thorin: 18</span> | <span class="diceRoll">Lyra: 16</span> | <span class="diceRoll">Goblin Archer: 14</span> | <span class="diceRoll">You: 12</span> | <span class="diceRoll">Elara: 10</span> | <span class="diceRoll">Goblin Warrior: 8</span> | <span class="diceRoll">Goblin Pyro: 6</span>
+
+<div class="combatText">
+**Thorin's Turn:**
+Thorin charges forward, greataxe raised high!
+
+Attack roll: <span class="diceRoll">d20(15) + 5 = 20</span> vs AC 13 - <span class="successText">HIT!</span>
+Damage: <span class="diceRoll">d12(9) + 3 = 12</span>
+
+The blade bites deep into the goblin warrior's shoulder! The creature staggers, blood spraying.
+**Goblin Warrior: 0 HP - SLAIN!**
+
+"One down!" Thorin roars.
+</div>
+
+<div class="combatText">
+**Lyra's Turn:**
+Lyra draws her shortbow and fires at the archer!
+
+Attack roll: <span class="diceRoll">d20(12) + 6 = 18</span> vs AC 13 - <span class="successText">HIT!</span>
+Damage: <span class="diceRoll">d6(4) + 4 = 8</span>
+
+The arrow pierces the goblin's chest!
+**Goblin Archer: DEAD!**
+
+"Two!" Lyra calls out, already nocking another arrow.
+</div>
+
+<div class="combatText">
+**Your Turn!**
+
+Only the torch-wielding goblin remains, frantically trying to set the well on fire.
+
+What do you do?
+</div>`,
+                sceneData: {
+                    environment: 'village_square',
+                    combat: true,
+                    partyPositions: [
+                        {id: 'player', x: 200, y: 300},
+                        {id: 'elara', x: 150, y: 270},
+                        {id: 'thorin', x: 350, y: 290},
+                        {id: 'lyra', x: 180, y: 240}
+                    ],
+                    enemies: [
+                        {id: 'goblin3', type: 'goblin_pyro', x: 420, y: 300, hp: 5, maxHp: 5}
+                    ]
+                },
+                choices: [
+                    {
+                        id: 'attack_pyro',
+                        label: "Attack the remaining goblin",
+                        description: "Finish off the last enemy!",
+                        combat: {action: 'attack', target: 'goblin3'},
+                        nextScene: 'combat_victory'
+                    },
+                    {
+                        id: 'save_well',
+                        label: "Stop the goblin from burning the well",
+                        description: "The village needs that water supply!",
+                        skill: 'Athletics',
+                        dc: 10,
+                        success: 'well_saved',
+                        failure: 'well_burning'
+                    },
+                    {
+                        id: 'capture',
+                        label: "Try to capture it alive",
+                        description: "It might have information about why they attacked.",
+                        skill: 'Athletics',
+                        dc: 14,
+                        success: 'goblin_captured',
+                        failure: 'combat_victory'
+                    }
+                ]
+            },
+
+            combat_victory: {
+                title: "Victory!",
+                text: `You strike true! Your weapon finds its mark, and the last goblin crumples to the ground.
+
+<span class="successText">**VICTORY!**</span>
+
+The village square falls silent except for the crackle of flames and the grateful sobs of the surviving villagers.
+
+**Experience Gained: 150 XP**
+**Loot Found:** 15 gold pieces, 3 healing potions, crude goblin weapons
+
+An elderly man in simple robes approaches, his face streaked with soot.
+
+"Thank you, travelers. I am Elder Aldric. These goblins have been raiding us for weeks, but this was the boldest attack yet. They came from the forest to the north... from an old ruin that was once a temple. Something dark stirs there."
+
+He gestures to the inn. "Please, rest and recover. We'll tend to your wounds and provide what provisions we can. When you're ready... we need you to investigate that ruin. Our village guard is no match for what lurks there."`,
+                sceneData: {
+                    environment: 'village_square',
+                    lighting: 'smoky_clearing',
+                    partyPositions: [
+                        {id: 'player', x: 250, y: 300, state: 'victorious'},
+                        {id: 'elara', x: 200, y: 280, state: 'healing'},
+                        {id: 'thorin', x: 300, y: 300, state: 'celebrating'},
+                        {id: 'lyra', x: 230, y: 250, state: 'looting'}
+                    ],
+                    npcs: [{id: 'elder', x: 350, y: 300}],
+                    objects: ['inn', 'dead_goblins', 'smoke'],
+                    mood: 'relief'
+                },
+                choices: [
+                    {
+                        id: 'rest_at_inn',
+                        label: "Rest at the inn",
+                        description: "Recover your strength before the next challenge.",
+                        nextScene: 'inn_rest'
+                    },
+                    {
+                        id: 'immediate_pursuit',
+                        label: "Pursue the goblins immediately",
+                        description: "Strike while their forces are weakened!",
+                        nextScene: 'forest_path'
+                    },
+                    {
+                        id: 'question_elder',
+                        label: "Ask the Elder more questions",
+                        description: "Learn what you can about the temple ruins.",
+                        nextScene: 'elder_dialogue'
+                    }
+                ]
+            },
+
+            // Add 27+ more scenes for full campaign...
+            // This is a condensed example showing the structure
+        };
+
+        // Character Templates
+        const CHARACTER_TEMPLATES = {
+            player: {name: 'Hero', class: 'Fighter', level: 1, maxHp: 12, currentHp: 12, ac: 16},
+            elara: {name: 'Elara', class: 'Cleric', level: 1, maxHp: 10, currentHp: 10, ac: 14},
+            thorin: {name: 'Thorin', class: 'Fighter', level: 1, maxHp: 14, currentHp: 14, ac: 18},
+            lyra: {name: 'Lyra', class: 'Rogue', level: 1, maxHp: 8, currentHp: 8, ac: 15}
+        };
+
+        // Visual Renderer Classes
+        class Renderer2D {
+            constructor(canvas, ctx) {
+                this.canvas = canvas;
+                this.ctx = ctx;
+            }
+
+            render(sceneData) {
+                const ctx = this.ctx;
+                ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // Background
+                this.drawBackground(sceneData.environment);
+
+                // Objects
+                if (sceneData.objects) {
+                    sceneData.objects.forEach(obj => this.drawObject(obj));
+                }
+
+                // Characters
+                if (sceneData.partyPositions) {
+                    sceneData.partyPositions.forEach(char => this.drawCharacter(char));
+                }
+
+                // Enemies
+                if (sceneData.enemies) {
+                    sceneData.enemies.forEach(enemy => this.drawEnemy(enemy));
+                }
+
+                // NPCs
+                if (sceneData.npcs) {
+                    sceneData.npcs.forEach(npc => this.drawNPC(npc));
+                }
+            }
+
+            drawBackground(env) {
+                const ctx = this.ctx;
+                const w = this.canvas.width;
+                const h = this.canvas.height;
+
+                // Environment-specific backgrounds
+                const backgrounds = {
+                    'road_forest': ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, w/2),
+                    'village_square': ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, w/2),
+                };
+
+                if (env === 'road_forest') {
+                    const grad = backgrounds[env];
+                    grad.addColorStop(0, '#5a7d4e');
+                    grad.addColorStop(1, '#2d3e25');
+                    ctx.fillStyle = grad;
+                    ctx.fillRect(0, 0, w, h);
+
+                    // Draw trees
+                    for (let i = 0; i < 10; i++) {
+                        const x = Math.random() * w;
+                        const y = Math.random() * h;
+                        this.drawTree(x, y);
+                    }
+                } else if (env === 'village_square') {
+                    const grad = backgrounds[env];
+                    grad.addColorStop(0, '#8b7355');
+                    grad.addColorStop(1, '#4a3820');
+                    ctx.fillStyle = grad;
+                    ctx.fillRect(0, 0, w, h);
+                }
+
+                // Draw grid
+                ctx.strokeStyle = 'rgba(212, 175, 55, 0.1)';
+                ctx.lineWidth = 1;
+                for (let x = 0; x < w; x += 40) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, h);
+                    ctx.stroke();
+                }
+                for (let y = 0; y < h; y += 40) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(w, y);
+                    ctx.stroke();
+                }
+            }
+
+            drawTree(x, y) {
+                const ctx = this.ctx;
+                // Trunk
+                ctx.fillStyle = '#4a3020';
+                ctx.fillRect(x - 5, y, 10, 30);
+                // Leaves
+                ctx.fillStyle = '#2d5016';
+                ctx.beginPath();
+                ctx.arc(x, y, 20, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            drawCharacter(char) {
+                const ctx = this.ctx;
+                const {x, y, id} = char;
+
+                // Shadow
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.beginPath();
+                ctx.ellipse(x, y + 35, 20, 8, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Body (circle with gradient)
+                const grad = ctx.createRadialGradient(x, y, 5, x, y, 25);
+
+                // Different colors per character
+                const colors = {
+                    player: ['#4682b4', '#1e3a5f'],
+                    elara: ['#daa520', '#8b6914'],
+                    thorin: ['#8b4513', '#5a2d0c'],
+                    lyra: ['#9370db', '#5a3a7a']
+                };
+
+                const color = colors[id] || ['#666', '#333'];
+                grad.addColorStop(0, color[0]);
+                grad.addColorStop(1, color[1]);
+
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(x, y, 25, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Outline
+                ctx.strokeStyle = 'rgba(212, 175, 55, 0.8)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Label
+                const charData = CHARACTER_TEMPLATES[id];
+                if (charData) {
+                    ctx.fillStyle = '#f4e4c1';
+                    ctx.font = 'bold 14px Cinzel';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(charData.name, x, y - 35);
+
+                    // Health bar
+                    const hpPercent = charData.currentHp / charData.maxHp;
+                    ctx.fillStyle = 'rgba(20, 5, 5, 0.9)';
+                    ctx.fillRect(x - 20, y + 30, 40, 6);
+                    ctx.fillStyle = hpPercent > 0.5 ? '#90ee90' : hpPercent > 0.25 ? '#ffd700' : '#ff6b6b';
+                    ctx.fillRect(x - 20, y + 30, 40 * hpPercent, 6);
+                }
+            }
+
+            drawEnemy(enemy) {
+                const ctx = this.ctx;
+                const {x, y, type, hp, maxHp} = enemy;
+
+                // Shadow
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.beginPath();
+                ctx.ellipse(x, y + 25, 15, 6, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Enemy triangle
+                const grad = ctx.createRadialGradient(x, y, 5, x, y, 20);
+                grad.addColorStop(0, '#8b0000');
+                grad.addColorStop(1, '#4a0000');
+
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.moveTo(x, y - 20);
+                ctx.lineTo(x - 18, y + 15);
+                ctx.lineTo(x + 18, y + 15);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Glowing eyes
+                ctx.fillStyle = '#ffd700';
+                ctx.beginPath();
+                ctx.arc(x - 6, y - 5, 3, 0, Math.PI * 2);
+                ctx.arc(x + 6, y - 5, 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Label
+                ctx.fillStyle = '#ff6b6b';
+                ctx.font = 'bold 12px Cinzel';
+                ctx.textAlign = 'center';
+                ctx.fillText(type.replace('_', ' '), x, y - 30);
+
+                // Health bar
+                const hpPercent = hp / maxHp;
+                ctx.fillStyle = 'rgba(20, 5, 5, 0.9)';
+                ctx.fillRect(x - 18, y + 20, 36, 5);
+                ctx.fillStyle = '#ff6b6b';
+                ctx.fillRect(x - 18, y + 20, 36 * hpPercent, 5);
+            }
+
+            drawNPC(npc) {
+                const ctx = this.ctx;
+                const {x, y} = npc;
+
+                // Simple NPC representation
+                ctx.fillStyle = '#c0c0c0';
+                ctx.beginPath();
+                ctx.arc(x, y, 20, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = '#d4af37';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+
+            drawObject(objType) {
+                // Draw environmental objects
+                // Simplified for now
+            }
+        }
+
+        class Renderer3D {
+            constructor(canvas, ctx) {
+                this.canvas = canvas;
+                this.ctx = ctx;
+            }
+
+            render(sceneData) {
+                const ctx = this.ctx;
+                ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // Isometric projection
+                // Similar to 2D but with isometric transformation
+
+                // Background
+                this.drawBackground(sceneData.environment);
+
+                // Convert positions to isometric and render
+                if (sceneData.partyPositions) {
+                    sceneData.partyPositions.forEach(char => {
+                        const iso = this.toIsometric(char.x, char.y);
+                        this.drawCharacter3D(iso.x, iso.y, char.id);
+                    });
+                }
+
+                if (sceneData.enemies) {
+                    sceneData.enemies.forEach(enemy => {
+                        const iso = this.toIsometric(enemy.x, enemy.y);
+                        this.drawEnemy3D(iso.x, iso.y, enemy);
+                    });
+                }
+            }
+
+            toIsometric(x, y) {
+                return {
+                    x: (x - y) * 0.866,
+                    y: (x + y) * 0.5
+                };
+            }
+
+            drawBackground(env) {
+                const ctx = this.ctx;
+                const w = this.canvas.width;
+                const h = this.canvas.height;
+
+                const grad = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, w/2);
+                grad.addColorStop(0, '#3a2820');
+                grad.addColorStop(1, '#1a1410');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, w, h);
+
+                // Isometric grid
+                ctx.strokeStyle = 'rgba(212, 175, 55, 0.15)';
+                ctx.lineWidth = 1;
+                for (let i = 0; i < 20; i++) {
+                    const x1 = i * 40;
+                    const iso1 = this.toIsometric(x1, 0);
+                    const iso2 = this.toIsometric(x1, 600);
+                    ctx.beginPath();
+                    ctx.moveTo(w/2 + iso1.x, h/2 + iso1.y);
+                    ctx.lineTo(w/2 + iso2.x, h/2 + iso2.y);
+                    ctx.stroke();
+                }
+                for (let i = 0; i < 20; i++) {
+                    const y1 = i * 40;
+                    const iso1 = this.toIsometric(0, y1);
+                    const iso2 = this.toIsometric(600, y1);
+                    ctx.beginPath();
+                    ctx.moveTo(w/2 + iso1.x, h/2 + iso1.y);
+                    ctx.lineTo(w/2 + iso2.x, h/2 + iso2.y);
+                    ctx.stroke();
+                }
+            }
+
+            drawCharacter3D(x, y, id) {
+                const ctx = this.ctx;
+                const w = this.canvas.width;
+                const h = this.canvas.height;
+
+                const screenX = w/2 + x;
+                const screenY = h/2 + y;
+
+                // 3D cube-like character
+                const colors = {
+                    player: '#4682b4',
+                    elara: '#daa520',
+                    thorin: '#8b4513',
+                    lyra: '#9370db'
+                };
+
+                const color = colors[id] || '#666';
+
+                // Draw simple 3D cube
+                ctx.fillStyle = color;
+                ctx.fillRect(screenX - 15, screenY - 30, 30, 30);
+
+                // Top face (lighter)
+                ctx.fillStyle = this.lightenColor(color, 20);
+                ctx.beginPath();
+                ctx.moveTo(screenX - 15, screenY - 30);
+                ctx.lineTo(screenX, screenY - 40);
+                ctx.lineTo(screenX + 15, screenY - 30);
+                ctx.lineTo(screenX, screenY - 20);
+                ctx.closePath();
+                ctx.fill();
+
+                // Side face (darker)
+                ctx.fillStyle = this.darkenColor(color, 20);
+                ctx.beginPath();
+                ctx.moveTo(screenX + 15, screenY - 30);
+                ctx.lineTo(screenX + 15, screenY);
+                ctx.lineTo(screenX, screenY + 10);
+                ctx.lineTo(screenX, screenY - 20);
+                ctx.closePath();
+                ctx.fill();
+
+                // Label
+                const charData = CHARACTER_TEMPLATES[id];
+                if (charData) {
+                    ctx.fillStyle = '#f4e4c1';
+                    ctx.font = 'bold 12px Cinzel';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(charData.name, screenX, screenY - 45);
+                }
+            }
+
+            drawEnemy3D(x, y, enemy) {
+                const ctx = this.ctx;
+                const w = this.canvas.width;
+                const h = this.canvas.height;
+
+                const screenX = w/2 + x;
+                const screenY = h/2 + y;
+
+                // 3D pyramid
+                ctx.fillStyle = '#8b0000';
+                ctx.beginPath();
+                ctx.moveTo(screenX, screenY - 30);
+                ctx.lineTo(screenX - 15, screenY + 10);
+                ctx.lineTo(screenX + 15, screenY + 10);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.strokeStyle = '#ff0000';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+
+            lightenColor(color, percent) {
+                const num = parseInt(color.replace('#',''), 16);
+                const amt = Math.round(2.55 * percent);
+                const R = (num >> 16) + amt;
+                const G = (num >> 8 & 0x00FF) + amt;
+                const B = (num & 0x0000FF) + amt;
+                return '#' + (0x1000000 + (R<255?R<1?0:R:255)*0x10000 +
+                    (G<255?G<1?0:G:255)*0x100 + (B<255?B<1?0:B:255))
+                    .toString(16).slice(1);
+            }
+
+            darkenColor(color, percent) {
+                const num = parseInt(color.replace('#',''), 16);
+                const amt = Math.round(2.55 * percent);
+                const R = (num >> 16) - amt;
+                const G = (num >> 8 & 0x00FF) - amt;
+                const B = (num & 0x0000FF) - amt;
+                return '#' + (0x1000000 + (R>0?R:0)*0x10000 +
+                    (G>0?G:0)*0x100 + (B>0?B:0))
+                    .toString(16).slice(1);
+            }
+        }
+
+        // Game Engine
+        class GameEngine {
+            constructor() {
+                this.canvas = document.getElementById('renderCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.renderer2D = new Renderer2D(this.canvas, this.ctx);
+                this.renderer3D = new Renderer3D(this.canvas, this.ctx);
+
+                this.resizeCanvas();
+                window.addEventListener('resize', () => this.resizeCanvas());
+
+                this.loadGameState();
+            }
+
+            resizeCanvas() {
+                const visualSection = document.getElementById('visualSection');
+                this.canvas.width = visualSection.clientWidth;
+                this.canvas.height = visualSection.clientHeight;
+                this.render();
+            }
+
+            loadGameState() {
+                const saved = localStorage.getItem(APP_NAME);
+                if (saved) {
+                    try {
+                        gameState = JSON.parse(saved);
+                    } catch (e) {
+                        console.error('Failed to load save:', e);
+                    }
+                }
+            }
+
+            saveGameState() {
+                localStorage.setItem(APP_NAME, JSON.stringify(gameState));
+            }
+
+            newGame() {
+                gameState = {
+                    currentScene: 'intro',
+                    characters: [
+                        {...CHARACTER_TEMPLATES.player},
+                        {...CHARACTER_TEMPLATES.elara},
+                        {...CHARACTER_TEMPLATES.thorin},
+                        {...CHARACTER_TEMPLATES.lyra}
+                    ],
+                    choices: {},
+                    inventory: [],
+                    viewMode: '2d',
+                    playMode: 'single'
+                };
+
+                document.getElementById('mainMenu').style.display = 'none';
+                this.showScene(gameState.currentScene);
+                this.updateCharacterPanel();
+                this.saveGameState();
+            }
+
+            continueGame() {
+                if (gameState.currentScene) {
+                    document.getElementById('mainMenu').style.display = 'none';
+                    this.showScene(gameState.currentScene);
+                    this.updateCharacterPanel();
+                } else {
+                    alert('No saved game found!');
+                }
+            }
+
+            showMultiplayer() {
+                alert('Multiplayer feature coming soon! For now, enjoy the single-player adventure.');
+            }
+
+            showScene(sceneId) {
+                const scene = SCENES[sceneId];
+                if (!scene) {
+                    console.error('Scene not found:', sceneId);
+                    return;
+                }
+
+                gameState.currentScene = sceneId;
+
+                // Update narrative
+                const narrativeBox = document.getElementById('narrativeBox');
+                narrativeBox.innerHTML = `
+                    <div class="narrativeTitle">${scene.title}</div>
+                    <div class="narrativeText">${scene.text}</div>
+                `;
+
+                // Update choices
+                const choiceBox = document.getElementById('choiceBox');
+                choiceBox.innerHTML = '';
+
+                scene.choices.forEach(choice => {
+                    const btn = document.createElement('button');
+                    btn.className = 'choice';
+                    btn.innerHTML = `
+                        <span class="choiceLabel">${choice.label}</span>
+                        <span class="choiceDescription">${choice.description}</span>
+                        ${choice.skill ? `<span class="choiceSkill">${choice.skill} DC ${choice.dc}</span>` : ''}
+                    `;
+                    btn.onclick = () => this.handleChoice(choice);
+                    choiceBox.appendChild(btn);
+                });
+
+                // Render scene
+                this.render();
+
+                // Scroll to top
+                narrativeBox.scrollTop = 0;
+
+                this.saveGameState();
+            }
+
+            handleChoice(choice) {
+                // Track choice
+                gameState.choices[gameState.currentScene] = choice.id;
+
+                // Handle skill checks
+                if (choice.skill) {
+                    const roll = Math.floor(Math.random() * 20) + 1;
+                    const total = roll + 3; // Simplified - would use character modifiers
+
+                    const result = total >= choice.dc ? 'success' : 'failure';
+                    const nextScene = choice[result];
+
+                    // Show roll result
+                    const narrativeBox = document.getElementById('narrativeBox');
+                    narrativeBox.innerHTML += `
+                        <div class="narrativeText" style="margin-top: 20px;">
+                            <strong>${choice.skill} Check:</strong>
+                            <span class="diceRoll">d20(${roll}) + 3 = ${total}</span> vs DC ${choice.dc}
+                            ${result === 'success' ?
+                                '<span class="successText"> - SUCCESS!</span>' :
+                                '<span class="failText"> - FAILURE!</span>'}
+                        </div>
+                    `;
+
+                    setTimeout(() => this.showScene(nextScene), 1500);
+                } else if (choice.nextScene) {
+                    this.showScene(choice.nextScene);
+                } else if (choice.combat) {
+                    // Handle combat choice
+                    this.showScene(choice.nextScene);
+                }
+            }
+
+            toggleViewMode() {
+                gameState.viewMode = gameState.viewMode === '2d' ? '3d' : '2d';
+                document.getElementById('modeToggle').textContent =
+                    gameState.viewMode === '2d' ? 'Switch to 3D' : 'Switch to 2D';
+                this.render();
+                this.saveGameState();
+            }
+
+            render() {
+                const scene = SCENES[gameState.currentScene];
+                if (!scene || !scene.sceneData) return;
+
+                if (gameState.viewMode === '2d') {
+                    this.renderer2D.render(scene.sceneData);
+                } else {
+                    this.renderer3D.render(scene.sceneData);
+                }
+            }
+
+            updateCharacterPanel() {
+                const panel = document.getElementById('charPanel');
+                panel.innerHTML = '<div style="font-family: Cinzel; color: #d4af37; margin-bottom: 15px; font-size: 1.1em;">Party</div>';
+
+                gameState.characters.forEach(char => {
+                    const hpPercent = (char.currentHp / char.maxHp) * 100;
+                    const card = document.createElement('div');
+                    card.className = 'charCard';
+                    card.innerHTML = `
+                        <div class="charName">${char.name}</div>
+                        <div class="charClass">Level ${char.level} ${char.class}</div>
+                        <div class="healthBar">
+                            <div class="healthFill" style="width: ${hpPercent}%"></div>
+                            <div class="healthText">${char.currentHp}/${char.maxHp} HP</div>
+                        </div>
+                    `;
+                    panel.appendChild(card);
+                });
+            }
+        }
+
+        // Data Import/Export
+        function exportData() {
+            const dataStr = JSON.stringify(gameState, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `baldurs-gate-save-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    gameState = JSON.parse(e.target.result);
+                    game.showScene(gameState.currentScene);
+                    game.updateCharacterPanel();
+                    game.saveGameState();
+                    alert('Save loaded successfully!');
+                } catch (error) {
+                    alert('Invalid save file!');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Initialize game
+        let game;
+        window.addEventListener('DOMContentLoaded', () => {
+            game = new GameEngine();
+        });
+    </script>
+</body>
+</html>
