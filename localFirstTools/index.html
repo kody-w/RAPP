@@ -25,6 +25,10 @@
 
     <!-- Description -->
     <meta name="description" content="Privacy-first, offline-capable tools that work entirely in your browser. No servers, no tracking.">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
         * {
             margin: 0;
@@ -1715,9 +1719,49 @@
             margin-left: 10px;
             color: var(--text-secondary);
         }
+
+        /* Back Button */
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 20px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+        }
+
+        .back-button:hover {
+            background: rgba(6, 255, 165, 0.1);
+            border-color: var(--accent);
+            transform: translateX(-3px);
+        }
+
+        @media (max-width: 768px) {
+            .back-button {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+                top: 15px;
+                left: 15px;
+            }
+        }
     </style>
 </head>
 <body>
+    <a href="../index.html" class="back-button" title="Back to Chat">
+        <i class="fas fa-arrow-left"></i>
+    </a>
     <div class="container">
         <header class="header">
             <h1>LOCAL FIRST TOOLS</h1>

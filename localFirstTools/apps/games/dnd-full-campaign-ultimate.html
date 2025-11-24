@@ -1,0 +1,1754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D&D: The Lost Crown of Atheria - Full Campaign</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=MedievalSharp&family=Inter:wght@300;400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0f;
+            color: #e4e4e4;
+            overflow: hidden;
+        }
+
+        #root {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        #three-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .game-ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+            display: flex;
+        }
+
+        .game-ui > * {
+            pointer-events: auto;
+        }
+
+        /* Title Screen */
+        .title-screen {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(ellipse at center, rgba(26, 15, 10, 0.95) 0%, rgba(10, 5, 5, 0.98) 100%);
+            animation: fadeIn 2s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .title-content {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .title-logo {
+            font-family: 'Cinzel', serif;
+            font-size: 4em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 25%, #ffd700 50%, #ff8c00 75%, #ffd700 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 4s linear infinite;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+            margin-bottom: 20px;
+            letter-spacing: 3px;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 0% center; }
+            100% { background-position: 200% center; }
+        }
+
+        .title-subtitle {
+            font-family: 'MedievalSharp', serif;
+            font-size: 1.8em;
+            color: #c0a080;
+            margin-bottom: 40px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+        }
+
+        .title-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+        }
+
+        /* Main Layout */
+        .game-layout {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-areas:
+                "header header header"
+                "party story actions"
+                "inventory story status";
+            grid-template-columns: 300px 1fr 300px;
+            grid-template-rows: auto 1fr 200px;
+            gap: 15px;
+            padding: 15px;
+        }
+
+        @media (max-width: 1200px) {
+            .game-layout {
+                grid-template-areas:
+                    "header"
+                    "story"
+                    "actions";
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr auto;
+            }
+            .party-panel, .inventory-panel, .status-panel {
+                display: none;
+            }
+        }
+
+        .header-bar {
+            grid-area: header;
+            background: rgba(15, 15, 30, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 12px;
+            padding: 15px 25px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .campaign-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.5em;
+            background: linear-gradient(135deg, #ffd700, #ff8c00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .chapter-info {
+            color: #a0a0c0;
+            font-size: 0.9em;
+        }
+
+        .party-panel {
+            grid-area: party;
+            background: rgba(15, 15, 30, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px solid rgba(78, 205, 196, 0.3);
+            overflow-y: auto;
+        }
+
+        .story-panel {
+            grid-area: story;
+            background: rgba(15, 15, 30, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 12px;
+            padding: 25px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .actions-panel {
+            grid-area: actions;
+            background: rgba(15, 15, 30, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px solid rgba(255, 107, 107, 0.3);
+            overflow-y: auto;
+        }
+
+        .inventory-panel {
+            grid-area: inventory;
+            background: rgba(15, 15, 30, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            overflow-y: auto;
+        }
+
+        .status-panel {
+            grid-area: status;
+            background: rgba(15, 15, 30, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px solid rgba(160, 160, 192, 0.3);
+            overflow-y: auto;
+        }
+
+        .panel-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #ffd700;
+            font-family: 'Cinzel', serif;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Story Text */
+        .story-content {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        .story-entry {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            border-left: 4px solid;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .story-entry.dm {
+            border-left-color: #ffd700;
+        }
+
+        .story-entry.action {
+            border-left-color: #4ecdc4;
+        }
+
+        .story-entry.combat {
+            border-left-color: #ff6b6b;
+        }
+
+        .story-entry.success {
+            border-left-color: #4ecdc4;
+            background: rgba(78, 205, 196, 0.1);
+        }
+
+        .story-entry.failure {
+            border-left-color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+        }
+
+        .dm-narrator {
+            font-family: 'MedievalSharp', serif;
+            font-size: 1.1em;
+            line-height: 1.7;
+            color: #f0e6d2;
+        }
+
+        .dialogue {
+            font-style: italic;
+            color: #c0a080;
+            padding: 10px;
+            border-left: 3px solid #c0a080;
+            margin: 10px 0;
+        }
+
+        /* Character Creation */
+        .char-creation {
+            width: 100%;
+            max-width: 800px;
+            background: rgba(20, 20, 40, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 40px;
+            border: 2px solid rgba(255, 215, 0, 0.4);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
+        }
+
+        .stat-rolling {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid rgba(78, 205, 196, 0.3);
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #a0a0c0;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #ffd700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        .stat-modifier {
+            font-size: 0.9em;
+            color: #4ecdc4;
+            margin-top: 5px;
+        }
+
+        /* Character Card */
+        .character-card {
+            background: linear-gradient(135deg, rgba(78, 205, 196, 0.15), rgba(78, 205, 196, 0.05));
+            border: 2px solid rgba(78, 205, 196, 0.4);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .character-card.active {
+            border-color: #ffd700;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+        }
+
+        .char-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .char-name {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: #4ecdc4;
+        }
+
+        .char-level {
+            font-size: 0.9em;
+            color: #a0a0c0;
+        }
+
+        .char-class-race {
+            font-size: 0.85em;
+            color: #a0a0c0;
+            margin-bottom: 8px;
+        }
+
+        .health-bar-container {
+            margin: 10px 0;
+        }
+
+        .health-bar {
+            background: rgba(0, 0, 0, 0.5);
+            height: 24px;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+        }
+
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #ee5a6f);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85em;
+            font-weight: 600;
+            color: white;
+        }
+
+        .xp-bar {
+            background: rgba(0, 0, 0, 0.5);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .xp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4ecdc4, #44a08d);
+            transition: width 0.5s ease;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ffd700, #ff8c00);
+            color: #1a1a2e;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.5);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-full {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        /* Choice Buttons */
+        .choice-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .choice-btn {
+            background: rgba(78, 205, 196, 0.1);
+            border: 2px solid rgba(78, 205, 196, 0.3);
+            padding: 15px 20px;
+            border-radius: 10px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #e4e4e4;
+            font-size: 1em;
+        }
+
+        .choice-btn:hover {
+            background: rgba(78, 205, 196, 0.2);
+            border-color: #4ecdc4;
+            transform: translateX(5px);
+            box-shadow: 0 4px 20px rgba(78, 205, 196, 0.3);
+        }
+
+        .choice-btn .choice-label {
+            font-weight: 600;
+            color: #4ecdc4;
+            margin-bottom: 5px;
+        }
+
+        .choice-btn .choice-desc {
+            font-size: 0.9em;
+            color: #a0a0c0;
+        }
+
+        .choice-btn .choice-skill {
+            font-size: 0.85em;
+            color: #ffd700;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        /* Dice Roll */
+        .dice-roll-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .dice-roll-content {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .dice-roll-prompt {
+            font-size: 1.5em;
+            color: #ffd700;
+            margin-bottom: 30px;
+            font-family: 'Cinzel', serif;
+        }
+
+        .dice-3d {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 30px;
+            perspective: 1000px;
+        }
+
+        .dice-face {
+            width: 150px;
+            height: 150px;
+            background: linear-gradient(135deg, #ffd700, #ff8c00);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 5em;
+            font-weight: 700;
+            color: #1a1a2e;
+            box-shadow: 0 10px 40px rgba(255, 215, 0, 0.5);
+            animation: diceRoll 1s ease-out;
+        }
+
+        @keyframes diceRoll {
+            0% { transform: rotateX(0) rotateY(0) scale(0.5); opacity: 0; }
+            50% { transform: rotateX(720deg) rotateY(720deg) scale(1.2); }
+            100% { transform: rotateX(720deg) rotateY(720deg) scale(1); opacity: 1; }
+        }
+
+        .dice-result-text {
+            font-size: 1.8em;
+            font-weight: 700;
+            margin-top: 20px;
+        }
+
+        .dice-result-text.success {
+            color: #4ecdc4;
+        }
+
+        .dice-result-text.failure {
+            color: #ff6b6b;
+        }
+
+        .dice-modifiers {
+            font-size: 1.2em;
+            color: #a0a0c0;
+            margin-top: 10px;
+        }
+
+        /* Inventory */
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .inventory-item {
+            background: rgba(255, 215, 0, 0.1);
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            border-radius: 8px;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .inventory-item:hover {
+            border-color: #ffd700;
+            background: rgba(255, 215, 0, 0.2);
+            transform: scale(1.05);
+        }
+
+        .item-name {
+            font-weight: 600;
+            color: #ffd700;
+            margin-bottom: 3px;
+        }
+
+        .item-type {
+            font-size: 0.8em;
+            color: #a0a0c0;
+        }
+
+        .item-equipped {
+            font-size: 0.75em;
+            color: #4ecdc4;
+            margin-top: 3px;
+        }
+
+        /* Combat */
+        .combat-grid {
+            display: grid;
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .enemy-card {
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.2), rgba(255, 107, 107, 0.05));
+            border: 2px solid rgba(255, 107, 107, 0.4);
+            border-radius: 10px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .enemy-card:hover {
+            border-color: #ff6b6b;
+            box-shadow: 0 4px 20px rgba(255, 107, 107, 0.4);
+        }
+
+        .enemy-card.selected {
+            border-color: #ffd700;
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.6);
+        }
+
+        .enemy-card.defeated {
+            opacity: 0.4;
+            filter: grayscale(100%);
+            cursor: not-allowed;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #ffd700;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            border-radius: 8px;
+            background: rgba(15, 15, 30, 0.8);
+            color: #e4e4e4;
+            font-size: 1em;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #ffd700;
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.2);
+        }
+
+        /* Status Effects */
+        .status-effects {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .status-effect {
+            background: rgba(255, 107, 107, 0.2);
+            border: 1px solid rgba(255, 107, 107, 0.4);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            color: #ff6b6b;
+        }
+
+        .status-effect.buff {
+            background: rgba(78, 205, 196, 0.2);
+            border-color: rgba(78, 205, 196, 0.4);
+            color: #4ecdc4;
+        }
+
+        /* Loot Display */
+        .loot-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(20, 20, 40, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 40px;
+            border: 2px solid rgba(255, 215, 0, 0.4);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            max-width: 500px;
+            width: 90%;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -40%);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+        }
+
+        .loot-title {
+            font-family: 'Cinzel', serif;
+            font-size: 2em;
+            color: #ffd700;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .loot-list {
+            margin: 20px 0;
+        }
+
+        .loot-item {
+            background: rgba(255, 215, 0, 0.1);
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .loot-item-name {
+            font-weight: 600;
+            color: #ffd700;
+        }
+
+        .loot-item-desc {
+            font-size: 0.85em;
+            color: #a0a0c0;
+            margin-top: 3px;
+        }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #ffd700, #ff8c00);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #ffed4e, #ffd700);
+        }
+
+        /* Loading Screen */
+        .loading-screen {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(10, 10, 15, 0.95);
+        }
+
+        .loading-content {
+            text-align: center;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 215, 0, 0.2);
+            border-top: 4px solid #ffd700;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 1.2em;
+            color: #ffd700;
+            font-family: 'Cinzel', serif;
+        }
+
+        /* Victory/Defeat Screens */
+        .end-screen {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(ellipse at center, rgba(26, 15, 10, 0.95) 0%, rgba(10, 5, 5, 0.98) 100%);
+            animation: fadeIn 1s ease-out;
+        }
+
+        .end-content {
+            text-align: center;
+            padding: 40px;
+            max-width: 800px;
+        }
+
+        .end-title {
+            font-family: 'Cinzel', serif;
+            font-size: 4em;
+            font-weight: 700;
+            margin-bottom: 30px;
+            animation: victoryPulse 2s ease-in-out infinite;
+        }
+
+        .end-title.victory {
+            background: linear-gradient(135deg, #ffd700, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .end-title.defeat {
+            background: linear-gradient(135deg, #ff6b6b, #8b0000);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        @keyframes victoryPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .end-stats {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+        }
+
+        .end-stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+        }
+
+        .end-stat-label {
+            color: #a0a0c0;
+        }
+
+        .end-stat-value {
+            color: #ffd700;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // =======================
+        // GAME DATA & CONSTANTS
+        // =======================
+
+        const CLASSES = {
+            Warrior: { hitDie: 10, skills: ['Athletics', 'Intimidation'], abilities: ['Second Wind', 'Action Surge'] },
+            Mage: { hitDie: 6, skills: ['Arcana', 'Investigation'], abilities: ['Fireball', 'Shield'] },
+            Rogue: { hitDie: 8, skills: ['Stealth', 'Sleight of Hand'], abilities: ['Sneak Attack', 'Cunning Action'] },
+            Cleric: { hitDie: 8, skills: ['Medicine', 'Insight'], abilities: ['Healing Word', 'Bless'] },
+            Ranger: { hitDie: 10, skills: ['Survival', 'Nature'], abilities: ['Hunters Mark', 'Favored Enemy'] }
+        };
+
+        const RACES = {
+            Human: { statBonus: { all: 1 }, speed: 30 },
+            Elf: { statBonus: { dexterity: 2 }, speed: 30, abilities: ['Darkvision'] },
+            Dwarf: { statBonus: { constitution: 2 }, speed: 25, abilities: ['Darkvision', 'Poison Resistance'] },
+            Halfling: { statBonus: { dexterity: 2 }, speed: 25, abilities: ['Lucky'] },
+            Dragonborn: { statBonus: { strength: 2, charisma: 1 }, speed: 30, abilities: ['Breath Weapon'] }
+        };
+
+        const BACKGROUNDS = {
+            'Noble': { skills: ['History', 'Persuasion'], items: ['Fine Clothes', 'Signet Ring'] },
+            'Soldier': { skills: ['Athletics', 'Intimidation'], items: ['Uniform', 'Trophy'] },
+            'Criminal': { skills: ['Deception', 'Stealth'], items: ['Crowbar', 'Dark Cloak'] },
+            'Sage': { skills: ['Arcana', 'History'], items: ['Ancient Book', 'Ink & Quill'] },
+            'Folk Hero': { skills: ['Animal Handling', 'Survival'], items: ['Artisan Tools', 'Shovel'] }
+        };
+
+        // =======================
+        // CAMPAIGN STORY DATA
+        // =======================
+
+        const CAMPAIGN_DATA = {
+            title: "The Lost Crown of Atheria",
+            acts: [
+                {
+                    id: 'prologue',
+                    title: 'Prologue: The Stolen Crown',
+                    scenes: [
+                        {
+                            id: 'opening',
+                            type: 'narrative',
+                            text: `The kingdom of Atheria has fallen into darkness. Three days ago, the Crown of Light—an ancient artifact that has protected the realm for centuries—was stolen from the royal vault. Without its power, shadow creatures have begun to emerge from the Darkwood Forest, terrorizing villages and travelers.\n\nThe king has issued a desperate call: any brave souls who can recover the crown will be rewarded beyond their wildest dreams. You and your companions have answered that call, meeting at the Rusty Dragon tavern in the village of Millhaven, the last settlement before the Darkwood.`,
+                            choices: [
+                                { id: 'tavern', text: 'Enter the tavern and meet your companions', next: 'tavern_scene' }
+                            ]
+                        },
+                        {
+                            id: 'tavern_scene',
+                            type: 'narrative',
+                            text: `The Rusty Dragon is crowded and warm, a stark contrast to the cold fear gripping the kingdom. You push through the throng of nervous villagers to a table in the corner where three adventurers wait.\n\nA grizzled dwarf warrior polishes his axe. An elven mage studies an ancient tome. A human cleric tends to her holy symbol. They look up as you approach.`,
+                            npcs: [
+                                { name: 'Thorin Ironforge', race: 'Dwarf', class: 'Warrior' },
+                                { name: 'Elara Moonwhisper', race: 'Elf', class: 'Mage' },
+                                { name: 'Sister Grimm', race: 'Human', class: 'Cleric' }
+                            ],
+                            choices: [
+                                { id: 'introduce', text: '"Greetings. I heard you seek companions for the crown quest."', skill: 'Persuasion', dc: 12, next: 'companions_join', failNext: 'companions_skeptical' },
+                                { id: 'confident', text: '"I\'m the best fighter you\'ll find. When do we leave?"', skill: 'Intimidation', dc: 14, next: 'companions_impressed', failNext: 'companions_laugh' },
+                                { id: 'investigate', text: 'Observe them carefully before speaking', skill: 'Insight', dc: 10, next: 'companions_info', failNext: 'companions_info' }
+                            ]
+                        },
+                        {
+                            id: 'companions_join',
+                            type: 'dialogue',
+                            speaker: 'Thorin',
+                            text: `"Aye, that we do! The name's Thorin Ironforge. This here is Elara and Sister Grimm. We've been waiting for someone with true courage. The king's gold is tempting, but more importantly, those shadow beasts killed my cousin in Oakshire. I mean to see them pay."`,
+                            choices: [
+                                { id: 'continue', text: 'Shake hands with your new companions', next: 'quest_details' }
+                            ]
+                        },
+                        {
+                            id: 'companions_skeptical',
+                            type: 'dialogue',
+                            speaker: 'Elara',
+                            text: `"Perhaps. But we've seen many would-be heroes these past days, all talk and no skill. What makes you different?"`,
+                            choices: [
+                                { id: 'prove', text: 'Demonstrate your combat skills', skill: 'Athletics', dc: 13, next: 'companions_join', failNext: 'companions_reluctant' },
+                                { id: 'magic', text: 'Show them a spell or special ability', skill: 'Arcana', dc: 13, next: 'companions_join', failNext: 'companions_reluctant' },
+                                { id: 'honest', text: '"I may not be perfect, but I\'m determined. Together we\'re stronger."', next: 'companions_join' }
+                            ]
+                        },
+                        {
+                            id: 'quest_details',
+                            type: 'narrative',
+                            text: `Sister Grimm spreads a worn map on the table. "The crown was stolen by a creature known only as the Shadow Lord. Intelligence suggests he's taken it deep into the Darkwood, to the ruins of an ancient temple. The forest is treacherous—full of his shadow spawn and worse things.\n\n"But there may be another way. Old Marigold, the village herbalist, claims to know a secret path through the woods. She's eccentric, but her knowledge of the forest is unmatched."`,
+                            choices: [
+                                { id: 'herbalist', text: 'Visit Old Marigold for information about the secret path', next: 'herbalist_scene' },
+                                { id: 'prepare', text: 'Visit the market to purchase supplies first', next: 'market_scene' },
+                                { id: 'direct', text: 'Head directly into the Darkwood via the main road', next: 'darkwood_entrance' }
+                            ]
+                        },
+                        {
+                            id: 'herbalist_scene',
+                            type: 'narrative',
+                            text: `Old Marigold's cottage sits on the edge of town, surrounded by wildflowers and strange herbs. Smoke curls from her chimney, carrying an odd, sweet scent. You knock on her weathered door.\n\nA tiny old woman with wild white hair opens it, her eyes sharp as a hawk's. "Ah, I've been expecting you," she says before you can speak. "You seek the crown, yes? Come in, come in. But nothing is free, dearies."`,
+                            choices: [
+                                { id: 'ask_path', text: '"We need to know the secret path through Darkwood."', next: 'herbalist_quest' },
+                                { id: 'pay_gold', text: 'Offer her gold for information', next: 'herbalist_gold' },
+                                { id: 'insight', text: 'Try to read her intentions', skill: 'Insight', dc: 14, next: 'herbalist_truth', failNext: 'herbalist_quest' }
+                            ]
+                        },
+                        {
+                            id: 'herbalist_quest',
+                            type: 'dialogue',
+                            speaker: 'Marigold',
+                            text: `"The secret path, you say? Oh, I know it well. But information has a price. My poor cat, Mr. Whiskers, ran into the forest yesterday and hasn't returned. Bring him back safely, and I'll tell you everything."`,
+                            choices: [
+                                { id: 'accept', text: '"We\'ll find your cat. Where was he last seen?"', next: 'forest_cat_search' },
+                                { id: 'refuse', text: '"We don\'t have time for cat-hunting. The kingdom is at stake!"', next: 'herbalist_angry' },
+                                { id: 'persuade', text: '"Surely we can work out another arrangement?"', skill: 'Persuasion', dc: 15, next: 'herbalist_alternative', failNext: 'herbalist_firm' }
+                            ]
+                        },
+                        {
+                            id: 'forest_cat_search',
+                            type: 'narrative',
+                            text: `Marigold points to the forest edge. "He likes to hunt near the old willow by the stream. But be careful—the shadows grow thick even this close to town."\n\nYou venture into the woods, following a narrow path. The trees seem to whisper warnings as you go deeper. Soon you hear a faint meowing...`,
+                            choices: [
+                                { id: 'investigate', text: 'Follow the sound carefully', skill: 'Perception', dc: 12, next: 'find_cat', failNext: 'cat_ambush' },
+                                { id: 'call_out', text: 'Call for the cat loudly', next: 'cat_ambush' },
+                                { id: 'magic', text: 'Use magic to locate the cat', skill: 'Arcana', dc: 13, next: 'find_cat', failNext: 'cat_ambush' }
+                            ]
+                        },
+                        {
+                            id: 'find_cat',
+                            type: 'narrative',
+                            text: `You find Mr. Whiskers perched in a tree, hissing at something in the shadows below. As you approach, you see what has him trapped: three shadow wolves, their eyes glowing red with malevolence. They turn toward you, growling.`,
+                            encounter: {
+                                type: 'combat',
+                                enemies: [
+                                    { name: 'Shadow Wolf', hp: 15, maxHp: 15, ac: 13, attack: 5, damage: '1d6+2' },
+                                    { name: 'Shadow Wolf', hp: 15, maxHp: 15, ac: 13, attack: 5, damage: '1d6+2' },
+                                    { name: 'Shadow Wolf', hp: 15, maxHp: 15, ac: 13, attack: 5, damage: '1d6+2' }
+                                ],
+                                onVictory: 'cat_rescued',
+                                onDefeat: 'defeat_cat_search'
+                            }
+                        },
+                        {
+                            id: 'cat_rescued',
+                            type: 'narrative',
+                            text: `The shadow wolves dissolve into wisps of darkness as they fall. Mr. Whiskers leaps down from the tree and rubs against your leg, purring. Thorin scoops up the cat. "Let's get this furball back to the old woman."\n\nMarigold is overjoyed when you return with her beloved pet. "Oh, thank you, thank you! As promised, I'll tell you of the secret path..."`,
+                            rewards: {
+                                xp: 150,
+                                gold: 25,
+                                items: ['Healing Potion', 'Marigold\'s Secret Map']
+                            },
+                            choices: [
+                                { id: 'continue', text: 'Listen to her instructions', next: 'secret_path_revealed' }
+                            ]
+                        },
+                        {
+                            id: 'secret_path_revealed',
+                            type: 'dialogue',
+                            speaker: 'Marigold',
+                            text: `"The secret path begins at the old standing stones, a mile west of here. Look for the stone marked with a crescent moon. Press it, and a passage will open. Follow it deep into the forest—it will lead you past the worst of the shadow spawn, directly to the temple ruins.\n\nBut beware! The path is ancient and has its own guardians. You'll need wits as much as weapons. Now go, and may the old gods watch over you."`,
+                            choices: [
+                                { id: 'stones', text: 'Head to the standing stones', next: 'standing_stones' },
+                                { id: 'prepare_more', text: 'Visit the market first to prepare better', next: 'market_scene' }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        };
+
+        // =======================
+        // UTILITY FUNCTIONS
+        // =======================
+
+        const rollDice = (sides) => Math.floor(Math.random() * sides) + 1;
+
+        const rollStats = () => {
+            // Roll 4d6, drop lowest
+            const rolls = [rollDice(6), rollDice(6), rollDice(6), rollDice(6)];
+            rolls.sort((a, b) => a - b);
+            return rolls.slice(1).reduce((a, b) => a + b, 0);
+        };
+
+        const getModifier = (stat) => Math.floor((stat - 10) / 2);
+
+        const calculateAC = (character) => {
+            let ac = 10 + getModifier(character.stats.dexterity);
+            if (character.equipment.armor) ac += character.equipment.armor.acBonus;
+            return ac;
+        };
+
+        const calculateHP = (character) => {
+            const hitDie = CLASSES[character.class].hitDie;
+            const conMod = getModifier(character.stats.constitution);
+            return hitDie + conMod + ((character.level - 1) * (Math.floor(hitDie / 2) + 1 + conMod));
+        };
+
+        const xpForNextLevel = (level) => level * 1000;
+
+        // =======================
+        // THREE.JS SCENE MANAGER
+        // =======================
+
+        class SceneManager {
+            constructor(container) {
+                this.container = container;
+                this.scene = new THREE.Scene();
+                this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+                this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+
+                this.init();
+            }
+
+            init() {
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setClearColor(0x0a0a0f, 1);
+                this.container.appendChild(this.renderer.domElement);
+
+                this.camera.position.set(0, 8, 20);
+                this.camera.lookAt(0, 0, 0);
+
+                // Lighting
+                const ambientLight = new THREE.AmbientLight(0x404040, 2);
+                this.scene.add(ambientLight);
+
+                const directionalLight = new THREE.DirectionalLight(0xffd700, 1.5);
+                directionalLight.position.set(10, 20, 10);
+                this.scene.add(directionalLight);
+
+                const pointLight1 = new THREE.PointLight(0xff8c00, 2, 50);
+                pointLight1.position.set(-15, 10, 0);
+                this.scene.add(pointLight1);
+
+                const pointLight2 = new THREE.PointLight(0x4ecdc4, 2, 50);
+                pointLight2.position.set(15, 10, 0);
+                this.scene.add(pointLight2);
+
+                // Create mystical environment
+                this.createEnvironment();
+
+                window.addEventListener('resize', () => this.onWindowResize(), false);
+                this.animate();
+            }
+
+            createEnvironment() {
+                // Mystical ground
+                const groundGeometry = new THREE.CircleGeometry(30, 64);
+                const groundMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x1a1a2e,
+                    roughness: 0.8,
+                    metalness: 0.2
+                });
+                const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+                ground.rotation.x = -Math.PI / 2;
+                this.scene.add(ground);
+
+                // Magic circle
+                const circleGeometry = new THREE.RingGeometry(8, 8.2, 64);
+                const circleMaterial = new THREE.MeshBasicMaterial({
+                    color: 0xffd700,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.6
+                });
+                const circle = new THREE.Mesh(circleGeometry, circleMaterial);
+                circle.rotation.x = -Math.PI / 2;
+                circle.position.y = 0.1;
+                this.scene.add(circle);
+
+                // Floating particles
+                const particleCount = 500;
+                const particles = new THREE.BufferGeometry();
+                const positions = [];
+
+                for (let i = 0; i < particleCount; i++) {
+                    positions.push(
+                        (Math.random() - 0.5) * 50,
+                        Math.random() * 30,
+                        (Math.random() - 0.5) * 50
+                    );
+                }
+
+                particles.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+
+                const particleMaterial = new THREE.PointsMaterial({
+                    color: 0xffd700,
+                    size: 0.15,
+                    transparent: true,
+                    opacity: 0.8
+                });
+
+                this.particles = new THREE.Points(particles, particleMaterial);
+                this.scene.add(this.particles);
+            }
+
+            onWindowResize() {
+                this.camera.aspect = window.innerWidth / window.innerHeight;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+
+            animate() {
+                requestAnimationFrame(() => this.animate());
+
+                // Gentle camera movement
+                const time = Date.now() * 0.0003;
+                this.camera.position.x = Math.sin(time) * 3;
+                this.camera.position.z = 20 + Math.cos(time) * 2;
+                this.camera.lookAt(0, 0, 0);
+
+                // Rotate particles
+                if (this.particles) {
+                    this.particles.rotation.y += 0.001;
+                }
+
+                this.renderer.render(this.scene, this.camera);
+            }
+        }
+
+        // =======================
+        // REACT COMPONENTS
+        // =======================
+
+        // Title Screen Component
+        function TitleScreen({ onStart }) {
+            return (
+                <div className="title-screen">
+                    <div className="title-content">
+                        <div className="title-logo">THE LOST CROWN</div>
+                        <div className="title-subtitle">of Atheria</div>
+                        <div className="title-buttons">
+                            <button className="btn btn-primary" onClick={onStart}>
+                                <span>⚔️ Begin Your Quest</span>
+                            </button>
+                            <button className="btn btn-secondary" onClick={() => alert('Import feature coming soon!')}>
+                                <span>📜 Load Saved Game</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Character Creation Component
+        function CharacterCreation({ onComplete }) {
+            const [step, setStep] = useState('intro');
+            const [character, setCharacter] = useState({
+                name: '',
+                race: 'Human',
+                class: 'Warrior',
+                background: 'Noble',
+                stats: {
+                    strength: 0,
+                    dexterity: 0,
+                    constitution: 0,
+                    intelligence: 0,
+                    wisdom: 0,
+                    charisma: 0
+                },
+                level: 1,
+                xp: 0,
+                hp: 0,
+                maxHp: 0,
+                ac: 10,
+                gold: 50,
+                inventory: [],
+                equipment: { weapon: null, armor: null, accessory: null },
+                abilities: [],
+                skills: []
+            });
+
+            const rollAllStats = () => {
+                const newStats = {
+                    strength: rollStats(),
+                    dexterity: rollStats(),
+                    constitution: rollStats(),
+                    intelligence: rollStats(),
+                    wisdom: rollStats(),
+                    charisma: rollStats()
+                };
+                setCharacter(prev => ({ ...prev, stats: newStats }));
+                setStep('assign');
+            };
+
+            const finishCreation = () => {
+                // Apply racial bonuses
+                const raceBonus = RACES[character.race].statBonus;
+                const finalStats = { ...character.stats };
+                if (raceBonus.all) {
+                    Object.keys(finalStats).forEach(stat => finalStats[stat] += raceBonus.all);
+                } else {
+                    Object.keys(raceBonus).forEach(stat => finalStats[stat] += raceBonus[stat]);
+                }
+
+                // Calculate HP and AC
+                const finalChar = { ...character, stats: finalStats };
+                finalChar.maxHp = calculateHP(finalChar);
+                finalChar.hp = finalChar.maxHp;
+                finalChar.ac = calculateAC(finalChar);
+
+                // Add class abilities and skills
+                finalChar.abilities = CLASSES[character.class].abilities;
+                finalChar.skills = [...CLASSES[character.class].skills, ...BACKGROUNDS[character.background].skills];
+                finalChar.inventory = [...BACKGROUNDS[character.background].items, 'Adventurer\'s Pack', 'Rope', 'Torches (5)'];
+
+                onComplete(finalChar);
+            };
+
+            if (step === 'intro') {
+                return (
+                    <div className="title-screen">
+                        <div className="char-creation">
+                            <h2 className="panel-title">⚔️ Create Your Hero</h2>
+                            <p style={{ color: '#a0a0c0', marginBottom: '30px', lineHeight: '1.6' }}>
+                                The kingdom of Atheria calls for heroes. Before you embark on your quest to recover the Lost Crown,
+                                we must know who you are. What is your name, brave adventurer?
+                            </p>
+                            <div className="form-group">
+                                <label>Character Name:</label>
+                                <input
+                                    type="text"
+                                    value={character.name}
+                                    onChange={(e) => setCharacter({ ...character, name: e.target.value })}
+                                    placeholder="Enter your hero's name..."
+                                    autoFocus
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Race:</label>
+                                <select value={character.race} onChange={(e) => setCharacter({ ...character, race: e.target.value })}>
+                                    {Object.keys(RACES).map(race => (
+                                        <option key={race} value={race}>{race}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="form-group">
+                                <label>Class:</label>
+                                <select value={character.class} onChange={(e) => setCharacter({ ...character, class: e.target.value })}>
+                                    {Object.keys(CLASSES).map(cls => (
+                                        <option key={cls} value={cls}>{cls}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="form-group">
+                                <label>Background:</label>
+                                <select value={character.background} onChange={(e) => setCharacter({ ...character, background: e.target.value })}>
+                                    {Object.keys(BACKGROUNDS).map(bg => (
+                                        <option key={bg} value={bg}>{bg}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <button
+                                className="btn btn-primary btn-full"
+                                onClick={() => setStep('roll')}
+                                disabled={!character.name}
+                            >
+                                <span>Continue to Ability Scores</span>
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (step === 'roll') {
+                const hasRolled = character.stats.strength > 0;
+                return (
+                    <div className="title-screen">
+                        <div className="char-creation">
+                            <h2 className="panel-title">🎲 Roll Ability Scores</h2>
+                            <p style={{ color: '#a0a0c0', marginBottom: '20px' }}>
+                                Your abilities define your strengths and weaknesses. Click below to roll 4d6 (drop lowest) for each stat.
+                            </p>
+
+                            {hasRolled && (
+                                <div className="stat-rolling">
+                                    {Object.entries(character.stats).map(([stat, value]) => (
+                                        <div key={stat} className="stat-box">
+                                            <div className="stat-label">{stat.toUpperCase()}</div>
+                                            <div className="stat-value">{value}</div>
+                                            <div className="stat-modifier">
+                                                {getModifier(value) >= 0 ? '+' : ''}{getModifier(value)}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            <div style={{ marginTop: '30px', display: 'flex', gap: '15px', justifyContent: 'center' }}>
+                                <button className="btn btn-secondary" onClick={rollAllStats}>
+                                    <span>🎲 {hasRolled ? 'Re-roll Stats' : 'Roll Stats'}</span>
+                                </button>
+                                {hasRolled && (
+                                    <button className="btn btn-primary" onClick={finishCreation}>
+                                        <span>Finalize Character</span>
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return null;
+        }
+
+        // Dice Roll Component
+        function DiceRoll({ skill, dc, onResult }) {
+            const [rolling, setRolling] = useState(true);
+            const [result, setResult] = useState(null);
+
+            useEffect(() => {
+                setTimeout(() => {
+                    const roll = rollDice(20);
+                    const success = roll >= dc;
+                    setResult({ roll, success, dc, skill });
+                    setRolling(false);
+
+                    setTimeout(() => {
+                        onResult(success);
+                    }, 2000);
+                }, 1500);
+            }, []);
+
+            return (
+                <div className="dice-roll-overlay">
+                    <div className="dice-roll-content">
+                        <div className="dice-roll-prompt">
+                            {skill} Check (DC {dc})
+                        </div>
+                        <div className="dice-3d">
+                            <div className="dice-face">
+                                {result ? result.roll : '?'}
+                            </div>
+                        </div>
+                        {result && (
+                            <>
+                                <div className={`dice-result-text ${result.success ? 'success' : 'failure'}`}>
+                                    {result.success ? '✓ SUCCESS!' : '✗ FAILURE'}
+                                </div>
+                                <div className="dice-modifiers">
+                                    Rolled {result.roll} vs DC {result.dc}
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        // Main Game Component
+        function Game() {
+            const [gameState, setGameState] = useState('title'); // title, creation, playing, combat, victory, defeat
+            const [character, setCharacter] = useState(null);
+            const [party, setParty] = useState([]);
+            const [currentScene, setCurrentScene] = useState(null);
+            const [storyLog, setStoryLog] = useState([]);
+            const [showDiceRoll, setShowDiceRoll] = useState(null);
+            const [campaignProgress, setCampaignProgress] = useState({ act: 0, scene: 0 });
+
+            const sceneRef = useRef(null);
+            const sceneManagerRef = useRef(null);
+
+            useEffect(() => {
+                if (sceneRef.current && !sceneManagerRef.current) {
+                    sceneManagerRef.current = new SceneManager(sceneRef.current);
+                }
+            }, []);
+
+            const addToLog = (text, type = 'dm') => {
+                setStoryLog(prev => [...prev, { text, type, timestamp: Date.now() }]);
+            };
+
+            const handleStartGame = () => {
+                setGameState('creation');
+            };
+
+            const handleCharacterCreated = (char) => {
+                setCharacter(char);
+
+                // Create AI companions
+                const companions = [
+                    {
+                        name: 'Thorin Ironforge',
+                        race: 'Dwarf',
+                        class: 'Warrior',
+                        level: 1,
+                        hp: 12,
+                        maxHp: 12,
+                        ac: 16,
+                        isAI: true,
+                        stats: { strength: 16, dexterity: 10, constitution: 14, intelligence: 8, wisdom: 12, charisma: 10 }
+                    },
+                    {
+                        name: 'Elara Moonwhisper',
+                        race: 'Elf',
+                        class: 'Mage',
+                        level: 1,
+                        hp: 8,
+                        maxHp: 8,
+                        ac: 12,
+                        isAI: true,
+                        stats: { strength: 8, dexterity: 14, constitution: 10, intelligence: 17, wisdom: 13, charisma: 12 }
+                    },
+                    {
+                        name: 'Sister Grimm',
+                        race: 'Human',
+                        class: 'Cleric',
+                        level: 1,
+                        hp: 10,
+                        maxHp: 10,
+                        ac: 14,
+                        isAI: true,
+                        stats: { strength: 12, dexterity: 10, constitution: 12, intelligence: 10, wisdom: 16, charisma: 14 }
+                    }
+                ];
+
+                setParty([char, ...companions]);
+                setGameState('playing');
+
+                // Start first scene
+                const firstScene = CAMPAIGN_DATA.acts[0].scenes[0];
+                setCurrentScene(firstScene);
+                addToLog(firstScene.text, 'dm');
+            };
+
+            const handleChoice = (choice) => {
+                addToLog(`You choose: "${choice.text}"`, 'action');
+
+                // Handle skill checks
+                if (choice.skill && choice.dc) {
+                    setShowDiceRoll({ skill: choice.skill, dc: choice.dc, choice });
+                } else {
+                    proceedToNextScene(choice.next);
+                }
+            };
+
+            const handleDiceResult = (success) => {
+                const choice = showDiceRoll.choice;
+                setShowDiceRoll(null);
+
+                if (success) {
+                    addToLog(`Success! Your ${choice.skill} check succeeds.`, 'success');
+                    proceedToNextScene(choice.next);
+                } else {
+                    addToLog(`Failure. Your ${choice.skill} check fails.`, 'failure');
+                    proceedToNextScene(choice.failNext || choice.next);
+                }
+            };
+
+            const proceedToNextScene = (sceneId) => {
+                const nextScene = CAMPAIGN_DATA.acts[0].scenes.find(s => s.id === sceneId);
+                if (nextScene) {
+                    setTimeout(() => {
+                        setCurrentScene(nextScene);
+                        addToLog(nextScene.text, nextScene.type || 'dm');
+
+                        if (nextScene.speaker) {
+                            addToLog(`${nextScene.speaker}: "${nextScene.text}"`, 'dialogue');
+                        }
+                    }, 1000);
+                }
+            };
+
+            // Render different game states
+            if (gameState === 'title') {
+                return (
+                    <>
+                        <div id="three-container" ref={sceneRef}></div>
+                        <TitleScreen onStart={handleStartGame} />
+                    </>
+                );
+            }
+
+            if (gameState === 'creation') {
+                return (
+                    <>
+                        <div id="three-container" ref={sceneRef}></div>
+                        <CharacterCreation onComplete={handleCharacterCreated} />
+                    </>
+                );
+            }
+
+            if (gameState === 'playing') {
+                return (
+                    <>
+                        <div id="three-container" ref={sceneRef}></div>
+                        <div className="game-ui">
+                            <div className="game-layout">
+                                {/* Header */}
+                                <div className="header-bar">
+                                    <div className="campaign-title">{CAMPAIGN_DATA.title}</div>
+                                    <div className="chapter-info">
+                                        Act {campaignProgress.act + 1}: {CAMPAIGN_DATA.acts[campaignProgress.act].title}
+                                    </div>
+                                </div>
+
+                                {/* Party Panel */}
+                                <div className="party-panel">
+                                    <div className="panel-title">⚔️ Party</div>
+                                    {party.map((member, idx) => (
+                                        <div key={idx} className="character-card">
+                                            <div className="char-header">
+                                                <div className="char-name">{member.name} {member.isAI && '🤖'}</div>
+                                                <div className="char-level">Lv.{member.level}</div>
+                                            </div>
+                                            <div className="char-class-race">
+                                                {member.race} {member.class}
+                                            </div>
+                                            <div className="health-bar-container">
+                                                <div className="health-bar">
+                                                    <div className="health-fill" style={{ width: `${(member.hp / member.maxHp) * 100}%` }}>
+                                                        {member.hp}/{member.maxHp}
+                                                    </div>
+                                                </div>
+                                                {member.xp !== undefined && (
+                                                    <div className="xp-bar">
+                                                        <div className="xp-fill" style={{ width: `${(member.xp / xpForNextLevel(member.level)) * 100}%` }}></div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div style={{ fontSize: '0.85em', color: '#a0a0c0', marginTop: '8px' }}>
+                                                AC: {member.ac} | Gold: {member.gold || 0} 🪙
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Story Panel */}
+                                <div className="story-panel">
+                                    <div className="story-content">
+                                        {storyLog.map((entry, idx) => (
+                                            <div key={idx} className={`story-entry ${entry.type}`}>
+                                                <div className="dm-narrator">{entry.text}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Choices */}
+                                    {currentScene && currentScene.choices && (
+                                        <div className="choice-list">
+                                            {currentScene.choices.map((choice, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    className="choice-btn"
+                                                    onClick={() => handleChoice(choice)}
+                                                >
+                                                    <div className="choice-label">{choice.text}</div>
+                                                    {choice.skill && (
+                                                        <div className="choice-skill">
+                                                            🎲 {choice.skill} Check (DC {choice.dc})
+                                                        </div>
+                                                    )}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Actions Panel */}
+                                <div className="actions-panel">
+                                    <div className="panel-title">⚡ Actions</div>
+                                    <button className="btn btn-secondary btn-full">
+                                        <span>🎒 Open Inventory</span>
+                                    </button>
+                                    <button className="btn btn-secondary btn-full">
+                                        <span>📊 Character Sheet</span>
+                                    </button>
+                                    <button className="btn btn-secondary btn-full">
+                                        <span>💤 Take Rest</span>
+                                    </button>
+                                    <button className="btn btn-secondary btn-full">
+                                        <span>💾 Save Game</span>
+                                    </button>
+                                </div>
+
+                                {/* Inventory Panel */}
+                                <div className="inventory-panel">
+                                    <div className="panel-title">🎒 Inventory</div>
+                                    {character && character.inventory && (
+                                        <div className="inventory-grid">
+                                            {character.inventory.slice(0, 6).map((item, idx) => (
+                                                <div key={idx} className="inventory-item">
+                                                    <div className="item-name">{item}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Status Panel */}
+                                <div className="status-panel">
+                                    <div className="panel-title">📊 Status</div>
+                                    {character && (
+                                        <div style={{ fontSize: '0.9em', color: '#a0a0c0' }}>
+                                            <div style={{ marginBottom: '8px' }}>
+                                                <strong style={{ color: '#ffd700' }}>Location:</strong> Millhaven
+                                            </div>
+                                            <div style={{ marginBottom: '8px' }}>
+                                                <strong style={{ color: '#ffd700' }}>Quest:</strong> The Lost Crown
+                                            </div>
+                                            <div>
+                                                <strong style={{ color: '#ffd700' }}>Objectives:</strong> Find the crown in Darkwood
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Dice Roll Overlay */}
+                        {showDiceRoll && (
+                            <DiceRoll
+                                skill={showDiceRoll.skill}
+                                dc={showDiceRoll.dc}
+                                onResult={handleDiceResult}
+                            />
+                        )}
+                    </>
+                );
+            }
+
+            return null;
+        }
+
+        // Mount React App
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<Game />);
+    </script>
+</body>
+</html>
