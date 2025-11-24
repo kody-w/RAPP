@@ -455,7 +455,7 @@
       color: white;
     }
 
-    /* Settings Import/Export Buttons */
+    /* RAPPID Backup Buttons */
     .settings-import-export {
       display: flex;
       gap: var(--space-m);
@@ -2566,15 +2566,20 @@
         </button>
       </div>
       <div class="modal-body">
-        <!-- Settings Import/Export -->
+        <!-- RAPPID Settings Backup -->
+        <div style="margin-bottom: var(--space-m); padding: var(--space-m); background: var(--gray-10); border-radius: var(--radius); border-left: 3px solid var(--primary);">
+          <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary);">
+            <strong>RAPPID Backup:</strong> Save your endpoints, API keys, and voice settings locally for safekeeping. Import them back anytime to restore your configuration.
+          </p>
+        </div>
         <div class="settings-import-export">
-          <button class="button button-secondary" id="export-settings">
+          <button class="button button-secondary" id="export-settings" title="Download RAPPID configuration to local file">
             <i class="fas fa-download"></i>
-            Export Settings
+            Export RAPPID Backup
           </button>
-          <button class="button button-secondary" id="import-settings">
+          <button class="button button-secondary" id="import-settings" title="Restore RAPPID configuration from local file">
             <i class="fas fa-upload"></i>
-            Import Settings
+            Import RAPPID Backup
           </button>
         </div>
 
@@ -3095,6 +3100,8 @@
 
       exportSettings() {
         return {
+          rappid: true,
+          backupType: "RAPPID Settings Backup",
           endpoints: this.endpoints,
           azureTTSKey: this.settings.azureTTSKey,
           azureRegion: this.settings.azureRegion,
@@ -5401,9 +5408,11 @@
 
       exportSettings() {
         const settingsData = appState.exportSettings();
-        const filename = `chat-settings-${new Date()
+        const timestamp = new Date()
           .toISOString()
-          .replace(/:/g, "_")}.json`;
+          .replace(/:/g, "_")
+          .replace(/\..+/, ''); // Remove milliseconds
+        const filename = `RAPPID-backup-${timestamp}.json`;
         this.downloadJson(settingsData, filename);
       }
 
@@ -5414,7 +5423,11 @@
             const settingsData = JSON.parse(e.target.result);
 
             if (!settingsData.version || (!settingsData.endpoints && !settingsData.azureTTSKey)) {
-              throw new Error("Invalid settings file format");
+              throw new Error("Invalid RAPPID backup file format");
+            }
+
+            if (!settingsData.rappid) {
+              throw new Error("This file is not a valid RAPPID backup");
             }
 
             appState.importSettings(settingsData);
@@ -5431,14 +5444,14 @@
               voiceManager.setVoiceName(settingsData.ttsVoiceName);
             }
 
-            this.showNotification("Settings imported successfully!", "success");
+            this.showNotification("RAPPID backup restored successfully!", "success");
 
             document.getElementById("settings-modal").classList.remove("active");
 
             this.openSettings();
           } catch (error) {
             this.showNotification(
-              "Error importing settings: " + error.message,
+              "Error restoring RAPPID backup: " + error.message,
               "error"
             );
           }

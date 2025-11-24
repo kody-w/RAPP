@@ -115,6 +115,13 @@
       "metadata": {
         "description": "Runtime for Function App"
       }
+    },
+    "corsAllowedOrigins": {
+      "type": "array",
+      "defaultValue": ["*"],
+      "metadata": {
+        "description": "CORS allowed origins. Default '*' allows all origins. For production, specify your domains: ['https://yourdomain.com', 'https://app.yourdomain.com']"
+      }
     }
   },
   "variables": {
@@ -313,9 +320,11 @@
             }
           ],
           "cors": {
-            "allowedOrigins": [
-              "*"
-            ]
+            "allowedOrigins": "[parameters('corsAllowedOrigins')]",
+            "supportCredentials": false
+          },
+          "apiDefinition": {
+            "url": "https://schema.management.azure.com/schemas/2016-03-01/apiapp.json"
           }
         }
       }
