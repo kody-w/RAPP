@@ -204,7 +204,7 @@ const sampleAgents = [
 
 1. **Generate manifest.json** from your agent stacks:
    ```bash
-   python generate_agent_catalog.py --output manifest.json
+   python tools/generate_agent_catalog.py --output manifest.json
    ```
 
 2. **Update agent_store.html** to load from manifest:
@@ -297,7 +297,7 @@ jobs:
 
       - name: Generate Manifest
         run: |
-          python generate_agent_catalog.py --output manifest.json
+          python tools/generate_agent_catalog.py --output manifest.json
 
       - name: Commit Manifest
         run: |

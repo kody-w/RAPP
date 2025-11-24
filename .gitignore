@@ -42,7 +42,6 @@ secrets.json
 htmlcov/
 
 # Deployment
-*.zip
 deployment/
 .vscode/extensions.json
 .vscode/launch.json
@@ -50,3 +49,6 @@ deployment/
 .vscode/tasks.json
 run.bat
 run.ps1
+
+# Power Platform solutions (keep versioned zips)
+!power-platform/*.zip

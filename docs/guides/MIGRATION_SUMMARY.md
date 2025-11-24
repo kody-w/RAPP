@@ -115,13 +115,13 @@ agents = [{
 **Usage:**
 ```bash
 # Generate manifest only (recommended)
-python3 generate_agent_catalog.py --format manifest
+python3 tools/generate_agent_catalog.py --format manifest
 
 # Generate JavaScript fallback only
-python3 generate_agent_catalog.py --format javascript
+python3 tools/generate_agent_catalog.py --format javascript
 
 # Generate both (default)
-python3 generate_agent_catalog.py --format both
+python3 tools/generate_agent_catalog.py --format both
 ```
 
 ### 3. Created Documentation
@@ -187,7 +187,7 @@ python3 generate_agent_catalog.py --format both
 
 2. **Regenerate manifest:**
    ```bash
-   python3 generate_agent_catalog.py
+   python3 tools/generate_agent_catalog.py
    ```
 
 3. **Commit and push:**
@@ -219,7 +219,7 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-      - run: python3 generate_agent_catalog.py
+      - run: python3 tools/generate_agent_catalog.py
       - run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
@@ -286,7 +286,7 @@ jobs:
 **Cause:** agent_catalog_generated.js not found
 
 **Solutions:**
-1. Regenerate: `python3 generate_agent_catalog.py --format both`
+1. Regenerate: `python3 tools/generate_agent_catalog.py --format both`
 2. Commit both files: `git add manifest.json agent_catalog_generated.js`
 3. Push to GitHub
 

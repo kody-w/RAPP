@@ -217,7 +217,7 @@ When new agents are added to AI-Agent-Templates:
 1. **Run the generator:**
    ```bash
    cd /path/to/RAPP
-   python3 generate_agent_catalog.py
+   python3 tools/generate_agent_catalog.py
    ```
 
 2. **Review output:**
