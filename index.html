@@ -2103,13 +2103,11 @@
         <a href="localFirstTools/index.html" class="header-button" title="Open App Store" style="display: flex; align-items: center; text-decoration: none; color: inherit;">
           <i class="fas fa-th"></i>
         </a>
-        <button class="header-button" id="collab-os-button" title="Launch Collaborative AI OS" style="position: relative;">
+        <button class="header-button" id="collab-os-button" title="Launch Collaborative AI OS">
           <i class="fas fa-robot"></i>
-          <span style="position: absolute; top: -4px; right: -4px; width: 8px; height: 8px; background: #00ff00; border-radius: 50%; box-shadow: 0 0 10px #00ff00; animation: pulse 2s infinite;"></span>
         </button>
-        <button class="header-button" id="agent-store-button" title="Open Agent Marketplace" style="position: relative;">
+        <button class="header-button" id="agent-store-button" title="Open Agent Marketplace">
           <i class="fas fa-store"></i>
-          <span style="position: absolute; top: -4px; right: -4px; width: 8px; height: 8px; background: #ff4081; border-radius: 50%; box-shadow: 0 0 10px #ff4081; animation: pulse 2s infinite;"></span>
         </button>
         <button class="header-button" id="pin-tool-button" title="Pin a Tool">
           <i class="fas fa-thumbtack"></i>
@@ -5196,31 +5194,19 @@
 
       async loadTools() {
         try {
-          // Fetch the localFirstTools index.html to parse available tools
-          const response = await fetch('localFirstTools/index.html');
-          const html = await response.text();
+          // Fetch the apps manifest which contains all available tools
+          const response = await fetch('localFirstTools/apps-manifest.json');
+          const apps = await response.json();
 
-          // Parse HTML to extract tools
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(html, 'text/html');
+          // Map apps to tool format with icons
+          this.tools = apps.map(app => ({
+            name: app.name,
+            path: app.path,
+            category: app.category,
+            icon: this.getIconForTool(app.name, app.category)
+          }));
 
-          // Look for tool links in the index
-          const links = doc.querySelectorAll('a[href$=".html"]');
-          this.tools = Array.from(links).map(link => {
-            const href = link.getAttribute('href');
-            const name = link.textContent.trim() || href.split('/').pop().replace('.html', '');
-            return {
-              name: name,
-              path: 'localFirstTools/' + href,
-              icon: this.getIconForTool(name)
-            };
-          });
-
-          // If no tools found in index, try to load from common directories
-          if (this.tools.length === 0) {
-            this.tools = this.getDefaultTools();
-          }
-
+          console.log(`Loaded ${this.tools.length} tools from manifest`);
           this.renderToolGallery();
         } catch (error) {
           console.error('Error loading tools:', error);
@@ -5241,28 +5227,74 @@
         ];
       }
 
-      getIconForTool(name) {
+      getIconForTool(name, category = '') {
+        // Category-specific default icons
+        const categoryIcons = {
+          'ai-tools': 'fa-robot',
+          'games': 'fa-gamepad',
+          'productivity': 'fa-tasks',
+          'business': 'fa-briefcase',
+          'development': 'fa-code',
+          'media': 'fa-video',
+          'education': 'fa-graduation-cap',
+          'health': 'fa-heartbeat',
+          'utilities': 'fa-wrench',
+          'quantum-worlds': 'fa-globe',
+          'index-variants': 'fa-th'
+        };
+
+        // Keyword-based icon mapping
         const iconMap = {
+          'ai': 'fa-robot',
+          'chat': 'fa-comments',
+          'assistant': 'fa-user-robot',
+          'neural': 'fa-brain',
+          'game': 'fa-gamepad',
           'todo': 'fa-tasks',
           'note': 'fa-sticky-note',
           'calculator': 'fa-calculator',
           'timer': 'fa-clock',
           'code': 'fa-code',
+          'editor': 'fa-edit',
           'markdown': 'fa-markdown',
           'calendar': 'fa-calendar',
           'budget': 'fa-dollar-sign',
           'password': 'fa-key',
-          'game': 'fa-gamepad',
+          'vault': 'fa-lock',
           'chart': 'fa-chart-bar',
-          'drawing': 'fa-palette'
+          'drawing': 'fa-palette',
+          'paint': 'fa-paint-brush',
+          'video': 'fa-video',
+          'audio': 'fa-music',
+          'music': 'fa-music',
+          'quantum': 'fa-atom',
+          'particle': 'fa-atom',
+          'physics': 'fa-flask',
+          'browser': 'fa-browser',
+          'os': 'fa-desktop',
+          'terminal': 'fa-terminal',
+          'book': 'fa-book',
+          'journal': 'fa-book',
+          'presentation': 'fa-presentation',
+          'email': 'fa-envelope',
+          'crm': 'fa-users',
+          'dashboard': 'fa-tachometer-alt'
         };
 
         const lowerName = name.toLowerCase();
+
+        // First check name-based keywords
         for (const [key, icon] of Object.entries(iconMap)) {
           if (lowerName.includes(key)) {
             return icon;
           }
         }
+
+        // Fall back to category icon
+        if (category && categoryIcons[category]) {
+          return categoryIcons[category];
+        }
+
         return 'fa-cube';
       }
 
@@ -5271,18 +5303,25 @@
 
         const searchTerm = this.toolGallerySearchInput.value.toLowerCase();
         const filteredTools = this.tools.filter(tool =>
-          tool.name.toLowerCase().includes(searchTerm)
+          tool.name.toLowerCase().includes(searchTerm) ||
+          (tool.category && tool.category.toLowerCase().includes(searchTerm))
         );
+
+        // Show count
+        if (searchTerm) {
+          console.log(`Showing ${filteredTools.length} of ${this.tools.length} tools`);
+        }
 
         filteredTools.forEach(tool => {
           const toolItem = document.createElement('div');
           toolItem.className = 'tool-gallery-item';
+          const categoryDisplay = tool.category ? tool.category.replace('-', ' ') : '';
           toolItem.innerHTML = `
             <div class="tool-gallery-item-icon">
               <i class="fas ${tool.icon}"></i>
             </div>
             <div class="tool-gallery-item-name">${tool.name}</div>
-            <div class="tool-gallery-item-desc">${tool.path.split('/').slice(-2).join('/')}</div>
+            <div class="tool-gallery-item-desc">${categoryDisplay}</div>
           `;
           toolItem.addEventListener('click', () => {
             this.pinTool(tool);

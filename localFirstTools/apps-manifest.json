@@ -1,0 +1,1002 @@
+[
+  {
+    "name": "Agent Browser",
+    "path": "localFirstTools/apps/ai-tools/agent-browser.html",
+    "category": "ai-tools"
+  },
+  {
+    "name": "Agent Deployment Prototype",
+    "path": "localFirstTools/apps/ai-tools/agent-deployment-prototype.html",
+    "category": "ai-tools"
+  },
+  {
+    "name": "Ai Business Hello World",
+    "path": "localFirstTools/apps/ai-tools/ai-business-hello-world.html",
+    "category": "ai-tools"
+  },
+  {
+    "name": "Ai Chat Hello World",
+    "path": "localFirstTools/apps/ai-tools/ai-chat-hello-world.html",
+    "category": "ai-tools"
+  },
+  {
+    "name": "Ai Config Hub",
+    "path": "localFirstTools/apps/ai-tools/ai-config-hub.html",
+    "category": "ai-tools"
+  },
+  {
+    "name": "Ai Simulation Sales Demo",
+    "path": "localFirstTools/apps/ai-tools/ai-simulation-sales-demo.html",
+    "category": "ai-tools"
+  },
+  {
+    "name": "Ai Token Quick Start",
+    "path": "localFirstTools/apps/ai-tools/ai-token-quick-start.html",
+    "category": "ai-tools"
+  },
+  {
+    "name": "Ai Voice Hello World",
+    "path": "localFirstTools/apps/ai-tools/ai-voice-hello-world.html",
+    "category": "ai-tools"
+  },
+  {
+    "name": "Apl2ai Watch App",
+    "path": "localFirstTools/apps/ai-tools/apl2ai-watch-app.html",
+    "category": "ai-tools"
+  },
+  {
+    "name": "Aplai",
+    "path": "localFirstTools/apps/ai-tools/aplAI.html",
+    "category": "ai-tools"
+  },
+  {
+    "name": "Aplai Direct App",
+    "path": "localFirstTools/apps/ai-tools/aplai-direct-app.html",
+    "category": "ai-tools"
+  },
+  {
+    "name": "Aplai Unified App",
+    "path": "localFirstTools/apps/ai-tools/aplai-unified-app.html",
+    "category": "ai-tools"
+  },
+  {
+    "name": "Aplai Watch App",
+    "path": "localFirstTools/apps/ai-tools/aplai-watch-app.html",
+    "category": "ai-tools"
+  },
+  {
+    "name": "Claude Subagents Tutorial",
+    "path": "localFirstTools/apps/ai-tools/claude-subagents-tutorial.html",
+    "category": "ai-tools"
+  },
+  {
+    "name": "Claude Subagents Tutorial Continued",
+    "path": "localFirstTools/apps/ai-tools/claude-subagents-tutorial-continued.html",
+    "category": "ai-tools"
+  },
+  {
+    "name": "Collaborative Ai Os",
+    "path": "localFirstTools/apps/ai-tools/collaborative-ai-os.html",
+    "category": "ai-tools"
+  },
+  {
+    "name": "Complete Voice Assistant",
+    "path": "localFirstTools/apps/ai-tools/complete-voice-assistant.html",
+    "category": "ai-tools"
+  },
+  {
+    "name": "Consolidated Ai Tools",
+    "path": "localFirstTools/apps/ai-tools/consolidated-ai-tools.html",
+    "category": "ai-tools"
+  },
+  {
+    "name": "Contract Analyzer",
+    "path": "localFirstTools/apps/ai-tools/contract-analyzer.html",
+    "category": "ai-tools"
+  },
+  {
+    "name": "Copilot Agent Store",
+    "path": "localFirstTools/apps/ai-tools/copilot-agent-store.html",
+    "category": "ai-tools"
+  },
+  {
+    "name": "Copilot Companion",
+    "path": "localFirstTools/apps/ai-tools/Copilot_Companion.html",
+    "category": "ai-tools"
+  },
+  {
+    "name": "Deepfake Studio",
+    "path": "localFirstTools/apps/ai-tools/deepfake-studio.html",
+    "category": "ai-tools"
+  },
+  {
+    "name": "Jarvis Protocol Os",
+    "path": "localFirstTools/apps/ai-tools/jarvis-protocol-os.html",
+    "category": "ai-tools"
+  },
+  {
+    "name": "Mcp Registry",
+    "path": "localFirstTools/apps/ai-tools/mcp-registry.html",
+    "category": "ai-tools"
+  },
+  {
+    "name": "Neural Network Playground",
+    "path": "localFirstTools/apps/ai-tools/neural-network-playground.html",
+    "category": "ai-tools"
+  },
+  {
+    "name": "Neural Network Zoo",
+    "path": "localFirstTools/apps/ai-tools/neural-network-zoo.html",
+    "category": "ai-tools"
+  },
+  {
+    "name": "Order Verification Signup",
+    "path": "localFirstTools/apps/ai-tools/order-verification-signup.html",
+    "category": "ai-tools"
+  },
+  {
+    "name": "Workshop",
+    "path": "localFirstTools/apps/ai-tools/workshop.html",
+    "category": "ai-tools"
+  },
+  {
+    "name": "Wristai",
+    "path": "localFirstTools/apps/ai-tools/wristAI.html",
+    "category": "ai-tools"
+  },
+  {
+    "name": "Ai Order Assistant",
+    "path": "localFirstTools/apps/business/ai-order-assistant.html",
+    "category": "business"
+  },
+  {
+    "name": "Ai Simulation Sales Demo",
+    "path": "localFirstTools/apps/business/ai-simulation-sales-demo.html",
+    "category": "business"
+  },
+  {
+    "name": "Dynamics365 Email Automation",
+    "path": "localFirstTools/apps/business/dynamics365-email-automation.html",
+    "category": "business"
+  },
+  {
+    "name": "Hormozi Demo Complete",
+    "path": "localFirstTools/apps/business/hormozi_demo_complete.html",
+    "category": "business"
+  },
+  {
+    "name": "Influence Mastery App",
+    "path": "localFirstTools/apps/business/influence-mastery-app.html",
+    "category": "business"
+  },
+  {
+    "name": "Presentation App Complete",
+    "path": "localFirstTools/apps/business/presentation_app_complete.html",
+    "category": "business"
+  },
+  {
+    "name": "Presentation App Final",
+    "path": "localFirstTools/apps/business/presentation_app_final.html",
+    "category": "business"
+  },
+  {
+    "name": "Wells Fargo Bankerbot",
+    "path": "localFirstTools/apps/business/wells-fargo-bankerbot.html",
+    "category": "business"
+  },
+  {
+    "name": "Artifact Converter",
+    "path": "localFirstTools/apps/development/artifact-converter.html",
+    "category": "development"
+  },
+  {
+    "name": "Autonomous App Generator",
+    "path": "localFirstTools/apps/development/autonomous-app-generator.html",
+    "category": "development"
+  },
+  {
+    "name": "Azure Vm Hackernews",
+    "path": "localFirstTools/apps/development/azure-vm-hackernews.html",
+    "category": "development"
+  },
+  {
+    "name": "Azure Vm Hackernews Backup",
+    "path": "localFirstTools/apps/development/azure-vm-hackernews-backup.html",
+    "category": "development"
+  },
+  {
+    "name": "Browser Ide",
+    "path": "localFirstTools/apps/development/browser-ide.html",
+    "category": "development"
+  },
+  {
+    "name": "Browser Vm App",
+    "path": "localFirstTools/apps/development/browser-vm-app.html",
+    "category": "development"
+  },
+  {
+    "name": "Browser Vm Azure Function",
+    "path": "localFirstTools/apps/development/browser-vm-azure-function.html",
+    "category": "development"
+  },
+  {
+    "name": "Browser Vm Docker",
+    "path": "localFirstTools/apps/development/browser-vm-docker.html",
+    "category": "development"
+  },
+  {
+    "name": "Cdn File Manager",
+    "path": "localFirstTools/apps/development/cdn-file-manager.html",
+    "category": "development"
+  },
+  {
+    "name": "Claude Subagents Tutorial",
+    "path": "localFirstTools/apps/development/claude-subagents-tutorial.html",
+    "category": "development"
+  },
+  {
+    "name": "Claude Subagents Tutorial Continued",
+    "path": "localFirstTools/apps/development/claude-subagents-tutorial-continued.html",
+    "category": "development"
+  },
+  {
+    "name": "Github Gallery Setup",
+    "path": "localFirstTools/apps/development/github-gallery-setup.html",
+    "category": "development"
+  },
+  {
+    "name": "Github Sync Manager",
+    "path": "localFirstTools/apps/development/github-sync-manager.html",
+    "category": "development"
+  },
+  {
+    "name": "Iframe Tunneler 10",
+    "path": "localFirstTools/apps/development/iframe-tunneler-10.html",
+    "category": "development"
+  },
+  {
+    "name": "Iframe Tunneler 7",
+    "path": "localFirstTools/apps/development/iframe-tunneler-7.html",
+    "category": "development"
+  },
+  {
+    "name": "Local Browser",
+    "path": "localFirstTools/apps/development/local-browser.html",
+    "category": "development"
+  },
+  {
+    "name": "Mermaid Viewer",
+    "path": "localFirstTools/apps/development/mermaid-viewer.html",
+    "category": "development"
+  },
+  {
+    "name": "Meta Dashboard",
+    "path": "localFirstTools/apps/development/meta-dashboard.html",
+    "category": "development"
+  },
+  {
+    "name": "Meta Presentation",
+    "path": "localFirstTools/apps/development/meta-presentation.html",
+    "category": "development"
+  },
+  {
+    "name": "Nerf Studio",
+    "path": "localFirstTools/apps/development/nerf-studio.html",
+    "category": "development"
+  },
+  {
+    "name": "Visual Programming Ide",
+    "path": "localFirstTools/apps/development/visual-programming-ide.html",
+    "category": "development"
+  },
+  {
+    "name": "Card Counting Trainer",
+    "path": "localFirstTools/apps/education/card-counting-trainer.html",
+    "category": "education"
+  },
+  {
+    "name": "Digit Recognition Wasm",
+    "path": "localFirstTools/apps/education/digit-recognition-wasm.html",
+    "category": "education"
+  },
+  {
+    "name": "Distributed Chaos Simulator",
+    "path": "localFirstTools/apps/education/distributed-chaos-simulator.html",
+    "category": "education"
+  },
+  {
+    "name": "Interactive Solar System",
+    "path": "localFirstTools/apps/education/interactive-solar-system.html",
+    "category": "education"
+  },
+  {
+    "name": "Nexus",
+    "path": "localFirstTools/apps/education/nexus.html",
+    "category": "education"
+  },
+  {
+    "name": "Particle Physics Playground",
+    "path": "localFirstTools/apps/education/particle-physics-playground.html",
+    "category": "education"
+  },
+  {
+    "name": "Physics Playground Lab",
+    "path": "localFirstTools/apps/education/physics-playground-lab.html",
+    "category": "education"
+  },
+  {
+    "name": "Pipboy Interface",
+    "path": "localFirstTools/apps/education/pipboy-interface.html",
+    "category": "education"
+  },
+  {
+    "name": "Quantum Circuit Designer",
+    "path": "localFirstTools/apps/education/quantum-circuit-designer.html",
+    "category": "education"
+  },
+  {
+    "name": "Quantum Particle Lab",
+    "path": "localFirstTools/apps/education/quantum-particle-lab.html",
+    "category": "education"
+  },
+  {
+    "name": "Quantum Reality Driver Enhanced",
+    "path": "localFirstTools/apps/education/quantum-reality-driver-enhanced.html",
+    "category": "education"
+  },
+  {
+    "name": "Quantum Seal Detector",
+    "path": "localFirstTools/apps/education/quantum-seal-detector.html",
+    "category": "education"
+  },
+  {
+    "name": "Quantum Seal System",
+    "path": "localFirstTools/apps/education/quantum-seal-system.html",
+    "category": "education"
+  },
+  {
+    "name": "Quantum Synchronized Ftl",
+    "path": "localFirstTools/apps/education/quantum-synchronized-ftl.html",
+    "category": "education"
+  },
+  {
+    "name": "Quantum Vm Threejs",
+    "path": "localFirstTools/apps/education/quantum-vm-threejs.html",
+    "category": "education"
+  },
+  {
+    "name": "Rainbow Svg Path",
+    "path": "localFirstTools/apps/education/rainbow-svg-path.html",
+    "category": "education"
+  },
+  {
+    "name": "Solitaire Tutorial Game",
+    "path": "localFirstTools/apps/education/solitaire-tutorial-game.html",
+    "category": "education"
+  },
+  {
+    "name": "Teacher Learner",
+    "path": "localFirstTools/apps/education/teacher-learner.html",
+    "category": "education"
+  },
+  {
+    "name": "Teacher Learner App",
+    "path": "localFirstTools/apps/education/teacher-learner-app.html",
+    "category": "education"
+  },
+  {
+    "name": "Vibe Terminal",
+    "path": "localFirstTools/apps/education/vibe-terminal.html",
+    "category": "education"
+  },
+  {
+    "name": "3d Engine V1 Minimal",
+    "path": "localFirstTools/apps/games/3d-engine-v1-minimal.html",
+    "category": "games"
+  },
+  {
+    "name": "3d Engine V5 Physics",
+    "path": "localFirstTools/apps/games/3d-engine-v5-physics.html",
+    "category": "games"
+  },
+  {
+    "name": "3d Engine V6 Graphics",
+    "path": "localFirstTools/apps/games/3d-engine-v6-graphics.html",
+    "category": "games"
+  },
+  {
+    "name": "3d Engine V7 Network",
+    "path": "localFirstTools/apps/games/3d-engine-v7-network.html",
+    "category": "games"
+  },
+  {
+    "name": "3d Engine V8 Modular",
+    "path": "localFirstTools/apps/games/3d-engine-v8-modular.html",
+    "category": "games"
+  },
+  {
+    "name": "3d Multiplayer Physics Engine",
+    "path": "localFirstTools/apps/games/3d-multiplayer-physics-engine.html",
+    "category": "games"
+  },
+  {
+    "name": "3d World Navigation",
+    "path": "localFirstTools/apps/games/3d-world-navigation.html",
+    "category": "games"
+  },
+  {
+    "name": "Ancient Ruins Dying Star",
+    "path": "localFirstTools/apps/games/ancient-ruins-dying-star.html",
+    "category": "games"
+  },
+  {
+    "name": "Balatro Clone",
+    "path": "localFirstTools/apps/games/balatro-clone.html",
+    "category": "games"
+  },
+  {
+    "name": "Baldurs Gate Campaign",
+    "path": "localFirstTools/apps/games/baldurs-gate-campaign.html",
+    "category": "games"
+  },
+  {
+    "name": "Baldurs Gate Campaign Copy",
+    "path": "localFirstTools/apps/games/baldurs-gate-campaign copy.html",
+    "category": "games"
+  },
+  {
+    "name": "Baldurs Gate Campaign Copy 2",
+    "path": "localFirstTools/apps/games/baldurs-gate-campaign copy 2.html",
+    "category": "games"
+  },
+  {
+    "name": "Baldurs Gate Campaign Copy 3",
+    "path": "localFirstTools/apps/games/baldurs-gate-campaign copy 3.html",
+    "category": "games"
+  },
+  {
+    "name": "Baldurs Gate Campaign Copy 4",
+    "path": "localFirstTools/apps/games/baldurs-gate-campaign copy 4.html",
+    "category": "games"
+  },
+  {
+    "name": "Baldurs Gate Campaign Copy 5",
+    "path": "localFirstTools/apps/games/baldurs-gate-campaign copy 5.html",
+    "category": "games"
+  },
+  {
+    "name": "Baldurs Gate Ultimate",
+    "path": "localFirstTools/apps/games/baldurs-gate-ultimate.html",
+    "category": "games"
+  },
+  {
+    "name": "Bioluminescent Ocean Trench",
+    "path": "localFirstTools/apps/games/bioluminescent-ocean-trench.html",
+    "category": "games"
+  },
+  {
+    "name": "Cityofheroes",
+    "path": "localFirstTools/apps/games/cityofHeroes.html",
+    "category": "games"
+  },
+  {
+    "name": "Civ Simulator",
+    "path": "localFirstTools/apps/games/civ-simulator.html",
+    "category": "games"
+  },
+  {
+    "name": "Collaborative Music Garden",
+    "path": "localFirstTools/apps/games/collaborative-music-garden.html",
+    "category": "games"
+  },
+  {
+    "name": "Complete Retroplay Console Ios",
+    "path": "localFirstTools/apps/games/complete-retroplay-console-ios.html",
+    "category": "games"
+  },
+  {
+    "name": "Crystal Caves World",
+    "path": "localFirstTools/apps/games/crystal-caves-world.html",
+    "category": "games"
+  },
+  {
+    "name": "Dnd Campaign 3d Visual",
+    "path": "localFirstTools/apps/games/dnd-campaign-3d-visual.html",
+    "category": "games"
+  },
+  {
+    "name": "Dnd Campaign Manager Enhanced",
+    "path": "localFirstTools/apps/games/dnd-campaign-manager-enhanced.html",
+    "category": "games"
+  },
+  {
+    "name": "Dnd Campaign Manager Multiplayer",
+    "path": "localFirstTools/apps/games/dnd-campaign-manager-multiplayer.html",
+    "category": "games"
+  },
+  {
+    "name": "Dnd Full Campaign Ultimate",
+    "path": "localFirstTools/apps/games/dnd-full-campaign-ultimate.html",
+    "category": "games"
+  },
+  {
+    "name": "Drone Simulator",
+    "path": "localFirstTools/apps/games/drone-simulator.html",
+    "category": "games"
+  },
+  {
+    "name": "Feedshyworm4",
+    "path": "localFirstTools/apps/games/feedShyworm4.html",
+    "category": "games"
+  },
+  {
+    "name": "Fpspic",
+    "path": "localFirstTools/apps/games/fpspic.html",
+    "category": "games"
+  },
+  {
+    "name": "Fractal Forest Recursion",
+    "path": "localFirstTools/apps/games/fractal-forest-recursion.html",
+    "category": "games"
+  },
+  {
+    "name": "Gameboy Clone",
+    "path": "localFirstTools/apps/games/gameboy-clone.html",
+    "category": "games"
+  },
+  {
+    "name": "Gameboy Emulator",
+    "path": "localFirstTools/apps/games/gameboy-emulator.html",
+    "category": "games"
+  },
+  {
+    "name": "Gameoflife",
+    "path": "localFirstTools/apps/games/gameoflife.html",
+    "category": "games"
+  },
+  {
+    "name": "Hearthstone Card Battle",
+    "path": "localFirstTools/apps/games/hearthstone-card-battle.html",
+    "category": "games"
+  },
+  {
+    "name": "Hearthstone Spectator Mode",
+    "path": "localFirstTools/apps/games/hearthstone-spectator-mode.html",
+    "category": "games"
+  },
+  {
+    "name": "Impossible Architecture Museum",
+    "path": "localFirstTools/apps/games/impossible-architecture-museum.html",
+    "category": "games"
+  },
+  {
+    "name": "Levi",
+    "path": "localFirstTools/apps/games/levi.html",
+    "category": "games"
+  },
+  {
+    "name": "Living Paint Dimension",
+    "path": "localFirstTools/apps/games/living-paint-dimension.html",
+    "category": "games"
+  },
+  {
+    "name": "Monster Truck Game",
+    "path": "localFirstTools/apps/games/monster-truck-game.html",
+    "category": "games"
+  },
+  {
+    "name": "Neon Synthwave City",
+    "path": "localFirstTools/apps/games/neon-synthwave-city.html",
+    "category": "games"
+  },
+  {
+    "name": "Nexus Holographic Companion",
+    "path": "localFirstTools/apps/games/nexus-holographic-companion.html",
+    "category": "games"
+  },
+  {
+    "name": "Nexusworlds",
+    "path": "localFirstTools/apps/games/NexusWorlds.html",
+    "category": "games"
+  },
+  {
+    "name": "P2p Networked World Enhanced",
+    "path": "localFirstTools/apps/games/p2p-networked-world-enhanced.html",
+    "category": "games"
+  },
+  {
+    "name": "Pokedex",
+    "path": "localFirstTools/apps/games/pokedex.html",
+    "category": "games"
+  },
+  {
+    "name": "Pokemon Generator Full Html",
+    "path": "localFirstTools/apps/games/pokemon-generator-full-html.html",
+    "category": "games"
+  },
+  {
+    "name": "Poker Trainer Continued",
+    "path": "localFirstTools/apps/games/poker-trainer-continued.html",
+    "category": "games"
+  },
+  {
+    "name": "Procedural Universe Generator",
+    "path": "localFirstTools/apps/games/procedural-universe-generator.html",
+    "category": "games"
+  },
+  {
+    "name": "Quantum Garden Floating Islands",
+    "path": "localFirstTools/apps/games/quantum-garden-floating-islands.html",
+    "category": "games"
+  },
+  {
+    "name": "Quantum Worlds Social Vr",
+    "path": "localFirstTools/apps/games/quantum-worlds-social-vr.html",
+    "category": "games"
+  },
+  {
+    "name": "Quantum Worlds Store",
+    "path": "localFirstTools/apps/games/quantum-worlds-store.html",
+    "category": "games"
+  },
+  {
+    "name": "Racing",
+    "path": "localFirstTools/apps/games/racing.html",
+    "category": "games"
+  },
+  {
+    "name": "Racing2",
+    "path": "localFirstTools/apps/games/racing2.html",
+    "category": "games"
+  },
+  {
+    "name": "Roblox Clone",
+    "path": "localFirstTools/apps/games/roblox-clone.html",
+    "category": "games"
+  },
+  {
+    "name": "Sky Realms Game",
+    "path": "localFirstTools/apps/games/sky-realms-game.html",
+    "category": "games"
+  },
+  {
+    "name": "Sky Realms Game Gamepad",
+    "path": "localFirstTools/apps/games/sky-realms-game_gamepad.html",
+    "category": "games"
+  },
+  {
+    "name": "Snake 2 Game",
+    "path": "localFirstTools/apps/games/snake-2-game.html",
+    "category": "games"
+  },
+  {
+    "name": "Snake3",
+    "path": "localFirstTools/apps/games/snake3.html",
+    "category": "games"
+  },
+  {
+    "name": "Steamdeck Game",
+    "path": "localFirstTools/apps/games/steamdeck-game.html",
+    "category": "games"
+  },
+  {
+    "name": "Steamdeck Game Store",
+    "path": "localFirstTools/apps/games/steamdeck-game-store.html",
+    "category": "games"
+  },
+  {
+    "name": "Tile Room 3d",
+    "path": "localFirstTools/apps/games/tile-room-3d.html",
+    "category": "games"
+  },
+  {
+    "name": "Wowmon",
+    "path": "localFirstTools/apps/games/wowMon.html",
+    "category": "games"
+  },
+  {
+    "name": "Zero G Space Station Builder",
+    "path": "localFirstTools/apps/games/zero-g-space-station-builder.html",
+    "category": "games"
+  },
+  {
+    "name": "Biometric Scanner",
+    "path": "localFirstTools/apps/health/biometric-scanner.html",
+    "category": "health"
+  },
+  {
+    "name": "Breathwork",
+    "path": "localFirstTools/apps/health/breathwork.html",
+    "category": "health"
+  },
+  {
+    "name": "Breathwork Guide",
+    "path": "localFirstTools/apps/health/breathwork-guide.html",
+    "category": "health"
+  },
+  {
+    "name": "Index Mac",
+    "path": "localFirstTools/apps/index-variants/index_MAC.html",
+    "category": "index-variants"
+  },
+  {
+    "name": "Index Mac Local",
+    "path": "localFirstTools/apps/index-variants/index_MAC_local.html",
+    "category": "index-variants"
+  },
+  {
+    "name": "Index Minimal Search",
+    "path": "localFirstTools/apps/index-variants/index-minimal-search.html",
+    "category": "index-variants"
+  },
+  {
+    "name": "Index Multi Theme",
+    "path": "localFirstTools/apps/index-variants/index-multi-theme.html",
+    "category": "index-variants"
+  },
+  {
+    "name": "Index Slim",
+    "path": "localFirstTools/apps/index-variants/index_slim.html",
+    "category": "index-variants"
+  },
+  {
+    "name": "Index Slim Cloud",
+    "path": "localFirstTools/apps/index-variants/index_slim_cloud.html",
+    "category": "index-variants"
+  },
+  {
+    "name": "Index Slim Cloud Qr",
+    "path": "localFirstTools/apps/index-variants/index_slim_cloud_qr.html",
+    "category": "index-variants"
+  },
+  {
+    "name": "Index Slim Cloud Tools",
+    "path": "localFirstTools/apps/index-variants/index_slim_cloud_tools.html",
+    "category": "index-variants"
+  },
+  {
+    "name": "Bothangles Ios Fixed",
+    "path": "localFirstTools/apps/media/bothangles-ios-fixed.html",
+    "category": "media"
+  },
+  {
+    "name": "Drone Simulator Link App",
+    "path": "localFirstTools/apps/media/drone-simulator-link-app.html",
+    "category": "media"
+  },
+  {
+    "name": "Drum Machine 808",
+    "path": "localFirstTools/apps/media/drum-machine-808.html",
+    "category": "media"
+  },
+  {
+    "name": "Dual Camera Recorder",
+    "path": "localFirstTools/apps/media/dual-camera-recorder.html",
+    "category": "media"
+  },
+  {
+    "name": "Hologram Camera Recorder",
+    "path": "localFirstTools/apps/media/hologram-camera-recorder.html",
+    "category": "media"
+  },
+  {
+    "name": "Holographic Display Creator",
+    "path": "localFirstTools/apps/media/holographic-display-creator.html",
+    "category": "media"
+  },
+  {
+    "name": "Youtube Webcam Recorder",
+    "path": "localFirstTools/apps/media/youtube-webcam-recorder.html",
+    "category": "media"
+  },
+  {
+    "name": "Youtube Webcam Sync Fixed",
+    "path": "localFirstTools/apps/media/youtube-webcam-sync-fixed.html",
+    "category": "media"
+  },
+  {
+    "name": "Autonomous Book Factory",
+    "path": "localFirstTools/apps/productivity/autonomous-book-factory.html",
+    "category": "productivity"
+  },
+  {
+    "name": "Book Factory World",
+    "path": "localFirstTools/apps/productivity/book-factory-world.html",
+    "category": "productivity"
+  },
+  {
+    "name": "Compressed Book Factory",
+    "path": "localFirstTools/apps/productivity/compressed-book-factory.html",
+    "category": "productivity"
+  },
+  {
+    "name": "Digital Twin Keeper",
+    "path": "localFirstTools/apps/productivity/digital-twin-keeper.html",
+    "category": "productivity"
+  },
+  {
+    "name": "Focusflow Timer",
+    "path": "localFirstTools/apps/productivity/focusflow-timer.html",
+    "category": "productivity"
+  },
+  {
+    "name": "Ghostwriter",
+    "path": "localFirstTools/apps/productivity/ghostwriter.html",
+    "category": "productivity"
+  },
+  {
+    "name": "Jim Rohn Journal App",
+    "path": "localFirstTools/apps/productivity/jim-rohn-journal-app.html",
+    "category": "productivity"
+  },
+  {
+    "name": "Memory Palace",
+    "path": "localFirstTools/apps/productivity/memory-palace.html",
+    "category": "productivity"
+  },
+  {
+    "name": "Omni Writer",
+    "path": "localFirstTools/apps/productivity/omni-writer.html",
+    "category": "productivity"
+  },
+  {
+    "name": "Presentation App Complete",
+    "path": "localFirstTools/apps/productivity/presentation_app_complete.html",
+    "category": "productivity"
+  },
+  {
+    "name": "Prompt Library",
+    "path": "localFirstTools/apps/productivity/prompt-library.html",
+    "category": "productivity"
+  },
+  {
+    "name": "Record Review App",
+    "path": "localFirstTools/apps/productivity/record-review-app.html",
+    "category": "productivity"
+  },
+  {
+    "name": "Severance Refiner",
+    "path": "localFirstTools/apps/productivity/severance-refiner.html",
+    "category": "productivity"
+  },
+  {
+    "name": "Sneaker Net Social",
+    "path": "localFirstTools/apps/productivity/sneaker-net-social.html",
+    "category": "productivity"
+  },
+  {
+    "name": "Sneakernet Complete",
+    "path": "localFirstTools/apps/productivity/sneakernet-complete.html",
+    "category": "productivity"
+  },
+  {
+    "name": "Ancient Ruins Dying Star",
+    "path": "localFirstTools/apps/quantum-worlds/ancient-ruins-dying-star.html",
+    "category": "quantum-worlds"
+  },
+  {
+    "name": "Bioluminescent Ocean Trench",
+    "path": "localFirstTools/apps/quantum-worlds/bioluminescent-ocean-trench.html",
+    "category": "quantum-worlds"
+  },
+  {
+    "name": "Collaborative Music Garden",
+    "path": "localFirstTools/apps/quantum-worlds/collaborative-music-garden.html",
+    "category": "quantum-worlds"
+  },
+  {
+    "name": "Fractal Forest",
+    "path": "localFirstTools/apps/quantum-worlds/fractal-forest.html",
+    "category": "quantum-worlds"
+  },
+  {
+    "name": "Impossible Architecture Museum",
+    "path": "localFirstTools/apps/quantum-worlds/impossible-architecture-museum.html",
+    "category": "quantum-worlds"
+  },
+  {
+    "name": "Living Paint Dimension",
+    "path": "localFirstTools/apps/quantum-worlds/living-paint-dimension.html",
+    "category": "quantum-worlds"
+  },
+  {
+    "name": "Neon Synthwave City",
+    "path": "localFirstTools/apps/quantum-worlds/neon-synthwave-city.html",
+    "category": "quantum-worlds"
+  },
+  {
+    "name": "Particle Physics Playground",
+    "path": "localFirstTools/apps/quantum-worlds/particle-physics-playground.html",
+    "category": "quantum-worlds"
+  },
+  {
+    "name": "Quantum Garden",
+    "path": "localFirstTools/apps/quantum-worlds/quantum-garden.html",
+    "category": "quantum-worlds"
+  },
+  {
+    "name": "Zero G Space Station",
+    "path": "localFirstTools/apps/quantum-worlds/zero-g-space-station.html",
+    "category": "quantum-worlds"
+  },
+  {
+    "name": "Ai Config Demo",
+    "path": "localFirstTools/apps/utilities/ai-config-demo.html",
+    "category": "utilities"
+  },
+  {
+    "name": "Ghz Mvp Messenger",
+    "path": "localFirstTools/apps/utilities/ghz-mvp-messenger.html",
+    "category": "utilities"
+  },
+  {
+    "name": "Ghz Three Person Sync",
+    "path": "localFirstTools/apps/utilities/ghz-three-person-sync.html",
+    "category": "utilities"
+  },
+  {
+    "name": "Index Sorting",
+    "path": "localFirstTools/apps/utilities/index_sorting.html",
+    "category": "utilities"
+  },
+  {
+    "name": "Linux Terminal Emulator",
+    "path": "localFirstTools/apps/utilities/linux-terminal-emulator.html",
+    "category": "utilities"
+  },
+  {
+    "name": "Local Analytics Studio",
+    "path": "localFirstTools/apps/utilities/local-analytics-studio.html",
+    "category": "utilities"
+  },
+  {
+    "name": "Local Os",
+    "path": "localFirstTools/apps/utilities/local-os.html",
+    "category": "utilities"
+  },
+  {
+    "name": "P2p Distributed Os",
+    "path": "localFirstTools/apps/utilities/p2p-distributed-os.html",
+    "category": "utilities"
+  },
+  {
+    "name": "Quantum Sealed Messenger",
+    "path": "localFirstTools/apps/utilities/quantum-sealed-messenger.html",
+    "category": "utilities"
+  },
+  {
+    "name": "Quantum Tripartite Messenger",
+    "path": "localFirstTools/apps/utilities/quantum-tripartite-messenger.html",
+    "category": "utilities"
+  },
+  {
+    "name": "Securevault Password Manager",
+    "path": "localFirstTools/apps/utilities/securevault-password-manager.html",
+    "category": "utilities"
+  },
+  {
+    "name": "Snap Message App",
+    "path": "localFirstTools/apps/utilities/snap-message-app.html",
+    "category": "utilities"
+  },
+  {
+    "name": "Text File Splitter",
+    "path": "localFirstTools/apps/utilities/text-file-splitter.html",
+    "category": "utilities"
+  },
+  {
+    "name": "Timezone Converter Tool",
+    "path": "localFirstTools/apps/utilities/timezone-converter-tool.html",
+    "category": "utilities"
+  },
+  {
+    "name": "Windows95 Emulator",
+    "path": "localFirstTools/apps/utilities/windows95-emulator.html",
+    "category": "utilities"
+  },
+  {
+    "name": "Wordpress Crawler",
+    "path": "localFirstTools/apps/utilities/wordpress-crawler.html",
+    "category": "utilities"
+  }
+]
