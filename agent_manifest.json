@@ -14,30 +14,46 @@
       "tags": [
         "ai",
         "storage",
-        "support",
-        "data"
+        "data",
+        "support"
       ],
       "use_cases": [],
       "dependencies": []
     },
-    "PromptPlayground": {
-      "name": "PromptPlayground",
-      "filename": "prompt_playground_agent.py",
-      "class_name": "PromptPlaygroundAgent",
+    "UploadImage": {
+      "name": "UploadImage",
+      "filename": "upload_image_agent.py",
+      "class_name": "UploadImageAgent",
       "metadata": {},
       "description": "No description available",
       "parameters": {},
       "docstring": "",
-      "file_docstring": "Prompt Engineering Playground Agent\n\nThis agent provides a comprehensive prompt engineering environment with:\n- Iterative prompt refinement\n- A/B testing across multiple prompt variants\n- Performance metrics tracking (latency, tokens, quality)\n- Genetic algorithm-based optimization\n- Experiment management and analysis\n\nUsage:\n1. Create an experiment with test cases\n2. Add prompt variants to test\n3. Run A/B tests to compare performance\n4. Use genetic optimization to evolve better prompts\n5. Analyze results and export findings",
+      "file_docstring": "Extract base64 content from a data URL.",
       "capabilities": [],
-      "category": "Utilities",
+      "category": "Document",
       "tags": [
-        "openai",
-        "ml",
-        "api",
         "ai",
         "storage",
-        "gpt",
+        "data",
+        "service"
+      ],
+      "use_cases": [],
+      "dependencies": []
+    },
+    "HackerNewsLatest": {
+      "name": "HackerNewsLatest",
+      "filename": "hacker_news_latest_agent.py",
+      "class_name": "HackerNewsLatestAgent",
+      "metadata": {},
+      "description": "No description available",
+      "parameters": {},
+      "docstring": "",
+      "file_docstring": "Fetches top stories from Hacker News API.\n\n        Args:\n            story_limit: Number of stories to retrieve (default: 10)\n\n        Returns:\n            Formatted string with story titles and URLs",
+      "capabilities": [],
+      "category": "Development",
+      "tags": [
+        "api",
+        "ai",
         "data"
       ],
       "use_cases": [],
@@ -55,36 +71,14 @@
       "capabilities": [],
       "category": "Utilities",
       "tags": [
+        "ai",
+        "service",
         "sales",
-        "api",
-        "ai",
-        "service",
-        "integration",
-        "storage",
         "support",
-        "data"
-      ],
-      "use_cases": [],
-      "dependencies": []
-    },
-    "OrderVerification": {
-      "name": "OrderVerification",
-      "filename": "order_verification_agent.py",
-      "class_name": "OrderVerificationAgent",
-      "metadata": {},
-      "description": "No description available",
-      "parameters": {},
-      "docstring": "",
-      "file_docstring": "Voice Order Verification & Upsell Agent\n\nPROBLEM SOLVED:\n- Employees experience mental fatigue from tracking order details (sizes, sides, drinks, special requests)\n- Mistakes happen during rush hours when split attention causes missing items\n- Upselling is inconsistent and feels scripted\n- Order errors discovered at pickup lead to remakes and customer frustration\n\nSOLUTION:\n- AI catches mistakes in REAL-TIME (\"You forgot the fries\") before order is confirmed\n- Employees focus on CUSTOMER SERVICE and building rapport instead of transaction details\n- Intelligent upselling happens automatically without memorizing scripts\n- Reduces employee stress and cognitive load, leading to better work experience\n\nRESULT:\n- 85% reduction in order errors\n- 50% reduction in employee stress\n- 3x increase in upsell success rate\n- Employees can make eye contact and connect with customers instead of staring at POS\n\nPerfect for: Drive-thru, phone orders, counter service, conversational commerce",
-      "capabilities": [],
-      "category": "Commerce",
-      "tags": [
-        "analytics",
-        "ai",
-        "service",
-        "customer",
         "storage",
-        "database",
+        "api",
+        "integration",
+        "ml",
         "data"
       ],
       "use_cases": [],
@@ -109,71 +103,23 @@
       "use_cases": [],
       "dependencies": []
     },
-    "GitHubAgentLibrary": {
-      "name": "GitHubAgentLibrary",
-      "filename": "github_agent_library_manager.py",
-      "class_name": "GitHubAgentLibraryManager",
-      "metadata": {},
-      "description": "No description available",
-      "parameters": {},
-      "docstring": "Comprehensive GitHub Agent Library Manager.\n    Manages integration with the GitHub Agent Template Library at kody-w/AI-Agent-Templates.\n    Handles both individual agent operations (discover, search, install) and GUID-based agent groups.",
-      "file_docstring": "Comprehensive GitHub Agent Library Manager.\n    Manages integration with the GitHub Agent Template Library at kody-w/AI-Agent-Templates.\n    Handles both individual agent operations (discover, search, install) and GUID-based agent groups.",
-      "capabilities": [],
-      "category": "Development",
-      "tags": [
-        "sales",
-        "api",
-        "ai",
-        "workflow",
-        "service",
-        "automation",
-        "integration",
-        "storage",
-        "data"
-      ],
-      "use_cases": [],
-      "dependencies": []
-    },
-    "DDDungeonMaster": {
-      "name": "DDDungeonMaster",
-      "filename": "dnd_dungeon_master_agent.py",
-      "class_name": "DDDungeonMasterAgent",
+    "AnalyzeImage": {
+      "name": "AnalyzeImage",
+      "filename": "analyze_image_agent.py",
+      "class_name": "AnalyzeImageAgent",
       "metadata": {},
       "description": "No description available",
       "parameters": {},
       "docstring": "",
-      "file_docstring": "D&D Dungeon Master Agent\n\nA comprehensive text-based Dungeons & Dragons 5th Edition Dungeon Master agent\nthat facilitates complete campaign playthroughs with BG3-level depth.\n\nFeatures:\n- Complete character creation (races, classes, backgrounds, stats)\n- D&D 5e combat mechanics with dice rolling and turn management\n- Inventory and equipment system\n- Spell casting with spell slots and components\n- Rich narrative generation using AI\n- Quest tracking and progression\n- NPC interaction and dialogue\n- Save/Load game state\n- Multiple campaign settings\n- Party management (single or multi-character)\n\nBased on D&D 5th Edition rules, enhanced with Baldur's Gate 3 storytelling depth.",
-      "capabilities": [],
-      "category": "Entertainment",
-      "tags": [
-        "openai",
-        "api",
-        "ai",
-        "rest",
-        "storage",
-        "gpt",
-        "data"
-      ],
-      "use_cases": [],
-      "dependencies": []
-    },
-    "ContractAnalysis": {
-      "name": "ContractAnalysis",
-      "filename": "contract_analysis_agent.py",
-      "class_name": "ContractAnalysisAgent",
-      "metadata": {},
-      "description": "No description available",
-      "parameters": {},
-      "docstring": "",
-      "file_docstring": "Contract Analysis Agent\nAnalyzes contracts to extract key obligations, identify risks, and compare multiple contracts.",
+      "file_docstring": "Analyze an image using Vision AI.\n\n        Args:\n            image_source (str): URL of the image to be analyzed, or a Base64 encoded image string.\n            prompt (str, optional): Custom prompt for analysis\n\n        Returns:\n            str: A detailed description of the image content.",
       "capabilities": [],
       "category": "Analytics",
       "tags": [
-        "ml",
         "ai",
-        "rest",
-        "service",
+        "openai",
         "storage",
+        "api",
+        "gpt",
         "data"
       ],
       "use_cases": [],
@@ -185,21 +131,17 @@
       "ContextMemory",
       "ManageMemory"
     ],
-    "Utilities": [
-      "PromptPlayground",
-      "ScriptedDemo"
-    ],
-    "Commerce": [
-      "OrderVerification"
+    "Document": [
+      "UploadImage"
     ],
     "Development": [
-      "GitHubAgentLibrary"
+      "HackerNewsLatest"
     ],
-    "Entertainment": [
-      "DDDungeonMaster"
+    "Utilities": [
+      "ScriptedDemo"
     ],
     "Analytics": [
-      "ContractAnalysis"
+      "AnalyzeImage"
     ]
   },
   "suggested_presets": [
@@ -223,10 +165,29 @@
       "auto_generated": true
     },
     {
+      "name": "Document Suite",
+      "description": "All document agents",
+      "agents": [
+        "upload_image_agent.py"
+      ],
+      "settings": {},
+      "icon": "\ud83d\udcc4",
+      "auto_generated": true
+    },
+    {
+      "name": "Development Suite",
+      "description": "All development agents",
+      "agents": [
+        "hacker_news_latest_agent.py"
+      ],
+      "settings": {},
+      "icon": "\ud83d\udcbb",
+      "auto_generated": true
+    },
+    {
       "name": "Utilities Suite",
       "description": "All utilities agents",
       "agents": [
-        "prompt_playground_agent.py",
         "scripted_demo_agent.py"
       ],
       "settings": {},
@@ -234,57 +195,13 @@
       "auto_generated": true
     },
     {
-      "name": "Commerce Suite",
-      "description": "All commerce agents",
-      "agents": [
-        "order_verification_agent.py"
-      ],
-      "settings": {},
-      "icon": "\ud83d\uded2",
-      "auto_generated": true
-    },
-    {
-      "name": "Development Suite",
-      "description": "All development agents",
-      "agents": [
-        "github_agent_library_manager.py"
-      ],
-      "settings": {},
-      "icon": "\ud83d\udcbb",
-      "auto_generated": true
-    },
-    {
-      "name": "Entertainment Suite",
-      "description": "All entertainment agents",
-      "agents": [
-        "dnd_dungeon_master_agent.py"
-      ],
-      "settings": {},
-      "icon": "\ud83c\udfae",
-      "auto_generated": true
-    },
-    {
       "name": "Analytics Suite",
       "description": "All analytics agents",
       "agents": [
-        "contract_analysis_agent.py"
+        "analyze_image_agent.py"
       ],
       "settings": {},
       "icon": "\ud83d\udcca",
-      "auto_generated": true
-    },
-    {
-      "name": "Customer Service",
-      "description": "Memory and commerce agents for customer interactions",
-      "agents": [
-        "context_memory_agent.py",
-        "manage_memory_agent.py",
-        "order_verification_agent.py"
-      ],
-      "settings": {
-        "enable_upsell": true
-      },
-      "icon": "\ud83d\uded2",
       "auto_generated": true
     },
     {
@@ -300,8 +217,8 @@
     }
   ],
   "statistics": {
-    "total_agents": 8,
-    "total_categories": 6,
-    "total_presets": 9
+    "total_agents": 6,
+    "total_categories": 5,
+    "total_presets": 7
   }
 }
