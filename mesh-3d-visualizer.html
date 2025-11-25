@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>RAPP P2P Mesh - 3D Multi-Window Visualizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid rgba(102, 126, 234, 0.5);
+            box-shadow: 0 0 30px rgba(102, 126, 234, 0.3);
+            z-index: 100;
+            max-width: 300px;
+        }
+
+        #info h1 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+
+        #info p {
+            font-size: 12px;
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .stat-value {
+            color: #4ade80;
+            font-weight: bold;
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid rgba(102, 126, 234, 0.5);
+            z-index: 100;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.6);
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <h1>🔀 P2P Mesh Network</h1>
+        <p><strong>Works with tabs AND windows!</strong></p>
+        <p>Open this in multiple browser tabs or windows to see the 3D mesh network visualize your P2P connections in real-time!</p>
+        <p style="font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 5px;">Uses localStorage for cross-instance coordination - no server needed!</p>
+        <div class="stat">
+            <span class="stat-label">Tabs & Windows:</span>
+            <span class="stat-value" id="window-count">1</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">Peers:</span>
+            <span class="stat-value" id="peer-count">0</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">This Window:</span>
+            <span class="stat-value" id="window-id">-</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">Browser:</span>
+            <span class="stat-value" id="browser-name">-</span>
+        </div>
+    </div>
+
+    <div id="controls">
+        <button onclick="openNewTab()">📑 Open New Tab</button>
+        <button onclick="openNewWindow()">🪟 Open New Window</button>
+        <button onclick="testDataFlow()">⚡ Test Data Flow</button>
+        <button onclick="clearWindows()">🗑️ Clear All</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script type="module">
+        // ============================================================================
+        // WINDOW MANAGER (Multi-window coordination via localStorage)
+        // ============================================================================
+        class WindowManager {
+            constructor() {
+                this.windows = [];
+                this.count = 0;
+                this.id = null;
+                this.winData = null;
+                this.winShapeChangeCallback = null;
+                this.winChangeCallback = null;
+
+                // Listen for localStorage changes from other windows
+                window.addEventListener("storage", (event) => {
+                    if (event.key === "mesh-windows") {
+                        const newWindows = JSON.parse(event.newValue || '[]');
+                        const changed = this.didWindowsChange(this.windows, newWindows);
+                        this.windows = newWindows;
+
+                        if (changed && this.winChangeCallback) {
+                            this.winChangeCallback();
+                        }
+                    }
+                });
+
+                // Clean up on close
+                window.addEventListener('beforeunload', () => {
+                    const index = this.getWindowIndexFromId(this.id);
+                    if (index >= 0) {
+                        this.windows.splice(index, 1);
+                        this.updateWindowsLocalStorage();
+                    }
+                });
+            }
+
+            didWindowsChange(oldWins, newWins) {
+                if (oldWins.length !== newWins.length) return true;
+                return oldWins.some((w, i) => w.id !== newWins[i].id);
+            }
+
+            init(metaData) {
+                this.windows = JSON.parse(localStorage.getItem("mesh-windows") || '[]');
+                this.count = parseInt(localStorage.getItem("mesh-count") || '0');
+                this.count++;
+                this.id = this.count;
+
+                const shape = this.getWinShape();
+                this.winData = { id: this.id, shape, metaData };
+                this.windows.push(this.winData);
+
+                localStorage.setItem("mesh-count", this.count);
+                this.updateWindowsLocalStorage();
+            }
+
+            getWinShape() {
+                return {
+                    x: window.screenX,
+                    y: window.screenY,
+                    w: window.innerWidth,
+                    h: window.innerHeight
+                };
+            }
+
+            getWindowIndexFromId(id) {
+                return this.windows.findIndex(w => w.id === id);
+            }
+
+            updateWindowsLocalStorage() {
+                localStorage.setItem("mesh-windows", JSON.stringify(this.windows));
+            }
+
+            update() {
+                const shape = this.getWinShape();
+                const changed = ['x', 'y', 'w', 'h'].some(k => shape[k] !== this.winData.shape[k]);
+
+                if (changed) {
+                    this.winData.shape = shape;
+                    const index = this.getWindowIndexFromId(this.id);
+                    if (index >= 0) {
+                        this.windows[index].shape = shape;
+                        if (this.winShapeChangeCallback) this.winShapeChangeCallback();
+                        this.updateWindowsLocalStorage();
+                    }
+                }
+            }
+
+            setWinShapeChangeCallback(callback) { this.winShapeChangeCallback = callback; }
+            setWinChangeCallback(callback) { this.winChangeCallback = callback; }
+            getWindows() { return this.windows; }
+            getThisWindowData() { return this.winData; }
+            getThisWindowID() { return this.id; }
+        }
+
+        // ============================================================================
+        // BROWSER DETECTION
+        // ============================================================================
+        function detectBrowser() {
+            const ua = navigator.userAgent;
+            if (ua.indexOf('Firefox') > -1) return { name: 'Firefox', color: 0xff6b35 };
+            if (ua.indexOf('Edg') > -1) return { name: 'Edge', color: 0x0078d4 };
+            if (ua.indexOf('Chrome') > -1) return { name: 'Chrome', color: 0x4285f4 };
+            if (ua.indexOf('Safari') > -1) return { name: 'Safari', color: 0x006cff };
+            return { name: 'Unknown', color: 0x888888 };
+        }
+
+        // ============================================================================
+        // THREE.JS SCENE SETUP
+        // ============================================================================
+        let camera, scene, renderer, world;
+        let windowManager;
+        let nodes = [];
+        let connections = [];
+        let particles = [];
+        let sceneOffset = { x: 0, y: 0 };
+        let sceneOffsetTarget = { x: 0, y: 0 };
+
+        const browser = detectBrowser();
+        document.getElementById('browser-name').textContent = browser.name;
+
+        function setupScene() {
+            // Camera setup
+            camera = new THREE.OrthographicCamera(
+                0, window.innerWidth,
+                0, window.innerHeight,
+                -10000, 10000
+            );
+            camera.position.z = 2.5;
+
+            // Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0a0a0a);
+            scene.fog = new THREE.Fog(0x0a0a0a, 1000, 10000);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // World container
+            world = new THREE.Object3D();
+            scene.add(world);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+
+            const pointLight = new THREE.PointLight(0x667eea, 2, 5000);
+            pointLight.position.set(0, 0, 1000);
+            scene.add(pointLight);
+        }
+
+        function setupWindowManager() {
+            windowManager = new WindowManager();
+            windowManager.setWinShapeChangeCallback(updateWindowShape);
+            windowManager.setWinChangeCallback(windowsUpdated);
+
+            windowManager.init({ browser: browser.name, color: browser.color });
+            document.getElementById('window-id').textContent = windowManager.getThisWindowID();
+
+            windowsUpdated();
+        }
+
+        function windowsUpdated() {
+            const wins = windowManager.getWindows();
+            console.log(`🔄 Network updated: ${wins.length} instance(s) connected (tabs + windows)`);
+            updateNodes();
+            updateStats();
+        }
+
+        function updateStats() {
+            const wins = windowManager.getWindows();
+            document.getElementById('window-count').textContent = wins.length;
+            document.getElementById('peer-count').textContent = Math.max(0, wins.length - 1);
+        }
+
+        function updateNodes() {
+            const wins = windowManager.getWindows();
+
+            // Clear existing nodes and connections
+            nodes.forEach(n => world.remove(n.mesh));
+            connections.forEach(c => world.remove(c));
+            nodes = [];
+            connections = [];
+
+            // Create nodes for each window
+            wins.forEach((win, i) => {
+                // Node position (center of window)
+                const x = win.shape.x + (win.shape.w * 0.5);
+                const y = win.shape.y + (win.shape.h * 0.5);
+
+                // Create glowing sphere
+                const geometry = new THREE.SphereGeometry(50, 32, 32);
+                const material = new THREE.MeshPhongMaterial({
+                    color: win.metaData.color || 0x667eea,
+                    emissive: win.metaData.color || 0x667eea,
+                    emissiveIntensity: 0.5,
+                    shininess: 100,
+                    transparent: true,
+                    opacity: 0.9
+                });
+
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.position.set(x, y, 0);
+                world.add(mesh);
+
+                // Add glow effect
+                const glowGeometry = new THREE.SphereGeometry(60, 32, 32);
+                const glowMaterial = new THREE.MeshBasicMaterial({
+                    color: win.metaData.color || 0x667eea,
+                    transparent: true,
+                    opacity: 0.3
+                });
+                const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                mesh.add(glow);
+
+                // Pulsing animation data
+                nodes.push({
+                    mesh,
+                    glow,
+                    targetX: x,
+                    targetY: y,
+                    pulsePhase: Math.random() * Math.PI * 2,
+                    windowId: win.id
+                });
+            });
+
+            // Create connections between nodes
+            for (let i = 0; i < nodes.length; i++) {
+                for (let j = i + 1; j < nodes.length; j++) {
+                    const points = [
+                        nodes[i].mesh.position,
+                        nodes[j].mesh.position
+                    ];
+
+                    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                    const material = new THREE.LineBasicMaterial({
+                        color: 0x667eea,
+                        transparent: true,
+                        opacity: 0.4,
+                        linewidth: 2
+                    });
+
+                    const line = new THREE.Line(geometry, material);
+                    world.add(line);
+                    connections.push(line);
+                }
+            }
+        }
+
+        function updateWindowShape() {
+            sceneOffsetTarget = { x: -window.screenX, y: -window.screenY };
+        }
+
+        function createDataParticle(fromIndex, toIndex) {
+            if (!nodes[fromIndex] || !nodes[toIndex]) return;
+
+            const geometry = new THREE.SphereGeometry(8, 16, 16);
+            const material = new THREE.MeshBasicMaterial({
+                color: 0x4ade80,
+                transparent: true,
+                opacity: 1
+            });
+
+            const particle = new THREE.Mesh(geometry, material);
+            particle.position.copy(nodes[fromIndex].mesh.position);
+            world.add(particle);
+
+            particles.push({
+                mesh: particle,
+                from: nodes[fromIndex].mesh.position.clone(),
+                to: nodes[toIndex].mesh.position.clone(),
+                progress: 0,
+                speed: 0.02
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            windowManager.update();
+
+            const time = Date.now() * 0.001;
+            const falloff = 0.05;
+
+            // Smooth camera movement
+            sceneOffset.x += (sceneOffsetTarget.x - sceneOffset.x) * falloff;
+            sceneOffset.y += (sceneOffsetTarget.y - sceneOffset.y) * falloff;
+            world.position.set(sceneOffset.x, sceneOffset.y, 0);
+
+            // Update nodes
+            const wins = windowManager.getWindows();
+            nodes.forEach((node, i) => {
+                if (wins[i]) {
+                    const win = wins[i];
+                    const targetX = win.shape.x + (win.shape.w * 0.5);
+                    const targetY = win.shape.y + (win.shape.h * 0.5);
+
+                    node.mesh.position.x += (targetX - node.mesh.position.x) * falloff;
+                    node.mesh.position.y += (targetY - node.mesh.position.y) * falloff;
+
+                    // Pulsing animation
+                    node.pulsePhase += 0.02;
+                    const scale = 1 + Math.sin(node.pulsePhase) * 0.1;
+                    node.mesh.scale.set(scale, scale, scale);
+
+                    // Rotation
+                    node.mesh.rotation.x = time * 0.3;
+                    node.mesh.rotation.y = time * 0.5;
+                }
+            });
+
+            // Update connections
+            connections.forEach((line, i) => {
+                const nodeA = Math.floor(i / nodes.length);
+                const nodeB = i % nodes.length;
+                if (nodes[nodeA] && nodes[nodeB]) {
+                    const positions = line.geometry.attributes.position.array;
+                    positions[0] = nodes[nodeA].mesh.position.x;
+                    positions[1] = nodes[nodeA].mesh.position.y;
+                    positions[2] = nodes[nodeA].mesh.position.z;
+                    positions[3] = nodes[nodeB].mesh.position.x;
+                    positions[4] = nodes[nodeB].mesh.position.y;
+                    positions[5] = nodes[nodeB].mesh.position.z;
+                    line.geometry.attributes.position.needsUpdate = true;
+                }
+            });
+
+            // Update particles
+            particles = particles.filter(p => {
+                p.progress += p.speed;
+
+                if (p.progress >= 1) {
+                    world.remove(p.mesh);
+                    return false;
+                }
+
+                // Lerp position
+                p.mesh.position.lerpVectors(p.from, p.to, p.progress);
+
+                // Fade out
+                p.mesh.material.opacity = 1 - p.progress;
+
+                return true;
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        function resize() {
+            camera = new THREE.OrthographicCamera(
+                0, window.innerWidth,
+                0, window.innerHeight,
+                -10000, 10000
+            );
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // ============================================================================
+        // GLOBAL FUNCTIONS (called from buttons)
+        // ============================================================================
+        window.openNewWindow = function() {
+            console.log('🪟 Opening new window...');
+            window.open(window.location.href, '_blank', 'width=800,height=600');
+        };
+
+        window.openNewTab = function() {
+            console.log('📑 Opening new tab...');
+            window.open(window.location.href, '_blank');
+        };
+
+        window.testDataFlow = function() {
+            if (nodes.length < 2) {
+                alert('Open at least 2 instances (tabs or windows) to see data flow!');
+                return;
+            }
+
+            // Send particles from this window to all others
+            const thisIndex = nodes.findIndex(n => n.windowId === windowManager.getThisWindowID());
+            if (thisIndex >= 0) {
+                nodes.forEach((_, i) => {
+                    if (i !== thisIndex) {
+                        createDataParticle(thisIndex, i);
+                        setTimeout(() => createDataParticle(i, thisIndex), 500);
+                    }
+                });
+            }
+        };
+
+        window.clearWindows = function() {
+            if (confirm('Clear all windows from the network?')) {
+                localStorage.removeItem('mesh-windows');
+                localStorage.removeItem('mesh-count');
+                window.location.reload();
+            }
+        };
+
+        // ============================================================================
+        // INITIALIZATION
+        // ============================================================================
+        let initialized = false;
+
+        // Handle visibility changes
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState !== 'hidden' && !initialized) {
+                init();
+            }
+        });
+
+        window.onload = () => {
+            if (document.visibilityState !== 'hidden') {
+                init();
+            }
+        };
+
+        function init() {
+            if (initialized) return;
+            initialized = true;
+
+            console.log('🚀 Initializing P2P Mesh Visualizer...');
+            console.log(`📍 Instance ID will be: ${(parseInt(localStorage.getItem("mesh-count") || '0') + 1)}`);
+            console.log('💾 Using localStorage for cross-tab & cross-window communication');
+
+            setTimeout(() => {
+                setupScene();
+                setupWindowManager();
+                resize();
+                updateWindowShape();
+                animate();
+                window.addEventListener('resize', resize);
+
+                console.log(`✅ Instance ${windowManager.getThisWindowID()} ready!`);
+                console.log('🔗 Listening for other tabs and windows...');
+
+                // Auto-test data flow after 2 seconds if multiple instances
+                setTimeout(() => {
+                    if (windowManager.getWindows().length > 1) {
+                        console.log('🎯 Multiple instances detected! Auto-testing data flow...');
+                        testDataFlow();
+                    }
+                }, 2000);
+            }, 500);
+        }
+
+        console.log('🔀 RAPP P2P Mesh 3D Visualizer loaded!');
+        console.log('📑 Works with tabs AND windows! Open multiple instances to see the magic!');
+        console.log('💡 Tip: Use "📑 Open New Tab" or "🪟 Open New Window" buttons');
+    </script>
+</body>
+</html>

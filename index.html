@@ -1010,9 +1010,10 @@
       overflow-y: auto;
       overflow-x: hidden;
       padding: var(--space-xl);
-      padding-bottom: 200px;
+      padding-bottom: 350px;
       scroll-behavior: smooth;
       position: relative;
+      min-height: 0;
     }
 
     @media (min-width: 1024px) {
@@ -3650,6 +3651,7 @@
     </div>
     <div class="mesh-banner-actions">
       <button class="mesh-banner-btn" id="mesh-banner-test">🧪 Test Sync</button>
+      <button class="mesh-banner-btn" id="mesh-banner-share">📱 Share (QR Code)</button>
       <button class="mesh-banner-btn" id="mesh-banner-view">📊 View Details</button>
     </div>
     <button class="mesh-banner-close" id="mesh-banner-close">
@@ -3663,7 +3665,58 @@
     <span>Syncing...</span>
   </div>
 
+  <!-- Show Mode Modal (Cross-Device Sharing) -->
+  <div id="show-mode-modal" class="mesh-modal" style="display: none;">
+    <div class="mesh-panel" style="max-width: 500px;">
+      <div class="mesh-header">
+        <div class="mesh-panel-icon">
+          <i class="fas fa-qrcode"></i>
+        </div>
+        <div class="mesh-panel-title">
+          Share RAPP Across Devices
+        </div>
+        <button class="mesh-close" id="show-mode-close-btn">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="mesh-content" style="text-align: center;">
+        <p style="margin-bottom: 20px; color: var(--gray-80);">
+          Scan this QR code on another device to sync your RAPP state in real-time!
+        </p>
+
+        <div id="show-mode-status" style="padding: 12px; background: rgba(76, 175, 80, 0.1); border-radius: var(--radius); margin-bottom: 20px; display: none;">
+          <div style="display: flex; align-items: center; justify-content: center; gap: 10px; color: #4caf50;">
+            <i class="fas fa-broadcast-tower"></i>
+            <span>Broadcasting - <span id="show-mode-viewer-count">0</span> device(s) connected</span>
+          </div>
+        </div>
+
+        <div id="qr-code-container" style="display: inline-block; padding: 20px; background: white; border-radius: var(--radius); margin: 20px 0;">
+          <canvas id="qr-code-canvas"></canvas>
+        </div>
+
+        <div style="margin: 20px 0;">
+          <input type="text" id="share-url" readonly
+            style="width: 100%; padding: 12px; background: var(--gray-20); border: 1px solid var(--gray-40); border-radius: var(--radius); font-family: monospace; font-size: 12px; text-align: center;"
+            value="Generating share link...">
+        </div>
+
+        <button class="mesh-btn mesh-btn-primary" id="copy-share-url" style="width: 100%;">
+          <i class="fas fa-copy"></i>
+          Copy Share Link
+        </button>
+
+        <p style="margin-top: 20px; font-size: 12px; color: var(--gray-80);">
+          💡 Other devices will follow your RAPP state updates in real-time via P2P connection
+        </p>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"></script>
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
 
   <script>
     // Global state management
@@ -7389,6 +7442,314 @@
  * - Fault tolerance: Survive node failures
  */
 
+/**
+ * Show Mode Manager - Cross-Device P2P Synchronization via PeerJS
+ * Enables RAPPID sync across different browsers and devices using QR codes
+ */
+class ShowModeManager {
+  constructor(rappMesh) {
+    this.rappMesh = rappMesh;
+    this.peer = null;
+    this.connections = new Map(); // peerId -> connection
+    this.isHost = false;
+    this.roomId = null;
+    this.isFollowing = false;
+
+    this.initializePeer();
+    this.setupEventListeners();
+  }
+
+  initializePeer() {
+    // Check if joining an existing session
+    const urlParams = new URLSearchParams(window.location.search);
+    const hostId = urlParams.get('mesh');
+
+    try {
+      if (hostId) {
+        // Joining as viewer
+        this.roomId = hostId;
+        this.peer = new Peer();
+        this.isFollowing = true;
+
+        this.peer.on('open', (id) => {
+          console.log('[Show Mode] Viewer peer ID:', id);
+          console.log('[Show Mode] Connecting to host:', this.roomId);
+
+          setTimeout(() => {
+            this.connectToHost(this.roomId);
+          }, 1000);
+        });
+      } else {
+        // Normal mode - can become host later
+        this.peer = new Peer();
+
+        this.peer.on('open', (id) => {
+          console.log('[Show Mode] Peer ID ready:', id);
+        });
+      }
+
+      // Handle incoming connections
+      this.peer.on('connection', (conn) => {
+        console.log('[Show Mode] Incoming connection from:', conn.peer);
+        this.handleNewConnection(conn);
+      });
+
+      // Handle errors
+      this.peer.on('error', (err) => {
+        console.error('[Show Mode] Peer error:', err);
+        this.showNotification('Connection error: ' + err.message);
+      });
+
+    } catch (error) {
+      console.error('[Show Mode] Failed to initialize peer:', error);
+    }
+  }
+
+  setupEventListeners() {
+    // Share button in mesh banner
+    document.getElementById('mesh-banner-share')?.addEventListener('click', () => {
+      this.startHosting();
+    });
+
+    // Close modal
+    document.getElementById('show-mode-close-btn')?.addEventListener('click', () => {
+      document.getElementById('show-mode-modal').style.display = 'none';
+    });
+
+    // Copy URL button
+    document.getElementById('copy-share-url')?.addEventListener('click', async () => {
+      const urlInput = document.getElementById('share-url');
+      try {
+        await navigator.clipboard.writeText(urlInput.value);
+        const btn = document.getElementById('copy-share-url');
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+        setTimeout(() => {
+          btn.innerHTML = originalHtml;
+        }, 2000);
+      } catch (err) {
+        console.error('Failed to copy:', err);
+      }
+    });
+  }
+
+  startHosting() {
+    if (!this.peer || !this.peer.id) {
+      this.showNotification('Please wait, connecting to P2P network...');
+      setTimeout(() => this.startHosting(), 1000);
+      return;
+    }
+
+    this.isHost = true;
+    this.roomId = this.peer.id;
+
+    // Show modal
+    document.getElementById('show-mode-modal').style.display = 'flex';
+    document.getElementById('show-mode-status').style.display = 'block';
+
+    // Generate share URL
+    const shareUrl = `${window.location.origin}${window.location.pathname}?mesh=${this.roomId}`;
+    document.getElementById('share-url').value = shareUrl;
+
+    // Generate QR code
+    this.generateQRCode(shareUrl);
+
+    // Update viewer count
+    this.updateViewerCount();
+
+    this.showNotification('📱 Sharing enabled! Scan QR code to join from another device');
+
+    // Hook into rappMesh to broadcast operations
+    this.hookIntoMesh();
+  }
+
+  connectToHost(hostId) {
+    try {
+      console.log('[Show Mode] Connecting to host:', hostId);
+
+      const conn = this.peer.connect(hostId, {
+        reliable: true,
+        serialization: 'json'
+      });
+
+      conn.on('open', () => {
+        console.log('[Show Mode] Connected to host successfully!');
+        this.showNotification('✅ Connected! Following host\'s RAPP state');
+      });
+
+      this.handleNewConnection(conn);
+    } catch (error) {
+      console.error('[Show Mode] Failed to connect to host:', error);
+      this.showNotification('Failed to connect to host');
+    }
+  }
+
+  handleNewConnection(conn) {
+    const peerId = conn.peer;
+
+    conn.on('open', () => {
+      console.log('[Show Mode] Connection opened with peer:', peerId);
+      this.connections.set(peerId, conn);
+
+      if (this.isHost) {
+        this.updateViewerCount();
+        this.showNotification(`New device connected: ${peerId.substring(0, 8)}...`);
+
+        // Send current state to new peer
+        this.sendFullState(conn);
+      }
+    });
+
+    conn.on('data', (data) => {
+      this.handlePeerData(peerId, data);
+    });
+
+    conn.on('close', () => {
+      console.log('[Show Mode] Peer disconnected:', peerId);
+      this.connections.delete(peerId);
+
+      if (this.isHost) {
+        this.updateViewerCount();
+      }
+    });
+
+    conn.on('error', (err) => {
+      console.error('[Show Mode] Connection error with peer', peerId, ':', err);
+    });
+  }
+
+  handlePeerData(peerId, data) {
+    try {
+      if (data.type === 'operation') {
+        // Received mesh operation from peer
+        console.log('[Show Mode] Received operation from peer:', data.operation.type);
+
+        if (!this.isHost) {
+          // Apply operation from host
+          this.rappMesh.applyRemoteOperation(data.operation);
+        }
+      } else if (data.type === 'fullState') {
+        // Received full state sync
+        console.log('[Show Mode] Received full state from host');
+
+        if (!this.isHost) {
+          this.applyFullState(data.state);
+        }
+      }
+    } catch (error) {
+      console.error('[Show Mode] Error handling peer data:', error);
+    }
+  }
+
+  hookIntoMesh() {
+    // Override mesh's broadcast to also send via PeerJS
+    const originalBroadcast = this.rappMesh.broadcastOperation.bind(this.rappMesh);
+
+    this.rappMesh.broadcastOperation = (operation) => {
+      // Call original localStorage broadcast
+      originalBroadcast(operation);
+
+      // Also broadcast via PeerJS if hosting
+      if (this.isHost && this.connections.size > 0) {
+        this.broadcastToPeers({
+          type: 'operation',
+          operation: operation
+        });
+      }
+    };
+  }
+
+  broadcastToPeers(data) {
+    this.connections.forEach((conn, peerId) => {
+      if (conn && conn.open) {
+        try {
+          conn.send(data);
+        } catch (error) {
+          console.error('[Show Mode] Failed to send to peer:', peerId, error);
+        }
+      }
+    });
+  }
+
+  sendFullState(conn) {
+    // Send complete RAPP state to new peer
+    const state = {
+      chats: this.rappMesh.appState.chats,
+      settings: this.rappMesh.appState.settings,
+      currentChatId: this.rappMesh.appState.currentChatId
+    };
+
+    try {
+      conn.send({
+        type: 'fullState',
+        state: state
+      });
+    } catch (error) {
+      console.error('[Show Mode] Failed to send full state:', error);
+    }
+  }
+
+  applyFullState(state) {
+    // Apply received state from host
+    if (state.chats) {
+      this.rappMesh.appState.chats = state.chats;
+    }
+    if (state.settings) {
+      this.rappMesh.appState.settings = state.settings;
+    }
+    if (state.currentChatId) {
+      this.rappMesh.appState.currentChatId = state.currentChatId;
+    }
+
+    this.rappMesh.appState.saveState();
+
+    // Trigger UI refresh
+    if (window.chatApp) {
+      window.chatApp.loadChats();
+      if (state.currentChatId) {
+        window.chatApp.loadChat(state.currentChatId);
+      }
+    }
+
+    this.showNotification('✅ RAPP state synchronized!');
+  }
+
+  generateQRCode(url) {
+    const canvas = document.getElementById('qr-code-canvas');
+    if (!canvas) return;
+
+    try {
+      if (window.QRious) {
+        new QRious({
+          element: canvas,
+          value: url,
+          size: 250,
+          background: 'white',
+          foreground: 'black',
+          level: 'H'
+        });
+      } else {
+        console.warn('[Show Mode] QRious library not loaded');
+      }
+    } catch (error) {
+      console.error('[Show Mode] Failed to generate QR code:', error);
+    }
+  }
+
+  updateViewerCount() {
+    const count = this.connections.size;
+    document.getElementById('show-mode-viewer-count').textContent = count;
+  }
+
+  showNotification(message) {
+    if (window.rappMeshUI) {
+      window.rappMeshUI.showNotification('info', message);
+    } else {
+      console.log('[Show Mode]', message);
+    }
+  }
+}
+
 class DistributedRAPPMesh {
   constructor(appState, options = {}) {
     this.nodeId = this.generateNodeId();
@@ -7997,6 +8358,38 @@ class DistributedRAPPMesh {
     }, fromPeerId);
   }
 
+  // Public method for applying operations from PeerJS (cross-device sync)
+  applyRemoteOperation(operation) {
+    // Check if we've already seen this operation
+    if (this.operationLog.find(op => op.id === operation.id)) {
+      console.log(`[DistributedRAPP] Operation ${operation.id} already applied`);
+      return;
+    }
+
+    console.log(`[DistributedRAPP] Applying remote operation from PeerJS: ${operation.type}`);
+
+    // Update vector clock
+    if (operation.vectorClock) {
+      Object.keys(operation.vectorClock).forEach(nodeId => {
+        this.vectorClock[nodeId] = Math.max(
+          this.vectorClock[nodeId] || 0,
+          operation.vectorClock[nodeId]
+        );
+      });
+    }
+
+    // Add to operation log
+    this.operationLog.push(operation);
+
+    // Apply operation to local state
+    this.applyOperation(operation);
+
+    // Trigger UI update
+    if (this.handlers.operationReceived) {
+      this.handlers.operationReceived(operation);
+    }
+  }
+
   applyOperation(operation) {
     try {
       switch (operation.type) {
@@ -8599,8 +8992,13 @@ console.log('[DistributedRAPP] Module loaded - Ready for mesh networking');
       window.rappMesh = mesh;
       window.rappMeshUI = meshUI;
 
+      // Initialize Show Mode Manager for cross-device P2P sync
+      window.showModeManager = new ShowModeManager(mesh);
+      console.log('[Show Mode] ✓ Cross-device sync ready');
+
       console.log('[RAPP Mesh] ✓ System initialized');
       console.log('[RAPP Mesh] Open RAPP in other browsers to form mesh!');
+      console.log('[RAPP Mesh] 📱 Click "Share (QR Code)" to sync across devices!');
     }
 
     if (document.readyState === 'loading') {
