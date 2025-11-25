@@ -111,9 +111,8 @@ The complete solution spans multiple layers when deployed with Power Platform in
 ### Core Components
 
 **function_app.py (main entry point):**
-- Two Azure Function HTTP trigger endpoints:
-  - `businessinsightbot_function`: Main conversational endpoint (function_app.py:1268)
-  - `agent_manager`: Agent configuration and preset management API (function_app.py:804)
+- Single Azure Function HTTP trigger endpoint:
+  - `businessinsightbot_function`: Main conversational endpoint
 - `Assistant` class orchestrates the AI conversation flow (function_app.py:230)
 - Dynamic agent loading from both local `agents/` folder and Azure File Storage (`agents/` and `multi_agents/` shares)
 - GUID-based user context management with default GUID: `c0p110t0-aaaa-bbbb-cccc-123456789abc`
@@ -136,15 +135,7 @@ The complete solution spans multiple layers when deployed with Power Platform in
 - Format: JSON array of agent filenames (e.g., `["context_memory_agent.py", "manage_memory_agent.py"]`)
 - If no config exists, all agents are loaded by default
 - Useful for limiting functionality per user or testing specific agents
-- Managed through the Agent Manager API endpoint
-
-**Agent Manager API:**
-The `agent_manager` endpoint provides REST API for agent configuration:
-- `GET /api/agent_manager?action=list_agents` - List all available agents with metadata
-- `GET /api/agent_manager?action=get_config&user_guid=xxx` - Get user's agent configuration
-- `POST /api/agent_manager` with `action=save_config` - Save agent configuration
-- `GET /api/agent_manager?action=list_presets` - List agent combination presets
-- `POST /api/agent_manager` with `action=save_preset` - Save new preset
+- Configuration files can be managed directly in Azure File Storage
 
 **Memory System:**
 - Dual-layer memory: shared (all users) + user-specific (per GUID)
@@ -655,18 +646,4 @@ demo_data = {
 
 storage = AzureFileStorageManager()
 storage.write_file('demos', 'my_demo.json', json.dumps(demo_data))
-```
-
-**Using the Agent Manager API:**
-```bash
-# List all available agents
-curl http://localhost:7071/api/agent_manager?action=list_agents
-
-# Get user's current configuration
-curl http://localhost:7071/api/agent_manager?action=get_config&user_guid=USER_GUID
-
-# Save agent configuration
-curl -X POST http://localhost:7071/api/agent_manager \
-  -H "Content-Type: application/json" \
-  -d '{"action": "save_config", "user_guid": "USER_GUID", "enabled_agents": ["context_memory_agent.py"]}'
 ```
