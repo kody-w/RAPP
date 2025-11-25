@@ -1059,6 +1059,61 @@
       margin-top: var(--space-l);
     }
 
+    /* Welcome Icon (replaces pseudo-elements when active) */
+    .welcome-icon {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      z-index: 1;
+    }
+
+    .welcome-icon-square {
+      width: 150px;
+      height: 150px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto;
+      box-shadow: 0 10px 40px rgba(116, 39, 116, 0.3);
+      transition: all 0.3s ease;
+    }
+
+    .welcome-icon-square.qr-active {
+      background: white;
+      padding: 15px;
+    }
+
+    .welcome-icon-square canvas {
+      border-radius: 10px;
+    }
+
+    .welcome-text {
+      margin-top: 20px;
+      color: var(--gray-60);
+      font-size: 18px;
+      font-weight: 500;
+      line-height: 1.6;
+    }
+
+    .welcome-text.sharing-active {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    body.dark .welcome-text {
+      color: var(--gray-80);
+    }
+
+    /* Hide pseudo-elements when welcome-icon exists */
+    .chat-messages:has(.welcome-icon)::before,
+    .chat-messages:has(.welcome-icon)::after {
+      display: none;
+    }
+
     body.dark .chat-messages:empty::after {
       color: var(--gray-50);
     }
@@ -3166,6 +3221,14 @@
         <main class="chat-container">
           <div class="chat-messages-wrapper">
             <div class="chat-messages" id="chat-messages">
+              <!-- Welcome Icon (can be replaced with QR code when sharing) -->
+              <div id="welcome-icon" class="welcome-icon" style="display: none;">
+                <div class="welcome-icon-square"></div>
+                <div class="welcome-text">
+                  Welcome to RAPP<br>
+                  Start a conversation below
+                </div>
+              </div>
               <!-- Loading Indicator will be appended here dynamically -->
             </div>
           </div>
@@ -5719,7 +5782,13 @@
       }
 
       displayChatMessages(messages) {
+        // Clear messages but preserve welcome icon
+        const welcomeIcon = document.getElementById('welcome-icon');
         this.chatMessages.innerHTML = "";
+        if (welcomeIcon) {
+          this.chatMessages.appendChild(welcomeIcon);
+        }
+
         messages.forEach((message) => {
           this.addMessageToUI(
             message.role,
@@ -5729,11 +5798,23 @@
             message.endpointName
           );
         });
+
+        // Hide welcome icon if there are messages
+        if (welcomeIcon) {
+          welcomeIcon.style.display = messages.length > 0 ? 'none' : 'block';
+        }
+
         this.scrollToBottom();
       }
 
       clearChatMessages() {
+        // Clear messages but preserve welcome icon
+        const welcomeIcon = document.getElementById('welcome-icon');
         this.chatMessages.innerHTML = "";
+        if (welcomeIcon) {
+          this.chatMessages.appendChild(welcomeIcon);
+          welcomeIcon.style.display = 'block';
+        }
       }
 
       createMessageElement(role, content, endpointName = null) {
@@ -5835,6 +5916,12 @@
         }
 
         this.chatMessages.appendChild(messageWrapper);
+
+        // Hide welcome icon when messages are present
+        const welcomeIcon = document.getElementById('welcome-icon');
+        if (welcomeIcon) {
+          welcomeIcon.style.display = 'none';
+        }
 
         if (role === "assistant" || role === "system") {
           messageWrapper.querySelectorAll("pre code").forEach((block) => {
@@ -7454,12 +7541,23 @@ class ShowModeManager {
     this.isHost = false;
     this.roomId = null;
     this.isFollowing = false;
+    this.isHooked = false; // Track if we've hooked into mesh
+    this.connectionTimeout = null; // Timeout for peer connection
 
     this.initializePeer();
     this.setupEventListeners();
   }
 
   initializePeer() {
+    // Check if PeerJS is available
+    if (typeof Peer === 'undefined') {
+      console.error('[Show Mode] PeerJS library not loaded!');
+      return;
+    }
+
+    // Show "Connecting..." state on welcome screen
+    this.showConnectingState();
+
     // Check if joining an existing session
     const urlParams = new URLSearchParams(window.location.search);
     const hostId = urlParams.get('mesh');
@@ -7480,11 +7578,32 @@ class ShowModeManager {
           }, 1000);
         });
       } else {
-        // Normal mode - can become host later
-        this.peer = new Peer();
+        // Normal mode - automatically start hosting (sharing enabled by default)
+        console.log('[Show Mode] Initializing peer for auto-hosting...');
+        this.peer = new Peer({
+          config: {
+            iceServers: [
+              { urls: 'stun:stun.l.google.com:19302' },
+              { urls: 'stun:global.stun.twilio.com:3478' }
+            ]
+          },
+          debug: 1 // Show debug info in console
+        });
 
         this.peer.on('open', (id) => {
-          console.log('[Show Mode] Peer ID ready:', id);
+          console.log('[Show Mode] ✅ Peer ID ready:', id);
+
+          // Clear connection timeout since peer is ready
+          if (this.connectionTimeout) {
+            clearTimeout(this.connectionTimeout);
+            this.connectionTimeout = null;
+          }
+
+          // Automatically start hosting and show QR code
+          console.log('[Show Mode] Auto-starting hosting in 500ms...');
+          setTimeout(() => {
+            this.startHosting();
+          }, 500);
         });
       }
 
@@ -7508,7 +7627,7 @@ class ShowModeManager {
   setupEventListeners() {
     // Share button in mesh banner
     document.getElementById('mesh-banner-share')?.addEventListener('click', () => {
-      this.startHosting();
+      this.startHosting(true); // Show modal when button is clicked
     });
 
     // Close modal
@@ -7533,31 +7652,55 @@ class ShowModeManager {
     });
   }
 
-  startHosting() {
+  startHosting(showModal = false) {
+    console.log('[Show Mode] startHosting called, showModal:', showModal);
+    console.log('[Show Mode] peer:', this.peer ? 'exists' : 'null');
+    console.log('[Show Mode] peer.id:', this.peer?.id || 'not ready');
+
     if (!this.peer || !this.peer.id) {
+      console.log('[Show Mode] Peer not ready, retrying in 1 second...');
       this.showNotification('Please wait, connecting to P2P network...');
-      setTimeout(() => this.startHosting(), 1000);
+      setTimeout(() => this.startHosting(showModal), 1000);
       return;
     }
 
+    // If already hosting, just show modal if requested
+    if (this.isHost && this.roomId) {
+      console.log('[Show Mode] Already hosting, roomId:', this.roomId);
+      if (showModal) {
+        document.getElementById('show-mode-modal').style.display = 'flex';
+        this.showNotification('📱 Sharing enabled! Scan QR code to join from another device');
+      }
+      return;
+    }
+
+    console.log('[Show Mode] Starting hosting mode...');
     this.isHost = true;
     this.roomId = this.peer.id;
 
-    // Show modal
-    document.getElementById('show-mode-modal').style.display = 'flex';
-    document.getElementById('show-mode-status').style.display = 'block';
-
     // Generate share URL
     const shareUrl = `${window.location.origin}${window.location.pathname}?mesh=${this.roomId}`;
+    console.log('[Show Mode] Share URL:', shareUrl);
+
+    // Show welcome icon with QR code if chat is empty
+    console.log('[Show Mode] Calling showWelcomeQRCode...');
+    this.showWelcomeQRCode(shareUrl);
+
+    // Update share URL in modal (but don't show modal unless requested)
+    document.getElementById('show-mode-status').style.display = 'block';
     document.getElementById('share-url').value = shareUrl;
 
-    // Generate QR code
+    // Generate QR code in modal
     this.generateQRCode(shareUrl);
 
     // Update viewer count
     this.updateViewerCount();
 
-    this.showNotification('📱 Sharing enabled! Scan QR code to join from another device');
+    // Only show modal if explicitly requested (e.g., button click)
+    if (showModal) {
+      document.getElementById('show-mode-modal').style.display = 'flex';
+      this.showNotification('📱 Sharing enabled! Scan QR code to join from another device');
+    }
 
     // Hook into rappMesh to broadcast operations
     this.hookIntoMesh();
@@ -7642,6 +7785,10 @@ class ShowModeManager {
   }
 
   hookIntoMesh() {
+    // Only hook once to prevent nested overrides
+    if (this.isHooked) return;
+    this.isHooked = true;
+
     // Override mesh's broadcast to also send via PeerJS
     const originalBroadcast = this.rappMesh.broadcastOperation.bind(this.rappMesh);
 
@@ -7733,6 +7880,124 @@ class ShowModeManager {
       }
     } catch (error) {
       console.error('[Show Mode] Failed to generate QR code:', error);
+    }
+  }
+
+  showWelcomeQRCode(url) {
+    console.log('[Show Mode] showWelcomeQRCode called with URL:', url);
+
+    const chatMessages = document.getElementById('chat-messages');
+    const welcomeIcon = document.getElementById('welcome-icon');
+
+    console.log('[Show Mode] chatMessages element:', chatMessages ? 'found' : 'NOT FOUND');
+    console.log('[Show Mode] welcomeIcon element:', welcomeIcon ? 'found' : 'NOT FOUND');
+
+    if (!chatMessages || !welcomeIcon) {
+      console.error('[Show Mode] Required elements not found in DOM!');
+      return;
+    }
+
+    console.log('[Show Mode] chatMessages.children.length:', chatMessages.children.length);
+
+    // Only show if chat is empty
+    if (chatMessages.children.length <= 1) { // Only welcome-icon present
+      console.log('[Show Mode] Chat is empty, showing QR code on welcome screen');
+      welcomeIcon.style.display = 'block';
+
+      const square = welcomeIcon.querySelector('.welcome-icon-square');
+      const text = welcomeIcon.querySelector('.welcome-text');
+
+      console.log('[Show Mode] square element:', square ? 'found' : 'NOT FOUND');
+      console.log('[Show Mode] text element:', text ? 'found' : 'NOT FOUND');
+
+      // Clear square, remove connecting state, and add QR code
+      square.innerHTML = '';
+      square.style.animation = ''; // Clear any animations
+      square.classList.add('qr-active');
+
+      // Create canvas for QR code
+      const canvas = document.createElement('canvas');
+      square.appendChild(canvas);
+
+      // Generate QR code
+      try {
+        if (window.QRious) {
+          console.log('[Show Mode] Generating QR code with QRious...');
+          new QRious({
+            element: canvas,
+            value: url,
+            size: 120,
+            background: 'white',
+            foreground: 'black',
+            level: 'H'
+          });
+          console.log('[Show Mode] ✅ QR code generated successfully!');
+        } else {
+          console.error('[Show Mode] QRious library not available!');
+        }
+      } catch (error) {
+        console.error('[Show Mode] Failed to generate welcome QR code:', error);
+      }
+
+      // Update text
+      text.innerHTML = 'Scan to join this RAPP<br>from another device';
+      text.classList.add('sharing-active');
+      console.log('[Show Mode] Welcome text updated');
+    } else {
+      console.log('[Show Mode] Chat not empty, skipping QR code display');
+    }
+  }
+
+  hideWelcomeQRCode() {
+    const welcomeIcon = document.getElementById('welcome-icon');
+    if (welcomeIcon) {
+      welcomeIcon.style.display = 'none';
+
+      const square = welcomeIcon.querySelector('.welcome-icon-square');
+      const text = welcomeIcon.querySelector('.welcome-text');
+
+      square.classList.remove('qr-active');
+      square.innerHTML = '';
+      text.classList.remove('sharing-active');
+      text.innerHTML = 'Welcome to RAPP<br>Start a conversation below';
+    }
+  }
+
+  showConnectingState() {
+    const chatMessages = document.getElementById('chat-messages');
+    const welcomeIcon = document.getElementById('welcome-icon');
+
+    if (!chatMessages || !welcomeIcon) {
+      console.error('[Show Mode] Required elements not found for connecting state');
+      return;
+    }
+
+    // Only show if chat is empty
+    if (chatMessages.children.length <= 1) {
+      welcomeIcon.style.display = 'block';
+
+      const square = welcomeIcon.querySelector('.welcome-icon-square');
+      const text = welcomeIcon.querySelector('.welcome-text');
+
+      // Show pulsing animation while connecting
+      square.innerHTML = '<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 48px; opacity: 0.7;">⚡</div>';
+      square.style.animation = 'pulse 2s ease-in-out infinite';
+
+      // Update text
+      text.innerHTML = 'Connecting to P2P network...<br>QR code will appear shortly';
+      text.style.color = 'var(--primary)';
+      console.log('[Show Mode] Showing connecting state on welcome screen');
+
+      // Timeout fallback - if peer doesn't connect in 15 seconds, show error
+      this.connectionTimeout = setTimeout(() => {
+        if (!this.peer || !this.peer.id) {
+          console.warn('[Show Mode] Peer connection timeout - showing fallback message');
+          square.style.animation = '';
+          square.innerHTML = '<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 48px; opacity: 0.5;">📡</div>';
+          text.innerHTML = 'P2P network unavailable<br>Chat still works normally!';
+          text.style.color = 'var(--gray-60)';
+        }
+      }, 15000);
     }
   }
 

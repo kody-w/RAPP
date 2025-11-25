@@ -1,0 +1,1803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ShyWorld — Linked Fleet</title>
+  <style>
+    :root {
+      --ui-bg: rgba(0,0,0,0.65);
+      --ui-panel: rgba(18,18,18,0.9);
+      --ui-accent: #66e3a5;
+      --text: #f5f7fa;
+      --muted: #bfc7d5;
+      --neon: #25f0d2;
+      --sail: #f4a460;
+      --link: #ff6b6b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: -apple-system, system-ui, sans-serif;
+      color: var(--text);
+    }
+    .glass {
+      backdrop-filter: blur(8px);
+      background: var(--ui-bg);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+    }
+
+    /* Worlds */
+    #sailing-world, #cabin-world {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      transition: opacity 0.5s;
+    }
+    #sailing-world { z-index: 1; }
+    #cabin-world { z-index: 2; opacity: 0; pointer-events: none; }
+    #cabin-world.active { opacity: 1; pointer-events: auto; }
+    #sailing-world.hidden { opacity: 0; pointer-events: none; }
+
+    /* World Toggle */
+    #world-toggle {
+      position: fixed;
+      top: 12px; left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      padding: 4px;
+      display: flex; gap: 4px;
+    }
+    .world-btn {
+      padding: 8px 16px;
+      border: none; border-radius: 6px;
+      font-size: 11px; font-weight: 600;
+      cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .world-btn.deck { background: rgba(37,240,210,0.15); color: var(--neon); border: 1px solid rgba(37,240,210,0.4); }
+    .world-btn.cabin { background: rgba(244,164,96,0.15); color: var(--sail); border: 1px solid rgba(244,164,96,0.4); }
+    .world-btn.active { box-shadow: 0 0 15px currentColor; }
+    .world-btn:not(.active) { opacity: 0.5; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .world-btn.active .dot { animation: pulse 1s infinite; }
+    @keyframes pulse { 50% { opacity: 0.4; } }
+
+    /* Link Status Banner */
+    #link-banner {
+      position: fixed;
+      top: 50px; left: 50%;
+      transform: translateX(-50%);
+      z-index: 110;
+      padding: 8px 20px;
+      background: linear-gradient(135deg, rgba(255,107,107,0.9), rgba(255,154,107,0.9));
+      border-radius: 20px;
+      font-size: 13px; font-weight: 600;
+      color: white;
+      display: none;
+      align-items: center; gap: 10px;
+      box-shadow: 0 4px 20px rgba(255,107,107,0.4);
+    }
+    #link-banner.show { display: flex; }
+    #link-banner .chain { font-size: 18px; }
+
+    /* Stats */
+    .stat-row {
+      display: flex; align-items: center; gap: 6px;
+      margin-bottom: 6px; font-size: 11px;
+    }
+    .stat-icon { width: 18px; text-align: center; font-size: 12px; }
+    .stat-label { color: var(--muted); width: 55px; font-size: 10px; }
+    .stat-bar-bg { flex: 1; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
+    .stat-bar { height: 100%; border-radius: 4px; transition: width 0.3s; }
+    .hunger { background: linear-gradient(90deg, #ff6b6b, #ffa500); }
+    .happy { background: linear-gradient(90deg, #ff69b4, #ff1493); }
+    .energy { background: linear-gradient(90deg, #9b59b6, #8e44ad); }
+    .health { background: linear-gradient(90deg, #2ecc71, #27ae60); }
+    .stat-value { font-size: 10px; width: 30px; text-align: right; color: var(--muted); }
+
+    /* ========== SAILING WORLD ========== */
+    #space-canvas { 
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%; 
+      height: 100%; 
+    }
+    
+    #ship-hud {
+      position: absolute;
+      top: 55px; left: 12px;
+      padding: 14px 16px; min-width: 220px;
+    }
+    #ship-title {
+      font-size: 16px; font-weight: 700;
+      background: linear-gradient(90deg, var(--sail), #ffd700);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 2px;
+    }
+    #ship-location { color: var(--muted); font-size: 10px; margin-bottom: 6px; }
+    
+    #link-status {
+      padding: 8px 10px; margin-bottom: 10px;
+      background: rgba(255,107,107,0.15);
+      border: 1px solid rgba(255,107,107,0.4);
+      border-radius: 6px;
+      font-size: 11px;
+      display: none;
+    }
+    #link-status.show { display: block; }
+    #link-status .title { color: var(--link); font-weight: 600; margin-bottom: 4px; }
+    #link-status .info { color: var(--muted); font-size: 10px; }
+    #link-status .crew { margin-top: 6px; }
+    .crew-member { 
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 8px; margin: 2px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 10px; font-size: 10px;
+    }
+    .crew-member.captain { border: 1px solid var(--sail); }
+    .crew-member .dot { width: 6px; height: 6px; border-radius: 50%; }
+
+    #wind-indicator {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 10px; margin-bottom: 10px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 6px;
+    }
+    #wind-dir { font-size: 20px; transition: transform 0.5s; }
+    #wind-info { font-size: 10px; }
+    #wind-speed { color: var(--neon); font-weight: 600; }
+
+    #players-panel {
+      position: absolute;
+      top: 55px; right: 12px;
+      padding: 10px 12px; min-width: 180px;
+    }
+    #players-header {
+      font-size: 10px; font-weight: 600;
+      color: var(--sail);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      display: flex; justify-content: space-between;
+    }
+    .player-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 8px; margin-bottom: 4px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 6px; font-size: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .player-item:hover { background: rgba(255,255,255,0.1); }
+    .player-item.self { border: 1px solid var(--sail); cursor: default; }
+    .player-item.linked { border: 1px solid var(--link); background: rgba(255,107,107,0.1); }
+    .player-item.nearby { box-shadow: 0 0 10px rgba(255,107,107,0.5); }
+    .player-avatar { width: 22px; height: 22px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+    .player-name { font-weight: 600; }
+    .player-status { font-size: 9px; color: var(--muted); }
+    .player-status.nearby { color: var(--link); }
+    .link-btn {
+      margin-left: auto;
+      padding: 3px 8px;
+      background: var(--link);
+      border: none; border-radius: 4px;
+      color: white; font-size: 9px; font-weight: 600;
+      cursor: pointer;
+    }
+    .unlink-btn {
+      margin-left: auto;
+      padding: 3px 8px;
+      background: rgba(255,255,255,0.2);
+      border: none; border-radius: 4px;
+      color: white; font-size: 9px;
+      cursor: pointer;
+    }
+
+    #camera-controls {
+      position: absolute;
+      bottom: 70px; right: 12px;
+      padding: 10px;
+      display: none;
+    }
+    #camera-controls.show { display: block; }
+    #camera-controls h4 { font-size: 10px; color: var(--muted); margin-bottom: 8px; }
+    .cam-btn {
+      display: block; width: 100%;
+      padding: 8px 12px; margin-bottom: 4px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 6px;
+      color: white; font-size: 11px;
+      cursor: pointer;
+      text-align: left;
+    }
+    .cam-btn:hover { background: rgba(255,255,255,0.15); }
+    .cam-btn.active { border-color: var(--neon); background: rgba(37,240,210,0.1); }
+
+    #minimap {
+      position: absolute;
+      bottom: 12px; right: 12px;
+      width: 150px; height: 150px;
+      border-radius: 10px; overflow: hidden;
+    }
+    #minimap canvas { width: 100%; height: 100%; }
+
+    #speed-panel {
+      position: absolute;
+      bottom: 12px; left: 50%;
+      transform: translateX(-50%);
+      padding: 8px 16px;
+      font-family: monospace; font-size: 12px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    #speed-panel .label { color: var(--muted); font-size: 10px; }
+    #speed-panel .value { color: var(--neon); font-weight: 600; }
+
+    #controls-help {
+      position: absolute;
+      bottom: 12px; left: 12px;
+      padding: 8px 10px;
+      font-size: 9px; color: var(--muted);
+    }
+    .key { display: inline-block; padding: 2px 5px; margin: 0 2px; background: rgba(255,255,255,0.15); border-radius: 3px; font-family: monospace; color: white; font-size: 8px; }
+
+    /* Destination */
+    #dest-panel {
+      position: absolute;
+      top: 320px; left: 12px;
+      padding: 10px 12px; min-width: 180px;
+      display: none;
+    }
+    #dest-panel.show { display: block; }
+    #dest-header { font-size: 10px; color: var(--sail); margin-bottom: 6px; }
+    #dest-name { font-size: 13px; font-weight: 600; }
+    #dest-info { font-size: 10px; color: var(--muted); margin: 4px 0; }
+    #dest-info span { color: var(--neon); font-family: monospace; }
+    #dest-progress-bg { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin: 8px 0; }
+    #dest-progress { height: 100%; background: linear-gradient(90deg, var(--sail), #ffd700); border-radius: 2px; }
+    #dest-eta { font-size: 11px; font-family: monospace; color: var(--sail); }
+
+    /* Island Info */
+    #island-info {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 20px; min-width: 300px;
+      text-align: center;
+      display: none; z-index: 30;
+    }
+    #island-info.show { display: block; }
+    #island-name { font-size: 20px; font-weight: 700; }
+    #island-type { color: var(--muted); font-size: 12px; margin-bottom: 12px; }
+    #island-stats { font-size: 11px; line-height: 1.8; text-align: left; }
+    #island-stats span { color: var(--neon); }
+    #island-btns { margin-top: 14px; display: flex; gap: 10px; justify-content: center; }
+    .i-btn { padding: 10px 18px; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .i-btn.primary { background: linear-gradient(135deg, var(--sail), #ffd700); color: #000; }
+    .i-btn.secondary { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); }
+
+    /* ========== CABIN WORLD ========== */
+    #cabin-world { background: radial-gradient(ellipse at 70% 10%, #b7e7ff 0%, #7bc9ff 25%, #5aa0f0 60%, #4a75c2 100%); }
+    #cabin-canvas { 
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%; 
+      height: 100%; 
+    }
+
+    #cabin-hud {
+      position: absolute;
+      top: 55px; left: 12px;
+      padding: 14px 16px; min-width: 240px;
+    }
+    #pet-name { font-size: 18px; font-weight: 700; color: var(--neon); margin-bottom: 2px; }
+    #pet-age { color: var(--muted); font-size: 11px; margin-bottom: 4px; }
+    #pet-mood { font-size: 12px; padding: 4px 10px; border-radius: 6px; background: rgba(255,255,255,0.1); margin-bottom: 10px; display: inline-block; }
+
+    #cabin-players {
+      position: absolute;
+      top: 55px; right: 12px;
+      padding: 10px 12px; min-width: 170px;
+    }
+    #cabin-players-header { font-size: 10px; font-weight: 600; color: var(--sail); text-transform: uppercase; margin-bottom: 8px; }
+    .cabin-player { display: flex; align-items: center; gap: 8px; padding: 5px 8px; margin-bottom: 4px; background: rgba(255,255,255,0.08); border-radius: 6px; font-size: 10px; }
+    .cabin-player.self { border: 1px solid var(--neon); }
+
+    #travel-status {
+      position: absolute;
+      top: 280px; left: 12px;
+      padding: 10px 12px; min-width: 200px;
+      display: none;
+    }
+    #travel-status.show { display: block; }
+    #travel-header { font-size: 10px; color: var(--sail); margin-bottom: 6px; }
+    #travel-dest { font-size: 12px; font-weight: 600; }
+    #travel-info { font-size: 10px; color: var(--muted); margin: 4px 0; }
+    #travel-info span { color: var(--neon); }
+    #travel-progress-bg { height: 4px; background: rgba(0,0,0,0.2); border-radius: 2px; margin: 8px 0; }
+    #travel-progress { height: 100%; background: linear-gradient(90deg, var(--sail), #ffd700); border-radius: 2px; }
+    #time-warp { font-size: 10px; color: var(--sail); padding: 4px 8px; background: rgba(244,164,96,0.15); border-radius: 4px; display: inline-block; }
+
+    #pet-actions {
+      position: absolute;
+      top: 55px; right: 200px;
+      padding: 12px; min-width: 160px;
+    }
+    #pet-actions h3 { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+    .action-btn { display: block; width: 100%; margin-bottom: 6px; padding: 10px 12px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; text-align: left; }
+    .action-btn.feed { background: linear-gradient(180deg, #e67e22, #d35400); color: white; }
+    .action-btn.pet { background: linear-gradient(180deg, #e91e8c, #c2185b); color: white; }
+    .action-btn.play { background: linear-gradient(180deg, #3498db, #2980b9); color: white; }
+    .action-btn.sleep { background: linear-gradient(180deg, #9b59b6, #8e44ad); color: white; }
+
+    #chat-panel {
+      position: absolute;
+      bottom: 12px; left: 12px;
+      width: 300px;
+    }
+    #chat-messages { height: 100px; overflow-y: auto; padding: 8px 10px; font-size: 11px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .chat-msg { margin-bottom: 5px; line-height: 1.3; }
+    .chat-msg .sender { font-weight: 600; }
+    .chat-msg.system { color: var(--muted); font-style: italic; font-size: 10px; }
+    .chat-msg.action { color: var(--sail); }
+    .chat-msg.link { color: var(--link); }
+    #chat-input-row { display: flex; gap: 6px; padding: 8px 10px; }
+    #chat-input { flex: 1; padding: 8px 10px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: white; font-size: 12px; }
+    #chat-input:focus { outline: none; border-color: var(--neon); }
+    #chat-send { padding: 8px 14px; background: var(--neon); border: none; border-radius: 6px; color: #000; font-weight: 600; font-size: 11px; cursor: pointer; }
+
+    #cabin-tips { position: absolute; bottom: 12px; right: 12px; padding: 10px 12px; font-size: 10px; color: var(--muted); }
+    #thought-bubble { position: absolute; z-index: 60; padding: 8px 14px; font-size: 22px; background: white; color: #333; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); pointer-events: none; opacity: 0; transition: opacity 0.3s; }
+    #thought-bubble.show { opacity: 1; }
+
+    #status-toast { position: fixed; top: 90px; left: 50%; transform: translateX(-50%); padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 150; }
+    #status-toast.show { opacity: 1; }
+    #status-toast.success { background: rgba(16,185,129,0.95); color: white; }
+    #status-toast.info { background: rgba(59,130,246,0.95); color: white; }
+    #status-toast.warn { background: rgba(244,164,96,0.95); color: #000; }
+    #status-toast.link { background: linear-gradient(135deg, rgba(255,107,107,0.95), rgba(255,154,107,0.95)); color: white; }
+
+    #arrival-alert { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 28px 36px; background: rgba(26,58,92,0.98); border: 2px solid var(--sail); border-radius: 16px; text-align: center; z-index: 200; display: none; }
+    #arrival-alert.show { display: block; }
+    #arrival-alert h2 { color: var(--sail); font-size: 20px; margin-bottom: 8px; }
+    #arrival-alert p { color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+    #wake-btn { padding: 12px 28px; background: linear-gradient(135deg, var(--sail), #ffd700); border: none; border-radius: 8px; color: #000; font-weight: 700; font-size: 13px; cursor: pointer; }
+
+    #transition-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 100; background: #1a3a5c; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.4s; }
+    #transition-overlay.active { opacity: 1; pointer-events: auto; }
+    #transition-text { font-size: 22px; font-weight: 700; color: var(--sail); }
+
+    #name-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 500; display: flex; align-items: center; justify-content: center; }
+    #name-modal.hidden { display: none; }
+    #name-modal-content { background: linear-gradient(180deg, #2a3f5f, #1a2a3f); padding: 36px 44px; border-radius: 20px; text-align: center; max-width: 420px; border: 1px solid rgba(244,164,96,0.3); }
+    #name-modal-content .logo { font-size: 48px; margin-bottom: 12px; }
+    #name-modal-content h2 { margin: 0 0 6px; color: var(--sail); font-size: 28px; }
+    #name-modal-content .tagline { color: var(--muted); font-size: 13px; margin-bottom: 24px; font-style: italic; }
+    #name-input { width: 100%; padding: 14px; font-size: 16px; border: 2px solid rgba(244,164,96,0.4); border-radius: 8px; background: rgba(0,0,0,0.3); color: white; text-align: center; margin-bottom: 18px; outline: none; }
+    #name-input:focus { border-color: var(--sail); }
+    #confirm-name { padding: 14px 36px; font-size: 15px; font-weight: 700; background: linear-gradient(135deg, var(--sail), #ffd700); border: none; border-radius: 8px; color: #000; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div id="name-modal">
+    <div id="name-modal-content">
+      <div class="logo">⛵</div>
+      <h2>ShyWorld</h2>
+      <div class="tagline">Sail Through the Cosmos</div>
+      <input type="text" id="name-input" placeholder="Choose captain name" maxlength="20" />
+      <br>
+      <button id="confirm-name">Start Sailing ⛵</button>
+    </div>
+  </div>
+
+  <div id="world-toggle" class="glass">
+    <button class="world-btn deck active" id="btn-deck"><span class="dot"></span>⛵ Deck</button>
+    <button class="world-btn cabin" id="btn-cabin"><span class="dot"></span>🐛 Cabin</button>
+  </div>
+
+  <div id="link-banner"><span class="chain">⛓️</span> <span id="link-banner-text">Linked with Captain X</span></div>
+
+  <div id="transition-overlay"><div id="transition-text">Going Below Deck...</div></div>
+  <div id="arrival-alert"><h2>⚓ Land Ho!</h2><p id="arrival-msg">You've arrived.</p><button id="wake-btn">Come Topside ⛵</button></div>
+
+  <!-- Sailing World -->
+  <div id="sailing-world">
+    <canvas id="space-canvas"></canvas>
+    
+    <div id="ship-hud" class="glass">
+      <div id="ship-title">⛵ The Wanderer</div>
+      <div id="ship-location">Sector 0, 0</div>
+      
+      <div id="link-status">
+        <div class="title">⛓️ SHIPS LINKED</div>
+        <div class="info">Viewing from: <span id="view-angle">Starboard</span></div>
+        <div class="crew" id="crew-list"></div>
+      </div>
+
+      <div id="wind-indicator">
+        <div id="wind-dir">💨</div>
+        <div id="wind-info">Stellar Wind: <span id="wind-speed">12</span> kn</div>
+      </div>
+
+      <div class="stat-row"><span class="stat-icon">🍔</span><span class="stat-label">Hunger</span><div class="stat-bar-bg"><div class="stat-bar hunger" id="s-hunger"></div></div><span class="stat-value" id="s-hunger-v">80%</span></div>
+      <div class="stat-row"><span class="stat-icon">💖</span><span class="stat-label">Happy</span><div class="stat-bar-bg"><div class="stat-bar happy" id="s-happy"></div></div><span class="stat-value" id="s-happy-v">80%</span></div>
+      <div class="stat-row"><span class="stat-icon">⚡</span><span class="stat-label">Energy</span><div class="stat-bar-bg"><div class="stat-bar energy" id="s-energy"></div></div><span class="stat-value" id="s-energy-v">100%</span></div>
+    </div>
+
+    <div id="players-panel" class="glass">
+      <div id="players-header"><span>🌊 Fleet</span><span id="player-count">1</span></div>
+      <div id="player-list"></div>
+    </div>
+
+    <div id="camera-controls" class="glass">
+      <h4>📷 Camera View</h4>
+      <button class="cam-btn active" data-view="stern">Stern (Behind)</button>
+      <button class="cam-btn" data-view="bow">Bow (Front)</button>
+      <button class="cam-btn" data-view="port">Port (Left)</button>
+      <button class="cam-btn" data-view="starboard">Starboard (Right)</button>
+      <button class="cam-btn" data-view="above">Bird's Eye</button>
+      <button class="cam-btn" data-view="close">Close Up</button>
+    </div>
+
+    <div id="dest-panel" class="glass">
+      <div id="dest-header">🧭 CHARTED COURSE</div>
+      <div id="dest-name">-</div>
+      <div id="dest-info">Distance: <span id="dest-dist">-</span></div>
+      <div id="dest-progress-bg"><div id="dest-progress"></div></div>
+      <div id="dest-eta">ETA: <span id="dest-eta-val">-</span></div>
+    </div>
+
+    <div id="minimap" class="glass"><canvas id="minimap-canvas"></canvas></div>
+    <div id="speed-panel" class="glass">
+      <div><span class="label">Speed</span><br><span class="value" id="speed-val">0</span> <span class="label">kn</span></div>
+      <div><span class="label">Heading</span><br><span class="value" id="heading-val">N</span></div>
+    </div>
+    <div id="controls-help" class="glass"><span class="key">WASD</span> Sail <span class="key">Shift</span> Boost <span class="key">E</span> Scan <span class="key">Tab</span> Cabin <span class="key">L</span> Link nearby</div>
+
+    <div id="island-info" class="glass">
+      <div id="island-name">Unknown Isle</div>
+      <div id="island-type">-</div>
+      <div id="island-stats">Climate: <span id="i-temp">-</span><br>Atmosphere: <span id="i-atmo">-</span><br>Gravity: <span id="i-grav">-</span>g<br>Resources: <span id="i-res">-</span></div>
+      <div id="island-btns">
+        <button class="i-btn secondary" id="close-island">Close</button>
+        <button class="i-btn primary" id="set-course">🧭 Set Course</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cabin World -->
+  <div id="cabin-world">
+    <canvas id="cabin-canvas"></canvas>
+    <div id="cabin-hud" class="glass">
+      <div id="pet-name">🐛 Shyworm</div>
+      <div id="pet-age">Born just now</div>
+      <div id="pet-mood">😊 Content</div>
+      <div class="stat-row"><span class="stat-icon">🍔</span><span class="stat-label">Hunger</span><div class="stat-bar-bg"><div class="stat-bar hunger" id="c-hunger"></div></div><span class="stat-value" id="c-hunger-v">80%</span></div>
+      <div class="stat-row"><span class="stat-icon">💖</span><span class="stat-label">Happy</span><div class="stat-bar-bg"><div class="stat-bar happy" id="c-happy"></div></div><span class="stat-value" id="c-happy-v">80%</span></div>
+      <div class="stat-row"><span class="stat-icon">⚡</span><span class="stat-label">Energy</span><div class="stat-bar-bg"><div class="stat-bar energy" id="c-energy"></div></div><span class="stat-value" id="c-energy-v">100%</span></div>
+      <div class="stat-row"><span class="stat-icon">❤️</span><span class="stat-label">Health</span><div class="stat-bar-bg"><div class="stat-bar health" id="c-health"></div></div><span class="stat-value" id="c-health-v">100%</span></div>
+    </div>
+    <div id="cabin-players" class="glass">
+      <div id="cabin-players-header">🛳️ Below Deck</div>
+      <div id="cabin-player-list"></div>
+    </div>
+    <div id="travel-status" class="glass">
+      <div id="travel-header">⚓ AUTOPILOT</div>
+      <div id="travel-dest">-</div>
+      <div id="travel-info">Dist: <span id="t-dist">-</span> | ETA: <span id="t-eta">-</span></div>
+      <div id="travel-progress-bg"><div id="travel-progress"></div></div>
+      <div id="time-warp">⚡ TIME WARP: 100x</div>
+    </div>
+    <div id="pet-actions" class="glass">
+      <h3>Care for your pet</h3>
+      <button class="action-btn feed" id="btn-feed">🍔 Feed</button>
+      <button class="action-btn pet" id="btn-pet">💕 Pet</button>
+      <button class="action-btn play" id="btn-play">🎾 Play</button>
+      <button class="action-btn sleep" id="btn-sleep">😴 Rest</button>
+    </div>
+    <div id="chat-panel" class="glass">
+      <div id="chat-messages"><div class="chat-msg system">Welcome aboard!</div></div>
+      <div id="chat-input-row">
+        <input type="text" id="chat-input" placeholder="Ship's log..." maxlength="150">
+        <button id="chat-send">Send</button>
+      </div>
+    </div>
+    <div id="cabin-tips" class="glass">🐛 Click to drop food • Click other worms to feed them</div>
+    <div id="thought-bubble"></div>
+  </div>
+
+  <div id="status-toast"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+(function() {
+  'use strict';
+
+  const CONFIG = {
+    CHANNEL: 'shyworld-fleet-v2',
+    SYNC_RATE: 50,
+    HEARTBEAT: 2000,
+    WORLD_SEED: 42069,
+    TIME_WARP: 100,
+    AUTOPILOT_SPEED: 80,
+    MAX_SPEED: 50,
+    BOOST: 3,
+    GRID_SIZE: 18,
+    LINK_DISTANCE: 30, // Distance to allow linking
+  };
+
+  class Rand {
+    constructor(s) { this.s = s; }
+    next() { this.s = (this.s * 9301 + 49297) % 233280; return this.s / 233280; }
+    range(a, b) { return a + this.next() * (b - a); }
+    int(a, b) { return Math.floor(this.range(a, b + 1)); }
+    pick(arr) { return arr[this.int(0, arr.length - 1)]; }
+  }
+
+  // ========== LOCAL PLAYER ==========
+  const localPlayer = {
+    id: 'S-' + Math.random().toString(36).substr(2, 4).toUpperCase(),
+    name: '',
+    color: `hsl(${Math.random() * 360}, 70%, 55%)`,
+    world: 'deck',
+    pos: { x: 0, y: 0, z: 0 },
+    vel: { x: 0, y: 0, z: 0 },
+    rot: { y: 0 },
+    speed: 0,
+    sector: { x: 0, z: 0 },
+    stats: { hunger: 80, happiness: 80, energy: 100, health: 100 },
+    petBirthday: null,
+    petState: 'idle',
+    isSleeping: false,
+    // LINKING
+    linkedTo: null,      // ID of player we're linked to (null = captain of own ship)
+    linkedGroup: [],     // IDs of all players in our linked group
+    isCaptain: true,     // Am I the captain of this linked group?
+    cameraView: 'stern', // Camera angle when viewing linked ship
+  };
+
+  // ========== STATE ==========
+  const state = {
+    players: new Map(),
+    systems: new Map(),
+    visibleStars: [],
+    visiblePlanets: [],
+    destination: null,
+    totalDist: 0,
+    currentDist: 0,
+    nearbyIsland: null,
+    nearbyPlayers: new Set(), // Players within linking distance
+    transitioning: false,
+    wind: { angle: 0, speed: 12 },
+    foodItems: [],
+    worm: [{ x: 9, y: 0, z: 9 }, { x: 8, y: 0, z: 9 }, { x: 7, y: 0, z: 9 }],
+    wormTarget: null,
+    moveTimer: 0,
+    statDecayTimer: 0,
+  };
+
+  // ========== P2P ==========
+  let channel;
+  try { channel = new BroadcastChannel(CONFIG.CHANNEL); }
+  catch(e) { channel = { postMessage: ()=>{}, onmessage: null, close: ()=>{} }; }
+
+  const MSG = { 
+    JOIN: 'join', LEAVE: 'leave', SYNC: 'sync', CHAT: 'chat', ACTION: 'action', 
+    FEED_OTHER: 'feed_other',
+    LINK_REQUEST: 'link_request',
+    LINK_ACCEPT: 'link_accept',
+    LINK_REJECT: 'link_reject',
+    UNLINK: 'unlink',
+  };
+
+  function broadcast(type, data = {}) {
+    channel.postMessage({ type, sender: localPlayer.id, ts: Date.now(), ...data });
+  }
+
+  function getSync() {
+    return {
+      name: localPlayer.name,
+      color: localPlayer.color,
+      world: localPlayer.world,
+      pos: localPlayer.pos,
+      rot: localPlayer.rot,
+      speed: localPlayer.speed,
+      sector: localPlayer.sector,
+      stats: localPlayer.stats,
+      wormHead: state.worm[0],
+      linkedTo: localPlayer.linkedTo,
+      linkedGroup: localPlayer.linkedGroup,
+      isCaptain: localPlayer.isCaptain,
+      destination: state.destination ? { name: state.destination.planet.name, pos: state.destination.planet.pos } : null,
+    };
+  }
+
+  channel.onmessage = (e) => {
+    const msg = e.data;
+    if (msg.sender === localPlayer.id) return;
+
+    switch(msg.type) {
+      case MSG.JOIN:
+        state.players.set(msg.sender, { id: msg.sender, ...msg, lastSeen: Date.now() });
+        broadcast(MSG.SYNC, getSync());
+        addChat(null, `${msg.name} joined`, 'system');
+        toast(`${msg.name} set sail!`, 'info');
+        break;
+
+      case MSG.SYNC:
+        if (!state.players.has(msg.sender)) {
+          state.players.set(msg.sender, { id: msg.sender, ...msg, lastSeen: Date.now() });
+        } else {
+          Object.assign(state.players.get(msg.sender), msg, { lastSeen: Date.now() });
+        }
+        break;
+
+      case MSG.LEAVE:
+        const leaving = state.players.get(msg.sender);
+        if (leaving) addChat(null, `${leaving.name} left`, 'system');
+        // If we were linked to them, unlink
+        if (localPlayer.linkedTo === msg.sender) {
+          unlinkShips();
+        }
+        state.players.delete(msg.sender);
+        break;
+
+      case MSG.CHAT:
+        const cp = state.players.get(msg.sender);
+        addChat(cp ? cp.name : msg.sender, msg.text, 'chat', cp ? cp.color : '#888');
+        break;
+
+      case MSG.ACTION:
+        const ap = state.players.get(msg.sender);
+        addChat(ap ? ap.name : 'Someone', msg.action, 'action');
+        break;
+
+      case MSG.FEED_OTHER:
+        if (msg.target === localPlayer.id) {
+          const feeder = state.players.get(msg.sender);
+          localPlayer.stats.hunger = Math.min(100, localPlayer.stats.hunger + 15);
+          localPlayer.stats.happiness = Math.min(100, localPlayer.stats.happiness + 10);
+          toast(`${feeder ? feeder.name : 'Someone'} fed your worm!`, 'warn');
+        }
+        break;
+
+      case MSG.LINK_REQUEST:
+        if (msg.target === localPlayer.id) {
+          const requester = state.players.get(msg.sender);
+          // Auto-accept for now (could add UI prompt)
+          acceptLink(msg.sender);
+          addChat(null, `⛓️ ${requester?.name || 'Someone'} linked to your ship!`, 'link');
+        }
+        break;
+
+      case MSG.LINK_ACCEPT:
+        if (msg.target === localPlayer.id) {
+          const accepter = state.players.get(msg.sender);
+          localPlayer.linkedTo = msg.sender;
+          localPlayer.isCaptain = false;
+          localPlayer.linkedGroup = [localPlayer.id, msg.sender];
+          toast(`⛓️ Linked with ${accepter?.name}!`, 'link');
+          addChat(null, `⛓️ You boarded ${accepter?.name}'s ship!`, 'link');
+          updateLinkUI();
+        }
+        break;
+
+      case MSG.UNLINK:
+        if (localPlayer.linkedTo === msg.sender || localPlayer.linkedGroup.includes(msg.sender)) {
+          const other = state.players.get(msg.sender);
+          unlinkShips();
+          addChat(null, `⛓️ ${other?.name || 'Ship'} unlinked`, 'link');
+        }
+        break;
+    }
+    updatePlayerLists();
+  };
+
+  // ========== LINKING ==========
+  function requestLink(targetId) {
+    const target = state.players.get(targetId);
+    if (!target) return;
+    broadcast(MSG.LINK_REQUEST, { target: targetId });
+    addChat(null, `⛓️ Requesting to board ${target.name}'s ship...`, 'link');
+  }
+
+  function acceptLink(requesterId) {
+    localPlayer.linkedGroup = [localPlayer.id, requesterId];
+    localPlayer.isCaptain = true;
+    broadcast(MSG.LINK_ACCEPT, { target: requesterId });
+    updateLinkUI();
+  }
+
+  function unlinkShips() {
+    if (localPlayer.linkedTo || localPlayer.linkedGroup.length > 1) {
+      broadcast(MSG.UNLINK, {});
+    }
+    localPlayer.linkedTo = null;
+    localPlayer.linkedGroup = [];
+    localPlayer.isCaptain = true;
+    toast('Ships unlinked', 'info');
+    updateLinkUI();
+  }
+
+  function updateLinkUI() {
+    const linked = localPlayer.linkedTo || localPlayer.linkedGroup.length > 1;
+    $('link-status').classList.toggle('show', linked);
+    $('link-banner').classList.toggle('show', linked);
+    $('camera-controls').classList.toggle('show', linked && !localPlayer.isCaptain);
+
+    if (linked) {
+      if (localPlayer.isCaptain) {
+        $('link-banner-text').textContent = `${localPlayer.linkedGroup.length} ships linked`;
+        $('view-angle').textContent = 'Captain\'s View';
+      } else {
+        const captain = state.players.get(localPlayer.linkedTo);
+        $('link-banner-text').textContent = `Aboard ${captain?.name || 'Unknown'}'s ship`;
+        $('view-angle').textContent = localPlayer.cameraView.charAt(0).toUpperCase() + localPlayer.cameraView.slice(1);
+      }
+
+      // Crew list
+      let crewHtml = '';
+      if (localPlayer.isCaptain) {
+        crewHtml += `<span class="crew-member captain"><span class="dot" style="background:${localPlayer.color}"></span>${localPlayer.name} (Captain)</span>`;
+        for (const id of localPlayer.linkedGroup) {
+          if (id !== localPlayer.id) {
+            const p = state.players.get(id);
+            if (p) crewHtml += `<span class="crew-member"><span class="dot" style="background:${p.color}"></span>${p.name}</span>`;
+          }
+        }
+      } else {
+        const captain = state.players.get(localPlayer.linkedTo);
+        if (captain) crewHtml += `<span class="crew-member captain"><span class="dot" style="background:${captain.color}"></span>${captain.name} (Captain)</span>`;
+        crewHtml += `<span class="crew-member"><span class="dot" style="background:${localPlayer.color}"></span>${localPlayer.name} (You)</span>`;
+      }
+      $('crew-list').innerHTML = crewHtml;
+    }
+  }
+
+  function checkNearbyPlayers() {
+    state.nearbyPlayers.clear();
+    const myPos = new THREE.Vector3(localPlayer.pos.x, 0, localPlayer.pos.z);
+    
+    for (const [id, p] of state.players) {
+      if (p.world !== 'deck' || !p.pos) continue;
+      const theirPos = new THREE.Vector3(p.pos.x || 0, 0, p.pos.z || 0);
+      const dist = myPos.distanceTo(theirPos);
+      if (dist < CONFIG.LINK_DISTANCE) {
+        state.nearbyPlayers.add(id);
+      }
+    }
+  }
+
+  // ========== DOM ==========
+  const $ = id => document.getElementById(id);
+
+  // ========== THREE.JS SAILING ==========
+  let scene, camera, renderer, clock;
+  let shipGroup, ownShipGroup;
+  const keys = {};
+  const starMeshes = new Map();
+  const planetMeshes = new Map();
+  const playerShipMeshes = new Map();
+
+  function initSailing() {
+    scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x0a1628, 0.0015);
+
+    camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 2000);
+    renderer = new THREE.WebGLRenderer({ canvas: $('space-canvas'), antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.setClearColor(0x0a1628);
+
+    clock = new THREE.Clock();
+
+    scene.add(new THREE.AmbientLight(0x334466, 0.6));
+    const sun = new THREE.DirectionalLight(0xffeedd, 0.9);
+    sun.position.set(100, 80, 50);
+    scene.add(sun);
+
+    // Stars
+    const starGeo = new THREE.BufferGeometry();
+    const verts = [], cols = [];
+    for (let i = 0; i < 8000; i++) {
+      verts.push((Math.random()-0.5)*3000, (Math.random()-0.5)*1500, (Math.random()-0.5)*3000);
+      const c = new THREE.Color().setHSL(Math.random()*0.15+0.55, 0.6, 0.7+Math.random()*0.3);
+      cols.push(c.r, c.g, c.b);
+    }
+    starGeo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+    starGeo.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+    scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ size: 1.5, vertexColors: true, transparent: true, opacity: 0.9 })));
+
+    // Nebula ocean
+    const nebulaGeo = new THREE.PlaneGeometry(4000, 4000, 64, 64);
+    const nebulaMat = new THREE.ShaderMaterial({
+      transparent: true,
+      uniforms: { time: { value: 0 }, color1: { value: new THREE.Color(0x1a3a5c) }, color2: { value: new THREE.Color(0x0a1628) } },
+      vertexShader: `varying vec2 vUv; varying float vY; uniform float time; void main() { vUv = uv; vec3 pos = position; pos.z = sin(pos.x*0.01+time)*5.0 + cos(pos.y*0.01+time*0.7)*5.0; vY = pos.z; gl_Position = projectionMatrix * modelViewMatrix * vec4(pos,1.0); }`,
+      fragmentShader: `varying vec2 vUv; varying float vY; uniform vec3 color1; uniform vec3 color2; void main() { float alpha = 0.3 + vY*0.02; vec3 col = mix(color2, color1, vUv.y); gl_FragColor = vec4(col, alpha*0.5); }`,
+      side: THREE.DoubleSide,
+    });
+    const nebula = new THREE.Mesh(nebulaGeo, nebulaMat);
+    nebula.rotation.x = -Math.PI / 2;
+    nebula.position.y = -50;
+    scene.add(nebula);
+    state.nebulaMat = nebulaMat;
+
+    buildShip();
+  }
+
+  function buildShip() {
+    shipGroup = new THREE.Group();
+    ownShipGroup = shipGroup; // Reference to our own ship
+
+    // Hull
+    const hullGeo = new THREE.BoxGeometry(3, 1.2, 6);
+    const hullMat = new THREE.MeshPhongMaterial({ color: 0x5c3a21 });
+    const hull = new THREE.Mesh(hullGeo, hullMat);
+    hull.position.y = 0;
+    shipGroup.add(hull);
+
+    // Bow
+    const bowGeo = new THREE.ConeGeometry(1.5, 3, 4);
+    const bow = new THREE.Mesh(bowGeo, hullMat);
+    bow.rotation.x = Math.PI / 2;
+    bow.position.set(0, 0, 4.5);
+    shipGroup.add(bow);
+
+    // Deck
+    const deckGeo = new THREE.BoxGeometry(2.8, 0.1, 5.5);
+    const deckMat = new THREE.MeshPhongMaterial({ color: 0x8b6914 });
+    const deck = new THREE.Mesh(deckGeo, deckMat);
+    deck.position.y = 0.65;
+    shipGroup.add(deck);
+
+    // Mast
+    const mastGeo = new THREE.CylinderGeometry(0.12, 0.15, 10, 8);
+    const mastMat = new THREE.MeshPhongMaterial({ color: 0x4a3520 });
+    const mast = new THREE.Mesh(mastGeo, mastMat);
+    mast.position.set(0, 5.5, 0);
+    shipGroup.add(mast);
+
+    // Main sail
+    const sailGeo = new THREE.PlaneGeometry(4, 6, 8, 8);
+    const sailMat = new THREE.MeshPhongMaterial({ color: 0xf4e4bc, side: THREE.DoubleSide, transparent: true, opacity: 0.95 });
+    state.mainSail = new THREE.Mesh(sailGeo, sailMat);
+    state.mainSail.position.set(0, 5, 0.5);
+    shipGroup.add(state.mainSail);
+
+    // Sail glow
+    const glowGeo = new THREE.PlaneGeometry(4.2, 6.2);
+    const glowMat = new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.15, side: THREE.DoubleSide });
+    state.sailGlow = new THREE.Mesh(glowGeo, glowMat);
+    state.sailGlow.position.set(0, 5, 0.55);
+    shipGroup.add(state.sailGlow);
+
+    // Cabin
+    const cabinGeo = new THREE.BoxGeometry(2.2, 1.5, 2);
+    const cabin = new THREE.Mesh(cabinGeo, new THREE.MeshPhongMaterial({ color: 0x5c3a21 }));
+    cabin.position.set(0, 1.4, -1.8);
+    shipGroup.add(cabin);
+
+    // Lantern
+    const lanternGeo = new THREE.SphereGeometry(0.2, 8, 8);
+    const lantern = new THREE.Mesh(lanternGeo, new THREE.MeshBasicMaterial({ color: 0xffdd66 }));
+    lantern.position.set(0, 2.2, -2.8);
+    shipGroup.add(lantern);
+    shipGroup.add(new THREE.PointLight(0xffdd66, 0.5, 10));
+
+    // Figurehead (worm)
+    const figGeo = new THREE.SphereGeometry(0.5, 12, 12);
+    const figMat = new THREE.MeshPhongMaterial({ color: new THREE.Color(localPlayer.color), emissive: new THREE.Color(localPlayer.color), emissiveIntensity: 0.3 });
+    const fig = new THREE.Mesh(figGeo, figMat);
+    fig.position.set(0, 0.5, 5.5);
+    shipGroup.add(fig);
+    const eyeGeo = new THREE.SphereGeometry(0.1, 6, 6);
+    const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const le = new THREE.Mesh(eyeGeo, eyeMat); le.position.set(-0.18, 0.1, 0.4); fig.add(le);
+    const re = new THREE.Mesh(eyeGeo, eyeMat); re.position.set(0.18, 0.1, 0.4); fig.add(re);
+
+    scene.add(shipGroup);
+  }
+
+  function buildOtherShip(color) {
+    const g = new THREE.Group();
+    const c = new THREE.Color(color || '#888');
+
+    const hullGeo = new THREE.BoxGeometry(2.5, 1, 5);
+    const hull = new THREE.Mesh(hullGeo, new THREE.MeshPhongMaterial({ color: 0x5c3a21 }));
+    g.add(hull);
+
+    const bowGeo = new THREE.ConeGeometry(1.25, 2.5, 4);
+    const bow = new THREE.Mesh(bowGeo, new THREE.MeshPhongMaterial({ color: 0x5c3a21 }));
+    bow.rotation.x = Math.PI / 2;
+    bow.position.z = 3.75;
+    g.add(bow);
+
+    const mastGeo = new THREE.CylinderGeometry(0.1, 0.12, 7, 6);
+    const mast = new THREE.Mesh(mastGeo, new THREE.MeshPhongMaterial({ color: 0x4a3520 }));
+    mast.position.y = 4;
+    g.add(mast);
+
+    const sailGeo = new THREE.PlaneGeometry(3, 4);
+    const sail = new THREE.Mesh(sailGeo, new THREE.MeshPhongMaterial({ color: c, side: THREE.DoubleSide, transparent: true, opacity: 0.9 }));
+    sail.position.set(0, 4, 0.3);
+    g.add(sail);
+
+    return g;
+  }
+
+  // ========== PROCEDURAL GEN ==========
+  const STARS = [0xffd700, 0xff6600, 0x6688ff, 0xffffff, 0xff4444];
+  const ISLANDS = ['Tropical Isle', 'Crystal Atoll', 'Storm Haven', 'Volcanic Rock', 'Ice Shelf'];
+  const ATMOS = ['None', 'Thin', 'Breathable', 'Dense', 'Misty'];
+  const RES = ['Starwood', 'Crystals', 'Water', 'Solar Essence', 'Stellar Silk'];
+
+  function genSystem(sx, sz) {
+    const key = `${sx},${sz}`;
+    if (state.systems.has(key)) return state.systems.get(key);
+    const rng = new Rand(CONFIG.WORLD_SEED + sx*73856093 + sz*83492791);
+    if (rng.next() > 0.3) { state.systems.set(key, null); return null; }
+    const sys = {
+      name: ['Amber','Azure','Coral','Dawn','Emerald'][rng.int(0,4)] + ' ' + ['Reach','Deep','Shoals'][rng.int(0,2)],
+      pos: new THREE.Vector3(sx*100+rng.range(-40,40), rng.range(-5,5), sz*100+rng.range(-40,40)),
+      starColor: rng.pick(STARS),
+      starSize: rng.range(3, 6),
+      planets: [],
+    };
+    const np = rng.int(1, 3);
+    for (let i = 0; i < np; i++) {
+      const orbit = 15 + i * rng.range(8, 12);
+      const ang = rng.next() * Math.PI * 2;
+      sys.planets.push({
+        id: key + '-' + i,
+        name: sys.name + ' ' + ['Alpha','Beta','Gamma'][i],
+        type: rng.pick(ISLANDS),
+        pos: new THREE.Vector3(sys.pos.x + Math.cos(ang)*orbit, sys.pos.y + rng.range(-3,3), sys.pos.z + Math.sin(ang)*orbit),
+        size: rng.range(1.5, 3),
+        color: [0x4488ff,0x88ff44,0xff8844,0xffff44,0xff44ff][rng.int(0,4)],
+        temp: ['Frigid','Cold','Temperate','Warm','Hot'][rng.int(0,4)],
+        atmo: rng.pick(ATMOS),
+        grav: rng.range(0.2, 2).toFixed(1),
+        res: [rng.pick(RES)],
+      });
+    }
+    state.systems.set(key, sys);
+    return sys;
+  }
+
+  function getStarMesh(sys) {
+    if (!sys) return null;
+    if (starMeshes.has(sys.name)) return starMeshes.get(sys.name);
+    const m = new THREE.Mesh(new THREE.SphereGeometry(sys.starSize, 20, 20), new THREE.MeshBasicMaterial({ color: sys.starColor }));
+    m.position.copy(sys.pos);
+    m.add(new THREE.Mesh(new THREE.SphereGeometry(sys.starSize*1.5, 12, 12), new THREE.MeshBasicMaterial({ color: sys.starColor, transparent: true, opacity: 0.2 })));
+    m.add(new THREE.PointLight(sys.starColor, 2, 100));
+    scene.add(m);
+    starMeshes.set(sys.name, m);
+    return m;
+  }
+
+  function getPlanetMesh(p) {
+    if (!p) return null;
+    if (planetMeshes.has(p.id)) return planetMeshes.get(p.id);
+    const m = new THREE.Mesh(new THREE.SphereGeometry(p.size, 20, 20), new THREE.MeshPhongMaterial({ color: p.color, shininess: 20 }));
+    m.position.copy(p.pos);
+    const ring = new THREE.Mesh(new THREE.RingGeometry(p.size*1.2, p.size*1.5, 32), new THREE.MeshBasicMaterial({ color: p.color, transparent: true, opacity: 0.2, side: THREE.DoubleSide }));
+    ring.rotation.x = Math.PI / 2;
+    m.add(ring);
+    scene.add(m);
+    planetMeshes.set(p.id, m);
+    return m;
+  }
+
+  function updateVisible() {
+    const sec = localPlayer.sector;
+    state.visibleStars.length = 0;
+    state.visiblePlanets.length = 0;
+    for (let dx = -3; dx <= 3; dx++) {
+      for (let dz = -3; dz <= 3; dz++) {
+        const sys = genSystem(sec.x+dx, sec.z+dz);
+        if (sys) {
+          const sm = getStarMesh(sys);
+          if (sm) state.visibleStars.push({ sys, mesh: sm });
+          for (const pl of sys.planets) {
+            const pm = getPlanetMesh(pl);
+            if (pm) state.visiblePlanets.push({ planet: pl, sys, mesh: pm });
+          }
+        }
+      }
+    }
+  }
+
+  // ========== OTHER SHIPS ==========
+  function getPlayerShip(p) {
+    if (playerShipMeshes.has(p.id)) return playerShipMeshes.get(p.id);
+    const ship = buildOtherShip(p.color);
+    scene.add(ship);
+    playerShipMeshes.set(p.id, ship);
+    return ship;
+  }
+
+  function updateOtherShips() {
+    const now = Date.now();
+    for (const [id, p] of state.players) {
+      if (now - p.lastSeen > CONFIG.HEARTBEAT * 2) {
+        const mesh = playerShipMeshes.get(id);
+        if (mesh) scene.remove(mesh);
+        playerShipMeshes.delete(id);
+        state.players.delete(id);
+        updatePlayerLists();
+        continue;
+      }
+
+      // If they're linked to us, don't show their separate ship
+      if (p.linkedTo === localPlayer.id) {
+        const mesh = playerShipMeshes.get(id);
+        if (mesh) mesh.visible = false;
+        continue;
+      }
+
+      if (p.world === 'deck' && localPlayer.world === 'deck') {
+        const ship = getPlayerShip(p);
+        if (p.pos) {
+          ship.position.lerp(new THREE.Vector3(p.pos.x || 0, 0, p.pos.z || 0), 0.15);
+          ship.rotation.y = p.rot?.y || 0;
+          ship.visible = true;
+        }
+      } else {
+        const ship = playerShipMeshes.get(id);
+        if (ship) ship.visible = false;
+      }
+    }
+  }
+
+  // ========== MOVEMENT ==========
+  function getActiveShipPos() {
+    // If linked to someone, use their position
+    if (localPlayer.linkedTo) {
+      const captain = state.players.get(localPlayer.linkedTo);
+      if (captain && captain.pos) {
+        return { x: captain.pos.x, y: 0, z: captain.pos.z };
+      }
+    }
+    return localPlayer.pos;
+  }
+
+  function updateMovement(dt) {
+    state.wind.angle += Math.sin(clock.elapsedTime * 0.1) * 0.001;
+    state.wind.speed = 10 + Math.sin(clock.elapsedTime * 0.2) * 4;
+
+    // If we're linked to someone else, we don't control movement
+    if (localPlayer.linkedTo) {
+      const captain = state.players.get(localPlayer.linkedTo);
+      if (captain && captain.pos) {
+        // Update our position to match captain
+        localPlayer.pos = { x: captain.pos.x, y: 0, z: captain.pos.z };
+        localPlayer.rot = captain.rot || { y: 0 };
+        localPlayer.speed = captain.speed || 0;
+        localPlayer.sector = captain.sector || { x: 0, z: 0 };
+        
+        // If captain has destination, we share it
+        if (captain.destination && !state.destination) {
+          // Could sync destination here
+        }
+      }
+      updateShipPosition();
+      return;
+    }
+
+    // Cabin = autopilot
+    if (localPlayer.world === 'cabin' && state.destination) {
+      updateAutopilot(dt * CONFIG.TIME_WARP);
+      return;
+    }
+
+    // Manual sailing
+    if (localPlayer.world === 'deck') {
+      const accel = 25;
+      const boost = (keys['ShiftLeft'] || keys['ShiftRight']) ? CONFIG.BOOST : 1;
+
+      if (keys['KeyA']) localPlayer.rot.y += 1.5 * dt;
+      if (keys['KeyD']) localPlayer.rot.y -= 1.5 * dt;
+
+      const fwd = new THREE.Vector3(Math.sin(localPlayer.rot.y), 0, Math.cos(localPlayer.rot.y));
+      const vel = new THREE.Vector3(localPlayer.vel.x, 0, localPlayer.vel.z);
+
+      const windDir = new THREE.Vector3(Math.cos(state.wind.angle), 0, Math.sin(state.wind.angle));
+      const windBonus = Math.max(0, fwd.dot(windDir)) * state.wind.speed * 0.05;
+
+      if (keys['KeyW']) vel.addScaledVector(fwd, (accel + windBonus) * boost * dt);
+      if (keys['KeyS']) vel.addScaledVector(fwd, -accel * 0.3 * dt);
+      if (keys['Space']) vel.multiplyScalar(0.92);
+
+      vel.multiplyScalar(0.985);
+      localPlayer.speed = vel.length();
+      const maxSpd = CONFIG.MAX_SPEED * boost;
+      if (localPlayer.speed > maxSpd) { vel.multiplyScalar(maxSpd / localPlayer.speed); localPlayer.speed = maxSpd; }
+
+      localPlayer.vel = { x: vel.x, y: 0, z: vel.z };
+      localPlayer.pos.x += vel.x * dt;
+      localPlayer.pos.z += vel.z * dt;
+    }
+
+    localPlayer.sector = { x: Math.floor(localPlayer.pos.x/100), z: Math.floor(localPlayer.pos.z/100) };
+    updateShipPosition();
+  }
+
+  function updateShipPosition() {
+    const pos = getActiveShipPos();
+    shipGroup.position.set(pos.x, Math.sin(clock.elapsedTime * 1.5) * 0.3, pos.z);
+    shipGroup.rotation.y = localPlayer.rot.y;
+
+    // Sail animation
+    const sailIntensity = localPlayer.speed / CONFIG.MAX_SPEED;
+    if (state.mainSail) state.mainSail.rotation.x = Math.sin(clock.elapsedTime * 3) * 0.05 * sailIntensity;
+    if (state.sailGlow) state.sailGlow.material.opacity = 0.1 + sailIntensity * 0.25;
+  }
+
+  function updateAutopilot(dt) {
+    if (!state.destination) return;
+    const dest = state.destination.planet.pos;
+    const pos = new THREE.Vector3(localPlayer.pos.x, 0, localPlayer.pos.z);
+    const dir = new THREE.Vector3(dest.x - pos.x, 0, dest.z - pos.z).normalize();
+    const dist = pos.distanceTo(new THREE.Vector3(dest.x, 0, dest.z));
+    state.currentDist = dist;
+
+    if (dist < state.destination.planet.size * 3) {
+      arriveAtDest();
+      return;
+    }
+
+    localPlayer.pos.x += dir.x * CONFIG.AUTOPILOT_SPEED * dt;
+    localPlayer.pos.z += dir.z * CONFIG.AUTOPILOT_SPEED * dt;
+    localPlayer.speed = CONFIG.AUTOPILOT_SPEED;
+    localPlayer.rot.y = Math.atan2(dir.x, dir.z);
+    localPlayer.sector = { x: Math.floor(localPlayer.pos.x/100), z: Math.floor(localPlayer.pos.z/100) };
+    updateShipPosition();
+  }
+
+  function setDest(planet, sys) {
+    const pos = new THREE.Vector3(localPlayer.pos.x, 0, localPlayer.pos.z);
+    state.destination = { planet, sys };
+    state.totalDist = pos.distanceTo(new THREE.Vector3(planet.pos.x, 0, planet.pos.z));
+    state.currentDist = state.totalDist;
+    toast(`Course set: ${planet.name}`, 'success');
+  }
+
+  function arriveAtDest() {
+    const name = state.destination.planet.name;
+    state.destination = null;
+    state.totalDist = 0;
+    state.currentDist = 0;
+    if (localPlayer.world === 'cabin') {
+      $('arrival-msg').textContent = `Arrived at ${name}`;
+      $('arrival-alert').classList.add('show');
+    } else {
+      toast(`Land ho! ${name}!`, 'success');
+    }
+  }
+
+  // ========== CAMERA ==========
+  const CAMERA_VIEWS = {
+    stern: { offset: new THREE.Vector3(0, 8, 20), lookOffset: new THREE.Vector3(0, 0, 0) },
+    bow: { offset: new THREE.Vector3(0, 6, -15), lookOffset: new THREE.Vector3(0, 0, 5) },
+    port: { offset: new THREE.Vector3(-18, 8, 0), lookOffset: new THREE.Vector3(0, 0, 0) },
+    starboard: { offset: new THREE.Vector3(18, 8, 0), lookOffset: new THREE.Vector3(0, 0, 0) },
+    above: { offset: new THREE.Vector3(0, 30, 5), lookOffset: new THREE.Vector3(0, 0, 0) },
+    close: { offset: new THREE.Vector3(0, 3, 8), lookOffset: new THREE.Vector3(0, 2, 0) },
+  };
+
+  function updateCamera() {
+    const view = CAMERA_VIEWS[localPlayer.cameraView] || CAMERA_VIEWS.stern;
+    const pos = getActiveShipPos();
+    const shipPos = new THREE.Vector3(pos.x, 0, pos.z);
+
+    const off = view.offset.clone().applyAxisAngle(new THREE.Vector3(0,1,0), localPlayer.rot.y);
+    const target = shipPos.clone().add(off);
+    camera.position.lerp(target, 0.08);
+
+    const lookAt = shipPos.clone().add(view.lookOffset.clone().applyAxisAngle(new THREE.Vector3(0,1,0), localPlayer.rot.y));
+    camera.lookAt(lookAt);
+  }
+
+  function checkNearby() {
+    state.nearbyIsland = null;
+    const pos = new THREE.Vector3(localPlayer.pos.x, 0, localPlayer.pos.z);
+    for (const { planet, sys } of state.visiblePlanets) {
+      if (!planet || !planet.pos) continue;
+      const d = pos.distanceTo(new THREE.Vector3(planet.pos.x, 0, planet.pos.z));
+      if (d < planet.size * 5) {
+        state.nearbyIsland = { planet, sys };
+        break;
+      }
+    }
+    $('ship-location').textContent = state.nearbyIsland
+      ? `Near ${state.nearbyIsland.planet.name} (E to scan)`
+      : `Sector ${localPlayer.sector.x}, ${localPlayer.sector.z}`;
+  }
+
+  // ========== MINIMAP ==========
+  function updateMinimap() {
+    const cvs = $('minimap-canvas');
+    const ctx = cvs.getContext('2d');
+    cvs.width = 150; cvs.height = 150;
+    const scale = 0.3, cx = 75, cy = 75;
+
+    ctx.fillStyle = '#0a1628';
+    ctx.fillRect(0, 0, 150, 150);
+
+    // Grid
+    ctx.strokeStyle = 'rgba(100,150,200,0.1)';
+    for (let i = 0; i <= 150; i += 25) {
+      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 150); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(150, i); ctx.stroke();
+    }
+
+    // Stars & planets - FIX: Added null checks for starColor and color
+    for (const { sys } of state.visibleStars) {
+      if (!sys || !sys.pos || sys.starColor === undefined) continue;
+      const dx = (sys.pos.x - localPlayer.pos.x) * scale;
+      const dz = (sys.pos.z - localPlayer.pos.z) * scale;
+      if (Math.abs(dx) < cx && Math.abs(dz) < cy) {
+        ctx.fillStyle = '#' + sys.starColor.toString(16).padStart(6, '0');
+        ctx.beginPath(); ctx.arc(cx + dx, cy + dz, 4, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    for (const { planet } of state.visiblePlanets) {
+      if (!planet || !planet.pos || planet.color === undefined) continue;
+      const dx = (planet.pos.x - localPlayer.pos.x) * scale;
+      const dz = (planet.pos.z - localPlayer.pos.z) * scale;
+      if (Math.abs(dx) < cx && Math.abs(dz) < cy) {
+        ctx.fillStyle = '#' + planet.color.toString(16).padStart(6, '0');
+        ctx.beginPath(); ctx.arc(cx + dx, cy + dz, 3, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+
+    // Other ships
+    for (const [id, p] of state.players) {
+      if (!p.pos || p.world !== 'deck') continue;
+      const dx = (p.pos.x - localPlayer.pos.x) * scale;
+      const dz = (p.pos.z - localPlayer.pos.z) * scale;
+      if (Math.abs(dx) < cx && Math.abs(dz) < cy) {
+        ctx.fillStyle = state.nearbyPlayers.has(id) ? '#ff6b6b' : (p.color || '#888');
+        ctx.beginPath(); ctx.arc(cx + dx, cy + dz, 3, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+
+    // Self
+    ctx.fillStyle = localPlayer.color;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - 6);
+    ctx.lineTo(cx - 4, cy + 4);
+    ctx.lineTo(cx + 4, cy + 4);
+    ctx.closePath();
+    ctx.fill();
+
+    // Link distance circle
+    ctx.strokeStyle = 'rgba(255,107,107,0.3)';
+    ctx.beginPath();
+    ctx.arc(cx, cy, CONFIG.LINK_DISTANCE * scale, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // ========== UI ==========
+  function updateUI() {
+    ['s', 'c'].forEach(p => {
+      $(`${p}-hunger`).style.width = localPlayer.stats.hunger + '%';
+      $(`${p}-hunger-v`).textContent = Math.round(localPlayer.stats.hunger) + '%';
+      $(`${p}-happy`).style.width = localPlayer.stats.happiness + '%';
+      $(`${p}-happy-v`).textContent = Math.round(localPlayer.stats.happiness) + '%';
+      $(`${p}-energy`).style.width = localPlayer.stats.energy + '%';
+      $(`${p}-energy-v`).textContent = Math.round(localPlayer.stats.energy) + '%';
+    });
+    $('c-health').style.width = localPlayer.stats.health + '%';
+    $('c-health-v').textContent = Math.round(localPlayer.stats.health) + '%';
+
+    $('speed-val').textContent = Math.round(localPlayer.speed * 10);
+    const headings = ['N','NE','E','SE','S','SW','W','NW'];
+    $('heading-val').textContent = headings[Math.round((-localPlayer.rot.y / Math.PI * 4 + 8)) % 8];
+    $('wind-speed').textContent = Math.round(state.wind.speed);
+    $('wind-dir').style.transform = `rotate(${state.wind.angle}rad)`;
+
+    // Mood
+    const avg = (localPlayer.stats.hunger + localPlayer.stats.happiness + localPlayer.stats.energy + localPlayer.stats.health) / 4;
+    $('pet-mood').textContent = localPlayer.isSleeping ? '😴 Sleeping' : avg >= 80 ? '😄 Very Happy' : avg >= 60 ? '😊 Happy' : avg >= 40 ? '😐 Okay' : '😢 Sad';
+
+    // Dest
+    const dp = $('dest-panel'), tp = $('travel-status');
+    if (state.destination) {
+      dp.classList.add('show'); tp.classList.add('show');
+      $('dest-name').textContent = $('travel-dest').textContent = state.destination.planet.name;
+      $('dest-dist').textContent = Math.round(state.currentDist) + ' lg';
+      $('t-dist').textContent = Math.round(state.currentDist) + ' lg';
+      const pct = state.totalDist > 0 ? ((state.totalDist - state.currentDist) / state.totalDist) * 100 : 0;
+      $('dest-progress').style.width = $('travel-progress').style.width = pct + '%';
+      const eta = state.currentDist / CONFIG.AUTOPILOT_SPEED;
+      $('dest-eta-val').textContent = $('t-eta').textContent = eta > 60 ? Math.round(eta/60) + 'm' : Math.round(eta) + 's';
+    } else {
+      dp.classList.remove('show'); tp.classList.remove('show');
+    }
+  }
+
+  function updatePlayerLists() {
+    checkNearbyPlayers();
+
+    let html = `<div class="player-item self"><div class="player-avatar" style="background:${localPlayer.color}">⛵</div><div><div class="player-name">${localPlayer.name}</div><div class="player-status">${localPlayer.linkedTo ? '⛓️ Crew' : localPlayer.linkedGroup.length > 1 ? '⛓️ Captain' : '🧭 Solo'}</div></div></div>`;
+    
+    for (const [id, p] of state.players) {
+      const isNearby = state.nearbyPlayers.has(id);
+      const isLinked = localPlayer.linkedTo === id || localPlayer.linkedGroup.includes(id);
+      
+      html += `<div class="player-item${isLinked ? ' linked' : ''}${isNearby ? ' nearby' : ''}">
+        <div class="player-avatar" style="background:${p.color||'#888'}">⛵</div>
+        <div>
+          <div class="player-name">${p.name||id}</div>
+          <div class="player-status${isNearby ? ' nearby' : ''}">${isLinked ? '⛓️ Linked' : isNearby ? '📍 In Range' : p.world === 'cabin' ? '🐛 Below' : '🌊 Sailing'}</div>
+        </div>
+        ${isLinked ? `<button class="unlink-btn" onclick="window.unlinkShips()">Unlink</button>` : isNearby && !localPlayer.linkedTo ? `<button class="link-btn" onclick="window.requestLink('${id}')">Link</button>` : ''}
+      </div>`;
+    }
+    $('player-list').innerHTML = html;
+    $('player-count').textContent = state.players.size + 1;
+
+    // Cabin list
+    let cHtml = `<div class="cabin-player self">🐛 ${localPlayer.name}</div>`;
+    for (const [id, p] of state.players) {
+      if (p.world === 'cabin') cHtml += `<div class="cabin-player">🐛 ${p.name||id}</div>`;
+    }
+    $('cabin-player-list').innerHTML = cHtml;
+
+    updateLinkUI();
+  }
+
+  // Expose for onclick
+  window.requestLink = requestLink;
+  window.unlinkShips = unlinkShips;
+
+  // ========== CABIN (PET) ==========
+  let cabinScene, cabinCamera, cabinRenderer;
+
+  function initCabin() {
+    cabinScene = new THREE.Scene();
+    cabinScene.fog = new THREE.Fog(0x7bc9ff, 20, 60);
+    cabinCamera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 500);
+    cabinRenderer = new THREE.WebGLRenderer({ canvas: $('cabin-canvas'), antialias: true });
+    cabinRenderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    cabinRenderer.setSize(window.innerWidth, window.innerHeight);
+    cabinRenderer.setClearColor(0x7bc9ff);
+    cabinRenderer.shadowMap.enabled = true;
+
+    cabinScene.add(new THREE.HemisphereLight(0xb2d7ff, 0x41577c, 0.8));
+    const dl = new THREE.DirectionalLight(0xffffff, 0.9);
+    dl.position.set(15, 25, 20);
+    dl.castShadow = true;
+    cabinScene.add(dl);
+
+    // Sky
+    const skyGeo = new THREE.SphereGeometry(150, 32, 16);
+    const skyMat = new THREE.ShaderMaterial({
+      side: THREE.BackSide,
+      uniforms: { topColor: { value: new THREE.Color(0x86c9ff) }, bottomColor: { value: new THREE.Color(0x5a86c2) } },
+      vertexShader: `varying vec3 vWP; void main() { vWP = (modelMatrix * vec4(position,1.0)).xyz; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+      fragmentShader: `uniform vec3 topColor; uniform vec3 bottomColor; varying vec3 vWP; void main() { float h = normalize(vWP + vec3(0,33,0)).y; gl_FragColor = vec4(mix(bottomColor, topColor, pow(max(h,0.0),0.6)), 1.0); }`,
+    });
+    cabinScene.add(new THREE.Mesh(skyGeo, skyMat));
+
+    buildCabinWorld();
+    buildWorm();
+    setupCabinInput();
+
+    state.cabinCamTarget = new THREE.Vector3(CONFIG.GRID_SIZE/2, 0, CONFIG.GRID_SIZE/2);
+    state.cabinSpherical = { radius: 25, phi: Math.PI/3.2, theta: Math.PI/5 };
+    applyCabinCamera();
+  }
+
+  function buildCabinWorld() {
+    const boxGeo = new THREE.BoxGeometry(1, 1, 1);
+    const grassTex = createTex('#3a9d5c'), dirtTex = createTex('#7a4a28');
+    const grassMat = new THREE.MeshLambertMaterial({ map: grassTex });
+    const dirtMat = new THREE.MeshLambertMaterial({ map: dirtTex });
+
+    for (let x = -1; x < CONFIG.GRID_SIZE + 1; x++) {
+      for (let z = -1; z < CONFIG.GRID_SIZE + 1; z++) {
+        const g = new THREE.Mesh(boxGeo, grassMat); g.position.set(x, -0.5, z); g.receiveShadow = true; cabinScene.add(g);
+        const d = new THREE.Mesh(boxGeo, dirtMat); d.position.set(x, -1.5, z); cabinScene.add(d);
+      }
+    }
+
+    state.clickPlane = new THREE.Mesh(new THREE.PlaneGeometry(CONFIG.GRID_SIZE, CONFIG.GRID_SIZE), new THREE.MeshBasicMaterial({ visible: false }));
+    state.clickPlane.rotation.x = -Math.PI / 2;
+    state.clickPlane.position.set((CONFIG.GRID_SIZE-1)/2, 0.01, (CONFIG.GRID_SIZE-1)/2);
+    cabinScene.add(state.clickPlane);
+  }
+
+  function createTex(hex) {
+    const c = document.createElement('canvas'); c.width = c.height = 64;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = hex; ctx.fillRect(0, 0, 64, 64);
+    for (let i = 0; i < 100; i++) {
+      const x = Math.floor(Math.random()*62), y = Math.floor(Math.random()*62);
+      const b = (Math.random()*0.3-0.15)*255;
+      ctx.fillStyle = `rgb(${Math.max(0,Math.min(255,parseInt(hex.slice(1,3),16)+b))|0},${Math.max(0,Math.min(255,parseInt(hex.slice(3,5),16)+b))|0},${Math.max(0,Math.min(255,parseInt(hex.slice(5,7),16)+b))|0})`;
+      ctx.fillRect(x, y, 2, 2);
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.magFilter = tex.minFilter = THREE.NearestFilter;
+    return tex;
+  }
+
+  function buildWorm() {
+    const segGeo = new THREE.BoxGeometry(0.85, 0.85, 0.85);
+    state.headMesh = new THREE.Mesh(segGeo, new THREE.MeshLambertMaterial({ color: 0x1e7a1e }));
+    state.headMesh.castShadow = true;
+    cabinScene.add(state.headMesh);
+
+    const eyeGeo = new THREE.SphereGeometry(0.12, 8, 8);
+    const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const le = new THREE.Mesh(eyeGeo, eyeMat); le.position.set(-0.2, 0.15, 0.35); state.headMesh.add(le);
+    const re = new THREE.Mesh(eyeGeo, eyeMat); re.position.set(0.2, 0.15, 0.35); state.headMesh.add(re);
+
+    state.bodyPool = []; state.activeBody = [];
+    const bodyMat = new THREE.MeshLambertMaterial({ color: 0x34c634 });
+    for (let i = 0; i < 50; i++) {
+      const m = new THREE.Mesh(segGeo, bodyMat); m.castShadow = true; m.visible = false;
+      cabinScene.add(m); state.bodyPool.push(m);
+    }
+    syncWorm(true);
+  }
+
+  function syncWorm(reset = false) {
+    const h = state.worm[0];
+    state.headMesh.position.set(h.x, h.y + (localPlayer.isSleeping ? -0.15 : 0), h.z);
+    if (state.worm.length > 1) {
+      const n = state.worm[1];
+      state.headMesh.rotation.y = Math.atan2(h.x - n.x, h.z - n.z);
+    }
+    if (reset) { state.activeBody.forEach(m => m.visible = false); state.activeBody.length = 0; }
+    const needed = Math.max(0, state.worm.length - 1);
+    while (state.activeBody.length < needed && state.bodyPool.length > 0) {
+      const m = state.bodyPool.pop(); m.visible = true; state.activeBody.push(m);
+    }
+    while (state.activeBody.length > needed) {
+      const m = state.activeBody.pop(); m.visible = false; state.bodyPool.push(m);
+    }
+    for (let i = 1; i < state.worm.length; i++) {
+      const seg = state.worm[i], mesh = state.activeBody[i - 1];
+      if (mesh) mesh.position.set(seg.x, seg.y + (localPlayer.isSleeping ? -0.15 : 0), seg.z);
+    }
+  }
+
+  function applyCabinCamera() {
+    const { radius, phi, theta } = state.cabinSpherical;
+    cabinCamera.position.set(
+      state.cabinCamTarget.x + radius * Math.sin(phi) * Math.cos(theta),
+      state.cabinCamTarget.y + radius * Math.cos(phi),
+      state.cabinCamTarget.z + radius * Math.sin(phi) * Math.sin(theta)
+    );
+    cabinCamera.lookAt(state.cabinCamTarget);
+  }
+
+  // Food & worm behavior (simplified)
+  function spawnFood(x, z) {
+    if (state.foodItems.length >= 5) return false;
+    if (x < 0 || x >= CONFIG.GRID_SIZE || z < 0 || z >= CONFIG.GRID_SIZE) return false;
+    for (const s of state.worm) if (s.x === x && s.z === z) return false;
+    for (const f of state.foodItems) if (f.x === x && f.z === z) return false;
+
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), new THREE.MeshLambertMaterial({ color: 0xff6a00 }));
+    mesh.position.set(x, 0.3, z); mesh.castShadow = true;
+    cabinScene.add(mesh);
+    state.foodItems.push({ x, z, mesh });
+    return true;
+  }
+
+  function updateWorm(dt) {
+    if (localPlayer.isSleeping) return;
+    state.moveTimer += dt;
+    if (state.moveTimer < 0.5) return;
+    state.moveTimer = 0;
+
+    let next = null;
+    if (state.wormTarget) {
+      const h = state.worm[0], dx = state.wormTarget.x - h.x, dz = state.wormTarget.z - h.z;
+      if (dx === 0 && dz === 0) state.wormTarget = null;
+      else next = Math.abs(dx) > Math.abs(dz) ? { x: h.x + Math.sign(dx), z: h.z } : { x: h.x, z: h.z + Math.sign(dz) };
+    } else if (Math.random() < 0.3) {
+      const h = state.worm[0];
+      const dirs = [{x:1,z:0},{x:-1,z:0},{x:0,z:1},{x:0,z:-1}].filter(d => {
+        const nx = h.x+d.x, nz = h.z+d.z;
+        return nx >= 0 && nx < CONFIG.GRID_SIZE && nz >= 0 && nz < CONFIG.GRID_SIZE;
+      });
+      if (dirs.length) { const d = dirs[Math.floor(Math.random()*dirs.length)]; next = { x: h.x+d.x, z: h.z+d.z }; }
+    }
+
+    if (!next) return;
+    state.worm.unshift({ x: next.x, y: 0, z: next.z });
+    state.worm.pop();
+
+    for (let i = 0; i < state.foodItems.length; i++) {
+      const f = state.foodItems[i];
+      if (f.x === next.x && f.z === next.z) {
+        cabinScene.remove(f.mesh);
+        state.foodItems.splice(i, 1);
+        state.worm.push({ ...state.worm[state.worm.length-1] });
+        localPlayer.stats.hunger = Math.min(100, localPlayer.stats.hunger + 20);
+        syncWorm(true);
+        break;
+      }
+    }
+    syncWorm();
+  }
+
+  function updateStats(dt) {
+    state.statDecayTimer += dt;
+    if (state.statDecayTimer < 2) return;
+    state.statDecayTimer = 0;
+    localPlayer.stats.hunger = Math.max(0, localPlayer.stats.hunger - 0.5);
+    localPlayer.stats.happiness = Math.max(0, localPlayer.stats.happiness - 0.3);
+    if (localPlayer.isSleeping) localPlayer.stats.energy = Math.min(100, localPlayer.stats.energy + 2);
+    else localPlayer.stats.energy = Math.max(0, localPlayer.stats.energy - 0.2);
+    const avg = (localPlayer.stats.hunger + localPlayer.stats.happiness + localPlayer.stats.energy) / 3;
+    if (avg < 30) localPlayer.stats.health = Math.max(0, localPlayer.stats.health - 0.5);
+    else if (avg > 60) localPlayer.stats.health = Math.min(100, localPlayer.stats.health + 0.3);
+  }
+
+  function setupCabinInput() {
+    state.cabinRaycaster = new THREE.Raycaster();
+    state.cabinPointer = new THREE.Vector2();
+    let md = false, lx = 0, ly = 0, dx0 = 0, dy0 = 0;
+
+    $('cabin-canvas').addEventListener('mousedown', e => { md = true; lx = dx0 = e.clientX; ly = dy0 = e.clientY; });
+    window.addEventListener('mousemove', e => {
+      if (!md || localPlayer.world !== 'cabin') return;
+      state.cabinSpherical.theta -= (e.clientX - lx) * 0.005;
+      state.cabinSpherical.phi = THREE.MathUtils.clamp(state.cabinSpherical.phi - (e.clientY - ly) * 0.005, 0.2, Math.PI/2.2);
+      lx = e.clientX; ly = e.clientY;
+      applyCabinCamera();
+    });
+    window.addEventListener('mouseup', e => {
+      md = false;
+      if (localPlayer.world !== 'cabin') return;
+      if ((e.clientX-dx0)**2 + (e.clientY-dy0)**2 < 25) cabinClick(e.clientX, e.clientY);
+    });
+    $('cabin-canvas').addEventListener('wheel', e => {
+      if (localPlayer.world !== 'cabin') return;
+      state.cabinSpherical.radius = THREE.MathUtils.clamp(state.cabinSpherical.radius + Math.sign(e.deltaY)*2, 12, 50);
+      applyCabinCamera();
+    }, { passive: true });
+  }
+
+  function cabinClick(cx, cy) {
+    state.cabinPointer.x = (cx / window.innerWidth) * 2 - 1;
+    state.cabinPointer.y = -(cy / window.innerHeight) * 2 + 1;
+    state.cabinRaycaster.setFromCamera(state.cabinPointer, cabinCamera);
+    const hits = state.cabinRaycaster.intersectObject(state.clickPlane);
+    if (hits.length) {
+      const gx = Math.round(hits[0].point.x), gz = Math.round(hits[0].point.z);
+      // Check other worms
+      for (const [id, p] of state.players) {
+        if (p.world === 'cabin' && p.wormHead && Math.abs(gx - p.wormHead.x) <= 1 && Math.abs(gz - p.wormHead.z) <= 1) {
+          broadcast(MSG.FEED_OTHER, { target: id });
+          toast(`Fed ${p.name}'s worm!`, 'success');
+          return;
+        }
+      }
+      if (spawnFood(gx, gz)) {
+        if (localPlayer.stats.hunger < 70) state.wormTarget = { x: gx, z: gz };
+      }
+    }
+  }
+
+  const otherWorms = new Map();
+  function renderOtherWorms() {
+    for (const [id, p] of state.players) {
+      if (p.world === 'cabin' && p.wormHead) {
+        let m = otherWorms.get(id);
+        if (!m) {
+          m = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.85, 0.85), new THREE.MeshLambertMaterial({ color: new THREE.Color(p.color || '#888') }));
+          m.castShadow = true;
+          cabinScene.add(m);
+          otherWorms.set(id, m);
+        }
+        m.position.set(p.wormHead.x, p.wormHead.y || 0, p.wormHead.z);
+        m.visible = true;
+      } else {
+        const m = otherWorms.get(id);
+        if (m) m.visible = false;
+      }
+    }
+  }
+
+  // ========== TRANSITIONS ==========
+  function goToCabin() {
+    if (state.transitioning) return;
+    state.transitioning = true;
+    $('transition-text').textContent = 'Going Below Deck...';
+    $('transition-overlay').classList.add('active');
+    setTimeout(() => {
+      localPlayer.world = 'cabin';
+      $('sailing-world').classList.add('hidden');
+      $('cabin-world').classList.add('active');
+      $('btn-deck').classList.remove('active');
+      $('btn-cabin').classList.add('active');
+      updatePlayerLists();
+    }, 500);
+    setTimeout(() => { $('transition-overlay').classList.remove('active'); state.transitioning = false; toast('Below deck. Time warp: 100x ⚡', 'warn'); }, 1000);
+  }
+
+  function goToDeck() {
+    if (state.transitioning) return;
+    state.transitioning = true;
+    $('transition-text').textContent = 'Coming Topside...';
+    $('transition-overlay').classList.add('active');
+    setTimeout(() => {
+      localPlayer.world = 'deck';
+      $('sailing-world').classList.remove('hidden');
+      $('cabin-world').classList.remove('active');
+      $('btn-deck').classList.add('active');
+      $('btn-cabin').classList.remove('active');
+      $('arrival-alert').classList.remove('show');
+      updatePlayerLists();
+    }, 500);
+    setTimeout(() => { $('transition-overlay').classList.remove('active'); state.transitioning = false; toast('On deck! ⛵', 'info'); }, 1000);
+  }
+
+  // ========== CHAT ==========
+  function addChat(sender, text, type, color = '#888') {
+    const el = document.createElement('div');
+    el.className = 'chat-msg ' + type;
+    el.innerHTML = type === 'system' || type === 'link' ? text : `<span class="sender" style="color:${color}">${sender}${type==='action'?'':':'}</span> ${text}`;
+    $('chat-messages').appendChild(el);
+    $('chat-messages').scrollTop = $('chat-messages').scrollHeight;
+  }
+
+  function sendChat() {
+    const t = $('chat-input').value.trim();
+    if (!t) return;
+    broadcast(MSG.CHAT, { text: t });
+    addChat(localPlayer.name, t, 'chat', localPlayer.color);
+    $('chat-input').value = '';
+  }
+
+  function toast(msg, type = 'info') {
+    $('status-toast').textContent = msg;
+    $('status-toast').className = 'show ' + type;
+    setTimeout(() => $('status-toast').className = '', 3000);
+  }
+
+  function showIsland(p, sys) {
+    $('island-name').textContent = p.name;
+    $('island-type').textContent = p.type + ' • ' + sys.name;
+    $('i-temp').textContent = p.temp;
+    $('i-atmo').textContent = p.atmo;
+    $('i-grav').textContent = p.grav;
+    $('i-res').textContent = p.res.join(', ') || 'None';
+    $('island-info').classList.add('show');
+    $('set-course').onclick = () => { setDest(p, sys); $('island-info').classList.remove('show'); };
+  }
+
+  // ========== INPUT ==========
+  function onKeyDown(e) {
+    keys[e.code] = true;
+    if (e.code === 'Tab') { e.preventDefault(); localPlayer.world === 'deck' ? goToCabin() : goToDeck(); }
+    if (e.code === 'KeyE' && localPlayer.world === 'deck' && state.nearbyIsland) showIsland(state.nearbyIsland.planet, state.nearbyIsland.sys);
+    if (e.code === 'KeyL' && localPlayer.world === 'deck') {
+      // Link to first nearby player
+      for (const id of state.nearbyPlayers) {
+        if (!localPlayer.linkedTo) { requestLink(id); break; }
+      }
+    }
+    if (e.code === 'KeyU') unlinkShips();
+    if (e.code === 'Enter' && document.activeElement !== $('chat-input')) { e.preventDefault(); $('chat-input').focus(); }
+  }
+  function onKeyUp(e) { keys[e.code] = false; }
+  function onResize() {
+    camera.aspect = cabinCamera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix(); cabinCamera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    cabinRenderer.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  // ========== CAMERA VIEW BUTTONS ==========
+  function setupCameraButtons() {
+    document.querySelectorAll('.cam-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.cam-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        localPlayer.cameraView = btn.dataset.view;
+        $('view-angle').textContent = btn.textContent;
+      });
+    });
+  }
+
+  // ========== MAIN LOOP ==========
+  let lastSync = 0;
+
+  function animate() {
+    requestAnimationFrame(animate);
+    const dt = clock.getDelta();
+
+    if (localPlayer.world === 'deck') {
+      updateMovement(dt);
+      updateCamera();
+      updateVisible();
+      checkNearby();
+      updateOtherShips();
+      updateMinimap();
+      if (state.nebulaMat) state.nebulaMat.uniforms.time.value = clock.elapsedTime;
+      renderer.render(scene, camera);
+    } else {
+      if (state.destination) updateMovement(dt);
+      updateWorm(dt);
+      updateStats(dt);
+      for (const f of state.foodItems) { f.mesh.rotation.y += 0.02; f.mesh.position.y = 0.3 + Math.sin(clock.elapsedTime*3+f.x)*0.05; }
+      if (localPlayer.isSleeping) state.headMesh.scale.set(1+Math.sin(clock.elapsedTime*2)*0.03, 1-Math.sin(clock.elapsedTime*2)*0.015, 1+Math.sin(clock.elapsedTime*2)*0.03);
+      else state.headMesh.scale.set(1,1,1);
+      state.cabinCamTarget.lerp(new THREE.Vector3(state.worm[0].x, 0, state.worm[0].z), 0.05);
+      applyCabinCamera();
+      renderOtherWorms();
+      cabinRenderer.render(cabinScene, cabinCamera);
+    }
+
+    updateUI();
+
+    if (Date.now() - lastSync > CONFIG.SYNC_RATE) {
+      broadcast(MSG.SYNC, getSync());
+      lastSync = Date.now();
+    }
+  }
+
+  // ========== INIT ==========
+  function init() {
+    $('confirm-name').onclick = startGame;
+    $('name-input').onkeydown = e => { if (e.key === 'Enter') startGame(); };
+    $('name-input').focus();
+  }
+
+  function startGame() {
+    localPlayer.name = $('name-input').value.trim() || 'Sailor-' + Math.floor(Math.random()*1000);
+    localPlayer.petBirthday = new Date().toISOString();
+    $('name-modal').classList.add('hidden');
+    $('pet-name').textContent = '🐛 ' + localPlayer.name;
+
+    initSailing();
+    initCabin();
+    setupCameraButtons();
+
+    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('keyup', onKeyUp);
+    window.addEventListener('resize', onResize);
+
+    $('btn-deck').onclick = () => { if (localPlayer.world === 'cabin') goToDeck(); };
+    $('btn-cabin').onclick = () => { if (localPlayer.world === 'deck') goToCabin(); };
+    $('close-island').onclick = () => $('island-info').classList.remove('show');
+    $('wake-btn').onclick = goToDeck;
+    $('btn-feed').onclick = () => { const h = state.worm[0]; for (const o of [{x:2,z:0},{x:-2,z:0},{x:0,z:2},{x:0,z:-2}]) if (spawnFood(h.x+o.x, h.z+o.z)) { state.wormTarget = {x:h.x+o.x,z:h.z+o.z}; break; } };
+    $('btn-pet').onclick = () => { localPlayer.stats.happiness = Math.min(100, localPlayer.stats.happiness + 15); toast('💕', 'success'); };
+    $('btn-play').onclick = () => { localPlayer.stats.happiness = Math.min(100, localPlayer.stats.happiness + 10); localPlayer.stats.energy = Math.max(0, localPlayer.stats.energy - 10); };
+    $('btn-sleep').onclick = () => { localPlayer.isSleeping = !localPlayer.isSleeping; $('btn-sleep').textContent = localPlayer.isSleeping ? '☀️ Wake' : '😴 Rest'; };
+    $('chat-send').onclick = sendChat;
+    $('chat-input').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); sendChat(); } e.stopPropagation(); };
+
+    broadcast(MSG.JOIN, { name: localPlayer.name, color: localPlayer.color });
+    addChat(null, `You are Captain ${localPlayer.name}. Press L near another ship to link!`, 'system');
+
+    setInterval(() => { broadcast(MSG.SYNC, getSync()); updatePlayerLists(); }, CONFIG.HEARTBEAT);
+    window.onbeforeunload = () => { broadcast(MSG.LEAVE); channel.close(); };
+
+    animate();
+  }
+
+  init();
+})();
+  </script>
+</body>
+</html>
