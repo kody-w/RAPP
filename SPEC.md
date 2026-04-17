@@ -144,6 +144,8 @@ RAPP v1 is exactly three tiers. Each tier is independently runnable — you do n
 
 This is the most important section of this document. **Every RAPP-compatible runtime in v1 must accept agents that conform to this contract, and only this contract.**
 
+> 🚨 **Nothing else is required to be a RAPP agent.** No `__manifest__`, no `@publisher/slug`, no version, no category, no registry membership. Those are layered on by RAR (§12) for agents that want to be *registered*. A file that satisfies this section alone — `BasicAgent`, `name`, `metadata`, `perform()` — is a fully valid RAPP v1 agent and MUST be executable by any v1-compliant runtime.
+
 ### 5.1 Python form
 
 A single file, named `<thing>_agent.py`, placed in an `agents/` directory:
@@ -366,7 +368,45 @@ This is evolution inside the system. The contract stays constant; the capabiliti
 
 > Referenced, not twinned. RAR lives at [kody-w/RAR](https://github.com/kody-w/RAR) and is the canonical reference registry implementation of the v1 single file agent contract.
 
-**RAR** (RAPP Agent Registry) is the reference package registry for v1. It is to single file agents what npm is to JavaScript packages — but local-first, single-file, and offline-capable. No `node_modules`. No build step. No server required. Every agent in RAR is a single `.py` file with an embedded `__manifest__`. `git clone` the registry and you have everything — it works from `file://`, in a cabin, with no internet.
+**RAR** (RAPP Agent Registry) is the reference package registry for v1. It is to single file agents what npm is to JavaScript packages — but local-first, single-file, and offline-capable. No `node_modules`. No build step. No server required. `git clone` the registry and you have everything — it works from `file://`, in a cabin, with no internet.
+
+### 12.0 The critical distinction — RAPP agent vs. RAR agent
+
+**A RAPP agent is not a RAR agent.** They are two different things, and the agent file is sacred in both senses — but the registry adds requirements on top of §5 that a plain RAPP agent does not need to satisfy.
+
+| Capability | **RAPP agent** (§5 contract) | **RAR-registered agent** (§12) |
+|------------|:----------------------------:|:------------------------------:|
+| Extends `BasicAgent` | ✅ Required | ✅ Required |
+| `self.name` | ✅ Required | ✅ Required |
+| `self.metadata` (function-calling schema) | ✅ Required | ✅ Required |
+| `perform(**kwargs) -> str` | ✅ Required | ✅ Required |
+| File named `*_agent.py` in `agents/` | ✅ Required | ✅ Required |
+| `__manifest__` dict at module scope | ❌ **Not required** | ✅ Required |
+| `schema: "rapp-agent/1.0"` tag | ❌ Not required | ✅ Required |
+| `@publisher/slug` package identity | ❌ Not required | ✅ Required |
+| Semver `version` | ❌ Not required | ✅ Required |
+| Category + tags + quality tier | ❌ Not required | ✅ Required |
+| `requires_env` declared explicitly | ❌ Not required | ✅ Required |
+| File lives at `agents/@publisher/slug.py` | ❌ Not required | ✅ Required |
+| `snake_case` everywhere | ❌ Recommended | ✅ Required |
+| Passes `rapp_sdk.py validate` | ❌ Not required | ✅ Required |
+| Passes `rapp_sdk.py test` (contract tests) | ❌ Not required | ✅ Required |
+| Runs in a brainstem (Tier 1/2/3) | ✅ Yes | ✅ Yes |
+| Appears in `registry.json` | ❌ No | ✅ Yes |
+| Has a card, seed, incantation | ❌ No | ✅ Yes |
+| Resolvable from 7-word incantation | ❌ No | ✅ Yes |
+
+**Read this two ways.** Looking left: the sacred tenet is preserved — a `weather_agent.py` with just `BasicAgent`, `name`, `metadata`, and `perform()` is a valid, runnable RAPP v1 agent. Drop it in `agents/`, it works, anywhere. Zero registry awareness required. Looking right: to be **registered** in RAR — to be installable by `rapp_sdk.py install`, to have a card, to be resolvable by seed or incantation, to appear in `registry.json` — the file must additionally carry the `__manifest__` dict and pass the SDK's validators.
+
+**The manifest is the cost of admission to RAR. It is not the cost of being a RAPP agent.**
+
+This distinction is load-bearing for v1:
+
+- A developer can write and run agents **forever** without ever touching the registry. The file stays sacred. The contract stays clean.
+- A developer who wants to **share** their agent pays the manifest tax once: add ~10 lines of `__manifest__`, submit, done. The file is still one file. The manifest lives inside the file. No separate package.json.
+- A runtime that loads an agent MUST NOT require the manifest to execute it. Runtimes that only execute manifest-bearing files are non-compliant with §5.
+
+> **The agent.py is sacred. The registry is sanctioned. The registry does not get to redefine what a RAPP agent is.**
 
 ### 12.1 Canonical facts
 
@@ -383,9 +423,11 @@ This is evolution inside the system. The contract stays constant; the capabiliti
 | **Package path** | `agents/@publisher/slug.py` |
 | **Naming** | `snake_case` everywhere — filenames, manifest names, dependencies. No dashes. |
 
-### 12.2 The `__manifest__` schema
+### 12.2 The `__manifest__` schema (RAR-only)
 
-v1 recognizes one additional convention for registry-ready agents: an embedded `__manifest__` dict at module scope, tagged `"schema": "rapp-agent/1.0"`. The manifest is strictly additive to Section 5's contract — a file with a manifest is still a valid v1 agent, and a v1 agent without a manifest is still runnable in a brainstem. The manifest makes the agent **registry-addressable**.
+> Reminder: this section defines requirements for **registry-bound** agents, not for all RAPP agents. See §12.0.
+
+RAR-registered agents carry an embedded `__manifest__` dict at module scope, tagged `"schema": "rapp-agent/1.0"`. The manifest is the sole difference between a runnable RAPP agent and a registerable RAR agent. Because the manifest lives inside the same file, the sacred tenet (§0) is preserved: one file, one agent, one contract — now with an optional registry header.
 
 ```python
 __manifest__ = {
@@ -491,6 +533,7 @@ A change to any of those sections requires a major version bump (RAPP v2). v2 is
 | Changes to `/chat` request or response shape | **No** — v2 only |
 | Removing any required attribute on `BasicAgent` | **No** — v2 only |
 | Breaking the `data_slush` shape | **No** — v2 only |
+| Making `__manifest__` a §5 requirement (registry bleeding into contract) | **No** — v2 only, and strongly discouraged |
 
 ---
 
