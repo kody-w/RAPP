@@ -19,7 +19,7 @@
 >
 > An agent that requires more than a single Python (or TypeScript) file is not a RAPP agent.
 
-Everything else in this specification — the brainstem, the cloud tier, Copilot Studio, federation, soul files, sources panels, ARM templates, RappterHub, data sloshing — exists **to serve the single-file agent**. If a future feature breaks this contract, the feature is wrong.
+Everything else in this specification — the brainstem, the cloud tier, Copilot Studio, federation, soul files, sources panels, ARM templates, RAR, data sloshing — exists **to serve the single-file agent**. If a future feature breaks this contract, the feature is wrong.
 
 This is the inviolable law of RAPP v1. It is what makes a 14-year-old able to ship an agent on day one, and what makes an enterprise able to ship the same file to 500,000 seats on day 100.
 
@@ -90,7 +90,7 @@ Agents output `data_slush` — curated signals from live results that feed into 
 | **Name** | RAPP (Rapid Agent Platform Protocol) |
 | **Version** | 1.0.0 |
 | **Layers** | Brainstem · Hippocampus (CommunityRAPP) · Copilot Studio harness |
-| **Registry** | RappterHub |
+| **Registry** | [RAR — RAPP Agent Registry](https://kody-w.github.io/RAR) |
 | **Doctrine** | Single File Agents |
 | **Reference Implementation** | [kody-w/rapp-installer](https://github.com/kody-w/rapp-installer) |
 | **Cloud Backend** | [kody-w/CommunityRAPP](https://github.com/kody-w/CommunityRAPP) |
@@ -353,7 +353,7 @@ The pattern gets more powerful when agents generate other agents. The `LearnNew`
 
 `LearnNew` generates a complete single file agent — metadata, documentation, and working code — writes it to the `agents/` directory, and hot-loads it for immediate use. Because the output is a single file with a deterministic contract, generated agents are:
 
-- **Publishable** — push directly to RappterHub (no separate manifest to write)
+- **Publishable** — push directly to RAR (no separate manifest to write)
 - **Testable** — standard unit tests against `perform()`
 - **Auditable** — read one file to understand everything the agent can do
 - **Moltable** — evolve through feedback: "add Reddit sources" → new generation, same contract
@@ -362,23 +362,102 @@ This is evolution inside the system. The contract stays constant; the capabiliti
 
 ---
 
-## 12. RappterHub — The Registry
+## 12. RAR — The RAPP Agent Registry
 
-**RappterHub** is the package registry built on the single file agent standard. Publishing is simple — your agent file already contains its manifest, documentation, and code. No separate `AGENT.md` or `package.json` needed.
+> Referenced, not twinned. RAR lives at [kody-w/RAR](https://github.com/kody-w/RAR) and is the canonical reference registry implementation of the v1 single file agent contract.
 
-```bash
-# Publish your single file agent
-$ rappterhub publish ./my_agent.py
+**RAR** (RAPP Agent Registry) is the reference package registry for v1. It is to single file agents what npm is to JavaScript packages — but local-first, single-file, and offline-capable. No `node_modules`. No build step. No server required. Every agent in RAR is a single `.py` file with an embedded `__manifest__`. `git clone` the registry and you have everything — it works from `file://`, in a cabin, with no internet.
 
-# Others install it with one command
-$ rappterhub install kody-w/weather-poet
-✓ Installed weather-poet v1.0.0
+### 12.1 Canonical facts
 
-# It works immediately — no configuration
-$ openrappter --exec WeatherPoet "Tokyo"
+| Field | Value |
+|-------|-------|
+| **Repo** | [kody-w/RAR](https://github.com/kody-w/RAR) |
+| **Site** | [kody-w.github.io/RAR](https://kody-w.github.io/RAR) |
+| **Registry index** | [`registry.json`](https://raw.githubusercontent.com/kody-w/RAR/main/registry.json) |
+| **Machine API manifest** | [`api.json`](https://raw.githubusercontent.com/kody-w/RAR/main/api.json) |
+| **AI skill interface** | [`skill.md`](https://raw.githubusercontent.com/kody-w/RAR/main/skill.md) |
+| **SDK (zero-dep, single-file)** | [`rapp_sdk.py`](https://raw.githubusercontent.com/kody-w/RAR/main/rapp_sdk.py) |
+| **Agent template** | [`template_agent.py`](https://raw.githubusercontent.com/kody-w/RAR/main/template_agent.py) |
+| **Agent base class** | `BasicAgent` (`@rapp/basic_agent`) |
+| **Package path** | `agents/@publisher/slug.py` |
+| **Naming** | `snake_case` everywhere — filenames, manifest names, dependencies. No dashes. |
+
+### 12.2 The `__manifest__` schema
+
+v1 recognizes one additional convention for registry-ready agents: an embedded `__manifest__` dict at module scope, tagged `"schema": "rapp-agent/1.0"`. The manifest is strictly additive to Section 5's contract — a file with a manifest is still a valid v1 agent, and a v1 agent without a manifest is still runnable in a brainstem. The manifest makes the agent **registry-addressable**.
+
+```python
+__manifest__ = {
+    "schema": "rapp-agent/1.0",
+    "name": "@publisher/slug",            # package id — snake_case slug
+    "version": "1.0.0",                   # semver
+    "display_name": "Human-Facing Name",
+    "description": "One sentence.",
+    "author": "Your Name",
+    "tags": ["keyword1", "keyword2"],
+    "category": "general",                # one of the 19 canonical categories
+    "quality_tier": "community",          # community | verified | official
+    "requires_env": [],                   # env vars the agent needs
+}
 ```
 
-The registry is sanctioned by v1 as the canonical distribution channel. An agent published to RappterHub is, by definition, a valid RAPP v1 agent — the registry is the compliance oracle.
+### 12.3 The SDK surface
+
+`rapp_sdk.py` is a zero-dependency single file. Every command supports `--json` for machine orchestration.
+
+| Command | Purpose |
+|---------|---------|
+| `new @pub/slug` | Scaffold agent from template |
+| `validate path.py` | Validate the manifest + contract |
+| `test path.py` | Run contract tests |
+| `submit path.py` | Submit to RAR (auto-registers binder if needed) |
+| `card resolve NAME\|SEED\|INCANTATION` | Resolve a card from name, 64-bit seed, or 7-word incantation |
+| `card words NAME` | Get the 7-word incantation for any agent |
+| `egg forge @a @b @c` | Compress a set of agents into a shareable string |
+| `egg hatch STRING` | Reconstruct agents from a compact egg string |
+
+### 12.4 Sanctioned extensions (v1-compatible)
+
+RAR introduces four concepts that are **sanctioned but optional** under v1. An implementation is v1-compliant without any of them; implementations that adopt them inherit the following definitions:
+
+- **Card** — a visual, collectible projection of an agent file (types, stats, abilities, art). Every agent has at most one card.
+- **Seed** — a deterministic 64-bit number that reconstructs the full card offline. The card's entire visual state can be rebuilt from the seed alone.
+- **Incantation** — the 7-word English phrase that maps 1:1 to a seed (e.g. `TWIST MOLD BEQUEST VALOR LEFT ORBIT RUNE`). Speakable via the Web Speech API; the binder listens and the card self-assembles.
+- **Binder** — a personal card collection. Offline via IndexedDB + localStorage. Mobile-first, PWA-capable. Export/import as `binder.json`.
+- **Egg** — a compact serialization format that encodes a set of agents into a shareable string. Forge on one device, hatch on another.
+
+These extensions exist to serve the sacred tenet from a different angle: if the file is the agent, then a seed is the file, and an incantation is the seed. Portability all the way down to seven spoken words.
+
+### 12.5 How it composes with v1
+
+| v1 concept | RAR instance |
+|------------|--------------|
+| Sacred tenet — single file agent | Every RAR package is exactly one `.py` file |
+| Self-describing (§2.2) | The `__manifest__` lives inside the file |
+| Bounded (§2.3) | The manifest `parameters` schema is the lock |
+| Evolvable (§2.4) | `version` bump + resubmit = molt |
+| Chainable (§2.5) | `data_slush` flows through chains in a binder |
+| The three tiers (§4) | A RAR agent installs into any of the three |
+| `BasicAgent` (§5.1) | RAR's `@rapp/basic_agent` is the reference base |
+| Agent generation (§11) | `rapp_sdk.py new` scaffolds; `LearnNew` generates in-brainstem |
+
+### 12.6 Submission path (one command)
+
+```bash
+# Fetch the SDK
+curl -O https://raw.githubusercontent.com/kody-w/RAR/main/rapp_sdk.py
+
+# Scaffold + submit
+python rapp_sdk.py new @yourname/my_cool_agent
+python rapp_sdk.py submit agents/@yourname/my_cool_agent.py
+```
+
+The SDK validates, auto-registers the publisher's binder on first submit, opens a staging PR, and — once approved — the forge mints the card into `registry.json`. Updates are a `version` bump plus a resubmit.
+
+### 12.7 Registry as compliance oracle
+
+The registry is sanctioned by v1 as the canonical distribution channel and the de-facto compliance oracle. An agent that validates under `rapp_sdk.py validate` is, by definition, a valid RAPP v1 agent. If a runtime accepts an agent from the registry and cannot execute it, the runtime is non-compliant — not the agent.
 
 ---
 
@@ -422,7 +501,7 @@ The AI ecosystem is currently living through this progression. RAPP v1 is alread
 1. ✅ **Skills** — flat text files. Mainstream. (Already commoditized.)
 2. 🔄 **Plugins** — deterministic code called by skills. Arriving now across every vendor.
 3. 🔜 **Unified format** — skill + plugin + contract merged into one file. _This is the single file agent._
-4. 🔜 **Agent registries** — sharing and installing. _This is RappterHub._
+4. 🔜 **Agent registries** — sharing and installing. _This is [RAR](https://kody-w.github.io/RAR)._
 5. 🔜 **Agent generation** — AI creating agents that create agents. _This is LearnNew + molt._
 
 RAPP is not predicting this. RAPP is the artifact left behind from running this loop in production for over a year.
