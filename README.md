@@ -1,4 +1,8 @@
-# RAPP — kody-w.com
+# RAPP
+
+📜 **[Read the v1 Specification → `SPEC.md`](./SPEC.md)** — the contractual digital twin of RAPP v1. The single-file `agent.py` is sacred.
+
+ — kody-w.com
 
 Static landing page for the **RAPP stack**, served from this repo via GitHub Pages at [kody-w.com](https://kody-w.com).
 
