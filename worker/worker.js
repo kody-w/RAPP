@@ -29,7 +29,13 @@
  *                                → poll for completion → access_token | { error: 'authorization_pending' }
  *   GET  /api/copilot/token      Authorization: Bearer ghu_…
  *                                → exchange ghu_ for short-lived Copilot bearer + endpoint
- *   GET  /api/models             → catalog proxy (no auth required, 5-min edge cache)
+ *   GET  /api/copilot/models     Authorization: Bearer <copilot-token>
+ *                                ?endpoint=https://api.individual.githubcopilot.com
+ *                                → proxy {endpoint}/models with Editor headers + CORS
+ *   POST /api/copilot/chat       Authorization: Bearer <copilot-token>
+ *                                ?endpoint=https://api.individual.githubcopilot.com
+ *                                → proxy {endpoint}/chat/completions
+ *   GET  /api/models             → public catalog proxy (no auth required, 5-min edge cache)
  *   GET  /api/user               Authorization: Bearer …
  *                                → api.github.com/user proxy
  *   GET  /healthz                → "ok"
@@ -175,6 +181,53 @@ export default {
         },
       });
       return passthroughText(ghResp, request);
+    }
+
+    // ── Copilot models list (full Copilot model catalog incl. Claude/Opus) ──
+    if (p === '/api/copilot/models' && request.method === 'GET') {
+      const auth = request.headers.get('Authorization');
+      if (!auth) return json({ error: 'missing Authorization' }, { status: 401 }, request);
+      const endpoint = url.searchParams.get('endpoint') || 'https://api.individual.githubcopilot.com';
+      if (!/^https:\/\/[a-z0-9.-]*githubcopilot\.com\/?$/i.test(endpoint)) {
+        return json({ error: 'invalid endpoint' }, { status: 400 }, request);
+      }
+      const upstream = await fetch(endpoint.replace(/\/$/, '') + '/models', {
+        method: 'GET',
+        headers: {
+          'Authorization': auth,
+          'Accept': 'application/json',
+          'Editor-Version': 'vscode/1.95.0',
+          'Editor-Plugin-Version': 'copilot/1.0.0',
+          'Copilot-Integration-Id': 'vscode-chat',
+          'User-Agent': 'GitHubCopilotChat/0.22.2024',
+        },
+      });
+      return passthroughText(upstream, request);
+    }
+
+    // ── Copilot chat completions proxy ─────────────────────────────
+    if (p === '/api/copilot/chat' && request.method === 'POST') {
+      const auth = request.headers.get('Authorization');
+      if (!auth) return json({ error: 'missing Authorization' }, { status: 401 }, request);
+      const endpoint = url.searchParams.get('endpoint') || 'https://api.individual.githubcopilot.com';
+      if (!/^https:\/\/[a-z0-9.-]*githubcopilot\.com\/?$/i.test(endpoint)) {
+        return json({ error: 'invalid endpoint' }, { status: 400 }, request);
+      }
+      const body = await request.text();
+      const upstream = await fetch(endpoint.replace(/\/$/, '') + '/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': auth,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Editor-Version': 'vscode/1.95.0',
+          'Editor-Plugin-Version': 'copilot/1.0.0',
+          'Copilot-Integration-Id': 'vscode-chat',
+          'User-Agent': 'GitHubCopilotChat/0.22.2024',
+        },
+        body,
+      });
+      return passthroughText(upstream, request);
     }
 
     // ── Public catalog proxy with CORS + edge cache ───────────────

@@ -295,14 +295,32 @@ aside .actions{padding:12px 18px;border-top:1px solid var(--border);display:flex
     <div class="row">
       <label for="provider">LLM provider</label>
       <select id="provider">
-        <option value="github">GitHub (default — same login as the rest of RAPP)</option>
+        <option value="copilot">GitHub Copilot (default — full Copilot model catalog incl. Claude/Opus)</option>
+        <option value="github">GitHub Models (PAT-style, public catalog)</option>
         <option value="openai">OpenAI</option>
         <option value="custom">Custom (any OpenAI-compatible endpoint)</option>
       </select>
     </div>
 
-    <!-- GitHub OAuth (default) — same flow as kody-w.github.io/RAR/virtual-brainstem.html -->
-    <div id="provider-github">
+    <!-- Copilot (device-code flow → Copilot session bearer via worker proxy) -->
+    <div id="provider-copilot">
+      <div class="banner" style="background:rgba(63,185,80,.06);border-color:var(--green);color:var(--green-3)">
+        Same <strong>GitHub Copilot device-code flow</strong> the local <code>brainstem.py</code> uses. The worker proxies the
+        <code>copilot_internal/v2/token</code> exchange and the chat endpoint (both CORS-blocked from a browser otherwise).
+        Requires a GitHub Copilot subscription. Unlocks the full Copilot model catalog — <strong>Claude Sonnet/Opus, GPT-4o, o-series, Gemini, etc.</strong>
+      </div>
+      <div class="row">
+        <label>Status</label>
+        <div id="copilot-status" style="font-size:12px;color:var(--dim);font-family:'SF Mono',monospace"></div>
+      </div>
+      <div class="row" style="flex-direction:row;gap:8px">
+        <button class="btn primary" id="cp-signin">🔐 Sign in with GitHub</button>
+        <button class="btn danger" id="cp-signout">Sign out</button>
+      </div>
+    </div>
+
+    <!-- GitHub OAuth (web flow → models.github.ai catalog) -->
+    <div id="provider-github" hidden>
       <div class="banner" style="background:rgba(63,185,80,.06);border-color:var(--green);color:var(--green-3)">
         Sign in with GitHub. The OAuth web flow goes through the same Cloudflare Worker (<code>rappterbook-auth</code>) the canonical RAR brainstem uses, so the token exchange happens off-browser. Token then talks to GitHub Models directly. Same identity as the rest of RAPP.
       </div>
@@ -384,6 +402,44 @@ aside .actions{padding:12px 18px;border-top:1px solid var(--border);display:flex
   </div>
 </aside>
 
+<!-- Copilot sign-in modal — device-code flow via worker -->
+<div class="modal" id="cpsignin-modal">
+  <div class="panel" style="max-width:480px">
+    <header><span class="ttl">🔐 Sign in with GitHub Copilot</span><button class="close" id="cpsignin-close">×</button></header>
+    <div class="body">
+      <div id="cpsignin-error" class="banner warn" hidden></div>
+
+      <div id="cpsignin-step1">
+        <p style="font-size:13px;color:var(--dim);margin-bottom:14px">
+          Same device-code flow the local <code>brainstem.py</code> uses. Unlocks the full Copilot model catalog
+          (Claude Sonnet/Opus, GPT-4o, o-series, Gemini, etc.) — your Copilot subscription is the engine.
+        </p>
+        <button class="btn primary" id="cpsignin-go" style="width:100%;padding:12px">Sign in with GitHub →</button>
+      </div>
+
+      <div id="cpsignin-step2" hidden>
+        <p style="font-size:13px;color:var(--dim);margin-bottom:10px">Open GitHub and enter this code:</p>
+        <div style="background:var(--code-bg);border:1px solid var(--green);border-radius:8px;padding:18px;text-align:center;margin-bottom:14px">
+          <div style="font-family:'SF Mono',monospace;font-size:32px;letter-spacing:6px;color:var(--green-3);font-weight:700" id="cpsignin-code">XXXX-XXXX</div>
+        </div>
+        <a href="#" id="cpsignin-link" target="_blank" rel="noopener" class="btn primary" style="display:block;text-align:center;text-decoration:none;margin-bottom:14px">Open https://github.com/login/device →</a>
+        <p style="font-size:12px;color:var(--muted);text-align:center">
+          <span class="typing" style="display:inline-flex;gap:4px;vertical-align:middle"><span></span><span></span><span></span></span>
+          waiting for you to authorize…
+        </p>
+      </div>
+
+      <div id="cpsignin-step3" hidden>
+        <div style="text-align:center;padding:20px">
+          <div style="font-size:48px;margin-bottom:12px">✓</div>
+          <div style="font-size:16px;color:var(--green-3);font-weight:600">Signed in to GitHub Copilot</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:6px">Loading Copilot model catalog…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Install modal -->
 <div class="modal" id="install-modal">
   <div class="panel">
@@ -460,11 +516,25 @@ const GH_MODELS_LIST  = AUTH_WORKER_URL + '/api/models';
 const GH_MODELS_LIST_DIRECT  = 'https://models.github.ai/catalog/models';
 const GH_MODELS_LIST_LEGACY  = 'https://models.inference.ai.azure.com/models';
 
+// Copilot — same client_id rapp_brainstem/brainstem.py uses for device-code.
+const COPILOT_CLIENT_ID = 'Iv1.b507a08c87ecfe98';
+const COPILOT_DEFAULT_API = 'https://api.individual.githubcopilot.com';
+
 const PROVIDERS = {
+  copilot: {
+    label: 'GitHub Copilot',
+    // Sensible defaults — replaced with the live Copilot catalog (incl. Claude/Opus) on sign-in.
+    models: [
+      { id: 'gpt-4o',          name: 'GPT-4o' },
+      { id: 'claude-sonnet-4', name: 'Claude Sonnet 4' },
+      { id: 'gpt-4.1',         name: 'GPT-4.1' },
+      { id: 'gpt-4o-mini',     name: 'GPT-4o Mini' },
+    ],
+    defaultModel: 'gpt-4o',
+  },
   github: {
-    label: 'GitHub',
+    label: 'GitHub Models',
     base: 'https://models.github.ai/inference',
-    // Sensible defaults; overwritten by the live catalog on every load.
     models: [
       { id: 'openai/gpt-4o',          name: 'OpenAI GPT-4o' },
       { id: 'openai/gpt-4o-mini',     name: 'OpenAI GPT-4o Mini' },
@@ -500,10 +570,17 @@ const state = {
   binder: null,
   hand: new Set(),
   settings: {
-    provider: 'github',          // default — same GitHub identity the rest of RAPP uses
-    ghToken: '',                 // GitHub OAuth access token from worker exchange
-    ghUser:  '',                 // username, populated after sign-in
-    apiKey: '',                  // OpenAI key
+    provider: 'copilot',         // default — full Copilot catalog incl. Claude/Opus
+    // GitHub OAuth web flow (Models / display)
+    ghToken: '',
+    ghUser:  '',
+    // Copilot (device-code flow → ghu_ → exchange for short-lived bearer)
+    ghuToken:        '',         // ghu_ token from device-code (long-lived)
+    copilotToken:    '',         // short-lived Copilot session bearer (~10–25 min)
+    copilotEndpoint: '',         // {api: ...} from the exchange
+    copilotExpiresAt: 0,         // ms epoch
+    // Other providers
+    apiKey: '',
     customBase: 'https://api.openai.com/v1',
     customKey: '',
     model: 'gpt-4o',
@@ -512,22 +589,30 @@ const state = {
   },
   pyodide: null,
   pyodideLoading: null,
+  pendingDeviceLogin: null,
 };
 
 function activeApiBase() {
   const p = state.settings.provider;
-  if (p === 'github') return PROVIDERS.github.base;
-  if (p === 'openai') return PROVIDERS.openai.base;
+  if (p === 'copilot') return state.settings.copilotEndpoint || COPILOT_DEFAULT_API;
+  if (p === 'github')  return PROVIDERS.github.base;
+  if (p === 'openai')  return PROVIDERS.openai.base;
   return (state.settings.customBase || PROVIDERS.custom.base).replace(/\/+$/, '');
 }
 function activeApiKey() {
   const p = state.settings.provider;
-  if (p === 'github') return state.settings.ghToken;
-  if (p === 'openai') return state.settings.apiKey;
+  if (p === 'copilot') return state.settings.copilotToken;
+  if (p === 'github')  return state.settings.ghToken;
+  if (p === 'openai')  return state.settings.apiKey;
   return state.settings.customKey;
 }
 function activeChatUrl() {
-  if (state.settings.provider === 'github') return GH_MODELS_URL;
+  const p = state.settings.provider;
+  if (p === 'copilot') {
+    // Worker proxies api.individual.githubcopilot.com (CORS-blocked direct).
+    return AUTH_WORKER_URL + '/api/copilot/chat?endpoint=' + encodeURIComponent(state.settings.copilotEndpoint || COPILOT_DEFAULT_API);
+  }
+  if (p === 'github') return GH_MODELS_URL;
   return `${activeApiBase()}/chat/completions`;
 }
 
@@ -563,9 +648,10 @@ function loadSettings() {
 }
 function refreshProviderUI() {
   const p = state.settings.provider;
-  $('#provider-github').hidden = p !== 'github';
-  $('#provider-openai').hidden = p !== 'openai';
-  $('#provider-custom').hidden = p !== 'custom';
+  $('#provider-copilot').hidden = p !== 'copilot';
+  $('#provider-github').hidden  = p !== 'github';
+  $('#provider-openai').hidden  = p !== 'openai';
+  $('#provider-custom').hidden  = p !== 'custom';
   const gs = $('#github-status');
   if (gs) {
     if (state.settings.ghToken) {
@@ -574,6 +660,20 @@ function refreshProviderUI() {
     } else {
       gs.textContent = 'signed out';
       gs.style.color = 'var(--muted)';
+    }
+  }
+  const cps = $('#copilot-status');
+  if (cps) {
+    if (state.settings.copilotToken && Date.now() < state.settings.copilotExpiresAt - 60000) {
+      const mins = Math.max(0, Math.round((state.settings.copilotExpiresAt - Date.now())/60000));
+      cps.textContent = `signed in · session bearer valid ~${mins}m`;
+      cps.style.color = 'var(--green-3)';
+    } else if (state.settings.ghuToken) {
+      cps.textContent = 'signed in · session bearer expired (will refresh on next chat)';
+      cps.style.color = 'var(--warn)';
+    } else {
+      cps.textContent = 'signed out';
+      cps.style.color = 'var(--muted)';
     }
   }
 }
@@ -606,15 +706,17 @@ function saveSettings() {
 function refreshStatus() {
   const dot = $('#status-dot'), text = $('#status-text'), signin = $('#btn-signin');
   const p = state.settings.provider;
-  if (activeApiKey()) {
+  // Copilot is "signed in" if we have a ghu_ token (we re-exchange for the short-lived bearer on demand).
+  const haveCopilot = (p === 'copilot') && !!state.settings.ghuToken;
+  if (activeApiKey() || haveCopilot) {
     dot.className = 'dot online';
     const who = (p === 'github' && state.settings.ghUser) ? state.settings.ghUser : PROVIDERS[p].label;
     text.textContent = `${who} · ${state.settings.model}`;
     signin.hidden = true;
   } else {
     dot.className = 'dot offline';
-    text.textContent = p === 'github' ? 'Signed out' : `${PROVIDERS[p].label} · no key`;
-    signin.hidden = p !== 'github';
+    text.textContent = (p === 'github' || p === 'copilot') ? 'Signed out' : `${PROVIDERS[p].label} · no key`;
+    signin.hidden = (p !== 'github' && p !== 'copilot');
   }
 }
 
@@ -757,6 +859,161 @@ function signOutGitHub() {
   LS.set('settings', state.settings);
   refreshStatus();
   refreshProviderUI();
+}
+
+/* ───── Copilot device-code flow (via worker proxy) ───────────── */
+
+async function copilotStartDeviceLogin() {
+  const r = await fetch(AUTH_WORKER_URL + '/api/auth/device', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ client_id: COPILOT_CLIENT_ID, scope: 'read:user' }),
+  });
+  if (!r.ok) throw new Error(`device start ${r.status}: ${(await r.text()).slice(0,200)}`);
+  const d = await r.json();
+  state.pendingDeviceLogin = {
+    device_code: d.device_code,
+    interval: d.interval || 5,
+    expires_at: Date.now() + (d.expires_in || 900) * 1000,
+  };
+  return { user_code: d.user_code, verification_uri: d.verification_uri };
+}
+
+async function copilotPollDeviceLogin() {
+  if (!state.pendingDeviceLogin) return null;
+  const r = await fetch(AUTH_WORKER_URL + '/api/auth/device/poll', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ device_code: state.pendingDeviceLogin.device_code, client_id: COPILOT_CLIENT_ID }),
+  });
+  const d = await r.json();
+  if (d.access_token) {
+    state.settings.ghuToken = d.access_token;
+    state.pendingDeviceLogin = null;
+    LS.set('settings', state.settings);
+    return d.access_token;
+  }
+  if (d.error === 'authorization_pending' || d.error === 'slow_down') return null;
+  if (d.error) {
+    state.pendingDeviceLogin = null;
+    throw new Error(d.error_description || d.error);
+  }
+  return null;
+}
+
+async function copilotExchange() {
+  if (!state.settings.ghuToken) throw new Error('No ghu_ token — sign in first.');
+  const r = await fetch(AUTH_WORKER_URL + '/api/copilot/token', {
+    headers: { 'Authorization': `Bearer ${state.settings.ghuToken}` },
+  });
+  if (!r.ok) {
+    const t = await r.text();
+    throw new Error(`copilot exchange ${r.status}: ${t.slice(0,300)}`);
+  }
+  const d = await r.json();
+  if (!d.token) throw new Error('Copilot returned no token (Copilot subscription required)');
+  state.settings.copilotToken     = d.token;
+  state.settings.copilotEndpoint  = (d.endpoints && d.endpoints.api) || COPILOT_DEFAULT_API;
+  state.settings.copilotExpiresAt = (d.expires_at || (Date.now()/1000 + 600)) * 1000;
+  LS.set('settings', state.settings);
+  return d.token;
+}
+
+async function ensureCopilotToken() {
+  const fresh = state.settings.copilotToken && Date.now() < state.settings.copilotExpiresAt - 60000;
+  if (fresh) return state.settings.copilotToken;
+  return copilotExchange();
+}
+
+async function fetchCopilotModels() {
+  if (state.settings.provider !== 'copilot') return;
+  try {
+    const tok = await ensureCopilotToken();
+    const url = AUTH_WORKER_URL + '/api/copilot/models?endpoint=' + encodeURIComponent(state.settings.copilotEndpoint || COPILOT_DEFAULT_API);
+    const r = await fetch(url, { headers: { 'Authorization': `Bearer ${tok}` } });
+    if (!r.ok) { console.warn('[brainstem] copilot models failed', r.status); return; }
+    const d = await r.json();
+    const list = Array.isArray(d) ? d : (d.data || d.models || []);
+    const models = [];
+    const seen = new Set();
+    for (const m of list) {
+      const id = m.id || m.model || '';
+      if (!id) continue;
+      const caps = m.capabilities || {};
+      // Drop non-chat models
+      if (caps.type && caps.type !== 'chat') continue;
+      if (m.model_picker_enabled === false && !id.includes('gpt-4o')) continue;
+      const friendly = m.name || (m.vendor ? `${m.vendor} · ${id}` : id);
+      if (!seen.has(id)) { seen.add(id); models.push({ id, name: friendly }); }
+    }
+    models.sort((a, b) => a.name.localeCompare(b.name));
+    if (!models.length) return;
+    PROVIDERS.copilot.models = models;
+    if (!models.find(m => m.id === state.settings.model)) {
+      // Prefer claude-sonnet-4 or gpt-4o as default
+      const def = models.find(m => /claude-sonnet-4|gpt-4o(?!-mini)/i.test(m.id)) || models[0];
+      state.settings.model = def.id;
+      LS.set('settings', state.settings);
+    }
+    console.log(`[brainstem] loaded ${models.length} copilot models`);
+    refreshModelOptions();
+    refreshStatus();
+  } catch (e) {
+    console.warn('[brainstem] fetchCopilotModels:', e.message);
+  }
+}
+
+function signOutCopilot() {
+  state.settings.ghuToken = '';
+  state.settings.copilotToken = '';
+  state.settings.copilotEndpoint = '';
+  state.settings.copilotExpiresAt = 0;
+  state.pendingDeviceLogin = null;
+  LS.set('settings', state.settings);
+  refreshStatus();
+  refreshProviderUI();
+}
+
+/* ───── Copilot sign-in modal ─────────────────────────────────── */
+
+function openCopilotSigninModal() {
+  $('#cpsignin-modal').classList.add('open');
+  $('#cpsignin-step1').hidden = false;
+  $('#cpsignin-step2').hidden = true;
+  $('#cpsignin-step3').hidden = true;
+  $('#cpsignin-error').hidden = true;
+}
+function closeCopilotSigninModal() { $('#cpsignin-modal').classList.remove('open'); }
+
+async function runCopilotSignin() {
+  $('#cpsignin-step1').hidden = true;
+  $('#cpsignin-error').hidden = true;
+  try {
+    const { user_code, verification_uri } = await copilotStartDeviceLogin();
+    $('#cpsignin-code').textContent = user_code;
+    $('#cpsignin-link').href = verification_uri;
+    $('#cpsignin-link').textContent = verification_uri;
+    $('#cpsignin-step2').hidden = false;
+    const interval = (state.pendingDeviceLogin?.interval || 5) * 1000;
+    const expires  = state.pendingDeviceLogin?.expires_at || (Date.now() + 900000);
+    while (Date.now() < expires && state.pendingDeviceLogin) {
+      await new Promise(r => setTimeout(r, interval));
+      try { const tok = await copilotPollDeviceLogin(); if (tok) break; } catch (e) { throw e; }
+    }
+    if (!state.settings.ghuToken) throw new Error('Login timed out — try again.');
+    await copilotExchange();
+    fetchCopilotModels();
+    $('#cpsignin-step2').hidden = true;
+    $('#cpsignin-step3').hidden = false;
+    refreshStatus();
+    setTimeout(closeCopilotSigninModal, 1200);
+  } catch (e) {
+    console.error(e);
+    $('#cpsignin-error').textContent = '⚠️ ' + e.message;
+    $('#cpsignin-error').hidden = false;
+    $('#cpsignin-step1').hidden = false;
+    $('#cpsignin-step2').hidden = true;
+  }
 }
 
 /* ───── Binder + starter cards ──────────────────────────────── */
@@ -959,14 +1216,25 @@ function closeAside(id) { $('#'+id).classList.remove('open'); }
 /* ───── Chat send loop (SPEC §8) ──────────────────────────── */
 async function send(userInput) {
   if (!userInput || !userInput.trim()) return;
-  if (!activeApiKey()) {
+  // Copilot: refresh the short-lived bearer if needed (or kick off sign-in if no ghu_)
+  if (state.settings.provider === 'copilot') {
+    if (!state.settings.ghuToken) {
+      appendMsg('system', '⚠️ Not signed in to Copilot. Click 🔐 Sign in with GitHub.');
+      openCopilotSigninModal(); return;
+    }
+    try { await ensureCopilotToken(); }
+    catch (e) {
+      appendMsg('system', '⚠️ Copilot exchange failed: ' + e.message);
+      return;
+    }
+  } else if (!activeApiKey()) {
     if (state.settings.provider === 'github') {
       appendMsg('system', '⚠️ Not signed in. Click 🔐 Sign in with GitHub.');
+      startGitHubSignIn();
     } else {
       appendMsg('system', '⚠️ No API key. Click ⚙️ to add one.');
+      openAside('settings');
     }
-    if (state.settings.provider === 'github') startGitHubSignIn();
-    else openAside('settings');
     return;
   }
   appendMsg('user', userInput);
@@ -1254,7 +1522,10 @@ function wire() {
   $('#btn-settings').addEventListener('click', () => openAside('settings'));
   $('#btn-agents').addEventListener('click',   () => openAside('agents'));
   $('#btn-binder').addEventListener('click',   () => openAside('binder'));
-  $('#btn-signin').addEventListener('click',   () => startGitHubSignIn());
+  $('#btn-signin').addEventListener('click', () => {
+    if (state.settings.provider === 'copilot') openCopilotSigninModal();
+    else startGitHubSignIn();
+  });
   $('#btn-install').addEventListener('click',  () => openInstallModal());
   $$('button[data-close]').forEach(b => b.addEventListener('click', () => closeAside(b.dataset.close)));
   $('#save-settings').addEventListener('click', saveSettings);
@@ -1262,9 +1533,16 @@ function wire() {
     state.settings.provider = e.target.value;
     refreshProviderUI();
     refreshModelOptions();
+    if (e.target.value === 'copilot' && state.settings.ghuToken) fetchCopilotModels();
+    if (e.target.value === 'github')  fetchGitHubModels();
   });
   $('#github-signin').addEventListener('click', startGitHubSignIn);
   $('#github-signout').addEventListener('click', signOutGitHub);
+  $('#cp-signin').addEventListener('click',  openCopilotSigninModal);
+  $('#cp-signout').addEventListener('click', () => { signOutCopilot(); refreshProviderUI(); });
+  $('#cpsignin-close').addEventListener('click', closeCopilotSigninModal);
+  $('#cpsignin-go').addEventListener('click', runCopilotSignin);
+  $('#cpsignin-modal').addEventListener('click', e => { if (e.target.id === 'cpsignin-modal') closeCopilotSigninModal(); });
   $('#reset-data').addEventListener('click', () => {
     if (!confirm('Wipe all local data (binder, hand, settings, transcripts)?')) return;
     LS.del('settings'); LS.del('binder'); LS.del('hand');
@@ -1386,6 +1664,7 @@ function wire() {
     if (e.key !== 'Escape') return;
     if ($('#card-modal').classList.contains('open')) closeCardModal();
     else if ($('#install-modal').classList.contains('open')) closeInstallModal();
+    else if ($('#cpsignin-modal').classList.contains('open')) closeCopilotSigninModal();
     else $$('aside.open').forEach(a => a.classList.remove('open'));
   });
 }
@@ -1426,7 +1705,9 @@ function copyInstallCmd() {
   loadSettings();
   await handleGitHubAuthCallback();   // pick up ?code=... after OAuth round-trip
   if (state.settings.ghToken && !state.settings.ghUser) await fetchGitHubUser();
-  fetchGitHubModels();                // refresh model list from API on every load
+  // Refresh model lists from APIs on every load
+  if (state.settings.provider === 'copilot' && state.settings.ghuToken) fetchCopilotModels();
+  else if (state.settings.provider === 'github') fetchGitHubModels();
   refreshStatus();
   await bootBinder();
   // Auto-load Hello + Dice into hand on first run so the chat works immediately
