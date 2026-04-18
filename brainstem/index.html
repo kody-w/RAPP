@@ -716,19 +716,17 @@ async function fetchGitHubModels() {
     const rawId = m.id || m.name || '';
     if (!rawId) continue;
     if (payload.isCatalog) {
-      // New catalog: keep ids in publisher/slug form. Filter to text↔text +
-      // tool-calling-capable models (these are the ones the brainstem needs).
+      // New catalog: keep ids in publisher/slug form. Brainstem requires
+      // text↔text + tool-calling — drop everything else (no fallback row).
       const inMod  = m.supported_input_modalities  || [];
       const outMod = m.supported_output_modalities || [];
       const caps   = m.capabilities || [];
       if (!inMod.includes('text') || !outMod.includes('text')) continue;
-      // Skip embeddings/audio/image-gen even if they slipped through
+      if (!caps.includes('tool-calling')) continue;
       if (/embed|whisper|dall-e|tts|audio|moderation/i.test(rawId)) continue;
       const friendly = m.name || rawId;
       const tier = m.rate_limit_tier ? ` [${m.rate_limit_tier}]` : '';
-      const noTools = !caps.includes('tool-calling');
-      const label = `${friendly}${tier}${noTools ? ' (no tools)' : ''}`;
-      if (!seen.has(rawId)) { seen.add(rawId); models.push({ id: rawId, name: label, _noTools: noTools }); }
+      if (!seen.has(rawId)) { seen.add(rawId); models.push({ id: rawId, name: `${friendly}${tier}` }); }
     } else {
       // Legacy: ids are azureml:// URIs; strip down. No prefix needed for legacy chat URL.
       if ((m.task || '').toLowerCase() === 'embedding') continue;
@@ -738,15 +736,11 @@ async function fetchGitHubModels() {
       if (!seen.has(clean)) { seen.add(clean); models.push({ id: clean, name: friendly }); }
     }
   }
-  // Tool-calling capable models first, then alphabetical
-  models.sort((a, b) => {
-    if (!!a._noTools !== !!b._noTools) return a._noTools ? 1 : -1;
-    return a.name.localeCompare(b.name);
-  });
+  models.sort((a, b) => a.name.localeCompare(b.name));
   if (!models.length) return;
   PROVIDERS.github.models = models;
   if (!models.find(m => m.id === state.settings.model)) {
-    state.settings.model = (models.find(m => !m._noTools) || models[0]).id;
+    state.settings.model = models[0].id;
     LS.set('settings', state.settings);
   }
   console.log(`[brainstem] loaded ${models.length} models from ${payload.isCatalog ? 'catalog' : 'legacy'}`);
