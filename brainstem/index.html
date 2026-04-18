@@ -4,403 +4,681 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>RAPP Brainstem — Virtual</title>
-<meta name="description" content="The browser-only RAPP brainstem. Same chat UI, same agent contract, same card binder. Bring your own API key.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E🧠%3C/text%3E%3C/svg%3E">
+<meta name="description" content="The browser-only RAPP brainstem. Same chat UI, same single-file *_agent.py contract, same binder. Same GitHub identity as the rest of RAPP.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' fill='%2358a6ff'%3E%3Cpath d='M184 0c-30.9 0-56.5 22.7-61.1 52.3C54.5 67 0 130 0 206.8c0 41.6 17.4 79.2 45.3 105.9-2 9.2-3.3 18.8-3.3 28.7 0 55.3 35.8 102.2 85.5 119C142.2 493 172.6 512 208 512h16c35.3 0 64-28.7 64-64V86c0-8.8-7.2-16-16-16h-16c-8.8 0-16 7.2-16 16v16c0 8.8-7.2 16-16 16s-16-7.2-16-16V64c0-35.3-28.7-64-64-64h40zm144 0c30.9 0 56.5 22.7 61.1 52.3C457.5 67 512 130 512 206.8c0 41.6-17.4 79.2-45.3 105.9 2 9.2 3.3 18.8 3.3 28.7 0 55.3-35.8 102.2-85.5 119C369.8 493 339.4 512 304 512h-16c-35.3 0-64-28.7-64-64V86c0-8.8 7.2-16 16-16h16c8.8 0 16 7.2 16 16v16c0 8.8 7.2 16 16 16s16-7.2 16-16V64c0-35.3 28.7-64 64-64h-40z'/%3E%3C/svg%3E">
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
-:root{
-  --bg:#0d1117; --panel:#161b22; --panel2:#1c2129; --border:#21262d; --border2:#30363d;
-  --fg:#e6edf3; --dim:#8b949e; --muted:#484f58;
-  --green:#238636; --green-2:#2ea043; --green-3:#3fb950;
-  --blue:#1f6feb; --blue-2:#58a6ff;
-  --purple:#8b5cf6; --purple-2:#a78bfa;
-  --red:#f85149; --warn:#d29922;
-  --code-bg:#0d1117;
-  --t-logic:#58a6ff; --t-data:#3fb950; --t-social:#d29922;
-  --t-shield:#f0f0f0; --t-craft:#f85149; --t-heal:#ff7eb3; --t-wealth:#bc8cff;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-  background:var(--bg);color:var(--fg);
-  display:flex;flex-direction:column;overflow:hidden;line-height:1.5}
-a{color:var(--blue-2);text-decoration:none}a:hover{text-decoration:underline}
-button{font-family:inherit;cursor:pointer}
-code,pre{font-family:"SF Mono","Fira Code",ui-monospace,monospace}
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #0d1117;
+    color: #e6edf3;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
 
-/* Header — mirrors rapp_brainstem header */
-header{height:52px;background:var(--panel);border-bottom:1px solid var(--border);
-  display:flex;align-items:center;padding:0 14px;gap:10px;flex-shrink:0;z-index:30}
-.brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px}
-.brand .logo{font-size:22px;filter:drop-shadow(0 0 6px rgba(63,185,80,.35))}
-.brand small{color:var(--dim);font-weight:500;font-size:11px;letter-spacing:.5px;text-transform:uppercase;margin-left:2px}
-.spacer{flex:1}
-.dot{width:9px;height:9px;border-radius:50%;display:inline-block;vertical-align:middle;margin-right:6px}
-.dot.online{background:var(--green-3);box-shadow:0 0 6px rgba(63,185,80,.5)}
-.dot.offline{background:var(--red)}
-.dot.checking{background:var(--warn);animation:pulse 1s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.status{font-size:12px;color:var(--dim)}
-.icon-btn{background:none;border:1px solid transparent;color:var(--dim);font-size:13px;
-  padding:6px 10px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;
-  transition:background .15s,color .15s,border-color .15s}
-.icon-btn:hover{background:var(--panel2);color:var(--fg);border-color:var(--border)}
-.icon-btn.active{background:var(--panel2);color:var(--green-3);border-color:var(--green)}
-select.model{background:var(--panel2);color:var(--fg);border:1px solid var(--border);
-  padding:5px 8px;border-radius:6px;font-size:12px}
+  /* ── Inline SVG icon helper ── */
+  .icon { display: inline-flex; align-items: center; justify-content: center;
+    width: 16px; height: 16px; flex-shrink: 0; }
+  .icon svg { width: 100%; height: 100%; fill: currentColor; }
+  .icon-lg { width: 20px; height: 20px; }
+  .icon-xl { width: 40px; height: 40px; }
 
-/* Main shell */
-main{flex:1;display:flex;min-height:0}
-#chat-shell{flex:1;display:flex;flex-direction:column;min-width:0;position:relative}
+  /* ── Header (mirrors OG) ── */
+  header {
+    padding: 12px 24px;
+    border-bottom: 1px solid #21262d;
+    display: flex; align-items: center; gap: 10px;
+    background: #161b22;
+    position: relative;   /* anchor for popdowns */
+    z-index: 30;
+  }
+  header .logo {
+    width: 24px; height: 24px; border-radius: 6px;
+    background: #1f6feb;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+  }
+  header h1 { font-size: 15px; font-weight: 600; color: #e6edf3; }
+  header h1 .badge {
+    margin-left: 6px; font-size: 9px; letter-spacing: 1.5px;
+    color: #58a6ff; vertical-align: middle;
+    border: 1px solid #1f6feb; padding: 2px 6px; border-radius: 999px;
+    text-transform: uppercase; font-weight: 700;
+  }
+  header .controls {
+    margin-left: auto;
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: #8b949e;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%;
+    background: #3fb950; animation: pulse 2s infinite; }
+  .dot.offline { background: #f85149; animation: none; }
+  .dot.checking { background: #d29922; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 
-/* Chat */
-#chat{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:16px}
-.welcome{text-align:center;max-width:640px;margin:60px auto 40px;color:var(--dim)}
-.welcome h2{font-size:22px;color:var(--fg);margin-bottom:6px}
-.welcome p{font-size:14px;line-height:1.6}
-.welcome .pill{display:inline-block;margin-top:14px;padding:6px 12px;border:1px solid var(--border);
-  background:var(--panel);border-radius:999px;font-size:12px;color:var(--dim)}
-.welcome .key{color:var(--green-3)}
+  .icon-btn {
+    background: none; border: 1px solid #30363d; border-radius: 6px;
+    padding: 4px 7px; cursor: pointer; color: #8b949e;
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; transition: all .15s;
+    text-decoration: none; font-family: inherit;
+  }
+  .icon-btn:hover { border-color: #58a6ff; color: #58a6ff; }
+  .icon-btn.active { border-color: #3fb950; color: #3fb950; background: rgba(63,185,80,.08); }
+  .icon-btn.green { border-color: #3fb950; color: #3fb950; }
+  .icon-btn.green:hover { background: rgba(63,185,80,.12); }
 
-.msg{display:flex;gap:12px;align-items:flex-start;max-width:760px;width:100%;align-self:center}
-.msg .av{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;
-  justify-content:center;font-size:16px;font-weight:600}
-.msg.user{flex-direction:row-reverse;align-self:flex-end}
-.msg.user .av{background:var(--blue);color:#fff}
-.msg.assistant .av{background:var(--panel2);border:1px solid var(--border)}
-.msg.system .av{background:var(--purple);color:#fff}
-.bubble{background:var(--panel);border:1px solid var(--border);padding:10px 14px;
-  border-radius:12px;max-width:680px;font-size:14px;color:var(--fg);overflow-wrap:break-word}
-.msg.user .bubble{background:var(--blue);color:#fff;border-color:transparent}
-.bubble p{margin-bottom:8px}.bubble p:last-child{margin-bottom:0}
-.bubble pre{background:var(--code-bg);border:1px solid var(--border);border-radius:6px;padding:10px;overflow-x:auto;margin:6px 0;font-size:12px}
-.bubble code{background:var(--panel2);padding:2px 5px;border-radius:3px;font-size:12px}
-.bubble pre code{background:none;padding:0}
-.bubble ul,.bubble ol{margin:6px 0 6px 22px}
-.bubble blockquote{border-left:3px solid var(--border2);padding-left:10px;color:var(--dim);margin:6px 0}
-.bubble table{border-collapse:collapse;margin:8px 0;font-size:12px}
-.bubble th,.bubble td{border:1px solid var(--border);padding:4px 8px}
-.bubble a{color:var(--blue-2)}
-.agent-log{margin-top:8px;border-left:3px solid var(--purple);padding-left:10px}
-.agent-log details{margin-top:6px}
-.agent-log summary{cursor:pointer;font-size:12px;color:var(--purple-2);font-weight:600;display:flex;align-items:center;gap:6px}
-.agent-log summary::before{content:'▸';transition:transform .15s}
-.agent-log details[open] summary::before{transform:rotate(90deg)}
-.agent-log pre{font-size:11px;background:var(--code-bg);border:1px solid var(--border);border-radius:4px;padding:8px;margin-top:6px;max-height:240px;overflow:auto}
-.typing{display:flex;gap:4px}.typing span{width:6px;height:6px;background:var(--dim);border-radius:50%;animation:bounce 1.2s infinite}
-.typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
-@keyframes bounce{0%,80%,100%{transform:translateY(0);opacity:.4}40%{transform:translateY(-4px);opacity:1}}
+  /* ── Model selector ── */
+  #model-sel {
+    background: #0d1117; color: #e6edf3;
+    border: 1px solid #30363d; border-radius: 6px;
+    padding: 4px 8px; font-size: 12px;
+    font-family: "SF Mono", monospace; cursor: pointer; outline: none;
+    transition: border-color .15s; max-width: 220px;
+  }
+  #model-sel:hover { border-color: #58a6ff; }
+  #model-sel:focus { border-color: #1f6feb; }
 
-/* Hand row — the active "card hand" of loaded agents */
-#hand-row{padding:10px 16px;border-top:1px solid var(--border);background:var(--panel);
-  display:flex;align-items:center;gap:8px;overflow-x:auto;flex-shrink:0;min-height:62px}
-#hand-row .hand-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;flex-shrink:0;margin-right:4px}
-.hand-empty{color:var(--muted);font-size:12px;font-style:italic}
-.mini-card{display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--border);
-  border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;flex-shrink:0;transition:border-color .15s}
-.mini-card:hover{border-color:var(--border2)}
-.mini-card .swatch{width:6px;height:24px;border-radius:3px;background:var(--t-social)}
-.mini-card.flash{animation:cardflash 1.2s ease-out}
-@keyframes cardflash{
-  0%{transform:scale(1);box-shadow:0 0 0 0 rgba(125,240,200,.4)}
-  50%{transform:scale(1.06);box-shadow:0 0 0 8px rgba(125,240,200,0)}
-  100%{transform:scale(1)}
-}
-.mini-card .x{color:var(--muted);margin-left:2px;font-size:10px}
-.mini-card .x:hover{color:var(--red)}
+  /* ── Pop-down panels (was slide drawers) ── */
+  aside {
+    display: none;
+    position: absolute; top: 100%; right: 24px; margin-top: 6px;
+    background: #161b22; border: 1px solid #30363d; border-radius: 10px;
+    width: 360px; max-width: calc(100vw - 32px);
+    z-index: 50; box-shadow: 0 8px 24px rgba(0,0,0,.5);
+    font-size: 13px; max-height: 70vh; display: flex; flex-direction: column;
+  }
+  aside.open { display: flex; }
+  aside header.aside-head {
+    padding: 12px 16px; border-bottom: 1px solid #21262d;
+    background: transparent; position: static;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  aside header.aside-head .ttl { font-size: 13px; font-weight: 600; color: #e6edf3; }
+  aside header.aside-head .close {
+    background: none; border: none; color: #8b949e;
+    font-size: 18px; cursor: pointer; padding: 0 4px;
+  }
+  aside header.aside-head .close:hover { color: #e6edf3; }
+  aside .body { padding: 14px 16px; overflow-y: auto; flex: 1; }
+  aside .actions {
+    padding: 10px 16px; border-top: 1px solid #21262d;
+    display: flex; gap: 6px; flex-wrap: wrap;
+  }
+  .btn {
+    background: #21262d; border: 1px solid #30363d; color: #e6edf3;
+    padding: 6px 10px; border-radius: 6px; font-size: 12px;
+    cursor: pointer; font-family: inherit; transition: all .15s;
+  }
+  .btn:hover { border-color: #58a6ff; color: #58a6ff; }
+  .btn.primary { background: #238636; border-color: #2ea043; color: #fff; }
+  .btn.primary:hover { background: #2ea043; }
+  .btn.danger { color: #f85149; }
+  .btn.danger:hover { border-color: #f85149; background: rgba(248,81,73,.08); }
+  .btn.green { background: #238636; border-color: #2ea043; color: #fff; }
+  .btn.green:hover { background: #2ea043; }
+  .btn.install-os.active { background: #238636; border-color: #2ea043; color: #fff; }
 
-/* Footer */
-#footer{padding:14px 16px;border-top:1px solid var(--border);background:var(--panel);flex-shrink:0}
-.starters{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
-.starter{background:var(--panel2);border:1px solid var(--border);color:var(--dim);
-  padding:6px 12px;border-radius:999px;font-size:12px;transition:border-color .15s,color .15s}
-.starter:hover{border-color:var(--blue);color:var(--fg)}
-.input-row{display:flex;gap:8px;align-items:flex-end}
-#input{flex:1;background:var(--panel2);border:1px solid var(--border);color:var(--fg);
-  padding:10px 12px;border-radius:8px;font-family:inherit;font-size:14px;resize:none;
-  min-height:38px;max-height:160px;outline:none;line-height:1.4}
-#input:focus{border-color:var(--blue)}
-#send{background:var(--blue);color:#fff;border:none;border-radius:8px;
-  padding:10px 16px;font-size:13px;font-weight:600;transition:background .15s;height:38px}
-#send:hover{background:var(--blue-2)}
-#send:disabled{opacity:.4;cursor:default}
-.toolbar{display:flex;gap:14px;font-size:11px;color:var(--muted);margin-top:8px;align-items:center}
-.toolbar a{color:var(--muted)}.toolbar a:hover{color:var(--dim)}
+  .row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+  .row label {
+    font-size: 11px; color: #8b949e; text-transform: uppercase; letter-spacing: .5px;
+  }
+  .row input, .row select, .row textarea {
+    background: #0d1117; color: #e6edf3;
+    border: 1px solid #30363d; border-radius: 6px;
+    padding: 7px 10px; font-size: 12px;
+    font-family: "SF Mono", monospace; outline: none;
+    transition: border-color .15s;
+  }
+  .row input:focus, .row select:focus, .row textarea:focus { border-color: #1f6feb; }
+  .row textarea { font-family: "SF Mono", monospace; min-height: 110px; resize: vertical; font-size: 11px; }
+  .row .hint { font-size: 11px; color: #6e7681; margin-top: 2px; }
 
-/* Side panels — slide-in drawers */
-aside{position:fixed;top:52px;right:0;bottom:0;width:380px;background:var(--panel);
-  border-left:1px solid var(--border);display:flex;flex-direction:column;
-  transform:translateX(100%);transition:transform .25s ease;z-index:40}
-aside.open{transform:translateX(0)}
-aside header{height:auto;background:transparent;border:none;padding:14px 18px;justify-content:space-between}
-aside header .ttl{font-size:14px;font-weight:600;color:var(--fg)}
-aside header .close{background:none;border:none;color:var(--dim);font-size:18px;cursor:pointer}
-aside .body{flex:1;overflow-y:auto;padding:14px 18px}
-aside .actions{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap}
+  .banner {
+    background: rgba(31,111,235,.08); border: 1px solid #1f6feb;
+    color: #58a6ff; padding: 10px 12px; border-radius: 6px;
+    font-size: 12px; line-height: 1.45; margin-bottom: 12px;
+  }
+  .banner.warn { background: rgba(210,153,34,.08); border-color: #d29922; color: #d29922; }
+  .banner.green { background: rgba(63,185,80,.06); border-color: #238636; color: #3fb950; }
 
-.row{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
-.row label{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:1px}
-.row input,.row select,.row textarea{background:var(--panel2);border:1px solid var(--border);
-  color:var(--fg);padding:8px 10px;border-radius:6px;font-family:inherit;font-size:13px;outline:none}
-.row input:focus,.row select:focus,.row textarea:focus{border-color:var(--blue)}
-.row textarea{min-height:120px;resize:vertical;font-family:"SF Mono",monospace;font-size:12px}
-.row .hint{font-size:11px;color:var(--muted);margin-top:2px}
-.btn{background:var(--panel2);border:1px solid var(--border);color:var(--fg);padding:7px 12px;
-  border-radius:6px;font-size:12px;transition:border-color .15s}
-.btn:hover{border-color:var(--blue)}
-.btn.primary{background:var(--blue);color:#fff;border-color:transparent}
-.btn.primary:hover{background:var(--blue-2)}
-.btn.danger{color:var(--red)}.btn.danger:hover{border-color:var(--red)}
-.btn.green{background:var(--green);color:#fff;border-color:transparent}
-.btn.green:hover{background:var(--green-2)}
-.btn.install-os.active{background:var(--green);color:#fff;border-color:transparent}
+  /* Agent file rows */
+  .afile {
+    padding: 8px 10px; background: #0d1117; border: 1px solid #21262d;
+    border-radius: 6px; margin-bottom: 6px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .afile .name { flex: 1; min-width: 0; font-size: 12px; font-weight: 600; color: #e6edf3;
+    font-family: "SF Mono", monospace;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .afile .meta { font-size: 10px; color: #6e7681; font-family: "SF Mono", monospace; }
+  .afile .actions { display: flex; gap: 2px; padding: 0; border: none; }
+  .afile button {
+    background: none; border: 1px solid transparent; color: #6e7681;
+    padding: 4px 6px; border-radius: 4px; font-size: 12px; cursor: pointer;
+  }
+  .afile button:hover { background: #21262d; color: #e6edf3; border-color: #30363d; }
 
-/* Agent file rows */
-.afile{padding:10px 12px;background:var(--panel2);border:1px solid var(--border);border-radius:8px;
-  margin-bottom:8px;display:flex;align-items:center;gap:10px}
-.afile .name{flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.afile .meta{font-size:11px;color:var(--muted);font-family:"SF Mono",monospace}
-.afile .actions{display:flex;gap:4px}
-.afile button{background:none;border:none;color:var(--muted);padding:4px 6px;border-radius:4px;font-size:13px}
-.afile button:hover{background:var(--border);color:var(--fg)}
+  /* Drag-drop dropzone in agents panel */
+  .dropzone {
+    border: 2px dashed #30363d; border-radius: 8px; padding: 14px;
+    text-align: center; color: #6e7681; font-size: 11px;
+    margin-top: 8px; cursor: pointer; transition: all .15s;
+  }
+  .dropzone:hover, .dropzone.over { border-color: #58a6ff; color: #58a6ff; }
 
-/* Drag-drop watermark */
-.dropzone{border:2px dashed var(--border2);border-radius:10px;padding:18px;text-align:center;
-  color:var(--muted);font-size:12px;margin-top:10px;cursor:pointer;transition:border-color .15s,color .15s}
-.dropzone:hover,.dropzone.over{border-color:var(--blue);color:var(--blue-2)}
+  /* Card grid (binder) */
+  .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .card {
+    background: #0d1117; border: 1px solid #30363d; border-radius: 8px;
+    padding: 8px; cursor: pointer;
+    transition: transform .12s, border-color .15s;
+    display: flex; flex-direction: column; gap: 6px; position: relative;
+  }
+  .card:hover { transform: translateY(-1px); border-color: #58a6ff; }
+  .card .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 4px; }
+  .card .nm {
+    font-size: 12px; font-weight: 600; color: #e6edf3;
+    overflow: hidden; text-overflow: ellipsis;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  }
+  .card .hp { font-size: 10px; color: #8b949e; font-weight: 600; }
+  .card .types { display: flex; gap: 3px; }
+  .card .type-chip {
+    font-size: 8px; padding: 2px 5px; border-radius: 999px;
+    font-weight: 700; letter-spacing: .5px; color: #06080f;
+  }
+  .card .ftxt {
+    font-size: 9px; color: #6e7681; font-style: italic; line-height: 1.3;
+    overflow: hidden; text-overflow: ellipsis;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  }
+  .card .stats-row { display: flex; gap: 4px; font-size: 9px; color: #8b949e; }
+  .card .stats-row span { flex: 1; text-align: center; padding: 2px 0; background: #161b22; border-radius: 3px; }
+  .card .rare {
+    position: absolute; top: 4px; right: 4px;
+    font-size: 8px; padding: 2px 5px; border-radius: 999px;
+    font-weight: 700; letter-spacing: .5px;
+    background: #161b22; border: 1px solid #30363d; color: #8b949e;
+  }
+  .card.r-mythic .rare { color: #ffb74d; border-color: #ffb74d; }
+  .card.r-rare .rare { color: #bc8cff; border-color: #8b5cf6; }
+  .card.r-core .rare { color: #58a6ff; border-color: #1f6feb; }
+  .card.r-starter .rare { color: #6e7681; }
+  .card.in-hand { border-color: #3fb950; background: rgba(63,185,80,.05); }
 
-/* Card grid (binder) */
-.card-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:10px;
-  cursor:pointer;transition:transform .12s,border-color .15s;display:flex;flex-direction:column;gap:6px;position:relative}
-.card:hover{transform:translateY(-2px);border-color:var(--blue-2)}
-.card .top{display:flex;justify-content:space-between;align-items:flex-start;gap:6px}
-.card .nm{font-size:13px;font-weight:600;color:var(--fg);overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-.card .hp{font-size:11px;color:var(--dim);font-weight:600}
-.card .types{display:flex;gap:4px}
-.card .type-chip{font-size:9px;padding:2px 6px;border-radius:999px;font-weight:700;letter-spacing:.5px;color:#06080f}
-.card .ftxt{font-size:10px;color:var(--muted);font-style:italic;line-height:1.3;
-  overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-.card .stats-row{display:flex;gap:6px;font-size:10px;color:var(--dim)}
-.card .stats-row span{flex:1;text-align:center;padding:2px 0;background:var(--code-bg);border-radius:3px}
-.card .rare{position:absolute;top:6px;right:6px;font-size:9px;padding:2px 6px;border-radius:999px;font-weight:700;letter-spacing:.5px;background:var(--panel);border:1px solid var(--border);color:var(--dim)}
-.card.r-mythic .rare{color:#ffb74d;border-color:#ffb74d}
-.card.r-rare .rare{color:var(--purple-2);border-color:var(--purple)}
-.card.r-core .rare{color:var(--blue-2);border-color:var(--blue)}
-.card.r-starter .rare{color:var(--dim)}
-.card.in-hand{border-color:var(--green-3);background:rgba(63,185,80,.06)}
+  /* ── Chat ── */
+  #chat {
+    flex: 1; overflow-y: auto; padding: 24px;
+    display: flex; flex-direction: column; gap: 16px;
+    position: relative;
+  }
+  .msg { display: flex; gap: 12px; max-width: 760px; z-index: 2; }
+  .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+  .msg.system { align-self: center; max-width: 720px; }
 
-/* Modal */
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;display:none;align-items:center;justify-content:center;padding:20px}
-.modal.open{display:flex}
-.modal .panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;
-  max-width:560px;width:100%;max-height:90vh;display:flex;flex-direction:column}
-.modal .panel header{padding:14px 18px;border-bottom:1px solid var(--border);justify-content:space-between}
-.modal .panel .body{padding:18px;overflow-y:auto;flex:1}
-.modal .panel .actions{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+  /* Watermark */
+  #chat-watermark {
+    position: absolute; bottom: 24px; right: 24px;
+    color: #30363d; font-size: 14px; font-weight: 500; text-align: right;
+    pointer-events: none; z-index: 1; user-select: none;
+    display: flex; flex-direction: row; align-items: center; gap: 8px;
+    opacity: .6;
+  }
+  #chat-watermark svg { width: 20px; height: 20px; fill: #30363d; }
 
-/* Card detail content */
-.cd-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
-.cd-name{font-size:18px;font-weight:700}
-.cd-pkg{font-size:11px;color:var(--muted);font-family:"SF Mono",monospace;margin-top:2px}
-.cd-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:14px 0}
-.cd-stats div{background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:8px;text-align:center}
-.cd-stats .lbl{font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
-.cd-stats .val{font-size:18px;font-weight:700;color:var(--fg)}
-.cd-abil{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px}
-.cd-abil .nm{font-weight:700;color:var(--fg);font-size:13px}
-.cd-abil .stats{font-size:11px;color:var(--dim);margin-top:2px}
-.cd-incantation{background:var(--code-bg);border:1px solid var(--border);border-radius:6px;
-  padding:10px;font-family:"SF Mono",monospace;font-size:11px;color:var(--green-3);margin-top:10px;letter-spacing:.5px;text-align:center}
-.cd-source{background:var(--code-bg);border:1px solid var(--border);border-radius:6px;
-  padding:10px;font-family:"SF Mono",monospace;font-size:11px;color:var(--fg);
-  max-height:240px;overflow:auto;white-space:pre;margin-top:8px}
+  .avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; color: #8b949e; background: #21262d;
+  }
+  .avatar .icon { width: 18px; height: 18px; }
+  .msg.user .avatar { background: #1f6feb; color: #fff; }
+  .msg.assistant .avatar { background: #161b22; border: 1px solid #30363d; color: #58a6ff; }
 
-/* Onboarding card / settings */
-.banner{background:rgba(31,111,235,.08);border:1px solid var(--blue);border-radius:8px;
-  padding:12px;color:var(--blue-2);font-size:12px;margin-bottom:12px}
-.banner.warn{background:rgba(210,153,34,.08);border-color:var(--warn);color:var(--warn)}
+  .bubble {
+    padding: 12px 16px; border-radius: 12px;
+    font-size: 14px; line-height: 1.6;
+    max-width: 780px; word-break: break-word;
+  }
+  .msg.assistant .bubble {
+    background: #161b22; border: 1px solid #21262d;
+    border-radius: 4px 12px 12px 12px;
+  }
+  .msg.assistant .bubble a { color: #58a6ff; text-decoration: none; }
+  .msg.assistant .bubble a:hover { text-decoration: underline; }
+  .msg.assistant .bubble strong { color: #e6edf3; }
+  .msg.assistant .bubble ol, .msg.assistant .bubble ul { padding-left: 20px; margin: 8px 0; }
+  .msg.assistant .bubble li { margin: 6px 0; }
+  .msg.assistant .bubble p { margin: 6px 0; }
+  .msg.assistant .bubble p:first-child { margin-top: 0; }
+  .msg.assistant .bubble p:last-child { margin-bottom: 0; }
+  .msg.assistant .bubble code {
+    background: #0d1117; padding: 2px 6px; border-radius: 4px;
+    font-family: "SF Mono", monospace; font-size: 12px;
+  }
+  .msg.assistant .bubble pre {
+    background: #0d1117; padding: 10px; border-radius: 6px;
+    overflow-x: auto; margin: 8px 0;
+  }
+  .msg.assistant .bubble pre code { padding: 0; background: none; }
+  .msg.user .bubble {
+    background: #1f6feb; color: #fff;
+    border-radius: 12px 4px 12px 12px;
+    white-space: pre-wrap;
+  }
+  .msg.system .bubble {
+    background: transparent; color: #8b949e;
+    font-size: 13px; border: none; padding: 4px 8px; max-width: none;
+  }
+  .msg.system .bubble h2 { color: #e6edf3; font-size: 16px; margin-bottom: 8px; }
+  .msg.system .bubble ul { padding-left: 20px; margin: 12px 0; }
+  .msg.system .bubble li { margin-bottom: 6px; }
+  .msg.system .bubble code { background: rgba(255,255,255,.06); padding: 2px 4px; border-radius: 4px;
+    font-family: "SF Mono", monospace; font-size: 12px; }
+  .msg.system .bubble strong { color: #c9d1d9; }
+  .msg.system .bubble .iconify { vertical-align: middle; width: 1.25em; height: 1.25em; color: #8b949e; }
 
-@media(max-width:680px){
-  aside{width:100%}
-  .card-grid{grid-template-columns:1fr 1fr}
-}
-@media(max-width:420px){.card-grid{grid-template-columns:1fr}}
+  /* Agent activity (collapsible) */
+  .agent-log { margin-top: 10px; border: 1px solid #30363d; border-radius: 6px; overflow: hidden; }
+  .agent-log details summary {
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px 10px; background: #0d1117;
+    color: #8b949e; font-size: 10px; font-weight: 600;
+    font-family: "SF Mono", monospace;
+    text-transform: uppercase; letter-spacing: .5px;
+    cursor: pointer; user-select: none; list-style: none;
+  }
+  .agent-log details summary::-webkit-details-marker { display: none; }
+  .agent-log details summary::before {
+    content: '▸'; color: #d2a8ff; transition: transform .15s;
+  }
+  .agent-log details[open] summary::before { transform: rotate(90deg); }
+  .agent-log pre {
+    padding: 8px 10px; background: #0d1117;
+    font-size: 10px; color: #7ee787;
+    font-family: "SF Mono", monospace;
+    white-space: pre-wrap; max-height: 200px;
+    overflow-y: auto; border-top: 1px solid #21262d; margin: 0;
+  }
+
+  .typing { display: flex; gap: 4px; align-items: center; padding: 4px 0; }
+  .typing span {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #8b949e; animation: bounce 1.2s infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: .2s; }
+  .typing span:nth-child(3) { animation-delay: .4s; }
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-6px); }
+  }
+
+  /* ── Hand row (loaded agents — card game) ── */
+  #hand-row {
+    padding: 8px 24px; border-top: 1px solid #21262d; background: #0d1117;
+    display: flex; align-items: center; gap: 8px;
+    overflow-x: auto; flex-shrink: 0; min-height: 44px;
+  }
+  #hand-row .hand-label {
+    font-size: 10px; color: #6e7681; text-transform: uppercase;
+    letter-spacing: 1px; flex-shrink: 0; margin-right: 4px;
+  }
+  .hand-empty { color: #484f58; font-size: 11px; font-style: italic; }
+  .mini-card {
+    display: flex; align-items: center; gap: 6px;
+    background: #161b22; border: 1px solid #30363d;
+    border-radius: 6px; padding: 4px 8px; font-size: 11px;
+    cursor: pointer; flex-shrink: 0; transition: border-color .15s;
+    color: #e6edf3;
+  }
+  .mini-card:hover { border-color: #58a6ff; }
+  .mini-card .swatch { width: 4px; height: 16px; border-radius: 2px; background: #d29922; }
+  .mini-card.flash { animation: cardflash 1.2s ease-out; }
+  @keyframes cardflash {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(63,185,80,.5); }
+    50% { transform: scale(1.06); box-shadow: 0 0 0 8px rgba(63,185,80,0); }
+    100% { transform: scale(1); }
+  }
+  .mini-card .x { color: #6e7681; margin-left: 2px; font-size: 10px; padding: 0 4px; }
+  .mini-card .x:hover { color: #f85149; }
+
+  /* ── Footer ── */
+  footer {
+    padding: 16px 24px; border-top: 1px solid #21262d;
+    background: #161b22; flex-shrink: 0;
+  }
+  #starters {
+    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+    max-width: 760px; margin: 0 auto 16px;
+    transition: opacity .3s, transform .3s;
+  }
+  .starter {
+    background: #161b22; color: #58a6ff;
+    border: 1px solid #30363d; border-radius: 20px;
+    padding: 6px 14px; font-size: 12px;
+    cursor: pointer; transition: all .2s; white-space: nowrap;
+    font-family: inherit;
+  }
+  .starter:hover {
+    background: #21262d; border-color: #58a6ff; transform: translateY(-1px);
+  }
+
+  .input-row {
+    display: flex; gap: 10px;
+    max-width: 760px; margin: 0 auto;
+  }
+  #input {
+    flex: 1; background: #0d1117;
+    border: 1px solid #30363d; border-radius: 8px;
+    color: #e6edf3; font-size: 14px;
+    padding: 10px 14px; resize: none; outline: none;
+    line-height: 1.5; max-height: 120px;
+    transition: border-color .15s; font-family: inherit;
+  }
+  #input:focus { border-color: #1f6feb; }
+  #input::placeholder { color: #484f58; }
+  #send {
+    background: #1f6feb; color: #fff; border: none; border-radius: 8px;
+    padding: 10px 18px; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: background .15s, opacity .15s;
+    align-self: flex-end; font-family: inherit;
+  }
+  #send:hover { background: #388bfd; }
+  #send:disabled { opacity: .4; cursor: default; }
+
+  .toolbar-row {
+    display: flex; justify-content: space-between; align-items: center;
+    max-width: 760px; margin: 8px auto 0;
+    font-size: 11px; color: #484f58;
+  }
+  .toolbar-row .left, .toolbar-row .right {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .toolbar-link {
+    background: none; border: none; color: #484f58;
+    cursor: pointer; font-size: 11px;
+    text-decoration: none; transition: color .15s; font-family: inherit;
+  }
+  .toolbar-link:hover { color: #8b949e; }
+
+  /* ── Modals (cpsignin, install, card) ── */
+  .modal {
+    position: fixed; inset: 0;
+    background: rgba(13,17,23,.95);
+    display: none; align-items: center; justify-content: center;
+    z-index: 100; padding: 20px;
+  }
+  .modal.open { display: flex; }
+  .modal .panel {
+    background: #161b22; border: 1px solid #30363d; border-radius: 12px;
+    max-width: 480px; width: 100%; max-height: 90vh;
+    display: flex; flex-direction: column;
+  }
+  .modal .panel header {
+    padding: 14px 18px; border-bottom: 1px solid #21262d;
+    background: transparent; position: static;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .modal .panel header .ttl { font-size: 14px; font-weight: 600; color: #e6edf3; }
+  .modal .panel header .close {
+    background: none; border: none; color: #8b949e; font-size: 18px;
+    cursor: pointer; padding: 0 4px;
+  }
+  .modal .panel .body { padding: 18px; overflow-y: auto; flex: 1; }
+  .modal .panel .actions {
+    padding: 12px 18px; border-top: 1px solid #21262d;
+    display: flex; gap: 8px; justify-content: flex-end;
+  }
+
+  /* Card detail content */
+  .cd-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+  .cd-name { font-size: 18px; font-weight: 700; color: #e6edf3; }
+  .cd-pkg { font-size: 11px; color: #6e7681; font-family: "SF Mono", monospace; margin-top: 2px; }
+  .cd-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 14px 0; }
+  .cd-stats div { background: #0d1117; border: 1px solid #21262d; border-radius: 6px; padding: 8px; text-align: center; }
+  .cd-stats .lbl { font-size: 9px; color: #6e7681; letter-spacing: 1px; text-transform: uppercase; }
+  .cd-stats .val { font-size: 18px; font-weight: 700; color: #e6edf3; }
+  .cd-abil { background: #0d1117; border: 1px solid #21262d; border-radius: 6px; padding: 10px; margin-bottom: 8px; }
+  .cd-abil .nm { font-weight: 700; color: #e6edf3; font-size: 13px; }
+  .cd-abil .stats { font-size: 11px; color: #8b949e; margin-top: 2px; }
+  .cd-incantation {
+    background: #0d1117; border: 1px solid #21262d; border-radius: 6px;
+    padding: 10px; font-family: "SF Mono", monospace;
+    font-size: 11px; color: #3fb950; margin-top: 10px;
+    letter-spacing: .5px; text-align: center;
+  }
+  .cd-source {
+    background: #0d1117; border: 1px solid #21262d; border-radius: 6px;
+    padding: 10px; font-family: "SF Mono", monospace;
+    font-size: 11px; color: #e6edf3;
+    max-height: 240px; overflow: auto; white-space: pre; margin-top: 8px;
+  }
+
+  /* Drop overlay */
+  #drop-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(35,134,54,.9); z-index: 200;
+    align-items: center; justify-content: center; flex-direction: column;
+    color: #fff; font-size: 24px; font-weight: 600;
+    border: 6px dashed rgba(255,255,255,.5); border-radius: 16px; margin: 16px;
+    pointer-events: none;
+  }
+  #drop-overlay .icon { width: 64px; height: 64px; margin-bottom: 16px; }
+
+  @media (max-width: 720px) {
+    aside { right: 12px; left: 12px; width: auto; }
+    header h1 .badge { display: none; }
+  }
+
+  /* Sign-in pulse */
+  .icon-btn.green { animation: signin-pulse 2.4s ease-in-out infinite; }
+  @keyframes signin-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(63,185,80,0); }
+    50%      { box-shadow: 0 0 0 4px rgba(63,185,80,.18); }
+  }
+  .icon-btn.green[hidden] { display: none !important; }
 </style>
 </head>
 <body>
 
+<div id="drop-overlay">
+  <span class="icon"><svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg></span>
+  Drop .py agent file to install
+</div>
+
 <header>
-  <div class="brand">
-    <span class="logo">🧠</span>
-    <span>RAPP Brainstem</span>
-    <small>Virtual</small>
+  <div class="logo">
+    <span class="icon"><svg viewBox="0 0 512 512" fill="#fff"><path d="M184 0c-30.9 0-56.5 22.7-61.1 52.3C54.5 67 0 130 0 206.8c0 41.6 17.4 79.2 45.3 105.9-2 9.2-3.3 18.8-3.3 28.7 0 55.3 35.8 102.2 85.5 119C142.2 493 172.6 512 208 512h16c35.3 0 64-28.7 64-64V86c0-8.8-7.2-16-16-16h-16c-8.8 0-16 7.2-16 16v16c0 8.8-7.2 16-16 16s-16-7.2-16-16V64c0-35.3-28.7-64-64-64h40zm144 0c30.9 0 56.5 22.7 61.1 52.3C457.5 67 512 130 512 206.8c0 41.6-17.4 79.2-45.3 105.9 2 9.2 3.3 18.8 3.3 28.7 0 55.3-35.8 102.2-85.5 119C369.8 493 339.4 512 304 512h-16c-35.3 0-64-28.7-64-64V86c0-8.8 7.2-16 16-16h16c8.8 0 16 7.2 16 16v16c0 8.8 7.2 16 16 16s16-7.2 16-16V64c0-35.3 28.7-64 64-64h-40z"/></svg></span>
   </div>
-  <span class="spacer"></span>
-  <select class="model" id="model-sel"></select>
-  <button class="icon-btn" id="btn-binder" title="Binder">🃏 Binder</button>
-  <button class="icon-btn" id="btn-agents" title="Agents">📋 Agents</button>
-  <button class="icon-btn" id="btn-install" title="Install the local brainstem">💻 Install</button>
-  <button class="icon-btn" id="btn-settings" title="Settings">⚙️</button>
-  <button class="icon-btn" id="btn-signin" hidden style="color:var(--green-3);border-color:var(--green)" title="Sign in with GitHub">🔐 Sign in with GitHub</button>
-  <span class="status"><span class="dot offline" id="status-dot"></span><span id="status-text">Signed out</span></span>
+  <h1>RAPP Brainstem<span class="badge">virtual</span></h1>
+  <div class="controls">
+    <span class="dot offline" id="status-dot"></span>
+    <span id="status-text">checking...</span>
+    <select id="model-sel"></select>
+
+    <button class="icon-btn green" id="btn-signin" hidden title="Sign in with GitHub">
+      <span class="icon"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg></span>
+      Sign in with GitHub
+    </button>
+
+    <button class="icon-btn" id="btn-binder" title="Binder">
+      <span class="icon"><svg viewBox="0 0 24 24"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1s-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg></span>
+      Binder
+    </button>
+    <button class="icon-btn" id="btn-agents" title="Manage Agents">
+      <span class="icon"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v4h4v2h-4v4h-2v-4H7v-2h4z"/></svg></span>
+      Agents
+    </button>
+    <button class="icon-btn" id="btn-install" title="Install the local brainstem">
+      <span class="icon"><svg viewBox="0 0 16 16"><path d="M8 12L3 7h3V0h4v7h3l-5 5zM2 14h12v2H2v-2z"/></svg></span>
+      Install
+    </button>
+    <button class="icon-btn" id="btn-settings" title="Settings">
+      <span class="icon"><svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M7.429 1.525a6.593 6.593 0 011.142 0c.036.003.108.036.137.146l.289 1.105c.147.56.55.967.997 1.189.174.086.341.183.501.29.417.278.97.423 1.53.27l1.102-.303c.11-.03.175.016.195.046.219.31.41.641.573.989.014.031.022.11-.059.19l-.815.806c-.411.406-.562.957-.53 1.456a4.588 4.588 0 010 .582c-.032.499.119 1.05.53 1.456l.815.806c.08.08.073.159.059.19a6.494 6.494 0 01-.573.99c-.02.029-.086.074-.195.045l-1.103-.303c-.559-.153-1.112-.008-1.529.27-.16.107-.327.204-.5.29-.449.222-.851.628-.998 1.189l-.289 1.105c-.029.11-.1.143-.137.146a6.613 6.613 0 01-1.142 0c-.036-.003-.108-.037-.137-.146l-.289-1.105c-.147-.56-.55-.967-.997-1.189a4.502 4.502 0 01-.501-.29c-.417-.278-.97-.423-1.53-.27l-1.102.303c-.11.03-.175-.016-.195-.046a6.492 6.492 0 01-.573-.989c-.014-.031-.022-.11.059-.19l.815-.806c.411-.406.562-.957.53-1.456a4.587 4.587 0 010-.582c.032-.499-.119-1.05-.53-1.456l-.815-.806c-.08-.08-.073-.159-.059-.19a6.44 6.44 0 01.573-.99c.02-.029.086-.074.195-.045l1.103.303c.559.153 1.112.008 1.529-.27.16-.107.327-.204.5-.29.449-.222.851-.628.998-1.189l.289-1.105c.029-.11.1-.143.137-.146zM8 0c-.236 0-.47.01-.701.03-.743.065-1.29.615-1.458 1.261l-.29 1.106c-.017.066-.078.158-.211.224a5.994 5.994 0 00-.668.386c-.123.082-.233.117-.3.117h-.013l-1.104-.304c-.646-.178-1.314.023-1.71.64a7.994 7.994 0 00-.573.989c-.358.658-.217 1.381.164 1.758l.816.806c.046.046.106.144.098.284a6.095 6.095 0 000 .772c.008.14-.052.238-.098.284l-.816.806c-.38.377-.522 1.1-.164 1.758.145.267.306.524.573.99.396.616 1.064.817 1.71.639l1.104-.304c.068-.019.146-.003.3.117.195.13.4.25.668.387.133.066.194.158.212.224l.289 1.106c.169.646.715 1.196 1.458 1.26a8.094 8.094 0 001.402 0c.743-.064 1.29-.614 1.458-1.26l.29-1.106c.017-.066.078-.158.211-.224a5.98 5.98 0 00.668-.386c.123-.082.233-.117.3-.117h.013l1.104.304c.646.178 1.314-.023 1.71-.64.267-.465.428-.722.573-.989.358-.658.217-1.381-.164-1.758l-.816-.806c-.046-.046-.106-.144-.098-.284a6.095 6.095 0 000-.772c-.008-.14.052-.238.098-.284l.816-.806c.38-.377.522-1.1.164-1.758a7.994 7.994 0 00-.573-.99c-.396-.616-1.064-.817-1.71-.639l-1.104.304c-.068.019-.146.003-.3-.117a5.994 5.994 0 00-.668-.387c-.133-.066-.194-.158-.212-.224L10.16 1.29C9.99.645 9.444.095 8.701.031A8.094 8.094 0 008 0zm0 11a3 3 0 100-6 3 3 0 000 6z"/></svg></span>
+    </button>
+  </div>
+
+  <!-- ── Settings popdown ── -->
+  <aside id="settings">
+    <header class="aside-head"><span class="ttl">Settings</span><button class="close" data-close="settings">×</button></header>
+    <div class="body">
+      <div class="banner">Your token is stored only in your browser (localStorage). There is no server.</div>
+
+      <div class="row">
+        <label for="provider">LLM provider</label>
+        <select id="provider">
+          <option value="copilot">GitHub Copilot (default — full Copilot model catalog incl. Claude/Opus)</option>
+          <option value="github">GitHub Models (PAT-style, public catalog)</option>
+          <option value="openai">OpenAI</option>
+          <option value="custom">Custom (any OpenAI-compatible endpoint)</option>
+        </select>
+      </div>
+
+      <div id="provider-copilot">
+        <div class="banner green">
+          Same <strong>device-code flow</strong> the local <code>brainstem.py</code> uses — your Copilot subscription powers the chat. Worker proxies the CORS-blocked Copilot endpoints. Unlocks Claude Sonnet/Opus, GPT-4o, o-series, Gemini.
+        </div>
+        <div class="row">
+          <label>Status</label>
+          <div id="copilot-status" style="font-size:12px;color:#8b949e;font-family:'SF Mono',monospace"></div>
+        </div>
+        <div class="row" style="flex-direction:row;gap:6px">
+          <button class="btn primary" id="cp-signin">🔐 Sign in with GitHub</button>
+          <button class="btn danger" id="cp-signout">Sign out</button>
+        </div>
+      </div>
+
+      <div id="provider-github" hidden>
+        <div class="banner green">
+          Same GitHub identity, public Models catalog. OAuth web flow via the rapp-auth worker.
+        </div>
+        <div class="row">
+          <label>Status</label>
+          <div id="github-status" style="font-size:12px;color:#8b949e;font-family:'SF Mono',monospace"></div>
+        </div>
+        <div class="row" style="flex-direction:row;gap:6px">
+          <button class="btn primary" id="github-signin">🔐 Sign in with GitHub</button>
+          <button class="btn danger" id="github-signout">Sign out</button>
+        </div>
+      </div>
+
+      <div id="provider-openai" hidden>
+        <div class="row">
+          <label for="api-key">OpenAI API key</label>
+          <input type="password" id="api-key" placeholder="sk-…" autocomplete="off" />
+        </div>
+      </div>
+      <div id="provider-custom" hidden>
+        <div class="row">
+          <label for="api-base">API base URL</label>
+          <input type="text" id="api-base" placeholder="https://api.openai.com/v1" />
+        </div>
+        <div class="row">
+          <label for="custom-key">API key</label>
+          <input type="password" id="custom-key" placeholder="sk-…" autocomplete="off" />
+        </div>
+      </div>
+
+      <div class="row">
+        <label for="exec-mode">Agent execution mode</label>
+        <select id="exec-mode">
+          <option value="stub">Stub (default — synthesized results)</option>
+          <option value="live">Live (lazy-load Pyodide ~10MB)</option>
+        </select>
+        <span class="hint">Stub mode echoes a deterministic result so the LLM can chain. Live runs the actual Python <code>perform()</code> in-browser via Pyodide.</span>
+      </div>
+      <div class="row">
+        <label for="soul">soul.md (system prompt)</label>
+        <textarea id="soul" placeholder="You are a helpful, concise RAPP assistant…"></textarea>
+        <span class="hint">Loaded as the system prompt every turn. SPEC §7.</span>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="save-settings">Save</button>
+      <button class="btn danger" id="reset-data">Wipe local data</button>
+    </div>
+  </aside>
+
+  <!-- ── Agents popdown ── -->
+  <aside id="agents">
+    <header class="aside-head"><span class="ttl">Installed agents</span><button class="close" data-close="agents">×</button></header>
+    <div class="body" id="agents-list"></div>
+    <div class="actions">
+      <button class="btn primary" id="import-py">Import .py</button>
+      <button class="btn" id="paste-py">Paste source…</button>
+    </div>
+    <input type="file" id="file-py" accept=".py,text/x-python" hidden />
+  </aside>
+
+  <!-- ── Binder popdown ── -->
+  <aside id="binder">
+    <header class="aside-head"><span class="ttl">Binder · cards</span><button class="close" data-close="binder">×</button></header>
+    <div class="body">
+      <div class="banner">Tap a card → <strong>Play to hand</strong> hot-loads the agent. Tap ✕ on a hand card to unload.</div>
+      <div class="card-grid" id="card-grid"></div>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="import-card">Import card.json</button>
+      <button class="btn" id="import-binder">Import binder.json</button>
+      <button class="btn" id="export-binder">Export binder</button>
+      <input type="file" id="file-card" accept=".json,application/json" hidden />
+      <input type="file" id="file-binder" accept=".json,application/json" hidden />
+    </div>
+  </aside>
 </header>
 
-<main>
-  <div id="chat-shell">
-
-    <div id="chat">
-      <div class="welcome">
-        <h2>🧠 RAPP Brainstem — virtual</h2>
-        <p>Browser-only twin of the local brainstem. Same <code>/chat</code> envelope. Same single-file
-          <code>*_agent.py</code> contract. Same binder model. Same GitHub identity as the rest of RAPP.</p>
-        <p class="pill"><span class="key">●</span> Click <strong>🔐 Sign in with GitHub</strong> in the header to use GitHub Models, then ask the agents anything.</p>
-      </div>
-    </div>
-
-    <div id="hand-row">
-      <span class="hand-label">Hand:</span>
-      <span class="hand-empty" id="hand-empty">no agents loaded — open the binder, tap a card to play it</span>
-    </div>
-
-    <div id="footer">
-      <div class="starters" id="starters">
-        <button class="starter" data-prompt="Roll 3d20.">Roll 3d20</button>
-        <button class="starter" data-prompt="Write a haiku about the weather in Kyoto.">Weather haiku · Kyoto</button>
-        <button class="starter" data-prompt="Greet me and roll some dice — chain them.">Greet + chain</button>
-      </div>
-      <div class="input-row">
-        <textarea id="input" placeholder="Talk to the brainstem… (Shift+Enter for newline)" rows="1"></textarea>
-        <button id="send">Send</button>
-      </div>
-      <div class="toolbar">
-        <span id="session-id" hidden></span>
-        <a href="#" id="export-tx">Export transcript</a>
-        <a href="#" id="import-tx">Import</a>
-        <a href="#" id="clear-tx">Clear</a>
-        <span class="spacer" style="flex:1"></span>
-        <a href="../">← back to twin</a>
-      </div>
-    </div>
-
+<div id="chat">
+  <div id="chat-watermark">
+    Drag &amp; drop .py agents, or open the Binder
+    <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
   </div>
-</main>
 
-<!-- Settings drawer -->
-<aside id="settings">
-  <header><span class="ttl">Settings</span><button class="close" data-close="settings">×</button></header>
-  <div class="body">
-    <div class="banner">Your token is stored only in your browser (localStorage). There is no server.</div>
-
-    <div class="row">
-      <label for="provider">LLM provider</label>
-      <select id="provider">
-        <option value="copilot">GitHub Copilot (default — full Copilot model catalog incl. Claude/Opus)</option>
-        <option value="github">GitHub Models (PAT-style, public catalog)</option>
-        <option value="openai">OpenAI</option>
-        <option value="custom">Custom (any OpenAI-compatible endpoint)</option>
-      </select>
-    </div>
-
-    <!-- Copilot (device-code flow → Copilot session bearer via worker proxy) -->
-    <div id="provider-copilot">
-      <div class="banner" style="background:rgba(63,185,80,.06);border-color:var(--green);color:var(--green-3)">
-        Same <strong>GitHub Copilot device-code flow</strong> the local <code>brainstem.py</code> uses. The worker proxies the
-        <code>copilot_internal/v2/token</code> exchange and the chat endpoint (both CORS-blocked from a browser otherwise).
-        Requires a GitHub Copilot subscription. Unlocks the full Copilot model catalog — <strong>Claude Sonnet/Opus, GPT-4o, o-series, Gemini, etc.</strong>
-      </div>
-      <div class="row">
-        <label>Status</label>
-        <div id="copilot-status" style="font-size:12px;color:var(--dim);font-family:'SF Mono',monospace"></div>
-      </div>
-      <div class="row" style="flex-direction:row;gap:8px">
-        <button class="btn primary" id="cp-signin">🔐 Sign in with GitHub</button>
-        <button class="btn danger" id="cp-signout">Sign out</button>
-      </div>
-    </div>
-
-    <!-- GitHub OAuth (web flow → models.github.ai catalog) -->
-    <div id="provider-github" hidden>
-      <div class="banner" style="background:rgba(63,185,80,.06);border-color:var(--green);color:var(--green-3)">
-        Sign in with GitHub. The OAuth web flow goes through the same Cloudflare Worker (<code>rappterbook-auth</code>) the canonical RAR brainstem uses, so the token exchange happens off-browser. Token then talks to GitHub Models directly. Same identity as the rest of RAPP.
-      </div>
-      <div class="row">
-        <label>Status</label>
-        <div id="github-status" style="font-size:12px;color:var(--dim);font-family:'SF Mono',monospace"></div>
-      </div>
-      <div class="row" style="flex-direction:row;gap:8px">
-        <button class="btn primary" id="github-signin">🔐 Sign in with GitHub</button>
-        <button class="btn danger" id="github-signout">Sign out</button>
-      </div>
-    </div>
-
-    <!-- OpenAI / custom -->
-    <div id="provider-openai" hidden>
-      <div class="row">
-        <label for="api-key">OpenAI API key</label>
-        <input type="password" id="api-key" placeholder="sk-…" autocomplete="off" />
-      </div>
-    </div>
-    <div id="provider-custom" hidden>
-      <div class="row">
-        <label for="api-base">API base URL</label>
-        <input type="text" id="api-base" placeholder="https://api.openai.com/v1" />
-        <span class="hint">Any OpenAI-compatible chat-completions endpoint.</span>
-      </div>
-      <div class="row">
-        <label for="custom-key">API key</label>
-        <input type="password" id="custom-key" placeholder="sk-…" autocomplete="off" />
-      </div>
-    </div>
-
-    <div class="row">
-      <label for="exec-mode">Agent execution mode</label>
-      <select id="exec-mode">
-        <option value="stub">Stub (default — synthesized results)</option>
-        <option value="live">Live (lazy-load Pyodide ~10MB)</option>
-      </select>
-      <span class="hint">Stub mode echoes a deterministic synthesized result so the LLM can chain. Live mode runs the actual Python <code>perform()</code> in-browser via Pyodide.</span>
-    </div>
-    <div class="row">
-      <label for="soul">soul.md (system prompt)</label>
-      <textarea id="soul" placeholder="You are a helpful, concise RAPP assistant…"></textarea>
-      <span class="hint">Loaded as the system prompt every turn. SPEC §7.</span>
+  <div class="msg system welcome">
+    <div class="bubble">
+      <h2>Welcome to your RAPP Brainstem (virtual)</h2>
+      <p>I'm the browser-only twin of the local brainstem. Same <code>/chat</code> envelope. Same single-file <code>*_agent.py</code> contract. Same GitHub identity as the rest of RAPP.</p>
+      <ul>
+        <li><strong>Sign in</strong> with the green button (top-right) to use your GitHub Copilot subscription.</li>
+        <li><strong>Binder</strong>: tap a card → "Play to hand" to hot-load that agent so I can call it.</li>
+        <li><strong>Agents</strong>: drag a <code>.py</code> file anywhere on this window to install a new tool.</li>
+        <li><strong>Install</strong>: get the real local brainstem with one curl command.</li>
+      </ul>
+      <p><em>Try a starter prompt below to get going.</em></p>
     </div>
   </div>
-  <div class="actions">
-    <button class="btn primary" id="save-settings">Save</button>
-    <button class="btn danger" id="reset-data">Wipe local data</button>
-  </div>
-</aside>
+</div>
 
-<!-- Agents drawer -->
-<aside id="agents">
-  <header><span class="ttl">Agents (file view)</span><button class="close" data-close="agents">×</button></header>
-  <div class="body" id="agents-list">
-    <!-- populated -->
-  </div>
-  <div class="actions">
-    <button class="btn primary" id="import-py">Import .py</button>
-    <button class="btn" id="paste-py">Paste source…</button>
-  </div>
-  <input type="file" id="file-py" accept=".py,text/x-python" hidden />
-</aside>
+<!-- ── Hand row (loaded agents) ── -->
+<div id="hand-row">
+  <span class="hand-label">Hand:</span>
+  <span class="hand-empty" id="hand-empty">no agents loaded — open the Binder, tap a card to play it</span>
+</div>
 
-<!-- Binder drawer -->
-<aside id="binder">
-  <header><span class="ttl">Binder · cards</span><button class="close" data-close="binder">×</button></header>
-  <div class="body">
-    <div class="banner" id="binder-banner">Tap a card to view it. Tap <strong>Play to hand</strong> to hot-load the agent into the brainstem.</div>
-    <div class="card-grid" id="card-grid"></div>
+<footer>
+  <div id="starters">
+    <button class="starter" data-prompt="Roll 3d20.">Roll 3d20</button>
+    <button class="starter" data-prompt="Write a haiku about the weather in Kyoto.">Weather haiku · Kyoto</button>
+    <button class="starter" data-prompt="Greet me and roll some dice — chain them.">Greet + chain</button>
   </div>
-  <div class="actions">
-    <button class="btn primary" id="import-card">Import card.json</button>
-    <button class="btn" id="import-binder">Import binder.json</button>
-    <button class="btn" id="export-binder">Export binder</button>
-    <input type="file" id="file-card" accept=".json,application/json" hidden />
-    <input type="file" id="file-binder" accept=".json,application/json" hidden />
+  <div class="input-row">
+    <textarea id="input" placeholder="Talk to the brainstem… (Shift+Enter for newline)" rows="1"></textarea>
+    <button id="send">Send</button>
   </div>
-</aside>
+  <div class="toolbar-row">
+    <div class="left">
+      <span id="session-id" hidden></span>
+    </div>
+    <div class="right">
+      <a class="toolbar-link" href="#" id="export-tx">Export transcript</a>
+      <a class="toolbar-link" href="#" id="import-tx">Import</a>
+      <a class="toolbar-link" href="#" id="clear-tx">Clear</a>
+      <a class="toolbar-link" href="../">← back to twin</a>
+    </div>
+  </div>
+</footer>
 
 <!-- Copilot sign-in modal — device-code flow via worker -->
 <div class="modal" id="cpsignin-modal">
@@ -408,32 +686,29 @@ aside .actions{padding:12px 18px;border-top:1px solid var(--border);display:flex
     <header><span class="ttl">🔐 Sign in with GitHub Copilot</span><button class="close" id="cpsignin-close">×</button></header>
     <div class="body">
       <div id="cpsignin-error" class="banner warn" hidden></div>
-
       <div id="cpsignin-step1">
-        <p style="font-size:13px;color:var(--dim);margin-bottom:14px">
+        <p style="font-size:13px;color:#8b949e;margin-bottom:14px">
           Same device-code flow the local <code>brainstem.py</code> uses. Unlocks the full Copilot model catalog
           (Claude Sonnet/Opus, GPT-4o, o-series, Gemini, etc.) — your Copilot subscription is the engine.
         </p>
         <button class="btn primary" id="cpsignin-go" style="width:100%;padding:12px">Sign in with GitHub →</button>
       </div>
-
       <div id="cpsignin-step2" hidden>
-        <p style="font-size:13px;color:var(--dim);margin-bottom:10px">Open GitHub and enter this code:</p>
-        <div style="background:var(--code-bg);border:1px solid var(--green);border-radius:8px;padding:18px;text-align:center;margin-bottom:14px">
-          <div style="font-family:'SF Mono',monospace;font-size:32px;letter-spacing:6px;color:var(--green-3);font-weight:700" id="cpsignin-code">XXXX-XXXX</div>
+        <p style="font-size:13px;color:#8b949e;margin-bottom:10px">Open GitHub and enter this code:</p>
+        <div style="background:#0d1117;border:1px solid #238636;border-radius:8px;padding:18px;text-align:center;margin-bottom:14px">
+          <div style="font-family:'SF Mono',monospace;font-size:32px;letter-spacing:6px;color:#3fb950;font-weight:700" id="cpsignin-code">XXXX-XXXX</div>
         </div>
         <a href="#" id="cpsignin-link" target="_blank" rel="noopener" class="btn primary" style="display:block;text-align:center;text-decoration:none;margin-bottom:14px">Open https://github.com/login/device →</a>
-        <p style="font-size:12px;color:var(--muted);text-align:center">
+        <p style="font-size:12px;color:#6e7681;text-align:center">
           <span class="typing" style="display:inline-flex;gap:4px;vertical-align:middle"><span></span><span></span><span></span></span>
           waiting for you to authorize…
         </p>
       </div>
-
       <div id="cpsignin-step3" hidden>
         <div style="text-align:center;padding:20px">
           <div style="font-size:48px;margin-bottom:12px">✓</div>
-          <div style="font-size:16px;color:var(--green-3);font-weight:600">Signed in to GitHub Copilot</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:6px">Loading Copilot model catalog…</div>
+          <div style="font-size:16px;color:#3fb950;font-weight:600">Signed in to GitHub Copilot</div>
+          <div style="font-size:12px;color:#6e7681;margin-top:6px">Loading Copilot model catalog…</div>
         </div>
       </div>
     </div>
@@ -447,7 +722,7 @@ aside .actions{padding:12px 18px;border-top:1px solid var(--border);display:flex
     <div class="body">
       <div class="banner">
         Run the canonical one-line installer from this repo
-        (<a href="https://github.com/kody-w/RAPP" target="_blank" rel="noopener">kody-w/RAPP</a>).
+        (<a href="https://github.com/kody-w/RAPP" target="_blank" rel="noopener" style="color:#58a6ff">kody-w/RAPP</a>).
         It installs to <code>~/.brainstem/src/rapp_brainstem/</code>, then you can <code>brainstem</code> from any shell.
       </div>
       <div style="display:flex;gap:6px;margin-bottom:10px">
@@ -455,12 +730,11 @@ aside .actions{padding:12px 18px;border-top:1px solid var(--border);display:flex
         <button class="btn install-os" data-os="linux">Linux</button>
         <button class="btn install-os" data-os="win">Windows</button>
       </div>
-      <pre id="install-cmd" style="background:var(--code-bg);border:1px solid var(--border);border-radius:6px;padding:12px;overflow-x:auto;cursor:pointer;font-family:'SF Mono',monospace;font-size:12px;color:var(--fg);white-space:pre-wrap;word-break:break-all"></pre>
-      <div style="font-size:11px;color:var(--muted);margin-top:6px;text-align:center">click the command to copy</div>
-
-      <div style="margin-top:16px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Already installed?</div>
+      <pre id="install-cmd" style="background:#0d1117;border:1px solid #21262d;border-radius:6px;padding:12px;overflow-x:auto;cursor:pointer;font-family:'SF Mono',monospace;font-size:12px;color:#e6edf3;white-space:pre-wrap;word-break:break-all"></pre>
+      <div style="font-size:11px;color:#6e7681;margin-top:6px;text-align:center">click the command to copy</div>
+      <div style="margin-top:16px;font-size:11px;color:#6e7681;text-transform:uppercase;letter-spacing:1px">Already installed?</div>
       <a class="btn" id="open-vscode" href="vscode://file/" style="display:inline-block;margin-top:6px;text-decoration:none">📂 Open <code>~/.brainstem/src/rapp_brainstem</code> in VS Code</a>
-      <div style="font-size:11px;color:var(--muted);margin-top:4px">Uses the <code>vscode://file/</code> URL scheme. Requires VS Code installed.</div>
+      <div style="font-size:11px;color:#6e7681;margin-top:4px">Uses the <code>vscode://file/</code> URL scheme. Requires VS Code installed.</div>
     </div>
     <div class="actions">
       <a class="btn" href="../installer/" style="text-decoration:none">Open installer page →</a>
