@@ -92,7 +92,7 @@ Agents output `data_slush` — curated signals from live results that feed into 
 | **Layers** | Brainstem · Hippocampus (CommunityRAPP) · Copilot Studio harness |
 | **Registry** | [RAR — RAPP Agent Registry](https://kody-w.github.io/RAR) |
 | **Doctrine** | Single File Agents |
-| **Reference Implementation** | [kody-w/rapp-installer](https://github.com/kody-w/rapp-installer) |
+| **Reference Implementation** | [kody-w/RAPP](https://github.com/kody-w/RAPP) |
 | **Cloud Backend** | [kody-w/CommunityRAPP](https://github.com/kody-w/CommunityRAPP) |
 | **Copilot Studio Bundle** | `MSFTAIBASMultiAgentCopilot_1_0_0_5.zip` |
 
@@ -112,7 +112,7 @@ RAPP v1 is exactly three tiers. Each tier is independently runnable — you do n
 | **Auth** | `gh auth login` device code — no API keys |
 | **Storage** | Local filesystem (`local_storage.py` shim) |
 | **Layout** | `~/.brainstem/src/rapp_brainstem/{brainstem.py, soul.md, agents/, .env}` |
-| **Install** | `curl -fsSL https://kody-w.github.io/rapp-installer/install.sh \| bash` |
+| **Install** | `curl -fsSL https://kody-w.github.io/RAPP/install.sh \| bash` |
 | **Run** | `brainstem` |
 
 ### Tier 2 — Hippocampus / CommunityRAPP (cloud)

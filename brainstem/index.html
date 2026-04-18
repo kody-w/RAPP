@@ -390,8 +390,8 @@ aside .actions{padding:12px 18px;border-top:1px solid var(--border);display:flex
     <header><span class="ttl">💻 Install the real brainstem</span><button class="close" id="install-close">×</button></header>
     <div class="body">
       <div class="banner">
-        Run the canonical one-line installer from
-        <a href="https://github.com/kody-w/rapp-installer" target="_blank" rel="noopener">kody-w/rapp-installer</a>.
+        Run the canonical one-line installer from this repo
+        (<a href="https://github.com/kody-w/RAPP" target="_blank" rel="noopener">kody-w/RAPP</a>).
         It installs to <code>~/.brainstem/src/rapp_brainstem/</code>, then you can <code>brainstem</code> from any shell.
       </div>
       <div style="display:flex;gap:6px;margin-bottom:10px">
@@ -1382,9 +1382,9 @@ function wire() {
 }
 
 const INSTALL_CMDS = {
-  mac:   'curl -fsSL https://kody-w.github.io/rapp-installer/install.sh | bash',
-  linux: 'curl -fsSL https://kody-w.github.io/rapp-installer/install.sh | bash',
-  win:   'iwr https://kody-w.github.io/rapp-installer/install.ps1 -useb | iex',
+  mac:   'curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash',
+  linux: 'curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash',
+  win:   'iwr https://kody-w.github.io/RAPP/install.ps1 -useb | iex',
 };
 function detectOS() {
   const ua = navigator.userAgent;

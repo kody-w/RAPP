@@ -177,7 +177,7 @@
       <a href="brainstem/" title="Browser-only brainstem with card binder">Try it ↗</a>
       <a href="installer/">Installer</a>
       <a href="SPEC.md">SPEC</a>
-      <a class="gh-btn" href="https://github.com/kody-w/rapp-installer" target="_blank" rel="noopener">GitHub →</a>
+      <a class="gh-btn" href="https://github.com/kody-w/RAPP" target="_blank" rel="noopener">GitHub →</a>
     </div>
   </div>
 </header>
@@ -198,7 +198,7 @@
   <div class="cta-row">
     <a class="cta primary" href="#brainstem">Start with the Brainstem ↓</a>
     <a class="cta ghost" href="SPEC.md">Read the v1 spec</a>
-    <a class="cta ghost" href="https://github.com/kody-w/rapp-installer" target="_blank" rel="noopener">View on GitHub</a>
+    <a class="cta ghost" href="https://github.com/kody-w/RAPP" target="_blank" rel="noopener">View on GitHub</a>
   </div>
 </section>
 
@@ -277,12 +277,12 @@
         <p>Connect remote agent repos through the chat UI's Sources panel — paste any GitHub URL with an <code>agents/</code> folder and the brainstem hot-loads them. Missing pip dependencies are auto-installed.</p>
         <div class="code">
           <span class="lbl">macOS / Linux</span>
-          <pre id="c1m">curl -fsSL https://kody-w.github.io/rapp-installer/install.sh | bash</pre>
+          <pre id="c1m">curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash</pre>
           <button class="copy" data-target="c1m">Copy</button>
         </div>
         <div class="code">
           <span class="lbl">Windows (PowerShell)</span>
-          <pre id="c1w">irm https://raw.githubusercontent.com/kody-w/rapp-installer/main/install.ps1 | iex</pre>
+          <pre id="c1w">irm https://raw.githubusercontent.com/kody-w/RAPP/main/install.ps1 | iex</pre>
           <button class="copy" data-target="c1w">Copy</button>
         </div>
         <div class="code">
@@ -309,8 +309,8 @@ brainstem       # → http://localhost:7071</pre>
           <li>Local-first development</li>
         </ul>
         <div class="tier-links">
-          <a href="https://github.com/kody-w/rapp-installer" target="_blank" rel="noopener">Source ↗</a>
-          <a href="https://github.com/kody-w/rapp-installer/tree/main/rapp_brainstem" target="_blank" rel="noopener">rapp_brainstem/ ↗</a>
+          <a href="https://github.com/kody-w/RAPP" target="_blank" rel="noopener">Source ↗</a>
+          <a href="https://github.com/kody-w/RAPP/tree/main/rapp_brainstem" target="_blank" rel="noopener">rapp_brainstem/ ↗</a>
         </div>
       </aside>
     </div>
@@ -334,18 +334,18 @@ brainstem       # → http://localhost:7071</pre>
         <p>Each project is isolated: <code>~/rapp-projects/my-project/</code> with its own venv, agents, and local storage that mirror up to the cloud. Auth happens through the chat UI via GitHub device-code flow.</p>
         <div class="code">
           <span class="lbl">macOS / Linux</span>
-          <pre id="c2m">curl -fsSL https://raw.githubusercontent.com/kody-w/rapp-installer/main/community_rapp/install.sh | bash</pre>
+          <pre id="c2m">curl -fsSL https://raw.githubusercontent.com/kody-w/RAPP/main/install.sh | bash</pre>
           <button class="copy" data-target="c2m">Copy</button>
         </div>
         <div class="code">
           <span class="lbl">Windows (PowerShell)</span>
-          <pre id="c2w">irm https://raw.githubusercontent.com/kody-w/rapp-installer/main/community_rapp/install.ps1 | iex</pre>
+          <pre id="c2w">irm https://raw.githubusercontent.com/kody-w/RAPP/main/install.ps1 | iex</pre>
           <button class="copy" data-target="c2w">Copy</button>
         </div>
         <div class="code">
           <span class="lbl">Or one-click ARM template</span>
           <pre id="c2a">https://portal.azure.com/#create/Microsoft.Template/uri/
-  https%3A%2F%2Fraw.githubusercontent.com%2Fkody-w%2Frapp-installer%2Fmain%2Fazuredeploy.json</pre>
+  https%3A%2F%2Fraw.githubusercontent.com%2Fkody-w%2FRAPP%2Fmain%2Fazuredeploy.json</pre>
           <button class="copy" data-target="c2a">Copy</button>
         </div>
       </div>
@@ -366,7 +366,7 @@ brainstem       # → http://localhost:7071</pre>
           <li>Azure OpenAI deployment</li>
         </ul>
         <div class="tier-links">
-          <a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fkody-w%2Frapp-installer%2Fmain%2Fazuredeploy.json" target="_blank" rel="noopener">Deploy to Azure ↗</a>
+          <a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fkody-w%2FRAPP%2Fmain%2Fazuredeploy.json" target="_blank" rel="noopener">Deploy to Azure ↗</a>
           <a href="https://github.com/kody-w/CommunityRAPP" target="_blank" rel="noopener">CommunityRAPP repo ↗</a>
           <a href="https://kody-w.github.io/CommunityRAPP/onboard.html" target="_blank" rel="noopener">Onboarding ↗</a>
         </div>
@@ -392,7 +392,7 @@ brainstem       # → http://localhost:7071</pre>
         <p>The same agent logic you tested locally now answers in <strong>Microsoft Teams</strong> and <strong>M365 Copilot</strong> — declaratively, with org-wide governance, and with the full Copilot extensibility surface.</p>
         <div class="code">
           <span class="lbl">Download the solution .zip</span>
-          <pre id="c3z">https://github.com/kody-w/rapp-installer/raw/main/MSFTAIBASMultiAgentCopilot_1_0_0_5.zip</pre>
+          <pre id="c3z">https://github.com/kody-w/RAPP/raw/main/MSFTAIBASMultiAgentCopilot_1_0_0_5.zip</pre>
           <button class="copy" data-target="c3z">Copy</button>
         </div>
         <div class="code">
@@ -421,7 +421,7 @@ brainstem       # → http://localhost:7071</pre>
           <li>Enterprise governance</li>
         </ul>
         <div class="tier-links">
-          <a href="https://github.com/kody-w/rapp-installer/raw/main/MSFTAIBASMultiAgentCopilot_1_0_0_5.zip">Download .zip ↓</a>
+          <a href="https://github.com/kody-w/RAPP/raw/main/MSFTAIBASMultiAgentCopilot_1_0_0_5.zip">Download .zip ↓</a>
           <a href="https://make.powerautomate.com" target="_blank" rel="noopener">Power Platform ↗</a>
           <a href="https://copilotstudio.microsoft.com" target="_blank" rel="noopener">Copilot Studio ↗</a>
         </div>
@@ -471,7 +471,7 @@ brainstem       # → http://localhost:7071</pre>
 <footer>
   <div>
     <strong style="color:var(--fg)">RAPP</strong> — A digital twin of the RAPP stack.<br>
-    Source: <a href="https://github.com/kody-w/rapp-installer" target="_blank" rel="noopener">rapp-installer</a>
+    Source: <a href="https://github.com/kody-w/RAPP" target="_blank" rel="noopener">RAPP</a>
     · <a href="https://github.com/kody-w/CommunityRAPP" target="_blank" rel="noopener">CommunityRAPP</a>
     · <a href="https://kody-w.github.io/RAR" target="_blank" rel="noopener">RAR (Agent Registry)</a>
     · <a href="https://github.com/kody-w/RAPP" target="_blank" rel="noopener">RAPP</a>

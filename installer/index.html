@@ -32,7 +32,7 @@
   .hero .tag{display:inline-block;margin-top:14px;color:var(--green-3);font-weight:600;font-size:13px;
     text-transform:uppercase;letter-spacing:1px}
 
-  /* Install widget — pixel-similar to the rapp-installer widget */
+  /* Install widget — pixel-similar to the RAPP install widget */
   .install{max-width:620px;width:100%;margin:0 0 36px;
     background:var(--panel);border:2px solid var(--green);border-radius:12px;overflow:hidden}
   .install:hover{border-color:var(--green-2)}
@@ -105,7 +105,7 @@
 
 <div class="twin-banner">
   This page is a static memorial of the install flow. The live installer lives at
-  <a href="https://github.com/kody-w/rapp-installer" target="_blank">kody-w/rapp-installer</a>.
+  <a href="https://github.com/kody-w/RAPP" target="_blank">kody-w/RAPP</a>.
 </div>
 
 <div class="install" id="install">
@@ -119,7 +119,7 @@
   </div>
   <div class="install-body" id="cmd-row">
     <span class="dollar">$</span>
-    <span class="cmd" id="cmd-text">curl -fsSL https://kody-w.github.io/rapp-installer/install.sh | bash</span>
+    <span class="cmd" id="cmd-text">curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash</span>
     <span class="copy">⧉</span>
   </div>
   <div class="install-hint">click anywhere on the line to copy</div>
@@ -144,7 +144,7 @@
       <div class="step">
         <h3>Install</h3>
         <p>Install puts the brainstem at <code>~/.brainstem/src/rapp_brainstem/</code>.</p>
-        <pre>curl -fsSL https://kody-w.github.io/rapp-installer/install.sh | bash</pre>
+        <pre>curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash</pre>
       </div>
       <div class="step">
         <h3>Run</h3>
@@ -199,7 +199,7 @@
       <div class="step">
         <h3>Bundle</h3>
         <pre>MSFTAIBASMultiAgentCopilot_1_0_0_5.zip</pre>
-        <p>Lives in the rapp-installer repo. Import → set Function App URL → publish.</p>
+        <p>Lives in the RAPP repo. Import → set Function App URL → publish.</p>
       </div>
     </div>
   </div>
@@ -211,16 +211,16 @@
   <a href="../SPEC.md">SPEC.md</a>
   <a href="../brainstem/">Brainstem (virtual)</a>
   <a href="../hippocampus/">Hippocampus</a>
-  <a href="https://github.com/kody-w/rapp-installer" target="_blank">Source</a>
+  <a href="https://github.com/kody-w/RAPP" target="_blank">Source</a>
 </div>
 
 <footer>RAPP v1 — frozen 2026-04-17 · digital twin</footer>
 
 <script>
   const CMDS = {
-    mac:   'curl -fsSL https://kody-w.github.io/rapp-installer/install.sh | bash',
-    linux: 'curl -fsSL https://kody-w.github.io/rapp-installer/install.sh | bash',
-    win:   'iwr https://kody-w.github.io/rapp-installer/install.ps1 -useb | iex'
+    mac:   'curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash',
+    linux: 'curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash',
+    win:   'iwr https://kody-w.github.io/RAPP/install.ps1 -useb | iex'
   };
   const tabs = document.querySelectorAll('.install-tab');
   const cmdText = document.getElementById('cmd-text');

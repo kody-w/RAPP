@@ -12,7 +12,7 @@ The repo memorializes the three-tier RAPP architecture, plus a browser-only **vi
 |------|-----------|
 | `index.html` | Landing page — animated stack diagram + tier intros |
 | `SPEC.md` | The frozen v1 contract (sacred — do not break) |
-| [`installer/`](./installer/) | Twin of [kody-w/rapp-installer](https://github.com/kody-w/rapp-installer) — install widget mirror |
+| [`installer/`](./installer/) | Twin of [kody-w/RAPP](https://github.com/kody-w/RAPP) — install widget mirror |
 | [`brainstem/`](./brainstem/) | **Virtual brainstem** — chat UI parity with the local Flask brainstem, plus the **card binder** |
 | [`hippocampus/`](./hippocampus/) | Twin of Tier 2 — Deploy-to-Azure button + ARM template doc |
 | [`agents/`](./agents/) | Starter single-file agents (`hello`, `dice`, `weather_poet`, `sloshtest`) |
