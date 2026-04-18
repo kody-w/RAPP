@@ -1,24 +1,46 @@
 /* =====================================================================
- * rapp-auth — Cloudflare Worker for the RAPP Virtual Brainstem.
+ * rapp-auth — Cloudflare Worker for the entire RAPP stack.
  *
- * Two responsibilities:
- *   1. OAuth code-for-token exchange — the only step that requires the
- *      client_secret, which can't live in the browser.
- *   2. Catalog proxy — adds CORS headers to https://models.github.ai/
- *      so the browser can fetch the live model list (the upstream
- *      doesn't send Access-Control-Allow-Origin for kody-w.github.io).
+ * The single auth + proxy surface used by any RAPP consumer that runs
+ * outside a server (the virtual brainstem today; future PWAs, Copilot
+ * Studio embeds, browser extensions tomorrow). Tier-1 (local brainstem)
+ * and Tier-2 (Azure Functions) talk to GitHub directly from server-side
+ * code and don't need this worker — but they can use it interchangeably
+ * if they want one consistent auth surface across all tiers.
+ *
+ * What it does:
+ *   - Holds the OAuth App client_secret so the browser doesn't have to.
+ *   - Proxies the GitHub Models catalog (CORS-blocked upstream).
+ *   - Proxies the GitHub Copilot device-code + token-exchange APIs
+ *     (also CORS-blocked from kody-w.github.io). This unlocks the
+ *     same Copilot flow the local brainstem.py uses.
+ *
+ * What it does NOT do:
+ *   - Store tokens. Stateless. No KV, no D1, no logs.
+ *   - Decide auth policy. The browser owns the token; we just proxy.
+ *   - Cache per-user data. Catalog is edge-cached for 5 min, that's it.
  *
  * Endpoints:
- *   POST /api/auth/token   { code, redirect_uri? }   → { access_token }
- *   GET  /api/models       (no auth required)        → upstream catalog JSON
- *   GET  /api/user         (Authorization: Bearer …) → upstream /user JSON
- *   GET  /healthz                                    → "ok"
+ *   POST /api/auth/token         { code, redirect_uri? }
+ *                                → OAuth web-flow code → access_token
+ *   POST /api/auth/device        { client_id?, scope? }
+ *                                → start device-code flow → user_code, verification_uri, …
+ *   POST /api/auth/device/poll   { device_code, client_id? }
+ *                                → poll for completion → access_token | { error: 'authorization_pending' }
+ *   GET  /api/copilot/token      Authorization: Bearer ghu_…
+ *                                → exchange ghu_ for short-lived Copilot bearer + endpoint
+ *   GET  /api/models             → catalog proxy (no auth required, 5-min edge cache)
+ *   GET  /api/user               Authorization: Bearer …
+ *                                → api.github.com/user proxy
+ *   GET  /healthz                → "ok"
  *
- * Required secrets (set via `wrangler secret put`):
- *   GH_CLIENT_ID       — the OAuth App client id
- *   GH_CLIENT_SECRET   — the OAuth App client secret
+ * Required secrets (one-time, via `wrangler secret put`):
+ *   GH_CLIENT_ID                 — OAuth App (web-flow) client id
+ *   GH_CLIENT_SECRET             — OAuth App (web-flow) client secret
+ *   GH_DEVICE_CLIENT_ID          — device-flow client id (defaults to the
+ *                                   Copilot one used by brainstem.py if unset)
  *
- * Deploy:  npx wrangler deploy
+ * Deploy:  cd worker && npx wrangler deploy
  * ===================================================================== */
 
 const ALLOWED_ORIGINS = [
@@ -26,6 +48,10 @@ const ALLOWED_ORIGINS = [
   'http://localhost',
   'http://127.0.0.1',
 ];
+
+// Same client id rapp_brainstem/brainstem.py uses for device-code flow.
+// Returns ghu_ tokens that work with the Copilot exchange API.
+const COPILOT_CLIENT_ID = 'Iv1.b507a08c87ecfe98';
 
 function corsHeaders(req) {
   const origin = req.headers.get('Origin') || '';
@@ -50,29 +76,40 @@ function json(body, init = {}, req) {
   });
 }
 
+async function passthroughText(upstream, req, extraHeaders = {}) {
+  const text = await upstream.text();
+  return new Response(text, {
+    status: upstream.status,
+    headers: {
+      'Content-Type': upstream.headers.get('Content-Type') || 'application/json',
+      ...corsHeaders(req),
+      ...extraHeaders,
+    },
+  });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    const p = url.pathname;
 
-    // CORS preflight
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: corsHeaders(request) });
     }
 
-    if (url.pathname === '/healthz') {
+    if (p === '/healthz') {
       return new Response('ok', { status: 200, headers: corsHeaders(request) });
     }
 
-    // POST /api/auth/token — exchange the OAuth `code` for an access_token
-    if (url.pathname === '/api/auth/token' && request.method === 'POST') {
+    // ── OAuth web flow: code → access_token ──────────────────────
+    if (p === '/api/auth/token' && request.method === 'POST') {
       try {
         const body = await request.json();
-        const code = body.code;
-        if (!code) return json({ error: 'missing code' }, { status: 400 }, request);
+        if (!body.code) return json({ error: 'missing code' }, { status: 400 }, request);
         const params = new URLSearchParams({
           client_id: env.GH_CLIENT_ID,
           client_secret: env.GH_CLIENT_SECRET,
-          code,
+          code: body.code,
         });
         if (body.redirect_uri) params.set('redirect_uri', body.redirect_uri);
         const ghResp = await fetch('https://github.com/login/oauth/access_token', {
@@ -80,52 +117,91 @@ export default {
           headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
           body: params.toString(),
         });
-        const data = await ghResp.json();
-        return json(data, { status: ghResp.status }, request);
+        return passthroughText(ghResp, request);
       } catch (e) {
         return json({ error: 'exchange_failed', detail: String(e) }, { status: 500 }, request);
       }
     }
 
-    // GET /api/models — proxy the public GitHub Models catalog with CORS
-    if (url.pathname === '/api/models' && request.method === 'GET') {
+    // ── Device-code flow: start ───────────────────────────────────
+    if (p === '/api/auth/device' && request.method === 'POST') {
+      try {
+        const body = await request.json().catch(() => ({}));
+        const clientId = body.client_id || env.GH_DEVICE_CLIENT_ID || COPILOT_CLIENT_ID;
+        const scope = body.scope || 'read:user';
+        const ghResp = await fetch('https://github.com/login/device/code', {
+          method: 'POST',
+          headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: `client_id=${encodeURIComponent(clientId)}&scope=${encodeURIComponent(scope)}`,
+        });
+        return passthroughText(ghResp, request);
+      } catch (e) {
+        return json({ error: 'device_start_failed', detail: String(e) }, { status: 500 }, request);
+      }
+    }
+
+    // ── Device-code flow: poll ────────────────────────────────────
+    if (p === '/api/auth/device/poll' && request.method === 'POST') {
+      try {
+        const body = await request.json();
+        if (!body.device_code) return json({ error: 'missing device_code' }, { status: 400 }, request);
+        const clientId = body.client_id || env.GH_DEVICE_CLIENT_ID || COPILOT_CLIENT_ID;
+        const ghResp = await fetch('https://github.com/login/oauth/access_token', {
+          method: 'POST',
+          headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: `client_id=${encodeURIComponent(clientId)}&device_code=${encodeURIComponent(body.device_code)}&grant_type=urn:ietf:params:oauth:grant-type:device_code`,
+        });
+        return passthroughText(ghResp, request);
+      } catch (e) {
+        return json({ error: 'device_poll_failed', detail: String(e) }, { status: 500 }, request);
+      }
+    }
+
+    // ── Copilot session-token exchange (mirrors brainstem.py) ─────
+    if (p === '/api/copilot/token' && request.method === 'GET') {
+      const auth = request.headers.get('Authorization');
+      if (!auth) return json({ error: 'missing Authorization' }, { status: 401 }, request);
+      // Normalize "Bearer ghu_…" / "token ghu_…" — Copilot expects "token" for ghu_.
+      const raw = auth.replace(/^(Bearer|token)\s+/i, '');
+      const upstreamAuth = raw.startsWith('ghu_') ? `token ${raw}` : `Bearer ${raw}`;
+      const ghResp = await fetch('https://api.github.com/copilot_internal/v2/token', {
+        method: 'GET',
+        headers: {
+          'Authorization': upstreamAuth,
+          'Accept': 'application/json',
+          'Editor-Version': 'vscode/1.95.0',
+          'Editor-Plugin-Version': 'copilot/1.0.0',
+          'User-Agent': 'GitHubCopilotChat/0.22.2024',
+        },
+      });
+      return passthroughText(ghResp, request);
+    }
+
+    // ── Public catalog proxy with CORS + edge cache ───────────────
+    if (p === '/api/models' && request.method === 'GET') {
       try {
         const upstream = await fetch('https://models.github.ai/catalog/models', {
           headers: { 'Accept': 'application/json' },
-          cf: { cacheTtl: 300 },   // edge-cache 5 min — catalog rarely changes
+          cf: { cacheTtl: 300 },
         });
-        const text = await upstream.text();
-        return new Response(text, {
-          status: upstream.status,
-          headers: {
-            'Content-Type': 'application/json',
-            'Cache-Control': 'public, max-age=300',
-            ...corsHeaders(request),
-          },
+        return passthroughText(upstream, request, {
+          'Cache-Control': 'public, max-age=300',
         });
       } catch (e) {
         return json({ error: 'upstream_failed', detail: String(e) }, { status: 502 }, request);
       }
     }
 
-    // GET /api/user — proxy github.com/user with CORS (browser can call directly,
-    // but routing through the worker lets us cache and gives one consistent surface).
-    if (url.pathname === '/api/user' && request.method === 'GET') {
+    // ── api.github.com/user proxy ─────────────────────────────────
+    if (p === '/api/user' && request.method === 'GET') {
       const auth = request.headers.get('Authorization');
       if (!auth) return json({ error: 'unauthorized' }, { status: 401 }, request);
       const upstream = await fetch('https://api.github.com/user', {
         headers: { 'Authorization': auth, 'Accept': 'application/json', 'User-Agent': 'rapp-auth-worker' },
       });
-      const text = await upstream.text();
-      return new Response(text, {
-        status: upstream.status,
-        headers: {
-          'Content-Type': 'application/json',
-          ...corsHeaders(request),
-        },
-      });
+      return passthroughText(upstream, request);
     }
 
-    return json({ error: 'not_found', path: url.pathname }, { status: 404 }, request);
+    return json({ error: 'not_found', path: p }, { status: 404 }, request);
   },
 };
