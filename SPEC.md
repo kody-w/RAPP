@@ -3,7 +3,7 @@
 > **Memorialized:** 2026-04-17
 > **Status:** Frozen. v1 is the canonical reference. All future versions must remain backwards-compatible with the v1 agent contract.
 > **Companion doctrine:** [Single File Agents — rappterhub](https://kody-w.github.io/rappterhub/single-file-agents.html)
-> **Live at:** [kody-w.com](https://kody-w.com) · [kody-w.github.io/RAPP](https://kody-w.github.io/RAPP/)
+> **Live at:** [kody-w.github.io/RAPP](https://kody-w.github.io/RAPP/)
 
 ---
 
@@ -95,7 +95,6 @@ Agents output `data_slush` — curated signals from live results that feed into 
 | **Reference Implementation** | [kody-w/rapp-installer](https://github.com/kody-w/rapp-installer) |
 | **Cloud Backend** | [kody-w/CommunityRAPP](https://github.com/kody-w/CommunityRAPP) |
 | **Copilot Studio Bundle** | `MSFTAIBASMultiAgentCopilot_1_0_0_5.zip` |
-| **Custom Domain** | kody-w.com |
 
 ---
 
@@ -553,7 +552,7 @@ RAPP is not predicting this. RAPP is the artifact left behind from running this 
 
 ## 16. The Digital Twin
 
-This specification, the landing page at [kody-w.com](https://kody-w.com), the [`archive/engine`](https://github.com/kody-w/RAPP/tree/archive/engine) branch of this repo, and the canonical [Single File Agents doctrine page](https://kody-w.github.io/rappterhub/single-file-agents.html) together form the **digital twin** of RAPP v1.
+This specification, the landing page at [kody-w.github.io/RAPP](https://kody-w.github.io/RAPP/), the [`archive/engine`](https://github.com/kody-w/RAPP/tree/archive/engine) branch of this repo, and the canonical [Single File Agents doctrine page](https://kody-w.github.io/rappterhub/single-file-agents.html) together form the **digital twin** of RAPP v1.
 
 The twin is intentionally static. It is not a running system; it is a memorial of a running system, captured at the moment v1 was declared frozen. Its job is to outlive the running system — so any future runtime, in any future language, on any future cloud, can be checked against this document and judged compliant or not.
 

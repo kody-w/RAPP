@@ -325,7 +325,7 @@ class TinyAgent(BasicAgent):
   console.log('\nDigital twin layout');
 
   for (const p of [
-    'index.html', 'SPEC.md', 'README.md', 'CNAME',
+    'index.html', 'SPEC.md', 'README.md',
     'installer/index.html', 'hippocampus/index.html', 'brainstem/index.html', 'brainstem/rapp.js',
     'agents/basic_agent.py', 'agents/hello_agent.py', 'agents/dice_agent.py',
     'agents/weather_poet_agent.py', 'agents/sloshtest_agent.py',

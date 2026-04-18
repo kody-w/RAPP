@@ -1,8 +1,8 @@
-# RAPP — kody-w.com
+# RAPP
 
 📜 **[Read the v1 Specification → `SPEC.md`](./SPEC.md)** — the contractual digital twin of RAPP v1. The single-file `*_agent.py` is sacred.
 
-Static digital twin of the **RAPP stack**, served from this repo via GitHub Pages at [kody-w.com](https://kody-w.com).
+Static digital twin of the **RAPP stack**, served from this repo via GitHub Pages at [kody-w.github.io/RAPP](https://kody-w.github.io/RAPP/).
 
 The repo memorializes the three-tier RAPP architecture, plus a browser-only **virtual brainstem** that runs the same single-file agent contract entirely client-side.
 
@@ -53,7 +53,6 @@ Both runners exercise the same suite: agent parsing, manifest extraction, seed/m
 ## Deploy
 
 GitHub Pages → Settings → Pages → Source: `main` branch, root.
-Custom domain `kody-w.com` is set via `CNAME`.
 
 ## History
 
