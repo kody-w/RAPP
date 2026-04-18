@@ -993,7 +993,10 @@ function refreshStatus() {
 /* ───── GitHub OAuth web flow (mirrors RAR virtual brainstem) ──── */
 
 function startGitHubSignIn() {
-  // Preserve current URL so we return here after OAuth
+  // Mark "we initiated OAuth in this session" so the callback handler
+  // knows the ?code= is one we expect. Without this, a stale code from
+  // a bookmark / copy-pasted URL would silently 404 the worker.
+  LS.set('oauthPending', Date.now());
   const redirect = window.location.origin + window.location.pathname;
   const url = `https://github.com/login/oauth/authorize?client_id=${AUTH_CLIENT_ID}&scope=read:user&redirect_uri=${encodeURIComponent(redirect)}`;
   window.location.href = url;
@@ -1006,12 +1009,17 @@ async function handleGitHubAuthCallback() {
   // Strip the code out of the URL immediately so refresh doesn't re-submit.
   const cleanUrl = window.location.origin + window.location.pathname + (window.location.hash || '');
   window.history.replaceState({}, '', cleanUrl);
-  // Don't re-fire for a code we've already attempted (one-shot guard against
-  // bookmarked/copy-pasted URLs that still carry a consumed ?code=).
+  // Only attempt the exchange if we're the page that initiated the OAuth flow.
+  // If a user lands here with ?code= from a bookmark, copy-paste, or stale tab,
+  // the code is meaningless to us — skip silently, no 404 noise.
+  const pending = LS.get('oauthPending', 0);
+  const fresh = pending && (Date.now() - pending) < 10 * 60 * 1000;
+  LS.del('oauthPending');
+  if (!fresh) return;
+  // Belt-and-suspenders: also short-circuit if we somehow re-enter with the same code.
   const lastTried = LS.get('lastOAuthCode', '');
   if (lastTried === code) return;
   LS.set('lastOAuthCode', code);
-  // Skip if we're already signed in via this provider — nothing to gain.
   if (state.settings.ghToken) return;
   try {
     const resp = await fetch(AUTH_WORKER_URL + '/api/auth/token', {
