@@ -541,29 +541,35 @@
         <div class="banner green">
           Same <strong>device-code flow</strong> the local <code>brainstem.py</code> uses — your Copilot subscription powers the chat. Worker proxies the CORS-blocked Copilot endpoints. Unlocks Claude Sonnet/Opus, GPT-4o, o-series, Gemini.
         </div>
-        <div class="row">
-          <label>Status</label>
-          <div id="copilot-status" style="font-size:12px;color:#8b949e;font-family:'SF Mono',monospace"></div>
+        <div class="row" style="flex-direction:row;align-items:center;justify-content:space-between;gap:8px">
+          <div>
+            <label style="display:block;margin-bottom:2px">Status</label>
+            <div id="copilot-status" style="font-size:12px;color:#8b949e;font-family:'SF Mono',monospace"></div>
+          </div>
+          <button class="btn danger" id="cp-signout" hidden>Sign out</button>
         </div>
-        <div class="row" style="flex-direction:row;gap:6px">
-          <button class="btn primary" id="cp-signin">🔐 Sign in with GitHub</button>
-          <button class="btn danger" id="cp-signout">Sign out</button>
-        </div>
+        <div class="hint" style="margin-top:6px">Use the green <strong>🔐 Sign in with GitHub</strong> button in the header to sign in.</div>
       </div>
 
       <div id="provider-github" hidden>
         <div class="banner green">
           Same GitHub identity, public Models catalog. OAuth web flow via the rapp-auth worker.
         </div>
-        <div class="row">
-          <label>Status</label>
-          <div id="github-status" style="font-size:12px;color:#8b949e;font-family:'SF Mono',monospace"></div>
+        <div class="row" style="flex-direction:row;align-items:center;justify-content:space-between;gap:8px">
+          <div>
+            <label style="display:block;margin-bottom:2px">Status</label>
+            <div id="github-status" style="font-size:12px;color:#8b949e;font-family:'SF Mono',monospace"></div>
+          </div>
+          <button class="btn danger" id="github-signout" hidden>Sign out</button>
         </div>
-        <div class="row" style="flex-direction:row;gap:6px">
-          <button class="btn primary" id="github-signin">🔐 Sign in with GitHub</button>
-          <button class="btn danger" id="github-signout">Sign out</button>
-        </div>
+        <div class="hint" style="margin-top:6px">Use the green <strong>🔐 Sign in with GitHub</strong> button in the header to sign in.</div>
       </div>
+
+      <!-- Hidden hooks so the JS click handlers (#cp-signin, #github-signin)
+           keep working without surfacing duplicate UI. The header #btn-signin
+           is the single sign-in entry point. -->
+      <button id="cp-signin" hidden></button>
+      <button id="github-signin" hidden></button>
 
       <div id="provider-openai" hidden>
         <div class="row">
@@ -922,28 +928,33 @@ function refreshProviderUI() {
   $('#provider-github').hidden  = p !== 'github';
   $('#provider-openai').hidden  = p !== 'openai';
   $('#provider-custom').hidden  = p !== 'custom';
-  const gs = $('#github-status');
+  const gs = $('#github-status'), gso = $('#github-signout');
   if (gs) {
     if (state.settings.ghToken) {
       gs.textContent = `signed in${state.settings.ghUser ? ' as @' + state.settings.ghUser : ''}`;
-      gs.style.color = 'var(--green-3)';
+      gs.style.color = '#3fb950';
+      if (gso) gso.hidden = false;
     } else {
-      gs.textContent = 'signed out';
-      gs.style.color = 'var(--muted)';
+      gs.textContent = 'signed out — use the header button';
+      gs.style.color = '#6e7681';
+      if (gso) gso.hidden = true;
     }
   }
-  const cps = $('#copilot-status');
+  const cps = $('#copilot-status'), cpso = $('#cp-signout');
   if (cps) {
     if (state.settings.copilotToken && Date.now() < state.settings.copilotExpiresAt - 60000) {
       const mins = Math.max(0, Math.round((state.settings.copilotExpiresAt - Date.now())/60000));
       cps.textContent = `signed in · session bearer valid ~${mins}m`;
-      cps.style.color = 'var(--green-3)';
+      cps.style.color = '#3fb950';
+      if (cpso) cpso.hidden = false;
     } else if (state.settings.ghuToken) {
       cps.textContent = 'signed in · session bearer expired (will refresh on next chat)';
-      cps.style.color = 'var(--warn)';
+      cps.style.color = '#d29922';
+      if (cpso) cpso.hidden = false;
     } else {
-      cps.textContent = 'signed out';
-      cps.style.color = 'var(--muted)';
+      cps.textContent = 'signed out — use the header button';
+      cps.style.color = '#6e7681';
+      if (cpso) cpso.hidden = true;
     }
   }
 }
