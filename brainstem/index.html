@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>RAPP Brainstem — Virtual</title>
+<meta name="description" content="The browser-only RAPP brainstem. Same chat UI, same agent contract, same card binder. Bring your own API key.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E🧠%3C/text%3E%3C/svg%3E">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+:root{
+  --bg:#0d1117; --panel:#161b22; --panel2:#1c2129; --border:#21262d; --border2:#30363d;
+  --fg:#e6edf3; --dim:#8b949e; --muted:#484f58;
+  --green:#238636; --green-2:#2ea043; --green-3:#3fb950;
+  --blue:#1f6feb; --blue-2:#58a6ff;
+  --purple:#8b5cf6; --purple-2:#a78bfa;
+  --red:#f85149; --warn:#d29922;
+  --code-bg:#0d1117;
+  --t-logic:#58a6ff; --t-data:#3fb950; --t-social:#d29922;
+  --t-shield:#f0f0f0; --t-craft:#f85149; --t-heal:#ff7eb3; --t-wealth:#bc8cff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:var(--bg);color:var(--fg);
+  display:flex;flex-direction:column;overflow:hidden;line-height:1.5}
+a{color:var(--blue-2);text-decoration:none}a:hover{text-decoration:underline}
+button{font-family:inherit;cursor:pointer}
+code,pre{font-family:"SF Mono","Fira Code",ui-monospace,monospace}
+
+/* Header — mirrors rapp_brainstem header */
+header{height:52px;background:var(--panel);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 14px;gap:10px;flex-shrink:0;z-index:30}
+.brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px}
+.brand .logo{font-size:22px;filter:drop-shadow(0 0 6px rgba(63,185,80,.35))}
+.brand small{color:var(--dim);font-weight:500;font-size:11px;letter-spacing:.5px;text-transform:uppercase;margin-left:2px}
+.spacer{flex:1}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;vertical-align:middle;margin-right:6px}
+.dot.online{background:var(--green-3);box-shadow:0 0 6px rgba(63,185,80,.5)}
+.dot.offline{background:var(--red)}
+.dot.checking{background:var(--warn);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.status{font-size:12px;color:var(--dim)}
+.icon-btn{background:none;border:1px solid transparent;color:var(--dim);font-size:13px;
+  padding:6px 10px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;
+  transition:background .15s,color .15s,border-color .15s}
+.icon-btn:hover{background:var(--panel2);color:var(--fg);border-color:var(--border)}
+.icon-btn.active{background:var(--panel2);color:var(--green-3);border-color:var(--green)}
+select.model{background:var(--panel2);color:var(--fg);border:1px solid var(--border);
+  padding:5px 8px;border-radius:6px;font-size:12px}
+
+/* Main shell */
+main{flex:1;display:flex;min-height:0}
+#chat-shell{flex:1;display:flex;flex-direction:column;min-width:0;position:relative}
+
+/* Chat */
+#chat{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:16px}
+.welcome{text-align:center;max-width:640px;margin:60px auto 40px;color:var(--dim)}
+.welcome h2{font-size:22px;color:var(--fg);margin-bottom:6px}
+.welcome p{font-size:14px;line-height:1.6}
+.welcome .pill{display:inline-block;margin-top:14px;padding:6px 12px;border:1px solid var(--border);
+  background:var(--panel);border-radius:999px;font-size:12px;color:var(--dim)}
+.welcome .key{color:var(--green-3)}
+
+.msg{display:flex;gap:12px;align-items:flex-start;max-width:760px;width:100%;align-self:center}
+.msg .av{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;
+  justify-content:center;font-size:16px;font-weight:600}
+.msg.user{flex-direction:row-reverse;align-self:flex-end}
+.msg.user .av{background:var(--blue);color:#fff}
+.msg.assistant .av{background:var(--panel2);border:1px solid var(--border)}
+.msg.system .av{background:var(--purple);color:#fff}
+.bubble{background:var(--panel);border:1px solid var(--border);padding:10px 14px;
+  border-radius:12px;max-width:680px;font-size:14px;color:var(--fg);overflow-wrap:break-word}
+.msg.user .bubble{background:var(--blue);color:#fff;border-color:transparent}
+.bubble p{margin-bottom:8px}.bubble p:last-child{margin-bottom:0}
+.bubble pre{background:var(--code-bg);border:1px solid var(--border);border-radius:6px;padding:10px;overflow-x:auto;margin:6px 0;font-size:12px}
+.bubble code{background:var(--panel2);padding:2px 5px;border-radius:3px;font-size:12px}
+.bubble pre code{background:none;padding:0}
+.bubble ul,.bubble ol{margin:6px 0 6px 22px}
+.bubble blockquote{border-left:3px solid var(--border2);padding-left:10px;color:var(--dim);margin:6px 0}
+.bubble table{border-collapse:collapse;margin:8px 0;font-size:12px}
+.bubble th,.bubble td{border:1px solid var(--border);padding:4px 8px}
+.bubble a{color:var(--blue-2)}
+.agent-log{margin-top:8px;border-left:3px solid var(--purple);padding-left:10px}
+.agent-log details{margin-top:6px}
+.agent-log summary{cursor:pointer;font-size:12px;color:var(--purple-2);font-weight:600;display:flex;align-items:center;gap:6px}
+.agent-log summary::before{content:'▸';transition:transform .15s}
+.agent-log details[open] summary::before{transform:rotate(90deg)}
+.agent-log pre{font-size:11px;background:var(--code-bg);border:1px solid var(--border);border-radius:4px;padding:8px;margin-top:6px;max-height:240px;overflow:auto}
+.typing{display:flex;gap:4px}.typing span{width:6px;height:6px;background:var(--dim);border-radius:50%;animation:bounce 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,80%,100%{transform:translateY(0);opacity:.4}40%{transform:translateY(-4px);opacity:1}}
+
+/* Hand row — the active "card hand" of loaded agents */
+#hand-row{padding:10px 16px;border-top:1px solid var(--border);background:var(--panel);
+  display:flex;align-items:center;gap:8px;overflow-x:auto;flex-shrink:0;min-height:62px}
+#hand-row .hand-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;flex-shrink:0;margin-right:4px}
+.hand-empty{color:var(--muted);font-size:12px;font-style:italic}
+.mini-card{display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--border);
+  border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;flex-shrink:0;transition:border-color .15s}
+.mini-card:hover{border-color:var(--border2)}
+.mini-card .swatch{width:6px;height:24px;border-radius:3px;background:var(--t-social)}
+.mini-card.flash{animation:cardflash 1.2s ease-out}
+@keyframes cardflash{
+  0%{transform:scale(1);box-shadow:0 0 0 0 rgba(125,240,200,.4)}
+  50%{transform:scale(1.06);box-shadow:0 0 0 8px rgba(125,240,200,0)}
+  100%{transform:scale(1)}
+}
+.mini-card .x{color:var(--muted);margin-left:2px;font-size:10px}
+.mini-card .x:hover{color:var(--red)}
+
+/* Footer */
+#footer{padding:14px 16px;border-top:1px solid var(--border);background:var(--panel);flex-shrink:0}
+.starters{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.starter{background:var(--panel2);border:1px solid var(--border);color:var(--dim);
+  padding:6px 12px;border-radius:999px;font-size:12px;transition:border-color .15s,color .15s}
+.starter:hover{border-color:var(--blue);color:var(--fg)}
+.input-row{display:flex;gap:8px;align-items:flex-end}
+#input{flex:1;background:var(--panel2);border:1px solid var(--border);color:var(--fg);
+  padding:10px 12px;border-radius:8px;font-family:inherit;font-size:14px;resize:none;
+  min-height:38px;max-height:160px;outline:none;line-height:1.4}
+#input:focus{border-color:var(--blue)}
+#send{background:var(--blue);color:#fff;border:none;border-radius:8px;
+  padding:10px 16px;font-size:13px;font-weight:600;transition:background .15s;height:38px}
+#send:hover{background:var(--blue-2)}
+#send:disabled{opacity:.4;cursor:default}
+.toolbar{display:flex;gap:14px;font-size:11px;color:var(--muted);margin-top:8px;align-items:center}
+.toolbar a{color:var(--muted)}.toolbar a:hover{color:var(--dim)}
+
+/* Side panels — slide-in drawers */
+aside{position:fixed;top:52px;right:0;bottom:0;width:380px;background:var(--panel);
+  border-left:1px solid var(--border);display:flex;flex-direction:column;
+  transform:translateX(100%);transition:transform .25s ease;z-index:40}
+aside.open{transform:translateX(0)}
+aside header{height:auto;background:transparent;border:none;padding:14px 18px;justify-content:space-between}
+aside header .ttl{font-size:14px;font-weight:600;color:var(--fg)}
+aside header .close{background:none;border:none;color:var(--dim);font-size:18px;cursor:pointer}
+aside .body{flex:1;overflow-y:auto;padding:14px 18px}
+aside .actions{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap}
+
+.row{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
+.row label{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:1px}
+.row input,.row select,.row textarea{background:var(--panel2);border:1px solid var(--border);
+  color:var(--fg);padding:8px 10px;border-radius:6px;font-family:inherit;font-size:13px;outline:none}
+.row input:focus,.row select:focus,.row textarea:focus{border-color:var(--blue)}
+.row textarea{min-height:120px;resize:vertical;font-family:"SF Mono",monospace;font-size:12px}
+.row .hint{font-size:11px;color:var(--muted);margin-top:2px}
+.btn{background:var(--panel2);border:1px solid var(--border);color:var(--fg);padding:7px 12px;
+  border-radius:6px;font-size:12px;transition:border-color .15s}
+.btn:hover{border-color:var(--blue)}
+.btn.primary{background:var(--blue);color:#fff;border-color:transparent}
+.btn.primary:hover{background:var(--blue-2)}
+.btn.danger{color:var(--red)}.btn.danger:hover{border-color:var(--red)}
+.btn.green{background:var(--green);color:#fff;border-color:transparent}
+.btn.green:hover{background:var(--green-2)}
+
+/* Agent file rows */
+.afile{padding:10px 12px;background:var(--panel2);border:1px solid var(--border);border-radius:8px;
+  margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.afile .name{flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.afile .meta{font-size:11px;color:var(--muted);font-family:"SF Mono",monospace}
+.afile .actions{display:flex;gap:4px}
+.afile button{background:none;border:none;color:var(--muted);padding:4px 6px;border-radius:4px;font-size:13px}
+.afile button:hover{background:var(--border);color:var(--fg)}
+
+/* Drag-drop watermark */
+.dropzone{border:2px dashed var(--border2);border-radius:10px;padding:18px;text-align:center;
+  color:var(--muted);font-size:12px;margin-top:10px;cursor:pointer;transition:border-color .15s,color .15s}
+.dropzone:hover,.dropzone.over{border-color:var(--blue);color:var(--blue-2)}
+
+/* Card grid (binder) */
+.card-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:10px;
+  cursor:pointer;transition:transform .12s,border-color .15s;display:flex;flex-direction:column;gap:6px;position:relative}
+.card:hover{transform:translateY(-2px);border-color:var(--blue-2)}
+.card .top{display:flex;justify-content:space-between;align-items:flex-start;gap:6px}
+.card .nm{font-size:13px;font-weight:600;color:var(--fg);overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.card .hp{font-size:11px;color:var(--dim);font-weight:600}
+.card .types{display:flex;gap:4px}
+.card .type-chip{font-size:9px;padding:2px 6px;border-radius:999px;font-weight:700;letter-spacing:.5px;color:#06080f}
+.card .ftxt{font-size:10px;color:var(--muted);font-style:italic;line-height:1.3;
+  overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.card .stats-row{display:flex;gap:6px;font-size:10px;color:var(--dim)}
+.card .stats-row span{flex:1;text-align:center;padding:2px 0;background:var(--code-bg);border-radius:3px}
+.card .rare{position:absolute;top:6px;right:6px;font-size:9px;padding:2px 6px;border-radius:999px;font-weight:700;letter-spacing:.5px;background:var(--panel);border:1px solid var(--border);color:var(--dim)}
+.card.r-mythic .rare{color:#ffb74d;border-color:#ffb74d}
+.card.r-rare .rare{color:var(--purple-2);border-color:var(--purple)}
+.card.r-core .rare{color:var(--blue-2);border-color:var(--blue)}
+.card.r-starter .rare{color:var(--dim)}
+.card.in-hand{border-color:var(--green-3);background:rgba(63,185,80,.06)}
+
+/* Modal */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;display:none;align-items:center;justify-content:center;padding:20px}
+.modal.open{display:flex}
+.modal .panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;
+  max-width:560px;width:100%;max-height:90vh;display:flex;flex-direction:column}
+.modal .panel header{padding:14px 18px;border-bottom:1px solid var(--border);justify-content:space-between}
+.modal .panel .body{padding:18px;overflow-y:auto;flex:1}
+.modal .panel .actions{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+
+/* Card detail content */
+.cd-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.cd-name{font-size:18px;font-weight:700}
+.cd-pkg{font-size:11px;color:var(--muted);font-family:"SF Mono",monospace;margin-top:2px}
+.cd-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:14px 0}
+.cd-stats div{background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:8px;text-align:center}
+.cd-stats .lbl{font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.cd-stats .val{font-size:18px;font-weight:700;color:var(--fg)}
+.cd-abil{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px}
+.cd-abil .nm{font-weight:700;color:var(--fg);font-size:13px}
+.cd-abil .stats{font-size:11px;color:var(--dim);margin-top:2px}
+.cd-incantation{background:var(--code-bg);border:1px solid var(--border);border-radius:6px;
+  padding:10px;font-family:"SF Mono",monospace;font-size:11px;color:var(--green-3);margin-top:10px;letter-spacing:.5px;text-align:center}
+.cd-source{background:var(--code-bg);border:1px solid var(--border);border-radius:6px;
+  padding:10px;font-family:"SF Mono",monospace;font-size:11px;color:var(--fg);
+  max-height:240px;overflow:auto;white-space:pre;margin-top:8px}
+
+/* Onboarding card / settings */
+.banner{background:rgba(31,111,235,.08);border:1px solid var(--blue);border-radius:8px;
+  padding:12px;color:var(--blue-2);font-size:12px;margin-bottom:12px}
+.banner.warn{background:rgba(210,153,34,.08);border-color:var(--warn);color:var(--warn)}
+
+@media(max-width:680px){
+  aside{width:100%}
+  .card-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:420px){.card-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="logo">🧠</span>
+    <span>RAPP Brainstem</span>
+    <small>Virtual</small>
+  </div>
+  <span class="spacer"></span>
+  <select class="model" id="model-sel">
+    <option value="gpt-4o">GPT-4o</option>
+    <option value="gpt-4o-mini">GPT-4o Mini</option>
+    <option value="gpt-4.1">GPT-4.1</option>
+    <option value="gpt-4">GPT-4</option>
+    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+  </select>
+  <button class="icon-btn" id="btn-binder" title="Binder">🃏 Binder</button>
+  <button class="icon-btn" id="btn-agents" title="Agents">📋 Agents</button>
+  <button class="icon-btn" id="btn-settings" title="Settings">⚙️</button>
+  <span class="status"><span class="dot offline" id="status-dot"></span><span id="status-text">No key</span></span>
+</header>
+
+<main>
+  <div id="chat-shell">
+
+    <div id="chat">
+      <div class="welcome">
+        <h2>🧠 RAPP Brainstem — virtual</h2>
+        <p>Browser-only twin of the local brainstem. Same <code>/chat</code> envelope. Same single-file
+          <code>*_agent.py</code> contract. Same binder model. Bring your own API key.</p>
+        <p class="pill"><span class="key">●</span> Click <strong>⚙️</strong> to add an OpenAI-compatible API key, then ask the agents anything.</p>
+      </div>
+    </div>
+
+    <div id="hand-row">
+      <span class="hand-label">Hand:</span>
+      <span class="hand-empty" id="hand-empty">no agents loaded — open the binder, tap a card to play it</span>
+    </div>
+
+    <div id="footer">
+      <div class="starters" id="starters">
+        <button class="starter" data-prompt="Roll 3d20.">Roll 3d20</button>
+        <button class="starter" data-prompt="Write a haiku about the weather in Kyoto.">Weather haiku · Kyoto</button>
+        <button class="starter" data-prompt="Greet me and roll some dice — chain them.">Greet + chain</button>
+      </div>
+      <div class="input-row">
+        <textarea id="input" placeholder="Talk to the brainstem… (Shift+Enter for newline)" rows="1"></textarea>
+        <button id="send">Send</button>
+      </div>
+      <div class="toolbar">
+        <span id="session-id" hidden></span>
+        <a href="#" id="export-tx">Export transcript</a>
+        <a href="#" id="import-tx">Import</a>
+        <a href="#" id="clear-tx">Clear</a>
+        <span class="spacer" style="flex:1"></span>
+        <a href="../">← back to twin</a>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- Settings drawer -->
+<aside id="settings">
+  <header><span class="ttl">Settings</span><button class="close" data-close="settings">×</button></header>
+  <div class="body">
+    <div class="banner">Your API key is stored only in your browser (localStorage). It never touches our server — there is no server.</div>
+    <div class="row">
+      <label for="api-base">API base URL</label>
+      <input type="text" id="api-base" placeholder="https://api.openai.com/v1" />
+      <span class="hint">Any OpenAI-compatible chat-completions endpoint. Examples: api.openai.com/v1, openrouter.ai/api/v1, models.github.ai/inference</span>
+    </div>
+    <div class="row">
+      <label for="api-key">API key</label>
+      <input type="password" id="api-key" placeholder="sk-…" />
+      <span class="hint">Stored in localStorage as <code>rapp_api_key</code>. Use a key with chat completions + tool calling.</span>
+    </div>
+    <div class="row">
+      <label for="exec-mode">Agent execution mode</label>
+      <select id="exec-mode">
+        <option value="stub">Stub (default — synthesized results)</option>
+        <option value="live">Live (lazy-load Pyodide ~10MB)</option>
+      </select>
+      <span class="hint">Stub mode echoes a deterministic synthesized result so the LLM can chain. Live mode runs the actual Python perform() in-browser via Pyodide.</span>
+    </div>
+    <div class="row">
+      <label for="soul">soul.md (system prompt)</label>
+      <textarea id="soul" placeholder="You are a helpful, concise RAPP assistant…"></textarea>
+      <span class="hint">Loaded as the system prompt every turn. SPEC §7.</span>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn primary" id="save-settings">Save</button>
+    <button class="btn danger" id="reset-data">Wipe local data</button>
+  </div>
+</aside>
+
+<!-- Agents drawer -->
+<aside id="agents">
+  <header><span class="ttl">Agents (file view)</span><button class="close" data-close="agents">×</button></header>
+  <div class="body" id="agents-list">
+    <!-- populated -->
+  </div>
+  <div class="actions">
+    <button class="btn primary" id="import-py">Import .py</button>
+    <button class="btn" id="paste-py">Paste source…</button>
+  </div>
+  <input type="file" id="file-py" accept=".py,text/x-python" hidden />
+</aside>
+
+<!-- Binder drawer -->
+<aside id="binder">
+  <header><span class="ttl">Binder · cards</span><button class="close" data-close="binder">×</button></header>
+  <div class="body">
+    <div class="banner" id="binder-banner">Tap a card to view it. Tap <strong>Play to hand</strong> to hot-load the agent into the brainstem.</div>
+    <div class="card-grid" id="card-grid"></div>
+  </div>
+  <div class="actions">
+    <button class="btn primary" id="import-card">Import card.json</button>
+    <button class="btn" id="import-binder">Import binder.json</button>
+    <button class="btn" id="export-binder">Export binder</button>
+    <input type="file" id="file-card" accept=".json,application/json" hidden />
+    <input type="file" id="file-binder" accept=".json,application/json" hidden />
+  </div>
+</aside>
+
+<!-- Card detail modal -->
+<div class="modal" id="card-modal">
+  <div class="panel">
+    <header><span class="ttl" id="cd-title">Card</span><button class="close" id="cd-close">×</button></header>
+    <div class="body" id="cd-body"></div>
+    <div class="actions">
+      <button class="btn" id="cd-export">Export card.json</button>
+      <button class="btn" id="cd-export-py">Export .py</button>
+      <button class="btn green" id="cd-play">Play to hand</button>
+    </div>
+  </div>
+</div>
+
+<script src="./rapp.js"></script>
+<script>
+/* =====================================================================
+ * Virtual brainstem orchestration. Pure vanilla JS. No bundler.
+ * SPEC §8 chat envelope: { user_input, conversation_history, session_id }
+ * ===================================================================== */
+(() => {
+'use strict';
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => [...r.querySelectorAll(s)];
+
+const STARTER_AGENT_FILES = [
+  'hello_agent.py', 'dice_agent.py', 'weather_poet_agent.py', 'sloshtest_agent.py'
+];
+
+/* ───── State ─────────────────────────────────────────────────── */
+const state = {
+  sessionId: crypto.randomUUID(),
+  conversation_history: [],     // SPEC §8 shape — [{role, content}]
+  fullTranscript: [],           // Full audit log
+  binder: null,                 // RAPP.Binder
+  hand: new Set(),              // filenames currently loaded into the brainstem
+  settings: {
+    apiBase: 'https://api.openai.com/v1',
+    apiKey: '',
+    model: 'gpt-4o',
+    execMode: 'stub',
+    soul: 'You are a helpful, concise RAPP brainstem assistant. Use the loaded tools when relevant. After tool calls, summarize the result in plain English.',
+  },
+  pyodide: null,                // lazy
+  pyodideLoading: null,
+};
+
+/* ───── Persistence ──────────────────────────────────────────── */
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem('rapp_'+k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { localStorage.setItem('rapp_'+k, JSON.stringify(v)); },
+  del(k)    { localStorage.removeItem('rapp_'+k); },
+};
+
+function loadSettings() {
+  const saved = LS.get('settings', null);
+  if (saved) Object.assign(state.settings, saved);
+  $('#api-base').value = state.settings.apiBase;
+  $('#api-key').value  = state.settings.apiKey;
+  $('#exec-mode').value = state.settings.execMode;
+  $('#soul').value = state.settings.soul;
+  $('#model-sel').value = state.settings.model;
+  refreshStatus();
+}
+function saveSettings() {
+  state.settings.apiBase = $('#api-base').value.trim().replace(/\/+$/,'') || 'https://api.openai.com/v1';
+  state.settings.apiKey  = $('#api-key').value.trim();
+  state.settings.execMode = $('#exec-mode').value;
+  state.settings.soul = $('#soul').value;
+  state.settings.model = $('#model-sel').value;
+  LS.set('settings', state.settings);
+  refreshStatus();
+  closeAside('settings');
+}
+
+function refreshStatus() {
+  const dot = $('#status-dot'), text = $('#status-text');
+  if (state.settings.apiKey) {
+    dot.className = 'dot online';
+    text.textContent = state.settings.model;
+  } else {
+    dot.className = 'dot offline';
+    text.textContent = 'No key';
+  }
+}
+
+/* ───── Binder + starter cards ──────────────────────────────── */
+async function bootBinder() {
+  // Try restoring binder from localStorage; otherwise mint starter binder.
+  const saved = LS.get('binder', null);
+  if (saved && saved.schema === 'rapp-binder/1.0' && (saved.cards||[]).length > 0) {
+    state.binder = saved;
+  } else {
+    state.binder = RAPP.Binder.empty('@local/you');
+    for (const f of STARTER_AGENT_FILES) {
+      try {
+        const src = await (await fetch(`../agents/${f}`)).text();
+        const c = await RAPP.Card.mintCard(src, f);
+        RAPP.Binder.addCard(state.binder, c);
+      } catch (e) {
+        console.warn('starter card failed', f, e);
+      }
+    }
+    LS.set('binder', state.binder);
+  }
+  // Restore hand
+  const handFiles = LS.get('hand', []);
+  state.hand = new Set(handFiles);
+  // Drop any hand entries that no longer exist
+  const have = new Set((state.binder.cards||[]).map(c => c.filename));
+  state.hand = new Set([...state.hand].filter(f => have.has(f)));
+  renderBinder();
+  renderHand();
+  renderAgents();
+}
+
+function persistBinder() { LS.set('binder', state.binder); }
+function persistHand() { LS.set('hand', [...state.hand]); }
+
+/* ───── Render: binder cards ────────────────────────────────── */
+function renderBinder() {
+  const grid = $('#card-grid');
+  grid.innerHTML = '';
+  for (const c of state.binder.cards) grid.appendChild(cardElement(c));
+}
+function cardElement(c) {
+  const card = c.card;
+  const div = document.createElement('div');
+  div.className = `card r-${card.rarity || 'core'}`;
+  if (state.hand.has(c.filename)) div.classList.add('in-hand');
+  const swatch = (card.types||['SOCIAL']).map(t =>
+    `<span class="type-chip" style="background:${RAPP.AGENT_TYPES[t].color}">${t}</span>`).join('');
+  const stats = card.stats || {};
+  div.innerHTML = `
+    <span class="rare">${(card.rarity_label || card.rarity || '').toUpperCase()}</span>
+    <div class="top">
+      <div>
+        <div class="nm">${escapeHtml(c.manifest.display_name || c.parsed?.agentName || c.name)}</div>
+        <div class="types">${swatch}</div>
+      </div>
+      <div class="hp">HP ${card.hp || stats.hp || 0}</div>
+    </div>
+    <div class="ftxt">${escapeHtml(card.flavor || c.manifest.description || '')}</div>
+    <div class="stats-row">
+      <span>ATK ${stats.atk||0}</span><span>DEF ${stats.def||0}</span>
+      <span>SPD ${stats.spd||0}</span><span>INT ${stats.int||0}</span>
+    </div>
+  `;
+  div.addEventListener('click', () => openCardModal(c));
+  return div;
+}
+
+/* ───── Render: hand row + agents drawer ────────────────────── */
+function renderHand() {
+  const row = $('#hand-row');
+  // remove existing mini-cards
+  $$('.mini-card', row).forEach(n => n.remove());
+  const empty = $('#hand-empty');
+  if (state.hand.size === 0) { empty.style.display = 'inline'; return; }
+  empty.style.display = 'none';
+  for (const f of state.hand) {
+    const c = state.binder.cards.find(x => x.filename === f);
+    if (!c) continue;
+    const mini = document.createElement('div');
+    mini.className = 'mini-card';
+    mini.dataset.filename = f;
+    const primary = (c.card.types||['SOCIAL'])[0];
+    mini.innerHTML = `
+      <span class="swatch" style="background:${RAPP.AGENT_TYPES[primary].color}"></span>
+      <span>${escapeHtml(c.parsed?.agentName || c.manifest.display_name || c.name)}</span>
+      <span class="x" title="Tuck back to deck">✕</span>
+    `;
+    mini.querySelector('.x').addEventListener('click', e => {
+      e.stopPropagation();
+      state.hand.delete(f); persistHand(); renderHand(); renderBinder();
+    });
+    mini.addEventListener('click', () => openCardModal(c));
+    row.appendChild(mini);
+  }
+}
+
+function renderAgents() {
+  const list = $('#agents-list');
+  list.innerHTML = '';
+  for (const c of state.binder.cards) {
+    const div = document.createElement('div');
+    div.className = 'afile';
+    const inHand = state.hand.has(c.filename);
+    div.innerHTML = `
+      <div style="flex:1;min-width:0">
+        <div class="name">${escapeHtml(c.parsed?.agentName || c.name)}</div>
+        <div class="meta">${escapeHtml(c.filename)} · ${inHand ? '<span style="color:var(--green-3)">loaded</span>' : 'in deck'}</div>
+      </div>
+      <div class="actions">
+        <button title="${inHand ? 'Unload' : 'Load to hand'}" data-act="${inHand?'unload':'load'}">${inHand?'⤴':'⤵'}</button>
+        <button title="Export .py" data-act="export">⬇</button>
+        <button title="Remove" data-act="remove">🗑</button>
+      </div>
+    `;
+    div.querySelectorAll('button[data-act]').forEach(b => {
+      b.addEventListener('click', () => {
+        const act = b.dataset.act;
+        if (act === 'load')   { state.hand.add(c.filename); persistHand(); renderHand(); renderAgents(); renderBinder(); }
+        if (act === 'unload') { state.hand.delete(c.filename); persistHand(); renderHand(); renderAgents(); renderBinder(); }
+        if (act === 'export') { downloadFile(c.filename, c.source, 'text/x-python'); }
+        if (act === 'remove') {
+          if (confirm(`Remove ${c.filename}?`)) {
+            RAPP.Binder.removeCard(state.binder, x => x.filename === c.filename);
+            state.hand.delete(c.filename); persistBinder(); persistHand();
+            renderBinder(); renderHand(); renderAgents();
+          }
+        }
+      });
+    });
+    list.appendChild(div);
+  }
+  // dropzone
+  const dz = document.createElement('div');
+  dz.className = 'dropzone';
+  dz.textContent = 'drop a *_agent.py here, or use Import / Paste below';
+  dz.addEventListener('click', () => $('#file-py').click());
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+  dz.addEventListener('drop', async e => {
+    e.preventDefault(); dz.classList.remove('over');
+    for (const f of e.dataTransfer.files) await importPyFile(f);
+  });
+  list.appendChild(dz);
+}
+
+/* ───── Card modal ─────────────────────────────────────────── */
+let cardModalCard = null;
+function openCardModal(c) {
+  cardModalCard = c;
+  const card = c.card;
+  $('#cd-title').textContent = c.parsed?.agentName || c.manifest.display_name || c.name;
+  const playBtn = $('#cd-play');
+  const inHand = state.hand.has(c.filename);
+  playBtn.textContent = inHand ? '✓ In hand' : 'Play to hand';
+  playBtn.disabled = inHand;
+  const stats = card.stats || {};
+  $('#cd-body').innerHTML = `
+    <div class="cd-head">
+      <div>
+        <div class="cd-name">${escapeHtml(c.manifest.display_name || c.name)}</div>
+        <div class="cd-pkg">${escapeHtml(c.name)} · v${c.manifest.version || '0.0.0'} · ${escapeHtml(card.tier||'community')}</div>
+      </div>
+      <div style="text-align:right;font-size:11px;color:var(--dim)">
+        ${(card.types||[]).map(t=>`<span class="type-chip" style="background:${RAPP.AGENT_TYPES[t].color};color:#06080f;font-size:9px;padding:2px 6px;border-radius:999px;font-weight:700">${t}</span>`).join(' ')}
+        <div style="margin-top:4px;color:var(--muted)">HP ${card.hp || 0} · ${card.rarity_label || ''}</div>
+      </div>
+    </div>
+    <div style="font-size:13px;color:var(--dim)">${escapeHtml(c.manifest.description||'')}</div>
+    <div class="cd-stats">
+      <div><div class="lbl">HP</div><div class="val">${stats.hp||0}</div></div>
+      <div><div class="lbl">ATK</div><div class="val">${stats.atk||0}</div></div>
+      <div><div class="lbl">DEF</div><div class="val">${stats.def||0}</div></div>
+      <div><div class="lbl">SPD</div><div class="val">${stats.spd||0}</div></div>
+      <div><div class="lbl">INT</div><div class="val">${stats.int||0}</div></div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:14px 0 6px">Abilities</div>
+    ${(card.abilities||[]).map(a => `
+      <div class="cd-abil">
+        <div class="nm">${escapeHtml(a.name)} <span style="color:var(--muted);font-weight:500;font-size:11px">· ${a.cost} energy · ${a.damage} dmg</span></div>
+        <div class="stats">${escapeHtml(a.text||'')}</div>
+      </div>
+    `).join('')}
+    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:14px 0 6px">Type matchups</div>
+    <div style="font-size:12px;color:var(--dim)">Weak: <strong style="color:${RAPP.AGENT_TYPES[card.weakness].color}">${card.weakness_label}</strong> · Resists: <strong style="color:${RAPP.AGENT_TYPES[card.resistance].color}">${card.resistance_label}</strong></div>
+    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:14px 0 6px">7-word incantation (SPEC §12.4)</div>
+    <div class="cd-incantation">${escapeHtml(card.incantation || '')}</div>
+    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:14px 0 6px">Source (the file IS the agent)</div>
+    <div class="cd-source">${escapeHtml(c.source).slice(0, 4000)}${c.source.length>4000 ? '\n... (' + (c.source.length-4000) + ' more chars)' : ''}</div>
+    <div style="margin-top:10px;font-size:11px;color:var(--muted);text-align:center">sha256 ${c.sha256.slice(0,16)}…</div>
+  `;
+  $('#card-modal').classList.add('open');
+}
+function closeCardModal() { $('#card-modal').classList.remove('open'); cardModalCard = null; }
+
+/* ───── Settings open/close ───────────────────────────────── */
+function openAside(id) { $$('#'+id+'.open, aside.open').forEach(a => a.classList.remove('open')); $('#'+id).classList.add('open'); }
+function closeAside(id) { $('#'+id).classList.remove('open'); }
+
+/* ───── Chat send loop (SPEC §8) ──────────────────────────── */
+async function send(userInput) {
+  if (!userInput || !userInput.trim()) return;
+  if (!state.settings.apiKey) {
+    appendMsg('system', '⚠️ No API key. Click ⚙️ to add one.');
+    openAside('settings'); return;
+  }
+  appendMsg('user', userInput);
+  state.conversation_history.push({ role: 'user', content: userInput });
+
+  const typing = appendTyping();
+
+  try {
+    const resp = await chatLoop(userInput);
+    typing.remove();
+    appendMsg('assistant', resp.text, resp.agent_logs);
+    state.conversation_history.push({ role: 'assistant', content: resp.text });
+    state.fullTranscript.push({ at: new Date().toISOString(), user: userInput, assistant: resp.text, agent_logs: resp.agent_logs, model: state.settings.model });
+  } catch (e) {
+    typing.remove();
+    appendMsg('system', `⚠️ ${e.message}`);
+  }
+}
+
+/* The §8-shaped chat envelope — implemented entirely in the browser
+ * by talking to an OpenAI-compatible API directly.
+ */
+async function chatLoop(userInput) {
+  const tools = handTools();
+  const systemMsg = state.settings.soul + (tools.length ? '\n\nLoaded tools (RAPP single-file agents):\n' + tools.map(t => '• ' + t.function.name + ' — ' + t.function.description).join('\n') : '');
+  const messages = [
+    { role: 'system', content: systemMsg },
+    ...state.conversation_history,  // already includes the just-added user msg
+  ];
+  const agent_logs = [];
+  let safety = 6;
+
+  while (safety-- > 0) {
+    const body = {
+      model: state.settings.model,
+      messages,
+      ...(tools.length ? { tools, tool_choice: 'auto' } : {}),
+    };
+    const r = await fetch(`${state.settings.apiBase}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'authorization': `Bearer ${state.settings.apiKey}`,
+      },
+      body: JSON.stringify(body),
+    });
+    if (!r.ok) {
+      const txt = await r.text();
+      throw new Error(`API error ${r.status}: ${txt.slice(0,300)}`);
+    }
+    const data = await r.json();
+    const choice = data.choices && data.choices[0];
+    if (!choice) throw new Error('No choices in response');
+    const msg = choice.message;
+    messages.push(msg);
+    if (msg.tool_calls && msg.tool_calls.length) {
+      let upstreamSlush = null;
+      for (const tc of msg.tool_calls) {
+        const fname = tc.function.name;
+        let args = {};
+        try { args = JSON.parse(tc.function.arguments || '{}'); } catch {}
+        const card = findCardByAgentName(fname);
+        if (!card || !state.hand.has(card.filename)) {
+          messages.push({ role: 'tool', tool_call_id: tc.id, name: fname,
+            content: JSON.stringify({ status: 'error', message: `Agent '${fname}' is not loaded into the brainstem hand.` })});
+          continue;
+        }
+        flashHand(card.filename);
+        const out = await runAgent(card, args, upstreamSlush);
+        agent_logs.push({ name: fname, args, output: out });
+        // capture slush for next call in this round
+        try { const j = JSON.parse(out); if (j && j.data_slush) upstreamSlush = j.data_slush; } catch {}
+        messages.push({ role: 'tool', tool_call_id: tc.id, name: fname, content: out });
+      }
+      continue; // loop again to let model use the tool output
+    }
+    // No more tool calls — final text
+    return { text: msg.content || '', agent_logs };
+  }
+  return { text: '_(stopped after 6 tool-call rounds)_', agent_logs };
+}
+
+function handTools() {
+  const out = [];
+  for (const f of state.hand) {
+    const c = state.binder.cards.find(x => x.filename === f);
+    if (!c) continue;
+    const p = RAPP.Agent.parseAgentSource(c.source, c.filename);
+    out.push({
+      type: 'function',
+      function: {
+        name: p.name || c.manifest.name.split('/').pop(),
+        description: p.description || c.manifest.description || '',
+        parameters: p.parameters || { type: 'object', properties: {}, required: [] },
+      },
+    });
+  }
+  return out;
+}
+
+function findCardByAgentName(name) {
+  for (const c of state.binder.cards) {
+    const p = RAPP.Agent.parseAgentSource(c.source, c.filename);
+    if (p.name === name) return c;
+  }
+  return null;
+}
+
+/* ───── Agent execution: stub or live (Pyodide) ───────────── */
+async function runAgent(card, kwargs, upstreamSlush) {
+  if (state.settings.execMode === 'live') {
+    try { return await runAgentLive(card, kwargs, upstreamSlush); }
+    catch (e) { return JSON.stringify({status:'error', message:`live exec failed: ${e.message}`}); }
+  }
+  return runAgentStub(card, kwargs, upstreamSlush);
+}
+
+function runAgentStub(card, kwargs, upstreamSlush) {
+  // Synthesize a deterministic plausible result so the LLM can chain.
+  const p = RAPP.Agent.parseAgentSource(card.source, card.filename);
+  const base = {
+    status: 'success',
+    _stub: true,
+    _agent: p.name,
+    _args: kwargs,
+    _slush_in: upstreamSlush || {},
+    summary: `[stub] ${p.name}(${JSON.stringify(kwargs)}) — virtual brainstem stub-mode result. Toggle Live in ⚙️ to execute the real perform().`,
+    data_slush: { stub: true, agent: p.name },
+  };
+  // Per-agent flavor
+  if (p.name === 'Hello') base.message = `Hello, ${kwargs.who || 'world'}!`;
+  if (p.name === 'Dice') {
+    const n = Math.max(1, Math.min(100, +kwargs.count || 1));
+    const s = Math.max(2, Math.min(1000, +kwargs.sides || 6));
+    const rolls = Array.from({length:n}, () => 1 + Math.floor(Math.random() * s));
+    base.rolls = rolls; base.total = rolls.reduce((a,b)=>a+b,0);
+    base.summary = `Rolled ${n}d${s}: ${rolls} → ${base.total}`;
+    base.data_slush = { total: base.total, count: n, sides: s };
+  }
+  if (p.name === 'WeatherPoet') {
+    const city = kwargs.query || 'Seattle';
+    const conds = ['sunny','cloudy','rainy','snowy','windy','foggy','stormy'];
+    const i = [...city.toLowerCase()].reduce((a,c)=>a+c.charCodeAt(0),0) % conds.length;
+    const cond = conds[i];
+    const temp = 20 + (i*7) % 75;
+    base.weather = { city, condition: cond, temp_f: temp };
+    base.haiku = `Soft ${cond} ${city},\nthe day unfolds at ${temp}°—\na haiku, no more.`;
+    base.data_slush = { mood: cond, temp_f: temp, city };
+    base.summary = base.haiku;
+  }
+  if (p.name === 'SloshTest') {
+    base.received_slush = upstreamSlush || {};
+    base.summary = `slush echo: ${Object.keys(upstreamSlush||{}).length} signal(s)`;
+    base.data_slush = { reported: true, upstream_keys: Object.keys(upstreamSlush||{}) };
+  }
+  return JSON.stringify(base);
+}
+
+async function runAgentLive(card, kwargs, upstreamSlush) {
+  if (!state.pyodide) {
+    if (!state.pyodideLoading) {
+      state.pyodideLoading = (async () => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js';
+        document.head.appendChild(s);
+        await new Promise(r => s.onload = r);
+        state.pyodide = await window.loadPyodide();
+        // Inject the BasicAgent shim — no Azure deps, no openrappter package.
+        const basic = await (await fetch('../agents/basic_agent.py')).text();
+        state.pyodide.FS.mkdirTree('/agents');
+        state.pyodide.FS.writeFile('/agents/basic_agent.py', basic);
+        state.pyodide.FS.writeFile('/agents/__init__.py', '');
+        // openrappter shim → re-export BasicAgent
+        state.pyodide.FS.mkdirTree('/openrappter/agents');
+        state.pyodide.FS.writeFile('/openrappter/__init__.py', '');
+        state.pyodide.FS.writeFile('/openrappter/agents/__init__.py', '');
+        state.pyodide.FS.writeFile('/openrappter/agents/basic_agent.py', basic);
+        await state.pyodide.runPythonAsync(`import sys; sys.path.insert(0, '/')`);
+      })();
+    }
+    await state.pyodideLoading;
+  }
+  // Write the agent file fresh each call (cheap)
+  state.pyodide.FS.writeFile('/agents/' + card.filename, card.source);
+  const p = RAPP.Agent.parseAgentSource(card.source, card.filename);
+  const className = p.className;
+  const modName = card.filename.replace(/\.py$/, '');
+  const argsJson = JSON.stringify(kwargs);
+  const slushJson = JSON.stringify(upstreamSlush || {});
+  const script = `
+import json, importlib
+mod = importlib.import_module('agents.${modName}')
+importlib.reload(mod)
+agent = mod.${className}()
+agent.context = {'slush': json.loads(${JSON.stringify(slushJson)})}
+result = agent.perform(**json.loads(${JSON.stringify(argsJson)}))
+result if isinstance(result, str) else json.dumps(result)
+`;
+  const r = await state.pyodide.runPythonAsync(script);
+  return String(r);
+}
+
+function flashHand(filename) {
+  const node = $$('.mini-card').find(n => n.dataset.filename === filename);
+  if (!node) return;
+  node.classList.remove('flash');
+  void node.offsetWidth;   // restart animation
+  node.classList.add('flash');
+}
+
+/* ───── Chat rendering ────────────────────────────────────── */
+function appendMsg(role, text, agent_logs) {
+  // Hide welcome on first user message
+  const w = $('.welcome'); if (w && role !== 'system') w.style.display = 'none';
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  const av = role === 'user' ? '🧑' : (role === 'assistant' ? '🧠' : '⚙️');
+  const html = role === 'user'
+    ? escapeHtml(text).replace(/\n/g, '<br>')
+    : (window.marked ? window.marked.parse(text || '') : escapeHtml(text||'').replace(/\n/g,'<br>'));
+  let logHtml = '';
+  if (agent_logs && agent_logs.length) {
+    logHtml = `<div class="agent-log">${agent_logs.map(l => `
+      <details><summary>🧬 ${escapeHtml(l.name)} called with ${escapeHtml(JSON.stringify(l.args))}</summary>
+      <pre>${escapeHtml(typeof l.output === 'string' ? l.output : JSON.stringify(l.output, null, 2))}</pre></details>`).join('')}</div>`;
+  }
+  div.innerHTML = `<div class="av">${av}</div><div class="bubble">${html}${logHtml}</div>`;
+  $('#chat').appendChild(div);
+  scrollChat();
+  return div;
+}
+function appendTyping() {
+  const div = document.createElement('div');
+  div.className = 'msg assistant';
+  div.innerHTML = `<div class="av">🧠</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  $('#chat').appendChild(div); scrollChat(); return div;
+}
+function scrollChat() { const c = $('#chat'); c.scrollTop = c.scrollHeight; }
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+
+/* ───── Imports ──────────────────────────────────────────── */
+async function importPyFile(file) {
+  const text = await file.text();
+  const card = await RAPP.Card.mintCard(text, file.name);
+  RAPP.Binder.addCard(state.binder, card);
+  persistBinder(); renderBinder(); renderAgents();
+}
+async function importCardJson(file) {
+  const text = await file.text();
+  const obj = JSON.parse(text);
+  if (obj.schema !== 'rapp-card/1.0') throw new Error('Not a rapp-card/1.0 JSON');
+  // Verify and re-mint to recompute card display from source — single canonical path.
+  const re = await RAPP.Card.mintCard(obj.source, obj.filename);
+  if (obj.sha256 && re.sha256 !== obj.sha256) throw new Error('SHA-256 mismatch on import');
+  RAPP.Binder.addCard(state.binder, re);
+  persistBinder(); renderBinder(); renderAgents();
+}
+async function importBinderJson(file) {
+  const text = await file.text();
+  const obj = JSON.parse(text);
+  if (obj.schema !== 'rapp-binder/1.0') throw new Error('Not a rapp-binder/1.0 JSON');
+  for (const c of obj.cards || []) {
+    try {
+      const re = await RAPP.Card.mintCard(c.source, c.filename);
+      RAPP.Binder.addCard(state.binder, re);
+    } catch (e) { console.warn('skip card', c.filename, e); }
+  }
+  persistBinder(); renderBinder(); renderAgents();
+}
+
+function downloadFile(name, content, mime) {
+  const blob = new Blob([content], { type: mime || 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/* ───── Wire UI ────────────────────────────────────────── */
+function wire() {
+  $('#btn-settings').addEventListener('click', () => openAside('settings'));
+  $('#btn-agents').addEventListener('click',   () => openAside('agents'));
+  $('#btn-binder').addEventListener('click',   () => openAside('binder'));
+  $$('button[data-close]').forEach(b => b.addEventListener('click', () => closeAside(b.dataset.close)));
+  $('#save-settings').addEventListener('click', saveSettings);
+  $('#reset-data').addEventListener('click', () => {
+    if (!confirm('Wipe all local data (binder, hand, settings, transcripts)?')) return;
+    LS.del('settings'); LS.del('binder'); LS.del('hand');
+    location.reload();
+  });
+  $('#model-sel').addEventListener('change', () => {
+    state.settings.model = $('#model-sel').value;
+    LS.set('settings', state.settings);
+    refreshStatus();
+  });
+
+  // chat
+  const input = $('#input');
+  function autoGrow(){ input.style.height = 'auto'; input.style.height = Math.min(160, input.scrollHeight) + 'px'; }
+  input.addEventListener('input', autoGrow);
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doSend(); }
+  });
+  $('#send').addEventListener('click', doSend);
+  function doSend() {
+    const v = input.value.trim();
+    if (!v) return;
+    input.value = ''; autoGrow(); send(v);
+  }
+  $$('.starter').forEach(s => s.addEventListener('click', () => {
+    input.value = s.dataset.prompt; doSend();
+  }));
+  $('#export-tx').addEventListener('click', e => {
+    e.preventDefault();
+    const json = JSON.stringify({session_id: state.sessionId, transcript: state.fullTranscript, history: state.conversation_history}, null, 2);
+    downloadFile(`brainstem-transcript-${Date.now()}.json`, json, 'application/json');
+  });
+  $('#import-tx').addEventListener('click', e => {
+    e.preventDefault();
+    const f = document.createElement('input'); f.type='file'; f.accept='.json';
+    f.onchange = async () => {
+      const text = await f.files[0].text();
+      const data = JSON.parse(text);
+      if (data.history) state.conversation_history = data.history;
+      if (data.session_id) state.sessionId = data.session_id;
+      $('#chat').innerHTML = '';
+      for (const m of state.conversation_history) appendMsg(m.role, m.content);
+    };
+    f.click();
+  });
+  $('#clear-tx').addEventListener('click', e => {
+    e.preventDefault();
+    if (!confirm('Clear chat?')) return;
+    state.conversation_history = []; state.fullTranscript = []; state.sessionId = crypto.randomUUID();
+    $('#chat').innerHTML = `<div class="welcome"><h2>🧠 Cleared</h2><p>Fresh session.</p></div>`;
+  });
+
+  // agents drawer
+  $('#import-py').addEventListener('click', () => $('#file-py').click());
+  $('#file-py').addEventListener('change', async e => {
+    for (const f of e.target.files) await importPyFile(f);
+    e.target.value = '';
+  });
+  $('#paste-py').addEventListener('click', async () => {
+    const src = prompt('Paste agent.py source:');
+    if (!src) return;
+    const fname = (prompt('Filename (e.g. my_agent.py):') || 'pasted_agent.py').trim();
+    const card = await RAPP.Card.mintCard(src, fname);
+    RAPP.Binder.addCard(state.binder, card);
+    persistBinder(); renderBinder(); renderAgents();
+  });
+
+  // binder drawer
+  $('#import-card').addEventListener('click', () => $('#file-card').click());
+  $('#file-card').addEventListener('change', async e => {
+    for (const f of e.target.files) {
+      try { await importCardJson(f); } catch (er) { alert('Card import failed: ' + er.message); }
+    }
+    e.target.value = '';
+  });
+  $('#import-binder').addEventListener('click', () => $('#file-binder').click());
+  $('#file-binder').addEventListener('change', async e => {
+    for (const f of e.target.files) {
+      try { await importBinderJson(f); } catch (er) { alert('Binder import failed: ' + er.message); }
+    }
+    e.target.value = '';
+  });
+  $('#export-binder').addEventListener('click', () => {
+    state.binder.exported_at = new Date().toISOString();
+    downloadFile(`binder-${Date.now()}.json`, JSON.stringify(state.binder, null, 2), 'application/json');
+  });
+
+  // card modal
+  $('#cd-close').addEventListener('click', closeCardModal);
+  $('#card-modal').addEventListener('click', e => { if (e.target.id === 'card-modal') closeCardModal(); });
+  $('#cd-export').addEventListener('click', () => {
+    if (!cardModalCard) return;
+    downloadFile(`${cardModalCard.filename.replace(/\.py$/, '')}.card.json`, JSON.stringify(cardModalCard, null, 2), 'application/json');
+  });
+  $('#cd-export-py').addEventListener('click', () => {
+    if (!cardModalCard) return;
+    downloadFile(cardModalCard.filename, cardModalCard.source, 'text/x-python');
+  });
+  $('#cd-play').addEventListener('click', () => {
+    if (!cardModalCard) return;
+    state.hand.add(cardModalCard.filename);
+    persistHand(); renderHand(); renderBinder(); renderAgents();
+    closeCardModal();
+  });
+
+  // Esc closes modal/drawers
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if ($('#card-modal').classList.contains('open')) closeCardModal();
+    else $$('aside.open').forEach(a => a.classList.remove('open'));
+  });
+}
+
+/* ───── Boot ─────────────────────────────────────────── */
+(async () => {
+  loadSettings();
+  await bootBinder();
+  // Auto-load Hello + Dice into hand on first run so the chat works immediately
+  if (state.hand.size === 0 && state.binder.cards.length > 0) {
+    for (const f of ['hello_agent.py','dice_agent.py']) {
+      if (state.binder.cards.find(c => c.filename === f)) state.hand.add(f);
+    }
+    persistHand(); renderHand(); renderBinder(); renderAgents();
+  }
+  wire();
+  if (window.marked) window.marked.setOptions({ breaks: true, gfm: true });
+})();
+
+})();
+</script>
+
+</body>
+</html>
