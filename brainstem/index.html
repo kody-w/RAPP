@@ -448,23 +448,23 @@ const STARTER_AGENT_FILES = [
 // secret). Token then talks to the GitHub Models endpoint directly.
 const AUTH_CLIENT_ID  = 'Ov23liuueQBIUggrH8NG';
 const AUTH_WORKER_URL = 'https://rappterbook-auth.kwildfeuer.workers.dev';
-const GH_MODELS_URL   = 'https://models.inference.ai.azure.com/chat/completions';
-const GH_MODELS_LIST  = 'https://models.inference.ai.azure.com/models';
+// New GitHub Models API. Catalog is public (no auth); chat needs the OAuth bearer.
+const GH_MODELS_URL   = 'https://models.github.ai/inference/chat/completions';
+const GH_MODELS_LIST  = 'https://models.github.ai/catalog/models';
+const GH_MODELS_LIST_LEGACY = 'https://models.inference.ai.azure.com/models';
 
 const PROVIDERS = {
   github: {
     label: 'GitHub',
-    base: 'https://models.inference.ai.azure.com',
+    base: 'https://models.github.ai/inference',
+    // Sensible defaults; overwritten by the live catalog on every load.
     models: [
-      // Sensible defaults; overwritten on first sign-in by GH_MODELS_LIST.
-      { id: 'gpt-4o',          name: 'GPT-4o' },
-      { id: 'gpt-4o-mini',     name: 'GPT-4o Mini' },
-      { id: 'gpt-4.1',         name: 'GPT-4.1' },
-      { id: 'gpt-4.1-mini',    name: 'GPT-4.1 Mini' },
-      { id: 'Meta-Llama-3.1-70B-Instruct', name: 'Llama 3.1 70B' },
-      { id: 'Mistral-large-2411',          name: 'Mistral Large' },
+      { id: 'openai/gpt-4o',          name: 'OpenAI GPT-4o' },
+      { id: 'openai/gpt-4o-mini',     name: 'OpenAI GPT-4o Mini' },
+      { id: 'openai/gpt-4.1',         name: 'OpenAI GPT-4.1' },
+      { id: 'openai/gpt-4.1-mini',    name: 'OpenAI GPT-4.1 Mini' },
     ],
-    defaultModel: 'gpt-4o',
+    defaultModel: 'openai/gpt-4o',
   },
   openai: {
     label: 'OpenAI',
@@ -520,8 +520,6 @@ function activeApiKey() {
   return state.settings.customKey;
 }
 function activeChatUrl() {
-  // GitHub Models is OpenAI-compatible but its chat endpoint is mounted at
-  // /chat/completions (no /v1 prefix); the others use the {base}/chat/completions path.
   if (state.settings.provider === 'github') return GH_MODELS_URL;
   return `${activeApiBase()}/chat/completions`;
 }
@@ -682,36 +680,66 @@ function extractModelName(raw) {
 }
 
 async function fetchGitHubModels() {
-  if (!state.settings.ghToken || state.settings.provider !== 'github') return;
-  try {
-    const resp = await fetch(GH_MODELS_LIST, {
-      headers: { 'Authorization': `Bearer ${state.settings.ghToken}` },
-    });
-    if (!resp.ok) return;
-    const data = await resp.json();
-    const list = data.data || data || [];
-    const seen = new Set();
-    const models = [];
-    for (const m of list) {
-      const rawId = m.id || m.name || '';
-      const caps = m.capabilities || {};
-      if (caps.chat_completion === false) continue;
+  // The catalog is PUBLIC — no token required, runs on every page load.
+  // Use the new endpoint first (rich metadata + canonical "publisher/slug" ids
+  // that the inference endpoint accepts directly). Fall back to legacy.
+  const tryFetch = async (url, isCatalog) => {
+    const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    if (!r.ok) throw new Error(`${url} → HTTP ${r.status}`);
+    return { data: await r.json(), isCatalog };
+  };
+  let payload;
+  try { payload = await tryFetch(GH_MODELS_LIST, true); }
+  catch (e1) {
+    console.warn('[brainstem] catalog fetch failed:', e1.message, '— trying legacy');
+    try { payload = await tryFetch(GH_MODELS_LIST_LEGACY, false); }
+    catch (e2) { console.warn('[brainstem] legacy fetch also failed:', e2.message); return; }
+  }
+  const list = Array.isArray(payload.data) ? payload.data : (payload.data.data || payload.data.models || []);
+  if (!list.length) return;
+
+  const models = [];
+  const seen = new Set();
+  for (const m of list) {
+    const rawId = m.id || m.name || '';
+    if (!rawId) continue;
+    if (payload.isCatalog) {
+      // New catalog: keep ids in publisher/slug form. Filter to text↔text +
+      // tool-calling-capable models (these are the ones the brainstem needs).
+      const inMod  = m.supported_input_modalities  || [];
+      const outMod = m.supported_output_modalities || [];
+      const caps   = m.capabilities || [];
+      if (!inMod.includes('text') || !outMod.includes('text')) continue;
+      // Skip embeddings/audio/image-gen even if they slipped through
+      if (/embed|whisper|dall-e|tts|audio|moderation/i.test(rawId)) continue;
+      const friendly = m.name || rawId;
+      const tier = m.rate_limit_tier ? ` [${m.rate_limit_tier}]` : '';
+      const noTools = !caps.includes('tool-calling');
+      const label = `${friendly}${tier}${noTools ? ' (no tools)' : ''}`;
+      if (!seen.has(rawId)) { seen.add(rawId); models.push({ id: rawId, name: label, _noTools: noTools }); }
+    } else {
+      // Legacy: ids are azureml:// URIs; strip down. No prefix needed for legacy chat URL.
+      if ((m.task || '').toLowerCase() === 'embedding') continue;
       if (/embed|whisper|dall-e|tts|audio|moderation/i.test(rawId)) continue;
       const clean = extractModelName(rawId);
-      const friendly = m.friendly_name || m.display_name || clean;
+      const friendly = m.friendly_name || m.name || clean;
       if (!seen.has(clean)) { seen.add(clean); models.push({ id: clean, name: friendly }); }
     }
-    models.sort((a, b) => a.id.localeCompare(b.id));
-    if (models.length) {
-      PROVIDERS.github.models = models;
-      // Keep current selection if still valid; otherwise pick the first.
-      if (!models.find(m => m.id === state.settings.model)) state.settings.model = models[0].id;
-      refreshModelOptions();
-      refreshStatus();
-    }
-  } catch (e) {
-    console.warn('fetchGitHubModels failed:', e.message);
   }
+  // Tool-calling capable models first, then alphabetical
+  models.sort((a, b) => {
+    if (!!a._noTools !== !!b._noTools) return a._noTools ? 1 : -1;
+    return a.name.localeCompare(b.name);
+  });
+  if (!models.length) return;
+  PROVIDERS.github.models = models;
+  if (!models.find(m => m.id === state.settings.model)) {
+    state.settings.model = (models.find(m => !m._noTools) || models[0]).id;
+    LS.set('settings', state.settings);
+  }
+  console.log(`[brainstem] loaded ${models.length} models from ${payload.isCatalog ? 'catalog' : 'legacy'}`);
+  refreshModelOptions();
+  refreshStatus();
 }
 
 function signOutGitHub() {
