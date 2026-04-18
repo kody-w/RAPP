@@ -900,11 +900,7 @@ const LS = {
 function loadSettings() {
   const saved = LS.get('settings', null);
   if (saved) Object.assign(state.settings, saved);
-  // Migrate from prior schemas
-  if (saved && (saved.copilotToken || saved.ghuToken)) {
-    // The Copilot device-code path didn't work — drop those fields.
-    state.settings.provider = 'github';
-  }
+  // One-shot migration from the very first apiBase/apiKey schema (no provider field).
   if (saved && saved.apiBase && !saved.provider) {
     if (/openai\.com/.test(saved.apiBase)) state.settings.provider = 'openai';
     else if (/models\./.test(saved.apiBase)) state.settings.provider = 'github';
@@ -1016,19 +1012,24 @@ async function handleGitHubAuthCallback() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code }),
     });
+    if (!resp.ok) {
+      // Stale or already-used code — silent (just info log) so the console isn't full of red.
+      console.info('[brainstem] OAuth code already consumed or expired — ignoring.');
+      return;
+    }
     const data = await resp.json();
     if (data.access_token) {
       state.settings.ghToken = data.access_token;
       LS.set('settings', state.settings);
       await fetchGitHubUser();
-      fetchGitHubModels();   // populate dropdown from the API
+      fetchGitHubModels();
       refreshStatus();
       refreshProviderUI();
     } else {
-      console.warn('auth/token:', data);
+      console.info('[brainstem] OAuth response had no access_token:', data.error || 'unknown');
     }
   } catch (e) {
-    console.error('auth callback failed', e);
+    console.info('[brainstem] OAuth callback skipped:', e.message);
   }
 }
 
