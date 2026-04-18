@@ -153,6 +153,7 @@ aside .actions{padding:12px 18px;border-top:1px solid var(--border);display:flex
 .btn.danger{color:var(--red)}.btn.danger:hover{border-color:var(--red)}
 .btn.green{background:var(--green);color:#fff;border-color:transparent}
 .btn.green:hover{background:var(--green-2)}
+.btn.install-os.active{background:var(--green);color:#fff;border-color:transparent}
 
 /* Agent file rows */
 .afile{padding:10px 12px;background:var(--panel2);border:1px solid var(--border);border-radius:8px;
@@ -236,17 +237,13 @@ aside .actions{padding:12px 18px;border-top:1px solid var(--border);display:flex
     <small>Virtual</small>
   </div>
   <span class="spacer"></span>
-  <select class="model" id="model-sel">
-    <option value="gpt-4o">GPT-4o</option>
-    <option value="gpt-4o-mini">GPT-4o Mini</option>
-    <option value="gpt-4.1">GPT-4.1</option>
-    <option value="gpt-4">GPT-4</option>
-    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-  </select>
+  <select class="model" id="model-sel"></select>
   <button class="icon-btn" id="btn-binder" title="Binder">🃏 Binder</button>
   <button class="icon-btn" id="btn-agents" title="Agents">📋 Agents</button>
+  <button class="icon-btn" id="btn-install" title="Install the local brainstem">💻 Install</button>
   <button class="icon-btn" id="btn-settings" title="Settings">⚙️</button>
-  <span class="status"><span class="dot offline" id="status-dot"></span><span id="status-text">No key</span></span>
+  <button class="icon-btn" id="btn-signin" hidden style="color:var(--green-3);border-color:var(--green)" title="Sign in with GitHub">🔐 Sign in with GitHub</button>
+  <span class="status"><span class="dot offline" id="status-dot"></span><span id="status-text">Signed out</span></span>
 </header>
 
 <main>
@@ -256,8 +253,8 @@ aside .actions{padding:12px 18px;border-top:1px solid var(--border);display:flex
       <div class="welcome">
         <h2>🧠 RAPP Brainstem — virtual</h2>
         <p>Browser-only twin of the local brainstem. Same <code>/chat</code> envelope. Same single-file
-          <code>*_agent.py</code> contract. Same binder model. Bring your own API key.</p>
-        <p class="pill"><span class="key">●</span> Click <strong>⚙️</strong> to add an OpenAI-compatible API key, then ask the agents anything.</p>
+          <code>*_agent.py</code> contract. Same binder model. Same GitHub identity as the rest of RAPP.</p>
+        <p class="pill"><span class="key">●</span> Click <strong>🔐 Sign in with GitHub</strong> in the header to use GitHub Models, then ask the agents anything.</p>
       </div>
     </div>
 
@@ -293,24 +290,60 @@ aside .actions{padding:12px 18px;border-top:1px solid var(--border);display:flex
 <aside id="settings">
   <header><span class="ttl">Settings</span><button class="close" data-close="settings">×</button></header>
   <div class="body">
-    <div class="banner">Your API key is stored only in your browser (localStorage). It never touches our server — there is no server.</div>
+    <div class="banner">Your token is stored only in your browser (localStorage). There is no server.</div>
+
     <div class="row">
-      <label for="api-base">API base URL</label>
-      <input type="text" id="api-base" placeholder="https://api.openai.com/v1" />
-      <span class="hint">Any OpenAI-compatible chat-completions endpoint. Examples: api.openai.com/v1, openrouter.ai/api/v1, models.github.ai/inference</span>
+      <label for="provider">LLM provider</label>
+      <select id="provider">
+        <option value="github">GitHub Models (default — same login as the rest of RAPP)</option>
+        <option value="openai">OpenAI</option>
+        <option value="custom">Custom (any OpenAI-compatible endpoint)</option>
+      </select>
     </div>
-    <div class="row">
-      <label for="api-key">API key</label>
-      <input type="password" id="api-key" placeholder="sk-…" />
-      <span class="hint">Stored in localStorage as <code>rapp_api_key</code>. Use a key with chat completions + tool calling.</span>
+
+    <!-- GitHub-specific UI -->
+    <div id="provider-github">
+      <div class="banner" style="background:rgba(63,185,80,.06);border-color:var(--green);color:var(--green-3)">
+        Sign in is just a GitHub <strong>fine-grained personal access token</strong> with the <code>models:read</code> scope. The brainstem uses the same GitHub identity as the local installer.
+      </div>
+      <div class="row">
+        <label>Get a token</label>
+        <a class="btn primary" href="https://github.com/settings/personal-access-tokens/new?description=RAPP%20Virtual%20Brainstem&scopes=read:user,models:read" target="_blank" rel="noopener" style="display:inline-block;text-align:center;text-decoration:none">🔐 Open GitHub → create token</a>
+        <span class="hint">Tick <strong>Models · Read</strong> under "Permissions". No repo access needed. Copy the resulting <code>github_pat_…</code> string.</span>
+      </div>
+      <div class="row">
+        <label for="gh-token">GitHub token</label>
+        <input type="password" id="gh-token" placeholder="github_pat_… or ghp_…" autocomplete="off" />
+        <span class="hint">Stored in localStorage as <code>rapp_gh_token</code>. Used against <code>https://models.github.ai/inference</code>.</span>
+      </div>
     </div>
+
+    <!-- OpenAI / custom -->
+    <div id="provider-openai" hidden>
+      <div class="row">
+        <label for="api-key">OpenAI API key</label>
+        <input type="password" id="api-key" placeholder="sk-…" autocomplete="off" />
+      </div>
+    </div>
+    <div id="provider-custom" hidden>
+      <div class="row">
+        <label for="api-base">API base URL</label>
+        <input type="text" id="api-base" placeholder="https://api.openai.com/v1" />
+        <span class="hint">Any OpenAI-compatible chat-completions endpoint.</span>
+      </div>
+      <div class="row">
+        <label for="custom-key">API key</label>
+        <input type="password" id="custom-key" placeholder="sk-…" autocomplete="off" />
+      </div>
+    </div>
+
     <div class="row">
       <label for="exec-mode">Agent execution mode</label>
       <select id="exec-mode">
         <option value="stub">Stub (default — synthesized results)</option>
         <option value="live">Live (lazy-load Pyodide ~10MB)</option>
       </select>
-      <span class="hint">Stub mode echoes a deterministic synthesized result so the LLM can chain. Live mode runs the actual Python perform() in-browser via Pyodide.</span>
+      <span class="hint">Stub mode echoes a deterministic synthesized result so the LLM can chain. Live mode runs the actual Python <code>perform()</code> in-browser via Pyodide.</span>
     </div>
     <div class="row">
       <label for="soul">soul.md (system prompt)</label>
@@ -353,6 +386,35 @@ aside .actions{padding:12px 18px;border-top:1px solid var(--border);display:flex
   </div>
 </aside>
 
+<!-- Install modal -->
+<div class="modal" id="install-modal">
+  <div class="panel">
+    <header><span class="ttl">💻 Install the real brainstem</span><button class="close" id="install-close">×</button></header>
+    <div class="body">
+      <div class="banner">
+        Run the canonical one-line installer from
+        <a href="https://github.com/kody-w/rapp-installer" target="_blank" rel="noopener">kody-w/rapp-installer</a>.
+        It installs to <code>~/.brainstem/src/rapp_brainstem/</code>, then you can <code>brainstem</code> from any shell.
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <button class="btn install-os active" data-os="mac">macOS</button>
+        <button class="btn install-os" data-os="linux">Linux</button>
+        <button class="btn install-os" data-os="win">Windows</button>
+      </div>
+      <pre id="install-cmd" style="background:var(--code-bg);border:1px solid var(--border);border-radius:6px;padding:12px;overflow-x:auto;cursor:pointer;font-family:'SF Mono',monospace;font-size:12px;color:var(--fg);white-space:pre-wrap;word-break:break-all"></pre>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px;text-align:center">click the command to copy</div>
+
+      <div style="margin-top:16px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Already installed?</div>
+      <a class="btn" id="open-vscode" href="vscode://file/" style="display:inline-block;margin-top:6px;text-decoration:none">📂 Open <code>~/.brainstem/src/rapp_brainstem</code> in VS Code</a>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">Uses the <code>vscode://file/</code> URL scheme. Requires VS Code installed.</div>
+    </div>
+    <div class="actions">
+      <a class="btn" href="../installer/" style="text-decoration:none">Open installer page →</a>
+      <button class="btn primary" id="install-copy">Copy command</button>
+    </div>
+  </div>
+</div>
+
 <!-- Card detail modal -->
 <div class="modal" id="card-modal">
   <div class="panel">
@@ -382,6 +444,40 @@ const STARTER_AGENT_FILES = [
 ];
 
 /* ───── State ─────────────────────────────────────────────────── */
+const PROVIDERS = {
+  github: {
+    label: 'GitHub Models',
+    base: 'https://models.github.ai/inference',
+    models: [
+      { id: 'openai/gpt-4o',                name: 'GPT-4o (GitHub)' },
+      { id: 'openai/gpt-4o-mini',           name: 'GPT-4o Mini (GitHub)' },
+      { id: 'openai/gpt-4.1',               name: 'GPT-4.1 (GitHub)' },
+      { id: 'openai/gpt-4.1-mini',          name: 'GPT-4.1 Mini (GitHub)' },
+      { id: 'meta/Meta-Llama-3.1-70B-Instruct',  name: 'Llama 3.1 70B (GitHub)' },
+      { id: 'mistral-ai/Mistral-Large-2411',     name: 'Mistral Large (GitHub)' },
+    ],
+    defaultModel: 'openai/gpt-4o',
+  },
+  openai: {
+    label: 'OpenAI',
+    base: 'https://api.openai.com/v1',
+    models: [
+      { id: 'gpt-4o',         name: 'GPT-4o' },
+      { id: 'gpt-4o-mini',    name: 'GPT-4o Mini' },
+      { id: 'gpt-4.1',        name: 'GPT-4.1' },
+      { id: 'gpt-4',          name: 'GPT-4' },
+      { id: 'gpt-3.5-turbo',  name: 'GPT-3.5 Turbo' },
+    ],
+    defaultModel: 'gpt-4o',
+  },
+  custom: {
+    label: 'Custom',
+    base: 'https://api.openai.com/v1',
+    models: [{ id: 'gpt-4o', name: 'gpt-4o' }],
+    defaultModel: 'gpt-4o',
+  },
+};
+
 const state = {
   sessionId: crypto.randomUUID(),
   conversation_history: [],     // SPEC §8 shape — [{role, content}]
@@ -389,15 +485,28 @@ const state = {
   binder: null,                 // RAPP.Binder
   hand: new Set(),              // filenames currently loaded into the brainstem
   settings: {
-    apiBase: 'https://api.openai.com/v1',
-    apiKey: '',
-    model: 'gpt-4o',
+    provider: 'github',         // 'github' | 'openai' | 'custom'
+    ghToken: '',                // GitHub PAT for github provider
+    apiKey: '',                 // OpenAI key for openai provider
+    customBase: 'https://api.openai.com/v1',
+    customKey: '',              // key for custom provider
+    model: 'openai/gpt-4o',
     execMode: 'stub',
     soul: 'You are a helpful, concise RAPP brainstem assistant. Use the loaded tools when relevant. After tool calls, summarize the result in plain English.',
   },
   pyodide: null,                // lazy
   pyodideLoading: null,
 };
+
+function activeApiBase() {
+  if (state.settings.provider === 'custom') return (state.settings.customBase || PROVIDERS.custom.base).replace(/\/+$/, '');
+  return PROVIDERS[state.settings.provider].base;
+}
+function activeApiKey() {
+  if (state.settings.provider === 'github') return state.settings.ghToken;
+  if (state.settings.provider === 'openai') return state.settings.apiKey;
+  return state.settings.customKey;
+}
 
 /* ───── Persistence ──────────────────────────────────────────── */
 const LS = {
@@ -409,16 +518,48 @@ const LS = {
 function loadSettings() {
   const saved = LS.get('settings', null);
   if (saved) Object.assign(state.settings, saved);
-  $('#api-base').value = state.settings.apiBase;
+  // Migration from earlier release that used apiBase + apiKey only
+  if (saved && saved.apiBase && !saved.provider) {
+    if (/openai\.com/.test(saved.apiBase)) state.settings.provider = 'openai';
+    else if (/models\.github\.ai/.test(saved.apiBase)) { state.settings.provider = 'github'; state.settings.ghToken = saved.apiKey || ''; }
+    else { state.settings.provider = 'custom'; state.settings.customBase = saved.apiBase; state.settings.customKey = saved.apiKey || ''; }
+  }
+  $('#provider').value = state.settings.provider;
+  $('#gh-token').value = state.settings.ghToken;
   $('#api-key').value  = state.settings.apiKey;
+  $('#api-base').value = state.settings.customBase;
+  $('#custom-key').value = state.settings.customKey;
   $('#exec-mode').value = state.settings.execMode;
   $('#soul').value = state.settings.soul;
-  $('#model-sel').value = state.settings.model;
+  refreshProviderUI();
+  refreshModelOptions();
   refreshStatus();
 }
+function refreshProviderUI() {
+  const p = state.settings.provider;
+  $('#provider-github').hidden = p !== 'github';
+  $('#provider-openai').hidden = p !== 'openai';
+  $('#provider-custom').hidden = p !== 'custom';
+}
+function refreshModelOptions() {
+  const sel = $('#model-sel');
+  sel.innerHTML = '';
+  for (const m of PROVIDERS[state.settings.provider].models) {
+    const o = document.createElement('option');
+    o.value = m.id; o.textContent = m.name;
+    sel.appendChild(o);
+  }
+  if (!PROVIDERS[state.settings.provider].models.find(m => m.id === state.settings.model)) {
+    state.settings.model = PROVIDERS[state.settings.provider].defaultModel;
+  }
+  sel.value = state.settings.model;
+}
 function saveSettings() {
-  state.settings.apiBase = $('#api-base').value.trim().replace(/\/+$/,'') || 'https://api.openai.com/v1';
-  state.settings.apiKey  = $('#api-key').value.trim();
+  state.settings.provider = $('#provider').value;
+  state.settings.ghToken  = $('#gh-token').value.trim();
+  state.settings.apiKey   = $('#api-key').value.trim();
+  state.settings.customBase = $('#api-base').value.trim().replace(/\/+$/,'') || 'https://api.openai.com/v1';
+  state.settings.customKey  = $('#custom-key').value.trim();
   state.settings.execMode = $('#exec-mode').value;
   state.settings.soul = $('#soul').value;
   state.settings.model = $('#model-sel').value;
@@ -428,13 +569,20 @@ function saveSettings() {
 }
 
 function refreshStatus() {
-  const dot = $('#status-dot'), text = $('#status-text');
-  if (state.settings.apiKey) {
+  const dot = $('#status-dot'), text = $('#status-text'), signin = $('#btn-signin');
+  if (activeApiKey()) {
     dot.className = 'dot online';
-    text.textContent = state.settings.model;
+    text.textContent = `${PROVIDERS[state.settings.provider].label} · ${state.settings.model}`;
+    signin.hidden = true;
   } else {
     dot.className = 'dot offline';
-    text.textContent = 'No key';
+    if (state.settings.provider === 'github') {
+      text.textContent = 'Signed out';
+      signin.hidden = false;
+    } else {
+      text.textContent = `${PROVIDERS[state.settings.provider].label} · no key`;
+      signin.hidden = true;
+    }
   }
 }
 
@@ -638,8 +786,12 @@ function closeAside(id) { $('#'+id).classList.remove('open'); }
 /* ───── Chat send loop (SPEC §8) ──────────────────────────── */
 async function send(userInput) {
   if (!userInput || !userInput.trim()) return;
-  if (!state.settings.apiKey) {
-    appendMsg('system', '⚠️ No API key. Click ⚙️ to add one.');
+  if (!activeApiKey()) {
+    if (state.settings.provider === 'github') {
+      appendMsg('system', '⚠️ Not signed in. Click 🔐 Sign in with GitHub in the header.');
+    } else {
+      appendMsg('system', '⚠️ No API key. Click ⚙️ to add one.');
+    }
     openAside('settings'); return;
   }
   appendMsg('user', userInput);
@@ -678,11 +830,11 @@ async function chatLoop(userInput) {
       messages,
       ...(tools.length ? { tools, tool_choice: 'auto' } : {}),
     };
-    const r = await fetch(`${state.settings.apiBase}/chat/completions`, {
+    const r = await fetch(`${activeApiBase()}/chat/completions`, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        'authorization': `Bearer ${state.settings.apiKey}`,
+        'authorization': `Bearer ${activeApiKey()}`,
       },
       body: JSON.stringify(body),
     });
@@ -927,8 +1079,15 @@ function wire() {
   $('#btn-settings').addEventListener('click', () => openAside('settings'));
   $('#btn-agents').addEventListener('click',   () => openAside('agents'));
   $('#btn-binder').addEventListener('click',   () => openAside('binder'));
+  $('#btn-signin').addEventListener('click',   () => openAside('settings'));
+  $('#btn-install').addEventListener('click',  () => openInstallModal());
   $$('button[data-close]').forEach(b => b.addEventListener('click', () => closeAside(b.dataset.close)));
   $('#save-settings').addEventListener('click', saveSettings);
+  $('#provider').addEventListener('change', e => {
+    state.settings.provider = e.target.value;
+    refreshProviderUI();
+    refreshModelOptions();
+  });
   $('#reset-data').addEventListener('click', () => {
     if (!confirm('Wipe all local data (binder, hand, settings, transcripts)?')) return;
     LS.del('settings'); LS.del('binder'); LS.del('hand');
@@ -1034,11 +1193,54 @@ function wire() {
     closeCardModal();
   });
 
+  // install modal
+  $('#install-close').addEventListener('click', closeInstallModal);
+  $('#install-modal').addEventListener('click', e => { if (e.target.id === 'install-modal') closeInstallModal(); });
+  $$('.install-os').forEach(b => b.addEventListener('click', () => {
+    $$('.install-os').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    $('#install-cmd').textContent = INSTALL_CMDS[b.dataset.os];
+  }));
+  $('#install-cmd').addEventListener('click', copyInstallCmd);
+  $('#install-copy').addEventListener('click', copyInstallCmd);
+
   // Esc closes modal/drawers
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
     if ($('#card-modal').classList.contains('open')) closeCardModal();
+    else if ($('#install-modal').classList.contains('open')) closeInstallModal();
     else $$('aside.open').forEach(a => a.classList.remove('open'));
+  });
+}
+
+const INSTALL_CMDS = {
+  mac:   'curl -fsSL https://kody-w.github.io/rapp-installer/install.sh | bash',
+  linux: 'curl -fsSL https://kody-w.github.io/rapp-installer/install.sh | bash',
+  win:   'iwr https://kody-w.github.io/rapp-installer/install.ps1 -useb | iex',
+};
+function detectOS() {
+  const ua = navigator.userAgent;
+  if (/Windows/i.test(ua)) return 'win';
+  if (/Linux/i.test(ua) && !/Android/i.test(ua)) return 'linux';
+  return 'mac';
+}
+function openInstallModal() {
+  const os = detectOS();
+  $$('.install-os').forEach(x => x.classList.toggle('active', x.dataset.os === os));
+  $('#install-cmd').textContent = INSTALL_CMDS[os];
+  // Try to fill the VS Code link with $HOME if discoverable; otherwise leave generic.
+  // (Browsers can't read $HOME — link uses ~ which works on macOS/Linux when VS Code expands it.)
+  $('#open-vscode').href = 'vscode://file/' + (navigator.platform.includes('Win') ? '%USERPROFILE%\\\\.brainstem\\\\src\\\\rapp_brainstem' : '~/.brainstem/src/rapp_brainstem');
+  $('#install-modal').classList.add('open');
+}
+function closeInstallModal() { $('#install-modal').classList.remove('open'); }
+function copyInstallCmd() {
+  const cmd = $('#install-cmd').textContent;
+  navigator.clipboard.writeText(cmd).then(() => {
+    const btn = $('#install-copy');
+    const old = btn.textContent;
+    btn.textContent = '✓ Copied';
+    setTimeout(() => { btn.textContent = old; }, 1200);
   });
 }
 
