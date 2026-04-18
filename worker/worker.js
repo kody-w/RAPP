@@ -95,7 +95,7 @@ async function passthroughText(upstream, req, extraHeaders = {}) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const p = url.pathname;
 
@@ -230,15 +230,43 @@ export default {
       return passthroughText(upstream, request);
     }
 
-    // ── Public catalog proxy with CORS + edge cache ───────────────
+    // ── Public catalog proxy with CORS + aggressive edge cache ────
+    // models.github.ai rate-limits anon requests; we cache 1 hour at the edge
+    // and serve stale-while-revalidate so a 429 from upstream still returns
+    // something useful to the browser.
     if (p === '/api/models' && request.method === 'GET') {
+      const cacheKey = new Request('https://rapp-auth-cache/api/models/v1', { method: 'GET' });
+      const cache = caches.default;
+      let cached = await cache.match(cacheKey);
+      // Fresh hit — serve from edge.
+      if (cached) {
+        const h = new Headers(cached.headers);
+        Object.entries(corsHeaders(request)).forEach(([k, v]) => h.set(k, v));
+        h.set('X-RAPP-Cache', 'HIT');
+        return new Response(cached.body, { status: cached.status, headers: h });
+      }
       try {
         const upstream = await fetch('https://models.github.ai/catalog/models', {
-          headers: { 'Accept': 'application/json' },
-          cf: { cacheTtl: 300 },
+          headers: { 'Accept': 'application/json', 'User-Agent': 'rapp-auth-worker/1' },
         });
-        return passthroughText(upstream, request, {
-          'Cache-Control': 'public, max-age=300',
+        const body = await upstream.text();
+        // Only cache 2xx responses; 429s shouldn't poison the cache.
+        if (upstream.ok) {
+          const cacheResp = new Response(body, {
+            status: upstream.status,
+            headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=3600' },
+          });
+          // Fire-and-forget — don't block the response.
+          ctx?.waitUntil?.(cache.put(cacheKey, cacheResp.clone()));
+        }
+        return new Response(body, {
+          status: upstream.status,
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'public, max-age=3600',
+            'X-RAPP-Cache': upstream.ok ? 'MISS' : 'BYPASS',
+            ...corsHeaders(request),
+          },
         });
       } catch (e) {
         return json({ error: 'upstream_failed', detail: String(e) }, { status: 502 }, request);

@@ -1070,26 +1070,46 @@ function extractModelName(raw) {
 }
 
 async function fetchGitHubModels() {
-  // The catalog is PUBLIC — no token required, runs on every page load.
-  // Use the new endpoint first (rich metadata + canonical "publisher/slug" ids
-  // that the inference endpoint accepts directly). Fall back to legacy.
+  // The catalog is PUBLIC — but models.github.ai rate-limits unauthenticated
+  // traffic. We cache the parsed catalog in localStorage for 6 h so warm loads
+  // never even hit the worker.
+  const CACHE_KEY = 'gh_catalog_v1';
+  const CACHE_TTL = 6 * 3600 * 1000;
+  const cached = LS.get(CACHE_KEY, null);
+  if (cached && cached.payload && (Date.now() - cached.at) < CACHE_TTL) {
+    console.log(`[brainstem] using cached catalog (${cached.payload.data?.length ?? 0} entries, ${Math.round((Date.now()-cached.at)/60000)}m old)`);
+    applyCatalogPayload(cached.payload);
+    return;
+  }
   const tryFetch = async (url, isCatalog) => {
     const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
     if (!r.ok) throw new Error(`${url} → HTTP ${r.status}`);
     return { data: await r.json(), isCatalog };
   };
-  // Order: worker proxy (gets CORS-fixed catalog) → direct catalog → legacy.
+  // Order: worker proxy (CORS-fixed + edge cache) → legacy fallback.
+  // Skip the direct call — it's CORS-blocked, just adds noise.
   let payload;
   try { payload = await tryFetch(GH_MODELS_LIST, true); }
   catch (e1) {
-    console.warn('[brainstem] worker catalog failed:', e1.message, '— trying direct');
-    try { payload = await tryFetch(GH_MODELS_LIST_DIRECT, true); }
+    console.warn('[brainstem] worker catalog failed:', e1.message, '— trying legacy');
+    try { payload = await tryFetch(GH_MODELS_LIST_LEGACY, false); }
     catch (e2) {
-      console.warn('[brainstem] direct catalog failed:', e2.message, '— trying legacy');
-      try { payload = await tryFetch(GH_MODELS_LIST_LEGACY, false); }
-      catch (e3) { console.warn('[brainstem] all catalog endpoints failed:', e3.message); return; }
+      // Last-ditch: serve a stale cache if we have one, even if expired.
+      if (cached && cached.payload) {
+        console.warn('[brainstem] all live endpoints failed — using stale cache');
+        applyCatalogPayload(cached.payload);
+        return;
+      }
+      console.warn('[brainstem] all catalog endpoints failed:', e2.message);
+      return;
     }
   }
+  // Persist for next load.
+  LS.set(CACHE_KEY, { payload, at: Date.now() });
+  applyCatalogPayload(payload);
+}
+
+function applyCatalogPayload(payload) {
   const list = Array.isArray(payload.data) ? payload.data : (payload.data.data || payload.data.models || []);
   if (!list.length) return;
 
