@@ -1003,9 +1003,16 @@ async function handleGitHubAuthCallback() {
   const params = new URLSearchParams(window.location.search);
   const code = params.get('code');
   if (!code) return;
-  // Strip the code out of the URL so refresh doesn't re-submit
+  // Strip the code out of the URL immediately so refresh doesn't re-submit.
   const cleanUrl = window.location.origin + window.location.pathname + (window.location.hash || '');
   window.history.replaceState({}, '', cleanUrl);
+  // Don't re-fire for a code we've already attempted (one-shot guard against
+  // bookmarked/copy-pasted URLs that still carry a consumed ?code=).
+  const lastTried = LS.get('lastOAuthCode', '');
+  if (lastTried === code) return;
+  LS.set('lastOAuthCode', code);
+  // Skip if we're already signed in via this provider — nothing to gain.
+  if (state.settings.ghToken) return;
   try {
     const resp = await fetch(AUTH_WORKER_URL + '/api/auth/token', {
       method: 'POST',
@@ -1013,8 +1020,7 @@ async function handleGitHubAuthCallback() {
       body: JSON.stringify({ code }),
     });
     if (!resp.ok) {
-      // Stale or already-used code — silent (just info log) so the console isn't full of red.
-      console.info('[brainstem] OAuth code already consumed or expired — ignoring.');
+      console.info('[brainstem] OAuth code rejected (already used or expired) — ignoring.');
       return;
     }
     const data = await resp.json();
