@@ -446,12 +446,18 @@ const STARTER_AGENT_FILES = [
 // Browser does the OAuth web-flow redirect; the user's Cloudflare Worker
 // handles the code→token exchange (the only step that needs a client
 // secret). Token then talks to the GitHub Models endpoint directly.
+// ── Auth + worker config ──────────────────────────────────────────
+// Swap these two lines after deploying the rapp-auth worker (see /worker/README.md).
+// Until then we fall back to the rappterbook-auth worker — same contract, shared OAuth app.
 const AUTH_CLIENT_ID  = 'Ov23liuueQBIUggrH8NG';
 const AUTH_WORKER_URL = 'https://rappterbook-auth.kwildfeuer.workers.dev';
-// New GitHub Models API. Catalog is public (no auth); chat needs the OAuth bearer.
+
+// Chat goes browser→GitHub directly; the catalog goes through the worker
+// because models.github.ai/catalog/models doesn't send CORS headers to Pages.
 const GH_MODELS_URL   = 'https://models.github.ai/inference/chat/completions';
-const GH_MODELS_LIST  = 'https://models.github.ai/catalog/models';
-const GH_MODELS_LIST_LEGACY = 'https://models.inference.ai.azure.com/models';
+const GH_MODELS_LIST  = AUTH_WORKER_URL + '/api/models';
+const GH_MODELS_LIST_DIRECT  = 'https://models.github.ai/catalog/models';
+const GH_MODELS_LIST_LEGACY  = 'https://models.inference.ai.azure.com/models';
 
 const PROVIDERS = {
   github: {
@@ -688,12 +694,17 @@ async function fetchGitHubModels() {
     if (!r.ok) throw new Error(`${url} → HTTP ${r.status}`);
     return { data: await r.json(), isCatalog };
   };
+  // Order: worker proxy (gets CORS-fixed catalog) → direct catalog → legacy.
   let payload;
   try { payload = await tryFetch(GH_MODELS_LIST, true); }
   catch (e1) {
-    console.warn('[brainstem] catalog fetch failed:', e1.message, '— trying legacy');
-    try { payload = await tryFetch(GH_MODELS_LIST_LEGACY, false); }
-    catch (e2) { console.warn('[brainstem] legacy fetch also failed:', e2.message); return; }
+    console.warn('[brainstem] worker catalog failed:', e1.message, '— trying direct');
+    try { payload = await tryFetch(GH_MODELS_LIST_DIRECT, true); }
+    catch (e2) {
+      console.warn('[brainstem] direct catalog failed:', e2.message, '— trying legacy');
+      try { payload = await tryFetch(GH_MODELS_LIST_LEGACY, false); }
+      catch (e3) { console.warn('[brainstem] all catalog endpoints failed:', e3.message); return; }
+    }
   }
   const list = Array.isArray(payload.data) ? payload.data : (payload.data.data || payload.data.models || []);
   if (!list.length) return;
