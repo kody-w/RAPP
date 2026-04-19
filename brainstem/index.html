@@ -122,6 +122,22 @@
   .btn.install-os.active { background: #238636; border-color: #2ea043; color: #fff; }
   .btn.install-flavor.active { background: #1f6feb; border-color: #388bfd; color: #fff; }
 
+  /* Swarm modal — list of agents that'll be included in the bundle */
+  .swarm-agents-list {
+    max-height: 220px; overflow-y: auto;
+    border: 1px solid #21262d; border-radius: 6px;
+    background: #0d1117; padding: 6px;
+  }
+  .swarm-agent-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 8px; font-size: 11px; color: #c9d1d9;
+    font-family: "SF Mono", ui-monospace, monospace;
+    border-bottom: 1px solid #161b22;
+  }
+  .swarm-agent-row:last-child { border-bottom: none; }
+  .swarm-agent-row .name { flex: 1; }
+  .swarm-agent-row .src { font-size: 9px; color: #6e7681; }
+
   .row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
   .row label {
     font-size: 11px; color: #8b949e; text-transform: uppercase; letter-spacing: .5px;
@@ -1277,6 +1293,7 @@
         <div class="settings-quick-row">
           <button class="btn" id="btn-binder">📒 Binder</button>
           <button class="btn" id="btn-install">⬇ Install</button>
+          <button class="btn" id="btn-deploy-swarm">🐝 Deploy as Swarm</button>
         </div>
       </div>
     </div>
@@ -1437,6 +1454,41 @@
     <div class="actions">
       <a class="btn" href="../installer/" style="text-decoration:none">Open installer page →</a>
       <button class="btn primary" id="install-copy">Copy command</button>
+    </div>
+  </div>
+</div>
+
+<!-- Deploy-as-Swarm modal -->
+<div class="modal" id="swarm-modal">
+  <div class="panel">
+    <header><span class="ttl">🐝 Deploy as Swarm</span><button class="close" id="swarm-close">×</button></header>
+    <div class="body">
+      <div class="banner">
+        Bundles every agent in your binder into a <strong>swarm package</strong> — a single JSON file containing each agent's source, the system soul, and a one-line install command. Drop the bundle on any machine running a Tier 2 endpoint (locally or in Azure) and you'll have a permanent, callable swarm at a known URL.
+      </div>
+      <div class="row">
+        <label for="swarm-name">Swarm name</label>
+        <input type="text" id="swarm-name" placeholder="my-sales-swarm" autocomplete="off" />
+        <span class="hint">A short slug used as the swarm's identifier (lowercase, hyphens). Becomes part of the endpoint URL when deployed.</span>
+      </div>
+      <div class="row">
+        <label for="swarm-purpose">Purpose (one line)</label>
+        <input type="text" id="swarm-purpose" placeholder="e.g. B2B sales acceleration agents" autocomplete="off" />
+        <span class="hint">A human-readable description of what this swarm is for. Stored in the bundle's manifest.</span>
+      </div>
+      <div class="row">
+        <label>Included agents</label>
+        <div id="swarm-agents-list" class="swarm-agents-list"></div>
+      </div>
+      <div class="row">
+        <label for="swarm-endpoint">Push to endpoint (optional)</label>
+        <input type="text" id="swarm-endpoint" placeholder="http://localhost:7071  or  https://my-swarm.azurewebsites.net" autocomplete="off" />
+        <span class="hint">If you have a running Tier 2 endpoint, paste its URL and we'll POST the bundle directly. Leave blank to download the bundle as a file you can install manually.</span>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="swarm-download">⬇ Download bundle</button>
+      <button class="btn primary" id="swarm-push">🚀 Push to endpoint</button>
     </div>
   </div>
 </div>
@@ -1615,14 +1667,17 @@ const SOUL_KNOWLEDGE = `<knowledge>
 - You can discover and call agents — Python files that extend BasicAgent.
 - The user may be at any stage of the RAPP journey:
   - Tier 1 — Brainstem: local Python or this browser-only twin (where they are now).
-  - Tier 2 — Hippocampus: Azure Functions with persistent memory, runs locally first.
+  - Tier 2 — Swarm: a deployable bundle of agents pushed to a Community RAPP endpoint (powered by the hippocampus engine — Azure Functions with persistent memory). Runs locally first, deploys to Azure when ready.
   - Tier 3 — Nervous System: Copilot Studio + M365/Teams.
 - Each tier builds on the last — don't overwhelm users with later tiers unless they ask.
+- A "swarm" = the agents currently loaded in the brainstem, packaged together and pushed to a permanent endpoint. Users can have many swarms for different use cases (sales swarm, support swarm, ops swarm) and switch between them.
 </knowledge>`;
 
-const SOUL_TIER2 = `<tier_2_hippocampus>
-When the user says they're ready for Tier 2, step 2, the cloud, Azure,
-or the hippocampus — give them the one-liner.
+const SOUL_TIER2 = `<tier_2_swarm>
+When the user says they're ready for Tier 2, step 2, the cloud, a swarm,
+the hippocampus, or "deploy these agents" — give them the one-liner. The
+deployable unit is a "swarm" (the user-facing name); the engine running
+it is still the hippocampus.
 
 <install_command os="macos_linux">
 curl -fsSL https://raw.githubusercontent.com/kody-w/rapp-installer/main/community_rapp/install.sh | bash
@@ -1632,19 +1687,25 @@ curl -fsSL https://raw.githubusercontent.com/kody-w/rapp-installer/main/communit
 irm https://raw.githubusercontent.com/kody-w/rapp-installer/main/community_rapp/install.ps1 | iex
 </install_command>
 
-This creates an isolated project at \`~/rapp-projects/{name}/\` with its
-own venv, dependencies, and start script. No Azure account or API keys
-needed to start. The chat UI walks them through GitHub device-code auth
-automatically.
+This creates an isolated swarm endpoint at \`~/rapp-projects/{name}/\`
+with its own venv, dependencies, and start script. No Azure account or
+API keys needed to start. The chat UI walks them through GitHub device-
+code auth automatically.
+
+If the user already has agents loaded in the brainstem and asks to
+"deploy this as a swarm" or "push these agents to a swarm endpoint",
+point them at the brainstem's Settings → Deploy as Swarm — it bundles
+the current binder + soul into a swarm package they can install on any
+machine running the Tier 2 endpoint, locally or in Azure.
 
 <onboarding_guide>https://kody-w.github.io/CommunityRAPP/onboard.html</onboarding_guide>
 
 <important>
-Do NOT give generic Azure deployment advice. Give them the one-liner.
-The hippocampus runs locally first — Azure deployment comes later, only
-when they ask.
+Do NOT give generic Azure deployment advice. Give them the one-liner
+or point them at the in-brainstem Deploy as Swarm action. Swarms run
+locally first — Azure deployment comes later, only when they ask.
 </important>
-</tier_2_hippocampus>`;
+</tier_2_swarm>`;
 
 const SOUL_HOW_TO_HELP = `<how_to_help>
 - When users ask general questions, answer directly and concisely.
@@ -3491,6 +3552,11 @@ function wire() {
   $('#btn-agents').addEventListener('click',   () => openAside('agents'));
   $('#btn-binder').addEventListener('click',   () => { closeAside('settings'); openAside('binder'); });
   $('#btn-install').addEventListener('click',  () => { closeAside('settings'); openInstallModal(); });
+  $('#btn-deploy-swarm').addEventListener('click', () => { closeAside('settings'); openSwarmModal(); });
+  $('#swarm-close').addEventListener('click', closeSwarmModal);
+  $('#swarm-modal').addEventListener('click', e => { if (e.target.id === 'swarm-modal') closeSwarmModal(); });
+  $('#swarm-download').addEventListener('click', downloadSwarmBundle);
+  $('#swarm-push').addEventListener('click', pushSwarmToEndpoint);
   $('#btn-browse').addEventListener('click',   () => { openAside('browse'); refreshAllSources(); });
   $('#add-source').addEventListener('click',   () => addSource($('#source-input').value));
   $('#source-input').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addSource(e.target.value); } });
@@ -3672,6 +3738,7 @@ function wire() {
     }
     if (e.key !== 'Escape') return;
     if ($('#tutorial-overlay').classList.contains('open')) hideTutorial();
+    else if ($('#swarm-modal').classList.contains('open')) closeSwarmModal();
     else if ($('#install-modal').classList.contains('open')) closeInstallModal();
     else if ($('#cpsignin-modal').classList.contains('open')) closeCopilotSigninModal();
     else $$('aside.open').forEach(a => a.classList.remove('open'));
@@ -3724,6 +3791,129 @@ function copyInstallCmd() {
     btn.textContent = '✓ Copied';
     setTimeout(() => { btn.textContent = old; }, 1200);
   });
+}
+
+/* ───── Deploy as Swarm ──────────────────────────────────────────────
+   A "swarm" is the brainstem's current binder packaged as a deployable
+   bundle. The bundle is one JSON file containing each agent's source,
+   the soul (system prompt) used, and a manifest. Drop it on any Tier 2
+   endpoint (Community RAPP / hippocampus install) — locally or in
+   Azure — and it becomes a permanent callable swarm at that endpoint.
+   The backing engine is still the hippocampus; "swarm" is the unit. */
+
+function buildSwarmBundle({ name, purpose }) {
+  const slug = (name || 'untitled-swarm')
+    .toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
+    || 'untitled-swarm';
+  const agents = (state.binder?.cards || []).map(c => ({
+    filename: c.filename,
+    name: c.parsed?.agentName || c.name,
+    display_name: c.manifest?.display_name || c.name,
+    description: c.manifest?.description || '',
+    source: c.source,
+    sha256: c.sha256 || null,
+  }));
+  return {
+    schema: 'rapp-swarm/1.0',
+    name: slug,
+    purpose: purpose || '',
+    created_at: new Date().toISOString(),
+    created_by: state.settings.ghUser || 'anonymous',
+    soul: buildSystemPrompt(''),       // include the full canonical soul
+    agent_count: agents.length,
+    agents,
+  };
+}
+
+function renderSwarmAgentsList() {
+  const list = $('#swarm-agents-list');
+  list.innerHTML = '';
+  const cards = state.binder?.cards || [];
+  if (!cards.length) {
+    list.innerHTML = '<div style="padding:12px;color:#6e7681;font-size:11px;text-align:center">No agents in your binder. Add some via Browse first.</div>';
+    return;
+  }
+  for (const c of cards) {
+    const row = document.createElement('div');
+    row.className = 'swarm-agent-row';
+    const name = c.parsed?.agentName || c.name;
+    const src = c.manifest?.name || c.filename;
+    row.innerHTML = `<span class="name">${escapeHtml(name)}</span><span class="src">${escapeHtml(src)}</span>`;
+    list.appendChild(row);
+  }
+}
+
+function openSwarmModal() {
+  // Pre-fill with a sensible default name based on the binder size + first agent
+  const cards = state.binder?.cards || [];
+  const defaultName = cards.length
+    ? `${(cards[0].parsed?.agentName || 'rapp').toLowerCase()}-swarm-${cards.length}`
+    : 'my-swarm';
+  $('#swarm-name').value = defaultName;
+  $('#swarm-purpose').value = '';
+  $('#swarm-endpoint').value = '';
+  renderSwarmAgentsList();
+  $('#swarm-modal').classList.add('open');
+}
+function closeSwarmModal() { $('#swarm-modal').classList.remove('open'); }
+
+function downloadSwarmBundle() {
+  const name = $('#swarm-name').value.trim();
+  const purpose = $('#swarm-purpose').value.trim();
+  if (!name) { alert('Give the swarm a name first.'); return; }
+  const bundle = buildSwarmBundle({ name, purpose });
+  if (!bundle.agents.length) { alert('Your binder has no agents to deploy.'); return; }
+  const filename = `${bundle.name}.swarm.json`;
+  const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+  // Quick confirmation in the button
+  const btn = $('#swarm-download');
+  const old = btn.textContent;
+  btn.textContent = `✓ ${filename}`;
+  setTimeout(() => { btn.textContent = old; }, 1800);
+}
+
+async function pushSwarmToEndpoint() {
+  const name = $('#swarm-name').value.trim();
+  const purpose = $('#swarm-purpose').value.trim();
+  const endpoint = $('#swarm-endpoint').value.trim().replace(/\/+$/, '');
+  if (!name) { alert('Give the swarm a name first.'); return; }
+  if (!endpoint) { alert('Paste an endpoint URL, or use Download bundle to install manually.'); return; }
+  const bundle = buildSwarmBundle({ name, purpose });
+  if (!bundle.agents.length) { alert('Your binder has no agents to deploy.'); return; }
+  const btn = $('#swarm-push');
+  const old = btn.textContent;
+  btn.textContent = '⏳ Pushing…';
+  btn.disabled = true;
+  try {
+    // Tier 2 endpoint convention: POST /api/swarm/deploy with the bundle JSON.
+    // The hippocampus side persists the agents, restarts its loader, and
+    // returns the canonical swarm URL the user can chat with.
+    const r = await fetch(endpoint + '/api/swarm/deploy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(bundle),
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const result = await r.json().catch(() => ({}));
+    const swarmUrl = result.swarm_url || `${endpoint}/swarm/${bundle.name}`;
+    btn.textContent = '✓ Deployed';
+    setTimeout(() => {
+      closeSwarmModal();
+      alert(`Swarm "${bundle.name}" deployed.\n\nEndpoint:\n${swarmUrl}\n\nChat with it from any RAPP surface that accepts a custom endpoint.`);
+      btn.textContent = old; btn.disabled = false;
+    }, 600);
+  } catch (e) {
+    btn.textContent = '✗ Failed';
+    setTimeout(() => {
+      alert(`Push failed: ${e.message}\n\nMake sure your Tier 2 endpoint is running and exposes /api/swarm/deploy.\nFalling back to Download bundle is always an option.`);
+      btn.textContent = old; btn.disabled = false;
+    }, 600);
+  }
 }
 
 /* ───── Tutorial (port of BlazingBeard quest, web-flavored) ─── */
