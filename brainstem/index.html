@@ -1081,9 +1081,53 @@
   }
   #drop-overlay .icon { width: 64px; height: 64px; margin-bottom: 16px; }
 
+  /* ── Mobile (≤720px) ─────────────────────────────────────────────
+     Tightens the header, drops button labels in favor of icons, lets
+     the asides span the screen, respects iOS safe-area insets so the
+     input doesn't sit under the home indicator. */
   @media (max-width: 720px) {
-    aside { right: 12px; left: 12px; width: auto; }
+    aside { right: 12px; left: 12px; width: auto; max-height: 80vh; }
+    header { padding: 10px 12px; gap: 6px; }
+    header h1 { font-size: 13px; }
     header h1 .badge { display: none; }
+    header .controls { gap: 4px; }
+    /* Status text is noise on a phone — keep just the colored dot. */
+    header #status-text { display: none; }
+    /* Tether pill stays visible but loses the agent count to save space. */
+    .tether-pill { font-size: 10px; padding: 2px 6px; }
+    /* Drop the text labels from header buttons — icons-only on phones.
+       (Text nodes inside .icon-btn collapse via font-size:0; the .icon
+       span keeps its sized SVG visible.) */
+    .icon-btn { padding: 6px; font-size: 0; }
+    .icon-btn .icon { width: 16px; height: 16px; }
+    /* Sign-in stays labeled because it's the primary action. */
+    #btn-signin { font-size: 11px; padding: 4px 8px; }
+    /* Model selector shrinks but stays usable. */
+    #model-sel { max-width: 130px; padding: 4px 6px; font-size: 11px; }
+    /* Welcome card / chat content gets edge-to-edge breathing room. */
+    #chat { padding: 12px; gap: 10px; }
+    .msg .bubble { max-width: 100%; padding: 10px 12px; font-size: 14px; }
+    /* Footer respects the iPhone home indicator and trims padding. */
+    footer { padding: 10px 12px env(safe-area-inset-bottom, 10px); }
+    .input-row { gap: 6px; }
+    #input { font-size: 16px; }   /* 16px prevents iOS Safari zoom on focus */
+    #send { padding: 8px 14px; font-size: 13px; }
+    .toolbar-row { font-size: 10px; }
+    /* Hand pills — narrower so 3 fit two-up on a phone. */
+    .hand-pill { max-width: 240px; font-size: 11px; padding: 5px 10px; }
+    /* Card-mode hand: shrink the fan + lift so it doesn't dominate. */
+    #hand-cards[data-mode="cards"] { height: 80px; }
+    .hand-card { transform: translateY(60px) rotate(var(--rot)) scale(.32); margin: 0 -98px; }
+    .hand-card:hover { transform: translateY(-200px) rotate(0deg) scale(.85); }
+    /* Card modal scales down. */
+    .ac-wrap { width: min(80vw, 320px); }
+    /* Install / browse rows wrap nicely. */
+    .install-flavor, .install-os { flex: 1; min-width: 100px; }
+  }
+  /* Very small phones (≤380px): drop the badge entirely, tighten more. */
+  @media (max-width: 380px) {
+    header h1 { display: none; }   /* logo alone is enough for branding */
+    header { padding: 8px 10px; }
   }
 
   /* Sign-in pulse */
