@@ -355,7 +355,9 @@
     background: #0d1117; padding: 2px 6px; border-radius: 4px;
     font-family: "SF Mono", monospace; font-size: 12px;
   }
-  .msg.assistant .bubble pre {
+  /* :not(.al-pre) excludes agent-log pre blocks — those have their own
+     scoped styling and were getting clobbered by this rule's specificity. */
+  .msg.assistant .bubble pre:not(.al-pre) {
     background: #0d1117; padding: 10px; border-radius: 6px;
     overflow-x: auto; margin: 8px 0;
   }
@@ -411,8 +413,10 @@
     padding: 4px 10px 8px; background: #0d1117;
     font-size: 10px; color: #7ee787;
     font-family: "SF Mono", ui-monospace, monospace;
-    white-space: pre-wrap; max-height: 200px;
-    overflow-y: auto; margin: 0;
+    /* Wrap long lines (raw output often has unbroken JSON strings or URLs)
+       so the pre never forces the bubble to overflow horizontally. */
+    white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere;
+    max-height: 220px; overflow-y: auto; margin: 0;
   }
   .agent-log .al-pre.args { color: #79c0ff; }
 
@@ -3246,6 +3250,11 @@ function appendMsg(role, text, agent_logs) {
   }
   div.innerHTML = `<div class="avatar">${ic}</div><div class="bubble">${html}${logHtml}</div>`;
   $('#chat').appendChild(div);
+  // Expanding an agent-log <details> grows the bubble — keep the bottom
+  // visible so the user doesn't have to chase it manually.
+  div.querySelectorAll('.agent-log details').forEach(d => {
+    d.addEventListener('toggle', () => { if (d.open) scrollChat(); });
+  });
   scrollChat();
   return div;
 }
