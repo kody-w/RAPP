@@ -350,6 +350,8 @@
     }
 
     // Try to lift description + parameters out of the metadata literal too.
+    // Pass the already-extracted self.name in so the parser can resolve the
+    // common `"name": self.name` reference inside self.metadata.
     const metaIdx = source.search(/self\.metadata\s*=/);
     if (metaIdx >= 0) {
       const open = source.indexOf('{', metaIdx);
@@ -361,7 +363,7 @@
           else if (c === '}') { depth--; if (depth === 0) { end = i; break; } }
         }
         if (end > open) {
-          const meta = pythonDictToJson(source.substring(open, end + 1));
+          const meta = pythonDictToJson(source.substring(open, end + 1), { selfName: r.name });
           if (meta && typeof meta === 'object') {
             if (typeof meta.description === 'string') r.description = meta.description;
             if (meta.parameters && typeof meta.parameters === 'object') r.parameters = meta.parameters;
@@ -375,9 +377,19 @@
 
   // Convert a small Python dict literal to JSON. Best-effort but safe:
   // we reject anything with code-like identifiers (not None/True/False).
-  function pythonDictToJson(src) {
+  function pythonDictToJson(src, ctx) {
     try {
       let s = src;
+      // Resolve `self.name` references inside the dict (used in agent
+      // metadata as `"name": self.name`) — the OG ran in Python where this
+      // just works; we have to substitute the literal before JSON.parse.
+      const selfName = ctx && ctx.selfName;
+      if (selfName) {
+        s = s.replace(/\bself\.name\b/g, JSON.stringify(selfName));
+      }
+      // Strip any other unresolved `self.<ident>` so the parser doesn't choke
+      // on agent-specific runtime references that aren't part of the schema.
+      s = s.replace(/\bself\.[A-Za-z_]\w*/g, 'null');
       // Replace Python literals
       s = s.replace(/\bTrue\b/g, 'true').replace(/\bFalse\b/g, 'false').replace(/\bNone\b/g, 'null');
       // Convert tuples (...) → arrays. (Rare in manifests but safe.)
@@ -421,6 +433,16 @@
           i++;
         }
       }
+      // Python implicit string concatenation: `"foo" "bar"` (or split across
+      // lines / wrapped in parens) → one combined string. Repeat until stable
+      // because three+ adjacent strings need multiple passes.
+      let prev;
+      do {
+        prev = out;
+        out = out.replace(/"((?:[^"\\]|\\.)*)"\s*"((?:[^"\\]|\\.)*)"/g, '"$1$2"');
+      } while (out !== prev);
+      // A leftover `("string")` from a parenthesized concat → just the string.
+      out = out.replace(/\(\s*("(?:[^"\\]|\\.)*")\s*\)/g, '$1');
       // Strip trailing commas before } or ]
       out = out.replace(/,(\s*[}\]])/g, '$1');
       return JSON.parse(out);
