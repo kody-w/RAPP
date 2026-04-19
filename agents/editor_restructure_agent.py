@@ -1,30 +1,41 @@
-"""editor_cutweak_agent.py — single sacred agent. Cuts the weakest 20%."""
+"""editor_restructure_agent.py — single sacred agent.
+Detects repetitive middle sections (the same point restated 2-3 times in
+slightly different words) and consolidates them. Common in long-form
+generated prose."""
 from agents.basic_agent import BasicAgent
 import json, os, urllib.request, urllib.error
 
-__manifest__ = {"schema": "rapp-agent/1.0", "name": "@rapp/editor-cutweak",
+__manifest__ = {"schema": "rapp-agent/1.0", "name": "@rapp/editor-restructure",
                 "tier": "core", "trust": "community", "version": "0.1.0",
                 "tags": ["editor-specialist"]}
 
-SOUL = """You are a 'cut the weakest 20%' editor pass. You read prose and
-return the same prose with the weakest paragraphs removed. You preserve the
-writer's voice. You do not add new content. You output ONLY the cut prose,
-nothing else.
+SOUL = """You are a structural editor. You read prose and consolidate
+repetitive middle sections — passages where the same point is restated
+2-3 times in slightly different words. This is a common failure mode in
+long-form drafts: the writer makes a claim in paragraph 3, restates it in
+paragraph 5, restates it again in paragraph 7. Each restatement feels like
+emphasis but is actually drag.
 
-CRITICAL: Fenced code blocks (```...```) are EVIDENCE, not prose. Never cut
-a code block. Never abbreviate one. Never replace one with a description of
-what it shows. If a paragraph is weak, cut the paragraph; if a code block
-sits next to weak prose, keep the code block, cut the prose around it.
-Code is the load-bearing material in technical writing — your job is to
-remove the scaffolding around it, never the load itself."""
+Your job: identify those repetitions, KEEP the strongest single statement
+of the idea, DELETE the others. You do not rewrite. You do not add. You
+output the same draft minus the redundant restatements.
+
+You preserve voice. You preserve code blocks (never cut a fenced code
+block). You preserve real structural progression — when a later paragraph
+sharpens or extends an earlier point, that is NOT repetition; keep both.
+Cut only when a paragraph could be deleted with no loss of information,
+because its information is already on the page elsewhere.
+
+Output ONLY the restructured prose, nothing else."""
 
 
-class EditorCutweakAgent(BasicAgent):
+class EditorRestructureAgent(BasicAgent):
     def __init__(self):
-        self.name = "EditorCutweak"
+        self.name = "EditorRestructure"
         self.metadata = {
             "name": self.name,
-            "description": "Returns the same prose with the weakest 20% cut.",
+            "description": "Consolidates repetitive middle sections — keeps the strongest "
+                           "statement of each idea, cuts the restatements.",
             "parameters": {"type": "object",
                 "properties": {"input": {"type": "string", "description": "Draft prose"}},
                 "required": ["input"]},
@@ -33,8 +44,9 @@ class EditorCutweakAgent(BasicAgent):
 
     def perform(self, input="", **kwargs):
         return _llm_call(SOUL,
-            f"Draft to cut:\n{input}\n\nReturn the same draft with the weakest "
-            "20% removed. Output only the cut prose. No commentary.")
+            f"Draft to restructure:\n{input}\n\nReturn the same draft with redundant "
+            "restatements consolidated. Keep the strongest single statement of each "
+            "idea. Cut the rest. Output ONLY the restructured prose.")
 
 
 def _llm_call(soul, user_prompt):

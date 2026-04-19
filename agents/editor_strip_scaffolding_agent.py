@@ -1,30 +1,41 @@
-"""editor_cutweak_agent.py — single sacred agent. Cuts the weakest 20%."""
+"""editor_strip_scaffolding_agent.py — single sacred agent.
+Strips meta-artifacts the Writer left in: outline headers, planning
+notes, ALL-CAPS placeholder labels, redundant frontmatter."""
 from agents.basic_agent import BasicAgent
 import json, os, urllib.request, urllib.error
 
-__manifest__ = {"schema": "rapp-agent/1.0", "name": "@rapp/editor-cutweak",
+__manifest__ = {"schema": "rapp-agent/1.0", "name": "@rapp/editor-strip-scaffolding",
                 "tier": "core", "trust": "community", "version": "0.1.0",
                 "tags": ["editor-specialist"]}
 
-SOUL = """You are a 'cut the weakest 20%' editor pass. You read prose and
-return the same prose with the weakest paragraphs removed. You preserve the
-writer's voice. You do not add new content. You output ONLY the cut prose,
-nothing else.
+SOUL = """You are a meta-artifact stripper. You read prose that may have been
+written by a draft-and-outline workflow, and you remove anything that's
+scaffolding rather than content:
 
-CRITICAL: Fenced code blocks (```...```) are EVIDENCE, not prose. Never cut
-a code block. Never abbreviate one. Never replace one with a description of
-what it shows. If a paragraph is weak, cut the paragraph; if a code block
-sits next to weak prose, keep the code block, cut the prose around it.
-Code is the load-bearing material in technical writing — your job is to
-remove the scaffolding around it, never the load itself."""
+- Lines like '## Outline' followed by a bullet list of sections (the Writer
+  often leaves these in by mistake)
+- Empty 'TODO' / 'PLACEHOLDER' / 'FIXME' headers
+- Duplicate H1 titles (sometimes the Writer puts both a YAML title field AND
+  a markdown # title — keep only the markdown one)
+- Working notes in square brackets like '[expand here]' or '[see source]'
+- ALL-CAPS section labels that are clearly draft-state ('NOTE TO SELF', 'DRAFT')
+- Trailing 'sign-off as @writer' instructions that leaked from the prompt
+
+You preserve everything else verbatim — voice, structure, code blocks,
+prose, formatting. You output ONLY the cleaned text, nothing else.
+
+CRITICAL: Never cut fenced code blocks. Never cut real markdown headers
+that are part of the document's structure (the kind a published version
+would have). Cut only the pre-publication scaffolding."""
 
 
-class EditorCutweakAgent(BasicAgent):
+class EditorStripScaffoldingAgent(BasicAgent):
     def __init__(self):
-        self.name = "EditorCutweak"
+        self.name = "EditorStripScaffolding"
         self.metadata = {
             "name": self.name,
-            "description": "Returns the same prose with the weakest 20% cut.",
+            "description": "Strips outline headers, TODO markers, draft-state labels, "
+                           "and other meta-artifacts the Writer leaked into the draft.",
             "parameters": {"type": "object",
                 "properties": {"input": {"type": "string", "description": "Draft prose"}},
                 "required": ["input"]},
@@ -33,8 +44,9 @@ class EditorCutweakAgent(BasicAgent):
 
     def perform(self, input="", **kwargs):
         return _llm_call(SOUL,
-            f"Draft to cut:\n{input}\n\nReturn the same draft with the weakest "
-            "20% removed. Output only the cut prose. No commentary.")
+            f"Draft to strip:\n{input}\n\nReturn the cleaned draft. Output ONLY "
+            "the cleaned text. Preserve voice, code, real headers. Cut only "
+            "scaffolding artifacts.")
 
 
 def _llm_call(soul, user_prompt):

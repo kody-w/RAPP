@@ -126,3 +126,16 @@ Field notes from building the RAPP brainstem, swarm server, tether, registry, an
 
 69. [What a Curator does](./69-what-a-curator-does.md)
 70. [How we built the wire contract first, then the implementation](./70-wire-contract-first.md)
+
+## Twin Stack v1.3 + the agent vs human experiment
+
+80. [agent.py all the way down](./80-agent-py-all-the-way-down.md)
+81. [The two-pass agent loader](./81-two-pass-agent-loader.md)
+82. [The .egg snapshot format](./82-egg-snapshot-format.md)
+83. [Deleting the pipeline DSL we just built](./83-deleting-pipeline-dsl.md)
+84. [Click-and-watch: the book factory as a single web page](./84-click-and-watch-book-factory.md)
+85. [Tether bridge: the agent.py decides](./85-tether-agent-decides.md)
+86. [Per-twin Function App = independent scaling unit](./86-per-twin-fa-scaling-unit.md)
+87. [The user-correction loop](./87-user-correction-loop.md)
+88. [Agent vs human, same source material](./88-agent-vs-human-same-source.md)
+89. [The double-jump loop: Claude and BookFactory improving each other generation by generation](./89-double-jump-loop.md)

@@ -1,18 +1,24 @@
 """
-persona_editor_agent.py — Editor persona, composite of three specialist agents.
+persona_editor_agent.py — Editor persona, composite of FIVE specialist agents.
 
-Each specialist (factcheck / voicecheck / cutweak) is its own portable
-agent.py. Editor's perform() direct-imports them and runs each in turn,
-then composes the final output.
+v0.3.0: added strip_scaffolding (catches `## Outline` artifacts the Writer
+left in) and restructure (consolidates repetitive middle sections). Composite
+runs in order: strip → cut → restructure, then runs factcheck and voicecheck
+in parallel-style for the editor's note. cutweak now preserves fenced code.
+
+Each specialist is its own portable agent.py with its own inlined LLM call.
+Editor's perform() direct-imports them and runs each in sequence, then
+composes the final output.
 
 Sacred all the way down: this file is a single agent.py, but its perform()
-delegates to other agent.py files. Cat any one of them to read the whole
-unit. Move them together to share the Editor capability.
+delegates to other agent.py files. Cat any one of them to read the unit.
 """
 from agents.basic_agent import BasicAgent
-from agents.editor_cutweak_agent    import EditorCutweakAgent
-from agents.editor_factcheck_agent  import EditorFactcheckAgent
-from agents.editor_voicecheck_agent import EditorVoicecheckAgent
+from agents.editor_strip_scaffolding_agent import EditorStripScaffoldingAgent
+from agents.editor_cutweak_agent           import EditorCutweakAgent
+from agents.editor_restructure_agent       import EditorRestructureAgent
+from agents.editor_factcheck_agent         import EditorFactcheckAgent
+from agents.editor_voicecheck_agent        import EditorVoicecheckAgent
 
 
 __manifest__ = {
@@ -20,10 +26,12 @@ __manifest__ = {
     "name": "@rapp/persona-editor",
     "tier": "core",
     "trust": "community",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "tags": ["persona", "creative-pipeline", "composite"],
     "delegates_to": [
+        "@rapp/editor-strip-scaffolding",
         "@rapp/editor-cutweak",
+        "@rapp/editor-restructure",
         "@rapp/editor-factcheck",
         "@rapp/editor-voicecheck",
     ],
@@ -36,8 +44,9 @@ class PersonaEditorAgent(BasicAgent):
         self.name = "Editor"
         self.metadata = {
             "name": self.name,
-            "description": "The Editor persona. Delegates to cutweak + factcheck + "
-                           "voicecheck specialist agents and composes the result.",
+            "description": "The Editor persona. Strips scaffolding → cuts weak prose "
+                           "(preserving code) → restructures repetitive middles, then "
+                           "runs factcheck + voicecheck for the editor's note.",
             "parameters": {
                 "type": "object",
                 "properties": {"input": {"type": "string", "description": "Writer's draft"}},
@@ -47,11 +56,18 @@ class PersonaEditorAgent(BasicAgent):
         super().__init__(name=self.name, metadata=self.metadata)
 
     def perform(self, input="", **kwargs):
-        cut    = EditorCutweakAgent().perform(input=input)
-        facts  = EditorFactcheckAgent().perform(input=input)
-        voice  = EditorVoicecheckAgent().perform(input=input)
+        # Sequential transformations on the prose itself
+        stripped     = EditorStripScaffoldingAgent().perform(input=input)
+        cut          = EditorCutweakAgent().perform(input=stripped)
+        restructured = EditorRestructureAgent().perform(input=cut)
+
+        # Parallel-in-spirit checks against the original draft (so the
+        # checks see what was claimed before any cutting happened)
+        facts = EditorFactcheckAgent().perform(input=input)
+        voice = EditorVoicecheckAgent().perform(input=input)
+
         return (
-            f"{cut}\n"
+            f"{restructured}\n"
             f"---\n"
             f"**Editor's note**\n\n"
             f"_Sourcing flags:_\n{facts}\n\n"
