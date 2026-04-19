@@ -27,6 +27,13 @@ __manifest__ = {
 
 _MEM_KEY = "rapp_memory_v1"
 
+def _memory_path():
+    """Where this process's memory lives — swarm server overrides via env."""
+    import os
+    p = os.environ.get("BRAINSTEM_MEMORY_PATH")
+    return p if p else os.path.expanduser("~/.brainstem/memory.json")
+
+
 def _read_memory():
     try:
         from js import localStorage  # type: ignore
@@ -34,7 +41,7 @@ def _read_memory():
         return json.loads(raw) if raw else {}
     except Exception:
         import os
-        path = os.path.expanduser("~/.brainstem/memory.json")
+        path = _memory_path()
         if os.path.exists(path):
             with open(path) as f:
                 return json.load(f)

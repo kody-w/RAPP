@@ -1433,9 +1433,10 @@
   <div class="panel">
     <header><span class="ttl">💻 Install</span><button class="close" id="install-close">×</button></header>
     <div class="body">
-      <div style="display:flex;gap:6px;margin-bottom:10px">
+      <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
         <button class="btn install-flavor active" data-flavor="brainstem">Local brainstem</button>
-        <button class="btn install-flavor" data-flavor="tether">Tether (browser AI + local agents)</button>
+        <button class="btn install-flavor" data-flavor="tether">Tether</button>
+        <button class="btn install-flavor" data-flavor="swarm">Swarm endpoint</button>
       </div>
       <div class="banner" id="install-blurb">
         The canonical one-line installer. Installs to <code>~/.brainstem/src/rapp_brainstem/</code>, then you can <code>brainstem</code> from any shell.
@@ -1481,9 +1482,15 @@
         <div id="swarm-agents-list" class="swarm-agents-list"></div>
       </div>
       <div class="row">
-        <label for="swarm-endpoint">Push to endpoint (optional)</label>
-        <input type="text" id="swarm-endpoint" placeholder="http://localhost:7071  or  https://my-swarm.azurewebsites.net" autocomplete="off" />
-        <span class="hint">If you have a running Tier 2 endpoint, paste its URL and we'll POST the bundle directly. Leave blank to download the bundle as a file you can install manually.</span>
+        <label for="swarm-endpoint">Push to endpoint</label>
+        <input type="text" id="swarm-endpoint" placeholder="http://localhost:7080  or  https://my-swarm.azurewebsites.net" autocomplete="off" />
+        <span class="hint">A swarm endpoint accepts the bundle at <code>/api/swarm/deploy</code> and returns the swarm's <code>swarm_guid</code> + URL. Run one locally with <code>brainstem-swarm</code> (or use the install one-liner). Leave blank for download-only.</span>
+      </div>
+
+      <div class="row">
+        <label>Previously deployed swarms</label>
+        <div id="deployed-swarms-list" class="swarm-agents-list"></div>
+        <span class="hint">Saved automatically on successful push. Click a swarm to copy its URL.</span>
       </div>
     </div>
     <div class="actions">
@@ -1810,6 +1817,12 @@ const state = {
     // they get real filesystem / subprocess / LAN / hardware access.
     tetherEnabled: false,
     tetherUrl: 'http://localhost:8765',
+    // Default endpoint that Deploy as Swarm posts to (the local swarm/server.py
+    // installed via `install-swarm.sh`, listens on :7080 by default).
+    swarmEndpoint: 'http://localhost:7080',
+    // Persisted list of swarms this user has deployed: {name, swarm_guid,
+    // swarm_url, info_url, endpoint, deployed_at}. Capped at 50.
+    deployedSwarms: [],
   },
   // Live tether status (refreshed by probeTether). Not persisted.
   tether: { connected: false, agents: [], lastError: null, host: '' },
@@ -3756,10 +3769,17 @@ const INSTALL_CMDS = {
     linux: 'curl -fsSL https://kody-w.github.io/RAPP/install-tether.sh | bash',
     win:   'iwr https://kody-w.github.io/RAPP/install-tether.ps1 -useb | iex',
   },
+  swarm: {
+    mac:   'curl -fsSL https://kody-w.github.io/RAPP/install-swarm.sh | bash',
+    linux: 'curl -fsSL https://kody-w.github.io/RAPP/install-swarm.sh | bash',
+    // Windows tether-style ps1 not yet split — same install-swarm.sh in WSL works.
+    win:   'iwr https://kody-w.github.io/RAPP/install-swarm.sh -useb | wsl bash',
+  },
 };
 const INSTALL_BLURBS = {
   brainstem: 'The full local-first stack — Python + Flask + venv + GitHub OAuth. Installs to <code>~/.brainstem/src/rapp_brainstem/</code>, then you can <code>brainstem</code> from any shell.',
   tether: 'Stdlib-only Python server that exposes your local agents to <em>this</em> virtual brainstem. Installs to <code>~/.brainstem-tether/</code>, then runs <code>brainstem-tether</code> on <code>localhost:8765</code>. AI stays in the browser; agents run on your machine.',
+  swarm: 'Stdlib-only multi-tenant swarm server. Hosts <em>many</em> swarms behind one endpoint at <code>localhost:7080</code>, each isolated by GUID — agents and per-user memory both routed by <code>swarm_guid</code> + <code>user_guid</code>. Push from <strong>Settings → Deploy as Swarm</strong>.',
 };
 function detectOS() {
   const ua = navigator.userAgent;
@@ -3825,6 +3845,33 @@ function buildSwarmBundle({ name, purpose }) {
   };
 }
 
+function renderDeployedSwarmsList() {
+  const list = $('#deployed-swarms-list');
+  list.innerHTML = '';
+  const swarms = state.settings.deployedSwarms || [];
+  if (!swarms.length) {
+    list.innerHTML = '<div style="padding:12px;color:#6e7681;font-size:11px;text-align:center">No swarms deployed yet from this browser.</div>';
+    return;
+  }
+  for (const s of swarms) {
+    const row = document.createElement('div');
+    row.className = 'swarm-agent-row';
+    row.style.cursor = 'pointer';
+    row.title = `Click to copy ${s.swarm_url}`;
+    const when = s.deployed_at ? new Date(s.deployed_at).toLocaleString() : '';
+    row.innerHTML = `<span class="name">${escapeHtml(s.name || s.swarm_guid)}</span>
+                     <span class="src">${escapeHtml(s.agent_count || '?')} agents · ${escapeHtml(when)}</span>`;
+    row.addEventListener('click', () => {
+      navigator.clipboard.writeText(s.swarm_url || '').then(() => {
+        const orig = row.innerHTML;
+        row.innerHTML = `<span class="name" style="color:#3fb950">✓ copied ${escapeHtml(s.swarm_url)}</span>`;
+        setTimeout(() => { row.innerHTML = orig; }, 1400);
+      });
+    });
+    list.appendChild(row);
+  }
+}
+
 function renderSwarmAgentsList() {
   const list = $('#swarm-agents-list');
   list.innerHTML = '';
@@ -3851,8 +3898,9 @@ function openSwarmModal() {
     : 'my-swarm';
   $('#swarm-name').value = defaultName;
   $('#swarm-purpose').value = '';
-  $('#swarm-endpoint').value = '';
+  $('#swarm-endpoint').value = state.settings.swarmEndpoint || 'http://localhost:7080';
   renderSwarmAgentsList();
+  renderDeployedSwarmsList();
   $('#swarm-modal').classList.add('open');
 }
 function closeSwarmModal() { $('#swarm-modal').classList.remove('open'); }
@@ -3890,27 +3938,57 @@ async function pushSwarmToEndpoint() {
   btn.textContent = '⏳ Pushing…';
   btn.disabled = true;
   try {
-    // Tier 2 endpoint convention: POST /api/swarm/deploy with the bundle JSON.
-    // The hippocampus side persists the agents, restarts its loader, and
-    // returns the canonical swarm URL the user can chat with.
+    // POST /api/swarm/deploy is the wire contract every Tier 2 swarm endpoint
+    // honors — local stdlib swarm/server.py, the Community RAPP project, and
+    // (eventually) the Azure deployment. Returns {swarm_guid, swarm_url, ...}.
     const r = await fetch(endpoint + '/api/swarm/deploy', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(bundle),
     });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const result = await r.json().catch(() => ({}));
-    const swarmUrl = result.swarm_url || `${endpoint}/swarm/${bundle.name}`;
+    const result = await r.json();
+    if (result.status === 'error') throw new Error(result.message || 'deploy rejected');
+
+    // Remember the endpoint that just worked so the next deploy pre-fills it.
+    state.settings.swarmEndpoint = endpoint;
+    // Persist this deployment so users can come back to the URL later.
+    state.settings.deployedSwarms = state.settings.deployedSwarms || [];
+    state.settings.deployedSwarms.unshift({
+      name: result.name || bundle.name,
+      swarm_guid: result.swarm_guid,
+      swarm_url: result.swarm_url,
+      info_url: result.info_url,
+      endpoint,
+      agent_count: result.agent_count,
+      deployed_at: new Date().toISOString(),
+    });
+    state.settings.deployedSwarms = state.settings.deployedSwarms.slice(0, 50);
+    LS.set('settings', state.settings);
+
     btn.textContent = '✓ Deployed';
     setTimeout(() => {
       closeSwarmModal();
-      alert(`Swarm "${bundle.name}" deployed.\n\nEndpoint:\n${swarmUrl}\n\nChat with it from any RAPP surface that accepts a custom endpoint.`);
+      const msg =
+        `🐝 Swarm "${result.name}" deployed!\n\n` +
+        `swarm_guid:  ${result.swarm_guid}\n` +
+        `agents:      ${result.agent_count}\n\n` +
+        `Call it:\n  POST ${result.swarm_url}\n  body: {"name": "<AgentName>", "args": {...}, "user_guid": "<optional>"}\n\n` +
+        `Inspect it:\n  GET  ${result.info_url}\n\n` +
+        `Saved to your deployed-swarms list — see Settings.`;
+      alert(msg);
       btn.textContent = old; btn.disabled = false;
     }, 600);
   } catch (e) {
     btn.textContent = '✗ Failed';
     setTimeout(() => {
-      alert(`Push failed: ${e.message}\n\nMake sure your Tier 2 endpoint is running and exposes /api/swarm/deploy.\nFalling back to Download bundle is always an option.`);
+      alert(
+        `Push failed: ${e.message}\n\n` +
+        `Make sure a swarm endpoint is running at ${endpoint}.\n` +
+        `Quick start:\n` +
+        `  curl -fsSL https://kody-w.github.io/RAPP/install-swarm.sh | bash\n\n` +
+        `Or use Download bundle to install manually.`
+      );
       btn.textContent = old; btn.disabled = false;
     }, 600);
   }

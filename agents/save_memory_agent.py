@@ -31,6 +31,19 @@ __manifest__ = {
 
 _MEM_KEY = "rapp_memory_v1"
 
+def _memory_path():
+    """Where this process's memory lives.
+
+    Priority: BRAINSTEM_MEMORY_PATH env (set by swarm server for per-swarm /
+    per-user routing) → default ~/.brainstem/memory.json. The swarm server
+    swaps the env var around each call so the same agent file serves N
+    isolated tenants without changing its code.
+    """
+    import os
+    p = os.environ.get("BRAINSTEM_MEMORY_PATH")
+    return p if p else os.path.expanduser("~/.brainstem/memory.json")
+
+
 def _read_memory():
     try:
         from js import localStorage  # type: ignore
@@ -38,7 +51,7 @@ def _read_memory():
         return json.loads(raw) if raw else {}
     except Exception:
         import os
-        path = os.path.expanduser("~/.brainstem/memory.json")
+        path = _memory_path()
         if os.path.exists(path):
             with open(path) as f:
                 return json.load(f)
@@ -53,7 +66,7 @@ def _write_memory(data):
     except Exception:
         pass
     import os
-    path = os.path.expanduser("~/.brainstem/memory.json")
+    path = _memory_path()
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as f:
         json.dump(data, f, indent=2)
