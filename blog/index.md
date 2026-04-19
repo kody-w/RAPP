@@ -89,3 +89,40 @@ Field notes from building the RAPP brainstem, swarm server, tether, registry, an
 50. [Authenticated swarms: who can call which `swarm_guid`?](./50-authenticated-swarms.md)
 51. [Per-swarm soul](./51-per-swarm-soul.md)
 52. [Swarms calling swarms](./52-swarms-calling-swarms.md)
+
+## Sealing & snapshot — twin-preservation primitives
+
+53. [The smallest workable seal](./53-smallest-workable-seal.md)
+54. [Snapshots as conversational artifacts, not backups](./54-snapshots-as-conversational-artifacts.md)
+55. [`PermissionError` as a first-class signal](./55-permission-error-as-signal.md)
+56. [HTTP 423 Locked is real and useful](./56-http-423-locked.md)
+57. [Snapshot agent caching by `sys.modules` namespacing, part two](./57-snapshot-namespacing-part-two.md)
+
+## Open-core strategy
+
+58. [Open the bones, close the body, sell the soul](./58-open-bones-close-body.md)
+59. [Why a JSON file is a marketplace AND a deployment unit AND a portable archive](./59-json-as-everything.md)
+60. [The deliberately-invalid sentinel, expanded](./60-sentinel-guid-expanded.md)
+
+## Patent strategy
+
+61. [Filing a software patent in 90 minutes for $160](./61-filing-software-patent-90-min.md)
+62. [The integrated-combination doctrine for AI-system patents](./62-integrated-combination-doctrine.md)
+71. [Patent-pending in build-in-public: how we say what we have without giving it away](./71-patent-pending-build-in-public.md)
+
+## Pricing & business model (abstracted)
+
+63. [Pricing for legacy, not utility](./63-pricing-for-legacy.md)
+64. [The endowment-funded perpetual service](./64-endowment-funded-perpetual.md)
+65. [Tiered capacity gating in stdlib Python](./65-tier-gating-stdlib.md)
+
+## Federation & D2D
+
+66. [The D2D protocol, v0 sketch](./66-d2d-protocol-v0.md)
+67. [Phone-anchored sovereign clouds: the federation pattern](./67-phone-anchored-clouds.md)
+68. [Swarms calling swarms: composition with consent](./68-swarms-calling-swarms-protocol.md)
+
+## Operations & culture
+
+69. [What a Curator does](./69-what-a-curator-does.md)
+70. [How we built the wire contract first, then the implementation](./70-wire-contract-first.md)
