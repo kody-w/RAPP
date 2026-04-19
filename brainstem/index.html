@@ -584,6 +584,64 @@
     font-size: 8px; color: rgba(201,168,76,.5); letter-spacing: 1px;
   }
 
+  /* ── First-run tutorial overlay (port of BlazingBeard's quest, web-flavored) ── */
+  #tutorial-overlay {
+    position: fixed; inset: 0;
+    background: rgba(13,17,23,.92);
+    display: none; align-items: center; justify-content: center;
+    z-index: 150; padding: 20px;
+    backdrop-filter: blur(6px);
+  }
+  #tutorial-overlay.open { display: flex; }
+  .tut-card {
+    background: #161b22; border: 1px solid #30363d; border-radius: 16px;
+    width: 100%; max-width: 560px; max-height: 90vh;
+    display: flex; flex-direction: column;
+    box-shadow: 0 24px 48px rgba(0,0,0,.5);
+  }
+  .tut-head {
+    padding: 18px 22px 12px; border-bottom: 1px solid #21262d;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .tut-progress { font-size: 11px; color: #6e7681; letter-spacing: 1px; text-transform: uppercase; }
+  .tut-progress strong { color: #58a6ff; }
+  .tut-skip {
+    background: none; border: none; color: #6e7681; font-size: 12px;
+    cursor: pointer; text-decoration: underline;
+  }
+  .tut-skip:hover { color: #f85149; }
+  .tut-body { padding: 22px; overflow-y: auto; flex: 1; }
+  .tut-phase {
+    font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: #d2a8ff; font-weight: 600; margin-bottom: 6px;
+  }
+  .tut-title { font-size: 22px; font-weight: 700; color: #e6edf3; margin-bottom: 6px; }
+  .tut-time { font-size: 11px; color: #6e7681; margin-bottom: 16px; }
+  .tut-desc { font-size: 14px; color: #c9d1d9; line-height: 1.55; margin-bottom: 14px; }
+  .tut-tip {
+    background: rgba(31,111,235,.06); border: 1px solid #1f6feb;
+    border-radius: 8px; padding: 10px 12px; margin: 12px 0;
+    font-size: 12px; color: #58a6ff; line-height: 1.5;
+  }
+  .tut-tip strong { color: #c9d1d9; }
+  .tut-cta {
+    margin-top: 12px; padding: 10px 14px;
+    background: rgba(63,185,80,.06); border: 1px solid #238636;
+    border-radius: 8px; font-size: 13px; color: #3fb950; line-height: 1.5;
+  }
+  .tut-foot {
+    padding: 14px 22px; border-top: 1px solid #21262d;
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  }
+  .tut-dots { display: flex; gap: 5px; }
+  .tut-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #30363d; transition: background .15s;
+  }
+  .tut-dot.active { background: #58a6ff; }
+  .tut-dot.done { background: #238636; }
+  .tut-nav { display: flex; gap: 8px; }
+
   /* Drop overlay */
   #drop-overlay {
     display: none; position: fixed; inset: 0;
@@ -872,6 +930,31 @@
     <div class="actions">
       <a class="btn" href="../installer/" style="text-decoration:none">Open installer page →</a>
       <button class="btn primary" id="install-copy">Copy command</button>
+    </div>
+  </div>
+</div>
+
+<!-- First-run tutorial — adapted from BlazingBeard's RAPP brainstem quest -->
+<div id="tutorial-overlay">
+  <div class="tut-card">
+    <div class="tut-head">
+      <span class="tut-progress">Step <strong id="tut-n">1</strong> of <strong id="tut-total">9</strong></span>
+      <button class="tut-skip" id="tut-skip">Skip · don't show again</button>
+    </div>
+    <div class="tut-body">
+      <div class="tut-phase" id="tut-phase">Hatching</div>
+      <div class="tut-title" id="tut-title">Welcome</div>
+      <div class="tut-time" id="tut-time">~30 sec</div>
+      <div class="tut-desc" id="tut-desc"></div>
+      <div class="tut-tip" id="tut-tip" hidden></div>
+      <div class="tut-cta" id="tut-cta" hidden></div>
+    </div>
+    <div class="tut-foot">
+      <div class="tut-dots" id="tut-dots"></div>
+      <div class="tut-nav">
+        <button class="btn" id="tut-prev">Back</button>
+        <button class="btn primary" id="tut-next">Next →</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1473,7 +1556,11 @@ async function runCopilotSignin() {
     $('#cpsignin-step2').hidden = true;
     $('#cpsignin-step3').hidden = false;
     refreshStatus();
-    setTimeout(closeCopilotSigninModal, 1200);
+    setTimeout(() => {
+      closeCopilotSigninModal();
+      // First-time sign-in → show the tutorial unless already dismissed.
+      if (!LS.get('tutorialDismissed', 0)) setTimeout(() => showTutorial(true), 400);
+    }, 1200);
   } catch (e) {
     console.error(e);
     $('#cpsignin-error').textContent = '⚠️ ' + e.message;
@@ -2156,6 +2243,17 @@ function wire() {
   $('#cpsignin-close').addEventListener('click', closeCopilotSigninModal);
   $('#cpsignin-go').addEventListener('click', runCopilotSignin);
   $('#cpsignin-modal').addEventListener('click', e => { if (e.target.id === 'cpsignin-modal') closeCopilotSigninModal(); });
+  // Tutorial wiring
+  $('#tut-prev').addEventListener('click', tutPrev);
+  $('#tut-next').addEventListener('click', tutNext);
+  $('#tut-skip').addEventListener('click', hideTutorial);
+  $('#tutorial-overlay').addEventListener('click', e => { if (e.target.id === 'tutorial-overlay') hideTutorial(); });
+  // "Show tutorial" link in settings actions
+  const tutLink = document.createElement('button');
+  tutLink.className = 'btn'; tutLink.textContent = 'Show tutorial';
+  tutLink.addEventListener('click', () => { closeAside('settings'); showTutorial(true); });
+  const settingsActions = $('#settings .actions');
+  if (settingsActions) settingsActions.insertBefore(tutLink, settingsActions.firstChild);
   $('#reset-data').addEventListener('click', () => {
     if (!confirm('Wipe all local data (binder, hand, settings, transcripts)?')) return;
     LS.del('settings'); LS.del('binder'); LS.del('hand');
@@ -2275,7 +2373,8 @@ function wire() {
   // Esc closes modal/drawers
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
-    if ($('#card-modal').classList.contains('open')) closeCardModal();
+    if ($('#tutorial-overlay').classList.contains('open')) hideTutorial();
+    else if ($('#card-modal').classList.contains('open')) closeCardModal();
     else if ($('#install-modal').classList.contains('open')) closeInstallModal();
     else if ($('#cpsignin-modal').classList.contains('open')) closeCopilotSigninModal();
     else $$('aside.open').forEach(a => a.classList.remove('open'));
@@ -2311,6 +2410,72 @@ function copyInstallCmd() {
     btn.textContent = '✓ Copied';
     setTimeout(() => { btn.textContent = old; }, 1200);
   });
+}
+
+/* ───── Tutorial (port of BlazingBeard quest, web-flavored) ─── */
+const TUTORIAL_STEPS = [
+  { phase: 'Welcome', title: 'You\'re in the RAPP Brainstem', time: '~30 sec',
+    desc: 'This is the browser-only twin of the local brainstem. Same <code>/chat</code> envelope, same single-file <code>*_agent.py</code> contract — your GitHub Copilot subscription powers it. Let me show you around in 9 quick steps.' },
+  { phase: '🥚 Hatching', title: 'Sign in is done', time: '✓',
+    desc: 'You\'re signed in via the GitHub Copilot device-code flow — same path the local brainstem uses. The session token auto-refreshes; you don\'t have to manage anything.',
+    tip: '<strong>Status pill:</strong> top-right shows your GitHub identity and active model.' },
+  { phase: '🥚 Hatching', title: 'First conversation', time: '~30 sec',
+    desc: 'Type anything in the box at the bottom. The brainstem combines your <code>soul.md</code> system prompt with the loaded agent tools and asks the model to respond.',
+    cta: 'Try a starter prompt: <strong>Top HN stories</strong> — the chat will call the HackerNews agent and stream a list back.' },
+  { phase: '🧠 Core skills', title: 'Switch models on the fly', time: '~10 sec',
+    desc: 'Click the model dropdown at the top to swap between GPT-4o, Claude Sonnet/Opus, GPT-4.1, o-series, Gemini, etc. — the full Copilot catalog. No restart.',
+    tip: 'Models without tool-calling capability are tagged <code>· no tools</code> and won\'t fire your agents.' },
+  { phase: '🧠 Core skills', title: 'Memory persists across sessions', time: '~1 min',
+    desc: 'Tell the brainstem to remember something: <em>"Remember that my name is Kody and I work on RAPP."</em> The <strong>SaveMemory</strong> agent writes it to localStorage. Refresh the page and ask <em>"What do you remember about me?"</em> — <strong>RecallMemory</strong> brings it back, and its <code>system_context()</code> auto-injects it on every turn.' },
+  { phase: '⚡ Your agents', title: 'The Binder = your card collection', time: '~30 sec',
+    desc: 'Click <strong>Binder</strong> in the header to see every agent as a Pokemon-style card. Tap a card to view stats / abilities / source, then tap again to flip it — the back has a QR code with a deeplink to the agent.',
+    tip: 'The hand row above the chat is what\'s actually loaded. The LLM only sees those tools.' },
+  { phase: '⚡ Your agents', title: 'Add an agent', time: '~1 min',
+    desc: 'Drag any <code>*_agent.py</code> file onto the window to install it. Or click <strong>Agents</strong> in the header → <strong>Paste source</strong>. Or import a <strong>card.json</strong> from the binder drawer — the source is embedded, sha256-verified, and reconstructs exactly.',
+    cta: 'Single-file agents are sacred (SPEC §0). One file = one agent = one perform(). The same file works in the local brainstem and the cloud tier unchanged.' },
+  { phase: '🧬 Mastery', title: 'Want the real one on your machine?', time: '~3 min',
+    desc: 'Click <strong>💻 Install</strong> in the header for the canonical one-line installer (Mac / Linux / Windows). It puts the brainstem at <code>~/.brainstem/src/rapp_brainstem/</code>; then just type <code>brainstem</code> in any shell.',
+    tip: 'The local brainstem talks to the same Copilot endpoint you\'re using here. Files round-trip between the two.' },
+  { phase: '🧬 Mastery', title: 'You\'re set', time: '🏆',
+    desc: 'You\'ve got chat, memory, agents, and a binder. Re-open this tutorial anytime from <strong>⚙ Settings → Show tutorial</strong> at the bottom of the panel.' },
+];
+let tutStep = 0;
+function showTutorial(forceFromStart) {
+  if (forceFromStart) tutStep = 0;
+  $('#tut-total').textContent = TUTORIAL_STEPS.length;
+  renderTutStep();
+  $('#tutorial-overlay').classList.add('open');
+}
+function hideTutorial() {
+  $('#tutorial-overlay').classList.remove('open');
+  LS.set('tutorialDismissed', 1);
+}
+function renderTutStep() {
+  const s = TUTORIAL_STEPS[tutStep];
+  $('#tut-n').textContent = tutStep + 1;
+  $('#tut-phase').textContent = s.phase;
+  $('#tut-title').textContent = s.title;
+  $('#tut-time').textContent = s.time;
+  $('#tut-desc').innerHTML = s.desc;
+  const tip = $('#tut-tip'); tip.hidden = !s.tip; if (s.tip) tip.innerHTML = s.tip;
+  const cta = $('#tut-cta'); cta.hidden = !s.cta; if (s.cta) cta.innerHTML = s.cta;
+  // Dots
+  const dots = $('#tut-dots'); dots.innerHTML = '';
+  for (let i = 0; i < TUTORIAL_STEPS.length; i++) {
+    const d = document.createElement('span');
+    d.className = 'tut-dot' + (i === tutStep ? ' active' : (i < tutStep ? ' done' : ''));
+    dots.appendChild(d);
+  }
+  $('#tut-prev').disabled = tutStep === 0;
+  $('#tut-prev').style.opacity = tutStep === 0 ? '0.3' : '1';
+  $('#tut-next').textContent = tutStep === TUTORIAL_STEPS.length - 1 ? 'Done' : 'Next →';
+}
+function tutNext() {
+  if (tutStep < TUTORIAL_STEPS.length - 1) { tutStep++; renderTutStep(); }
+  else hideTutorial();
+}
+function tutPrev() {
+  if (tutStep > 0) { tutStep--; renderTutStep(); }
 }
 
 /* ───── Boot ─────────────────────────────────────────── */
