@@ -2508,9 +2508,14 @@ function appendMsg(role, text, agent_logs) {
   const div = document.createElement('div');
   div.className = `msg ${role}`;
   const ic = role === 'user' ? icon('user') : (role === 'assistant' ? icon('brain') : icon('system'));
-  const html = role === 'user'
-    ? escapeHtml(text).replace(/\n/g, '<br>')
-    : (window.marked ? window.marked.parse(text || '') : escapeHtml(text||'').replace(/\n/g,'<br>'));
+  let html;
+  if (role === 'user') {
+    html = escapeHtml(text).replace(/\n/g, '<br>');
+  } else {
+    html = window.marked ? window.marked.parse(text || '') : escapeHtml(text||'').replace(/\n/g,'<br>');
+    // Force every link in assistant/system bubbles to open in a new tab.
+    html = html.replace(/<a\s+href=/g, '<a target="_blank" rel="noopener noreferrer" href=');
+  }
   let logHtml = '';
   if (agent_logs && agent_logs.length) {
     logHtml = `<div class="agent-log">${agent_logs.map(l => `

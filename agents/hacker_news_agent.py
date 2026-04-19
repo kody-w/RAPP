@@ -92,11 +92,21 @@ class HackerNewsAgent(BasicAgent):
             except Exception:
                 continue
 
-        summary_lines = [f"{i+1}. {s['title']} ({s.get('score', 0)} points, by {s.get('author', '?')})\n   {s['url']}"
-                        for i, s in enumerate(stories)]
+        # Markdown with proper [title](url) links + HN comments link.
+        # The LLM tends to copy this format verbatim; pre-linked here means
+        # the rendered chat bubble has clickable titles + comment threads.
+        summary_lines = []
+        for i, s in enumerate(stories):
+            comments_url = f"https://news.ycombinator.com/item?id={s['id']}"
+            summary_lines.append(
+                f"{i+1}. **[{s['title']}]({s['url']})** "
+                f"— {s.get('score', 0)} points, by {s.get('author', '?')} "
+                f"· [{s.get('comments', 0)} comments]({comments_url})"
+            )
         return json.dumps({
             "status": "success",
             "stories": stories,
-            "summary": "Top Hacker News stories:\n\n" + "\n\n".join(summary_lines),
+            "summary": "Top Hacker News stories:\n\n" + "\n\n".join(summary_lines)
+                       + "\n\nWhen presenting these to the user, render the titles as clickable markdown links exactly as written above.",
             "data_slush": {"count": len(stories), "top_url": stories[0]["url"] if stories else None},
         })
