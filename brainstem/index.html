@@ -1584,7 +1584,7 @@ const state = {
     customKey: '',
     model: 'gpt-4o',
     execMode: 'live',
-    soul: 'You are a helpful, concise RAPP brainstem assistant. Use the loaded tools when relevant. After tool calls, summarize the result in plain English.',
+    soul: 'You are a helpful, concise RAPP brainstem assistant. Use the loaded tools when relevant. When a tool returns markdown — links like [title](url), lists, code blocks — render that markdown verbatim in your reply. Preserve every clickable link exactly as the tool wrote it; do not strip URLs, do not rewrite titles into plain text, do not collapse formatted output into prose.',
     handMode: 'pills',           // 'pills' (default — clean for business users) | 'cards' (holo)
     // Agent registries we pull Browse listings from. Each entry is `owner/repo`
     // and must publish a registry.json at the repo root in rapp-registry/1.0.
@@ -1662,6 +1662,15 @@ function loadSettings() {
     LS.set('settings', state.settings);
   }
   LS.set('migratedToLive', 1);
+  // One-shot migration v4 — overwrite the stale soul whose final sentence
+  // ("summarize the result in plain English") told models to strip markdown
+  // links from agent output (HN titles, etc.). Anyone still on the original
+  // string (we removed the editor in v3) gets the new link-preserving prompt.
+  const STALE_SOUL = 'You are a helpful, concise RAPP brainstem assistant. Use the loaded tools when relevant. After tool calls, summarize the result in plain English.';
+  if (state.settings.soul === STALE_SOUL) {
+    state.settings.soul = 'You are a helpful, concise RAPP brainstem assistant. Use the loaded tools when relevant. When a tool returns markdown — links like [title](url), lists, code blocks — render that markdown verbatim in your reply. Preserve every clickable link exactly as the tool wrote it; do not strip URLs, do not rewrite titles into plain text, do not collapse formatted output into prose.';
+    LS.set('settings', state.settings);
+  }
   $('#provider').value = state.settings.provider;
   $('#api-key').value  = state.settings.apiKey;
   $('#api-base').value = state.settings.customBase;
