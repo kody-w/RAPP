@@ -3091,7 +3091,7 @@ async function send(userInput) {
  * by talking to an OpenAI-compatible API directly.
  */
 async function chatLoop(userInput) {
-  const tools = handTools();
+  const tools = binderTools();
   // Build the system prompt from the SOUL_* blocks plus a fresh read of
   // localStorage memories — same XML structure (identity / memory blocks /
   // context_instructions / agent_usage / …) the community RAPP function_app.py
@@ -3160,16 +3160,24 @@ async function chatLoop(userInput) {
   return { text: '_(stopped after 6 tool-call rounds)_', agent_logs };
 }
 
-function handTools() {
+// Returns the OpenAI tools array for every agent in the binder — exactly
+// like the OG community RAPP's get_agent_metadata() (function_app.py),
+// which exposes every *_agent.py loaded from the agents/ folder. The
+// "hand" here is purely a quick-click UX (pills/cards above the input);
+// the LLM gets the full binder so it can call anything the user has
+// installed without first having to "play" it.
+function binderTools() {
   const out = [];
-  for (const f of state.hand) {
-    const c = state.binder.cards.find(x => x.filename === f);
-    if (!c) continue;
+  const seen = new Set();
+  for (const c of state.binder.cards) {
     const p = RAPP.Agent.parseAgentSource(c.source, c.filename);
+    const name = p.name || (c.manifest.name || '').split('/').pop() || c.filename.replace(/_agent\.py$/, '');
+    if (!name || seen.has(name)) continue;   // de-dupe on agent name
+    seen.add(name);
     out.push({
       type: 'function',
       function: {
-        name: p.name || c.manifest.name.split('/').pop(),
+        name,
         description: p.description || c.manifest.description || '',
         parameters: p.parameters || { type: 'object', properties: {}, required: [] },
       },
