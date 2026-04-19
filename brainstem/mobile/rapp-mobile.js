@@ -370,9 +370,67 @@ async function getSettings() {
     azure_endpoint: '', azure_api_key: '', azure_deployment: '',
     openai_api_key: '', openai_model: 'gpt-4o',
     anthropic_api_key: '', anthropic_model: 'claude-sonnet-4-6',
+    tether_url: 'http://127.0.0.1:8765',
   };
 }
 async function setSettings(s) { await idbPut('settings', SETTINGS_KEY, s); return s; }
+
+// ─── Local tether bridge (the twin's "hands" on the OS) ────────────────
+// When the user runs `python tether/server.py` alongside the PWA, the
+// tether exposes local *_agent.py files with REAL system access (filesystem,
+// processes, LAN, hardware). The PWA discovers it via /tether/tools and
+// registers those tools alongside the swarm's in-browser stubs. Tool calls
+// route to whichever side actually has the agent.
+//
+// Trust model: the tether is granting the LLM the SAME power as the user's
+// own shell. The user must explicitly run the tether to enable this — it's
+// not on by default, and the URL is a local-network address that doesn't
+// resolve from outside the device.
+
+let _tetherCache = null;       // { url, alive, tools, count, fetched_at }
+const TETHER_TTL_MS = 30_000;
+
+async function probeTether(force = false) {
+  const s = await getSettings();
+  const url = (s.tether_url || 'http://127.0.0.1:8765').replace(/\/+$/, '');
+  if (!force && _tetherCache && _tetherCache.url === url
+      && (Date.now() - _tetherCache.fetched_at) < TETHER_TTL_MS) {
+    return _tetherCache;
+  }
+  try {
+    // Probe healthz first (fast), then enrich with tools.
+    const hr = await fetch(url + '/tether/healthz', { signal: AbortSignal.timeout(1500) });
+    if (!hr.ok) throw new Error(`HTTP ${hr.status}`);
+    const h = await hr.json();
+    let tools = [];
+    try {
+      const tr = await fetch(url + '/tether/tools', { signal: AbortSignal.timeout(1500) });
+      if (tr.ok) tools = (await tr.json()).tools || [];
+    } catch {}
+    _tetherCache = {
+      url, alive: true,
+      agent_count: h.count || (h.agents || []).length,
+      tools, fetched_at: Date.now(),
+    };
+    return _tetherCache;
+  } catch {
+    _tetherCache = { url, alive: false, agent_count: 0, tools: [], fetched_at: Date.now() };
+    return _tetherCache;
+  }
+}
+
+async function callTetherAgent(name, args) {
+  const s = await getSettings();
+  const url = (s.tether_url || 'http://127.0.0.1:8765').replace(/\/+$/, '');
+  const r = await fetch(url + '/tether/agent', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, args }),
+  });
+  const j = await r.json();
+  if (j.status === 'ok') return typeof j.output === 'string' ? j.output : JSON.stringify(j.output);
+  throw new Error(j.message || 'tether call failed');
+}
 
 // ─── LLM dispatch ──────────────────────────────────────────────────────
 
@@ -505,14 +563,51 @@ async function chatWithSwarm(twin_id, swarm_guid, user_input, history = []) {
   if (!manifest) return { error: 'swarm not found', swarm_guid };
 
   const agents = manifest.agents || [];
+
+  // Build tool list. Each swarm agent contributes ONE tool. We also include
+  // tether tools IF and ONLY IF the swarm declares any tether_required
+  // agents — that's the trigger for involving the local tether at all.
+  const swarmDeclaresTether = agents.some(a => _needsTether(a));
   const tools = agents.map(a => ({
     type: 'function',
-    function: { name: a.name, description: a.description || '',
-                parameters: { type: 'object', properties: {}, required: [] } },
+    function: {
+      name: a.name,
+      description: a.description || '',
+      parameters: _agentParameters(a),
+    },
   }));
+
+  // Probe tether ONLY when the swarm has tether-required agents. This keeps
+  // the tether out of the loop entirely for browser-only swarms.
+  let tether = null;
+  if (swarmDeclaresTether) {
+    tether = await probeTether();
+    if (!tether.alive) {
+      // The swarm needs hardware but tether isn't running — surface this
+      // to the LLM as an extra system note so it can apologize gracefully.
+      tools.push({
+        type: 'function',
+        function: {
+          name: '__tether_unavailable',
+          description: 'A required tether tool is unavailable. Inform the user that the local tether process is not running and they need to start it.',
+          parameters: { type: 'object', properties: {}, required: [] },
+        },
+      });
+    }
+  }
 
   const messages = [];
   if (manifest.soul) messages.push({ role: 'system', content: manifest.soul });
+  if (swarmDeclaresTether && tether && !tether.alive) {
+    messages.push({
+      role: 'system',
+      content: 'NOTE: this swarm has agents that need OS access via the local '
+        + 'tether, but the tether is not running. If the user asks for an '
+        + 'action that needs hardware/filesystem/process access, tell them: '
+        + '"That needs the local tether — run `python tether/server.py` from '
+        + 'your RAPP repo to enable it."',
+    });
+  }
   for (const m of history) {
     if (['user','assistant','tool','system'].includes(m.role)) messages.push(m);
   }
@@ -529,24 +624,92 @@ async function chatWithSwarm(twin_id, swarm_guid, user_input, history = []) {
     const tcs = assistant.tool_calls || [];
     if (!tcs.length || rounds >= MAX_TOOL_ROUNDS) {
       return { response: assistant.content || '', agent_logs, rounds, swarm_guid,
-                provider: detectProvider(await getSettings()) };
+                provider: detectProvider(await getSettings()),
+                tether_used: agent_logs.some(l => l.via === 'tether') };
     }
     for (const c of tcs) {
       const name = (c.function && c.function.name) || '';
       let args = {};
       try { args = JSON.parse((c.function && c.function.arguments) || '{}'); } catch {}
       const t0 = performance.now();
-      const out = await runAgentStub(agents, name, args);
-      agent_logs.push({ name, args, ms: Math.round(performance.now() - t0), output: out.slice(0, 2000) });
-      messages.push({ role: 'tool', tool_call_id: c.id || '', name, content: out });
+      const exec = await _executeToolCall(agents, name, args, tether);
+      agent_logs.push({
+        name, args,
+        ms: Math.round(performance.now() - t0),
+        output: (exec.output || '').slice(0, 2000),
+        via: exec.via,                  // 'browser' | 'tether' | 'unknown'
+        error: exec.error || undefined,
+      });
+      messages.push({ role: 'tool', tool_call_id: c.id || '', name, content: exec.output || '' });
     }
   }
 }
-async function runAgentStub(agents, name, args) {
-  const a = agents.find(x => x.name === name);
-  if (!a) return JSON.stringify({ error: `unknown agent: ${name}` });
-  return `[${name}] ${a.description || a.role_framing || ''} — args=${JSON.stringify(args)}. ` +
-         `(In-browser Pyodide execution lands in v2.)`;
+
+// ─── Tool-call dispatch (the agent decides; the tether is opt-in) ──────
+
+function _needsTether(agent) {
+  // The agent declares its own requirement. Either via an explicit flag in
+  // the manifest, OR via the tag "tether" (convention).
+  if (!agent) return false;
+  if (agent.tether_required === true) return true;
+  if (agent.manifest && agent.manifest.tether_required === true) return true;
+  const tags = (agent.tags || (agent.manifest && agent.manifest.tags) || []);
+  return Array.isArray(tags) && tags.includes('tether');
+}
+
+function _agentParameters(agent) {
+  // Prefer explicit metadata.parameters from the manifest if present.
+  if (agent.parameters) return agent.parameters;
+  if (agent.metadata && agent.metadata.parameters) return agent.metadata.parameters;
+  return { type: 'object', properties: {}, required: [] };
+}
+
+async function _executeToolCall(agents, name, args, tether) {
+  // Special pseudo-tool injected when the swarm needs tether but tether is down.
+  if (name === '__tether_unavailable') {
+    return { output: JSON.stringify({
+      error: 'tether_unavailable',
+      message: 'The local tether is not running. To enable hardware/filesystem/process actions, run: python tether/server.py',
+    }), via: 'browser' };
+  }
+
+  const swarmAgent = agents.find(a => a.name === name);
+  const declaresTether = _needsTether(swarmAgent);
+
+  // Case 1: swarm agent that needs tether → route to tether
+  if (swarmAgent && declaresTether) {
+    if (!tether || !tether.alive) {
+      return {
+        output: JSON.stringify({
+          error: 'tether_unavailable',
+          message: `Agent "${name}" requires the local tether but it's not running. Ask the user to start: python tether/server.py`,
+        }),
+        via: 'tether', error: 'tether_unavailable',
+      };
+    }
+    try {
+      const out = await callTetherAgent(name, args);
+      return { output: out, via: 'tether' };
+    } catch (e) {
+      return { output: JSON.stringify({ error: 'tether_call_failed', message: e.message }),
+                via: 'tether', error: e.message };
+    }
+  }
+
+  // Case 2: swarm agent that does NOT need tether → in-browser stub (Pyodide v2)
+  if (swarmAgent) {
+    return { output: _browserStub(swarmAgent, args), via: 'browser' };
+  }
+
+  // Case 3: not in the swarm — maybe the LLM tried to call a tether-only
+  // tool (because the swarm doesn't expose tether tools by default, this
+  // shouldn't normally happen, but handle it gracefully).
+  return { output: JSON.stringify({ error: 'unknown_agent', name }), via: 'unknown' };
+}
+
+function _browserStub(agent, args) {
+  return `[${agent.name}] ${agent.description || agent.role_framing || ''} — args=${JSON.stringify(args)}. ` +
+         `(Browser-side Pyodide execution lands in v2; for now this is a stub. Set tether_required=true in the agent manifest to route to the local tether instead.)`;
 }
 
 // ─── Conversations ─────────────────────────────────────────────────────
@@ -673,6 +836,8 @@ return {
   sendDocumentToPeer,
   // Settings + LLM
   getSettings, setSettings, llmChat,
+  // Tether bridge (the twin's "hands" on the OS — opt-in per agent)
+  probeTether, callTetherAgent,
   // Swarms + chat
   listSwarms, getSwarm, deploySwarm, deleteSwarm,
   chatWithSwarm, chatWithSwarmResilient,

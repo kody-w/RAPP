@@ -209,9 +209,292 @@ cmd_wipe() {
 cmd_demo() {
     local which="${1:-hero}"
     case "$which" in
-      hero) cmd_demo_hero ;;
-      *) echo "unknown demo: $which (try: hero)"; exit 2 ;;
+      hero)         cmd_demo_hero ;;
+      book-factory) cmd_demo_book ;;
+      *) echo "unknown demo: $which (try: hero | book-factory)"; exit 2 ;;
     esac
+}
+
+cmd_demo_book() {
+    # Multi-twin pipeline: kody (source) → writer → editor → publisher.
+    # Molly (CEO) chimes in with strategic guidance. All twins driven by
+    # ONE OpenAI endpoint, all running on this device.
+    echo "════════════════════════════════════════════════════════════════"
+    echo "  📚 DIGITAL TWIN BOOK FACTORY"
+    echo "════════════════════════════════════════════════════════════════"
+    echo "  Source:    @kody.local       (consultant, off-hours, has the story)"
+    echo "  CEO:       @molly.local      (strategic call on what stays in)"
+    echo "  Pipeline:  @writer @editor @publisher @reviewer"
+    echo "════════════════════════════════════════════════════════════════"
+    echo ""
+
+    # Spin up & peer all twins
+    for t in kody molly writer editor publisher reviewer; do
+        twin_running "$t" || { echo "▶ Starting $t ..."; cmd_start "$t" >/dev/null; }
+    done
+    echo ""
+    echo "▶ Mutual peering for the pipeline"
+    bash "$0" peer kody writer    >/dev/null
+    bash "$0" peer writer editor  >/dev/null
+    bash "$0" peer editor publisher >/dev/null
+    bash "$0" peer publisher reviewer >/dev/null
+    bash "$0" peer kody molly     >/dev/null
+    bash "$0" peer molly publisher >/dev/null
+
+    # Auto-hatch each twin's cloud from the registry
+    cd "$ROOT"
+    _build_book_bundles
+    for t in kody molly writer editor publisher reviewer; do
+        local port=$(port_for "$t")
+        local guid_count=$(curl -fsS http://127.0.0.1:$port/api/swarm/healthz | python3 -c 'import json,sys; print(json.load(sys.stdin)["swarm_count"])')
+        if [ "$guid_count" = "0" ]; then
+            echo "▶ Hatching $t's cloud"
+            curl -fsS -X POST http://127.0.0.1:$port/api/swarm/deploy \
+                -H 'Content-Type: application/json' --data-binary @/tmp/${t}-bundle.json >/dev/null
+        fi
+    done
+
+    # Resolve guids
+    declare -A GUID
+    declare -A PORT
+    for t in kody molly writer editor publisher reviewer; do
+        PORT[$t]=$(port_for "$t")
+        GUID[$t]=$(curl -fsS http://127.0.0.1:${PORT[$t]}/api/swarm/healthz | python3 -c 'import json,sys; print(json.load(sys.stdin)["swarms"][0]["swarm_guid"])')
+    done
+
+    # ── STEP 1 — Kody's twin extracts source material from real repo ──
+    echo ""
+    echo "▶ STEP 1: Kody's twin extracts source material from this repo"
+    {
+        echo "# Source material — the platform-build story"
+        echo ""
+        echo "## Recent shipping cadence (from git)"
+        git log --oneline -n 15 --since="2 weeks ago" || true
+        echo ""
+        echo "## Engineering field notes (blog posts about the build)"
+        local i=0
+        for p in blog/7[2-9]-*.md; do
+            [ -f "$p" ] || continue
+            i=$((i+1)); [ $i -gt 5 ] && break
+            echo "### $(basename "$p")"
+            sed -n '1,10p' "$p"
+            echo ""
+        done
+    } > /tmp/source-material.md
+    echo "  wrote /tmp/source-material.md ($(wc -c < /tmp/source-material.md | tr -d ' ') bytes)"
+
+    # Save into Kody's workspace + send to Writer via T2T
+    python3 - <<PY > /dev/null
+import sys, json, base64, urllib.request
+url = "http://127.0.0.1:${PORT[kody]}"
+data = open("/tmp/source-material.md","rb").read()
+urllib.request.urlopen(urllib.request.Request(
+    f"{url}/api/workspace/documents/source-material.md",
+    data=json.dumps({"content_b64": base64.b64encode(data).decode()}).encode(),
+    headers={"Content-Type":"application/json"}, method="POST"))
+PY
+
+    WRITER_ID=$(python3 -c "import json; print(json.load(open('$(twin_dir writer)/t2t/identity.json'))['cloud_id'])")
+    curl -fsS -X POST "http://127.0.0.1:${PORT[kody]}/api/t2t/send-document" \
+        -H 'Content-Type: application/json' \
+        -d "{\"to\":\"$WRITER_ID\",\"document_name\":\"source-material.md\"}" >/dev/null
+    echo "  ✓ source-material.md → @writer.local inbox"
+
+    # ── STEP 2 — Writer twin drafts a chapter ──
+    echo ""
+    echo "▶ STEP 2: @writer drafts a chapter from the source (live LLM)"
+    {
+        echo "You just received source-material.md from @kody.local in your inbox. Here it is:"
+        echo ""
+        cat /tmp/source-material.md
+        echo ""
+        echo "Outline a chapter titled 'Why local-first is the whole pitch'. Then draft it."
+        echo "Lead with one concrete scene from the source. Plain prose, no markdown headings"
+        echo "except a single H1. Under 800 words. Sign off as @writer.local."
+    } > /tmp/prompt-writer.txt
+    DRAFT=$(_chat_file "${PORT[writer]}" "${GUID[writer]}" /tmp/prompt-writer.txt)
+    echo "$DRAFT" > /tmp/draft.md
+    echo "  ✓ Draft written ($(wc -w < /tmp/draft.md | tr -d ' ') words)"
+    echo "  ┌── Excerpt:"
+    head -8 /tmp/draft.md | sed 's/^/  │ /'
+    echo "  └──"
+
+    # Send draft → editor
+    python3 - <<PY > /dev/null
+import sys, json, base64, urllib.request
+url = "http://127.0.0.1:${PORT[writer]}"
+data = open("/tmp/draft.md","rb").read()
+urllib.request.urlopen(urllib.request.Request(
+    f"{url}/api/workspace/documents/draft.md",
+    data=json.dumps({"content_b64": base64.b64encode(data).decode()}).encode(),
+    headers={"Content-Type":"application/json"}, method="POST"))
+PY
+    EDITOR_ID=$(python3 -c "import json; print(json.load(open('$(twin_dir editor)/t2t/identity.json'))['cloud_id'])")
+    curl -fsS -X POST "http://127.0.0.1:${PORT[writer]}/api/t2t/send-document" \
+        -H 'Content-Type: application/json' \
+        -d "{\"to\":\"$EDITOR_ID\",\"document_name\":\"draft.md\"}" >/dev/null
+    echo "  ✓ draft.md → @editor.local inbox"
+
+    # ── STEP 3 — Editor twin cuts and flags ──
+    echo ""
+    echo "▶ STEP 3: @editor cuts ruthlessly + voice-checks (live LLM)"
+    {
+        echo "You received draft.md from @writer.local. Here it is:"
+        echo ""
+        cat /tmp/draft.md
+        echo ""
+        echo "Edit it: cut the weakest 20%, flag two claims that need sourcing, note any voice"
+        echo "drift from the original Kody source. Return the EDITED draft followed by '---'"
+        echo "followed by your editor's note (max 5 bullets)."
+    } > /tmp/prompt-editor.txt
+    EDITED=$(_chat_file "${PORT[editor]}" "${GUID[editor]}" /tmp/prompt-editor.txt)
+    echo "$EDITED" > /tmp/edited.md
+    echo "  ✓ Edited ($(wc -w < /tmp/edited.md | tr -d ' ') words)"
+    echo "  ┌── Editor's note (last section):"
+    awk '/^---$/{found=1; next} found' /tmp/edited.md | head -10 | sed 's/^/  │ /'
+    echo "  └──"
+
+    # Send edited → publisher
+    python3 - <<PY > /dev/null
+import sys, json, base64, urllib.request
+url = "http://127.0.0.1:${PORT[editor]}"
+data = open("/tmp/edited.md","rb").read()
+urllib.request.urlopen(urllib.request.Request(
+    f"{url}/api/workspace/documents/edited.md",
+    data=json.dumps({"content_b64": base64.b64encode(data).decode()}).encode(),
+    headers={"Content-Type":"application/json"}, method="POST"))
+PY
+    PUBLISHER_ID=$(python3 -c "import json; print(json.load(open('$(twin_dir publisher)/t2t/identity.json'))['cloud_id'])")
+    curl -fsS -X POST "http://127.0.0.1:${PORT[editor]}/api/t2t/send-document" \
+        -H 'Content-Type: application/json' \
+        -d "{\"to\":\"$PUBLISHER_ID\",\"document_name\":\"edited.md\"}" >/dev/null
+    echo "  ✓ edited.md → @publisher.local inbox"
+
+    # ── STEP 4 — Molly (CEO) chimes in on whether to ship ──
+    echo ""
+    echo "▶ STEP 4: @molly (CEO) reviews for strategic message-discipline"
+    {
+        echo "As CEO, you have final say on whether this chapter ships externally or stays"
+        echo "internal. The chapter is from the book about building this platform."
+        echo "Here's the editor-cut version:"
+        echo ""
+        cat /tmp/edited.md
+        echo ""
+        echo "In 3 short bullets:"
+        echo "(1) Does this ship as-is, ship with edits, or hold?"
+        echo "(2) What's the partner-conversation risk if it ships?"
+        echo "(3) What's the one line you want changed before it goes out?"
+    } > /tmp/prompt-molly.txt
+    MOLLY_REVIEW=$(_chat_file "${PORT[molly]}" "${GUID[molly]}" /tmp/prompt-molly.txt)
+    echo "  ┌── Molly's verdict:"
+    echo "$MOLLY_REVIEW" | head -10 | sed 's/^/  │ /'
+    echo "  └──"
+
+    # ── STEP 5 — Publisher assembles final artifact ──
+    echo ""
+    echo "▶ STEP 5: @publisher assembles the publication-ready chapter"
+    {
+        echo "You received edited.md and a CEO note. Assemble the final chapter as one"
+        echo "publication-ready markdown file with proper frontmatter (title, author, date,"
+        echo "chapter number). Apply the CEO's requested change."
+        echo ""
+        echo "Edited draft:"
+        cat /tmp/edited.md
+        echo ""
+        echo "CEO note:"
+        echo "$MOLLY_REVIEW"
+        echo ""
+        echo "Output the final markdown. Nothing else."
+    } > /tmp/prompt-publisher.txt
+    FINAL=$(_chat_file "${PORT[publisher]}" "${GUID[publisher]}" /tmp/prompt-publisher.txt)
+    echo "$FINAL" > /tmp/chapter-final.md
+    echo "  ✓ Final chapter ready: /tmp/chapter-final.md ($(wc -w < /tmp/chapter-final.md | tr -d ' ') words)"
+
+    # ── STEP 6 — Reviewer reads it cold ──
+    echo ""
+    echo "▶ STEP 6: @reviewer reads it the way a real reader would"
+    {
+        echo "Here is the final chapter. Read it as if you didn't build this platform."
+        echo ""
+        cat /tmp/chapter-final.md
+        echo ""
+        echo "In 3 bullets:"
+        echo "(1) score 1-5"
+        echo "(2) strongest line in the chapter"
+        echo "(3) would you keep reading the next chapter? Why or why not?"
+    } > /tmp/prompt-reviewer.txt
+    REVIEW=$(_chat_file "${PORT[reviewer]}" "${GUID[reviewer]}" /tmp/prompt-reviewer.txt)
+    echo "  ┌── Reader's verdict:"
+    echo "$REVIEW" | head -8 | sed 's/^/  │ /'
+    echo "  └──"
+
+    echo ""
+    echo "════════════════════════════════════════════════════════════════"
+    echo "  ✓ BOOK FACTORY COMPLETE"
+    echo "════════════════════════════════════════════════════════════════"
+    echo "  6 twins, 5 LLM calls, 3 T2T document hand-offs, 1 OpenAI endpoint."
+    echo "  Final chapter: /tmp/chapter-final.md"
+    echo "  Source:    /tmp/source-material.md"
+    echo "  Draft:     /tmp/draft.md"
+    echo "  Edited:    /tmp/edited.md"
+    echo ""
+    echo "  Replay anytime: bash hippocampus/twin-sim.sh demo book-factory"
+    echo "════════════════════════════════════════════════════════════════"
+}
+
+# Helper: chat with one twin's swarm. Prompt is read from a FILE path —
+# avoids all shell-quoting hell with multi-line / multi-byte prompts.
+_chat_file() {
+    local port="$1" guid="$2" prompt_file="$3"
+    python3 - "$port" "$guid" "$prompt_file" <<'PY'
+import sys, json, urllib.request
+port, guid, pf = sys.argv[1], sys.argv[2], sys.argv[3]
+prompt = open(pf).read()
+body = json.dumps({"user_input": prompt}).encode()
+r = urllib.request.urlopen(urllib.request.Request(
+    f"http://127.0.0.1:{port}/api/swarm/{guid}/chat",
+    data=body, headers={"Content-Type":"application/json"}, method="POST"), timeout=180)
+print(json.loads(r.read()).get("response",""))
+PY
+}
+
+# Build per-twin bundles for all 6 personas in the book factory.
+_build_book_bundles() {
+    cd "$ROOT"
+    python3 - <<'PY'
+import json, re, datetime, pathlib
+reg = json.load(open('brainstem/onboard/registry.json'))
+all_clouds = (reg.get('hero_humans', []) + reg.get('hero_role_twins', []))
+pick = {'kody': 'kody-cloud', 'molly': 'molly-cloud',
+        'writer': 'writer', 'editor': 'editor',
+        'publisher': 'publisher', 'reviewer': 'reviewer'}
+def stub(cid, s):
+    cls = re.sub(r'[^A-Za-z0-9]', '', s['name']) + 'Agent'
+    desc = (s.get('description') or '').replace('"', '\\"')
+    role = (s.get('role_framing') or '').replace('"', '\\"')
+    return f'''from agents.basic_agent import BasicAgent
+__manifest__ = {{"schema":"rapp-agent/1.0","name":"@twinstack/{cid}-{s['name'].lower()}","tier":"core","trust":"community","version":"0.1.0","tags":["twin-stack"]}}
+class {cls}(BasicAgent):
+    def __init__(self):
+        self.name = "{s['name']}"
+        self.metadata = {{"name": self.name, "description": "{desc}", "parameters": {{"type":"object","properties":{{}},"required":[]}}}}
+        super().__init__(name=self.name, metadata=self.metadata)
+    def perform(self, **kwargs):
+        return ("[{s['name']}] role: {role}")
+'''
+for twin_name, cloud_id in pick.items():
+    cloud = next((c for c in all_clouds if c['id'] == cloud_id), None)
+    if not cloud: continue
+    agents = [{'filename': re.sub(r'[^a-z0-9]','_', s['name'].lower())+'_agent.py',
+               'name': s['name'], 'description': s.get('description',''),
+               'source': stub(cloud['id'], s)} for s in cloud['swarms']]
+    bundle = {'schema':'rapp-swarm/1.0','name':cloud['title'],'purpose':cloud.get('tagline',''),
+              'soul':cloud.get('soul_addendum',''),'cloud_id':cloud['id'],
+              'handle':cloud.get('owner_handle', f"@{twin_name}.local"),
+              'created_at':datetime.datetime.utcnow().isoformat()+'Z',
+              'created_by':f'@{twin_name}.local','agents':agents}
+    pathlib.Path(f'/tmp/{twin_name}-bundle.json').write_text(json.dumps(bundle))
+PY
 }
 
 cmd_demo_hero() {
@@ -398,6 +681,7 @@ RAPP Twin Simulator — local dev tools for the full Twin Stack ecosystem.
   peer  <a> <b>     Mutually whitelist two twins for T2T (chat, doc share)
   wipe  <name>      Stop AND delete a twin's workspace
   demo  hero        Hero flow: real git history → Kody's brief → T2T → Molly's CEO decision
+  demo  book-factory   6-twin pipeline: Kody → Writer → Editor → Molly (CEO) → Publisher → Reviewer
 
 Each twin's full state lives at: $TWINS_HOME/<name>/
 EOF

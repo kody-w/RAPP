@@ -111,6 +111,29 @@ class TetherHandler(BaseHTTPRequestHandler):
                 "agents": sorted(self.agents.keys()),
                 "count": len(self.agents),
             })
+        # /tether/tools — full OpenAI-shape tool definitions (for the PWA
+        # to register tether agents as additional callable tools).
+        if self.path in ("/tether/tools", "/tools"):
+            tools = []
+            for name in sorted(self.agents.keys()):
+                a = self.agents[name]
+                md = getattr(a, "metadata", {}) or {}
+                tools.append({
+                    "type": "function",
+                    "function": {
+                        "name": md.get("name", name),
+                        "description": md.get("description", ""),
+                        "parameters": md.get("parameters",
+                                              {"type": "object", "properties": {}, "required": []}),
+                    },
+                })
+            return self._send_json(200, {
+                "schema": "rapp-tether/1.0",
+                "tools": tools,
+                "count": len(tools),
+                "note": "These tools have OS-level access via the local tether process. "
+                        "The twin runs as the user; treat with the same trust as the user's own shell.",
+            })
         return self._send_json(404, {"status": "error", "message": "not found"})
 
     def do_POST(self):

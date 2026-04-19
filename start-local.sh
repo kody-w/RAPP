@@ -1,0 +1,129 @@
+#!/bin/bash
+# start-local.sh — RAPP local-first launcher.
+#
+# Boots the full local-first stack on this machine:
+#   • Static file server on :8000  (serves the mobile PWA + onboard page)
+#   • Tether server     on :8765  (gives the twin OS access for tether_required agents)
+#   • Optional: swarm server on :7080 (run with --swarm)
+#
+# Then opens the mobile PWA in your default browser.
+#
+# Stops everything cleanly on Ctrl-C.
+#
+# Usage:
+#     ./start-local.sh                    # static + tether + open PWA
+#     ./start-local.sh --swarm            # also start the local swarm server
+#     ./start-local.sh --no-tether        # no tether (browser-only mode)
+#     ./start-local.sh --no-open          # don't open browser
+#     ./start-local.sh --port 9000        # static server port (default 8000)
+#
+# Requirements: python3 (already on every Mac/Linux). NOTHING ELSE.
+
+set -e
+cd "$(dirname "$0")"
+
+PORT=8000
+TETHER_PORT=8765
+SWARM_PORT=7080
+START_TETHER=1
+START_SWARM=0
+OPEN_BROWSER=1
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --swarm)      START_SWARM=1 ;;
+        --no-tether)  START_TETHER=0 ;;
+        --no-open)    OPEN_BROWSER=0 ;;
+        --port)       PORT="$2"; shift ;;
+        --tether-port) TETHER_PORT="$2"; shift ;;
+        --help|-h)
+            grep '^#' "$0" | sed 's/^# \?//'
+            exit 0 ;;
+        *) echo "unknown flag: $1"; exit 2 ;;
+    esac
+    shift
+done
+
+PIDS=()
+cleanup() {
+    echo ""
+    echo "▶ Stopping local services…"
+    for pid in "${PIDS[@]}"; do
+        kill "$pid" 2>/dev/null || true
+    done
+    echo "  Stopped. State preserved in IndexedDB (browser) and ~/.rapp-twins/ (filesystem)."
+}
+trap cleanup EXIT INT TERM
+
+# ── Static file server (serves the mobile PWA + everything in repo) ────
+
+echo "▶ Static file server on :$PORT"
+lsof -ti:"$PORT" 2>/dev/null | xargs -r kill -9 2>/dev/null
+python3 -m http.server "$PORT" >/tmp/rapp-static.log 2>&1 &
+PIDS+=($!)
+
+# ── Tether (real OS access for tether_required agents) ────────────────
+
+if [ "$START_TETHER" = "1" ] && [ -f tether/server.py ]; then
+    echo "▶ Tether server on :$TETHER_PORT (agents/ → real OS access)"
+    lsof -ti:"$TETHER_PORT" 2>/dev/null | xargs -r kill -9 2>/dev/null
+    python3 tether/server.py --port "$TETHER_PORT" --agents agents >/tmp/rapp-tether.log 2>&1 &
+    PIDS+=($!)
+fi
+
+# ── Optional swarm server (multi-tenant local hosting) ────────────────
+
+if [ "$START_SWARM" = "1" ] && [ -f swarm/server.py ]; then
+    echo "▶ Swarm server on :$SWARM_PORT"
+    lsof -ti:"$SWARM_PORT" 2>/dev/null | xargs -r kill -9 2>/dev/null
+    python3 swarm/server.py --port "$SWARM_PORT" --root ~/.rapp-swarm >/tmp/rapp-swarm.log 2>&1 &
+    PIDS+=($!)
+fi
+
+# ── Wait for static server to be ready (it boots fast) ─────────────────
+sleep 1
+
+URL="http://127.0.0.1:$PORT/brainstem/mobile/"
+
+cat <<EOF
+
+════════════════════════════════════════════════════════════════
+  ✓ RAPP LOCAL-FIRST STACK RUNNING
+════════════════════════════════════════════════════════════════
+
+  📱 Mobile PWA:        $URL
+  🌐 Onboard hatch:     http://127.0.0.1:$PORT/brainstem/onboard/
+  🧠 Brainstem (OG):    http://127.0.0.1:$PORT/brainstem/
+EOF
+
+if [ "$START_TETHER" = "1" ]; then
+    echo "  🔌 Tether (OS hands): http://127.0.0.1:$TETHER_PORT/tether/healthz"
+fi
+if [ "$START_SWARM" = "1" ]; then
+    echo "  🐝 Swarm endpoint:    http://127.0.0.1:$SWARM_PORT/api/swarm/healthz"
+fi
+
+cat <<EOF
+
+  Logs (tail to debug):
+    tail -f /tmp/rapp-static.log
+EOF
+[ "$START_TETHER" = "1" ] && echo "    tail -f /tmp/rapp-tether.log"
+[ "$START_SWARM"  = "1" ] && echo "    tail -f /tmp/rapp-swarm.log"
+
+cat <<EOF
+
+  Ctrl-C to stop everything cleanly.
+
+════════════════════════════════════════════════════════════════
+
+EOF
+
+if [ "$OPEN_BROWSER" = "1" ]; then
+    if command -v open >/dev/null;     then open "$URL"
+    elif command -v xdg-open >/dev/null; then xdg-open "$URL"
+    fi
+fi
+
+# Wait forever (until Ctrl-C → cleanup trap)
+wait
