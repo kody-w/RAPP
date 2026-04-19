@@ -87,6 +87,11 @@ def _now_compact():
     return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
 
+def _b64_decode(s):
+    import base64
+    return base64.b64decode(s) if s else b""
+
+
 # ─── D2D integration (lazy-imported so swarm server stays usable without it) ─
 
 _t2t_manager = None
@@ -151,6 +156,20 @@ def get_llm_chat():
         sys.path.insert(0, str(Path(__file__).parent))
         from chat import chat_with_swarm, diagnostics  # type: ignore
     return chat_with_swarm, diagnostics
+
+
+_workspace = None
+def get_workspace(root):
+    """Lazy workspace (per-twin documents + inbox + outbox)."""
+    global _workspace
+    if _workspace is None:
+        try:
+            from swarm.workspace import Workspace
+        except ImportError:
+            sys.path.insert(0, str(Path(__file__).parent))
+            from workspace import Workspace  # type: ignore
+        _workspace = Workspace(root)
+    return _workspace
 
 
 # ─── SWARM STORE ────────────────────────────────────────────────────────
@@ -770,6 +789,25 @@ class SwarmHandler(BaseHTTPRequestHandler):
                 "snapshots": self.store.list_snapshots(sg),
             })
 
+        # /api/workspace — twin metadata + counts
+        if path == "/api/workspace":
+            return self._send_json(200, get_workspace(self.store.root).info())
+
+        # /api/workspace/documents — list mine + inbox + outbox
+        if path == "/api/workspace/documents":
+            return self._send_json(200, get_workspace(self.store.root).list_documents())
+
+        # /api/workspace/documents/<name>?location=documents|inbox|outbox
+        m = re.match(r"^/api/workspace/documents/([^/]+)/?$", path)
+        if m:
+            from urllib.parse import parse_qs
+            qs = parse_qs(urlparse(self.path).query)
+            location = (qs.get("location") or ["documents"])[0]
+            doc = get_workspace(self.store.root).read_document(m.group(1), location)
+            if not doc:
+                return self._send_json(404, {"status": "error", "message": "document not found"})
+            return self._send_json(200, doc)
+
         # /api/llm/status — what LLM provider is wired in (diagnostic)
         if path == "/api/llm/status":
             try:
@@ -904,6 +942,122 @@ class SwarmHandler(BaseHTTPRequestHandler):
                 traceback.print_exc()
                 return self._send_json(500, {"status": "error", "message": str(e)})
 
+        # /api/workspace/documents/<name> — save (write/overwrite)
+        m = re.match(r"^/api/workspace/documents/([^/]+)/?$", path)
+        if m:
+            try:
+                body = self._read_json()
+            except Exception as e:
+                return self._send_json(400, {"status": "error", "message": f"bad json: {e}"})
+            content_b64 = body.get("content_b64") or ""
+            location = body.get("location", "documents")
+            try:
+                import base64 as _b64
+                content = _b64.b64decode(content_b64) if content_b64 else (
+                    (body.get("content") or "").encode("utf-8")
+                )
+                meta = get_workspace(self.store.root).write_document(
+                    m.group(1), content, location
+                )
+                return self._send_json(200, {"status": "ok", **meta})
+            except ValueError as e:
+                return self._send_json(400, {"status": "error", "message": str(e)})
+
+        # /api/t2t/send-document — sign + push doc to a peer twin
+        if path == "/api/t2t/send-document":
+            try:
+                body = self._read_json()
+            except Exception as e:
+                return self._send_json(400, {"status": "error", "message": f"bad json: {e}"})
+            to_cloud_id = body.get("to", "")
+            doc_name = body.get("document_name", "")
+            location = body.get("from_location", "documents")
+            mgr = get_t2t_manager(self.store.root)
+            ws = get_workspace(self.store.root)
+            peer = mgr.peers.get_peer(to_cloud_id)
+            if not peer:
+                return self._send_json(403, {"status": "error", "message": "peer not whitelisted"})
+            if not peer.get("url"):
+                return self._send_json(400, {"status": "error", "message": "peer has no URL on file"})
+            doc = ws.read_document(doc_name, location)
+            if not doc:
+                return self._send_json(404, {"status": "error", "message": "document not found"})
+
+            # Sign the (from, doc_name, content_b64) tuple with MY secret
+            try:
+                from swarm.t2t import sign as _sign
+            except ImportError:
+                from t2t import sign as _sign  # type: ignore
+            my_id = mgr.identity.get_or_create()["cloud_id"]
+            my_secret = mgr.identity.get_secret()
+            payload_obj = {
+                "from": my_id,
+                "name": doc["name"],
+                "bytes": doc["bytes"],
+                "content_b64": doc["content_b64"],
+                "sent_at": _now_iso(),
+            }
+            payload_str = json.dumps(payload_obj, sort_keys=True, separators=(",", ":"))
+            sig = _sign(payload_str, my_secret)
+
+            # Send to peer
+            import urllib.request as _ur
+            import urllib.error as _ue
+            req = _ur.Request(
+                peer["url"].rstrip("/") + "/api/t2t/receive-document",
+                data=json.dumps({**payload_obj, "sig": sig}).encode("utf-8"),
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            try:
+                with _ur.urlopen(req, timeout=15) as resp:
+                    peer_resp = json.loads(resp.read().decode("utf-8"))
+            except _ue.HTTPError as e:
+                return self._send_json(502, {"status": "error",
+                                              "message": f"peer HTTP {e.code}",
+                                              "details": e.read().decode("utf-8")[:300]})
+            except _ue.URLError as e:
+                return self._send_json(502, {"status": "error", "message": f"peer unreachable: {e}"})
+
+            # Mirror to MY outbox for audit
+            try:
+                ws.write_document(doc["name"], _b64_decode(doc["content_b64"]), "outbox")
+            except Exception:
+                pass
+            return self._send_json(200, {"status": "ok", "peer_response": peer_resp,
+                                          "name": doc["name"]})
+
+        # /api/t2t/receive-document — accept doc from a known peer
+        if path == "/api/t2t/receive-document":
+            try:
+                body = self._read_json()
+            except Exception as e:
+                return self._send_json(400, {"status": "error", "message": f"bad json: {e}"})
+            from_cloud_id = body.get("from", "")
+            sig = body.get("sig", "")
+            mgr = get_t2t_manager(self.store.root)
+            peer = mgr.peers.get_peer(from_cloud_id)
+            if not peer:
+                return self._send_json(403, {"status": "error", "message": "unknown sender"})
+            try:
+                from swarm.t2t import verify as _verify
+            except ImportError:
+                from t2t import verify as _verify  # type: ignore
+            payload_obj = {k: body[k] for k in ("from", "name", "bytes", "content_b64", "sent_at") if k in body}
+            payload_str = json.dumps(payload_obj, sort_keys=True, separators=(",", ":"))
+            if not _verify(payload_str, sig, peer["secret"]):
+                return self._send_json(403, {"status": "error", "message": "signature failed"})
+            # Save to inbox, namespaced by sender's cloud_id
+            ws = get_workspace(self.store.root)
+            try:
+                content = _b64_decode(body.get("content_b64", ""))
+                fname = f"{from_cloud_id[:8]}_{body.get('name','document')}"
+                meta = ws.write_document(fname, content, "inbox")
+                return self._send_json(200, {"status": "ok", "received": True,
+                                              "saved_as": meta["name"]})
+            except ValueError as e:
+                return self._send_json(400, {"status": "error", "message": str(e)})
+
         # /api/t2t/peers — whitelist a peer twin
         if path == "/api/t2t/peers":
             try:
@@ -1014,6 +1168,18 @@ class SwarmHandler(BaseHTTPRequestHandler):
 
     def do_DELETE(self):
         path = urlparse(self.path).path
+        # /api/workspace/documents/<name>?location=…
+        m = re.match(r"^/api/workspace/documents/([^/]+)/?$", path)
+        if m:
+            from urllib.parse import parse_qs
+            qs = parse_qs(urlparse(self.path).query)
+            location = (qs.get("location") or ["documents"])[0]
+            ok = get_workspace(self.store.root).delete_document(m.group(1), location)
+            return self._send_json(200 if ok else 404,
+                                    {"status": "ok" if ok else "error",
+                                     "removed": m.group(1) if ok else None,
+                                     "message": None if ok else "document not found"})
+
         m = re.match(r"^/api/swarm/([0-9a-f-]+)/?$", path)
         if not m:
             return self._send_json(404, {"status": "error", "message": "not found"})

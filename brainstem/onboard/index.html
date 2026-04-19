@@ -213,6 +213,93 @@
     border: 1px dashed #30363d; border-radius: 8px;
   }
   .loading { color: #8b949e; font-size: 13px; padding: 20px; }
+
+  /* Hatched-swarm cards */
+  .hatched-card {
+    background: #0d1117; border: 1px solid #2ea043; border-radius: 10px;
+    padding: 12px 14px; display: flex; align-items: center; gap: 10px;
+    transition: border-color .15s;
+  }
+  .hatched-card:hover { border-color: #3fb950; }
+  .hatched-card .nm { font-weight: 600; font-size: 13px; flex: 1; }
+  .hatched-card .gd { font-family: "SF Mono", monospace; font-size: 10px; color: #6e7681; }
+  .hatched-card .ag { font-size: 11px; color: #8b949e; }
+  .hatched-card button {
+    background: #21262d; border: 1px solid #30363d; color: #e6edf3;
+    padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer;
+  }
+  .hatched-card button.primary { background: #238636; border-color: #2ea043; color: #fff; }
+  .hatched-card button.primary:hover { background: #2ea043; }
+  .hatched-card button.danger { color: #f85149; }
+  .hatched-card button.danger:hover { border-color: #f85149; }
+
+  /* Chat drawer */
+  .chat-drawer-bg {
+    position: fixed; inset: 0; background: rgba(0,0,0,.7);
+    display: none; z-index: 150; align-items: stretch; justify-content: flex-end;
+  }
+  .chat-drawer-bg.open { display: flex; }
+  .chat-drawer {
+    background: #161b22; border-left: 1px solid #30363d;
+    width: 100%; max-width: 520px; display: flex; flex-direction: column;
+    box-shadow: -8px 0 32px rgba(0,0,0,.5);
+  }
+  .chat-head {
+    padding: 14px 18px; border-bottom: 1px solid #21262d;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .chat-head .who { flex: 1; }
+  .chat-head .nm { font-weight: 600; font-size: 14px; }
+  .chat-head .gd { font-family: "SF Mono", monospace; font-size: 10px; color: #6e7681; }
+  .chat-head .provider {
+    font-size: 10px; color: #f0b66f; font-family: "SF Mono", monospace;
+    border: 1px solid #835a2b; border-radius: 999px; padding: 2px 8px;
+  }
+  .chat-head .close {
+    background: none; border: none; color: #8b949e; font-size: 22px;
+    cursor: pointer; padding: 0 4px;
+  }
+  .chat-head .close:hover { color: #e6edf3; }
+  .chat-log {
+    flex: 1; overflow-y: auto; padding: 16px 18px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .chat-msg {
+    max-width: 90%; padding: 10px 14px; border-radius: 10px;
+    font-size: 13px; line-height: 1.5; white-space: pre-wrap;
+  }
+  .chat-msg.user { align-self: flex-end; background: #1f6feb; color: #fff; }
+  .chat-msg.assistant { align-self: flex-start; background: #21262d; }
+  .chat-msg.tool {
+    align-self: flex-start; background: #0d1117; border: 1px dashed #30363d;
+    color: #8b949e; font-family: "SF Mono", monospace; font-size: 11px;
+    max-width: 100%;
+  }
+  .chat-msg .voice {
+    margin-top: 6px; padding-top: 6px; border-top: 1px dashed #30363d;
+    font-style: italic; color: #f0b66f; font-size: 11px;
+  }
+  .chat-input-row {
+    border-top: 1px solid #21262d; padding: 12px 14px;
+    display: flex; gap: 8px;
+  }
+  .chat-input-row textarea {
+    flex: 1; resize: none; min-height: 44px; max-height: 140px;
+    background: #0d1117; color: #e6edf3; border: 1px solid #30363d;
+    border-radius: 8px; padding: 10px 12px; font-family: inherit; font-size: 13px;
+    outline: none;
+  }
+  .chat-input-row textarea:focus { border-color: #1f6feb; }
+  .chat-input-row button {
+    background: #238636; border: 1px solid #2ea043; color: #fff;
+    border-radius: 8px; padding: 0 16px; cursor: pointer; font-family: inherit;
+    font-size: 13px;
+  }
+  .chat-input-row button:disabled { opacity: .5; cursor: not-allowed; }
+  .chat-status {
+    padding: 6px 18px; font-size: 11px; color: #8b949e;
+    font-family: "SF Mono", monospace;
+  }
 </style>
 </head>
 <body>
@@ -260,6 +347,9 @@
 <div class="section-h" id="hero-section-h">Hero clouds — specific humans</div>
 <div class="grid" id="hero-grid"><div class="loading">Loading…</div></div>
 
+<div class="section-h">Hatched on this endpoint</div>
+<div class="grid" id="hatched-grid"><div class="empty">No swarms hatched here yet. Pick a hero cloud below and push it.</div></div>
+
 <div class="section-h">Hero clouds — role twins</div>
 <div class="grid" id="role-grid"><div class="loading">Loading…</div></div>
 
@@ -272,6 +362,26 @@
 </div>
 
 </main>
+
+<!-- Chat drawer -->
+<div class="chat-drawer-bg" id="chat-bg">
+  <div class="chat-drawer">
+    <div class="chat-head">
+      <div class="who">
+        <div class="nm" id="chat-name">—</div>
+        <div class="gd" id="chat-guid">—</div>
+      </div>
+      <span class="provider" id="chat-provider">—</span>
+      <button class="close" id="chat-close">×</button>
+    </div>
+    <div class="chat-status" id="chat-status">Ready.</div>
+    <div class="chat-log" id="chat-log"></div>
+    <div class="chat-input-row">
+      <textarea id="chat-input" placeholder="Ask your twin… (Enter to send, Shift+Enter for newline)"></textarea>
+      <button id="chat-send">Send</button>
+    </div>
+  </div>
+</div>
 
 <!-- Detail modal -->
 <div class="modal-bg" id="modal-bg">
@@ -627,7 +737,143 @@ async function pushBundle() {
 
 $('#m-download').addEventListener('click', downloadBundle);
 $('#m-copy').addEventListener('click', copyBundle);
-$('#m-push').addEventListener('click', pushBundle);
+$('#m-push').addEventListener('click', async () => {
+  await pushBundle();
+  await refreshHatched();
+});
+
+// ─── Hatched-swarms list ───────────────────────────────────────────────
+
+async function refreshHatched() {
+  const endpoint = $('#endpoint').value.trim().replace(/\/+$/, '');
+  const grid = $('#hatched-grid');
+  if (!endpoint) { grid.innerHTML = '<div class="empty">No endpoint set.</div>'; return; }
+  try {
+    const r = await fetch(endpoint + '/api/swarm/healthz');
+    const j = await r.json();
+    grid.innerHTML = '';
+    if (!j.swarms || !j.swarms.length) {
+      grid.innerHTML = '<div class="empty">No swarms hatched on this endpoint yet.</div>';
+      return;
+    }
+    for (const s of j.swarms) {
+      const card = el('div', { class: 'hatched-card' }, [
+        el('div', { style: 'flex:1' }, [
+          el('div', { class: 'nm', text: s.name }),
+          el('div', { class: 'gd', text: s.swarm_guid }),
+          el('div', { class: 'ag', text: `${s.agent_count} agents` }),
+        ]),
+        el('button', { class: 'primary', onclick: () => openChat(s, endpoint) }, '💬 Chat'),
+        el('button', { class: 'danger', onclick: () => tearDown(s, endpoint) }, '✕'),
+      ]);
+      grid.appendChild(card);
+    }
+  } catch (e) {
+    grid.innerHTML = `<div class="empty">Endpoint unreachable: ${e.message}</div>`;
+  }
+}
+
+async function tearDown(s, endpoint) {
+  if (!confirm(`Tear down "${s.name}" on ${endpoint}?\n\nguid: ${s.swarm_guid}\nThis deletes its agents and memory locally.`)) return;
+  try {
+    const r = await fetch(endpoint + '/api/swarm/' + s.swarm_guid, { method: 'DELETE' });
+    if (r.ok) { toast('Swarm torn down', 'ok'); await refreshHatched(); }
+    else { const j = await r.json().catch(() => ({})); toast(`Tear-down failed: ${j.message || r.status}`, 'bad'); }
+  } catch (e) { toast(`Network error: ${e.message}`, 'bad'); }
+}
+
+// ─── Chat drawer ───────────────────────────────────────────────────────
+
+const CHAT_STATE = { swarm: null, endpoint: null, history: [] };
+
+async function openChat(swarm, endpoint) {
+  CHAT_STATE.swarm = swarm;
+  CHAT_STATE.endpoint = endpoint;
+  CHAT_STATE.history = [];
+  $('#chat-name').textContent = swarm.name;
+  $('#chat-guid').textContent = swarm.swarm_guid;
+  $('#chat-log').innerHTML = '';
+  $('#chat-status').textContent = 'Probing LLM provider…';
+  $('#chat-bg').classList.add('open');
+
+  // Probe provider
+  try {
+    const r = await fetch(endpoint + '/api/llm/status');
+    const j = await r.json();
+    $('#chat-provider').textContent = j.provider + (j.azure_deployment ? ` · ${j.azure_deployment}` : '');
+    $('#chat-status').textContent = `Ready · ${j.provider}${j.fake_mode ? ' (fake mode)' : ''}`;
+  } catch {
+    $('#chat-provider').textContent = '?';
+    $('#chat-status').textContent = 'Provider probe failed.';
+  }
+  setTimeout(() => $('#chat-input').focus(), 50);
+}
+
+function closeChat() { $('#chat-bg').classList.remove('open'); }
+
+function appendChatMsg(role, content, voice) {
+  const log = $('#chat-log');
+  const msg = el('div', { class: 'chat-msg ' + role });
+  msg.appendChild(document.createTextNode(content || ''));
+  if (voice && role === 'assistant') {
+    msg.appendChild(el('div', { class: 'voice', text: '🔊 ' + voice }));
+  }
+  log.appendChild(msg);
+  log.scrollTop = log.scrollHeight;
+}
+
+async function sendChat() {
+  const input = $('#chat-input');
+  const text = input.value.trim();
+  if (!text || !CHAT_STATE.swarm) return;
+  input.value = '';
+  appendChatMsg('user', text);
+  CHAT_STATE.history.push({ role: 'user', content: text });
+
+  const sendBtn = $('#chat-send');
+  sendBtn.disabled = true;
+  $('#chat-status').textContent = '… thinking';
+
+  try {
+    const url = `${CHAT_STATE.endpoint}/api/swarm/${CHAT_STATE.swarm.swarm_guid}/chat`;
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_input: text,
+        conversation_history: CHAT_STATE.history.slice(0, -1),
+      }),
+    });
+    const j = await r.json();
+    if (j.error) {
+      appendChatMsg('assistant', `❌ ${j.error}`);
+      $('#chat-status').textContent = 'Error.';
+    } else {
+      // Show tool-call logs (compact)
+      for (const log of (j.agent_logs || [])) {
+        appendChatMsg('tool', `→ ${log.name}(${JSON.stringify(log.args)})  [${log.ms}ms]`);
+      }
+      const resp = j.response || j.assistant_response || '';
+      const voice = j.voice_response || '';
+      appendChatMsg('assistant', resp, voice);
+      CHAT_STATE.history.push({ role: 'assistant', content: resp });
+      $('#chat-status').textContent =
+        `${j.provider || ''} · rounds=${j.rounds || 0} · ${(j.agent_logs || []).length} tool call(s)`;
+    }
+  } catch (e) {
+    appendChatMsg('assistant', `❌ network: ${e.message}`);
+    $('#chat-status').textContent = 'Network error.';
+  } finally {
+    sendBtn.disabled = false;
+  }
+}
+
+$('#chat-close').addEventListener('click', closeChat);
+$('#chat-bg').addEventListener('click', (e) => { if (e.target.id === 'chat-bg') closeChat(); });
+$('#chat-send').addEventListener('click', sendChat);
+$('#chat-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+});
 
 // ─── Hatch / probe ─────────────────────────────────────────────────────
 
