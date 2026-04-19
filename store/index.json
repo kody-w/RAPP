@@ -1,0 +1,163 @@
+{
+  "schema": "rapp-store/1.0",
+  "name": "RAPPstore \u2014 official",
+  "description": "Public catalog of rapplications. Each rapplication is a converged single-file agent.py produced by the double-jump loop. Pull into your local brainstem's agents/ directory and it works. Optional .egg pack restores example workflow state.",
+  "maintainer": "@kody.cloud",
+  "version": "1.0.0",
+  "generated_at": "2026-04-19T00:00:00Z",
+  "homepage": "https://kody-w.github.io/RAPP/store/",
+  "install_protocol": "drop the singleton .py file into your local brainstem's `agents/` dir. Then POST /api/swarm/deploy with a bundle that includes it, OR: simply hot-load it from disk if your brainstem watches the agents/ folder. The file is everything \u2014 no install script, no pip, no native deps.",
+  "rapplications": [
+    {
+      "id": "bookfactoryagent",
+      "name": "BookFactory",
+      "version": "0.3.0",
+      "summary": "Five-persona content pipeline (Writer \u2192 Editor [3 specialists] \u2192 CEO [2 specialists] \u2192 Publisher \u2192 Reviewer). One call, one chapter back. Best for: engineering writeups, blog posts, briefing docs, narrative content under 1500 words.",
+      "tagline": "Source material in, publishable chapter out \u2014 8 LLM calls under one POST.",
+      "category": "creative-pipeline",
+      "tags": [
+        "composite",
+        "creative-pipeline",
+        "twin-stack",
+        "singleton"
+      ],
+      "manifest_name": "@rapp/book-factory-singleton",
+      "singleton_filename": "bookfactory_agent.py",
+      "singleton_url": "https://raw.githubusercontent.com/kody-w/RAPP/main/agents/bookfactory_agent.py",
+      "singleton_sha256": "e4cc1cd9212d6f845219966ac7df06ab4a3e0c1346a98b0ed2c147032afdf0a4",
+      "singleton_lines": 543,
+      "singleton_bytes": 24779,
+      "egg_url": null,
+      "egg_note": "No pre-populated state .egg shipped \u2014 BookFactory is stateless per call. Output artifacts are written to the workspace dir specified per call.",
+      "produced_by": {
+        "method": "double-jump-loop",
+        "cycles": 3,
+        "source_files_collapsed": 13,
+        "specialists": [
+          "@rapp/persona-writer",
+          "@rapp/editor-strip-scaffolding",
+          "@rapp/editor-cutweak",
+          "@rapp/editor-restructure",
+          "@rapp/editor-factcheck",
+          "@rapp/editor-voicecheck",
+          "@rapp/persona-editor (composite)",
+          "@rapp/ceo-risk",
+          "@rapp/ceo-decision",
+          "@rapp/persona-ceo (composite)",
+          "@rapp/persona-publisher",
+          "@rapp/persona-reviewer",
+          "@rapp/book-factory (top composite)"
+        ]
+      },
+      "metrics": {
+        "cycle_3_corpus_win_rate": 0.625,
+        "cycles_to_converge_engineering_writeups": 1,
+        "best_line_win_rate_vs_one_shot_llm": 0.583,
+        "wall_time_sec_per_call_p50": 75,
+        "wall_time_sec_per_call_p90": 110,
+        "llm_calls_per_invocation": 8
+      },
+      "example_call": {
+        "endpoint": "POST /api/swarm/{guid}/agent",
+        "body": {
+          "name": "BookFactory",
+          "args": {
+            "source": "<your raw source material>",
+            "chapter_title": "Whatever You Want",
+            "author": "@you"
+          }
+        }
+      },
+      "license": "BSD-style \u2014 see https://github.com/kody-w/RAPP",
+      "spec_post": "https://kody-w.github.io/RAPP/blog/89-double-jump-loop.md",
+      "shipped_in_commit": "ebb1648"
+    },
+    {
+      "id": "bookfactoryagent-demo",
+      "name": "BookFactory (with Kody+Molly demo state)",
+      "version": "0.3.0",
+      "summary": "Five-persona content pipeline (Writer \u2192 Editor [3 specialists] \u2192 CEO [2 specialists] \u2192 Publisher \u2192 Reviewer). One call, one chapter back. Best for: engineering writeups, blog posts, briefing docs, narrative content under 1500 words. \u00b7 This demo edition ships with a pre-packaged .egg containing the Kody+Molly book-factory workspaces from cycle 3, so you can unpack it with `bash hippocampus/twin-egg.sh unpack` and immediately see what a real run produces \u2014 source material, draft, edited prose, CEO note, final chapter, reviewer score.",
+      "tagline": "BookFactory + a worked Kody/Molly run packed as one .egg you can unpack and inspect.",
+      "category": "creative-pipeline",
+      "tags": [
+        "composite",
+        "creative-pipeline",
+        "twin-stack",
+        "singleton",
+        "demo",
+        "stateful"
+      ],
+      "manifest_name": "@rapp/book-factory-singleton",
+      "singleton_filename": "bookfactory_agent.py",
+      "singleton_url": "https://raw.githubusercontent.com/kody-w/RAPP/main/agents/bookfactory_agent.py",
+      "singleton_sha256": "e4cc1cd9212d6f845219966ac7df06ab4a3e0c1346a98b0ed2c147032afdf0a4",
+      "singleton_lines": 543,
+      "singleton_bytes": 24779,
+      "egg_url": "https://raw.githubusercontent.com/kody-w/RAPP/main/store/eggs/bookfactoryagent-demo.egg",
+      "egg_note": "Contains 6 twin workspaces (kody, molly, writer, editor, publisher, reviewer) plus the in-flight book-factory artifacts under .shared/. Unpack with `bash hippocampus/twin-egg.sh unpack bookfactoryagent-demo.egg --into ~/.rapp-twins`. Restoration is byte-identical and SHA-256-verified.",
+      "produced_by": {
+        "method": "double-jump-loop",
+        "cycles": 3,
+        "source_files_collapsed": 13,
+        "specialists": [
+          "@rapp/persona-writer",
+          "@rapp/editor-strip-scaffolding",
+          "@rapp/editor-cutweak",
+          "@rapp/editor-restructure",
+          "@rapp/editor-factcheck",
+          "@rapp/editor-voicecheck",
+          "@rapp/persona-editor (composite)",
+          "@rapp/ceo-risk",
+          "@rapp/ceo-decision",
+          "@rapp/persona-ceo (composite)",
+          "@rapp/persona-publisher",
+          "@rapp/persona-reviewer",
+          "@rapp/book-factory (top composite)"
+        ]
+      },
+      "metrics": {
+        "cycle_3_corpus_win_rate": 0.625,
+        "cycles_to_converge_engineering_writeups": 1,
+        "best_line_win_rate_vs_one_shot_llm": 0.583,
+        "wall_time_sec_per_call_p50": 75,
+        "wall_time_sec_per_call_p90": 110,
+        "llm_calls_per_invocation": 8
+      },
+      "example_call": {
+        "endpoint": "POST /api/swarm/{guid}/agent",
+        "body": {
+          "name": "BookFactory",
+          "args": {
+            "source": "<your raw source material>",
+            "chapter_title": "Whatever You Want",
+            "author": "@you"
+          }
+        }
+      },
+      "license": "BSD-style \u2014 see https://github.com/kody-w/RAPP",
+      "spec_post": "https://kody-w.github.io/RAPP/blog/89-double-jump-loop.md",
+      "shipped_in_commit": "ebb1648",
+      "egg_filename": "bookfactoryagent-demo.egg",
+      "egg_sha256": "f2899a0483ad11610b97c2bcf2a8dd7021aa76c8606ebaa0a1bbb5fb6e50e4a5",
+      "egg_bytes": 58769,
+      "install_after_unpack": "Already-hatched swarms come with the .egg. Start any twin: bash hippocampus/twin-sim.sh start kody. Then call BookFactory through that twin's brainstem to see a complete worked example."
+    }
+  ],
+  "publish_your_own": {
+    "summary": "Author a rapplication using the multi-file source pattern (see blog/89). Run the double-jump loop until convergence (typically 1-3 cycles per content shape). Collapse to a singleton via tools/build-rapplication.py. Submit a PR adding an entry to store/index.json.",
+    "schema": "rapp-application/1.0",
+    "required_fields": [
+      "id",
+      "name",
+      "version",
+      "summary",
+      "manifest_name",
+      "singleton_url"
+    ],
+    "see_also": [
+      "blog/98-the-rapplication.md",
+      "blog/99-the-rappstore.md",
+      "blog/101-publish-your-first-rapplication.md"
+    ]
+  }
+}

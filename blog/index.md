@@ -150,3 +150,12 @@ Field notes from building the RAPP brainstem, swarm server, tether, registry, an
 95. [The investor one-pager](./95-investor-one-pager.md)
 96. [README from scratch](./96-readme-from-scratch.md)
 97. [What it's like to ship 4000 lines in 24 hours with an LLM partner](./97-shipping-with-an-llm-partner.md)
+
+## RAPPstore + the autonomous improvement loop, formalized
+
+98. [The rapplication — the unit of converged AI workflow](./98-the-rapplication.md)
+99. [The RAPPstore — a JSON file is a marketplace, again](./99-the-rappstore.md)
+100. [Metrics for intelligence gains in the double-jump loop](./100-metrics-for-intelligence-gains.md)
+101. [Publish your first rapplication — a 5-minute tutorial](./101-publish-your-first-rapplication.md)
+102. [Why agent.py-all-the-way-down beats LangChain / CrewAI / AutoGen for shipping](./102-vs-langchain-crewai-autogen.md)
+103. [The control plane sketch — provisioning brainstems at fleet scale](./103-control-plane-sketch.md)
