@@ -2240,7 +2240,6 @@ function openCardModal(c) {
     wrap.style.setProperty('--angle', '0deg');
   });
   // Tap card to flip
-  const wrap = document.getElementById('ac-flip');
   wrap.addEventListener('click', () => wrap.classList.toggle('flipped'));
   $('#card-modal').classList.add('open');
 }
