@@ -1664,16 +1664,24 @@ function refreshProviderUI() {
 }
 function refreshModelOptions() {
   const sel = $('#model-sel');
+  const provider = PROVIDERS[state.settings.provider];
   sel.innerHTML = '';
-  for (const m of PROVIDERS[state.settings.provider].models) {
+  for (const m of provider.models) {
     const o = document.createElement('option');
     o.value = m.id; o.textContent = m.name;
     sel.appendChild(o);
   }
-  if (!PROVIDERS[state.settings.provider].models.find(m => m.id === state.settings.model)) {
-    state.settings.model = PROVIDERS[state.settings.provider].defaultModel;
+  // Preserve the user's saved choice even when the static defaults don't
+  // include it yet — the async Copilot/GitHub catalog fetch will repopulate
+  // shortly. Append a placeholder option so the dropdown still reflects
+  // their pick instead of silently snapping back to the default.
+  const saved = state.settings.model;
+  if (saved && !provider.models.find(m => m.id === saved)) {
+    const o = document.createElement('option');
+    o.value = saved; o.textContent = `${saved} (loading…)`;
+    sel.appendChild(o);
   }
-  sel.value = state.settings.model;
+  sel.value = saved || provider.defaultModel;
 }
 function saveSettings() {
   state.settings.provider = $('#provider').value;
