@@ -433,28 +433,144 @@
     display: flex; gap: 8px; justify-content: flex-end;
   }
 
-  /* Card detail content */
-  .cd-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-  .cd-name { font-size: 18px; font-weight: 700; color: #e6edf3; }
-  .cd-pkg { font-size: 11px; color: #6e7681; font-family: "SF Mono", monospace; margin-top: 2px; }
-  .cd-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 14px 0; }
-  .cd-stats div { background: #0d1117; border: 1px solid #21262d; border-radius: 6px; padding: 8px; text-align: center; }
-  .cd-stats .lbl { font-size: 9px; color: #6e7681; letter-spacing: 1px; text-transform: uppercase; }
-  .cd-stats .val { font-size: 18px; font-weight: 700; color: #e6edf3; }
-  .cd-abil { background: #0d1117; border: 1px solid #21262d; border-radius: 6px; padding: 10px; margin-bottom: 8px; }
-  .cd-abil .nm { font-weight: 700; color: #e6edf3; font-size: 13px; }
-  .cd-abil .stats { font-size: 11px; color: #8b949e; margin-top: 2px; }
-  .cd-incantation {
-    background: #0d1117; border: 1px solid #21262d; border-radius: 6px;
-    padding: 10px; font-family: "SF Mono", monospace;
-    font-size: 11px; color: #3fb950; margin-top: 10px;
-    letter-spacing: .5px; text-align: center;
+  /* ── Card detail modal — flippable Pokemon-style card (mirrors RAR/store.html) ── */
+  #card-modal .panel { max-width: 380px; background: transparent; border: none; box-shadow: none; }
+  #card-modal .panel header, #card-modal .panel .actions { background: #161b22; border-color: #30363d; border-radius: 12px; }
+  #card-modal .panel header { border: 1px solid #30363d; }
+  #card-modal .panel .actions { border: 1px solid #30363d; margin-top: 10px; }
+  #card-modal .panel .body { padding: 0; overflow: visible; perspective: 1200px; }
+
+  .ac-wrap {
+    position: relative; width: 100%; aspect-ratio: 5/7;
+    cursor: pointer; transform-style: preserve-3d;
+    transition: transform .55s cubic-bezier(.4, .15, .25, 1);
+    margin: 8px 0;
   }
-  .cd-source {
-    background: #0d1117; border: 1px solid #21262d; border-radius: 6px;
-    padding: 10px; font-family: "SF Mono", monospace;
-    font-size: 11px; color: #e6edf3;
-    max-height: 240px; overflow: auto; white-space: pre; margin-top: 8px;
+  .ac-wrap.flipped { transform: rotateY(180deg); }
+  .ac-face {
+    position: absolute; inset: 0; border-radius: 14px;
+    -webkit-backface-visibility: hidden; backface-visibility: hidden;
+    overflow: hidden;
+  }
+
+  /* Front */
+  .ac-front {
+    background: linear-gradient(160deg, #1c2230 0%, #0d1117 100%);
+    border: 2px solid #30363d;
+    display: flex; flex-direction: column;
+  }
+  .ac-front.r-mythic { border-color: #ffb74d; box-shadow: 0 0 18px rgba(255,183,77,.18) inset, 0 0 0 1px rgba(255,183,77,.3); }
+  .ac-front.r-rare   { border-color: #bc8cff; box-shadow: 0 0 18px rgba(188,140,255,.18) inset, 0 0 0 1px rgba(188,140,255,.3); }
+  .ac-front.r-core   { border-color: #58a6ff; box-shadow: 0 0 14px rgba(88,166,255,.14) inset; }
+  .ac-front.r-starter{ border-color: #6e7681; }
+  .ac-band { height: 5px; width: 100%; }
+  .ac-head {
+    padding: 10px 14px 8px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+  }
+  .ac-name { font-size: 16px; font-weight: 700; color: #e6edf3; line-height: 1.15; }
+  .ac-name small { display: block; font-size: 10px; color: #6e7681; font-weight: 500; margin-top: 2px; font-family: "SF Mono", monospace; }
+  .ac-hp {
+    font-size: 14px; font-weight: 700; color: #f85149;
+    background: rgba(248,81,73,.1); padding: 3px 10px; border-radius: 999px;
+    white-space: nowrap;
+  }
+  .ac-art {
+    height: 110px; margin: 0 14px; border-radius: 8px;
+    background: radial-gradient(ellipse at center, rgba(255,255,255,.04) 0%, transparent 70%);
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid #21262d; position: relative; overflow: hidden;
+    font-size: 56px;
+  }
+  .ac-art .ac-glyph { filter: drop-shadow(0 0 14px currentColor); }
+  .ac-types {
+    padding: 8px 14px 6px; display: flex; gap: 5px; flex-wrap: wrap;
+  }
+  .ac-type-chip {
+    font-size: 9px; padding: 2px 7px; border-radius: 999px;
+    font-weight: 700; letter-spacing: .5px; color: #06080f;
+  }
+  .ac-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
+    padding: 0 14px 8px; font-size: 10px;
+  }
+  .ac-stats div { background: rgba(13,17,23,.5); border-radius: 4px; padding: 4px 0; text-align: center; }
+  .ac-stats .lbl { color: #6e7681; font-size: 8px; text-transform: uppercase; letter-spacing: .8px; }
+  .ac-stats .val { color: #e6edf3; font-size: 13px; font-weight: 700; }
+  .ac-abilities {
+    flex: 1; padding: 4px 14px; display: flex; flex-direction: column; gap: 4px; overflow: hidden;
+  }
+  .ac-ab {
+    background: rgba(13,17,23,.5); border-left: 3px solid #58a6ff;
+    padding: 5px 8px; border-radius: 3px; font-size: 11px;
+  }
+  .ac-ab .ab-name { font-weight: 700; color: #e6edf3; }
+  .ac-ab .ab-cost { color: #d2a8ff; font-size: 9px; margin-left: 6px; font-family: "SF Mono", monospace; }
+  .ac-ab .ab-text { color: #8b949e; font-size: 10px; margin-top: 2px; line-height: 1.3; }
+  .ac-flavor {
+    padding: 4px 14px 6px;
+    font-size: 9px; color: #6e7681; font-style: italic;
+    border-top: 1px dashed rgba(110,118,129,.3); margin-top: 4px;
+  }
+  .ac-foot {
+    padding: 6px 14px 8px; display: flex; justify-content: space-between; align-items: center;
+    font-size: 9px; color: #6e7681;
+  }
+  .ac-rarity { text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+  .ac-rarity.mythic { color: #ffb74d; }
+  .ac-rarity.rare   { color: #bc8cff; }
+  .ac-rarity.core   { color: #58a6ff; }
+  .ac-rarity.starter{ color: #6e7681; }
+  .ac-flip-hint {
+    position: absolute; bottom: 6px; right: 8px;
+    font-size: 9px; color: #484f58; pointer-events: none;
+  }
+
+  /* Back — kraft-paper card-back, mirrors RAR */
+  .ac-back {
+    background: linear-gradient(180deg, #1a1510 0%, #2a2418 30%, #1a1510 70%, #0f0c08 100%);
+    border: 2px solid #8b7332;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 18px; transform: rotateY(180deg);
+  }
+  .ac-back::before {
+    content: ''; position: absolute; inset: 8px; border-radius: 8px;
+    border: 1px solid rgba(139,115,50,.4);
+    background: radial-gradient(ellipse at center, rgba(139,115,50,.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .ac-back::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: repeating-conic-gradient(rgba(139,115,50,.04) 0deg 10deg, transparent 10deg 20deg);
+    opacity: .5;
+  }
+  .ac-back-logo {
+    font-family: "SF Mono", monospace; font-size: 22px; font-weight: 800; letter-spacing: 4px;
+    color: #c9a84c; text-shadow: 0 0 12px rgba(201,168,76,.4);
+    position: relative; z-index: 1; margin-bottom: 4px;
+  }
+  .ac-back-sub {
+    font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+    color: rgba(201,168,76,.6); margin-bottom: 14px; position: relative; z-index: 1;
+  }
+  .ac-qr {
+    background: #fff; padding: 8px; border-radius: 8px;
+    box-shadow: 0 0 0 2px rgba(139,115,50,.5), 0 4px 16px rgba(0,0,0,.4);
+    position: relative; z-index: 1;
+  }
+  .ac-qr img { display: block; width: 150px; height: 150px; }
+  .ac-qr .qr-loading {
+    width: 150px; height: 150px; display: flex; align-items: center; justify-content: center;
+    color: #888; font-size: 10px;
+  }
+  .ac-incant {
+    margin-top: 12px; font-family: "SF Mono", monospace;
+    font-size: 9px; letter-spacing: 1.5px; color: #c9a84c;
+    text-align: center; line-height: 1.6; position: relative; z-index: 1;
+    max-width: 100%; word-spacing: 4px;
+  }
+  .ac-back-hint {
+    position: absolute; bottom: 8px; left: 0; right: 0; text-align: center;
+    font-size: 8px; color: rgba(201,168,76,.5); letter-spacing: 1px;
   }
 
   /* Drop overlay */
@@ -1492,6 +1608,10 @@ function renderAgents() {
 
 /* ───── Card modal ─────────────────────────────────────────── */
 let cardModalCard = null;
+const TYPE_GLYPH = {
+  LOGIC: '🧠', DATA: '📊', SOCIAL: '💬', SHIELD: '🛡',
+  CRAFT: '⚙️', HEAL: '❤️', WEALTH: '💰',
+};
 function openCardModal(c) {
   cardModalCard = c;
   const card = c.card;
@@ -1500,41 +1620,82 @@ function openCardModal(c) {
   const inHand = state.hand.has(c.filename);
   playBtn.textContent = inHand ? '✓ In hand' : 'Play to hand';
   playBtn.disabled = inHand;
+
   const stats = card.stats || {};
+  const types = card.types || ['SOCIAL'];
+  const primary = types[0];
+  const primaryColor = RAPP.AGENT_TYPES[primary].color;
+  const rarity = card.rarity || 'core';
+  const display = c.manifest.display_name || c.parsed?.agentName || c.name;
+
+  // QR encodes a deeplink that, when opened in a browser, lands here and
+  // (future hook) imports the card from its 64-bit seed. For now, scanning
+  // gets you the brainstem URL with the agent's incantation as a hint.
+  const seed = card.seed || '';
+  const incantation = card.incantation || '';
+  const deeplink = `https://kody-w.github.io/RAPP/brainstem/?seed=${encodeURIComponent(seed)}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=0&data=${encodeURIComponent(deeplink)}`;
+
   $('#cd-body').innerHTML = `
-    <div class="cd-head">
-      <div>
-        <div class="cd-name">${escapeHtml(c.manifest.display_name || c.name)}</div>
-        <div class="cd-pkg">${escapeHtml(c.name)} · v${c.manifest.version || '0.0.0'} · ${escapeHtml(card.tier||'community')}</div>
+    <div class="ac-wrap" id="ac-flip">
+      <!-- FRONT -->
+      <div class="ac-face ac-front r-${rarity}" style="background-image:radial-gradient(ellipse at top, ${primaryColor}11 0%, transparent 70%);">
+        <div class="ac-band" style="background:${primaryColor}"></div>
+        <div class="ac-head">
+          <div class="ac-name">
+            ${escapeHtml(display)}
+            <small>${escapeHtml(c.name)} · v${escapeHtml(c.manifest.version || '0.0.0')}</small>
+          </div>
+          <div class="ac-hp">HP ${card.hp || stats.hp || 0}</div>
+        </div>
+        <div class="ac-art" style="color:${primaryColor}">
+          <span class="ac-glyph">${TYPE_GLYPH[primary] || '✨'}</span>
+        </div>
+        <div class="ac-types">
+          ${types.map(t => `<span class="ac-type-chip" style="background:${RAPP.AGENT_TYPES[t].color}">${t}</span>`).join('')}
+          <span style="font-size:9px;color:#6e7681;margin-left:auto;align-self:center">
+            Weak ${card.weakness_label} · Resists ${card.resistance_label}
+          </span>
+        </div>
+        <div class="ac-stats">
+          <div><div class="lbl">ATK</div><div class="val">${stats.atk||0}</div></div>
+          <div><div class="lbl">DEF</div><div class="val">${stats.def||0}</div></div>
+          <div><div class="lbl">SPD</div><div class="val">${stats.spd||0}</div></div>
+          <div><div class="lbl">INT</div><div class="val">${stats.int||0}</div></div>
+        </div>
+        <div class="ac-abilities">
+          ${(card.abilities||[]).slice(0, 3).map(a => `
+            <div class="ac-ab" style="border-left-color:${primaryColor}">
+              <span class="ab-name">${escapeHtml(a.name)}</span>
+              <span class="ab-cost">${a.cost}E · ${a.damage} dmg</span>
+              ${a.text ? `<div class="ab-text">${escapeHtml(a.text)}</div>` : ''}
+            </div>
+          `).join('')}
+        </div>
+        <div class="ac-flavor">${escapeHtml(card.flavor || c.manifest.description || '')}</div>
+        <div class="ac-foot">
+          <span class="ac-rarity ${rarity}">${escapeHtml(card.rarity_label || rarity)}</span>
+          <span style="font-family:'SF Mono',monospace">#${(card.name_seed||0).toString(16).toUpperCase().padStart(8,'0').slice(0,8)}</span>
+        </div>
+        <div class="ac-flip-hint">tap to flip ↻</div>
       </div>
-      <div style="text-align:right;font-size:11px;color:var(--dim)">
-        ${(card.types||[]).map(t=>`<span class="type-chip" style="background:${RAPP.AGENT_TYPES[t].color};color:#06080f;font-size:9px;padding:2px 6px;border-radius:999px;font-weight:700">${t}</span>`).join(' ')}
-        <div style="margin-top:4px;color:var(--muted)">HP ${card.hp || 0} · ${card.rarity_label || ''}</div>
+
+      <!-- BACK -->
+      <div class="ac-face ac-back">
+        <div class="ac-back-logo">RAPP</div>
+        <div class="ac-back-sub">single-file agent</div>
+        <div class="ac-qr">
+          <img src="${qrUrl}" alt="QR code" width="150" height="150" loading="lazy"
+               onerror="this.outerHTML='<div class=qr-loading>QR unavailable</div>'">
+        </div>
+        <div class="ac-incant">${escapeHtml(incantation)}</div>
+        <div class="ac-back-hint">tap to flip back ↺</div>
       </div>
     </div>
-    <div style="font-size:13px;color:var(--dim)">${escapeHtml(c.manifest.description||'')}</div>
-    <div class="cd-stats">
-      <div><div class="lbl">HP</div><div class="val">${stats.hp||0}</div></div>
-      <div><div class="lbl">ATK</div><div class="val">${stats.atk||0}</div></div>
-      <div><div class="lbl">DEF</div><div class="val">${stats.def||0}</div></div>
-      <div><div class="lbl">SPD</div><div class="val">${stats.spd||0}</div></div>
-      <div><div class="lbl">INT</div><div class="val">${stats.int||0}</div></div>
-    </div>
-    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:14px 0 6px">Abilities</div>
-    ${(card.abilities||[]).map(a => `
-      <div class="cd-abil">
-        <div class="nm">${escapeHtml(a.name)} <span style="color:var(--muted);font-weight:500;font-size:11px">· ${a.cost} energy · ${a.damage} dmg</span></div>
-        <div class="stats">${escapeHtml(a.text||'')}</div>
-      </div>
-    `).join('')}
-    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:14px 0 6px">Type matchups</div>
-    <div style="font-size:12px;color:var(--dim)">Weak: <strong style="color:${RAPP.AGENT_TYPES[card.weakness].color}">${card.weakness_label}</strong> · Resists: <strong style="color:${RAPP.AGENT_TYPES[card.resistance].color}">${card.resistance_label}</strong></div>
-    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:14px 0 6px">7-word incantation (SPEC §12.4)</div>
-    <div class="cd-incantation">${escapeHtml(card.incantation || '')}</div>
-    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:14px 0 6px">Source (the file IS the agent)</div>
-    <div class="cd-source">${escapeHtml(c.source).slice(0, 4000)}${c.source.length>4000 ? '\n... (' + (c.source.length-4000) + ' more chars)' : ''}</div>
-    <div style="margin-top:10px;font-size:11px;color:var(--muted);text-align:center">sha256 ${c.sha256.slice(0,16)}…</div>
   `;
+  // Tap card to flip
+  const wrap = document.getElementById('ac-flip');
+  wrap.addEventListener('click', () => wrap.classList.toggle('flipped'));
   $('#card-modal').classList.add('open');
 }
 function closeCardModal() { $('#card-modal').classList.remove('open'); cardModalCard = null; }
