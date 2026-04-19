@@ -282,27 +282,38 @@
   .msg.system .bubble strong { color: #c9d1d9; }
   .msg.system .bubble .iconify { vertical-align: middle; width: 1.25em; height: 1.25em; color: #8b949e; }
 
-  /* Agent activity (collapsible) */
-  .agent-log { margin-top: 10px; border: 1px solid #30363d; border-radius: 6px; overflow: hidden; }
+  /* Agent activity — small chip beneath the assistant bubble; click to peek
+     at the raw tool output. One row per call; multiple stack vertically. */
+  .agent-log { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
+  .agent-log details {
+    border: 1px solid #21262d; border-radius: 6px;
+    background: rgba(13,17,23,.6); overflow: hidden;
+  }
   .agent-log details summary {
     display: flex; align-items: center; gap: 6px;
-    padding: 5px 10px; background: #0d1117;
-    color: #8b949e; font-size: 10px; font-weight: 600;
-    font-family: "SF Mono", monospace;
-    text-transform: uppercase; letter-spacing: .5px;
+    padding: 5px 10px;
+    color: #8b949e; font-size: 11px;
     cursor: pointer; user-select: none; list-style: none;
   }
   .agent-log details summary::-webkit-details-marker { display: none; }
   .agent-log details summary::before {
-    content: '▸'; color: #d2a8ff; transition: transform .15s;
-    display: inline-block;
+    content: '›'; color: #58a6ff; font-size: 13px; line-height: 1;
+    transition: transform .15s; display: inline-block; width: 8px;
   }
   .agent-log details[open] summary::before { transform: rotate(90deg); }
-  .agent-log details summary .icon { width: 12px; height: 12px; color: #d2a8ff; vertical-align: middle; margin-right: 4px; }
+  .agent-log details summary .icon {
+    width: 11px; height: 11px; color: #58a6ff; vertical-align: middle;
+  }
+  .agent-log .al-name { color: #c9d1d9; font-weight: 600; }
+  .agent-log .al-args {
+    color: #6e7681; font-family: "SF Mono", ui-monospace, monospace;
+    font-size: 10px; margin-left: 2px;
+  }
+  .agent-log details:hover { border-color: #30363d; background: rgba(13,17,23,.85); }
   .agent-log pre {
     padding: 8px 10px; background: #0d1117;
     font-size: 10px; color: #7ee787;
-    font-family: "SF Mono", monospace;
+    font-family: "SF Mono", ui-monospace, monospace;
     white-space: pre-wrap; max-height: 200px;
     overflow-y: auto; border-top: 1px solid #21262d; margin: 0;
   }
@@ -2731,6 +2742,7 @@ const ICONS = {
   brain:     `<svg viewBox="0 0 512 512" fill="currentColor"><path d="M184 0c-30.9 0-56.5 22.7-61.1 52.3C54.5 67 0 130 0 206.8c0 41.6 17.4 79.2 45.3 105.9-2 9.2-3.3 18.8-3.3 28.7 0 55.3 35.8 102.2 85.5 119C142.2 493 172.6 512 208 512h16c35.3 0 64-28.7 64-64V86c0-8.8-7.2-16-16-16h-16c-8.8 0-16 7.2-16 16v16c0 8.8-7.2 16-16 16s-16-7.2-16-16V64c0-35.3-28.7-64-64-64h40zm144 0c30.9 0 56.5 22.7 61.1 52.3C457.5 67 512 130 512 206.8c0 41.6-17.4 79.2-45.3 105.9 2 9.2 3.3 18.8 3.3 28.7 0 55.3-35.8 102.2-85.5 119C369.8 493 339.4 512 304 512h-16c-35.3 0-64-28.7-64-64V86c0-8.8 7.2-16 16-16h16c8.8 0 16 7.2 16 16v16c0 8.8 7.2 16 16 16s16-7.2 16-16V64c0-35.3 28.7-64 64-64h-40z"/></svg>`,
   system:    `<svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM0 8a8 8 0 1116 0A8 8 0 010 8zm9 3a1 1 0 11-2 0 1 1 0 012 0zM6.92 6.085c.081-.16.19-.291.34-.385.149-.094.339-.144.566-.144.222 0 .412.046.567.123.156.077.273.18.353.31.08.13.123.281.123.452 0 .142-.02.27-.06.382-.039.111-.094.205-.165.282-.072.077-.157.144-.255.198-.097.054-.205.103-.323.146-.198.072-.32.142-.367.21-.046.067-.07.169-.07.305v.305H7.616v-.305c0-.221.025-.394.075-.518.05-.124.142-.226.276-.305.135-.079.305-.157.51-.234.169-.064.296-.135.382-.213.085-.078.128-.18.128-.305a.318.318 0 00-.118-.252.43.43 0 00-.293-.103c-.123 0-.226.027-.31.082a.622.622 0 00-.196.196L6.92 6.085z"/></svg>`,
   dna:       `<svg viewBox="0 0 16 16" fill="currentColor"><path d="M2.5 1a.5.5 0 01.5.5V2h10v-.5a.5.5 0 011 0v1.997c0 1.717-1.013 3.234-2.469 3.913L9.466 8l1.565.59c1.456.679 2.469 2.196 2.469 3.913V14.5a.5.5 0 01-1 0V14H3v.5a.5.5 0 01-1 0v-1.997c0-1.717 1.013-3.234 2.469-3.913L6.534 8 4.97 7.41C3.512 6.732 2.5 5.215 2.5 3.498V1.5a.5.5 0 01.5-.5zM4 13h8c-.06-1.196-.776-2.243-1.806-2.731L8 9.515l-2.194 1.082C4.776 11.027 4 12.04 4 13.236V13zm4-4.515l2.194-1.082C11.224 6.973 12 5.96 12 4.764V4H4v.235c0 1.196.776 2.209 1.806 2.697L8 8.485z"/></svg>`,
+  spark:     `<svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a.5.5 0 01.5.5v3a.5.5 0 01-1 0v-3A.5.5 0 018 0zm0 12a.5.5 0 01.5.5v3a.5.5 0 01-1 0v-3a.5.5 0 01.5-.5zM3 8a.5.5 0 01-.5.5h-2a.5.5 0 010-1h2A.5.5 0 013 8zm12 0a.5.5 0 01-.5.5h-2a.5.5 0 010-1h2a.5.5 0 01.5.5zM2.5 2.5a.5.5 0 01.707 0l1.5 1.5a.5.5 0 01-.707.707l-1.5-1.5a.5.5 0 010-.707zm9.793 9.793a.5.5 0 01.707 0l1.5 1.5a.5.5 0 01-.707.707l-1.5-1.5a.5.5 0 010-.707zm.707-9.793a.5.5 0 010 .707l-1.5 1.5a.5.5 0 11-.707-.707l1.5-1.5a.5.5 0 01.707 0zM3.207 12.293a.5.5 0 010 .707l-1.5 1.5a.5.5 0 11-.707-.707l1.5-1.5a.5.5 0 01.707 0z"/></svg>`,
 };
 const icon = name => `<span class="icon">${ICONS[name]||''}</span>`;
 
@@ -2749,9 +2761,17 @@ function appendMsg(role, text, agent_logs) {
   }
   let logHtml = '';
   if (agent_logs && agent_logs.length) {
-    logHtml = `<div class="agent-log">${agent_logs.map(l => `
-      <details><summary>${icon('dna')} ${escapeHtml(l.name)} called with ${escapeHtml(JSON.stringify(l.args))}</summary>
-      <pre>${escapeHtml(typeof l.output === 'string' ? l.output : JSON.stringify(l.output, null, 2))}</pre></details>`).join('')}</div>`;
+    logHtml = `<div class="agent-log">${agent_logs.map(l => {
+      // "RecallMemory" → "Recall Memory" so the line reads naturally.
+      const pretty = String(l.name || 'Agent').replace(/([a-z])([A-Z])/g, '$1 $2');
+      const hasArgs = l.args && Object.keys(l.args).length > 0;
+      const argTail = hasArgs ? ` <span class="al-args">(${escapeHtml(JSON.stringify(l.args))})</span>` : '';
+      return `
+        <details>
+          <summary>${icon('spark')} <span class="al-name">${escapeHtml(pretty)}</span> agent called${argTail}</summary>
+          <pre>${escapeHtml(typeof l.output === 'string' ? l.output : JSON.stringify(l.output, null, 2))}</pre>
+        </details>`;
+    }).join('')}</div>`;
   }
   div.innerHTML = `<div class="avatar">${ic}</div><div class="bubble">${html}${logHtml}</div>`;
   $('#chat').appendChild(div);
