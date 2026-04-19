@@ -305,18 +305,21 @@
     width: 11px; height: 11px; color: #58a6ff; vertical-align: middle;
   }
   .agent-log .al-name { color: #c9d1d9; font-weight: 600; }
-  .agent-log .al-args {
-    color: #6e7681; font-family: "SF Mono", ui-monospace, monospace;
-    font-size: 10px; margin-left: 2px;
-  }
   .agent-log details:hover { border-color: #30363d; background: rgba(13,17,23,.85); }
-  .agent-log pre {
-    padding: 8px 10px; background: #0d1117;
+  .agent-log .al-section {
+    padding: 4px 10px 2px; background: #0d1117;
+    font-size: 9px; color: #6e7681;
+    text-transform: uppercase; letter-spacing: .8px;
+    border-top: 1px solid #21262d;
+  }
+  .agent-log .al-pre {
+    padding: 4px 10px 8px; background: #0d1117;
     font-size: 10px; color: #7ee787;
     font-family: "SF Mono", ui-monospace, monospace;
     white-space: pre-wrap; max-height: 200px;
-    overflow-y: auto; border-top: 1px solid #21262d; margin: 0;
+    overflow-y: auto; margin: 0;
   }
+  .agent-log .al-pre.args { color: #79c0ff; }
 
   .typing { display: flex; gap: 4px; align-items: center; padding: 4px 0; }
   .typing span {
@@ -2751,11 +2754,17 @@ function appendMsg(role, text, agent_logs) {
       // "RecallMemory" → "Recall Memory" so the line reads naturally.
       const pretty = String(l.name || 'Agent').replace(/([a-z])([A-Z])/g, '$1 $2');
       const hasArgs = l.args && Object.keys(l.args).length > 0;
-      const argTail = hasArgs ? ` <span class="al-args">(${escapeHtml(JSON.stringify(l.args))})</span>` : '';
+      // Args go INSIDE the expanded body — collapsed summary stays clean.
+      const argsBlock = hasArgs
+        ? `<div class="al-section">args</div><pre class="al-pre args">${escapeHtml(JSON.stringify(l.args, null, 2))}</pre>`
+        : '';
+      const outStr = typeof l.output === 'string' ? l.output : JSON.stringify(l.output, null, 2);
       return `
         <details>
-          <summary>${icon('spark')} <span class="al-name">${escapeHtml(pretty)}</span> agent called${argTail}</summary>
-          <pre>${escapeHtml(typeof l.output === 'string' ? l.output : JSON.stringify(l.output, null, 2))}</pre>
+          <summary>${icon('spark')} <span class="al-name">${escapeHtml(pretty)}</span> agent called</summary>
+          ${argsBlock}
+          <div class="al-section">result</div>
+          <pre class="al-pre">${escapeHtml(outStr)}</pre>
         </details>`;
     }).join('')}</div>`;
   }
