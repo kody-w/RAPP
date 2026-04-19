@@ -363,12 +363,16 @@
     z-index: 1;
   }
 
-  /* Pill mode = the OG quick-click buttons, driven by the hand. */
+  /* Pill mode = the OG quick-click buttons, driven by the hand. The label
+     IS the prompt that will be sent — agent name lives in the tooltip /
+     full card. Long prompts truncate with an ellipsis so the row stays tidy. */
   .hand-pill {
     background: #161b22; color: #58a6ff;
     border: 1px solid #30363d; border-radius: 20px;
     padding: 6px 14px; font-size: 12px;
-    cursor: pointer; transition: all .15s; white-space: nowrap;
+    cursor: pointer; transition: all .15s;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    max-width: 360px;
     font-family: inherit; pointer-events: auto;
   }
   .hand-pill:hover {
@@ -2013,17 +2017,20 @@ function renderHand() {
   row.dataset.mode = mode;
 
   if (mode === 'pills') {
-    // Pill mode: simple text buttons (default — clean & professional).
+    // Pill mode: each pill IS the prompt that gets sent. The agent's name
+    // lives in the right-click → full card; the user just sees what they're
+    // about to ask. Keeps the quick-click flow as low-cognition as possible.
     cards.forEach(c => {
       const el = document.createElement('button');
       el.type = 'button';
       el.className = 'hand-pill';
       el.dataset.filename = c.filename;
+      const prompt = promptForCard(c);
       const name = c.parsed?.agentName || c.manifest.display_name || c.name;
-      el.title = `Click to ask: "${promptForCard(c)}"\nRight-click for full card`;
-      el.textContent = name;
+      el.title = `Sends: "${prompt}"\n(via the ${name} agent — right-click for full card)`;
+      el.textContent = prompt;
       el.addEventListener('click', () => {
-        $('#input').value = promptForCard(c);
+        $('#input').value = prompt;
         $('#send').click();
       });
       el.addEventListener('contextmenu', e => {
