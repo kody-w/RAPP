@@ -120,6 +120,7 @@
   .btn.green { background: #238636; border-color: #2ea043; color: #fff; }
   .btn.green:hover { background: #2ea043; }
   .btn.install-os.active { background: #238636; border-color: #2ea043; color: #fff; }
+  .btn.install-flavor.active { background: #1f6feb; border-color: #388bfd; color: #fff; }
 
   .row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
   .row label {
@@ -1224,7 +1225,7 @@
           <button class="btn" id="tether-test">Test</button>
         </div>
         <div id="tether-status" class="tether-stat">disabled</div>
-        <span class="hint">Routes agent execution through a local Python process for real OS access. Run <code>python tether/server.py</code> from the RAPP repo.</span>
+        <span class="hint">Routes agent execution through a local Python process for real OS access. Install with the one-liner from <strong>Install → Tether</strong>, or run <code>python tether/server.py</code> from this repo.</span>
       </div>
     </div>
     <div class="actions">
@@ -1361,12 +1362,14 @@
 <!-- Install modal -->
 <div class="modal" id="install-modal">
   <div class="panel">
-    <header><span class="ttl">💻 Install the real brainstem</span><button class="close" id="install-close">×</button></header>
+    <header><span class="ttl">💻 Install</span><button class="close" id="install-close">×</button></header>
     <div class="body">
-      <div class="banner">
-        Run the canonical one-line installer from this repo
-        (<a href="https://github.com/kody-w/RAPP" target="_blank" rel="noopener" style="color:#58a6ff">kody-w/RAPP</a>).
-        It installs to <code>~/.brainstem/src/rapp_brainstem/</code>, then you can <code>brainstem</code> from any shell.
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <button class="btn install-flavor active" data-flavor="brainstem">Local brainstem</button>
+        <button class="btn install-flavor" data-flavor="tether">Tether (browser AI + local agents)</button>
+      </div>
+      <div class="banner" id="install-blurb">
+        The canonical one-line installer. Installs to <code>~/.brainstem/src/rapp_brainstem/</code>, then you can <code>brainstem</code> from any shell.
       </div>
       <div style="display:flex;gap:6px;margin-bottom:10px">
         <button class="btn install-os active" data-os="mac">macOS</button>
@@ -3406,7 +3409,12 @@ function wire() {
   $$('.install-os').forEach(b => b.addEventListener('click', () => {
     $$('.install-os').forEach(x => x.classList.remove('active'));
     b.classList.add('active');
-    $('#install-cmd').textContent = INSTALL_CMDS[b.dataset.os];
+    refreshInstallCmd();
+  }));
+  $$('.install-flavor').forEach(b => b.addEventListener('click', () => {
+    $$('.install-flavor').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    refreshInstallCmd();
   }));
   $('#install-cmd').addEventListener('click', copyInstallCmd);
   $('#install-copy').addEventListener('click', copyInstallCmd);
@@ -3430,9 +3438,20 @@ function wire() {
 }
 
 const INSTALL_CMDS = {
-  mac:   'curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash',
-  linux: 'curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash',
-  win:   'iwr https://kody-w.github.io/RAPP/install.ps1 -useb | iex',
+  brainstem: {
+    mac:   'curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash',
+    linux: 'curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash',
+    win:   'iwr https://kody-w.github.io/RAPP/install.ps1 -useb | iex',
+  },
+  tether: {
+    mac:   'curl -fsSL https://kody-w.github.io/RAPP/install-tether.sh | bash',
+    linux: 'curl -fsSL https://kody-w.github.io/RAPP/install-tether.sh | bash',
+    win:   'iwr https://kody-w.github.io/RAPP/install-tether.ps1 -useb | iex',
+  },
+};
+const INSTALL_BLURBS = {
+  brainstem: 'The full local-first stack — Python + Flask + venv + GitHub OAuth. Installs to <code>~/.brainstem/src/rapp_brainstem/</code>, then you can <code>brainstem</code> from any shell.',
+  tether: 'Stdlib-only Python server that exposes your local agents to <em>this</em> virtual brainstem. Installs to <code>~/.brainstem-tether/</code>, then runs <code>brainstem-tether</code> on <code>localhost:8765</code>. AI stays in the browser; agents run on your machine.',
 };
 function detectOS() {
   const ua = navigator.userAgent;
@@ -3440,12 +3459,18 @@ function detectOS() {
   if (/Linux/i.test(ua) && !/Android/i.test(ua)) return 'linux';
   return 'mac';
 }
+function refreshInstallCmd() {
+  const os = $$('.install-os').find(b => b.classList.contains('active'))?.dataset.os || detectOS();
+  const flavor = $$('.install-flavor').find(b => b.classList.contains('active'))?.dataset.flavor || 'brainstem';
+  $('#install-cmd').textContent = INSTALL_CMDS[flavor][os];
+  $('#install-blurb').innerHTML = INSTALL_BLURBS[flavor];
+}
 function openInstallModal() {
   const os = detectOS();
   $$('.install-os').forEach(x => x.classList.toggle('active', x.dataset.os === os));
-  $('#install-cmd').textContent = INSTALL_CMDS[os];
-  // Try to fill the VS Code link with $HOME if discoverable; otherwise leave generic.
-  // (Browsers can't read $HOME — link uses ~ which works on macOS/Linux when VS Code expands it.)
+  // Default flavor = brainstem
+  $$('.install-flavor').forEach((x, i) => x.classList.toggle('active', i === 0));
+  refreshInstallCmd();
   $('#open-vscode').href = 'vscode://file/' + (navigator.platform.includes('Win') ? '%USERPROFILE%\\\\.brainstem\\\\src\\\\rapp_brainstem' : '~/.brainstem/src/rapp_brainstem');
   $('#install-modal').classList.add('open');
 }
