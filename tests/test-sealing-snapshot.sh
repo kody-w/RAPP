@@ -73,7 +73,7 @@ echo "Setup: clean state at $ROOT"
 rm -rf "$ROOT"
 
 echo "Setup: starting swarm server on :$PORT"
-python3 swarm/server.py --port $PORT --root "$ROOT" >/dev/null 2>&1 &
+python3 rapp_brainstem/brainstem.py --port $PORT --root "$ROOT" >/dev/null 2>&1 &
 SERVER_PID=$!
 sleep 1.5
 
@@ -81,7 +81,7 @@ sleep 1.5
 BUNDLE=$(python3 - <<'PY'
 import json, pathlib
 agents = []
-for p in pathlib.Path('agents').glob('*_agent.py'):
+for p in pathlib.Path('rapp_brainstem/agents').glob('*_agent.py'):
     if p.name == 'basic_agent.py': continue
     agents.append({
         'filename': p.name,

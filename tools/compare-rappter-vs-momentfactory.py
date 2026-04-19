@@ -60,31 +60,104 @@ def engine_a_available() -> tuple[bool, str]:
     return True, "ready"
 
 
-def engine_a_run(moment: dict) -> dict:
-    """Adapter for the private rappter engine.
+def engine_a_run(moment: dict, invoke: bool = False, timeout_sec: int = 240) -> dict:
+    """Adapter for the private rappter tick/tock organism engine.
 
-    The full integration would: inject the moment as the active seed in
-    rappterbook/state/seeds.json, invoke one tick via the fleet harness,
-    parse the resulting stream delta, and extract post(s).
+    Two modes:
+      • dry / preview (default) — describe exactly what would be invoked.
+        Cheap, deterministic, no LLM calls.
+      • --invoke-rappter — actually queue the moment as a seed, run one tick
+        via the fleet harness, parse the resulting stream-delta files for new
+        posts. Costs LLM calls and ~2-4 minutes per moment.
 
-    For now, this returns a placeholder shape so the harness can produce
-    structurally complete comparison artifacts. Wire the real integration
-    in when running locally with the engine warm.
+    Seed-injection contract:
+      • <RAPPTERBOOK_DIR>/state/seeds.json — moment becomes the active seed
+      • bash <RAPPTER_DIR>/engine/fleet/claude-infinite.sh runs ONE frame
+      • <RAPPTERBOOK_DIR>/state/stream_deltas/frame-N-*.json holds the result
+      • Posts pulled from delta.posts_created
     """
     ok, why = engine_a_available()
     if not ok:
         return {"engine": "rappter", "available": False, "reason": why,
                 "post": None}
-    # Placeholder — returning the structure the comparison expects.
-    # A real implementation would shell out to engine/fleet/claude-infinite.sh
-    # in single-tick mode after seeding state/seeds.json.
-    return {"engine": "rappter", "available": True,
-            "note": "Adapter is a stub — wire engine/fleet single-tick when running locally.",
-            "post": {
-                "title": "(rappter engine not invoked from this run)",
-                "body":  "(placeholder — see RAPPTER_ENGINE_DIR docs)",
-                "channel": "(unknown)",
-            }}
+
+    rb_state   = RAPPTERBOOK_DIR / "state"
+    seeds_path = rb_state / "seeds.json"
+    deltas_dir = rb_state / "stream_deltas"
+
+    if not invoke:
+        return {
+            "engine": "rappter",
+            "available": True,
+            "mode": "preview",
+            "would_inject_into": str(seeds_path),
+            "would_run":         f"bash {RAPPTER_DIR}/engine/fleet/claude-infinite.sh "
+                                  "--streams 1 --hours 0.05 --interval 60",
+            "would_read_from":   str(deltas_dir),
+            "post":              None,
+            "note": "Re-run with --invoke-rappter to actually fire the engine and harvest posts.",
+        }
+
+    # Live invocation
+    seeds_path.parent.mkdir(parents=True, exist_ok=True)
+    seeds = json.loads(seeds_path.read_text()) if seeds_path.exists() else {"active": None, "queue": []}
+    seed_id = f"comparison-{moment['moment_id']}-{int(time.time())}"
+    seed_entry = {
+        "id":        seed_id,
+        "text":      moment["source"],
+        "context":   f"injected by RAPP head-to-head harness; source_type={moment['source_type']}",
+        "source":    "compare-rappter-vs-momentfactory",
+        "tags":      ["harness", moment["source_type"]],
+        "queued_at": time.strftime("%Y-%m-%dT%H:%M:%S+00:00", time.gmtime()),
+    }
+    seeds["active"] = {**seed_entry, "frames_active": 0,
+                       "experiment": "head-to-head", "frame": 1, "max_frames": 1}
+    seeds_path.write_text(json.dumps(seeds, indent=2))
+
+    before = set(p.name for p in deltas_dir.glob("frame-*.json")) if deltas_dir.exists() else set()
+    cmd = ["bash", str(RAPPTER_DIR / "engine" / "fleet" / "claude-infinite.sh"),
+           "--streams", "1", "--hours", "0.05", "--interval", "60"]
+    try:
+        proc = subprocess.run(
+            cmd, cwd=str(RAPPTER_DIR), capture_output=True, text=True,
+            timeout=timeout_sec,
+            env={**os.environ, "RAPPTERBOOK_PATH": str(RAPPTERBOOK_DIR)})
+        invoke_status = proc.returncode
+        invoke_stderr = (proc.stderr or "")[-500:]
+    except subprocess.TimeoutExpired:
+        return {"engine": "rappter", "available": True, "mode": "live",
+                "error": f"engine timeout after {timeout_sec}s",
+                "seed_id": seed_id, "post": None}
+
+    after = set(p.name for p in deltas_dir.glob("frame-*.json")) if deltas_dir.exists() else set()
+    new_files = sorted(after - before)
+    posts = []
+    for fn in new_files:
+        try:
+            delta = json.loads((deltas_dir / fn).read_text())
+        except (OSError, json.JSONDecodeError):
+            continue
+        for p in delta.get("posts_created", []) or []:
+            posts.append({
+                "title":      p.get("title"),
+                "body":       (p.get("body", "") or "")[:1500],
+                "channel":    p.get("channel"),
+                "by":         p.get("agent_id"),
+                "frame":      delta.get("frame"),
+                "delta_file": fn,
+            })
+
+    return {
+        "engine": "rappter",
+        "available": True,
+        "mode": "live",
+        "seed_id": seed_id,
+        "invoke_status": invoke_status,
+        "invoke_stderr_tail": invoke_stderr,
+        "new_delta_files": new_files,
+        "post_count": len(posts),
+        "posts": posts,
+    }
 
 
 # ── Engine B: MomentFactory via the local RAPP brainstem ──────────────
@@ -110,7 +183,7 @@ def deploy_momentfactory(port: int) -> str:
         "moment_factory_agent.py",
     ]
     agents = [{"filename": f,
-               "source": (RAPP_ROOT / "agents" / f).read_text()}
+               "source": (RAPP_ROOT / "rapplications" / "momentfactory" / "source" / f).read_text()}
               for f in files]
     bundle = {
         "schema": "rapp-swarm/1.0",
@@ -163,6 +236,8 @@ def main():
                     help="skip Engine A (rappter engine)")
     ap.add_argument("--no-momentfactory", action="store_true",
                     help="skip Engine B (MomentFactory)")
+    ap.add_argument("--invoke-rappter", action="store_true",
+                    help="actually fire the rappter engine (default: preview only)")
     args = ap.parse_args()
 
     fixtures = list_fixtures()
@@ -190,7 +265,7 @@ def main():
             root = f"/tmp/rapp-comparison-cycle-{args.cycle}"
             subprocess.run(["rm", "-rf", root], check=False)
             server_proc = subprocess.Popen(
-                ["python3", "-u", "swarm/server.py", "--port", str(args.port), "--root", root],
+                ["python3", "-u", "rapp_brainstem/brainstem.py", "--port", str(args.port), "--root", root],
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                 cwd=RAPP_ROOT)
             time.sleep(2)
@@ -210,7 +285,7 @@ def main():
 
             a_out = None
             if not args.no_rappter:
-                a_out = engine_a_run(moment)
+                a_out = engine_a_run(moment, invoke=args.invoke_rappter)
             b_out = None
             if not args.no_momentfactory:
                 b_out = engine_b_run(args.port, guid, moment)

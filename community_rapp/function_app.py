@@ -53,11 +53,12 @@ import azure.functions as func
 
 
 # ─── Path setup ─────────────────────────────────────────────────────────
-# `hippocampus/build.sh` vendors the swarm core into ./_swarm/ before
-# `func azure functionapp publish`. Locally, sibling ../swarm/ also works.
+# `community_rapp/build.sh` vendors the brainstem core into ./_vendored/
+# before `func azure functionapp publish`. Locally, sibling ../rapp_brainstem/
+# also works for direct invocation.
 
 _HERE = Path(__file__).resolve().parent
-for _candidate in (_HERE / "_swarm", _HERE.parent / "swarm"):
+for _candidate in (_HERE / "_vendored", _HERE.parent / "rapp_brainstem"):
     if _candidate.is_dir() and str(_candidate) not in sys.path:
         sys.path.insert(0, str(_candidate))
 
@@ -88,7 +89,11 @@ def _load_dotenv():
 _load_dotenv()
 
 # Now import the swarm core (vendored).
-from server import SwarmStore, get_t2t_manager, SealedSwarmError  # type: ignore
+# Try `brainstem` first (the new name), fall back to `server` (the vendored alias).
+try:
+    from brainstem import SwarmStore, get_t2t_manager, SealedSwarmError  # type: ignore
+except ImportError:
+    from server import SwarmStore, get_t2t_manager, SealedSwarmError  # type: ignore
 from chat import chat_with_swarm, diagnostics as llm_diagnostics  # type: ignore
 from llm import chat as llm_chat, detect_provider  # type: ignore
 from t2t import verify as t2t_verify  # type: ignore

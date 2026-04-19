@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* tests/run-tests.mjs — Node test runner for the rapp.js core lib.
  *
- * Loads brainstem/rapp.js into a synthetic global, then asserts the
+ * Loads rapp_brainstem/web/rapp.js into a synthetic global, then asserts the
  * RAPP v1 contract: agent parsing, manifest extraction, seed math,
  * mnemonic round-trips, card mint, card↔agent.py round-trips, binder
  * import/export.
@@ -24,7 +24,7 @@ const __dirname  = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, '..');
 
 // Load rapp.js into the global scope (it's an IIFE that attaches to `window`).
-const rappSource = fs.readFileSync(path.join(ROOT, 'brainstem', 'rapp.js'), 'utf8');
+const rappSource = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'web', 'rapp.js'), 'utf8');
 // Provide a `window` so the IIFE can attach.
 globalThis.window = globalThis;
 new Function(rappSource).call(globalThis);
@@ -103,7 +103,7 @@ const STARTER_FILES = ['save_memory_agent.py','recall_memory_agent.py','hacker_n
   console.log('\nAgent source parsing');
 
   for (const f of STARTER_FILES) {
-    const src = fs.readFileSync(path.join(ROOT, 'agents', f), 'utf8');
+    const src = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'agents', f), 'utf8');
     await test(`parse ${f} — class + name + manifest`, () => {
       const p = RAPP.Agent.parseAgentSource(src, f);
       assert(p.hasBasicAgent, 'extends BasicAgent');
@@ -138,7 +138,7 @@ class TinyAgent(BasicAgent):
   console.log('\nCard mint & round-trip');
 
   for (const f of STARTER_FILES) {
-    const src = fs.readFileSync(path.join(ROOT, 'agents', f), 'utf8');
+    const src = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'agents', f), 'utf8');
     await test(`mint card from ${f}`, async () => {
       const c = await RAPP.Card.mintCard(src, f);
       assertEq(c.schema, 'rapp-card/1.0');
@@ -161,7 +161,7 @@ class TinyAgent(BasicAgent):
   }
 
   await test('card SHA-256 mismatch is detected', async () => {
-    const src = fs.readFileSync(path.join(ROOT, 'agents', 'save_memory_agent.py'), 'utf8');
+    const src = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'agents', 'save_memory_agent.py'), 'utf8');
     const c = await RAPP.Card.mintCard(src, 'save_memory_agent.py');
     c.source = c.source + '\n# tampered\n';   // mutate but keep stale sha256
     let threw = false;
@@ -175,7 +175,7 @@ class TinyAgent(BasicAgent):
   await test('binder round-trips through JSON', async () => {
     const b = RAPP.Binder.empty('@test/me');
     for (const f of STARTER_FILES) {
-      const src = fs.readFileSync(path.join(ROOT, 'agents', f), 'utf8');
+      const src = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'agents', f), 'utf8');
       const c = await RAPP.Card.mintCard(src, f);
       RAPP.Binder.addCard(b, c);
     }
@@ -192,7 +192,7 @@ class TinyAgent(BasicAgent):
 
   await test('binder addCard is idempotent for same filename', async () => {
     const b = RAPP.Binder.empty();
-    const src = fs.readFileSync(path.join(ROOT, 'agents', 'save_memory_agent.py'), 'utf8');
+    const src = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'agents', 'save_memory_agent.py'), 'utf8');
     const c1 = await RAPP.Card.mintCard(src, 'save_memory_agent.py');
     RAPP.Binder.addCard(b, c1);
     RAPP.Binder.addCard(b, c1);
@@ -201,7 +201,7 @@ class TinyAgent(BasicAgent):
 
   await test('binder removeCard works by predicate', async () => {
     const b = RAPP.Binder.empty();
-    const src = fs.readFileSync(path.join(ROOT, 'agents', 'save_memory_agent.py'), 'utf8');
+    const src = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'agents', 'save_memory_agent.py'), 'utf8');
     const c = await RAPP.Card.mintCard(src, 'save_memory_agent.py');
     RAPP.Binder.addCard(b, c);
     RAPP.Binder.removeCard(b, x => x.filename === 'save_memory_agent.py');
@@ -213,7 +213,7 @@ class TinyAgent(BasicAgent):
 
   for (const f of STARTER_FILES) {
     await test(`${f} satisfies §5 (BasicAgent + name + metadata + perform)`, () => {
-      const src = fs.readFileSync(path.join(ROOT, 'agents', f), 'utf8');
+      const src = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'agents', f), 'utf8');
       const p = RAPP.Agent.parseAgentSource(src, f);
       assert(p.hasBasicAgent, 'extends BasicAgent');
       assert(p.name, 'self.name set');
@@ -232,8 +232,8 @@ class TinyAgent(BasicAgent):
   console.log('\nSPEC §8 chat envelope');
 
   await test('chat request/response shapes match §8', () => {
-    // Static check: ensure brainstem/index.html declares the §8 contract.
-    const html = fs.readFileSync(path.join(ROOT, 'brainstem', 'index.html'), 'utf8');
+    // Static check: ensure rapp_brainstem/web/index.html declares the §8 contract.
+    const html = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'web', 'index.html'), 'utf8');
     assert(html.includes('user_input'), 'request includes user_input');
     assert(html.includes('conversation_history'), 'request includes conversation_history');
     assert(html.includes('session_id'), 'request includes session_id');
@@ -270,8 +270,8 @@ class TinyAgent(BasicAgent):
 
   await test('save_memory → recall_memory passes signals through slush', async () => {
     // Mint both starter agents and simulate the brainstem chain loop.
-    const saveSrc = fs.readFileSync(path.join(ROOT, 'agents', 'save_memory_agent.py'), 'utf8');
-    const recSrc  = fs.readFileSync(path.join(ROOT, 'agents', 'recall_memory_agent.py'), 'utf8');
+    const saveSrc = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'agents', 'save_memory_agent.py'), 'utf8');
+    const recSrc  = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'agents', 'recall_memory_agent.py'), 'utf8');
     await RAPP.Card.mintCard(saveSrc, 'save_memory_agent.py');
     await RAPP.Card.mintCard(recSrc,  'recall_memory_agent.py');
     // Use the same shape the UI's stub runner mirrors.
@@ -293,7 +293,7 @@ class TinyAgent(BasicAgent):
   console.log('\nCard wire-compat');
 
   await test('seed → mnemonic → seed → card is fully reproducible', async () => {
-    const src = fs.readFileSync(path.join(ROOT, 'agents', 'recall_memory_agent.py'), 'utf8');
+    const src = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'agents', 'recall_memory_agent.py'), 'utf8');
     const c = await RAPP.Card.mintCard(src, 'recall_memory_agent.py');
     const seedBig = BigInt(c.card.seed);
     const words = RAPP.Mnemonic.seedToWords(seedBig);
@@ -306,7 +306,7 @@ class TinyAgent(BasicAgent):
   });
 
   await test('card.json is valid JSON and round-trips', async () => {
-    const src = fs.readFileSync(path.join(ROOT, 'agents', 'hacker_news_agent.py'), 'utf8');
+    const src = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'agents', 'hacker_news_agent.py'), 'utf8');
     const c = await RAPP.Card.mintCard(src, 'hacker_news_agent.py');
     const json = JSON.stringify(c);
     const parsed = JSON.parse(json);
@@ -319,28 +319,28 @@ class TinyAgent(BasicAgent):
 
   for (const p of [
     'index.html', 'SPEC.md', 'README.md',
-    'installer/index.html', 'hippocampus/index.html', 'brainstem/index.html', 'brainstem/rapp.js',
-    'agents/basic_agent.py',
-    'agents/save_memory_agent.py', 'agents/recall_memory_agent.py', 'agents/hacker_news_agent.py',
+    'installer/index.html', 'community_rapp/index.html', 'rapp_brainstem/web/index.html', 'rapp_brainstem/web/rapp.js',
+    'rapp_brainstem/agents/basic_agent.py',
+    'rapp_brainstem/agents/manage_memory_agent.py', 'rapp_brainstem/agents/manage_memory_agent.py', 'rapp_brainstem/agents/hacker_news_agent.py',
     'tests/run-tests.mjs',
     'tether/server.py',
-    'swarm/server.py',
+    'rapp_brainstem/brainstem.py',
     'install-swarm.sh',
     'tests/test-sealing-snapshot.sh',
     'tests/test-hero-deploy.sh',
     'tests/test-t2t.sh',
     'tests/test-llm-chat.sh',
-    'swarm/t2t.py',
-    'swarm/llm.py',
-    'swarm/chat.py',
-    'brainstem/onboard/index.html',
-    'brainstem/onboard/registry.json',
-    'hippocampus/function_app.py',
-    'hippocampus/host.json',
-    'hippocampus/requirements.txt',
-    'hippocampus/build.sh',
-    'hippocampus/provision-twin.sh',
-    'hippocampus/README.md',
+    'rapp_brainstem/t2t.py',
+    'rapp_brainstem/llm.py',
+    'rapp_brainstem/chat.py',
+    'rapp_brainstem/web/onboard/index.html',
+    'rapp_brainstem/web/onboard/registry.json',
+    'community_rapp/function_app.py',
+    'community_rapp/host.json',
+    'community_rapp/requirements.txt',
+    'community_rapp/build.sh',
+    'community_rapp/provision-twin.sh',
+    'community_rapp/README.md',
   ]) {
     await test(`twin file present: ${p}`, () => {
       const full = path.join(ROOT, p);

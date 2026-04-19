@@ -57,7 +57,7 @@ cd /Users/kodyw/Documents/GitHub/Rappter/RAPP
 rm -rf "$ROOT"
 lsof -ti:$PORT 2>/dev/null | xargs kill -9 2>/dev/null || true
 sleep 0.5
-python3 -u swarm/server.py --port $PORT --root $ROOT > /tmp/bf-v2-server.log 2>&1 &
+python3 -u rapp_brainstem/brainstem.py --port $PORT --root $ROOT > /tmp/bf-v2-server.log 2>&1 &
 SERVER_PID=$!
 sleep 2
 
@@ -65,7 +65,7 @@ sleep 2
 GUID=$(python3 - <<'PY'
 import json, urllib.request, pathlib
 agents = [{'filename':p.name,'source':p.read_text()}
-          for p in sorted(pathlib.Path('agents').glob('*_agent.py'))
+          for p in sorted(pathlib.Path('rapplications/bookfactory/source').glob('*_agent.py'))
           if p.name != 'basic_agent.py']
 bundle = {'schema':'rapp-swarm/1.0','name':'bf-v2-test',
           'soul':'BookFactory v2 wire test','agents':agents}

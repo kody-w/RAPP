@@ -25,9 +25,23 @@ from pathlib import Path
 
 RAPP_ROOT = Path(__file__).resolve().parent.parent
 RAR_ROOT  = RAPP_ROOT.parent / "RAR"  # /Rappter/RAPP → /Rappter → /Rappter/RAR
-SRC_DIR   = RAPP_ROOT / "agents"
 DEST_DIR  = RAR_ROOT / "agents" / "@rarbookworld"
 STORE     = RAPP_ROOT / "store" / "index.json"
+
+# After v1.8 reorg, factory source files live under rapplications/{name}/{source,singleton}/
+RAPPS_DIR = RAPP_ROOT / "rapplications"
+
+
+def _src_path(filename: str) -> Path:
+    """Map a filename to its on-disk source location after v1.8 reorg."""
+    bf_source = RAPPS_DIR / "bookfactory" / "source"
+    bf_singleton = RAPPS_DIR / "bookfactory" / "singleton"
+    mf_source = RAPPS_DIR / "momentfactory" / "source"
+    mf_singleton = RAPPS_DIR / "momentfactory" / "singleton"
+    for d in (bf_singleton, bf_source, mf_singleton, mf_source):
+        if (d / filename).exists():
+            return d / filename
+    raise FileNotFoundError(f"could not find {filename} under rapplications/")
 
 PUBLISHER = "@rarbookworld"
 AUTHOR    = "rarbookworld"
@@ -251,7 +265,7 @@ def publish():
     published = []
 
     for src_filename, slug, display, desc, tags in AGENTS:
-        src_path = SRC_DIR / src_filename
+        src_path = _src_path(src_filename)
         if not src_path.exists():
             print(f"  ✗ source missing: {src_path}")
             continue

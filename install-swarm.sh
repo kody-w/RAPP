@@ -53,7 +53,7 @@ install_cli() {
 #!/bin/bash
 # RAPP Swarm Server launcher.
 # Persists swarms to ~/.rapp-swarm/swarms/{guid}/.
-exec "$python_cmd" "$SWARM_HOME/_repo/swarm/server.py" \\
+exec "$python_cmd" "$SWARM_HOME/_repo/rapp_brainstem/brainstem.py" \\
     --root "$SWARM_HOME" \\
     "\$@"
 WRAPPER

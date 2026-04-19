@@ -159,3 +159,35 @@ Field notes from building the RAPP brainstem, swarm server, tether, registry, an
 101. [Publish your first rapplication — a 5-minute tutorial](./101-publish-your-first-rapplication.md)
 102. [Why agent.py-all-the-way-down beats LangChain / CrewAI / AutoGen for shipping](./102-vs-langchain-crewai-autogen.md)
 103. [The control plane sketch — provisioning brainstems at fleet scale](./103-control-plane-sketch.md)
+
+## Benchmarking
+
+105. [The bakeoff pattern: a reproducible way to answer "we're better than RAPP"](./105-the-bakeoff-pattern.md)
+106. [Determinism compounds — why one fewer hop is the whole game](./106-determinism-compounds.md)
+107. [Token economics at scale — what the 3.67× really costs](./107-token-economics-at-scale.md)
+108. [The content filter as a leading indicator](./108-content-filter-as-leading-indicator.md)
+116. [Integrated combination, with bakeoff evidence](./116-integrated-combination-bakeoff-evidence.md)
+120. [Bake off your own stack — a migration assessment for enterprise teams](./120-bakeoff-your-own-stack.md)
+124. [The quality column we refused to fake — blind A/B instead of LLM-judge](./124-the-quality-column-we-refused-to-fake.md)
+
+## Architecture decisions, defended
+
+109. [The graph DSL we deliberately didn't build](./109-graph-dsl-we-deliberately-didnt-build.md)
+110. [The bakeoff policy — falsifiable claims only](./110-the-bakeoff-policy.md)
+111. [Why snake_case everywhere](./111-why-snake-case-everywhere.md)
+118. [`data_slush` vs shared state — the difference that matters](./118-data-slush-vs-shared-state.md)
+121. [What RAPP v2 will NOT be — the non-goals doc](./121-what-rapp-v2-will-NOT-be.md)
+
+## Institutional memory
+
+112. [The egg-forge origin — how the format was found](./112-the-egg-forge-origin.md)
+113. [The 2026-04-17 freeze](./113-the-2026-04-17-freeze.md)
+114. [Molly and Kody — the twin sim that started it all](./114-molly-kody-twins.md)
+115. [Why the Rappter engine is in the archive](./115-rappter-engine-archive-reason.md)
+117. [Incantation as speech-executable](./117-incantation-as-speech-executable.md)
+
+## How-to & retrospective
+
+119. [Writing your first rapplication today](./119-writing-your-first-rapplication-today.md)
+122. [What shipping with an LLM partner really cost — the year in numbers](./122-what-shipping-with-an-llm-partner-really-cost.md)
+123. [The 122-posts retrospective — what holds up, what doesn't](./123-the-122-posts-retrospective.md)

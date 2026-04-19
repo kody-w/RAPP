@@ -1,5 +1,5 @@
 #!/bin/bash
-# tests/test-llm-chat.sh — exercises /api/swarm/{guid}/chat via swarm/server.py
+# tests/test-llm-chat.sh — exercises /api/swarm/{guid}/chat via rapp_brainstem/brainstem.py
 # in LLM_FAKE mode (deterministic stub LLM). Verifies the wire shape, the
 # tool-call execution path, and the LLM provider diagnostic endpoint.
 #
@@ -63,7 +63,7 @@ rm -rf "$ROOT"
 
 # Force fake LLM mode for reproducibility
 echo "Setup: starting swarm server with LLM_FAKE=1 on :$PORT"
-LLM_FAKE=1 python3 swarm/server.py --port $PORT --root "$ROOT" >/dev/null 2>&1 &
+LLM_FAKE=1 python3 rapp_brainstem/brainstem.py --port $PORT --root "$ROOT" >/dev/null 2>&1 &
 SERVER_PID=$!
 sleep 1.5
 
@@ -71,7 +71,7 @@ sleep 1.5
 BUNDLE=$(python3 - <<'PY'
 import json, pathlib
 agents = []
-for p in pathlib.Path('agents').glob('*_agent.py'):
+for p in pathlib.Path('rapp_brainstem/agents').glob('*_agent.py'):
     if p.name == 'basic_agent.py': continue
     agents.append({
         'filename': p.name,
@@ -157,7 +157,7 @@ if [ "${LIVE_LLM:-}" = "1" ]; then
     kill $SERVER_PID; wait $SERVER_PID 2>/dev/null || true
     [ -e "$ROOT" ] && chmod -R u+w "$ROOT" 2>/dev/null
     rm -rf "$ROOT"
-    python3 swarm/server.py --port $PORT --root "$ROOT" >/dev/null 2>&1 &
+    python3 rapp_brainstem/brainstem.py --port $PORT --root "$ROOT" >/dev/null 2>&1 &
     SERVER_PID=$!
     sleep 1.5
 

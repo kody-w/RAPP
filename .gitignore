@@ -11,3 +11,4 @@ sessions.json
 .env.*.local
 *.secret
 secrets.json
+local.settings.json

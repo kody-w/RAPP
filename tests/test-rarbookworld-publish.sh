@@ -176,14 +176,14 @@ rm -rf "$ROOT"
 lsof -ti:$PORT 2>/dev/null | xargs kill -9 2>/dev/null || true
 sleep 0.5
 
-python3 -u swarm/server.py --port $PORT --root "$ROOT" > /tmp/rarbookworld-test-server.log 2>&1 &
+python3 -u rapp_brainstem/brainstem.py --port $PORT --root "$ROOT" > /tmp/rarbookworld-test-server.log 2>&1 &
 SERVER_PID=$!
 trap "kill $SERVER_PID 2>/dev/null || true" EXIT
 sleep 2
 
 GUID=$(python3 - <<PY
 import json, urllib.request, pathlib
-src = pathlib.Path("agents/bookfactory_agent.py").read_text()
+src = pathlib.Path("rapplications/bookfactory/singleton/bookfactory_agent.py").read_text()
 bundle = {
     "schema": "rapp-swarm/1.0",
     "name": "rarbookworld-singleton-test",

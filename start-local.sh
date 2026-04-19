@@ -73,17 +73,17 @@ fi
 
 # ── Optional swarm server (multi-tenant local hosting) ────────────────
 
-if [ "$START_SWARM" = "1" ] && [ -f swarm/server.py ]; then
+if [ "$START_SWARM" = "1" ] && [ -f rapp_brainstem/brainstem.py ]; then
     echo "▶ Swarm server on :$SWARM_PORT"
     lsof -ti:"$SWARM_PORT" 2>/dev/null | xargs -r kill -9 2>/dev/null
-    python3 swarm/server.py --port "$SWARM_PORT" --root ~/.rapp-swarm >/tmp/rapp-swarm.log 2>&1 &
+    python3 rapp_brainstem/brainstem.py --port "$SWARM_PORT" --root ~/.rapp-swarm >/tmp/rapp-swarm.log 2>&1 &
     PIDS+=($!)
 fi
 
 # ── Wait for static server to be ready (it boots fast) ─────────────────
 sleep 1
 
-URL="http://127.0.0.1:$PORT/brainstem/mobile/"
+URL="http://127.0.0.1:$PORT/rapp_brainstem/web/mobile/"
 
 cat <<EOF
 
@@ -92,7 +92,7 @@ cat <<EOF
 ════════════════════════════════════════════════════════════════
 
   📱 Mobile PWA:        $URL
-  🌐 Onboard hatch:     http://127.0.0.1:$PORT/brainstem/onboard/
+  🌐 Onboard hatch:     http://127.0.0.1:$PORT/rapp_brainstem/web/onboard/
   🧠 Brainstem (OG):    http://127.0.0.1:$PORT/brainstem/
 EOF
 

@@ -51,7 +51,7 @@ agents = [
 
 fail = 0
 for fn in agents:
-    p = Path("agents") / fn
+    p = Path("rapplications/momentfactory/source") / fn
     if not p.exists():
         print(f"  ✗ missing: {fn}"); fail += 1; continue
     try:
@@ -80,7 +80,9 @@ echo "--- Section 2: SeedStamper deterministic + wordlist ---"
 
 python3 - <<'PY'
 import sys, json
-sys.path.insert(0, "agents")
+# Make `from agents.basic_agent import BasicAgent` resolve via rapp_brainstem/agents/
+sys.path.insert(0, "rapp_brainstem")
+sys.path.insert(0, "rapplications/momentfactory/source")
 from seed_stamper_agent import SeedStamperAgent, WORDS
 
 assert len(WORDS) == 256, f"wordlist must be 256 words, got {len(WORDS)}"
@@ -116,7 +118,7 @@ rm -rf "$ROOT"
 lsof -ti:$PORT 2>/dev/null | xargs kill -9 2>/dev/null || true
 sleep 0.5
 
-python3 -u swarm/server.py --port $PORT --root "$ROOT" > /tmp/momentfactory-test-server.log 2>&1 &
+python3 -u rapp_brainstem/brainstem.py --port $PORT --root "$ROOT" > /tmp/momentfactory-test-server.log 2>&1 &
 SERVER_PID=$!
 trap "kill $SERVER_PID 2>/dev/null || true" EXIT
 sleep 2
@@ -134,7 +136,7 @@ files = [
     "seed_stamper_agent.py",
     "moment_factory_agent.py",
 ]
-agents = [{"filename": f, "source": pathlib.Path("agents/" + f).read_text()} for f in files]
+agents = [{"filename": f, "source": pathlib.Path("rapplications/momentfactory/source/" + f).read_text()} for f in files]
 bundle = {
     "schema": "rapp-swarm/1.0",
     "name": "momentfactory-test",

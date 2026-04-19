@@ -1,1118 +1,1599 @@
+#!/usr/bin/env python3
 """
-RAPP Brainstem — minimal local AI agent endpoint.
-Only dependency: a GitHub account with Copilot access.
+RAPP Swarm Server — host many RAPP swarms behind one endpoint, routed by GUID.
 
-Uses the GitHub Copilot API directly.
-No API keys needed — just `gh auth login`.
+A "swarm" is the bundle of agents you pushed from the brainstem's Deploy as
+Swarm action. Each swarm has its own GUID, its own agents directory, and its
+own per-user memory namespace. One endpoint can host hundreds of swarms; each
+chat request picks a swarm by GUID, optionally a user by GUID, and gets back
+isolated agent execution + memory.
 
-Usage:
-    ./start.sh
-    # or: python brainstem.py
+Layout on disk (~/.rapp-swarm by default):
 
-POST /chat    { user_input, conversation_history?, session_id? }
-GET  /health  Status, model, loaded agents, token state
+    swarms/
+      <swarm_guid>/
+        manifest.json                 ← name, purpose, soul, created_at, …
+        agents/
+          hacker_news_agent.py
+          save_memory_agent.py
+          …
+        memory/
+          <user_guid>/memory.json     ← per-user memory inside this swarm
+          shared/memory.json          ← swarm-wide shared memory (anonymous)
+
+Routing follows the community-RAPP pattern: a request without a user_guid is
+treated as anonymous and uses the swarm's shared memory. The default sentinel
+"c0p110t0-aaaa-bbbb-cccc-123456789abc" is the same intentional-invalid GUID
+the OG uses to mark anonymous sessions in logs while routing to shared memory.
+
+Endpoints:
+    GET    /api/swarm/healthz                List all swarms with stats
+    POST   /api/swarm/deploy                 Install a rapp-swarm/1.0 bundle
+    GET    /api/swarm/{guid}/healthz         Info + agents for one swarm
+    POST   /api/swarm/{guid}/agent           Run an agent in this swarm
+    DELETE /api/swarm/{guid}                 Tear down a swarm
+
+Stdlib only. No venv, no pip, no Azure Functions runtime needed locally.
+The Tier 2 deploy story (Azure Functions, hippocampus engine) layers on top
+of this same wire format — same /api/swarm/deploy contract, same routing.
 """
 
-import os
-import sys
-import json
-import uuid
-import glob
-import time
+import argparse
+import hashlib
 import importlib.util
-import subprocess
+import json
+import os
+import re
+import sys
+import threading
+import time
 import traceback
+import uuid
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from typing import Dict, List, Optional
+from urllib.parse import urlparse
 
-import requests
-from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS
-from dotenv import load_dotenv
 
-load_dotenv()
+# ─── CONSTANTS ──────────────────────────────────────────────────────────
 
-app = Flask(__name__, static_folder=os.path.dirname(os.path.abspath(__file__)))
-CORS(app)
+# Same sentinel the community RAPP brainstem uses: not a valid UUID
+# (contains 'p' and 'l'), so it can never collide with a real user GUID
+# but is instantly recognizable in logs as "anonymous session".
+DEFAULT_USER_GUID = "c0p110t0-aaaa-bbbb-cccc-123456789abc"
 
-# ── Config ────────────────────────────────────────────────────────────────────
+GUID_RE = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+    re.IGNORECASE,
+)
 
-SOUL_PATH   = os.getenv("SOUL_PATH",   os.path.join(os.path.dirname(__file__), "soul.md"))
-AGENTS_PATH = os.getenv("AGENTS_PATH", os.path.join(os.path.dirname(__file__), "agents"))
-MODEL       = os.getenv("GITHUB_MODEL", "gpt-4o")
-PORT        = int(os.getenv("PORT", 7071))
-VOICE_MODE  = os.getenv("VOICE_MODE", "false").lower() == "true"
-VOICE_ZIP_PW = os.getenv("VOICE_ZIP_PASSWORD", "").encode() or None
+ALLOWED_ORIGINS = (
+    "https://kody-w.github.io",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+)
 
-_version_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "VERSION")
-VERSION = open(_version_file).read().strip() if os.path.exists(_version_file) else "0.0.0"
 
-COPILOT_TOKEN_URL = "https://api.github.com/copilot_internal/v2/token"
+class SealedSwarmError(Exception):
+    """Raised when a write-path operation targets a sealed swarm."""
+    pass
 
-AVAILABLE_MODELS = [
-    {"id": "gpt-4.1",         "name": "GPT-4.1"},
-    {"id": "gpt-4o",          "name": "GPT-4o"},
-    {"id": "gpt-4o-mini",     "name": "GPT-4o Mini"},
-    {"id": "claude-sonnet-4", "name": "Claude Sonnet 4"},
-    {"id": "gpt-4",           "name": "GPT-4"},
-    {"id": "gpt-3.5-turbo",   "name": "GPT-3.5 Turbo"},
-]
 
-# Models that don't support OpenAI-style tool_choice parameter
-_NO_TOOL_CHOICE_MODELS = set()
-_models_fetched = False
+def _now_iso():
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
-def _fetch_copilot_models():
-    """Fetch available models from Copilot API. Updates AVAILABLE_MODELS in place."""
-    global AVAILABLE_MODELS, _models_fetched, _NO_TOOL_CHOICE_MODELS
-    if _models_fetched:
-        return
-    try:
-        copilot_token, endpoint = get_copilot_token()
-        resp = requests.get(
-            f"{endpoint}/models",
-            headers={
-                "Authorization": f"Bearer {copilot_token}",
-                "Content-Type": "application/json",
-                "Editor-Version": "vscode/1.95.0",
-                "Copilot-Integration-Id": "vscode-chat",
-            },
-            timeout=10,
-        )
-        if resp.status_code == 200:
-            data = resp.json()
-            models_list = data if isinstance(data, list) else data.get("data", data.get("models", []))
-            if models_list:
-                new_models = []
-                for m in models_list:
-                    mid = m.get("id", m.get("model", ""))
-                    mname = m.get("name", mid)
-                    if mid:
-                        new_models.append({"id": mid, "name": mname})
-                        if "o1" in mid.lower():
-                            _NO_TOOL_CHOICE_MODELS.add(mid)
-                if new_models:
-                    AVAILABLE_MODELS = new_models
-                    print(f"[brainstem] Fetched {len(new_models)} models from Copilot API")
-        _models_fetched = True
-    except Exception as e:
-        print(f"[brainstem] Could not fetch models (using defaults): {e}")
-        _models_fetched = True
 
-# ── GitHub token ──────────────────────────────────────────────────────────────
+def _now_compact():
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
-# GitHub Copilot GitHub App client ID — produces ghu_ tokens that work with Copilot exchange API
-# Note: Ov23ctDVkRmgkPke0Mmm is an OAuth App that produces gho_ tokens — those get 404 from Copilot
-COPILOT_CLIENT_ID = "Iv1.b507a08c87ecfe98"
-_token_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".copilot_token")
-_copilot_cache_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".copilot_session")
 
-def _read_token_file():
-    """Read the token file. Returns dict with at least 'access_token', or None."""
-    if not os.path.exists(_token_file):
-        return None
-    try:
-        with open(_token_file) as f:
-            raw = f.read().strip()
-        if not raw:
-            return None
-        # New JSON format: {"access_token": ..., "refresh_token": ...}
-        if raw.startswith("{"):
-            return json.loads(raw)
-        # Legacy plain-text format: just the token string
-        return {"access_token": raw}
-    except Exception:
-        return None
+def _b64_decode(s):
+    import base64
+    return base64.b64decode(s) if s else b""
 
-def get_github_token():
-    """Get GitHub token from env, saved file, or gh CLI.
-    
-    Only returns tokens that work with the Copilot token exchange API.
-    Tokens from 'gh auth token' (gho_ prefix) don't have Copilot access,
-    so we skip them and only use ghu_ tokens from our device code flow.
-    """
-    # 1. Env var
-    token = os.getenv("GITHUB_TOKEN", "").strip()
-    if token:
-        return token
-    # 2. Saved token from device code login (ghu_ tokens)
-    data = _read_token_file()
-    if data and data.get("access_token"):
-        return data["access_token"]
-    # 3. gh CLI — only use if it returns a Copilot-compatible token (not gho_)
-    try:
-        env = os.environ.copy()
-        if sys.platform == "win32":
-            machine = os.environ.get("Path", "")
+
+# ─── D2D integration (lazy-imported so swarm server stays usable without it) ─
+
+_t2t_manager = None
+
+def get_t2t_manager(root):
+    """Get the T2T (twin-to-twin) manager. T2T is the user-facing protocol name;
+    the implementation is the daemon-to-daemon (D2D) layer underneath."""
+    global _t2t_manager
+    if _t2t_manager is None:
+        sys.path.insert(0, str(Path(__file__).parent))
+        from t2t import T2TManager  # type: ignore
+        _t2t_manager = T2TManager(root)
+    return _t2t_manager
+
+
+# ─── .env loader (stdlib — no python-dotenv dependency) ─────────────────
+
+def load_dotenv(path=None):
+    """Read a .env file into os.environ. Existing env vars win.
+    Looks at $RAPP_DOTENV, then ./.env, then ../.env (repo root)."""
+    candidates = []
+    if path:
+        candidates.append(Path(path))
+    if os.environ.get("RAPP_DOTENV"):
+        candidates.append(Path(os.environ["RAPP_DOTENV"]))
+    here = Path(__file__).resolve().parent
+    candidates += [
+        Path.cwd() / ".env",
+        here / ".env",
+        here.parent / ".env",
+    ]
+    for p in candidates:
+        if p and p.is_file():
             try:
-                import winreg
-                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment") as key:
-                    machine = winreg.QueryValueEx(key, "Path")[0]
-                with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Environment") as key:
-                    user = winreg.QueryValueEx(key, "Path")[0]
-                env["Path"] = machine + ";" + user
+                for line in p.read_text().splitlines():
+                    s = line.strip()
+                    if not s or s.startswith("#") or "=" not in s:
+                        continue
+                    k, v = s.split("=", 1)
+                    k, v = k.strip(), v.strip()
+                    if v and v[0] in ('"', "'") and v[-1] == v[0]:
+                        v = v[1:-1]
+                    os.environ.setdefault(k, v)
+                return p
             except Exception:
-                pass
-        result = subprocess.run(
-            ["gh", "auth", "token"],
-            capture_output=True, text=True, timeout=5,
-            shell=(sys.platform == "win32"),
-            env=env,
-        )
-        token = result.stdout.strip()
-        if token and not token.startswith("gho_"):
-            return token
-    except Exception:
-        pass
+                continue
     return None
 
-def save_github_token(token, refresh_token=None):
-    """Persist token (and optional refresh token) for reuse across restarts."""
-    # Preserve existing refresh_token if we're only updating the access_token
-    existing = _read_token_file() or {}
-    data = {
-        "access_token": token,
-        "refresh_token": refresh_token or existing.get("refresh_token"),
-        "saved_at": time.time(),
-    }
-    with open(_token_file, "w") as f:
-        json.dump(data, f)
-    print(f"[brainstem] GitHub token saved (prefix: {token[:4]}...)")
 
-def refresh_github_token():
-    """Try to refresh an expired GitHub token using the stored refresh_token."""
-    data = _read_token_file()
-    if not data or not data.get("refresh_token"):
-        return None
-    try:
-        resp = requests.post(
-            "https://github.com/login/oauth/access_token",
-            headers={"Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded"},
-            data=(
-                f"client_id={COPILOT_CLIENT_ID}"
-                f"&grant_type=refresh_token"
-                f"&refresh_token={data['refresh_token']}"
-            ),
-            timeout=10,
-        )
-        result = resp.json()
-        if result.get("access_token"):
-            new_token = result["access_token"]
-            new_refresh = result.get("refresh_token", data.get("refresh_token"))
-            save_github_token(new_token, new_refresh)
-            print(f"[brainstem] GitHub token refreshed successfully")
-            return new_token
-        print(f"[brainstem] Token refresh failed: {result.get('error', 'unknown')}")
-    except Exception as e:
-        print(f"[brainstem] Token refresh error: {e}")
-    return None
+# ─── LLM dispatch lazy loader (for /api/swarm/{guid}/chat) ─────────────
 
-def _load_copilot_cache():
-    """Load cached Copilot API token from disk."""
-    if not os.path.exists(_copilot_cache_file):
-        return None
-    try:
-        with open(_copilot_cache_file) as f:
-            data = json.load(f)
-        if data.get("token") and time.time() < data.get("expires_at", 0) - 60:
-            return data
-    except Exception:
-        pass
-    return None
+def get_llm_chat():
+    """Lazy import the chat loop so the server is usable without it
+    (e.g., in pure-T2T deployments)."""
+    sys.path.insert(0, str(Path(__file__).parent))
+    from chat import chat_with_swarm, diagnostics  # type: ignore
+    return chat_with_swarm, diagnostics
 
-def _save_copilot_cache(token, endpoint, expires_at):
-    """Cache Copilot API token to disk so it survives restarts."""
-    try:
-        with open(_copilot_cache_file, "w") as f:
-            json.dump({"token": token, "endpoint": endpoint, "expires_at": expires_at}, f)
-    except Exception:
-        pass
 
-# ── Copilot token exchange ────────────────────────────────────────────────────
+_workspace = None
+def get_workspace(root):
+    """Lazy workspace (per-twin documents + inbox + outbox)."""
+    global _workspace
+    if _workspace is None:
+        sys.path.insert(0, str(Path(__file__).parent))
+        from workspace import Workspace  # type: ignore
+        _workspace = Workspace(root)
+    return _workspace
 
-_copilot_token_cache = {"token": None, "endpoint": None, "expires_at": 0}
 
-def _exchange_github_for_copilot(github_token):
-    """Exchange a GitHub token for a Copilot API token. Returns (token, endpoint, expires_at) or raises."""
-    auth_prefix = "token" if github_token.startswith("ghu_") else "Bearer"
-    print(f"[brainstem] Exchanging token (prefix: {github_token[:8]}..., auth: {auth_prefix})")
-    resp = requests.get(
-        COPILOT_TOKEN_URL,
-        headers={
-            "Authorization": f"{auth_prefix} {github_token}",
-            "Accept": "application/json",
-            "Editor-Version": "vscode/1.95.0",
-            "Editor-Plugin-Version": "copilot/1.0.0",
-            "User-Agent": "GitHubCopilotChat/0.22.2024",
-        },
-        timeout=10,
-    )
-    print(f"[brainstem] Exchange response: HTTP {resp.status_code} — {resp.text[:300]}")
-    return resp
+# ─── BINDER ────────────────────────────────────────────────────────────
+#
+# The binder is a per-twin manifest of which rapplications are installed.
+# Installation = materialize a singleton .py from the rapplications/ catalog
+# into <root>/agents/, where the brainstem's hot-loader picks it up.
+#
+# Binder state lives at <root>/.binder.json with schema rapp-binder/1.0
+# (matches the JS-side binder schema in rapp_brainstem/web/rapp.js).
 
-def get_copilot_token():
-    """Exchange GitHub token for a short-lived Copilot API token."""
-    global _copilot_token_cache
-    
-    # 1. Return in-memory cached token if still valid (with 60s buffer)
-    if _copilot_token_cache["token"] and time.time() < _copilot_token_cache["expires_at"] - 60:
-        return _copilot_token_cache["token"], _copilot_token_cache["endpoint"]
-    
-    # 2. Try disk-cached Copilot session token (survives restarts)
-    disk_cache = _load_copilot_cache()
-    if disk_cache:
-        _copilot_token_cache = disk_cache
-        print(f"[brainstem] Copilot token restored from cache (expires in {int(disk_cache['expires_at'] - time.time())}s)")
-        return disk_cache["token"], disk_cache["endpoint"]
-    
-    # 3. Exchange GitHub token for Copilot token
-    github_token = get_github_token()
-    if not github_token:
-        raise RuntimeError("Not authenticated. Visit /login in your browser to sign in with GitHub.")
-    
-    resp = _exchange_github_for_copilot(github_token)
-    
-    # 4. If error, the GitHub token may have expired — try refreshing it
-    if resp.status_code in (401, 403, 404):
-        refreshed = refresh_github_token()
-        if refreshed:
-            resp = _exchange_github_for_copilot(refreshed)
-        if resp.status_code in (401, 403, 404):
-            # Token exchange failed — NEVER delete the token file.
-            try:
-                err_body = resp.json()
-                err_details = err_body.get("error_details", {})
-                notification_id = err_details.get("notification_id", "")
-            except Exception:
-                err_details = {}
-                notification_id = ""
+class Binder:
+    """Per-twin rapplication installation manifest + materialization."""
 
-            if notification_id == "no_copilot_access":
-                # Extract username from error message
-                detail_msg = err_details.get("message", "")
-                username = detail_msg.split("as ")[-1].rstrip(".") if "as " in detail_msg else "this account"
-                print(f"[brainstem] No Copilot access for {username}")
-                # Delete the bad token so health check shows unauthenticated
-                if os.path.exists(_token_file):
-                    os.remove(_token_file)
-                raise RuntimeError(
-                    f"NO_COPILOT_ACCESS:{username}"
-                )
-
-            try:
-                err_msg = err_body.get("message", resp.text[:200])
-            except Exception:
-                err_msg = resp.text[:200]
-            print(f"[brainstem] Copilot token exchange failed (HTTP {resp.status_code}): {err_msg}")
-            raise RuntimeError(
-                f"Copilot auth failed ({resp.status_code}): {err_msg}. Sign in with GitHub to retry."
+    def __init__(self, root: Path):
+        self.root = Path(root)
+        self.binder_path = self.root / ".binder.json"
+        self.installed_dir = self.root / "agents"
+        self.installed_dir.mkdir(parents=True, exist_ok=True)
+        # Catalog source: prefer the local repo, fall back to env override
+        self.catalog_path = Path(
+            os.environ.get(
+                "RAPP_CATALOG",
+                str(Path(__file__).resolve().parent.parent / "store" / "index.json"),
             )
-    resp.raise_for_status()
-    
-    data = resp.json()
-    copilot_token = data.get("token")
-    endpoint = data.get("endpoints", {}).get("api", "https://api.individual.githubcopilot.com")
-    expires_at = data.get("expires_at", time.time() + 600)
-    
-    if not copilot_token:
-        raise RuntimeError("Failed to get Copilot API token. Check your Copilot subscription.")
-    
-    _copilot_token_cache = {
-        "token": copilot_token,
-        "endpoint": endpoint,
-        "expires_at": expires_at,
-    }
-    _save_copilot_cache(copilot_token, endpoint, expires_at)
-    
-    print(f"[brainstem] Copilot token refreshed (expires in {int(expires_at - time.time())}s)")
-    return copilot_token, endpoint
+        )
+        self.rapps_dir = Path(
+            os.environ.get(
+                "RAPP_RAPPLICATIONS",
+                str(Path(__file__).resolve().parent.parent / "rapplications"),
+            )
+        )
+        self._lock = threading.Lock()
 
-# ── Device code OAuth flow ────────────────────────────────────────────────────
-
-_pending_login = {}
-
-def start_device_code_login():
-    """Start GitHub device code OAuth flow. Returns user_code and verification_uri."""
-    global _pending_login
-    resp = requests.post(
-        "https://github.com/login/device/code",
-        headers={"Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded"},
-        data=f"client_id={COPILOT_CLIENT_ID}",
-        timeout=10,
-    )
-    resp.raise_for_status()
-    data = resp.json()
-    _pending_login = {
-        "device_code": data["device_code"],
-        "interval": data.get("interval", 5),
-        "expires_at": time.time() + data.get("expires_in", 900),
-    }
-    return {
-        "user_code": data["user_code"],
-        "verification_uri": data["verification_uri"],
-    }
-
-def poll_device_code():
-    """Poll for completed device code authorization. Returns token or None."""
-    global _pending_login
-    if not _pending_login:
-        return None
-    
-    resp = requests.post(
-        "https://github.com/login/oauth/access_token",
-        headers={"Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded"},
-        data=(
-            f"client_id={COPILOT_CLIENT_ID}"
-            f"&device_code={_pending_login['device_code']}"
-            f"&grant_type=urn:ietf:params:oauth:grant-type:device_code"
-        ),
-        timeout=10,
-    )
-    data = resp.json()
-    
-    if data.get("access_token"):
-        token = data["access_token"]
-        refresh = data.get("refresh_token")
-        save_github_token(token, refresh)
-        _pending_login = {}
-        return token
-    
-    error = data.get("error", "")
-    if error in ("authorization_pending", "slow_down"):
-        return None  # Keep polling
-    if error == "expired_token":
-        _pending_login = {}
-        raise RuntimeError("Login expired. Please try again.")
-    if error:
-        _pending_login = {}
-        raise RuntimeError(f"Login failed: {error}")
-    
-    return None
-
-# ── Soul loader ───────────────────────────────────────────────────────────────
-
-_soul_cache = None
-
-def load_soul():
-    global _soul_cache
-    if _soul_cache is not None:
-        return _soul_cache
-    if not os.path.exists(SOUL_PATH):
-        print(f"[brainstem] Warning: soul file not found at {SOUL_PATH}, using default.")
-        _soul_cache = "You are a helpful AI assistant."
-        return _soul_cache
-    with open(SOUL_PATH, "r") as f:
-        _soul_cache = f.read().strip()
-    print(f"[brainstem] Soul loaded: {SOUL_PATH}")
-    return _soul_cache
-
-# ── Agent loader ──────────────────────────────────────────────────────────────
-
-
-def _load_agent_from_file(filepath):
-    """Load agent classes from a single .py file. Returns dict of name→instance.
-    Auto-installs missing pip packages and shims cloud deps to local storage."""
-    agents = {}
-    brainstem_dir = os.path.dirname(os.path.abspath(__file__))
-    if brainstem_dir not in sys.path:
-        sys.path.insert(0, brainstem_dir)
-    
-    _register_shims()
-    
-    # Try loading, auto-install missing deps, retry once
-    for attempt in range(2):
+    def _load(self) -> dict:
+        if not self.binder_path.exists():
+            return {"schema": "rapp-binder/1.0", "installed": []}
         try:
-            mod_name = f"agent_{os.path.basename(filepath).replace('.', '_')}_{id(filepath)}_{attempt}"
-            spec = importlib.util.spec_from_file_location(mod_name, filepath)
+            return json.loads(self.binder_path.read_text())
+        except json.JSONDecodeError:
+            return {"schema": "rapp-binder/1.0", "installed": []}
+
+    def _save(self, binder: dict) -> None:
+        binder["updated_at"] = _now_iso()
+        self.binder_path.write_text(json.dumps(binder, indent=2))
+
+    def list(self) -> dict:
+        return self._load()
+
+    def catalog(self) -> dict:
+        if not self.catalog_path.exists():
+            return {"schema": "rapp-store/1.0", "rapplications": []}
+        return json.loads(self.catalog_path.read_text())
+
+    def _find_in_catalog(self, rapp_id: str):
+        for r in self.catalog().get("rapplications", []):
+            if r.get("id") == rapp_id:
+                return r
+        return None
+
+    def _resolve_local_singleton(self, entry: dict):
+        """Locate the singleton on disk inside rapplications/ if present."""
+        fn = entry.get("singleton_filename")
+        if not fn:
+            return None
+        # Try {id-stem}/singleton/{filename} first
+        for sub in self.rapps_dir.iterdir() if self.rapps_dir.exists() else []:
+            cand = sub / "singleton" / fn
+            if cand.exists():
+                return cand
+            cand = sub / "source" / fn
+            if cand.exists():
+                return cand
+        return None
+
+    def install(self, rapp_id: str) -> dict:
+        """Materialize a singleton from the catalog into <root>/agents/.
+        Records the install in <root>/.binder.json."""
+        with self._lock:
+            entry = self._find_in_catalog(rapp_id)
+            if not entry:
+                raise ValueError(f"rapplication '{rapp_id}' not in catalog")
+            src = self._resolve_local_singleton(entry)
+            if not src:
+                raise FileNotFoundError(
+                    f"singleton file not found locally for '{rapp_id}'; "
+                    f"catalog points at {entry.get('singleton_url')}"
+                )
+            data = src.read_bytes()
+            actual_sha = hashlib.sha256(data).hexdigest()
+            pinned = entry.get("singleton_sha256")
+            if pinned and pinned != actual_sha and pinned != "compute_at_publish_time":
+                raise ValueError(
+                    f"SHA-256 mismatch for '{rapp_id}': pinned {pinned[:16]}…, "
+                    f"actual {actual_sha[:16]}…"
+                )
+            dest = self.installed_dir / src.name
+            dest.write_bytes(data)
+            binder = self._load()
+            binder["installed"] = [r for r in binder.get("installed", []) if r["id"] != rapp_id]
+            binder["installed"].append({
+                "id":                 rapp_id,
+                "manifest_name":      entry.get("manifest_name"),
+                "singleton_filename": src.name,
+                "singleton_sha256":   actual_sha,
+                "version":            entry.get("version"),
+                "publisher":          entry.get("publisher"),
+                "installed_at":       _now_iso(),
+                "source":             str(src.relative_to(Path(__file__).resolve().parent.parent)),
+            })
+            self._save(binder)
+            return {
+                "id":                 rapp_id,
+                "installed_to":       str(dest),
+                "singleton_sha256":   actual_sha,
+                "binder_count":       len(binder["installed"]),
+            }
+
+    def uninstall(self, rapp_id: str) -> dict:
+        with self._lock:
+            binder = self._load()
+            entries = binder.get("installed", [])
+            matching = [e for e in entries if e["id"] == rapp_id]
+            if not matching:
+                raise ValueError(f"'{rapp_id}' not installed")
+            for e in matching:
+                p = self.installed_dir / e["singleton_filename"]
+                if p.exists():
+                    p.unlink()
+            binder["installed"] = [e for e in entries if e["id"] != rapp_id]
+            self._save(binder)
+            return {"id": rapp_id, "removed": len(matching),
+                    "binder_count": len(binder["installed"])}
+
+    def sync(self) -> dict:
+        """Re-materialize every installed rapplication from the catalog.
+        Use after a binder.json hand-edit or after importing an .egg."""
+        with self._lock:
+            binder = self._load()
+            results = []
+            for e in list(binder.get("installed", [])):
+                rid = e["id"]
+                try:
+                    catalog_entry = self._find_in_catalog(rid)
+                    if not catalog_entry:
+                        results.append({"id": rid, "status": "skipped",
+                                        "reason": "no longer in catalog"})
+                        continue
+                    src = self._resolve_local_singleton(catalog_entry)
+                    if not src:
+                        results.append({"id": rid, "status": "skipped",
+                                        "reason": "singleton not local"})
+                        continue
+                    dest = self.installed_dir / src.name
+                    dest.write_bytes(src.read_bytes())
+                    results.append({"id": rid, "status": "synced",
+                                    "to": str(dest)})
+                except Exception as exc:
+                    results.append({"id": rid, "status": "error", "error": str(exc)})
+            return {"results": results, "binder_count": len(binder.get("installed", []))}
+
+
+def get_binder(root: Path) -> "Binder":
+    return Binder(root)
+
+
+# ─── SWARM STORE ────────────────────────────────────────────────────────
+
+class SwarmStore:
+    """Disk-backed registry of swarms. Thread-safe for the small ops we do."""
+
+    def __init__(self, root: Path):
+        self.root = root
+        self.swarms_dir = root / "swarms"
+        self.swarms_dir.mkdir(parents=True, exist_ok=True)
+        self._lock = threading.Lock()
+        self._loaded_agents = {}   # swarm_guid -> {name: agent_instance}
+
+    # ── Layout helpers ──
+
+    def swarm_dir(self, swarm_guid: str) -> Path:
+        return self.swarms_dir / swarm_guid
+
+    def agents_dir(self, swarm_guid: str) -> Path:
+        return self.swarm_dir(swarm_guid) / "agents"
+
+    def memory_path(self, swarm_guid, user_guid):
+        """Per-user memory file inside a swarm. None / sentinel → shared."""
+        if not user_guid or user_guid == DEFAULT_USER_GUID or not GUID_RE.match(user_guid):
+            return self.swarm_dir(swarm_guid) / "memory" / "shared" / "memory.json"
+        return self.swarm_dir(swarm_guid) / "memory" / user_guid / "memory.json"
+
+    def manifest_path(self, swarm_guid: str) -> Path:
+        return self.swarm_dir(swarm_guid) / "manifest.json"
+
+    # ── Listing / lookup ──
+
+    def list_swarms(self):
+        out = []
+        for d in sorted(self.swarms_dir.iterdir()) if self.swarms_dir.exists() else []:
+            if not d.is_dir():
+                continue
+            mp = d / "manifest.json"
+            if not mp.exists():
+                continue
+            try:
+                m = json.loads(mp.read_text())
+            except Exception:
+                continue
+            out.append({
+                "swarm_guid": d.name,
+                "name": m.get("name", d.name),
+                "purpose": m.get("purpose", ""),
+                "agent_count": m.get("agent_count", 0),
+                "created_at": m.get("created_at", ""),
+                "created_by": m.get("created_by", ""),
+            })
+        return out
+
+    def get_manifest(self, swarm_guid):
+        mp = self.manifest_path(swarm_guid)
+        if not mp.exists():
+            return None
+        try:
+            return json.loads(mp.read_text())
+        except Exception:
+            return None
+
+    # ── Sealing ──
+    # Sealing transitions a swarm to immutable state: writes rejected, reads OK.
+    # Sealed swarms can still be queried and snapshotted (final-archive use case).
+    # The sealing PRIMITIVE is public and lives here; the operational PRODUCT
+    # around it (endowment funding, ceremony, family notification) is downstream.
+
+    def is_sealed(self, swarm_guid):
+        m = self.get_manifest(swarm_guid)
+        if not m:
+            return False
+        return m.get("sealing", {}).get("status") in ("sealed", "eternal")
+
+    def seal_status(self, swarm_guid):
+        m = self.get_manifest(swarm_guid)
+        if not m:
+            return {"sealed": False, "exists": False}
+        s = m.get("sealing", {})
+        return {
+            "sealed": s.get("status") in ("sealed", "eternal"),
+            "exists": True,
+            "status": s.get("status", "active"),
+            "sealed_at": s.get("sealed_at"),
+            "sealed_by": s.get("sealed_by"),
+            "trigger": s.get("trigger"),
+        }
+
+    def seal(self, swarm_guid, actor=None, trigger="voluntary"):
+        with self._lock:
+            m = self.get_manifest(swarm_guid)
+            if not m:
+                raise FileNotFoundError(f"swarm not found: {swarm_guid}")
+            existing = m.get("sealing", {})
+            if existing.get("status") in ("sealed", "eternal"):
+                # Idempotent — already sealed
+                return existing
+            sealing = {
+                "status": "sealed",
+                "sealed_at": _now_iso(),
+                "sealed_by": actor or "anonymous",
+                "trigger": trigger,
+            }
+            m["sealing"] = sealing
+            self.manifest_path(swarm_guid).write_text(json.dumps(m, indent=2))
+            # Make all existing memory files read-only on POSIX so writes from
+            # agent code fail loudly (not silently). Cross-platform graceful.
+            self._chmod_memory_readonly(swarm_guid)
+            return sealing
+
+    def _chmod_memory_readonly(self, swarm_guid):
+        mem_root = self.swarm_dir(swarm_guid) / "memory"
+        if not mem_root.exists():
+            return
+        if os.name != "posix":
+            return
+        for p in mem_root.rglob("*"):
+            try:
+                if p.is_file():
+                    os.chmod(p, 0o444)
+                elif p.is_dir():
+                    os.chmod(p, 0o555)
+            except OSError:
+                pass
+
+    # ── Snapshots ──
+    # Snapshots are temporally-versioned read-only copies of swarm state.
+    # Created at any time on an active or sealed swarm. Each snapshot has its
+    # own swarm_dir with frozen agents/, memory/, and a snapshot manifest.
+
+    def snapshots_dir(self, swarm_guid):
+        return self.swarm_dir(swarm_guid) / "snapshots"
+
+    def create_snapshot(self, swarm_guid, label=None):
+        sd = self.swarm_dir(swarm_guid)
+        if not sd.exists():
+            raise FileNotFoundError(f"swarm not found: {swarm_guid}")
+        with self._lock:
+            ts = _now_compact()
+            safe_label = "".join(c if c.isalnum() or c in "-_" else "_" for c in (label or "snapshot"))[:64]
+            snap_name = f"{ts}_{safe_label}"
+            snap_root = self.snapshots_dir(swarm_guid) / snap_name
+            snap_root.mkdir(parents=True, exist_ok=False)
+
+            import shutil
+            # Copy agents (skip __pycache__)
+            src_agents = sd / "agents"
+            if src_agents.exists():
+                shutil.copytree(src_agents, snap_root / "agents",
+                                ignore=shutil.ignore_patterns("__pycache__"))
+            # Copy memory tree
+            src_memory = sd / "memory"
+            if src_memory.exists():
+                shutil.copytree(src_memory, snap_root / "memory")
+            # Copy manifest under a snapshot-specific name
+            src_manifest = sd / "manifest.json"
+            if src_manifest.exists():
+                shutil.copy2(src_manifest, snap_root / "source_manifest.json")
+
+            meta = {
+                "snapshot_label": label or "snapshot",
+                "snapshot_iso": _now_iso(),
+                "snapshot_name": snap_name,
+                "swarm_guid": swarm_guid,
+            }
+            (snap_root / "snapshot_metadata.json").write_text(json.dumps(meta, indent=2))
+
+            # Mark snapshot files read-only on POSIX
+            if os.name == "posix":
+                for p in snap_root.rglob("*"):
+                    try:
+                        if p.is_file():
+                            os.chmod(p, 0o444)
+                        elif p.is_dir():
+                            os.chmod(p, 0o555)
+                    except OSError:
+                        pass
+
+            return meta
+
+    def list_snapshots(self, swarm_guid):
+        snap_dir = self.snapshots_dir(swarm_guid)
+        if not snap_dir.exists():
+            return []
+        out = []
+        for d in sorted(snap_dir.iterdir()):
+            if not d.is_dir():
+                continue
+            meta_file = d / "snapshot_metadata.json"
+            if meta_file.exists():
+                try:
+                    out.append(json.loads(meta_file.read_text()))
+                except Exception:
+                    continue
+        return out
+
+    def execute_against_snapshot(self, swarm_guid, snapshot_name, agent_name, args, user_guid):
+        """Execute an agent against a frozen snapshot. Reads work, writes fail."""
+        snap_root = self.snapshots_dir(swarm_guid) / snapshot_name
+        if not snap_root.exists():
+            return {"status": "error", "message": f"snapshot not found: {snapshot_name}"}
+
+        # Use a separate cache key so snapshot vs live agents don't collide.
+        cache_key = f"{swarm_guid}::snapshot::{snapshot_name}"
+        if cache_key not in self._loaded_agents:
+            agents = {}
+            ad = snap_root / "agents"
+            if ad.exists():
+                # Reuse the same loading path as live agents — module names must
+                # be unique per snapshot to avoid sys.modules collision.
+                self._ensure_basic_agent_shim()
+                for path in sorted(ad.glob("*_agent.py")):
+                    if path.name == "basic_agent.py":
+                        continue
+                    try:
+                        modname = f"snap_{swarm_guid.replace('-', '_')}_{snapshot_name}_{path.stem}"
+                        spec = importlib.util.spec_from_file_location(modname, str(path))
+                        mod = importlib.util.module_from_spec(spec)
+                        spec.loader.exec_module(mod)
+                        for attr in dir(mod):
+                            cls = getattr(mod, attr)
+                            if not isinstance(cls, type):
+                                continue
+                            if attr.endswith("Agent") and attr != "BasicAgent":
+                                try:
+                                    inst = cls()
+                                    agents[inst.name] = inst
+                                except Exception:
+                                    pass
+                    except Exception:
+                        pass
+            self._loaded_agents[cache_key] = agents
+
+        agents = self._loaded_agents[cache_key]
+        agent = agents.get(agent_name)
+        if not agent:
+            return {"status": "error", "message": f"unknown agent in snapshot: {agent_name}",
+                    "available": sorted(agents.keys())}
+
+        # Point memory at the snapshot's frozen memory tree (read-only on POSIX).
+        # Agents that try to write will get PermissionError; we surface that as
+        # a clean error so callers know snapshots are read-only.
+        if user_guid and GUID_RE.match(user_guid) and user_guid != DEFAULT_USER_GUID:
+            mem_path = snap_root / "memory" / user_guid / "memory.json"
+        else:
+            mem_path = snap_root / "memory" / "shared" / "memory.json"
+
+        old_env = os.environ.get("BRAINSTEM_MEMORY_PATH")
+        os.environ["BRAINSTEM_MEMORY_PATH"] = str(mem_path)
+        try:
+            output = agent.perform(**(args or {}))
+            # Heuristic: if the agent raised PermissionError, the output captures
+            # that. We also check the output for telltale write-failure signs.
+            return {"status": "ok", "output": output, "snapshot": snapshot_name, "read_only": True}
+        except PermissionError as e:
+            return {"status": "error", "message": f"snapshot is read-only: {e}",
+                    "snapshot": snapshot_name}
+        except Exception as e:
+            traceback.print_exc()
+            return {"status": "error", "message": str(e), "snapshot": snapshot_name}
+        finally:
+            if old_env is None:
+                os.environ.pop("BRAINSTEM_MEMORY_PATH", None)
+            else:
+                os.environ["BRAINSTEM_MEMORY_PATH"] = old_env
+
+    def _ensure_basic_agent_shim(self):
+        """Make sure the agents.basic_agent shim is registered in sys.modules.
+        Safe to call multiple times; idempotent."""
+        if "agents" not in sys.modules:
+            pkg = type(sys)("agents")
+            pkg.__path__ = []
+            sys.modules["agents"] = pkg
+        if "agents.basic_agent" in sys.modules:
+            return
+        here = Path(__file__).parent.resolve()
+        vendored = here / "_basic_agent_shim.py"
+        if not vendored.exists():
+            self._write_basic_agent_shim(vendored)
+        spec = importlib.util.spec_from_file_location("agents.basic_agent", str(vendored))
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        sys.modules["agents.basic_agent"] = mod
+
+    # ── Deploy ──
+
+    def deploy(self, bundle):
+        """Persist a rapp-swarm/1.0 bundle to disk. Returns the manifest."""
+        if bundle.get("schema") != "rapp-swarm/1.0":
+            raise ValueError(f"unsupported bundle schema: {bundle.get('schema')}")
+
+        # Use the bundle's swarm_guid if present and valid; otherwise mint one.
+        sg = (bundle.get("swarm_guid") or "").strip().lower()
+        if not (sg and GUID_RE.match(sg)):
+            sg = str(uuid.uuid4())
+
+        # Sealed swarms are immutable — reject any redeploy attempt that
+        # targets a sealed swarm_guid.
+        if self.is_sealed(sg):
+            raise SealedSwarmError(f"swarm {sg} is sealed; redeploy rejected")
+
+        with self._lock:
+            sd = self.swarm_dir(sg)
+            ad = self.agents_dir(sg)
+            sd.mkdir(parents=True, exist_ok=True)
+            ad.mkdir(parents=True, exist_ok=True)
+            (sd / "memory" / "shared").mkdir(parents=True, exist_ok=True)
+
+            # Write each agent's source. Filenames are sandboxed to a basename
+            # to prevent path traversal — bundles can't escape their swarm dir.
+            written_agents = []
+            for a in bundle.get("agents", []):
+                fname = os.path.basename(a.get("filename", "") or "")
+                if not fname.endswith("_agent.py"):
+                    continue
+                src = a.get("source") or ""
+                if not src.strip():
+                    continue
+                (ad / fname).write_text(src)
+                written_agents.append(fname)
+
+            # Write the manifest (drop the heavy source bodies — keep metadata).
+            manifest = {
+                "schema": "rapp-swarm/1.0",
+                "swarm_guid": sg,
+                "name": bundle.get("name", "untitled-swarm"),
+                "purpose": bundle.get("purpose", ""),
+                "soul": bundle.get("soul", ""),
+                "created_at": bundle.get("created_at", ""),
+                "created_by": bundle.get("created_by", "anonymous"),
+                "agent_count": len(written_agents),
+                "agents": [
+                    {k: v for k, v in a.items() if k != "source"}
+                    for a in bundle.get("agents", [])
+                ],
+            }
+            self.manifest_path(sg).write_text(json.dumps(manifest, indent=2))
+
+            # Invalidate any cached agent instances so the next call re-imports.
+            self._loaded_agents.pop(sg, None)
+
+            return manifest
+
+    def remove(self, swarm_guid):
+        if self.is_sealed(swarm_guid):
+            raise SealedSwarmError(f"swarm {swarm_guid} is sealed; deletion rejected")
+        with self._lock:
+            sd = self.swarm_dir(swarm_guid)
+            if not sd.exists():
+                return False
+            # Recursively delete the swarm dir.
+            for root_path, dirs, files in os.walk(sd, topdown=False):
+                for f in files:
+                    os.remove(os.path.join(root_path, f))
+                for d in dirs:
+                    os.rmdir(os.path.join(root_path, d))
+            os.rmdir(sd)
+            self._loaded_agents.pop(swarm_guid, None)
+            return True
+
+    # ── Agent loading & execution ──
+
+    def load_agents(self, swarm_guid):
+        """Import every agent file under this swarm's agents/ dir. Cached.
+
+        Threading: under ThreadingHTTPServer, 8 parallel /agent calls into
+        the same swarm previously raced on sys.modules mutations during
+        importlib.exec_module → some threads returned empty agent dicts
+        → 404 'unknown agent'. The whole load is now serialized under
+        self._lock; the fast path (cache hit) doesn't need it because
+        dict reads are atomic in CPython."""
+        if swarm_guid in self._loaded_agents:
+            return self._loaded_agents[swarm_guid]
+
+        with self._lock:
+            # Re-check inside the lock — another thread may have populated
+            # the cache while we were waiting.
+            if swarm_guid in self._loaded_agents:
+                return self._loaded_agents[swarm_guid]
+
+            return self._load_agents_locked(swarm_guid)
+
+    def _load_agents_locked(self, swarm_guid):
+        """The actual load. Caller must hold self._lock."""
+        agents = {}
+        ad = self.agents_dir(swarm_guid)
+        if not ad.exists():
+            self._loaded_agents[swarm_guid] = agents
+            return agents
+
+        # Allow agents to do `from agents.basic_agent import BasicAgent`.
+        # We provide a synthetic `agents` package pointing at our shared
+        # stdlib basic_agent (vendored alongside the server).
+        here = Path(__file__).parent.resolve()
+        vendored_basic = here / "_basic_agent_shim.py"
+        if not vendored_basic.exists():
+            self._write_basic_agent_shim(vendored_basic)
+
+        # Inject `agents` package + `agents.basic_agent` module into sys.modules
+        # so per-swarm files can import normally.
+        if "agents" not in sys.modules:
+            pkg = type(sys)("agents")
+            pkg.__path__ = []  # marks it as a namespace package
+            sys.modules["agents"] = pkg
+        if "agents.basic_agent" not in sys.modules:
+            spec = importlib.util.spec_from_file_location(
+                "agents.basic_agent", str(vendored_basic)
+            )
             mod = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(mod)
+            sys.modules["agents.basic_agent"] = mod
+
+        # Two-pass load:
+        #   Pass 1 — import every module and register it under both
+        #            `swarm_<guid>_<stem>` (per-swarm unique) AND
+        #            `agents.<stem>`     (so composite agents can do
+        #                                  `from agents.editor_cutweak_agent
+        #                                   import EditorCutweakAgent`)
+        #   Pass 2 — instantiate the *Agent classes. Defers instantiation
+        #            so a composite's dependencies are all in sys.modules
+        #            before its class body executes. Some composites import
+        #            specialists at class-definition time; passing twice
+        #            avoids glob-order accidents.
+        loaded_mods = []
+        for path in sorted(ad.glob("*_agent.py")):
+            if path.name == "basic_agent.py":
+                continue
+            try:
+                modname = f"swarm_{swarm_guid.replace('-', '_')}_{path.stem}"
+                spec = importlib.util.spec_from_file_location(modname, str(path))
+                mod = importlib.util.module_from_spec(spec)
+                # Pre-register both names BEFORE exec so a composite that
+                # imports a sibling that hasn't been exec'd yet still resolves
+                # (the second pass below re-execs anything that failed)
+                sys.modules[modname] = mod
+                sys.modules[f"agents.{path.stem}"] = mod
+                spec.loader.exec_module(mod)
+                loaded_mods.append((path, mod))
+            except Exception as e:
+                # Defer the error — composite's dependency may not be loaded yet.
+                # We retry in pass 2 below.
+                loaded_mods.append((path, None))
+                print(f"  ⏳ {path.name} → import deferred ({e})")
+
+        # Pass 2: re-execute any that deferred (their deps should now exist)
+        for i, (path, mod) in enumerate(loaded_mods):
+            if mod is not None: continue
+            try:
+                modname = f"swarm_{swarm_guid.replace('-', '_')}_{path.stem}"
+                spec = importlib.util.spec_from_file_location(modname, str(path))
+                mod = importlib.util.module_from_spec(spec)
+                sys.modules[modname] = mod
+                sys.modules[f"agents.{path.stem}"] = mod
+                spec.loader.exec_module(mod)
+                loaded_mods[i] = (path, mod)
+            except Exception as e:
+                print(f"  ✗ {path.name} → import: {e}")
+
+        # Pass 3: instantiate every *Agent class
+        for path, mod in loaded_mods:
+            if mod is None: continue
             for attr in dir(mod):
                 cls = getattr(mod, attr)
-                if (
-                    isinstance(cls, type)
-                    and hasattr(cls, "perform")
-                    and attr not in ("BasicAgent", "object")
-                    and not attr.startswith("_")
-                ):
-                    instance = cls()
-                    agents[instance.name] = instance
-            break  # success
-        except ModuleNotFoundError as e:
-            missing = _extract_package_name(e)
-            if missing and attempt == 0:
-                _auto_install(missing)
-                continue  # retry after install
-            print(f"[brainstem] Failed to load {filepath}: {e}")
-        except Exception as e:
-            print(f"[brainstem] Failed to load {filepath}: {e}")
-            break
-    return agents
-
-
-# ── Shims & auto-install ─────────────────────────────────────────────────────
-
-_shims_registered = False
-
-def _register_shims():
-    """Register local shims for cloud dependencies so agents import them transparently."""
-    global _shims_registered
-    if _shims_registered:
-        return
-    
-    import types
-    brainstem_dir = os.path.dirname(os.path.abspath(__file__))
-    
-    # Shim: agents.basic_agent → local basic_agent
-    try:
-        # Try loading from agents/ subdirectory first, then flat
-        agents_dir = os.path.join(brainstem_dir, "agents")
-        if agents_dir not in sys.path:
-            sys.path.insert(0, agents_dir)
-        from basic_agent import BasicAgent as _BA
-        if "agents" not in sys.modules:
-            agents_mod = types.ModuleType("agents")
-            agents_mod.__path__ = [agents_dir]
-            sys.modules["agents"] = agents_mod
-        if "agents.basic_agent" not in sys.modules:
-            ba_mod = types.ModuleType("agents.basic_agent")
-            ba_mod.BasicAgent = _BA
-            sys.modules["agents.basic_agent"] = ba_mod
-            sys.modules["agents"].basic_agent = ba_mod
-        # Shim: openrappter.agents.basic_agent → same BasicAgent
-        if "openrappter" not in sys.modules:
-            or_mod = types.ModuleType("openrappter")
-            or_mod.__path__ = [brainstem_dir]
-            sys.modules["openrappter"] = or_mod
-        if "openrappter.agents" not in sys.modules:
-            or_agents = types.ModuleType("openrappter.agents")
-            or_agents.__path__ = [agents_dir]
-            or_agents.basic_agent = sys.modules["agents.basic_agent"]
-            sys.modules["openrappter.agents"] = or_agents
-            sys.modules["openrappter"].agents = or_agents
-        if "openrappter.agents.basic_agent" not in sys.modules:
-            sys.modules["openrappter.agents.basic_agent"] = sys.modules["agents.basic_agent"]
-    except ImportError as e:
-        print(f"[brainstem] Warning: Could not load BasicAgent: {e}")
-        pass
-    
-    # Shim: utils.azure_file_storage → local_storage.py
-    from local_storage import AzureFileStorageManager as _LSM
-    if "utils" not in sys.modules:
-        utils_mod = types.ModuleType("utils")
-        utils_mod.__path__ = [os.path.join(brainstem_dir, "utils")]
-        sys.modules["utils"] = utils_mod
-    afs_mod = types.ModuleType("utils.azure_file_storage")
-    afs_mod.AzureFileStorageManager = _LSM
-    sys.modules["utils.azure_file_storage"] = afs_mod
-    if hasattr(sys.modules["utils"], "__path__"):
-        sys.modules["utils"].azure_file_storage = afs_mod
-    
-    # Shim: utils.dynamics_storage → same local storage
-    ds_mod = types.ModuleType("utils.dynamics_storage")
-    ds_mod.DynamicsStorageManager = _LSM
-    sys.modules["utils.dynamics_storage"] = ds_mod
-    
-    # Shim: utils.storage_factory → returns local storage manager
-    sf_mod = types.ModuleType("utils.storage_factory")
-    sf_mod.get_storage_manager = lambda: _LSM()
-    sys.modules["utils.storage_factory"] = sf_mod
-    if hasattr(sys.modules["utils"], "__path__"):
-        sys.modules["utils"].storage_factory = sf_mod
-    
-    _shims_registered = True
-    print("[brainstem] Local storage shims registered")
-
-
-# Map of import names → pip package names
-_PIP_MAP = {
-    "bs4": "beautifulsoup4",
-    "beautifulsoup4": "beautifulsoup4",
-    "PIL": "Pillow",
-    "cv2": "opencv-python",
-    "sklearn": "scikit-learn",
-    "yaml": "pyyaml",
-    "docx": "python-docx",
-    "pptx": "python-pptx",
-    "dotenv": "python-dotenv",
-}
-
-
-def _extract_package_name(error):
-    """Extract the pip-installable package name from a ModuleNotFoundError."""
-    msg = str(error)
-    # "No module named 'bs4'"
-    match = __import__("re").search(r"No module named '([^']+)'", msg)
-    if not match:
-        return None
-    mod = match.group(1).split(".")[0]
-    return _PIP_MAP.get(mod, mod)
-
-
-def _auto_install(package):
-    """Auto-install a pip package."""
-    print(f"[brainstem] Auto-installing dependency: {package}")
-    try:
-        result = subprocess.run(
-            [sys.executable, "-m", "pip", "install", package, "-q"],
-            capture_output=True, text=True, timeout=60,
-        )
-        if result.returncode == 0:
-            print(f"[brainstem] Installed {package}")
-            # Clear import caches so retry works
-            importlib.invalidate_caches()
-        else:
-            print(f"[brainstem] Failed to install {package}: {result.stderr[:200]}")
-    except Exception as e:
-        print(f"[brainstem] Failed to install {package}: {e}")
-
-def load_agents():
-    agents = {}
-    pattern = os.path.join(AGENTS_PATH, "*_agent.py")
-    files = glob.glob(pattern)
-
-    for filepath in files:
-        loaded = _load_agent_from_file(filepath)
-        for name, instance in loaded.items():
-            agents[name] = instance
-            print(f"[brainstem] Agent loaded: {name}")
-
-    print(f"[brainstem] {len(agents)} agent(s) ready.")
-    return agents
-
-# ── LLM call ─────────────────────────────────────────────────────────────────
-
-def call_copilot(messages, tools=None):
-    """Call the Copilot chat completions API."""
-    copilot_token, endpoint = get_copilot_token()
-    
-    url = f"{endpoint}/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {copilot_token}",
-        "Content-Type": "application/json",
-        "Editor-Version": "vscode/1.95.0",
-        "Copilot-Integration-Id": "vscode-chat",
-    }
-    body = {
-        "model": MODEL,
-        "messages": messages,
-    }
-    if tools:
-        body["tools"] = tools
-        if MODEL not in _NO_TOOL_CHOICE_MODELS:
-            body["tool_choice"] = "auto"
-
-    print(f"[brainstem] API call: model={MODEL}, tools={len(tools) if tools else 0}, tool_choice={body.get('tool_choice', 'NONE')}")
-
-    resp = requests.post(url, headers=headers, json=body, timeout=60)
-    if resp.status_code != 200:
-        error_detail = resp.text[:500] if resp.text else "No details"
-        print(f"[brainstem] API error {resp.status_code} with model '{MODEL}': {error_detail}")
-        # On 429/5xx, cycle through other available models before giving up
-        if resp.status_code in (429, 500, 502, 503):
-            tried = {MODEL}
-            fallback_ids = [m["id"] for m in AVAILABLE_MODELS if m["id"] != MODEL]
-            for fallback_model in fallback_ids:
-                if fallback_model in tried:
+                if not isinstance(cls, type):
                     continue
-                tried.add(fallback_model)
-                print(f"[brainstem] Retrying with {fallback_model}...")
-                body["model"] = fallback_model
-                if fallback_model in _NO_TOOL_CHOICE_MODELS:
-                    body.pop("tool_choice", None)
-                elif tools and "tool_choice" not in body:
-                    body["tool_choice"] = "auto"
-                resp = requests.post(url, headers=headers, json=body, timeout=60)
-                if resp.status_code == 200:
-                    break
-                print(f"[brainstem] {fallback_model} also failed ({resp.status_code})")
-    resp.raise_for_status()
-    result = resp.json()
+                if attr.endswith("Agent") and attr != "BasicAgent":
+                    try:
+                        inst = cls()
+                        agents[inst.name] = inst
+                    except Exception as e:
+                        print(f"  ✗ {path.name} → instantiate {attr}: {e}")
 
-    # ── Normalize multi-choice responses ──────────────────────────────────────
-    # Some models (e.g. Claude via Copilot API) split text and tool_calls into
-    # separate choices.  Merge them into a single choice so the rest of the
-    # codebase can treat the response uniformly.
-    choices = result.get("choices", [])
-    if len(choices) > 1:
-        merged = {"role": "assistant", "content": None, "tool_calls": []}
-        for c in choices:
-            m = c.get("message", {})
-            if m.get("content"):
-                merged["content"] = (merged["content"] or "") + m["content"]
-            if m.get("tool_calls"):
-                merged["tool_calls"].extend(m["tool_calls"])
-        if not merged["tool_calls"]:
-            del merged["tool_calls"]
-        fr = "tool_calls" if merged.get("tool_calls") else choices[0].get("finish_reason", "stop")
-        result["choices"] = [{"message": merged, "finish_reason": fr}]
+        self._loaded_agents[swarm_guid] = agents
+        return agents
 
-    # Debug logging
-    choice = result.get("choices", [{}])[0]
-    msg = choice.get("message", {})
-    fr = choice.get("finish_reason", "")
-    has_tools = bool(msg.get("tool_calls"))
-    print(f"[brainstem] API response: finish_reason={fr}, has_tool_calls={has_tools}, content_len={len(msg.get('content') or '')}")
-    if has_tools:
-        print(f"[brainstem]   tool_calls: {[tc.get('function',{}).get('name','?') for tc in msg['tool_calls']]}")
+    @staticmethod
+    def _write_basic_agent_shim(p):
+        """Tiny BasicAgent so swarm agent files can `from agents.basic_agent import BasicAgent`."""
+        p.write_text(
+            "class BasicAgent:\n"
+            "    def __init__(self, name=None, metadata=None):\n"
+            "        if name is not None: self.name = name\n"
+            "        elif not hasattr(self, 'name'): self.name = 'BasicAgent'\n"
+            "        if metadata is not None: self.metadata = metadata\n"
+            "        elif not hasattr(self, 'metadata'):\n"
+            "            self.metadata = {'name': self.name, 'description': '', 'parameters': {'type': 'object', 'properties': {}}}\n"
+            "    def perform(self, **kwargs):\n"
+            "        return 'Not implemented.'\n"
+            "    def system_context(self):\n"
+            "        return None\n"
+            "    def to_tool(self):\n"
+            "        return {'type': 'function', 'function': {\n"
+            "            'name': self.name,\n"
+            "            'description': self.metadata.get('description', ''),\n"
+            "            'parameters': self.metadata.get('parameters', {'type': 'object', 'properties': {}})}}\n"
+        )
 
-    return result
+    # ── Memory routing ──
+    # Each agent file has its own _read_memory/_write_memory shim that ends up
+    # at ~/.brainstem/memory.json by default. To route per-swarm-per-user, we
+    # patch the env var BRAINSTEM_MEMORY_PATH around each call. Agents that
+    # use the standard shim respect it; legacy agents that ignore it will
+    # continue using their default path (which is a graceful degradation,
+    # not a bug — they just won't get isolation).
 
-# ── Agent execution ───────────────────────────────────────────────────────────
+    def execute_in_dir(self, agents_dir: Path, agent_name: str,
+                       args: dict, cache_key: str = None):
+        """Execute an agent that lives outside the per-swarm layout.
 
+        Used by the binder route to run rapplications materialized into
+        <root>/agents/. Reuses the same two-pass loader as per-swarm loads
+        but with a stable cache key, so re-installs are picked up via cache
+        bust (Binder.install() clears the cache for cache_key='__binder__').
+        """
+        cache_key = cache_key or f"__dir__::{agents_dir}"
+        if cache_key not in self._loaded_agents:
+            with self._lock:
+                if cache_key not in self._loaded_agents:
+                    saved_root = None
+                    # Reuse _load_agents_locked by temporarily pointing at this dir.
+                    # The simplest path: replicate the load logic inline here.
+                    self._ensure_basic_agent_shim()
+                    if "agents" not in sys.modules:
+                        pkg = type(sys)("agents")
+                        pkg.__path__ = []
+                        sys.modules["agents"] = pkg
+                    if "agents.basic_agent" not in sys.modules:
+                        here = Path(__file__).parent.resolve()
+                        vendored_basic = here / "_basic_agent_shim.py"
+                        if not vendored_basic.exists():
+                            self._write_basic_agent_shim(vendored_basic)
+                        spec = importlib.util.spec_from_file_location(
+                            "agents.basic_agent", str(vendored_basic))
+                        mod = importlib.util.module_from_spec(spec)
+                        spec.loader.exec_module(mod)
+                        sys.modules["agents.basic_agent"] = mod
 
-def run_tool_calls(tool_calls, agents, session_id=None):
-    results = []
-    logs = []
-    for tc in tool_calls:
-        fn_name = tc["function"]["name"]
+                    agents = {}
+                    if agents_dir.exists():
+                        for path in sorted(agents_dir.glob("*_agent.py")):
+                            if path.name == "basic_agent.py":
+                                continue
+                            try:
+                                modname = f"binder_{path.stem}"
+                                spec = importlib.util.spec_from_file_location(modname, str(path))
+                                mod = importlib.util.module_from_spec(spec)
+                                sys.modules[modname] = mod
+                                sys.modules[f"agents.{path.stem}"] = mod
+                                spec.loader.exec_module(mod)
+                                for attr in dir(mod):
+                                    cls = getattr(mod, attr)
+                                    if not isinstance(cls, type):
+                                        continue
+                                    if attr.endswith("Agent") and attr != "BasicAgent":
+                                        try:
+                                            inst = cls()
+                                            agents[inst.name] = inst
+                                        except Exception:
+                                            pass
+                            except Exception as e:
+                                print(f"  ⏳ binder: {path.name} → {e}")
+                    self._loaded_agents[cache_key] = agents
+
+        agents = self._loaded_agents[cache_key]
+        agent = agents.get(agent_name)
+        if not agent:
+            return {"status": "error", "message": f"unknown agent: {agent_name}",
+                    "available": sorted(agents.keys())}
         try:
-            args = json.loads(tc["function"].get("arguments", "{}"))
-        except Exception:
-            args = {}
-
-        print(f"[brainstem] {fn_name} args: {json.dumps(args)[:200]}")
-
-        agent = agents.get(fn_name)
-        if agent:
-            try:
-                result = agent.perform(**args)
-                logs.append(f"[{fn_name}] {result}")
-            except Exception as e:
-                result = f"Error: {e}"
-                logs.append(f"[{fn_name}] ERROR: {e}")
-        else:
-            result = f"Agent '{fn_name}' not found."
-            logs.append(result)
-
-        results.append({
-            "tool_call_id": tc["id"],
-            "role": "tool",
-            "name": fn_name,
-            "content": str(result)
-        })
-    return results, logs
-
-# ── /chat endpoint ────────────────────────────────────────────────────────────
-
-@app.route("/chat", methods=["POST"])
-def chat():
-    data = request.get_json(force=True) or {}
-    user_input = data.get("user_input", "").strip()
-    history    = data.get("conversation_history", [])
-    session_id = data.get("session_id") or str(uuid.uuid4())
-
-    if not user_input:
-        return jsonify({"error": "user_input is required"}), 400
-
-    try:
-        soul   = load_soul()
-        agents = load_agents()
-        tools  = [a.to_tool() for a in agents.values()] if agents else None
-
-        # ── Collect system context from any agent that provides it ──
-        extra_context = ""
-        for agent in agents.values():
-            try:
-                ctx = agent.system_context()
-                if ctx:
-                    extra_context += "\n" + ctx
-            except Exception as e:
-                print(f"[brainstem] system_context failed for {agent.name}: {e}")
-
-        system_content = soul + extra_context
-        if VOICE_MODE:
-            system_content += "\n\nIMPORTANT: End every response with |||VOICE||| followed by a concise, conversational version of your answer suitable for text-to-speech. Keep the voice version under 2-3 sentences. The part before |||VOICE||| should be the full formatted response."
-
-        messages = [{"role": "system", "content": system_content}]
-        messages += [m for m in history if m.get("role") in ("user", "assistant", "tool")]
-        messages.append({"role": "user", "content": user_input})
-
-        all_logs = []
-        # Up to 3 tool-call rounds
-        for _ in range(3):
-            response = call_copilot(messages, tools=tools)
-            choice   = response["choices"][0]
-            msg      = choice["message"]
-            finish   = choice.get("finish_reason", "")
-            messages.append(msg)
-
-            # Some models use finish_reason "tool_calls", others just include tool_calls in the message
-            if msg.get("tool_calls"):
-                print(f"[brainstem] Tool calls triggered (finish_reason={finish}): {[tc['function']['name'] for tc in msg['tool_calls']]}")
-                tool_results, logs = run_tool_calls(msg["tool_calls"], agents, session_id=session_id)
-                all_logs.extend(logs)
-                messages.extend(tool_results)
-            else:
-                break
-
-        reply = msg.get("content") or ""
-        
-        result = {
-            "response": reply,
-            "session_id": session_id,
-            "agent_logs": "\n".join(all_logs),
-            "voice_mode": VOICE_MODE,
-        }
-        
-        if VOICE_MODE and "|||VOICE|||" in reply:
-            parts = reply.split("|||VOICE|||", 1)
-            result["response"] = parts[0].strip()
-            result["voice_response"] = parts[1].strip()
-        
-        return jsonify(result)
-
-    except requests.exceptions.HTTPError as e:
-        traceback.print_exc()
-        status = e.response.status_code if e.response is not None else 502
-        return jsonify({
-            "error": f"Model '{MODEL}' returned {status}. All fallback models also failed — try again shortly or switch models.",
-            "model": MODEL,
-            "detail": str(e)[:300]
-        }), 502
-
-    except Exception as e:
-        traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
-
-# ── /health endpoint ──────────────────────────────────────────────────────────
-
-@app.route("/", methods=["GET"])
-def index():
-    return send_from_directory(os.path.dirname(os.path.abspath(__file__)), "index.html")
-
-@app.route("/login", methods=["POST"])
-def login():
-    """Start GitHub device code OAuth flow."""
-    try:
-        data = start_device_code_login()
-        return jsonify(data)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route("/login/poll", methods=["POST"])
-def login_poll():
-    """Poll for completed device code authorization."""
-    try:
-        token = poll_device_code()
-        if token:
-            # Eagerly exchange for Copilot token so health check shows ready immediately
-            try:
-                get_copilot_token()
-                print("[brainstem] Copilot session established after login")
-            except Exception as e:
-                print(f"[brainstem] Eager Copilot exchange deferred: {e}")
-                # Not fatal — will exchange on first /chat call
-            return jsonify({"status": "ok", "message": "Authenticated with GitHub Copilot!"})
-        return jsonify({"status": "pending"})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route("/login/status", methods=["GET"])
-def login_status():
-    """Check if a login flow is currently in progress."""
-    return jsonify({"pending": bool(_pending_login)})
-
-@app.route("/models", methods=["GET"])
-def list_models():
-    """List available models and current selection. Fetches from Copilot API on first call."""
-    _fetch_copilot_models()
-    return jsonify({"models": AVAILABLE_MODELS, "current": MODEL})
-
-@app.route("/models/set", methods=["POST"])
-def set_model():
-    """Change the active model."""
-    global MODEL
-    data = request.get_json(force=True) or {}
-    new_model = data.get("model", "").strip()
-    _fetch_copilot_models()
-    valid_ids = [m["id"] for m in AVAILABLE_MODELS]
-    if new_model not in valid_ids:
-        return jsonify({"error": f"Unknown model. Available: {valid_ids}"}), 400
-    MODEL = new_model
-    return jsonify({"model": MODEL})
-
-@app.route("/voice", methods=["GET"])
-def voice_status():
-    """Get voice mode status."""
-    return jsonify({"voice_mode": VOICE_MODE})
-
-@app.route("/voice/config", methods=["GET"])
-def voice_config():
-    """Serve voice config from password-protected voice.zip."""
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    voice_zip = os.path.join(base_dir, "voice.zip")
-    password = request.args.get("password", "").encode() or VOICE_ZIP_PW
-    if os.path.exists(voice_zip):
-        try:
-            import pyzipper
-            with pyzipper.AESZipFile(voice_zip, 'r') as zf:
-                with zf.open("voice.json", pwd=password) as f:
-                    cfg = json.load(f)
-            return jsonify(cfg)
-        except (RuntimeError, Exception) as e:
-            err = str(e).lower()
-            if "password" in err or "bad password" in err or "decrypt" in err:
-                # Fallback: try standard zipfile (for unencrypted legacy zips)
-                try:
-                    import zipfile
-                    with zipfile.ZipFile(voice_zip, 'r') as zf:
-                        with zf.open("voice.json") as f:
-                            cfg = json.load(f)
-                    return jsonify(cfg)
-                except Exception:
-                    return jsonify({"error": "voice.zip password incorrect"}), 403
-            return jsonify({"error": str(e)}), 500
-    return jsonify({})
-
-@app.route("/voice/config", methods=["POST"])
-def voice_config_save():
-    """Save voice config to AES-encrypted voice.zip for local persistence."""
-    data = request.get_json(force=True) or {}
-    password = data.pop("_password", None)
-    if not password:
-        return jsonify({"error": "Password required to export voice.zip"}), 400
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    voice_zip = os.path.join(base_dir, "voice.zip")
-    try:
-        import pyzipper
-        with pyzipper.AESZipFile(voice_zip, 'w',
-                                 compression=pyzipper.ZIP_DEFLATED,
-                                 encryption=pyzipper.WZ_AES) as zf:
-            zf.setpassword(password.encode())
-            zf.writestr("voice.json", json.dumps(data, indent=2))
-        return jsonify({"status": "ok", "message": "voice.zip saved (AES encrypted)"})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route("/voice/export", methods=["POST"])
-def voice_export():
-    """Generate and return a password-protected voice.zip for download."""
-    data = request.get_json(force=True) or {}
-    password = data.pop("_password", None)
-    if not password:
-        return jsonify({"error": "Password required"}), 400
-    try:
-        import pyzipper
-        import io
-        buf = io.BytesIO()
-        with pyzipper.AESZipFile(buf, 'w',
-                                 compression=pyzipper.ZIP_DEFLATED,
-                                 encryption=pyzipper.WZ_AES) as zf:
-            zf.setpassword(password.encode())
-            zf.writestr("voice.json", json.dumps(data, indent=2))
-        buf.seek(0)
-        from flask import send_file
-        return send_file(buf, mimetype='application/zip',
-                         as_attachment=True, download_name='voice.zip')
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route("/voice/import", methods=["POST"])
-def voice_import():
-    """Import a password-protected voice.zip and return its config."""
-    if 'file' not in request.files:
-        return jsonify({"error": "No file uploaded"}), 400
-    password = request.form.get("password", "").encode()
-    if not password:
-        return jsonify({"error": "Password required"}), 400
-    f = request.files['file']
-    try:
-        import pyzipper
-        import io
-        buf = io.BytesIO(f.read())
-        with pyzipper.AESZipFile(buf, 'r') as zf:
-            with zf.open("voice.json", pwd=password) as jf:
-                cfg = json.load(jf)
-        # Also save to local voice.zip
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        voice_zip = os.path.join(base_dir, "voice.zip")
-        buf.seek(0)
-        with open(voice_zip, 'wb') as out:
-            out.write(buf.read())
-        return jsonify(cfg)
-    except (RuntimeError, Exception) as e:
-        err = str(e).lower()
-        if "password" in err or "decrypt" in err:
-            return jsonify({"error": "Wrong password"}), 403
-        return jsonify({"error": str(e)}), 500
-
-@app.route("/voice/toggle", methods=["POST"])
-def voice_toggle():
-    """Toggle voice mode on/off."""
-    global VOICE_MODE
-    data = request.get_json(force=True) or {}
-    if "enabled" in data:
-        VOICE_MODE = bool(data["enabled"])
-    else:
-        VOICE_MODE = not VOICE_MODE
-    return jsonify({"voice_mode": VOICE_MODE})
-
-@app.route("/version", methods=["GET"])
-def version():
-    """Return the current brainstem version."""
-    return jsonify({"version": VERSION})
-
-@app.route("/agents", methods=["GET"])
-def list_agents_files():
-    """List all agent .py files available with their loaded agent names."""
-    files = glob.glob(os.path.join(AGENTS_PATH, "*.py"))
-    results = []
-    for f in files:
-        filename = os.path.basename(f)
-        if filename.startswith("__") or not filename.endswith(".py"):
-            continue
-        try:
-            # We don't want to re-download pip packages or run arbitrary init unnecessarily,
-            # but if it's already synthetically loaded or safe to parse, _load_agent_from_file is okay.
-            loaded = _load_agent_from_file(f)
-            agent_names = list(loaded.keys())
-        except Exception:
-            agent_names = []
-            
-        results.append({
-            "filename": filename,
-            "agents": agent_names
-        })
-        
-    return jsonify({"files": results})
-
-@app.route("/agents/export/<filename>", methods=["GET"])
-def agents_export(filename):
-    """Export an agent .py file."""
-    from flask import send_file
-    import werkzeug.utils
-    safe_name = werkzeug.utils.secure_filename(filename)
-    if not safe_name.endswith('.py'):
-        safe_name += '.py'
-    filepath = os.path.join(AGENTS_PATH, safe_name)
-    if os.path.exists(filepath):
-        return send_file(filepath, as_attachment=True)
-    return jsonify({"error": "Agent not found"}), 404
-
-@app.route("/agents/<filename>", methods=["DELETE"])
-def agents_delete(filename):
-    """Delete an agent .py file."""
-    import werkzeug.utils
-    safe_name = werkzeug.utils.secure_filename(filename)
-    if not safe_name.endswith('.py'):
-        safe_name += '.py'
-    filepath = os.path.join(AGENTS_PATH, safe_name)
-    if os.path.exists(filepath):
-        os.remove(filepath)
-        # Reload agents so memory drops it
-        try:
-            load_agents()
-        except Exception:
-            pass
-        return jsonify({"status": "ok", "message": f"Agent {safe_name} deleted."})
-    return jsonify({"error": "Agent not found"}), 404
-
-@app.route("/agents/import", methods=["POST"])
-def agents_import():
-    """Import an agent .py file via drag & drop."""
-    import werkzeug.utils
-    if 'file' not in request.files:
-        return jsonify({"error": "No file uploaded"}), 400
-    f = request.files['file']
-    if f.filename == '':
-        return jsonify({"error": "No selected file"}), 400
-    if not f.filename.endswith('.py'):
-        return jsonify({"error": "Only .py files are supported"}), 400
-    
-    os.makedirs(AGENTS_PATH, exist_ok=True)
-    safe_name = werkzeug.utils.secure_filename(f.filename)
-    # Ensure it matches the glob pattern *_agent.py
-    if not safe_name.endswith('_agent.py'):
-        safe_name = safe_name[:-3] + '_agent.py'
-        
-    filepath = os.path.join(AGENTS_PATH, safe_name)
-    f.save(filepath)
-    
-    # Reload agents to include the new one
-    try:
-        load_agents()
-    except Exception as e:
-        return jsonify({"error": f"Uploaded but failed to load: {e}"}), 500
-        
-    return jsonify({"status": "ok", "message": f"Agent {safe_name} imported successfully."})
-
-@app.route("/health", methods=["GET"])
-def health():
-    agents = {}
-    try:
-        agents = load_agents()
-    except Exception:
-        pass
-    soul_ok = os.path.exists(SOUL_PATH)
-
-    # Lightweight auth check — just see if a GitHub token EXISTS.
-    # Never do token exchange here; that happens lazily on first /chat call.
-    github_token = get_github_token()
-
-    # Check if we have a cached (valid) Copilot session (memory or disk)
-    copilot_ok = False
-    if _copilot_token_cache["token"] and time.time() < _copilot_token_cache["expires_at"] - 60:
-        copilot_ok = True
-    else:
-        disk_cache = _load_copilot_cache()
-        if disk_cache:
-            copilot_ok = True
-
-    if github_token:
-        return jsonify({
-            "status": "ok",
-            "version": VERSION,
-            "model":  MODEL,
-            "voice_mode": VOICE_MODE,
-            "soul":   SOUL_PATH if soul_ok else "missing",
-            "agents": list(agents.keys()),
-            "copilot": "\u2713" if copilot_ok else "pending",
-            "brainstem_dir": os.path.dirname(os.path.abspath(__file__)),
-        })
-    else:
-        return jsonify({
-            "status": "unauthenticated",
-            "version": VERSION,
-            "model":  MODEL,
-            "soul":   SOUL_PATH if soul_ok else "missing",
-            "agents": list(agents.keys()),
-        })
-
-@app.route("/debug/auth", methods=["GET"])
-def debug_auth():
-    """Debug endpoint — shows current auth state and tests token exchange."""
-    token = get_github_token()
-    token_data = _read_token_file()
-    copilot_cache = _load_copilot_cache()
-
-    result = {
-        "github_token_exists": token is not None,
-        "github_token_prefix": token[:10] + "..." if token else None,
-        "github_token_length": len(token) if token else 0,
-        "token_file_exists": os.path.exists(_token_file),
-        "token_file_has_refresh": bool(token_data and token_data.get("refresh_token")),
-        "copilot_cache_exists": copilot_cache is not None,
-        "copilot_cache_expires_in": int(copilot_cache["expires_at"] - time.time()) if copilot_cache else None,
-        "copilot_memory_cache": bool(_copilot_token_cache["token"]),
-    }
-
-    if token:
-        try:
-            resp = _exchange_github_for_copilot(token)
-            result["exchange_http_status"] = resp.status_code
-            result["exchange_response"] = resp.text[:500]
+            return {"status": "ok", "output": agent.perform(**(args or {}))}
         except Exception as e:
-            result["exchange_error"] = str(e)
+            traceback.print_exc()
+            return {"status": "error", "message": str(e),
+                    "trace": traceback.format_exc(limit=5)}
 
-    return jsonify(result)
+    def execute(self, swarm_guid, agent_name, args, user_guid):
+        agents = self.load_agents(swarm_guid)
+        agent = agents.get(agent_name)
+        if not agent:
+            return {"status": "error", "message": f"unknown agent: {agent_name}",
+                    "available": sorted(agents.keys())}
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+        # Set the memory path for this (swarm, user) tuple. Agent files that
+        # check os.environ['BRAINSTEM_MEMORY_PATH'] route to our isolated file;
+        # ones that don't fall back to the default ~/.brainstem/memory.json.
+        mem_path = self.memory_path(swarm_guid, user_guid)
+        mem_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # If sealed, force the memory file to read-only so any agent that tries
+        # to write fails with PermissionError. Reads still work — that's the
+        # whole point of sealing (preserved but queryable).
+        sealed = self.is_sealed(swarm_guid)
+        if sealed and os.name == "posix" and mem_path.exists():
+            try:
+                os.chmod(mem_path, 0o444)
+            except OSError:
+                pass
+
+        old_env = os.environ.get("BRAINSTEM_MEMORY_PATH")
+        os.environ["BRAINSTEM_MEMORY_PATH"] = str(mem_path)
+        try:
+            output = agent.perform(**(args or {}))
+            # Heuristic post-check: if sealed, see if the agent's output
+            # claims success despite the swarm being sealed (most write agents
+            # fail loudly, but some catch and return their own envelope).
+            if sealed and isinstance(output, str):
+                # If a write-style agent returned a "success" envelope, override.
+                # Detect by looking for 'saved' / 'success' tokens. Conservative.
+                low = output.lower()
+                if '"status": "success"' in low and ("saved" in low or "wrote" in low or "stored" in low):
+                    return {"status": "ok", "output": json.dumps({
+                        "status": "error",
+                        "message": "swarm is sealed; writes are rejected",
+                        "sealed": True,
+                    })}
+            return {"status": "ok", "output": output}
+        except PermissionError as e:
+            # Most common path when sealed: agent's _write_memory hit chmod 0444
+            return {"status": "ok", "output": json.dumps({
+                "status": "error",
+                "message": f"swarm is sealed; writes rejected ({e})",
+                "sealed": True,
+            })}
+        except Exception as e:
+            traceback.print_exc()
+            return {"status": "error", "message": str(e),
+                    "trace": traceback.format_exc(limit=5)}
+        finally:
+            if old_env is None:
+                os.environ.pop("BRAINSTEM_MEMORY_PATH", None)
+            else:
+                os.environ["BRAINSTEM_MEMORY_PATH"] = old_env
+
+
+# ─── HTTP HANDLER ───────────────────────────────────────────────────────
+
+class SwarmHandler(BaseHTTPRequestHandler):
+    store = None  # SwarmStore, set by main()
+
+    # ── CORS / response helpers ──
+
+    def _cors_headers(self):
+        origin = self.headers.get("Origin", "")
+        if (
+            origin in ALLOWED_ORIGINS
+            or origin.startswith("http://localhost")
+            or origin.startswith("http://127.0.0.1")
+        ):
+            self.send_header("Access-Control-Allow-Origin", origin)
+        else:
+            self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        # Required for Chrome to allow https://kody-w.github.io → http://localhost.
+        self.send_header("Access-Control-Allow-Private-Network", "true")
+        self.send_header("Access-Control-Max-Age", "600")
+
+    def _send_json(self, status, payload):
+        body = json.dumps(payload).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self._cors_headers()
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _read_json(self):
+        n = int(self.headers.get("Content-Length", 0))
+        if n <= 0:
+            return {}
+        return json.loads(self.rfile.read(n).decode("utf-8"))
+
+    # ── Routing ──
+
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self._cors_headers()
+        self.end_headers()
+
+    def do_GET(self):
+        path = urlparse(self.path).path
+
+        # /api/swarm/healthz — top-level: list all swarms
+        if path in ("/api/swarm/healthz", "/healthz"):
+            return self._send_json(200, {
+                "status": "ok",
+                "schema": "rapp-swarm/1.0",
+                "version": "1.0.0",
+                "host": self.headers.get("Host", "localhost"),
+                "swarm_count": len(self.store.list_swarms()),
+                "swarms": self.store.list_swarms(),
+            })
+
+        # /api/swarm/list — convenience alias
+        if path == "/api/swarm/list":
+            return self._send_json(200, {"swarms": self.store.list_swarms()})
+
+        # /api/swarm/{guid}/healthz — info about one swarm
+        m = re.match(r"^/api/swarm/([0-9a-f-]+)/healthz/?$", path)
+        if m:
+            sg = m.group(1)
+            manifest = self.store.get_manifest(sg)
+            if not manifest:
+                return self._send_json(404, {"status": "error", "message": "swarm not found"})
+            agents = self.store.load_agents(sg)
+            seal = self.store.seal_status(sg)
+            return self._send_json(200, {
+                "status": "ok",
+                "swarm_guid": sg,
+                "name": manifest.get("name"),
+                "purpose": manifest.get("purpose"),
+                "agent_count": len(agents),
+                "agents": sorted(agents.keys()),
+                "sealed": seal["sealed"],
+                "sealing": {
+                    "status": seal.get("status"),
+                    "sealed_at": seal.get("sealed_at"),
+                    "sealed_by": seal.get("sealed_by"),
+                    "trigger": seal.get("trigger"),
+                },
+            })
+
+        # /api/swarm/{guid}/seal — get sealing status
+        m = re.match(r"^/api/swarm/([0-9a-f-]+)/seal/?$", path)
+        if m:
+            sg = m.group(1)
+            seal = self.store.seal_status(sg)
+            if not seal["exists"]:
+                return self._send_json(404, {"status": "error", "message": "swarm not found"})
+            return self._send_json(200, seal)
+
+        # /api/swarm/{guid}/snapshots — list snapshots for a swarm
+        m = re.match(r"^/api/swarm/([0-9a-f-]+)/snapshots/?$", path)
+        if m:
+            sg = m.group(1)
+            if self.store.get_manifest(sg) is None:
+                return self._send_json(404, {"status": "error", "message": "swarm not found"})
+            return self._send_json(200, {
+                "swarm_guid": sg,
+                "snapshots": self.store.list_snapshots(sg),
+            })
+
+        # /api/workspace — twin metadata + counts
+        if path == "/api/workspace":
+            return self._send_json(200, get_workspace(self.store.root).info())
+
+        # /api/workspace/documents — list mine + inbox + outbox
+        if path == "/api/workspace/documents":
+            return self._send_json(200, get_workspace(self.store.root).list_documents())
+
+        # /api/workspace/documents/<name>?location=documents|inbox|outbox
+        m = re.match(r"^/api/workspace/documents/([^/]+)/?$", path)
+        if m:
+            from urllib.parse import parse_qs
+            qs = parse_qs(urlparse(self.path).query)
+            location = (qs.get("location") or ["documents"])[0]
+            doc = get_workspace(self.store.root).read_document(m.group(1), location)
+            if not doc:
+                return self._send_json(404, {"status": "error", "message": "document not found"})
+            return self._send_json(200, doc)
+
+        # /api/llm/status — what LLM provider is wired in (diagnostic)
+        if path == "/api/llm/status":
+            try:
+                _, diagnostics = get_llm_chat()
+                return self._send_json(200, diagnostics())
+            except Exception as e:
+                return self._send_json(500, {"status": "error", "message": str(e)})
+
+        # /api/t2t/identity — this twin's public identity (cloud_id, handle, capabilities)
+        if path == "/api/t2t/identity":
+            mgr = get_t2t_manager(self.store.root)
+            return self._send_json(200, mgr.get_identity_public())
+
+        # /api/t2t/peers — list whitelisted peer twins
+        if path == "/api/t2t/peers":
+            mgr = get_t2t_manager(self.store.root)
+            return self._send_json(200, {"peers": mgr.list_peers()})
+
+        # /api/binder — list installed rapplications for this twin
+        if path in ("/api/binder", "/api/binder/"):
+            return self._send_json(200, get_binder(self.store.root).list())
+
+        # /api/binder/catalog — proxy the local store/index.json catalog
+        if path in ("/api/binder/catalog", "/api/binder/catalog/"):
+            return self._send_json(200, get_binder(self.store.root).catalog())
+
+        return self._send_json(404, {"status": "error", "message": "not found"})
+
+    def do_POST(self):
+        path = urlparse(self.path).path
+
+        # /api/swarm/deploy — install a bundle
+        if path == "/api/swarm/deploy":
+            try:
+                bundle = self._read_json()
+            except Exception as e:
+                return self._send_json(400, {"status": "error", "message": f"bad json: {e}"})
+            try:
+                manifest = self.store.deploy(bundle)
+            except SealedSwarmError as e:
+                return self._send_json(423, {"status": "error", "message": str(e), "sealed": True})
+            except ValueError as e:
+                return self._send_json(400, {"status": "error", "message": str(e)})
+            except Exception as e:
+                traceback.print_exc()
+                return self._send_json(500, {"status": "error", "message": str(e)})
+
+            host = self.headers.get("Host", "localhost")
+            scheme = "https" if self.headers.get("X-Forwarded-Proto") == "https" else "http"
+            base = f"{scheme}://{host}"
+            return self._send_json(200, {
+                "status": "ok",
+                "swarm_guid": manifest["swarm_guid"],
+                "name": manifest["name"],
+                "swarm_url": f"{base}/api/swarm/{manifest['swarm_guid']}/agent",
+                "info_url":  f"{base}/api/swarm/{manifest['swarm_guid']}/healthz",
+                "agent_count": manifest["agent_count"],
+            })
+
+        # /api/swarm/{guid}/agent — execute an agent
+        m = re.match(r"^/api/swarm/([0-9a-f-]+)/agent/?$", path)
+        if m:
+            sg = m.group(1)
+            try:
+                body = self._read_json()
+            except Exception as e:
+                return self._send_json(400, {"status": "error", "message": f"bad json: {e}"})
+            name = body.get("name")
+            args = body.get("args") or {}
+            user_guid = body.get("user_guid")
+            if not name:
+                return self._send_json(400, {"status": "error", "message": "missing 'name'"})
+            result = self.store.execute(sg, name, args, user_guid)
+            status = 200 if result.get("status") == "ok" else (
+                404 if "unknown agent" in result.get("message", "") else 500
+            )
+            return self._send_json(status, result)
+
+        # /api/swarm/{guid}/chat — LLM-driven chat against this swarm's
+        # agents (the same wire shape the OG community RAPP brainstem uses).
+        m = re.match(r"^/api/swarm/([0-9a-f-]+)/chat/?$", path)
+        if m:
+            sg = m.group(1)
+            try:
+                body = self._read_json()
+            except Exception as e:
+                return self._send_json(400, {"status": "error", "message": f"bad json: {e}"})
+            user_input = body.get("user_input") or body.get("input") or ""
+            if not user_input:
+                return self._send_json(400, {"status": "error", "message": "missing 'user_input'"})
+            try:
+                chat_with_swarm, _ = get_llm_chat()
+                result = chat_with_swarm(
+                    self.store, sg,
+                    user_input=user_input,
+                    conversation_history=body.get("conversation_history") or [],
+                    user_guid=body.get("user_guid"),
+                    extra_system=body.get("extra_system", ""),
+                )
+                status = 200 if not result.get("error") else 500
+                return self._send_json(status, result)
+            except Exception as e:
+                traceback.print_exc()
+                return self._send_json(500, {"status": "error", "message": str(e)})
+
+        # /api/swarm/{guid}/seal — seal a swarm (immutable, queryable)
+        m = re.match(r"^/api/swarm/([0-9a-f-]+)/seal/?$", path)
+        if m:
+            sg = m.group(1)
+            try:
+                body = self._read_json()
+            except Exception:
+                body = {}
+            actor = body.get("actor") or "anonymous"
+            trigger = body.get("trigger") or "voluntary"
+            try:
+                sealing = self.store.seal(sg, actor=actor, trigger=trigger)
+                return self._send_json(200, {"status": "ok", "swarm_guid": sg, "sealing": sealing})
+            except FileNotFoundError as e:
+                return self._send_json(404, {"status": "error", "message": str(e)})
+            except Exception as e:
+                traceback.print_exc()
+                return self._send_json(500, {"status": "error", "message": str(e)})
+
+        # /api/swarm/{guid}/snapshot — create a snapshot
+        m = re.match(r"^/api/swarm/([0-9a-f-]+)/snapshot/?$", path)
+        if m:
+            sg = m.group(1)
+            try:
+                body = self._read_json()
+            except Exception:
+                body = {}
+            label = body.get("label")
+            try:
+                meta = self.store.create_snapshot(sg, label=label)
+                return self._send_json(200, {"status": "ok", **meta})
+            except FileNotFoundError as e:
+                return self._send_json(404, {"status": "error", "message": str(e)})
+            except Exception as e:
+                traceback.print_exc()
+                return self._send_json(500, {"status": "error", "message": str(e)})
+
+        # /api/workspace/documents/<name> — save (write/overwrite)
+        m = re.match(r"^/api/workspace/documents/([^/]+)/?$", path)
+        if m:
+            try:
+                body = self._read_json()
+            except Exception as e:
+                return self._send_json(400, {"status": "error", "message": f"bad json: {e}"})
+            content_b64 = body.get("content_b64") or ""
+            location = body.get("location", "documents")
+            try:
+                import base64 as _b64
+                content = _b64.b64decode(content_b64) if content_b64 else (
+                    (body.get("content") or "").encode("utf-8")
+                )
+                meta = get_workspace(self.store.root).write_document(
+                    m.group(1), content, location
+                )
+                return self._send_json(200, {"status": "ok", **meta})
+            except ValueError as e:
+                return self._send_json(400, {"status": "error", "message": str(e)})
+
+        # /api/t2t/send-document — sign + push doc to a peer twin
+        if path == "/api/t2t/send-document":
+            try:
+                body = self._read_json()
+            except Exception as e:
+                return self._send_json(400, {"status": "error", "message": f"bad json: {e}"})
+            to_cloud_id = body.get("to", "")
+            doc_name = body.get("document_name", "")
+            location = body.get("from_location", "documents")
+            mgr = get_t2t_manager(self.store.root)
+            ws = get_workspace(self.store.root)
+            peer = mgr.peers.get_peer(to_cloud_id)
+            if not peer:
+                return self._send_json(403, {"status": "error", "message": "peer not whitelisted"})
+            if not peer.get("url"):
+                return self._send_json(400, {"status": "error", "message": "peer has no URL on file"})
+            doc = ws.read_document(doc_name, location)
+            if not doc:
+                return self._send_json(404, {"status": "error", "message": "document not found"})
+
+            # Sign the (from, doc_name, content_b64) tuple with MY secret
+            from t2t import sign as _sign  # type: ignore
+            my_id = mgr.identity.get_or_create()["cloud_id"]
+            my_secret = mgr.identity.get_secret()
+            payload_obj = {
+                "from": my_id,
+                "name": doc["name"],
+                "bytes": doc["bytes"],
+                "content_b64": doc["content_b64"],
+                "sent_at": _now_iso(),
+            }
+            payload_str = json.dumps(payload_obj, sort_keys=True, separators=(",", ":"))
+            sig = _sign(payload_str, my_secret)
+
+            # Send to peer
+            import urllib.request as _ur
+            import urllib.error as _ue
+            req = _ur.Request(
+                peer["url"].rstrip("/") + "/api/t2t/receive-document",
+                data=json.dumps({**payload_obj, "sig": sig}).encode("utf-8"),
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            try:
+                with _ur.urlopen(req, timeout=15) as resp:
+                    peer_resp = json.loads(resp.read().decode("utf-8"))
+            except _ue.HTTPError as e:
+                return self._send_json(502, {"status": "error",
+                                              "message": f"peer HTTP {e.code}",
+                                              "details": e.read().decode("utf-8")[:300]})
+            except _ue.URLError as e:
+                return self._send_json(502, {"status": "error", "message": f"peer unreachable: {e}"})
+
+            # Mirror to MY outbox for audit
+            try:
+                ws.write_document(doc["name"], _b64_decode(doc["content_b64"]), "outbox")
+            except Exception:
+                pass
+            return self._send_json(200, {"status": "ok", "peer_response": peer_resp,
+                                          "name": doc["name"]})
+
+        # /api/t2t/receive-document — accept doc from a known peer
+        if path == "/api/t2t/receive-document":
+            try:
+                body = self._read_json()
+            except Exception as e:
+                return self._send_json(400, {"status": "error", "message": f"bad json: {e}"})
+            from_cloud_id = body.get("from", "")
+            sig = body.get("sig", "")
+            mgr = get_t2t_manager(self.store.root)
+            peer = mgr.peers.get_peer(from_cloud_id)
+            if not peer:
+                return self._send_json(403, {"status": "error", "message": "unknown sender"})
+            from t2t import verify as _verify  # type: ignore
+            payload_obj = {k: body[k] for k in ("from", "name", "bytes", "content_b64", "sent_at") if k in body}
+            payload_str = json.dumps(payload_obj, sort_keys=True, separators=(",", ":"))
+            if not _verify(payload_str, sig, peer["secret"]):
+                return self._send_json(403, {"status": "error", "message": "signature failed"})
+            # Save to inbox, namespaced by sender's cloud_id
+            ws = get_workspace(self.store.root)
+            try:
+                content = _b64_decode(body.get("content_b64", ""))
+                fname = f"{from_cloud_id[:8]}_{body.get('name','document')}"
+                meta = ws.write_document(fname, content, "inbox")
+                return self._send_json(200, {"status": "ok", "received": True,
+                                              "saved_as": meta["name"]})
+            except ValueError as e:
+                return self._send_json(400, {"status": "error", "message": str(e)})
+
+        # /api/t2t/peers — whitelist a peer twin
+        if path == "/api/t2t/peers":
+            try:
+                body = self._read_json()
+            except Exception as e:
+                return self._send_json(400, {"status": "error", "message": f"bad json: {e}"})
+            cloud_id = body.get("cloud_id")
+            secret = body.get("secret")
+            if not cloud_id or not secret:
+                return self._send_json(400, {"status": "error", "message": "cloud_id and secret required"})
+            mgr = get_t2t_manager(self.store.root)
+            peer = mgr.add_peer(
+                cloud_id=cloud_id, secret=secret,
+                handle=body.get("handle", ""), url=body.get("url", ""),
+                allowed_caps=body.get("allowed_caps") or ["*"],
+            )
+            peer = {k: v for k, v in peer.items() if k != "secret"}
+            return self._send_json(200, {"status": "ok", "peer": peer})
+
+        # /api/t2t/handshake — accept an incoming handshake
+        if path == "/api/t2t/handshake":
+            try:
+                body = self._read_json()
+            except Exception as e:
+                return self._send_json(400, {"status": "error", "message": f"bad json: {e}"})
+            mgr = get_t2t_manager(self.store.root)
+            result = mgr.handshake(
+                from_cloud_id=body.get("from", ""),
+                conv_id=body.get("conv_id", ""),
+                intro=body.get("intro") or {},
+                sig=body.get("sig", ""),
+            )
+            status = 200 if result.get("accepted") else 403
+            return self._send_json(status, result)
+
+        # /api/t2t/message — receive an inbound message
+        if path == "/api/t2t/message":
+            try:
+                body = self._read_json()
+            except Exception as e:
+                return self._send_json(400, {"status": "error", "message": f"bad json: {e}"})
+            mgr = get_t2t_manager(self.store.root)
+            result = mgr.receive_message(
+                from_cloud_id=body.get("from", ""),
+                conv_id=body.get("conv_id", ""),
+                seq=body.get("seq", 0),
+                body=body.get("body") or {},
+                sig=body.get("sig", ""),
+            )
+            status = 200 if result.get("received") else 403
+            return self._send_json(status, result)
+
+        # /api/t2t/invoke — peer twin invokes one of MY capabilities (a swarm/agent call)
+        if path == "/api/t2t/invoke":
+            try:
+                body = self._read_json()
+            except Exception as e:
+                return self._send_json(400, {"status": "error", "message": f"bad json: {e}"})
+            mgr = get_t2t_manager(self.store.root)
+            from_cloud_id = body.get("from", "")
+            sig = body.get("sig", "")
+            invocation = body.get("invocation") or {}
+            # Verify sig against the peer's secret
+            payload = json.dumps({"from": from_cloud_id, "invocation": invocation},
+                                 sort_keys=True, separators=(",", ":"))
+            peer = mgr.peers.get_peer(from_cloud_id)
+            if not peer:
+                return self._send_json(403, {"status": "error", "message": "peer not whitelisted"})
+            from t2t import verify as _verify_t2t  # type: ignore
+            if not _verify_t2t(payload, sig, peer["secret"]):
+                return self._send_json(403, {"status": "error", "message": "signature failed"})
+            # Check capability allowlist
+            target_swarm = invocation.get("swarm_guid", "")
+            agent_name = invocation.get("agent", "")
+            if not mgr.can_peer_invoke(from_cloud_id, agent_name):
+                return self._send_json(403, {"status": "error",
+                                              "message": f"peer not authorized for capability '{agent_name}'"})
+            # Execute the agent — same path as /api/swarm/{guid}/agent but invoked via T2T
+            result = self.store.execute(target_swarm, agent_name,
+                                         invocation.get("args") or {},
+                                         user_guid=None)  # T2T calls are anonymous to the target's memory
+            return self._send_json(200, {"status": "ok", "result": result, "invoked_by": from_cloud_id})
+
+        # /api/swarm/{guid}/snapshots/{snap_name}/agent — query an agent against a snapshot
+        m = re.match(r"^/api/swarm/([0-9a-f-]+)/snapshots/([0-9A-Za-z_\-]+)/agent/?$", path)
+        if m:
+            sg = m.group(1)
+            snap_name = m.group(2)
+            try:
+                body = self._read_json()
+            except Exception as e:
+                return self._send_json(400, {"status": "error", "message": f"bad json: {e}"})
+            name = body.get("name")
+            args = body.get("args") or {}
+            user_guid = body.get("user_guid")
+            if not name:
+                return self._send_json(400, {"status": "error", "message": "missing 'name'"})
+            result = self.store.execute_against_snapshot(sg, snap_name, name, args, user_guid)
+            status = 200 if result.get("status") == "ok" else (
+                404 if "not found" in result.get("message", "") else 500
+            )
+            return self._send_json(status, result)
+
+        # /api/binder/install — install a rapplication from the catalog
+        if path in ("/api/binder/install", "/api/binder/install/"):
+            try:
+                body = self._read_json()
+            except Exception as e:
+                return self._send_json(400, {"status": "error", "message": f"bad json: {e}"})
+            rid = body.get("id")
+            if not rid:
+                return self._send_json(400, {"status": "error", "message": "missing 'id'"})
+            try:
+                result = get_binder(self.store.root).install(rid)
+                # Bust the binder cache so the new singleton is picked up on next call.
+                self.store._loaded_agents.pop("__binder__", None)
+                return self._send_json(200, {"status": "ok", **result})
+            except (FileNotFoundError, ValueError) as e:
+                return self._send_json(400, {"status": "error", "message": str(e)})
+            except Exception as e:
+                traceback.print_exc()
+                return self._send_json(500, {"status": "error", "message": str(e)})
+
+        # /api/binder/sync — re-materialize all installed rapplications from catalog
+        if path in ("/api/binder/sync", "/api/binder/sync/"):
+            try:
+                result = get_binder(self.store.root).sync()
+                return self._send_json(200, {"status": "ok", **result})
+            except Exception as e:
+                traceback.print_exc()
+                return self._send_json(500, {"status": "error", "message": str(e)})
+
+        # /api/binder/agent — execute a binder-installed rapplication directly
+        # (no swarm_guid needed; the binder's <root>/agents/ is its own load context)
+        if path in ("/api/binder/agent", "/api/binder/agent/"):
+            try:
+                body = self._read_json()
+            except Exception as e:
+                return self._send_json(400, {"status": "error", "message": f"bad json: {e}"})
+            name = body.get("name")
+            args = body.get("args") or {}
+            if not name:
+                return self._send_json(400, {"status": "error", "message": "missing 'name'"})
+            try:
+                result = self.store.execute_in_dir(
+                    Path(self.store.root) / "agents",
+                    name,
+                    args,
+                    cache_key="__binder__",
+                )
+                status = 200 if result.get("status") == "ok" else (
+                    404 if "unknown agent" in result.get("message", "") else 500
+                )
+                return self._send_json(status, result)
+            except Exception as e:
+                traceback.print_exc()
+                return self._send_json(500, {"status": "error", "message": str(e)})
+
+        return self._send_json(404, {"status": "error", "message": "not found"})
+
+    def do_DELETE(self):
+        path = urlparse(self.path).path
+        # /api/binder/installed/<id> — uninstall a rapplication
+        m = re.match(r"^/api/binder/installed/([A-Za-z0-9_\-]+)/?$", path)
+        if m:
+            rid = m.group(1)
+            try:
+                result = get_binder(self.store.root).uninstall(rid)
+                self.store._loaded_agents.pop("__binder__", None)
+                return self._send_json(200, {"status": "ok", **result})
+            except ValueError as e:
+                return self._send_json(404, {"status": "error", "message": str(e)})
+            except Exception as e:
+                traceback.print_exc()
+                return self._send_json(500, {"status": "error", "message": str(e)})
+
+        # /api/workspace/documents/<name>?location=…
+        m = re.match(r"^/api/workspace/documents/([^/]+)/?$", path)
+        if m:
+            from urllib.parse import parse_qs
+            qs = parse_qs(urlparse(self.path).query)
+            location = (qs.get("location") or ["documents"])[0]
+            ok = get_workspace(self.store.root).delete_document(m.group(1), location)
+            return self._send_json(200 if ok else 404,
+                                    {"status": "ok" if ok else "error",
+                                     "removed": m.group(1) if ok else None,
+                                     "message": None if ok else "document not found"})
+
+        m = re.match(r"^/api/swarm/([0-9a-f-]+)/?$", path)
+        if not m:
+            return self._send_json(404, {"status": "error", "message": "not found"})
+        sg = m.group(1)
+        try:
+            ok = self.store.remove(sg)
+        except SealedSwarmError as e:
+            return self._send_json(423, {"status": "error", "message": str(e), "sealed": True})
+        if not ok:
+            return self._send_json(404, {"status": "error", "message": "swarm not found"})
+        return self._send_json(200, {"status": "ok", "removed": sg})
+
+    def log_message(self, fmt, *args):
+        sys.stderr.write(f"  → {fmt % args}\n")
+
+
+# ─── ENTRY POINT ────────────────────────────────────────────────────────
+
+def main():
+    p = argparse.ArgumentParser(
+        description="RAPP Swarm Server — host many swarms behind one endpoint, routed by GUID."
+    )
+    p.add_argument("--port", type=int, default=7080)
+    p.add_argument("--host", default="127.0.0.1",
+                   help="Bind address. Use 0.0.0.0 to expose on LAN.")
+    p.add_argument("--root", default="~/.rapp-swarm",
+                   help="Where to persist swarms. Default: ~/.rapp-swarm")
+    args = p.parse_args()
+
+    # Load root .env (Azure OpenAI keys, etc) — does NOT overwrite existing env.
+    loaded = load_dotenv()
+    if loaded:
+        print(f"  Loaded env from {loaded}")
+
+    root = Path(os.path.expanduser(args.root)).resolve()
+    root.mkdir(parents=True, exist_ok=True)
+
+    SwarmHandler.store = SwarmStore(root)
+    existing = SwarmHandler.store.list_swarms()
+
+    print(f"\n  RAPP Swarm Server")
+    print(f"  {'─' * 36}")
+    print(f"  Root: {root}")
+    print(f"  Swarms loaded: {len(existing)}")
+    for s in existing:
+        print(f"    • {s['name']}  ({s['agent_count']} agents)  {s['swarm_guid']}")
+
+    url = f"http://{args.host}:{args.port}"
+    print(f"\n  Listening on  {url}")
+    print(f"  Health check  {url}/api/swarm/healthz")
+    print(f"\n  Deploy a swarm from the brainstem:")
+    print(f"    Settings → 🐝 Deploy as Swarm → Push to endpoint: {url}\n")
+    print(f"  Ctrl-C to stop.\n")
+
+    # ThreadingHTTPServer so concurrent BookFactory / chat / T2T requests
+    # run in parallel — single-threaded HTTPServer makes a 90s LLM call
+    # block every other request behind it. Threading buys us 8x speedup
+    # on the cycle-3 parallel BookFactory runs.
+    server = ThreadingHTTPServer((args.host, args.port), SwarmHandler)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("\n  Shutting down.")
+        server.server_close()
+
 
 if __name__ == "__main__":
-    print(f"\n🧠 RAPP Brainstem v{VERSION} starting on http://localhost:{PORT}")
-    print(f"   Soul:   {SOUL_PATH}")
-    print(f"   Agents: {AGENTS_PATH}")
-    print(f"   Model:  {MODEL}")
-    print(f"   Voice:  {'on' if VOICE_MODE else 'off'} (POST /voice/toggle to change)")
-    print(f"   Auth:   GitHub Copilot API (via gh CLI)\n")
-    load_soul()
-    load_agents()
-    app.run(host="0.0.0.0", port=PORT, debug=False)
+    main()

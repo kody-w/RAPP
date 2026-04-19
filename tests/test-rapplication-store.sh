@@ -68,11 +68,22 @@ python3 - <<'PY'
 import json, hashlib, pathlib, sys
 cat = json.load(open("store/index.json"))
 fail = 0
+
+def find_local(filename):
+    """After v1.8 reorg, files live under rapplications/{name}/{singleton,source}/.
+    Search all of them and return the first match."""
+    rapps = pathlib.Path("rapplications")
+    for sub in rapps.iterdir() if rapps.exists() else []:
+        for kind in ("singleton", "source"):
+            cand = sub / kind / filename
+            if cand.exists():
+                return cand
+    return None
+
 for r in cat["rapplications"]:
-    fn = "agents/" + r["singleton_filename"]
-    p = pathlib.Path(fn)
-    if not p.exists():
-        print(f"  ✗ {r['id']}: singleton file missing at {fn}"); fail += 1
+    p = find_local(r["singleton_filename"])
+    if not p:
+        print(f"  ✗ {r['id']}: singleton file missing for {r['singleton_filename']}"); fail += 1
         continue
     actual = hashlib.sha256(p.read_bytes()).hexdigest()
     pinned = r.get("singleton_sha256", "")
@@ -99,7 +110,7 @@ rm -rf "$ROOT"
 lsof -ti:$PORT 2>/dev/null | xargs kill -9 2>/dev/null || true
 sleep 0.5
 
-python3 -u swarm/server.py --port $PORT --root "$ROOT" > /tmp/store-test-server.log 2>&1 &
+python3 -u rapp_brainstem/brainstem.py --port $PORT --root "$ROOT" > /tmp/store-test-server.log 2>&1 &
 SERVER_PID=$!
 trap "kill $SERVER_PID 2>/dev/null || true" EXIT
 sleep 2
@@ -108,7 +119,7 @@ sleep 2
 # verify it hatches as one agent (BookFactory).
 GUID=$(python3 - <<'PY'
 import json, urllib.request, pathlib
-src = pathlib.Path("agents/bookfactory_agent.py").read_text()
+src = pathlib.Path("rapplications/bookfactory/singleton/bookfactory_agent.py").read_text()
 bundle = {
     "schema": "rapp-swarm/1.0",
     "name": "store-install-test",
