@@ -718,10 +718,10 @@
       <div class="row">
         <label for="exec-mode">Agent execution mode</label>
         <select id="exec-mode">
-          <option value="stub">Stub (default — synthesized results)</option>
-          <option value="live">Live (lazy-load Pyodide ~10MB)</option>
+          <option value="live">Live (default — runs the real Python perform() via Pyodide)</option>
+          <option value="stub">Stub (synthesized results, no Python — for offline / debug)</option>
         </select>
-        <span class="hint">Stub mode echoes a deterministic result so the LLM can chain. Live runs the actual Python <code>perform()</code> in-browser via Pyodide.</span>
+        <span class="hint">Live mode lazy-loads Pyodide (~10 MB) on the first agent call, then runs the actual <code>perform()</code> in-browser. Stub mode echoes a deterministic synthesized result instead — fast, no download, but agents don't really execute.</span>
       </div>
       <div class="row">
         <label for="soul">soul.md (system prompt)</label>
@@ -991,7 +991,7 @@ const state = {
     customBase: 'https://api.openai.com/v1',
     customKey: '',
     model: 'gpt-4o',
-    execMode: 'stub',
+    execMode: 'live',
     soul: 'You are a helpful, concise RAPP brainstem assistant. Use the loaded tools when relevant. After tool calls, summarize the result in plain English.',
   },
   pyodide: null,
@@ -1049,6 +1049,15 @@ function loadSettings() {
     LS.set('settings', state.settings);
   }
   LS.set('migratedToCopilot', 1);
+  // One-shot migration v3 — flip default execMode from stub to live so the
+  // brainstem actually runs perform() in-browser via Pyodide. Custom users
+  // who deliberately set 'stub' will only get auto-bumped once.
+  const liveMig = LS.get('migratedToLive', 0);
+  if (!liveMig && state.settings.execMode === 'stub') {
+    state.settings.execMode = 'live';
+    LS.set('settings', state.settings);
+  }
+  LS.set('migratedToLive', 1);
   $('#provider').value = state.settings.provider;
   $('#api-key').value  = state.settings.apiKey;
   $('#api-base').value = state.settings.customBase;
