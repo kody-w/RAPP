@@ -912,6 +912,16 @@ function loadSettings() {
     else if (/models\./.test(saved.apiBase)) state.settings.provider = 'github';
     else { state.settings.provider = 'custom'; state.settings.customBase = saved.apiBase; state.settings.customKey = saved.apiKey || ''; }
   }
+  // One-shot migration v2 — promote everyone off the GitHub Models PAT catalog
+  // onto the proper Copilot endpoint (the OG local brainstem's model list).
+  // Custom / OpenAI users are left alone.
+  const migrated = LS.get('migratedToCopilot', 0);
+  if (!migrated && state.settings.provider === 'github') {
+    state.settings.provider = 'copilot';
+    state.settings.model = PROVIDERS.copilot.defaultModel;
+    LS.set('settings', state.settings);
+  }
+  LS.set('migratedToCopilot', 1);
   $('#provider').value = state.settings.provider;
   $('#api-key').value  = state.settings.apiKey;
   $('#api-base').value = state.settings.customBase;
