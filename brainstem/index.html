@@ -475,13 +475,10 @@
     white-space: nowrap;
   }
   .ac-art {
-    height: 110px; margin: 0 14px; border-radius: 8px;
-    background: radial-gradient(ellipse at center, rgba(255,255,255,.04) 0%, transparent 70%);
-    display: flex; align-items: center; justify-content: center;
+    aspect-ratio: 5/3; margin: 0 14px; border-radius: 8px;
     border: 1px solid #21262d; position: relative; overflow: hidden;
-    font-size: 56px;
   }
-  .ac-art .ac-glyph { filter: drop-shadow(0 0 14px currentColor); }
+  .ac-art svg { width: 100%; height: 100%; display: block; }
   .ac-types {
     padding: 8px 14px 6px; display: flex; gap: 5px; flex-wrap: wrap;
   }
@@ -1608,10 +1605,95 @@ function renderAgents() {
 
 /* ───── Card modal ─────────────────────────────────────────── */
 let cardModalCard = null;
-const TYPE_GLYPH = {
-  LOGIC: '🧠', DATA: '📊', SOCIAL: '💬', SHIELD: '🛡',
-  CRAFT: '⚙️', HEAL: '❤️', WEALTH: '💰',
+
+/* ───── Card art generator — port of RAR/store.html genCreativeArt ─── */
+// Hero glyph SVG paths per agent type. Each takes (color) → markup centered at 100,95.
+const TYPE_GLYPHS = {
+  LOGIC:  c => `<path d="M65 70 Q100 50 135 70 Q140 95 135 120 Q100 140 65 120 Q60 95 65 70 Z M85 80 L115 80 M85 95 L115 95 M85 110 L115 110" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round"/>`,
+  DATA:   c => `<g fill="${c}"><rect x="70" y="70" width="60" height="14" rx="2" opacity=".9"/><rect x="70" y="90" width="60" height="14" rx="2" opacity=".7"/><rect x="70" y="110" width="60" height="14" rx="2" opacity=".5"/></g>`,
+  SOCIAL: c => `<path d="M60 75 Q60 60 75 60 H125 Q140 60 140 75 V105 Q140 120 125 120 H105 L90 135 L92 120 H75 Q60 120 60 105 Z" fill="none" stroke="${c}" stroke-width="2"/><g fill="${c}"><circle cx="80" cy="92" r="3"/><circle cx="100" cy="92" r="3"/><circle cx="120" cy="92" r="3"/></g>`,
+  SHIELD: c => `<path d="M100 55 L140 70 V105 Q140 130 100 145 Q60 130 60 105 V70 Z" fill="none" stroke="${c}" stroke-width="2.5"/><path d="M100 75 L120 85 V100 Q120 115 100 125 Q80 115 80 100 V85 Z" fill="${c}" opacity=".25"/>`,
+  CRAFT:  c => `<g fill="none" stroke="${c}" stroke-width="2"><circle cx="100" cy="95" r="22"/><circle cx="100" cy="95" r="9"/></g><g fill="${c}">${[0,45,90,135,180,225,270,315].map(a=>{const r=(a*Math.PI)/180;const x1=100+24*Math.cos(r),y1=95+24*Math.sin(r);const x2=100+34*Math.cos(r),y2=95+34*Math.sin(r);return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${c}" stroke-width="3" stroke-linecap="round"/>`;}).join('')}</g>`,
+  HEAL:   c => `<path d="M100 60 C90 50 70 50 70 75 C70 100 100 130 100 130 C100 130 130 100 130 75 C130 50 110 50 100 60 Z" fill="${c}" opacity=".3" stroke="${c}" stroke-width="2"/><path d="M88 90 H112 M100 78 V102" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".9"/>`,
+  WEALTH: c => `<g><polygon points="100,60 130,95 100,130 70,95" fill="none" stroke="${c}" stroke-width="2.5"/><polygon points="100,75 118,95 100,115 82,95" fill="${c}" opacity=".25"/><line x1="85" y1="80" x2="115" y2="110" stroke="${c}" stroke-width="1" opacity=".5"/><line x1="115" y1="80" x2="85" y2="110" stroke="${c}" stroke-width="1" opacity=".5"/></g>`,
 };
+
+function generateCardArt(card, primaryColor) {
+  const seed = (() => { try { return BigInt(card.seed || 0); } catch { return 0n; } })();
+  const rngSeed = Number(seed & 0xFFFFFFFFn) || 0xc0ffee;
+  let s = rngSeed >>> 0;
+  const rng = () => {
+    s = (s + 0x6D2B79F5) >>> 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1) >>> 0;
+    t ^= (t + Math.imul(t ^ (t >>> 7), t | 61)) >>> 0;
+    return ((t ^ (t >>> 14)) >>> 0) / 0xFFFFFFFF;
+  };
+  const p = primaryColor;
+  const uid = 'g' + (rngSeed >>> 0).toString(36);
+  const hexToRgb = h => { const n = parseInt(h.replace('#',''), 16); return [(n>>16)&255, (n>>8)&255, n&255]; };
+  const darken = (rgb, f) => '#' + rgb.map(c => Math.round(c*f).toString(16).padStart(2,'0')).join('');
+  const rgb = hexToRgb(p);
+  const bgDeep = darken(rgb, 0.08), bgMid = darken(rgb, 0.15);
+
+  let svg = `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">`;
+  svg += `<defs>
+    <radialGradient id="bg-${uid}"><stop offset="0%" stop-color="${bgMid}"/><stop offset="100%" stop-color="${bgDeep}"/></radialGradient>
+    <filter id="glow-${uid}"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="glow2-${uid}"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>`;
+  svg += `<rect width="200" height="200" fill="url(#bg-${uid})"/>`;
+  svg += `<ellipse cx="100" cy="95" rx="60" ry="50" fill="${p}" opacity="0.06"/>`;
+
+  // Frame (5 styles, picked by seed)
+  const frame = Math.floor(rng() * 5);
+  const fg = [];
+  if (frame === 0) {
+    fg.push(`<circle cx="100" cy="95" r="65" fill="none" stroke="${p}" stroke-width="1" opacity=".15"/>`);
+    fg.push(`<circle cx="100" cy="95" r="45" fill="none" stroke="${p}" stroke-width="1.5" opacity=".2"/>`);
+    fg.push(`<circle cx="100" cy="95" r="25" fill="${p}" opacity=".06"/>`);
+  } else if (frame === 1) {
+    fg.push(`<polygon points="100,30 170,95 100,160 30,95" fill="none" stroke="${p}" stroke-width="1.5" opacity=".2"/>`);
+    fg.push(`<polygon points="100,50 150,95 100,140 50,95" fill="none" stroke="${p}" stroke-width="1" opacity=".12"/>`);
+  } else if (frame === 2) {
+    const hex = (cx,cy,r) => Array.from({length:6},(_,i)=>{const a=Math.PI/3*i-Math.PI/6;return `${cx+r*Math.cos(a)},${cy+r*Math.sin(a)}`}).join(' ');
+    fg.push(`<polygon points="${hex(100,95,60)}" fill="none" stroke="${p}" stroke-width="1.5" opacity=".2"/>`);
+    fg.push(`<polygon points="${hex(100,95,40)}" fill="none" stroke="${p}" stroke-width="1" opacity=".12"/>`);
+  } else if (frame === 3) {
+    fg.push(`<ellipse cx="100" cy="95" rx="60" ry="30" fill="none" stroke="${p}" stroke-width="1.5" opacity=".25"/>`);
+    fg.push(`<ellipse cx="100" cy="95" rx="60" ry="30" fill="none" stroke="${p}" stroke-width="1" opacity=".15" transform="rotate(60 100 95)"/>`);
+    fg.push(`<ellipse cx="100" cy="95" rx="60" ry="30" fill="none" stroke="${p}" stroke-width=".8" opacity=".1" transform="rotate(120 100 95)"/>`);
+  } else {
+    fg.push(`<rect x="40" y="40" width="120" height="110" rx="6" fill="none" stroke="${p}" stroke-width="1.5" opacity=".18"/>`);
+    fg.push(`<rect x="55" y="55" width="90" height="80" rx="3" fill="none" stroke="${p}" stroke-width="1" opacity=".12"/>`);
+    fg.push(`<line x1="40" y1="95" x2="160" y2="95" stroke="${p}" stroke-width=".5" opacity=".1"/>`);
+    fg.push(`<line x1="100" y1="40" x2="100" y2="150" stroke="${p}" stroke-width=".5" opacity=".1"/>`);
+  }
+  svg += `<g filter="url(#glow-${uid})">${fg.join('')}</g>`;
+
+  // Accent dots (deterministic)
+  const dotN = 4 + Math.floor(rng() * 5);
+  for (let i = 0; i < dotN; i++) {
+    const dx = 20 + Math.floor(rng() * 160);
+    const dy = 20 + Math.floor(rng() * 160);
+    const dr = 1 + rng() * 2;
+    svg += `<circle cx="${dx}" cy="${dy}" r="${dr.toFixed(1)}" fill="${p}" opacity="${(0.15 + rng() * 0.2).toFixed(2)}"/>`;
+  }
+
+  // Hero glyph (centered, glowing)
+  const heroFn = TYPE_GLYPHS[(card.types && card.types[0]) || 'SOCIAL'] || TYPE_GLYPHS.SOCIAL;
+  svg += `<g filter="url(#glow2-${uid})" opacity=".85">${heroFn(p)}</g>`;
+  svg += `<circle cx="100" cy="95" r="3" fill="${p}" opacity=".5"/>`;
+
+  // Corner tech marks (RAR signature)
+  svg += `<path d="M8,24 L8,8 L24,8" fill="none" stroke="${p}" stroke-width="1.5" opacity=".2"/>`;
+  svg += `<path d="M176,8 L192,8 L192,24" fill="none" stroke="${p}" stroke-width="1.5" opacity=".2"/>`;
+  svg += `<path d="M8,176 L8,192 L24,192" fill="none" stroke="${p}" stroke-width="1.5" opacity=".2"/>`;
+  svg += `<path d="M176,192 L192,192 L192,176" fill="none" stroke="${p}" stroke-width="1.5" opacity=".2"/>`;
+
+  svg += `</svg>`;
+  return svg;
+}
 function openCardModal(c) {
   cardModalCard = c;
   const card = c.card;
@@ -1648,9 +1730,7 @@ function openCardModal(c) {
           </div>
           <div class="ac-hp">HP ${card.hp || stats.hp || 0}</div>
         </div>
-        <div class="ac-art" style="color:${primaryColor}">
-          <span class="ac-glyph">${TYPE_GLYPH[primary] || '✨'}</span>
-        </div>
+        <div class="ac-art" style="color:${primaryColor};padding:0">${generateCardArt(card, primaryColor)}</div>
         <div class="ac-types">
           ${types.map(t => `<span class="ac-type-chip" style="background:${RAPP.AGENT_TYPES[t].color}">${t}</span>`).join('')}
           <span style="font-size:9px;color:#6e7681;margin-left:auto;align-self:center">
