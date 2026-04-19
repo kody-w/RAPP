@@ -161,6 +161,15 @@
   }
   .afile button:hover { background: #21262d; color: #e6edf3; border-color: #30363d; }
 
+  /* Compact sign-in status row in Settings */
+  .settings-status-row {
+    flex-direction: row !important; align-items: center; justify-content: space-between;
+    gap: 8px; padding: 8px 10px; background: #0d1117;
+    border: 1px solid #21262d; border-radius: 6px;
+  }
+  .settings-status-row label { margin-bottom: 2px !important; font-size: 10px; }
+  .settings-status-row > div > div { font-size: 12px; color: #8b949e; font-family: "SF Mono", ui-monospace, monospace; }
+
   /* Sources list (Settings) */
   .src-row {
     display: flex; align-items: center; gap: 6px;
@@ -1112,49 +1121,37 @@
   <aside id="settings">
     <header class="aside-head"><span class="ttl">Settings</span><button class="close" data-close="settings">×</button></header>
     <div class="body">
-      <div class="banner">Your token is stored only in your browser (localStorage). There is no server.</div>
-
       <div class="row">
-        <label for="provider">LLM provider</label>
+        <label for="provider">Provider</label>
         <select id="provider">
-          <option value="copilot">GitHub Copilot (default — full Copilot model catalog incl. Claude/Opus)</option>
-          <option value="github">GitHub Models (PAT-style, public catalog)</option>
+          <option value="copilot">GitHub Copilot</option>
+          <option value="github">GitHub Models</option>
           <option value="openai">OpenAI</option>
-          <option value="custom">Custom (any OpenAI-compatible endpoint)</option>
+          <option value="custom">Custom (OpenAI-compatible)</option>
         </select>
       </div>
 
       <div id="provider-copilot">
-        <div class="banner green">
-          Same <strong>device-code flow</strong> the local <code>brainstem.py</code> uses — your Copilot subscription powers the chat. Worker proxies the CORS-blocked Copilot endpoints. Unlocks Claude Sonnet/Opus, GPT-4o, o-series, Gemini.
-        </div>
-        <div class="row" style="flex-direction:row;align-items:center;justify-content:space-between;gap:8px">
+        <div class="row settings-status-row">
           <div>
-            <label style="display:block;margin-bottom:2px">Status</label>
-            <div id="copilot-status" style="font-size:12px;color:#8b949e;font-family:'SF Mono',monospace"></div>
+            <label>Sign-in</label>
+            <div id="copilot-status"></div>
           </div>
           <button class="btn danger" id="cp-signout" hidden>Sign out</button>
         </div>
-        <div class="hint" style="margin-top:6px">Use the green <strong>🔐 Sign in with GitHub</strong> button in the header to sign in.</div>
       </div>
 
       <div id="provider-github" hidden>
-        <div class="banner green">
-          Same GitHub identity, public Models catalog. OAuth web flow via the rapp-auth worker.
-        </div>
-        <div class="row" style="flex-direction:row;align-items:center;justify-content:space-between;gap:8px">
+        <div class="row settings-status-row">
           <div>
-            <label style="display:block;margin-bottom:2px">Status</label>
-            <div id="github-status" style="font-size:12px;color:#8b949e;font-family:'SF Mono',monospace"></div>
+            <label>Sign-in</label>
+            <div id="github-status"></div>
           </div>
           <button class="btn danger" id="github-signout" hidden>Sign out</button>
         </div>
-        <div class="hint" style="margin-top:6px">Use the green <strong>🔐 Sign in with GitHub</strong> button in the header to sign in.</div>
       </div>
 
-      <!-- Hidden hooks so the JS click handlers (#cp-signin, #github-signin)
-           keep working without surfacing duplicate UI. The header #btn-signin
-           is the single sign-in entry point. -->
+      <!-- Hidden click hooks for JS handlers (the visible sign-in lives in the header). -->
       <button id="cp-signin" hidden></button>
       <button id="github-signin" hidden></button>
 
@@ -1176,39 +1173,33 @@
       </div>
 
       <div class="row">
-        <label for="exec-mode">Agent execution mode</label>
+        <label for="exec-mode">Execution</label>
         <select id="exec-mode">
-          <option value="live">Live (default — runs the real Python perform() via Pyodide)</option>
-          <option value="stub">Stub (synthesized results, no Python — for offline / debug)</option>
+          <option value="live">Live (Pyodide)</option>
+          <option value="stub">Stub (debug)</option>
         </select>
-        <span class="hint">Live mode lazy-loads Pyodide (~10 MB) on the first agent call, then runs the actual <code>perform()</code> in-browser. Stub mode echoes a deterministic synthesized result instead — fast, no download, but agents don't really execute.</span>
       </div>
+
       <div class="row">
-        <label>Agent sources (RAR-format registries)</label>
+        <label for="hand-mode-select">Hand</label>
+        <select id="hand-mode-select">
+          <option value="pills">Pills</option>
+          <option value="cards">Cards</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <label>Agent sources</label>
         <div id="sources-list"></div>
         <div class="src-add-row">
-          <input id="source-input" type="text" placeholder="owner/repo (e.g. kody-w/RAR)" autocomplete="off" />
+          <input id="source-input" type="text" placeholder="owner/repo" autocomplete="off" />
           <button class="btn" id="add-source">Add</button>
         </div>
-        <span class="hint">The Browse panel pulls agents from each source's <code>registry.json</code> at the repo root (must follow the <code>rapp-registry/1.0</code> schema). The default <strong>kody-w/RAR</strong> hosts the canonical agent library and can't be removed.</span>
-      </div>
-      <div class="row">
-        <label for="hand-mode-select">Hand display</label>
-        <select id="hand-mode-select">
-          <option value="pills">Pills (default — clean text buttons above the input)</option>
-          <option value="cards">Cards (holographic mini-cards tucked behind the input)</option>
-        </select>
-        <span class="hint">How your loaded agents render above the chat. Both modes share the same data — pills are quick and professional; cards show each agent's holographic preview. Right-click any pill or card to open the full collectible view.</span>
-      </div>
-      <div class="row">
-        <label for="soul">soul.md (system prompt)</label>
-        <textarea id="soul" placeholder="You are a helpful, concise RAPP assistant…"></textarea>
-        <span class="hint">Loaded as the system prompt every turn. SPEC §7.</span>
       </div>
     </div>
     <div class="actions">
       <button class="btn primary" id="save-settings">Save</button>
-      <button class="btn danger" id="reset-data">Wipe local data</button>
+      <button class="btn danger" id="reset-data">Wipe data</button>
     </div>
   </aside>
 
@@ -1585,7 +1576,6 @@ function loadSettings() {
   $('#custom-key').value = state.settings.customKey;
   $('#exec-mode').value = state.settings.execMode;
   $('#hand-mode-select').value = state.settings.handMode || 'pills';
-  $('#soul').value = state.settings.soul;
   refreshProviderUI();
   refreshModelOptions();
   refreshStatus();
@@ -1645,7 +1635,6 @@ function saveSettings() {
   state.settings.customBase = $('#api-base').value.trim().replace(/\/+$/,'') || 'https://api.openai.com/v1';
   state.settings.customKey  = $('#custom-key').value.trim();
   state.settings.execMode = $('#exec-mode').value;
-  state.settings.soul = $('#soul').value;
   state.settings.model = $('#model-sel').value;
   LS.set('settings', state.settings);
   refreshStatus();
