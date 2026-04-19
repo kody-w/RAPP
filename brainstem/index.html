@@ -325,76 +325,74 @@
     background: #161b22; flex-shrink: 0;
   }
 
-  /* Hand cards = mini playing cards above the input. Click to fire that
-     agent's starter prompt; ✕ tucks back to deck; right-click → full holo. */
+  /* Hand = poker hand fanned at the bottom, tucked behind the chat input.
+     Each card is the same .ac-front holo as the modal, scaled .27 by default
+     so it looks like a real card peeking up from below. Hover lifts the card
+     up and grows it to full size — like raising a card from your hand to play. */
   #hand-cards {
-    display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
-    max-width: 760px; margin: 0 auto 14px;
-    transition: opacity .3s, transform .3s;
+    position: relative;
+    display: flex; justify-content: center; align-items: flex-end;
+    height: 110px;                 /* room for the fanned tops to peek */
+    margin: 0 auto -32px;          /* negative bottom = cards tuck behind input */
+    perspective: 1200px;
+    pointer-events: none;          /* let clicks fall through gaps */
   }
   .hand-empty {
     color: #484f58; font-size: 11px; font-style: italic;
-    align-self: center; padding: 18px 0;
+    align-self: flex-end; padding-bottom: 40px;
   }
+
+  /* Each .hand-card is a full-size holo card (290×406) scaled tiny by default.
+     `transform-origin: center bottom` so it grows upward when hovered. */
   .hand-card {
-    position: relative; width: 132px; height: 84px;
-    border-radius: 8px; padding: 0;
-    background: linear-gradient(160deg, #1c2230 0%, #0d1117 100%);
-    border: 1px solid #30363d;
-    cursor: pointer; transition: transform .15s, border-color .15s, box-shadow .15s;
-    color: #e6edf3; font-family: inherit;
-    display: flex; flex-direction: column; overflow: hidden;
-    text-align: left;
+    --rot: 0deg; --tx: 0px; --ty: 0px;
+    position: relative; width: 290px; height: 406px;
+    transform-origin: center bottom;
+    transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scale(.27);
+    transition: transform .45s cubic-bezier(.16, 1, .3, 1),
+                filter .25s, z-index 0s .45s;
+    margin: 0 -98px;               /* heavy overlap so cards fan-stack */
+    cursor: pointer; padding: 0; border: none; background: none;
+    flex-shrink: 0; pointer-events: auto;
+    filter: drop-shadow(0 6px 10px rgba(0,0,0,.65));
   }
   .hand-card:hover {
-    transform: translateY(-3px) scale(1.03);
-    border-color: #58a6ff;
-    box-shadow: 0 6px 16px -4px rgba(31,111,235,.45);
+    transform: translate(0, -340px) rotate(0deg) scale(1);
+    z-index: 200;
+    transition: transform .45s cubic-bezier(.16, 1, .3, 1),
+                filter .25s, z-index 0s 0s;
+    filter: drop-shadow(0 24px 40px rgba(0,0,0,.85))
+            drop-shadow(0 0 30px rgba(201,168,76,.5));
   }
-  .hand-card .hc-strip {
-    height: 4px; flex-shrink: 0; background: #d29922;
-  }
-  .hand-card .hc-body {
-    flex: 1; padding: 6px 8px; display: flex; flex-direction: column;
-    justify-content: space-between; min-height: 0;
-  }
-  .hand-card .hc-top {
-    display: flex; justify-content: space-between; align-items: flex-start; gap: 4px;
-  }
-  .hand-card .hc-name {
-    font-size: 11px; font-weight: 600; color: #e6edf3;
-    line-height: 1.2; overflow: hidden; text-overflow: ellipsis;
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-  }
-  .hand-card .hc-rare {
-    font-size: 8px; letter-spacing: .8px; color: #8b949e;
-    text-transform: uppercase; flex-shrink: 0;
-  }
-  .hand-card .hc-bot {
-    display: flex; justify-content: space-between; align-items: center;
-    font-size: 9px; color: #6e7681;
-  }
-  .hand-card .hc-type {
-    padding: 1px 6px; border-radius: 8px; color: #fff;
-    font-size: 8px; font-weight: 600; letter-spacing: .5px;
-    background: #d29922;
-  }
-  .hand-card .hc-hp { color: #f85149; font-weight: 600; font-size: 9px; }
-  .hand-card .hc-x {
-    position: absolute; top: 4px; right: 4px;
-    width: 16px; height: 16px; border-radius: 50%;
-    background: rgba(13,17,23,.85); color: #6e7681;
-    border: 1px solid #30363d;
+  /* The .ac-front already has position:absolute;inset:0 and renders the holo. */
+  .hand-card .ac-face { position: absolute; inset: 0; }
+
+  /* Activate the holo shimmer/prism/fresnel/scanlines on hand-card hover too
+     (the original rules key off .ac-wrap:hover, which we don't have here). */
+  .hand-card:hover .holo-shimmer-track,
+  .hand-card:hover .holo-prism,
+  .hand-card:hover .holo-fresnel,
+  .hand-card:hover .holo-scanlines { opacity: 1; }
+
+  /* ✕ tuck-back-to-deck button — only visible when card is hovered/lifted. */
+  .hand-x {
+    position: absolute; top: 8px; left: 8px; z-index: 10;
+    width: 24px; height: 24px; border-radius: 50%;
+    background: rgba(13,17,23,.9); color: #c9a84c;
+    border: 1.5px solid #c9a84c;
     display: flex; align-items: center; justify-content: center;
-    font-size: 9px; line-height: 1; opacity: 0; transition: opacity .15s, color .15s;
+    font-size: 13px; line-height: 1; cursor: pointer;
+    opacity: 0; transition: opacity .25s .1s, color .15s, border-color .15s;
+    font-family: inherit; padding: 0;
   }
-  .hand-card:hover .hc-x { opacity: 1; }
-  .hand-card .hc-x:hover { color: #f85149; border-color: #f85149; }
+  .hand-card:hover .hand-x { opacity: 1; }
+  .hand-x:hover { color: #f85149; border-color: #f85149; }
+
   .hand-card.flash { animation: cardflash 1.2s ease-out; }
   @keyframes cardflash {
-    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(63,185,80,.5); }
-    50% { transform: scale(1.06); box-shadow: 0 0 0 8px rgba(63,185,80,0); }
-    100% { transform: scale(1); }
+    0%   { filter: drop-shadow(0 6px 10px rgba(0,0,0,.65)); }
+    50%  { filter: drop-shadow(0 0 24px rgba(63,185,80,.9)); }
+    100% { filter: drop-shadow(0 6px 10px rgba(0,0,0,.65)); }
   }
 
   .input-row {
@@ -1913,41 +1911,37 @@ function renderHand() {
   const row = $('#hand-cards');
   $$('.hand-card', row).forEach(n => n.remove());
   const empty = $('#hand-empty');
-  if (state.hand.size === 0) { empty.style.display = 'inline'; return; }
+  const cards = [...state.hand]
+    .map(f => state.binder.cards.find(x => x.filename === f))
+    .filter(Boolean);
+  if (cards.length === 0) { empty.style.display = 'inline'; return; }
   empty.style.display = 'none';
-  for (const f of state.hand) {
-    const c = state.binder.cards.find(x => x.filename === f);
-    if (!c) continue;
-    const card = c.card || {};
-    const stats = card.stats || {};
-    const primary = (card.types || ['SOCIAL'])[0];
-    const color = RAPP.AGENT_TYPES[primary]?.color || '#d29922';
-    const name = c.parsed?.agentName || c.manifest.display_name || c.name;
-    const rare = (card.rarity_label || card.rarity || 'core').toUpperCase();
-    const hp = card.hp || stats.hp || 0;
+
+  // Fan layout: rotate each card around its bottom-center, with the middle
+  // card upright and the outer cards splayed left/right. Y-offset adds a
+  // shallow arc so the fan feels held in a hand.
+  const n = cards.length;
+  const SPREAD = 14;          // degrees between adjacent cards
+  const ARC    = 6;           // px lift per step away from center
+  cards.forEach((c, i) => {
+    const offset = i - (n - 1) / 2;
+    const rot = offset * SPREAD;
+    const ty  = Math.abs(offset) * ARC;
 
     const el = document.createElement('button');
     el.type = 'button';
     el.className = 'hand-card';
-    el.dataset.filename = f;
-    el.title = `Click to ask: "${promptForCard(c)}"\nRight-click for full card`;
-    el.innerHTML = `
-      <span class="hc-strip" style="background:${color}"></span>
-      <div class="hc-body">
-        <div class="hc-top">
-          <div class="hc-name">${escapeHtml(name)}</div>
-          <div class="hc-rare">${escapeHtml(rare)}</div>
-        </div>
-        <div class="hc-bot">
-          <span class="hc-type" style="background:${color}">${escapeHtml(primary)}</span>
-          <span class="hc-hp">HP ${hp}</span>
-        </div>
-      </div>
-      <span class="hc-x" title="Tuck back to deck">✕</span>
+    el.dataset.filename = c.filename;
+    el.style.setProperty('--rot', `${rot}deg`);
+    el.style.setProperty('--ty', `${ty}px`);
+    el.style.zIndex = String(10 + i);     // later cards sit on top in the fan
+    el.title = `Click to ask: "${promptForCard(c)}"\nRight-click for full card view`;
+    el.innerHTML = holoFrontHtml(c) + `
+      <button type="button" class="hand-x" title="Tuck back to deck">✕</button>
     `;
-    el.querySelector('.hc-x').addEventListener('click', e => {
+    el.querySelector('.hand-x').addEventListener('click', e => {
       e.stopPropagation(); e.preventDefault();
-      state.hand.delete(f); persistHand(); renderHand(); renderBinder();
+      state.hand.delete(c.filename); persistHand(); renderHand(); renderBinder();
     });
     el.addEventListener('click', () => {
       $('#input').value = promptForCard(c);
@@ -1957,7 +1951,7 @@ function renderHand() {
       e.preventDefault(); openCardModal(c);
     });
     row.appendChild(el);
-  }
+  });
 }
 
 function renderAgents() {
@@ -2100,6 +2094,70 @@ function generateCardArt(card, primaryColor) {
   svg += `</svg>`;
   return svg;
 }
+// Build the front face of the holo card. Same markup the modal uses; pulled
+// out so renderHand can drop a real card into the fanned poker hand.
+function holoFrontHtml(c) {
+  const card = c.card || {};
+  const stats = card.stats || {};
+  const types = card.types || ['SOCIAL'];
+  const primary = types[0];
+  const primaryColor = RAPP.AGENT_TYPES[primary]?.color || '#d29922';
+  const rarity = card.rarity || 'core';
+  const display = c.manifest.display_name || c.parsed?.agentName || c.name;
+
+  const TYPE_TO_PIP = { LOGIC:'U', DATA:'G', SOCIAL:'U', SHIELD:'W', CRAFT:'B', HEAL:'R', WEALTH:'R' };
+  const genericCost = Math.max(1, Math.min(7, Math.round(((card.hp || 50) - 30) / 12)));
+  const pipsHtml = `<span class="holo-pip N">${genericCost}</span>` +
+    types.map(t => { const p = TYPE_TO_PIP[t] || 'U'; return `<span class="holo-pip ${p}">${p}</span>`; }).join('');
+
+  const TYPE_NOUNS = { LOGIC:'Mind', DATA:'Pipeline', SOCIAL:'Voice', SHIELD:'Sentinel', CRAFT:'Construct', HEAL:'Healer', WEALTH:'Broker' };
+  const noun = TYPE_NOUNS[primary] || 'Agent';
+  const isLegendary = rarity === 'mythic';
+  const typeLine = `${isLegendary ? 'Legendary ' : ''}Agent — ${noun}${types[1] ? ' ' + (TYPE_NOUNS[types[1]] || '') : ''}`;
+
+  const TAP = '<span class="holo-pip N" style="display:inline-flex;width:14px;height:14px;font-size:8px;vertical-align:middle;margin:0 2px">T</span>';
+  const rulesHtml = (card.abilities || []).slice(0, 2).map(a =>
+    `<div class="holo-ability"><span class="kw">${escapeHtml(a.name)}${TAP}:</span> ${escapeHtml(a.text || c.manifest.description || "Trigger this agent's perform().")}</div>`
+  ).join('');
+
+  const flavorLine = card.flavor || c.manifest.description || 'A single file. A single promise.';
+  const flavorHtml = `<div class="holo-flavor">"${escapeHtml(flavorLine)}" <span class="attr">— ${escapeHtml(c.manifest.author || 'RAPP Collective')}</span></div>`;
+
+  const power = Math.max(1, Math.round((stats.atk || 14) / 14));
+  const toughness = Math.max(1, Math.round((stats.def || 14) / 14));
+
+  const setCode = ({ mythic:'HOLO', rare:'RARE', core:'CORE', starter:'STRT' })[rarity] || 'CORE';
+  const promo = rarity === 'mythic' ? '<span class="holo-promo">★ PROMO</span> · ' : '';
+  const author = (c.manifest.author || 'RAPP').toUpperCase();
+
+  return `
+    <div class="ac-face ac-front r-${rarity}">
+      <div class="holo-gem ${rarity}"></div>
+      <div class="holo-shimmer-track"></div>
+      <div class="holo-prism"></div>
+      <div class="holo-fresnel"></div>
+      <div class="holo-scanlines"></div>
+      <div class="holo-header">
+        <div style="min-width:0;flex:1">
+          <div class="holo-name">${escapeHtml(display)}</div>
+          <div class="holo-title">${escapeHtml(c.manifest.description ? c.manifest.description.split('.')[0] : 'Single-file agent')}</div>
+        </div>
+        <div class="holo-pips">${pipsHtml}</div>
+      </div>
+      <div class="holo-art">${generateCardArt(card, primaryColor)}</div>
+      <div class="holo-type">${escapeHtml(typeLine)}</div>
+      <div class="holo-text">
+        ${rulesHtml}
+        ${flavorHtml}
+      </div>
+      <div class="holo-footer">
+        <span class="holo-rarity ${rarity}">${setCode} ${promo}· ${escapeHtml(card.rarity_label || rarity).toUpperCase()} · <span class="holo-artist">${escapeHtml(author)}</span></span>
+        <span class="holo-stats">${power}/${toughness}</span>
+      </div>
+    </div>
+  `;
+}
+
 function openCardModal(c) {
   cardModalCard = c;
   const card = c.card;
