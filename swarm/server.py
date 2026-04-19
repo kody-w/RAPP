@@ -48,7 +48,7 @@ import threading
 import time
 import traceback
 import uuid
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Dict, List, Optional
 from urllib.parse import urlparse
@@ -536,13 +536,31 @@ class SwarmStore:
     # ── Agent loading & execution ──
 
     def load_agents(self, swarm_guid):
-        """Import every agent file under this swarm's agents/ dir. Cached."""
+        """Import every agent file under this swarm's agents/ dir. Cached.
+
+        Threading: under ThreadingHTTPServer, 8 parallel /agent calls into
+        the same swarm previously raced on sys.modules mutations during
+        importlib.exec_module → some threads returned empty agent dicts
+        → 404 'unknown agent'. The whole load is now serialized under
+        self._lock; the fast path (cache hit) doesn't need it because
+        dict reads are atomic in CPython."""
         if swarm_guid in self._loaded_agents:
             return self._loaded_agents[swarm_guid]
 
+        with self._lock:
+            # Re-check inside the lock — another thread may have populated
+            # the cache while we were waiting.
+            if swarm_guid in self._loaded_agents:
+                return self._loaded_agents[swarm_guid]
+
+            return self._load_agents_locked(swarm_guid)
+
+    def _load_agents_locked(self, swarm_guid):
+        """The actual load. Caller must hold self._lock."""
         agents = {}
         ad = self.agents_dir(swarm_guid)
         if not ad.exists():
+            self._loaded_agents[swarm_guid] = agents
             return agents
 
         # Allow agents to do `from agents.basic_agent import BasicAgent`.
@@ -1272,7 +1290,11 @@ def main():
     print(f"    Settings → 🐝 Deploy as Swarm → Push to endpoint: {url}\n")
     print(f"  Ctrl-C to stop.\n")
 
-    server = HTTPServer((args.host, args.port), SwarmHandler)
+    # ThreadingHTTPServer so concurrent BookFactory / chat / T2T requests
+    # run in parallel — single-threaded HTTPServer makes a 90s LLM call
+    # block every other request behind it. Threading buys us 8x speedup
+    # on the cycle-3 parallel BookFactory runs.
+    server = ThreadingHTTPServer((args.host, args.port), SwarmHandler)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

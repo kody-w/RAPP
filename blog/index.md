@@ -139,3 +139,14 @@ Field notes from building the RAPP brainstem, swarm server, tether, registry, an
 87. [The user-correction loop](./87-user-correction-loop.md)
 88. [Agent vs human, same source material](./88-agent-vs-human-same-source.md)
 89. [The double-jump loop: Claude and BookFactory improving each other generation by generation](./89-double-jump-loop.md)
+
+## Cycle 3: testing BookFactory v2 on new content shapes
+
+90. [Mobile PWA: IndexedDB as the filesystem](./90-mobile-pwa-idb-workspace.md)
+91. [Offline-resilient send queue](./91-offline-resilient-send-queue.md)
+92. [Twin Simulator: deterministic ports from name hash](./92-twin-sim-deterministic-ports.md)
+93. [Your first agent.py — a tutorial](./93-first-agent-py-tutorial.md)
+94. [A Twin Stack FAQ](./94-twin-stack-faq.md)
+95. [The investor one-pager](./95-investor-one-pager.md)
+96. [README from scratch](./96-readme-from-scratch.md)
+97. [What it's like to ship 4000 lines in 24 hours with an LLM partner](./97-shipping-with-an-llm-partner.md)

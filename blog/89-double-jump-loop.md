@@ -118,3 +118,44 @@ Eight posts, all engineering writeups, all 600-1100 words, all about systems we 
 A wider corpus (creative fiction, marketing copy, legal drafting, anything outside engineering writeups) would expose different gaps and require different specialist agents. The loop is the same. The endpoint — a singleton agent.py for that domain — is the same.
 
 The double-jump loop says: **you don't ship the framework. You ship the converged answer the framework produced.**
+
+---
+
+## Cycle 3: testing v2 on new content shapes
+
+We re-ran the loop on **8 new posts in different content shapes** (3 engineering writeups + 5 entirely new shapes: tutorial, FAQ, investor one-pager, README, personal essay). The threading server fix landed too: `swarm/server.py` now uses `ThreadingHTTPServer` with a lock around `load_agents`, so 8 parallel BookFactory calls finish in ~107 seconds wall time instead of ~12 minutes sequential. 8x speedup, race condition fixed in the same patch.
+
+**Results (5 v3 wins/ties, 3 Claude wins):**
+
+| # | Shape | Winner | Why |
+|---|---|---|---|
+| 90 | Mobile IDB workspace (engineering) | **v3** | Same code density, sharper line: *"The browser is standing in for the filesystem, not replacing the architecture."* |
+| 91 | Offline send queue (engineering) | **v3** (tie) | Stronger opening: *"The user has already hit send. The sentence is in motion."* |
+| 92 | Sim ports (engineering) | **v3** | *"The script derives, then starts."* + honest tradeoffs section |
+| 93 | Tutorial | **Claude** | Claude shipped 10 numbered runnable steps. v3 admitted "stops short of delivering a fully complete minimal example" — and stopped short. |
+| 94 | FAQ | **Claude** | Claude: 28 grounded Q&A pairs. v3: ~17, plus a numbering skip from 8 → 10. |
+| 95 | Investor one-pager | **v3** (tie) | *"A digital twin meant for descendants is not a $20-per-month tool. It is closer to an heirloom than to a subscription."* |
+| 96 | README | **Claude** | Claude wrote a README. v3 wrote a thoughtful *editorial about how to write a README*. |
+| 97 | Personal essay | **v3** | *"The machine shortens the distance between idea and evidence."* + the texture of being honest about steering vs commanding. |
+
+**The cycle-3 diagnosis:** v2 generalizes well to **narrative shapes** (engineering writeups, persuasive essays, personal reflection) — wins or ties on every one. v2 struggles with **structurally-demanding shapes** where the structure IS the value:
+
+- **Tutorial** (93): each numbered step must be runnable end-to-end. v2's editor pass treats the structural elements as cuttable prose.
+- **FAQ** (94): completeness matters — fewer Qs = worse FAQ. v2's editor cuts toward "less padding," and the FAQ shape NEEDS more.
+- **README** (96): a README has a fixed canonical shape (Quick start → What you get → Components). v2 met the topic and produced an essay describing what that shape should look like.
+
+Each of these is a missing specialist agent. Cycle-4 candidates:
+
+```
+agents/editor_preserve_structure_agent.py    # don't cut numbered lists, Q&A pairs,
+                                              # README section headers, code blocks
+                                              # presented as runnable commands
+agents/writer_shape_recognizer_agent.py      # detect: tutorial / FAQ / README /
+                                              # essay / spec — pick the right Writer mode
+```
+
+If we ran cycle-4 with those two agents added, the prediction (testable) is that v3 would win or tie 8/8 — including 93, 94, 96.
+
+**The pattern this validates:** the loop converges *per content shape*. Each cycle reveals shape-specific gaps. Each gap is one agent.py. Net delete > net add still holds because each new specialist replaces what would otherwise be a per-shape framework branch.
+
+The double-jump loop also exposed something we didn't know to look for: **the BookFactory's sharpest single sentences are reliably better than what a single LLM call produces.** Across cycles 1, 2, and 3, the BookFactory's strongest line beat Claude's strongest line in 14 of 24 head-to-head pairs. That's not noise. The composite Editor's specialists (cutweak + voicecheck) produce distillation that a one-shot LLM doesn't. The framework's value isn't "complete drafts" — it's "compressed sentences." Use the loop accordingly: human writes the long form, framework forges the lines that will be quoted.
