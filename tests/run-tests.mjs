@@ -327,6 +327,20 @@ class TinyAgent(BasicAgent):
     'swarm/server.py',
     'install-swarm.sh',
     'tests/test-sealing-snapshot.sh',
+    'tests/test-hero-deploy.sh',
+    'tests/test-t2t.sh',
+    'tests/test-llm-chat.sh',
+    'swarm/t2t.py',
+    'swarm/llm.py',
+    'swarm/chat.py',
+    'brainstem/onboard/index.html',
+    'brainstem/onboard/registry.json',
+    'hippocampus/function_app.py',
+    'hippocampus/host.json',
+    'hippocampus/requirements.txt',
+    'hippocampus/build.sh',
+    'hippocampus/provision-twin.sh',
+    'hippocampus/README.md',
   ]) {
     await test(`twin file present: ${p}`, () => {
       const full = path.join(ROOT, p);

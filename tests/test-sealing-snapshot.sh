@@ -67,6 +67,9 @@ all_but_last() { sed '$d'; }
 # ── Setup ──────────────────────────────────────────────────────────────
 
 echo "Setup: clean state at $ROOT"
+# Sealed snapshots get chmod 444/555 — force writable before removal so a
+# previous run's read-only tree doesn't block this run's cleanup.
+[ -e "$ROOT" ] && chmod -R u+w "$ROOT" 2>/dev/null
 rm -rf "$ROOT"
 
 echo "Setup: starting swarm server on :$PORT"

@@ -3,3 +3,10 @@ __pycache__/
 sessions.json
 .DS_Store
 *.log
+
+# Secrets — never commit
+.env
+.env.local
+.env.*.local
+*.secret
+secrets.json
