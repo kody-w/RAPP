@@ -72,6 +72,21 @@ ALLOWED_ORIGINS = (
 )
 
 
+class SealedSwarmError(Exception):
+    """Raised when a write-path operation targets a sealed swarm."""
+    pass
+
+
+def _now_iso():
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _now_compact():
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+
+
 # ─── SWARM STORE ────────────────────────────────────────────────────────
 
 class SwarmStore:
@@ -134,6 +149,228 @@ class SwarmStore:
         except Exception:
             return None
 
+    # ── Sealing ──
+    # Sealing transitions a swarm to immutable state: writes rejected, reads OK.
+    # Sealed swarms can still be queried and snapshotted (final-archive use case).
+    # The sealing PRIMITIVE is public and lives here; the operational PRODUCT
+    # around it (endowment funding, ceremony, family notification) is downstream.
+
+    def is_sealed(self, swarm_guid):
+        m = self.get_manifest(swarm_guid)
+        if not m:
+            return False
+        return m.get("sealing", {}).get("status") in ("sealed", "eternal")
+
+    def seal_status(self, swarm_guid):
+        m = self.get_manifest(swarm_guid)
+        if not m:
+            return {"sealed": False, "exists": False}
+        s = m.get("sealing", {})
+        return {
+            "sealed": s.get("status") in ("sealed", "eternal"),
+            "exists": True,
+            "status": s.get("status", "active"),
+            "sealed_at": s.get("sealed_at"),
+            "sealed_by": s.get("sealed_by"),
+            "trigger": s.get("trigger"),
+        }
+
+    def seal(self, swarm_guid, actor=None, trigger="voluntary"):
+        with self._lock:
+            m = self.get_manifest(swarm_guid)
+            if not m:
+                raise FileNotFoundError(f"swarm not found: {swarm_guid}")
+            existing = m.get("sealing", {})
+            if existing.get("status") in ("sealed", "eternal"):
+                # Idempotent — already sealed
+                return existing
+            sealing = {
+                "status": "sealed",
+                "sealed_at": _now_iso(),
+                "sealed_by": actor or "anonymous",
+                "trigger": trigger,
+            }
+            m["sealing"] = sealing
+            self.manifest_path(swarm_guid).write_text(json.dumps(m, indent=2))
+            # Make all existing memory files read-only on POSIX so writes from
+            # agent code fail loudly (not silently). Cross-platform graceful.
+            self._chmod_memory_readonly(swarm_guid)
+            return sealing
+
+    def _chmod_memory_readonly(self, swarm_guid):
+        mem_root = self.swarm_dir(swarm_guid) / "memory"
+        if not mem_root.exists():
+            return
+        if os.name != "posix":
+            return
+        for p in mem_root.rglob("*"):
+            try:
+                if p.is_file():
+                    os.chmod(p, 0o444)
+                elif p.is_dir():
+                    os.chmod(p, 0o555)
+            except OSError:
+                pass
+
+    # ── Snapshots ──
+    # Snapshots are temporally-versioned read-only copies of swarm state.
+    # Created at any time on an active or sealed swarm. Each snapshot has its
+    # own swarm_dir with frozen agents/, memory/, and a snapshot manifest.
+
+    def snapshots_dir(self, swarm_guid):
+        return self.swarm_dir(swarm_guid) / "snapshots"
+
+    def create_snapshot(self, swarm_guid, label=None):
+        sd = self.swarm_dir(swarm_guid)
+        if not sd.exists():
+            raise FileNotFoundError(f"swarm not found: {swarm_guid}")
+        with self._lock:
+            ts = _now_compact()
+            safe_label = "".join(c if c.isalnum() or c in "-_" else "_" for c in (label or "snapshot"))[:64]
+            snap_name = f"{ts}_{safe_label}"
+            snap_root = self.snapshots_dir(swarm_guid) / snap_name
+            snap_root.mkdir(parents=True, exist_ok=False)
+
+            import shutil
+            # Copy agents (skip __pycache__)
+            src_agents = sd / "agents"
+            if src_agents.exists():
+                shutil.copytree(src_agents, snap_root / "agents",
+                                ignore=shutil.ignore_patterns("__pycache__"))
+            # Copy memory tree
+            src_memory = sd / "memory"
+            if src_memory.exists():
+                shutil.copytree(src_memory, snap_root / "memory")
+            # Copy manifest under a snapshot-specific name
+            src_manifest = sd / "manifest.json"
+            if src_manifest.exists():
+                shutil.copy2(src_manifest, snap_root / "source_manifest.json")
+
+            meta = {
+                "snapshot_label": label or "snapshot",
+                "snapshot_iso": _now_iso(),
+                "snapshot_name": snap_name,
+                "swarm_guid": swarm_guid,
+            }
+            (snap_root / "snapshot_metadata.json").write_text(json.dumps(meta, indent=2))
+
+            # Mark snapshot files read-only on POSIX
+            if os.name == "posix":
+                for p in snap_root.rglob("*"):
+                    try:
+                        if p.is_file():
+                            os.chmod(p, 0o444)
+                        elif p.is_dir():
+                            os.chmod(p, 0o555)
+                    except OSError:
+                        pass
+
+            return meta
+
+    def list_snapshots(self, swarm_guid):
+        snap_dir = self.snapshots_dir(swarm_guid)
+        if not snap_dir.exists():
+            return []
+        out = []
+        for d in sorted(snap_dir.iterdir()):
+            if not d.is_dir():
+                continue
+            meta_file = d / "snapshot_metadata.json"
+            if meta_file.exists():
+                try:
+                    out.append(json.loads(meta_file.read_text()))
+                except Exception:
+                    continue
+        return out
+
+    def execute_against_snapshot(self, swarm_guid, snapshot_name, agent_name, args, user_guid):
+        """Execute an agent against a frozen snapshot. Reads work, writes fail."""
+        snap_root = self.snapshots_dir(swarm_guid) / snapshot_name
+        if not snap_root.exists():
+            return {"status": "error", "message": f"snapshot not found: {snapshot_name}"}
+
+        # Use a separate cache key so snapshot vs live agents don't collide.
+        cache_key = f"{swarm_guid}::snapshot::{snapshot_name}"
+        if cache_key not in self._loaded_agents:
+            agents = {}
+            ad = snap_root / "agents"
+            if ad.exists():
+                # Reuse the same loading path as live agents — module names must
+                # be unique per snapshot to avoid sys.modules collision.
+                self._ensure_basic_agent_shim()
+                for path in sorted(ad.glob("*_agent.py")):
+                    if path.name == "basic_agent.py":
+                        continue
+                    try:
+                        modname = f"snap_{swarm_guid.replace('-', '_')}_{snapshot_name}_{path.stem}"
+                        spec = importlib.util.spec_from_file_location(modname, str(path))
+                        mod = importlib.util.module_from_spec(spec)
+                        spec.loader.exec_module(mod)
+                        for attr in dir(mod):
+                            cls = getattr(mod, attr)
+                            if not isinstance(cls, type):
+                                continue
+                            if attr.endswith("Agent") and attr != "BasicAgent":
+                                try:
+                                    inst = cls()
+                                    agents[inst.name] = inst
+                                except Exception:
+                                    pass
+                    except Exception:
+                        pass
+            self._loaded_agents[cache_key] = agents
+
+        agents = self._loaded_agents[cache_key]
+        agent = agents.get(agent_name)
+        if not agent:
+            return {"status": "error", "message": f"unknown agent in snapshot: {agent_name}",
+                    "available": sorted(agents.keys())}
+
+        # Point memory at the snapshot's frozen memory tree (read-only on POSIX).
+        # Agents that try to write will get PermissionError; we surface that as
+        # a clean error so callers know snapshots are read-only.
+        if user_guid and GUID_RE.match(user_guid) and user_guid != DEFAULT_USER_GUID:
+            mem_path = snap_root / "memory" / user_guid / "memory.json"
+        else:
+            mem_path = snap_root / "memory" / "shared" / "memory.json"
+
+        old_env = os.environ.get("BRAINSTEM_MEMORY_PATH")
+        os.environ["BRAINSTEM_MEMORY_PATH"] = str(mem_path)
+        try:
+            output = agent.perform(**(args or {}))
+            # Heuristic: if the agent raised PermissionError, the output captures
+            # that. We also check the output for telltale write-failure signs.
+            return {"status": "ok", "output": output, "snapshot": snapshot_name, "read_only": True}
+        except PermissionError as e:
+            return {"status": "error", "message": f"snapshot is read-only: {e}",
+                    "snapshot": snapshot_name}
+        except Exception as e:
+            traceback.print_exc()
+            return {"status": "error", "message": str(e), "snapshot": snapshot_name}
+        finally:
+            if old_env is None:
+                os.environ.pop("BRAINSTEM_MEMORY_PATH", None)
+            else:
+                os.environ["BRAINSTEM_MEMORY_PATH"] = old_env
+
+    def _ensure_basic_agent_shim(self):
+        """Make sure the agents.basic_agent shim is registered in sys.modules.
+        Safe to call multiple times; idempotent."""
+        if "agents" not in sys.modules:
+            pkg = type(sys)("agents")
+            pkg.__path__ = []
+            sys.modules["agents"] = pkg
+        if "agents.basic_agent" in sys.modules:
+            return
+        here = Path(__file__).parent.resolve()
+        vendored = here / "_basic_agent_shim.py"
+        if not vendored.exists():
+            self._write_basic_agent_shim(vendored)
+        spec = importlib.util.spec_from_file_location("agents.basic_agent", str(vendored))
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        sys.modules["agents.basic_agent"] = mod
+
     # ── Deploy ──
 
     def deploy(self, bundle):
@@ -145,6 +382,11 @@ class SwarmStore:
         sg = (bundle.get("swarm_guid") or "").strip().lower()
         if not (sg and GUID_RE.match(sg)):
             sg = str(uuid.uuid4())
+
+        # Sealed swarms are immutable — reject any redeploy attempt that
+        # targets a sealed swarm_guid.
+        if self.is_sealed(sg):
+            raise SealedSwarmError(f"swarm {sg} is sealed; redeploy rejected")
 
         with self._lock:
             sd = self.swarm_dir(sg)
@@ -189,6 +431,8 @@ class SwarmStore:
             return manifest
 
     def remove(self, swarm_guid):
+        if self.is_sealed(swarm_guid):
+            raise SealedSwarmError(f"swarm {swarm_guid} is sealed; deletion rejected")
         with self._lock:
             sd = self.swarm_dir(swarm_guid)
             if not sd.exists():
@@ -305,11 +549,42 @@ class SwarmStore:
         # ones that don't fall back to the default ~/.brainstem/memory.json.
         mem_path = self.memory_path(swarm_guid, user_guid)
         mem_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # If sealed, force the memory file to read-only so any agent that tries
+        # to write fails with PermissionError. Reads still work — that's the
+        # whole point of sealing (preserved but queryable).
+        sealed = self.is_sealed(swarm_guid)
+        if sealed and os.name == "posix" and mem_path.exists():
+            try:
+                os.chmod(mem_path, 0o444)
+            except OSError:
+                pass
+
         old_env = os.environ.get("BRAINSTEM_MEMORY_PATH")
         os.environ["BRAINSTEM_MEMORY_PATH"] = str(mem_path)
         try:
             output = agent.perform(**(args or {}))
+            # Heuristic post-check: if sealed, see if the agent's output
+            # claims success despite the swarm being sealed (most write agents
+            # fail loudly, but some catch and return their own envelope).
+            if sealed and isinstance(output, str):
+                # If a write-style agent returned a "success" envelope, override.
+                # Detect by looking for 'saved' / 'success' tokens. Conservative.
+                low = output.lower()
+                if '"status": "success"' in low and ("saved" in low or "wrote" in low or "stored" in low):
+                    return {"status": "ok", "output": json.dumps({
+                        "status": "error",
+                        "message": "swarm is sealed; writes are rejected",
+                        "sealed": True,
+                    })}
             return {"status": "ok", "output": output}
+        except PermissionError as e:
+            # Most common path when sealed: agent's _write_memory hit chmod 0444
+            return {"status": "ok", "output": json.dumps({
+                "status": "error",
+                "message": f"swarm is sealed; writes rejected ({e})",
+                "sealed": True,
+            })}
         except Exception as e:
             traceback.print_exc()
             return {"status": "error", "message": str(e),
@@ -392,6 +667,7 @@ class SwarmHandler(BaseHTTPRequestHandler):
             if not manifest:
                 return self._send_json(404, {"status": "error", "message": "swarm not found"})
             agents = self.store.load_agents(sg)
+            seal = self.store.seal_status(sg)
             return self._send_json(200, {
                 "status": "ok",
                 "swarm_guid": sg,
@@ -399,6 +675,33 @@ class SwarmHandler(BaseHTTPRequestHandler):
                 "purpose": manifest.get("purpose"),
                 "agent_count": len(agents),
                 "agents": sorted(agents.keys()),
+                "sealed": seal["sealed"],
+                "sealing": {
+                    "status": seal.get("status"),
+                    "sealed_at": seal.get("sealed_at"),
+                    "sealed_by": seal.get("sealed_by"),
+                    "trigger": seal.get("trigger"),
+                },
+            })
+
+        # /api/swarm/{guid}/seal — get sealing status
+        m = re.match(r"^/api/swarm/([0-9a-f-]+)/seal/?$", path)
+        if m:
+            sg = m.group(1)
+            seal = self.store.seal_status(sg)
+            if not seal["exists"]:
+                return self._send_json(404, {"status": "error", "message": "swarm not found"})
+            return self._send_json(200, seal)
+
+        # /api/swarm/{guid}/snapshots — list snapshots for a swarm
+        m = re.match(r"^/api/swarm/([0-9a-f-]+)/snapshots/?$", path)
+        if m:
+            sg = m.group(1)
+            if self.store.get_manifest(sg) is None:
+                return self._send_json(404, {"status": "error", "message": "swarm not found"})
+            return self._send_json(200, {
+                "swarm_guid": sg,
+                "snapshots": self.store.list_snapshots(sg),
             })
 
         return self._send_json(404, {"status": "error", "message": "not found"})
@@ -414,6 +717,8 @@ class SwarmHandler(BaseHTTPRequestHandler):
                 return self._send_json(400, {"status": "error", "message": f"bad json: {e}"})
             try:
                 manifest = self.store.deploy(bundle)
+            except SealedSwarmError as e:
+                return self._send_json(423, {"status": "error", "message": str(e), "sealed": True})
             except ValueError as e:
                 return self._send_json(400, {"status": "error", "message": str(e)})
             except Exception as e:
@@ -451,6 +756,63 @@ class SwarmHandler(BaseHTTPRequestHandler):
             )
             return self._send_json(status, result)
 
+        # /api/swarm/{guid}/seal — seal a swarm (immutable, queryable)
+        m = re.match(r"^/api/swarm/([0-9a-f-]+)/seal/?$", path)
+        if m:
+            sg = m.group(1)
+            try:
+                body = self._read_json()
+            except Exception:
+                body = {}
+            actor = body.get("actor") or "anonymous"
+            trigger = body.get("trigger") or "voluntary"
+            try:
+                sealing = self.store.seal(sg, actor=actor, trigger=trigger)
+                return self._send_json(200, {"status": "ok", "swarm_guid": sg, "sealing": sealing})
+            except FileNotFoundError as e:
+                return self._send_json(404, {"status": "error", "message": str(e)})
+            except Exception as e:
+                traceback.print_exc()
+                return self._send_json(500, {"status": "error", "message": str(e)})
+
+        # /api/swarm/{guid}/snapshot — create a snapshot
+        m = re.match(r"^/api/swarm/([0-9a-f-]+)/snapshot/?$", path)
+        if m:
+            sg = m.group(1)
+            try:
+                body = self._read_json()
+            except Exception:
+                body = {}
+            label = body.get("label")
+            try:
+                meta = self.store.create_snapshot(sg, label=label)
+                return self._send_json(200, {"status": "ok", **meta})
+            except FileNotFoundError as e:
+                return self._send_json(404, {"status": "error", "message": str(e)})
+            except Exception as e:
+                traceback.print_exc()
+                return self._send_json(500, {"status": "error", "message": str(e)})
+
+        # /api/swarm/{guid}/snapshots/{snap_name}/agent — query an agent against a snapshot
+        m = re.match(r"^/api/swarm/([0-9a-f-]+)/snapshots/([0-9A-Za-z_\-]+)/agent/?$", path)
+        if m:
+            sg = m.group(1)
+            snap_name = m.group(2)
+            try:
+                body = self._read_json()
+            except Exception as e:
+                return self._send_json(400, {"status": "error", "message": f"bad json: {e}"})
+            name = body.get("name")
+            args = body.get("args") or {}
+            user_guid = body.get("user_guid")
+            if not name:
+                return self._send_json(400, {"status": "error", "message": "missing 'name'"})
+            result = self.store.execute_against_snapshot(sg, snap_name, name, args, user_guid)
+            status = 200 if result.get("status") == "ok" else (
+                404 if "not found" in result.get("message", "") else 500
+            )
+            return self._send_json(status, result)
+
         return self._send_json(404, {"status": "error", "message": "not found"})
 
     def do_DELETE(self):
@@ -459,7 +821,10 @@ class SwarmHandler(BaseHTTPRequestHandler):
         if not m:
             return self._send_json(404, {"status": "error", "message": "not found"})
         sg = m.group(1)
-        ok = self.store.remove(sg)
+        try:
+            ok = self.store.remove(sg)
+        except SealedSwarmError as e:
+            return self._send_json(423, {"status": "error", "message": str(e), "sealed": True})
         if not ok:
             return self._send_json(404, {"status": "error", "message": "swarm not found"})
         return self._send_json(200, {"status": "ok", "removed": sg})

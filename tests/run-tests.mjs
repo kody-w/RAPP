@@ -326,6 +326,7 @@ class TinyAgent(BasicAgent):
     'tether/server.py',
     'swarm/server.py',
     'install-swarm.sh',
+    'tests/test-sealing-snapshot.sh',
   ]) {
     await test(`twin file present: ${p}`, () => {
       const full = path.join(ROOT, p);
