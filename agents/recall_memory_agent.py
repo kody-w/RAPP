@@ -21,6 +21,7 @@ __manifest__ = {
     "category": "core",
     "quality_tier": "official",
     "requires_env": [],
+    "example_call": "What do you remember about me?",
 }
 
 

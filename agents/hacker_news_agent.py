@@ -21,6 +21,8 @@ __manifest__ = {
     "category": "integrations",
     "quality_tier": "official",
     "requires_env": [],
+    # Quick-click prompt the brainstem uses when you tap this agent's card/pill.
+    "example_call": "What are the top 5 stories on Hacker News right now?",
 }
 
 
