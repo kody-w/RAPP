@@ -23,7 +23,7 @@ __manifest__ = {
     "category": "core",
     "quality_tier": "official",
     "requires_env": [],
-    "example_call": "Remember that my name is Kody and I work on RAPP.",
+    "example_call": "Remember that I prefer concise responses.",
 }
 
 

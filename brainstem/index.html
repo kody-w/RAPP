@@ -1992,7 +1992,7 @@ function cardElement(c) {
 // generic "use this tool" line.
 const HAND_PROMPTS = {
   'hacker_news_agent.py':    'What are the top 5 stories on Hacker News right now?',
-  'save_memory_agent.py':    'Remember that my name is Kody and I work on RAPP.',
+  'save_memory_agent.py':    'Remember that I prefer concise responses.',
   'recall_memory_agent.py':  'What do you remember about me?',
 };
 
@@ -3047,7 +3047,7 @@ const TUTORIAL_STEPS = [
     desc: 'Click the model dropdown at the top to swap between GPT-4o, Claude Sonnet/Opus, GPT-4.1, o-series, Gemini, etc. — the full Copilot catalog. No restart.',
     tip: 'Models without tool-calling capability are tagged <code>· no tools</code> and won\'t fire your agents.' },
   { phase: '🧠 Core skills', title: 'Memory persists across sessions', time: '~1 min',
-    desc: 'Tell the brainstem to remember something: <em>"Remember that my name is Kody and I work on RAPP."</em> The <strong>SaveMemory</strong> agent writes it to localStorage. Refresh the page and ask <em>"What do you remember about me?"</em> — <strong>RecallMemory</strong> brings it back, and its <code>system_context()</code> auto-injects it on every turn.' },
+    desc: 'Tell the brainstem to remember something: <em>"Remember that I prefer concise responses."</em> The <strong>SaveMemory</strong> agent writes it to localStorage. Refresh the page and ask <em>"What do you remember about me?"</em> — <strong>RecallMemory</strong> brings it back, and its <code>system_context()</code> auto-injects it on every turn.' },
   { phase: '⚡ Your agents', title: 'The Binder = your card collection', time: '~30 sec',
     desc: 'Click <strong>Binder</strong> in the header to see every agent as a Pokemon-style card. Tap a card to view stats / abilities / source, then tap again to flip it — the back has a QR code with a deeplink to the agent.',
     tip: 'The hand row above the chat is what\'s actually loaded. The LLM only sees those tools.' },
