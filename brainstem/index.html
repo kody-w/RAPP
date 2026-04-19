@@ -447,18 +447,68 @@
     display: flex; gap: 8px; justify-content: flex-end;
   }
 
-  /* ── Card detail modal — flippable Pokemon-style card (mirrors RAR/store.html) ── */
-  #card-modal .panel { max-width: 380px; background: transparent; border: none; box-shadow: none; }
-  #card-modal .panel header, #card-modal .panel .actions { background: #161b22; border-color: #30363d; border-radius: 12px; }
-  #card-modal .panel header { border: 1px solid #30363d; }
-  #card-modal .panel .actions { border: 1px solid #30363d; margin-top: 10px; }
-  #card-modal .panel .body { padding: 0; overflow: visible; perspective: 1200px; }
+  /* ── Card detail modal — RAR holo (MTG-style) flippable card ── */
+  #card-modal { background: rgba(13,17,23,.96); }
+  #card-modal .panel { max-width: 460px; background: transparent; border: none; box-shadow: none; max-height: 96vh; }
+  #card-modal .panel header { display: none; }
+  #card-modal .panel .actions { background: #161b22; border: 1px solid #30363d; border-radius: 12px; margin-top: 14px; }
+  #card-modal .panel .body { padding: 0; overflow: visible; perspective: 1400px; }
+  /* Floating close button (RAR-style) */
+  #cd-floating-close {
+    position: fixed; top: 24px; right: 32px; z-index: 60;
+    background: none; border: none; color: #8b949e; font-size: 28px;
+    cursor: pointer; line-height: 1; padding: 4px 10px; border-radius: 50%;
+    transition: color .15s, background .15s;
+  }
+  #cd-floating-close:hover { color: #f85149; background: rgba(248,81,73,.1); }
+
+  /* Big name header above the card */
+  .cd-banner {
+    text-align: center; margin-bottom: 18px;
+    animation: cd-banner-in .4s ease-out;
+  }
+  @keyframes cd-banner-in {
+    from { opacity: 0; transform: translateY(-12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .cd-banner h1 {
+    font-size: 42px; font-weight: 800; letter-spacing: 6px;
+    color: #f6e9c8; text-shadow: 0 2px 12px rgba(201,168,76,.25);
+    margin: 0; line-height: 1;
+  }
+  .cd-banner .sub {
+    font-size: 11px; letter-spacing: 4px; color: #ffb74d;
+    margin-top: 8px; font-weight: 700;
+  }
+  .cd-banner .sub.r-rare    { color: #bc8cff; }
+  .cd-banner .sub.r-core    { color: #58a6ff; }
+  .cd-banner .sub.r-starter { color: #6e7681; }
+  .cd-banner .sub.r-mythic  { color: #ffb74d; }
+
+  /* Bottom grade strip */
+  .cd-grade {
+    display: flex; justify-content: center; gap: 64px;
+    margin-top: 18px; padding-top: 8px;
+    animation: cd-banner-in .55s ease-out;
+  }
+  .cd-grade .g {
+    text-align: center;
+  }
+  .cd-grade .g .v {
+    font-size: 24px; font-weight: 800; color: #ffb74d; letter-spacing: 1px;
+  }
+  .cd-grade .g.purple .v { color: #bc8cff; }
+  .cd-grade .g.blue   .v { color: #58a6ff; }
+  .cd-grade .g .l {
+    font-size: 9px; color: #6e7681; letter-spacing: 2px; text-transform: uppercase;
+    margin-top: 4px;
+  }
 
   .ac-wrap {
     position: relative; width: 100%; aspect-ratio: 5/7;
     cursor: pointer; transform-style: preserve-3d;
     transition: transform .55s cubic-bezier(.4, .15, .25, 1);
-    margin: 8px 0;
+    margin: 0 auto;
   }
   .ac-wrap.flipped { transform: rotateY(180deg); }
   .ac-face {
@@ -467,73 +517,114 @@
     overflow: hidden;
   }
 
-  /* Front */
+  /* MTG-style holo front */
   .ac-front {
-    background: linear-gradient(160deg, #1c2230 0%, #0d1117 100%);
-    border: 2px solid #30363d;
+    background:
+      linear-gradient(160deg, #1c1408 0%, #0d0a06 50%, #1a1006 100%);
+    border: 3px solid #c9a84c;
     display: flex; flex-direction: column;
+    box-shadow: 0 0 24px rgba(201,168,76,.25), 0 12px 40px rgba(0,0,0,.6);
+    padding: 10px;
   }
-  .ac-front.r-mythic { border-color: #ffb74d; box-shadow: 0 0 18px rgba(255,183,77,.18) inset, 0 0 0 1px rgba(255,183,77,.3); }
-  .ac-front.r-rare   { border-color: #bc8cff; box-shadow: 0 0 18px rgba(188,140,255,.18) inset, 0 0 0 1px rgba(188,140,255,.3); }
-  .ac-front.r-core   { border-color: #58a6ff; box-shadow: 0 0 14px rgba(88,166,255,.14) inset; }
-  .ac-front.r-starter{ border-color: #6e7681; }
-  .ac-band { height: 5px; width: 100%; }
-  .ac-head {
-    padding: 10px 14px 8px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+  .ac-front.r-rare    { border-color: #bc8cff; box-shadow: 0 0 24px rgba(188,140,255,.25), 0 12px 40px rgba(0,0,0,.6); }
+  .ac-front.r-core    { border-color: #58a6ff; box-shadow: 0 0 18px rgba(88,166,255,.2), 0 12px 40px rgba(0,0,0,.6); }
+  .ac-front.r-starter { border-color: #6e7681; box-shadow: 0 12px 40px rgba(0,0,0,.6); }
+
+  /* Title bar */
+  .ac-titlebar {
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+    background: linear-gradient(180deg, rgba(201,168,76,.15), rgba(201,168,76,.05));
+    border: 1px solid rgba(201,168,76,.4);
+    border-radius: 6px; padding: 6px 10px; margin-bottom: 6px;
   }
-  .ac-name { font-size: 16px; font-weight: 700; color: #e6edf3; line-height: 1.15; }
-  .ac-name small { display: block; font-size: 10px; color: #6e7681; font-weight: 500; margin-top: 2px; font-family: "SF Mono", monospace; }
-  .ac-hp {
-    font-size: 14px; font-weight: 700; color: #f85149;
-    background: rgba(248,81,73,.1); padding: 3px 10px; border-radius: 999px;
-    white-space: nowrap;
+  .ac-front.r-rare    .ac-titlebar { background: linear-gradient(180deg, rgba(188,140,255,.15), rgba(188,140,255,.05)); border-color: rgba(188,140,255,.4); }
+  .ac-front.r-core    .ac-titlebar { background: linear-gradient(180deg, rgba(88,166,255,.15), rgba(88,166,255,.05));  border-color: rgba(88,166,255,.4);  }
+  .ac-front.r-starter .ac-titlebar { background: linear-gradient(180deg, rgba(110,118,129,.15), rgba(110,118,129,.05));border-color: rgba(110,118,129,.4); }
+  .ac-titlebar .ac-name { font-size: 15px; font-weight: 700; color: #f6e9c8; line-height: 1.1; }
+  .ac-titlebar .ac-title { font-size: 10px; color: rgba(246,233,200,.65); font-style: italic; margin-top: 2px; }
+  .ac-pips { display: flex; gap: 3px; flex-shrink: 0; }
+  .ac-pip {
+    width: 18px; height: 18px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: #fff;
+    border: 1px solid rgba(0,0,0,.3); box-shadow: 0 1px 3px rgba(0,0,0,.3);
   }
+  .ac-pip.n { background: #d4d0c8; color: #06080f; }
+  /* MTG color codes — map our agent types onto W/U/B/R/G/colorless */
+  .ac-pip.W { background: #fff8d8; color: #06080f; }
+  .ac-pip.U { background: #1f6feb; }   /* DATA / SOCIAL → blue */
+  .ac-pip.B { background: #2f1d3d; }   /* CRAFT / WEALTH → black */
+  .ac-pip.R { background: #d35400; }   /* HEAL / WEALTH alt → red */
+  .ac-pip.G { background: #2ea043; }   /* DATA → green */
+
+  /* Art frame */
   .ac-art {
-    aspect-ratio: 5/3; margin: 0 14px; border-radius: 8px;
-    border: 1px solid #21262d; position: relative; overflow: hidden;
+    aspect-ratio: 5/3.5;
+    border: 1px solid rgba(201,168,76,.4);
+    border-radius: 4px; overflow: hidden;
+    background: #04060c; position: relative;
   }
+  .ac-front.r-rare    .ac-art { border-color: rgba(188,140,255,.4); }
+  .ac-front.r-core    .ac-art { border-color: rgba(88,166,255,.4); }
+  .ac-front.r-starter .ac-art { border-color: rgba(110,118,129,.4); }
   .ac-art svg { width: 100%; height: 100%; display: block; }
-  .ac-types {
-    padding: 8px 14px 6px; display: flex; gap: 5px; flex-wrap: wrap;
+
+  /* Type line */
+  .ac-typeline {
+    background: linear-gradient(180deg, rgba(201,168,76,.12), rgba(201,168,76,.04));
+    border-bottom: 1px solid rgba(201,168,76,.3);
+    border-top: 1px solid rgba(201,168,76,.3);
+    padding: 4px 10px; margin: 6px 0 0;
+    font-size: 11px; color: #f6e9c8; font-weight: 600;
   }
-  .ac-type-chip {
-    font-size: 9px; padding: 2px 7px; border-radius: 999px;
-    font-weight: 700; letter-spacing: .5px; color: #06080f;
+  .ac-front.r-rare    .ac-typeline { background: linear-gradient(180deg, rgba(188,140,255,.12), rgba(188,140,255,.04)); border-color: rgba(188,140,255,.3); }
+  .ac-front.r-core    .ac-typeline { background: linear-gradient(180deg, rgba(88,166,255,.12),  rgba(88,166,255,.04));  border-color: rgba(88,166,255,.3); }
+  .ac-front.r-starter .ac-typeline { background: linear-gradient(180deg, rgba(110,118,129,.12),rgba(110,118,129,.04));border-color: rgba(110,118,129,.3); }
+
+  /* Rules text box */
+  .ac-text {
+    flex: 1; padding: 8px 10px;
+    font-size: 11px; color: #d8c8a8; line-height: 1.45;
+    overflow: hidden;
+    background: linear-gradient(180deg, rgba(0,0,0,.15), rgba(0,0,0,.3));
   }
-  .ac-stats {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
-    padding: 0 14px 8px; font-size: 10px;
+  .ac-rule { margin-bottom: 6px; }
+  .ac-rule .kw { font-weight: 700; color: #f6e9c8; }
+  .ac-rule .cost {
+    display: inline-flex; gap: 2px; vertical-align: middle; margin: 0 2px;
   }
-  .ac-stats div { background: rgba(13,17,23,.5); border-radius: 4px; padding: 4px 0; text-align: center; }
-  .ac-stats .lbl { color: #6e7681; font-size: 8px; text-transform: uppercase; letter-spacing: .8px; }
-  .ac-stats .val { color: #e6edf3; font-size: 13px; font-weight: 700; }
-  .ac-abilities {
-    flex: 1; padding: 4px 14px; display: flex; flex-direction: column; gap: 4px; overflow: hidden;
-  }
-  .ac-ab {
-    background: rgba(13,17,23,.5); border-left: 3px solid #58a6ff;
-    padding: 5px 8px; border-radius: 3px; font-size: 11px;
-  }
-  .ac-ab .ab-name { font-weight: 700; color: #e6edf3; }
-  .ac-ab .ab-cost { color: #d2a8ff; font-size: 9px; margin-left: 6px; font-family: "SF Mono", monospace; }
-  .ac-ab .ab-text { color: #8b949e; font-size: 10px; margin-top: 2px; line-height: 1.3; }
+  .ac-rule .cost .ac-pip { width: 13px; height: 13px; font-size: 8px; border-width: 0.5px; }
   .ac-flavor {
-    padding: 4px 14px 6px;
-    font-size: 9px; color: #6e7681; font-style: italic;
-    border-top: 1px dashed rgba(110,118,129,.3); margin-top: 4px;
+    margin-top: 8px; padding-top: 6px;
+    border-top: 1px dashed rgba(201,168,76,.2);
+    font-size: 10px; color: rgba(216,200,168,.65);
+    font-style: italic; line-height: 1.4;
   }
+  .ac-flavor .attr { color: rgba(216,200,168,.5); }
+
+  /* Footer */
   .ac-foot {
-    padding: 6px 14px 8px; display: flex; justify-content: space-between; align-items: center;
-    font-size: 9px; color: #6e7681;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 4px 0; margin-top: 4px;
+    font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+    color: rgba(201,168,76,.7);
   }
-  .ac-rarity { text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
-  .ac-rarity.mythic { color: #ffb74d; }
-  .ac-rarity.rare   { color: #bc8cff; }
-  .ac-rarity.core   { color: #58a6ff; }
-  .ac-rarity.starter{ color: #6e7681; }
+  .ac-set { font-weight: 700; }
+  .ac-set .star { color: #ffb74d; }
+  .ac-pt {
+    background: rgba(201,168,76,.15); border: 1px solid rgba(201,168,76,.5);
+    color: #f6e9c8; padding: 2px 10px; border-radius: 4px;
+    font-size: 13px; font-weight: 800; font-family: "SF Mono", monospace;
+    letter-spacing: 1px;
+  }
+  .ac-front.r-rare    .ac-pt { background: rgba(188,140,255,.15); border-color: rgba(188,140,255,.5); }
+  .ac-front.r-core    .ac-pt { background: rgba(88,166,255,.15);  border-color: rgba(88,166,255,.5);  }
+  .ac-front.r-starter .ac-pt { background: rgba(110,118,129,.15); border-color: rgba(110,118,129,.5); }
+
   .ac-flip-hint {
-    position: absolute; bottom: 6px; right: 8px;
-    font-size: 9px; color: #484f58; pointer-events: none;
+    position: absolute; bottom: 4px; right: 10px;
+    font-size: 8px; color: rgba(201,168,76,.4);
+    pointer-events: none; letter-spacing: 1px;
   }
 
   /* Back — kraft-paper card-back, mirrors RAR */
@@ -961,6 +1052,7 @@
 
 <!-- Card detail modal -->
 <div class="modal" id="card-modal">
+  <button id="cd-floating-close" title="Close (Esc)">×</button>
   <div class="panel">
     <header><span class="ttl" id="cd-title">Card</span><button class="close" id="cd-close">×</button></header>
     <div class="body" id="cd-body"></div>
@@ -1839,49 +1931,69 @@ function openCardModal(c) {
   const deeplink = `https://kody-w.github.io/RAPP/brainstem/?seed=${encodeURIComponent(seed)}`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=0&data=${encodeURIComponent(deeplink)}`;
 
+  // Map our agent types onto MTG-style mana pips
+  const TYPE_TO_PIP = {
+    LOGIC: 'U', DATA: 'G', SOCIAL: 'U', SHIELD: 'W',
+    CRAFT: 'B', HEAL: 'R', WEALTH: 'R',
+  };
+  // Generic cost prefix (number) + colored pip per type
+  const colorPips = types.map(t => `<span class="ac-pip ${TYPE_TO_PIP[t] || 'U'}">${TYPE_TO_PIP[t] || 'U'}</span>`).join('');
+  const genericCost = Math.max(1, Math.min(7, Math.round(((card.hp||50) - 30) / 12)));
+  const pipsHtml = `<span class="ac-pip n">${genericCost}</span>${colorPips}`;
+
+  // MTG type line
+  const TYPE_NOUNS = { LOGIC:'Mind', DATA:'Pipeline', SOCIAL:'Voice', SHIELD:'Sentinel', CRAFT:'Construct', HEAL:'Healer', WEALTH:'Broker' };
+  const noun = TYPE_NOUNS[primary] || 'Agent';
+  const isLegendary = rarity === 'mythic';
+  const typeLine = `${isLegendary ? 'Legendary ' : ''}Agent — ${noun}${types[1] ? ' ' + (TYPE_NOUNS[types[1]] || '') : ''}`;
+
+  // Rules text — port abilities into MTG-flavored rules with kw + tap-cost
+  const TAP = '<span class="cost"><span class="ac-pip n">T</span></span>';
+  const rulesHtml = (card.abilities || []).slice(0, 2).map(a => {
+    return `<div class="ac-rule"><span class="kw">${escapeHtml(a.name)}${TAP}:</span> ${escapeHtml(a.text || c.manifest.description || 'Trigger this agent\'s perform().')}</div>`;
+  }).join('');
+
+  // Flavor with em-dash attribution
+  const flavorLine = card.flavor || c.manifest.description || 'A single file. A single promise.';
+  const flavorHtml = `<div class="ac-flavor">"${escapeHtml(flavorLine)}" <span class="attr">— ${escapeHtml(c.manifest.author || 'RAPP')}</span></div>`;
+
+  // Power / toughness from stats
+  const power = Math.max(1, Math.round(stats.atk / 14));
+  const toughness = Math.max(1, Math.round(stats.def / 14));
+
+  // Set / artist line
+  const setCode = (rarity === 'mythic' ? 'HOLO' : (rarity === 'rare' ? 'RARE' : (rarity === 'core' ? 'CORE' : 'STRT')));
+  const promo = rarity === 'mythic' ? '<span class="star">★</span> PROMO ' : '';
+  const author = (c.manifest.author || 'RAPP').toUpperCase();
+
   $('#cd-body').innerHTML = `
+    <div class="cd-banner">
+      <h1>${escapeHtml(display).toUpperCase()}</h1>
+      <div class="sub r-${rarity}">${escapeHtml(card.rarity_label || rarity).toUpperCase()} · 1ST EDITION</div>
+    </div>
+
     <div class="ac-wrap" id="ac-flip">
-      <!-- FRONT -->
-      <div class="ac-face ac-front r-${rarity}" style="background-image:radial-gradient(ellipse at top, ${primaryColor}11 0%, transparent 70%);">
-        <div class="ac-band" style="background:${primaryColor}"></div>
-        <div class="ac-head">
-          <div class="ac-name">
-            ${escapeHtml(display)}
-            <small>${escapeHtml(c.name)} · v${escapeHtml(c.manifest.version || '0.0.0')}</small>
+      <div class="ac-face ac-front r-${rarity}">
+        <div class="ac-titlebar">
+          <div>
+            <div class="ac-name">${escapeHtml(display)}</div>
+            <div class="ac-title">${escapeHtml(c.name)} · v${escapeHtml(c.manifest.version || '0.0.0')}</div>
           </div>
-          <div class="ac-hp">HP ${card.hp || stats.hp || 0}</div>
+          <div class="ac-pips">${pipsHtml}</div>
         </div>
-        <div class="ac-art" style="color:${primaryColor};padding:0">${generateCardArt(card, primaryColor)}</div>
-        <div class="ac-types">
-          ${types.map(t => `<span class="ac-type-chip" style="background:${RAPP.AGENT_TYPES[t].color}">${t}</span>`).join('')}
-          <span style="font-size:9px;color:#6e7681;margin-left:auto;align-self:center">
-            Weak ${card.weakness_label} · Resists ${card.resistance_label}
-          </span>
+        <div class="ac-art">${generateCardArt(card, primaryColor)}</div>
+        <div class="ac-typeline">${escapeHtml(typeLine)}</div>
+        <div class="ac-text">
+          ${rulesHtml}
+          ${flavorHtml}
         </div>
-        <div class="ac-stats">
-          <div><div class="lbl">ATK</div><div class="val">${stats.atk||0}</div></div>
-          <div><div class="lbl">DEF</div><div class="val">${stats.def||0}</div></div>
-          <div><div class="lbl">SPD</div><div class="val">${stats.spd||0}</div></div>
-          <div><div class="lbl">INT</div><div class="val">${stats.int||0}</div></div>
-        </div>
-        <div class="ac-abilities">
-          ${(card.abilities||[]).slice(0, 3).map(a => `
-            <div class="ac-ab" style="border-left-color:${primaryColor}">
-              <span class="ab-name">${escapeHtml(a.name)}</span>
-              <span class="ab-cost">${a.cost}E · ${a.damage} dmg</span>
-              ${a.text ? `<div class="ab-text">${escapeHtml(a.text)}</div>` : ''}
-            </div>
-          `).join('')}
-        </div>
-        <div class="ac-flavor">${escapeHtml(card.flavor || c.manifest.description || '')}</div>
         <div class="ac-foot">
-          <span class="ac-rarity ${rarity}">${escapeHtml(card.rarity_label || rarity)}</span>
-          <span style="font-family:'SF Mono',monospace">#${(card.name_seed||0).toString(16).toUpperCase().padStart(8,'0').slice(0,8)}</span>
+          <span class="ac-set">${setCode} ${promo}· ${escapeHtml(card.rarity_label || rarity).toUpperCase()} · ${escapeHtml(author)}</span>
+          <span class="ac-pt">${power}/${toughness}</span>
         </div>
         <div class="ac-flip-hint">tap to flip ↻</div>
       </div>
 
-      <!-- BACK -->
       <div class="ac-face ac-back">
         <div class="ac-back-logo">RAPP</div>
         <div class="ac-back-sub">single-file agent</div>
@@ -1892,6 +2004,12 @@ function openCardModal(c) {
         <div class="ac-incant">${escapeHtml(incantation)}</div>
         <div class="ac-back-hint">tap to flip back ↺</div>
       </div>
+    </div>
+
+    <div class="cd-grade">
+      <div class="g"><div class="v">GEM MINT 10</div><div class="l">Grade</div></div>
+      <div class="g purple"><div class="v">${(card.floor_pts || 10) * 600} GP</div><div class="l">Reputation</div></div>
+      <div class="g blue"><div class="v">#${((card.name_seed || 0) % 9999 + 1)}</div><div class="l">Mint</div></div>
     </div>
   `;
   // Tap card to flip
@@ -2343,6 +2461,7 @@ function wire() {
 
   // card modal
   $('#cd-close').addEventListener('click', closeCardModal);
+  $('#cd-floating-close').addEventListener('click', closeCardModal);
   $('#card-modal').addEventListener('click', e => { if (e.target.id === 'card-modal') closeCardModal(); });
   $('#cd-export').addEventListener('click', () => {
     if (!cardModalCard) return;
