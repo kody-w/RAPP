@@ -83,12 +83,17 @@ def chat_azure_openai(messages: list, tools: list | None = None,
                  or os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME", "")
     api_version = os.environ.get("AZURE_OPENAI_API_VERSION", "2025-01-01-preview")
 
-    # The user's .env may already contain the full path
-    # (https://…/openai/v1/chat/completions) — accept that as-is. Otherwise
-    # build the standard Azure deployment URL.
+    # Endpoint variants we accept:
+    #   1. Full v1 URL:    https://…/openai/v1/chat/completions
+    #      → use as-is, NO api-version query (v1 doesn't accept it)
+    #   2. Full legacy URL: https://…/openai/deployments/<d>/chat/completions
+    #      → append ?api-version=…
+    #   3. Bare resource:  https://…
+    #      → build the legacy deployment URL ourselves
+    is_v1 = "/openai/v1/" in endpoint
     if "/chat/completions" in endpoint:
-        url = endpoint  # full URL provided
-        if "?" not in url:
+        url = endpoint
+        if not is_v1 and "?" not in url:
             url += f"?api-version={api_version}"
     else:
         url = f"{endpoint}/openai/deployments/{deployment}/chat/completions?api-version={api_version}"
@@ -97,10 +102,9 @@ def chat_azure_openai(messages: list, tools: list | None = None,
     if tools:
         body["tools"] = tools
         body["tool_choice"] = tool_choice
-    if model and "/chat/completions" in endpoint:
-        body["model"] = model
-    elif "/chat/completions" in endpoint and deployment:
-        body["model"] = deployment
+    # v1 + legacy chat-completions both want a model in the body
+    if "/chat/completions" in endpoint:
+        body["model"] = model or deployment
 
     resp = _http_post(url, {
         "Content-Type": "application/json",
