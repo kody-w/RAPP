@@ -49,7 +49,7 @@ function test(name, fn) {
 function assert(cond, msg) { if (!cond) throw new Error(msg || 'assertion failed'); }
 function assertEq(a, b, msg) { if (!eq(a, b)) throw new Error(`${msg || 'not equal'}\n    expected ${JSON.stringify(b)}\n    got      ${JSON.stringify(a)}`); }
 
-const STARTER_FILES = ['hello_agent.py','dice_agent.py','weather_poet_agent.py','sloshtest_agent.py'];
+const STARTER_FILES = ['save_memory_agent.py','recall_memory_agent.py','hacker_news_agent.py'];
 
 (async () => {
   console.log('\n\x1b[1mRAPP v1 contract tests\x1b[0m\n');
@@ -161,8 +161,8 @@ class TinyAgent(BasicAgent):
   }
 
   await test('card SHA-256 mismatch is detected', async () => {
-    const src = fs.readFileSync(path.join(ROOT, 'agents', 'hello_agent.py'), 'utf8');
-    const c = await RAPP.Card.mintCard(src, 'hello_agent.py');
+    const src = fs.readFileSync(path.join(ROOT, 'agents', 'save_memory_agent.py'), 'utf8');
+    const c = await RAPP.Card.mintCard(src, 'save_memory_agent.py');
     c.source = c.source + '\n# tampered\n';   // mutate but keep stale sha256
     let threw = false;
     try { await RAPP.Card.cardToAgentSource(c); } catch (e) { threw = true; }
@@ -192,8 +192,8 @@ class TinyAgent(BasicAgent):
 
   await test('binder addCard is idempotent for same filename', async () => {
     const b = RAPP.Binder.empty();
-    const src = fs.readFileSync(path.join(ROOT, 'agents', 'hello_agent.py'), 'utf8');
-    const c1 = await RAPP.Card.mintCard(src, 'hello_agent.py');
+    const src = fs.readFileSync(path.join(ROOT, 'agents', 'save_memory_agent.py'), 'utf8');
+    const c1 = await RAPP.Card.mintCard(src, 'save_memory_agent.py');
     RAPP.Binder.addCard(b, c1);
     RAPP.Binder.addCard(b, c1);
     assertEq(b.cards.length, 1);
@@ -201,10 +201,10 @@ class TinyAgent(BasicAgent):
 
   await test('binder removeCard works by predicate', async () => {
     const b = RAPP.Binder.empty();
-    const src = fs.readFileSync(path.join(ROOT, 'agents', 'hello_agent.py'), 'utf8');
-    const c = await RAPP.Card.mintCard(src, 'hello_agent.py');
+    const src = fs.readFileSync(path.join(ROOT, 'agents', 'save_memory_agent.py'), 'utf8');
+    const c = await RAPP.Card.mintCard(src, 'save_memory_agent.py');
     RAPP.Binder.addCard(b, c);
-    RAPP.Binder.removeCard(b, x => x.filename === 'hello_agent.py');
+    RAPP.Binder.removeCard(b, x => x.filename === 'save_memory_agent.py');
     assertEq(b.cards.length, 0);
   });
 
@@ -268,40 +268,33 @@ class TinyAgent(BasicAgent):
   /* ───── Suite 8: multi-agent chain via data_slush ─────────── */
   console.log('\nMulti-agent chain (data_slush)');
 
-  await test('weather_poet → sloshtest passes signals through slush', async () => {
-    // Mint both cards. Then simulate the brainstem's chain loop:
-    //   1) call WeatherPoet → parse data_slush
-    //   2) call SloshTest with that slush as upstream context
-    // Verify SloshTest receives WeatherPoet's keys.
-    const wpSrc = fs.readFileSync(path.join(ROOT, 'agents', 'weather_poet_agent.py'), 'utf8');
-    const stSrc = fs.readFileSync(path.join(ROOT, 'agents', 'sloshtest_agent.py'), 'utf8');
-    const wp = await RAPP.Card.mintCard(wpSrc, 'weather_poet_agent.py');
-    const st = await RAPP.Card.mintCard(stSrc, 'sloshtest_agent.py');
-
-    // Use the same stub-runner shape the UI uses (keep the test honest about
-    // what the deployed code actually does).
+  await test('save_memory → recall_memory passes signals through slush', async () => {
+    // Mint both starter agents and simulate the brainstem chain loop.
+    const saveSrc = fs.readFileSync(path.join(ROOT, 'agents', 'save_memory_agent.py'), 'utf8');
+    const recSrc  = fs.readFileSync(path.join(ROOT, 'agents', 'recall_memory_agent.py'), 'utf8');
+    await RAPP.Card.mintCard(saveSrc, 'save_memory_agent.py');
+    await RAPP.Card.mintCard(recSrc,  'recall_memory_agent.py');
+    // Use the same shape the UI's stub runner mirrors.
     const stub = (name, kw, slush) => {
-      if (name === 'WeatherPoet') {
-        const city = kw.query || 'Seattle';
-        return JSON.stringify({status:'success', haiku:'…', data_slush:{mood:'sunny', temp_f:71, city}});
+      if (name === 'SaveMemory') {
+        return JSON.stringify({status:'success', summary:'saved', data_slush:{saved_id:'abc', memory_type:kw.memory_type, importance:kw.importance||3}});
       }
-      if (name === 'SloshTest') {
-        return JSON.stringify({status:'success', received_slush: slush || {}, data_slush:{reported:true, upstream_keys:Object.keys(slush||{})}});
+      if (name === 'RecallMemory') {
+        return JSON.stringify({status:'success', memories:[], data_slush:{count:0, last_save_id: slush && slush.saved_id}});
       }
     };
-    const r1 = JSON.parse(stub('WeatherPoet', { query: 'Kyoto' }, null));
-    assert(r1.data_slush && r1.data_slush.city === 'Kyoto', 'WeatherPoet emitted slush');
-    const r2 = JSON.parse(stub('SloshTest', {}, r1.data_slush));
-    assertEq(r2.received_slush.city, 'Kyoto', 'SloshTest received city via slush');
-    assertEq(r2.data_slush.upstream_keys.sort(), ['city','mood','temp_f']);
+    const r1 = JSON.parse(stub('SaveMemory', { memory_type: 'fact', content: 'name=Kody', importance: 5 }, null));
+    assertEq(r1.data_slush.memory_type, 'fact');
+    const r2 = JSON.parse(stub('RecallMemory', {}, r1.data_slush));
+    assertEq(r2.data_slush.last_save_id, 'abc');
   });
 
   /* ───── Suite 9: card import wire-compat with manifest ─────── */
   console.log('\nCard wire-compat');
 
   await test('seed → mnemonic → seed → card is fully reproducible', async () => {
-    const src = fs.readFileSync(path.join(ROOT, 'agents', 'weather_poet_agent.py'), 'utf8');
-    const c = await RAPP.Card.mintCard(src, 'weather_poet_agent.py');
+    const src = fs.readFileSync(path.join(ROOT, 'agents', 'recall_memory_agent.py'), 'utf8');
+    const c = await RAPP.Card.mintCard(src, 'recall_memory_agent.py');
     const seedBig = BigInt(c.card.seed);
     const words = RAPP.Mnemonic.seedToWords(seedBig);
     const back = RAPP.Mnemonic.wordsToSeed(words);
@@ -313,8 +306,8 @@ class TinyAgent(BasicAgent):
   });
 
   await test('card.json is valid JSON and round-trips', async () => {
-    const src = fs.readFileSync(path.join(ROOT, 'agents', 'dice_agent.py'), 'utf8');
-    const c = await RAPP.Card.mintCard(src, 'dice_agent.py');
+    const src = fs.readFileSync(path.join(ROOT, 'agents', 'hacker_news_agent.py'), 'utf8');
+    const c = await RAPP.Card.mintCard(src, 'hacker_news_agent.py');
     const json = JSON.stringify(c);
     const parsed = JSON.parse(json);
     const back = await RAPP.Card.cardToAgentSource(parsed);
@@ -327,8 +320,8 @@ class TinyAgent(BasicAgent):
   for (const p of [
     'index.html', 'SPEC.md', 'README.md',
     'installer/index.html', 'hippocampus/index.html', 'brainstem/index.html', 'brainstem/rapp.js',
-    'agents/basic_agent.py', 'agents/hello_agent.py', 'agents/dice_agent.py',
-    'agents/weather_poet_agent.py', 'agents/sloshtest_agent.py',
+    'agents/basic_agent.py',
+    'agents/save_memory_agent.py', 'agents/recall_memory_agent.py', 'agents/hacker_news_agent.py',
     'tests/run-tests.mjs',
   ]) {
     await test(`twin file present: ${p}`, () => {

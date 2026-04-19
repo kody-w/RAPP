@@ -792,9 +792,9 @@
 
 <footer>
   <div id="starters">
-    <button class="starter" data-prompt="Roll 3d20.">Roll 3d20</button>
-    <button class="starter" data-prompt="Write a haiku about the weather in Kyoto.">Weather haiku · Kyoto</button>
-    <button class="starter" data-prompt="Greet me and roll some dice — chain them.">Greet + chain</button>
+    <button class="starter" data-prompt="What are the top 5 stories on Hacker News right now?">Top HN stories</button>
+    <button class="starter" data-prompt="Remember that my name is Kody and I work on RAPP.">Save a memory</button>
+    <button class="starter" data-prompt="What do you remember about me?">Recall memory</button>
   </div>
   <div class="input-row">
     <textarea id="input" placeholder="Talk to the brainstem… (Shift+Enter for newline)" rows="1"></textarea>
@@ -901,8 +901,9 @@ const $ = (s, r=document) => r.querySelector(s);
 const $$ = (s, r=document) => [...r.querySelectorAll(s)];
 
 const STARTER_AGENT_FILES = [
-  'hello_agent.py', 'dice_agent.py', 'weather_poet_agent.py', 'sloshtest_agent.py'
+  'save_memory_agent.py', 'recall_memory_agent.py', 'hacker_news_agent.py'
 ];
+const STARTER_VERSION = 'v2';   // bump to force-rehydrate the binder for existing users
 
 /* ───── State ─────────────────────────────────────────────────── */
 // Same OAuth + worker the canonical RAR virtual brainstem uses.
@@ -1484,11 +1485,19 @@ async function runCopilotSignin() {
 
 /* ───── Binder + starter cards ──────────────────────────────── */
 async function bootBinder() {
-  // Try restoring binder from localStorage; otherwise mint starter binder.
+  // Restore the binder if (a) one is saved AND (b) the starter version matches.
+  // Bumping STARTER_VERSION forces existing users to receive the new starter set.
   const saved = LS.get('binder', null);
-  if (saved && saved.schema === 'rapp-binder/1.0' && (saved.cards||[]).length > 0) {
+  const savedStarter = LS.get('starterVersion', '');
+  const goodSave = saved && saved.schema === 'rapp-binder/1.0' && (saved.cards||[]).length > 0 && savedStarter === STARTER_VERSION;
+  if (goodSave) {
     state.binder = saved;
   } else {
+    // Preserve any user-imported cards (anything NOT in STARTER_AGENT_FILES) on rehydrate.
+    const userCards = saved && saved.cards
+      ? saved.cards.filter(c => !STARTER_AGENT_FILES.includes(c.filename) &&
+                                !['hello_agent.py','dice_agent.py','weather_poet_agent.py','sloshtest_agent.py'].includes(c.filename))
+      : [];
     state.binder = RAPP.Binder.empty('@local/you');
     for (const f of STARTER_AGENT_FILES) {
       try {
@@ -1499,7 +1508,9 @@ async function bootBinder() {
         console.warn('starter card failed', f, e);
       }
     }
+    for (const c of userCards) RAPP.Binder.addCard(state.binder, c);
     LS.set('binder', state.binder);
+    LS.set('starterVersion', STARTER_VERSION);
   }
   // Restore hand
   const handFiles = LS.get('hand', []);
@@ -2312,9 +2323,9 @@ function copyInstallCmd() {
   else if (state.settings.provider === 'github') fetchGitHubModels();
   refreshStatus();
   await bootBinder();
-  // Auto-load Hello + Dice into hand on first run so the chat works immediately
+  // Auto-load all starter agents into the hand so the chat works immediately
   if (state.hand.size === 0 && state.binder.cards.length > 0) {
-    for (const f of ['hello_agent.py','dice_agent.py']) {
+    for (const f of STARTER_AGENT_FILES) {
       if (state.binder.cards.find(c => c.filename === f)) state.hand.add(f);
     }
     persistHand(); renderHand(); renderBinder(); renderAgents();
