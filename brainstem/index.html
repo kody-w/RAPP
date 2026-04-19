@@ -319,54 +319,82 @@
     30% { transform: translateY(-6px); }
   }
 
-  /* ── Hand row (loaded agents — card game) ── */
-  #hand-row {
-    padding: 8px 24px; border-top: 1px solid #21262d; background: #0d1117;
-    display: flex; align-items: center; gap: 8px;
-    overflow-x: auto; flex-shrink: 0; min-height: 44px;
-  }
-  #hand-row .hand-label {
-    font-size: 10px; color: #6e7681; text-transform: uppercase;
-    letter-spacing: 1px; flex-shrink: 0; margin-right: 4px;
-  }
-  .hand-empty { color: #484f58; font-size: 11px; font-style: italic; }
-  .mini-card {
-    display: flex; align-items: center; gap: 6px;
-    background: #161b22; border: 1px solid #30363d;
-    border-radius: 6px; padding: 4px 8px; font-size: 11px;
-    cursor: pointer; flex-shrink: 0; transition: border-color .15s;
-    color: #e6edf3;
-  }
-  .mini-card:hover { border-color: #58a6ff; }
-  .mini-card .swatch { width: 4px; height: 16px; border-radius: 2px; background: #d29922; }
-  .mini-card.flash { animation: cardflash 1.2s ease-out; }
-  @keyframes cardflash {
-    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(63,185,80,.5); }
-    50% { transform: scale(1.06); box-shadow: 0 0 0 8px rgba(63,185,80,0); }
-    100% { transform: scale(1); }
-  }
-  .mini-card .x { color: #6e7681; margin-left: 2px; font-size: 10px; padding: 0 4px; }
-  .mini-card .x:hover { color: #f85149; }
-
   /* ── Footer ── */
   footer {
     padding: 16px 24px; border-top: 1px solid #21262d;
     background: #161b22; flex-shrink: 0;
   }
-  #starters {
-    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
-    max-width: 760px; margin: 0 auto 16px;
+
+  /* Hand cards = mini playing cards above the input. Click to fire that
+     agent's starter prompt; ✕ tucks back to deck; right-click → full holo. */
+  #hand-cards {
+    display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+    max-width: 760px; margin: 0 auto 14px;
     transition: opacity .3s, transform .3s;
   }
-  .starter {
-    background: #161b22; color: #58a6ff;
-    border: 1px solid #30363d; border-radius: 20px;
-    padding: 6px 14px; font-size: 12px;
-    cursor: pointer; transition: all .2s; white-space: nowrap;
-    font-family: inherit;
+  .hand-empty {
+    color: #484f58; font-size: 11px; font-style: italic;
+    align-self: center; padding: 18px 0;
   }
-  .starter:hover {
-    background: #21262d; border-color: #58a6ff; transform: translateY(-1px);
+  .hand-card {
+    position: relative; width: 132px; height: 84px;
+    border-radius: 8px; padding: 0;
+    background: linear-gradient(160deg, #1c2230 0%, #0d1117 100%);
+    border: 1px solid #30363d;
+    cursor: pointer; transition: transform .15s, border-color .15s, box-shadow .15s;
+    color: #e6edf3; font-family: inherit;
+    display: flex; flex-direction: column; overflow: hidden;
+    text-align: left;
+  }
+  .hand-card:hover {
+    transform: translateY(-3px) scale(1.03);
+    border-color: #58a6ff;
+    box-shadow: 0 6px 16px -4px rgba(31,111,235,.45);
+  }
+  .hand-card .hc-strip {
+    height: 4px; flex-shrink: 0; background: #d29922;
+  }
+  .hand-card .hc-body {
+    flex: 1; padding: 6px 8px; display: flex; flex-direction: column;
+    justify-content: space-between; min-height: 0;
+  }
+  .hand-card .hc-top {
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 4px;
+  }
+  .hand-card .hc-name {
+    font-size: 11px; font-weight: 600; color: #e6edf3;
+    line-height: 1.2; overflow: hidden; text-overflow: ellipsis;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  }
+  .hand-card .hc-rare {
+    font-size: 8px; letter-spacing: .8px; color: #8b949e;
+    text-transform: uppercase; flex-shrink: 0;
+  }
+  .hand-card .hc-bot {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 9px; color: #6e7681;
+  }
+  .hand-card .hc-type {
+    padding: 1px 6px; border-radius: 8px; color: #fff;
+    font-size: 8px; font-weight: 600; letter-spacing: .5px;
+    background: #d29922;
+  }
+  .hand-card .hc-hp { color: #f85149; font-weight: 600; font-size: 9px; }
+  .hand-card .hc-x {
+    position: absolute; top: 4px; right: 4px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: rgba(13,17,23,.85); color: #6e7681;
+    border: 1px solid #30363d;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; line-height: 1; opacity: 0; transition: opacity .15s, color .15s;
+  }
+  .hand-card:hover .hc-x { opacity: 1; }
+  .hand-card .hc-x:hover { color: #f85149; border-color: #f85149; }
+  .hand-card.flash { animation: cardflash 1.2s ease-out; }
+  @keyframes cardflash {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(63,185,80,.5); }
+    50% { transform: scale(1.06); box-shadow: 0 0 0 8px rgba(63,185,80,0); }
+    100% { transform: scale(1); }
   }
 
   .input-row {
@@ -1064,22 +1092,14 @@
         <li><strong>Agents</strong>: drag a <code>.py</code> file anywhere on this window to install a new tool.</li>
         <li><strong>Install</strong>: get the real local brainstem with one curl command.</li>
       </ul>
-      <p><em>Try a starter prompt below to get going.</em></p>
+      <p><em>Tap a card above the input to ask a starter prompt — each card calls its agent.</em></p>
     </div>
   </div>
 </div>
 
-<!-- ── Hand row (loaded agents) ── -->
-<div id="hand-row">
-  <span class="hand-label">Hand:</span>
-  <span class="hand-empty" id="hand-empty">no agents loaded — open the Binder, tap a card to play it</span>
-</div>
-
 <footer>
-  <div id="starters">
-    <button class="starter" data-prompt="What are the top 5 stories on Hacker News right now?">Top HN stories</button>
-    <button class="starter" data-prompt="Remember that my name is Kody and I work on RAPP.">Save a memory</button>
-    <button class="starter" data-prompt="What do you remember about me?">Recall memory</button>
+  <div id="hand-cards">
+    <span class="hand-empty" id="hand-empty">no agents loaded — open the Binder, tap a card to play it</span>
   </div>
   <div class="input-row">
     <textarea id="input" placeholder="Talk to the brainstem… (Shift+Enter for newline)" rows="1"></textarea>
@@ -1874,32 +1894,69 @@ function cardElement(c) {
   return div;
 }
 
-/* ───── Render: hand row + agents drawer ────────────────────── */
+/* ───── Render: hand cards (quick-click prompts) + agents drawer ────── */
+
+// Default prompt per starter agent — clicking the card sends this verbatim.
+// Lookup is by filename first, then falls back to a generic "use this tool" line.
+const HAND_PROMPTS = {
+  'hacker_news_agent.py':    'What are the top 5 stories on Hacker News right now?',
+  'save_memory_agent.py':    'Remember that my name is Kody and I work on RAPP.',
+  'recall_memory_agent.py':  'What do you remember about me?',
+};
+
+function promptForCard(c) {
+  return HAND_PROMPTS[c.filename]
+    || `Use the ${c.parsed?.agentName || c.manifest.display_name || c.name} tool.`;
+}
+
 function renderHand() {
-  const row = $('#hand-row');
-  // remove existing mini-cards
-  $$('.mini-card', row).forEach(n => n.remove());
+  const row = $('#hand-cards');
+  $$('.hand-card', row).forEach(n => n.remove());
   const empty = $('#hand-empty');
   if (state.hand.size === 0) { empty.style.display = 'inline'; return; }
   empty.style.display = 'none';
   for (const f of state.hand) {
     const c = state.binder.cards.find(x => x.filename === f);
     if (!c) continue;
-    const mini = document.createElement('div');
-    mini.className = 'mini-card';
-    mini.dataset.filename = f;
-    const primary = (c.card.types||['SOCIAL'])[0];
-    mini.innerHTML = `
-      <span class="swatch" style="background:${RAPP.AGENT_TYPES[primary].color}"></span>
-      <span>${escapeHtml(c.parsed?.agentName || c.manifest.display_name || c.name)}</span>
-      <span class="x" title="Tuck back to deck">✕</span>
+    const card = c.card || {};
+    const stats = card.stats || {};
+    const primary = (card.types || ['SOCIAL'])[0];
+    const color = RAPP.AGENT_TYPES[primary]?.color || '#d29922';
+    const name = c.parsed?.agentName || c.manifest.display_name || c.name;
+    const rare = (card.rarity_label || card.rarity || 'core').toUpperCase();
+    const hp = card.hp || stats.hp || 0;
+
+    const el = document.createElement('button');
+    el.type = 'button';
+    el.className = 'hand-card';
+    el.dataset.filename = f;
+    el.title = `Click to ask: "${promptForCard(c)}"\nRight-click for full card`;
+    el.innerHTML = `
+      <span class="hc-strip" style="background:${color}"></span>
+      <div class="hc-body">
+        <div class="hc-top">
+          <div class="hc-name">${escapeHtml(name)}</div>
+          <div class="hc-rare">${escapeHtml(rare)}</div>
+        </div>
+        <div class="hc-bot">
+          <span class="hc-type" style="background:${color}">${escapeHtml(primary)}</span>
+          <span class="hc-hp">HP ${hp}</span>
+        </div>
+      </div>
+      <span class="hc-x" title="Tuck back to deck">✕</span>
     `;
-    mini.querySelector('.x').addEventListener('click', e => {
-      e.stopPropagation();
+    el.querySelector('.hc-x').addEventListener('click', e => {
+      e.stopPropagation(); e.preventDefault();
       state.hand.delete(f); persistHand(); renderHand(); renderBinder();
     });
-    mini.addEventListener('click', () => openCardModal(c));
-    row.appendChild(mini);
+    el.addEventListener('click', () => {
+      $('#input').value = promptForCard(c);
+      $('#send').click();
+    });
+    el.addEventListener('contextmenu', e => {
+      e.preventDefault(); openCardModal(c);
+    });
+    row.appendChild(el);
   }
 }
 
@@ -2475,7 +2532,7 @@ result if isinstance(result, str) else json.dumps(result)
 }
 
 function flashHand(filename) {
-  const node = $$('.mini-card').find(n => n.dataset.filename === filename);
+  const node = $$('.hand-card').find(n => n.dataset.filename === filename);
   if (!node) return;
   node.classList.remove('flash');
   void node.offsetWidth;   // restart animation
@@ -2628,9 +2685,6 @@ function wire() {
     if (!v) return;
     input.value = ''; autoGrow(); send(v);
   }
-  $$('.starter').forEach(s => s.addEventListener('click', () => {
-    input.value = s.dataset.prompt; doSend();
-  }));
   $('#export-tx').addEventListener('click', e => {
     e.preventDefault();
     const json = JSON.stringify({session_id: state.sessionId, transcript: state.fullTranscript, history: state.conversation_history}, null, 2);
@@ -2779,7 +2833,7 @@ const TUTORIAL_STEPS = [
     tip: '<strong>Status pill:</strong> top-right shows your GitHub identity and active model.' },
   { phase: '🥚 Hatching', title: 'First conversation', time: '~30 sec',
     desc: 'Type anything in the box at the bottom. The brainstem combines your <code>soul.md</code> system prompt with the loaded agent tools and asks the model to respond.',
-    cta: 'Try a starter prompt: <strong>Top HN stories</strong> — the chat will call the HackerNews agent and stream a list back.' },
+    cta: 'Tap the <strong>HackerNews</strong> card just above the input — clicking a card sends its starter prompt and the chat will stream the result back.' },
   { phase: '🧠 Core skills', title: 'Switch models on the fly', time: '~10 sec',
     desc: 'Click the model dropdown at the top to swap between GPT-4o, Claude Sonnet/Opus, GPT-4.1, o-series, Gemini, etc. — the full Copilot catalog. No restart.',
     tip: 'Models without tool-calling capability are tagged <code>· no tools</code> and won\'t fire your agents.' },
