@@ -228,6 +228,10 @@ cmd_demo_book() {
     echo "════════════════════════════════════════════════════════════════"
     echo ""
 
+    # Workflow artifacts live in the shared dir so twin-egg pack captures them.
+    local BOOK_DIR="$TWINS_HOME/.shared/book-factory"
+    mkdir -p "$BOOK_DIR"
+
     # Spin up & peer all twins
     for t in kody molly writer editor publisher reviewer; do
         twin_running "$t" || { echo "▶ Starting $t ..."; cmd_start "$t" >/dev/null; }
@@ -280,14 +284,14 @@ cmd_demo_book() {
             sed -n '1,10p' "$p"
             echo ""
         done
-    } > /tmp/source-material.md
-    echo "  wrote /tmp/source-material.md ($(wc -c < /tmp/source-material.md | tr -d ' ') bytes)"
+    } > $BOOK_DIR/source-material.md
+    echo "  wrote $BOOK_DIR/source-material.md ($(wc -c < $BOOK_DIR/source-material.md | tr -d ' ') bytes)"
 
     # Save into Kody's workspace + send to Writer via T2T
     python3 - <<PY > /dev/null
 import sys, json, base64, urllib.request
 url = "http://127.0.0.1:${PORT[kody]}"
-data = open("/tmp/source-material.md","rb").read()
+data = open("$BOOK_DIR/source-material.md","rb").read()
 urllib.request.urlopen(urllib.request.Request(
     f"{url}/api/workspace/documents/source-material.md",
     data=json.dumps({"content_b64": base64.b64encode(data).decode()}).encode(),
@@ -306,24 +310,24 @@ PY
     {
         echo "You just received source-material.md from @kody.local in your inbox. Here it is:"
         echo ""
-        cat /tmp/source-material.md
+        cat $BOOK_DIR/source-material.md
         echo ""
         echo "Outline a chapter titled 'Why local-first is the whole pitch'. Then draft it."
         echo "Lead with one concrete scene from the source. Plain prose, no markdown headings"
         echo "except a single H1. Under 800 words. Sign off as @writer.local."
-    } > /tmp/prompt-writer.txt
-    DRAFT=$(_chat_file "${PORT[writer]}" "${GUID[writer]}" /tmp/prompt-writer.txt)
-    echo "$DRAFT" > /tmp/draft.md
-    echo "  ✓ Draft written ($(wc -w < /tmp/draft.md | tr -d ' ') words)"
+    } > $BOOK_DIR/prompt-writer.txt
+    DRAFT=$(_chat_file "${PORT[writer]}" "${GUID[writer]}" $BOOK_DIR/prompt-writer.txt)
+    echo "$DRAFT" > $BOOK_DIR/draft.md
+    echo "  ✓ Draft written ($(wc -w < $BOOK_DIR/draft.md | tr -d ' ') words)"
     echo "  ┌── Excerpt:"
-    head -8 /tmp/draft.md | sed 's/^/  │ /'
+    head -8 $BOOK_DIR/draft.md | sed 's/^/  │ /'
     echo "  └──"
 
     # Send draft → editor
     python3 - <<PY > /dev/null
 import sys, json, base64, urllib.request
 url = "http://127.0.0.1:${PORT[writer]}"
-data = open("/tmp/draft.md","rb").read()
+data = open("$BOOK_DIR/draft.md","rb").read()
 urllib.request.urlopen(urllib.request.Request(
     f"{url}/api/workspace/documents/draft.md",
     data=json.dumps({"content_b64": base64.b64encode(data).decode()}).encode(),
@@ -341,24 +345,24 @@ PY
     {
         echo "You received draft.md from @writer.local. Here it is:"
         echo ""
-        cat /tmp/draft.md
+        cat $BOOK_DIR/draft.md
         echo ""
         echo "Edit it: cut the weakest 20%, flag two claims that need sourcing, note any voice"
         echo "drift from the original Kody source. Return the EDITED draft followed by '---'"
         echo "followed by your editor's note (max 5 bullets)."
-    } > /tmp/prompt-editor.txt
-    EDITED=$(_chat_file "${PORT[editor]}" "${GUID[editor]}" /tmp/prompt-editor.txt)
-    echo "$EDITED" > /tmp/edited.md
-    echo "  ✓ Edited ($(wc -w < /tmp/edited.md | tr -d ' ') words)"
+    } > $BOOK_DIR/prompt-editor.txt
+    EDITED=$(_chat_file "${PORT[editor]}" "${GUID[editor]}" $BOOK_DIR/prompt-editor.txt)
+    echo "$EDITED" > $BOOK_DIR/edited.md
+    echo "  ✓ Edited ($(wc -w < $BOOK_DIR/edited.md | tr -d ' ') words)"
     echo "  ┌── Editor's note (last section):"
-    awk '/^---$/{found=1; next} found' /tmp/edited.md | head -10 | sed 's/^/  │ /'
+    awk '/^---$/{found=1; next} found' $BOOK_DIR/edited.md | head -10 | sed 's/^/  │ /'
     echo "  └──"
 
     # Send edited → publisher
     python3 - <<PY > /dev/null
 import sys, json, base64, urllib.request
 url = "http://127.0.0.1:${PORT[editor]}"
-data = open("/tmp/edited.md","rb").read()
+data = open("$BOOK_DIR/edited.md","rb").read()
 urllib.request.urlopen(urllib.request.Request(
     f"{url}/api/workspace/documents/edited.md",
     data=json.dumps({"content_b64": base64.b64encode(data).decode()}).encode(),
@@ -378,14 +382,14 @@ PY
         echo "internal. The chapter is from the book about building this platform."
         echo "Here's the editor-cut version:"
         echo ""
-        cat /tmp/edited.md
+        cat $BOOK_DIR/edited.md
         echo ""
         echo "In 3 short bullets:"
         echo "(1) Does this ship as-is, ship with edits, or hold?"
         echo "(2) What's the partner-conversation risk if it ships?"
         echo "(3) What's the one line you want changed before it goes out?"
-    } > /tmp/prompt-molly.txt
-    MOLLY_REVIEW=$(_chat_file "${PORT[molly]}" "${GUID[molly]}" /tmp/prompt-molly.txt)
+    } > $BOOK_DIR/prompt-molly.txt
+    MOLLY_REVIEW=$(_chat_file "${PORT[molly]}" "${GUID[molly]}" $BOOK_DIR/prompt-molly.txt)
     echo "  ┌── Molly's verdict:"
     echo "$MOLLY_REVIEW" | head -10 | sed 's/^/  │ /'
     echo "  └──"
@@ -399,16 +403,16 @@ PY
         echo "chapter number). Apply the CEO's requested change."
         echo ""
         echo "Edited draft:"
-        cat /tmp/edited.md
+        cat $BOOK_DIR/edited.md
         echo ""
         echo "CEO note:"
         echo "$MOLLY_REVIEW"
         echo ""
         echo "Output the final markdown. Nothing else."
-    } > /tmp/prompt-publisher.txt
-    FINAL=$(_chat_file "${PORT[publisher]}" "${GUID[publisher]}" /tmp/prompt-publisher.txt)
-    echo "$FINAL" > /tmp/chapter-final.md
-    echo "  ✓ Final chapter ready: /tmp/chapter-final.md ($(wc -w < /tmp/chapter-final.md | tr -d ' ') words)"
+    } > $BOOK_DIR/prompt-publisher.txt
+    FINAL=$(_chat_file "${PORT[publisher]}" "${GUID[publisher]}" $BOOK_DIR/prompt-publisher.txt)
+    echo "$FINAL" > $BOOK_DIR/chapter-final.md
+    echo "  ✓ Final chapter ready: $BOOK_DIR/chapter-final.md ($(wc -w < $BOOK_DIR/chapter-final.md | tr -d ' ') words)"
 
     # ── STEP 6 — Reviewer reads it cold ──
     echo ""
@@ -416,14 +420,14 @@ PY
     {
         echo "Here is the final chapter. Read it as if you didn't build this platform."
         echo ""
-        cat /tmp/chapter-final.md
+        cat $BOOK_DIR/chapter-final.md
         echo ""
         echo "In 3 bullets:"
         echo "(1) score 1-5"
         echo "(2) strongest line in the chapter"
         echo "(3) would you keep reading the next chapter? Why or why not?"
-    } > /tmp/prompt-reviewer.txt
-    REVIEW=$(_chat_file "${PORT[reviewer]}" "${GUID[reviewer]}" /tmp/prompt-reviewer.txt)
+    } > $BOOK_DIR/prompt-reviewer.txt
+    REVIEW=$(_chat_file "${PORT[reviewer]}" "${GUID[reviewer]}" $BOOK_DIR/prompt-reviewer.txt)
     echo "  ┌── Reader's verdict:"
     echo "$REVIEW" | head -8 | sed 's/^/  │ /'
     echo "  └──"
@@ -433,10 +437,10 @@ PY
     echo "  ✓ BOOK FACTORY COMPLETE"
     echo "════════════════════════════════════════════════════════════════"
     echo "  6 twins, 5 LLM calls, 3 T2T document hand-offs, 1 OpenAI endpoint."
-    echo "  Final chapter: /tmp/chapter-final.md"
-    echo "  Source:    /tmp/source-material.md"
-    echo "  Draft:     /tmp/draft.md"
-    echo "  Edited:    /tmp/edited.md"
+    echo "  Final chapter: $BOOK_DIR/chapter-final.md"
+    echo "  Source:    $BOOK_DIR/source-material.md"
+    echo "  Draft:     $BOOK_DIR/draft.md"
+    echo "  Edited:    $BOOK_DIR/edited.md"
     echo ""
     echo "  Replay anytime: bash hippocampus/twin-sim.sh demo book-factory"
     echo "════════════════════════════════════════════════════════════════"

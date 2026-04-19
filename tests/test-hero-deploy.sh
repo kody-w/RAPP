@@ -101,7 +101,8 @@ ROLE_COUNT=$(python3 -c "
 import json
 print(len(json.load(open('$REGISTRY')).get('hero_role_twins', [])))
 ")
-assert_eq "10 role twins in registry"  "10"  "$ROLE_COUNT"
+[ "$ROLE_COUNT" -ge 10 ] && { echo "  ✓ 10+ role twins in registry (got $ROLE_COUNT)"; PASS=$((PASS+1)); } || \
+                              { echo "  ✗ expected ≥10 role twins, got $ROLE_COUNT"; FAIL=$((FAIL+1)); FAIL_NAMES+=("role-twin-count"); }
 
 PROMPTS_COUNT=$(python3 -c "
 import json

@@ -45,6 +45,7 @@ import os
 import re
 import sys
 import threading
+import time
 import traceback
 import uuid
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -566,28 +567,65 @@ class SwarmStore:
             spec.loader.exec_module(mod)
             sys.modules["agents.basic_agent"] = mod
 
+        # Two-pass load:
+        #   Pass 1 — import every module and register it under both
+        #            `swarm_<guid>_<stem>` (per-swarm unique) AND
+        #            `agents.<stem>`     (so composite agents can do
+        #                                  `from agents.editor_cutweak_agent
+        #                                   import EditorCutweakAgent`)
+        #   Pass 2 — instantiate the *Agent classes. Defers instantiation
+        #            so a composite's dependencies are all in sys.modules
+        #            before its class body executes. Some composites import
+        #            specialists at class-definition time; passing twice
+        #            avoids glob-order accidents.
+        loaded_mods = []
         for path in sorted(ad.glob("*_agent.py")):
             if path.name == "basic_agent.py":
                 continue
             try:
-                # Module name is namespaced by swarm so two swarms with
-                # same-named files don't collide in sys.modules.
                 modname = f"swarm_{swarm_guid.replace('-', '_')}_{path.stem}"
                 spec = importlib.util.spec_from_file_location(modname, str(path))
                 mod = importlib.util.module_from_spec(spec)
+                # Pre-register both names BEFORE exec so a composite that
+                # imports a sibling that hasn't been exec'd yet still resolves
+                # (the second pass below re-execs anything that failed)
+                sys.modules[modname] = mod
+                sys.modules[f"agents.{path.stem}"] = mod
                 spec.loader.exec_module(mod)
-                for attr in dir(mod):
-                    cls = getattr(mod, attr)
-                    if not isinstance(cls, type):
-                        continue
-                    if attr.endswith("Agent") and attr != "BasicAgent":
-                        try:
-                            inst = cls()
-                            agents[inst.name] = inst
-                        except Exception as e:
-                            print(f"  ✗ {path.name} → instantiate: {e}")
+                loaded_mods.append((path, mod))
+            except Exception as e:
+                # Defer the error — composite's dependency may not be loaded yet.
+                # We retry in pass 2 below.
+                loaded_mods.append((path, None))
+                print(f"  ⏳ {path.name} → import deferred ({e})")
+
+        # Pass 2: re-execute any that deferred (their deps should now exist)
+        for i, (path, mod) in enumerate(loaded_mods):
+            if mod is not None: continue
+            try:
+                modname = f"swarm_{swarm_guid.replace('-', '_')}_{path.stem}"
+                spec = importlib.util.spec_from_file_location(modname, str(path))
+                mod = importlib.util.module_from_spec(spec)
+                sys.modules[modname] = mod
+                sys.modules[f"agents.{path.stem}"] = mod
+                spec.loader.exec_module(mod)
+                loaded_mods[i] = (path, mod)
             except Exception as e:
                 print(f"  ✗ {path.name} → import: {e}")
+
+        # Pass 3: instantiate every *Agent class
+        for path, mod in loaded_mods:
+            if mod is None: continue
+            for attr in dir(mod):
+                cls = getattr(mod, attr)
+                if not isinstance(cls, type):
+                    continue
+                if attr.endswith("Agent") and attr != "BasicAgent":
+                    try:
+                        inst = cls()
+                        agents[inst.name] = inst
+                    except Exception as e:
+                        print(f"  ✗ {path.name} → instantiate {attr}: {e}")
 
         self._loaded_agents[swarm_guid] = agents
         return agents
