@@ -398,10 +398,56 @@
     100% { filter: drop-shadow(0 6px 10px rgba(0,0,0,.7)); }
   }
 
-  /* ── Hand-card hologram skin ─────────────────────────────────────────
-     The modal keeps the brown/gold collectible look; the cards in your
-     hand are recolored as cyan-blue holographic projections to match
-     the brainstem UI. Scoped overrides only — no edits to .ac-front. */
+  /* Compact face = title + art only. Designed to be readable when the
+     parent .hand-card is scaled to ~.42, so the title is intentionally
+     huge (36px → ~15px visible). Crossfades to the full holo on hover. */
+  .hc-compact, .hc-full {
+    position: absolute; inset: 0;
+    transition: opacity .25s ease;
+  }
+  .hc-full    { opacity: 0; pointer-events: none; }
+  .hc-compact { opacity: 1; }
+  .hand-card:hover .hc-compact { opacity: 0; }
+  .hand-card:hover .hc-full    { opacity: 1; }
+
+  .hc-compact {
+    display: flex; flex-direction: column;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(31,111,235,.22) 0%, transparent 65%),
+      linear-gradient(165deg, #0f1c30 0%, #07101e 50%, #0a1828 100%);
+    border: 3px solid rgba(88,166,255,.55);
+    border-radius: 14px;
+    box-shadow:
+      0 0 30px rgba(88,166,255,.22),
+      inset 0 0 40px rgba(88,166,255,.08),
+      inset 0 1px 0 rgba(180,220,255,.18);
+    padding: 18px 16px; overflow: hidden;
+  }
+  .hc-title-big {
+    font-size: 36px; font-weight: 700; color: #d6e6ff;
+    text-align: center; line-height: 1.1;
+    text-shadow: 0 0 14px rgba(88,166,255,.7), 0 2px 4px rgba(0,0,0,.7);
+    letter-spacing: .5px; padding: 6px 0 14px; flex-shrink: 0;
+  }
+  .hc-art-big {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    border: 1.5px solid rgba(88,166,255,.45);
+    border-radius: 8px;
+    background: radial-gradient(ellipse at 50% 40%,
+      rgba(15,40,75,.9) 0%, rgba(5,12,25,.95) 75%);
+    box-shadow: inset 0 0 40px rgba(88,166,255,.15);
+    padding: 18px; position: relative; overflow: hidden; min-height: 0;
+  }
+  .hc-art-big svg { width: 100%; height: 100%; max-width: 220px; }
+  .hc-art-big::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(0deg,
+      transparent 0px, transparent 3px,
+      rgba(0,200,255,.04) 3px, rgba(0,200,255,.04) 4px);
+    mix-blend-mode: screen;
+  }
+
+  /* ── Hand-card hologram skin (full view, shown on hover) ─────────── */
   .hand-card .ac-front {
     background:
       radial-gradient(ellipse at 50% 0%, rgba(31,111,235,.18) 0%, transparent 60%),
@@ -2036,7 +2082,15 @@ function renderHand() {
     el.style.setProperty('--rot', `${rot}deg`);
     el.style.zIndex = String(10 + i);     // later cards sit on top in the fan
     el.title = `Click to ask: "${promptForCard(c)}"\nRight-click for full card view`;
-    el.innerHTML = holoFrontHtml(c) + `
+    const primary = (c.card?.types || ['SOCIAL'])[0];
+    const primaryColor = RAPP.AGENT_TYPES[primary]?.color || '#58a6ff';
+    const name = c.parsed?.agentName || c.manifest.display_name || c.name;
+    el.innerHTML = `
+      <div class="hc-compact">
+        <div class="hc-title-big">${escapeHtml(name)}</div>
+        <div class="hc-art-big">${generateCardArt(c.card || {}, primaryColor)}</div>
+      </div>
+      <div class="hc-full">${holoFrontHtml(c)}</div>
       <button type="button" class="hand-x" title="Tuck back to deck">✕</button>
     `;
     el.querySelector('.hand-x').addEventListener('click', e => {
