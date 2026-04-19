@@ -372,23 +372,6 @@
     background: #21262d; border-color: #58a6ff; transform: translateY(-1px);
   }
 
-  /* Mode toggle — small segmented control beneath the hand area. */
-  .hand-mode-row {
-    display: flex; justify-content: center; gap: 2px;
-    max-width: 760px; margin: 0 auto 10px;
-    position: relative; z-index: 11;
-  }
-  .hand-mode-btn {
-    background: transparent; color: #6e7681;
-    border: 1px solid #21262d; padding: 3px 10px;
-    font-size: 10px; letter-spacing: .5px;
-    cursor: pointer; font-family: inherit;
-    transition: all .15s;
-  }
-  .hand-mode-btn:first-child { border-radius: 10px 0 0 10px; }
-  .hand-mode-btn:last-child  { border-radius: 0 10px 10px 0; border-left: none; }
-  .hand-mode-btn:hover  { color: #c9d1d9; border-color: #30363d; }
-  .hand-mode-btn.active { color: #58a6ff; background: #161b22; border-color: #1f6feb; }
   .hand-empty {
     color: #484f58; font-size: 11px; font-style: italic;
     align-self: flex-end; padding-bottom: 8px;
@@ -1125,6 +1108,14 @@
         <span class="hint">Live mode lazy-loads Pyodide (~10 MB) on the first agent call, then runs the actual <code>perform()</code> in-browser. Stub mode echoes a deterministic synthesized result instead — fast, no download, but agents don't really execute.</span>
       </div>
       <div class="row">
+        <label for="hand-mode-select">Hand display</label>
+        <select id="hand-mode-select">
+          <option value="pills">Pills (default — clean text buttons above the input)</option>
+          <option value="cards">Cards (holographic mini-cards tucked behind the input)</option>
+        </select>
+        <span class="hint">How your loaded agents render above the chat. Both modes share the same data — pills are quick and professional; cards show each agent's holographic preview. Right-click any pill or card to open the full collectible view.</span>
+      </div>
+      <div class="row">
         <label for="soul">soul.md (system prompt)</label>
         <textarea id="soul" placeholder="You are a helpful, concise RAPP assistant…"></textarea>
         <span class="hint">Loaded as the system prompt every turn. SPEC §7.</span>
@@ -1186,13 +1177,9 @@
 </div>
 
 <footer>
-  <!-- Pills (default) and cards render the same hand of agents — toggle picks. -->
+  <!-- Pills (default) and cards render the same hand of agents — see Settings. -->
   <div id="hand-cards">
     <span class="hand-empty" id="hand-empty">no agents loaded — open the Binder, tap a card to play it</span>
-  </div>
-  <div class="hand-mode-row">
-    <button class="hand-mode-btn active" data-mode="pills" title="Pill mode (default)">⌒ Pills</button>
-    <button class="hand-mode-btn"        data-mode="cards" title="Card mode (holographic)">▭ Cards</button>
   </div>
   <div class="input-row">
     <textarea id="input" placeholder="Talk to the brainstem… (Shift+Enter for newline)" rows="1"></textarea>
@@ -1489,6 +1476,7 @@ function loadSettings() {
   $('#api-base').value = state.settings.customBase;
   $('#custom-key').value = state.settings.customKey;
   $('#exec-mode').value = state.settings.execMode;
+  $('#hand-mode-select').value = state.settings.handMode || 'pills';
   $('#soul').value = state.settings.soul;
   refreshProviderUI();
   refreshModelOptions();
@@ -2085,10 +2073,8 @@ function renderHand() {
 function setHandMode(mode) {
   state.settings.handMode = (mode === 'cards') ? 'cards' : 'pills';
   LS.set('settings', state.settings);
-  // Update toggle button state
-  $$('.hand-mode-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.mode === state.settings.handMode);
-  });
+  const sel = $('#hand-mode-select');
+  if (sel) sel.value = state.settings.handMode;
   renderHand();
 }
 
@@ -2834,8 +2820,7 @@ function wire() {
   $('#btn-settings').addEventListener('click', () => openAside('settings'));
   $('#btn-agents').addEventListener('click',   () => openAside('agents'));
   $('#btn-binder').addEventListener('click',   () => openAside('binder'));
-  $$('.hand-mode-btn').forEach(b => b.addEventListener('click', () => setHandMode(b.dataset.mode)));
-  // Sync toggle UI to persisted setting and re-render in the right mode.
+  $('#hand-mode-select').addEventListener('change', e => setHandMode(e.target.value));
   setHandMode(state.settings.handMode || 'pills');
   $('#btn-signin').addEventListener('click', () => {
     if (state.settings.provider === 'copilot') openCopilotSigninModal();
