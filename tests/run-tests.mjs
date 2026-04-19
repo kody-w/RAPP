@@ -323,6 +323,7 @@ class TinyAgent(BasicAgent):
     'agents/basic_agent.py',
     'agents/save_memory_agent.py', 'agents/recall_memory_agent.py', 'agents/hacker_news_agent.py',
     'tests/run-tests.mjs',
+    'tether/server.py',
   ]) {
     await test(`twin file present: ${p}`, () => {
       const full = path.join(ROOT, p);

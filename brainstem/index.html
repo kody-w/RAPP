@@ -161,6 +161,22 @@
   }
   .afile button:hover { background: #21262d; color: #e6edf3; border-color: #30363d; }
 
+  /* Tether status pill (header) and Settings row */
+  .tether-pill {
+    background: rgba(63,185,80,.12); color: #3fb950;
+    border: 1px solid #238636; border-radius: 12px;
+    padding: 2px 10px; font-size: 11px; font-weight: 600;
+    cursor: default; white-space: nowrap;
+  }
+  .tether-row { display: flex; gap: 6px; margin-top: 4px; }
+  .tether-row input { flex: 1; }
+  .tether-stat {
+    margin-top: 6px; font-size: 11px; color: #6e7681;
+    font-family: "SF Mono", ui-monospace, monospace;
+  }
+  .tether-stat.ok  { color: #3fb950; }
+  .tether-stat.err { color: #f85149; }
+
   /* Compact sign-in status row in Settings */
   .settings-status-row {
     flex-direction: row !important; align-items: center; justify-content: space-between;
@@ -1089,6 +1105,7 @@
   <div class="controls">
     <span class="dot offline" id="status-dot"></span>
     <span id="status-text">checking...</span>
+    <span id="tether-pill" class="tether-pill" hidden></span>
     <select id="model-sel"></select>
 
     <button class="icon-btn green" id="btn-signin" hidden title="Sign in with GitHub">
@@ -1195,6 +1212,19 @@
           <input id="source-input" type="text" placeholder="owner/repo" autocomplete="off" />
           <button class="btn" id="add-source">Add</button>
         </div>
+      </div>
+
+      <div class="row">
+        <label>
+          <input type="checkbox" id="tether-enabled" style="vertical-align:middle;margin-right:6px">
+          Tether to local brainstem
+        </label>
+        <div class="tether-row">
+          <input id="tether-url" type="text" placeholder="http://localhost:8765" autocomplete="off" />
+          <button class="btn" id="tether-test">Test</button>
+        </div>
+        <div id="tether-status" class="tether-stat">disabled</div>
+        <span class="hint">Routes agent execution through a local Python process for real OS access. Run <code>python tether/server.py</code> from the RAPP repo.</span>
       </div>
     </div>
     <div class="actions">
@@ -1505,7 +1535,14 @@ const state = {
     // and must publish a registry.json at the repo root in rapp-registry/1.0.
     // The default kody-w/RAR is the canonical library and can't be removed.
     sources: ['kody-w/RAR'],
+    // Tether to a local brainstem (tether/server.py). When connected, agent
+    // calls route through the local Python process instead of Pyodide so
+    // they get real filesystem / subprocess / LAN / hardware access.
+    tetherEnabled: false,
+    tetherUrl: 'http://localhost:8765',
   },
+  // Live tether status (refreshed by probeTether). Not persisted.
+  tether: { connected: false, agents: [], lastError: null, host: '' },
   pyodide: null,
   pyodideLoading: null,
   pendingDeviceLogin: null,
@@ -1576,6 +1613,8 @@ function loadSettings() {
   $('#custom-key').value = state.settings.customKey;
   $('#exec-mode').value = state.settings.execMode;
   $('#hand-mode-select').value = state.settings.handMode || 'pills';
+  $('#tether-enabled').checked = !!state.settings.tetherEnabled;
+  $('#tether-url').value = state.settings.tetherUrl || 'http://localhost:8765';
   refreshProviderUI();
   refreshModelOptions();
   refreshStatus();
@@ -1636,8 +1675,11 @@ function saveSettings() {
   state.settings.customKey  = $('#custom-key').value.trim();
   state.settings.execMode = $('#exec-mode').value;
   state.settings.model = $('#model-sel').value;
+  state.settings.tetherEnabled = $('#tether-enabled').checked;
+  state.settings.tetherUrl = $('#tether-url').value.trim();
   LS.set('settings', state.settings);
   refreshStatus();
+  probeTether();   // re-probe in case tether settings changed
   closeAside('settings');
 }
 
@@ -2913,13 +2955,97 @@ function findCardByAgentName(name) {
   return null;
 }
 
-/* ───── Agent execution: stub or live (Pyodide) ───────────── */
+/* ───── Agent execution: tether → live (Pyodide) → stub ──────────────
+   Tether wins when it's connected and exposes the same agent name; the
+   call hits the local Python process via tether/server.py and gets real
+   filesystem / subprocess / LAN / hardware access. Falls through to the
+   in-browser executor otherwise. */
 async function runAgent(card, kwargs, upstreamSlush) {
+  const p = RAPP.Agent.parseAgentSource(card.source, card.filename);
+  const name = p.name || card.name;
+
+  if (state.tether.connected && state.tether.agents.includes(name)) {
+    try {
+      return await runAgentTethered(name, kwargs);
+    } catch (e) {
+      console.warn('tether call failed, falling back to local exec', e);
+      // Don't return error — fall through so the request still gets answered.
+    }
+  }
   if (state.settings.execMode === 'live') {
     try { return await runAgentLive(card, kwargs, upstreamSlush); }
     catch (e) { return JSON.stringify({status:'error', message:`live exec failed: ${e.message}`}); }
   }
   return runAgentStub(card, kwargs, upstreamSlush);
+}
+
+async function runAgentTethered(name, kwargs) {
+  const url = (state.settings.tetherUrl || '').replace(/\/+$/, '') + '/tether/agent';
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, args: kwargs || {} }),
+  });
+  const d = await r.json();
+  if (!r.ok || d.status === 'error') {
+    return JSON.stringify({ status: 'error', message: d.message || `tether HTTP ${r.status}` });
+  }
+  // Local agents return either a string or a JSON-serialized envelope.
+  return typeof d.output === 'string' ? d.output : JSON.stringify(d.output);
+}
+
+async function probeTether() {
+  if (!state.settings.tetherEnabled) {
+    state.tether = { connected: false, agents: [], lastError: null, host: '' };
+    refreshTetherStatus();
+    return;
+  }
+  const base = (state.settings.tetherUrl || '').replace(/\/+$/, '');
+  if (!base) {
+    state.tether = { connected: false, agents: [], lastError: 'no URL set', host: '' };
+    refreshTetherStatus();
+    return;
+  }
+  try {
+    const r = await fetch(base + '/tether/healthz', { cache: 'no-store' });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const d = await r.json();
+    state.tether = {
+      connected: true,
+      agents: d.agents || [],
+      lastError: null,
+      host: d.host || base,
+    };
+  } catch (e) {
+    state.tether = { connected: false, agents: [], lastError: e.message, host: '' };
+  }
+  refreshTetherStatus();
+}
+
+function refreshTetherStatus() {
+  const pill = $('#tether-pill');
+  const stat = $('#tether-status');
+  if (pill) {
+    if (state.tether.connected) {
+      pill.hidden = false;
+      pill.textContent = `⚡ Tethered · ${state.tether.agents.length} local agents`;
+      pill.title = `Routing through ${state.tether.host}\nLocal agents: ${state.tether.agents.join(', ') || '(none)'}`;
+    } else {
+      pill.hidden = true;
+    }
+  }
+  if (stat) {
+    if (!state.settings.tetherEnabled) {
+      stat.textContent = 'disabled';
+      stat.className = 'tether-stat';
+    } else if (state.tether.connected) {
+      stat.textContent = `connected · ${state.tether.agents.length} agents (${state.tether.agents.join(', ') || 'none'})`;
+      stat.className = 'tether-stat ok';
+    } else {
+      stat.textContent = `not reachable${state.tether.lastError ? ' — ' + state.tether.lastError : ''}`;
+      stat.className = 'tether-stat err';
+    }
+  }
 }
 
 function runAgentStub(card, kwargs, upstreamSlush) {
@@ -3126,6 +3252,17 @@ function wire() {
   $('#browse-filter').addEventListener('input', renderBrowse);
   $('#browse-source-filter').addEventListener('change', renderBrowse);
   $('#browse-refresh').addEventListener('click', refreshAllSources);
+  $('#tether-test').addEventListener('click', async () => {
+    // Pull current values into state without saving so the test reflects what
+    // the user just typed.
+    state.settings.tetherEnabled = true;
+    state.settings.tetherUrl = $('#tether-url').value.trim();
+    await probeTether();
+  });
+  $('#tether-enabled').addEventListener('change', e => {
+    state.settings.tetherEnabled = e.target.checked;
+    probeTether();
+  });
   $('#hand-mode-select').addEventListener('change', e => setHandMode(e.target.value));
   setHandMode(state.settings.handMode || 'pills');
   $('#btn-signin').addEventListener('click', () => {
@@ -3411,6 +3548,10 @@ function tutPrev() {
   // Kick off the registry fetch in the background so Settings and Browse
   // show live agent counts as soon as the user opens them.
   refreshAllSources();
+  // Probe the tether (if enabled) and re-check every 30s so the pill goes
+  // dark when the local brainstem stops responding.
+  probeTether();
+  setInterval(probeTether, 30_000);
 })();
 
 })();
