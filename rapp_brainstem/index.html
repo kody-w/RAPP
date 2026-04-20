@@ -294,6 +294,13 @@
     border-top: 1px solid #21262d;
     background: #161b22;
   }
+  /* "Face" footer — eyes (globe + send) above, mouth (quick prompts)
+     below the chat textbox. Ordering in HTML: eyes → input → mouth. */
+  .eyes-row {
+    display: flex; justify-content: space-between; align-items: end;
+    max-width: 760px; margin: 0 auto 8px; padding: 0 8px;
+    min-height: 84px;
+  }
   .input-row {
     display: flex; gap: 10px; align-items: center;
     max-width: 760px; margin: 0 auto;
@@ -538,9 +545,12 @@
   #drop-overlay .icon { width: 64px; height: 64px; margin-bottom: 16px; }
 
   /* ── Starter Prompts ── */
+  /* The "mouth" — quick-prompt pills + dynamic twin suggestions below
+     the chat box. Starter prompts seed it; twin.send/prompt actions
+     append as lavender-tinted pills. */
   #starter-prompts {
     display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
-    max-width: 760px; margin: 0 auto 16px; padding: 0 24px;
+    max-width: 760px; margin: 12px auto 0; padding: 0 24px;
     transition: opacity 0.3s, transform 0.3s;
   }
   .starter-btn {
@@ -551,6 +561,8 @@
   .starter-btn:hover {
     background: #21262d; border-color: #58a6ff; transform: translateY(-1px);
   }
+  .starter-btn.twin-pill { color: #c4b5fd; border-color: rgba(167,139,250,.4); }
+  .starter-btn.twin-pill:hover { border-color: #a78bfa; background: rgba(167,139,250,.08); }
   .hidden-prompts { opacity: 0; pointer-events: none; transform: translateY(10px); display: none !important; }
 
   /* ── Light Mode Overrides ── */
@@ -1062,11 +1074,6 @@
 </div>
 
 <footer>
-  <div id="starter-prompts">
-    <button class="starter-btn" onclick="useStarter('What exactly can you do?')">What can you do?</button>
-    <button class="starter-btn" onclick="useStarter('Help me build a new tool.')">Help me build a new tool</button>
-    <button class="starter-btn" onclick="useStarter('How do I manage my agent files?')">How do I manage agents?</button>
-  </div>
   <div class="toolbar-row">
     <div class="left">
       <span class="dev-only">Session: <span id="session-id">—</span></span>
@@ -1084,7 +1091,11 @@
       <button class="toolbar-link dev-only" onclick="toggleDevMode()" id="dev-toggle">Dev</button>
     </div>
   </div>
-  <div class="input-row">
+
+  <!-- EYES: globe + send button sit above the input, spaced apart like
+       eyes above a mouth. Bubble is anchored inside the twin-slot so
+       it pops up from the eye itself. -->
+  <div class="eyes-row">
     <div class="twin-slot" id="twin-slot">
       <div id="twin-bubble">
         <div class="twin-status-tag">present</div>
@@ -1096,8 +1107,20 @@
       </div>
       <div class="twin-caption">Twin</div>
     </div>
-    <textarea id="input" rows="1" placeholder="Message brainstem..." autocomplete="off"></textarea>
     <button id="send" onclick="sendMessage()">Send</button>
+  </div>
+
+  <!-- The text box — "nose/cheek" — full-width between the eyes and mouth. -->
+  <div class="input-row">
+    <textarea id="input" rows="1" placeholder="Message brainstem..." autocomplete="off"></textarea>
+  </div>
+
+  <!-- MOUTH: quick-prompt pills. Starter prompts seed it; twin can
+       append send/prompt suggestions as lavender .twin-pill chips. -->
+  <div id="starter-prompts">
+    <button class="starter-btn" onclick="useStarter('What exactly can you do?')">What can you do?</button>
+    <button class="starter-btn" onclick="useStarter('Help me build a new tool.')">Help me build a new tool</button>
+    <button class="starter-btn" onclick="useStarter('How do I manage my agent files?')">How do I manage agents?</button>
   </div>
 </footer>
 
@@ -2716,7 +2739,29 @@
       actBox.appendChild(btn);
     });
 
+    // Also surface twin's send/prompt suggestions in the "mouth" row
+    // under the chat box — same UX as starter pills so users have one
+    // place to look for "what could I say next?"
+    renderMouthPills(actions);
+
     if (twinMode && !portrait.classList.contains('active')) showTwin();
+  }
+
+  function renderMouthPills(actions) {
+    const row = document.getElementById('starter-prompts');
+    if (!row) return;
+    row.querySelectorAll('.twin-pill').forEach(el => el.remove());
+    if (!actions) return;
+    actions
+      .filter(a => a.kind === 'send' || a.kind === 'prompt')
+      .forEach(a => {
+        const btn = document.createElement('button');
+        btn.className = 'starter-btn twin-pill';
+        btn.textContent = '✨ ' + (a.label || a.body || a.kind);
+        btn.title = a.body || a.label || a.kind;
+        btn.onclick = () => runTwinAction(a, btn);
+        row.appendChild(btn);
+      });
   }
 
   function runTwinAction(action, btn) {
@@ -2769,6 +2814,7 @@
     document.querySelector('#twin-bubble .twin-body').innerHTML = '';
     document.querySelector('#twin-bubble .twin-actions').innerHTML = '';
     document.getElementById('twin-bubble').classList.remove('visible');
+    renderMouthPills([]);
     if (_holo) _holo.setMood('present');
   }
 
