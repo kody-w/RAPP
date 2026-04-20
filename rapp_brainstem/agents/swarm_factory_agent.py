@@ -1,11 +1,17 @@
 """
-swarm_factory_agent.py — Converge your local agents into a single-file RAPP swarm.
+swarm_factory_agent.py — Build, install, and manage RAPP swarms.
 
-Takes every agent loaded on your local brainstem and collapses them into ONE
-sacred agent.py file. The output is a drop-in singleton you can share with
-anyone — they copy the file into their brainstem's agents/ dir and it works.
+Actions:
+  build   — Converge local agents into a single shareable .py singleton
+  list    — Show available swarms in the RAPP Store
+  install — Pull a swarm from the RAPP Store into your agents/ dir
+  uninstall — Remove an installed swarm
 
-Usage: ask the brainstem "Package my agents as a swarm called SalesBot"
+Usage:
+  "Package my agents as a swarm called SalesBot"
+  "What swarms are available in the RAPP Store?"
+  "Install the BookFactory swarm"
+  "Uninstall BookFactory"
 """
 
 from agents.basic_agent import BasicAgent
@@ -15,16 +21,20 @@ import re
 import json
 import hashlib
 import glob
+import urllib.request
+import urllib.error
 
+
+RAPP_STORE_CATALOG_URL = "https://raw.githubusercontent.com/kody-w/RAPP/main/rapp_store/index.json"
 
 __manifest__ = {
     "schema": "rapp-agent/1.0",
     "name": "@rapp/swarm-factory",
     "tier": "core",
     "trust": "official",
-    "version": "0.1.0",
-    "tags": ["meta", "build", "singleton", "swarm-factory"],
-    "example_call": {"args": {"swarm_name": "SalesBot", "description": "B2B sales acceleration pipeline"}},
+    "version": "0.2.0",
+    "tags": ["meta", "build", "singleton", "swarm-factory", "store"],
+    "example_call": {"args": {"action": "list"}},
 }
 
 
@@ -34,35 +44,141 @@ class SwarmFactoryAgent(BasicAgent):
         self.metadata = {
             "name": "SwarmFactory",
             "description": (
-                "Converge the agents loaded on this brainstem into a single "
-                "shareable .py file. The output is a RAPP swarm singleton — one "
-                "file that contains every agent collapsed into _Internal classes "
-                "with a single public entrypoint. Anyone can drop this file into "
-                "their brainstem's agents/ dir and it works. Call this when the "
-                "user wants to package, publish, export, or share their agent swarm."
+                "Build, install, list, and uninstall RAPP swarms. "
+                "Actions: 'build' converges local agents into a shareable singleton .py file. "
+                "'list' shows available swarms in the RAPP Store. "
+                "'install' pulls a swarm from the store into agents/. "
+                "'uninstall' removes an installed swarm. "
+                "Call this when the user wants to package/export agents, browse the store, "
+                "or install/remove a swarm."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
+                    "action": {
+                        "type": "string",
+                        "enum": ["build", "list", "install", "uninstall"],
+                        "description": "What to do: build (package local agents), list (browse RAPP Store), install (pull from store), uninstall (remove swarm)"
+                    },
                     "swarm_name": {
                         "type": "string",
-                        "description": "PascalCase name for the swarm (e.g. SalesBot, ResearchPipeline)"
+                        "description": "For build: PascalCase name for the swarm. For install/uninstall: the swarm id or name (e.g. 'bookfactory', 'BookFactory')"
                     },
                     "description": {
                         "type": "string",
-                        "description": "One-line description of what this swarm does"
+                        "description": "For build: one-line description of what this swarm does"
                     },
                     "exclude": {
                         "type": "string",
-                        "description": "Comma-separated agent names to exclude (e.g. 'SaveMemory,RecallMemory'). Built-in memory/factory agents are excluded automatically."
+                        "description": "For build: comma-separated agent names to exclude. Built-in memory/factory agents are excluded automatically."
                     }
                 },
-                "required": ["swarm_name"]
+                "required": ["action"]
             }
         }
         super().__init__(self.name, self.metadata)
 
-    def perform(self, swarm_name="MySwarm", description="", exclude="", **kwargs):
+    def _fetch_catalog(self):
+        req = urllib.request.Request(RAPP_STORE_CATALOG_URL,
+                                     headers={"User-Agent": "RAPP-SwarmFactory/0.2"})
+        resp = urllib.request.urlopen(req, timeout=10)
+        return json.loads(resp.read().decode())
+
+    def _list_swarms(self):
+        cat = self._fetch_catalog()
+        rapps = cat.get("rapplications", [])
+        swarms = [r for r in rapps
+                  if (r.get("produced_by", {}).get("source_files_collapsed", 0) > 1
+                      and not r.get("egg_url"))]
+        results = []
+        for s in swarms:
+            results.append({
+                "id": s.get("id"),
+                "name": s.get("display_name") or s.get("name") or s.get("id"),
+                "description": s.get("description", ""),
+                "version": s.get("version", ""),
+                "agents_collapsed": s.get("produced_by", {}).get("source_files_collapsed", 0),
+                "singleton_filename": s.get("singleton_filename", ""),
+            })
+        return json.dumps({
+            "status": "ok",
+            "action": "list",
+            "swarms": results,
+            "count": len(results),
+            "message": f"Found {len(results)} swarm(s) in the RAPP Store.",
+        })
+
+    def _install_swarm(self, swarm_name):
+        if not swarm_name:
+            return json.dumps({"status": "error",
+                               "message": "Provide swarm_name to install (e.g. 'bookfactory')."})
+        agents_dir = os.environ.get("AGENTS_PATH",
+                        os.path.join(os.path.dirname(os.path.abspath(__file__))))
+        cat = self._fetch_catalog()
+        rapps = cat.get("rapplications", [])
+        lookup = swarm_name.lower().replace(" ", "").replace("-", "").replace("_", "")
+        entry = None
+        for r in rapps:
+            rid = (r.get("id") or "").lower().replace("-", "").replace("_", "")
+            rname = (r.get("display_name") or r.get("name") or "").lower().replace(" ", "").replace("-", "").replace("_", "")
+            if lookup in (rid, rname):
+                entry = r
+                break
+        if not entry:
+            return json.dumps({"status": "error",
+                               "message": f"Swarm '{swarm_name}' not found in the RAPP Store."})
+        url = entry.get("singleton_url")
+        fname = entry.get("singleton_filename")
+        if not url or not fname:
+            return json.dumps({"status": "error",
+                               "message": f"Catalog entry for '{swarm_name}' is missing singleton_url or filename."})
+        req = urllib.request.Request(url, headers={"User-Agent": "RAPP-SwarmFactory/0.2"})
+        body = urllib.request.urlopen(req, timeout=15).read()
+        dest = os.path.join(agents_dir, fname)
+        os.makedirs(agents_dir, exist_ok=True)
+        with open(dest, "wb") as f:
+            f.write(body)
+        return json.dumps({
+            "status": "ok",
+            "action": "install",
+            "id": entry.get("id"),
+            "filename": fname,
+            "bytes": len(body),
+            "destination": dest,
+            "message": f"Installed '{entry.get('display_name') or entry.get('name') or entry.get('id')}' → agents/{fname} ({len(body)} bytes). It will load on the next request.",
+        })
+
+    def _uninstall_swarm(self, swarm_name):
+        if not swarm_name:
+            return json.dumps({"status": "error",
+                               "message": "Provide swarm_name to uninstall."})
+        agents_dir = os.environ.get("AGENTS_PATH",
+                        os.path.join(os.path.dirname(os.path.abspath(__file__))))
+        lookup = swarm_name.lower().replace(" ", "").replace("-", "").replace("_", "")
+        for fname in sorted(os.listdir(agents_dir)):
+            if not fname.endswith("_agent.py") or fname == "basic_agent.py":
+                continue
+            stem = fname.replace("_agent.py", "").replace("-", "").replace("_", "")
+            if stem == lookup:
+                path = os.path.join(agents_dir, fname)
+                os.remove(path)
+                return json.dumps({
+                    "status": "ok",
+                    "action": "uninstall",
+                    "removed": fname,
+                    "message": f"Removed agents/{fname}. It will no longer load.",
+                })
+        return json.dumps({"status": "error",
+                           "message": f"No installed agent matching '{swarm_name}' found."})
+
+    def perform(self, action="build", swarm_name="MySwarm", description="", exclude="", **kwargs):
+        if action == "list":
+            return self._list_swarms()
+        if action == "install":
+            return self._install_swarm(swarm_name)
+        if action == "uninstall":
+            return self._uninstall_swarm(swarm_name)
+
         agents_dir = os.environ.get("AGENTS_PATH",
                         os.path.join(os.path.dirname(os.path.abspath(__file__))))
 
