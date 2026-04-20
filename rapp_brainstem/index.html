@@ -1695,16 +1695,21 @@
         fetch(API + '/api/binder/catalog').then(r => r.json()).catch(() => ({ rapplications: [] }))
       ]);
       _rappsCache = { binder: bR, catalog: cR };
-      const installed = bR.installed || [];
+      const allInstalled = bR.installed || [];
       const allCatalog = (cR.rapplications || []);
       // Only show top-level rapplications (source_files_collapsed > 1 = converged swarm)
       const catalog = allCatalog.filter(r => (r.produced_by?.source_files_collapsed || 0) > 1);
+      const catalogIds = new Set(allCatalog.map(r => r.id));
+      // Installed: only show agents that came from the RAPPstore catalog
+      const installed = allInstalled.filter(e => catalogIds.has(e.id));
       const installedIds = new Set(installed.map(e => e.id));
       document.getElementById('sp-rapps-installed-n').textContent = '(' + installed.length + ')';
       document.getElementById('sp-rapps-catalog-n').textContent = '(' + catalog.length + ')';
-      instDiv.innerHTML = installed.length ? installed.map(e =>
-        `<div class="rapp-row installed"><div class="rr-head"><span class="rr-name">${esc(e.id)}</span><span class="rr-ver">v${esc(e.version||'?')}</span></div><div class="rr-actions"><button class="panel-btn danger" onclick="uninstallRapp('${esc(e.id)}')">Uninstall</button></div></div>`
-      ).join('') : '<div style="color:#8b949e;font-size:10px;font-style:italic">No rapplications installed.</div>';
+      instDiv.innerHTML = installed.length ? installed.map(e => {
+        const catEntry = allCatalog.find(r => r.id === e.id);
+        const displayName = catEntry?.name || e.id;
+        return `<div class="rapp-row installed"><div class="rr-head"><span class="rr-name">${esc(displayName)}</span><span class="rr-ver">v${esc(e.version||catEntry?.version||'?')}</span></div><div class="rr-actions"><button class="panel-btn danger" onclick="uninstallRapp('${esc(e.id)}')">Uninstall</button></div></div>`;
+      }).join('') : '<div style="color:#8b949e;font-size:10px;font-style:italic">No rapplications installed.</div>';
       catDiv.innerHTML = catalog.map(r => {
         const isInst = installedIds.has(r.id);
         const summary = (r.summary||'').slice(0,120) + ((r.summary||'').length > 120 ? '…' : '');
