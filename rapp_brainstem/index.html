@@ -2749,20 +2749,11 @@
       bubble.classList.remove('visible');
     }
 
+    // Bubble is for the twin's *voice* (the text); actions live as
+    // pills in the mouth row below the input — that's the one surface
+    // the user clicks to accept a twin-driven UI move.
     const actBox = document.querySelector('#twin-bubble .twin-actions');
-    actBox.innerHTML = '';
-    actions.forEach(a => {
-      const btn = document.createElement('button');
-      btn.className = 'twin-action';
-      const glyph = CHIP_GLYPH[a.kind] || '◆';
-      btn.innerHTML = `<span class="chip-glyph">${glyph}</span> ${esc(a.label || a.kind)}`;
-      btn.onclick = () => runTwinAction(a, btn);
-      actBox.appendChild(btn);
-    });
-
-    // Also surface twin's send/prompt suggestions in the "mouth" row
-    // under the chat box — same UX as starter pills so users have one
-    // place to look for "what could I say next?"
+    if (actBox) actBox.innerHTML = '';
     renderMouthPills(actions);
 
     if (twinMode && !portrait.classList.contains('active')) showTwin();
@@ -2773,16 +2764,19 @@
     if (!row) return;
     row.querySelectorAll('.twin-pill').forEach(el => el.remove());
     if (!actions) return;
-    actions
-      .filter(a => a.kind === 'send' || a.kind === 'prompt')
-      .forEach(a => {
-        const btn = document.createElement('button');
-        btn.className = 'starter-btn twin-pill';
-        btn.textContent = '✨ ' + (a.label || a.body || a.kind);
-        btn.title = a.body || a.label || a.kind;
-        btn.onclick = () => runTwinAction(a, btn);
-        row.appendChild(btn);
-      });
+    // All twin action kinds (send / prompt / open / toggle / highlight
+    // / rapp) surface as pills in the mouth row — that's how the twin
+    // "drives" the UI: one place the user clicks to accept a suggestion.
+    actions.forEach(a => {
+      const btn = document.createElement('button');
+      btn.className = 'starter-btn twin-pill';
+      const glyph = CHIP_GLYPH[a.kind] || '✨';
+      const label = a.label || a.body || a.target || a.kind;
+      btn.textContent = glyph + '  ' + label;
+      btn.title = a.body || a.label || (a.target ? `${a.kind}: ${a.target}` : a.kind);
+      btn.onclick = () => runTwinAction(a, btn);
+      row.appendChild(btn);
+    });
   }
 
   function runTwinAction(action, btn) {
