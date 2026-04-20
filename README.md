@@ -12,7 +12,7 @@ The repo memorializes the three-tier RAPP architecture, plus a browser-only **vi
 |------|-----------|
 | `index.html` | Landing page — animated stack diagram + tier intros |
 | `SPEC.md` | The frozen v1 contract (sacred — do not break) |
-| [`rapp_installer/`](./rapp_installer/) | Install widget mirror |
+| [`installer/`](./installer/) | Install widget mirror |
 | [`rapp_brainstem/`](./rapp_brainstem/) | The local Flask brainstem + its browser twin under `web/` |
 | [`rapp_swarm/`](./rapp_swarm/) | Tier 2 — Azure Functions deployment target |
 | [`rapp_store/`](./rapp_store/) | Rapplication catalog + sources + eggs |

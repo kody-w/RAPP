@@ -319,7 +319,7 @@ class TinyAgent(BasicAgent):
 
   for (const p of [
     'index.html', 'SPEC.md', 'README.md',
-    'rapp_installer/index.html', 'rapp_swarm/index.html', 'rapp_brainstem/web/index.html', 'rapp_brainstem/web/rapp.js',
+    'installer/index.html', 'rapp_swarm/index.html', 'rapp_brainstem/web/index.html', 'rapp_brainstem/web/rapp.js',
     'rapp_brainstem/agents/basic_agent.py',
     'rapp_brainstem/agents/manage_memory_agent.py', 'rapp_brainstem/agents/manage_memory_agent.py', 'rapp_brainstem/agents/hacker_news_agent.py',
     'tests/run-tests.mjs',
