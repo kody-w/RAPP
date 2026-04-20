@@ -156,3 +156,85 @@ emits `|||TWIN|||` without `|||VOICE|||`, the twin text leaks into
   twin personas (the book-factory twin vs. the sales twin). Scope for
   later — for v1 of this feature, one twin per tenant, authored in the
   soul.
+
+---
+
+## Twin Calibration — fidelity that grows autonomously
+
+**Status:** proposed · **Shape:** prompt change + a small JSONL log · **Depends on:** the twin companion v0
+
+The v0 twin emits hints every turn. Some hints are right, some are noise.
+The user votes with their next turn — they act on the hint, push back
+against it, or ignore it. That signal is sitting there, free. Calibration
+is the move that captures it and uses it to make the twin better over
+time, without any explicit teach step from the user.
+
+### The loop
+
+1. **Predict.** Each turn the twin emits its commentary inside `|||TWIN|||`
+   AND optionally tags predictions it made, e.g.:
+   ```
+   |||TWIN|||
+   **Hint:** the oldest PR is the release blocker.
+   <probe id="t-4711" kind="priority-claim" subject="PR#123" confidence="0.7"/>
+   ```
+   The probe tag is part of the twin's output, not a separate primitive.
+2. **Observe.** On the *next* turn, the twin receives its own prior
+   `|||TWIN|||` output as context (appended to the system prompt as a
+   tiny `<prior_twin_probes>` block). The twin now knows what it claimed
+   a turn ago.
+3. **Score.** The twin's prompt instructs: *"For each prior probe,
+   judge whether the user's most recent message validates, contradicts,
+   or is silent on the claim. Emit a calibration line."* That line
+   looks like:
+   ```
+   <calibration id="t-4711" outcome="validated" note="user merged PR#123 first"/>
+   ```
+4. **Log.** The brainstem parses any `<calibration …/>` tags out of the
+   `|||TWIN|||` block and appends each to `<twin-root>/.twin_calibration.jsonl`
+   before rendering. The user never sees the tags; they're stripped
+   from what renders in the side panel.
+5. **Recalibrate.** The next turn's system prompt injects a rolling
+   summary of the twin's hit-rate by `kind`:
+   *"Your historical accuracy: priority-claim 62% (21/34), risk-flag
+   81% (17/21), api-shape-guess 44%."* The twin uses that to decide
+   how confidently to emit new probes of each kind.
+
+### Why this works without a new primitive
+
+- The probes and calibration marks are just **XML-ish tags inside the
+  existing `|||TWIN|||` block**. No new delimiter, no new wire field.
+  The parser needs one more step — extract-and-strip `<probe/>` and
+  `<calibration/>` before rendering — which is a ~20-line addition.
+- The log is one JSONL file per twin-root. No DB. Grep-readable.
+  Deletable. Exportable.
+- No separate LLM call. The twin already runs every turn; it now does
+  slightly more work inside the same completion.
+
+### The autonomy claim
+
+The user never has to say *"good hint"* or *"bad hint"*. The twin
+watches what the user actually does on the following turn — that's the
+ground truth. If the user merges PR#123 after the twin flagged it as
+the blocker, the claim is validated. If the user merges a different PR,
+the claim is contradicted. If the user changes topic entirely, the
+claim is silent — don't count it either way.
+
+This is the *confirm with numbers* move — the twin's confidence for
+each probe kind is an actual ratio, stored, auditable, and drifting
+toward reality as more turns happen. If the twin starts off overconfident
+about priority claims and underconfident about API shapes, the
+calibration log will show that, and the next turn's prompt will nudge
+the twin to adjust.
+
+### Acceptance
+
+1. `<probe/>` and `<calibration/>` tags are stripped from the rendered
+   twin panel and written to `.twin_calibration.jsonl` instead.
+2. A rolling accuracy summary is injected into the system prompt — at
+   most ~200 tokens, showing last-N windowed hit rates by `kind`.
+3. Removing the calibration block from the prompt collapses back to
+   v0 twin behavior. Removing the JSONL file resets the twin's
+   confidence to neutral. Both are cleanly reversible.
+4. The user can read `.twin_calibration.jsonl` with `jq` and see
+   what the twin thought and what happened.
