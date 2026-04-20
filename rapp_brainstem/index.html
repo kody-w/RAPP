@@ -665,11 +665,12 @@
   }
   #twin-portrait.active { display: block; }
   #twin-portrait canvas { display: block; width: 64px !important; height: 64px !important; }
+  /* Mood tag now lives inside #twin-bubble as a header chip — the circle
+     clipped the text when it was pinned to the bottom of the portrait. */
   .twin-status-tag {
-    position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
-    font-size: 7px; color: #38bdf8; text-transform: uppercase; letter-spacing: .06em;
-    white-space: nowrap; opacity: 0.85; pointer-events: none;
-    text-shadow: 0 0 4px rgba(0,0,0,.8);
+    display: inline-block; margin-bottom: 6px;
+    font-size: 9px; color: #a78bfa; text-transform: uppercase; letter-spacing: .12em;
+    font-weight: 700; opacity: 0.85;
   }
 
   #twin-bubble {
@@ -966,6 +967,7 @@
 </div>
 
 <div id="twin-bubble">
+  <div class="twin-status-tag">present</div>
   <div class="twin-body"></div>
   <div class="twin-actions"></div>
 </div>
@@ -996,7 +998,6 @@
   <div class="input-row">
     <div id="twin-portrait" data-mood="present" onclick="toggleTwinBubble()">
       <div id="twin-hologram"></div>
-      <div class="twin-status-tag">present</div>
     </div>
     <textarea id="input" rows="1" placeholder="Message brainstem..." autocomplete="off"></textarea>
     <button id="send" onclick="sendMessage()">Send</button>
