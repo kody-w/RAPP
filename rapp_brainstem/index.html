@@ -767,19 +767,34 @@
     font-weight: 700; opacity: 0.85;
   }
 
-  /* Pinned to the left edge of the viewport so it never covers chat
-     content. No tail — it's a side panel, not a speech bubble. */
+  /* Speech bubble to the LEFT of the globe, anchored to the twin-slot
+     so it moves with the footer. Tail points right — at the globe —
+     so it visibly belongs to the globe. */
   #twin-bubble {
-    position: fixed; left: 16px; bottom: 16px; z-index: 60;
-    width: 260px; max-width: calc(100vw - 32px); padding: 12px 14px;
+    position: absolute; right: calc(100% + 14px); bottom: 0;
+    width: 260px; padding: 12px 14px;
     background: rgba(22,27,34,.94); backdrop-filter: blur(14px);
     border: 1px solid rgba(167,139,250,.3); border-radius: 12px;
-    opacity: 0; transform: translateY(8px); pointer-events: none;
+    opacity: 0; transform: translateX(6px); pointer-events: none;
     transition: opacity .25s, transform .25s;
     text-align: left;
     box-shadow: 0 12px 32px rgba(0,0,0,.35);
+    z-index: 60;
   }
-  #twin-bubble.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  #twin-bubble.visible { opacity: 1; transform: translateX(0); pointer-events: auto; }
+  #twin-bubble::after {
+    content: ''; position: absolute; right: -6px; bottom: 18px;
+    width: 12px; height: 12px; background: rgba(22,27,34,.94);
+    border-top: 1px solid rgba(167,139,250,.3);
+    border-right: 1px solid rgba(167,139,250,.3);
+    transform: rotate(45deg);
+  }
+  /* Narrow viewports: drop to under the input row so the bubble
+     doesn't run off the left edge. */
+  @media (max-width: 900px) {
+    #twin-bubble { position: fixed; left: 12px; right: auto; bottom: 12px; }
+    #twin-bubble::after { display: none; }
+  }
 
   .twin-body { font-size: 12px; line-height: 1.5; color: #cdd6e3; }
   .twin-body p { margin: 0 0 4px; }
