@@ -542,24 +542,24 @@
   /* ── Starter Prompts ── */
   /* The "mouth" — quick-prompt pills + dynamic twin suggestions below
      the chat box. Starter prompts seed it; twin.send/prompt actions
-     append as lavender-tinted pills. */
+     append as dynamic blue pills. */
   #starter-prompts {
     display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
     max-width: 760px; margin: 12px auto 0; padding: 0 24px;
     transition: opacity 0.3s, transform 0.3s;
   }
-  /* Mouth pills — all purple since this row is the twin's suggestion
-     space (static seeds + dynamic twin.send/prompt actions mix here). */
+  /* Mouth pills — unified blue to match the Send button so static seeds
+     and dynamic twin.send/prompt actions read as one cohesive family. */
   .starter-btn {
-    background: #161b22; color: #c4b5fd; border: 1px solid rgba(167,139,250,.4);
+    background: #161b22; color: #79c0ff; border: 1px solid rgba(88,166,255,.4);
     border-radius: 20px; padding: 8px 16px; font-size: 13px;
     cursor: pointer; transition: all 0.2s; white-space: nowrap;
   }
   .starter-btn:hover {
-    background: rgba(167,139,250,.08); border-color: #a78bfa; transform: translateY(-1px);
+    background: rgba(88,166,255,.1); border-color: #58a6ff; transform: translateY(-1px);
   }
-  .starter-btn.twin-pill { color: #e9d5ff; }
-  .starter-btn.twin-pill:hover { border-color: #a78bfa; background: rgba(167,139,250,.12); }
+  .starter-btn.twin-pill { color: #cae3ff; }
+  .starter-btn.twin-pill:hover { border-color: #58a6ff; background: rgba(88,166,255,.14); }
   .hidden-prompts { opacity: 0; pointer-events: none; transform: translateY(10px); display: none !important; }
 
   /* ── Light Mode Overrides ── */
@@ -620,13 +620,13 @@
   }
   body.light-mode .starter-btn {
     background: #ffffff;
-    border: 1px solid rgba(124,58,237,.3);
-    color: #7c3aed;
+    border: 1px solid rgba(31,111,235,.3);
+    color: #1f6feb;
   }
   body.light-mode .starter-btn:hover {
-    background: rgba(124,58,237,.08);
-    color: #6d28d9;
-    border-color: #7c3aed;
+    background: rgba(31,111,235,.08);
+    color: #0969da;
+    border-color: #1f6feb;
   }
   body.light-mode #chat-watermark {
     color: #57606a;
@@ -716,7 +716,7 @@
   #twin-portrait {
     width: 48px; height: 48px; cursor: pointer;
     position: relative; border-radius: 50%;
-    background: rgba(0,0,0,.4); overflow: hidden;
+    background: rgba(10,20,40,.15); overflow: hidden;
     /* Blue glow matches the Send button so the footer reads as one
        visual pair: holo-globe on the left, blue pill on the right. */
     box-shadow: 0 0 18px rgba(31,111,235,.55),
@@ -734,13 +734,13 @@
         to bottom,
         rgba(88,166,255,0) 0px,
         rgba(88,166,255,0) 2px,
-        rgba(88,166,255,.12) 2px,
-        rgba(88,166,255,.12) 3px
+        rgba(88,166,255,.08) 2px,
+        rgba(88,166,255,.08) 3px
       ),
       radial-gradient(circle at 50% 40%,
-        rgba(88,166,255,.0) 40%,
-        rgba(31,111,235,.22) 80%,
-        rgba(31,111,235,.45) 100%);
+        rgba(88,166,255,.0) 55%,
+        rgba(31,111,235,.12) 85%,
+        rgba(31,111,235,.28) 100%);
     mix-blend-mode: screen;
     pointer-events: none;
     animation: holo-flicker 3.2s ease-in-out infinite;
@@ -787,7 +787,7 @@
      clipped the text when it was pinned to the bottom of the portrait. */
   .twin-status-tag {
     display: inline-block; margin-bottom: 6px;
-    font-size: 9px; color: #a78bfa; text-transform: uppercase; letter-spacing: .12em;
+    font-size: 9px; color: #58a6ff; text-transform: uppercase; letter-spacing: .12em;
     font-weight: 700; opacity: 0.85;
   }
 
@@ -801,7 +801,7 @@
     width: 280px; max-height: 360px; padding: 12px 14px;
     box-sizing: border-box;
     background: rgba(22,27,34,.94); backdrop-filter: blur(14px);
-    border: 1px solid rgba(167,139,250,.3); border-radius: 12px;
+    border: 1px solid rgba(88,166,255,.3); border-radius: 12px;
     opacity: 0; transform: translateX(6px); pointer-events: none;
     transition: opacity .25s, transform .25s;
     text-align: left; overflow: hidden auto;
@@ -812,8 +812,8 @@
   #twin-bubble::after {
     content: ''; position: absolute; right: -6px; bottom: 18px;
     width: 12px; height: 12px; background: rgba(22,27,34,.94);
-    border-top: 1px solid rgba(167,139,250,.3);
-    border-right: 1px solid rgba(167,139,250,.3);
+    border-top: 1px solid rgba(88,166,255,.3);
+    border-right: 1px solid rgba(88,166,255,.3);
     transform: rotate(45deg);
   }
   /* Narrow viewports: drop to under the input row so the bubble
@@ -825,40 +825,42 @@
 
   .twin-body { font-size: 12px; line-height: 1.5; color: #cdd6e3; }
   .twin-body p { margin: 0 0 4px; }
-  .twin-body strong { color: #a78bfa; }
-  .twin-body code { background: rgba(167,139,250,.12); padding: 1px 4px; border-radius: 3px; font-size: 11px; }
+  .twin-body strong { color: #58a6ff; }
+  .twin-body code { background: rgba(88,166,255,.12); padding: 1px 4px; border-radius: 3px; font-size: 11px; }
 
   .twin-actions { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
   .twin-action {
     display: inline-flex; align-items: center; gap: 4px;
     padding: 4px 10px; border-radius: 999px; font-size: 10px;
-    background: rgba(167,139,250,.1); border: 1px solid rgba(167,139,250,.35);
-    color: #c4b5fd; cursor: pointer; transition: all .15s;
+    background: rgba(88,166,255,.1); border: 1px solid rgba(88,166,255,.35);
+    color: #79c0ff; cursor: pointer; transition: all .15s;
   }
-  .twin-action:hover { background: rgba(167,139,250,.22); border-color: #a78bfa; color: #e9d5ff; }
+  .twin-action:hover { background: rgba(88,166,255,.22); border-color: #58a6ff; color: #cae3ff; }
   .twin-action-done { background: rgba(52,211,153,.12); border-color: rgba(52,211,153,.4); color: #6ee7b7; pointer-events: none; }
   .twin-action-fail { background: rgba(248,113,113,.12); border-color: rgba(248,113,113,.4); color: #fca5a5; pointer-events: none; }
   .twin-action .chip-glyph { font-size: 12px; }
 
   @keyframes twin-highlight-flash {
     0%, 100% { background: transparent; }
-    50% { background: rgba(167,139,250,.2); }
+    50% { background: rgba(88,166,255,.2); }
   }
 
-  body.light-mode #twin-portrait { background: rgba(0,0,0,.06); }
+  /* Light mode: brighten the globe base so the earth texture reads clearly
+     against a white footer instead of disappearing into a dark well. */
+  body.light-mode #twin-portrait { background: rgba(200,220,255,.3); }
   body.light-mode #twin-bubble {
-    background: rgba(255,255,255,.98); border-color: rgba(124,58,237,.35);
-    color: #24292e; box-shadow: 0 12px 32px rgba(124,58,237,.15);
+    background: rgba(255,255,255,.98); border-color: rgba(31,111,235,.35);
+    color: #24292e; box-shadow: 0 12px 32px rgba(31,111,235,.15);
   }
   body.light-mode #twin-bubble::after {
     background: rgba(255,255,255,.98);
-    border-top-color: rgba(124,58,237,.35); border-right-color: rgba(124,58,237,.35);
+    border-top-color: rgba(31,111,235,.35); border-right-color: rgba(31,111,235,.35);
   }
   body.light-mode .twin-body { color: #24292e; }
-  body.light-mode .twin-body strong { color: #7c3aed; }
-  body.light-mode .twin-body code { background: rgba(124,58,237,.08); color: #6d28d9; }
-  body.light-mode .twin-action { background: rgba(124,58,237,.08); border-color: rgba(124,58,237,.3); color: #6d28d9; }
-  body.light-mode .twin-status-tag { color: #7c3aed; }
+  body.light-mode .twin-body strong { color: #1f6feb; }
+  body.light-mode .twin-body code { background: rgba(31,111,235,.08); color: #0969da; }
+  body.light-mode .twin-action { background: rgba(31,111,235,.08); border-color: rgba(31,111,235,.3); color: #0969da; }
+  body.light-mode .twin-status-tag { color: #1f6feb; }
 </style>
 </head>
 <body>
@@ -1162,7 +1164,7 @@
   </div>
 
   <!-- MOUTH: quick-prompt pills below the input. Starter prompts seed
-       it; twin can append send/prompt suggestions as lavender chips. -->
+       it; twin can append send/prompt suggestions as blue chips. -->
   <div id="starter-prompts">
     <button class="starter-btn" onclick="useStarter('What exactly can you do?')">What can you do?</button>
     <button class="starter-btn" onclick="useStarter('Help me build a new tool.')">Help me build a new tool</button>
@@ -2864,12 +2866,12 @@
 
   // ── Three.js Hologram — head + shoulders portrait ───────────────────────
   const MOOD_COLORS = {
-    present:      { core: 0xa78bfa, glow: 0x7c3aed },
+    present:      { core: 0x58a6ff, glow: 0x1f6feb },
     curious:      { core: 0x60a5fa, glow: 0x3b82f6 },
     alert:        { core: 0xf87171, glow: 0xdc2626 },
     validated:    { core: 0x4ade80, glow: 0x22c55e },
     contradicted: { core: 0xfbbf24, glow: 0xf59e0b },
-    thinking:     { core: 0xa78bfa, glow: 0x6d28d9 },
+    thinking:     { core: 0x58a6ff, glow: 0x0969da },
   };
 
   let _holo = null;
