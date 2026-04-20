@@ -294,38 +294,33 @@
     border-top: 1px solid #21262d;
     background: #161b22;
   }
-  /* "Face" footer — eyes (globe + send) above, mouth (quick prompts)
-     below the chat textbox. Ordering in HTML: eyes → input → mouth. */
-  .eyes-row {
-    display: flex; justify-content: space-between; align-items: end;
-    max-width: 760px; margin: 0 auto 8px; padding: 0 8px;
-    min-height: 84px;
-  }
+  /* Input row — [globe] [pill input] [send] on one horizontal line.
+     The globe (twin) + send button bookend the pill-shaped textbox. */
   .input-row {
-    display: flex; gap: 10px; align-items: center;
+    display: flex; gap: 12px; align-items: center;
     max-width: 760px; margin: 0 auto;
   }
   #input {
     flex: 1; background: #0d1117;
-    border: 1px solid #30363d; border-radius: 8px;
+    border: 1px solid #30363d; border-radius: 32px;
     color: #e6edf3; font-size: 14px;
-    padding: 10px 14px; resize: none; outline: none;
-    line-height: 1.5; max-height: 120px;
-    transition: border-color 0.15s;
+    padding: 14px 22px; resize: none; outline: none;
+    line-height: 1.5; max-height: 140px;
+    transition: border-color 0.15s, box-shadow 0.15s;
   }
-  #input:focus { border-color: #1f6feb; }
-  #input::placeholder { color: #484f58; }
+  #input:focus { border-color: #1f6feb; box-shadow: 0 0 0 3px rgba(31,111,235,.15); }
+  #input::placeholder { color: #6e7681; }
   #send {
-    width: 64px; height: 64px; flex-shrink: 0;
+    width: 48px; height: 48px; flex-shrink: 0;
     background: #1f6feb; color: #fff; border: none; border-radius: 50%;
-    font-size: 12px; font-weight: 600; letter-spacing: .04em;
-    cursor: pointer; transition: background 0.15s, opacity 0.15s, transform 0.1s;
+    cursor: pointer; transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
     display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 0 12px rgba(31,111,235,.25);
+    box-shadow: 0 2px 10px rgba(31,111,235,.35);
   }
-  #send:hover { background: #388bfd; transform: scale(1.04); }
-  #send:active { transform: scale(0.96); }
-  #send:disabled { opacity: 0.4; cursor: default; transform: none; }
+  #send:hover { background: #388bfd; transform: scale(1.06); box-shadow: 0 2px 14px rgba(31,111,235,.5); }
+  #send:active { transform: scale(0.94); }
+  #send:disabled { opacity: 0.4; cursor: default; transform: none; box-shadow: none; }
+  #send svg { transform: translateX(1px); }
 
   .toolbar-row {
     display: flex; justify-content: space-between; align-items: center;
@@ -691,11 +686,11 @@
   /* ── Twin — portrait in footer bar ── */
   .twin-slot {
     display: none; flex-direction: column; align-items: center;
-    gap: 4px; flex-shrink: 0; position: relative;
+    gap: 2px; flex-shrink: 0; position: relative;
   }
   .twin-slot.active { display: flex; }
   #twin-portrait {
-    width: 64px; height: 64px; cursor: pointer;
+    width: 48px; height: 48px; cursor: pointer;
     position: relative; border-radius: 50%;
     background: rgba(0,0,0,.4); overflow: hidden;
     /* Blue glow matches the Send button so the footer reads as one
@@ -757,7 +752,7 @@
   /* Legacy rule kept so JS that checks for .active on #twin-portrait
      still works; the slot wrapper handles show/hide. */
   #twin-portrait.active { display: block; }
-  #twin-portrait canvas { display: block; width: 64px !important; height: 64px !important; }
+  #twin-portrait canvas { display: block; width: 48px !important; height: 48px !important; }
   /* Mood tag now lives inside #twin-bubble as a header chip — the circle
      clipped the text when it was pinned to the bottom of the portrait. */
   .twin-status-tag {
@@ -1092,10 +1087,10 @@
     </div>
   </div>
 
-  <!-- EYES: globe + send button sit above the input, spaced apart like
-       eyes above a mouth. Bubble is anchored inside the twin-slot so
-       it pops up from the eye itself. -->
-  <div class="eyes-row">
+  <!-- Input row — [globe] [pill-shaped textbox] [send] on one line.
+       Twin bubble is anchored inside the twin-slot so it still pops
+       up from the globe. -->
+  <div class="input-row">
     <div class="twin-slot" id="twin-slot">
       <div id="twin-bubble">
         <div class="twin-status-tag">present</div>
@@ -1107,16 +1102,14 @@
       </div>
       <div class="twin-caption">Twin</div>
     </div>
-    <button id="send" onclick="sendMessage()">Send</button>
-  </div>
-
-  <!-- The text box — "nose/cheek" — full-width between the eyes and mouth. -->
-  <div class="input-row">
     <textarea id="input" rows="1" placeholder="Message brainstem..." autocomplete="off"></textarea>
+    <button id="send" onclick="sendMessage()" title="Send">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M3.4 20.4l17.45-7.48a1 1 0 000-1.84L3.4 3.6a1 1 0 00-1.39 1.1L4 11l13 1-13 1-1.99 6.3a1 1 0 001.39 1.1z"/></svg>
+    </button>
   </div>
 
-  <!-- MOUTH: quick-prompt pills. Starter prompts seed it; twin can
-       append send/prompt suggestions as lavender .twin-pill chips. -->
+  <!-- MOUTH: quick-prompt pills below the input. Starter prompts seed
+       it; twin can append send/prompt suggestions as lavender chips. -->
   <div id="starter-prompts">
     <button class="starter-btn" onclick="useStarter('What exactly can you do?')">What can you do?</button>
     <button class="starter-btn" onclick="useStarter('Help me build a new tool.')">Help me build a new tool</button>
