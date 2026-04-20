@@ -2595,6 +2595,43 @@ async function runCopilotSignin() {
 
 /* ───── Binder + starter cards ──────────────────────────────── */
 async function bootBinder() {
+  // Local mode: the filesystem is the source of truth. Fetch every
+  // agent .py from the Flask brainstem's /agents/full endpoint and
+  // mint a card per file so the "Installed agents" panel reflects
+  // what Python actually loaded (not the browser's IndexedDB seed).
+  if (document.body.classList.contains('is-local')) {
+    try {
+      const r = await fetch('/agents/full', { cache: 'no-cache' });
+      if (r.ok) {
+        const data = await r.json();
+        state.binder = RAPP.Binder.empty('@local/you');
+        for (const f of data.files || []) {
+          if (!f.source || f.filename === 'basic_agent.py') continue;
+          try {
+            const c = await RAPP.Card.mintCard(f.source, f.filename);
+            RAPP.Binder.addCard(state.binder, c);
+          } catch (e) {
+            console.warn('local card mint failed', f.filename, e);
+          }
+        }
+        // In local mode every agent is "loaded" server-side, so put them
+        // all in the hand — the LLM has access to all of them anyway.
+        state.hand = new Set((state.binder.cards || []).map(c => c.filename));
+        persistHand();
+        // Don't persist the binder under 'binder' localStorage key because
+        // the server state can change independently of the browser cache.
+        renderBinder();
+        renderHand();
+        renderAgents();
+        return;
+      }
+    } catch (e) {
+      console.warn('[local] /agents/full fetch failed, falling back to IDB binder', e);
+    }
+    // Fall through to the normal virtual-brainstem binder if the fetch
+    // fails — better a starter set than nothing.
+  }
+
   // Restore the binder if (a) one is saved AND (b) the starter version matches.
   // Bumping STARTER_VERSION forces existing users to receive the new starter set.
   const saved = LS.get('binder', null);

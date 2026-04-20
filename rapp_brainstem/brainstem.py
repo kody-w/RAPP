@@ -1205,13 +1205,45 @@ def list_agents_files():
             agent_names = list(loaded.keys())
         except Exception:
             agent_names = []
-            
+
         results.append({
             "filename": filename,
             "agents": agent_names
         })
-        
+
     return jsonify({"files": results})
+
+
+@app.route("/agents/full", methods=["GET"])
+def list_agents_full():
+    """Same as /agents but each entry also carries the file's source.
+    Lets the rich browser UI hydrate its binder from the filesystem in
+    one round-trip when it's served by the local Flask brainstem, so
+    the "Installed agents" panel reflects what Python actually loaded
+    instead of the browser's IndexedDB seed set."""
+    files = glob.glob(os.path.join(AGENTS_PATH, "*.py"))
+    out = []
+    for f in files:
+        filename = os.path.basename(f)
+        if filename.startswith("__") or not filename.endswith(".py") or filename == "basic_agent.py":
+            continue
+        try:
+            with open(f, "r", encoding="utf-8") as fh:
+                source = fh.read()
+        except OSError:
+            source = ""
+        try:
+            loaded = _load_agent_from_file(f)
+            agent_names = list(loaded.keys())
+        except Exception:
+            agent_names = []
+        out.append({
+            "filename": filename,
+            "agents": agent_names,
+            "source": source,
+            "bytes": len(source.encode("utf-8")) if source else 0,
+        })
+    return jsonify({"files": out, "agents_path": AGENTS_PATH})
 
 @app.route("/agents/export/<filename>", methods=["GET"])
 def agents_export(filename):
