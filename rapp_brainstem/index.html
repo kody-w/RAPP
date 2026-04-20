@@ -790,6 +790,19 @@
     0%   { transform: translateX(-60%); }
     100% { transform: translateX(60%); }
   }
+  /* Double-tap nudge: the globe pulses while it re-projects fresh
+     suggestions, so the user sees the tap registered. */
+  @keyframes twin-nudge-pulse {
+    0%, 100% {
+      box-shadow: 0 0 18px rgba(31,111,235,.55), 0 0 2px rgba(88,166,255,.8) inset;
+      transform: scale(1);
+    }
+    50% {
+      box-shadow: 0 0 32px rgba(88,166,255,.95), 0 0 6px rgba(200,220,255,1) inset;
+      transform: scale(1.08);
+    }
+  }
+  #twin-portrait.nudging { animation: twin-nudge-pulse 1s ease-in-out infinite; }
   .twin-caption, .send-caption {
     font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
     color: #8b949e; font-weight: 600;
@@ -1170,7 +1183,7 @@
         <div class="twin-body"></div>
         <div class="twin-actions"></div>
       </div>
-      <div id="twin-portrait" data-mood="present" onclick="toggleTwinBubble()">
+      <div id="twin-portrait" data-mood="present" onclick="onGlobeClick()" title="Tap to open. Double-tap for fresh angles.">
         <div id="twin-hologram"></div>
       </div>
       <div class="twin-caption">Twin</div>
@@ -2734,21 +2747,110 @@
     document.getElementById('twin-bubble').classList.remove('visible');
   }
 
-  // If the bubble has no twin reply yet, inject a friendly "I'm here"
-  // placeholder so clicking the portrait isn't a dead end. Called from
-  // showTwin() and toggleTwinBubble().
+  // Rotating default hints — the twin shouldn't repeat the same line on
+  // every fresh click, it should feel alive. Cycles through a short pool
+  // leaning into the hologram metaphor.
+  const DEFAULT_TWIN_HINTS = [
+    '<p>Projection online. Say something — I\'ll flag risks, ask questions, and suggest moves here.</p>',
+    '<p>Your hologram, listening. Drop a thought and I\'ll run it from a few angles.</p>',
+    '<p>Holo warming up. Tap me twice any time you\'re stuck — I\'ll cough up fresh angles on whatever we\'re working on.</p>',
+    '<p>I\'m the projection of you that reads between the lines. What\'s on your mind?</p>',
+    '<p>Flickering in. Two taps on the globe = "I need a nudge" and I\'ll respond with new moves.</p>',
+    '<p>Holo-you, ready. Ask anything — or double-tap me for context-aware suggestions when you blank.</p>',
+  ];
+  let _hintIdx = Math.floor(Math.random() * DEFAULT_TWIN_HINTS.length);
+
+  // If the bubble has no twin reply yet, inject a rotating hint so
+  // clicking the portrait isn't a dead end — and isn't the same line
+  // every time.
   function ensureBubbleContent() {
     const body = document.querySelector('#twin-bubble .twin-body');
     if (!body) return;
     if (body.innerHTML.trim()) return;
-    body.innerHTML =
-      '<p>Say something — I\'ll flag risks, ask questions, and suggest moves here.</p>';
+    body.innerHTML = DEFAULT_TWIN_HINTS[_hintIdx % DEFAULT_TWIN_HINTS.length];
+    _hintIdx++;
   }
 
   function toggleTwinBubble() {
     const b = document.getElementById('twin-bubble');
     ensureBubbleContent();
     b.classList.toggle('visible');
+  }
+
+  // ── Globe click dispatcher ─────────────────────────────────────────────
+  // Single tap: toggle bubble.
+  // Double tap (within ~650ms): the user is stuck — fire a silent /chat
+  // call asking the twin for fresh writer's-block-busters based on current
+  // conversation context. The response updates ONLY the twin bubble and
+  // mouth-pill row; nothing is appended to the chat transcript.
+  let _lastGlobeClick = 0;
+  let _nudgeInFlight = false;
+  function onGlobeClick() {
+    const now = Date.now();
+    if (now - _lastGlobeClick < 650) {
+      _lastGlobeClick = 0;
+      triggerTwinNudge();
+    } else {
+      _lastGlobeClick = now;
+      toggleTwinBubble();
+    }
+  }
+
+  async function triggerTwinNudge() {
+    if (_nudgeInFlight) return;
+    _nudgeInFlight = true;
+    const portrait = document.getElementById('twin-portrait');
+    portrait.classList.add('nudging');
+    if (_holo) { _holo.setMood('thinking'); _holo.speak(); }
+
+    // Open bubble immediately with a "thinking" placeholder so the user
+    // gets feedback the tap registered.
+    const body = document.querySelector('#twin-bubble .twin-body');
+    const bubble = document.getElementById('twin-bubble');
+    const prevBody = body.innerHTML;
+    body.innerHTML = '<p><em>Projection refocusing…</em></p>';
+    bubble.classList.add('visible');
+
+    try {
+      const nudgeMessage =
+        '[SYSTEM NUDGE — the user tapped the hologram twice to say "I\'m stuck." ' +
+        'Look at the conversation so far and offer fresh angles they haven\'t ' +
+        'tried yet. Reply with ONLY a |||TWIN||| block — no main reply, no ' +
+        '|||VOICE|||. Inside the TWIN block: one short holo-flavored ' +
+        'observation (1 sentence, lean into the hologram metaphor — ' +
+        '"flickering on…", "re-aiming the projector…", etc.) followed by ' +
+        '2–3 <action kind="send"> or <action kind="prompt"> chips with ' +
+        'concrete next moves based on the actual conversation context. ' +
+        'Do not repeat suggestions from earlier turns. Keep it tight.]';
+
+      const reqBody = { user_input: nudgeMessage, conversation_history: history };
+      if (sessionId) reqBody.session_id = sessionId;
+
+      const r = await fetch(`${API}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reqBody)
+      });
+      const d = await r.json();
+
+      if (d.error) {
+        body.innerHTML = prevBody || '<p>The holo glitched — try again in a sec.</p>';
+      } else if (d.twin_response && d.twin_response.trim()) {
+        renderTwin(d.twin_response);
+      } else if (d.response && d.response.trim()) {
+        // Model ignored the twin-only hint; parse the whole response as twin.
+        renderTwin(d.response);
+      } else {
+        body.innerHTML = prevBody || DEFAULT_TWIN_HINTS[0];
+      }
+      // Nudges don't append to history — they're ambient, not a turn.
+    } catch (e) {
+      console.warn('[twin] nudge failed', e);
+      body.innerHTML = prevBody || '<p>The holo glitched — try again in a sec.</p>';
+    } finally {
+      _nudgeInFlight = false;
+      portrait.classList.remove('nudging');
+    }
   }
 
   function parseTwinTags(raw) {
@@ -2834,10 +2936,10 @@
   function runTwinAction(action, btn) {
     try {
       if (action.kind === 'send') {
-        document.getElementById('user-input').value = action.body || '';
+        document.getElementById('input').value = action.body || '';
         sendMessage();
       } else if (action.kind === 'prompt') {
-        const inp = document.getElementById('user-input');
+        const inp = document.getElementById('input');
         inp.value = action.body || '';
         inp.focus();
         inp.dispatchEvent(new Event('input'));
