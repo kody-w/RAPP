@@ -412,6 +412,21 @@ def load_soul():
 # ── Agent loader ──────────────────────────────────────────────────────────────
 
 
+def _brainstem_llm_call(soul: str, user_prompt: str) -> str:
+    """LLM wrapper injected into swarm agents so they use the brainstem's
+    configured provider (Copilot, Azure, OpenAI, Anthropic) and model."""
+    messages = [{"role": "system", "content": soul},
+                {"role": "user", "content": user_prompt}]
+    try:
+        result = call_copilot(messages)
+        choices = result.get("choices", [])
+        if choices:
+            return choices[0].get("message", {}).get("content", "")
+        return ""
+    except Exception as e:
+        return f"(brainstem LLM error: {e})"
+
+
 def _load_agent_from_file(filepath):
     """Load agent classes from a single .py file. Returns dict of name→instance.
     Auto-installs missing pip packages and shims cloud deps to local storage."""
@@ -429,6 +444,8 @@ def _load_agent_from_file(filepath):
             spec = importlib.util.spec_from_file_location(mod_name, filepath)
             mod = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(mod)
+            if hasattr(mod, '_llm_call'):
+                mod._llm_call = _brainstem_llm_call
             for attr in dir(mod):
                 cls = getattr(mod, attr)
                 if (
