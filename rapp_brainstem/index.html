@@ -1420,6 +1420,9 @@
   document.addEventListener('click', (e) => {
     const p = document.getElementById('agents-panel');
     const b = document.getElementById('agents-btn');
+    // Clicks inside the twin bubble (e.g. a twin-action that opens
+    // this panel) must not immediately close what they just opened.
+    if (e.target.closest && e.target.closest('#twin-bubble')) return;
     if (p.classList.contains('open') && !p.contains(e.target) && !b.contains(e.target)) {
       p.classList.remove('open');
     }
@@ -1933,6 +1936,9 @@
 
   document.addEventListener('click', (e) => {
     const panel = document.getElementById('settings-panel');
+    // Same twin-bubble exception as the agents panel — a twin-action
+    // that opens settings must not auto-close on the same click.
+    if (e.target.closest && e.target.closest('#twin-bubble')) return;
     if (!e.target.closest('.voice-wrapper') && panel.classList.contains('open')) {
       panel.classList.remove('open');
     }
