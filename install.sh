@@ -584,6 +584,9 @@ with open(sys.argv[2], 'w') as f: json.dump(out, f)
     # Step 2: Launch brainstem
     echo ""
     echo -e "  ${CYAN}Starting RAPP Brainstem...${NC}"
+    echo -e "  ${CYAN}(also serves as the tether for the virtual brainstem at${NC}"
+    echo -e "  ${CYAN} https://kody-w.github.io/RAPP/rapp_brainstem/web/  →  point its${NC}"
+    echo -e "  ${CYAN} Settings.tether_url at http://localhost:7071)${NC}"
     echo ""
 
     cd "$BRAINSTEM_HOME/src/rapp_brainstem"

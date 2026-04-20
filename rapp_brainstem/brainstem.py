@@ -1160,6 +1160,39 @@ class SwarmHandler(BaseHTTPRequestHandler):
             if served:
                 return
 
+        # /tether/healthz + /tether/tools — speak the rapp-tether/1.0 wire shape
+        # so the virtual brainstem at https://kody-w.github.io/RAPP/rapp_brainstem/web/
+        # can use this brainstem as its tether (no separate tether/server.py needed).
+        if path in ("/tether/healthz",):
+            agents_dir = Path(self.store.root) / "agents"
+            self.store.execute_in_dir(agents_dir, "__warmup__", {}, cache_key="__binder__")
+            agents = self.store._loaded_agents.get("__binder__", {}) or {}
+            return self._send_json(200, {
+                "status": "ok", "schema": "rapp-tether/1.0", "version": "1.0.0",
+                "host": self.headers.get("Host", "localhost"),
+                "agents": sorted(agents.keys()),
+                "count": len(agents),
+                "tether_source": "rapp_brainstem (binder)",
+            })
+        if path in ("/tether/tools",):
+            agents_dir = Path(self.store.root) / "agents"
+            self.store.execute_in_dir(agents_dir, "__warmup__", {}, cache_key="__binder__")
+            agents = self.store._loaded_agents.get("__binder__", {}) or {}
+            tools = []
+            for name in sorted(agents.keys()):
+                md = getattr(agents[name], "metadata", {}) or {}
+                tools.append({"type": "function", "function": {
+                    "name":        md.get("name", name),
+                    "description": md.get("description", ""),
+                    "parameters":  md.get("parameters",
+                                          {"type": "object", "properties": {}, "required": []}),
+                }})
+            return self._send_json(200, {
+                "schema": "rapp-tether/1.0", "tools": tools, "count": len(tools),
+                "note": "Tools come from the brainstem's binder. Install via "
+                        "POST /api/binder/install to add more.",
+            })
+
         # /api/binder — list installed rapplications for this twin
         if path in ("/api/binder", "/api/binder/"):
             return self._send_json(200, get_binder(self.store.root).list())
@@ -1550,6 +1583,28 @@ class SwarmHandler(BaseHTTPRequestHandler):
                     extra_system=body.get("extra_system", ""),
                 )
                 status = 200 if not result.get("error") else 500
+                return self._send_json(status, result)
+            except Exception as e:
+                traceback.print_exc()
+                return self._send_json(500, {"status": "error", "message": str(e)})
+
+        # /tether/agent — same as /api/binder/agent but at the rapp-tether/1.0
+        # wire path. Lets the virtual brainstem call this brainstem as its tether.
+        if path == "/tether/agent":
+            try:
+                body = self._read_json()
+            except Exception as e:
+                return self._send_json(400, {"status": "error", "message": f"bad json: {e}"})
+            name = body.get("name")
+            args = body.get("args") or {}
+            if not name:
+                return self._send_json(400, {"status": "error", "message": "missing 'name'"})
+            try:
+                result = self.store.execute_in_dir(
+                    Path(self.store.root) / "agents", name, args,
+                    cache_key="__binder__")
+                status = 200 if result.get("status") == "ok" else (
+                    404 if "unknown agent" in result.get("message", "") else 500)
                 return self._send_json(status, result)
             except Exception as e:
                 traceback.print_exc()
