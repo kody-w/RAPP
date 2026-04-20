@@ -30,6 +30,15 @@ try:
 except ImportError:
     from llm import chat as llm_chat, detect_provider, provider_status  # type: ignore
 
+# Twin calibration helpers — sibling module, vendored into rapp_swarm/_vendored/.
+try:
+    from rapp_brainstem import twin as _twin
+except ImportError:
+    try:
+        import twin as _twin  # type: ignore
+    except ImportError:
+        _twin = None  # calibration is optional; feature gracefully disables
+
 
 MAX_TOOL_ROUNDS = 4
 
@@ -45,6 +54,23 @@ def _parse_voice_twin_split(content: str):
         return content.strip(), "", ""
     voice, _, twin = rest.partition("|||TWIN|||")
     return main.strip(), voice.strip(), twin.strip()
+
+
+def _calibration_root(store, swarm_guid, extra_hint=None):
+    """Resolve where the twin calibration log should live for this tenant."""
+    if extra_hint:
+        return extra_hint
+    for attr in ("swarm_dir", "swarm_root", "root_for", "get_root"):
+        fn = getattr(store, attr, None)
+        if callable(fn):
+            try:
+                p = fn(swarm_guid) if swarm_guid else fn()
+                if p:
+                    return str(p)
+            except TypeError:
+                pass
+    base = getattr(store, "root", None) or "."
+    return str(base) if not swarm_guid else f"{base}/swarms/{swarm_guid}"
 
 
 def _agent_to_tool(agent) -> dict:
@@ -102,7 +128,12 @@ def chat_with_swarm(store, swarm_guid: str, user_input: str,
     soul = (manifest.get("soul") or "").strip()
     agents = store.load_agents(swarm_guid)
     tools = [_agent_to_tool(a) for a in agents.values()]
-    system = _system_prompt(soul, agents, extra=extra_system)
+
+    # Calibration block (pending probes + rolling accuracy) — injected
+    # alongside the soul so the twin can self-judge prior turns.
+    calib_root = _calibration_root(store, swarm_guid)
+    calib_block = _twin.build_calibration_system_block(calib_root) if _twin else ""
+    system = _system_prompt(soul, agents, extra=(extra_system + ("\n\n" + calib_block if calib_block else "")).strip())
 
     messages = []
     if system:
@@ -137,6 +168,13 @@ def chat_with_swarm(store, swarm_guid: str, user_input: str,
         if not tool_calls or rounds >= MAX_TOOL_ROUNDS:
             raw = assistant.get("content") or ""
             main, voice, twin = _parse_voice_twin_split(raw)
+            # Extract + log <probe/> and <calibration/> tags; strip from render.
+            if _twin:
+                twin, probes, calibrations = _twin.parse_twin_tags(twin)
+                try:
+                    _twin.log_events(calib_root, probes, calibrations)
+                except OSError:
+                    pass  # calibration is best-effort; never fail the reply
             return {
                 "response": main,
                 "voice_response": voice,

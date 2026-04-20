@@ -62,6 +62,12 @@ for _candidate in (_HERE / "_vendored", _HERE.parent / "rapp_brainstem"):
     if _candidate.is_dir() and str(_candidate) not in sys.path:
         sys.path.insert(0, str(_candidate))
 
+# Twin calibration helpers — vendored alongside chat.py/llm.py.
+try:
+    import twin as _twin  # type: ignore
+except ImportError:
+    _twin = None  # calibration gracefully disables if the helper is missing
+
 
 def _load_dotenv():
     """Stdlib .env loader (no python-dotenv dependency required)."""
@@ -273,6 +279,12 @@ class Assistant:
 
     # ── system prompt (sacred OG shape) ──
 
+    def _calibration_root(self):
+        try:
+            return str(STORE.swarm_dir(self.swarm_guid))
+        except Exception:
+            return str(_BRAINSTEM_HOME)
+
     def _system_prompt(self, shared_memory="", user_memory=""):
         soul_block = self.soul or ""
         agent_ctx = "\n\n".join(
@@ -280,6 +292,16 @@ class Assistant:
             for a in self.agents.values()
             if hasattr(a, "system_context") and a.system_context()
         )
+        calib_block = ""
+        if _twin:
+            try:
+                calib_block = _twin.build_calibration_system_block(self._calibration_root())
+            except Exception:
+                calib_block = ""
+        # Inject calibration block (if any) right after agent_context so the
+        # twin sees its prior probes + historical accuracy with the rest of
+        # the orientation material.
+        extra_calib = ("\n\n" + calib_block) if calib_block else ""
         return f"""<identity>
 You are {self.assistant_name} — {self.characteristic}.
 You operate inside the Twin Stack as a hatched swarm cloud
@@ -293,7 +315,7 @@ You operate inside the Twin Stack as a hatched swarm cloud
 <agent_context>
 {agent_ctx}
 </agent_context>
-
+{extra_calib}
 <shared_memory_output>
 These are memories accessible across every conversation in this swarm:
 {shared_memory or "(none)"}
@@ -336,6 +358,19 @@ CRITICAL: structure your response in THREE parts separated by |||VOICE||| then |
    - Plain markdown is fine. Bold single-word tags work well (**Risk:**, **Hint:**, **Question:**).
    - Silent is allowed — leave the twin section empty if there's nothing worth saying this turn.
    - Do NOT re-answer the question. The twin comments on the turn; it does not replace any part of it.
+
+CALIBRATION (optional, in the |||TWIN||| block only):
+- When you make a claim you could be right OR wrong about, tag it with a probe:
+    <probe id="t-<unique>" kind="<priority-claim|risk-flag|api-shape-guess|...>" subject="<what you're claiming about>" confidence="0.0-1.0"/>
+  Use a short slug for `kind` so different claims of the same category aggregate.
+- When a <twin_calibration> block appears in your system context with pending probes,
+  judge each against what the user's most recent message actually showed:
+    <calibration id="<probe id>" outcome="validated|contradicted|silent" note="<why>"/>
+  * validated = the user's behavior or message confirms the claim
+  * contradicted = the user's behavior or message refutes it
+  * silent = the user neither confirmed nor refuted — don't penalize yourself for guessing in the quiet
+- Both tag types are stripped before the user sees the panel. The user never reads the tags.
+  Only your historical accuracy numbers come back to you in future turns.
 
 Order is fixed: |||VOICE||| always comes before |||TWIN|||.
 
@@ -431,6 +466,7 @@ Revenue's up 12 percent and customers are happier.
             if not tool_calls:
                 content = assistant_msg.get("content") or ""
                 formatted, voice, twin = _parse_voice_split(content)
+                twin = self._log_twin_tags(twin)
                 return formatted, voice, twin, "\n".join(agent_logs)
 
             # Execute each tool call → loop
@@ -456,7 +492,21 @@ Revenue's up 12 percent and customers are happier.
                 last_text = m["content"]
                 break
         formatted, voice, twin = _parse_voice_split(last_text or "(no response)")
+        twin = self._log_twin_tags(twin)
         return formatted, voice, twin, "\n".join(agent_logs)
+
+    def _log_twin_tags(self, twin_text: str) -> str:
+        """Strip in-band <probe/> + <calibration/> tags from the twin block,
+        append them to the calibration log, and return the cleaned text."""
+        if not _twin or not twin_text:
+            return twin_text
+        try:
+            cleaned, probes, calibrations = _twin.parse_twin_tags(twin_text)
+            if probes or calibrations:
+                _twin.log_events(self._calibration_root(), probes, calibrations)
+            return cleaned
+        except Exception:
+            return twin_text
 
 
 # ─── HTTP App ───────────────────────────────────────────────────────────

@@ -1863,6 +1863,13 @@ Structure every reply in THREE parts, separated by \`|||VOICE|||\` then \`|||TWI
 1. Main reply (before \`|||VOICE|||\`): what the user sees in the chat. Markdown fine.
 2. Voice line (between \`|||VOICE|||\` and \`|||TWIN|||\`): 1–2 sentences, plain English, no markdown. What a colleague would say out loud.
 3. Twin (after \`|||TWIN|||\`): the user's digital twin reacting to THIS turn — first person, speaking AS the user, to the user. One or two short observations, hints, risks, or questions. Bold single-word tags work well (\`**Hint:**\`, \`**Risk:**\`, \`**Question:**\`). Do NOT re-answer the question; the twin comments on the turn, it doesn't replace any part of it. Empty is fine when there's nothing worth saying.
+
+Calibration (inside |||TWIN||| only, optional):
+- Tag a claim that could be right or wrong with a probe:
+    <probe id="t-<unique>" kind="<short-slug>" subject="<what you're claiming>" confidence="0.0-1.0"/>
+- If a <twin_calibration> block appears in your context listing pending probes, judge each against what the user's most recent message actually demonstrated and emit a calibration tag for it:
+    <calibration id="<probe id>" outcome="validated|contradicted|silent" note="<why>"/>
+- Both tag types are stripped before the panel is shown. The user never reads them. They become historical accuracy numbers that come back to you next turn.
 </response_format>`;
 
 const SOUL_BOUNDARIES = `<boundaries>
@@ -3394,29 +3401,164 @@ function parseVoiceTwinSplit(content) {
   };
 }
 
-/* Render the twin's reaction to a side panel. Minimum viable surface:
- * an ambient floating card in the corner. Collapses automatically when
- * empty. Re-rendered per turn — the twin is about THIS turn, not history. */
+/* Parse + strip in-band calibration tags from a twin block.
+ * Keeps the wire contract: the server may have already stripped these (Python
+ * path), but when the browser is making direct LLM calls the stripping has to
+ * happen here too so the tags don't leak into the rendered panel.
+ * Returns { text, probes, calibrations }. */
+function parseTwinTags(twinText) {
+  if (!twinText) return { text: '', probes: [], calibrations: [] };
+  const probeRe = /<probe\s+([^/>]*?)\s*\/>/gi;
+  const calibRe = /<calibration\s+([^/>]*?)\s*\/>/gi;
+  const attrRe  = /(\w+)\s*=\s*["']([^"']*)["']/g;
+  const parseAttrs = (s) => {
+    const o = {};
+    let m; while ((m = attrRe.exec(s)) !== null) o[m[1].toLowerCase()] = m[2];
+    return o;
+  };
+  const probes = [], calibrations = [];
+  let m;
+  while ((m = probeRe.exec(twinText)) !== null) probes.push(parseAttrs(m[1]));
+  while ((m = calibRe.exec(twinText)) !== null) calibrations.push(parseAttrs(m[1]));
+  const text = twinText.replace(probeRe, '').replace(calibRe, '')
+                       .replace(/\n{3,}/g, '\n\n').trim();
+  return { text, probes, calibrations };
+}
+
+/* Twin "mood" — read the panel a little bit body-language-wise.
+ * Map surface patterns in the twin text to an abstract state that drives
+ * the sphere's color + animation. Pure pattern match — no LLM, no cost. */
+function detectTwinMood(text, calibrations) {
+  if (!text) return 'dormant';
+  // Calibration outcomes dominate when present (they're first-person feedback).
+  const outcomes = (calibrations || []).map(c => (c.outcome || '').toLowerCase());
+  if (outcomes.includes('validated'))    return 'validated';
+  if (outcomes.includes('contradicted')) return 'contradicted';
+  // Content-based fallbacks — matched in priority order.
+  const t = text.toLowerCase();
+  if (/\*\*(risk|warn|careful|caution|danger)/i.test(text)) return 'alert';
+  if (/\*\*question/i.test(text) || /\?\s*$/.test(text))    return 'curious';
+  if (/\*\*hint|\*\*suggest|\*\*consider/i.test(text))      return 'thinking';
+  return 'thinking';
+}
+
+/* Render the twin as a holographic side panel: animated sphere + markdown.
+ * The sphere's mood color + pulse rhythm is the "body language" the user
+ * can read at a glance. Ambient, collapsible, re-rendered per turn. */
 function renderTwinPanel(markdown) {
-  let host = document.getElementById('twin-panel');
-  if (!host) {
-    host = document.createElement('aside');
-    host.id = 'twin-panel';
-    host.style.cssText = 'position:fixed;right:16px;bottom:16px;max-width:320px;'
-      + 'background:rgba(22,27,34,.94);color:#cdd6e3;border:1px solid #30363d;'
-      + 'border-left:3px solid #8b5cf6;border-radius:10px;padding:12px 14px;'
-      + 'font-size:13px;line-height:1.5;backdrop-filter:blur(8px);z-index:40;'
-      + 'box-shadow:0 12px 32px rgba(0,0,0,.4);';
-    host.innerHTML = '<div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;'
-      + 'color:#a78bfa;margin-bottom:6px;font-weight:700;">👤 Your Twin</div>'
-      + '<div id="twin-panel-body"></div>';
-    document.body.appendChild(host);
+  // Strip in-band calibration tags before rendering (belt + suspenders).
+  const { text, probes, calibrations } = parseTwinTags(markdown);
+  const mood = detectTwinMood(text, calibrations);
+  const host = ensureTwinPanel();
+  host.dataset.mood = mood;
+  const body = host.querySelector('.twin-body');
+  const status = host.querySelector('.twin-status');
+  status.textContent = MOOD_LABEL[mood] || 'observing';
+  if (!text) {
+    body.innerHTML = '<div class="twin-silent">…</div>';
+  } else if (typeof renderMarkdown === 'function') {
+    body.innerHTML = renderMarkdown(text);
+  } else {
+    body.textContent = text;
   }
-  const body = document.getElementById('twin-panel-body');
-  // Reuse the existing markdown renderer if present, fall back to plain text.
-  if (typeof renderMarkdown === 'function') body.innerHTML = renderMarkdown(markdown);
-  else body.textContent = markdown;
-  host.style.display = 'block';
+  host.style.display = 'flex';
+}
+
+const MOOD_LABEL = {
+  dormant:      'quiet',
+  thinking:     'observing',
+  curious:      'wondering',
+  alert:        'flagging a risk',
+  validated:    'called it',
+  contradicted: 'recalibrating',
+};
+
+function ensureTwinPanel() {
+  let host = document.getElementById('twin-panel');
+  if (host) return host;
+  // Inject one-time stylesheet for the twin panel + sphere animations.
+  if (!document.getElementById('twin-panel-styles')) {
+    const s = document.createElement('style');
+    s.id = 'twin-panel-styles';
+    s.textContent = `
+      #twin-panel { position:fixed; right:18px; bottom:18px; width:300px; z-index:40;
+        display:none; flex-direction:column; gap:10px; padding:14px;
+        background:linear-gradient(180deg, rgba(22,27,34,.94), rgba(13,17,23,.94));
+        border:1px solid #30363d; border-radius:14px;
+        backdrop-filter:blur(10px); box-shadow:0 20px 60px rgba(0,0,0,.45);
+        font-family:inherit; color:#cdd6e3; font-size:13px; line-height:1.5; }
+      #twin-panel .twin-head { display:flex; align-items:center; justify-content:space-between;
+        gap:8px; font-size:10px; letter-spacing:1.6px; text-transform:uppercase; font-weight:700; }
+      #twin-panel .twin-label { color:#a78bfa; }
+      #twin-panel .twin-status { color:#8b949e; font-weight:600; letter-spacing:.8px;
+        text-transform:lowercase; font-style:italic; }
+      #twin-panel .twin-sphere-wrap { display:flex; justify-content:center; align-items:center;
+        height:96px; position:relative; }
+      #twin-panel .twin-sphere { width:72px; height:72px; border-radius:50%; position:relative;
+        background:radial-gradient(circle at 32% 30%, rgba(255,255,255,.55), rgba(167,139,250,.55) 28%, rgba(88,60,200,.85) 70%, rgba(20,12,60,.95) 100%);
+        box-shadow:0 0 24px rgba(167,139,250,.55), inset 0 0 18px rgba(255,255,255,.08);
+        animation:twin-pulse 3.4s ease-in-out infinite; transition:box-shadow .5s, background .8s; }
+      #twin-panel .twin-sphere::before {
+        content:""; position:absolute; inset:-8px; border-radius:50%;
+        border:1px solid rgba(167,139,250,.35); animation:twin-ring 5s linear infinite;
+        pointer-events:none; }
+      #twin-panel .twin-sphere::after {
+        content:""; position:absolute; inset:-18px; border-radius:50%;
+        border:1px dashed rgba(167,139,250,.18); animation:twin-ring 9s linear infinite reverse;
+        pointer-events:none; }
+      #twin-panel .twin-body { color:#cdd6e3; font-size:13px; line-height:1.55; }
+      #twin-panel .twin-body p { margin:0 0 6px; }
+      #twin-panel .twin-body p:last-child { margin-bottom:0; }
+      #twin-panel .twin-body strong { color:#e6edf3; }
+      #twin-panel .twin-body code { background:#0d1117; padding:1px 5px; border-radius:3px;
+        font-size:12px; }
+      #twin-panel .twin-silent { color:#6b7280; font-style:italic; text-align:center; }
+
+      /* Mood-driven recoloring. Only the sphere background + glow change;
+         the panel chrome stays stable so it doesn't feel chaotic. */
+      #twin-panel[data-mood="dormant"] .twin-sphere {
+        background:radial-gradient(circle at 32% 30%, rgba(255,255,255,.2), rgba(100,110,130,.3) 30%, rgba(30,36,50,.9) 80%);
+        box-shadow:0 0 10px rgba(100,110,130,.2); animation-duration:6s; }
+      #twin-panel[data-mood="curious"] .twin-sphere {
+        background:radial-gradient(circle at 32% 30%, rgba(255,255,255,.5), rgba(99,179,237,.55) 28%, rgba(31,111,235,.9) 70%, rgba(12,30,72,.95) 100%);
+        box-shadow:0 0 28px rgba(99,179,237,.6); animation-duration:2.6s; }
+      #twin-panel[data-mood="alert"] .twin-sphere {
+        background:radial-gradient(circle at 32% 30%, rgba(255,255,255,.5), rgba(255,170,80,.55) 28%, rgba(210,100,40,.9) 70%, rgba(80,24,8,.95) 100%);
+        box-shadow:0 0 30px rgba(255,140,60,.65); animation-duration:1.8s; }
+      #twin-panel[data-mood="validated"] .twin-sphere {
+        background:radial-gradient(circle at 32% 30%, rgba(255,255,255,.55), rgba(125,240,200,.6) 28%, rgba(46,160,120,.9) 70%, rgba(10,52,38,.95) 100%);
+        box-shadow:0 0 32px rgba(125,240,200,.65); animation-duration:3.8s; }
+      #twin-panel[data-mood="contradicted"] .twin-sphere {
+        background:radial-gradient(circle at 32% 30%, rgba(255,255,255,.4), rgba(248,81,73,.55) 28%, rgba(180,50,45,.9) 70%, rgba(60,12,12,.95) 100%);
+        box-shadow:0 0 28px rgba(248,81,73,.6); animation-duration:2.2s; }
+      /* thinking = default (lavender, defined above on .twin-sphere) */
+
+      @keyframes twin-pulse {
+        0%,100% { transform:scale(1);   filter:brightness(1); }
+        50%     { transform:scale(1.05); filter:brightness(1.12); }
+      }
+      @keyframes twin-ring {
+        to { transform:rotate(360deg); }
+      }
+      @media (max-width:720px) {
+        #twin-panel { right:8px; left:8px; bottom:8px; width:auto; }
+      }
+    `;
+    document.head.appendChild(s);
+  }
+  host = document.createElement('aside');
+  host.id = 'twin-panel';
+  host.dataset.mood = 'thinking';
+  host.innerHTML = `
+    <div class="twin-head">
+      <span class="twin-label">👤 Your Twin</span>
+      <span class="twin-status">observing</span>
+    </div>
+    <div class="twin-sphere-wrap"><div class="twin-sphere"></div></div>
+    <div class="twin-body"></div>
+  `;
+  document.body.appendChild(host);
+  return host;
 }
 
 // Returns the OpenAI tools array for every agent in the binder — exactly
