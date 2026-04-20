@@ -1899,12 +1899,18 @@ The |||TWIN||| block is the twin's entire real estate — anything twin-related 
    Server-side-only debug signal — routing notes, memory hit-rate, suspected prompt drift. Printed to logs with a [twin-telemetry] prefix, never rendered to the user.
 
 4. <action kind="..." label="..." [target="..."]>body</action>
-   A small UI favor the twin offers the user. Renders as a one-click chip next to the twin panel. The user's click is the approval — never auto-fires. Offer 0-2 per turn, only when it clearly helps. Vocabulary (keep it small):
+   A small UI favor the twin offers the user. Renders as a one-click chip next to the twin panel (and, for send/prompt kinds, as a pill above the chat input alongside the starter pills). The user's click is the approval — never auto-fires. Offer 0-2 per turn, only when it clearly helps. Vocabulary (keep it small):
      <action kind="send" label="Show me PR #42">Show me PR #42</action>            (submit a message as the user)
      <action kind="prompt" label="Draft a follow-up">What did we decide on X?</action> (prefill the input; user hits enter)
      <action kind="open" target="settings|binder|agents|browse" label="Open settings"/>
      <action kind="toggle" target="voice" label="Turn on voice"/>
+     <action kind="toggle" target="cards" label="Switch to card mode"/>      (hand → fanned holographic cards)
+     <action kind="toggle" target="pills" label="Switch to pill mode"/>      (hand → clean text pills)
+     <action kind="toggle" target="hand-mode" label="Flip hand mode"/>       (the other of the two)
+     <action kind="highlight" target="SaveMemory" label="Tap SaveMemory"/>   (flash one loaded card/pill to draw the eye)
    The user only sees the label on the chip; the body is the payload.
+
+   When the user asks for a UI change ("switch to card mode", "show me the cards", "give me the pill view"), the right answer is to emit the matching <action kind="toggle" …/> so they can confirm it with one click — not to just describe the change.
 </response_format>`;
 
 const SOUL_BOUNDARIES = `<boundaries>
@@ -3770,6 +3776,36 @@ async function runTwinAction(action, btn) {
       if (btnVoice) { btnVoice.click(); markDone('Toggled'); return; }
       throw new Error('voice toggle not wired');
     }
+    // Hand-mode toggle — the twin can switch the quick-pick row between
+    // pills (text buttons) and cards (fanned holographic cards). Three
+    // spellings are supported so the LLM can be flexible:
+    //   target="cards" | target="pills"  — set explicitly
+    //   target="hand-mode" | target="hand" — flip to the other
+    if (kind === 'toggle' && (target === 'cards' || target === 'pills'
+        || target === 'hand-mode' || target === 'hand')) {
+      if (typeof setHandMode !== 'function') throw new Error('setHandMode unavailable');
+      let next;
+      if (target === 'cards' || target === 'pills') {
+        next = target;
+      } else {
+        next = (state.settings.handMode === 'cards') ? 'pills' : 'cards';
+      }
+      setHandMode(next);
+      markDone(next === 'cards' ? 'Cards on' : 'Pills on');
+      return;
+    }
+    // Highlight a card/pill in the hand so the user's eye flicks to it.
+    // The twin passes the agent display-name or filename as `target`.
+    // Resolves via findCardByAgentName → flashHand(filename).
+    if (kind === 'highlight' && target) {
+      const card = (typeof findCardByAgentName === 'function')
+        ? findCardByAgentName(target)
+        : null;
+      if (!card) throw new Error(`no loaded card for "${target}"`);
+      if (typeof flashHand === 'function') flashHand(card.filename);
+      markDone('Highlighted');
+      return;
+    }
     throw new Error(`unknown twin action: kind="${kind}" target="${target}"`);
   } catch (e) {
     console.warn('[twin-action] failed:', e.message, action);
@@ -3799,11 +3835,12 @@ function ensureTwinPanel() {
     const s = document.createElement('style');
     s.id = 'twin-panel-styles';
     s.textContent = `
-      /* Compact bottom-right companion — sized to match the footer bar so
-         it reads as "part of the chat chrome" rather than a floating
-         notification. Never takes over real estate; the chat column stays
-         the width of the message stream. */
-      #twin-panel { position:fixed; right:18px; bottom:18px; width:260px; z-index:40;
+      /* Compact bottom-LEFT companion. Assistant replies land on the left
+         of the chat and user messages on the right, so the twin — which
+         is the assistant's *other voice* — sits on the same side as its
+         parent. Keeps the spatial mapping clean: left = what the system
+         is saying to you, right = what you're saying back. */
+      #twin-panel { position:fixed; left:18px; bottom:18px; width:260px; z-index:40;
         display:none; flex-direction:column; gap:8px; padding:12px;
         background:linear-gradient(180deg, rgba(22,27,34,.94), rgba(13,17,23,.94));
         border:1px solid #30363d; border-radius:12px;

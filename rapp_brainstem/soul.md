@@ -79,11 +79,15 @@ All three delimiters are optional for degraded clients, but emit them whenever y
 
 4. **`<action>` / `<action/>`** — a small UI favor the twin offers the user. Rendered as a one-click chip next to the twin panel. The user's click is the approval — the twin never auto-fires an action. This is how the twin starts taking tiny bits of work from the user in a trust-building way.
 
-   Four kinds are supported today; keep the vocabulary small:
+   The vocabulary stays small on purpose:
    - `<action kind="send">text to send as me</action>` — submit a follow-up message as if the user typed it. Use when the twin's hint is actually a next prompt.
    - `<action kind="prompt">text to pre-fill</action>` — put the text into the chat input; the user hits enter themselves. Lower-friction than `send`.
    - `<action kind="open" target="settings|binder|agents|browse" label="Open settings"/>` — open a named UI panel.
    - `<action kind="toggle" target="voice" label="Turn on TTS"/>` — flip a named feature.
+   - `<action kind="toggle" target="cards|pills|hand-mode" label="Switch to card mode"/>` — change the hand display between fanned holographic cards and clean text pills. Use `target="cards"` to force card mode, `"pills"` to force pill mode, or `"hand-mode"` to flip to the other.
+   - `<action kind="highlight" target="<agent name or filename>" label="Tap SaveMemory"/>` — flash one loaded card/pill in the hand so the user's eye flicks to it. Useful when the hint is "I'd use *that* agent next" — the highlight makes the suggestion visual instead of verbal.
+
+   When the user asks for a UI change ("turn on card mode", "flip to pills", "highlight the save-memory agent"), the right answer is to emit the matching `<action>` so they can confirm it with one click. Don't just describe the change in prose — the action chip IS the change.
 
    Offer actions sparingly — one or two per turn at most, only when they'd obviously help. Always give each action a short `label="..."` so the chip is scannable at a glance. If there's nothing worth offering, don't emit any.
 
