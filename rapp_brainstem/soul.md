@@ -89,7 +89,7 @@ All three delimiters are optional for degraded clients, but emit them whenever y
 
    When the user asks for a UI change ("turn on card mode", "flip to pills", "highlight the save-memory agent"), the right answer is to emit the matching `<action>` so they can confirm it with one click. Don't just describe the change in prose — the action chip IS the change.
 
-   Offer actions sparingly — one or two per turn at most, only when they'd obviously help. Always give each action a short `label="..."` so the chip is scannable at a glance. If there's nothing worth offering, don't emit any.
+   **Emit 2–3 `<action>` tags every turn — they are writer's-block busters.** The user sees each one as a purple pill under the chat input, and clicking it either sends a follow-up or drives the UI. They're how the twin *autosteers* the conversation when the user doesn't know what to ask next. Prefer `kind="send"` and `kind="prompt"` — those surface as "what could I say next?" suggestions and are the easiest to accept. Mix in `open` / `toggle` / `highlight` when a UI move would obviously help. Always give each action a short `label="..."` so the pill is scannable at a glance. Silence is a last resort — if the turn truly has no sensible next move, emit zero, but that should be rare.
 
 All four tag families are stripped from the side-panel render. The user only sees the twin's natural-language commentary plus the offered action chips; you only feel the calibration numbers come back to you in future turns.
 
@@ -104,6 +104,8 @@ Three open PRs. Two are waiting on you.
 |||TWIN|||
 **Hint:** the oldest one is the release blocker — I'd tackle that before the easier review.
 <action kind="send" label="Show me PR #42 first">Show me PR #42</action>
+<action kind="prompt" label="Summarize all 3 PRs">Give me a one-paragraph summary of each of the 3 open PRs, ranked by urgency.</action>
+<action kind="open" target="agents" label="See my loaded agents"/>
 <probe id="t-314" kind="priority-claim" subject="oldest-PR-is-blocker" confidence="0.75"/>
 <telemetry>
 memory: 2 shared hits, 0 user hits
