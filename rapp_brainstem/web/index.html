@@ -1908,6 +1908,8 @@ The |||TWIN||| block is the twin's entire real estate — anything twin-related 
      <action kind="toggle" target="pills" label="Switch to pill mode"/>      (hand → clean text pills)
      <action kind="toggle" target="hand-mode" label="Flip hand mode"/>       (the other of the two)
      <action kind="highlight" target="SaveMemory" label="Tap SaveMemory"/>   (flash one loaded card/pill to draw the eye)
+     <action kind="rapp" target="BookFactory" label="Run BookFactory on this chapter">{"source":"...","chapter_title":"..."}</action>
+       Run an installed rapplication (composed agent like BookFactory / MomentFactory / etc.). The body is a JSON object matching the rapplication's `parameters` schema from <installed_rapplications>. Only offer a rapp action when the user's turn clearly benefits from it — e.g., they just pasted raw source and BookFactory is installed. The runtime flashes the card, calls perform(args), and appends the output to the chat as a system message.
    The user only sees the label on the chip; the body is the payload.
 
    When the user asks for a UI change ("switch to card mode", "show me the cards", "give me the pill view"), the right answer is to emit the matching <action kind="toggle" …/> so they can confirm it with one click — not to just describe the change.
@@ -1956,9 +1958,46 @@ function buildSystemPrompt(toolsXml) {
     SOUL_TIER2,
     SOUL_HOW_TO_HELP,
     SOUL_RESPONSE_FORMAT,
+    buildRappsXml(),
     SOUL_BOUNDARIES,
     toolsXml || '',
   ].filter(Boolean).join('\n\n');
+}
+
+/* Tell the twin what rapplications (composed single-file agents like
+ * BookFactory, MomentFactory, …) are currently installed in the binder
+ * and what args they take. The twin uses this to offer
+ * `<action kind="rapp" target="<name>">args JSON</action>` chips — a
+ * one-click way to run a rapplication from the twin panel without the
+ * user having to hand-type the arguments. */
+function buildRappsXml() {
+  const tools = binderTools();
+  if (!tools.length) {
+    return '<installed_rapplications>\n(none installed — the twin should not offer rapp actions this turn.)\n</installed_rapplications>';
+  }
+  const lines = tools.map(t => {
+    const fn = t.function || {};
+    const name = fn.name || '';
+    const desc = (fn.description || '').trim().replace(/\s+/g, ' ').slice(0, 240);
+    const params = JSON.stringify(fn.parameters || {});
+    return `  <rapp name="${escapeAttr(name)}" description="${escapeAttr(desc)}" parameters='${escapeAttr(params)}'/>`;
+  });
+  return [
+    '<installed_rapplications>',
+    'Rapplications the user has installed right now. Each is invocable via',
+    '<action kind="rapp" target="<name>" label="Run <name>">{"arg":"..."}</action>',
+    'inside your |||TWIN||| block. The user clicks to confirm; the runtime calls',
+    'the rapplication with the JSON body as its arguments. Only offer a rapp',
+    "action when the user's turn clearly benefits from it.",
+    ...lines,
+    '</installed_rapplications>',
+  ].join('\n');
+}
+
+function escapeAttr(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 // Kept for legacy export/import callers. The chat loop ignores this
@@ -3804,6 +3843,39 @@ async function runTwinAction(action, btn) {
       if (!card) throw new Error(`no loaded card for "${target}"`);
       if (typeof flashHand === 'function') flashHand(card.filename);
       markDone('Highlighted');
+      return;
+    }
+    // Run a rapplication (composed single-file agent like BookFactory or
+    // MomentFactory) the user has installed. `target` is the agent name,
+    // the body is a JSON object of args. Routes through the same runAgent
+    // path the LLM tool-call loop uses, so the rapp's perform() runs in
+    // the exact same environment. Output is appended as a system message
+    // to the chat so the user can see what came back.
+    if (kind === 'rapp' && target) {
+      const card = (typeof findCardByAgentName === 'function')
+        ? findCardByAgentName(target)
+        : null;
+      if (!card) throw new Error(`no installed rapplication "${target}"`);
+      if (state.hand && !state.hand.has(card.filename)) {
+        // Auto-load into the hand so the LLM can see it in follow-ups.
+        state.hand.add(card.filename);
+        if (typeof persistHand === 'function') persistHand();
+        if (typeof renderHand === 'function') renderHand();
+      }
+      let args = {};
+      if (body) {
+        try { args = JSON.parse(body); }
+        catch { throw new Error(`invalid JSON args for rapp "${target}"`); }
+      }
+      if (typeof flashHand === 'function') flashHand(card.filename);
+      if (typeof appendMsg === 'function') {
+        appendMsg('system', `👤 Twin → running **${target}** with \`${JSON.stringify(args)}\``);
+      }
+      const out = await runAgent(card, args, null);
+      if (typeof appendMsg === 'function') {
+        appendMsg('system', `**${target}** returned:\n\n\`\`\`\n${String(out).slice(0, 4000)}\n\`\`\``);
+      }
+      markDone(`Ran ${target}`);
       return;
     }
     throw new Error(`unknown twin action: kind="${kind}" target="${target}"`);

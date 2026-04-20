@@ -723,6 +723,36 @@ def chat():
                 print(f"[brainstem] system_context failed for {agent.name}: {e}")
 
         system_content = soul + extra_context
+
+        # Installed rapplications block — lets the twin (and the main model)
+        # see what composed single-file agents are loaded, so it can offer
+        # <action kind="rapp" target="..." ...> chips from its |||TWIN|||.
+        if agents:
+            rapps_lines = ["<installed_rapplications>"]
+            rapps_lines.append(
+                "Rapplications the user has installed right now. Each is invocable from "
+                "the twin panel via <action kind=\"rapp\" target=\"<name>\" label=\"...\">"
+                "{\"arg\":\"...\"}</action> — the user clicks to confirm, the runtime "
+                "calls perform(args). Only offer a rapp action when the turn clearly "
+                "benefits from it."
+            )
+            for a in agents.values():
+                try:
+                    md = getattr(a, "metadata", {}) or {}
+                    name = md.get("name", getattr(a, "name", ""))
+                    desc = (md.get("description") or "").strip().replace("\n", " ")[:240]
+                    params = json.dumps(md.get("parameters") or {})
+                    # Escape quotes for XML attribute safety.
+                    desc_attr = desc.replace("&", "&amp;").replace("\"", "&quot;")
+                    params_attr = params.replace("&", "&amp;").replace("'", "&#39;")
+                    rapps_lines.append(
+                        f'  <rapp name="{name}" description="{desc_attr}" parameters=\'{params_attr}\'/>'
+                    )
+                except Exception:
+                    continue
+            rapps_lines.append("</installed_rapplications>")
+            system_content += "\n\n" + "\n".join(rapps_lines)
+
         if VOICE_MODE:
             system_content += "\n\nIMPORTANT: End every response with |||VOICE||| followed by a concise, conversational version of your answer suitable for text-to-speech. Keep the voice version under 2-3 sentences. The part before |||VOICE||| should be the full formatted response."
         if TWIN_MODE:
