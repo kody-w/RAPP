@@ -588,6 +588,37 @@ with open(sys.argv[2], 'w') as f: json.dump(out, f)
 
     cd "$BRAINSTEM_HOME/src/rapp_brainstem"
 
+    # Port-in-use detection. Almost always a previous brainstem still running.
+    if command -v lsof >/dev/null 2>&1; then
+        EXISTING_PID=$(lsof -ti:7071 2>/dev/null | head -1)
+        if [ -n "$EXISTING_PID" ]; then
+            EXISTING_CMD=$(ps -p "$EXISTING_PID" -o comm= 2>/dev/null | head -c 60)
+            echo -e "  ${YELLOW}⚠${NC} Port 7071 is already in use by PID $EXISTING_PID ($EXISTING_CMD)"
+            if [ -t 0 ]; then
+                printf "  Kill it and continue? [y/N] "
+                read -r REPLY </dev/tty
+            else
+                # Piped via curl|bash — auto-kill since the user clearly wants
+                # the brainstem running and the most common case is a stale
+                # previous brainstem.
+                REPLY="y"
+                echo -e "  ${CYAN}(running via curl|bash — auto-killing previous brainstem)${NC}"
+            fi
+            case "$REPLY" in
+                [Yy]*)
+                    kill -9 "$EXISTING_PID" 2>/dev/null && \
+                        echo -e "  ${GREEN}✓${NC} killed PID $EXISTING_PID"
+                    sleep 0.5
+                    ;;
+                *)
+                    echo -e "  ${YELLOW}Aborted.${NC} To launch on a different port:"
+                    echo -e "    cd $BRAINSTEM_HOME/src/rapp_brainstem && PORT=7072 python brainstem.py"
+                    exit 1
+                    ;;
+            esac
+        fi
+    fi
+
     # Open the browser after a short delay
     (sleep 3 && (open "http://localhost:7071" 2>/dev/null || xdg-open "http://localhost:7071" 2>/dev/null)) &
 
