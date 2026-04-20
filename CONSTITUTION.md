@@ -210,7 +210,153 @@ rapplication catalog, or its install-widget mirror — it belongs elsewhere.
 
 ---
 
-## Article VIII — Amendments
+## Article VIII — Degrade Gracefully
+
+Every feature added to this repo must **compose back down cleanly**: if
+its helper fails to import, if its prompt block is absent, if its log
+file can't be written, the rest of the system keeps working.
+
+Examples in the tree today:
+
+- `rapp_brainstem/twin.py` is imported with a `try: … except ImportError:
+  _twin = None`. If the helper is missing, calibration silently disables
+  and the v0 twin split still returns cleanly.
+- The twin's `<telemetry>` / `<probe>` / `<calibration>` tags are all
+  optional. Remove the prompt instructions and the tags stop; the panel
+  still renders the natural-language part.
+- A browser client that doesn't know about `|||TWIN|||` sees the main
+  reply + voice line and nothing breaks. The twin slot is invisible to
+  it.
+
+> **New features are additive, not load-bearing.** If your feature's
+> failure path is "nothing else works," redesign it until its failure
+> path is "that one feature is off."
+
+---
+
+## Article IX — The Twin Offers, The User Accepts
+
+The digital twin is a companion, not an autonomous actor in the UI.
+Everything the twin *does* to the user's surface is a button the user
+clicks. This is load-bearing for trust: the twin builds confidence by
+taking small, reversible favors off the user's plate — **one click at a
+time, always user-approved**.
+
+Concretely:
+
+- `<action>` tags render as chips. Chips never fire automatically.
+- The dispatch is a whitelist (today: `send`, `prompt`, `open`,
+  `toggle`). The twin can only invoke named actions that the user
+  already has a manual button or keystroke for.
+- Arbitrary code execution from twin output is prohibited. The twin
+  never gets an `eval` surface, never gets an HTTP-escape, never gets
+  to skip the user's hands.
+
+If a new action kind is proposed, it must satisfy: *the user already
+has a way to do this manually, and the twin is just saving them the
+click*. "Convenience" is the whole point; "autonomy" is not.
+
+---
+
+## Article X — Calibration Is Behavioral, Not Explicit
+
+We do not build thumbs-up / thumbs-down buttons for the twin. The
+user's next message is the ground truth — if they acted on a hint, it
+was validated; if they pushed back, it was contradicted; if they
+changed the subject, it was silent. The twin grades itself on that,
+writes the result to `.twin_calibration.jsonl`, and the rolling
+accuracy feeds back into the next turn's system prompt.
+
+Why this matters:
+
+- Explicit feedback buttons are friction. Users don't click them.
+  Friction-free signal is the only signal that scales.
+- Silent outcomes don't count. The twin is not penalized for
+  guessing quietly — this preserves its willingness to offer hints
+  that *might* be wrong but are useful when right.
+- No dashboards, no graphs, no "your twin's accuracy is 72%" UI.
+  The feedback loop is internal. The user feels it, doesn't read it.
+
+If you find yourself adding a scoring UI, re-read this article.
+
+---
+
+## Article XI — Historical Artifacts Are Memorial
+
+When we rename, restructure, or relocate, the past stays.
+
+- Blog posts at [kody-w.github.io](https://kody-w.github.io/) tagged
+  `rapp` preserve the timeline — including their references to
+  long-renamed folders (`hippocampus/`, `community_rapp/`, etc.).
+  Don't retcon them.
+- Commit messages are not rewritten. `git log` is the truth of what
+  happened, when.
+- Code comments describing past reasoning (e.g. "Same sentinel the
+  community RAPP brainstem uses…") stay even after the names move,
+  because they describe *where an idea came from*, not *where the
+  file lives now*.
+
+The rule: **rename paths and API surfaces; don't rename history.** If a
+stale reference in docs is confusing users *today*, fix it in today's
+doc. Don't mass-rewrite past posts to pretend the rename always
+existed.
+
+---
+
+## Article XII — Prompt Shape Is a Contract
+
+The delimited slots and in-band tag vocabularies (`|||VOICE|||`,
+`|||TWIN|||`, `<probe/>`, `<calibration/>`, `<telemetry>`, `<action>`)
+are as much a wire as `/chat`'s JSON shape. A user's `soul.md` depends
+on them. A fine-tuned model might depend on them. A downstream parser
+depends on them.
+
+Evolve them with the same discipline as SPEC §14:
+
+- **Additive changes only in v1.x.** A new tag family (kept small) is
+  allowed. A new top-level `|||<SLOT>|||` is allowed but very rare
+  (see Article II).
+- **Never silently repurpose.** If `|||VOICE|||` means "TTS line,"
+  `|||VOICE|||` means only that, forever. Its meaning does not
+  shift-right into "voice or short summary" because that would break
+  anyone who wrote to the old contract.
+- **Never change a tag's attribute name without deprecation.** If
+  `<probe kind=…>` exists, don't rename `kind` to `category`.
+  Breaking attributes goes in v2 with a compat shim.
+
+The prompt is sacred for the same reason the agent file is sacred: it
+is the thing users wrote down.
+
+---
+
+## Article XIII — Reversibility
+
+Every feature must be cleanly removable. The test: can a user (or a
+future us) turn it off by deleting one file, one block, or one line?
+
+- Delete `rapp_brainstem/twin.py` → calibration disables, v0 twin
+  split still works.
+- Delete the user's `.twin_calibration.jsonl` → the twin's confidence
+  resets to neutral, next turn is unaffected otherwise.
+- Remove the `|||TWIN|||` section of the system prompt → the twin
+  falls silent, nothing else changes.
+- Remove an `<action kind="…">` from the action-dispatcher whitelist
+  → twin-suggested actions of that kind render as failed chips; other
+  kinds still work.
+
+What this rules out:
+
+- ❌ Half-torn-out code, `# removed in vX` comments, dead branches.
+  Delete completely or don't delete.
+- ❌ Compatibility shims that live forever "just in case."
+- ❌ Features that can only be disabled by a rebuild or a reinstall.
+
+If a feature can't be cleanly removed, it's coupled too tightly to
+the core. Uncouple it before shipping.
+
+---
+
+## Article XIV — Amendments
 
 This constitution can be amended. The only rule: amendments must preserve
 Article I — **the brainstem stays light**. Any change that loads
