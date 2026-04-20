@@ -774,14 +774,15 @@
      content scrolls inside the bubble. */
   #twin-bubble {
     position: absolute; right: calc(100% + 14px); bottom: 0;
-    width: 280px; max-height: 140px; padding: 10px 12px;
+    width: 280px; max-height: 360px; padding: 12px 14px;
+    box-sizing: border-box;
     background: rgba(22,27,34,.94); backdrop-filter: blur(14px);
     border: 1px solid rgba(167,139,250,.3); border-radius: 12px;
     opacity: 0; transform: translateX(6px); pointer-events: none;
     transition: opacity .25s, transform .25s;
-    text-align: left; overflow-y: auto;
+    text-align: left; overflow: hidden auto;
     box-shadow: 0 12px 32px rgba(0,0,0,.35);
-    z-index: 60; font-size: 12px;
+    z-index: 60; font-size: 13px; line-height: 1.5;
   }
   #twin-bubble.visible { opacity: 1; transform: translateX(0); pointer-events: auto; }
   #twin-bubble::after {
