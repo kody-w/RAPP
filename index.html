@@ -1,504 +1,308 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>RAPP — The AI Agent Stack</title>
-<meta name="description" content="The full RAPP stack: local Brainstem → cloud Swarm → Copilot Studio. Local-first AI agents that grow into the Microsoft enterprise stack one tier at a time.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAPP — Local-first AI agents, three tiers</title>
+<meta name="description" content="The full RAPP stack: local Brainstem → cloud Swarm → Copilot Studio. Single-file agents that run unchanged across all three.">
 <meta property="og:title" content="RAPP — The AI Agent Stack">
-<meta property="og:description" content="Brainstem → Swarm → Copilot Studio. Three tiers. One agent. Your own.">
+<meta property="og:description" content="Brainstem → Swarm → Copilot Studio. Three tiers. One agent. No API keys.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://kody-w.github.io/RAPP/">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E🧠%3C/text%3E%3C/svg%3E">
 <style>
   :root{
-    --bg:#06080f; --panel:#0d1320; --panel2:#151c2e; --border:#1f2a44;
-    --fg:#e8ecf4; --dim:#8ea0b8; --muted:#6b7a93;
-    --t1:#7df0c8;   /* brainstem - mint */
-    --t2:#58a6ff;   /* swarm - blue */
-    --t3:#bc8cff;   /* copilot studio - purple */
-    --hot:#ff6b9d;
+    --bg:#0d1117; --panel:#161b22; --border:#21262d; --border2:#30363d;
+    --fg:#e6edf3; --dim:#8b949e; --muted:#484f58;
+    --green:#238636; --green-2:#2ea043; --green-3:#3fb950;
+    --blue:#1f6feb; --blue-2:#58a6ff;
+    --purple:#8b5cf6; --purple-2:#a78bfa;
+    --red:#f85149; --warn:#d29922;
     --code-bg:#04060c;
   }
-  *{box-sizing:border-box}
+  *{box-sizing:border-box;margin:0;padding:0}
   html{scroll-behavior:smooth}
-  body{margin:0;
-    background:
-      radial-gradient(1400px 700px at 75% -10%, rgba(188,140,255,.07), transparent 60%),
-      radial-gradient(1100px 600px at 15% 30%, rgba(88,166,255,.06), transparent 60%),
-      radial-gradient(900px 500px at 50% 110%, rgba(125,240,200,.06), transparent 60%),
-      var(--bg);
-    color:var(--fg);
-    font-family:ui-sans-serif,-apple-system,'Segoe UI',system-ui,sans-serif;
-    -webkit-font-smoothing:antialiased;line-height:1.55;min-height:100vh}
-  a{color:var(--t1);text-decoration:none}
-  a:hover{text-decoration:underline}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:var(--bg);color:var(--fg);min-height:100vh;line-height:1.55;
+    display:flex;flex-direction:column;align-items:center}
+  a{color:var(--blue-2);text-decoration:none}a:hover{text-decoration:underline}
+  code,kbd,pre{font-family:"SF Mono","Fira Code",ui-monospace,monospace;font-size:13px}
+  code{background:var(--panel);padding:2px 6px;border-radius:4px}
 
-  /* Header */
-  header{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);
-    background:rgba(6,8,15,.78);border-bottom:1px solid var(--border)}
-  .hdr{max-width:1200px;margin:0 auto;padding:14px 24px;
-    display:flex;gap:14px;align-items:center;flex-wrap:wrap}
-  .brand{font-weight:800;font-size:18px;letter-spacing:.3px;display:flex;gap:8px;align-items:center}
-  .brand .logo{font-size:24px;filter:drop-shadow(0 0 8px rgba(125,240,200,.4))}
-  .brand .name{background:linear-gradient(90deg,var(--t1),var(--t2),var(--t3));
+  /* ── Top nav ── */
+  header{position:sticky;top:0;z-index:10;width:100%;
+    backdrop-filter:blur(12px);background:rgba(13,17,23,.82);
+    border-bottom:1px solid var(--border)}
+  .nav{max-width:960px;margin:0 auto;padding:14px 24px;
+    display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px;letter-spacing:.2px}
+  .brand .logo{font-size:22px;filter:drop-shadow(0 0 8px rgba(125,240,200,.3))}
+  .nav-links{margin-left:auto;display:flex;gap:16px;font-size:13px;flex-wrap:wrap}
+  .nav-links a{color:var(--dim)}
+  .nav-links a:hover{color:var(--fg);text-decoration:none}
+  .gh-btn{padding:5px 12px;border:1px solid var(--border2);border-radius:6px;
+    color:var(--fg)!important;font-weight:600;font-size:12px}
+  .gh-btn:hover{border-color:var(--green);text-decoration:none}
+
+  /* ── Main column (pixel-similar to installer/) ── */
+  main{padding:60px 24px;display:flex;flex-direction:column;align-items:center;width:100%}
+
+  .hero{text-align:center;max-width:680px;margin-bottom:28px}
+  .hero .logo{font-size:64px;margin-bottom:16px;filter:drop-shadow(0 0 12px rgba(125,240,200,.25))}
+  .hero h1{font-size:44px;font-weight:800;margin-bottom:10px;letter-spacing:-.5px}
+  .hero h1 .grad{background:linear-gradient(90deg,#7df0c8,#58a6ff,#a78bfa);
     -webkit-background-clip:text;background-clip:text;color:transparent}
-  .navlinks{margin-left:auto;display:flex;gap:18px;font-size:14px;flex-wrap:wrap}
-  .navlinks a{color:var(--dim)}
-  .navlinks a:hover{color:var(--fg)}
-  .gh-btn{padding:6px 14px;border:1px solid var(--border);border-radius:999px;
-    background:var(--panel);color:var(--fg);font-size:13px;font-weight:600}
-  .gh-btn:hover{border-color:var(--t1);text-decoration:none}
+  .hero p{color:var(--dim);font-size:16px;max-width:560px;margin:0 auto}
+  .hero .tag{display:inline-block;margin-top:14px;color:var(--green-3);font-weight:600;font-size:12px;
+    text-transform:uppercase;letter-spacing:1.2px}
 
-  /* Hero */
-  .hero{max-width:1200px;margin:0 auto;padding:80px 24px 40px;text-align:center}
-  .hero h1{margin:0;font-size:clamp(40px,7vw,76px);font-weight:800;letter-spacing:-1px;
-    line-height:1.05}
-  .hero h1 .grad{background:linear-gradient(90deg,var(--t1),var(--t2),var(--t3));
-    -webkit-background-clip:text;background-clip:text;color:transparent;
-    background-size:200% 100%;animation:shimmer 8s linear infinite}
-  @keyframes shimmer{to{background-position:200% 0}}
-  .hero .tagline{margin:18px auto 0;color:var(--dim);font-size:clamp(16px,2vw,20px);
-    max-width:700px;line-height:1.5}
-  .hero .meta{margin:24px 0 0;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;
-    color:var(--muted);font-size:13px}
-  .hero .meta span{padding:6px 12px;border:1px solid var(--border);border-radius:999px;
-    background:var(--panel)}
-  .cta-row{margin:36px 0 0;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-  .cta{padding:14px 28px;border-radius:12px;font-weight:600;font-size:15px;
-    border:1px solid transparent;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
-  .cta.primary{background:linear-gradient(135deg,var(--t1),var(--t2));color:#04060c}
-  .cta.primary:hover{transform:translateY(-1px);text-decoration:none;
-    box-shadow:0 10px 30px rgba(125,240,200,.25)}
-  .cta.ghost{background:var(--panel);color:var(--fg);border-color:var(--border)}
-  .cta.ghost:hover{border-color:var(--t1);text-decoration:none}
+  /* ── Install widget — identical footprint to installer/ ── */
+  .install{max-width:620px;width:100%;margin:0 0 28px;
+    background:var(--panel);border:2px solid var(--green);border-radius:12px;overflow:hidden}
+  .install:hover{border-color:var(--green-2)}
+  .install-tabs{display:flex;align-items:center;padding:0 16px;
+    border-bottom:1px solid var(--border);height:40px}
+  .install-tabs-l{display:flex;align-items:center;gap:2px}
+  .dots{display:flex;gap:5px;margin-right:14px}
+  .dots span{width:10px;height:10px;border-radius:50%}
+  .dots span:nth-child(1){background:var(--red)}
+  .dots span:nth-child(2){background:var(--warn)}
+  .dots span:nth-child(3){background:var(--green-3)}
+  .install-tab{background:none;border:none;color:var(--muted);font-size:12px;
+    padding:8px 14px;cursor:pointer;font-family:"SF Mono",monospace;
+    border-bottom:2px solid transparent;margin-bottom:-1px;
+    transition:color .15s,border-color .15s}
+  .install-tab:hover{color:var(--dim)}
+  .install-tab.active{color:var(--fg);border-bottom-color:var(--green)}
+  .install-body{padding:20px 24px;cursor:pointer;display:flex;align-items:center;gap:8px}
+  .install-body .dollar{color:var(--dim);user-select:none}
+  .install-body .cmd{font-family:"SF Mono",monospace;font-size:14px;color:var(--fg);flex:1;word-break:break-all}
+  .install-body .copy{font-size:16px;opacity:.4;flex-shrink:0;transition:opacity .15s}
+  .install-body:hover .copy{opacity:1}
+  .install-body.copied .copy{opacity:1;color:var(--green-3)}
+  .install-hint{padding:0 24px 14px;font-size:11px;color:var(--muted);text-align:center}
 
-  /* Stack diagram */
-  .stack{max-width:1200px;margin:60px auto;padding:0 24px}
-  .stack-svg{width:100%;height:auto;max-width:900px;margin:0 auto;display:block}
+  .alt-cta{display:flex;gap:10px;margin-bottom:40px;flex-wrap:wrap;justify-content:center}
+  .alt-cta a{padding:8px 16px;border:1px solid var(--border2);border-radius:8px;
+    color:var(--dim)!important;font-size:13px;background:var(--panel)}
+  .alt-cta a:hover{border-color:var(--green);color:var(--fg)!important;text-decoration:none}
 
-  /* Tier sections */
-  .tiers{max-width:1200px;margin:0 auto;padding:60px 24px;
-    display:grid;gap:24px;grid-template-columns:1fr}
-  .tier{background:var(--panel);border:1px solid var(--border);border-radius:20px;
-    padding:32px;position:relative;overflow:hidden}
-  .tier::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;
-    background:var(--tier-color)}
-  .tier[data-tier="1"]{--tier-color:var(--t1)}
-  .tier[data-tier="2"]{--tier-color:var(--t2)}
-  .tier[data-tier="3"]{--tier-color:var(--t3)}
-  .tier-head{display:flex;align-items:flex-start;gap:18px;flex-wrap:wrap;margin-bottom:18px}
-  .tier-num{font-family:'Courier New',monospace;font-size:48px;font-weight:800;
-    color:var(--tier-color);opacity:.4;line-height:1;letter-spacing:-2px}
-  .tier-title-wrap{flex:1;min-width:200px}
-  .tier-organ{font-family:'Courier New',monospace;font-size:11px;letter-spacing:2px;
-    color:var(--tier-color);text-transform:uppercase;margin-bottom:4px}
-  .tier-title{font-size:28px;font-weight:700;margin:0 0 4px;line-height:1.2}
-  .tier-sub{color:var(--dim);font-size:14px;margin:0}
-  .tier-body{display:grid;gap:24px;grid-template-columns:1fr;margin-top:8px}
-  @media(min-width:780px){.tier-body{grid-template-columns:1.4fr 1fr}}
-  .tier-desc p{margin:0 0 14px;color:#cdd6e3;font-size:15px}
-  .tier-desc p:last-child{margin-bottom:0}
-  .tier-desc strong{color:var(--fg)}
-  .tier-aside h4{margin:0 0 8px;font-size:11px;letter-spacing:1.5px;
-    text-transform:uppercase;color:var(--muted)}
-  .tier-aside ul{margin:0 0 18px;padding-left:18px;color:var(--dim);font-size:13px}
-  .tier-aside li{margin-bottom:4px}
-  .tier-aside li b{color:var(--fg)}
+  /* ── Tier cards — collapsible, clean ── */
+  .tiers{max-width:620px;width:100%;margin-bottom:20px}
+  .tiers-intro{font-size:12px;color:var(--muted);text-transform:uppercase;
+    letter-spacing:1.5px;margin-bottom:12px;text-align:center}
+  .tier{background:var(--panel);border:1px solid var(--border);border-radius:12px;
+    margin-bottom:14px;overflow:hidden;transition:border-color .15s}
+  .tier:hover{border-color:var(--border2)}
+  .tier-head{padding:18px 22px;display:flex;align-items:center;gap:14px;cursor:pointer;user-select:none}
+  .tier-icon{font-size:28px}
+  .tier-title h2{font-size:17px;font-weight:600;margin-bottom:2px}
+  .tier-title .sub{font-size:13px;color:var(--dim)}
+  .tier-badge{margin-left:auto;font-size:10px;font-weight:700;padding:4px 10px;border-radius:12px;
+    text-transform:uppercase;letter-spacing:.5px}
+  .tier-badge.start{background:var(--green);color:#fff}
+  .tier-badge.next{background:rgba(31,111,235,.18);color:var(--blue-2);border:1px solid var(--blue)}
+  .tier-badge.adv{background:rgba(139,92,246,.18);color:var(--purple-2);border:1px solid var(--purple)}
+  .tier-arrow{color:var(--muted);font-size:16px;transition:transform .2s}
+  .tier.open .tier-arrow{transform:rotate(90deg)}
+  .tier-body{display:none;padding:0 22px 22px;border-top:1px solid var(--border)}
+  .tier.open .tier-body{display:block}
+  .tier-body p{color:var(--dim);font-size:14px;margin-top:14px}
+  .tier-body .met{color:var(--purple-2);font-style:italic;font-size:12.5px;margin-top:10px}
+  .step{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;
+    padding:14px;margin-top:12px}
+  .step h3{font-size:13px;font-weight:600;margin-bottom:6px;
+    text-transform:uppercase;letter-spacing:1px;color:var(--dim)}
+  .step p{margin:0 0 8px;font-size:13px;color:var(--dim)}
+  .step pre{background:#04060c;border:1px solid var(--border);border-radius:6px;
+    padding:10px 12px;overflow-x:auto;color:var(--fg)}
 
-  /* Code block with copy */
-  .code{position:relative;margin:0 0 14px}
-  .code pre{margin:0;padding:14px 60px 14px 16px;background:var(--code-bg);
-    border:1px solid var(--border);border-radius:10px;
-    font-family:'SF Mono','Monaco','Courier New',monospace;font-size:12.5px;
-    color:#cdd6e3;overflow-x:auto;line-height:1.6}
-  .code .lbl{display:block;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
-    color:var(--muted);margin-bottom:6px;font-weight:600}
-  .copy{position:absolute;top:24px;right:8px;padding:4px 10px;
-    background:var(--panel2);border:1px solid var(--border);border-radius:6px;
-    color:var(--dim);cursor:pointer;font-size:11px;font-family:inherit;transition:all .15s}
-  .copy:hover{border-color:var(--tier-color);color:var(--fg)}
-  .copy.ok{color:var(--t1);border-color:var(--t1)}
-
-  /* Tier links */
-  .tier-links{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
-  .tier-links a{font-size:12px;padding:6px 12px;border:1px solid var(--border);
-    border-radius:8px;background:var(--panel2);color:var(--dim)}
-  .tier-links a:hover{border-color:var(--tier-color);color:var(--fg);text-decoration:none}
-
-  /* Flow arrows between tiers */
-  .flow{display:flex;justify-content:center;align-items:center;color:var(--muted);
-    font-family:'Courier New',monospace;font-size:11px;letter-spacing:2px;
-    padding:6px 0}
-  .flow::before,.flow::after{content:"";flex:0 0 60px;height:1px;
-    background:linear-gradient(90deg,transparent,var(--border),transparent);margin:0 12px}
-
-  /* Architecture row */
-  .arch{max-width:1200px;margin:80px auto;padding:0 24px;text-align:center}
-  .arch h2{font-size:32px;margin:0 0 8px;font-weight:700}
-  .arch p{color:var(--dim);margin:0 auto 36px;max-width:600px}
-  .arch-grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-    text-align:left}
-  .arch-card{background:var(--panel);border:1px solid var(--border);border-radius:14px;
-    padding:20px}
-  .arch-card .icon{font-size:24px;margin-bottom:8px;display:block}
-  .arch-card h3{margin:0 0 6px;font-size:15px}
-  .arch-card p{margin:0;color:var(--dim);font-size:13px}
-
-  /* Footer */
-  footer{max-width:1200px;margin:80px auto 40px;padding:40px 24px 0;
-    border-top:1px solid var(--border);
-    display:flex;gap:24px;justify-content:space-between;flex-wrap:wrap;
-    color:var(--muted);font-size:13px}
-  footer a{color:var(--dim)}
-  footer a:hover{color:var(--fg)}
-  .foot-links{display:flex;gap:18px;flex-wrap:wrap}
-
-  /* Animation: pulse on stack nodes */
-  .pulse{animation:pulse 3s ease-in-out infinite}
-  @keyframes pulse{
-    0%,100%{filter:drop-shadow(0 0 4px currentColor)}
-    50%{filter:drop-shadow(0 0 16px currentColor)}
-  }
+  /* ── Footer ── */
+  .links{margin-top:32px;text-align:center;font-size:13px;color:var(--muted);max-width:620px}
+  .links a{margin:0 10px;color:var(--dim)}
+  .links a:hover{color:var(--fg)}
+  footer{margin:32px 0 48px;color:var(--muted);font-size:12px;text-align:center}
 </style>
 </head>
 <body>
 
 <header>
-  <div class="hdr">
+  <div class="nav">
     <div class="brand">
       <span class="logo">🧠</span>
-      <span class="name">RAPP</span>
+      <span>RAPP</span>
     </div>
-    <div class="navlinks">
+    <div class="nav-links">
       <a href="#brainstem">Brainstem</a>
       <a href="#swarm">Swarm</a>
       <a href="#copilot-studio">Copilot Studio</a>
-      <a href="rapp_brainstem/web/" title="Browser-only brainstem with card binder">Try it ↗</a>
+      <a href="rapp_brainstem/web/" title="Browser-only brainstem">Try it ↗</a>
       <a href="installer/">Installer</a>
-      <a href="https://kody-w.github.io/" title="Doctrine, decisions, and build-in-public" target="_blank" rel="noopener">Blog ↗</a>
+      <a href="https://kody-w.github.io/" target="_blank" rel="noopener">Blog ↗</a>
       <a href="SPEC.md">SPEC</a>
       <a class="gh-btn" href="https://github.com/kody-w/RAPP" target="_blank" rel="noopener">GitHub →</a>
     </div>
   </div>
 </header>
 
-<section class="hero">
-  <h1>The <span class="grad">RAPP Stack</span></h1>
-  <p class="tagline">
-    Local-first AI agents that grow into the Microsoft enterprise stack
-    one tier at a time. <strong style="color:var(--fg)">Brainstem → Swarm → Copilot Studio.</strong>
-    No API keys. No cloud setup. Just your GitHub account.
-  </p>
-  <div class="meta">
-    <span>3 tiers</span>
-    <span>1 agent</span>
-    <span>0 vendor lock-in</span>
-    <span>Open source</span>
+<main>
+
+<div class="hero">
+  <div class="logo">🧠</div>
+  <h1>The <span class="grad">RAPP</span> Stack</h1>
+  <p>Local-first AI agents that grow into the Microsoft enterprise stack one tier at a time. <strong style="color:var(--fg)">Brainstem → Swarm → Copilot Studio.</strong> No API keys, no cloud setup — just your GitHub account.</p>
+  <div class="tag">v1 frozen · one agent file, three tiers</div>
+</div>
+
+<div class="install" id="install">
+  <div class="install-tabs">
+    <div class="install-tabs-l">
+      <div class="dots"><span></span><span></span><span></span></div>
+      <button class="install-tab active" data-os="mac">macOS</button>
+      <button class="install-tab" data-os="linux">Linux</button>
+      <button class="install-tab" data-os="win">Windows</button>
+    </div>
   </div>
-  <div class="cta-row">
-    <a class="cta primary" href="#brainstem">Start with the Brainstem ↓</a>
-    <a class="cta ghost" href="SPEC.md">Read the v1 spec</a>
-    <a class="cta ghost" href="https://github.com/kody-w/RAPP" target="_blank" rel="noopener">View on GitHub</a>
+  <div class="install-body" id="cmd-row">
+    <span class="dollar">$</span>
+    <span class="cmd" id="cmd-text">curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash</span>
+    <span class="copy">⧉</span>
   </div>
-</section>
+  <div class="install-hint">click anywhere on the line to copy</div>
+</div>
 
-<!-- Animated stack diagram -->
-<section class="stack" aria-label="RAPP stack diagram">
-  <svg class="stack-svg" viewBox="0 0 900 480" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="g1" x1="0" x2="1"><stop offset="0" stop-color="#7df0c8" stop-opacity=".25"/><stop offset="1" stop-color="#7df0c8" stop-opacity=".05"/></linearGradient>
-      <linearGradient id="g2" x1="0" x2="1"><stop offset="0" stop-color="#58a6ff" stop-opacity=".25"/><stop offset="1" stop-color="#58a6ff" stop-opacity=".05"/></linearGradient>
-      <linearGradient id="g3" x1="0" x2="1"><stop offset="0" stop-color="#bc8cff" stop-opacity=".25"/><stop offset="1" stop-color="#bc8cff" stop-opacity=".05"/></linearGradient>
-      <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
-        <path d="M0,0 L10,3 L0,6 z" fill="#8ea0b8"/>
-      </marker>
-    </defs>
+<div class="alt-cta">
+  <a href="rapp_brainstem/web/">Try it in the browser ↗</a>
+  <a href="SPEC.md">Read the v1 spec</a>
+  <a href="https://github.com/kody-w/RAPP" target="_blank" rel="noopener">View source on GitHub ↗</a>
+</div>
 
-    <!-- Tier 1: Brainstem (local) -->
-    <g transform="translate(50,40)">
-      <rect width="800" height="100" rx="14" fill="url(#g1)" stroke="#7df0c8" stroke-width="1.5" stroke-opacity=".5"/>
-      <text x="20" y="32" fill="#7df0c8" font-family="Courier New" font-size="11" letter-spacing="2">TIER 1 · LOCAL</text>
-      <text x="20" y="60" fill="#e8ecf4" font-size="22" font-weight="700">🧠 RAPP Brainstem</text>
-      <text x="20" y="84" fill="#8ea0b8" font-size="13">Flask server · GitHub Copilot LLM · auto-discover agents · local-first</text>
-      <g class="pulse" style="color:#7df0c8" transform="translate(720,50)">
-        <circle r="20" fill="none" stroke="#7df0c8" stroke-width="1.5"/>
-        <text y="6" text-anchor="middle" fill="#7df0c8" font-size="20">⚡</text>
-      </g>
-    </g>
+<div class="tiers">
+  <div class="tiers-intro">Three tiers · one file</div>
 
-    <!-- Arrow 1→2 -->
-    <line x1="450" y1="150" x2="450" y2="180" stroke="#8ea0b8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-    <text x="460" y="170" fill="#8ea0b8" font-size="11" font-family="Courier New">deploy ↗</text>
-
-    <!-- Tier 2: Swarm (cloud) -->
-    <g transform="translate(50,190)">
-      <rect width="800" height="100" rx="14" fill="url(#g2)" stroke="#58a6ff" stroke-width="1.5" stroke-opacity=".5"/>
-      <text x="20" y="32" fill="#58a6ff" font-family="Courier New" font-size="11" letter-spacing="2">TIER 2 · CLOUD</text>
-      <text x="20" y="60" fill="#e8ecf4" font-size="22" font-weight="700">☁️ RAPP Swarm</text>
-      <text x="20" y="84" fill="#8ea0b8" font-size="13">Azure Functions · Azure OpenAI · Storage · Application Insights · Entra ID</text>
-      <g class="pulse" style="color:#58a6ff;animation-delay:.5s" transform="translate(720,50)">
-        <circle r="20" fill="none" stroke="#58a6ff" stroke-width="1.5"/>
-        <text y="6" text-anchor="middle" fill="#58a6ff" font-size="20">☁</text>
-      </g>
-    </g>
-
-    <!-- Arrow 2→3 -->
-    <line x1="450" y1="300" x2="450" y2="330" stroke="#8ea0b8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-    <text x="460" y="320" fill="#8ea0b8" font-size="11" font-family="Courier New">import ↗</text>
-
-    <!-- Tier 3: Copilot Studio -->
-    <g transform="translate(50,340)">
-      <rect width="800" height="100" rx="14" fill="url(#g3)" stroke="#bc8cff" stroke-width="1.5" stroke-opacity=".5"/>
-      <text x="20" y="32" fill="#bc8cff" font-family="Courier New" font-size="11" letter-spacing="2">TIER 3 · ENTERPRISE</text>
-      <text x="20" y="60" fill="#e8ecf4" font-size="22" font-weight="700">🤖 Copilot Studio Harness</text>
-      <text x="20" y="84" fill="#8ea0b8" font-size="13">Power Platform .zip · Teams + M365 Copilot · declarative agents · org-wide deploy</text>
-      <g class="pulse" style="color:#bc8cff;animation-delay:1s" transform="translate(720,50)">
-        <circle r="20" fill="none" stroke="#bc8cff" stroke-width="1.5"/>
-        <text y="6" text-anchor="middle" fill="#bc8cff" font-size="20">▶</text>
-      </g>
-    </g>
-  </svg>
-</section>
-
-<!-- Tier 1: BRAINSTEM -->
-<section class="tiers">
-  <article class="tier" data-tier="1" id="brainstem">
-    <header class="tier-head">
-      <div class="tier-num">01</div>
-      <div class="tier-title-wrap">
-        <div class="tier-organ">Local · The survival basics</div>
-        <h2 class="tier-title">🧠 The Brainstem</h2>
-        <p class="tier-sub">A local Flask server. Your GitHub Copilot subscription is the AI engine. No cloud. No API keys.</p>
+  <article class="tier open" data-tier="1" id="brainstem">
+    <div class="tier-head" onclick="this.parentNode.classList.toggle('open')">
+      <span class="tier-icon">🧠</span>
+      <div class="tier-title">
+        <h2>Tier 1 — Brainstem</h2>
+        <div class="sub">Local Python server · GitHub Copilot · port 7071</div>
       </div>
-    </header>
+      <span class="tier-badge start">Start here</span>
+      <span class="tier-arrow">›</span>
+    </div>
     <div class="tier-body">
-      <div class="tier-desc">
-        <p>The brainstem runs the core agent loop — <strong>soul</strong> (system prompt), <strong>tool-calling</strong>, conversation history. Drop any <code>*_agent.py</code> file into the agents directory and it gets auto-discovered and registered as a callable tool.</p>
-        <p>Connect remote agent repos through the chat UI's Sources panel — paste any GitHub URL with an <code>agents/</code> folder and the brainstem hot-loads them. Missing pip dependencies are auto-installed.</p>
-        <div class="code">
-          <span class="lbl">macOS / Linux</span>
-          <pre id="c1m">curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash</pre>
-          <button class="copy" data-target="c1m">Copy</button>
-        </div>
-        <div class="code">
-          <span class="lbl">Windows (PowerShell)</span>
-          <pre id="c1w">irm https://raw.githubusercontent.com/kody-w/RAPP/main/install.ps1 | iex</pre>
-          <button class="copy" data-target="c1w">Copy</button>
-        </div>
-        <div class="code">
-          <span class="lbl">Then</span>
-          <pre id="c1r">gh auth login   # one-time GitHub auth
-brainstem       # → http://localhost:7071</pre>
-          <button class="copy" data-target="c1r">Copy</button>
-        </div>
+      <p>The minimum viable brain. Runs on your laptop. Only dependency: a GitHub account with Copilot access. No API keys, no cloud, no config files.</p>
+      <p class="met"><em>Metaphor: the autonomic core. Beats without thinking.</em></p>
+      <div class="step">
+        <h3>Install</h3>
+        <p>Puts the brainstem at <code>~/.brainstem/src/rapp_brainstem/</code>.</p>
+        <pre>curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash</pre>
       </div>
-      <aside class="tier-aside">
-        <h4>What you get</h4>
-        <ul>
-          <li><b>Soul file</b> — system prompt as markdown</li>
-          <li><b>Auto-loaded agents</b> — Python tool calling</li>
-          <li><b>Local storage</b> — JSON shim, no DB</li>
-          <li><b>Hot-reload from GitHub</b> — paste URL, agents appear</li>
-          <li><b>GPT-4o by default</b> — via GitHub Models</li>
-        </ul>
-        <h4>What you learn</h4>
-        <ul>
-          <li>Python agents</li>
-          <li>OpenAI-style function calling</li>
-          <li>Prompt engineering</li>
-          <li>Local-first development</li>
-        </ul>
-        <div class="tier-links">
-          <a href="https://github.com/kody-w/RAPP" target="_blank" rel="noopener">Source ↗</a>
-          <a href="https://github.com/kody-w/RAPP/tree/main/rapp_brainstem" target="_blank" rel="noopener">rapp_brainstem/ ↗</a>
-        </div>
-      </aside>
+      <div class="step">
+        <h3>Run</h3>
+        <p>Starts a Flask server on port 7071 and opens the chat UI.</p>
+        <pre>brainstem</pre>
+      </div>
+      <div class="step">
+        <h3>Try it without installing</h3>
+        <p>Open the <a href="rapp_brainstem/web/">browser brainstem</a> — same UI, in-browser, bring your own API key.</p>
+      </div>
     </div>
   </article>
 
-  <div class="flow">deploy to cloud</div>
-
-  <!-- Tier 2: SWARM -->
   <article class="tier" data-tier="2" id="swarm">
-    <header class="tier-head">
-      <div class="tier-num">02</div>
-      <div class="tier-title-wrap">
-        <div class="tier-organ">Cloud · Swarms running in Azure</div>
-        <h2 class="tier-title">☁️ The Swarm</h2>
-        <p class="tier-sub">Give your brainstem a cloud body. Persistent memory, always-on, Azure OpenAI behind it.</p>
+    <div class="tier-head" onclick="this.parentNode.classList.toggle('open')">
+      <span class="tier-icon">☁️</span>
+      <div class="tier-title">
+        <h2>Tier 2 — Swarm</h2>
+        <div class="sub">Azure Functions · Azure OpenAI · managed identity</div>
       </div>
-    </header>
+      <span class="tier-badge next">Next step</span>
+      <span class="tier-arrow">›</span>
+    </div>
     <div class="tier-body">
-      <div class="tier-desc">
-        <p>A RAPP Swarm is the same brainstem agent loop, but living on <strong>Azure Functions</strong> with <strong>Azure OpenAI (GPT-4o)</strong>, a <strong>Storage Account</strong> for memory, and <strong>Application Insights</strong> for monitoring. All Entra ID auth — no API keys anywhere.</p>
-        <p>Each project is isolated: <code>~/rapp-projects/my-project/</code> with its own venv, agents, and local storage that mirror up to the cloud. Auth happens through the chat UI via GitHub device-code flow.</p>
-        <div class="code">
-          <span class="lbl">macOS / Linux</span>
-          <pre id="c2m">curl -fsSL https://kody-w.github.io/RAPP/install-swarm.sh | bash</pre>
-          <button class="copy" data-target="c2m">Copy</button>
-        </div>
-        <div class="code">
-          <span class="lbl">Windows (WSL)</span>
-          <pre id="c2w">iwr https://kody-w.github.io/RAPP/install-swarm.sh -useb | wsl bash</pre>
-          <button class="copy" data-target="c2w">Copy</button>
-        </div>
-        <div class="code">
-          <span class="lbl">Or one-click ARM template</span>
-          <pre id="c2a">https://portal.azure.com/#create/Microsoft.Template/uri/
-  https%3A%2F%2Fraw.githubusercontent.com%2Fkody-w%2FRAPP%2Fmain%2Fazuredeploy.json</pre>
-          <button class="copy" data-target="c2a">Copy</button>
-        </div>
+      <p>The same single-file agents your laptop runs, hosted on Azure. One ARM template, one Deploy-to-Azure button. The HTTP surface is identical to Tier 1, so anything that talks to <code>/chat</code> on your laptop can talk to <code>/chat</code> in the cloud.</p>
+      <p class="met"><em>Metaphor: long-term memory. Slow, durable, multi-tenant.</em></p>
+      <div class="step">
+        <h3>Install the swarm runtime</h3>
+        <pre>curl -fsSL https://kody-w.github.io/RAPP/install-swarm.sh | bash</pre>
       </div>
-      <aside class="tier-aside">
-        <h4>What gets created</h4>
-        <ul>
-          <li><b>Function App</b> (Python 3.11)</li>
-          <li><b>Azure OpenAI</b> — GPT-4o</li>
-          <li><b>Storage Account</b> — persistent memory</li>
-          <li><b>Application Insights</b> — telemetry</li>
-          <li><b>Managed identity</b> + RBAC, no secrets</li>
-        </ul>
-        <h4>What you learn</h4>
-        <ul>
-          <li>ARM templates</li>
-          <li>Azure Functions</li>
-          <li>Managed identity &amp; RBAC</li>
-          <li>Azure OpenAI deployment</li>
-        </ul>
-        <div class="tier-links">
-          <a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fkody-w%2FRAPP%2Fmain%2Fazuredeploy.json" target="_blank" rel="noopener">Deploy to Azure ↗</a>
-          <a href="https://github.com/kody-w/RAPP/tree/main/rapp_swarm" target="_blank" rel="noopener">rapp_swarm/ ↗</a>
-        </div>
-      </aside>
+      <div class="step">
+        <h3>Deploy to Azure</h3>
+        <p>Click the button on the <a href="rapp_swarm/">swarm page</a>, fill in the resource group, wait ~3 minutes.</p>
+      </div>
     </div>
   </article>
 
-  <div class="flow">import to copilot studio</div>
-
-  <!-- Tier 3: COPILOT STUDIO -->
   <article class="tier" data-tier="3" id="copilot-studio">
-    <header class="tier-head">
-      <div class="tier-num">03</div>
-      <div class="tier-title-wrap">
-        <div class="tier-organ">Enterprise · The nervous system</div>
-        <h2 class="tier-title">🤖 Copilot Studio Harness</h2>
-        <p class="tier-sub">The same agent answers in Microsoft Teams and M365 Copilot across your whole org.</p>
+    <div class="tier-head" onclick="this.parentNode.classList.toggle('open')">
+      <span class="tier-icon">🏢</span>
+      <div class="tier-title">
+        <h2>Tier 3 — Copilot Studio</h2>
+        <div class="sub">Power Platform solution · Teams · M365 Copilot</div>
       </div>
-    </header>
+      <span class="tier-badge adv">Enterprise</span>
+      <span class="tier-arrow">›</span>
+    </div>
     <div class="tier-body">
-      <div class="tier-desc">
-        <p>The included <strong>Power Platform solution .zip</strong> wires your RAPP Swarm Function App into Microsoft Copilot Studio. Import the solution, point it at your Function App URL, and publish.</p>
-        <p>The same agent logic you tested locally now answers in <strong>Microsoft Teams</strong> and <strong>M365 Copilot</strong> — declaratively, with org-wide governance, and with the full Copilot extensibility surface.</p>
-        <div class="code">
-          <span class="lbl">Download the solution .zip</span>
-          <pre id="c3z">https://github.com/kody-w/RAPP/raw/main/MSFTAIBASMultiAgentCopilot_1_0_0_5.zip</pre>
-          <button class="copy" data-target="c3z">Copy</button>
-        </div>
-        <div class="code">
-          <span class="lbl">Steps</span>
-          <pre id="c3s">1. make.powerautomate.com → Solutions → Import → upload the .zip
-2. Open the imported "Multi-Agent Copilot" → set Function App URL
-3. Publish → enable in Teams or M365 Copilot
-4. Same agent. Now in your whole org's Copilot.</pre>
-          <button class="copy" data-target="c3s">Copy</button>
-        </div>
+      <p>Import the unmanaged solution zip into Copilot Studio. Wire the Function App URL from Tier 2. Publish to Teams. The same agent file you wrote on day 1 is now being called from M365 Copilot.</p>
+      <p class="met"><em>Metaphor: the cortex. Where the brain meets the world.</em></p>
+      <div class="step">
+        <h3>Bundle</h3>
+        <pre>MSFTAIBASMultiAgentCopilot_1_0_0_5.zip</pre>
+        <p>Lives in the RAPP repo. Import → set Function App URL → publish.</p>
       </div>
-      <aside class="tier-aside">
-        <h4>What ships in the .zip</h4>
-        <ul>
-          <li><b>Declarative copilot</b> — schema-bound</li>
-          <li><b>Topics</b> — wired to your Function App</li>
-          <li><b>Variables</b> — endpoint config</li>
-          <li><b>Connection references</b> — managed identity</li>
-        </ul>
-        <h4>What you learn</h4>
-        <ul>
-          <li>Copilot Studio</li>
-          <li>Declarative agents</li>
-          <li>Power Platform solutions</li>
-          <li>Teams &amp; M365 integration</li>
-          <li>Enterprise governance</li>
-        </ul>
-        <div class="tier-links">
-          <a href="https://github.com/kody-w/RAPP/raw/main/MSFTAIBASMultiAgentCopilot_1_0_0_5.zip">Download .zip ↓</a>
-          <a href="https://make.powerautomate.com" target="_blank" rel="noopener">Power Platform ↗</a>
-          <a href="https://copilotstudio.microsoft.com" target="_blank" rel="noopener">Copilot Studio ↗</a>
-        </div>
-      </aside>
     </div>
   </article>
-</section>
+</div>
 
-<!-- Architecture grid -->
-<section class="arch">
-  <h2>One agent. Three lives.</h2>
-  <p>Same code. Same tools. Same soul. Test it on your laptop, deploy it to Azure, ship it to your org.</p>
-  <div class="arch-grid">
-    <div class="arch-card">
-      <span class="icon">🧬</span>
-      <h3>One soul, three bodies</h3>
-      <p>The same <code>soul.md</code> + <code>agents/*.py</code> works across all three tiers. Move up the stack as you outgrow the previous one.</p>
-    </div>
-    <div class="arch-card">
-      <span class="icon">🔓</span>
-      <h3>No vendor lock-in</h3>
-      <p>Brainstem runs anywhere Python runs. RAPP Swarm is a vanilla ARM template. Copilot Studio harness is a portable solution .zip.</p>
-    </div>
-    <div class="arch-card">
-      <span class="icon">🪪</span>
-      <h3>Auth that just works</h3>
-      <p>GitHub OAuth at Tier 1. Entra ID + managed identity at Tier 2. Power Platform connection refs at Tier 3. Zero API keys end-to-end.</p>
-    </div>
-    <div class="arch-card">
-      <span class="icon">📦</span>
-      <h3>Hot-reload from any repo</h3>
-      <p>Paste a GitHub URL with an <code>agents/</code> folder into the Sources panel. Brainstem clones, installs deps, registers tools. Live.</p>
-    </div>
-    <div class="arch-card">
-      <span class="icon">🧪</span>
-      <h3>Test locally, ship globally</h3>
-      <p>Iterate on agents at <code>localhost:7071</code>. When ready, the same agents run as Azure Functions and Copilot Studio actions.</p>
-    </div>
-    <div class="arch-card">
-      <span class="icon">🦴</span>
-      <h3>Open-source skeleton</h3>
-      <p>Every layer is open. Read the source, fork it, deploy your own. The brainstem repo is the ground truth.</p>
-    </div>
-  </div>
-</section>
+<div class="links">
+  <a href="SPEC.md">SPEC</a>
+  <a href="CONSTITUTION.md">Constitution</a>
+  <a href="ROADMAP.md">Roadmap</a>
+  <a href="installer/">Installer</a>
+  <a href="rapp_store/">Store</a>
+  <a href="https://kody-w.github.io/" target="_blank" rel="noopener">Blog ↗</a>
+  <a href="https://kody-w.github.io/RAR" target="_blank" rel="noopener">RAR ↗</a>
+</div>
 
 <footer>
-  <div>
-    <strong style="color:var(--fg)">RAPP</strong> — local-first AI agents, three tiers.<br>
-    Source: <a href="https://github.com/kody-w/RAPP" target="_blank" rel="noopener">kody-w/RAPP</a>
-    · <a href="https://kody-w.github.io/RAR" target="_blank" rel="noopener">RAR (Agent Registry)</a>
-    · <a href="https://kody-w.github.io/" target="_blank" rel="noopener">Blog</a>
-  </div>
-  <div class="foot-links">
-    <a href="#brainstem">Tier 1</a>
-    <a href="#swarm">Tier 2</a>
-    <a href="#copilot-studio">Tier 3</a>
-    <a href="https://kody-w.github.io/" target="_blank" rel="noopener">Blog ↗</a>
-    <a href="SPEC.md">v1 SPEC</a>
-    <a href="https://github.com/kody-w" target="_blank" rel="noopener">@kody-w</a>
-  </div>
+  RAPP v1 — frozen 2026-04-17 · <a href="https://github.com/kody-w/RAPP" target="_blank" rel="noopener" style="color:inherit">kody-w/RAPP</a>
 </footer>
 
+</main>
+
 <script>
-// Copy buttons
-document.querySelectorAll('.copy').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const id = btn.dataset.target;
-    const txt = document.getElementById(id).textContent.trim();
-    navigator.clipboard.writeText(txt).then(() => {
-      const orig = btn.textContent;
-      btn.textContent = '✓ Copied';
-      btn.classList.add('ok');
-      setTimeout(() => { btn.textContent = orig; btn.classList.remove('ok'); }, 1500);
+  const CMDS = {
+    mac:   'curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash',
+    linux: 'curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash',
+    win:   'iwr https://kody-w.github.io/RAPP/install.ps1 -useb | iex'
+  };
+  const tabs = document.querySelectorAll('.install-tab');
+  const cmdText = document.getElementById('cmd-text');
+  const cmdRow  = document.getElementById('cmd-row');
+  tabs.forEach(t => t.addEventListener('click', () => {
+    tabs.forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    cmdText.textContent = CMDS[t.dataset.os];
+  }));
+  // Auto-detect OS for the default tab.
+  (function(){
+    const ua = navigator.userAgent;
+    let os = 'mac';
+    if (/Windows/i.test(ua)) os = 'win';
+    else if (/Linux/i.test(ua) && !/Android/i.test(ua)) os = 'linux';
+    document.querySelectorAll('.install-tab').forEach(t => {
+      if (t.dataset.os === os) t.click();
+    });
+  })();
+  cmdRow.addEventListener('click', () => {
+    navigator.clipboard.writeText(cmdText.textContent).then(() => {
+      cmdRow.classList.add('copied');
+      setTimeout(() => cmdRow.classList.remove('copied'), 1200);
     });
   });
-});
 </script>
+
 </body>
 </html>
