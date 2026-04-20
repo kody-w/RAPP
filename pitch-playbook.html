@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAPP — Executive Pitch Playbook</title>
+<meta name="description" content="End-to-end playbook for pitching RAPP to executive leadership. Covers the problem, the demo, and the ask.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E🧠%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --border:#21262d; --border2:#30363d;
+    --fg:#e6edf3; --dim:#8b949e; --muted:#484f58;
+    --green:#238636; --green-2:#2ea043; --green-3:#3fb950;
+    --blue:#1f6feb; --blue-2:#58a6ff;
+    --purple:#8b5cf6; --purple-2:#a78bfa;
+    --red:#f85149; --warn:#d29922;
+    --code-bg:#04060c;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:var(--bg);color:var(--fg);min-height:100vh;line-height:1.55}
+  a{color:var(--blue-2);text-decoration:none}a:hover{text-decoration:underline}
+  code,kbd,pre{font-family:"SF Mono","Fira Code",ui-monospace,monospace;font-size:13px}
+  code{background:var(--panel);padding:2px 6px;border-radius:4px;border:1px solid var(--border)}
+
+  header{position:sticky;top:0;z-index:10;width:100%;
+    backdrop-filter:blur(12px);background:rgba(13,17,23,.82);
+    border-bottom:1px solid var(--border)}
+  .nav{max-width:960px;margin:0 auto;padding:14px 24px;
+    display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px;letter-spacing:.2px}
+  .brand .logo{font-size:22px;filter:drop-shadow(0 0 8px rgba(125,240,200,.3))}
+  .nav-links{margin-left:auto;display:flex;gap:16px;font-size:13px}
+  .nav-links a{color:var(--dim)}.nav-links a:hover{color:var(--fg);text-decoration:none}
+
+  main{max-width:720px;margin:0 auto;padding:48px 24px 80px}
+
+  .hero{text-align:center;margin-bottom:48px}
+  .hero .icon{font-size:48px;margin-bottom:12px;filter:drop-shadow(0 0 12px rgba(125,240,200,.25))}
+  .hero h1{font-size:32px;font-weight:800;margin-bottom:8px;letter-spacing:-.3px}
+  .hero h1 .grad{background:linear-gradient(90deg,#7df0c8,#58a6ff,#a78bfa);
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p{color:var(--dim);font-size:15px;max-width:560px;margin:0 auto}
+  .hero .tag{display:inline-block;margin-top:12px;color:var(--green-3);font-weight:600;font-size:11px;
+    text-transform:uppercase;letter-spacing:1.2px}
+
+  h2{font-size:20px;font-weight:700;margin:40px 0 16px;padding-top:16px;
+    border-top:1px solid var(--border)}
+  h2 .num{color:var(--blue-2);margin-right:8px;font-size:14px;font-weight:600}
+  h3{font-size:15px;font-weight:600;margin:20px 0 8px;color:var(--fg)}
+  p{color:var(--dim);font-size:14px;margin-bottom:12px}
+  ul,ol{color:var(--dim);font-size:14px;margin:0 0 16px 20px}
+  li{margin-bottom:6px}
+  li strong{color:var(--fg)}
+  blockquote{border-left:3px solid var(--purple);padding:12px 16px;margin:16px 0;
+    background:rgba(139,92,246,.06);border-radius:0 8px 8px 0}
+  blockquote p{color:var(--purple-2);margin:0;font-size:13px;font-style:italic}
+
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;
+    padding:20px;margin:16px 0;transition:border-color .15s}
+  .card:hover{border-color:var(--border2)}
+  .card h3{margin-top:0}
+  .card .label{font-size:10px;text-transform:uppercase;letter-spacing:1px;
+    color:var(--blue-2);font-weight:700;margin-bottom:6px}
+
+  .pipeline{display:flex;align-items:center;gap:0;margin:20px 0;flex-wrap:wrap;justify-content:center}
+  .pipeline .step{background:var(--panel);border:1px solid var(--border);border-radius:8px;
+    padding:10px 14px;text-align:center;min-width:100px;transition:border-color .15s}
+  .pipeline .step:hover{border-color:var(--green)}
+  .pipeline .step .emoji{font-size:20px;margin-bottom:4px}
+  .pipeline .step .name{font-size:12px;font-weight:600;color:var(--fg)}
+  .pipeline .step .role{font-size:10px;color:var(--muted)}
+  .pipeline .arrow{color:var(--muted);font-size:16px;margin:0 4px;flex-shrink:0}
+
+  .email-preview{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;
+    padding:20px;margin:16px 0;font-size:13px;line-height:1.6}
+  .email-preview .subject{color:var(--fg);font-weight:700;margin-bottom:12px;font-size:14px}
+  .email-preview .body{color:var(--dim)}
+  .email-preview .body strong{color:var(--fg)}
+  .email-preview .body .ask{color:var(--green-3);font-weight:600}
+
+  .timeline{position:relative;margin:16px 0 24px;padding-left:28px}
+  .timeline::before{content:'';position:absolute;left:8px;top:4px;bottom:4px;
+    width:2px;background:var(--border)}
+  .timeline .t-step{position:relative;margin-bottom:16px}
+  .timeline .t-step::before{content:'';position:absolute;left:-24px;top:4px;
+    width:12px;height:12px;border-radius:50%;background:var(--green);border:2px solid var(--bg)}
+  .timeline .t-step .time{font-size:11px;color:var(--green-3);font-weight:700;
+    text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+  .timeline .t-step p{margin:0;font-size:13px}
+
+  .file-tree{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;
+    padding:14px 18px;margin:12px 0;font-family:"SF Mono",monospace;font-size:12px;
+    color:var(--dim);line-height:1.8}
+  .file-tree .dir{color:var(--blue-2)}
+  .file-tree .file{color:var(--fg)}
+  .file-tree .note{color:var(--muted);font-style:italic}
+
+  pre.cmd{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;
+    padding:12px 16px;margin:12px 0;overflow-x:auto;color:var(--fg);font-size:13px}
+  pre.cmd .dollar{color:var(--muted);user-select:none}
+  pre.cmd .comment{color:var(--muted)}
+
+  .highlight{background:rgba(35,134,54,.1);border:1px solid var(--green);
+    border-radius:8px;padding:16px;margin:16px 0}
+  .highlight p{color:var(--green-3);margin:0}
+
+  .toggle-demo{display:flex;align-items:center;gap:12px;margin:12px 0;padding:12px 16px;
+    background:var(--panel);border:1px solid var(--border);border-radius:8px}
+  .toggle-switch{width:36px;height:20px;background:var(--green);border-radius:10px;
+    position:relative;flex-shrink:0}
+  .toggle-switch::after{content:'';position:absolute;top:3px;left:19px;width:14px;height:14px;
+    border-radius:50%;background:#fff}
+  .toggle-switch.off{background:var(--border2)}
+  .toggle-switch.off::after{left:3px;background:var(--muted)}
+  .toggle-label{font-size:12px;font-family:"SF Mono",monospace}
+  .toggle-label .on{color:var(--green-3)}
+  .toggle-label .off{color:var(--muted);text-decoration:line-through}
+
+  .toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;
+    padding:20px 24px;margin:0 0 32px}
+  .toc h3{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--blue-2)}
+  .toc ol{margin:0;padding-left:20px}
+  .toc li{margin-bottom:4px;font-size:13px}
+  .toc a{color:var(--dim)}.toc a:hover{color:var(--fg)}
+
+  footer{text-align:center;padding:40px 24px;border-top:1px solid var(--border);
+    color:var(--muted);font-size:12px;margin-top:40px}
+  footer a{color:var(--dim)}
+</style>
+</head>
+<body>
+
+<header>
+  <nav class="nav">
+    <a href="https://kody-w.github.io/RAPP/" class="brand">
+      <span class="logo">🧠</span> RAPP
+    </a>
+    <div class="nav-links">
+      <a href="https://kody-w.github.io/RAPP/">Home</a>
+      <a href="https://kody-w.github.io/RAPP/store/">Store</a>
+      <a href="https://github.com/kody-w/RAPP/blob/main/SPEC.md">Spec</a>
+      <a href="https://github.com/kody-w/RAPP">GitHub</a>
+    </div>
+  </nav>
+</header>
+
+<main>
+
+<!-- ── Hero ── -->
+<div class="hero">
+  <div class="icon">🎯</div>
+  <h1>Executive <span class="grad">Pitch Playbook</span></h1>
+  <p>End-to-end context for pitching RAPP to executive leadership. The problem, the approach, the demo, and the ask.</p>
+  <div class="tag">Internal playbook &mdash; April 2026</div>
+</div>
+
+<!-- ── TOC ── -->
+<div class="toc">
+  <h3>Contents</h3>
+  <ol>
+    <li><a href="#problem">The Problem: Agent Fragmentation</a></li>
+    <li><a href="#why-rapp">Why RAPP Solves It</a></li>
+    <li><a href="#approach">The Approach: Email + Video + Demo</a></li>
+    <li><a href="#email">The Email Draft</a></li>
+    <li><a href="#execbrief">The Demo Swarm: ExecBrief Pipeline</a></li>
+    <li><a href="#demo-script">3-Minute Video Script</a></li>
+    <li><a href="#agent-management">Agent Management: Enable/Disable Toggle</a></li>
+    <li><a href="#run-it">How to Run the Demo</a></li>
+  </ol>
+</div>
+
+<!-- ── 1. The Problem ── -->
+<h2 id="problem"><span class="num">01</span>The Problem: Agent Fragmentation</h2>
+
+<p>Across Microsoft, teams are independently building agent tooling that is complex, redundant, and unteachable. The more we adopt external ecosystems that go in the same direction, the worse it gets. Only a handful of people can use any single tool. None of them share agents with each other.</p>
+
+<div class="card">
+  <div class="label">Core tensions</div>
+  <ul>
+    <li><strong>"Yeah, we built that too"</strong> &mdash; heard dozens of times over two years. Teams build redundant tools that won't scale, but use them because they came up with them.</li>
+    <li><strong>Complexity as a moat</strong> &mdash; if people can't learn the tools, it's just floating egos. The tools exist to serve their creators, not the org.</li>
+    <li><strong>Tool balkanization delays the real unlock</strong> &mdash; people forget what comes <em>after</em> we get good tools people can build on. That's where the AI value comes from.</li>
+    <li><strong>The two-year prediction</strong> &mdash; everyone will eventually need a quick way to share agents. They could adopt RAPP now or clean up the mess later.</li>
+  </ul>
+</div>
+
+<blockquote>
+  <p>This is what RAPP is trying to stop. It works for everyone and is easy to learn and teach. It's trying to prevent another AI winter and just jump over it.</p>
+</blockquote>
+
+<!-- ── 2. Why RAPP ── -->
+<h2 id="why-rapp"><span class="num">02</span>Why RAPP Solves It</h2>
+
+<div class="card">
+  <div class="label">The sacred tenet</div>
+  <h3>One file = one agent. No exceptions.</h3>
+  <p>A single Python file contains the documentation, the contract, and the code. A 14-year-old can ship their first agent in minutes. An enterprise can ship the same file to 500,000 seats.</p>
+</div>
+
+<ul>
+  <li><strong>Three tiers, zero modification.</strong> The same file runs on a laptop (local Flask server), in Azure Functions, and in Copilot Studio on Teams &mdash; unchanged.</li>
+  <li><strong>Shareable by design.</strong> Agents install with a file drop. There's a registry, a store, and agents can be compressed into a speakable 7-word phrase.</li>
+  <li><strong>Already working.</strong> RAPP has a frozen v1 spec, a one-line installer, a live agent store, and a pipeline that generates agents from natural language.</li>
+  <li><strong>Engine, not experience.</strong> Infrastructure that stays light so capabilities compound. The opposite of every framework that ships complexity and calls it power.</li>
+</ul>
+
+<!-- ── 3. The Approach ── -->
+<h2 id="approach"><span class="num">03</span>The Approach: Email + Video + Demo</h2>
+
+<p>Strategy: send a concise email to the executive with a short video walkthrough attached. The executive reads every email. CC allies who can speak to context. Ask for 30 minutes to demo live.</p>
+
+<div class="card">
+  <div class="label">Approach</div>
+  <ul>
+    <li><strong>Email</strong> &mdash; concise pitch framing the problem (fragmentation), not the product. Under 300 words.</li>
+    <li><strong>3-minute video</strong> &mdash; attached to the email. Shows the ExecBrief pipeline running live. The demo literally produces the executive brief arguing for RAPP.</li>
+    <li><strong>30-minute demo</strong> &mdash; the ask. Live walkthrough with allies CC'd.</li>
+  </ul>
+  <p style="margin-top:12px;color:var(--green-3);font-size:12px;font-weight:600">THE META MOVE: The pipeline produces the executive brief about why RAPP matters. The medium is the message.</p>
+</div>
+
+<!-- ── 4. The Email ── -->
+<h2 id="email"><span class="num">04</span>The Email Draft</h2>
+
+<div class="email-preview">
+  <div class="subject">Subject: 30 min demo request &mdash; RAPP: solving agent fragmentation before it costs us</div>
+  <div class="body">
+    <p>I built RAPP (Rapid Agent Prototyping Platform), an internal tool that solves a problem I believe is about to become one of Microsoft's biggest blockers: <strong>agent tool fragmentation</strong>.</p>
+    <p><strong>The problem in one sentence:</strong> Across Microsoft, teams are independently building agent tooling that is complex, redundant, and unteachable &mdash; and the more we adopt external ecosystems that go in the same direction, the worse it gets.</p>
+    <p><strong>Why this matters now:</strong> In two years, everyone at Microsoft is going to need a fast way to build and share agents. Right now, the path we're on creates silos. This balkanization will delay the real AI unlock: <strong>what happens after we have good tools that people can actually build on.</strong></p>
+    <p><strong>What RAPP does differently:</strong></p>
+    <ul style="margin:8px 0 8px 20px">
+      <li><strong>One file = one agent.</strong> No frameworks, no build steps. A 14-year-old can ship their first agent in minutes.</li>
+      <li><strong>Three tiers, zero modification.</strong> Same file runs locally, in Azure Functions, and in Copilot Studio on Teams.</li>
+      <li><strong>Shareable by design.</strong> Agents install with a file drop. Registry, store, 7-word speakable phrases.</li>
+      <li><strong>Already working.</strong> Frozen v1 spec, one-line installer, live agent store, natural-language agent generation.</li>
+    </ul>
+    <p class="ask"><strong>My ask:</strong> 30 minutes to demo RAPP and walk through why it deserves a place in Microsoft's agent strategy. I've attached a short video walkthrough.</p>
+  </div>
+</div>
+
+<!-- ── 5. ExecBrief Pipeline ── -->
+<h2 id="execbrief"><span class="num">05</span>The Demo Swarm: ExecBrief Pipeline</h2>
+
+<p>A four-agent pipeline that takes a business topic and produces a polished executive brief. Each agent has its own persona (SOUL prompt) and makes its own LLM call. Published to the RAPP store as a singleton.</p>
+
+<div class="pipeline">
+  <div class="step">
+    <div class="emoji">🔭</div>
+    <div class="name">Scout</div>
+    <div class="role">Research analyst</div>
+  </div>
+  <div class="arrow">&#x2192;</div>
+  <div class="step">
+    <div class="emoji">🔬</div>
+    <div class="name">Analyst</div>
+    <div class="role">Chief analyst</div>
+  </div>
+  <div class="arrow">&#x2192;</div>
+  <div class="step">
+    <div class="emoji">🎯</div>
+    <div class="name">Strategist</div>
+    <div class="role">VP of Strategy</div>
+  </div>
+  <div class="arrow">&#x2192;</div>
+  <div class="step">
+    <div class="emoji">✍️</div>
+    <div class="name">Writer</div>
+    <div class="role">Exec comms director</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="label">Pipeline behavior</div>
+  <ul>
+    <li><strong>Scout</strong> &mdash; produces structured intelligence brief: Situation, Landscape, Signals, Gaps</li>
+    <li><strong>Analyst</strong> &mdash; extracts Key Insights, Risks, Opportunities, and a Tension Map</li>
+    <li><strong>Strategist</strong> &mdash; frames the problem and produces exactly 3 recommendations with sequencing</li>
+    <li><strong>Writer</strong> &mdash; composes a sub-400-word executive brief with one clear ask at the end</li>
+  </ul>
+  <p style="margin:12px 0 0;font-size:12px;color:var(--muted)">4 LLM calls per invocation &bull; ~45s wall time &bull; Output: one polished brief</p>
+</div>
+
+<h3>Store entry</h3>
+<div class="file-tree">
+  <span class="dir">rapp_store/execbrief/</span><br>
+  &ensp;&ensp;<span class="file">manifest.json</span><br>
+  &ensp;&ensp;<span class="file">README.md</span><br>
+  &ensp;&ensp;<span class="dir">singleton/</span><br>
+  &ensp;&ensp;&ensp;&ensp;<span class="file">execbrief_agent.py</span> <span class="note">&larr; 489 lines, drop-in single file</span><br>
+  &ensp;&ensp;<span class="dir">source/</span><br>
+  &ensp;&ensp;&ensp;&ensp;<span class="file">brief_scout_agent.py</span><br>
+  &ensp;&ensp;&ensp;&ensp;<span class="file">brief_analyst_agent.py</span><br>
+  &ensp;&ensp;&ensp;&ensp;<span class="file">brief_strategist_agent.py</span><br>
+  &ensp;&ensp;&ensp;&ensp;<span class="file">brief_writer_agent.py</span><br>
+  &ensp;&ensp;&ensp;&ensp;<span class="file">exec_brief_agent.py</span><br>
+  &ensp;&ensp;<span class="dir">tools/</span><br>
+  &ensp;&ensp;&ensp;&ensp;<span class="file">build.py</span> <span class="note">&larr; re-converge source &rarr; singleton</span>
+</div>
+
+<h3>SOUL prompts (personality per agent)</h3>
+<p>Each sub-agent has a sacred SOUL constant &mdash; its system prompt that defines its expertise and output format. When converged into the singleton, all four SOULs are inlined verbatim. The personality travels with the file.</p>
+
+<!-- ── 6. Demo Script ── -->
+<h2 id="demo-script"><span class="num">06</span>3-Minute Video Script</h2>
+
+<div class="timeline">
+  <div class="t-step">
+    <div class="time">0:00 &ndash; 0:30 &bull; The file</div>
+    <p>Open the agents directory. <em>"Five Python files. Each one is a complete agent &mdash; its docs, its contract, its code. No framework, no build step."</em> Open one to show how simple it is. Highlight the SOUL prompt.</p>
+  </div>
+  <div class="t-step">
+    <div class="time">0:30 &ndash; 1:00 &bull; The drop</div>
+    <p><em>"These files were just dropped into the agents folder. The brainstem auto-discovers them. No install, no restart."</em> Open the agents panel in the UI. Show the toggle switches. Hit <code>/health</code> to show them loaded.</p>
+  </div>
+  <div class="t-step">
+    <div class="time">1:00 &ndash; 2:00 &bull; The pipeline</div>
+    <p>Type: <em>"Create an executive brief about why Microsoft needs a unified agent sharing standard and what happens if we don't act."</em> Watch the terminal show the pipeline stepping through Scout &rarr; Analyst &rarr; Strategist &rarr; Writer. Read the output &mdash; it IS the pitch.</p>
+  </div>
+  <div class="t-step">
+    <div class="time">2:00 &ndash; 2:30 &bull; The convergence</div>
+    <p><em>"Now watch &mdash; one command converges this entire pipeline into a single file."</em> Show SwarmFactory or the build tool. Show the singleton output. <em>"This is what you share. Drop it in anyone's brainstem and it works."</em></p>
+  </div>
+  <div class="t-step">
+    <div class="time">2:30 &ndash; 3:00 &bull; The punchline</div>
+    <p><em>"Same file runs locally, in Azure Functions, and in Copilot Studio on Teams. That's RAPP &mdash; the agent IS the file, and the file runs everywhere."</em> Show the three tiers side by side if possible.</p>
+  </div>
+</div>
+
+<div class="highlight">
+  <p><strong>The meta-move:</strong> The pipeline literally produces the executive brief about why RAPP matters. The executive reads RAPP's output arguing for RAPP's adoption. The medium is the message.</p>
+</div>
+
+<!-- ── 7. Agent Management ── -->
+<h2 id="agent-management"><span class="num">07</span>Agent Management: Enable/Disable Toggle</h2>
+
+<p>The brainstem now supports per-agent enable/disable toggles. Files stay on disk &mdash; they're just skipped during load. This lets you curate which swarms are active for any given demo or workflow.</p>
+
+<h3>How it works</h3>
+<ul>
+  <li><strong>Backend:</strong> <code>.agents_disabled.json</code> in the agents directory tracks disabled filenames</li>
+  <li><strong>API:</strong> <code>POST /agents/&lt;filename&gt;/toggle</code> flips enabled/disabled state</li>
+  <li><strong>Load:</strong> <code>load_agents()</code> skips files listed in the disabled set</li>
+  <li><strong>UI:</strong> Green toggle switch next to each agent in the panel</li>
+</ul>
+
+<h3>Visual</h3>
+<div class="toggle-demo">
+  <div class="toggle-switch"></div>
+  <div class="toggle-label"><span class="on">execbrief_agent.py &mdash; ExecBrief</span></div>
+</div>
+<div class="toggle-demo">
+  <div class="toggle-switch"></div>
+  <div class="toggle-label"><span class="on">hacker_news_agent.py &mdash; HackerNews</span></div>
+</div>
+<div class="toggle-demo">
+  <div class="toggle-switch off"></div>
+  <div class="toggle-label"><span class="off">bookfactory_agent.py &mdash; BookFactory</span></div>
+</div>
+
+<p style="font-size:12px;color:var(--muted);margin-top:8px">One click to toggle. No file deletion. Non-destructive and reversible. State persists across restarts.</p>
+
+<!-- ── 8. Run It ── -->
+<h2 id="run-it"><span class="num">08</span>How to Run the Demo</h2>
+
+<h3>Fresh install (if needed)</h3>
+<pre class="cmd"><span class="dollar">$ </span>curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash</pre>
+
+<h3>Install ExecBrief from the store</h3>
+<p>Open the brainstem UI at <code>http://localhost:7071</code>. Go to Settings &rarr; RAPP Swarms &rarr; find ExecBrief in the catalog &rarr; click Install. Or ask the brainstem directly:</p>
+<pre class="cmd"><span class="comment"># In the chat UI:</span>
+Install ExecBrief from the store</pre>
+
+<h3>Run the pitch demo</h3>
+<pre class="cmd"><span class="comment"># In the chat UI:</span>
+Create an executive brief about why Microsoft needs a unified
+agent sharing standard and what happens if we don't act</pre>
+
+<h3>Watch the pipeline in the terminal</h3>
+<pre class="cmd"><span class="comment"># Console output during execution:</span>
+[ExecBrief] Starting pipeline: "why Microsoft needs a unified..."
+[ExecBrief] Step 1/4: Scout gathering intelligence...
+[ExecBrief] Step 2/4: Analyst extracting insights...
+[ExecBrief] Step 3/4: Strategist forming recommendations...
+[ExecBrief] Step 4/4: Writer composing executive brief...
+[ExecBrief] Pipeline complete — 4 agents, 1 brief.</pre>
+
+<h3>Converge to singleton (for the demo finale)</h3>
+<pre class="cmd"><span class="comment"># In the chat UI:</span>
+Use SwarmFactory to converge the current agents into a single file called ExecBrief</pre>
+
+<h3>Manage agents</h3>
+<p>Open the agents panel (puzzle icon in the UI header). Use the green toggle switches to enable/disable any loaded agent. Disabled agents stay on disk but don't load into the brainstem.</p>
+
+<div class="card" style="border-color:var(--green);margin-top:32px">
+  <div class="label" style="color:var(--green-3)">Ready</div>
+  <h3 style="color:var(--green-3)">Everything is deployed and live.</h3>
+  <p>The ExecBrief rapplication is in the store. The toggle UI is in the brainstem. The installer pulls the latest. Start the brainstem, install ExecBrief, and shoot your shot.</p>
+</div>
+
+</main>
+
+<footer>
+  <p>RAPP Pitch Playbook &bull; April 2026 &bull; <a href="https://github.com/kody-w/RAPP">github.com/kody-w/RAPP</a></p>
+  <p style="margin-top:6px">The file IS the agent IS the documentation IS the contract.</p>
+</footer>
+
+</body>
+</html>
