@@ -117,6 +117,19 @@
   .step pre{background:#04060c;border:1px solid var(--border);border-radius:6px;
     padding:10px 12px;overflow-x:auto;color:var(--fg)}
 
+  /* Direct download for the Copilot Studio solution zip — one click, no repo hop. */
+  .zip-dl{display:flex;align-items:center;gap:10px;
+    background:#04060c;border:1px solid var(--border);border-radius:6px;
+    padding:10px 12px;color:var(--fg)!important;text-decoration:none;
+    transition:border-color .15s,background .15s}
+  .zip-dl:hover{border-color:var(--purple-2);background:#0a0e17;text-decoration:none}
+  .zip-dl .zip-icon{font-size:16px;color:var(--purple-2)}
+  .zip-dl .zip-name{flex:1;font-family:"SF Mono",ui-monospace,monospace;font-size:13px;
+    word-break:break-all}
+  .zip-dl .zip-hint{font-size:10px;color:var(--muted);text-transform:uppercase;
+    letter-spacing:1px;white-space:nowrap}
+  .zip-dl:hover .zip-hint{color:var(--purple-2)}
+
   /* ── Footer ── */
   .links{margin-top:32px;text-align:center;font-size:13px;color:var(--muted);max-width:620px}
   .links a{margin:0 10px;color:var(--dim)}
@@ -249,8 +262,12 @@
       <p class="met"><em>Metaphor: the cortex. Where the brain meets the world.</em></p>
       <div class="step">
         <h3>Bundle</h3>
-        <pre>MSFTAIBASMultiAgentCopilot_1_0_0_5.zip</pre>
-        <p>Lives in the RAPP repo. Import → set Function App URL → publish.</p>
+        <a class="zip-dl" href="MSFTAIBASMultiAgentCopilot_1_0_0_5.zip" download>
+          <span class="zip-icon">⬇</span>
+          <span class="zip-name">MSFTAIBASMultiAgentCopilot_1_0_0_5.zip</span>
+          <span class="zip-hint">click to download</span>
+        </a>
+        <p>Download, import into Copilot Studio → set Function App URL → publish.</p>
       </div>
     </div>
   </article>
