@@ -1874,6 +1874,14 @@ The |||TWIN||| block is the twin's entire real estate — anything twin-related 
 
 3. <telemetry>one fact per line</telemetry>
    Server-side-only debug signal — routing notes, memory hit-rate, suspected prompt drift. Printed to logs with a [twin-telemetry] prefix, never rendered to the user.
+
+4. <action kind="..." label="..." [target="..."]>body</action>
+   A small UI favor the twin offers the user. Renders as a one-click chip next to the twin panel. The user's click is the approval — never auto-fires. Offer 0-2 per turn, only when it clearly helps. Vocabulary (keep it small):
+     <action kind="send" label="Show me PR #42">Show me PR #42</action>            (submit a message as the user)
+     <action kind="prompt" label="Draft a follow-up">What did we decide on X?</action> (prefill the input; user hits enter)
+     <action kind="open" target="settings|binder|agents|browse" label="Open settings"/>
+     <action kind="toggle" target="voice" label="Turn on voice"/>
+   The user only sees the label on the chip; the body is the payload.
 </response_format>`;
 
 const SOUL_BOUNDARIES = `<boundaries>
@@ -3406,27 +3414,44 @@ function parseVoiceTwinSplit(content) {
 }
 
 /* Parse + strip in-band twin tags from a twin block.
- * |||TWIN||| is the twin's entire real estate — probes, calibrations, and
- * telemetry ALL live inside it as tags. The server Python path strips them
- * server-side; the browser path has to strip them here because the browser
- * brainstem calls the LLM directly. Telemetry is console.log-ed so it shows
- * up in devtools alongside the brainstem's existing [brainstem] lines.
- * Returns { text, probes, calibrations }. */
+ * |||TWIN||| is the twin's entire real estate — probes, calibrations,
+ * telemetry, and actions ALL live inside it as tags. The server Python
+ * path strips the first three; the browser strips them all here because
+ * the browser brainstem calls the LLM directly.
+ *
+ * Actions are the twin starting to take tiny bits of work FROM the user:
+ * a suggested next message, "open your settings", "turn on voice." Each
+ * action renders as a chip the user can click to accept. The user's click
+ * IS the approval — the twin never auto-fires anything. This is how the
+ * twin builds trust: small, reversible favors the user says yes to.
+ *
+ * Returns { text, probes, calibrations, actions }. */
 function parseTwinTags(twinText) {
-  if (!twinText) return { text: '', probes: [], calibrations: [] };
+  if (!twinText) return { text: '', probes: [], calibrations: [], actions: [] };
   const probeRe     = /<probe\s+([^/>]*?)\s*\/>/gi;
   const calibRe     = /<calibration\s+([^/>]*?)\s*\/>/gi;
   const telemetryRe = /<telemetry\s*>([\s\S]*?)<\/telemetry\s*>/gi;
-  const attrRe      = /(\w+)\s*=\s*["']([^"']*)["']/g;
+  // Action accepts both self-closing (<action ... />) and with-body
+  // (<action ...>body</action>) forms — the body is used as the payload
+  // for `send`/`prompt` so the twin can write natural-language actions.
+  const actionPairRe = /<action\s+([^/>]*?)\s*>([\s\S]*?)<\/action\s*>/gi;
+  const actionSelfRe = /<action\s+([^/>]*?)\s*\/>/gi;
+  const attrRe       = /(\w+)\s*=\s*["']([^"']*)["']/g;
   const parseAttrs = (s) => {
     const o = {};
     let m; while ((m = attrRe.exec(s)) !== null) o[m[1].toLowerCase()] = m[2];
     return o;
   };
-  const probes = [], calibrations = [];
+  const probes = [], calibrations = [], actions = [];
   let m;
   while ((m = probeRe.exec(twinText)) !== null) probes.push(parseAttrs(m[1]));
   while ((m = calibRe.exec(twinText)) !== null) calibrations.push(parseAttrs(m[1]));
+  while ((m = actionPairRe.exec(twinText)) !== null) {
+    const a = parseAttrs(m[1]);
+    a.body = (m[2] || '').trim();
+    actions.push(a);
+  }
+  while ((m = actionSelfRe.exec(twinText)) !== null) actions.push(parseAttrs(m[1]));
   // Log every <telemetry> block to the devtools console, then strip from text.
   const telemetryMatches = [...twinText.matchAll(telemetryRe)];
   for (const tm of telemetryMatches) {
@@ -3438,11 +3463,13 @@ function parseTwinTags(twinText) {
   }
   const text = twinText
     .replace(telemetryRe, '')
+    .replace(actionPairRe, '')
+    .replace(actionSelfRe, '')
     .replace(probeRe, '')
     .replace(calibRe, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
-  return { text, probes, calibrations };
+  return { text, probes, calibrations, actions };
 }
 
 /* Twin "mood" — read the panel a little bit body-language-wise.
@@ -3464,10 +3491,11 @@ function detectTwinMood(text, calibrations) {
 
 /* Render the twin as a holographic side panel: animated sphere + markdown.
  * The sphere's mood color + pulse rhythm is the "body language" the user
- * can read at a glance. Ambient, collapsible, re-rendered per turn. */
+ * can read at a glance. Ambient, collapsible, re-rendered per turn.
+ * Actions render as accept-chips below the text — the twin suggests, the
+ * user clicks, the UI does exactly what the user could have done manually. */
 function renderTwinPanel(markdown) {
-  // Strip in-band calibration tags before rendering (belt + suspenders).
-  const { text, probes, calibrations } = parseTwinTags(markdown);
+  const { text, probes, calibrations, actions } = parseTwinTags(markdown);
   const mood = detectTwinMood(text, calibrations);
   const host = ensureTwinPanel();
   host.dataset.mood = mood;
@@ -3481,7 +3509,122 @@ function renderTwinPanel(markdown) {
   } else {
     body.textContent = text;
   }
+  renderTwinActions(host, actions || []);
   host.style.display = 'flex';
+}
+
+/* Action chips — each is a small "accept" button. Clicking fires the
+ * matching UI operation through the SAME code path the user would have
+ * used manually. The twin never bypasses a user interaction; it only
+ * *offers* to perform one. This is where the twin starts taking work
+ * from the user in tiny, reversible, confidence-building steps. */
+function renderTwinActions(host, actions) {
+  let wrap = host.querySelector('.twin-actions');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.className = 'twin-actions';
+    host.appendChild(wrap);
+  }
+  wrap.innerHTML = '';
+  if (!actions.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'flex';
+  for (const a of actions) {
+    const btn = document.createElement('button');
+    btn.className = 'twin-action';
+    btn.dataset.kind = (a.kind || '').toLowerCase();
+    btn.innerHTML = twinActionGlyph(a) + '<span class="twin-action-label"></span>';
+    btn.querySelector('.twin-action-label').textContent = a.label || twinActionDefaultLabel(a);
+    btn.title = twinActionTooltip(a);
+    btn.addEventListener('click', () => runTwinAction(a, btn));
+    wrap.appendChild(btn);
+  }
+}
+
+function twinActionGlyph(a) {
+  const k = (a.kind || '').toLowerCase();
+  const g = {
+    send: '➤', prompt: '✎', open: '⎋', toggle: '⇄',
+  }[k] || '•';
+  return `<span class="twin-action-glyph">${g}</span>`;
+}
+
+function twinActionDefaultLabel(a) {
+  const k = (a.kind || '').toLowerCase();
+  if (k === 'send')   return 'Send this';
+  if (k === 'prompt') return 'Put this in the box';
+  if (k === 'open')   return 'Open ' + (a.target || 'panel');
+  if (k === 'toggle') return 'Toggle ' + (a.target || '');
+  return 'Do it';
+}
+
+function twinActionTooltip(a) {
+  const k = (a.kind || '').toLowerCase();
+  if (k === 'send')   return 'Send this message to the brainstem as if you typed it';
+  if (k === 'prompt') return 'Put this into the chat input (you still hit enter)';
+  if (k === 'open')   return `Open the "${a.target}" panel`;
+  if (k === 'toggle') return `Toggle "${a.target}"`;
+  return 'Run this twin-suggested action';
+}
+
+/* Whitelisted action dispatch. The twin can only invoke named actions
+ * from this small vocabulary — no arbitrary code, no bypass. Each path
+ * here calls a function the user already has a button/keyboard for. */
+async function runTwinAction(action, btn) {
+  const kind = (action.kind || '').toLowerCase();
+  const body = (action.body || action.text || '').trim();
+  const target = (action.target || '').toLowerCase();
+
+  const markDone = (label) => {
+    if (!btn) return;
+    btn.disabled = true;
+    btn.classList.add('twin-action-done');
+    const lbl = btn.querySelector('.twin-action-label');
+    if (lbl) lbl.textContent = label || 'Done';
+  };
+
+  try {
+    if (kind === 'send' && body) {
+      const input = document.getElementById('input');
+      if (input) { input.value = ''; }
+      await send(body);
+      markDone('Sent');
+      return;
+    }
+    if (kind === 'prompt' && body) {
+      const input = document.getElementById('input');
+      if (input) {
+        input.value = body;
+        input.focus();
+        input.dispatchEvent(new Event('input'));
+      }
+      markDone('Pre-filled');
+      return;
+    }
+    if (kind === 'open' && target) {
+      const allowed = ['settings', 'binder', 'agents', 'browse', 'install', 'install-modal'];
+      const el = document.getElementById(target);
+      if (!el || !allowed.includes(target)) throw new Error(`panel "${target}" not available`);
+      if (typeof openAside === 'function') openAside(target);
+      else el.classList.add('open');
+      markDone('Opened');
+      return;
+    }
+    if (kind === 'toggle' && target === 'voice') {
+      const btnVoice = document.getElementById('btn-voice')
+        || document.querySelector('[data-toggle="voice"]');
+      if (btnVoice) { btnVoice.click(); markDone('Toggled'); return; }
+      throw new Error('voice toggle not wired');
+    }
+    throw new Error(`unknown twin action: kind="${kind}" target="${target}"`);
+  } catch (e) {
+    console.warn('[twin-action] failed:', e.message, action);
+    if (btn) {
+      btn.disabled = true;
+      btn.classList.add('twin-action-fail');
+      const lbl = btn.querySelector('.twin-action-label');
+      if (lbl) lbl.textContent = 'Couldn\'t do it';
+    }
+  }
 }
 
 const MOOD_LABEL = {
@@ -3533,6 +3676,27 @@ function ensureTwinPanel() {
       #twin-panel .twin-body code { background:#0d1117; padding:1px 5px; border-radius:3px;
         font-size:12px; }
       #twin-panel .twin-silent { color:#6b7280; font-style:italic; text-align:center; }
+
+      /* Action chips — the twin suggests, the user accepts with one click.
+         Never auto-fires. Chips fade to "done" state on success, "fail"
+         state if the dispatch couldn't match a whitelisted UI op. */
+      #twin-panel .twin-actions { display:flex; flex-wrap:wrap; gap:6px;
+        margin-top:4px; }
+      #twin-panel .twin-action { display:inline-flex; align-items:center; gap:6px;
+        padding:6px 10px; background:rgba(167,139,250,.1);
+        border:1px solid rgba(167,139,250,.35); border-radius:999px;
+        color:#e6edf3; font-size:12px; font-family:inherit; cursor:pointer;
+        transition:all .15s; max-width:100%; }
+      #twin-panel .twin-action:hover { background:rgba(167,139,250,.22);
+        border-color:rgba(167,139,250,.65); transform:translateY(-1px); }
+      #twin-panel .twin-action:disabled { cursor:default; transform:none; }
+      #twin-panel .twin-action-glyph { font-size:11px; opacity:.75; }
+      #twin-panel .twin-action-label { white-space:nowrap; overflow:hidden;
+        text-overflow:ellipsis; max-width:240px; }
+      #twin-panel .twin-action-done { background:rgba(125,240,200,.12);
+        border-color:rgba(125,240,200,.55); color:#7df0c8; opacity:.85; }
+      #twin-panel .twin-action-fail { background:rgba(248,81,73,.12);
+        border-color:rgba(248,81,73,.45); color:#f85149; opacity:.85; }
 
       /* Mood-driven recoloring. Only the sphere background + glow change;
          the panel chrome stays stable so it doesn't feel chaotic. */

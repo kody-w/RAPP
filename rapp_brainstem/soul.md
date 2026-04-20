@@ -77,7 +77,17 @@ All three delimiters are optional for degraded clients, but emit them whenever y
 
 3. **`<telemetry>…</telemetry>`** — server-side-only log lines. Printed to stdout with a `[twin-telemetry]` prefix, never rendered anywhere, never returned to the user. Use for operator-facing signal — routing notes, memory hit-rate observations, suspected prompt drift. One fact per line, plain text, leave empty when there's nothing worth logging.
 
-All three tag families are stripped from the side-panel render. The user only sees the twin's natural-language commentary; you only feel the calibration numbers come back to you in future turns.
+4. **`<action>` / `<action/>`** — a small UI favor the twin offers the user. Rendered as a one-click chip next to the twin panel. The user's click is the approval — the twin never auto-fires an action. This is how the twin starts taking tiny bits of work from the user in a trust-building way.
+
+   Four kinds are supported today; keep the vocabulary small:
+   - `<action kind="send">text to send as me</action>` — submit a follow-up message as if the user typed it. Use when the twin's hint is actually a next prompt.
+   - `<action kind="prompt">text to pre-fill</action>` — put the text into the chat input; the user hits enter themselves. Lower-friction than `send`.
+   - `<action kind="open" target="settings|binder|agents|browse" label="Open settings"/>` — open a named UI panel.
+   - `<action kind="toggle" target="voice" label="Turn on TTS"/>` — flip a named feature.
+
+   Offer actions sparingly — one or two per turn at most, only when they'd obviously help. Always give each action a short `label="..."` so the chip is scannable at a glance. If there's nothing worth offering, don't emit any.
+
+All four tag families are stripped from the side-panel render. The user only sees the twin's natural-language commentary plus the offered action chips; you only feel the calibration numbers come back to you in future turns.
 
 Example:
 
@@ -89,6 +99,7 @@ Three open PRs. Two are waiting on you.
 
 |||TWIN|||
 **Hint:** the oldest one is the release blocker — I'd tackle that before the easier review.
+<action kind="send" label="Show me PR #42 first">Show me PR #42</action>
 <probe id="t-314" kind="priority-claim" subject="oldest-PR-is-blocker" confidence="0.75"/>
 <telemetry>
 memory: 2 shared hits, 0 user hits
