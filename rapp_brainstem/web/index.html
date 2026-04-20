@@ -1909,7 +1909,7 @@ The |||TWIN||| block is the twin's entire real estate — anything twin-related 
      <action kind="toggle" target="hand-mode" label="Flip hand mode"/>       (the other of the two)
      <action kind="highlight" target="SaveMemory" label="Tap SaveMemory"/>   (flash one loaded card/pill to draw the eye)
      <action kind="rapp" target="BookFactory" label="Run BookFactory on this chapter">{"source":"...","chapter_title":"..."}</action>
-       Run an installed rapplication (composed agent like BookFactory / MomentFactory / etc.). The body is a JSON object matching the rapplication's `parameters` schema from <installed_rapplications>. Only offer a rapp action when the user's turn clearly benefits from it — e.g., they just pasted raw source and BookFactory is installed. The runtime flashes the card, calls perform(args), and appends the output to the chat as a system message.
+       Run an installed rapplication (composed agent like BookFactory / MomentFactory / etc.). The body is a JSON object matching the rapplication's 'parameters' schema from <installed_rapplications>. Only offer a rapp action when the user's turn clearly benefits from it — e.g., they just pasted raw source and BookFactory is installed. The runtime flashes the card, calls perform(args), and appends the output to the chat as a system message.
    The user only sees the label on the chip; the body is the payload.
 
    When the user asks for a UI change ("switch to card mode", "show me the cards", "give me the pill view"), the right answer is to emit the matching <action kind="toggle" …/> so they can confirm it with one click — not to just describe the change.

@@ -2,13 +2,27 @@
 set -e
 
 # RAPP Brainstem Installer
-# Usage: curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash
+# Usage:
+#   curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash
+#
+# Pin to a specific released version (fallback if a newer release breaks):
+#   BRAINSTEM_VERSION=0.5.1 curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash
+#
+# Every VERSION bump in the repo is tagged `brainstem-vX.Y.Z` and that
+# tag's tree is immutable — the install will check out exactly that
+# commit, no matter what main looks like later. See VERSIONS.md.
 
 BRAINSTEM_HOME="$HOME/.brainstem"
 BRAINSTEM_BIN="$HOME/.local/bin"
 VENV_DIR="$BRAINSTEM_HOME/venv"
 REPO_URL="https://github.com/kody-w/RAPP.git"
 REMOTE_VERSION_URL="https://raw.githubusercontent.com/kody-w/RAPP/main/rapp_brainstem/VERSION"
+
+# Optional pin: BRAINSTEM_VERSION=X.Y.Z env var → install that tagged
+# version instead of the tip of main. Empty means "latest main".
+PIN_VERSION="${BRAINSTEM_VERSION:-}"
+PIN_TAG=""
+[ -n "$PIN_VERSION" ] && PIN_TAG="brainstem-v${PIN_VERSION}"
 
 # Colors
 RED='\033[0;31m'
@@ -248,8 +262,15 @@ install_brainstem() {
         [ -f "$LOCAL_VERSION_FILE" ] && LOCAL_VER=$(cat "$LOCAL_VERSION_FILE" 2>/dev/null || echo "0.0.0")
         local REMOTE_VER=$(curl -sf "$REMOTE_VERSION_URL" 2>/dev/null || echo "0.0.0")
 
+        # Pinned-version override: users can fall back to an older released
+        # version if a newer one broke something for them.
+        if [ -n "$PIN_VERSION" ]; then
+            echo "  ⚑ Pin requested: v${PIN_VERSION} (will check out tag ${PIN_TAG})"
+            REMOTE_VER="$PIN_VERSION"
+        fi
+
         echo "  Local:  v${LOCAL_VER}"
-        echo "  Remote: v${REMOTE_VER}"
+        echo "  Target: v${REMOTE_VER}"
 
         if [ "$LOCAL_VER" = "$REMOTE_VER" ]; then
             echo -e "  ${GREEN}✓${NC} Already up to date (v${LOCAL_VER})"
@@ -279,10 +300,20 @@ install_brainstem() {
             # pulls from somewhere stale.
             git remote set-url origin "$REPO_URL" 2>/dev/null || true
             git stash --quiet --include-untracked 2>/dev/null || true
-            git fetch --quiet origin main 2>/dev/null || true
-            if git reset --hard --quiet origin/main 2>/dev/null; then
+            # Fetch main + tags so both "latest" and "pin" flows work.
+            git fetch --quiet --tags origin main 2>/dev/null || true
+            # Choose reset target: a pinned tag if requested, else origin/main.
+            local reset_target="origin/main"
+            if [ -n "$PIN_TAG" ]; then
+                if git rev-parse --verify "$PIN_TAG" >/dev/null 2>&1; then
+                    reset_target="$PIN_TAG"
+                else
+                    echo -e "  ${YELLOW}⚠${NC} Pin tag ${PIN_TAG} not found on remote — falling back to origin/main"
+                fi
+            fi
+            if git reset --hard --quiet "$reset_target" 2>/dev/null; then
                 git clean -fdq 2>/dev/null || true
-                echo -e "  ${GREEN}✓${NC} Framework hard-synced to origin/main"
+                echo -e "  ${GREEN}✓${NC} Framework hard-synced to ${reset_target}"
             else
                 echo -e "  ${YELLOW}Warning: git reset failed — falling back to pull${NC}"
                 git pull --quiet 2>/dev/null || echo -e "  ${YELLOW}Warning: Could not pull${NC}"
@@ -300,6 +331,11 @@ install_brainstem() {
                 cd "$BRAINSTEM_HOME"
                 rm -rf "$BRAINSTEM_HOME/src"
                 if git clone --quiet "$REPO_URL" "$BRAINSTEM_HOME/src"; then
+                    if [ -n "$PIN_TAG" ]; then
+                        cd "$BRAINSTEM_HOME/src"
+                        git checkout --quiet "$PIN_TAG" 2>/dev/null || \
+                            echo -e "  ${YELLOW}Warning: Could not check out tag ${PIN_TAG}; staying on main${NC}"
+                    fi
                     echo -e "  ${GREEN}✓${NC} Fresh clone successful"
                 else
                     echo -e "  ${RED}✗${NC} Fresh clone failed — please check connectivity and retry"
@@ -332,6 +368,14 @@ install_brainstem() {
         echo "  Fresh install — cloning repository..."
         rm -rf "$BRAINSTEM_HOME/src" 2>/dev/null || true
         git clone --quiet "$REPO_URL" "$BRAINSTEM_HOME/src"
+        if [ -n "$PIN_TAG" ]; then
+            cd "$BRAINSTEM_HOME/src"
+            if git checkout --quiet "$PIN_TAG" 2>/dev/null; then
+                echo -e "  ${GREEN}✓${NC} Checked out tag ${PIN_TAG}"
+            else
+                echo -e "  ${YELLOW}Warning: Tag ${PIN_TAG} not found — staying on main${NC}"
+            fi
+        fi
     fi
     echo -e "  ${GREEN}✓${NC} Source code ready"
 }

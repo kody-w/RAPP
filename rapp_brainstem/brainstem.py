@@ -848,6 +848,31 @@ def web_static(subpath):
     web_root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web")
     return send_from_directory(web_root, subpath)
 
+
+# Static assets the rich UI references at top level (rapp.js, images,
+# etc) — when served via Flask, HTML's `./rapp.js` resolves to `/rapp.js`,
+# not `/web/rapp.js`. Forward known asset extensions to web/ so the UI
+# loads clean without changing the HTML (which is also served by
+# GitHub Pages directly, where `./rapp.js` resolves correctly).
+@app.route("/<path:asset>", methods=["GET"])
+def web_asset_fallback(asset):
+    from flask import abort
+    # Don't accidentally shadow API routes — only fall through for
+    # file-shaped paths (has an extension) and never for obvious API
+    # prefixes. Flask's routing normally matches more-specific routes
+    # first, so this is just defense in depth.
+    if asset.startswith(("api/", "chat", "health", "voice", "twin",
+                          "agents", "models", "login", "version",
+                          "diagnostics", "tether", "web/", "repos")):
+        abort(404)
+    if "." not in asset.rsplit("/", 1)[-1]:
+        abort(404)
+    web_root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web")
+    candidate = os.path.join(web_root, asset)
+    if os.path.isfile(candidate):
+        return send_from_directory(web_root, asset)
+    abort(404)
+
 @app.route("/", methods=["GET"])
 def index():
     """Serve the rich UI (rapp_brainstem/web/index.html) when it exists —
