@@ -500,6 +500,29 @@
     pointer-events: none;
   }
 
+  /* Twin-suggested pills — same shape as .hand-pill, lavender-tinted so
+     the user can see at a glance these are the TWIN's suggestions for
+     what to say next, not the loaded agents. Cleared when the user
+     sends the next message so they always reflect the current turn. */
+  .twin-pill {
+    background: rgba(167,139,250,.08); color: #c4b5fd;
+    border: 1px solid rgba(167,139,250,.4); border-radius: 20px;
+    padding: 6px 14px 6px 10px; font-size: 12px;
+    cursor: pointer; transition: all .15s;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    max-width: 360px;
+    font-family: inherit; pointer-events: auto;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .twin-pill:hover {
+    background: rgba(167,139,250,.18); border-color: #a78bfa;
+    color: #e6edf3; transform: translateY(-1px);
+  }
+  .twin-pill:disabled { cursor: default; opacity: .6; transform: none; }
+  .twin-pill::before {
+    content: '✨'; font-size: 10px; opacity: .75;
+  }
+
   /* Each card is 290×406 internally; transform: scale(.42) shrinks it to a
      visible ~122×170. translateY(60px) pushes it down so its bottom half
      is below the footer's top edge, where the input-row's opaque bg covers
@@ -3303,6 +3326,9 @@ async function send(userInput) {
   }
   appendMsg('user', userInput);
   state.conversation_history.push({ role: 'user', content: userInput });
+  // Clear any twin-suggested pills from the previous turn — the new turn
+  // gets its own set (or none) based on what the twin emits this time.
+  clearTwinPills();
 
   const typing = appendTyping();
 
@@ -3546,7 +3572,69 @@ function renderTwinPanel(markdown) {
 
   renderTwinActions(host, actions || []);
   renderTwinHistory(host);
+  // Send/prompt actions also render as click-to-ask pills in the #hand-cards
+  // row — the same spot the starter pills live, so users have one place to
+  // look for "what could I say next?" whether the suggestion came from the
+  // binder or from the twin.
+  renderTwinPills(actions || []);
   host.style.display = 'flex';
+}
+
+/* Clear any previously-rendered twin pills. Called at the top of every
+ * send() so pills from turn N don't linger into turn N+1. */
+function clearTwinPills() {
+  const row = document.getElementById('hand-cards');
+  if (!row) return;
+  row.querySelectorAll('.twin-pill').forEach(el => el.remove());
+  // Restore the "no agents loaded" hint if nothing's left in the row.
+  const empty = document.getElementById('hand-empty');
+  const handCount = row.querySelectorAll('.hand-pill, .hand-card').length;
+  if (empty && handCount === 0) empty.style.display = 'inline';
+}
+
+/* Twin-authored send/prompt actions render as click-to-ask pills above the
+ * input. Identical UX to the starter pills (click → send the text) but
+ * lavender-tinted with a ✨ prefix so the user can see which suggestions
+ * came from the twin vs from their loaded agents. open/toggle actions
+ * stay in the twin panel only — this row is about "what to say next." */
+function renderTwinPills(actions) {
+  clearTwinPills();
+  const row = document.getElementById('hand-cards');
+  if (!row || !actions || !actions.length) return;
+  const empty = document.getElementById('hand-empty');
+  // Only send + prompt kinds become pills here. open/toggle actions
+  // don't belong in the "ask this next" row; they stay in the twin panel.
+  const pills = actions.filter(a => {
+    const k = (a.kind || '').toLowerCase();
+    return (k === 'send' || k === 'prompt')
+        && (a.body || a.text || a.label);
+  });
+  if (!pills.length) return;
+  if (empty) empty.style.display = 'none';
+  for (const a of pills) {
+    const kind = (a.kind || 'send').toLowerCase();
+    const body = (a.body || a.text || '').trim();
+    const label = (a.label || body || 'Twin suggestion').trim();
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'twin-pill';
+    btn.textContent = label;
+    btn.title = kind === 'send'
+      ? `Sends: "${body || label}"  (twin suggestion)`
+      : `Pre-fills: "${body || label}"  (twin suggestion — you press enter)`;
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      btn.style.opacity = '.6';
+      if (kind === 'prompt') {
+        const input = document.getElementById('input');
+        if (input) { input.value = body; input.focus(); input.dispatchEvent(new Event('input')); }
+      } else {
+        // send — runs the normal chat path, same as typing + enter.
+        await send(body);
+      }
+    });
+    row.appendChild(btn);
+  }
 }
 
 /* Recent observations fade back in time. The most-recent is already shown
