@@ -811,9 +811,24 @@ def chat():
 
 # ── /health endpoint ──────────────────────────────────────────────────────────
 
+@app.route("/web/<path:subpath>", methods=["GET"])
+def web_static(subpath):
+    """Serve any file under rapp_brainstem/web/ — used by the rich UI
+    for assets, onboard/, mobile/, etc."""
+    web_root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web")
+    return send_from_directory(web_root, subpath)
+
 @app.route("/", methods=["GET"])
 def index():
-    return send_from_directory(os.path.dirname(os.path.abspath(__file__)), "index.html")
+    """Serve the rich UI (rapp_brainstem/web/index.html) when it exists —
+    same file the virtual brainstem runs, so local + virtual are one UI
+    to learn. Fall back to the legacy rapp_brainstem/index.html if
+    someone kept it around on their install."""
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    web_index = os.path.join(base_dir, "web", "index.html")
+    if os.path.isfile(web_index):
+        return send_from_directory(os.path.join(base_dir, "web"), "index.html")
+    return send_from_directory(base_dir, "index.html")
 
 @app.route("/login", methods=["POST"])
 def login():
