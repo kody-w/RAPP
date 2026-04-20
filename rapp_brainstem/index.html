@@ -482,6 +482,19 @@
   }
   .agent-list li:last-child { border-bottom: none; }
   .agent-list .agent-name { color: #e6edf3; font-family: "SF Mono", monospace; }
+  .agent-list li.disabled .agent-name { color: #484f58; text-decoration: line-through; }
+  .agent-toggle {
+    position: relative; width: 32px; height: 18px; flex-shrink: 0;
+    background: #21262d; border: 1px solid #30363d; border-radius: 9px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .agent-toggle::after {
+    content: ''; position: absolute; top: 2px; left: 2px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: #484f58; transition: all 0.2s;
+  }
+  .agent-toggle.on { background: #238636; border-color: #2ea043; }
+  .agent-toggle.on::after { left: 16px; background: #fff; }
   .agent-list .export-btn {
     background: #21262d; color: #e6edf3; border: 1px solid #30363d;
     border-radius: 4px; padding: 3px 6px; font-size: 10px;
@@ -1211,17 +1224,30 @@
         return;
       }
       for (const item of data.files) {
+        const isEnabled = item.enabled !== false;
         const li = document.createElement('li');
+        if (!isEnabled) li.classList.add('disabled');
+
+        const toggle = document.createElement('div');
+        toggle.className = 'agent-toggle' + (isEnabled ? ' on' : '');
+        toggle.title = isEnabled ? 'Click to disable' : 'Click to enable';
+        toggle.onclick = async () => {
+          try {
+            const r = await fetch(`${API}/agents/${encodeURIComponent(item.filename)}/toggle`, { method: 'POST' });
+            if (r.ok) loadAgentsList();
+          } catch (e) { console.error('Toggle failed:', e); }
+        };
+
         const nameSpan = document.createElement('span');
         nameSpan.className = 'agent-name';
-
         let displayTxt = item.filename;
         if (item.agents && item.agents.length > 0) {
           displayTxt = `${item.agents.join(', ')} (${item.filename})`;
         }
-
         nameSpan.textContent = displayTxt;
         nameSpan.title = item.filename;
+        nameSpan.style.flex = '1';
+        nameSpan.style.marginLeft = '8px';
 
         const controls = document.createElement('div');
         controls.style.display = 'flex';
@@ -1235,7 +1261,7 @@
         };
 
         const delBtn = document.createElement('button');
-        delBtn.className = 'export-btn'; // styling reuse
+        delBtn.className = 'export-btn';
         delBtn.style.color = '#f85149';
         delBtn.textContent = 'Trsh';
         delBtn.onclick = async () => {
@@ -1257,6 +1283,7 @@
         controls.appendChild(expBtn);
         controls.appendChild(delBtn);
 
+        li.appendChild(toggle);
         li.appendChild(nameSpan);
         li.appendChild(controls);
         ul.appendChild(li);

@@ -568,18 +568,38 @@ def _auto_install(package):
     except Exception as e:
         print(f"[brainstem] Failed to install {package}: {e}")
 
+_DISABLED_FILE = os.path.join(AGENTS_PATH, ".agents_disabled.json")
+
+def _read_disabled() -> set:
+    if os.path.exists(_DISABLED_FILE):
+        try:
+            with open(_DISABLED_FILE) as f:
+                return set(json.load(f))
+        except Exception:
+            pass
+    return set()
+
+def _write_disabled(disabled: set):
+    with open(_DISABLED_FILE, "w") as f:
+        json.dump(sorted(disabled), f)
+
 def load_agents():
     agents = {}
     pattern = os.path.join(AGENTS_PATH, "*_agent.py")
     files = glob.glob(pattern)
+    disabled = _read_disabled()
 
     for filepath in files:
+        filename = os.path.basename(filepath)
+        if filename in disabled:
+            print(f"[brainstem] Agent skipped (disabled): {filename}")
+            continue
         loaded = _load_agent_from_file(filepath)
         for name, instance in loaded.items():
             agents[name] = instance
             print(f"[brainstem] Agent loaded: {name}")
 
-    print(f"[brainstem] {len(agents)} agent(s) ready.")
+    print(f"[brainstem] {len(agents)} agent(s) ready, {len(disabled)} disabled.")
     return agents
 
 # ── LLM call ─────────────────────────────────────────────────────────────────
@@ -1186,14 +1206,13 @@ def version():
 def list_agents_files():
     """List all agent .py files available with their loaded agent names."""
     files = glob.glob(os.path.join(AGENTS_PATH, "*.py"))
+    disabled = _read_disabled()
     results = []
     for f in files:
         filename = os.path.basename(f)
         if filename.startswith("__") or not filename.endswith(".py"):
             continue
         try:
-            # We don't want to re-download pip packages or run arbitrary init unnecessarily,
-            # but if it's already synthetically loaded or safe to parse, _load_agent_from_file is okay.
             loaded = _load_agent_from_file(f)
             agent_names = list(loaded.keys())
         except Exception:
@@ -1201,7 +1220,8 @@ def list_agents_files():
 
         results.append({
             "filename": filename,
-            "agents": agent_names
+            "agents": agent_names,
+            "enabled": filename not in disabled,
         })
 
     return jsonify({"files": results})
@@ -1268,6 +1288,27 @@ def agents_delete(filename):
             pass
         return jsonify({"status": "ok", "message": f"Agent {safe_name} deleted."})
     return jsonify({"error": "Agent not found"}), 404
+
+@app.route("/agents/<filename>/toggle", methods=["POST"])
+def agents_toggle(filename):
+    """Toggle an agent file between enabled and disabled."""
+    import werkzeug.utils
+    safe_name = werkzeug.utils.secure_filename(filename)
+    if not safe_name.endswith('.py'):
+        safe_name += '.py'
+    filepath = os.path.join(AGENTS_PATH, safe_name)
+    if not os.path.exists(filepath):
+        return jsonify({"error": "Agent not found"}), 404
+    disabled = _read_disabled()
+    if safe_name in disabled:
+        disabled.discard(safe_name)
+        enabled = True
+    else:
+        disabled.add(safe_name)
+        enabled = False
+    _write_disabled(disabled)
+    print(f"[brainstem] Agent {'enabled' if enabled else 'disabled'}: {safe_name}")
+    return jsonify({"status": "ok", "filename": safe_name, "enabled": enabled})
 
 @app.route("/agents/import", methods=["POST"])
 def agents_import():
