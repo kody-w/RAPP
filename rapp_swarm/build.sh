@@ -19,10 +19,10 @@ mkdir -p "$DEST"
 
 # Copy each Python module the function app imports.
 # function_app.py still imports as `server` (back-compat alias).
-for src in brainstem.py llm.py chat.py t2t.py _basic_agent_shim.py twin.py; do
+for src in swarm_server.py llm.py chat.py t2t.py _basic_agent_shim.py twin.py; do
     if [ -f "$ROOT/rapp_brainstem/$src" ]; then
         dest="$src"
-        [ "$src" = "brainstem.py" ] && dest="server.py"
+        [ "$src" = "swarm_server.py" ] && dest="server.py"
         cp "$ROOT/rapp_brainstem/$src" "$DEST/$dest"
         echo "  ✓ $src → $dest"
     fi
