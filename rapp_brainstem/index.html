@@ -1696,7 +1696,9 @@
       ]);
       _rappsCache = { binder: bR, catalog: cR };
       const installed = bR.installed || [];
-      const catalog = (cR.rapplications || []);
+      const allCatalog = (cR.rapplications || []);
+      // Only show top-level rapplications (source_files_collapsed > 1 = converged swarm)
+      const catalog = allCatalog.filter(r => (r.produced_by?.source_files_collapsed || 0) > 1);
       const installedIds = new Set(installed.map(e => e.id));
       document.getElementById('sp-rapps-installed-n').textContent = '(' + installed.length + ')';
       document.getElementById('sp-rapps-catalog-n').textContent = '(' + catalog.length + ')';
@@ -1706,7 +1708,7 @@
       catDiv.innerHTML = catalog.map(r => {
         const isInst = installedIds.has(r.id);
         const summary = (r.summary||'').slice(0,120) + ((r.summary||'').length > 120 ? '…' : '');
-        return `<div class="rapp-row ${isInst?'installed':''}"><div class="rr-head"><span class="rr-name">${esc(r.id)}</span><span class="rr-ver">v${esc(r.version||'?')}</span></div><div class="rr-summary">${esc(summary)}</div><div class="rr-actions">${isInst
+        return `<div class="rapp-row ${isInst?'installed':''}"><div class="rr-head"><span class="rr-name">${esc(r.name || r.id)}</span><span class="rr-ver">v${esc(r.version||'?')}</span></div><div class="rr-summary">${esc(summary)}</div><div class="rr-actions">${isInst
           ? `<button class="panel-btn danger" onclick="uninstallRapp('${esc(r.id)}')">Uninstall</button>`
           : `<button class="panel-btn primary" onclick="installRapp('${esc(r.id)}')">Install</button>`
         }</div></div>`;
