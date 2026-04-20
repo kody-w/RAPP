@@ -917,6 +917,122 @@ def login_status():
     """Check if a login flow is currently in progress."""
     return jsonify({"pending": bool(_pending_login)})
 
+
+# ── /api/binder/* — minimal binder API for the rich UI ────────────────────────
+# "Installed rapplications" on the local brainstem = the *_agent.py files
+# in the agents/ directory. Catalog comes from the canonical RAPP store.
+
+RAPP_STORE_CATALOG_URL = "https://raw.githubusercontent.com/kody-w/RAPP/main/rapp_store/index.json"
+
+
+def _installed_rapps():
+    """Walk the agents dir and return one entry per *_agent.py file.
+    The `id` is the filename stem without the _agent suffix so it lines
+    up with the rapp_store catalog's ids."""
+    out = []
+    if not os.path.isdir(AGENTS_PATH):
+        return out
+    for fname in sorted(os.listdir(AGENTS_PATH)):
+        if not fname.endswith("_agent.py") or fname == "basic_agent.py":
+            continue
+        full = os.path.join(AGENTS_PATH, fname)
+        stem = fname[:-len("_agent.py")]
+        out.append({
+            "id": stem.replace("_", ""),     # bookfactory_agent.py → bookfactory
+            "filename": fname,
+            "path": full,
+            "bytes": os.path.getsize(full) if os.path.isfile(full) else 0,
+        })
+    return out
+
+
+@app.route("/api/binder", methods=["GET"])
+def api_binder():
+    """List installed rapplications (= agents in the local agents dir)."""
+    return jsonify({
+        "schema": "rapp-binder/1.0",
+        "installed": _installed_rapps(),
+        "agents_path": AGENTS_PATH,
+    })
+
+
+@app.route("/api/binder/catalog", methods=["GET"])
+def api_binder_catalog():
+    """Proxy the canonical RAPPstore catalog so the UI can list what's
+    available to install. Browser can't CORS-fetch the raw URL through
+    some networks, so the Flask brainstem plays middleman."""
+    try:
+        r = requests.get(RAPP_STORE_CATALOG_URL, timeout=6)
+        if r.ok:
+            return jsonify(r.json())
+        return jsonify({"schema": "rapp-store/1.0", "rapplications": []})
+    except Exception as e:
+        return jsonify({"schema": "rapp-store/1.0", "rapplications": [],
+                        "error": str(e)})
+
+
+@app.route("/api/binder/install", methods=["POST"])
+def api_binder_install():
+    """Install a rapplication by id: fetch its singleton_url from the
+    catalog, save to agents/<singleton_filename>, reload agents."""
+    data = request.get_json(force=True) or {}
+    rapp_id = (data.get("id") or "").strip()
+    if not rapp_id:
+        return jsonify({"status": "error", "message": "missing 'id'"}), 400
+    try:
+        cat = requests.get(RAPP_STORE_CATALOG_URL, timeout=6).json()
+        entry = next((r for r in cat.get("rapplications", []) if r.get("id") == rapp_id), None)
+        if not entry:
+            return jsonify({"status": "error", "message": f"rapplication '{rapp_id}' not in catalog"}), 404
+        url = entry.get("singleton_url")
+        fname = entry.get("singleton_filename")
+        if not url or not fname:
+            return jsonify({"status": "error", "message": "catalog entry missing singleton_url/filename"}), 500
+        body = requests.get(url, timeout=10).content
+        dest = os.path.join(AGENTS_PATH, fname)
+        os.makedirs(AGENTS_PATH, exist_ok=True)
+        with open(dest, "wb") as f:
+            f.write(body)
+        return jsonify({"status": "ok", "id": rapp_id, "filename": fname, "bytes": len(body)})
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route("/api/binder/installed/<rapp_id>", methods=["DELETE"])
+def api_binder_uninstall(rapp_id):
+    """Remove an installed rapplication. Matches by id (filename stem)."""
+    for entry in _installed_rapps():
+        if entry["id"] == rapp_id:
+            try:
+                os.remove(entry["path"])
+                return jsonify({"status": "ok", "removed": entry["filename"]})
+            except OSError as e:
+                return jsonify({"status": "error", "message": str(e)}), 500
+    return jsonify({"status": "error", "message": f"no installed rapplication '{rapp_id}'"}), 404
+
+
+@app.route("/api/binder/agent", methods=["POST"])
+def api_binder_agent():
+    """Execute a named installed agent directly (no LLM). Used by the
+    twin's <action kind="rapp"> dispatch path when it wants to call a
+    rapplication without routing through the chat loop."""
+    data = request.get_json(force=True) or {}
+    name = (data.get("name") or "").strip()
+    args = data.get("args") or {}
+    if not name:
+        return jsonify({"status": "error", "message": "missing 'name'"}), 400
+    agents = load_agents()
+    agent = agents.get(name)
+    if not agent:
+        return jsonify({"status": "error", "message": f"unknown agent '{name}'"}), 404
+    try:
+        out = agent.perform(**args) if hasattr(agent, "perform") else str(agent(**args))
+        return jsonify({"status": "ok", "name": name, "output": out})
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 @app.route("/models", methods=["GET"])
 def list_models():
     """List available models and current selection. Fetches from Copilot API on first call."""

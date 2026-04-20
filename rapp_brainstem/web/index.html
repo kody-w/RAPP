@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>RAPP Brainstem — Virtual</title>
+<title>RAPP Brainstem</title>
 <meta name="description" content="The browser-only RAPP brainstem. Same chat UI, same single-file *_agent.py contract, same binder. Same GitHub identity as the rest of RAPP.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' fill='%2358a6ff'%3E%3Cpath d='M184 0c-30.9 0-56.5 22.7-61.1 52.3C54.5 67 0 130 0 206.8c0 41.6 17.4 79.2 45.3 105.9-2 9.2-3.3 18.8-3.3 28.7 0 55.3 35.8 102.2 85.5 119C142.2 493 172.6 512 208 512h16c35.3 0 64-28.7 64-64V86c0-8.8-7.2-16-16-16h-16c-8.8 0-16 7.2-16 16v16c0 8.8-7.2 16-16 16s-16-7.2-16-16V64c0-35.3-28.7-64-64-64h40zm144 0c30.9 0 56.5 22.7 61.1 52.3C457.5 67 512 130 512 206.8c0 41.6-17.4 79.2-45.3 105.9 2 9.2 3.3 18.8 3.3 28.7 0 55.3-35.8 102.2-85.5 119C369.8 493 339.4 512 304 512h-16c-35.3 0-64-28.7-64-64V86c0-8.8 7.2-16 16-16h16c8.8 0 16 7.2 16 16v16c0 8.8 7.2 16 16 16s16-7.2 16-16V64c0-35.3 28.7-64 64-64h-40z'/%3E%3C/svg%3E">
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -1180,6 +1180,12 @@
     50%      { box-shadow: 0 0 0 4px rgba(63,185,80,.18); }
   }
   .icon-btn.green[hidden] { display: none !important; }
+
+  /* Mode-aware copy — .virtual-only shows when we're hosted by GH Pages
+     as the browser brainstem, .local-only shows when served by the
+     Flask brainstem on localhost. Body class is set on boot. */
+  body.is-local .virtual-only  { display: none !important; }
+  body.is-virtual .local-only  { display: none !important; }
 </style>
 </head>
 <body>
@@ -1193,7 +1199,7 @@
   <div class="logo">
     <span class="icon"><svg viewBox="0 0 512 512" fill="#fff"><path d="M184 0c-30.9 0-56.5 22.7-61.1 52.3C54.5 67 0 130 0 206.8c0 41.6 17.4 79.2 45.3 105.9-2 9.2-3.3 18.8-3.3 28.7 0 55.3 35.8 102.2 85.5 119C142.2 493 172.6 512 208 512h16c35.3 0 64-28.7 64-64V86c0-8.8-7.2-16-16-16h-16c-8.8 0-16 7.2-16 16v16c0 8.8-7.2 16-16 16s-16-7.2-16-16V64c0-35.3-28.7-64-64-64h40zm144 0c30.9 0 56.5 22.7 61.1 52.3C457.5 67 512 130 512 206.8c0 41.6-17.4 79.2-45.3 105.9 2 9.2 3.3 18.8 3.3 28.7 0 55.3-35.8 102.2-85.5 119C369.8 493 339.4 512 304 512h-16c-35.3 0-64-28.7-64-64V86c0-8.8 7.2-16 16-16h16c8.8 0 16 7.2 16 16v16c0 8.8 7.2 16 16 16s16-7.2 16-16V64c0-35.3 28.7-64 64-64h-40z"/></svg></span>
   </div>
-  <h1>RAPP Brainstem<span class="badge">virtual</span></h1>
+  <h1>RAPP Brainstem<span class="badge virtual-only">virtual</span><span class="badge local-only" style="background:rgba(63,185,80,.15);border-color:rgba(63,185,80,.4);color:#3fb950">local</span></h1>
   <div class="controls">
     <span class="dot offline" id="status-dot"></span>
     <span id="status-text">checking...</span>
@@ -1212,10 +1218,6 @@
     <button class="icon-btn" id="btn-agents" title="Manage Agents">
       <span class="icon"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v4h4v2h-4v4h-2v-4H7v-2h4z"/></svg></span>
       Agents
-    </button>
-    <button class="icon-btn" id="btn-rapps" title="Rapplications — install / uninstall / run">
-      <span class="icon">📦</span>
-      Rapps
     </button>
     <button class="icon-btn" id="btn-settings" title="Settings">
       <span class="icon"><svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M7.429 1.525a6.593 6.593 0 011.142 0c.036.003.108.036.137.146l.289 1.105c.147.56.55.967.997 1.189.174.086.341.183.501.29.417.278.97.423 1.53.27l1.102-.303c.11-.03.175.016.195.046.219.31.41.641.573.989.014.031.022.11-.059.19l-.815.806c-.411.406-.562.957-.53 1.456a4.588 4.588 0 010 .582c-.032.499.119 1.05.53 1.456l.815.806c.08.08.073.159.059.19a6.494 6.494 0 01-.573.99c-.02.029-.086.074-.195.045l-1.103-.303c-.559-.153-1.112-.008-1.529.27-.16.107-.327.204-.5.29-.449.222-.851.628-.998 1.189l-.289 1.105c-.029.11-.1.143-.137.146a6.613 6.613 0 01-1.142 0c-.036-.003-.108-.037-.137-.146l-.289-1.105c-.147-.56-.55-.967-.997-1.189a4.502 4.502 0 01-.501-.29c-.417-.278-.97-.423-1.53-.27l-1.102.303c-.11.03-.175-.016-.195-.046a6.492 6.492 0 01-.573-.989c-.014-.031-.022-.11.059-.19l.815-.806c.411-.406.562-.957.53-1.456a4.587 4.587 0 010-.582c.032-.499-.119-1.05-.53-1.456l-.815-.806c-.08-.08-.073-.159-.059-.19a6.44 6.44 0 01.573-.99c.02-.029.086-.074.195-.045l1.103.303c.559.153 1.112.008 1.529-.27.16-.107.327-.204.5-.29.449-.222.851-.628.998-1.189l.289-1.105c.029-.11.1-.143.137-.146zM8 0c-.236 0-.47.01-.701.03-.743.065-1.29.615-1.458 1.261l-.29 1.106c-.017.066-.078.158-.211.224a5.994 5.994 0 00-.668.386c-.123.082-.233.117-.3.117h-.013l-1.104-.304c-.646-.178-1.314.023-1.71.64a7.994 7.994 0 00-.573.989c-.358.658-.217 1.381.164 1.758l.816.806c.046.046.106.144.098.284a6.095 6.095 0 000 .772c.008.14-.052.238-.098.284l-.816.806c-.38.377-.522 1.1-.164 1.758.145.267.306.524.573.99.396.616 1.064.817 1.71.639l1.104-.304c.068-.019.146-.003.3.117.195.13.4.25.668.387.133.066.194.158.212.224l.289 1.106c.169.646.715 1.196 1.458 1.26a8.094 8.094 0 001.402 0c.743-.064 1.29-.614 1.458-1.26l.29-1.106c.017-.066.078-.158.211-.224a5.98 5.98 0 00.668-.386c.123-.082.233-.117.3-.117h.013l1.104.304c.646.178 1.314-.023 1.71-.64.267-.465.428-.722.573-.989.358-.658.217-1.381-.164-1.758l-.816-.806c-.046-.046-.106-.144-.098-.284a6.095 6.095 0 000-.772c-.008-.14.052-.238.098-.284l.816-.806c.38-.377.522-1.1.164-1.758a7.994 7.994 0 00-.573-.99c-.396-.616-1.064-.817-1.71-.639l-1.104.304c-.068.019-.146.003-.3-.117a5.994 5.994 0 00-.668-.387c-.133-.066-.194-.158-.212-.224L10.16 1.29C9.99.645 9.444.095 8.701.031A8.094 8.094 0 008 0zm0 11a3 3 0 100-6 3 3 0 000 6z"/></svg></span>
@@ -1319,6 +1321,7 @@
         <label>More</label>
         <div class="settings-quick-row">
           <button class="btn" id="btn-binder">📒 Binder</button>
+          <button class="btn" id="btn-rapps-from-settings">📦 Rapplications</button>
           <button class="btn" id="btn-install">⬇ Install</button>
           <button class="btn" id="btn-deploy-swarm">🐝 Deploy as Swarm</button>
         </div>
@@ -1458,14 +1461,23 @@
         await load();
       }
 
-      // Hook the header button
+      // Entry points: the old top-bar #btn-rapps (removed on this branch,
+      // left tolerant in case anyone still ships it) and the new
+      // #btn-rapps-from-settings inside the Settings aside. Either one
+      // toggles the #rapps aside open and kicks off a load().
       document.addEventListener('DOMContentLoaded', () => {
-        const btn = document.getElementById('btn-rapps');
-        if (btn) {
-          btn.addEventListener('click', () => {
-            const aside = document.getElementById('rapps');
-            const open = aside.classList.toggle('open');
-            if (open) load();
+        const open_rapps = () => {
+          const aside = document.getElementById('rapps');
+          const open = aside.classList.toggle('open');
+          if (open) load();
+        };
+        const legacy = document.getElementById('btn-rapps');
+        if (legacy) legacy.addEventListener('click', open_rapps);
+        const fromSettings = document.getElementById('btn-rapps-from-settings');
+        if (fromSettings) {
+          fromSettings.addEventListener('click', () => {
+            if (typeof closeAside === 'function') closeAside('settings');
+            open_rapps();
           });
         }
       });
@@ -1515,8 +1527,10 @@
 
   <div class="msg system welcome">
     <div class="bubble">
-      <h2>Welcome to your RAPP Brainstem (virtual)</h2>
-      <p>I'm the browser-only twin of the local brainstem. Same <code>/chat</code> envelope. Same single-file <code>*_agent.py</code> contract. Same GitHub identity as the rest of RAPP.</p>
+      <h2 class="virtual-only">Welcome to your RAPP Brainstem (virtual)</h2>
+      <h2 class="local-only">Welcome to your RAPP Brainstem</h2>
+      <p class="virtual-only">I'm the browser-only twin of the local brainstem. Same <code>/chat</code> envelope. Same single-file <code>*_agent.py</code> contract. Same GitHub identity as the rest of RAPP.</p>
+      <p class="local-only">I'm running on your machine — Flask on port 7071, powered by your GitHub Copilot subscription. Same single-file <code>*_agent.py</code> contract as the rest of RAPP. Agents run directly in the Python process here, not in the browser.</p>
       <ul>
         <li><strong>Sign in</strong> with the green button (top-right) to use your GitHub Copilot subscription.</li>
         <li><strong>Binder</strong>: tap a card → "Play to hand" to hot-load that agent so I can call it.</li>
@@ -4854,6 +4868,20 @@ function tutPrev() {
 }
 
 /* ───── Boot ─────────────────────────────────────────── */
+// Local vs. virtual mode — when this file is served by the local Flask
+// brainstem (localhost:7071 or a LAN IP), some virtual-brainstem
+// copy/features don't make sense (it's not virtual; agents run in
+// Python, not Pyodide). Tag <body> with the mode; CSS + a few
+// conditional JS paths key off it.
+const RAPP_MODE = (() => {
+  const h = location.hostname || '';
+  if (h === 'kody-w.github.io') return 'virtual';
+  // localhost, 127.0.0.1, or any LAN IP → running against a local server
+  if (/^(localhost|127\.|0\.0\.0\.0|192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/i.test(h)) return 'local';
+  return 'virtual';  // default to virtual for anything else (e.g. *.github.io mirror)
+})();
+document.body.classList.add(RAPP_MODE === 'local' ? 'is-local' : 'is-virtual');
+
 (async () => {
   loadSettings();
   await handleGitHubAuthCallback();   // pick up ?code=... after OAuth round-trip
