@@ -1279,12 +1279,13 @@
         </div>
       </div>
 
-      <div class="row">
+      <div class="row virtual-only">
         <label for="exec-mode">Execution</label>
         <select id="exec-mode">
           <option value="live">Live (Pyodide)</option>
           <option value="stub">Stub (debug)</option>
         </select>
+        <span class="hint">How agents execute in the browser twin — Live runs Python via Pyodide in-page; Stub is a debug no-op. Not shown on the local brainstem (agents run server-side there).</span>
       </div>
 
       <div class="row">
@@ -1304,7 +1305,7 @@
         </div>
       </div>
 
-      <div class="row">
+      <div class="row virtual-only">
         <label>
           <input type="checkbox" id="tether-enabled" style="vertical-align:middle;margin-right:6px">
           Tether to local brainstem
@@ -1314,7 +1315,7 @@
           <button class="btn" id="tether-test">Test</button>
         </div>
         <div id="tether-status" class="tether-stat">disabled</div>
-        <span class="hint">Routes agent execution through your local brainstem for real OS access. Install it with the one-liner from <strong>Install</strong> below, then start it with <code>brainstem</code>.</span>
+        <span class="hint">Routes agent execution through your local brainstem for real OS access. Install it with the one-liner from <strong>Install</strong> below, then start it with <code>brainstem</code>. Not shown on the local brainstem (you ARE the tether).</span>
       </div>
 
       <div class="row">
@@ -4882,6 +4883,22 @@ const RAPP_MODE = (() => {
 })();
 document.body.classList.add(RAPP_MODE === 'local' ? 'is-local' : 'is-virtual');
 
+// Mount the twin hologram IMMEDIATELY on DOMContentLoaded, before any
+// async boot steps that could throw and abort. The twin is the
+// assistant's visual presence — it should always be there, even if
+// other parts of the boot chain are still loading or have failed.
+(function mountTwinEarly(){
+  const go = () => {
+    try { if (typeof initTwinPresence === 'function') initTwinPresence(); }
+    catch (e) { console.warn('[twin] initTwinPresence failed:', e); }
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', go, { once: true });
+  } else {
+    go();
+  }
+})();
+
 (async () => {
   loadSettings();
   await handleGitHubAuthCallback();   // pick up ?code=... after OAuth round-trip
@@ -4890,9 +4907,9 @@ document.body.classList.add(RAPP_MODE === 'local' ? 'is-local' : 'is-virtual');
   if (state.settings.provider === 'copilot' && state.settings.ghuToken) fetchCopilotModels();
   else if (state.settings.provider === 'github') fetchGitHubModels();
   refreshStatus();
-  // The twin is present in the chat from the first paint — not a notification
-  // that flashes after the first turn. Mount it idle; it fills with content as
-  // turns happen.
+  // Twin was mounted earlier (see mountTwinEarly IIFE before this boot);
+  // re-call initTwinPresence() is idempotent — ensureTwinPanel() reuses
+  // the existing #twin-panel if one already exists.
   initTwinPresence();
   await bootBinder();
   // Auto-load all starter agents into the hand so the chat works immediately
