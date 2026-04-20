@@ -875,14 +875,7 @@ def web_asset_fallback(asset):
 
 @app.route("/", methods=["GET"])
 def index():
-    """Serve the rich UI (rapp_brainstem/web/index.html) when it exists —
-    same file the virtual brainstem runs, so local + virtual are one UI
-    to learn. Fall back to the legacy rapp_brainstem/index.html if
-    someone kept it around on their install."""
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    web_index = os.path.join(base_dir, "web", "index.html")
-    if os.path.isfile(web_index):
-        return send_from_directory(os.path.join(base_dir, "web"), "index.html")
     return send_from_directory(base_dir, "index.html")
 
 @app.route("/login", methods=["POST"])
