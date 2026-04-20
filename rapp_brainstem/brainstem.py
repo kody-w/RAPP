@@ -949,9 +949,9 @@ def _installed_rapps():
         if not fname.endswith("_agent.py") or fname == "basic_agent.py":
             continue
         full = os.path.join(AGENTS_PATH, fname)
-        stem = fname[:-len("_agent.py")]
+        stem = fname[:-len(".py")]
         out.append({
-            "id": stem.replace("_", ""),     # bookfactory_agent.py → bookfactory
+            "id": stem.replace("_", ""),     # execbrief_agent.py → execbriefagent
             "filename": fname,
             "path": full,
             "bytes": os.path.getsize(full) if os.path.isfile(full) else 0,
