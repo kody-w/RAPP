@@ -653,23 +653,36 @@
     border-color: #57606a;
   }
 
-  /* ── Twin — bottom-left floating portrait ── */
-  #twin-wrap {
-    position: fixed; left: 16px; bottom: 80px; z-index: 50;
-    display: none; flex-direction: column; align-items: flex-start;
-    pointer-events: none;
+  /* ── Twin — portrait in footer bar ── */
+  #twin-portrait {
+    width: 80px; height: 80px; flex-shrink: 0; cursor: pointer;
+    position: relative; display: none; border-radius: 8px;
+    background: rgba(0,0,0,.25); overflow: hidden;
   }
-  #twin-wrap.open { display: flex; }
+  #twin-portrait.active { display: block; }
+  #twin-portrait canvas { display: block; width: 80px !important; height: 80px !important; }
+  .twin-status-tag {
+    position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%);
+    font-size: 8px; color: #a78bfa; text-transform: uppercase; letter-spacing: .06em;
+    white-space: nowrap; opacity: 0.8; pointer-events: none;
+  }
 
   #twin-bubble {
-    pointer-events: auto;
-    max-width: 320px; padding: 10px 14px;
-    background: rgba(22,27,34,.92); backdrop-filter: blur(14px);
-    border: 1px solid rgba(167,139,250,.25); border-radius: 12px;
-    margin-bottom: 8px; opacity: 0; transform: translateY(8px);
-    transition: opacity .3s, transform .3s;
+    position: fixed; left: 24px; bottom: 130px; z-index: 60;
+    max-width: 340px; padding: 10px 14px;
+    background: rgba(22,27,34,.94); backdrop-filter: blur(14px);
+    border: 1px solid rgba(167,139,250,.3); border-radius: 12px;
+    opacity: 0; transform: translateY(6px); pointer-events: none;
+    transition: opacity .25s, transform .25s;
   }
-  #twin-bubble.visible { opacity: 1; transform: translateY(0); }
+  #twin-bubble.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  #twin-bubble::after {
+    content: ''; position: absolute; bottom: -6px; left: 30px;
+    width: 12px; height: 12px; background: rgba(22,27,34,.94);
+    border-right: 1px solid rgba(167,139,250,.3);
+    border-bottom: 1px solid rgba(167,139,250,.3);
+    transform: rotate(45deg);
+  }
 
   .twin-body { font-size: 12px; line-height: 1.5; color: #cdd6e3; }
   .twin-body p { margin: 0 0 4px; }
@@ -678,7 +691,6 @@
 
   .twin-actions { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
   .twin-action {
-    pointer-events: auto;
     display: inline-flex; align-items: center; gap: 4px;
     padding: 4px 10px; border-radius: 999px; font-size: 10px;
     background: rgba(167,139,250,.1); border: 1px solid rgba(167,139,250,.35);
@@ -689,23 +701,14 @@
   .twin-action-fail { background: rgba(248,113,113,.12); border-color: rgba(248,113,113,.4); color: #fca5a5; pointer-events: none; }
   .twin-action .chip-glyph { font-size: 12px; }
 
-  #twin-portrait {
-    pointer-events: auto; cursor: pointer;
-    width: 120px; height: 150px; position: relative;
-  }
-  #twin-portrait canvas { display: block; width: 100%; height: 100%; }
-  .twin-status-tag {
-    position: absolute; bottom: -2px; left: 50%; transform: translateX(-50%);
-    font-size: 9px; color: #a78bfa; text-transform: uppercase; letter-spacing: .06em;
-    white-space: nowrap; opacity: 0.7;
-  }
-
   @keyframes twin-highlight-flash {
     0%, 100% { background: transparent; }
     50% { background: rgba(167,139,250,.2); }
   }
 
-  body.light-mode #twin-bubble { background: rgba(246,248,250,.95); border-color: rgba(124,58,237,.2); }
+  body.light-mode #twin-portrait { background: rgba(0,0,0,.06); }
+  body.light-mode #twin-bubble { background: rgba(246,248,250,.96); border-color: rgba(124,58,237,.2); }
+  body.light-mode #twin-bubble::after { background: rgba(246,248,250,.96); border-color: rgba(124,58,237,.2); }
   body.light-mode .twin-body { color: #24292e; }
   body.light-mode .twin-body strong { color: #7c3aed; }
   body.light-mode .twin-action { background: rgba(124,58,237,.08); border-color: rgba(124,58,237,.3); color: #6d28d9; }
@@ -957,15 +960,9 @@
   </div>
 </div>
 
-<div id="twin-wrap" data-mood="present">
-  <div id="twin-bubble">
-    <div class="twin-body"></div>
-    <div class="twin-actions"></div>
-  </div>
-  <div id="twin-portrait" onclick="toggleTwinBubble()">
-    <div id="twin-hologram"></div>
-    <div class="twin-status-tag">present</div>
-  </div>
+<div id="twin-bubble">
+  <div class="twin-body"></div>
+  <div class="twin-actions"></div>
 </div>
 
 <footer>
@@ -992,6 +989,10 @@
     </div>
   </div>
   <div class="input-row">
+    <div id="twin-portrait" data-mood="present" onclick="toggleTwinBubble()">
+      <div id="twin-hologram"></div>
+      <div class="twin-status-tag">present</div>
+    </div>
     <textarea id="input" rows="1" placeholder="Message brainstem..." autocomplete="off"></textarea>
     <button id="send" onclick="sendMessage()">Send</button>
   </div>
@@ -2497,16 +2498,14 @@
   }
 
   function showTwin() {
-    const w = document.getElementById('twin-wrap');
-    w.style.display = 'flex';
-    requestAnimationFrame(() => w.classList.add('open'));
+    const p = document.getElementById('twin-portrait');
+    p.classList.add('active');
     if (!_holo) setTimeout(initHologram, 50);
   }
 
   function hideTwin() {
-    const w = document.getElementById('twin-wrap');
-    w.classList.remove('open');
-    setTimeout(() => { if (!w.classList.contains('open')) w.style.display = 'none'; }, 300);
+    document.getElementById('twin-portrait').classList.remove('active');
+    document.getElementById('twin-bubble').classList.remove('visible');
   }
 
   function toggleTwinBubble() {
@@ -2546,11 +2545,11 @@
   }
 
   function renderTwin(raw) {
-    const wrap = document.getElementById('twin-wrap');
+    const portrait = document.getElementById('twin-portrait');
     const { text, probes, calibrations, actions } = parseTwinTags(raw);
     const mood = detectMood(text, calibrations);
     _tw.lastMood = mood;
-    wrap.dataset.mood = mood;
+    portrait.dataset.mood = mood;
     document.querySelector('.twin-status-tag').textContent = MOOD_LABEL[mood] || 'present';
     if (_holo) { _holo.setMood(mood); _holo.speak(); }
 
@@ -2575,7 +2574,7 @@
       actBox.appendChild(btn);
     });
 
-    if (twinMode && !wrap.classList.contains('open')) showTwin();
+    if (twinMode && !portrait.classList.contains('active')) showTwin();
   }
 
   function runTwinAction(action, btn) {
@@ -2621,9 +2620,9 @@
 
   function resetTwin() {
     _tw.history = []; _tw.lastMood = 'present';
-    const wrap = document.getElementById('twin-wrap');
-    if (!wrap) return;
-    wrap.dataset.mood = 'present';
+    const p = document.getElementById('twin-portrait');
+    if (!p) return;
+    p.dataset.mood = 'present';
     document.querySelector('.twin-status-tag').textContent = 'present';
     document.querySelector('#twin-bubble .twin-body').innerHTML = '';
     document.querySelector('#twin-bubble .twin-actions').innerHTML = '';
@@ -2647,11 +2646,11 @@
     const container = document.getElementById('twin-hologram');
     if (!container || !window.THREE || _holo) return;
 
-    const W = 120, H = 150;
+    const W = 80, H = 80;
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(32, W / H, 0.1, 50);
-    camera.position.set(0, 2.4, 4.8);
-    camera.lookAt(0, 2.1, 0);
+    const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 50);
+    camera.position.set(0, 2.55, 4.2);
+    camera.lookAt(0, 2.3, 0);
 
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     renderer.setSize(W, H);
@@ -2794,9 +2793,9 @@
 
   // Init hologram when twin becomes visible
   const _holoObs = new MutationObserver(() => {
-    if (document.getElementById('twin-wrap')?.classList.contains('open') && !_holo) setTimeout(initHologram, 50);
+    if (document.getElementById('twin-portrait')?.classList.contains('active') && !_holo) setTimeout(initHologram, 50);
   });
-  _holoObs.observe(document.getElementById('twin-wrap'), { attributes: true, attributeFilter: ['class'] });
+  _holoObs.observe(document.getElementById('twin-portrait'), { attributes: true, attributeFilter: ['class'] });
 </script>
 </body>
 </html>
