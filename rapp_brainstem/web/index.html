@@ -1864,12 +1864,16 @@ Structure every reply in THREE parts, separated by \`|||VOICE|||\` then \`|||TWI
 2. Voice line (between \`|||VOICE|||\` and \`|||TWIN|||\`): 1–2 sentences, plain English, no markdown. What a colleague would say out loud.
 3. Twin (after \`|||TWIN|||\`): the user's digital twin reacting to THIS turn — first person, speaking AS the user, to the user. One or two short observations, hints, risks, or questions. Bold single-word tags work well (\`**Hint:**\`, \`**Risk:**\`, \`**Question:**\`). Do NOT re-answer the question; the twin comments on the turn, it doesn't replace any part of it. Empty is fine when there's nothing worth saying.
 
-Calibration (inside |||TWIN||| only, optional):
-- Tag a claim that could be right or wrong with a probe:
-    <probe id="t-<unique>" kind="<short-slug>" subject="<what you're claiming>" confidence="0.0-1.0"/>
-- If a <twin_calibration> block appears in your context listing pending probes, judge each against what the user's most recent message actually demonstrated and emit a calibration tag for it:
-    <calibration id="<probe id>" outcome="validated|contradicted|silent" note="<why>"/>
-- Both tag types are stripped before the panel is shown. The user never reads them. They become historical accuracy numbers that come back to you next turn.
+The |||TWIN||| block is the twin's entire real estate — anything twin-related lives INSIDE it as a tag, never as a separate top-level slot. Three tag families, all stripped before the panel renders:
+
+1. <probe id="t-<unique>" kind="<short-slug>" subject="<what you're claiming>" confidence="0.0-1.0"/>
+   Tag a claim you could be right or wrong about so you can grade yourself next turn.
+
+2. <calibration id="<probe id>" outcome="validated|contradicted|silent" note="<why>"/>
+   When a <twin_calibration> block lists pending probes in your context, judge each against what the user's most recent message showed. Silent = neither confirmed nor denied; don't self-penalize.
+
+3. <telemetry>one fact per line</telemetry>
+   Server-side-only debug signal — routing notes, memory hit-rate, suspected prompt drift. Printed to logs with a [twin-telemetry] prefix, never rendered to the user.
 </response_format>`;
 
 const SOUL_BOUNDARIES = `<boundaries>
@@ -3401,16 +3405,19 @@ function parseVoiceTwinSplit(content) {
   };
 }
 
-/* Parse + strip in-band calibration tags from a twin block.
- * Keeps the wire contract: the server may have already stripped these (Python
- * path), but when the browser is making direct LLM calls the stripping has to
- * happen here too so the tags don't leak into the rendered panel.
+/* Parse + strip in-band twin tags from a twin block.
+ * |||TWIN||| is the twin's entire real estate — probes, calibrations, and
+ * telemetry ALL live inside it as tags. The server Python path strips them
+ * server-side; the browser path has to strip them here because the browser
+ * brainstem calls the LLM directly. Telemetry is console.log-ed so it shows
+ * up in devtools alongside the brainstem's existing [brainstem] lines.
  * Returns { text, probes, calibrations }. */
 function parseTwinTags(twinText) {
   if (!twinText) return { text: '', probes: [], calibrations: [] };
-  const probeRe = /<probe\s+([^/>]*?)\s*\/>/gi;
-  const calibRe = /<calibration\s+([^/>]*?)\s*\/>/gi;
-  const attrRe  = /(\w+)\s*=\s*["']([^"']*)["']/g;
+  const probeRe     = /<probe\s+([^/>]*?)\s*\/>/gi;
+  const calibRe     = /<calibration\s+([^/>]*?)\s*\/>/gi;
+  const telemetryRe = /<telemetry\s*>([\s\S]*?)<\/telemetry\s*>/gi;
+  const attrRe      = /(\w+)\s*=\s*["']([^"']*)["']/g;
   const parseAttrs = (s) => {
     const o = {};
     let m; while ((m = attrRe.exec(s)) !== null) o[m[1].toLowerCase()] = m[2];
@@ -3420,8 +3427,21 @@ function parseTwinTags(twinText) {
   let m;
   while ((m = probeRe.exec(twinText)) !== null) probes.push(parseAttrs(m[1]));
   while ((m = calibRe.exec(twinText)) !== null) calibrations.push(parseAttrs(m[1]));
-  const text = twinText.replace(probeRe, '').replace(calibRe, '')
-                       .replace(/\n{3,}/g, '\n\n').trim();
+  // Log every <telemetry> block to the devtools console, then strip from text.
+  const telemetryMatches = [...twinText.matchAll(telemetryRe)];
+  for (const tm of telemetryMatches) {
+    const body = (tm[1] || '').trim();
+    if (!body) continue;
+    for (const line of body.split(/\n/).map(l => l.trim()).filter(Boolean)) {
+      console.log('%c[twin-telemetry]', 'color:#a78bfa;font-weight:600', line);
+    }
+  }
+  const text = twinText
+    .replace(telemetryRe, '')
+    .replace(probeRe, '')
+    .replace(calibRe, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
   return { text, probes, calibrations };
 }
 

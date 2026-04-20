@@ -173,18 +173,13 @@ def _ensure_string_content(message):
 
 def _parse_voice_split(content):
     """Split on |||VOICE||| then |||TWIN|||. Returns (formatted, voice, twin).
-    Every delimiter is optional:
-      - No |||VOICE|||: voice is derived from first sentence, twin is "".
-      - |||VOICE||| only: twin is "".
-      - Both present: three-way split in order.
-    |||TWIN||| MUST come after |||VOICE|||. If the model emits TWIN before
-    VOICE, that's an authoring bug — we treat the whole thing as the main
-    reply (the twin text will leak into `formatted`)."""
+    Every delimiter is optional. |||TWIN||| is the twin's entire real estate —
+    anything the twin emits (commentary, <probe/>, <calibration/>, <telemetry>)
+    lives inside it. Nothing twin-related leaks outside its block."""
     if not content:
         return "", "", ""
-    main, _, rest = content.partition("|||VOICE|||")
-    if not _:
-        # No VOICE delimiter — derive a voice line, no twin.
+    main, sep, rest = content.partition("|||VOICE|||")
+    if not sep:
         formatted = content.strip()
         sentence = formatted.split(".")[0] if formatted else "OK."
         voice = re.sub(r"\*\*|`|#|>|---", "", sentence).strip()
@@ -372,6 +367,15 @@ CALIBRATION (optional, in the |||TWIN||| block only):
 - Both tag types are stripped before the user sees the panel. The user never reads the tags.
   Only your historical accuracy numbers come back to you in future turns.
 
+TELEMETRY (optional, in the |||TWIN||| block only):
+- When the twin wants to surface a server-side observation for the operator —
+  a routing note, a memory hit-rate comment, a suspected prompt drift — wrap it in:
+    <telemetry>one fact per line, plain text</telemetry>
+- The block is printed to the server logs with a [twin-telemetry] prefix and
+  stripped before the panel is rendered. The user never reads it.
+- This is debug signal, not commentary. Keep it terse. Leave it out when there's
+  nothing worth logging this turn.
+
 Order is fixed: |||VOICE||| always comes before |||TWIN|||.
 
 EXAMPLE:
@@ -433,7 +437,9 @@ Revenue's up 12 percent and customers are happier.
     # ── run the chat loop ──
 
     def run(self, user_input, conversation_history, max_rounds=4):
-        """Returns (formatted_response, voice_response, twin_response, agent_logs_str)."""
+        """Returns (formatted_response, voice_response, twin_response, agent_logs_str).
+        Any <telemetry> tags inside |||TWIN||| are printed to server logs
+        (prefixed [twin-telemetry]) and stripped before the twin renders."""
         shared_mem, user_mem = self._recall_memory()
         messages = [
             _ensure_string_content({"role": "system",
@@ -496,14 +502,20 @@ Revenue's up 12 percent and customers are happier.
         return formatted, voice, twin, "\n".join(agent_logs)
 
     def _log_twin_tags(self, twin_text: str) -> str:
-        """Strip in-band <probe/> + <calibration/> tags from the twin block,
-        append them to the calibration log, and return the cleaned text."""
+        """Extract <telemetry>, <probe/>, <calibration/> from the twin block.
+        Telemetry lines are written to server logs; probes + calibrations are
+        appended to the calibration JSONL. All three tag types are stripped
+        from the returned text so nothing twin-auxiliary leaks to the user."""
         if not _twin or not twin_text:
             return twin_text
         try:
-            cleaned, probes, calibrations = _twin.parse_twin_tags(twin_text)
+            cleaned, probes, calibrations, telemetry = _twin.parse_twin_tags(twin_text)
             if probes or calibrations:
                 _twin.log_events(self._calibration_root(), probes, calibrations)
+            for line in (telemetry or "").splitlines():
+                line = line.strip()
+                if line:
+                    logging.info("[twin-telemetry] %s", line)
             return cleaned
         except Exception:
             return twin_text

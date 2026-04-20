@@ -44,9 +44,9 @@ MAX_TOOL_ROUNDS = 4
 
 
 def _parse_voice_twin_split(content: str):
-    """Split the LLM output on |||VOICE||| then |||TWIN|||.
-    Returns (main, voice, twin). Every delimiter is optional; missing ones
-    yield empty strings downstream. Parallel to rapp_swarm/_parse_voice_split."""
+    """Split on |||VOICE||| then |||TWIN|||. Returns (main, voice, twin).
+    |||TWIN||| is the twin's entire real estate — probes, calibrations, and
+    telemetry all live INSIDE it as tags that get stripped before render."""
     if not content:
         return "", "", ""
     main, sep, rest = content.partition("|||VOICE|||")
@@ -54,6 +54,18 @@ def _parse_voice_twin_split(content: str):
         return content.strip(), "", ""
     voice, _, twin = rest.partition("|||TWIN|||")
     return main.strip(), voice.strip(), twin.strip()
+
+
+def _emit_telemetry(telemetry: str) -> None:
+    """Print twin-authored telemetry to stdout, grouped with the existing
+    `[brainstem] …` log lines. Server-only — never returned to the client."""
+    t = (telemetry or "").strip()
+    if not t:
+        return
+    for line in t.splitlines():
+        line = line.strip()
+        if line:
+            print(f"[twin-telemetry] {line}", flush=True)
 
 
 def _calibration_root(store, swarm_guid, extra_hint=None):
@@ -168,13 +180,16 @@ def chat_with_swarm(store, swarm_guid: str, user_input: str,
         if not tool_calls or rounds >= MAX_TOOL_ROUNDS:
             raw = assistant.get("content") or ""
             main, voice, twin = _parse_voice_twin_split(raw)
-            # Extract + log <probe/> and <calibration/> tags; strip from render.
+            # Extract twin-authored tags: <probe/>, <calibration/>, <telemetry>.
+            # Probes + calibrations go to the calibration log; telemetry to
+            # server stdout; everything else stays as the twin panel text.
             if _twin:
-                twin, probes, calibrations = _twin.parse_twin_tags(twin)
+                twin, probes, calibrations, telemetry = _twin.parse_twin_tags(twin)
+                _emit_telemetry(telemetry)
                 try:
                     _twin.log_events(calib_root, probes, calibrations)
                 except OSError:
-                    pass  # calibration is best-effort; never fail the reply
+                    pass  # best-effort; never fail the reply for logging
             return {
                 "response": main,
                 "voice_response": voice,
@@ -274,6 +289,9 @@ def chat_with_binder(store, agents_dir, user_input: str,
         if not tool_calls or rounds >= MAX_TOOL_ROUNDS:
             raw = assistant.get("content") or ""
             main, voice, twin = _parse_voice_twin_split(raw)
+            if _twin:
+                twin, _probes, _calibs, telemetry = _twin.parse_twin_tags(twin)
+                _emit_telemetry(telemetry)
             return {
                 "response":       main,
                 "voice_response": voice,

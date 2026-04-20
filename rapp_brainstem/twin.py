@@ -27,8 +27,13 @@ from pathlib import Path
 
 LOG_FILENAME = ".twin_calibration.jsonl"
 
+# In-band vocabulary — all authored by the twin, all live INSIDE |||TWIN|||.
+# |||TWIN||| is the twin's entire real estate. Nothing twin-related leaks
+# outside its block — telemetry, probes, and calibrations are all tags the
+# server strips before anyone reads the twin panel.
 _PROBE_RE       = re.compile(r"<probe\s+([^/>]*?)\s*/>", re.IGNORECASE)
 _CALIBRATION_RE = re.compile(r"<calibration\s+([^/>]*?)\s*/>", re.IGNORECASE)
+_TELEMETRY_RE   = re.compile(r"<telemetry\s*>(.*?)</telemetry\s*>", re.IGNORECASE | re.DOTALL)
 _ATTR_RE        = re.compile(r"""(\w+)\s*=\s*["']([^"']*)["']""")
 
 
@@ -37,16 +42,21 @@ def _parse_attrs(s: str) -> dict:
 
 
 def parse_twin_tags(twin_text: str):
-    """Extract <probe/> and <calibration/> tags from a twin block.
-    Returns (cleaned_text, probes, calibrations)."""
+    """Extract <probe/>, <calibration/>, and <telemetry>…</telemetry> blocks
+    from a twin block. Returns (cleaned_text, probes, calibrations, telemetry_text).
+    `telemetry_text` is the concatenated contents of every <telemetry> block
+    (for the server to print to logs); tags are stripped from `cleaned_text`
+    so the twin panel never renders them."""
     if not twin_text:
-        return "", [], []
+        return "", [], [], ""
     probes = [_parse_attrs(m.group(1)) for m in _PROBE_RE.finditer(twin_text)]
     calibs = [_parse_attrs(m.group(1)) for m in _CALIBRATION_RE.finditer(twin_text)]
-    cleaned = _CALIBRATION_RE.sub("", _PROBE_RE.sub("", twin_text))
-    # Collapse any extra blank lines that the tag removal left behind.
+    telemetry_chunks = [m.group(1).strip() for m in _TELEMETRY_RE.finditer(twin_text)]
+    telemetry = "\n".join(c for c in telemetry_chunks if c)
+    cleaned = _TELEMETRY_RE.sub("", twin_text)
+    cleaned = _CALIBRATION_RE.sub("", _PROBE_RE.sub("", cleaned))
     cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
-    return cleaned, probes, calibs
+    return cleaned, probes, calibs, telemetry
 
 
 def _now_iso() -> str:
