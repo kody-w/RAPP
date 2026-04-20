@@ -769,17 +769,19 @@
 
   /* Speech bubble to the LEFT of the globe, anchored to the twin-slot
      so it moves with the footer. Tail points right — at the globe —
-     so it visibly belongs to the globe. */
+     so it visibly belongs to the globe. Clamped to the input-row
+     height so it never climbs above the textbox's top edge; long
+     content scrolls inside the bubble. */
   #twin-bubble {
     position: absolute; right: calc(100% + 14px); bottom: 0;
-    width: 260px; padding: 12px 14px;
+    width: 260px; max-height: 90px; padding: 10px 12px;
     background: rgba(22,27,34,.94); backdrop-filter: blur(14px);
     border: 1px solid rgba(167,139,250,.3); border-radius: 12px;
     opacity: 0; transform: translateX(6px); pointer-events: none;
     transition: opacity .25s, transform .25s;
-    text-align: left;
+    text-align: left; overflow-y: auto;
     box-shadow: 0 12px 32px rgba(0,0,0,.35);
-    z-index: 60;
+    z-index: 60; font-size: 12px;
   }
   #twin-bubble.visible { opacity: 1; transform: translateX(0); pointer-events: auto; }
   #twin-bubble::after {
@@ -792,7 +794,7 @@
   /* Narrow viewports: drop to under the input row so the bubble
      doesn't run off the left edge. */
   @media (max-width: 900px) {
-    #twin-bubble { position: fixed; left: 12px; right: auto; bottom: 12px; }
+    #twin-bubble { position: fixed; left: 12px; right: auto; bottom: 12px; max-height: 180px; }
     #twin-bubble::after { display: none; }
   }
 
