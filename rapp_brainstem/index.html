@@ -774,7 +774,7 @@
      content scrolls inside the bubble. */
   #twin-bubble {
     position: absolute; right: calc(100% + 14px); bottom: 0;
-    width: 260px; max-height: 90px; padding: 10px 12px;
+    width: 280px; max-height: 140px; padding: 10px 12px;
     background: rgba(22,27,34,.94); backdrop-filter: blur(14px);
     border: 1px solid rgba(167,139,250,.3); border-radius: 12px;
     opacity: 0; transform: translateX(6px); pointer-events: none;
@@ -2688,8 +2688,7 @@
     if (!body) return;
     if (body.innerHTML.trim()) return;
     body.innerHTML =
-      '<p><strong>Your twin, present.</strong></p>' +
-      '<p>I\'m watching alongside you. Say something in the chat and I\'ll react — flagging risks, asking questions, or suggesting next moves as buttons here.</p>';
+      '<p>Say something — I\'ll flag risks, ask questions, and suggest moves here.</p>';
   }
 
   function toggleTwinBubble() {
