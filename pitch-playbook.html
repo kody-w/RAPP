@@ -167,6 +167,7 @@
     <li><a href="#execbrief">The Demo Swarm: ExecBrief Pipeline</a></li>
     <li><a href="#demo-script">3-Minute Video Script</a></li>
     <li><a href="#agent-management">Agent Management: Enable/Disable Toggle</a></li>
+    <li><a href="#the-dropper">The Ultimate Dropper: Teams + Virtual Brainstem</a></li>
     <li><a href="#run-it">How to Run the Demo</a></li>
   </ol>
 </div>
@@ -362,8 +363,70 @@
 
 <p style="font-size:12px;color:var(--muted);margin-top:8px">One click to toggle. No file deletion. Non-destructive and reversible. State persists across restarts.</p>
 
-<!-- ── 8. Run It ── -->
-<h2 id="run-it"><span class="num">08</span>How to Run the Demo</h2>
+<!-- ── 8. The Dropper ── -->
+<h2 id="the-dropper"><span class="num">08</span>The Ultimate Dropper: Teams + Virtual Brainstem</h2>
+
+<p>This is the closer. After the demo, you hand the executive the agent itself &mdash; not a slide deck, not a doc, not a link to a repo. <strong>The actual agent as a single .py file.</strong> They drop it into a browser and it works.</p>
+
+<div class="card" style="border-color:var(--purple)">
+  <div class="label" style="color:var(--purple-2)">The play</div>
+  <h3>Post the file. Post the link. They're running it in 30 seconds.</h3>
+  <ol style="margin-top:12px">
+    <li><strong>Export</strong> &mdash; from the agents panel, click Export on <code>execbrief_agent.py</code>. You now have the singleton file.</li>
+    <li><strong>Post to Teams</strong> &mdash; drop the <code>.py</code> file directly into the Teams chat with the executive. One file, 489 lines, everything inlined.</li>
+    <li><strong>Post the link</strong> &mdash; paste the virtual brainstem URL alongside it:
+      <pre class="cmd" style="margin:8px 0">https://kody-w.github.io/RAPP/rapp_brainstem/web/</pre>
+    </li>
+    <li><strong>They open &amp; drop</strong> &mdash; the executive opens the virtual brainstem in their browser, opens the Agents drawer, and drops <code>execbrief_agent.py</code> onto the drop zone. It loads instantly.</li>
+    <li><strong>They run it</strong> &mdash; they can see the agent, its metadata, its capabilities. To execute the full pipeline, they run the one-liner to start a local brainstem (the tether lights up green) and the browser routes execution to local Python.</li>
+  </ol>
+</div>
+
+<div class="pipeline" style="margin:24px 0">
+  <div class="step" style="border-color:var(--purple)">
+    <div class="emoji">📤</div>
+    <div class="name">Export</div>
+    <div class="role">Your brainstem</div>
+  </div>
+  <div class="arrow">&#x2192;</div>
+  <div class="step" style="border-color:var(--purple)">
+    <div class="emoji">💬</div>
+    <div class="name">Teams</div>
+    <div class="role">Post the .py file</div>
+  </div>
+  <div class="arrow">&#x2192;</div>
+  <div class="step" style="border-color:var(--purple)">
+    <div class="emoji">🌐</div>
+    <div class="name">Virtual Brainstem</div>
+    <div class="role">Browser drop zone</div>
+  </div>
+  <div class="arrow">&#x2192;</div>
+  <div class="step" style="border-color:var(--green)">
+    <div class="emoji">🧠</div>
+    <div class="name">Running</div>
+    <div class="role">Their machine</div>
+  </div>
+</div>
+
+<h3>Why this lands</h3>
+<ul>
+  <li><strong>No repo to clone.</strong> No npm install. No Docker. No YAML. One file in a chat message.</li>
+  <li><strong>Immediate inspection.</strong> The virtual brainstem parses the agent on drop &mdash; shows its name, parameters, SOUL prompts, capabilities. The executive can read exactly what it does before running it.</li>
+  <li><strong>Same file, any tier.</strong> The file they just received in Teams is the same file that runs in Azure Functions and Copilot Studio. That's the portability guarantee in action.</li>
+  <li><strong>The proof is the experience.</strong> You don't pitch shareability with a slide. You pitch it by sharing.</li>
+</ul>
+
+<div class="highlight">
+  <p><strong>The punchline for the executive:</strong> "I just sent you a .py file in Teams. You dropped it in a browser. It works. That's what agent sharing should feel like at Microsoft. That's what RAPP does."</p>
+</div>
+
+<h3>One-liner for full execution</h3>
+<p>If the executive wants to run the full pipeline (not just inspect), they paste one command. The virtual brainstem detects the local tether and routes agent execution to real Python.</p>
+<pre class="cmd"><span class="dollar">$ </span>curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash</pre>
+<p style="font-size:12px;color:var(--muted)">Installs prereqs, clones, sets up venv, authenticates via GitHub Copilot, launches on :7071. The virtual brainstem's tether pill turns green. ExecBrief runs locally.</p>
+
+<!-- ── 9. Run It ── -->
+<h2 id="run-it"><span class="num">09</span>How to Run the Demo</h2>
 
 <h3>Fresh install (if needed)</h3>
 <pre class="cmd"><span class="dollar">$ </span>curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash</pre>
