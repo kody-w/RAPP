@@ -2503,6 +2503,9 @@
     const p = document.getElementById('twin-portrait');
     p.classList.add('active');
     if (!_holo) setTimeout(initHologram, 50);
+    // Seed the bubble with a default message so clicking the portrait
+    // always reveals something useful, even on a fresh session.
+    ensureBubbleContent();
   }
 
   function hideTwin() {
@@ -2510,8 +2513,21 @@
     document.getElementById('twin-bubble').classList.remove('visible');
   }
 
+  // If the bubble has no twin reply yet, inject a friendly "I'm here"
+  // placeholder so clicking the portrait isn't a dead end. Called from
+  // showTwin() and toggleTwinBubble().
+  function ensureBubbleContent() {
+    const body = document.querySelector('#twin-bubble .twin-body');
+    if (!body) return;
+    if (body.innerHTML.trim()) return;
+    body.innerHTML =
+      '<p><strong>Your twin, present.</strong></p>' +
+      '<p>I\'m watching alongside you. Say something in the chat and I\'ll react — flagging risks, asking questions, or suggesting next moves as buttons here.</p>';
+  }
+
   function toggleTwinBubble() {
     const b = document.getElementById('twin-bubble');
+    ensureBubbleContent();
     b.classList.toggle('visible');
   }
 
