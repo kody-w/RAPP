@@ -1744,7 +1744,6 @@
 
   function useStarter(text) {
     document.getElementById('input').value = text;
-    document.getElementById('starter-prompts').classList.add('hidden-prompts');
     sendMessage();
   }
 
@@ -1755,8 +1754,8 @@
 
     clog('chat.send', { input_len: text.length, history_len: history.length });
 
-    // Immediately hide prompts on any send
-    document.getElementById('starter-prompts')?.classList.add('hidden-prompts');
+    // Mouth row stays visible — static pills + twin's dynamic ✨
+    // suggestions are always there for "what could I say next?"
 
     input.value = '';
     input.style.height = 'auto';
