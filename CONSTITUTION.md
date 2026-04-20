@@ -108,7 +108,9 @@ sub-capability of something that already has a home.
 
 ---
 
-## Article III — Capabilities Are Files
+## Article III — Capabilities Are Files (Single File Agents)
+
+### III.1 — The default answer
 
 When a user asks for a new ability, the answer is almost always:
 
@@ -129,6 +131,92 @@ Single-file agents are:
   brainstem doesn't.
 
 The brainstem staying small is how the agents stay cheap.
+
+### III.2 — The minimum bar (shared with SPEC §5)
+
+A RAPP agent is a single file that:
+
+1. Is named `*_agent.py` (or `*Agent.ts`) and lives in an `agents/` folder.
+2. Defines a class extending `BasicAgent`.
+3. Sets `self.name` — the tool name the LLM sees.
+4. Sets `self.metadata` — an OpenAI-style function-calling JSON schema.
+5. Implements `perform(**kwargs) -> str` — the tool body.
+
+Nothing else is required. No manifest, no package identity, no schema
+tag. A file that meets these five points is a fully valid RAPP agent and
+MUST run in any v1-compliant runtime. Registry additions (`__manifest__`,
+`@publisher/slug`, semver, tags) are optional — they buy admission to
+RAR, not the right to exist.
+
+### III.3 — The portability guarantee
+
+**An agent file that runs in Tier 1 must run unmodified in Tier 2 and
+Tier 3.** If you make a change that requires agents to be edited before
+they work on a different tier, the change is wrong. Write the shim into
+the runtime, not into every agent file.
+
+This is the single hardest promise in the whole spec. Protect it.
+
+### III.4 — `data_slush` is the wire between agents
+
+When an agent's work feeds the next agent in a chain, its `perform()`
+returns a JSON string shaped like:
+
+```json
+{
+  "status": "success",
+  "<payload_key>": "<human-facing result>",
+  "data_slush": { "<signal_key>": "<curated value for next agent>" }
+}
+```
+
+`data_slush` lands automatically in the next agent's `self.context.slush`
+— no LLM interpretation between steps. This is how deterministic
+pipelines compose. If you feel tempted to introduce a message bus or a
+shared state store between agents, re-read SPEC §5.4 and §6: the slush
+is the wire, and it is enough.
+
+### III.5 — Agents MUST NOT
+
+- Require a build step.
+- Import sibling files within the same `agents/` directory (each agent
+  is independent and movable).
+- Depend on any framework beyond `BasicAgent`.
+- Mutate the runtime's global state outside what `perform()` returns.
+- Require configuration outside `self.metadata` or environment variables.
+
+Agents MAY make HTTP calls, hit databases, shell out, write files, call
+other LLMs. They MAY declare pip dependencies at the top of the file —
+the runtime auto-installs missing ones. Freedom inside the file;
+discipline at the boundary.
+
+### III.6 — Rapplications: composed pipelines, still one file
+
+A **rapplication** is what you get when you build a pipeline out of
+several cooperating agents and then collapse it to a single deployable
+file via the double-jump loop. The multi-file form under
+`rapp_store/<name>/source/` is the authoring surface; the one-file
+artifact under `rapp_store/<name>/singleton/` is the shipped unit.
+
+The rule: **the ship-time artifact is still one file.** A rapplication
+that needs two files in production is not a rapplication — it's a
+library. The source tree has as many files as it needs; the singleton
+has one. If the collapse tool stops being able to produce a singleton,
+the rapplication has outgrown the pattern.
+
+### III.7 — Where agents live in this repo
+
+| Path | What it holds |
+|------|---------------|
+| `rapp_brainstem/agents/` | Default agents shipped with the brainstem (starter set + essentials like memory). |
+| `rapp_brainstem/agents/experimental/` | In-flight agents the auto-loader ignores. Hand-load them when you're ready. |
+| `rapp_store/<rapp>/source/` | Rapplication source — multi-file, editable, runs through the double-jump loop. |
+| `rapp_store/<rapp>/singleton/` | Collapsed single-file ship artifact for the rapplication. |
+| `rapp_store/<rapp>/tests/` | Tests for the singleton and the source agents. Use real storage, not mocks. |
+
+User-authored agents live in the user's own workspace, not this repo.
+This repo ships the starter set + the store; everything else is
+downstream.
 
 ---
 

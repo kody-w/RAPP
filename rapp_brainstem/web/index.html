@@ -3489,28 +3489,95 @@ function detectTwinMood(text, calibrations) {
   return 'thinking';
 }
 
+/* The twin is a persistent companion in the chat — not a per-turn flash.
+ * It mounts on page load in an idle state (present, sphere pulsing gently)
+ * and fills with reactions as turns happen. Across a session we keep a
+ * small rolling log of recent reactions so the user can feel continuity:
+ * the twin was there a few turns ago, is still there, has been watching. */
+const TWIN_HISTORY_LIMIT = 4;
+const _twinState = { history: [], lastMood: 'present' };
+
+/* Mount the panel on boot in a quiet "present" state. Called once from the
+ * boot path; subsequent renders come from renderTwinPanel(). */
+function initTwinPresence() {
+  const host = ensureTwinPanel();
+  host.dataset.mood = 'present';
+  const status = host.querySelector('.twin-status');
+  if (status) status.textContent = 'present';
+  const body = host.querySelector('.twin-body');
+  if (body) body.innerHTML =
+    '<div class="twin-silent">I\'m here. Say something and I\'ll watch with you.</div>';
+  renderTwinHistory(host);
+  host.style.display = 'flex';
+}
+
 /* Render the twin as a holographic side panel: animated sphere + markdown.
  * The sphere's mood color + pulse rhythm is the "body language" the user
- * can read at a glance. Ambient, collapsible, re-rendered per turn.
- * Actions render as accept-chips below the text — the twin suggests, the
- * user clicks, the UI does exactly what the user could have done manually. */
+ * can read at a glance. Per turn we push the current reaction into a
+ * rolling history so recent turns stay visible, fading by age. Actions
+ * render as accept-chips below — the twin suggests, the user clicks. */
 function renderTwinPanel(markdown) {
   const { text, probes, calibrations, actions } = parseTwinTags(markdown);
   const mood = detectTwinMood(text, calibrations);
   const host = ensureTwinPanel();
   host.dataset.mood = mood;
+  _twinState.lastMood = mood;
   const body = host.querySelector('.twin-body');
   const status = host.querySelector('.twin-status');
   status.textContent = MOOD_LABEL[mood] || 'observing';
+
   if (!text) {
+    // No current reaction — fall back to a quiet "still here" state but keep
+    // the history visible so the twin still feels present. This prevents the
+    // panel from feeling empty/broken on silent turns.
     body.innerHTML = '<div class="twin-silent">…</div>';
-  } else if (typeof renderMarkdown === 'function') {
-    body.innerHTML = renderMarkdown(text);
   } else {
-    body.textContent = text;
+    body.innerHTML = (typeof renderMarkdown === 'function')
+      ? renderMarkdown(text)
+      : escapeHtml(text);
+    // Push to rolling history (newest first). Skip if it's a duplicate of
+    // the previous entry (the model sometimes repeats itself turn-over-turn).
+    const prev = _twinState.history[0];
+    if (!prev || prev.text !== text) {
+      _twinState.history.unshift({ text, mood, at: Date.now() });
+      if (_twinState.history.length > TWIN_HISTORY_LIMIT) _twinState.history.length = TWIN_HISTORY_LIMIT;
+    }
   }
+
   renderTwinActions(host, actions || []);
+  renderTwinHistory(host);
   host.style.display = 'flex';
+}
+
+/* Recent observations fade back in time. The most-recent is already shown
+ * in .twin-body; the log below shows the previous ones progressively dimmer.
+ * This is what makes the twin feel like it's been THERE, not just a
+ * per-turn notification. */
+function renderTwinHistory(host) {
+  let log = host.querySelector('.twin-history');
+  if (!log) {
+    log = document.createElement('div');
+    log.className = 'twin-history';
+    // Insert before the actions wrapper if present, else at the end.
+    const actionsWrap = host.querySelector('.twin-actions');
+    if (actionsWrap) host.insertBefore(log, actionsWrap);
+    else host.appendChild(log);
+  }
+  // Show entries beyond the most-recent (which is in .twin-body).
+  const rest = _twinState.history.slice(1);
+  if (!rest.length) { log.style.display = 'none'; log.innerHTML = ''; return; }
+  log.style.display = 'block';
+  const firstLine = (t) => {
+    const line = (t || '').split(/\n/).map(l => l.trim()).find(Boolean) || '';
+    return line.length > 120 ? line.slice(0, 117) + '…' : line;
+  };
+  log.innerHTML = rest.map((entry, i) => {
+    const dim = 1 - (i + 1) * 0.22; // 0.78, 0.56, 0.34 … gently fading
+    return `<div class="twin-history-entry" style="opacity:${Math.max(0.25, dim).toFixed(2)}">`
+         + `<span class="twin-history-dot" data-mood="${escapeHtml(entry.mood)}"></span>`
+         + escapeHtml(firstLine(entry.text))
+         + `</div>`;
+  }).join('');
 }
 
 /* Action chips — each is a small "accept" button. Clicking fires the
@@ -3697,6 +3764,25 @@ function ensureTwinPanel() {
         border-color:rgba(125,240,200,.55); color:#7df0c8; opacity:.85; }
       #twin-panel .twin-action-fail { background:rgba(248,81,73,.12);
         border-color:rgba(248,81,73,.45); color:#f85149; opacity:.85; }
+
+      /* Rolling memory — makes the twin feel like it's been here for a
+         while, not appearing per-turn. Recent reactions fade with age. */
+      #twin-panel .twin-history { display:none; margin-top:4px; padding-top:10px;
+        border-top:1px dashed rgba(167,139,250,.18); font-size:12px;
+        color:#8ea0b8; display:flex; flex-direction:column; gap:5px; }
+      #twin-panel .twin-history-entry { display:flex; gap:8px; align-items:flex-start;
+        line-height:1.45; }
+      #twin-panel .twin-history-dot { flex:0 0 6px; width:6px; height:6px;
+        border-radius:50%; margin-top:6px; background:#6b7280;
+        box-shadow:0 0 6px rgba(167,139,250,.5); }
+      #twin-panel .twin-history-dot[data-mood="alert"]        { background:#ff9a4a; box-shadow:0 0 6px rgba(255,140,60,.65); }
+      #twin-panel .twin-history-dot[data-mood="curious"]      { background:#63b3ed; box-shadow:0 0 6px rgba(99,179,237,.65); }
+      #twin-panel .twin-history-dot[data-mood="validated"]    { background:#7df0c8; box-shadow:0 0 6px rgba(125,240,200,.65); }
+      #twin-panel .twin-history-dot[data-mood="contradicted"] { background:#f85149; box-shadow:0 0 6px rgba(248,81,73,.65); }
+      #twin-panel .twin-history-dot[data-mood="thinking"]     { background:#a78bfa; box-shadow:0 0 6px rgba(167,139,250,.65); }
+      #twin-panel[data-mood="present"] .twin-sphere {
+        background:radial-gradient(circle at 32% 30%, rgba(255,255,255,.3), rgba(167,139,250,.3) 30%, rgba(60,40,110,.9) 80%);
+        box-shadow:0 0 14px rgba(167,139,250,.3); animation-duration:5.5s; }
 
       /* Mood-driven recoloring. Only the sphere background + glow change;
          the panel chrome stays stable so it doesn't feel chaotic. */
@@ -4574,6 +4660,10 @@ function tutPrev() {
   if (state.settings.provider === 'copilot' && state.settings.ghuToken) fetchCopilotModels();
   else if (state.settings.provider === 'github') fetchGitHubModels();
   refreshStatus();
+  // The twin is present in the chat from the first paint — not a notification
+  // that flashes after the first turn. Mount it idle; it fills with content as
+  // turns happen.
+  initTwinPresence();
   await bootBinder();
   // Auto-load all starter agents into the hand so the chat works immediately
   if (state.hand.size === 0 && state.binder.cards.length > 0) {
