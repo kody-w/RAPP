@@ -2720,9 +2720,29 @@ const HAND_PROMPTS = {
 };
 
 function promptForCard(c) {
-  return c.manifest?.example_call
-    || HAND_PROMPTS[c.filename]
-    || `Use the ${c.parsed?.agentName || c.manifest.display_name || c.name} tool.`;
+  // example_call ships in two shapes across the catalog:
+  //   "example_call": "What's the weather?"                   (string)
+  //   "example_call": { "args": {...}, "endpoint": "..." }    (object)
+  // Earlier code returned the value directly, which meant the
+  // object form stringified to "[object Object]" when assigned to
+  // textContent or .value. Coerce to a usable string.
+  const ex = c.manifest?.example_call;
+  if (typeof ex === 'string' && ex.trim()) return ex;
+  if (ex && typeof ex === 'object') {
+    // Prefer a natural-language `text` if present. Otherwise try to build
+    // a "Run <agent> with <args>" line. Finally fall through to the stock
+    // "Use the X tool." so we never return an object.
+    if (typeof ex.text === 'string' && ex.text.trim()) return ex.text;
+    if (typeof ex.prompt === 'string' && ex.prompt.trim()) return ex.prompt;
+    if (ex.args && typeof ex.args === 'object') {
+      try {
+        const name = c.parsed?.agentName || c.manifest?.display_name || c.name || 'this';
+        return `Run ${name} with ${JSON.stringify(ex.args)}`;
+      } catch { /* fall through */ }
+    }
+  }
+  return HAND_PROMPTS[c.filename]
+      || `Use the ${c.parsed?.agentName || c.manifest?.display_name || c.name || 'this'} tool.`;
 }
 
 function renderHand() {
