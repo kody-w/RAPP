@@ -300,6 +300,8 @@ install_brainstem() {
             # pulls from somewhere stale.
             git remote set-url origin "$REPO_URL" 2>/dev/null || true
             git stash --quiet --include-untracked 2>/dev/null || true
+            # Ensure we're on main — clones can drift to other branches
+            git checkout main --quiet 2>/dev/null || true
             # Fetch main + tags so both "latest" and "pin" flows work.
             git fetch --quiet --tags origin main 2>/dev/null || true
             # Choose reset target: a pinned tag if requested, else origin/main.
@@ -521,10 +523,18 @@ create_env() {
 launch_brainstem() {
     export PATH="$BRAINSTEM_BIN:/opt/homebrew/bin:/usr/local/bin:$PATH"
 
-    # Always pull latest code before launching
+    # Always pull latest code before launching — ensure we're on main
     if [ -d "$BRAINSTEM_HOME/src/.git" ]; then
         cd "$BRAINSTEM_HOME/src"
-        git pull --quiet 2>/dev/null || true
+        local current_branch
+        current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+        if [ "$current_branch" != "main" ]; then
+            git stash --quiet --include-untracked 2>/dev/null || true
+            git checkout main --quiet 2>/dev/null || true
+        fi
+        git fetch --quiet origin main 2>/dev/null || true
+        git reset --hard origin/main --quiet 2>/dev/null || true
+        git clean -fdq rapp_brainstem/agents/ 2>/dev/null || true
     fi
 
     local venv_python="$VENV_DIR/bin/python"
