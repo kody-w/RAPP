@@ -1857,6 +1857,12 @@ const SOUL_RESPONSE_FORMAT = `<response_format>
 - When a tool returns markdown — links like [title](url), lists, code blocks — render that markdown verbatim in your reply.
 - Preserve every clickable link exactly as the tool wrote it; do not strip URLs, do not rewrite titles into plain text.
 - Keep responses focused: if you can say it in 2 sentences, don't use 5.
+
+Structure every reply in THREE parts, separated by \`|||VOICE|||\` then \`|||TWIN|||\`. Order is fixed: VOICE always before TWIN.
+
+1. Main reply (before \`|||VOICE|||\`): what the user sees in the chat. Markdown fine.
+2. Voice line (between \`|||VOICE|||\` and \`|||TWIN|||\`): 1–2 sentences, plain English, no markdown. What a colleague would say out loud.
+3. Twin (after \`|||TWIN|||\`): the user's digital twin reacting to THIS turn — first person, speaking AS the user, to the user. One or two short observations, hints, risks, or questions. Bold single-word tags work well (\`**Hint:**\`, \`**Risk:**\`, \`**Question:**\`). Do NOT re-answer the question; the twin comments on the turn, it doesn't replace any part of it. Empty is fine when there's nothing worth saying.
 </response_format>`;
 
 const SOUL_BOUNDARIES = `<boundaries>
@@ -3285,8 +3291,11 @@ async function send(userInput) {
     const resp = await chatLoop(userInput);
     typing.remove();
     appendMsg('assistant', resp.text, resp.agent_logs);
+    // Keep delimited blocks OUT of conversation history so the model
+    // doesn't echo them back; history is just the main reply.
     state.conversation_history.push({ role: 'assistant', content: resp.text });
-    state.fullTranscript.push({ at: new Date().toISOString(), user: userInput, assistant: resp.text, agent_logs: resp.agent_logs, model: state.settings.model });
+    if (resp.twin) renderTwinPanel(resp.twin);
+    state.fullTranscript.push({ at: new Date().toISOString(), user: userInput, assistant: resp.text, voice: resp.voice, twin: resp.twin, agent_logs: resp.agent_logs, model: state.settings.model });
   } catch (e) {
     typing.remove();
     appendMsg('system', `⚠️ ${e.message}`);
@@ -3360,10 +3369,54 @@ async function chatLoop(userInput) {
       }
       continue; // loop again to let model use the tool output
     }
-    // No more tool calls — final text
-    return { text: msg.content || '', agent_logs };
+    // No more tool calls — final text; split on |||VOICE||| then |||TWIN|||.
+    const raw = msg.content || '';
+    const { main, voice, twin } = parseVoiceTwinSplit(raw);
+    return { text: main, voice, twin, agent_logs };
   }
-  return { text: '_(stopped after 6 tool-call rounds)_', agent_logs };
+  return { text: '_(stopped after 6 tool-call rounds)_', voice: '', twin: '', agent_logs };
+}
+
+/* Same three-way split as rapp_brainstem/chat.py and rapp_swarm/function_app.py.
+ * Returns { main, voice, twin } — any missing block is ''. */
+function parseVoiceTwinSplit(content) {
+  if (!content) return { main: '', voice: '', twin: '' };
+  const vIdx = content.indexOf('|||VOICE|||');
+  if (vIdx < 0) return { main: content.trim(), voice: '', twin: '' };
+  const main = content.slice(0, vIdx).trim();
+  const rest = content.slice(vIdx + '|||VOICE|||'.length);
+  const tIdx = rest.indexOf('|||TWIN|||');
+  if (tIdx < 0) return { main, voice: rest.trim(), twin: '' };
+  return {
+    main,
+    voice: rest.slice(0, tIdx).trim(),
+    twin:  rest.slice(tIdx + '|||TWIN|||'.length).trim(),
+  };
+}
+
+/* Render the twin's reaction to a side panel. Minimum viable surface:
+ * an ambient floating card in the corner. Collapses automatically when
+ * empty. Re-rendered per turn — the twin is about THIS turn, not history. */
+function renderTwinPanel(markdown) {
+  let host = document.getElementById('twin-panel');
+  if (!host) {
+    host = document.createElement('aside');
+    host.id = 'twin-panel';
+    host.style.cssText = 'position:fixed;right:16px;bottom:16px;max-width:320px;'
+      + 'background:rgba(22,27,34,.94);color:#cdd6e3;border:1px solid #30363d;'
+      + 'border-left:3px solid #8b5cf6;border-radius:10px;padding:12px 14px;'
+      + 'font-size:13px;line-height:1.5;backdrop-filter:blur(8px);z-index:40;'
+      + 'box-shadow:0 12px 32px rgba(0,0,0,.4);';
+    host.innerHTML = '<div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;'
+      + 'color:#a78bfa;margin-bottom:6px;font-weight:700;">👤 Your Twin</div>'
+      + '<div id="twin-panel-body"></div>';
+    document.body.appendChild(host);
+  }
+  const body = document.getElementById('twin-panel-body');
+  // Reuse the existing markdown renderer if present, fall back to plain text.
+  if (typeof renderMarkdown === 'function') body.innerHTML = renderMarkdown(markdown);
+  else body.textContent = markdown;
+  host.style.display = 'block';
 }
 
 // Returns the OpenAI tools array for every agent in the binder — exactly

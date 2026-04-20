@@ -34,6 +34,19 @@ except ImportError:
 MAX_TOOL_ROUNDS = 4
 
 
+def _parse_voice_twin_split(content: str):
+    """Split the LLM output on |||VOICE||| then |||TWIN|||.
+    Returns (main, voice, twin). Every delimiter is optional; missing ones
+    yield empty strings downstream. Parallel to rapp_swarm/_parse_voice_split."""
+    if not content:
+        return "", "", ""
+    main, sep, rest = content.partition("|||VOICE|||")
+    if not sep:
+        return content.strip(), "", ""
+    voice, _, twin = rest.partition("|||TWIN|||")
+    return main.strip(), voice.strip(), twin.strip()
+
+
 def _agent_to_tool(agent) -> dict:
     """Build an OpenAI-format tool definition from an agent's metadata."""
     md = getattr(agent, "metadata", {}) or {}
@@ -122,8 +135,12 @@ def chat_with_swarm(store, swarm_guid: str, user_input: str,
 
         tool_calls = assistant.get("tool_calls") or []
         if not tool_calls or rounds >= MAX_TOOL_ROUNDS:
+            raw = assistant.get("content") or ""
+            main, voice, twin = _parse_voice_twin_split(raw)
             return {
-                "response": assistant.get("content") or "",
+                "response": main,
+                "voice_response": voice,
+                "twin_response": twin,
                 "agent_logs": agent_logs,
                 "provider": provider,
                 "rounds": rounds,
@@ -217,17 +234,21 @@ def chat_with_binder(store, agents_dir, user_input: str,
 
         tool_calls = assistant.get("tool_calls") or []
         if not tool_calls or rounds >= MAX_TOOL_ROUNDS:
+            raw = assistant.get("content") or ""
+            main, voice, twin = _parse_voice_twin_split(raw)
             return {
-                "response":   assistant.get("content") or "",
-                "agent_logs": agent_logs,
-                "provider":   provider,
-                "rounds":     rounds,
-                "context":    "binder",
+                "response":       main,
+                "voice_response": voice,
+                "twin_response":  twin,
+                "agent_logs":     agent_logs,
+                "provider":       provider,
+                "rounds":         rounds,
+                "context":        "binder",
                 "agents_available": sorted(agents.keys()),
-                "model":      os.environ.get("AZURE_OPENAI_DEPLOYMENT")
-                              or os.environ.get("OPENAI_MODEL")
-                              or os.environ.get("ANTHROPIC_MODEL")
-                              or "fake",
+                "model":          os.environ.get("AZURE_OPENAI_DEPLOYMENT")
+                                  or os.environ.get("OPENAI_MODEL")
+                                  or os.environ.get("ANTHROPIC_MODEL")
+                                  or "fake",
             }
 
         # Execute each tool call against the binder-loaded agents.

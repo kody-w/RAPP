@@ -89,12 +89,14 @@ Agents output `data_slush` — curated signals from live results that feed into 
 |-------|-------|
 | **Name** | RAPP (Rapid Agent Platform Protocol) |
 | **Version** | 1.0.0 |
-| **Layers** | Brainstem · Hippocampus (CommunityRAPP) · Copilot Studio harness |
+| **Layers** | Brainstem · Swarm · Copilot Studio harness |
 | **Registry** | [RAR — RAPP Agent Registry](https://kody-w.github.io/RAR) |
+| **Rapplication Store** | [`rapp_store/`](./rapp_store/) in this repo — catalog (`index.json`), marketplace UI (`index.html`), sources + eggs per rapplication |
 | **Doctrine** | Single File Agents |
-| **Reference Implementation** | [kody-w/RAPP](https://github.com/kody-w/RAPP) |
-| **Cloud Backend** | [kody-w/CommunityRAPP](https://github.com/kody-w/CommunityRAPP) |
+| **Reference Implementation** | [kody-w/RAPP](https://github.com/kody-w/RAPP) — one monorepo, three tier directories (`rapp_brainstem/`, `rapp_swarm/`, `MSFTAIBASMultiAgentCopilot_*.zip`) |
 | **Copilot Studio Bundle** | `MSFTAIBASMultiAgentCopilot_1_0_0_5.zip` |
+| **Doctrine Blog** | [kody-w.github.io](https://kody-w.github.io/) (tagged `rapp`) |
+| **Roadmap** | [`ROADMAP.md`](./ROADMAP.md) — post-v1 directions that must honor the v1 contract |
 
 ---
 
@@ -115,7 +117,7 @@ RAPP v1 is exactly three tiers. Each tier is independently runnable — you do n
 | **Install** | `curl -fsSL https://kody-w.github.io/RAPP/install.sh \| bash` |
 | **Run** | `brainstem` |
 
-### Tier 2 — Hippocampus / CommunityRAPP (cloud)
+### Tier 2 — Swarm (cloud)
 
 | Property | Value |
 |----------|-------|
@@ -124,8 +126,10 @@ RAPP v1 is exactly three tiers. Each tier is independently runnable — you do n
 | **Auth** | Entra ID (managed identity, RBAC) |
 | **Storage** | Azure Storage Account |
 | **Telemetry** | Application Insights |
+| **Source** | [`rapp_swarm/`](./rapp_swarm/) — `function_app.py`, `host.json`, ARM template, provision scripts |
 | **Deploy** | `azuredeploy.json` ARM template — Deploy-to-Azure button |
-| **Per-user** | `~/rapp-projects/<project>/` — isolated venv + agents + storage |
+| **Install** | `curl -fsSL https://kody-w.github.io/RAPP/install-swarm.sh \| bash` |
+| **Wire shape** | Same `/chat` surface as Tier 1; the local brainstem also speaks `rapp-tether/1.0` on :7071 so any Tier 1 is a valid Tier 2 endpoint for dev. |
 
 ### Tier 3 — Copilot Studio harness (enterprise)
 
@@ -259,7 +263,7 @@ An agent's `perform()` SHOULD return a JSON string shaped like:
 This is the single hardest requirement in the entire RAPP spec, and it is the requirement that gives RAPP its value. A `weather_agent.py` you write on your laptop today must:
 
 - Run locally against `localhost:7071` (Tier 1)
-- Deploy unchanged to your CommunityRAPP Function App (Tier 2)
+- Deploy unchanged to your RAPP Swarm Function App (Tier 2)
 - Be invoked from Microsoft Teams via Copilot Studio (Tier 3)
 
 If a future change to the spec, the runtime, or the cloud backend breaks this guarantee, the change is rejected. v1 is frozen on this point.
@@ -340,7 +344,7 @@ A tenant in RAPP v1 is the smallest unit of identity. It consists of:
 2. An `agents/` directory of one or more single file agents
 3. A persistent storage location (filesystem in Tier 1, Storage Account in Tier 2)
 
-A brainstem instance hosts exactly one tenant in v1. A CommunityRAPP project is one tenant per project directory. A Copilot Studio agent is one tenant per imported solution.
+A brainstem instance hosts exactly one tenant in v1. A RAPP Swarm project is one tenant per project directory. A Copilot Studio agent is one tenant per imported solution.
 
 **Multi-tenancy is achieved by deploying multiple instances, not by partitioning a single instance.** This is intentional. It keeps the data model boring, the security model trivial, and the failure domain small.
 
@@ -507,7 +511,7 @@ The registry is sanctioned by v1 as the canonical distribution channel and the d
 RAPP v1 does not standardize federation. However, the spec acknowledges three patterns observed in the wild:
 
 - **Source federation** — pulling agent files from remote GitHub repos via the Sources panel. Sanctioned.
-- **Tier handoff** — a Tier 1 brainstem calling a Tier 2 CommunityRAPP `/chat` endpoint as a sub-agent. Sanctioned.
+- **Tier handoff** — a Tier 1 brainstem calling a Tier 2 RAPP Swarm `/chat` endpoint as a sub-agent. Sanctioned.
 - **Cross-tenant calls** — one tenant invoking another tenant's `/chat`. Permitted but not standardized; treat the other tenant as a remote HTTP API.
 - **Chain composition** — agents piping `data_slush` to one another. Standardized (Section 5.4).
 
@@ -548,9 +552,14 @@ The AI ecosystem is currently living through this progression. RAPP v1 is alread
 
 RAPP is not predicting this. RAPP is the artifact left behind from running this loop in production for over a year.
 
+Post-v1 direction lives in [`ROADMAP.md`](./ROADMAP.md). Roadmap items MUST honor the v1 contract — they extend, never replace.
+
 ---
 
-## 16. The Digital Twin
+## 16. The Digital Twin (memorial, not companion)
+
+> Not to be confused with the **digital twin companion** feature in `ROADMAP.md` — that is an in-product surface. This section is about the spec itself as a static twin of the v1 system.
+
 
 This specification, the landing page at [kody-w.github.io/RAPP](https://kody-w.github.io/RAPP/), the [`archive/engine`](https://github.com/kody-w/RAPP/tree/archive/engine) branch of this repo, and the canonical [Single File Agents doctrine page](https://kody-w.github.io/rappterhub/single-file-agents.html) together form the **digital twin** of RAPP v1.
 

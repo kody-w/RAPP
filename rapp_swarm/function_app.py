@@ -166,20 +166,28 @@ def _ensure_string_content(message):
 
 
 def _parse_voice_split(content):
-    """Sacred OG response shape: split on |||VOICE|||. Returns (formatted, voice).
-    If no delimiter, voice is the first sentence stripped of formatting."""
+    """Split on |||VOICE||| then |||TWIN|||. Returns (formatted, voice, twin).
+    Every delimiter is optional:
+      - No |||VOICE|||: voice is derived from first sentence, twin is "".
+      - |||VOICE||| only: twin is "".
+      - Both present: three-way split in order.
+    |||TWIN||| MUST come after |||VOICE|||. If the model emits TWIN before
+    VOICE, that's an authoring bug — we treat the whole thing as the main
+    reply (the twin text will leak into `formatted`)."""
     if not content:
-        return "", ""
-    parts = content.split("|||VOICE|||")
-    if len(parts) >= 2:
-        return parts[0].strip(), parts[1].strip()
-    formatted = content.strip()
-    sentence = formatted.split(".")[0] if formatted else "OK."
-    voice = re.sub(r"\*\*|`|#|>|---", "", sentence).strip()
-    voice = re.sub(r"\s+", " ", voice).strip()
-    if not voice.endswith("."):
-        voice += "."
-    return formatted, voice
+        return "", "", ""
+    main, _, rest = content.partition("|||VOICE|||")
+    if not _:
+        # No VOICE delimiter — derive a voice line, no twin.
+        formatted = content.strip()
+        sentence = formatted.split(".")[0] if formatted else "OK."
+        voice = re.sub(r"\*\*|`|#|>|---", "", sentence).strip()
+        voice = re.sub(r"\s+", " ", voice).strip()
+        if voice and not voice.endswith("."):
+            voice += "."
+        return formatted, voice, ""
+    voice, _, twin = rest.partition("|||TWIN|||")
+    return main.strip(), voice.strip(), twin.strip()
 
 
 def _select_swarm(req_body):
@@ -313,15 +321,23 @@ IMPORTANT — be honest and accurate about agent usage:
 </agent_usage>
 
 <response_format>
-CRITICAL: structure your response in TWO parts separated by |||VOICE|||
+CRITICAL: structure your response in THREE parts separated by |||VOICE||| then |||TWIN|||.
 
 1. FIRST PART (before |||VOICE|||): full formatted response
    - Use **bold**, `code`, # headings, > quotes, --- rules, lists
    - Be substantive and useful
-2. SECOND PART (after |||VOICE|||): a concise voice response
+2. SECOND PART (between |||VOICE||| and |||TWIN|||): a concise voice response
    - 1–2 sentences max
    - Plain English, no markdown
    - Sound like a colleague over a cubicle wall
+3. THIRD PART (after |||TWIN|||): the user's digital twin reacting to the turn
+   - First person — speak AS the user, to the user ("I'd push back on that third point…")
+   - Short. One or two observations, hints, risks, or questions.
+   - Plain markdown is fine. Bold single-word tags work well (**Risk:**, **Hint:**, **Question:**).
+   - Silent is allowed — leave the twin section empty if there's nothing worth saying this turn.
+   - Do NOT re-answer the question. The twin comments on the turn; it does not replace any part of it.
+
+Order is fixed: |||VOICE||| always comes before |||TWIN|||.
 
 EXAMPLE:
 Here's the analysis:
@@ -330,6 +346,9 @@ Here's the analysis:
 
 |||VOICE|||
 Revenue's up 12 percent and customers are happier.
+
+|||TWIN|||
+**Hint:** the +12% is YoY — worth checking the seasonally-adjusted number before I take it into the board review.
 </response_format>"""
 
     # ── memory recall (best-effort via the swarm's own memory agents) ──
@@ -379,7 +398,7 @@ Revenue's up 12 percent and customers are happier.
     # ── run the chat loop ──
 
     def run(self, user_input, conversation_history, max_rounds=4):
-        """Returns (formatted_response, voice_response, agent_logs_str)."""
+        """Returns (formatted_response, voice_response, twin_response, agent_logs_str)."""
         shared_mem, user_mem = self._recall_memory()
         messages = [
             _ensure_string_content({"role": "system",
@@ -404,15 +423,15 @@ Revenue's up 12 percent and customers are happier.
             except Exception as e:
                 err = f"LLM error: {e}"
                 logging.error(err)
-                return err, "Something went wrong with the model.", "\n".join(agent_logs)
+                return err, "Something went wrong with the model.", "", "\n".join(agent_logs)
 
             messages.append(assistant_msg)
             tool_calls = assistant_msg.get("tool_calls") or []
 
             if not tool_calls:
                 content = assistant_msg.get("content") or ""
-                formatted, voice = _parse_voice_split(content)
-                return formatted, voice, "\n".join(agent_logs)
+                formatted, voice, twin = _parse_voice_split(content)
+                return formatted, voice, twin, "\n".join(agent_logs)
 
             # Execute each tool call → loop
             for call in tool_calls:
@@ -436,8 +455,8 @@ Revenue's up 12 percent and customers are happier.
             if m.get("role") == "assistant" and m.get("content"):
                 last_text = m["content"]
                 break
-        formatted, voice = _parse_voice_split(last_text or "(no response)")
-        return formatted, voice, "\n".join(agent_logs)
+        formatted, voice, twin = _parse_voice_split(last_text or "(no response)")
+        return formatted, voice, twin, "\n".join(agent_logs)
 
 
 # ─── HTTP App ───────────────────────────────────────────────────────────
@@ -525,6 +544,7 @@ def _do_chat(req: func.HttpRequest) -> func.HttpResponse:
         return _json_response(200, {
             "assistant_response": "I've loaded your conversation memory. How can I assist you today?",
             "voice_response": "I've loaded your memory — what can I help with?",
+            "twin_response": "",
             "agent_logs": "",
             "user_guid": user_guid,
             "swarm_guid": sg,
@@ -532,10 +552,11 @@ def _do_chat(req: func.HttpRequest) -> func.HttpResponse:
 
     try:
         assistant = Assistant(swarm_guid=sg, user_guid=user_guid)
-        formatted, voice, logs = assistant.run(user_input, conversation_history)
+        formatted, voice, twin, logs = assistant.run(user_input, conversation_history)
         return _json_response(200, {
             "assistant_response": str(formatted),
             "voice_response": str(voice),
+            "twin_response": str(twin),
             "agent_logs": str(logs),
             "user_guid": assistant.user_guid,
             "swarm_guid": sg,
