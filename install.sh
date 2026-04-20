@@ -274,18 +274,37 @@ install_brainstem() {
             # merge conflicts and silently failing, leaving users pinned to
             # old VERSIONs. Hard reset always wins the race.
             cd "$BRAINSTEM_HOME/src"
+            # Make sure the origin URL is the canonical repo — users can end
+            # up on forks/mirrors or old HTTPS→SSH migrations where fetch
+            # pulls from somewhere stale.
+            git remote set-url origin "$REPO_URL" 2>/dev/null || true
             git stash --quiet --include-untracked 2>/dev/null || true
             git fetch --quiet origin main 2>/dev/null || true
             if git reset --hard --quiet origin/main 2>/dev/null; then
-                # Blow away any leftover untracked files from prior state
-                # (e.g. the deleted-in-repo rapp_brainstem/index.html that
-                # used to stick around and make the Flask root still serve
-                # the old minimal UI instead of web/index.html).
                 git clean -fdq 2>/dev/null || true
                 echo -e "  ${GREEN}✓${NC} Framework hard-synced to origin/main"
             else
                 echo -e "  ${YELLOW}Warning: git reset failed — falling back to pull${NC}"
                 git pull --quiet 2>/dev/null || echo -e "  ${YELLOW}Warning: Could not pull${NC}"
+            fi
+
+            # 2b. Verify the sync actually landed. If VERSION still doesn't
+            # match the remote, something deeper is wrong with the user's
+            # local clone (detached HEAD, wrong branch, broken origin, a
+            # stale object cache) — nuke and re-clone. Backup is safe.
+            local post_sync_ver="0.0.0"
+            [ -f "$LOCAL_VERSION_FILE" ] && post_sync_ver=$(cat "$LOCAL_VERSION_FILE" 2>/dev/null | tr -d '[:space:]')
+            if [ "$post_sync_ver" != "$REMOTE_VER" ]; then
+                echo -e "  ${YELLOW}⚠${NC} Post-sync VERSION is v${post_sync_ver} (expected v${REMOTE_VER})"
+                echo "  Re-cloning from scratch to recover..."
+                cd "$BRAINSTEM_HOME"
+                rm -rf "$BRAINSTEM_HOME/src"
+                if git clone --quiet "$REPO_URL" "$BRAINSTEM_HOME/src"; then
+                    echo -e "  ${GREEN}✓${NC} Fresh clone successful"
+                else
+                    echo -e "  ${RED}✗${NC} Fresh clone failed — please check connectivity and retry"
+                    return 1
+                fi
             fi
 
             # 3. Restore user's local files (merge, don't overwrite)
