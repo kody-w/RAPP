@@ -80,6 +80,12 @@
   }
   .icon-btn:hover { border-color: #58a6ff; color: #58a6ff; }
   .icon-btn.active { border-color: #3fb950; color: #3fb950; background: rgba(63,185,80,0.08); }
+  /* Labeled top-bar buttons — icon + text so users can be trained with
+     noun phrases ("click Agents", "click Settings") instead of pointing
+     at an unlabeled gear. */
+  .icon-btn.labeled-btn { padding: 5px 10px; gap: 6px; font-size: 12px; font-weight: 500; }
+  .icon-btn.labeled-btn .btn-label { letter-spacing: .02em; }
+  .icon-btn.labeled-btn .icon svg { width: 14px; height: 14px; }
 
   /* ── Login overlay ── */
   #login-overlay {
@@ -657,12 +663,23 @@
   }
 
   /* ── Twin — portrait in footer bar ── */
+  .twin-slot {
+    display: none; flex-direction: column; align-items: center;
+    gap: 4px; flex-shrink: 0;
+  }
+  .twin-slot.active { display: flex; }
   #twin-portrait {
-    width: 64px; height: 64px; flex-shrink: 0; cursor: pointer;
-    position: relative; display: none; border-radius: 50%;
+    width: 64px; height: 64px; cursor: pointer;
+    position: relative; border-radius: 50%;
     background: rgba(0,0,0,.4); overflow: hidden;
     box-shadow: 0 0 12px rgba(56,189,248,.15);
   }
+  .twin-caption {
+    font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+    color: #8b949e; font-weight: 600;
+  }
+  /* Legacy rule kept so JS that checks for .active on #twin-portrait
+     still works; the slot wrapper handles show/hide. */
   #twin-portrait.active { display: block; }
   #twin-portrait canvas { display: block; width: 64px !important; height: 64px !important; }
   /* Mood tag now lives inside #twin-bubble as a header chip — the circle
@@ -775,17 +792,10 @@
     <span id="status-text">checking...</span>
     <select id="model-select" onchange="changeModel(this.value)"></select>
 
-    <button class="icon-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle Light/Dark Mode">
-      <span class="icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58a.996.996 0 00-1.41 0 .996.996 0 000 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37a.996.996 0 00-1.41 0 .996.996 0 000 1.41l1.06 1.06c.39.39 1.03.39 1.41 0a.996.996 0 000-1.41l-1.06-1.06zm1.06-10.96a.996.996 0 000-1.41.996.996 0 00-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36a.996.996 0 000-1.41.996.996 0 00-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></svg></span>
-    </button>
-
-    <button class="icon-btn" onclick="exportBook()" title="Export diagnostics (book.json)">
-      <span class="icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg></span>
-    </button>
-
     <div class="agents-wrapper">
-      <button class="icon-btn" id="agents-btn" onclick="toggleAgentsPanel()" title="Manage Agents">
+      <button class="icon-btn labeled-btn" id="agents-btn" onclick="toggleAgentsPanel()" title="Manage Agents">
         <span class="icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v4h4v2h-4v4h-2v-4H7v-2h4z"/></svg></span>
+        <span class="btn-label">Agents</span>
       </button>
       <div id="agents-panel">
         <h3>
@@ -802,16 +812,35 @@
     </div>
 
     <div class="voice-wrapper">
-      <button class="icon-btn" id="voice-btn" onclick="toggleVoice()" title="Voice mode off">
+      <button class="icon-btn labeled-btn" id="voice-btn" onclick="toggleVoice()" title="Voice mode off">
         <span class="icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg></span>
+        <span class="btn-label">Voice</span>
       </button>
-      <button class="icon-btn" id="twin-btn" onclick="toggleTwinPanel()" title="Twin off">
-        <span class="icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm0 14c-2.03 0-4.43-.82-6.14-2.88C7.55 15.8 9.68 15 12 15s4.45.8 6.14 2.12C16.43 19.18 14.03 20 12 20z"/></svg></span>
-      </button>
-      <button class="icon-btn" id="settings-gear-btn" onclick="toggleSettingsPanel()" title="Settings">
+      <button class="icon-btn labeled-btn" id="settings-gear-btn" onclick="toggleSettingsPanel()" title="Settings">
         <span class="icon"><svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M7.429 1.525a6.593 6.593 0 011.142 0c.036.003.108.036.137.146l.289 1.105c.147.56.55.967.997 1.189.174.086.341.183.501.29.417.278.97.423 1.53.27l1.102-.303c.11-.03.175.016.195.046.219.31.41.641.573.989.014.031.022.11-.059.19l-.815.806c-.411.406-.562.957-.53 1.456a4.588 4.588 0 010 .582c-.032.499.119 1.05.53 1.456l.815.806c.08.08.073.159.059.19a6.494 6.494 0 01-.573.99c-.02.029-.086.074-.195.045l-1.103-.303c-.559-.153-1.112-.008-1.529.27-.16.107-.327.204-.5.29-.449.222-.851.628-.998 1.189l-.289 1.105c-.029.11-.1.143-.137.146a6.613 6.613 0 01-1.142 0c-.036-.003-.108-.037-.137-.146l-.289-1.105c-.147-.56-.55-.967-.997-1.189a4.502 4.502 0 01-.501-.29c-.417-.278-.97-.423-1.53-.27l-1.102.303c-.11.03-.175-.016-.195-.046a6.492 6.492 0 01-.573-.989c-.014-.031-.022-.11.059-.19l.815-.806c.411-.406.562-.957.53-1.456a4.587 4.587 0 010-.582c.032-.499-.119-1.05-.53-1.456l-.815-.806c-.08-.08-.073-.159-.059-.19a6.44 6.44 0 01.573-.99c.02-.029.086-.074.195-.045l1.103.303c.559.153 1.112.008 1.529-.27.16-.107.327-.204.5-.29.449-.222.851-.628.998-1.189l.289-1.105c.029-.11.1-.143.137-.146zM8 0c-.236 0-.47.01-.701.03-.743.065-1.29.615-1.458 1.261l-.29 1.106c-.017.066-.078.158-.211.224a5.994 5.994 0 00-.668.386c-.123.082-.233.117-.3.117h-.013l-1.104-.304c-.646-.178-1.314.023-1.71.64a7.994 7.994 0 00-.573.989c-.358.658-.217 1.381.164 1.758l.816.806c.046.046.106.144.098.284a6.095 6.095 0 000 .772c.008.14-.052.238-.098.284l-.816.806c-.38.377-.522 1.1-.164 1.758.145.267.306.524.573.99.396.616 1.064.817 1.71.639l1.104-.304c.068-.019.146-.003.3.117.195.13.4.25.668.387.133.066.194.158.212.224l.289 1.106c.169.646.715 1.196 1.458 1.26a8.094 8.094 0 001.402 0c.743-.064 1.29-.614 1.458-1.26l.29-1.106c.017-.066.078-.158.211-.224a5.98 5.98 0 00.668-.386c.123-.082.233-.117.3-.117h.013l1.104.304c.646.178 1.314-.023 1.71-.64.267-.465.428-.722.573-.989.358-.658.217-1.381-.164-1.758l-.816-.806c-.046-.046-.106-.144-.098-.284a6.095 6.095 0 000-.772c-.008-.14.052-.238.098-.284l.816-.806c.38-.377.522-1.1.164-1.758a7.994 7.994 0 00-.573-.99c-.396-.616-1.064-.817-1.71-.639l-1.104.304c-.068.019-.146.003-.3-.117a5.994 5.994 0 00-.668-.387c-.133-.066-.194-.158-.212-.224L10.16 1.29C9.99.645 9.444.095 8.701.031A8.094 8.094 0 008 0zm0 11a3 3 0 100-6 3 3 0 000 6z"/></svg></span>
+        <span class="btn-label">Settings</span>
       </button>
       <div id="settings-panel">
+
+        <!-- Quick actions — the items that used to live as separate icons
+             in the top bar. Parked here so the top bar stays trainable
+             with just three labeled buttons (Agents / Voice / Settings). -->
+        <div class="sp-section" id="sp-quick">
+          <div class="sp-header" onclick="toggleSpSection('sp-quick')">
+            <span class="sp-title">⚡ Quick Actions</span>
+            <span class="sp-chev">›</span>
+          </div>
+          <div class="sp-body">
+            <div class="panel-row">
+              <button class="panel-btn" onclick="toggleTheme()">🌓 Toggle Theme</button>
+              <button class="panel-btn" onclick="toggleTwinPanel()" id="sp-twin-toggle">👤 Twin: on</button>
+            </div>
+            <div class="panel-row">
+              <button class="panel-btn" onclick="exportBook()">📋 Export Diagnostics</button>
+              <a class="panel-btn" href="vscode://file/$HOME/.brainstem/src/rapp_brainstem" style="text-decoration:none;text-align:center;">⌨️ Open in VS Code</a>
+            </div>
+          </div>
+        </div>
 
         <!-- Voice Settings -->
         <div class="sp-section" id="sp-voice">
@@ -939,9 +968,6 @@
 
       </div>
     </div>
-    <a class="icon-btn" href="vscode://file/$HOME/.brainstem/src/rapp_brainstem" id="vscode-link" title="Open in VS Code">
-      <span class="icon"><svg viewBox="0 0 16 16"><path d="M14.85 3.22l-3.07-1.56a.75.75 0 00-.82.12L5.8 6.56 3.16 4.58a.5.5 0 00-.64.05l-.86.74a.5.5 0 00-.004.72L3.87 8l-2.22 1.92a.5.5 0 00.003.72l.86.74a.5.5 0 00.64.05L5.8 9.44l5.16 4.78a.75.75 0 00.82.12l3.07-1.56a.75.75 0 00.42-.67V3.89a.75.75 0 00-.42-.67zM11 10.93L7.3 8 11 5.07v5.86z"/></svg></span>
-    </a>
   </div>
 </header>
 
@@ -996,8 +1022,11 @@
     </div>
   </div>
   <div class="input-row">
-    <div id="twin-portrait" data-mood="present" onclick="toggleTwinBubble()">
-      <div id="twin-hologram"></div>
+    <div class="twin-slot" id="twin-slot">
+      <div id="twin-portrait" data-mood="present" onclick="toggleTwinBubble()">
+        <div id="twin-hologram"></div>
+      </div>
+      <div class="twin-caption">Twin</div>
     </div>
     <textarea id="input" rows="1" placeholder="Message brainstem..." autocomplete="off"></textarea>
     <button id="send" onclick="sendMessage()">Send</button>
@@ -2498,14 +2527,22 @@
 
   function updateTwinBtn() {
     const btn = document.getElementById('twin-btn');
-    if (!btn) return;
-    btn.className = twinMode ? 'icon-btn active' : 'icon-btn';
-    btn.title = twinMode ? 'Twin on' : 'Twin off';
+    if (btn) {
+      btn.className = twinMode ? 'icon-btn active' : 'icon-btn';
+      btn.title = twinMode ? 'Twin on' : 'Twin off';
+    }
+    // Mirror state on the Settings → Quick Actions toggle so the user
+    // has one clear place to turn the twin on/off now that the top-bar
+    // icon is gone.
+    const sp = document.getElementById('sp-twin-toggle');
+    if (sp) sp.textContent = twinMode ? '👤 Twin: on' : '👤 Twin: off';
   }
 
   function showTwin() {
     const p = document.getElementById('twin-portrait');
+    const s = document.getElementById('twin-slot');
     p.classList.add('active');
+    if (s) s.classList.add('active');
     if (!_holo) setTimeout(initHologram, 50);
     // Seed the bubble with a default message so clicking the portrait
     // always reveals something useful, even on a fresh session.
@@ -2514,6 +2551,8 @@
 
   function hideTwin() {
     document.getElementById('twin-portrait').classList.remove('active');
+    const s = document.getElementById('twin-slot');
+    if (s) s.classList.remove('active');
     document.getElementById('twin-bubble').classList.remove('visible');
   }
 
