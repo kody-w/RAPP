@@ -339,48 +339,123 @@
   #model-select:hover { border-color: #58a6ff; }
   #model-select:focus { border-color: #1f6feb; }
 
-  /* ── Voice settings panel ── */
-  #voice-panel {
+  /* ── Settings panel (gear icon) ── */
+  #settings-panel {
     display: none;
     position: absolute; top: 100%; right: 0; margin-top: 6px;
     background: #161b22; border: 1px solid #30363d; border-radius: 10px;
-    padding: 16px; width: 300px; z-index: 50;
+    padding: 0; width: 340px; z-index: 50;
     box-shadow: 0 8px 24px rgba(0,0,0,0.4);
     font-size: 13px;
+    max-height: 80vh; overflow-y: auto;
   }
-  #voice-panel.open { display: block; }
-  #voice-panel h3 {
-    font-size: 13px; font-weight: 600; margin-bottom: 12px;
+  #settings-panel.open { display: block; }
+
+  /* Sections inside settings panel */
+  .sp-section {
+    border-bottom: 1px solid #21262d;
+  }
+  .sp-section:last-child { border-bottom: none; }
+  .sp-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px; cursor: pointer; user-select: none;
+    transition: background 0.15s;
+  }
+  .sp-header:hover { background: rgba(88,166,255,0.04); }
+  .sp-header .sp-title {
+    font-size: 12px; font-weight: 600; color: #e6edf3;
     display: flex; align-items: center; gap: 6px;
   }
-  #voice-panel label {
+  .sp-header .sp-chev {
+    font-size: 10px; color: #8b949e;
+    transition: transform 0.2s;
+  }
+  .sp-section.open .sp-chev { transform: rotate(90deg); }
+  .sp-body {
+    display: none; padding: 0 16px 14px;
+  }
+  .sp-section.open .sp-body { display: block; }
+  .sp-body label {
     display: block; color: #8b949e; font-size: 11px;
     margin-bottom: 4px; margin-top: 10px;
   }
-  #voice-panel label:first-of-type { margin-top: 0; }
-  #voice-panel input, #voice-panel select {
+  .sp-body label:first-child { margin-top: 0; }
+  .sp-body input, .sp-body select {
     width: 100%; background: #0d1117; color: #e6edf3;
     border: 1px solid #30363d; border-radius: 6px;
     padding: 6px 8px; font-size: 12px;
     font-family: "SF Mono", monospace;
     outline: none; transition: border-color 0.15s;
   }
-  #voice-panel input:focus, #voice-panel select:focus { border-color: #1f6feb; }
-  #voice-panel .panel-row {
+  .sp-body input:focus, .sp-body select:focus { border-color: #1f6feb; }
+  .sp-body .panel-row {
     display: flex; gap: 8px; align-items: center; margin-top: 12px;
   }
-  #voice-panel .panel-btn {
+  .sp-body .panel-btn {
     background: #21262d; color: #e6edf3; border: 1px solid #30363d;
     border-radius: 6px; padding: 5px 10px; font-size: 11px;
     cursor: pointer; transition: all 0.15s;
   }
-  #voice-panel .panel-btn:hover { border-color: #58a6ff; color: #58a6ff; }
-  #voice-panel .panel-btn.primary { background: #238636; border-color: #238636; }
-  #voice-panel .panel-btn.primary:hover { background: #2ea043; }
-  #voice-panel .panel-status {
+  .sp-body .panel-btn:hover { border-color: #58a6ff; color: #58a6ff; }
+  .sp-body .panel-btn.primary { background: #238636; border-color: #238636; }
+  .sp-body .panel-btn.primary:hover { background: #2ea043; }
+  .sp-body .panel-btn.danger { color: #f85149; border-color: #f85149; }
+  .sp-body .panel-btn.danger:hover { background: rgba(248,81,73,0.08); }
+  .sp-body .panel-status {
     font-size: 11px; color: #8b949e; margin-top: 8px;
     min-height: 16px;
   }
+
+  /* Rapplications rows */
+  .rapp-row {
+    background: #0d1117; border: 1px solid #21262d; border-radius: 6px;
+    padding: 8px 10px; margin-bottom: 6px; font-size: 11px;
+  }
+  .rapp-row.installed { border-left: 3px solid #3fb950; }
+  .rapp-row .rr-head { display: flex; align-items: center; gap: 6px; }
+  .rapp-row .rr-name { font-weight: 600; color: #e6edf3; }
+  .rapp-row .rr-ver { color: #6e7681; font-family: "SF Mono", monospace; font-size: 9px; }
+  .rapp-row .rr-summary { color: #8b949e; margin: 3px 0 6px; line-height: 1.4; font-size: 10px; }
+  .rapp-row .rr-actions { display: flex; gap: 4px; }
+
+  /* Install command block */
+  .install-cmd-block {
+    background: #0d1117; border: 1px solid #21262d; border-radius: 6px;
+    padding: 10px; font-family: "SF Mono", monospace; font-size: 11px;
+    color: #e6edf3; cursor: pointer; word-break: break-all;
+    user-select: all; margin: 8px 0 4px;
+    transition: border-color 0.15s;
+  }
+  .install-cmd-block:hover { border-color: #58a6ff; }
+  .sp-toggle-row {
+    display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 6px;
+  }
+  .sp-toggle-btn {
+    background: #21262d; border: 1px solid #30363d; color: #e6edf3;
+    border-radius: 6px; padding: 4px 10px; font-size: 11px;
+    cursor: pointer; transition: all 0.15s; flex: 1; text-align: center;
+  }
+  .sp-toggle-btn:hover { border-color: #58a6ff; }
+  .sp-toggle-btn.active { background: #238636; border-color: #2ea043; color: #fff; }
+  .sp-toggle-btn.flavor-active { background: #1f6feb; border-color: #388bfd; color: #fff; }
+
+  /* Swarm agents list */
+  .sp-swarm-list {
+    max-height: 140px; overflow-y: auto;
+    border: 1px solid #21262d; border-radius: 6px;
+    background: #0d1117; padding: 4px; margin: 6px 0;
+  }
+  .sp-swarm-row {
+    padding: 3px 8px; font-size: 10px; color: #c9d1d9;
+    font-family: "SF Mono", monospace;
+    border-bottom: 1px solid #161b22;
+  }
+  .sp-swarm-row:last-child { border-bottom: none; }
+  .sp-sub-label {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+    color: #58a6ff; margin: 10px 0 4px;
+  }
+
   .voice-wrapper { position: relative; }
 
   /* ── Agent settings panel ── */
@@ -544,11 +619,11 @@
   body.light-mode .toolbar-link:hover {
     color: #24292e;
   }
-  body.light-mode #voice-panel {
+  body.light-mode #settings-panel {
     background: #f6f8fa;
-    border-top-color: #d0d7de;
+    border-color: #d0d7de;
   }
-  body.light-mode #voice-panel select, body.light-mode #voice-panel input {
+  body.light-mode #settings-panel select, body.light-mode #settings-panel input {
     background: #ffffff;
     border-color: #d0d7de;
     color: #24292e;
@@ -649,67 +724,135 @@
       <button class="icon-btn" id="voice-btn" onclick="toggleVoice()" title="Voice mode off">
         <span class="icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg></span>
       </button>
-      <button class="icon-btn" id="voice-settings-btn" onclick="toggleVoicePanel()" title="Voice settings">
+      <button class="icon-btn" id="settings-gear-btn" onclick="toggleSettingsPanel()" title="Settings">
         <span class="icon"><svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M7.429 1.525a6.593 6.593 0 011.142 0c.036.003.108.036.137.146l.289 1.105c.147.56.55.967.997 1.189.174.086.341.183.501.29.417.278.97.423 1.53.27l1.102-.303c.11-.03.175.016.195.046.219.31.41.641.573.989.014.031.022.11-.059.19l-.815.806c-.411.406-.562.957-.53 1.456a4.588 4.588 0 010 .582c-.032.499.119 1.05.53 1.456l.815.806c.08.08.073.159.059.19a6.494 6.494 0 01-.573.99c-.02.029-.086.074-.195.045l-1.103-.303c-.559-.153-1.112-.008-1.529.27-.16.107-.327.204-.5.29-.449.222-.851.628-.998 1.189l-.289 1.105c-.029.11-.1.143-.137.146a6.613 6.613 0 01-1.142 0c-.036-.003-.108-.037-.137-.146l-.289-1.105c-.147-.56-.55-.967-.997-1.189a4.502 4.502 0 01-.501-.29c-.417-.278-.97-.423-1.53-.27l-1.102.303c-.11.03-.175-.016-.195-.046a6.492 6.492 0 01-.573-.989c-.014-.031-.022-.11.059-.19l.815-.806c.411-.406.562-.957.53-1.456a4.587 4.587 0 010-.582c.032-.499-.119-1.05-.53-1.456l-.815-.806c-.08-.08-.073-.159-.059-.19a6.44 6.44 0 01.573-.99c.02-.029.086-.074.195-.045l1.103.303c.559.153 1.112.008 1.529-.27.16-.107.327-.204.5-.29.449-.222.851-.628.998-1.189l.289-1.105c.029-.11.1-.143.137-.146zM8 0c-.236 0-.47.01-.701.03-.743.065-1.29.615-1.458 1.261l-.29 1.106c-.017.066-.078.158-.211.224a5.994 5.994 0 00-.668.386c-.123.082-.233.117-.3.117h-.013l-1.104-.304c-.646-.178-1.314.023-1.71.64a7.994 7.994 0 00-.573.989c-.358.658-.217 1.381.164 1.758l.816.806c.046.046.106.144.098.284a6.095 6.095 0 000 .772c.008.14-.052.238-.098.284l-.816.806c-.38.377-.522 1.1-.164 1.758.145.267.306.524.573.99.396.616 1.064.817 1.71.639l1.104-.304c.068-.019.146-.003.3.117.195.13.4.25.668.387.133.066.194.158.212.224l.289 1.106c.169.646.715 1.196 1.458 1.26a8.094 8.094 0 001.402 0c.743-.064 1.29-.614 1.458-1.26l.29-1.106c.017-.066.078-.158.211-.224a5.98 5.98 0 00.668-.386c.123-.082.233-.117.3-.117h.013l1.104.304c.646.178 1.314-.023 1.71-.64.267-.465.428-.722.573-.989.358-.658.217-1.381-.164-1.758l-.816-.806c-.046-.046-.106-.144-.098-.284a6.095 6.095 0 000-.772c-.008-.14.052-.238.098-.284l.816-.806c.38-.377.522-1.1.164-1.758a7.994 7.994 0 00-.573-.99c-.396-.616-1.064-.817-1.71-.639l-1.104.304c-.068.019-.146.003-.3-.117a5.994 5.994 0 00-.668-.387c-.133-.066-.194-.158-.212-.224L10.16 1.29C9.99.645 9.444.095 8.701.031A8.094 8.094 0 008 0zm0 11a3 3 0 100-6 3 3 0 000 6z"/></svg></span>
       </button>
-      <div id="voice-panel">
-        <h3>
-          <span class="icon"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></span>
-          Voice Settings
-        </h3>
-        <label for="voice-provider">Provider</label>
-        <select id="voice-provider" onchange="switchVoiceProvider()">
-          <option value="azure">Azure Speech</option>
-          <option value="elevenlabs">ElevenLabs</option>
-          <option value="browser">Browser (free)</option>
-        </select>
-        <div id="azure-fields">
-          <label for="az-speech-key">Speech API Key</label>
-          <input type="password" id="az-speech-key" placeholder="paste key from Azure portal..." autocomplete="off">
-          <label for="az-speech-region">Region</label>
-          <select id="az-speech-region" onchange="loadAzureVoices()">
-            <option value="eastus">East US</option>
-            <option value="eastus2">East US 2</option>
-            <option value="westus">West US</option>
-            <option value="westus2">West US 2</option>
-            <option value="centralus">Central US</option>
-            <option value="northeurope">North Europe</option>
-            <option value="westeurope">West Europe</option>
-            <option value="swedencentral">Sweden Central</option>
-            <option value="southeastasia">Southeast Asia</option>
-            <option value="australiaeast">Australia East</option>
-            <option value="japaneast">Japan East</option>
-          </select>
-          <label for="az-voice-select">Voice</label>
-          <select id="az-voice-select">
-            <option value="">Enter key &amp; save to load voices</option>
-          </select>
+      <div id="settings-panel">
+
+        <!-- Voice Settings -->
+        <div class="sp-section" id="sp-voice">
+          <div class="sp-header" onclick="toggleSpSection('sp-voice')">
+            <span class="sp-title">🔊 Voice Settings</span>
+            <span class="sp-chev">›</span>
+          </div>
+          <div class="sp-body">
+            <label for="voice-provider">Provider</label>
+            <select id="voice-provider" onchange="switchVoiceProvider()">
+              <option value="azure">Azure Speech</option>
+              <option value="elevenlabs">ElevenLabs</option>
+              <option value="browser">Browser (free)</option>
+            </select>
+            <div id="azure-fields">
+              <label for="az-speech-key">Speech API Key</label>
+              <input type="password" id="az-speech-key" placeholder="paste key from Azure portal..." autocomplete="off">
+              <label for="az-speech-region">Region</label>
+              <select id="az-speech-region" onchange="loadAzureVoices()">
+                <option value="eastus">East US</option>
+                <option value="eastus2">East US 2</option>
+                <option value="westus">West US</option>
+                <option value="westus2">West US 2</option>
+                <option value="centralus">Central US</option>
+                <option value="northeurope">North Europe</option>
+                <option value="westeurope">West Europe</option>
+                <option value="swedencentral">Sweden Central</option>
+                <option value="southeastasia">Southeast Asia</option>
+                <option value="australiaeast">Australia East</option>
+                <option value="japaneast">Japan East</option>
+              </select>
+              <label for="az-voice-select">Voice</label>
+              <select id="az-voice-select">
+                <option value="">Enter key &amp; save to load voices</option>
+              </select>
+            </div>
+            <div id="elevenlabs-fields" style="display:none">
+              <label for="el-api-key">ElevenLabs API Key</label>
+              <input type="password" id="el-api-key" placeholder="sk_..." autocomplete="off">
+              <label for="el-voice-select">Voice</label>
+              <select id="el-voice-select">
+                <option value="">Enter API key first</option>
+              </select>
+              <label for="el-model-select">Model</label>
+              <select id="el-model-select">
+                <option value="eleven_multilingual_v2">Multilingual v2</option>
+                <option value="eleven_turbo_v2_5">Turbo v2.5 (low latency)</option>
+                <option value="eleven_monolingual_v1">English v1</option>
+              </select>
+            </div>
+            <div class="panel-row">
+              <button class="panel-btn primary" onclick="saveVoiceSettings()">Save</button>
+              <button class="panel-btn" onclick="testVoice()">Test</button>
+              <button class="panel-btn" onclick="clearVoiceSettings()">Clear Key</button>
+            </div>
+            <div class="panel-row" style="margin-top:6px">
+              <button class="panel-btn" onclick="exportVoiceConfig()">Export</button>
+              <button class="panel-btn" onclick="document.getElementById('voice-import').click()">Import</button>
+              <input type="file" id="voice-import" accept=".zip,.json" style="display:none" onchange="importVoiceConfig(event)">
+            </div>
+            <div class="panel-status" id="voice-panel-status"></div>
+          </div>
         </div>
-        <div id="elevenlabs-fields" style="display:none">
-          <label for="el-api-key">ElevenLabs API Key</label>
-          <input type="password" id="el-api-key" placeholder="sk_..." autocomplete="off">
-          <label for="el-voice-select">Voice</label>
-          <select id="el-voice-select">
-            <option value="">Enter API key first</option>
-          </select>
-          <label for="el-model-select">Model</label>
-          <select id="el-model-select">
-            <option value="eleven_multilingual_v2">Multilingual v2</option>
-            <option value="eleven_turbo_v2_5">Turbo v2.5 (low latency)</option>
-            <option value="eleven_monolingual_v1">English v1</option>
-          </select>
+
+        <!-- Rapplications -->
+        <div class="sp-section" id="sp-rapps">
+          <div class="sp-header" onclick="toggleSpSection('sp-rapps'); loadRapps();">
+            <span class="sp-title">📦 Rapplications</span>
+            <span class="sp-chev">›</span>
+          </div>
+          <div class="sp-body">
+            <div class="sp-sub-label">Installed <span id="sp-rapps-installed-n">(0)</span></div>
+            <div id="sp-rapps-installed"></div>
+            <div class="sp-sub-label" style="margin-top:12px">Catalog <span id="sp-rapps-catalog-n">(0)</span></div>
+            <div id="sp-rapps-catalog"></div>
+          </div>
         </div>
-        <div class="panel-row">
-          <button class="panel-btn primary" onclick="saveVoiceSettings()">Save</button>
-          <button class="panel-btn" onclick="testVoice()">Test</button>
-          <button class="panel-btn" onclick="clearVoiceSettings()">Clear Key</button>
+
+        <!-- Install -->
+        <div class="sp-section" id="sp-install">
+          <div class="sp-header" onclick="toggleSpSection('sp-install'); refreshInstallUI();">
+            <span class="sp-title">💻 Install</span>
+            <span class="sp-chev">›</span>
+          </div>
+          <div class="sp-body">
+            <div class="sp-toggle-row" id="install-flavor-row">
+              <button class="sp-toggle-btn flavor-active" data-flavor="brainstem">Local brainstem</button>
+              <button class="sp-toggle-btn" data-flavor="swarm">Swarm endpoint</button>
+            </div>
+            <div style="font-size:10px; color:#8b949e; margin-bottom:8px; line-height:1.5" id="sp-install-blurb"></div>
+            <div class="sp-toggle-row" id="install-os-row">
+              <button class="sp-toggle-btn" data-os="mac">macOS</button>
+              <button class="sp-toggle-btn" data-os="linux">Linux</button>
+              <button class="sp-toggle-btn" data-os="win">Windows</button>
+            </div>
+            <div class="install-cmd-block" id="sp-install-cmd" onclick="copyInstallCmd()"></div>
+            <div style="font-size:9px; color:#6e7681; text-align:center">tap to copy</div>
+          </div>
         </div>
-        <div class="panel-row" style="margin-top:6px">
-          <button class="panel-btn" onclick="exportVoiceConfig()">Export</button>
-          <button class="panel-btn" onclick="document.getElementById('voice-import').click()">Import</button>
-          <input type="file" id="voice-import" accept=".zip,.json" style="display:none" onchange="importVoiceConfig(event)">
+
+        <!-- Deploy as Swarm -->
+        <div class="sp-section" id="sp-swarm">
+          <div class="sp-header" onclick="toggleSpSection('sp-swarm'); loadSwarmAgents();">
+            <span class="sp-title">🐝 Deploy as Swarm</span>
+            <span class="sp-chev">›</span>
+          </div>
+          <div class="sp-body">
+            <div style="font-size:10px; color:#8b949e; margin-bottom:8px; line-height:1.5">
+              Bundles agents into a deployable swarm package for any Tier 2 endpoint.
+            </div>
+            <label for="sp-swarm-name">Swarm name</label>
+            <input type="text" id="sp-swarm-name" placeholder="my-sales-swarm" autocomplete="off">
+            <label for="sp-swarm-purpose">Purpose</label>
+            <input type="text" id="sp-swarm-purpose" placeholder="e.g. B2B sales acceleration" autocomplete="off">
+            <div class="sp-sub-label">Included agents</div>
+            <div id="sp-swarm-agents" class="sp-swarm-list"></div>
+            <label for="sp-swarm-endpoint">Push to endpoint</label>
+            <input type="text" id="sp-swarm-endpoint" placeholder="http://localhost:7080" autocomplete="off">
+            <div class="panel-row">
+              <button class="panel-btn" onclick="downloadSwarmBundle()">⬇ Download</button>
+              <button class="panel-btn primary" id="sp-swarm-push" onclick="pushSwarmBundle()">🚀 Push</button>
+            </div>
+          </div>
         </div>
-        <div class="panel-status" id="voice-panel-status"></div>
+
       </div>
     </div>
     <a class="icon-btn" href="vscode://file/$HOME/.brainstem/src/rapp_brainstem" id="vscode-link" title="Open in VS Code">
@@ -1524,15 +1667,217 @@
   }
 
   function toggleVoicePanel() {
-    document.getElementById('voice-panel').classList.toggle('open');
+    toggleSettingsPanel();
+  }
+
+  function toggleSettingsPanel() {
+    document.getElementById('settings-panel').classList.toggle('open');
+  }
+  function toggleSpSection(id) {
+    document.getElementById(id).classList.toggle('open');
   }
 
   document.addEventListener('click', (e) => {
-    const panel = document.getElementById('voice-panel');
+    const panel = document.getElementById('settings-panel');
     if (!e.target.closest('.voice-wrapper') && panel.classList.contains('open')) {
       panel.classList.remove('open');
     }
   });
+
+  // ── Rapplications (Settings panel) ──
+  let _rappsCache = null;
+  async function loadRapps() {
+    const instDiv = document.getElementById('sp-rapps-installed');
+    const catDiv = document.getElementById('sp-rapps-catalog');
+    try {
+      const [bR, cR] = await Promise.all([
+        fetch(API + '/api/binder').then(r => r.json()).catch(() => ({ installed: [] })),
+        fetch(API + '/api/binder/catalog').then(r => r.json()).catch(() => ({ rapplications: [] }))
+      ]);
+      _rappsCache = { binder: bR, catalog: cR };
+      const installed = bR.installed || [];
+      const catalog = (cR.rapplications || []);
+      const installedIds = new Set(installed.map(e => e.id));
+      document.getElementById('sp-rapps-installed-n').textContent = '(' + installed.length + ')';
+      document.getElementById('sp-rapps-catalog-n').textContent = '(' + catalog.length + ')';
+      instDiv.innerHTML = installed.length ? installed.map(e =>
+        `<div class="rapp-row installed"><div class="rr-head"><span class="rr-name">${esc(e.id)}</span><span class="rr-ver">v${esc(e.version||'?')}</span></div><div class="rr-actions"><button class="panel-btn danger" onclick="uninstallRapp('${esc(e.id)}')">Uninstall</button></div></div>`
+      ).join('') : '<div style="color:#8b949e;font-size:10px;font-style:italic">No rapplications installed.</div>';
+      catDiv.innerHTML = catalog.map(r => {
+        const isInst = installedIds.has(r.id);
+        const summary = (r.summary||'').slice(0,120) + ((r.summary||'').length > 120 ? '…' : '');
+        return `<div class="rapp-row ${isInst?'installed':''}"><div class="rr-head"><span class="rr-name">${esc(r.id)}</span><span class="rr-ver">v${esc(r.version||'?')}</span></div><div class="rr-summary">${esc(summary)}</div><div class="rr-actions">${isInst
+          ? `<button class="panel-btn danger" onclick="uninstallRapp('${esc(r.id)}')">Uninstall</button>`
+          : `<button class="panel-btn primary" onclick="installRapp('${esc(r.id)}')">Install</button>`
+        }</div></div>`;
+      }).join('') || '<div style="color:#8b949e;font-size:10px;font-style:italic">Catalog empty or unreachable.</div>';
+    } catch (e) {
+      instDiv.innerHTML = '<div style="color:#f85149;font-size:10px">Error loading rapplications.</div>';
+    }
+  }
+  async function installRapp(id) {
+    try {
+      const r = await fetch(API + '/api/binder/install', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ id })
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      loadRapps(); loadAgentsList();
+    } catch(e) { alert('Install failed: ' + e.message); }
+  }
+  async function uninstallRapp(id) {
+    if (!confirm('Uninstall ' + id + '?')) return;
+    try {
+      const r = await fetch(API + '/api/binder/installed/' + encodeURIComponent(id), { method: 'DELETE' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      loadRapps(); loadAgentsList();
+    } catch(e) { alert('Uninstall failed: ' + e.message); }
+  }
+  function esc(s) { return String(s??'').replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  // ── Install commands (Settings panel) ──
+  const INSTALL_CMDS = {
+    brainstem: {
+      mac:   'curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash',
+      linux: 'curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash',
+      win:   'iwr https://kody-w.github.io/RAPP/install.ps1 -useb | iex',
+    },
+    swarm: {
+      mac:   'curl -fsSL https://kody-w.github.io/RAPP/install-swarm.sh | bash',
+      linux: 'curl -fsSL https://kody-w.github.io/RAPP/install-swarm.sh | bash',
+      win:   'iwr https://kody-w.github.io/RAPP/install-swarm.sh -useb | wsl bash',
+    },
+  };
+  const INSTALL_BLURBS = {
+    brainstem: 'The full local-first stack — Python + Flask + venv + GitHub OAuth. Installs to <code>~/.brainstem/</code>, then you can <code>brainstem</code> from any shell.',
+    swarm: 'Multi-tenant swarm server on <code>localhost:7080</code>. Each swarm is isolated by GUID — push from Deploy as Swarm above.',
+  };
+  function detectInstallOS() {
+    const ua = navigator.userAgent;
+    if (/Windows/i.test(ua)) return 'win';
+    if (/Linux/i.test(ua)) return 'linux';
+    return 'mac';
+  }
+  function refreshInstallUI() {
+    const flavor = document.querySelector('#install-flavor-row .flavor-active')?.dataset.flavor || 'brainstem';
+    const os = document.querySelector('#install-os-row .active')?.dataset.os || detectInstallOS();
+    // Ensure active states
+    document.querySelectorAll('#install-os-row .sp-toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.os === os));
+    document.getElementById('sp-install-cmd').textContent = INSTALL_CMDS[flavor]?.[os] || '';
+    document.getElementById('sp-install-blurb').innerHTML = INSTALL_BLURBS[flavor] || '';
+  }
+  document.addEventListener('click', (e) => {
+    if (e.target.matches('#install-flavor-row .sp-toggle-btn')) {
+      document.querySelectorAll('#install-flavor-row .sp-toggle-btn').forEach(b => b.classList.remove('flavor-active'));
+      e.target.classList.add('flavor-active');
+      refreshInstallUI();
+    }
+    if (e.target.matches('#install-os-row .sp-toggle-btn')) {
+      document.querySelectorAll('#install-os-row .sp-toggle-btn').forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      refreshInstallUI();
+    }
+  });
+  function copyInstallCmd() {
+    const cmd = document.getElementById('sp-install-cmd').textContent;
+    navigator.clipboard.writeText(cmd).then(() => {
+      const el = document.getElementById('sp-install-cmd');
+      const orig = el.textContent;
+      el.textContent = '✓ Copied!';
+      el.style.color = '#3fb950';
+      setTimeout(() => { el.textContent = orig; el.style.color = ''; }, 1400);
+    });
+  }
+
+  // ── Deploy as Swarm (Settings panel) ──
+  async function loadSwarmAgents() {
+    const list = document.getElementById('sp-swarm-agents');
+    try {
+      const r = await fetch(API + '/api/binder');
+      const data = await r.json();
+      const agents = data.installed || [];
+      if (!agents.length) {
+        list.innerHTML = '<div style="padding:8px;color:#6e7681;font-size:10px;text-align:center">No agents installed. Install rapplications first.</div>';
+        return;
+      }
+      list.innerHTML = agents.map(a =>
+        `<div class="sp-swarm-row">${esc(a.id || a.singleton_filename || '?')}</div>`
+      ).join('');
+      if (!document.getElementById('sp-swarm-name').value) {
+        document.getElementById('sp-swarm-name').value =
+          (agents[0]?.id || 'rapp').toLowerCase().replace(/[^a-z0-9]/g,'-') + '-swarm-' + agents.length;
+      }
+    } catch(e) {
+      // Fallback: load from /agents endpoint
+      try {
+        const r2 = await fetch(API + '/agents');
+        const agents2 = await r2.json();
+        list.innerHTML = (agents2||[]).map(a =>
+          `<div class="sp-swarm-row">${esc(a.name || a.filename || '?')}</div>`
+        ).join('') || '<div style="padding:8px;color:#6e7681;font-size:10px">No agents found.</div>';
+      } catch(e2) {
+        list.innerHTML = '<div style="padding:8px;color:#f85149;font-size:10px">Could not load agents.</div>';
+      }
+    }
+  }
+  async function buildSwarmBundleLocal() {
+    const name = document.getElementById('sp-swarm-name').value.trim();
+    const purpose = document.getElementById('sp-swarm-purpose').value.trim();
+    const slug = (name || 'untitled-swarm').toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
+    // Fetch agent source files
+    let agentsData = [];
+    try {
+      const r = await fetch(API + '/agents');
+      agentsData = await r.json();
+    } catch(e) {}
+    return {
+      schema: 'rapp-swarm/1.0',
+      name: slug,
+      purpose: purpose || '',
+      created_at: new Date().toISOString(),
+      agent_count: agentsData.length,
+      agents: agentsData.map(a => ({
+        filename: a.filename,
+        name: a.name,
+        description: a.description || '',
+      })),
+    };
+  }
+  async function downloadSwarmBundle() {
+    const name = document.getElementById('sp-swarm-name').value.trim();
+    if (!name) { alert('Give the swarm a name first.'); return; }
+    const bundle = await buildSwarmBundleLocal();
+    const filename = bundle.name + '.swarm.json';
+    const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+  async function pushSwarmBundle() {
+    const name = document.getElementById('sp-swarm-name').value.trim();
+    const endpoint = document.getElementById('sp-swarm-endpoint').value.trim().replace(/\/+$/, '');
+    if (!name) { alert('Give the swarm a name first.'); return; }
+    if (!endpoint) { alert('Enter an endpoint URL, or use Download instead.'); return; }
+    const bundle = await buildSwarmBundleLocal();
+    const btn = document.getElementById('sp-swarm-push');
+    btn.textContent = '⏳ Pushing…'; btn.disabled = true;
+    try {
+      const r = await fetch(endpoint + '/api/swarm/deploy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bundle),
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const result = await r.json();
+      btn.textContent = '✓ Deployed'; btn.disabled = false;
+      alert('Swarm "' + (result.name || bundle.name) + '" deployed!\n\nswarm_guid: ' + result.swarm_guid + '\nURL: ' + (result.swarm_url || endpoint));
+      setTimeout(() => { btn.textContent = '🚀 Push'; }, 2000);
+    } catch(e) {
+      btn.textContent = '✗ Failed'; btn.disabled = false;
+      alert('Push failed: ' + e.message + '\n\nMake sure a swarm endpoint is running at ' + endpoint);
+      setTimeout(() => { btn.textContent = '🚀 Push'; }, 2000);
+    }
+  }
 
   // ── Azure Speech TTS ──
   async function loadAzureVoices() {
