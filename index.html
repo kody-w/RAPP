@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>RAPP — The AI Agent Stack</title>
-<meta name="description" content="The full RAPP stack: local Brainstem → cloud Hippocampus (CommunityRAPP) → Copilot Studio. Local-first AI agents that grow into the Microsoft enterprise stack one tier at a time.">
+<meta name="description" content="The full RAPP stack: local Brainstem → cloud Swarm → Copilot Studio. Local-first AI agents that grow into the Microsoft enterprise stack one tier at a time.">
 <meta property="og:title" content="RAPP — The AI Agent Stack">
-<meta property="og:description" content="Brainstem → Hippocampus → Copilot Studio. Three tiers. One agent. Your own.">
+<meta property="og:description" content="Brainstem → Swarm → Copilot Studio. Three tiers. One agent. Your own.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://kody-w.github.io/RAPP/">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E🧠%3C/text%3E%3C/svg%3E">
@@ -172,10 +172,11 @@
     </div>
     <div class="navlinks">
       <a href="#brainstem">Brainstem</a>
-      <a href="#hippocampus">Hippocampus</a>
+      <a href="#swarm">Swarm</a>
       <a href="#copilot-studio">Copilot Studio</a>
-      <a href="brainstem/" title="Browser-only brainstem with card binder">Try it ↗</a>
-      <a href="installer/">Installer</a>
+      <a href="rapp_brainstem/web/" title="Browser-only brainstem with card binder">Try it ↗</a>
+      <a href="rapp_installer/">Installer</a>
+      <a href="https://kody-w.github.io/" title="Doctrine, decisions, and build-in-public" target="_blank" rel="noopener">Blog ↗</a>
       <a href="SPEC.md">SPEC</a>
       <a class="gh-btn" href="https://github.com/kody-w/RAPP" target="_blank" rel="noopener">GitHub →</a>
     </div>
@@ -186,7 +187,7 @@
   <h1>The <span class="grad">RAPP Stack</span></h1>
   <p class="tagline">
     Local-first AI agents that grow into the Microsoft enterprise stack
-    one tier at a time. <strong style="color:var(--fg)">Brainstem → Hippocampus → Copilot Studio.</strong>
+    one tier at a time. <strong style="color:var(--fg)">Brainstem → Swarm → Copilot Studio.</strong>
     No API keys. No cloud setup. Just your GitHub account.
   </p>
   <div class="meta">
@@ -230,11 +231,11 @@
     <line x1="450" y1="150" x2="450" y2="180" stroke="#8ea0b8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
     <text x="460" y="170" fill="#8ea0b8" font-size="11" font-family="Courier New">deploy ↗</text>
 
-    <!-- Tier 2: Hippocampus (cloud) -->
+    <!-- Tier 2: Swarm (cloud) -->
     <g transform="translate(50,190)">
       <rect width="800" height="100" rx="14" fill="url(#g2)" stroke="#58a6ff" stroke-width="1.5" stroke-opacity=".5"/>
-      <text x="20" y="32" fill="#58a6ff" font-family="Courier New" font-size="11" letter-spacing="2">TIER 2 · CLOUD (CommunityRAPP)</text>
-      <text x="20" y="60" fill="#e8ecf4" font-size="22" font-weight="700">☁️ RAPP Hippocampus</text>
+      <text x="20" y="32" fill="#58a6ff" font-family="Courier New" font-size="11" letter-spacing="2">TIER 2 · CLOUD</text>
+      <text x="20" y="60" fill="#e8ecf4" font-size="22" font-weight="700">☁️ RAPP Swarm</text>
       <text x="20" y="84" fill="#8ea0b8" font-size="13">Azure Functions · Azure OpenAI · Storage · Application Insights · Entra ID</text>
       <g class="pulse" style="color:#58a6ff;animation-delay:.5s" transform="translate(720,50)">
         <circle r="20" fill="none" stroke="#58a6ff" stroke-width="1.5"/>
@@ -318,28 +319,28 @@ brainstem       # → http://localhost:7071</pre>
 
   <div class="flow">deploy to cloud</div>
 
-  <!-- Tier 2: HIPPOCAMPUS -->
-  <article class="tier" data-tier="2" id="hippocampus">
+  <!-- Tier 2: SWARM -->
+  <article class="tier" data-tier="2" id="swarm">
     <header class="tier-head">
       <div class="tier-num">02</div>
       <div class="tier-title-wrap">
-        <div class="tier-organ">Cloud · The spinal cord (CommunityRAPP)</div>
-        <h2 class="tier-title">☁️ The Hippocampus</h2>
+        <div class="tier-organ">Cloud · Swarms running in Azure</div>
+        <h2 class="tier-title">☁️ The Swarm</h2>
         <p class="tier-sub">Give your brainstem a cloud body. Persistent memory, always-on, Azure OpenAI behind it.</p>
       </div>
     </header>
     <div class="tier-body">
       <div class="tier-desc">
-        <p>The Hippocampus is the same brainstem agent loop, but living on <strong>Azure Functions</strong> with <strong>Azure OpenAI (GPT-4o)</strong>, a <strong>Storage Account</strong> for memory, and <strong>Application Insights</strong> for monitoring. All Entra ID auth — no API keys anywhere.</p>
+        <p>A RAPP Swarm is the same brainstem agent loop, but living on <strong>Azure Functions</strong> with <strong>Azure OpenAI (GPT-4o)</strong>, a <strong>Storage Account</strong> for memory, and <strong>Application Insights</strong> for monitoring. All Entra ID auth — no API keys anywhere.</p>
         <p>Each project is isolated: <code>~/rapp-projects/my-project/</code> with its own venv, agents, and local storage that mirror up to the cloud. Auth happens through the chat UI via GitHub device-code flow.</p>
         <div class="code">
           <span class="lbl">macOS / Linux</span>
-          <pre id="c2m">curl -fsSL https://raw.githubusercontent.com/kody-w/RAPP/main/install.sh | bash</pre>
+          <pre id="c2m">curl -fsSL https://kody-w.github.io/RAPP/install-swarm.sh | bash</pre>
           <button class="copy" data-target="c2m">Copy</button>
         </div>
         <div class="code">
-          <span class="lbl">Windows (PowerShell)</span>
-          <pre id="c2w">irm https://raw.githubusercontent.com/kody-w/RAPP/main/install.ps1 | iex</pre>
+          <span class="lbl">Windows (WSL)</span>
+          <pre id="c2w">iwr https://kody-w.github.io/RAPP/install-swarm.sh -useb | wsl bash</pre>
           <button class="copy" data-target="c2w">Copy</button>
         </div>
         <div class="code">
@@ -367,8 +368,7 @@ brainstem       # → http://localhost:7071</pre>
         </ul>
         <div class="tier-links">
           <a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fkody-w%2FRAPP%2Fmain%2Fazuredeploy.json" target="_blank" rel="noopener">Deploy to Azure ↗</a>
-          <a href="https://github.com/kody-w/CommunityRAPP" target="_blank" rel="noopener">CommunityRAPP repo ↗</a>
-          <a href="https://kody-w.github.io/CommunityRAPP/onboard.html" target="_blank" rel="noopener">Onboarding ↗</a>
+          <a href="https://github.com/kody-w/RAPP/tree/main/rapp_swarm" target="_blank" rel="noopener">rapp_swarm/ ↗</a>
         </div>
       </aside>
     </div>
@@ -388,7 +388,7 @@ brainstem       # → http://localhost:7071</pre>
     </header>
     <div class="tier-body">
       <div class="tier-desc">
-        <p>The included <strong>Power Platform solution .zip</strong> wires your Hippocampus Function App into Microsoft Copilot Studio. Import the solution, point it at your Function App URL, and publish.</p>
+        <p>The included <strong>Power Platform solution .zip</strong> wires your RAPP Swarm Function App into Microsoft Copilot Studio. Import the solution, point it at your Function App URL, and publish.</p>
         <p>The same agent logic you tested locally now answers in <strong>Microsoft Teams</strong> and <strong>M365 Copilot</strong> — declaratively, with org-wide governance, and with the full Copilot extensibility surface.</p>
         <div class="code">
           <span class="lbl">Download the solution .zip</span>
@@ -443,7 +443,7 @@ brainstem       # → http://localhost:7071</pre>
     <div class="arch-card">
       <span class="icon">🔓</span>
       <h3>No vendor lock-in</h3>
-      <p>Brainstem runs anywhere Python runs. Hippocampus is a vanilla ARM template. Copilot Studio harness is a portable solution .zip.</p>
+      <p>Brainstem runs anywhere Python runs. RAPP Swarm is a vanilla ARM template. Copilot Studio harness is a portable solution .zip.</p>
     </div>
     <div class="arch-card">
       <span class="icon">🪪</span>
@@ -470,16 +470,16 @@ brainstem       # → http://localhost:7071</pre>
 
 <footer>
   <div>
-    <strong style="color:var(--fg)">RAPP</strong> — A digital twin of the RAPP stack.<br>
-    Source: <a href="https://github.com/kody-w/RAPP" target="_blank" rel="noopener">RAPP</a>
-    · <a href="https://github.com/kody-w/CommunityRAPP" target="_blank" rel="noopener">CommunityRAPP</a>
+    <strong style="color:var(--fg)">RAPP</strong> — local-first AI agents, three tiers.<br>
+    Source: <a href="https://github.com/kody-w/RAPP" target="_blank" rel="noopener">kody-w/RAPP</a>
     · <a href="https://kody-w.github.io/RAR" target="_blank" rel="noopener">RAR (Agent Registry)</a>
-    · <a href="https://github.com/kody-w/RAPP" target="_blank" rel="noopener">RAPP</a>
+    · <a href="https://kody-w.github.io/" target="_blank" rel="noopener">Blog</a>
   </div>
   <div class="foot-links">
     <a href="#brainstem">Tier 1</a>
-    <a href="#hippocampus">Tier 2</a>
+    <a href="#swarm">Tier 2</a>
     <a href="#copilot-studio">Tier 3</a>
+    <a href="https://kody-w.github.io/" target="_blank" rel="noopener">Blog ↗</a>
     <a href="SPEC.md">v1 SPEC</a>
     <a href="https://github.com/kody-w" target="_blank" rel="noopener">@kody-w</a>
   </div>

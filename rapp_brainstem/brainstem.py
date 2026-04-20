@@ -167,7 +167,7 @@ def get_workspace(root):
 # ─── BINDER ────────────────────────────────────────────────────────────
 #
 # The binder is a per-twin manifest of which rapplications are installed.
-# Installation = materialize a singleton .py from the rapplications/ catalog
+# Installation = materialize a singleton .py from the rapp_store/ catalog
 # into <root>/agents/, where the brainstem's hot-loader picks it up.
 #
 # Binder state lives at <root>/.binder.json with schema rapp-binder/1.0
@@ -185,13 +185,13 @@ class Binder:
         self.catalog_path = Path(
             os.environ.get(
                 "RAPP_CATALOG",
-                str(Path(__file__).resolve().parent.parent / "store" / "index.json"),
+                str(Path(__file__).resolve().parent.parent / "rapp_store" / "index.json"),
             )
         )
         self.rapps_dir = Path(
             os.environ.get(
                 "RAPP_RAPPLICATIONS",
-                str(Path(__file__).resolve().parent.parent / "rapplications"),
+                str(Path(__file__).resolve().parent.parent / "rapp_store"),
             )
         )
         self._lock = threading.Lock()
@@ -223,7 +223,7 @@ class Binder:
         return None
 
     def _resolve_local_singleton(self, entry: dict):
-        """Locate the singleton on disk inside rapplications/ if present."""
+        """Locate the singleton on disk inside rapp_store/ if present."""
         fn = entry.get("singleton_filename")
         if not fn:
             return None
@@ -1162,7 +1162,7 @@ class SwarmHandler(BaseHTTPRequestHandler):
 
         # /tether/healthz + /tether/tools — speak the rapp-tether/1.0 wire shape
         # so the virtual brainstem at https://kody-w.github.io/RAPP/rapp_brainstem/web/
-        # can use this brainstem as its tether (no separate tether/server.py needed).
+        # can route agent calls through this brainstem for real OS access.
         if path in ("/tether/healthz",):
             agents_dir = Path(self.store.root) / "agents"
             self.store.execute_in_dir(agents_dir, "__warmup__", {}, cache_key="__binder__")
@@ -1197,7 +1197,7 @@ class SwarmHandler(BaseHTTPRequestHandler):
         if path in ("/api/binder", "/api/binder/"):
             return self._send_json(200, get_binder(self.store.root).list())
 
-        # /api/binder/catalog — proxy the local store/index.json catalog
+        # /api/binder/catalog — proxy the local rapp_store/index.json catalog
         if path in ("/api/binder/catalog", "/api/binder/catalog/"):
             return self._send_json(200, get_binder(self.store.root).catalog())
 

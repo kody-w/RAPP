@@ -109,11 +109,11 @@ echo "Setup: clean state"
 rm -rf "$KODY_ROOT" "$MOLLY_ROOT"
 
 echo "Setup: starting Kody's swarm cloud on :$KODY_PORT (root: $KODY_ROOT)"
-python3 swarm/server.py --port $KODY_PORT --root "$KODY_ROOT" >/dev/null 2>&1 &
+python3 rapp_brainstem/brainstem.py --port $KODY_PORT --root "$KODY_ROOT" >/dev/null 2>&1 &
 KODY_PID=$!
 
 echo "Setup: starting Molly's swarm cloud on :$MOLLY_PORT (root: $MOLLY_ROOT)"
-python3 swarm/server.py --port $MOLLY_PORT --root "$MOLLY_ROOT" >/dev/null 2>&1 &
+python3 rapp_brainstem/brainstem.py --port $MOLLY_PORT --root "$MOLLY_ROOT" >/dev/null 2>&1 &
 MOLLY_PID=$!
 
 sleep 1.8

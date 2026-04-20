@@ -65,7 +65,7 @@ sleep 2
 GUID=$(python3 - <<'PY'
 import json, urllib.request, pathlib
 agents = [{'filename':p.name,'source':p.read_text()}
-          for p in sorted(pathlib.Path('rapplications/bookfactory/source').glob('*_agent.py'))
+          for p in sorted(pathlib.Path('rapp_store/bookfactory/source').glob('*_agent.py'))
           if p.name != 'basic_agent.py']
 bundle = {'schema':'rapp-swarm/1.0','name':'bf-v2-test',
           'soul':'BookFactory v2 wire test','agents':agents}

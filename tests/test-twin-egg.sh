@@ -87,7 +87,7 @@ cd /Users/kodyw/Documents/GitHub/Rappter/RAPP
 
 echo ""
 echo "--- pack ---"
-TWINS_HOME=$SRC bash community_rapp/twin-egg.sh pack --out $EGG > /tmp/egg-pack.out
+TWINS_HOME=$SRC bash rapp_swarm/twin-egg.sh pack --out $EGG > /tmp/egg-pack.out
 PACKED_LINE=$(grep "packed" /tmp/egg-pack.out)
 assert_contains "pack reports 2 twins"  "2 twin"  "$PACKED_LINE"
 assert_file "egg file produced"  "$EGG"
@@ -96,7 +96,7 @@ assert_file "egg file produced"  "$EGG"
 
 echo ""
 echo "--- info ---"
-INFO=$(bash community_rapp/twin-egg.sh info $EGG)
+INFO=$(bash rapp_swarm/twin-egg.sh info $EGG)
 assert_contains "info: rapp-egg/1.0 schema"  "rapp-egg/1.0"  "$INFO"
 assert_contains "info: kody twin listed"     "kody"          "$INFO"
 assert_contains "info: molly twin listed"    "molly"         "$INFO"
@@ -127,7 +127,7 @@ PY
 
 echo ""
 echo "--- unpack ---"
-TWINS_HOME=$DST bash community_rapp/twin-egg.sh unpack $EGG --into $DST > /tmp/egg-unpack.out
+TWINS_HOME=$DST bash rapp_swarm/twin-egg.sh unpack $EGG --into $DST > /tmp/egg-unpack.out
 RESTORED=$(grep "restored" /tmp/egg-unpack.out || echo "")
 assert_contains "unpack: SHA verified"  "all SHA"          "$(cat /tmp/egg-unpack.out)"
 assert_contains "unpack: 2 twins restored" "restored 2 twin" "$RESTORED"

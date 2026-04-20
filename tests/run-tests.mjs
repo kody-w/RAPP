@@ -319,11 +319,10 @@ class TinyAgent(BasicAgent):
 
   for (const p of [
     'index.html', 'SPEC.md', 'README.md',
-    'installer/index.html', 'community_rapp/index.html', 'rapp_brainstem/web/index.html', 'rapp_brainstem/web/rapp.js',
+    'rapp_installer/index.html', 'rapp_swarm/index.html', 'rapp_brainstem/web/index.html', 'rapp_brainstem/web/rapp.js',
     'rapp_brainstem/agents/basic_agent.py',
     'rapp_brainstem/agents/manage_memory_agent.py', 'rapp_brainstem/agents/manage_memory_agent.py', 'rapp_brainstem/agents/hacker_news_agent.py',
     'tests/run-tests.mjs',
-    'tether/server.py',
     'rapp_brainstem/brainstem.py',
     'install-swarm.sh',
     'tests/test-sealing-snapshot.sh',
@@ -335,12 +334,12 @@ class TinyAgent(BasicAgent):
     'rapp_brainstem/chat.py',
     'rapp_brainstem/web/onboard/index.html',
     'rapp_brainstem/web/onboard/registry.json',
-    'community_rapp/function_app.py',
-    'community_rapp/host.json',
-    'community_rapp/requirements.txt',
-    'community_rapp/build.sh',
-    'community_rapp/provision-twin.sh',
-    'community_rapp/README.md',
+    'rapp_swarm/function_app.py',
+    'rapp_swarm/host.json',
+    'rapp_swarm/requirements.txt',
+    'rapp_swarm/build.sh',
+    'rapp_swarm/provision-twin.sh',
+    'rapp_swarm/README.md',
   ]) {
     await test(`twin file present: ${p}`, () => {
       const full = path.join(ROOT, p);

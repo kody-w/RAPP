@@ -1,7 +1,7 @@
 #!/bin/bash
 # tests/test-rarbookworld-publish.sh — verify @rarbookworld publish to BOTH:
 #   1. RAR repo at agents/@rarbookworld/<slug>.py with valid RAR manifests
-#   2. RAPP store/index.json with publisher: @rarbookworld entries
+#   2. RAPP rapp_store/index.json with publisher: @rarbookworld entries
 
 set -e
 set -o pipefail
@@ -121,14 +121,14 @@ for f in sorted(DEST.glob("*.py")):
 sys.exit(1 if fail else 0)
 PY
 
-# ── Section 4: RAPP store/index.json has the @rarbookworld entries ────
+# ── Section 4: RAPP rapp_store/index.json has the @rarbookworld entries ────
 
 echo ""
-echo "--- Section 4: RAPP store/index.json @rarbookworld coverage ---"
+echo "--- Section 4: RAPP rapp_store/index.json @rarbookworld coverage ---"
 
 python3 - <<'PY'
 import json, sys
-cat = json.load(open("store/index.json"))
+cat = json.load(open("rapp_store/index.json"))
 rb = [r for r in cat["rapplications"] if r.get("publisher") == "@rarbookworld"]
 print(f"  total rapplications: {len(cat['rapplications'])}")
 print(f"  @rarbookworld entries: {len(rb)}")
@@ -146,7 +146,7 @@ echo "--- Section 5: catalog SHA-256 still verifies ---"
 
 python3 - <<'PY'
 import json, hashlib, pathlib, sys
-cat = json.load(open("store/index.json"))
+cat = json.load(open("rapp_store/index.json"))
 fail = 0
 checked = 0
 for r in cat["rapplications"]:
@@ -183,7 +183,7 @@ sleep 2
 
 GUID=$(python3 - <<PY
 import json, urllib.request, pathlib
-src = pathlib.Path("rapplications/bookfactory/singleton/bookfactory_agent.py").read_text()
+src = pathlib.Path("rapp_store/bookfactory/singleton/bookfactory_agent.py").read_text()
 bundle = {
     "schema": "rapp-swarm/1.0",
     "name": "rarbookworld-singleton-test",

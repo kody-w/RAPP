@@ -12,15 +12,16 @@ The repo memorializes the three-tier RAPP architecture, plus a browser-only **vi
 |------|-----------|
 | `index.html` | Landing page — animated stack diagram + tier intros |
 | `SPEC.md` | The frozen v1 contract (sacred — do not break) |
-| [`installer/`](./installer/) | Twin of [kody-w/RAPP](https://github.com/kody-w/RAPP) — install widget mirror |
-| [`brainstem/`](./brainstem/) | **Virtual brainstem** — chat UI parity with the local Flask brainstem, plus the **card binder** |
-| [`hippocampus/`](./hippocampus/) | Twin of Tier 2 — Deploy-to-Azure button + ARM template doc |
+| [`rapp_installer/`](./rapp_installer/) | Install widget mirror |
+| [`rapp_brainstem/`](./rapp_brainstem/) | The local Flask brainstem + its browser twin under `web/` |
+| [`rapp_swarm/`](./rapp_swarm/) | Tier 2 — Azure Functions deployment target |
+| [`rapp_store/`](./rapp_store/) | Rapplication catalog + sources + eggs |
 | [`agents/`](./agents/) | Starter single-file agents (`hello`, `dice`, `weather_poet`, `sloshtest`) |
 | [`tests/`](./tests/) | Browser + Node test runner for the v1 contract |
 
 ## The virtual brainstem
 
-[`brainstem/index.html`](./brainstem/index.html) is a browser-only RAPP brainstem at UI + functional parity with the real one. Bring your own OpenAI-compatible API key and it runs.
+[`rapp_brainstem/web/index.html`](./rapp_brainstem/web/index.html) is a browser-only RAPP brainstem at UI + functional parity with the real one. Bring your own OpenAI-compatible API key and it runs.
 
 It ships with a **starter binder** of single-file agents. Multi-agent hot-loading is organized as a card game:
 

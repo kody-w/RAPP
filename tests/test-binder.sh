@@ -142,7 +142,7 @@ echo "--- Section 7: SHA-256 enforcement ---"
 DOCTORED=/tmp/doctored-catalog.json
 python3 - <<PY
 import json
-cat = json.load(open("store/index.json"))
+cat = json.load(open("rapp_store/index.json"))
 for r in cat["rapplications"]:
     if r["id"] == "bookfactoryagent":
         r["singleton_sha256"] = "0" * 64

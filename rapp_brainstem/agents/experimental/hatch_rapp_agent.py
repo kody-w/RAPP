@@ -1692,15 +1692,15 @@ class HatchRappAgent(BasicAgent):
             )
 
         try:
-            # Prefer copying from community_rapp/ in the repo (source of truth)
+            # Prefer copying from rapp_swarm/ in the repo (source of truth)
             # Fall back to inline templates if not available
             brainstem_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             repo_root = os.path.dirname(brainstem_dir)
-            community_src = os.path.join(repo_root, "community_rapp")
-            use_repo = os.path.isfile(os.path.join(community_src, "function_app.py"))
+            swarms_src = os.path.join(repo_root, "rapp_swarm")
+            use_repo = os.path.isfile(os.path.join(swarms_src, "function_app.py"))
 
             if use_repo:
-                self._scaffold_from_repo(output_dir, community_src, target)
+                self._scaffold_from_repo(output_dir, swarms_src, target)
             else:
                 self._scaffold_from_templates(output_dir, target)
 
@@ -1789,7 +1789,7 @@ class HatchRappAgent(BasicAgent):
     # ------------------------------------------------------------------
 
     def _scaffold_from_repo(self, output_dir: str, src: str, target: str):
-        """Copy files directly from community_rapp/ in the repo."""
+        """Copy files directly from rapp_swarm/ in the repo."""
         # Files to always copy
         always = [
             "function_app.py", "host.json", "requirements.txt",

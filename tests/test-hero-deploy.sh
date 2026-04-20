@@ -1,10 +1,10 @@
 #!/bin/bash
 # tests/test-hero-deploy.sh — end-to-end test of the onboard hatch flow:
-# read brainstem/onboard/registry.json, generate a swarm bundle from a hero
+# read rapp_brainstem/web/onboard/registry.json, generate a swarm bundle from a hero
 # cloud (Kody's), deploy it through the swarm server, verify the swarm
 # hatched and an agent in it executes.
 #
-# Mirrors the bundleFromCloud() logic in brainstem/onboard/index.html so
+# Mirrors the bundleFromCloud() logic in rapp_brainstem/web/onboard/index.html so
 # the wire contract stays in sync between the browser hatcher and the
 # stdlib server. Run from repo root:
 #
@@ -64,7 +64,7 @@ echo "Setup: clean state at $ROOT"
 rm -rf "$ROOT"
 
 echo "Setup: starting swarm server on :$PORT"
-python3 swarm/server.py --port $PORT --root "$ROOT" >/dev/null 2>&1 &
+python3 rapp_brainstem/brainstem.py --port $PORT --root "$ROOT" >/dev/null 2>&1 &
 SERVER_PID=$!
 sleep 1.5
 
@@ -73,7 +73,7 @@ sleep 1.5
 echo ""
 echo "--- Section 1: registry shape ---"
 
-REGISTRY=brainstem/onboard/registry.json
+REGISTRY=rapp_brainstem/web/onboard/registry.json
 [ -f "$REGISTRY" ] || { echo "  ✗ registry missing: $REGISTRY"; exit 1; }
 SCHEMA=$(python3 -c "import json; print(json.load(open('$REGISTRY'))['schema'])")
 assert_eq "registry schema = rapp-cloud-registry/1.0"  "rapp-cloud-registry/1.0"  "$SCHEMA"
@@ -124,7 +124,7 @@ assert_eq "5 collaboration layers documented (A2A,S2S,C2C,T2T,D2D)"  "5"  "$LAYE
 echo ""
 echo "--- Section 2: bundle assembly ---"
 
-# This Python mirrors bundleFromCloud() in brainstem/onboard/index.html.
+# This Python mirrors bundleFromCloud() in rapp_brainstem/web/onboard/index.html.
 # If the browser hatcher's bundle shape changes, update both.
 build_bundle() {
     local cloud_id="$1" out="$2"

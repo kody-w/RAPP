@@ -4,6 +4,8 @@ sessions.json
 .DS_Store
 *.log
 .claude/
+.venv/
+rapp_swarm/.venv/
 
 # Secrets — never commit
 .env
@@ -12,3 +14,7 @@ sessions.json
 *.secret
 secrets.json
 local.settings.json
+.vscode/extensions.json
+.vscode/launch.json
+.vscode/settings.json
+.vscode/tasks.json

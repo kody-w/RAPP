@@ -8,30 +8,30 @@ This release consolidates the directory layout to align with `rapp-installer` an
 |-------------------------------------|----------------------------------------------------|
 | `swarm/server.py`                   | `rapp_brainstem/brainstem.py`                      |
 | `swarm/{chat,llm,t2t,workspace,_basic_agent_shim}.py` | `rapp_brainstem/{chat,llm,t2t,workspace,_basic_agent_shim}.py` |
-| `hippocampus/function_app.py`       | `community_rapp/function_app.py`                   |
-| `hippocampus/{twin-egg,twin-sim,provision-twin,build}.sh` | `community_rapp/{...}.sh`                          |
-| `hippocampus/_swarm/` (vendored swarm) | `community_rapp/_vendored/` (vendored brainstem)  |
+| `hippocampus/function_app.py`       | `rapp_swarm/function_app.py`                   |
+| `hippocampus/{twin-egg,twin-sim,provision-twin,build}.sh` | `rapp_swarm/{...}.sh`                          |
+| `hippocampus/_swarm/` (vendored swarm) | `rapp_swarm/_vendored/` (vendored brainstem)  |
 | `brainstem/{index.html,rapp.js,mobile,onboard}` | `rapp_brainstem/web/{index.html,rapp.js,mobile,onboard}` |
 | `agents/basic_agent.py` etc.        | `rapp_brainstem/agents/*` (system defaults only)  |
-| `agents/persona_*` etc.             | `rapplications/bookfactory/source/`                |
-| `agents/sensorium_*` etc.           | `rapplications/momentfactory/source/`              |
-| `agents/bookfactory_agent.py`       | `rapplications/bookfactory/singleton/bookfactory_agent.py` |
-| `agents/momentfactory_agent.py`     | `rapplications/momentfactory/singleton/momentfactory_agent.py` |
+| `agents/persona_*` etc.             | `rapp_store/bookfactory/source/`                |
+| `agents/sensorium_*` etc.           | `rapp_store/momentfactory/source/`              |
+| `agents/bookfactory_agent.py`       | `rapp_store/bookfactory/singleton/bookfactory_agent.py` |
+| `agents/momentfactory_agent.py`     | `rapp_store/momentfactory/singleton/momentfactory_agent.py` |
 
 **Removed** (no longer needed):
 - `swarm/` — superseded by `rapp_brainstem/`
-- `hippocampus/` — superseded by `community_rapp/`
+- `hippocampus/` — superseded by `rapp_swarm/`
 - `brainstem/` (the JS frontend dir) — superseded by `rapp_brainstem/web/`
 - `agents/` at top-level — system defaults moved into `rapp_brainstem/agents/`
 
 ## API additions: the binder is in the brainstem
 
-The brainstem now exposes `/api/binder/*` alongside `/api/swarm/*`, `/api/workspace/*`, `/api/llm/*`, `/api/t2t/*`. Per-twin binder state lives at `<root>/.binder.json` (schema `rapp-binder/1.0`). Installation materializes a singleton from `rapplications/<name>/singleton/` into `<root>/agents/`. Hot-load + execute happens in-process via `/api/binder/agent` (no swarm GUID needed).
+The brainstem now exposes `/api/binder/*` alongside `/api/swarm/*`, `/api/workspace/*`, `/api/llm/*`, `/api/t2t/*`. Per-twin binder state lives at `<root>/.binder.json` (schema `rapp-binder/1.0`). Installation materializes a singleton from `rapp_store/<name>/singleton/` into `<root>/agents/`. Hot-load + execute happens in-process via `/api/binder/agent` (no swarm GUID needed).
 
 | Method | Path                              | Purpose                                                |
 |--------|-----------------------------------|--------------------------------------------------------|
 | GET    | `/api/binder`                     | Show installed rapplications for this twin             |
-| GET    | `/api/binder/catalog`             | Proxy local `store/index.json`                          |
+| GET    | `/api/binder/catalog`             | Proxy local `rapp_store/index.json`                     |
 | POST   | `/api/binder/install`             | `{id}` → materialize singleton + record install        |
 | DELETE | `/api/binder/installed/{id}`      | Remove file + record                                   |
 | POST   | `/api/binder/sync`                | Re-materialize from `.binder.json`                     |

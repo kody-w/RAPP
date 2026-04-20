@@ -1285,11 +1285,11 @@
           Tether to local brainstem
         </label>
         <div class="tether-row">
-          <input id="tether-url" type="text" placeholder="http://localhost:8765" autocomplete="off" />
+          <input id="tether-url" type="text" placeholder="http://localhost:7071" autocomplete="off" />
           <button class="btn" id="tether-test">Test</button>
         </div>
         <div id="tether-status" class="tether-stat">disabled</div>
-        <span class="hint">Routes agent execution through a local Python process for real OS access. Install with the one-liner from <strong>Install</strong> below, or run <code>python tether/server.py</code> from this repo.</span>
+        <span class="hint">Routes agent execution through your local brainstem for real OS access. Install it with the one-liner from <strong>Install</strong> below, then start it with <code>brainstem</code>.</span>
       </div>
 
       <div class="row">
@@ -1568,7 +1568,6 @@
     <div class="body">
       <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
         <button class="btn install-flavor active" data-flavor="brainstem">Local brainstem</button>
-        <button class="btn install-flavor" data-flavor="tether">Tether</button>
         <button class="btn install-flavor" data-flavor="swarm">Swarm endpoint</button>
       </div>
       <div class="banner" id="install-blurb">
@@ -1586,7 +1585,7 @@
       <div style="font-size:11px;color:#6e7681;margin-top:4px">Uses the <code>vscode://file/</code> URL scheme. Requires VS Code installed.</div>
     </div>
     <div class="actions">
-      <a class="btn" href="../installer/" style="text-decoration:none">Open installer page →</a>
+      <a class="btn" href="../../rapp_installer/" style="text-decoration:none">Open installer page →</a>
       <button class="btn primary" id="install-copy">Copy command</button>
     </div>
   </div>
@@ -1696,7 +1695,7 @@ const STARTER_VERSION = 'v2';   // bump to force-rehydrate the binder for existi
 // ── Auth + worker config ──────────────────────────────────────────
 // Dedicated rapp-auth worker — see /worker/README.md.
 // AUTH_CLIENT_ID is the GitHub OAuth App client id whose Authorization
-// callback URL is https://kody-w.github.io/RAPP/brainstem/.
+// callback URL is https://kody-w.github.io/RAPP/.
 const AUTH_CLIENT_ID  = 'Ov23liXWPqaiWnxt9cLz';
 const AUTH_WORKER_URL = 'https://rapp-auth.kwildfeuer.workers.dev';
 
@@ -1807,7 +1806,7 @@ const SOUL_KNOWLEDGE = `<knowledge>
 - You can discover and call agents — Python files that extend BasicAgent.
 - The user may be at any stage of the RAPP journey:
   - Tier 1 — Brainstem: local Python or this browser-only twin (where they are now).
-  - Tier 2 — Swarm: a deployable bundle of agents pushed to a Community RAPP endpoint (powered by the hippocampus engine — Azure Functions with persistent memory). Runs locally first, deploys to Azure when ready.
+  - Tier 2 — Swarm: a deployable bundle of agents pushed to a RAPP Swarms endpoint (Azure Functions with persistent memory). Runs locally first, deploys to Azure when ready.
   - Tier 3 — Nervous System: Copilot Studio + M365/Teams.
 - Each tier builds on the last — don't overwhelm users with later tiers unless they ask.
 - A "swarm" = the agents currently loaded in the brainstem, packaged together and pushed to a permanent endpoint. Users can have many swarms for different use cases (sales swarm, support swarm, ops swarm) and switch between them.
@@ -1815,16 +1814,15 @@ const SOUL_KNOWLEDGE = `<knowledge>
 
 const SOUL_TIER2 = `<tier_2_swarm>
 When the user says they're ready for Tier 2, step 2, the cloud, a swarm,
-the hippocampus, or "deploy these agents" — give them the one-liner. The
-deployable unit is a "swarm" (the user-facing name); the engine running
-it is still the hippocampus.
+or "deploy these agents" — give them the one-liner. The deployable unit
+is a "swarm"; the engine running it lives at rapp_swarm/ in the RAPP repo.
 
 <install_command os="macos_linux">
-curl -fsSL https://raw.githubusercontent.com/kody-w/rapp-installer/main/community_rapp/install.sh | bash
+curl -fsSL https://kody-w.github.io/RAPP/install-swarm.sh | bash
 </install_command>
 
 <install_command os="windows">
-irm https://raw.githubusercontent.com/kody-w/rapp-installer/main/community_rapp/install.ps1 | iex
+iwr https://kody-w.github.io/RAPP/install-swarm.sh -useb | wsl bash
 </install_command>
 
 This creates an isolated swarm endpoint at \`~/rapp-projects/{name}/\`
@@ -1945,9 +1943,10 @@ const state = {
     // and must publish a registry.json at the repo root in rapp-registry/1.0.
     // The default kody-w/RAR is the canonical library and can't be removed.
     sources: ['kody-w/RAR'],
-    // Tether to a local brainstem (tether/server.py). When connected, agent
-    // calls route through the local Python process instead of Pyodide so
-    // they get real filesystem / subprocess / LAN / hardware access.
+    // Tether to a local brainstem (rapp_brainstem/brainstem.py on :7071, which
+    // speaks the rapp-tether/1.0 wire shape). When connected, agent calls
+    // route through the local Python process instead of Pyodide so they get
+    // real filesystem / subprocess / LAN / hardware access.
     tetherEnabled: false,
     tetherUrl: 'http://localhost:8765',
     // Default endpoint that Deploy as Swarm posts to (the local swarm/server.py
@@ -3067,7 +3066,7 @@ function openCardModal(c) {
   // gets you the brainstem URL with the agent's incantation as a hint.
   const seed = card.seed || '';
   const incantation = card.incantation || '';
-  const deeplink = `https://kody-w.github.io/RAPP/brainstem/?seed=${encodeURIComponent(seed)}`;
+  const deeplink = `https://kody-w.github.io/RAPP/rapp_brainstem/web/?seed=${encodeURIComponent(seed)}`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=0&data=${encodeURIComponent(deeplink)}`;
 
   // RAR's exact pip mapping for our agent types → MTG colors (W/U/B/R/G).
@@ -3403,7 +3402,7 @@ function findCardByAgentName(name) {
 
 /* ───── Agent execution: tether → live (Pyodide) → stub ──────────────
    Tether wins when it's connected and exposes the same agent name; the
-   call hits the local Python process via tether/server.py and gets real
+   call hits the local brainstem (rapp-tether/1.0 on :7071) and gets real
    filesystem / subprocess / LAN / hardware access. Falls through to the
    in-browser executor otherwise. */
 async function runAgent(card, kwargs, upstreamSlush) {
@@ -3897,11 +3896,6 @@ const INSTALL_CMDS = {
     linux: 'curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash',
     win:   'iwr https://kody-w.github.io/RAPP/install.ps1 -useb | iex',
   },
-  tether: {
-    mac:   'curl -fsSL https://kody-w.github.io/RAPP/install-tether.sh | bash',
-    linux: 'curl -fsSL https://kody-w.github.io/RAPP/install-tether.sh | bash',
-    win:   'iwr https://kody-w.github.io/RAPP/install-tether.ps1 -useb | iex',
-  },
   swarm: {
     mac:   'curl -fsSL https://kody-w.github.io/RAPP/install-swarm.sh | bash',
     linux: 'curl -fsSL https://kody-w.github.io/RAPP/install-swarm.sh | bash',
@@ -3910,8 +3904,7 @@ const INSTALL_CMDS = {
   },
 };
 const INSTALL_BLURBS = {
-  brainstem: 'The full local-first stack — Python + Flask + venv + GitHub OAuth. Installs to <code>~/.brainstem/src/rapp_brainstem/</code>, then you can <code>brainstem</code> from any shell.',
-  tether: 'Stdlib-only Python server that exposes your local agents to <em>this</em> virtual brainstem. Installs to <code>~/.brainstem-tether/</code>, then runs <code>brainstem-tether</code> on <code>localhost:8765</code>. AI stays in the browser; agents run on your machine.',
+  brainstem: 'The full local-first stack — Python + Flask + venv + GitHub OAuth. Installs to <code>~/.brainstem/src/rapp_brainstem/</code>, then you can <code>brainstem</code> from any shell. Also speaks the tether protocol on <code>localhost:7071</code> — this browser brainstem can route agent calls through it for real OS access.',
   swarm: 'Stdlib-only multi-tenant swarm server. Hosts <em>many</em> swarms behind one endpoint at <code>localhost:7080</code>, each isolated by GUID — agents and per-user memory both routed by <code>swarm_guid</code> + <code>user_guid</code>. Push from <strong>Settings → Deploy as Swarm</strong>.',
 };
 function detectOS() {
@@ -3950,9 +3943,9 @@ function copyInstallCmd() {
    A "swarm" is the brainstem's current binder packaged as a deployable
    bundle. The bundle is one JSON file containing each agent's source,
    the soul (system prompt) used, and a manifest. Drop it on any Tier 2
-   endpoint (Community RAPP / hippocampus install) — locally or in
-   Azure — and it becomes a permanent callable swarm at that endpoint.
-   The backing engine is still the hippocampus; "swarm" is the unit. */
+   endpoint (the rapp_swarm Azure Function App, or the local brainstem
+   speaking the same wire shape) and it becomes a permanent callable
+   swarm at that endpoint. */
 
 function buildSwarmBundle({ name, purpose }) {
   const slug = (name || 'untitled-swarm')
@@ -4072,8 +4065,8 @@ async function pushSwarmToEndpoint() {
   btn.disabled = true;
   try {
     // POST /api/swarm/deploy is the wire contract every Tier 2 swarm endpoint
-    // honors — local stdlib swarm/server.py, the Community RAPP project, and
-    // (eventually) the Azure deployment. Returns {swarm_guid, swarm_url, ...}.
+    // honors — the local brainstem, the rapp_swarm Function App, and
+    // (eventually) any other deployment. Returns {swarm_guid, swarm_url, ...}.
     const r = await fetch(endpoint + '/api/swarm/deploy', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

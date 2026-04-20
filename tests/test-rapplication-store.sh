@@ -32,9 +32,9 @@ cd /Users/kodyw/Documents/GitHub/Rappter/RAPP
 # ── Section 1: catalog schema ──────────────────────────────────────────
 
 echo ""
-echo "--- Section 1: store/index.json schema ---"
+echo "--- Section 1: rapp_store/index.json schema ---"
 
-CAT=store/index.json
+CAT=rapp_store/index.json
 [ -f "$CAT" ] || { echo "  ✗ catalog missing: $CAT"; exit 1; }
 
 SCHEMA=$(python3 -c "import json; print(json.load(open('$CAT'))['schema'])")
@@ -48,7 +48,7 @@ COUNT=$(python3 -c "import json; print(len(json.load(open('$CAT'))['rapplication
 python3 - <<'PY'
 import json, sys
 required = ["id","name","version","summary","manifest_name","singleton_filename","singleton_url"]
-cat = json.load(open("store/index.json"))
+cat = json.load(open("rapp_store/index.json"))
 fail = 0
 for r in cat["rapplications"]:
     missing = [k for k in required if k not in r]
@@ -66,13 +66,13 @@ echo "--- Section 2: SHA-256 pin verification ---"
 
 python3 - <<'PY'
 import json, hashlib, pathlib, sys
-cat = json.load(open("store/index.json"))
+cat = json.load(open("rapp_store/index.json"))
 fail = 0
 
 def find_local(filename):
-    """After v1.8 reorg, files live under rapplications/{name}/{singleton,source}/.
+    """After v1.8 reorg, files live under rapp_store/{name}/{singleton,source}/.
     Search all of them and return the first match."""
-    rapps = pathlib.Path("rapplications")
+    rapps = pathlib.Path("rapp_store")
     for sub in rapps.iterdir() if rapps.exists() else []:
         for kind in ("singleton", "source"):
             cand = sub / kind / filename
@@ -119,7 +119,7 @@ sleep 2
 # verify it hatches as one agent (BookFactory).
 GUID=$(python3 - <<'PY'
 import json, urllib.request, pathlib
-src = pathlib.Path("rapplications/bookfactory/singleton/bookfactory_agent.py").read_text()
+src = pathlib.Path("rapp_store/bookfactory/singleton/bookfactory_agent.py").read_text()
 bundle = {
     "schema": "rapp-swarm/1.0",
     "name": "store-install-test",

@@ -51,7 +51,7 @@ agents = [
 
 fail = 0
 for fn in agents:
-    p = Path("rapplications/momentfactory/source") / fn
+    p = Path("rapp_store/momentfactory/source") / fn
     if not p.exists():
         print(f"  ✗ missing: {fn}"); fail += 1; continue
     try:
@@ -82,7 +82,7 @@ python3 - <<'PY'
 import sys, json
 # Make `from agents.basic_agent import BasicAgent` resolve via rapp_brainstem/agents/
 sys.path.insert(0, "rapp_brainstem")
-sys.path.insert(0, "rapplications/momentfactory/source")
+sys.path.insert(0, "rapp_store/momentfactory/source")
 from seed_stamper_agent import SeedStamperAgent, WORDS
 
 assert len(WORDS) == 256, f"wordlist must be 256 words, got {len(WORDS)}"
@@ -136,7 +136,7 @@ files = [
     "seed_stamper_agent.py",
     "moment_factory_agent.py",
 ]
-agents = [{"filename": f, "source": pathlib.Path("rapplications/momentfactory/source/" + f).read_text()} for f in files]
+agents = [{"filename": f, "source": pathlib.Path("rapp_store/momentfactory/source/" + f).read_text()} for f in files]
 bundle = {
     "schema": "rapp-swarm/1.0",
     "name": "momentfactory-test",

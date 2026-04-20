@@ -26,7 +26,7 @@ The worker is **stateless**: no KV, no D1, no logs, no per-user storage. It's ju
    - GitHub → Settings → Developer settings → **OAuth Apps** → **New OAuth App**
    - **Application name:** `RAPP`
    - **Homepage URL:** `https://kody-w.github.io/RAPP/`
-   - **Authorization callback URL:** `https://kody-w.github.io/RAPP/brainstem/`
+   - **Authorization callback URL:** `https://kody-w.github.io/RAPP/`
    - Click **Register application**, then **Generate a new client secret**.
    - Copy both the **Client ID** and the **Client Secret**.
 

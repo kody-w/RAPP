@@ -370,29 +370,30 @@ async function getSettings() {
     azure_endpoint: '', azure_api_key: '', azure_deployment: '',
     openai_api_key: '', openai_model: 'gpt-4o',
     anthropic_api_key: '', anthropic_model: 'claude-sonnet-4-6',
-    tether_url: 'http://127.0.0.1:8765',
+    tether_url: 'http://127.0.0.1:7071',
   };
 }
 async function setSettings(s) { await idbPut('settings', SETTINGS_KEY, s); return s; }
 
 // ─── Local tether bridge (the twin's "hands" on the OS) ────────────────
-// When the user runs `python tether/server.py` alongside the PWA, the
-// tether exposes local *_agent.py files with REAL system access (filesystem,
-// processes, LAN, hardware). The PWA discovers it via /tether/tools and
-// registers those tools alongside the swarm's in-browser stubs. Tool calls
-// route to whichever side actually has the agent.
+// When the user runs the local brainstem alongside the PWA, it speaks the
+// rapp-tether/1.0 wire shape on :7071 and exposes local *_agent.py files
+// with REAL system access (filesystem, processes, LAN, hardware). The PWA
+// discovers it via /tether/tools and registers those tools alongside the
+// swarm's in-browser stubs. Tool calls route to whichever side actually
+// has the agent.
 //
 // Trust model: the tether is granting the LLM the SAME power as the user's
-// own shell. The user must explicitly run the tether to enable this — it's
-// not on by default, and the URL is a local-network address that doesn't
-// resolve from outside the device.
+// own shell. The user must explicitly run the brainstem to enable this —
+// it's not on by default, and the URL is a local-network address that
+// doesn't resolve from outside the device.
 
 let _tetherCache = null;       // { url, alive, tools, count, fetched_at }
 const TETHER_TTL_MS = 30_000;
 
 async function probeTether(force = false) {
   const s = await getSettings();
-  const url = (s.tether_url || 'http://127.0.0.1:8765').replace(/\/+$/, '');
+  const url = (s.tether_url || 'http://127.0.0.1:7071').replace(/\/+$/, '');
   if (!force && _tetherCache && _tetherCache.url === url
       && (Date.now() - _tetherCache.fetched_at) < TETHER_TTL_MS) {
     return _tetherCache;
@@ -421,7 +422,7 @@ async function probeTether(force = false) {
 
 async function callTetherAgent(name, args) {
   const s = await getSettings();
-  const url = (s.tether_url || 'http://127.0.0.1:8765').replace(/\/+$/, '');
+  const url = (s.tether_url || 'http://127.0.0.1:7071').replace(/\/+$/, '');
   const r = await fetch(url + '/tether/agent', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -604,8 +605,8 @@ async function chatWithSwarm(twin_id, swarm_guid, user_input, history = []) {
       content: 'NOTE: this swarm has agents that need OS access via the local '
         + 'tether, but the tether is not running. If the user asks for an '
         + 'action that needs hardware/filesystem/process access, tell them: '
-        + '"That needs the local tether — run `python tether/server.py` from '
-        + 'your RAPP repo to enable it."',
+        + '"That needs the local brainstem — start it with `brainstem` (or '
+        + '`./start.sh` from rapp_brainstem/) to enable OS access."',
     });
   }
   for (const m of history) {
@@ -669,7 +670,7 @@ async function _executeToolCall(agents, name, args, tether) {
   if (name === '__tether_unavailable') {
     return { output: JSON.stringify({
       error: 'tether_unavailable',
-      message: 'The local tether is not running. To enable hardware/filesystem/process actions, run: python tether/server.py',
+      message: 'The local brainstem is not running. To enable hardware/filesystem/process actions, start it with: brainstem (or ./start.sh from rapp_brainstem/)',
     }), via: 'browser' };
   }
 
@@ -682,7 +683,7 @@ async function _executeToolCall(agents, name, args, tether) {
       return {
         output: JSON.stringify({
           error: 'tether_unavailable',
-          message: `Agent "${name}" requires the local tether but it's not running. Ask the user to start: python tether/server.py`,
+          message: `Agent "${name}" requires the local brainstem but it's not running. Ask the user to start it with: brainstem (or ./start.sh from rapp_brainstem/)`,
         }),
         via: 'tether', error: 'tether_unavailable',
       };
