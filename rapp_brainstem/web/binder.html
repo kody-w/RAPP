@@ -200,6 +200,10 @@
   <button onclick="reload()">↻ Reload</button>
 </header>
 
+<div id="banner" style="display:none; background:#5a3d11; color:#ffe7b3;
+     border-bottom:1px solid #d29922; padding:10px 24px; font-size:13px;">
+</div>
+
 <main>
   <!-- ── INSTALLED ──────────────────────────────── -->
   <section>
@@ -263,22 +267,40 @@
 
   function endpoint() { return $('#endpoint').value.replace(/\/$/, ''); }
 
+  // If the page is loaded from https:// (e.g. GitHub Pages) but the brainstem
+  // endpoint is http://, the browser will block the fetch as mixed content.
+  // Detect that up front and surface it instead of hanging on "Loading…".
+  function mixedContentBlocked() {
+    return window.location.protocol === 'https:' && endpoint().startsWith('http:');
+  }
+
   async function api(path, opts = {}) {
-    const r = await fetch(endpoint() + path, {
-      headers: { 'Content-Type': 'application/json' },
-      ...opts,
-    });
-    const text = await r.text();
-    try { return { status: r.status, json: JSON.parse(text) }; }
-    catch { return { status: r.status, json: { _raw: text } }; }
+    if (mixedContentBlocked()) {
+      return { status: 0, json: { _mixed_content: true,
+        message: "Browsers block https→http requests. Open this page from your "
+                 + "local brainstem instead: " + endpoint() + "/binder.html" } };
+    }
+    try {
+      const r = await fetch(endpoint() + path, {
+        headers: { 'Content-Type': 'application/json' },
+        ...opts,
+      });
+      const text = await r.text();
+      try { return { status: r.status, json: JSON.parse(text) }; }
+      catch { return { status: r.status, json: { _raw: text } }; }
+    } catch (err) {
+      return { status: 0, json: { _network: true,
+        message: "Cannot reach " + endpoint() + " — is the brainstem running? "
+                 + "Try: python3 rapp_brainstem/brainstem.py --port 7080" } };
+    }
   }
 
   async function loadBinder() {
     const r = await api('/api/binder');
     if (r.status !== 200) {
+      const msg = (r.json && r.json.message) || 'Brainstem unreachable.';
       $('#installed').innerHTML =
-        `<div class="empty">Brainstem unreachable. Start it with:<br>
-         <code>python3 rapp_brainstem/brainstem.py --port 7080</code></div>`;
+        `<div class="empty">${esc(msg)}</div>`;
       return;
     }
     BINDER = r.json;
@@ -288,7 +310,8 @@
   async function loadCatalog() {
     const r = await api('/api/binder/catalog');
     if (r.status !== 200) {
-      $('#catalog').innerHTML = `<div class="empty">Catalog unreachable.</div>`;
+      const msg = (r.json && r.json.message) || 'Catalog unreachable.';
+      $('#catalog').innerHTML = `<div class="empty">${esc(msg)}</div>`;
       return;
     }
     CATALOG = r.json;
@@ -429,7 +452,23 @@
     }
   }
 
+  function checkContext() {
+    const banner = $('#banner');
+    if (mixedContentBlocked()) {
+      banner.style.display = 'block';
+      banner.innerHTML = '⚠ This page was opened over HTTPS, but the brainstem '
+        + 'endpoint is HTTP. Browsers block these requests as <em>mixed content</em>. '
+        + 'Open this page from your local brainstem instead: '
+        + '<a style="color:#ffd680" href="' + endpoint() + '/binder.html">'
+        + endpoint() + '/binder.html</a>';
+      return false;
+    }
+    banner.style.display = 'none';
+    return true;
+  }
+
   async function reload() {
+    checkContext();
     await Promise.all([loadCatalog(), loadBinder()]);
   }
 
