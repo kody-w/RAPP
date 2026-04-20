@@ -6,6 +6,64 @@ no frameworks, no new primitives where an existing pattern will do.
 
 ---
 
+## Native GUI installer for non-technical users
+
+**Status:** proposed · **Shape:** OS-native installer package · **Depends on:** background service (shipped)
+
+Right now the only supported install path is `curl | bash` / `iwr | iex`.
+That's the right answer for developers and the discipline of Article V
+(the one-liner is sacred) — but for a non-technical user, opening a
+terminal is already friction. A first-time user should be able to
+double-click an icon and end up with a running brainstem that auto-starts
+on login, without ever seeing a shell.
+
+The one-liner stays sacred. The GUI installer wraps it, not replaces it.
+
+### Target packages
+
+| OS | Format | What it does |
+|---|---|---|
+| macOS | `.pkg` (signed + notarized) | Installs Python 3.11 if missing, drops the repo in `~/.brainstem/`, writes the launchd plist, sets up the venv, opens the browser. |
+| Windows | `.msi` or signed `.exe` (MSIX preferred) | Same shape via winget preflight + Scheduled Task registration + browser launch. |
+| Linux | `.deb` + `.rpm` | systemd `--user` unit, standard Linux package conventions. |
+
+### What it MUST preserve
+
+- **The one-liner still works.** GUI installers are additive, not
+  replacement. Everything the `.pkg` does is also in the shell script.
+- **Same on-disk layout.** `~/.brainstem/`, same VERSION file, same
+  service unit — so `brainstem doctor` output is identical regardless of
+  whether the user came in via GUI or CLI.
+- **Same upgrade path.** The installer should know how to upgrade an
+  existing install (detect VERSION, same hard-sync logic as install.sh).
+
+### What it gets the user
+
+- Double-click install. No Terminal.
+- App in `/Applications` (macOS) / Start Menu (Windows) that opens
+  the brainstem UI in the default browser.
+- Automatic updates through the same repo (maybe tie into Sparkle on
+  macOS, Squirrel on Windows).
+- Uninstaller that `launchctl bootout` / `Unregister-ScheduledTask` and
+  removes `~/.brainstem/` cleanly.
+
+### Open questions
+
+- Signing + notarization (both macOS Gatekeeper and Windows SmartScreen
+  hate unsigned installers) — a real Apple Developer account and a
+  code-signing cert add ongoing cost.
+- How much of the `install.sh` flow do we bundle vs. fetch live? Bundled
+  = works offline / in air-gapped environments; live-fetch = always
+  current but needs network.
+- Where does the installer live — a GitHub Release asset, a custom
+  landing page, both?
+
+Until the GUI installer exists, the fallback for non-technical users is
+`curl | bash` → launchd service → auto-browser-open, which is the
+lightest-weight thing we can do without a packaging pipeline.
+
+---
+
 ## Digital Twin Companion — a third split, like `|||VOICE|||`
 
 **Status:** shipped (v0) · **Shape:** prompt change + parser change · **Surface:** brainstem side panel

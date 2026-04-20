@@ -469,29 +469,198 @@ install_cli() {
     echo ""
     echo "Installing CLI..."
     mkdir -p "$BRAINSTEM_BIN"
+    mkdir -p "$BRAINSTEM_HOME/logs"
 
+    # Subcommand dispatcher: `brainstem` by itself starts the background
+    # service (if installed) and opens the browser. `brainstem start|stop|
+    # restart|status|logs|doctor|run|open` manages the service or fetches
+    # diagnostics — the "doctor" output is what a user pastes back for
+    # troubleshooting. All commands work whether the service is installed
+    # (launchd on macOS, systemd --user on Linux) or not (falls back to
+    # foreground run).
     cat > "$BRAINSTEM_BIN/brainstem" << 'WRAPPER'
 #!/bin/bash
 BRAINSTEM_HOME="$HOME/.brainstem"
+SRC="$BRAINSTEM_HOME/src/rapp_brainstem"
 VENV_PYTHON="$BRAINSTEM_HOME/venv/bin/python"
-cd "$BRAINSTEM_HOME/src/rapp_brainstem"
+LOG="$BRAINSTEM_HOME/logs/brainstem.log"
+URL="http://localhost:7071"
+PLIST_ID="io.github.kodyw.rapp-brainstem"
+PLIST_PATH="$HOME/Library/LaunchAgents/${PLIST_ID}.plist"
+SYSTEMD_UNIT="rapp-brainstem.service"
 
-# Use venv Python; fall back to creating venv if missing
-if [ ! -x "$VENV_PYTHON" ]; then
-    echo "  Setting up environment..."
-    PYTHON_CMD=$(command -v python3.11 || command -v python3.12 || command -v python3.13 || command -v python3)
-    "$PYTHON_CMD" -m venv "$BRAINSTEM_HOME/venv" 2>/dev/null
-    "$BRAINSTEM_HOME/venv/bin/pip" install -r requirements.txt --quiet 2>/dev/null || \
-        "$BRAINSTEM_HOME/venv/bin/pip" install -r requirements.txt
-    VENV_PYTHON="$BRAINSTEM_HOME/venv/bin/python"
-fi
+is_macos() { [[ "$OSTYPE" == "darwin"* ]]; }
+is_linux() { [[ "$OSTYPE" == "linux-gnu"* ]] || [[ "$OSTYPE" == "linux" ]]; }
 
-# Verify deps on every launch (fast no-op if already installed)
-if ! "$VENV_PYTHON" -c "import flask, requests, dotenv" 2>/dev/null; then
-    "$BRAINSTEM_HOME/venv/bin/pip" install -r requirements.txt --quiet 2>/dev/null || true
-fi
+_ensure_venv() {
+    if [ ! -x "$VENV_PYTHON" ]; then
+        echo "Setting up environment…"
+        local PY
+        PY=$(command -v python3.11 || command -v python3.12 || command -v python3.13 || command -v python3)
+        "$PY" -m venv "$BRAINSTEM_HOME/venv"
+    fi
+    if ! "$VENV_PYTHON" -c "import flask, requests, dotenv" 2>/dev/null; then
+        "$BRAINSTEM_HOME/venv/bin/pip" install -q -r "$SRC/requirements.txt" || \
+            "$BRAINSTEM_HOME/venv/bin/pip" install -r "$SRC/requirements.txt"
+    fi
+}
 
-exec "$VENV_PYTHON" brainstem.py "$@"
+_service_installed() {
+    if is_macos; then [ -f "$PLIST_PATH" ]; return
+    elif is_linux; then systemctl --user cat "$SYSTEMD_UNIT" &>/dev/null; return
+    else return 1; fi
+}
+
+cmd_start() {
+    _ensure_venv
+    if is_macos && [ -f "$PLIST_PATH" ]; then
+        launchctl bootstrap "gui/$(id -u)" "$PLIST_PATH" 2>/dev/null || \
+            launchctl kickstart -k "gui/$(id -u)/$PLIST_ID" 2>/dev/null || true
+        echo "✓ Service started (launchd: $PLIST_ID)"
+    elif is_linux && _service_installed; then
+        systemctl --user start "$SYSTEMD_UNIT"
+        echo "✓ Service started (systemd --user: $SYSTEMD_UNIT)"
+    else
+        echo "⚠ No service installed — running in foreground (Ctrl-C to stop)."
+        cmd_run
+    fi
+}
+
+cmd_stop() {
+    if is_macos && [ -f "$PLIST_PATH" ]; then
+        launchctl bootout "gui/$(id -u)/$PLIST_ID" 2>/dev/null || true
+        echo "✓ Service stopped"
+    elif is_linux && _service_installed; then
+        systemctl --user stop "$SYSTEMD_UNIT" && echo "✓ Service stopped"
+    else
+        echo "⚠ No service installed."
+    fi
+}
+
+cmd_restart() { cmd_stop; sleep 1; cmd_start; }
+
+cmd_status() {
+    local code
+    code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 3 "$URL/health" 2>/dev/null || echo "000")
+    if [ "$code" = "200" ]; then
+        echo "✓ Brainstem is UP at $URL (HTTP 200)"
+        curl -s --max-time 3 "$URL/health" | head -c 400 ; echo
+    else
+        echo "✗ Brainstem not responding at $URL (HTTP $code)"
+    fi
+    echo ""
+    if is_macos && [ -f "$PLIST_PATH" ]; then
+        echo "Service (launchd):"
+        launchctl print "gui/$(id -u)/$PLIST_ID" 2>/dev/null \
+            | awk '/state =|pid =|last exit code/' | sed 's/^/  /'
+    elif is_linux && _service_installed; then
+        echo "Service (systemd --user):"
+        systemctl --user status "$SYSTEMD_UNIT" --no-pager --lines=0 2>/dev/null \
+            | head -5 | sed 's/^/  /'
+    else
+        echo "Service: (not installed — foreground-only)"
+    fi
+}
+
+cmd_logs() {
+    if [ -f "$LOG" ]; then tail -f "$LOG"; else echo "no log at $LOG"; fi
+}
+
+cmd_run() {
+    _ensure_venv
+    cd "$SRC"
+    exec "$VENV_PYTHON" brainstem.py "$@"
+}
+
+cmd_open() {
+    if is_macos; then open "$URL" 2>/dev/null
+    elif is_linux; then xdg-open "$URL" 2>/dev/null
+    else echo "Open $URL in your browser"; fi
+}
+
+cmd_doctor() {
+    echo "=== RAPP Brainstem doctor ==="
+    echo ""
+    echo "Install path: $BRAINSTEM_HOME"
+    echo "Source:       $SRC"
+    echo "Venv python:  $VENV_PYTHON $([ -x "$VENV_PYTHON" ] && echo '(OK)' || echo '(MISSING)')"
+    echo "Version:      $(cat "$SRC/VERSION" 2>/dev/null || echo '?')"
+    echo "Log file:     $LOG"
+    echo "OS:           $OSTYPE"
+    echo ""
+    echo "=== Service state ==="
+    if is_macos; then
+        if [ -f "$PLIST_PATH" ]; then
+            echo "Plist:  $PLIST_PATH (present)"
+            launchctl print "gui/$(id -u)/$PLIST_ID" 2>/dev/null \
+                | awk '/state =|pid =|last exit code|program =/' | sed 's/^/  /' \
+                || echo "  (not loaded)"
+        else
+            echo "Plist:  (not installed — running in foreground is the only way)"
+        fi
+    elif is_linux; then
+        if _service_installed; then
+            systemctl --user status "$SYSTEMD_UNIT" --no-pager --lines=0 2>/dev/null | head -6
+        else
+            echo "Unit: (not installed)"
+        fi
+    fi
+    echo ""
+    echo "=== /health ==="
+    curl -s --max-time 3 "$URL/health" 2>/dev/null || echo "(unreachable)"
+    echo ""
+    echo ""
+    echo "=== Last 40 log lines ==="
+    tail -n 40 "$LOG" 2>/dev/null || echo "(no log yet)"
+    echo ""
+    echo "=== End doctor report ==="
+}
+
+cmd_help() {
+    cat <<EOF
+Usage: brainstem [COMMAND]
+
+With no command, starts the service and opens the browser. All the
+commands below work whether the background service is installed or not.
+
+  start     Start the background service (or foreground if no service)
+  stop      Stop the background service
+  restart   Restart the background service
+  status    One-line health check + service state
+  logs      Tail the service log
+  doctor    Paste-to-support troubleshooting dump
+  run       Run the brainstem in the foreground (for debugging)
+  open      Open http://localhost:7071 in your browser
+  help      Show this message
+EOF
+}
+
+case "${1:-default}" in
+    start)   cmd_start ;;
+    stop)    cmd_stop ;;
+    restart) cmd_restart ;;
+    status)  cmd_status ;;
+    logs)    cmd_logs ;;
+    doctor)  cmd_doctor ;;
+    run)     shift; cmd_run "$@" ;;
+    open)    cmd_open ;;
+    help|-h|--help) cmd_help ;;
+    default)
+        # No arg: ensure service is running, give it a second to come up,
+        # then pop the browser. If no service is installed, fall through
+        # to foreground run — the one-liner still leaves the user in a
+        # working state.
+        cmd_start &
+        sleep 1
+        for i in 1 2 3 4 5 6 7 8 9 10; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 1 "$URL/health" 2>/dev/null || echo 000)
+            [ "$code" = "200" ] && break
+            sleep 1
+        done
+        cmd_open
+        ;;
+    *) echo "Unknown command: $1"; cmd_help; exit 1 ;;
+esac
 WRAPPER
 
     chmod +x "$BRAINSTEM_BIN/brainstem"
@@ -517,6 +686,154 @@ create_env() {
     local env_file="$BRAINSTEM_HOME/src/rapp_brainstem/.env"
     if [ ! -f "$env_file" ]; then
         cp "$BRAINSTEM_HOME/src/rapp_brainstem/.env.example" "$env_file" 2>/dev/null || true
+    fi
+}
+
+# Install a user-level background service so non-technical users never
+# have to think about "running a server". Service auto-starts on login
+# (Constitution Article V — the one-liner is sacred, this is its
+# auto-run story), auto-restarts on crash, logs to a known spot. Fall
+# through silently if the OS service manager isn't available — the
+# foreground-run fallback in the `brainstem` CLI still leaves users
+# with a working install.
+install_service() {
+    local os_type
+    os_type=$(detect_os)
+    mkdir -p "$BRAINSTEM_HOME/logs"
+
+    if [[ "$os_type" == "macos" ]]; then
+        _install_service_macos
+    elif [[ "$os_type" == "linux" ]]; then
+        _install_service_linux
+    else
+        echo -e "  ${YELLOW}Service auto-start not supported on this OS — foreground only${NC}"
+    fi
+}
+
+_install_service_macos() {
+    local plist_id="io.github.kodyw.rapp-brainstem"
+    local plist_dir="$HOME/Library/LaunchAgents"
+    local plist_path="$plist_dir/${plist_id}.plist"
+    local venv_python="$BRAINSTEM_HOME/venv/bin/python"
+    local src_dir="$BRAINSTEM_HOME/src/rapp_brainstem"
+    local log="$BRAINSTEM_HOME/logs/brainstem.log"
+
+    mkdir -p "$plist_dir"
+
+    # Bootout any previously-loaded copy so we pick up new paths/flags.
+    launchctl bootout "gui/$(id -u)/$plist_id" 2>/dev/null || true
+
+    cat > "$plist_path" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>${plist_id}</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>${venv_python}</string>
+        <string>brainstem.py</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>${src_dir}</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+        <key>HOME</key>
+        <string>${HOME}</string>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>${log}</string>
+    <key>StandardErrorPath</key>
+    <string>${log}</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+    <key>ProcessType</key>
+    <string>Interactive</string>
+</dict>
+</plist>
+PLIST
+
+    if launchctl bootstrap "gui/$(id -u)" "$plist_path" 2>/dev/null; then
+        echo -e "  ${GREEN}✓${NC} Background service installed (launchd: ${plist_id})"
+    else
+        # Already-loaded cases: kickstart -k to restart with the new plist.
+        launchctl kickstart -k "gui/$(id -u)/${plist_id}" 2>/dev/null && \
+            echo -e "  ${GREEN}✓${NC} Background service refreshed" || \
+            echo -e "  ${YELLOW}⚠${NC} Could not load service — will run in foreground"
+    fi
+}
+
+_install_service_linux() {
+    local unit_name="rapp-brainstem.service"
+    local unit_dir="$HOME/.config/systemd/user"
+    local unit_path="$unit_dir/$unit_name"
+    local venv_python="$BRAINSTEM_HOME/venv/bin/python"
+    local src_dir="$BRAINSTEM_HOME/src/rapp_brainstem"
+    local log="$BRAINSTEM_HOME/logs/brainstem.log"
+
+    if ! command -v systemctl &>/dev/null; then
+        echo -e "  ${YELLOW}systemctl not found — skipping service install (foreground only)${NC}"
+        return
+    fi
+
+    mkdir -p "$unit_dir"
+
+    cat > "$unit_path" <<UNIT
+[Unit]
+Description=RAPP Brainstem — local-first AI agent server
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=${src_dir}
+ExecStart=${venv_python} brainstem.py
+Restart=always
+RestartSec=3
+StandardOutput=append:${log}
+StandardError=append:${log}
+
+[Install]
+WantedBy=default.target
+UNIT
+
+    systemctl --user daemon-reload 2>/dev/null || true
+    if systemctl --user enable --now "$unit_name" 2>/dev/null; then
+        echo -e "  ${GREEN}✓${NC} Background service installed (systemd --user: ${unit_name})"
+    else
+        echo -e "  ${YELLOW}⚠${NC} Could not enable service (systemd --user may not be running) — falling back to foreground"
+    fi
+}
+
+# Poll /health until it responds 200 or we give up. Used to verify the
+# background service came up successfully before opening the browser.
+wait_for_health() {
+    local url="http://localhost:7071/health"
+    local timeout="${1:-15}"  # seconds
+    for ((i=0; i<timeout; i++)); do
+        local code
+        code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 1 "$url" 2>/dev/null || echo 000)
+        if [ "$code" = "200" ]; then
+            return 0
+        fi
+        sleep 1
+    done
+    return 1
+}
+
+open_browser() {
+    local url="http://localhost:7071"
+    if [[ "$(detect_os)" == "macos" ]]; then
+        open "$url" 2>/dev/null || true
+    elif [[ "$(detect_os)" == "linux" ]]; then
+        xdg-open "$url" 2>/dev/null || true
     fi
 }
 
@@ -729,15 +1046,36 @@ with open(sys.argv[2], 'w') as f: json.dump(out, f)
         fi
     fi
 
-    # Open the browser after a short delay
-    (sleep 3 && (open "http://localhost:7071" 2>/dev/null || xdg-open "http://localhost:7071" 2>/dev/null)) &
-
     # Final dep safety net — if somehow we got here without deps, fix it
     if ! "$venv_python" -c "import flask, requests, dotenv" 2>/dev/null; then
         echo -e "  ${YELLOW}⚠${NC} Fixing missing dependencies..."
         "$VENV_DIR/bin/pip" install -r "$BRAINSTEM_HOME/src/rapp_brainstem/requirements.txt" --quiet 2>/dev/null || \
             "$VENV_DIR/bin/pip" install -r "$BRAINSTEM_HOME/src/rapp_brainstem/requirements.txt"
     fi
+
+    # Install + start the background service. Non-technical users never
+    # have to think about "running a server" again — it auto-starts on
+    # login and auto-restarts on crash.
+    install_service
+
+    # Verify /health comes up (gives the service up to 15s to cold-boot).
+    # On success, open the browser and return — the one-liner is done.
+    # On failure, fall back to the old foreground-exec behavior so the
+    # user still ends up with a working brainstem.
+    if wait_for_health 15; then
+        open_browser
+        echo ""
+        echo -e "  ${GREEN}✓${NC} Brainstem is running at http://localhost:7071"
+        echo -e "  It'll auto-start on login and auto-restart if it crashes."
+        echo ""
+        echo -e "  Manage with: ${CYAN}brainstem${NC} ${CYAN}start|stop|restart|status|logs|doctor${NC}"
+        echo ""
+        return 0
+    fi
+
+    echo -e "  ${YELLOW}⚠${NC} Background service didn't come up — running in foreground instead."
+    echo ""
+    (sleep 3 && (open "http://localhost:7071" 2>/dev/null || xdg-open "http://localhost:7071" 2>/dev/null)) &
 
     # Use exec to replace shell — but only if stdin is a terminal.
     # When piped (curl | bash), exec can lose the TTY and hang.

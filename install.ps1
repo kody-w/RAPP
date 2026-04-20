@@ -7,6 +7,8 @@ $ErrorActionPreference = "Stop"
 
 $BRAINSTEM_HOME = "$env:USERPROFILE\.brainstem"
 $BRAINSTEM_BIN = "$env:USERPROFILE\.local\bin"
+$VENV_DIR = "$BRAINSTEM_HOME\venv"
+$VENV_PY = "$VENV_DIR\Scripts\python.exe"
 $REPO_URL = "https://github.com/kody-w/RAPP.git"
 $REMOTE_VERSION_URL = "https://raw.githubusercontent.com/kody-w/RAPP/main/rapp_brainstem/VERSION"
 
@@ -273,17 +275,47 @@ function Install-Brainstem {
     Write-Host "  [OK] Source code ready" -ForegroundColor Green
 }
 
+function Setup-Venv {
+    # Create/repair the venv. Using a fixed absolute path here means the
+    # Scheduled Task can invoke python without relying on PATH resolution.
+    if (Test-Path $VENV_PY) {
+        try {
+            & $VENV_PY -c "import sys; sys.exit(0)" 2>&1 | Out-Null
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host "  [OK] Virtual environment OK" -ForegroundColor Green
+                return
+            }
+        } catch {}
+        Write-Host "  [!] Virtual environment broken, recreating..." -ForegroundColor Yellow
+        Remove-Item -Recurse -Force $VENV_DIR -ErrorAction SilentlyContinue
+    }
+
+    $py = if ($script:PythonExe) { $script:PythonExe } else { "python" }
+    Write-Host "  Creating virtual environment..."
+    & $py -m venv $VENV_DIR 2>&1 | Out-Null
+    if (-not (Test-Path $VENV_PY)) {
+        & $py -m ensurepip 2>&1 | Out-Null
+        & $py -m venv $VENV_DIR 2>&1 | Out-Null
+    }
+    if (-not (Test-Path $VENV_PY)) {
+        Write-Host "  [X] Failed to create virtual environment" -ForegroundColor Red
+        exit 1
+    }
+    & $VENV_PY -m pip install --upgrade pip --quiet 2>&1 | Out-Null
+    Write-Host "  [OK] Virtual environment ready" -ForegroundColor Green
+}
+
 function Run-PipInstall {
     $reqFile = "$BRAINSTEM_HOME\src\rapp_brainstem\requirements.txt"
-    $py = if ($script:PythonExe) { $script:PythonExe } else { "python" }
+    $py = if (Test-Path $VENV_PY) { $VENV_PY } elseif ($script:PythonExe) { $script:PythonExe } else { "python" }
     $proc = Start-Process -FilePath $py -ArgumentList "-m", "pip", "install", "-r", $reqFile -NoNewWindow -Wait -PassThru
     if ($proc.ExitCode -ne 0) {
-        $proc = Start-Process -FilePath $py -ArgumentList "-m", "pip", "install", "-r", $reqFile, "--user" -NoNewWindow -Wait -PassThru | Out-Null
+        Start-Process -FilePath $py -ArgumentList "-m", "pip", "install", "-r", $reqFile, "--user" -NoNewWindow -Wait -PassThru | Out-Null
     }
 }
 
 function Check-PythonDeps {
-    $py = if ($script:PythonExe) { $script:PythonExe } else { "python" }
+    $py = if (Test-Path $VENV_PY) { $VENV_PY } elseif ($script:PythonExe) { $script:PythonExe } else { "python" }
     $proc = Start-Process -FilePath $py -ArgumentList "-c", "import flask, flask_cors, requests, dotenv" -NoNewWindow -Wait -PassThru
     return $proc.ExitCode -eq 0
 }
@@ -307,22 +339,146 @@ function Install-CLI {
     if (-not (Test-Path $BRAINSTEM_BIN)) {
         New-Item -ItemType Directory -Force -Path $BRAINSTEM_BIN | Out-Null
     }
+    $logDir = "$BRAINSTEM_HOME\logs"
+    if (-not (Test-Path $logDir)) {
+        New-Item -ItemType Directory -Force -Path $logDir | Out-Null
+    }
 
-    # Batch wrapper (works in cmd.exe and PowerShell)
     $py = if ($script:PythonExe) { $script:PythonExe } else { "python" }
+
+    # PowerShell subcommand dispatcher — the authoritative wrapper.
+    # Matches the macOS/Linux bash wrapper: start / stop / restart /
+    # status / logs / doctor / run / open + default (start-then-open).
+    $psContent = @'
+# RAPP Brainstem CLI wrapper (Windows)
+param([Parameter(Position=0)][string]$Command = 'default', [Parameter(ValueFromRemainingArguments=$true)][string[]]$Rest)
+$BRAINSTEM_HOME = "$env:USERPROFILE\.brainstem"
+$SRC            = "$BRAINSTEM_HOME\src\rapp_brainstem"
+$VENV_PY        = "$BRAINSTEM_HOME\venv\Scripts\python.exe"
+$LOG            = "$BRAINSTEM_HOME\logs\brainstem.log"
+$URL            = "http://localhost:7071"
+$TASK           = "RAPP-Brainstem"
+
+function Test-ServiceInstalled {
+    try { $null = Get-ScheduledTask -TaskName $TASK -ErrorAction Stop; return $true } catch { return $false }
+}
+
+function Invoke-Start {
+    if (Test-ServiceInstalled) {
+        try { Start-ScheduledTask -TaskName $TASK; Write-Host "[OK] Service started ($TASK)" -ForegroundColor Green } catch { Write-Host "[!] Could not start task: $_" -ForegroundColor Yellow }
+    } else {
+        Write-Host "[!] No background task installed — running in foreground (Ctrl-C to stop)." -ForegroundColor Yellow
+        Invoke-Run
+    }
+}
+function Invoke-Stop {
+    if (Test-ServiceInstalled) {
+        try { Stop-ScheduledTask -TaskName $TASK -ErrorAction SilentlyContinue; Write-Host "[OK] Service stopped" -ForegroundColor Green } catch {}
+    } else { Write-Host "[!] No background task installed." -ForegroundColor Yellow }
+}
+function Invoke-Restart { Invoke-Stop; Start-Sleep -Seconds 1; Invoke-Start }
+function Invoke-Status {
+    try {
+        $r = Invoke-WebRequest -Uri "$URL/health" -UseBasicParsing -TimeoutSec 3 -ErrorAction Stop
+        if ($r.StatusCode -eq 200) { Write-Host "[UP] Brainstem at $URL (HTTP 200)" -ForegroundColor Green; $r.Content.Substring(0, [Math]::Min(400,$r.Content.Length)) }
+    } catch {
+        Write-Host "[DOWN] Brainstem not responding at $URL" -ForegroundColor Red
+    }
+    Write-Host ""
+    if (Test-ServiceInstalled) {
+        $t = Get-ScheduledTask -TaskName $TASK
+        $i = Get-ScheduledTaskInfo -TaskName $TASK
+        Write-Host "Task: $TASK"
+        Write-Host "  State: $($t.State)"
+        Write-Host "  LastRunTime: $($i.LastRunTime)"
+        Write-Host "  LastResult:  $($i.LastTaskResult)"
+    } else { Write-Host "Task: (not installed — foreground-only)" }
+}
+function Invoke-Logs {
+    if (Test-Path $LOG) { Get-Content -Path $LOG -Tail 200 -Wait } else { Write-Host "no log at $LOG" }
+}
+function Invoke-Run {
+    Push-Location $SRC
+    try { & $VENV_PY brainstem.py @Rest } finally { Pop-Location }
+}
+function Invoke-Open { Start-Process $URL }
+function Invoke-Doctor {
+    Write-Host "=== RAPP Brainstem doctor ==="
+    Write-Host ""
+    Write-Host "Install path: $BRAINSTEM_HOME"
+    Write-Host "Source:       $SRC"
+    Write-Host "Venv python:  $VENV_PY $(if (Test-Path $VENV_PY) { '(OK)' } else { '(MISSING)' })"
+    $v = if (Test-Path "$SRC\VERSION") { (Get-Content "$SRC\VERSION" -Raw).Trim() } else { '?' }
+    Write-Host "Version:      $v"
+    Write-Host "Log file:     $LOG"
+    Write-Host "OS:           Windows"
+    Write-Host ""
+    Write-Host "=== Task state ==="
+    if (Test-ServiceInstalled) {
+        $t = Get-ScheduledTask -TaskName $TASK; $i = Get-ScheduledTaskInfo -TaskName $TASK
+        Write-Host "Task:        $TASK (present)"
+        Write-Host "State:       $($t.State)"
+        Write-Host "LastRunTime: $($i.LastRunTime)"
+        Write-Host "LastResult:  $($i.LastTaskResult)"
+    } else { Write-Host "Task: (not installed)" }
+    Write-Host ""
+    Write-Host "=== /health ==="
+    try { (Invoke-WebRequest -Uri "$URL/health" -UseBasicParsing -TimeoutSec 3 -ErrorAction Stop).Content } catch { Write-Host "(unreachable)" }
+    Write-Host ""
+    Write-Host "=== Last 40 log lines ==="
+    if (Test-Path $LOG) { Get-Content -Path $LOG -Tail 40 } else { Write-Host "(no log yet)" }
+    Write-Host ""
+    Write-Host "=== End doctor report ==="
+}
+function Show-Help {
+@"
+Usage: brainstem [COMMAND]
+
+With no command, starts the service and opens the browser.
+
+  start     Start the background Scheduled Task
+  stop      Stop the Scheduled Task
+  restart   Restart the Scheduled Task
+  status    One-line health check + task state
+  logs      Tail the service log
+  doctor    Paste-to-support troubleshooting dump
+  run       Run in the foreground (for debugging)
+  open      Open http://localhost:7071 in your browser
+  help      Show this message
+"@
+}
+
+switch ($Command) {
+    'start'   { Invoke-Start; break }
+    'stop'    { Invoke-Stop; break }
+    'restart' { Invoke-Restart; break }
+    'status'  { Invoke-Status; break }
+    'logs'    { Invoke-Logs; break }
+    'doctor'  { Invoke-Doctor; break }
+    'run'     { Invoke-Run; break }
+    'open'    { Invoke-Open; break }
+    { $_ -in @('help','-h','--help') } { Show-Help; break }
+    'default' {
+        Invoke-Start
+        for ($i = 0; $i -lt 10; $i++) {
+            try { if ((Invoke-WebRequest -Uri "$URL/health" -UseBasicParsing -TimeoutSec 1 -ErrorAction Stop).StatusCode -eq 200) { break } } catch {}
+            Start-Sleep -Seconds 1
+        }
+        Invoke-Open
+        break
+    }
+    default { Write-Host "Unknown command: $Command"; Show-Help; exit 1 }
+}
+'@
+    Set-Content -Path "$BRAINSTEM_BIN\brainstem.ps1" -Value $psContent -Encoding UTF8
+
+    # CMD wrapper invokes the PowerShell wrapper so `brainstem` works from
+    # cmd.exe, PowerShell, Run dialog, shortcuts, everywhere.
     $cmdContent = @"
 @echo off
-cd /d "$BRAINSTEM_HOME\src\rapp_brainstem"
-$py brainstem.py %*
+powershell -ExecutionPolicy Bypass -NoProfile -File "$BRAINSTEM_BIN\brainstem.ps1" %*
 "@
     Set-Content -Path "$BRAINSTEM_BIN\brainstem.cmd" -Value $cmdContent
-
-    # PowerShell wrapper
-    $psContent = @"
-Set-Location "$BRAINSTEM_HOME\src\rapp_brainstem"
-& "$py" brainstem.py @args
-"@
-    Set-Content -Path "$BRAINSTEM_BIN\brainstem.ps1" -Value $psContent
 
     # Add to PATH if not already there
     $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
@@ -333,6 +489,67 @@ Set-Location "$BRAINSTEM_HOME\src\rapp_brainstem"
     }
 
     Write-Host "  [OK] CLI installed" -ForegroundColor Green
+}
+
+function Install-Service {
+    # Register a user-level Scheduled Task that runs the brainstem at
+    # logon and restarts on failure. No admin needed. If registration
+    # fails, Launch-Brainstem falls back to the old foreground-run path.
+    Write-Host ""
+    Write-Host "Installing background service..."
+    $task = "RAPP-Brainstem"
+    $py = "$BRAINSTEM_HOME\venv\Scripts\python.exe"
+    $src = "$BRAINSTEM_HOME\src\rapp_brainstem"
+    $log = "$BRAINSTEM_HOME\logs\brainstem.log"
+    $errLog = "$BRAINSTEM_HOME\logs\brainstem.err.log"
+
+    if (-not (Test-Path $py)) {
+        Write-Host "  [!] Venv python missing, skipping service install" -ForegroundColor Yellow
+        return
+    }
+
+    # Remove any prior task so the new config lands cleanly.
+    try { Unregister-ScheduledTask -TaskName $task -Confirm:$false -ErrorAction SilentlyContinue } catch {}
+
+    try {
+        # ScheduledTasks native cmdlets are the right tool; no XML round-trip.
+        # Redirect stdout/stderr through cmd.exe so logs land on disk the
+        # same way launchd/systemd redirect StandardOutPath.
+        $cmd = "cmd.exe"
+        $cmdArgs = "/c `"`"$py`" brainstem.py 1>>`"$log`" 2>>`"$errLog`"`""
+        $action = New-ScheduledTaskAction -Execute $cmd -Argument $cmdArgs -WorkingDirectory $src
+        $trigger = New-ScheduledTaskTrigger -AtLogOn -User "$env:USERDOMAIN\$env:USERNAME"
+        $settings = New-ScheduledTaskSettingsSet `
+            -AllowStartIfOnBatteries `
+            -DontStopIfGoingOnBatteries `
+            -RestartCount 999 `
+            -RestartInterval (New-TimeSpan -Minutes 1) `
+            -StartWhenAvailable `
+            -ExecutionTimeLimit (New-TimeSpan -Hours 0) `
+            -Hidden
+        $principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType Interactive
+        $def = New-ScheduledTask -Action $action -Trigger $trigger -Settings $settings -Principal $principal -Description "RAPP Brainstem — local-first AI agent server (user service)"
+        Register-ScheduledTask -TaskName $task -InputObject $def -Force | Out-Null
+
+        # Kick it off immediately.
+        Start-ScheduledTask -TaskName $task
+        Write-Host "  [OK] Background service installed (Scheduled Task: $task)" -ForegroundColor Green
+    } catch {
+        Write-Host "  [!] Could not install Scheduled Task: $_" -ForegroundColor Yellow
+    }
+}
+
+function Wait-ForHealth {
+    param([int]$TimeoutSec = 15)
+    $url = "http://localhost:7071/health"
+    for ($i = 0; $i -lt $TimeoutSec; $i++) {
+        try {
+            $r = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 1 -ErrorAction Stop
+            if ($r.StatusCode -eq 200) { return $true }
+        } catch {}
+        Start-Sleep -Seconds 1
+    }
+    return $false
 }
 
 function Create-Env {
@@ -481,11 +698,45 @@ function Launch-Brainstem {
         Run-PipInstall
     }
 
-    # Open browser after a delay
+    # Stop any previously-running brainstem on port 7071 before Install-Service
+    # tries to take the port. Matches install.sh auto-kill behavior.
+    try {
+        $conn = Get-NetTCPConnection -LocalPort 7071 -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($conn) {
+            $existingPid = $conn.OwningProcess
+            Write-Host "  [!] Port 7071 busy (PID $existingPid) — stopping it" -ForegroundColor Yellow
+            Stop-Process -Id $existingPid -Force -ErrorAction SilentlyContinue
+            Start-Sleep -Milliseconds 500
+        }
+    } catch {}
+
+    # Install + start the background Scheduled Task. Non-technical users
+    # never have to think about "running a server" again — it auto-starts
+    # at logon and auto-restarts on crash.
+    Install-Service
+
+    # Give the task up to 15s to cold-boot. On success, pop the browser
+    # and return. On failure, fall back to foreground exec so the user
+    # still ends up with a working brainstem.
+    if (Wait-ForHealth 15) {
+        Start-Process "http://localhost:7071"
+        Pop-Location
+        Write-Host ""
+        Write-Host "  [OK] Brainstem is running at http://localhost:7071" -ForegroundColor Green
+        Write-Host "  It'll auto-start at logon and auto-restart if it crashes."
+        Write-Host ""
+        Write-Host "  Manage with: brainstem start|stop|restart|status|logs|doctor" -ForegroundColor Cyan
+        Write-Host ""
+        return
+    }
+
+    Write-Host "  [!] Background service didn't come up — running in foreground instead." -ForegroundColor Yellow
+    Write-Host ""
     Start-Job -ScriptBlock { Start-Sleep -Seconds 3; Start-Process "http://localhost:7071" } | Out-Null
 
-    $py = if ($script:PythonExe) { $script:PythonExe } else { "python" }
+    $py = if (Test-Path $VENV_PY) { $VENV_PY } elseif ($script:PythonExe) { $script:PythonExe } else { "python" }
     & $py brainstem.py
+    Pop-Location
 }
 
 function Main {
@@ -495,7 +746,12 @@ function Main {
     if (Test-Path "$BRAINSTEM_HOME\src\.git") {
         Write-Host "Checking for updates..."
         if (-not (Check-ForUpgrade)) {
-            # Already up to date — just launch
+            # Already up to date — still verify venv + deps + CLI before launch
+            Check-Prerequisites
+            Setup-Venv
+            Setup-Dependencies
+            Install-CLI
+            Create-Env
             Launch-Brainstem
             return
         }
@@ -503,6 +759,7 @@ function Main {
 
     Check-Prerequisites
     Install-Brainstem
+    Setup-Venv
     Setup-Dependencies
     Install-CLI
     Create-Env
