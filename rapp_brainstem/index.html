@@ -672,7 +672,57 @@
     width: 64px; height: 64px; cursor: pointer;
     position: relative; border-radius: 50%;
     background: rgba(0,0,0,.4); overflow: hidden;
-    box-shadow: 0 0 12px rgba(56,189,248,.15);
+    /* Blue glow matches the Send button so the footer reads as one
+       visual pair: holo-globe on the left, blue pill on the right. */
+    box-shadow: 0 0 18px rgba(31,111,235,.55),
+                0 0 2px rgba(88,166,255,.8) inset;
+    outline: 1px solid rgba(88,166,255,.4);
+    outline-offset: -1px;
+  }
+  /* Hologram scanlines + rim tint — sits above the Three.js canvas via
+     overflow:hidden so the spinning earth still shows through, but now
+     with a sci-fi projected-beam feel rather than a plain photo. */
+  #twin-portrait::before {
+    content: ''; position: absolute; inset: 0; border-radius: 50%;
+    background:
+      repeating-linear-gradient(
+        to bottom,
+        rgba(88,166,255,0) 0px,
+        rgba(88,166,255,0) 2px,
+        rgba(88,166,255,.12) 2px,
+        rgba(88,166,255,.12) 3px
+      ),
+      radial-gradient(circle at 50% 40%,
+        rgba(88,166,255,.0) 40%,
+        rgba(31,111,235,.22) 80%,
+        rgba(31,111,235,.45) 100%);
+    mix-blend-mode: screen;
+    pointer-events: none;
+    animation: holo-flicker 3.2s ease-in-out infinite;
+    z-index: 2;
+  }
+  /* Glossy sweep across the globe — the moving highlight that reads
+     as "this is projected light, not a sticker." */
+  #twin-portrait::after {
+    content: ''; position: absolute; inset: 0; border-radius: 50%;
+    background: linear-gradient(
+      115deg,
+      transparent 30%,
+      rgba(120,180,255,.22) 48%,
+      transparent 66%);
+    mix-blend-mode: screen; pointer-events: none;
+    animation: holo-sweep 5.5s linear infinite;
+    z-index: 3;
+  }
+  @keyframes holo-flicker {
+    0%, 100% { opacity: 1; }
+    48%      { opacity: .78; }
+    50%      { opacity: 1; }
+    52%      { opacity: .85; }
+  }
+  @keyframes holo-sweep {
+    0%   { transform: translateX(-60%); }
+    100% { transform: translateX(60%); }
   }
   .twin-caption {
     font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
