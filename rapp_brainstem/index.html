@@ -406,7 +406,7 @@
     min-height: 16px;
   }
 
-  /* Rapplications rows */
+  /* RAPP Swarms rows */
   .rapp-row {
     background: #0d1117; border: 1px solid #21262d; border-radius: 6px;
     padding: 8px 10px; margin-bottom: 6px; font-size: 11px;
@@ -795,7 +795,7 @@
         <!-- Rapplications -->
         <div class="sp-section" id="sp-rapps">
           <div class="sp-header" onclick="toggleSpSection('sp-rapps'); loadRapps();">
-            <span class="sp-title">📦 Rapplications</span>
+            <span class="sp-title">🐝 RAPP Swarms</span>
             <span class="sp-chev">›</span>
           </div>
           <div class="sp-body">
@@ -1710,7 +1710,7 @@
         const catEntry = allCatalog.find(r => r.id === e.id);
         const displayName = catEntry?.name || e.id;
         return `<div class="rapp-row installed"><div class="rr-head"><span class="rr-name">${esc(displayName)}</span><span class="rr-ver">v${esc(e.version||catEntry?.version||'?')}</span></div><div class="rr-actions"><button class="panel-btn danger" onclick="uninstallRapp('${esc(e.id)}')">Uninstall</button></div></div>`;
-      }).join('') : '<div style="color:#8b949e;font-size:10px;font-style:italic">No rapplications installed.</div>';
+      }).join('') : '<div style="color:#8b949e;font-size:10px;font-style:italic">No RAPP swarms installed.</div>';
       catDiv.innerHTML = catalog.map(r => {
         const isInst = installedIds.has(r.id);
         const summary = (r.summary||'').slice(0,120) + ((r.summary||'').length > 120 ? '…' : '');
@@ -1720,7 +1720,7 @@
         }</div></div>`;
       }).join('') || '<div style="color:#8b949e;font-size:10px;font-style:italic">Catalog empty or unreachable.</div>';
     } catch (e) {
-      instDiv.innerHTML = '<div style="color:#f85149;font-size:10px">Error loading rapplications.</div>';
+      instDiv.innerHTML = '<div style="color:#f85149;font-size:10px">Error loading RAPP swarms.</div>';
     }
   }
   async function installRapp(id) {
@@ -1805,7 +1805,7 @@
       const data = await r.json();
       const agents = data.installed || [];
       if (!agents.length) {
-        list.innerHTML = '<div style="padding:8px;color:#6e7681;font-size:10px;text-align:center">No agents installed. Install rapplications first.</div>';
+        list.innerHTML = '<div style="padding:8px;color:#6e7681;font-size:10px;text-align:center">No agents installed. Install RAPP swarms first.</div>';
         return;
       }
       list.innerHTML = agents.map(a =>
