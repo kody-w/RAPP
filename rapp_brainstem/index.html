@@ -651,6 +651,95 @@
     color: #24292e;
     border-color: #57606a;
   }
+
+  /* ── Twin panel ── */
+  #twin-panel {
+    position: fixed; right: 0; top: 0; bottom: 0; width: 300px;
+    background: rgba(22,27,34,.92); backdrop-filter: blur(16px);
+    border-left: 1px solid #30363d;
+    display: none; flex-direction: column; z-index: 45;
+    transform: translateX(100%); transition: transform .3s ease;
+    padding: 16px 14px;
+    overflow-y: auto;
+  }
+  #twin-panel.open { display: flex; transform: translateX(0); }
+  body.twin-open #chat { margin-right: 300px; transition: margin-right .3s ease; }
+  body.twin-open footer { margin-right: 300px; transition: margin-right .3s ease; }
+
+  .twin-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .twin-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #a78bfa; }
+  .twin-status { font-size: 10px; color: #8b949e; font-style: italic; }
+
+  .twin-sphere-wrap { display: flex; justify-content: center; margin-bottom: 14px; }
+  .twin-sphere {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #c4b5fd 0%, #7c3aed 60%, #4c1d95 100%);
+    box-shadow: 0 0 18px rgba(167,139,250,.4), inset 0 -4px 8px rgba(0,0,0,.25);
+    animation: twin-pulse 3.4s ease-in-out infinite;
+  }
+  @keyframes twin-pulse {
+    0%, 100% { transform: scale(1); filter: brightness(1); }
+    50% { transform: scale(1.06); filter: brightness(1.15); }
+  }
+  #twin-panel[data-mood="alert"] .twin-sphere {
+    background: radial-gradient(circle at 40% 35%, #fca5a5 0%, #dc2626 60%, #7f1d1d 100%);
+    box-shadow: 0 0 18px rgba(248,113,113,.5), inset 0 -4px 8px rgba(0,0,0,.25);
+  }
+  #twin-panel[data-mood="curious"] .twin-sphere {
+    background: radial-gradient(circle at 40% 35%, #93c5fd 0%, #3b82f6 60%, #1e3a5f 100%);
+    box-shadow: 0 0 18px rgba(96,165,250,.5), inset 0 -4px 8px rgba(0,0,0,.25);
+  }
+  #twin-panel[data-mood="validated"] .twin-sphere {
+    background: radial-gradient(circle at 40% 35%, #86efac 0%, #22c55e 60%, #14532d 100%);
+    box-shadow: 0 0 18px rgba(74,222,128,.5), inset 0 -4px 8px rgba(0,0,0,.25);
+  }
+  #twin-panel[data-mood="contradicted"] .twin-sphere {
+    background: radial-gradient(circle at 40% 35%, #fde68a 0%, #f59e0b 60%, #78350f 100%);
+    box-shadow: 0 0 18px rgba(251,191,36,.5), inset 0 -4px 8px rgba(0,0,0,.25);
+  }
+
+  .twin-body { font-size: 13px; line-height: 1.55; color: #cdd6e3; margin-bottom: 12px; }
+  .twin-body p { margin: 0 0 6px; }
+  .twin-body strong { color: #a78bfa; }
+  .twin-body code { background: rgba(167,139,250,.12); padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+  .twin-silent { font-style: italic; text-align: center; color: #6e7681; font-size: 12px; padding: 8px 0; }
+
+  .twin-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .twin-action {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 12px; border-radius: 999px; font-size: 11px;
+    background: rgba(167,139,250,.1); border: 1px solid rgba(167,139,250,.35);
+    color: #c4b5fd; cursor: pointer; transition: all .15s;
+  }
+  .twin-action:hover { background: rgba(167,139,250,.22); border-color: #a78bfa; color: #e9d5ff; }
+  .twin-action-done { background: rgba(52,211,153,.12); border-color: rgba(52,211,153,.4); color: #6ee7b7; pointer-events: none; }
+  .twin-action-fail { background: rgba(248,113,113,.12); border-color: rgba(248,113,113,.4); color: #fca5a5; pointer-events: none; }
+  .twin-action .chip-glyph { font-size: 13px; }
+
+  .twin-history { border-top: 1px solid #21262d; padding-top: 8px; margin-top: auto; }
+  .twin-history-entry { display: flex; align-items: flex-start; gap: 6px; font-size: 11px; color: #8b949e; margin-bottom: 6px; line-height: 1.4; }
+  .twin-history-dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; background: #a78bfa; }
+  .twin-history-entry[data-mood="alert"] .twin-history-dot { background: #f87171; }
+  .twin-history-entry[data-mood="validated"] .twin-history-dot { background: #4ade80; }
+  .twin-history-entry[data-mood="contradicted"] .twin-history-dot { background: #fbbf24; }
+  .twin-history-entry[data-mood="curious"] .twin-history-dot { background: #60a5fa; }
+
+  @keyframes twin-highlight-flash {
+    0%, 100% { background: transparent; }
+    50% { background: rgba(167,139,250,.2); }
+  }
+
+  body.light-mode #twin-panel { background: rgba(246,248,250,.95); border-color: #d0d7de; }
+  body.light-mode .twin-label { color: #7c3aed; }
+  body.light-mode .twin-body { color: #24292e; }
+  body.light-mode .twin-body strong { color: #7c3aed; }
+  body.light-mode .twin-action { background: rgba(124,58,237,.08); border-color: rgba(124,58,237,.3); color: #6d28d9; }
+  body.light-mode .twin-history { border-color: #d0d7de; }
+
+  @media (max-width: 720px) {
+    #twin-panel { width: 100%; }
+    body.twin-open #chat, body.twin-open footer { margin-right: 0; }
+  }
 </style>
 </head>
 <body>
@@ -736,6 +825,9 @@
     <div class="voice-wrapper">
       <button class="icon-btn" id="voice-btn" onclick="toggleVoice()" title="Voice mode off">
         <span class="icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg></span>
+      </button>
+      <button class="icon-btn" id="twin-btn" onclick="toggleTwinPanel()" title="Twin off">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm0 14c-2.03 0-4.43-.82-6.14-2.88C7.55 15.8 9.68 15 12 15s4.45.8 6.14 2.12C16.43 19.18 14.03 20 12 20z"/></svg></span>
       </button>
       <button class="icon-btn" id="settings-gear-btn" onclick="toggleSettingsPanel()" title="Settings">
         <span class="icon"><svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M7.429 1.525a6.593 6.593 0 011.142 0c.036.003.108.036.137.146l.289 1.105c.147.56.55.967.997 1.189.174.086.341.183.501.29.417.278.97.423 1.53.27l1.102-.303c.11-.03.175.016.195.046.219.31.41.641.573.989.014.031.022.11-.059.19l-.815.806c-.411.406-.562.957-.53 1.456a4.588 4.588 0 010 .582c-.032.499.119 1.05.53 1.456l.815.806c.08.08.073.159.059.19a6.494 6.494 0 01-.573.99c-.02.029-.086.074-.195.045l-1.103-.303c-.559-.153-1.112-.008-1.529.27-.16.107-.327.204-.5.29-.449.222-.851.628-.998 1.189l-.289 1.105c-.029.11-.1.143-.137.146a6.613 6.613 0 01-1.142 0c-.036-.003-.108-.037-.137-.146l-.289-1.105c-.147-.56-.55-.967-.997-1.189a4.502 4.502 0 01-.501-.29c-.417-.278-.97-.423-1.53-.27l-1.102.303c-.11.03-.175-.016-.195-.046a6.492 6.492 0 01-.573-.989c-.014-.031-.022-.11.059-.19l.815-.806c.411-.406.562-.957.53-1.456a4.587 4.587 0 010-.582c.032-.499-.119-1.05-.53-1.456l-.815-.806c-.08-.08-.073-.159-.059-.19a6.44 6.44 0 01.573-.99c.02-.029.086-.074.195-.045l1.103.303c.559.153 1.112.008 1.529-.27.16-.107.327-.204.5-.29.449-.222.851-.628.998-1.189l.289-1.105c.029-.11.1-.143.137-.146zM8 0c-.236 0-.47.01-.701.03-.743.065-1.29.615-1.458 1.261l-.29 1.106c-.017.066-.078.158-.211.224a5.994 5.994 0 00-.668.386c-.123.082-.233.117-.3.117h-.013l-1.104-.304c-.646-.178-1.314.023-1.71.64a7.994 7.994 0 00-.573.989c-.358.658-.217 1.381.164 1.758l.816.806c.046.046.106.144.098.284a6.095 6.095 0 000 .772c.008.14-.052.238-.098.284l-.816.806c-.38.377-.522 1.1-.164 1.758.145.267.306.524.573.99.396.616 1.064.817 1.71.639l1.104-.304c.068-.019.146-.003.3.117.195.13.4.25.668.387.133.066.194.158.212.224l.289 1.106c.169.646.715 1.196 1.458 1.26a8.094 8.094 0 001.402 0c.743-.064 1.29-.614 1.458-1.26l.29-1.106c.017-.066.078-.158.211-.224a5.98 5.98 0 00.668-.386c.123-.082.233-.117.3-.117h.013l1.104.304c.646.178 1.314-.023 1.71-.64.267-.465.428-.722.573-.989.358-.658.217-1.381-.164-1.758l-.816-.806c-.046-.046-.106-.144-.098-.284a6.095 6.095 0 000-.772c-.008-.14.052-.238.098-.284l.816-.806c.38-.377.522-1.1.164-1.758a7.994 7.994 0 00-.573-.99c-.396-.616-1.064-.817-1.71-.639l-1.104.304c-.068.019-.146.003-.3-.117a5.994 5.994 0 00-.668-.387c-.133-.066-.194-.158-.212-.224L10.16 1.29C9.99.645 9.444.095 8.701.031A8.094 8.094 0 008 0zm0 11a3 3 0 100-6 3 3 0 000 6z"/></svg></span>
@@ -894,6 +986,19 @@
     </div>
   </div>
 </div>
+
+<aside id="twin-panel" data-mood="present">
+  <div class="twin-head">
+    <span class="twin-label">Your Twin</span>
+    <span class="twin-status">present</span>
+  </div>
+  <div class="twin-sphere-wrap"><div class="twin-sphere"></div></div>
+  <div class="twin-body">
+    <div class="twin-silent">I'm here. Say something and I'll watch with you.</div>
+  </div>
+  <div class="twin-actions"></div>
+  <div class="twin-history"></div>
+</aside>
 
 <footer>
   <div id="starter-prompts">
@@ -1584,11 +1689,13 @@
           content: d.response,
           agent_logs: d.agent_logs || null,
           voice_response: d.voice_response || null,
+          twin_response: d.twin_response || null,
           model: document.getElementById('model-select')?.value || null,
           session_id: d.session_id,
           timestamp: new Date().toISOString()
         });
         appendMsg('assistant', d.response, d.agent_logs && d.agent_logs.trim() ? d.agent_logs : null);
+        if (d.twin_response && d.twin_response.trim()) renderTwin(d.twin_response);
         if (d.voice_response) {
           speakText(d.voice_response);
         } else if (voiceMode) {
@@ -2315,6 +2422,7 @@
       </div>
     `;
     document.getElementById('starter-prompts')?.classList.remove('hidden-prompts');
+    resetTwin();
   }
 
   function exportChat() {
@@ -2386,6 +2494,196 @@
       }
     };
     reader.readAsText(file);
+  }
+
+  // ── Digital Twin ────────────────────────────────────────────────────────
+  let twinMode = false;
+  const _tw = { history: [], lastMood: 'present' };
+  const MOOD_LABEL = {
+    present:'present', thinking:'observing', curious:'wondering',
+    alert:'flagging a risk', validated:'called it', contradicted:'missed it'
+  };
+  const CHIP_GLYPH = { send:'↗', prompt:'✎', open:'⎋', toggle:'⇄', highlight:'✦', rapp:'⚙' };
+
+  fetch(`${API}/twin`).then(r=>r.json()).then(d=>{
+    twinMode = d.twin_mode;
+    updateTwinBtn();
+    if (twinMode) openTwinPanel();
+  }).catch(()=>{});
+
+  async function toggleTwinPanel() {
+    try {
+      const r = await fetch(`${API}/twin/toggle`, { method:'POST', headers:{'Content-Type':'application/json'}, body:'{}' });
+      const d = await r.json();
+      twinMode = d.twin_mode;
+      updateTwinBtn();
+      if (twinMode) openTwinPanel(); else closeTwinPanel();
+    } catch(e) { console.error('Twin toggle failed:', e); }
+  }
+
+  function updateTwinBtn() {
+    const btn = document.getElementById('twin-btn');
+    if (!btn) return;
+    btn.className = twinMode ? 'icon-btn active' : 'icon-btn';
+    btn.title = twinMode ? 'Twin on' : 'Twin off';
+  }
+
+  function openTwinPanel() {
+    const p = document.getElementById('twin-panel');
+    p.style.display = 'flex';
+    requestAnimationFrame(() => { p.classList.add('open'); });
+    document.body.classList.add('twin-open');
+  }
+
+  function closeTwinPanel() {
+    const p = document.getElementById('twin-panel');
+    p.classList.remove('open');
+    document.body.classList.remove('twin-open');
+    setTimeout(() => { if (!p.classList.contains('open')) p.style.display = 'none'; }, 300);
+  }
+
+  function parseTwinTags(raw) {
+    let text = raw;
+    const probes = [], calibrations = [], actions = [];
+    text = text.replace(/<probe\s+([^/>]*?)\/>/gi, (_, attrs) => { probes.push(parseAttrs(attrs)); return ''; });
+    text = text.replace(/<calibration\s+([^/>]*?)\/>/gi, (_, attrs) => { calibrations.push(parseAttrs(attrs)); return ''; });
+    text = text.replace(/<telemetry>([\s\S]*?)<\/telemetry>/gi, (_, body) => {
+      body.trim().split('\n').forEach(l => { if (l.trim()) console.log('[twin-telemetry]', l.trim()); });
+      return '';
+    });
+    text = text.replace(/<action\s+([^>]*?)>([\s\S]*?)<\/action\s*>/gi, (_, attrs, body) => {
+      const a = parseAttrs(attrs);
+      a.body = body.trim();
+      actions.push(a);
+      return '';
+    });
+    text = text.replace(/<action\s+([^/>]*?)\/>/gi, (_, attrs) => {
+      actions.push(parseAttrs(attrs));
+      return '';
+    });
+    return { text: text.trim(), probes, calibrations, actions };
+  }
+
+  function parseAttrs(s) {
+    const o = {};
+    s.replace(/([\w-]+)\s*=\s*"([^"]*)"/g, (_, k, v) => { o[k] = v; });
+    s.replace(/([\w-]+)\s*=\s*'([^']*)'/g, (_, k, v) => { o[k] = v; });
+    return o;
+  }
+
+  function detectMood(text, cals) {
+    if (cals.some(c => c.outcome === 'contradicted')) return 'contradicted';
+    if (cals.some(c => c.outcome === 'validated')) return 'validated';
+    if (/\*\*Risk:?\*\*|\*\*Warning:?\*\*/i.test(text)) return 'alert';
+    if (/\*\*Question:?\*\*|\*\*Curious:?\*\*/i.test(text)) return 'curious';
+    return 'present';
+  }
+
+  function renderTwin(raw) {
+    const panel = document.getElementById('twin-panel');
+    const { text, probes, calibrations, actions } = parseTwinTags(raw);
+    const mood = detectMood(text, calibrations);
+    _tw.lastMood = mood;
+    panel.dataset.mood = mood;
+    panel.querySelector('.twin-status').textContent = MOOD_LABEL[mood] || 'present';
+
+    const body = panel.querySelector('.twin-body');
+    if (text) {
+      body.innerHTML = marked.parse(text);
+    } else {
+      body.innerHTML = '<div class="twin-silent">Nothing to add this turn.</div>';
+    }
+
+    const actBox = panel.querySelector('.twin-actions');
+    actBox.innerHTML = '';
+    actions.forEach((a, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'twin-action';
+      const glyph = CHIP_GLYPH[a.kind] || '◆';
+      btn.innerHTML = `<span class="chip-glyph">${glyph}</span> ${esc(a.label || a.kind)}`;
+      btn.onclick = () => runTwinAction(a, btn);
+      actBox.appendChild(btn);
+    });
+
+    if (text) {
+      _tw.history.unshift({ text: text.split('\n')[0].replace(/\*\*/g,'').slice(0, 80), mood });
+      if (_tw.history.length > 4) _tw.history.pop();
+    }
+    renderTwinHistory();
+
+    if (!panel.classList.contains('open') && twinMode) openTwinPanel();
+  }
+
+  function renderTwinHistory() {
+    const box = document.getElementById('twin-panel').querySelector('.twin-history');
+    if (_tw.history.length <= 1) { box.innerHTML = ''; return; }
+    const opacities = [0.7, 0.5, 0.35, 0.2];
+    box.innerHTML = _tw.history.slice(1).map((h, i) =>
+      `<div class="twin-history-entry" data-mood="${h.mood}" style="opacity:${opacities[i]||0.2}"><div class="twin-history-dot"></div><span>${esc(h.text)}</span></div>`
+    ).join('');
+  }
+
+  function runTwinAction(action, btn) {
+    const kind = action.kind;
+    try {
+      if (kind === 'send') {
+        const input = document.getElementById('user-input');
+        input.value = action.body || '';
+        sendMessage();
+      } else if (kind === 'prompt') {
+        const input = document.getElementById('user-input');
+        input.value = action.body || '';
+        input.focus();
+        input.dispatchEvent(new Event('input'));
+      } else if (kind === 'open') {
+        const target = action.target;
+        if (target === 'settings') toggleSettingsPanel();
+        else if (target === 'agents') toggleAgentsPanel();
+        else if (target === 'binder' || target === 'browse') {
+          toggleSettingsPanel();
+          setTimeout(() => toggleSpSection('sp-rapps'), 150);
+        }
+      } else if (kind === 'toggle') {
+        if (action.target === 'voice') toggleVoice();
+        else console.log('[twin] toggle target not available:', action.target);
+      } else if (kind === 'highlight') {
+        const items = document.querySelectorAll('#agent-list-ul li');
+        for (const li of items) {
+          const name = li.querySelector('.agent-name')?.textContent || '';
+          if (name.toLowerCase().includes((action.target||'').toLowerCase())) {
+            li.style.animation = 'twin-highlight-flash .6s ease 2';
+            setTimeout(() => { li.style.animation = ''; }, 1300);
+            const agentsPanel = document.getElementById('agents-panel');
+            if (agentsPanel && !agentsPanel.classList.contains('open')) toggleAgentsPanel();
+            break;
+          }
+        }
+      } else if (kind === 'rapp') {
+        fetch(`${API}/chat`, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ user_input: `Use ${action.target}: ${action.body || ''}` })
+        }).then(r=>r.json()).then(d => {
+          if (d.response) appendMsg('assistant', d.response, d.agent_logs || null);
+          if (d.twin_response) renderTwin(d.twin_response);
+        }).catch(e => { console.error('[twin] rapp action failed:', e); });
+      }
+      btn.classList.add('twin-action-done');
+    } catch(e) {
+      console.error('[twin] action failed:', e);
+      btn.classList.add('twin-action-fail');
+    }
+  }
+
+  function resetTwin() {
+    _tw.history = [];
+    _tw.lastMood = 'present';
+    const p = document.getElementById('twin-panel');
+    if (!p) return;
+    p.dataset.mood = 'present';
+    p.querySelector('.twin-status').textContent = 'present';
+    p.querySelector('.twin-body').innerHTML = '<div class="twin-silent">I\'m here. Say something and I\'ll watch with you.</div>';
+    p.querySelector('.twin-actions').innerHTML = '';
+    p.querySelector('.twin-history').innerHTML = '';
   }
 </script>
 </body>
