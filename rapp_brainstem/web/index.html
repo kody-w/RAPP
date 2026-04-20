@@ -1307,15 +1307,29 @@
 
       <div class="row virtual-only">
         <label>
-          <input type="checkbox" id="tether-enabled" style="vertical-align:middle;margin-right:6px">
-          Tether to local brainstem
+          <input type="checkbox" id="tether-enabled" style="vertical-align:middle;margin-right:6px" checked>
+          Tether to local brainstem <strong style="color:#3fb950">(recommended)</strong>
         </label>
         <div class="tether-row">
           <input id="tether-url" type="text" placeholder="http://localhost:7071" autocomplete="off" />
           <button class="btn" id="tether-test">Test</button>
         </div>
         <div id="tether-status" class="tether-stat">disabled</div>
-        <span class="hint">Routes agent execution through your local brainstem for real OS access. Install it with the one-liner from <strong>Install</strong> below, then start it with <code>brainstem</code>. Not shown on the local brainstem (you ARE the tether).</span>
+        <div id="tether-install-cta" style="display:none; margin-top:8px; padding:10px 12px;
+             background:#04060c; border:1px solid #21262d; border-left:3px solid #3fb950;
+             border-radius:6px; font-size:12px; line-height:1.55">
+          <div style="color:#8b949e; margin-bottom:6px">
+            ⚠️ Local brainstem not running — agents will fall back to browser Pyodide.
+            Get the real thing with one command:
+          </div>
+          <div id="tether-install-cmd" title="Click to copy"
+               style="font-family:'SF Mono',ui-monospace,monospace; font-size:12px;
+                      padding:8px 10px; background:#0d1117; border:1px solid #30363d;
+                      border-radius:4px; color:#e6edf3; cursor:pointer;
+                      word-break:break-all; user-select:all">curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash</div>
+          <div style="color:#6e7681; font-size:10.5px; margin-top:4px">click to copy · then run in terminal · refresh this page when the brainstem is up</div>
+        </div>
+        <span class="hint">When tethered, agent execution runs in real Python on your machine instead of Pyodide in the browser — full filesystem / subprocess / network access.</span>
       </div>
 
       <div class="row">
@@ -2055,7 +2069,12 @@ const state = {
     // speaks the rapp-tether/1.0 wire shape). When connected, agent calls
     // route through the local Python process instead of Pyodide so they get
     // real filesystem / subprocess / LAN / hardware access.
-    tetherEnabled: false,
+    // Default ON: tether is the recommended execution path on the
+    // virtual brainstem (real Python on user's machine > Pyodide in
+    // the browser). If the local brainstem isn't reachable, the UI
+    // surfaces the install one-liner via the #tether-install-cta
+    // block inside Settings → Tether.
+    tetherEnabled: true,
     tetherUrl: 'http://localhost:8765',
     // Default endpoint that Deploy as Swarm posts to (the local swarm/server.py
     // installed via `install-swarm.sh`, listens on :7080 by default).
@@ -4173,6 +4192,16 @@ function refreshTetherStatus() {
       stat.className = 'tether-stat err';
     }
   }
+  // Install CTA: show whenever tether is wanted but not reachable. This is
+  // the "Pyodide is the fallback, tether is the recommended path" UX —
+  // users who land on the virtual brainstem and want real agent execution
+  // get the install one-liner right here, no docs hunt.
+  const cta = document.getElementById('tether-install-cta');
+  if (cta) {
+    const wants = !!state.settings.tetherEnabled;
+    const have  = !!state.tether.connected;
+    cta.style.display = (wants && !have) ? 'block' : 'none';
+  }
 }
 
 function runAgentStub(card, kwargs, upstreamSlush) {
@@ -4390,6 +4419,22 @@ function wire() {
   $('#browse-filter').addEventListener('input', renderBrowse);
   $('#browse-source-filter').addEventListener('change', renderBrowse);
   $('#browse-refresh').addEventListener('click', refreshAllSources);
+  // Click the install one-liner to copy it. Users who read the CTA and
+  // want to spin up a local brainstem can copy-paste-run in one click.
+  (() => {
+    const cmdEl = document.getElementById('tether-install-cmd');
+    if (!cmdEl) return;
+    cmdEl.addEventListener('click', () => {
+      const text = cmdEl.textContent.trim();
+      navigator.clipboard.writeText(text).then(() => {
+        const orig = cmdEl.textContent;
+        cmdEl.textContent = '✓ Copied — paste in your terminal';
+        cmdEl.style.color = '#3fb950';
+        setTimeout(() => { cmdEl.textContent = orig; cmdEl.style.color = '#e6edf3'; }, 1600);
+      });
+    });
+  })();
+
   $('#tether-test').addEventListener('click', async () => {
     // Pull current values into state without saving so the test reflects what
     // the user just typed.
