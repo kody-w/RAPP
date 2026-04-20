@@ -1,5 +1,5 @@
 #!/bin/bash
-# hippocampus/twin-sim.sh — RAPP Twin Simulator (local dev tools)
+# rapp_swarm/twin-sim.sh — RAPP Twin Simulator (local dev tools)
 #
 # Spin up isolated local twin workspaces on this machine that simulate
 # the full cloud Twin Stack ecosystem. Each twin gets:
@@ -19,14 +19,14 @@
 # whichever LLM provider is configured).
 #
 # Commands:
-#     bash hippocampus/twin-sim.sh start <name>   Spin up a twin
-#     bash hippocampus/twin-sim.sh stop  <name>   Stop one (data preserved)
-#     bash hippocampus/twin-sim.sh stop  all      Stop every running twin
-#     bash hippocampus/twin-sim.sh list           Show all known twins
-#     bash hippocampus/twin-sim.sh logs  <name>   Tail one twin's log
-#     bash hippocampus/twin-sim.sh open  [name]   Open onboard page in browser
-#     bash hippocampus/twin-sim.sh peer  <a> <b>  Mutually whitelist a↔b for T2T
-#     bash hippocampus/twin-sim.sh wipe  <name>   Stop AND delete the workspace
+#     bash rapp_swarm/twin-sim.sh start <name>   Spin up a twin
+#     bash rapp_swarm/twin-sim.sh stop  <name>   Stop one (data preserved)
+#     bash rapp_swarm/twin-sim.sh stop  all      Stop every running twin
+#     bash rapp_swarm/twin-sim.sh list           Show all known twins
+#     bash rapp_swarm/twin-sim.sh logs  <name>   Tail one twin's log
+#     bash rapp_swarm/twin-sim.sh open  [name]   Open onboard page in browser
+#     bash rapp_swarm/twin-sim.sh peer  <a> <b>  Mutually whitelist a↔b for T2T
+#     bash rapp_swarm/twin-sim.sh wipe  <name>   Stop AND delete the workspace
 #
 # Wire a peer once with `peer kody molly`, then twins can chat, share
 # documents, and invoke each other's swarms via T2T over localhost.
@@ -442,7 +442,7 @@ PY
     echo "  Draft:     $BOOK_DIR/draft.md"
     echo "  Edited:    $BOOK_DIR/edited.md"
     echo ""
-    echo "  Replay anytime: bash hippocampus/twin-sim.sh demo book-factory"
+    echo "  Replay anytime: bash rapp_swarm/twin-sim.sh demo book-factory"
     echo "════════════════════════════════════════════════════════════════"
 }
 
@@ -520,7 +520,7 @@ cmd_demo_hero() {
     local m_count=$(curl -fsS $MOLLY_URL/api/swarm/healthz | python3 -c 'import json,sys; print(json.load(sys.stdin)["swarm_count"])')
     if [ "$k_count" = "0" ] || [ "$m_count" = "0" ]; then
         echo "▶ Auto-hatching missing twin clouds from registry"
-        python3 "$ROOT/hippocampus/.demo-build-bundles.py" >/dev/null 2>&1 || \
+        python3 "$ROOT/rapp_swarm/.demo-build-bundles.py" >/dev/null 2>&1 || \
             _build_bundles_inline
         [ "$k_count" = "0" ] && curl -fsS -X POST $KODY_URL/api/swarm/deploy \
             -H 'Content-Type: application/json' --data-binary @/tmp/kody-bundle.json >/dev/null

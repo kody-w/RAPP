@@ -2,7 +2,7 @@
 
 A tiny stateless Cloudflare Worker that holds the GitHub OAuth client secret and proxies the few GitHub APIs that aren't browser-friendly. It's the canonical auth + proxy surface for **any** RAPP consumer that runs outside a server: the virtual brainstem today, future PWAs, browser extensions, Copilot Studio embeds tomorrow.
 
-Tier 1 (local Python brainstem) and Tier 2 (Azure Functions hippocampus) talk to GitHub directly server-side and don't *need* this worker — but they can use it if you want one consistent auth surface across every tier.
+Tier 1 (local Python brainstem) and Tier 2 (Azure Functions swarm) talk to GitHub directly server-side and don't *need* this worker — but they can use it if you want one consistent auth surface across every tier.
 
 ## Endpoints
 

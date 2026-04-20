@@ -1,5 +1,5 @@
 #!/bin/bash
-# hippocampus/provision-twin-lite.sh — minimal cloud deploy for a Twin Stack
+# rapp_swarm/provision-twin-lite.sh — minimal cloud deploy for a Twin Stack
 # cloud estate. Skips creating a new Azure OpenAI deployment (cheap + avoids
 # regional quota collisions); instead reuses the AZURE_OPENAI_* keys from
 # the root .env (e.g., the existing rappter OpenAI).
@@ -11,11 +11,11 @@
 #
 # Then:
 #     applies .env keys as appSettings
-#     bash hippocampus/build.sh         (vendor swarm/* into _swarm/)
+#     bash rapp_swarm/build.sh         (vendor swarm/* into _swarm/)
 #     func azure functionapp publish    (deploy function_app.py)
 #
-#     bash hippocampus/provision-twin-lite.sh kody
-#     bash hippocampus/provision-twin-lite.sh molly
+#     bash rapp_swarm/provision-twin-lite.sh kody
+#     bash rapp_swarm/provision-twin-lite.sh molly
 #
 # Tear down:
 #     az group delete --name rg-twin-kody --yes --no-wait

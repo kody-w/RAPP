@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RAPP Hippocampus — Tier 2 Digital Twin</title>
+<title>RAPP Swarm — Tier 2</title>
 <meta name="description" content="The cloud tier of RAPP. Azure Functions + Azure OpenAI. The same single-file agents your laptop runs, but durable.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E☁️%3C/text%3E%3C/svg%3E">
 <style>
@@ -79,18 +79,13 @@
 </head>
 <body>
 
-<div class="breadcrumb"><a href="../">RAPP</a> &nbsp;›&nbsp; hippocampus</div>
+<div class="breadcrumb"><a href="../">RAPP</a> &nbsp;›&nbsp; swarm</div>
 
 <div class="hero">
   <div class="logo">☁️</div>
-  <h1>Hippocampus</h1>
-  <p>Tier 2 — long-term memory in the cloud.</p>
-  <div class="tag">Azure Functions · Azure OpenAI · digital twin</div>
-</div>
-
-<div class="twin-banner">
-  This is a static memorial of the cloud tier. The live backend lives at
-  <a href="https://github.com/kody-w/CommunityRAPP" target="_blank">kody-w/CommunityRAPP</a>.
+  <h1>RAPP Swarm</h1>
+  <p>Tier 2 — always-on, multi-tenant, in Azure.</p>
+  <div class="tag">Azure Functions · Azure OpenAI · Entra ID</div>
 </div>
 
 <div class="deploy-card">
@@ -140,7 +135,7 @@
 
 <div class="section">
   <h2>HTTP surface (SPEC §8)</h2>
-  <p>Hippocampus implements the same five endpoints as the brainstem. Identical request and response shapes.
+  <p>RAPP Swarm implements the same five endpoints as the brainstem. Identical request and response shapes.
     A client written for Tier 1 talks to Tier 2 by changing one URL.</p>
   <table class="endpoints">
     <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
@@ -178,9 +173,9 @@ AGENTS_PATH             = ./agents</pre>
 <div class="links">
   <a href="../">Landing</a>
   <a href="../installer/">Installer</a>
-  <a href="../brainstem/">Brainstem (virtual)</a>
+  <a href="../rapp_brainstem/web/">Brainstem (virtual)</a>
   <a href="../SPEC.md">SPEC.md</a>
-  <a href="https://github.com/kody-w/CommunityRAPP" target="_blank">Source</a>
+  <a href="https://github.com/kody-w/RAPP/tree/main/rapp_swarm" target="_blank">Source</a>
 </div>
 
 <footer>RAPP v1 — frozen 2026-04-17 · digital twin</footer>

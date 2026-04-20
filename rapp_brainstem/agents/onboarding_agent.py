@@ -79,7 +79,7 @@ class OnboardingAgent(BasicAgent):
             "Tier 2: Spinal Cord (Azure Functions)\n"
             "  Deploy your agents to Azure as a Function App.\n"
             "  Uses Azure OpenAI, managed identity, persistent storage.\n"
-            "  Full CommunityRAPP backend with memory agents.\n"
+            "  Full RAPP Swarm backend with memory agents.\n"
             "\n"
             "Tier 3: Nervous System (Copilot Studio + M365)\n"
             "  Native Copilot Studio agents, Power Automate flows.\n"

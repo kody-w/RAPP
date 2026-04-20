@@ -1,5 +1,5 @@
 """
-HatchRappAgent — scaffolds, tests, and deploys CommunityRAPP projects.
+HatchRappAgent — scaffolds, tests, and deploys RAPP Swarm projects.
 
 Supports two deployment targets:
   - azure_functions: Azure Function App backend with local development support
@@ -1713,11 +1713,12 @@ class HatchRappAgent(BasicAgent):
                 with open(arm_src, "r") as f:
                     arm_content = f.read()
                 # Replace repo-specific references with generic placeholders
+                # so the scaffolded template points at the user's own org/repo
+                # instead of the canonical kody-w/RAPP.
                 arm_content = arm_content.replace(
-                    "kody-w/CommunityRAPP", "<your-org>/<your-repo>"
+                    "kody-w/RAPP", "<your-org>/<your-repo>"
                 )
                 arm_content = arm_content.replace("kody-w", "<your-org>")
-                arm_content = arm_content.replace("CommunityRAPP", "RAPP")
                 with open(arm_dst, "w") as f:
                     f.write(arm_content)
                 arm_note = f"\n  azuredeploy.json   (copied from kody-w/RAPP)"

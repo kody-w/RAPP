@@ -1,5 +1,5 @@
 #!/bin/bash
-# hippocampus/twin-egg.sh — pack/unpack the full local Twin Stack as a .egg
+# rapp_swarm/twin-egg.sh — pack/unpack the full local Twin Stack as a .egg
 #
 # A .egg is a single zipfile capturing the entire local Twin Stack ecosystem:
 # every twin's workspace, identity, peers, conversations, documents, inbox,
@@ -12,9 +12,9 @@
 # was changed. Twins keep their identities, their peer relationships, their
 # in-progress conversations, their inbox-pending documents.
 #
-#     bash hippocampus/twin-egg.sh pack  [--out twinstack-2026-04-19.egg]
-#     bash hippocampus/twin-egg.sh unpack twinstack.egg [--into ~/.rapp-twins] [--start]
-#     bash hippocampus/twin-egg.sh info  twinstack.egg
+#     bash rapp_swarm/twin-egg.sh pack  [--out twinstack-2026-04-19.egg]
+#     bash rapp_swarm/twin-egg.sh unpack twinstack.egg [--into ~/.rapp-twins] [--start]
+#     bash rapp_swarm/twin-egg.sh info  twinstack.egg
 #
 # Defaults: TWINS_HOME=~/.rapp-twins. .egg files are zipfiles (use `unzip -l`
 # to inspect contents directly).

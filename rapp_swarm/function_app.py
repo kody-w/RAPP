@@ -1,7 +1,8 @@
 """
-hippocampus/function_app.py — The graduated brainstem in the cloud.
+rapp_swarm/function_app.py — The graduated brainstem in the cloud.
 
-This is the OG CommunityRAPP Assistant pattern, ported to drive RAPP as a
+This is the OG Assistant pattern from the original community brainstem,
+ported to drive RAPP as a
 whole: the same `Assistant` class, the same |||VOICE||| split, the same
 sacred BasicAgent contract — but parameterized by `swarm_guid` so each
 request loads THAT swarm's agents + memory, hot-swapped per call.
@@ -105,7 +106,7 @@ from llm import chat as llm_chat, detect_provider  # type: ignore
 from t2t import verify as t2t_verify  # type: ignore
 
 
-# ─── Sacred constants (from OG CommunityRAPP) ──────────────────────────
+# ─── Sacred constants (lineage: OG community brainstem) ───────────────
 
 # Default GUID — INTENTIONALLY INVALID UUID (contains 'p','l' = "copilot")
 # Spelled this way to make it a database-insertion guardrail and instantly

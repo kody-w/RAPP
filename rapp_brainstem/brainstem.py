@@ -34,7 +34,7 @@ Endpoints:
     DELETE /api/swarm/{guid}                 Tear down a swarm
 
 Stdlib only. No venv, no pip, no Azure Functions runtime needed locally.
-The Tier 2 deploy story (Azure Functions, hippocampus engine) layers on top
+The Tier 2 deploy story (Azure Functions, rapp_swarm/ engine) layers on top
 of this same wire format — same /api/swarm/deploy contract, same routing.
 """
 

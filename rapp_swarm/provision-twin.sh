@@ -1,5 +1,5 @@
 #!/bin/bash
-# hippocampus/provision-twin.sh — one-shot Azure provisioner for a
+# rapp_swarm/provision-twin.sh — one-shot Azure provisioner for a
 # Twin Stack cloud estate (Kody's, Molly's, or any named human).
 #
 # What it does:
@@ -11,14 +11,14 @@
 #   5. Layer the root .env keys on top as Function App settings (overrides
 #      the freshly-created OpenAI with any pre-existing keys you want to
 #      use — useful if you already have quota in another RG)
-#   6. Run hippocampus/build.sh to vendor the swarm core
+#   6. Run rapp_swarm/build.sh to vendor the swarm core
 #   7. func azure functionapp publish — deploys function_app.py
 #   8. Print the function URL and the bootstrap instructions
 #
 # Usage:
-#     bash hippocampus/provision-twin.sh kody
-#     bash hippocampus/provision-twin.sh molly
-#     bash hippocampus/provision-twin.sh anyone-else
+#     bash rapp_swarm/provision-twin.sh kody
+#     bash rapp_swarm/provision-twin.sh molly
+#     bash rapp_swarm/provision-twin.sh anyone-else
 #
 # Defaults (override with env vars):
 #     SUBSCRIPTION_ID  = 3d0e6986-1b31-4189-a394-b3289d54efb0
@@ -159,7 +159,7 @@ az functionapp config appsettings set \
 
 # ── 5. Vendor swarm core ───────────────────────────────────────────────
 
-echo "▶ Vendoring swarm core (hippocampus/build.sh)"
+echo "▶ Vendoring swarm core (rapp_swarm/build.sh)"
 bash "$(pwd)/build.sh"
 
 # ── 6. Publish function code ───────────────────────────────────────────
