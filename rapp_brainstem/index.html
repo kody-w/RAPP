@@ -474,24 +474,35 @@
     display: none;
     position: absolute; top: 100%; right: 0; margin-top: 6px;
     background: #161b22; border: 1px solid #30363d; border-radius: 10px;
-    padding: 16px; width: 300px; z-index: 50;
+    padding: 14px; width: 360px; z-index: 50;
     box-shadow: 0 8px 24px rgba(0,0,0,0.4);
     font-size: 13px;
-    max-height: 400px; overflow-y: auto;
+    max-height: 440px; overflow-y: auto; overflow-x: hidden;
   }
   #agents-panel.open { display: block; }
   #agents-panel h3 {
-    font-size: 13px; font-weight: 600; margin-bottom: 12px;
+    font-size: 12px; font-weight: 600; margin-bottom: 10px;
     display: flex; align-items: center; justify-content: space-between;
+    color: #8b949e; text-transform: uppercase; letter-spacing: .08em;
   }
   .agent-list { list-style: none; margin: 0; padding: 0; }
   .agent-list li {
-    display: flex; justify-content: space-between; align-items: center;
+    display: grid; grid-template-columns: auto 1fr auto;
+    align-items: center; gap: 10px;
     padding: 8px 0; border-bottom: 1px solid #21262d;
-    font-size: 12px;
   }
   .agent-list li:last-child { border-bottom: none; }
-  .agent-list .agent-name { color: #e6edf3; font-family: "SF Mono", monospace; }
+  .agent-list .agent-text { min-width: 0; }
+  .agent-list .agent-name {
+    color: #e6edf3; font-weight: 500; font-size: 13px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    display: block;
+  }
+  .agent-list .agent-file {
+    color: #6e7681; font-family: "SF Mono", monospace; font-size: 10px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    display: block; margin-top: 1px;
+  }
   .agent-list li.disabled .agent-name { color: #484f58; text-decoration: line-through; }
   .agent-toggle {
     position: relative; width: 32px; height: 18px; flex-shrink: 0;
@@ -505,12 +516,15 @@
   }
   .agent-toggle.on { background: #238636; border-color: #2ea043; }
   .agent-toggle.on::after { left: 16px; background: #fff; }
-  .agent-list .export-btn {
-    background: #21262d; color: #e6edf3; border: 1px solid #30363d;
-    border-radius: 4px; padding: 3px 6px; font-size: 10px;
-    cursor: pointer; transition: all 0.15s;
+  .agent-list .row-actions { display: flex; gap: 2px; flex-shrink: 0; }
+  .agent-list .row-btn {
+    background: transparent; border: none; padding: 4px; border-radius: 4px;
+    color: #8b949e; cursor: pointer; transition: all 0.15s;
+    display: inline-flex; align-items: center; justify-content: center;
   }
-  .agent-list .export-btn:hover { border-color: #58a6ff; color: #58a6ff; }
+  .agent-list .row-btn svg { width: 14px; height: 14px; fill: currentColor; }
+  .agent-list .row-btn:hover { background: #21262d; color: #58a6ff; }
+  .agent-list .row-btn.danger:hover { color: #f85149; }
 
   /* ── Drag & Drop Overlay ── */
   #drop-overlay {
@@ -851,14 +865,14 @@
       </button>
       <div id="agents-panel">
         <h3>
-          <span class="icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v4h4v2h-4v4h-2v-4H7v-2h4z"/></svg></span>
-          Installed Agents
+          <span>Installed Agents</span>
+          <span id="agent-count" style="font-weight:400;text-transform:none;letter-spacing:0;color:#6e7681;"></span>
         </h3>
         <ul class="agent-list" id="agent-list-ul">
           <!-- Populated by JS -->
         </ul>
-        <div style="font-size:10px; color:#8b949e; margin-top:12px; text-align:center;">
-          Drag & drop .py files anywhere to install new agents
+        <div style="font-size:11px; color:#8b949e; margin-top:14px; padding-top:10px; border-top:1px dashed #21262d; text-align:center; line-height:1.5;">
+          Drop a <code style="color:#d2a8ff;background:rgba(210,168,255,.08);padding:1px 4px;border-radius:3px;">.py</code> file anywhere in the window<br>to install a new agent.
         </div>
       </div>
     </div>
@@ -1381,10 +1395,18 @@
       const res = await fetch(`${API}/agents`);
       const data = await res.json();
       const ul = document.getElementById('agent-list-ul');
+      const countEl = document.getElementById('agent-count');
       ul.innerHTML = '';
       if (!data.files || data.files.length === 0) {
         ul.innerHTML = '<li><span class="agent-name" style="color:#8b949e">No agents found.</span></li>';
+        if (countEl) countEl.textContent = '0';
         return;
+      }
+      if (countEl) {
+        const enabled = data.files.filter(f => f.enabled !== false).length;
+        countEl.textContent = enabled === data.files.length
+          ? `${data.files.length}`
+          : `${enabled} / ${data.files.length}`;
       }
       for (const item of data.files) {
         const isEnabled = item.enabled !== false;
@@ -1401,32 +1423,37 @@
           } catch (e) { console.error('Toggle failed:', e); }
         };
 
+        const textWrap = document.createElement('div');
+        textWrap.className = 'agent-text';
         const nameSpan = document.createElement('span');
         nameSpan.className = 'agent-name';
-        let displayTxt = item.filename;
-        if (item.agents && item.agents.length > 0) {
-          displayTxt = `${item.agents.join(', ')} (${item.filename})`;
-        }
-        nameSpan.textContent = displayTxt;
+        nameSpan.textContent = (item.agents && item.agents.length)
+          ? item.agents.join(', ')
+          : item.filename.replace(/\.py$/,'');
         nameSpan.title = item.filename;
-        nameSpan.style.flex = '1';
-        nameSpan.style.marginLeft = '8px';
+        textWrap.appendChild(nameSpan);
+        if (item.agents && item.agents.length) {
+          const fileSpan = document.createElement('span');
+          fileSpan.className = 'agent-file';
+          fileSpan.textContent = item.filename;
+          textWrap.appendChild(fileSpan);
+        }
 
         const controls = document.createElement('div');
-        controls.style.display = 'flex';
-        controls.style.gap = '4px';
+        controls.className = 'row-actions';
 
         const expBtn = document.createElement('button');
-        expBtn.className = 'export-btn';
-        expBtn.textContent = 'Export';
+        expBtn.className = 'row-btn';
+        expBtn.title = 'Export .py';
+        expBtn.innerHTML = '<svg viewBox="0 0 16 16"><path d="M7.47 10.78a.75.75 0 001.06 0l3.75-3.75a.75.75 0 00-1.06-1.06L8.75 8.44V1.75a.75.75 0 00-1.5 0v6.69L4.78 5.97a.75.75 0 00-1.06 1.06l3.75 3.75zM3.75 13a.75.75 0 000 1.5h8.5a.75.75 0 000-1.5h-8.5z"/></svg>';
         expBtn.onclick = () => {
           window.open(`${API}/agents/export/${encodeURIComponent(item.filename)}`, '_blank');
         };
 
         const delBtn = document.createElement('button');
-        delBtn.className = 'export-btn';
-        delBtn.style.color = '#f85149';
-        delBtn.textContent = 'Trsh';
+        delBtn.className = 'row-btn danger';
+        delBtn.title = 'Delete';
+        delBtn.innerHTML = '<svg viewBox="0 0 16 16"><path d="M6.5 1.75a.25.25 0 01.25-.25h2.5a.25.25 0 01.25.25V3h-3V1.75zm4.5 0V3h2.25a.75.75 0 010 1.5H2.75a.75.75 0 010-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75zM4.496 6.675a.75.75 0 10-1.492.15l.66 6.6A1.75 1.75 0 005.405 15h5.19c.9 0 1.652-.681 1.741-1.576l.66-6.6a.75.75 0 00-1.492-.149l-.66 6.6a.25.25 0 01-.249.225h-5.19a.25.25 0 01-.249-.225l-.66-6.6z"/></svg>';
         delBtn.onclick = async () => {
           if (confirm(`Are you sure you want to remove ${item.filename}?`)) {
             try {
@@ -1447,7 +1474,7 @@
         controls.appendChild(delBtn);
 
         li.appendChild(toggle);
-        li.appendChild(nameSpan);
+        li.appendChild(textWrap);
         li.appendChild(controls);
         ul.appendChild(li);
       }
