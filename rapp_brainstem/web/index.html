@@ -3799,51 +3799,28 @@ function ensureTwinPanel() {
     const s = document.createElement('style');
     s.id = 'twin-panel-styles';
     s.textContent = `
-      /* Default (narrow) — floating bottom-right companion. */
-      #twin-panel { position:fixed; right:18px; bottom:18px; width:300px; z-index:40;
-        display:none; flex-direction:column; gap:10px; padding:14px;
+      /* Compact bottom-right companion — sized to match the footer bar so
+         it reads as "part of the chat chrome" rather than a floating
+         notification. Never takes over real estate; the chat column stays
+         the width of the message stream. */
+      #twin-panel { position:fixed; right:18px; bottom:18px; width:260px; z-index:40;
+        display:none; flex-direction:column; gap:8px; padding:12px;
         background:linear-gradient(180deg, rgba(22,27,34,.94), rgba(13,17,23,.94));
-        border:1px solid #30363d; border-radius:14px;
-        backdrop-filter:blur(10px); box-shadow:0 20px 60px rgba(0,0,0,.45);
-        font-family:inherit; color:#cdd6e3; font-size:13px; line-height:1.5;
-        overflow-y:auto; }
+        border:1px solid #30363d; border-radius:12px;
+        backdrop-filter:blur(10px); box-shadow:0 16px 40px rgba(0,0,0,.4);
+        font-family:inherit; color:#cdd6e3; font-size:12.5px; line-height:1.5;
+        max-height:calc(100vh - 160px); overflow-y:auto; }
       #twin-panel .twin-head { display:flex; align-items:center; justify-content:space-between;
-        gap:8px; font-size:10px; letter-spacing:1.6px; text-transform:uppercase; font-weight:700; }
+        gap:8px; font-size:9.5px; letter-spacing:1.4px; text-transform:uppercase; font-weight:700; }
       #twin-panel .twin-label { color:#a78bfa; }
       #twin-panel .twin-status { color:#8b949e; font-weight:600; letter-spacing:.8px;
         text-transform:lowercase; font-style:italic; }
       #twin-panel .twin-sphere-wrap { display:flex; justify-content:center; align-items:center;
-        height:96px; position:relative; }
-      #twin-panel .twin-sphere { width:72px; height:72px; border-radius:50%; position:relative;
+        height:70px; position:relative; }
+      #twin-panel .twin-sphere { width:52px; height:52px; border-radius:50%; position:relative;
         background:radial-gradient(circle at 32% 30%, rgba(255,255,255,.55), rgba(167,139,250,.55) 28%, rgba(88,60,200,.85) 70%, rgba(20,12,60,.95) 100%);
-        box-shadow:0 0 24px rgba(167,139,250,.55), inset 0 0 18px rgba(255,255,255,.08);
+        box-shadow:0 0 20px rgba(167,139,250,.5), inset 0 0 14px rgba(255,255,255,.08);
         animation:twin-pulse 3.4s ease-in-out infinite; transition:box-shadow .5s, background .8s; }
-
-      /* Wide screens — persistent right rail. The hologram IS part of
-         the chat, not a floating notification. Chat + footer shift left
-         to make room (320px rail + 1px border). */
-      @media (min-width: 1100px) {
-        body.has-twin-rail #chat   { padding-right:24px; margin-right:320px; }
-        body.has-twin-rail footer  { margin-right:320px; }
-        #twin-panel {
-          position:fixed !important;
-          top:49px;            /* under the header */
-          right:0; bottom:0; left:auto;
-          width:320px;
-          border-radius:0 !important;
-          border:none !important;
-          border-left:1px solid #21262d !important;
-          background:linear-gradient(180deg, #0d1117 0%, #0a0e15 100%) !important;
-          backdrop-filter:none !important;
-          box-shadow:-8px 0 20px rgba(0,0,0,.25) !important;
-          padding:18px 18px 24px !important;
-          gap:14px !important;
-        }
-        #twin-panel .twin-sphere-wrap { height:160px !important; }
-        #twin-panel .twin-sphere { width:120px !important; height:120px !important; }
-        #twin-panel .twin-sphere::before { inset:-12px !important; }
-        #twin-panel .twin-sphere::after  { inset:-26px !important; }
-      }
       #twin-panel .twin-sphere::before {
         content:""; position:absolute; inset:-8px; border-radius:50%;
         border:1px solid rgba(167,139,250,.35); animation:twin-ring 5s linear infinite;
@@ -3944,13 +3921,6 @@ function ensureTwinPanel() {
     <div class="twin-body"></div>
   `;
   document.body.appendChild(host);
-  // Mark the body so the wide-screen CSS (chat + footer margin-right, right
-  // rail) activates. The matchMedia query re-evaluates on resize so the rail
-  // / floating-panel mode swaps live without a reload.
-  const wide = window.matchMedia('(min-width: 1100px)');
-  const applyMode = () => document.body.classList.toggle('has-twin-rail', wide.matches);
-  applyMode();
-  wide.addEventListener('change', applyMode);
   return host;
 }
 
