@@ -1007,6 +1007,52 @@ class SwarmHandler(BaseHTTPRequestHandler):
         self._cors_headers()
         self.end_headers()
 
+    # ── Static file serving for the web frontend ──────────────────────
+
+    _MIME = {
+        ".html": "text/html; charset=utf-8",
+        ".js":   "application/javascript",
+        ".css":  "text/css",
+        ".json": "application/json",
+        ".svg":  "image/svg+xml",
+        ".png":  "image/png",
+        ".webmanifest": "application/manifest+json",
+        ".md":   "text/markdown; charset=utf-8",
+    }
+
+    def _serve_web(self, url_path: str) -> bool:
+        """Serve files from rapp_brainstem/web/. Returns True if handled.
+        Block path traversal. / and /index.html → index.html. Unknown paths
+        return False so other routes (or 404) can take over."""
+        web_root = (Path(__file__).parent / "web").resolve()
+        if not web_root.is_dir():
+            return False
+
+        rel = url_path.lstrip("/") or "index.html"
+        # Path-traversal protection: resolve and confirm we're still under web_root
+        try:
+            full = (web_root / rel).resolve()
+            full.relative_to(web_root)
+        except (ValueError, OSError):
+            return False
+        if not full.is_file():
+            return False
+
+        try:
+            data = full.read_bytes()
+        except OSError:
+            return False
+        ext = full.suffix.lower()
+        ctype = self._MIME.get(ext, "application/octet-stream")
+        self.send_response(200)
+        self._cors_headers()
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header("Cache-Control", "no-cache")
+        self.end_headers()
+        self.wfile.write(data)
+        return True
+
     def do_GET(self):
         path = urlparse(self.path).path
 
@@ -1106,6 +1152,13 @@ class SwarmHandler(BaseHTTPRequestHandler):
         if path == "/api/t2t/peers":
             mgr = get_t2t_manager(self.store.root)
             return self._send_json(200, {"peers": mgr.list_peers()})
+
+        # ── Static-serve rapp_brainstem/web/ for any non-/api path ────
+        # Lets http://127.0.0.1:7080/binder.html (and /index.html) work.
+        if not path.startswith("/api/"):
+            served = self._serve_web(path)
+            if served:
+                return
 
         # /api/binder — list installed rapplications for this twin
         if path in ("/api/binder", "/api/binder/"):
@@ -1469,6 +1522,35 @@ class SwarmHandler(BaseHTTPRequestHandler):
             try:
                 result = get_binder(self.store.root).sync()
                 return self._send_json(200, {"status": "ok", **result})
+            except Exception as e:
+                traceback.print_exc()
+                return self._send_json(500, {"status": "error", "message": str(e)})
+
+        # /chat — LLM-driven chat against the binder-installed agents.
+        # Same wire shape as the legacy Flask brainstem's /chat. Tool-calling
+        # routes to whatever's been installed via /api/binder/install.
+        if path == "/chat":
+            try:
+                body = self._read_json()
+            except Exception as e:
+                return self._send_json(400, {"status": "error", "message": f"bad json: {e}"})
+            user_input = body.get("user_input") or body.get("input") or ""
+            if not user_input:
+                return self._send_json(400, {"status": "error",
+                                              "message": "missing 'user_input'"})
+            try:
+                sys.path.insert(0, str(Path(__file__).parent))
+                from chat import chat_with_binder  # type: ignore
+                result = chat_with_binder(
+                    self.store,
+                    Path(self.store.root) / "agents",
+                    user_input=user_input,
+                    conversation_history=body.get("conversation_history") or [],
+                    soul=body.get("soul", ""),
+                    extra_system=body.get("extra_system", ""),
+                )
+                status = 200 if not result.get("error") else 500
+                return self._send_json(status, result)
             except Exception as e:
                 traceback.print_exc()
                 return self._send_json(500, {"status": "error", "message": str(e)})

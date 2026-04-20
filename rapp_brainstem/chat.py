@@ -164,6 +164,102 @@ def chat_with_swarm(store, swarm_guid: str, user_input: str,
             })
 
 
+def chat_with_binder(store, agents_dir, user_input: str,
+                     conversation_history=None,
+                     soul: str = "",
+                     extra_system: str = "") -> dict:
+    """Drive an LLM-powered chat against the binder-installed agents.
+
+    Mirrors chat_with_swarm but loads agents from <root>/agents/ (the binder's
+    materialization target) instead of a per-swarm dir. Lets a user install
+    rapplications via the binder API and immediately call them via /chat.
+    """
+    from pathlib import Path as _P
+    agents_dir = _P(agents_dir)
+
+    # Use the same loader the binder/agent route uses, with cache key '__binder__'
+    # (busted by /api/binder/install + /api/binder/installed/{id}).
+    if "__binder__" not in store._loaded_agents:
+        # Trigger one warm load via execute_in_dir with a sentinel — easier to
+        # just poke the cache by hand than to refactor execute_in_dir.
+        store.execute_in_dir(agents_dir, "__warmup__", {}, cache_key="__binder__")
+    agents = store._loaded_agents.get("__binder__", {}) or {}
+
+    tools = [_agent_to_tool(a) for a in agents.values()]
+    system = _system_prompt(soul, agents, extra=extra_system)
+
+    messages = []
+    if system:
+        messages.append({"role": "system", "content": system})
+    for m in (conversation_history or []):
+        if isinstance(m, dict) and m.get("role") in ("user", "assistant", "tool", "system"):
+            messages.append(m)
+    messages.append({"role": "user", "content": user_input})
+
+    provider = detect_provider()
+    agent_logs: list = []
+    rounds = 0
+
+    while True:
+        rounds += 1
+        try:
+            assistant = llm_chat(messages, tools=tools or None)
+        except Exception as e:
+            return {
+                "response":   f"LLM error: {e}",
+                "agent_logs": agent_logs,
+                "provider":   provider,
+                "rounds":     rounds,
+                "context":    "binder",
+                "error":      str(e),
+            }
+        messages.append(assistant)
+
+        tool_calls = assistant.get("tool_calls") or []
+        if not tool_calls or rounds >= MAX_TOOL_ROUNDS:
+            return {
+                "response":   assistant.get("content") or "",
+                "agent_logs": agent_logs,
+                "provider":   provider,
+                "rounds":     rounds,
+                "context":    "binder",
+                "agents_available": sorted(agents.keys()),
+                "model":      os.environ.get("AZURE_OPENAI_DEPLOYMENT")
+                              or os.environ.get("OPENAI_MODEL")
+                              or os.environ.get("ANTHROPIC_MODEL")
+                              or "fake",
+            }
+
+        # Execute each tool call against the binder-loaded agents.
+        for call in tool_calls:
+            fn = (call.get("function") or {})
+            name = fn.get("name", "")
+            try:
+                args = json.loads(fn.get("arguments") or "{}")
+            except Exception:
+                args = {}
+            t0 = time.time()
+            result = store.execute_in_dir(agents_dir, name, args, cache_key="__binder__")
+            ms = int((time.time() - t0) * 1000)
+            output_str = result.get("output") if result.get("status") == "ok" \
+                          else json.dumps({"error": result.get("message", "agent error")})
+            if not isinstance(output_str, str):
+                output_str = json.dumps(output_str)
+            agent_logs.append({
+                "name":   name,
+                "args":   args,
+                "output": output_str[:2000],
+                "ms":     ms,
+                "status": result.get("status"),
+            })
+            messages.append({
+                "role":         "tool",
+                "tool_call_id": call.get("id", ""),
+                "name":         name,
+                "content":      output_str,
+            })
+
+
 def diagnostics() -> dict:
     """For /api/swarm/healthz to expose what LLM provider it's wired to."""
     return provider_status()

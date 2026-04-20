@@ -1190,6 +1190,10 @@
       <span class="icon"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v4h4v2h-4v4h-2v-4H7v-2h4z"/></svg></span>
       Agents
     </button>
+    <button class="icon-btn" id="btn-rapps" title="Rapplications — install / uninstall / run">
+      <span class="icon">📦</span>
+      Rapps
+    </button>
     <button class="icon-btn" id="btn-settings" title="Settings">
       <span class="icon"><svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M7.429 1.525a6.593 6.593 0 011.142 0c.036.003.108.036.137.146l.289 1.105c.147.56.55.967.997 1.189.174.086.341.183.501.29.417.278.97.423 1.53.27l1.102-.303c.11-.03.175.016.195.046.219.31.41.641.573.989.014.031.022.11-.059.19l-.815.806c-.411.406-.562.957-.53 1.456a4.588 4.588 0 010 .582c-.032.499.119 1.05.53 1.456l.815.806c.08.08.073.159.059.19a6.494 6.494 0 01-.573.99c-.02.029-.086.074-.195.045l-1.103-.303c-.559-.153-1.112-.008-1.529.27-.16.107-.327.204-.5.29-.449.222-.851.628-.998 1.189l-.289 1.105c-.029.11-.1.143-.137.146a6.613 6.613 0 01-1.142 0c-.036-.003-.108-.037-.137-.146l-.289-1.105c-.147-.56-.55-.967-.997-1.189a4.502 4.502 0 01-.501-.29c-.417-.278-.97-.423-1.53-.27l-1.102.303c-.11.03-.175-.016-.195-.046a6.492 6.492 0 01-.573-.989c-.014-.031-.022-.11.059-.19l.815-.806c.411-.406.562-.957.53-1.456a4.587 4.587 0 010-.582c.032-.499-.119-1.05-.53-1.456l-.815-.806c-.08-.08-.073-.159-.059-.19a6.44 6.44 0 01.573-.99c.02-.029.086-.074.195-.045l1.103.303c.559.153 1.112.008 1.529-.27.16-.107.327-.204.5-.29.449-.222.851-.628.998-1.189l.289-1.105c.029-.11.1-.143.137-.146zM8 0c-.236 0-.47.01-.701.03-.743.065-1.29.615-1.458 1.261l-.29 1.106c-.017.066-.078.158-.211.224a5.994 5.994 0 00-.668.386c-.123.082-.233.117-.3.117h-.013l-1.104-.304c-.646-.178-1.314.023-1.71.64a7.994 7.994 0 00-.573.989c-.358.658-.217 1.381.164 1.758l.816.806c.046.046.106.144.098.284a6.095 6.095 0 000 .772c.008.14-.052.238-.098.284l-.816.806c-.38.377-.522 1.1-.164 1.758.145.267.306.524.573.99.396.616 1.064.817 1.71.639l1.104-.304c.068-.019.146-.003.3.117.195.13.4.25.668.387.133.066.194.158.212.224l.289 1.106c.169.646.715 1.196 1.458 1.26a8.094 8.094 0 001.402 0c.743-.064 1.29-.614 1.458-1.26l.29-1.106c.017-.066.078-.158.211-.224a5.98 5.98 0 00.668-.386c.123-.082.233-.117.3-.117h.013l1.104.304c.646.178 1.314-.023 1.71-.64.267-.465.428-.722.573-.989.358-.658.217-1.381-.164-1.758l-.816-.806c-.046-.046-.106-.144-.098-.284a6.095 6.095 0 000-.772c-.008-.14.052-.238.098-.284l.816-.806c.38-.377.522-1.1.164-1.758a7.994 7.994 0 00-.573-.99c-.396-.616-1.064-.817-1.71-.639l-1.104.304c-.068.019-.146.003-.3-.117a5.994 5.994 0 00-.668-.387c-.133-.066-.194-.158-.212-.224L10.16 1.29C9.99.645 9.444.095 8.701.031A8.094 8.094 0 008 0zm0 11a3 3 0 100-6 3 3 0 000 6z"/></svg></span>
     </button>
@@ -1315,6 +1319,136 @@
   </aside>
 
   <!-- ── Binder popdown ── -->
+  <!-- ── v1.9: Rapplications binder management (HTTP /api/binder/*) ── -->
+  <aside id="rapps">
+    <header class="aside-head"><span class="ttl">📦 Rapplications</span><button class="close" data-close="rapps">×</button></header>
+    <div style="padding: 12px 16px; font-size: 12px; color: #8b949e;">
+      Installed rapplications materialize into <code>&lt;root&gt;/agents/</code> on this twin.
+      Once installed, they're callable from chat as tools <em>and</em> via <code>POST /api/binder/agent</code>.
+    </div>
+    <div style="padding: 0 16px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #58a6ff;">
+      Installed <span id="rapps-installed-count" style="color: #8b949e">(0)</span>
+    </div>
+    <div id="rapps-installed" style="padding: 0 16px 16px;"></div>
+    <div style="padding: 0 16px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #58a6ff;">
+      Catalog (RAPPstore) <span id="rapps-catalog-count" style="color: #8b949e">(0)</span>
+    </div>
+    <div id="rapps-catalog" style="padding: 0 16px 16px;"></div>
+    <div style="padding: 8px 16px 16px;">
+      <a href="/binder.html" target="_blank" style="font-size: 12px; color: #58a6ff; text-decoration: none;">
+        ↗ Open full binder management UI
+      </a>
+    </div>
+  </aside>
+
+  <style>
+    #rapps .rapp-row {
+      background: #161b22; border: 1px solid #21262d; border-radius: 6px;
+      padding: 10px; margin-bottom: 8px; font-size: 12px;
+    }
+    #rapps .rapp-row.installed { border-left: 3px solid #3fb950; }
+    #rapps .rapp-row .name { font-weight: 600; color: #e6edf3; }
+    #rapps .rapp-row .ver  { color: #8b949e; font-family: ui-monospace, monospace; font-size: 10px; margin-left: 6px; }
+    #rapps .rapp-row .summary { color: #8b949e; margin: 4px 0 6px; line-height: 1.4; }
+    #rapps .rapp-row .actions { display: flex; gap: 6px; }
+    #rapps .rapp-row button {
+      background: transparent; color: #e6edf3; border: 1px solid #21262d;
+      border-radius: 4px; padding: 3px 10px; font-size: 11px; cursor: pointer;
+    }
+    #rapps .rapp-row button:hover { border-color: #58a6ff; color: #58a6ff; }
+    #rapps .rapp-row button.primary { background: #1f6feb; border-color: #1f6feb; color: white; }
+    #rapps .rapp-row button.danger { color: #f85149; border-color: rgba(248,81,73,0.3); }
+  </style>
+
+  <script>
+    (function rappsPanel() {
+      // Lightweight in-page binder management. The brainstem this UI talks to
+      // is the same origin if /binder.html is served (default) or window.location.
+      const BASE = window.location.origin && !window.location.origin.startsWith('file:')
+        ? window.location.origin
+        : 'http://127.0.0.1:7080';
+
+      function $(s) { return document.querySelector(s); }
+      function esc(s) { return String(s ?? '').replace(/[<>&"']/g, c =>
+        ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c])); }
+
+      async function api(path, opts) {
+        const r = await fetch(BASE + path, {
+          headers: { 'Content-Type': 'application/json' }, ...opts
+        });
+        const text = await r.text();
+        try { return { status: r.status, json: JSON.parse(text) }; }
+        catch { return { status: r.status, json: { _raw: text } }; }
+      }
+
+      let BINDER, CATALOG;
+
+      async function load() {
+        const [b, c] = await Promise.all([api('/api/binder'), api('/api/binder/catalog')]);
+        BINDER  = b.status === 200 ? b.json : { installed: [] };
+        CATALOG = c.status === 200 ? c.json : { rapplications: [] };
+        render();
+      }
+
+      function isInstalled(id) { return (BINDER.installed || []).some(e => e.id === id); }
+
+      function rappRow(r, installed) {
+        const summary = (r.summary || '').slice(0, 160) + ((r.summary || '').length > 160 ? '…' : '');
+        const btn = installed
+          ? `<button class="danger" data-uninstall="${esc(r.id)}">Uninstall</button>`
+          : `<button class="primary" data-install="${esc(r.id)}">Install</button>`;
+        return `
+          <div class="rapp-row ${installed ? 'installed' : ''}">
+            <div><span class="name">${esc(r.id)}</span><span class="ver">v${esc(r.version || '?')}</span></div>
+            <div class="summary">${esc(summary)}</div>
+            <div class="actions">${btn}</div>
+          </div>`;
+      }
+
+      function render() {
+        const list = BINDER.installed || [];
+        $('#rapps-installed-count').textContent = `(${list.length})`;
+        $('#rapps-installed').innerHTML = list.length
+          ? list.map(e => rappRow(e, true)).join('')
+          : '<div style="color:#8b949e;font-style:italic;font-size:11px;">No rapplications installed yet.</div>';
+
+        const cat = (CATALOG.rapplications || []);
+        $('#rapps-catalog-count').textContent = `(${cat.length})`;
+        $('#rapps-catalog').innerHTML = cat.map(r => rappRow(r, isInstalled(r.id))).join('');
+
+        // Wire buttons
+        document.querySelectorAll('#rapps [data-install]').forEach(b =>
+          b.addEventListener('click', () => install(b.dataset.install)));
+        document.querySelectorAll('#rapps [data-uninstall]').forEach(b =>
+          b.addEventListener('click', () => uninstall(b.dataset.uninstall)));
+      }
+
+      async function install(id) {
+        const r = await api('/api/binder/install', { method: 'POST', body: JSON.stringify({ id }) });
+        if (r.status !== 200) alert('Install failed: ' + (r.json.message || 'unknown'));
+        await load();
+      }
+      async function uninstall(id) {
+        if (!confirm('Uninstall ' + id + '?')) return;
+        const r = await api('/api/binder/installed/' + encodeURIComponent(id), { method: 'DELETE' });
+        if (r.status !== 200) alert('Uninstall failed: ' + (r.json.message || 'unknown'));
+        await load();
+      }
+
+      // Hook the header button
+      document.addEventListener('DOMContentLoaded', () => {
+        const btn = document.getElementById('btn-rapps');
+        if (btn) {
+          btn.addEventListener('click', () => {
+            const aside = document.getElementById('rapps');
+            const open = aside.classList.toggle('open');
+            if (open) load();
+          });
+        }
+      });
+    })();
+  </script>
+
   <aside id="binder">
     <header class="aside-head"><span class="ttl">Binder · cards</span><button class="close" data-close="binder">×</button></header>
     <div class="body">
