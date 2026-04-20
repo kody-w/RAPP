@@ -347,17 +347,37 @@ install_brainstem() {
             [ -f "$BACKUP/soul.md" ] && cp "$BACKUP/soul.md" "$SOUL_FILE"
             [ -f "$BACKUP/.env" ] && cp "$BACKUP/.env" "$ENV_FILE"
             if [ -d "$BACKUP/agents" ]; then
-                # Restore user agents that aren't in the repo (custom ones)
+                # Only restore truly custom agents — ones the user created
+                # that don't exist in the repo after reset. Agents the repo
+                # deleted must stay deleted.
+                local restored=0
                 for agent_file in "$BACKUP/agents"/*.py; do
                     local fname=$(basename "$agent_file")
-                    # Skip core agents that the repo manages
                     case "$fname" in
                         basic_agent.py|__init__.py) continue ;;
                     esac
-                    # If user has a custom agent, keep it
+                    # If the repo already has this file after reset, skip —
+                    # the repo version wins (updated or still present).
+                    # If the repo DOESN'T have it, it's either a custom agent
+                    # or one the repo deleted. Check git to distinguish.
+                    if [ -f "$AGENTS_DIR/$fname" ]; then
+                        continue
+                    fi
+                    # File not in repo after reset — was it ever tracked?
+                    # If git knows about it, the repo intentionally deleted it.
+                    if git -C "$BRAINSTEM_HOME/src" log --oneline -1 -- "rapp_brainstem/agents/$fname" >/dev/null 2>&1 && \
+                       [ -n "$(git -C "$BRAINSTEM_HOME/src" log --oneline -1 -- "rapp_brainstem/agents/$fname" 2>/dev/null)" ]; then
+                        echo -e "  ${YELLOW}⚠${NC} Skipping deleted repo agent: $fname"
+                        continue
+                    fi
                     cp "$agent_file" "$AGENTS_DIR/$fname"
+                    restored=$((restored + 1))
                 done
-                echo -e "  ${GREEN}✓${NC} Restored custom agents + soul + config"
+                if [ $restored -gt 0 ]; then
+                    echo -e "  ${GREEN}✓${NC} Restored $restored custom agent(s) + soul + config"
+                else
+                    echo -e "  ${GREEN}✓${NC} Restored soul + config"
+                fi
             fi
 
             # 4. Clean up backup

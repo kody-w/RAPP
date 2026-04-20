@@ -158,7 +158,24 @@ GitHub. The user's brainstem is their brainstem.
 
 ---
 
-## Article VIII — Amendments
+## Article VIII — Bump the Version
+
+Every commit that changes brainstem behavior — agents added or removed,
+routes changed, installer logic updated, anything the user would notice
+after re-running the one-liner — **must bump `rapp_brainstem/VERSION`**.
+
+The installer compares local vs. remote VERSION to decide whether to
+pull. If VERSION doesn't change, users are stuck on stale code no matter
+how many commits land on main. The one-liner silently does nothing and
+the user has no idea why their fix isn't there.
+
+Patch bump (`0.8.7` → `0.8.8`) for fixes and small changes. Minor bump
+for new features or breaking agent changes. The number itself doesn't
+matter as much as the fact that it changed.
+
+---
+
+## Article IX — Amendments
 
 This constitution can be amended. The only rule: the change must serve
 the platform's purpose as a business-focused AI agent engine. If it
