@@ -548,16 +548,18 @@
     max-width: 760px; margin: 12px auto 0; padding: 0 24px;
     transition: opacity 0.3s, transform 0.3s;
   }
+  /* Mouth pills — all purple since this row is the twin's suggestion
+     space (static seeds + dynamic twin.send/prompt actions mix here). */
   .starter-btn {
-    background: #161b22; color: #58a6ff; border: 1px solid #30363d;
+    background: #161b22; color: #c4b5fd; border: 1px solid rgba(167,139,250,.4);
     border-radius: 20px; padding: 8px 16px; font-size: 13px;
     cursor: pointer; transition: all 0.2s; white-space: nowrap;
   }
   .starter-btn:hover {
-    background: #21262d; border-color: #58a6ff; transform: translateY(-1px);
+    background: rgba(167,139,250,.08); border-color: #a78bfa; transform: translateY(-1px);
   }
-  .starter-btn.twin-pill { color: #c4b5fd; border-color: rgba(167,139,250,.4); }
-  .starter-btn.twin-pill:hover { border-color: #a78bfa; background: rgba(167,139,250,.08); }
+  .starter-btn.twin-pill { color: #e9d5ff; }
+  .starter-btn.twin-pill:hover { border-color: #a78bfa; background: rgba(167,139,250,.12); }
   .hidden-prompts { opacity: 0; pointer-events: none; transform: translateY(10px); display: none !important; }
 
   /* ── Light Mode Overrides ── */
@@ -618,13 +620,13 @@
   }
   body.light-mode .starter-btn {
     background: #ffffff;
-    border: 1px solid #d0d7de;
-    color: #57606a;
+    border: 1px solid rgba(124,58,237,.3);
+    color: #7c3aed;
   }
   body.light-mode .starter-btn:hover {
-    background: rgba(9, 105, 218, 0.08);
-    color: #0969da;
-    border-color: #0969da;
+    background: rgba(124,58,237,.08);
+    color: #6d28d9;
+    border-color: #7c3aed;
   }
   body.light-mode #chat-watermark {
     color: #57606a;
