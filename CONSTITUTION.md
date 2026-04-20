@@ -64,7 +64,7 @@ reason other than a new output slot, stop. The thing you want is a new
   routes to the agent. Adding `/my-feature` is load in the wrong place.
 - ❌ Special-casing a particular agent in-core ("if agent name is X,
   transform its output"). The agent's own `perform()` does the transform.
-- ❌ Central memory features. Memory is `manage_memory_agent.py` + its
+- ❌ Central memory features. Memory is `save_memory_agent.py` + `recall_memory_agent.py` + its
   storage shim. Never an in-core dict.
 - ❌ A "plugin system" for things that are not agents. Single file
   agents are the plugin system.

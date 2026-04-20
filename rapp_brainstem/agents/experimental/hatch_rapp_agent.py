@@ -1767,8 +1767,8 @@ class HatchRappAgent(BasicAgent):
             f"  local.settings.template.json{arm_note}\n"
             f"  agents/__init__.py\n"
             f"  agents/basic_agent.py\n"
-            f"  agents/context_memory_agent.py\n"
-            f"  agents/manage_memory_agent.py\n"
+            f"  agents/save_memory_agent.py\n"
+            f"  agents/recall_memory_agent.py\n"
             + (
                 "  agents/copilot_studio_transpiler_agent.py\n"
                 if target == "copilot_studio" else ""
@@ -1796,7 +1796,7 @@ class HatchRappAgent(BasicAgent):
             "function_app.py", "host.json", "requirements.txt",
             ".funcignore", "local.settings.template.json",
             "agents/__init__.py", "agents/basic_agent.py",
-            "agents/context_memory_agent.py", "agents/manage_memory_agent.py",
+            "agents/save_memory_agent.py", "agents/recall_memory_agent.py",
             "utils/__init__.py", "utils/result.py", "utils/storage_factory.py",
             "utils/local_file_storage.py", "utils/environment.py",
         ]
@@ -1822,8 +1822,10 @@ class HatchRappAgent(BasicAgent):
                     "local.settings.template.json": TEMPLATE_LOCAL_SETTINGS,
                     "agents/__init__.py": TEMPLATE_AGENTS_INIT,
                     "agents/basic_agent.py": TEMPLATE_BASIC_AGENT,
-                    "agents/context_memory_agent.py": TEMPLATE_CONTEXT_MEMORY_AGENT,
-                    "agents/manage_memory_agent.py": TEMPLATE_MANAGE_MEMORY_AGENT,
+                    # Legacy ContextMemory/ManageMemory templates were deleted —
+                    # save_memory_agent.py and recall_memory_agent.py cover the
+                    # same surface with cleaner names. The scaffolder now relies
+                    # on copying from the repo (see rapp_brainstem/agents/).
                     "agents/copilot_studio_transpiler_agent.py": TEMPLATE_COPILOT_TRANSPILER_AGENT,
                     "utils/__init__.py": TEMPLATE_UTILS_INIT,
                     "utils/result.py": TEMPLATE_RESULT,

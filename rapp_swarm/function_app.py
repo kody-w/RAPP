@@ -397,7 +397,7 @@ Revenue's up 12 percent and customers are happier.
         """Try a couple of well-known memory recall agent names.
         Returns (shared_memory, user_memory). Soft-failure: returns ("","")."""
         shared, specific = "", ""
-        for agent_name in ("ContextMemory", "RecallMemory", "MemoryRecall"):
+        for agent_name in ("RecallMemory", "MemoryRecall"):
             if agent_name not in self.agents:
                 continue
             try:
@@ -427,7 +427,7 @@ Revenue's up 12 percent and customers are happier.
         except Exception:
             args = {}
         # Sacred behavior: memory agents receive the user_guid automatically
-        if agent_name in ("ManageMemory", "ContextMemory", "SaveMemory", "RecallMemory"):
+        if agent_name in ("SaveMemory", "RecallMemory"):
             args.setdefault("user_guid", self.user_guid)
         result = STORE.execute(self.swarm_guid, agent_name, args, self.user_guid)
         if result.get("status") == "ok":

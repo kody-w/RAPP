@@ -321,7 +321,7 @@ class TinyAgent(BasicAgent):
     'index.html', 'SPEC.md', 'README.md',
     'installer/index.html', 'rapp_swarm/index.html', 'rapp_brainstem/web/index.html', 'rapp_brainstem/web/rapp.js',
     'rapp_brainstem/agents/basic_agent.py',
-    'rapp_brainstem/agents/manage_memory_agent.py', 'rapp_brainstem/agents/manage_memory_agent.py', 'rapp_brainstem/agents/hacker_news_agent.py',
+    'rapp_brainstem/agents/save_memory_agent.py', 'rapp_brainstem/agents/recall_memory_agent.py', 'rapp_brainstem/agents/hacker_news_agent.py',
     'tests/run-tests.mjs',
     'rapp_brainstem/brainstem.py',
     'install-swarm.sh',
