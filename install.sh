@@ -268,11 +268,25 @@ install_brainstem() {
             fi
             echo -e "  ${GREEN}✓${NC} Backed up soul, agents, config"
 
-            # 2. Pull latest from GitHub
+            # 2. Hard-sync framework files to origin/main. User files (soul,
+            # agents, .env) are already backed up above — we restore them at
+            # step 3. `git pull` was getting wedged on untracked files or
+            # merge conflicts and silently failing, leaving users pinned to
+            # old VERSIONs. Hard reset always wins the race.
             cd "$BRAINSTEM_HOME/src"
-            git stash --quiet 2>/dev/null || true
-            git pull --quiet 2>/dev/null || echo -e "  ${YELLOW}Warning: Could not pull${NC}"
-            echo -e "  ${GREEN}✓${NC} Framework updated"
+            git stash --quiet --include-untracked 2>/dev/null || true
+            git fetch --quiet origin main 2>/dev/null || true
+            if git reset --hard --quiet origin/main 2>/dev/null; then
+                # Blow away any leftover untracked files from prior state
+                # (e.g. the deleted-in-repo rapp_brainstem/index.html that
+                # used to stick around and make the Flask root still serve
+                # the old minimal UI instead of web/index.html).
+                git clean -fdq 2>/dev/null || true
+                echo -e "  ${GREEN}✓${NC} Framework hard-synced to origin/main"
+            else
+                echo -e "  ${YELLOW}Warning: git reset failed — falling back to pull${NC}"
+                git pull --quiet 2>/dev/null || echo -e "  ${YELLOW}Warning: Could not pull${NC}"
+            fi
 
             # 3. Restore user's local files (merge, don't overwrite)
             [ -f "$BACKUP/soul.md" ] && cp "$BACKUP/soul.md" "$SOUL_FILE"
