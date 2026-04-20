@@ -653,69 +653,63 @@
     border-color: #57606a;
   }
 
-  /* ── Twin panel ── */
-  #twin-panel {
-    position: fixed; right: 0; top: 0; bottom: 0; width: 300px;
-    background: rgba(22,27,34,.92); backdrop-filter: blur(16px);
-    border-left: 1px solid #30363d;
-    display: none; flex-direction: column; z-index: 45;
-    transform: translateX(100%); transition: transform .3s ease;
-    padding: 16px 14px;
-    overflow-y: auto;
+  /* ── Twin — bottom-left floating portrait ── */
+  #twin-wrap {
+    position: fixed; left: 16px; bottom: 80px; z-index: 50;
+    display: none; flex-direction: column; align-items: flex-start;
+    pointer-events: none;
   }
-  #twin-panel.open { display: flex; transform: translateX(0); }
-  body.twin-open #chat { margin-right: 300px; transition: margin-right .3s ease; }
-  body.twin-open footer { margin-right: 300px; transition: margin-right .3s ease; }
+  #twin-wrap.open { display: flex; }
 
-  .twin-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-  .twin-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #a78bfa; }
-  .twin-status { font-size: 10px; color: #8b949e; font-style: italic; }
+  #twin-bubble {
+    pointer-events: auto;
+    max-width: 320px; padding: 10px 14px;
+    background: rgba(22,27,34,.92); backdrop-filter: blur(14px);
+    border: 1px solid rgba(167,139,250,.25); border-radius: 12px;
+    margin-bottom: 8px; opacity: 0; transform: translateY(8px);
+    transition: opacity .3s, transform .3s;
+  }
+  #twin-bubble.visible { opacity: 1; transform: translateY(0); }
 
-  #twin-hologram { width: 100%; height: 200px; margin-bottom: 8px; position: relative; }
-  #twin-hologram canvas { width: 100% !important; height: 100% !important; display: block; }
-
-  .twin-body { font-size: 13px; line-height: 1.55; color: #cdd6e3; margin-bottom: 12px; }
-  .twin-body p { margin: 0 0 6px; }
+  .twin-body { font-size: 12px; line-height: 1.5; color: #cdd6e3; }
+  .twin-body p { margin: 0 0 4px; }
   .twin-body strong { color: #a78bfa; }
-  .twin-body code { background: rgba(167,139,250,.12); padding: 1px 5px; border-radius: 3px; font-size: 12px; }
-  .twin-silent { font-style: italic; text-align: center; color: #6e7681; font-size: 12px; padding: 8px 0; }
+  .twin-body code { background: rgba(167,139,250,.12); padding: 1px 4px; border-radius: 3px; font-size: 11px; }
 
-  .twin-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .twin-actions { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
   .twin-action {
-    display: inline-flex; align-items: center; gap: 5px;
-    padding: 5px 12px; border-radius: 999px; font-size: 11px;
+    pointer-events: auto;
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 10px; border-radius: 999px; font-size: 10px;
     background: rgba(167,139,250,.1); border: 1px solid rgba(167,139,250,.35);
     color: #c4b5fd; cursor: pointer; transition: all .15s;
   }
   .twin-action:hover { background: rgba(167,139,250,.22); border-color: #a78bfa; color: #e9d5ff; }
   .twin-action-done { background: rgba(52,211,153,.12); border-color: rgba(52,211,153,.4); color: #6ee7b7; pointer-events: none; }
   .twin-action-fail { background: rgba(248,113,113,.12); border-color: rgba(248,113,113,.4); color: #fca5a5; pointer-events: none; }
-  .twin-action .chip-glyph { font-size: 13px; }
+  .twin-action .chip-glyph { font-size: 12px; }
 
-  .twin-history { border-top: 1px solid #21262d; padding-top: 8px; margin-top: auto; }
-  .twin-history-entry { display: flex; align-items: flex-start; gap: 6px; font-size: 11px; color: #8b949e; margin-bottom: 6px; line-height: 1.4; }
-  .twin-history-dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; background: #a78bfa; }
-  .twin-history-entry[data-mood="alert"] .twin-history-dot { background: #f87171; }
-  .twin-history-entry[data-mood="validated"] .twin-history-dot { background: #4ade80; }
-  .twin-history-entry[data-mood="contradicted"] .twin-history-dot { background: #fbbf24; }
-  .twin-history-entry[data-mood="curious"] .twin-history-dot { background: #60a5fa; }
+  #twin-portrait {
+    pointer-events: auto; cursor: pointer;
+    width: 120px; height: 150px; position: relative;
+  }
+  #twin-portrait canvas { display: block; width: 100%; height: 100%; }
+  .twin-status-tag {
+    position: absolute; bottom: -2px; left: 50%; transform: translateX(-50%);
+    font-size: 9px; color: #a78bfa; text-transform: uppercase; letter-spacing: .06em;
+    white-space: nowrap; opacity: 0.7;
+  }
 
   @keyframes twin-highlight-flash {
     0%, 100% { background: transparent; }
     50% { background: rgba(167,139,250,.2); }
   }
 
-  body.light-mode #twin-panel { background: rgba(246,248,250,.95); border-color: #d0d7de; }
-  body.light-mode .twin-label { color: #7c3aed; }
+  body.light-mode #twin-bubble { background: rgba(246,248,250,.95); border-color: rgba(124,58,237,.2); }
   body.light-mode .twin-body { color: #24292e; }
   body.light-mode .twin-body strong { color: #7c3aed; }
   body.light-mode .twin-action { background: rgba(124,58,237,.08); border-color: rgba(124,58,237,.3); color: #6d28d9; }
-  body.light-mode .twin-history { border-color: #d0d7de; }
-
-  @media (max-width: 720px) {
-    #twin-panel { width: 100%; }
-    body.twin-open #chat, body.twin-open footer { margin-right: 0; }
-  }
+  body.light-mode .twin-status-tag { color: #7c3aed; }
 </style>
 </head>
 <body>
@@ -963,18 +957,16 @@
   </div>
 </div>
 
-<aside id="twin-panel" data-mood="present">
-  <div class="twin-head">
-    <span class="twin-label">Your Twin</span>
-    <span class="twin-status">present</span>
+<div id="twin-wrap" data-mood="present">
+  <div id="twin-bubble">
+    <div class="twin-body"></div>
+    <div class="twin-actions"></div>
   </div>
-  <div id="twin-hologram"></div>
-  <div class="twin-body">
-    <div class="twin-silent">I'm here. Say something and I'll watch with you.</div>
+  <div id="twin-portrait" onclick="toggleTwinBubble()">
+    <div id="twin-hologram"></div>
+    <div class="twin-status-tag">present</div>
   </div>
-  <div class="twin-actions"></div>
-  <div class="twin-history"></div>
-</aside>
+</div>
 
 <footer>
   <div id="starter-prompts">
@@ -2484,7 +2476,7 @@
   fetch(`${API}/twin`).then(r=>r.json()).then(d=>{
     twinMode = d.twin_mode;
     updateTwinBtn();
-    if (twinMode) openTwinPanel();
+    if (twinMode) showTwin();
   }).catch(()=>{});
 
   async function toggleTwinPanel() {
@@ -2493,7 +2485,7 @@
       const d = await r.json();
       twinMode = d.twin_mode;
       updateTwinBtn();
-      if (twinMode) openTwinPanel(); else closeTwinPanel();
+      if (twinMode) showTwin(); else hideTwin();
     } catch(e) { console.error('Twin toggle failed:', e); }
   }
 
@@ -2504,39 +2496,37 @@
     btn.title = twinMode ? 'Twin on' : 'Twin off';
   }
 
-  function openTwinPanel() {
-    const p = document.getElementById('twin-panel');
-    p.style.display = 'flex';
-    requestAnimationFrame(() => { p.classList.add('open'); });
-    document.body.classList.add('twin-open');
+  function showTwin() {
+    const w = document.getElementById('twin-wrap');
+    w.style.display = 'flex';
+    requestAnimationFrame(() => w.classList.add('open'));
+    if (!_holo) setTimeout(initHologram, 50);
   }
 
-  function closeTwinPanel() {
-    const p = document.getElementById('twin-panel');
-    p.classList.remove('open');
-    document.body.classList.remove('twin-open');
-    setTimeout(() => { if (!p.classList.contains('open')) p.style.display = 'none'; }, 300);
+  function hideTwin() {
+    const w = document.getElementById('twin-wrap');
+    w.classList.remove('open');
+    setTimeout(() => { if (!w.classList.contains('open')) w.style.display = 'none'; }, 300);
+  }
+
+  function toggleTwinBubble() {
+    const b = document.getElementById('twin-bubble');
+    b.classList.toggle('visible');
   }
 
   function parseTwinTags(raw) {
     let text = raw;
     const probes = [], calibrations = [], actions = [];
-    text = text.replace(/<probe\s+([^/>]*?)\/>/gi, (_, attrs) => { probes.push(parseAttrs(attrs)); return ''; });
-    text = text.replace(/<calibration\s+([^/>]*?)\/>/gi, (_, attrs) => { calibrations.push(parseAttrs(attrs)); return ''; });
-    text = text.replace(/<telemetry>([\s\S]*?)<\/telemetry>/gi, (_, body) => {
-      body.trim().split('\n').forEach(l => { if (l.trim()) console.log('[twin-telemetry]', l.trim()); });
+    text = text.replace(/<probe\s+([^/>]*?)\/>/gi, (_, a) => { probes.push(parseAttrs(a)); return ''; });
+    text = text.replace(/<calibration\s+([^/>]*?)\/>/gi, (_, a) => { calibrations.push(parseAttrs(a)); return ''; });
+    text = text.replace(/<telemetry>([\s\S]*?)<\/telemetry>/gi, (_, b) => {
+      b.trim().split('\n').forEach(l => { if (l.trim()) console.log('[twin-telemetry]', l.trim()); });
       return '';
     });
-    text = text.replace(/<action\s+([^>]*?)>([\s\S]*?)<\/action\s*>/gi, (_, attrs, body) => {
-      const a = parseAttrs(attrs);
-      a.body = body.trim();
-      actions.push(a);
-      return '';
+    text = text.replace(/<action\s+([^>]*?)>([\s\S]*?)<\/action\s*>/gi, (_, a, b) => {
+      const o = parseAttrs(a); o.body = b.trim(); actions.push(o); return '';
     });
-    text = text.replace(/<action\s+([^/>]*?)\/>/gi, (_, attrs) => {
-      actions.push(parseAttrs(attrs));
-      return '';
-    });
+    text = text.replace(/<action\s+([^/>]*?)\/>/gi, (_, a) => { actions.push(parseAttrs(a)); return ''; });
     return { text: text.trim(), probes, calibrations, actions };
   }
 
@@ -2556,24 +2546,27 @@
   }
 
   function renderTwin(raw) {
-    const panel = document.getElementById('twin-panel');
+    const wrap = document.getElementById('twin-wrap');
     const { text, probes, calibrations, actions } = parseTwinTags(raw);
     const mood = detectMood(text, calibrations);
     _tw.lastMood = mood;
-    panel.dataset.mood = mood;
-    panel.querySelector('.twin-status').textContent = MOOD_LABEL[mood] || 'present';
+    wrap.dataset.mood = mood;
+    document.querySelector('.twin-status-tag').textContent = MOOD_LABEL[mood] || 'present';
     if (_holo) { _holo.setMood(mood); _holo.speak(); }
 
-    const body = panel.querySelector('.twin-body');
+    const body = document.querySelector('#twin-bubble .twin-body');
+    const bubble = document.getElementById('twin-bubble');
     if (text) {
       body.innerHTML = marked.parse(text);
+      bubble.classList.add('visible');
     } else {
-      body.innerHTML = '<div class="twin-silent">Nothing to add this turn.</div>';
+      body.innerHTML = '';
+      bubble.classList.remove('visible');
     }
 
-    const actBox = panel.querySelector('.twin-actions');
+    const actBox = document.querySelector('#twin-bubble .twin-actions');
     actBox.innerHTML = '';
-    actions.forEach((a, i) => {
+    actions.forEach(a => {
       const btn = document.createElement('button');
       btn.className = 'twin-action';
       const glyph = CHIP_GLYPH[a.kind] || '◆';
@@ -2582,162 +2575,129 @@
       actBox.appendChild(btn);
     });
 
-    if (text) {
-      _tw.history.unshift({ text: text.split('\n')[0].replace(/\*\*/g,'').slice(0, 80), mood });
-      if (_tw.history.length > 4) _tw.history.pop();
-    }
-    renderTwinHistory();
-
-    if (!panel.classList.contains('open') && twinMode) openTwinPanel();
-  }
-
-  function renderTwinHistory() {
-    const box = document.getElementById('twin-panel').querySelector('.twin-history');
-    if (_tw.history.length <= 1) { box.innerHTML = ''; return; }
-    const opacities = [0.7, 0.5, 0.35, 0.2];
-    box.innerHTML = _tw.history.slice(1).map((h, i) =>
-      `<div class="twin-history-entry" data-mood="${h.mood}" style="opacity:${opacities[i]||0.2}"><div class="twin-history-dot"></div><span>${esc(h.text)}</span></div>`
-    ).join('');
+    if (twinMode && !wrap.classList.contains('open')) showTwin();
   }
 
   function runTwinAction(action, btn) {
-    const kind = action.kind;
     try {
-      if (kind === 'send') {
-        const input = document.getElementById('user-input');
-        input.value = action.body || '';
+      if (action.kind === 'send') {
+        document.getElementById('user-input').value = action.body || '';
         sendMessage();
-      } else if (kind === 'prompt') {
-        const input = document.getElementById('user-input');
-        input.value = action.body || '';
-        input.focus();
-        input.dispatchEvent(new Event('input'));
-      } else if (kind === 'open') {
-        const target = action.target;
-        if (target === 'settings') toggleSettingsPanel();
-        else if (target === 'agents') toggleAgentsPanel();
-        else if (target === 'binder' || target === 'browse') {
+      } else if (action.kind === 'prompt') {
+        const inp = document.getElementById('user-input');
+        inp.value = action.body || '';
+        inp.focus();
+        inp.dispatchEvent(new Event('input'));
+      } else if (action.kind === 'open') {
+        if (action.target === 'settings') toggleSettingsPanel();
+        else if (action.target === 'agents') toggleAgentsPanel();
+        else if (action.target === 'binder' || action.target === 'browse') {
           toggleSettingsPanel();
           setTimeout(() => toggleSpSection('sp-rapps'), 150);
         }
-      } else if (kind === 'toggle') {
+      } else if (action.kind === 'toggle') {
         if (action.target === 'voice') toggleVoice();
-        else console.log('[twin] toggle target not available:', action.target);
-      } else if (kind === 'highlight') {
-        const items = document.querySelectorAll('#agent-list-ul li');
-        for (const li of items) {
-          const name = li.querySelector('.agent-name')?.textContent || '';
-          if (name.toLowerCase().includes((action.target||'').toLowerCase())) {
+      } else if (action.kind === 'highlight') {
+        document.querySelectorAll('#agent-list-ul li').forEach(li => {
+          if ((li.querySelector('.agent-name')?.textContent||'').toLowerCase().includes((action.target||'').toLowerCase())) {
             li.style.animation = 'twin-highlight-flash .6s ease 2';
             setTimeout(() => { li.style.animation = ''; }, 1300);
-            const agentsPanel = document.getElementById('agents-panel');
-            if (agentsPanel && !agentsPanel.classList.contains('open')) toggleAgentsPanel();
-            break;
+            const ap = document.getElementById('agents-panel');
+            if (ap && !ap.classList.contains('open')) toggleAgentsPanel();
           }
-        }
-      } else if (kind === 'rapp') {
+        });
+      } else if (action.kind === 'rapp') {
         fetch(`${API}/chat`, {
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({ user_input: `Use ${action.target}: ${action.body || ''}` })
         }).then(r=>r.json()).then(d => {
           if (d.response) appendMsg('assistant', d.response, d.agent_logs || null);
           if (d.twin_response) renderTwin(d.twin_response);
-        }).catch(e => { console.error('[twin] rapp action failed:', e); });
+        });
       }
       btn.classList.add('twin-action-done');
-    } catch(e) {
-      console.error('[twin] action failed:', e);
-      btn.classList.add('twin-action-fail');
-    }
+    } catch(e) { btn.classList.add('twin-action-fail'); }
   }
 
   function resetTwin() {
-    _tw.history = [];
-    _tw.lastMood = 'present';
-    const p = document.getElementById('twin-panel');
-    if (!p) return;
-    p.dataset.mood = 'present';
-    p.querySelector('.twin-status').textContent = 'present';
-    p.querySelector('.twin-body').innerHTML = '<div class="twin-silent">I\'m here. Say something and I\'ll watch with you.</div>';
-    p.querySelector('.twin-actions').innerHTML = '';
-    p.querySelector('.twin-history').innerHTML = '';
+    _tw.history = []; _tw.lastMood = 'present';
+    const wrap = document.getElementById('twin-wrap');
+    if (!wrap) return;
+    wrap.dataset.mood = 'present';
+    document.querySelector('.twin-status-tag').textContent = 'present';
+    document.querySelector('#twin-bubble .twin-body').innerHTML = '';
+    document.querySelector('#twin-bubble .twin-actions').innerHTML = '';
+    document.getElementById('twin-bubble').classList.remove('visible');
     if (_holo) _holo.setMood('present');
   }
 
-  // ── Three.js Hologram Figure ────────────────────────────────────────────
+  // ── Three.js Hologram — head + shoulders portrait ───────────────────────
   const MOOD_COLORS = {
-    present:      { core: 0xa78bfa, glow: 0x7c3aed, particle: 0xc4b5fd },
-    curious:      { core: 0x60a5fa, glow: 0x3b82f6, particle: 0x93c5fd },
-    alert:        { core: 0xf87171, glow: 0xdc2626, particle: 0xfca5a5 },
-    validated:    { core: 0x4ade80, glow: 0x22c55e, particle: 0x86efac },
-    contradicted: { core: 0xfbbf24, glow: 0xf59e0b, particle: 0xfde68a },
-    thinking:     { core: 0xa78bfa, glow: 0x6d28d9, particle: 0x8b5cf6 },
+    present:      { core: 0xa78bfa, glow: 0x7c3aed },
+    curious:      { core: 0x60a5fa, glow: 0x3b82f6 },
+    alert:        { core: 0xf87171, glow: 0xdc2626 },
+    validated:    { core: 0x4ade80, glow: 0x22c55e },
+    contradicted: { core: 0xfbbf24, glow: 0xf59e0b },
+    thinking:     { core: 0xa78bfa, glow: 0x6d28d9 },
   };
 
   let _holo = null;
 
   function initHologram() {
     const container = document.getElementById('twin-hologram');
-    if (!container || !window.THREE) return;
+    if (!container || !window.THREE || _holo) return;
 
-    const w = container.clientWidth || 300, h = 200;
+    const W = 120, H = 150;
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
-    camera.position.set(0, 1.2, 5.5);
-    camera.lookAt(0, 1.2, 0);
+    const camera = new THREE.PerspectiveCamera(32, W / H, 0.1, 50);
+    camera.position.set(0, 2.4, 4.8);
+    camera.lookAt(0, 2.1, 0);
 
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    renderer.setSize(w, h);
+    renderer.setSize(W, H);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setClearColor(0x000000, 0);
     container.appendChild(renderer.domElement);
 
-    const figureGroup = new THREE.Group();
-    scene.add(figureGroup);
+    const group = new THREE.Group();
+    scene.add(group);
 
-    // Build humanoid from particles
     const pts = [];
-    function capsule(cx, cy, cz, rx, ry, rz, n) {
+    function vol(cx, cy, cz, rx, ry, rz, n) {
       for (let i = 0; i < n; i++) {
-        const u = Math.random() * Math.PI * 2;
-        const v = Math.random() * Math.PI;
-        const lr = 0.6 + Math.random() * 0.4;
-        pts.push(
-          cx + rx * lr * Math.sin(v) * Math.cos(u),
-          cy + ry * lr * Math.cos(v),
-          cz + rz * lr * Math.sin(v) * Math.sin(u)
-        );
+        const u = Math.random() * Math.PI * 2, v = Math.random() * Math.PI;
+        const r = 0.5 + Math.random() * 0.5;
+        pts.push(cx + rx*r*Math.sin(v)*Math.cos(u), cy + ry*r*Math.cos(v), cz + rz*r*Math.sin(v)*Math.sin(u));
       }
     }
     // Head
-    capsule(0, 2.65, 0, 0.32, 0.38, 0.30, 180);
+    vol(0, 2.9, 0, 0.36, 0.42, 0.34, 280);
+    // Eyes — denser band
+    for (let i = 0; i < 40; i++) {
+      const side = i < 20 ? -0.14 : 0.14;
+      pts.push(side + (Math.random()-.5)*0.06, 2.98 + (Math.random()-.5)*0.04, 0.28 + Math.random()*0.04);
+    }
     // Neck
-    capsule(0, 2.2, 0, 0.12, 0.12, 0.10, 30);
-    // Torso
-    capsule(0, 1.5, 0, 0.50, 0.65, 0.28, 350);
-    // Left arm
-    capsule(-0.72, 1.65, 0, 0.14, 0.55, 0.14, 120);
-    // Right arm
-    capsule(0.72, 1.65, 0, 0.14, 0.55, 0.14, 120);
-    // Left leg
-    capsule(-0.22, 0.35, 0, 0.16, 0.50, 0.16, 130);
-    // Right leg
-    capsule(0.22, 0.35, 0, 0.16, 0.50, 0.16, 130);
-    // Hips
-    capsule(0, 0.85, 0, 0.40, 0.15, 0.22, 80);
+    vol(0, 2.38, 0, 0.14, 0.16, 0.12, 50);
+    // Shoulders
+    vol(0, 2.1, 0, 0.7, 0.14, 0.26, 200);
+    // Upper torso
+    vol(0, 1.7, 0, 0.55, 0.35, 0.28, 260);
+    // Left shoulder round
+    vol(-0.62, 2.15, 0, 0.18, 0.16, 0.16, 80);
+    // Right shoulder round
+    vol(0.62, 2.15, 0, 0.18, 0.16, 0.16, 80);
 
     const count = pts.length / 3;
     const positions = new Float32Array(pts);
     const basePositions = new Float32Array(pts);
     const colors = new Float32Array(count * 3);
     const sizes = new Float32Array(count);
-    const col = new THREE.Color(0xa78bfa);
+    const c = new THREE.Color(0xa78bfa);
     for (let i = 0; i < count; i++) {
-      const brightness = 0.6 + Math.random() * 0.4;
-      colors[i*3]   = col.r * brightness;
-      colors[i*3+1] = col.g * brightness;
-      colors[i*3+2] = col.b * brightness;
-      sizes[i] = 0.02 + Math.random() * 0.03;
+      const b = 0.55 + Math.random() * 0.45;
+      colors[i*3] = c.r*b; colors[i*3+1] = c.g*b; colors[i*3+2] = c.b*b;
+      sizes[i] = 0.025 + Math.random() * 0.035;
     }
 
     const geo = new THREE.BufferGeometry();
@@ -2745,154 +2705,98 @@
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     geo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
 
-    const particleMat = new THREE.ShaderMaterial({
-      uniforms: {
-        uTime: { value: 0 },
-        uGlow: { value: new THREE.Color(0x7c3aed) },
-        uIntensity: { value: 1.0 },
-      },
+    const mat = new THREE.ShaderMaterial({
+      uniforms: { uTime: {value:0}, uGlow: {value: new THREE.Color(0x7c3aed)}, uIntensity: {value:1.0} },
       vertexShader: `
-        attribute float size;
-        attribute vec3 color;
-        varying vec3 vColor;
-        varying float vAlpha;
+        attribute float size; attribute vec3 color;
+        varying vec3 vColor; varying float vAlpha;
         uniform float uTime;
         void main() {
           vColor = color;
-          float scanLine = sin(position.y * 12.0 - uTime * 2.0) * 0.5 + 0.5;
-          vAlpha = 0.4 + scanLine * 0.6;
+          float scan = sin(position.y * 14.0 - uTime * 2.5) * 0.5 + 0.5;
+          vAlpha = 0.35 + scan * 0.65;
           vec4 mv = modelViewMatrix * vec4(position, 1.0);
-          gl_PointSize = size * (200.0 / -mv.z);
+          gl_PointSize = size * (180.0 / -mv.z);
           gl_Position = projectionMatrix * mv;
-        }
-      `,
+        }`,
       fragmentShader: `
-        varying vec3 vColor;
-        varying float vAlpha;
-        uniform vec3 uGlow;
-        uniform float uIntensity;
+        varying vec3 vColor; varying float vAlpha;
+        uniform vec3 uGlow; uniform float uIntensity;
         void main() {
           float d = length(gl_PointCoord - 0.5) * 2.0;
           if (d > 1.0) discard;
-          float glow = exp(-d * 3.0);
-          vec3 c = mix(vColor, uGlow, 0.3) * uIntensity;
-          gl_FragColor = vec4(c, vAlpha * glow);
-        }
-      `,
-      transparent: true,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
+          float g = exp(-d * 2.8);
+          vec3 col = mix(vColor, uGlow, 0.35) * uIntensity;
+          gl_FragColor = vec4(col, vAlpha * g);
+        }`,
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
     });
 
-    const figure = new THREE.Points(geo, particleMat);
-    figureGroup.add(figure);
+    group.add(new THREE.Points(geo, mat));
 
-    // Ambient glow orb behind figure
-    const glowGeo = new THREE.SphereGeometry(0.6, 16, 16);
-    const glowMat = new THREE.MeshBasicMaterial({
-      color: 0x7c3aed, transparent: true, opacity: 0.08,
-    });
-    const glowOrb = new THREE.Mesh(glowGeo, glowMat);
-    glowOrb.position.set(0, 1.5, -0.3);
-    figureGroup.add(glowOrb);
+    // Glow behind head
+    const glowMat = new THREE.MeshBasicMaterial({ color: 0x7c3aed, transparent: true, opacity: 0.06 });
+    const glow = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 12), glowMat);
+    glow.position.set(0, 2.6, -0.2);
+    group.add(glow);
 
-    // Scan ring
-    const ringGeo = new THREE.RingGeometry(0.8, 0.85, 48);
-    const ringMat = new THREE.MeshBasicMaterial({
-      color: 0xa78bfa, transparent: true, opacity: 0.2, side: THREE.DoubleSide,
-    });
-    const ring = new THREE.Mesh(ringGeo, ringMat);
+    // Scan line ring
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0xa78bfa, transparent: true, opacity: 0.15, side: THREE.DoubleSide });
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.55, 0.58, 36), ringMat);
     ring.rotation.x = -Math.PI / 2;
-    figureGroup.add(ring);
+    group.add(ring);
 
-    // State
-    let mood = 'present';
-    let speaking = 0;
-    let targetIntensity = 1.0;
-    let currentIntensity = 1.0;
+    let speaking = 0, targetInt = 1.0, curInt = 1.0;
 
-    function animate() {
+    (function animate() {
       requestAnimationFrame(animate);
       const t = performance.now() * 0.001;
+      mat.uniforms.uTime.value = t;
+      group.scale.y = 1 + Math.sin(t * 1.6) * 0.005;
+      group.rotation.y = Math.sin(t * 0.35) * 0.1;
 
-      particleMat.uniforms.uTime.value = t;
-
-      // Breathing
-      const breath = Math.sin(t * 1.8) * 0.008;
-      figureGroup.scale.set(1, 1 + breath, 1);
-
-      // Gentle rotation
-      figureGroup.rotation.y = Math.sin(t * 0.4) * 0.12;
-
-      // Speaking: disperse particles slightly
-      const posArr = geo.attributes.position.array;
       if (speaking > 0) {
-        speaking = Math.max(0, speaking - 0.008);
+        speaking = Math.max(0, speaking - 0.006);
+        const pos = geo.attributes.position.array;
         for (let i = 0; i < count; i++) {
-          const jitter = speaking * 0.04;
-          posArr[i*3]   = basePositions[i*3]   + (Math.sin(t*8 + i) * jitter);
-          posArr[i*3+1] = basePositions[i*3+1] + (Math.cos(t*6 + i*1.3) * jitter);
-          posArr[i*3+2] = basePositions[i*3+2] + (Math.sin(t*7 + i*0.7) * jitter);
+          const j = speaking * 0.035;
+          pos[i*3]   = basePositions[i*3]   + Math.sin(t*9+i)*j;
+          pos[i*3+1] = basePositions[i*3+1] + Math.cos(t*7+i*1.3)*j;
+          pos[i*3+2] = basePositions[i*3+2] + Math.sin(t*8+i*0.7)*j;
         }
         geo.attributes.position.needsUpdate = true;
       }
 
-      // Smooth intensity
-      currentIntensity += (targetIntensity - currentIntensity) * 0.05;
-      particleMat.uniforms.uIntensity.value = currentIntensity;
-
-      // Scan ring
-      ring.position.y = ((t * 0.5) % 3.5) - 0.2;
-      ring.material.opacity = 0.12 + Math.sin(t * 2) * 0.06;
-
-      // Glow pulse
-      glowOrb.material.opacity = 0.06 + Math.sin(t * 1.5) * 0.03;
-
+      curInt += (targetInt - curInt) * 0.05;
+      mat.uniforms.uIntensity.value = curInt;
+      ring.position.y = 1.4 + ((t * 0.6) % 2.0);
+      ring.material.opacity = 0.1 + Math.sin(t * 2) * 0.05;
+      glow.material.opacity = 0.05 + Math.sin(t * 1.4) * 0.025;
       renderer.render(scene, camera);
-    }
-    animate();
-
-    // Resize handler
-    const ro = new ResizeObserver(() => {
-      const nw = container.clientWidth || 300;
-      camera.aspect = nw / h;
-      camera.updateProjectionMatrix();
-      renderer.setSize(nw, h);
-    });
-    ro.observe(container);
+    })();
 
     _holo = {
       setMood(m) {
-        mood = m;
-        const c = MOOD_COLORS[m] || MOOD_COLORS.present;
-        const col = new THREE.Color(c.core);
+        const mc = MOOD_COLORS[m] || MOOD_COLORS.present;
+        const col = new THREE.Color(mc.core);
         for (let i = 0; i < count; i++) {
-          const b = 0.6 + Math.random() * 0.4;
-          colors[i*3]   = col.r * b;
-          colors[i*3+1] = col.g * b;
-          colors[i*3+2] = col.b * b;
+          const b = 0.55 + Math.random() * 0.45;
+          colors[i*3] = col.r*b; colors[i*3+1] = col.g*b; colors[i*3+2] = col.b*b;
         }
         geo.attributes.color.needsUpdate = true;
-        particleMat.uniforms.uGlow.value.setHex(c.glow);
-        glowMat.color.setHex(c.glow);
-        ringMat.color.setHex(c.core);
+        mat.uniforms.uGlow.value.setHex(mc.glow);
+        glowMat.color.setHex(mc.glow);
+        ringMat.color.setHex(mc.core);
       },
-      speak() {
-        speaking = 1.0;
-        targetIntensity = 1.6;
-        setTimeout(() => { targetIntensity = 1.0; }, 2000);
-      },
+      speak() { speaking = 1.0; targetInt = 1.7; setTimeout(() => { targetInt = 1.0; }, 2500); },
     };
   }
 
-  // Init hologram when twin panel is first opened
-  const _holoObserver = new MutationObserver(() => {
-    const panel = document.getElementById('twin-panel');
-    if (panel && panel.classList.contains('open') && !_holo) {
-      setTimeout(initHologram, 100);
-    }
+  // Init hologram when twin becomes visible
+  const _holoObs = new MutationObserver(() => {
+    if (document.getElementById('twin-wrap')?.classList.contains('open') && !_holo) setTimeout(initHologram, 50);
   });
-  _holoObserver.observe(document.getElementById('twin-panel'), { attributes: true, attributeFilter: ['class'] });
+  _holoObs.observe(document.getElementById('twin-wrap'), { attributes: true, attributeFilter: ['class'] });
 </script>
 </body>
 </html>
