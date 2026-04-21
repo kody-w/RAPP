@@ -531,7 +531,70 @@ Concretely:
 
 ---
 
-## Article XVI — Amendments
+## Article XVI — The Root Stays Minimal; State Lives in `.brainstem_data/`
+
+The root of `rapp_brainstem/` is the engine surface — the first thing a
+new user sees when they clone the repo. Every file at root competes for
+their attention. A sprawling root signals complexity and pushes
+adoption downhill.
+
+> **Root = the engine. `.brainstem_data/` = the twin's home. Nothing
+> in between.**
+
+What belongs at `rapp_brainstem/` root:
+
+- `brainstem.py` — the Flask server.
+- `soul.md` — the default system prompt.
+- `VERSION`, `requirements.txt` — build/deploy metadata.
+- `start.sh`, `start.ps1` — the one-liner's launchers.
+- `README.md`, `CLAUDE.md`, `CONSTITUTION.md` — docs and governance.
+- `index.html` — the landing page.
+- `agents/` — the starter/example agents.
+- `utils/`, `web/` — directories for cohesive support surfaces.
+- `local_storage.py`, `basic_agent.py`, `_basic_agent_shim.py` — the
+  base contracts agents extend.
+
+What belongs in `.brainstem_data/`:
+
+- **Everything dynamic, user-generated, or session-scoped.** Memory
+  files, binder state (`.binder.json`), swarm directories, snapshots,
+  per-swarm agent sets, per-user memory namespaces, twin calibration
+  logs (`.twin_calibration.jsonl`), telemetry logs, saved sessions,
+  etc.
+- Configuration state that the user or runtime edits: swarm manifests,
+  active-swarm pointer files, soul overrides, agent-group definitions.
+- In short: **if it changes between runs, or belongs to this user's
+  twin and not the engine itself, it lives in `.brainstem_data/`.**
+
+### What this rules out
+
+- ❌ Dropping `foo_agent.py`, `scratch.py`, or `admin_tool.py` at root.
+  Agent files go in `agents/` (or `agents/experimental/`). Scratch
+  files don't get committed.
+- ❌ Top-level JSON state files (`.swarms.json`, `.agent_groups.json`,
+  `.binder.json`) sitting next to `brainstem.py`. These are runtime
+  state; they belong under `.brainstem_data/` and are either
+  gitignored or read-only fixtures.
+- ❌ Adding a new top-level directory "because it doesn't fit anywhere
+  else." If it doesn't fit anywhere else, it's state — put it in
+  `.brainstem_data/`. If it's not state, it probably doesn't belong
+  in this repo at all (see Article VII).
+- ❌ Shipping default runtime state (example memories, seeded swarms)
+  that pollutes `.brainstem_data/` on install. The user's twin starts
+  empty; the engine seeds nothing.
+
+### Why `.brainstem_data/`
+
+The directory is the **context of the digital twin living**. It's the
+twin's home on the user's device. Treating it as such — state
+organized by purpose, not flat-bagged — lets us grow new capabilities
+(more swarms, more memory surfaces, more calibration) without ever
+touching the root. The engine stays small; the twin grows inside its
+own directory.
+
+---
+
+## Article XVII — Amendments
 
 This constitution can be amended. The only rule: amendments must preserve
 Article I — **the brainstem stays light**. Any change that loads

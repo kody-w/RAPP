@@ -248,7 +248,61 @@ state is mounted, not what the code does.
 
 ---
 
-## Article XI — Amendments
+## Article XI — The Root Stays Minimal; State Lives in `.brainstem_data/`
+
+The `rapp_brainstem/` root is the engine surface — the first thing a
+new user sees when they clone the repo. Every file at root competes
+for their attention. A sprawling root signals complexity and pushes
+adoption downhill.
+
+> **Root = the engine. `.brainstem_data/` = the twin's home. Nothing
+> in between.**
+
+What belongs at root:
+
+- `brainstem.py`, `soul.md`, `VERSION`, `requirements.txt`
+- `start.sh` / `start.ps1` — the one-liner's launchers
+- `README.md`, `CLAUDE.md`, `CONSTITUTION.md` — docs + governance
+- `index.html` — landing page
+- `agents/` — starter agents (flat files only; `experimental/`
+  subdirectory for in-flight work)
+- `utils/`, `web/` — cohesive support directories
+- `local_storage.py`, `basic_agent.py` — the base contracts
+
+What belongs in `.brainstem_data/`:
+
+- Everything dynamic, user-generated, session-scoped, or
+  state-carrying. Memory files, binder state, swarm directories,
+  snapshots, per-user memory namespaces, twin calibration logs,
+  saved sessions, active-swarm pointers, agent-group definitions.
+- In short: **if it changes between runs, or belongs to this user's
+  twin and not the engine itself, it lives in `.brainstem_data/`.**
+
+### What this rules out
+
+- ❌ Dropping `foo_agent.py`, `scratch.py`, or `admin_tool.py` at
+  root. Agent files go in `agents/` (or `agents/experimental/`).
+- ❌ Top-level JSON state files (`.swarms.json`, `.agent_groups.json`,
+  `.binder.json`) next to `brainstem.py`. These are runtime state;
+  they belong under `.brainstem_data/` and are gitignored.
+- ❌ Adding a new top-level directory "because it doesn't fit
+  anywhere else." If it doesn't fit anywhere else, it's probably
+  state — put it in `.brainstem_data/`.
+- ❌ Shipping default runtime state that pollutes `.brainstem_data/`
+  on install. The user's twin starts empty; the engine seeds
+  nothing.
+
+### Why `.brainstem_data/`
+
+The directory is the **context of the digital twin living**. It's the
+twin's home on the user's device. Treating it as such — state
+organized by purpose, not flat-bagged — lets us grow new capabilities
+without ever touching the root. The engine stays small; the twin
+grows inside its own directory.
+
+---
+
+## Article XII — Amendments
 
 This constitution can be amended. The only rule: the change must serve
 the platform's purpose as a business-focused AI agent engine. If it
