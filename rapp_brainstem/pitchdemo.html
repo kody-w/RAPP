@@ -275,6 +275,44 @@
   }
   .index-metric strong { color: #cae3ff; font-weight: 700; }
 
+  /* Twin-themed index card */
+  .index-card.twin-theme {
+    background: linear-gradient(135deg, rgba(210,153,34,.12), rgba(227,179,65,.04));
+    border-color: rgba(210,153,34,.40);
+    box-shadow: 0 0 0 1px rgba(210,153,34,.15), 0 8px 28px rgba(210,153,34,.20);
+  }
+  .index-card.twin-theme.running::before {
+    background: linear-gradient(100deg, transparent 40%, rgba(227,179,65,.14) 50%, transparent 60%);
+  }
+  .index-card.twin-theme .index-card-title { color: #e3b341; }
+  .index-card.twin-theme.running .index-card-status {
+    color: #e3b341; background: rgba(210,153,34,.12); border-color: rgba(210,153,34,.35);
+  }
+  .index-card.twin-theme.done .index-card-status {
+    color: #e3b341; background: rgba(210,153,34,.12); border-color: rgba(210,153,34,.35);
+  }
+  .index-card.twin-theme .index-stage { border-left-color: rgba(210,153,34,.15); }
+  .index-card.twin-theme .index-stage[data-status="done"] .index-stage-label { color: #e3b341; }
+  .index-card.twin-theme .index-stage[data-status="done"] .index-stage-dot {
+    background: #d29922; box-shadow: 0 0 0 2px rgba(210,153,34,.25);
+  }
+  .index-card.twin-theme .index-stage[data-status="running"] { background: rgba(210,153,34,.08); }
+  .index-card.twin-theme .index-stage[data-status="running"] .index-stage-label { color: #f0d68a; }
+  .index-card.twin-theme .index-stage[data-status="running"] .index-stage-dot {
+    background: #d29922;
+    box-shadow: 0 0 0 0 rgba(210,153,34,.6);
+    animation: twin-pulse 1.3s ease-in-out infinite;
+  }
+  @keyframes twin-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(210,153,34,.6); transform: scale(1); }
+    50%      { box-shadow: 0 0 0 6px rgba(210,153,34,0); transform: scale(1.2); }
+  }
+  .index-card.twin-theme .index-card-metrics { border-top-color: rgba(210,153,34,.15); }
+  .index-card.twin-theme .index-metric {
+    background: rgba(210,153,34,.08); border-color: rgba(210,153,34,.2);
+  }
+  .index-card.twin-theme .index-metric strong { color: #e3b341; }
+
   .typing { display: flex; gap: 4px; align-items: center; padding: 4px 0; }
   .typing span {
     width: 6px; height: 6px; border-radius: 50%;
@@ -346,6 +384,16 @@
   .starter-btn:hover {
     background: rgba(88,166,255,.1); border-color: #58a6ff; transform: translateY(-1px);
   }
+  .starter-btn.download {
+    color: #e3b341; border-color: rgba(210,153,34,.5);
+  }
+  .starter-btn.download:hover {
+    background: rgba(210,153,34,.1); border-color: #d29922;
+  }
+  .starter-btn.complete {
+    color: #3fb950; border-color: rgba(63,185,80,.5);
+    cursor: default;
+  }
 
   .send-slot { display: flex; flex-direction: column; align-items: center; gap: 2px; }
   .send-caption { font-size: 9px; color: #484f58; letter-spacing: .05em; }
@@ -388,7 +436,7 @@
   <div class="logo">
     <span class="icon"><svg viewBox="0 0 512 512" fill="#fff"><path d="M184 0c-30.9 0-56.5 22.7-61.1 52.3C54.5 67 0 130 0 206.8c0 41.6 17.4 79.2 45.3 105.9-2 9.2-3.3 18.8-3.3 28.7 0 55.3 35.8 102.2 85.5 119C142.2 493 172.6 512 208 512h16c35.3 0 64-28.7 64-64V86c0-8.8-7.2-16-16-16h-16c-8.8 0-16 7.2-16 16v16c0 8.8-7.2 16-16 16s-16-7.2-16-16V64c0-35.3-28.7-64-64-64h40zm144 0c30.9 0 56.5 22.7 61.1 52.3C457.5 67 512 130 512 206.8c0 41.6-17.4 79.2-45.3 105.9 2 9.2 3.3 18.8 3.3 28.7 0 55.3-35.8 102.2-85.5 119C369.8 493 339.4 512 304 512h-16c-35.3 0-64-28.7-64-64V86c0-8.8 7.2-16 16-16h16c8.8 0 16 7.2 16 16v16c0 8.8 7.2 16 16 16s16-7.2 16-16V64c0-35.3 28.7-64 64-64h-40z"/></svg></span>
   </div>
-  <h1>RAPP Brainstem <span style="font-size:11px;font-weight:400;color:#8b949e;vertical-align:middle">v0.9.0</span></h1>
+  <h1>RAPP Brainstem <span style="font-size:11px;font-weight:400;color:#8b949e;vertical-align:middle">v1.0</span></h1>
   <div class="controls">
     <div class="dot"></div>
     <span style="color:#8b949e">gpt-4o</span>
@@ -421,14 +469,9 @@
 
   <div class="msg system">
     <div class="bubble">
-      <h2>Welcome to your local RAPP Brainstem!</h2>
-      <p>I am your local assistant powered by Copilot. Here is a quick tour to get you started:</p>
-      <ul>
-        <li><strong>Chat</strong>: Just ask me questions below to start building and researching!</li>
-        <li><strong>Agents Panel</strong>: Click the + icon (top right) to view or remove installed tools.</li>
-        <li><strong>Add Skills</strong>: Drag and drop any <code>.py</code> agent file directly onto this window to instantly teach me new things.</li>
-      </ul>
-      <p><em>Click one of the prompts below to get started!</em></p>
+      <h2>RAPP Brainstem v1.0</h2>
+      <p>Your personal AI server. Digital twin active. Running locally on your machine.</p>
+      <p>Agents, memory, and twin are fully portable — export and run anywhere: cloud, mobile, edge. Same output, everywhere.</p>
     </div>
   </div>
 </div>
@@ -463,69 +506,193 @@
   <button class="reset-btn" onclick="resetDemo()">Reset</button>
 </div>
 
+<!-- Embedded agent source for download (not executed) -->
+<script type="text/plain" id="agent-py-full">"""exec_briefing_agent.py - Deterministic executive briefing generator.
+
+Drop this file into any RAPP Brainstem 'agents/' folder. Zero dependencies.
+Synthetic demo data produces identical output every run - that's the governance layer.
+Swap DEMO_DATA for live data sources when ready; the agent contract stays the same."""
+
+from basic_agent import BasicAgent
+
+
+class ExecBriefingAgent(BasicAgent):
+
+    def __init__(self):
+        self.name = "ExecBriefing"
+        self.metadata = self.__class__.metadata
+        super().__init__(name=self.name, metadata=self.metadata)
+
+    metadata = {
+        "name": "exec_briefing",
+        "description": (
+            "Generate governed, deterministic executive briefings for board reviews, "
+            "investor updates, and leadership meetings. Uses built-in synthetic data "
+            "in demo mode to guarantee reproducible output."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "period": {
+                    "type": "string",
+                    "description": "Reporting period, e.g. 'Q2 FY2025'"
+                },
+                "focus": {
+                    "type": "string",
+                    "enum": ["board_review", "investor_update", "leadership"],
+                    "description": "Briefing type"
+                }
+            },
+            "required": ["period"]
+        }
+    }
+
+    DEMO_DATA = {
+        "revenue": {"current": "$14.2M", "qoq": "+18%", "target": "$13.5M"},
+        "pipeline": {"weighted": "$47.3M", "deals_over_1m": 3},
+        "nrr": "118%",
+        "headcount": {"start": 142, "current": 156, "open_reqs": 8},
+        "wins": [
+            {"name": "Acme Corp", "value": "$1.2M", "segment": "enterprise"},
+            {"name": "GlobalTech", "value": "$890K", "segment": "mid-market"},
+        ],
+        "risks": [
+            {"issue": "Enterprise deal cycle lengthening", "detail": "+12 days vs Q1"},
+            {"issue": "VP Engineering unfilled", "detail": "60 days open"},
+        ],
+        "board_asks": [
+            "Approve accelerated Series B timeline (market window)",
+            "Authorize +20 headcount for Q3 (12 eng, 5 GTM, 3 ops)",
+        ],
+    }
+
+    def perform(self, period="Q2 FY2025", focus="board_review", **kwargs):
+        d = self.DEMO_DATA
+        lines = [f"## {period} - Executive Board Briefing", ""]
+
+        lines.append("| Metric | Result | vs. Target | Signal |")
+        lines.append("|---|---|---|---|")
+        r = d["revenue"]
+        lines.append(f"| Revenue | {r['current']} | +5% beat ({r['target']} target) | Accelerating |")
+        p = d["pipeline"]
+        lines.append(f"| Pipeline | {p['weighted']} | {p['deals_over_1m']} deals > $1M | Healthy |")
+        lines.append(f"| NRR | {d['nrr']} | Above 110% floor | Strong expansion |")
+        h = d["headcount"]
+        lines.append(f"| Headcount | {h['start']} to {h['current']} | {h['open_reqs']} open reqs | VP Eng unfilled |")
+
+        lines.append("")
+        lines.append("**Key Wins**")
+        for w in d["wins"]:
+            lines.append(f"- {w['name']}: {w['value']} ({w['segment']})")
+
+        lines.append("")
+        lines.append("**Risk Register**")
+        for i, r in enumerate(d["risks"], 1):
+            lines.append(f"{i}. {r['issue']} ({r['detail']})")
+
+        lines.append("")
+        lines.append("**Board Asks**")
+        for i, ask in enumerate(d["board_asks"], 1):
+            lines.append(f"{i}. {ask}")
+
+        return "\n".join(lines)
+</script>
+
+<script type="text/plain" id="agent-py-display"># exec_briefing_agent.py - Drop into any RAPP Brainstem
+from basic_agent import BasicAgent
+
+class ExecBriefingAgent(BasicAgent):
+    def __init__(self):
+        self.name = "ExecBriefing"
+        super().__init__(name=self.name, metadata=self.metadata)
+
+    metadata = {
+        "name": "exec_briefing",
+        "description": "Deterministic board briefings with governed output.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "period": {"type": "string", "description": "e.g. Q2 FY2025"}
+            },
+            "required": ["period"]
+        }
+    }
+    # Synthetic data: same input -> same output, every time
+    DEMO_DATA = {
+        "revenue": "$14.2M (+18% QoQ)",
+        "pipeline": "$47.3M weighted, 3 deals >$1M",
+        "nrr": "118%",
+        "headcount": "142 to 156 (8 open reqs)",
+        "wins": ["Acme Corp $1.2M", "GlobalTech $890K"],
+        "risks": ["Deal cycle +12d avg", "VP Eng 60d unfilled"],
+    }
+    def perform(self, period="Q2 FY2025", **kw):
+        d = self.DEMO_DATA  # governed: deterministic output
+        rows = [f"| {k.title()} | {v} |" for k,v in d.items() if type(v)==str]
+        header = f"## {period} Briefing\n| Metric | Value |\n|---|---|\n"
+        return header + "\n".join(rows)</script>
+
 <script>
 const SVG_BRAIN = '<svg viewBox="0 0 512 512" fill="currentColor"><path d="M184 0c-30.9 0-56.5 22.7-61.1 52.3C54.5 67 0 130 0 206.8c0 41.6 17.4 79.2 45.3 105.9-2 9.2-3.3 18.8-3.3 28.7 0 55.3 35.8 102.2 85.5 119C142.2 493 172.6 512 208 512h16c35.3 0 64-28.7 64-64V86c0-8.8-7.2-16-16-16h-16c-8.8 0-16 7.2-16 16v16c0 8.8-7.2 16-16 16s-16-7.2-16-16V64c0-35.3-28.7-64-64-64h40zm144 0c30.9 0 56.5 22.7 61.1 52.3C457.5 67 512 130 512 206.8c0 41.6-17.4 79.2-45.3 105.9 2 9.2 3.3 18.8 3.3 28.7 0 55.3-35.8 102.2-85.5 119C369.8 493 339.4 512 304 512h-16c-35.3 0-64-28.7-64-64V86c0-8.8 7.2-16 16-16h16c8.8 0 16 7.2 16 16v16c0 8.8 7.2 16 16 16s16-7.2 16-16V64c0-35.3 28.7-64 64-64h-40z"/></svg>';
 const SVG_USER = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
 
+const DISPLAY_CODE = document.getElementById('agent-py-display').textContent.trim();
+const FULL_AGENT_PY = document.getElementById('agent-py-full').textContent.trim();
+
 // ─── Demo Script ────────────────────────────────────────────────
-// Each step: { user, response, logs?, card?, delay? }
+// Exec pitch: their use case, digital twin, deploy, governance, handoff
 const DEMO_SCRIPT = [
   {
-    label: "Introduction",
-    user: "What can you do?",
-    response: `I'm your local AI brainstem — a personal agent server running right here on your machine. Here's what I can do right now:\n\n| Agent | What it does |\n|---|---|\n| **SaveMemory** | Persist anything to local storage — notes, data, context |\n| **RecallMemory** | Retrieve saved information by key |\n| **SwarmFactory** | Build new agents from a natural-language description |\n| **BrainstemAdmin** | Manage swarms, export/import .egg snapshots |\n| **LearnNew** | Research a topic and produce structured notes |\n| **HackerNews** | Pull top stories from Hacker News |\n| **PitchDeck** | Generate investor-ready pitch materials |\n\nAll 7 agents are **single Python files** — no frameworks, no build steps. Drop a new \`.py\` file into the agents folder and I learn it instantly. No restart needed.\n\nAgents are organized into **swarms** — you can load multiple swarms at once like a Venn diagram. Work swarm + project swarm + personal swarm, all layered together.\n\nWhat would you like to try first?`,
-    logs: `[BrainstemAdmin] status check — 7 agents loaded, no active swarm filter`,
+    label: "Board Briefing",
+    user: "I have a board review Thursday. Pull together my Q2 exec briefing.",
+    response: "## Q2 FY2025 \u2014 Executive Board Briefing\n\n| Metric | Result | vs. Target | Signal |\n|---|---|---|---|\n| Revenue | $14.2M | +5% beat ($13.5M target) | Accelerating |\n| Weighted Pipeline | $47.3M | 3 deals > $1M | Healthy |\n| Net Revenue Retention | 118% | Above 110% floor | Strong expansion |\n| Headcount | 142 \u2192 156 | 8 open reqs | VP Eng 60d unfilled |\n\n**Key Wins**\n- Acme Corp: $1.2M enterprise deal (closed May 14)\n- GlobalTech: $890K mid-market expansion (closed June 2)\n\n**Risk Register**\n1. Enterprise deal cycle lengthening (+12 days avg vs Q1)\n2. VP Engineering role unfilled \u2014 60 days, pipeline thin\n\n**Board Asks**\n1. Approve accelerated Series B timeline (market window closing Q4)\n2. Authorize +20 headcount for Q3 (12 eng, 5 GTM, 3 ops)\n\n---\n*Every data point above is deterministic \u2014 run this agent again tomorrow, next week, on a different machine. Same input, same output. That\u2019s the governance layer.*",
+    logs: "[ExecBriefing] period: Q2 FY2025 | focus: board_review | data_mode: demo\n[ExecBriefing] Pipeline: revenue \u2713 pipeline \u2713 nrr \u2713 headcount \u2713 risks \u2713\n[ExecBriefing] Output hash: a7f3c2e \u2014 deterministic, reproducible\n[ExecBriefing] Governance: same input \u2192 same output guaranteed",
   },
   {
-    label: "Create swarms",
-    user: "Create a 'Sales' swarm with SaveMemory, RecallMemory, and LearnNew. And a 'Research' swarm with LearnNew and HackerNews.",
-    response: `Done. Two swarms created:\n\n**Sales** (stack mode, 3 agents):\n- **SaveMemory** — store prospect notes, call summaries, deal data\n- **RecallMemory** — pull up anything saved by key\n- **LearnNew** — research companies, industries, competitors\n\n**Research** (stack mode, 2 agents):\n- **LearnNew** — deep-dive research on any topic\n- **HackerNews** — real-time tech news and trends\n\nNotice **LearnNew** is in both swarms — when you load both, agents merge like a Venn diagram. No duplicates, just the union of capabilities.\n\nWant me to load them?`,
-    logs: `[BrainstemAdmin] create_swarm "Sales" → agents: [save_memory_agent.py, recall_memory_agent.py, learn_new_agent.py], mode: stack\n[BrainstemAdmin] create_swarm "Research" → agents: [learn_new_agent.py, hacker_news_agent.py], mode: stack\n[BrainstemAdmin] swarms saved to .swarms.json`,
-  },
-  {
-    label: "Layer swarms",
-    user: "Load both Sales and Research together",
-    response: `Loaded **Sales + Research**. I now have 4 unique agents active (plus admin):\n\n- SaveMemory, RecallMemory, LearnNew, HackerNews\n\nThis is the Venn diagram in action — both swarms layered, agents merged. LearnNew appears in both but loads once.\n\nYou can add or remove swarms anytime without restarting. Load your project swarm on top, or drop back to just Sales for a focused call. It's like switching context on your phone — instant, no setup.\n\nTry asking me to research a company.`,
-    logs: `[BrainstemAdmin] load_swarms ["Sales", "Research"] → active\n[BrainstemAdmin] agent union: SaveMemory, RecallMemory, LearnNew, HackerNews, BrainstemAdmin (5 total)`,
-  },
-  {
-    label: "Build a new agent",
-    user: "Build me an agent that can look up company information and give me a quick briefing before a sales call",
-    response: `Your new agent is ready. **CompanyBriefing** takes a company name, pulls key facts, and gives you a concise pre-call brief.\n\nI've saved it to \`agents/company_briefing_agent.py\` — it's already loaded and available. Here's what it covers:\n\n- **Company overview** — what they do, size, funding stage\n- **Recent news** — last 30 days of headlines\n- **Key people** — CEO, CTO, decision-makers\n- **Talking points** — 3 conversation starters tailored to their business\n\nI've automatically added it to your **Sales** swarm. Try it: *"Brief me on Acme Corp before my 2pm call"*`,
-    logs: `[SwarmFactory] Generating company_briefing_agent.py\n[SwarmFactory] Wrote 127 lines → agents/company_briefing_agent.py\n[SwarmFactory] Agent loaded successfully — CompanyBriefing ready`,
+    label: "Digital Twin",
+    user: "I want my digital twin prepped with all of this for the flight. I\u2019ll adjust my talking points on the plane.",
+    response: "Already done \u2014 your digital twin captured the full briefing context the moment it was generated.\n\n**Your twin is right here.** It\u2019s not a separate app you open \u2014 it sits side-by-side in this conversation. Every interaction trains it. Every data point is context it carries forward.\n\n**Same endpoint, your perspective.** Your twin isn\u2019t a copy \u2014 it\u2019s a lens. Same agents, same data, same brainstem. When you ask it to adjust your talking points at 30,000 feet, it\u2019s working from the same Q2 data, the same risk register, the same deal history. Double-click it anywhere and it picks up right where you left off.\n\n**Offline works.** Your twin packs into a portable `.egg` snapshot \u2014 142 KB, everything included. Agents, data, memory, soul. Open it on the plane with no connection. Edit your prep. When you land and reconnect, changes sync back automatically.\n\n**Train it on the fly.** Tell it *\"emphasize the pipeline story, downplay headcount risk\"* and it adjusts \u2014 not just for this briefing, but for how it preps you going forward. It\u2019s learning your presentation style, your priorities, your voice.\n\nThis is V1 of the digital twin. It goes where you go.",
+    logs: "[DigitalTwin] Context captured: Q2 Board Review \u2014 14 data points, 2 risk items\n[DigitalTwin] Perspective sync: twin aligned to user briefing context\n[DigitalTwin] Offline pack: .egg snapshot ready (142 KB)\n[DigitalTwin] Status: active, learning presentation preferences",
     card: {
       status: "done",
-      title: "SwarmFactory: CompanyBriefing Agent",
+      theme: "twin",
+      title: "Digital Twin \u2014 Active",
       stages: [
-        { label: "Analyze", status: "done", note: "Parsed requirements" },
-        { label: "Generate", status: "done", note: "127 lines written" },
-        { label: "Validate", status: "done", note: "Syntax OK, metadata valid" },
-        { label: "Install", status: "done", note: "Hot-loaded into brainstem" },
+        { label: "Context", status: "done", note: "Q2 Board Review captured" },
+        { label: "Sync", status: "done", note: "Twin perspective aligned" },
+        { label: "Offline", status: "done", note: ".egg pack ready (142 KB)" },
+        { label: "Learning", status: "running", note: "Adapting to your style" },
       ],
       metrics: [
-        { label: "Lines", value: "127" },
-        { label: "Methods", value: "4" },
-        { label: "Time", value: "3.2s" },
+        { label: "Data Points", value: "14" },
+        { label: "Agents", value: "4" },
+        { label: "Dimensions", value: "1" },
       ],
     },
   },
   {
-    label: "Use the new agent",
-    user: "Brief me on Acme Corp before my 2pm call",
-    response: `## Acme Corp — Pre-Call Brief\n\n**What they do**: Enterprise supply chain automation platform. Series B ($42M raised). ~180 employees across SF and Austin.\n\n**Recent news**:\n- Announced integration with SAP last week\n- Hired new VP of Sales from Salesforce (3 weeks ago)\n- Named in Gartner's "Cool Vendors" report for supply chain\n\n**Key people in the room**:\n- **Sarah Chen** — VP Operations, decision-maker, reports to CEO\n- **Marcus Rivera** — CTO, technical evaluator\n\n**Talking points**:\n1. Their SAP integration suggests they're investing in enterprise connectors — ask how they handle custom integrations for mid-market clients\n2. The new VP of Sales means they're scaling outbound — our platform could accelerate their team ramp\n3. Gartner recognition = board pressure to capitalize on momentum — timing is good\n\n*I've saved this to memory under "acme_corp_brief" so you can pull it up during the call.*`,
-    logs: `[CompanyBriefing] Researching "Acme Corp"...\n[CompanyBriefing] Found: Enterprise supply chain, Series B, 180 employees\n[CompanyBriefing] Recent news: 3 items (SAP integration, VP hire, Gartner)\n[SaveMemory] Stored "acme_corp_brief" → .brainstem_data/acme_corp_brief.json`,
+    label: "Cloud Deploy",
+    user: "The board accesses everything from the conference room, not my laptop. Can they get this same experience?",
+    response: "One command:\n\n```\nrapp deploy --target cloud\n```\n\nThat\u2019s it. Your brainstem \u2014 agents, twin, data, everything \u2014 deploys to a cloud endpoint. Same URL for anyone with access. Same deterministic output.\n\n**What the board sees:**\n- They open `https://your-org.rapp.cloud/chat` from the conference room\n- Same briefing agent, same Q2 data, same twin context\n- They ask follow-ups \u2014 *\"break down pipeline by region\"* \u2014 and get governed, traceable answers\n\n**What doesn\u2019t change:**\n- Agent code: identical single `.py` files\n- Output: same input \u2192 same hash \u2192 same briefing\n- Twin: your perspective, your context, your training\n- Governance: every agent call logged and reproducible\n\n**What scales:**\n- Your team gets the same endpoint with role-based access\n- Anyone exports their setup as an `.egg` \u2192 imports on another device\n- Cloud, laptop, phone, edge \u2014 same contract, everywhere\n\nLocal to cloud in one command. No infra to manage.",
+    logs: "[BrainstemAdmin] Packaging for cloud deploy...\n[BrainstemAdmin] Agents: 4 files synced (0 conflicts)\n[BrainstemAdmin] Twin context: ported (Q2 Board Review)\n[BrainstemAdmin] \u2192 Deployed: https://your-org.rapp.cloud/chat\n[BrainstemAdmin] Governance chain: local hash a7f3c2e = cloud hash a7f3c2e \u2713",
   },
   {
-    label: "Export portable egg",
-    user: "This is great. Export everything — agents, memory, swarms — as a portable egg I can share with the team",
-    response: `Exported your brainstem as **digitaltwin.rappid.egg** (128 KB).\n\nHere's what's inside:\n\n| Contents | Count |\n|---|---|\n| Agents (with source) | 8 files |\n| Memory entries | 3 items |\n| Swarms | 2 (Sales + Research) |\n| Soul (system prompt) | 1 file |\n| Digital twin bridge | 1 file (mobile-compatible) |\n\nAnyone on your team can import this egg into their own brainstem — they get your exact setup: both swarms, the CompanyBriefing agent you just built, and all saved memory.\n\nIt also works on the **mobile brainstem** in a browser. Export from your laptop, import on your phone — same agents, same memory, same swarms. Your AI travels with you.\n\n*The .egg file is downloading now.*`,
-    logs: `[BrainstemAdmin] export_egg → packing 8 agents, 3 memory entries, 2 swarms\n[BrainstemAdmin] Built digitaltwin.json bridge (rapp-twin/1.0)\n[BrainstemAdmin] Created egg-manifest.json (rapp-egg/1.0, v2, portable=true)\n[BrainstemAdmin] → digitaltwin.rappid.egg (128 KB)`,
+    label: "Multi-Device",
+    user: "I update the revenue figures from my phone on the flight. My chief of staff updates headcount from the office. What happens?",
+    response: "Nothing breaks. Nothing is lost.\n\n**Dream Catcher** tracks every editing context as a separate **dimension**:\n\n| Dimension | Device | Change | Time |\n|---|---|---|---|\n| d-1 | Phone (offline) | Revenue updated to $14.6M (late close added) | 2:15 PM |\n| d-2 | Office (cloud) | Headcount updated: VP Eng offer accepted | 2:40 PM |\n\nWhen your phone reconnects, the Dream Catcher auto-merges:\n\n- **No conflict** \u2192 both changes apply. Revenue is $14.6M AND headcount shows the new hire.\n- **If there IS a conflict** \u2192 both dimensions are preserved. You see both versions, pick one, or keep both as branches.\n\n**No data is ever lost.** Even if you edit the same field from two places, both versions survive. The Dream Catcher doesn\u2019t pick winners \u2014 it preserves reality.\n\nThis is what every other framework gets wrong. They assume one source of truth. We assume you live in multiple contexts simultaneously \u2014 because you do.",
+    logs: "[DreamCatcher] Monitoring 2 active dimensions\n[DreamCatcher] d-1 (phone/offline): revenue field updated \u2192 $14.6M\n[DreamCatcher] d-2 (office/cloud): headcount field updated \u2192 VP Eng filled\n[DreamCatcher] Reconnect detected \u2192 auto-merge: 0 conflicts\n[DreamCatcher] Result: both changes preserved, unified state",
   },
   {
-    label: "Handoff to colleague",
-    user: "My colleague just imported the egg on their machine. Will everything work the same?",
-    response: `Yes — that's the whole point.\n\nWhen they import the .egg, they get:\n\n- **All 8 agents** installed and ready (including CompanyBriefing)\n- **Both swarms** (Sales + Research) pre-configured and layered\n- **Saved memory** — the Acme Corp brief and any other notes you stored\n- **Same soul/personality** — the brainstem behaves identically\n\nThe agents are just Python files — no API keys, no cloud dependencies, no vendor lock-in. Everything runs locally on their machine through their own GitHub Copilot token.\n\nThey can:\n- Start chatting immediately with your exact setup\n- Layer on their own swarms — personal, project-specific, public\n- Toggle any swarm between **stack** (individual agents) and **converged** (unified agent) mode\n- Export their *own* egg later with the combined state\n- Open it on their phone's mobile brainstem too\n\n**One file. Complete portable AI workspace.** That's the egg.`,
+    label: "Why RAPP?",
+    user: "We already pay for ChatGPT Enterprise. My team uses Copilot. Why would I add another tool?",
+    response: "You wouldn\u2019t add another tool. You\u2019d fill the gap between them.\n\nChatGPT gives you conversations. Copilot gives you code completions. Neither gives you **governed, portable, deterministic AI capability that you own.**\n\n**Governance that\u2019s actually governance.** Every agent call produces the same output for the same input. Hash `a7f3c2e` \u2014 run it today, six months from now, on a different continent. Same hash. That\u2019s not a promise, it\u2019s math. Your compliance team can audit every output back to its source.\n\n**One file = one capability.** An agent isn\u2019t a prompt you hope works. It\u2019s a Python file \u2014 30 lines, no dependencies, no framework. Runs on your laptop, in the cloud, on a phone, at the edge. Same file. Everywhere.\n\n**Your digital twin is yours.** Not locked in a vendor\u2019s cloud. Not dependent on a subscription renewal. Export it as a 142 KB `.egg` file. Import it anywhere. Your AI identity is portable and reconvergent.\n\n**No vendor lock-in.** GPT-4, Claude, Llama, Mistral \u2014 swap the model from the dropdown at the top of this screen. Same agents, same output contract, same governance hash. The model is commodity plumbing. Your agents and twin are the asset.\n\n**Compatibility by default.** Any agent someone writes works in any brainstem. Share a `.py` file over Slack \u2192 recipient drops it in \u2192 it works. No install wizard, no version conflicts, no *\"which framework are you on?\"*\n\nThe industry is building walled gardens. We\u2019re building a standard.",
     logs: null,
+  },
+  {
+    label: "Try It Yourself",
+    user: "Show me. What do I actually take away from this meeting?",
+    response: null,
+    logs: "[BrainstemAdmin] Exporting exec_briefing_agent.py (demo mode, deterministic)\n[BrainstemAdmin] Verification: input hash \u2192 output hash a7f3c2e \u2713\n[BrainstemAdmin] Agent file ready for handoff",
   },
 ];
 
@@ -542,7 +709,7 @@ function renderDots() {
   });
 }
 
-function appendMsg(role, text, logs, card) {
+function appendMsg(role, html, logs, card) {
   const chat = document.getElementById('chat');
   const wrap = document.createElement('div');
   wrap.className = `msg ${role}`;
@@ -563,12 +730,16 @@ function appendMsg(role, text, logs, card) {
     bubble.appendChild(renderIndexCard(card));
   }
 
-  if (role === 'assistant' && typeof marked !== 'undefined') {
+  if (role === 'assistant' && html) {
     const textDiv = document.createElement('div');
-    textDiv.innerHTML = marked.parse(text);
+    if (typeof marked !== 'undefined') {
+      textDiv.innerHTML = marked.parse(html);
+    } else {
+      textDiv.textContent = html;
+    }
     bubble.appendChild(textDiv);
-  } else {
-    bubble.textContent = text;
+  } else if (role === 'user') {
+    bubble.textContent = html;
   }
 
   right.appendChild(bubble);
@@ -631,7 +802,7 @@ function removeTyping() {
 
 function renderIndexCard(card) {
   const root = document.createElement('div');
-  root.className = 'index-card ' + (card.status || 'running');
+  root.className = 'index-card ' + (card.status || 'running') + (card.theme === 'twin' ? ' twin-theme' : '');
 
   const head = document.createElement('div');
   head.className = 'index-card-head';
@@ -642,7 +813,7 @@ function renderIndexCard(card) {
   titleWrap.appendChild(title);
   const status = document.createElement('span');
   status.className = 'index-card-status';
-  status.textContent = card.status === 'done' ? 'complete' : 'running';
+  status.textContent = card.status === 'done' ? 'complete' : 'active';
   head.appendChild(titleWrap);
   head.appendChild(status);
   root.appendChild(head);
@@ -685,6 +856,31 @@ function renderIndexCard(card) {
   return root;
 }
 
+function buildStep6Response() {
+  return "This:\n\n```python\n" + DISPLAY_CODE + "\n```\n\n" +
+    "**That\u2019s it.** One file. 28 lines. No dependencies. No framework.\n\n" +
+    "Here\u2019s what happens right now:\n" +
+    "1. You already have a brainstem running \u2014 we set it up before this meeting\n" +
+    "2. Drop this file into the `agents/` folder\n" +
+    "3. Ask: *\"Pull together my Q2 exec briefing\"*\n" +
+    "4. You get the same table, same data, same output hash\n\n" +
+    "**Same input. Same output. Every time. On any device.** That\u2019s the governance layer that doesn\u2019t exist anywhere else today.\n\n" +
+    "The synthetic data proves the contract works. Swap in your real data sources when you\u2019re ready \u2014 the agent interface doesn\u2019t change. And when you do, your digital twin carries that forward everywhere you go.\n\n" +
+    "*Your file is ready to download below.*";
+}
+
+function downloadAgentFile() {
+  const blob = new Blob([FULL_AGENT_PY], { type: 'text/x-python' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'exec_briefing_agent.py';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 function advanceDemo() {
   if (animating) return;
   if (currentStep >= DEMO_SCRIPT.length - 1) return;
@@ -710,7 +906,6 @@ function advanceDemo() {
       charIdx++;
     } else {
       clearInterval(typeInterval);
-      // Flash send
       setTimeout(() => {
         input.value = '';
         input.setAttribute('readonly', '');
@@ -720,26 +915,32 @@ function advanceDemo() {
         const delay = step.card ? 2200 : 1400;
         setTimeout(() => {
           removeTyping();
-          appendMsg('assistant', step.response, step.logs, step.card);
 
-          // Show next step hint as starter prompt
+          // Step 6 builds its response dynamically (includes code)
+          const responseText = step.response !== null ? step.response : buildStep6Response();
+          appendMsg('assistant', responseText, step.logs, step.card);
+
+          // Show next action
+          const prompts = document.getElementById('starter-prompts');
           if (currentStep < DEMO_SCRIPT.length - 1) {
             const nextStep = DEMO_SCRIPT[currentStep + 1];
-            const prompts = document.getElementById('starter-prompts');
             const btn = document.createElement('button');
             btn.className = 'starter-btn';
-            btn.textContent = nextStep.user.length > 60 ? nextStep.user.substring(0, 57) + '...' : nextStep.user;
+            btn.textContent = nextStep.user.length > 70 ? nextStep.user.substring(0, 67) + '...' : nextStep.user;
             btn.onclick = advanceDemo;
             prompts.appendChild(btn);
           } else {
-            const prompts = document.getElementById('starter-prompts');
-            const btn = document.createElement('button');
-            btn.className = 'starter-btn';
-            btn.textContent = 'Demo complete';
-            btn.style.borderColor = '#3fb950';
-            btn.style.color = '#3fb950';
-            btn.onclick = () => {};
-            prompts.appendChild(btn);
+            // Final step: download button + complete indicator
+            const dl = document.createElement('button');
+            dl.className = 'starter-btn download';
+            dl.textContent = '\u2B07 Download exec_briefing_agent.py';
+            dl.onclick = downloadAgentFile;
+            prompts.appendChild(dl);
+
+            const done = document.createElement('button');
+            done.className = 'starter-btn complete';
+            done.textContent = 'Demo complete';
+            prompts.appendChild(done);
           }
 
           animating = false;
@@ -754,7 +955,6 @@ function resetDemo() {
   currentStep = -1;
   animating = false;
   const chat = document.getElementById('chat');
-  // Keep only the welcome message
   const msgs = chat.querySelectorAll('.msg:not(.system)');
   msgs.forEach(m => m.remove());
   document.getElementById('starter-prompts').innerHTML = '';
@@ -763,7 +963,7 @@ function resetDemo() {
   renderDots();
 }
 
-// Keyboard shortcut: Space or Enter to advance
+// Keyboard: Space or Enter to advance, Cmd+Shift+R to reset
 document.addEventListener('keydown', (e) => {
   if (e.code === 'Space' || e.code === 'Enter') {
     e.preventDefault();
