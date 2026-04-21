@@ -549,7 +549,14 @@
   #starter-prompts {
     display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
     max-width: 760px; margin: 12px auto 0; padding: 0 24px;
-    transition: opacity 0.3s, transform 0.3s;
+    max-height: 200px; overflow: hidden;
+    transition: max-height .22s ease, opacity .22s ease, margin-top .22s ease;
+  }
+  /* When the textarea grows multiline, the mouth row folds away so the
+     user has room to compose. Click-through disabled during collapse
+     so the animated-but-invisible pills can't be hit. */
+  body.input-multiline #starter-prompts {
+    max-height: 0; opacity: 0; margin-top: 0; pointer-events: none;
   }
   /* Mouth pills — unified blue to match the Send button so static seeds
      and dynamic twin.send/prompt actions read as one cohesive family. */
@@ -1774,7 +1781,13 @@
   const input = document.getElementById('input');
   input.addEventListener('input', () => {
     input.style.height = 'auto';
-    input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+    const h = Math.min(input.scrollHeight, 120);
+    input.style.height = h + 'px';
+    // Once the textarea grows past a single line, collapse the mouth
+    // pills so the user has room to compose. Threshold ~52px matches
+    // the single-line height (14px × 1.5 line-height + 28px padding +
+    // borders).
+    document.body.classList.toggle('input-multiline', h > 52);
   });
   input.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
@@ -1909,6 +1922,7 @@
 
     input.value = '';
     input.style.height = 'auto';
+    document.body.classList.remove('input-multiline');
     document.getElementById('send').disabled = true;
 
     appendMsg('user', text);
