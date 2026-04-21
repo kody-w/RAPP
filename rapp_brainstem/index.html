@@ -267,7 +267,7 @@
   .logs-label:hover { background: #161b22; color: #e6edf3; }
   .logs-label .arrow { transition: transform 0.2s; font-size: 8px; }
   .logs-label .arrow.open { transform: rotate(90deg); }
-  .logs-label .agent-name { color: #d2a8ff; }
+  .logs-label .agent-name { color: #58a6ff; }
   .agent-logs {
     padding: 8px 10px; background: #0d1117;
     font-size: 10px; color: #7ee787;
@@ -1805,8 +1805,17 @@
     if (logs) {
       const wrapper = document.createElement('div');
       wrapper.className = 'agent-logs-wrapper';
-      // Extract agent names from log lines like "[AgentName] result"
-      const agentNames = [...new Set((logs.match(/\[([^\]]+)\]/g) || []).map(m => m.slice(1, -1)))];
+      // Extract agent names from log lines like "[AgentName] result".
+      // Must be an alphanumeric identifier — previous /\[([^\]]+)\]/
+      // greedily captured JSON arrays like [{"id":...}] and painted the
+      // whole blob purple+uppercase in the collapsed label. Now we
+      // require a bare identifier (1–40 chars, letters/digits/_-) so
+      // bracketed JSON never qualifies.
+      const agentNames = [...new Set(
+        (logs.match(/\[([A-Za-z][A-Za-z0-9_\- ]{0,39})\]/g) || [])
+          .map(m => m.slice(1, -1).trim())
+          .filter(n => n && !n.includes('{') && !n.includes('"'))
+      )];
       const label = document.createElement('div');
       label.className = 'logs-label';
       const nameSpan = agentNames.length > 0
@@ -3000,15 +3009,24 @@
     if (twinMode && !portrait.classList.contains('active')) showTwin();
   }
 
+  // Mouth row holds AT MOST 3 pills. When the twin has suggestions they
+  // own the row (statics hide); when it has none, the 3 static starter
+  // prompts show as a fallback. This stops the 6-pill pile-up where
+  // statics + twin pills stacked every turn.
+  const MAX_PILLS = 3;
   function renderMouthPills(actions) {
     const row = document.getElementById('starter-prompts');
     if (!row) return;
     row.querySelectorAll('.twin-pill').forEach(el => el.remove());
-    if (!actions) return;
-    // All twin action kinds (send / prompt / open / toggle / highlight
-    // / rapp) surface as pills in the mouth row — that's how the twin
-    // "drives" the UI: one place the user clicks to accept a suggestion.
-    actions.forEach(a => {
+    const statics = row.querySelectorAll('.starter-btn:not(.twin-pill)');
+    const hasTwin = actions && actions.length > 0;
+
+    // Twin has the floor → hide statics. Twin silent → restore statics.
+    statics.forEach(s => { s.style.display = hasTwin ? 'none' : ''; });
+
+    if (!hasTwin) return;
+    const limited = actions.slice(0, MAX_PILLS);
+    limited.forEach(a => {
       const btn = document.createElement('button');
       btn.className = 'starter-btn twin-pill';
       const glyph = CHIP_GLYPH[a.kind] || '✨';
