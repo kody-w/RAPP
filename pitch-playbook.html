@@ -447,7 +447,7 @@ pre.cmd .green{color:var(--green)}
     <h2 class="animate d1" style="font-size:3rem">Send the agent. <span class="purple">Not a deck.</span></h2>
     <p class="big animate d2" style="margin:16px auto 48px;max-width:640px">Hand them the actual agent as a file. They drop it in a browser. It works.</p>
     <div class="pipeline animate d3" style="margin:0 auto 56px">
-      <a href="https://raw.githubusercontent.com/kody-w/RAPP/main/rapp_store/execbrief/singleton/execbrief_agent.py" download="execbrief_agent.py" class="step" style="border-color:var(--purple);text-decoration:none;color:inherit;cursor:pointer"><div class="emoji">📤</div><div class="name">Export</div><div class="role">Download the agent</div></a>
+      <div class="step" style="border-color:var(--purple);cursor:pointer" onclick="downloadAgent('https://raw.githubusercontent.com/kody-w/RAPP/main/rapp_store/execbrief/singleton/execbrief_agent.py','execbrief_agent.py')"><div class="emoji">📤</div><div class="name">Export</div><div class="role">Download the agent</div></div>
       <div class="arrow">→</div>
       <div class="step" style="border-color:var(--purple)"><div class="emoji">💬</div><div class="name">Teams</div><div class="role">Drop in chat</div></div>
       <div class="arrow">→</div>
@@ -498,7 +498,7 @@ agent sharing standard and what happens if we don't act</span>
     <h1 class="animate d1" style="font-size:3rem">It's live. <span class="grad">Try it now.</span></h1>
     <p class="big animate d2" style="margin:24px auto 40px;max-width:600px">One file. One drop. It runs.</p>
     <div class="btn-row animate d3">
-      <a href="https://raw.githubusercontent.com/kody-w/RAPP/main/rapp_store/execbrief/singleton/execbrief_agent.py" download="execbrief_agent.py" class="btn btn-primary" style="font-size:1.25rem;padding:18px 36px">📥 Download the agent</a>
+      <button class="btn btn-primary" style="font-size:1.25rem;padding:18px 36px" onclick="downloadAgent('https://raw.githubusercontent.com/kody-w/RAPP/main/rapp_store/execbrief/singleton/execbrief_agent.py','execbrief_agent.py')">📥 Download the agent</button>
     </div>
     <div class="btn-row animate d4" style="margin-top:12px">
       <a href="https://kody-w.github.io/RAPP/" class="btn btn-outline">RAPP Home</a>
@@ -590,6 +590,16 @@ function toggleMode(){
   const idx = visibleSlides.indexOf(prevActive);
   current = idx >= 0 ? idx : 0;
   showSlide(current);
+}
+
+function downloadAgent(url, filename) {
+  fetch(url).then(r => r.blob()).then(b => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(b);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
 }
 
 applyMode();
