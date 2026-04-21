@@ -1490,9 +1490,9 @@
   document.addEventListener('click', (e) => {
     const p = document.getElementById('agents-panel');
     const b = document.getElementById('agents-btn');
-    // Clicks inside the twin bubble (e.g. a twin-action that opens
-    // this panel) must not immediately close what they just opened.
-    if (e.target.closest && e.target.closest('#twin-bubble')) return;
+    // Clicks on twin surfaces (bubble OR twin-pill in the mouth row)
+    // must not immediately close what they just opened.
+    if (e.target.closest && (e.target.closest('#twin-bubble') || e.target.closest('.twin-pill'))) return;
     if (p.classList.contains('open') && !p.contains(e.target) && !b.contains(e.target)) {
       p.classList.remove('open');
     }
@@ -2005,9 +2005,10 @@
 
   document.addEventListener('click', (e) => {
     const panel = document.getElementById('settings-panel');
-    // Same twin-bubble exception as the agents panel — a twin-action
-    // that opens settings must not auto-close on the same click.
-    if (e.target.closest && e.target.closest('#twin-bubble')) return;
+    // Same twin exception as the agents panel — a twin-action (bubble or
+    // mouth-row pill) that opens settings must not auto-close on the
+    // same click.
+    if (e.target.closest && (e.target.closest('#twin-bubble') || e.target.closest('.twin-pill'))) return;
     if (!e.target.closest('.voice-wrapper') && panel.classList.contains('open')) {
       panel.classList.remove('open');
     }
@@ -2935,24 +2936,27 @@
 
   function runTwinAction(action, btn) {
     try {
-      if (action.kind === 'send') {
-        document.getElementById('input').value = action.body || '';
+      const kind = (action.kind || '').toLowerCase();
+      const inp = document.getElementById('input');
+      const textFor = () => action.body || action.label || action.target || '';
+      if (kind === 'send') {
+        inp.value = textFor();
+        if (!inp.value.trim()) return; // nothing to send
         sendMessage();
-      } else if (action.kind === 'prompt') {
-        const inp = document.getElementById('input');
-        inp.value = action.body || '';
+      } else if (kind === 'prompt') {
+        inp.value = textFor();
         inp.focus();
         inp.dispatchEvent(new Event('input'));
-      } else if (action.kind === 'open') {
+      } else if (kind === 'open') {
         if (action.target === 'settings') toggleSettingsPanel();
         else if (action.target === 'agents') toggleAgentsPanel();
         else if (action.target === 'binder' || action.target === 'browse') {
           toggleSettingsPanel();
           setTimeout(() => toggleSpSection('sp-rapps'), 150);
         }
-      } else if (action.kind === 'toggle') {
+      } else if (kind === 'toggle') {
         if (action.target === 'voice') toggleVoice();
-      } else if (action.kind === 'highlight') {
+      } else if (kind === 'highlight') {
         document.querySelectorAll('#agent-list-ul li').forEach(li => {
           if ((li.querySelector('.agent-name')?.textContent||'').toLowerCase().includes((action.target||'').toLowerCase())) {
             li.style.animation = 'twin-highlight-flash .6s ease 2';
@@ -2961,7 +2965,7 @@
             if (ap && !ap.classList.contains('open')) toggleAgentsPanel();
           }
         });
-      } else if (action.kind === 'rapp') {
+      } else if (kind === 'rapp') {
         fetch(`${API}/chat`, {
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({ user_input: `Use ${action.target}: ${action.body || ''}` })
@@ -2969,9 +2973,24 @@
           if (d.response) appendMsg('assistant', d.response, d.agent_logs || null);
           if (d.twin_response) renderTwin(d.twin_response);
         });
+      } else {
+        // Unknown / missing kind — never leave the user with a dead pill.
+        // Degrade to "send": push whatever text we have into the input and
+        // fire it as a normal turn. Works for LLM-invented kinds like
+        // "ask", "show", "refresh", etc.
+        const text = textFor();
+        if (text.trim()) {
+          inp.value = text;
+          sendMessage();
+        } else {
+          inp.focus();
+        }
       }
       btn.classList.add('twin-action-done');
-    } catch(e) { btn.classList.add('twin-action-fail'); }
+    } catch(e) {
+      console.warn('[twin] action failed', action, e);
+      btn.classList.add('twin-action-fail');
+    }
   }
 
   function resetTwin() {
