@@ -2223,24 +2223,43 @@
     return root;
   }
 
-  // Poll /card/<turn_id> every ~500ms while a turn is in flight. Each
-  // poll re-renders into the same slot — the card "moves" without any
-  // flicker because we swap DOM subtrees wholesale per tick (cheap at
-  // this size). Stops when the caller clears the interval.
+  // Poll /card/<turn_id> every ~500ms while a turn is in flight. Two
+  // rules keep the card from looking like it's reloading:
+  //   - we skip rendering entirely when the JSON hasn't changed since
+  //     the last tick (most polls during a slow stage return identical
+  //     state — rendering them anyway was the source of the flashing)
+  //   - the entrance animation (card-materialize) only plays on the
+  //     first render; update-renders strip the animation class so the
+  //     card mutates in place rather than replaying the fade-in each
+  //     time a stage flips
   function startCardPoller(turnId, slot) {
     let stopped = false;
+    let lastHash = '';
     const tick = async () => {
       if (stopped) return;
       try {
         const r = await fetch(`${API}/card/${turnId}`);
         if (r.ok) {
           const card = await r.json();
-          const rendered = renderIndexCard(card);
-          if (rendered && slot) {
-            slot.innerHTML = '';
-            slot.appendChild(rendered);
-            const chat = document.getElementById('chat');
-            chat.scrollTop = chat.scrollHeight;
+          const hash = JSON.stringify(card);
+          if (hash !== lastHash && slot) {
+            const rendered = renderIndexCard(card);
+            if (rendered) {
+              // Strip the entrance animation on updates so we don't
+              // replay the fade-in every tick; only the first render
+              // into an empty slot keeps it.
+              const isFirstRender = !slot.firstElementChild;
+              if (!isFirstRender) {
+                rendered.style.animation = 'none';
+              }
+              slot.innerHTML = '';
+              slot.appendChild(rendered);
+              if (isFirstRender) {
+                const chat = document.getElementById('chat');
+                chat.scrollTop = chat.scrollHeight;
+              }
+            }
+            lastHash = hash;
           }
         }
       } catch {}
