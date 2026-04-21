@@ -1806,15 +1806,15 @@
       const wrapper = document.createElement('div');
       wrapper.className = 'agent-logs-wrapper';
       // Extract agent names from log lines like "[AgentName] result".
-      // Must be an alphanumeric identifier — previous /\[([^\]]+)\]/
-      // greedily captured JSON arrays like [{"id":...}] and painted the
-      // whole blob purple+uppercase in the collapsed label. Now we
-      // require a bare identifier (1–40 chars, letters/digits/_-) so
-      // bracketed JSON never qualifies.
+      // Must be an identifier at the start of a line — earlier attempts
+      // let JSON blobs and markdown links ([Title](url) from the agent's
+      // own output) slip through and poison the collapsed label with
+      // story titles. Anchor to (start | newline), forbid spaces inside
+      // the brackets, and require a space after so markdown links
+      // ([Foo](url) — no space between `]` and `(`) never qualify.
       const agentNames = [...new Set(
-        (logs.match(/\[([A-Za-z][A-Za-z0-9_\- ]{0,39})\]/g) || [])
-          .map(m => m.slice(1, -1).trim())
-          .filter(n => n && !n.includes('{') && !n.includes('"'))
+        [...logs.matchAll(/(?:^|\n)\s*\[([A-Za-z][A-Za-z0-9_]{0,39})\](?=\s)/g)]
+          .map(m => m[1])
       )];
       const label = document.createElement('div');
       label.className = 'logs-label';
