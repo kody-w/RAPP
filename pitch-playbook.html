@@ -370,46 +370,20 @@ pre.cmd .green{color:var(--green)}
 <!-- ── SLIDE 6: ExecBrief Pipeline ── -->
 <div class="slide">
   <div class="slide-inner">
-    <h3 class="kicker animate"><span class="num-badge">05</span>The Demo Swarm</h3>
-    <h2 class="animate d1">ExecBrief Pipeline</h2>
-    <p class="animate d2" style="margin-bottom:8px">A four-agent pipeline that takes a business topic and produces a polished executive brief. Each agent has its own persona (SOUL prompt) and makes its own LLM call. Published to the RAPP store as a singleton.</p>
+    <h3 class="kicker animate"><span class="num-badge">05</span>See It In Action</h3>
+    <h2 class="animate d1">Four agents, one brief.</h2>
+    <p class="animate d2" style="margin-bottom:16px">You give it a topic. Four specialized agents work in sequence — each with its own expertise — and hand you a polished executive brief in under a minute.</p>
     <div class="pipeline animate d3">
-      <div class="step"><div class="emoji">🔭</div><div class="name">Scout</div><div class="role">Research analyst</div></div>
+      <div class="step"><div class="emoji">🔭</div><div class="name">Scout</div><div class="role">Gathers intelligence</div></div>
       <div class="arrow">→</div>
-      <div class="step"><div class="emoji">🔬</div><div class="name">Analyst</div><div class="role">Chief analyst</div></div>
+      <div class="step"><div class="emoji">🔬</div><div class="name">Analyst</div><div class="role">Finds the insight</div></div>
       <div class="arrow">→</div>
-      <div class="step"><div class="emoji">🎯</div><div class="name">Strategist</div><div class="role">VP of Strategy</div></div>
+      <div class="step"><div class="emoji">🎯</div><div class="name">Strategist</div><div class="role">Frames the decision</div></div>
       <div class="arrow">→</div>
-      <div class="step"><div class="emoji">✍️</div><div class="name">Writer</div><div class="role">Exec comms director</div></div>
+      <div class="step"><div class="emoji">✍️</div><div class="name">Writer</div><div class="role">Delivers the brief</div></div>
     </div>
-    <div class="cols animate d4" style="margin-top:8px">
-      <div class="card">
-        <div class="label">Pipeline behavior</div>
-        <ul>
-          <li><strong>Scout</strong> — structured intelligence brief: Situation, Landscape, Signals, Gaps</li>
-          <li><strong>Analyst</strong> — extracts Key Insights, Risks, Opportunities, Tension Map</li>
-          <li><strong>Strategist</strong> — frames the problem and produces exactly 3 recommendations</li>
-          <li><strong>Writer</strong> — composes a sub-400-word executive brief with one clear ask</li>
-        </ul>
-        <p style="margin-top:10px;font-size:.78rem;color:var(--muted)">4 LLM calls per invocation · ~45s wall time · Output: one polished brief</p>
-      </div>
-      <div>
-        <h4 style="font-size:.85rem;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:6px">Store entry</h4>
-        <div class="file-tree" style="margin:0">
-          <span class="dir">rapp_store/execbrief/</span><br>
-          &ensp;&ensp;<span class="file">manifest.json</span><br>
-          &ensp;&ensp;<span class="file">README.md</span><br>
-          &ensp;&ensp;<span class="dir">singleton/</span><br>
-          &ensp;&ensp;&ensp;&ensp;<span class="file">execbrief_agent.py</span> <span class="note">← 489 lines</span><br>
-          &ensp;&ensp;<span class="dir">source/</span><br>
-          &ensp;&ensp;&ensp;&ensp;<span class="file">brief_scout_agent.py</span><br>
-          &ensp;&ensp;&ensp;&ensp;<span class="file">brief_analyst_agent.py</span><br>
-          &ensp;&ensp;&ensp;&ensp;<span class="file">brief_strategist_agent.py</span><br>
-          &ensp;&ensp;&ensp;&ensp;<span class="file">brief_writer_agent.py</span><br>
-          &ensp;&ensp;<span class="dir">tools/</span><br>
-          &ensp;&ensp;&ensp;&ensp;<span class="file">build.py</span> <span class="note">← re-converge</span>
-        </div>
-      </div>
+    <div class="highlight-box animate d4" style="margin-top:24px">
+      <p><strong>The meta-move:</strong> This pipeline produces the executive brief arguing for the very tool that built it. The medium is the message.</p>
     </div>
   </div>
 </div>
@@ -451,24 +425,24 @@ pre.cmd .green{color:var(--green)}
 <div class="slide">
   <div class="slide-inner">
     <h3 class="kicker animate"><span class="num-badge">07</span>Agent Management</h3>
-    <h2 class="animate d1">Enable/Disable Toggle</h2>
-    <p class="animate d2" style="margin-bottom:16px">The brainstem now supports per-agent enable/disable toggles. Files stay on disk — they're just skipped during load. This lets you curate which swarms are active for any given demo or workflow.</p>
+    <h2 class="animate d1">One Click. <span class="green">On or Off.</span></h2>
+    <p class="animate d2" style="margin-bottom:16px">Every agent shows up in the panel with a toggle. Turn it on, it's live. Turn it off, it's sleeping — nothing deleted, nothing lost. Curate exactly which capabilities are active for any workflow.</p>
     <div class="cols animate d3">
       <div>
-        <h4 style="font-size:.85rem;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:10px">How it works</h4>
+        <h4 style="font-size:.85rem;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:10px">What you get</h4>
         <ul class="feature-list" style="margin-top:0">
-          <li><span class="icon">💾</span><div><strong>Backend:</strong> <code>.agents_disabled.json</code> in the agents directory tracks disabled filenames</div></li>
-          <li><span class="icon">🔌</span><div><strong>API:</strong> <code>POST /agents/&lt;filename&gt;/toggle</code> flips state</div></li>
-          <li><span class="icon">🔄</span><div><strong>Load:</strong> <code>load_agents()</code> skips files listed in the disabled set</div></li>
-          <li><span class="icon">🎛️</span><div><strong>UI:</strong> Green toggle switch next to each agent in the panel</div></li>
+          <li><span class="icon">🎛️</span><div><strong>Instant control</strong> — toggle any agent on or off from the sidebar</div></li>
+          <li><span class="icon">🛡️</span><div><strong>Non-destructive</strong> — disabled agents stay intact, ready to reactivate</div></li>
+          <li><span class="icon">💾</span><div><strong>Persistent</strong> — your choices survive restarts and updates</div></li>
+          <li><span class="icon">🎯</span><div><strong>Per-workflow</strong> — run a lean stack for demos, full suite for development</div></li>
         </ul>
       </div>
       <div>
-        <h4 style="font-size:.85rem;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:10px">Visual</h4>
-        <div class="toggle-demo"><div class="toggle-switch"></div><div class="toggle-label"><span class="on">execbrief_agent.py — ExecBrief</span></div></div>
-        <div class="toggle-demo"><div class="toggle-switch"></div><div class="toggle-label"><span class="on">hacker_news_agent.py — HackerNews</span></div></div>
-        <div class="toggle-demo"><div class="toggle-switch off"></div><div class="toggle-label"><span class="off">bookfactory_agent.py — BookFactory</span></div></div>
-        <p style="font-size:.78rem;color:var(--muted);margin-top:10px;text-align:center">One click to toggle. Non-destructive. State persists across restarts.</p>
+        <h4 style="font-size:.85rem;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:10px">Live preview</h4>
+        <div class="toggle-demo"><div class="toggle-switch"></div><div class="toggle-label"><span class="on">ExecBrief</span></div></div>
+        <div class="toggle-demo"><div class="toggle-switch"></div><div class="toggle-label"><span class="on">HackerNews</span></div></div>
+        <div class="toggle-demo"><div class="toggle-switch off"></div><div class="toggle-label"><span class="off">BookFactory</span></div></div>
+        <p style="font-size:.78rem;color:var(--muted);margin-top:10px;text-align:center">One click. That's it.</p>
       </div>
     </div>
   </div>
