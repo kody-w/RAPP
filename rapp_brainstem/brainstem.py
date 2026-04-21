@@ -48,37 +48,67 @@ TWIN_MODE   = os.getenv("TWIN_MODE", "true").lower() == "true"
 VOICE_ZIP_PW = os.getenv("VOICE_ZIP_PASSWORD", "").encode() or None
 
 _BRAINSTEM_DIR = os.path.dirname(os.path.abspath(__file__))
-_GROUPS_FILE = os.path.join(_BRAINSTEM_DIR, ".agent_groups.json")
-_ACTIVE_GROUP = None  # None = "all agents", else a group name string
+_SWARMS_FILE = os.path.join(_BRAINSTEM_DIR, ".swarms.json")
+_ACTIVE_SWARMS = None  # None = not yet loaded from disk; [] = "all agents"
 
-def _read_groups() -> dict:
-    if os.path.exists(_GROUPS_FILE):
+def _read_swarms():
+    # Migrate legacy .agent_groups.json on first read
+    legacy = os.path.join(_BRAINSTEM_DIR, ".agent_groups.json")
+    if not os.path.exists(_SWARMS_FILE) and os.path.exists(legacy):
         try:
-            with open(_GROUPS_FILE) as f:
-                return json.load(f)
+            with open(legacy) as f:
+                old = json.load(f)
+            migrated = {"schema": "rapp-swarms/1.0", "active": [], "swarms": {}}
+            for name, grp in old.get("groups", {}).items():
+                migrated["swarms"][name] = {
+                    "agents": grp.get("agents", []),
+                    "mode": "stack",
+                    "soul_override": grp.get("soul_override"),
+                    "memory_namespace": grp.get("memory_namespace", name),
+                }
+            if old.get("active"):
+                migrated["active"] = [old["active"]]
+            with open(_SWARMS_FILE, "w") as f:
+                json.dump(migrated, f, indent=2)
+            return migrated
         except Exception:
             pass
-    return {"schema": "rapp-groups/1.0", "active": None, "groups": {}}
+    if os.path.exists(_SWARMS_FILE):
+        try:
+            with open(_SWARMS_FILE) as f:
+                data = json.load(f)
+            if isinstance(data.get("active"), str):
+                data["active"] = [data["active"]] if data["active"] else []
+            return data
+        except Exception:
+            pass
+    return {"schema": "rapp-swarms/1.0", "active": [], "swarms": {}}
 
-def _write_groups(data: dict):
-    data.setdefault("schema", "rapp-groups/1.0")
-    with open(_GROUPS_FILE, "w") as f:
+def _write_swarms(data):
+    data.setdefault("schema", "rapp-swarms/1.0")
+    if isinstance(data.get("active"), str):
+        data["active"] = [data["active"]] if data["active"] else []
+    with open(_SWARMS_FILE, "w") as f:
         json.dump(data, f, indent=2)
 
-def _get_active_group():
-    global _ACTIVE_GROUP
-    if _ACTIVE_GROUP is not None:
-        return _ACTIVE_GROUP
-    gdata = _read_groups()
-    _ACTIVE_GROUP = gdata.get("active")
-    return _ACTIVE_GROUP
+def _get_active_swarms():
+    global _ACTIVE_SWARMS
+    if _ACTIVE_SWARMS is not None:
+        return _ACTIVE_SWARMS
+    sdata = _read_swarms()
+    _ACTIVE_SWARMS = sdata.get("active", []) or []
+    return _ACTIVE_SWARMS
 
-def _set_active_group(name):
-    global _ACTIVE_GROUP
-    _ACTIVE_GROUP = name
-    gdata = _read_groups()
-    gdata["active"] = name
-    _write_groups(gdata)
+def _set_active_swarms(names):
+    global _ACTIVE_SWARMS
+    if names is None:
+        names = []
+    if isinstance(names, str):
+        names = [names] if names else []
+    _ACTIVE_SWARMS = names
+    sdata = _read_swarms()
+    sdata["active"] = names
+    _write_swarms(sdata)
 
 _version_file = os.path.join(_BRAINSTEM_DIR, "VERSION")
 VERSION = open(_version_file).read().strip() if os.path.exists(_version_file) else "0.0.0"
@@ -431,18 +461,19 @@ _soul_cache = None
 
 def load_soul():
     global _soul_cache
-    active_group = _get_active_group()
-    if active_group:
-        gdata = _read_groups()
-        grp = gdata.get("groups", {}).get(active_group, {})
-        override = grp.get("soul_override")
-        if override:
-            override_path = os.path.join(_BRAINSTEM_DIR, override) if not os.path.isabs(override) else override
-            if os.path.isfile(override_path):
-                with open(override_path, "r") as f:
-                    soul = f.read().strip()
-                print(f"[brainstem] Soul loaded (group override): {override_path}")
-                return soul
+    active_swarms = _get_active_swarms()
+    if active_swarms:
+        sdata = _read_swarms()
+        for sname in active_swarms:
+            swarm = sdata.get("swarms", {}).get(sname, {})
+            override = swarm.get("soul_override")
+            if override:
+                override_path = os.path.join(_BRAINSTEM_DIR, override) if not os.path.isabs(override) else override
+                if os.path.isfile(override_path):
+                    with open(override_path, "r") as f:
+                        soul = f.read().strip()
+                    print(f"[brainstem] Soul loaded (swarm override: {sname}): {override_path}")
+                    return soul
     if _soul_cache is not None:
         return _soul_cache
     if not os.path.exists(SOUL_PATH):
@@ -651,28 +682,29 @@ def load_agents():
     files = glob.glob(pattern)
     disabled = _read_disabled()
 
-    active_group = _get_active_group()
-    group_filter = None
-    if active_group:
-        gdata = _read_groups()
-        grp = gdata.get("groups", {}).get(active_group)
-        if grp:
-            group_filter = set(grp.get("agents", []))
+    active_swarms = _get_active_swarms()
+    swarm_filter = None
+    if active_swarms:
+        sdata = _read_swarms()
+        swarm_filter = set()
+        for sname in active_swarms:
+            swarm = sdata.get("swarms", {}).get(sname, {})
+            swarm_filter.update(swarm.get("agents", []))
 
     for filepath in files:
         filename = os.path.basename(filepath)
         if filename in disabled:
             print(f"[brainstem] Agent skipped (disabled): {filename}")
             continue
-        if group_filter is not None and filename not in group_filter and filename != "brainstem_admin_agent.py":
+        if swarm_filter is not None and filename not in swarm_filter and filename != "brainstem_admin_agent.py":
             continue
         loaded = _load_agent_from_file(filepath)
         for name, instance in loaded.items():
             agents[name] = instance
             print(f"[brainstem] Agent loaded: {name}")
 
-    group_label = active_group or "all"
-    print(f"[brainstem] {len(agents)} agent(s) ready, {len(disabled)} disabled, group={group_label}.")
+    swarm_label = "+".join(active_swarms) if active_swarms else "all"
+    print(f"[brainstem] {len(agents)} agent(s) ready, {len(disabled)} disabled, swarms={swarm_label}.")
     return agents
 
 # ── LLM call ─────────────────────────────────────────────────────────────────
@@ -1525,7 +1557,7 @@ def health():
             "agents": list(agents.keys()),
             "copilot": "\u2713" if copilot_ok else "pending",
             "brainstem_dir": _BRAINSTEM_DIR,
-            "active_group": _get_active_group(),
+            "active_swarms": _get_active_swarms(),
         })
     else:
         return jsonify({
@@ -1534,7 +1566,7 @@ def health():
             "model":  MODEL,
             "soul":   SOUL_PATH if soul_ok else "missing",
             "agents": list(agents.keys()),
-            "active_group": _get_active_group(),
+            "active_swarms": _get_active_swarms(),
         })
 
 @app.route("/debug/auth", methods=["GET"])
@@ -1565,50 +1597,57 @@ def debug_auth():
 
     return jsonify(result)
 
-# ── Agent Groups API ──────────────────────────────────────────────────────────
+# ── Swarms API ────────────────────────────────────────────────────────────────
 
-@app.route("/api/groups", methods=["GET"])
-def api_groups_list():
-    gdata = _read_groups()
-    return jsonify(gdata)
+@app.route("/api/swarms", methods=["GET"])
+def api_swarms_list():
+    sdata = _read_swarms()
+    return jsonify(sdata)
 
-@app.route("/api/groups/active", methods=["POST"])
-def api_groups_set_active():
+@app.route("/api/swarms/active", methods=["POST"])
+def api_swarms_set_active():
     data = request.get_json(force=True) or {}
-    name = data.get("group")  # None = show all
-    if name:
-        gdata = _read_groups()
-        if name not in gdata.get("groups", {}):
-            return jsonify({"error": f"group '{name}' not found"}), 404
-    _set_active_group(name)
-    return jsonify({"status": "ok", "active": name})
+    names = data.get("swarms", [])
+    if isinstance(names, str):
+        names = [names] if names else []
+    if names is None:
+        names = []
+    sdata = _read_swarms()
+    for n in names:
+        if n not in sdata.get("swarms", {}):
+            return jsonify({"error": f"swarm '{n}' not found"}), 404
+    _set_active_swarms(names)
+    return jsonify({"status": "ok", "active": names})
 
-@app.route("/api/groups/<name>", methods=["PUT"])
-def api_groups_upsert(name):
+@app.route("/api/swarms/<name>", methods=["PUT"])
+def api_swarms_upsert(name):
     data = request.get_json(force=True) or {}
-    gdata = _read_groups()
-    groups = gdata.setdefault("groups", {})
-    existing = groups.get(name, {})
-    groups[name] = {
+    sdata = _read_swarms()
+    swarms = sdata.setdefault("swarms", {})
+    existing = swarms.get(name, {})
+    swarms[name] = {
         "agents": data.get("agents", existing.get("agents", [])),
+        "mode": data.get("mode", existing.get("mode", "stack")),
         "soul_override": data.get("soul_override", existing.get("soul_override")),
         "memory_namespace": data.get("memory_namespace", existing.get("memory_namespace", name)),
     }
-    _write_groups(gdata)
-    return jsonify({"status": "ok", "group": name, "data": groups[name]})
+    _write_swarms(sdata)
+    return jsonify({"status": "ok", "swarm": name, "data": swarms[name]})
 
-@app.route("/api/groups/<name>", methods=["DELETE"])
-def api_groups_delete(name):
-    gdata = _read_groups()
-    groups = gdata.get("groups", {})
-    if name not in groups:
-        return jsonify({"error": f"group '{name}' not found"}), 404
-    del groups[name]
-    if gdata.get("active") == name:
-        gdata["active"] = None
-        global _ACTIVE_GROUP
-        _ACTIVE_GROUP = None
-    _write_groups(gdata)
+@app.route("/api/swarms/<name>", methods=["DELETE"])
+def api_swarms_delete(name):
+    sdata = _read_swarms()
+    swarms = sdata.get("swarms", {})
+    if name not in swarms:
+        return jsonify({"error": f"swarm '{name}' not found"}), 404
+    del swarms[name]
+    active = sdata.get("active", [])
+    if name in active:
+        active.remove(name)
+        sdata["active"] = active
+        global _ACTIVE_SWARMS
+        _ACTIVE_SWARMS = active
+    _write_swarms(sdata)
     return jsonify({"status": "ok", "deleted": name})
 
 
@@ -1684,7 +1723,7 @@ def api_egg_export():
             add_tree(data_dir, ".brainstem_data")
 
         soul_text = ""
-        for config_file in ["soul.md", ".agent_groups.json", ".agents_disabled.json"]:
+        for config_file in ["soul.md", ".swarms.json", ".agents_disabled.json"]:
             full = os.path.join(base, config_file) if config_file != ".agents_disabled.json" else os.path.join(agents_dir, config_file)
             if config_file == ".agents_disabled.json":
                 full = _DISABLED_FILE
@@ -1696,7 +1735,7 @@ def api_egg_export():
                     soul_text = open(full, "r", encoding="utf-8").read()
 
         now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-        gdata = _read_groups()
+        sdata = _read_swarms()
 
         twin_bundle = {
             "schema": "rapp-twin/1.0",
@@ -1705,8 +1744,8 @@ def api_egg_export():
             "origin": "brainstem-egg",
             "exported_at": now,
             "soul": soul_text,
-            "groups": gdata.get("groups", {}),
-            "active_group": gdata.get("active"),
+            "swarm_configs": sdata.get("swarms", {}),
+            "active_swarms": sdata.get("active", []),
             "swarms": [{
                 "schema": "rapp-swarm/1.0",
                 "swarm_guid": hashlib.sha256(("egg-swarm-" + now).encode()).hexdigest()[:36],
@@ -1772,7 +1811,7 @@ def api_egg_import():
                     dest = os.path.join(base, "agents", entry[len("agents/"):])
                 elif entry.startswith(".brainstem_data/"):
                     dest = os.path.join(base, entry)
-                elif entry in ("soul.md", ".agent_groups.json"):
+                elif entry in ("soul.md", ".swarms.json", ".agent_groups.json"):
                     dest = os.path.join(base, entry)
                 elif entry == ".agents_disabled.json":
                     dest = _DISABLED_FILE
@@ -1784,10 +1823,10 @@ def api_egg_import():
                     out.write(zf.read(entry))
                 restored.append(entry)
 
-            global _ACTIVE_GROUP
-            _ACTIVE_GROUP = None
-            gdata = _read_groups()
-            _ACTIVE_GROUP = gdata.get("active")
+            global _ACTIVE_SWARMS
+            _ACTIVE_SWARMS = None
+            sdata = _read_swarms()
+            _ACTIVE_SWARMS = sdata.get("active", []) or []
 
         return jsonify({
             "status": "ok",
