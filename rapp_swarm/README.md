@@ -3,7 +3,7 @@
 `rapp_swarm/` is the Tier 2 deploy target — the same brainstem agent loop
 running in Azure Functions, backed by Azure OpenAI and an Azure Storage
 account. Same wire surface as the local brainstem (deploy/agent/seal/
-snapshot/T2T) plus an LLM-driven `/api/chat` that mirrors the OG
+snapshot) plus an LLM-driven `/api/chat` that mirrors the OG
 community brainstem's `businessinsightbot_function` shape.
 
 ## Layout
@@ -104,7 +104,6 @@ All routes prefixed with `/api/`:
 | POST     | `swarm/{guid}/snapshot`                     | Create snapshot                                   |
 | GET      | `swarm/{guid}/snapshots`                    | List snapshots                                    |
 | POST     | `swarm/{guid}/snapshots/{snap}/agent`       | Read-only agent call against snapshot             |
-| GET/POST | `t2t/identity`, `t2t/peers`, `t2t/handshake`, `t2t/message`, `t2t/invoke` | Twin-to-twin protocol |
 | GET      | `llm/status`                                | Which LLM provider is wired                       |
 
 ## Why a separate Tier 2?

@@ -11,10 +11,8 @@
   },
   "collaboration_layers": {
     "A2A": "agent-to-agent within one swarm — in-process, no auth (the LLM orchestrates)",
-    "S2S": "swarm-to-swarm within one cloud — call /api/swarm/{other_guid}/agent, owner-consented",
-    "C2C": "cloud-to-cloud, same human — multiple clouds owned by the same identity collaborate",
-    "T2T": "twin-to-twin between humans — HMAC-authenticated peer protocol via /api/t2t/*",
-    "D2D": "daemon-to-daemon — implementation underlayer (the actual processes carrying T2T)"
+    "S2S": "swarm-to-swarm within one cloud — invoke_swarm_agent on a sibling swarm directory",
+    "C2C": "cloud-to-cloud, same human — multiple clouds owned by the same identity collaborate"
   },
   "tether_estate": "Each cloud can extend its capability surface via tethers to the user's other devices (laptop filesystem, phone camera, home server, etc.). The cloud is the orchestration; the tethered devices are the twin's estate.",
 

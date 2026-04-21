@@ -46,7 +46,6 @@ rapp_brainstem/        Tier 1 — local Flask server (:7071) + browser UI
   web/                 Browser UI served at /
   local_storage.py     Local shim for Azure File Storage (JSON files under .brainstem_data/)
   twin.py              Digital twin calibration (probe/judgment cycle)
-  workspace.py         Per-twin filesystem workspace (~/.rapp-twins/<name>/)
 
 rapp_swarm/            Tier 2 — Azure Functions cloud deployment
   function_app.py      Same logic as brainstem.py, multi-backend LLM support

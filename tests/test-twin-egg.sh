@@ -5,8 +5,8 @@
 #   1. Pack captures a TWINS_HOME into a single .egg zipfile
 #   2. Manifest carries schema=rapp-egg/1.0, twins[], file SHA-256 hashes
 #   3. Unpack restores byte-identical state into a fresh dir
-#   4. Round-trip preserves: workspace.json, t2t/identity, peers, swarms,
-#      documents, inbox, outbox, AND .shared/ (in-flight pipeline state)
+#   4. Round-trip preserves: workspace.json, swarms, documents, inbox,
+#      outbox, AND .shared/ (in-flight pipeline state)
 #   5. Transient files (server.pid, server.log) are excluded
 #   6. info command reads manifest without extracting
 
@@ -54,22 +54,18 @@ EGG=/tmp/rapp-egg-test.egg
 chmod -R u+w $SRC $DST 2>/dev/null || true
 rm -rf $SRC $DST $EGG
 
-mkdir -p $SRC/kody/{swarms/abc,t2t/conversations,documents,inbox,outbox}
-mkdir -p $SRC/molly/{swarms,t2t,documents}
+mkdir -p $SRC/kody/{swarms/abc,documents,inbox,outbox}
+mkdir -p $SRC/molly/{swarms,documents}
 mkdir -p $SRC/.shared/book-factory
 
 # Kody twin state
 echo '{"name":"kody","port":7142,"created_at":"2026-04-19T00:00:00Z"}' > $SRC/kody/workspace.json
-echo '{"cloud_id":"kodyhex","secret":"kodysecret","handle":"@kody.local"}' > $SRC/kody/t2t/identity.json
-echo '{"peers":[{"cloud_id":"mollyhex","handle":"@molly.local"}]}'         > $SRC/kody/t2t/peers.json
-echo '{"type":"message_in","body":{"text":"hi"}}'                          > $SRC/kody/t2t/conversations/conv1.jsonl
 echo 'kody source notes'                                                    > $SRC/kody/documents/notes.md
 echo 'inbox-doc-from-molly'                                                 > $SRC/kody/inbox/molly_q3.md
 echo '{"name":"@bf/sample"}'                                                > $SRC/kody/swarms/abc/manifest.json
 
 # Molly twin state
 echo '{"name":"molly","port":7094}'           > $SRC/molly/workspace.json
-echo '{"cloud_id":"mollyhex","secret":"mollysecret","handle":"@molly.local"}' > $SRC/molly/t2t/identity.json
 echo 'molly contact list'                     > $SRC/molly/documents/contacts.md
 
 # Shared book-factory state (the kind of artifact the user wants captured)
@@ -138,12 +134,6 @@ echo "--- byte-identical restore checks ---"
 diff -q $SRC/kody/workspace.json   $DST/kody/workspace.json   >/dev/null && \
     { echo "  ✓ kody/workspace.json bit-identical"; PASS=$((PASS+1)); } || \
     { echo "  ✗ kody/workspace.json differs"; FAIL=$((FAIL+1)); FAIL_NAMES+=("workspace.json"); }
-diff -q $SRC/kody/t2t/identity.json $DST/kody/t2t/identity.json >/dev/null && \
-    { echo "  ✓ kody/t2t/identity.json bit-identical"; PASS=$((PASS+1)); } || \
-    { echo "  ✗ kody/t2t/identity.json differs"; FAIL=$((FAIL+1)); FAIL_NAMES+=("identity"); }
-diff -q $SRC/kody/t2t/peers.json    $DST/kody/t2t/peers.json    >/dev/null && \
-    { echo "  ✓ kody/t2t/peers.json bit-identical"; PASS=$((PASS+1)); } || \
-    { echo "  ✗ peers differ"; FAIL=$((FAIL+1)); FAIL_NAMES+=("peers"); }
 diff -q $SRC/kody/documents/notes.md $DST/kody/documents/notes.md >/dev/null && \
     { echo "  ✓ kody/documents/notes.md bit-identical"; PASS=$((PASS+1)); } || \
     { echo "  ✗ documents differ"; FAIL=$((FAIL+1)); FAIL_NAMES+=("docs"); }

@@ -175,7 +175,309 @@ matter as much as the fact that it changed.
 
 ---
 
-## Article IX — Amendments
+## Article IX — Swarms Are Directories, Not Routes
+
+A **swarm** is local state: a directory containing `agents/`, a soul,
+and a memory namespace. The brainstem runs against that state. It is
+not a runtime abstraction, a routing layer, or a multi-tenant service.
+
+> **A swarm is a directory. Changing swarm = changing which directory
+> the brainstem reads. That is the whole concept.**
+
+Concretely:
+
+- Swarm operations (deploy, list, switch, invoke a sibling, seal,
+  snapshot) are `*_agent.py` files that read and write state on disk.
+  They are **not** classes in `brainstem.py`, REST routes, or
+  middleware.
+- Those agents must be **drop-in compatible with any brainstem.py** —
+  including older versions in the wild. They use `BasicAgent` +
+  stdlib + filesystem only. Copying them into a six-month-old
+  brainstem must still work.
+- The filesystem layout IS the contract. Two swarms with the same
+  directory shape behave identically under the same brainstem.
+
+### What this rules out
+
+- ❌ A `SwarmStore` class or equivalent as a first-class object in
+  `brainstem.py`.
+- ❌ `/api/swarm/<guid>/...` routes or any new HTTP surface for swarm
+  ops. Everything routes through `/chat` + an agent.
+- ❌ Swarm-awareness baked into the brainstem core. If a swarm agent
+  needs a new brainstem symbol to function, the design is wrong —
+  redesign the agent.
+- ❌ Runtime swarm state held in memory beyond a single request. Disk
+  is authoritative; the brainstem is stateless between calls.
+
+If you catch yourself designing a swarm-aware subsystem, stop and ask:
+could this be a directory layout plus an agent? If yes, do that.
+
+---
+
+## Article X — Tier Parity Is a `/chat` Contract, Not a Transport
+
+The brainstem-side of the agent portability guarantee (Article IV):
+**`rapp_brainstem/brainstem.py` and `rapp_swarm/function_app.py` must
+behave identically on the `/chat` *contract*.** The surface a caller
+touches is the invariant; what sits below it can legitimately differ.
+
+> **Same `/chat` contract. Same prompt split. Same agent contract.
+> Same state layout. Transport differences below the contract are OK.**
+
+What must be identical across tiers:
+
+- Request envelope (`user_input`, `conversation_history`, `session_id`).
+- Response envelope (`response`, `voice_response`, `twin_response`,
+  `session_id`, `agent_logs`, `provider`, `model`).
+- Tool-calling loop shape — call LLM → execute tool calls → loop,
+  capped at a small number of rounds, with the same per-round logging.
+- `|||VOICE|||` / `|||TWIN|||` split (and the twin sub-tags).
+- Agent contract (`BasicAgent` + `perform()`, Article IV). Agents that
+  run on Tier 1 must run unmodified on Tier 2.
+- State layout (`.brainstem_data/` on Tier 1, `BRAINSTEM_HOME` on
+  Tier 2; same directory shape inside).
+
+What may legitimately differ:
+
+- **Mount point for state.** Local disk vs. Azure Files.
+- **LLM transport — by design.** Tier 1 stays Copilot-only with the
+  `gh` CLI auth chain — one auth, one provider, one training story,
+  zero-config install. Tier 2 is where the user picks an AI for their
+  cloud deployment (Azure OpenAI / OpenAI / Anthropic / whatever the
+  deploy target gives access to). Pushing to the RAPP cloud swarm is
+  the moment the user declares *which AI runs there*. That decision
+  lives on the cloud side because it's the cloud operator's
+  constraint, not the learner's.
+
+### What this rules out
+
+- ❌ A Tier-2-only server stack that duplicates `brainstem.py`'s
+  responsibilities with drift. If Tier 2 needs a capability, it
+  lands in an agent or (for boot/loop/route concerns) in a shared
+  vendored module.
+- ❌ Routes that exist on one tier but not the other. `/chat` is the
+  surface; both tiers expose it and route identically.
+- ❌ Adding an LLM provider to Tier 1 that breaks the one-liner
+  install. Default posture: don't — provider choice belongs on the
+  cloud-deploy side where it already lives.
+- ❌ "It works in Tier 1, we'll figure out Tier 2 later." Contract
+  parity is asserted per-PR, not deferred.
+
+---
+
+## Article XI — The Root Is the Engine's Public Surface; the Brainstem's Workspace Is Separate
+
+The root of `rapp_brainstem/` is the first thing a new user sees when
+they clone the repo. Every file there competes for their attention.
+A sprawling root signals complexity and pushes adoption downhill.
+
+Two surfaces, two masters:
+
+> **`agents/` + root = the engine's public surface (what we ship
+> to the user). The brainstem's workspace = where the brainstem
+> dumps scratch while working for the user. Don't collapse them.**
+
+### What belongs at root (the engine's surface)
+
+- `brainstem.py`, `soul.md`, `VERSION`, `requirements.txt`
+- `start.sh` / `start.ps1` — the one-liner's launchers
+- `README.md`, `CLAUDE.md`, `CONSTITUTION.md` — docs + governance
+- `index.html` — landing page
+- **`agents/`** — starter agents. Load-bearing for the training
+  story: users clone the repo, open `agents/`, and see what a RAPP
+  agent looks like. Drag-and-drop visible, editable, the reference
+  implementation. **Do not move this into the brainstem workspace**
+  — it would bury what the user is meant to learn from.
+- `utils/`, `web/` — cohesive support directories (`utils/` holds
+  `llm.py`, `twin.py`, `local_storage.py`, `_basic_agent_shim.py`,
+  `index_card.py`). `agents/basic_agent.py` is the base class.
+
+### What belongs in the brainstem's workspace (scratch while running)
+
+Everything **written by the brainstem as it serves the user** — as
+opposed to edited by the user or shipped by the engine:
+
+- Per-user memory files, binder state, twin calibration logs.
+- Deployed sibling swarms (`swarms/<guid>/…`), snapshots, sealed
+  markers, active-swarm pointers.
+- Hatched project scaffolds (Article VI-A).
+
+Pathing follows the memory-agent pattern — the same shape the memory
+agents have used since day one. One env var overrides, one simple
+home-relative default, no cwd heuristics:
+
+```python
+def _memory_path():
+    p = os.environ.get("BRAINSTEM_MEMORY_PATH")
+    return p if p else os.path.expanduser("~/.brainstem/memory.json")
+```
+
+Category conventions today:
+
+- `~/.brainstem/memory.json` — `BRAINSTEM_MEMORY_PATH` override.
+- `~/.brainstem/swarms/<guid>/…` — `BRAINSTEM_SWARMS_PATH` override.
+- New categories get the same shape: one env var, one home-relative
+  default. Tier 2 sets the env var to an Azure Files mount so the
+  same agents serve isolated tenants without modification.
+
+### What this rules out
+
+- ❌ Dropping `foo_agent.py`, `scratch.py`, or `admin_tool.py` at
+  root. Agent files go in `agents/` (or `agents/experimental/`).
+- ❌ Top-level JSON state files (`.swarms.json`, `.agent_groups.json`,
+  `.binder.json`) next to `brainstem.py`. These are runtime state;
+  they belong in the brainstem's workspace and are gitignored.
+- ❌ Moving `agents/` out of root. It is the training surface.
+- ❌ Adding a new top-level directory "because it doesn't fit
+  anywhere else." Give it a workspace category instead.
+- ❌ Seeding default runtime state on install. The user's twin
+  starts empty; the engine seeds nothing into the workspace.
+- ❌ Three-tier cwd/home/env fallbacks for path resolution. Match
+  the memory-agent pattern: one env var, one default.
+
+### Why two surfaces
+
+The engine's root is the curriculum. New users read it, understand
+what the platform is, and copy-paste agents to learn. The brainstem's
+workspace is the operator's reality — memory, state, deployed swarms,
+sessions. Keeping them separate means the workspace can grow
+indefinitely without ever obscuring the learning path.
+
+---
+
+## Article XII — `agents/` IS the User's Workspace
+
+`agents/` is **the user's entire operational workspace** for setting up
+and managing their brainstem. To add a capability, organize a swarm,
+turn something off — all of it happens inside `agents/`. Engine files
+(`brainstem.py`, `VERSION`, `soul.md`, `requirements.txt`, install
+scripts) are a stable black box users never edit.
+
+> **Engine files are for the engine. `agents/` is for the user.
+> Everything functional a user needs to do happens in `agents/`.**
+
+### A recursive, user-organized tree
+
+`agents/` is a **recursive tree** with no depth limit. Drop a `*_agent.py`
+file anywhere under it and the brainstem finds it. Subdirectories can
+contain subdirectories —
+`agents/sales_stack/q4/prospects/outbound_agent.py` auto-loads just
+like `agents/outbound_agent.py`.
+
+Two subdirectory names are reserved and **never** auto-load:
+**`experimental_agents/`** (in-flight, hand-load only) and
+**`disabled_agents/`** (move a file there to turn it off). Everything
+else under `agents/` loads.
+
+### Starter set at the top level of `agents/`
+
+- `basic_agent.py` — base class.
+- `hacker_news_agent.py`, `learn_new_agent.py`,
+  `save_memory_agent.py`, `recall_memory_agent.py` — curriculum.
+
+A new user opens `agents/` and sees exactly these five — the shape of
+what a RAPP agent is. Don't dump more at the top level; use a subdir.
+
+### Engine-provided subdirectories (convention, not magic)
+
+- `agents/system_agents/` — engine infrastructure (swarm factory +
+  swarm-management agents today). Auto-loads because it's under
+  `agents/`.
+- `agents/experimental_agents/` — never auto-loads. Hand-load to
+  test in-flight work.
+- `agents/disabled_agents/` — never auto-loads. Move a file here to
+  turn it off.
+
+### User-organized subdirectories (the whole point)
+
+Anything else under `agents/` auto-loads: `agents/my_stack/`,
+`agents/personal_twin/`, `agents/project_x/`, even nested like
+`agents/ceo/roles/`. No registration, no config — drop a folder in,
+`*_agent.py` files inside it load.
+
+### What this rules out
+
+- ❌ Making users touch engine files to do brainstem-y things. The
+  user's entire config surface is `soul.md` + `.env` + the `agents/`
+  tree. Never "edit brainstem.py to…"
+- ❌ A "brainstem config" directory outside `agents/` that users
+  are expected to edit.
+- ❌ Dumping more than the five starter files at the top level of
+  `agents/`. Infrastructure goes in `system_agents/`; user groupings
+  go in user-named subdirs (arbitrarily deep).
+- ❌ A registry file listing which agents to load. Discovery is
+  filesystem-only.
+- ❌ `from agents.system_agents.X import …` in tests — load by file
+  path via `importlib`. The `agents.*` module namespace is for the
+  shimmed `basic_agent` import only.
+- ❌ Any depth limit on `agents/` recursion.
+
+### Discovery
+
+- `load_agents()` walks `agents/` recursively via `rglob("*_agent.py")`
+  and skips paths containing `experimental_agents/`, `disabled_agents/`,
+  or `__pycache__/`.
+- Agents import `from agents.basic_agent import BasicAgent` from any
+  depth via the shim.
+- `rapp_swarm/build.sh` recursively vendors the `agents/` tree with
+  the same exclusions — Tier 2 mirrors Tier 1's user-organized shape.
+
+---
+
+## Article XIII — The Management UI Is a View Onto `agents/`
+
+The brainstem's browser interface is **a view onto the `agents/`
+tree**. Every user-facing action in the UI corresponds 1:1 to a
+filesystem operation inside `agents/`. The UI abstracts files, paths,
+and Python — but never invents concepts that don't exist on disk.
+
+> **UI tree = `agents/` tree. UI operation = filesystem operation.
+> No UI-only concepts.**
+
+### Mapping
+
+| UI action         | Filesystem op                                     |
+|-------------------|---------------------------------------------------|
+| "New agent"       | write `*_agent.py` at chosen location             |
+| "New folder"      | `mkdir` under `agents/`                           |
+| "Move" / drag     | `mv` between directories                          |
+| "Rename"          | `mv` with a new name                              |
+| "Delete"          | `rm`                                              |
+| "Disable"         | move into `agents/disabled_agents/`               |
+| "Enable"          | move out of `disabled_agents/`                    |
+| "Mark experimental"| move into `agents/experimental_agents/`          |
+| "Edit"            | open the file in an inline editor                |
+
+The three reserved subdirs are visible in the UI with their semantics
+explained. Don't hide them.
+
+### What the UI covers (user's full config surface)
+
+Per Article XII, the user's operational surface is `soul.md` + `.env`
++ `agents/` tree. The UI covers all three: persona editor, creds
+form, agent tree. Nothing else.
+
+### What this rules out
+
+- ❌ UI-only concepts (tags, categories, collections) that don't
+  round-trip to the filesystem.
+- ❌ Editing engine internals (`brainstem.py`, `VERSION`, etc.)
+  through the UI.
+- ❌ A separate registry alongside the filesystem. Disk is the
+  registry.
+- ❌ UI actions with no filesystem equivalent.
+- ❌ Hiding `system_agents/`, `experimental_agents/`, or
+  `disabled_agents/` from the tree view.
+
+### Why
+
+If the UI invents concepts that don't exist on disk, UI users and
+filesystem users diverge. `agents/` is the single source of truth;
+the UI must be transparent to it.
+
+---
+
+## Article XIV — Amendments
 
 This constitution can be amended. The only rule: the change must serve
 the platform's purpose as a business-focused AI agent engine. If it
