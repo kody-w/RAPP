@@ -1855,14 +1855,20 @@
     return true;
   }
 
-  // Snake/kebab/file-extension → "Pretty Title" so the panel never shows
-  // save_memory_agent.py. (Article XX — human names in default mode.)
+  // Snake/kebab/CamelCase/file-extension → "Pretty Title" so the panel
+  // never shows save_memory_agent.py or SaveMemory (Article XX —
+  // human names in default mode).
   function _prettyAgentName(raw) {
     if (!raw) return '';
-    return String(raw).replace(/_agent\.py$/i, '').replace(/\.py$/i, '')
-      .split(/[_\-\.]/).filter(Boolean)
-      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(' ');
+    let s = String(raw).replace(/_agent\.py$/i, '').replace(/\.py$/i, '');
+    if (/[_\-\.]/.test(s)) {
+      // snake_case / kebab-case → "Snake Case"
+      return s.split(/[_\-\.]/).filter(Boolean)
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    }
+    // CamelCase / PascalCase → "Camel Case" (and keep acronym runs: HTTPResponder → HTTP Responder)
+    return s.replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+            .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2');
   }
 
   async function loadAgentsList() {
@@ -1903,10 +1909,11 @@
         textWrap.className = 'agent-text';
         const nameSpan = document.createElement('span');
         nameSpan.className = 'agent-name';
-        // Prefer the class's self.name; fall back to pretty-printed filename.
-        // Never show the underscored/.py form to the user.
+        // Prefer the class's self.name (pretty-printed: "SaveMemory" →
+        // "Save Memory"); fall back to pretty-printed filename. Never
+        // show the CamelCase or underscored form to the user.
         nameSpan.textContent = (item.agents && item.agents.length)
-          ? item.agents.join(', ')
+          ? item.agents.map(_prettyAgentName).join(', ')
           : _prettyAgentName(item.filename);
         // Keep the raw filename as a hover tooltip — discoverable for the
         // curious without cluttering the surface.

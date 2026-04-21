@@ -780,12 +780,16 @@ const RESERVED_PRETTY = {
  */
 function prettyName(raw) {
   if (!raw) return "";
-  let base = raw.replace(/_agent\.py$/i, "").replace(/\.py$/i, "");
-  return base.split(/[_\-\.]/).filter(Boolean).map(w => {
-    // All-caps short tokens (like "q4" → "Q4", "api" → "API") feel off
-    // to force-lower-then-title. Just cap first letter, leave rest.
-    return w.charAt(0).toUpperCase() + w.slice(1);
-  }).join(" ");
+  let s = raw.replace(/_agent\.py$/i, "").replace(/\.py$/i, "");
+  if (/[_\-\.]/.test(s)) {
+    // snake_case / kebab-case → title-cased words
+    return s.split(/[_\-\.]/).filter(Boolean).map(w =>
+      w.charAt(0).toUpperCase() + w.slice(1)
+    ).join(" ");
+  }
+  // CamelCase / PascalCase → "Camel Case" (acronym runs preserved: HTTPResponder → HTTP Responder)
+  return s.replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+          .replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2");
 }
 
 // ── Toast ──────────────────────────────────────────────────────
