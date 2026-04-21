@@ -628,9 +628,12 @@ is no separate "assistant" character alongside a "twin" character.
 - **Main reply**: the twin at work. First-person as the user —
   answering as the user would, choosing as the user would.
 - **|||VOICE|||**: TTS version, same voice.
-- **|||TWIN||| panel**: the twin's self-view. What it's sure of,
-  what it's guessing, probes it wants validated. Same identity,
-  angled inward.
+- **|||TWIN||| panel**: the twin's **rubber-duck surface**. The twin
+  surfaces an assumption it's making about the user *right now* and
+  asks to be corrected. Not a status report. Not a progress bar.
+  Disagreement refines; confirmation locks the belief. Same
+  identity as the main reply — just angled inward, asking to be
+  taught.
 
 ### Rules-out
 
@@ -645,10 +648,22 @@ is no separate "assistant" character alongside a "twin" character.
 
 ### The hologram
 
-Represents the twin *as it is now*, mid-journey toward being the
-user. A thin veil at first; clearer as fidelity grows. The visual's
-meaning is always: "this is where your twin is right now in becoming
-you."
+Represents the twin *present with you* — listening, guessing, ready
+to be corrected. Not a progress bar. Meaning is always: "I'm here,
+I'm guessing, teach me."
+
+### The rubber-duck pattern
+
+Shapes the twin block takes (at most one per turn):
+
+- **I'm assuming:** <belief>. Right?
+- **My guess:** you'd rather <X>. True?
+- **Learning:** you'd call this <name>, not <other>. Close?
+- **Rubber-duck me:** walk me through <thing> so I can copy your
+  instinct.
+
+Each is the twin's current working hypothesis, stated so the user
+can confirm, correct, or sharpen it. The correction IS the learning.
 
 ---
 

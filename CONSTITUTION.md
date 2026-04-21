@@ -1020,10 +1020,13 @@ purposes:
   would answer, choosing as the user would choose. "Me, handling
   this for you, as you."
 - **|||VOICE|||**: a TTS-friendly version of that same voice.
-- **|||TWIN||| panel**: the twin's self-view. What it's now sure of,
-  what it's guessing, probes it wants validated, patterns it's
-  spotted across turns. Same identity — just angled inward instead of
-  outward.
+- **|||TWIN||| panel**: the twin's **rubber-duck surface**. Not a
+  status report. Not a progress bar. Not "I'm 73% you." The twin
+  thinks out loud about an *assumption it's currently making about
+  the user*, phrased so the user can correct it on the fly. The
+  twin is asking to be taught. Disagreement refines; confirmation
+  locks the belief. Same identity as the main reply — just angled
+  inward, looking for the user's correction.
 
 ### Why this matters
 
@@ -1051,11 +1054,26 @@ its place by being a truthful fidelity snapshot.
 
 ### The hologram
 
-The visual globe is not decoration — it represents the twin *as it is
-right now*, mid-journey toward the user. A thin veil at first; more
-resolution as fidelity grows. Whatever mood / animation / later
-visual metric the hologram shows, its meaning is always: "this is
-where your twin is right now in becoming you."
+The visual globe is not decoration. It represents the twin *present
+with you in the conversation* — listening, currently guessing, ready
+to be corrected. The caption reads "Your twin." Whatever mood or
+animation the hologram shows, its meaning is always: "I'm here,
+I'm guessing, teach me."
+
+### The rubber-duck pattern
+
+Concrete shapes a well-formed |||TWIN||| block takes (pick at most
+one per turn):
+
+- **I'm assuming:** <belief about the user>. Right?
+- **My guess:** you'd rather <X>. True?
+- **Learning:** you'd call this <name>, not <other name>. Am I close?
+- **Rubber-duck me:** walk me through <thing> so I can copy your
+  instinct.
+
+Each one is the twin's current working hypothesis, stated simply so
+the user can say "yes," "no, actually…", or "close but…". The
+correction is the whole point.
 
 ---
 
