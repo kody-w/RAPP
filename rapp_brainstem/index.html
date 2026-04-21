@@ -3044,15 +3044,15 @@
       const kind = (action.kind || '').toLowerCase();
       const inp = document.getElementById('input');
       const textFor = () => action.body || action.label || action.target || '';
-      if (kind === 'send') {
-        inp.value = textFor();
-        if (!inp.value.trim()) return; // nothing to send
+      // Treat "send" and "prompt" the same — clicking a pill always
+      // sends. The previous split (prompt = prefill only) confused users
+      // who expected every pill click to produce a chat turn; half the
+      // pills appeared dead.
+      if (kind === 'send' || kind === 'prompt') {
+        const txt = textFor();
+        if (!txt.trim()) return;
+        inp.value = txt;
         sendMessage();
-      } else if (kind === 'prompt') {
-        inp.value = textFor();
-        inp.focus();
-        inp.dispatchEvent(new Event('input'));
-        flashInput();
       } else if (kind === 'open') {
         if (action.target === 'settings') toggleSettingsPanel();
         else if (action.target === 'agents') toggleAgentsPanel();
