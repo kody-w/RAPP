@@ -580,6 +580,33 @@
     35%  { transform: scale(.92);  box-shadow: 0 0 0 4px  rgba(88,166,255,.35); }
     100% { transform: scale(1);    box-shadow: 0 0 0 16px rgba(88,166,255,0);   }
   }
+  /* New twin pill entrance — slide up + fade + brief blue halo so the
+     user's eye locks onto the fresh suggestions instead of scanning
+     past stale-looking text. Staggered via inline animation-delay set
+     in renderMouthPills. */
+  @keyframes pill-materialize {
+    0% {
+      opacity: 0;
+      transform: translateY(14px) scale(.6);
+      box-shadow: 0 0 0 0 rgba(88,166,255,0);
+      filter: blur(2px);
+    }
+    55% {
+      opacity: 1;
+      transform: translateY(-2px) scale(1.06);
+      box-shadow: 0 0 0 6px rgba(88,166,255,.35);
+      filter: blur(0);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      box-shadow: 0 0 0 12px rgba(88,166,255,0);
+      filter: blur(0);
+    }
+  }
+  .starter-btn.twin-pill.materialize {
+    animation: pill-materialize .55s cubic-bezier(.34,1.56,.64,1) backwards;
+  }
   .starter-btn.pill-pressed {
     animation: pill-pulse .55s ease-out;
     background: rgba(88,166,255,.18);
@@ -3042,14 +3069,22 @@
 
     if (!hasTwin) return;
     const limited = actions.slice(0, MAX_PILLS);
-    limited.forEach(a => {
+    limited.forEach((a, i) => {
       const btn = document.createElement('button');
-      btn.className = 'starter-btn twin-pill';
+      btn.className = 'starter-btn twin-pill materialize';
+      // Stagger entrance so pills cascade in left-to-right — draws the
+      // eye and makes "these are new" obvious without being noisy.
+      btn.style.animationDelay = (i * 80) + 'ms';
       const glyph = CHIP_GLYPH[a.kind] || '✨';
       const label = a.label || a.body || a.target || a.kind;
       btn.textContent = glyph + '  ' + label;
       btn.title = a.body || a.label || (a.target ? `${a.kind}: ${a.target}` : a.kind);
       btn.onclick = () => runTwinAction(a, btn);
+      // Drop the materialize class once the animation ends so subsequent
+      // press animations (pill-pulse) aren't queued behind it.
+      btn.addEventListener('animationend', (e) => {
+        if (e.animationName === 'pill-materialize') btn.classList.remove('materialize');
+      });
       row.appendChild(btn);
     });
   }
