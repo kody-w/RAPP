@@ -3,149 +3,320 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RAPP Brainstem — Manage</title>
+<title>RAPP Brainstem — Your Agents</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #0d1117;
-    --panel: #161b22;
-    --panel-soft: #1e242d;
-    --border: #30363d;
-    --fg: #e6edf3;
-    --muted: #8b949e;
-    --accent: #58a6ff;
-    --good: #3fb950;
-    --warn: #d29922;
-    --bad:  #f85149;
-    --radius: 8px;
+    --bg:       #0b0e14;
+    --bg-soft:  #13172080;
+    --panel:    #161b26;
+    --panel-2:  #1d2330;
+    --panel-3:  #242a39;
+    --border:   #2a3040;
+    --border-strong: #39405a;
+    --fg:       #e8ecf4;
+    --muted:    #8b93a7;
+    --accent:   #7aa2ff;
+    --accent-2: #a78bfa;
+    --good:     #52d37c;
+    --warn:     #f0c96b;
+    --bad:      #f97a85;
+    --radius:   10px;
+    --radius-lg: 14px;
+    --shadow-soft: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.15);
+    --shadow:      0 4px 12px rgba(0,0,0,0.4);
   }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background: var(--bg);
+  html, body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif;
+    background: radial-gradient(ellipse at top left, #1a1028 0%, var(--bg) 45%) fixed;
     color: var(--fg);
     min-height: 100vh;
-    display: grid;
-    grid-template-rows: 56px 1fr;
   }
+  body { display: grid; grid-template-rows: 64px 1fr; }
+
+  /* ── Header ─────────────────────────────────────────────── */
   header {
-    background: var(--panel);
+    background: linear-gradient(180deg, rgba(22,27,38,0.9), rgba(22,27,38,0.6));
+    backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
-    padding: 0 24px;
+    padding: 0 28px;
     gap: 16px;
+    position: sticky; top: 0; z-index: 50;
   }
-  header h1 { font-size: 15px; font-weight: 600; }
+  header .brand {
+    font-size: 15px; font-weight: 600;
+    display: flex; align-items: center; gap: 10px;
+    color: var(--fg);
+  }
+  header .brand .logo {
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border-radius: 8px;
+    display: grid; place-items: center;
+    font-size: 16px;
+  }
   header .spacer { flex: 1; }
-  header a { color: var(--muted); text-decoration: none; font-size: 13px; }
-  header a:hover { color: var(--fg); }
+  header a.back {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    transition: background 0.15s;
+  }
+  header a.back:hover { background: var(--panel-2); color: var(--fg); }
   .tabs {
-    display: flex;
-    gap: 4px;
-    background: var(--panel-soft);
-    border-radius: var(--radius);
+    display: flex; gap: 2px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
     padding: 3px;
   }
   .tabs button {
     background: transparent;
     border: 0;
     color: var(--muted);
-    padding: 7px 14px;
-    border-radius: 6px;
-    font-size: 13px;
+    padding: 7px 16px;
+    border-radius: 7px;
+    font-size: 13px; font-weight: 500;
     cursor: pointer;
+    transition: all 0.15s;
   }
+  .tabs button:hover { color: var(--fg); }
   .tabs button.active {
-    background: var(--bg);
+    background: var(--panel-3);
     color: var(--fg);
+    box-shadow: var(--shadow-soft);
   }
-  main { padding: 24px; overflow: auto; max-width: 1100px; width: 100%; margin: 0 auto; }
-  .pane { display: none; }
-  .pane.active { display: block; }
 
-  /* ── Agents pane ──────────────────────────────────────────── */
-  .agents-toolbar {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 16px;
-    align-items: center;
+  /* ── Layout ─────────────────────────────────────────────── */
+  main {
+    padding: 32px 28px 60px;
+    overflow: auto;
+    max-width: 1100px;
+    width: 100%;
+    margin: 0 auto;
   }
-  .agents-toolbar .spacer { flex: 1; }
+  .pane { display: none; animation: fadein 0.2s ease; }
+  .pane.active { display: block; }
+  @keyframes fadein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+  /* ── Hero / greeting ────────────────────────────────────── */
+  .hero {
+    background:
+      linear-gradient(135deg, rgba(122,162,255,0.08), rgba(167,139,250,0.06)),
+      var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 22px 28px;
+    margin-bottom: 24px;
+    display: flex; align-items: center; gap: 24px;
+  }
+  .hero .hero-icon {
+    width: 56px; height: 56px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border-radius: 14px;
+    display: grid; place-items: center;
+    font-size: 28px;
+    flex-shrink: 0;
+  }
+  .hero h2 { font-size: 18px; margin-bottom: 4px; }
+  .hero p  { color: var(--muted); font-size: 13px; line-height: 1.5; }
+
+  /* ── Toolbar ────────────────────────────────────────────── */
+  .toolbar {
+    display: flex; gap: 10px;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .toolbar .spacer { flex: 1; }
   .btn {
-    background: var(--panel-soft);
+    background: var(--panel-2);
     color: var(--fg);
     border: 1px solid var(--border);
-    padding: 7px 12px;
-    border-radius: 6px;
-    font-size: 13px;
+    padding: 9px 14px;
+    border-radius: 8px;
+    font-size: 13px; font-weight: 500;
     cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex; align-items: center; gap: 8px;
   }
-  .btn:hover { background: #242a33; }
-  .btn.primary { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 500; }
+  .btn:hover { background: var(--panel-3); border-color: var(--border-strong); }
+  .btn.primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border-color: transparent;
+    color: #0a0d14;
+    font-weight: 600;
+  }
   .btn.primary:hover { filter: brightness(1.1); }
-  .btn.danger  { color: var(--bad); }
+  .btn.ghost { background: transparent; }
 
+  /* Advanced switch */
+  .advanced-switch {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+    user-select: none;
+    border-radius: 8px;
+  }
+  .advanced-switch:hover { color: var(--fg); }
+  .advanced-switch .sw {
+    width: 28px; height: 16px; border-radius: 9px;
+    background: var(--border);
+    position: relative;
+    transition: background 0.15s;
+  }
+  .advanced-switch .sw::after {
+    content: "";
+    position: absolute; top: 2px; left: 2px;
+    width: 12px; height: 12px;
+    background: #fff; border-radius: 50%;
+    transition: left 0.15s;
+  }
+  .advanced-switch.on .sw { background: var(--accent); }
+  .advanced-switch.on .sw::after { left: 14px; }
+
+  /* ── Tree ───────────────────────────────────────────────── */
   .tree {
     background: var(--panel);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 8px;
-    min-height: 300px;
+    border-radius: var(--radius-lg);
+    padding: 10px;
+    min-height: 280px;
+  }
+  .empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--muted);
+  }
+  .empty-state .big-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.6; }
+  .empty-state p { font-size: 13px; line-height: 1.6; max-width: 420px; margin: 0 auto; }
+
+  /* ── Nodes ──────────────────────────────────────────────── */
+  .node-wrap { margin-bottom: 3px; }
+  .node {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 14px;
+    border-radius: 10px;
+    cursor: default;
+    transition: background 0.12s;
+  }
+  .node:hover { background: var(--panel-2); }
+  .node.selected { background: rgba(122,162,255,0.08); box-shadow: inset 0 0 0 1px rgba(122,162,255,0.25); }
+  .node.drop-target {
+    background: rgba(82,211,124,0.12);
+    box-shadow: inset 0 0 0 1px var(--good);
+  }
+  .node .toggle {
+    width: 14px; text-align: center;
+    color: var(--muted);
+    font-size: 10px;
+    transition: transform 0.15s;
     user-select: none;
   }
-  .node { padding: 4px 8px; border-radius: 4px; cursor: default; display: flex; align-items: center; gap: 8px; }
-  .node:hover { background: var(--panel-soft); }
-  .node.selected { background: rgba(88, 166, 255, 0.15); }
-  .node .icon { width: 18px; text-align: center; opacity: 0.9; }
-  .node .name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .node .badge {
+  .node .toggle.expanded { transform: rotate(90deg); }
+  .node .toggle:empty { visibility: hidden; }
+
+  .node .icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: grid; place-items: center;
+    font-size: 16px;
+    background: var(--panel-3);
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .node.folder .icon {
+    background: linear-gradient(135deg, rgba(122,162,255,0.15), rgba(167,139,250,0.1));
+    border-color: rgba(122,162,255,0.3);
+  }
+  .node.folder.reserved-system .icon {
+    background: linear-gradient(135deg, rgba(82,211,124,0.2), rgba(82,211,124,0.08));
+    border-color: rgba(82,211,124,0.35);
+  }
+  .node.folder.reserved-experimental .icon {
+    background: linear-gradient(135deg, rgba(240,201,107,0.2), rgba(240,201,107,0.08));
+    border-color: rgba(240,201,107,0.35);
+  }
+  .node.folder.reserved-disabled .icon {
+    background: linear-gradient(135deg, rgba(249,122,133,0.2), rgba(249,122,133,0.08));
+    border-color: rgba(249,122,133,0.35);
+  }
+  .node.agent .icon {
+    background: var(--panel-3);
+    font-size: 14px;
+  }
+
+  .node .name {
+    flex: 1;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    font-size: 14px;
+  }
+  .node.folder .name { font-weight: 500; }
+  .node.folder .name .count {
+    color: var(--muted); font-size: 12px; font-weight: 400;
+    margin-left: 6px;
+  }
+
+  .badge {
     font-size: 10px;
-    padding: 2px 6px;
+    padding: 2px 8px;
     border-radius: 10px;
-    background: var(--panel-soft);
+    background: var(--panel-3);
     color: var(--muted);
     border: 1px solid var(--border);
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    font-weight: 600;
   }
-  .node .badge.reserved { background: #2d3b55; color: var(--accent); border-color: var(--accent); }
-  .node .badge.system   { background: #2a3f2e; color: var(--good); border-color: var(--good); }
-  .node .badge.experimental { background: #3f3426; color: var(--warn); border-color: var(--warn); }
-  .node .badge.disabled { background: #402628; color: var(--bad);  border-color: var(--bad); }
+  .badge.system       { background: rgba(82,211,124,0.1);  color: var(--good);   border-color: rgba(82,211,124,0.3); }
+  .badge.experimental { background: rgba(240,201,107,0.1); color: var(--warn);   border-color: rgba(240,201,107,0.3); }
+  .badge.disabled     { background: rgba(249,122,133,0.1); color: var(--bad);    border-color: rgba(249,122,133,0.3); }
 
-  /* Folder-group toggle switch */
+  /* Folder-group toggle */
   .folder-switch {
     position: relative;
-    width: 30px; height: 16px;
+    width: 36px; height: 20px;
     background: var(--border);
-    border-radius: 8px;
+    border-radius: 10px;
     cursor: pointer;
     transition: background 0.15s;
+    flex-shrink: 0;
   }
-  .folder-switch.on  { background: var(--good); }
-  .folder-switch.off { background: var(--bad); }
+  .folder-switch.on { background: var(--good); }
   .folder-switch::after {
     content: "";
-    position: absolute;
-    top: 2px; left: 2px;
-    width: 12px; height: 12px;
-    background: #fff;
-    border-radius: 50%;
+    position: absolute; top: 2px; left: 2px;
+    width: 16px; height: 16px;
+    background: #fff; border-radius: 50%;
     transition: left 0.15s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.4);
   }
-  .folder-switch.on::after { left: 16px; }
-  .node.folder-off { opacity: 0.55; }
+  .folder-switch.on::after { left: 18px; }
+  .node.folder-off { opacity: 0.5; }
   .node.folder-off .name { text-decoration: line-through; }
-  .children { margin-left: 22px; border-left: 1px solid var(--border); padding-left: 8px; }
-  .node .toggle { font-family: monospace; color: var(--muted); min-width: 10px; text-align: center; }
-  .node.agent .icon { color: var(--fg); }
-  .node.folder .name { font-weight: 500; }
-  .node.drop-target { background: rgba(63, 185, 80, 0.2); outline: 1px dashed var(--good); }
 
-  /* ── Modal ──────────────────────────────────────────── */
+  /* Children */
+  .children {
+    margin-left: 26px;
+    padding-left: 12px;
+    border-left: 1px solid var(--border);
+    margin-top: 2px;
+    overflow: hidden;
+    max-height: 5000px;
+    transition: max-height 0.2s ease;
+  }
+  .children.collapsed { max-height: 0; margin-top: 0; }
+
+  /* ── Modal ──────────────────────────────────────────────── */
   .modal-backdrop {
     position: fixed; inset: 0;
     background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
     display: none;
     align-items: center;
     justify-content: center;
@@ -154,144 +325,208 @@
   .modal-backdrop.open { display: flex; }
   .modal {
     background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    min-width: 440px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    min-width: 480px;
     max-width: 640px;
-    max-height: 80vh;
+    max-height: 82vh;
     overflow: auto;
-    padding: 24px;
+    padding: 28px;
+    box-shadow: var(--shadow);
   }
-  .modal h2 { font-size: 16px; margin-bottom: 16px; }
-  .modal label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; margin-top: 12px; }
+  .modal h2 { font-size: 18px; margin-bottom: 8px; }
+  .modal .subtitle { color: var(--muted); font-size: 13px; line-height: 1.5; margin-bottom: 18px; }
+  .modal label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 4px; margin-top: 14px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
   .modal input[type="text"], .modal textarea, .modal select {
     width: 100%;
     background: var(--bg);
     color: var(--fg);
     border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 8px 10px;
+    border-radius: 8px;
+    padding: 10px 12px;
     font-size: 13px;
     font-family: inherit;
   }
-  .modal textarea { min-height: 200px; font-family: ui-monospace, "SF Mono", monospace; }
-  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+  .modal input:focus, .modal textarea:focus { outline: 0; border-color: var(--accent); }
+  .modal textarea { min-height: 180px; font-family: ui-monospace, "SF Mono", monospace; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+
   .template-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px;
-    margin: 12px 0;
+    margin: 8px 0;
   }
   .template-card {
     border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 12px;
+    background: var(--panel-2);
+    border-radius: 10px;
+    padding: 14px;
     cursor: pointer;
+    transition: all 0.15s;
   }
-  .template-card:hover { border-color: var(--accent); }
-  .template-card.selected { border-color: var(--accent); background: rgba(88,166,255,0.05); }
-  .template-card .icon { font-size: 24px; margin-bottom: 6px; }
-  .template-card .name { font-weight: 500; font-size: 13px; }
-  .template-card .desc { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+  .template-card:hover { border-color: var(--border-strong); background: var(--panel-3); }
+  .template-card.selected {
+    border-color: var(--accent);
+    background: rgba(122,162,255,0.08);
+    box-shadow: 0 0 0 1px rgba(122,162,255,0.2);
+  }
+  .template-card .tc-icon { font-size: 26px; margin-bottom: 8px; }
+  .template-card .tc-name { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+  .template-card .tc-desc { font-size: 11.5px; color: var(--muted); line-height: 1.4; }
 
   /* ── Persona / Settings panes ──────────────────────────── */
-  .field-group { margin-bottom: 20px; }
-  .field-group h3 { font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--fg); }
-  .field-group p { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
-  .field { margin-bottom: 12px; }
-  .field label { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-  .field input, .field textarea {
-    width: 100%;
+  .section-card {
     background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px 26px;
+    margin-bottom: 18px;
+  }
+  .section-card h3 {
+    font-size: 14px;
+    margin-bottom: 4px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-card h3 .sec-icon {
+    width: 26px; height: 26px; border-radius: 7px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: grid; place-items: center;
+    font-size: 14px;
+  }
+  .section-card p { font-size: 12.5px; color: var(--muted); line-height: 1.5; margin-bottom: 14px; }
+  .section-card .field { margin-bottom: 12px; }
+  .section-card .field label { display: block; font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-weight: 600; }
+  .section-card .field input, .section-card .field textarea {
+    width: 100%;
+    background: var(--bg);
     color: var(--fg);
     border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 8px 10px;
+    border-radius: 8px;
+    padding: 9px 11px;
     font-size: 13px;
     font-family: inherit;
   }
-  .persona-textarea { min-height: 320px; font-family: ui-monospace, "SF Mono", monospace; white-space: pre; }
+  .section-card .field input:focus, .section-card .field textarea:focus { outline: 0; border-color: var(--accent); }
+  .persona-textarea { min-height: 340px; font-family: ui-monospace, "SF Mono", monospace; white-space: pre; }
+
   .secret-chip {
-    display: inline-block;
-    font-size: 11px;
-    padding: 3px 8px;
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11.5px; font-weight: 500;
+    padding: 5px 10px;
     border-radius: 12px;
-    background: var(--panel);
+    background: var(--panel-2);
     border: 1px solid var(--border);
     color: var(--muted);
     margin-right: 6px;
+    margin-bottom: 6px;
   }
-  .secret-chip.set { color: var(--good); border-color: var(--good); }
-  .secret-chip.unset { color: var(--muted); }
+  .secret-chip.set   { color: var(--good);  border-color: rgba(82,211,124,0.3);  background: rgba(82,211,124,0.08); }
+  .secret-chip .dot  { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
 
+  /* ── Toast ──────────────────────────────────────────────── */
   .toast {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
+    position: fixed; bottom: 24px; right: 24px;
     background: var(--panel);
-    border: 1px solid var(--border);
-    padding: 10px 14px;
-    border-radius: 6px;
+    border: 1px solid var(--border-strong);
+    padding: 12px 18px;
+    border-radius: 10px;
     font-size: 13px;
-    opacity: 0;
-    transform: translateY(10px);
+    opacity: 0; transform: translateY(10px);
     transition: all 0.2s;
     z-index: 200;
+    box-shadow: var(--shadow);
   }
   .toast.show { opacity: 1; transform: translateY(0); }
   .toast.good { border-color: var(--good); }
   .toast.bad  { border-color: var(--bad); }
+
+  /* ── Context menu ───────────────────────────────────────── */
+  .ctx-menu {
+    position: fixed;
+    background: var(--panel);
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    padding: 4px;
+    z-index: 150;
+    box-shadow: var(--shadow);
+    min-width: 180px;
+  }
+  .ctx-menu .item {
+    padding: 7px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 6px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .ctx-menu .item:hover { background: var(--panel-2); }
+  .ctx-menu .item.danger { color: var(--bad); }
+  .ctx-menu .sep { height: 1px; background: var(--border); margin: 4px 6px; }
+
   .muted { color: var(--muted); font-size: 12px; }
+  .subtle-help { color: var(--muted); font-size: 12px; margin-top: 14px; line-height: 1.5; }
+  .kbd {
+    font-family: ui-monospace, monospace;
+    font-size: 11px;
+    padding: 1px 6px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--panel-2);
+  }
 </style>
 </head>
 <body>
 <header>
-  <h1>🧠 RAPP Brainstem</h1>
+  <div class="brand">
+    <div class="logo">🧠</div>
+    <span>RAPP Brainstem</span>
+  </div>
   <div class="spacer"></div>
   <div class="tabs">
     <button data-tab="agents"  class="active">Agents</button>
-    <button data-tab="persona">Persona</button>
     <button data-tab="settings">Settings</button>
   </div>
   <div class="spacer"></div>
-  <a href="/">← Chat</a>
+  <a class="back" href="/">← Chat</a>
 </header>
 
 <main>
-  <!-- Agents pane -->
+  <!-- ── Agents ────────────────────────────────────────── -->
   <section id="pane-agents" class="pane active">
-    <div class="agents-toolbar">
-      <button class="btn primary" id="btn-new-agent">＋ New Agent</button>
-      <button class="btn" id="btn-new-folder">📁 New Folder</button>
-      <button class="btn" id="btn-refresh">↻ Refresh</button>
-      <div class="spacer"></div>
-      <button class="btn" id="btn-vscode" title="Opens the agents folder in VS Code">Open in VS Code</button>
+    <div class="hero">
+      <div class="hero-icon">✨</div>
+      <div>
+        <h2>Your agents</h2>
+        <p>Organize your agents into folders however you want. Drop a folder in, drag things between folders, toggle whole groups on and off. The brainstem auto-discovers everything inside.</p>
+      </div>
     </div>
+
+    <div class="toolbar">
+      <button class="btn primary" id="btn-new-agent">＋ New agent</button>
+      <button class="btn" id="btn-new-folder">📁 New folder</button>
+      <button class="btn ghost" id="btn-refresh">↻ Refresh</button>
+      <div class="spacer"></div>
+      <div class="advanced-switch" id="advanced-switch" title="Show system, experimental, and disabled folders">
+        <span>Advanced</span>
+        <span class="sw"></span>
+      </div>
+      <button class="btn ghost" id="btn-vscode" title="Open the agents folder in VS Code">
+        <span>⚙</span> VS Code
+      </button>
+    </div>
+
     <div class="tree" id="tree"></div>
-    <p class="muted" style="margin-top:12px">
-      Drag an agent between folders to move it. Drop one on <b>disabled_agents</b> to turn it off.
-      Three reserved folder names (<b>system_agents</b>, <b>experimental_agents</b>, <b>disabled_agents</b>) are engine-provided — don't rename them.
+
+    <p class="subtle-help">
+      <span class="kbd">drag</span> to move between folders. <span class="kbd">right-click</span> for rename, disable, delete. Toggle a folder to silence every agent inside without deleting anything.
     </p>
   </section>
 
-  <!-- Persona pane -->
-  <section id="pane-persona" class="pane">
-    <div class="field-group">
-      <h3>Soul</h3>
-      <p>This is the system prompt your brainstem loads every request. Write it in first person — "You are a…"</p>
-      <textarea class="persona-textarea" id="persona-textarea"></textarea>
-      <div style="margin-top:10px; display:flex; gap:8px;">
-        <button class="btn primary" id="btn-save-soul">Save Persona</button>
-        <button class="btn" id="btn-reload-soul">Reload</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- Settings pane -->
+  <!-- ── Settings ──────────────────────────────────────── -->
   <section id="pane-settings" class="pane">
-    <div class="field-group">
-      <h3>Model</h3>
-      <p>Which LLM the brainstem uses. Defaults to GitHub Copilot via the <code>gh</code> CLI.</p>
+    <div class="section-card">
+      <h3><span class="sec-icon">⚙</span> Model</h3>
+      <p>Which LLM the brainstem uses. The default is GitHub Copilot via the <code>gh</code> CLI — zero config.</p>
       <div class="field">
         <label>GITHUB_MODEL</label>
         <input type="text" data-env="GITHUB_MODEL" placeholder="gpt-4o">
@@ -302,28 +537,28 @@
       </div>
     </div>
 
-    <div class="field-group">
-      <h3>Voice & Twin</h3>
+    <div class="section-card">
+      <h3><span class="sec-icon">🎙</span> Voice & Twin</h3>
       <p>Toggle the TTS voice line and the digital-twin side panel.</p>
       <div class="field">
-        <label>VOICE_MODE (true/false)</label>
+        <label>VOICE_MODE (true / false)</label>
         <input type="text" data-env="VOICE_MODE" placeholder="false">
       </div>
       <div class="field">
-        <label>TWIN_MODE (true/false)</label>
+        <label>TWIN_MODE (true / false)</label>
         <input type="text" data-env="TWIN_MODE" placeholder="true">
       </div>
     </div>
 
-    <div class="field-group">
-      <h3>Secrets</h3>
-      <p>These are set/unset only — the brainstem doesn't send them back. Edit <code>.env</code> directly if you need to change one.</p>
+    <div class="section-card">
+      <h3><span class="sec-icon">🔐</span> Secrets</h3>
+      <p>Set or unset only — secrets never round-trip through the UI. Edit <code>.env</code> directly to rotate them.</p>
       <div id="secrets-row" style="margin-bottom:12px;"></div>
     </div>
 
-    <div style="display:flex; gap:8px;">
-      <button class="btn primary" id="btn-save-env">Save Settings</button>
-      <button class="btn" id="btn-reload-env">Reload</button>
+    <div style="display:flex; gap:10px;">
+      <button class="btn primary" id="btn-save-env">Save settings</button>
+      <button class="btn ghost" id="btn-reload-env">Reload</button>
     </div>
   </section>
 </main>
@@ -344,6 +579,11 @@ const $  = (sel, root=document) => root.querySelector(sel);
 const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
 
 const RESERVED_NAMES = new Set(["system_agents", "experimental_agents", "disabled_agents"]);
+const RESERVED_PRETTY = {
+  "system_agents":       { label: "System tools",   icon: "🛠", cls: "reserved-system" },
+  "experimental_agents": { label: "Experimental",   icon: "🧪", cls: "reserved-experimental" },
+  "disabled_agents":     { label: "Disabled",       icon: "⏸",  cls: "reserved-disabled" },
+};
 
 // ── Toast ──────────────────────────────────────────────────────
 let _toastTimer = null;
@@ -373,54 +613,97 @@ async function api(path, opts={}) {
 $$(".tabs button").forEach(b => b.addEventListener("click", () => {
   $$(".tabs button").forEach(x => x.classList.toggle("active", x === b));
   $$(".pane").forEach(p => p.classList.toggle("active", p.id === `pane-${b.dataset.tab}`));
-  if (b.dataset.tab === "persona" || b.dataset.tab === "settings") loadConfig();
+  if (b.dataset.tab === "settings") loadConfig();
 }));
 
-// ── Tree rendering ─────────────────────────────────────────────
+// ── Tree state ─────────────────────────────────────────────────
 let _tree = null;
 let _selected = null;
-const _collapsed = new Set();  // paths of collapsed folders
+let _showAdvanced = false;
+// Expanded paths — opt-in. Default: all folders start collapsed.
+let _expanded = new Set();
+// First load: auto-expand nothing; user clicks to drill in.
+let _firstLoad = true;
 
+// ── Advanced toggle ────────────────────────────────────────────
+const advSwitch = $("#advanced-switch");
+advSwitch.addEventListener("click", () => {
+  _showAdvanced = !_showAdvanced;
+  advSwitch.classList.toggle("on", _showAdvanced);
+  renderTree();
+});
+
+// ── Tree rendering ─────────────────────────────────────────────
 async function loadTree() {
   try {
     _tree = await api("/api/agents/tree");
     renderTree();
+    _firstLoad = false;
   } catch (e) {
     toast("couldn't load tree: " + e.message, "bad");
   }
 }
 
+function countAgents(node) {
+  if (!node) return 0;
+  if (node.kind === "agent") return 1;
+  let c = 0;
+  for (const ch of node.children || []) c += countAgents(ch);
+  return c;
+}
+
 function renderTree() {
   const root = $("#tree");
   root.innerHTML = "";
-  root.appendChild(renderNode(_tree, 0, true));
+
+  if (!_tree) return;
+
+  // Top-level children, filtered by advanced mode.
+  const visible = (_tree.children || []).filter(c => {
+    if (!_showAdvanced && c.reserved) return false;
+    return true;
+  });
+
+  if (visible.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.innerHTML = `
+      <div class="big-icon">📂</div>
+      <p>Your workspace is empty.<br>
+      Click <b>＋ New agent</b> to spawn one from a template, or <b>📁 New folder</b> to start grouping.</p>`;
+    root.appendChild(empty);
+    return;
+  }
+
+  for (const c of visible) root.appendChild(renderNode(c, 1));
+
+  // Restore selection highlight
+  if (_selected) {
+    const sel = root.querySelector(`.node[data-path="${CSS.escape(_selected)}"]`);
+    if (sel) sel.classList.add("selected");
+  }
 }
 
-function renderNode(node, depth, isRoot=false) {
+function renderNode(node, depth) {
   const wrap = document.createElement("div");
-  if (!isRoot) wrap.classList.add("node-wrap");
+  wrap.className = "node-wrap";
 
   const row = document.createElement("div");
   row.className = `node ${node.kind}`;
   row.dataset.path = node.path || "";
   row.dataset.kind = node.kind;
-  if (node.path === _selected) row.classList.add("selected");
 
-  // Toggle (for folders with children)
+  if (node.reserved) row.classList.add(RESERVED_PRETTY[node.reserved].cls);
+  if (node.folder_disabled) row.classList.add("folder-off");
+
+  // Toggle chevron
   const toggle = document.createElement("span");
   toggle.className = "toggle";
-  if (node.kind === "folder" && node.children && node.children.length) {
-    const collapsed = _collapsed.has(node.path);
-    toggle.textContent = collapsed ? "▶" : "▼";
-    toggle.style.cursor = "pointer";
-    toggle.addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (_collapsed.has(node.path)) _collapsed.delete(node.path);
-      else _collapsed.add(node.path);
-      renderTree();
-    });
-  } else {
-    toggle.textContent = "";
+  const hasChildren = node.kind === "folder" && node.children && node.children.length;
+  const expanded = _expanded.has(node.path);
+  if (hasChildren) {
+    toggle.textContent = "▸";
+    if (expanded) toggle.classList.add("expanded");
   }
   row.appendChild(toggle);
 
@@ -428,49 +711,68 @@ function renderNode(node, depth, isRoot=false) {
   const icon = document.createElement("span");
   icon.className = "icon";
   if (node.kind === "folder") {
-    icon.textContent = node.reserved ? "🗃" : (node.path === "" ? "🧠" : "📁");
+    if (node.reserved) icon.textContent = RESERVED_PRETTY[node.reserved].icon;
+    else               icon.textContent = expanded ? "📂" : "📁";
   } else {
-    icon.textContent = node.status === "disabled" ? "⏸" :
-                       node.status === "experimental" ? "🧪" :
-                       node.kind === "other" ? "📄" : "⚙";
+    icon.textContent = node.status === "disabled"     ? "⏸"
+                     : node.status === "experimental" ? "🧪"
+                     : node.kind === "other"          ? "📄"
+                     : "⚙";
   }
   row.appendChild(icon);
 
-  // Name
+  // Name + count
   const name = document.createElement("span");
   name.className = "name";
-  name.textContent = isRoot ? "agents/" : node.name;
+  const displayName = node.reserved ? RESERVED_PRETTY[node.reserved].label : node.name;
+  name.textContent = displayName;
+  if (node.kind === "folder") {
+    const n = countAgents(node);
+    if (n) {
+      const c = document.createElement("span");
+      c.className = "count";
+      c.textContent = `· ${n} agent${n === 1 ? "" : "s"}`;
+      name.appendChild(c);
+    }
+  }
   row.appendChild(name);
 
   // Badges
-  if (node.reserved)          appendBadge(row, node.reserved.replace("_agents",""), "reserved");
-  if (node.system)            appendBadge(row, "system", "system");
-  if (node.status === "experimental") appendBadge(row, "experimental", "experimental");
-  if (node.status === "disabled")     appendBadge(row, "disabled", "disabled");
+  if (node.system && !node.reserved)          appendBadge(row, "system",       "system");
+  if (node.status === "experimental")         appendBadge(row, "experimental", "experimental");
+  if (node.status === "disabled")             appendBadge(row, "disabled",     "disabled");
 
-  // Folder-group toggle (on non-reserved folders, anywhere in the tree)
-  if (node.kind === "folder" && !node.reserved && !isRoot) {
-    const disabled = !!node.folder_disabled;
-    if (disabled) row.classList.add("folder-off");
+  // Folder-group toggle (non-reserved folders only)
+  if (node.kind === "folder" && !node.reserved) {
+    const isOn = !node.folder_disabled;
     const sw = document.createElement("div");
-    sw.className = "folder-switch " + (disabled ? "off" : "on");
-    sw.title = disabled ? "Folder disabled — click to enable all agents inside" : "Folder enabled — click to disable all agents inside";
+    sw.className = "folder-switch" + (isOn ? " on" : "");
+    sw.title = isOn
+      ? "Folder enabled — click to pause every agent inside"
+      : "Folder paused — click to re-enable";
     sw.addEventListener("click", async (e) => {
       e.stopPropagation();
       try {
         await api("/api/agents/folder-toggle", { method: "POST",
-          body: JSON.stringify({ path: node.path, enabled: disabled }) });
-        toast(disabled ? `enabled ${node.name}` : `disabled ${node.name}`);
+          body: JSON.stringify({ path: node.path, enabled: !isOn }) });
+        toast(isOn ? `paused ${node.name}` : `enabled ${node.name}`);
         await loadTree();
       } catch (err) { toast(err.message, "bad"); }
     });
     row.appendChild(sw);
   }
 
-  // Selection + context actions
-  row.addEventListener("click", () => {
+  // Interactions
+  row.addEventListener("click", (e) => {
     _selected = node.path || "";
     $$(".node").forEach(n => n.classList.toggle("selected", n === row));
+    // Toggle expand/collapse on folder click (anywhere on the row that
+    // isn't the folder-switch, which stops propagation).
+    if (hasChildren) {
+      if (_expanded.has(node.path)) _expanded.delete(node.path);
+      else _expanded.add(node.path);
+      renderTree();
+    }
   });
   row.addEventListener("contextmenu", (e) => {
     e.preventDefault();
@@ -479,7 +781,7 @@ function renderNode(node, depth, isRoot=false) {
   });
 
   // Drag & drop
-  if (!isRoot && node.kind === "agent") {
+  if (node.kind === "agent") {
     row.draggable = true;
     row.addEventListener("dragstart", (e) => {
       e.dataTransfer.setData("text/path", node.path);
@@ -503,7 +805,8 @@ function renderNode(node, depth, isRoot=false) {
       const to = targetFolder ? `${targetFolder}/${base}` : base;
       if (from === to) return;
       try {
-        await api("/api/agents/move", { method: "POST", body: JSON.stringify({ from_path: from, to_path: to }) });
+        await api("/api/agents/move", { method: "POST",
+          body: JSON.stringify({ from_path: from, to_path: to }) });
         toast(`moved → ${to}`);
         await loadTree();
       } catch (err) { toast(err.message, "bad"); }
@@ -513,9 +816,9 @@ function renderNode(node, depth, isRoot=false) {
   wrap.appendChild(row);
 
   // Children
-  if (node.kind === "folder" && node.children && !_collapsed.has(node.path)) {
+  if (hasChildren) {
     const children = document.createElement("div");
-    children.className = "children";
+    children.className = "children" + (expanded ? "" : " collapsed");
     for (const c of node.children) children.appendChild(renderNode(c, depth + 1));
     wrap.appendChild(children);
   }
@@ -531,38 +834,41 @@ function appendBadge(row, text, cls) {
 
 // ── Context menu ───────────────────────────────────────────────
 function showNodeMenu(event, node) {
-  closeModal();
+  closeCtxMenu();
   const actions = [];
   if (node.kind === "agent") {
-    actions.push({ label: "Rename…",         fn: () => renamePrompt(node) });
-    if (node.status !== "disabled") actions.push({ label: "Disable", fn: () => disableAgent(node) });
-    else                            actions.push({ label: "Enable",  fn: () => enableAgent(node) });
-    actions.push({ label: "Delete",          fn: () => deleteNode(node), danger: true });
-  } else if (node.kind === "folder" && !node.reserved && node.path !== "") {
-    actions.push({ label: "Rename…",         fn: () => renamePrompt(node) });
-    actions.push({ label: "Delete (if empty)", fn: () => deleteNode(node), danger: true });
+    actions.push({ icon: "✏", label: "Rename…", fn: () => renamePrompt(node) });
+    if (node.status !== "disabled") actions.push({ icon: "⏸", label: "Disable", fn: () => disableAgent(node) });
+    else                            actions.push({ icon: "▶", label: "Enable",  fn: () => enableAgent(node) });
+    actions.push({ sep: true });
+    actions.push({ icon: "🗑", label: "Delete",  fn: () => deleteNode(node), danger: true });
+  } else if (node.kind === "folder" && !node.reserved) {
+    actions.push({ icon: "✏", label: "Rename…", fn: () => renamePrompt(node) });
+    actions.push({ sep: true });
+    actions.push({ icon: "🗑", label: "Delete (if empty)", fn: () => deleteNode(node), danger: true });
   }
-  actions.push({ label: "Open in VS Code",  fn: () => openInVSCode(node.path) });
+  actions.push({ icon: "⚙", label: "Open in VS Code", fn: () => openInVSCode(node.path) });
   if (!actions.length) return;
+
   const menu = document.createElement("div");
-  menu.style.cssText = `position:fixed; top:${event.clientY}px; left:${event.clientX}px;
-    background:var(--panel); border:1px solid var(--border); border-radius:6px;
-    padding:4px; z-index:150; box-shadow: 0 4px 12px rgba(0,0,0,0.6);`;
+  menu.className = "ctx-menu";
+  menu.style.top  = event.clientY + "px";
+  menu.style.left = event.clientX + "px";
   for (const a of actions) {
-    const item = document.createElement("div");
-    item.style.cssText = "padding:6px 14px; font-size:13px; cursor:pointer; border-radius:4px;";
-    if (a.danger) item.style.color = "var(--bad)";
-    item.textContent = a.label;
-    item.addEventListener("click", () => { document.body.removeChild(menu); a.fn(); });
-    item.addEventListener("mouseover", () => item.style.background = "var(--panel-soft)");
-    item.addEventListener("mouseout",  () => item.style.background = "");
-    menu.appendChild(item);
+    if (a.sep) { const s = document.createElement("div"); s.className = "sep"; menu.appendChild(s); continue; }
+    const it = document.createElement("div");
+    it.className = "item" + (a.danger ? " danger" : "");
+    it.innerHTML = `<span style="width:18px;text-align:center">${a.icon || ""}</span><span>${a.label}</span>`;
+    it.addEventListener("click", () => { closeCtxMenu(); a.fn(); });
+    menu.appendChild(it);
   }
+  menu.id = "ctx-menu-active";
   document.body.appendChild(menu);
-  setTimeout(() => {
-    const close = () => { try { document.body.removeChild(menu); } catch {} document.removeEventListener("click", close); };
-    document.addEventListener("click", close);
-  }, 10);
+  setTimeout(() => document.addEventListener("click", closeCtxMenu, { once: true }), 10);
+}
+function closeCtxMenu() {
+  const m = $("#ctx-menu-active");
+  if (m) m.remove();
 }
 
 async function renamePrompt(node) {
@@ -613,12 +919,14 @@ async function openInVSCode(path) {
 // ── New folder / new agent ─────────────────────────────────────
 $("#btn-new-folder").addEventListener("click", async () => {
   const suggested = _selected || "";
-  const name = prompt("New folder name (under agents/" + (suggested ? suggested + "/" : "") + "):");
+  const underHint = suggested ? ` under “${suggested}”` : "";
+  const name = prompt(`New folder name${underHint}:`);
   if (!name) return;
   const path = suggested ? `${suggested}/${name}` : name;
   try {
     await api("/api/agents/mkdir", { method: "POST", body: JSON.stringify({ path }) });
     toast("folder created");
+    _expanded.add(suggested);  // open the parent so the new folder is visible
     await loadTree();
   } catch (e) { toast(e.message, "bad"); }
 });
@@ -631,29 +939,31 @@ async function openNewAgentModal() {
   catch (e) { toast(e.message, "bad"); return; }
 
   let selectedTpl = templates[0];
-  let agentName = selectedTpl.default_name;
-
   const modal = $("#modal");
+
+  // Suggest current folder if one is selected (and it's not an agent file)
+  const sel = _selected ? currentNode(_selected) : null;
+  const defaultFolder = sel && sel.kind === "folder" ? _selected : "";
+
   modal.innerHTML = `
-    <h2>New Agent</h2>
-    <p class="muted">Pick a template. The agent file is created under the selected folder.</p>
+    <h2>New agent</h2>
+    <p class="subtitle">Pick a template and name it. We'll create the file under the folder you choose.</p>
     <div class="template-grid" id="tpl-grid"></div>
     <label>Agent name</label>
-    <input type="text" id="agent-name" value="${agentName}">
+    <input type="text" id="agent-name" value="${selectedTpl.default_name}">
     <label>Folder</label>
-    <input type="text" id="agent-folder" value="${_selected && currentNode(_selected)?.kind === 'folder' ? _selected : ''}" placeholder="(top level)">
+    <input type="text" id="agent-folder" value="${defaultFolder}" placeholder="(top level — leave blank)">
     <div class="modal-actions">
-      <button class="btn" data-close>Cancel</button>
+      <button class="btn ghost" data-close>Cancel</button>
       <button class="btn primary" id="btn-create-agent">Create</button>
-    </div>
-  `;
+    </div>`;
 
   const grid = $("#tpl-grid", modal);
   for (const t of templates) {
     const card = document.createElement("div");
     card.className = "template-card" + (t.id === selectedTpl.id ? " selected" : "");
     card.dataset.id = t.id;
-    card.innerHTML = `<div class="icon">${t.icon}</div><div class="name">${t.name}</div><div class="desc">${t.description}</div>`;
+    card.innerHTML = `<div class="tc-icon">${t.icon}</div><div class="tc-name">${t.name}</div><div class="tc-desc">${t.description}</div>`;
     card.addEventListener("click", () => {
       selectedTpl = t;
       $$(".template-card", grid).forEach(c => c.classList.toggle("selected", c.dataset.id === t.id));
@@ -670,11 +980,11 @@ async function openNewAgentModal() {
       await api("/api/agents/new", { method: "POST",
         body: JSON.stringify({ folder, agent_name: name, template_id: selectedTpl.id }) });
       toast("agent created");
+      if (folder) _expanded.add(folder);
       closeModal();
       await loadTree();
     } catch (e) { toast(e.message, "bad"); }
   });
-
   openModal();
 }
 
@@ -693,7 +1003,6 @@ function currentNode(path) {
   return walk(_tree);
 }
 
-// ── Refresh / VS Code ──────────────────────────────────────────
 $("#btn-refresh").addEventListener("click", loadTree);
 $("#btn-vscode").addEventListener("click", () => openInVSCode(""));
 
@@ -701,29 +1010,20 @@ $("#btn-vscode").addEventListener("click", () => openInVSCode(""));
 async function loadConfig() {
   try {
     const cfg = await api("/api/config");
-    $("#persona-textarea").value = cfg.soul || "";
     for (const [k, v] of Object.entries(cfg.env || {})) {
       const el = $$(`input[data-env="${k}"]`);
       if (el.length) el[0].value = v;
     }
     const row = $("#secrets-row");
     row.innerHTML = "";
-    for (const [k, set] of Object.entries(cfg.secrets || {})) {
+    for (const [k, isSet] of Object.entries(cfg.secrets || {})) {
       const chip = document.createElement("span");
-      chip.className = `secret-chip ${set ? 'set' : 'unset'}`;
-      chip.textContent = `${k}: ${set ? '✓ set' : '— unset'}`;
+      chip.className = `secret-chip ${isSet ? 'set' : ''}`;
+      chip.innerHTML = `<span class="dot"></span> ${k}: ${isSet ? 'set' : 'unset'}`;
       row.appendChild(chip);
     }
   } catch (e) { toast(e.message, "bad"); }
 }
-
-$("#btn-save-soul").addEventListener("click", async () => {
-  try {
-    await api("/api/config/soul", { method: "POST", body: JSON.stringify({ soul: $("#persona-textarea").value }) });
-    toast("persona saved");
-  } catch (e) { toast(e.message, "bad"); }
-});
-$("#btn-reload-soul").addEventListener("click", loadConfig);
 
 $("#btn-save-env").addEventListener("click", async () => {
   const values = {};
@@ -735,15 +1035,13 @@ $("#btn-save-env").addEventListener("click", async () => {
 });
 $("#btn-reload-env").addEventListener("click", loadConfig);
 
-// ── First-run wizard (if the tree is "just the starter set") ───
+// ── First-run wizard ───────────────────────────────────────────
 function maybeFirstRunWizard() {
   if (!_tree) return;
-  const top = (_tree.children || []).filter(c => c.kind === "folder" && !c.reserved);
-  const topAgents = (_tree.children || []).filter(c => c.kind === "agent");
-  // Heuristic: only reserved folders + the 5 starter agents means fresh install
-  if (top.length === 0 && topAgents.length <= 5) {
-    const alreadyShown = sessionStorage.getItem("rapp_wizard_shown");
-    if (alreadyShown) return;
+  const topFolders = (_tree.children || []).filter(c => c.kind === "folder" && !c.reserved);
+  const topAgents  = (_tree.children || []).filter(c => c.kind === "agent");
+  if (topFolders.length === 0 && topAgents.length <= 5) {
+    if (sessionStorage.getItem("rapp_wizard_shown")) return;
     sessionStorage.setItem("rapp_wizard_shown", "1");
     openFirstRunWizard();
   }
@@ -752,18 +1050,25 @@ function maybeFirstRunWizard() {
 function openFirstRunWizard() {
   const modal = $("#modal");
   modal.innerHTML = `
-    <h2>Welcome to your brainstem</h2>
-    <p class="muted">This is your <code>agents/</code> workspace. Everything you need to set up is here.</p>
-    <ul style="margin:16px 0 20px 20px; font-size:13px; line-height:1.7;">
-      <li><b>Agents tab</b> — add, organize, or disable agents. Drag them between folders.</li>
-      <li><b>Persona tab</b> — your soul.md, the voice your brainstem speaks with.</li>
-      <li><b>Settings tab</b> — model selection and toggles.</li>
-      <li>Need code access? Hit <b>Open in VS Code</b>.</li>
-    </ul>
+    <h2>Welcome to your brainstem 👋</h2>
+    <p class="subtitle">This is your agent workspace. Everything you need to set up lives here.</p>
+    <div style="display:grid; gap:10px; margin:14px 0 6px;">
+      <div style="display:flex; gap:12px; align-items:flex-start;">
+        <div style="font-size:22px;">📂</div>
+        <div><b>Agents</b><div class="muted">Add, organize, and toggle agents. Drag between folders. Flip a folder switch to pause a whole group.</div></div>
+      </div>
+      <div style="display:flex; gap:12px; align-items:flex-start;">
+        <div style="font-size:22px;">⚙</div>
+        <div><b>Settings</b><div class="muted">Model choice, voice/twin toggles.</div></div>
+      </div>
+      <div style="display:flex; gap:12px; align-items:flex-start;">
+        <div style="font-size:22px;">🛠</div>
+        <div><b>Need to edit soul or code?</b><div class="muted">Hit <b>VS Code</b> — the brainstem opens your agents folder in your editor for anything deeper than folders.</div></div>
+      </div>
+    </div>
     <div class="modal-actions">
       <button class="btn primary" data-close>Start organizing</button>
-    </div>
-  `;
+    </div>`;
   openModal();
 }
 
