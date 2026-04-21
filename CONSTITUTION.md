@@ -483,40 +483,62 @@ could this be a directory layout plus an agent? If yes, do that.
 
 ---
 
-## Article XV — Tier Parity Runs Deeper Than Agents
+## Article XV — Tier Parity Is a `/chat` Contract, Not a Transport
 
 Article III.3 promises agent portability across tiers. This article
 extends that promise to the server itself: **`rapp_brainstem/brainstem.py`
 and `rapp_swarm/function_app.py` must behave identically on the `/chat`
-contract.** The difference between tiers is where state is mounted, not
-what the code does.
+*contract*.** The surface a caller touches — request envelope, response
+envelope, slot split, agent contract, state layout — is the invariant.
 
-> **Same `/chat` loop. Same prompt split. Same agent contract. Same
-> state layout. Different mount point for the state root.**
+> **Same `/chat` contract. Same prompt split. Same agent contract.
+> Same state layout. Transport differences below the contract are OK.**
 
-Concretely:
+What must be identical across tiers:
 
-- Tier 1 mounts state on local disk (default `~/.brainstem_data/` or
-  `BRAINSTEM_HOME`).
-- Tier 2 mounts state on Azure Files at `BRAINSTEM_HOME`.
-- Tier 3 wraps the same `/chat` behind Copilot Studio.
-- The tool-calling loop, the provider dispatch, the slot split, and the
-  agent-discovery rules are byte-for-byte the same code path across
-  tiers — enforced by vendoring from one source of truth, not by
-  maintaining parallel implementations.
+- **Request envelope** — `user_input`, `conversation_history`,
+  `session_id`.
+- **Response envelope** — `response`, `voice_response`, `twin_response`,
+  `session_id`, `agent_logs`, `provider`, `model`.
+- **Tool-calling loop shape** — call LLM → execute tool calls → loop,
+  capped at a small number of rounds, with the same per-round logging.
+- **Slot split** — `|||VOICE|||` and `|||TWIN|||` are stripped the
+  same way, and the twin tags (`<probe/>`, `<calibration/>`,
+  `<telemetry>`) are handled the same way.
+- **Agent contract** — `BasicAgent` + `perform()` + metadata. Agents
+  that run in Tier 1 must run unmodified in Tier 2 (III.3).
+- **State layout** — `.brainstem_data/` on Tier 1, `BRAINSTEM_HOME` on
+  Tier 2. Same directory shape (`agents/`, `soul.md`, `memory/`,
+  `swarms/<guid>/...`).
+
+What may legitimately differ:
+
+- **Mount point for state.** Tier 1 local disk; Tier 2 Azure Files.
+- **LLM transport — by design.** Tier 1 is the training on-ramp:
+  Copilot-only via the `gh` CLI auth chain, zero-config, one auth
+  story for every learner. Tier 2 is where the user decides — pushing
+  to the RAPP cloud swarm is the moment the user declares *which AI
+  the cloud deployment uses* (Azure OpenAI, OpenAI, Anthropic, or any
+  provider the deploy target gives access to). That choice lives on
+  the cloud side because it's the cloud operator's constraint, not
+  the learner's. Both tiers produce the same response envelope and
+  the same loop behavior regardless of transport.
 
 ### What this rules out
 
-- ❌ A Tier-2-only server (`swarm_server.py`, a separate handler stack,
-  a bespoke chat loop) that duplicates `brainstem.py`'s responsibilities
-  with drift. If Tier 2 needs a capability, the capability lands in
-  `brainstem.py` (or an agent) and Tier 2 vendors it.
-- ❌ A Tier-1-only LLM provider path (e.g. Copilot-only) that Tier 2
-  has to re-implement. Provider dispatch is shared.
+- ❌ A Tier-2-only server (e.g. `swarm_server.py`, a separate handler
+  stack, a bespoke chat loop) that duplicates `brainstem.py`'s
+  responsibilities with drift. If Tier 2 needs a capability,
+  the capability lands in an agent and Tier 2 vendors it.
 - ❌ Routes that exist on one tier but not the other. `/chat` is the
   surface; both tiers expose it, both tiers route the same way.
-- ❌ "It works in Tier 1, we'll figure out Tier 2 later." Tier parity
-  is asserted per-PR, not deferred to a migration window.
+- ❌ Adding an LLM provider to Tier 1 that breaks the one-liner
+  install. Any multi-provider work on Tier 1 must keep Copilot as
+  the zero-config default (Article V). Default posture: don't add
+  one — put provider choice on the cloud-deploy side where it
+  already lives.
+- ❌ "It works in Tier 1, we'll figure out Tier 2 later." Contract
+  parity is asserted per-PR, not deferred to a migration window.
 
 ### How we enforce it
 
