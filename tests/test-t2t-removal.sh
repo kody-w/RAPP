@@ -76,29 +76,13 @@ assert_not_exists "rapp_brainstem/t2t.py removed"        rapp_brainstem/t2t.py
 assert_not_exists "rapp_brainstem/workspace.py removed"  rapp_brainstem/workspace.py
 assert_not_exists "tests/test-t2t.sh removed"            tests/test-t2t.sh
 
-# ── Section 2: swarm_server imports cleanly ───────────────────────────
+# ── Section 2: swarm_server.py / chat.py entirely removed ─────────────
 
 echo ""
-echo "--- Section 2: swarm_server.py is clean ---"
+echo "--- Section 2: swarm_server.py and chat.py entirely gone ---"
 
-IMPORT_OUT=$(python3 -c "
-import sys
-sys.path.insert(0, 'rapp_brainstem')
-import swarm_server
-# Should NOT have these symbols
-bad = [s for s in dir(swarm_server) if 't2t' in s.lower() or 'workspace' in s.lower()]
-print('bad_symbols:' + ','.join(bad) if bad else 'ok')
-" 2>&1)
-assert_eq "swarm_server imports with no T2T/workspace symbols"  "ok"  "$IMPORT_OUT"
-
-assert_no_match "swarm_server.py has no /api/t2t/ routes" \
-    '"/api/t2t/'  rapp_brainstem/swarm_server.py
-assert_no_match "swarm_server.py has no /api/workspace routes" \
-    '"/api/workspace'  rapp_brainstem/swarm_server.py
-assert_no_match "swarm_server.py has no 'from t2t import' statements" \
-    'from t2t import'  rapp_brainstem/swarm_server.py
-assert_no_match "swarm_server.py has no 'from workspace import' statements" \
-    'from workspace import'  rapp_brainstem/swarm_server.py
+assert_not_exists "rapp_brainstem/swarm_server.py removed"  rapp_brainstem/swarm_server.py
+assert_not_exists "rapp_brainstem/chat.py removed"          rapp_brainstem/chat.py
 
 # ── Section 3: function_app.py is clean ───────────────────────────────
 
@@ -135,89 +119,17 @@ rm -rf rapp_swarm/_vendored
 bash rapp_swarm/build.sh >/dev/null 2>&1
 assert_not_exists "vendored bundle has no t2t.py"         rapp_swarm/_vendored/t2t.py
 assert_not_exists "vendored bundle has no workspace.py"   rapp_swarm/_vendored/workspace.py
-# But the core files should still be vendored
-if [ -f rapp_swarm/_vendored/server.py ] && \
-   [ -f rapp_swarm/_vendored/chat.py ] && \
-   [ -f rapp_swarm/_vendored/llm.py ] && \
-   [ -f rapp_swarm/_vendored/twin.py ]; then
-    echo "  ✓ vendored bundle still contains server/chat/llm/twin"
+assert_not_exists "vendored bundle has no server.py"      rapp_swarm/_vendored/server.py
+assert_not_exists "vendored bundle has no chat.py"        rapp_swarm/_vendored/chat.py
+# But the core runtime deps should still be vendored
+if [ -f rapp_swarm/_vendored/llm.py ] && \
+   [ -f rapp_swarm/_vendored/twin.py ] && \
+   [ -f rapp_swarm/_vendored/_basic_agent_shim.py ]; then
+    echo "  ✓ vendored bundle still contains llm/twin/_basic_agent_shim"
     PASS=$((PASS + 1))
 else
     echo "  ✗ vendored bundle missing expected core files"
     FAIL=$((FAIL + 1)); FAIL_NAMES+=("vendor-core")
-fi
-
-# ── Section 5: Runtime — T2T routes 404, core routes work ─────────────
-
-echo ""
-echo "--- Section 5: swarm_server runtime (live) ---"
-
-rm -rf "$ROOT"
-python3 rapp_brainstem/swarm_server.py --port $PORT --root "$ROOT" >/dev/null 2>&1 &
-SERVER_PID=$!
-sleep 1.5
-
-# Core route still works
-CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:$PORT/api/swarm/healthz")
-assert_eq "GET /api/swarm/healthz still 200"  "200"  "$CODE"
-
-# T2T routes gone (404 from the BaseHTTPRequestHandler fallback)
-CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:$PORT/api/t2t/identity")
-assert_eq "GET /api/t2t/identity now 404"  "404"  "$CODE"
-CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:$PORT/api/t2t/peers")
-assert_eq "GET /api/t2t/peers now 404"  "404"  "$CODE"
-CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:$PORT/api/workspace")
-assert_eq "GET /api/workspace now 404"  "404"  "$CODE"
-CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:$PORT/api/workspace/documents")
-assert_eq "GET /api/workspace/documents now 404"  "404"  "$CODE"
-
-# POST T2T also 404
-CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
-    -H 'Content-Type: application/json' -d '{}' \
-    "http://127.0.0.1:$PORT/api/t2t/handshake")
-assert_eq "POST /api/t2t/handshake now 404"  "404"  "$CODE"
-CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
-    -H 'Content-Type: application/json' -d '{}' \
-    "http://127.0.0.1:$PORT/api/t2t/invoke")
-assert_eq "POST /api/t2t/invoke now 404"  "404"  "$CODE"
-
-# Deploy + chat still work (core non-T2T path)
-BUNDLE=$(python3 - <<'PY'
-import json, pathlib
-agents = []
-for p in pathlib.Path('rapp_brainstem/agents').glob('*_agent.py'):
-    if p.name == 'basic_agent.py': continue
-    agents.append({
-        'filename': p.name,
-        'name': p.stem.replace('_agent', '').title().replace('_', ''),
-        'source': p.read_text(),
-    })
-print(json.dumps({
-    'schema': 'rapp-swarm/1.0',
-    'name': 'test-t2t-removal',
-    'purpose': 'T2T removal smoke test',
-    'created_at': '2026-04-21T00:00:00Z',
-    'created_by': 'test',
-    'agents': agents,
-}))
-PY
-)
-DEPLOY=$(curl -s -X POST "http://127.0.0.1:$PORT/api/swarm/deploy" \
-    -H 'Content-Type: application/json' --data-binary "$BUNDLE")
-SWARM_GUID=$(echo "$DEPLOY" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("swarm_guid",""))' 2>/dev/null)
-if [ -n "$SWARM_GUID" ]; then
-    echo "  ✓ /api/swarm/deploy still works (got guid $SWARM_GUID)"
-    PASS=$((PASS + 1))
-else
-    echo "  ✗ /api/swarm/deploy failed — response: $(echo "$DEPLOY" | head -c 200)"
-    FAIL=$((FAIL + 1)); FAIL_NAMES+=("deploy")
-fi
-
-# Seal status route still works
-if [ -n "$SWARM_GUID" ]; then
-    CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-        "http://127.0.0.1:$PORT/api/swarm/$SWARM_GUID/seal")
-    assert_eq "GET /api/swarm/<guid>/seal still 200"  "200"  "$CODE"
 fi
 
 # ── Summary ────────────────────────────────────────────────────────────
