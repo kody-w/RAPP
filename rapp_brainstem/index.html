@@ -2813,16 +2813,28 @@
     bubble.classList.add('visible');
 
     try {
+      // Rotate the holo-flavored opener cue so the LLM doesn't latch onto
+      // the same phrase every nudge. The model tends to mirror whatever
+      // example we give it — so give it a fresh image each time.
+      const NUDGE_VIBES = [
+        'signal snapping into focus', 'holo flickers and clears',
+        'coordinates updating', 'beam re-calibrating',
+        'new frequency coming in', 'projection sharpens',
+        'parallax shifts', 'layer peels back',
+        'wider lens dropping in', 'holo pans out',
+        'recursion kicks in', 'fresh scan rolling',
+        'spin-up from another angle', 'mirror tilts a few degrees',
+      ];
+      const vibe = NUDGE_VIBES[Math.floor(Math.random() * NUDGE_VIBES.length)];
+      const nonce = Math.random().toString(36).slice(2, 7);
       const nudgeMessage =
-        '[SYSTEM NUDGE — the user tapped the hologram twice to say "I\'m stuck." ' +
-        'Look at the conversation so far and offer fresh angles they haven\'t ' +
-        'tried yet. Reply with ONLY a |||TWIN||| block — no main reply, no ' +
-        '|||VOICE|||. Inside the TWIN block: one short holo-flavored ' +
-        'observation (1 sentence, lean into the hologram metaphor — ' +
-        '"flickering on…", "re-aiming the projector…", etc.) followed by ' +
-        '2–3 <action kind="send"> or <action kind="prompt"> chips with ' +
-        'concrete next moves based on the actual conversation context. ' +
-        'Do not repeat suggestions from earlier turns. Keep it tight.]';
+        `[SYSTEM NUDGE #${nonce} — the user tapped the hologram twice: "I'm stuck." ` +
+        'Reply with ONLY a |||TWIN||| block — no main reply, no |||VOICE|||. ' +
+        'Inside the TWIN block:\n' +
+        `1. One short holo-flavored opener (ONE sentence, ~10 words). Use THIS vibe as inspiration: "${vibe}". ` +
+        'Do NOT use the word "projector" or repeat any opener you have used earlier in this conversation — invent a new image each time.\n' +
+        '2. Then 2–3 <action kind="send"> or <action kind="prompt"> chips with concrete next moves grounded in what we\'ve actually been discussing. ' +
+        'Do not repeat suggestions the twin already made earlier. The user can see what was said — show them new ground.]';
 
       const reqBody = { user_input: nudgeMessage, conversation_history: history };
       if (sessionId) reqBody.session_id = sessionId;
