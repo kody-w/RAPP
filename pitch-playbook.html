@@ -246,7 +246,7 @@ pre.cmd .green{color:var(--green)}
   <div class="slide-inner">
     <div class="logo animate">🧠</div>
     <h1 class="animate d1">Vibe Agent <span class="grad">Swarm Building</span></h1>
-    <p class="big animate d2" style="margin:0 auto;max-width:680px">Build, share, and deploy AI agent swarms the way software should work — describe what you want, drop a file, it runs.</p>
+    <p class="big animate d2" style="margin:0 auto;max-width:680px">Describe what you want. Drop a file. It runs.</p>
     <div class="tag animate d3">End-to-end pitch playbook · April 2026</div>
     <p class="animate d4 dim" style="font-size:.95rem;margin:20px auto 0">By <strong style="color:var(--text)">Kody Wildfeuer</strong> · <span style="color:var(--accent)">AIBAST</span> (AI Business Applications Specialist Team) · Microsoft</p>
     <p class="animate d4 dim" style="font-size:.8rem;margin:12px auto 0">Press → or swipe to navigate &nbsp;·&nbsp; Built for executive leadership</p>
@@ -274,43 +274,48 @@ pre.cmd .green{color:var(--green)}
 
 <!-- ── SLIDE 2: The Problem ── -->
 <div class="slide">
-  <div class="slide-inner">
+  <div class="slide-inner center">
     <h3 class="kicker animate"><span class="num-badge">01</span>The Opportunity</h3>
-    <h2 class="animate d1">Making agents easier to share</h2>
-    <p class="animate d2" style="margin-bottom:18px">Teams across Microsoft are each building great agent tooling in parallel — every team solving a real need, each with its own approach, audience, and learning curve. Agents exist, the work is real, but they don't always travel easily between teams. A shared, lightweight format on top could let that work compound.</p>
-    <div class="card animate d3" style="max-width:880px;margin:0 auto">
-      <div class="label">What we've been noticing</div>
-      <ul>
-        <li><strong>"Yeah, we built that too"</strong> — a phrase we've all said. Teams independently solve similar needs because there's no shared baseline to start from.</li>
-        <li><strong>Easier to build than to teach</strong> — when a tool is hard to onboard, it stays with its authors, even when the capability deserves a wider audience.</li>
-        <li><strong>The real unlock comes later</strong> — what happens <em>after</em> we have agent tooling people can build on together. That's where the AI value compounds.</li>
-        <li><strong>The two-year view</strong> — everyone at Microsoft will eventually need a fast way to share agents. A shared format now is cheaper than retrofitting one later.</li>
-      </ul>
+    <h2 class="animate d1" style="font-size:3rem">Agents don't <span class="orange">travel.</span></h2>
+    <p class="big animate d2" style="margin:24px auto 48px;max-width:760px">Teams across Microsoft build great agents — but sharing them between teams is still harder than it should be.</p>
+    <div class="cols-3 animate d3" style="max-width:900px;margin:0 auto">
+      <div style="text-align:center;padding:24px 16px">
+        <div style="font-size:2.4rem;margin-bottom:16px">🔁</div>
+        <p style="font-size:1.15rem;max-width:none"><strong style="color:var(--text)">"We built that too."</strong><br>Teams solve the same needs in parallel.</p>
+      </div>
+      <div style="text-align:center;padding:24px 16px">
+        <div style="font-size:2.4rem;margin-bottom:16px">📚</div>
+        <p style="font-size:1.15rem;max-width:none"><strong style="color:var(--text)">Hard to teach.</strong><br>Great tools stay with their authors.</p>
+      </div>
+      <div style="text-align:center;padding:24px 16px">
+        <div style="font-size:2.4rem;margin-bottom:16px">⏳</div>
+        <p style="font-size:1.15rem;max-width:none"><strong style="color:var(--text)">The clock is ticking.</strong><br>A shared format now beats retrofitting one later.</p>
+      </div>
     </div>
-    <blockquote class="animate d4"><p>RAPP is a contribution toward that shared layer — a simple, teachable format that complements the tooling teams already have and lets great work travel, compound, and become accessible to everyone.</p></blockquote>
   </div>
 </div>
 
 <!-- ── SLIDE 3: Why RAPP ── -->
 <div class="slide">
-  <div class="slide-inner">
+  <div class="slide-inner center">
     <h3 class="kicker animate"><span class="num-badge">02</span>Why RAPP Solves It</h3>
-    <h2 class="animate d1">One file = one agent. <span class="green">No exceptions.</span></h2>
-    <div class="cols animate d2" style="margin-top:12px">
-      <div>
-        <div class="card" style="border-color:var(--accent)">
-          <div class="label">The sacred tenet</div>
-          <p>A single Python file contains the documentation, the contract, and the code. A 14-year-old can ship their first agent in minutes. An enterprise can ship the same file to 500,000 seats.</p>
-        </div>
+    <h2 class="animate d1" style="font-size:3rem">One file = one agent. <span class="green">No exceptions.</span></h2>
+    <p class="big animate d2" style="margin:24px auto 56px;max-width:720px">A single file contains everything — the docs, the contract, the code. Ship it in minutes. Run it anywhere.</p>
+    <div class="cols-3 animate d3" style="max-width:960px;margin:0 auto">
+      <div style="text-align:center;padding:24px 20px">
+        <div style="font-size:2.4rem;margin-bottom:16px">🔁</div>
+        <p style="font-size:1.3rem;max-width:none"><strong style="color:var(--text)">Runs everywhere</strong></p>
+        <p style="font-size:1.05rem;max-width:none;margin-top:8px">Laptop, Azure, Teams — same file, unchanged.</p>
       </div>
-      <div>
-        <ul class="feature-list">
-          <li><span class="icon">🔁</span><div><strong>Three tiers, zero modification.</strong> The same file runs on a laptop (local Flask server), in Azure Functions, and in Copilot Studio on Teams — unchanged.</div></li>
-          <li><span class="icon">📦</span><div><strong>Shareable by design.</strong> Agents install with a file drop. Registry, store, 7-word speakable phrase.</div></li>
-          <li><span class="icon">✅</span><div><strong>Already working.</strong> Frozen v1 spec, one-line installer, live agent store, natural-language agent generation.</div></li>
-          <li><span class="icon">⚙️</span><div><strong>Engine, not experience.</strong> Infrastructure that stays light so capabilities compound — a shared base layer, not another framework to learn.</div></li>
-          <li><span class="icon">🤝</span><div><strong>Complements, doesn't replace.</strong> RAPP sits alongside the agent tooling teams already use. The goal is to accelerate the great work in flight, not compete with it.</div></li>
-        </ul>
+      <div style="text-align:center;padding:24px 20px">
+        <div style="font-size:2.4rem;margin-bottom:16px">📦</div>
+        <p style="font-size:1.3rem;max-width:none"><strong style="color:var(--text)">Share with a drop</strong></p>
+        <p style="font-size:1.05rem;max-width:none;margin-top:8px">File drop, agent store, or a speakable phrase.</p>
+      </div>
+      <div style="text-align:center;padding:24px 20px">
+        <div style="font-size:2.4rem;margin-bottom:16px">🤝</div>
+        <p style="font-size:1.3rem;max-width:none"><strong style="color:var(--text)">Complements, doesn't replace</strong></p>
+        <p style="font-size:1.05rem;max-width:none;margin-top:8px">A shared layer on top of the tools teams already use.</p>
       </div>
     </div>
   </div>
@@ -371,9 +376,9 @@ pre.cmd .green{color:var(--green)}
 <div class="slide">
   <div class="slide-inner">
     <h3 class="kicker animate"><span class="num-badge">05</span>See It In Action</h3>
-    <h2 class="animate d1">Four agents, one brief.</h2>
-    <p class="animate d2" style="margin-bottom:16px">You give it a topic. Four specialized agents work in sequence — each with its own expertise — and hand you a polished executive brief in under a minute.</p>
-    <div class="pipeline animate d3">
+    <h2 class="animate d1" style="font-size:3rem">Four agents, one brief.</h2>
+    <p class="big animate d2" style="margin:16px auto 48px;max-width:640px;text-align:center">Give it a topic. Get a polished executive brief in under a minute.</p>
+    <div class="pipeline animate d3" style="margin:0 auto 56px">
       <div class="step"><div class="emoji">🔭</div><div class="name">Scout</div><div class="role">Gathers intelligence</div></div>
       <div class="arrow">→</div>
       <div class="step"><div class="emoji">🔬</div><div class="name">Analyst</div><div class="role">Finds the insight</div></div>
@@ -382,8 +387,8 @@ pre.cmd .green{color:var(--green)}
       <div class="arrow">→</div>
       <div class="step"><div class="emoji">✍️</div><div class="name">Writer</div><div class="role">Delivers the brief</div></div>
     </div>
-    <div class="highlight-box animate d4" style="margin-top:24px">
-      <p><strong>The meta-move:</strong> This pipeline produces the executive brief arguing for the very tool that built it. The medium is the message.</p>
+    <div class="highlight-box animate d4" style="max-width:720px">
+      <p><strong>The meta-move:</strong> This pipeline produces the brief arguing for the very tool that built it.</p>
     </div>
   </div>
 </div>
@@ -423,58 +428,35 @@ pre.cmd .green{color:var(--green)}
 
 <!-- ── SLIDE 8: Agent Management ── -->
 <div class="slide">
-  <div class="slide-inner">
+  <div class="slide-inner center">
     <h3 class="kicker animate"><span class="num-badge">07</span>Agent Management</h3>
-    <h2 class="animate d1">One Click. <span class="green">On or Off.</span></h2>
-    <p class="animate d2" style="margin-bottom:16px">Every agent shows up in the panel with a toggle. Turn it on, it's live. Turn it off, it's sleeping — nothing deleted, nothing lost. Curate exactly which capabilities are active for any workflow.</p>
-    <div class="cols animate d3">
-      <div>
-        <h4 style="font-size:.85rem;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:10px">What you get</h4>
-        <ul class="feature-list" style="margin-top:0">
-          <li><span class="icon">🎛️</span><div><strong>Instant control</strong> — toggle any agent on or off from the sidebar</div></li>
-          <li><span class="icon">🛡️</span><div><strong>Non-destructive</strong> — disabled agents stay intact, ready to reactivate</div></li>
-          <li><span class="icon">💾</span><div><strong>Persistent</strong> — your choices survive restarts and updates</div></li>
-          <li><span class="icon">🎯</span><div><strong>Per-workflow</strong> — run a lean stack for demos, full suite for development</div></li>
-        </ul>
-      </div>
-      <div>
-        <h4 style="font-size:.85rem;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:10px">Live preview</h4>
-        <div class="toggle-demo"><div class="toggle-switch"></div><div class="toggle-label"><span class="on">ExecBrief</span></div></div>
-        <div class="toggle-demo"><div class="toggle-switch"></div><div class="toggle-label"><span class="on">HackerNews</span></div></div>
-        <div class="toggle-demo"><div class="toggle-switch off"></div><div class="toggle-label"><span class="off">BookFactory</span></div></div>
-        <p style="font-size:.78rem;color:var(--muted);margin-top:10px;text-align:center">One click. That's it.</p>
-      </div>
+    <h2 class="animate d1" style="font-size:3rem">One click. <span class="green">On or off.</span></h2>
+    <p class="big animate d2" style="margin:16px auto 48px;max-width:600px">Turn any agent on or off from the sidebar. Nothing gets deleted. Ever.</p>
+    <div class="animate d3" style="max-width:380px;margin:0 auto">
+      <div class="toggle-demo"><div class="toggle-switch"></div><div class="toggle-label"><span class="on">ExecBrief</span></div></div>
+      <div class="toggle-demo"><div class="toggle-switch"></div><div class="toggle-label"><span class="on">HackerNews</span></div></div>
+      <div class="toggle-demo"><div class="toggle-switch off"></div><div class="toggle-label"><span class="off">BookFactory</span></div></div>
     </div>
   </div>
 </div>
 
 <!-- ── SLIDE 9: The Dropper ── -->
 <div class="slide">
-  <div class="slide-inner">
-    <h3 class="kicker animate"><span class="num-badge">08</span>The Ultimate Dropper</h3>
-    <h2 class="animate d1">Teams + <span class="purple">Virtual Brainstem</span></h2>
-    <p class="animate d2" style="margin-bottom:14px">This is the closer. After the demo, you hand the executive the agent itself — not a slide deck, not a doc, not a link to a repo. <strong style="color:var(--text)">The actual agent as a single .py file.</strong> They drop it into a browser and it works.</p>
-    <div class="pipeline animate d3" style="margin:12px 0">
-      <a href="https://raw.githubusercontent.com/kody-w/RAPP/main/rapp_store/execbrief/singleton/execbrief_agent.py" download="execbrief_agent.py" class="step" style="border-color:var(--purple);text-decoration:none;color:inherit;cursor:pointer"><div class="emoji">📤</div><div class="name">Export</div><div class="role">Download .py</div></a>
+  <div class="slide-inner center">
+    <h3 class="kicker animate"><span class="num-badge">08</span>The Dropper</h3>
+    <h2 class="animate d1" style="font-size:3rem">Send the agent. <span class="purple">Not a deck.</span></h2>
+    <p class="big animate d2" style="margin:16px auto 48px;max-width:640px">Hand them the actual agent as a file. They drop it in a browser. It works.</p>
+    <div class="pipeline animate d3" style="margin:0 auto 56px">
+      <a href="https://raw.githubusercontent.com/kody-w/RAPP/main/rapp_store/execbrief/singleton/execbrief_agent.py" download="execbrief_agent.py" class="step" style="border-color:var(--purple);text-decoration:none;color:inherit;cursor:pointer"><div class="emoji">📤</div><div class="name">Export</div><div class="role">Download the agent</div></a>
       <div class="arrow">→</div>
-      <div class="step" style="border-color:var(--purple)"><div class="emoji">💬</div><div class="name">Teams</div><div class="role">Post the .py file</div></div>
+      <div class="step" style="border-color:var(--purple)"><div class="emoji">💬</div><div class="name">Teams</div><div class="role">Drop in chat</div></div>
       <div class="arrow">→</div>
-      <div class="step" style="border-color:var(--purple)"><div class="emoji">🌐</div><div class="name">Virtual Brainstem</div><div class="role">Browser drop zone</div></div>
+      <div class="step" style="border-color:var(--purple)"><div class="emoji">🌐</div><div class="name">Browser</div><div class="role">Open & drop</div></div>
       <div class="arrow">→</div>
       <div class="step" style="border-color:var(--green)"><div class="emoji">🧠</div><div class="name">Running</div><div class="role">Their machine</div></div>
     </div>
-    <div class="card animate d4" style="border-color:var(--purple);max-width:920px;margin:0 auto">
-      <div class="label" style="color:var(--purple)">The play</div>
-      <ul>
-        <li><strong>Export</strong> — <a href="https://raw.githubusercontent.com/kody-w/RAPP/main/rapp_store/execbrief/singleton/execbrief_agent.py" download="execbrief_agent.py" style="color:var(--accent)">click here to download <code>execbrief_agent.py</code></a>. You now have the singleton file.</li>
-        <li><strong>Post to Teams</strong> — drop the <code>.py</code> file directly into the Teams chat. One file, 489 lines, everything inlined.</li>
-        <li><strong>Post the link</strong> — paste <code>https://kody-w.github.io/RAPP/rapp_brainstem/web/</code> alongside it.</li>
-        <li><strong>They open &amp; drop</strong> — the executive opens the virtual brainstem, opens the Agents drawer, drops the file onto the drop zone. Loads instantly.</li>
-        <li><strong>They run it</strong> — one-liner starts a local brainstem; the tether lights up green and the browser routes execution to local Python.</li>
-      </ul>
-    </div>
-    <div class="highlight-box animate d4">
-      <p><strong>The punchline:</strong> "I just sent you a .py file in Teams. You dropped it in a browser. It works. That's what agent sharing should feel like at Microsoft."</p>
+    <div class="highlight-box animate d4" style="max-width:760px">
+      <p><strong>The punchline:</strong> "I sent you a file in Teams. You dropped it in a browser. It works."</p>
     </div>
   </div>
 </div>
@@ -512,19 +494,19 @@ agent sharing standard and what happens if we don't act</span>
 <!-- ── SLIDE 11: CTA ── -->
 <div class="slide center">
   <div class="slide-inner">
-    <div class="logo animate">🧠</div>
-    <h1 class="animate d1" style="font-size:2.6rem">Everything is <span class="grad">deployed &amp; live.</span></h1>
-    <p class="big animate d2" style="margin:0 auto 18px;max-width:720px">The ExecBrief rapplication is in the store. The toggle UI is in the brainstem. The installer pulls the latest.<br><strong style="color:var(--text)">Start the brainstem, install ExecBrief, and share it with your team.</strong></p>
-    <p class="animate d2 dim" style="margin:0 auto 20px;max-width:720px;font-size:.95rem">RAPP is a complement to the great agent tooling across Microsoft — built to accelerate the work in flight and make agents accessible to everyone through easy sharing and learning.</p>
+    <div class="logo animate" style="margin-bottom:24px">🧠</div>
+    <h1 class="animate d1" style="font-size:3rem">It's live. <span class="grad">Try it now.</span></h1>
+    <p class="big animate d2" style="margin:24px auto 40px;max-width:600px">One file. One drop. It runs.</p>
     <div class="btn-row animate d3">
-      <a href="https://raw.githubusercontent.com/kody-w/RAPP/main/rapp_store/execbrief/singleton/execbrief_agent.py" download="execbrief_agent.py" class="btn btn-primary">📥 Download execbrief_agent.py</a>
-      <a href="https://kody-w.github.io/RAPP/" class="btn btn-outline">🚀 RAPP Home</a>
-      <a href="https://kody-w.github.io/RAPP/store/" class="btn btn-outline">🏪 Store</a>
-      <a href="https://github.com/kody-w/RAPP" class="btn btn-green">⌨️ GitHub</a>
+      <a href="https://raw.githubusercontent.com/kody-w/RAPP/main/rapp_store/execbrief/singleton/execbrief_agent.py" download="execbrief_agent.py" class="btn btn-primary" style="font-size:1.25rem;padding:18px 36px">📥 Download the agent</a>
     </div>
-    <p class="animate d4" style="margin-top:32px;color:var(--muted);font-size:.82rem">
-      The file IS the agent IS the documentation IS the contract.<br>
-      Pitch Playbook · April 2026 · Built by Kody Wildfeuer · AIBAST · Microsoft
+    <div class="btn-row animate d4" style="margin-top:12px">
+      <a href="https://kody-w.github.io/RAPP/" class="btn btn-outline">RAPP Home</a>
+      <a href="https://kody-w.github.io/RAPP/store/" class="btn btn-outline">Agent Store</a>
+      <a href="https://github.com/kody-w/RAPP" class="btn btn-green">GitHub</a>
+    </div>
+    <p class="animate d4" style="margin-top:48px;color:var(--muted);font-size:.82rem">
+      Kody Wildfeuer · AIBAST · Microsoft · April 2026
     </p>
   </div>
 </div>
