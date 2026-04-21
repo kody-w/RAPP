@@ -561,6 +561,32 @@
   }
   .starter-btn.twin-pill { color: #cae3ff; }
   .starter-btn.twin-pill:hover { border-color: #58a6ff; background: rgba(88,166,255,.14); }
+  /* Press-feedback: immediate squish + halo + locked state so the user
+     sees their click registered, even when the action is "open a panel"
+     (no chat turn) or "prefill the input" (no typing indicator). Locked
+     pill can't re-fire until the timer clears, which kills the
+     "I clicked three times because nothing happened" pileup. */
+  @keyframes pill-pulse {
+    0%   { transform: scale(1);    box-shadow: 0 0 0 0    rgba(88,166,255,.55); }
+    35%  { transform: scale(.92);  box-shadow: 0 0 0 4px  rgba(88,166,255,.35); }
+    100% { transform: scale(1);    box-shadow: 0 0 0 16px rgba(88,166,255,0);   }
+  }
+  .starter-btn.pill-pressed {
+    animation: pill-pulse .55s ease-out;
+    background: rgba(88,166,255,.18);
+    border-color: #58a6ff;
+    color: #cae3ff;
+  }
+  .starter-btn.pill-locked {
+    opacity: .5; pointer-events: none; cursor: wait;
+  }
+  /* Flash the input border when a "prompt" pill prefills the textarea
+     so the user's eye is pulled to where their cursor just landed. */
+  @keyframes input-flash {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(88,166,255,0); }
+    50%      { box-shadow: 0 0 0 3px rgba(88,166,255,.45); }
+  }
+  #input.flash { animation: input-flash .5s ease-out 1; }
   .hidden-prompts { opacity: 0; pointer-events: none; transform: translateY(10px); display: none !important; }
 
   /* ── Light Mode Overrides ── */
@@ -602,6 +628,28 @@
   body.light-mode .msg.assistant .bubble pre {
     background: #f6f8fa;
     border: 1px solid #d0d7de;
+  }
+  /* Agent-called chip + expanded log box — were rendering as a dark box
+     on white, now theme-aware. Label becomes a light chip; the expanded
+     raw payload is a light monospace panel instead of a black hole. */
+  body.light-mode .agent-logs-wrapper {
+    border-color: #d0d7de;
+  }
+  body.light-mode .logs-label {
+    background: #f6f8fa;
+    color: #57606a;
+  }
+  body.light-mode .logs-label:hover {
+    background: #eaeef2;
+    color: #24292e;
+  }
+  body.light-mode .logs-label .agent-name {
+    color: #1f6feb;
+  }
+  body.light-mode .agent-logs {
+    background: #f6f8fa;
+    color: #1a7f37;
+    border-top-color: #d0d7de;
   }
   body.light-mode .msg.assistant .avatar {
     background: #f6f8fa;
@@ -1200,9 +1248,9 @@
   <!-- MOUTH: quick-prompt pills below the input. Starter prompts seed
        it; twin can append send/prompt suggestions as blue chips. -->
   <div id="starter-prompts">
-    <button class="starter-btn" onclick="useStarter('What exactly can you do?')">What can you do?</button>
-    <button class="starter-btn" onclick="useStarter('Help me build a new tool.')">Help me build a new tool</button>
-    <button class="starter-btn" onclick="useStarter('How do I manage my agent files?')">How do I manage agents?</button>
+    <button class="starter-btn" onclick="useStarter('What exactly can you do?', this)">What can you do?</button>
+    <button class="starter-btn" onclick="useStarter('Help me build a new tool.', this)">Help me build a new tool</button>
+    <button class="starter-btn" onclick="useStarter('How do I manage my agent files?', this)">How do I manage agents?</button>
   </div>
 </footer>
 
@@ -1807,9 +1855,35 @@
     document.getElementById('typing-indicator')?.remove();
   }
 
-  function useStarter(text) {
+  function useStarter(text, btn) {
+    pressPill(btn);
     document.getElementById('input').value = text;
     sendMessage();
+  }
+
+  // Shared press-feedback for any pill (static starter or twin-pill).
+  // Fires a squish+halo animation, locks the pill so repeat clicks
+  // can't pile up, and clears after ~1.4s (or sooner if caller unlocks).
+  function pressPill(btn) {
+    if (!btn) return;
+    btn.classList.remove('pill-pressed');
+    // Force a reflow so the animation restarts if the same pill is
+    // pressed twice in a row (e.g. locked window expired).
+    void btn.offsetWidth;
+    btn.classList.add('pill-pressed', 'pill-locked');
+    setTimeout(() => btn.classList.remove('pill-pressed'), 600);
+    setTimeout(() => btn.classList.remove('pill-locked'), 1400);
+  }
+
+  // Flash the input border — used when a twin "prompt" pill prefills
+  // the textarea so the user's eye lands on the newly-populated input
+  // instead of wondering if the click did anything.
+  function flashInput() {
+    const inp = document.getElementById('input');
+    if (!inp) return;
+    inp.classList.remove('flash');
+    void inp.offsetWidth;
+    inp.classList.add('flash');
   }
 
   // ── Send ──
@@ -2948,6 +3022,7 @@
 
   function runTwinAction(action, btn) {
     try {
+      pressPill(btn);
       const kind = (action.kind || '').toLowerCase();
       const inp = document.getElementById('input');
       const textFor = () => action.body || action.label || action.target || '';
@@ -2959,6 +3034,7 @@
         inp.value = textFor();
         inp.focus();
         inp.dispatchEvent(new Event('input'));
+        flashInput();
       } else if (kind === 'open') {
         if (action.target === 'settings') toggleSettingsPanel();
         else if (action.target === 'agents') toggleAgentsPanel();
