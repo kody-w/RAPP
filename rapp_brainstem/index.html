@@ -83,9 +83,22 @@
   /* Labeled top-bar buttons — icon + text so users can be trained with
      noun phrases ("click Agents", "click Settings") instead of pointing
      at an unlabeled gear. */
-  .icon-btn.labeled-btn { padding: 5px 10px; gap: 6px; font-size: 12px; font-weight: 500; }
+  .icon-btn.labeled-btn {
+    padding: 0 12px;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    height: 30px;        /* explicit height so SVG-vs-emoji content doesn't shift sizes */
+    line-height: 1;
+    box-sizing: border-box;
+  }
   .icon-btn.labeled-btn .btn-label { letter-spacing: .02em; }
-  .icon-btn.labeled-btn .icon svg { width: 14px; height: 14px; }
+  .icon-btn.labeled-btn .icon,
+  .icon-btn.labeled-btn .icon svg {
+    width: 14px; height: 14px;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
 
   /* ── Login overlay ── */
   #login-overlay {
@@ -1529,9 +1542,14 @@
   <!-- MOUTH: quick-prompt pills below the input. Starter prompts seed
        it; twin can append send/prompt suggestions as blue chips. -->
   <div id="starter-prompts">
-    <button class="starter-btn" onclick="useStarter('What exactly can you do?', this)">What can you do?</button>
-    <button class="starter-btn" onclick="useStarter('Help me build a new tool.', this)">Help me build a new tool</button>
-    <button class="starter-btn" onclick="useStarter('How do I manage my agent files?', this)">How do I manage agents?</button>
+    <!-- Starters are twin-voiced calibration bets, not help prompts. Per
+         CONSTITUTION Article XXI — the user's first click is the twin's
+         first data point. Each label = a prediction the twin is making
+         about the user; click confirms, ignore tells the twin to look
+         elsewhere. Help-shaped prompts belong in the main reply, not here. -->
+    <button class="starter-btn" onclick="useStarter('Remind me what I was building last.', this)">Remind me what I was building</button>
+    <button class="starter-btn" onclick="useStarter('What&apos;s my biggest risk right now?', this)">What&apos;s my biggest risk?</button>
+    <button class="starter-btn" onclick="useStarter('What have I said I&apos;d ship that I haven&apos;t?', this)">What haven&apos;t I shipped?</button>
   </div>
 </footer>
 
@@ -3353,7 +3371,7 @@
 
   function updateVoiceBtn() {
     const btn = document.getElementById('voice-btn');
-    btn.className = voiceMode ? 'icon-btn active' : 'icon-btn';
+    btn.className = 'icon-btn labeled-btn' + (voiceMode ? ' active' : '');
     btn.title = voiceMode ? 'Voice mode on' : 'Voice mode off';
   }
 
@@ -3630,7 +3648,7 @@
   function updateTwinBtn() {
     const btn = document.getElementById('twin-btn');
     if (btn) {
-      btn.className = twinMode ? 'icon-btn active' : 'icon-btn';
+      btn.className = 'icon-btn labeled-btn' + (twinMode ? ' active' : '');
       btn.title = twinMode ? 'Twin on' : 'Twin off';
     }
     // Mirror state on the Settings → Quick Actions toggle so the user

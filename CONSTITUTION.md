@@ -939,7 +939,72 @@ file directly.
 
 ---
 
-## Article XXI — Amendments
+## Article XXI — Every Twin Surface Is a Calibration Opportunity
+
+The digital twin (`|||TWIN|||` panel, action pills, present-card
+lines, any other twin-owned surface) exists to **build fidelity with
+the user** — each turn is the twin's chance to predict something
+about the user and let the user's next action validate, contradict,
+or silently pass on that prediction. That feedback loop is how twin
+accuracy grows.
+
+> **Twin surface = the twin's bet. Click = "you're right about me."
+> Ignore = signal the other way. Help-shaped prompts waste the slot.**
+
+Help-shaped prompts ("What should I build next?", "How do I deploy?")
+are what the **main assistant reply** is for. The twin's job is
+different. A twin surface that gives back generic help is a turn
+the twin learned nothing from — and fidelity stalls.
+
+### Calibration-shaped (right)
+
+Labels are predictions. The user's click vs. ignore vs. pushback is
+the data:
+
+- `<action kind="send" label="I think you prefer X. Right?">…</action>`
+- `<action kind="send" label="Still want to ship today?">…</action>`
+- `<action kind="send" label="You mentioned Foo last week — do that?">…</action>`
+- `<action kind="prompt" label="Pin this as a priority?">…</action>`
+
+Each calibration-shaped action pairs with a `<probe>` so the twin
+self-judges on the next turn via `<calibration>`. That loop is the
+point.
+
+### Help-shaped (wrong)
+
+Anything that doesn't imply a bet about the user. These are the main
+assistant's job:
+
+- ❌ "What can you do?"
+- ❌ "Browse my agents"
+- ❌ "How do I deploy to Azure?"
+- ❌ "Help me build a new tool"
+
+### What this rules out
+
+- ❌ Twin action labels that aren't predictions about the user.
+- ❌ Using twin surfaces for navigation ("Browse my agents") when
+  the assistant's main reply could have offered the same thing.
+- ❌ Emitting an `<action>` without a paired `<probe>` — the bet
+  must be recorded so the next turn can judge it.
+- ❌ A static fallback starter prompt that's help-shaped. The
+  user's first turn is the twin's first data point; don't waste it.
+- ❌ Confusing twin voice with assistant voice. The twin speaks
+  first-person AS the user TO the user. Predictions, not answers.
+
+### Why this matters
+
+The twin calibration log (`.twin_calibration.jsonl`) scores the twin
+on whether its probes got validated or contradicted by subsequent
+user behavior. If the twin keeps offering generic help, every probe
+is vague — "confidence: 0.3, subject: 'user might want help'" — and
+the accuracy feedback is noise. Calibration-shaped actions make
+probes sharp: "priority-claim on PR#123, 0.7 confidence" either
+holds up or doesn't. Sharp probes grow the twin faster.
+
+---
+
+## Article XXII — Amendments
 
 This constitution can be amended. The only rule: amendments must preserve
 Article I — **the brainstem stays light**. Any change that loads

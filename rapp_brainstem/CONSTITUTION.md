@@ -573,7 +573,50 @@ write to the same `.env` / filesystem — there is no parallel state.
 
 ---
 
-## Article XV — Amendments
+## Article XVI — Every Twin Surface Is a Calibration Opportunity
+
+The digital twin (`|||TWIN|||` panel, action pills, present-card
+lines) exists to build fidelity with the user. Each turn is the
+twin's chance to **predict something** about the user — clicks and
+ignores are the data that grows twin accuracy over time.
+
+> **Twin surface = the twin's bet. Generic help belongs in the
+> main assistant reply, not on twin surfaces.**
+
+### Calibration-shaped (right)
+
+Labels that are predictions about the user. Click = "you're right
+about me." Ignore = signal the other way.
+
+- `label="I think you prefer X. Right?"`
+- `label="Still want to ship today?"`
+- `label="You mentioned Foo — did that happen?"`
+- `label="Pin this as a priority?"`
+
+Pair each calibration-shaped `<action>` with a `<probe>` so the next
+turn's `<calibration>` can judge it.
+
+### Help-shaped (wrong)
+
+- ❌ "What can you do?"
+- ❌ "Browse my agents"
+- ❌ "How do I deploy to Azure?"
+
+These are main-assistant-reply territory. Using them on twin surfaces
+wastes the slot — the twin learns nothing.
+
+### Rules-out
+
+- ❌ Twin labels that aren't predictions about the user.
+- ❌ `<action>` without a paired `<probe>`.
+- ❌ Static starter prompts that are help-shaped (they're the
+  user's first turn — make it the twin's first data point).
+- ❌ Confusing twin voice (first-person as the user, TO the user,
+  predicting) with assistant voice (answering).
+
+---
+
+## Article XVII — Amendments
 
 This constitution can be amended. The only rule: the change must serve
 the platform's purpose as a business-focused AI agent engine. If it
