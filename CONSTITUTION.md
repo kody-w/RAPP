@@ -751,7 +751,81 @@ No registration, no config, no env var. Drop a folder in, put
 
 ---
 
-## Article XVIII — Amendments
+## Article XVIII — The Management UI Is a View Onto `agents/`
+
+The brainstem's management UI — the browser interface served by the
+brainstem and anything built on top of it — is **a view onto the
+`agents/` tree**. Every user-facing action in the UI corresponds 1:1
+to a filesystem operation inside `agents/`. The UI never invents a
+parallel model; it abstracts the filesystem so users don't have to
+see files, paths, or Python.
+
+> **UI tree = `agents/` tree. UI operation = filesystem operation on
+> `agents/`. No UI-only concepts that don't exist on disk.**
+
+### The mapping
+
+| UI action                 | Filesystem operation                                |
+|---------------------------|-----------------------------------------------------|
+| "New agent"               | write a new `*_agent.py` at the chosen tree location |
+| "New folder"              | `mkdir` under `agents/`                             |
+| "Move" (drag-drop)        | `mv` between directories in `agents/`               |
+| "Rename"                  | `mv` with a new name                                |
+| "Delete"                  | `rm` the file                                       |
+| "Disable"                 | move the file into `agents/disabled_agents/`        |
+| "Enable"                  | move it back out of `disabled_agents/`              |
+| "Mark experimental"       | move into `agents/experimental_agents/`             |
+| "Edit"                    | open the `*_agent.py` in an inline editor          |
+
+The three engine-reserved subdirs (`system_agents/`, `experimental_agents/`,
+`disabled_agents/`) are visible in the UI with their semantics (system
+is read-only-by-convention, experimental won't auto-load, disabled is
+off). The UI doesn't hide them — users benefit from seeing where their
+swarm management agents live and what's turned off.
+
+### What the UI covers (the user's full config surface)
+
+The user's entire operational surface per Article XVII is `soul.md` +
+`.env` + the `agents/` tree. The UI covers all three:
+
+- **Persona editor** — edit `soul.md` inline.
+- **Creds / config** — safe form for `.env` fields (tokens, models,
+  toggles). No free-form editing of engine files.
+- **Agent tree** — the main view, as described above.
+
+Plus diagnostic readouts the UI can show without being configuration:
+health, LLM provider status, loaded-agent count, Copilot auth status.
+These are read-only.
+
+### What this rules out
+
+- ❌ UI-only organizational concepts. If the UI shows "tags,"
+  "categories," or "collections," they must exist in the filesystem
+  (manifest field, subdir name) — never UI-local state that doesn't
+  round-trip.
+- ❌ A fourth configuration surface in the UI. Users don't edit
+  `brainstem.py`, `VERSION`, `requirements.txt`, or the `utils/`
+  tree through the UI — those are engine internals.
+- ❌ A separate "agent registry" the UI writes to alongside the
+  filesystem. Filesystem IS the registry.
+- ❌ Hiding the reserved subdirs. Users should see
+  `system_agents/`, `experimental_agents/`, and `disabled_agents/`
+  in their tree — that's how they know what's going on.
+- ❌ UI actions that have no filesystem equivalent. If the UI can do
+  it, the filesystem can do it. `agents/` is the truth.
+
+### Why this discipline
+
+If the UI invents concepts that don't exist on disk, the filesystem
+and the UI drift apart. Users who edit `agents/` directly (via their
+editor, a script, or a drag-drop into the folder) get a different
+reality from users who edit via the UI. The brainstem is supposed to
+auto-discover whatever's on disk; keeping the UI 1:1 with the
+filesystem preserves that contract.
+
+---
+
+## Article XIX — Amendments
 
 This constitution can be amended. The only rule: amendments must preserve
 Article I — **the brainstem stays light**. Any change that loads

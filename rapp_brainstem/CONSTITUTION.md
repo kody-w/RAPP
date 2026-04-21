@@ -423,7 +423,60 @@ Anything else under `agents/` auto-loads: `agents/my_stack/`,
 
 ---
 
-## Article XIII — Amendments
+## Article XIII — The Management UI Is a View Onto `agents/`
+
+The brainstem's browser interface is **a view onto the `agents/`
+tree**. Every user-facing action in the UI corresponds 1:1 to a
+filesystem operation inside `agents/`. The UI abstracts files, paths,
+and Python — but never invents concepts that don't exist on disk.
+
+> **UI tree = `agents/` tree. UI operation = filesystem operation.
+> No UI-only concepts.**
+
+### Mapping
+
+| UI action         | Filesystem op                                     |
+|-------------------|---------------------------------------------------|
+| "New agent"       | write `*_agent.py` at chosen location             |
+| "New folder"      | `mkdir` under `agents/`                           |
+| "Move" / drag     | `mv` between directories                          |
+| "Rename"          | `mv` with a new name                              |
+| "Delete"          | `rm`                                              |
+| "Disable"         | move into `agents/disabled_agents/`               |
+| "Enable"          | move out of `disabled_agents/`                    |
+| "Mark experimental"| move into `agents/experimental_agents/`          |
+| "Edit"            | open the file in an inline editor                |
+
+The three reserved subdirs are visible in the UI with their semantics
+explained. Don't hide them.
+
+### What the UI covers (user's full config surface)
+
+Per Article XII, the user's operational surface is `soul.md` + `.env`
++ `agents/` tree. The UI covers all three: persona editor, creds
+form, agent tree. Nothing else.
+
+### What this rules out
+
+- ❌ UI-only concepts (tags, categories, collections) that don't
+  round-trip to the filesystem.
+- ❌ Editing engine internals (`brainstem.py`, `VERSION`, etc.)
+  through the UI.
+- ❌ A separate registry alongside the filesystem. Disk is the
+  registry.
+- ❌ UI actions with no filesystem equivalent.
+- ❌ Hiding `system_agents/`, `experimental_agents/`, or
+  `disabled_agents/` from the tree view.
+
+### Why
+
+If the UI invents concepts that don't exist on disk, UI users and
+filesystem users diverge. `agents/` is the single source of truth;
+the UI must be transparent to it.
+
+---
+
+## Article XIV — Amendments
 
 This constitution can be amended. The only rule: the change must serve
 the platform's purpose as a business-focused AI agent engine. If it
