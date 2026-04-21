@@ -553,17 +553,19 @@ What may legitimately differ:
 
 ---
 
-## Article XVI — The Root Stays Minimal; State Lives in `.brainstem_data/`
+## Article XVI — The Root Is the Engine's Public Surface; the Brainstem's Workspace Is Separate
 
-The root of `rapp_brainstem/` is the engine surface — the first thing a
-new user sees when they clone the repo. Every file at root competes for
-their attention. A sprawling root signals complexity and pushes
-adoption downhill.
+The root of `rapp_brainstem/` is the first thing a new user sees when
+they clone the repo. Every file there competes for their attention.
+A sprawling root signals complexity and pushes adoption downhill.
 
-> **Root = the engine. `.brainstem_data/` = the twin's home. Nothing
-> in between.**
+Two surfaces, two masters:
 
-What belongs at `rapp_brainstem/` root:
+> **`agents/` + root = the engine's public surface — what we ship to
+> the user. The brainstem's workspace = where the brainstem dumps
+> scratch while working for the user. Don't collapse them.**
+
+### What belongs at `rapp_brainstem/` root (the engine's surface)
 
 - `brainstem.py` — the Flask server.
 - `soul.md` — the default system prompt.
@@ -571,48 +573,73 @@ What belongs at `rapp_brainstem/` root:
 - `start.sh`, `start.ps1` — the one-liner's launchers.
 - `README.md`, `CLAUDE.md`, `CONSTITUTION.md` — docs and governance.
 - `index.html` — the landing page.
-- `agents/` — the starter/example agents.
-- `utils/`, `web/` — directories for cohesive support surfaces.
+- **`agents/`** — the starter agents. This is load-bearing for the
+  training story: users clone the repo, open `agents/`, and see what
+  a RAPP agent looks like. Drag-and-drop visible, editable, published
+  as the reference implementation. **Do not move `agents/` into the
+  brainstem workspace** — that would bury the thing users are meant
+  to learn from.
+- `utils/`, `web/` — cohesive support directories.
 - `local_storage.py`, `basic_agent.py`, `_basic_agent_shim.py` — the
   base contracts agents extend.
 
-What belongs in `.brainstem_data/`:
+### What belongs in the brainstem's workspace (scratch while running)
 
-- **Everything dynamic, user-generated, or session-scoped.** Memory
-  files, binder state (`.binder.json`), swarm directories, snapshots,
-  per-swarm agent sets, per-user memory namespaces, twin calibration
-  logs (`.twin_calibration.jsonl`), telemetry logs, saved sessions,
-  etc.
-- Configuration state that the user or runtime edits: swarm manifests,
-  active-swarm pointer files, soul overrides, agent-group definitions.
-- In short: **if it changes between runs, or belongs to this user's
-  twin and not the engine itself, it lives in `.brainstem_data/`.**
+Everything that is **written by the brainstem as it serves the user**
+— as opposed to edited by the user or shipped by the engine:
+
+- Per-user memory files, binder state (`.binder.json`),
+  `.twin_calibration.jsonl`, telemetry logs, saved sessions.
+- Deployed sibling swarms (`swarms/<guid>/…` — directory + agents +
+  memory, created at runtime by the swarm-management agents).
+- Snapshots, sealed-swarm markers, active-swarm pointers.
+- Hatched project scaffolds (Article VI-A).
+
+The pathing follows the same pattern the memory agents have used
+since day one: a single env var overrides the default, and the
+default is a simple directory outside the repo.
+
+```python
+def _memory_path():
+    p = os.environ.get("BRAINSTEM_MEMORY_PATH")
+    return p if p else os.path.expanduser("~/.brainstem/memory.json")
+```
+
+Category conventions today:
+
+- `~/.brainstem/memory.json` — `BRAINSTEM_MEMORY_PATH` override.
+- `~/.brainstem/swarms/<guid>/…` — `BRAINSTEM_SWARMS_PATH` override.
+- New categories get the same shape: one env var, one home-relative
+  default, no cwd heuristics, no multi-tier fallbacks.
+
+Tier 2 (cloud) sets the env var to a mounted Azure Files path so the
+same agent files serve isolated tenants without modification.
 
 ### What this rules out
 
-- ❌ Dropping `foo_agent.py`, `scratch.py`, or `admin_tool.py` at root.
-  Agent files go in `agents/` (or `agents/experimental/`). Scratch
-  files don't get committed.
+- ❌ Dropping `foo_agent.py`, `scratch.py`, or `admin_tool.py` at
+  root. Agent files live in `agents/` (or `agents/experimental/`).
 - ❌ Top-level JSON state files (`.swarms.json`, `.agent_groups.json`,
   `.binder.json`) sitting next to `brainstem.py`. These are runtime
-  state; they belong under `.brainstem_data/` and are either
-  gitignored or read-only fixtures.
-- ❌ Adding a new top-level directory "because it doesn't fit anywhere
-  else." If it doesn't fit anywhere else, it's state — put it in
-  `.brainstem_data/`. If it's not state, it probably doesn't belong
-  in this repo at all (see Article VII).
-- ❌ Shipping default runtime state (example memories, seeded swarms)
-  that pollutes `.brainstem_data/` on install. The user's twin starts
-  empty; the engine seeds nothing.
+  state; they belong in the brainstem's workspace and are either
+  gitignored or never tracked.
+- ❌ Moving `agents/` out of root. It is the training surface.
+- ❌ Adding a new top-level directory "because it doesn't fit
+  anywhere else." If it doesn't fit anywhere else, it's workspace
+  scratch — give it a category under the brainstem's workspace.
+- ❌ Seeding default runtime state on install. The user's twin starts
+  empty; the engine seeds nothing into the workspace.
+- ❌ Three-tier cwd/home/env fallbacks for path resolution. Match
+  the memory-agent pattern: one env var, one default. Simpler.
 
-### Why `.brainstem_data/`
+### Why two surfaces
 
-The directory is the **context of the digital twin living**. It's the
-twin's home on the user's device. Treating it as such — state
-organized by purpose, not flat-bagged — lets us grow new capabilities
-(more swarms, more memory surfaces, more calibration) without ever
-touching the root. The engine stays small; the twin grows inside its
-own directory.
+The engine's root surface is the curriculum. New users read it,
+understand what the platform is, and copy-paste agents to learn. The
+brainstem's workspace is the operator's reality — memory, state,
+deployed swarms, session dumps. Keeping them separate means we can
+grow the workspace indefinitely without ever obscuring the learning
+path.
 
 ---
 

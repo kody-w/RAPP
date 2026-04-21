@@ -3,7 +3,7 @@
 #
 # Proves they are drop-in compatible with any brainstem by instantiating
 # each agent directly (no Flask server, no HTTP) against a synthetic
-# BRAINSTEM_HOME. Covers happy path + error cases + the end-to-end
+# BRAINSTEM_SWARMS_PATH. Covers happy path + error cases + the end-to-end
 # deploy → invoke → snapshot → seal → (refuse delete) → unseal → delete
 # lifecycle that every usable swarm goes through.
 #
@@ -27,7 +27,7 @@ python3 - <<PY
 import json, os, sys, tempfile
 from pathlib import Path
 
-os.environ["BRAINSTEM_HOME"] = "$TEST_HOME"
+os.environ["BRAINSTEM_SWARMS_PATH"] = "$TEST_HOME/swarms"
 sys.path.insert(0, "rapp_brainstem")
 
 PASS = 0
@@ -299,31 +299,31 @@ eq("ListSwarms after delete: 1 swarm", 1, r["swarm_count"])
 # ── Section 8: drop-in compat — operate against an ad-hoc swarms root ──
 
 print("")
-print("--- Section 8: BRAINSTEM_HOME drop-in compat ---")
+print("--- Section 8: BRAINSTEM_SWARMS_PATH drop-in compat ---")
 
-ALT = "/tmp/rapp-swarm-agents-test-alt-$$"
+ALT = "/tmp/rapp-swarm-agents-test-alt-$$/swarms"
 import shutil as _sh
 _sh.rmtree(ALT, ignore_errors=True)
 Path(ALT).mkdir(parents=True, exist_ok=True)
-os.environ["BRAINSTEM_HOME"] = ALT
+os.environ["BRAINSTEM_SWARMS_PATH"] = ALT
 
 # The same agent instances (reusing objects we built before) MUST honor
 # the new env — proving they resolve state on every call, never caching.
 r = pj(lst.perform())
-eq("ListSwarms on fresh BRAINSTEM_HOME: 0 swarms", 0, r["swarm_count"])
+eq("ListSwarms on fresh BRAINSTEM_SWARMS_PATH: 0 swarms", 0, r["swarm_count"])
 
 r = pj(deploy.perform(bundle={
     "schema": "rapp-swarm/1.0", "name": "Alt Home",
     "agents": [{"filename": "echo_agent.py", "source": echo_agent_source}],
 }))
-eq("DeploySwarm against alt home: success", "success", r["status"])
+eq("DeploySwarm against alt path: success", "success", r["status"])
 ALT_GUID = r["swarm_guid"]
 
-truthy("Deploy wrote into alt home",
-       Path(ALT).joinpath("swarms", ALT_GUID, "manifest.json").is_file())
+truthy("Deploy wrote into alt path",
+       Path(ALT).joinpath(ALT_GUID, "manifest.json").is_file())
 
-# Flip back — the original swarm still listed only what's under its own home
-os.environ["BRAINSTEM_HOME"] = "$TEST_HOME"
+# Flip back — the original swarm still listed only what's under its own path
+os.environ["BRAINSTEM_SWARMS_PATH"] = "$TEST_HOME/swarms"
 r = pj(lst.perform())
 eq("After env flip back: only original 1 swarm visible", 1, r["swarm_count"])
 

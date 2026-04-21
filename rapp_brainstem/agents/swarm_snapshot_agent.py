@@ -44,13 +44,13 @@ _SNAP_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_\-]{0,63}$")
 
 
 def _swarms_root() -> Path:
-    override = os.environ.get("BRAINSTEM_HOME")
-    if override:
-        return (Path(override).expanduser() / "swarms").resolve()
-    here_local = (Path.cwd() / ".brainstem_data" / "swarms").resolve()
-    if (Path.cwd() / "brainstem.py").is_file() or (Path.cwd() / ".brainstem_data").is_dir():
-        return here_local
-    return (Path.home() / ".brainstem_data" / "swarms").resolve()
+    """Where sibling swarms live on this device.
+
+    Priority: $BRAINSTEM_SWARMS_PATH env → default ~/.brainstem/swarms/.
+    Same pattern as save_memory_agent.py / recall_memory_agent.py.
+    """
+    p = os.environ.get("BRAINSTEM_SWARMS_PATH")
+    return Path(p) if p else Path(os.path.expanduser("~/.brainstem/swarms"))
 
 
 def _resolve_swarm(guid: str) -> Path:

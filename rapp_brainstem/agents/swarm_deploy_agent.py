@@ -35,21 +35,19 @@ __manifest__ = {
 }
 
 
-# ─── Swarm state layout (Article XVI / XI — state in .brainstem_data/) ──
+# ─── Swarm state layout ────────────────────────────────────────────────
+# Same pattern as save_memory_agent.py / recall_memory_agent.py: a single
+# env var override, otherwise ~/.brainstem/<category>/. The swarm server
+# can swap the env var per tenant to isolate state without touching the
+# agent file.
 
 def _swarms_root() -> Path:
-    """Resolve `.brainstem_data/swarms/` for the active twin.
+    """Where sibling swarms live on this device.
 
-    Priority: $BRAINSTEM_HOME/swarms → <cwd>/.brainstem_data/swarms
-    → ~/.brainstem_data/swarms. First option that exists or can be created.
+    Priority: $BRAINSTEM_SWARMS_PATH env → default ~/.brainstem/swarms/.
     """
-    override = os.environ.get("BRAINSTEM_HOME")
-    if override:
-        return (Path(override).expanduser() / "swarms").resolve()
-    here_local = (Path.cwd() / ".brainstem_data" / "swarms").resolve()
-    if (Path.cwd() / "brainstem.py").is_file() or (Path.cwd() / ".brainstem_data").is_dir():
-        return here_local
-    return (Path.home() / ".brainstem_data" / "swarms").resolve()
+    p = os.environ.get("BRAINSTEM_SWARMS_PATH")
+    return Path(p) if p else Path(os.path.expanduser("~/.brainstem/swarms"))
 
 
 def _now_iso() -> str:
