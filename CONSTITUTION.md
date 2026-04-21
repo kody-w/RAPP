@@ -444,7 +444,94 @@ the core. Uncouple it before shipping.
 
 ---
 
-## Article XIV — Amendments
+## Article XIV — Swarms Are Directories, Not Routes
+
+A **swarm** is local state: a directory containing `agents/`, a soul
+file, and a memory namespace. The brainstem runs against that state. It
+is not a runtime abstraction, a routing layer, or a multi-tenant
+service.
+
+> **A swarm is a directory. Changing swarm = changing which directory
+> the brainstem is pointed at. That is the entire concept.**
+
+Concretely:
+
+- Swarm selection is a body field on `/chat` (optional `swarm_guid`) or
+  an env pointer to a default directory. Nothing more. No new endpoints.
+- Swarm operations (deploy, list, switch, seal, snapshot, invoke a
+  sibling) are `*_agent.py` files that read and write state on disk.
+  They are not classes in the core, not REST routes, not middleware.
+- The filesystem layout IS the contract. Two swarms with the same
+  directory shape behave the same under the same brainstem.
+
+### What this rules out
+
+- ❌ A `SwarmStore` class or equivalent as a first-class runtime object
+  in `brainstem.py` / `function_app.py`. At most, a handful of
+  `pathlib` helpers that resolve "which directory for this request."
+- ❌ `/api/swarm/<guid>/...` REST surfaces. Every historical route of
+  that shape collapses to `/chat` with the appropriate agent plus a
+  `swarm_guid` body field.
+- ❌ Runtime state about swarms held in memory beyond the lifetime of a
+  single request. Disk is authoritative; the brainstem is stateless
+  between calls.
+- ❌ A "swarm server" parallel to the brainstem. There is one server.
+  It reads state.
+
+If you catch yourself designing a swarm-aware subsystem, stop and ask:
+could this be a directory layout plus an agent? If yes, do that.
+
+---
+
+## Article XV — Tier Parity Runs Deeper Than Agents
+
+Article III.3 promises agent portability across tiers. This article
+extends that promise to the server itself: **`rapp_brainstem/brainstem.py`
+and `rapp_swarm/function_app.py` must behave identically on the `/chat`
+contract.** The difference between tiers is where state is mounted, not
+what the code does.
+
+> **Same `/chat` loop. Same prompt split. Same agent contract. Same
+> state layout. Different mount point for the state root.**
+
+Concretely:
+
+- Tier 1 mounts state on local disk (default `~/.brainstem_data/` or
+  `BRAINSTEM_HOME`).
+- Tier 2 mounts state on Azure Files at `BRAINSTEM_HOME`.
+- Tier 3 wraps the same `/chat` behind Copilot Studio.
+- The tool-calling loop, the provider dispatch, the slot split, and the
+  agent-discovery rules are byte-for-byte the same code path across
+  tiers — enforced by vendoring from one source of truth, not by
+  maintaining parallel implementations.
+
+### What this rules out
+
+- ❌ A Tier-2-only server (`swarm_server.py`, a separate handler stack,
+  a bespoke chat loop) that duplicates `brainstem.py`'s responsibilities
+  with drift. If Tier 2 needs a capability, the capability lands in
+  `brainstem.py` (or an agent) and Tier 2 vendors it.
+- ❌ A Tier-1-only LLM provider path (e.g. Copilot-only) that Tier 2
+  has to re-implement. Provider dispatch is shared.
+- ❌ Routes that exist on one tier but not the other. `/chat` is the
+  surface; both tiers expose it, both tiers route the same way.
+- ❌ "It works in Tier 1, we'll figure out Tier 2 later." Tier parity
+  is asserted per-PR, not deferred to a migration window.
+
+### How we enforce it
+
+- `rapp_swarm/build.sh` vendors `brainstem.py` (and its direct
+  dependencies) into `rapp_swarm/_vendored/`. `function_app.py` is a
+  thin Azure Functions adapter over `brainstem.py`'s `/chat` handler.
+- A regression test deploys the same bundle against Tier 1 and Tier 2
+  and diffs the `/chat` response for a fixed conversation. Divergence
+  fails the check.
+- If you change `brainstem.py` and don't re-run `build.sh`, you have
+  shipped drift. The build script is part of the PR, not a follow-up.
+
+---
+
+## Article XVI — Amendments
 
 This constitution can be amended. The only rule: amendments must preserve
 Article I — **the brainstem stays light**. Any change that loads

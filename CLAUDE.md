@@ -23,7 +23,7 @@ pip3 install -r requirements.txt        # Install dependencies
 # Tests
 python3 -m pytest test_local_agents.py -v                          # Python agent tests
 python3 -m pytest test_local_agents.py::TestLocalStorage::test_write_and_read -v  # Single test
-node tests/run-tests.mjs                                           # JS tests (agent parsing, cards, binder, sealing, t2t)
+node tests/run-tests.mjs                                           # JS tests (agent parsing, cards, binder, sealing)
 
 # Tier 2 — Azure Functions
 bash rapp_swarm/build.sh                # Vendor brainstem core into _vendored/
