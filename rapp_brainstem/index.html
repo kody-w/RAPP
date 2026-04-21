@@ -276,6 +276,10 @@
     overflow-y: auto; border-top: 1px solid #21262d;
   }
   .agent-logs.collapsed { display: none; }
+  .agent-logs a { color: #58a6ff; text-decoration: underline; text-underline-offset: 2px; }
+  .agent-logs a:hover { color: #79c0ff; }
+  body.light-mode .agent-logs a { color: #1f6feb; }
+  body.light-mode .agent-logs a:hover { color: #0969da; }
 
   /* ── Index Card ──
      Factory agents emit a live card that updates during the run and
@@ -2024,6 +2028,11 @@
     if (role === 'assistant' && typeof marked !== 'undefined') {
       bubble.innerHTML = marked.parse(text);
       bubble.querySelectorAll('a').forEach(a => a.target = '_blank');
+      // Make file paths / file:// links clickable — they route through
+      // /open which serves from allow-listed roots. Also cross-reference
+      // any filename that appears bare in the chat against full paths
+      // pulled from agent_logs so "File: foo.html" becomes clickable.
+      enhanceFileLinks(bubble, logs);
     } else {
       bubble.textContent = text;
     }
@@ -2058,7 +2067,10 @@
       label.innerHTML = '<span class="arrow">\u25B6</span> agent called' + nameSpan;
       const logBox = document.createElement('div');
       logBox.className = 'agent-logs collapsed';
+      // Start with escaped text, then walk and linkify absolute paths
+      // so expanded logs have clickable file paths too.
       logBox.textContent = logs;
+      enhanceFileLinks(logBox, logs);
       label.onclick = () => {
         logBox.classList.toggle('collapsed');
         label.querySelector('.arrow').classList.toggle('open');
@@ -2236,6 +2248,113 @@
     };
     tick();
     return () => { stopped = true; };
+  }
+
+  // ── File-path autolinker ──────────────────────────────────────────
+  // Three passes over the rendered assistant bubble:
+  //   1. rewrite <a href="file://..."> to go through /open
+  //   2. autolink absolute paths found in raw text nodes
+  //   3. when a bare filename (usually shown inside <code>) matches a
+  //      full path extracted from agent_logs, wrap it as a clickable
+  //      link — that's how "File: foo.html" becomes openable without
+  //      the agent having to spell out the full path in the chat body.
+  const OPENABLE_EXT = /\.(html?|pdf|md|markdown|txt|json|csv|log|py|js|ts|sh|ya?ml|toml|png|jpe?g|gif|svg|webp|mp3|mp4|mov|wav|zip|tgz|tar|gz)$/i;
+  const ABS_PATH_RE = /(?:file:\/\/)?(\/[A-Za-z0-9._/~\-]+\.[A-Za-z0-9]+)/g;
+
+  function _fileHref(absPath) {
+    return `${API}/open?path=${encodeURIComponent(absPath)}`;
+  }
+
+  function _extractPathsFromLogs(logs) {
+    if (!logs) return { paths: [], byBasename: new Map() };
+    const paths = new Set();
+    const re = /(?:file:\/\/)?(\/[A-Za-z0-9._/~\-]+)/g;
+    let m;
+    while ((m = re.exec(logs)) !== null) {
+      const p = m[1];
+      if (OPENABLE_EXT.test(p)) paths.add(p);
+    }
+    const byBasename = new Map();
+    for (const p of paths) {
+      const base = p.split('/').pop();
+      if (base && !byBasename.has(base)) byBasename.set(base, p);
+    }
+    return { paths: [...paths], byBasename };
+  }
+
+  function enhanceFileLinks(root, logs) {
+    if (!root) return;
+    const { byBasename } = _extractPathsFromLogs(logs);
+
+    // Pass 1: existing <a href="file://...">
+    root.querySelectorAll('a[href^="file://"]').forEach(a => {
+      const path = a.getAttribute('href').replace(/^file:\/\//, '');
+      a.setAttribute('href', _fileHref(path));
+      a.setAttribute('target', '_blank');
+      a.setAttribute('rel', 'noopener');
+    });
+
+    // Pass 2 + 3: walk text nodes, linkify absolute paths inline.
+    // <code> / <pre> text nodes included — "File: `foo.html`" should
+    // become clickable without stripping the code formatting.
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode(n) {
+        // Skip text that's already inside an <a> (avoid double-linking).
+        let p = n.parentNode;
+        while (p && p !== root) {
+          if (p.tagName === 'A') return NodeFilter.FILTER_REJECT;
+          p = p.parentNode;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    const textNodes = [];
+    let n; while ((n = walker.nextNode())) textNodes.push(n);
+
+    textNodes.forEach(tn => {
+      const text = tn.nodeValue;
+      if (!text) return;
+      const absMatches = [...text.matchAll(ABS_PATH_RE)].filter(m => OPENABLE_EXT.test(m[1]));
+      // Only consider basename matches where the text is JUST the
+      // basename (i.e. the code/text node's full value equals a known
+      // filename). That keeps us from hijacking normal prose words that
+      // happen to look like filenames.
+      const basenameMatch = byBasename.get(text.trim());
+      if (!absMatches.length && !basenameMatch) return;
+
+      // Easy path: whole-text basename match — replace the text node
+      // with a single anchor.
+      if (basenameMatch && !absMatches.length) {
+        const a = document.createElement('a');
+        a.href = _fileHref(basenameMatch);
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.textContent = text;
+        a.title = basenameMatch;
+        tn.parentNode.replaceChild(a, tn);
+        return;
+      }
+
+      // Harder path: interleave text + anchors for each abs path match.
+      const frag = document.createDocumentFragment();
+      let last = 0;
+      for (const m of absMatches) {
+        const path = m[1];
+        const start = m.index + (m[0].startsWith('file://') ? m[0].length - path.length : 0);
+        const matchStart = m.index;
+        if (matchStart > last) frag.appendChild(document.createTextNode(text.slice(last, matchStart)));
+        const a = document.createElement('a');
+        a.href = _fileHref(path);
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.textContent = m[0];
+        a.title = path;
+        frag.appendChild(a);
+        last = matchStart + m[0].length;
+      }
+      if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+      tn.parentNode.replaceChild(frag, tn);
+    });
   }
 
   function _uuid() {

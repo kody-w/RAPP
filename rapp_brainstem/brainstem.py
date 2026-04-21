@@ -1235,6 +1235,35 @@ def voice_toggle():
         VOICE_MODE = not VOICE_MODE
     return jsonify({"voice_mode": VOICE_MODE})
 
+@app.route("/open", methods=["GET"])
+def open_file():
+    """Serve a file by absolute path — used by the UI to open artifacts
+    (pitch decks, briefs, etc.) that agents drop under the user's home.
+    Allow-list restricted: we will only serve files that live under the
+    brainstem install dir, the user's ~/.brainstem, or a configured
+    workspace dir. Path traversal is blocked by abspath + prefix check.
+    """
+    from flask import send_file
+    raw = request.args.get("path", "")
+    if not raw:
+        return jsonify({"error": "missing path"}), 400
+    try:
+        path = os.path.abspath(raw)
+    except Exception:
+        return jsonify({"error": "bad path"}), 400
+    brainstem_dir = os.path.abspath(os.path.dirname(__file__))
+    allowed_roots = [
+        brainstem_dir,
+        os.path.abspath(os.path.expanduser("~/.brainstem")),
+        os.path.abspath(os.environ.get("TWIN_WORKSPACE", "/tmp")),
+        "/tmp",
+    ]
+    if not any(path == r or path.startswith(r + os.sep) for r in allowed_roots):
+        return jsonify({"error": "path not in allowed roots", "path": path}), 403
+    if not os.path.isfile(path):
+        return jsonify({"error": "not found", "path": path}), 404
+    return send_file(path)
+
 @app.route("/card/<turn_id>", methods=["GET"])
 def index_card_get(turn_id):
     """Polled by the UI every ~500ms while a turn is in flight. Returns
