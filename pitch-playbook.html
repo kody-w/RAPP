@@ -241,272 +241,112 @@ pre.cmd .green{color:var(--green)}
 
 <div class="deck" id="deck">
 
-<!-- ── SLIDE 0: Title ── -->
+<!--
+  SALES DECK — 6 slides. One claim per slide, one question at the bottom
+  that hands the mic to the prospect. Kody talks ~20%, prospect talks ~80%.
+  Every slide follows the same rhythm:
+    1. One-sentence hook
+    2. One visual proof (or number)
+    3. ONE question → Kody shuts up.
+  The differentiators are adoption-shaped: ease of learning, portability,
+  shareability, simplicity. Not a feature comparison with other AI tools.
+-->
+
+<!-- ── SLIDE 1: The Problem They Already Feel ── -->
 <div class="slide active center">
   <div class="slide-inner">
     <div class="logo animate">🧠</div>
-    <h1 class="animate d1">Vibe Agent <span class="grad">Swarm Building</span></h1>
-    <p class="big animate d2" style="margin:0 auto;max-width:680px">Describe what you want. Drop a file. It runs.</p>
-    <div class="tag animate d3">End-to-end pitch playbook · April 2026</div>
-    <p class="animate d4 dim" style="font-size:.95rem;margin:20px auto 0">By <strong style="color:var(--text)">Kody Wildfeuer</strong> · <span style="color:var(--accent)">AIBAST</span> (AI Business Applications Specialist Team) · Microsoft</p>
-    <p class="animate d4 dim" style="font-size:.8rem;margin:12px auto 0">Press → or swipe to navigate &nbsp;·&nbsp; Built for executive leadership</p>
+    <h1 class="animate d1">Your team has <span class="grad">15 AI tools.</span></h1>
+    <p class="big animate d2" style="margin:18px auto 40px;max-width:720px">
+      Nobody shares anything. Everybody starts over. Adoption stalls at the person who built it.
+    </p>
+    <div class="animate d3" style="margin:28px auto 0;max-width:720px;padding:22px 28px;background:var(--tint-purple);border:1px solid var(--purple);border-radius:12px;text-align:left">
+      <div style="color:var(--purple);font-size:.85rem;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;margin-bottom:10px">Ask them</div>
+      <p style="color:var(--text);font-size:1.4rem;line-height:1.45;margin:0"><strong>"What's your biggest blocker to AI adoption on your team right now?"</strong></p>
+    </div>
+    <p class="animate d4 dim" style="font-size:.82rem;margin-top:36px">→ shut up. let them answer.</p>
   </div>
 </div>
 
-<!-- ── SLIDE 1: Contents ── -->
-<div class="slide center" data-rehearse-only>
-  <div class="slide-inner">
-    <h3 class="kicker animate">Playbook</h3>
-    <h2 class="animate d1">What's inside</h2>
-    <div class="toc-grid animate d2">
-      <div class="toc-item" onclick="showSlide(2)"><div class="n">01</div><div class="t">The Opportunity: Sharing Agents</div></div>
-      <div class="toc-item" onclick="showSlide(3)"><div class="n">02</div><div class="t">Why RAPP Solves It</div></div>
-      <div class="toc-item" onclick="showSlide(4)"><div class="n">03</div><div class="t">The Approach: Email + Video + Demo</div></div>
-      <div class="toc-item" onclick="showSlide(5)"><div class="n">04</div><div class="t">The Email Draft</div></div>
-      <div class="toc-item" onclick="showSlide(6)"><div class="n">05</div><div class="t">The Demo Swarm: ExecBrief Pipeline</div></div>
-      <div class="toc-item" onclick="showSlide(7)"><div class="n">06</div><div class="t">3-Minute Video Script</div></div>
-      <div class="toc-item" onclick="showSlide(8)"><div class="n">07</div><div class="t">Agent Management: Enable/Disable Toggle</div></div>
-      <div class="toc-item" onclick="showSlide(9)"><div class="n">08</div><div class="t">The Ultimate Dropper: Teams + Virtual Brainstem</div></div>
-      <div class="toc-item" onclick="showSlide(10)"><div class="n">09</div><div class="t">How to Run the Demo</div></div>
-    </div>
-  </div>
-</div>
-
-<!-- ── SLIDE 2: The Problem ── -->
-<div class="slide">
-  <div class="slide-inner center">
-    <h3 class="kicker animate"><span class="num-badge">01</span>The Opportunity</h3>
-    <h2 class="animate d1" style="font-size:3rem">Agents don't <span class="orange">travel.</span></h2>
-    <p class="big animate d2" style="margin:24px auto 48px;max-width:760px">Teams across Microsoft build great agents — but sharing them between teams is still harder than it should be.</p>
-    <div class="cols-3 animate d3" style="max-width:900px;margin:0 auto">
-      <div style="text-align:center;padding:24px 16px">
-        <div style="font-size:2.4rem;margin-bottom:16px">🔁</div>
-        <p style="font-size:1.15rem;max-width:none"><strong style="color:var(--text)">"We built that too."</strong><br>Teams solve the same needs in parallel.</p>
-      </div>
-      <div style="text-align:center;padding:24px 16px">
-        <div style="font-size:2.4rem;margin-bottom:16px">📚</div>
-        <p style="font-size:1.15rem;max-width:none"><strong style="color:var(--text)">Hard to teach.</strong><br>Great tools stay with their authors.</p>
-      </div>
-      <div style="text-align:center;padding:24px 16px">
-        <div style="font-size:2.4rem;margin-bottom:16px">⏳</div>
-        <p style="font-size:1.15rem;max-width:none"><strong style="color:var(--text)">The clock is ticking.</strong><br>A shared format now beats retrofitting one later.</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ── SLIDE 3: Why RAPP ── -->
-<div class="slide">
-  <div class="slide-inner center">
-    <h3 class="kicker animate"><span class="num-badge">02</span>Why RAPP Solves It</h3>
-    <h2 class="animate d1" style="font-size:3rem">One file = one agent. <span class="green">No exceptions.</span></h2>
-    <p class="big animate d2" style="margin:24px auto 56px;max-width:720px">A single file contains everything — the docs, the contract, the code. Ship it in minutes. Run it anywhere.</p>
-    <div class="cols-3 animate d3" style="max-width:960px;margin:0 auto">
-      <div style="text-align:center;padding:24px 20px">
-        <div style="font-size:2.4rem;margin-bottom:16px">🔁</div>
-        <p style="font-size:1.3rem;max-width:none"><strong style="color:var(--text)">Runs everywhere</strong></p>
-        <p style="font-size:1.05rem;max-width:none;margin-top:8px">Laptop, Azure, Teams — same file, unchanged.</p>
-      </div>
-      <div style="text-align:center;padding:24px 20px">
-        <div style="font-size:2.4rem;margin-bottom:16px">📦</div>
-        <p style="font-size:1.3rem;max-width:none"><strong style="color:var(--text)">Share with a drop</strong></p>
-        <p style="font-size:1.05rem;max-width:none;margin-top:8px">File drop, agent store, or a speakable phrase.</p>
-      </div>
-      <div style="text-align:center;padding:24px 20px">
-        <div style="font-size:2.4rem;margin-bottom:16px">🤝</div>
-        <p style="font-size:1.3rem;max-width:none"><strong style="color:var(--text)">Complements, doesn't replace</strong></p>
-        <p style="font-size:1.05rem;max-width:none;margin-top:8px">A shared layer on top of the tools teams already use.</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ── SLIDE 4: The Approach ── -->
-<div class="slide" data-rehearse-only>
-  <div class="slide-inner">
-    <h3 class="kicker animate"><span class="num-badge">03</span>The Approach</h3>
-    <h2 class="animate d1">Email + Video + Demo</h2>
-    <p class="animate d2" style="margin-bottom:20px">Strategy: send a concise email to the executive with a short video walkthrough attached. The executive reads every email. CC allies who can speak to context. Ask for 30 minutes to demo live.</p>
-    <div class="cols-3 animate d3" style="max-width:980px;margin:0 auto">
-      <div class="card">
-        <h4 style="color:var(--accent)">📧 Email</h4>
-        <p>Concise pitch framing the problem (fragmentation), not the product. Under 300 words.</p>
-      </div>
-      <div class="card">
-        <h4 style="color:var(--purple)">🎥 3-minute video</h4>
-        <p>Attached to the email. Shows the ExecBrief pipeline running live. The demo literally produces the executive brief arguing for RAPP.</p>
-      </div>
-      <div class="card">
-        <h4 style="color:var(--green)">🖥️ 30-minute demo</h4>
-        <p>The ask. Live walkthrough with allies CC'd.</p>
-      </div>
-    </div>
-    <div class="highlight-box animate d4" style="margin-top:24px">
-      <p><strong>THE META MOVE:</strong> The pipeline produces the executive brief about why RAPP matters. The medium is the message.</p>
-    </div>
-  </div>
-</div>
-
-<!-- ── SLIDE 5: The Email ── -->
-<div class="slide" data-rehearse-only>
-  <div class="slide-inner">
-    <h3 class="kicker animate"><span class="num-badge">04</span>The Email Draft</h3>
-    <h2 class="animate d1">Send this.</h2>
-    <div class="email-preview animate d2">
-      <div class="subject">Subject: 30 min demo request — a lightweight format for sharing agents across teams</div>
-      <div class="body">
-        <p>I'm on the <strong>AIBAST</strong> (AI Business Applications Specialist Team) and I've been working on RAPP (Rapid Agent Prototyping Platform) — an internal effort I'd love your take on. I think it could help with a challenge that's quietly growing across Microsoft: <strong>how we share agents between teams</strong>.</p>
-        <p><strong>What I've been noticing:</strong> Teams across the company are each building great agent tooling in parallel. The work is real and the needs are real — but agents don't always travel easily between teams, and there isn't a shared baseline for moving them around.</p>
-        <p><strong>Why I think it matters now:</strong> In a couple of years, everyone at Microsoft is going to need a fast way to build and share agents. A shared, lightweight format on top of the great work already happening would let it compound, and it's cheaper to put that layer in place now than to retrofit it later.</p>
-        <p><strong>To be clear:</strong> this is a <em>complement</em> to the excellent tooling other teams have built — not a replacement. The goal is to accelerate and make agents accessible to everyone through easier sharing and learning, using our RAPP vibe agent building tool.</p>
-        <p><strong>What RAPP does differently:</strong></p>
-        <ul>
-          <li><strong>One file = one agent.</strong> No frameworks, no build steps. A 14-year-old can ship their first agent in minutes.</li>
-          <li><strong>Three tiers, zero modification.</strong> Same file runs locally, in Azure Functions, and in Copilot Studio on Teams.</li>
-          <li><strong>Shareable by design.</strong> Agents install with a file drop. Registry, store, 7-word speakable phrases.</li>
-          <li><strong>Already working.</strong> Frozen v1 spec, one-line installer, live agent store, natural-language agent generation.</li>
-        </ul>
-        <p class="ask"><strong>My ask:</strong> 30 minutes to walk you through RAPP and get your honest feedback on whether it could complement what other teams are doing. I've attached a short video walkthrough.</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ── SLIDE 6: ExecBrief Pipeline ── -->
-<div class="slide">
-  <div class="slide-inner">
-    <h3 class="kicker animate"><span class="num-badge">05</span>See It In Action</h3>
-    <h2 class="animate d1" style="font-size:3rem">Four agents, one brief.</h2>
-    <p class="big animate d2" style="margin:16px auto 48px;max-width:640px;text-align:center">Give it a topic. Get a polished executive brief in under a minute.</p>
-    <div class="pipeline animate d3" style="margin:0 auto 56px">
-      <div class="step"><div class="emoji">🔭</div><div class="name">Scout</div><div class="role">Gathers intelligence</div></div>
-      <div class="arrow">→</div>
-      <div class="step"><div class="emoji">🔬</div><div class="name">Analyst</div><div class="role">Finds the insight</div></div>
-      <div class="arrow">→</div>
-      <div class="step"><div class="emoji">🎯</div><div class="name">Strategist</div><div class="role">Frames the decision</div></div>
-      <div class="arrow">→</div>
-      <div class="step"><div class="emoji">✍️</div><div class="name">Writer</div><div class="role">Delivers the brief</div></div>
-    </div>
-    <div class="highlight-box animate d4" style="max-width:720px">
-      <p><strong>The meta-move:</strong> This pipeline produces the brief arguing for the very tool that built it.</p>
-    </div>
-  </div>
-</div>
-
-<!-- ── SLIDE 7: Demo Script ── -->
-<div class="slide" data-rehearse-only>
-  <div class="slide-inner">
-    <h3 class="kicker animate"><span class="num-badge">06</span>3-Minute Video Script</h3>
-    <h2 class="animate d1">Every beat, timed.</h2>
-    <div class="timeline animate d2">
-      <div class="t-step">
-        <div class="time">0:00 – 0:30 · The file</div>
-        <p>Open the agents directory. <em>"Five Python files. Each one is a complete agent — its docs, its contract, its code. No framework, no build step."</em> Open one to show how simple it is. Highlight the SOUL prompt.</p>
-      </div>
-      <div class="t-step">
-        <div class="time">0:30 – 1:00 · The drop</div>
-        <p><em>"These files were just dropped into the agents folder. The brainstem auto-discovers them. No install, no restart."</em> Open the agents panel in the UI. Show the toggle switches. Hit <code>/health</code> to show them loaded.</p>
-      </div>
-      <div class="t-step">
-        <div class="time">1:00 – 2:00 · The pipeline</div>
-        <p>Type: <em>"Create an executive brief about why Microsoft needs a unified agent sharing standard and what happens if we don't act."</em> Watch the terminal show the pipeline stepping through Scout → Analyst → Strategist → Writer. Read the output — it IS the pitch.</p>
-      </div>
-      <div class="t-step">
-        <div class="time">2:00 – 2:30 · The convergence</div>
-        <p><em>"Now watch — one command converges this entire pipeline into a single file."</em> Show SwarmFactory or the build tool. Show the singleton output. <em>"This is what you share. Drop it in anyone's brainstem and it works."</em></p>
-      </div>
-      <div class="t-step">
-        <div class="time">2:30 – 3:00 · The punchline</div>
-        <p><em>"Same file runs locally, in Azure Functions, and in Copilot Studio on Teams. That's RAPP — the agent IS the file, and the file runs everywhere."</em></p>
-      </div>
-    </div>
-    <div class="highlight-box animate d3">
-      <p><strong>The meta-move:</strong> The pipeline literally produces the executive brief about why RAPP matters. The executive reads RAPP's output arguing for RAPP's adoption. The medium is the message.</p>
-    </div>
-  </div>
-</div>
-
-<!-- ── SLIDE 8: Agent Management ── -->
-<div class="slide">
-  <div class="slide-inner center">
-    <h3 class="kicker animate"><span class="num-badge">07</span>Agent Management</h3>
-    <h2 class="animate d1" style="font-size:3rem">One click. <span class="green">On or off.</span></h2>
-    <p class="big animate d2" style="margin:16px auto 48px;max-width:600px">Turn any agent on or off from the sidebar. Nothing gets deleted. Ever.</p>
-    <div class="animate d3" style="max-width:380px;margin:0 auto">
-      <div class="toggle-demo"><div class="toggle-switch"></div><div class="toggle-label"><span class="on">ExecBrief</span></div></div>
-      <div class="toggle-demo"><div class="toggle-switch"></div><div class="toggle-label"><span class="on">HackerNews</span></div></div>
-      <div class="toggle-demo"><div class="toggle-switch off"></div><div class="toggle-label"><span class="off">BookFactory</span></div></div>
-    </div>
-  </div>
-</div>
-
-<!-- ── SLIDE 9: The Dropper ── -->
-<div class="slide">
-  <div class="slide-inner center">
-    <h3 class="kicker animate"><span class="num-badge">08</span>The Dropper</h3>
-    <h2 class="animate d1" style="font-size:3rem">Send the agent. <span class="purple">Not a deck.</span></h2>
-    <p class="big animate d2" style="margin:16px auto 48px;max-width:640px">Hand them the actual agent as a file. They drop it in a browser. It works.</p>
-    <div class="pipeline animate d3" style="margin:0 auto 56px">
-      <div class="step" style="border-color:var(--purple);cursor:pointer" onclick="downloadAgent('https://raw.githubusercontent.com/kody-w/RAPP/main/rapp_store/execbrief/singleton/execbrief_agent.py','execbrief_agent.py')"><div class="emoji">📤</div><div class="name">Export</div><div class="role">Download the agent</div></div>
-      <div class="arrow">→</div>
-      <div class="step" style="border-color:var(--purple)"><div class="emoji">💬</div><div class="name">Teams</div><div class="role">Drop in chat</div></div>
-      <div class="arrow">→</div>
-      <div class="step" style="border-color:var(--purple)"><div class="emoji">🌐</div><div class="name">Browser</div><div class="role">Open & drop</div></div>
-      <div class="arrow">→</div>
-      <div class="step" style="border-color:var(--green)"><div class="emoji">🧠</div><div class="name">Running</div><div class="role">Their machine</div></div>
-    </div>
-    <div class="highlight-box animate d4" style="max-width:760px">
-      <p><strong>The punchline:</strong> "I sent you a file in Teams. You dropped it in a browser. It works."</p>
-    </div>
-  </div>
-</div>
-
-<!-- ── SLIDE 10: Run the Demo ── -->
-<div class="slide" data-rehearse-only>
-  <div class="slide-inner">
-    <h3 class="kicker animate"><span class="num-badge">09</span>How to Run the Demo</h3>
-    <h2 class="animate d1">From zero to pitch in <span class="green">5 commands</span></h2>
-    <pre class="cmd animate d2"><span class="comment"># 1. Fresh install (if needed)</span>
-<span class="dollar">$ </span>curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash
-
-<span class="comment"># 2. Open the brainstem UI at http://localhost:7071</span>
-<span class="comment">#    Settings → RAPP Swarms → find ExecBrief → Install</span>
-<span class="comment">#    ...or ask in the chat:</span>
-<span class="green">Install ExecBrief from the store</span>
-
-<span class="comment"># 3. Run the pitch demo</span>
-<span class="green">Create an executive brief about why Microsoft needs a unified
-agent sharing standard and what happens if we don't act</span>
-
-<span class="comment"># 4. Watch the pipeline in the terminal</span>
-[ExecBrief] Step 1/4: Scout gathering intelligence...
-[ExecBrief] Step 2/4: Analyst extracting insights...
-[ExecBrief] Step 3/4: Strategist forming recommendations...
-[ExecBrief] Step 4/4: Writer composing executive brief...
-[ExecBrief] Pipeline complete — 4 agents, 1 brief.
-
-<span class="comment"># 5. Converge to a singleton for the finale</span>
-<span class="green">Use SwarmFactory to converge the current agents into a single file called ExecBrief</span></pre>
-    <p class="animate d3" style="font-size:.88rem;color:var(--muted);margin:10px auto 0;text-align:center">Open the agents panel (puzzle icon) to toggle which swarms are active during the demo.</p>
-  </div>
-</div>
-
-<!-- ── SLIDE 11: CTA ── -->
+<!-- ── SLIDE 2: Ease of Learning ── -->
 <div class="slide center">
   <div class="slide-inner">
-    <div class="logo animate" style="margin-bottom:24px">🧠</div>
-    <h1 class="animate d1" style="font-size:3rem">It's live. <span class="grad">Try it now.</span></h1>
-    <p class="big animate d2" style="margin:24px auto 40px;max-width:600px">One file. One drop. It runs.</p>
-    <div class="btn-row animate d3">
-      <button class="btn btn-primary" style="font-size:1.25rem;padding:18px 36px" onclick="downloadAgent('https://raw.githubusercontent.com/kody-w/RAPP/main/rapp_store/execbrief/singleton/execbrief_agent.py','execbrief_agent.py')">📥 Download the agent</button>
+    <h3 class="kicker animate">01 · Learning curve</h3>
+    <h1 class="animate d1">Zero to shipping in <span class="green">60 seconds.</span></h1>
+    <p class="big animate d2" style="margin:18px auto 36px;max-width:740px">
+      A teenager can open the folder, name an agent, and run it before the kettle boils. No SDK, no framework, no account setup — just a file and a dropdown.
+    </p>
+    <div class="animate d3" style="margin:28px auto 0;max-width:760px;padding:22px 28px;background:var(--tint-purple);border:1px solid var(--purple);border-radius:12px;text-align:left">
+      <div style="color:var(--purple);font-size:.85rem;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;margin-bottom:10px">Ask them</div>
+      <p style="color:var(--text);font-size:1.4rem;line-height:1.45;margin:0"><strong>"How long does it take someone on your team to get their first working agent into a real workflow today?"</strong></p>
     </div>
-    <div class="btn-row animate d4" style="margin-top:12px">
-      <a href="https://kody-w.github.io/RAPP/" class="btn btn-outline">RAPP Home</a>
-      <a href="https://kody-w.github.io/RAPP/store/" class="btn btn-outline">Agent Store</a>
-      <a href="https://github.com/kody-w/RAPP" class="btn btn-green">GitHub</a>
+    <p class="animate d4 dim" style="font-size:.82rem;margin-top:36px">→ shut up.</p>
+  </div>
+</div>
+
+<!-- ── SLIDE 3: Ease of Teaching ── -->
+<div class="slide center">
+  <div class="slide-inner">
+    <h3 class="kicker animate">02 · Ease of teaching</h3>
+    <h1 class="animate d1">One file. <span class="grad">Readable by a human.</span></h1>
+    <p class="big animate d2" style="margin:18px auto 36px;max-width:760px">
+      The agent <em>is</em> its own documentation. A new hire opens one file and learns the whole pattern. Teach once; it spreads.
+    </p>
+    <div class="animate d3" style="margin:28px auto 0;max-width:760px;padding:22px 28px;background:var(--tint-purple);border:1px solid var(--purple);border-radius:12px;text-align:left">
+      <div style="color:var(--purple);font-size:.85rem;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;margin-bottom:10px">Ask them</div>
+      <p style="color:var(--text);font-size:1.4rem;line-height:1.45;margin:0"><strong>"Who on your team could you hand this to today and expect them to be productive tomorrow?"</strong></p>
     </div>
-    <p class="animate d4" style="margin-top:48px;color:var(--muted);font-size:.82rem">
-      Kody Wildfeuer · AIBAST · Microsoft · April 2026
+    <p class="animate d4 dim" style="font-size:.82rem;margin-top:36px">→ shut up.</p>
+  </div>
+</div>
+
+<!-- ── SLIDE 4: Portability + Shareability ── -->
+<div class="slide center">
+  <div class="slide-inner">
+    <h3 class="kicker animate">03 · Portability</h3>
+    <h1 class="animate d1">Email it. Drop it. <span class="green">It runs.</span></h1>
+    <p class="big animate d2" style="margin:18px auto 32px;max-width:760px">
+      Your best person's playbook becomes your team's playbook in the time it takes to drag a file into a chat. No cloud account, no vendor lock, no install ceremony.
+    </p>
+    <div class="animate d3" style="margin:28px auto 0;max-width:780px;padding:22px 28px;background:var(--tint-purple);border:1px solid var(--purple);border-radius:12px;text-align:left">
+      <div style="color:var(--purple);font-size:.85rem;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;margin-bottom:10px">Ask them</div>
+      <p style="color:var(--text);font-size:1.4rem;line-height:1.45;margin:0"><strong>"What would change if your top performer's playbook became every person's default tomorrow?"</strong></p>
+    </div>
+    <p class="animate d4 dim" style="font-size:.82rem;margin-top:36px">→ shut up.</p>
+  </div>
+</div>
+
+<!-- ── SLIDE 5: Simplicity ── -->
+<div class="slide center">
+  <div class="slide-inner">
+    <h3 class="kicker animate">04 · Simplicity</h3>
+    <h1 class="animate d1">A GitHub account. <span class="grad">That's it.</span></h1>
+    <p class="big animate d2" style="margin:18px auto 36px;max-width:760px">
+      No API keys to procure. No infrastructure to provision. No IT ticket. The thing that gatekeeps most teams — setup — is deleted.
+    </p>
+    <div class="animate d3" style="margin:28px auto 0;max-width:780px;padding:22px 28px;background:var(--tint-purple);border:1px solid var(--purple);border-radius:12px;text-align:left">
+      <div style="color:var(--purple);font-size:.85rem;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;margin-bottom:10px">Ask them</div>
+      <p style="color:var(--text);font-size:1.4rem;line-height:1.45;margin:0"><strong>"What's your team's cost — in hours or dollars — to onboard one more person to AI right now?"</strong></p>
+    </div>
+    <p class="animate d4 dim" style="font-size:.82rem;margin-top:36px">→ shut up.</p>
+  </div>
+</div>
+
+<!-- ── SLIDE 6: The Ask (then silence) ── -->
+<div class="slide center">
+  <div class="slide-inner">
+    <div class="logo animate" style="margin-bottom:20px">🧠</div>
+    <h3 class="kicker animate">The ask</h3>
+    <h1 class="animate d1">30-day pilot. 5 people. <span class="green">I set it up in an hour.</span></h1>
+    <p class="big animate d2" style="margin:22px auto 40px;max-width:680px">
+      If adoption hasn't moved in 30 days, you turn it off. No cleanup. No switching cost. The files walk away the same way they arrived.
+    </p>
+    <div class="animate d3" style="margin:40px auto 0;max-width:640px;padding:26px 32px;background:var(--tint-green);border:1px solid var(--green);border-radius:14px">
+      <p style="color:var(--text);font-size:1.55rem;line-height:1.4;margin:0;font-weight:600">Then I stop talking.</p>
+      <p style="color:var(--text-dim);font-size:1.05rem;line-height:1.55;margin-top:10px">Silence is the close. Don't fill it.</p>
+    </div>
+    <p class="animate d4 dim" style="margin-top:48px;font-size:.82rem">
+      Kody Wildfeuer · RAPP
     </p>
   </div>
 </div>
