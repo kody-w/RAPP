@@ -277,6 +277,191 @@
   }
   .agent-logs.collapsed { display: none; }
 
+  /* ── Index Card ──
+     Factory agents emit a live card that updates during the run and
+     freezes into a report when done. Rendered in the assistant bubble's
+     right column, above the final text. Stages animate state changes
+     so "progress view" and "report" are the same surface. */
+  .index-card {
+    margin: 4px 0 10px; padding: 14px 16px 12px;
+    background: linear-gradient(135deg, rgba(31,111,235,.10), rgba(88,166,255,.04));
+    border: 1px solid rgba(88,166,255,.35); border-radius: 12px;
+    box-shadow: 0 0 0 1px rgba(88,166,255,.12), 0 8px 28px rgba(31,111,235,.18);
+    animation: card-materialize .45s cubic-bezier(.34,1.56,.64,1) backwards;
+    position: relative; overflow: hidden;
+  }
+  @keyframes card-materialize {
+    0%   { opacity: 0; transform: translateY(10px) scale(.96); filter: blur(4px); }
+    100% { opacity: 1; transform: translateY(0)    scale(1);   filter: blur(0);  }
+  }
+  /* Moving shimmer sweep across the card while any stage is running —
+     the "the factory is alive" cue. Pauses when status flips to done. */
+  .index-card.running::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(100deg, transparent 40%, rgba(120,180,255,.14) 50%, transparent 60%);
+    animation: card-shimmer 2.4s linear infinite;
+    pointer-events: none;
+  }
+  @keyframes card-shimmer {
+    0%   { transform: translateX(-60%); }
+    100% { transform: translateX(60%);  }
+  }
+  .index-card-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 10px; margin-bottom: 8px;
+  }
+  .index-card-title {
+    font-size: 14px; font-weight: 600; color: #e6edf3;
+    line-height: 1.3;
+  }
+  .index-card-sub {
+    font-size: 11px; color: #8b949e; margin-top: 2px;
+  }
+  .index-card-status {
+    font-size: 9px; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; padding: 2px 8px; border-radius: 999px;
+    color: #79c0ff; background: rgba(88,166,255,.12);
+    border: 1px solid rgba(88,166,255,.3); flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .index-card.done .index-card-status {
+    color: #7ee787; background: rgba(46,160,67,.12);
+    border-color: rgba(46,160,67,.35);
+  }
+  .index-card.failed .index-card-status {
+    color: #ffa198; background: rgba(248,81,73,.12);
+    border-color: rgba(248,81,73,.35);
+  }
+  /* Stage rail — one row of stage chips connected by a line that fills
+     left-to-right as stages complete. Reads as a factory belt. */
+  .index-card-stages {
+    display: flex; align-items: stretch; gap: 0;
+    margin-top: 6px; position: relative;
+  }
+  .index-stage {
+    flex: 1; min-width: 0; padding: 8px 10px;
+    display: flex; flex-direction: column; gap: 3px;
+    position: relative;
+    border-left: 1px solid rgba(88,166,255,.15);
+    transition: background .25s;
+  }
+  .index-stage:first-child { border-left: none; }
+  .index-stage-label {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 600; color: #8b949e;
+    transition: color .25s;
+  }
+  .index-stage-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    flex-shrink: 0; background: #30363d;
+    transition: all .3s;
+  }
+  .index-stage-note {
+    font-size: 10px; color: #6e7681; margin-left: 16px;
+    min-height: 12px; line-height: 1.3;
+  }
+  /* Pending — quiet, gray */
+  .index-stage[data-status="pending"] .index-stage-dot {
+    background: #30363d;
+  }
+  /* Running — blue pulse + ring, label brightens */
+  .index-stage[data-status="running"] {
+    background: rgba(88,166,255,.08);
+  }
+  .index-stage[data-status="running"] .index-stage-label { color: #cae3ff; }
+  .index-stage[data-status="running"] .index-stage-dot {
+    background: #58a6ff;
+    box-shadow: 0 0 0 0 rgba(88,166,255,.6);
+    animation: stage-pulse 1.3s ease-in-out infinite;
+  }
+  @keyframes stage-pulse {
+    0%, 100% { box-shadow: 0 0 0 0  rgba(88,166,255,.6);  transform: scale(1);   }
+    50%      { box-shadow: 0 0 0 6px rgba(88,166,255,0);   transform: scale(1.2); }
+  }
+  /* Done — solid check on filled blue circle */
+  .index-stage[data-status="done"] .index-stage-label { color: #7ee787; }
+  .index-stage[data-status="done"] .index-stage-dot {
+    background: #2ea043; box-shadow: 0 0 0 2px rgba(46,160,67,.25);
+  }
+  .index-stage[data-status="done"] .index-stage-dot::after {
+    content: '✓'; color: #fff; font-size: 8px; line-height: 10px;
+    display: block; text-align: center; font-weight: 900;
+  }
+  /* Failed — amber warn */
+  .index-stage[data-status="failed"] .index-stage-label { color: #ffa198; }
+  .index-stage[data-status="failed"] .index-stage-dot {
+    background: #f85149; box-shadow: 0 0 0 2px rgba(248,81,73,.25);
+  }
+  .index-stage[data-status="failed"] .index-stage-dot::after {
+    content: '!'; color: #fff; font-size: 9px; line-height: 10px;
+    display: block; text-align: center; font-weight: 900;
+  }
+
+  .index-card-metrics {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-top: 10px; padding-top: 10px;
+    border-top: 1px solid rgba(88,166,255,.15);
+  }
+  .index-metric {
+    font-size: 10px; color: #8b949e;
+    padding: 3px 9px; border-radius: 999px;
+    background: rgba(88,166,255,.08);
+    border: 1px solid rgba(88,166,255,.2);
+  }
+  .index-metric strong { color: #cae3ff; font-weight: 700; }
+
+  .index-card-artifacts { margin-top: 10px; }
+  .index-artifact {
+    margin-top: 6px; padding: 10px 12px;
+    background: rgba(13,17,23,.6);
+    border: 1px solid rgba(88,166,255,.22);
+    border-radius: 8px;
+  }
+  .index-artifact-head {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 600; color: #cae3ff;
+    margin-bottom: 6px; cursor: pointer; user-select: none;
+  }
+  .index-artifact-kind {
+    font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
+    color: #58a6ff; padding: 1px 6px; border-radius: 4px;
+    background: rgba(88,166,255,.12);
+  }
+  .index-artifact-body {
+    font-size: 12px; color: #cdd6e3; line-height: 1.55;
+    max-height: 400px; overflow-y: auto; padding-top: 4px;
+  }
+  .index-artifact-body.collapsed { display: none; }
+  .index-artifact-body p { margin: 4px 0; }
+  .index-artifact-body h2, .index-artifact-body h3 {
+    color: #e6edf3; margin: 10px 0 4px; font-size: 13px;
+  }
+  .index-artifact-body ul { margin: 4px 0; padding-left: 18px; }
+  .index-artifact-body li { margin: 3px 0; }
+  .index-artifact-body em { color: #8b949e; font-style: italic; }
+  .index-artifact-body code { background: rgba(88,166,255,.1); padding: 1px 4px; border-radius: 3px; }
+
+  /* Light-mode overrides for the whole card */
+  body.light-mode .index-card {
+    background: linear-gradient(135deg, rgba(31,111,235,.06), rgba(31,111,235,.02));
+    border-color: rgba(31,111,235,.35);
+    box-shadow: 0 0 0 1px rgba(31,111,235,.08), 0 8px 28px rgba(31,111,235,.1);
+  }
+  body.light-mode .index-card-title { color: #24292e; }
+  body.light-mode .index-card-sub { color: #57606a; }
+  body.light-mode .index-card-status { color: #1f6feb; }
+  body.light-mode .index-card.done .index-card-status { color: #1a7f37; background: rgba(46,160,67,.08); border-color: rgba(46,160,67,.3); }
+  body.light-mode .index-stage-label { color: #57606a; }
+  body.light-mode .index-stage[data-status="running"] .index-stage-label { color: #1f6feb; }
+  body.light-mode .index-stage[data-status="done"] .index-stage-label { color: #1a7f37; }
+  body.light-mode .index-stage-note { color: #6e7681; }
+  body.light-mode .index-metric { color: #57606a; background: rgba(31,111,235,.05); border-color: rgba(31,111,235,.2); }
+  body.light-mode .index-metric strong { color: #1f6feb; }
+  body.light-mode .index-artifact { background: #ffffff; border-color: rgba(31,111,235,.22); }
+  body.light-mode .index-artifact-head { color: #1f6feb; }
+  body.light-mode .index-artifact-body { color: #24292e; }
+  body.light-mode .index-artifact-body h2, body.light-mode .index-artifact-body h3 { color: #24292e; }
+
   .typing { display: flex; gap: 4px; align-items: center; padding: 4px 0; }
   .typing span {
     width: 6px; height: 6px; border-radius: 50%;
@@ -1821,7 +2006,7 @@
   });
 
   // ── Chat rendering ──
-  function appendMsg(role, text, logs) {
+  function appendMsg(role, text, logs, card) {
     const chat = document.getElementById('chat');
     const wrap = document.createElement('div');
     wrap.className = `msg ${role}`;
@@ -1841,6 +2026,13 @@
       bubble.querySelectorAll('a').forEach(a => a.target = '_blank');
     } else {
       bubble.textContent = text;
+    }
+    // Factory-style agents emit an index card. Render it inside the
+    // bubble, above the text — the same card the user watched evolve
+    // during the run is now frozen here as the "report" artifact.
+    if (role === 'assistant' && card) {
+      const rendered = renderIndexCard(card);
+      if (rendered) bubble.insertBefore(rendered, bubble.firstChild);
     }
     right.appendChild(bubble);
 
@@ -1895,7 +2087,11 @@
     av.appendChild(ic);
     const bub = document.createElement('div');
     bub.className = 'bubble';
-    bub.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+    // Card slot sits above the typing dots — the card, if an agent
+    // starts one, materializes here and updates live during the run.
+    bub.innerHTML =
+      '<div class="live-card-slot"></div>' +
+      '<div class="typing"><span></span><span></span><span></span></div>';
     wrap.appendChild(av);
     wrap.appendChild(bub);
     chat.appendChild(wrap);
@@ -1904,6 +2100,150 @@
 
   function removeTyping() {
     document.getElementById('typing-indicator')?.remove();
+  }
+
+  // ── Index Card renderer ─────────────────────────────────────────────
+  // Builds a fresh .index-card DOM tree from a card JSON. Called both
+  // during the run (repeatedly, from the poller) and once at the end
+  // (with the final snapshot embedded in the /chat response).
+  function renderIndexCard(card) {
+    if (!card) return null;
+    const root = document.createElement('div');
+    root.className = 'index-card ' + (card.status || 'running');
+
+    const head = document.createElement('div');
+    head.className = 'index-card-head';
+    const titleWrap = document.createElement('div');
+    const title = document.createElement('div');
+    title.className = 'index-card-title';
+    title.textContent = card.title || 'Running…';
+    titleWrap.appendChild(title);
+    if (card.subtitle) {
+      const sub = document.createElement('div');
+      sub.className = 'index-card-sub';
+      sub.textContent = card.subtitle;
+      titleWrap.appendChild(sub);
+    }
+    head.appendChild(titleWrap);
+    const status = document.createElement('span');
+    status.className = 'index-card-status';
+    status.textContent = card.status === 'done' ? 'complete'
+                       : card.status === 'failed' ? 'failed'
+                       : 'running';
+    head.appendChild(status);
+    root.appendChild(head);
+
+    if (card.stages && card.stages.length) {
+      const stages = document.createElement('div');
+      stages.className = 'index-card-stages';
+      card.stages.forEach(s => {
+        const el = document.createElement('div');
+        el.className = 'index-stage';
+        el.dataset.status = s.status || 'pending';
+        const lab = document.createElement('div');
+        lab.className = 'index-stage-label';
+        const dot = document.createElement('span');
+        dot.className = 'index-stage-dot';
+        const name = document.createElement('span');
+        name.textContent = s.label || s.id;
+        lab.appendChild(dot); lab.appendChild(name);
+        el.appendChild(lab);
+        const note = document.createElement('div');
+        note.className = 'index-stage-note';
+        note.textContent = s.note || '';
+        el.appendChild(note);
+        stages.appendChild(el);
+      });
+      root.appendChild(stages);
+    }
+
+    const metricKeys = Object.keys(card.metrics || {});
+    if (metricKeys.length) {
+      const metrics = document.createElement('div');
+      metrics.className = 'index-card-metrics';
+      metricKeys.forEach(k => {
+        const m = document.createElement('span');
+        m.className = 'index-metric';
+        m.innerHTML = k + ' <strong>' + card.metrics[k] + '</strong>';
+        metrics.appendChild(m);
+      });
+      root.appendChild(metrics);
+    }
+
+    if (card.artifacts && card.artifacts.length) {
+      const wrap = document.createElement('div');
+      wrap.className = 'index-card-artifacts';
+      card.artifacts.forEach(a => {
+        const box = document.createElement('div');
+        box.className = 'index-artifact';
+        const hd = document.createElement('div');
+        hd.className = 'index-artifact-head';
+        const kind = document.createElement('span');
+        kind.className = 'index-artifact-kind';
+        kind.textContent = a.kind || 'artifact';
+        const tl = document.createElement('span');
+        tl.textContent = a.title || '';
+        const arrow = document.createElement('span');
+        arrow.textContent = '▾';
+        arrow.style.marginLeft = 'auto';
+        hd.appendChild(kind); hd.appendChild(tl); hd.appendChild(arrow);
+        box.appendChild(hd);
+        const body = document.createElement('div');
+        body.className = 'index-artifact-body';
+        if (a.body_md) {
+          body.innerHTML = (typeof marked !== 'undefined') ? marked.parse(a.body_md) : a.body_md;
+        } else if (a.url) {
+          body.innerHTML = '<a href="' + a.url + '" target="_blank" style="color:#58a6ff">' + a.url + '</a>';
+        }
+        // Open by default when finished, collapsed while still running
+        if (card.status !== 'done') body.classList.add('collapsed');
+        hd.onclick = () => {
+          body.classList.toggle('collapsed');
+          arrow.textContent = body.classList.contains('collapsed') ? '▸' : '▾';
+        };
+        if (body.classList.contains('collapsed')) arrow.textContent = '▸';
+        box.appendChild(body);
+        wrap.appendChild(box);
+      });
+      root.appendChild(wrap);
+    }
+
+    return root;
+  }
+
+  // Poll /card/<turn_id> every ~500ms while a turn is in flight. Each
+  // poll re-renders into the same slot — the card "moves" without any
+  // flicker because we swap DOM subtrees wholesale per tick (cheap at
+  // this size). Stops when the caller clears the interval.
+  function startCardPoller(turnId, slot) {
+    let stopped = false;
+    const tick = async () => {
+      if (stopped) return;
+      try {
+        const r = await fetch(`${API}/card/${turnId}`);
+        if (r.ok) {
+          const card = await r.json();
+          const rendered = renderIndexCard(card);
+          if (rendered && slot) {
+            slot.innerHTML = '';
+            slot.appendChild(rendered);
+            const chat = document.getElementById('chat');
+            chat.scrollTop = chat.scrollHeight;
+          }
+        }
+      } catch {}
+      if (!stopped) setTimeout(tick, 500);
+    };
+    tick();
+    return () => { stopped = true; };
+  }
+
+  function _uuid() {
+    if (crypto && crypto.randomUUID) return crypto.randomUUID();
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+      const r = Math.random() * 16 | 0;
+      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
   }
 
   function useStarter(text, btn) {
@@ -1958,8 +2298,14 @@
 
     appendTyping();
 
+    // Per-send turn_id — the card file is keyed by this so the client
+    // can start polling immediately, before /chat returns.
+    const turnId = _uuid();
+    const liveSlot = document.querySelector('#typing-indicator .live-card-slot');
+    const stopPolling = startCardPoller(turnId, liveSlot);
+
     try {
-      const body = { user_input: text, conversation_history: history };
+      const body = { user_input: text, conversation_history: history, turn_id: turnId };
       if (sessionId) body.session_id = sessionId;
 
       const r = await fetch(`${API}/chat`, {
@@ -1969,6 +2315,7 @@
       });
 
       const d = await r.json();
+      stopPolling();
       removeTyping();
       if (d.agent_logs) console.log('[brainstem] agent_logs:', d.agent_logs.slice(0, 200));
 
@@ -2008,11 +2355,12 @@
           agent_logs: d.agent_logs || null,
           voice_response: d.voice_response || null,
           twin_response: d.twin_response || null,
+          index_card: d.index_card || null,
           model: document.getElementById('model-select')?.value || null,
           session_id: d.session_id,
           timestamp: new Date().toISOString()
         });
-        appendMsg('assistant', d.response, d.agent_logs && d.agent_logs.trim() ? d.agent_logs : null);
+        appendMsg('assistant', d.response, d.agent_logs && d.agent_logs.trim() ? d.agent_logs : null, d.index_card || null);
         if (d.twin_response && d.twin_response.trim()) renderTwin(d.twin_response);
         if (d.voice_response) {
           speakText(d.voice_response);
@@ -2021,6 +2369,7 @@
         }
       }
     } catch (err) {
+      stopPolling();
       removeTyping();
       clog('chat.network_error', { error: err.message });
       const wrap = appendMsg('system', '');
@@ -2805,7 +3154,7 @@
           } else if (role === 'assistant') {
             history.push({ role: 'assistant', content });
             const logs = turn.agent_logs && turn.agent_logs.trim() ? turn.agent_logs : null;
-            appendMsg('assistant', content, logs);
+            appendMsg('assistant', content, logs, turn.index_card || null);
           }
           fullTranscript.push(turn);
         }

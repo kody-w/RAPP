@@ -700,7 +700,18 @@ def call_copilot(messages, tools=None):
 # ── Agent execution ───────────────────────────────────────────────────────────
 
 
-def run_tool_calls(tool_calls, agents, session_id=None):
+def run_tool_calls(tool_calls, agents, session_id=None, turn_id=None):
+    # Bind the current turn's index card so any agent that calls
+    # utils.index_card.current() writes to the right file. Safe to
+    # bind even if no agent uses it — read_by_turn returns None and
+    # the endpoint responds 404.
+    try:
+        from utils import index_card as _card
+        if turn_id:
+            _card.bind(turn_id)
+    except Exception:
+        _card = None
+
     results = []
     logs = []
     for tc in tool_calls:
@@ -730,6 +741,9 @@ def run_tool_calls(tool_calls, agents, session_id=None):
             "name": fn_name,
             "content": str(result)
         })
+
+    if _card is not None and turn_id:
+        _card.unbind()
     return results, logs
 
 # ── /chat endpoint ────────────────────────────────────────────────────────────
@@ -740,6 +754,11 @@ def chat():
     user_input = data.get("user_input", "").strip()
     history    = data.get("conversation_history", [])
     session_id = data.get("session_id") or str(uuid.uuid4())
+    # turn_id is per-send, generated client-side so the UI can start
+    # polling GET /card/<turn_id> immediately. If the client didn't
+    # send one, make one here; it just won't be pollable before /chat
+    # returns.
+    turn_id    = data.get("turn_id") or str(uuid.uuid4())
 
     if not user_input:
         return jsonify({"error": "user_input is required"}), 400
@@ -829,7 +848,7 @@ def chat():
             # Some models use finish_reason "tool_calls", others just include tool_calls in the message
             if msg.get("tool_calls"):
                 print(f"[brainstem] Tool calls triggered (finish_reason={finish}): {[tc['function']['name'] for tc in msg['tool_calls']]}")
-                tool_results, logs = run_tool_calls(msg["tool_calls"], agents, session_id=session_id)
+                tool_results, logs = run_tool_calls(msg["tool_calls"], agents, session_id=session_id, turn_id=turn_id)
                 all_logs.extend(logs)
                 messages.extend(tool_results)
             else:
@@ -837,12 +856,30 @@ def chat():
 
         reply = msg.get("content") or ""
         
+        # Embed the final index card (if any agent wrote one during this
+        # turn) so the UI can keep it in the transcript after the run
+        # finishes. The client stops polling once /chat returns — this
+        # final snapshot is the authoritative "frozen report" state.
+        index_card_final = None
+        try:
+            from utils import index_card as _card
+            index_card_final = _card.read_by_turn(turn_id)
+            # Auto-finish if the agent forgot — no stuck spinners on
+            # cards whose agent returned without calling finish().
+            if index_card_final and index_card_final.get("status") == "running":
+                _card.IndexCard(turn_id).finish()
+                index_card_final = _card.read_by_turn(turn_id)
+        except Exception as _e:
+            print(f"[brainstem] index_card read failed: {_e}")
+
         result = {
             "response": reply,
             "session_id": session_id,
+            "turn_id": turn_id,
             "agent_logs": "\n".join(all_logs),
             "voice_mode": VOICE_MODE,
             "twin_mode":  TWIN_MODE,
+            "index_card": index_card_final,
         }
 
         # Three-way split: main |||VOICE||| voice |||TWIN||| twin. Both
@@ -1197,6 +1234,21 @@ def voice_toggle():
     else:
         VOICE_MODE = not VOICE_MODE
     return jsonify({"voice_mode": VOICE_MODE})
+
+@app.route("/card/<turn_id>", methods=["GET"])
+def index_card_get(turn_id):
+    """Polled by the UI every ~500ms while a turn is in flight. Returns
+    the current index-card JSON, or 404 if the agent for this turn hasn't
+    started a card yet. The card mechanism is opt-in per agent — missing
+    card = agent didn't use one, not an error."""
+    try:
+        from utils import index_card as _card
+        d = _card.read_by_turn(turn_id)
+        if not d:
+            return jsonify({"error": "no card for this turn"}), 404
+        return jsonify(d)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/twin", methods=["GET"])
 def twin_status():
