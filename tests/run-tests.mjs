@@ -331,7 +331,6 @@ class TinyAgent(BasicAgent):
     'tests/test-llm-chat.sh',
     'rapp_brainstem/t2t.py',
     'rapp_brainstem/llm.py',
-    'rapp_brainstem/chat.py',
     'rapp_brainstem/web/onboard/index.html',
     'rapp_brainstem/web/onboard/registry.json',
     'rapp_swarm/function_app.py',
