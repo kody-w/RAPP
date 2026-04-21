@@ -643,20 +643,34 @@ path.
 
 ---
 
-## Article XVII — `agents/` Is a User-Organized Tree
+## Article XVII — `agents/` IS the User's Workspace
 
-`rapp_brainstem/agents/` is a **recursive tree** that the user
-organizes. Drop an `*_agent.py` file anywhere under it and the
-brainstem finds it. Make any subdirectory you want to group related
-agents — the engine doesn't care about the folder names. This is the
-whole point: a user organizing their `sales_stack/`, their
-`personal_twin/`, or their `project_x_swarm/` needs nothing from the
-engine but a folder.
+`rapp_brainstem/agents/` is **the user's entire operational workspace**
+for setting up and managing their brainstem. To add a capability,
+organize a swarm, group a project's agents, turn something off — all
+of it happens inside `agents/`. Nothing else is supposed to be touched.
 
-> **`agents/` is the user-organized tree. `load_agents()` walks it
-> recursively. Two subdir names are reserved by the engine:
-> `experimental_agents/` and `disabled_agents/` never auto-load.
-> Everything else does.**
+> **Engine files are for the engine. `agents/` is for the user.
+> Everything functional a user needs to do happens in `agents/`.**
+
+The engine (`brainstem.py`, `VERSION`, `soul.md`, `requirements.txt`,
+`start.sh`, `local_storage.py`, the `utils/` and `web/` trees) is a
+stable, boring surface. Users rarely read it and never edit it. The
+user's focus is inside `agents/`.
+
+### A recursive, user-organized tree
+
+`agents/` is a **recursive tree** with no depth limit. Drop a `*_agent.py`
+file anywhere under it and the brainstem finds it. Make any
+subdirectory you want to group related agents — the engine doesn't
+care about folder names. Subdirectories themselves can contain more
+subdirectories. `agents/sales_stack/q4/prospects/outbound_agent.py`
+auto-loads exactly like `agents/outbound_agent.py`.
+
+Two subdirectory names are reserved by the engine — they never
+auto-load: **`experimental_agents/`** (in-flight work, hand-load only)
+and **`disabled_agents/`** (turned off, move a file there to disable
+it without deleting). Everything else under `agents/` loads.
 
 ### What's at the top level of `agents/` by default (the starter set)
 
@@ -698,17 +712,29 @@ No registration, no config, no env var. Drop a folder in, put
 
 ### What this rules out
 
+- ❌ Making users edit engine files to do things a brainstem exists
+  to do. If a user wants to add a capability, change behavior, or
+  reorganize their setup, the answer is always something inside
+  `agents/` (or `soul.md` for persona, `.env` for creds). Never
+  "open `brainstem.py` and edit…"
 - ❌ A registration file (`agents.json`, `registry.yaml`) listing
   which agents to load. Discovery is filesystem-only.
-- ❌ Engine-imposed subdir categories beyond the three named reserved
-  ones. The user owns the naming inside `agents/`.
+- ❌ A "brainstem config" directory outside `agents/` that users
+  are expected to edit. The user's entire config surface is:
+  `soul.md`, `.env`, the `agents/` tree.
+- ❌ Engine-imposed subdir categories beyond the three reserved
+  names (`system_agents/` convention, `experimental_agents/`,
+  `disabled_agents/`). The user owns naming inside `agents/`.
 - ❌ Importing `from agents.system_agents.swarm_deploy_agent import ...`
   in tests. Tests load nested-subdir agents by file path via
   `importlib`; the `agents.*` module namespace is for the base
   class shim only.
 - ❌ Dumping more than the five starter files at the top level of
   `agents/`. The top level is the curriculum — infrastructure goes
-  in `system_agents/`, user organization goes in user-named subdirs.
+  in `system_agents/`, user organization goes in user-named subdirs
+  (arbitrarily deep).
+- ❌ Any depth limit on `agents/` recursion. Users pick their
+  own structure.
 
 ### Discovery rules
 
