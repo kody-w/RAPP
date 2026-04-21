@@ -45,6 +45,11 @@ _AGENTS_EXCLUDED_SUBDIRS = frozenset({
     "disabled_agents",       # turned off
     "__pycache__",
 })
+
+# Marker file that disables an entire folder group. Drop this file into
+# any folder under agents/ and every agent file inside that subtree
+# skips loading. Filesystem-is-truth (Article XVIII).
+_FOLDER_DISABLED_MARKER = ".folder_disabled"
 MODEL       = os.getenv("GITHUB_MODEL", "gpt-4o")
 PORT        = int(os.getenv("PORT", 7071))
 VOICE_MODE  = os.getenv("VOICE_MODE", "false").lower() == "true"
@@ -777,6 +782,9 @@ def _agents_tree_json() -> dict:
             # Flag reserved dirs inside agents/ root
             if len(rel_parts) == 1 and path.name in _AGENT_MGR_RESERVED_DIR_NAMES:
                 node["reserved"] = path.name  # "system_agents" | "experimental_agents" | "disabled_agents"
+            # Folder-group disable marker (.folder_disabled file inside)
+            if (path / _FOLDER_DISABLED_MARKER).is_file():
+                node["folder_disabled"] = True
             children = []
             for child in sorted(path.iterdir(), key=lambda p: (p.is_file(), p.name)):
                 sub = walk(child, rel_parts + (child.name,))
@@ -1028,6 +1036,19 @@ def load_agents():
         for p in root.rglob("*_agent.py"):
             rel_parts = p.relative_to(root).parts
             if any(part in _AGENTS_EXCLUDED_SUBDIRS for part in rel_parts[:-1]):
+                continue
+            # Walk up and skip if any ancestor folder has a .folder_disabled
+            # marker (bulk-disable without moving files, per Article XVIII).
+            skip = False
+            cur = p.parent
+            while cur != root.parent and cur.is_dir():
+                if (cur / _FOLDER_DISABLED_MARKER).is_file():
+                    skip = True
+                    break
+                if cur == root:
+                    break
+                cur = cur.parent
+            if skip:
                 continue
             files.append(str(p))
     disabled = _read_disabled()
@@ -2009,6 +2030,42 @@ def api_agents_delete():
         return jsonify({"status": "ok", "deleted": rel})
     except OSError as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/agents/folder-toggle", methods=["POST"])
+def api_agents_folder_toggle():
+    """Body {path, enabled?}. Writes or removes the .folder_disabled
+    marker in the folder. When disabled, every agent under that folder
+    (and any subfolder) skips auto-load. Reserved dirs are forbidden."""
+    body = request.get_json(force=True) or {}
+    rel  = (body.get("path") or "").strip()
+    want_enabled = body.get("enabled")  # if None: toggle
+    if not rel:
+        return jsonify({"error": "path required"}), 400
+    if rel.strip("/") in _AGENT_MGR_RESERVED_DIR_NAMES:
+        return jsonify({"error": f"cannot toggle reserved dir: {rel}"}), 403
+    try:
+        target = _safe_agents_path(rel, must_exist=True)
+    except (ValueError, FileNotFoundError) as e:
+        return jsonify({"error": str(e)}), 400
+    if not os.path.isdir(target):
+        return jsonify({"error": "not a folder"}), 400
+    marker = os.path.join(target, _FOLDER_DISABLED_MARKER)
+    is_disabled = os.path.isfile(marker)
+    if want_enabled is None:
+        want_enabled = is_disabled  # toggle
+    if want_enabled:
+        if is_disabled:
+            try: os.remove(marker)
+            except OSError as e: return jsonify({"error": str(e)}), 500
+        return jsonify({"status": "ok", "path": rel, "enabled": True})
+    # disable: create marker
+    if not is_disabled:
+        try:
+            with open(marker, "w") as f:
+                f.write("disabled\n")
+        except OSError as e: return jsonify({"error": str(e)}), 500
+    return jsonify({"status": "ok", "path": rel, "enabled": False})
 
 
 @app.route("/api/agents/templates", methods=["GET"])

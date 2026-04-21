@@ -208,7 +208,75 @@ CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://127.0.0.1:$PORT/api
 assert_eq "can't delete reserved system_agents (403)" "403" "$CODE"
 assert_path_exists "system_agents still here" "$AGENTS_DIR/system_agents"
 
-# ── Section 7: config get/set ──────────────────────────────────────────
+# ── Section 7: folder-group enable/disable ────────────────────────────
+echo ""
+echo "--- Section 7: POST /api/agents/folder-toggle ---"
+# Create a folder + agent, confirm it loads
+mkdir -p "$AGENTS_DIR/group_test"
+cat > "$AGENTS_DIR/group_test/alpha_agent.py" <<'PY'
+from agents.basic_agent import BasicAgent
+import json
+class AlphaAgent(BasicAgent):
+    def __init__(self):
+        self.name = "Alpha"
+        self.metadata = {"name": self.name, "description": "x", "parameters": {"type":"object","properties":{},"required":[]}}
+        super().__init__(name=self.name, metadata=self.metadata)
+    def perform(self, **kw): return json.dumps({"status":"success"})
+PY
+
+BEFORE=$(curl -s http://127.0.0.1:$PORT/api/agents/tree | python3 -c "
+import json, sys
+t = json.load(sys.stdin)
+def find(n, p):
+    if n['path']==p: return n
+    for c in n.get('children',[]) or []:
+        r=find(c,p)
+        if r: return r
+n = find(t, 'group_test')
+print('yes' if n else 'no')
+")
+assert_eq "folder group_test present in tree" "yes" "$BEFORE"
+
+# Disable the folder
+RESP=$(curl -s -X POST http://127.0.0.1:$PORT/api/agents/folder-toggle \
+    -H 'Content-Type: application/json' -d '{"path":"group_test","enabled":false}')
+assert_contains "folder-toggle disable: ok" '"status":"ok"' "$RESP"
+assert_contains "folder-toggle reports enabled=false" '"enabled":false' "$RESP"
+assert_path_exists "marker written" "$AGENTS_DIR/group_test/.folder_disabled"
+
+# Tree reflects disabled state
+DISABLED=$(curl -s http://127.0.0.1:$PORT/api/agents/tree | python3 -c "
+import json, sys
+t = json.load(sys.stdin)
+def find(n, p):
+    if n['path']==p: return n
+    for c in n.get('children',[]) or []:
+        r=find(c,p)
+        if r: return r
+n = find(t, 'group_test')
+print('yes' if n and n.get('folder_disabled') else 'no')
+")
+assert_eq "tree reports folder_disabled=true" "yes" "$DISABLED"
+
+# Re-enable
+RESP=$(curl -s -X POST http://127.0.0.1:$PORT/api/agents/folder-toggle \
+    -H 'Content-Type: application/json' -d '{"path":"group_test","enabled":true}')
+assert_contains "folder-toggle enable: ok" '"status":"ok"' "$RESP"
+assert_path_missing "marker removed" "$AGENTS_DIR/group_test/.folder_disabled"
+
+# Reserved dir is forbidden
+CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://127.0.0.1:$PORT/api/agents/folder-toggle \
+    -H 'Content-Type: application/json' -d '{"path":"system_agents","enabled":false}')
+assert_eq "folder-toggle refuses reserved dir (403)" "403" "$CODE"
+
+# Not-a-folder is rejected
+echo "dummy" > "$AGENTS_DIR/group_test/some_file.txt"
+CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://127.0.0.1:$PORT/api/agents/folder-toggle \
+    -H 'Content-Type: application/json' -d '{"path":"group_test/some_file.txt","enabled":false}')
+assert_eq "folder-toggle rejects non-folder (400)" "400" "$CODE"
+
+
+# ── Section 8: config get/set ──────────────────────────────────────────
 echo ""
 echo "--- Section 7: /api/config ---"
 RESP=$(curl -s http://127.0.0.1:$PORT/api/config)

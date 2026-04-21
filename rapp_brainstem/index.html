@@ -1948,10 +1948,9 @@
       const mgr = document.createElement('button');
       mgr.className = 'swarm-pill manage';
       mgr.textContent = '+ Manage';
+      mgr.title = 'Open the agent manager (folders, templates, persona, settings)';
       mgr.onclick = () => {
-        document.getElementById('agents-panel').classList.remove('open');
-        toggleSettingsPanel();
-        setTimeout(() => toggleSpSection('sp-swarms'), 100);
+        window.location.href = '/manage';
       };
       bar.appendChild(mgr);
     } catch (e) { console.error('Failed to load swarms', e); }
