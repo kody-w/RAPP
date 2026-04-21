@@ -2032,6 +2032,91 @@ def api_agents_delete():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/agents/detail", methods=["POST"])
+def api_agents_detail():
+    """Body {path}. Returns {name, description, parameters, manifest,
+    filename, has_system_context} for the agent file at `path`. Used by
+    the /manage UI to show an info card when the user selects an agent
+    — so beginners see what the agent does without reading code."""
+    body = request.get_json(force=True) or {}
+    rel  = (body.get("path") or "").strip()
+    if not rel:
+        return jsonify({"error": "path required"}), 400
+    try:
+        target = _safe_agents_path(rel, must_exist=True)
+    except (ValueError, FileNotFoundError) as e:
+        return jsonify({"error": str(e)}), 400
+    if not os.path.isfile(target):
+        return jsonify({"error": "not a file"}), 400
+    if not target.endswith(".py"):
+        return jsonify({"error": "not a python file"}), 400
+
+    # Load the module fresh so we can read both the instance metadata
+    # and the module-level __manifest__ dict.
+    import importlib.util as _iu
+    _register_shims()
+    brainstem_dir = os.path.dirname(os.path.abspath(__file__))
+    if brainstem_dir not in sys.path:
+        sys.path.insert(0, brainstem_dir)
+    mod_name = f"_detail_{hash(target)}"
+    try:
+        spec = _iu.spec_from_file_location(mod_name, target)
+        mod = _iu.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+    except Exception as e:
+        return jsonify({"error": f"import failed: {e}"}), 500
+
+    # Find the first BasicAgent subclass in the module
+    from agents.basic_agent import BasicAgent as _BA  # shim-resolved
+    agent_instance = None
+    for attr in dir(mod):
+        cls = getattr(mod, attr)
+        if (
+            isinstance(cls, type)
+            and issubclass(cls, _BA)
+            and cls is not _BA
+            and not attr.startswith("_")
+        ):
+            try:
+                agent_instance = cls()
+                break
+            except Exception:
+                continue
+
+    filename = os.path.basename(target)
+    if agent_instance is None:
+        return jsonify({
+            "error": "no BasicAgent subclass found in file",
+            "filename": filename,
+            "path": rel,
+        }), 422
+
+    md = getattr(agent_instance, "metadata", {}) or {}
+    manifest = getattr(mod, "__manifest__", None)
+
+    return jsonify({
+        "status": "ok",
+        "path": rel,
+        "filename": filename,
+        "name": getattr(agent_instance, "name", ""),
+        "description": md.get("description", ""),
+        "parameters": md.get("parameters", {"type": "object", "properties": {}}),
+        "manifest": manifest if isinstance(manifest, dict) else None,
+        "has_system_context": bool(getattr(type(agent_instance), "system_context", None) is not BasicAgent.system_context)
+            if hasattr(_BA, "system_context") else False,
+        "source_bytes": os.path.getsize(target),
+    })
+
+
+# Alias BasicAgent here too for the has_system_context comparison above
+# (we imported it via shim; the comparison against BasicAgent.system_context
+# needs the same class object in scope).
+try:
+    from agents.basic_agent import BasicAgent  # shim-resolved  # noqa: F811
+except Exception:
+    BasicAgent = None
+
+
 @app.route("/api/agents/folder-toggle", methods=["POST"])
 def api_agents_folder_toggle():
     """Body {path, enabled?}. Writes or removes the .folder_disabled

@@ -439,6 +439,72 @@
   .conn-chip .status { font-size: 12px; color: var(--muted); }
   .conn-chip.connected .status { color: var(--good); }
 
+  /* ── Agent detail card (sidebar) ────────────────────────── */
+  .workspace {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 18px;
+  }
+  @media (max-width: 880px) { .workspace { grid-template-columns: 1fr; } }
+  .detail-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 22px;
+    position: sticky;
+    top: 88px;
+    align-self: start;
+    max-height: calc(100vh - 110px);
+    overflow: auto;
+  }
+  .detail-card .dc-empty { text-align: center; color: var(--muted); padding: 24px 10px; font-size: 13px; line-height: 1.5; }
+  .detail-card .dc-empty .big-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.5; }
+  .detail-card .dc-icon {
+    width: 56px; height: 56px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: grid; place-items: center;
+    font-size: 26px;
+    margin-bottom: 14px;
+  }
+  .detail-card h4 { font-size: 16px; margin-bottom: 4px; }
+  .detail-card .dc-filename { font-size: 11px; color: var(--muted); font-family: ui-monospace, monospace; margin-bottom: 14px; }
+  .detail-card .dc-description { font-size: 13px; line-height: 1.55; color: var(--fg); margin-bottom: 14px; }
+  .detail-card .dc-section { margin-bottom: 12px; }
+  .detail-card .dc-label { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; font-weight: 600; }
+  .detail-card .dc-param {
+    font-size: 12px;
+    padding: 7px 10px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    margin-bottom: 6px;
+  }
+  .detail-card .dc-param b { color: var(--accent); font-family: ui-monospace, monospace; font-weight: 600; font-size: 11.5px; }
+  .detail-card .dc-param .pt { color: var(--muted); font-size: 10.5px; margin-left: 6px; }
+  .detail-card .dc-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+  .detail-card .dc-tag {
+    font-size: 10.5px;
+    padding: 2px 9px;
+    border-radius: 10px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .detail-card .dc-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 16px; }
+  .detail-card .dc-btn {
+    flex: 1; min-width: fit-content;
+    background: var(--panel-2);
+    color: var(--fg);
+    border: 1px solid var(--border);
+    padding: 7px 10px;
+    border-radius: 7px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .detail-card .dc-btn:hover { background: var(--panel-3); }
+  .detail-card .dc-btn.danger { color: var(--bad); }
+
   /* Advanced-mode select styling matches text inputs */
   .adv-select, select {
     width: 100%;
@@ -562,10 +628,18 @@
       </button>
     </div>
 
-    <div class="tree" id="tree"></div>
+    <div class="workspace">
+      <div class="tree" id="tree"></div>
+      <aside class="detail-card" id="detail-card">
+        <div class="dc-empty">
+          <div class="big-icon">👉</div>
+          <p>Click an agent to see what it does.</p>
+        </div>
+      </aside>
+    </div>
 
     <p class="subtle-help">
-      <span class="kbd">drag</span> to move between folders. <span class="kbd">right-click</span> for rename, disable, delete. Toggle a folder to silence every agent inside without deleting anything.
+      <span class="kbd">click</span> an agent to see details. <span class="kbd">drag</span> to move between folders. <span class="kbd">right-click</span> for rename, disable, delete. Toggle a folder to silence every agent inside without deleting anything.
     </p>
   </section>
 
@@ -788,6 +862,15 @@ async function loadTree() {
     _tree = await api("/api/agents/tree");
     renderTree();
     _firstLoad = false;
+    // If the current selection still exists and is an agent, refresh detail.
+    // Otherwise show empty state.
+    if (_selected) {
+      const node = currentNode(_selected);
+      if (node && node.kind === "agent") loadAgentDetail(node);
+      else renderDetailEmpty();
+    } else {
+      renderDetailEmpty();
+    }
   } catch (e) {
     toast("couldn't load tree: " + e.message, "bad");
   }
@@ -925,12 +1008,18 @@ function renderNode(node, depth) {
   row.addEventListener("click", (e) => {
     _selected = node.path || "";
     $$(".node").forEach(n => n.classList.toggle("selected", n === row));
-    // Toggle expand/collapse on folder click (anywhere on the row that
-    // isn't the folder-switch, which stops propagation).
-    if (hasChildren) {
+    if (node.kind === "agent") {
+      // Show details for agents — so beginners understand what the
+      // thing does without reading code.
+      loadAgentDetail(node);
+    } else if (hasChildren) {
+      // Folders: expand/collapse on click.
       if (_expanded.has(node.path)) _expanded.delete(node.path);
       else _expanded.add(node.path);
       renderTree();
+      renderDetailEmpty();
+    } else {
+      renderDetailEmpty();
     }
   });
   row.addEventListener("contextmenu", (e) => {
@@ -991,6 +1080,97 @@ function appendBadge(row, text, cls) {
   row.appendChild(b);
 }
 
+// ── Agent detail card ──────────────────────────────────────────
+function renderDetailEmpty() {
+  const card = $("#detail-card");
+  card.innerHTML = `
+    <div class="dc-empty">
+      <div class="big-icon">👉</div>
+      <p>Click an agent to see what it does.</p>
+    </div>`;
+}
+
+function escapeHtml(s) {
+  return String(s || "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+async function loadAgentDetail(node) {
+  const card = $("#detail-card");
+  card.innerHTML = `<div class="dc-empty"><div class="big-icon">⏳</div><p>Loading…</p></div>`;
+  let detail;
+  try {
+    detail = await api("/api/agents/detail", { method: "POST", body: JSON.stringify({ path: node.path }) });
+  } catch (e) {
+    card.innerHTML = `<div class="dc-empty"><div class="big-icon">⚠</div><p>Couldn't load: ${escapeHtml(e.message)}</p></div>`;
+    return;
+  }
+
+  const pretty = prettyName(node.name);
+  const statusChip = node.status === "experimental" ? `<span class="badge experimental">experimental</span>`
+                   : node.status === "disabled"     ? `<span class="badge disabled">disabled</span>`
+                   : "";
+  const manifest = detail.manifest || {};
+  const tags = manifest.tags || [];
+  const version = manifest.version || "";
+  const author = manifest.author || "";
+  const props = (detail.parameters && detail.parameters.properties) || {};
+  const required = new Set(detail.parameters && detail.parameters.required || []);
+
+  let html = `
+    <div class="dc-icon">⚙</div>
+    <h4>${escapeHtml(pretty)} ${statusChip}</h4>
+    <div class="dc-filename">${escapeHtml(detail.filename)}${version ? ` · v${escapeHtml(version)}` : ""}</div>`;
+
+  if (detail.description) {
+    html += `<div class="dc-description">${escapeHtml(detail.description)}</div>`;
+  } else {
+    html += `<div class="dc-description muted">This agent didn't ship with a description.</div>`;
+  }
+
+  // Parameters
+  if (Object.keys(props).length) {
+    html += `<div class="dc-section"><div class="dc-label">What to give it</div>`;
+    for (const [k, p] of Object.entries(props)) {
+      const t = p.type || "any";
+      const desc = p.description ? ` — ${escapeHtml(p.description)}` : "";
+      const req = required.has(k) ? " <span style='color:var(--bad)'>required</span>" : "";
+      html += `<div class="dc-param"><b>${escapeHtml(k)}</b><span class="pt">${escapeHtml(t)}</span>${req}${desc}</div>`;
+    }
+    html += `</div>`;
+  }
+
+  // Tags
+  if (tags.length) {
+    html += `<div class="dc-section"><div class="dc-label">Tags</div><div class="dc-tags">`;
+    for (const t of tags) html += `<span class="dc-tag">${escapeHtml(t)}</span>`;
+    html += `</div></div>`;
+  }
+
+  // Author
+  if (author) html += `<div class="dc-section"><div class="dc-label">Author</div><div style="font-size:12px">${escapeHtml(author)}</div></div>`;
+
+  // Actions
+  html += `
+    <div class="dc-actions">
+      <button class="dc-btn" data-act="vscode">Open in VS Code</button>
+      <button class="dc-btn" data-act="rename">Rename</button>
+      <button class="dc-btn" data-act="${node.status === 'disabled' ? 'enable' : 'disable'}">${node.status === 'disabled' ? 'Enable' : 'Disable'}</button>
+      <button class="dc-btn danger" data-act="delete">Delete</button>
+    </div>`;
+
+  card.innerHTML = html;
+
+  // Wire action buttons
+  $$(".dc-btn", card).forEach(b => b.addEventListener("click", async () => {
+    const act = b.dataset.act;
+    if (act === "vscode") return openInVSCode(node.path);
+    if (act === "rename") return renamePrompt(node);
+    if (act === "disable") return disableAgent(node);
+    if (act === "enable")  return enableAgent(node);
+    if (act === "delete")  return deleteNode(node);
+  }));
+}
+
 // ── Context menu ───────────────────────────────────────────────
 function showNodeMenu(event, node) {
   closeCtxMenu();
@@ -1032,7 +1212,13 @@ function closeCtxMenu() {
 
 async function renamePrompt(node) {
   const current = node.name;
-  const fresh = prompt(`Rename "${current}" to:`, current);
+  const fresh = await inputModal({
+    title: "Rename",
+    subtitle: `Pick a new name for "${_showAdvanced ? current : prettyName(current)}".`,
+    label: "New name",
+    value: current,
+    okLabel: "Rename",
+  });
   if (!fresh || fresh === current) return;
   const dir = node.path.split("/").slice(0, -1).join("/");
   const to = dir ? `${dir}/${fresh}` : fresh;
@@ -1077,15 +1263,21 @@ async function openInVSCode(path) {
 
 // ── New folder / new agent ─────────────────────────────────────
 $("#btn-new-folder").addEventListener("click", async () => {
-  const suggested = _selected || "";
-  const underHint = suggested ? ` under “${suggested}”` : "";
-  const name = prompt(`New folder name${underHint}:`);
+  const parent = parentFolderPath();  // never an agent-file path
+  const parentLabel = parent ? `inside "${_showAdvanced ? parent : prettyName(parent.split("/").pop())}"` : "at the top level";
+  const name = await inputModal({
+    title: "New folder",
+    subtitle: `Create a new folder ${parentLabel}.`,
+    label: "Folder name",
+    placeholder: "e.g. sales stack",
+    okLabel: "Create",
+  });
   if (!name) return;
-  const path = suggested ? `${suggested}/${name}` : name;
+  const path = parent ? `${parent}/${name}` : name;
   try {
     await api("/api/agents/mkdir", { method: "POST", body: JSON.stringify({ path }) });
     toast("folder created");
-    _expanded.add(suggested);  // open the parent so the new folder is visible
+    if (parent) _expanded.add(parent);
     await loadTree();
   } catch (e) { toast(e.message, "bad"); }
 });
@@ -1100,9 +1292,9 @@ async function openNewAgentModal() {
   let selectedTpl = templates[0];
   const modal = $("#modal");
 
-  // Suggest current folder if one is selected (and it's not an agent file)
-  const sel = _selected ? currentNode(_selected) : null;
-  const defaultFolder = sel && sel.kind === "folder" ? _selected : "";
+  // Parent folder (Windows-style): current folder if selected, else
+  // containing folder if an agent file is selected, else top-level.
+  const defaultFolder = parentFolderPath();
 
   modal.innerHTML = `
     <h2>New agent</h2>
@@ -1160,6 +1352,59 @@ function currentNode(path) {
     for (const c of n.children || []) { const r = walk(c); if (r) return r; }
   }
   return walk(_tree);
+}
+
+/* Windows-Explorer-style parent resolution: when "New Folder" or
+ * "New Agent" is triggered, the *parent folder* of the current
+ * selection is where the new thing is created. If the user selected
+ * an agent file, use its enclosing folder. If nothing is selected,
+ * use the top-level workspace. Never treat an agent file as a
+ * parent directory. */
+function parentFolderPath() {
+  if (!_selected) return "";
+  const node = currentNode(_selected);
+  if (!node) return "";
+  if (node.kind === "folder") return node.path;
+  // agent file: strip the filename to get the containing folder
+  const parts = _selected.split("/");
+  parts.pop();
+  return parts.join("/");
+}
+
+/* Nicer input modal to replace window.prompt() — matches the UI style,
+ * supports validation, Enter/Escape, auto-focus. */
+function inputModal({ title, subtitle, label, value = "", placeholder = "", okLabel = "OK" }) {
+  return new Promise((resolve) => {
+    const modal = $("#modal");
+    modal.innerHTML = `
+      <h2>${title}</h2>
+      ${subtitle ? `<p class="subtitle">${subtitle}</p>` : ""}
+      <label>${label}</label>
+      <input type="text" id="im-input" value="${value.replace(/"/g,"&quot;")}" placeholder="${placeholder}">
+      <div class="modal-actions">
+        <button class="btn ghost" data-close>Cancel</button>
+        <button class="btn primary" id="im-ok">${okLabel}</button>
+      </div>`;
+    openModal();
+    const input = $("#im-input", modal);
+    input.focus(); input.select();
+    const ok = () => {
+      const v = input.value.trim();
+      closeModal();
+      resolve(v || null);
+    };
+    $("#im-ok", modal).addEventListener("click", ok);
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); ok(); }
+      if (e.key === "Escape") { closeModal(); resolve(null); }
+    });
+    $("#modal-backdrop").addEventListener("click", function onBG(e) {
+      if (e.target.id === "modal-backdrop" || e.target.matches("[data-close]")) {
+        $("#modal-backdrop").removeEventListener("click", onBG);
+        resolve(null);
+      }
+    });
+  });
 }
 
 $("#btn-refresh").addEventListener("click", loadTree);
