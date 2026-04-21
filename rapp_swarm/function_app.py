@@ -12,7 +12,7 @@ request loads THAT swarm's agents + memory, hot-swapped per call.
     POST /api/trigger/copilot-studio        (sacred OG direct-invoke shape)
     GET  /api/health                        (sacred OG health probe)
 
-Plus the Twin Stack swarm + T2T cloud surface (driven by swarm_guid):
+Plus the Twin Stack swarm cloud surface (driven by swarm_guid):
 
     POST /api/swarm/deploy                  (push a rapp-swarm/1.0 bundle)
     GET  /api/swarm/healthz, /{guid}/healthz
@@ -20,7 +20,6 @@ Plus the Twin Stack swarm + T2T cloud surface (driven by swarm_guid):
     POST /api/swarm/{guid}/chat             (LLM-driven chat per swarm)
     GET/POST /api/swarm/{guid}/seal
     POST/GET /api/swarm/{guid}/snapshot, /snapshots, /snapshots/{snap}/agent
-    GET/POST /api/t2t/identity, /peers, /handshake, /message, /invoke
     GET  /api/llm/status
 
 Sacred:
@@ -98,12 +97,11 @@ _load_dotenv()
 # Now import the swarm core (vendored).
 # Try `brainstem` first (the new name), fall back to `server` (the vendored alias).
 try:
-    from brainstem import SwarmStore, get_t2t_manager, SealedSwarmError  # type: ignore
+    from brainstem import SwarmStore, SealedSwarmError  # type: ignore
 except ImportError:
-    from server import SwarmStore, get_t2t_manager, SealedSwarmError  # type: ignore
+    from server import SwarmStore, SealedSwarmError  # type: ignore
 from chat import chat_with_swarm, diagnostics as llm_diagnostics  # type: ignore
 from llm import chat as llm_chat, detect_provider  # type: ignore
-from t2t import verify as t2t_verify  # type: ignore
 
 
 # ─── Sacred constants (lineage: OG community brainstem) ───────────────
@@ -555,11 +553,6 @@ def health_check(req: func.HttpRequest) -> func.HttpResponse:
             "swarm_count": len(swarms),
             "swarms": [s["swarm_guid"] for s in swarms],
         }
-        try:
-            ident = get_t2t_manager(STORE.root).get_identity_public()
-            health["checks"]["t2t"] = {"status": "pass", "cloud_id": ident["cloud_id"], "handle": ident["handle"]}
-        except Exception as e:
-            health["checks"]["t2t"] = {"status": "warn", "message": str(e)}
     health["response_time_ms"] = round((time.time() - started) * 1000, 2)
     return _json_response(200 if health["status"] == "healthy" else 503,
                           health, req.headers.get("origin"))
@@ -822,90 +815,6 @@ def swarm_snapshot_agent(req: func.HttpRequest) -> func.HttpResponse:
     result = STORE.execute_against_snapshot(sg, snap, name, body.get("args") or {}, body.get("user_guid"))
     status = 200 if result.get("status") == "ok" else 404
     return _json_response(status, result, req.headers.get("origin"))
-
-
-# ── T2T (twin-to-twin) ─────────────────────────────────────────────────
-
-@app.function_name(name="t2t_identity")
-@app.route(route="t2t/identity", methods=["GET", "OPTIONS"])
-def t2t_identity(req: func.HttpRequest) -> func.HttpResponse:
-    if req.method == "OPTIONS": return _json_response(204, {}, req.headers.get("origin"))
-    return _json_response(200, get_t2t_manager(STORE.root).get_identity_public(),
-                           req.headers.get("origin"))
-
-
-@app.function_name(name="t2t_peers_list")
-@app.route(route="t2t/peers", methods=["GET", "OPTIONS"])
-def t2t_peers_list(req: func.HttpRequest) -> func.HttpResponse:
-    if req.method == "OPTIONS": return _json_response(204, {}, req.headers.get("origin"))
-    return _json_response(200, {"peers": get_t2t_manager(STORE.root).list_peers()},
-                           req.headers.get("origin"))
-
-
-@app.function_name(name="t2t_peers_add")
-@app.route(route="t2t/peers", methods=["POST"])
-def t2t_peers_add(req: func.HttpRequest) -> func.HttpResponse:
-    body = _read_json(req)
-    cloud_id = body.get("cloud_id"); secret = body.get("secret")
-    if not cloud_id or not secret:
-        return _json_response(400, {"status": "error", "message": "cloud_id and secret required"},
-                               req.headers.get("origin"))
-    mgr = get_t2t_manager(STORE.root)
-    peer = mgr.add_peer(cloud_id=cloud_id, secret=secret,
-                         handle=body.get("handle", ""), url=body.get("url", ""),
-                         allowed_caps=body.get("allowed_caps") or ["*"])
-    peer = {k: v for k, v in peer.items() if k != "secret"}
-    return _json_response(200, {"status": "ok", "peer": peer}, req.headers.get("origin"))
-
-
-@app.function_name(name="t2t_handshake")
-@app.route(route="t2t/handshake", methods=["POST"])
-def t2t_handshake(req: func.HttpRequest) -> func.HttpResponse:
-    body = _read_json(req)
-    mgr = get_t2t_manager(STORE.root)
-    result = mgr.handshake(
-        from_cloud_id=body.get("from", ""), conv_id=body.get("conv_id", ""),
-        intro=body.get("intro") or {}, sig=body.get("sig", ""),
-    )
-    return _json_response(200 if result.get("accepted") else 403, result, req.headers.get("origin"))
-
-
-@app.function_name(name="t2t_message")
-@app.route(route="t2t/message", methods=["POST"])
-def t2t_message(req: func.HttpRequest) -> func.HttpResponse:
-    body = _read_json(req)
-    mgr = get_t2t_manager(STORE.root)
-    result = mgr.receive_message(
-        from_cloud_id=body.get("from", ""), conv_id=body.get("conv_id", ""),
-        seq=body.get("seq", 0), body=body.get("body") or {}, sig=body.get("sig", ""),
-    )
-    return _json_response(200 if result.get("received") else 403, result, req.headers.get("origin"))
-
-
-@app.function_name(name="t2t_invoke")
-@app.route(route="t2t/invoke", methods=["POST"])
-def t2t_invoke(req: func.HttpRequest) -> func.HttpResponse:
-    body = _read_json(req)
-    mgr = get_t2t_manager(STORE.root)
-    from_cloud_id = body.get("from", "")
-    sig = body.get("sig", "")
-    invocation = body.get("invocation") or {}
-    payload = json.dumps({"from": from_cloud_id, "invocation": invocation},
-                         sort_keys=True, separators=(",", ":"))
-    peer = mgr.peers.get_peer(from_cloud_id)
-    if not peer:
-        return _json_response(403, {"status": "error", "message": "peer not whitelisted"}, req.headers.get("origin"))
-    if not t2t_verify(payload, sig, peer["secret"]):
-        return _json_response(403, {"status": "error", "message": "signature failed"}, req.headers.get("origin"))
-    target_swarm = invocation.get("swarm_guid", "")
-    agent_name = invocation.get("agent", "")
-    if not mgr.can_peer_invoke(from_cloud_id, agent_name):
-        return _json_response(403, {"status": "error",
-                                     "message": f"peer not authorized for capability '{agent_name}'"},
-                               req.headers.get("origin"))
-    result = STORE.execute(target_swarm, agent_name, invocation.get("args") or {}, user_guid=None)
-    return _json_response(200, {"status": "ok", "result": result, "invoked_by": from_cloud_id},
-                           req.headers.get("origin"))
 
 
 # ── /api/llm/status (which LLM provider is wired) ──────────────────────

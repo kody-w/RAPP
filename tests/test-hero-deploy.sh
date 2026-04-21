@@ -117,7 +117,7 @@ import json
 r = json.load(open('$REGISTRY'))
 print(len((r.get('collaboration_layers') or {})))
 ")
-assert_eq "5 collaboration layers documented (A2A,S2S,C2C,T2T,D2D)"  "5"  "$LAYERS_COUNT"
+assert_eq "3 collaboration layers documented (A2A,S2S,C2C)"  "3"  "$LAYERS_COUNT"
 
 # ── Section 2: bundle assembly mirrors browser hatcher ────────────────
 

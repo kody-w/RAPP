@@ -94,21 +94,6 @@ def _b64_decode(s):
     return base64.b64decode(s) if s else b""
 
 
-# ─── D2D integration (lazy-imported so swarm server stays usable without it) ─
-
-_t2t_manager = None
-
-def get_t2t_manager(root):
-    """Get the T2T (twin-to-twin) manager. T2T is the user-facing protocol name;
-    the implementation is the daemon-to-daemon (D2D) layer underneath."""
-    global _t2t_manager
-    if _t2t_manager is None:
-        sys.path.insert(0, str(Path(__file__).parent))
-        from t2t import T2TManager  # type: ignore
-        _t2t_manager = T2TManager(root)
-    return _t2t_manager
-
-
 # ─── .env loader (stdlib — no python-dotenv dependency) ─────────────────
 
 def load_dotenv(path=None):
@@ -146,22 +131,10 @@ def load_dotenv(path=None):
 # ─── LLM dispatch lazy loader (for /api/swarm/{guid}/chat) ─────────────
 
 def get_llm_chat():
-    """Lazy import the chat loop so the server is usable without it
-    (e.g., in pure-T2T deployments)."""
+    """Lazy import the chat loop so the server is usable without it."""
     sys.path.insert(0, str(Path(__file__).parent))
     from chat import chat_with_swarm, diagnostics  # type: ignore
     return chat_with_swarm, diagnostics
-
-
-_workspace = None
-def get_workspace(root):
-    """Lazy workspace (per-twin documents + inbox + outbox)."""
-    global _workspace
-    if _workspace is None:
-        sys.path.insert(0, str(Path(__file__).parent))
-        from workspace import Workspace  # type: ignore
-        _workspace = Workspace(root)
-    return _workspace
 
 
 # ─── BINDER ────────────────────────────────────────────────────────────
@@ -1116,25 +1089,6 @@ class SwarmHandler(BaseHTTPRequestHandler):
                 "snapshots": self.store.list_snapshots(sg),
             })
 
-        # /api/workspace — twin metadata + counts
-        if path == "/api/workspace":
-            return self._send_json(200, get_workspace(self.store.root).info())
-
-        # /api/workspace/documents — list mine + inbox + outbox
-        if path == "/api/workspace/documents":
-            return self._send_json(200, get_workspace(self.store.root).list_documents())
-
-        # /api/workspace/documents/<name>?location=documents|inbox|outbox
-        m = re.match(r"^/api/workspace/documents/([^/]+)/?$", path)
-        if m:
-            from urllib.parse import parse_qs
-            qs = parse_qs(urlparse(self.path).query)
-            location = (qs.get("location") or ["documents"])[0]
-            doc = get_workspace(self.store.root).read_document(m.group(1), location)
-            if not doc:
-                return self._send_json(404, {"status": "error", "message": "document not found"})
-            return self._send_json(200, doc)
-
         # /api/llm/status — what LLM provider is wired in (diagnostic)
         if path == "/api/llm/status":
             try:
@@ -1142,16 +1096,6 @@ class SwarmHandler(BaseHTTPRequestHandler):
                 return self._send_json(200, diagnostics())
             except Exception as e:
                 return self._send_json(500, {"status": "error", "message": str(e)})
-
-        # /api/t2t/identity — this twin's public identity (cloud_id, handle, capabilities)
-        if path == "/api/t2t/identity":
-            mgr = get_t2t_manager(self.store.root)
-            return self._send_json(200, mgr.get_identity_public())
-
-        # /api/t2t/peers — list whitelisted peer twins
-        if path == "/api/t2t/peers":
-            mgr = get_t2t_manager(self.store.root)
-            return self._send_json(200, {"peers": mgr.list_peers()})
 
         # ── Static-serve rapp_brainstem/web/ for any non-/api path ────
         # Lets http://127.0.0.1:7080/binder.html (and /index.html) work.
@@ -1317,199 +1261,6 @@ class SwarmHandler(BaseHTTPRequestHandler):
                 traceback.print_exc()
                 return self._send_json(500, {"status": "error", "message": str(e)})
 
-        # /api/workspace/documents/<name> — save (write/overwrite)
-        m = re.match(r"^/api/workspace/documents/([^/]+)/?$", path)
-        if m:
-            try:
-                body = self._read_json()
-            except Exception as e:
-                return self._send_json(400, {"status": "error", "message": f"bad json: {e}"})
-            content_b64 = body.get("content_b64") or ""
-            location = body.get("location", "documents")
-            try:
-                import base64 as _b64
-                content = _b64.b64decode(content_b64) if content_b64 else (
-                    (body.get("content") or "").encode("utf-8")
-                )
-                meta = get_workspace(self.store.root).write_document(
-                    m.group(1), content, location
-                )
-                return self._send_json(200, {"status": "ok", **meta})
-            except ValueError as e:
-                return self._send_json(400, {"status": "error", "message": str(e)})
-
-        # /api/t2t/send-document — sign + push doc to a peer twin
-        if path == "/api/t2t/send-document":
-            try:
-                body = self._read_json()
-            except Exception as e:
-                return self._send_json(400, {"status": "error", "message": f"bad json: {e}"})
-            to_cloud_id = body.get("to", "")
-            doc_name = body.get("document_name", "")
-            location = body.get("from_location", "documents")
-            mgr = get_t2t_manager(self.store.root)
-            ws = get_workspace(self.store.root)
-            peer = mgr.peers.get_peer(to_cloud_id)
-            if not peer:
-                return self._send_json(403, {"status": "error", "message": "peer not whitelisted"})
-            if not peer.get("url"):
-                return self._send_json(400, {"status": "error", "message": "peer has no URL on file"})
-            doc = ws.read_document(doc_name, location)
-            if not doc:
-                return self._send_json(404, {"status": "error", "message": "document not found"})
-
-            # Sign the (from, doc_name, content_b64) tuple with MY secret
-            from t2t import sign as _sign  # type: ignore
-            my_id = mgr.identity.get_or_create()["cloud_id"]
-            my_secret = mgr.identity.get_secret()
-            payload_obj = {
-                "from": my_id,
-                "name": doc["name"],
-                "bytes": doc["bytes"],
-                "content_b64": doc["content_b64"],
-                "sent_at": _now_iso(),
-            }
-            payload_str = json.dumps(payload_obj, sort_keys=True, separators=(",", ":"))
-            sig = _sign(payload_str, my_secret)
-
-            # Send to peer
-            import urllib.request as _ur
-            import urllib.error as _ue
-            req = _ur.Request(
-                peer["url"].rstrip("/") + "/api/t2t/receive-document",
-                data=json.dumps({**payload_obj, "sig": sig}).encode("utf-8"),
-                headers={"Content-Type": "application/json"},
-                method="POST",
-            )
-            try:
-                with _ur.urlopen(req, timeout=15) as resp:
-                    peer_resp = json.loads(resp.read().decode("utf-8"))
-            except _ue.HTTPError as e:
-                return self._send_json(502, {"status": "error",
-                                              "message": f"peer HTTP {e.code}",
-                                              "details": e.read().decode("utf-8")[:300]})
-            except _ue.URLError as e:
-                return self._send_json(502, {"status": "error", "message": f"peer unreachable: {e}"})
-
-            # Mirror to MY outbox for audit
-            try:
-                ws.write_document(doc["name"], _b64_decode(doc["content_b64"]), "outbox")
-            except Exception:
-                pass
-            return self._send_json(200, {"status": "ok", "peer_response": peer_resp,
-                                          "name": doc["name"]})
-
-        # /api/t2t/receive-document — accept doc from a known peer
-        if path == "/api/t2t/receive-document":
-            try:
-                body = self._read_json()
-            except Exception as e:
-                return self._send_json(400, {"status": "error", "message": f"bad json: {e}"})
-            from_cloud_id = body.get("from", "")
-            sig = body.get("sig", "")
-            mgr = get_t2t_manager(self.store.root)
-            peer = mgr.peers.get_peer(from_cloud_id)
-            if not peer:
-                return self._send_json(403, {"status": "error", "message": "unknown sender"})
-            from t2t import verify as _verify  # type: ignore
-            payload_obj = {k: body[k] for k in ("from", "name", "bytes", "content_b64", "sent_at") if k in body}
-            payload_str = json.dumps(payload_obj, sort_keys=True, separators=(",", ":"))
-            if not _verify(payload_str, sig, peer["secret"]):
-                return self._send_json(403, {"status": "error", "message": "signature failed"})
-            # Save to inbox, namespaced by sender's cloud_id
-            ws = get_workspace(self.store.root)
-            try:
-                content = _b64_decode(body.get("content_b64", ""))
-                fname = f"{from_cloud_id[:8]}_{body.get('name','document')}"
-                meta = ws.write_document(fname, content, "inbox")
-                return self._send_json(200, {"status": "ok", "received": True,
-                                              "saved_as": meta["name"]})
-            except ValueError as e:
-                return self._send_json(400, {"status": "error", "message": str(e)})
-
-        # /api/t2t/peers — whitelist a peer twin
-        if path == "/api/t2t/peers":
-            try:
-                body = self._read_json()
-            except Exception as e:
-                return self._send_json(400, {"status": "error", "message": f"bad json: {e}"})
-            cloud_id = body.get("cloud_id")
-            secret = body.get("secret")
-            if not cloud_id or not secret:
-                return self._send_json(400, {"status": "error", "message": "cloud_id and secret required"})
-            mgr = get_t2t_manager(self.store.root)
-            peer = mgr.add_peer(
-                cloud_id=cloud_id, secret=secret,
-                handle=body.get("handle", ""), url=body.get("url", ""),
-                allowed_caps=body.get("allowed_caps") or ["*"],
-            )
-            peer = {k: v for k, v in peer.items() if k != "secret"}
-            return self._send_json(200, {"status": "ok", "peer": peer})
-
-        # /api/t2t/handshake — accept an incoming handshake
-        if path == "/api/t2t/handshake":
-            try:
-                body = self._read_json()
-            except Exception as e:
-                return self._send_json(400, {"status": "error", "message": f"bad json: {e}"})
-            mgr = get_t2t_manager(self.store.root)
-            result = mgr.handshake(
-                from_cloud_id=body.get("from", ""),
-                conv_id=body.get("conv_id", ""),
-                intro=body.get("intro") or {},
-                sig=body.get("sig", ""),
-            )
-            status = 200 if result.get("accepted") else 403
-            return self._send_json(status, result)
-
-        # /api/t2t/message — receive an inbound message
-        if path == "/api/t2t/message":
-            try:
-                body = self._read_json()
-            except Exception as e:
-                return self._send_json(400, {"status": "error", "message": f"bad json: {e}"})
-            mgr = get_t2t_manager(self.store.root)
-            result = mgr.receive_message(
-                from_cloud_id=body.get("from", ""),
-                conv_id=body.get("conv_id", ""),
-                seq=body.get("seq", 0),
-                body=body.get("body") or {},
-                sig=body.get("sig", ""),
-            )
-            status = 200 if result.get("received") else 403
-            return self._send_json(status, result)
-
-        # /api/t2t/invoke — peer twin invokes one of MY capabilities (a swarm/agent call)
-        if path == "/api/t2t/invoke":
-            try:
-                body = self._read_json()
-            except Exception as e:
-                return self._send_json(400, {"status": "error", "message": f"bad json: {e}"})
-            mgr = get_t2t_manager(self.store.root)
-            from_cloud_id = body.get("from", "")
-            sig = body.get("sig", "")
-            invocation = body.get("invocation") or {}
-            # Verify sig against the peer's secret
-            payload = json.dumps({"from": from_cloud_id, "invocation": invocation},
-                                 sort_keys=True, separators=(",", ":"))
-            peer = mgr.peers.get_peer(from_cloud_id)
-            if not peer:
-                return self._send_json(403, {"status": "error", "message": "peer not whitelisted"})
-            from t2t import verify as _verify_t2t  # type: ignore
-            if not _verify_t2t(payload, sig, peer["secret"]):
-                return self._send_json(403, {"status": "error", "message": "signature failed"})
-            # Check capability allowlist
-            target_swarm = invocation.get("swarm_guid", "")
-            agent_name = invocation.get("agent", "")
-            if not mgr.can_peer_invoke(from_cloud_id, agent_name):
-                return self._send_json(403, {"status": "error",
-                                              "message": f"peer not authorized for capability '{agent_name}'"})
-            # Execute the agent — same path as /api/swarm/{guid}/agent but invoked via T2T
-            result = self.store.execute(target_swarm, agent_name,
-                                         invocation.get("args") or {},
-                                         user_guid=None)  # T2T calls are anonymous to the target's memory
-            return self._send_json(200, {"status": "ok", "result": result, "invoked_by": from_cloud_id})
-
         # /api/swarm/{guid}/snapshots/{snap_name}/agent — query an agent against a snapshot
         m = re.match(r"^/api/swarm/([0-9a-f-]+)/snapshots/([0-9A-Za-z_\-]+)/agent/?$", path)
         if m:
@@ -1654,18 +1405,6 @@ class SwarmHandler(BaseHTTPRequestHandler):
                 traceback.print_exc()
                 return self._send_json(500, {"status": "error", "message": str(e)})
 
-        # /api/workspace/documents/<name>?location=…
-        m = re.match(r"^/api/workspace/documents/([^/]+)/?$", path)
-        if m:
-            from urllib.parse import parse_qs
-            qs = parse_qs(urlparse(self.path).query)
-            location = (qs.get("location") or ["documents"])[0]
-            ok = get_workspace(self.store.root).delete_document(m.group(1), location)
-            return self._send_json(200 if ok else 404,
-                                    {"status": "ok" if ok else "error",
-                                     "removed": m.group(1) if ok else None,
-                                     "message": None if ok else "document not found"})
-
         m = re.match(r"^/api/swarm/([0-9a-f-]+)/?$", path)
         if not m:
             return self._send_json(404, {"status": "error", "message": "not found"})
@@ -1720,7 +1459,7 @@ def main():
     print(f"    Settings → 🐝 Deploy as Swarm → Push to endpoint: {url}\n")
     print(f"  Ctrl-C to stop.\n")
 
-    # ThreadingHTTPServer so concurrent BookFactory / chat / T2T requests
+    # ThreadingHTTPServer so concurrent BookFactory / chat requests
     # run in parallel — single-threaded HTTPServer makes a 90s LLM call
     # block every other request behind it. Threading buys us 8x speedup
     # on the cycle-3 parallel BookFactory runs.

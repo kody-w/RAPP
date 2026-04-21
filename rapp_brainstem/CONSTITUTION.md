@@ -175,7 +175,80 @@ matter as much as the fact that it changed.
 
 ---
 
-## Article IX — Amendments
+## Article IX — Swarms Are Directories, Not Routes
+
+A **swarm** is local state: a directory containing `agents/`, a soul,
+and a memory namespace. The brainstem runs against that state. It is
+not a runtime abstraction, a routing layer, or a multi-tenant service.
+
+> **A swarm is a directory. Changing swarm = changing which directory
+> the brainstem reads. That is the whole concept.**
+
+Concretely:
+
+- Swarm operations (deploy, list, switch, invoke a sibling, seal,
+  snapshot) are `*_agent.py` files that read and write state on disk.
+  They are **not** classes in `brainstem.py`, REST routes, or
+  middleware.
+- Those agents must be **drop-in compatible with any brainstem.py** —
+  including older versions in the wild. They use `BasicAgent` +
+  stdlib + filesystem only. Copying them into a six-month-old
+  brainstem must still work.
+- The filesystem layout IS the contract. Two swarms with the same
+  directory shape behave identically under the same brainstem.
+
+### What this rules out
+
+- ❌ A `SwarmStore` class or equivalent as a first-class object in
+  `brainstem.py`.
+- ❌ `/api/swarm/<guid>/...` routes or any new HTTP surface for swarm
+  ops. Everything routes through `/chat` + an agent.
+- ❌ Swarm-awareness baked into the brainstem core. If a swarm agent
+  needs a new brainstem symbol to function, the design is wrong —
+  redesign the agent.
+- ❌ Runtime swarm state held in memory beyond a single request. Disk
+  is authoritative; the brainstem is stateless between calls.
+
+If you catch yourself designing a swarm-aware subsystem, stop and ask:
+could this be a directory layout plus an agent? If yes, do that.
+
+---
+
+## Article X — Tier Parity Is a `/chat` Contract
+
+The brainstem-side of the agent portability guarantee (Article IV):
+**`rapp_brainstem/brainstem.py` and `rapp_swarm/function_app.py` must
+behave identically on `/chat`.** The difference between tiers is where
+state is mounted, not what the code does.
+
+> **Same `/chat` loop. Same prompt split. Same agent contract. Same
+> state layout. Different mount point for the state root.**
+
+- Tier 1 mounts state on local disk (`~/.brainstem_data/` or
+  `BRAINSTEM_HOME`).
+- Tier 2 mounts state on Azure Files at `BRAINSTEM_HOME`.
+- Tier 3 wraps the same `/chat` behind Copilot Studio.
+- The tool-calling loop, provider dispatch, slot split, and agent
+  discovery are byte-for-byte the same code path — enforced by
+  vendoring from one source of truth, not by maintaining parallel
+  implementations.
+
+### What this rules out
+
+- ❌ A Tier-2-only server stack that duplicates `brainstem.py`'s
+  responsibilities with drift. If Tier 2 needs a capability, the
+  capability lands in `brainstem.py` (or an agent) and Tier 2 vendors
+  it.
+- ❌ A Tier-1-only LLM provider path that Tier 2 has to re-implement.
+  Provider dispatch is shared.
+- ❌ Routes that exist on one tier but not the other. `/chat` is the
+  surface; both tiers expose it and route identically.
+- ❌ "It works in Tier 1, we'll figure out Tier 2 later." Tier parity
+  is asserted per-PR, not deferred.
+
+---
+
+## Article XI — Amendments
 
 This constitution can be amended. The only rule: the change must serve
 the platform's purpose as a business-focused AI agent engine. If it
