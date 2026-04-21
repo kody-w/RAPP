@@ -275,6 +275,9 @@
     <div class="actions">
       <button class="btn primary" id="save-settings">Save</button>
       <button class="btn ghost" id="export-twin-btn">⬇ Export active twin</button>
+      <button class="btn ghost" id="export-egg-btn">📦 Export .egg</button>
+      <button class="btn ghost" id="import-egg-btn">📦 Import .egg</button>
+      <input type="file" id="egg-file-input" accept=".egg,.zip" style="display:none">
       <button class="btn danger" id="wipe-twin-btn">Delete active twin</button>
     </div>
   </div>
@@ -567,6 +570,39 @@ $('#export-twin-btn').addEventListener('click', async () => {
   a.href = URL.createObjectURL(blob);
   a.download = `twin-${(bundle.handle||'export').replace('@','')}.json`;
   a.click();
+});
+$('#export-egg-btn').addEventListener('click', async () => {
+  try {
+    const bundle = await RAPP.exportEgg(STATE.twin_id);
+    const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'digitaltwin.rappid.egg.json';
+    a.click();
+    toast('Egg exported', 'ok');
+  } catch (e) { toast('Export failed: ' + e.message, 'err'); }
+});
+$('#import-egg-btn').addEventListener('click', () => { $('#egg-file-input').click(); });
+$('#egg-file-input').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  e.target.value = '';
+  try {
+    let twin;
+    if (file.name.endsWith('.egg') || file.name.endsWith('.zip')) {
+      twin = await RAPP.importEgg(file);
+    } else {
+      const text = await file.text();
+      const bundle = JSON.parse(text);
+      twin = await RAPP.importTwinBundle(bundle, { handle: bundle.handle || '@imported' });
+    }
+    await RAPP.setActiveTwin(twin.twin_id);
+    STATE.twin_id = twin.twin_id;
+    await renderTwinPill();
+    await renderSwarmStrip();
+    $('#settings-bg').classList.remove('open');
+    toast('Egg imported — twin active', 'ok');
+  } catch (e) { toast('Import failed: ' + e.message, 'err'); }
 });
 $('#wipe-twin-btn').addEventListener('click', async () => {
   if (!confirm('Delete the active twin and all its local state? This cannot be undone.')) return;

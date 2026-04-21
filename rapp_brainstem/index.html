@@ -660,6 +660,26 @@
     color: #58a6ff; margin: 10px 0 4px;
   }
 
+  /* ── Agent Group Selector ── */
+  .group-bar {
+    display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 10px;
+    padding-bottom: 8px; border-bottom: 1px solid #21262d;
+  }
+  .group-pill {
+    background: #21262d; border: 1px solid #30363d; color: #c9d1d9;
+    border-radius: 12px; padding: 3px 10px; font-size: 11px;
+    cursor: pointer; transition: all 0.15s; white-space: nowrap;
+  }
+  .group-pill:hover { border-color: #58a6ff; color: #58a6ff; }
+  .group-pill.active { background: #1f6feb; border-color: #388bfd; color: #fff; }
+  .group-pill.manage {
+    background: transparent; border-style: dashed; color: #8b949e; font-size: 10px;
+  }
+  .group-pill.manage:hover { color: #58a6ff; border-color: #58a6ff; }
+  body.light-mode .group-bar { border-bottom-color: #d0d7de; }
+  body.light-mode .group-pill { background: #eaeef2; border-color: #d0d7de; color: #24292e; }
+  body.light-mode .group-pill.active { background: #0969da; border-color: #0969da; color: #fff; }
+
   .voice-wrapper { position: relative; }
 
   /* ── Agent settings panel ── */
@@ -1234,6 +1254,9 @@
           <span>Installed Agents</span>
           <span id="agent-count" style="font-weight:400;text-transform:none;letter-spacing:0;color:#6e7681;"></span>
         </h3>
+        <div class="group-bar" id="group-bar">
+          <button class="group-pill active" data-group="" onclick="switchGroup(null)">All</button>
+        </div>
         <ul class="agent-list" id="agent-list-ul">
           <!-- Populated by JS -->
         </ul>
@@ -1274,6 +1297,33 @@
             <div class="panel-row">
               <button class="panel-btn" onclick="exportBook()">📋 Export Diagnostics</button>
             </div>
+          </div>
+        </div>
+
+        <!-- Agent Groups & Egg -->
+        <div class="sp-section" id="sp-groups">
+          <div class="sp-header" onclick="toggleSpSection('sp-groups'); loadGroupsSettings();">
+            <span class="sp-title">📦 Agent Groups & Egg</span>
+            <span class="sp-chev">›</span>
+          </div>
+          <div class="sp-body">
+            <div class="sp-sub-label">Groups</div>
+            <div id="sp-groups-list" style="margin-bottom:8px"></div>
+            <div class="panel-row">
+              <input type="text" id="sp-new-group" placeholder="New group name..." style="flex:1">
+              <button class="panel-btn primary" onclick="createGroup()">+ Add</button>
+            </div>
+            <div class="sp-sub-label" style="margin-top:14px">Portable Egg (.egg)</div>
+            <div style="font-size:10px; color:#8b949e; margin-bottom:8px; line-height:1.5">
+              Export your entire brainstem — agents, memories, soul, groups — as a single .egg file.
+              Drop it into any brainstem to restore exactly where you left off.
+            </div>
+            <div class="panel-row">
+              <button class="panel-btn primary" onclick="exportEgg()">Export .egg</button>
+              <button class="panel-btn" onclick="document.getElementById('egg-import').click()">Import .egg</button>
+              <input type="file" id="egg-import" accept=".egg,.zip" style="display:none" onchange="importEgg(event)">
+            </div>
+            <div class="panel-status" id="egg-status"></div>
           </div>
         </div>
 
@@ -1758,7 +1808,7 @@
   function toggleAgentsPanel() {
     const p = document.getElementById('agents-panel');
     const open = p.classList.toggle('open');
-    if (open) loadAgentsList();
+    if (open) { loadGroupBar(); loadAgentsList(); }
   }
   document.addEventListener('click', (e) => {
     const p = document.getElementById('agents-panel');
@@ -1862,6 +1912,194 @@
     } catch (e) {
       console.error('Failed to load agents list', e);
     }
+  }
+
+  // ── Agent Groups ──
+  let _groupsCache = null;
+
+  async function loadGroupBar() {
+    try {
+      const res = await fetch(`${API}/api/groups`);
+      const data = await res.json();
+      _groupsCache = data;
+      const bar = document.getElementById('group-bar');
+      bar.innerHTML = '';
+      const allBtn = document.createElement('button');
+      allBtn.className = 'group-pill' + (!data.active ? ' active' : '');
+      allBtn.textContent = 'All';
+      allBtn.onclick = () => switchGroup(null);
+      bar.appendChild(allBtn);
+      for (const [name, grp] of Object.entries(data.groups || {})) {
+        const pill = document.createElement('button');
+        pill.className = 'group-pill' + (data.active === name ? ' active' : '');
+        pill.textContent = name;
+        pill.title = `${(grp.agents || []).length} agents`;
+        pill.onclick = () => switchGroup(name);
+        bar.appendChild(pill);
+      }
+      const mgr = document.createElement('button');
+      mgr.className = 'group-pill manage';
+      mgr.textContent = '+ Manage';
+      mgr.onclick = () => {
+        document.getElementById('agents-panel').classList.remove('open');
+        toggleSettingsPanel();
+        setTimeout(() => toggleSpSection('sp-groups'), 100);
+      };
+      bar.appendChild(mgr);
+    } catch (e) { console.error('Failed to load groups', e); }
+  }
+
+  async function switchGroup(name) {
+    try {
+      await fetch(`${API}/api/groups/active`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({group: name}),
+      });
+      await loadGroupBar();
+      await loadAgentsList();
+    } catch (e) { console.error('Switch group failed', e); }
+  }
+
+  async function loadGroupsSettings() {
+    try {
+      const res = await fetch(`${API}/api/groups`);
+      const data = await res.json();
+      _groupsCache = data;
+      const container = document.getElementById('sp-groups-list');
+      container.innerHTML = '';
+      const groups = data.groups || {};
+      if (Object.keys(groups).length === 0) {
+        container.innerHTML = '<div style="font-size:11px;color:#8b949e;padding:4px 0">No groups yet. Create one to organize your agents.</div>';
+        return;
+      }
+      // fetch agent files to show checkboxes
+      const agRes = await fetch(`${API}/agents`);
+      const agData = await agRes.json();
+      const allFiles = (agData.files || []).filter(f => f.filename !== 'basic_agent.py');
+      for (const [name, grp] of Object.entries(groups)) {
+        const isActive = data.active === name;
+        const row = document.createElement('div');
+        row.className = 'rapp-row' + (isActive ? ' installed' : '');
+        row.innerHTML = `
+          <div class="rr-head">
+            <span class="rr-name">${esc(name)}</span>
+            <span class="rr-ver">${(grp.agents || []).length} agents</span>
+          </div>
+          <div style="margin:6px 0 4px">
+            ${allFiles.map(f => {
+              const checked = (grp.agents || []).includes(f.filename) ? 'checked' : '';
+              const label = f.agents && f.agents.length ? f.agents.join(', ') : f.filename.replace(/\.py$/,'');
+              return `<label style="display:flex;gap:4px;align-items:center;font-size:10px;color:#c9d1d9;padding:1px 0;cursor:pointer">
+                <input type="checkbox" data-group="${esc(name)}" data-file="${esc(f.filename)}" ${checked}
+                  onchange="toggleGroupAgent('${esc(name)}','${esc(f.filename)}',this.checked)"
+                  style="accent-color:#1f6feb;margin:0">
+                ${esc(label)}
+              </label>`;
+            }).join('')}
+          </div>
+          <div class="rr-actions">
+            <button class="panel-btn${isActive ? ' primary' : ''}" onclick="switchGroup(${isActive ? 'null' : "'" + esc(name) + "'"}); loadGroupsSettings();">
+              ${isActive ? 'Active' : 'Activate'}
+            </button>
+            <button class="panel-btn danger" onclick="deleteGroup('${esc(name)}')">Delete</button>
+          </div>
+        `;
+        container.appendChild(row);
+      }
+    } catch (e) { console.error('Failed to load groups settings', e); }
+  }
+
+  async function toggleGroupAgent(groupName, filename, checked) {
+    try {
+      const res = await fetch(`${API}/api/groups`);
+      const data = await res.json();
+      const grp = (data.groups || {})[groupName];
+      if (!grp) return;
+      let agents = grp.agents || [];
+      if (checked && !agents.includes(filename)) agents.push(filename);
+      if (!checked) agents = agents.filter(a => a !== filename);
+      await fetch(`${API}/api/groups/${encodeURIComponent(groupName)}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({agents}),
+      });
+      await loadGroupBar();
+    } catch (e) { console.error('Toggle group agent failed', e); }
+  }
+
+  async function createGroup() {
+    const input = document.getElementById('sp-new-group');
+    const name = (input.value || '').trim();
+    if (!name) return;
+    try {
+      await fetch(`${API}/api/groups/${encodeURIComponent(name)}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({agents: []}),
+      });
+      input.value = '';
+      await loadGroupBar();
+      await loadGroupsSettings();
+    } catch (e) { console.error('Create group failed', e); }
+  }
+
+  async function deleteGroup(name) {
+    if (!confirm(`Delete group "${name}"?`)) return;
+    try {
+      await fetch(`${API}/api/groups/${encodeURIComponent(name)}`, {method: 'DELETE'});
+      await loadGroupBar();
+      await loadGroupsSettings();
+    } catch (e) { console.error('Delete group failed', e); }
+  }
+
+  // ── Egg Export/Import ──
+  async function exportEgg() {
+    const status = document.getElementById('egg-status');
+    status.textContent = 'Packing .egg...';
+    try {
+      const res = await fetch(`${API}/api/egg/export`, {method: 'POST'});
+      if (!res.ok) {
+        const err = await res.json();
+        status.textContent = 'Export failed: ' + (err.error || 'unknown');
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const disp = res.headers.get('Content-Disposition') || '';
+      const match = disp.match(/filename="?([^"]+)"?/);
+      a.download = match ? match[1] : 'digitaltwin.rappid.egg';
+      a.href = url;
+      a.click();
+      URL.revokeObjectURL(url);
+      status.textContent = 'Egg exported successfully.';
+    } catch (e) {
+      status.textContent = 'Export failed: ' + e;
+    }
+  }
+
+  async function importEgg(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const status = document.getElementById('egg-status');
+    status.textContent = 'Importing .egg...';
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch(`${API}/api/egg/import`, {method: 'POST', body: fd});
+      const data = await res.json();
+      if (data.status === 'ok') {
+        status.textContent = `Restored ${data.files_restored} files. Agents and memories are live.`;
+        await loadGroupBar();
+        await loadAgentsList();
+      } else {
+        status.textContent = 'Import failed: ' + (data.error || 'unknown');
+      }
+    } catch (e) {
+      status.textContent = 'Import failed: ' + e;
+    }
+    event.target.value = '';
   }
 
   async function copyDeviceCode() {

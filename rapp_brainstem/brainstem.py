@@ -47,7 +47,40 @@ VOICE_MODE  = os.getenv("VOICE_MODE", "false").lower() == "true"
 TWIN_MODE   = os.getenv("TWIN_MODE", "true").lower() == "true"
 VOICE_ZIP_PW = os.getenv("VOICE_ZIP_PASSWORD", "").encode() or None
 
-_version_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "VERSION")
+_BRAINSTEM_DIR = os.path.dirname(os.path.abspath(__file__))
+_GROUPS_FILE = os.path.join(_BRAINSTEM_DIR, ".agent_groups.json")
+_ACTIVE_GROUP = None  # None = "all agents", else a group name string
+
+def _read_groups() -> dict:
+    if os.path.exists(_GROUPS_FILE):
+        try:
+            with open(_GROUPS_FILE) as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {"schema": "rapp-groups/1.0", "active": None, "groups": {}}
+
+def _write_groups(data: dict):
+    data.setdefault("schema", "rapp-groups/1.0")
+    with open(_GROUPS_FILE, "w") as f:
+        json.dump(data, f, indent=2)
+
+def _get_active_group():
+    global _ACTIVE_GROUP
+    if _ACTIVE_GROUP is not None:
+        return _ACTIVE_GROUP
+    gdata = _read_groups()
+    _ACTIVE_GROUP = gdata.get("active")
+    return _ACTIVE_GROUP
+
+def _set_active_group(name):
+    global _ACTIVE_GROUP
+    _ACTIVE_GROUP = name
+    gdata = _read_groups()
+    gdata["active"] = name
+    _write_groups(gdata)
+
+_version_file = os.path.join(_BRAINSTEM_DIR, "VERSION")
 VERSION = open(_version_file).read().strip() if os.path.exists(_version_file) else "0.0.0"
 
 COPILOT_TOKEN_URL = "https://api.github.com/copilot_internal/v2/token"
@@ -398,6 +431,18 @@ _soul_cache = None
 
 def load_soul():
     global _soul_cache
+    active_group = _get_active_group()
+    if active_group:
+        gdata = _read_groups()
+        grp = gdata.get("groups", {}).get(active_group, {})
+        override = grp.get("soul_override")
+        if override:
+            override_path = os.path.join(_BRAINSTEM_DIR, override) if not os.path.isabs(override) else override
+            if os.path.isfile(override_path):
+                with open(override_path, "r") as f:
+                    soul = f.read().strip()
+                print(f"[brainstem] Soul loaded (group override): {override_path}")
+                return soul
     if _soul_cache is not None:
         return _soul_cache
     if not os.path.exists(SOUL_PATH):
@@ -606,17 +651,28 @@ def load_agents():
     files = glob.glob(pattern)
     disabled = _read_disabled()
 
+    active_group = _get_active_group()
+    group_filter = None
+    if active_group:
+        gdata = _read_groups()
+        grp = gdata.get("groups", {}).get(active_group)
+        if grp:
+            group_filter = set(grp.get("agents", []))
+
     for filepath in files:
         filename = os.path.basename(filepath)
         if filename in disabled:
             print(f"[brainstem] Agent skipped (disabled): {filename}")
+            continue
+        if group_filter is not None and filename not in group_filter and filename != "brainstem_admin_agent.py":
             continue
         loaded = _load_agent_from_file(filepath)
         for name, instance in loaded.items():
             agents[name] = instance
             print(f"[brainstem] Agent loaded: {name}")
 
-    print(f"[brainstem] {len(agents)} agent(s) ready, {len(disabled)} disabled.")
+    group_label = active_group or "all"
+    print(f"[brainstem] {len(agents)} agent(s) ready, {len(disabled)} disabled, group={group_label}.")
     return agents
 
 # ── LLM call ─────────────────────────────────────────────────────────────────
@@ -1468,7 +1524,8 @@ def health():
             "soul":   SOUL_PATH if soul_ok else "missing",
             "agents": list(agents.keys()),
             "copilot": "\u2713" if copilot_ok else "pending",
-            "brainstem_dir": os.path.dirname(os.path.abspath(__file__)),
+            "brainstem_dir": _BRAINSTEM_DIR,
+            "active_group": _get_active_group(),
         })
     else:
         return jsonify({
@@ -1477,6 +1534,7 @@ def health():
             "model":  MODEL,
             "soul":   SOUL_PATH if soul_ok else "missing",
             "agents": list(agents.keys()),
+            "active_group": _get_active_group(),
         })
 
 @app.route("/debug/auth", methods=["GET"])
@@ -1506,6 +1564,242 @@ def debug_auth():
             result["exchange_error"] = str(e)
 
     return jsonify(result)
+
+# ── Agent Groups API ──────────────────────────────────────────────────────────
+
+@app.route("/api/groups", methods=["GET"])
+def api_groups_list():
+    gdata = _read_groups()
+    return jsonify(gdata)
+
+@app.route("/api/groups/active", methods=["POST"])
+def api_groups_set_active():
+    data = request.get_json(force=True) or {}
+    name = data.get("group")  # None = show all
+    if name:
+        gdata = _read_groups()
+        if name not in gdata.get("groups", {}):
+            return jsonify({"error": f"group '{name}' not found"}), 404
+    _set_active_group(name)
+    return jsonify({"status": "ok", "active": name})
+
+@app.route("/api/groups/<name>", methods=["PUT"])
+def api_groups_upsert(name):
+    data = request.get_json(force=True) or {}
+    gdata = _read_groups()
+    groups = gdata.setdefault("groups", {})
+    existing = groups.get(name, {})
+    groups[name] = {
+        "agents": data.get("agents", existing.get("agents", [])),
+        "soul_override": data.get("soul_override", existing.get("soul_override")),
+        "memory_namespace": data.get("memory_namespace", existing.get("memory_namespace", name)),
+    }
+    _write_groups(gdata)
+    return jsonify({"status": "ok", "group": name, "data": groups[name]})
+
+@app.route("/api/groups/<name>", methods=["DELETE"])
+def api_groups_delete(name):
+    gdata = _read_groups()
+    groups = gdata.get("groups", {})
+    if name not in groups:
+        return jsonify({"error": f"group '{name}' not found"}), 404
+    del groups[name]
+    if gdata.get("active") == name:
+        gdata["active"] = None
+        global _ACTIVE_GROUP
+        _ACTIVE_GROUP = None
+    _write_groups(gdata)
+    return jsonify({"status": "ok", "deleted": name})
+
+
+# ── Egg Export/Import API ─────────────────────────────────────────────────────
+
+@app.route("/api/egg/export", methods=["POST"])
+def api_egg_export():
+    """Pack a .egg — ZIP snapshot of the full brainstem state."""
+    import zipfile, io, hashlib
+    from datetime import datetime, timezone
+
+    base = _BRAINSTEM_DIR
+    buf = io.BytesIO()
+    files_added = []
+
+    EXCLUDE_NAMES = {"server.pid", "server.log", ".DS_Store", "__pycache__", "voice.zip"}
+    EXCLUDE_SUFFIXES = (".pyc",)
+
+    def should_skip(p):
+        name = os.path.basename(p)
+        if name in EXCLUDE_NAMES:
+            return True
+        if any(part in EXCLUDE_NAMES for part in p.split(os.sep)):
+            return True
+        if any(p.endswith(s) for s in EXCLUDE_SUFFIXES):
+            return True
+        return False
+
+    def sha256_file(path):
+        h = hashlib.sha256()
+        with open(path, "rb") as f:
+            for chunk in iter(lambda: f.read(8192), b""):
+                h.update(chunk)
+        return h.hexdigest()
+
+    def add_tree(real_root, arc_prefix):
+        for dirpath, dirnames, filenames in os.walk(real_root):
+            dirnames[:] = [d for d in dirnames if d not in EXCLUDE_NAMES]
+            for fname in sorted(filenames):
+                full = os.path.join(dirpath, fname)
+                if should_skip(full):
+                    continue
+                rel = os.path.relpath(full, real_root)
+                arc = arc_prefix + "/" + rel
+                zf.write(full, arcname=arc)
+                sz = os.path.getsize(full)
+                files_added.append({"arc": arc, "sha256": sha256_file(full), "bytes": sz})
+
+    agent_sources = []
+
+    with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as zf:
+        agents_dir = os.path.join(base, "agents")
+        if os.path.isdir(agents_dir):
+            add_tree(agents_dir, "agents")
+            for af in sorted(glob.glob(os.path.join(agents_dir, "*_agent.py"))):
+                fname = os.path.basename(af)
+                if fname == "basic_agent.py":
+                    continue
+                try:
+                    src = open(af, "r", encoding="utf-8").read()
+                    aname = fname.replace("_agent.py", "").replace("_", " ").title().replace(" ", "")
+                    desc = ""
+                    for line in src.splitlines():
+                        if '"description"' in line or "'description'" in line:
+                            desc = line.split(":", 1)[-1].strip().strip('",').strip("',")[:200]
+                            break
+                    agent_sources.append({"filename": fname, "name": aname, "description": desc, "source": src})
+                except Exception:
+                    pass
+
+        data_dir = os.path.join(base, ".brainstem_data")
+        if os.path.isdir(data_dir):
+            add_tree(data_dir, ".brainstem_data")
+
+        soul_text = ""
+        for config_file in ["soul.md", ".agent_groups.json", ".agents_disabled.json"]:
+            full = os.path.join(base, config_file) if config_file != ".agents_disabled.json" else os.path.join(agents_dir, config_file)
+            if config_file == ".agents_disabled.json":
+                full = _DISABLED_FILE
+            if os.path.isfile(full):
+                zf.write(full, arcname=config_file)
+                sz = os.path.getsize(full)
+                files_added.append({"arc": config_file, "sha256": sha256_file(full), "bytes": sz})
+                if config_file == "soul.md":
+                    soul_text = open(full, "r", encoding="utf-8").read()
+
+        now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        gdata = _read_groups()
+
+        twin_bundle = {
+            "schema": "rapp-twin/1.0",
+            "handle": "@digitaltwin",
+            "cloud_id": "egg-" + hashlib.sha256(now.encode()).hexdigest()[:16],
+            "origin": "brainstem-egg",
+            "exported_at": now,
+            "soul": soul_text,
+            "groups": gdata.get("groups", {}),
+            "active_group": gdata.get("active"),
+            "swarms": [{
+                "schema": "rapp-swarm/1.0",
+                "swarm_guid": hashlib.sha256(("egg-swarm-" + now).encode()).hexdigest()[:36],
+                "name": "Brainstem Agents",
+                "purpose": "All agents from the exported brainstem",
+                "soul": soul_text,
+                "created_at": now,
+                "agents": agent_sources,
+            }],
+        }
+        zf.writestr("digitaltwin.json", json.dumps(twin_bundle, indent=2))
+
+        manifest = {
+            "schema": "rapp-egg/1.0",
+            "egg_type": "brainstem",
+            "egg_version": 2,
+            "created_at": now,
+            "host": os.uname().nodename if hasattr(os, "uname") else "unknown",
+            "brainstem_version": VERSION,
+            "portable": True,
+            "stats": {
+                "agent_count": len(agent_sources),
+                "file_count": len(files_added),
+                "total_bytes": sum(f["bytes"] for f in files_added),
+            },
+            "files": files_added,
+        }
+        zf.writestr("egg-manifest.json", json.dumps(manifest, indent=2, sort_keys=True))
+
+    buf.seek(0)
+    from flask import send_file
+    return send_file(buf, mimetype="application/zip", as_attachment=True,
+                     download_name="digitaltwin.rappid.egg")
+
+
+@app.route("/api/egg/import", methods=["POST"])
+def api_egg_import():
+    """Unpack a .egg — overlay onto this brainstem instance."""
+    import zipfile, io
+
+    if "file" not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+    f = request.files["file"]
+    buf = io.BytesIO(f.read())
+
+    try:
+        with zipfile.ZipFile(buf, "r") as zf:
+            names = zf.namelist()
+            if "egg-manifest.json" not in names:
+                return jsonify({"error": "Not a valid .egg — missing egg-manifest.json"}), 400
+
+            manifest = json.loads(zf.read("egg-manifest.json"))
+            base = _BRAINSTEM_DIR
+            restored = []
+
+            for entry in names:
+                if entry == "egg-manifest.json":
+                    continue
+                if entry.endswith("/"):
+                    continue
+
+                if entry.startswith("agents/"):
+                    dest = os.path.join(base, "agents", entry[len("agents/"):])
+                elif entry.startswith(".brainstem_data/"):
+                    dest = os.path.join(base, entry)
+                elif entry in ("soul.md", ".agent_groups.json"):
+                    dest = os.path.join(base, entry)
+                elif entry == ".agents_disabled.json":
+                    dest = _DISABLED_FILE
+                else:
+                    continue
+
+                os.makedirs(os.path.dirname(dest), exist_ok=True)
+                with open(dest, "wb") as out:
+                    out.write(zf.read(entry))
+                restored.append(entry)
+
+            global _ACTIVE_GROUP
+            _ACTIVE_GROUP = None
+            gdata = _read_groups()
+            _ACTIVE_GROUP = gdata.get("active")
+
+        return jsonify({
+            "status": "ok",
+            "files_restored": len(restored),
+            "manifest": manifest,
+        })
+    except zipfile.BadZipFile:
+        return jsonify({"error": "Invalid ZIP / .egg file"}), 400
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 

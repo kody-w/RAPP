@@ -820,6 +820,78 @@ async function drainPendingQueue(onProgress) {
 async function pendingCount() { return (await _loadPending()).length; }
 async function clearPendingQueue() { await _savePending([]); }
 
+// ─── Egg import/export (universal .egg = ZIP with digitaltwin.json) ───
+
+async function _readZipEntry(blob, targetName) {
+  const buf = await blob.arrayBuffer();
+  const view = new DataView(buf);
+  const len = buf.byteLength;
+  let eocd = -1;
+  for (let i = len - 22; i >= Math.max(0, len - 65558); i--) {
+    if (view.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  }
+  if (eocd < 0) throw new Error('Not a valid ZIP');
+  const cdOff = view.getUint32(eocd + 16, true);
+  const cdCount = view.getUint16(eocd + 10, true);
+  let pos = cdOff;
+  for (let i = 0; i < cdCount; i++) {
+    if (view.getUint32(pos, true) !== 0x02014b50) break;
+    const nameLen = view.getUint16(pos + 28, true);
+    const extraLen = view.getUint16(pos + 30, true);
+    const commentLen = view.getUint16(pos + 32, true);
+    const localOff = view.getUint32(pos + 42, true);
+    const name = new TextDecoder().decode(new Uint8Array(buf, pos + 46, nameLen));
+    if (name === targetName) {
+      const lv = new DataView(buf, localOff);
+      const lNameLen = lv.getUint16(26, true);
+      const lExtraLen = lv.getUint16(28, true);
+      const method = lv.getUint16(8, true);
+      const cSize = lv.getUint32(18, true);
+      const dataStart = localOff + 30 + lNameLen + lExtraLen;
+      const raw = new Uint8Array(buf, dataStart, cSize);
+      if (method === 0) return new TextDecoder().decode(raw);
+      if (method === 8) {
+        const ds = new DecompressionStream('deflate-raw');
+        const writer = ds.writable.getWriter();
+        writer.write(raw); writer.close();
+        const chunks = []; const reader = ds.readable.getReader();
+        while (true) { const {done, value} = await reader.read(); if (done) break; chunks.push(value); }
+        const total = chunks.reduce((s,c) => s + c.length, 0);
+        const out = new Uint8Array(total); let off = 0;
+        for (const c of chunks) { out.set(c, off); off += c.length; }
+        return new TextDecoder().decode(out);
+      }
+      throw new Error(`Unsupported ZIP method: ${method}`);
+    }
+    pos += 46 + nameLen + extraLen + commentLen;
+  }
+  return null;
+}
+
+async function importEgg(blob) {
+  const raw = await _readZipEntry(blob, 'digitaltwin.json');
+  if (!raw) throw new Error('Not a portable .egg — missing digitaltwin.json');
+  const bundle = JSON.parse(raw);
+  if (bundle.schema !== 'rapp-twin/1.0') throw new Error('Unsupported egg schema: ' + bundle.schema);
+  const twin = await importTwinBundle(bundle, { handle: bundle.handle || '@digitaltwin' });
+  if (bundle.memory && Array.isArray(bundle.memory)) {
+    for (const m of bundle.memory) {
+      await idbPut('memory', twin.twin_id + ':' + m.key, m.data);
+    }
+  }
+  return twin;
+}
+
+async function exportEgg(twin_id) {
+  const bundle = await exportTwin(twin_id, { includeConversations: true, includeDocuments: true });
+  bundle.schema = 'rapp-twin/1.0';
+  const memRows = await idbList('memory');
+  bundle.memory = memRows
+    .filter(r => r.key.startsWith(twin_id + ':'))
+    .map(r => ({ key: r.key.split(':').slice(1).join(':'), data: r.value }));
+  return bundle;
+}
+
 // ─── Public API ────────────────────────────────────────────────────────
 
 return {
@@ -827,6 +899,8 @@ return {
   listTwins, getTwin, createSelfTwin, deleteTwin,
   getActiveTwinId, setActiveTwin,
   importTwinBundle, exportTwin, pullTwinFromRegistry, bundleFromRegistryEntry,
+  // Egg portability
+  importEgg, exportEgg,
   // Crypto
   sign, verify, canonicalJson, envelopePayload,
   // Peers
