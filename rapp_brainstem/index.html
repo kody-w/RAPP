@@ -1827,6 +1827,26 @@
     }
   });
 
+  // Hide engine infrastructure files from the user's agent list. basic_agent.py
+  // is the base class; files with no loaded agent classes aren't "agents" the
+  // user cares about (Article XX — beginner-first; engine internals hidden).
+  function _isUserFacingAgentFile(item) {
+    if (!item || !item.filename) return false;
+    if (item.filename === 'basic_agent.py') return false;
+    if (!item.agents || item.agents.length === 0) return false;
+    return true;
+  }
+
+  // Snake/kebab/file-extension → "Pretty Title" so the panel never shows
+  // save_memory_agent.py. (Article XX — human names in default mode.)
+  function _prettyAgentName(raw) {
+    if (!raw) return '';
+    return String(raw).replace(/_agent\.py$/i, '').replace(/\.py$/i, '')
+      .split(/[_\-\.]/).filter(Boolean)
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+  }
+
   async function loadAgentsList() {
     try {
       const res = await fetch(`${API}/agents`);
@@ -1834,18 +1854,19 @@
       const ul = document.getElementById('agent-list-ul');
       const countEl = document.getElementById('agent-count');
       ul.innerHTML = '';
-      if (!data.files || data.files.length === 0) {
-        ul.innerHTML = '<li><span class="agent-name" style="color:#8b949e">No agents found.</span></li>';
+      const files = (data.files || []).filter(_isUserFacingAgentFile);
+      if (files.length === 0) {
+        ul.innerHTML = '<li><span class="agent-name" style="color:#8b949e">No agents installed yet.</span></li>';
         if (countEl) countEl.textContent = '0';
         return;
       }
       if (countEl) {
-        const enabled = data.files.filter(f => f.enabled !== false).length;
-        countEl.textContent = enabled === data.files.length
-          ? `${data.files.length}`
-          : `${enabled} / ${data.files.length}`;
+        const enabled = files.filter(f => f.enabled !== false).length;
+        countEl.textContent = enabled === files.length
+          ? `${files.length}`
+          : `${enabled} / ${files.length}`;
       }
-      for (const item of data.files) {
+      for (const item of files) {
         const isEnabled = item.enabled !== false;
         const li = document.createElement('li');
         if (!isEnabled) li.classList.add('disabled');
@@ -1864,17 +1885,15 @@
         textWrap.className = 'agent-text';
         const nameSpan = document.createElement('span');
         nameSpan.className = 'agent-name';
+        // Prefer the class's self.name; fall back to pretty-printed filename.
+        // Never show the underscored/.py form to the user.
         nameSpan.textContent = (item.agents && item.agents.length)
           ? item.agents.join(', ')
-          : item.filename.replace(/\.py$/,'');
+          : _prettyAgentName(item.filename);
+        // Keep the raw filename as a hover tooltip — discoverable for the
+        // curious without cluttering the surface.
         nameSpan.title = item.filename;
         textWrap.appendChild(nameSpan);
-        if (item.agents && item.agents.length) {
-          const fileSpan = document.createElement('span');
-          fileSpan.className = 'agent-file';
-          fileSpan.textContent = item.filename;
-          textWrap.appendChild(fileSpan);
-        }
 
         const controls = document.createElement('div');
         controls.className = 'row-actions';
