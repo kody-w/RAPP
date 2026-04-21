@@ -259,7 +259,7 @@ pre.cmd .green{color:var(--green)}
     <h3 class="kicker animate">Playbook</h3>
     <h2 class="animate d1">What's inside</h2>
     <div class="toc-grid animate d2">
-      <div class="toc-item" onclick="showSlide(2)"><div class="n">01</div><div class="t">The Problem: Agent Fragmentation</div></div>
+      <div class="toc-item" onclick="showSlide(2)"><div class="n">01</div><div class="t">The Opportunity: Sharing Agents</div></div>
       <div class="toc-item" onclick="showSlide(3)"><div class="n">02</div><div class="t">Why RAPP Solves It</div></div>
       <div class="toc-item" onclick="showSlide(4)"><div class="n">03</div><div class="t">The Approach: Email + Video + Demo</div></div>
       <div class="toc-item" onclick="showSlide(5)"><div class="n">04</div><div class="t">The Email Draft</div></div>
@@ -275,19 +275,19 @@ pre.cmd .green{color:var(--green)}
 <!-- ── SLIDE 2: The Problem ── -->
 <div class="slide">
   <div class="slide-inner">
-    <h3 class="kicker animate"><span class="num-badge">01</span>The Problem</h3>
-    <h2 class="animate d1">Agent Fragmentation</h2>
-    <p class="animate d2" style="margin-bottom:18px">Across Microsoft, teams are independently building agent tooling that is complex, redundant, and unteachable. The more we adopt external ecosystems that go in the same direction, the worse it gets. Only a handful of people can use any single tool. None of them share agents with each other.</p>
+    <h3 class="kicker animate"><span class="num-badge">01</span>The Opportunity</h3>
+    <h2 class="animate d1">Making agents easier to share</h2>
+    <p class="animate d2" style="margin-bottom:18px">Teams across Microsoft are each building great agent tooling in parallel — every team solving a real need, each with its own approach, audience, and learning curve. Agents exist, the work is real, but they don't always travel easily between teams. A shared, lightweight format on top could let that work compound.</p>
     <div class="card animate d3" style="max-width:880px;margin:0 auto">
-      <div class="label">Core tensions</div>
+      <div class="label">What we've been noticing</div>
       <ul>
-        <li><strong>"Yeah, we built that too"</strong> — heard dozens of times over two years. Teams build redundant tools that won't scale, but use them because they came up with them.</li>
-        <li><strong>Complexity as a moat</strong> — if people can't learn the tools, it's just floating egos. The tools exist to serve their creators, not the org.</li>
-        <li><strong>Tool balkanization delays the real unlock</strong> — people forget what comes <em>after</em> we get good tools people can build on. That's where the AI value comes from.</li>
-        <li><strong>The two-year prediction</strong> — everyone will eventually need a quick way to share agents. They could adopt RAPP now or clean up the mess later.</li>
+        <li><strong>"Yeah, we built that too"</strong> — a phrase we've all said. Teams independently solve similar needs because there's no shared baseline to start from.</li>
+        <li><strong>Easier to build than to teach</strong> — when a tool is hard to onboard, it stays with its authors, even when the capability deserves a wider audience.</li>
+        <li><strong>The real unlock comes later</strong> — what happens <em>after</em> we have agent tooling people can build on together. That's where the AI value compounds.</li>
+        <li><strong>The two-year view</strong> — everyone at Microsoft will eventually need a fast way to share agents. A shared format now is cheaper than retrofitting one later.</li>
       </ul>
     </div>
-    <blockquote class="animate d4"><p>This is what RAPP is trying to stop. It works for everyone and is easy to learn and teach. It's trying to prevent another AI winter and just jump over it.</p></blockquote>
+    <blockquote class="animate d4"><p>RAPP is a contribution toward that shared layer — a simple, teachable format that complements the tooling teams already have and lets great work travel, compound, and become accessible to everyone.</p></blockquote>
   </div>
 </div>
 
@@ -308,7 +308,8 @@ pre.cmd .green{color:var(--green)}
           <li><span class="icon">🔁</span><div><strong>Three tiers, zero modification.</strong> The same file runs on a laptop (local Flask server), in Azure Functions, and in Copilot Studio on Teams — unchanged.</div></li>
           <li><span class="icon">📦</span><div><strong>Shareable by design.</strong> Agents install with a file drop. Registry, store, 7-word speakable phrase.</div></li>
           <li><span class="icon">✅</span><div><strong>Already working.</strong> Frozen v1 spec, one-line installer, live agent store, natural-language agent generation.</div></li>
-          <li><span class="icon">⚙️</span><div><strong>Engine, not experience.</strong> Infrastructure that stays light so capabilities compound. The opposite of every framework that ships complexity and calls it power.</div></li>
+          <li><span class="icon">⚙️</span><div><strong>Engine, not experience.</strong> Infrastructure that stays light so capabilities compound — a shared base layer, not another framework to learn.</div></li>
+          <li><span class="icon">🤝</span><div><strong>Complements, doesn't replace.</strong> RAPP sits alongside the agent tooling teams already use. The goal is to accelerate the great work in flight, not compete with it.</div></li>
         </ul>
       </div>
     </div>
@@ -347,11 +348,12 @@ pre.cmd .green{color:var(--green)}
     <h3 class="kicker animate"><span class="num-badge">04</span>The Email Draft</h3>
     <h2 class="animate d1">Send this.</h2>
     <div class="email-preview animate d2">
-      <div class="subject">Subject: 30 min demo request — RAPP: solving agent fragmentation before it costs us</div>
+      <div class="subject">Subject: 30 min demo request — a lightweight format for sharing agents across teams</div>
       <div class="body">
-        <p>I'm on the <strong>AIBAST</strong> (AI Business Applications Specialist Team) and I built RAPP (Rapid Agent Prototyping Platform), an internal tool that solves a problem I believe is about to become one of Microsoft's biggest blockers: <strong>agent tool fragmentation</strong>.</p>
-        <p><strong>The problem in one sentence:</strong> Across Microsoft, teams are independently building agent tooling that is complex, redundant, and unteachable — and the more we adopt external ecosystems that go in the same direction, the worse it gets.</p>
-        <p><strong>Why this matters now:</strong> In two years, everyone at Microsoft is going to need a fast way to build and share agents. Right now, the path we're on creates silos. This balkanization will delay the real AI unlock: <strong>what happens after we have good tools that people can actually build on.</strong></p>
+        <p>I'm on the <strong>AIBAST</strong> (AI Business Applications Specialist Team) and I've been working on RAPP (Rapid Agent Prototyping Platform) — an internal effort I'd love your take on. I think it could help with a challenge that's quietly growing across Microsoft: <strong>how we share agents between teams</strong>.</p>
+        <p><strong>What I've been noticing:</strong> Teams across the company are each building great agent tooling in parallel. The work is real and the needs are real — but agents don't always travel easily between teams, and there isn't a shared baseline for moving them around.</p>
+        <p><strong>Why I think it matters now:</strong> In a couple of years, everyone at Microsoft is going to need a fast way to build and share agents. A shared, lightweight format on top of the great work already happening would let it compound, and it's cheaper to put that layer in place now than to retrofit it later.</p>
+        <p><strong>To be clear:</strong> this is a <em>complement</em> to the excellent tooling other teams have built — not a replacement. The goal is to accelerate and make agents accessible to everyone through easier sharing and learning, using our RAPP vibe agent building tool.</p>
         <p><strong>What RAPP does differently:</strong></p>
         <ul>
           <li><strong>One file = one agent.</strong> No frameworks, no build steps. A 14-year-old can ship their first agent in minutes.</li>
@@ -359,7 +361,7 @@ pre.cmd .green{color:var(--green)}
           <li><strong>Shareable by design.</strong> Agents install with a file drop. Registry, store, 7-word speakable phrases.</li>
           <li><strong>Already working.</strong> Frozen v1 spec, one-line installer, live agent store, natural-language agent generation.</li>
         </ul>
-        <p class="ask"><strong>My ask:</strong> 30 minutes to demo RAPP and walk through why it deserves a place in Microsoft's agent strategy. I've attached a short video walkthrough.</p>
+        <p class="ask"><strong>My ask:</strong> 30 minutes to walk you through RAPP and get your honest feedback on whether it could complement what other teams are doing. I've attached a short video walkthrough.</p>
       </div>
     </div>
   </div>
@@ -538,7 +540,8 @@ agent sharing standard and what happens if we don't act</span>
   <div class="slide-inner">
     <div class="logo animate">🧠</div>
     <h1 class="animate d1" style="font-size:2.6rem">Everything is <span class="grad">deployed &amp; live.</span></h1>
-    <p class="big animate d2" style="margin:0 auto 24px;max-width:680px">The ExecBrief rapplication is in the store. The toggle UI is in the brainstem. The installer pulls the latest.<br><strong style="color:var(--text)">Start the brainstem, install ExecBrief, and shoot your shot.</strong></p>
+    <p class="big animate d2" style="margin:0 auto 18px;max-width:720px">The ExecBrief rapplication is in the store. The toggle UI is in the brainstem. The installer pulls the latest.<br><strong style="color:var(--text)">Start the brainstem, install ExecBrief, and share it with your team.</strong></p>
+    <p class="animate d2 dim" style="margin:0 auto 20px;max-width:720px;font-size:.95rem">RAPP is a complement to the great agent tooling across Microsoft — built to accelerate the work in flight and make agents accessible to everyone through easy sharing and learning.</p>
     <div class="btn-row animate d3">
       <a href="https://kody-w.github.io/RAPP/" class="btn btn-primary">🚀 RAPP Home</a>
       <a href="https://kody-w.github.io/RAPP/store/" class="btn btn-outline">🏪 Store</a>
