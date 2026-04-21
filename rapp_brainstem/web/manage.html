@@ -410,6 +410,53 @@
   .section-card .field input:focus, .section-card .field textarea:focus { outline: 0; border-color: var(--accent); }
   .persona-textarea { min-height: 340px; font-family: ui-monospace, "SF Mono", monospace; white-space: pre; }
 
+  /* Beginner-friendly toggle row + connection chips */
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 14px;
+    padding: 12px 14px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 10px;
+  }
+  .toggle-row:last-child { margin-bottom: 0; }
+  .toggle-title { font-size: 13.5px; font-weight: 500; margin-bottom: 3px; }
+  .toggle-desc  { font-size: 12px; color: var(--muted); }
+
+  .conn-chip {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 14px;
+    padding: 10px 14px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 8px;
+  }
+  .conn-chip .conn-label { display: flex; align-items: center; gap: 10px; font-size: 13.5px; }
+  .conn-chip .conn-label .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); }
+  .conn-chip.connected .dot { background: var(--good); box-shadow: 0 0 6px rgba(82,211,124,0.5); }
+  .conn-chip .status { font-size: 12px; color: var(--muted); }
+  .conn-chip.connected .status { color: var(--good); }
+
+  /* Advanced-mode select styling matches text inputs */
+  .adv-select, select {
+    width: 100%;
+    background: var(--bg);
+    color: var(--fg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 11px;
+    font-size: 13px;
+    font-family: inherit;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 5l3 3 3-3' stroke='%238b93a7' stroke-width='1.3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+  }
+  .adv-select:focus, select:focus { outline: 0; border-color: var(--accent); }
+
   .secret-chip {
     display: inline-flex; align-items: center; gap: 6px;
     font-size: 11.5px; font-weight: 500;
@@ -524,39 +571,103 @@
 
   <!-- ── Settings ──────────────────────────────────────── -->
   <section id="pane-settings" class="pane">
-    <div class="section-card">
-      <h3><span class="sec-icon">⚙</span> Model</h3>
-      <p>Which LLM the brainstem uses. The default is GitHub Copilot via the <code>gh</code> CLI — zero config.</p>
-      <div class="field">
-        <label>GITHUB_MODEL</label>
-        <input type="text" data-env="GITHUB_MODEL" placeholder="gpt-4o">
+
+    <!-- Beginner-friendly settings (shown when Advanced is off) -->
+    <div id="settings-simple">
+      <div class="section-card">
+        <h3><span class="sec-icon">🧠</span> Which model?</h3>
+        <p>Pick the AI model your brainstem should talk to. Defaults to GPT-4o through GitHub Copilot — no setup needed beyond a GitHub account.</p>
+        <div class="field">
+          <label>Model</label>
+          <select id="simple-model" data-env="GITHUB_MODEL" style="width:100%;background:var(--bg);color:var(--fg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;">
+            <option value="gpt-4o">GPT-4o (recommended)</option>
+            <option value="gpt-4.1">GPT-4.1</option>
+            <option value="gpt-4o-mini">GPT-4o Mini (faster, cheaper)</option>
+            <option value="claude-sonnet-4">Claude Sonnet 4</option>
+            <option value="gpt-4">GPT-4</option>
+            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+          </select>
+        </div>
       </div>
-      <div class="field">
-        <label>PORT</label>
-        <input type="text" data-env="PORT" placeholder="7071">
+
+      <div class="section-card">
+        <h3><span class="sec-icon">🎙</span> Extras</h3>
+        <p>Turn features on and off.</p>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-title">Voice responses</div>
+            <div class="toggle-desc">Speak replies out loud with text-to-speech.</div>
+          </div>
+          <div class="folder-switch" id="simple-voice" data-env-bool="VOICE_MODE"></div>
+        </div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-title">Digital Twin panel</div>
+            <div class="toggle-desc">A side panel where the twin comments on each turn.</div>
+          </div>
+          <div class="folder-switch" id="simple-twin" data-env-bool="TWIN_MODE"></div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <h3><span class="sec-icon">🔌</span> Connections</h3>
+        <p>Services your brainstem is linked to. Connect or disconnect in <b>Advanced</b>.</p>
+        <div id="simple-connections"></div>
       </div>
     </div>
 
-    <div class="section-card">
-      <h3><span class="sec-icon">🎙</span> Voice & Twin</h3>
-      <p>Toggle the TTS voice line and the digital-twin side panel.</p>
-      <div class="field">
-        <label>VOICE_MODE (true / false)</label>
-        <input type="text" data-env="VOICE_MODE" placeholder="false">
+    <!-- Advanced raw .env editor (shown when Advanced is on) -->
+    <div id="settings-advanced" style="display:none;">
+      <div class="section-card">
+        <h3><span class="sec-icon">⚙</span> Environment</h3>
+        <p>Raw <code>.env</code> values. Only whitelisted keys save; unknown keys are silently dropped.</p>
+        <div class="field">
+          <label>GITHUB_MODEL</label>
+          <select data-env="GITHUB_MODEL" class="adv-select">
+            <option value="gpt-4o">gpt-4o</option>
+            <option value="gpt-4.1">gpt-4.1</option>
+            <option value="gpt-4o-mini">gpt-4o-mini</option>
+            <option value="claude-sonnet-4">claude-sonnet-4</option>
+            <option value="gpt-4">gpt-4</option>
+            <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>PORT</label>
+          <input type="text" data-env="PORT" placeholder="7071">
+        </div>
+        <div class="field">
+          <label>VOICE_MODE</label>
+          <select data-env="VOICE_MODE" class="adv-select">
+            <option value="true">true</option>
+            <option value="false">false</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>TWIN_MODE</label>
+          <select data-env="TWIN_MODE" class="adv-select">
+            <option value="true">true</option>
+            <option value="false">false</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>AZURE_OPENAI_ENDPOINT</label>
+          <input type="text" data-env="AZURE_OPENAI_ENDPOINT" placeholder="https://...openai.azure.com/">
+        </div>
+        <div class="field">
+          <label>AZURE_OPENAI_DEPLOYMENT</label>
+          <input type="text" data-env="AZURE_OPENAI_DEPLOYMENT">
+        </div>
       </div>
-      <div class="field">
-        <label>TWIN_MODE (true / false)</label>
-        <input type="text" data-env="TWIN_MODE" placeholder="true">
+
+      <div class="section-card">
+        <h3><span class="sec-icon">🔐</span> Secrets</h3>
+        <p>Presence-only — the UI never reads secret values back. Rotate by editing <code>.env</code> directly.</p>
+        <div id="secrets-row" style="margin-bottom:12px;"></div>
       </div>
     </div>
 
-    <div class="section-card">
-      <h3><span class="sec-icon">🔐</span> Secrets</h3>
-      <p>Set or unset only — secrets never round-trip through the UI. Edit <code>.env</code> directly to rotate them.</p>
-      <div id="secrets-row" style="margin-bottom:12px;"></div>
-    </div>
-
-    <div style="display:flex; gap:10px;">
+    <div style="display:flex; gap:10px; margin-top:8px;">
       <button class="btn primary" id="btn-save-env">Save settings</button>
       <button class="btn ghost" id="btn-reload-env">Reload</button>
     </div>
@@ -584,6 +695,24 @@ const RESERVED_PRETTY = {
   "experimental_agents": { label: "Experimental",   icon: "🧪", cls: "reserved-experimental" },
   "disabled_agents":     { label: "Disabled",       icon: "⏸",  cls: "reserved-disabled" },
 };
+
+/* Pretty-print a filesystem name for non-advanced view:
+ *   save_memory_agent.py  →  "Save Memory"
+ *   hacker_news_agent.py  →  "Hacker News"
+ *   my_stack              →  "My Stack"
+ *   q4-prospects          →  "Q4 Prospects"
+ * Keeps words separated by _ / -, strips _agent.py and trailing .py,
+ * Title-cases each word. Acronyms (2-3 chars all letters) stay upper.
+ */
+function prettyName(raw) {
+  if (!raw) return "";
+  let base = raw.replace(/_agent\.py$/i, "").replace(/\.py$/i, "");
+  return base.split(/[_\-\.]/).filter(Boolean).map(w => {
+    // All-caps short tokens (like "q4" → "Q4", "api" → "API") feel off
+    // to force-lower-then-title. Just cap first letter, leave rest.
+    return w.charAt(0).toUpperCase() + w.slice(1);
+  }).join(" ");
+}
 
 // ── Toast ──────────────────────────────────────────────────────
 let _toastTimer = null;
@@ -626,12 +755,32 @@ let _expanded = new Set();
 let _firstLoad = true;
 
 // ── Advanced toggle ────────────────────────────────────────────
+// Flipping "Advanced" does two things:
+//   • Agents tab: show reserved folders + raw filenames (save_memory_agent.py)
+//     instead of pretty names (Save Memory).
+//   • Settings tab: show raw .env editor with select/text for every key,
+//     instead of the beginner-friendly dropdown + toggles + connection
+//     chips. Constitution Article XX — beginner default, advanced opt-in.
 const advSwitch = $("#advanced-switch");
 advSwitch.addEventListener("click", () => {
   _showAdvanced = !_showAdvanced;
   advSwitch.classList.toggle("on", _showAdvanced);
   renderTree();
+  applySettingsMode();
 });
+
+function applySettingsMode() {
+  const simple   = $("#settings-simple");
+  const advanced = $("#settings-advanced");
+  if (!simple || !advanced) return;
+  if (_showAdvanced) {
+    simple.style.display   = "none";
+    advanced.style.display = "";
+  } else {
+    simple.style.display   = "";
+    advanced.style.display = "none";
+  }
+}
 
 // ── Tree rendering ─────────────────────────────────────────────
 async function loadTree() {
@@ -724,7 +873,17 @@ function renderNode(node, depth) {
   // Name + count
   const name = document.createElement("span");
   name.className = "name";
-  const displayName = node.reserved ? RESERVED_PRETTY[node.reserved].label : node.name;
+  let displayName;
+  if (node.reserved) {
+    // Reserved folders keep their friendly label regardless of advanced mode,
+    // but advanced mode appends the raw dirname so power users know the path.
+    displayName = RESERVED_PRETTY[node.reserved].label;
+    if (_showAdvanced) displayName += `  ${node.reserved}/`;
+  } else if (_showAdvanced) {
+    displayName = node.name;            // raw: save_memory_agent.py, my_stack
+  } else {
+    displayName = prettyName(node.name); // "Save Memory", "My Stack"
+  }
   name.textContent = displayName;
   if (node.kind === "folder") {
     const n = countAgents(node);
@@ -1010,24 +1169,81 @@ $("#btn-vscode").addEventListener("click", () => openInVSCode(""));
 async function loadConfig() {
   try {
     const cfg = await api("/api/config");
+    // Populate every element that declares data-env="KEY" — inputs
+    // (text), selects (bounded value), and data-env-bool toggles.
     for (const [k, v] of Object.entries(cfg.env || {})) {
-      const el = $$(`input[data-env="${k}"]`);
-      if (el.length) el[0].value = v;
+      $$(`[data-env="${k}"]`).forEach(el => { el.value = v; });
     }
+    // Bool toggles in the simple pane use the .folder-switch UI. "true" → on.
+    $$("[data-env-bool]").forEach(el => {
+      const k = el.dataset.envBool;
+      const v = String((cfg.env || {})[k] || "").toLowerCase() === "true";
+      el.classList.toggle("on", v);
+    });
+    // Secrets chips (advanced pane — raw names)
     const row = $("#secrets-row");
-    row.innerHTML = "";
-    for (const [k, isSet] of Object.entries(cfg.secrets || {})) {
-      const chip = document.createElement("span");
-      chip.className = `secret-chip ${isSet ? 'set' : ''}`;
-      chip.innerHTML = `<span class="dot"></span> ${k}: ${isSet ? 'set' : 'unset'}`;
-      row.appendChild(chip);
+    if (row) {
+      row.innerHTML = "";
+      for (const [k, isSet] of Object.entries(cfg.secrets || {})) {
+        const chip = document.createElement("span");
+        chip.className = `secret-chip ${isSet ? 'set' : ''}`;
+        chip.innerHTML = `<span class="dot"></span> ${k}: ${isSet ? 'set' : 'unset'}`;
+        row.appendChild(chip);
+      }
     }
+    // Simple-pane "Connections" chips — friendly names + status
+    renderConnections(cfg.secrets || {});
   } catch (e) { toast(e.message, "bad"); }
 }
 
+const CONNECTION_PRETTY = {
+  GITHUB_TOKEN:         { name: "GitHub Copilot",  icon: "🧠" },
+  OPENAI_API_KEY:       { name: "OpenAI",          icon: "🎯" },
+  ANTHROPIC_API_KEY:    { name: "Anthropic Claude", icon: "🎭" },
+  AZURE_OPENAI_API_KEY: { name: "Azure OpenAI",    icon: "☁" },
+};
+
+function renderConnections(secrets) {
+  const box = $("#simple-connections");
+  if (!box) return;
+  box.innerHTML = "";
+  for (const [k, isSet] of Object.entries(secrets)) {
+    const meta = CONNECTION_PRETTY[k] || { name: k, icon: "🔗" };
+    const chip = document.createElement("div");
+    chip.className = "conn-chip" + (isSet ? " connected" : "");
+    chip.innerHTML = `
+      <span class="conn-label">
+        <span class="dot"></span>
+        <span style="font-size:16px">${meta.icon}</span>
+        <span>${meta.name}</span>
+      </span>
+      <span class="status">${isSet ? "Connected" : "Not connected"}</span>`;
+    box.appendChild(chip);
+  }
+  if (!Object.keys(secrets).length) {
+    box.innerHTML = '<p class="muted">No connections configured.</p>';
+  }
+}
+
+// Wire the simple-pane folder-style toggles (data-env-bool).
+document.addEventListener("click", (e) => {
+  const sw = e.target.closest("[data-env-bool]");
+  if (!sw) return;
+  sw.classList.toggle("on");
+});
+
 $("#btn-save-env").addEventListener("click", async () => {
   const values = {};
-  $$("input[data-env]").forEach(i => values[i.dataset.env] = i.value);
+  // Text + select inputs that declare data-env="KEY"
+  $$("[data-env]").forEach(el => {
+    if (el.tagName === "INPUT" || el.tagName === "SELECT") {
+      values[el.dataset.env] = el.value;
+    }
+  });
+  // Bool toggles (.folder-switch[data-env-bool]) → "true" / "false"
+  $$("[data-env-bool]").forEach(el => {
+    values[el.dataset.envBool] = el.classList.contains("on") ? "true" : "false";
+  });
   try {
     await api("/api/config/env", { method: "POST", body: JSON.stringify({ values }) });
     toast("settings saved");
@@ -1074,6 +1290,7 @@ function openFirstRunWizard() {
 
 // ── Boot ───────────────────────────────────────────────────────
 (async function init() {
+  applySettingsMode();
   await loadTree();
   maybeFirstRunWizard();
 })();

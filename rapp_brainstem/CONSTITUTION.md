@@ -525,7 +525,55 @@ the UI must be transparent to it.
 
 ---
 
-## Article XIV — Amendments
+## Article XIV — UI Defaults to Beginner-First; Advanced Is Opt-In
+
+The `/manage` UI has two modes driven by a single **Advanced** toggle.
+Default = beginner-friendly. Advanced = power user. Beginners never
+see technical detail unless they ask for it.
+
+### Beginner view (default)
+
+- Human names: `save_memory_agent.py` → "Save Memory". `my_stack/` →
+  "My Stack". Strip `_agent.py`, replace `_` with spaces,
+  title-case.
+- Dropdowns + toggles for bounded values (never text inputs for
+  true/false or enumerated model lists).
+- Friendly service names: "GitHub Copilot — Connected ✓" not
+  `GITHUB_TOKEN: set`.
+- Reserved folders (`system_agents/`, `experimental_agents/`,
+  `disabled_agents/`) hidden.
+- Folders collapsed on load.
+- Curated field set — model, voice, twin, connection chips.
+
+### Advanced view (toggle on)
+
+- Raw filenames + extensions.
+- Reserved folders visible with annotated labels.
+- Full `.env` editor (bounded → select, free-form → text).
+- Secret chips with raw env key names.
+
+### What this rules out
+
+- ❌ Showing `snake_case_agent.py` in default mode.
+- ❌ Text inputs for bounded values in any mode. Dropdowns/toggles
+  always.
+- ❌ Reserved folders visible by default.
+- ❌ Two separate UIs. One UI, toggled visibility.
+- ❌ Losing form state on mode flip. Both views bind to the same
+  `data-env="KEY"` attributes.
+- ❌ The Advanced toggle gating *features*. It only gates
+  visibility — a beginner can do everything they need from the
+  beginner view.
+
+### Why
+
+A beginner opening the UI should see something that reads like an
+app, not a file browser. Power users flip the toggle. Both modes
+write to the same `.env` / filesystem — there is no parallel state.
+
+---
+
+## Article XV — Amendments
 
 This constitution can be amended. The only rule: the change must serve
 the platform's purpose as a business-focused AI agent engine. If it

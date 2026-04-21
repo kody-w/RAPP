@@ -872,7 +872,74 @@ This is what keeps the one-liner (Article V) honest: not just
 
 ---
 
-## Article XX — Amendments
+## Article XX — UI Defaults to Beginner-First; Advanced Is Opt-In
+
+The `/manage` UI has two modes driven by a single **Advanced** toggle.
+Every user-facing surface defaults to the beginner view; technical
+detail is revealed only when the user asks for it.
+
+> **Default = beginner. Advanced = power user. Never show raw
+> filenames, raw env keys, or reserved internals in default mode.**
+
+### Beginner view (default)
+
+- **Human names.** `save_memory_agent.py` renders as "Save Memory".
+  `my_stack/` renders as "My Stack". Strip `_agent.py`, replace `_`
+  with spaces, title-case words.
+- **Dropdowns and toggles, not text fields.** If a setting is
+  bounded (model choice, voice on/off, twin on/off), render a
+  `<select>` or a toggle switch. Text inputs are a last resort for
+  free-form values (URLs, custom strings).
+- **Friendly service names.** "GitHub Copilot — Connected ✓" instead
+  of `GITHUB_TOKEN: set`.
+- **Reserved folders hidden.** `system_agents/`, `experimental_agents/`,
+  and `disabled_agents/` are filtered out of the tree view entirely.
+- **Folders collapsed on load.** Users expand what they want to
+  explore, not drown in a wall of nested paths.
+- **Curated field set.** Only the settings a learner needs — model,
+  voice, twin, connection status.
+
+### Advanced view (opt-in via toggle)
+
+- Raw filenames with `_agent.py` extensions so engineers reason
+  about paths.
+- Reserved folders visible with their directory names annotated
+  alongside friendly labels ("System tools — `system_agents/`").
+- Full `.env` editor: every whitelisted key as a field. Bounded
+  values still render as selects, free-form as text.
+- Secret chips with raw env key names (`GITHUB_TOKEN: set`).
+- Additional fields (Azure endpoint, Azure deployment, etc.) that
+  don't belong in the beginner's path.
+
+### What this rules out
+
+- ❌ Showing `snake_case_agent.py` filenames in default mode.
+- ❌ Rendering "`VOICE_MODE (true / false)`" as a text input in any
+  mode. Bounded = dropdown/toggle, always.
+- ❌ Exposing reserved folders by default. The three reserved names
+  are engine-internal; beginners don't need to care.
+- ❌ Separate backend endpoints for "simple" vs "advanced" — both
+  modes save to the same underlying `.env` / filesystem. Mode is a
+  rendering concern, not a data concern.
+- ❌ Losing form state when the user flips the toggle mid-edit.
+  Both views bind to the same `data-env="KEY"` attribute so edits
+  persist across mode changes.
+- ❌ Using the Advanced toggle to gate features — it only gates
+  *visibility*. A beginner can always do everything they need from
+  the beginner view; Advanced is additive, not unlocked.
+
+### Why two modes, not two apps
+
+A second UI (power-user dashboard) would split maintenance and tempt
+feature drift. One UI with a visibility toggle forces every new
+setting to pass the beginner-design bar first: *what's the friendly
+version of this?* If the answer is "there isn't one," the setting
+probably doesn't belong in the UI at all — put it in the `.env`
+file directly.
+
+---
+
+## Article XXI — Amendments
 
 This constitution can be amended. The only rule: amendments must preserve
 Article I — **the brainstem stays light**. Any change that loads
