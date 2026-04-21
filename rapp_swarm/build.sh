@@ -24,18 +24,22 @@ rm -rf "$DEST"
 mkdir -p "$DEST"
 mkdir -p "$DEST/agents"
 
-# Python modules the function app imports directly.
+# Support modules live under utils/ (Article XVI — root stays minimal).
+# Vendor the utils/ tree so function_app.py's `from utils.llm import …`
+# and `from utils import twin` resolve inside _vendored/.
+mkdir -p "$DEST/utils"
 for src in llm.py twin.py _basic_agent_shim.py; do
-    if [ -f "$ROOT/rapp_brainstem/$src" ]; then
-        cp "$ROOT/rapp_brainstem/$src" "$DEST/$src"
-        echo "  ✓ $src"
+    if [ -f "$ROOT/rapp_brainstem/utils/$src" ]; then
+        cp "$ROOT/rapp_brainstem/utils/$src" "$DEST/utils/$src"
+        echo "  ✓ utils/$src"
     else
-        echo "  ⚠ missing: $src"
+        echo "  ⚠ missing: utils/$src"
     fi
 done
 
-# Package marker for the vendor directory itself.
-[ -f "$DEST/__init__.py" ] || touch "$DEST/__init__.py"
+# Package markers for the vendor tree.
+[ -f "$DEST/__init__.py" ]       || touch "$DEST/__init__.py"
+[ -f "$DEST/utils/__init__.py" ] || touch "$DEST/utils/__init__.py"
 
 # Agent tree — per CONSTITUTION Article XVII / XII, agents/ is a
 # user-organized tree. Vendor it recursively, mirroring Tier 1's shape,

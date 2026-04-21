@@ -87,17 +87,17 @@ _load_dotenv()
 
 # ── Dependencies (vendored by build.sh) ────────────────────────────────
 
-from llm import chat as llm_chat, detect_provider, provider_status  # type: ignore
+from utils.llm import chat as llm_chat, detect_provider, provider_status  # type: ignore
 
 try:
-    import twin as _twin  # type: ignore
+    from utils import twin as _twin  # type: ignore
 except ImportError:
     _twin = None  # calibration gracefully disables if helper absent
 
-# Import path for agents to find BasicAgent. The shim under _vendored/
+# Import path for agents to find BasicAgent. The shim under _vendored/utils/
 # rewires `agents.basic_agent` → the same class Tier 1 uses.
 try:
-    import _basic_agent_shim  # type: ignore  # noqa: F401 — side-effect only
+    from utils import _basic_agent_shim  # type: ignore  # noqa: F401 — side-effect only
 except ImportError:
     pass
 

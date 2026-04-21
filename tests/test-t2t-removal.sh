@@ -121,11 +121,12 @@ assert_not_exists "vendored bundle has no t2t.py"         rapp_swarm/_vendored/t
 assert_not_exists "vendored bundle has no workspace.py"   rapp_swarm/_vendored/workspace.py
 assert_not_exists "vendored bundle has no server.py"      rapp_swarm/_vendored/server.py
 assert_not_exists "vendored bundle has no chat.py"        rapp_swarm/_vendored/chat.py
-# But the core runtime deps should still be vendored
-if [ -f rapp_swarm/_vendored/llm.py ] && \
-   [ -f rapp_swarm/_vendored/twin.py ] && \
-   [ -f rapp_swarm/_vendored/_basic_agent_shim.py ]; then
-    echo "  ✓ vendored bundle still contains llm/twin/_basic_agent_shim"
+# Core runtime deps live under utils/ in the vendor tree now
+# (Article XVI — root stays minimal, support modules in utils/).
+if [ -f rapp_swarm/_vendored/utils/llm.py ] && \
+   [ -f rapp_swarm/_vendored/utils/twin.py ] && \
+   [ -f rapp_swarm/_vendored/utils/_basic_agent_shim.py ]; then
+    echo "  ✓ vendored bundle contains utils/llm + utils/twin + utils/_basic_agent_shim"
     PASS=$((PASS + 1))
 else
     echo "  ✗ vendored bundle missing expected core files"

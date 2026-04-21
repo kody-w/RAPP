@@ -288,8 +288,9 @@ Two surfaces, two masters:
   agent looks like. Drag-and-drop visible, editable, the reference
   implementation. **Do not move this into the brainstem workspace**
   — it would bury what the user is meant to learn from.
-- `utils/`, `web/` — cohesive support directories
-- `local_storage.py`, `basic_agent.py` — the base contracts
+- `utils/`, `web/` — cohesive support directories (`utils/` holds
+  `llm.py`, `twin.py`, `local_storage.py`, `_basic_agent_shim.py`,
+  `index_card.py`). `agents/basic_agent.py` is the base class.
 
 ### What belongs in the brainstem's workspace (scratch while running)
 

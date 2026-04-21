@@ -56,11 +56,41 @@ TWIN_MODE   = os.getenv("TWIN_MODE", "true").lower() == "true"
 VOICE_ZIP_PW = os.getenv("VOICE_ZIP_PASSWORD", "").encode() or None
 
 _BRAINSTEM_DIR = os.path.dirname(os.path.abspath(__file__))
-_SWARMS_FILE = os.path.join(_BRAINSTEM_DIR, ".swarms.json")
+
+# Runtime state lives in the brainstem's workspace, not at the repo root
+# (Article XVI/XI — "Root = engine's surface, workspace = brainstem's scratch").
+# Path resolution matches the memory-agent pattern: env override → ~/.brainstem/.
+def _workspace_file(env_var: str, filename: str) -> str:
+    override = os.environ.get(env_var)
+    if override:
+        return os.path.expanduser(override)
+    return os.path.expanduser(f"~/.brainstem/{filename}")
+
+def _migrate_from_root(new_path: str, *old_basenames: str) -> None:
+    """If a file exists at the old repo-root location, move it to the new
+    home-relative location so users don't lose state. Runs idempotently."""
+    if os.path.exists(new_path):
+        return
+    for name in old_basenames:
+        old = os.path.join(_BRAINSTEM_DIR, name)
+        if os.path.exists(old):
+            try:
+                os.makedirs(os.path.dirname(new_path), exist_ok=True)
+                os.rename(old, new_path)
+                print(f"[brainstem] migrated {name} → {new_path}")
+                return
+            except OSError as e:
+                print(f"[brainstem] warning: could not migrate {name}: {e}")
+
+_SWARMS_FILE = _workspace_file("BRAINSTEM_SWARMS_FILE", "swarms.json")
 _ACTIVE_SWARMS = None  # None = not yet loaded from disk; [] = "all agents"
 
 def _read_swarms():
-    # Migrate legacy .agent_groups.json on first read
+    # One-time migration: repo-root .swarms.json or legacy .agent_groups.json
+    # → ~/.brainstem/swarms.json (per CONSTITUTION Article XVI).
+    _migrate_from_root(_SWARMS_FILE, ".swarms.json")
+
+    # Separate migration: .agent_groups.json had a different schema
     legacy = os.path.join(_BRAINSTEM_DIR, ".agent_groups.json")
     if not os.path.exists(_SWARMS_FILE) and os.path.exists(legacy):
         try:
@@ -76,11 +106,17 @@ def _read_swarms():
                 }
             if old.get("active"):
                 migrated["active"] = [old["active"]]
+            os.makedirs(os.path.dirname(_SWARMS_FILE), exist_ok=True)
             with open(_SWARMS_FILE, "w") as f:
                 json.dump(migrated, f, indent=2)
+            # Clean up the legacy file now that it's migrated
+            try: os.remove(legacy)
+            except OSError: pass
+            print(f"[brainstem] migrated .agent_groups.json → {_SWARMS_FILE}")
             return migrated
         except Exception:
             pass
+
     if os.path.exists(_SWARMS_FILE):
         try:
             with open(_SWARMS_FILE) as f:
@@ -96,6 +132,7 @@ def _write_swarms(data):
     data.setdefault("schema", "rapp-swarms/1.0")
     if isinstance(data.get("active"), str):
         data["active"] = [data["active"]] if data["active"] else []
+    os.makedirs(os.path.dirname(_SWARMS_FILE), exist_ok=True)
     with open(_SWARMS_FILE, "w") as f:
         json.dump(data, f, indent=2)
 
@@ -178,8 +215,11 @@ def _fetch_copilot_models():
 # GitHub Copilot GitHub App client ID — produces ghu_ tokens that work with Copilot exchange API
 # Note: Ov23ctDVkRmgkPke0Mmm is an OAuth App that produces gho_ tokens — those get 404 from Copilot
 COPILOT_CLIENT_ID = "Iv1.b507a08c87ecfe98"
-_token_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".copilot_token")
-_copilot_cache_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".copilot_session")
+_token_file         = _workspace_file("BRAINSTEM_COPILOT_TOKEN_FILE",   "copilot_token")
+_copilot_cache_file = _workspace_file("BRAINSTEM_COPILOT_SESSION_FILE", "copilot_session")
+# One-time migration: repo-root .copilot_token / .copilot_session → workspace.
+_migrate_from_root(_token_file,         ".copilot_token")
+_migrate_from_root(_copilot_cache_file, ".copilot_session")
 
 def _read_token_file():
     """Read the token file. Returns dict with at least 'access_token', or None."""
@@ -249,6 +289,7 @@ def save_github_token(token, refresh_token=None):
         "refresh_token": refresh_token or existing.get("refresh_token"),
         "saved_at": time.time(),
     }
+    os.makedirs(os.path.dirname(_token_file), exist_ok=True)
     with open(_token_file, "w") as f:
         json.dump(data, f)
     print(f"[brainstem] GitHub token saved (prefix: {token[:4]}...)")
@@ -297,6 +338,7 @@ def _load_copilot_cache():
 def _save_copilot_cache(token, endpoint, expires_at):
     """Cache Copilot API token to disk so it survives restarts."""
     try:
+        os.makedirs(os.path.dirname(_copilot_cache_file), exist_ok=True)
         with open(_copilot_cache_file, "w") as f:
             json.dump({"token": token, "endpoint": endpoint, "expires_at": expires_at}, f)
     except Exception:
@@ -600,7 +642,7 @@ def _register_shims():
         pass
     
     # Shim: utils.azure_file_storage → local_storage.py
-    from local_storage import AzureFileStorageManager as _LSM
+    from utils.local_storage import AzureFileStorageManager as _LSM
     if "utils" not in sys.modules:
         utils_mod = types.ModuleType("utils")
         utils_mod.__path__ = [os.path.join(brainstem_dir, "utils")]
@@ -1748,16 +1790,21 @@ def api_egg_export():
         if os.path.isdir(data_dir):
             add_tree(data_dir, ".brainstem_data")
 
+        # Config files to include in the egg. soul.md lives at the engine
+        # root (user-editable persona). .swarms.json and .agents_disabled.json
+        # live in the workspace (~/.brainstem/*) or agents/ respectively.
         soul_text = ""
-        for config_file in ["soul.md", ".swarms.json", ".agents_disabled.json"]:
-            full = os.path.join(base, config_file) if config_file != ".agents_disabled.json" else os.path.join(agents_dir, config_file)
-            if config_file == ".agents_disabled.json":
-                full = _DISABLED_FILE
+        config_files = [
+            ("soul.md",              os.path.join(base, "soul.md")),
+            ("swarms.json",          _SWARMS_FILE),
+            (".agents_disabled.json", _DISABLED_FILE),
+        ]
+        for arc_name, full in config_files:
             if os.path.isfile(full):
-                zf.write(full, arcname=config_file)
+                zf.write(full, arcname=arc_name)
                 sz = os.path.getsize(full)
-                files_added.append({"arc": config_file, "sha256": sha256_file(full), "bytes": sz})
-                if config_file == "soul.md":
+                files_added.append({"arc": arc_name, "sha256": sha256_file(full), "bytes": sz})
+                if arc_name == "soul.md":
                     soul_text = open(full, "r", encoding="utf-8").read()
 
         now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
@@ -1837,8 +1884,12 @@ def api_egg_import():
                     dest = os.path.join(base, "agents", entry[len("agents/"):])
                 elif entry.startswith(".brainstem_data/"):
                     dest = os.path.join(base, entry)
-                elif entry in ("soul.md", ".swarms.json", ".agent_groups.json"):
+                elif entry == "soul.md":
                     dest = os.path.join(base, entry)
+                elif entry in ("swarms.json", ".swarms.json", ".agent_groups.json"):
+                    # Any of these variants route to the workspace swarms file.
+                    dest = _SWARMS_FILE
+                    os.makedirs(os.path.dirname(dest), exist_ok=True)
                 elif entry == ".agents_disabled.json":
                     dest = _DISABLED_FILE
                 else:

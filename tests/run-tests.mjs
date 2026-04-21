@@ -328,7 +328,7 @@ class TinyAgent(BasicAgent):
     'tests/test-sealing-snapshot.sh',
     'tests/test-hero-deploy.sh',
     'tests/test-llm-chat.sh',
-    'rapp_brainstem/llm.py',
+    'rapp_brainstem/utils/llm.py',
     'rapp_brainstem/web/onboard/index.html',
     'rapp_brainstem/web/onboard/registry.json',
     'rapp_swarm/function_app.py',

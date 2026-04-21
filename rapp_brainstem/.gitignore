@@ -1,11 +1,19 @@
-# Token files (contain secrets)
+# User creds (root-level)
+.env
+
+# Legacy runtime state at root (auto-migrated to ~/.brainstem/ on boot,
+# but kept in .gitignore so pre-migration copies never get tracked)
 .copilot_token
 .copilot_session
-.env
+.swarms.json
+.agent_groups.json
 
 # Python
 __pycache__/
 *.pyc
+
+# macOS junk
+.DS_Store
 
 # Remote agents (downloaded at runtime)
 .remote_agents/

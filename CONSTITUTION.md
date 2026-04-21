@@ -654,9 +654,9 @@ of it happens inside `agents/`. Nothing else is supposed to be touched.
 > Everything functional a user needs to do happens in `agents/`.**
 
 The engine (`brainstem.py`, `VERSION`, `soul.md`, `requirements.txt`,
-`start.sh`, `local_storage.py`, the `utils/` and `web/` trees) is a
-stable, boring surface. Users rarely read it and never edit it. The
-user's focus is inside `agents/`.
+`start.sh`, the `utils/` and `web/` trees) is a stable, boring
+surface. Users rarely read it and never edit it. The user's focus is
+inside `agents/`.
 
 ### A recursive, user-organized tree
 
