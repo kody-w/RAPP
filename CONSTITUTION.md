@@ -825,7 +825,54 @@ filesystem preserves that contract.
 
 ---
 
-## Article XIX — Amendments
+## Article XIX — Versions Are Load-Bearing Rollback Points
+
+`rapp_brainstem/VERSION` is the source of truth for what's running.
+Every released VERSION is also a git tag `brainstem-vX.Y.Z`, and those
+tags are **immutable**. They are the rollback contract with users.
+
+> **If a release breaks, users must be able to pin to a prior working
+> version with one command.** The one-liner already supports this:
+>
+> ```bash
+> BRAINSTEM_VERSION=0.9.0 curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash
+> ```
+>
+> For that to keep working, every VERSION bump on main must ship a
+> matching `brainstem-vX.Y.Z` tag, and published tags must never move.
+
+### Release discipline
+
+- **Bump + tag together.** The commit that bumps `VERSION` to `X.Y.Z`
+  gets tagged `brainstem-vX.Y.Z` (typically the merge commit on main).
+  No version bump without the matching tag push.
+- **Tags are immutable.** Never `git tag -f` or `git push --force` a
+  brainstem-v tag. A user who pinned to `0.9.0` six months ago must
+  get the same tree today.
+- **No gaps.** `0.9.0 → 0.10.0` is fine. `0.9.0 → 0.11.0` with
+  `0.10.0` skipped leaves a hole in the rollback path.
+- **Bad release? New tag.** If `0.9.0` shipped broken, the fix is
+  `0.9.1`, not a rewritten `0.9.0`. The bad tag stays so users who
+  pinned to it aren't surprised.
+- **Installer contract.** The one-liner MUST honor `BRAINSTEM_VERSION`
+  and MUST warn (not silently skip) if a requested tag doesn't exist.
+
+### What this rules out
+
+- ❌ Untagged releases. A VERSION bump without the corresponding tag
+  pushed to origin is incomplete.
+- ❌ Moving or deleting a published tag.
+- ❌ Silent behavior changes across a tag boundary. If a release
+  changes agent contract, route surface, response envelope — bump
+  the version.
+- ❌ Installer changes that drop `BRAINSTEM_VERSION` pinning support.
+
+This is what keeps the one-liner (Article V) honest: not just
+"install the latest" but "let users roll back when the latest breaks."
+
+---
+
+## Article XX — Amendments
 
 This constitution can be amended. The only rule: amendments must preserve
 Article I — **the brainstem stays light**. Any change that loads

@@ -158,20 +158,68 @@ GitHub. The user's brainstem is their brainstem.
 
 ---
 
-## Article VIII — Bump the Version
+## Article VIII — Versions Are Load-Bearing Rollback Points
 
 Every commit that changes brainstem behavior — agents added or removed,
 routes changed, installer logic updated, anything the user would notice
 after re-running the one-liner — **must bump `rapp_brainstem/VERSION`**.
 
-The installer compares local vs. remote VERSION to decide whether to
-pull. If VERSION doesn't change, users are stuck on stale code no matter
-how many commits land on main. The one-liner silently does nothing and
-the user has no idea why their fix isn't there.
+> **Every released VERSION is also a git tag `brainstem-vX.Y.Z`. Tags
+> are immutable — they are the rollback contract with users.**
 
-Patch bump (`0.8.7` → `0.8.8`) for fixes and small changes. Minor bump
-for new features or breaking agent changes. The number itself doesn't
-matter as much as the fact that it changed.
+### The rollback contract
+
+When a release breaks a user's install, they must be able to fall back
+to a prior working version with a single command:
+
+```bash
+BRAINSTEM_VERSION=0.9.0 curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash
+```
+
+The installer honors `BRAINSTEM_VERSION` by checking out the
+`brainstem-v<VERSION>` tag and hard-resetting the local tree to it. A
+user who can't update and a user who must downgrade both have the
+same escape hatch: pin to a known-good version.
+
+This only works if **every released VERSION has a matching tag**, and
+**tags never move**. Both are sacred.
+
+### Release discipline
+
+- **Bump + tag together.** The commit that bumps `VERSION` to `X.Y.Z`
+  is the one that gets tagged `brainstem-vX.Y.Z` — ideally the merge
+  commit on main. No version bump without the matching tag push.
+- **Tags are immutable.** Never `git tag -f` or `git push --force` a
+  brainstem-v tag. A user who pinned to `0.9.0` six months ago must
+  get the same tree today.
+- **Don't skip versions.** `0.9.0` → `0.10.0` is fine. `0.9.0` →
+  `0.11.0` when `0.10.0` was never tagged creates a gap in the
+  rollback path.
+- **No "republish" of an older version.** If `0.9.0` was bad and you
+  need to ship a fix, that's `0.9.1` (new tag, new point). The old
+  bad tag stays so users who already pinned to it aren't surprised
+  by a silent change.
+- **VERSIONS.md (or the tag annotation) records what changed.** The
+  `git show brainstem-vX.Y.Z` message is the user's release-note.
+
+### What this rules out
+
+- ❌ Untagged releases. A VERSION bump without the corresponding tag
+  pushed to origin is incomplete — users can't pin to it, can't roll
+  back from it.
+- ❌ Moving or deleting a published tag. Tags are the rollback
+  contract; rewriting them breaks every user who pinned to them.
+- ❌ Installer logic that relies on main alone. The installer MUST
+  support `BRAINSTEM_VERSION` and MUST fall back gracefully if a tag
+  doesn't exist (with a clear warning).
+- ❌ Silent behavior changes between tags. If a release changes what
+  a prior release did — agent contract, route surface, response
+  envelope — that's a VERSION bump, not a patch.
+
+Patch bump (`0.9.5` → `0.9.6`) for fixes. Minor bump (`0.9.6` →
+`0.10.0`) for new features or breaking agent changes. Major bump for
+SPEC-breaking changes — which should basically never happen (see
+Article III.3: the agent contract is sacred).
 
 ---
 
