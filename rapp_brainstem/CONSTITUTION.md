@@ -214,37 +214,54 @@ could this be a directory layout plus an agent? If yes, do that.
 
 ---
 
-## Article X — Tier Parity Is a `/chat` Contract
+## Article X — Tier Parity Is a `/chat` Contract, Not a Transport
 
 The brainstem-side of the agent portability guarantee (Article IV):
 **`rapp_brainstem/brainstem.py` and `rapp_swarm/function_app.py` must
-behave identically on `/chat`.** The difference between tiers is where
-state is mounted, not what the code does.
+behave identically on the `/chat` *contract*.** The surface a caller
+touches is the invariant; what sits below it can legitimately differ.
 
-> **Same `/chat` loop. Same prompt split. Same agent contract. Same
-> state layout. Different mount point for the state root.**
+> **Same `/chat` contract. Same prompt split. Same agent contract.
+> Same state layout. Transport differences below the contract are OK.**
 
-- Tier 1 mounts state on local disk (`~/.brainstem_data/` or
-  `BRAINSTEM_HOME`).
-- Tier 2 mounts state on Azure Files at `BRAINSTEM_HOME`.
-- Tier 3 wraps the same `/chat` behind Copilot Studio.
-- The tool-calling loop, provider dispatch, slot split, and agent
-  discovery are byte-for-byte the same code path — enforced by
-  vendoring from one source of truth, not by maintaining parallel
-  implementations.
+What must be identical across tiers:
+
+- Request envelope (`user_input`, `conversation_history`, `session_id`).
+- Response envelope (`response`, `voice_response`, `twin_response`,
+  `session_id`, `agent_logs`, `provider`, `model`).
+- Tool-calling loop shape — call LLM → execute tool calls → loop,
+  capped at a small number of rounds, with the same per-round logging.
+- `|||VOICE|||` / `|||TWIN|||` split (and the twin sub-tags).
+- Agent contract (`BasicAgent` + `perform()`, Article IV). Agents that
+  run on Tier 1 must run unmodified on Tier 2.
+- State layout (`.brainstem_data/` on Tier 1, `BRAINSTEM_HOME` on
+  Tier 2; same directory shape inside).
+
+What may legitimately differ:
+
+- **Mount point for state.** Local disk vs. Azure Files.
+- **LLM transport — by design.** Tier 1 stays Copilot-only with the
+  `gh` CLI auth chain — one auth, one provider, one training story,
+  zero-config install. Tier 2 is where the user picks an AI for their
+  cloud deployment (Azure OpenAI / OpenAI / Anthropic / whatever the
+  deploy target gives access to). Pushing to the RAPP cloud swarm is
+  the moment the user declares *which AI runs there*. That decision
+  lives on the cloud side because it's the cloud operator's
+  constraint, not the learner's.
 
 ### What this rules out
 
 - ❌ A Tier-2-only server stack that duplicates `brainstem.py`'s
-  responsibilities with drift. If Tier 2 needs a capability, the
-  capability lands in `brainstem.py` (or an agent) and Tier 2 vendors
-  it.
-- ❌ A Tier-1-only LLM provider path that Tier 2 has to re-implement.
-  Provider dispatch is shared.
+  responsibilities with drift. If Tier 2 needs a capability, it
+  lands in an agent or (for boot/loop/route concerns) in a shared
+  vendored module.
 - ❌ Routes that exist on one tier but not the other. `/chat` is the
   surface; both tiers expose it and route identically.
-- ❌ "It works in Tier 1, we'll figure out Tier 2 later." Tier parity
-  is asserted per-PR, not deferred.
+- ❌ Adding an LLM provider to Tier 1 that breaks the one-liner
+  install. Default posture: don't — provider choice belongs on the
+  cloud-deploy side where it already lives.
+- ❌ "It works in Tier 1, we'll figure out Tier 2 later." Contract
+  parity is asserted per-PR, not deferred.
 
 ---
 
