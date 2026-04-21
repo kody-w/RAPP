@@ -696,7 +696,7 @@ def load_agents():
         if filename in disabled:
             print(f"[brainstem] Agent skipped (disabled): {filename}")
             continue
-        if swarm_filter is not None and filename not in swarm_filter and filename != "brainstem_admin_agent.py":
+        if swarm_filter is not None and filename not in swarm_filter:
             continue
         loaded = _load_agent_from_file(filepath)
         for name, instance in loaded.items():
