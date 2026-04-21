@@ -2392,14 +2392,17 @@ def health():
     # Never do token exchange here; that happens lazily on first /chat call.
     github_token = get_github_token()
 
-    # Check if we have a cached (valid) Copilot session (memory or disk)
-    copilot_ok = False
-    if _copilot_token_cache["token"] and time.time() < _copilot_token_cache["expires_at"] - 60:
-        copilot_ok = True
-    else:
-        disk_cache = _load_copilot_cache()
-        if disk_cache:
-            copilot_ok = True
+    # Connection status from the user's POV: if we have a GitHub token,
+    # we're effectively connected — `/chat` does the Copilot token
+    # exchange lazily and the user's first turn will Just Work. The
+    # finer-grained "is the ephemeral Copilot session cached" is
+    # back-end detail the UI shouldn't surface as "connecting..." when
+    # chat is actually working. (Symptom: UI said "connecting..."
+    # indefinitely even though chat round-trips succeeded.)
+    copilot_ok = bool(github_token) or (
+        _copilot_token_cache["token"] and
+        time.time() < _copilot_token_cache["expires_at"] - 60
+    )
 
     if github_token:
         return jsonify({
