@@ -37,16 +37,16 @@ done
 # Package marker for the vendor directory itself.
 [ -f "$DEST/__init__.py" ] || touch "$DEST/__init__.py"
 
-# Starter + swarm-management agents — shipped with the engine so Tier 2
-# has the same default agent surface as Tier 1 on first boot. Users'
-# own agents land in BRAINSTEM_HOME/agents/ and take precedence.
-if [ -d "$ROOT/rapp_brainstem/agents" ]; then
-    for src in "$ROOT/rapp_brainstem/agents"/*.py; do
-        [ -f "$src" ] || continue
-        cp "$src" "$DEST/agents/"
-    done
-    echo "  ✓ agents/*.py ($(ls "$DEST/agents/" | wc -l | tr -d ' ') files)"
-fi
+# Agent tree — per CONSTITUTION Article XVII / XII, agents/ is a
+# user-organized tree. Vendor it recursively, mirroring Tier 1's shape,
+# but skip the two subdirs that never auto-load in either tier:
+# experimental_agents/ and disabled_agents/. __pycache__ is also skipped.
+rsync -a \
+    --exclude='__pycache__' \
+    --exclude='experimental_agents' \
+    --exclude='disabled_agents' \
+    "$ROOT/rapp_brainstem/agents/" "$DEST/agents/"
+echo "  ✓ agents/ tree ($(find "$DEST/agents" -name '*_agent.py' | wc -l | tr -d ' ') agent files)"
 
 echo "▶ Done. Function App is ready to publish."
 echo "    cd rapp_swarm && func azure functionapp publish <APP_NAME> --build remote"

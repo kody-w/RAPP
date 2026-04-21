@@ -113,13 +113,22 @@ _SOUL_FILE  = _BRAINSTEM_HOME / "soul.md"
 
 MAX_TOOL_ROUNDS = 4
 
+# Per CONSTITUTION Article XVII / XII — agents/ is a user-organized
+# tree; these subdir names are the ONLY excluded branches on discovery.
+_AGENTS_EXCLUDED_SUBDIRS = frozenset({
+    "experimental_agents",   # in-flight, hand-load only
+    "disabled_agents",       # turned off
+    "__pycache__",
+})
 
-# ── Agent discovery (mirrors brainstem.py's glob pattern) ──────────────
+
+# ── Agent discovery (mirrors brainstem.py's recursive walk) ────────────
 
 def _load_agents() -> dict:
-    """Discover every `*_agent.py` under AGENTS_DIR, instantiate each
-    BasicAgent subclass, return {name: instance}. Reloaded per request so
-    file edits take effect without a restart (parity with Tier 1).
+    """Discover every `*_agent.py` under AGENTS_DIR recursively (matching
+    brainstem.py). Skips the two reserved subtrees (experimental_agents/,
+    disabled_agents/). Reloaded per request so file edits take effect
+    without a restart (parity with Tier 1).
     """
     # Lazy-import BasicAgent from the shim so the class identity matches
     # what the agent files themselves extend.
@@ -134,9 +143,16 @@ def _load_agents() -> dict:
     if not _AGENTS_DIR.is_dir():
         return agents
 
-    for py_file in sorted(_AGENTS_DIR.glob("*_agent.py")):
-        if py_file.name == "basic_agent.py":
-            continue
+    def _discoverable():
+        for py_file in sorted(_AGENTS_DIR.rglob("*_agent.py")):
+            if py_file.name == "basic_agent.py":
+                continue
+            rel_parts = py_file.relative_to(_AGENTS_DIR).parts
+            if any(part in _AGENTS_EXCLUDED_SUBDIRS for part in rel_parts[:-1]):
+                continue
+            yield py_file
+
+    for py_file in _discoverable():
         mod_name = f"_tier2_{py_file.stem}"
         spec = importlib.util.spec_from_file_location(mod_name, py_file)
         if spec is None or spec.loader is None:

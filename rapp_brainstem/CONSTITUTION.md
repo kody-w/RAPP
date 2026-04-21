@@ -344,7 +344,70 @@ indefinitely without ever obscuring the learning path.
 
 ---
 
-## Article XII — Amendments
+## Article XII — `agents/` Is a User-Organized Tree
+
+`agents/` is a **recursive tree** the user organizes. Drop an
+`*_agent.py` file anywhere under it and the brainstem finds it. Make
+subdirectories to group your own agents — the engine doesn't care
+about the folder names. Users organizing a `sales_stack/`, a
+`personal_twin/`, or a `project_x_swarm/` need nothing from the engine
+but a folder.
+
+> **`agents/` is a user-organized tree. `load_agents()` walks it
+> recursively. Two subdir names are reserved by the engine:
+> `experimental_agents/` and `disabled_agents/` never auto-load.
+> Everything else does.**
+
+### Starter set at the top level of `agents/`
+
+- `basic_agent.py` — base class.
+- `hacker_news_agent.py`, `learn_new_agent.py`,
+  `save_memory_agent.py`, `recall_memory_agent.py` — curriculum.
+
+A new user opens `agents/` and sees exactly these five — the shape of
+what a RAPP agent is. Don't dump more at the top level; use a subdir.
+
+### Engine-provided subdirectories (convention, not magic)
+
+- `agents/system_agents/` — engine infrastructure (swarm factory +
+  swarm-management agents today). Auto-loads because it's under
+  `agents/`.
+- `agents/experimental_agents/` — never auto-loads. Hand-load to
+  test in-flight work.
+- `agents/disabled_agents/` — never auto-loads. Move a file here to
+  turn it off.
+
+### User-organized subdirectories (the whole point)
+
+Anything else under `agents/` auto-loads: `agents/my_stack/`,
+`agents/personal_twin/`, `agents/project_x/`, even nested like
+`agents/ceo/roles/`. No registration, no config — drop a folder in,
+`*_agent.py` files inside it load.
+
+### What this rules out
+
+- ❌ Dumping more than the five starter files at the top level of
+  `agents/`. Infrastructure goes in `system_agents/`; user groupings
+  go in user-named subdirs.
+- ❌ A registry file listing which agents to load. Discovery is
+  filesystem-only.
+- ❌ `from agents.system_agents.X import …` in tests — load by file
+  path via `importlib`. The `agents.*` module namespace is for the
+  shimmed `basic_agent` import only.
+
+### Discovery
+
+- `load_agents()` walks `agents/` recursively via `rglob("*_agent.py")`
+  and skips paths containing `experimental_agents/`, `disabled_agents/`,
+  or `__pycache__/`.
+- Agents import `from agents.basic_agent import BasicAgent` from any
+  depth via the shim.
+- `rapp_swarm/build.sh` recursively vendors the `agents/` tree with
+  the same exclusions — Tier 2 mirrors Tier 1's user-organized shape.
+
+---
+
+## Article XIII — Amendments
 
 This constitution can be amended. The only rule: the change must serve
 the platform's purpose as a business-focused AI agent engine. If it

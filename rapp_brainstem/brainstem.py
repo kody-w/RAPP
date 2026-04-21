@@ -37,6 +37,14 @@ CORS(app)
 
 SOUL_PATH   = os.getenv("SOUL_PATH",   os.path.join(os.path.dirname(__file__), "soul.md"))
 AGENTS_PATH = os.getenv("AGENTS_PATH", os.path.join(os.path.dirname(__file__), "agents"))
+
+# Per CONSTITUTION Article XVII / XII — agents/ is a user-organized tree.
+# load_agents() recurses. These subdir names are the ONLY excluded branches.
+_AGENTS_EXCLUDED_SUBDIRS = frozenset({
+    "experimental_agents",   # in-flight, hand-load only
+    "disabled_agents",       # turned off
+    "__pycache__",
+})
 MODEL       = os.getenv("GITHUB_MODEL", "gpt-4o")
 PORT        = int(os.getenv("PORT", 7071))
 VOICE_MODE  = os.getenv("VOICE_MODE", "false").lower() == "true"
@@ -677,9 +685,27 @@ def _write_disabled(disabled: set):
         json.dump(sorted(disabled), f)
 
 def load_agents():
+    """Auto-discover agents by recursively walking AGENTS_PATH.
+
+    Per Article XVII / XII, agents/ is a user-organized tree. Users
+    create subdirs (agents/my_sales_stack/, agents/personal_twin/, …)
+    to group their own agents; the engine provides agents/system_agents/
+    for infrastructure. All of them auto-load.
+
+    The ONLY carve-outs are agents/experimental_agents/ (hand-load
+    only) and agents/disabled_agents/ (turned off by file move). Those
+    subtrees are skipped entirely, along with __pycache__.
+    """
+    from pathlib import Path
     agents = {}
-    pattern = os.path.join(AGENTS_PATH, "*_agent.py")
-    files = glob.glob(pattern)
+    root = Path(AGENTS_PATH)
+    files = []
+    if root.is_dir():
+        for p in root.rglob("*_agent.py"):
+            rel_parts = p.relative_to(root).parts
+            if any(part in _AGENTS_EXCLUDED_SUBDIRS for part in rel_parts[:-1]):
+                continue
+            files.append(str(p))
     disabled = _read_disabled()
 
     active_swarms = _get_active_swarms()

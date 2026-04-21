@@ -30,6 +30,30 @@ from pathlib import Path
 os.environ["BRAINSTEM_SWARMS_PATH"] = "$TEST_HOME/swarms"
 sys.path.insert(0, "rapp_brainstem")
 
+# Register the agents.basic_agent shim so system agents' imports resolve.
+# This mirrors what brainstem.py's _register_shims does at boot.
+import types, importlib.util
+sys.path.insert(0, "rapp_brainstem/agents")
+from basic_agent import BasicAgent as _BA  # type: ignore
+if "agents" not in sys.modules:
+    _m = types.ModuleType("agents"); _m.__path__ = ["rapp_brainstem/agents"]
+    sys.modules["agents"] = _m
+if "agents.basic_agent" not in sys.modules:
+    _ba = types.ModuleType("agents.basic_agent"); _ba.BasicAgent = _BA
+    sys.modules["agents.basic_agent"] = _ba
+    sys.modules["agents"].basic_agent = _ba
+
+# System agents now live in rapp_brainstem/agents/system_agents/ per
+# CONSTITUTION Article XVII. Load them by file path.
+def _load_system(name):
+    spec = importlib.util.spec_from_file_location(
+        f"_test_{name}",
+        f"rapp_brainstem/agents/system_agents/{name}.py",
+    )
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
 PASS = 0
 FAIL = 0
 FAIL_NAMES = []
@@ -56,14 +80,14 @@ def truthy(name, cond, note=""):
         FAIL += 1
         FAIL_NAMES.append(name)
 
-# Import each agent module fresh
-from agents.swarm_deploy_agent    import SwarmDeployAgent
-from agents.swarm_list_agent      import SwarmListAgent
-from agents.swarm_info_agent      import SwarmInfoAgent
-from agents.swarm_invoke_agent    import SwarmInvokeAgent
-from agents.swarm_seal_agent      import SwarmSealAgent
-from agents.swarm_snapshot_agent  import SwarmSnapshotAgent
-from agents.swarm_delete_agent    import SwarmDeleteAgent
+# Load each system agent from system_agents/ by file path.
+SwarmDeployAgent   = _load_system("swarm_deploy_agent").SwarmDeployAgent
+SwarmListAgent     = _load_system("swarm_list_agent").SwarmListAgent
+SwarmInfoAgent     = _load_system("swarm_info_agent").SwarmInfoAgent
+SwarmInvokeAgent   = _load_system("swarm_invoke_agent").SwarmInvokeAgent
+SwarmSealAgent     = _load_system("swarm_seal_agent").SwarmSealAgent
+SwarmSnapshotAgent = _load_system("swarm_snapshot_agent").SwarmSnapshotAgent
+SwarmDeleteAgent   = _load_system("swarm_delete_agent").SwarmDeleteAgent
 
 deploy   = SwarmDeployAgent()
 lst      = SwarmListAgent()

@@ -643,7 +643,89 @@ path.
 
 ---
 
-## Article XVII — Amendments
+## Article XVII — `agents/` Is a User-Organized Tree
+
+`rapp_brainstem/agents/` is a **recursive tree** that the user
+organizes. Drop an `*_agent.py` file anywhere under it and the
+brainstem finds it. Make any subdirectory you want to group related
+agents — the engine doesn't care about the folder names. This is the
+whole point: a user organizing their `sales_stack/`, their
+`personal_twin/`, or their `project_x_swarm/` needs nothing from the
+engine but a folder.
+
+> **`agents/` is the user-organized tree. `load_agents()` walks it
+> recursively. Two subdir names are reserved by the engine:
+> `experimental_agents/` and `disabled_agents/` never auto-load.
+> Everything else does.**
+
+### What's at the top level of `agents/` by default (the starter set)
+
+- `basic_agent.py` — the base class every agent extends.
+- `hacker_news_agent.py` — HTTP call example.
+- `learn_new_agent.py` — agent that writes agents.
+- `save_memory_agent.py` + `recall_memory_agent.py` — the memory pair.
+
+These five files are the teaching curriculum. A new user opening
+`agents/` sees exactly this and understands what a RAPP agent is. Do
+not dump more files at the top level — put infrastructure in
+`system_agents/`, put groupings in a named subdir.
+
+### Engine-provided subdirectories (conventions, not magic)
+
+- **`agents/system_agents/`** — engine infrastructure. Auto-loads
+  because it lives under `agents/`. Contains today: `swarm_factory`
+  + seven swarm-management agents (deploy/list/info/invoke/seal/
+  snapshot/delete). Future brainstem-admin and introspection agents
+  go here.
+- **`agents/experimental_agents/`** — never auto-loads. In-flight
+  work the user hand-loads when testing. Keeps `agents/` clean of
+  half-finished files.
+- **`agents/disabled_agents/`** — never auto-loads. Move an agent
+  file here to turn it off without deleting. The filesystem itself
+  records "off."
+
+### User-organized subdirectories (the whole point)
+
+Anything else the user creates under `agents/` auto-loads. Examples:
+
+- `agents/sales_stack/` — a user's sales-focused bundle.
+- `agents/personal_twin/` — their personal-assistant agents.
+- `agents/project_x_swarm/` — agents grouped by project.
+- `agents/ceo_twin/roles/` — even nested subdirs work.
+
+No registration, no config, no env var. Drop a folder in, put
+`*_agent.py` files inside, they load. That's the contract.
+
+### What this rules out
+
+- ❌ A registration file (`agents.json`, `registry.yaml`) listing
+  which agents to load. Discovery is filesystem-only.
+- ❌ Engine-imposed subdir categories beyond the three named reserved
+  ones. The user owns the naming inside `agents/`.
+- ❌ Importing `from agents.system_agents.swarm_deploy_agent import ...`
+  in tests. Tests load nested-subdir agents by file path via
+  `importlib`; the `agents.*` module namespace is for the base
+  class shim only.
+- ❌ Dumping more than the five starter files at the top level of
+  `agents/`. The top level is the curriculum — infrastructure goes
+  in `system_agents/`, user organization goes in user-named subdirs.
+
+### Discovery rules
+
+- `brainstem.py` `load_agents()` walks `agents/` recursively via
+  `rglob("*_agent.py")`. Skips any path that contains
+  `experimental_agents/`, `disabled_agents/`, or `__pycache__/` as
+  an intermediate directory.
+- The shim `sys.modules["agents.basic_agent"]` makes
+  `from agents.basic_agent import BasicAgent` resolve from any
+  agent file at any depth.
+- `rapp_swarm/build.sh` vendors the `agents/` tree recursively with
+  the same exclusions, so Tier 2 mirrors Tier 1's user-organized
+  shape exactly.
+
+---
+
+## Article XVIII — Amendments
 
 This constitution can be amended. The only rule: amendments must preserve
 Article I — **the brainstem stays light**. Any change that loads
