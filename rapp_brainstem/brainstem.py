@@ -35,8 +35,8 @@ CORS(app)
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-SOUL_PATH   = os.getenv("SOUL_PATH",   os.path.join(os.path.dirname(__file__), "soul.md"))
-AGENTS_PATH = os.getenv("AGENTS_PATH", os.path.join(os.path.dirname(__file__), "agents"))
+SOUL_PATH   = os.path.abspath(os.getenv("SOUL_PATH",   os.path.join(os.path.dirname(__file__), "soul.md")))
+AGENTS_PATH = os.path.abspath(os.getenv("AGENTS_PATH", os.path.join(os.path.dirname(__file__), "agents")))
 
 # Per CONSTITUTION Article XVII / XII — agents/ is a user-organized tree.
 # load_agents() recurses. These subdir names are the ONLY excluded branches.
@@ -725,6 +725,288 @@ def _read_disabled() -> set:
 def _write_disabled(disabled: set):
     with open(_DISABLED_FILE, "w") as f:
         json.dump(sorted(disabled), f)
+
+
+# ── Agent manager helpers (Article XVIII — UI is a view onto agents/) ────
+# These back the management UI at /manage. Every path is validated to be
+# inside AGENTS_PATH before any filesystem op runs.
+
+_AGENT_MGR_RESERVED_DIR_NAMES = {"system_agents", "experimental_agents", "disabled_agents"}
+
+
+def _safe_agents_path(rel: str, must_exist: bool = False) -> str:
+    """Resolve `rel` relative to AGENTS_PATH and reject anything outside.
+    Returns the absolute path. Raises ValueError on path-traversal,
+    null-bytes, absolute inputs, or symlink escape.
+    """
+    from pathlib import Path
+    if rel is None:
+        rel = ""
+    rel = str(rel).strip().lstrip("/")
+    if "\x00" in rel or ".." in Path(rel).parts:
+        raise ValueError(f"invalid path: {rel!r}")
+    root = Path(AGENTS_PATH).resolve()
+    target = (root / rel).resolve() if rel else root
+    try:
+        target.relative_to(root)
+    except ValueError:
+        raise ValueError(f"path escapes agents/: {rel!r}")
+    if must_exist and not target.exists():
+        raise FileNotFoundError(f"not found: {rel}")
+    return str(target)
+
+
+def _agents_tree_json() -> dict:
+    """Build a nested tree JSON of AGENTS_PATH. Reserved dirs get flagged
+    so the UI can render them distinctly."""
+    from pathlib import Path
+    root = Path(AGENTS_PATH)
+    if not root.is_dir():
+        return {"name": "agents", "kind": "folder", "children": [], "path": ""}
+    disabled = _read_disabled()
+
+    def walk(path: Path, rel_parts=()):
+        if path.name == "__pycache__":
+            return None
+        node = {
+            "name": path.name,
+            "path": "/".join(rel_parts) if rel_parts else "",
+            "kind": "folder" if path.is_dir() else "agent",
+        }
+        if path.is_dir():
+            # Flag reserved dirs inside agents/ root
+            if len(rel_parts) == 1 and path.name in _AGENT_MGR_RESERVED_DIR_NAMES:
+                node["reserved"] = path.name  # "system_agents" | "experimental_agents" | "disabled_agents"
+            children = []
+            for child in sorted(path.iterdir(), key=lambda p: (p.is_file(), p.name)):
+                sub = walk(child, rel_parts + (child.name,))
+                if sub is not None:
+                    children.append(sub)
+            node["children"] = children
+        else:
+            # Agent file — work out status + metadata
+            name_lower = path.name.lower()
+            if not name_lower.endswith("_agent.py"):
+                node["kind"] = "other"  # supporting file, shown greyed
+            in_experimental = "experimental_agents" in rel_parts
+            in_disabled     = "disabled_agents"     in rel_parts
+            in_system       = "system_agents"       in rel_parts
+            if in_disabled or path.name in disabled:
+                node["status"] = "disabled"
+            elif in_experimental:
+                node["status"] = "experimental"
+            else:
+                node["status"] = "active"
+            if in_system:
+                node["system"] = True
+            node["bytes"] = path.stat().st_size
+        return node
+
+    tree = walk(root)
+    tree["name"] = "agents"
+    return tree
+
+
+# ── Starter templates shipped with the engine ─────────────────────────
+# Minimal, functional, educational. Each template instantiates as a
+# single *_agent.py file with a placeholder for the user's name.
+
+_AGENT_TEMPLATES = [
+    {
+        "id": "echo",
+        "name": "Echo",
+        "description": "Echoes whatever you tell it. Great first agent to learn the shape.",
+        "icon": "🔁",
+        "class_name": "EchoAgent",
+        "default_name": "Echo",
+        "source": '''"""{class_name} — echo back the user's input."""
+from agents.basic_agent import BasicAgent
+import json
+
+class {class_name}(BasicAgent):
+    def __init__(self):
+        self.name = "{agent_name}"
+        self.metadata = {{
+            "name": self.name,
+            "description": "Echoes the msg argument back to the user.",
+            "parameters": {{
+                "type": "object",
+                "properties": {{"msg": {{"type": "string"}}}},
+                "required": ["msg"],
+            }},
+        }}
+        super().__init__(name=self.name, metadata=self.metadata)
+
+    def perform(self, **kwargs):
+        msg = kwargs.get("msg", "")
+        return json.dumps({{"status": "success", "echoed": msg}})
+''',
+    },
+    {
+        "id": "http_get",
+        "name": "HTTP Get",
+        "description": "Fetches a URL and returns the body. Show the LLM you can read the web.",
+        "icon": "🌐",
+        "class_name": "HttpGetAgent",
+        "default_name": "HttpGet",
+        "source": '''"""{class_name} — fetch a URL and return its body."""
+from agents.basic_agent import BasicAgent
+import json
+import urllib.request
+
+class {class_name}(BasicAgent):
+    def __init__(self):
+        self.name = "{agent_name}"
+        self.metadata = {{
+            "name": self.name,
+            "description": "Fetches a URL and returns the response body (truncated to 4KB).",
+            "parameters": {{
+                "type": "object",
+                "properties": {{"url": {{"type": "string", "description": "URL to fetch"}}}},
+                "required": ["url"],
+            }},
+        }}
+        super().__init__(name=self.name, metadata=self.metadata)
+
+    def perform(self, **kwargs):
+        url = kwargs.get("url", "")
+        if not url:
+            return json.dumps({{"status": "error", "message": "url required"}})
+        try:
+            with urllib.request.urlopen(url, timeout=15) as resp:
+                body = resp.read(4096).decode("utf-8", errors="replace")
+            return json.dumps({{"status": "success", "url": url, "body": body}})
+        except Exception as e:
+            return json.dumps({{"status": "error", "message": str(e)}})
+''',
+    },
+    {
+        "id": "note_taker",
+        "name": "Note Taker",
+        "description": "Saves free-form notes to a file. A thin memory wrapper for learners.",
+        "icon": "📝",
+        "class_name": "NoteTakerAgent",
+        "default_name": "NoteTaker",
+        "source": '''"""{class_name} — save free-form notes to the user's workspace."""
+from agents.basic_agent import BasicAgent
+import json
+import os
+from datetime import datetime
+
+class {class_name}(BasicAgent):
+    def __init__(self):
+        self.name = "{agent_name}"
+        self.metadata = {{
+            "name": self.name,
+            "description": "Saves a note to ~/.brainstem/notes.jsonl with a timestamp.",
+            "parameters": {{
+                "type": "object",
+                "properties": {{"note": {{"type": "string"}}}},
+                "required": ["note"],
+            }},
+        }}
+        super().__init__(name=self.name, metadata=self.metadata)
+
+    def perform(self, **kwargs):
+        note = (kwargs.get("note") or "").strip()
+        if not note:
+            return json.dumps({{"status": "error", "message": "empty note"}})
+        path = os.path.expanduser("~/.brainstem/notes.jsonl")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        entry = {{"when": datetime.utcnow().isoformat() + "Z", "note": note}}
+        with open(path, "a") as f:
+            f.write(json.dumps(entry) + "\\n")
+        return json.dumps({{"status": "success", "saved": entry}})
+''',
+    },
+    {
+        "id": "persona",
+        "name": "Persona Twin",
+        "description": "A voiced personality the LLM adopts inside a subject domain.",
+        "icon": "🎭",
+        "class_name": "PersonaAgent",
+        "default_name": "Persona",
+        "source": '''"""{class_name} — inject a persona description into the system prompt."""
+from agents.basic_agent import BasicAgent
+import json
+
+class {class_name}(BasicAgent):
+    PERSONA = "You are a thoughtful advisor. Speak with warmth and directness."
+
+    def __init__(self):
+        self.name = "{agent_name}"
+        self.metadata = {{
+            "name": self.name,
+            "description": "Retrieves the persona prompt. Usually called implicitly via system_context.",
+            "parameters": {{"type": "object", "properties": {{}}, "required": []}},
+        }}
+        super().__init__(name=self.name, metadata=self.metadata)
+
+    def system_context(self):
+        return f"<persona>{{self.PERSONA}}</persona>"
+
+    def perform(self, **kwargs):
+        return json.dumps({{"status": "success", "persona": self.PERSONA}})
+''',
+    },
+    {
+        "id": "slack_notifier",
+        "name": "Slack Notifier",
+        "description": "Posts to a Slack webhook. Set SLACK_WEBHOOK_URL in .env.",
+        "icon": "💬",
+        "class_name": "SlackNotifierAgent",
+        "default_name": "SlackNotify",
+        "source": '''"""{class_name} — post a message to a Slack webhook."""
+from agents.basic_agent import BasicAgent
+import json
+import os
+import urllib.request
+
+class {class_name}(BasicAgent):
+    def __init__(self):
+        self.name = "{agent_name}"
+        self.metadata = {{
+            "name": self.name,
+            "description": "Posts a message to Slack via the SLACK_WEBHOOK_URL env var.",
+            "parameters": {{
+                "type": "object",
+                "properties": {{"text": {{"type": "string"}}}},
+                "required": ["text"],
+            }},
+        }}
+        super().__init__(name=self.name, metadata=self.metadata)
+
+    def perform(self, **kwargs):
+        text = (kwargs.get("text") or "").strip()
+        url = os.environ.get("SLACK_WEBHOOK_URL", "").strip()
+        if not url:
+            return json.dumps({{"status": "error", "message": "SLACK_WEBHOOK_URL not set"}})
+        if not text:
+            return json.dumps({{"status": "error", "message": "text required"}})
+        req = urllib.request.Request(
+            url,
+            data=json.dumps({{"text": text}}).encode("utf-8"),
+            headers={{"Content-Type": "application/json"}},
+            method="POST",
+        )
+        try:
+            urllib.request.urlopen(req, timeout=10)
+            return json.dumps({{"status": "success", "posted": text}})
+        except Exception as e:
+            return json.dumps({{"status": "error", "message": str(e)}})
+''',
+    },
+]
+
+
+def _render_template(tpl: dict, agent_name: str) -> str:
+    """Fill the template's Python source with the user-chosen name.
+    Class name stays as tpl['class_name']; self.name = agent_name."""
+    import re
+    class_name = re.sub(r"[^A-Za-z0-9]", "", agent_name) or tpl["class_name"]
+    if not class_name.endswith("Agent"):
+        class_name = class_name + "Agent"
+    return tpl["source"].format(class_name=class_name, agent_name=agent_name)
 
 def load_agents():
     """Auto-discover agents by recursively walking AGENTS_PATH.
@@ -1592,6 +1874,303 @@ def agents_import():
         return jsonify({"error": f"Uploaded but failed to load: {e}"}), 500
         
     return jsonify({"status": "ok", "message": f"Agent {safe_name} imported successfully."})
+
+
+# ── Agent Manager UI backend (Article XVIII) ────────────────────────────
+# /manage serves the non-technical management UI. These routes are the
+# 1:1 filesystem API it calls. Every write op = a filesystem op on
+# agents/; no UI-only state.
+
+@app.route("/manage", methods=["GET"])
+def manage_ui():
+    """Serve web/manage.html — the agent-manager UI."""
+    page = os.path.join(_BRAINSTEM_DIR, "web", "manage.html")
+    if not os.path.isfile(page):
+        return jsonify({"error": "manage.html not built"}), 404
+    from flask import send_file
+    return send_file(page, mimetype="text/html")
+
+
+@app.route("/api/agents/tree", methods=["GET"])
+def api_agents_tree():
+    """Return the full nested agents/ tree as JSON. The UI's source of truth."""
+    return jsonify(_agents_tree_json())
+
+
+@app.route("/api/agents/mkdir", methods=["POST"])
+def api_agents_mkdir():
+    """Body {path: 'sales_stack/q4'} — creates the folder under agents/."""
+    body = request.get_json(force=True) or {}
+    rel  = (body.get("path") or "").strip()
+    if not rel:
+        return jsonify({"error": "path required"}), 400
+    try:
+        target = _safe_agents_path(rel)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    try:
+        os.makedirs(target, exist_ok=True)
+        return jsonify({"status": "ok", "path": rel})
+    except OSError as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/agents/move", methods=["POST"])
+def api_agents_move():
+    """Body {from_path, to_path}. Used for: rename, drag-drop between
+    folders, enable/disable (by moving in/out of disabled_agents)."""
+    import shutil
+    body = request.get_json(force=True) or {}
+    src = (body.get("from_path") or body.get("from") or "").strip()
+    dst = (body.get("to_path")   or body.get("to")   or "").strip()
+    if not src or not dst:
+        return jsonify({"error": "from_path and to_path required"}), 400
+    try:
+        src_abs = _safe_agents_path(src, must_exist=True)
+        dst_abs = _safe_agents_path(dst)
+    except (ValueError, FileNotFoundError) as e:
+        return jsonify({"error": str(e)}), 400
+    if src_abs == dst_abs:
+        return jsonify({"status": "ok", "from": src, "to": dst, "noop": True})
+    if os.path.exists(dst_abs):
+        return jsonify({"error": f"destination exists: {dst}"}), 409
+    os.makedirs(os.path.dirname(dst_abs), exist_ok=True)
+    try:
+        shutil.move(src_abs, dst_abs)
+        return jsonify({"status": "ok", "from": src, "to": dst})
+    except OSError as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/agents/new", methods=["POST"])
+def api_agents_new():
+    """Body {folder, agent_name, template_id} — create a new agent
+    file from a template in the named folder (folder is a path under
+    agents/). agent_name is the self.name for the instance."""
+    body = request.get_json(force=True) or {}
+    folder = (body.get("folder") or "").strip()
+    name   = (body.get("agent_name") or "").strip()
+    tpl_id = (body.get("template_id") or "echo").strip()
+    if not name:
+        return jsonify({"error": "agent_name required"}), 400
+
+    tpl = next((t for t in _AGENT_TEMPLATES if t["id"] == tpl_id), None)
+    if tpl is None:
+        return jsonify({"error": f"unknown template: {tpl_id}"}), 400
+
+    try:
+        folder_abs = _safe_agents_path(folder)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    os.makedirs(folder_abs, exist_ok=True)
+
+    # Filename from agent_name: snake_case + _agent.py
+    import re
+    slug = re.sub(r"[^A-Za-z0-9]+", "_", name).strip("_").lower() or tpl["id"]
+    filename = slug + "_agent.py"
+    target = os.path.join(folder_abs, filename)
+    if os.path.exists(target):
+        return jsonify({"error": f"agent already exists: {filename}"}), 409
+
+    source = _render_template(tpl, name)
+    with open(target, "w") as f:
+        f.write(source)
+
+    rel = os.path.relpath(target, AGENTS_PATH)
+    return jsonify({
+        "status": "ok",
+        "path": rel.replace(os.sep, "/"),
+        "filename": filename,
+        "agent_name": name,
+    })
+
+
+@app.route("/api/agents/delete", methods=["POST"])
+def api_agents_delete():
+    """Body {path} — remove a file or (empty) folder under agents/.
+    Refuses to delete the three reserved top-level subdirs themselves."""
+    import shutil
+    body = request.get_json(force=True) or {}
+    rel  = (body.get("path") or "").strip()
+    if not rel:
+        return jsonify({"error": "path required"}), 400
+    # Never allow deleting a reserved subdir itself
+    if rel.strip("/") in _AGENT_MGR_RESERVED_DIR_NAMES:
+        return jsonify({"error": f"cannot delete reserved dir: {rel}"}), 403
+    try:
+        target = _safe_agents_path(rel, must_exist=True)
+    except (ValueError, FileNotFoundError) as e:
+        return jsonify({"error": str(e)}), 400
+    try:
+        if os.path.isdir(target):
+            shutil.rmtree(target)
+        else:
+            os.remove(target)
+        return jsonify({"status": "ok", "deleted": rel})
+    except OSError as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/agents/templates", methods=["GET"])
+def api_agents_templates():
+    """List the starter templates the UI offers."""
+    return jsonify({
+        "templates": [
+            {k: t[k] for k in ("id", "name", "description", "icon", "default_name")}
+            for t in _AGENT_TEMPLATES
+        ]
+    })
+
+
+@app.route("/api/agents/open-in-vscode", methods=["POST"])
+def api_open_in_vscode():
+    """Power-user escape hatch: launch `code <path>` on the user's
+    machine. Localhost-only; refuses from non-loopback requesters."""
+    remote = (request.remote_addr or "").strip()
+    if remote not in ("127.0.0.1", "::1", "localhost"):
+        return jsonify({"error": "localhost-only"}), 403
+    body = request.get_json(silent=True) or {}
+    rel  = (body.get("path") or "").strip()
+    try:
+        target = _safe_agents_path(rel) if rel else AGENTS_PATH
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    try:
+        subprocess.Popen(["code", target], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return jsonify({"status": "ok", "opened": rel or "agents/"})
+    except FileNotFoundError:
+        return jsonify({"error": "`code` CLI not found — install VS Code shell command first"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ── Config (persona + env) routes ─────────────────────────────────────
+# The UI's "Persona" and "Settings" tabs edit these. Everything is
+# read-modified-written as whole files; no partial state.
+
+_CONFIG_ENV_ALLOWED = {
+    "GITHUB_MODEL", "PORT", "VOICE_MODE", "TWIN_MODE",
+    "SOUL_PATH", "AGENTS_PATH",
+    "AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_DEPLOYMENT",
+    "OPENAI_MODEL", "ANTHROPIC_MODEL",
+    "SLACK_WEBHOOK_URL",
+}
+# Secrets never round-trip through the UI — we show "set" / "unset".
+_CONFIG_ENV_SECRETS = {
+    "GITHUB_TOKEN", "AZURE_OPENAI_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY",
+}
+_ENV_FILE = os.path.join(_BRAINSTEM_DIR, ".env")
+
+
+def _parse_env_file(path: str) -> dict:
+    out: dict = {}
+    if not os.path.isfile(path):
+        return out
+    try:
+        with open(path) as f:
+            for line in f:
+                s = line.strip()
+                if not s or s.startswith("#") or "=" not in s:
+                    continue
+                k, v = s.split("=", 1)
+                k = k.strip()
+                v = v.strip()
+                if v and v[0] in ('"', "'") and v[-1] == v[0]:
+                    v = v[1:-1]
+                out[k] = v
+    except OSError:
+        pass
+    return out
+
+
+def _write_env_file(path: str, values: dict) -> None:
+    """Merge `values` into .env preserving comments + unknown keys."""
+    existing_keys = []
+    existing_values = {}
+    lines_out = []
+    if os.path.isfile(path):
+        with open(path) as f:
+            for line in f:
+                s = line.strip()
+                if not s or s.startswith("#") or "=" not in s:
+                    lines_out.append(line.rstrip("\n"))
+                    continue
+                k, v = s.split("=", 1)
+                k = k.strip()
+                existing_keys.append(k)
+                existing_values[k] = v
+                if k in values:
+                    new_v = values[k]
+                    lines_out.append(f"{k}={new_v}")
+                else:
+                    lines_out.append(line.rstrip("\n"))
+    # Append new keys that weren't already in the file
+    for k, v in values.items():
+        if k not in existing_keys:
+            lines_out.append(f"{k}={v}")
+    with open(path, "w") as f:
+        f.write("\n".join(lines_out).rstrip() + "\n")
+
+
+@app.route("/api/config", methods=["GET"])
+def api_config_get():
+    """Return the user's config surface: persona (soul.md contents) +
+    whitelisted .env values + presence of secrets."""
+    soul_text = ""
+    if os.path.isfile(SOUL_PATH):
+        try:
+            soul_text = open(SOUL_PATH, "r", encoding="utf-8").read()
+        except OSError:
+            pass
+    env_on_disk = _parse_env_file(_ENV_FILE)
+    env_values = {
+        k: env_on_disk.get(k, os.environ.get(k, ""))
+        for k in _CONFIG_ENV_ALLOWED
+    }
+    secret_presence = {
+        k: bool(env_on_disk.get(k, os.environ.get(k, "")).strip())
+        for k in _CONFIG_ENV_SECRETS
+    }
+    return jsonify({
+        "soul":   soul_text,
+        "env":    env_values,
+        "secrets": secret_presence,
+        "allowed_env_keys": sorted(_CONFIG_ENV_ALLOWED),
+    })
+
+
+@app.route("/api/config/soul", methods=["POST"])
+def api_config_soul():
+    """Body {soul} — overwrite soul.md. No merge; user owns the file."""
+    body = request.get_json(force=True) or {}
+    soul = body.get("soul")
+    if not isinstance(soul, str):
+        return jsonify({"error": "soul must be a string"}), 400
+    os.makedirs(os.path.dirname(SOUL_PATH) or ".", exist_ok=True)
+    with open(SOUL_PATH, "w", encoding="utf-8") as f:
+        f.write(soul)
+    return jsonify({"status": "ok", "bytes": len(soul)})
+
+
+@app.route("/api/config/env", methods=["POST"])
+def api_config_env():
+    """Body {values: {KEY: value, …}} — update .env fields.
+    Only whitelisted keys accepted. Secrets set by presence only
+    (value "" means unset; non-empty means set)."""
+    body = request.get_json(force=True) or {}
+    values = body.get("values") or {}
+    if not isinstance(values, dict):
+        return jsonify({"error": "values must be an object"}), 400
+    accepted = {}
+    for k, v in values.items():
+        if k in _CONFIG_ENV_ALLOWED or k in _CONFIG_ENV_SECRETS:
+            accepted[k] = str(v) if v is not None else ""
+        # silently drop unknown keys — UI mustn't use them
+    if not accepted:
+        return jsonify({"error": "no accepted keys in body"}), 400
+    _write_env_file(_ENV_FILE, accepted)
+    return jsonify({"status": "ok", "updated": sorted(accepted.keys())})
+
 
 @app.route("/health", methods=["GET"])
 def health():

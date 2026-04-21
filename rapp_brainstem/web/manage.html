@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAPP Brainstem — Manage</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --panel-soft: #1e242d;
+    --border: #30363d;
+    --fg: #e6edf3;
+    --muted: #8b949e;
+    --accent: #58a6ff;
+    --good: #3fb950;
+    --warn: #d29922;
+    --bad:  #f85149;
+    --radius: 8px;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: 56px 1fr;
+  }
+  header {
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    gap: 16px;
+  }
+  header h1 { font-size: 15px; font-weight: 600; }
+  header .spacer { flex: 1; }
+  header a { color: var(--muted); text-decoration: none; font-size: 13px; }
+  header a:hover { color: var(--fg); }
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--panel-soft);
+    border-radius: var(--radius);
+    padding: 3px;
+  }
+  .tabs button {
+    background: transparent;
+    border: 0;
+    color: var(--muted);
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .tabs button.active {
+    background: var(--bg);
+    color: var(--fg);
+  }
+  main { padding: 24px; overflow: auto; max-width: 1100px; width: 100%; margin: 0 auto; }
+  .pane { display: none; }
+  .pane.active { display: block; }
+
+  /* ── Agents pane ──────────────────────────────────────────── */
+  .agents-toolbar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    align-items: center;
+  }
+  .agents-toolbar .spacer { flex: 1; }
+  .btn {
+    background: var(--panel-soft);
+    color: var(--fg);
+    border: 1px solid var(--border);
+    padding: 7px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .btn:hover { background: #242a33; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 500; }
+  .btn.primary:hover { filter: brightness(1.1); }
+  .btn.danger  { color: var(--bad); }
+
+  .tree {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px;
+    min-height: 300px;
+    user-select: none;
+  }
+  .node { padding: 4px 8px; border-radius: 4px; cursor: default; display: flex; align-items: center; gap: 8px; }
+  .node:hover { background: var(--panel-soft); }
+  .node.selected { background: rgba(88, 166, 255, 0.15); }
+  .node .icon { width: 18px; text-align: center; opacity: 0.9; }
+  .node .name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .node .badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    background: var(--panel-soft);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .node .badge.reserved { background: #2d3b55; color: var(--accent); border-color: var(--accent); }
+  .node .badge.system   { background: #2a3f2e; color: var(--good); border-color: var(--good); }
+  .node .badge.experimental { background: #3f3426; color: var(--warn); border-color: var(--warn); }
+  .node .badge.disabled { background: #402628; color: var(--bad);  border-color: var(--bad); }
+  .children { margin-left: 22px; border-left: 1px solid var(--border); padding-left: 8px; }
+  .node .toggle { font-family: monospace; color: var(--muted); min-width: 10px; text-align: center; }
+  .node.agent .icon { color: var(--fg); }
+  .node.folder .name { font-weight: 500; }
+  .node.drop-target { background: rgba(63, 185, 80, 0.2); outline: 1px dashed var(--good); }
+
+  /* ── Modal ──────────────────────────────────────────── */
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    min-width: 440px;
+    max-width: 640px;
+    max-height: 80vh;
+    overflow: auto;
+    padding: 24px;
+  }
+  .modal h2 { font-size: 16px; margin-bottom: 16px; }
+  .modal label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; margin-top: 12px; }
+  .modal input[type="text"], .modal textarea, .modal select {
+    width: 100%;
+    background: var(--bg);
+    color: var(--fg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-family: inherit;
+  }
+  .modal textarea { min-height: 200px; font-family: ui-monospace, "SF Mono", monospace; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+  .template-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 12px 0;
+  }
+  .template-card {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    cursor: pointer;
+  }
+  .template-card:hover { border-color: var(--accent); }
+  .template-card.selected { border-color: var(--accent); background: rgba(88,166,255,0.05); }
+  .template-card .icon { font-size: 24px; margin-bottom: 6px; }
+  .template-card .name { font-weight: 500; font-size: 13px; }
+  .template-card .desc { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+
+  /* ── Persona / Settings panes ──────────────────────────── */
+  .field-group { margin-bottom: 20px; }
+  .field-group h3 { font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--fg); }
+  .field-group p { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .field input, .field textarea {
+    width: 100%;
+    background: var(--panel);
+    color: var(--fg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-family: inherit;
+  }
+  .persona-textarea { min-height: 320px; font-family: ui-monospace, "SF Mono", monospace; white-space: pre; }
+  .secret-chip {
+    display: inline-block;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    margin-right: 6px;
+  }
+  .secret-chip.set { color: var(--good); border-color: var(--good); }
+  .secret-chip.unset { color: var(--muted); }
+
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.2s;
+    z-index: 200;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.good { border-color: var(--good); }
+  .toast.bad  { border-color: var(--bad); }
+  .muted { color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🧠 RAPP Brainstem</h1>
+  <div class="spacer"></div>
+  <div class="tabs">
+    <button data-tab="agents"  class="active">Agents</button>
+    <button data-tab="persona">Persona</button>
+    <button data-tab="settings">Settings</button>
+  </div>
+  <div class="spacer"></div>
+  <a href="/">← Chat</a>
+</header>
+
+<main>
+  <!-- Agents pane -->
+  <section id="pane-agents" class="pane active">
+    <div class="agents-toolbar">
+      <button class="btn primary" id="btn-new-agent">＋ New Agent</button>
+      <button class="btn" id="btn-new-folder">📁 New Folder</button>
+      <button class="btn" id="btn-refresh">↻ Refresh</button>
+      <div class="spacer"></div>
+      <button class="btn" id="btn-vscode" title="Opens the agents folder in VS Code">Open in VS Code</button>
+    </div>
+    <div class="tree" id="tree"></div>
+    <p class="muted" style="margin-top:12px">
+      Drag an agent between folders to move it. Drop one on <b>disabled_agents</b> to turn it off.
+      Three reserved folder names (<b>system_agents</b>, <b>experimental_agents</b>, <b>disabled_agents</b>) are engine-provided — don't rename them.
+    </p>
+  </section>
+
+  <!-- Persona pane -->
+  <section id="pane-persona" class="pane">
+    <div class="field-group">
+      <h3>Soul</h3>
+      <p>This is the system prompt your brainstem loads every request. Write it in first person — "You are a…"</p>
+      <textarea class="persona-textarea" id="persona-textarea"></textarea>
+      <div style="margin-top:10px; display:flex; gap:8px;">
+        <button class="btn primary" id="btn-save-soul">Save Persona</button>
+        <button class="btn" id="btn-reload-soul">Reload</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Settings pane -->
+  <section id="pane-settings" class="pane">
+    <div class="field-group">
+      <h3>Model</h3>
+      <p>Which LLM the brainstem uses. Defaults to GitHub Copilot via the <code>gh</code> CLI.</p>
+      <div class="field">
+        <label>GITHUB_MODEL</label>
+        <input type="text" data-env="GITHUB_MODEL" placeholder="gpt-4o">
+      </div>
+      <div class="field">
+        <label>PORT</label>
+        <input type="text" data-env="PORT" placeholder="7071">
+      </div>
+    </div>
+
+    <div class="field-group">
+      <h3>Voice & Twin</h3>
+      <p>Toggle the TTS voice line and the digital-twin side panel.</p>
+      <div class="field">
+        <label>VOICE_MODE (true/false)</label>
+        <input type="text" data-env="VOICE_MODE" placeholder="false">
+      </div>
+      <div class="field">
+        <label>TWIN_MODE (true/false)</label>
+        <input type="text" data-env="TWIN_MODE" placeholder="true">
+      </div>
+    </div>
+
+    <div class="field-group">
+      <h3>Secrets</h3>
+      <p>These are set/unset only — the brainstem doesn't send them back. Edit <code>.env</code> directly if you need to change one.</p>
+      <div id="secrets-row" style="margin-bottom:12px;"></div>
+    </div>
+
+    <div style="display:flex; gap:8px;">
+      <button class="btn primary" id="btn-save-env">Save Settings</button>
+      <button class="btn" id="btn-reload-env">Reload</button>
+    </div>
+  </section>
+</main>
+
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal" id="modal"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═════════════════════════════════════════════════════════════════
+ * RAPP Brainstem Manager — vanilla JS, no deps.
+ * Every UI action is a filesystem operation on agents/ (Article XVIII).
+ * ═════════════════════════════════════════════════════════════════ */
+
+const $  = (sel, root=document) => root.querySelector(sel);
+const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+
+const RESERVED_NAMES = new Set(["system_agents", "experimental_agents", "disabled_agents"]);
+
+// ── Toast ──────────────────────────────────────────────────────
+let _toastTimer = null;
+function toast(msg, kind="good") {
+  const t = $("#toast");
+  t.textContent = msg;
+  t.className = `toast show ${kind}`;
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.className = "toast", 2400);
+}
+
+// ── API helpers ────────────────────────────────────────────────
+async function api(path, opts={}) {
+  const r = await fetch(path, {
+    headers: opts.body ? {"Content-Type": "application/json"} : undefined,
+    ...opts,
+  });
+  if (!r.ok) {
+    let msg = `${r.status} ${r.statusText}`;
+    try { const j = await r.json(); if (j.error) msg = j.error; } catch {}
+    throw new Error(msg);
+  }
+  return r.json();
+}
+
+// ── Tabs ───────────────────────────────────────────────────────
+$$(".tabs button").forEach(b => b.addEventListener("click", () => {
+  $$(".tabs button").forEach(x => x.classList.toggle("active", x === b));
+  $$(".pane").forEach(p => p.classList.toggle("active", p.id === `pane-${b.dataset.tab}`));
+  if (b.dataset.tab === "persona" || b.dataset.tab === "settings") loadConfig();
+}));
+
+// ── Tree rendering ─────────────────────────────────────────────
+let _tree = null;
+let _selected = null;
+const _collapsed = new Set();  // paths of collapsed folders
+
+async function loadTree() {
+  try {
+    _tree = await api("/api/agents/tree");
+    renderTree();
+  } catch (e) {
+    toast("couldn't load tree: " + e.message, "bad");
+  }
+}
+
+function renderTree() {
+  const root = $("#tree");
+  root.innerHTML = "";
+  root.appendChild(renderNode(_tree, 0, true));
+}
+
+function renderNode(node, depth, isRoot=false) {
+  const wrap = document.createElement("div");
+  if (!isRoot) wrap.classList.add("node-wrap");
+
+  const row = document.createElement("div");
+  row.className = `node ${node.kind}`;
+  row.dataset.path = node.path || "";
+  row.dataset.kind = node.kind;
+  if (node.path === _selected) row.classList.add("selected");
+
+  // Toggle (for folders with children)
+  const toggle = document.createElement("span");
+  toggle.className = "toggle";
+  if (node.kind === "folder" && node.children && node.children.length) {
+    const collapsed = _collapsed.has(node.path);
+    toggle.textContent = collapsed ? "▶" : "▼";
+    toggle.style.cursor = "pointer";
+    toggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (_collapsed.has(node.path)) _collapsed.delete(node.path);
+      else _collapsed.add(node.path);
+      renderTree();
+    });
+  } else {
+    toggle.textContent = "";
+  }
+  row.appendChild(toggle);
+
+  // Icon
+  const icon = document.createElement("span");
+  icon.className = "icon";
+  if (node.kind === "folder") {
+    icon.textContent = node.reserved ? "🗃" : (node.path === "" ? "🧠" : "📁");
+  } else {
+    icon.textContent = node.status === "disabled" ? "⏸" :
+                       node.status === "experimental" ? "🧪" :
+                       node.kind === "other" ? "📄" : "⚙";
+  }
+  row.appendChild(icon);
+
+  // Name
+  const name = document.createElement("span");
+  name.className = "name";
+  name.textContent = isRoot ? "agents/" : node.name;
+  row.appendChild(name);
+
+  // Badges
+  if (node.reserved)          appendBadge(row, node.reserved.replace("_agents",""), "reserved");
+  if (node.system)            appendBadge(row, "system", "system");
+  if (node.status === "experimental") appendBadge(row, "experimental", "experimental");
+  if (node.status === "disabled")     appendBadge(row, "disabled", "disabled");
+
+  // Selection + context actions
+  row.addEventListener("click", () => {
+    _selected = node.path || "";
+    $$(".node").forEach(n => n.classList.toggle("selected", n === row));
+  });
+  row.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    _selected = node.path || "";
+    showNodeMenu(e, node);
+  });
+
+  // Drag & drop
+  if (!isRoot && node.kind === "agent") {
+    row.draggable = true;
+    row.addEventListener("dragstart", (e) => {
+      e.dataTransfer.setData("text/path", node.path);
+      e.dataTransfer.effectAllowed = "move";
+    });
+  }
+  if (node.kind === "folder") {
+    row.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      row.classList.add("drop-target");
+    });
+    row.addEventListener("dragleave", () => row.classList.remove("drop-target"));
+    row.addEventListener("drop", async (e) => {
+      e.preventDefault();
+      row.classList.remove("drop-target");
+      const from = e.dataTransfer.getData("text/path");
+      if (!from) return;
+      const base = from.split("/").pop();
+      const targetFolder = node.path || "";
+      const to = targetFolder ? `${targetFolder}/${base}` : base;
+      if (from === to) return;
+      try {
+        await api("/api/agents/move", { method: "POST", body: JSON.stringify({ from_path: from, to_path: to }) });
+        toast(`moved → ${to}`);
+        await loadTree();
+      } catch (err) { toast(err.message, "bad"); }
+    });
+  }
+
+  wrap.appendChild(row);
+
+  // Children
+  if (node.kind === "folder" && node.children && !_collapsed.has(node.path)) {
+    const children = document.createElement("div");
+    children.className = "children";
+    for (const c of node.children) children.appendChild(renderNode(c, depth + 1));
+    wrap.appendChild(children);
+  }
+  return wrap;
+}
+
+function appendBadge(row, text, cls) {
+  const b = document.createElement("span");
+  b.className = `badge ${cls}`;
+  b.textContent = text;
+  row.appendChild(b);
+}
+
+// ── Context menu ───────────────────────────────────────────────
+function showNodeMenu(event, node) {
+  closeModal();
+  const actions = [];
+  if (node.kind === "agent") {
+    actions.push({ label: "Rename…",         fn: () => renamePrompt(node) });
+    if (node.status !== "disabled") actions.push({ label: "Disable", fn: () => disableAgent(node) });
+    else                            actions.push({ label: "Enable",  fn: () => enableAgent(node) });
+    actions.push({ label: "Delete",          fn: () => deleteNode(node), danger: true });
+  } else if (node.kind === "folder" && !node.reserved && node.path !== "") {
+    actions.push({ label: "Rename…",         fn: () => renamePrompt(node) });
+    actions.push({ label: "Delete (if empty)", fn: () => deleteNode(node), danger: true });
+  }
+  actions.push({ label: "Open in VS Code",  fn: () => openInVSCode(node.path) });
+  if (!actions.length) return;
+  const menu = document.createElement("div");
+  menu.style.cssText = `position:fixed; top:${event.clientY}px; left:${event.clientX}px;
+    background:var(--panel); border:1px solid var(--border); border-radius:6px;
+    padding:4px; z-index:150; box-shadow: 0 4px 12px rgba(0,0,0,0.6);`;
+  for (const a of actions) {
+    const item = document.createElement("div");
+    item.style.cssText = "padding:6px 14px; font-size:13px; cursor:pointer; border-radius:4px;";
+    if (a.danger) item.style.color = "var(--bad)";
+    item.textContent = a.label;
+    item.addEventListener("click", () => { document.body.removeChild(menu); a.fn(); });
+    item.addEventListener("mouseover", () => item.style.background = "var(--panel-soft)");
+    item.addEventListener("mouseout",  () => item.style.background = "");
+    menu.appendChild(item);
+  }
+  document.body.appendChild(menu);
+  setTimeout(() => {
+    const close = () => { try { document.body.removeChild(menu); } catch {} document.removeEventListener("click", close); };
+    document.addEventListener("click", close);
+  }, 10);
+}
+
+async function renamePrompt(node) {
+  const current = node.name;
+  const fresh = prompt(`Rename "${current}" to:`, current);
+  if (!fresh || fresh === current) return;
+  const dir = node.path.split("/").slice(0, -1).join("/");
+  const to = dir ? `${dir}/${fresh}` : fresh;
+  try {
+    await api("/api/agents/move", { method: "POST", body: JSON.stringify({ from_path: node.path, to_path: to }) });
+    toast("renamed");
+    await loadTree();
+  } catch (e) { toast(e.message, "bad"); }
+}
+
+async function disableAgent(node) {
+  const base = node.path.split("/").pop();
+  await moveAgent(node.path, `disabled_agents/${base}`, "disabled");
+}
+async function enableAgent(node) {
+  const base = node.path.split("/").pop();
+  await moveAgent(node.path, base, "enabled");
+}
+async function moveAgent(from, to, label) {
+  try {
+    await api("/api/agents/move", { method: "POST", body: JSON.stringify({ from_path: from, to_path: to }) });
+    toast(label);
+    await loadTree();
+  } catch (e) { toast(e.message, "bad"); }
+}
+
+async function deleteNode(node) {
+  if (!confirm(`Delete ${node.path}? This cannot be undone.`)) return;
+  try {
+    await api("/api/agents/delete", { method: "POST", body: JSON.stringify({ path: node.path }) });
+    toast("deleted");
+    await loadTree();
+  } catch (e) { toast(e.message, "bad"); }
+}
+
+async function openInVSCode(path) {
+  try {
+    await api("/api/agents/open-in-vscode", { method: "POST", body: JSON.stringify({ path: path || "" }) });
+    toast("opened in VS Code");
+  } catch (e) { toast(e.message, "bad"); }
+}
+
+// ── New folder / new agent ─────────────────────────────────────
+$("#btn-new-folder").addEventListener("click", async () => {
+  const suggested = _selected || "";
+  const name = prompt("New folder name (under agents/" + (suggested ? suggested + "/" : "") + "):");
+  if (!name) return;
+  const path = suggested ? `${suggested}/${name}` : name;
+  try {
+    await api("/api/agents/mkdir", { method: "POST", body: JSON.stringify({ path }) });
+    toast("folder created");
+    await loadTree();
+  } catch (e) { toast(e.message, "bad"); }
+});
+
+$("#btn-new-agent").addEventListener("click", openNewAgentModal);
+
+async function openNewAgentModal() {
+  let templates = [];
+  try { templates = (await api("/api/agents/templates")).templates; }
+  catch (e) { toast(e.message, "bad"); return; }
+
+  let selectedTpl = templates[0];
+  let agentName = selectedTpl.default_name;
+
+  const modal = $("#modal");
+  modal.innerHTML = `
+    <h2>New Agent</h2>
+    <p class="muted">Pick a template. The agent file is created under the selected folder.</p>
+    <div class="template-grid" id="tpl-grid"></div>
+    <label>Agent name</label>
+    <input type="text" id="agent-name" value="${agentName}">
+    <label>Folder</label>
+    <input type="text" id="agent-folder" value="${_selected && currentNode(_selected)?.kind === 'folder' ? _selected : ''}" placeholder="(top level)">
+    <div class="modal-actions">
+      <button class="btn" data-close>Cancel</button>
+      <button class="btn primary" id="btn-create-agent">Create</button>
+    </div>
+  `;
+
+  const grid = $("#tpl-grid", modal);
+  for (const t of templates) {
+    const card = document.createElement("div");
+    card.className = "template-card" + (t.id === selectedTpl.id ? " selected" : "");
+    card.dataset.id = t.id;
+    card.innerHTML = `<div class="icon">${t.icon}</div><div class="name">${t.name}</div><div class="desc">${t.description}</div>`;
+    card.addEventListener("click", () => {
+      selectedTpl = t;
+      $$(".template-card", grid).forEach(c => c.classList.toggle("selected", c.dataset.id === t.id));
+      $("#agent-name", modal).value = t.default_name;
+    });
+    grid.appendChild(card);
+  }
+
+  $("#btn-create-agent", modal).addEventListener("click", async () => {
+    const name = $("#agent-name", modal).value.trim();
+    const folder = $("#agent-folder", modal).value.trim();
+    if (!name) { toast("name required", "bad"); return; }
+    try {
+      await api("/api/agents/new", { method: "POST",
+        body: JSON.stringify({ folder, agent_name: name, template_id: selectedTpl.id }) });
+      toast("agent created");
+      closeModal();
+      await loadTree();
+    } catch (e) { toast(e.message, "bad"); }
+  });
+
+  openModal();
+}
+
+function openModal()  { $("#modal-backdrop").classList.add("open"); }
+function closeModal() { $("#modal-backdrop").classList.remove("open"); }
+$("#modal-backdrop").addEventListener("click", (e) => {
+  if (e.target.id === "modal-backdrop") closeModal();
+  if (e.target.matches("[data-close]")) closeModal();
+});
+
+function currentNode(path) {
+  function walk(n) {
+    if ((n.path || "") === path) return n;
+    for (const c of n.children || []) { const r = walk(c); if (r) return r; }
+  }
+  return walk(_tree);
+}
+
+// ── Refresh / VS Code ──────────────────────────────────────────
+$("#btn-refresh").addEventListener("click", loadTree);
+$("#btn-vscode").addEventListener("click", () => openInVSCode(""));
+
+// ── Config ─────────────────────────────────────────────────────
+async function loadConfig() {
+  try {
+    const cfg = await api("/api/config");
+    $("#persona-textarea").value = cfg.soul || "";
+    for (const [k, v] of Object.entries(cfg.env || {})) {
+      const el = $$(`input[data-env="${k}"]`);
+      if (el.length) el[0].value = v;
+    }
+    const row = $("#secrets-row");
+    row.innerHTML = "";
+    for (const [k, set] of Object.entries(cfg.secrets || {})) {
+      const chip = document.createElement("span");
+      chip.className = `secret-chip ${set ? 'set' : 'unset'}`;
+      chip.textContent = `${k}: ${set ? '✓ set' : '— unset'}`;
+      row.appendChild(chip);
+    }
+  } catch (e) { toast(e.message, "bad"); }
+}
+
+$("#btn-save-soul").addEventListener("click", async () => {
+  try {
+    await api("/api/config/soul", { method: "POST", body: JSON.stringify({ soul: $("#persona-textarea").value }) });
+    toast("persona saved");
+  } catch (e) { toast(e.message, "bad"); }
+});
+$("#btn-reload-soul").addEventListener("click", loadConfig);
+
+$("#btn-save-env").addEventListener("click", async () => {
+  const values = {};
+  $$("input[data-env]").forEach(i => values[i.dataset.env] = i.value);
+  try {
+    await api("/api/config/env", { method: "POST", body: JSON.stringify({ values }) });
+    toast("settings saved");
+  } catch (e) { toast(e.message, "bad"); }
+});
+$("#btn-reload-env").addEventListener("click", loadConfig);
+
+// ── First-run wizard (if the tree is "just the starter set") ───
+function maybeFirstRunWizard() {
+  if (!_tree) return;
+  const top = (_tree.children || []).filter(c => c.kind === "folder" && !c.reserved);
+  const topAgents = (_tree.children || []).filter(c => c.kind === "agent");
+  // Heuristic: only reserved folders + the 5 starter agents means fresh install
+  if (top.length === 0 && topAgents.length <= 5) {
+    const alreadyShown = sessionStorage.getItem("rapp_wizard_shown");
+    if (alreadyShown) return;
+    sessionStorage.setItem("rapp_wizard_shown", "1");
+    openFirstRunWizard();
+  }
+}
+
+function openFirstRunWizard() {
+  const modal = $("#modal");
+  modal.innerHTML = `
+    <h2>Welcome to your brainstem</h2>
+    <p class="muted">This is your <code>agents/</code> workspace. Everything you need to set up is here.</p>
+    <ul style="margin:16px 0 20px 20px; font-size:13px; line-height:1.7;">
+      <li><b>Agents tab</b> — add, organize, or disable agents. Drag them between folders.</li>
+      <li><b>Persona tab</b> — your soul.md, the voice your brainstem speaks with.</li>
+      <li><b>Settings tab</b> — model selection and toggles.</li>
+      <li>Need code access? Hit <b>Open in VS Code</b>.</li>
+    </ul>
+    <div class="modal-actions">
+      <button class="btn primary" data-close>Start organizing</button>
+    </div>
+  `;
+  openModal();
+}
+
+// ── Boot ───────────────────────────────────────────────────────
+(async function init() {
+  await loadTree();
+  maybeFirstRunWizard();
+})();
+</script>
+</body>
+</html>
