@@ -307,8 +307,10 @@
     color: #e6edf3; font-size: 14px;
     padding: 14px 22px; resize: none; outline: none;
     line-height: 1.5; max-height: 140px;
+    overflow-y: auto; scrollbar-width: none;
     transition: border-color 0.15s, box-shadow 0.15s;
   }
+  #input::-webkit-scrollbar { display: none; }
   #input:focus { border-color: #1f6feb; box-shadow: 0 0 0 3px rgba(31,111,235,.15); }
   #input::placeholder { color: #6e7681; }
   #send {
