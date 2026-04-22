@@ -737,6 +737,14 @@ def _write_disabled(disabled: set):
 # inside AGENTS_PATH before any filesystem op runs.
 
 _AGENT_MGR_RESERVED_DIR_NAMES = {"system_agents", "experimental_agents", "disabled_agents"}
+# Sacred dir names per Article XII (showroom vs. shop). Never delete or
+# disable a folder whose basename is here, regardless of depth.
+_AGENT_MGR_SACRED_DIR_NAMES = _AGENT_MGR_RESERVED_DIR_NAMES | {"workspace_agents"}
+
+def _is_sacred_dir(rel):
+    """True if the final path segment of `rel` is a sacred/reserved dir."""
+    parts = [p for p in (rel or "").strip("/").split("/") if p]
+    return bool(parts) and parts[-1] in _AGENT_MGR_SACRED_DIR_NAMES
 
 
 def _safe_agents_path(rel: str, must_exist: bool = False) -> str:
@@ -1019,14 +1027,16 @@ def _render_template(tpl: dict, agent_name: str) -> str:
 def load_agents():
     """Auto-discover agents by recursively walking AGENTS_PATH.
 
-    Per Article XVII / XII, agents/ is a user-organized tree. Users
-    create subdirs (agents/my_sales_stack/, agents/personal_twin/, …)
-    to group their own agents; the engine provides agents/system_agents/
-    for infrastructure. All of them auto-load.
+    Per Article XII / XII-A, agents/ top level is the showroom — only the
+    canonical ship-in-repo agents sit there. All organizational subtrees
+    (experimental_agents, disabled_agents, system_agents, local_agents,
+    specific_local_project_agents*, etc.) live under agents/workspace_agents/.
+    All of them auto-load (reserved-name matching catches carve-outs at any
+    depth).
 
-    The ONLY carve-outs are agents/experimental_agents/ (hand-load
-    only) and agents/disabled_agents/ (turned off by file move). Those
-    subtrees are skipped entirely, along with __pycache__.
+    The ONLY carve-outs are experimental_agents/ (hand-load only) and
+    disabled_agents/ (turned off by file move). Those subtrees are skipped
+    entirely regardless of where they sit, along with __pycache__.
     """
     from pathlib import Path
     agents = {}
@@ -2080,9 +2090,10 @@ def api_agents_delete():
     rel  = (body.get("path") or "").strip()
     if not rel:
         return jsonify({"error": "path required"}), 400
-    # Never allow deleting a reserved subdir itself
-    if rel.strip("/") in _AGENT_MGR_RESERVED_DIR_NAMES:
-        return jsonify({"error": f"cannot delete reserved dir: {rel}"}), 403
+    # Never allow deleting a sacred dir (workspace_agents, or any
+    # reserved subdir by basename — works at any depth post-reorg).
+    if _is_sacred_dir(rel):
+        return jsonify({"error": f"cannot delete sacred dir: {rel}"}), 403
     try:
         target = _safe_agents_path(rel, must_exist=True)
     except (ValueError, FileNotFoundError) as e:
@@ -2192,8 +2203,8 @@ def api_agents_folder_toggle():
     want_enabled = body.get("enabled")  # if None: toggle
     if not rel:
         return jsonify({"error": "path required"}), 400
-    if rel.strip("/") in _AGENT_MGR_RESERVED_DIR_NAMES:
-        return jsonify({"error": f"cannot toggle reserved dir: {rel}"}), 403
+    if _is_sacred_dir(rel):
+        return jsonify({"error": f"cannot toggle sacred dir: {rel}"}), 403
     try:
         target = _safe_agents_path(rel, must_exist=True)
     except (ValueError, FileNotFoundError) as e:

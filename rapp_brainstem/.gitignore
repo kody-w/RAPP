@@ -19,3 +19,10 @@ __pycache__/
 .remote_agents/
 .repos.json
 voice.zip
+
+# Local-only agents — auto-loaded by brainstem, never committed.
+# Drop any *_agent.py here that's personal, half-baked, or tenant-specific.
+agents/workspace_agents/local_agents/
+
+# Project-scoped agent folders also stay local by default.
+agents/workspace_agents/specific_local_project_agents*/

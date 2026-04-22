@@ -75,6 +75,27 @@ write, and share agents.
 
 ---
 
+## Article IV-A — Config Is A Param, Not A Source Edit
+
+Users never edit agent source to configure an agent. If an agent needs
+a name, a path, a token, a preference — it goes in the agent's
+OpenAI-function `parameters` schema and is listed in `required`.
+
+- Required config → `"required": [...]`. The brainstem's tool-calling
+  loop surfaces the missing value and the LLM asks the user in-chat.
+- Never ship an agent with `_CONFIG = "EDIT_ME_BEFORE_USING"`. That
+  pushes setup work onto the user that belongs inside the agent.
+- Durable preferences (my name, my role, my tenant) live in the
+  user's memory (`save_memory` / `recall_memory`) so the LLM has them
+  in context on future turns. Not in a hidden file the user has to find.
+
+Consequence: agent files are read-only from the user's perspective.
+They can move agents between tiers (Article II), share them across
+instances, or swap them without opening an editor. The agent does
+the work the user does not.
+
+---
+
 ## Article V — Don't Break the One-Liner
 
 The install experience is sacred:
@@ -92,6 +113,63 @@ the repo, sets up the venv, authenticates, and launches.
 
 Any change to the repo must be tested against this path. If the
 one-liner breaks, nothing else matters.
+
+---
+
+## Article V-A — Two-Mode Install, Agent-Aware Handshake
+
+The one-liner defaults to a **global** install at `~/.brainstem` (port
+7071, background service, global `brainstem` CLI). A second mode —
+**project-local** — installs into `./.brainstem/` in the current
+directory on a free port ≥ 7072, with no global CLI or service, and
+auto-gitignored. Both modes can coexist on one machine and talk to
+each other as agents.
+
+```bash
+# Global (unchanged, default):
+curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash
+
+# Project-local (from inside the target repo):
+curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash -s -- --here
+```
+
+### The agent handshake
+
+When an agent (Copilot CLI, Claude Code, any LLM shelling out) runs
+the installer, it sets `RAPP_INSTALL_ASSIST=1`. The installer does
+**not install** — it prints a structured block delimited by
+`<<<RAPP_INSTALLER_HANDSHAKE v=1>>>` / `<<<END_...>>>` containing:
+
+1. A pointer to `skill.md` (canonical learnable manifest).
+2. The global-vs-local question for the user.
+3. Self-documented re-invocation commands:
+   `RAPP_INSTALL_MODE=global curl ... | bash` or `=local`.
+4. A heuristic the agent can apply without reasoning from scratch.
+
+The agent asks the user, then re-invokes with the chosen mode. The
+human one-liner experience is unaffected.
+
+### `skill.md` is the canonical manifest
+
+The repo root ships `skill.md` — a single markdown file with YAML
+frontmatter (`name`, `description`, `version`, `canonical_url`)
+describing what RAPP is, when to suggest it, both install modes, the
+handshake protocol, and the agent-system architecture. Any agent
+fetching `https://kody-w.github.io/RAPP/skill.md` learns enough to be
+useful without ever running the installer first.
+
+### What this rules out
+
+- ❌ Requiring flag knowledge from humans. A direct user typing
+  `curl ... | bash` never encounters the handshake or needs to know
+  `--here` exists; global-default is silent.
+- ❌ A separate "project install" URL. There is one installer, one
+  URL, one convention — mode is picked via flag or env var.
+- ❌ Agent-specific code paths in `install.sh` (e.g., "if
+  `$COPILOT_CLI`…"). The handshake is triggered by a single generic
+  env var (`RAPP_INSTALL_ASSIST`) any agent can set.
+- ❌ `skill.md` drift. The file is canonical; the installer's
+  handshake points at it rather than duplicating its content.
 
 ---
 
@@ -404,18 +482,50 @@ scripts) are a stable black box users never edit.
 > **Engine files are for the engine. `agents/` is for the user.
 > Everything functional a user needs to do happens in `agents/`.**
 
-### A recursive, user-organized tree
+### Two surfaces: the showroom and the shop
 
-`agents/` is a **recursive tree** with no depth limit. Drop a `*_agent.py`
-file anywhere under it and the brainstem finds it. Subdirectories can
-contain subdirectories —
-`agents/sales_stack/q4/prospects/outbound_agent.py` auto-loads just
-like `agents/outbound_agent.py`.
+`agents/` has exactly two structural layers, and both are sacred.
 
-Two subdirectory names are reserved and **never** auto-load:
+**1. `agents/` top level — the showroom.** Only the canonical
+ship-in-repo starter agents live here. A new user opens `agents/` and
+sees a small, clean set of example `*_agent.py` files — the shape of
+what a RAPP agent is. Nothing else. No subdirectories except the one
+named `workspace_agents/`.
+
+**2. `agents/workspace_agents/` — the shop.** Everything organizational
+lives under here: engine infrastructure, hand-load experiments,
+disabled agents, personal/local-only agents, project-scoped folders,
+user groupings. This is where the tree grows.
+
+```
+agents/
+├── basic_agent.py              ← starter set (showroom)
+├── hacker_news_agent.py
+├── learn_new_agent.py
+├── recall_memory_agent.py
+├── save_memory_agent.py
+└── workspace_agents/           ← everything else (shop)
+    ├── system_agents/          ← engine infrastructure
+    ├── experimental_agents/    ← hand-load only
+    ├── disabled_agents/        ← turned off
+    ├── local_agents/           ← gitignored, personal
+    └── <any user folder>/      ← user groupings, projects, swarms
+```
+
+A newcomer isn't overwhelmed. An operator has unlimited room.
+
+### A recursive tree inside `workspace_agents/`
+
+Inside `workspace_agents/`, the tree recurses with no depth limit.
+Drop a `*_agent.py` file anywhere and the brainstem finds it —
+`workspace_agents/sales_stack/q4/prospects/outbound_agent.py`
+auto-loads just like a top-level starter agent.
+
+Two subdirectory names are reserved by name-match at any depth and
+**never** auto-load:
 **`experimental_agents/`** (in-flight, hand-load only) and
 **`disabled_agents/`** (move a file there to turn it off). Everything
-else under `agents/` loads.
+else loads.
 
 ### Starter set at the top level of `agents/`
 
@@ -423,25 +533,31 @@ else under `agents/` loads.
 - `hacker_news_agent.py`, `learn_new_agent.py`,
   `save_memory_agent.py`, `recall_memory_agent.py` — curriculum.
 
-A new user opens `agents/` and sees exactly these five — the shape of
-what a RAPP agent is. Don't dump more at the top level; use a subdir.
+Ship-in-repo general-purpose agents may be added here sparingly when
+they're broadly useful (e.g. `workiq_agent.py` as the Microsoft 365
+faucet). Keep the set small enough that a newcomer can scan it in
+seconds.
 
-### Engine-provided subdirectories (convention, not magic)
+### Engine-provided subdirectories (under `workspace_agents/`)
 
-- `agents/system_agents/` — engine infrastructure (swarm factory +
-  swarm-management agents today). Auto-loads because it's under
-  `agents/`.
-- `agents/experimental_agents/` — never auto-loads. Hand-load to
-  test in-flight work.
-- `agents/disabled_agents/` — never auto-loads. Move a file here to
-  turn it off.
+- `workspace_agents/system_agents/` — engine infrastructure (swarm
+  factory + swarm-management agents today). Auto-loads.
+- `workspace_agents/experimental_agents/` — never auto-loads.
+  Hand-load to test in-flight work.
+- `workspace_agents/disabled_agents/` — never auto-loads. Move a file
+  here to turn it off.
+- `workspace_agents/local_agents/` — gitignored. Personal,
+  tenant-specific, or half-baked agents that auto-load but never
+  commit.
 
 ### User-organized subdirectories (the whole point)
 
-Anything else under `agents/` auto-loads: `agents/my_stack/`,
-`agents/personal_twin/`, `agents/project_x/`, even nested like
-`agents/ceo/roles/`. No registration, no config — drop a folder in,
-`*_agent.py` files inside it load.
+Anything else under `workspace_agents/` auto-loads:
+`workspace_agents/my_stack/`, `workspace_agents/personal_twin/`,
+`workspace_agents/project_x/`, even nested like
+`workspace_agents/ceo/roles/`. No registration, no config — drop a
+folder in, `*_agent.py` files inside it load. Project-scoped folders
+matching `specific_local_project_agents*/` are gitignored by default.
 
 ### What this rules out
 
@@ -450,15 +566,19 @@ Anything else under `agents/` auto-loads: `agents/my_stack/`,
   tree. Never "edit brainstem.py to…"
 - ❌ A "brainstem config" directory outside `agents/` that users
   are expected to edit.
-- ❌ Dumping more than the five starter files at the top level of
-  `agents/`. Infrastructure goes in `system_agents/`; user groupings
-  go in user-named subdirs (arbitrarily deep).
+- ❌ Dumping organizational subdirectories at the top level of
+  `agents/`. `system_agents/`, `experimental_agents/`,
+  `disabled_agents/`, `local_agents/`, project folders — all of them
+  live under `workspace_agents/`, never at top level.
+- ❌ Adding more starter agents to the top level beyond the small
+  curriculum set + rare broadly-useful exceptions. The showroom
+  stays clean for newcomers.
 - ❌ A registry file listing which agents to load. Discovery is
   filesystem-only.
-- ❌ `from agents.system_agents.X import …` in tests — load by file
-  path via `importlib`. The `agents.*` module namespace is for the
-  shimmed `basic_agent` import only.
-- ❌ Any depth limit on `agents/` recursion.
+- ❌ `from agents.workspace_agents.system_agents.X import …` in
+  tests — load by file path via `importlib`. The `agents.*` module
+  namespace is for the shimmed `basic_agent` import only.
+- ❌ Any depth limit on `workspace_agents/` recursion.
 
 ### Discovery
 
