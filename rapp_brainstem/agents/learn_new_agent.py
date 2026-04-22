@@ -635,20 +635,16 @@ if __name__ == "__main__":
     # ── Name generation ───────────────────────────────────────────────────
 
     def _generate_name(self, description):
-        try:
-            result = subprocess.run(
-                ['copilot', '--message',
-                 f'Generate a short 1-2 word CamelCase name for an agent that: '
-                 f'{description[:200]}. Reply with ONLY the name, nothing else.'],
-                capture_output=True, text=True, timeout=10
-            )
-            if result.returncode == 0 and result.stdout.strip():
-                name = result.stdout.strip().split('\n')[0]
-                name = re.sub(r'[^a-zA-Z]', '', name)
-                if name and len(name) <= 30:
-                    return name
-        except Exception:
-            pass
+        prompt = (
+            f'Generate a short 1-2 word CamelCase name for an agent that: '
+            f'{description[:200]}. Reply with ONLY the name, nothing else.'
+        )
+        llm_out = self._call_llm(prompt)
+        if llm_out:
+            name = llm_out.split('\n')[0]
+            name = re.sub(r'[^a-zA-Z]', '', name)
+            if name and len(name) <= 30:
+                return name
 
         words = description.lower().split()
         keywords = [w for w in words if len(w) > 3 and w not in
@@ -767,54 +763,60 @@ if __name__ == "__main__":
 
         return extra
 
-    def _generate_perform_body(self, description):
+    def _call_llm(self, prompt, timeout_seconds=60):
+        """Run a one-shot prompt through the brainstem's own LLM dispatch.
+        Returns the assistant text on success, None on any failure. Uses
+        lazy import so this file stays importable standalone."""
         try:
-            prompt = (
-                f"Generate ONLY the Python code for the body of a perform() method "
-                f"for an agent that: {description}\n\n"
-                f"Rules:\n"
-                f"- Return a JSON string with status and result\n"
-                f"- Use kwargs.get() to access parameters\n"
-                f"- Keep it simple and functional\n"
-                f"- Do NOT include the method signature, just the body\n"
-                f"- Indent with 8 spaces\n"
-                f"- If the agent produces a file (HTML, PDF, image, report, export, etc.), "
-                f"write it with self.artifact_path('<name>.<ext>') which returns an absolute "
-                f"path under ~/.brainstem/artifacts/ (dir auto-created, allow-listed by the "
-                f"brainstem so the chat UI autolinks it). Include that absolute path in the "
-                f"returned JSON under the key 'artifact_path' so the chat makes it clickable.\n\n"
-                f"Example format (no file):\n"
-                f"        # Process the query\n"
-                f"        result = \"processed: \" + query\n"
-                f'        return json.dumps({{"status": "success", "result": result}})\n\n'
-                f"Example format (writes a file):\n"
-                f"        path = self.artifact_path('report.html')\n"
-                f"        with open(path, 'w', encoding='utf-8') as f:\n"
-                f"            f.write('<html>...</html>')\n"
-                f'        return json.dumps({{"status": "success", "artifact_path": path}})'
-            )
-
-            result = subprocess.run(
-                ['copilot', '--message', prompt],
-                capture_output=True, text=True, timeout=30
-            )
-
-            if result.returncode == 0 and result.stdout.strip():
-                body = result.stdout.strip()
-                if '```python' in body:
-                    body = body.split('```python')[1].split('```')[0]
-                elif '```' in body:
-                    body = body.split('```')[1].split('```')[0]
-
-                lines = body.strip().split('\n')
-                indented = '\n'.join(
-                    '        ' + line.lstrip() if line.strip() else ''
-                    for line in lines
-                )
-                if indented.strip():
-                    return indented
+            import sys
+            brainstem = sys.modules.get('brainstem') or sys.modules.get('__main__')
+            call_copilot = getattr(brainstem, 'call_copilot', None) if brainstem else None
+            if call_copilot is None:
+                return None
+            resp = call_copilot([{"role": "user", "content": prompt}])
+            choice = (resp.get("choices") or [{}])[0]
+            content = (choice.get("message") or {}).get("content") or ""
+            return content.strip() or None
         except Exception:
-            pass
+            return None
+
+    def _generate_perform_body(self, description):
+        prompt = (
+            f"Generate ONLY the Python code for the body of a perform() method "
+            f"for an agent that: {description}\n\n"
+            f"Rules:\n"
+            f"- Return a JSON string with status and result\n"
+            f"- Use kwargs.get() to access parameters\n"
+            f"- Keep it simple and functional\n"
+            f"- Do NOT include the method signature, just the body\n"
+            f"- Indent with 8 spaces\n"
+            f"- If the agent produces a file (HTML, PDF, image, report, export, etc.), "
+            f"write it with self.artifact_path('<name>.<ext>') which returns an absolute "
+            f"path under ~/.brainstem/artifacts/ (dir auto-created, allow-listed by the "
+            f"brainstem so the chat UI autolinks it). Include that absolute path in the "
+            f"returned JSON under the key 'artifact_path' so the chat makes it clickable.\n\n"
+            f"Example format (no file):\n"
+            f"        # Process the query\n"
+            f"        result = \"processed: \" + query\n"
+            f'        return json.dumps({{"status": "success", "result": result}})\n\n'
+            f"Example format (writes a file):\n"
+            f"        path = self.artifact_path('report.html')\n"
+            f"        with open(path, 'w', encoding='utf-8') as f:\n"
+            f"            f.write('<html>...</html>')\n"
+            f'        return json.dumps({{"status": "success", "artifact_path": path}})'
+        )
+
+        body = self._call_llm(prompt)
+        if body:
+            if '```python' in body:
+                body = body.split('```python', 1)[1].split('```', 1)[0]
+            elif '```' in body:
+                body = body.split('```', 1)[1].split('```', 1)[0]
+            import textwrap
+            dedented = textwrap.dedent(body.strip('\n'))
+            indented = textwrap.indent(dedented, '        ')
+            if indented.strip():
+                return indented
 
         return '''        # Default implementation - customize this
         if not query:
