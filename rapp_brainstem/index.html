@@ -2606,7 +2606,9 @@
   //      link — that's how "File: foo.html" becomes openable without
   //      the agent having to spell out the full path in the chat body.
   const OPENABLE_EXT = /\.(html?|pdf|md|markdown|txt|json|csv|log|py|js|ts|sh|ya?ml|toml|png|jpe?g|gif|svg|webp|mp3|mp4|mov|wav|zip|tgz|tar|gz)$/i;
-  const ABS_PATH_RE = /(?:file:\/\/)?(\/[A-Za-z0-9._/~\-]+\.[A-Za-z0-9]+)/g;
+  // Require no word/path char before the leading `/` so a relative path like
+  // `output/presentation.html` doesn't falsely yield `/presentation.html`.
+  const ABS_PATH_RE = /(?<![A-Za-z0-9._\-~])(?:file:\/\/)?(\/[A-Za-z0-9._/~\-]+\.[A-Za-z0-9]+)/g;
 
   function _fileHref(absPath) {
     return `${API}/open?path=${encodeURIComponent(absPath)}`;
@@ -2615,7 +2617,7 @@
   function _extractPathsFromLogs(logs) {
     if (!logs) return { paths: [], byBasename: new Map() };
     const paths = new Set();
-    const re = /(?:file:\/\/)?(\/[A-Za-z0-9._/~\-]+)/g;
+    const re = /(?<![A-Za-z0-9._\-~])(?:file:\/\/)?(\/[A-Za-z0-9._/~\-]+)/g;
     let m;
     while ((m = re.exec(logs)) !== null) {
       const p = m[1];

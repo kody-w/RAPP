@@ -12,6 +12,8 @@ RAR registry (https://github.com/kody-w/RAR).
 
 Actions:
   create  — Generate and save a single agent (default)
+  update  — Regenerate an existing agent in place; previous version is
+            archived to agents/archived_agents/<name>_<timestamp>.py
   swarm   — Generate a multi-agent pipeline + orchestrator
   list    — List generated agents in agents/
   delete  — Remove a generated agent
@@ -292,11 +294,12 @@ if __name__ == "__main__":
             "name": self.name,
             "description": (
                 "Creates new RAPP agents or swarms from natural-language descriptions. "
-                "Actions: 'create' generates a single agent, 'swarm' creates a multi-agent "
-                "pipeline, 'list' shows generated agents, 'delete' removes one, "
+                "Actions: 'create' generates a single agent, 'update' regenerates an "
+                "existing agent in place (archiving the old version), 'swarm' creates a "
+                "multi-agent pipeline, 'list' shows generated agents, 'delete' removes one, "
                 "'preview' dry-runs generation, 'submit' prepares a RAR registry submission. "
                 "Call when the user wants to teach the brainstem something new, create a "
-                "custom agent, or build an agent swarm."
+                "custom agent, modify an existing one, or build an agent swarm."
             ),
             "parameters": {
                 "type": "object",
@@ -312,7 +315,7 @@ if __name__ == "__main__":
                     "action": {
                         "type": "string",
                         "description": "Action to perform.",
-                        "enum": ["create", "swarm", "list", "delete", "preview", "submit"]
+                        "enum": ["create", "update", "swarm", "list", "delete", "preview", "submit"]
                     },
                     "query": {
                         "type": "string",
@@ -356,6 +359,8 @@ if __name__ == "__main__":
             return self._list_generated_agents()
         elif action == 'delete':
             return self._delete_agent(name or description)
+        elif action == 'update':
+            return self._update_agent(description, name, **kwargs)
         elif action == 'preview':
             if kwargs.get('agents_in_swarm'):
                 return self._create_swarm(description, name, write=False, **kwargs)
@@ -389,7 +394,9 @@ if __name__ == "__main__":
             return json.dumps({
                 "status": "error",
                 "message": f"Agent '{name}' already exists at {file_path}. "
-                           f"Delete it first or choose a different name."
+                           f"Use action='update' to regenerate in place (old version "
+                           f"archived to agents/archived_agents/), action='delete' to "
+                           f"remove it, or choose a different name."
             })
 
         agent_code = self._generate_agent_code(description, name, class_name, **kwargs)
@@ -770,11 +777,21 @@ if __name__ == "__main__":
                 f"- Use kwargs.get() to access parameters\n"
                 f"- Keep it simple and functional\n"
                 f"- Do NOT include the method signature, just the body\n"
-                f"- Indent with 8 spaces\n\n"
-                f"Example format:\n"
+                f"- Indent with 8 spaces\n"
+                f"- If the agent produces a file (HTML, PDF, image, report, export, etc.), "
+                f"write it with self.artifact_path('<name>.<ext>') which returns an absolute "
+                f"path under ~/.brainstem/artifacts/ (dir auto-created, allow-listed by the "
+                f"brainstem so the chat UI autolinks it). Include that absolute path in the "
+                f"returned JSON under the key 'artifact_path' so the chat makes it clickable.\n\n"
+                f"Example format (no file):\n"
                 f"        # Process the query\n"
                 f"        result = \"processed: \" + query\n"
-                f'        return json.dumps({{"status": "success", "result": result}})'
+                f'        return json.dumps({{"status": "success", "result": result}})\n\n'
+                f"Example format (writes a file):\n"
+                f"        path = self.artifact_path('report.html')\n"
+                f"        with open(path, 'w', encoding='utf-8') as f:\n"
+                f"            f.write('<html>...</html>')\n"
+                f'        return json.dumps({{"status": "success", "artifact_path": path}})'
             )
 
             result = subprocess.run(
@@ -977,6 +994,104 @@ if __name__ == "__main__":
             "count": len(agents)
         })
 
+    # ── Update / archive ──────────────────────────────────────────────────
+
+    CORE_AGENTS = {
+        'basic_agent.py', 'save_memory_agent.py', 'recall_memory_agent.py',
+        'learn_new_agent.py', 'swarm_factory_agent.py',
+    }
+
+    def _archive_agent_file(self, file_path):
+        """Move file_path into agents/archived_agents/<stem>_<timestamp>.py.
+        Returns the archive path. Agents in the archive dir are NOT
+        auto-discovered (brainstem globs agents/*_agent.py flat-only)."""
+        archive_dir = self.agents_dir / "archived_agents"
+        archive_dir.mkdir(exist_ok=True)
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        stem = file_path.stem
+        archive_path = archive_dir / f"{stem}_{ts}.py"
+        file_path.rename(archive_path)
+        return archive_path
+
+    def _update_agent(self, description, name, **kwargs):
+        if not name and not description:
+            return json.dumps({
+                "status": "error",
+                "message": "Please provide the agent name to update (and optionally a new description)."
+            })
+
+        if not name:
+            name = self._generate_name(description)
+        name = self._sanitize_name(name)
+        class_name = f"{name}Agent"
+        snake = self._to_snake_case(name)
+        file_path = self.agents_dir / f"{snake}_agent.py"
+
+        if not file_path.exists():
+            for f in self.agents_dir.glob('*_agent.py'):
+                if name.lower() in f.name.lower():
+                    file_path = f
+                    snake = file_path.stem.replace('_agent', '')
+                    class_name = ''.join(w.capitalize() for w in snake.split('_')) + 'Agent'
+                    break
+
+        if not file_path.exists():
+            return json.dumps({
+                "status": "error",
+                "message": f"Agent '{name}' not found. Use action='create' to make a new one."
+            })
+
+        if file_path.name in self.CORE_AGENTS:
+            return json.dumps({
+                "status": "error",
+                "message": f"Cannot update core agent '{file_path.name}'."
+            })
+
+        if not description:
+            return json.dumps({
+                "status": "error",
+                "message": f"Please provide a new description for '{name}' — nothing to regenerate from."
+            })
+
+        archive_path = self._archive_agent_file(file_path)
+
+        agent_code = self._generate_agent_code(description, name, class_name, **kwargs)
+        try:
+            file_path.write_text(agent_code)
+        except Exception as e:
+            archive_path.rename(file_path)
+            return json.dumps({
+                "status": "error",
+                "message": f"Failed to write updated agent (restored previous version): {e}"
+            })
+
+        hot_load_result = self._hot_load_agent(file_path, class_name)
+
+        result = {
+            "status": "success",
+            "action": "update",
+            "message": f"Updated agent '{name}' (previous version archived)",
+            "agent_name": name,
+            "filename": file_path.name,
+            "file_path": str(file_path),
+            "archive_path": str(archive_path),
+            "lines": len(agent_code.split('\n')),
+            "hot_loaded": hot_load_result.get("success", False),
+            "description": description[:200],
+            "hint": (
+                f"Previous version saved to agents/archived_agents/{archive_path.name}. "
+                f"To roll back, delete the new file and move the archive back."
+            ),
+        }
+        if hot_load_result.get("installed_deps"):
+            result["installed_dependencies"] = hot_load_result["installed_deps"]
+        if not hot_load_result.get("success"):
+            result["hot_load_error"] = hot_load_result.get("error")
+            if hot_load_result.get("hint"):
+                result["hot_load_hint"] = hot_load_result["hint"]
+
+        return json.dumps(result)
+
     def _delete_agent(self, name):
         if not name:
             return json.dumps({
@@ -999,9 +1114,7 @@ if __name__ == "__main__":
                 "message": f"Agent '{name}' not found."
             })
 
-        core = {'basic_agent.py', 'save_memory_agent.py', 'recall_memory_agent.py',
-                'learn_new_agent.py', 'swarm_factory_agent.py'}
-        if file_path.name in core:
+        if file_path.name in self.CORE_AGENTS:
             return json.dumps({
                 "status": "error",
                 "message": "Cannot delete core agents."
