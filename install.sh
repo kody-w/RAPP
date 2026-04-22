@@ -24,17 +24,18 @@ set -e
 #
 # To install project-local (./.brainstem, own port, own agents, gitignored):
 #   curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash -s -- --here
-# or equivalent env vars:
-#   BRAINSTEM_LOCAL=1 curl ... | bash
-#   RAPP_INSTALL_MODE=local curl ... | bash
+# or via env on the BASH side of the pipe (env must apply to bash, not curl):
+#   curl -fsSL https://kody-w.github.io/RAPP/install.sh | BRAINSTEM_LOCAL=1 bash
+#   curl -fsSL https://kody-w.github.io/RAPP/install.sh | RAPP_INSTALL_MODE=local bash
 #
 # AGENT HANDSHAKE: When an agent (Copilot CLI, Claude Code, etc.) runs
-# this installer, it sets RAPP_INSTALL_ASSIST=1 to trigger a handshake.
+# this installer, it sets RAPP_INSTALL_ASSIST=1 on the bash side:
+#   curl -fsSL https://kody-w.github.io/RAPP/install.sh | RAPP_INSTALL_ASSIST=1 bash
 # The script then prints a structured prompt describing the two modes
 # and exits — the agent relays the choice to the user and re-invokes
-# with RAPP_INSTALL_MODE=global or RAPP_INSTALL_MODE=local. This way
-# the one-liner stays generic: humans running it directly get the
-# global default silently; agents stop and ask first.
+# with RAPP_INSTALL_MODE=global|local. This way the one-liner stays
+# generic: humans running it directly get the global default silently;
+# agents stop and ask first.
 
 LOCAL_MODE=0
 for arg in "$@"; do
@@ -67,18 +68,22 @@ QUESTION FOR THE USER — pick one of two install modes:
   GLOBAL (recommended default) — one brainstem for the whole machine.
     Installs at ~/.brainstem. Runs on port 7071. Has a `brainstem`
     CLI and auto-starts on login.
-    Re-invoke as:
-      RAPP_INSTALL_MODE=global curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash
+    Re-invoke as (env on the bash side of the pipe):
+      curl -fsSL https://kody-w.github.io/RAPP/install.sh | RAPP_INSTALL_MODE=global bash
 
   LOCAL — project-scoped brainstem for the current directory.
     Installs at ./.brainstem/. Picks its own port (7072+). No global
     CLI, no background service. Gitignored automatically. Runs
     alongside the global brainstem if one exists.
-    Re-invoke as (from the target project directory):
-      RAPP_INSTALL_MODE=local curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash
+    Re-invoke as (from the target project directory, env on bash side):
+      curl -fsSL https://kody-w.github.io/RAPP/install.sh | RAPP_INSTALL_MODE=local bash
 
 HEURISTIC — if the user is inside a specific project or repo and
 mentioned isolation, suggest LOCAL. Otherwise suggest GLOBAL.
+
+NOTE — env must be on the BASH side of the pipe, not the curl side.
+`ENV=VAL curl ... | bash` sets ENV only for curl; bash never sees it.
+`curl ... | ENV=VAL bash` is the working form.
 
 <<<END_RAPP_INSTALLER_HANDSHAKE>>>
 HANDSHAKE

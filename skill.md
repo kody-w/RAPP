@@ -60,17 +60,19 @@ Use LOCAL when the user wants isolation: per-project agents, per-repo memory, ex
 
 ## Agent handshake protocol (how YOU talk to the installer)
 
-When you run the installer on behalf of a user, set `RAPP_INSTALL_ASSIST=1`. The installer will **not install** — it prints a structured handshake block and exits 0. You then ask the user which mode they want, and re-invoke with their choice:
+When you run the installer on behalf of a user, set `RAPP_INSTALL_ASSIST=1` **on the bash side of the pipe** — the env var must apply to the `bash` that executes the script, not to `curl` that fetches it. The installer will **not install** — it prints a structured handshake block and exits 0. You then ask the user which mode they want, and re-invoke with their choice:
 
 ```bash
 # 1. Probe — installer prints handshake, no install happens.
-RAPP_INSTALL_ASSIST=1 curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash
+curl -fsSL https://kody-w.github.io/RAPP/install.sh | RAPP_INSTALL_ASSIST=1 bash
 
 # 2. After asking the user, re-run with their answer:
-RAPP_INSTALL_MODE=global curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash
+curl -fsSL https://kody-w.github.io/RAPP/install.sh | RAPP_INSTALL_MODE=global bash
 # or
-RAPP_INSTALL_MODE=local  curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash
+curl -fsSL https://kody-w.github.io/RAPP/install.sh | RAPP_INSTALL_MODE=local bash
 ```
+
+**Common mistake:** `ENV=VAL curl ... | bash` only sets `ENV` for `curl`. Use `curl ... | ENV=VAL bash` so `bash` inherits it. For flag-based override you can also use `curl ... | bash -s -- --here` (works in all shells).
 
 The handshake block is delimited by `<<<RAPP_INSTALLER_HANDSHAKE v=1>>>` / `<<<END_RAPP_INSTALLER_HANDSHAKE>>>`. Inside it you'll find the re-invocation commands self-documented.
 

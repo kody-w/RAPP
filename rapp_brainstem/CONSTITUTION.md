@@ -136,14 +136,16 @@ curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash -s -- --here
 ### The agent handshake
 
 When an agent (Copilot CLI, Claude Code, any LLM shelling out) runs
-the installer, it sets `RAPP_INSTALL_ASSIST=1`. The installer does
-**not install** — it prints a structured block delimited by
+the installer, it sets `RAPP_INSTALL_ASSIST=1` **on the bash side of
+the pipe** (`curl ... | RAPP_INSTALL_ASSIST=1 bash`) — the env must
+apply to `bash`, not to `curl`. The installer does **not install** —
+it prints a structured block delimited by
 `<<<RAPP_INSTALLER_HANDSHAKE v=1>>>` / `<<<END_...>>>` containing:
 
 1. A pointer to `skill.md` (canonical learnable manifest).
 2. The global-vs-local question for the user.
 3. Self-documented re-invocation commands:
-   `RAPP_INSTALL_MODE=global curl ... | bash` or `=local`.
+   `curl ... | RAPP_INSTALL_MODE=global bash` or `=local`.
 4. A heuristic the agent can apply without reasoning from scratch.
 
 The agent asks the user, then re-invokes with the chosen mode. The
