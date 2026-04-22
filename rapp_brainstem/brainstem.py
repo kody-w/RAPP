@@ -53,11 +53,10 @@ _FOLDER_DISABLED_MARKER = ".folder_disabled"
 MODEL       = os.getenv("GITHUB_MODEL", "gpt-4o")
 PORT        = int(os.getenv("PORT", 7071))
 VOICE_MODE  = os.getenv("VOICE_MODE", "false").lower() == "true"
-# Twin mode drives the digital-twin side panel via |||TWIN|||. On by default
-# (the twin is the flagship post-v1 addition). Set TWIN_MODE=false to disable
-# the system-prompt instruction + the twin_response field on /chat. Toggle
-# live via POST /twin/toggle.
-TWIN_MODE   = os.getenv("TWIN_MODE", "true").lower() == "true"
+# Twin mode drives the digital-twin side panel via |||TWIN|||. Off by default
+# until the feature graduates from preview — the feature ships in the code
+# and is fully wired; users opt in via TWIN_MODE=true or POST /twin/toggle.
+TWIN_MODE   = os.getenv("TWIN_MODE", "false").lower() == "true"
 VOICE_ZIP_PW = os.getenv("VOICE_ZIP_PASSWORD", "").encode() or None
 
 _BRAINSTEM_DIR = os.path.dirname(os.path.abspath(__file__))
