@@ -1,5 +1,8 @@
 # RAPP
 
+> **Portable, shareable, vibe swarm building tool.**
+> Drop a single Python file into `agents/` and the brainstem runs it. AirDrop the same file to a teammate and it runs there too. Compose files into swarms; promote any of them from laptop → cloud → Copilot Studio without changing a line.
+
 📜 **[Read the v1 Specification → `SPEC.md`](./SPEC.md)** — the contractual digital twin of RAPP v1. The single-file `*_agent.py` is sacred.
 
 Static digital twin of the **RAPP stack**, served from this repo via GitHub Pages at [kody-w.github.io/RAPP](https://kody-w.github.io/RAPP/).

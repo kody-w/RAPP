@@ -1,6 +1,6 @@
 ---
 name: rapp-brainstem
-description: Install, configure, or use the RAPP (Rapid Agent Prototyping Platform) brainstem — a local-first AI agent server powered by GitHub Copilot. Use when the user wants to install RAPP, set up a local or project-scoped brainstem, run custom agents without API keys, or asks about a "brainstem" on their machine.
+description: Install, configure, or use RAPP (Rapid Agent Prototyping Platform) — a portable, shareable, vibe swarm building tool. Local-first AI agent server powered by GitHub Copilot, where agents are single Python files anyone can drop in, AirDrop, or push to a teammate. Use when the user wants to install RAPP, set up a local or project-scoped brainstem, build or share custom agents without API keys, compose agents into swarms, or asks about a "brainstem" on their machine.
 version: 1
 canonical_url: https://kody-w.github.io/RAPP/skill.md
 repo: https://github.com/kody-w/RAPP
@@ -10,7 +10,9 @@ repo: https://github.com/kody-w/RAPP
 
 ## What it is
 
-The RAPP brainstem is a **local-first AI agent server**. It runs as a Flask app on the user's own machine and proxies conversation through the GitHub Copilot API, with automatic tool-calling via user-defined agents written as single Python files. One GitHub account with Copilot access is the only dependency — no API keys, no cloud accounts, no enterprise gates.
+RAPP is a **portable, shareable, vibe swarm building tool**. Drop a single Python file into `agents/` and the brainstem auto-discovers it. Hand someone the file and they're running your agent in 60 seconds. Compose files into swarms; promote the same file from laptop → cloud → Copilot Studio without changing a line.
+
+Under the hood: a Flask app on the user's own machine that proxies conversation through the GitHub Copilot API, with automatic tool-calling via user-defined agents. One GitHub account with Copilot access is the only dependency — no API keys, no cloud accounts, no enterprise gates.
 
 Philosophy: *engine, not experience.* The brainstem is infrastructure; agents are the features.
 

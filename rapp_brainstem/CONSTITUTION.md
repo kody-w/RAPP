@@ -6,10 +6,13 @@
 
 ## What This Is
 
-RAPP Brainstem is a **business-focused AI agent platform** that teaches
-the Microsoft AI stack through progressive tiers. It is an engine —
-not a consumer product, not a toy, not a creature.
+RAPP Brainstem is a **portable, shareable, vibe swarm building tool**.
+A single-file agent travels — drop it in, AirDrop it out, promote it
+across tiers without rewriting it. The brainstem is the engine that
+makes that travel possible: a local Flask server that runs single-file
+Python agents, with an upgrade path through Azure and Copilot Studio.
 
+It is an engine — not a consumer product, not a toy, not a creature.
 It exists to help developers, teams, and organizations build AI agents
 that start local and scale to Azure and M365 Copilot Studio.
 
@@ -17,7 +20,9 @@ that start local and scale to Azure and M365 Copilot Studio.
 
 ## Article I — The Engine, Not the Experience
 
-RAPP Brainstem is infrastructure. It is the Flask server, the LLM loop,
+RAPP Brainstem is the engine behind a portable, shareable, vibe swarm
+building tool. The vibe lives in the agents the user writes; the
+engine stays infrastructure. It is the Flask server, the LLM loop,
 the agent discovery, the auth chain, and the deployment templates.
 
 It does not have a personality out of the box beyond what the user puts

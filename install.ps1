@@ -82,7 +82,7 @@ $REMOTE_VERSION_URL = "https://raw.githubusercontent.com/kody-w/RAPP/main/rapp_b
 function Print-Banner {
     Write-Host ""
     Write-Host "  🧠 RAPP Brainstem" -ForegroundColor Cyan
-    Write-Host "  Local-first AI agent server" -ForegroundColor Gray
+    Write-Host "  Portable · Shareable · Vibe Swarm Building Tool" -ForegroundColor Gray
     Write-Host "  Powered by GitHub Copilot — no API keys needed" -ForegroundColor Gray
     Write-Host ""
 }

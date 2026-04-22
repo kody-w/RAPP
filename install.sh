@@ -128,7 +128,7 @@ print_banner() {
     echo -e "${CYAN}"
     echo "  🧠 RAPP Brainstem"
     echo -e "${NC}"
-    echo "  Local-first AI agent server"
+    echo "  Portable · Shareable · Vibe Swarm Building Tool"
     echo "  Powered by GitHub Copilot — no API keys needed"
     echo ""
 }
