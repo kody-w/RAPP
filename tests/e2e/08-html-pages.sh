@@ -48,17 +48,15 @@ check() {
     fi
 }
 
-# one-pager.html — the boss's ask
+# one-pager.html — single-slide pitch, reads like a PowerPoint slide
 echo "▶ one-pager content anchors..."
 check one-pager.html "headline uses 'goal' + 'swarm'"             'Give it a.*goal.*swarm'
-check one-pager.html "contrasts GPTs/Skills/Plugins"              'GPTs.*Skills.*Plug|GPTs · Skills'
-check one-pager.html "contrasts Copilot Studio"                   'Copilot Studio'
-check one-pager.html "claims portable single file"                'Single Python file|single Python file|Single .*file|single .*file'
-check one-pager.html "claims deterministic"                       'eterministic'
-check one-pager.html "claims local-first / offline"               'Local-first|offline|Offline'
+check one-pager.html "positions alongside Copilot/Azure/M365"     'Copilot.*Azure.*Microsoft 365|Copilot, Azure, and Microsoft 365'
+check one-pager.html "claims portable single file"                'Single Python file|single Python file|one Python file|one portable'
+check one-pager.html "lands the 'one codebase, three tiers' beat" 'three tiers|three-tier|One codebase|one codebase'
 check one-pager.html "pull-quote distills the pitch"              'swarms around it|swarm around your goal|swarms around your goal'
-check one-pager.html "cross-links to FAQ"                         'faq\.html'
-check one-pager.html "cross-links to roadmap"                     'roadmap\.html'
+check one-pager.html "cross-links to FAQ (sr-only nav)"           'faq\.html'
+check one-pager.html "cross-links to roadmap (sr-only nav)"       'roadmap\.html'
 
 # release-notes.html
 echo "▶ release-notes content anchors..."
