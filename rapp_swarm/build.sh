@@ -58,12 +58,26 @@ fi
 # user-organized tree. Vendor it recursively, mirroring Tier 1's shape,
 # but skip the two subdirs that never auto-load in either tier:
 # experimental_agents/ and disabled_agents/. __pycache__ is also skipped.
-rsync -a \
-    --exclude='__pycache__' \
-    --exclude='experimental_agents' \
-    --exclude='disabled_agents' \
-    "$ROOT/rapp_brainstem/agents/" "$DEST/agents/"
+if command -v rsync &>/dev/null; then
+    rsync -a \
+        --exclude='__pycache__' \
+        --exclude='experimental_agents' \
+        --exclude='disabled_agents' \
+        "$ROOT/rapp_brainstem/agents/" "$DEST/agents/"
+else
+    # Fallback for systems without rsync (Windows/Git Bash)
+    cp -R "$ROOT/rapp_brainstem/agents/"* "$DEST/agents/" 2>/dev/null || true
+    rm -rf "$DEST/agents/__pycache__" "$DEST/agents/experimental_agents" "$DEST/agents/disabled_agents" 2>/dev/null || true
+fi
 echo "  ✓ agents/ tree ($(find "$DEST/agents" -name '*_agent.py' | wc -l | tr -d ' ') agent files)"
+
+# Services tree — drop-in HTTP endpoints (swarms, binder, etc.)
+# Same discovery pattern as agents: services/*_service.py.
+if [ -d "$ROOT/rapp_brainstem/services" ]; then
+    mkdir -p "$DEST/services"
+    cp "$ROOT/rapp_brainstem/services"/*_service.py "$DEST/services/" 2>/dev/null || true
+    echo "  ✓ services/ tree ($(find "$DEST/services" -name '*_service.py' 2>/dev/null | wc -l | tr -d ' ') service files)"
+fi
 
 # function_app.py's load_agents_from_folder() does `os.listdir("./agents")`
 # relative to function_app.py's directory. Copy (not symlink) the
@@ -72,6 +86,13 @@ echo "  ✓ agents/ tree ($(find "$DEST/agents" -name '*_agent.py' | wc -l | tr 
 rm -rf agents
 cp -R _vendored/agents agents
 echo "  ✓ agents/ (copy for function_app.py lookup + Azure deploy zip)"
+
+# Same for services — copy to root for function_app.py lookup.
+if [ -d _vendored/services ]; then
+    rm -rf services
+    cp -R _vendored/services services
+    echo "  ✓ services/ (copy for function_app.py lookup + Azure deploy zip)"
+fi
 
 echo "▶ Done. Function App is ready to publish."
 echo "    cd rapp_swarm && func azure functionapp publish <APP_NAME> --build remote"

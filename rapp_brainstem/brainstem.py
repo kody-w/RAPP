@@ -1024,6 +1024,11 @@ def chat():
 def index():
     return send_from_directory(os.path.dirname(os.path.abspath(__file__)), "index.html")
 
+@app.route("/web/<path:filename>", methods=["GET"])
+def web_static(filename):
+    """Serve files from the web/ directory."""
+    return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "web"), filename)
+
 @app.route("/login", methods=["POST"])
 def login():
     """Start GitHub device code OAuth flow."""
