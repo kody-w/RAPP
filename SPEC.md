@@ -851,7 +851,7 @@ that exists today and every one that will exist tomorrow.
 
 | Version | Tag | Summary |
 |---------|-----|---------|
-| 0.12.2 | `brainstem-v0.12.2` | Service discovery in kernel; full-stack rapplication model; 3 base rapplications (kanban, webhook, dashboard); Windows installer fixes. |
+| 0.12.2 | `brainstem-v0.12.2` | Agent-first rapplication platform: service discovery in kernel, factory-clean brainstem, 7 RAPPstore rapplications, VibeBuilder, twin mode, rapplication SDK, Constitution Article XX, vBrainstem standalone catalog, installer fixes. |
 
 ---
 

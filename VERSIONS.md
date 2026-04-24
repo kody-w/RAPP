@@ -48,7 +48,7 @@ exists.
 | `brainstem-v0.7.0` | Flask `/` now serves the rich `web/index.html` (Settings aside, binder, twin panel, …) |
 | `brainstem-v0.7.1` | Twin can run rapplications via `<action kind="rapp">` + auto-inject binder context |
 | `brainstem-v0.7.2` | Fixed `rapp.js` 404 + SOUL_RESPONSE_FORMAT template literal breakage |
-| `brainstem-v0.12.2` | Service discovery in kernel; agent-first rapplication model (kanban, webhook, dashboard); legacy memory agents restored; Windows installer fixes (dep-check SyntaxError, hidden background service, repo-switch detection) |
+| `brainstem-v0.12.2` | Agent-first rapplication platform. Service discovery in kernel (`services/*_service.py` → `/api/<name>`). Factory-clean brainstem (4 core agents, empty `services/`). RAPPstore with 7 rapplications (kanban, webhook, dashboard, vibe_builder, learn_new, swarm_factory + binder/swarms services). VibeBuilder meta-agent generates rapplications from natural language. Twin mode restored with `|||TWIN|||` + action chips. Rapplication SDK (`rapplication-sdk.md`). Constitution Article XX (kernel/extensions/factory-installed rule). vBrainstem: standalone RAPPstore catalog, OS-aware install one-liner, tether default port fix. Login UI polished (green code box, animated dots, model catalog messaging). Windows installer fixes (dep-check SyntaxError, hidden background service, PYTHONIOENCODING, repo-switch detection). `build.sh` vendors services + rsync fallback for Windows. |
 
 ## When cutting a new version (maintainer checklist)
 
