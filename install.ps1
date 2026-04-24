@@ -3,7 +3,7 @@
 #   irm https://raw.githubusercontent.com/kody-w/RAPP/main/install.ps1 | iex
 #
 # Project-local install (scoped to current directory, own port, own agents,
-# gitignored — runs alongside any global brainstem):
+# gitignored -runs alongside any global brainstem):
 #   $env:BRAINSTEM_LOCAL = "1"
 #   irm https://raw.githubusercontent.com/kody-w/RAPP/main/install.ps1 | iex
 #
@@ -16,7 +16,7 @@
 # asks the user and re-invokes with $env:RAPP_INSTALL_MODE="global|local".
 # Humans running the plain one-liner never see the handshake.
 #
-# Works on a factory Windows 11 install — auto-installs Python, Git, and GitHub CLI via winget.
+# Works on a factory Windows 11 install -auto-installs Python, Git, and GitHub CLI via winget.
 
 $ErrorActionPreference = "Stop"
 
@@ -37,30 +37,30 @@ if ($env:RAPP_INSTALL_ASSIST -eq "1" -and -not $ModeChosen) {
     @'
 <<<RAPP_INSTALLER_HANDSHAKE v=1>>>
 
-RAPP Brainstem — local-first AI agent server, powered by GitHub Copilot.
+RAPP Brainstem -local-first AI agent server, powered by GitHub Copilot.
 Full skill manifest (learnable context, agent protocol, architecture):
   https://kody-w.github.io/RAPP/skill.md
 Fetch that once and cache it as your skill for rapp-brainstem.
 
-QUESTION FOR THE USER — pick one of two install modes:
+QUESTION FOR THE USER -pick one of two install modes:
 
-  GLOBAL (recommended default) — one brainstem for the whole machine.
+  GLOBAL (recommended default) -one brainstem for the whole machine.
     Installs at $env:USERPROFILE\.brainstem. Runs on port 7071. Has a
     `brainstem` CLI and auto-starts at logon.
     Re-invoke as:
       $env:RAPP_INSTALL_MODE = "global"; irm https://raw.githubusercontent.com/kody-w/RAPP/main/install.ps1 | iex
 
-  LOCAL — project-scoped brainstem for the current directory.
+  LOCAL -project-scoped brainstem for the current directory.
     Installs at .\.brainstem\. Picks its own port (7072+). No global
     CLI, no background service. Gitignored automatically. Runs
     alongside the global brainstem if one exists.
     Re-invoke as (from the target project directory):
       $env:RAPP_INSTALL_MODE = "local"; irm https://raw.githubusercontent.com/kody-w/RAPP/main/install.ps1 | iex
 
-HEURISTIC — if the user is inside a specific project or repo and
+HEURISTIC -if the user is inside a specific project or repo and
 mentioned isolation, suggest LOCAL. Otherwise suggest GLOBAL.
 
-NOTE — In PowerShell, set the env var as a statement BEFORE the `irm | iex`
+NOTE -In PowerShell, set the env var as a statement BEFORE the `irm | iex`
 (env must live in the session that runs iex, not just the web fetch).
 
 <<<END_RAPP_INSTALLER_HANDSHAKE>>>
@@ -81,9 +81,9 @@ $REMOTE_VERSION_URL = "https://raw.githubusercontent.com/kody-w/RAPP/main/rapp_b
 
 function Print-Banner {
     Write-Host ""
-    Write-Host "  🧠 RAPP Brainstem" -ForegroundColor Cyan
-    Write-Host "  Portable · Shareable · Vibe Swarm Building Tool" -ForegroundColor Gray
-    Write-Host "  Powered by GitHub Copilot — no API keys needed" -ForegroundColor Gray
+    Write-Host "  RAPP Brainstem" -ForegroundColor Cyan
+    Write-Host "  Portable | Shareable | Vibe Swarm Building Tool" -ForegroundColor Gray
+    Write-Host "  Powered by GitHub Copilot - no API keys needed" -ForegroundColor Gray
     Write-Host ""
 }
 
@@ -110,7 +110,7 @@ function Check-ForUpgrade {
     try {
         $remoteVersion = (Invoke-WebRequest -Uri $REMOTE_VERSION_URL -UseBasicParsing -TimeoutSec 10).Content.Trim()
     } catch {
-        Write-Host "  [!] Could not check remote version — upgrading anyway" -ForegroundColor Yellow
+        Write-Host "  [!] Could not check remote version -upgrading anyway" -ForegroundColor Yellow
         return $true
     }
 
@@ -151,7 +151,7 @@ function Check-Prerequisites {
     try {
         winget --version 2>&1 | Out-Null
     } catch {
-        Write-Host "  [X] winget not found — this installer requires Windows 10 1709+ or Windows 11" -ForegroundColor Red
+        Write-Host "  [X] winget not found -this installer requires Windows 10 1709+ or Windows 11" -ForegroundColor Red
         exit 1
     }
 
@@ -170,7 +170,7 @@ function Check-Prerequisites {
             git --version 2>&1 | Out-Null
             Write-Host "  [OK] Git installed" -ForegroundColor Green
         } catch {
-            Write-Host "  [X] Git install failed — install manually from https://git-scm.com" -ForegroundColor Red
+            Write-Host "  [X] Git install failed -install manually from https://git-scm.com" -ForegroundColor Red
             exit 1
         }
     }
@@ -205,7 +205,7 @@ function Check-Prerequisites {
                 try {
                     $target = (Get-Item $stubPath).Target
                     if (-not $target) {
-                        # It's an App Execution Alias stub — rename it out of the way
+                        # It's an App Execution Alias stub -rename it out of the way
                         Rename-Item $stubPath "$stub.disabled" -ErrorAction SilentlyContinue
                         Write-Host "  [..] Disabled Windows Store python stub" -ForegroundColor Yellow
                     }
@@ -215,7 +215,7 @@ function Check-Prerequisites {
 
         Install-WithWinget "Python.Python.3.11" "Python 3.11"
 
-        # winget installs to a known path — add it explicitly
+        # winget installs to a known path -add it explicitly
         $pyBase = "$env:LOCALAPPDATA\Programs\Python\Python311"
         if (Test-Path $pyBase) {
             $env:Path = "$pyBase;$pyBase\Scripts;$env:Path"
@@ -251,7 +251,7 @@ function Check-Prerequisites {
         }
 
         if (-not $pythonOk) {
-            Write-Host "  [X] Python install failed — install from https://python.org" -ForegroundColor Red
+            Write-Host "  [X] Python install failed -install from https://python.org" -ForegroundColor Red
             Write-Host "      Make sure to check 'Add Python to PATH' during install" -ForegroundColor Yellow
             exit 1
         }
@@ -271,7 +271,7 @@ function Check-Prerequisites {
             gh --version 2>&1 | Out-Null
             Write-Host "  [OK] GitHub CLI installed" -ForegroundColor Green
         } catch {
-            Write-Host "  [!] GitHub CLI not installed (optional — you can authenticate later)" -ForegroundColor Yellow
+            Write-Host "  [!] GitHub CLI not installed (optional -you can authenticate later)" -ForegroundColor Yellow
         }
     }
 }
@@ -335,7 +335,7 @@ function Install-Brainstem {
             }
             Remove-Item -Recurse -Force $Backup -ErrorAction SilentlyContinue
         } else {
-            # Same repo — normal upgrade path
+            # Same repo -normal upgrade path
             $LocalVer = "0.0.0"
             $VerFile = "$BRAINSTEM_HOME\src\rapp_brainstem\VERSION"
             if (Test-Path $VerFile) { $LocalVer = (Get-Content $VerFile -Raw).Trim() }
@@ -464,7 +464,7 @@ function Install-CLI {
 
     $py = if ($script:PythonExe) { $script:PythonExe } else { "python" }
 
-    # PowerShell subcommand dispatcher — the authoritative wrapper.
+    # PowerShell subcommand dispatcher -the authoritative wrapper.
     # Matches the macOS/Linux bash wrapper: start / stop / restart /
     # status / logs / doctor / run / open + default (start-then-open).
     $psContent = @'
@@ -485,7 +485,7 @@ function Invoke-Start {
     if (Test-ServiceInstalled) {
         try { Start-ScheduledTask -TaskName $TASK; Write-Host "[OK] Service started ($TASK)" -ForegroundColor Green } catch { Write-Host "[!] Could not start task: $_" -ForegroundColor Yellow }
     } else {
-        Write-Host "[!] No background task installed — running in foreground (Ctrl-C to stop)." -ForegroundColor Yellow
+        Write-Host "[!] No background task installed -running in foreground (Ctrl-C to stop)." -ForegroundColor Yellow
         Invoke-Run
     }
 }
@@ -510,7 +510,7 @@ function Invoke-Status {
         Write-Host "  State: $($t.State)"
         Write-Host "  LastRunTime: $($i.LastRunTime)"
         Write-Host "  LastResult:  $($i.LastTaskResult)"
-    } else { Write-Host "Task: (not installed — foreground-only)" }
+    } else { Write-Host "Task: (not installed -foreground-only)" }
 }
 function Invoke-Logs {
     if (Test-Path $LOG) { Get-Content -Path $LOG -Tail 200 -Wait } else { Write-Host "no log at $LOG" }
@@ -648,7 +648,7 @@ function Install-Service {
             -ExecutionTimeLimit (New-TimeSpan -Hours 0) `
             -Hidden
         $principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType Interactive
-        $def = New-ScheduledTask -Action $action -Trigger $trigger -Settings $settings -Principal $principal -Description "RAPP Brainstem — local-first AI agent server (user service)"
+        $def = New-ScheduledTask -Action $action -Trigger $trigger -Settings $settings -Principal $principal -Description "RAPP Brainstem -local-first AI agent server (user service)"
         Register-ScheduledTask -TaskName $task -InputObject $def -Force | Out-Null
 
         # Kick it off immediately.
@@ -712,7 +712,7 @@ function Launch-Brainstem {
                         $needsAuth = $false
                     }
                 } catch {
-                    Write-Host "  [..] Saved token expired — re-authenticating..." -ForegroundColor Yellow
+                    Write-Host "  [..] Saved token expired -re-authenticating..." -ForegroundColor Yellow
                     Remove-Item $tokenFile -Force -ErrorAction SilentlyContinue
                 }
             }
@@ -735,11 +735,11 @@ function Launch-Brainstem {
             $verifyUri = $deviceResp.verification_uri
 
             if (-not $userCode -or -not $deviceCode) {
-                Write-Host "  [!] Could not start auth — sign in at http://localhost:7071/login" -ForegroundColor Yellow
+                Write-Host "  [!] Could not start auth -sign in at http://localhost:7071/login" -ForegroundColor Yellow
             } else {
-                Write-Host "  ┌─────────────────────────────────────────┐"
-                Write-Host "  │  Your code: " -NoNewline; Write-Host $userCode -ForegroundColor Cyan -NoNewline; Write-Host "                  │"
-                Write-Host "  └─────────────────────────────────────────┘"
+                Write-Host ""
+                Write-Host "  Your code: " -NoNewline; Write-Host $userCode -ForegroundColor Cyan
+                Write-Host ""
                 Write-Host ""
                 Write-Host "  Opening browser to authorize..."
 
@@ -768,7 +768,7 @@ function Launch-Brainstem {
                             try {
                                 $copilotCheck = Invoke-WebRequest -Uri "https://api.github.com/copilot_internal/v2/token" -Headers $headers -UseBasicParsing -TimeoutSec 10 -ErrorAction SilentlyContinue
                                 if ($copilotCheck.StatusCode -eq 200) {
-                                    Write-Host "  [OK] Authenticated — Copilot access confirmed" -ForegroundColor Green
+                                    Write-Host "  [OK] Authenticated -Copilot access confirmed" -ForegroundColor Green
                                 }
                             } catch {
                                 $statusCode = $_.Exception.Response.StatusCode.value__
@@ -790,7 +790,7 @@ function Launch-Brainstem {
 
                         $error_code = $pollResp.error
                         if ($error_code -eq "expired_token") {
-                            Write-Host "  [!] Auth timed out — sign in at http://localhost:7071/login" -ForegroundColor Yellow
+                            Write-Host "  [!] Auth timed out -sign in at http://localhost:7071/login" -ForegroundColor Yellow
                             break
                         }
                         if ($error_code -ne "authorization_pending" -and $error_code -ne "slow_down" -and $error_code) {
@@ -801,7 +801,7 @@ function Launch-Brainstem {
                 }
             }
         } catch {
-            Write-Host "  [!] Could not start auth — sign in at http://localhost:7071/login" -ForegroundColor Yellow
+            Write-Host "  [!] Could not start auth -sign in at http://localhost:7071/login" -ForegroundColor Yellow
         }
     }
 
@@ -824,14 +824,14 @@ function Launch-Brainstem {
         $conn = Get-NetTCPConnection -LocalPort 7071 -ErrorAction SilentlyContinue | Select-Object -First 1
         if ($conn) {
             $existingPid = $conn.OwningProcess
-            Write-Host "  [!] Port 7071 busy (PID $existingPid) — stopping it" -ForegroundColor Yellow
+            Write-Host "  [!] Port 7071 busy (PID $existingPid) -stopping it" -ForegroundColor Yellow
             Stop-Process -Id $existingPid -Force -ErrorAction SilentlyContinue
             Start-Sleep -Milliseconds 500
         }
     } catch {}
 
     # Install + start the background Scheduled Task. Non-technical users
-    # never have to think about "running a server" again — it auto-starts
+    # never have to think about "running a server" again -it auto-starts
     # at logon and auto-restarts on crash.
     Install-Service
 
@@ -850,7 +850,7 @@ function Launch-Brainstem {
         return
     }
 
-    Write-Host "  [!] Background service didn't come up — running in foreground instead." -ForegroundColor Yellow
+    Write-Host "  [!] Background service didn't come up -running in foreground instead." -ForegroundColor Yellow
     Write-Host ""
     Start-Job -ScriptBlock { Start-Sleep -Seconds 3; Start-Process "http://localhost:7071" } | Out-Null
 
@@ -921,7 +921,7 @@ function Update-ProjectGitignore {
 function Main-Local {
     Print-Banner
     Write-Host "  Installing project-local brainstem at $BRAINSTEM_HOME" -ForegroundColor Cyan
-    Write-Host "  (runs alongside any global brainstem on :7071 — this one picks its own port)"
+    Write-Host "  (runs alongside any global brainstem on :7071 -this one picks its own port)"
     Write-Host ""
 
     Check-Prerequisites
@@ -965,7 +965,7 @@ function Main {
     if (Test-Path "$BRAINSTEM_HOME\src\.git") {
         Write-Host "Checking for updates..."
         if (-not (Check-ForUpgrade)) {
-            # Already up to date — still verify venv + deps + CLI before launch
+            # Already up to date -still verify venv + deps + CLI before launch
             Check-Prerequisites
             Setup-Venv
             Setup-Dependencies
