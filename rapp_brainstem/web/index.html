@@ -1408,26 +1408,38 @@
       const BASE = window.location.origin && !window.location.origin.startsWith('file:')
         ? window.location.origin
         : 'http://127.0.0.1:7080';
+      const CATALOG_URL = 'https://raw.githubusercontent.com/kody-w/RAPP/main/rapp_store/index.json';
 
       function $(s) { return document.querySelector(s); }
       function esc(s) { return String(s ?? '').replace(/[<>&"']/g, c =>
         ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c])); }
 
       async function api(path, opts) {
-        const r = await fetch(BASE + path, {
-          headers: { 'Content-Type': 'application/json' }, ...opts
-        });
-        const text = await r.text();
-        try { return { status: r.status, json: JSON.parse(text) }; }
-        catch { return { status: r.status, json: { _raw: text } }; }
+        try {
+          const r = await fetch(BASE + path, {
+            headers: { 'Content-Type': 'application/json' }, ...opts
+          });
+          const text = await r.text();
+          try { return { status: r.status, json: JSON.parse(text) }; }
+          catch { return { status: r.status, json: { _raw: text } }; }
+        } catch { return { status: 0, json: {} }; }
       }
 
       let BINDER, CATALOG;
 
       async function load() {
+        // Try local brainstem first; fall back to GitHub catalog for standalone vBrainstem
         const [b, c] = await Promise.all([api('/api/binder'), api('/api/binder/catalog')]);
-        BINDER  = b.status === 200 ? b.json : { installed: [] };
-        CATALOG = c.status === 200 ? c.json : { rapplications: [] };
+        BINDER = b.status === 200 ? b.json : { installed: JSON.parse(localStorage.getItem('rapp_binder_installed') || '[]') };
+        if (c.status === 200) {
+          CATALOG = c.json;
+        } else {
+          // Standalone: fetch catalog directly from GitHub
+          try {
+            const r = await fetch(CATALOG_URL);
+            CATALOG = await r.json();
+          } catch { CATALOG = { rapplications: [] }; }
+        }
         render();
       }
 
@@ -1435,12 +1447,15 @@
 
       function rappRow(r, installed) {
         const summary = (r.summary || '').slice(0, 160) + ((r.summary || '').length > 160 ? '…' : '');
+        const displayName = r.name || r.id;
+        const cat = r.category ? `<span style="font-size:9px;background:#1f6feb22;color:#58a6ff;padding:1px 5px;border-radius:3px;margin-left:6px">${esc(r.category)}</span>` : '';
+        const svc = r.service_filename ? `<span style="font-size:9px;color:#8b949e;margin-left:4px">+ service</span>` : '';
         const btn = installed
           ? `<button class="danger" data-uninstall="${esc(r.id)}">Uninstall</button>`
           : `<button class="primary" data-install="${esc(r.id)}">Install</button>`;
         return `
           <div class="rapp-row ${installed ? 'installed' : ''}">
-            <div><span class="name">${esc(r.id)}</span><span class="ver">v${esc(r.version || '?')}</span></div>
+            <div><span class="name">${esc(displayName)}</span><span class="ver">v${esc(r.version || '?')}</span>${cat}${svc}</div>
             <div class="summary">${esc(summary)}</div>
             <div class="actions">${btn}</div>
           </div>`;
@@ -1465,14 +1480,26 @@
       }
 
       async function install(id) {
+        // Try local brainstem binder service first
         const r = await api('/api/binder/install', { method: 'POST', body: JSON.stringify({ id }) });
-        if (r.status !== 200) alert('Install failed: ' + (r.json.message || 'unknown'));
+        if (r.status === 200) { await load(); return; }
+        // Standalone: track in localStorage (agent runs when tethered)
+        const entry = (CATALOG.rapplications || []).find(e => e.id === id);
+        if (!entry) { alert('Not found in catalog: ' + id); return; }
+        const list = JSON.parse(localStorage.getItem('rapp_binder_installed') || '[]');
+        if (!list.some(e => e.id === id)) {
+          list.push({ id, version: entry.version || '?', filename: entry.singleton_filename || '' });
+          localStorage.setItem('rapp_binder_installed', JSON.stringify(list));
+        }
         await load();
       }
       async function uninstall(id) {
         if (!confirm('Uninstall ' + id + '?')) return;
         const r = await api('/api/binder/installed/' + encodeURIComponent(id), { method: 'DELETE' });
-        if (r.status !== 200) alert('Uninstall failed: ' + (r.json.message || 'unknown'));
+        if (r.status === 200) { await load(); return; }
+        // Standalone: remove from localStorage
+        const list = JSON.parse(localStorage.getItem('rapp_binder_installed') || '[]');
+        localStorage.setItem('rapp_binder_installed', JSON.stringify(list.filter(e => e.id !== id)));
         await load();
       }
 
