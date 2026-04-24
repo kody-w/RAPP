@@ -51,12 +51,12 @@ check() {
 # one-pager.html — the boss's ask
 echo "▶ one-pager content anchors..."
 check one-pager.html "headline uses 'goal' + 'swarm'"             'Give it a.*goal.*swarm'
-check one-pager.html "contrasts GPTs/Skills/Plugins"              'GPTs.*Skills.*Plugins|GPTs / Skills / Plugins'
+check one-pager.html "contrasts GPTs/Skills/Plugins"              'GPTs.*Skills.*Plug|GPTs · Skills'
 check one-pager.html "contrasts Copilot Studio"                   'Copilot Studio'
 check one-pager.html "claims portable single file"                'Single Python file|single Python file|Single .*file|single .*file'
 check one-pager.html "claims deterministic"                       'eterministic'
 check one-pager.html "claims local-first / offline"               'Local-first|offline|Offline'
-check one-pager.html "pull-quote distills the pitch"              'swarm around your goal'
+check one-pager.html "pull-quote distills the pitch"              'swarms around it|swarm around your goal|swarms around your goal'
 check one-pager.html "cross-links to FAQ"                         'faq\.html'
 check one-pager.html "cross-links to roadmap"                     'roadmap\.html'
 

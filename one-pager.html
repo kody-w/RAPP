@@ -10,242 +10,289 @@
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://kody-w.github.io/RAPP/one-pager.html">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E🧠%3C/text%3E%3C/svg%3E">
+<script>
+(function(){
+  try {
+    var saved = localStorage.getItem('rapp-theme');
+    var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    var theme = saved || (prefersLight ? 'light' : 'dark');
+    if (theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+  } catch(e){}
+})();
+</script>
 <style>
-  :root{
-    --bg:#0d1117; --panel:#161b22; --border:#21262d; --border2:#30363d;
-    --fg:#e6edf3; --dim:#8b949e;
-    --blue:#1f6feb; --blue-2:#58a6ff;
-    --green-3:#3fb950; --purple:#a78bfa; --warn:#d29922;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  html,body{height:100%}
-  body{
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-    background:var(--bg);color:var(--fg);
-    min-height:100vh;
-    display:flex;flex-direction:column;
-    line-height:1.5;
-  }
-  a{color:var(--blue-2);text-decoration:none}a:hover{text-decoration:underline}
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d1117;--surface:#161b22;--surface2:#1c2128;--border:#30363d;--border2:#21262d;
+  --text:#e6edf3;--text-dim:#8b949e;--muted:#484f58;
+  --accent:#58a6ff;--green:#3fb950;--green-2:#2ea043;--purple:#a78bfa;--purple-2:#8b5cf6;
+  --orange:#f0883e;--yellow:#e3b341;--red:#f85149;--warn:#d29922;
+  --chrome-bg:rgba(22,27,34,.92);
+  --grad-1:#7df0c8;--grad-2:#58a6ff;--grad-3:#a78bfa;
+  --tint-green:rgba(63,185,80,.08);--tint-purple:rgba(139,92,246,.08);--tint-blue:rgba(88,166,255,.1);
+  --logo-glow:rgba(125,240,200,.3);
+}
+[data-theme="light"]{
+  --bg:#ffffff;--surface:#f6f8fa;--surface2:#eaeef2;--border:#d0d7de;--border2:#afb8c1;
+  --text:#1f2328;--text-dim:#59636e;--muted:#8c959f;
+  --accent:#0969da;--green:#1a7f37;--green-2:#2da44e;--purple:#8250df;--purple-2:#6639ba;
+  --orange:#bc4c00;--yellow:#9a6700;--red:#cf222e;--warn:#9a6700;
+  --chrome-bg:rgba(255,255,255,.88);
+  --grad-1:#2da44e;--grad-2:#0969da;--grad-3:#8250df;
+  --tint-green:rgba(26,127,55,.08);--tint-purple:rgba(130,80,223,.08);--tint-blue:rgba(9,105,218,.08);
+  --logo-glow:rgba(9,105,218,.2);
+}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.55;transition:background-color .25s,color .25s}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:'SF Mono',ui-monospace,monospace;font-size:.85em;background:var(--surface);padding:2px 6px;border-radius:4px;border:1px solid var(--border2)}
 
-  /* slide canvas — 16:9-ish, centered, fits without scroll on a normal laptop */
-  .slide{
-    flex:1;
-    display:grid;
-    grid-template-rows:auto 1fr auto;
-    max-width:1180px;
-    width:100%;
-    margin:0 auto;
-    padding:28px 40px 24px;
-  }
+/* Slide canvas — single slide, fills viewport */
+.slide{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  padding:56px 64px 72px;overflow-y:auto;
+}
+.slide-inner{width:100%;max-width:1200px;text-align:center}
 
-  header{
-    display:flex;align-items:center;justify-content:space-between;
-    padding-bottom:18px;border-bottom:1px solid var(--border);
-  }
-  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px}
-  .brand .logo{font-size:22px}
-  .brand .version{color:var(--dim);font-size:12px;font-weight:400;margin-left:4px}
-  .kicker{color:var(--dim);font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+/* Hero */
+.logo{font-size:64px;filter:drop-shadow(0 0 16px var(--logo-glow));margin-bottom:14px;line-height:1}
+h1{font-size:3.4rem;font-weight:800;line-height:1.08;margin-bottom:18px;letter-spacing:-.5px}
+h1 .grad{background:linear-gradient(135deg,var(--grad-1),var(--grad-2),var(--grad-3));-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{font-size:1.25rem;color:var(--text-dim);max-width:780px;margin:0 auto 36px;line-height:1.6}
+.sub strong{color:var(--text)}
 
-  /* hero row */
-  .hero{
-    padding:36px 0 28px;
-    display:grid;grid-template-columns:1.2fr .8fr;gap:44px;align-items:center;
-  }
-  .headline{
-    font-size:44px;line-height:1.08;font-weight:800;letter-spacing:-0.5px;
-  }
-  .headline .accent{color:var(--blue-2)}
-  .headline .accent2{color:var(--green-3)}
-  .sub{margin-top:16px;font-size:17px;color:var(--dim);max-width:58ch}
+/* 3-column compare */
+.cols-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;width:100%;text-align:left;margin-bottom:28px}
+.card{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:22px 24px 20px;
+  transition:border-color .15s,transform .15s;
+  display:flex;flex-direction:column;gap:10px;
+  position:relative;
+}
+.card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.card .card-label{
+  font-size:.72rem;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;
+  color:var(--text-dim);
+}
+.card h3{font-size:1.2rem;font-weight:700;line-height:1.25;color:var(--text);margin-bottom:2px}
+.card ul{list-style:none;display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.card ul li{
+  padding-left:22px;position:relative;
+  font-size:.98rem;line-height:1.5;color:var(--text-dim);
+}
+.card ul li strong{color:var(--text)}
+.card .yes{color:var(--green)}
+.card .no{color:var(--warn)}
+.card .mix{color:var(--text-dim)}
+.card ul li::before{
+  position:absolute;left:0;top:0;font-weight:800;font-family:'SF Mono',monospace;
+}
+.card ul li.no::before{content:"✗";color:var(--warn)}
+.card ul li.yes::before{content:"✓";color:var(--green)}
+.card ul li.mix::before{content:"~";color:var(--text-dim)}
 
-  /* flow chip — the mechanism */
-  .flow{
-    background:linear-gradient(180deg,var(--panel) 0%,#11161d 100%);
-    border:1px solid var(--border2);
-    border-radius:12px;
-    padding:22px 20px;
-    display:flex;flex-direction:column;gap:12px;
-    box-shadow:0 10px 30px rgba(0,0,0,.35);
-  }
-  .flow-step{
-    display:grid;grid-template-columns:26px 1fr;gap:10px;align-items:flex-start;
-  }
-  .flow-step .n{
-    width:24px;height:24px;border-radius:50%;
-    background:rgba(88,166,255,.12);
-    border:1px solid var(--blue-2);
-    color:var(--blue-2);
-    display:flex;align-items:center;justify-content:center;
-    font-size:12px;font-weight:700;
-  }
-  .flow-step h4{font-size:14px;font-weight:600;color:var(--fg)}
-  .flow-step p{font-size:13px;color:var(--dim);margin-top:2px}
-  .flow-step .hint{color:var(--green-3);font-family:"SF Mono",ui-monospace,monospace;font-size:12px;margin-top:4px}
+.card.ours{
+  background:linear-gradient(180deg,var(--tint-blue) 0%,var(--surface) 60%);
+  border-color:var(--accent);
+  box-shadow:0 0 0 1px var(--accent),0 10px 36px rgba(88,166,255,.15);
+}
+.card.ours .card-label{color:var(--accent)}
+.card.ours h3 .grad{background:linear-gradient(135deg,var(--grad-1),var(--grad-2),var(--grad-3));-webkit-background-clip:text;background-clip:text;color:transparent}
+.card .stamp{
+  position:absolute;top:14px;right:16px;
+  font-size:.62rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;
+  color:var(--green);
+}
 
-  /* compare — the actual boss-landing answer */
-  .compare{
-    display:grid;grid-template-columns:repeat(3,1fr);gap:14px;
-    margin-top:8px;padding-top:24px;border-top:1px solid var(--border);
-  }
-  .card{
-    background:var(--panel);border:1px solid var(--border2);border-radius:10px;
-    padding:18px 18px 16px;
-    display:flex;flex-direction:column;gap:10px;
-    position:relative;
-  }
-  .card.ours{border-color:var(--blue-2);box-shadow:0 0 0 1px rgba(88,166,255,.25), 0 8px 22px rgba(31,111,235,.18)}
-  .card-title{font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px}
-  .card.ours .card-title{color:var(--blue-2)}
-  .card.ours .card-title::after{
-    content:"one slide answer";
-    margin-left:auto;
-    font-size:10px;color:var(--green-3);letter-spacing:.08em;text-transform:uppercase;
-    font-weight:600;
-  }
-  .card-list{list-style:none;display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--dim)}
-  .card-list li{display:grid;grid-template-columns:16px 1fr;gap:8px;align-items:flex-start;line-height:1.4}
-  .card-list .yes{color:var(--green-3);font-weight:700}
-  .card-list .no{color:var(--warn);font-weight:700}
-  .card-list .na{color:var(--dim);font-weight:700}
+/* Hinge line (the slide question equivalent — final beat of the slide) */
+.slide-q{
+  display:block;margin:8px auto 0;max-width:880px;
+  font-size:1.5rem;line-height:1.45;color:var(--text);font-weight:600;
+  font-style:italic;position:relative;padding-top:28px;
+  letter-spacing:-.1px;
+}
+.slide-q::before{
+  content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:48px;height:2px;
+  background:linear-gradient(90deg,var(--grad-1),var(--grad-3));
+  border-radius:1px;opacity:.8;
+}
+.slide-q .accent{
+  background:linear-gradient(135deg,var(--grad-1),var(--grad-2),var(--grad-3));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  font-style:normal;font-weight:700;
+}
+.slide-q .by{
+  display:block;margin-top:10px;font-size:.85rem;
+  color:var(--text-dim);font-weight:500;font-style:normal;letter-spacing:0;
+}
 
-  /* footer pull-quote */
-  footer{
-    margin-top:22px;padding-top:16px;border-top:1px solid var(--border);
-    display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;
-  }
-  .quote{
-    font-size:14px;color:var(--fg);max-width:720px;font-style:italic;
-    border-left:3px solid var(--blue-2);padding-left:14px;
-  }
-  .quote .by{display:block;margin-top:4px;font-style:normal;color:var(--dim);font-size:12px}
-  .links{font-size:12px;color:var(--dim);display:flex;gap:14px;flex-wrap:wrap}
-  .links a{color:var(--blue-2)}
+/* Corner chrome */
+.theme-toggle{
+  position:fixed;top:18px;left:22px;z-index:50;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:38px;height:38px;padding:0;
+  background:var(--chrome-bg);backdrop-filter:blur(12px);
+  border:1px solid var(--border);border-radius:50%;
+  color:var(--text-dim);cursor:pointer;font-size:1rem;line-height:1;
+  transition:all .15s;
+}
+.theme-toggle:hover{color:var(--text);border-color:var(--accent);transform:translateY(-1px)}
+.theme-toggle .sun{display:none}
+.theme-toggle .moon{display:inline}
+[data-theme="light"] .theme-toggle .sun{display:inline}
+[data-theme="light"] .theme-toggle .moon{display:none}
 
-  @media (max-width:860px){
-    .hero{grid-template-columns:1fr;gap:24px;padding:20px 0}
-    .headline{font-size:32px}
-    .compare{grid-template-columns:1fr}
-    .slide{padding:20px}
-  }
+.corner-nav{
+  position:fixed;top:18px;right:22px;z-index:50;
+  display:flex;align-items:center;gap:10px;
+  padding:8px 14px;
+  background:var(--chrome-bg);backdrop-filter:blur(12px);
+  border:1px solid var(--border);border-radius:24px;
+}
+.corner-nav a{font-size:.78rem;color:var(--text-dim)}
+.corner-nav a:hover{color:var(--accent);text-decoration:none}
+.corner-nav .sep{color:var(--muted);font-size:.7rem}
 
-  /* print: fits as one slide to PDF */
-  @media print{
-    body{background:#fff;color:#0d1117}
-    .slide{max-width:none}
-    .card{break-inside:avoid}
-  }
+/* Slide-footer links */
+.slide-footer-links{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  display:flex;gap:18px;z-index:40;
+  padding:6px 18px;
+  background:var(--chrome-bg);backdrop-filter:blur(12px);
+  border:1px solid var(--border);border-radius:22px;
+  font-size:.78rem;
+}
+.slide-footer-links a{color:var(--text-dim)}
+.slide-footer-links a:hover{color:var(--accent);text-decoration:none}
+
+/* Responsive */
+@media(max-width:980px){
+  .slide{padding:36px 24px 80px;height:auto;position:relative;min-height:100vh}
+  html,body{overflow:auto}
+  h1{font-size:2.1rem}
+  .sub{font-size:1.05rem;margin-bottom:24px}
+  .cols-3{grid-template-columns:1fr;gap:14px}
+  .slide-q{font-size:1.1rem;padding-top:22px}
+  .corner-nav{top:8px;right:10px;padding:6px 10px;gap:6px}
+  .corner-nav a{font-size:.72rem}
+  .theme-toggle{top:8px;left:10px;width:32px;height:32px;font-size:.85rem}
+  .slide-footer-links{bottom:10px;padding:4px 12px;gap:10px;font-size:.7rem}
+}
+
+/* Print: fits as a single slide in PDF */
+@media print{
+  html,body{background:#fff;color:#0d1117;overflow:visible;height:auto}
+  .theme-toggle,.corner-nav,.slide-footer-links{display:none !important}
+  .slide{position:static;padding:32px;height:auto}
+  .card{break-inside:avoid}
+}
+
+/* Entry animation */
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.animate{animation:fadeUp .55s ease both}
+.animate.d1{animation-delay:.08s}
+.animate.d2{animation-delay:.16s}
+.animate.d3{animation-delay:.24s}
+.animate.d4{animation-delay:.32s}
+.animate.d5{animation-delay:.40s}
 </style>
 </head>
 <body>
+
+<button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+  <span class="moon">🌙</span><span class="sun">☀️</span>
+</button>
+
+<nav class="corner-nav">
+  <a href="./">Home</a>
+  <span class="sep">·</span>
+  <a href="./pitch-playbook.html">Pitch deck</a>
+  <span class="sep">·</span>
+  <a href="./faq.html">FAQ</a>
+</nav>
+
 <main class="slide">
+  <div class="slide-inner">
 
-  <header>
-    <div class="brand">
-      <span class="logo">🧠</span>
-      <span>RAPP</span>
-      <span class="version">Rapid Agent Prototyping Platform</span>
-    </div>
-    <span class="kicker">One-Slide Explainer</span>
-  </header>
+    <div class="logo animate d1">🧠</div>
 
-  <section class="hero">
-    <div>
-      <h1 class="headline">
-        Give it a <span class="accent">goal</span>.<br>
-        Your <span class="accent2">swarm</span> does the rest.<br>
-        Share the <span class="accent">file</span>. Anyone runs it.
-      </h1>
-      <p class="sub">
-        RAPP turns a natural-language goal into a working agent swarm — on your
-        laptop, on an IoT box in the woods, in Teams, in Copilot Studio. The
-        agent is <strong>one Python file</strong>. Drop it in a chat. Your
-        teammate loads it and runs it. Works the same on every machine. Works
-        offline. Works next year.
-      </p>
-    </div>
+    <h1 class="animate d2">
+      Give it a <span class="grad">goal</span>.<br>
+      Your <span class="grad">swarm</span> does the rest.
+    </h1>
 
-    <div class="flow" aria-label="How it works, in three steps">
-      <div class="flow-step">
-        <span class="n">1</span>
-        <div>
-          <h4>Say your goal</h4>
-          <p>Natural language. No YAML, no skills manifest, no plugin spec.</p>
-          <div class="hint">"Draft an exec brief on Q3 sales pipeline."</div>
-        </div>
+    <p class="sub animate d3">
+      RAPP turns a natural-language goal into a working agent swarm —
+      on your laptop, on an IoT box in the woods, in Teams, in Copilot
+      Studio. Every agent is <strong>one Python file</strong>. Drop it in
+      a chat. Anyone can load it and run it. Works the same on every
+      machine. Works <strong>offline</strong>. Works next year.
+    </p>
+
+    <section class="cols-3">
+      <div class="card animate d4">
+        <span class="card-label">GPTs · Skills · Plug-ins</span>
+        <h3>Vendor-locked, non-deterministic</h3>
+        <ul>
+          <li class="no">Runs <strong>only inside the vendor's chat</strong>.</li>
+          <li class="no"><strong>Non-deterministic</strong> — markdown the LLM reinterprets.</li>
+          <li class="no">Not shareable across ecosystems.</li>
+          <li class="no">Cloud-tethered. No offline.</li>
+        </ul>
       </div>
-      <div class="flow-step">
-        <span class="n">2</span>
-        <div>
-          <h4>Agents swarm around it</h4>
-          <p>Copilot drives the brainstem; agents spin up, divide the work,
-            produce the outcome, and remember what they learned.</p>
-        </div>
+
+      <div class="card animate d4">
+        <span class="card-label">Copilot Studio · Declarative agents</span>
+        <h3>Bounded by the product surface</h3>
+        <ul>
+          <li class="mix">Solid for structured M365-inside scenarios.</li>
+          <li class="no">Only what the product exposes today.</li>
+          <li class="no">Single-tenant logic; hard to reuse across orgs.</li>
+          <li class="no">No local execution, no on-device.</li>
+        </ul>
       </div>
-      <div class="flow-step">
-        <span class="n">3</span>
-        <div>
-          <h4>Share the file</h4>
-          <p>One <code>*_agent.py</code>. AirDrop it, paste it in Teams, email it.
-            It runs unchanged on the next brainstem it lands in.</p>
-        </div>
+
+      <div class="card ours animate d4">
+        <span class="stamp">this one</span>
+        <span class="card-label">RAPP</span>
+        <h3><span class="grad">Portable. Deterministic. Yours.</span></h3>
+        <ul>
+          <li class="yes"><strong>Single Python file = one agent.</strong> Portable by physics.</li>
+          <li class="yes"><strong>Deterministic</strong> — code, not vibes. Runs the same everywhere.</li>
+          <li class="yes"><strong>Local-first.</strong> Offline-capable. Cloud when you want it.</li>
+          <li class="yes"><strong>Shareable by drag-and-drop.</strong> Chat → teammate's brainstem.</li>
+          <li class="yes"><strong>Scales</strong> to cloud + Copilot Studio unchanged.</li>
+        </ul>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="compare" aria-label="Why this, not something else">
-    <div class="card">
-      <h3 class="card-title">GPTs / Skills / Plugins</h3>
-      <ul class="card-list">
-        <li><span class="no">✗</span><span>Vendor-locked — your GPT only runs in that vendor's chat.</span></li>
-        <li><span class="no">✗</span><span>Non-deterministic. Different behavior on different days / devices.</span></li>
-        <li><span class="no">✗</span><span>Not shareable across ecosystems (Anthropic ↔ OpenAI ↔ Copilot).</span></li>
-        <li><span class="no">✗</span><span>Cloud-tethered. No offline, no on-device.</span></li>
-      </ul>
-    </div>
-
-    <div class="card">
-      <h3 class="card-title">Copilot Studio / Declarative Agents</h3>
-      <ul class="card-list">
-        <li><span class="na">~</span><span>Great for structured, bounded scenarios inside M365.</span></li>
-        <li><span class="no">✗</span><span>Limited to what the product surface supports today.</span></li>
-        <li><span class="no">✗</span><span>Single-tenant logic; harder to reuse across orgs.</span></li>
-        <li><span class="no">✗</span><span>No local execution, no on-device, no offline.</span></li>
-      </ul>
-    </div>
-
-    <div class="card ours">
-      <h3 class="card-title">RAPP</h3>
-      <ul class="card-list">
-        <li><span class="yes">✓</span><span><strong>Single Python file = one agent.</strong> Portable by design.</span></li>
-        <li><span class="yes">✓</span><span><strong>Deterministic.</strong> Code, not vibes — runs the same everywhere.</span></li>
-        <li><span class="yes">✓</span><span><strong>Local-first.</strong> Runs offline on your laptop, an IoT box, or Azure.</span></li>
-        <li><span class="yes">✓</span><span><strong>Shareable by drag-and-drop.</strong> Teams chat → teammate's brainstem.</span></li>
-        <li><span class="yes">✓</span><span><strong>Scales to cloud + Copilot Studio</strong> unchanged (tier parity).</span></li>
-      </ul>
-    </div>
-  </section>
-
-  <footer>
-    <blockquote class="quote">
-      "What's unique about RAPP is that you just give it your goal. It will
-      automatically spin up agents that will swarm around your goal and
-      produce the outcome you desire — and learn from it. Drop that in a
-      Teams call and everyone can load it into their brainstems and run it
-      immediately for the next few weeks."
+    <blockquote class="slide-q animate d5">
+      <span>Give it your goal. A swarm <span class="accent">spins up, swarms around it, and learns from it.</span> Drop the file in a Teams chat — everyone loads it into their brainstem and runs it immediately.</span>
       <span class="by">— the pitch, in one breath</span>
     </blockquote>
-    <nav class="links">
-      <a href="./">Landing</a>
-      <a href="./pitch-playbook.html">Pitch playbook</a>
-      <a href="./faq.html">FAQ</a>
-      <a href="./roadmap.html">Roadmap</a>
-      <a href="./release-notes.html">Release notes</a>
-      <a href="https://github.com/kody-w/RAPP">GitHub</a>
-    </nav>
-  </footer>
 
+  </div>
 </main>
+
+<nav class="slide-footer-links">
+  <a href="./release-notes.html">Releases</a>
+  <a href="./roadmap.html">Roadmap</a>
+  <a href="./faq.html">FAQ</a>
+  <a href="https://github.com/kody-w/RAPP">GitHub</a>
+</nav>
+
+<script>
+function toggleTheme(){
+  var current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  var next = current === 'light' ? 'dark' : 'light';
+  if (next === 'light') document.documentElement.setAttribute('data-theme','light');
+  else document.documentElement.removeAttribute('data-theme');
+  try { localStorage.setItem('rapp-theme', next); } catch(e){}
+}
+</script>
+
 </body>
 </html>
