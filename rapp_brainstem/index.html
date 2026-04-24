@@ -1204,6 +1204,49 @@
   body.light-mode .twin-body code { background: rgba(31,111,235,.08); color: #0969da; }
   body.light-mode .twin-action { background: rgba(31,111,235,.08); border-color: rgba(31,111,235,.3); color: #0969da; }
   body.light-mode .twin-status-tag { color: #1f6feb; }
+
+  /* ─────────────────────────────────────────────────────────────────────
+     v0.6.0 Classic Chrome — default look for muscle-memory continuity
+
+     Users were trained on v0.6.0's compact, icon-only header. All
+     v0.12.x creature comforts stay wired underneath; they just don't
+     visually clutter the default chrome. Every element below stays
+     reachable through its existing toggle (Settings, twin mode button,
+     swarm management panel).
+     ───────────────────────────────────────────────────────────────────── */
+
+  /* Icon-only header buttons — hide the text labels that v0.12.x added.
+     The tooltip still shows on hover, so discoverability is preserved. */
+  .icon-btn.labeled-btn .btn-label { display: none; }
+  .icon-btn.labeled-btn {
+    width: 30px;
+    min-width: 0;
+    padding: 0;
+    gap: 0;
+    justify-content: center;
+  }
+  .icon-btn.labeled-btn .icon,
+  .icon-btn.labeled-btn .icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Hide the chat watermark and lower-right corner hint that post-v0.6.0
+     additions placed over the chat area by default — keeps the backdrop
+     clean like users remember. (Specific panels re-enable when active.) */
+  /* (No change — watermark was already tuned; leaving the styles alone
+     so light-mode + accessibility don't regress.) */
+
+  /* The v0.6.0 screenshot ships with the twin portrait hidden until the
+     user turns Twin mode on. The JS already defaults twinMode=false and
+     calls hideTwin() on page load when the backend reports twin_mode=false,
+     so no CSS override is needed here — just documenting the invariant:
+       - #twin-portrait / #twin-bubble: hidden by default, shown only
+         after the Twin button in the header is clicked.
+       - .swarm-bar: hidden until user creates or activates a swarm.
+       - .index-card: hidden until a factory agent begins running.
+     If any of these start appearing on cold load, the gating JS drifted.
+   */
 </style>
 </head>
 <body>

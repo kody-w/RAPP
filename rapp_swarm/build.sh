@@ -66,19 +66,12 @@ rsync -a \
 echo "  ✓ agents/ tree ($(find "$DEST/agents" -name '*_agent.py' | wc -l | tr -d ' ') agent files)"
 
 # function_app.py's load_agents_from_folder() does `os.listdir("./agents")`
-# relative to function_app.py's directory. Expose the vendored agent tree
-# at that sibling path via a symlink so local `func start` and Azure
-# deploy both see agents/ where the code looks for it.
-ln -sfn _vendored/agents agents
-echo "  ✓ agents -> _vendored/agents (symlink for function_app.py lookup)"
-
-# Same for utils/ — function_app.py does `from utils.xxx import ...`.
-# Python resolves this via sys.path, but a symlink mirrors the source
-# layout of the CommunityRAPP base (agents/ + utils/ as function-app
-# siblings) and keeps the Azure publish tree coherent.
-ln -sfn _vendored/utils utils-vendored
-# NOTE: rapp_swarm/utils/ already exists as a source dir; we do NOT
-# symlink over it. Keep source + vendored distinct.
+# relative to function_app.py's directory. Copy (not symlink) the
+# vendored agent tree to that sibling path — `func azure functionapp
+# publish` zips the deploy tree and symlinks don't always survive.
+rm -rf agents
+cp -R _vendored/agents agents
+echo "  ✓ agents/ (copy for function_app.py lookup + Azure deploy zip)"
 
 echo "▶ Done. Function App is ready to publish."
 echo "    cd rapp_swarm && func azure functionapp publish <APP_NAME> --build remote"

@@ -94,7 +94,9 @@ if [ -f "$ENV_FILE" ]; then
         v="${v%\"}"; v="${v#\"}"; v="${v%\'}"; v="${v#\'}"
         case "$k" in
             AZURE_OPENAI_API_KEY|AZURE_OPENAI_ENDPOINT|AZURE_OPENAI_DEPLOYMENT| \
-            AZURE_OPENAI_API_VERSION|OPENAI_API_KEY|ANTHROPIC_API_KEY)
+            AZURE_OPENAI_DEPLOYMENT_NAME|AZURE_OPENAI_API_VERSION| \
+            OPENAI_API_KEY|ANTHROPIC_API_KEY|ASSISTANT_NAME| \
+            CHARACTERISTIC_DESCRIPTION|USE_CLOUD_STORAGE)
                 [ -n "$v" ] && SETTINGS+=("$k=$v")
                 ;;
         esac
