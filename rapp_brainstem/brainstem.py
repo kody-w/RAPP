@@ -686,6 +686,11 @@ def _register_shims():
         pass
     
     # Shim: utils.azure_file_storage → local_storage.py
+    # local_storage.py lives under rapp_brainstem/utils/ (root stays minimal
+    # per Article XI). Add utils/ to sys.path so the bare import resolves.
+    utils_dir = os.path.join(brainstem_dir, "utils")
+    if utils_dir not in sys.path:
+        sys.path.insert(0, utils_dir)
     from local_storage import AzureFileStorageManager as _LSM
     if "utils" not in sys.modules:
         utils_mod = types.ModuleType("utils")
@@ -756,15 +761,20 @@ def _auto_install(package):
         print(f"[brainstem] Failed to install {package}: {e}")
 
 def load_agents():
+    # Walk AGENTS_PATH recursively per Article XII (workspace_agents/ + nested
+    # user folders). Skip reserved subdirs that never auto-load
+    # (experimental_agents/, disabled_agents/) and __pycache__.
     agents = {}
-    pattern = os.path.join(AGENTS_PATH, "*_agent.py")
-    files = glob.glob(pattern)
+    _SKIP = ("experimental_agents", "disabled_agents", "__pycache__")
+    pattern = os.path.join(AGENTS_PATH, "**", "*_agent.py")
+    files = [f for f in glob.glob(pattern, recursive=True)
+             if not any(s in f.split(os.sep) for s in _SKIP)]
 
     for filepath in files:
         loaded = _load_agent_from_file(filepath)
         for name, instance in loaded.items():
             agents[name] = instance
-            print(f"[brainstem] Agent loaded: {name}")
+            print(f"[brainstem] Agent loaded: {name} ({os.path.relpath(filepath, AGENTS_PATH)})")
 
     print(f"[brainstem] {len(agents)} agent(s) ready.")
     return agents
