@@ -31,11 +31,24 @@ mkdir -p "$DEST/utils"
 for src in llm.py twin.py _basic_agent_shim.py; do
     if [ -f "$ROOT/rapp_brainstem/utils/$src" ]; then
         cp "$ROOT/rapp_brainstem/utils/$src" "$DEST/utils/$src"
-        echo "  ✓ utils/$src"
+        echo "  ✓ utils/$src (brainstem)"
     else
         echo "  ⚠ missing: utils/$src"
     fi
 done
+
+# Tier-2 cloud-specific utils (Azure File Storage, Azure OpenAI error
+# types, Result[T,E] types, local filesystem fallback). Live in
+# rapp_swarm/utils/ because they are NOT Tier 1 concerns — brainstem
+# has no Azure-SDK dependencies.
+if [ -d utils ]; then
+    for src in utils/*.py; do
+        [ -f "$src" ] || continue
+        base=$(basename "$src")
+        cp "$src" "$DEST/utils/$base"
+        echo "  ✓ utils/$base (tier-2)"
+    done
+fi
 
 # Package markers for the vendor tree.
 [ -f "$DEST/__init__.py" ]       || touch "$DEST/__init__.py"

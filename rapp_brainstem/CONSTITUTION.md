@@ -36,18 +36,206 @@ they do not live here.
 
 ---
 
-## Article II — Three Tiers, One Path
+## Article I-A — `brainstem.py` Is Sacred
 
-The platform teaches the Microsoft AI stack one layer at a time:
+`rapp_brainstem/brainstem.py` is the stateless "thought" engine. One
+file: Flask server, auth chain, soul loader, agent discovery, tool-
+calling loop, LLM proxy, diagnostics. It stays one file and it stays
+small.
 
-| Tier | Name | What It Is | What You Learn |
-|------|------|-----------|----------------|
-| 1 | **Brainstem** | Local Flask server + GitHub Copilot | Python agents, function-calling, prompt engineering |
-| 2 | **Spinal Cord** | Azure deployment (ARM template) | Azure Functions, Azure OpenAI, managed identity, RBAC |
-| 3 | **Nervous System** | Copilot Studio + M365 | Power Platform, declarative agents, Teams integration |
+> **Add capability by writing an agent. Not by editing `brainstem.py`.**
 
-Each tier is self-contained and complete. Users advance when they choose
-to, not when we push them.
+### The fixed contract surface
+
+Changes to anything in this list are **SPEC-level**: bump VERSION, tag
+it (Article VIII), verify Tier 2 parity (Article X), document what
+changed in the tag annotation.
+
+- `POST /chat` — the single invocation surface. Request envelope
+  (`user_input`, `conversation_history`, `session_id`) and response
+  envelope (`response`, `voice_response?`, `session_id`, `agent_logs`)
+  are frozen. New output slots arrive as delimiters, never as new keys.
+- `GET /health` — status, model, agents, auth state.
+- Auth chain — `GITHUB_TOKEN` → `.copilot_token` (device-code OAuth)
+  → `gh auth token`. No other provider on Tier 1 (Article X).
+- Agent discovery — `agents/*_agent.py`, reloaded from disk every
+  request. Recursion rules per Article XII.
+- Storage shim — `utils.azure_file_storage` intercepted via
+  `sys.modules` to `local_storage.py` under `.brainstem_data/`.
+- Flight recorder — `_tlog()` + `.brainstem_book.json`.
+- Tool-calling loop — up to 3 rounds, identical shape each round.
+- Output delimiters — `|||VOICE|||`, `|||TWIN|||` (SPEC.md §3).
+
+### The only legitimate reasons to edit this file
+
+1. A bug fix in existing behavior (same contract, same routes, same
+   envelopes — just fixed).
+2. Adding a new top-level output-slot delimiter (e.g., the next
+   `|||VOICE|||`-shaped slot). This is a SPEC change with version bump.
+
+Everything else belongs in an agent, in `utils/`, or in a hatched
+project.
+
+### What this rules out
+
+- ❌ **New features in `brainstem.py`.** Features are `*_agent.py`
+  files. The brainstem does not grow capability.
+- ❌ **"Small helpers" added inline.** Shared helpers go in `utils/`;
+  agent-specific helpers live inside the agent.
+- ❌ **New HTTP routes for agent-shaped work.** If the LLM could
+  route to it via `/chat`, it's an agent — not a route.
+- ❌ **Framework abstractions beyond `BasicAgent` + `perform()`.** No
+  lifecycle hooks, middleware, plugin layers, agent base class
+  variants.
+- ❌ **Silent contract changes** — renaming routes, reshaping the
+  response envelope, reordering the tool loop, changing log shape.
+  These are SPEC breaks (see Article VIII).
+- ❌ **Provider-specific code paths beyond the GitHub Copilot chain.**
+  Tier 1 is Copilot-only by design (Article X); other providers live
+  on Tier 2's side of the contract.
+- ❌ **In-process state that persists across requests.** Disk is
+  authoritative; the brainstem is stateless. The short-lived Copilot
+  token cache is the single permitted exception and must degrade
+  gracefully when absent.
+- ❌ **Swarm, tenancy, or routing logic in `brainstem.py`.** Swarms
+  are directories (Article IX). Any swarm-aware code is an agent.
+- ❌ **UI logic beyond serving `index.html`.** The UI is a view onto
+  `agents/` (Article XIII); its behavior lives in the page and in
+  agents, not in the server.
+
+### The test before any edit
+
+1. Is this a bug fix in existing behavior, or am I adding something?
+2. If adding — can it be an agent? (The answer is almost always yes.)
+3. If it touches the contract surface — have I bumped VERSION and
+   verified Tier 2 parity?
+
+If the change does not survive these three questions, it does not
+belong in this file.
+
+### Why
+
+Every agent in the ecosystem — starter, workspace, hatched,
+third-party, and ones written six months from now — depends on this
+file's contract being the same tomorrow as it is today. Drift here is
+the one change that breaks *everyone's* agents at once. The file is
+sacred because portability (Article IV) is sacred.
+
+---
+
+## Article II — Three Tiers, One Model
+
+Three deployment shapes, **one model underneath**. Every tier runs
+the same `BasicAgent` contract, discovers files in `agents/`, and
+serves the same `/chat` envelope shape. What changes per tier is
+**the LLM provider**, **how memory is scoped**, and **how identity
+arrives**.
+
+| Tier | LLM Provider | Memory Scope | Identity Source |
+|------|--------------|--------------|-----------------|
+| 1 — **Local Brainstem** | GitHub Copilot (`gh` CLI) | Single-user, flat | Implicit |
+| 2 — **Cloud Brainstem** | Azure OpenAI (`azuredeploy.json`) | Per-user by guid | `user_guid` body field |
+| 3 — **Copilot Studio** | Inherits Tier 2 | Per-user by guid | AAD `oid` → `user_guid` via Power Automate |
+
+### The Tier 2 multi-tenancy model
+
+**One deployment, many users, shared agents, personal memory.** All
+users share the same `agents/` tree (vendored at deploy or served
+from Azure File Storage). Each user has their own memory namespace,
+routed per request by the adapter:
+
+```python
+storage_manager.set_memory_context(user_guid)
+```
+
+One brainstem that remembers you. Not one brainstem per user.
+
+### How Tier 3 drives it
+
+The shipping Power Automate flow (`Workflows/TalktoRAPPAI-*.json` in
+the MCS solution zip) calls **Office 365 Users → Get my profile
+(V2)** with `runtimeSource: "invoker"`. The signed-in user's AAD
+object ID (`body/id`) becomes the `user_guid` in the POST body to
+Tier 2. Auth to the function is the shared `x-functions-key`;
+identity is enforced by Power Automate's invoker-scoped connection.
+One MCS connector, one Tier 2, N users — zero per-user MCS
+configuration.
+
+### Canonical Tier 2 / Tier 3 wire
+
+```json
+// Request
+{ "user_input": "...", "conversation_history": [...], "user_guid": "<AAD oid>" }
+
+// Response
+{ "assistant_response": "...", "voice_response": "...", "agent_logs": "...", "user_guid": "..." }
+```
+
+### The `function_app.py` adapter seam
+
+`rapp_swarm/function_app.py` is the one place that knows about MCS.
+It translates the brainstem-shape envelope (`response` /
+`voice_response`) to the Power Automate consumer shape
+(`assistant_response` + echoed `user_guid`). Translation stays here,
+never in `brainstem.py` (Article I-A).
+
+### What is identical across tiers
+
+- The `/chat` envelope shape at the consumer seam (Article X).
+- The agent contract (`BasicAgent` + `perform()`, Article IV).
+- Tool-calling loop **shape**: call LLM → execute tools → loop,
+  capped at a small number of rounds.
+- The workshop → singleton path (Article IX).
+
+### What legitimately differs per tier
+
+- **LLM provider.** Tier 1 = GitHub Copilot. Tier 2/3 = Azure
+  OpenAI, required by `azuredeploy.json` — a cloud Function App
+  cannot run the `gh` CLI auth chain. The provider is the cloud
+  operator's constraint, not the learner's (Article X).
+- **Tool-calling implementation.** Tier 2's `function_app.py` has
+  its own `Assistant` class adapted for the Azure OpenAI SDK (tools
+  vs. functions API, TTL-cached clients, Result-typed errors). The
+  *shape* matches `brainstem.py`'s loop; the *code* does not. This
+  is by design — provider-native implementations are allowed at
+  Tier 2; envelope parity is what ties them together. The brainstem
+  is the **gateway** for the teaching surface; the cloud requires a
+  different engine to hit Azure OpenAI through `azuredeploy.json`.
+- **Memory scope mechanism.** Tier 1 scopes via
+  `BRAINSTEM_MEMORY_PATH` env var (Article XI). Tier 2 scopes via
+  `storage_manager.set_memory_context(user_guid)` — same outcome,
+  different mechanism fitted to Azure Files.
+
+### What this rules out
+
+- ❌ **Per-user Tier 2 deployments.** One deployment, N guids. No
+  `hatch_rapp_agent`, no per-user `function_app.py`, no per-user
+  ARM deployment. Stronger isolation means a second Tier 2 in a
+  separate Azure subscription, not a scaffold-per-tenant.
+- ❌ **Per-user Copilot Studio solutions.** One MCS connector, one
+  Tier 2, N users via guid-from-identity.
+- ❌ **Porting the Tier 1 Copilot API path into Tier 2.** Cloud
+  deployments need Azure OpenAI. `brainstem.py` stays local.
+- ❌ **Porting the Tier 2 Azure OpenAI path into Tier 1.** Local
+  works with a GitHub account alone — that's the one-liner pitch
+  (Article V).
+- ❌ **Renaming brainstem envelope fields to match an MCS consumer.**
+  `assistant_response`, `output`, `output_1` are Power Automate's
+  field names. Translation happens in `function_app.py`, never in
+  `brainstem.py`. The next person who "fixes" the mismatch by
+  renaming `response` → `assistant_response` in Tier 1 breaks both
+  Tier 1 and Article I-A in one commit.
+
+### Why
+
+Tier 1 is the teaching surface — local, Copilot-auth, zero-config.
+Tier 2 is the cloud surface — Azure OpenAI, guid-scoped memory, one
+deployment for many users. Tier 3 is the M365 surface — Power
+Automate carries the user's identity in. **Brainstem is the gateway;
+the cloud is where the real multi-tenant serving happens.** Keeping
+the implementations intentionally separate but the envelope
+identical is what lets an agent written on a laptop serve many users
+in Teams without a rewrite.
 
 ---
 
@@ -207,30 +395,6 @@ belongs somewhere else.
 
 ---
 
-## Article VI-A — Brainstem Hatches, User Develops
-
-The brainstem is the **bootstrapper**, not the workspace. When a user
-asks the brainstem to create a new RAPP (Tier 2 Azure Functions or
-Tier 3 Copilot Studio), the brainstem scaffolds a complete, self-contained
-project in `~/.brainstem_data/hatched_rapps/` and then **gets out of the way**.
-
-The hatched project contains everything the user needs: `function_app.py`,
-`agents/`, `utils/`, deployment templates, and configuration files. Once
-hatched, the user opens that project in VS Code and develops there.
-
-Brainstem agents that support hatching (e.g., `hatch_rapp_agent.py`) are
-**onboarding guides** — they scaffold, check status, and point the user to
-their new workspace. They do not embed Tier 2/3 runtime code inside the
-brainstem itself.
-
-This separation ensures:
-- The brainstem stays small and focused (Article I)
-- Hatched projects are portable and independent
-- Users own and control their hatched code (Article VII)
-- The brainstem never becomes a monolith
-
----
-
 ## Article VII — The User Owns Their Instance
 
 - The soul file is theirs to edit. We provide a default, not a mandate.
@@ -308,27 +472,32 @@ Article III.3: the agent contract is sacred).
 
 ---
 
-## Article IX — Swarms Are Directories, Not Routes
+## Article IX — A Swarm Is a Workshop; Distribution Is a Singleton
 
-A **swarm** is local state: a directory containing `agents/`, a soul,
-and a memory namespace. The brainstem runs against that state. It is
-not a runtime abstraction, a routing layer, or a multi-tenant service.
+A **swarm** has two shapes and only two:
 
-> **A swarm is a directory. Changing swarm = changing which directory
-> the brainstem reads. That is the whole concept.**
+1. **Workshop** — a folder of `*_agent.py` files under
+   `agents/workspace_agents/<my_swarm>/`. You edit N files and iterate
+   against the hotload loop (Article XII). This is the dev surface.
+2. **Singleton** — one `*_agent.py` file. `swarm_factory_agent`
+   converges a workshop into one file with all capabilities inlined.
+   That file is the unit of distribution — drop it into another user's
+   `agents/`, vendor it into Tier 2, attach it to an email. Same
+   hotload loop receives it.
+
+> **Workshop = N files. Distribution = 1 file. Same hotload loop on
+> both ends. No runtime swarm abstraction in between.**
 
 Concretely:
 
-- Swarm operations (deploy, list, switch, invoke a sibling, seal,
-  snapshot) are `*_agent.py` files that read and write state on disk.
-  They are **not** classes in `brainstem.py`, REST routes, or
-  middleware.
-- Those agents must be **drop-in compatible with any brainstem.py** —
-  including older versions in the wild. They use `BasicAgent` +
-  stdlib + filesystem only. Copying them into a six-month-old
-  brainstem must still work.
-- The filesystem layout IS the contract. Two swarms with the same
-  directory shape behave identically under the same brainstem.
+- The only swarm agent on the lesson path is **`swarm_factory_agent`**
+  (converges workshop → singleton, or pulls a published singleton
+  from the RAPP Store into `agents/`).
+- A singleton's behavior at runtime happens inside its `perform()` —
+  same contract as every other agent.
+- The filesystem layout IS the contract. A singleton that runs under
+  one brainstem at a given VERSION runs under any brainstem at that
+  VERSION.
 
 ### What this rules out
 
@@ -336,6 +505,17 @@ Concretely:
   `brainstem.py`.
 - ❌ `/api/swarm/<guid>/...` routes or any new HTTP surface for swarm
   ops. Everything routes through `/chat` + an agent.
+- ❌ **A second runtime destination for swarms.** `~/.brainstem/swarms/<guid>/`
+  is not an active location the brainstem reaches into. Once a swarm
+  is converged, it's a file in `agents/` like every other agent.
+- ❌ **Sibling-swarm invocation** via in-process import or recursive
+  `/chat`. Two swarms that want to compose either share the workshop
+  or both land as singletons in the same `agents/` tree. A
+  `swarm_invoke_agent`, `swarm_deploy_agent`, `swarm_list_agent`,
+  `swarm_info_agent`, `swarm_seal_agent`, `swarm_snapshot_agent`, or
+  `swarm_delete_agent` is the wrong shape — those were retired
+  precisely because they invent a runtime destination the simple
+  model does not need.
 - ❌ Swarm-awareness baked into the brainstem core. If a swarm agent
   needs a new brainstem symbol to function, the design is wrong —
   redesign the agent.
@@ -343,7 +523,9 @@ Concretely:
   is authoritative; the brainstem is stateless between calls.
 
 If you catch yourself designing a swarm-aware subsystem, stop and ask:
-could this be a directory layout plus an agent? If yes, do that.
+could this be either a folder under `workspace_agents/` (during dev)
+or a single `*_agent.py` file (for distribution)? The answer is always
+one of those two.
 
 ---
 
@@ -431,9 +613,7 @@ Everything **written by the brainstem as it serves the user** — as
 opposed to edited by the user or shipped by the engine:
 
 - Per-user memory files, binder state, twin calibration logs.
-- Deployed sibling swarms (`swarms/<guid>/…`), snapshots, sealed
-  markers, active-swarm pointers.
-- Hatched project scaffolds (Article VI-A).
+- Session logs, telemetry, saved conversation state.
 
 Pathing follows the memory-agent pattern — the same shape the memory
 agents have used since day one. One env var overrides, one simple
@@ -511,11 +691,12 @@ agents/
 ├── learn_new_agent.py
 ├── recall_memory_agent.py
 ├── save_memory_agent.py
+├── workiq_agent.py             ← M365 faucet (curriculum extra)
 └── workspace_agents/           ← everything else (shop)
-    ├── system_agents/          ← engine infrastructure
-    ├── experimental_agents/    ← hand-load only
-    ├── disabled_agents/        ← turned off
-    ├── local_agents/           ← gitignored, personal
+    ├── swarm_factory_agent.py  ← the one ship-in-repo swarm tool
+    ├── experimental_agents/    ← reserved: hand-load only
+    ├── disabled_agents/        ← reserved: turned off
+    ├── local_agents/           ← reserved: gitignored, personal
     └── <any user folder>/      ← user groupings, projects, swarms
 ```
 
@@ -545,10 +726,14 @@ they're broadly useful (e.g. `workiq_agent.py` as the Microsoft 365
 faucet). Keep the set small enough that a newcomer can scan it in
 seconds.
 
-### Engine-provided subdirectories (under `workspace_agents/`)
+### Engine-shipped agent under `workspace_agents/`
 
-- `workspace_agents/system_agents/` — engine infrastructure (swarm
-  factory + swarm-management agents today). Auto-loads.
+- `workspace_agents/swarm_factory_agent.py` — the one ship-in-repo
+  swarm tool (converges a workshop into a singleton, pulls published
+  singletons from the RAPP Store). Auto-loads.
+
+### Reserved subdirectories (under `workspace_agents/`)
+
 - `workspace_agents/experimental_agents/` — never auto-loads.
   Hand-load to test in-flight work.
 - `workspace_agents/disabled_agents/` — never auto-loads. Move a file
@@ -574,18 +759,22 @@ matching `specific_local_project_agents*/` are gitignored by default.
 - ❌ A "brainstem config" directory outside `agents/` that users
   are expected to edit.
 - ❌ Dumping organizational subdirectories at the top level of
-  `agents/`. `system_agents/`, `experimental_agents/`,
-  `disabled_agents/`, `local_agents/`, project folders — all of them
-  live under `workspace_agents/`, never at top level.
+  `agents/`. `experimental_agents/`, `disabled_agents/`,
+  `local_agents/`, project folders — all of them live under
+  `workspace_agents/`, never at top level.
 - ❌ Adding more starter agents to the top level beyond the small
   curriculum set + rare broadly-useful exceptions. The showroom
   stays clean for newcomers.
 - ❌ A registry file listing which agents to load. Discovery is
   filesystem-only.
-- ❌ `from agents.workspace_agents.system_agents.X import …` in
-  tests — load by file path via `importlib`. The `agents.*` module
-  namespace is for the shimmed `basic_agent` import only.
+- ❌ `from agents.workspace_agents.X import …` in tests — load by
+  file path via `importlib`. The `agents.*` module namespace is for
+  the shimmed `basic_agent` import only.
 - ❌ Any depth limit on `workspace_agents/` recursion.
+- ❌ Re-introducing a `system_agents/` bucket. The one ship-in-repo
+  engine agent (`swarm_factory_agent`) lives at the top of
+  `workspace_agents/`; additional engine agents, if ever needed, sit
+  alongside it. One less folder, one less concept to teach.
 
 ### Discovery
 
@@ -641,8 +830,8 @@ form, agent tree. Nothing else.
 - ❌ A separate registry alongside the filesystem. Disk is the
   registry.
 - ❌ UI actions with no filesystem equivalent.
-- ❌ Hiding `system_agents/`, `experimental_agents/`, or
-  `disabled_agents/` from the tree view.
+- ❌ Hiding `experimental_agents/` or `disabled_agents/` from the
+  tree view.
 
 ### Why
 
@@ -667,8 +856,8 @@ see technical detail unless they ask for it.
   true/false or enumerated model lists).
 - Friendly service names: "GitHub Copilot — Connected ✓" not
   `GITHUB_TOKEN: set`.
-- Reserved folders (`system_agents/`, `experimental_agents/`,
-  `disabled_agents/`) hidden.
+- Reserved folders (`experimental_agents/`, `disabled_agents/`)
+  hidden.
 - Folders collapsed on load.
 - Curated field set — model, voice, twin, connection chips.
 

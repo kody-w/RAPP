@@ -77,8 +77,8 @@ mkdir -p "$AGENTS_DIR"
 # engine-reserved system_agents subdir, so the UI will see the shape).
 cp rapp_brainstem/agents/basic_agent.py         "$AGENTS_DIR/"
 cp rapp_brainstem/agents/hacker_news_agent.py   "$AGENTS_DIR/"
-mkdir -p "$AGENTS_DIR/system_agents"
-cp rapp_brainstem/agents/system_agents/swarm_deploy_agent.py "$AGENTS_DIR/system_agents/"
+mkdir -p "$AGENTS_DIR/workspace_agents/system_agents"
+cp rapp_brainstem/agents/workspace_agents/system_agents/swarm_factory_agent.py "$AGENTS_DIR/workspace_agents/system_agents/"
 
 # Point brainstem at the sandbox home for memory, token, swarms state.
 export BRAINSTEM_MEMORY_PATH="$TEST_HOME/memory.json"

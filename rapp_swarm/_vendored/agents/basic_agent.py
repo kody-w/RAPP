@@ -1,5 +1,21 @@
+import os
+
+
 class BasicAgent:
     """Base class for all RAPP Brainstem agents. Extend this in your private agent files."""
+
+    @staticmethod
+    def artifact_path(filename):
+        """Return an absolute path under ~/.brainstem/artifacts/ for writing a
+        user-visible artifact (HTML deck, report, export, etc.). The directory
+        is created if missing, and is allow-listed by the brainstem's /open
+        endpoint — so any absolute path returned here is openable from chat.
+        Agents should return this path in their JSON response so the chat
+        autolinker can surface it as a clickable link."""
+        root = os.path.join(os.path.expanduser("~"), ".brainstem", "artifacts")
+        os.makedirs(root, exist_ok=True)
+        safe = os.path.basename(filename) or "artifact"
+        return os.path.join(root, safe)
 
     def __init__(self, name=None, metadata=None):
         if name is not None:

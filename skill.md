@@ -97,15 +97,15 @@ The handshake block is delimited by `<<<RAPP_INSTALLER_HANDSHAKE v=1>>>` / `<<<E
 │   ├── learn_new_agent.py    ←   "
 │   ├── recall_memory_agent.py
 │   ├── save_memory_agent.py
-│   └── workspace_agents/     ← all organizational subdirs live here
-│       ├── system_agents/
-│       ├── experimental_agents/
-│       ├── disabled_agents/
-│       ├── local_agents/     ← gitignored; personal agents
-│       └── <user folders>/
+│   └── workspace_agents/       ← all organizational content lives here
+│       ├── swarm_factory_agent.py  ← the one ship-in-repo swarm tool
+│       ├── experimental_agents/    ← reserved; never auto-loads
+│       ├── disabled_agents/        ← reserved; never auto-loads
+│       ├── local_agents/           ← gitignored; personal agents
+│       └── <user folders>/         ← user swarms / groupings
 ```
 
-**Constitutional rule:** the top level of `agents/` is the showroom (starter/ship agents only). Everything organizational — system, experimental, disabled, local, project-specific — lives under `agents/workspace_agents/`. Users don't edit engine files; they drop agents into the tree.
+**Constitutional rule:** the top level of `agents/` is the showroom (starter/ship agents only). Everything organizational — experimental, disabled, local, project-specific, user swarms — lives under `agents/workspace_agents/`. Users don't edit engine files; they drop agents into the tree.
 
 ## Config pattern — agents ask, don't require editing
 

@@ -590,10 +590,6 @@ Everything that is **written by the brainstem as it serves the user**
 
 - Per-user memory files, binder state (`.binder.json`),
   `.twin_calibration.jsonl`, telemetry logs, saved sessions.
-- Deployed sibling swarms (`swarms/<guid>/…` — directory + agents +
-  memory, created at runtime by the swarm-management agents).
-- Snapshots, sealed-swarm markers, active-swarm pointers.
-- Hatched project scaffolds (Article VI-A).
 
 The pathing follows the same pattern the memory agents have used
 since day one: a single env var overrides the default, and the
@@ -681,22 +677,22 @@ it without deleting). Everything else under `agents/` loads.
 
 These five files are the teaching curriculum. A new user opening
 `agents/` sees exactly this and understands what a RAPP agent is. Do
-not dump more files at the top level — put infrastructure in
-`system_agents/`, put groupings in a named subdir.
+not dump more files at the top level — put the one engine tool
+(`swarm_factory_agent.py`) under `workspace_agents/`, put user
+groupings in a named subdir.
 
 ### Engine-provided subdirectories (conventions, not magic)
 
-- **`agents/system_agents/`** — engine infrastructure. Auto-loads
-  because it lives under `agents/`. Contains today: `swarm_factory`
-  + seven swarm-management agents (deploy/list/info/invoke/seal/
-  snapshot/delete). Future brainstem-admin and introspection agents
-  go here.
-- **`agents/experimental_agents/`** — never auto-loads. In-flight
-  work the user hand-loads when testing. Keeps `agents/` clean of
-  half-finished files.
-- **`agents/disabled_agents/`** — never auto-loads. Move an agent
-  file here to turn it off without deleting. The filesystem itself
-  records "off."
+- **`agents/workspace_agents/`** — the shop. Houses the one ship-in-
+  repo engine agent (`swarm_factory_agent.py`) plus every
+  organizational subdirectory (experimental, disabled, local, user
+  folders). Auto-loads recursively.
+- **`agents/workspace_agents/experimental_agents/`** — never auto-
+  loads. In-flight work the user hand-loads when testing. Keeps
+  `agents/` clean of half-finished files.
+- **`agents/workspace_agents/disabled_agents/`** — never auto-loads.
+  Move an agent file here to turn it off without deleting. The
+  filesystem itself records "off."
 
 ### User-organized subdirectories (the whole point)
 
@@ -722,17 +718,18 @@ No registration, no config, no env var. Drop a folder in, put
 - ❌ A "brainstem config" directory outside `agents/` that users
   are expected to edit. The user's entire config surface is:
   `soul.md`, `.env`, the `agents/` tree.
-- ❌ Engine-imposed subdir categories beyond the three reserved
-  names (`system_agents/` convention, `experimental_agents/`,
-  `disabled_agents/`). The user owns naming inside `agents/`.
-- ❌ Importing `from agents.system_agents.swarm_deploy_agent import ...`
-  in tests. Tests load nested-subdir agents by file path via
-  `importlib`; the `agents.*` module namespace is for the base
-  class shim only.
-- ❌ Dumping more than the five starter files at the top level of
-  `agents/`. The top level is the curriculum — infrastructure goes
-  in `system_agents/`, user organization goes in user-named subdirs
-  (arbitrarily deep).
+- ❌ Engine-imposed subdir categories beyond the reserved names
+  (`experimental_agents/`, `disabled_agents/`, `local_agents/`).
+  The user owns naming inside `workspace_agents/`.
+- ❌ Importing `from agents.workspace_agents.X import ...` in tests.
+  Tests load nested-subdir agents by file path via `importlib`; the
+  `agents.*` module namespace is for the base class shim only.
+- ❌ Dumping more than the curriculum files at the top level of
+  `agents/`. The top level is the curriculum — the engine tool
+  (`swarm_factory_agent.py`) lives under `workspace_agents/`, user
+  organization goes in user-named subdirs (arbitrarily deep).
+- ❌ Re-introducing a `system_agents/` bucket. One less folder, one
+  less concept to teach.
 - ❌ Any depth limit on `agents/` recursion. Users pick their
   own structure.
 
@@ -777,11 +774,10 @@ see files, paths, or Python.
 | "Mark experimental"       | move into `agents/experimental_agents/`             |
 | "Edit"                    | open the `*_agent.py` in an inline editor          |
 
-The three engine-reserved subdirs (`system_agents/`, `experimental_agents/`,
-`disabled_agents/`) are visible in the UI with their semantics (system
-is read-only-by-convention, experimental won't auto-load, disabled is
-off). The UI doesn't hide them — users benefit from seeing where their
-swarm management agents live and what's turned off.
+The engine-reserved subdirs (`experimental_agents/`,
+`disabled_agents/`) are visible in the UI with their semantics
+(experimental won't auto-load, disabled is off). The UI doesn't hide
+them — users benefit from seeing what's parked and what's turned off.
 
 ### What the UI covers (the user's full config surface)
 
@@ -809,8 +805,8 @@ These are read-only.
 - ❌ A separate "agent registry" the UI writes to alongside the
   filesystem. Filesystem IS the registry.
 - ❌ Hiding the reserved subdirs. Users should see
-  `system_agents/`, `experimental_agents/`, and `disabled_agents/`
-  in their tree — that's how they know what's going on.
+  `experimental_agents/` and `disabled_agents/` in their tree —
+  that's how they know what's going on.
 - ❌ UI actions that have no filesystem equivalent. If the UI can do
   it, the filesystem can do it. `agents/` is the truth.
 
@@ -892,8 +888,8 @@ detail is revealed only when the user asks for it.
   free-form values (URLs, custom strings).
 - **Friendly service names.** "GitHub Copilot — Connected ✓" instead
   of `GITHUB_TOKEN: set`.
-- **Reserved folders hidden.** `system_agents/`, `experimental_agents/`,
-  and `disabled_agents/` are filtered out of the tree view entirely.
+- **Reserved folders hidden.** `experimental_agents/` and
+  `disabled_agents/` are filtered out of the tree view entirely.
 - **Folders collapsed on load.** Users expand what they want to
   explore, not drown in a wall of nested paths.
 - **Curated field set.** Only the settings a learner needs — model,
@@ -904,7 +900,7 @@ detail is revealed only when the user asks for it.
 - Raw filenames with `_agent.py` extensions so engineers reason
   about paths.
 - Reserved folders visible with their directory names annotated
-  alongside friendly labels ("System tools — `system_agents/`").
+  alongside friendly labels ("Parked — `experimental_agents/`").
 - Full `.env` editor: every whitelisted key as a field. Bounded
   values still render as selects, free-form as text.
 - Secret chips with raw env key names (`GITHUB_TOKEN: set`).
