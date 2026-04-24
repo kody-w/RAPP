@@ -5,7 +5,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
-PAGES=(one-pager.html leadership.html process.html release-notes.html roadmap.html faq.html)
+PAGES=(one-pager.html leadership.html process.html faq-slide.html partners.html use-cases.html release-notes.html roadmap.html faq.html)
 
 for f in "${PAGES[@]}"; do
     [ -f "$f" ] || { echo "FAIL: $f does not exist"; exit 1; }
@@ -99,6 +99,36 @@ check process.html "self-documenting handoff"                     'self-document
 check process.html "agent IS the spec insight"                    'agent IS the spec|agent is the spec'
 check process.html "cross-links to leadership one-pager"          'leadership\.html'
 check process.html "cross-links to platform one-pager"            'one-pager\.html'
+
+# faq-slide.html — top 4 Q&A compressed to one slide
+echo "▶ faq-slide.html content anchors..."
+check faq-slide.html "audience kicker"                            'Top Questions|TOP QUESTIONS'
+check faq-slide.html "4-question framing"                         'Four questions'
+check faq-slide.html "Copilot question (not competition)"         'compete with Copilot Studio'
+check faq-slide.html "offline question"                           'offline'
+check faq-slide.html "production question"                        'production|three tiers|Three tiers'
+check faq-slide.html "one-sentence question"                      'one sentence|one-sentence|in one sentence'
+check faq-slide.html "links to full FAQ"                          'faq\.html'
+
+# partners.html — partner audience
+echo "▶ partners.html content anchors..."
+check partners.html "kicker labels audience"                      'For Partners|FOR PARTNERS'
+check partners.html "the file IS the spec headline"               'file.*IS.*spec|IS the spec'
+check partners.html "'you get / you build / you own' framing"     'You get.*You build.*You own|you get.*you build.*you own'
+check partners.html "self-documenting handoff"                    'self-documenting|Self-documenting'
+check partners.html "before/after contrast"                       'Without RAPP.*With RAPP|Discovery.*spec.*estimate'
+check partners.html "cross-links to process"                      'process\.html'
+check partners.html "cross-links to leadership"                   'leadership\.html'
+
+# use-cases.html — concrete scenarios
+echo "▶ use-cases.html content anchors..."
+check use-cases.html "kicker labels audience"                     'What Teams Build|WHAT TEAMS BUILD'
+check use-cases.html "lead prioritization scenario"               'Lead prioritization'
+check use-cases.html "personalized outreach scenario"             'Personalized outreach'
+check use-cases.html "customer-service scenario"                  'Customer-service|customer-service'
+check use-cases.html "research briefs scenario"                   'Research.*insights|insights briefs|briefs'
+check use-cases.html "input/swarm/outcome flow per card"          'lbl in.*Input|>Input<.*>Swarm<|lbl out'
+check use-cases.html "cross-links to platform one-pager"          'one-pager\.html'
 
 # faq.html
 echo "▶ faq content anchors..."
