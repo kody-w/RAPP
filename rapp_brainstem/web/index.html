@@ -1326,7 +1326,7 @@
                style="font-family:'SF Mono',ui-monospace,monospace; font-size:12px;
                       padding:8px 10px; background:#0d1117; border:1px solid #30363d;
                       border-radius:4px; color:#e6edf3; cursor:pointer;
-                      word-break:break-all; user-select:all">curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash</div>
+                      word-break:break-all; user-select:all"></div>
           <div style="color:#6e7681; font-size:10.5px; margin-top:4px">click to copy · then run in terminal · refresh this page when the brainstem is up</div>
         </div>
         <span class="hint">When tethered, agent execution runs in real Python on your machine instead of Pyodide in the browser — full filesystem / subprocess / network access.</span>
@@ -2102,7 +2102,7 @@ const state = {
     // surfaces the install one-liner via the #tether-install-cta
     // block inside Settings → Tether.
     tetherEnabled: true,
-    tetherUrl: 'http://localhost:8765',
+    tetherUrl: 'http://localhost:7071',
     // Default endpoint that Deploy as Swarm posts to (the local swarm/server.py
     // installed via `install-swarm.sh`, listens on :7080 by default).
     swarmEndpoint: 'http://localhost:7080',
@@ -2187,7 +2187,7 @@ function loadSettings() {
   $('#exec-mode').value = state.settings.execMode;
   $('#hand-mode-select').value = state.settings.handMode || 'pills';
   $('#tether-enabled').checked = !!state.settings.tetherEnabled;
-  $('#tether-url').value = state.settings.tetherUrl || 'http://localhost:8765';
+  $('#tether-url').value = state.settings.tetherUrl || 'http://localhost:7071';
   refreshProviderUI();
   refreshModelOptions();
   refreshStatus();
@@ -4508,6 +4508,11 @@ function wire() {
   (() => {
     const cmdEl = document.getElementById('tether-install-cmd');
     if (!cmdEl) return;
+    // Detect OS and show the right one-liner
+    const isWin = navigator.platform.startsWith('Win') || navigator.userAgent.includes('Windows');
+    cmdEl.textContent = isWin
+      ? 'iwr https://kody-w.github.io/RAPP/install.ps1 -useb | iex'
+      : 'curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash';
     cmdEl.addEventListener('click', () => {
       const text = cmdEl.textContent.trim();
       navigator.clipboard.writeText(text).then(() => {
