@@ -590,3 +590,175 @@ The sacred tenet, restated:
 > Protect it. Future versions will be judged by whether the file you wrote on your laptop today still runs unchanged on whatever runs RAPP next.
 
 _Memorialized 2026-04-17, at the moment v1 was declared frozen._
+
+---
+
+## 18. Post-v1 Addenda (v1-compatible)
+
+> **Added 2026-04-24 (brainstem v0.12.x).** This section documents extensions
+> layered on top of v1 without breaking any frozen clause. Nothing here
+> rewrites §0 through §17. §14 Versioning Policy governs what is allowed:
+> new optional configuration variables, new optional HTTP endpoints, new
+> implementations of the existing tiers. Every item below fits in one of
+> those buckets.
+>
+> **If an addendum contradicts an earlier section, §18 does not win — the
+> addendum is wrong and should be retracted.** The v1 contract is the
+> oracle; §18 is a changelog, not an override.
+
+### 18.0 Why this section exists
+
+Between the 2026-04-17 memorialization and today, the reference
+implementation shipped real deployments at all three tiers. A handful of
+discipline decisions and implementation patterns emerged that deserve
+explicit record without mutating the frozen contract.
+
+### 18.1 `brainstem.py` is sacred (companion to §0)
+
+v1's sacred tenet (§0) declares the **agent file** sacred. Post-v1 practice
+has added a **companion** rule: the reference brainstem entry point
+(`rapp_brainstem/brainstem.py`) is sacred at the **platform** layer. Both
+rules coexist; neither subsumes the other.
+
+- §0 protects the *unit of distribution*: one file, portable, self-documenting.
+- §18.1 protects the *engine that runs the units*: one file, stable contract, no drift.
+
+Legitimate edits to `brainstem.py` are bug fixes in existing behavior, or
+adding a new top-level output-slot delimiter (the class of change that
+produced `|||VOICE|||` and `|||TWIN|||`). Everything else belongs in an
+agent or in a utility module — **never** in the engine.
+
+The anti-patterns called out explicitly:
+
+- New features added inline to the engine.
+- New HTTP routes that duplicate what an agent could do.
+- Silent contract changes — renaming a route, reshaping a response
+  envelope, reordering the tool loop. Those are SPEC-level changes
+  (§14) and require a version bump and a migration note.
+
+### 18.2 Tier 2 adapter seam: `user_guid` dispatch + envelope translation
+
+Tier 2 in practice serves many tenants from a single Function App
+deployment. The mechanism is a body-field dispatch token:
+
+```json
+POST /api/businessinsightbot_function
+{
+  "user_input":            "<string>",
+  "conversation_history":  "<array>",
+  "user_guid":             "<AAD oid / tenant identity>"
+}
+```
+
+`user_guid` scopes memory and any per-tenant state. The adapter seam
+(`rapp_swarm/function_app.py`) calls `storage_manager.set_memory_context(
+user_guid)` per request, then invokes the same agent contract (§5).
+
+**Compatibility with §8.** Tier 1's `/chat` (with `session_id`) is
+untouched. Tier 2 adds `/api/businessinsightbot_function` as a **new
+optional HTTP endpoint**, sanctioned by §14. Tier 1 clients continue to
+work against Tier 1 brainstems unchanged.
+
+**Envelope translation at the seam.** Tier 1 returns `response` /
+`voice_response` / `agent_logs`. The shipping Copilot Studio / Power
+Automate consumer expects `assistant_response` / `voice_response` /
+`agent_logs` / echoed `user_guid`. The translation happens in
+`function_app.py` only. **The brainstem envelope is never reshaped.**
+Any future MCS consumer with different field names gets its translation
+in the adapter, not in the core.
+
+### 18.3 Tier 3 identity flow
+
+The Power Automate flow that ships with the Copilot Studio solution bundle
+(§4 Tier 3) uses the Office 365 Users connector's
+**`Get my profile (V2)`** on `runtimeSource: "invoker"` — the signed-in
+M365 user. `body/id` (the AAD object ID) becomes the `user_guid` in the
+body sent to Tier 2. Auth to the function app is the shared function key;
+identity is guaranteed by Power Automate's invoker-scoped connection.
+
+**No per-user Copilot Studio solution.** One connector, one Tier 2
+deployment, N users via identity-from-invoker.
+
+### 18.4 Tenancy clarification (v1-compatible reading of §10)
+
+§10 reads correctly at Tier 1: *one brainstem instance hosts exactly one
+tenant.* That is still true of a local brainstem on a developer's laptop.
+
+Tier 2 in v1.12 partitions a single Function App deployment by
+`user_guid`. Each guid sees its own memory namespace; the shared
+`agents/` tree is the same for all tenants. **This does not contradict
+§10** because:
+
+- The v1 agent contract (§5) is unchanged — agents don't know which
+  tenant invoked them.
+- The `/chat` request/response shape at the *contract* surface is
+  unchanged. Tier 2 adds a *new route* (§18.2) that carries the
+  dispatch field; the original route still honors the original shape.
+- The data model stays boring: one `user_guid` = one memory namespace.
+  No shared mutable state between tenants.
+
+Stronger isolation (regulated tenants, air-gapped customers) is achieved
+by deploying a second Tier 2 instance — still one codebase, guid-routed
+within each deployment.
+
+### 18.5 Workshop → Singleton (Article IX companion to §11)
+
+§11 describes agent *generation* from natural language via the `LearnNew`
+meta-agent. v1.12 formalized a companion verb for **distribution**:
+
+- **Workshop** — a folder of `*_agent.py` files under
+  `agents/workspace_agents/<my_swarm>/` where a user iterates against
+  the hotload loop.
+- **Singleton** — one `*_agent.py` file produced by
+  `swarm_factory_agent.py`, containing the inlined capabilities of the
+  entire workshop.
+
+The singleton is the **unit of distribution**. Drop it into any other
+brainstem's `agents/` and it runs unchanged. This is the §0 sacred
+tenet applied to composed swarms: one file remains the unit — whether
+that file started life as a single hand-authored agent or as the
+converged output of a workshop.
+
+The retired sibling-swarm invocation family (`swarm_invoke`,
+`swarm_deploy`, `swarm_list`, `swarm_info`, `swarm_seal`,
+`swarm_snapshot`, `swarm_delete`) is **explicitly not part of the
+spec**. Swarms at the user layer are a directory of agents during
+development and a singleton file at distribution. No runtime swarm
+registry, no orchestration protocol, no invocation API.
+
+### 18.6 Audience one-pagers (distinct from the pitch deck)
+
+The reference implementation ships a family of single-slide HTML pages —
+one URL per audience — at `kody-w.github.io/RAPP/`:
+
+| Audience | URL |
+|----------|-----|
+| General / platform | `one-pager.html` |
+| Leadership / exec | `leadership.html` |
+| Sellers / enablement (process) | `process.html` |
+| Partners receiving handoffs | `partners.html` |
+| "What can this build?" | `use-cases.html` |
+| Top-4 objections | `faq-slide.html` |
+| Security / compliance | `security.html` |
+
+These are content, not contract. They carry no normative weight in this
+SPEC; they're listed so implementers can find canonical phrasing of the
+platform's positioning.
+
+### 18.7 Version history under v1
+
+v1 is still v1. Every release since 2026-04-17 is a v1.x.y patch:
+
+| Version | Tag | Summary |
+|---------|-----|---------|
+| 0.12.1 | `brainstem-v0.12.1` | UI backport to v0.6.0 classic chrome; Tier 2 deploy-pipeline fixes. |
+| 0.12.0 | `brainstem-v0.12.0` | Three-tier adapter seam landed; sacred brainstem article; workshop→singleton framing; 17 agents retired. |
+| 0.11.x | `brainstem-v0.11.*` | Workspace_agents pattern, project-local install, agent handshake, positioning polish. |
+
+Rollback contract is preserved: every tag is immutable,
+`BRAINSTEM_VERSION=x.y.z` is the one-command rollback.
+
+---
+
+_§18 added 2026-04-24. Future addenda append below this line only;
+edits to §0 through §17 are v2 work._
