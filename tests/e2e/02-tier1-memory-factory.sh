@@ -5,15 +5,22 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
-PORT="${PORT:-7072}"   # matches 01-tier1-smoke.sh default
+PORT="${PORT:-7072}"
 PID_FILE=/tmp/rapp-e2e-brainstem.pid
 LOG=/tmp/rapp-e2e-brainstem.log
+TMP_DIR=$(mktemp -d)
 
+cleanup_test_swarm() {
+    rm -rf rapp_brainstem/agents/workspace_agents/e2e_test_swarm
+    rm -f rapp_brainstem/agents/e2e_test_swarm_agent.py 2>/dev/null || true
+}
 cleanup() {
     if [ -f "$PID_FILE" ]; then
         kill "$(cat "$PID_FILE")" 2>/dev/null || true
         rm -f "$PID_FILE"
     fi
+    rm -rf "$TMP_DIR"
+    cleanup_test_swarm
 }
 trap cleanup EXIT
 
@@ -30,38 +37,61 @@ else
     done
 fi
 
+# Helper: build JSON body via python, read from stdin, write to file
+jbody() {
+    python3 -c 'import json, sys; print(json.dumps(json.loads(sys.stdin.read())))'
+}
+
 # ── Memory round-trip ─────────────────────────────────────────────────
 
-FACT="my favourite color is viridian-$(date +%s)"
+STAMP=$(date +%s)
+FACT="my favourite color is viridian-$STAMP"
 echo "▶ Saving fact via chat: '$FACT'"
+
+cat > "$TMP_DIR/save_body.json" <<JSON
+{
+  "user_input": "Please remember this for me: $FACT",
+  "conversation_history": []
+}
+JSON
 
 SAVE_RESP=$(curl -s -X POST "http://localhost:$PORT/chat" \
     -H "Content-Type: application/json" \
-    -d "$(python3 -c "import json; print(json.dumps({'user_input': f'Please remember this for me: $FACT', 'conversation_history': []}))")" )
-SAVE_LOGS=$(echo "$SAVE_RESP" | python3 -c 'import sys,json; print(json.load(sys.stdin).get("agent_logs",""))')
-if echo "$SAVE_LOGS" | grep -iq "save_memory\|savememory"; then
+    --data @"$TMP_DIR/save_body.json")
+echo "$SAVE_RESP" > "$TMP_DIR/save_resp.json"
+SAVE_LOGS=$(python3 -c "import json; print(json.load(open('$TMP_DIR/save_resp.json')).get('agent_logs',''))")
+SAVE_TEXT=$(python3 -c "import json; print(json.load(open('$TMP_DIR/save_resp.json')).get('response',''))")
+
+if echo "$SAVE_LOGS" | grep -iq "save_memory\|savememory\|SaveMemory"; then
     echo "PASS: save_memory invoked during save turn"
 else
-    echo "WARN: save_memory was not invoked on the save turn (LLM may have chosen not to)."
+    echo "WARN: save_memory was not invoked on the save turn."
     echo "  agent_logs: $(echo "$SAVE_LOGS" | head -c 200)"
+    echo "  response: $(echo "$SAVE_TEXT" | head -c 200)"
 fi
 
 echo "▶ Recalling via chat..."
+cat > "$TMP_DIR/recall_body.json" <<'JSON'
+{
+  "user_input": "What is my favourite color? Answer in one word only.",
+  "conversation_history": []
+}
+JSON
 RECALL_RESP=$(curl -s -X POST "http://localhost:$PORT/chat" \
     -H "Content-Type: application/json" \
-    -d '{"user_input":"What is my favourite color? Answer in one word only.","conversation_history":[]}' )
-RECALL_TEXT=$(echo "$RECALL_RESP" | python3 -c 'import sys,json; print(json.load(sys.stdin).get("response",""))')
+    --data @"$TMP_DIR/recall_body.json")
+echo "$RECALL_RESP" > "$TMP_DIR/recall_resp.json"
+RECALL_TEXT=$(python3 -c "import json; print(json.load(open('$TMP_DIR/recall_resp.json')).get('response',''))")
+
 if echo "$RECALL_TEXT" | grep -iq "viridian"; then
     echo "PASS: memory round-trip (fact recovered in recall turn)"
 else
-    echo "WARN: 'viridian' not found in recall response. LLM may have ignored memory context."
+    echo "WARN: 'viridian' not in recall response. LLM may have ignored memory context."
     echo "  response: $(echo "$RECALL_TEXT" | head -c 200)"
 fi
 
 # ── Swarm factory: converge workshop → singleton ──────────────────────
 
-# Make sure there's at least one thing under workspace_agents/ besides
-# swarm_factory itself, so converge has something to do.
 TEST_SWARM_DIR=rapp_brainstem/agents/workspace_agents/e2e_test_swarm
 mkdir -p "$TEST_SWARM_DIR"
 cat > "$TEST_SWARM_DIR/e2e_echo_agent.py" <<'EOF'
@@ -80,34 +110,39 @@ class E2EEchoAgent(BasicAgent):
 EOF
 echo "  seeded test swarm at $TEST_SWARM_DIR"
 
-cleanup_test_swarm() {
-    rm -rf "$TEST_SWARM_DIR"
-    rm -f rapp_brainstem/agents/e2e_test_swarm_agent.py 2>/dev/null || true
-}
-trap 'cleanup; cleanup_test_swarm' EXIT
-
 echo "▶ Invoking swarm_factory (action=build) via /chat..."
+cat > "$TMP_DIR/build_body.json" <<'JSON'
+{
+  "user_input": "Use the swarm_factory tool with action=build to package the agents in the e2e_test_swarm workshop into a singleton named e2e_test_swarm. Report the output path.",
+  "conversation_history": []
+}
+JSON
 BUILD_RESP=$(curl -s -X POST "http://localhost:$PORT/chat" \
     -H "Content-Type: application/json" \
-    -d '{"user_input":"Use swarm_factory with action=build to package the agents in e2e_test_swarm into a singleton named e2e_test_swarm. Report the output path.","conversation_history":[]}' )
-BUILD_LOGS=$(echo "$BUILD_RESP" | python3 -c 'import sys,json; print(json.load(sys.stdin).get("agent_logs",""))')
-if echo "$BUILD_LOGS" | grep -iq "swarm_factory\|swarmfactory"; then
+    --data @"$TMP_DIR/build_body.json")
+echo "$BUILD_RESP" > "$TMP_DIR/build_resp.json"
+BUILD_LOGS=$(python3 -c "import json; print(json.load(open('$TMP_DIR/build_resp.json')).get('agent_logs',''))")
+BUILD_TEXT=$(python3 -c "import json; print(json.load(open('$TMP_DIR/build_resp.json')).get('response',''))")
+
+if echo "$BUILD_LOGS" | grep -iq "swarm_factory\|swarmfactory\|SwarmFactory"; then
     echo "PASS: swarm_factory invoked"
+    echo "  factory output (first 300 chars of logs):"
+    echo "$BUILD_LOGS" | head -c 300 | sed 's/^/    /'
+    echo
 else
     echo "FAIL: swarm_factory was not invoked"
     echo "  agent_logs: $(echo "$BUILD_LOGS" | head -c 300)"
-    echo "  response: $(echo "$BUILD_RESP" | python3 -c 'import sys,json; print(json.load(sys.stdin).get("response",""))' | head -c 300)"
+    echo "  response: $(echo "$BUILD_TEXT" | head -c 300)"
     exit 1
 fi
 
-# Find any singleton file that looks like a factory output
 SINGLETON=$(find rapp_brainstem/agents -maxdepth 4 -name "e2e_test_swarm*_agent.py" -newer "$TEST_SWARM_DIR" 2>/dev/null | head -1)
 if [ -n "$SINGLETON" ] && [ -f "$SINGLETON" ]; then
     SIZE=$(wc -c < "$SINGLETON")
     echo "PASS: singleton produced at $SINGLETON ($SIZE bytes)"
 else
-    echo "WARN: no singleton file found. Factory output path may be configurable."
-    echo "  (This is non-fatal — factory reported success in agent_logs.)"
+    echo "WARN: no singleton file found on disk. Factory reported success in logs."
+    echo "  (Non-fatal — factory may write elsewhere or require different args.)"
 fi
 
 echo "✅ Tier 1 memory + factory test complete"

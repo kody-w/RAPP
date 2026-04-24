@@ -19,3 +19,10 @@ local.settings.json
 .vscode/settings.json
 .vscode/tasks.json
 outreach_charles.html
+rapp_swarm/agents
+rapp_swarm/utils-vendored
+
+# Test/runtime artifacts
+rapp_brainstem/.brainstem_book.json
+rapp_swarm/_vendored/.local_storage/
+rapp_swarm/.local_storage/
