@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAPP — One Slide</title>
+<meta name="description" content="Give it a goal. Agents swarm around it. Share the file, everyone runs it. Works offline. That's RAPP.">
+<meta property="og:title" content="RAPP — Give it a goal. Agents swarm. Share the file.">
+<meta property="og:description" content="Give it a goal. Agents swarm around it. Share the file, everyone runs it. Works offline. That's RAPP.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kody-w.github.io/RAPP/one-pager.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E🧠%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --border:#21262d; --border2:#30363d;
+    --fg:#e6edf3; --dim:#8b949e;
+    --blue:#1f6feb; --blue-2:#58a6ff;
+    --green-3:#3fb950; --purple:#a78bfa; --warn:#d29922;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:var(--bg);color:var(--fg);
+    min-height:100vh;
+    display:flex;flex-direction:column;
+    line-height:1.5;
+  }
+  a{color:var(--blue-2);text-decoration:none}a:hover{text-decoration:underline}
+
+  /* slide canvas — 16:9-ish, centered, fits without scroll on a normal laptop */
+  .slide{
+    flex:1;
+    display:grid;
+    grid-template-rows:auto 1fr auto;
+    max-width:1180px;
+    width:100%;
+    margin:0 auto;
+    padding:28px 40px 24px;
+  }
+
+  header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding-bottom:18px;border-bottom:1px solid var(--border);
+  }
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px}
+  .brand .logo{font-size:22px}
+  .brand .version{color:var(--dim);font-size:12px;font-weight:400;margin-left:4px}
+  .kicker{color:var(--dim);font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+
+  /* hero row */
+  .hero{
+    padding:36px 0 28px;
+    display:grid;grid-template-columns:1.2fr .8fr;gap:44px;align-items:center;
+  }
+  .headline{
+    font-size:44px;line-height:1.08;font-weight:800;letter-spacing:-0.5px;
+  }
+  .headline .accent{color:var(--blue-2)}
+  .headline .accent2{color:var(--green-3)}
+  .sub{margin-top:16px;font-size:17px;color:var(--dim);max-width:58ch}
+
+  /* flow chip — the mechanism */
+  .flow{
+    background:linear-gradient(180deg,var(--panel) 0%,#11161d 100%);
+    border:1px solid var(--border2);
+    border-radius:12px;
+    padding:22px 20px;
+    display:flex;flex-direction:column;gap:12px;
+    box-shadow:0 10px 30px rgba(0,0,0,.35);
+  }
+  .flow-step{
+    display:grid;grid-template-columns:26px 1fr;gap:10px;align-items:flex-start;
+  }
+  .flow-step .n{
+    width:24px;height:24px;border-radius:50%;
+    background:rgba(88,166,255,.12);
+    border:1px solid var(--blue-2);
+    color:var(--blue-2);
+    display:flex;align-items:center;justify-content:center;
+    font-size:12px;font-weight:700;
+  }
+  .flow-step h4{font-size:14px;font-weight:600;color:var(--fg)}
+  .flow-step p{font-size:13px;color:var(--dim);margin-top:2px}
+  .flow-step .hint{color:var(--green-3);font-family:"SF Mono",ui-monospace,monospace;font-size:12px;margin-top:4px}
+
+  /* compare — the actual boss-landing answer */
+  .compare{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:14px;
+    margin-top:8px;padding-top:24px;border-top:1px solid var(--border);
+  }
+  .card{
+    background:var(--panel);border:1px solid var(--border2);border-radius:10px;
+    padding:18px 18px 16px;
+    display:flex;flex-direction:column;gap:10px;
+    position:relative;
+  }
+  .card.ours{border-color:var(--blue-2);box-shadow:0 0 0 1px rgba(88,166,255,.25), 0 8px 22px rgba(31,111,235,.18)}
+  .card-title{font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px}
+  .card.ours .card-title{color:var(--blue-2)}
+  .card.ours .card-title::after{
+    content:"one slide answer";
+    margin-left:auto;
+    font-size:10px;color:var(--green-3);letter-spacing:.08em;text-transform:uppercase;
+    font-weight:600;
+  }
+  .card-list{list-style:none;display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--dim)}
+  .card-list li{display:grid;grid-template-columns:16px 1fr;gap:8px;align-items:flex-start;line-height:1.4}
+  .card-list .yes{color:var(--green-3);font-weight:700}
+  .card-list .no{color:var(--warn);font-weight:700}
+  .card-list .na{color:var(--dim);font-weight:700}
+
+  /* footer pull-quote — Anto's own words */
+  footer{
+    margin-top:22px;padding-top:16px;border-top:1px solid var(--border);
+    display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;
+  }
+  .quote{
+    font-size:14px;color:var(--fg);max-width:720px;font-style:italic;
+    border-left:3px solid var(--blue-2);padding-left:14px;
+  }
+  .quote .by{display:block;margin-top:4px;font-style:normal;color:var(--dim);font-size:12px}
+  .links{font-size:12px;color:var(--dim);display:flex;gap:14px;flex-wrap:wrap}
+  .links a{color:var(--blue-2)}
+
+  @media (max-width:860px){
+    .hero{grid-template-columns:1fr;gap:24px;padding:20px 0}
+    .headline{font-size:32px}
+    .compare{grid-template-columns:1fr}
+    .slide{padding:20px}
+  }
+
+  /* print: fits as one slide to PDF */
+  @media print{
+    body{background:#fff;color:#0d1117}
+    .slide{max-width:none}
+    .card{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<main class="slide">
+
+  <header>
+    <div class="brand">
+      <span class="logo">🧠</span>
+      <span>RAPP</span>
+      <span class="version">Rapid Agent Prototyping Platform</span>
+    </div>
+    <span class="kicker">One-Slide Explainer</span>
+  </header>
+
+  <section class="hero">
+    <div>
+      <h1 class="headline">
+        Give it a <span class="accent">goal</span>.<br>
+        Your <span class="accent2">swarm</span> does the rest.<br>
+        Share the <span class="accent">file</span>. Anyone runs it.
+      </h1>
+      <p class="sub">
+        RAPP turns a natural-language goal into a working agent swarm — on your
+        laptop, on an IoT box in the woods, in Teams, in Copilot Studio. The
+        agent is <strong>one Python file</strong>. Drop it in a chat. Your
+        teammate loads it and runs it. Works the same on every machine. Works
+        offline. Works next year.
+      </p>
+    </div>
+
+    <div class="flow" aria-label="How it works, in three steps">
+      <div class="flow-step">
+        <span class="n">1</span>
+        <div>
+          <h4>Say your goal</h4>
+          <p>Natural language. No YAML, no skills manifest, no plugin spec.</p>
+          <div class="hint">"Draft an exec brief on Q3 sales pipeline."</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <span class="n">2</span>
+        <div>
+          <h4>Agents swarm around it</h4>
+          <p>Copilot drives the brainstem; agents spin up, divide the work,
+            produce the outcome, and remember what they learned.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <span class="n">3</span>
+        <div>
+          <h4>Share the file</h4>
+          <p>One <code>*_agent.py</code>. AirDrop it, paste it in Teams, email it.
+            It runs unchanged on the next brainstem it lands in.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="compare" aria-label="Why this, not something else">
+    <div class="card">
+      <h3 class="card-title">GPTs / Skills / Plugins</h3>
+      <ul class="card-list">
+        <li><span class="no">✗</span><span>Vendor-locked — your GPT only runs in that vendor's chat.</span></li>
+        <li><span class="no">✗</span><span>Non-deterministic. Different behavior on different days / devices.</span></li>
+        <li><span class="no">✗</span><span>Not shareable across ecosystems (Anthropic ↔ OpenAI ↔ Copilot).</span></li>
+        <li><span class="no">✗</span><span>Cloud-tethered. No offline, no on-device.</span></li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3 class="card-title">Copilot Studio / Declarative Agents</h3>
+      <ul class="card-list">
+        <li><span class="na">~</span><span>Great for structured, bounded scenarios inside M365.</span></li>
+        <li><span class="no">✗</span><span>Limited to what the product surface supports today.</span></li>
+        <li><span class="no">✗</span><span>Single-tenant logic; harder to reuse across orgs.</span></li>
+        <li><span class="no">✗</span><span>No local execution, no on-device, no offline.</span></li>
+      </ul>
+    </div>
+
+    <div class="card ours">
+      <h3 class="card-title">RAPP</h3>
+      <ul class="card-list">
+        <li><span class="yes">✓</span><span><strong>Single Python file = one agent.</strong> Portable by design.</span></li>
+        <li><span class="yes">✓</span><span><strong>Deterministic.</strong> Code, not vibes — runs the same everywhere.</span></li>
+        <li><span class="yes">✓</span><span><strong>Local-first.</strong> Runs offline on your laptop, an IoT box, or Azure.</span></li>
+        <li><span class="yes">✓</span><span><strong>Shareable by drag-and-drop.</strong> Teams chat → teammate's brainstem.</span></li>
+        <li><span class="yes">✓</span><span><strong>Scales to cloud + Copilot Studio</strong> unchanged (tier parity).</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    <blockquote class="quote">
+      "What's unique about RAPP is that you just give it your goal. It will
+      automatically spin up agents that will swarm around your goal and
+      produce the outcome you desire — and learn from it. Drop that in a
+      Teams call and everyone can load it into their brainstems and run it
+      immediately for the next few weeks."
+      <span class="by">— the pitch, in one breath</span>
+    </blockquote>
+    <nav class="links">
+      <a href="./">Landing</a>
+      <a href="./pitch-playbook.html">Pitch playbook</a>
+      <a href="./faq.html">FAQ</a>
+      <a href="./roadmap.html">Roadmap</a>
+      <a href="./release-notes.html">Release notes</a>
+      <a href="https://github.com/kody-w/RAPP">GitHub</a>
+    </nav>
+  </footer>
+
+</main>
+</body>
+</html>

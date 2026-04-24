@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAPP — Release Notes</title>
+<meta name="description" content="What changed in each tagged brainstem release. Pin to any version with BRAINSTEM_VERSION=x.y.z curl … | bash.">
+<meta property="og:title" content="RAPP — Release Notes">
+<meta property="og:description" content="What changed in each tagged brainstem release. Pin to any version with BRAINSTEM_VERSION=x.y.z.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E🧠%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --border:#21262d; --border2:#30363d;
+    --fg:#e6edf3; --dim:#8b949e;
+    --blue:#1f6feb; --blue-2:#58a6ff;
+    --green-3:#3fb950; --purple:#a78bfa; --warn:#d29922;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:var(--bg);color:var(--fg);line-height:1.55;min-height:100vh;
+    display:flex;flex-direction:column;align-items:center;
+  }
+  a{color:var(--blue-2);text-decoration:none}a:hover{text-decoration:underline}
+  code,pre{font-family:"SF Mono",ui-monospace,monospace;font-size:13px}
+  code{background:var(--panel);padding:2px 6px;border-radius:4px}
+  pre{background:#04060c;border:1px solid var(--border2);padding:12px;border-radius:6px;overflow-x:auto}
+
+  header{width:100%;border-bottom:1px solid var(--border);background:rgba(13,17,23,.82);backdrop-filter:blur(12px);position:sticky;top:0;z-index:10}
+  .nav{max-width:860px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700}
+  .brand .logo{font-size:22px}
+  .brand .version{color:var(--dim);font-size:12px;font-weight:400}
+  .nav-links{margin-left:auto;display:flex;gap:16px;font-size:13px}
+
+  main{max-width:860px;padding:36px 24px 80px;width:100%}
+  h1{font-size:34px;letter-spacing:-0.3px;margin-bottom:6px}
+  .subtitle{color:var(--dim);font-size:15px;margin-bottom:28px}
+
+  .install{
+    background:var(--panel);border:1px solid var(--border2);border-radius:8px;
+    padding:16px;margin-bottom:32px;
+  }
+  .install h3{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--dim);margin-bottom:10px;font-weight:600}
+
+  .release{
+    margin-bottom:32px;
+    padding-bottom:24px;
+    border-bottom:1px solid var(--border);
+  }
+  .release:last-child{border-bottom:none}
+  .release h2{
+    font-size:22px;font-weight:700;margin-bottom:4px;
+    display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  }
+  .release h2 .tag-chip{
+    font-size:12px;font-weight:600;
+    padding:3px 8px;border-radius:999px;
+    background:rgba(31,111,235,.12);border:1px solid var(--blue);color:var(--blue-2);
+    font-family:"SF Mono",monospace;
+  }
+  .release.latest h2 .tag-chip{background:rgba(63,185,80,.15);border-color:var(--green-3);color:var(--green-3)}
+  .release .oneline{color:var(--dim);font-size:14px;margin-bottom:12px;font-style:italic}
+  .release ul{list-style:none;padding:0}
+  .release ul li{
+    padding:6px 0 6px 20px;position:relative;
+    font-size:14px;
+  }
+  .release ul li::before{
+    content:"▸";position:absolute;left:4px;top:6px;color:var(--blue-2);
+  }
+  .release strong{color:var(--fg)}
+
+  footer{
+    margin-top:48px;padding-top:20px;border-top:1px solid var(--border);
+    color:var(--dim);font-size:12px;text-align:center;
+  }
+</style>
+</head>
+<body>
+<header>
+  <nav class="nav">
+    <a href="./" class="brand">
+      <span class="logo">🧠</span>
+      <span>RAPP</span>
+      <span class="version">Release Notes</span>
+    </a>
+    <div class="nav-links">
+      <a href="./one-pager.html">One-pager</a>
+      <a href="./faq.html">FAQ</a>
+      <a href="./roadmap.html">Roadmap</a>
+      <a href="https://github.com/kody-w/RAPP">GitHub</a>
+    </div>
+  </nav>
+</header>
+
+<main>
+  <h1>Release Notes</h1>
+  <p class="subtitle">Every tagged brainstem release, newest first. Tags are
+    immutable — you can pin and roll back to any past version.</p>
+
+  <div class="install">
+    <h3>Install or pin to a version</h3>
+    <pre>curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash
+BRAINSTEM_VERSION=0.12.0 curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash</pre>
+  </div>
+
+  <!-- v0.12.1 ──────────────────────────────────────────────────── -->
+  <article class="release latest">
+    <h2>v0.12.1 <span class="tag-chip">brainstem-v0.12.1</span></h2>
+    <p class="oneline">UI backport to v0.6.0 classic chrome — same muscle memory, all v0.12 features kept.</p>
+    <ul>
+      <li><strong>Default look restored</strong> to the v0.6.0 screenshot users were trained on: icon-only header buttons, uncluttered chrome.</li>
+      <li><strong>No feature regression.</strong> Twin portrait, swarm management, index cards, Settings panel, .egg export, VS Code link, voice toggle, starter prompts — all still there, shown when their mode turns on.</li>
+      <li><strong>UI smoke test</strong> added (<code>tests/e2e/07-ui-smoke.sh</code>) — 20 assertions covering v0.6.0 markers + v0.12 handlers.</li>
+      <li>Tier 2 deploy pipeline small fixes: agents copied (not symlinked) so <code>func publish</code> zip survives; <code>provision-twin-lite.sh</code> env-var filter extended.</li>
+    </ul>
+  </article>
+
+  <!-- v0.12.0 ──────────────────────────────────────────────────── -->
+  <article class="release">
+    <h2>v0.12.0 <span class="tag-chip">brainstem-v0.12.0</span></h2>
+    <p class="oneline">Three Tiers, One Model — tier-2 adoption + sacred brainstem + constitution cleanup.</p>
+    <ul>
+      <li><strong>Article I-A added:</strong> <code>brainstem.py</code> is sacred. Bug fixes only; features go in <code>agents/</code>.</li>
+      <li><strong>Article II rewritten:</strong> one Tier 2 deployment serves many users via <code>user_guid</code> body field; shared <code>agents/</code> tree + per-user memory via <code>storage_manager.set_memory_context(user_guid)</code>. Matches the Power Automate flow 1:1.</li>
+      <li><strong>Article IX rewritten:</strong> workshop → singleton distribution. Retired the sibling-swarm invocation family (invoke / deploy / list / info / seal / snapshot / delete).</li>
+      <li><strong>Article VI-A retired:</strong> no more per-user "hatching."</li>
+      <li><strong>Tier 2 function_app.py</strong> replaced with the CommunityRAPP Base Memory Agent Platform body. Six cloud utils vendored (azure_file_storage, copilot_auth, storage_factory, local_file_storage, result, environment).</li>
+      <li><strong>Agents cleanup:</strong> 17 agents removed (7 retired swarm family + 10 experimental). <code>swarm_factory_agent</code> promoted out of <code>system_agents/</code>.</li>
+      <li><strong>brainstem.py bug fixes</strong> (Article I-A permits): shim import path + recursive agent discovery (Article XII alignment).</li>
+      <li><strong>E2E test scripts added</strong> under <code>tests/e2e/</code>. Tier 1 smoke + memory/factory + Tier 2 local all green. Tier 2 cloud deferred (MCAPS policy).</li>
+    </ul>
+  </article>
+
+  <!-- v0.11.x highlights ──────────────────────────────────────── -->
+  <article class="release">
+    <h2>v0.11.7 <span class="tag-chip">brainstem-v0.11.7</span></h2>
+    <p class="oneline">README rewrite for technical readers + pitch deck "Receipts" slide.</p>
+  </article>
+
+  <article class="release">
+    <h2>v0.11.0 – v0.11.6 <span class="tag-chip">brainstem-v0.11.x</span></h2>
+    <p class="oneline">Pitch & positioning polish, workspace_agents/ pattern, project-local install, agent handshake.</p>
+    <ul>
+      <li>v0.11.6 — pitch slide 4 now anchors "swarm" with a concrete behavior.</li>
+      <li>v0.11.5 — landing page tab title + OG meta carry the positioning.</li>
+      <li>v0.11.4 — positioning: "Portable, Shareable, Vibe Swarm Building Tool."</li>
+      <li>v0.11.3 — <code>install.ps1</code> symmetry for Windows: project-local + agent handshake.</li>
+      <li>v0.11.2 — day-zero UX: <code>TWIN_MODE</code> off by default, interview-style starter prompts.</li>
+      <li>v0.11.1 — bug fix: handshake env-var placement in pipe (bash side, not curl).</li>
+      <li>v0.11.0 — <code>workspace_agents/</code> pattern, project-local install (<code>--here</code>), agent handshake via <code>RAPP_INSTALL_ASSIST</code>.</li>
+    </ul>
+  </article>
+
+  <article class="release">
+    <h2>v0.10.x <span class="tag-chip">brainstem-v0.10.x</span></h2>
+    <p class="oneline">UI polish round: twin-as-rubber-duck, unified identity model, file-open from chat, multiple LearnNew/factory fixes.</p>
+  </article>
+
+  <article class="release">
+    <h2>v0.9.0 and earlier</h2>
+    <p class="oneline">Foundational releases: the one-liner installer, Copilot API auth chain, agent auto-discovery, soul file, diagnostics flight recorder. See
+      <a href="https://github.com/kody-w/RAPP/tags">the full tag list on GitHub</a> for the complete history.</p>
+  </article>
+
+  <footer>
+    Tags are immutable. If a release ever goes wrong, pin to the prior version with
+    <code>BRAINSTEM_VERSION=…</code> and the installer will restore it byte-for-byte.
+    See <a href="./faq.html">FAQ</a> · <a href="./roadmap.html">Roadmap</a>.
+  </footer>
+</main>
+</body>
+</html>
