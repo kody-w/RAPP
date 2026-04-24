@@ -134,17 +134,27 @@
   .login-btn:hover { background: #2ea043; }
   .login-btn:disabled { opacity: 0.5; cursor: default; }
   .device-code {
-    font-family: "SF Mono", monospace;
-    font-size: 32px; font-weight: 700; letter-spacing: 4px;
-    color: #58a6ff; margin: 16px 0;
+    font-family: "SF Mono", "Cascadia Code", monospace;
+    font-size: 32px; font-weight: 700; letter-spacing: 6px;
+    color: #3fb950; margin: 16px 0;
+    background: #0d1117; border: 1px solid #238636; border-radius: 8px;
+    padding: 18px; display: inline-block;
   }
   .login-status { color: #8b949e; font-size: 13px; margin-top: 16px; }
+  .login-status .typing { display: inline-flex; gap: 3px; vertical-align: middle; margin-right: 4px; }
+  .login-status .typing span {
+    width: 4px; height: 4px; background: #8b949e; border-radius: 50%;
+    animation: blink 1.4s infinite both;
+  }
+  .login-status .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .login-status .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%,80%,100% { opacity: 0.3; } 40% { opacity: 1; } }
   .login-success { color: #3fb950; }
   .code-row {
     display: flex; align-items: center; justify-content: center;
-    gap: 8px; margin: 16px 0;
+    gap: 8px; margin: 16px 0; position: relative;
   }
-  .code-row .device-code { margin: 0; }
+  .code-row .device-code { margin: 0; position: relative; }
   .copy-btn {
     background: #21262d; border: 1px solid #30363d; border-radius: 6px;
     color: #8b949e; cursor: pointer; padding: 6px 8px;
@@ -1263,7 +1273,7 @@
       <span class="icon icon-xl"><svg viewBox="0 0 24 24"><path d="M13 3C9.2 3 6.2 5.9 6 9.7L4.1 12.6c-.3.5.1 1.1.7 1.1H6v3c0 1.1.9 2 2 2h1v3h7v-4.9c2.8-1.5 5-4.8 5-8.1 0-5-4.5-8-8-5zM9.5 9C8.7 9 8 8.3 8 7.5S8.7 6 9.5 6s1.5.7 1.5 1.5S10.3 9 9.5 9zm5 0c-.8 0-1.5-.7-1.5-1.5S13.7 6 14.5 6s1.5.7 1.5 1.5S15.3 9 14.5 9z"/></svg></span>
     </div>
     <h2>RAPP Brainstem</h2>
-    <p>Sign in with your GitHub account to use Copilot AI.</p>
+    <p>Sign in with your GitHub account to unlock the full Copilot model catalog — Claude, GPT-4o, o-series, Gemini, and more.</p>
     <div id="login-step1">
       <button class="login-btn" onclick="startLogin()">Sign in with GitHub</button>
     </div>
@@ -1278,13 +1288,14 @@
       <div class="copy-toast" id="copy-toast">&nbsp;</div>
       <a id="verify-link" href="#" target="_blank" style="color:#58a6ff;font-size:14px">Open GitHub &rarr;</a>
       <div style="font-size:11px;color:#8b949e;margin-top:4px">If a new tab didn't open, click the link above</div>
-      <div class="login-status" id="login-status">Waiting for authorization...</div>
+      <div class="login-status" id="login-status"><span class="typing"><span></span><span></span><span></span></span> Waiting for authorization...</div>
     </div>
     <div id="login-step3" style="display:none">
       <div style="margin-bottom:16px;color:#3fb950;">
         <span class="icon icon-xl"><svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 16A8 8 0 108 0a8 8 0 000 16zm3.78-9.72a.75.75 0 00-1.06-1.06L6.75 9.19 5.28 7.72a.75.75 0 00-1.06 1.06l2 2a.75.75 0 001.06 0l4.5-4.5z"/></svg></span>
       </div>
       <p class="login-success" style="font-size:16px;font-weight:600">Connected to GitHub Copilot</p>
+      <p style="font-size:12px;color:#6e7681;margin-top:6px">Loading Copilot model catalog...</p>
     </div>
     <div style="margin-top:24px;padding-top:16px;border-top:1px solid #30363d">
       <a href="#" onclick="switchAccount(); return false;" style="color:#58a6ff;font-size:13px;text-decoration:none;margin-right:16px">🔄 Switch account</a>
