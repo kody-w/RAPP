@@ -5,7 +5,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
-PAGES=(one-pager.html leadership.html process.html faq-slide.html partners.html use-cases.html release-notes.html roadmap.html faq.html)
+PAGES=(one-pager.html leadership.html process.html faq-slide.html partners.html use-cases.html security.html release-notes.html roadmap.html faq.html)
 
 for f in "${PAGES[@]}"; do
     [ -f "$f" ] || { echo "FAIL: $f does not exist"; exit 1; }
@@ -129,6 +129,19 @@ check use-cases.html "customer-service scenario"                  'Customer-serv
 check use-cases.html "research briefs scenario"                   'Research.*insights|insights briefs|briefs'
 check use-cases.html "input/swarm/outcome flow per card"          'lbl in.*Input|>Input<.*>Swarm<|lbl out'
 check use-cases.html "cross-links to platform one-pager"          'one-pager\.html'
+
+# security.html — CISO / compliance audience
+echo "▶ security.html content anchors..."
+check security.html "kicker labels audience"                      'Security.*Compliance|SECURITY'
+check security.html "headline: data / device / audit trail"       'Your data.*Your device.*Your audit|audit trail'
+check security.html "data residency pillar"                       'Data residency|Local-first'
+check security.html "supply chain pillar"                         'Supply chain|Auditable'
+check security.html "identity pillar (IdP)"                       'IdP.*already trust|Identity'
+check security.html "Entra / AAD reference"                       'Azure AD|Entra'
+check security.html "BRAINSTEM_VERSION pin example"               'BRAINSTEM_VERSION'
+check security.html "guardrails: no telemetry"                    'No telemetry|telemetry phoning home'
+check security.html "guardrails: no centralized registry"         'No vendor-shared|no centralized|agent registry'
+check security.html "cross-links to other one-pagers"             'one-pager\.html|partners\.html|leadership\.html'
 
 # faq.html
 echo "▶ faq content anchors..."

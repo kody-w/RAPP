@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAPP — Security & Compliance One-Pager</title>
+<meta name="description" content="Your data. Your device. Your audit trail. How RAPP's architecture maps to enterprise security expectations — local-first, auditable supply chain, rides on your existing identity.">
+<meta property="og:title" content="RAPP — Your data. Your device. Your audit trail.">
+<meta property="og:description" content="How RAPP's architecture maps to enterprise security expectations — local-first, auditable supply chain, rides on your existing identity.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kody-w.github.io/RAPP/security.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E🧠%3C/text%3E%3C/svg%3E">
+<script>
+(function(){
+  try {
+    var saved = localStorage.getItem('rapp-theme');
+    var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    var theme = saved || (prefersLight ? 'light' : 'dark');
+    if (theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+  } catch(e){}
+})();
+</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d1117;--surface:#161b22;--surface2:#1c2128;--border:#30363d;--border2:#21262d;
+  --text:#e6edf3;--text-dim:#8b949e;--muted:#484f58;
+  --accent:#58a6ff;--green:#3fb950;--purple:#a78bfa;--red:#f85149;
+  --grad-1:#7df0c8;--grad-2:#58a6ff;--grad-3:#a78bfa;
+  --logo-glow:rgba(125,240,200,.3);
+}
+[data-theme="light"]{
+  --bg:#ffffff;--surface:#f6f8fa;--surface2:#eaeef2;--border:#d0d7de;--border2:#afb8c1;
+  --text:#1f2328;--text-dim:#59636e;--muted:#8c959f;
+  --accent:#0969da;--green:#1a7f37;--purple:#8250df;--red:#cf222e;
+  --grad-1:#2da44e;--grad-2:#0969da;--grad-3:#8250df;
+  --logo-glow:rgba(9,105,218,.2);
+}
+html,body{
+  height:100%;overflow:hidden;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  background:var(--bg);color:var(--text);line-height:1.55;
+  transition:background-color .25s,color .25s;
+}
+.slide{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  padding:5vh 6vw;text-align:center;
+}
+.slide-inner{width:100%;max-width:1220px}
+
+.kicker{
+  display:inline-block;margin-bottom:14px;
+  font-size:.78rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:var(--red);
+  padding:6px 14px;border:1px solid var(--red);border-radius:999px;
+  background:rgba(248,81,73,.08);
+}
+[data-theme="light"] .kicker{background:rgba(207,34,46,.08)}
+
+.logo{
+  font-size:clamp(48px,5.5vw,72px);line-height:1;margin-bottom:12px;
+  filter:drop-shadow(0 0 22px var(--logo-glow));
+}
+h1{
+  font-size:clamp(2rem,4.2vw,3.8rem);font-weight:800;line-height:1.08;
+  letter-spacing:-.7px;margin-bottom:14px;
+}
+h1 .grad{
+  background:linear-gradient(135deg,var(--grad-1),var(--grad-2),var(--grad-3));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.sub{
+  font-size:clamp(1rem,1.4vw,1.25rem);color:var(--text-dim);
+  max-width:900px;margin:0 auto 32px;line-height:1.55;
+}
+.sub strong{color:var(--text)}
+
+/* 3 pillars of the security story */
+.pillars{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:18px;
+  width:100%;text-align:left;margin-bottom:26px;
+}
+.pillar{
+  background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  padding:22px 24px;transition:border-color .2s,transform .2s;
+  display:flex;flex-direction:column;gap:8px;
+}
+.pillar:hover{border-color:var(--accent);transform:translateY(-2px)}
+.pillar .badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:34px;height:34px;margin-bottom:6px;
+  background:linear-gradient(135deg,var(--grad-1),var(--grad-3));
+  border-radius:10px;font-size:17px;
+}
+.pillar .lbl{
+  font-size:.72rem;letter-spacing:1.4px;text-transform:uppercase;
+  color:var(--accent);font-weight:700;
+}
+.pillar h3{font-size:clamp(1.05rem,1.3vw,1.24rem);font-weight:700;line-height:1.25;color:var(--text)}
+.pillar ul{list-style:none;display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.pillar ul li{
+  padding-left:20px;position:relative;
+  font-size:clamp(.88rem,1.02vw,.98rem);line-height:1.55;color:var(--text-dim);
+}
+.pillar ul li::before{
+  content:"✓";position:absolute;left:0;top:0;color:var(--green);font-weight:800;
+}
+.pillar ul li strong{color:var(--text)}
+
+/* Guardrail band — what RAPP explicitly does NOT do */
+.guardrails{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:12px;
+  max-width:1060px;margin:0 auto 26px;text-align:left;
+}
+.guard{
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:14px 18px;
+}
+.guard .label{
+  font-size:.7rem;letter-spacing:1.4px;text-transform:uppercase;
+  color:var(--text-dim);font-weight:700;margin-bottom:4px;
+  display:flex;align-items:center;gap:6px;
+}
+.guard .label::before{
+  content:"✗";color:var(--red);font-weight:800;font-size:.95rem;
+}
+.guard p{font-size:clamp(.84rem,.98vw,.93rem);color:var(--text-dim);line-height:1.5}
+.guard p strong{color:var(--text)}
+
+.hinge{
+  display:block;margin:0 auto;max-width:960px;
+  font-size:clamp(1rem,1.3vw,1.28rem);line-height:1.5;
+  color:var(--text);font-weight:500;font-style:italic;
+  position:relative;padding-top:22px;letter-spacing:-.1px;
+}
+.hinge::before{
+  content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:50px;height:2px;
+  background:linear-gradient(90deg,var(--grad-1),var(--grad-3));
+  border-radius:1px;opacity:.85;
+}
+.hinge .accent{
+  background:linear-gradient(135deg,var(--grad-1),var(--grad-2),var(--grad-3));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  font-style:normal;font-weight:700;
+}
+
+.sr-only{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.animate{animation:fadeUp .6s ease both}
+.animate.d1{animation-delay:.08s}.animate.d2{animation-delay:.18s}
+.animate.d3{animation-delay:.28s}.animate.d4{animation-delay:.38s}
+.animate.d5{animation-delay:.48s}.animate.d6{animation-delay:.58s}
+.animate.d7{animation-delay:.68s}
+
+@media(max-width:900px){
+  html,body{overflow:auto;height:auto}
+  .slide{position:static;padding:36px 22px;min-height:100vh}
+  .pillars,.guardrails{grid-template-columns:1fr;gap:12px}
+}
+@media print{
+  html,body{background:#fff;color:#0d1117;overflow:visible;height:auto}
+  .slide{position:static;padding:28px;page-break-inside:avoid}
+  .pillar,.guard{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<main class="slide">
+  <div class="slide-inner">
+
+    <span class="kicker animate d1">For Security &amp; Compliance</span>
+
+    <div class="logo animate d2">🧠</div>
+
+    <h1 class="animate d3">
+      Your data. Your device. <span class="grad">Your audit trail.</span>
+    </h1>
+
+    <p class="sub animate d4">
+      RAPP is <strong>local-first by design</strong>. Agents are plain Python
+      files on disk, auth rides on the identity your team already uses, and
+      every release is a git-pinned, immutable tag. Nothing leaves the device
+      unless you promote it — to <strong>your</strong> Azure subscription,
+      into <strong>your</strong> Copilot Studio tenant.
+    </p>
+
+    <section class="pillars">
+
+      <div class="pillar animate d4">
+        <div class="badge">🔒</div>
+        <span class="lbl">Data residency</span>
+        <h3>Local-first. On-device by default.</h3>
+        <ul>
+          <li>Agents, memory, and soul files live <strong>on the user's machine</strong>.</li>
+          <li>Cloud tier is <strong>your</strong> Azure subscription — data stays inside your boundary.</li>
+          <li>Air-gapped mode: pair with a local LLM, cut the network, still works.</li>
+          <li>Per-user memory isolation at Tier 2 via guid-scoped namespaces.</li>
+        </ul>
+      </div>
+
+      <div class="pillar animate d5">
+        <div class="badge">📜</div>
+        <span class="lbl">Supply chain</span>
+        <h3>Auditable, pinnable, rollback-able.</h3>
+        <ul>
+          <li>Every agent is <strong>plain Python code</strong> — reviewable, diff-able, committable.</li>
+          <li>Every release is a <strong>git tag</strong> (<code>brainstem-v0.12.x</code>). Tags are immutable.</li>
+          <li>Pin to a known-good version: <code>BRAINSTEM_VERSION=0.12.1</code>.</li>
+          <li>One-command rollback if a release ever goes sideways.</li>
+        </ul>
+      </div>
+
+      <div class="pillar animate d5">
+        <div class="badge">🆔</div>
+        <span class="lbl">Identity</span>
+        <h3>Rides on the IdP you already trust.</h3>
+        <ul>
+          <li>Tier 1: <strong>GitHub identity</strong> (your corp SSO via GitHub).</li>
+          <li>Tier 2: <strong>Azure AD / Entra ID</strong> on the function app and storage.</li>
+          <li>Tier 3: <strong>M365 identity</strong> flows in via Power Automate — the signed-in user's object ID IS the tenant key.</li>
+          <li>Zero new accounts, zero shared secrets between users.</li>
+        </ul>
+      </div>
+
+    </section>
+
+    <section class="guardrails">
+      <div class="guard animate d6">
+        <div class="label">What RAPP never does</div>
+        <p><strong>No telemetry phoning home.</strong> The brainstem doesn't call back to us. Period. You control where requests go.</p>
+      </div>
+      <div class="guard animate d6">
+        <div class="label">What RAPP never does</div>
+        <p><strong>No vendor-shared agent registry.</strong> Your agents live in your repo, your tree, your cloud. We don't host them centrally.</p>
+      </div>
+      <div class="guard animate d6">
+        <div class="label">What RAPP never does</div>
+        <p><strong>No opaque skill interpretation.</strong> Agents are code, not markdown the LLM re-reads. You can read exactly what the agent will do.</p>
+      </div>
+    </section>
+
+    <blockquote class="hinge animate d7">
+      The agent is a file. The file is reviewable code.
+      <span class="accent">The deployment runs in your tenant, on your identity, against your data.</span>
+      Security review starts with <code>git log</code> — not a spec document.
+    </blockquote>
+
+  </div>
+</main>
+
+<nav class="sr-only" aria-label="Related pages">
+  <a href="./">Home</a>
+  <a href="./one-pager.html">Platform one-pager</a>
+  <a href="./leadership.html">Leadership one-pager</a>
+  <a href="./process.html">Process one-pager</a>
+  <a href="./partners.html">Partners one-pager</a>
+  <a href="./use-cases.html">Use cases</a>
+  <a href="./faq-slide.html">FAQ slide</a>
+  <a href="./faq.html">Full FAQ</a>
+  <a href="./pitch-playbook.html">Pitch deck</a>
+  <a href="./roadmap.html">Roadmap</a>
+  <a href="./release-notes.html">Release notes</a>
+  <a href="https://github.com/kody-w/RAPP">GitHub</a>
+</nav>
+
+</body>
+</html>
