@@ -1042,12 +1042,14 @@ today and every one that will exist tomorrow.
 The kernel provides discovery mechanisms for `agents/` and `services/`,
 but `services/` ships **empty**. Only core agents ship in `agents/`:
 
-| Ships with brainstem | Installed on demand |
-|---------------------|-------------------|
-| ContextMemory, ManageMemory (memory) | Kanban, Webhook, Dashboard |
-| LearnNew (agent generation) | VibeBuilder (rapplication generation) |
-| HackerNews, WorkIQ (starter examples) | Swarms, Binder (platform services) |
-| SwarmFactory (workshop → singleton) | Any user-built rapplication |
+| Ships with brainstem (factory image) | Installed on demand (rapp_store) |
+|--------------------------------------|----------------------------------|
+| ContextMemory, ManageMemory (memory) | LearnNew (agent generation) |
+| HackerNews (starter/test) | SwarmFactory (workshop → singleton) |
+| WorkIQ (productivity) | VibeBuilder (rapplication generation) |
+| | Kanban, Webhook, Dashboard |
+| | Swarms, Binder (platform services) |
+| | Any user-built rapplication |
 
 No rapplication, no service, and no non-core agent is pre-installed.
 Users install what they need — via the binder catalog, via VibeBuilder,
