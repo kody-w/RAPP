@@ -30,16 +30,17 @@ if ! curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash -s -- --here > i
 fi
 echo "PASS: installer completed"
 
-# Locate the installed brainstem
-if [ -d .brainstem ]; then
-    INSTALL_DIR="$SANDBOX/.brainstem"
-elif [ -d RAPP/rapp_brainstem ]; then
-    INSTALL_DIR="$SANDBOX/RAPP/rapp_brainstem"
-else
-    echo "FAIL: could not locate installed brainstem directory"
-    ls -la
+# Locate the installed brainstem.py (could be at .brainstem/, at
+# .brainstem/src/rapp_brainstem/, or under RAPP/rapp_brainstem/
+# depending on installer version).
+BRAINSTEM_PY=$(find . -maxdepth 5 -name brainstem.py -type f 2>/dev/null | head -1)
+if [ -z "$BRAINSTEM_PY" ] || [ ! -f "$BRAINSTEM_PY" ]; then
+    echo "FAIL: could not locate installed brainstem.py"
+    echo "  sandbox contents:"
+    find . -maxdepth 4 -type d 2>/dev/null | head -20
     exit 1
 fi
+INSTALL_DIR=$(dirname "$BRAINSTEM_PY")
 echo "  install dir: $INSTALL_DIR"
 
 # Start brainstem on a non-default port
