@@ -89,23 +89,29 @@ The handshake block is delimited by `<<<RAPP_INSTALLER_HANDSHAKE v=1>>>` / `<<<E
 
 ```
 ~/.brainstem/src/rapp_brainstem/
-├── brainstem.py              ← the engine (don't edit)
+├── brainstem.py              ← the kernel (don't edit)
 ├── soul.md                   ← system prompt (edit freely)
-├── agents/
+├── agents/                   ← factory image (4 agents + base class)
 │   ├── basic_agent.py        ← base class
-│   ├── hacker_news_agent.py  ← example / curriculum
-│   ├── learn_new_agent.py    ←   "
-│   ├── recall_memory_agent.py
-│   ├── save_memory_agent.py
-│   └── workspace_agents/       ← all organizational content lives here
-│       ├── swarm_factory_agent.py  ← the one ship-in-repo swarm tool
-│       ├── experimental_agents/    ← reserved; never auto-loads
-│       ├── disabled_agents/        ← reserved; never auto-loads
-│       ├── local_agents/           ← gitignored; personal agents
-│       └── <user folders>/         ← user swarms / groupings
+│   ├── context_memory_agent.py  ← recall memories
+│   ├── manage_memory_agent.py   ← save memories
+│   ├── hacker_news_agent.py     ← starter/test
+│   └── workiq_agent.py          ← productivity
+├── services/                 ← empty by default (drop-in HTTP services)
+└── .brainstem_data/          ← local storage (auto-created)
 ```
 
-**Constitutional rule:** the top level of `agents/` is the showroom (starter/ship agents only). Everything organizational — experimental, disabled, local, project-specific, user swarms — lives under `agents/workspace_agents/`. Users don't edit engine files; they drop agents into the tree.
+**Factory-installed rule:** the brainstem ships clean — like a factory iPhone. `services/` is empty. Only core agents are in `agents/`. Everything else (LearnNew, SwarmFactory, VibeBuilder, Kanban, Webhook, Dashboard, etc.) lives in the RAPPstore and gets installed on demand.
+
+## Rapplications (full-stack extensions)
+
+A rapplication = agent file (required) + optional service file. The agent is the primary interface — any AI can drive it. The service adds HTTP endpoints for UIs.
+
+- **Agent contract:** extends `BasicAgent`, defines `metadata` + `perform(**kwargs) → str`
+- **Service contract:** module-level `name` string + `handle(method, path, body) → (dict, int)`
+- Both share `.brainstem_data/{name}.json` storage
+- Install = drop files in `agents/` and `services/`. Uninstall = delete them.
+- Full SDK: https://kody-w.github.io/RAPP/rapplication-sdk.md
 
 ## Config pattern — agents ask, don't require editing
 
