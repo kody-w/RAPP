@@ -1033,9 +1033,26 @@ adds convenience (drag-and-drop, charting, webhook ingestion) but
 never gates capability.
 
 This is what makes rapplications work on every AI surface that exists
-today and every one that will exist tomorrow. The brainstem is the
-iPhone. The agents are the default apps. The rapplications are the
-App Store.
+today and every one that will exist tomorrow.
+
+### The factory-installed rule
+
+> **The brainstem ships clean — like a factory iPhone.**
+
+The kernel provides discovery mechanisms for `agents/` and `services/`,
+but `services/` ships **empty**. Only core agents ship in `agents/`:
+
+| Ships with brainstem | Installed on demand |
+|---------------------|-------------------|
+| ContextMemory, ManageMemory (memory) | Kanban, Webhook, Dashboard |
+| LearnNew (agent generation) | VibeBuilder (rapplication generation) |
+| HackerNews, WorkIQ (starter examples) | Swarms, Binder (platform services) |
+| SwarmFactory (workshop → singleton) | Any user-built rapplication |
+
+No rapplication, no service, and no non-core agent is pre-installed.
+Users install what they need — via the binder catalog, via VibeBuilder,
+or by dropping files in manually. The brainstem never assumes what
+the user wants beyond the minimum viable agent surface.
 
 ### What a rapplication is
 
@@ -1055,6 +1072,9 @@ A rapplication is the atomic installable unit in the RAPP ecosystem:
   design is wrong.
 - ❌ Multi-file agents or multi-file services. The single-file rule
   (Article IV, §0) extends to services.
+- ❌ Pre-installed rapplications or services in the brainstem. The
+  brainstem ships factory-clean. `services/` is empty. Only core
+  agents live in `agents/`. Everything else is installed on demand.
 - ❌ Services that duplicate agent capability. The service reads/writes
   the same storage as the agent. It is a view, not a second brain.
 
