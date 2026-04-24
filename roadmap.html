@@ -110,9 +110,9 @@
 <main>
   <h1>Roadmap</h1>
   <p class="subtitle">
-    What we're building next. Near-term is work actively in flight; mid-term
-    is on deck for the next few weeks; the longer horizon is where the
-    platform is heading through FY27 planning.
+    What's next for the platform. Near-term is work actively in flight;
+    mid-term is on deck for the next few weeks; the longer horizon is
+    where the architecture is heading.
   </p>
 
   <div class="column">
@@ -123,35 +123,32 @@
       <h2>This sprint</h2>
 
       <div class="item">
-        <h3>One-slide pitch <span class="chip done">done</span></h3>
-        <p>Boss feedback: the old pitch slide is too poor at landing
-          "why this, not GPTs / skills / Copilot Studio." <a href="./one-pager.html">New one-slide explainer</a> distills
-          the message to "give it a goal, swarm around it, share the file."</p>
+        <h3>One-slide explainer <span class="chip done">done</span></h3>
+        <p>Single-slide pitch that lands "why RAPP, not GPTs / skills /
+          Copilot Studio" in one glance. <a href="./one-pager.html">Published here.</a></p>
       </div>
 
       <div class="item">
-        <h3>Tier 2 cloud MVP in tenant <span class="chip wip">wip</span></h3>
-        <p><strong>Goal:</strong> Get <code>rapp_swarm/function_app.py</code>
-          deployed to the Microsoft tenant's production subscription so AI 8
-          and RAPP can be reached externally. Constraint: minimize spend;
-          deploy only what needs to be externally visible.</p>
+        <h3>Tier 2 cloud MVP <span class="chip wip">wip</span></h3>
+        <p><strong>Goal:</strong> get <code>rapp_swarm/function_app.py</code>
+          deployed to a shared cloud endpoint so agents can be reached from
+          Copilot Studio / Power Automate. Minimize spend; deploy only what
+          needs to be externally visible.</p>
       </div>
 
       <div class="item">
-        <h3>Tier 2 provisioning — MCAPS-safe <span class="chip blocked">blocked</span></h3>
-        <p><code>provision-twin-lite.sh</code> hit the subscription policy that
+        <h3>Identity-based provisioning <span class="chip blocked">blocked</span></h3>
+        <p><code>provision-twin-lite.sh</code> hit a subscription policy that
           forces <code>allowSharedKeyAccess=false</code>. Rewrite using
-          identity-based <code>AzureWebJobsStorage</code> + Flex Consumption so
-          function apps can be created without shared keys. Helper script
-          <code>enable-mi-on-twin.sh</code> already parked for the role-grant half.</p>
+          identity-based <code>AzureWebJobsStorage</code> + Flex Consumption
+          so function apps can be created without shared keys.
+          <code>enable-mi-on-twin.sh</code> parked for the role-grant half.</p>
       </div>
 
       <div class="item">
-        <h3>AI 8 — library MVP <span class="chip wip">wip</span></h3>
-        <p>AI 8 is the tool everyone is asking for. We are good at demos &amp;
-          pilots but struggle to put real agents in production. MVP AI 8
-          published so CAPE and FDS teams can use it. Zoho driving the build;
-          collaboration with Geary and Drew.</p>
+        <h3>UI backport to v0.6.0 chrome <span class="chip done">done</span></h3>
+        <p>Shipped in v0.12.1. All v0.12 creature comforts remain wired;
+          default look matches the chrome early adopters were trained on.</p>
       </div>
     </section>
 
@@ -161,59 +158,41 @@
       <h2>Next few weeks</h2>
 
       <div class="item">
-        <h3>AI 8 → FDS &amp; CAPE <span class="chip plan">plan</span></h3>
-        <p>Push the FDS team to use AI 8 for their agent ideation and
-          deployment problems. Natasha thread — follow-up owned on return.</p>
+        <h3>Short demo video <span class="chip plan">plan</span></h3>
+        <p>A 60–90s clip showing the capability (goal in → swarm out → share
+          the file), not the install process. Has to stand on its own when
+          passed around without the author in the room.</p>
       </div>
 
       <div class="item">
-        <h3>AI 8 + Agents Library integration <span class="chip plan">plan</span></h3>
-        <p>AI 8 promotes the Agents Library. Bring first-party and partner
-          agents into it via standard joins; lean on the SP partnership.</p>
+        <h3>Starter agent gallery <span class="chip plan">plan</span></h3>
+        <p>Expand the ship-in-repo examples that demonstrate the single-file
+          agent contract end-to-end. Keep the showroom small — curriculum,
+          not kitchen sink.</p>
       </div>
 
       <div class="item">
-        <h3>RAPP presentation + short demo video <span class="chip plan">plan</span></h3>
-        <p>Short demo showing the <em>capability</em> (goal in → swarm out → share the file), not the install. Needs to be crisp enough
-          that Dominique, Drew, and anyone else can hand it around without
-          Kody in the room.</p>
+        <h3>Swarm factory distribution flow <span class="chip plan">plan</span></h3>
+        <p>Polish the <em>workshop → singleton</em> path (Article IX) so
+          publishing a swarm is a single natural-language turn, and the
+          resulting file is trivially shareable (chat drop, email, airdrop).</p>
       </div>
 
       <div class="item">
-        <h3>DMT P1 handover <span class="chip plan">plan</span></h3>
-        <p>Data gets the base playbook from Gary to take over P1 development.
-          FastTrack stays out of scope for this workstream — we do it
-          ourselves.</p>
-      </div>
-
-      <div class="item">
-        <h3>Partner-base V3 (HCL) <span class="chip plan">plan</span></h3>
-        <p>Continue building V3 of the partner base and CL GMT until it's
-          sunset next year. Bring Vitu along.</p>
+        <h3>Tier 2 cloud test pass <span class="chip plan">plan</span></h3>
+        <p>Once provisioning unblocks, run the same guid-scoped memory
+          isolation assertions that already pass locally against a deployed
+          endpoint. Extends <code>tests/e2e/05-tier2-cloud.sh</code>.</p>
       </div>
     </section>
 
     <!-- LATER ────────────────────────────────────────────── -->
     <section class="col later">
       <span class="col-header">Later — the horizon</span>
-      <h2>FY27 + offsite</h2>
+      <h2>Platform direction</h2>
 
       <div class="item">
-        <h3>FY27 planning offsite <span class="chip plan">plan</span></h3>
-        <p>Denver, June 2–4. Pre-confirmed for the team. Goal: brainstorming
-          in small groups and regroup on direction, not wall-of-slides
-          presenting.</p>
-      </div>
-
-      <div class="item">
-        <h3>Team growth <span class="chip plan">plan</span></h3>
-        <p>Backfill two heads (currently 5, target 7+). More hands = wider
-          collaboration across ERP programs, not just Salesforce replacement
-          positioning.</p>
-      </div>
-
-      <div class="item">
-        <h3>Tier 3: Copilot Studio deploy shape <span class="chip plan">plan</span></h3>
+        <h3>Tier 3: Copilot Studio bundle output <span class="chip plan">plan</span></h3>
         <p>Stabilize the Power-Automate-driven guid routing pattern
           (already shipped at the contract level in v0.12.0). Consider a
           <code>swarm_factory --target=copilot_studio</code> mode that emits
@@ -221,17 +200,25 @@
       </div>
 
       <div class="item">
-        <h3>Partner / first-party agents library scale <span class="chip plan">plan</span></h3>
-        <p>Multi-org deployments of RAPP where one Tier 2 deployment serves
-          many guids (users / orgs), each with their own memory namespace.
-          Depends on Tier 2 MVP landing first.</p>
+        <h3>Multi-tenant scale <span class="chip plan">plan</span></h3>
+        <p>One Tier 2 deployment serves many guids (users / orgs) under
+          shared <code>agents/</code> + per-user memory namespace. Real-world
+          validation at scale, monitoring, cost tracking.</p>
       </div>
 
       <div class="item">
-        <h3>On-device / offline story <span class="chip plan">plan</span></h3>
-        <p>Forestry IoT, field devices, air-gapped environments. The
-          single-file agent already works offline with a local LLM (LLaMA);
-          polish the story and demo.</p>
+        <h3>Richer on-device story <span class="chip plan">plan</span></h3>
+        <p>IoT, field devices, air-gapped environments. The single-file agent
+          already runs offline with a local LLM; polish the demo story and
+          ship sample agents that showcase it.</p>
+      </div>
+
+      <div class="item">
+        <h3>Cross-brainstem agent invocation <span class="chip plan">plan</span></h3>
+        <p>Project-local and global brainstems already coexist on one
+          machine. Smooth the agent handshake so a global brainstem can
+          invoke an agent registered in a project-local sibling, and vice
+          versa, without explicit plumbing.</p>
       </div>
     </section>
   </div>
@@ -248,8 +235,9 @@
   </section>
 
   <footer>
-    Have feedback? <a href="https://github.com/kody-w/RAPP/issues">Open an issue</a> or
-    reach Kody directly. See <a href="./release-notes.html">what shipped recently</a>.
+    Have feedback?
+    <a href="https://github.com/kody-w/RAPP/issues">Open an issue on GitHub.</a>
+    See <a href="./release-notes.html">what shipped recently</a>.
   </footer>
 </main>
 </body>

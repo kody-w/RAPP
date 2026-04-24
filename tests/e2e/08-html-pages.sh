@@ -56,7 +56,7 @@ check one-pager.html "contrasts Copilot Studio"                   'Copilot Studi
 check one-pager.html "claims portable single file"                'Single Python file|single Python file|Single .*file|single .*file'
 check one-pager.html "claims deterministic"                       'eterministic'
 check one-pager.html "claims local-first / offline"               'Local-first|offline|Offline'
-check one-pager.html "pull-quote — Anto's own words"              'swarm around your goal'
+check one-pager.html "pull-quote distills the pitch"              'swarm around your goal'
 check one-pager.html "cross-links to FAQ"                         'faq\.html'
 check one-pager.html "cross-links to roadmap"                     'roadmap\.html'
 
@@ -73,8 +73,8 @@ check release-notes.html "cross-links to FAQ"                     'faq\.html'
 echo "▶ roadmap content anchors..."
 check roadmap.html "three horizons columns"                       'Now|Next|Later'
 check roadmap.html "Tier 2 cloud item"                            'Tier 2.*[cC]loud|provision-twin-lite'
-check roadmap.html "AI 8 item"                                    'AI 8'
-check roadmap.html "FY27 / offsite mention"                       'FY27|offsite|Denver'
+check roadmap.html "swarm factory distribution item"              'swarm factory|Swarm factory|workshop'
+check roadmap.html "on-device / offline item"                     'on-device|offline|IoT'
 check roadmap.html "one-pager linked"                             'one-pager\.html'
 check roadmap.html "Article references"                           'Article I-A|Article II|Article V'
 
