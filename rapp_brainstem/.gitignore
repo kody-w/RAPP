@@ -8,6 +8,9 @@
 .swarms.json
 .agent_groups.json
 
+# Local storage data (services, memory, etc.)
+.brainstem_data/
+
 # Python
 __pycache__/
 *.pyc

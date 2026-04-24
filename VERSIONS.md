@@ -48,6 +48,7 @@ exists.
 | `brainstem-v0.7.0` | Flask `/` now serves the rich `web/index.html` (Settings aside, binder, twin panel, …) |
 | `brainstem-v0.7.1` | Twin can run rapplications via `<action kind="rapp">` + auto-inject binder context |
 | `brainstem-v0.7.2` | Fixed `rapp.js` 404 + SOUL_RESPONSE_FORMAT template literal breakage |
+| `brainstem-v0.12.2` | Service discovery in kernel; agent-first rapplication model (kanban, webhook, dashboard); legacy memory agents restored; Windows installer fixes (dep-check SyntaxError, hidden background service, repo-switch detection) |
 
 ## When cutting a new version (maintainer checklist)
 

@@ -285,23 +285,23 @@ function Install-Brainstem {
     }
 
     if (Test-Path "$BRAINSTEM_HOME\src\.git") {
-        # Smart update — preserve soul, agents, config
-        $LocalVer = "0.0.0"
-        $VerFile = "$BRAINSTEM_HOME\src\rapp_brainstem\VERSION"
-        if (Test-Path $VerFile) { $LocalVer = (Get-Content $VerFile -Raw).Trim() }
-        try { $RemoteVer = (Invoke-WebRequest -Uri $REMOTE_VERSION_URL -UseBasicParsing -TimeoutSec 5).Content.Trim() } catch { $RemoteVer = "0.0.0" }
+        # If the existing clone points at a different repo (e.g. rapp-installer
+        # vs RAPP), back up user files, nuke the old clone, and re-clone from
+        # the correct repo so the two installers don't fight each other.
+        $currentRemote = ""
+        try {
+            $currentRemote = (git -C "$BRAINSTEM_HOME\src" remote get-url origin 2>&1 | Out-String).Trim()
+        } catch {}
 
-        Write-Host "  Local:  v$LocalVer"
-        Write-Host "  Remote: v$RemoteVer"
+        # Normalize for comparison (strip .git suffix, lowercase)
+        $normalCurrent = $currentRemote.ToLower().TrimEnd('/') -replace '\.git$', ''
+        $normalExpected = $REPO_URL.ToLower().TrimEnd('/') -replace '\.git$', ''
 
-        if ($LocalVer -eq $RemoteVer) {
-            Write-Host "  [OK] Already up to date (v$LocalVer)" -ForegroundColor Green
-        } else {
-            Write-Host "  Upgrading v$LocalVer -> v$RemoteVer..."
+        if ($normalCurrent -ne $normalExpected) {
+            Write-Host "  [..] Switching source repo ($currentRemote -> $REPO_URL)" -ForegroundColor Yellow
+            # Backup user files before nuking
             $Backup = "$env:TEMP\brainstem-upgrade-$(Get-Random)"
             New-Item -ItemType Directory -Force -Path $Backup | Out-Null
-
-            # Backup user files
             $AgentsDir = "$BRAINSTEM_HOME\src\rapp_brainstem\agents"
             $SoulFile = "$BRAINSTEM_HOME\src\rapp_brainstem\soul.md"
             $EnvFile = "$BRAINSTEM_HOME\src\rapp_brainstem\.env"
@@ -310,14 +310,22 @@ function Install-Brainstem {
             if (Test-Path $AgentsDir) { Copy-Item "$AgentsDir\*.py" "$Backup\" -ErrorAction SilentlyContinue }
             Write-Host "  [OK] Backed up soul, agents, config" -ForegroundColor Green
 
-            # Pull latest
-            Push-Location "$BRAINSTEM_HOME\src"
-            try { git stash --quiet 2>&1 | Out-Null } catch {}
-            try { git pull --quiet 2>&1 | Out-Null } catch {}
-            Pop-Location
-            Write-Host "  [OK] Framework updated" -ForegroundColor Green
+            # Remove old clone and re-clone from the correct repo.
+            # Rename first (instant, avoids locked-file issues), then delete.
+            $oldSrc = "$BRAINSTEM_HOME\src-old-$(Get-Random)"
+            Rename-Item "$BRAINSTEM_HOME\src" $oldSrc -Force
+            Remove-Item -Recurse -Force $oldSrc -ErrorAction SilentlyContinue
+            git clone --quiet $REPO_URL "$BRAINSTEM_HOME\src" 2>&1
+            if ($LASTEXITCODE -ne 0) {
+                Write-Host "  [X] Failed to clone repository" -ForegroundColor Red
+                exit 1
+            }
+            Write-Host "  [OK] Re-cloned from correct repo" -ForegroundColor Green
 
             # Restore user files
+            $AgentsDir = "$BRAINSTEM_HOME\src\rapp_brainstem\agents"
+            $SoulFile = "$BRAINSTEM_HOME\src\rapp_brainstem\soul.md"
+            $EnvFile = "$BRAINSTEM_HOME\src\rapp_brainstem\.env"
             if (Test-Path "$Backup\soul.md") { Copy-Item "$Backup\soul.md" $SoulFile -Force }
             if (Test-Path "$Backup\.env") { Copy-Item "$Backup\.env" $EnvFile -Force }
             Get-ChildItem "$Backup\*.py" -ErrorAction SilentlyContinue | ForEach-Object {
@@ -326,7 +334,50 @@ function Install-Brainstem {
                 }
             }
             Remove-Item -Recurse -Force $Backup -ErrorAction SilentlyContinue
-            Write-Host "  [OK] Upgrade complete: v$LocalVer -> v$RemoteVer" -ForegroundColor Green
+        } else {
+            # Same repo — normal upgrade path
+            $LocalVer = "0.0.0"
+            $VerFile = "$BRAINSTEM_HOME\src\rapp_brainstem\VERSION"
+            if (Test-Path $VerFile) { $LocalVer = (Get-Content $VerFile -Raw).Trim() }
+            try { $RemoteVer = (Invoke-WebRequest -Uri $REMOTE_VERSION_URL -UseBasicParsing -TimeoutSec 5).Content.Trim() } catch { $RemoteVer = "0.0.0" }
+
+            Write-Host "  Local:  v$LocalVer"
+            Write-Host "  Remote: v$RemoteVer"
+
+            if ($LocalVer -eq $RemoteVer) {
+                Write-Host "  [OK] Already up to date (v$LocalVer)" -ForegroundColor Green
+            } else {
+                Write-Host "  Upgrading v$LocalVer -> v$RemoteVer..."
+                $Backup = "$env:TEMP\brainstem-upgrade-$(Get-Random)"
+                New-Item -ItemType Directory -Force -Path $Backup | Out-Null
+
+                # Backup user files
+                $AgentsDir = "$BRAINSTEM_HOME\src\rapp_brainstem\agents"
+                $SoulFile = "$BRAINSTEM_HOME\src\rapp_brainstem\soul.md"
+                $EnvFile = "$BRAINSTEM_HOME\src\rapp_brainstem\.env"
+                if (Test-Path $SoulFile) { Copy-Item $SoulFile "$Backup\soul.md" }
+                if (Test-Path $EnvFile) { Copy-Item $EnvFile "$Backup\.env" }
+                if (Test-Path $AgentsDir) { Copy-Item "$AgentsDir\*.py" "$Backup\" -ErrorAction SilentlyContinue }
+                Write-Host "  [OK] Backed up soul, agents, config" -ForegroundColor Green
+
+                # Pull latest
+                Push-Location "$BRAINSTEM_HOME\src"
+                try { git stash --quiet 2>&1 | Out-Null } catch {}
+                try { git pull --quiet 2>&1 | Out-Null } catch {}
+                Pop-Location
+                Write-Host "  [OK] Framework updated" -ForegroundColor Green
+
+                # Restore user files
+                if (Test-Path "$Backup\soul.md") { Copy-Item "$Backup\soul.md" $SoulFile -Force }
+                if (Test-Path "$Backup\.env") { Copy-Item "$Backup\.env" $EnvFile -Force }
+                Get-ChildItem "$Backup\*.py" -ErrorAction SilentlyContinue | ForEach-Object {
+                    if ($_.Name -notin @("basic_agent.py", "__init__.py")) {
+                        Copy-Item $_.FullName "$AgentsDir\$($_.Name)" -Force
+                    }
+                }
+                Remove-Item -Recurse -Force $Backup -ErrorAction SilentlyContinue
+                Write-Host "  [OK] Upgrade complete: v$LocalVer -> v$RemoteVer" -ForegroundColor Green
+            }
         }
     } else {
         if (Test-Path "$BRAINSTEM_HOME\src") {
@@ -383,7 +434,7 @@ function Run-PipInstall {
 
 function Check-PythonDeps {
     $py = if (Test-Path $VENV_PY) { $VENV_PY } elseif ($script:PythonExe) { $script:PythonExe } else { "python" }
-    $proc = Start-Process -FilePath $py -ArgumentList "-c", "import flask, flask_cors, requests, dotenv" -NoNewWindow -Wait -PassThru
+    $proc = Start-Process -FilePath $py -ArgumentList "-c `"import flask, flask_cors, requests, dotenv`"" -NoNewWindow -Wait -PassThru
     return $proc.ExitCode -eq 0
 }
 
@@ -580,10 +631,12 @@ function Install-Service {
 
     try {
         # ScheduledTasks native cmdlets are the right tool; no XML round-trip.
-        # Redirect stdout/stderr through cmd.exe so logs land on disk the
-        # same way launchd/systemd redirect StandardOutPath.
-        $cmd = "cmd.exe"
-        $cmdArgs = "/c `"`"$py`" brainstem.py 1>>`"$log`" 2>>`"$errLog`"`""
+        # Wrap in powershell -WindowStyle Hidden so no console window flashes
+        # at logon or on restart. Set PYTHONIOENCODING=utf-8 so emoji in
+        # print() calls don't crash on Windows cp1252 consoles.
+        # Redirect stdout/stderr to log files.
+        $cmd = "powershell.exe"
+        $cmdArgs = "-WindowStyle Hidden -ExecutionPolicy Bypass -NoProfile -Command `"`$env:PYTHONIOENCODING='utf-8'; Set-Location '$src'; & '$py' brainstem.py >> '$log' 2>> '$errLog'`""
         $action = New-ScheduledTaskAction -Execute $cmd -Argument $cmdArgs -WorkingDirectory $src
         $trigger = New-ScheduledTaskTrigger -AtLogOn -User "$env:USERDOMAIN\$env:USERNAME"
         $settings = New-ScheduledTaskSettingsSet `

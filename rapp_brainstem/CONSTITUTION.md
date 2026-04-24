@@ -43,7 +43,7 @@ file: Flask server, auth chain, soul loader, agent discovery, tool-
 calling loop, LLM proxy, diagnostics. It stays one file and it stays
 small.
 
-> **Add capability by writing an agent. Not by editing `brainstem.py`.**
+> **Add capability by writing an agent or a service. Not by editing `brainstem.py`.**
 
 ### The fixed contract surface
 
@@ -60,6 +60,13 @@ changed in the tag annotation.
   → `gh auth token`. No other provider on Tier 1 (Article X).
 - Agent discovery — `agents/*_agent.py`, reloaded from disk every
   request. Recursion rules per Article XII.
+- Service discovery — `services/*_service.py`, reloaded every
+  request. Each service exposes `name` (str) and
+  `handle(method, path, body) → (dict, status_code)`. Dispatched
+  via `GET|POST|PUT|DELETE /api/<name>/<path>`. Services provide
+  HTTP endpoints (UI backends, CRUD APIs) without LLM visibility.
+  Agents handle LLM tool calls; services handle HTTP — they never
+  overlap.
 - Storage shim — `utils.azure_file_storage` intercepted via
   `sys.modules` to `local_storage.py` under `.brainstem_data/`.
 - Flight recorder — `_tlog()` + `.brainstem_book.json`.
@@ -73,8 +80,8 @@ changed in the tag annotation.
 2. Adding a new top-level output-slot delimiter (e.g., the next
    `|||VOICE|||`-shaped slot). This is a SPEC change with version bump.
 
-Everything else belongs in an agent, in `utils/`, or in a hatched
-project.
+Everything else belongs in an agent, a service, in `utils/`, or in
+a hatched project.
 
 ### What this rules out
 
@@ -82,11 +89,13 @@ project.
   files. The brainstem does not grow capability.
 - ❌ **"Small helpers" added inline.** Shared helpers go in `utils/`;
   agent-specific helpers live inside the agent.
-- ❌ **New HTTP routes for agent-shaped work.** If the LLM could
-  route to it via `/chat`, it's an agent — not a route.
-- ❌ **Framework abstractions beyond `BasicAgent` + `perform()`.** No
-  lifecycle hooks, middleware, plugin layers, agent base class
-  variants.
+- ❌ **New HTTP routes in `brainstem.py`.** If the LLM could route
+  to it via `/chat`, it's an agent. If the UI needs a REST endpoint,
+  it's a service (`services/*_service.py`). Either way, not a route
+  in the kernel.
+- ❌ **Framework abstractions beyond `BasicAgent` + `perform()` and
+  service `handle()`.** No lifecycle hooks, middleware, plugin layers,
+  agent base class variants.
 - ❌ **Silent contract changes** — renaming routes, reshaping the
   response envelope, reordering the tool loop, changing log shape.
   These are SPEC breaks (see Article VIII).
@@ -980,6 +989,74 @@ Shapes the twin block takes (at most one per turn):
 
 Each is the twin's current working hypothesis, stated so the user
 can confirm, correct, or sharpen it. The correction IS the learning.
+
+---
+
+## Article XX — The Kernel, The Extensions, The Rapplication
+
+### The kernel
+
+The kernel is exactly two files. They never grow.
+
+| File | Role |
+|------|------|
+| `brainstem.py` | Server, auth, LLM loop, agent discovery, service discovery |
+| `basic_agent.py` | Agent base class |
+
+The kernel provides two discovery mechanisms — one for agents, one for
+services — and dispatches to whatever files it finds. All capability
+lives in the extensions, never in the kernel.
+
+### The two extension contracts
+
+| | Agent | Service |
+|---|---|---|
+| **File pattern** | `agents/*_agent.py` | `services/*_service.py` |
+| **Contract** | `metadata` + `perform(**kwargs) → str` | `name` + `handle(method, path, body) → (dict, int)` |
+| **LLM sees it?** | Yes | No |
+| **Use case** | Anything the LLM should invoke | HTTP endpoints for UIs, webhooks, machine-to-machine |
+| **Hot reload?** | Every request | Every request |
+| **Tier portable?** | Yes | Yes |
+
+Agents and services never overlap. If the LLM should call it, it's an
+agent. If the UI or an external system should call it, it's a service.
+Both are single-file, zero-dependency, and portable.
+
+### The agent-first rule
+
+> **The agent is the API. The service is a view.**
+
+Every rapplication MUST be fully functional through `perform()` alone.
+A user talking to any AI — phone, terminal, Copilot Studio, Claude,
+GPT — gets the complete rapplication without a browser. The service
+adds convenience (drag-and-drop, charting, webhook ingestion) but
+never gates capability.
+
+This is what makes rapplications work on every AI surface that exists
+today and every one that will exist tomorrow. The brainstem is the
+iPhone. The agents are the default apps. The rapplications are the
+App Store.
+
+### What a rapplication is
+
+A rapplication is the atomic installable unit in the RAPP ecosystem:
+
+1. MUST include at least one `*_agent.py`.
+2. MAY include one `*_service.py`.
+3. Both files are single-file, self-contained, portable across tiers.
+4. Install = drop files in. Uninstall = delete them. Nothing else.
+
+### What this rules out
+
+- ❌ Service-only rapplications. No agent = not a rapplication. The
+  agent-first rule is not optional.
+- ❌ Agents that require their service to function. The service is
+  always optional. If removing the service breaks the agent, the
+  design is wrong.
+- ❌ Multi-file agents or multi-file services. The single-file rule
+  (Article IV, §0) extends to services.
+- ❌ Services that duplicate agent capability. The service reads/writes
+  the same storage as the agent. It is a view, not a second brain.
 
 ---
 

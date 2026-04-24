@@ -75,19 +75,22 @@ Routes to GitHub Copilot API (default), Azure OpenAI, OpenAI, Anthropic, or a de
 These are inviolable — do not break backwards compatibility:
 
 1. **Single-file agents are the plugin system.** One file = one class = one `perform()` = one metadata dict. No build steps, no sibling imports, no frameworks.
-2. **Brainstem stays light.** Only legitimate modification: adding a new top-level output slot. New features → new agents, not brainstem changes.
-3. **Delimited slots are fixed forever.** `|||VOICE|||` and `|||TWIN|||` never get repurposed or overloaded. New sub-capabilities use tags inside the slot.
-4. **Tier portability guarantee.** An agent that runs in Tier 1 must run unmodified in Tier 2 & 3.
+2. **Single-file services are the HTTP extension system.** One file = `name` + `handle(method, path, body) → (dict, status)`. Dispatched via `/api/<name>/<path>`. Services serve UIs; agents serve LLMs. They never overlap.
+3. **Agent-first rule.** Every rapplication MUST work fully through the agent alone. The service is always optional — it's a view, not the application.
+4. **Brainstem stays light.** The kernel is `brainstem.py` + `basic_agent.py`. It provides agent discovery and service discovery — nothing else. New features → new agents or services, not brainstem changes.
+5. **Delimited slots are fixed forever.** `|||VOICE|||` and `|||TWIN|||` never get repurposed or overloaded. New sub-capabilities use tags inside the slot.
+6. **Tier portability guarantee.** An agent that runs in Tier 1 must run unmodified in Tier 2 & 3.
 
 ## Key Directories
 
 | Directory | Purpose |
 |-----------|---------|
-| `rapp_brainstem/` | Tier 1 local server (Flask, agents, web UI) |
+| `rapp_brainstem/` | Tier 1 local server (Flask, agents, services, web UI) |
 | `rapp_swarm/` | Tier 2 Azure Functions (vendors brainstem core) |
 | `worker/` | Tier 3 Cloudflare auth/proxy worker |
 | `rapp_store/` | Rapplication catalog (index.json + agent packages) |
 | `agents/` | Starter/example agents for documentation |
+| `services/` | Drop-in HTTP services (swarms, binder, twin, etc.) |
 | `tests/` | JS test runner + integration test scripts |
 | `installer/` | Install widget mirror for GitHub Pages |
 

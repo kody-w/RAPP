@@ -37,11 +37,13 @@ CORS(app)
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-SOUL_PATH   = os.getenv("SOUL_PATH",   os.path.join(os.path.dirname(__file__), "soul.md"))
-AGENTS_PATH = os.getenv("AGENTS_PATH", os.path.join(os.path.dirname(__file__), "agents"))
-MODEL       = os.getenv("GITHUB_MODEL", "gpt-4o")
+SOUL_PATH    = os.getenv("SOUL_PATH",    os.path.join(os.path.dirname(__file__), "soul.md"))
+AGENTS_PATH  = os.getenv("AGENTS_PATH",  os.path.join(os.path.dirname(__file__), "agents"))
+SERVICES_PATH = os.getenv("SERVICES_PATH", os.path.join(os.path.dirname(__file__), "services"))
+MODEL        = os.getenv("GITHUB_MODEL", "gpt-4o")
 PORT        = int(os.getenv("PORT", 7071))
 VOICE_MODE  = os.getenv("VOICE_MODE", "false").lower() == "true"
+TWIN_MODE   = os.getenv("TWIN_MODE", "true").lower() == "true"
 VOICE_ZIP_PW = os.getenv("VOICE_ZIP_PASSWORD", "").encode() or None
 
 _version_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "VERSION")
@@ -925,6 +927,27 @@ def chat():
         system_content = soul + extra_context
         if VOICE_MODE:
             system_content += "\n\nIMPORTANT: End every response with |||VOICE||| followed by a concise, conversational version of your answer suitable for text-to-speech. Keep the voice version under 2-3 sentences. The part before |||VOICE||| should be the full formatted response."
+        if TWIN_MODE:
+            system_content += (
+                "\n\nTWIN: After the VOICE section (or after the main reply if VOICE is off), "
+                "append |||TWIN||| followed by the user's digital twin reacting to this turn. "
+                "Speak FIRST-PERSON as the user, TO the user — one or two short observations, "
+                "hints, risks, or questions about what was just said. Short is a feature. "
+                "Silent is allowed — leave empty if there's nothing worth saying. "
+                "Do NOT re-answer the question. The twin comments ON the turn, it does not "
+                "replace any part of it. Bold tags like **Hint:** / **Risk:** / **Question:** "
+                "work well. Inside |||TWIN|||, you may also emit these optional tags (all are "
+                "stripped before the user sees the panel): "
+                "<probe id=\"t-<uniq>\" kind=\"<slug>\" subject=\"...\" confidence=\"0.0-1.0\"/> "
+                "tags a claim you could be right or wrong about. "
+                "<calibration id=\"<probe id>\" outcome=\"validated|contradicted|silent\" note=\"...\"/> "
+                "judges a prior probe against what the user just did. "
+                "<telemetry>one fact per line</telemetry> is server-log-only debug signal. "
+                "<action kind=\"send|prompt|open|toggle|highlight|rapp\" target=\"...\" label=\"...\">body</action> "
+                "offers the user a one-click UI favor (send text, prefill input, open a panel, "
+                "toggle a feature like voice/cards/pills/hand-mode, highlight a loaded card, "
+                "or invoke a rapplication tool on their behalf via kind=\"rapp\")."
+            )
 
         messages = [{"role": "system", "content": system_content}]
         messages += [m for m in history if m.get("role") in ("user", "assistant", "tool")]
@@ -955,13 +978,24 @@ def chat():
             "session_id": session_id,
             "agent_logs": "\n".join(all_logs),
             "voice_mode": VOICE_MODE,
+            "twin_mode":  TWIN_MODE,
         }
-        
-        if VOICE_MODE and "|||VOICE|||" in reply:
-            parts = reply.split("|||VOICE|||", 1)
-            result["response"] = parts[0].strip()
-            result["voice_response"] = parts[1].strip()
-        
+
+        # Three-way split: main |||VOICE||| voice |||TWIN||| twin.
+        # Both delimiters optional. Left-to-right so twin never
+        # pollutes voice and voice never pollutes main.
+        remainder = reply
+        if "|||VOICE|||" in remainder:
+            main, _, remainder = remainder.partition("|||VOICE|||")
+            result["response"] = main.strip()
+        if "|||TWIN|||" in remainder:
+            voice_or_main, _, twin_text = remainder.partition("|||TWIN|||")
+            if VOICE_MODE and "|||VOICE|||" in reply:
+                result["voice_response"] = voice_or_main.strip()
+            result["twin_response"] = twin_text.strip() if TWIN_MODE else ""
+        elif VOICE_MODE and "|||VOICE|||" in reply:
+            result["voice_response"] = remainder.strip()
+
         return jsonify(result)
 
     except requests.exceptions.HTTPError as e:
@@ -1198,6 +1232,22 @@ def voice_toggle():
         VOICE_MODE = not VOICE_MODE
     return jsonify({"voice_mode": VOICE_MODE})
 
+@app.route("/twin", methods=["GET"])
+def twin_status():
+    """Get twin mode status."""
+    return jsonify({"twin_mode": TWIN_MODE})
+
+@app.route("/twin/toggle", methods=["POST"])
+def twin_toggle():
+    """Toggle twin mode on/off."""
+    global TWIN_MODE
+    data = request.get_json(force=True) or {}
+    if "enabled" in data:
+        TWIN_MODE = bool(data["enabled"])
+    else:
+        TWIN_MODE = not TWIN_MODE
+    return jsonify({"twin_mode": TWIN_MODE})
+
 @app.route("/version", methods=["GET"])
 def version():
     """Return the current brainstem version."""
@@ -1315,6 +1365,7 @@ def health():
             "version": VERSION,
             "model":  MODEL,
             "voice_mode": VOICE_MODE,
+            "twin_mode":  TWIN_MODE,
             "soul":   SOUL_PATH if soul_ok else "missing",
             "agents": list(agents.keys()),
             "copilot": "\u2713" if copilot_ok else "pending",
@@ -1535,6 +1586,45 @@ def diagnostics_report():
         _tlog("diagnostics.report_error", {"error": str(e)}, level="error")
         return jsonify({"error": str(e)}), 500
 
+# ── Services (drop-in HTTP routes via services/*_service.py) ─────────────────
+
+def load_services():
+    """Discover services from SERVICES_PATH. Each service module exposes:
+       name  — str, URL namespace (e.g. "swarms" → /api/swarms/...)
+       handle(method, path, body) — returns (dict, status_code)
+    Reloaded every request, same as agents.
+    """
+    svcs = {}
+    if not os.path.isdir(SERVICES_PATH):
+        return svcs
+    for filepath in glob.glob(os.path.join(SERVICES_PATH, "*_service.py")):
+        mod_name = os.path.splitext(os.path.basename(filepath))[0]
+        try:
+            spec = importlib.util.spec_from_file_location(mod_name, filepath)
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            svc_name = getattr(mod, "name", mod_name.replace("_service", ""))
+            if hasattr(mod, "handle"):
+                svcs[svc_name] = mod
+        except Exception as e:
+            print(f"[brainstem] Service load error ({mod_name}): {e}")
+    return svcs
+
+@app.route("/api/<service>", methods=["GET", "POST", "PUT", "DELETE"])
+@app.route("/api/<service>/<path:path>", methods=["GET", "POST", "PUT", "DELETE"])
+def service_dispatch(service, path=""):
+    svcs = load_services()
+    svc = svcs.get(service)
+    if not svc:
+        return jsonify({"error": f"service '{service}' not found"}), 404
+    try:
+        body = request.get_json(silent=True) or {}
+        result, status = svc.handle(request.method, path, body)
+        return jsonify(result), status
+    except Exception as e:
+        print(f"[brainstem] Service error ({service}/{path}): {e}")
+        return jsonify({"error": str(e)}), 500
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
@@ -1545,10 +1635,14 @@ if __name__ == "__main__":
     print(f"   Agents: {AGENTS_PATH}")
     print(f"   Model:  {MODEL}")
     print(f"   Voice:  {'on' if VOICE_MODE else 'off'} (POST /voice/toggle to change)")
+    print(f"   Twin:   {'on' if TWIN_MODE else 'off'} (POST /twin/toggle to change)")
     print(f"   Auth:   GitHub Copilot API (via gh CLI)\n")
     load_soul()
     agents = load_agents()
-    _tlog("server.agents_loaded", {"agents": list(agents.keys())})
+    svcs = load_services()
+    if svcs:
+        print(f"[brainstem] {len(svcs)} service(s) ready: {', '.join(svcs.keys())}")
+    _tlog("server.agents_loaded", {"agents": list(agents.keys()), "services": list(svcs.keys())})
     _load_pending_login()  # Resume any in-progress device code login
     _tlog("server.ready", {"url": f"http://localhost:{PORT}"})
     app.run(host="0.0.0.0", port=PORT, debug=False)

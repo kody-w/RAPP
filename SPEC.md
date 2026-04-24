@@ -758,6 +758,101 @@ v1 is still v1. Every release since 2026-04-17 is a v1.x.y patch:
 Rollback contract is preserved: every tag is immutable,
 `BRAINSTEM_VERSION=x.y.z` is the one-command rollback.
 
+### 18.8 Full-Stack Rapplications: the Agent-First Extension Model
+
+§0 declares the single-file agent sacred. §18.1 declares `brainstem.py`
+sacred. Together they define the **kernel**: the engine and the unit it
+runs. Everything built on top of the kernel is an **extension**.
+
+v0.12.2 formalized two extension points — one existing, one new:
+
+| Extension | Contract | Drop-in directory | LLM-visible? |
+|-----------|----------|-------------------|-------------|
+| **Agent** | `metadata` dict + `perform(**kwargs) → str` | `agents/` | Yes — tool in the tool-calling loop |
+| **Service** | `name` str + `handle(method, path, body) → (dict, int)` | `services/` | No — HTTP only |
+
+**Agents** are the primary interface. They work through any LLM that
+speaks tool calls: brainstem `/chat`, Copilot Studio, Claude, GPT, or
+any future AI. The agent IS the application.
+
+**Services** are the optional HTTP layer. They expose REST endpoints
+for web UIs, external system integrations, or machine-to-machine
+communication. Services read/write the same storage as agents — they
+are a view, not a second source of truth.
+
+A **rapplication** is the atomic installable unit:
+
+- MUST include at least one `*_agent.py` (the agent-first rule).
+- MAY include one `*_service.py` (the optional HTTP layer).
+- Both files are single-file, zero-dependency, portable across tiers.
+- Install = drop files into `agents/` and `services/`.
+  Uninstall = delete them. No config, no migration, no cleanup.
+
+#### The kernel boundary
+
+The kernel (`brainstem.py` + `basic_agent.py`) provides exactly two
+discovery mechanisms — one for agents, one for services — and never
+grows beyond them. All capability lives in the extensions:
+
+```
+┌─────────────────────────────────────────┐
+│            brainstem.py (kernel)         │
+│  ┌──────────────┐  ┌────────────────┐   │
+│  │ Agent        │  │ Service        │   │
+│  │ Discovery    │  │ Discovery      │   │
+│  │ agents/*.py  │  │ services/*.py  │   │
+│  └──────┬───────┘  └───────┬────────┘   │
+│         │                  │            │
+│   POST /chat          GET|POST|PUT|DELETE│
+│   (LLM tool loop)     /api/<name>/<path>│
+└─────────┼──────────────────┼────────────┘
+          │                  │
+    ┌─────▼──────┐    ┌──────▼──────┐
+    │  Any LLM   │    │  Any UI /   │
+    │  Any AI    │    │  Any client │
+    │  Any tier  │    │  Any system │
+    └────────────┘    └─────────────┘
+```
+
+#### The agent-first rule
+
+> **The agent is the API. The service is a view.**
+
+A rapplication MUST be fully functional through `perform()` alone. A
+user talking to any AI — on their phone, in a terminal, through
+Copilot Studio — gets the complete rapplication without a browser.
+The service adds convenience (drag-and-drop, charting, webhooks) but
+never gates capability.
+
+This is what makes RAPP rapplications portable across every AI surface
+that exists today and every one that will exist tomorrow.
+
+#### Compatibility with v1
+
+- **§0 (Sacred Tenet):** Agents are still single-file. Services are
+  also single-file. The unit of distribution is unchanged.
+- **§5 (Agent Contract):** `metadata` + `perform()` is untouched.
+  Services have their own contract (`name` + `handle()`), never mixed.
+- **§8 (HTTP Surface):** The five frozen endpoints are unchanged.
+  Service dispatch (`/api/<name>/<path>`) is a new optional endpoint
+  sanctioned by §14.
+- **§10 (Tenancy):** Services share the tenant's storage namespace,
+  same as agents. No new tenancy model.
+
+#### Catalog categories for full-stack rapplications
+
+| Category | Pattern | Example |
+|----------|---------|---------|
+| `workspace` | Agent manages data, service serves UI | Kanban |
+| `integration` | Agent queries events, service ingests them | Webhook |
+| `analytics` | Agent logs/queries metrics, service serves charts | Dashboard |
+
+### 18.9 Version history under v1 (continued)
+
+| Version | Tag | Summary |
+|---------|-----|---------|
+| 0.12.2 | `brainstem-v0.12.2` | Service discovery in kernel; full-stack rapplication model; 3 base rapplications (kanban, webhook, dashboard); Windows installer fixes. |
+
 ---
 
 _§18 added 2026-04-24. Future addenda append below this line only;
