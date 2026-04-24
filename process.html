@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAPP — Process One-Pager</title>
+<meta name="description" content="Customer conversation to production agent, in one week. The RAPP process from workshop to Copilot Studio.">
+<meta property="og:title" content="RAPP — Customer conversation to production agent, in one week.">
+<meta property="og:description" content="Customer conversation to production agent, in one week. The RAPP process from workshop to Copilot Studio.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kody-w.github.io/RAPP/process.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E🧠%3C/text%3E%3C/svg%3E">
+<script>
+(function(){
+  try {
+    var saved = localStorage.getItem('rapp-theme');
+    var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    var theme = saved || (prefersLight ? 'light' : 'dark');
+    if (theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+  } catch(e){}
+})();
+</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d1117;--surface:#161b22;--surface2:#1c2128;--border:#30363d;--border2:#21262d;
+  --text:#e6edf3;--text-dim:#8b949e;--muted:#484f58;
+  --accent:#58a6ff;--green:#3fb950;--purple:#a78bfa;
+  --grad-1:#7df0c8;--grad-2:#58a6ff;--grad-3:#a78bfa;
+  --logo-glow:rgba(125,240,200,.3);
+}
+[data-theme="light"]{
+  --bg:#ffffff;--surface:#f6f8fa;--surface2:#eaeef2;--border:#d0d7de;--border2:#afb8c1;
+  --text:#1f2328;--text-dim:#59636e;--muted:#8c959f;
+  --accent:#0969da;--green:#1a7f37;--purple:#8250df;
+  --grad-1:#2da44e;--grad-2:#0969da;--grad-3:#8250df;
+  --logo-glow:rgba(9,105,218,.2);
+}
+html,body{
+  height:100%;overflow:hidden;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  background:var(--bg);color:var(--text);line-height:1.55;
+  transition:background-color .25s,color .25s;
+}
+
+.slide{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  padding:5vh 6vw;text-align:center;
+}
+.slide-inner{width:100%;max-width:1260px}
+
+.kicker{
+  display:inline-block;margin-bottom:14px;
+  font-size:.78rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:var(--purple);
+  padding:6px 14px;border:1px solid var(--purple);border-radius:999px;
+  background:rgba(167,139,250,.08);
+}
+[data-theme="light"] .kicker{background:rgba(130,80,223,.08)}
+
+.logo{
+  font-size:clamp(48px,5.5vw,72px);line-height:1;margin-bottom:12px;
+  filter:drop-shadow(0 0 22px var(--logo-glow));
+}
+h1{
+  font-size:clamp(2.1rem,4.4vw,4rem);font-weight:800;line-height:1.08;
+  letter-spacing:-.8px;margin-bottom:14px;
+}
+h1 .grad{
+  background:linear-gradient(135deg,var(--grad-1),var(--grad-2),var(--grad-3));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.sub{
+  font-size:clamp(1rem,1.4vw,1.22rem);color:var(--text-dim);
+  max-width:880px;margin:0 auto 36px;line-height:1.55;
+}
+.sub strong{color:var(--text)}
+
+/* Pipeline — 5 steps, arrows between */
+.pipeline{
+  display:flex;align-items:stretch;gap:10px;flex-wrap:wrap;justify-content:center;
+  margin-bottom:36px;
+}
+.step{
+  flex:1 1 0;min-width:160px;max-width:220px;
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:18px 16px 16px;text-align:left;
+  position:relative;transition:border-color .2s,transform .2s;
+}
+.step:hover{border-color:var(--accent);transform:translateY(-2px)}
+.step .n{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:26px;height:26px;margin-bottom:10px;
+  background:linear-gradient(135deg,var(--grad-1),var(--grad-3));border-radius:50%;
+  font-size:12px;font-weight:800;color:#0d1117;font-family:'SF Mono',ui-monospace,monospace;
+}
+[data-theme="light"] .step .n{color:#fff}
+.step h3{font-size:clamp(.95rem,1.1vw,1.08rem);font-weight:700;line-height:1.25;margin-bottom:4px}
+.step p{font-size:clamp(.82rem,.95vw,.92rem);color:var(--text-dim);line-height:1.5}
+.step p strong{color:var(--text)}
+.arrow{
+  display:flex;align-items:center;justify-content:center;
+  color:var(--muted);font-size:20px;flex-shrink:0;
+  align-self:center;
+}
+
+/* Value band — what this unlocks */
+.value-band{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:14px;
+  margin-bottom:30px;
+}
+.value-cell{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:16px 18px;text-align:left;
+}
+.value-cell .label{
+  font-size:.72rem;letter-spacing:1.4px;text-transform:uppercase;
+  color:var(--accent);font-weight:700;margin-bottom:6px;
+}
+.value-cell h4{font-size:clamp(.98rem,1.15vw,1.12rem);font-weight:700;margin-bottom:4px}
+.value-cell p{font-size:clamp(.85rem,1vw,.95rem);color:var(--text-dim);line-height:1.5}
+
+.hinge{
+  display:block;margin:0 auto;max-width:960px;
+  font-size:clamp(1rem,1.35vw,1.3rem);line-height:1.5;
+  color:var(--text);font-weight:500;font-style:italic;
+  position:relative;padding-top:26px;letter-spacing:-.1px;
+}
+.hinge::before{
+  content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:52px;height:2px;
+  background:linear-gradient(90deg,var(--grad-1),var(--grad-3));
+  border-radius:1px;opacity:.85;
+}
+.hinge .accent{
+  background:linear-gradient(135deg,var(--grad-1),var(--grad-2),var(--grad-3));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  font-style:normal;font-weight:700;
+}
+
+.sr-only{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.animate{animation:fadeUp .6s ease both}
+.animate.d1{animation-delay:.08s}.animate.d2{animation-delay:.18s}
+.animate.d3{animation-delay:.28s}.animate.d4{animation-delay:.38s}
+.animate.d5{animation-delay:.48s}.animate.d6{animation-delay:.58s}
+.animate.d7{animation-delay:.68s}
+
+@media(max-width:1100px){
+  .arrow{display:none}
+  .pipeline{gap:10px}
+  .step{flex:1 1 45%;max-width:none}
+}
+@media(max-width:700px){
+  html,body{overflow:auto;height:auto}
+  .slide{position:static;padding:32px 18px;min-height:100vh}
+  .pipeline{flex-direction:column}
+  .step{flex:1 1 100%;max-width:100%}
+  .value-band{grid-template-columns:1fr}
+}
+@media print{
+  html,body{background:#fff;color:#0d1117;overflow:visible;height:auto}
+  .slide{position:static;padding:28px;page-break-inside:avoid}
+  .step,.value-cell{break-inside:avoid}
+  .arrow{display:none}
+}
+</style>
+</head>
+<body>
+
+<main class="slide">
+  <div class="slide-inner">
+
+    <span class="kicker animate d1">The Process</span>
+
+    <div class="logo animate d2">🧠</div>
+
+    <h1 class="animate d3">
+      Customer conversation to <span class="grad">working agent</span>.<br>
+      In one week.
+    </h1>
+
+    <p class="sub animate d4">
+      A structured ideation workshop grounds the customer in their own
+      business problems. RAPP turns that transcript into a working agent
+      prototype — <strong>validated, demonstrable, and shareable as a single file</strong>
+      — ready for a partner to bolt to production on Copilot Studio.
+    </p>
+
+    <section class="pipeline">
+      <div class="step animate d4">
+        <span class="n">1</span>
+        <h3>60-min ideation workshop</h3>
+        <p>Customer describes their <strong>business problems</strong> —
+          not features. Structured value-ranking lands the
+          top-priority use cases.</p>
+      </div>
+      <div class="arrow">→</div>
+
+      <div class="step animate d5">
+        <span class="n">2</span>
+        <h3>Transcript → RAPP</h3>
+        <p>The recorded session flows into the tool. RAPP
+          generates a <strong>working agent prototype</strong>
+          against the top use case(s).</p>
+      </div>
+      <div class="arrow">→</div>
+
+      <div class="step animate d5">
+        <span class="n">3</span>
+        <h3>Customer validates</h3>
+        <p>Deliver the prototype as a short demo video and a
+          <strong>single portable agent file</strong>. Feedback loops
+          back into the tool the same day.</p>
+      </div>
+      <div class="arrow">→</div>
+
+      <div class="step animate d6">
+        <span class="n">4</span>
+        <h3>Partner handoff</h3>
+        <p>The agent file travels to the partner as-is. The
+          <strong>file is the spec</strong>: it carries the problem,
+          the solution, and the working code.</p>
+      </div>
+      <div class="arrow">→</div>
+
+      <div class="step animate d6">
+        <span class="n">5</span>
+        <h3>Deploy to Copilot Studio</h3>
+        <p>Partner connects real systems; the agent promotes to
+          <strong>Azure and Copilot Studio unchanged</strong>, landing
+          where the customer already works.</p>
+      </div>
+    </section>
+
+    <section class="value-band">
+      <div class="value-cell animate d7">
+        <span class="label">What customers give us</span>
+        <h4>A one-hour conversation about their real problems</h4>
+        <p>No AI expertise required on their side. They describe the work that keeps them up at night — we handle the rest.</p>
+      </div>
+
+      <div class="value-cell animate d7">
+        <span class="label">What the workshop produces</span>
+        <h4>A validated, shareable agent artifact</h4>
+        <p>Not a slide deck, not a spec — an actual working prototype tied to the customer's own words. The agent is the record.</p>
+      </div>
+
+      <div class="value-cell animate d7">
+        <span class="label">What partners pick up</span>
+        <h4>Self-documenting agent files, production-shaped</h4>
+        <p>Single-file hand-off. The partner bolts it to real data and lands it in Copilot Studio. No re-architecting. No re-specifying.</p>
+      </div>
+    </section>
+
+    <blockquote class="hinge animate d7">
+      The <span class="accent">agent IS the spec.</span>
+      Customer → prototype → partner → production in a single handoff —
+      carried by one portable file.
+    </blockquote>
+
+  </div>
+</main>
+
+<nav class="sr-only" aria-label="Related pages">
+  <a href="./">Home</a>
+  <a href="./one-pager.html">Platform one-pager</a>
+  <a href="./leadership.html">Leadership one-pager</a>
+  <a href="./pitch-playbook.html">Pitch deck</a>
+  <a href="./faq.html">FAQ</a>
+  <a href="./roadmap.html">Roadmap</a>
+  <a href="./release-notes.html">Release notes</a>
+  <a href="https://github.com/kody-w/RAPP">GitHub</a>
+</nav>
+
+</body>
+</html>

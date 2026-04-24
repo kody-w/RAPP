@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAPP — Leadership One-Pager</title>
+<meta name="description" content="RAPP turns every customer AI workshop into a production-bound agent artifact. Scale specialist output without specialist headcount, across the Microsoft AI stack.">
+<meta property="og:title" content="RAPP — Scale AI workshops into working agents.">
+<meta property="og:description" content="RAPP turns every customer AI workshop into a production-bound agent artifact. Scale specialist output without specialist headcount, across the Microsoft AI stack.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kody-w.github.io/RAPP/leadership.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E🧠%3C/text%3E%3C/svg%3E">
+<script>
+(function(){
+  try {
+    var saved = localStorage.getItem('rapp-theme');
+    var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    var theme = saved || (prefersLight ? 'light' : 'dark');
+    if (theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+  } catch(e){}
+})();
+</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d1117;--surface:#161b22;--surface2:#1c2128;--border:#30363d;--border2:#21262d;
+  --text:#e6edf3;--text-dim:#8b949e;--muted:#484f58;
+  --accent:#58a6ff;--green:#3fb950;--purple:#a78bfa;
+  --grad-1:#7df0c8;--grad-2:#58a6ff;--grad-3:#a78bfa;
+  --logo-glow:rgba(125,240,200,.3);
+}
+[data-theme="light"]{
+  --bg:#ffffff;--surface:#f6f8fa;--surface2:#eaeef2;--border:#d0d7de;--border2:#afb8c1;
+  --text:#1f2328;--text-dim:#59636e;--muted:#8c959f;
+  --accent:#0969da;--green:#1a7f37;--purple:#8250df;
+  --grad-1:#2da44e;--grad-2:#0969da;--grad-3:#8250df;
+  --logo-glow:rgba(9,105,218,.2);
+}
+html,body{
+  height:100%;overflow:hidden;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  background:var(--bg);color:var(--text);line-height:1.55;
+  transition:background-color .25s,color .25s;
+}
+
+/* Slide canvas */
+.slide{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  padding:5vh 7vw;text-align:center;
+}
+.slide-inner{width:100%;max-width:1200px}
+
+/* Audience tag — tiny kicker above the headline */
+.kicker{
+  display:inline-block;margin-bottom:16px;
+  font-size:.78rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:var(--accent);
+  padding:6px 14px;border:1px solid var(--accent);border-radius:999px;
+  background:rgba(88,166,255,.08);
+}
+
+.logo{
+  font-size:clamp(52px,6vw,78px);line-height:1;margin-bottom:14px;
+  filter:drop-shadow(0 0 22px var(--logo-glow));
+}
+h1{
+  font-size:clamp(2.3rem,4.8vw,4.4rem);font-weight:800;line-height:1.08;
+  letter-spacing:-.8px;margin-bottom:18px;
+}
+h1 .grad{
+  background:linear-gradient(135deg,var(--grad-1),var(--grad-2),var(--grad-3));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.sub{
+  font-size:clamp(1.02rem,1.5vw,1.3rem);color:var(--text-dim);
+  max-width:880px;margin:0 auto 34px;line-height:1.55;
+}
+.sub strong{color:var(--text)}
+
+/* KPI row — big numbers that read at the back of a room */
+.stats{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:14px;
+  max-width:940px;margin:0 auto 32px;
+}
+.stat{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:20px 14px;
+}
+.stat .num{
+  display:block;font-size:clamp(2rem,3.4vw,3rem);font-weight:800;line-height:1;
+  background:linear-gradient(135deg,var(--grad-1),var(--grad-2),var(--grad-3));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  letter-spacing:-1px;
+}
+.stat .lbl{
+  display:block;margin-top:8px;
+  font-size:.78rem;color:var(--text-dim);letter-spacing:1.2px;text-transform:uppercase;
+  font-weight:600;
+}
+
+/* Three outcome beats */
+.beats{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:18px;
+  width:100%;text-align:left;margin-bottom:34px;
+}
+.beat{
+  background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  padding:22px 24px;transition:border-color .2s,transform .2s;
+}
+.beat:hover{border-color:var(--accent);transform:translateY(-2px)}
+.beat .badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:30px;margin-bottom:10px;
+  background:linear-gradient(135deg,var(--grad-1),var(--grad-3));border-radius:8px;
+  font-size:15px;color:#0d1117;font-weight:800;
+}
+[data-theme="light"] .beat .badge{color:#fff}
+.beat h3{font-size:clamp(1.05rem,1.35vw,1.28rem);font-weight:700;margin-bottom:6px;line-height:1.3}
+.beat p{font-size:clamp(.9rem,1.05vw,1rem);color:var(--text-dim);line-height:1.55}
+.beat p strong{color:var(--text)}
+
+/* Closing hinge line */
+.hinge{
+  display:block;margin:0 auto;max-width:940px;
+  font-size:clamp(1.02rem,1.4vw,1.35rem);line-height:1.5;
+  color:var(--text);font-weight:500;font-style:italic;
+  position:relative;padding-top:26px;letter-spacing:-.1px;
+}
+.hinge::before{
+  content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:52px;height:2px;
+  background:linear-gradient(90deg,var(--grad-1),var(--grad-3));
+  border-radius:1px;opacity:.85;
+}
+.hinge .accent{
+  background:linear-gradient(135deg,var(--grad-1),var(--grad-2),var(--grad-3));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  font-style:normal;font-weight:700;
+}
+
+.sr-only{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.animate{animation:fadeUp .6s ease both}
+.animate.d1{animation-delay:.08s}.animate.d2{animation-delay:.18s}.animate.d3{animation-delay:.28s}
+.animate.d4{animation-delay:.38s}.animate.d5{animation-delay:.48s}.animate.d6{animation-delay:.58s}
+
+@media(max-width:900px){
+  html,body{overflow:auto;height:auto}
+  .slide{position:static;padding:36px 22px;min-height:100vh}
+  .stats,.beats{grid-template-columns:1fr;gap:12px}
+}
+@media print{
+  html,body{background:#fff;color:#0d1117;overflow:visible;height:auto}
+  .slide{position:static;padding:28px;page-break-inside:avoid}
+  .beat,.stat{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<main class="slide">
+  <div class="slide-inner">
+
+    <span class="kicker animate d1">For Leadership</span>
+
+    <div class="logo animate d2">🧠</div>
+
+    <h1 class="animate d3">
+      Every customer conversation<br>
+      becomes <span class="grad">a working agent</span>.
+    </h1>
+
+    <p class="sub animate d4">
+      RAPP is the <strong>acceleration layer</strong> that turns AI workshops into
+      production-bound artifacts. One session with a customer becomes a working
+      agent in days — and every agent travels across <strong>Copilot, Azure, and
+      Microsoft 365</strong> as a single portable file.
+    </p>
+
+    <section class="stats">
+      <div class="stat animate d4">
+        <span class="num">1 hr</span>
+        <span class="lbl">Non-technical to productive</span>
+      </div>
+      <div class="stat animate d4">
+        <span class="num">~3 days</span>
+        <span class="lbl">Conversation → validated demo</span>
+      </div>
+      <div class="stat animate d4">
+        <span class="num">1 file</span>
+        <span class="lbl">Workshop → partner → production</span>
+      </div>
+    </section>
+
+    <section class="beats">
+      <div class="beat animate d5">
+        <div class="badge">①</div>
+        <h3>Scale specialist output, not specialist headcount</h3>
+        <p>
+          A <strong>non-technical teammate</strong>, trained in an hour, can
+          originate and package AI opportunities that previously required
+          specialized engineering. The tool does the heavy lifting; your team
+          does the customer conversation.
+        </p>
+      </div>
+
+      <div class="beat animate d5">
+        <div class="badge">②</div>
+        <h3>Workshop to validated demo, same week</h3>
+        <p>
+          A 60-minute customer session becomes a <strong>validated working agent
+          by week's end</strong>. Tighter cycle means more pipeline originated
+          per seller, per quarter — and more customer "wow" moments per month.
+        </p>
+      </div>
+
+      <div class="beat animate d5">
+        <div class="badge">③</div>
+        <h3>On the stack. Not on the side.</h3>
+        <p>
+          RAPP is the <strong>on-ramp</strong> to the Microsoft AI stack.
+          Prototypes on a laptop; promotes to Azure; lands in Copilot Studio
+          — unchanged. Partners pick up a self-documenting single file and
+          bolt it to production. No re-spec'ing.
+        </p>
+      </div>
+    </section>
+
+    <blockquote class="hinge animate d6">
+      Accelerates the motion your team already runs.
+      <span class="accent">Every conversation becomes an artifact — and every artifact travels</span>
+      from workshop to production on the Microsoft stack you already sell.
+    </blockquote>
+
+  </div>
+</main>
+
+<nav class="sr-only" aria-label="Related pages">
+  <a href="./">Home</a>
+  <a href="./one-pager.html">Platform one-pager</a>
+  <a href="./process.html">Process one-pager</a>
+  <a href="./pitch-playbook.html">Pitch deck</a>
+  <a href="./faq.html">FAQ</a>
+  <a href="./roadmap.html">Roadmap</a>
+  <a href="./release-notes.html">Release notes</a>
+  <a href="https://github.com/kody-w/RAPP">GitHub</a>
+</nav>
+
+</body>
+</html>

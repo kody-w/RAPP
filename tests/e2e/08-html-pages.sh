@@ -5,7 +5,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
-PAGES=(one-pager.html release-notes.html roadmap.html faq.html)
+PAGES=(one-pager.html leadership.html process.html release-notes.html roadmap.html faq.html)
 
 for f in "${PAGES[@]}"; do
     [ -f "$f" ] || { echo "FAIL: $f does not exist"; exit 1; }
@@ -75,6 +75,30 @@ check roadmap.html "swarm factory distribution item"              'swarm factory
 check roadmap.html "on-device / offline item"                     'on-device|offline|IoT'
 check roadmap.html "one-pager linked"                             'one-pager\.html'
 check roadmap.html "Article references"                           'Article I-A|Article II|Article V'
+
+# leadership.html — audience: execs / GMs / funders
+echo "▶ leadership.html content anchors..."
+check leadership.html "audience kicker labels it"                 'For Leadership|LEADERSHIP'
+check leadership.html "headline lands 'working agent' outcome"    'working agent'
+check leadership.html "positions as acceleration layer"           'acceleration layer|accelerates|on-ramp'
+check leadership.html "mentions Copilot/Azure/M365 alongside"     'Copilot.*Azure.*Microsoft 365|Microsoft AI stack'
+check leadership.html "KPI row has the 3 big numbers"             '1 hr|3 days|1 file'
+check leadership.html "3-beat outcome section"                    'specialist headcount|Workshop to validated|On the stack'
+check leadership.html "closing hinge line"                        'Every conversation becomes an artifact|becomes an artifact'
+check leadership.html "cross-links to process one-pager"          'process\.html'
+check leadership.html "cross-links to platform one-pager"         'one-pager\.html'
+
+# process.html — audience: enablement / sellers / partners
+echo "▶ process.html content anchors..."
+check process.html "audience kicker labels it"                    'The Process|PROCESS'
+check process.html "headline lands 'one week' promise"            'one week|In one week'
+check process.html "5-step pipeline present"                      '60-min ideation|Transcript.*RAPP|Partner handoff|Copilot Studio'
+check process.html "customer validates step"                      'Customer validates|customer validates'
+check process.html "value band with what customers give"          'one-hour conversation|hour conversation'
+check process.html "self-documenting handoff"                     'self-documenting|Self-documenting'
+check process.html "agent IS the spec insight"                    'agent IS the spec|agent is the spec'
+check process.html "cross-links to leadership one-pager"          'leadership\.html'
+check process.html "cross-links to platform one-pager"            'one-pager\.html'
 
 # faq.html
 echo "▶ faq content anchors..."
