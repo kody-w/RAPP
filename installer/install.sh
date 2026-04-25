@@ -547,6 +547,63 @@ ensure_deps() {
     echo -e "  ${GREEN}✓${NC} Dependencies installed"
 }
 
+bootstrap_binder_at_install() {
+    # The one-liner does EVERYTHING. Pre-install the package manager from
+    # RAPPstore at install time so the user never sees a "bootstrap needed"
+    # banner on first launch. If RAPPstore is offline at install time, skip
+    # silently — the brainstem will retry on first launch via its own
+    # _bootstrap_binder() and write the same status file.
+    local src="$BRAINSTEM_HOME/src/rapp_brainstem"
+    local services="$src/services"
+    local binder="$services/binder_service.py"
+    local status_file="$src/.brainstem_data/bootstrap.json"
+    local binder_url="${RAPPSTORE_URL:-https://raw.githubusercontent.com/kody-w/RAPP/main/rapp_store}"
+    binder_url="${binder_url%/index.json}/binder/binder_service.py"
+    local expected_sha="a68e44bc2ef0085dfe1598fa224b655b24e91d329128cff2a7328f12a560714d"
+    local now
+    now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+    mkdir -p "$services" "$src/.brainstem_data"
+
+    if [ -f "$binder" ]; then
+        echo -e "  ${GREEN}✓${NC} Binder already present (skipping bootstrap fetch)"
+        [ -f "$status_file" ] || cat > "$status_file" <<EOF
+{"rapp_store_reachable": true, "binder_installed": true, "checked_at": "$now", "error": null}
+EOF
+        return 0
+    fi
+
+    echo "  Fetching binder from RAPPstore..."
+    local tmp
+    tmp=$(mktemp)
+    if curl -fsSL --max-time 10 "$binder_url" -o "$tmp" 2>/dev/null; then
+        local actual_sha
+        actual_sha=$(shasum -a 256 "$tmp" | cut -d' ' -f1)
+        if [ "$expected_sha" = "$actual_sha" ]; then
+            mv "$tmp" "$binder"
+            cat > "$status_file" <<EOF
+{"rapp_store_reachable": true, "binder_installed": true, "checked_at": "$now", "error": null}
+EOF
+            echo -e "  ${GREEN}✓${NC} Binder installed"
+        else
+            rm -f "$tmp"
+            cat > "$status_file" <<EOF
+{"rapp_store_reachable": true, "binder_installed": false, "checked_at": "$now", "error": "sha256 mismatch"}
+EOF
+            echo -e "  ${YELLOW}⚠${NC} Binder SHA mismatch — skipped (brainstem will retry on launch)"
+        fi
+    else
+        rm -f "$tmp"
+        # Network down or RAPPstore unreachable — don't block the install. Brainstem
+        # self-bootstraps on launch (see _bootstrap_binder() in brainstem.py); when
+        # the network comes back, it'll succeed then. The user sees no banner if
+        # the install bootstrap worked; if not, the brainstem-side retry covers it.
+        cat > "$status_file" <<EOF
+{"rapp_store_reachable": false, "binder_installed": false, "checked_at": "$now", "error": "rapp_store unreachable at install time (will retry on launch)"}
+EOF
+        echo -e "  ${YELLOW}⚠${NC} RAPPstore offline — skipped (brainstem will retry on launch)"
+    fi
+}
+
 install_cli() {
     echo ""
     echo "Installing CLI..."
@@ -1273,6 +1330,7 @@ main() {
             ensure_deps
             install_cli
             create_env
+            bootstrap_binder_at_install
             export PATH="$BRAINSTEM_BIN:/opt/homebrew/bin:/usr/local/bin:$PATH"
             launch_brainstem
             exit $?  # launch uses exec, but guard against fall-through
@@ -1286,6 +1344,7 @@ main() {
     setup_deps
     install_cli
     create_env
+    bootstrap_binder_at_install
 
     # Make sure brainstem and gh are on PATH for this session
     export PATH="$BRAINSTEM_BIN:/opt/homebrew/bin:/usr/local/bin:$PATH"
