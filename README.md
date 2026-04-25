@@ -111,6 +111,8 @@ If you're not the audience for the rest of this README, [**pitch-playbook.html**
 - [`CONSTITUTION.md`](./CONSTITUTION.md) — articles governing what belongs, what's sacred, what's ruled out. Worth a skim if you want to contribute.
 - [`pages/docs/SPEC.md`](./pages/docs/SPEC.md) — the v1 contract for the single-file agent format. Frozen on purpose; the agent contract is the API.
 
+> **The wire is forever.** `/chat` is time-travel safe by construction (Constitution Article XXV, SPEC §0.1). A v0 brainstem from years ago will still talk to the latest brainstem without a single code change on either side — schema evolution is additive-only, both response keys are emitted forever, the default `user_guid` is the same string in every implementation. The long tail of brainstems in the wild is the customer.
+
 ## The vault
 
 [`pages/vault/`](./pages/vault/) is the platform's second-brain wiki — the *why* behind every decision, captured as long-form notes. It's a real Obsidian vault (open with *File → Open folder as vault*) and it's also rendered as a static site at [`pages/vault/`](https://kody-w.github.io/RAPP/pages/vault/) with wikilinks, backlinks, full-text search, a graph view, and JSZip export to a portable Obsidian-compatible bundle.

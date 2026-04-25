@@ -25,6 +25,28 @@ This is the inviolable law of RAPP v1. It is what makes a 14-year-old able to sh
 
 ---
 
+## 0.1 The Companion Tenet — The Wire Is Forever
+
+> **`/chat` is the only wire. It is time-travel safe by construction.**
+>
+> ⏳ **A v0 brainstem unearthed from a backup, a probe, or a frozen Docker image still talks to the latest brainstem without a single code change on either side.**
+>
+> One endpoint. Same envelope. Same default behavior. Forever.
+>
+> A brainstem from a year ago, ten years ago, or eons from now is a peer of any brainstem shipping today. Neither one is "compatible" because compatibility was never the question — they speak the same wire because the wire is the same wire.
+
+The whole stack is engineered so this stays true:
+
+- **Schema evolution is additive-only** (Constitution Article XXV). New fields may appear; existing fields never get renamed, removed, or repurposed.
+- **Both response keys are emitted forever** — `response` AND `assistant_response` carry the same value. The CA365 lineage (`Copilot-Agent-365`, `CommunityRAPP`, `rapp_swarm`) shipped `assistant_response` first; `rapp_brainstem` later used `response`. Both keys land in every response so neither lineage has to know the other exists.
+- **`DEFAULT_USER_GUID = "c0p110t0-aaaa-bbbb-cccc-123456789abc"`** is the same string in every implementation, since the original CA365. It is intentionally invalid hex — that invalidity is the contract; never "fix" it.
+- **No peer mode, no handshake mode, no special routing.** Agents and humans hit the same code path. There is no protocol negotiation step that an old brainstem could fail at.
+- **The LLM in the middle absorbs version drift.** Whatever shape an old brainstem returns, a modern asker's LLM can read. Whatever shape a modern asker sends, an old brainstem's LLM can interpret. The wire's job is to deliver the chat — meaning is the LLM's job.
+
+If a future change would break a brainstem from the past, the change is wrong — even if it would make today's code cleaner. **The long tail of brainstems in the wild is the customer.**
+
+---
+
 ## 1. Why Single File Agents
 
 ### 1.1 The problem with skills alone

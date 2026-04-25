@@ -1347,7 +1347,7 @@ remembers why we made it that way.*
 
 ---
 
-## Article XXV — Chat Is The Only Wire
+## Article XXV — Chat Is The Only Wire (Time-Travel Safe)
 
 `/chat` is the universal interface. A human typing into the chat UI, an
 agent invoking another agent, a peer brainstem reaching across the
@@ -1356,9 +1356,19 @@ the same envelope and get back the same envelope**. The brainstem does
 not know — and must never need to know — which kind of caller is on
 the other end.
 
-> **One wire. Same shape. Forever.** A brainstem from a year ago must
-> still be able to chat with a brainstem shipped today, and vice
-> versa. Caller type is irrelevant.
+> **One wire. Same shape. Forever.**
+>
+> A brainstem unearthed from a backup, a probe, a frozen Docker image,
+> or a cold-storage drive after eons must be revivable and able to
+> chat with the latest brainstem **without a single code change on
+> either side**. Neither one knows — neither one needs to know — what
+> year the other was built in. Caller type and caller vintage are
+> equally irrelevant. The wire is the contract, and contracts hold
+> across time.
+
+This is what makes the brainstem an engine, not a product. Engines
+don't care who's pulling the lever, and they don't care when the lever
+was made.
 
 ### What the wire is
 
