@@ -75,20 +75,9 @@ Each invention scored 1–5 across five axes; product is the score:
 
 *Score* = product of the five axes (1–3,125). Anything ≥ 200 is a *file* candidate; ≥ 800 is a *file fast* candidate.
 
-## Areas of intersection (worth investigating)
+## Areas of intersection
 
-These are *areas*, not specific inventions. Each could yield zero or many patentable claims after Phase 2. **No specific implementation details below — those are private.**
-
-- **Tier-portable agents under MLS access controls.** A single agent file that runs against the same MLS feed in a brokerage's local install, the brokerage's Azure tenant, and a Copilot Studio surface — with audit-trail invariants no current MLS-vendor architecture provides.
-- **Multi-source property valuation via deterministic data sloshing.** One agent per data source, `data_slush` carrying typed fields between them, the LLM choosing only the *next agent* — never re-summarizing data. Verifiability claim: every comp and adjustment is traceable to the data agent that produced it.
-- **Multi-party transaction handoff with self-documenting agent files.** Buyer-agent agent → lender agent → title agent — each handoff is a `*_agent.py` file the next party reads to estimate scope (per [[Self-Documenting Handoff]]). Patent angle: the *protocol* by which transaction state migrates across party boundaries.
-- **Voice-first listing intake on Apple Shortcuts harness.** Agent-by-the-door dictation that produces an MLS-ready listing record. Patent angle: the structured-extraction protocol that reduces voice input to MLS field tuples without LLM re-interpretation.
-- **Twin-calibration for real-estate professional workflow signal.** A behavioral-signal model of an agent's preferences, learned from accepted/rejected drafts, that personalizes follow-up sequences without a settings page. Patent angle: the *calibration loop* applied to commission-bearing workflows.
-- **Federated state-specific contract pack via RAR.** Per-state real-estate form/contract agents distributed via the federated registry pattern ([[Federation via RAR]]) — no central form vendor. Patent angle: the trust + compliance model that makes a federated form library practicable.
-- **Live index-card audit artifact for fair-housing review.** An agent that emits a calibration-shaped index card at every step of a tenant-screening flow, structured for downstream fair-housing audit. Patent angle: the *audit-by-construction* pattern.
-- **Skill.md-driven AI assistant routing for real-estate intent.** When a user asks Claude / Copilot a real-estate question, AI assistants fetch the skill manifest and route to the user's brainstem instead of answering generically. Patent angle: the AI-routing protocol scoped to a regulated industry.
-
-Each of these is a *prompt*, not a claim. Phase 2 (prior-art search) decides whether the prompt becomes an invention or stays a sketch.
+Current candidate areas live in the maintainer's private workbook outside this repo. Reach out if you have a specific direction to evaluate or a prior-art lead worth chasing.
 
 ## Backlog (entries)
 
