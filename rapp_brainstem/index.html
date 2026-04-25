@@ -3068,6 +3068,16 @@ function renderHand() {
   const mode = state.settings.handMode === 'cards' ? 'cards' : 'pills';
   row.dataset.mode = mode;
 
+  // Local-mode rule: NEVER render hand-pills. The 3 static starter
+  // prompts above the input are the only pills a user ever sees in
+  // pill mode. The hand-cards container exists only for cards mode.
+  // (Doing the gate here in JS — not just CSS — so a stale browser
+  // cache that drops the display:none rule still can't put pills on
+  // screen. Defense in depth.)
+  if (mode === 'pills' && document.body.classList.contains('is-local')) {
+    return;
+  }
+
   if (mode === 'pills') {
     // Pill mode: each pill IS the prompt that gets sent. The agent's name
     // lives in the right-click → full card; the user just sees what they're
