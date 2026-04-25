@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invention Backlog — RAPP</title>
+<meta name="description" content="A capture surface for novel, patentable inventions at the intersection of the Rappter stack and the real-estate / AI industry. Public framework, private specifics.">
+
+<!-- Social / OG -->
+<meta property="og:title" content="Invention Backlog — RAPP">
+<meta property="og:description" content="Patentable inventions at the intersection of the Rappter stack and real-estate AI. The framework, the rubric, the areas worth investigating.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://kody-w.github.io/RAPP/pages/share/invention-backlog/">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E📜%3C/text%3E%3C/svg%3E">
+
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --border: #21262d;
+    --border2: #30363d;
+    --fg: #e6edf3;
+    --dim: #8b949e;
+    --muted: #484f58;
+    --link: #58a6ff;
+    --link-hover: #79c0ff;
+    --accent: #cba6f7;
+    --green: #3fb950;
+    --warn: #d29922;
+    --code-bg: #161b22;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.7;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 56px 24px 80px;
+  }
+
+  a { color: var(--link); text-decoration: none; }
+  a:hover { color: var(--link-hover); text-decoration: underline; }
+
+  code, pre {
+    font-family: "SF Mono", "Fira Code", ui-monospace, monospace;
+    font-size: 13.5px;
+  }
+
+  code {
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--accent);
+    border: 1px solid var(--border);
+  }
+
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 18px;
+    overflow-x: auto;
+    margin: 16px 0;
+  }
+
+  pre code {
+    background: transparent;
+    padding: 0;
+    color: var(--fg);
+    border: 0;
+  }
+
+  /* Top chrome */
+  .chrome {
+    width: 100%;
+    max-width: 760px;
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .breadcrumb {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .breadcrumb a { color: var(--dim); }
+  .breadcrumb a:hover { color: var(--fg); text-decoration: none; }
+
+  .actions {
+    display: flex;
+    gap: 8px;
+    font-size: 12px;
+  }
+
+  .actions a {
+    padding: 6px 12px;
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    color: var(--dim);
+  }
+
+  .actions a:hover {
+    border-color: var(--accent);
+    color: var(--fg);
+    text-decoration: none;
+  }
+
+  /* Article */
+  article {
+    width: 100%;
+    max-width: 760px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 56px 64px;
+  }
+
+  article .loading {
+    color: var(--muted);
+    text-align: center;
+    padding: 80px 0;
+  }
+
+  article h1 {
+    font-size: 36px;
+    line-height: 1.2;
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+  }
+
+  article h2 {
+    font-size: 22px;
+    margin: 36px 0 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  article h3 {
+    font-size: 17px;
+    margin: 28px 0 10px;
+    color: var(--accent);
+  }
+
+  article p,
+  article li {
+    color: var(--fg);
+    font-size: 15.5px;
+  }
+
+  article p { margin: 12px 0; }
+
+  article ul, article ol {
+    margin: 12px 0 12px 24px;
+  }
+
+  article li { margin: 6px 0; }
+
+  article blockquote {
+    border-left: 3px solid var(--accent);
+    background: rgba(203, 166, 247, 0.06);
+    padding: 14px 20px;
+    margin: 20px 0;
+    border-radius: 0 8px 8px 0;
+    color: var(--fg);
+  }
+
+  article blockquote p { margin: 6px 0; }
+
+  article hr {
+    border: 0;
+    border-top: 1px solid var(--border);
+    margin: 32px 0;
+  }
+
+  article table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0;
+    font-size: 14px;
+  }
+
+  article th,
+  article td {
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  article th {
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    border-bottom: 2px solid var(--border2);
+  }
+
+  article td { color: var(--dim); }
+  article td:first-child { color: var(--fg); }
+
+  /* Wikilinks rendered as inline references with a subtle dot */
+  article a.wikilink {
+    color: var(--accent);
+    border-bottom: 1px dashed var(--accent);
+  }
+  article a.wikilink:hover {
+    color: var(--link-hover);
+    border-bottom-color: var(--link-hover);
+    text-decoration: none;
+  }
+  article a.wikilink.broken {
+    color: var(--warn);
+    border-bottom-color: var(--warn);
+  }
+
+  /* Frontmatter chip */
+  .meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+    color: var(--dim);
+    font-size: 13px;
+  }
+
+  .meta .pill {
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--bg);
+    background: var(--accent);
+  }
+
+  /* Footer */
+  footer {
+    width: 100%;
+    max-width: 760px;
+    margin-top: 32px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    border-top: 1px solid var(--border);
+    padding-top: 24px;
+  }
+
+  footer a { color: var(--dim); }
+
+  /* Mobile */
+  @media (max-width: 720px) {
+    body { padding: 32px 16px 56px; }
+    article { padding: 32px 24px; }
+    article h1 { font-size: 28px; }
+    article h2 { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="chrome">
+  <div class="breadcrumb">
+    <a href="../../../">RAPP</a> &nbsp;/&nbsp;
+    <a href="../../">pages</a> &nbsp;/&nbsp;
+    <a href="../">share</a> &nbsp;/&nbsp;
+    Invention Backlog
+  </div>
+  <div class="actions">
+    <a href="../../vault/#Plans%20%26%20Ledgers%2FInvention%20Backlog.md">Open in vault</a>
+    <a href="https://github.com/kody-w/RAPP/blob/main/pages/vault/Plans%20%26%20Ledgers/Invention%20Backlog.md">Source</a>
+  </div>
+</div>
+
+<article id="article">
+  <p class="loading">Loading…</p>
+</article>
+
+<footer>
+  Part of the <a href="../../vault/">RAPP Vault</a> ·
+  <a href="https://github.com/kody-w/RAPP">GitHub</a> ·
+  <a href="../../../">RAPP landing</a>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script>
+(async () => {
+  const SOURCE_PATH = "Plans & Ledgers/Invention Backlog.md";
+
+  // Try same-origin first (works on GitHub Pages and local static server),
+  // fall back to raw.githubusercontent.com so this page works embedded
+  // off-domain too. Same pattern as the vault viewer.
+  const SAME_ORIGIN = `../../vault/${encodeURIComponent("Plans & Ledgers")}/${encodeURIComponent("Invention Backlog.md")}`;
+  const RAW_GH = `https://raw.githubusercontent.com/kody-w/RAPP/main/pages/vault/${encodeURIComponent("Plans & Ledgers")}/${encodeURIComponent("Invention Backlog.md")}`;
+
+  async function fetchMarkdown() {
+    try {
+      const res = await fetch(SAME_ORIGIN, { cache: "no-cache" });
+      if (res.ok) return await res.text();
+    } catch (_) { /* fall through */ }
+    const res = await fetch(RAW_GH, { cache: "no-cache" });
+    if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
+    return await res.text();
+  }
+
+  function parseFrontmatter(md) {
+    if (!md.startsWith("---")) return { meta: {}, body: md };
+    const end = md.indexOf("\n---", 3);
+    if (end === -1) return { meta: {}, body: md };
+    const rawYaml = md.slice(3, end).trim();
+    const body = md.slice(end + 4).replace(/^\n/, "");
+    const meta = {};
+    for (const line of rawYaml.split(/\r?\n/)) {
+      const m = line.match(/^([A-Za-z0-9_-]+):\s*(.*)$/);
+      if (m) {
+        let v = m[2].trim();
+        if ((v.startsWith('"') && v.endsWith('"')) ||
+            (v.startsWith("'") && v.endsWith("'"))) {
+          v = v.slice(1, -1);
+        }
+        meta[m[1]] = v;
+      }
+    }
+    return { meta, body };
+  }
+
+  // Rewrite [[wikilinks]] to point at the viewer for navigation. Anything
+  // that lives outside the vault is left as broken (styled with a warning
+  // colour); inside-vault links go to the viewer hash route.
+  function rewriteWikilinks(md) {
+    return md.replace(/\[\[([^\]|\n]+)(\|([^\]\n]+))?\]\]/g, (_, title, _alias, alias) => {
+      const display = (alias || title).trim();
+      const target = title.trim();
+      // Best-effort routing — the viewer matches by note title, so this works
+      // for any note in the vault. Out-of-vault refs (e.g., [[CONSTITUTION]])
+      // become broken; the viewer will surface them as such if clicked.
+      const hash = encodeURIComponent(target);
+      return `[${display}](../../vault/#${hash} "wikilink")`;
+    });
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, c => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[c]));
+  }
+
+  try {
+    const raw = await fetchMarkdown();
+    const { meta, body } = parseFrontmatter(raw);
+
+    const linked = rewriteWikilinks(body);
+    let html = marked.parse(linked, { gfm: true, breaks: false, mangle: false });
+
+    // Tag wiki anchors so CSS styles them distinctly.
+    html = html.replace(
+      /<a href="(\.\.\/\.\.\/vault\/#[^"]+)" title="wikilink">/g,
+      (_, href) => `<a href="${href}" class="wikilink">`
+    );
+
+    const status = meta.status || "";
+    const chip = status
+      ? `<div class="meta"><span class="pill">${escapeHtml(status)}</span><span>${escapeHtml(meta.section || "")}</span>${meta.session_date ? ` · <span>session ${escapeHtml(meta.session_date)}</span>` : ""}</div>`
+      : "";
+
+    document.getElementById("article").innerHTML = chip + html;
+    if (meta.title) document.title = `${meta.title} — RAPP`;
+  } catch (err) {
+    document.getElementById("article").innerHTML =
+      `<h1>Couldn't load this page</h1>
+       <p>Source: <code>${escapeHtml(SOURCE_PATH)}</code></p>
+       <pre>${escapeHtml(String(err))}</pre>
+       <p>Try the <a href="../../vault/#${encodeURIComponent(SOURCE_PATH)}">vault viewer</a> or
+       <a href="https://github.com/kody-w/RAPP/blob/main/pages/vault/${encodeURIComponent("Plans & Ledgers")}/${encodeURIComponent("Invention Backlog.md")}">view source on GitHub</a>.</p>`;
+    console.error(err);
+  }
+})();
+</script>
+
+</body>
+</html>
