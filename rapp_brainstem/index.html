@@ -535,8 +535,13 @@
      strip. With the pseudo at z:50, cards (z:1) are PAINTED OVER by
      the bar — only the parts above the footer top edge stay visible.
      The input-row and toolbar-row at z:100 still paint above the bar
-     so their own contents (input box, links) read normally. */
-  footer::before {
+     so their own contents (input box, links) read normally.
+
+     Scoped to body.hand-cards (cards mode) ONLY — pills mode has no
+     hand cards to cover, and the un-scoped pseudo was painting over
+     the 3 static starter pills and inflating the footer's visual
+     height since starter-prompts had no z-index of its own. */
+  body.hand-cards footer::before {
     content: ''; position: absolute; inset: 0;
     background: #161b22; z-index: 50; pointer-events: none;
   }
@@ -1454,6 +1459,7 @@
     </div>
     <div class="actions">
       <button class="btn primary" id="save-settings">Save</button>
+      <button class="btn" id="clear-cache" title="Unregister service workers, clear CacheStorage, and hard-reload — keeps localStorage. Use when stale JS/CSS is sticking around.">Clear cache</button>
       <button class="btn danger" id="reset-data">Wipe data</button>
     </div>
   </aside>
@@ -1775,6 +1781,9 @@
         <select id="browse-source-filter">
           <option value="">all sources</option>
         </select>
+        <select id="browse-publisher-filter" title="Filter by publisher (agent.author)">
+          <option value="">all publishers</option>
+        </select>
         <button class="btn" id="browse-refresh" title="Re-fetch all registries">↻</button>
       </div>
       <div id="browse-list"></div>
@@ -1865,8 +1874,13 @@
       </div>
       <div id="cpsignin-step2" hidden>
         <p style="font-size:13px;color:#8b949e;margin-bottom:10px">Open GitHub and enter this code:</p>
-        <div style="background:#0d1117;border:1px solid #238636;border-radius:8px;padding:18px;text-align:center;margin-bottom:14px">
-          <div style="font-family:'SF Mono',monospace;font-size:32px;letter-spacing:6px;color:#3fb950;font-weight:700" id="cpsignin-code">XXXX-XXXX</div>
+        <div style="position:relative;background:#0d1117;border:1px solid #238636;border-radius:8px;padding:18px;text-align:center;margin-bottom:14px">
+          <div id="cpsignin-code" title="Click to copy" style="font-family:'SF Mono',monospace;font-size:32px;letter-spacing:6px;color:#3fb950;font-weight:700;cursor:pointer;user-select:all">XXXX-XXXX</div>
+          <button type="button" id="cpsignin-copy" title="Copy code" aria-label="Copy code"
+            style="position:absolute;top:8px;right:8px;background:transparent;border:1px solid #30363d;color:#8b949e;border-radius:6px;padding:4px 8px;font-size:11px;font-family:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:all .15s">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"/></svg>
+            <span>Copy</span>
+          </button>
         </div>
         <a href="#" id="cpsignin-link" target="_blank" rel="noopener" class="btn primary" style="display:block;text-align:center;text-decoration:none;margin-bottom:14px">Open https://github.com/login/device →</a>
         <p style="font-size:12px;color:#6e7681;text-align:center">
@@ -3416,6 +3430,7 @@ function renderBrowse() {
   list.innerHTML = '';
   const q = ($('#browse-filter')?.value || '').toLowerCase().trim();
   const sourceFilter = $('#browse-source-filter')?.value || '';
+  const publisherFilter = $('#browse-publisher-filter')?.value || '';
   const installed = new Set(state.binder.cards.map(c => c.filename));
 
   let entries = [];
@@ -3423,6 +3438,33 @@ function renderBrowse() {
     if (sourceFilter && repo !== sourceFilter) continue;
     if (!reg || !reg.agents) continue;
     for (const a of reg.agents) entries.push({ repo, branch: reg._branch || 'main', agent: a });
+  }
+  // Build the publisher dropdown from the source-filtered set so it
+  // always reflects the publishers actually visible. Sort case-insensitively
+  // so "AIBAST" and "anthropic" sit side-by-side instead of by ASCII order.
+  // "unknown" is the default for agents missing an `author` field — keep
+  // it but pin it to the bottom so it doesn't dominate the top of a long list.
+  (function repopulatePublisherFilter(){
+    const sel = $('#browse-publisher-filter');
+    if (!sel) return;
+    const cur = sel.value;
+    const seen = new Set();
+    for (const { agent } of entries) {
+      const p = (agent.author || 'unknown').trim();
+      if (p) seen.add(p);
+    }
+    const list = [...seen].sort((a, b) => {
+      if (a === 'unknown') return 1;
+      if (b === 'unknown') return -1;
+      return a.toLowerCase().localeCompare(b.toLowerCase());
+    });
+    sel.innerHTML = '<option value="">all publishers</option>' +
+      list.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
+    // Restore prior selection if it still exists; otherwise reset.
+    sel.value = list.includes(cur) ? cur : '';
+  })();
+  if (publisherFilter) {
+    entries = entries.filter(({ agent: a }) => (a.author || 'unknown') === publisherFilter);
   }
   if (q) {
     entries = entries.filter(({ agent: a }) => {
@@ -4913,6 +4955,7 @@ function wire() {
   $('#source-input').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addSource(e.target.value); } });
   $('#browse-filter').addEventListener('input', renderBrowse);
   $('#browse-source-filter').addEventListener('change', renderBrowse);
+  $('#browse-publisher-filter').addEventListener('change', renderBrowse);
   $('#browse-refresh').addEventListener('click', refreshAllSources);
   // Click the install one-liner to copy it. Users who read the CTA and
   // want to spin up a local brainstem can copy-paste-run in one click.
@@ -4968,6 +5011,47 @@ function wire() {
   $('#cpsignin-close').addEventListener('click', closeCopilotSigninModal);
   $('#cpsignin-go').addEventListener('click', runCopilotSignin);
   $('#cpsignin-modal').addEventListener('click', e => { if (e.target.id === 'cpsignin-modal') closeCopilotSigninModal(); });
+  // Device-code copy: clicking either the code itself or the Copy button
+  // writes it to the clipboard and flashes "Copied!" on the button.
+  (function wireDeviceCodeCopy(){
+    const codeEl = $('#cpsignin-code');
+    const btn = $('#cpsignin-copy');
+    if (!codeEl || !btn) return;
+    const label = btn.querySelector('span');
+    const original = label ? label.textContent : 'Copy';
+    let resetTimer = null;
+    const flash = (ok) => {
+      if (label) label.textContent = ok ? 'Copied!' : 'Copy failed';
+      btn.style.color = ok ? '#3fb950' : '#f85149';
+      btn.style.borderColor = ok ? 'rgba(63,185,80,.5)' : 'rgba(248,81,73,.5)';
+      clearTimeout(resetTimer);
+      resetTimer = setTimeout(() => {
+        if (label) label.textContent = original;
+        btn.style.color = '';
+        btn.style.borderColor = '';
+      }, 1400);
+    };
+    const doCopy = async () => {
+      const code = (codeEl.textContent || '').trim();
+      if (!code || code === 'XXXX-XXXX') return;
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(code);
+        } else {
+          // Fallback for non-secure contexts (e.g. http://localhost
+          // counts as secure in modern browsers, but older builds
+          // may not — keep a textarea+execCommand path just in case).
+          const ta = document.createElement('textarea');
+          ta.value = code; ta.style.position = 'fixed'; ta.style.opacity = '0';
+          document.body.appendChild(ta); ta.select();
+          document.execCommand('copy'); document.body.removeChild(ta);
+        }
+        flash(true);
+      } catch { flash(false); }
+    };
+    codeEl.addEventListener('click', doCopy);
+    btn.addEventListener('click', e => { e.stopPropagation(); doCopy(); });
+  })();
   // Tutorial wiring
   $('#tut-prev').addEventListener('click', tutPrev);
   $('#tut-next').addEventListener('click', tutNext);
@@ -4983,6 +5067,34 @@ function wire() {
     if (!confirm('Wipe all local data (binder, hand, settings, transcripts)?')) return;
     LS.del('settings'); LS.del('binder'); LS.del('hand');
     location.reload();
+  });
+  // Clear browser-side caches without touching localStorage. Targets
+  // the symptom we keep hitting on local: stale index.html / JS that
+  // doesn't pick up server-side fixes until the user does the
+  // Cmd+Shift+R shuffle. Unregister SWs, blow away CacheStorage,
+  // then reload with a cache-busting query so the HTTP cache is
+  // bypassed for this navigation too.
+  $('#clear-cache').addEventListener('click', async () => {
+    if (!confirm('Clear browser cache for this page (service workers + CacheStorage) and hard-reload? Your settings and binder are kept.')) return;
+    const btn = $('#clear-cache');
+    btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Clearing…';
+    try {
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(r => r.unregister()));
+      }
+      if (window.caches && caches.keys) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k => caches.delete(k)));
+      }
+    } catch (e) { console.warn('[clear-cache] partial failure:', e); }
+    // Cache-bust the navigation itself so even an aggressive HTTP
+    // cache returns a fresh document. Strip any pre-existing _cb
+    // param so we don't keep stacking them on repeat clicks.
+    const url = new URL(location.href);
+    url.searchParams.delete('_cb');
+    url.searchParams.set('_cb', String(Date.now()));
+    location.replace(url.toString());
   });
   $('#model-sel').addEventListener('change', () => {
     state.settings.model = $('#model-sel').value;
