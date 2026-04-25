@@ -548,19 +548,22 @@
      mode still gets the full hand-cards container — only pill mode
      hides it. */
   body:not(.hand-cards) #hand-cards { display: none; }
-  /* Card mode rebuilds the layout: absolute, fanned, tucked behind input.
+  /* Card mode: cards anchor at the BOTTOM of the footer (bottom:0)
+     so the footer's full height (input-row + toolbar-row, both z:100
+     with opaque bg) paints OVER the bottom halves. Only the top
+     halves peek above the gray bar — the UNO-hand effect.
      `isolation: isolate` forces a stacking context so the per-card
      z-indexes set inline by renderHand (10+i, for fanning order) stay
-     confined here — outside, the whole hand-cards container is z:1,
-     which is comfortably below the input/toolbar rows at z:100. */
+     confined here — outside, the whole hand-cards container is z:1. */
   #hand-cards[data-mode="cards"] {
     position: absolute;
-    left: 0; right: 0; bottom: 100%;
-    height: 110px; max-width: none; margin: 0;
+    left: 0; right: 0; bottom: 0;
+    height: 0; max-width: none; margin: 0;
     flex-wrap: nowrap; gap: 0;
     perspective: 1400px;
     z-index: 1;
     isolation: isolate;
+    overflow: visible;
   }
 
   /* Pill mode = the OG quick-click buttons, driven by the hand. The label
@@ -609,15 +612,17 @@
   }
 
   /* Each card is 290×406 internally; transform: scale(.42) shrinks it to a
-     visible ~122×170. translateY(60px) pushes it down so its bottom half
-     is below the footer's top edge — and the footer's input-row + toolbar-row
-     (z-index:100, opaque #161b22 bg) paint OVER that overlapping body so
-     only the top half of the card peeks above the bar. UNO-style hand. */
+     visible ~122×170. With #hand-cards anchored at bottom:0 of the footer
+     and align-items:flex-end, cards' visual bottoms sit at the very
+     bottom of the footer. Their bodies extend UPWARD ~170px from there.
+     The footer (input + toolbar bars, z:100, opaque bg) paints over the
+     bottom ~footer-height-px of each card, so only the top ~50-70px
+     peeks above the gray bar. UNO-style hand. */
   .hand-card {
     --rot: 0deg;
     position: relative; width: 290px; height: 406px;
     transform-origin: center bottom;
-    transform: translateY(60px) rotate(var(--rot)) scale(.42);
+    transform: translateY(0) rotate(var(--rot)) scale(.42);
     transition: transform .25s cubic-bezier(.16, 1, .3, 1),
                 filter .2s, z-index 0s .25s;
     margin: 0 -82px;
@@ -626,9 +631,8 @@
     filter: drop-shadow(0 -2px 10px rgba(0,0,0,.6));
   }
   .hand-card:hover {
-    /* Small bob up — hovered card is just slightly higher than its siblings.
-       Slight scale-up to signal interactivity. No flying away. */
-    transform: translateY(10px) rotate(0deg) scale(.46);
+    /* Lift up out of the bar so the full card is visible. */
+    transform: translateY(-90px) rotate(0deg) scale(.46);
     z-index: 50;
     transition: transform .2s cubic-bezier(.16, 1, .3, 1),
                 filter .2s, z-index 0s 0s;
@@ -1245,8 +1249,8 @@
     .hand-pill { max-width: 240px; font-size: 11px; padding: 5px 10px; }
     /* Card-mode hand: shrink the fan + lift so it doesn't dominate. */
     #hand-cards[data-mode="cards"] { height: 80px; }
-    .hand-card { transform: translateY(60px) rotate(var(--rot)) scale(.32); margin: 0 -98px; }
-    .hand-card:hover { transform: translateY(-200px) rotate(0deg) scale(.85); }
+    .hand-card { transform: translateY(0) rotate(var(--rot)) scale(.32); margin: 0 -98px; }
+    .hand-card:hover { transform: translateY(-90px) rotate(0deg) scale(.85); }
     /* Card modal scales down. */
     .ac-wrap { width: min(80vw, 320px); }
     /* Install / browse rows wrap nicely. */
