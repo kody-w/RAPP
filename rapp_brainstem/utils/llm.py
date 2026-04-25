@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 """
-swarm/llm.py — stdlib-only LLM dispatch for the swarm server.
+utils/llm.py — stdlib-only LLM dispatch shared by Tier 1 (brainstem)
+and Tier 2 (swarm).
 
 Provider precedence (first one with credentials wins):
-    1. Azure OpenAI (AZURE_OPENAI_ENDPOINT + AZURE_OPENAI_API_KEY [+ AZURE_OPENAI_DEPLOYMENT])
-    2. OpenAI       (OPENAI_API_KEY)
-    3. Anthropic    (ANTHROPIC_API_KEY)
-    4. Fake mode    (LLM_FAKE=1) — deterministic stub for tests
+    1. Copilot      (Tier 1 only — registered by the brainstem at startup
+                     so single-file rapps can reuse the same engine that
+                     powers the host process; no env vars required)
+    2. Azure OpenAI (AZURE_OPENAI_ENDPOINT + AZURE_OPENAI_API_KEY [+ AZURE_OPENAI_DEPLOYMENT])
+    3. OpenAI       (OPENAI_API_KEY)
+    4. Anthropic    (ANTHROPIC_API_KEY)
+    5. Fake mode    (LLM_FAKE=1) — deterministic stub for tests
 
 Uses urllib only — no openai / anthropic SDK dependency, so this works
 under the stdlib-only swarm server AND under Azure Functions without
@@ -15,6 +19,11 @@ extra installs.
 The wire format we accept and emit is OpenAI-compatible:
     chat({"messages":[…], "tools":[…], "model":…}) →
     {"role":"assistant", "content":…, "tool_calls":[…]}
+
+Single-file rapps can also use the higher-level convenience
+    call_llm(messages, model=None) -> str
+which returns just the assistant's text content. This is the contract
+BookFactory and friends use instead of inlining their own _llm_call.
 """
 
 from __future__ import annotations
@@ -24,12 +33,33 @@ import urllib.error
 import urllib.request
 
 
+# ─── Copilot provider (Tier 1 — registered by the brainstem at startup) ─
+
+# A callable returning (token, endpoint) for the brainstem's live Copilot
+# session. The brainstem injects this via register_copilot_provider() so
+# rapps loaded into its agents/ directory transparently route through the
+# same LLM that's powering the engine — no AZURE_/OPENAI_ keys needed for
+# local Tier 1 use. Tier 2 (swarm) never registers one and falls through
+# to env-configured providers.
+_copilot_token_provider = None
+_copilot_default_model = "gpt-4o"
+
+
+def register_copilot_provider(token_getter, default_model: str = "gpt-4o") -> None:
+    """Brainstem hook. `token_getter()` must return (bearer_token, endpoint)."""
+    global _copilot_token_provider, _copilot_default_model
+    _copilot_token_provider = token_getter
+    _copilot_default_model = default_model or "gpt-4o"
+
+
 # ─── Provider detection ─────────────────────────────────────────────────
 
 def detect_provider() -> str:
-    """Returns one of: 'azure-openai', 'openai', 'anthropic', 'fake'."""
+    """Returns one of: 'copilot', 'azure-openai', 'openai', 'anthropic', 'fake'."""
     if os.environ.get("LLM_FAKE") == "1":
         return "fake"
+    if _copilot_token_provider is not None:
+        return "copilot"
     if os.environ.get("AZURE_OPENAI_ENDPOINT") and os.environ.get("AZURE_OPENAI_API_KEY"):
         return "azure-openai"
     if os.environ.get("OPENAI_API_KEY"):
@@ -43,6 +73,7 @@ def provider_status() -> dict:
     """Diagnostic — what creds are present, what provider would be used."""
     return {
         "provider": detect_provider(),
+        "copilot_registered": _copilot_token_provider is not None,
         "azure_openai_configured": bool(
             os.environ.get("AZURE_OPENAI_ENDPOINT") and os.environ.get("AZURE_OPENAI_API_KEY")
         ),
@@ -227,6 +258,29 @@ def _normalize_openai_response(resp: dict) -> dict:
     return out
 
 
+# ─── Copilot (Tier 1 — uses the brainstem's live session) ───────────────
+
+def chat_copilot(messages: list, tools: list | None = None,
+                 tool_choice: str = "auto", model: str | None = None) -> dict:
+    """Chat via the host brainstem's already-authenticated Copilot session."""
+    if _copilot_token_provider is None:
+        raise RuntimeError("copilot provider not registered")
+    token, endpoint = _copilot_token_provider()
+    if not token or not endpoint:
+        raise RuntimeError("copilot session unavailable")
+    body = {"model": model or _copilot_default_model, "messages": messages}
+    if tools:
+        body["tools"] = tools
+        body["tool_choice"] = tool_choice
+    resp = _http_post(endpoint.rstrip("/") + "/chat/completions", {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {token}",
+        "Editor-Version": "vscode/1.95.0",
+        "Copilot-Integration-Id": "vscode-chat",
+    }, body)
+    return _normalize_openai_response(resp)
+
+
 # ─── Top-level dispatch ─────────────────────────────────────────────────
 
 def chat(messages: list, tools: list | None = None,
@@ -234,6 +288,8 @@ def chat(messages: list, tools: list | None = None,
     """Dispatch to the configured provider. Returns an OpenAI-shape
     assistant message dict."""
     p = detect_provider()
+    if p == "copilot":
+        return chat_copilot(messages, tools, tool_choice, model)
     if p == "azure-openai":
         return chat_azure_openai(messages, tools, tool_choice, model)
     if p == "openai":
@@ -241,6 +297,16 @@ def chat(messages: list, tools: list | None = None,
     if p == "anthropic":
         return chat_anthropic(messages, tools, tool_choice, model)
     return chat_fake(messages, tools, tool_choice, model)
+
+
+def call_llm(messages: list, model: str | None = None) -> str:
+    """Convenience for single-file rapps: send messages, get just the
+    assistant's text content back. Same provider precedence as chat()."""
+    try:
+        msg = chat(messages, model=model)
+    except Exception as e:
+        return f"(LLM dispatch error: {e})"
+    return msg.get("content") or ""
 
 
 if __name__ == "__main__":

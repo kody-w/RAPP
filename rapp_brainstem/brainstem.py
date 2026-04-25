@@ -742,7 +742,20 @@ def _register_shims():
     sys.modules["utils.storage_factory"] = sf_mod
     if hasattr(sys.modules["utils"], "__path__"):
         sys.modules["utils"].storage_factory = sf_mod
-    
+
+    # Hand utils.llm a callable for the brainstem's live Copilot session.
+    # Single-file rapps that import `call_llm` from utils.llm now route
+    # through whichever LLM is powering the engine itself — no per-rapp
+    # AZURE_OPENAI_* / OPENAI_API_KEY needed locally. Tier 2 vendors the
+    # same utils/llm.py but never registers a provider, so it falls
+    # through to env-configured Azure/OpenAI/Anthropic as before.
+    try:
+        from utils import llm as _llm_mod
+        _llm_mod.register_copilot_provider(get_copilot_token, MODEL)
+        print("[brainstem] utils.llm Copilot provider registered")
+    except Exception as e:
+        print(f"[brainstem] Could not register Copilot provider with utils.llm: {e}")
+
     _shims_registered = True
     print("[brainstem] Local storage shims registered")
 
