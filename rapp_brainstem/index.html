@@ -186,6 +186,13 @@
     cursor: pointer; font-family: inherit; transition: all .15s;
   }
   .btn:hover { border-color: #58a6ff; color: #58a6ff; }
+  .btn:disabled, .btn[disabled] {
+    opacity: .55; cursor: not-allowed;
+    /* Prevent the hover repaint from briefly lighting up a disabled
+       button on mouseover — most relevant for the Copilot sign-in
+       cooldown where the same button is rate-limit-locked. */
+    pointer-events: none;
+  }
   .btn.primary { background: #238636; border-color: #2ea043; color: #fff; }
   .btn.primary:hover { background: #2ea043; }
   .btn.danger { color: #f85149; }
@@ -2771,7 +2778,21 @@ async function copilotStartDeviceLogin() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ client_id: COPILOT_CLIENT_ID, scope: 'read:user' }),
   });
-  if (!r.ok) throw new Error(`device start ${r.status}: ${(await r.text()).slice(0,200)}`);
+  if (!r.ok) {
+    // Preserve the parsed body and status code on the thrown Error so
+    // the modal can render a tailored message for known failure modes
+    // (most importantly 429: GitHub's secondary rate limit on the
+    // device-code endpoint, which surfaces with a documentation_url
+    // and a "wait a few minutes" message — much friendlier as a one-
+    // line "GitHub is rate-limiting" banner than as raw JSON).
+    const text = await r.text();
+    let parsed = null;
+    try { parsed = JSON.parse(text); } catch {}
+    const err = new Error(parsed?.message || `device start ${r.status}: ${text.slice(0, 200)}`);
+    err.status = r.status;
+    err.parsed = parsed;
+    throw err;
+  }
   const d = await r.json();
   state.pendingDeviceLogin = {
     device_code: d.device_code,
@@ -2887,7 +2908,42 @@ function openCopilotSigninModal() {
 }
 function closeCopilotSigninModal() { $('#cpsignin-modal').classList.remove('open'); }
 
+// Lock the Sign-in button for N seconds. Used both as a tiny double-
+// click guard (~2s on a normal request-in-flight) and as a meaningful
+// rate-limit cooldown (~30s after a GitHub 429) so a frustrated re-
+// click doesn't keep extending the lockout. The button shows a live
+// countdown so the wait reads as intentional, not a hung UI.
+let _cpsigninCooldownTimer = null;
+function cooldownCpsigninButton(seconds) {
+  const btn = document.getElementById('cpsignin-go');
+  if (!btn) return;
+  if (_cpsigninCooldownTimer) { clearInterval(_cpsigninCooldownTimer); _cpsigninCooldownTimer = null; }
+  const original = btn.dataset.origText || btn.textContent;
+  btn.dataset.origText = original;
+  btn.disabled = true;
+  let remaining = Math.max(0, Math.floor(seconds));
+  const tick = () => {
+    if (remaining <= 0) {
+      clearInterval(_cpsigninCooldownTimer); _cpsigninCooldownTimer = null;
+      btn.disabled = false;
+      btn.textContent = original;
+      return;
+    }
+    btn.textContent = `Wait ${remaining}s…`;
+    remaining -= 1;
+  };
+  tick();
+  _cpsigninCooldownTimer = setInterval(tick, 1000);
+}
+
 async function runCopilotSignin() {
+  // Guard against double-clicks while a request is already in flight.
+  // The button's disabled state alone protects against pointer events,
+  // but a keyboard-driven Enter could still re-fire — short-circuit
+  // here too.
+  const btn = document.getElementById('cpsignin-go');
+  if (btn && btn.disabled) return;
+  cooldownCpsigninButton(2);  // baseline guard while the request runs
   $('#cpsignin-step1').hidden = true;
   $('#cpsignin-error').hidden = true;
   try {
@@ -2908,6 +2964,10 @@ async function runCopilotSignin() {
     $('#cpsignin-step2').hidden = true;
     $('#cpsignin-step3').hidden = false;
     refreshStatus();
+    // Released from cooldown once we're successfully in step3. The
+    // modal closes automatically below; the button reset is for the
+    // next time the modal is opened.
+    cooldownCpsigninButton(0);
     setTimeout(() => {
       closeCopilotSigninModal();
       // First-time sign-in → show the tutorial unless already dismissed.
@@ -2915,8 +2975,30 @@ async function runCopilotSignin() {
     }, 1200);
   } catch (e) {
     console.error(e);
-    $('#cpsignin-error').textContent = '⚠️ ' + e.message;
-    $('#cpsignin-error').hidden = false;
+    const errEl = $('#cpsignin-error');
+    if (e && e.status === 429) {
+      // GitHub's secondary rate limit on /login/device/code. Show a
+      // friendlier banner with a clickable docs link instead of the
+      // raw {"code":"429","documentation_url":"...","message":"..."}
+      // JSON dump. Hold the button down for 30s — long enough that
+      // a frustrated retry won't re-hit the same lockout immediately,
+      // short enough that the cooldown ends before GitHub's does.
+      const docUrl = (e.parsed && e.parsed.documentation_url)
+        || 'https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting';
+      const msg = (e.parsed && e.parsed.message)
+        || 'GitHub temporarily restricted access to the device-code endpoint. Wait a few minutes and try again.';
+      errEl.innerHTML =
+        `<strong>⏳ GitHub is rate-limiting us.</strong><br>` +
+        `<span style="font-size:12px;opacity:.85">${escapeHtml(msg)}</span><br>` +
+        `<a href="${escapeHtml(docUrl)}" target="_blank" rel="noopener" style="font-size:11px;color:#58a6ff">Why this happens →</a>`;
+      cooldownCpsigninButton(30);
+    } else {
+      errEl.textContent = '⚠️ ' + e.message;
+      // Non-429 errors: short cooldown so the button isn't instantly
+      // re-clickable but the user isn't stuck either.
+      cooldownCpsigninButton(3);
+    }
+    errEl.hidden = false;
     $('#cpsignin-step1').hidden = false;
     $('#cpsignin-step2').hidden = true;
   }
