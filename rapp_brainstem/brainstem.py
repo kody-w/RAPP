@@ -1140,6 +1140,7 @@ def manage_page():
     return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "web"), "manage.html")
 
 @app.route("/binder", methods=["GET"])
+@app.route("/binder.html", methods=["GET"])
 def binder_page():
     return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "web"), "binder.html")
 
