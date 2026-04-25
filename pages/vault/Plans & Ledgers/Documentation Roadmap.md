@@ -45,12 +45,26 @@ Items currently being written or staged for the next push.
 - **Home.** `Makefile` at repo root (would be a new file) or a `tests/check` shell wrapper.
 - **Ready when.** Anytime.
 
-### Apple Shortcuts harness (Watch / Siri / iPhone)
+### Apple Shortcuts harness — author the first `.shortcut` bundle
 
-- **What.** A `.shortcut` file hosted at `installer/shortcuts/brainstem-voice.shortcut` that lets a user ask their brainstem questions via Siri on iPhone, iPad, Mac, or Apple Watch. The shortcut prompts for input via dictation, POSTs to a configurable brainstem URL, and speaks the `|||VOICE|||` portion of the response aloud.
-- **Why.** Apple Watch + Siri become brainstem clients with **zero native code** — no watchOS app, no App Store review, no code signing, no per-OS-version regression testing. Distribution is the same shape as everything else (iCloud share link or hosted file). See [[Surfaces — Mobile, Watch, Voice]].
-- **Home.** `installer/shortcuts/` (new subdirectory). The README.md there documents the protocol so other authors can ship their own brainstem-compatible Shortcuts.
-- **Ready when.** Now — the brainstem already emits the `|||VOICE|||` slot designed for TTS, so the protocol is in place. The work is creating the Shortcut bundle (requires a Mac with Shortcuts.app), exporting it, and writing the install / configure docs.
+- **What.** Build *Brainstem Voice* in `Shortcuts.app` (5 actions per `installer/shortcuts/protocol.md`), export, sign with `installer/shortcuts/sign.sh`, drop the signed file at `installer/shortcuts/brainstem-voice/brainstem-voice.shortcut`, and paste the iCloud share link into that subdirectory's `README.md`.
+- **Why.** The directory, the protocol doc, the sign helper, the landing pages, and the per-shortcut subdirectory are all in place (shipped 2026-04-24). What remains is the actual GUI authoring — a 5-minute exercise that requires a Mac with Shortcuts.app. Once authored, every Apple surface (iPhone / iPad / Mac / Watch / HomePod / CarPlay) becomes a brainstem client.
+- **Home.** `installer/shortcuts/brainstem-voice/brainstem-voice.shortcut` (signed file) + iCloud share link in the same dir's README.
+- **Ready when.** Anytime — the maintainer authors it on their Mac in 5 minutes following `installer/shortcuts/brainstem-voice/index.html`'s walkthrough.
+
+### Apple Shortcuts MCP integration (one-time setup)
+
+- **What.** `claude mcp add apple-shortcuts -- npx -y mcp-server-apple-shortcuts` — installs the [recursechat MCP server](https://github.com/recursechat/mcp-server-apple-shortcuts) so Claude Code / Desktop can `list_shortcuts`, `run_shortcut`, `view_shortcut` from chat. Useful for verifying a freshly-authored Shortcut without leaving the conversation.
+- **Why.** Closes the loop on the authoring → testing flow. After building *Brainstem Voice* in Shortcuts.app, you can ask Claude *"run Brainstem Voice with input 'what's on my mind'"* and verify the voice slot speaks correctly.
+- **Home.** Configured per-machine; not in repo. The install command is documented in `installer/shortcuts/README.md` under the *MCP integration (optional)* section.
+- **Ready when.** Now (already installed on this maintainer's machine; ✓ Connected as of 2026-04-24). Documentation lives in the README.
+
+### Additional brainstem-compatible Shortcuts (Capture, Brief, …)
+
+- **What.** Build out the *planned* Shortcuts listed on `installer/shortcuts/index.html` — *Brainstem Capture* (Siri/Watch dictation → `manage_memory`), *Brainstem Brief* (HomePod/CarPlay morning brief). Each is a 5-minute author following the same protocol.
+- **Why.** Each Shortcut is a distinct *calibration surface* (per [[Every Twin Surface Is a Calibration Opportunity]]) and reaches a different moment in the user's day.
+- **Home.** New subdirectories under `installer/shortcuts/` mirroring `brainstem-voice/`'s shape.
+- **Ready when.** *Brainstem Voice* is shipped and the protocol has proven on at least one surface end-to-end.
 
 ### Android automation parallel
 
@@ -164,6 +178,7 @@ Items that started in *Now* or *Next* and have been published. **Append-only —
 - **2026-04-24** · Root cleanup pass 2 — `vault/` and `docs/` moved under `pages/`. Root down to 12 entries; `installer/` and `tests/` kept at root (install URL is sacred per Article V; tests aren't pages). All references updated; `vault-check.mjs` now scans `pages/vault/`; 598 wikilinks still resolve.
 - **2026-04-24** · PWA shipped on both web surfaces — `pages/vault/` and `rapp_brainstem/web/` are now installable on every desktop + mobile browser, offline-resilient. Vault uses stale-while-revalidate for markdown so notes are instant offline; brainstem caches its UI shell but passes `/chat` and API calls through to the network. iOS meta tags + manifest + SW + SVG icons. See [[Surfaces — Mobile, Watch, Voice]].
 - **2026-04-24** · "RAPP monorepo" → "RAPP platform" across CLAUDE.md, CONSTITUTION.md, README.md, vault notes, and the viewer chrome. The platform reaches further than one repo; the term should reflect that.
+- **2026-04-24** · `installer/shortcuts/` scaffolding shipped — directory, `README.md` (authoring workflow), `protocol.md` (5-action contract every brainstem-compatible Shortcut implements), `sign.sh` (wrapper around `shortcuts sign --mode anyone`), `index.html` (landing page listing available Shortcuts), `brainstem-voice/` subdirectory with its own `README.md` + `index.html` (5-minute walkthrough). Linked from `index.html` and `installer/index.html`. Apple Shortcuts MCP server installed via `claude mcp add` for verification flow. Authoring the actual `.shortcut` file is the next step — see *Now* tier above.
 
 ## Related
 

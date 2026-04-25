@@ -11,6 +11,7 @@ Living docs — the platform's working memory. Append, never delete.
 
 - ◐ [[Vault Build-Out Plan]] — phased build of the vault itself
 - ◐ [[Documentation Roadmap]] — Now / Next / Later for all platform docs
+- ◐ [[Platform Backlog]] — Now / Next / Later for engineering, design, infra, tooling
 - ◐ [[Release Ledger]] — append-only log of what shipped
 - ◐ [[Blog Roadmap]] — 28 blog posts mirrored to vault sources
 - ◐ [[Content Strategy]] — cross-medium plan (newsletter, YouTube, TikTok, X, LinkedIn, Instagram)

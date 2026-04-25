@@ -30,6 +30,18 @@ Each entry has the same shape:
 
 ## 2026
 
+### 2026-04-24 — installer/shortcuts/ scaffold + Apple Shortcuts MCP
+
+- **Type.** code + docs.
+- **Scope.**
+  - `installer/shortcuts/` directory created with `README.md` (authoring workflow), `protocol.md` (the 5-action contract every brainstem-compatible Shortcut implements), `sign.sh` (one-line wrapper around `shortcuts sign --mode anyone` — defaults to *people-who-know-me*, which makes hosted shortcuts uninstallable for strangers), `index.html` (landing page with cards for *Brainstem Voice* + *Brainstem Capture* + *Brainstem Brief* as the catalog grows).
+  - `installer/shortcuts/brainstem-voice/` subdirectory with `README.md` (install paths + 5-minute build walkthrough) and `index.html` (numbered action-by-action page styled to match the install widget). Status banner makes it clear the `.shortcut` binary isn't authored yet.
+  - Linked from `index.html` (root landing — new "Apple Shortcuts ↗" CTA) and `installer/index.html` (the install widget — new nav entry).
+  - **Apple Shortcuts MCP server installed** — `claude mcp add apple-shortcuts -- npx -y mcp-server-apple-shortcuts` (recursechat's implementation, the most popular). Connected and registered. Tools are `list_shortcuts`, `run_shortcut`, `view_shortcut` — useful for chat-side verification of authored Shortcuts. **None of the available MCPs creates Shortcuts** because the underlying macOS `shortcuts` CLI doesn't expose creation; Apple keeps authoring inside Shortcuts.app GUI and the `.shortcut` binary format is undocumented. Documented in `installer/shortcuts/README.md` under *MCP integration (optional)*.
+- **Why.** Apple Shortcuts is the platform's path to **Apple Watch + Siri + iPhone + iPad + Mac + HomePod + CarPlay** with zero native code, zero App Store review, zero per-OS-version regression testing. The brainstem already emits the `|||VOICE|||` slot designed for TTS, so the Shortcut is just a 5-action harness over the existing `/chat` contract. The constitutional posture is captured in [[Surfaces — Mobile, Watch, Voice]].
+- **Receipts.** 7 new files under `installer/shortcuts/`. `claude mcp list` shows `apple-shortcuts: ✓ Connected`. The `.shortcut` binary is still author-pending — follow the walkthrough at `installer/shortcuts/brainstem-voice/index.html` (5 minutes on a Mac with Shortcuts.app).
+- **Lesson.** The line between *what an MCP can give you* and *what the platform underneath can give you* is sharp. Three independent MCP implementations all wrap the same `shortcuts` CLI; none of them transcends its limits. When evaluating an MCP, look at the underlying tool's surface area first — the wrapper inherits everything below it, capability and limitation alike.
+
 ### 2026-04-24 — Session-pointer frontmatter convention
 
 - **Type.** docs (governance / convention).
