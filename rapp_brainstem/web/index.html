@@ -1404,9 +1404,9 @@
       Once installed, they're callable from chat as tools <em>and</em> via <code>POST /api/binder/agent</code>.
     </div>
     <div style="padding: 0 16px 10px;">
-      <button class="btn" id="btn-import-egg" title="Import a .egg cartridge">📥 Import .egg</button>
-      <input type="file" id="rapp-egg-import" accept=".egg,.zip" style="display:none">
-      <div id="rapp-egg-status" style="font-size:10px;color:#6e7681;margin-top:6px"></div>
+      <button class="btn" id="btn-import-rapp" title="Import a rapplication file">📥 Import rapplication</button>
+      <input type="file" id="rapp-import-file" accept=".rapplication,.egg,.zip" style="display:none">
+      <div id="rapp-io-status" style="font-size:10px;color:#6e7681;margin-top:6px"></div>
     </div>
     <div style="padding: 0 16px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #58a6ff;">
       Installed <span id="rapps-installed-count" style="color: #8b949e">(0)</span>
@@ -1503,7 +1503,7 @@
           ? `<button class="primary" data-open="${esc(r.id)}" data-url="${esc(uiUrl)}" data-name="${esc(displayName)}">Open ▸</button>`
           : '';
         const exportBtn = installed
-          ? `<button data-export="${esc(r.id)}" title="Download as .egg cartridge">📤 Export</button>`
+          ? `<button data-export="${esc(r.id)}" title="Download as rapplication file">📤 Export</button>`
           : '';
         const btn = installed
           ? `${openBtn}${exportBtn}<button class="danger" data-uninstall="${esc(r.id)}">Uninstall</button>`
@@ -1535,14 +1535,16 @@
         document.querySelectorAll('#rapps [data-open]').forEach(b =>
           b.addEventListener('click', () => openRappFrame(b.dataset.open, b.dataset.name, b.dataset.url)));
         document.querySelectorAll('#rapps [data-export]').forEach(b =>
-          b.addEventListener('click', () => exportRappEgg(b.dataset.export)));
+          b.addEventListener('click', () => exportRapp(b.dataset.export)));
       }
 
-      // Egg cartridge — virtual mirror of the local brainstem's flow.
-      // Routes through the binder service (tether or local origin).
-      async function exportRappEgg(id) {
-        const status = document.getElementById('rapp-egg-status');
-        if (status) status.textContent = `Packing ${id}.egg…`;
+      // Rapplication export / import — virtual mirror of the local
+      // brainstem's flow. Routes through the binder service (tether or
+      // local origin). Internal storage format is a zip; user only ever
+      // sees a `.rapplication` file.
+      async function exportRapp(id) {
+        const status = document.getElementById('rapp-io-status');
+        if (status) status.textContent = `Exporting ${id}…`;
         try {
           // api() returns {status, json}; for binary we go direct.
           const tetherBase = (state.settings.tetherUrl || '').replace(/\/+$/, '');
@@ -1557,7 +1559,7 @@
           const a = document.createElement('a');
           const disp = res.headers.get('Content-Disposition') || '';
           const m = disp.match(/filename="?([^"]+)"?/);
-          a.download = m ? m[1] : `${id}.egg`;
+          a.download = m ? m[1] : `${id}.rapplication.egg`;
           a.href = objUrl; a.click();
           URL.revokeObjectURL(objUrl);
           if (status) status.textContent = `Exported ${a.download}.`;
@@ -1565,8 +1567,8 @@
           if (status) status.textContent = 'Export failed: ' + e.message;
         }
       }
-      async function importRappEgg(file) {
-        const status = document.getElementById('rapp-egg-status');
+      async function importRapp(file) {
+        const status = document.getElementById('rapp-io-status');
         if (status) status.textContent = `Importing ${file.name}…`;
         try {
           const buf = await file.arrayBuffer();
@@ -1590,12 +1592,12 @@
       }
       // Wire the import button + file picker once.
       document.addEventListener('DOMContentLoaded', () => {
-        const btn = document.getElementById('btn-import-egg');
-        const file = document.getElementById('rapp-egg-import');
+        const btn = document.getElementById('btn-import-rapp');
+        const file = document.getElementById('rapp-import-file');
         if (btn && file) {
           btn.addEventListener('click', () => file.click());
           file.addEventListener('change', e => {
-            if (e.target.files[0]) importRappEgg(e.target.files[0]);
+            if (e.target.files[0]) importRapp(e.target.files[0]);
             e.target.value = '';
           });
         }

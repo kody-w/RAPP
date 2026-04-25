@@ -1433,24 +1433,25 @@
           </div>
         </div>
 
-        <!-- Egg backup (split from Swarms — different workflow) -->
+        <!-- Brainstem backup (whole-brainstem snapshot — distinct from
+             per-rapplication export/import in the Rapplications section). -->
         <div class="sp-section" id="sp-egg">
           <div class="sp-header" onclick="toggleSpSection('sp-egg')">
             <div class="sp-title-wrap">
-              <span class="sp-title">🥚 Egg backup</span>
-              <span class="sp-sub">export / restore your whole brainstem (.egg)</span>
+              <span class="sp-title">💾 Brainstem backup</span>
+              <span class="sp-sub">export / restore your whole brainstem</span>
             </div>
             <span class="sp-chev">›</span>
           </div>
           <div class="sp-body">
             <div style="font-size:10px; color:#8b949e; margin-bottom:8px; line-height:1.5">
-              Export your entire brainstem — agents, memories, soul, swarms — as a single .egg file.
+              Export your entire brainstem — agents, memories, soul, swarms — as a single backup file.
               Drop it into any brainstem to restore exactly where you left off.
             </div>
             <div class="panel-row">
-              <button class="panel-btn primary" onclick="exportEgg()">Export .egg</button>
-              <button class="panel-btn" onclick="document.getElementById('egg-import').click()">Import .egg</button>
-              <input type="file" id="egg-import" accept=".egg,.zip" style="display:none" onchange="importEgg(event)">
+              <button class="panel-btn primary" onclick="exportEgg()">Export</button>
+              <button class="panel-btn" onclick="document.getElementById('egg-import').click()">Import</button>
+              <input type="file" id="egg-import" accept=".rapplication,.egg,.zip" style="display:none" onchange="importEgg(event)">
             </div>
             <div class="panel-status" id="egg-status"></div>
           </div>
@@ -1533,14 +1534,14 @@
           </div>
           <div class="sp-body">
             <div class="panel-row" style="margin-bottom:8px">
-              <button class="panel-btn" onclick="document.getElementById('rapp-egg-import').click()" title="Import a .egg cartridge">📥 Import .egg</button>
-              <input type="file" id="rapp-egg-import" accept=".egg,.zip" style="display:none" onchange="importRappEgg(event)">
+              <button class="panel-btn" onclick="document.getElementById('rapp-import-file').click()" title="Import a rapplication file">📥 Import rapplication</button>
+              <input type="file" id="rapp-import-file" accept=".rapplication,.egg,.zip" style="display:none" onchange="importRapp(event)">
             </div>
             <div class="sp-sub-label">Installed <span id="sp-rapps-installed-n">(0)</span></div>
             <div id="sp-rapps-installed"></div>
             <div class="sp-sub-label" style="margin-top:12px">Catalog <span id="sp-rapps-catalog-n">(0)</span></div>
             <div id="sp-rapps-catalog"></div>
-            <div class="panel-status" id="rapp-egg-status" style="margin-top:6px"></div>
+            <div class="panel-status" id="rapp-io-status" style="margin-top:6px"></div>
           </div>
         </div>
 
@@ -2318,10 +2319,11 @@
     } catch (e) { console.error('Delete swarm failed', e); }
   }
 
-  // ── Egg Export/Import ──
+  // ── Whole-brainstem backup export/import ──
+  // (Per-rapplication export/import lives in the Rapplications panel.)
   async function exportEgg() {
     const status = document.getElementById('egg-status');
-    status.textContent = 'Packing .egg...';
+    status.textContent = 'Exporting…';
     try {
       const res = await fetch(`${API}/api/egg/export`, {method: 'POST'});
       if (!res.ok) {
@@ -2334,11 +2336,11 @@
       const a = document.createElement('a');
       const disp = res.headers.get('Content-Disposition') || '';
       const match = disp.match(/filename="?([^"]+)"?/);
-      a.download = match ? match[1] : 'digitaltwin.rappid.egg';
+      a.download = match ? match[1] : 'brainstem-backup.egg';
       a.href = url;
       a.click();
       URL.revokeObjectURL(url);
-      status.textContent = 'Egg exported successfully.';
+      status.textContent = 'Backup exported.';
     } catch (e) {
       status.textContent = 'Export failed: ' + e;
     }
@@ -2348,7 +2350,7 @@
     const file = event.target.files[0];
     if (!file) return;
     const status = document.getElementById('egg-status');
-    status.textContent = 'Importing .egg...';
+    status.textContent = 'Importing…';
     try {
       const fd = new FormData();
       fd.append('file', file);
@@ -3168,7 +3170,7 @@
         const openBtn = uiUrl
           ? `<button class="panel-btn primary" onclick="openRappFrame('${esc(e.id)}', ${JSON.stringify(displayName)}, '${esc(uiUrl)}')">Open ▸</button>`
           : '';
-        const exportBtn = `<button class="panel-btn" onclick="exportRappEgg('${esc(e.id)}')" title="Download as .egg cartridge">📤 Export</button>`;
+        const exportBtn = `<button class="panel-btn" onclick="exportRapp('${esc(e.id)}')" title="Download as rapplication file">📤 Export</button>`;
         return `<div class="rapp-row installed"><div class="rr-head"><span class="rr-name">${esc(displayName)}</span><span class="rr-ver">v${esc(e.version||catEntry?.version||'?')}</span></div><div class="rr-actions">${openBtn}${exportBtn}<button class="panel-btn danger" onclick="uninstallRapp('${esc(e.id)}')">Uninstall</button></div></div>`;
       }).join('') : '<div style="color:#8b949e;font-size:10px;font-style:italic">No RAPP swarms installed.</div>';
       catDiv.innerHTML = catalog.map(r => {
@@ -3238,12 +3240,13 @@
       closeRappFrame();
     }
   });
-  // ── Egg cartridge: per-rapp export / import ──
-  // Export bundles {manifest.json, agent.py, service.py?, state/...}
-  // into a .egg (zip) the user can share. Import reverses it.
-  async function exportRappEgg(id) {
-    const status = document.getElementById('rapp-egg-status');
-    if (status) status.textContent = `Packing ${id}.egg…`;
+  // ── Rapplication export / import ──
+  // Bundles a rapplication (agent + service + state) into a single
+  // shareable file. The internal data structure is a zip; the user
+  // just sees a .rapplication file.
+  async function exportRapp(id) {
+    const status = document.getElementById('rapp-io-status');
+    if (status) status.textContent = `Exporting ${id}…`;
     try {
       const res = await fetch(`${API}/api/binder/export/${encodeURIComponent(id)}`);
       if (!res.ok) {
@@ -3255,7 +3258,7 @@
       const a = document.createElement('a');
       const disp = res.headers.get('Content-Disposition') || '';
       const m = disp.match(/filename="?([^"]+)"?/);
-      a.download = m ? m[1] : `${id}.egg`;
+      a.download = m ? m[1] : `${id}.rapplication.egg`;
       a.href = url; a.click();
       URL.revokeObjectURL(url);
       if (status) status.textContent = `Exported ${a.download}.`;
@@ -3263,10 +3266,10 @@
       if (status) status.textContent = 'Export failed: ' + e.message;
     }
   }
-  async function importRappEgg(event) {
+  async function importRapp(event) {
     const file = event.target.files[0];
     if (!file) return;
-    const status = document.getElementById('rapp-egg-status');
+    const status = document.getElementById('rapp-io-status');
     if (status) status.textContent = `Importing ${file.name}…`;
     try {
       const buf = await file.arrayBuffer();

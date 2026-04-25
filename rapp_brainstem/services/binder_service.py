@@ -145,10 +145,15 @@ def _export_egg(rapp_id):
                     z.write(full, "state/" + rel)
 
     blob = buf.getvalue()
-    egg_filename = f"{rapp_id}.egg"
+    # Filename keeps both extensions: `.rapplication.egg` — `.rapplication`
+    # is what the user reads; `.egg` is the internal format identifier
+    # (zip-based archive). User-facing UI never mentions "egg" — only
+    # "rapplication" — but the on-disk file keeps the format hint so a
+    # tool inspecting the file can recognize it.
+    download_filename = f"{rapp_id}.rapplication.egg"
     return blob, 200, {
         "Content-Type": "application/zip",
-        "Content-Disposition": f'attachment; filename="{egg_filename}"',
+        "Content-Disposition": f'attachment; filename="{download_filename}"',
         "Content-Length": str(len(blob)),
     }
 
