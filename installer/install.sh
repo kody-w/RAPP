@@ -1291,7 +1291,26 @@ main() {
     if [ -d "$BRAINSTEM_HOME/src/.git" ]; then
         echo "Checking for updates..."
         if ! check_for_upgrade; then
-            # Already up to date — still verify everything works before launching
+            # VERSION matches, but UI changes and kernel-service updates
+            # ship without version bumps — pull latest origin/main anyway
+            # so a curl|bash always lands on the freshest files. Fast-
+            # forward only: we never clobber locally modified files
+            # (.env, runtime-installed agents, user data).
+            if cd "$BRAINSTEM_HOME/src" 2>/dev/null; then
+                git remote set-url origin "$REPO_URL" 2>/dev/null || true
+                git fetch --quiet origin main 2>/dev/null || true
+                local before_sha after_sha
+                before_sha=$(git rev-parse HEAD 2>/dev/null)
+                if git merge --ff-only --quiet origin/main 2>/dev/null; then
+                    after_sha=$(git rev-parse HEAD 2>/dev/null)
+                    if [ "$before_sha" != "$after_sha" ]; then
+                        echo -e "  ${GREEN}✓${NC} Pulled latest UI / kernel files (${before_sha:0:7} → ${after_sha:0:7})"
+                    fi
+                else
+                    echo -e "  ${YELLOW}⚠${NC} Could not fast-forward — local changes blocking. Run 'git -C $BRAINSTEM_HOME/src status' to inspect."
+                fi
+                cd - >/dev/null
+            fi
             check_prereqs
             setup_venv
             ensure_deps
