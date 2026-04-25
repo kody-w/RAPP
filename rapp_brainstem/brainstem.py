@@ -1067,6 +1067,14 @@ def chat():
             voice_or_main, _, twin_text = remainder.partition("|||TWIN|||")
             if VOICE_MODE and "|||VOICE|||" in reply:
                 result["voice_response"] = _unwrap(voice_or_main, "voice")
+            elif "|||VOICE|||" not in reply:
+                # No VOICE delimiter — the part before |||TWIN||| is the
+                # main reply. Without this branch, response/assistant_response
+                # would still contain the unsplit reply (with |||TWIN||| and
+                # the twin text embedded), which is wrong for programmatic
+                # clients reading those fields.
+                result["response"] = _unwrap(voice_or_main, "main")
+                result["assistant_response"] = result["response"]
             result["twin_response"] = _unwrap(twin_text, "twin") if TWIN_MODE else ""
         elif VOICE_MODE and "|||VOICE|||" in reply:
             result["voice_response"] = _unwrap(remainder, "voice")

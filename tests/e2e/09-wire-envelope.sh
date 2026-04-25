@@ -116,7 +116,29 @@ if [ "$A" != "$B" ]; then
 fi
 echo "PASS: response and assistant_response present with identical content"
 
-# ── 5. Unknown future field → ignored gracefully ─────────────────────
+# ── 5. Slot delimiters cleanly stripped from response field ──────────
+# When TWIN_MODE is on and the LLM emits |||TWIN|||, the `response` and
+# `assistant_response` fields must NOT contain the delimiter or the twin
+# text. Programmatic clients reading `response` should never see a leaked
+# slot delimiter — that's the whole point of the server-side split.
+RESP=$(curl -s -X POST "http://localhost:$PORT/chat" \
+    -H "Content-Type: application/json" \
+    -d '{"user_input":"reply with one short sentence and a brief twin observation"}')
+A=$(echo "$RESP" | python3 -c 'import sys,json; print(json.load(sys.stdin,strict=False).get("response",""))')
+B=$(echo "$RESP" | python3 -c 'import sys,json; print(json.load(sys.stdin,strict=False).get("assistant_response",""))')
+if echo "$A" | grep -qE '\|\|\|(VOICE|TWIN)\|\|\|'; then
+    echo "FAIL: response field leaks slot delimiter — server-side split is broken"
+    echo "  response: $A"
+    exit 1
+fi
+if echo "$B" | grep -qE '\|\|\|(VOICE|TWIN)\|\|\|'; then
+    echo "FAIL: assistant_response field leaks slot delimiter"
+    echo "  assistant_response: $B"
+    exit 1
+fi
+echo "PASS: slot delimiters stripped cleanly from response/assistant_response"
+
+# ── 6. Unknown future field → ignored gracefully ─────────────────────
 RESP=$(curl -s -w "\n%{http_code}" -X POST "http://localhost:$PORT/chat" \
     -H "Content-Type: application/json" \
     -d '{"user_input":"hi","future_field_v99":{"nested":[1,2,3]}}')
