@@ -548,9 +548,11 @@ ensure_deps() {
 }
 
 install_binder_locally() {
-    # Binder is now baked into the kernel — rapp_brainstem/services/binder_service.py
-    # ships with the brainstem itself. This step is a fallback for older clones
-    # that don't have the kernel copy yet (it copies from the rapp_store mirror).
+    # Binder is baked into the kernel — rapp_brainstem/services/binder_service.py
+    # ships with the brainstem itself. If it's missing (e.g. user uninstalled
+    # the binder rapp via the UI, which deleted its own service file as a
+    # rapp side-effect), restore from git HEAD so /api/binder/* keeps
+    # working. This is non-destructive — it only writes if the file is gone.
     local src_dir="$BRAINSTEM_HOME/src/rapp_brainstem"
     local services="$src_dir/services"
     local kernel_binder="$services/binder_service.py"
@@ -558,6 +560,13 @@ install_binder_locally() {
     mkdir -p "$services"
     if [ -f "$kernel_binder" ]; then
         echo -e "  ${GREEN}OK${NC} Binder (kernel-baked)"
+    elif [ -d "$BRAINSTEM_HOME/src/.git" ] && \
+         git -C "$BRAINSTEM_HOME/src" cat-file -e HEAD:rapp_brainstem/services/binder_service.py 2>/dev/null; then
+        # File is in git HEAD but missing on disk — restore it. Most common
+        # cause: user uninstalled the binder rapp from the catalog, which
+        # nuked the kernel-baked file as a side-effect.
+        git -C "$BRAINSTEM_HOME/src" checkout HEAD -- rapp_brainstem/services/binder_service.py 2>/dev/null
+        echo -e "  ${GREEN}OK${NC} Binder restored from git HEAD"
     elif [ -f "$store_binder" ]; then
         cp "$store_binder" "$kernel_binder"
         echo -e "  ${GREEN}OK${NC} Binder installed (from rapp_store mirror)"

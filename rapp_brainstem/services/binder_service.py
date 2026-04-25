@@ -325,8 +325,18 @@ def handle(method, path, body):
         if not entry:
             return {"error": "not installed"}, 404
 
-        _remove_from_dir(_AGENTS_DIR, entry.get("agent_filename") or entry.get("filename"))
-        _remove_from_dir(_SERVICES_DIR, entry.get("service_filename"))
+        # Kernel-protected files: the binder is baked into the kernel and
+        # cannot be self-removed even if the catalog still lists it. Same
+        # principle for any future kernel-baked rapp — the uninstall just
+        # forgets the entry from binder.json without touching the file.
+        # Without this, uninstalling the binder rapp from the UI deletes
+        # this very service as a side-effect and breaks /api/binder/*.
+        KERNEL_PROTECTED = {"binder", "binder_service.py"}
+        agent_fn = entry.get("agent_filename") or entry.get("filename")
+        svc_fn = entry.get("service_filename")
+        if rapp_id not in KERNEL_PROTECTED and (svc_fn or "") not in KERNEL_PROTECTED:
+            _remove_from_dir(_AGENTS_DIR, agent_fn)
+            _remove_from_dir(_SERVICES_DIR, svc_fn)
 
         state["installed"] = [e for e in state["installed"] if e.get("id") != rapp_id]
         _write(state)
