@@ -90,6 +90,33 @@
   #model-sel:hover { border-color: #58a6ff; }
   #model-sel:focus { border-color: #1f6feb; }
 
+  /* Rapplication iframe overlay — matches the local brainstem's #rapp-frame
+     so both pages take over the surface the same way. ui_url (absolute)
+     loads any rapp UI; relative URLs route through the tether to the
+     local brainstem's /api/<service>/ endpoint. */
+  #rapp-frame {
+    display: none; position: fixed; inset: 0;
+    z-index: 40; background: #0d1117; flex-direction: column;
+  }
+  #rapp-frame.open { display: flex; }
+  #rapp-frame .rf-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 14px; background: #161b22;
+    border-bottom: 1px solid #21262d;
+    font-size: 12px; color: #c9d1d9; flex-shrink: 0;
+  }
+  #rapp-frame .rf-title { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+  #rapp-frame .rf-title .rf-id { color: #6e7681; font-family: "SF Mono", monospace; font-size: 10px; font-weight: 400; }
+  #rapp-frame .rf-close {
+    background: transparent; border: 1px solid #30363d;
+    color: #c9d1d9; padding: 3px 10px; border-radius: 4px;
+    font-size: 11px; cursor: pointer;
+  }
+  #rapp-frame .rf-close:hover { border-color: #f85149; color: #f85149; }
+  #rapp-frame iframe {
+    flex: 1; width: 100%; height: 100%; border: none; background: #fff;
+  }
+
   /* ── Pop-down panels (was slide drawers) ── */
   aside {
     display: none;
@@ -1346,8 +1373,8 @@
         <div class="settings-quick-row">
           <button class="btn" id="btn-binder">📒 Binder</button>
           <button class="btn" id="btn-rapps-from-settings">📦 Rapplications</button>
-          <button class="btn" id="btn-install">⬇ Install</button>
-          <button class="btn" id="btn-deploy-swarm">🐝 Deploy as Swarm</button>
+          <button class="btn" id="btn-install">💻 Install brainstem</button>
+          <button class="btn" id="btn-deploy-swarm">🚀 Deploy to cloud</button>
         </div>
       </div>
     </div>
@@ -1459,8 +1486,19 @@
         const displayName = r.name || r.id;
         const cat = r.category ? `<span style="font-size:9px;background:#1f6feb22;color:#58a6ff;padding:1px 5px;border-radius:3px;margin-left:6px">${esc(r.category)}</span>` : '';
         const svc = r.service_filename ? `<span style="font-size:9px;color:#8b949e;margin-left:4px">+ service</span>` : '';
+        // A rapplication's UI loads in the iframe overlay. Resolution rules:
+        //   - r.ui_url (absolute) → use directly (works standalone or tethered)
+        //   - r.service_filename + tether → tetherUrl + /api/<svc>/
+        //   - r.service_filename + no tether → no Open button (we can't reach it)
+        const svcName = (r.service_filename || '').replace(/_service\.py$/, '');
+        const tetherBase = (state.settings.tetherUrl || '').replace(/\/+$/, '');
+        const uiUrl = r.ui_url
+          || (svcName && tetherBase ? `${tetherBase}/api/${svcName}/` : '');
+        const openBtn = (installed && uiUrl)
+          ? `<button class="primary" data-open="${esc(r.id)}" data-url="${esc(uiUrl)}" data-name="${esc(displayName)}">Open ▸</button>`
+          : '';
         const btn = installed
-          ? `<button class="danger" data-uninstall="${esc(r.id)}">Uninstall</button>`
+          ? `${openBtn}<button class="danger" data-uninstall="${esc(r.id)}">Uninstall</button>`
           : `<button class="primary" data-install="${esc(r.id)}">Install</button>`;
         return `
           <div class="rapp-row ${installed ? 'installed' : ''}">
@@ -1486,6 +1524,8 @@
           b.addEventListener('click', () => install(b.dataset.install)));
         document.querySelectorAll('#rapps [data-uninstall]').forEach(b =>
           b.addEventListener('click', () => uninstall(b.dataset.uninstall)));
+        document.querySelectorAll('#rapps [data-open]').forEach(b =>
+          b.addEventListener('click', () => openRappFrame(b.dataset.open, b.dataset.name, b.dataset.url)));
       }
 
       async function install(id) {
@@ -1511,6 +1551,28 @@
         localStorage.setItem('rapp_binder_installed', JSON.stringify(list.filter(e => e.id !== id)));
         await load();
       }
+
+      // Rapplication iframe overlay — exposed on window so the inline
+      // close-button in the overlay markup can call it. Same shape as the
+      // local brainstem's openRappFrame/closeRappFrame so a user moving
+      // between pages sees identical behavior.
+      window.openRappFrame = function(id, name, url) {
+        document.getElementById('rf-name').textContent = name || id;
+        document.getElementById('rf-id').textContent = id ? `· ${id}` : '';
+        document.getElementById('rf-iframe').src = url;
+        document.getElementById('rapp-frame').classList.add('open');
+        // Close any open aside so the iframe is fully visible.
+        document.querySelectorAll('aside.open').forEach(a => a.classList.remove('open'));
+      };
+      window.closeRappFrame = function() {
+        document.getElementById('rapp-frame').classList.remove('open');
+        document.getElementById('rf-iframe').src = 'about:blank';
+      };
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && document.getElementById('rapp-frame')?.classList.contains('open')) {
+          window.closeRappFrame();
+        }
+      });
 
       // Entry points: the old top-bar #btn-rapps (removed on this branch,
       // left tolerant in case anyone still ships it) and the new
@@ -1569,6 +1631,21 @@
     </div>
   </aside>
 </header>
+
+<!-- Rapplication iframe overlay. Each installed rapp that ships a service
+     (or declares ui_url) gets an "Open ▸" button. Clicking opens this
+     overlay with the rapp's HTML UI. Close returns to chat. Mirrors the
+     local brainstem's #rapp-frame. -->
+<div id="rapp-frame" role="dialog" aria-modal="true">
+  <div class="rf-head">
+    <div class="rf-title">
+      <span id="rf-name">Rapplication</span>
+      <span class="rf-id" id="rf-id"></span>
+    </div>
+    <button class="rf-close" onclick="closeRappFrame()">✕ Close</button>
+  </div>
+  <iframe id="rf-iframe" title="Rapplication UI"></iframe>
+</div>
 
 <div id="chat">
   <div id="chat-watermark">
@@ -1652,7 +1729,7 @@
 <!-- Install modal -->
 <div class="modal" id="install-modal">
   <div class="panel">
-    <header><span class="ttl">💻 Install</span><button class="close" id="install-close">×</button></header>
+    <header><span class="ttl">💻 Install brainstem</span><button class="close" id="install-close">×</button></header>
     <div class="body">
       <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
         <button class="btn install-flavor active" data-flavor="brainstem">Local brainstem</button>
@@ -1682,7 +1759,7 @@
 <!-- Deploy-as-Swarm modal -->
 <div class="modal" id="swarm-modal">
   <div class="panel">
-    <header><span class="ttl">🐝 Deploy as Swarm</span><button class="close" id="swarm-close">×</button></header>
+    <header><span class="ttl">🚀 Deploy to cloud</span><button class="close" id="swarm-close">×</button></header>
     <div class="body">
       <div class="banner">
         Bundles every agent in your binder into a <strong>swarm package</strong> — a single JSON file containing each agent's source, the system soul, and a one-line install command. Drop the bundle on any machine running a Tier 2 endpoint (locally or in Azure) and you'll have a permanent, callable swarm at a known URL.
@@ -1894,7 +1971,7 @@ const SOUL_KNOWLEDGE = `<knowledge>
 - You can discover and call agents — Python files that extend BasicAgent.
 - The user may be at any stage of the RAPP journey:
   - Tier 1 — Brainstem: local Python or this browser-only twin (where they are now).
-  - Tier 2 — Swarm: a deployable bundle of agents pushed to a RAPP Swarms endpoint (Azure Functions with persistent memory). Runs locally first, deploys to Azure when ready.
+  - Tier 2 — Swarm: a deployable bundle of agents pushed to a swarm endpoint (Azure Functions with persistent memory). Runs locally first, deploys to Azure when ready.
   - Tier 3 — Nervous System: Copilot Studio + M365/Teams.
 - Each tier builds on the last — don't overwhelm users with later tiers unless they ask.
 - A "swarm" = the agents currently loaded in the brainstem, packaged together and pushed to a permanent endpoint. Users can have many swarms for different use cases (sales swarm, support swarm, ops swarm) and switch between them.
@@ -1920,7 +1997,7 @@ code auth automatically.
 
 If the user already has agents loaded in the brainstem and asks to
 "deploy this as a swarm" or "push these agents to a swarm endpoint",
-point them at the brainstem's Settings → Deploy as Swarm — it bundles
+point them at the brainstem's Settings → Deploy to cloud — it bundles
 the current binder + soul into a swarm package they can install on any
 machine running the Tier 2 endpoint, locally or in Azure.
 
@@ -1928,7 +2005,7 @@ machine running the Tier 2 endpoint, locally or in Azure.
 
 <important>
 Do NOT give generic Azure deployment advice. Give them the one-liner
-or point them at the in-brainstem Deploy as Swarm action. Swarms run
+or point them at the in-brainstem Deploy to cloud action. Swarms run
 locally first — Azure deployment comes later, only when they ask.
 </important>
 </tier_2_swarm>`;
@@ -2097,10 +2174,18 @@ const state = {
     // settings only so legacy callers / exports still see a value.
     soul: '',
     handMode: 'pills',           // 'pills' (default — clean for business users) | 'cards' (holo)
-    // Agent registries we pull Browse listings from. Each entry is `owner/repo`
-    // and must publish a registry.json at the repo root in rapp-registry/1.0.
-    // The default kody-w/RAR is the canonical library and can't be removed.
-    sources: ['kody-w/RAR'],
+    // Agent registries we pull Browse listings from. Each entry is `owner/repo`.
+    // Three repo schemas are supported by the resolver below:
+    //   1. registry.json          (rapp-registry/1.x  — kody-w/RAR)
+    //   2. manifest.json          (agent-manifest     — kody-w/AI-Agent-Templates)
+    //   3. rapp_store/index.json  (rapp-store         — kody-w/RAPP — these are
+    //                              composed rapplications; installing routes
+    //                              through /api/binder/install for SHA-pinned
+    //                              server-side delivery, not a raw fetch.)
+    // PINNED_SOURCES below are hard-coded defaults — re-injected at load
+    // time so adding a new default propagates to existing users — and are
+    // protected from removal in the UI. User-added sources are removable.
+    sources: ['kody-w/RAR', 'kody-w/RAPP'],
     // Tether to a local brainstem (rapp_brainstem/brainstem.py on :7071, which
     // speaks the rapp-tether/1.0 wire shape). When connected, agent calls
     // route through the local Python process instead of Pyodide so they get
@@ -2157,9 +2242,21 @@ const LS = {
   del(k)    { localStorage.removeItem('rapp_'+k); },
 };
 
+// Sources that ship pinned by default. Re-injected at load time so adding
+// a new default actually reaches existing users (whose saved settings
+// would otherwise overwrite the in-code defaults). Protected from removal
+// via removeSource() — users add and remove their own sources freely.
+const PINNED_SOURCES = ['kody-w/RAR', 'kody-w/RAPP'];
+
 function loadSettings() {
   const saved = LS.get('settings', null);
   if (saved) Object.assign(state.settings, saved);
+  // Re-inject any pinned sources not already in the user's list. Idempotent
+  // — running twice is a no-op. Order: pinned first, then user-added, in
+  // their existing order.
+  if (!Array.isArray(state.settings.sources)) state.settings.sources = [];
+  const userAdded = state.settings.sources.filter(s => !PINNED_SOURCES.includes(s));
+  state.settings.sources = [...PINNED_SOURCES, ...userAdded];
   // One-shot migration from the very first apiBase/apiKey schema (no provider field).
   if (saved && saved.apiBase && !saved.provider) {
     if (/openai\.com/.test(saved.apiBase)) state.settings.provider = 'openai';
@@ -2922,28 +3019,101 @@ function renderAgents() {
    We fetch from raw.githubusercontent.com directly — no auth needed for
    public repos, no worker proxy required. */
 
-const RAR_DEFAULT = 'kody-w/RAR';
 state.registries = {};   // { 'owner/repo': { agents: [...], _err?: string } }
 
 function normalizeSourceInput(s) {
   if (!s) return null;
   s = s.trim();
-  // Strip github.com URL prefix if pasted; keep just owner/repo
+  // Strip github.com URL prefix if pasted; also accept github.io URLs since
+  // those map 1:1 to a github repo (kody-w.github.io/AI-Agent-Templates →
+  // kody-w/AI-Agent-Templates).
   s = s.replace(/^https?:\/\/(www\.)?github\.com\//i, '').replace(/\.git$/, '');
+  s = s.replace(/^https?:\/\/([\w-]+)\.github\.io\/([\w.-]+).*$/i, '$1/$2');
   s = s.replace(/\/+$/, '');
   if (!/^[\w.-]+\/[\w.-]+$/.test(s)) return null;
   return s;
 }
 
+// Fetch a source registry, trying every schema we support. Returns a
+// normalized object: { agents: [...], _branch, _schema }. `agents[]`
+// always carries the fields the Browse renderer reads — name, description,
+// _file, plus optional display_name/author/category/tags/quality_tier — and
+// an `_install_method` ("raw" | "binder") that tells installFromRegistry
+// whether to fetch the file directly from raw.githubusercontent.com or to
+// route through the brainstem's /api/binder/install endpoint.
 async function fetchSourceRegistry(repo) {
-  // Try main first, fall back to master if 404
   for (const branch of ['main', 'master']) {
+    // Schema 1 — rapp-registry/1.x (registry.json at repo root).
+    // Single-file agents minted client-side by raw fetch + Card.mintCard.
     try {
       const r = await fetch(`https://raw.githubusercontent.com/${repo}/${branch}/registry.json`, { cache: 'no-store' });
-      if (!r.ok) continue;
-      const reg = await r.json();
-      reg._branch = branch;
-      return reg;
+      if (r.ok) {
+        const reg = await r.json();
+        reg._branch = branch;
+        reg._schema = 'rapp-registry';
+        if (Array.isArray(reg.agents)) {
+          for (const a of reg.agents) {
+            if (!a._install_method) a._install_method = 'raw';
+          }
+          return reg;
+        }
+      }
+    } catch {}
+    // Schema 2 — agent-manifest (manifest.json with agents:[]).
+    // Used by kody-w/AI-Agent-Templates. Single-file agents, raw install.
+    try {
+      const r = await fetch(`https://raw.githubusercontent.com/${repo}/${branch}/manifest.json`, { cache: 'no-store' });
+      if (r.ok) {
+        const m = await r.json();
+        if (Array.isArray(m.agents)) {
+          return {
+            _branch: branch,
+            _schema: 'agent-manifest',
+            schema: 'agent-manifest/1.0',
+            agents: m.agents.map(a => ({
+              name: a.name || a.id || a.filename || 'agent',
+              display_name: a.name || a.id,
+              description: a.description || '',
+              author: m.repository || repo,
+              category: a.type || 'general',
+              tags: Array.isArray(a.features) ? a.features : [],
+              quality_tier: a.quality_tier || 'community',
+              icon: a.icon || '',
+              _file: a.path || (a.filename ? `agents/${a.filename}` : ''),
+              _install_method: 'raw',
+            })).filter(a => a._file),
+          };
+        }
+      }
+    } catch {}
+    // Schema 3 — rapp-store (rapp_store/index.json with rapplications:[]).
+    // Composed multi-class singletons — installs go through the brainstem's
+    // binder endpoint so the server validates the SHA pin before writing.
+    try {
+      const r = await fetch(`https://raw.githubusercontent.com/${repo}/${branch}/rapp_store/index.json`, { cache: 'no-store' });
+      if (r.ok) {
+        const m = await r.json();
+        if (Array.isArray(m.rapplications)) {
+          return {
+            _branch: branch,
+            _schema: 'rapp-store',
+            schema: m.schema || 'rapp-store/1.0',
+            agents: m.rapplications.map(r => ({
+              name: r.manifest_name || r.name || r.id,
+              display_name: r.name || r.manifest_name,
+              description: r.summary || r.tagline || '',
+              author: r.publisher || r.produced_by || repo,
+              category: r.category || 'rapplication',
+              tags: Array.isArray(r.tags) ? r.tags : [],
+              quality_tier: 'rapplication',
+              version: r.version || '',
+              _file: r.singleton_filename || `${r.id}.py`,
+              _install_method: 'binder',
+              _rapp_id: r.id,
+            })).filter(a => a._rapp_id),
+          };
+        }
+      }
     } catch {}
   }
   return null;
@@ -2979,7 +3149,7 @@ function renderSourcesList() {
   list.innerHTML = '';
   for (const repo of state.settings.sources) {
     const reg = state.registries[repo];
-    const isDefault = repo === RAR_DEFAULT;
+    const isPinned = PINNED_SOURCES.includes(repo);
     const row = document.createElement('div');
     row.className = 'src-row';
     let statusHtml = '<span class="src-status">…</span>';
@@ -2989,11 +3159,11 @@ function renderSourcesList() {
     }
     row.innerHTML = `
       <span>${escapeHtml(repo)}</span>
-      ${isDefault ? '<span class="src-default">DEFAULT</span>' : ''}
+      ${isPinned ? '<span class="src-default">DEFAULT</span>' : ''}
       ${statusHtml}
-      ${isDefault ? '' : '<button class="src-rm" title="Remove source">✕</button>'}
+      ${isPinned ? '' : '<button class="src-rm" title="Remove source">✕</button>'}
     `;
-    if (!isDefault) {
+    if (!isPinned) {
       row.querySelector('.src-rm').addEventListener('click', () => removeSource(repo));
     }
     list.appendChild(row);
@@ -3019,7 +3189,7 @@ async function addSource(input) {
 }
 
 function removeSource(repo) {
-  if (repo === RAR_DEFAULT) return;
+  if (PINNED_SOURCES.includes(repo)) return;
   state.settings.sources = state.settings.sources.filter(s => s !== repo);
   delete state.registries[repo];
   LS.set('settings', state.settings);
@@ -3091,9 +3261,30 @@ function renderBrowse() {
 }
 
 async function installFromRegistry(repo, branch, agent, btn) {
-  if (!agent._file) { alert('This registry entry has no _file path.'); return; }
   if (btn) { btn.classList.add('loading'); btn.textContent = '…'; }
   try {
+    if (agent._install_method === 'binder') {
+      // Rapplication — let the brainstem fetch + SHA-validate + write the
+      // file server-side. We just need the rapp id.
+      if (!agent._rapp_id) throw new Error('rapplication entry has no _rapp_id');
+      const tetherBase = (state.settings.tetherUrl || '').replace(/\/+$/, '') || '';
+      const url = (tetherBase || '') + '/api/binder/install';
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id: agent._rapp_id }),
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status} from /api/binder/install`);
+      const j = await r.json();
+      if (j.status !== 'ok') throw new Error(j.error || 'binder install failed');
+      // The brainstem owns the file on disk; we don't add a client-side
+      // card. Re-render Browse so the row reflects "installed" state via
+      // a /api/binder GET on next refresh (or just toggle the button).
+      if (btn) { btn.classList.remove('loading'); btn.classList.add('installed'); btn.textContent = '✓ Installed'; btn.disabled = true; }
+      return;
+    }
+    // Default — raw install for single-file agents.
+    if (!agent._file) throw new Error('registry entry has no _file path');
     const url = `https://raw.githubusercontent.com/${repo}/${branch}/${agent._file}`;
     const r = await fetch(url, { cache: 'no-store' });
     if (!r.ok) throw new Error(`HTTP ${r.status} fetching ${agent._file}`);
@@ -3103,7 +3294,7 @@ async function installFromRegistry(repo, branch, agent, btn) {
     RAPP.Binder.addCard(state.binder, card);
     persistBinder();
     renderBinder(); renderAgents(); renderHand();
-    renderBrowse();   // re-render to flip the button to "Installed"
+    renderBrowse();
   } catch (e) {
     alert(`Install failed: ${e.message}`);
     if (btn) { btn.classList.remove('loading'); btn.textContent = '+ Add'; }
@@ -4730,7 +4921,7 @@ const INSTALL_CMDS = {
 };
 const INSTALL_BLURBS = {
   brainstem: 'The full local-first stack — Python + Flask + venv + GitHub OAuth. Installs to <code>~/.brainstem/src/rapp_brainstem/</code>, then you can <code>brainstem</code> from any shell. Also speaks the tether protocol on <code>localhost:7071</code> — this browser brainstem can route agent calls through it for real OS access.',
-  swarm: 'Stdlib-only multi-tenant swarm server. Hosts <em>many</em> swarms behind one endpoint at <code>localhost:7080</code>, each isolated by GUID — agents and per-user memory both routed by <code>swarm_guid</code> + <code>user_guid</code>. Push from <strong>Settings → Deploy as Swarm</strong>.',
+  swarm: 'Stdlib-only multi-tenant swarm server. Hosts <em>many</em> swarms behind one endpoint at <code>localhost:7080</code>, each isolated by GUID — agents and per-user memory both routed by <code>swarm_guid</code> + <code>user_guid</code>. Push from <strong>Settings → Deploy to cloud</strong>.',
 };
 function detectOS() {
   const ua = navigator.userAgent;
@@ -4967,7 +5158,7 @@ const TUTORIAL_STEPS = [
     desc: 'Drag any <code>*_agent.py</code> file onto the window to install it. Or click <strong>Agents</strong> in the header → <strong>Paste source</strong>. Or import a <strong>card.json</strong> from the binder drawer — the source is embedded, sha256-verified, and reconstructs exactly.',
     cta: 'Single-file agents are sacred (SPEC §0). One file = one agent = one perform(). The same file works in the local brainstem and the cloud tier unchanged.' },
   { phase: '🧬 Mastery', title: 'Want the real one on your machine?', time: '~3 min',
-    desc: 'Click <strong>💻 Install</strong> in the header for the canonical one-line installer (Mac / Linux / Windows). It puts the brainstem at <code>~/.brainstem/src/rapp_brainstem/</code>; then just type <code>brainstem</code> in any shell.',
+    desc: 'Click <strong>💻 Install brainstem</strong> in the header for the canonical one-line installer (Mac / Linux / Windows). It puts the brainstem at <code>~/.brainstem/src/rapp_brainstem/</code>; then just type <code>brainstem</code> in any shell.',
     tip: 'The local brainstem talks to the same Copilot endpoint you\'re using here. Files round-trip between the two.' },
   { phase: '🧬 Mastery', title: 'You\'re set', time: '🏆',
     desc: 'You\'ve got chat, memory, agents, and a binder. Re-open this tutorial anytime from <strong>⚙ Settings → Show tutorial</strong> at the bottom of the panel.' },

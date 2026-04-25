@@ -593,6 +593,15 @@
     font-size: 12px; font-weight: 600; color: #e6edf3;
     display: flex; align-items: center; gap: 6px;
   }
+  /* One-line subtitle under each section title — small, muted, no wrap.
+     Disambiguates section names so a new user can tell "Swarms" (runtime
+     grouping) from "Rapplications" (composed bundles) at a glance. */
+  .sp-header .sp-title-wrap { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .sp-header .sp-sub {
+    font-size: 10px; color: #6e7681; font-weight: 400;
+    line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  body.light-mode .sp-header .sp-sub { color: #57606a; }
   .sp-header .sp-chev {
     font-size: 10px; color: #8b949e;
     transition: transform 0.2s;
@@ -634,6 +643,36 @@
   }
 
   /* RAPP Swarms rows */
+  /* Rapplication iframe overlay — full-screen takeover when a rapp UI
+     is opened. Above chat, below #settings-panel (z:50) so the panel can
+     still be dismissed. The iframe fills the body; the header strip
+     carries the rapp name + close button so the user always has a way
+     back to chat. */
+  #rapp-frame {
+    display: none; position: fixed; inset: 0;
+    z-index: 40; background: #0d1117; flex-direction: column;
+  }
+  #rapp-frame.open { display: flex; }
+  #rapp-frame .rf-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 14px; background: #161b22;
+    border-bottom: 1px solid #21262d;
+    font-size: 12px; color: #c9d1d9; flex-shrink: 0;
+  }
+  #rapp-frame .rf-title { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+  #rapp-frame .rf-title .rf-id { color: #6e7681; font-family: "SF Mono", monospace; font-size: 10px; font-weight: 400; }
+  #rapp-frame .rf-close {
+    background: transparent; border: 1px solid #30363d;
+    color: #c9d1d9; padding: 3px 10px; border-radius: 4px;
+    font-size: 11px; cursor: pointer;
+  }
+  #rapp-frame .rf-close:hover { border-color: #f85149; color: #f85149; }
+  #rapp-frame iframe {
+    flex: 1; width: 100%; height: 100%; border: none; background: #fff;
+  }
+  body.light-mode #rapp-frame { background: #fff; }
+  body.light-mode #rapp-frame .rf-head { background: #f6f8fa; border-bottom-color: #d0d7de; color: #24292e; }
+
   .rapp-row {
     background: #0d1117; border: 1px solid #21262d; border-radius: 6px;
     padding: 8px 10px; margin-bottom: 6px; font-size: 11px;
@@ -1356,7 +1395,10 @@
              with just three labeled buttons (Agents / Voice / Settings). -->
         <div class="sp-section" id="sp-quick">
           <div class="sp-header" onclick="toggleSpSection('sp-quick')">
-            <span class="sp-title">⚡ Quick Actions</span>
+            <div class="sp-title-wrap">
+              <span class="sp-title">⚡ Quick Actions</span>
+              <span class="sp-sub">theme · twin · diagnostics</span>
+            </div>
             <span class="sp-chev">›</span>
           </div>
           <div class="sp-body">
@@ -1370,14 +1412,16 @@
           </div>
         </div>
 
-        <!-- Swarms & Egg -->
+        <!-- Swarms (runtime grouping) -->
         <div class="sp-section" id="sp-swarms">
           <div class="sp-header" onclick="toggleSpSection('sp-swarms'); loadSwarmsSettings();">
-            <span class="sp-title">🐝 Swarms & Egg</span>
+            <div class="sp-title-wrap">
+              <span class="sp-title">🐝 Swarms</span>
+              <span class="sp-sub">stack vs. converged — how loaded agents present</span>
+            </div>
             <span class="sp-chev">›</span>
           </div>
           <div class="sp-body">
-            <div class="sp-sub-label">Swarms</div>
             <div style="font-size:10px; color:#6e7681; margin-bottom:6px; line-height:1.4">
               Load multiple swarms for layered agent access. Toggle mode: <strong style="color:#c9d1d9">stack</strong> (individual agents) or <strong style="color:#c9d1d9">converged</strong> (unified).
             </div>
@@ -1386,7 +1430,19 @@
               <input type="text" id="sp-new-swarm" placeholder="New swarm name..." style="flex:1">
               <button class="panel-btn primary" onclick="createSwarm()">+ Add</button>
             </div>
-            <div class="sp-sub-label" style="margin-top:14px">Portable Egg (.egg)</div>
+          </div>
+        </div>
+
+        <!-- Egg backup (split from Swarms — different workflow) -->
+        <div class="sp-section" id="sp-egg">
+          <div class="sp-header" onclick="toggleSpSection('sp-egg')">
+            <div class="sp-title-wrap">
+              <span class="sp-title">🥚 Egg backup</span>
+              <span class="sp-sub">export / restore your whole brainstem (.egg)</span>
+            </div>
+            <span class="sp-chev">›</span>
+          </div>
+          <div class="sp-body">
             <div style="font-size:10px; color:#8b949e; margin-bottom:8px; line-height:1.5">
               Export your entire brainstem — agents, memories, soul, swarms — as a single .egg file.
               Drop it into any brainstem to restore exactly where you left off.
@@ -1403,7 +1459,10 @@
         <!-- Voice Settings -->
         <div class="sp-section" id="sp-voice">
           <div class="sp-header" onclick="toggleSpSection('sp-voice')">
-            <span class="sp-title">🔊 Voice Settings</span>
+            <div class="sp-title-wrap">
+              <span class="sp-title">🔊 Voice</span>
+              <span class="sp-sub">TTS provider · voice selection · keys</span>
+            </div>
             <span class="sp-chev">›</span>
           </div>
           <div class="sp-body">
@@ -1463,10 +1522,13 @@
           </div>
         </div>
 
-        <!-- Rapplications -->
+        <!-- Rapplications (the rapp store — composed multi-class singletons) -->
         <div class="sp-section" id="sp-rapps">
           <div class="sp-header" onclick="toggleSpSection('sp-rapps'); loadRapps();">
-            <span class="sp-title">🐝 RAPP Swarms</span>
+            <div class="sp-title-wrap">
+              <span class="sp-title">📦 Rapplications</span>
+              <span class="sp-sub">composed bundles from the rapp store (BookFactory, …)</span>
+            </div>
             <span class="sp-chev">›</span>
           </div>
           <div class="sp-body">
@@ -1477,10 +1539,13 @@
           </div>
         </div>
 
-        <!-- Install -->
+        <!-- Install — curl line for installing the brainstem on another machine -->
         <div class="sp-section" id="sp-install">
           <div class="sp-header" onclick="toggleSpSection('sp-install'); refreshInstallUI();">
-            <span class="sp-title">💻 Install</span>
+            <div class="sp-title-wrap">
+              <span class="sp-title">💻 Install brainstem</span>
+              <span class="sp-sub">one-liner to set up a new local or swarm install</span>
+            </div>
             <span class="sp-chev">›</span>
           </div>
           <div class="sp-body">
@@ -1499,10 +1564,13 @@
           </div>
         </div>
 
-        <!-- Deploy as Swarm -->
+        <!-- Deploy to cloud — Tier 2 swarm bundling and push -->
         <div class="sp-section" id="sp-swarm">
           <div class="sp-header" onclick="toggleSpSection('sp-swarm'); loadSwarmAgents();">
-            <span class="sp-title">🐝 Deploy as Swarm</span>
+            <div class="sp-title-wrap">
+              <span class="sp-title">🚀 Deploy to cloud</span>
+              <span class="sp-sub">bundle as a Tier 2 swarm and push to an endpoint</span>
+            </div>
             <span class="sp-chev">›</span>
           </div>
           <div class="sp-body">
@@ -1528,6 +1596,20 @@
     </div>
   </div>
 </header>
+
+<!-- Rapplication iframe overlay. Each installed rapp that ships a service
+     gets an "Open ▸" button in Settings → Rapplications. Clicking opens
+     this overlay with the rapp's HTML UI. Close returns to chat. -->
+<div id="rapp-frame" role="dialog" aria-modal="true">
+  <div class="rf-head">
+    <div class="rf-title">
+      <span id="rf-name">Rapplication</span>
+      <span class="rf-id" id="rf-id"></span>
+    </div>
+    <button class="rf-close" onclick="closeRappFrame()">✕ Close</button>
+  </div>
+  <iframe id="rf-iframe" title="Rapplication UI"></iframe>
+</div>
 
 <div id="chat">
   <!-- Subtle Drop Watermark -->
@@ -3073,7 +3155,15 @@
       instDiv.innerHTML = installed.length ? installed.map(e => {
         const catEntry = allCatalog.find(r => r.id === e.id);
         const displayName = catEntry?.name || e.id;
-        return `<div class="rapp-row installed"><div class="rr-head"><span class="rr-name">${esc(displayName)}</span><span class="rr-ver">v${esc(e.version||catEntry?.version||'?')}</span></div><div class="rr-actions"><button class="panel-btn danger" onclick="uninstallRapp('${esc(e.id)}')">Uninstall</button></div></div>`;
+        // A rapplication with a service has a UI — surface an "Open" button
+        // that loads the service's HTML in the iframe overlay. ui_url
+        // (catalog override) wins over the derived /api/<svc>/ default.
+        const svcName = (catEntry?.service_filename || '').replace(/_service\.py$/, '');
+        const uiUrl = catEntry?.ui_url || (svcName ? `/api/${svcName}/` : '');
+        const openBtn = uiUrl
+          ? `<button class="panel-btn primary" onclick="openRappFrame('${esc(e.id)}', ${JSON.stringify(displayName)}, '${esc(uiUrl)}')">Open ▸</button>`
+          : '';
+        return `<div class="rapp-row installed"><div class="rr-head"><span class="rr-name">${esc(displayName)}</span><span class="rr-ver">v${esc(e.version||catEntry?.version||'?')}</span></div><div class="rr-actions">${openBtn}<button class="panel-btn danger" onclick="uninstallRapp('${esc(e.id)}')">Uninstall</button></div></div>`;
       }).join('') : '<div style="color:#8b949e;font-size:10px;font-style:italic">No RAPP swarms installed.</div>';
       catDiv.innerHTML = catalog.map(r => {
         const isInst = installedIds.has(r.id);
@@ -3119,6 +3209,29 @@
       window.location.reload();
     } catch(e) { alert('Uninstall failed: ' + e.message); }
   }
+  // ── Rapplication iframe overlay ──
+  // The rapplication's HTML UI loads in an iframe over the chat surface.
+  // This is the differentiator: agent.py serves the LLM, swarm bundles
+  // agents, rapplication = swarm + iframe UI. Close returns to chat.
+  function openRappFrame(id, name, url) {
+    document.getElementById('rf-name').textContent = name || id;
+    document.getElementById('rf-id').textContent = id ? `· ${id}` : '';
+    document.getElementById('rf-iframe').src = url;
+    document.getElementById('rapp-frame').classList.add('open');
+    // Close the settings panel so the iframe is fully visible.
+    const sp = document.getElementById('settings-panel');
+    if (sp && sp.classList.contains('open')) sp.classList.remove('open');
+  }
+  function closeRappFrame() {
+    document.getElementById('rapp-frame').classList.remove('open');
+    document.getElementById('rf-iframe').src = 'about:blank';
+  }
+  // ESC key closes the overlay.
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && document.getElementById('rapp-frame')?.classList.contains('open')) {
+      closeRappFrame();
+    }
+  });
   function esc(s) { return String(s??'').replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c])); }
 
   // ── Install commands (Settings panel) ──
@@ -3136,7 +3249,7 @@
   };
   const INSTALL_BLURBS = {
     brainstem: 'The full local-first stack — Python + Flask + venv + GitHub OAuth. Installs to <code>~/.brainstem/</code>, then you can <code>brainstem</code> from any shell.',
-    swarm: 'Multi-tenant swarm server on <code>localhost:7080</code>. Each swarm is isolated by GUID — push from Deploy as Swarm above.',
+    swarm: 'Multi-tenant swarm server on <code>localhost:7080</code>. Each swarm is isolated by GUID — push from <strong>Deploy to cloud</strong> above.',
   };
   function detectInstallOS() {
     const ua = navigator.userAgent;
