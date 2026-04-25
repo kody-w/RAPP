@@ -1168,32 +1168,64 @@ with open(sys.argv[2], 'w') as f: json.dump(out, f)
             "$VENV_DIR/bin/pip" install -r "$BRAINSTEM_HOME/src/rapp_brainstem/requirements.txt"
     fi
 
-    # Install + start the background service. Non-technical users never
-    # have to think about "running a server" again — it auto-starts on
-    # login and auto-restarts on crash.
-    install_service
-
-    # Verify /health comes up (gives the service up to 15s to cold-boot).
-    # On success, open the browser and return — the one-liner is done.
-    # On failure, fall back to the old foreground-exec behavior so the
-    # user still ends up with a working brainstem.
-    if wait_for_health 15; then
-        open_browser
-        echo ""
-        echo -e "  ${GREEN}✓${NC} Brainstem is running at http://localhost:7071"
-        echo -e "  It'll auto-start on login and auto-restart if it crashes."
-        echo ""
-        echo -e "  Manage with: ${CYAN}brainstem${NC} ${CYAN}start|stop|restart|status|logs|doctor${NC}"
-        echo ""
-        return 0
+    # ── User vs. Agent handshake ─────────────────────────────────────
+    # Different runtimes want different lifecycle models:
+    #   - HUMAN at a terminal: brainstem runs in the foreground; close
+    #     the terminal (or Ctrl-C) to stop. This is what the user trains
+    #     people on — "kill the terminal to stop the brainstem".
+    #   - AGENT (Claude Code, Cursor, CI, etc.): brainstem runs as a
+    #     background launchd/systemd service so the agent can return
+    #     control to its harness and call `brainstem restart` / `stop`
+    #     without TTY contortions.
+    # Detection: well-known env vars set by the agent runtimes. Users
+    # can force one mode or the other via BRAINSTEM_LAUNCH_MODE=fg|bg.
+    local launch_mode="${BRAINSTEM_LAUNCH_MODE:-}"
+    if [ -z "$launch_mode" ]; then
+        if [ -n "$CLAUDECODE" ] || [ -n "$CURSOR_AGENT" ] || \
+           [ "$CI" = "true" ] || [ -n "$GITHUB_ACTIONS" ] || \
+           [ "$TERM_PROGRAM" = "vscode" ] && [ -n "$CLAUDE_CODE_ENTRYPOINT" ]; then
+            launch_mode="bg"
+        else
+            launch_mode="fg"
+        fi
     fi
 
-    echo -e "  ${YELLOW}⚠${NC} Background service didn't come up — running in foreground instead."
-    echo ""
-    (sleep 3 && (open "http://localhost:7071" 2>/dev/null || xdg-open "http://localhost:7071" 2>/dev/null)) &
+    if [ "$launch_mode" = "bg" ]; then
+        # Agent path: install the service so `brainstem start|stop|restart`
+        # works from CLI invocations, return immediately so the harness
+        # gets control back.
+        echo -e "  ${CYAN}(agent runtime detected — installing as background service)${NC}"
+        install_service
+        if wait_for_health 15; then
+            echo ""
+            echo -e "  ${GREEN}✓${NC} Brainstem is running at http://localhost:7071"
+            echo -e "  Manage with: ${CYAN}brainstem${NC} ${CYAN}start|stop|restart|status|logs|doctor${NC}"
+            echo ""
+            return 0
+        fi
+        echo -e "  ${YELLOW}⚠${NC} Service didn't come up — falling back to foreground."
+    fi
 
-    # Use exec to replace shell — but only if stdin is a terminal.
-    # When piped (curl | bash), exec can lose the TTY and hang.
+    # Foreground path (humans). First unload any prior launchd service
+    # so it doesn't race for :7071 with the foreground process we're
+    # about to start.
+    if [ -f "$HOME/Library/LaunchAgents/io.github.kodyw.rapp-brainstem.plist" ]; then
+        echo -e "  ${CYAN}(unloading prior launchd service so foreground process owns :7071)${NC}"
+        launchctl unload "$HOME/Library/LaunchAgents/io.github.kodyw.rapp-brainstem.plist" 2>/dev/null || true
+    fi
+
+    # Open the browser shortly after the server starts.
+    (sleep 2 && (open "http://localhost:7071" 2>/dev/null || xdg-open "http://localhost:7071" 2>/dev/null)) &
+
+    echo ""
+    echo -e "  ${GREEN}✓${NC} Brainstem starting in this terminal — close the window or press Ctrl-C to stop it."
+    echo ""
+
+    # Use exec to replace this shell process — closing the terminal then
+    # sends signals straight to brainstem.py. Only when stdin is a real
+    # TTY though; when piped (curl | bash), exec can lose the TTY and
+    # the process orphans. Direct invocation in the piped case still
+    # gets killed when the terminal closes (parent pid gone).
     if [ -t 0 ]; then
         exec "$venv_python" brainstem.py
     else
