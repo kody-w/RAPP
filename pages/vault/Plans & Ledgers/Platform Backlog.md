@@ -95,6 +95,58 @@ Items currently in motion or queued for the next session.
   net is in place.
 - **Effort.** M — each page is small but there are 10.
 
+### `rapp_brainstem/test_local_agents.py` fixture audit
+
+- **What.** Read through `rapp_brainstem/test_local_agents.py` and
+  fix any stale references to `save_memory_agent.py` /
+  `recall_memory_agent.py` (renamed to `manage_memory_agent.py`
+  long ago). Same bug class as the JS test fixture fix that landed
+  on 2026-04-24 — high probability the Python tests have the same
+  problem and just hadn't been run.
+- **Why.** Tests that crash on stale fixtures are silent regressions.
+  Until they run green again, contributors can't trust them — and
+  the Python suite covers Tier 1 storage and agent contracts that
+  the JS suite doesn't reach.
+- **Where.** `rapp_brainstem/test_local_agents.py`. Possibly also
+  any tier-internal fixtures it references.
+- **Ready when.** Anytime — same shape as the JS fix, well-precedented.
+- **Effort.** S (~30 min — find references, decide replacements,
+  run, verify).
+
+### `rapp_brainstem/CONSTITUTION.md` sync audit
+
+- **What.** Compare the brainstem-internal constitution against the
+  root `CONSTITUTION.md`. Resolve drift: stale path refs (likely
+  references `docs/SPEC.md` that should be `pages/docs/SPEC.md`),
+  contradictions with the updated Article XVI, and references to
+  files that have moved. Decide which articles belong to brainstem
+  vs. the root and reduce duplication.
+- **Why.** Two constitutions both calling themselves "the rules"
+  is a contradiction surface. Today's root reorganization changed
+  Article XVI, Article XXIII, and several path conventions — the
+  brainstem copy almost certainly didn't track. Future contributors
+  reading either file should land at the same answer.
+- **Where.** `rapp_brainstem/CONSTITUTION.md`. Compare with root
+  `CONSTITUTION.md`. Memorialize the resolution in a vault note.
+- **Ready when.** Anytime.
+- **Effort.** M — diff is straightforward, but the *which-rules-
+  belong-where* question is a judgment call worth thinking through.
+
+### Manifest staleness test (`tests/site-check.mjs`)
+
+- **What.** New test script that walks `pages/**/*.html`, asserts
+  every page (other than `pages/_site/`, `pages/vault/`, and
+  `pages/docs/viewer.html`) is listed in `pages/_site/index.json`.
+  Mirrors the shape of `tests/vault-check.mjs`.
+- **Why.** Right now adding a page silently desyncs the manifest
+  — search, sitemap, and any future content discovery feature stop
+  seeing the new page. Catching it at test time keeps the manifest
+  honest.
+- **Where.** New: `tests/site-check.mjs`. Edit: `tests/run-tests.mjs`
+  to invoke it as part of the suite.
+- **Ready when.** Anytime — `_site/index.json` already exists.
+- **Effort.** S.
+
 ## Next — scoped, not yet started
 
 Items the platform needs but that are blocked on something else.
@@ -111,6 +163,35 @@ Items the platform needs but that are blocked on something else.
   [[Vault Build-Out Plan]] Phase 6 but applies broadly — moving it
   here so it doesn't get lost when that plan closes.)
 - **Effort.** S.
+
+### Tier-internal HTML surfaces — site shell decision
+
+- **What.** Three tier-internal HTML surfaces don't use the new
+  `pages/_site/` chrome: `rapp_brainstem/index.html`,
+  `rapp_brainstem/web/index.html` (browser-only brainstem), and
+  `installer/index.html` (install widget). Decide their relationship
+  to the site shell — three options:
+  1. **Unify** — link `_site/css/*.css` and inject the shared
+     header/footer. They become part of the site, navigable from
+     the audience nav.
+  2. **Tokens-only** — link `_site/css/tokens.css` so colors stay
+     in sync, but keep their existing chrome (their audience is
+     operators, not visitors).
+  3. **Stay standalone** — leave them as-is. They're tier-internal,
+     not part of the audience site.
+- **Why.** Article XVI says *"anything served to a public visitor
+  lives somewhere under `pages/`"* — but these three are *served*
+  publicly from outside `pages/`. They predate the rule and are an
+  acknowledged exception, but the exception isn't explicit. Making
+  the call now prevents drift.
+- **Where.** `rapp_brainstem/index.html`,
+  `rapp_brainstem/web/index.html`, `installer/index.html`. Plus an
+  Article XVI amendment memorializing whichever option wins.
+- **Ready when.** Anytime — but the decision benefits from the
+  visual-verification pass landing first (so we know the new shell
+  is actually rendering correctly before considering whether to
+  extend it).
+- **Effort.** S to decide, M to execute (option-dependent).
 
 ### Sitemap.xml + robots.txt at repo root
 

@@ -30,6 +30,14 @@ Each entry has the same shape:
 
 ## 2026
 
+### 2026-04-24 — Invention Backlog living doc
+
+- **Type.** docs (governance + capture surface).
+- **Scope.** New living doc at `pages/vault/Plans & Ledgers/Invention Backlog.md` capturing the brief on patentable inventions at the intersection of the Rappter stack and the real-estate / AI industry. Defines the 8-phase per-invention process (capture → prior art → white-space → design → claims → USPTO-ready → commercial viability → rank), a 5-axis patentability rubric (novelty × non-obviousness × utility × enablement × defensibility, score 1–3,125), and 8 *areas of intersection* phrased as **prompts** rather than enabled inventions to preserve novelty bars. Strong public-vault discipline section: implementation details, claim language, prior-art memos, and commercial viability numbers stay in private working docs; this file is the public *index*. Wired into `_manifest.json` and `_index.md` as the 7th living doc.
+- **Why.** The brief was time-sensitive ("make sure it's not lost"). A vault-side capture surface ties the prompt to the platform's existing memory discipline. Public framework + private specifics is the right shape for IP-adjacent work — the framework is reusable across many candidate inventions, while the specifics carry filing-clock risk in jurisdictions without a US-style grace period.
+- **Receipts.** `pages/vault/Plans & Ledgers/Invention Backlog.md`. `node tests/vault-check.mjs` post-add: 54 notes, 734 wikilinks resolve, 0 PII, 0 failures.
+- **Lesson.** The platform's vault discipline already separates *what's safe to publish* from *what's still hot*. Extending it to IP work is a small step: same append-only ledger pattern, same session-pointer convention, same wikilink graph — with a clear *public-vault discipline* line drawn between *areas* (publishable) and *implementations* (private until filed).
+
 ### 2026-04-24 — installer/shortcuts/ scaffold + Apple Shortcuts MCP
 
 - **Type.** code + docs.

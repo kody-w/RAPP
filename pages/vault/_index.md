@@ -15,6 +15,7 @@ Living docs — the platform's working memory. Append, never delete.
 - ◐ [[Release Ledger]] — append-only log of what shipped
 - ◐ [[Blog Roadmap]] — 28 blog posts mirrored to vault sources
 - ◐ [[Content Strategy]] — cross-medium plan (newsletter, YouTube, TikTok, X, LinkedIn, Instagram)
+- ◐ [[Invention Backlog]] — patentable inventions at the intersection of Rappter × real-estate AI
 
 ## Foundations
 
