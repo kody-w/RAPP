@@ -55,6 +55,9 @@ Pulled from the work that landed Article XXV (chat is the only wire) plus the mo
 ### 11. Versioned Packages with Top-Level Aliases
 **Hook:** `rapp_store/binder/binder_service.py` *and* `rapp_store/binder/versions/1.0.0/binder_service.py` exist as the same file content. The versioned path is the canonical location; the top-level path is a copy-as-alias for the latest version. Edge clients pin to versioned URLs and stay frozen forever. Everyone else pulls from the top-level alias and tracks latest. Both URLs work; neither breaks the other. It's how you maintain a package registry without ever forcing an upgrade.
 
+### 12. RAR — Trust Without Discrimination
+**Hook:** Supply-chain protection that never refuses an agent the user wants to load. The RAR registry adds publisher signatures at the install gate (binder verifies, records provenance) without ever gating execution. Trust is metadata; the user is authority. A v0 agent.py from a backup tape with no signature loads exactly the same as a freshly-published official one — because we don't discriminate. The full design is in [[RAR — Trust Without Discrimination]] in `Architecture/`; this post is the case for *why* refusing unsigned agents would have been the wrong call.
+
 ---
 
 ## Status

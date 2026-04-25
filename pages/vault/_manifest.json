@@ -68,6 +68,7 @@
     {"path": "Architecture/Local Storage Shim via sys.modules.md", "title": "Local Storage Shim via sys.modules", "section": "Architecture", "status": "published"},
     {"path": "Architecture/The Deterministic Fake LLM.md", "title": "The Deterministic Fake LLM", "section": "Architecture", "status": "published"},
     {"path": "Architecture/Vendoring, Not Symlinking.md", "title": "Vendoring, Not Symlinking", "section": "Architecture", "status": "published"},
+    {"path": "Architecture/RAR — Trust Without Discrimination.md", "title": "RAR — Trust Without Discrimination", "section": "Architecture", "status": "published"},
     {"path": "Architecture/The Auth Cascade.md", "title": "The Auth Cascade", "section": "Architecture", "status": "published"},
     {"path": "Architecture/Repo Root Reorganization 2026-04-24.md", "title": "Repo Root Reorganization 2026-04-24", "section": "Architecture", "status": "published"},
     {"path": "Architecture/Surfaces — Mobile, Watch, Voice.md", "title": "Surfaces — Mobile, Watch, Voice", "section": "Architecture", "status": "published"},
