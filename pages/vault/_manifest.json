@@ -88,6 +88,9 @@
 
     {"path": "Manifestos/The Engine Stays Small.md", "title": "The Engine Stays Small", "section": "Manifestos", "status": "published"},
     {"path": "Manifestos/Three Tiers, One Model.md", "title": "Three Tiers, One Model", "section": "Manifestos", "status": "published"},
-    {"path": "Manifestos/Roots Are Public Surfaces.md", "title": "Roots Are Public Surfaces", "section": "Manifestos", "status": "published"}
+    {"path": "Manifestos/Roots Are Public Surfaces.md", "title": "Roots Are Public Surfaces", "section": "Manifestos", "status": "published"},
+    {"path": "Manifestos/Chat Is The Only Wire.md", "title": "Chat Is The Only Wire", "section": "Manifestos", "status": "published"},
+
+    {"path": "Blog Drafts/_TODO-from-article-xxv-session.md", "title": "Blog drafts to write from the Article XXV session", "section": "Blog Drafts", "status": "stub"}
   ]
 }

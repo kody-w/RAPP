@@ -1149,8 +1149,14 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
         assistant_response, voice_response, agent_logs = assistant.run(user_input, conversation_history)
 
+        # Constitution Article XXV: both response keys forever. Tier 2's
+        # CA365 lineage shipped `assistant_response`; Tier 1 (rapp_brainstem)
+        # later used `response`. Emit both with identical content so clients
+        # of either lineage land on the data they expect.
+        assistant_response_str = str(assistant_response)
         response = {
-            "assistant_response": str(assistant_response),
+            "assistant_response": assistant_response_str,
+            "response": assistant_response_str,
             "voice_response": str(voice_response),
             "agent_logs": str(agent_logs),
             "user_guid": assistant.user_guid

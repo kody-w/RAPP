@@ -115,7 +115,8 @@ if [ -f rapp_swarm/function_app.py ]; then
     assert_contains rapp_swarm/function_app.py 'user_guid'                              "request envelope: user_guid"
     assert_contains rapp_swarm/function_app.py 'DEFAULT_USER_GUID'                      "identity: DEFAULT_USER_GUID constant"
     assert_contains rapp_swarm/function_app.py "$DEFAULT_USER_GUID"                     "identity: exact default GUID string"
-    assert_contains rapp_swarm/function_app.py 'assistant_response'                     "response envelope: assistant_response key"
+    assert_contains rapp_swarm/function_app.py '"assistant_response"'                   "response envelope: assistant_response key (CA365 lineage)"
+    assert_contains rapp_swarm/function_app.py '"response"'                             "response envelope: response key (rapp_brainstem lineage parity, Article XXV)"
 else
     echo "    SKIP: rapp_swarm/function_app.py not found"
 fi
