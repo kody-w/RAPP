@@ -1300,7 +1300,7 @@
   <div class="logo">
     <span class="icon"><svg viewBox="0 0 512 512" fill="#fff"><path d="M184 0c-30.9 0-56.5 22.7-61.1 52.3C54.5 67 0 130 0 206.8c0 41.6 17.4 79.2 45.3 105.9-2 9.2-3.3 18.8-3.3 28.7 0 55.3 35.8 102.2 85.5 119C142.2 493 172.6 512 208 512h16c35.3 0 64-28.7 64-64V86c0-8.8-7.2-16-16-16h-16c-8.8 0-16 7.2-16 16v16c0 8.8-7.2 16-16 16s-16-7.2-16-16V64c0-35.3-28.7-64-64-64h40zm144 0c30.9 0 56.5 22.7 61.1 52.3C457.5 67 512 130 512 206.8c0 41.6-17.4 79.2-45.3 105.9 2 9.2 3.3 18.8 3.3 28.7 0 55.3-35.8 102.2-85.5 119C369.8 493 339.4 512 304 512h-16c-35.3 0-64-28.7-64-64V86c0-8.8 7.2-16 16-16h16c8.8 0 16 7.2 16 16v16c0 8.8 7.2 16 16 16s16-7.2 16-16V64c0-35.3 28.7-64 64-64h-40z"/></svg></span>
   </div>
-  <h1>RAPP Brainstem<span class="badge virtual-only">virtual</span><span class="badge local-only" style="background:rgba(63,185,80,.15);border-color:rgba(63,185,80,.4);color:#3fb950">local</span></h1>
+  <h1>RAPP Brainstem<span class="badge virtual-only">virtual</span><span class="badge local-only" id="brainstem-version" style="background:rgba(63,185,80,.15);border-color:rgba(63,185,80,.4);color:#3fb950" title="Brainstem version (from /version)">v…</span></h1>
   <div class="controls">
     <span class="dot offline" id="status-dot"></span>
     <span id="status-text">checking...</span>
@@ -5437,6 +5437,24 @@ document.body.classList.add('is-local');
     ? '%USERPROFILE%\\\\.brainstem\\\\src\\\\rapp_brainstem'
     : '~/.brainstem/src/rapp_brainstem';
   link.href = 'vscode://file/' + path;
+})();
+
+// Populate the version badge from /version. The badge replaces the
+// generic "local" tag that used to live next to the title — for
+// training/debugging it's more useful to know which version of the
+// brainstem you're talking to than to be reminded "yes, this is local".
+(function showVersion(){
+  const el = document.getElementById('brainstem-version');
+  if (!el) return;
+  fetch('/version', { cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : null)
+    .then(d => {
+      if (d && d.version) {
+        el.textContent = 'v' + d.version;
+        el.title = 'Brainstem v' + d.version + ' · running locally';
+      }
+    })
+    .catch(() => { /* keep the v… placeholder if /version is down */ });
 })();
 
 // Mount the twin hologram IMMEDIATELY on DOMContentLoaded, before any
