@@ -527,13 +527,19 @@
     padding: 16px 24px; border-top: 1px solid #21262d;
     background: #161b22; flex-shrink: 0;
   }
-  /* Input row + toolbar row sit ON TOP of the cards' bottoms with their
-     own opaque bg — that's how the "tucked behind the bar" effect works.
-     z-index has to be > any per-card inline z-index (renderHand sets
-     each card to 10+i, so 5 cards reach 14). Using 100 with isolation
-     on the hand-cards parent so card z's are confined to that context.
-     Without this, the cards painted OVER the input bar instead of
-     tucking behind it. */
+  /* Opaque "bar" pseudo-element that covers the FULL footer area with
+     the footer bg color, sandwiched between the cards (z:1) and the
+     input/toolbar rows (z:100). Without this, the footer's own bg
+     paints first (un-z-indexed), the cards' inline z-index puts them
+     ABOVE the bg, and you see card bodies bleeding through the gray
+     strip. With the pseudo at z:50, cards (z:1) are PAINTED OVER by
+     the bar — only the parts above the footer top edge stay visible.
+     The input-row and toolbar-row at z:100 still paint above the bar
+     so their own contents (input box, links) read normally. */
+  footer::before {
+    content: ''; position: absolute; inset: 0;
+    background: #161b22; z-index: 50; pointer-events: none;
+  }
   .input-row { position: relative; z-index: 100; background: #161b22; }
   .toolbar-row { position: relative; z-index: 100; background: #161b22; }
 
