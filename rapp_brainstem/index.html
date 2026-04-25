@@ -101,16 +101,21 @@
      land on first. Hidden after the first user message. Also hidden
      when hand-mode is "cards" — the holographic card row owns the
      bottom of the chat in that mode, and pills above it clutter
-     the visual. */
+     the visual. Padded vertically so hover transforms (the -1px pill
+     lift) don't clip against the container edge. */
   #starter-prompts {
     display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
-    max-width: 760px; margin: 12px auto 6px; padding: 0 24px;
-    transition: opacity .22s ease, max-height .22s ease;
-    max-height: 200px; overflow: hidden;
+    max-width: 760px; margin: 6px auto 0; padding: 6px 24px;
+    transition: opacity .22s ease, max-height .22s ease, padding .22s ease, margin .22s ease;
+    max-height: 200px;
+    /* No overflow restriction by default — hover lift would clip against
+       the row's top edge otherwise. The hide-state below adds it back so
+       collapse animation looks clean. */
   }
   #starter-prompts.hidden,
   body.hand-cards #starter-prompts {
-    opacity: 0; max-height: 0; margin: 0; pointer-events: none;
+    opacity: 0; max-height: 0; margin: 0; padding: 0;
+    overflow: hidden; pointer-events: none;
   }
   .starter-btn {
     background: #161b22; color: #79c0ff; border: 1px solid rgba(88,166,255,.4);
