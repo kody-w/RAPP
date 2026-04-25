@@ -3773,26 +3773,33 @@ function closeAside(id) { $('#'+id).classList.remove('open'); }
 /* ───── Chat send loop (SPEC §8) ──────────────────────────── */
 async function send(userInput) {
   if (!userInput || !userInput.trim()) return;
-  // Copilot: refresh the short-lived bearer if needed (or kick off sign-in if no ghu_)
-  if (state.settings.provider === 'copilot') {
-    if (!state.settings.ghuToken) {
-      appendMsg('system', '⚠️ Not signed in to Copilot. Click 🔐 Sign in with GitHub.');
-      openCopilotSigninModal(); return;
-    }
-    try { await ensureCopilotToken(); }
-    catch (e) {
-      appendMsg('system', '⚠️ Copilot exchange failed: ' + e.message);
+  // Local brainstem: the server holds the GitHub Copilot token and does
+  // the exchange itself — no browser auth needed. Skip every browser-
+  // side credential check; chatLoop just POSTs to /chat and the server
+  // handles the rest. The .virtual-only guards below are dead in local
+  // mode but kept to minimize the diff against the virtual fork.
+  if (!document.body.classList.contains('is-local')) {
+    // Copilot: refresh the short-lived bearer if needed (or kick off sign-in if no ghu_)
+    if (state.settings.provider === 'copilot') {
+      if (!state.settings.ghuToken) {
+        appendMsg('system', '⚠️ Not signed in to Copilot. Click 🔐 Sign in with GitHub.');
+        openCopilotSigninModal(); return;
+      }
+      try { await ensureCopilotToken(); }
+      catch (e) {
+        appendMsg('system', '⚠️ Copilot exchange failed: ' + e.message);
+        return;
+      }
+    } else if (!activeApiKey()) {
+      if (state.settings.provider === 'github') {
+        appendMsg('system', '⚠️ Not signed in. Click 🔐 Sign in with GitHub.');
+        startGitHubSignIn();
+      } else {
+        appendMsg('system', '⚠️ No API key. Click ⚙️ to add one.');
+        openAside('settings');
+      }
       return;
     }
-  } else if (!activeApiKey()) {
-    if (state.settings.provider === 'github') {
-      appendMsg('system', '⚠️ Not signed in. Click 🔐 Sign in with GitHub.');
-      startGitHubSignIn();
-    } else {
-      appendMsg('system', '⚠️ No API key. Click ⚙️ to add one.');
-      openAside('settings');
-    }
-    return;
   }
   appendMsg('user', userInput);
   state.conversation_history.push({ role: 'user', content: userInput });
@@ -5323,11 +5330,42 @@ document.body.classList.add('is-local');
 
 (async () => {
   loadSettings();
-  await handleGitHubAuthCallback();   // pick up ?code=... after OAuth round-trip
-  if (state.settings.ghToken && !state.settings.ghUser) await fetchGitHubUser();
-  // Refresh model lists from APIs on every load
-  if (state.settings.provider === 'copilot' && state.settings.ghuToken) fetchCopilotModels();
-  else if (state.settings.provider === 'github') fetchGitHubModels();
+  // Local brainstem: skip every browser-side credential flow on boot.
+  // The Flask server holds the GitHub Copilot token; we just need the
+  // model list, which it serves at /models. The sign-in modal stays in
+  // the DOM and remains user-callable from the toolbar — useful if the
+  // server's token expires and the user genuinely does need to re-auth
+  // at the browser level — but we never auto-trigger it.
+  if (document.body.classList.contains('is-local')) {
+    try {
+      const r = await fetch('/models', { cache: 'no-cache' });
+      if (r.ok) {
+        const data = await r.json();
+        if (data.current) state.settings.model = data.current;
+        // Reuse the same option-population path the Copilot/GitHub
+        // flows use so the model dropdown looks identical.
+        if (Array.isArray(data.models) && typeof populateModelOptions === 'function') {
+          populateModelOptions(data.models, data.current);
+        } else if (Array.isArray(data.models)) {
+          // Fallback: write the <option>s ourselves if the helper isn't here
+          const sel = document.getElementById('model-sel');
+          if (sel) {
+            sel.innerHTML = data.models.map(m =>
+              `<option value="${m.id}"${m.id === data.current ? ' selected' : ''}>${m.name || m.id}</option>`
+            ).join('');
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[local] /models fetch failed:', e);
+    }
+  } else {
+    await handleGitHubAuthCallback();   // pick up ?code=... after OAuth round-trip
+    if (state.settings.ghToken && !state.settings.ghUser) await fetchGitHubUser();
+    // Refresh model lists from APIs on every load
+    if (state.settings.provider === 'copilot' && state.settings.ghuToken) fetchCopilotModels();
+    else if (state.settings.provider === 'github') fetchGitHubModels();
+  }
   refreshStatus();
   // Twin was mounted earlier (see mountTwinEarly IIFE before this boot);
   // re-call initTwinPresence() is idempotent — ensureTwinPanel() reuses

@@ -1392,13 +1392,67 @@ def list_agents_files():
             agent_names = list(loaded.keys())
         except Exception:
             agent_names = []
-            
+
         results.append({
             "filename": filename,
             "agents": agent_names
         })
-        
+
     return jsonify({"files": results})
+
+
+@app.route("/agents/full", methods=["GET"])
+def list_agents_full():
+    """Same as /agents but each entry also carries the file's source —
+    the local UI's bootBinder() mints client-side cards from this so the
+    binder grid matches what Python actually loaded. Skips basic_agent.py
+    (the BasicAgent base class — not a usable agent on its own)."""
+    files = glob.glob(os.path.join(AGENTS_PATH, "*.py"))
+    results = []
+    for f in files:
+        filename = os.path.basename(f)
+        if filename.startswith("__") or filename == "basic_agent.py" or not filename.endswith(".py"):
+            continue
+        try:
+            loaded = _load_agent_from_file(f)
+            agent_names = list(loaded.keys())
+        except Exception:
+            agent_names = []
+        try:
+            with open(f, "r", encoding="utf-8") as fh:
+                source = fh.read()
+        except Exception:
+            source = ""
+        results.append({
+            "filename": filename,
+            "agents": agent_names,
+            "source": source,
+        })
+    return jsonify({"files": results})
+
+
+# PWA / web-asset fallthrough routes — the local index.html (forked from
+# web/) references rapp.js / manifest / icons / sw.js at root paths.
+# Serve them from the web/ directory so the fork doesn't 404.
+@app.route("/rapp.js", methods=["GET"])
+def rapp_js():
+    return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "web"), "rapp.js")
+
+@app.route("/manifest.webmanifest", methods=["GET"])
+def manifest_webmanifest():
+    return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "web"), "manifest.webmanifest")
+
+@app.route("/icon-192.svg", methods=["GET"])
+def icon_192():
+    return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "web"), "icon-192.svg")
+
+@app.route("/icon-512.svg", methods=["GET"])
+def icon_512():
+    return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "web"), "icon-512.svg")
+
+@app.route("/sw.js", methods=["GET"])
+def service_worker():
+    return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "web"), "sw.js")
 
 @app.route("/agents/export/<filename>", methods=["GET"])
 def agents_export(filename):
