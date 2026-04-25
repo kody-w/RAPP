@@ -4,6 +4,21 @@ from agents.basic_agent import BasicAgent
 from utils.azure_file_storage import AzureFileStorageManager
 
 
+__manifest__ = {
+    "schema": "rapp-agent/1.0",
+    "name": "@rapp/manage_memory",
+    "version": "1.0.0",
+    "display_name": "Manage Memory",
+    "description": "Saves typed memories (fact / preference / insight / task) to persistent storage so they survive across conversations. The recall side is a sibling lookup pattern — see context_memory_agent.",
+    "author": "RAPP",
+    "tags": ["starter", "memory", "storage"],
+    "category": "memory",
+    "quality_tier": "official",
+    "requires_env": [],
+    "example_call": "Remember that I prefer Python over TypeScript for prototypes.",
+}
+
+
 class ManageMemoryAgent(BasicAgent):
     def __init__(self):
         self.name = 'ManageMemory'

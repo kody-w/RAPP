@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAPP — One Slide</title>
+<meta name="description" content="Give it a goal. Your swarm does the rest. RAPP is the portable agent layer that accelerates adoption across Copilot, Azure, and Microsoft 365.">
+<meta property="og:title" content="RAPP — Give it a goal. Your swarm does the rest.">
+<meta property="og:description" content="Give it a goal. Your swarm does the rest. RAPP is the portable agent layer that accelerates adoption across Copilot, Azure, and Microsoft 365.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kody-w.github.io/RAPP/pages/one-pager.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E🧠%3C/text%3E%3C/svg%3E">
+<script>
+(function(){
+  try {
+    var saved = localStorage.getItem('rapp-theme');
+    var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    var theme = saved || (prefersLight ? 'light' : 'dark');
+    if (theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+  } catch(e){}
+})();
+</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d1117;--surface:#161b22;--surface2:#1c2128;--border:#30363d;--border2:#21262d;
+  --text:#e6edf3;--text-dim:#8b949e;--muted:#484f58;
+  --accent:#58a6ff;--green:#3fb950;--purple:#a78bfa;
+  --chrome-bg:rgba(22,27,34,.9);
+  --grad-1:#7df0c8;--grad-2:#58a6ff;--grad-3:#a78bfa;
+  --logo-glow:rgba(125,240,200,.3);
+}
+[data-theme="light"]{
+  --bg:#ffffff;--surface:#f6f8fa;--surface2:#eaeef2;--border:#d0d7de;--border2:#afb8c1;
+  --text:#1f2328;--text-dim:#59636e;--muted:#8c959f;
+  --accent:#0969da;--green:#1a7f37;--purple:#8250df;
+  --chrome-bg:rgba(255,255,255,.85);
+  --grad-1:#2da44e;--grad-2:#0969da;--grad-3:#8250df;
+  --logo-glow:rgba(9,105,218,.2);
+}
+html,body{
+  height:100%;overflow:hidden;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  background:var(--bg);color:var(--text);line-height:1.55;
+  transition:background-color .25s,color .25s;
+}
+
+/* Slide canvas — fills viewport, looks like a projected PowerPoint slide */
+.slide{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  padding:6vh 8vw;
+  text-align:center;
+}
+.slide-inner{width:100%;max-width:1180px}
+
+/* Hero */
+.logo{
+  font-size:clamp(56px,7vw,88px);line-height:1;margin-bottom:18px;
+  filter:drop-shadow(0 0 22px var(--logo-glow));
+}
+h1{
+  font-size:clamp(2.6rem,5.5vw,5rem);font-weight:800;line-height:1.05;
+  letter-spacing:-.8px;margin-bottom:22px;
+}
+h1 .grad{
+  background:linear-gradient(135deg,var(--grad-1),var(--grad-2),var(--grad-3));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.sub{
+  font-size:clamp(1.05rem,1.6vw,1.4rem);color:var(--text-dim);
+  max-width:880px;margin:0 auto 42px;line-height:1.55;
+}
+.sub strong{color:var(--text)}
+
+/* Three outcome beats — no comparisons, just what the platform delivers */
+.beats{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:22px;
+  width:100%;text-align:left;margin-bottom:40px;
+}
+.beat{
+  background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  padding:24px 26px;
+  transition:border-color .2s,transform .2s;
+}
+.beat:hover{border-color:var(--accent);transform:translateY(-2px)}
+.beat .badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:32px;height:32px;margin-bottom:10px;
+  background:linear-gradient(135deg,var(--grad-1),var(--grad-3));
+  border-radius:8px;font-size:16px;
+  color:#0d1117;font-weight:800;
+}
+[data-theme="light"] .beat .badge{color:#fff}
+.beat h3{
+  font-size:clamp(1.1rem,1.4vw,1.35rem);font-weight:700;
+  margin-bottom:6px;line-height:1.3;
+}
+.beat p{
+  font-size:clamp(.92rem,1.1vw,1.02rem);color:var(--text-dim);
+  line-height:1.55;
+}
+.beat p strong{color:var(--text)}
+
+/* Hinge line — the pitch in one breath */
+.hinge{
+  display:block;margin:0 auto;max-width:960px;
+  font-size:clamp(1.05rem,1.5vw,1.4rem);line-height:1.5;
+  color:var(--text);font-weight:500;font-style:italic;
+  position:relative;padding-top:26px;letter-spacing:-.1px;
+}
+.hinge::before{
+  content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:52px;height:2px;
+  background:linear-gradient(90deg,var(--grad-1),var(--grad-3));
+  border-radius:1px;opacity:.85;
+}
+.hinge .accent{
+  background:linear-gradient(135deg,var(--grad-1),var(--grad-2),var(--grad-3));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  font-style:normal;font-weight:700;
+}
+
+/* Hidden-but-indexable links (crawlers/screen readers find them;
+   not visible on the slide — PowerPoint feel). */
+.sr-only{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+/* Fade-up entry */
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.animate{animation:fadeUp .6s ease both}
+.animate.d1{animation-delay:.10s}
+.animate.d2{animation-delay:.22s}
+.animate.d3{animation-delay:.34s}
+.animate.d4{animation-delay:.46s}
+.animate.d5{animation-delay:.58s}
+
+/* Responsive — single column on narrow screens so it still reads clean */
+@media (max-width:900px){
+  html,body{overflow:auto;height:auto}
+  .slide{position:static;padding:40px 22px;min-height:100vh}
+  .beats{grid-template-columns:1fr;gap:14px}
+}
+
+/* Print: one page, nothing but the slide */
+@media print{
+  html,body{background:#fff;color:#0d1117;overflow:visible;height:auto}
+  .slide{position:static;padding:32px;page-break-inside:avoid}
+  .beat{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<main class="slide">
+  <div class="slide-inner">
+
+    <div class="logo animate d1">🧠</div>
+
+    <h1 class="animate d2">
+      Give it a <span class="grad">goal</span>.<br>
+      Your <span class="grad">swarm</span> does the rest.
+    </h1>
+
+    <p class="sub animate d3">
+      RAPP is the <strong>portable agent layer</strong> that accelerates
+      adoption across <strong>Microsoft Copilot, Azure, and Microsoft 365</strong>.
+      Describe a goal in plain language; a working agent swarm builds itself —
+      on your laptop, in Azure, and inside Copilot Studio, from the same
+      single file.
+    </p>
+
+    <section class="beats">
+
+      <div class="beat animate d4">
+        <div class="badge">①</div>
+        <h3>Goal in, swarm out</h3>
+        <p>
+          Describe what you want in natural language.
+          A <strong>swarm of agents spins up, coordinates, and learns</strong>
+          from the work — so the result improves every time you run it.
+        </p>
+      </div>
+
+      <div class="beat animate d4">
+        <div class="badge">②</div>
+        <h3>One file. Travels anywhere.</h3>
+        <p>
+          Every agent is <strong>one Python file</strong>. Drop it in a
+          Teams chat, paste it in an email, drag it onto a teammate's
+          brainstem — it runs the same wherever it lands.
+        </p>
+      </div>
+
+      <div class="beat animate d4">
+        <div class="badge">③</div>
+        <h3>One codebase, three tiers</h3>
+        <p>
+          The same agent you write on your laptop runs
+          <strong>unchanged in Azure and inside Copilot Studio</strong>.
+          Your prototype <em>is</em> your production artifact.
+        </p>
+      </div>
+
+    </section>
+
+    <blockquote class="hinge animate d5">
+      Give it your goal. A swarm
+      <span class="accent">spins up, swarms around it, and learns from it.</span>
+      Drop the file in a Teams chat — everyone loads it into their brainstem
+      and runs it immediately.
+    </blockquote>
+
+  </div>
+</main>
+
+<!-- Hidden cross-links: present for crawlers and screen readers, invisible
+     on the slide itself so it reads like a single PowerPoint page. -->
+<nav class="sr-only" aria-label="Related pages">
+  <a href="./">Home</a>
+  <a href="./leadership.html">Leadership one-pager</a>
+  <a href="./process.html">Process one-pager</a>
+  <a href="./partners.html">Partners one-pager</a>
+  <a href="./use-cases.html">Use cases</a>
+  <a href="./security.html">Security &amp; compliance</a>
+  <a href="./faq-slide.html">FAQ slide</a>
+  <a href="./faq.html">Full FAQ</a>
+  <a href="./pitch-playbook.html">Pitch deck</a>
+  <a href="./roadmap.html">Roadmap</a>
+  <a href="./release-notes.html">Release notes</a>
+  <a href="./vault/">Vault — second-brain wiki</a>
+  <a href="https://github.com/kody-w/RAPP">GitHub</a>
+</nav>
+
+</body>
+</html>

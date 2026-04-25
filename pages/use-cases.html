@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAPP — Use Cases</title>
+<meta name="description" content="Concrete examples of what teams build with RAPP. Sales prospecting, customer-service triage, internal operations, research and insights — all single-file portable agents.">
+<meta property="og:title" content="RAPP — What can you build with this?">
+<meta property="og:description" content="Concrete examples of what teams build with RAPP.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kody-w.github.io/RAPP/pages/use-cases.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E🧠%3C/text%3E%3C/svg%3E">
+<script>
+(function(){
+  try {
+    var saved = localStorage.getItem('rapp-theme');
+    var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    var theme = saved || (prefersLight ? 'light' : 'dark');
+    if (theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+  } catch(e){}
+})();
+</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d1117;--surface:#161b22;--surface2:#1c2128;--border:#30363d;--border2:#21262d;
+  --text:#e6edf3;--text-dim:#8b949e;--muted:#484f58;
+  --accent:#58a6ff;--green:#3fb950;--purple:#a78bfa;--orange:#f0883e;--yellow:#e3b341;
+  --grad-1:#7df0c8;--grad-2:#58a6ff;--grad-3:#a78bfa;
+  --logo-glow:rgba(125,240,200,.3);
+}
+[data-theme="light"]{
+  --bg:#ffffff;--surface:#f6f8fa;--surface2:#eaeef2;--border:#d0d7de;--border2:#afb8c1;
+  --text:#1f2328;--text-dim:#59636e;--muted:#8c959f;
+  --accent:#0969da;--green:#1a7f37;--purple:#8250df;--orange:#bc4c00;--yellow:#9a6700;
+  --grad-1:#2da44e;--grad-2:#0969da;--grad-3:#8250df;
+  --logo-glow:rgba(9,105,218,.2);
+}
+html,body{
+  height:100%;overflow:hidden;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  background:var(--bg);color:var(--text);line-height:1.55;
+  transition:background-color .25s,color .25s;
+}
+.slide{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  padding:4vh 5vw;text-align:center;
+}
+.slide-inner{width:100%;max-width:1280px}
+
+.kicker{
+  display:inline-block;margin-bottom:12px;
+  font-size:.78rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:var(--yellow);
+  padding:6px 14px;border:1px solid var(--yellow);border-radius:999px;
+  background:rgba(227,179,65,.08);
+}
+[data-theme="light"] .kicker{background:rgba(154,103,0,.08)}
+
+.logo{
+  font-size:clamp(44px,5vw,64px);line-height:1;margin-bottom:10px;
+  filter:drop-shadow(0 0 22px var(--logo-glow));
+}
+h1{
+  font-size:clamp(2rem,4.2vw,3.6rem);font-weight:800;line-height:1.08;
+  letter-spacing:-.7px;margin-bottom:14px;
+}
+h1 .grad{
+  background:linear-gradient(135deg,var(--grad-1),var(--grad-2),var(--grad-3));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.sub{
+  font-size:clamp(.98rem,1.3vw,1.2rem);color:var(--text-dim);
+  max-width:880px;margin:0 auto 28px;line-height:1.55;
+}
+.sub strong{color:var(--text)}
+
+/* 2x2 use-case grid */
+.cases{
+  display:grid;grid-template-columns:1fr 1fr;gap:16px;
+  width:100%;text-align:left;margin-bottom:28px;
+}
+.case{
+  background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  padding:20px 22px;transition:border-color .2s,transform .2s;
+  display:grid;grid-template-rows:auto auto 1fr;gap:10px;
+}
+.case:hover{border-color:var(--accent);transform:translateY(-2px)}
+.case .head{display:flex;align-items:center;gap:12px}
+.case .icon{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:36px;height:36px;flex-shrink:0;
+  border-radius:10px;
+  background:linear-gradient(135deg,var(--grad-1),var(--grad-3));
+  font-size:18px;color:#0d1117;
+}
+[data-theme="light"] .case .icon{color:#fff}
+.case h3{
+  font-size:clamp(1.05rem,1.3vw,1.22rem);font-weight:700;line-height:1.25;color:var(--text);
+}
+.case .tag{
+  font-size:.7rem;letter-spacing:1.2px;text-transform:uppercase;font-weight:700;
+  color:var(--accent);margin-top:2px;
+}
+.case .flow{
+  display:grid;grid-template-columns:auto 1fr;gap:8px 14px;
+  font-size:clamp(.85rem,1vw,.96rem);color:var(--text-dim);line-height:1.5;
+}
+.case .flow .lbl{
+  font-size:.72rem;letter-spacing:1.2px;text-transform:uppercase;font-weight:700;
+  color:var(--text-dim);padding-top:2px;white-space:nowrap;
+}
+.case .flow .val{color:var(--text-dim)}
+.case .flow .val strong{color:var(--text)}
+.case .flow .lbl.in{color:var(--accent)}
+.case .flow .lbl.out{color:var(--green)}
+
+/* Closing hinge */
+.hinge{
+  display:block;margin:0 auto;max-width:960px;
+  font-size:clamp(1rem,1.3vw,1.28rem);line-height:1.5;
+  color:var(--text);font-weight:500;font-style:italic;
+  position:relative;padding-top:22px;letter-spacing:-.1px;
+}
+.hinge::before{
+  content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:50px;height:2px;
+  background:linear-gradient(90deg,var(--grad-1),var(--grad-3));
+  border-radius:1px;opacity:.85;
+}
+.hinge .accent{
+  background:linear-gradient(135deg,var(--grad-1),var(--grad-2),var(--grad-3));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  font-style:normal;font-weight:700;
+}
+
+.sr-only{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.animate{animation:fadeUp .6s ease both}
+.animate.d1{animation-delay:.08s}.animate.d2{animation-delay:.18s}
+.animate.d3{animation-delay:.28s}.animate.d4{animation-delay:.38s}
+.animate.d5{animation-delay:.48s}.animate.d6{animation-delay:.58s}
+
+@media(max-width:900px){
+  html,body{overflow:auto;height:auto}
+  .slide{position:static;padding:32px 20px;min-height:100vh}
+  .cases{grid-template-columns:1fr;gap:12px}
+}
+@media print{
+  html,body{background:#fff;color:#0d1117;overflow:visible;height:auto}
+  .slide{position:static;padding:28px;page-break-inside:avoid}
+  .case{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<main class="slide">
+  <div class="slide-inner">
+
+    <span class="kicker animate d1">What Teams Build</span>
+
+    <div class="logo animate d2">🧠</div>
+
+    <h1 class="animate d3">
+      Real scenarios. <span class="grad">One file each.</span>
+    </h1>
+
+    <p class="sub animate d4">
+      Every example below is a <strong>single portable agent</strong> —
+      built from a 60-minute customer conversation, validated against
+      their own words, and promoted unchanged to
+      <strong>Copilot Studio and Microsoft 365</strong>.
+    </p>
+
+    <section class="cases">
+
+      <div class="case animate d4">
+        <div class="head">
+          <span class="icon">🎯</span>
+          <div>
+            <h3>Lead prioritization</h3>
+            <div class="tag">B2B Sales · Dynamics</div>
+          </div>
+        </div>
+        <div class="flow">
+          <span class="lbl in">Input</span>
+          <span class="val">Pipeline snapshot + recent activity + segmentation signals.</span>
+          <span class="lbl">Swarm</span>
+          <span class="val">Ranks accounts by <strong>propensity-to-close</strong>, explains the reasoning in plain language, drafts a next-best-action per account.</span>
+          <span class="lbl out">Outcome</span>
+          <span class="val">Seller opens the week already knowing <strong>which five accounts to call first</strong> — and why.</span>
+        </div>
+      </div>
+
+      <div class="case animate d5">
+        <div class="head">
+          <span class="icon">📨</span>
+          <div>
+            <h3>Personalized outreach</h3>
+            <div class="tag">B2B Sales · Copilot Studio</div>
+          </div>
+        </div>
+        <div class="flow">
+          <span class="lbl in">Input</span>
+          <span class="val">Target account + recent public signals + relationship history.</span>
+          <span class="lbl">Swarm</span>
+          <span class="val">Drafts a <strong>tailored email sequence</strong> grounded in what the account cares about, with the tone and references your team actually uses.</span>
+          <span class="lbl out">Outcome</span>
+          <span class="val">Outreach that reads like it came from your best rep — and <strong>lands in Copilot Studio</strong> next to the CRM.</span>
+        </div>
+      </div>
+
+      <div class="case animate d5">
+        <div class="head">
+          <span class="icon">🛎️</span>
+          <div>
+            <h3>Customer-service triage</h3>
+            <div class="tag">Service · M365</div>
+          </div>
+        </div>
+        <div class="flow">
+          <span class="lbl in">Input</span>
+          <span class="val">Inbound ticket or chat transcript.</span>
+          <span class="lbl">Swarm</span>
+          <span class="val">Classifies urgency, extracts the real ask, drafts a first-response, and routes to the right queue — with a summary a human agent can scan in five seconds.</span>
+          <span class="lbl out">Outcome</span>
+          <span class="val">Lower time-to-first-response. <strong>Human agents land on the right problem</strong>, not the wrong one.</span>
+        </div>
+      </div>
+
+      <div class="case animate d6">
+        <div class="head">
+          <span class="icon">🔎</span>
+          <div>
+            <h3>Research &amp; insights briefs</h3>
+            <div class="tag">Internal Ops · Teams</div>
+          </div>
+        </div>
+        <div class="flow">
+          <span class="lbl in">Input</span>
+          <span class="val">A topic, a meeting transcript, or a folder of source material.</span>
+          <span class="lbl">Swarm</span>
+          <span class="val">Reads, extracts, <strong>writes the brief you asked for</strong> — executive summary, detail sections, a watch-list of open questions.</span>
+          <span class="lbl out">Outcome</span>
+          <span class="val">Drop the agent into a Teams chat; your team builds their own briefs on demand without waiting for analysts.</span>
+        </div>
+      </div>
+
+    </section>
+
+    <blockquote class="hinge animate d6">
+      These aren't demos. They're <span class="accent">real agents customers keep, extend, and share.</span>
+      Every one is a single file you can fork, edit, or hand to a teammate in the next five seconds.
+    </blockquote>
+
+  </div>
+</main>
+
+<nav class="sr-only" aria-label="Related pages">
+  <a href="./">Home</a>
+  <a href="./one-pager.html">Platform one-pager</a>
+  <a href="./leadership.html">Leadership one-pager</a>
+  <a href="./process.html">Process one-pager</a>
+  <a href="./partners.html">Partners one-pager</a>
+  <a href="./faq-slide.html">FAQ slide</a>
+  <a href="./security.html">Security &amp; compliance</a>
+  <a href="./faq.html">Full FAQ</a>
+  <a href="./pitch-playbook.html">Pitch deck</a>
+  <a href="./roadmap.html">Roadmap</a>
+  <a href="./release-notes.html">Release notes</a>
+  <a href="./vault/">Vault — second-brain wiki</a>
+  <a href="https://github.com/kody-w/RAPP">GitHub</a>
+</nav>
+
+</body>
+</html>

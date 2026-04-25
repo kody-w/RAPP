@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAPP — Roadmap</title>
+<meta name="description" content="What's next for RAPP. Near-term, mid-term, and the longer horizon.">
+<meta property="og:title" content="RAPP — Roadmap">
+<meta property="og:description" content="What's next for RAPP. Near-term, mid-term, and the longer horizon.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E🧠%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --border:#21262d; --border2:#30363d;
+    --fg:#e6edf3; --dim:#8b949e;
+    --blue:#1f6feb; --blue-2:#58a6ff;
+    --green-3:#3fb950; --purple:#a78bfa; --warn:#d29922;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:var(--bg);color:var(--fg);line-height:1.55;min-height:100vh;
+    display:flex;flex-direction:column;align-items:center;
+  }
+  a{color:var(--blue-2);text-decoration:none}a:hover{text-decoration:underline}
+  code{font-family:"SF Mono",ui-monospace,monospace;font-size:13px;background:var(--panel);padding:2px 6px;border-radius:4px}
+
+  header{width:100%;border-bottom:1px solid var(--border);background:rgba(13,17,23,.82);backdrop-filter:blur(12px);position:sticky;top:0;z-index:10}
+  .nav{max-width:960px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700}
+  .brand .logo{font-size:22px}
+  .brand .version{color:var(--dim);font-size:12px;font-weight:400}
+  .nav-links{margin-left:auto;display:flex;gap:16px;font-size:13px}
+
+  main{max-width:960px;padding:36px 24px 80px;width:100%}
+  h1{font-size:34px;letter-spacing:-0.3px;margin-bottom:6px}
+  .subtitle{color:var(--dim);font-size:15px;margin-bottom:32px;max-width:64ch}
+
+  .column{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:20px;
+    margin-bottom:32px;
+  }
+  .col{
+    background:var(--panel);border:1px solid var(--border2);border-radius:10px;
+    padding:18px 18px 20px;
+  }
+  .col-header{
+    font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--dim);font-weight:600;margin-bottom:4px;
+  }
+  .col h2{font-size:18px;font-weight:700;margin-bottom:14px}
+  .col.now{border-left:3px solid var(--green-3)}
+  .col.next{border-left:3px solid var(--blue-2)}
+  .col.later{border-left:3px solid var(--purple)}
+
+  .item{
+    padding:10px 0;
+    border-bottom:1px solid var(--border);
+  }
+  .item:last-child{border-bottom:none}
+  .item h3{
+    font-size:14px;font-weight:600;margin-bottom:4px;
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  }
+  .chip{
+    font-size:10px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;
+    padding:2px 7px;border-radius:999px;font-family:"SF Mono",monospace;
+  }
+  .chip.blocked{background:rgba(210,153,34,.12);color:var(--warn);border:1px solid var(--warn)}
+  .chip.wip{background:rgba(88,166,255,.12);color:var(--blue-2);border:1px solid var(--blue)}
+  .chip.done{background:rgba(63,185,80,.12);color:var(--green-3);border:1px solid var(--green-3)}
+  .chip.plan{background:rgba(167,139,250,.12);color:var(--purple);border:1px solid var(--purple)}
+  .item p{font-size:13px;color:var(--dim);line-height:1.5}
+  .item p strong{color:var(--fg);font-weight:600}
+
+  .principles{
+    background:var(--panel);border:1px solid var(--border2);border-radius:10px;
+    padding:20px 24px;margin-top:24px;
+  }
+  .principles h2{font-size:18px;margin-bottom:12px}
+  .principles ul{list-style:none;display:flex;flex-direction:column;gap:10px}
+  .principles ul li{padding-left:22px;position:relative;font-size:14px;color:var(--dim);line-height:1.5}
+  .principles ul li::before{content:"✓";color:var(--green-3);position:absolute;left:0;font-weight:700}
+  .principles ul li strong{color:var(--fg)}
+
+  footer{margin-top:44px;color:var(--dim);font-size:12px;text-align:center;padding-top:20px;border-top:1px solid var(--border)}
+
+  @media (max-width:820px){
+    .column{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<header>
+  <nav class="nav">
+    <a href="./" class="brand">
+      <span class="logo">🧠</span>
+      <span>RAPP</span>
+      <span class="version">Roadmap</span>
+    </a>
+    <div class="nav-links">
+      <a href="./one-pager.html">One-pager</a>
+      <a href="./faq.html">FAQ</a>
+      <a href="./release-notes.html">Releases</a>
+      <a href="./vault/">Vault — second-brain wiki</a>
+  <a href="https://github.com/kody-w/RAPP">GitHub</a>
+    </div>
+  </nav>
+</header>
+
+<main>
+  <h1>Roadmap</h1>
+  <p class="subtitle">
+    What's next for the platform. Near-term is work actively in flight;
+    mid-term is on deck for the next few weeks; the longer horizon is
+    where the architecture is heading.
+  </p>
+
+  <div class="column">
+
+    <!-- NOW ────────────────────────────────────────────── -->
+    <section class="col now">
+      <span class="col-header">Now — in flight</span>
+      <h2>This sprint</h2>
+
+      <div class="item">
+        <h3>One-slide explainer <span class="chip done">done</span></h3>
+        <p>Single-slide pitch that lands "why RAPP, not GPTs / skills /
+          Copilot Studio" in one glance. <a href="./one-pager.html">Published here.</a></p>
+      </div>
+
+      <div class="item">
+        <h3>Tier 2 cloud MVP <span class="chip wip">wip</span></h3>
+        <p><strong>Goal:</strong> get <code>rapp_swarm/function_app.py</code>
+          deployed to a shared cloud endpoint so agents can be reached from
+          Copilot Studio / Power Automate. Minimize spend; deploy only what
+          needs to be externally visible.</p>
+      </div>
+
+      <div class="item">
+        <h3>Identity-based provisioning <span class="chip blocked">blocked</span></h3>
+        <p><code>provision-twin-lite.sh</code> hit a subscription policy that
+          forces <code>allowSharedKeyAccess=false</code>. Rewrite using
+          identity-based <code>AzureWebJobsStorage</code> + Flex Consumption
+          so function apps can be created without shared keys.
+          <code>enable-mi-on-twin.sh</code> parked for the role-grant half.</p>
+      </div>
+
+      <div class="item">
+        <h3>UI backport to v0.6.0 chrome <span class="chip done">done</span></h3>
+        <p>Shipped in v0.12.1. All v0.12 creature comforts remain wired;
+          default look matches the chrome early adopters were trained on.</p>
+      </div>
+    </section>
+
+    <!-- NEXT ────────────────────────────────────────────── -->
+    <section class="col next">
+      <span class="col-header">Next — on deck</span>
+      <h2>Next few weeks</h2>
+
+      <div class="item">
+        <h3>Short demo video <span class="chip plan">plan</span></h3>
+        <p>A 60–90s clip showing the capability (goal in → swarm out → share
+          the file), not the install process. Has to stand on its own when
+          passed around without the author in the room.</p>
+      </div>
+
+      <div class="item">
+        <h3>Starter agent gallery <span class="chip plan">plan</span></h3>
+        <p>Expand the ship-in-repo examples that demonstrate the single-file
+          agent contract end-to-end. Keep the showroom small — curriculum,
+          not kitchen sink.</p>
+      </div>
+
+      <div class="item">
+        <h3>Swarm factory distribution flow <span class="chip plan">plan</span></h3>
+        <p>Polish the <em>workshop → singleton</em> path (Article IX) so
+          publishing a swarm is a single natural-language turn, and the
+          resulting file is trivially shareable (chat drop, email, airdrop).</p>
+      </div>
+
+      <div class="item">
+        <h3>Tier 2 cloud test pass <span class="chip plan">plan</span></h3>
+        <p>Once provisioning unblocks, run the same guid-scoped memory
+          isolation assertions that already pass locally against a deployed
+          endpoint. Extends <code>tests/e2e/05-tier2-cloud.sh</code>.</p>
+      </div>
+    </section>
+
+    <!-- LATER ────────────────────────────────────────────── -->
+    <section class="col later">
+      <span class="col-header">Later — the horizon</span>
+      <h2>Platform direction</h2>
+
+      <div class="item">
+        <h3>Tier 3: Copilot Studio bundle output <span class="chip plan">plan</span></h3>
+        <p>Stabilize the Power-Automate-driven guid routing pattern
+          (already shipped at the contract level in v0.12.0). Consider a
+          <code>swarm_factory --target=copilot_studio</code> mode that emits
+          a Power Platform solution bundle directly.</p>
+      </div>
+
+      <div class="item">
+        <h3>Multi-tenant scale <span class="chip plan">plan</span></h3>
+        <p>One Tier 2 deployment serves many guids (users / orgs) under
+          shared <code>agents/</code> + per-user memory namespace. Real-world
+          validation at scale, monitoring, cost tracking.</p>
+      </div>
+
+      <div class="item">
+        <h3>Richer on-device story <span class="chip plan">plan</span></h3>
+        <p>IoT, field devices, air-gapped environments. The single-file agent
+          already runs offline with a local LLM; polish the demo story and
+          ship sample agents that showcase it.</p>
+      </div>
+
+      <div class="item">
+        <h3>Cross-brainstem agent invocation <span class="chip plan">plan</span></h3>
+        <p>Project-local and global brainstems already coexist on one
+          machine. Smooth the agent handshake so a global brainstem can
+          invoke an agent registered in a project-local sibling, and vice
+          versa, without explicit plumbing.</p>
+      </div>
+    </section>
+  </div>
+
+  <section class="principles">
+    <h2>Principles the roadmap stays faithful to</h2>
+    <ul>
+      <li><strong>The one-liner stays sacred.</strong> Any change must survive <code>curl … | bash</code> on a fresh machine (Article V).</li>
+      <li><strong>brainstem.py stays sacred.</strong> Features go in <code>agents/</code>, not in the engine (Article I-A).</li>
+      <li><strong>Three tiers, one model.</strong> An agent written on a laptop runs unchanged in the cloud and in Copilot Studio (Article II / Article X).</li>
+      <li><strong>Versions are rollback points.</strong> Every release is tagged and immutable; a bad release is one command away from rolling back (Article VIII).</li>
+      <li><strong>No per-user scaffolding.</strong> One Tier 2 deployment serves many users via guid routing — not one app per customer.</li>
+    </ul>
+  </section>
+
+  <footer>
+    Have feedback?
+    <a href="https://github.com/kody-w/RAPP/issues">Open an issue on GitHub.</a>
+    See <a href="./release-notes.html">what shipped recently</a>.
+  </footer>
+</main>
+</body>
+</html>

@@ -242,7 +242,7 @@ the five allowed responsibilities is probably mis-scoped.
 ## Article V — The Install One-Liner Is Sacred
 
 ```bash
-curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash
+curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash
 ```
 
 Works on a fresh machine. Installs prerequisites, clones, sets up the
@@ -637,6 +637,140 @@ deployed swarms, session dumps. Keeping them separate means we can
 grow the workspace indefinitely without ever obscuring the learning
 path.
 
+### The same discipline applies to the **repo** root
+
+The repo root is the storefront — what someone sees the moment they
+land on the GitHub page. It must read at a glance: *this is a
+three-tier engine, here is how you install it, here are the canonical
+docs.* A bloated root signals an unfinished project and pushes
+visitors away before the first scroll.
+
+> **Reorganized 2026-04-24 (memorialized in
+> [[Repo Root Reorganization 2026-04-24|the vault]]).** Almost
+> everything that was at root moved into a subdirectory. The list
+> below is the *floor* of root residence, not a buffet.
+
+What earns repo-root residence (the closed list):
+
+- **The two tier code directories** — `rapp_brainstem/` (Tier 1) and
+  `rapp_swarm/` (Tier 2). Each contains the running code for its
+  tier. Tier 3 (Microsoft Copilot Studio) has no running code in
+  this repo — it runs in Microsoft's cloud. Tier 3 ships as a
+  download (`installer/MSFTAIBASMultiAgentCopilot_*.zip`), not as a
+  tier directory. **Resist the pull of symmetry**: a directory
+  earns root residence by holding running code, not by completing a
+  numbered list.
+- **`worker/`** — Cloudflare auth/proxy worker shared across tiers.
+- **The catalog** — `rapp_store/`.
+- **The long-term memory** — `vault/` (see
+  [[#Article XXIII — The Vault Is the Long-Term Memory|Article XXIII]]).
+- **The install surface** — `installer/`. Public URLs route through
+  this subpath; everything inside is meant to be downloaded or
+  curl-piped by a user. Holds the one-liners (`install.sh`,
+  `install.ps1`, `install.cmd`), the swarm installer
+  (`install-swarm.sh`), the local launcher (`start-local.sh`), the
+  ARM template (`azuredeploy.json`), the install-widget mirror
+  (`index.html`), and the **Tier 3 Copilot Studio bundle**
+  (`MSFTAIBASMultiAgentCopilot_*.zip`). All install URLs:
+  `https://kody-w.github.io/RAPP/installer/<file>`.
+- **The cross-tier test runner** — `tests/`.
+- **The audience pages** — `pages/` (faq, leadership, partners,
+  process, security, use-cases, release-notes, roadmap, …).
+- **The reference docs** — `docs/`. Houses `SPEC.md` (frozen wire
+  contract), `ROADMAP.md` (post-v1 directions), `AGENTS.md` (agent
+  guidance for assistants), `VERSIONS.md`, `skill.md`,
+  `rapplication-sdk.md`, and any future long-form reference material.
+- **`README.md`** — must be at root because GitHub renders it on the
+  repo page. Acts as the catalog card and links into `docs/` and
+  `CONSTITUTION.md` for the rest.
+- **`CONSTITUTION.md`** — this file. Lives at repo root, peer to
+  `README.md`, because governance is part of the catalog card.
+  GitHub recognizes top-level governance files (LICENSE,
+  CODE_OF_CONDUCT, CONTRIBUTING) as community-standards anchors;
+  this article holds CONSTITUTION.md to the same level. A visitor
+  who lands on the repo page sees *what this is* (`README.md`) and
+  *the rules it lives by* (`CONSTITUTION.md`) at the same scroll
+  depth — the spec, the roadmap, and the rest live one click in.
+- **`CLAUDE.md`** — Claude Code reads project instructions from the
+  project root.
+- **`index.html`** — GitHub Pages serves the repo root; this is the
+  landing page.
+- **`pitch-playbook.html`** — its public URL has been shared
+  externally and is load-bearing for partner conversations. Cannot
+  move without breaking shared links. New audience pages go in
+  `pages/`; this is the only marketing HTML at root, by exception
+  rather than by precedent.
+- **Repo plumbing** — `.gitignore`, `.nojekyll`, `.env`/`.env.example`,
+  `.github/`, `.vscode/`, `.claude/`. Tools and git itself require
+  these at root.
+
+Each kept top-level subdirectory is **self-documenting**. `docs/`,
+`pages/`, `installer/`, and `tests/` each hold a `README.md` that
+states the local rule of residence — what belongs there, what doesn't,
+and what naming convention to follow. The repo-root rule (this
+article) is the spine; the per-directory README is the rib. New
+contributors don't have to grep the constitution to know where a new
+file goes — they read the README of the directory they're about to
+add to.
+
+Everything else lives in a subfolder. The exhaustive map of where
+*moved* things now live:
+
+- Install scripts, ARM template, Tier 3 Studio bundle → `installer/`.
+- `SPEC.md`, `ROADMAP.md`, `AGENTS.md`, `VERSIONS.md`, `skill.md`,
+  `rapplication-sdk.md` → `docs/`.
+- `CONSTITUTION.md` — stays at root as a peer of `README.md` (per
+  the residency list above; was briefly moved to `docs/` on
+  2026-04-24 and restored same session — governance is part of
+  the catalog card, not a reference doc).
+- New audience HTML → `pages/<file>.html`.
+- New auxiliary markdown → `docs/`.
+- Decision narratives, removal stories, manifestos → `vault/` (a real
+  Obsidian vault, governed by Article XXIII).
+
+### What this rules out (repo root)
+
+- ❌ Dropping the next marketing page at root because the previous
+  one happened to land there. New page → `pages/<file>.html`.
+  `pitch-playbook.html` is the *only* grandfathered exception, and
+  only because its URL is in circulation.
+- ❌ Adding `notes-on-X.md` next to `README.md` because it's "just
+  one more". Auxiliary docs → `docs/`.
+- ❌ Putting any new install-related file at root. New launcher,
+  new platform install, new ARM template, new downloadable bundle
+  → `installer/`.
+- ❌ Creating a new top-level `rapp_<tier>/` directory for an
+  artifact that has no running code. Tier 1 and Tier 2 have
+  directories because there is *code that runs in this repo*. Tier 3
+  is a download from `installer/` because the running code lives in
+  Microsoft's cloud, not here. The Copilot Studio `.zip` was briefly
+  placed in `rapp_studio/` on 2026-04-24 and folded back into
+  `installer/` the same day — the symmetry of three tier directories
+  was overfitting; the actual rule is *code earns a directory,
+  artifacts don't*.
+- ❌ Hardcoding `https://kody-w.github.io/RAPP/<file>` in a moved
+  file. When you relocate a page, update its `og:url`,
+  `canonical_url`, and any test fixtures so the move is honest.
+- ❌ Adding a new top-level directory because nothing else fits. If
+  it's a marketing page, it fits in `pages/`. If it's a doc, it fits
+  in `docs/`. If it's an install artifact, it fits in `installer/`.
+  A new top-level directory is justified only when there is a
+  cohesive body of *running code* that doesn't fit any existing
+  tier — and even then, justify it the same way you'd justify a
+  new `|||<SLOT>|||` (Article II).
+- ❌ Letting a `git pull` pollute root by accident. After a merge
+  that lands new files at the top level, the next move is to
+  re-home them under `installer/`, `pages/`, `docs/`, or the
+  appropriate `rapp_<tier>/` directory — not to ratify them as
+  root residents.
+- ❌ Adding a top-level subdirectory without a `README.md`. The
+  scale rule for that subdir lives at its own root. If the new
+  directory deserves to exist, write the README that says when to
+  add to it and when not to.
+
+The two roots — repo and `rapp_brainstem/` — share one discipline:
+**the root is the catalog card, not the junk drawer.**
+
 ---
 
 ## Article XVII — `agents/` IS the User's Workspace
@@ -831,7 +965,7 @@ tags are **immutable**. They are the rollback contract with users.
 > version with one command.** The one-liner already supports this:
 >
 > ```bash
-> BRAINSTEM_VERSION=0.9.0 curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash
+> BRAINSTEM_VERSION=0.9.0 curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash
 > ```
 >
 > For that to keep working, every VERSION bump on main must ship a
@@ -1073,7 +1207,109 @@ correction is the whole point.
 
 ---
 
-## Article XXIII — Amendments
+## Article XXIII — The Vault Is the Long-Term Memory
+
+Code captures *what*. Commit messages capture *what changed*. The
+constitution captures *the rules*. None of those capture *why a
+decision was made the way it was, what was rejected, and what we
+learned from the things we deleted*.
+
+That knowledge is the most fragile thing the project owns. It rots
+within weeks if it isn't written down, and once it's gone it doesn't
+come back — the next contributor will re-make the same mistake without
+even knowing they're repeating one.
+
+> **The repo's `vault/` directory is the load-bearing answer. It is a
+> real Obsidian vault, openable as-is, and it is the home for every
+> blog-post-shaped thought the platform has.**
+
+### What the vault is for
+
+The vault holds the long-form *why* behind decisions, in note form:
+
+- **Founding decisions** — the rejected alternatives, the close calls.
+- **Removals** — code that was deleted and the lesson it taught us.
+  These rot fastest, because the code is already gone.
+- **Architecture moments** — the clever tricks that look weird at
+  first glance and would be "cleaned up" by a refactor that didn't
+  know better.
+- **Positioning** — the honest tradeoffs, the anti-pitch, the framing
+  we use with prospects.
+- **Twin & UX philosophy** — the worked examples behind the rules in
+  Articles IX–X and XX–XXII.
+- **Process stories** — how a workshop actually runs, what makes a
+  60-minute session land, what doesn't.
+- **Manifestos** — the short essays that turn one-line slogans
+  ("engine, not experience"; "three tiers, one model") into something
+  a contributor can defend in a code review.
+
+### The two-state lifecycle
+
+Every note has `status: stub` or `status: published` in its
+frontmatter.
+
+- **Stub.** The slot is held: title, hook, pointers to related notes,
+  why this would rot if not written. This is the wiki saying "this
+  topic exists; the post hasn't shipped yet." Stubs cost nothing and
+  prevent the topic from being forgotten.
+- **Published.** The full essay. The bar is one thing: *the why is
+  captured well enough that someone who wasn't in the room can apply
+  it.*
+
+A stub becoming published is a real release. The reverse — a published
+note being demoted back to a stub — happens only if the post was wrong;
+it doesn't happen because the topic became unfashionable.
+
+### The two surfaces of the vault
+
+The vault has two faces, both load-bearing:
+
+1. **The vault itself** — `vault/` in the repo. Real markdown files,
+   real wikilinks, openable directly in any Obsidian client via *File
+   → Open folder as vault*. The data is the source of truth.
+2. **The static viewer** — `pages/vault/`. Pulls the markdown live
+   from the same files (relative path on GitHub Pages, raw GitHub as
+   fallback), renders wikilinks and backlinks, exports the entire
+   vault as an Obsidian-compatible zip, and imports a zip back to
+   override the live source for offline reading.
+
+Both must keep working. Either one breaking is a P1 — not because the
+viewer is precious, but because *the discipline of writing the post
+relies on the post being readable in two different places.*
+
+### What this rules out
+
+- ❌ Burying decision rationale in commit messages, PR descriptions,
+  or chat. Those have no future reader. The vault has a future
+  reader by construction.
+- ❌ Putting an "ARCHITECTURE.md" or "DECISIONS.md" at the repo
+  root. The right home for that content is a vault note, with a
+  hook line, frontmatter, and wikilinks.
+- ❌ Letting the viewer drift from the vault. If you rename or move
+  a note, update `_manifest.json` in the same change.
+- ❌ Skipping the stub. If a topic deserves a post but the post
+  isn't ready, ship the stub. The slot in the index is itself a
+  forcing function.
+- ❌ Treating the vault as documentation. Documentation is in
+  `docs/`, `README.md`, and the per-tier docs. The vault is *why*,
+  not *how*.
+- ❌ Generating notes from templates with no specific content. A
+  stub is short on purpose; an LLM-padded "stub" defeats the point.
+
+### Why this is constitutional
+
+If the only people who know why a decision was made are the people
+who made it, the platform is one resignation away from forgetting why
+anything works. The vault is the discipline that keeps that from
+happening — and unless it's load-bearing in the constitution, it
+will quietly stop being maintained the moment someone is in a hurry.
+
+The engine stays small. The agents can be everything. *And the vault
+remembers why we made it that way.*
+
+---
+
+## Article XXIV — Amendments
 
 This constitution can be amended. The only rule: amendments must preserve
 Article I — **the brainstem stays light**. Any change that loads
@@ -1086,5 +1322,5 @@ deserves the same "is this really necessary?" bar as adding a new
 
 ---
 
-*Ratified for the RAPP monorepo. The engine stays small so the agents
+*Ratified for the RAPP platform. The engine stays small so the agents
 can be everything.*

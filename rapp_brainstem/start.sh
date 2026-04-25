@@ -10,7 +10,7 @@ if [ ! -x "$VENV_PYTHON" ]; then
     echo "Setting up virtual environment..."
     PYTHON_CMD=$(command -v python3.11 || command -v python3.12 || command -v python3.13 || command -v python3)
     "$PYTHON_CMD" -m venv "$BRAINSTEM_HOME/venv" 2>/dev/null || {
-        echo "Failed to create venv — run the installer: curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash"
+        echo "Failed to create venv — run the installer: curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash"
         exit 1
     }
 fi

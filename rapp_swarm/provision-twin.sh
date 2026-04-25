@@ -6,7 +6,7 @@
 #   1. az login (if not logged in)
 #   2. Set subscription to the Visual Studio Enterprise subscription
 #   3. Create a fully isolated resource group rg-twin-<name>
-#   4. ARM-deploy the root azuredeploy.json into it (Function App + Storage
+#   4. ARM-deploy the azuredeploy.json template (in installer/) into it (Function App + Storage
 #      + Azure OpenAI + RBAC), wiring outputs into the function app
 #   5. Layer the root .env keys on top as Function App settings (overrides
 #      the freshly-created OpenAI with any pre-existing keys you want to
@@ -62,7 +62,7 @@ DESC="The Twin Stack — ${NAME}'s digital twin cloud estate."
 
 cd "$(dirname "$0")"
 ROOT="$(cd .. && pwd)"
-TEMPLATE="$ROOT/azuredeploy.json"
+TEMPLATE="$ROOT/installer/azuredeploy.json"
 
 # ── Sanity checks ──────────────────────────────────────────────────────
 

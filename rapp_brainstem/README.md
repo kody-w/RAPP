@@ -12,12 +12,12 @@ The brainstem runs on your machine, uses GitHub Copilot as the LLM, auto-discove
 
 **macOS / Linux:**
 ```bash
-curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash
+curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash
 ```
 
 **Windows (PowerShell):**
 ```powershell
-irm https://raw.githubusercontent.com/kody-w/RAPP/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/kody-w/RAPP/main/installer/install.ps1 | iex
 ```
 
 The installer handles Python 3.11, Git, cloning, pip deps, and the `brainstem` CLI command. Re-running the same one-liner auto-upgrades if a newer version is available.

@@ -79,6 +79,6 @@ non-zero on the first failure. Logs land under `/tmp/rapp-e2e-*.log`.
 
 ### 06-oneliner-install.sh
 - In `/tmp/rapp-install-sandbox-<timestamp>/`, run
-  `curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash`.
+  `curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash`.
 - Verify brainstem starts, `/health` returns ok, `/chat` round-trips.
 - Tears down after.

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAPP — FAQ (One Slide)</title>
+<meta name="description" content="The four questions every room asks — answered on one slide. Does this compete with Copilot? Does it run offline? How does it get to production? What's the one-sentence?">
+<meta property="og:title" content="RAPP — Four questions, one slide.">
+<meta property="og:description" content="The four questions every room asks — answered on one slide.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kody-w.github.io/RAPP/pages/faq-slide.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E🧠%3C/text%3E%3C/svg%3E">
+<script>
+(function(){
+  try {
+    var saved = localStorage.getItem('rapp-theme');
+    var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    var theme = saved || (prefersLight ? 'light' : 'dark');
+    if (theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+  } catch(e){}
+})();
+</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d1117;--surface:#161b22;--surface2:#1c2128;--border:#30363d;--border2:#21262d;
+  --text:#e6edf3;--text-dim:#8b949e;--muted:#484f58;
+  --accent:#58a6ff;--green:#3fb950;--purple:#a78bfa;
+  --grad-1:#7df0c8;--grad-2:#58a6ff;--grad-3:#a78bfa;
+  --logo-glow:rgba(125,240,200,.3);
+}
+[data-theme="light"]{
+  --bg:#ffffff;--surface:#f6f8fa;--surface2:#eaeef2;--border:#d0d7de;--border2:#afb8c1;
+  --text:#1f2328;--text-dim:#59636e;--muted:#8c959f;
+  --accent:#0969da;--green:#1a7f37;--purple:#8250df;
+  --grad-1:#2da44e;--grad-2:#0969da;--grad-3:#8250df;
+  --logo-glow:rgba(9,105,218,.2);
+}
+html,body{
+  height:100%;overflow:hidden;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  background:var(--bg);color:var(--text);line-height:1.55;
+  transition:background-color .25s,color .25s;
+}
+.slide{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  padding:4vh 6vw;text-align:center;
+}
+.slide-inner{width:100%;max-width:1260px}
+
+.kicker{
+  display:inline-block;margin-bottom:12px;
+  font-size:.78rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:var(--green);
+  padding:6px 14px;border:1px solid var(--green);border-radius:999px;
+  background:rgba(63,185,80,.08);
+}
+[data-theme="light"] .kicker{background:rgba(26,127,55,.08)}
+
+.logo{
+  font-size:clamp(44px,5vw,64px);line-height:1;margin-bottom:10px;
+  filter:drop-shadow(0 0 22px var(--logo-glow));
+}
+h1{
+  font-size:clamp(2rem,4.2vw,3.6rem);font-weight:800;line-height:1.08;
+  letter-spacing:-.7px;margin-bottom:30px;
+}
+h1 .grad{
+  background:linear-gradient(135deg,var(--grad-1),var(--grad-2),var(--grad-3));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+
+/* 2x2 Q&A grid */
+.qa-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:18px;
+  width:100%;text-align:left;margin-bottom:28px;
+}
+.qa{
+  background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  padding:22px 24px;transition:border-color .2s,transform .2s;
+}
+.qa:hover{border-color:var(--accent);transform:translateY(-2px)}
+.qa .q{
+  font-size:clamp(.74rem,.88vw,.82rem);
+  color:var(--accent);font-weight:700;letter-spacing:1.8px;text-transform:uppercase;
+  margin-bottom:8px;
+  display:flex;align-items:center;gap:8px;
+}
+.qa .q .num{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:22px;height:22px;border-radius:50%;
+  background:linear-gradient(135deg,var(--grad-1),var(--grad-3));
+  color:#0d1117;font-size:11px;font-weight:800;
+  font-family:'SF Mono',ui-monospace,monospace;
+}
+[data-theme="light"] .qa .q .num{color:#fff}
+.qa h3{
+  font-size:clamp(1.05rem,1.35vw,1.28rem);
+  font-weight:700;line-height:1.3;margin-bottom:10px;color:var(--text);
+}
+.qa p{
+  font-size:clamp(.88rem,1.05vw,.98rem);color:var(--text-dim);line-height:1.55;
+}
+.qa p strong{color:var(--text)}
+.qa p .accent{
+  background:linear-gradient(135deg,var(--grad-1),var(--grad-2),var(--grad-3));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  font-weight:700;
+}
+
+/* Closing hinge */
+.hinge{
+  display:block;margin:0 auto;max-width:900px;
+  font-size:clamp(1rem,1.35vw,1.3rem);line-height:1.5;
+  color:var(--text);font-weight:500;font-style:italic;
+  position:relative;padding-top:24px;letter-spacing:-.1px;
+}
+.hinge::before{
+  content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:50px;height:2px;
+  background:linear-gradient(90deg,var(--grad-1),var(--grad-3));
+  border-radius:1px;opacity:.85;
+}
+.hinge .accent{
+  background:linear-gradient(135deg,var(--grad-1),var(--grad-2),var(--grad-3));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  font-style:normal;font-weight:700;
+}
+.hinge .by{
+  display:block;margin-top:8px;font-size:.8rem;color:var(--text-dim);
+  font-style:normal;font-weight:500;letter-spacing:0;
+}
+
+.sr-only{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.animate{animation:fadeUp .6s ease both}
+.animate.d1{animation-delay:.08s}.animate.d2{animation-delay:.18s}
+.animate.d3{animation-delay:.28s}.animate.d4{animation-delay:.38s}
+.animate.d5{animation-delay:.48s}.animate.d6{animation-delay:.58s}
+
+@media(max-width:900px){
+  html,body{overflow:auto;height:auto}
+  .slide{position:static;padding:36px 22px;min-height:100vh}
+  .qa-grid{grid-template-columns:1fr;gap:12px}
+}
+@media print{
+  html,body{background:#fff;color:#0d1117;overflow:visible;height:auto}
+  .slide{position:static;padding:28px;page-break-inside:avoid}
+  .qa{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<main class="slide">
+  <div class="slide-inner">
+
+    <span class="kicker animate d1">Top Questions, One Slide</span>
+
+    <div class="logo animate d2">🧠</div>
+
+    <h1 class="animate d3">
+      Four questions.<br>
+      <span class="grad">One slide of answers.</span>
+    </h1>
+
+    <section class="qa-grid">
+
+      <div class="qa animate d4">
+        <div class="q"><span class="num">1</span>The Copilot question</div>
+        <h3>Does this compete with Copilot Studio?</h3>
+        <p>
+          No. RAPP is the <span class="accent">on-ramp</span> to the Microsoft AI
+          stack. The agent you prototype on a laptop promotes into Azure and
+          lands in Copilot Studio — unchanged. We <strong>accelerate</strong>
+          the stack; we don't replace any of it.
+        </p>
+      </div>
+
+      <div class="qa animate d4">
+        <div class="q"><span class="num">2</span>The offline question</div>
+        <h3>Does it really run offline?</h3>
+        <p>
+          Yes. The brainstem is a small local server; agents are plain files
+          on disk. Point it at a local model (or use GitHub Copilot) and the
+          whole thing runs <strong>on-device</strong>. Perfect for edge,
+          field, and air-gapped scenarios.
+        </p>
+      </div>
+
+      <div class="qa animate d5">
+        <div class="q"><span class="num">3</span>The production question</div>
+        <h3>How does it get to production?</h3>
+        <p>
+          <strong>Three tiers, one model.</strong> Same agent file: laptop
+          today, Azure this week, Copilot Studio next. The partner receives
+          a <span class="accent">self-documenting single file</span> — not a
+          20-page spec — and bolts it to real systems.
+        </p>
+      </div>
+
+      <div class="qa animate d5">
+        <div class="q"><span class="num">4</span>The one-sentence</div>
+        <h3>What is this, in one sentence?</h3>
+        <p>
+          <strong>Give it a goal; a swarm of agents builds itself, learns
+          from the work, and travels as one portable file</strong> —
+          across your laptop, your cloud, and your Copilot Studio tenant.
+          <span class="accent">Every conversation becomes an artifact.</span>
+        </p>
+      </div>
+
+    </section>
+
+    <blockquote class="hinge animate d6">
+      If it's <span class="accent">not on this slide, it's probably on the full FAQ</span>.
+      <span class="by">See: faq.html for the long answers.</span>
+    </blockquote>
+
+  </div>
+</main>
+
+<nav class="sr-only" aria-label="Related pages">
+  <a href="./">Home</a>
+  <a href="./one-pager.html">Platform one-pager</a>
+  <a href="./leadership.html">Leadership one-pager</a>
+  <a href="./process.html">Process one-pager</a>
+  <a href="./partners.html">Partners one-pager</a>
+  <a href="./use-cases.html">Use cases</a>
+  <a href="./security.html">Security &amp; compliance</a>
+  <a href="./faq.html">Full FAQ</a>
+  <a href="./pitch-playbook.html">Pitch deck</a>
+  <a href="./roadmap.html">Roadmap</a>
+  <a href="./release-notes.html">Release notes</a>
+  <a href="./vault/">Vault — second-brain wiki</a>
+  <a href="https://github.com/kody-w/RAPP">GitHub</a>
+</nav>
+
+</body>
+</html>

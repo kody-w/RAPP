@@ -1,0 +1,71 @@
+{
+  "title": "RAPP Vault",
+  "subtitle": "Second-brain wiki for the RAPP platform",
+  "github": {
+    "owner": "kody-w",
+    "repo": "RAPP",
+    "branch": "main",
+    "vault_path": "pages/vault"
+  },
+  "entry": "README.md",
+  "index": "_index.md",
+  "notes": [
+    {"path": "README.md", "title": "Welcome", "section": null, "status": "published"},
+    {"path": "_index.md", "title": "Index", "section": null, "status": "published"},
+
+    {"path": "Plans & Ledgers/Vault Build-Out Plan.md", "title": "Vault Build-Out Plan", "section": "Plans & Ledgers", "status": "living"},
+    {"path": "Plans & Ledgers/Documentation Roadmap.md", "title": "Documentation Roadmap", "section": "Plans & Ledgers", "status": "living"},
+    {"path": "Plans & Ledgers/Release Ledger.md", "title": "Release Ledger", "section": "Plans & Ledgers", "status": "living"},
+
+    {"path": "Foundations/How to Read This Vault.md", "title": "How to Read This Vault", "section": "Foundations", "status": "published"},
+    {"path": "Foundations/The Platform in 90 Seconds.md", "title": "The Platform in 90 Seconds", "section": "Foundations", "status": "published"},
+    {"path": "Foundations/The Sacred Constraints.md", "title": "The Sacred Constraints", "section": "Foundations", "status": "published"},
+    {"path": "Foundations/Glossary.md", "title": "Glossary", "section": "Foundations", "status": "published"},
+    {"path": "Foundations/Tier 1 — Local Brainstem.md", "title": "Tier 1 — Local Brainstem", "section": "Foundations", "status": "published"},
+    {"path": "Foundations/Tier 2 — Cloud Swarm.md", "title": "Tier 2 — Cloud Swarm", "section": "Foundations", "status": "published"},
+    {"path": "Foundations/Tier 3 — Enterprise Power Platform.md", "title": "Tier 3 — Enterprise Power Platform", "section": "Foundations", "status": "published"},
+    {"path": "Foundations/Constitution Reading Order.md", "title": "Constitution Reading Order", "section": "Foundations", "status": "published"},
+    {"path": "Foundations/Major Moments.md", "title": "Major Moments", "section": "Foundations", "status": "published"},
+
+    {"path": "Reading Paths/Reading Path — Engineer Evaluating RAPP.md", "title": "Reading Path — Engineer Evaluating RAPP", "section": "Reading Paths", "status": "published"},
+    {"path": "Reading Paths/Reading Path — Architect Deciding to Bet.md", "title": "Reading Path — Architect Deciding to Bet", "section": "Reading Paths", "status": "published"},
+    {"path": "Reading Paths/Reading Path — Partner Pricing a Project.md", "title": "Reading Path — Partner Pricing a Project", "section": "Reading Paths", "status": "published"},
+    {"path": "Reading Paths/Reading Path — Exec Asking What This Is.md", "title": "Reading Path — Exec Asking What This Is", "section": "Reading Paths", "status": "published"},
+    {"path": "Reading Paths/Reading Path — New Contributor.md", "title": "Reading Path — New Contributor", "section": "Reading Paths", "status": "published"},
+
+    {"path": "Founding Decisions/Engine, Not Experience.md", "title": "Engine, Not Experience", "section": "Founding Decisions", "status": "published"},
+    {"path": "Founding Decisions/Why Three Tiers, Not One.md", "title": "Why Three Tiers, Not One", "section": "Founding Decisions", "status": "published"},
+    {"path": "Founding Decisions/The Single-File Agent Bet.md", "title": "The Single-File Agent Bet", "section": "Founding Decisions", "status": "published"},
+    {"path": "Founding Decisions/Voice and Twin Are Forever.md", "title": "Voice and Twin Are Forever", "section": "Founding Decisions", "status": "published"},
+    {"path": "Founding Decisions/Data Sloshing.md", "title": "Data Sloshing", "section": "Founding Decisions", "status": "published"},
+    {"path": "Founding Decisions/The Brainstem Tax.md", "title": "The Brainstem Tax", "section": "Founding Decisions", "status": "published"},
+
+    {"path": "Removals/Why hatch_rapp Was Killed.md", "title": "Why hatch_rapp Was Killed", "section": "Removals", "status": "published"},
+    {"path": "Removals/From save_recall to manage_memory.md", "title": "From save_recall to manage_memory", "section": "Removals", "status": "published"},
+    {"path": "Removals/Why t2t and swarm_server Are Gone.md", "title": "Why t2t and swarm_server Are Gone", "section": "Removals", "status": "published"},
+    {"path": "Removals/The experimental Graveyard.md", "title": "The experimental Graveyard", "section": "Removals", "status": "published"},
+
+    {"path": "Architecture/Local Storage Shim via sys.modules.md", "title": "Local Storage Shim via sys.modules", "section": "Architecture", "status": "published"},
+    {"path": "Architecture/The Deterministic Fake LLM.md", "title": "The Deterministic Fake LLM", "section": "Architecture", "status": "published"},
+    {"path": "Architecture/Vendoring, Not Symlinking.md", "title": "Vendoring, Not Symlinking", "section": "Architecture", "status": "published"},
+    {"path": "Architecture/The Auth Cascade.md", "title": "The Auth Cascade", "section": "Architecture", "status": "published"},
+    {"path": "Architecture/Repo Root Reorganization 2026-04-24.md", "title": "Repo Root Reorganization 2026-04-24", "section": "Architecture", "status": "published"},
+    {"path": "Architecture/Surfaces — Mobile, Watch, Voice.md", "title": "Surfaces — Mobile, Watch, Voice", "section": "Architecture", "status": "published"},
+
+    {"path": "Positioning/RAPP vs Copilot Studio.md", "title": "RAPP vs Copilot Studio", "section": "Positioning", "status": "published"},
+    {"path": "Positioning/What You Give Up With RAPP.md", "title": "What You Give Up With RAPP", "section": "Positioning", "status": "published"},
+    {"path": "Positioning/Why GitHub Pages Is the Distribution Channel.md", "title": "Why GitHub Pages Is the Distribution Channel", "section": "Positioning", "status": "published"},
+
+    {"path": "Twin and UX/The Twin Offers, The User Accepts.md", "title": "The Twin Offers, The User Accepts", "section": "Twin and UX", "status": "published"},
+    {"path": "Twin and UX/Calibration Is Behavioral, Not Explicit.md", "title": "Calibration Is Behavioral, Not Explicit", "section": "Twin and UX", "status": "published"},
+    {"path": "Twin and UX/Every Twin Surface Is a Calibration Opportunity.md", "title": "Every Twin Surface Is a Calibration Opportunity", "section": "Twin and UX", "status": "published"},
+
+    {"path": "Process/60 Minutes to a Working Agent.md", "title": "60 Minutes to a Working Agent", "section": "Process", "status": "published"},
+    {"path": "Process/The Agent IS the Spec.md", "title": "The Agent IS the Spec", "section": "Process", "status": "published"},
+    {"path": "Process/Self-Documenting Handoff.md", "title": "Self-Documenting Handoff", "section": "Process", "status": "published"},
+
+    {"path": "Manifestos/The Engine Stays Small.md", "title": "The Engine Stays Small", "section": "Manifestos", "status": "published"},
+    {"path": "Manifestos/Three Tiers, One Model.md", "title": "Three Tiers, One Model", "section": "Manifestos", "status": "published"},
+    {"path": "Manifestos/Roots Are Public Surfaces.md", "title": "Roots Are Public Surfaces", "section": "Manifestos", "status": "published"}
+  ]
+}

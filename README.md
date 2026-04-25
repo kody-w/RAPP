@@ -3,7 +3,7 @@
 A local-first AI agent server. Single-file Python agents, no API keys — uses your existing GitHub Copilot OAuth as the LLM backend. Drops in your home directory or any project repo via one curl pipe.
 
 ```bash
-curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash
+curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash
 ```
 
 Brainstem comes up at `http://localhost:7071`. One GitHub account with Copilot access is the only dependency. No OpenAI/Anthropic key. No cloud account. No enterprise gate.
@@ -54,19 +54,19 @@ Drop that file in `agents/`, it auto-discovers on the next request. The `metadat
 
 ```bash
 # Global (default — installs at ~/.brainstem, port 7071, with a `brainstem` CLI):
-curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash
+curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash
 
 # Project-local (installs at ./.brainstem/, free port 7072+, gitignored):
-curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash -s -- --here
+curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash -s -- --here
 
 # Pin to a tagged version (immutable per the rollback contract):
-curl -fsSL https://kody-w.github.io/RAPP/install.sh | BRAINSTEM_VERSION=0.11.6 bash
+curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | BRAINSTEM_VERSION=0.11.6 bash
 ```
 
 Windows:
 
 ```powershell
-irm https://raw.githubusercontent.com/kody-w/RAPP/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/kody-w/RAPP/main/installer/install.ps1 | iex
 ```
 
 ## For LLMs running the installer on someone's behalf
@@ -79,13 +79,14 @@ Fetch [`skill.md`](https://kody-w.github.io/RAPP/skill.md) and cache it. It docu
 |---|---|
 | `rapp_brainstem/` | The engine — Flask server, agent loader, auth chain |
 | `rapp_brainstem/agents/` | Showroom (top-level starter agents) + `workspace_agents/` (everything organizational: system, experimental, disabled, local-only, project folders) |
-| `rapp_brainstem/CONSTITUTION.md` | Governance — what's sacred, what isn't, why |
 | `rapp_swarm/` | Tier 2 — Azure Functions target |
-| `worker/` | Tier 3 — Cloudflare worker that proxies into Copilot Studio |
+| `worker/` | Cloudflare auth/proxy worker |
 | `rapp_store/` | Catalog of distributable agents |
-| `install.sh` · `install.ps1` | One-liner installers (global + `--here`) |
-| `skill.md` | Canonical learnable manifest for AI assistants |
-| `SPEC.md` | The v1 contract (single-file `*_agent.py` is sacred) |
+| `installer/` | Public install surface — one-liner installers (`install.sh` / `install.ps1` / `install.cmd`), `start-local.sh`, `install-swarm.sh`, ARM template, install widget, and the Tier 3 Copilot Studio bundle (`MSFTAIBASMultiAgentCopilot_*.zip`) |
+| `CONSTITUTION.md` | Articles governing the repo. Peer of `README.md` at root |
+| `pages/docs/` | Reference (`SPEC.md`, `ROADMAP.md`, `AGENTS.md`, `VERSIONS.md`, `skill.md`, `rapplication-sdk.md`) |
+| `pages/vault/` | Long-term memory — Obsidian vault of decision narratives (Article XXIII) |
+| `pages/` | Audience-facing HTML (faq, leadership, partners, security, …) |
 | `index.html` | Landing page at kody-w.github.io/RAPP/ |
 | `pitch-playbook.html` | 6-slide narrative for non-technical audiences (see below) |
 | `tests/` | Browser + Node test runner |
@@ -109,15 +110,21 @@ If you're not the audience for the rest of this README, [**pitch-playbook.html**
 
 ## Constitution & spec
 
-- [`rapp_brainstem/CONSTITUTION.md`](./rapp_brainstem/CONSTITUTION.md) — articles governing what belongs, what's sacred, what's ruled out. Worth a skim if you want to contribute.
-- [`SPEC.md`](./SPEC.md) — the v1 contract for the single-file agent format. Frozen on purpose; the agent contract is the API.
+- [`CONSTITUTION.md`](./CONSTITUTION.md) — articles governing what belongs, what's sacred, what's ruled out. Worth a skim if you want to contribute.
+- [`pages/docs/SPEC.md`](./pages/docs/SPEC.md) — the v1 contract for the single-file agent format. Frozen on purpose; the agent contract is the API.
+
+## The vault
+
+[`pages/vault/`](./pages/vault/) is the platform's second-brain wiki — the *why* behind every decision, captured as long-form notes. It's a real Obsidian vault (open with *File → Open folder as vault*) and it's also rendered as a static site at [`pages/vault/`](https://kody-w.github.io/RAPP/pages/vault/) with wikilinks, backlinks, full-text search, a graph view, and JSZip export to a portable Obsidian-compatible bundle.
+
+Start with [`pages/vault/Foundations/The Platform in 90 Seconds.md`](./pages/vault/Foundations/The%20Platform%20in%2090%20Seconds.md) or pick a [reading path](./pages/vault/Reading%20Paths/) by audience (engineer, architect, partner, exec, contributor). The vault is mandated by Constitution Article XXIII — when you make a decision worth remembering, write it as a vault note rather than burying it in a commit message.
 
 ## Versioning & rollback
 
 Every release is tagged `brainstem-v<X.Y.Z>` and tags are immutable. To pin (or roll back if something wobbles):
 
 ```bash
-curl -fsSL https://kody-w.github.io/RAPP/install.sh | BRAINSTEM_VERSION=0.11.6 bash
+curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | BRAINSTEM_VERSION=0.11.6 bash
 ```
 
 The installer honors `BRAINSTEM_VERSION` by checking out the matching tag and resetting to it. See Constitution Article VIII for the full release discipline.

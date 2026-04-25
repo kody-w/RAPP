@@ -49,7 +49,7 @@ function test(name, fn) {
 function assert(cond, msg) { if (!cond) throw new Error(msg || 'assertion failed'); }
 function assertEq(a, b, msg) { if (!eq(a, b)) throw new Error(`${msg || 'not equal'}\n    expected ${JSON.stringify(b)}\n    got      ${JSON.stringify(a)}`); }
 
-const STARTER_FILES = ['save_memory_agent.py','recall_memory_agent.py','hacker_news_agent.py'];
+const STARTER_FILES = ['manage_memory_agent.py','context_memory_agent.py','hacker_news_agent.py'];
 
 (async () => {
   console.log('\n\x1b[1mRAPP v1 contract tests\x1b[0m\n');
@@ -161,8 +161,8 @@ class TinyAgent(BasicAgent):
   }
 
   await test('card SHA-256 mismatch is detected', async () => {
-    const src = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'agents', 'save_memory_agent.py'), 'utf8');
-    const c = await RAPP.Card.mintCard(src, 'save_memory_agent.py');
+    const src = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'agents', 'manage_memory_agent.py'), 'utf8');
+    const c = await RAPP.Card.mintCard(src, 'manage_memory_agent.py');
     c.source = c.source + '\n# tampered\n';   // mutate but keep stale sha256
     let threw = false;
     try { await RAPP.Card.cardToAgentSource(c); } catch (e) { threw = true; }
@@ -192,8 +192,8 @@ class TinyAgent(BasicAgent):
 
   await test('binder addCard is idempotent for same filename', async () => {
     const b = RAPP.Binder.empty();
-    const src = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'agents', 'save_memory_agent.py'), 'utf8');
-    const c1 = await RAPP.Card.mintCard(src, 'save_memory_agent.py');
+    const src = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'agents', 'manage_memory_agent.py'), 'utf8');
+    const c1 = await RAPP.Card.mintCard(src, 'manage_memory_agent.py');
     RAPP.Binder.addCard(b, c1);
     RAPP.Binder.addCard(b, c1);
     assertEq(b.cards.length, 1);
@@ -201,10 +201,10 @@ class TinyAgent(BasicAgent):
 
   await test('binder removeCard works by predicate', async () => {
     const b = RAPP.Binder.empty();
-    const src = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'agents', 'save_memory_agent.py'), 'utf8');
-    const c = await RAPP.Card.mintCard(src, 'save_memory_agent.py');
+    const src = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'agents', 'manage_memory_agent.py'), 'utf8');
+    const c = await RAPP.Card.mintCard(src, 'manage_memory_agent.py');
     RAPP.Binder.addCard(b, c);
-    RAPP.Binder.removeCard(b, x => x.filename === 'save_memory_agent.py');
+    RAPP.Binder.removeCard(b, x => x.filename === 'manage_memory_agent.py');
     assertEq(b.cards.length, 0);
   });
 
@@ -222,9 +222,9 @@ class TinyAgent(BasicAgent):
     });
   }
 
-  await test('SPEC.md exists and is non-empty', () => {
-    const s = fs.readFileSync(path.join(ROOT, 'SPEC.md'), 'utf8');
-    assert(s.length > 1000, 'SPEC.md content present');
+  await test('pages/docs/SPEC.md exists and is non-empty', () => {
+    const s = fs.readFileSync(path.join(ROOT, 'pages', 'docs', 'SPEC.md'), 'utf8');
+    assert(s.length > 1000, 'pages/docs/SPEC.md content present');
     assert(s.includes('rapp-agent/1.0'), 'SPEC mentions schema tag');
   });
 
@@ -268,12 +268,16 @@ class TinyAgent(BasicAgent):
   /* ───── Suite 8: multi-agent chain via data_slush ─────────── */
   console.log('\nMulti-agent chain (data_slush)');
 
-  await test('save_memory → recall_memory passes signals through slush', async () => {
-    // Mint both starter agents and simulate the brainstem chain loop.
-    const saveSrc = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'agents', 'save_memory_agent.py'), 'utf8');
-    const recSrc  = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'agents', 'recall_memory_agent.py'), 'utf8');
-    await RAPP.Card.mintCard(saveSrc, 'save_memory_agent.py');
-    await RAPP.Card.mintCard(recSrc,  'recall_memory_agent.py');
+  await test('two-step memory chain passes signals through slush', async () => {
+    // Mint two starter agents to verify the contract; the chain itself uses
+    // the stub below. (Memory split into save/recall agents historically;
+    // they were merged into manage_memory_agent.py — see vault note
+    // [[From save_recall to manage_memory]]. The data_slush wire shape is
+    // what's under test here, not the agent identity.)
+    const memSrc = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'agents', 'manage_memory_agent.py'), 'utf8');
+    const ctxSrc = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'agents', 'context_memory_agent.py'), 'utf8');
+    await RAPP.Card.mintCard(memSrc, 'manage_memory_agent.py');
+    await RAPP.Card.mintCard(ctxSrc, 'context_memory_agent.py');
     // Use the same shape the UI's stub runner mirrors.
     const stub = (name, kw, slush) => {
       if (name === 'SaveMemory') {
@@ -293,8 +297,8 @@ class TinyAgent(BasicAgent):
   console.log('\nCard wire-compat');
 
   await test('seed → mnemonic → seed → card is fully reproducible', async () => {
-    const src = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'agents', 'recall_memory_agent.py'), 'utf8');
-    const c = await RAPP.Card.mintCard(src, 'recall_memory_agent.py');
+    const src = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'agents', 'manage_memory_agent.py'), 'utf8');
+    const c = await RAPP.Card.mintCard(src, 'manage_memory_agent.py');
     const seedBig = BigInt(c.card.seed);
     const words = RAPP.Mnemonic.seedToWords(seedBig);
     const back = RAPP.Mnemonic.wordsToSeed(words);
@@ -318,13 +322,13 @@ class TinyAgent(BasicAgent):
   console.log('\nDigital twin layout');
 
   for (const p of [
-    'index.html', 'SPEC.md', 'README.md',
+    'index.html', 'pages/docs/SPEC.md', 'README.md',
     'installer/index.html', 'rapp_swarm/index.html', 'rapp_brainstem/web/index.html', 'rapp_brainstem/web/rapp.js',
     'rapp_brainstem/agents/basic_agent.py',
-    'rapp_brainstem/agents/save_memory_agent.py', 'rapp_brainstem/agents/recall_memory_agent.py', 'rapp_brainstem/agents/hacker_news_agent.py',
+    'rapp_brainstem/agents/manage_memory_agent.py', 'rapp_brainstem/agents/context_memory_agent.py', 'rapp_brainstem/agents/hacker_news_agent.py',
     'tests/run-tests.mjs',
     'rapp_brainstem/brainstem.py',
-    'install-swarm.sh',
+    'installer/install-swarm.sh',
     'tests/test-sealing-snapshot.sh',
     'tests/test-hero-deploy.sh',
     'tests/test-llm-chat.sh',

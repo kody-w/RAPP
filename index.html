@@ -152,7 +152,7 @@
       <a href="rapp_brainstem/web/" title="Browser-only brainstem">Try it ↗</a>
       <a href="installer/">Installer</a>
       <a href="https://kody-w.github.io/" target="_blank" rel="noopener">Blog ↗</a>
-      <a href="SPEC.md">SPEC</a>
+      <a href="docs/SPEC.md">SPEC</a>
       <a class="gh-btn" href="https://github.com/kody-w/RAPP" target="_blank" rel="noopener">GitHub →</a>
     </div>
   </div>
@@ -177,7 +177,7 @@
   </div>
   <div class="install-body" id="cmd-row">
     <span class="dollar">$</span>
-    <span class="cmd" id="cmd-text">curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash</span>
+    <span class="cmd" id="cmd-text">curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash</span>
     <span class="copy">⧉</span>
   </div>
   <div class="install-hint">click anywhere on the line to copy</div>
@@ -185,6 +185,7 @@
 
 <div class="alt-cta">
   <a href="rapp_brainstem/web/">Try it in the browser ↗</a>
+  <a href="pages/vault/">Read the vault ↗</a>
   <a href="https://github.com/kody-w/RAPP" target="_blank" rel="noopener">View source on GitHub ↗</a>
 </div>
 
@@ -207,7 +208,7 @@
       <div class="step">
         <h3>Install</h3>
         <p>Puts the brainstem at <code>~/.brainstem/src/rapp_brainstem/</code>.</p>
-        <pre>curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash</pre>
+        <pre>curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash</pre>
       </div>
       <div class="step">
         <h3>Run</h3>
@@ -236,7 +237,7 @@
       <p class="met"><em>Metaphor: long-term memory. Slow, durable, multi-tenant.</em></p>
       <div class="step">
         <h3>Install the swarm runtime</h3>
-        <pre>curl -fsSL https://kody-w.github.io/RAPP/install-swarm.sh | bash</pre>
+        <pre>curl -fsSL https://kody-w.github.io/RAPP/installer/install-swarm.sh | bash</pre>
       </div>
       <div class="step">
         <h3>Deploy to Azure</h3>
@@ -260,7 +261,7 @@
       <p class="met"><em>Metaphor: the cortex. Where the brain meets the world.</em></p>
       <div class="step">
         <h3>Bundle</h3>
-        <a class="zip-dl" href="MSFTAIBASMultiAgentCopilot_1_0_0_5.zip" download>
+        <a class="zip-dl" href="installer/MSFTAIBASMultiAgentCopilot_1_0_0_5.zip" download>
           <span class="zip-icon">⬇</span>
           <span class="zip-name">MSFTAIBASMultiAgentCopilot_1_0_0_5.zip</span>
           <span class="zip-hint">click to download</span>
@@ -272,9 +273,9 @@
 </div>
 
 <div class="links">
-  <a href="SPEC.md">SPEC</a>
+  <a href="docs/SPEC.md">SPEC</a>
   <a href="CONSTITUTION.md">Constitution</a>
-  <a href="ROADMAP.md">Roadmap</a>
+  <a href="docs/ROADMAP.md">Roadmap</a>
   <a href="installer/">Installer</a>
   <a href="rapp_store/">Store</a>
   <a href="https://kody-w.github.io/" target="_blank" rel="noopener">Blog ↗</a>
@@ -289,9 +290,9 @@
 
 <script>
   const CMDS = {
-    mac:   'curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash',
-    linux: 'curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash',
-    win:   'iwr https://kody-w.github.io/RAPP/install.ps1 -useb | iex'
+    mac:   'curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash',
+    linux: 'curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash',
+    win:   'iwr https://kody-w.github.io/RAPP/installer/install.ps1 -useb | iex'
   };
   const tabs = document.querySelectorAll('.install-tab');
   const cmdText = document.getElementById('cmd-text');

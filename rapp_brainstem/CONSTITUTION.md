@@ -303,11 +303,11 @@ the work the user does not.
 The install experience is sacred:
 
 ```bash
-curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash
+curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash
 ```
 
 ```powershell
-irm https://raw.githubusercontent.com/kody-w/RAPP/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/kody-w/RAPP/main/installer/install.ps1 | iex
 ```
 
 One command. Works on a fresh machine. Installs prerequisites, clones
@@ -329,10 +329,10 @@ each other as agents.
 
 ```bash
 # Global (unchanged, default):
-curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash
+curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash
 
 # Project-local (from inside the target repo):
-curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash -s -- --here
+curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash -s -- --here
 ```
 
 ### The agent handshake
@@ -431,7 +431,7 @@ When a release breaks a user's install, they must be able to fall back
 to a prior working version with a single command:
 
 ```bash
-BRAINSTEM_VERSION=0.9.0 curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash
+BRAINSTEM_VERSION=0.9.0 curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash
 ```
 
 The installer honors `BRAINSTEM_VERSION` by checking out the

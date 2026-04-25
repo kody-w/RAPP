@@ -5,7 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>RAPP Brainstem</title>
 <meta name="description" content="The browser-only RAPP brainstem. Same chat UI, same single-file *_agent.py contract, same binder. Same GitHub identity as the rest of RAPP.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' fill='%2358a6ff'%3E%3Cpath d='M184 0c-30.9 0-56.5 22.7-61.1 52.3C54.5 67 0 130 0 206.8c0 41.6 17.4 79.2 45.3 105.9-2 9.2-3.3 18.8-3.3 28.7 0 55.3 35.8 102.2 85.5 119C142.2 493 172.6 512 208 512h16c35.3 0 64-28.7 64-64V86c0-8.8-7.2-16-16-16h-16c-8.8 0-16 7.2-16 16v16c0 8.8-7.2 16-16 16s-16-7.2-16-16V64c0-35.3-28.7-64-64-64h40zm144 0c30.9 0 56.5 22.7 61.1 52.3C457.5 67 512 130 512 206.8c0 41.6-17.4 79.2-45.3 105.9 2 9.2 3.3 18.8 3.3 28.7 0 55.3-35.8 102.2-85.5 119C369.8 493 339.4 512 304 512h-16c-35.3 0-64-28.7-64-64V86c0-8.8 7.2-16 16-16h16c8.8 0 16 7.2 16 16v16c0 8.8 7.2 16 16 16s16-7.2 16-16V64c0-35.3 28.7-64 64-64h-40z'/%3E%3C/svg%3E">
+
+<!-- PWA: installable on every desktop + mobile browser. -->
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#1f6feb">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Brainstem">
+<link rel="apple-touch-icon" href="./icon-192.svg">
+<link rel="icon" href="./icon-192.svg">
+
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1897,11 +1906,11 @@ or "deploy these agents" — give them the one-liner. The deployable unit
 is a "swarm"; the engine running it lives at rapp_swarm/ in the RAPP repo.
 
 <install_command os="macos_linux">
-curl -fsSL https://kody-w.github.io/RAPP/install-swarm.sh | bash
+curl -fsSL https://kody-w.github.io/RAPP/installer/install-swarm.sh | bash
 </install_command>
 
 <install_command os="windows">
-iwr https://kody-w.github.io/RAPP/install-swarm.sh -useb | wsl bash
+iwr https://kody-w.github.io/RAPP/installer/install-swarm.sh -useb | wsl bash
 </install_command>
 
 This creates an isolated swarm endpoint at \`~/rapp-projects/{name}/\`
@@ -4511,8 +4520,8 @@ function wire() {
     // Detect OS and show the right one-liner
     const isWin = navigator.platform.startsWith('Win') || navigator.userAgent.includes('Windows');
     cmdEl.textContent = isWin
-      ? 'iwr https://kody-w.github.io/RAPP/install.ps1 -useb | iex'
-      : 'curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash';
+      ? 'iwr https://kody-w.github.io/RAPP/installer/install.ps1 -useb | iex'
+      : 'curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash';
     cmdEl.addEventListener('click', () => {
       const text = cmdEl.textContent.trim();
       navigator.clipboard.writeText(text).then(() => {
@@ -4708,15 +4717,15 @@ function wire() {
 
 const INSTALL_CMDS = {
   brainstem: {
-    mac:   'curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash',
-    linux: 'curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash',
-    win:   'iwr https://kody-w.github.io/RAPP/install.ps1 -useb | iex',
+    mac:   'curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash',
+    linux: 'curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash',
+    win:   'iwr https://kody-w.github.io/RAPP/installer/install.ps1 -useb | iex',
   },
   swarm: {
-    mac:   'curl -fsSL https://kody-w.github.io/RAPP/install-swarm.sh | bash',
-    linux: 'curl -fsSL https://kody-w.github.io/RAPP/install-swarm.sh | bash',
+    mac:   'curl -fsSL https://kody-w.github.io/RAPP/installer/install-swarm.sh | bash',
+    linux: 'curl -fsSL https://kody-w.github.io/RAPP/installer/install-swarm.sh | bash',
     // Windows tether-style ps1 not yet split — same install-swarm.sh in WSL works.
-    win:   'iwr https://kody-w.github.io/RAPP/install-swarm.sh -useb | wsl bash',
+    win:   'iwr https://kody-w.github.io/RAPP/installer/install-swarm.sh -useb | wsl bash',
   },
 };
 const INSTALL_BLURBS = {
@@ -4928,7 +4937,7 @@ async function pushSwarmToEndpoint() {
         `Push failed: ${e.message}\n\n` +
         `Make sure a swarm endpoint is running at ${endpoint}.\n` +
         `Quick start:\n` +
-        `  curl -fsSL https://kody-w.github.io/RAPP/install-swarm.sh | bash\n\n` +
+        `  curl -fsSL https://kody-w.github.io/RAPP/installer/install-swarm.sh | bash\n\n` +
         `Or use Download bundle to install manually.`
       );
       btn.textContent = old; btn.disabled = false;
@@ -5065,6 +5074,19 @@ document.body.classList.add(RAPP_MODE === 'local' ? 'is-local' : 'is-virtual');
 })();
 
 })();
+</script>
+
+<script>
+  // Register the service worker so the brainstem UI is installable as a PWA
+  // and resilient to flaky connectivity. The chat surface itself still needs
+  // the brainstem running on :7071; the SW only caches the static UI shell.
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch((err) => {
+        console.warn('brainstem SW registration failed:', err);
+      });
+    });
+  }
 </script>
 
 </body>

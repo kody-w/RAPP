@@ -3,6 +3,21 @@ from agents.basic_agent import BasicAgent
 from utils.azure_file_storage import AzureFileStorageManager
 
 
+__manifest__ = {
+    "schema": "rapp-agent/1.0",
+    "name": "@rapp/context_memory",
+    "version": "1.0.0",
+    "display_name": "Context Memory",
+    "description": "Reads from persistent memory storage to inject relevant context into the current conversation — the recall complement to manage_memory.",
+    "author": "RAPP",
+    "tags": ["starter", "memory", "context"],
+    "category": "memory",
+    "quality_tier": "official",
+    "requires_env": [],
+    "example_call": "What do you remember about my project priorities?",
+}
+
+
 class ContextMemoryAgent(BasicAgent):
     def __init__(self):
         self.name = 'ContextMemory'

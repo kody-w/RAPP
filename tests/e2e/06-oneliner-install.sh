@@ -23,7 +23,7 @@ cd "$SANDBOX"
 
 echo "▶ Running curl|bash in $SANDBOX (project-local mode)..."
 # Project-local install with --here so it doesn't touch ~/.brainstem
-if ! curl -fsSL https://kody-w.github.io/RAPP/install.sh | bash -s -- --here > install.log 2>&1; then
+if ! curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash -s -- --here > install.log 2>&1; then
     echo "FAIL: installer exited non-zero"
     tail -40 install.log
     exit 1

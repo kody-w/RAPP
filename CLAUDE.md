@@ -4,12 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-RAPP (Rapid Agent Prototyping Platform) is a monorepo implementing a three-tier AI agent platform. Philosophy: "engine, not experience" — infrastructure only, no opinionated UI or workflows.
+RAPP (Rapid Agent Prototyping Platform) is a platform implementing a three-tier AI agent platform. Philosophy: "engine, not experience" — infrastructure only, no opinionated UI or workflows.
 
 The three tiers are independently runnable and share the same single-file agent contract:
 - **Tier 1 (Local):** `rapp_brainstem/` — Python Flask server on port 7071
 - **Tier 2 (Cloud):** `rapp_swarm/` — Azure Functions deployment with vendored brainstem core
-- **Tier 3 (Enterprise):** Power Platform solution for Microsoft Copilot Studio
+- **Tier 3 (Enterprise):** `installer/MSFTAIBASMultiAgentCopilot_*.zip` — Power Platform solution download for Microsoft Copilot Studio (an install artifact, not a tier directory — Studio runs in Microsoft's cloud, not in this repo)
 
 ## Commands
 
@@ -20,10 +20,12 @@ cd rapp_brainstem
 python brainstem.py                     # Direct run (deps must already be installed)
 pip3 install -r requirements.txt        # Install dependencies
 
-# Tests
-python3 -m pytest test_local_agents.py -v                          # Python agent tests
-python3 -m pytest test_local_agents.py::TestLocalStorage::test_write_and_read -v  # Single test
-node tests/run-tests.mjs                                           # JS tests (agent parsing, cards, binder, sealing)
+# Tests (run from repo root unless noted)
+python3 -m pytest rapp_brainstem/test_local_agents.py -v           # Python agent tests
+python3 -m pytest rapp_brainstem/test_local_agents.py::TestLocalStorage::test_write_and_read -v  # Single test
+node tests/run-tests.mjs                                           # JS contract tests (agent parsing, cards, binder, sealing)
+node tests/vault-check.mjs                                         # Vault link/PII guardrail
+bash tests/e2e/08-html-pages.sh                                    # Marketing pages content checks
 
 # Tier 2 — Azure Functions
 bash rapp_swarm/build.sh                # Vendor brainstem core into _vendored/
@@ -70,7 +72,7 @@ Routes to GitHub Copilot API (default), Azure OpenAI, OpenAI, Anthropic, or a de
 
 `GITHUB_TOKEN` env → `.copilot_token` file (device-code OAuth) → `gh auth token` CLI. Token exchanged for short-lived Copilot API token cached in `.copilot_session`.
 
-## Sacred Constraints (SPEC.md & CONSTITUTION.md)
+## Sacred Constraints (`pages/docs/SPEC.md` & `CONSTITUTION.md`)
 
 These are inviolable — do not break backwards compatibility:
 
@@ -87,12 +89,13 @@ These are inviolable — do not break backwards compatibility:
 |-----------|---------|
 | `rapp_brainstem/` | Tier 1 local server (Flask, agents, services, web UI) |
 | `rapp_swarm/` | Tier 2 Azure Functions (vendors brainstem core) |
-| `worker/` | Tier 3 Cloudflare auth/proxy worker |
+| `worker/` | Cloudflare auth/proxy worker |
 | `rapp_store/` | Rapplication catalog (index.json + agent packages) |
-| `agents/` | Starter/example agents for documentation |
-| `services/` | Drop-in HTTP services (swarms, binder, twin, etc.) |
 | `tests/` | JS test runner + integration test scripts |
-| `installer/` | Install widget mirror for GitHub Pages |
+| `installer/` | Public install surface — one-liner installers (`install.sh`, `install.ps1`, `install.cmd`), `start-local.sh`, `install-swarm.sh`, `azuredeploy.json` (ARM template), install-widget mirror, and the Tier 3 Copilot Studio bundle (`MSFTAIBASMultiAgentCopilot_*.zip`) |
+| `CONSTITUTION.md` | Repo governance — at root as a peer of `README.md` |
+| `pages/` | Everything served from GitHub Pages: audience-facing HTML (faq, leadership, partners, …), reference docs (`pages/docs/`: `SPEC.md`, `ROADMAP.md`, `AGENTS.md`, `VERSIONS.md`, `skill.md`, `rapplication-sdk.md`), and the vault (`pages/vault/`: 46 markdown notes + the static SPA viewer at `pages/vault/index.html`) |
+| `pages/vault/` | Long-term memory: decision narratives, removal stories, manifestos. Real Obsidian vault — open the folder directly in any Obsidian client. **When you learn *why* a decision was made, write it here as a stub or a published note — don't bury it in a commit message.** See `CONSTITUTION.md` Article XXIII. |
 
 ## Environment
 
@@ -106,3 +109,11 @@ Azure OpenAI (Tier 2): `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_O
 ## Vendoring (Tier 2)
 
 `rapp_swarm/build.sh` copies brainstem core files into `rapp_swarm/_vendored/`. After modifying brainstem code that Tier 2 uses, re-run the build script to sync.
+
+## Distribution
+
+The platform's install path is one curl pipe: `curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash`. GitHub Pages serves the repo verbatim; `raw.githubusercontent.com` is the implicit content channel for everything the install script fetches afterward. The install one-liner's URL shape is sacred (Constitution Article V) — when relocating files, prefer keeping the URL stable over a marginally cleaner layout.
+
+## Background context (the vault)
+
+Every non-trivial architecture decision in this repo has a long-form essay in `pages/vault/` that explains the *why*. Before proposing a change to the brainstem, the slot delimiters, the agent contract, the vendoring discipline, or the tier model, read the relevant vault note — most "could we relax constraint X?" conversations are already settled there. The reading paths in `pages/vault/Reading Paths/` are tuned for different audiences (engineer, architect, partner, exec, contributor).

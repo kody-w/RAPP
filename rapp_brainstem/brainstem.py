@@ -33,7 +33,16 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__, static_folder=os.path.dirname(os.path.abspath(__file__)))
-CORS(app)
+# Cross-origin allowlist. Same-origin (bundled UI at /) needs no CORS.
+# Allowed: localhost/127.0.0.1 on any port, the hosted vBrainstem UI, and
+# anything the operator adds via RAPP_CORS_ORIGINS (comma-separated).
+_cors_origins = [
+    r"^https://kody-w\.github\.io$",
+    r"^http://localhost(:\d+)?$",
+    r"^http://127\.0\.0\.1(:\d+)?$",
+]
+_cors_extra = [o.strip() for o in os.getenv("RAPP_CORS_ORIGINS", "").split(",") if o.strip()]
+CORS(app, origins=_cors_origins + _cors_extra)
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
@@ -1407,7 +1416,13 @@ def debug_auth():
         try:
             resp = _exchange_github_for_copilot(token)
             result["exchange_http_status"] = resp.status_code
-            result["exchange_response"] = resp.text[:500]
+            result["exchange_ok"] = resp.ok
+            if not resp.ok:
+                try:
+                    err = resp.json()
+                    result["exchange_error_code"] = err.get("error") or err.get("message")
+                except Exception:
+                    result["exchange_error_code"] = "unparseable"
         except Exception as e:
             result["exchange_error"] = str(e)
 
