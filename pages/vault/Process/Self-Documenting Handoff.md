@@ -68,7 +68,7 @@ Each of these is a property the platform's design produces — not a guarantee t
 
 ## The "with / without RAPP" beat
 
-The marketing pages (`pages/partners.html` in particular) compress this into a single before/after image:
+The marketing pages (`pages/about/partners.html` in particular) compress this into a single before/after image:
 
 > **Without RAPP:** discovery call → spec → estimate → build → review → revise. 3 weeks before working software.
 >

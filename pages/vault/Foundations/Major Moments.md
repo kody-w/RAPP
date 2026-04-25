@@ -89,7 +89,7 @@ When something happens that's worth remembering on this scale:
 - Not a changelog. `VERSIONS.md` and the release-notes page do that.
 - Not a personal memoir. The platform's history; not anyone's story.
 - Not a roadmap. The forward-looking version is [[Documentation Roadmap]].
-- Not a release notes page. The user-facing version is `pages/release-notes.html`.
+- Not a release notes page. The user-facing version is `pages/release/release-notes.html`.
 
 ## Related
 

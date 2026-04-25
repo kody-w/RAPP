@@ -3,6 +3,8 @@ title: Federation via RAR
 status: published
 section: Architecture
 hook: A community-publishable agent registry that doesn't centralize. Every publisher hosts their own catalog; AI assistants and humans discover via stable raw URLs. There is no server to compromise.
+session_id: 63243848-caa9-483c-9a8e-9bb0ee9d2849
+session_date: 2026-04-24
 ---
 
 # Federation via RAR

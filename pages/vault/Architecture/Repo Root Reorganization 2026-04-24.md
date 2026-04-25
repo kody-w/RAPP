@@ -3,6 +3,8 @@ title: Repo Root Reorganization 2026-04-24
 description: The day we collapsed thirteen root files into a clean storefront, then doubled back on tier symmetry to learn that artifacts don't earn directories — only running code does.
 status: published
 date: 2026-04-24
+session_id: 63243848-caa9-483c-9a8e-9bb0ee9d2849
+session_date: 2026-04-24
 section: Architecture
 related:
   - "[[The Sacred Constraints]]"

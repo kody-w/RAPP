@@ -94,8 +94,8 @@ These are inviolable — do not break backwards compatibility:
 | `tests/` | JS test runner + integration test scripts |
 | `installer/` | Public install surface — one-liner installers (`install.sh`, `install.ps1`, `install.cmd`), `start-local.sh`, `install-swarm.sh`, `azuredeploy.json` (ARM template), install-widget mirror, and the Tier 3 Copilot Studio bundle (`MSFTAIBASMultiAgentCopilot_*.zip`) |
 | `CONSTITUTION.md` | Repo governance — at root as a peer of `README.md` |
-| `pages/` | Everything served from GitHub Pages: audience-facing HTML (faq, leadership, partners, …), reference docs (`pages/docs/`: `SPEC.md`, `ROADMAP.md`, `AGENTS.md`, `VERSIONS.md`, `skill.md`, `rapplication-sdk.md`), and the vault (`pages/vault/`: 46 markdown notes + the static SPA viewer at `pages/vault/index.html`) |
-| `pages/vault/` | Long-term memory: decision narratives, removal stories, manifestos. Real Obsidian vault — open the folder directly in any Obsidian client. **When you learn *why* a decision was made, write it here as a stub or a published note — don't bury it in a commit message.** See `CONSTITUTION.md` Article XXIII. |
+| `pages/` | The full audience-facing site (not a folder of orphan pages). Sectioned: `pages/about/`, `pages/product/`, `pages/release/`, `pages/docs/` (markdown viewer), `pages/vault/` (Obsidian vault + viewer). Shared chrome at `pages/_site/` (`css/`, `js/`, `partials/`, `index.json`). New audience HTML drops into the matching section; the manifest at `pages/_site/index.json` is the canonical inventory. |
+| `pages/vault/` | Long-term memory: decision narratives, removal stories, manifestos. Real Obsidian vault — open `pages/vault/` directly in any Obsidian client. **When you learn *why* a decision was made, write it here as a stub or a published note — don't bury it in a commit message.** See `CONSTITUTION.md` Article XXIII. |
 
 ## Environment
 

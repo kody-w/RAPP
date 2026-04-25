@@ -84,9 +84,7 @@ Fetch [`skill.md`](https://kody-w.github.io/RAPP/pages/docs/skill.md) and cache 
 | `rapp_store/` | Catalog of distributable agents |
 | `installer/` | Public install surface — one-liner installers (`install.sh` / `install.ps1` / `install.cmd`), `start-local.sh`, `install-swarm.sh`, ARM template, install widget, and the Tier 3 Copilot Studio bundle (`MSFTAIBASMultiAgentCopilot_*.zip`) |
 | `CONSTITUTION.md` | Articles governing the repo. Peer of `README.md` at root |
-| `pages/docs/` | Reference (`SPEC.md`, `ROADMAP.md`, `AGENTS.md`, `VERSIONS.md`, `skill.md`, `rapplication-sdk.md`) |
-| `pages/vault/` | Long-term memory — Obsidian vault of decision narratives (Article XXIII) |
-| `pages/` | Audience-facing HTML (faq, leadership, partners, security, …) |
+| `pages/` | The full audience-facing site, sectioned: `pages/about/` (leadership, partners, process, security), `pages/product/` (faq, faq-slide, one-pager, use-cases), `pages/release/` (release-notes, roadmap), `pages/docs/` (markdown specs + viewer), `pages/vault/` (Obsidian vault + viewer). Shared chrome under `pages/_site/` (CSS, JS, header/footer partials, site manifest). |
 | `index.html` | Landing page at kody-w.github.io/RAPP/ |
 | `pitch-playbook.html` | 6-slide narrative for non-technical audiences (see below) |
 | `tests/` | Browser + Node test runner |

@@ -672,19 +672,37 @@ What earns repo-root residence (the closed list):
   (`MSFTAIBASMultiAgentCopilot_*.zip`). All install URLs:
   `https://kody-w.github.io/RAPP/installer/<file>`.
 - **The cross-tier test runner** — `tests/`.
-- **`pages/` — the GitHub Pages publication surface.** Everything
-  served from `https://kody-w.github.io/RAPP/pages/...` lives here:
-  - `pages/` flat — audience HTML (faq, leadership, partners,
-    process, security, use-cases, release-notes, roadmap, …).
+- **`pages/` — the GitHub Pages publication surface, structured as a
+  full site, not a folder of orphan pages.** Everything served from
+  `https://kody-w.github.io/RAPP/pages/...` lives here, sectioned by
+  audience:
+  - `pages/index.html` — the site landing.
+  - `pages/about/` — leadership, partners, process, security.
+  - `pages/product/` — faq, faq-slide, one-pager, use-cases.
+  - `pages/release/` — release-notes, roadmap.
   - `pages/docs/` — reference markdown (`SPEC.md`, `ROADMAP.md`,
-    `AGENTS.md`, `VERSIONS.md`, `skill.md`, `rapplication-sdk.md`).
+    `AGENTS.md`, `VERSIONS.md`, `skill.md`, `rapplication-sdk.md`)
+    rendered through `pages/docs/viewer.html` with a docs landing at
+    `pages/docs/index.html`.
   - `pages/vault/` — long-term memory: the Obsidian vault notes
     plus the static SPA viewer (`pages/vault/index.html`). See
     [[#Article XXIII — The Vault Is the Long-Term Memory|Article XXIII]].
+  - `pages/_site/` — **shared site infrastructure**. Underscore prefix
+    marks it as not-a-page: tokens/base/components/doc CSS in `css/`,
+    theme + chrome + doc-viewer JS in `js/`, header + footer markup
+    in `partials/`, and `index.json` as the canonical site manifest.
+    Every page links to `_site/css/*.css` and includes `_site/js/site.js`,
+    so the design system has one source of truth. New pages drop into
+    the matching section subdirectory and reuse the same chrome — no
+    inline 200-line CSS duplication.
+  - `pages/404.html` — pretty 404 with a sitemap.
   The unifying rule: anything served to a public visitor (whether
   human-shaped HTML, AI-shaped markdown reference, or the *why*
   behind decisions) lives somewhere under `pages/`. Code stays in
-  tier directories; everything *served* lives in `pages/`.
+  tier directories; everything *served* lives in `pages/`. Adding a
+  new page = drop it into the right section + add one line to
+  `_site/index.json`. Adding a section = new subdirectory plus a
+  manifest entry.
 - **`README.md`** — must be at root because GitHub renders it on the
   repo page. Acts as the catalog card and links into `pages/docs/`,
   `pages/vault/`, and `CONSTITUTION.md` for the rest.

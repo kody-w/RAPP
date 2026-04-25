@@ -1,0 +1,66 @@
+{
+  "_comment": "Site manifest — every public page in pages/ listed once with title, section, description. Used by site.js for nav highlighting and (future) search.",
+  "site": {
+    "name": "RAPP",
+    "tagline": "Single-file AI agents. Engine, not experience.",
+    "url": "https://kody-w.github.io/RAPP/"
+  },
+  "sections": [
+    {
+      "key": "about",
+      "label": "About",
+      "description": "Who RAPP is for, how it gets adopted, what it doesn't try to be.",
+      "pages": [
+        { "path": "about/leadership.html", "title": "Leadership one-pager", "audience": "Executive sponsor", "description": "Workshops become production-bound agents. Same week. One file." },
+        { "path": "about/partners.html",    "title": "Partner one-pager",    "audience": "System integrator", "description": "What partners receive, what they build, what they own." },
+        { "path": "about/process.html",     "title": "How a session runs",   "audience": "Workshop lead",     "description": "60-minute customer session → working agent by week's end." },
+        { "path": "about/security.html",    "title": "Security & compliance","audience": "Security reviewer","description": "Local-first by design. What leaves the device, what doesn't." }
+      ]
+    },
+    {
+      "key": "product",
+      "label": "Product",
+      "description": "What the platform actually does, with examples.",
+      "pages": [
+        { "path": "product/faq.html",        "title": "FAQ",          "audience": "Engineer evaluating",   "description": "Straight answers — how is RAPP different from GPT, Copilot, Studio?" },
+        { "path": "product/faq-slide.html",  "title": "FAQ slide",     "audience": "Speaker companion",     "description": "Single-slide version of the FAQ for a presentation deck." },
+        { "path": "product/one-pager.html",  "title": "Platform one-pager","audience": "Reader in a hurry","description": "The whole product in one page." },
+        { "path": "product/use-cases.html",  "title": "Use cases",     "audience": "Buyer building scenarios","description": "What teams actually build with RAPP, by industry and shape." }
+      ]
+    },
+    {
+      "key": "release",
+      "label": "Release",
+      "description": "What's shipped, what's next.",
+      "pages": [
+        { "path": "release/roadmap.html",       "title": "Roadmap",       "audience": "Architect", "description": "Post-v1 directions that must honor the v1 contract." },
+        { "path": "release/release-notes.html", "title": "Release notes", "audience": "Operator", "description": "Tagged releases, immutable per Article XIX." }
+      ]
+    },
+    {
+      "key": "docs",
+      "label": "Docs",
+      "description": "The contract, the agent guide, the SDK reference.",
+      "pages": [
+        { "path": "docs/",                    "title": "Docs index",     "audience": "Engineer",   "description": "Cards for SPEC, AGENTS, ROADMAP, VERSIONS, skill, SDK." },
+        { "path": "docs/viewer.html?doc=SPEC",     "title": "SPEC",          "audience": "Engineer",   "description": "v1 wire contract for the single-file agent format. Frozen." },
+        { "path": "docs/viewer.html?doc=ROADMAP",  "title": "ROADMAP",       "audience": "Architect",  "description": "Post-v1 directions." },
+        { "path": "docs/viewer.html?doc=AGENTS",   "title": "AGENTS",        "audience": "AI assistant","description": "Guidance to AI assistants editing this repo." },
+        { "path": "docs/viewer.html?doc=VERSIONS", "title": "VERSIONS",      "audience": "Operator",   "description": "Tag history and rollback discipline." },
+        { "path": "docs/viewer.html?doc=skill",    "title": "skill.md",      "audience": "AI assistant","description": "Canonical AI-readable skill manifest." },
+        { "path": "docs/viewer.html?doc=rapplication-sdk", "title": "Rapplication SDK", "audience": "Builder", "description": "SDK-shaped reference for building rapplications." }
+      ]
+    },
+    {
+      "key": "vault",
+      "label": "Vault",
+      "description": "Long-form decision narratives — why every non-trivial choice was made the way it was.",
+      "pages": [
+        { "path": "vault/",                    "title": "Vault home",            "audience": "Curious contributor", "description": "Real Obsidian vault of founding decisions, removals, manifestos. Static SPA viewer." }
+      ]
+    }
+  ],
+  "root_pinned": [
+    { "path": "../pitch-playbook.html", "title": "Pitch playbook", "description": "6-slide deck framing RAPP as an adoption layer. URL grandfathered at root." }
+  ]
+}

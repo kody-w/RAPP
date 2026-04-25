@@ -4,6 +4,8 @@ status: living
 section: Plans & Ledgers
 type: roadmap
 hook: Three horizons — Now / Next / Later — for documentation across the platform. Append items as they emerge.
+session_id: 63243848-caa9-483c-9a8e-9bb0ee9d2849
+session_date: 2026-04-24
 ---
 
 # Documentation Roadmap

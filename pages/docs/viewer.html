@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAPP docs</title>
+<meta name="description" content="RAPP documentation viewer. Renders the markdown specs in the same theming as the rest of the site.">
+<meta property="og:title" content="RAPP — docs viewer">
+<meta property="og:description" content="Renders SPEC, AGENTS, ROADMAP, VERSIONS, skill, and the SDK reference.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://kody-w.github.io/RAPP/pages/docs/viewer.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E🧠%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="../_site/css/tokens.css">
+<link rel="stylesheet" href="../_site/css/base.css">
+<link rel="stylesheet" href="../_site/css/components.css">
+<link rel="stylesheet" href="../_site/css/doc.css">
+<script src="../_site/js/theme.js"></script>
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<div class="doc-layout">
+
+  <aside class="doc-toc" aria-label="Table of contents">
+    <h4>On this page</h4>
+    <p style="color:var(--muted);font-size:13px">Loading…</p>
+  </aside>
+
+  <main>
+    <header class="doc-header">
+      <span class="doc-eyebrow"><a href="./" style="color:var(--accent)">← Docs</a></span>
+      <h1>Loading…</h1>
+      <p class="doc-sub"></p>
+    </header>
+
+    <article class="doc-body">
+      <p style="color:var(--text-dim)">Fetching markdown…</p>
+    </article>
+
+    <hr style="margin-top:48px;border:0;border-top:1px solid var(--border);">
+    <p style="color:var(--text-dim);font-size:13px;margin-top:18px">
+      View source on
+      <a id="gh-link" href="https://github.com/kody-w/RAPP/tree/main/pages/docs" rel="noopener">GitHub</a>.
+      ·
+      <a href="./">Back to docs</a>
+    </p>
+  </main>
+
+</div>
+
+<div id="site-footer"></div>
+<script src="../_site/js/site.js" defer></script>
+<script src="../_site/js/doc-viewer.js" defer></script>
+<script>
+  // Update the GitHub source link to point at the specific .md
+  (function(){
+    var m = location.search.match(/[?&]doc=([^&]*)/);
+    var doc = m ? decodeURIComponent(m[1]) : 'README';
+    var allowed = ['SPEC','ROADMAP','AGENTS','VERSIONS','skill','rapplication-sdk','README'];
+    if(allowed.indexOf(doc) === -1) doc = 'README';
+    document.addEventListener('DOMContentLoaded', function(){
+      var link = document.getElementById('gh-link');
+      if(link) link.href = 'https://github.com/kody-w/RAPP/blob/main/pages/docs/' + doc + '.md';
+    });
+  })();
+</script>
+
+</body>
+</html>

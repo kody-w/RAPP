@@ -4,6 +4,8 @@ status: living
 section: Plans & Ledgers
 type: roadmap
 hook: 28 blog posts for the main blog (kody-w.github.io tagged "rapp"). Each mirrored to its vault source so writing is "externalize the essay," not "draft from scratch."
+session_id: 63243848-caa9-483c-9a8e-9bb0ee9d2849
+session_date: 2026-04-24
 ---
 
 # Blog Roadmap
@@ -196,7 +198,7 @@ When a post moves from "planned" to "drafting," its working copy lives at `pages
 
 - **Class.** Timely. **Decay.** HIGH after the next version.
 - **Hook.** Release-shaped narrative tied to the version tag.
-- **Source.** `pages/docs/VERSIONS.md`, `pages/release-notes.html`, [[Major Moments]].
+- **Source.** `pages/docs/VERSIONS.md`, `pages/release/release-notes.html`, [[Major Moments]].
 - **Ready when.** Cut the next release tag.
 
 ### 28. Federating an AI Agent Registry — A Look at RAR + skill.md

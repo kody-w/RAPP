@@ -40,6 +40,21 @@ Each note has a status in its frontmatter, surfaced in the index and the static 
 
 The bar to convert a stub to published is one thing: **the why is captured well enough that someone who wasn't in the room can apply it.**
 
+## Session pointers (optional)
+
+Some notes — mostly the living docs and the decision-shaped entries — carry two extra frontmatter fields:
+
+```yaml
+session_id: 63243848-caa9-483c-9a8e-9bb0ee9d2849
+session_date: 2026-04-24
+```
+
+These are pointers, not transcripts. The platform deliberately **does not store conversation content** in the vault, the repo, or anywhere else. The `session_id` is the UUID of the Claude Code session that produced the note; the `session_date` is when. If a future contributor needs context for *why* a decision came out the way it did, they can match the UUID against their local Claude Code store (`~/.claude/projects/<project-id>/<session-id>`) and re-read the conversation themselves.
+
+The fields are optional. Most notes don't carry them — manifestos and architecture deep-dives are decoupled from any single conversation. The pointer is most useful for entries where *the conversation is the artifact* (plans, ledgers, decision records).
+
+The link checker validates the field shape if present (UUID for `session_id`, ISO date for `session_date`) but never requires either.
+
 ## The graph, not the index
 
 Every note links to 3–5 related notes via `[[wikilinks]]`. The index is a flat list; the graph is the real structure. Click forward; click back via the backlinks panel (in the viewer) or the sidebar's "Backlinks" pane (in Obsidian). The fastest way to absorb the platform's mental model is to start at any note and follow links until you stop being surprised.

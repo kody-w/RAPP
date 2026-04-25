@@ -4,6 +4,8 @@ status: living
 section: Plans & Ledgers
 type: plan
 hook: The full plan to take the vault from 26 stubs to a publishable second-brain wiki — phased, with checkpoints.
+session_id: 63243848-caa9-483c-9a8e-9bb0ee9d2849
+session_date: 2026-04-24
 ---
 
 # Vault Build-Out Plan

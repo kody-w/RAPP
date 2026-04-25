@@ -4,6 +4,8 @@ status: living
 section: Plans & Ledgers
 type: strategy
 hook: One source of truth (the vault), distributed in the shape each medium rewards. Newsletter, YouTube, TikTok, X, LinkedIn, Instagram — each gets a different cut of the same essay.
+session_id: 63243848-caa9-483c-9a8e-9bb0ee9d2849
+session_date: 2026-04-24
 ---
 
 # Content Strategy

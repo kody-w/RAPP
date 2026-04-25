@@ -84,6 +84,16 @@ for (const f of mdFiles) {
   if (fm.meta.status && !VALID_STATUSES.has(fm.meta.status)) {
     fail(`${rel}: invalid status "${fm.meta.status}" (must be stub/published/living)`);
   }
+  // Optional: session pointer fields. We don't require them anywhere, but if a
+  // note declares them they must be well-formed so future Claude / future
+  // contributor can navigate back to the right session in their local Claude
+  // Code store. No transcript is ever stored — only the pointer.
+  if (fm.meta.session_id && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(fm.meta.session_id)) {
+    fail(`${rel}: malformed session_id "${fm.meta.session_id}" (expected UUID)`);
+  }
+  if (fm.meta.session_date && !/^\d{4}-\d{2}-\d{2}$/.test(fm.meta.session_date)) {
+    fail(`${rel}: malformed session_date "${fm.meta.session_date}" (expected YYYY-MM-DD)`);
+  }
   titleByPath.set(rel, fm.meta.title || basename(rel).replace(/\.md$/, ''));
   bodyByPath.set(rel, fm.body);
 }

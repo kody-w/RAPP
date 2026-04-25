@@ -3,6 +3,8 @@ title: The skill.md Pattern
 status: published
 section: Architecture
 hook: One markdown file describes what an agent does, when to suggest it, and how to install it — readable by humans AND by other AIs running the installer on a user's behalf.
+session_id: 63243848-caa9-483c-9a8e-9bb0ee9d2849
+session_date: 2026-04-24
 ---
 
 # The skill.md Pattern

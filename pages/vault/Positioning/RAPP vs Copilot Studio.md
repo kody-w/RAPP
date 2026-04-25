@@ -51,7 +51,7 @@ Three audiences matter, and the framing for each is different:
 
 ## What this means for the pitch
 
-The platform's marketing pages (`pages/leadership.html`, `pages/partners.html`, `pages/process.html`) all use the same framing. The faq pages explicitly handle the *"how is this different from Copilot Studio?"* question with the partner framing rather than a versus framing.
+The platform's marketing pages (`pages/about/leadership.html`, `pages/about/partners.html`, `pages/about/process.html`) all use the same framing. The faq pages explicitly handle the *"how is this different from Copilot Studio?"* question with the partner framing rather than a versus framing.
 
 Internally, the discipline is: **never let the conversation slip into "RAPP is better than Copilot Studio at X."** That comparison is structurally false because RAPP and Copilot Studio do different jobs. The right comparison is "RAPP feeds Copilot Studio better than discovery-first delivery does."
 

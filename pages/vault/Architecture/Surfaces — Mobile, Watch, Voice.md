@@ -3,6 +3,8 @@ title: Surfaces — Mobile, Watch, Voice
 status: published
 section: Architecture
 hook: Every form factor is a calibration opportunity. Ship them as web tech (PWAs + Apple Shortcuts) — not as native apps you have to maintain across three OSes.
+session_id: 63243848-caa9-483c-9a8e-9bb0ee9d2849
+session_date: 2026-04-24
 ---
 
 # Surfaces — Mobile, Watch, Voice

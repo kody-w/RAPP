@@ -4,6 +4,8 @@ status: living
 section: Plans & Ledgers
 type: ledger
 hook: Append-only log of what has shipped — the platform's institutional memory in operational form. Never edited, only added to.
+session_id: 63243848-caa9-483c-9a8e-9bb0ee9d2849
+session_date: 2026-04-24
 ---
 
 # Release Ledger
@@ -27,6 +29,14 @@ Each entry has the same shape:
 ---
 
 ## 2026
+
+### 2026-04-24 — Session-pointer frontmatter convention
+
+- **Type.** docs (governance / convention).
+- **Scope.** Two new optional frontmatter fields — `session_id` (UUID) and `session_date` (YYYY-MM-DD) — added to 9 notes that came out of decision-shaped or living-doc work this session: the 5 living docs (Vault Build-Out Plan, Documentation Roadmap, Release Ledger, Blog Roadmap, Content Strategy) plus 4 decision-shaped notes (Repo Root Reorganization 2026-04-24, Surfaces — Mobile Watch Voice, The skill.md Pattern, Federation via RAR). `tests/vault-check.mjs` extended to validate the field shape if present; the fields are never required. [[How to Read This Vault]] gained a "Session pointers" section explaining the convention.
+- **Why.** Living docs and decision records benefit from a verifiable pointer back to the Claude Code session that produced them — if a future contributor needs context for *why* a decision came out the way it did, the UUID lets them navigate to the right session in their local Claude Code store. **No conversation content is stored** in the vault, the repo, or anywhere else; only the pointer. The platform's posture: traceability without exposure.
+- **Receipts.** `tests/vault-check.mjs` lines 84–93 validate the new fields. 9 notes have `session_id: 63243848-caa9-483c-9a8e-9bb0ee9d2849` + `session_date: 2026-04-24`. `node tests/vault-check.mjs` post-change: 52 notes, 697 wikilinks resolve, 0 PII, 0 failures.
+- **Lesson.** When tempted to store conversation content (encrypted or otherwise) in a public repo, ask whether a *pointer* would do. For traceability needs, the answer is almost always yes — the UUID is enough.
 
 ### 2026-04-24 — PWA on both web surfaces
 

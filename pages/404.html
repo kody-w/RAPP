@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAPP — 404</title>
+<meta name="description" content="That page didn't resolve. Here's the rest of the site.">
+<meta property="og:title" content="RAPP — 404">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E🧠%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="./_site/css/tokens.css">
+<link rel="stylesheet" href="./_site/css/base.css">
+<link rel="stylesheet" href="./_site/css/components.css">
+<script src="./_site/js/theme.js"></script>
+<style>
+  .not-found{
+    text-align:center;
+    padding:96px 24px 48px;
+  }
+  .not-found .code{
+    font-family:var(--font-mono); font-size:84px; font-weight:800;
+    color:var(--accent); letter-spacing:-2px; line-height:1;
+    background:linear-gradient(135deg, var(--grad-1), var(--grad-2), var(--grad-3));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .not-found h1{
+    font-size:28px; font-weight:700; margin:18px 0 8px;
+  }
+  .not-found p{
+    color:var(--text-dim); max-width:55ch; margin:0 auto;
+  }
+  .not-found .actions{
+    margin-top:28px;
+    display:flex; gap:12px; justify-content:center; flex-wrap:wrap;
+  }
+  .nf-grid{ margin-top:48px; }
+</style>
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main class="site-main">
+
+  <section class="not-found">
+    <div class="code" aria-hidden="true">404</div>
+    <h1>That page didn't resolve.</h1>
+    <p>
+      Either the URL is from before a recent reorganization, or the link was hand-typed.
+      Try one of these starting points — or
+      <a href="https://github.com/kody-w/RAPP/issues" rel="noopener">open an issue</a>
+      if you got here from a link in the wild.
+    </p>
+    <div class="actions">
+      <a class="btn btn-primary" href="./">Site home</a>
+      <a class="btn" href="./product/faq.html">FAQ</a>
+      <a class="btn" href="./docs/">Docs</a>
+      <a class="btn" href="./vault/">Vault</a>
+    </div>
+  </section>
+
+  <section class="nf-grid">
+    <h2 style="font-size:14px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);font-weight:700;margin-bottom:14px">All sections</h2>
+    <div class="cards">
+      <a class="card" href="./about/leadership.html"><span class="card-eyebrow">About</span><h3>For sponsors, partners, security</h3><p>Leadership · Partners · Process · Security</p></a>
+      <a class="card" href="./product/faq.html"><span class="card-eyebrow">Product</span><h3>What it does</h3><p>FAQ · One-pager · Use cases · FAQ slide</p></a>
+      <a class="card" href="./release/roadmap.html"><span class="card-eyebrow">Release</span><h3>What ships, what's next</h3><p>Roadmap · Release notes</p></a>
+      <a class="card" href="./docs/"><span class="card-eyebrow">Docs</span><h3>For builders</h3><p>SPEC · AGENTS · ROADMAP · VERSIONS · skill · SDK</p></a>
+      <a class="card" href="./vault/"><span class="card-eyebrow">Vault</span><h3>The why</h3><p>Decision narratives, removal stories, manifestos.</p></a>
+    </div>
+  </section>
+
+</main>
+
+<div id="site-footer"></div>
+<script src="./_site/js/site.js" defer></script>
+
+</body>
+</html>

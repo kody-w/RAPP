@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAPP — Single-file AI agents. Engine, not experience.</title>
+<meta name="description" content="RAPP is a portable, three-tier AI agent platform. Single-file Python agents that travel from a laptop to Azure Functions to Microsoft Copilot Studio without rewriting.">
+<meta property="og:title" content="RAPP — Single-file AI agents.">
+<meta property="og:description" content="Portable, shareable, vibe swarm building tool. Engine, not experience.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kody-w.github.io/RAPP/pages/">
+<link rel="canonical" href="https://kody-w.github.io/RAPP/pages/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E🧠%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="./_site/css/tokens.css">
+<link rel="stylesheet" href="./_site/css/base.css">
+<link rel="stylesheet" href="./_site/css/components.css">
+<script src="./_site/js/theme.js"></script>
+<style>
+  .home-hero{
+    text-align:center;
+    padding:64px 24px 24px;
+  }
+  .home-hero h1{
+    font-size:clamp(2.2rem, 5vw, 3.6rem);
+    font-weight:800; letter-spacing:-0.8px; line-height:1.08;
+    margin:18px 0 14px;
+  }
+  .home-hero h1 .grad{
+    background:linear-gradient(135deg, var(--grad-1), var(--grad-2), var(--grad-3));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .home-hero p.lede{
+    color:var(--text-dim);
+    font-size:clamp(1rem, 1.4vw, 1.15rem);
+    max-width:680px; margin:0 auto;
+    line-height:1.55;
+  }
+  .home-hero .logo{
+    font-size:64px; line-height:1;
+    filter:drop-shadow(0 0 22px var(--logo-glow));
+  }
+  .home-hero .actions{
+    margin-top:28px;
+    display:flex; gap:12px; justify-content:center; flex-wrap:wrap;
+  }
+
+  .install-block{
+    margin:48px auto 0;
+    max-width:680px;
+    background:var(--surface);
+    border:1px solid var(--border2);
+    border-radius:var(--radius-lg);
+    padding:14px 18px;
+    font-family:var(--font-mono);
+    font-size:13px;
+    color:var(--text);
+    display:flex; align-items:center; gap:10px;
+  }
+  .install-block .prompt{ color:var(--green-3); user-select:none; }
+  .install-block code{ background:transparent; padding:0; flex:1; overflow-x:auto; white-space:nowrap; }
+  .install-block button{
+    border:1px solid var(--border2);
+    background:transparent; color:var(--text-dim);
+    padding:4px 10px; border-radius:6px; cursor:pointer;
+    font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase;
+  }
+  .install-block button:hover{ color:var(--text); border-color:var(--accent); }
+
+  .home-section{
+    padding:48px 0 24px;
+  }
+  .home-section .section-head{
+    display:flex; align-items:baseline; justify-content:space-between;
+    gap:24px; margin-bottom:18px;
+  }
+  .home-section h2{
+    font-size:24px; font-weight:700; color:var(--text);
+  }
+  .home-section .section-sub{
+    color:var(--text-dim); font-size:14px;
+  }
+
+  .audience-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));
+    gap:14px;
+  }
+
+  .pinned{
+    margin-top:48px;
+    padding:24px;
+    background:linear-gradient(135deg, rgba(125,240,200,.05), rgba(167,139,250,.05));
+    border:1px solid var(--border);
+    border-radius:var(--radius-lg);
+  }
+  .pinned h2{ font-size:18px; margin-bottom:8px; }
+  .pinned p{ color:var(--text-dim); font-size:14px; line-height:1.55; max-width:60ch; }
+  .pinned a.btn{ margin-top:12px; }
+</style>
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main class="site-main">
+
+  <header class="home-hero animate d1">
+    <div class="logo" aria-hidden="true">🧠</div>
+    <span class="kicker">Open source · MIT · Engine, not experience</span>
+    <h1>Single-file AI agents.<br><span class="grad">From a laptop to Copilot Studio</span> — without rewriting.</h1>
+    <p class="lede">
+      RAPP is a portable three-tier agent platform. One Python file is the agent.
+      The same file runs on a local Flask brainstem, an Azure Functions deployment,
+      and a Microsoft Copilot Studio harness. No build step. No framework. No SDK.
+    </p>
+
+    <div class="actions">
+      <a class="btn btn-primary" href="https://kody-w.github.io/RAPP/installer/install.sh">Install ↗</a>
+      <a class="btn" href="./product/faq.html">Read the FAQ</a>
+      <a class="btn" href="./docs/">Spec &amp; SDK</a>
+    </div>
+
+    <div class="install-block animate d2" aria-label="Install one-liner">
+      <span class="prompt">$</span>
+      <code id="install-cmd">curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash</code>
+      <button type="button" onclick="(function(b){var t=document.getElementById('install-cmd').textContent;navigator.clipboard&amp;&amp;navigator.clipboard.writeText(t);b.textContent='Copied';setTimeout(function(){b.textContent='Copy'},1400)})(this)">Copy</button>
+    </div>
+  </header>
+
+  <section class="home-section animate d3">
+    <div class="section-head">
+      <h2>About</h2>
+      <span class="section-sub">Who it's for · how it gets adopted</span>
+    </div>
+    <div class="audience-grid">
+      <a class="card" href="./about/leadership.html">
+        <span class="card-eyebrow">Executive sponsor</span>
+        <h3>Leadership one-pager</h3>
+        <p>Workshops become production-bound agents. Same week. One file.</p>
+        <span class="card-meta">about/leadership.html</span>
+      </a>
+      <a class="card" href="./about/partners.html">
+        <span class="card-eyebrow">System integrator</span>
+        <h3>Partner one-pager</h3>
+        <p>What partners receive, what they build, what they own — and why this is easier than a 20-page spec.</p>
+        <span class="card-meta">about/partners.html</span>
+      </a>
+      <a class="card" href="./about/process.html">
+        <span class="card-eyebrow">Workshop lead</span>
+        <h3>How a session runs</h3>
+        <p>60-minute customer session → working agent by week's end. The motion in detail.</p>
+        <span class="card-meta">about/process.html</span>
+      </a>
+      <a class="card" href="./about/security.html">
+        <span class="card-eyebrow">Security reviewer</span>
+        <h3>Security &amp; compliance</h3>
+        <p>Local-first by design. What leaves the device, what doesn't.</p>
+        <span class="card-meta">about/security.html</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="home-section animate d4">
+    <div class="section-head">
+      <h2>Product</h2>
+      <span class="section-sub">What it actually does</span>
+    </div>
+    <div class="audience-grid">
+      <a class="card" href="./product/faq.html">
+        <span class="card-eyebrow">Engineer evaluating</span>
+        <h3>FAQ</h3>
+        <p>Straight answers. How is RAPP different from GPT, Copilot, Studio? Why this instead of skills?</p>
+        <span class="card-meta">product/faq.html</span>
+      </a>
+      <a class="card" href="./product/one-pager.html">
+        <span class="card-eyebrow">Reader in a hurry</span>
+        <h3>Platform one-pager</h3>
+        <p>The whole product in one page. Read in 90 seconds.</p>
+        <span class="card-meta">product/one-pager.html</span>
+      </a>
+      <a class="card" href="./product/use-cases.html">
+        <span class="card-eyebrow">Buyer building scenarios</span>
+        <h3>Use cases</h3>
+        <p>What teams actually build with RAPP, by industry and shape.</p>
+        <span class="card-meta">product/use-cases.html</span>
+      </a>
+      <a class="card" href="./product/faq-slide.html">
+        <span class="card-eyebrow">Speaker companion</span>
+        <h3>FAQ slide</h3>
+        <p>Single-slide version of the FAQ for a presentation deck.</p>
+        <span class="card-meta">product/faq-slide.html</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="home-section animate d5">
+    <div class="section-head">
+      <h2>Release</h2>
+      <span class="section-sub">What's shipped, what's next</span>
+    </div>
+    <div class="audience-grid">
+      <a class="card" href="./release/roadmap.html">
+        <span class="card-eyebrow">Architect</span>
+        <h3>Roadmap</h3>
+        <p>Post-v1 directions that must honor the v1 contract.</p>
+        <span class="card-meta">release/roadmap.html</span>
+      </a>
+      <a class="card" href="./release/release-notes.html">
+        <span class="card-eyebrow">Operator</span>
+        <h3>Release notes</h3>
+        <p>Tagged releases, immutable per Article XIX. What changed, when.</p>
+        <span class="card-meta">release/release-notes.html</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="home-section animate d5">
+    <div class="section-head">
+      <h2>Reference</h2>
+      <span class="section-sub">For builders</span>
+    </div>
+    <div class="audience-grid">
+      <a class="card" href="./docs/">
+        <span class="card-eyebrow">Engineer</span>
+        <h3>Docs</h3>
+        <p>SPEC (frozen v1 wire contract), AGENTS, ROADMAP, VERSIONS, the SDK and AI-readable skill manifest.</p>
+        <span class="card-meta">docs/</span>
+      </a>
+      <a class="card" href="./vault/">
+        <span class="card-eyebrow">Curious contributor</span>
+        <h3>Vault</h3>
+        <p>Long-form decision narratives — why every non-trivial choice was made the way it was. Real Obsidian vault, static SPA viewer.</p>
+        <span class="card-meta">vault/</span>
+      </a>
+      <a class="card" href="https://github.com/kody-w/RAPP" rel="noopener">
+        <span class="card-eyebrow">Source</span>
+        <h3>GitHub repository</h3>
+        <p>The whole monorepo: brainstem, swarm, store, installer, vault.</p>
+        <span class="card-meta">kody-w/RAPP ↗</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="pinned animate d6">
+    <h2>Pitch playbook</h2>
+    <p>
+      A 6-slide deck that frames RAPP as an <em>adoption layer</em> on top of whatever AI tools your team already pays for.
+      Built for execs and team leads. Same product, different conversation.
+    </p>
+    <a class="btn" href="../pitch-playbook.html">Open the pitch ↗</a>
+  </section>
+
+</main>
+
+<div id="site-footer"></div>
+<script src="./_site/js/site.js" defer></script>
+
+</body>
+</html>

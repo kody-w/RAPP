@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAPP — Docs</title>
+<meta name="description" content="RAPP reference documentation. The frozen v1 SPEC, the agent guide, the SDK, the version history, and the AI-readable skill manifest.">
+<meta property="og:title" content="RAPP — Docs">
+<meta property="og:description" content="The contract, the SDK, the AI-readable skill, and the v1 spec.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kody-w.github.io/RAPP/pages/docs/">
+<link rel="canonical" href="https://kody-w.github.io/RAPP/pages/docs/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E🧠%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="../_site/css/tokens.css">
+<link rel="stylesheet" href="../_site/css/base.css">
+<link rel="stylesheet" href="../_site/css/components.css">
+<script src="../_site/js/theme.js"></script>
+<style>
+  .docs-hero{
+    text-align:center;
+    padding:48px 0 24px;
+  }
+  .docs-hero h1{
+    font-size:clamp(2rem, 4vw, 2.8rem);
+    font-weight:800; letter-spacing:-0.4px;
+    margin:14px 0 10px;
+  }
+  .docs-hero p{
+    color:var(--text-dim);
+    max-width:60ch;
+    margin:0 auto;
+    line-height:1.55;
+  }
+  .docs-section{ padding:24px 0 16px; }
+  .docs-section h2{
+    font-size:14px; text-transform:uppercase; letter-spacing:.1em;
+    color:var(--text-dim); font-weight:700;
+    margin-bottom:14px;
+  }
+  .docs-tip{
+    margin-top:32px;
+    padding:18px 22px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius-lg);
+    font-size:14px;
+    color:var(--text-dim);
+    line-height:1.6;
+  }
+  .docs-tip strong{ color:var(--text); }
+  .docs-tip code{ background:var(--bg); }
+</style>
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main class="site-main">
+
+  <header class="docs-hero">
+    <span class="kicker">Reference</span>
+    <h1>Docs</h1>
+    <p>The frozen v1 contract, the agent guide, the SDK, the version history, and the AI-readable skill manifest. Everything a builder needs.</p>
+  </header>
+
+  <section class="docs-section">
+    <h2>Core contract</h2>
+    <div class="cards">
+      <a class="card" href="./viewer.html?doc=SPEC">
+        <span class="card-eyebrow">Frozen v1</span>
+        <h3>SPEC</h3>
+        <p>The wire contract for the single-file agent format. The API. Frozen on purpose; the agent contract is the ABI.</p>
+        <span class="card-meta">SPEC.md</span>
+      </a>
+      <a class="card" href="./viewer.html?doc=AGENTS">
+        <span class="card-eyebrow">For AI assistants</span>
+        <h3>AGENTS</h3>
+        <p>Guidance to AI assistants editing this repo (Cursor, Codex, Claude). What they should know before touching files.</p>
+        <span class="card-meta">AGENTS.md</span>
+      </a>
+      <a class="card" href="./viewer.html?doc=ROADMAP">
+        <span class="card-eyebrow">Post-v1</span>
+        <h3>ROADMAP</h3>
+        <p>Directions that must honor the v1 contract. Extends the spec; never replaces it.</p>
+        <span class="card-meta">ROADMAP.md</span>
+      </a>
+      <a class="card" href="./viewer.html?doc=VERSIONS">
+        <span class="card-eyebrow">Operator</span>
+        <h3>VERSIONS</h3>
+        <p>Brainstem release tag history and the rollback discipline (Article XIX).</p>
+        <span class="card-meta">VERSIONS.md</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="docs-section">
+    <h2>For builders</h2>
+    <div class="cards">
+      <a class="card" href="./viewer.html?doc=skill">
+        <span class="card-eyebrow">AI-readable</span>
+        <h3>skill.md</h3>
+        <p>The canonical AI-readable skill manifest for RAPP. Tells an LLM what RAPP is and how the install handshake works.</p>
+        <span class="card-meta">skill.md</span>
+      </a>
+      <a class="card" href="./viewer.html?doc=rapplication-sdk">
+        <span class="card-eyebrow">Builder reference</span>
+        <h3>Rapplication SDK</h3>
+        <p>SDK-shaped reference for building rapplications — the multi-file source form that collapses to a single shipped file.</p>
+        <span class="card-meta">rapplication-sdk.md</span>
+      </a>
+      <a class="card" href="./viewer.html?doc=README">
+        <span class="card-eyebrow">This directory</span>
+        <h3>docs/README</h3>
+        <p>What lives in <code>pages/docs/</code> and how to add to it. The local scale rule.</p>
+        <span class="card-meta">README.md</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="docs-tip">
+    <strong>Read on GitHub instead.</strong>
+    Every doc here is a real <code>.md</code> file in <code>pages/docs/</code> — the viewer just renders them with theming and a sidebar.
+    Browse the source at
+    <a href="https://github.com/kody-w/RAPP/tree/main/pages/docs" rel="noopener">github.com/kody-w/RAPP/tree/main/pages/docs</a>.
+  </section>
+
+</main>
+
+<div id="site-footer"></div>
+<script src="../_site/js/site.js" defer></script>
+
+</body>
+</html>
