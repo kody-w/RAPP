@@ -1,6 +1,7 @@
 ---
 title: Markdown is the spec; HTML is the rendering
-status: draft
+status: shipped
+published_url: https://kody-w.github.io/2026/04/24/markdown-is-the-spec/
 section: Blog Drafts
 hook: Two viewers in the same project. Both ship raw markdown plus a tiny HTML/JS shell that renders it. Why this pattern beats either "ship docs as HTML" or "ship docs as markdown only."
 date: 2026-04-24

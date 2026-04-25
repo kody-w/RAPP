@@ -1,6 +1,7 @@
 ---
 title: From save_recall to manage_memory — agent consolidation as discipline
-status: draft
+status: shipped
+published_url: https://kody-w.github.io/2026/04/24/from-save-recall-to-manage-memory/
 section: Blog Drafts
 hook: We had two memory agents. One saved, one recalled. The split read clean in the SPEC and got messy in the LLM. We merged them — and learned something about when to consolidate.
 date: 2026-04-24

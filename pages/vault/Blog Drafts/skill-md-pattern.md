@@ -1,6 +1,7 @@
 ---
 title: skill.md — a pattern for AI-readable installers
-status: draft
+status: shipped
+published_url: https://kody-w.github.io/2026/04/24/skill-md-pattern/
 section: Blog Drafts
 hook: A markdown file at a stable URL. An LLM running an install command on someone's behalf. A handshake protocol that lets the LLM ask the right question before committing. The pattern is small, the leverage is huge.
 date: 2026-04-24

@@ -1,6 +1,7 @@
 ---
 title: Two cleanups in one week — when the constitutional rule pays off
-status: draft
+status: shipped
+published_url: https://kody-w.github.io/2026/04/24/two-cleanups-one-week/
 section: Blog Drafts
 hook: We wrote the rule about repo-root residence before the bloat. Five days later we applied it twice. The post that doesn't get written: the third cleanup that didn't have to happen.
 date: 2026-04-24

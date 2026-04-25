@@ -1,6 +1,7 @@
 ---
 title: Surfaces — mobile, watch, voice. Where the same agent travels next.
-status: draft
+status: shipped
+published_url: https://kody-w.github.io/2026/04/24/surfaces-mobile-watch-voice/
 section: Blog Drafts
 hook: A single Python file is the agent. It runs on a laptop today. The same file should run on a phone, on a watch, in voice — without rewriting. What it would take, and what we won't bend to get there.
 date: 2026-04-24

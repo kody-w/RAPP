@@ -1,6 +1,7 @@
 ---
 title: The directory-README pattern — per-folder scale rules as the rib of organizational discipline
-status: draft
+status: shipped
+published_url: https://kody-w.github.io/2026/04/24/directory-readme-pattern/
 section: Blog Drafts
 hook: A README in every kept top-level subdirectory, declaring its local rule of residence. Small artifact, fractal discipline. New contributors don't grep the constitution; they read the local README.
 date: 2026-04-24

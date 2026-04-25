@@ -1,6 +1,7 @@
 ---
 title: The experimental graveyard — what we tried, what we cut, and why we kept the bones
-status: draft
+status: shipped
+published_url: https://kody-w.github.io/2026/04/24/the-experimental-graveyard/
 section: Blog Drafts
 hook: An "experimental_agents/" folder that the auto-loader explicitly skips. The rule that produces it. The lesson it teaches every time someone asks why a file is gone.
 date: 2026-04-24

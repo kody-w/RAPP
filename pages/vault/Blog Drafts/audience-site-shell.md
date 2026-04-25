@@ -1,6 +1,7 @@
 ---
 title: The audience site shell — no build step required
-status: draft
+status: shipped
+published_url: https://kody-w.github.io/2026/04/24/audience-site-shell/
 section: Blog Drafts
 hook: A real multi-section website with shared chrome, design tokens, and a markdown docs viewer — using only vanilla HTML, CSS, and JS. No bundler, no framework, no SDK.
 date: 2026-04-24

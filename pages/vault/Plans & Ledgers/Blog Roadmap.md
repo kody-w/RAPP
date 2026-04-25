@@ -82,6 +82,43 @@ When a post moves from "planned" to "drafting," its working copy lives at `pages
 - **Source.** [[Roots Are Public Surfaces]] + [[Repo Root Reorganization 2026-04-24]].
 - **Why now.** Both cleanups are recent; the playbook is concrete.
 
+### 29. The Audience Site Shell — No Build Step Required
+
+- **Class.** Semi-evergreen.
+- **Decay.** HIGH (the building-while-fresh story; pattern part is durable).
+- **Hook.** A real multi-section website with shared chrome, design tokens, and a markdown docs viewer — using only vanilla HTML, CSS, and JS. No bundler, no framework, no SDK.
+- **Draft.** [[audience-site-shell]] · [[Repo Root Reorganization 2026-04-24]].
+- **Status.** Draft written 2026-04-24.
+
+### 30. Two Cleanups in One Week — When the Constitutional Rule Pays Off
+
+- **Class.** Semi-evergreen.
+- **Decay.** MEDIUM.
+- **Hook.** We wrote the rule about repo-root residence before the bloat. Five days later we applied it twice. The post that doesn't get written: the third cleanup that didn't have to happen.
+- **Draft.** [[two-cleanups-one-week]].
+- **Status.** Draft written 2026-04-24.
+
+### 31. From save_recall to manage_memory — Agent Consolidation as Discipline
+
+- **Class.** Evergreen (lesson) / High decay (the war story rotting fast).
+- **Hook.** Two memory agents merged into one. The split read clean in the SPEC and got messy in the LLM. When to split, when to merge.
+- **Draft.** [[from-save-recall-to-manage-memory]] · [[From save_recall to manage_memory]].
+- **Status.** Draft written 2026-04-24.
+
+### 32. The Experimental Graveyard — What We Tried, What We Cut, and Why We Kept the Bones
+
+- **Class.** Evergreen. **Decay.** HIGH.
+- **Hook.** An `experimental_agents/` folder the auto-loader explicitly skips. The rule that produces it. Memorial-not-deletion as institutional memory.
+- **Draft.** [[the-experimental-graveyard]] · [[The experimental Graveyard]].
+- **Status.** Draft written 2026-04-24.
+
+### 33. Code Earns a Directory; Artifacts Don't
+
+- **Class.** Evergreen. **Decay.** MEDIUM.
+- **Hook.** We created a tier-3 directory in the morning and folded it back into installer/ in the afternoon. Eight hours, one constitutional amendment, lesson on overfitting symmetry.
+- **Draft.** [[code-earns-a-directory]] · [[Repo Root Reorganization 2026-04-24]].
+- **Status.** Draft written 2026-04-24.
+
 ---
 
 ## Next — write within 60 days (manifestos + architecture deep-dives)
@@ -141,6 +178,41 @@ When a post moves from "planned" to "drafting," its working copy lives at `pages
 - **Class.** Semi-evergreen. **Decay.** MEDIUM. **Source.** [[RAPP vs Copilot Studio]].
 - **Hook.** Upstream of Copilot Studio, not competing. The honest framing for a Microsoft-aligned partner.
 
+### 34. Roots Are Public Surfaces
+
+- **Class.** Evergreen. **Decay.** LOW.
+- **Hook.** A repo's root is not a folder. It is a storefront. The discipline that flows from that distinction is what separates a project that scales from one that quietly accumulates clutter.
+- **Draft.** [[roots-are-public-surfaces]] · [[Roots Are Public Surfaces]].
+- **Status.** Draft written 2026-04-24.
+
+### 35. skill.md — A Pattern for AI-Readable Installers
+
+- **Class.** Evergreen. **Decay.** LOW.
+- **Hook.** A markdown file at a stable URL. An LLM running an install command on someone's behalf. A handshake protocol for the choice point. Small pattern, huge leverage.
+- **Draft.** [[skill-md-pattern]] · [[The skill.md Pattern]].
+- **Status.** Draft written 2026-04-24.
+
+### 36. Surfaces — Mobile, Watch, Voice. Where the Same Agent Travels Next.
+
+- **Class.** Semi-evergreen. **Decay.** MEDIUM.
+- **Hook.** What it would take to extend the single-file agent contract to mobile, watch, and voice without breaking portability. What we won't bend to get there.
+- **Draft.** [[surfaces-mobile-watch-voice]] · [[Surfaces — Mobile, Watch, Voice]].
+- **Status.** Draft written 2026-04-24.
+
+### 37. The Directory-README Pattern — Per-Folder Scale Rules as the Rib of Organizational Discipline
+
+- **Class.** Evergreen. **Decay.** LOW.
+- **Hook.** A README in every kept top-level subdirectory, declaring its local rule of residence. New contributors don't grep the constitution; they read the local README.
+- **Draft.** [[directory-readme-pattern]].
+- **Status.** Draft written 2026-04-24.
+
+### 38. Markdown Is the Spec; HTML Is the Rendering
+
+- **Class.** Evergreen. **Decay.** LOW.
+- **Hook.** Two viewers in one project. Both ship raw markdown plus a tiny HTML/JS shell that renders it. Why this beats either "ship docs as HTML" or "ship docs as markdown only."
+- **Draft.** [[markdown-is-the-spec]].
+- **Status.** Draft written 2026-04-24.
+
 ### 18. What You Give Up With RAPP — The Anti-Pitch
 
 - **Class.** Semi-evergreen. **Decay.** MEDIUM. **Source.** [[What You Give Up With RAPP]].
@@ -185,6 +257,27 @@ When a post moves from "planned" to "drafting," its working copy lives at `pages
 - **Class.** Evergreen. **Decay.** LOW. **Source.** [[Why GitHub Pages Is the Distribution Channel]].
 - **Hook.** One curl pipe. Audit-friendly. Versioning by tag. No registry, no CDN, no installer binary.
 
+### 39. Writing for the AI Reader — CLAUDE.md, AGENTS.md, skill.md
+
+- **Class.** Evergreen. **Decay.** LOW.
+- **Hook.** Three small files at the repo root tell three different AI audiences exactly how to read and edit your project. Together they're a contract for autonomous edits.
+- **Draft.** [[writing-for-the-ai-reader]].
+- **Status.** Draft written 2026-04-24.
+
+### 40. Building a Static Site in Pure HTML/CSS/JS in 2026 — The Anti-Framework Case
+
+- **Class.** Evergreen. **Decay.** LOW.
+- **Hook.** A real multi-section site with shared chrome, theming, a docs viewer, a vault renderer, and zero build step. The case that vanilla in 2026 is the new sensible default for content-shaped sites.
+- **Draft.** [[static-site-pure-html-2026]].
+- **Status.** Draft written 2026-04-24.
+
+### 41. The Vault as a Second Brain — Why Long-Form Decision Narratives Survive What Commit Messages Don't
+
+- **Class.** Evergreen. **Decay.** LOW.
+- **Hook.** Code captures what. Commit messages capture what changed. Neither captures why a decision was made the way it was. The vault is the only project memory that doesn't decay.
+- **Draft.** [[vault-as-second-brain]].
+- **Status.** Draft written 2026-04-24.
+
 ### 26. The Auth Cascade — `GITHUB_TOKEN` → `.copilot_token` → `gh auth token`
 
 - **Class.** Evergreen. **Decay.** MEDIUM. **Source.** [[The Auth Cascade]].
@@ -202,6 +295,25 @@ When a post moves from "planned" to "drafting," its working copy lives at `pages
 - **Ready when.** Cut the next release tag.
 
 ### 28. Federating an AI Agent Registry — A Look at RAR + skill.md
+
+- **Class.** Timely. **Decay.** HIGH after the moment.
+- **Hook.** RAR — the RAPP Agent Registry — exists. `skill.md` is its protocol. How federation works without a central server.
+- **Source.** [[Federation via RAR]] + [[The skill.md Pattern]].
+- **Why now.** Once RAR has its first federation partner.
+
+### 42. Pre-Launch Path Freedom — What We Changed Before the First Stranger Arrived
+
+- **Class.** Timely. **Decay.** HIGH (ages once first user lands).
+- **Hook.** Five separate "no users yet, do it now" decisions in one session. The window for changing your mind without permission closes the moment a stranger relies on a path.
+- **Draft.** [[pre-launch-path-freedom]].
+- **Status.** Draft written 2026-04-24. **Write timeline:** publish before first public user.
+
+### 43. One Session, Three Reorgs — A Real-Time View of Design Iteration
+
+- **Class.** Timely. **Decay.** HIGH (the iteration is specific to one session).
+- **Hook.** A directory created in the morning, removed in the afternoon. A doc moved into a subfolder, then restored to root. A vault split, then unified. From the inside it felt chaotic. The diff is clean.
+- **Draft.** [[one-session-three-reorgs]] · [[Repo Root Reorganization 2026-04-24]].
+- **Status.** Draft written 2026-04-24. **Write timeline:** within 30 days.
 
 - **Class.** Timely. **Decay.** MEDIUM.
 - **Hook.** A community-publishable agent registry that doesn't centralize. `skill.md` as the manifest. How publishing works without a central server.
@@ -226,7 +338,35 @@ The first **6 posts** ("Now" tier) are the priority — they're either highest-d
 
 Append-only. Each entry has the publish date and a link to the live post.
 
-*(empty — the first entry lands when the first post publishes)*
+### 2026-04-24 — 15-post drop on platform discipline + the 2026-04-24 reorg
+
+A single working session produced fifteen RAPP-tagged posts spanning decay-shaped war stories, evergreen platform/pattern essays, and timely pre-launch field reports. All published to `kody-w.github.io` with tag `[rapp]`. Source drafts retained at `pages/vault/Blog Drafts/` with `status: shipped` and `published_url:` set.
+
+**Decay-shaped (captured-while-fresh):**
+
+- #29 — [The Audience Site Shell — No Build Step Required](https://kody-w.github.io/2026/04/24/audience-site-shell/) · draft: [[audience-site-shell]]
+- #30 — [Two Cleanups in One Week](https://kody-w.github.io/2026/04/24/two-cleanups-one-week/) · draft: [[two-cleanups-one-week]]
+- #31 — [From save_recall to manage_memory](https://kody-w.github.io/2026/04/24/from-save-recall-to-manage-memory/) · draft: [[from-save-recall-to-manage-memory]]
+- #32 — [The Experimental Graveyard](https://kody-w.github.io/2026/04/24/the-experimental-graveyard/) · draft: [[the-experimental-graveyard]]
+- #33 — [Code Earns a Directory; Artifacts Don't](https://kody-w.github.io/2026/04/24/code-earns-a-directory/) · draft: [[code-earns-a-directory]]
+
+**Evergreen — platform & pattern:**
+
+- #34 — [Roots Are Public Surfaces](https://kody-w.github.io/2026/04/24/roots-are-public-surfaces/) · draft: [[roots-are-public-surfaces]]
+- #35 — [skill.md — A Pattern for AI-Readable Installers](https://kody-w.github.io/2026/04/24/skill-md-pattern/) · draft: [[skill-md-pattern]]
+- #36 — [Surfaces — Mobile, Watch, Voice](https://kody-w.github.io/2026/04/24/surfaces-mobile-watch-voice/) · draft: [[surfaces-mobile-watch-voice]]
+- #37 — [The Directory-README Pattern](https://kody-w.github.io/2026/04/24/directory-readme-pattern/) · draft: [[directory-readme-pattern]]
+- #38 — [Markdown Is the Spec; HTML Is the Rendering](https://kody-w.github.io/2026/04/24/markdown-is-the-spec/) · draft: [[markdown-is-the-spec]]
+- #39 — [Writing for the AI Reader](https://kody-w.github.io/2026/04/24/writing-for-the-ai-reader/) · draft: [[writing-for-the-ai-reader]]
+- #40 — [Building a Static Site in Pure HTML/CSS/JS in 2026](https://kody-w.github.io/2026/04/24/static-site-pure-html-2026/) · draft: [[static-site-pure-html-2026]]
+- #41 — [The Vault as a Second Brain](https://kody-w.github.io/2026/04/24/vault-as-second-brain/) · draft: [[vault-as-second-brain]]
+
+**Timely (anchor-to-a-moment):**
+
+- #42 — [Pre-Launch Path Freedom](https://kody-w.github.io/2026/04/24/pre-launch-path-freedom/) · draft: [[pre-launch-path-freedom]]
+- #43 — [One Session, Three Reorgs](https://kody-w.github.io/2026/04/24/one-session-three-reorgs/) · draft: [[one-session-three-reorgs]]
+
+**Receipts.** Commit `6746bd2` on `kody-w/kody-w.github.io@master`. Vault `pages/vault/Blog Drafts/` carries the source drafts with `status: shipped` and `published_url` per [[Blog Drafts — README]] lifecycle.
 
 ## Related
 

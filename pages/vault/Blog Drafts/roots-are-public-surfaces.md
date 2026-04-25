@@ -1,6 +1,7 @@
 ---
 title: Roots are public surfaces
-status: draft
+status: shipped
+published_url: https://kody-w.github.io/2026/04/24/roots-are-public-surfaces/
 section: Blog Drafts
 hook: A repo's root is not a folder. It is a storefront. The discipline that flows from that distinction is what separates a project that scales from one that quietly accumulates clutter.
 date: 2026-04-24

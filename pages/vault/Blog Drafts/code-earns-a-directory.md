@@ -1,6 +1,7 @@
 ---
 title: Code earns a directory; artifacts don't
-status: draft
+status: shipped
+published_url: https://kody-w.github.io/2026/04/24/code-earns-a-directory/
 section: Blog Drafts
 hook: We created a tier-3 directory in the morning and folded it back into installer/ in the afternoon. The lesson took half a day and saved future-us months of confused navigation.
 date: 2026-04-24
