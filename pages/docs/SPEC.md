@@ -307,13 +307,57 @@ The brainstem exposes exactly five endpoints in v1. Tiers 2 and 3 MUST implement
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
-| `/chat` | POST | `{"user_input": str, "conversation_history": list, "session_id": str}` → assistant response |
-| `/health` | GET | Status, model, loaded agents, token state |
+| `/chat` | POST | The wire. See full envelope below. |
+| `/health` | GET | Status, model, loaded agents, token state, bootstrap status |
 | `/login` | POST | Start GitHub device code OAuth flow (Tier 1 only) |
 | `/models` | GET | List available models |
 | `/repos` | GET | List connected agent repos (Sources) |
 
-Future versions MAY add endpoints. They MUST NOT change the shape of these five.
+Future versions MAY add endpoints. They MUST NOT change the shape of these five (Constitution Article XXV: additive-only schema evolution).
+
+### `/chat` envelope (sacred — see Constitution Article XXV)
+
+**Request** (POST `/chat`, `Content-Type: application/json`):
+
+| Field | Type | Required | Default | Notes |
+|-------|------|----------|---------|-------|
+| `user_input` | str | yes | — | The message |
+| `conversation_history` | list | no | `[]` | Prior turns as `{role, content}` |
+| `session_id` | str (GUID) | no | auto-mint | Per-conversation; echoed in response |
+| `user_guid` | str (GUID) | no | `DEFAULT_USER_GUID` | Caller identity. See below. |
+
+**Response** (200 OK):
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `response` | str | Assistant reply |
+| `assistant_response` | str | **Same value as `response`** — both keys forever |
+| `voice_response` | str | When `VOICE_MODE` enabled |
+| `twin_response` | str | When `TWIN_MODE` enabled |
+| `session_id` | str | Echoed |
+| `user_guid` | str | Echoed |
+| `agent_logs` | str | Newline-joined |
+| `voice_mode` / `twin_mode` | bool | Current server flags |
+
+Both `response` and `assistant_response` are emitted with identical content. The `rapp_brainstem` lineage historically used `response`; the CA365 lineage (`Copilot-Agent-365`, `CommunityRAPP`, `rapp_swarm`) historically used `assistant_response`. Both keys are present in every response so clients of either lineage land on the data they expect.
+
+### `user_guid` — caller identity
+
+Every caller (human, agent, peer brainstem, MCP client) has a `user_guid`. The kernel does not treat any value specially — there is no peer mode, no handshake mode, no special routing. Whoever is calling, they are uniformly a "user" from the wire's perspective.
+
+The default value is **intentionally invalid hex**:
+
+```
+DEFAULT_USER_GUID = "c0p110t0-aaaa-bbbb-cccc-123456789abc"
+```
+
+The `p` and `l` in `c0p110t0` spell "copilot" while making the string un-parseable as a real UUID. This is a security feature inherited from CA365: the default can never collide with a real identity, gets rejected by UUID-validating columns, and shows up unmistakably in logs as "no real user context." Memory shims route it to shared global memory.
+
+**On Tier 1** (single-operator local machine): `user_guid` is silent. Humans at the keyboard never need to think about it; the default routes to shared memory which IS "your" memory because you ARE the user.
+
+**On Tier 2** (multi-tenant cloud): callers identify themselves so memory is isolated per identity.
+
+Same wire either way. Same default behavior either way.
 
 ---
 

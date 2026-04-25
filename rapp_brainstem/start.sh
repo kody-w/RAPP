@@ -36,8 +36,15 @@ fi
 # the chat UI) can surface "RAPPstore offline" instead of a silent
 # degradation.
 BINDER_PATH="services/binder_service.py"
-BINDER_URL="https://raw.githubusercontent.com/kody-w/RAPP/main/rapp_store/binder/binder_service.py"
-BINDER_SHA="d393fbf17c9daa2887cadb035a20c4ee5862f660c8816750af5fc75e3db6d1f3"
+# Bootstrap pulls from RAPPSTORE_URL when set; otherwise the canonical store.
+# Distros can override this so a "RAPP Ubuntu" install pulls binder from the
+# distro mirror. We point at the top-level alias (= latest version) here; edge
+# clients pinning to a specific version use the versioned URL out of band.
+BINDER_BASE="${RAPPSTORE_URL:-https://raw.githubusercontent.com/kody-w/RAPP/main/rapp_store}"
+# Strip /index.json if RAPPSTORE_URL was set to the catalog file directly
+BINDER_BASE="${BINDER_BASE%/index.json}"
+BINDER_URL="$BINDER_BASE/binder/binder_service.py"
+BINDER_SHA="a68e44bc2ef0085dfe1598fa224b655b24e91d329128cff2a7328f12a560714d"
 BOOTSTRAP_FILE=".brainstem_data/bootstrap.json"
 mkdir -p .brainstem_data services
 

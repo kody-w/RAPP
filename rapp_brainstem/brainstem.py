@@ -58,6 +58,24 @@ VOICE_ZIP_PW = os.getenv("VOICE_ZIP_PASSWORD", "").encode() or None
 _version_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "VERSION")
 VERSION = open(_version_file).read().strip() if os.path.exists(_version_file) else "0.0.0"
 
+# Tier-2 / CommunityRAPP parity: every chat request can carry a `user_guid`
+# identifying who's calling. Default = an INTENTIONALLY INVALID UUID — the
+# 'p' and 'l' in c0p110t0 spell "copilot" while making the string un-parseable
+# as a real UUID. This is a security feature, not a bug:
+#   1. It can never collide with a real user's UUID
+#   2. UUID-validating columns reject it loudly instead of accepting a default
+#   3. It surfaces unmistakably in logs as "no real user context"
+#   4. Memory shims route DEFAULT_USER_GUID to shared global memory
+# On Tier 1 (local) the field is silent — the operator at the keyboard IS
+# the user and the default is the norm. On Tier 2 (cloud) the field is
+# how multi-tenant callers identify themselves. Same wire either way.
+DEFAULT_USER_GUID = "c0p110t0-aaaa-bbbb-cccc-123456789abc"
+
+# RAPPstore catalog URL — overridable so distros and mirrors are first-class.
+# Default points at the canonical store; forks/distros set this to their own
+# mirror and binder transparently installs from there.
+RAPPSTORE_URL = os.getenv("RAPPSTORE_URL", "https://raw.githubusercontent.com/kody-w/RAPP/main/rapp_store/index.json")
+
 COPILOT_TOKEN_URL = "https://api.github.com/copilot_internal/v2/token"
 
 AVAILABLE_MODELS = [
@@ -872,7 +890,7 @@ def call_copilot(messages, tools=None):
 # ── Agent execution ───────────────────────────────────────────────────────────
 
 
-def run_tool_calls(tool_calls, agents, session_id=None):
+def run_tool_calls(tool_calls, agents, session_id=None, user_guid=None):
     results = []
     logs = []
     for tc in tool_calls:
@@ -882,6 +900,13 @@ def run_tool_calls(tool_calls, agents, session_id=None):
         except Exception:
             args = {}
 
+        # Thread the caller's user_guid into every agent call (Tier 2 parity:
+        # CommunityRAPP function_app.py line 693). Memory agents key by it;
+        # other agents are free to ignore it. Don't overwrite if the LLM
+        # explicitly passed one — the caller wins by convention.
+        if user_guid and "user_guid" not in args:
+            args["user_guid"] = user_guid
+
         print(f"[brainstem] {fn_name} args: {json.dumps(args)[:200]}")
 
         agent = agents.get(fn_name)
@@ -889,6 +914,20 @@ def run_tool_calls(tool_calls, agents, session_id=None):
             try:
                 result = agent.perform(**args)
                 logs.append(f"[{fn_name}] {result}")
+            except TypeError as e:
+                # Agent's perform() doesn't accept user_guid kwarg — drop it and retry.
+                # Backwards compat for older agents that haven't adopted the threaded identity.
+                if "user_guid" in args and "user_guid" in str(e):
+                    args.pop("user_guid", None)
+                    try:
+                        result = agent.perform(**args)
+                        logs.append(f"[{fn_name}] {result}")
+                    except Exception as e2:
+                        result = f"Error: {e2}"
+                        logs.append(f"[{fn_name}] ERROR: {e2}")
+                else:
+                    result = f"Error: {e}"
+                    logs.append(f"[{fn_name}] ERROR: {e}")
             except Exception as e:
                 result = f"Error: {e}"
                 logs.append(f"[{fn_name}] ERROR: {e}")
@@ -912,11 +951,16 @@ def chat():
     user_input = data.get("user_input", "").strip()
     history    = data.get("conversation_history", [])
     session_id = data.get("session_id") or str(uuid.uuid4())
+    # Optional caller identity (additive, backwards compatible). Tier 1 callers
+    # — humans at the keyboard, the local UI — typically omit it; the default
+    # routes to shared global memory which IS "your" memory on a single-operator
+    # machine. Peer brainstems and multi-tenant clients pass their own GUID.
+    user_guid  = data.get("user_guid") or DEFAULT_USER_GUID
 
     if not user_input:
         return jsonify({"error": "user_input is required"}), 400
 
-    _tlog("chat.request", {"session_id": session_id, "input_len": len(user_input), "history_len": len(history)})
+    _tlog("chat.request", {"session_id": session_id, "input_len": len(user_input), "history_len": len(history), "user_guid": user_guid})
 
     try:
         soul   = load_soul()
@@ -974,7 +1018,7 @@ def chat():
             # Some models use finish_reason "tool_calls", others just include tool_calls in the message
             if msg.get("tool_calls"):
                 print(f"[brainstem] Tool calls triggered (finish_reason={finish}): {[tc['function']['name'] for tc in msg['tool_calls']]}")
-                tool_results, logs = run_tool_calls(msg["tool_calls"], agents, session_id=session_id)
+                tool_results, logs = run_tool_calls(msg["tool_calls"], agents, session_id=session_id, user_guid=user_guid)
                 all_logs.extend(logs)
                 messages.extend(tool_results)
             else:
@@ -982,9 +1026,17 @@ def chat():
 
         reply = msg.get("content") or ""
         
+        # Both response keys forever. The CA365 family (CommunityRAPP, rapp_swarm)
+        # has shipped `assistant_response` since the original implementation.
+        # rapp_brainstem renamed it to `response` along the way — that drift was
+        # a tier-parity violation. Per Article XXV (chat is the only wire,
+        # additive-only schema evolution), we emit both keys with the same value
+        # so clients of either lineage land on the data they expect.
         result = {
             "response": reply,
+            "assistant_response": reply,
             "session_id": session_id,
+            "user_guid": user_guid,
             "agent_logs": "\n".join(all_logs),
             "voice_mode": VOICE_MODE,
             "twin_mode":  TWIN_MODE,

@@ -1347,12 +1347,143 @@ remembers why we made it that way.*
 
 ---
 
-## Article XXIV — Amendments
+## Article XXV — Chat Is The Only Wire
 
-This constitution can be amended. The only rule: amendments must preserve
-Article I — **the brainstem stays light**. Any change that loads
-responsibility into `brainstem.py` / `function_app.py` which could be
-served by a `*_agent.py` or a tag-inside-a-slot change is rejected.
+`/chat` is the universal interface. A human typing into the chat UI, an
+agent invoking another agent, a peer brainstem reaching across the
+network, and an MCP client over stdio all hit the **same endpoint with
+the same envelope and get back the same envelope**. The brainstem does
+not know — and must never need to know — which kind of caller is on
+the other end.
+
+> **One wire. Same shape. Forever.** A brainstem from a year ago must
+> still be able to chat with a brainstem shipped today, and vice
+> versa. Caller type is irrelevant.
+
+### What the wire is
+
+**Request envelope** (POST `/chat`):
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `user_input` | str | yes | The message |
+| `conversation_history` | list | no | Prior turns as `{role, content}` |
+| `session_id` | str (GUID) | no | Per-conversation; auto-minted if absent |
+| `user_guid` | str (GUID) | no | Caller identity; defaults to `DEFAULT_USER_GUID = "c0p110t0-aaaa-bbbb-cccc-123456789abc"` |
+
+**Response envelope** (200 OK):
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `response` | str | Assistant reply (Tier 1 lineage) |
+| `assistant_response` | str | Same value as `response` (CA365/CommunityRAPP/rapp_swarm lineage) — both keys forever |
+| `voice_response` | str | When VOICE_MODE on |
+| `twin_response` | str | When TWIN_MODE on |
+| `session_id` | str | Echoed |
+| `user_guid` | str | Echoed |
+| `agent_logs` | str | Newline-joined |
+
+Both `response` and `assistant_response` are emitted with identical
+content. Tier 1 (`rapp_brainstem`) historically used `response`; the
+CA365 lineage (`Copilot-Agent-365`, `CommunityRAPP`, `rapp_swarm`)
+historically used `assistant_response`. They drifted before the wire
+was named sacred. The fix is additive — both keys are present in every
+response so clients of either lineage land on the data they expect.
+
+### Identity is `user_guid`, not routing
+
+Whoever is calling, they have a `user_guid`. The kernel does not
+treat any value specially. There is **no peer mode, no handshake mode,
+no special routing** for calls from agents vs humans vs other
+brainstems. They are indistinguishable from the wire's perspective and
+must remain so.
+
+The default GUID `c0p110t0-aaaa-bbbb-cccc-123456789abc` is **intentionally
+invalid hex** — the `p` and `l` spell "copilot" while making the string
+un-parseable as a real UUID. This is a security feature inherited from
+CA365: the default can never collide with a real identity, gets rejected
+by UUID-validating columns, and shows up unmistakably in logs as "no
+real user context." Memory shims route it to shared global memory.
+
+On Tier 1 (single-operator local machine) the field is silent — humans
+at the keyboard never need to think about it; the default routes to
+"your" memory because you ARE the user. On Tier 2 (multi-tenant cloud)
+callers identify themselves so memory is isolated. Same wire either
+way. Same default behavior either way.
+
+### Schema evolution is additive-only
+
+Future versions of the wire MAY add new optional request fields and
+new optional response fields. They MUST NOT:
+
+- Remove or rename existing fields
+- Change the meaning of an existing field's value
+- Make a previously-optional field required
+- Add a request field whose absence would be misinterpreted by older
+  brainstems (i.e. additions must degrade silently)
+
+The same applies to file formats the ecosystem depends on: rapplication
+manifests, the catalog `index.json`, the `rapp_store/` package layout,
+the binder's `binder.json` install record, the `bootstrap.json` written
+by `start.sh`. Each carries a `schema` field; new schemas may add fields
+but never remove or rename existing ones.
+
+### Discovery is just chat
+
+When asked "what can you do" or "what version are you," a brainstem
+answers through normal chat. The LLM has the agent list (it's the tool
+definitions), the soul, and `/health` for deterministic structured info
+when a programmatic client wants it. **No special agent, no special
+endpoint, no soul-level handshake convention.** The acid test ran
+during the v0.12.2 development cycle confirmed that a v0.6.0 brainstem
+from `kody-w/rapp-installer` still answers cross-version capability
+questions through the standard `/chat` envelope, with no special
+prompting. The wire was already sacred before it was named so.
+
+### Open-source distros, one wire
+
+This is the property that makes RAPP forkable and federated. Anyone
+can ship their own brainstem distro — fork the kernel, swap the soul,
+curate a default agent set, theme the UI, host a `RAPPSTORE_URL`
+mirror. So long as the fork still implements the wire above, it is in
+the ecosystem. A "RAPP Ubuntu" brainstem and a "RAPP Arch" brainstem
+can chat with each other and with the canonical RAPP brainstem because
+all three speak `/chat`. Like POSIX for the AI era.
+
+### What this rules out
+
+- ❌ Removing or renaming any existing request/response field
+- ❌ Adding a new endpoint that duplicates `/chat`'s job
+- ❌ "Peer-only" code paths inside `/chat` that branch on caller type
+- ❌ A "handshake" agent that fires only for non-human callers
+- ❌ Soul-level conventions ("when a peer asks X, respond with Y")
+  that the kernel needs to enforce
+- ❌ Hard-coded ecosystem URLs that can't be overridden by a distro
+  (`RAPPSTORE_URL` is the contract)
+
+### Why this is constitutional
+
+Every brainstem ever shipped is in the wild somewhere — pinned to an
+old version, frozen on an edge device, embedded in a workflow nobody
+remembers. They will keep talking to whatever they were taught to
+talk to, forever. If the wire isn't a contract, that long tail
+silently breaks. If the wire is a contract, the long tail keeps
+working and the platform keeps growing without coordinated upgrades.
+
+This is what makes the brainstem an **engine**, not a product. The
+engine is the wire. Everything above it is replaceable. The wire is
+not.
+
+---
+
+## Article XXVI — Amendments
+
+This constitution can be amended. The rules: amendments must preserve
+Article I — **the brainstem stays light** — and Article XXV —
+**chat is the only wire** (additive-only schema evolution; no
+removals or renames). Any change that loads responsibility into
+`brainstem.py` / `function_app.py` which could be served by a
+`*_agent.py` or a tag-inside-a-slot change is rejected.
 
 A constitution amendment is itself a brainstem-level decision. It
 deserves the same "is this really necessary?" bar as adding a new
