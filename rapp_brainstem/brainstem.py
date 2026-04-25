@@ -1748,7 +1748,19 @@ def service_dispatch(service, path=""):
         return jsonify({"error": f"service '{service}' not found"}), 404
     try:
         body = request.get_json(silent=True) or {}
-        result, status = svc.handle(request.method, path, body)
+        result = svc.handle(request.method, path, body)
+        # Services may return either:
+        #   (dict, status)                       — JSON response (default)
+        #   (bytes, status, headers_dict)        — binary file response
+        # The 3-tuple form lets a service emit a download (e.g. .egg cartridge)
+        # without bypassing the service-discovery contract.
+        if isinstance(result, tuple) and len(result) == 3:
+            blob, status, headers = result
+            if isinstance(blob, (bytes, bytearray)):
+                return bytes(blob), status, headers
+            # Fall through if the 3rd element wasn't bytes — treat as JSON
+            return jsonify(blob), status, headers
+        result, status = result
         return jsonify(result), status
     except Exception as e:
         print(f"[brainstem] Service error ({service}/{path}): {e}")

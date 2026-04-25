@@ -1532,10 +1532,15 @@
             <span class="sp-chev">›</span>
           </div>
           <div class="sp-body">
+            <div class="panel-row" style="margin-bottom:8px">
+              <button class="panel-btn" onclick="document.getElementById('rapp-egg-import').click()" title="Import a .egg cartridge">📥 Import .egg</button>
+              <input type="file" id="rapp-egg-import" accept=".egg,.zip" style="display:none" onchange="importRappEgg(event)">
+            </div>
             <div class="sp-sub-label">Installed <span id="sp-rapps-installed-n">(0)</span></div>
             <div id="sp-rapps-installed"></div>
             <div class="sp-sub-label" style="margin-top:12px">Catalog <span id="sp-rapps-catalog-n">(0)</span></div>
             <div id="sp-rapps-catalog"></div>
+            <div class="panel-status" id="rapp-egg-status" style="margin-top:6px"></div>
           </div>
         </div>
 
@@ -3163,7 +3168,8 @@
         const openBtn = uiUrl
           ? `<button class="panel-btn primary" onclick="openRappFrame('${esc(e.id)}', ${JSON.stringify(displayName)}, '${esc(uiUrl)}')">Open ▸</button>`
           : '';
-        return `<div class="rapp-row installed"><div class="rr-head"><span class="rr-name">${esc(displayName)}</span><span class="rr-ver">v${esc(e.version||catEntry?.version||'?')}</span></div><div class="rr-actions">${openBtn}<button class="panel-btn danger" onclick="uninstallRapp('${esc(e.id)}')">Uninstall</button></div></div>`;
+        const exportBtn = `<button class="panel-btn" onclick="exportRappEgg('${esc(e.id)}')" title="Download as .egg cartridge">📤 Export</button>`;
+        return `<div class="rapp-row installed"><div class="rr-head"><span class="rr-name">${esc(displayName)}</span><span class="rr-ver">v${esc(e.version||catEntry?.version||'?')}</span></div><div class="rr-actions">${openBtn}${exportBtn}<button class="panel-btn danger" onclick="uninstallRapp('${esc(e.id)}')">Uninstall</button></div></div>`;
       }).join('') : '<div style="color:#8b949e;font-size:10px;font-style:italic">No RAPP swarms installed.</div>';
       catDiv.innerHTML = catalog.map(r => {
         const isInst = installedIds.has(r.id);
@@ -3232,6 +3238,65 @@
       closeRappFrame();
     }
   });
+  // ── Egg cartridge: per-rapp export / import ──
+  // Export bundles {manifest.json, agent.py, service.py?, state/...}
+  // into a .egg (zip) the user can share. Import reverses it.
+  async function exportRappEgg(id) {
+    const status = document.getElementById('rapp-egg-status');
+    if (status) status.textContent = `Packing ${id}.egg…`;
+    try {
+      const res = await fetch(`${API}/api/binder/export/${encodeURIComponent(id)}`);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const disp = res.headers.get('Content-Disposition') || '';
+      const m = disp.match(/filename="?([^"]+)"?/);
+      a.download = m ? m[1] : `${id}.egg`;
+      a.href = url; a.click();
+      URL.revokeObjectURL(url);
+      if (status) status.textContent = `Exported ${a.download}.`;
+    } catch (e) {
+      if (status) status.textContent = 'Export failed: ' + e.message;
+    }
+  }
+  async function importRappEgg(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const status = document.getElementById('rapp-egg-status');
+    if (status) status.textContent = `Importing ${file.name}…`;
+    try {
+      const buf = await file.arrayBuffer();
+      // Base64-encode the bytes for a clean JSON body — keeps the service
+      // dispatch contract dict-in / dict-out without multipart plumbing.
+      let bin = ''; const u8 = new Uint8Array(buf);
+      const CHUNK = 0x8000;
+      for (let i = 0; i < u8.length; i += CHUNK) {
+        bin += String.fromCharCode.apply(null, u8.subarray(i, i + CHUNK));
+      }
+      const egg_b64 = btoa(bin);
+      const r = await fetch(`${API}/api/binder/import`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ egg_b64 }),
+      });
+      const data = await r.json();
+      if (data.status === 'ok') {
+        if (status) status.textContent = `Restored ${data.id} (${data.files_restored} files). Reloading…`;
+        // Same flow as install: a new service file may have appeared, so
+        // re-probe the UI capabilities to light up its surfaces.
+        setTimeout(() => window.location.reload(), 600);
+      } else {
+        if (status) status.textContent = 'Import failed: ' + (data.error || 'unknown');
+      }
+    } catch (e) {
+      if (status) status.textContent = 'Import failed: ' + e.message;
+    }
+    event.target.value = '';
+  }
   function esc(s) { return String(s??'').replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c])); }
 
   // ── Install commands (Settings panel) ──

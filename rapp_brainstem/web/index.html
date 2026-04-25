@@ -1403,6 +1403,11 @@
       Installed rapplications materialize into <code>&lt;root&gt;/agents/</code> on this twin.
       Once installed, they're callable from chat as tools <em>and</em> via <code>POST /api/binder/agent</code>.
     </div>
+    <div style="padding: 0 16px 10px;">
+      <button class="btn" id="btn-import-egg" title="Import a .egg cartridge">📥 Import .egg</button>
+      <input type="file" id="rapp-egg-import" accept=".egg,.zip" style="display:none">
+      <div id="rapp-egg-status" style="font-size:10px;color:#6e7681;margin-top:6px"></div>
+    </div>
     <div style="padding: 0 16px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #58a6ff;">
       Installed <span id="rapps-installed-count" style="color: #8b949e">(0)</span>
     </div>
@@ -1497,8 +1502,11 @@
         const openBtn = (installed && uiUrl)
           ? `<button class="primary" data-open="${esc(r.id)}" data-url="${esc(uiUrl)}" data-name="${esc(displayName)}">Open ▸</button>`
           : '';
+        const exportBtn = installed
+          ? `<button data-export="${esc(r.id)}" title="Download as .egg cartridge">📤 Export</button>`
+          : '';
         const btn = installed
-          ? `${openBtn}<button class="danger" data-uninstall="${esc(r.id)}">Uninstall</button>`
+          ? `${openBtn}${exportBtn}<button class="danger" data-uninstall="${esc(r.id)}">Uninstall</button>`
           : `<button class="primary" data-install="${esc(r.id)}">Install</button>`;
         return `
           <div class="rapp-row ${installed ? 'installed' : ''}">
@@ -1526,7 +1534,72 @@
           b.addEventListener('click', () => uninstall(b.dataset.uninstall)));
         document.querySelectorAll('#rapps [data-open]').forEach(b =>
           b.addEventListener('click', () => openRappFrame(b.dataset.open, b.dataset.name, b.dataset.url)));
+        document.querySelectorAll('#rapps [data-export]').forEach(b =>
+          b.addEventListener('click', () => exportRappEgg(b.dataset.export)));
       }
+
+      // Egg cartridge — virtual mirror of the local brainstem's flow.
+      // Routes through the binder service (tether or local origin).
+      async function exportRappEgg(id) {
+        const status = document.getElementById('rapp-egg-status');
+        if (status) status.textContent = `Packing ${id}.egg…`;
+        try {
+          // api() returns {status, json}; for binary we go direct.
+          const tetherBase = (state.settings.tetherUrl || '').replace(/\/+$/, '');
+          const url = `${tetherBase}/api/binder/export/${encodeURIComponent(id)}`;
+          const res = await fetch(url);
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error || `HTTP ${res.status}`);
+          }
+          const blob = await res.blob();
+          const objUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          const disp = res.headers.get('Content-Disposition') || '';
+          const m = disp.match(/filename="?([^"]+)"?/);
+          a.download = m ? m[1] : `${id}.egg`;
+          a.href = objUrl; a.click();
+          URL.revokeObjectURL(objUrl);
+          if (status) status.textContent = `Exported ${a.download}.`;
+        } catch (e) {
+          if (status) status.textContent = 'Export failed: ' + e.message;
+        }
+      }
+      async function importRappEgg(file) {
+        const status = document.getElementById('rapp-egg-status');
+        if (status) status.textContent = `Importing ${file.name}…`;
+        try {
+          const buf = await file.arrayBuffer();
+          let bin = ''; const u8 = new Uint8Array(buf);
+          const CHUNK = 0x8000;
+          for (let i = 0; i < u8.length; i += CHUNK) {
+            bin += String.fromCharCode.apply(null, u8.subarray(i, i + CHUNK));
+          }
+          const egg_b64 = btoa(bin);
+          const r = await api('/api/binder/import', { method: 'POST', body: JSON.stringify({ egg_b64 }) });
+          if (r.status === 200 && r.json && r.json.status === 'ok') {
+            if (status) status.textContent = `Restored ${r.json.id} (${r.json.files_restored} files).`;
+            await load();
+          } else {
+            const err = (r.json && r.json.error) || `HTTP ${r.status}`;
+            if (status) status.textContent = 'Import failed: ' + err;
+          }
+        } catch (e) {
+          if (status) status.textContent = 'Import failed: ' + e.message;
+        }
+      }
+      // Wire the import button + file picker once.
+      document.addEventListener('DOMContentLoaded', () => {
+        const btn = document.getElementById('btn-import-egg');
+        const file = document.getElementById('rapp-egg-import');
+        if (btn && file) {
+          btn.addEventListener('click', () => file.click());
+          file.addEventListener('change', e => {
+            if (e.target.files[0]) importRappEgg(e.target.files[0]);
+            e.target.value = '';
+          });
+        }
+      });
 
       async function install(id) {
         // Try local brainstem binder service first

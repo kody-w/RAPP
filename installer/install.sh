@@ -548,19 +548,21 @@ ensure_deps() {
 }
 
 install_binder_locally() {
-    # The one-liner clones the full repo, so rapp_store/binder/binder_service.py
-    # is already on disk. Just copy it into the brainstem's services/ dir. No
-    # network fetch, no bootstrap, no status file, no banner — binder ships
-    # with the brainstem when installed via the one-liner.
+    # Binder is now baked into the kernel — rapp_brainstem/services/binder_service.py
+    # ships with the brainstem itself. This step is a fallback for older clones
+    # that don't have the kernel copy yet (it copies from the rapp_store mirror).
     local src_dir="$BRAINSTEM_HOME/src/rapp_brainstem"
     local services="$src_dir/services"
+    local kernel_binder="$services/binder_service.py"
     local store_binder="$BRAINSTEM_HOME/src/rapp_store/binder/binder_service.py"
     mkdir -p "$services"
-    if [ -f "$store_binder" ]; then
-        cp "$store_binder" "$services/binder_service.py"
-        echo -e "  ${GREEN}OK${NC} Binder installed"
+    if [ -f "$kernel_binder" ]; then
+        echo -e "  ${GREEN}OK${NC} Binder (kernel-baked)"
+    elif [ -f "$store_binder" ]; then
+        cp "$store_binder" "$kernel_binder"
+        echo -e "  ${GREEN}OK${NC} Binder installed (from rapp_store mirror)"
     else
-        echo -e "  ${YELLOW}!${NC} rapp_store/binder/binder_service.py not in clone - package manager unavailable"
+        echo -e "  ${YELLOW}!${NC} binder_service.py missing - package manager unavailable"
     fi
 }
 
