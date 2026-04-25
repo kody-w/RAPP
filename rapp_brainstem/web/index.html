@@ -90,6 +90,29 @@
   #model-sel:hover { border-color: #58a6ff; }
   #model-sel:focus { border-color: #1f6feb; }
 
+  /* Starter prompts — twin-voiced calibration buttons shown above the
+     hand on first load. Same shape and copy as the local brainstem so
+     a new user sees identical onboarding regardless of which page they
+     land on first. Hidden after the first user message. */
+  #starter-prompts {
+    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+    max-width: 760px; margin: 12px auto 6px; padding: 0 24px;
+    transition: opacity .22s ease, max-height .22s ease;
+    max-height: 200px; overflow: hidden;
+  }
+  #starter-prompts.hidden {
+    opacity: 0; max-height: 0; margin: 0; pointer-events: none;
+  }
+  .starter-btn {
+    background: #161b22; color: #79c0ff; border: 1px solid rgba(88,166,255,.4);
+    border-radius: 20px; padding: 8px 16px; font-size: 13px;
+    cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    font-family: inherit;
+  }
+  .starter-btn:hover {
+    background: rgba(88,166,255,.1); border-color: #58a6ff; transform: translateY(-1px);
+  }
+
   /* Rapplication iframe overlay — matches the local brainstem's #rapp-frame
      so both pages take over the surface the same way. ui_url (absolute)
      loads any rapp UI; relative URLs route through the tether to the
@@ -1746,6 +1769,15 @@
 </div>
 
 <footer>
+  <!-- Twin-voiced calibration starters — same copy as the local brainstem
+       so the two pages share onboarding. Each label is a prediction the
+       twin makes about what's on the user's mind; click confirms. Hidden
+       on first user message. -->
+  <div id="starter-prompts">
+    <button class="starter-btn" data-starter="Ask me what I&apos;m building.">Ask me what I'm building</button>
+    <button class="starter-btn" data-starter="Ask me what&apos;s weighing on me.">Ask me what's weighing on me</button>
+    <button class="starter-btn" data-starter="Ask me what I&apos;m trying to figure out.">Ask me what I'm trying to figure out</button>
+  </div>
   <!-- Pills (default) and cards render the same hand of agents — see Settings. -->
   <div id="hand-cards">
     <span class="hand-empty" id="hand-empty">no agents loaded — open the Binder, tap a card to play it</span>
@@ -4669,6 +4701,12 @@ const icon = name => `<span class="icon">${ICONS[name]||''}</span>`;
 
 function appendMsg(role, text, agent_logs) {
   const w = $('.welcome'); if (w && role !== 'system') w.style.display = 'none';
+  // Hide starter prompts the moment the user sends — they're a first-load
+  // affordance, not a persistent UI element.
+  if (role === 'user') {
+    const sp = document.getElementById('starter-prompts');
+    if (sp) sp.classList.add('hidden');
+  }
   const div = document.createElement('div');
   div.className = `msg ${role}`;
   const ic = role === 'user' ? icon('user') : (role === 'assistant' ? icon('brain') : icon('system'));
@@ -4867,6 +4905,13 @@ function wire() {
     if (!v) return;
     input.value = ''; autoGrow(); send(v);
   }
+  // Starter prompts — click sends the predefined text directly.
+  document.querySelectorAll('#starter-prompts .starter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const text = btn.dataset.starter || btn.textContent;
+      send(text);
+    });
+  });
   $('#export-tx').addEventListener('click', e => {
     e.preventDefault();
     const json = JSON.stringify({session_id: state.sessionId, transcript: state.fullTranscript, history: state.conversation_history}, null, 2);

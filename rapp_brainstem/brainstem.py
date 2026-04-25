@@ -52,7 +52,7 @@ SERVICES_PATH = os.getenv("SERVICES_PATH", os.path.join(os.path.dirname(__file__
 MODEL        = os.getenv("GITHUB_MODEL", "gpt-4o")
 PORT        = int(os.getenv("PORT", 7071))
 VOICE_MODE  = os.getenv("VOICE_MODE", "false").lower() == "true"
-TWIN_MODE   = os.getenv("TWIN_MODE", "true").lower() == "true"
+TWIN_MODE   = os.getenv("TWIN_MODE", "false").lower() == "true"
 VOICE_ZIP_PW = os.getenv("VOICE_ZIP_PASSWORD", "").encode() or None
 
 _version_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "VERSION")

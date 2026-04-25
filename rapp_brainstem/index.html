@@ -1404,7 +1404,7 @@
           <div class="sp-body">
             <div class="panel-row">
               <button class="panel-btn" onclick="toggleTheme()">🌓 Toggle Theme</button>
-              <button class="panel-btn" onclick="toggleTwinPanel()" id="sp-twin-toggle">👤 Twin: on</button>
+              <button class="panel-btn" onclick="toggleTwinPanel()" id="sp-twin-toggle" title="Experimental — first-person twin commentary on each turn">👤 Twin: off (experimental)</button>
             </div>
             <div class="panel-row">
               <button class="panel-btn" onclick="exportBook()">📋 Export Diagnostics</button>
@@ -3957,7 +3957,7 @@
     // has one clear place to turn the twin on/off now that the top-bar
     // icon is gone.
     const sp = document.getElementById('sp-twin-toggle');
-    if (sp) sp.textContent = twinMode ? '👤 Twin: on' : '👤 Twin: off';
+    if (sp) sp.textContent = twinMode ? '👤 Twin: on (experimental)' : '👤 Twin: off (experimental)';
   }
 
   function showTwin() {
