@@ -527,13 +527,10 @@
     max-width: 760px; margin: 0 auto 8px;
     pointer-events: none;
   }
-  /* Local brainstem: hide the auto-generated per-agent example_call
-     pill row at the bottom of the chat. The static starter-prompts row
-     above carries the only call-to-action a new user needs; with N
-     agents auto-loaded server-side, the hand-pill row was duplicating
-     example_calls into a 7-button cluster. The binder's holographic
-     card grid is unaffected (it lives in its own aside). */
-  body.is-local #hand-cards { display: none !important; }
+  /* (Earlier: this hid #hand-cards on local to clean up first-load
+     clutter. Reverted — the pills/cards toggle relies on this row
+     existing. The new approach is to start the hand empty on local
+     instead of auto-filling it with every loaded agent.) */
   /* Card mode rebuilds the layout: absolute, fanned, tucked behind input. */
   #hand-cards[data-mode="cards"] {
     position: absolute;
@@ -1576,8 +1573,9 @@
         const status = document.getElementById('rapp-io-status');
         if (status) status.textContent = `Exporting ${id}…`;
         try {
-          // api() returns {status, json}; for binary we go direct.
-          const tetherBase = (state.settings.tetherUrl || '').replace(/\/+$/, '');
+          // Same-origin on local; tether prefix only when virtual.
+          const isLocal = document.body.classList.contains('is-local');
+          const tetherBase = isLocal ? '' : ((state.settings.tetherUrl || '').replace(/\/+$/, ''));
           const url = `${tetherBase}/api/binder/export/${encodeURIComponent(id)}`;
           const res = await fetch(url);
           if (!res.ok) {
@@ -2400,6 +2398,16 @@ function loadSettings() {
   // prompt from canonical SOUL_* blocks + live memory read. We blank the field
   // so legacy export/import surfaces don't carry around a misleading value.
   state.settings.soul = '';
+
+  // Local brainstem: ignore any saved tetherUrl. The UI is served by the
+  // same Flask process that owns /api/binder/* — every call is same-origin
+  // by definition. A stale tetherUrl in localStorage (e.g. ':8765' from
+  // earlier testing) would otherwise route installs/exports to the wrong
+  // port and 'Failed to fetch' the user out of the install flow.
+  if (document.body.classList.contains('is-local')) {
+    state.settings.tetherUrl = '';
+    state.settings.tetherEnabled = false;
+  }
   $('#provider').value = state.settings.provider;
   $('#api-key').value  = state.settings.apiKey;
   $('#api-base').value = state.settings.customBase;
@@ -2861,9 +2869,22 @@ async function bootBinder() {
             console.warn('local card mint failed', f.filename, e);
           }
         }
-        // In local mode every agent is "loaded" server-side, so put them
-        // all in the hand — the LLM has access to all of them anyway.
-        state.hand = new Set((state.binder.cards || []).map(c => c.filename));
+        // The server auto-exposes every loaded agent to the LLM regardless
+        // of the client-side hand. So on local, the hand is purely a UI
+        // affordance for organizing the agents the user is actively
+        // thinking about — not a gate on what the LLM sees. Restore the
+        // user's saved hand selection (or start empty for a fresh user)
+        // so the bottom-of-chat row isn't cluttered with one card per
+        // installed agent on first load.
+        const savedHand = LS.get('hand', null);
+        if (Array.isArray(savedHand)) {
+          // Filter to agents that still exist in the binder (in case
+          // an agent was uninstalled server-side since last visit).
+          const existing = new Set((state.binder.cards || []).map(c => c.filename));
+          state.hand = new Set(savedHand.filter(f => existing.has(f)));
+        } else {
+          state.hand = new Set();
+        }
         persistHand();
         // Don't persist the binder under 'binder' localStorage key because
         // the server state can change independently of the browser cache.
@@ -3397,9 +3418,14 @@ async function installFromRegistry(repo, branch, agent, btn) {
     if (agent._install_method === 'binder') {
       // Rapplication — let the brainstem fetch + SHA-validate + write the
       // file server-side. We just need the rapp id.
+      // On the LOCAL brainstem this UI is served by the same Flask
+      // process that owns /api/binder/* — same-origin call, no tether
+      // prefix. (The original virtual-fork code prepended state.settings.
+      // tetherUrl, which can be stale or wrong-port in localStorage.)
       if (!agent._rapp_id) throw new Error('rapplication entry has no _rapp_id');
-      const tetherBase = (state.settings.tetherUrl || '').replace(/\/+$/, '') || '';
-      const url = (tetherBase || '') + '/api/binder/install';
+      const isLocal = document.body.classList.contains('is-local');
+      const tetherBase = isLocal ? '' : ((state.settings.tetherUrl || '').replace(/\/+$/, '') || '');
+      const url = tetherBase + '/api/binder/install';
       const r = await fetch(url, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
