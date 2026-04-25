@@ -643,6 +643,53 @@
   }
 
   /* RAPP Swarms rows */
+  /* Advanced settings — full-screen fly-out page reachable from the
+     compact settings dropdown. Holds everything that isn't Quick Actions
+     so a fresh user gets a tight startup view; power users go one click
+     deeper. Centered column inside, scrollable body, Back button to
+     return to chat. */
+  #advanced-page {
+    display: none; position: fixed; inset: 0;
+    z-index: 41; background: #0d1117; flex-direction: column;
+  }
+  #advanced-page.open { display: flex; }
+  #advanced-page .ap-head {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 22px; background: #161b22;
+    border-bottom: 1px solid #21262d; flex-shrink: 0;
+  }
+  #advanced-page .ap-back {
+    background: transparent; border: 1px solid #30363d;
+    color: #c9d1d9; padding: 5px 12px; border-radius: 4px;
+    font-size: 12px; cursor: pointer; transition: all .15s;
+  }
+  #advanced-page .ap-back:hover { border-color: #58a6ff; color: #58a6ff; }
+  #advanced-page .ap-title {
+    font-size: 14px; font-weight: 600; color: #e6edf3;
+  }
+  #advanced-page .ap-body {
+    flex: 1; overflow-y: auto; padding: 20px;
+    max-width: 760px; width: 100%; margin: 0 auto;
+    box-sizing: border-box;
+  }
+  #advanced-page .sp-section {
+    background: #161b22; border: 1px solid #21262d; border-radius: 8px;
+    margin-bottom: 12px; border-bottom: 1px solid #21262d;
+  }
+  /* Big-page sp-headers get a touch more padding than the compact ones. */
+  #advanced-page .sp-header { padding: 14px 18px; }
+  #advanced-page .sp-body { padding: 0 18px 16px; }
+  body.light-mode #advanced-page { background: #fff; }
+  body.light-mode #advanced-page .ap-head { background: #f6f8fa; border-bottom-color: #d0d7de; }
+  body.light-mode #advanced-page .ap-title { color: #24292e; }
+  body.light-mode #advanced-page .sp-section { background: #fff; border-color: #d0d7de; }
+  /* The Advanced button at the bottom of the compact panel — separator
+     above so it reads as a distinct entry point, not another section. */
+  .sp-advanced-link {
+    padding: 10px 14px;
+    border-top: 1px solid #21262d;
+  }
+
   /* Rapplication iframe overlay — full-screen takeover when a rapp UI
      is opened. Above chat, below #settings-panel (z:50) so the panel can
      still be dismissed. The iframe fills the body; the header strip
@@ -1390,10 +1437,10 @@
       </a>
       <div id="settings-panel">
 
-        <!-- Quick actions — the items that used to live as separate icons
-             in the top bar. Parked here so the top bar stays trainable
-             with just three labeled buttons (Agents / Voice / Settings). -->
-        <div class="sp-section" id="sp-quick">
+        <!-- Compact view: only the bare basics a brand-new user needs at
+             startup. Everything else lives behind the Advanced button so
+             the dropdown stays scannable. -->
+        <div class="sp-section open" id="sp-quick">
           <div class="sp-header" onclick="toggleSpSection('sp-quick')">
             <div class="sp-title-wrap">
               <span class="sp-title">⚡ Quick Actions</span>
@@ -1412,196 +1459,219 @@
           </div>
         </div>
 
-        <!-- Swarms (runtime grouping) -->
-        <div class="sp-section" id="sp-swarms">
-          <div class="sp-header" onclick="toggleSpSection('sp-swarms'); loadSwarmsSettings();">
-            <div class="sp-title-wrap">
-              <span class="sp-title">🐝 Swarms</span>
-              <span class="sp-sub">stack vs. converged — how loaded agents present</span>
-            </div>
-            <span class="sp-chev">›</span>
-          </div>
-          <div class="sp-body">
-            <div style="font-size:10px; color:#6e7681; margin-bottom:6px; line-height:1.4">
-              Load multiple swarms for layered agent access. Toggle mode: <strong style="color:#c9d1d9">stack</strong> (individual agents) or <strong style="color:#c9d1d9">converged</strong> (unified).
-            </div>
-            <div id="sp-swarms-list" style="margin-bottom:8px"></div>
-            <div class="panel-row">
-              <input type="text" id="sp-new-swarm" placeholder="New swarm name..." style="flex:1">
-              <button class="panel-btn primary" onclick="createSwarm()">+ Add</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Brainstem backup (whole-brainstem snapshot — distinct from
-             per-rapplication export/import in the Rapplications section). -->
-        <div class="sp-section" id="sp-egg">
-          <div class="sp-header" onclick="toggleSpSection('sp-egg')">
-            <div class="sp-title-wrap">
-              <span class="sp-title">💾 Brainstem backup</span>
-              <span class="sp-sub">export / restore your whole brainstem</span>
-            </div>
-            <span class="sp-chev">›</span>
-          </div>
-          <div class="sp-body">
-            <div style="font-size:10px; color:#8b949e; margin-bottom:8px; line-height:1.5">
-              Export your entire brainstem — agents, memories, soul, swarms — as a single backup file.
-              Drop it into any brainstem to restore exactly where you left off.
-            </div>
-            <div class="panel-row">
-              <button class="panel-btn primary" onclick="exportEgg()">Export</button>
-              <button class="panel-btn" onclick="document.getElementById('egg-import').click()">Import</button>
-              <input type="file" id="egg-import" accept=".rapplication,.egg,.zip" style="display:none" onchange="importEgg(event)">
-            </div>
-            <div class="panel-status" id="egg-status"></div>
-          </div>
-        </div>
-
-        <!-- Voice Settings -->
-        <div class="sp-section" id="sp-voice">
-          <div class="sp-header" onclick="toggleSpSection('sp-voice')">
-            <div class="sp-title-wrap">
-              <span class="sp-title">🔊 Voice</span>
-              <span class="sp-sub">TTS provider · voice selection · keys</span>
-            </div>
-            <span class="sp-chev">›</span>
-          </div>
-          <div class="sp-body">
-            <label for="voice-provider">Provider</label>
-            <select id="voice-provider" onchange="switchVoiceProvider()">
-              <option value="azure">Azure Speech</option>
-              <option value="elevenlabs">ElevenLabs</option>
-              <option value="browser">Browser (free)</option>
-            </select>
-            <div id="azure-fields">
-              <label for="az-speech-key">Speech API Key</label>
-              <input type="password" id="az-speech-key" placeholder="paste key from Azure portal..." autocomplete="off">
-              <label for="az-speech-region">Region</label>
-              <select id="az-speech-region" onchange="loadAzureVoices()">
-                <option value="eastus">East US</option>
-                <option value="eastus2">East US 2</option>
-                <option value="westus">West US</option>
-                <option value="westus2">West US 2</option>
-                <option value="centralus">Central US</option>
-                <option value="northeurope">North Europe</option>
-                <option value="westeurope">West Europe</option>
-                <option value="swedencentral">Sweden Central</option>
-                <option value="southeastasia">Southeast Asia</option>
-                <option value="australiaeast">Australia East</option>
-                <option value="japaneast">Japan East</option>
-              </select>
-              <label for="az-voice-select">Voice</label>
-              <select id="az-voice-select">
-                <option value="">Enter key &amp; save to load voices</option>
-              </select>
-            </div>
-            <div id="elevenlabs-fields" style="display:none">
-              <label for="el-api-key">ElevenLabs API Key</label>
-              <input type="password" id="el-api-key" placeholder="sk_..." autocomplete="off">
-              <label for="el-voice-select">Voice</label>
-              <select id="el-voice-select">
-                <option value="">Enter API key first</option>
-              </select>
-              <label for="el-model-select">Model</label>
-              <select id="el-model-select">
-                <option value="eleven_multilingual_v2">Multilingual v2</option>
-                <option value="eleven_turbo_v2_5">Turbo v2.5 (low latency)</option>
-                <option value="eleven_monolingual_v1">English v1</option>
-              </select>
-            </div>
-            <div class="panel-row">
-              <button class="panel-btn primary" onclick="saveVoiceSettings()">Save</button>
-              <button class="panel-btn" onclick="testVoice()">Test</button>
-              <button class="panel-btn" onclick="clearVoiceSettings()">Clear Key</button>
-            </div>
-            <div class="panel-row" style="margin-top:6px">
-              <button class="panel-btn" onclick="exportVoiceConfig()">Export</button>
-              <button class="panel-btn" onclick="document.getElementById('voice-import').click()">Import</button>
-              <input type="file" id="voice-import" accept=".zip,.json" style="display:none" onchange="importVoiceConfig(event)">
-            </div>
-            <div class="panel-status" id="voice-panel-status"></div>
-          </div>
-        </div>
-
-        <!-- Rapplications (the rapp store — composed multi-class singletons) -->
-        <div class="sp-section" id="sp-rapps">
-          <div class="sp-header" onclick="toggleSpSection('sp-rapps'); loadRapps();">
-            <div class="sp-title-wrap">
-              <span class="sp-title">📦 Rapplications</span>
-              <span class="sp-sub">composed bundles from the rapp store (BookFactory, …)</span>
-            </div>
-            <span class="sp-chev">›</span>
-          </div>
-          <div class="sp-body">
-            <div class="panel-row" style="margin-bottom:8px">
-              <button class="panel-btn" onclick="document.getElementById('rapp-import-file').click()" title="Import a rapplication file">📥 Import rapplication</button>
-              <input type="file" id="rapp-import-file" accept=".rapplication,.egg,.zip" style="display:none" onchange="importRapp(event)">
-            </div>
-            <div class="sp-sub-label">Installed <span id="sp-rapps-installed-n">(0)</span></div>
-            <div id="sp-rapps-installed"></div>
-            <div class="sp-sub-label" style="margin-top:12px">Catalog <span id="sp-rapps-catalog-n">(0)</span></div>
-            <div id="sp-rapps-catalog"></div>
-            <div class="panel-status" id="rapp-io-status" style="margin-top:6px"></div>
-          </div>
-        </div>
-
-        <!-- Install — curl line for installing the brainstem on another machine -->
-        <div class="sp-section" id="sp-install">
-          <div class="sp-header" onclick="toggleSpSection('sp-install'); refreshInstallUI();">
-            <div class="sp-title-wrap">
-              <span class="sp-title">💻 Install brainstem</span>
-              <span class="sp-sub">one-liner to set up a new local or swarm install</span>
-            </div>
-            <span class="sp-chev">›</span>
-          </div>
-          <div class="sp-body">
-            <div class="sp-toggle-row" id="install-flavor-row">
-              <button class="sp-toggle-btn flavor-active" data-flavor="brainstem">Local brainstem</button>
-              <button class="sp-toggle-btn" data-flavor="swarm">Swarm endpoint</button>
-            </div>
-            <div style="font-size:10px; color:#8b949e; margin-bottom:8px; line-height:1.5" id="sp-install-blurb"></div>
-            <div class="sp-toggle-row" id="install-os-row">
-              <button class="sp-toggle-btn" data-os="mac">macOS</button>
-              <button class="sp-toggle-btn" data-os="linux">Linux</button>
-              <button class="sp-toggle-btn" data-os="win">Windows</button>
-            </div>
-            <div class="install-cmd-block" id="sp-install-cmd" onclick="copyInstallCmd()"></div>
-            <div style="font-size:9px; color:#6e7681; text-align:center">tap to copy</div>
-          </div>
-        </div>
-
-        <!-- Deploy to cloud — Tier 2 swarm bundling and push -->
-        <div class="sp-section" id="sp-swarm">
-          <div class="sp-header" onclick="toggleSpSection('sp-swarm'); loadSwarmAgents();">
-            <div class="sp-title-wrap">
-              <span class="sp-title">🚀 Deploy to cloud</span>
-              <span class="sp-sub">bundle as a Tier 2 swarm and push to an endpoint</span>
-            </div>
-            <span class="sp-chev">›</span>
-          </div>
-          <div class="sp-body">
-            <div style="font-size:10px; color:#8b949e; margin-bottom:8px; line-height:1.5">
-              Bundles agents into a deployable swarm package for any Tier 2 endpoint.
-            </div>
-            <label for="sp-swarm-name">Swarm name</label>
-            <input type="text" id="sp-swarm-name" placeholder="my-sales-swarm" autocomplete="off">
-            <label for="sp-swarm-purpose">Purpose</label>
-            <input type="text" id="sp-swarm-purpose" placeholder="e.g. B2B sales acceleration" autocomplete="off">
-            <div class="sp-sub-label">Included agents</div>
-            <div id="sp-swarm-agents" class="sp-swarm-list"></div>
-            <label for="sp-swarm-endpoint">Push to endpoint</label>
-            <input type="text" id="sp-swarm-endpoint" placeholder="http://localhost:7080" autocomplete="off">
-            <div class="panel-row">
-              <button class="panel-btn" onclick="downloadSwarmBundle()">⬇ Download</button>
-              <button class="panel-btn primary" id="sp-swarm-push" onclick="pushSwarmBundle()">🚀 Push</button>
-            </div>
-          </div>
+        <!-- Advanced — opens the fly-out page with rapplications, swarms,
+             voice, deploy, backup, and install. Hidden behind one button so
+             a fresh user isn't drowned in options on first load. -->
+        <div class="sp-advanced-link">
+          <button class="panel-btn primary" onclick="openAdvancedPage()" style="width:100%">
+            ⚙️ Advanced settings ▸
+          </button>
         </div>
 
       </div>
     </div>
   </div>
 </header>
+
+<!-- Advanced settings — full-screen fly-out page. Sits above chat (z:42),
+     below the rapplication iframe overlay (z:40 — wait, lower z; we want
+     this above #rapp-frame so opening Advanced from inside a rapp UI works).
+     Sections ordered by frequency of use. -->
+<div id="advanced-page" role="dialog" aria-modal="true">
+  <div class="ap-head">
+    <button class="ap-back" onclick="closeAdvancedPage()" title="Back to chat">← Back</button>
+    <div class="ap-title">⚙️ Advanced settings</div>
+  </div>
+  <div class="ap-body">
+
+    <!-- Rapplications (the rapp store — composed multi-class singletons) -->
+    <div class="sp-section" id="sp-rapps">
+      <div class="sp-header" onclick="toggleSpSection('sp-rapps'); loadRapps();">
+        <div class="sp-title-wrap">
+          <span class="sp-title">📦 Rapplications</span>
+          <span class="sp-sub">composed bundles from the rapp store (BookFactory, …)</span>
+        </div>
+        <span class="sp-chev">›</span>
+      </div>
+      <div class="sp-body">
+        <div class="panel-row" style="margin-bottom:8px">
+          <button class="panel-btn" onclick="document.getElementById('rapp-import-file').click()" title="Import a rapplication file">📥 Import rapplication</button>
+          <input type="file" id="rapp-import-file" accept=".rapplication,.egg,.zip" style="display:none" onchange="importRapp(event)">
+        </div>
+        <div class="sp-sub-label">Installed <span id="sp-rapps-installed-n">(0)</span></div>
+        <div id="sp-rapps-installed"></div>
+        <div class="sp-sub-label" style="margin-top:12px">Catalog <span id="sp-rapps-catalog-n">(0)</span></div>
+        <div id="sp-rapps-catalog"></div>
+        <div class="panel-status" id="rapp-io-status" style="margin-top:6px"></div>
+      </div>
+    </div>
+
+    <!-- Swarms (runtime grouping) -->
+    <div class="sp-section" id="sp-swarms">
+      <div class="sp-header" onclick="toggleSpSection('sp-swarms'); loadSwarmsSettings();">
+        <div class="sp-title-wrap">
+          <span class="sp-title">🐝 Swarms</span>
+          <span class="sp-sub">stack vs. converged — how loaded agents present</span>
+        </div>
+        <span class="sp-chev">›</span>
+      </div>
+      <div class="sp-body">
+        <div style="font-size:10px; color:#6e7681; margin-bottom:6px; line-height:1.4">
+          Load multiple swarms for layered agent access. Toggle mode: <strong style="color:#c9d1d9">stack</strong> (individual agents) or <strong style="color:#c9d1d9">converged</strong> (unified).
+        </div>
+        <div id="sp-swarms-list" style="margin-bottom:8px"></div>
+        <div class="panel-row">
+          <input type="text" id="sp-new-swarm" placeholder="New swarm name..." style="flex:1">
+          <button class="panel-btn primary" onclick="createSwarm()">+ Add</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Deploy to cloud — Tier 2 swarm bundling and push -->
+    <div class="sp-section" id="sp-swarm">
+      <div class="sp-header" onclick="toggleSpSection('sp-swarm'); loadSwarmAgents();">
+        <div class="sp-title-wrap">
+          <span class="sp-title">🚀 Deploy to cloud</span>
+          <span class="sp-sub">bundle as a Tier 2 swarm and push to an endpoint</span>
+        </div>
+        <span class="sp-chev">›</span>
+      </div>
+      <div class="sp-body">
+        <div style="font-size:10px; color:#8b949e; margin-bottom:8px; line-height:1.5">
+          Bundles agents into a deployable swarm package for any Tier 2 endpoint.
+        </div>
+        <label for="sp-swarm-name">Swarm name</label>
+        <input type="text" id="sp-swarm-name" placeholder="my-sales-swarm" autocomplete="off">
+        <label for="sp-swarm-purpose">Purpose</label>
+        <input type="text" id="sp-swarm-purpose" placeholder="e.g. B2B sales acceleration" autocomplete="off">
+        <div class="sp-sub-label">Included agents</div>
+        <div id="sp-swarm-agents" class="sp-swarm-list"></div>
+        <label for="sp-swarm-endpoint">Push to endpoint</label>
+        <input type="text" id="sp-swarm-endpoint" placeholder="http://localhost:7080" autocomplete="off">
+        <div class="panel-row">
+          <button class="panel-btn" onclick="downloadSwarmBundle()">⬇ Download</button>
+          <button class="panel-btn primary" id="sp-swarm-push" onclick="pushSwarmBundle()">🚀 Push</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Voice Settings -->
+    <div class="sp-section" id="sp-voice">
+      <div class="sp-header" onclick="toggleSpSection('sp-voice')">
+        <div class="sp-title-wrap">
+          <span class="sp-title">🔊 Voice</span>
+          <span class="sp-sub">TTS provider · voice selection · keys</span>
+        </div>
+        <span class="sp-chev">›</span>
+      </div>
+      <div class="sp-body">
+        <label for="voice-provider">Provider</label>
+        <select id="voice-provider" onchange="switchVoiceProvider()">
+          <option value="azure">Azure Speech</option>
+          <option value="elevenlabs">ElevenLabs</option>
+          <option value="browser">Browser (free)</option>
+        </select>
+        <div id="azure-fields">
+          <label for="az-speech-key">Speech API Key</label>
+          <input type="password" id="az-speech-key" placeholder="paste key from Azure portal..." autocomplete="off">
+          <label for="az-speech-region">Region</label>
+          <select id="az-speech-region" onchange="loadAzureVoices()">
+            <option value="eastus">East US</option>
+            <option value="eastus2">East US 2</option>
+            <option value="westus">West US</option>
+            <option value="westus2">West US 2</option>
+            <option value="centralus">Central US</option>
+            <option value="northeurope">North Europe</option>
+            <option value="westeurope">West Europe</option>
+            <option value="swedencentral">Sweden Central</option>
+            <option value="southeastasia">Southeast Asia</option>
+            <option value="australiaeast">Australia East</option>
+            <option value="japaneast">Japan East</option>
+          </select>
+          <label for="az-voice-select">Voice</label>
+          <select id="az-voice-select">
+            <option value="">Enter key &amp; save to load voices</option>
+          </select>
+        </div>
+        <div id="elevenlabs-fields" style="display:none">
+          <label for="el-api-key">ElevenLabs API Key</label>
+          <input type="password" id="el-api-key" placeholder="sk_..." autocomplete="off">
+          <label for="el-voice-select">Voice</label>
+          <select id="el-voice-select">
+            <option value="">Enter API key first</option>
+          </select>
+          <label for="el-model-select">Model</label>
+          <select id="el-model-select">
+            <option value="eleven_multilingual_v2">Multilingual v2</option>
+            <option value="eleven_turbo_v2_5">Turbo v2.5 (low latency)</option>
+            <option value="eleven_monolingual_v1">English v1</option>
+          </select>
+        </div>
+        <div class="panel-row">
+          <button class="panel-btn primary" onclick="saveVoiceSettings()">Save</button>
+          <button class="panel-btn" onclick="testVoice()">Test</button>
+          <button class="panel-btn" onclick="clearVoiceSettings()">Clear Key</button>
+        </div>
+        <div class="panel-row" style="margin-top:6px">
+          <button class="panel-btn" onclick="exportVoiceConfig()">Export</button>
+          <button class="panel-btn" onclick="document.getElementById('voice-import').click()">Import</button>
+          <input type="file" id="voice-import" accept=".zip,.json" style="display:none" onchange="importVoiceConfig(event)">
+        </div>
+        <div class="panel-status" id="voice-panel-status"></div>
+      </div>
+    </div>
+
+    <!-- Brainstem backup (whole-brainstem snapshot — distinct from
+         per-rapplication export/import in the Rapplications section). -->
+    <div class="sp-section" id="sp-egg">
+      <div class="sp-header" onclick="toggleSpSection('sp-egg')">
+        <div class="sp-title-wrap">
+          <span class="sp-title">💾 Brainstem backup</span>
+          <span class="sp-sub">export / restore your whole brainstem</span>
+        </div>
+        <span class="sp-chev">›</span>
+      </div>
+      <div class="sp-body">
+        <div style="font-size:10px; color:#8b949e; margin-bottom:8px; line-height:1.5">
+          Export your entire brainstem — agents, memories, soul, swarms — as a single backup file.
+          Drop it into any brainstem to restore exactly where you left off.
+        </div>
+        <div class="panel-row">
+          <button class="panel-btn primary" onclick="exportEgg()">Export</button>
+          <button class="panel-btn" onclick="document.getElementById('egg-import').click()">Import</button>
+          <input type="file" id="egg-import" accept=".rapplication,.egg,.zip" style="display:none" onchange="importEgg(event)">
+        </div>
+        <div class="panel-status" id="egg-status"></div>
+      </div>
+    </div>
+
+    <!-- Install — curl line for installing the brainstem on another machine -->
+    <div class="sp-section" id="sp-install">
+      <div class="sp-header" onclick="toggleSpSection('sp-install'); refreshInstallUI();">
+        <div class="sp-title-wrap">
+          <span class="sp-title">💻 Install brainstem</span>
+          <span class="sp-sub">one-liner to set up a new local or swarm install</span>
+        </div>
+        <span class="sp-chev">›</span>
+      </div>
+      <div class="sp-body">
+        <div class="sp-toggle-row" id="install-flavor-row">
+          <button class="sp-toggle-btn flavor-active" data-flavor="brainstem">Local brainstem</button>
+          <button class="sp-toggle-btn" data-flavor="swarm">Swarm endpoint</button>
+        </div>
+        <div style="font-size:10px; color:#8b949e; margin-bottom:8px; line-height:1.5" id="sp-install-blurb"></div>
+        <div class="sp-toggle-row" id="install-os-row">
+          <button class="sp-toggle-btn" data-os="mac">macOS</button>
+          <button class="sp-toggle-btn" data-os="linux">Linux</button>
+          <button class="sp-toggle-btn" data-os="win">Windows</button>
+        </div>
+        <div class="install-cmd-block" id="sp-install-cmd" onclick="copyInstallCmd()"></div>
+        <div style="font-size:9px; color:#6e7681; text-align:center">tap to copy</div>
+      </div>
+    </div>
+
+  </div>
+</div>
 
 <!-- Rapplication iframe overlay. Each installed rapp that ships a service
      gets an "Open ▸" button in Settings → Rapplications. Clicking opens
@@ -3239,7 +3309,23 @@
     if (e.key === 'Escape' && document.getElementById('rapp-frame')?.classList.contains('open')) {
       closeRappFrame();
     }
+    if (e.key === 'Escape' && document.getElementById('advanced-page')?.classList.contains('open')) {
+      closeAdvancedPage();
+    }
   });
+  // ── Advanced settings fly-out ──
+  // Compact #settings-panel keeps only Quick Actions for new users; the
+  // rest of the surface (Rapplications, Swarms, Voice, Deploy, Backup,
+  // Install) lives behind this single button so first-load isn't dense.
+  function openAdvancedPage() {
+    // Close the compact dropdown so the fly-out is the focused surface.
+    const sp = document.getElementById('settings-panel');
+    if (sp && sp.classList.contains('open')) sp.classList.remove('open');
+    document.getElementById('advanced-page')?.classList.add('open');
+  }
+  function closeAdvancedPage() {
+    document.getElementById('advanced-page')?.classList.remove('open');
+  }
   // ── Rapplication export / import ──
   // Bundles a rapplication (agent + service + state) into a single
   // shareable file. The internal data structure is a zip; the user
