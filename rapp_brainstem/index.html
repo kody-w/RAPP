@@ -332,6 +332,19 @@
   .browse-row .br-meta .chip.tier-official  { color: #3fb950; border-color: #238636; }
   .browse-row .br-meta .chip.tier-community { color: #58a6ff; border-color: #1f6feb; }
   .browse-row .br-meta .chip.tier-experimental { color: #d29922; border-color: #d2992233; }
+  /* Click-to-filter chips. The base chip is non-interactive (display
+     only); .chip-clickable opts in. Hover lifts the border so the
+     affordance reads as "clickable", and .chip-active locks the lit
+     state when a chip's filter is currently applied. */
+  .browse-row .br-meta .chip-clickable {
+    cursor: pointer; transition: border-color .12s, background .12s, color .12s;
+  }
+  .browse-row .br-meta .chip-clickable:hover {
+    border-color: #58a6ff; background: rgba(88,166,255,.08);
+  }
+  .browse-row .br-meta .chip-active {
+    background: rgba(88,166,255,.18); border-color: #58a6ff; color: #c8e1ff;
+  }
   .browse-row .br-add {
     background: #1f6feb; color: #fff; border: none; border-radius: 6px;
     padding: 6px 10px; font-size: 11px; font-weight: 600;
@@ -3494,15 +3507,27 @@ function renderBrowse() {
     const row = document.createElement('div');
     row.className = 'browse-row';
     const tier = (agent.quality_tier || 'community').toLowerCase();
+    const tierLabel = (agent.quality_tier || 'community').toUpperCase();
+    const author = publisherOf(agent);
+    const category = (agent.category || 'general');
+    // Mark each chip as click-to-filter via data-* attrs so a single
+    // delegated handler below can dispatch by kind without re-binding
+    // per row. .chip-active lights up when the chip's value matches
+    // the filter that's already in play, so the user can see at a
+    // glance what's narrowing their list.
+    const tierActive = q && q === tier ? ' chip-active' : '';
+    const authorActive = publisherFilter && publisherFilter === author ? ' chip-active' : '';
+    const categoryActive = q && q === category.toLowerCase() ? ' chip-active' : '';
+    const repoActive = sourceFilter && sourceFilter === repo ? ' chip-active' : '';
     row.innerHTML = `
       <div class="br-main">
         <div class="br-name">${escapeHtml(agent.display_name || agent.name || filename)}</div>
         <div class="br-desc">${escapeHtml(agent.description || '')}</div>
         <div class="br-meta">
-          <span class="chip tier-${tier}">${escapeHtml((agent.quality_tier || 'community').toUpperCase())}</span>
-          <span class="chip">${escapeHtml(agent.author || 'unknown')}</span>
-          <span class="chip">${escapeHtml(agent.category || 'general')}</span>
-          <span class="chip">${escapeHtml(repo)}</span>
+          <span class="chip chip-clickable tier-${tier}${tierActive}" data-filter-kind="tier" data-filter-value="${escapeHtml(tier)}" title="Filter by ${escapeHtml(tierLabel)} tier">${escapeHtml(tierLabel)}</span>
+          <span class="chip chip-clickable${authorActive}" data-filter-kind="publisher" data-filter-value="${escapeHtml(author)}" title="Filter by publisher: ${escapeHtml(author)}">${escapeHtml(author)}</span>
+          <span class="chip chip-clickable${categoryActive}" data-filter-kind="category" data-filter-value="${escapeHtml(category)}" title="Filter by category: ${escapeHtml(category)}">${escapeHtml(category)}</span>
+          <span class="chip chip-clickable${repoActive}" data-filter-kind="source" data-filter-value="${escapeHtml(repo)}" title="Filter by source: ${escapeHtml(repo)}">${escapeHtml(repo)}</span>
         </div>
       </div>
       <button class="br-add ${isInstalled ? 'installed' : ''}" ${isInstalled ? 'disabled' : ''}>
@@ -4970,6 +4995,38 @@ function wire() {
   $('#browse-source-filter').addEventListener('change', renderBrowse);
   $('#browse-publisher-filter').addEventListener('change', renderBrowse);
   $('#browse-refresh').addEventListener('click', refreshAllSources);
+  // Click-to-filter on the meta chips inside each browse row. One
+  // delegated handler on the list — rows are re-rendered constantly
+  // (every refresh, every filter change) so per-row listeners would
+  // leak. Toggling: clicking the active chip clears that filter.
+  $('#browse-list').addEventListener('click', e => {
+    const chip = e.target.closest('.chip-clickable');
+    if (!chip) return;
+    const kind = chip.dataset.filterKind;
+    const value = chip.dataset.filterValue;
+    if (!kind || value == null) return;
+    const wasActive = chip.classList.contains('chip-active');
+    if (kind === 'publisher') {
+      const sel = $('#browse-publisher-filter');
+      // The publisher dropdown is rebuilt by renderBrowse from the
+      // CURRENT entry set. If the desired publisher isn't an option
+      // yet (because the source filter excludes it), inject it so
+      // setting the value sticks past the next render.
+      if (sel && !Array.from(sel.options).some(o => o.value === value)) {
+        const opt = document.createElement('option');
+        opt.value = value; opt.textContent = value;
+        sel.appendChild(opt);
+      }
+      if (sel) sel.value = wasActive ? '' : value;
+    } else if (kind === 'source') {
+      const sel = $('#browse-source-filter');
+      if (sel) sel.value = wasActive ? '' : value;
+    } else if (kind === 'tier' || kind === 'category') {
+      const input = $('#browse-filter');
+      if (input) input.value = wasActive ? '' : value;
+    }
+    renderBrowse();
+  });
   // Click the install one-liner to copy it. Users who read the CTA and
   // want to spin up a local brainstem can copy-paste-run in one click.
   (() => {
