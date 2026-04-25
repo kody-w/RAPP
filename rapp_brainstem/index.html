@@ -527,6 +527,13 @@
     max-width: 760px; margin: 0 auto 8px;
     pointer-events: none;
   }
+  /* Local brainstem: hide the auto-generated per-agent example_call
+     pill row at the bottom of the chat. The static starter-prompts row
+     above carries the only call-to-action a new user needs; with N
+     agents auto-loaded server-side, the hand-pill row was duplicating
+     example_calls into a 7-button cluster. The binder's holographic
+     card grid is unaffected (it lives in its own aside). */
+  body.is-local #hand-cards { display: none !important; }
   /* Card mode rebuilds the layout: absolute, fanned, tucked behind input. */
   #hand-cards[data-mode="cards"] {
     position: absolute;
@@ -5394,16 +5401,12 @@ document.body.classList.add('is-local');
 </script>
 
 <script>
-  // Register the service worker so the brainstem UI is installable as a PWA
-  // and resilient to flaky connectivity. The chat surface itself still needs
-  // the brainstem running on :7071; the SW only caches the static UI shell.
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch((err) => {
-        console.warn('brainstem SW registration failed:', err);
-      });
-    });
-  }
+  // Service worker is a PWA feature for the virtual brainstem on
+  // GitHub Pages. On the local brainstem (this UI's only mode) the
+  // page is always served fresh from Flask on localhost:7071 — the
+  // SW just spammed "precache miss ./index.html" warnings into the
+  // console without buying us anything. Skipped here.
+  // (Original registration kept in web/index.html for the virtual.)
 </script>
 
 </body>
