@@ -2292,7 +2292,7 @@ const state = {
     // PINNED_SOURCES below are hard-coded defaults — re-injected at load
     // time so adding a new default propagates to existing users — and are
     // protected from removal in the UI. User-added sources are removable.
-    sources: ['kody-w/RAR', 'kody-w/RAPP'],
+    sources: ['kody-w/RAR'],
     // Tether to a local brainstem (rapp_brainstem/brainstem.py on :7071, which
     // speaks the rapp-tether/1.0 wire shape). When connected, agent calls
     // route through the local Python process instead of Pyodide so they get
@@ -2353,7 +2353,7 @@ const LS = {
 // a new default actually reaches existing users (whose saved settings
 // would otherwise overwrite the in-code defaults). Protected from removal
 // via removeSource() — users add and remove their own sources freely.
-const PINNED_SOURCES = ['kody-w/RAR', 'kody-w/RAPP'];
+const PINNED_SOURCES = ['kody-w/RAR'];
 
 function loadSettings() {
   const saved = LS.get('settings', null);
@@ -3141,6 +3141,16 @@ function normalizeSourceInput(s) {
   return s;
 }
 
+// Per-source schema hint — known repos go straight to the right URL
+// instead of probing all three schemas (which would produce 2 expected
+// 404s per source per page load). Unknown user-added repos still
+// probe all three to support arbitrary catalogs.
+const SOURCE_SCHEMA_HINTS = {
+  'kody-w/RAR':                'registry',     // registry.json at repo root
+  'kody-w/RAPP':               'rapp-store',   // rapp_store/index.json
+  'kody-w/AI-Agent-Templates': 'manifest',     // manifest.json at repo root
+};
+
 // Fetch a source registry, trying every schema we support. Returns a
 // normalized object: { agents: [...], _branch, _schema }. `agents[]`
 // always carries the fields the Browse renderer reads — name, description,
@@ -3149,10 +3159,12 @@ function normalizeSourceInput(s) {
 // whether to fetch the file directly from raw.githubusercontent.com or to
 // route through the brainstem's /api/binder/install endpoint.
 async function fetchSourceRegistry(repo) {
+  const hint = SOURCE_SCHEMA_HINTS[repo];
+  const trySchemas = hint ? [hint] : ['registry', 'manifest', 'rapp-store'];
   for (const branch of ['main', 'master']) {
     // Schema 1 — rapp-registry/1.x (registry.json at repo root).
     // Single-file agents minted client-side by raw fetch + Card.mintCard.
-    try {
+    if (trySchemas.includes('registry')) try {
       const r = await fetch(`https://raw.githubusercontent.com/${repo}/${branch}/registry.json`, { cache: 'no-store' });
       if (r.ok) {
         const reg = await r.json();
@@ -3168,7 +3180,7 @@ async function fetchSourceRegistry(repo) {
     } catch {}
     // Schema 2 — agent-manifest (manifest.json with agents:[]).
     // Used by kody-w/AI-Agent-Templates. Single-file agents, raw install.
-    try {
+    if (trySchemas.includes('manifest')) try {
       const r = await fetch(`https://raw.githubusercontent.com/${repo}/${branch}/manifest.json`, { cache: 'no-store' });
       if (r.ok) {
         const m = await r.json();
@@ -3196,7 +3208,7 @@ async function fetchSourceRegistry(repo) {
     // Schema 3 — rapp-store (rapp_store/index.json with rapplications:[]).
     // Composed multi-class singletons — installs go through the brainstem's
     // binder endpoint so the server validates the SHA pin before writing.
-    try {
+    if (trySchemas.includes('rapp-store')) try {
       const r = await fetch(`https://raw.githubusercontent.com/${repo}/${branch}/rapp_store/index.json`, { cache: 'no-store' });
       if (r.ok) {
         const m = await r.json();
