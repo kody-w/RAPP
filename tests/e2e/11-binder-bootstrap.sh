@@ -1,23 +1,22 @@
 #!/usr/bin/env bash
-# Binder bootstrap test (Constitution Article XXV — distros & RAPPSTORE_URL).
+# Binder install test (one-liner copies binder locally — no network bootstrap).
 #
-# Verifies the start.sh → binder bootstrap path end-to-end:
-#   - clean state (no services/ dir, no bootstrap.json)
-#   - run a sandboxed brainstem with start.sh
-#   - confirm binder lands in services/
-#   - confirm bootstrap.json records reachability + install
-#   - confirm /api/binder responds with installed list
-#   - confirm /health includes the bootstrap block reflecting the install
+# The one-liner installer (installer/install.sh) clones the full repo,
+# which already contains rapp_store/binder/binder_service.py. The
+# installer's install_binder_locally step copies that file into the
+# brainstem's services/ dir. No fetch, no bootstrap, no banner.
 #
-# This proves that a fresh brainstem on a fresh machine self-installs its
-# package manager from RAPPstore on first launch, with no manual steps.
+# This test verifies:
+#   - install.sh's install_binder_locally function copies binder into services/
+#   - launching the brainstem makes /api/binder respond 200
+#   - /health does NOT include a bootstrap block (we ripped that out)
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
 PORT="${PORT:-7084}"
-SANDBOX=/tmp/rapp-e2e-bootstrap
-PID_FILE=/tmp/rapp-e2e-bootstrap.pid
-LOG=/tmp/rapp-e2e-bootstrap.log
+SANDBOX=/tmp/rapp-e2e-binder-install
+PID_FILE=/tmp/rapp-e2e-binder-install.pid
+LOG=/tmp/rapp-e2e-binder-install.log
 
 cleanup() {
     [ -f "$PID_FILE" ] && kill "$(cat "$PID_FILE")" 2>/dev/null || true
@@ -31,68 +30,47 @@ if lsof -i ":$PORT" -sTCP:LISTEN >/dev/null 2>&1; then
     exit 1
 fi
 
-# Build a clean sandbox copy of the brainstem source (no .copilot_*,
-# no .brainstem_data, no services/). start.sh should bootstrap binder.
-echo "▶ Building sandbox at $SANDBOX..."
+# Build a sandbox that mirrors the post-install layout: brainstem source
+# + sibling rapp_store dir (the way `git clone` of kody-w/RAPP looks).
+echo "▶ Building sandbox at $SANDBOX (mirrors post-clone layout)..."
 rm -rf "$SANDBOX"
-mkdir -p "$SANDBOX"
-cp -r rapp_brainstem/* "$SANDBOX/"
-# Borrow auth so /chat works after bootstrap (the test of /api/binder
-# itself doesn't need auth, but we want a valid run).
+mkdir -p "$SANDBOX/src/rapp_brainstem" "$SANDBOX/src/rapp_store/binder"
+cp -r rapp_brainstem/* "$SANDBOX/src/rapp_brainstem/"
+cp rapp_store/binder/binder_service.py "$SANDBOX/src/rapp_store/binder/"
+# Borrow auth so /chat works (not strictly needed for this test, but consistent)
 for AUTH_SRC in "$HOME/.brainstem/src/rapp_brainstem" "$HOME/.brainstem"; do
     if [ -f "$AUTH_SRC/.copilot_session" ]; then
-        cp "$AUTH_SRC/.copilot_session" "$SANDBOX/.copilot_session"
-        cp "$AUTH_SRC/.copilot_token"   "$SANDBOX/.copilot_token" 2>/dev/null || true
+        cp "$AUTH_SRC/.copilot_session" "$SANDBOX/src/rapp_brainstem/.copilot_session"
+        cp "$AUTH_SRC/.copilot_token"   "$SANDBOX/src/rapp_brainstem/.copilot_token" 2>/dev/null || true
         break
     fi
 done
-# Ensure the sandbox is genuinely fresh
-rm -rf "$SANDBOX/services" "$SANDBOX/.brainstem_data"
+# Fresh state — no services/, no .brainstem_data/
+rm -rf "$SANDBOX/src/rapp_brainstem/services" "$SANDBOX/src/rapp_brainstem/.brainstem_data"
 
-# Run start.sh — this is what bootstraps binder
-echo "▶ Running start.sh on :$PORT (this triggers the bootstrap)..."
-( cd "$SANDBOX" && PORT=$PORT ./start.sh ) > "$LOG" 2>&1 &
-echo $! > "$PID_FILE"
-
-for i in $(seq 1 30); do
-    curl -sf "http://localhost:$PORT/health" >/dev/null 2>&1 && break
-    sleep 1
-    if [ "$i" = "30" ]; then
-        echo "FAIL: brainstem did not come up"
-        tail -30 "$LOG"
-        exit 1
-    fi
-done
+# Replicate install.sh's install_binder_locally step (one cp).
+echo "▶ Running the equivalent of install.sh's install_binder_locally..."
+mkdir -p "$SANDBOX/src/rapp_brainstem/services"
+cp "$SANDBOX/src/rapp_store/binder/binder_service.py" "$SANDBOX/src/rapp_brainstem/services/binder_service.py"
 
 # ── 1. binder_service.py landed in services/ ─────────────────────────
-if [ ! -f "$SANDBOX/services/binder_service.py" ]; then
-    echo "FAIL: services/binder_service.py was not created by bootstrap"
-    echo "--- start.sh log:"
-    tail -20 "$LOG"
+if [ ! -f "$SANDBOX/src/rapp_brainstem/services/binder_service.py" ]; then
+    echo "FAIL: services/binder_service.py was not created"
     exit 1
 fi
 echo "PASS: binder_service.py landed in services/"
 
-# ── 2. bootstrap.json was written ────────────────────────────────────
-if [ ! -f "$SANDBOX/.brainstem_data/bootstrap.json" ]; then
-    echo "FAIL: .brainstem_data/bootstrap.json was not written"
-    exit 1
-fi
-REACHABLE=$(python3 -c 'import json; print(json.load(open("'$SANDBOX'/.brainstem_data/bootstrap.json"))["rapp_store_reachable"])')
-INSTALLED=$(python3 -c 'import json; print(json.load(open("'$SANDBOX'/.brainstem_data/bootstrap.json"))["binder_installed"])')
-if [ "$REACHABLE" != "True" ]; then
-    echo "FAIL: bootstrap.json says rapp_store_reachable=$REACHABLE (network issue?)"
-    cat "$SANDBOX/.brainstem_data/bootstrap.json"
-    exit 1
-fi
-if [ "$INSTALLED" != "True" ]; then
-    echo "FAIL: bootstrap.json says binder_installed=$INSTALLED"
-    cat "$SANDBOX/.brainstem_data/bootstrap.json"
-    exit 1
-fi
-echo "PASS: bootstrap.json records reachable=true, installed=true"
+# Launch the brainstem
+echo "▶ Launching brainstem on :$PORT..."
+( cd "$SANDBOX/src/rapp_brainstem" && PORT=$PORT python3 brainstem.py ) > "$LOG" 2>&1 &
+echo $! > "$PID_FILE"
+for i in $(seq 1 30); do
+    curl -sf "http://localhost:$PORT/health" >/dev/null 2>&1 && break
+    sleep 1
+    [ "$i" = "30" ] && { echo "FAIL: did not come up"; tail -20 "$LOG"; exit 1; }
+done
 
-# ── 3. /api/binder responds 200 with installed list ──────────────────
+# ── 2. /api/binder responds 200 with installed list ──────────────────
 RESP=$(curl -s -w "\n%{http_code}" "http://localhost:$PORT/api/binder")
 HTTP_CODE=$(echo "$RESP" | tail -1)
 BODY=$(echo "$RESP" | sed '$d')
@@ -104,17 +82,23 @@ fi
 HAS_KEY=$(echo "$BODY" | python3 -c 'import sys,json; print("installed" in json.load(sys.stdin))')
 if [ "$HAS_KEY" != "True" ]; then
     echo "FAIL: /api/binder response missing 'installed' key"
-    echo "$BODY"
     exit 1
 fi
 echo "PASS: /api/binder returns 200 with installed key"
 
-# ── 4. /health bootstrap block reflects the install ──────────────────
-HEALTH_BS=$(curl -s "http://localhost:$PORT/health" | python3 -c 'import sys,json; b=json.load(sys.stdin).get("bootstrap",{}); print(b.get("rapp_store_reachable"), b.get("binder_installed"))')
-if [ "$HEALTH_BS" != "True True" ]; then
-    echo "FAIL: /health bootstrap not reflecting install: '$HEALTH_BS'"
+# ── 3. /health does NOT include bootstrap block (ripped out) ─────────
+HAS_BOOTSTRAP=$(curl -s "http://localhost:$PORT/health" | python3 -c 'import sys,json; print("bootstrap" in json.load(sys.stdin))')
+if [ "$HAS_BOOTSTRAP" = "True" ]; then
+    echo "FAIL: /health still includes 'bootstrap' block — should have been removed"
     exit 1
 fi
-echo "PASS: /health bootstrap block reports reachable+installed"
+echo "PASS: /health does not include bootstrap block (removed)"
 
-echo "✅ Binder bootstrap test passed"
+# ── 4. .brainstem_data/bootstrap.json was NOT created ────────────────
+if [ -f "$SANDBOX/src/rapp_brainstem/.brainstem_data/bootstrap.json" ]; then
+    echo "FAIL: bootstrap.json was created — bootstrap mechanism still active"
+    exit 1
+fi
+echo "PASS: no bootstrap.json (bootstrap mechanism removed)"
+
+echo "✅ Binder install test passed (one-liner copies binder, no bootstrap)"

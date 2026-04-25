@@ -61,17 +61,7 @@ for i in $(seq 1 30); do
     [ "$i" = "30" ] && { echo "FAIL: did not come up"; tail -20 "$LOG"; exit 1; }
 done
 
-# ── 1. /health includes bootstrap block ──────────────────────────────
-HEALTH=$(curl -s "http://localhost:$PORT/health")
-HAS_BOOTSTRAP=$(echo "$HEALTH" | python3 -c 'import sys,json; print("bootstrap" in json.load(sys.stdin))')
-if [ "$HAS_BOOTSTRAP" != "True" ]; then
-    echo "FAIL: /health missing 'bootstrap' block"
-    echo "$HEALTH"
-    exit 1
-fi
-echo "PASS: /health includes bootstrap block"
-
-# ── 2. /chat without user_guid → defaults to DEFAULT_USER_GUID ───────
+# ── 1. /chat without user_guid → defaults to DEFAULT_USER_GUID ───────
 RESP=$(curl -s -X POST "http://localhost:$PORT/chat" \
     -H "Content-Type: application/json" \
     -d '{"user_input":"reply with exactly the word: ok","conversation_history":[]}')

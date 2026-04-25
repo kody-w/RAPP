@@ -1433,22 +1433,6 @@ def agents_import():
         
     return jsonify({"status": "ok", "message": f"Agent {safe_name} imported successfully."})
 
-def _read_bootstrap_status():
-    """Read .brainstem_data/bootstrap.json, written by start.sh during the
-    binder bootstrap. Tells the UI whether RAPPstore was reachable from
-    this machine and whether the package manager is installed. Missing
-    file = bootstrap was never attempted (e.g. brainstem.py launched
-    directly without start.sh)."""
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".brainstem_data", "bootstrap.json")
-    if not os.path.exists(path):
-        return {"rapp_store_reachable": None, "binder_installed": None, "checked_at": None, "error": "bootstrap not run"}
-    try:
-        with open(path) as f:
-            return json.load(f)
-    except Exception as e:
-        return {"rapp_store_reachable": None, "binder_installed": None, "checked_at": None, "error": "unreadable: " + str(e)}
-
-
 @app.route("/health", methods=["GET"])
 def health():
     agents = {}
@@ -1457,7 +1441,6 @@ def health():
     except Exception:
         pass
     soul_ok = os.path.exists(SOUL_PATH)
-    bootstrap = _read_bootstrap_status()
 
     # Lightweight auth check — just see if a GitHub token EXISTS.
     # Never do token exchange here; that happens lazily on first /chat call.
@@ -1482,7 +1465,6 @@ def health():
             "soul":   SOUL_PATH if soul_ok else "missing",
             "agents": list(agents.keys()),
             "copilot": "\u2713" if copilot_ok else "pending",
-            "bootstrap": bootstrap,
             "brainstem_dir": os.path.dirname(os.path.abspath(__file__)),
         })
     else:
@@ -1492,7 +1474,6 @@ def health():
             "model":  MODEL,
             "soul":   SOUL_PATH if soul_ok else "missing",
             "agents": list(agents.keys()),
-            "bootstrap": bootstrap,
         })
 
 @app.route("/debug/auth", methods=["GET"])
@@ -1748,72 +1729,6 @@ def service_dispatch(service, path=""):
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
-def _bootstrap_binder():
-    """Self-bootstrap binder from RAPPstore on first launch.
-
-    Mirrors the start.sh bootstrap block but lives here so EVERY launch
-    path triggers it — start.sh, the `brainstem` CLI, direct
-    `python brainstem.py`, and any future launcher all get the bootstrap
-    for free without coordination.
-
-    Writes .brainstem_data/bootstrap.json with the result so /health
-    can surface RAPPstore reachability to the chat UI. Idempotent:
-    if services/binder_service.py already exists, just records the
-    fact that bootstrap has already happened.
-    """
-    base = os.path.dirname(os.path.abspath(__file__))
-    services_dir = os.path.join(base, "services")
-    data_dir = os.path.join(base, ".brainstem_data")
-    binder_path = os.path.join(services_dir, "binder_service.py")
-    bootstrap_file = os.path.join(data_dir, "bootstrap.json")
-    binder_url = (RAPPSTORE_URL.replace("/index.json", "")
-                  if RAPPSTORE_URL.endswith("/index.json")
-                  else RAPPSTORE_URL) + "/binder/binder_service.py"
-    expected_sha = "a68e44bc2ef0085dfe1598fa224b655b24e91d329128cff2a7328f12a560714d"
-
-    os.makedirs(services_dir, exist_ok=True)
-    os.makedirs(data_dir, exist_ok=True)
-
-    def _write_status(reachable, installed, error=None):
-        try:
-            with open(bootstrap_file, "w") as f:
-                json.dump({
-                    "rapp_store_reachable": reachable,
-                    "binder_installed": installed,
-                    "checked_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-                    "error": error,
-                }, f, indent=2)
-        except Exception as e:
-            print(f"[brainstem] bootstrap: could not write status: {e}")
-
-    # Already installed — record success without re-fetching
-    if os.path.exists(binder_path):
-        if not os.path.exists(bootstrap_file):
-            _write_status(True, True, None)
-        return
-
-    print("[brainstem] Bootstrapping binder from RAPPstore...")
-    try:
-        import hashlib
-        resp = requests.get(binder_url, timeout=10)
-        if resp.status_code != 200:
-            _write_status(False, False, f"HTTP {resp.status_code} from {binder_url}")
-            print(f"[brainstem]   WARNING: RAPPstore returned {resp.status_code}; binder not installed")
-            return
-        actual_sha = hashlib.sha256(resp.content).hexdigest()
-        if actual_sha != expected_sha:
-            _write_status(True, False, f"sha256 mismatch (expected {expected_sha}, got {actual_sha})")
-            print(f"[brainstem]   WARNING: SHA256 mismatch — binder install skipped")
-            return
-        with open(binder_path, "wb") as f:
-            f.write(resp.content)
-        _write_status(True, True, None)
-        print("[brainstem]   binder installed.")
-    except Exception as e:
-        _write_status(False, False, str(e))
-        print(f"[brainstem]   WARNING: RAPPstore unreachable ({e}); binder not installed")
-
-
 if __name__ == "__main__":
     _tlog_load()  # Restore previous flight log
     _tlog("server.starting", {"version": VERSION, "model": MODEL, "port": PORT})
@@ -1824,7 +1739,6 @@ if __name__ == "__main__":
     print(f"   Voice:  {'on' if VOICE_MODE else 'off'} (POST /voice/toggle to change)")
     print(f"   Twin:   {'on' if TWIN_MODE else 'off'} (POST /twin/toggle to change)")
     print(f"   Auth:   GitHub Copilot API (via gh CLI)\n")
-    _bootstrap_binder()  # Self-install package manager on first launch
     load_soul()
     agents = load_agents()
     svcs = load_services()
