@@ -65,7 +65,7 @@ Items the platform needs but that are blocked on something else (capacity, a cod
 
 - **What.** A step-by-step guide to deploying `rapp_swarm/` to Azure Functions, including the vendoring step, identity setup, and the smoke test.
 - **Why.** Tier 2 is the most-skipped tier in evaluations because the deploy story is implicit in the build script.
-- **Home.** `rapp_swarm/README.md` (operational) + `vault/Tier 2 — Cloud Swarm.md` (conceptual).
+- **Home.** `rapp_swarm/README.md` (operational) + `pages/vault/Tier 2 — Cloud Swarm.md` (conceptual).
 - **Ready when.** `tests/e2e/05-tier2-cloud.sh` is green on the current branch — that's the signal that the deploy path is reproducible.
 
 ### Tier 3 publish walkthrough
@@ -96,7 +96,7 @@ Items the platform should eventually have docs for, but where the underlying thi
 - **The vibe builder.** What it does, the loop it runs, the calibration signals it consumes. Wait until the agent settles into its current shape.
 - **The swarm factory pattern.** A vault note explaining how `swarm_factory_agent` produces composed pipelines without becoming a router. Wait for the next workshop run that uses it heavily.
 - **The rapp store contract.** What makes a directory in `rapp_store/` a valid rapplication, the manifest schema, the publish workflow. Wait for v1 of the manifest schema to stabilize.
-- **The skill.md / rapplication-sdk.md story.** A vault note covering the *AI-readable skill* pattern — what `docs/skill.md` is for, why it's distinct from `SPEC.md`, who consumes it.
+- **The skill.md / rapplication-sdk.md story.** A vault note covering the *AI-readable skill* pattern — what `pages/docs/skill.md` is for, why it's distinct from `SPEC.md`, who consumes it.
 - **The card pattern (live index card).** Recently shipped (commit `dd1434b`). Worth a vault note once a second card-shaped artifact has been built, so the post can compare two real instances rather than describing one in the abstract.
 - **Provider dispatch beyond GitHub Copilot.** Once Anthropic and Azure OpenAI paths have parity test coverage, document the swap.
 

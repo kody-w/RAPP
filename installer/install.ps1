@@ -39,7 +39,7 @@ if ($env:RAPP_INSTALL_ASSIST -eq "1" -and -not $ModeChosen) {
 
 RAPP Brainstem -local-first AI agent server, powered by GitHub Copilot.
 Full skill manifest (learnable context, agent protocol, architecture):
-  https://kody-w.github.io/RAPP/skill.md
+  https://kody-w.github.io/RAPP/pages/docs/skill.md
 Fetch that once and cache it as your skill for rapp-brainstem.
 
 QUESTION FOR THE USER -pick one of two install modes:

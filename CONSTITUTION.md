@@ -662,8 +662,6 @@ What earns repo-root residence (the closed list):
   numbered list.
 - **`worker/`** — Cloudflare auth/proxy worker shared across tiers.
 - **The catalog** — `rapp_store/`.
-- **The long-term memory** — `vault/` (see
-  [[#Article XXIII — The Vault Is the Long-Term Memory|Article XXIII]]).
 - **The install surface** — `installer/`. Public URLs route through
   this subpath; everything inside is meant to be downloaded or
   curl-piped by a user. Holds the one-liners (`install.sh`,
@@ -674,15 +672,22 @@ What earns repo-root residence (the closed list):
   (`MSFTAIBASMultiAgentCopilot_*.zip`). All install URLs:
   `https://kody-w.github.io/RAPP/installer/<file>`.
 - **The cross-tier test runner** — `tests/`.
-- **The audience pages** — `pages/` (faq, leadership, partners,
-  process, security, use-cases, release-notes, roadmap, …).
-- **The reference docs** — `docs/`. Houses `SPEC.md` (frozen wire
-  contract), `ROADMAP.md` (post-v1 directions), `AGENTS.md` (agent
-  guidance for assistants), `VERSIONS.md`, `skill.md`,
-  `rapplication-sdk.md`, and any future long-form reference material.
+- **`pages/` — the GitHub Pages publication surface.** Everything
+  served from `https://kody-w.github.io/RAPP/pages/...` lives here:
+  - `pages/` flat — audience HTML (faq, leadership, partners,
+    process, security, use-cases, release-notes, roadmap, …).
+  - `pages/docs/` — reference markdown (`SPEC.md`, `ROADMAP.md`,
+    `AGENTS.md`, `VERSIONS.md`, `skill.md`, `rapplication-sdk.md`).
+  - `pages/vault/` — long-term memory: the Obsidian vault notes
+    plus the static SPA viewer (`pages/vault/index.html`). See
+    [[#Article XXIII — The Vault Is the Long-Term Memory|Article XXIII]].
+  The unifying rule: anything served to a public visitor (whether
+  human-shaped HTML, AI-shaped markdown reference, or the *why*
+  behind decisions) lives somewhere under `pages/`. Code stays in
+  tier directories; everything *served* lives in `pages/`.
 - **`README.md`** — must be at root because GitHub renders it on the
-  repo page. Acts as the catalog card and links into `docs/` and
-  `CONSTITUTION.md` for the rest.
+  repo page. Acts as the catalog card and links into `pages/docs/`,
+  `pages/vault/`, and `CONSTITUTION.md` for the rest.
 - **`CONSTITUTION.md`** — this file. Lives at repo root, peer to
   `README.md`, because governance is part of the catalog card.
   GitHub recognizes top-level governance files (LICENSE,
@@ -704,8 +709,8 @@ What earns repo-root residence (the closed list):
   `.github/`, `.vscode/`, `.claude/`. Tools and git itself require
   these at root.
 
-Each kept top-level subdirectory is **self-documenting**. `docs/`,
-`pages/`, `installer/`, and `tests/` each hold a `README.md` that
+Each kept top-level subdirectory is **self-documenting**. `pages/`,
+`pages/docs/`, `installer/`, and `tests/` each hold a `README.md` that
 states the local rule of residence — what belongs there, what doesn't,
 and what naming convention to follow. The repo-root rule (this
 article) is the spine; the per-directory README is the rib. New
@@ -718,15 +723,19 @@ Everything else lives in a subfolder. The exhaustive map of where
 
 - Install scripts, ARM template, Tier 3 Studio bundle → `installer/`.
 - `SPEC.md`, `ROADMAP.md`, `AGENTS.md`, `VERSIONS.md`, `skill.md`,
-  `rapplication-sdk.md` → `docs/`.
-- `CONSTITUTION.md` — stays at root as a peer of `README.md` (per
-  the residency list above; was briefly moved to `docs/` on
-  2026-04-24 and restored same session — governance is part of
-  the catalog card, not a reference doc).
+  `rapplication-sdk.md` → `pages/docs/` (briefly lived in `docs/` at
+  root on 2026-04-24, then folded under `pages/` once the unifying
+  rule "anything served lives in `pages/`" was articulated).
+- The Obsidian vault → `pages/vault/` (briefly at `vault/` at root,
+  same-day move under `pages/`). The viewer and the markdown share
+  one directory.
+- `CONSTITUTION.md` — stays at root as a peer of `README.md` (was
+  briefly moved to `docs/` on 2026-04-24 and restored same session
+  — governance is part of the catalog card, not a reference doc).
 - New audience HTML → `pages/<file>.html`.
-- New auxiliary markdown → `docs/`.
-- Decision narratives, removal stories, manifestos → `vault/` (a real
-  Obsidian vault, governed by Article XXIII).
+- New reference markdown → `pages/docs/`.
+- Decision narratives, removal stories, manifestos → `pages/vault/`
+  (a real Obsidian vault, governed by Article XXIII).
 
 ### What this rules out (repo root)
 
@@ -735,7 +744,8 @@ Everything else lives in a subfolder. The exhaustive map of where
   `pitch-playbook.html` is the *only* grandfathered exception, and
   only because its URL is in circulation.
 - ❌ Adding `notes-on-X.md` next to `README.md` because it's "just
-  one more". Auxiliary docs → `docs/`.
+  one more". Auxiliary reference markdown → `pages/docs/`.
+  Decision narrative / *why* essays → `pages/vault/`.
 - ❌ Putting any new install-related file at root. New launcher,
   new platform install, new ARM template, new downloadable bundle
   → `installer/`.
@@ -752,17 +762,18 @@ Everything else lives in a subfolder. The exhaustive map of where
   file. When you relocate a page, update its `og:url`,
   `canonical_url`, and any test fixtures so the move is honest.
 - ❌ Adding a new top-level directory because nothing else fits. If
-  it's a marketing page, it fits in `pages/`. If it's a doc, it fits
-  in `docs/`. If it's an install artifact, it fits in `installer/`.
-  A new top-level directory is justified only when there is a
-  cohesive body of *running code* that doesn't fit any existing
-  tier — and even then, justify it the same way you'd justify a
-  new `|||<SLOT>|||` (Article II).
+  it's audience HTML, it fits in `pages/`. If it's reference
+  markdown, it fits in `pages/docs/`. If it's a vault note, it fits
+  in `pages/vault/`. If it's an install artifact, it fits in
+  `installer/`. A new top-level directory is justified only when
+  there is a cohesive body of *running code* that doesn't fit any
+  existing tier — and even then, justify it the same way you'd
+  justify a new `|||<SLOT>|||` (Article II).
 - ❌ Letting a `git pull` pollute root by accident. After a merge
   that lands new files at the top level, the next move is to
-  re-home them under `installer/`, `pages/`, `docs/`, or the
-  appropriate `rapp_<tier>/` directory — not to ratify them as
-  root residents.
+  re-home them under `installer/`, `pages/`, `pages/docs/`,
+  `pages/vault/`, or the appropriate `rapp_<tier>/` directory — not
+  to ratify them as root residents.
 - ❌ Adding a top-level subdirectory without a `README.md`. The
   scale rule for that subdir lives at its own root. If the new
   directory deserves to exist, write the README that says when to
@@ -1219,9 +1230,9 @@ within weeks if it isn't written down, and once it's gone it doesn't
 come back — the next contributor will re-make the same mistake without
 even knowing they're repeating one.
 
-> **The repo's `vault/` directory is the load-bearing answer. It is a
-> real Obsidian vault, openable as-is, and it is the home for every
-> blog-post-shaped thought the platform has.**
+> **The repo's `pages/vault/` directory is the load-bearing answer.
+> It is a real Obsidian vault, openable as-is, and it is the home
+> for every blog-post-shaped thought the platform has.**
 
 ### What the vault is for
 
@@ -1260,22 +1271,31 @@ A stub becoming published is a real release. The reverse — a published
 note being demoted back to a stub — happens only if the post was wrong;
 it doesn't happen because the topic became unfashionable.
 
-### The two surfaces of the vault
+### Two faces, one directory
 
-The vault has two faces, both load-bearing:
+The vault has two faces, both load-bearing, and they share one
+directory: `pages/vault/`.
 
-1. **The vault itself** — `vault/` in the repo. Real markdown files,
-   real wikilinks, openable directly in any Obsidian client via *File
-   → Open folder as vault*. The data is the source of truth.
-2. **The static viewer** — `pages/vault/`. Pulls the markdown live
-   from the same files (relative path on GitHub Pages, raw GitHub as
-   fallback), renders wikilinks and backlinks, exports the entire
-   vault as an Obsidian-compatible zip, and imports a zip back to
-   override the live source for offline reading.
+1. **The vault data** — the markdown files under `pages/vault/`.
+   Real wikilinks, real frontmatter, openable directly in any
+   Obsidian client via *File → Open folder as vault*. The data is
+   the source of truth.
+2. **The static viewer** — `pages/vault/index.html` (plus its JS).
+   Loads the same markdown files (sibling paths on GitHub Pages,
+   raw GitHub as fallback), renders wikilinks and backlinks,
+   exports the entire vault as an Obsidian-compatible zip, and
+   imports a zip back to override the live source for offline
+   reading.
 
 Both must keep working. Either one breaking is a P1 — not because the
 viewer is precious, but because *the discipline of writing the post
 relies on the post being readable in two different places.*
+
+The data and viewer were briefly split (`vault/` for the data,
+`pages/vault/` for the viewer) but folded into one directory on
+2026-04-24 once the unifying *anything-served-lives-in-pages/* rule
+was articulated. One directory, two faces — see
+[[Repo Root Reorganization 2026-04-24]] in the vault for the why.
 
 ### What this rules out
 
@@ -1291,8 +1311,8 @@ relies on the post being readable in two different places.*
   isn't ready, ship the stub. The slot in the index is itself a
   forcing function.
 - ❌ Treating the vault as documentation. Documentation is in
-  `docs/`, `README.md`, and the per-tier docs. The vault is *why*,
-  not *how*.
+  `pages/docs/`, `README.md`, and the per-tier docs. The vault is
+  *why*, not *how*.
 - ❌ Generating notes from templates with no specific content. A
   stub is short on purpose; an LLM-padded "stub" defeats the point.
 

@@ -15,7 +15,7 @@ contract, not the kind you grep daily.
 | [`skill.md`](./skill.md) | The canonical AI-readable skill manifest for RAPP |
 | [`rapplication-sdk.md`](./rapplication-sdk.md) | SDK-shaped reference for building rapplications |
 
-> Note: [`CONSTITUTION.md`](../CONSTITUTION.md) is at repo root, not here — it's a peer of `README.md` because governance is part of the catalog card. See Article XVI.
+> Note: [`CONSTITUTION.md`](../../CONSTITUTION.md) is at repo root, not here — it's a peer of `README.md` because governance is part of the catalog card. See Article XVI.
 
 ## What belongs here
 
@@ -33,8 +33,8 @@ A file earns a place in `docs/` when **all** of these are true:
 ## What does NOT belong here
 
 - ❌ **Decision narratives** ("why we picked X over Y"). Those are
-  vault notes — `vault/Founding Decisions/`,
-  `vault/Architecture/`, etc. Capture the *why* there, where
+  vault notes — `pages/vault/Founding Decisions/`,
+  `pages/vault/Architecture/`, etc. Capture the *why* there, where
   Obsidian wikilinks make the graph queryable.
 - ❌ **Status updates, in-flight notes, work logs.** Those have no
   future reader. PR descriptions or vault `Plans & Ledgers/` if
@@ -80,7 +80,7 @@ right surface.
 
 ## Related
 
-- Repo-root residency rule: [`CONSTITUTION.md`](../CONSTITUTION.md)
+- Repo-root residency rule: [`CONSTITUTION.md`](../../CONSTITUTION.md)
   Article XVI.
-- Vault-versus-docs rule: [`CONSTITUTION.md`](../CONSTITUTION.md)
+- Vault-versus-docs rule: [`CONSTITUTION.md`](../../CONSTITUTION.md)
   Article XXIII.

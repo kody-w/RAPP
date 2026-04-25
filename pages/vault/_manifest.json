@@ -16,6 +16,8 @@
     {"path": "Plans & Ledgers/Vault Build-Out Plan.md", "title": "Vault Build-Out Plan", "section": "Plans & Ledgers", "status": "living"},
     {"path": "Plans & Ledgers/Documentation Roadmap.md", "title": "Documentation Roadmap", "section": "Plans & Ledgers", "status": "living"},
     {"path": "Plans & Ledgers/Release Ledger.md", "title": "Release Ledger", "section": "Plans & Ledgers", "status": "living"},
+    {"path": "Plans & Ledgers/Blog Roadmap.md", "title": "Blog Roadmap", "section": "Plans & Ledgers", "status": "living"},
+    {"path": "Blog Drafts/README.md", "title": "Blog Drafts — README", "section": "Blog Drafts", "status": "published"},
 
     {"path": "Foundations/How to Read This Vault.md", "title": "How to Read This Vault", "section": "Foundations", "status": "published"},
     {"path": "Foundations/The Platform in 90 Seconds.md", "title": "The Platform in 90 Seconds", "section": "Foundations", "status": "published"},
@@ -51,6 +53,8 @@
     {"path": "Architecture/The Auth Cascade.md", "title": "The Auth Cascade", "section": "Architecture", "status": "published"},
     {"path": "Architecture/Repo Root Reorganization 2026-04-24.md", "title": "Repo Root Reorganization 2026-04-24", "section": "Architecture", "status": "published"},
     {"path": "Architecture/Surfaces — Mobile, Watch, Voice.md", "title": "Surfaces — Mobile, Watch, Voice", "section": "Architecture", "status": "published"},
+    {"path": "Architecture/The skill.md Pattern.md", "title": "The skill.md Pattern", "section": "Architecture", "status": "published"},
+    {"path": "Architecture/Federation via RAR.md", "title": "Federation via RAR", "section": "Architecture", "status": "published"},
 
     {"path": "Positioning/RAPP vs Copilot Studio.md", "title": "RAPP vs Copilot Studio", "section": "Positioning", "status": "published"},
     {"path": "Positioning/What You Give Up With RAPP.md", "title": "What You Give Up With RAPP", "section": "Positioning", "status": "published"},

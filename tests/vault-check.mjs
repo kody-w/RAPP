@@ -69,7 +69,7 @@ if (manifestPaths.size && [...manifestPaths].every((p) => filesystemPaths.has(p)
 
 // ── 2. Frontmatter sanity ───────────────────────────────────────────────────
 
-const VALID_STATUSES = new Set(['stub', 'published', 'living']);
+const VALID_STATUSES = new Set(['stub', 'published', 'living', 'draft', 'shipped']);
 const titleByPath = new Map();
 const bodyByPath = new Map();
 

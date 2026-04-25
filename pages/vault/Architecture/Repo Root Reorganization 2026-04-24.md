@@ -34,9 +34,9 @@ the first pass overfit a tier symmetry that didn't actually exist.
 | `MSFTAIBASMultiAgentCopilot_1_0_0_5.zip`  | `installer/MSFTAIBASMultiAgentCopilot_1_0_0_5.zip`           |
 | `SPEC.md`                                 | `pages/docs/SPEC.md`                                               |
 | `CONSTITUTION.md`                         | `CONSTITUTION.md` (stayed at root — see below)               |
-| `ROADMAP.md`                              | `docs/ROADMAP.md`                                            |
-| `AGENTS.md`                               | `docs/AGENTS.md`                                             |
-| `VERSIONS.md`                             | `docs/VERSIONS.md`                                           |
+| `ROADMAP.md`                              | `pages/docs/ROADMAP.md`                                            |
+| `AGENTS.md`                               | `pages/docs/AGENTS.md`                                             |
+| `VERSIONS.md`                             | `pages/docs/VERSIONS.md`                                           |
 
 The two new conventions that came out of this:
 

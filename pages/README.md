@@ -20,9 +20,14 @@ Audience pages, one per audience or topic:
 
 Plus the static viewer for the long-term memory:
 
-- `vault/` — renders `../vault/` (the Obsidian vault) in the browser.
-  Wikilinks, backlinks, search, JSZip export/import. See Article
-  XXIII for the contract this implements.
+- `vault/` — Obsidian vault (markdown notes) plus the static SPA
+  viewer (`vault/index.html`) that renders the same notes in the
+  browser. Wikilinks, backlinks, search, JSZip export/import. See
+  Article XXIII for the contract this implements.
+
+- `docs/` — Reference markdown (`SPEC.md`, `ROADMAP.md`, `AGENTS.md`,
+  `VERSIONS.md`, `skill.md`, `rapplication-sdk.md`). See
+  `docs/README.md` for what lives there.
 
 ## What belongs here
 

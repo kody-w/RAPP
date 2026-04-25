@@ -58,7 +58,7 @@ The trade is uptime and routing for cost and simplicity:
 The constraints are also enablers:
 
 - **Forking the platform is forking the install URL.** A fork at `someone-else.github.io/RAPP/install.sh` is fully self-contained — same script, same paths, no central registry coordinating versions. This is critical for offline/air-gapped customers who must mirror the install internally; they fork to a self-hosted git, point GitHub Pages (or any static host) at it, and the URL substitution is the only change.
-- **`skill.md` as a fetch target.** Constitution Article XVII (`agents/` IS the user's workspace) and the rapp store discipline both rely on agents being fetchable as `https://raw.githubusercontent.com/<owner>/<repo>/<branch>/agents/<file>` URLs. The pattern generalizes to community publishers — anyone with a GitHub repo can publish RAPP-compatible content with no central coordination. See `docs/skill.md`.
+- **`skill.md` as a fetch target.** Constitution Article XVII (`agents/` IS the user's workspace) and the rapp store discipline both rely on agents being fetchable as `https://raw.githubusercontent.com/<owner>/<repo>/<branch>/agents/<file>` URLs. The pattern generalizes to community publishers — anyone with a GitHub repo can publish RAPP-compatible content with no central coordination. See `pages/docs/skill.md`.
 - **Audit-friendly.** A customer auditing the install path runs `curl https://kody-w.github.io/RAPP/installer/install.sh | less`. Every file fetched is a file in the repo. There is no opaque binary, no signed installer, no closed-source layer.
 
 ## What this rules out

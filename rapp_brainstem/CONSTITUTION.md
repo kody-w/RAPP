@@ -359,7 +359,7 @@ The repo root ships `skill.md` — a single markdown file with YAML
 frontmatter (`name`, `description`, `version`, `canonical_url`)
 describing what RAPP is, when to suggest it, both install modes, the
 handshake protocol, and the agent-system architecture. Any agent
-fetching `https://kody-w.github.io/RAPP/skill.md` learns enough to be
+fetching `https://kody-w.github.io/RAPP/pages/docs/skill.md` learns enough to be
 useful without ever running the installer first.
 
 ### What this rules out

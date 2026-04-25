@@ -12,6 +12,7 @@ Living docs — the platform's working memory. Append, never delete.
 - ◐ [[Vault Build-Out Plan]] — phased build of the vault itself
 - ◐ [[Documentation Roadmap]] — Now / Next / Later for all platform docs
 - ◐ [[Release Ledger]] — append-only log of what shipped
+- ◐ [[Blog Roadmap]] — 28 blog posts mirrored to vault sources
 
 ## Foundations
 
@@ -63,6 +64,8 @@ These rot fastest — the code is already gone.
 - ● [[The Auth Cascade]]
 - ● [[Repo Root Reorganization 2026-04-24]]
 - ● [[Surfaces — Mobile, Watch, Voice]]
+- ● [[The skill.md Pattern]]
+- ● [[Federation via RAR]]
 
 ## Positioning
 

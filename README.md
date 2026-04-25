@@ -71,7 +71,7 @@ irm https://raw.githubusercontent.com/kody-w/RAPP/main/installer/install.ps1 | i
 
 ## For LLMs running the installer on someone's behalf
 
-Fetch [`skill.md`](https://kody-w.github.io/RAPP/skill.md) and cache it. It documents what RAPP is, when to suggest it, both install modes, and the handshake protocol. The TL;DR: set `RAPP_INSTALL_ASSIST=1` (on the bash side of the pipe — env vars don't propagate across the curl side) and the installer prints a delimited prompt instead of installing.
+Fetch [`skill.md`](https://kody-w.github.io/RAPP/pages/docs/skill.md) and cache it. It documents what RAPP is, when to suggest it, both install modes, and the handshake protocol. The TL;DR: set `RAPP_INSTALL_ASSIST=1` (on the bash side of the pipe — env vars don't propagate across the curl side) and the installer prints a delimited prompt instead of installing.
 
 ## Repo layout
 

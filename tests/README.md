@@ -1,6 +1,6 @@
 # `tests/` — Cross-tier test runner
 
-The contract checks that prove the engine still honors what `docs/SPEC.md`
+The contract checks that prove the engine still honors what `pages/docs/SPEC.md`
 says. Cross-tier in scope: anything tier-internal lives in that
 tier's own directory.
 
@@ -85,7 +85,7 @@ A test belongs in `tests/` when:
 
 When you're about to add a test here:
 
-1. *Is this checking a contract from `docs/SPEC.md`,
+1. *Is this checking a contract from `pages/docs/SPEC.md`,
    `CONSTITUTION.md`, the install URL, or the static page
    surface?* Yes → `tests/`. No → tier directory.
 2. *Does it run with no auth and no external service?* Yes →
@@ -105,7 +105,7 @@ When you're about to add a test here:
 
 ## Related
 
-- v1 contract being tested: [`../docs/SPEC.md`](../docs/SPEC.md).
+- v1 contract being tested: [`../pages/docs/SPEC.md`](../pages/docs/SPEC.md).
 - Install one-liner being tested:
   [`../CONSTITUTION.md`](../CONSTITUTION.md) Article V.
 - Page surface being tested: `../pages/README.md`.

@@ -112,4 +112,4 @@ directory.
   [`../CONSTITUTION.md`](../CONSTITUTION.md) Article V.
 - Repo-root residency rule: Article XVI.
 - Versioning + rollback contract: Article XIX,
-  [`../docs/VERSIONS.md`](../docs/VERSIONS.md).
+  [`../pages/docs/VERSIONS.md`](../pages/docs/VERSIONS.md).
