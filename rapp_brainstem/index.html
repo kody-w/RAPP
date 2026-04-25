@@ -3439,6 +3439,22 @@ function renderBrowse() {
     if (!reg || !reg.agents) continue;
     for (const a of reg.agents) entries.push({ repo, branch: reg._branch || 'main', agent: a });
   }
+  // Some registries ship `author` as an array or object instead of a
+  // string (e.g. `["Microsoft", "AIBAST"]` or `{name: "..."}`). Normalize
+  // to a single trimmed string so .trim/.toLowerCase don't blow up the
+  // whole panel when one entry is malformed.
+  const publisherOf = a => {
+    const v = a && a.author;
+    if (typeof v === 'string') return v.trim() || 'unknown';
+    if (Array.isArray(v) && v.length) {
+      const first = v.find(x => typeof x === 'string' && x.trim());
+      return first ? first.trim() : 'unknown';
+    }
+    if (v && typeof v === 'object' && typeof v.name === 'string') {
+      return v.name.trim() || 'unknown';
+    }
+    return 'unknown';
+  };
   // Build the publisher dropdown from the source-filtered set so it
   // always reflects the publishers actually visible. Sort case-insensitively
   // so "AIBAST" and "anthropic" sit side-by-side instead of by ASCII order.
@@ -3449,10 +3465,7 @@ function renderBrowse() {
     if (!sel) return;
     const cur = sel.value;
     const seen = new Set();
-    for (const { agent } of entries) {
-      const p = (agent.author || 'unknown').trim();
-      if (p) seen.add(p);
-    }
+    for (const { agent } of entries) seen.add(publisherOf(agent));
     const list = [...seen].sort((a, b) => {
       if (a === 'unknown') return 1;
       if (b === 'unknown') return -1;
@@ -3464,7 +3477,7 @@ function renderBrowse() {
     sel.value = list.includes(cur) ? cur : '';
   })();
   if (publisherFilter) {
-    entries = entries.filter(({ agent: a }) => (a.author || 'unknown') === publisherFilter);
+    entries = entries.filter(({ agent: a }) => publisherOf(a) === publisherFilter);
   }
   if (q) {
     entries = entries.filter(({ agent: a }) => {
