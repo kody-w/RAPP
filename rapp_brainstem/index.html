@@ -596,15 +596,17 @@
   }
 
   /* Each card is 290×406 internally; transform: scale(.42) shrinks it to a
-     visible ~122×170. translateY(60px) pushes it down so its bottom half
-     is below the footer's top edge, where the input-row's opaque bg covers
-     it (because input-row z-index > #hand-cards z-index). Only the top
-     half peeks above the bar. */
+     visible ~122×170. The resting translateY pushes it down so most of
+     the card is BELOW the top of the footer — only the top label / icon
+     peeks above the bar. Think UNO: cards held at the bottom of the
+     screen with just the top edges visible. The footer's input-row +
+     toolbar-row both have opaque #161b22 bgs and z-index:10 so they
+     paint OVER any card body that overlaps them. */
   .hand-card {
     --rot: 0deg;
     position: relative; width: 290px; height: 406px;
     transform-origin: center bottom;
-    transform: translateY(60px) rotate(var(--rot)) scale(.42);
+    transform: translateY(140px) rotate(var(--rot)) scale(.42);
     transition: transform .25s cubic-bezier(.16, 1, .3, 1),
                 filter .2s, z-index 0s .25s;
     margin: 0 -82px;
@@ -613,9 +615,9 @@
     filter: drop-shadow(0 -2px 10px rgba(0,0,0,.6));
   }
   .hand-card:hover {
-    /* Small bob up — hovered card is just slightly higher than its siblings.
-       Slight scale-up to signal interactivity. No flying away. */
-    transform: translateY(10px) rotate(0deg) scale(.46);
+    /* Hovered card lifts further up out of the bar, offset enough to
+       account for the deeper resting position. Sibling cards stay tucked. */
+    transform: translateY(-30px) rotate(0deg) scale(.46);
     z-index: 50;
     transition: transform .2s cubic-bezier(.16, 1, .3, 1),
                 filter .2s, z-index 0s 0s;
@@ -1232,8 +1234,8 @@
     .hand-pill { max-width: 240px; font-size: 11px; padding: 5px 10px; }
     /* Card-mode hand: shrink the fan + lift so it doesn't dominate. */
     #hand-cards[data-mode="cards"] { height: 80px; }
-    .hand-card { transform: translateY(60px) rotate(var(--rot)) scale(.32); margin: 0 -98px; }
-    .hand-card:hover { transform: translateY(-200px) rotate(0deg) scale(.85); }
+    .hand-card { transform: translateY(110px) rotate(var(--rot)) scale(.32); margin: 0 -98px; }
+    .hand-card:hover { transform: translateY(-30px) rotate(0deg) scale(.85); }
     /* Card modal scales down. */
     .ac-wrap { width: min(80vw, 320px); }
     /* Install / browse rows wrap nicely. */
