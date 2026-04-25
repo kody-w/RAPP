@@ -951,7 +951,11 @@ launch_brainstem() {
         fi
         git fetch --quiet origin main 2>/dev/null || true
         git reset --hard origin/main --quiet 2>/dev/null || true
-        git clean -fdq rapp_brainstem/agents/ 2>/dev/null || true
+        # NEVER `git clean rapp_brainstem/agents/` — that directory is the
+        # user's workspace (Article XVII) and contains rapplications they
+        # installed via binder. git clean would wipe them on every upgrade.
+        # The git reset above already restores any tracked files in agents/;
+        # untracked files (the user's installed agents) stay put.
     fi
 
     local venv_python="$VENV_DIR/bin/python"
