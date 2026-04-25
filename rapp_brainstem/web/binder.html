@@ -195,7 +195,11 @@
   <h1>📒 RAPP Binder<span class="badge">v1.8</span></h1>
   <div class="endpoint">
     brainstem:
-    <input id="endpoint" value="http://127.0.0.1:7080" />
+    <!-- Default to the origin that served this page — when this is opened
+         from the local brainstem at localhost:7071, the binder talks to
+         that same instance. User can override to point at a different
+         brainstem if desired. -->
+    <input id="endpoint" value="" />
   </div>
   <button onclick="reload()">↻ Reload</button>
 </header>
@@ -291,7 +295,7 @@
     } catch (err) {
       return { status: 0, json: { _network: true,
         message: "Cannot reach " + endpoint() + " — is the brainstem running? "
-                 + "Try: python3 rapp_brainstem/brainstem.py --port 7080" } };
+                 + "Try: brainstem start  (or: python3 rapp_brainstem/brainstem.py)" } };
     }
   }
 
@@ -475,6 +479,20 @@
   function esc(s) { return String(s ?? '').replace(/[<>&"']/g, c =>
     ({ '<':'&lt;', '>':'&gt;', '&':'&amp;', '"':'&quot;', "'":'&#39;' }[c])); }
   function fmtTime(s) { if (!s) return '—'; try { return new Date(s).toLocaleString(); } catch { return s; } }
+
+  // Default the brainstem URL to the origin that served this page —
+  // when opened from the local brainstem at localhost:7071, the binder
+  // talks to that same instance instead of the now-stale 7080 default.
+  // Falls back to localhost:7071 if the page somehow has no origin
+  // (e.g. opened via file://).
+  (function defaultEndpoint(){
+    const input = document.getElementById('endpoint');
+    if (!input) return;
+    const origin = (window.location && window.location.origin && window.location.origin !== 'null')
+      ? window.location.origin
+      : 'http://localhost:7071';
+    input.value = origin;
+  })();
 
   reload();
 </script>
