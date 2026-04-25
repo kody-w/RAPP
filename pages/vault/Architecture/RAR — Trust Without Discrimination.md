@@ -2,60 +2,64 @@
 title: RAR — Trust Without Discrimination
 status: published
 section: Architecture
-hook: The RAR registry adds supply-chain protection at the install gate without ever refusing an agent the user wants to load. Trust is metadata; the user is authority. Provenance information without permission gates.
+hook: How this repo interacts with the RAR registry (which lives in its own repo). Defines only the integration surface — manifest fields binder reads, the env var that points at the registry, the behavior on verify, and the inviolable principle that an agent meeting the v0 contract loads forever, signed or not.
 ---
 
 # RAR — Trust Without Discrimination
 
-> **Hook.** The RAR registry adds supply-chain protection at the install gate without ever refusing an agent the user wants to load. Trust is metadata; the user is authority. Provenance information without permission gates.
+> **Hook.** How this repo interacts with the RAR registry (which lives in its own repo). Defines only the integration surface — manifest fields binder reads, the env var that points at the registry, the behavior on verify, and the inviolable principle that an agent meeting the v0 contract loads forever, signed or not.
 
-This is the design captured at the end of the Article XXV session, before context loss. Future contributors picking up the RAR build should read this first.
+**RAR is its own repo with its own design, governance, and lifecycle.** Nothing about how RAR works internally — publisher onboarding, key generation, key rotation, registry structure — belongs in this repo. This note defines only the surface where this repo touches RAR: what fields we read from the manifest, where we look for verification material, and what binder does with the result.
 
-## What RAR is
+## The integration surface
 
-A separate registry — its own GitHub repo, its own governance, its own attack surface — that holds publisher identities and the cryptographic signatures by which agents are bound to those identities. Because it lives in a different repo than `rapp_store`, a compromise of one doesn't compromise both.
+### 1. Manifest fields binder reads
 
-Convention: `https://raw.githubusercontent.com/kody-w/RAR/main/publishers/<publisher>/keys.json`. Overridable via `RAR_REGISTRY_URL` env var so distros can run their own RAR (same pattern as `RAPPSTORE_URL`).
-
-## Where signatures live
-
-Inside the per-version manifest, additive to the existing `rapp-version/1.0` schema (bumping to `1.1` for sig support):
+Per-version manifests in `rapp_store/<pkg>/versions/<X.Y.Z>/manifest.json` may carry these optional fields. They are additive to the existing `rapp-version/1.0` schema (bumping to `1.1` when used):
 
 ```json
-// rapp_store/binder/versions/1.0.0/manifest.json
 {
   "schema": "rapp-version/1.1",
   "id": "binder",
   "version": "1.0.0",
   "agent":   { "filename": "binder_agent.py",   "sha256": "...", "rar_sig": "<base64>" },
   "service": { "filename": "binder_service.py", "sha256": "...", "rar_sig": "<base64>" },
-  "rar_publisher": "rar:@rapp",
+  "rar_publisher": "<publisher identifier per RAR's convention>",
   "rar_manifest_sig": "<base64>"
 }
 ```
 
-Per-file `rar_sig` covers tampering of an individual file. The manifest-level `rar_manifest_sig` is defense in depth — if an attacker replaces both the file AND the per-file sig, the manifest signature still won't match unless they have the publisher's offline key.
+This repo's responsibility ends at "binder reads these fields if present." How `rar_sig` and `rar_manifest_sig` are computed, what `rar_publisher` strings look like, and how publishers are issued — all of that is RAR's repo to define.
 
-## Where verification happens
+### 2. Where binder fetches verification material
 
-**In binder, on install.** Not in the brainstem kernel. The brainstem trusts what's already in `agents/` and `services/` — that's the existing trust boundary (Article XVII says `agents/` is the user's workspace, and the user's workspace doesn't ask permission). Binder is the gate because it's the one place code crosses from "remote" to "local."
+```
+RAR_REGISTRY_URL  (env var, optional)
+  default = whatever RAR's repo documents as the canonical registry URL
+```
+
+Same pattern as `RAPPSTORE_URL` — overridable so distros can point at their own RAR mirror. The exact URL shape RAR uses for keys, identities, and revocation is RAR's concern; this repo only knows the env var and that the result is consumable per RAR's published spec.
+
+### 3. What binder does with the result
 
 ```
 binder install <id>:
   1. Fetch catalog → get entry
   2. Download files → verify SHAs against per-version manifest (existing)
-  3. Fetch publisher pubkey from RAR registry        [NEW]
-  4. Verify each file's rar_sig against pubkey      [NEW]
-  5. Verify rar_manifest_sig against pubkey         [NEW]
-  6. Record provenance in binder.json               [NEW]
-  7. Install
+  3. If manifest has rar_publisher + rar_sig:
+       a. Fetch verification material from RAR_REGISTRY_URL
+       b. Verify per RAR's spec
+       c. Record verification result in binder.json: {verified: true | false}
+     Else:
+       Record {verified: unsigned} in binder.json
+  4. Install — always.
 ```
 
-Note step 7: install **always happens**. Verification populates a `verified: true | false | unsigned` field in `binder.json` for record-keeping and optional UI badging — it never refuses the install.
+**Step 4 is non-negotiable.** Install always happens. Verification populates an audit field; it never gates execution.
 
 ## The non-negotiable: no discrimination
 
-This is the part most likely to get "fixed" by a well-meaning contributor in the future. Don't.
+This is the part most likely to get "fixed" by a well-meaning contributor. Don't.
 
 **An agent.py that meets the v0 contract loads. Forever. No exceptions.** That contract is small:
 
@@ -82,31 +86,42 @@ Same doctrine as Article XXV ("chat is the only wire") applied to agents instead
 
 A v0 brainstem from years ago still chats with current → a v0 agent from years ago still loads on current. The wire is forever; the agent contract is forever. RAR is information that helps consumers reason about provenance — it is not a permission gate.
 
-If a contributor proposes adding load-time signature enforcement "for security," the answer is no. Real security at the install gate (binder verifying signatures and recording provenance) is good and worth building. Refusing the user's own files is security theater that breaks the time-travel guarantee for agents and breaks Article XVII.
-
-## Threat coverage
+## Threat coverage from binder's perspective
 
 | Threat | Without RAR | With RAR |
 |--------|-------------|----------|
 | Single file tampered, catalog SHA still good | Catalog SHA catches | Catalog SHA + RAR sig both catch |
-| Catalog AND file both tampered by repo writer | **Not caught** — repo writer sets new SHA | RAR sig from publisher's offline key required; repo writer can't forge |
-| Malicious package published as new publisher | User installs blindly | Provenance is recorded — auditable, traceable |
+| Catalog AND file tampered by repo writer | **Not caught** — repo writer sets new SHA | RAR sig requires offline publisher key; repo writer can't forge |
 | Locally-dropped agent in `agents/` | Loads | Loads (Article XVII — user's workspace) |
 | Edge brainstem from before RAR existed | Loads agents fine | Loads agents fine (additive schema) |
 
 ## Time-travel safety
 
-RAR is purely additive (Article XXV — additive-only schema evolution, no removals or renames). Old brainstems without RAR support ignore the new manifest fields and install as before. New brainstems verify when present and record provenance. Signed and unsigned packages coexist in the same catalog. Same wire, same contract, same loading discipline — RAR adds metadata to the install audit trail without changing anything that already works.
+RAR fields are purely additive (Article XXV — additive-only schema evolution, no removals or renames). Old brainstems without RAR support ignore the new manifest fields and install as before. New brainstems verify when present and record provenance. Signed and unsigned packages coexist in the same catalog. Same wire, same contract, same loading discipline — RAR adds metadata to the install audit trail without changing anything that already works.
 
-## What to build first (when the next session picks this up)
+## What lives where
 
-The minimum order, each step incremental and reversible:
+| Concern | Lives in |
+|---------|----------|
+| Manifest fields binder reads | This repo (rapp_store/) |
+| Binder's verify-and-record behavior | This repo (rapp_store/binder/) |
+| `RAPPSTORE_URL` and `RAR_REGISTRY_URL` env vars | This repo (brainstem.py + binder) |
+| The no-discrimination principle | This repo (this vault note + binder behavior) |
+| Publisher identities, key formats, registry structure | RAR's own repo |
+| Key rotation, revocation, trust roots | RAR's own repo |
+| How signatures are produced | RAR's own repo |
+| Publisher onboarding workflow | RAR's own repo |
 
-1. **Spec the manifest fields and `RAR_REGISTRY_URL`** — Constitution amendment + SPEC update. The schema bump from `rapp-version/1.0` to `rapp-version/1.1` is additive.
-2. **Stand up the RAR registry repo** — start with one publisher (`@rapp`) and one keypair; sign existing rapp_store manifests offline; commit signatures into the per-version manifests.
-3. **Teach binder to fetch keys + verify** — populate `verified` field in `binder.json`. Install always happens; verification result is metadata.
-4. **One acid test** (`tests/e2e/13-rar-supply-chain.sh`) — install a tampered file, confirm binder still installs but flags `verified: false`. Install an unsigned package, confirm binder installs and flags `verified: unsigned`.
-5. **(Optional, much later)** UI surface — verified checkmark badge, never a gate.
+## What to build (when the next session implements binder verification)
+
+Strictly the integration side:
+
+1. **Add `RAR_REGISTRY_URL` env var** to brainstem and binder, default = whatever RAR's repo publishes as canonical
+2. **Bump per-version manifest schema** from `rapp-version/1.0` to `rapp-version/1.1` to allow `rar_sig` / `rar_publisher` / `rar_manifest_sig` fields
+3. **Teach binder to read those fields, fetch material from `RAR_REGISTRY_URL`, verify, and record result in `binder.json`** — install always succeeds; verification populates an audit field
+4. **One acid test** (`tests/e2e/13-rar-supply-chain.sh`) — install a tampered file → binder records `verified: false` and **still installs**; install an unsigned package → binder records `verified: unsigned` and **still installs**; install a signed-and-untampered package → binder records `verified: true`
+
+That's it. Everything else — keys, registry structure, publisher onboarding, signing tooling — happens in the RAR repo.
 
 ## What this is NOT
 
@@ -117,4 +132,4 @@ The minimum order, each step incremental and reversible:
 
 ## Status
 
-Design captured. Implementation deferred. The principles in this note are inviolable; the implementation order is recommended but flexible. When in doubt: **we don't discriminate.**
+Integration surface defined. Binder implementation deferred. The principles in this note are inviolable; the implementation order is recommended but flexible. When in doubt: **we don't discriminate.**
