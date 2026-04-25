@@ -541,10 +541,13 @@
     max-width: 760px; margin: 0 auto 8px;
     pointer-events: none;
   }
-  /* (Earlier: this hid #hand-cards on local to clean up first-load
-     clutter. Reverted — the pills/cards toggle relies on this row
-     existing. The new approach is to start the hand empty on local
-     instead of auto-filling it with every loaded agent.) */
+  /* In pill mode, the static #starter-prompts row above the input
+     IS the call-to-action (always 3 fixed prompts). The auto-generated
+     per-agent hand-pill row is hidden so the bottom of the chat stays
+     a clean 3-pill cluster instead of a 3 + N variable list. Cards
+     mode still gets the full hand-cards container — only pill mode
+     hides it. */
+  body:not(.hand-cards) #hand-cards { display: none; }
   /* Card mode rebuilds the layout: absolute, fanned, tucked behind input.
      `isolation: isolate` forces a stacking context so the per-card
      z-indexes set inline by renderHand (10+i, for fanning order) stay
