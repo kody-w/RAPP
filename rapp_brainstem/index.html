@@ -553,6 +553,13 @@
      mode still gets the full hand-cards container — only pill mode
      hides it. */
   body:not(.hand-cards) #hand-cards { display: none; }
+
+  /* Once the user has sent a message, hide BOTH pill rows for the rest
+     of the session — no starter pills, no hand pills, no twin-suggested
+     injections. Chat history is the only thing in the bottom area from
+     here on. body.chat-started latches in appendMsg() on first user msg. */
+  body.chat-started #starter-prompts,
+  body.chat-started #hand-cards { display: none !important; }
   /* Card mode: cards anchor at the BOTTOM of the footer (bottom:0)
      so the footer's full height (input-row + toolbar-row, both z:100
      with opaque bg) paints OVER the bottom halves. Only the top
@@ -4130,13 +4137,14 @@ function clearTwinPills() {
   if (empty && handCount === 0) empty.style.display = 'inline';
 }
 
-/* Twin-authored send/prompt actions render as click-to-ask pills above the
- * input. Identical UX to the starter pills (click → send the text) but
- * lavender-tinted with a ✨ prefix so the user can see which suggestions
- * came from the twin vs from their loaded agents. open/toggle actions
- * stay in the twin panel only — this row is about "what to say next." */
+/* Twin-authored send/prompt actions used to render as click-to-ask pills
+ * above the input. Twin is removed from the local UI; pill injection is
+ * disabled here so even if a stray code path calls it (legacy renderer,
+ * server response with twin block), nothing lands in the chat surface. */
 function renderTwinPills(actions) {
   clearTwinPills();
+  return;  // twin pill injection disabled — local UI has no twin
+  // (legacy code below preserved for history; unreachable)
   const row = document.getElementById('hand-cards');
   if (!row || !actions || !actions.length) return;
   const empty = document.getElementById('hand-empty');
@@ -4769,9 +4777,15 @@ const icon = name => `<span class="icon">${ICONS[name]||''}</span>`;
 
 function appendMsg(role, text, agent_logs) {
   const w = $('.welcome'); if (w && role !== 'system') w.style.display = 'none';
-  // Hide starter prompts the moment the user sends — they're a first-load
-  // affordance, not a persistent UI element.
+  // Hide ALL pill rows the moment the user sends. starter-prompts is the
+  // 3-pill first-load row above the input; hand-cards is the per-agent
+  // example_call row that pills mode doesn't normally show but cards mode
+  // does (and twin pills used to inject into here too). Both go away on
+  // first message and stay gone for the session — no injection re-fills.
+  // body.chat-started flips the latch via CSS so we don't need to keep
+  // checking conversation length on every turn.
   if (role === 'user') {
+    document.body.classList.add('chat-started');
     const sp = document.getElementById('starter-prompts');
     if (sp) sp.classList.add('hidden');
   }
