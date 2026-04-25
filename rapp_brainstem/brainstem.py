@@ -1351,6 +1351,22 @@ def agents_import():
         
     return jsonify({"status": "ok", "message": f"Agent {safe_name} imported successfully."})
 
+def _read_bootstrap_status():
+    """Read .brainstem_data/bootstrap.json, written by start.sh during the
+    binder bootstrap. Tells the UI whether RAPPstore was reachable from
+    this machine and whether the package manager is installed. Missing
+    file = bootstrap was never attempted (e.g. brainstem.py launched
+    directly without start.sh)."""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".brainstem_data", "bootstrap.json")
+    if not os.path.exists(path):
+        return {"rapp_store_reachable": None, "binder_installed": None, "checked_at": None, "error": "bootstrap not run"}
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except Exception as e:
+        return {"rapp_store_reachable": None, "binder_installed": None, "checked_at": None, "error": "unreadable: " + str(e)}
+
+
 @app.route("/health", methods=["GET"])
 def health():
     agents = {}
@@ -1359,6 +1375,7 @@ def health():
     except Exception:
         pass
     soul_ok = os.path.exists(SOUL_PATH)
+    bootstrap = _read_bootstrap_status()
 
     # Lightweight auth check — just see if a GitHub token EXISTS.
     # Never do token exchange here; that happens lazily on first /chat call.
@@ -1383,6 +1400,7 @@ def health():
             "soul":   SOUL_PATH if soul_ok else "missing",
             "agents": list(agents.keys()),
             "copilot": "\u2713" if copilot_ok else "pending",
+            "bootstrap": bootstrap,
             "brainstem_dir": os.path.dirname(os.path.abspath(__file__)),
         })
     else:
@@ -1392,6 +1410,7 @@ def health():
             "model":  MODEL,
             "soul":   SOUL_PATH if soul_ok else "missing",
             "agents": list(agents.keys()),
+            "bootstrap": bootstrap,
         })
 
 @app.route("/debug/auth", methods=["GET"])

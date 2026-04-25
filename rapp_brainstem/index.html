@@ -1261,6 +1261,11 @@
 </head>
 <body>
 
+<div id="store-banner" style="display:none;background:#3d2c00;border-bottom:1px solid #6b4d00;color:#f0c674;padding:6px 14px;font-size:12px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;z-index:1000;position:relative;">
+  <span id="store-banner-msg">RAPPstore unreachable — running with locally installed rapplications only.</span>
+  <a href="#" onclick="probeStoreNow(); return false;" style="color:#79c0ff;text-decoration:none;margin-left:10px;">Retry</a>
+</div>
+
 <div id="drop-overlay">
   <span class="icon"><svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg></span>
   Drop .py agent file to install
@@ -1616,6 +1621,67 @@
 <script>
   // Auto-detect: if served from a different port (e.g. Live Server), proxy to brainstem on 7071
   const API = location.port === '7071' ? '' : `${location.protocol}//${location.hostname}:7071`;
+
+  // ── Capability detection ──────────────────────────────────────────
+  // The brainstem ships factory-clean: the index-card poller, the
+  // swarms service, and the binder service are optional installs from
+  // rapp_store/. We probe each once at boot so missing endpoints don't
+  // produce a 404 every turn (cards) or every panel-open (swarms,
+  // binder). For /api/<service> a 404 unambiguously means "not
+  // installed". For /card/<id> we have to disambiguate: the route
+  // returns JSON 404 when installed-but-no-card-yet, while a missing
+  // route gives Flask's default HTML 404.
+  const CAPS = { card: null, swarms: null, binder: null };
+  async function _probeCap(path, jsonOn404 = false) {
+    try {
+      const r = await fetch(`${API}${path}`);
+      if (r.status !== 404) return true;
+      if (!jsonOn404) return false;
+      return (r.headers.get('content-type') || '').includes('json');
+    } catch { return false; }
+  }
+  (async () => {
+    const [card, swarms, binder] = await Promise.all([
+      _probeCap('/card/_probe', true),
+      _probeCap('/api/swarms'),
+      _probeCap('/api/binder'),
+    ]);
+    CAPS.card = card; CAPS.swarms = swarms; CAPS.binder = binder;
+    const hide = id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; };
+    if (!swarms) { hide('swarm-bar'); hide('sp-swarms'); }
+    if (!binder) { hide('sp-rapps'); hide('sp-swarm'); }
+  })();
+
+  // ── RAPPstore reachability ──────────────────────────────────────────
+  // start.sh writes .brainstem_data/bootstrap.json when it tries to
+  // bootstrap binder; brainstem /health surfaces it. If the store was
+  // unreachable from this machine, show a banner so the user knows the
+  // catalog/install actions won't work — they're not silently broken,
+  // the network is.
+  async function probeStoreNow() {
+    try {
+      const r = await fetch(`${API}/health`);
+      if (!r.ok) return;
+      const h = await r.json();
+      const bs = h.bootstrap || {};
+      const banner = document.getElementById('store-banner');
+      const msg = document.getElementById('store-banner-msg');
+      if (!banner) return;
+      if (bs.rapp_store_reachable === false) {
+        const err = bs.error ? ` (${bs.error})` : '';
+        msg.textContent = `RAPPstore unreachable${err} — running with locally installed rapplications only.`;
+        banner.style.display = 'block';
+      } else if (bs.rapp_store_reachable === null && bs.binder_installed === null) {
+        // bootstrap.json missing — likely launched via `python brainstem.py` instead of start.sh.
+        msg.textContent = 'Bootstrap not run — package management may be unavailable. Restart via start.sh to install the binder.';
+        banner.style.display = (CAPS.binder === false) ? 'block' : 'none';
+      } else {
+        banner.style.display = 'none';
+      }
+    } catch {}
+  }
+  probeStoreNow();
+
   let sessionId = null;
   let history = [];
   let fullTranscript = [];
@@ -2028,6 +2094,7 @@
   let _swarmsCache = null;
 
   async function loadSwarmBar() {
+    if (CAPS.swarms === false) return;
     try {
       const res = await fetch(`${API}/api/swarms`);
       const data = await res.json();
@@ -2085,6 +2152,7 @@
   }
 
   async function loadSwarmsSettings() {
+    if (CAPS.swarms === false) return;
     try {
       const res = await fetch(`${API}/api/swarms`);
       const data = await res.json();
@@ -2615,10 +2683,12 @@
   //     card mutates in place rather than replaying the fade-in each
   //     time a stage flips
   function startCardPoller(turnId, slot) {
+    if (CAPS.card === false) return () => {};
     let stopped = false;
     let lastHash = '';
     const tick = async () => {
       if (stopped) return;
+      if (CAPS.card === false) return;
       try {
         const r = await fetch(`${API}/card/${turnId}`);
         if (r.ok) {
@@ -3014,6 +3084,7 @@
   // ── Rapplications (Settings panel) ──
   let _rappsCache = null;
   async function loadRapps() {
+    if (CAPS.binder === false) return;
     const instDiv = document.getElementById('sp-rapps-installed');
     const catDiv = document.getElementById('sp-rapps-catalog');
     try {
@@ -3056,7 +3127,19 @@
         method: 'POST', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ id })
       });
-      if (!r.ok) throw new Error('HTTP ' + r.status);
+      if (!r.ok) {
+        const errBody = await r.json().catch(() => ({}));
+        throw new Error(errBody.error || ('HTTP ' + r.status));
+      }
+      // The install may have dropped a new service file (e.g. swarms_service.py),
+      // which means the CAPS we probed at boot are now stale. A reload re-probes
+      // and lights up the newly installed UI surfaces — simpler than incremental
+      // mounting and the right UX for an explicit user action.
+      const body = await r.json().catch(() => ({}));
+      if (body.installed && body.installed.service_filename) {
+        window.location.reload();
+        return;
+      }
       loadRapps(); loadAgentsList();
     } catch(e) { alert('Install failed: ' + e.message); }
   }
@@ -3065,7 +3148,9 @@
     try {
       const r = await fetch(API + '/api/binder/installed/' + encodeURIComponent(id), { method: 'DELETE' });
       if (!r.ok) throw new Error('HTTP ' + r.status);
-      loadRapps(); loadAgentsList();
+      // Same reasoning as install: a service may have just disappeared.
+      // Reload so the UI re-probes and hides the now-missing surfaces.
+      window.location.reload();
     } catch(e) { alert('Uninstall failed: ' + e.message); }
   }
   function esc(s) { return String(s??'').replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -3126,6 +3211,7 @@
 
   // ── Deploy as Swarm (Settings panel) ──
   async function loadSwarmAgents() {
+    if (CAPS.binder === false) return;
     const list = document.getElementById('sp-swarm-agents');
     try {
       const r = await fetch(API + '/api/binder');
