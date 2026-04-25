@@ -25,12 +25,29 @@ import subprocess
 import traceback
 from datetime import datetime, timezone
 
+import logging
 import requests
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
+import flask.cli
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# Quiet the per-request `127.0.0.1 - - [date] "GET /... HTTP/1.1" 200 -`
+# access spam from werkzeug. ERROR level still surfaces 5xx, which is the
+# only thing worth interrupting the operator's eye for. The brainstem's
+# own [brainstem] ... prints are the real telemetry — they were getting
+# drowned out by the access log on every page load (rapp.js, manifest,
+# icons, /version, /models, /agents/full all fire on every reload).
+# Set BRAINSTEM_VERBOSE=1 to opt back in to the full werkzeug log.
+if not os.getenv("BRAINSTEM_VERBOSE"):
+    logging.getLogger("werkzeug").setLevel(logging.ERROR)
+    # Also suppress Flask's own startup banner ("* Serving Flask app",
+    # "* Debug mode: off", the production-deployment WARNING, "* Running
+    # on http://...", "Press CTRL+C to quit"). The brainstem's own
+    # startup banner above app.run() already says all of that.
+    flask.cli.show_server_banner = lambda *a, **k: None
 
 app = Flask(__name__, static_folder=os.path.dirname(os.path.abspath(__file__)))
 # Cross-origin allowlist. Same-origin (bundled UI at /) needs no CORS.
