@@ -559,7 +559,12 @@ install_binder_locally() {
     local store_binder="$BRAINSTEM_HOME/src/rapp_store/binder/binder_service.py"
     mkdir -p "$services"
     if [ -f "$kernel_binder" ]; then
-        echo -e "  ${GREEN}OK${NC} Binder (kernel-baked)"
+        # Happy path — binder file shipped with the kernel and is still
+        # there. The user doesn't need to know about a default that
+        # behaved as expected; this branch stays silent so the install
+        # output only mentions the binder when something was actually
+        # done (restore, copy, or warn).
+        :
     elif [ -d "$BRAINSTEM_HOME/src/.git" ] && \
          git -C "$BRAINSTEM_HOME/src" cat-file -e HEAD:rapp_brainstem/services/binder_service.py 2>/dev/null; then
         # File is in git HEAD but missing on disk — restore it. Most common
