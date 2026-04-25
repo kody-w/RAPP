@@ -490,7 +490,8 @@ setup_venv() {
     # Check if venv exists and is healthy
     if [ -x "$venv_python" ]; then
         if "$venv_python" -c "import sys; sys.exit(0)" 2>/dev/null; then
-            echo -e "  ${GREEN}✓${NC} Virtual environment OK"
+            # Happy path — venv was already there and works. Stay silent;
+            # the user doesn't need a line confirming the default state.
             return 0
         fi
         echo -e "  ${YELLOW}⚠${NC} Virtual environment broken — recreating..."
@@ -529,9 +530,11 @@ setup_deps() {
 }
 
 ensure_deps() {
-    # Quick import check — only install if something is missing
+    # Quick import check — only install if something is missing.
+    # Happy path stays silent; the user doesn't need a line confirming
+    # the default state. The "missing — installing" branch below still
+    # prints because the user should know we're touching pip.
     if "$VENV_DIR/bin/python" -c "import flask, requests, dotenv" 2>/dev/null; then
-        echo -e "  ${GREEN}✓${NC} Dependencies verified"
         return 0
     fi
 
@@ -1128,9 +1131,16 @@ with open(sys.argv[2], 'w') as f: json.dump(out, f)
     # Step 2: Launch brainstem
     echo ""
     echo -e "  ${CYAN}Starting RAPP Brainstem...${NC}"
-    echo -e "  ${CYAN}(also serves as the tether for the virtual brainstem at${NC}"
-    echo -e "  ${CYAN} https://kody-w.github.io/RAPP/rapp_brainstem/web/  →  point its${NC}"
-    echo -e "  ${CYAN} Settings.tether_url at http://localhost:7071)${NC}"
+    # One-click tether handoff. The web UI reads ?tether=… on boot,
+    # writes it into Settings.tether_url, flips the tether checkbox on,
+    # then strips the param so a reload doesn't re-apply (or a shared
+    # URL doesn't keep flipping someone else's tether back on).
+    # Most modern terminals (iTerm2, macOS Terminal, Windows Terminal,
+    # VSCode terminal, gnome-terminal) auto-detect URLs and make them
+    # cmd-/ctrl-clickable — no need for explicit OSC-8 escape sequences
+    # which would render as raw bytes in terminals that don't speak it.
+    echo -e "  ${CYAN}Use the virtual brainstem with this machine as the tether:${NC}"
+    echo -e "  https://kody-w.github.io/RAPP/rapp_brainstem/web/?tether=http://localhost:7071"
     echo ""
 
     cd "$BRAINSTEM_HOME/src/rapp_brainstem"

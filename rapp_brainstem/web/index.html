@@ -5367,6 +5367,34 @@ document.body.classList.add(RAPP_MODE === 'local' ? 'is-local' : 'is-virtual');
 
 (async () => {
   loadSettings();
+  // ?tether=http://localhost:7071 — the local brainstem's startup banner
+  // prints a one-click link in this shape. Apply it to settings, save,
+  // enable the tether checkbox, then strip the param so reload doesn't
+  // keep re-applying it (and so a shared URL doesn't keep flipping the
+  // tether back on for someone who turned it off).
+  (function applyTetherFromQuery(){
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const t = params.get('tether');
+      if (!t) return;
+      const trimmed = t.trim();
+      if (!/^https?:\/\//i.test(trimmed)) return;  // ignore garbage
+      state.settings.tetherUrl = trimmed;
+      state.settings.tetherEnabled = true;
+      LS.set('settings', state.settings);
+      const urlEl = document.getElementById('tether-url');
+      if (urlEl) urlEl.value = trimmed;
+      const enEl = document.getElementById('tether-enabled');
+      if (enEl) enEl.checked = true;
+      // Strip just the tether param; preserve everything else (?code=…,
+      // hash fragments, etc.) so OAuth + tether handoff coexist cleanly.
+      params.delete('tether');
+      const qs = params.toString();
+      const cleanUrl = window.location.origin + window.location.pathname
+        + (qs ? '?' + qs : '') + (window.location.hash || '');
+      window.history.replaceState({}, '', cleanUrl);
+    } catch (e) { console.warn('[tether] query-param apply failed:', e); }
+  })();
   await handleGitHubAuthCallback();   // pick up ?code=... after OAuth round-trip
   if (state.settings.ghToken && !state.settings.ghUser) await fetchGitHubUser();
   // Refresh model lists from APIs on every load
