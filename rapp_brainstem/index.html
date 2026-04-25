@@ -1765,9 +1765,9 @@
          first data point. Each label = a prediction the twin is making
          about the user; click confirms, ignore tells the twin to look
          elsewhere. Help-shaped prompts belong in the main reply, not here. -->
-    <button class="starter-btn" onclick="useStarter('Ask me what I&apos;m building.', this)">Ask me what I&apos;m building</button>
-    <button class="starter-btn" onclick="useStarter('Ask me what&apos;s weighing on me.', this)">Ask me what&apos;s weighing on me</button>
-    <button class="starter-btn" onclick="useStarter('Ask me what I&apos;m trying to figure out.', this)">Ask me what I&apos;m trying to figure out</button>
+    <button class="starter-btn" onclick="useStarter('Remember that I prefer concise responses.', this)">Remember that I prefer concise responses.</button>
+    <button class="starter-btn" onclick="useStarter('What do you remember about me?', this)">What do you remember about me?</button>
+    <button class="starter-btn" onclick="useStarter('What are the top 5 stories on Hacker News right now?', this)">What are the top 5 stories on Hacker News right now?</button>
   </div>
 </footer>
 
@@ -3122,8 +3122,12 @@
   document.getElementById('el-model-select').value = elModel;
   switchVoiceProvider();
 
-  if (azSpeechKey) loadAzureVoices();
-  if (elApiKey) loadElevenLabsVoices();
+  // Only validate keys for the *active* provider — otherwise a stale
+  // Azure key in localStorage 401's on every page load even when the
+  // user has switched to Browser (free), spamming the Voice panel
+  // status with HTTP 401.
+  if (voiceProvider === 'azure' && azSpeechKey) loadAzureVoices();
+  if (voiceProvider === 'elevenlabs' && elApiKey) loadElevenLabsVoices();
 
   // Auto-load config from server-side voice.zip (seeds UI if no localStorage yet)
   fetch(`${API}/voice/config`).then(r => r.json()).then(cfg => {
@@ -3165,8 +3169,8 @@
       localStorage.setItem('el_model', cfg.model);
     }
     switchVoiceProvider();
-    if (azSpeechKey) loadAzureVoices();
-    if (elApiKey) loadElevenLabsVoices();
+    if (voiceProvider === 'azure' && azSpeechKey) loadAzureVoices();
+    if (voiceProvider === 'elevenlabs' && elApiKey) loadElevenLabsVoices();
   }).catch(() => {});
 
   document.getElementById('az-speech-key').addEventListener('change', () => {
