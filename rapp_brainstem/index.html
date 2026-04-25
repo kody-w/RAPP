@@ -98,14 +98,18 @@
   /* Starter prompts — twin-voiced calibration buttons shown above the
      hand on first load. Same shape and copy as the local brainstem so
      a new user sees identical onboarding regardless of which page they
-     land on first. Hidden after the first user message. */
+     land on first. Hidden after the first user message. Also hidden
+     when hand-mode is "cards" — the holographic card row owns the
+     bottom of the chat in that mode, and pills above it clutter
+     the visual. */
   #starter-prompts {
     display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
     max-width: 760px; margin: 12px auto 6px; padding: 0 24px;
     transition: opacity .22s ease, max-height .22s ease;
     max-height: 200px; overflow: hidden;
   }
-  #starter-prompts.hidden {
+  #starter-prompts.hidden,
+  body.hand-cards #starter-prompts {
     opacity: 0; max-height: 0; margin: 0; pointer-events: none;
   }
   .starter-btn {
@@ -3101,6 +3105,10 @@ function setHandMode(mode) {
   LS.set('settings', state.settings);
   const sel = $('#hand-mode-select');
   if (sel) sel.value = state.settings.handMode;
+  // Tag <body> so CSS can hide the starter-prompts row in cards mode
+  // (the holographic cards take over the bottom of the chat — extra
+  // pills above them clutter the visual).
+  document.body.classList.toggle('hand-cards', state.settings.handMode === 'cards');
   renderHand();
 }
 
