@@ -1120,6 +1120,20 @@ def web_static(filename):
     """Serve files from the web/ directory."""
     return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "web"), filename)
 
+# Convenience routes for the named UI pages in web/ — so /manage works
+# (not just /web/manage.html). The chat UI links to these clean paths.
+@app.route("/manage", methods=["GET"])
+def manage_page():
+    return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "web"), "manage.html")
+
+@app.route("/binder", methods=["GET"])
+def binder_page():
+    return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "web"), "binder.html")
+
+@app.route("/rapplications", methods=["GET"])
+def rapplications_page():
+    return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "web"), "rapplications.html")
+
 @app.route("/login", methods=["POST"])
 def login():
     """Start GitHub device code OAuth flow."""
