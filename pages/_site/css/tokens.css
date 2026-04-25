@@ -1,0 +1,92 @@
+/* RAPP site — design tokens
+ * Single source of truth for color, spacing, typography variables.
+ * Page-level inline styles can READ these via var(--name) — they
+ * don't need to redefine.
+ *
+ * Token names match the legacy inline-styled pages so a page can
+ * adopt this stylesheet without breaking its existing color refs.
+ */
+
+:root{
+  /* Surfaces */
+  --bg:#0d1117;
+  --panel:#161b22;
+  --surface:#161b22;
+  --surface2:#1c2128;
+  --border:#21262d;
+  --border2:#30363d;
+
+  /* Text */
+  --fg:#e6edf3;
+  --text:#e6edf3;
+  --dim:#8b949e;
+  --text-dim:#8b949e;
+  --muted:#484f58;
+
+  /* Accents */
+  --accent:#58a6ff;
+  --blue:#1f6feb;
+  --blue-2:#58a6ff;
+  --green:#3fb950;
+  --green-3:#3fb950;
+  --purple:#a78bfa;
+  --warn:#d29922;
+
+  /* Brand gradient */
+  --grad-1:#7df0c8;
+  --grad-2:#58a6ff;
+  --grad-3:#a78bfa;
+  --logo-glow:rgba(125,240,200,.3);
+
+  /* Spacing scale */
+  --s-1:4px;
+  --s-2:8px;
+  --s-3:12px;
+  --s-4:16px;
+  --s-5:24px;
+  --s-6:32px;
+  --s-7:48px;
+  --s-8:64px;
+
+  /* Type scale */
+  --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --font-mono:"SF Mono",ui-monospace,"Menlo","Consolas",monospace;
+
+  /* Layout */
+  --site-max:1080px;
+  --doc-max:820px;
+  --radius:8px;
+  --radius-lg:14px;
+
+  /* Site chrome */
+  --header-h:56px;
+  --header-blur:12px;
+}
+
+[data-theme="light"]{
+  --bg:#ffffff;
+  --panel:#f6f8fa;
+  --surface:#f6f8fa;
+  --surface2:#eaeef2;
+  --border:#d0d7de;
+  --border2:#afb8c1;
+
+  --fg:#1f2328;
+  --text:#1f2328;
+  --dim:#59636e;
+  --text-dim:#59636e;
+  --muted:#8c959f;
+
+  --accent:#0969da;
+  --blue:#0969da;
+  --blue-2:#0969da;
+  --green:#1a7f37;
+  --green-3:#1a7f37;
+  --purple:#8250df;
+  --warn:#9a6700;
+
+  --grad-1:#2da44e;
+  --grad-2:#0969da;
+  --grad-3:#8250df;
+  --logo-glow:rgba(9,105,218,.2);
+}

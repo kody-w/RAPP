@@ -1,0 +1,67 @@
+/* RAPP site — base styles
+ * Reset + body defaults. Imported AFTER tokens.css so var() refs resolve.
+ */
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+html{ scroll-behavior:smooth; }
+
+body{
+  font-family:var(--font-sans);
+  background:var(--bg);
+  color:var(--text);
+  line-height:1.6;
+  min-height:100vh;
+  transition:background-color .25s ease, color .25s ease;
+  -webkit-font-smoothing:antialiased;
+}
+
+a{ color:var(--accent); text-decoration:none; }
+a:hover{ text-decoration:underline; }
+
+code{
+  font-family:var(--font-mono);
+  font-size:.92em;
+  background:var(--panel);
+  padding:2px 6px;
+  border-radius:4px;
+}
+
+pre{
+  font-family:var(--font-mono);
+  font-size:13px;
+  background:#04060c;
+  border:1px solid var(--border2);
+  padding:14px 16px;
+  border-radius:var(--radius);
+  overflow-x:auto;
+  line-height:1.55;
+}
+[data-theme="light"] pre{ background:#f6f8fa; }
+pre code{ background:transparent; padding:0; font-size:inherit; }
+
+img,svg{ max-width:100%; height:auto; }
+
+::selection{ background:var(--accent); color:var(--bg); }
+
+.sr-only{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+
+/* Containers used across many pages */
+.site-main{
+  max-width:var(--site-max);
+  margin:0 auto;
+  padding:var(--s-7) var(--s-5) var(--s-8);
+}
+.doc-main{
+  max-width:var(--doc-max);
+  margin:0 auto;
+  padding:var(--s-6) var(--s-5) var(--s-8);
+}
+
+/* Mobile */
+@media (max-width:720px){
+  .site-main, .doc-main{ padding-left:var(--s-4); padding-right:var(--s-4); }
+}

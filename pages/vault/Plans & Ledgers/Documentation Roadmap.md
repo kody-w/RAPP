@@ -57,6 +57,39 @@ Items currently being written or staged for the next push.
 - **Home.** `installer/automations/android/` (parallel to `installer/shortcuts/`).
 - **Ready when.** After the Apple Shortcut ships and the protocol is proven on the iOS side.
 
+### Content channel setup (newsletter, X, LinkedIn, YouTube, TikTok, Instagram)
+
+- **What.** Stand up the channels listed in [[Content Strategy]]. Per channel: claim handle, write profile bio + link, define visual identity. Six channels to ramp.
+- **Why.** The vault and the blog are the substance; the channels are the distribution. Without channels, every post has a single front door (the GitHub repo) and the audience caps at people who already know to look.
+- **Home.**
+  - **Newsletter:** Substack or Buttondown account at `kody-w` or `rapp-vault`. Subscribe surface in README, kody-w.github.io landing, and every blog post footer.
+  - **X:** profile bio links to latest blog post + vault. Pinned tweet = the platform's strongest one-line claim.
+  - **LinkedIn:** personal profile + a "RAPP" company page (or treat as personal-brand for now); cross-link to blog.
+  - **YouTube:** channel banner uses vault accent palette; channel description + first video.
+  - **TikTok / Instagram:** profile bio with one link tree if needed.
+- **Ready when.** Now — channel setup is independent of any post landing.
+
+### Channel voice + visual style guides
+
+- **What.** A one-pager per channel inside [[Content Strategy]] (or as separate vault notes if they grow) capturing exact tone rules, hashtag conventions, hook patterns, thumbnail templates, code-screenshot style.
+- **Why.** Consistency is what makes a channel feel inhabited. A guide ensures every post conforms even when the author is in a hurry.
+- **Home.** Inline in [[Content Strategy]] for now; promote to dedicated notes if they grow past one section.
+- **Ready when.** First channel posts have shipped — the guide writes itself from what worked vs. what didn't.
+
+### Production templates
+
+- **What.** A small set of reusable artifacts: code-screenshot styling preset (CodeSnap or Carbon with the vault palette), YouTube intro/outro (or a deliberate no-intro convention), TikTok caption/hook templates, X-thread skeleton, LinkedIn-article header format.
+- **Why.** Production friction kills cadence. A template that takes 30 seconds to fill in beats a from-scratch post that takes an hour and gets skipped.
+- **Home.** `pages/vault/Blog Drafts/templates/` (new subdirectory) — checked-in templates that any author can copy.
+- **Ready when.** First two posts have shipped — the templates emerge from what was actually used.
+
+### First-30-day content calendar execution
+
+- **What.** Run the 4-week calendar in [[Content Strategy]]. Anchor: blog posts #1, #2, #3, #4, #5 from [[Blog Roadmap]]. Each post → newsletter + X thread + TikTok + LinkedIn + occasional YouTube.
+- **Why.** Prove the channels and the cadence before scaling. Day 30 is the first checkpoint to drop dead channels and double down on live ones.
+- **Home.** Living entries in [[Release Ledger]] as each post + channel-projection ships.
+- **Ready when.** Channel setup is done and post #1 is drafted.
+
 ## Next — scoped, not yet started
 
 Items the platform needs but that are blocked on something else (capacity, a code change, a decision).
@@ -88,6 +121,20 @@ Items the platform needs but that are blocked on something else (capacity, a cod
 - **Why.** Services are newer and have less precedent in the repo; the convention is at risk of drifting.
 - **Home.** `docs/service-authoring.md` + a vault note (TBD title).
 - **Ready when.** At least three published services exist in `rapp_store/`. (Currently: `dashboard`, `kanban`, `webhook`. ✅ ready, just not started.)
+
+### Channel-specific recurring formats
+
+- **What.** Lock in the recurring series each channel runs. YouTube: *"Build an agent in 60 minutes"* (workshop) + *"Why we did X"* (architecture). TikTok: *"60-second build"*, *"We deleted X lines"*, *"Watch this agent ship"*. X: weekly threads tied to the blog post; daily replies in #AIagent / #LangChain / #CopilotStudio. LinkedIn: monthly long-form article + 2 weekly partner-shaped posts.
+- **Why.** A recurring format compounds. Audiences come back for the series even when individual posts vary in quality.
+- **Home.** [[Content Strategy]] (already documents these); the build-out task is producing the *first three episodes* of each series so the format is concrete.
+- **Ready when.** First-30-day calendar has run and shown which formats land.
+
+### Analytics surface (privacy-friendly)
+
+- **What.** Add Plausible (or equivalent privacy-friendly analytics) to kody-w.github.io and the vault viewer to track page views per post. Skip vanity metrics; track watch-through on YouTube long-form, open rate on the newsletter, replies + bookmarks on X (not likes).
+- **Why.** Day-30 and day-90 reviews need data. Without analytics, the channel-pruning decision becomes vibes.
+- **Home.** `installer/index.html` and the major HTML pages in `pages/`. Plausible script is a single line; no user tracking, no cookies.
+- **Ready when.** First channel posts have shipped (otherwise there's nothing to measure).
 
 ## Later — known gaps not yet scoped
 
