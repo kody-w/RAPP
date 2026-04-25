@@ -1045,17 +1045,39 @@ def chat():
         # Three-way split: main |||VOICE||| voice |||TWIN||| twin.
         # Both delimiters optional. Left-to-right so twin never
         # pollutes voice and voice never pollutes main.
+        # Per Article II, each slot's content may be wrapped in matching
+        # XML tags (<main>, <voice>, <twin>) — the wrapper is the LLM's
+        # explicit boundary marker. We strip the outer wrapper here so
+        # consumers receive the bare content. Wrapping is optional input;
+        # legacy emitters without it parse the same way.
+        def _unwrap(text, tag):
+            t = text.strip()
+            open_tag = "<" + tag + ">"
+            close_tag = "</" + tag + ">"
+            if t.startswith(open_tag) and t.endswith(close_tag):
+                return t[len(open_tag):-len(close_tag)].strip()
+            return t
+
         remainder = reply
         if "|||VOICE|||" in remainder:
             main, _, remainder = remainder.partition("|||VOICE|||")
-            result["response"] = main.strip()
+            result["response"] = _unwrap(main, "main")
+            result["assistant_response"] = result["response"]
         if "|||TWIN|||" in remainder:
             voice_or_main, _, twin_text = remainder.partition("|||TWIN|||")
             if VOICE_MODE and "|||VOICE|||" in reply:
-                result["voice_response"] = voice_or_main.strip()
-            result["twin_response"] = twin_text.strip() if TWIN_MODE else ""
+                result["voice_response"] = _unwrap(voice_or_main, "voice")
+            result["twin_response"] = _unwrap(twin_text, "twin") if TWIN_MODE else ""
         elif VOICE_MODE and "|||VOICE|||" in reply:
-            result["voice_response"] = remainder.strip()
+            result["voice_response"] = _unwrap(remainder, "voice")
+
+        # If the response had no slot delimiters at all but the LLM still
+        # wrapped the whole reply in <main>...</main>, unwrap that too.
+        if "|||VOICE|||" not in reply and "|||TWIN|||" not in reply:
+            unwrapped = _unwrap(reply, "main")
+            if unwrapped != reply.strip():
+                result["response"] = unwrapped
+                result["assistant_response"] = unwrapped
 
         return jsonify(result)
 

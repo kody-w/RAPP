@@ -77,21 +77,94 @@ reason other than a new output slot, stop. The thing you want is a new
 
 ## Article II — Delimited Slots Are a Fixed Resource
 
-Once a slot exists, it belongs to that thing **forever**. Never repurpose.
-Never overload. If the twin grows a new sub-capability, it lives as a tag
-inside `|||TWIN|||` — the slot is the twin's entire real estate.
+The **slot mechanism** — split a chat response on `|||<NAME>|||`
+delimiters, render each segment to its own surface — is sacred kernel
+behavior. It exists in the brainstem and never goes away. Once a
+specific slot has been defined and shipped, its **name** belongs to
+that purpose forever. Never repurpose. Never overload. If a slot
+grows a new sub-capability, it lives as a tag inside the slot — the
+slot is its capability's entire real estate.
 
-Concretely:
+### Specific slots are rappstore add-ins, not kernel features
 
-- `|||VOICE|||` — only TTS line. Not a "short summary." Not "voice OR
-  hint." Just the out-loud sentence.
-- `|||TWIN|||` — the digital twin's turn. Everything twin-related
-  (commentary, probes, calibration, telemetry, future signals) lives
-  **inside** this block as either natural-language text or XML-style
-  tags the server strips before render.
+The kernel knows the slot *mechanism*; it does not own the *list* of
+slots. Specific slots are **sense / behavior add-ins** that a brainstem
+installs based on its purpose and available sensing tools. They live
+in `rapp_store/` like every other modular feature, and a brainstem
+with no speaker doesn't need the voice add-in, a read-only oracle
+brainstem doesn't need the twin add-in, and a future vision brainstem
+might add `|||VISION|||` from a vision add-in. Each brainstem assembles
+the senses it actually uses.
 
-Slots get added **rarely** and **never** get removed in a minor version.
-v2 is the only place a slot can be retired.
+### Each slot's content is wrapped in matching XML tags
+
+Inside a slot, the content is wrapped in an XML element whose name
+matches the slot. This is a belt-and-suspenders convention: the
+delimiter marks where the slot starts; the XML tag marks what the
+slot's content actually is, with an explicit closing tag. The LLM
+doesn't have to guess where one slot ends and the next begins, and
+the parser can verify well-formed slot content rather than relying on
+the next delimiter alone.
+
+```
+<main>...the visible reply...</main>
+|||VOICE|||
+<voice>...the TTS line...</voice>
+|||TWIN|||
+<twin>...the twin's commentary, with optional inner tags...</twin>
+```
+
+The brainstem strips the outer wrapping tag before returning the slot
+content in the response envelope (e.g. the contents of `<voice>...</voice>`
+become the `voice_response` field). Inner tags within the twin block
+(`<probe/>`, `<calibration/>`, `<telemetry>`, `<action>`) keep their
+existing strip-or-pass-through behavior. Time-travel safety: legacy
+brainstems that emit slot content without the wrapping XML tag still
+parse correctly — the wrapper is optional input to the parser, mandatory
+output for new emitters.
+
+### v1 canonical slots
+
+Two slots are the defined pair shipped in v1. They can be removed or
+replaced in a future version, but while they exist their meanings are
+fixed:
+
+- `|||VOICE|||` — TTS sense add-in. Only the out-loud sentence; not a
+  "short summary," not "voice OR hint." A brainstem without a speaker
+  doesn't emit it.
+- `|||TWIN|||` — proxy-of-owner behavior add-in. The brainstem's
+  digital twin of its current owner (anchored on the active
+  `user_guid`). When the real owner is engaged it defers; when the
+  owner is offline it can act as their next-best-thing proxy.
+  Everything twin-related (commentary, probes, calibration,
+  telemetry, action chips, future signals) lives **inside** this
+  block as either natural-language text or XML-style tags the server
+  strips before render.
+
+New slots get added **rarely** and **never** get removed in a minor
+version. v2 is the only place a slot can be retired entirely.
+
+### Slots are time-travel safe (Article XXV)
+
+Delimiters are part of the wire and obey the wire-forever rule:
+
+- **A brainstem that doesn't emit a slot must not break a peer that
+  expects it.** Older brainstems don't emit `|||TWIN|||`; newer ones
+  must treat absent slots as empty/not-present, never as malformed.
+- **A brainstem that doesn't recognize a slot must not break a peer
+  that emits it.** Older brainstems don't know what `|||TWIN|||`
+  means; they just see it as part of the prose. That's fine — they
+  rendered the response as one block, which is the correct degraded
+  behavior.
+- **Delimiter strings themselves are sacred and identical across
+  every implementation, forever.** Never make them configurable per
+  brainstem; configurable strings would silently fragment the
+  ecosystem.
+
+Adding a new slot is the rare exception (per the rules above). When it
+happens, the new slot is optional in both directions: emitters MAY emit
+it, receivers MAY parse it, but neither side may require the other to
+support it.
 
 ### Sub-tag vocabulary lives inside a slot, not outside it
 
