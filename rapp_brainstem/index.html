@@ -773,7 +773,14 @@
     padding: 10px 14px; resize: none; outline: none;
     line-height: 1.5; max-height: 120px;
     transition: border-color .15s; font-family: inherit;
+    /* Hide the scrollbar UI — the textarea reserves a gutter even when
+       content fits, which read as a visible "bar" on the right edge of
+       the input pill. Wheel/touch scroll still works for overflow once
+       content exceeds max-height; we just don't paint the chrome. */
+    scrollbar-width: none;        /* Firefox */
+    -ms-overflow-style: none;     /* old Edge */
   }
+  #input::-webkit-scrollbar { width: 0; height: 0; }  /* Chromium/Safari */
   #input:focus { border-color: #1f6feb; }
   #input::placeholder { color: #484f58; }
   #send {
