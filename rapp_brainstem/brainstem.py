@@ -229,6 +229,53 @@ _TWIN_FACES = {
     "puzzled":  [r"|?.?|", r"(0.0)", r"|x.x|", r"(O_o)", r"[?_?]"],
     "error":    [r"|x_x|", r"(T_T)", r"|>.<|", r"(@_@)", r"[X_X]"],
 }
+
+# Multi-line ASCII figure poses, 3 rows × 5 columns. The figure is the
+# twin "performing" inside the cage — each pose is a frozen frame in a
+# flipbook. Different poses per mood, plus special "annotated" poses
+# selected from the actual |||TWIN||| content (bold tags like
+# **Hint:**, **Risk:**, **Question:** drive the corresponding pose so
+# the figure mirrors what the twin is saying — not just a random face).
+_TWIN_POSES = {
+    "awake": [
+        ["  o  ", " /|\\ ", " / \\ "],
+        [" \\o/ ", "  |  ", " / \\ "],
+        ["  o  ", " <|> ", " / \\ "],
+    ],
+    "thinking": [
+        ["  o  ", "  |\\ ", "  | \\"],
+        ["  ?  ", " /|\\ ", " / \\ "],
+        [" o   ", " /|  ", " / \\ "],
+        ["  o..", "  |  ", " / \\ "],
+    ],
+    "working": [
+        [" \\o  ", "  |\\ ", " / \\ "],
+        ["  o/ ", " /|  ", " / \\ "],
+        ["  o>>", " /|  ", " / \\ "],
+        ["  o  ", " >|> ", " / \\ "],
+    ],
+    "done": [
+        [" \\o/ ", "  |  ", " / \\ "],
+        ["  o  ", " /|\\ ", " / \\ "],
+        ["  o  ", " <|>!", " / \\ "],
+    ],
+    "puzzled": [
+        ["  ?  ", " <|> ", " / \\ "],
+        ["  o..", "  |\\ ", " / \\ "],
+        [" o-? ", " /|  ", " / \\ "],
+    ],
+    "error": [
+        [" x_x ", " >|< ", " / \\ "],
+        [" T_T ", "  |  ", " / \\ "],
+        [" >.< ", " \\|/ ", " / \\ "],
+    ],
+}
+# Annotated poses — selected when the twin's |||TWIN||| content carries
+# the matching bold tag. The figure literally shows the kind of thing
+# the twin is offering: lightbulb, warning, question mark.
+_TWIN_POSE_HINT = ["  o *", " /|\\ ", " / \\ "]      # idea / lightbulb
+_TWIN_POSE_RISK = ["  o ⚠", " /|\\ ", " / \\ "]      # warning sign
+_TWIN_POSE_QUESTION = ["  o?", " /|\\ ", " / \\ "]   # question mark
 # Pool of twin-flavored "stream of consciousness" snippets per mood.
 # Picked at random per frame so the twin sounds like itself, not like
 # a parrot of the user's input. The body line is "<line> [· <ctx>]" —
@@ -267,17 +314,62 @@ _TWIN_DIM = "\033[2m"
 _twin_state = {"pos": 0, "dir": 1, "frame": 0}
 _TWIN_CAGE_W = 8  # 0..7 horizontal positions
 
-def _twin_emit(message="", mood="working"):
-    """Render one frame of the twin in its cage. `message` is OPTIONAL
-    contextual suffix (tool name, error code, or — for 'done' mood —
-    the assistant's actual content excerpt). The twin's own line comes
-    from _TWIN_LINES[mood] picked at random; we never echo the user's
-    input verbatim — that would make the twin a parrot, not a personality."""
+def _pick_pose(mood, message):
+    """Choose the figure pose. If the twin's content carries an
+    explicit bold tag (**Hint:** / **Risk:** / **Question:**) we map
+    to the matching annotated pose so the figure mirrors what the
+    twin is saying. Otherwise random from the mood pool."""
+    msg_lower = (message or "").lower()
+    if "**hint" in msg_lower or "💡" in (message or ""):
+        return _TWIN_POSE_HINT
+    if "**risk" in msg_lower or "**warning" in msg_lower or "⚠" in (message or ""):
+        return _TWIN_POSE_RISK
+    if "**question" in msg_lower:
+        return _TWIN_POSE_QUESTION
+    return _twin_random.choice(_TWIN_POSES.get(mood, _TWIN_POSES["working"]))
+
+
+def _wrap_msg(text, width):
+    """Word-wrap text to a list of lines, each ≤ width chars. Truncates
+    to 3 lines max so the cage stays a fixed height."""
+    text = (text or "").strip().replace("\n", " ")
+    text = " ".join(text.split())  # collapse whitespace
+    if not text:
+        return ["", "", ""]
+    out = []
+    while text and len(out) < 3:
+        if len(text) <= width:
+            out.append(text)
+            break
+        cut = text.rfind(" ", 0, width)
+        if cut == -1:
+            cut = width
+        out.append(text[:cut].rstrip())
+        text = text[cut:].lstrip()
+    if len(out) == 3 and text:
+        # Hint that there's more (don't dangle a partial word)
+        out[-1] = out[-1][: width - 1].rstrip() + "…"
+    while len(out) < 3:
+        out.append("")
+    return out
+
+
+def _twin_emit(message="", mood="working", figure=None):
+    """Render one frame of the twin in its cage — a 3-line ASCII figure
+    on the left (pose driven by mood + bold-tag in `message`, or
+    overridden via the `figure` argument when the LLM emits a custom
+    <frame> inside the |||TWIN||| block) and a word-wrapped speech
+    bubble on the right (the twin's actual voice or a stock status line
+    for in-flight moods).
+
+    figure: optional list of EXACTLY 3 strings, each ≤ 5 chars wide.
+            Lets the LLM drive the figure pose directly via
+            <frame>...</frame> in its |||TWIN||| output."""
     if not TWIN_MODE:
         return
     _twin_state["frame"] += 1
     # Bounce position off the cage walls so the twin paces back and
-    # forth instead of stacking against an edge or wrapping unpredictably.
+    # forth instead of stacking against an edge.
     _twin_state["pos"] += _twin_state["dir"]
     if _twin_state["pos"] >= _TWIN_CAGE_W - 1:
         _twin_state["dir"] = -1
@@ -285,30 +377,40 @@ def _twin_emit(message="", mood="working"):
         _twin_state["dir"] = 1
     pos = max(0, min(_TWIN_CAGE_W - 1, _twin_state["pos"]))
 
-    pool = _TWIN_FACES.get(mood, _TWIN_FACES["working"])
-    face = _twin_random.choice(pool)
-
-    # Compose the body line. For 'done' the message IS the twin's voice
-    # (the assistant's response excerpt) — print it as-is. For every
-    # other mood, prepend a random twin-line so the twin sounds like
-    # itself first, with the contextual suffix (tool name, error code)
-    # appended after a separator. Suffixes are pre-truncated by callers.
+    # Compose the speech-bubble text. For 'done' the message IS the twin's
+    # voice (the |||TWIN||| content from the LLM). For in-flight moods,
+    # prepend a random stock line; never echo the user's input verbatim.
     line_pool = _TWIN_LINES.get(mood, [])
     twin_line = _twin_random.choice(line_pool) if line_pool else ""
-    ctx = (message or "").strip().replace("\n", " ")
+    ctx = (message or "").strip()
     if mood == "done":
-        msg = ctx[:48]  # the response excerpt is the twin's voice
+        body_text = ctx
     elif twin_line and ctx:
-        msg = f"{twin_line} · {ctx}"[:48]
+        body_text = f"{twin_line} · {ctx}"
     elif twin_line:
-        msg = twin_line[:48]
+        body_text = twin_line
     else:
-        msg = ctx[:48]
+        body_text = ctx
 
-    width = 55  # internal width of the cage
-    indent_face = (" " * (pos * 6)) + face
-    line_face = indent_face.ljust(width)[:width]
-    line_msg = ("  " + msg).ljust(width)[:width]
+    # Pose: caller-supplied override (LLM's <frame>) wins; else mood +
+    # bold-tag-driven canned pose.
+    if figure and isinstance(figure, list) and len(figure) >= 3:
+        pose = [str(figure[i])[:5].ljust(5) for i in range(3)]
+    else:
+        pose = _pick_pose(mood, message)
+
+    width = 55  # internal cage width
+    fig_w = 5
+    pad = pos  # 0..6, position drift
+    msg_w = width - pad - fig_w - 4  # 1 left margin, fig, 2 gap, 1 right margin
+
+    msg_lines = _wrap_msg(body_text, max(20, msg_w))
+
+    rendered = []
+    for i in range(3):
+        figure_seg = (" " * pad) + pose[i]
+        line = " " + figure_seg + "  " + msg_lines[i]
+        rendered.append(line.ljust(width)[:width])
 
     label = f" twin · {mood} · #{_twin_state['frame']} "
     label_pad = label + ("─" * max(0, width - len(label)))
@@ -318,10 +420,40 @@ def _twin_emit(message="", mood="working"):
     col = _TWIN_COLORS.get(mood, "") if use_color else ""
     rst = _TWIN_RESET if use_color else ""
     print(f"  {col}╭{label_pad}╮{rst}")
-    print(f"  {col}│{rst}{line_face}{col}│{rst}")
-    print(f"  {col}│{rst}{line_msg}{col}│{rst}")
+    for line in rendered:
+        print(f"  {col}│{rst}{line}{col}│{rst}")
     print(f"  {col}╰{bottom}╯{rst}")
     sys.stdout.flush()
+
+
+def _extract_twin_frame(twin_text):
+    """Pull <frame>...</frame> ASCII art out of the twin block. Returns
+    (figure_lines_or_None, twin_text_with_frame_stripped). The figure
+    is normalized to exactly 3 lines × 5 chars; missing lines pad with
+    blanks, extra lines / chars are truncated. Lets the LLM hand-author
+    its own pose for the cage on any turn it wants — drives the
+    animation dynamically instead of always picking from canned poses."""
+    if not twin_text:
+        return None, twin_text
+    import re as _re
+    m = _re.search(r"<frame>\s*\n?(.*?)\n?\s*</frame>", twin_text, _re.DOTALL | _re.IGNORECASE)
+    if not m:
+        return None, twin_text
+    raw = m.group(1).rstrip("\n")
+    raw_lines = raw.split("\n")
+    # Drop fully-empty leading/trailing lines but keep internal blanks
+    while raw_lines and not raw_lines[0].strip():
+        raw_lines.pop(0)
+    while raw_lines and not raw_lines[-1].strip():
+        raw_lines.pop()
+    # Normalize to 3 × 5
+    figure = []
+    for line in raw_lines[:3]:
+        figure.append(line[:5].ljust(5))
+    while len(figure) < 3:
+        figure.append("     ")
+    cleaned = (twin_text[:m.start()] + twin_text[m.end():]).strip()
+    return figure, cleaned
 
 
 # ── GitHub token ──────────────────────────────────────────────────────────────
@@ -1172,7 +1304,16 @@ def chat():
                 "<action kind=\"send|prompt|open|toggle|highlight|rapp\" target=\"...\" label=\"...\">body</action> "
                 "offers the user a one-click UI favor (send text, prefill input, open a panel, "
                 "toggle a feature like voice/cards/pills/hand-mode, highlight a loaded card, "
-                "or invoke a rapplication tool on their behalf via kind=\"rapp\")."
+                "or invoke a rapplication tool on their behalf via kind=\"rapp\"). "
+                "<frame>...</frame> lets you DRAW the twin's pose for this turn directly. "
+                "EXACTLY 3 lines, each up to 5 chars wide, ASCII only. The brainstem operator's "
+                "terminal renders the twin as a small figure inside a bordered cage; <frame> "
+                "is what gets drawn. Pose changes per turn = animation. Examples: "
+                "'\\o/' over '|' over '/\\' for celebration, '\\o' / '|\\' / '/\\' for a wave, "
+                "'o..' / '|' / '/\\' for thinking, 'x_x' / '|' / '/\\' for sad. Tag is OPTIONAL — "
+                "leave it out and the brainstem picks a pose from a canned pool that matches "
+                "the mood. Use it when the moment calls for a specific gesture. "
+                "Never put real chat content inside <frame> — it's just the picture."
             )
 
         messages = [{"role": "system", "content": system_content}]
@@ -1261,21 +1402,27 @@ def chat():
                 result["assistant_response"] = unwrapped
 
         # Final twin frame for this chat round. The twin's voice IS the
-        # |||TWIN||| block the LLM generated — the user's digital twin
-        # reacting in first-person to what just happened. Strip XML tags
-        # like <probe>/<calibration>/<telemetry>/<action> that are part
-        # of the twin protocol but not human-readable.
-        # Falls back to a short excerpt of the assistant's main response
-        # if the LLM didn't emit a twin block (silent-twin is allowed).
+        # |||TWIN||| block the LLM generated — first-person reaction
+        # to what just happened. We extract three things from it:
+        #   1. <frame>...</frame> — optional ASCII pose, drives the
+        #      figure inside the cage so the LLM can choose its own
+        #      gesture per turn (animation driven by the model).
+        #   2. <probe>/<calibration>/<telemetry>/<action> — protocol
+        #      tags, stripped before display (they're for machines).
+        #   3. The remaining prose — the speech bubble.
+        # Silent-twin is allowed; falls back to a brief excerpt of the
+        # main reply so the cage isn't empty after a turn.
         if TWIN_MODE:
             import re as _re
             twin_voice = (result.get("twin_response") or "").strip()
+            twin_figure = None
             if twin_voice:
+                twin_figure, twin_voice = _extract_twin_frame(twin_voice)
                 # Strip XML protocol tags, collapse whitespace
                 twin_voice = _re.sub(r"<(probe|calibration|telemetry|action)[^>]*?(/>|>.*?</\1>)", "", twin_voice, flags=_re.DOTALL)
                 twin_voice = _re.sub(r"\s+", " ", twin_voice).strip()
-            if twin_voice:
-                _twin_emit(twin_voice, "done")
+            if twin_voice or twin_figure:
+                _twin_emit(twin_voice, "done", figure=twin_figure)
             else:
                 # Twin was silent — show a brief excerpt of the main reply
                 # so the cage isn't empty after a turn. Trims voice/twin
@@ -1283,7 +1430,7 @@ def chat():
                 _excerpt = (result.get("response") or "").split("\n")[0]
                 _excerpt = _excerpt.replace("|||VOICE|||", "").replace("|||TWIN|||", "").strip()
                 if _excerpt:
-                    _twin_emit(_excerpt[:48], "done")
+                    _twin_emit(_excerpt, "done")
                 else:
                     _twin_emit("", "puzzled")
 
