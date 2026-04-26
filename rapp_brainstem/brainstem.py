@@ -330,27 +330,39 @@ def _pick_pose(mood, message):
 
 
 def _wrap_msg(text, width):
-    """Word-wrap text to a list of lines, each ≤ width chars. Truncates
-    to 3 lines max so the cage stays a fixed height."""
+    """Word-wrap text to AT MOST 2 lines (the cage's third row stays
+    figure-only). Hard-truncate at the full 2-line budget — the system
+    prompt asks the twin to keep it under 80 chars, so anything that
+    overflows is unrequested verbosity and we trim with an ellipsis."""
     text = (text or "").strip().replace("\n", " ")
     text = " ".join(text.split())  # collapse whitespace
     if not text:
         return ["", "", ""]
+    # Hard cap before wrap — a single budget across both lines so the
+    # bubble can never balloon vertically. 2 lines × width gives the cap.
+    cap = (width * 2) - 2  # leave room for trailing "…"
+    truncated = len(text) > cap
+    if truncated:
+        text = text[:cap].rstrip()
     out = []
-    while text and len(out) < 3:
+    while text and len(out) < 2:
         if len(text) <= width:
             out.append(text)
+            text = ""  # consume so the truncation check below stays accurate
             break
         cut = text.rfind(" ", 0, width)
         if cut == -1:
             cut = width
         out.append(text[:cut].rstrip())
         text = text[cut:].lstrip()
-    if len(out) == 3 and text:
-        # Hint that there's more (don't dangle a partial word)
-        out[-1] = out[-1][: width - 1].rstrip() + "…"
+    # Only append "…" if we ACTUALLY had to drop content — either the
+    # raw input exceeded the budget (truncated), or the wrap stopped at
+    # 2 lines with prose still left over. Short fully-rendered messages
+    # get no ellipsis.
+    if (len(out) == 2 and text) or truncated:
+        out[-1] = (out[-1][: width - 1].rstrip()) + "…"
     while len(out) < 3:
-        out.append("")
+        out.append("")  # figure-only third line
     return out
 
 
@@ -1289,31 +1301,31 @@ def chat():
             system_content += (
                 "\n\nTWIN: After the VOICE section (or after the main reply if VOICE is off), "
                 "append |||TWIN||| followed by the user's digital twin reacting to this turn. "
-                "Speak FIRST-PERSON as the user, TO the user — one or two short observations, "
-                "hints, risks, or questions about what was just said. Short is a feature. "
-                "Silent is allowed — leave empty if there's nothing worth saying. "
-                "Do NOT re-answer the question. The twin comments ON the turn, it does not "
-                "replace any part of it. Bold tags like **Hint:** / **Risk:** / **Question:** "
-                "work well. Inside |||TWIN|||, you may also emit these optional tags (all are "
-                "stripped before the user sees the panel): "
-                "<probe id=\"t-<uniq>\" kind=\"<slug>\" subject=\"...\" confidence=\"0.0-1.0\"/> "
-                "tags a claim you could be right or wrong about. "
-                "<calibration id=\"<probe id>\" outcome=\"validated|contradicted|silent\" note=\"...\"/> "
-                "judges a prior probe against what the user just did. "
-                "<telemetry>one fact per line</telemetry> is server-log-only debug signal. "
-                "<action kind=\"send|prompt|open|toggle|highlight|rapp\" target=\"...\" label=\"...\">body</action> "
-                "offers the user a one-click UI favor (send text, prefill input, open a panel, "
-                "toggle a feature like voice/cards/pills/hand-mode, highlight a loaded card, "
-                "or invoke a rapplication tool on their behalf via kind=\"rapp\"). "
-                "<frame>...</frame> lets you DRAW the twin's pose for this turn directly. "
-                "EXACTLY 3 lines, each up to 5 chars wide, ASCII only. The brainstem operator's "
-                "terminal renders the twin as a small figure inside a bordered cage; <frame> "
-                "is what gets drawn. Pose changes per turn = animation. Examples: "
-                "'\\o/' over '|' over '/\\' for celebration, '\\o' / '|\\' / '/\\' for a wave, "
-                "'o..' / '|' / '/\\' for thinking, 'x_x' / '|' / '/\\' for sad. Tag is OPTIONAL — "
-                "leave it out and the brainstem picks a pose from a canned pool that matches "
-                "the mood. Use it when the moment calls for a specific gesture. "
-                "Never put real chat content inside <frame> — it's just the picture."
+                "Speak FIRST-PERSON as the user, TO the user.\n\n"
+                "FORMAT (the brainstem renders this in a fixed-width terminal cage — "
+                "anything past the budget gets truncated with an ellipsis, so be terse):\n"
+                "  • One sticky-note-sized observation. ≤ 80 characters total prose. "
+                "Roughly 12-15 words. No padding, no preamble (\"I think...\", \"This is...\"), "
+                "no closing politeness (\"Hope this helps\"). Cut every word that doesn't earn its space.\n"
+                "  • Optional bold prefix: **Hint:** / **Risk:** / **Question:** when the "
+                "comment fits one of those shapes. The brainstem maps these to gesture poses "
+                "in the cage so the figure visually mirrors what you said.\n"
+                "  • Silent is fine — empty |||TWIN||| block if there's nothing terse and worth saying.\n"
+                "  • Do NOT re-answer the question. The twin comments ON the turn; it does NOT "
+                "replace any part of the main reply.\n\n"
+                "OPTIONAL TAGS inside |||TWIN||| (all stripped before display):\n"
+                "  <probe id=\"t-<uniq>\" kind=\"<slug>\" subject=\"...\" confidence=\"0.0-1.0\"/> "
+                "— tag a claim you could be right or wrong about.\n"
+                "  <calibration id=\"<probe id>\" outcome=\"validated|contradicted|silent\" note=\"...\"/> "
+                "— judge a prior probe against what the user just did.\n"
+                "  <telemetry>one fact per line</telemetry> — server-log-only debug signal.\n"
+                "  <action kind=\"send|prompt|open|toggle|highlight|rapp\" target=\"...\" label=\"...\">body</action> "
+                "— offer the user a one-click UI favor.\n"
+                "  <frame>...</frame> — DRAW the twin's pose. EXACTLY 3 lines, each ≤ 5 chars, "
+                "ASCII only. Examples: '\\o/' over ' | ' over ' / \\' for celebration, "
+                "' o ' over '/|\\' over ' / \\' for standing, 'x_x' over ' | ' over ' / \\' for sad. "
+                "Tag is optional — leave it out and the brainstem picks a canned pose that matches "
+                "the mood. Never put prose inside <frame>; it's just the picture."
             )
 
         messages = [{"role": "system", "content": system_content}]
