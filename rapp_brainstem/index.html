@@ -1737,7 +1737,7 @@
       const BASE = window.location.origin && !window.location.origin.startsWith('file:')
         ? window.location.origin
         : 'http://127.0.0.1:7080';
-      const CATALOG_URL = 'https://raw.githubusercontent.com/kody-w/RAPP/main/rapp_store/index.json';
+      const CATALOG_URL = 'https://raw.githubusercontent.com/kody-w/rapp_store/main/index.json';
 
       function $(s) { return document.querySelector(s); }
       function esc(s) { return String(s ?? '').replace(/[<>&"']/g, c =>
@@ -2579,7 +2579,7 @@ const state = {
     // Three repo schemas are supported by the resolver below:
     //   1. registry.json          (rapp-registry/1.x  — kody-w/RAR)
     //   2. manifest.json          (agent-manifest     — kody-w/AI-Agent-Templates)
-    //   3. rapp_store/index.json  (rapp-store         — kody-w/RAPP — these are
+    //   3. index.json             (rapp-store         — kody-w/rapp_store — these are
     //                              composed rapplications; installing routes
     //                              through /api/binder/install for SHA-pinned
     //                              server-side delivery, not a raw fetch.)
@@ -3568,7 +3568,7 @@ function normalizeSourceInput(s) {
 // choice, not something that flips at runtime.
 const SOURCE_SCHEMA_HINTS = {
   'kody-w/RAR':                'registry',     // registry.json at repo root
-  'kody-w/RAPP':               'rapp-store',   // rapp_store/index.json
+  'kody-w/rapp_store':         'rapp-store',   // index.json at repo root
   'kody-w/AI-Agent-Templates': 'manifest',     // manifest.json at repo root
 };
 
@@ -3629,11 +3629,11 @@ async function fetchSourceRegistry(repo) {
         }
       }
     } catch {}
-    // Schema 3 — rapp-store (rapp_store/index.json with rapplications:[]).
+    // Schema 3 — rapp-store (index.json at repo root with rapplications:[]).
     // Composed multi-class singletons — installs go through the brainstem's
     // binder endpoint so the server validates the SHA pin before writing.
     if (trySchemas.includes('rapp-store')) try {
-      const r = await fetch(`https://raw.githubusercontent.com/${repo}/${branch}/rapp_store/index.json`, { cache: 'no-store' });
+      const r = await fetch(`https://raw.githubusercontent.com/${repo}/${branch}/index.json`, { cache: 'no-store' });
       if (r.ok) {
         const m = await r.json();
         if (Array.isArray(m.rapplications)) {

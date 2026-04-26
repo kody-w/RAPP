@@ -65,7 +65,7 @@ CORS(app, origins=_cors_origins + _cors_extra)
 
 SOUL_PATH    = os.getenv("SOUL_PATH",    os.path.join(os.path.dirname(__file__), "soul.md"))
 AGENTS_PATH  = os.getenv("AGENTS_PATH",  os.path.join(os.path.dirname(__file__), "agents"))
-SERVICES_PATH = os.getenv("SERVICES_PATH", os.path.join(os.path.dirname(__file__), "services"))
+SERVICES_PATH = os.getenv("SERVICES_PATH", os.path.join(os.path.dirname(__file__), "utils", "services"))
 MODEL        = os.getenv("GITHUB_MODEL", "gpt-4o")
 PORT        = int(os.getenv("PORT", 7071))
 # Voice and Twin default ON — the brainstem's terminal twin (see
@@ -102,7 +102,7 @@ DEFAULT_USER_GUID = "c0p110t0-aaaa-bbbb-cccc-123456789abc"
 # RAPPstore catalog URL — overridable so distros and mirrors are first-class.
 # Default points at the canonical store; forks/distros set this to their own
 # mirror and binder transparently installs from there.
-RAPPSTORE_URL = os.getenv("RAPPSTORE_URL", "https://raw.githubusercontent.com/kody-w/RAPP/main/rapp_store/index.json")
+RAPPSTORE_URL = os.getenv("RAPPSTORE_URL", "https://raw.githubusercontent.com/kody-w/rapp_store/main/index.json")
 
 COPILOT_TOKEN_URL = "https://api.github.com/copilot_internal/v2/token"
 
@@ -1138,7 +1138,7 @@ def run_tool_calls(tool_calls, agents, session_id=None, user_guid=None):
 # monkey hears.
 #
 # Senses are SINGLE-FILE just like agents:
-#   rapp_brainstem/senses/<name>_sense.py   ← bundled defaults
+#   rapp_brainstem/utils/senses/<name>_sense.py   ← bundled defaults
 #   <user pulls more from the rapp_store>   ← installable
 #
 # Each *_sense.py defines four module-level vars:
@@ -1155,7 +1155,7 @@ def run_tool_calls(tool_calls, agents, session_id=None, user_guid=None):
 # To remove: delete the file. Soul is untouched. Other senses unaffected.
 # (A dog that wakes up with three legs makes the best of it.)
 
-SENSES_PATH = os.getenv("SENSES_PATH", os.path.join(os.path.dirname(__file__), "senses"))
+SENSES_PATH = os.getenv("SENSES_PATH", os.path.join(os.path.dirname(__file__), "utils", "senses"))
 
 def load_senses():
     """Discover *_sense.py files in SENSES_PATH. Each file is a tiny
@@ -1254,7 +1254,7 @@ def chat():
                 print(f"[brainstem] system_context failed for {agent.name}: {e}")
 
         # Soul + per-agent context + senses layer (Article XXIV). Senses
-        # are auto-discovered single files from rapp_brainstem/senses/ —
+        # are auto-discovered single files from rapp_brainstem/utils/senses/ —
         # independent from the soul, so adding/losing a sense never
         # touches the agent's identity prompt. Reloaded per request so
         # dropping a new sense file takes effect with no restart.
@@ -1372,22 +1372,22 @@ def index():
 @app.route("/web/<path:filename>", methods=["GET"])
 def web_static(filename):
     """Serve files from the web/ directory."""
-    return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "web"), filename)
+    return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "utils", "web"), filename)
 
 # Convenience routes for the named UI pages in web/ — so /manage works
 # (not just /web/manage.html). The chat UI links to these clean paths.
 @app.route("/manage", methods=["GET"])
 def manage_page():
-    return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "web"), "manage.html")
+    return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "utils", "web"), "manage.html")
 
 @app.route("/binder", methods=["GET"])
 @app.route("/binder.html", methods=["GET"])
 def binder_page():
-    return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "web"), "binder.html")
+    return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "utils", "web"), "binder.html")
 
 @app.route("/rapplications", methods=["GET"])
 def rapplications_page():
-    return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "web"), "rapplications.html")
+    return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "utils", "web"), "rapplications.html")
 
 @app.route("/login", methods=["POST"])
 def login():
@@ -1678,23 +1678,23 @@ def list_agents_full():
 # Serve them from the web/ directory so the fork doesn't 404.
 @app.route("/rapp.js", methods=["GET"])
 def rapp_js():
-    return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "web"), "rapp.js")
+    return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "utils", "web"), "rapp.js")
 
 @app.route("/manifest.webmanifest", methods=["GET"])
 def manifest_webmanifest():
-    return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "web"), "manifest.webmanifest")
+    return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "utils", "web"), "manifest.webmanifest")
 
 @app.route("/icon-192.svg", methods=["GET"])
 def icon_192():
-    return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "web"), "icon-192.svg")
+    return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "utils", "web"), "icon-192.svg")
 
 @app.route("/icon-512.svg", methods=["GET"])
 def icon_512():
-    return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "web"), "icon-512.svg")
+    return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "utils", "web"), "icon-512.svg")
 
 @app.route("/sw.js", methods=["GET"])
 def service_worker():
-    return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "web"), "sw.js")
+    return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "utils", "web"), "sw.js")
 
 @app.route("/agents/export/<filename>", methods=["GET"])
 def agents_export(filename):

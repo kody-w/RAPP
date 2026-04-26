@@ -315,6 +315,9 @@ function Install-Brainstem {
             $oldSrc = "$BRAINSTEM_HOME\src-old-$(Get-Random)"
             Rename-Item "$BRAINSTEM_HOME\src" $oldSrc -Force
             Remove-Item -Recurse -Force $oldSrc -ErrorAction SilentlyContinue
+            # Full clone of kody-w/RAPP — engine + swarm + worker + installer.
+            # rapp_store is the only repo split out (fetched at runtime via
+            # RAPPSTORE_URL).
             git clone --quiet $REPO_URL "$BRAINSTEM_HOME\src" 2>&1
             if ($LASTEXITCODE -ne 0) {
                 Write-Host "  [X] Failed to clone repository" -ForegroundColor Red

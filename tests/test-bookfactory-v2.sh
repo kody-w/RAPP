@@ -11,6 +11,15 @@
 set -e
 set -o pipefail
 
+# NOTE (2026-04-26): the catalog moved to kody-w/rapp_store. This script
+# inspects local rapp_store/ filesystem content that no longer exists in
+# this repo, so it self-skips here. The same test belongs in the catalog
+# repo's own test suite — see github.com/kody-w/rapp_store.
+if [ ! -d rapp_store ] || [ -f rapp_store/MOVED.md ] && [ ! -f rapp_store/index.json ]; then
+    echo "SKIP: tests/test-bookfactory-v2.sh — catalog moved to kody-w/rapp_store"
+    exit 0
+fi
+
 PORT=7180
 ROOT=/tmp/rapp-bf-v2-test
 PASS=0; FAIL=0; FAIL_NAMES=()

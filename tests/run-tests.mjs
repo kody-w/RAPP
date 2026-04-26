@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* tests/run-tests.mjs — Node test runner for the rapp.js core lib.
  *
- * Loads rapp_brainstem/web/rapp.js into a synthetic global, then asserts the
+ * Loads rapp_brainstem/utils/web/rapp.js into a synthetic global, then asserts the
  * RAPP v1 contract: agent parsing, manifest extraction, seed math,
  * mnemonic round-trips, card mint, card↔agent.py round-trips, binder
  * import/export.
@@ -24,7 +24,7 @@ const __dirname  = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, '..');
 
 // Load rapp.js into the global scope (it's an IIFE that attaches to `window`).
-const rappSource = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'web', 'rapp.js'), 'utf8');
+const rappSource = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'utils', 'web', 'rapp.js'), 'utf8');
 // Provide a `window` so the IIFE can attach.
 globalThis.window = globalThis;
 new Function(rappSource).call(globalThis);
@@ -232,8 +232,8 @@ class TinyAgent(BasicAgent):
   console.log('\nSPEC §8 chat envelope');
 
   await test('chat request/response shapes match §8', () => {
-    // Static check: ensure rapp_brainstem/web/index.html declares the §8 contract.
-    const html = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'web', 'index.html'), 'utf8');
+    // Static check: ensure rapp_brainstem/utils/web/index.html declares the §8 contract.
+    const html = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'utils', 'web', 'index.html'), 'utf8');
     assert(html.includes('user_input'), 'request includes user_input');
     assert(html.includes('conversation_history'), 'request includes conversation_history');
     assert(html.includes('session_id'), 'request includes session_id');
@@ -433,7 +433,7 @@ class TinyAgent(BasicAgent):
 
   for (const p of [
     'index.html', 'pages/docs/SPEC.md', 'README.md',
-    'installer/index.html', 'rapp_swarm/index.html', 'rapp_brainstem/web/index.html', 'rapp_brainstem/web/rapp.js',
+    'installer/index.html', 'rapp_swarm/index.html', 'rapp_brainstem/utils/web/index.html', 'rapp_brainstem/utils/web/rapp.js',
     'rapp_brainstem/agents/basic_agent.py',
     'rapp_brainstem/agents/manage_memory_agent.py', 'rapp_brainstem/agents/context_memory_agent.py', 'rapp_brainstem/agents/hacker_news_agent.py',
     'tests/run-tests.mjs',
@@ -443,8 +443,8 @@ class TinyAgent(BasicAgent):
     'tests/test-hero-deploy.sh',
     'tests/test-llm-chat.sh',
     'rapp_brainstem/utils/llm.py',
-    'rapp_brainstem/web/onboard/index.html',
-    'rapp_brainstem/web/onboard/registry.json',
+    'rapp_brainstem/utils/web/onboard/index.html',
+    'rapp_brainstem/utils/web/onboard/registry.json',
     'rapp_swarm/function_app.py',
     'rapp_swarm/host.json',
     'rapp_swarm/requirements.txt',

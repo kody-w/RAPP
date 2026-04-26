@@ -90,7 +90,8 @@ slot is its capability's entire real estate.
 The kernel knows the slot *mechanism*; it does not own the *list* of
 slots. Specific slots are **sense / behavior add-ins** that a brainstem
 installs based on its purpose and available sensing tools. They live
-in `rapp_store/` like every other modular feature, and a brainstem
+in the [`kody-w/rapp_store`](https://github.com/kody-w/rapp_store)
+catalog like every other modular feature, and a brainstem
 with no speaker doesn't need the voice add-in, a read-only oracle
 brainstem doesn't need the twin add-in, and a future vision brainstem
 might add `|||VISION|||` from a vision add-in. Each brainstem assembles
@@ -268,8 +269,9 @@ discipline at the boundary.
 A **rapplication** is what you get when you build a pipeline out of
 several cooperating agents and then collapse it to a single deployable
 file via the double-jump loop. The multi-file form under
-`rapp_store/<name>/source/` is the authoring surface; the one-file
-artifact under `rapp_store/<name>/singleton/` is the shipped unit.
+`<name>/source/` (in the [`kody-w/rapp_store`](https://github.com/kody-w/rapp_store)
+catalog) is the authoring surface; the one-file artifact under
+`<name>/singleton/` is the shipped unit.
 
 The rule: **the ship-time artifact is still one file.** A rapplication
 that needs two files in production is not a rapplication — it's a
@@ -283,13 +285,14 @@ the rapplication has outgrown the pattern.
 |------|---------------|
 | `rapp_brainstem/agents/` | Default agents shipped with the brainstem (starter set + essentials like memory). |
 | `rapp_brainstem/agents/experimental/` | In-flight agents the auto-loader ignores. Hand-load them when you're ready. |
-| `rapp_store/<rapp>/source/` | Rapplication source — multi-file, editable, runs through the double-jump loop. |
-| `rapp_store/<rapp>/singleton/` | Collapsed single-file ship artifact for the rapplication. |
-| `rapp_store/<rapp>/tests/` | Tests for the singleton and the source agents. Use real storage, not mocks. |
+| `<rapp>/source/` (in `kody-w/rapp_store`) | Rapplication source — multi-file, editable, runs through the double-jump loop. |
+| `<rapp>/singleton/` (in `kody-w/rapp_store`) | Collapsed single-file ship artifact for the rapplication. |
+| `<rapp>/tests/` (in `kody-w/rapp_store`) | Tests for the singleton and the source agents. Use real storage, not mocks. |
 
 User-authored agents live in the user's own workspace, not this repo.
-This repo ships the starter set + the store; everything else is
-downstream.
+This repo ships the starter set; the catalog of distributable
+rapplications lives in [`kody-w/rapp_store`](https://github.com/kody-w/rapp_store).
+Everything else is downstream.
 
 ---
 
@@ -351,7 +354,6 @@ This repo (`kody-w/RAPP`) contains:
 
 - ✅ `rapp_brainstem/` — the local Flask brainstem + its browser twin
 - ✅ `rapp_swarm/` — the Tier 2 Azure Functions deployment
-- ✅ `rapp_store/` — the rapplication catalog, sources, and eggs
 - ✅ `installer/` — the install-widget mirror (infra)
 - ✅ Root install scripts, ARM template, Copilot Studio .zip
 - ✅ `SPEC.md` (wire contract), `ROADMAP.md` (directions), this file
@@ -734,7 +736,7 @@ What earns repo-root residence (the closed list):
   earns root residence by holding running code, not by completing a
   numbered list.
 - **`worker/`** — Cloudflare auth/proxy worker shared across tiers.
-- **The catalog** — `rapp_store/`.
+- **The catalog** — moved to its own repo at [`kody-w/rapp_store`](https://github.com/kody-w/rapp_store) on 2026-04-26. Brainstem fetches `index.json` from there via `RAPPSTORE_URL`. A tombstone at `rapp_store/MOVED.md` in this repo points there.
 - **The install surface** — `installer/`. Public URLs route through
   this subpath; everything inside is meant to be downloaded or
   curl-piped by a user. Holds the one-liners (`install.sh`,
@@ -1453,9 +1455,10 @@ expression: sense.
   twin's tiny ASCII reaction. Frontends render in a panel; the
   brainstem operator's terminal renders the `<frame>` as a cage.
 
-**More senses live in the rapp_store** under `rapp_store/senses/` —
-each a single `*_sense.py` file. Drop one in
-`rapp_brainstem/senses/` and it's installed; delete it and it's gone.
+**More senses live in the catalog** under `senses/` in
+[`kody-w/rapp_store`](https://github.com/kody-w/rapp_store) — each a single
+`*_sense.py` file. Drop one in `rapp_brainstem/utils/senses/` and it's
+installed; delete it and it's gone.
 A dog that wakes up with three legs makes the best of it; the agent
 that loses a sense keeps its identity, just with one fewer mode of
 expression.
@@ -1649,7 +1652,7 @@ new optional response fields. They MUST NOT:
   brainstems (i.e. additions must degrade silently)
 
 The same applies to file formats the ecosystem depends on: rapplication
-manifests, the catalog `index.json`, the `rapp_store/` package layout,
+manifests, the catalog `index.json`, the rapplication package layout (in `kody-w/rapp_store`),
 the binder's `binder.json` install record, the `bootstrap.json` written
 by `start.sh`. Each carries a `schema` field; new schemas may add fields
 but never remove or rename existing ones.

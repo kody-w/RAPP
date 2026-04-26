@@ -37,6 +37,22 @@ cd worker && npx wrangler dev           # Local dev on :8787
 
 No linter, type checker, or CI pipeline is configured.
 
+## Cloning a single tier (optional)
+
+Default is a full clone — users typically progress from Tier 1 (brainstem) to Tier 2 (swarm) to Tier 3 (enterprise) over time, so the install one-liner pulls everything. The catalog (`kody-w/rapp_store`) is the only repo split out.
+
+If a contributor explicitly wants a leaner clone for one-tier work, sparse-checkout is supported (each tier is self-contained — never reaches up to the monorepo root):
+
+```bash
+git clone --filter=blob:none --no-checkout https://github.com/kody-w/RAPP.git brainstem
+cd brainstem
+git sparse-checkout init --cone
+git sparse-checkout set rapp_brainstem      # or rapp_swarm, or worker
+git checkout main
+```
+
+Suggest sparse-checkout only when explicitly asked or when the user names a single tier. Otherwise default-recommend the full clone — they'll likely want the other tiers later.
+
 ## Architecture
 
 ### Request Flow (POST /chat)
@@ -90,7 +106,7 @@ These are inviolable — do not break backwards compatibility:
 | `rapp_brainstem/` | Tier 1 local server (Flask, agents, services, web UI) |
 | `rapp_swarm/` | Tier 2 Azure Functions (vendors brainstem core) |
 | `worker/` | Cloudflare auth/proxy worker |
-| `rapp_store/` | Rapplication catalog (index.json + agent packages) |
+| `rapp_store/MOVED.md` | Tombstone. The rapplication catalog moved to [`kody-w/rapp_store`](https://github.com/kody-w/rapp_store) on 2026-04-26 — its own public repo, fetched via `RAPPSTORE_URL` (default `raw.githubusercontent.com/kody-w/rapp_store/main/index.json`). |
 | `tests/` | JS test runner + integration test scripts |
 | `installer/` | Public install surface — one-liner installers (`install.sh`, `install.ps1`, `install.cmd`), `start-local.sh`, `install-swarm.sh`, `azuredeploy.json` (ARM template), install-widget mirror, and the Tier 3 Copilot Studio bundle (`MSFTAIBASMultiAgentCopilot_*.zip`) |
 | `CONSTITUTION.md` | Repo governance — at root as a peer of `README.md` |

@@ -1042,7 +1042,7 @@ today and every one that will exist tomorrow.
 The kernel provides discovery mechanisms for `agents/` and `services/`,
 but `services/` ships **empty**. Only core agents ship in `agents/`:
 
-| Ships with brainstem (factory image) | Installed on demand (rapp_store) |
+| Ships with brainstem (factory image) | Installed on demand from `kody-w/rapp_store` |
 |--------------------------------------|----------------------------------|
 | ContextMemory, ManageMemory (memory) | LearnNew (agent generation) |
 | HackerNews (starter/test) | SwarmFactory (workshop → singleton) |
