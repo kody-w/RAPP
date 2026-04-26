@@ -3109,13 +3109,26 @@ async function bootBinder() {
         // so the bottom-of-chat row isn't cluttered with one card per
         // installed agent on first load.
         const savedHand = LS.get('hand', null);
-        if (Array.isArray(savedHand)) {
-          // Filter to agents that still exist in the binder (in case
-          // an agent was uninstalled server-side since last visit).
-          const existing = new Set((state.binder.cards || []).map(c => c.filename));
+        const existing = new Set((state.binder.cards || []).map(c => c.filename));
+        const handDefaultRev = LS.get('handDefaultRev', 0);
+        if (handDefaultRev < 1) {
+          // One-shot upgrade for everyone — existing AND new users.
+          // Prior versions auto-loaded only STARTER_AGENT_FILES into the
+          // hand (typically just hacker_news_agent.py matched on local),
+          // so most users had cards mode showing a single card despite
+          // having 5+ agents loaded server-side. The server exposes all
+          // loaded agents to the LLM regardless of client hand, so the
+          // hand should default to "all of them" — then user pruning is
+          // honored on subsequent boots.
+          state.hand = new Set([...existing]);
+          LS.set('handDefaultRev', 1);
+        } else if (Array.isArray(savedHand)) {
+          // Returning user with a curated hand — keep their selection,
+          // filter to what still exists.
           state.hand = new Set(savedHand.filter(f => existing.has(f)));
         } else {
-          state.hand = new Set();
+          // No saved hand — default to all loaded agents.
+          state.hand = new Set([...existing]);
         }
         persistHand();
         // Don't persist the binder under 'binder' localStorage key because
@@ -6237,8 +6250,13 @@ document.body.classList.add('is-local');
   // the existing #twin-panel if one already exists.
   initTwinPresence();
   await bootBinder();
-  // Auto-load all starter agents into the hand so the chat works immediately
-  if (state.hand.size === 0 && state.binder.cards.length > 0) {
+  // bootBinder's local path now defaults the hand to every loaded
+  // agent (with a one-shot upgrade for existing users). Only the
+  // virtual-brainstem fallback path (when /agents/full fails) leaves
+  // the hand empty, in which case auto-load the starter set so the
+  // user gets at least the basics to play with.
+  if (state.hand.size === 0 && state.binder.cards.length > 0
+      && !document.body.classList.contains('is-local')) {
     for (const f of STARTER_AGENT_FILES) {
       if (state.binder.cards.find(c => c.filename === f)) state.hand.add(f);
     }
