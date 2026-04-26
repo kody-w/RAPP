@@ -38,6 +38,12 @@ _DATA_DIR = os.path.join(_BASE_DIR, ".brainstem_data")
 _STATE_FILE = os.path.join(_DATA_DIR, "binder.json")
 _AGENTS_DIR = os.path.join(_BASE_DIR, "agents")
 _SERVICES_DIR = os.path.join(_BASE_DIR, "services")
+# UI files for rapplications that ship an iframe-mounted HTML interface
+# live here, namespaced per rapp id. Served back to the chat UI by the
+# /api/binder/ui/<id>/<file> route below. Kept under .brainstem_data so
+# `git pull` on the kernel repo doesn't blow them away — same logic as
+# the rest of per-install state.
+_UI_BASE_DIR = os.path.join(_DATA_DIR, "rapp_ui")
 # Distros and mirrors are first-class: RAPPSTORE_URL overrides the default
 # catalog. A "RAPP Ubuntu" or "RAPP Arch" fork sets this to its own mirror
 # and binder transparently installs from there. Sacred wire stays the same.
@@ -111,6 +117,7 @@ def _export_egg(rapp_id):
 
     agent_fn = entry.get("agent_filename") or entry.get("filename")
     svc_fn = entry.get("service_filename")
+    ui_fn = entry.get("ui_filename")  # iframe entrypoint, e.g. "index.html"
 
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
@@ -122,6 +129,7 @@ def _export_egg(rapp_id):
             "exported_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "agent_filename": agent_fn,
             "service_filename": svc_fn,
+            "ui_filename": ui_fn,  # null if no iframe UI shipped
         }
         z.writestr("manifest.json", json.dumps(manifest, indent=2))
 
@@ -135,6 +143,16 @@ def _export_egg(rapp_id):
             if os.path.exists(svc_path):
                 z.write(svc_path, "service.py")
 
+        # UI bundle — every file under rapp_ui/<id>/ goes in as ui/<rel>.
+        # Walk recursively so subdirs (css/, img/, js/) are preserved.
+        rapp_ui_dir = os.path.join(_UI_BASE_DIR, rapp_id)
+        if os.path.isdir(rapp_ui_dir):
+            for root, _dirs, files in os.walk(rapp_ui_dir):
+                for fname in files:
+                    full = os.path.join(root, fname)
+                    rel = os.path.relpath(full, rapp_ui_dir)
+                    z.write(full, "ui/" + rel.replace(os.sep, "/"))
+
         # Optional: rapp-scoped state under .brainstem_data/<rapp_id>/
         rapp_state_dir = os.path.join(_DATA_DIR, rapp_id)
         if os.path.isdir(rapp_state_dir):
@@ -142,7 +160,7 @@ def _export_egg(rapp_id):
                 for fname in files:
                     full = os.path.join(root, fname)
                     rel = os.path.relpath(full, rapp_state_dir)
-                    z.write(full, "state/" + rel)
+                    z.write(full, "state/" + rel.replace(os.sep, "/"))
 
     blob = buf.getvalue()
     # Filename keeps both extensions: `.rapplication.egg` — `.rapplication`
@@ -186,6 +204,7 @@ def _import_egg(body):
 
             agent_fn = manifest.get("agent_filename")
             svc_fn = manifest.get("service_filename")
+            ui_fn = manifest.get("ui_filename")
 
             installed = {"id": rapp_id, "version": manifest.get("version", "?")}
 
@@ -204,13 +223,39 @@ def _import_egg(body):
                 installed["service_filename"] = svc_fn
                 files_restored += 1
 
+            # Restore UI bundle (everything under ui/) to rapp_ui/<id>/.
+            # Files must stay within rapp_ui_dir — reject path traversal.
+            rapp_ui_dir = os.path.join(_UI_BASE_DIR, rapp_id)
+            ui_files_seen = []
+            for n in names:
+                if not n.startswith("ui/") or n.endswith("/"):
+                    continue
+                rel = n[len("ui/"):]
+                if not rel or ".." in rel.split("/"):
+                    continue  # path traversal guard
+                target = os.path.join(rapp_ui_dir, rel)
+                # Belt-and-suspenders: realpath stays inside rapp_ui_dir.
+                if not os.path.abspath(target).startswith(os.path.abspath(rapp_ui_dir) + os.sep):
+                    continue
+                os.makedirs(os.path.dirname(target), exist_ok=True)
+                with open(target, "wb") as f:
+                    f.write(z.read(n))
+                ui_files_seen.append(rel)
+                files_restored += 1
+            if ui_files_seen and ui_fn:
+                installed["ui_filename"] = ui_fn
+
             # Restore rapp-scoped state
             rapp_state_dir = os.path.join(_DATA_DIR, rapp_id)
             for n in names:
                 if not n.startswith("state/") or n.endswith("/"):
                     continue
                 rel = n[len("state/"):]
+                if not rel or ".." in rel.split("/"):
+                    continue
                 target = os.path.join(rapp_state_dir, rel)
+                if not os.path.abspath(target).startswith(os.path.abspath(rapp_state_dir) + os.sep):
+                    continue
                 os.makedirs(os.path.dirname(target), exist_ok=True)
                 with open(target, "wb") as f:
                     f.write(z.read(n))
@@ -246,9 +291,64 @@ def handle(method, path, body):
             return {"error": "id required"}, 400
         return _export_egg(rapp_id)
 
-    # POST /api/binder/import — import a .egg cartridge
+    # POST /api/binder/import — import a .egg cartridge from base64 OR URL
     if method == "POST" and path == "import":
+        # If the caller passes an egg_url (raw .egg file on github/cdn),
+        # fetch it server-side and feed the bytes through _import_egg.
+        # Lets the chat UI install eggs by URL without dealing with base64
+        # roundtripping in the browser.
+        if body.get("egg_url") and not body.get("egg_b64"):
+            try:
+                import requests
+                r = requests.get(body["egg_url"], timeout=30)
+                if r.status_code != 200:
+                    return {"error": f"egg download failed: HTTP {r.status_code}"}, 502
+                body = dict(body)
+                body["egg_b64"] = base64.b64encode(r.content).decode("ascii")
+            except Exception as e:
+                return {"error": f"egg download failed: {e}"}, 502
         return _import_egg(body)
+
+    # GET /api/binder/ui/<id>/<path> — serve a rapp's iframe UI files.
+    # Path-traversal guarded: target must stay within rapp_ui/<id>/.
+    if method == "GET" and path.startswith("ui/"):
+        rest = path[len("ui/"):]
+        if "/" not in rest:
+            return {"error": "expected ui/<id>/<file>"}, 400
+        rapp_id, _, rel = rest.partition("/")
+        if not rapp_id or not rel or ".." in rel.split("/"):
+            return {"error": "invalid path"}, 400
+        rapp_ui_dir = os.path.join(_UI_BASE_DIR, rapp_id)
+        target = os.path.abspath(os.path.join(rapp_ui_dir, rel))
+        if not target.startswith(os.path.abspath(rapp_ui_dir) + os.sep):
+            return {"error": "path escape"}, 400
+        if not os.path.isfile(target):
+            return {"error": f"not found: {rel}"}, 404
+        with open(target, "rb") as f:
+            blob = f.read()
+        # Minimal MIME inference — enough to make the browser render
+        # html/css/js/svg/png correctly. Fallback to octet-stream.
+        ext = os.path.splitext(target)[1].lower()
+        mime = {
+            ".html": "text/html; charset=utf-8",
+            ".htm":  "text/html; charset=utf-8",
+            ".css":  "text/css; charset=utf-8",
+            ".js":   "application/javascript; charset=utf-8",
+            ".mjs":  "application/javascript; charset=utf-8",
+            ".json": "application/json; charset=utf-8",
+            ".svg":  "image/svg+xml",
+            ".png":  "image/png",
+            ".jpg":  "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".gif":  "image/gif",
+            ".webp": "image/webp",
+            ".ico":  "image/x-icon",
+            ".woff": "font/woff",
+            ".woff2": "font/woff2",
+            ".txt":  "text/plain; charset=utf-8",
+            ".md":   "text/markdown; charset=utf-8",
+        }.get(ext, "application/octet-stream")
+        return blob, 200, {"Content-Type": mime, "Content-Length": str(len(blob))}
 
     # POST /api/binder/install — install a rapplication by id, optionally pinned to a version
     if method == "POST" and path == "install":
@@ -307,6 +407,28 @@ def handle(method, path, body):
             _write_to_dir(_SERVICES_DIR, service_filename, content)
             installed["service_filename"] = service_filename
 
+        # UI bundle (optional). Two shapes the catalog can declare:
+        #   ui_egg_url — a .zip/.tar containing the full UI tree. Future.
+        #   ui_url     — a single HTML file. Most common for v1.
+        # When ui_url is set, fetch the file and drop it into the per-rapp
+        # UI dir so /api/binder/ui/<id>/<filename> can serve it back to the
+        # iframe. ui_filename names the entrypoint (e.g. "index.html").
+        ui_url = entry.get("ui_url")
+        ui_filename = entry.get("ui_filename") or "index.html"
+        if ui_url:
+            try:
+                import requests
+                r = requests.get(ui_url, timeout=30)
+                if r.status_code != 200:
+                    return {"error": f"ui download failed: HTTP {r.status_code}"}, 502
+                rapp_ui_dir = os.path.join(_UI_BASE_DIR, rapp_id)
+                os.makedirs(rapp_ui_dir, exist_ok=True)
+                with open(os.path.join(rapp_ui_dir, ui_filename), "wb") as f:
+                    f.write(r.content)
+                installed["ui_filename"] = ui_filename
+            except Exception as e:
+                return {"error": f"ui download failed: {e}"}, 502
+
         if "agent_filename" not in installed and "service_filename" not in installed:
             return {"error": "rapplication has neither agent nor service files"}, 400
 
@@ -337,6 +459,13 @@ def handle(method, path, body):
         if rapp_id not in KERNEL_PROTECTED and (svc_fn or "") not in KERNEL_PROTECTED:
             _remove_from_dir(_AGENTS_DIR, agent_fn)
             _remove_from_dir(_SERVICES_DIR, svc_fn)
+            # Wipe the rapp's UI bundle too — leaving stale HTML behind
+            # would mean a future install of the same id could load files
+            # the new version didn't ship. Scoped to this rapp's dir only.
+            rapp_ui_dir = os.path.join(_UI_BASE_DIR, rapp_id)
+            if os.path.isdir(rapp_ui_dir):
+                import shutil
+                shutil.rmtree(rapp_ui_dir, ignore_errors=True)
 
         state["installed"] = [e for e in state["installed"] if e.get("id") != rapp_id]
         _write(state)

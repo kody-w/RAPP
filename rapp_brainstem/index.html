@@ -1591,14 +1591,30 @@
         const displayName = r.name || r.id;
         const cat = r.category ? `<span style="font-size:9px;background:#1f6feb22;color:#58a6ff;padding:1px 5px;border-radius:3px;margin-left:6px">${esc(r.category)}</span>` : '';
         const svc = r.service_filename ? `<span style="font-size:9px;color:#8b949e;margin-left:4px">+ service</span>` : '';
-        // A rapplication's UI loads in the iframe overlay. Resolution rules:
-        //   - r.ui_url (absolute) → use directly (works standalone or tethered)
-        //   - r.service_filename + tether → tetherUrl + /api/<svc>/
-        //   - r.service_filename + no tether → no Open button (we can't reach it)
+        // A rapplication's UI loads in the iframe overlay. Resolution rules,
+        // in priority order:
+        //   1. Installed locally + ui_filename present in the binder.json
+        //      entry → /api/binder/ui/<id>/<file>. This is same-origin, so
+        //      the iframe can call /chat (and any other brainstem route)
+        //      without CORS hassles. Required for any rapp UI that wants
+        //      to invoke the agent the rapp shipped with.
+        //   2. Catalog declares an absolute ui_url → use directly. Works
+        //      for static UIs that don't need to talk back, but cross-
+        //      origin /chat calls will be blocked.
+        //   3. Pure-service rapp on tether → tetherBase + /api/<svc>/.
+        //   4. Nothing → no Open button.
+        const isLocal = document.body.classList.contains('is-local');
         const svcName = (r.service_filename || '').replace(/_service\.py$/, '');
         const tetherBase = (state.settings.tetherUrl || '').replace(/\/+$/, '');
-        const uiUrl = r.ui_url
-          || (svcName && tetherBase ? `${tetherBase}/api/${svcName}/` : '');
+        const localBinderBase = isLocal ? '' : tetherBase;
+        let uiUrl = '';
+        if (r.ui_filename && installed) {
+          uiUrl = `${localBinderBase}/api/binder/ui/${encodeURIComponent(r.id)}/${encodeURIComponent(r.ui_filename)}`;
+        } else if (r.ui_url) {
+          uiUrl = r.ui_url;
+        } else if (svcName && tetherBase) {
+          uiUrl = `${tetherBase}/api/${svcName}/`;
+        }
         const openBtn = (installed && uiUrl)
           ? `<button class="primary" data-open="${esc(r.id)}" data-url="${esc(uiUrl)}" data-name="${esc(displayName)}">Open ▸</button>`
           : '';
@@ -1823,7 +1839,9 @@
     </div>
     <button class="rf-close" onclick="closeRappFrame()">✕ Close</button>
   </div>
-  <iframe id="rf-iframe" title="Rapplication UI"></iframe>
+  <iframe id="rf-iframe" title="Rapplication UI"
+          allowfullscreen
+          allow="fullscreen; clipboard-read; clipboard-write; camera; microphone; geolocation"></iframe>
 </div>
 
 <div id="chat">
