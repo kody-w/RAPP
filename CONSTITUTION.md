@@ -1420,6 +1420,104 @@ remembers why we made it that way.*
 
 ---
 
+## Article XXIV — Senses Are Agent-First; Frontends Are Modular Consumers
+
+The agent's response channels are the agent's **senses**. The agent
+emits every sense unconditionally on every reply. Frontends are
+modular consumers — each one picks the senses it cares about and
+ignores the rest.
+
+The two system senses today:
+
+- **`voice_response`** (the `|||VOICE|||` slot) — a short spoken
+  version of the reply, suitable for text-to-speech.
+- **`twin_response`** (the `|||TWIN|||` slot) — the twin's reaction:
+  the `<frame>` ASCII art for the operator's terminal, plus
+  optional probes / calibrations / telemetry / actions for any UI
+  that wants them.
+
+These two are baked in. **More senses can be added over time as the
+organism evolves** — a video sense, a haptic cue, a debug-trace
+sense, an emotion sense, anything an agent author ships behind a
+slot. The pattern is the same for every new sense.
+
+### The pattern for adding a sense
+
+A sense is added by:
+
+1. **Allocating a slot delimiter.** Pick `|||<SLOT>|||` (caps,
+   hyphen-free). Once allocated, the slot is fixed forever (Article
+   II / Sacred Constraint #5).
+2. **Teaching the system prompt to emit it.** The brainstem's
+   default soul (or any rapplication's soul) instructs the model to
+   author a `|||<SLOT>|||` block on every reply. **Always — never
+   gated on a frontend's preference.**
+3. **Splitting it on the server side.** Add the sense's field to the
+   chat response result dict (e.g. `result["video_response"]`).
+   **Always populate it when the LLM emits the slot — never gated.**
+4. **Letting consumers opt in.** Each frontend reads the field it
+   wants. Frontends that don't care about the sense ignore the field.
+
+That's the whole pattern.
+
+### What this rules out
+
+- **Frontend buttons that POST to the server to "enable" a sense.**
+  A mic button does not call `/voice/toggle`. A twin-panel show
+  button does not call `/twin/toggle`. UI toggles that relate to a
+  sense are *purely local state* — they decide whether THIS browser
+  plays / renders / consumes the sense, persisted to localStorage,
+  never sent to the server.
+- **Frontend init that GETs server state to learn whether the sense
+  exists.** No `fetch('/voice')` to learn `voice_mode`. The browser
+  decides on its own whether it cares.
+- **Backend gates that look at a server-side flag (e.g.
+  `VOICE_MODE`) to decide whether to emit a sense.** The chat path
+  emits every sense unconditionally. Env-var flags can stay for
+  decorative `/voice`, `/twin` status endpoints, but they MUST NOT
+  gate the chat-path system prompt or the response splitter.
+- **Removing a sense once allocated.** Per Article XXV, the chat
+  envelope is additive-only. A sense field, once shipped, is
+  shipped forever (it can be empty when the LLM didn't author one
+  that turn — but the field key never disappears).
+
+### Why this matters
+
+- **Modularity.** The same chat response is consumed by the local web
+  UI, mobile shells, voice-only embeds, transcription pipelines,
+  peer brainstems, MCP clients, and future agents-as-clients. If
+  the agent gates on one consumer's UI preference, every other
+  consumer is starved. A voice-only embed needs `voice_response`
+  whether or not someone else's browser has the mic icon lit.
+- **Agent-first (Article III).** Every rapplication must work fully
+  through the agent alone. The service / UI is always optional — a
+  view, not the application. A view doesn't get to silence the
+  agent's outputs.
+- **Slots are fixed forever (Article II).** A slot is part of the
+  agent contract, not a UI feature. Treating slots as opt-in via UI
+  toggles repurposes them as decoration on top of the main reply,
+  which is the opposite of what the slot mechanism is for.
+- **Decoupled growth.** The organism evolves new senses by adding
+  slots; no consumer is required to update. Old clients keep
+  reading the senses they already understood; new clients pick up
+  the new ones. The chat envelope is the neutral surface that lets
+  consumers and senses scale independently.
+
+### The mental model
+
+The agent has senses the way a person has senses. The agent doesn't
+ask "should I have hearing today?" — it just hears, and reports
+what it heard, every turn. Other entities decide whether they care
+about that report. A blind reader doesn't ask the speaker to stop
+seeing; they just don't read the visual fields.
+
+The brainstem's job is to make sure every sense fires every turn,
+into the chat envelope, where any consumer can pick it up. New
+senses are additions to the brainstem's perception, not features
+that get toggled on per-client.
+
+---
+
 ## Article XXV — Chat Is The Only Wire (Time-Travel Safe)
 
 `/chat` is the universal interface. A human typing into the chat UI, an
