@@ -318,7 +318,17 @@
     display: flex; align-items: flex-start; gap: 10px;
   }
   .browse-row:hover { border-color: #30363d; }
-  .browse-row .br-main { flex: 1; min-width: 0; }
+  .browse-row .br-main {
+    flex: 1; min-width: 0;
+    cursor: pointer;  /* whole row body opens the grail card modal */
+    transition: opacity .12s;
+  }
+  .browse-row .br-main:hover { opacity: .92; }
+  .browse-row .br-main.loading { opacity: .55; cursor: wait; }
+  /* Chips and the meta row inside .br-main keep their own cursors —
+     a clickable chip should still feel like a chip, not part of the
+     row-click affordance. */
+  .browse-row .br-main .chip-clickable { cursor: pointer; }
   .browse-row .br-name {
     font-size: 12px; font-weight: 600; color: #e6edf3; line-height: 1.3;
   }
@@ -3459,6 +3469,12 @@ async function fetchSourceRegistry(repo) {
               _file: r.singleton_filename || `${r.id}.py`,
               _install_method: 'binder',
               _rapp_id: r.id,
+              // Preserve the absolute singleton_url too — needed by the
+              // "click row to see grail card" path, which fetches the
+              // .py source out-of-band of install. For raw agents the
+              // URL is computed from repo+branch+_file; for binder
+              // rapplications the catalog ships the URL directly.
+              _singleton_url: r.singleton_url || '',
             })).filter(a => a._rapp_id),
           };
         }
@@ -3646,6 +3662,18 @@ function renderBrowse() {
     if (!isInstalled) {
       row.querySelector('.br-add').addEventListener('click', e => installFromRegistry(repo, branch, agent, e.currentTarget));
     }
+    // Click anywhere on .br-main (the row body — name/desc/meta) opens
+    // the grail card modal. The Add button has its own listener and
+    // sits outside .br-main so it's unaffected. Chips inside .br-main
+    // are clickable too (filter dispatch via the delegated #browse-list
+    // handler); we stop propagation there so chip clicks don't double-
+    // fire as a card open.
+    const main = row.querySelector('.br-main');
+    main.title = 'Click for full card';
+    main.addEventListener('click', e => {
+      if (e.target.closest('.chip-clickable')) return;  // chips own their click
+      openRegistryCardModal(repo, branch, agent, main);
+    });
     list.appendChild(row);
   }
   if (entries.length > MAX) {
@@ -3659,6 +3687,47 @@ function renderBrowse() {
     empty.style.cssText = 'padding:18px;color:#6e7681;font-size:11px;text-align:center;';
     empty.textContent = q ? 'No agents match that filter.' : 'No agents loaded yet.';
     list.appendChild(empty);
+  }
+}
+
+// Click-a-row-to-see-grail-card flow. Fetches the .py source for a
+// catalog entry (we don't ship the source in the registry payload to
+// keep it cheap), mints a Card via RAPP.Card.mintCard so the existing
+// openCardModal renderer accepts it, and opens. Cached per (repo,
+// branch, _file) so re-clicking the same row doesn't re-fetch.
+const _registryCardCache = new Map();
+async function openRegistryCardModal(repo, branch, agent, mainEl) {
+  const key = `${repo}|${branch}|${agent._file || agent._rapp_id || agent.name}`;
+  if (_registryCardCache.has(key)) {
+    openCardModal(_registryCardCache.get(key));
+    return;
+  }
+  if (mainEl) { mainEl.classList.add('loading'); mainEl.title = 'Loading card…'; }
+  try {
+    // Resolve the source URL. For raw single-file agents, build it
+    // from repo + branch + _file. For binder rapplications, use the
+    // absolute _singleton_url the catalog supplies.
+    let url;
+    if (agent._install_method === 'binder' && agent._singleton_url) {
+      url = agent._singleton_url;
+    } else if (agent._file) {
+      url = `https://raw.githubusercontent.com/${repo}/${branch}/${agent._file}`;
+    } else {
+      throw new Error('no source URL available for this entry');
+    }
+    const r = await fetch(url, { cache: 'no-store' });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const src = await r.text();
+    const filename = (agent._file || '').split('/').pop()
+      || `${(agent.name || 'agent').replace(/\W+/g, '_')}_agent.py`;
+    const card = await RAPP.Card.mintCard(src, filename);
+    _registryCardCache.set(key, card);
+    openCardModal(card);
+  } catch (e) {
+    console.error('[grail] mint failed:', e);
+    alert(`Couldn't load the card: ${e.message}`);
+  } finally {
+    if (mainEl) { mainEl.classList.remove('loading'); mainEl.title = 'Click for full card'; }
   }
 }
 
