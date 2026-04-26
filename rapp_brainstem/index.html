@@ -498,30 +498,38 @@
   .msg.system .bubble strong { color: #c9d1d9; }
   .msg.system .bubble .iconify { vertical-align: middle; width: 1.25em; height: 1.25em; color: #8b949e; }
 
-  /* Agent activity — small chip beneath the assistant bubble; click to peek
-     at the raw tool output. One row per call; multiple stack vertically. */
+  /* Agent activity — always-visible chip ("▶ AGENT CALLED ManageMemory")
+     beneath the assistant bubble. Click the chip to slide open the body
+     with args + result. One row per call; multiple stack vertically.
+     Replaces the prior native <details> approach where the agent name
+     was hidden until the user discovered the disclosure triangle. */
   .agent-log { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
-  .agent-log details {
+  .agent-log .al-row {
     border: 1px solid #21262d; border-radius: 6px;
     background: rgba(13,17,23,.6); overflow: hidden;
   }
-  .agent-log details summary {
+  .agent-log .al-chip {
     display: flex; align-items: center; gap: 6px;
     padding: 5px 10px;
-    color: #8b949e; font-size: 11px;
-    cursor: pointer; user-select: none; list-style: none;
+    color: #8b949e; font-size: 10px;
+    text-transform: uppercase; letter-spacing: .6px;
+    cursor: pointer; user-select: none;
+    transition: background .12s, border-color .12s;
   }
-  .agent-log details summary::-webkit-details-marker { display: none; }
-  .agent-log details summary::before {
-    content: '›'; color: #58a6ff; font-size: 13px; line-height: 1;
+  .agent-log .al-chip:hover { background: rgba(13,17,23,.9); }
+  .agent-log .al-arrow {
+    color: #58a6ff; font-size: 11px; line-height: 1;
     transition: transform .15s; display: inline-block; width: 8px;
   }
-  .agent-log details[open] summary::before { transform: rotate(90deg); }
-  .agent-log details summary .icon {
-    width: 11px; height: 11px; color: #58a6ff; vertical-align: middle;
+  .agent-log .al-row.open .al-arrow { transform: rotate(90deg); }
+  .agent-log .al-chip .icon { width: 11px; height: 11px; color: #58a6ff; }
+  .agent-log .al-label { color: #6e7681; }
+  .agent-log .al-name {
+    color: #d2a8ff; font-weight: 700; letter-spacing: 0;
+    text-transform: none; font-size: 11px; margin-left: 2px;
   }
-  .agent-log .al-name { color: #c9d1d9; font-weight: 600; }
-  .agent-log details:hover { border-color: #30363d; background: rgba(13,17,23,.85); }
+  .agent-log .al-err { color: #f85149; margin-left: auto; }
+  .agent-log .al-row:hover { border-color: #30363d; background: rgba(13,17,23,.85); }
   .agent-log .al-section {
     padding: 4px 10px 2px; background: #0d1117;
     font-size: 9px; color: #6e7681;
@@ -4431,11 +4439,18 @@ async function chatLoop(userInput) {
   // string of one-line summaries — for the new chassis we don't render
   // them as the structured detail panels the virtual UI used; future
   // pass can wire that back if useful.
+  // agent_logs is the structured array the brainstem now ships:
+  // [{name, args, output, error?}, ...]. Older brainstems (pre-arrays)
+  // returned a joined string under the same key; in that case we just
+  // pass the empty array through so appendMsg shows nothing rather
+  // than crashing on .map. agent_logs_text is the back-compat string.
+  const rawLogs = data.agent_logs;
+  const logsArr = Array.isArray(rawLogs) ? rawLogs : [];
   return {
     text: (data.response ?? data.assistant_response ?? '').toString(),
     voice: (data.voice ?? '').toString(),
     twin: '',  // explicitly dropped — twin removed from the local UI
-    agent_logs: [],
+    agent_logs: logsArr,
   };
 }
 
@@ -5283,31 +5298,53 @@ function appendMsg(role, text, agent_logs) {
     html = html.replace(/<a\s+href=/g, '<a target="_blank" rel="noopener noreferrer" href=');
   }
   let logHtml = '';
-  if (agent_logs && agent_logs.length) {
+  if (agent_logs && Array.isArray(agent_logs) && agent_logs.length) {
+    // Each agent call gets a SMALL ALWAYS-VISIBLE chip ("▶ AGENT CALLED
+    // <Name>") under the assistant bubble. The user sees at a glance
+    // which tool fired without expanding anything. Click the chip →
+    // body slides open with args + result. Matches the legacy rapp-
+    // installer brainstem UI; the previous <details>-based version
+    // hid the agent name entirely until the user discovered it.
     logHtml = `<div class="agent-log">${agent_logs.map(l => {
       // "RecallMemory" → "Recall Memory" so the line reads naturally.
       const pretty = String(l.name || 'Agent').replace(/([a-z])([A-Z])/g, '$1 $2');
       const hasArgs = l.args && Object.keys(l.args).length > 0;
-      // Args go INSIDE the expanded body — collapsed summary stays clean.
       const argsBlock = hasArgs
         ? `<div class="al-section">args</div><pre class="al-pre args">${escapeHtml(JSON.stringify(l.args, null, 2))}</pre>`
         : '';
       const outStr = typeof l.output === 'string' ? l.output : JSON.stringify(l.output, null, 2);
+      const errBadge = l.error ? `<span class="al-err">⚠</span>` : '';
       return `
-        <details>
-          <summary>${icon('spark')} <span class="al-name">${escapeHtml(pretty)}</span> agent called</summary>
-          ${argsBlock}
-          <div class="al-section">result</div>
-          <pre class="al-pre">${escapeHtml(outStr)}</pre>
-        </details>`;
+        <div class="al-row">
+          <div class="al-chip" data-toggle="al">
+            <span class="al-arrow">▸</span>
+            ${icon('spark')}
+            <span class="al-label">agent called</span>
+            <span class="al-name">${escapeHtml(pretty)}</span>
+            ${errBadge}
+          </div>
+          <div class="al-body" hidden>
+            ${argsBlock}
+            <div class="al-section">result</div>
+            <pre class="al-pre">${escapeHtml(outStr)}</pre>
+          </div>
+        </div>`;
     }).join('')}</div>`;
   }
   div.innerHTML = `<div class="avatar">${ic}</div><div class="bubble">${html}${logHtml}</div>`;
   $('#chat').appendChild(div);
-  // Expanding an agent-log <details> grows the bubble — keep the bottom
-  // visible so the user doesn't have to chase it manually.
-  div.querySelectorAll('.agent-log details').forEach(d => {
-    d.addEventListener('toggle', () => { if (d.open) scrollChat(); });
+  // Click an agent-log chip → toggle its body. Rotates the ▸ arrow via
+  // the .open class, then re-scrolls so the expanding row doesn't push
+  // the chat past the visible window.
+  div.querySelectorAll('.agent-log .al-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const row = chip.closest('.al-row');
+      const body = row.querySelector('.al-body');
+      const opening = body.hasAttribute('hidden');
+      if (opening) body.removeAttribute('hidden'); else body.setAttribute('hidden', '');
+      row.classList.toggle('open', opening);
+      if (opening) scrollChat();
+    });
   });
   scrollChat();
   return div;

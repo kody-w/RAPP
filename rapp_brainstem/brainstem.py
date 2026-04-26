@@ -238,57 +238,10 @@ _TWIN_COLORS = {
 }
 _TWIN_RESET = "\033[0m"
 
-# Canned art for in-flight states — boot, mid-API-call, mid-tool-run,
-# error. Used when no LLM <frame> is available. One scene per mood,
-# pre-fitted to the canvas. The position drift in _twin_state still
-# applies so consecutive frames in the same mood subtly shift.
-_TWIN_CANNED = {
-    "awake": [
-        "                                            ",
-        "                  o                         ",
-        "                 /|\\                        ",
-        "                 / \\                        ",
-        "             ~ awake ~                      ",
-    ],
-    "thinking": [
-        "                                            ",
-        "                 o..                        ",
-        "                 |\\                         ",
-        "                 / \\                        ",
-        "                  .                         ",
-    ],
-    "working": [
-        "                                            ",
-        "                \\o>>                        ",
-        "                 |                          ",
-        "                / \\                         ",
-        "              *  *  *                       ",
-    ],
-    "puzzled": [
-        "                                            ",
-        "                  ?                         ",
-        "                 <|>                        ",
-        "                 / \\                        ",
-        "                                            ",
-    ],
-    "error": [
-        "                                            ",
-        "                 x_x                        ",
-        "                 \\|/                        ",
-        "                 / \\                        ",
-        "             --- snag ---                   ",
-    ],
-    # 'done' has no canned art — the LLM's <frame> drives that mood.
-    # If a 'done' frame fires without any LLM art, _twin_emit falls
-    # back to the 'awake' canvas so the cage isn't visually empty.
-    "done": None,
-}
-
-# Persistent pacing state across frames so the cage feels continuous —
-# horizontal drift, with a bounce off the walls, plus a global frame
-# counter for the header label.
-_twin_state = {"pos": 0, "dir": 1, "frame": 0}
-_TWIN_PACE_RANGE = 4  # max horizontal shift in chars (smaller canvas now)
+# Pacing state — frame counter only. The previous version drifted the
+# canned art horizontally per call to imply life; with canned art gone,
+# the LLM controls composition entirely so no drift is needed.
+_twin_state = {"frame": 0}
 
 
 def _normalize_canvas(art_lines):
@@ -317,49 +270,27 @@ def _normalize_canvas(art_lines):
     return lines
 
 
-def _twin_emit(mood="working", figure=None):
-    """Render one frame of the twin in its cage. The figure argument,
-    when supplied, is a list of ASCII strings to draw. Otherwise we
-    fall back to the canned art for the mood. The cage is a fixed
-    height regardless of input — empty rows pad as needed.
+def _twin_emit(mood="done", figure=None):
+    """Render one frame of the twin in its cage — IF the LLM actually
+    shipped a <frame> in this turn's |||TWIN||| block. No <frame> =
+    no cage. The twin lives in the system prompt or it doesn't live;
+    drawing canned art on its behalf would lie about the twin being
+    a real digital organism reacting to the turn.
 
-    figure: optional list of strings (the LLM's hand-authored ASCII).
-            Up to _TWIN_CANVAS_H rows × _TWIN_CANVAS_W cols; clipped
-            otherwise. Comes from the <frame>...</frame> block parsed
-            out of |||TWIN|||."""
+    figure: REQUIRED. List of ASCII strings (the LLM's hand-authored
+            cage content). When None or empty, this function no-ops
+            silently — the operator just sees the [brainstem] telemetry
+            for that turn, no twin frame.
+    mood:   only used to color the cage border."""
     if not TWIN_MODE:
         return
+    if not figure:
+        return  # silent twin → silent terminal; no fake animation
     _twin_state["frame"] += 1
-    _twin_state["pos"] += _twin_state["dir"]
-    if _twin_state["pos"] >= _TWIN_PACE_RANGE:
-        _twin_state["dir"] = -1
-    elif _twin_state["pos"] <= 0:
-        _twin_state["dir"] = 1
-    pos = max(0, min(_TWIN_PACE_RANGE, _twin_state["pos"]))
 
-    # Pick the source art. LLM-supplied wins; else canned for the mood;
-    # else (done with no art) fall back to the awake canvas.
-    if figure:
-        art = figure
-    elif mood in _TWIN_CANNED and _TWIN_CANNED[mood] is not None:
-        art = _TWIN_CANNED[mood]
-    else:
-        art = _TWIN_CANNED["awake"]
-
-    canvas = _normalize_canvas(art)
-
-    # Apply pacing drift — shift each non-empty row by `pos` chars to
-    # the right, clipping back to canvas width. Empty rows stay empty.
-    if pos > 0 and not figure:
-        # Only drift the canned art; LLM-authored frames render where
-        # the model put them (the model controls the composition).
-        shifted = []
-        for line in canvas:
-            if line.strip():
-                shifted.append(((" " * pos) + line)[:_TWIN_CANVAS_W])
-            else:
-                shifted.append(line)
-        canvas = shifted
+    canvas = _normalize_canvas(figure)
+    if not any(line.strip() for line in canvas):
+        return  # all-blank frame from the LLM is also silence
 
     label = f" twin · {mood} · #{_twin_state['frame']} "
     label_pad = label + ("─" * max(0, _TWIN_CANVAS_W + 2 - len(label)))
@@ -1054,15 +985,16 @@ def call_copilot(messages, tools=None):
             body["tool_choice"] = "auto"
 
     print(f"[brainstem] API call: model={MODEL}, tools={len(tools) if tools else 0}, tool_choice={body.get('tool_choice', 'NONE')}")
-    # Twin frame: thinking — canned canvas, no LLM input yet.
-    _twin_emit("thinking")
+    # No twin frame mid-call — the twin only renders when the LLM
+    # ships a real <frame> in its |||TWIN||| block at the end of the
+    # round. Canned in-flight art would be the brainstem pretending
+    # the twin is reacting when it isn't.
 
     resp = requests.post(url, headers=headers, json=body, timeout=60)
     if resp.status_code != 200:
         error_detail = resp.text[:500] if resp.text else "No details"
         _tlog("api.error", {"model": MODEL, "status": resp.status_code, "detail": error_detail[:300]}, level="error")
         print(f"[brainstem] API error {resp.status_code} with model '{MODEL}': {error_detail}")
-        _twin_emit("error")
         # On 400/429/5xx, cycle through other available models before giving up
         if resp.status_code in (400, 429, 500, 502, 503):
             tried = {MODEL}
@@ -1115,7 +1047,7 @@ def call_copilot(messages, tools=None):
         # while the twin is busy. The TWIN's actual voice for this turn
         # comes from the |||TWIN||| block emitted at the end of the
         # whole chat round (see /chat handler), not from per-step lines.
-        _twin_emit("working")
+        # No twin frame mid-tool-call either — same rule as in-flight.
     # No 'speaking' / 'puzzled' frame here anymore — those are emitted
     # in the /chat handler AFTER parsing the |||TWIN||| block out of the
     # final reply. Doing it here would print the assistant content
@@ -1128,6 +1060,11 @@ def call_copilot(messages, tools=None):
 
 
 def run_tool_calls(tool_calls, agents, session_id=None, user_guid=None):
+    """Returns (tool_results_for_messages, structured_logs).
+    structured_logs is a list of dicts shaped {name, args, output, error?}
+    — what the chat UI reads to render the "▶ AGENT CALLED <Name>" chip
+    under the assistant bubble. Previously this was a list of pre-joined
+    strings, which the UI couldn't pick the agent name out of cleanly."""
     results = []
     logs = []
     for tc in tool_calls:
@@ -1147,10 +1084,11 @@ def run_tool_calls(tool_calls, agents, session_id=None, user_guid=None):
         print(f"[brainstem] {fn_name} args: {json.dumps(args)[:200]}")
 
         agent = agents.get(fn_name)
+        log_entry = {"name": fn_name, "args": args, "output": ""}
         if agent:
             try:
                 result = agent.perform(**args)
-                logs.append(f"[{fn_name}] {result}")
+                log_entry["output"] = result
             except TypeError as e:
                 # Agent's perform() doesn't accept user_guid kwarg — drop it and retry.
                 # Backwards compat for older agents that haven't adopted the threaded identity.
@@ -1158,19 +1096,25 @@ def run_tool_calls(tool_calls, agents, session_id=None, user_guid=None):
                     args.pop("user_guid", None)
                     try:
                         result = agent.perform(**args)
-                        logs.append(f"[{fn_name}] {result}")
+                        log_entry["args"] = args
+                        log_entry["output"] = result
                     except Exception as e2:
                         result = f"Error: {e2}"
-                        logs.append(f"[{fn_name}] ERROR: {e2}")
+                        log_entry["output"] = result
+                        log_entry["error"] = str(e2)
                 else:
                     result = f"Error: {e}"
-                    logs.append(f"[{fn_name}] ERROR: {e}")
+                    log_entry["output"] = result
+                    log_entry["error"] = str(e)
             except Exception as e:
                 result = f"Error: {e}"
-                logs.append(f"[{fn_name}] ERROR: {e}")
+                log_entry["output"] = result
+                log_entry["error"] = str(e)
         else:
             result = f"Agent '{fn_name}' not found."
-            logs.append(result)
+            log_entry["output"] = result
+            log_entry["error"] = "agent not found"
+        logs.append(log_entry)
 
         results.append({
             "tool_call_id": tc["id"],
@@ -1282,7 +1226,14 @@ def chat():
             "assistant_response": reply,
             "session_id": session_id,
             "user_guid": user_guid,
-            "agent_logs": "\n".join(all_logs),
+            # Structured array — list of {name, args, output, error?}.
+            # Chat UI uses this directly to render "▶ AGENT CALLED <Name>"
+            # chips under the assistant bubble. Joined-string back-compat
+            # for older clients lives under agent_logs_text.
+            "agent_logs": all_logs,
+            "agent_logs_text": "\n".join(
+                f"[{e['name']}] {e['output']}" for e in all_logs
+            ),
             "voice_mode": VOICE_MODE,
             "twin_mode":  TWIN_MODE,
         }
@@ -2085,5 +2036,7 @@ if __name__ == "__main__":
     _load_pending_login()  # Resume any in-progress device code login
     _tlog("server.ready", {"url": f"http://localhost:{PORT}"})
     # First frame of the flipbook — twin awakens with the agents loaded.
-    _twin_emit("awake")
+    # No twin frame at boot — the LLM hasn't said anything yet, so
+    # there's no twin to render. First frame will appear when the
+    # first chat round produces a real <frame> in |||TWIN|||.
     app.run(host="0.0.0.0", port=PORT, debug=False)
