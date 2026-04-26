@@ -871,10 +871,8 @@
     --tilt-x: 0deg; --tilt-y: 0deg; --shadow-x: 0px; --shadow-y: 12px;
     --mx: 50%; --my: 50%; --angle: 0deg; --px: .5; --py: .5;
     transform: perspective(1000px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
-    transition: transform .4s ease-out, filter .3s ease;
+    transition: transform .4s ease-out;
     cursor: pointer;
-    filter: drop-shadow(var(--shadow-x) var(--shadow-y) 50px rgba(0,0,0,.7))
-            drop-shadow(0 0 30px rgba(201,168,76,.12));
     flex-shrink: 0; position: relative; z-index: 1;
     animation: cardEnter .8s cubic-bezier(.16,1,.3,1) both;
   }
@@ -887,6 +885,13 @@
     position: absolute; inset: 0; border-radius: 14px;
     -webkit-backface-visibility: hidden; backface-visibility: hidden;
     overflow: hidden;
+    /* Filter on .ac-wrap would flatten its 3D children (CSS Transforms L2
+       grouping property) and break backface-visibility — front would show
+       mirrored on flip with no QR back. On .ac-face it's safe: the face is
+       the 3D leaf and its own backface check is unaffected. */
+    filter: drop-shadow(var(--shadow-x) var(--shadow-y) 50px rgba(0,0,0,.7))
+            drop-shadow(0 0 30px rgba(201,168,76,.12));
+    transition: filter .3s ease;
   }
 
   /* Holo front (RAR exact) */

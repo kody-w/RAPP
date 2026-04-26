@@ -976,10 +976,8 @@
     --tilt-x: 0deg; --tilt-y: 0deg; --shadow-x: 0px; --shadow-y: 12px;
     --mx: 50%; --my: 50%; --angle: 0deg; --px: .5; --py: .5;
     transform: perspective(1000px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
-    transition: transform .4s ease-out, filter .3s ease;
+    transition: transform .4s ease-out;
     cursor: pointer;
-    filter: drop-shadow(var(--shadow-x) var(--shadow-y) 50px rgba(0,0,0,.7))
-            drop-shadow(0 0 30px rgba(201,168,76,.12));
     flex-shrink: 0; position: relative; z-index: 1;
     /* Entry animation only — NO `both` / `forwards` fill-mode. With a
        fill-mode, the animation's `to`-keyframe transform stays applied
@@ -1000,6 +998,17 @@
     position: absolute; inset: 0; border-radius: 14px;
     -webkit-backface-visibility: hidden; backface-visibility: hidden;
     overflow: hidden;
+    /* Drop-shadow lives on the faces, NOT on .ac-wrap. `filter` is a
+       CSS Transforms L2 "grouping property" — applied to a 3D-context
+       wrap it forces descendants to flatten, which collapses the back
+       face's rotateY(180deg) to a 2D mirror and makes backface-visibility
+       a no-op (you'd see the front mirrored on flip, with no QR back).
+       On the face it's safe: the face is the leaf of the 3D hierarchy,
+       its content is already 2D, and its own backface-visibility check
+       is unaffected by the grouping. */
+    filter: drop-shadow(var(--shadow-x) var(--shadow-y) 50px rgba(0,0,0,.7))
+            drop-shadow(0 0 30px rgba(201,168,76,.12));
+    transition: filter .3s ease;
   }
 
   /* Holo front (RAR exact) */
