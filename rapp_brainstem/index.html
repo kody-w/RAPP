@@ -981,7 +981,15 @@
     filter: drop-shadow(var(--shadow-x) var(--shadow-y) 50px rgba(0,0,0,.7))
             drop-shadow(0 0 30px rgba(201,168,76,.12));
     flex-shrink: 0; position: relative; z-index: 1;
-    animation: cardEnter .8s cubic-bezier(.16,1,.3,1) both;
+    /* Entry animation only — NO `both` / `forwards` fill-mode. With a
+       fill-mode, the animation's `to`-keyframe transform stays applied
+       forever after the .8s entry, and CSS animations win over regular
+       rules — which silently broke `.ac-wrap.flipped` because its
+       transform got overridden by the pinned animation transform.
+       Without the fill-mode, the regular `.ac-wrap` (default) and
+       `.ac-wrap.flipped` rules govern after the entry completes, so
+       click-to-flip / F-key / Flip-button all work as intended. */
+    animation: cardEnter .8s cubic-bezier(.16,1,.3,1);
   }
   @keyframes cardEnter {
     from { opacity: 0; transform: perspective(1000px) rotateX(4deg) rotateY(0deg) scale(.85) translateZ(-60px); }
