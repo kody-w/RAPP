@@ -6485,7 +6485,10 @@ document.body.classList.add('is-local');
    ────────────────────────────────────────────────────────────── */
 (function voiceMode() {
   let voiceMode = false;
-  let voiceProvider = localStorage.getItem('voice_provider') || 'azure';
+  // Default to the browser's built-in SpeechSynthesisUtterance — works
+  // out of the box, no API key, no 401 spam in the console. Users who
+  // want Azure or ElevenLabs can switch via the gear and Save.
+  let voiceProvider = localStorage.getItem('voice_provider') || 'browser';
   let azSpeechKey = localStorage.getItem('az_speech_key') || '';
   let azSpeechRegion = localStorage.getItem('az_speech_region') || 'eastus';
   let azVoiceName = localStorage.getItem('az_voice_name') || 'en-US-JennyNeural';

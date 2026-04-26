@@ -1159,8 +1159,13 @@ def chat():
                 print(f"[brainstem] system_context failed for {agent.name}: {e}")
 
         system_content = soul + extra_context
-        if VOICE_MODE:
-            system_content += "\n\nIMPORTANT: End every response with |||VOICE||| followed by a concise, conversational version of your answer suitable for text-to-speech. Keep the voice version under 2-3 sentences. The part before |||VOICE||| should be the full formatted response."
+        # Voice block is ALWAYS requested and ALWAYS shipped. The frontend
+        # mic button only decides whether to play the TTS locally — the
+        # server has no business gating the voice channel based on a
+        # client's playback preference. Other clients (mobile shells,
+        # voice-only embeds, transcription pipelines) need the voice line
+        # whether or not this particular browser is speaking.
+        system_content += "\n\nIMPORTANT: End every response with |||VOICE||| followed by a concise, conversational version of your answer suitable for text-to-speech. Keep the voice version under 2-3 sentences. The part before |||VOICE||| should be the full formatted response."
         if TWIN_MODE:
             system_content += (
                 "\n\nTWIN: After the VOICE section (or after the main reply if VOICE is off), "
@@ -1261,9 +1266,12 @@ def chat():
             result["assistant_response"] = result["response"]
         if "|||TWIN|||" in remainder:
             voice_or_main, _, twin_text = remainder.partition("|||TWIN|||")
-            if VOICE_MODE and "|||VOICE|||" in reply:
+            if "|||VOICE|||" in reply:
+                # Always ship the voice block when the LLM emits one — the
+                # frontend decides whether to play it. See system-prompt
+                # comment above.
                 result["voice_response"] = _unwrap(voice_or_main, "voice")
-            elif "|||VOICE|||" not in reply:
+            else:
                 # No VOICE delimiter — the part before |||TWIN||| is the
                 # main reply. Without this branch, response/assistant_response
                 # would still contain the unsplit reply (with |||TWIN||| and
@@ -1272,7 +1280,7 @@ def chat():
                 result["response"] = _unwrap(voice_or_main, "main")
                 result["assistant_response"] = result["response"]
             result["twin_response"] = _unwrap(twin_text, "twin") if TWIN_MODE else ""
-        elif VOICE_MODE and "|||VOICE|||" in reply:
+        elif "|||VOICE|||" in reply:
             result["voice_response"] = _unwrap(remainder, "voice")
 
         # If the response had no slot delimiters at all but the LLM still
