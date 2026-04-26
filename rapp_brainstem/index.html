@@ -6484,7 +6484,11 @@ document.body.classList.add('is-local');
    exposes speakText() globally so the chat-loop hook can call it.
    ────────────────────────────────────────────────────────────── */
 (function voiceMode() {
-  let voiceMode = false;
+  // Local-only "do I play the audio?" flag. Persisted in localStorage so
+  // the user's preference survives reload. Independent of any server
+  // state — the backend always ships voice_response; this just gates
+  // playback in this browser tab.
+  let voiceMode = localStorage.getItem('voice_play') === '1';
   // Default to the browser's built-in SpeechSynthesisUtterance — works
   // out of the box, no API key, no 401 spam in the console. Users who
   // want Azure or ElevenLabs can switch via the gear and Save.
@@ -6723,17 +6727,19 @@ document.body.classList.add('is-local');
     btn.title = voiceMode ? 'Voice mode on' : 'Voice mode off';
   }
 
-  $('btn-voice').addEventListener('click', async () => {
-    try {
-      const r = await fetch('/voice/toggle', {
-        method: 'POST', headers: {'Content-Type':'application/json'}, body: '{}'
-      });
-      const d = await r.json();
-      voiceMode = !!d.voice_mode;
-      updateBtn();
-      if (voiceMode) speakText('Voice mode enabled.', true);
-      else stopSpeaking();
-    } catch (e) { console.error('Voice toggle failed:', e); }
+  // Mic toggle is PURELY local. The server always ships voice_response;
+  // this button only decides whether THIS browser plays it. Agent-first:
+  // the agent produces every channel unconditionally, and each frontend
+  // is a modular consumer that picks what it wants from the response.
+  // No round-trip to /voice/toggle — that would couple the agent's
+  // output to one consumer's UI preference and break the modularity for
+  // every other client of the same chat response.
+  $('btn-voice').addEventListener('click', () => {
+    voiceMode = !voiceMode;
+    localStorage.setItem('voice_play', voiceMode ? '1' : '0');
+    updateBtn();
+    if (voiceMode) speakText('Voice mode enabled.', true);
+    else stopSpeaking();
   });
 
   $('vc-save').addEventListener('click', () => {
@@ -6896,10 +6902,10 @@ document.body.classList.add('is-local');
     }
   });
 
-  fetch('/voice').then(r => r.json()).then(d => {
-    voiceMode = !!d.voice_mode;
-    updateBtn();
-  }).catch(() => {});
+  // Initial mic-button state is purely local — no /voice GET. The
+  // backend's voice_mode flag has nothing to do with whether THIS
+  // browser plays the audio.
+  updateBtn();
 
   // Expose the speaker so the chat-loop hook can call it without a
   // module import. The chat handler already guards via typeof.
