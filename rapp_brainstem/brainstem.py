@@ -68,8 +68,13 @@ AGENTS_PATH  = os.getenv("AGENTS_PATH",  os.path.join(os.path.dirname(__file__),
 SERVICES_PATH = os.getenv("SERVICES_PATH", os.path.join(os.path.dirname(__file__), "services"))
 MODEL        = os.getenv("GITHUB_MODEL", "gpt-4o")
 PORT        = int(os.getenv("PORT", 7071))
-VOICE_MODE  = os.getenv("VOICE_MODE", "false").lower() == "true"
-TWIN_MODE   = os.getenv("TWIN_MODE", "false").lower() == "true"
+# Voice and Twin default ON — the brainstem's terminal twin (see
+# _twin_emit below) is the operator's window into the agent's "world".
+# Watching it pace and react across calls makes non-tech users care
+# about what's happening; turning it off makes the terminal feel dead.
+# Operators who want pure telemetry can set TWIN_MODE=false.
+VOICE_MODE  = os.getenv("VOICE_MODE", "true").lower() == "true"
+TWIN_MODE   = os.getenv("TWIN_MODE", "true").lower() == "true"
 VOICE_ZIP_PW = os.getenv("VOICE_ZIP_PASSWORD", "").encode() or None
 
 _version_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "VERSION")
@@ -198,6 +203,86 @@ def _tlog_autosave():
 
 # Start autosave thread
 threading.Thread(target=_tlog_autosave, daemon=True).start()
+
+# ── Terminal twin (the operator's window into the agent's world) ─────────────
+#
+# Each LLM round emits a small ASCII portrait of the digital twin between
+# the [brainstem] telemetry lines. Static per-call (no animation inside a
+# frame), but state persists across calls — the twin paces left↔right
+# inside its bordered "cage" with a frame counter, so as the chat goes on
+# you see a continuous flipbook of the twin reacting to what's happening.
+# Like a Tamagotchi for the agent.
+#
+# Why bother: telemetry alone is text wallpaper. A bug-cage frame with a
+# face in it gives non-tech users a visual anchor for "the agent is
+# thinking now / working now / done now" — gateway drug to caring about
+# the technical lines underneath. Operators who want pure telemetry set
+# TWIN_MODE=false.
+
+import random as _twin_random
+
+_TWIN_FACES = {
+    "awake":    [r"|^_^|", r"(o.o)", r"|*.*|", r"(O.O)", r"[^v^]"],
+    "thinking": [r"|?_?|", r"(@.@)", r"|...|", r"(o.O)", r"|<.>|"],
+    "working":  [r"|>_<|", r"(>.<)", r"|^.^|", r"(=_=)", r"[*-*]"],
+    "done":     [r"|^_^|", r"(:^))", r"|+_+|", r"(^o^)", r"[\o/]"],
+    "puzzled":  [r"|?.?|", r"(0.0)", r"|x.x|", r"(O_o)", r"[?_?]"],
+    "error":    [r"|x_x|", r"(T_T)", r"|>.<|", r"(@_@)", r"[X_X]"],
+}
+_TWIN_COLORS = {
+    "awake":    "\033[36m",  # cyan
+    "thinking": "\033[35m",  # magenta
+    "working":  "\033[33m",  # yellow
+    "done":     "\033[32m",  # green
+    "puzzled":  "\033[33m",  # yellow
+    "error":    "\033[31m",  # red
+}
+_TWIN_RESET = "\033[0m"
+_TWIN_DIM = "\033[2m"
+
+# Persistent state — pacing position + direction + frame count. Builds
+# the flipbook continuity: pos drifts left/right per call, bouncing off
+# the walls so the twin never escapes the cage. Mood + face are fresh
+# per call but the position carries.
+_twin_state = {"pos": 0, "dir": 1, "frame": 0}
+_TWIN_CAGE_W = 8  # 0..7 horizontal positions
+
+def _twin_emit(message="", mood="working"):
+    """Render one frame of the twin in its cage."""
+    if not TWIN_MODE:
+        return
+    _twin_state["frame"] += 1
+    # Bounce position off the cage walls so the twin paces back and
+    # forth instead of stacking against an edge or wrapping unpredictably.
+    _twin_state["pos"] += _twin_state["dir"]
+    if _twin_state["pos"] >= _TWIN_CAGE_W - 1:
+        _twin_state["dir"] = -1
+    elif _twin_state["pos"] <= 0:
+        _twin_state["dir"] = 1
+    pos = max(0, min(_TWIN_CAGE_W - 1, _twin_state["pos"]))
+
+    pool = _TWIN_FACES.get(mood, _TWIN_FACES["working"])
+    face = _twin_random.choice(pool)
+    msg = (message or "").strip().replace("\n", " ")[:48]
+
+    width = 55  # internal width of the cage
+    indent_face = (" " * (pos * 6)) + face
+    line_face = indent_face.ljust(width)[:width]
+    line_msg = ("  " + msg).ljust(width)[:width]
+
+    label = f" twin · {mood} · #{_twin_state['frame']} "
+    label_pad = label + ("─" * max(0, width - len(label)))
+    bottom = "─" * width
+
+    use_color = sys.stdout.isatty()
+    col = _TWIN_COLORS.get(mood, "") if use_color else ""
+    rst = _TWIN_RESET if use_color else ""
+    print(f"  {col}╭{label_pad}╮{rst}")
+    print(f"  {col}│{rst}{line_face}{col}│{rst}")
+    print(f"  {col}│{rst}{line_msg}{col}│{rst}")
+    print(f"  {col}╰{bottom}╯{rst}")
+    sys.stdout.flush()
+
 
 # ── GitHub token ──────────────────────────────────────────────────────────────
 
@@ -861,12 +946,25 @@ def call_copilot(messages, tools=None):
             body["tool_choice"] = "auto"
 
     print(f"[brainstem] API call: model={MODEL}, tools={len(tools) if tools else 0}, tool_choice={body.get('tool_choice', 'NONE')}")
+    # Twin frame: thinking. Try to surface what's actually being thought
+    # about — last user message in the conversation. Falls back to a
+    # mood-only frame if we can't derive a snippet.
+    _twin_hint = ""
+    try:
+        for _m in reversed(messages or []):
+            if _m.get("role") == "user":
+                _twin_hint = (_m.get("content") or "").strip().split("\n")[0][:40]
+                break
+    except Exception:
+        pass
+    _twin_emit(f"thinking · {_twin_hint}" if _twin_hint else "thinking…", "thinking")
 
     resp = requests.post(url, headers=headers, json=body, timeout=60)
     if resp.status_code != 200:
         error_detail = resp.text[:500] if resp.text else "No details"
         _tlog("api.error", {"model": MODEL, "status": resp.status_code, "detail": error_detail[:300]}, level="error")
         print(f"[brainstem] API error {resp.status_code} with model '{MODEL}': {error_detail}")
+        _twin_emit(f"oops · HTTP {resp.status_code}", "error")
         # On 400/429/5xx, cycle through other available models before giving up
         if resp.status_code in (400, 429, 500, 502, 503):
             tried = {MODEL}
@@ -913,7 +1011,18 @@ def call_copilot(messages, tools=None):
     has_tools = bool(msg.get("tool_calls"))
     print(f"[brainstem] API response: finish_reason={fr}, has_tool_calls={has_tools}, content_len={len(msg.get('content') or '')}")
     if has_tools:
-        print(f"[brainstem]   tool_calls: {[tc.get('function',{}).get('name','?') for tc in msg['tool_calls']]}")
+        names = [tc.get("function", {}).get("name", "?") for tc in msg["tool_calls"]]
+        print(f"[brainstem]   tool_calls: {names}")
+        _twin_emit(f"calling · {', '.join(names)[:36]}", "working")
+    else:
+        # Plain text response — twin "speaks" a brief excerpt of what
+        # it just said, if anything came back. Empty response → puzzled.
+        _content = (msg.get("content") or "").strip()
+        if _content:
+            _excerpt = _content.split("\n")[0][:42]
+            _twin_emit(f"speaking · {_excerpt}", "done")
+        else:
+            _twin_emit("hmm · empty response", "puzzled")
 
     return result
 
@@ -1858,4 +1967,6 @@ if __name__ == "__main__":
     _tlog("server.agents_loaded", {"agents": list(agents.keys()), "services": list(svcs.keys())})
     _load_pending_login()  # Resume any in-progress device code login
     _tlog("server.ready", {"url": f"http://localhost:{PORT}"})
+    # First frame of the flipbook — twin awakens with the agents loaded.
+    _twin_emit(f"awake · {len(agents)} agents · listening on :{PORT}", "awake")
     app.run(host="0.0.0.0", port=PORT, debug=False)
