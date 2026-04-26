@@ -1,10 +1,10 @@
 """
 binder_service.py — package manager for a brainstem (kernel-baked).
 
-Lives in rapp_brainstem/services/ so it ships with the brainstem itself —
-no rapp-store install step needed. The legacy rapp_store/binder/binder_service.py
-mirror is kept in sync for old install paths but the kernel copy is
-canonical going forward.
+Lives in rapp_brainstem/utils/services/ so it ships with the brainstem
+itself — no rapp-store install step needed. The catalog itself lives in
+the separate kody-w/rapp_store repo (split out of kody-w/RAPP on
+2026-04-26); this service fetches index.json from there via RAPPSTORE_URL.
 
 Endpoints:
     GET    /api/binder                    — list installed rapplications
@@ -33,11 +33,15 @@ import zipfile
 name = "binder"
 
 
-_BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# File lives at rapp_brainstem/utils/services/binder_service.py — three
+# dirname() walks reach the brainstem root (file → services → utils → root).
+# The reorg on 2026-04-26 moved services/ under utils/; agents/ stays at
+# the brainstem root, so _AGENTS_DIR vs _SERVICES_DIR resolve asymmetrically.
+_BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _DATA_DIR = os.path.join(_BASE_DIR, ".brainstem_data")
 _STATE_FILE = os.path.join(_DATA_DIR, "binder.json")
 _AGENTS_DIR = os.path.join(_BASE_DIR, "agents")
-_SERVICES_DIR = os.path.join(_BASE_DIR, "services")
+_SERVICES_DIR = os.path.join(_BASE_DIR, "utils", "services")
 # UI files for rapplications that ship an iframe-mounted HTML interface
 # live here, namespaced per rapp id. Served back to the chat UI by the
 # /api/binder/ui/<id>/<file> route below. Kept under .brainstem_data so
@@ -47,7 +51,7 @@ _UI_BASE_DIR = os.path.join(_DATA_DIR, "rapp_ui")
 # Distros and mirrors are first-class: RAPPSTORE_URL overrides the default
 # catalog. A "RAPP Ubuntu" or "RAPP Arch" fork sets this to its own mirror
 # and binder transparently installs from there. Sacred wire stays the same.
-_CATALOG_URL = os.getenv("RAPPSTORE_URL", "https://raw.githubusercontent.com/kody-w/RAPP/main/rapp_store/index.json")
+_CATALOG_URL = os.getenv("RAPPSTORE_URL", "https://raw.githubusercontent.com/kody-w/rapp_store/main/index.json")
 
 
 def _read():

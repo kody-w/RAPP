@@ -27,7 +27,7 @@ import urllib.request
 import urllib.error
 
 
-RAPP_STORE_CATALOG_URL = "https://raw.githubusercontent.com/kody-w/RAPP/main/rapp_store/index.json"
+RAPP_STORE_CATALOG_URL = "https://raw.githubusercontent.com/kody-w/rapp_store/main/index.json"
 
 __manifest__ = {
     "schema": "rapp-agent/1.0",
@@ -121,7 +121,7 @@ class SwarmFactoryAgent(BasicAgent):
                 "                        \"of clean prose. No fluff.\"\n"
                 "    _SOUL_CRITIC     = \"You are a brutal critic. Cut anything weak.\"\n\n"
                 "    # Canonical LLM shim — same as BookFactory's singleton\n"
-                "    # (rapp_store/bookfactory/singleton/bookfactory_agent.py:507).\n"
+                "    # (kody-w/rapp_store, bookfactory/singleton/bookfactory_agent.py).\n"
                 "    # Routes through the brainstem's own dispatcher, which auto-\n"
                 "    # detects provider: Copilot → Azure → OpenAI → Anthropic.\n"
                 "    # The previous template only checked Azure/OpenAI envs and\n"

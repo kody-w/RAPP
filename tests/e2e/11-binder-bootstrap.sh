@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
-# Binder install test (one-liner copies binder locally — no network bootstrap).
+# Binder install test — kernel-baked, no rapp_store copy needed.
 #
-# The one-liner installer (installer/install.sh) clones the full repo,
-# which already contains rapp_store/binder/binder_service.py. The
-# installer's install_binder_locally step copies that file into the
-# brainstem's services/ dir. No fetch, no bootstrap, no banner.
+# Since the catalog moved to kody-w/rapp_store on 2026-04-26, the binder
+# is no longer copied from rapp_store/binder/binder_service.py at install
+# time — it ships kernel-baked at rapp_brainstem/services/binder_service.py
+# and is part of the brainstem itself. The installer's install_binder_locally
+# function is now a no-op happy path; restore-from-git-HEAD is the only
+# fallback.
 #
 # This test verifies:
-#   - install.sh's install_binder_locally function copies binder into services/
+#   - the kernel-baked binder is present after clone
 #   - launching the brainstem makes /api/binder respond 200
 #   - /health does NOT include a bootstrap block (we ripped that out)
 set -euo pipefail
@@ -30,13 +32,12 @@ if lsof -i ":$PORT" -sTCP:LISTEN >/dev/null 2>&1; then
     exit 1
 fi
 
-# Build a sandbox that mirrors the post-install layout: brainstem source
-# + sibling rapp_store dir (the way `git clone` of kody-w/RAPP looks).
-echo "▶ Building sandbox at $SANDBOX (mirrors post-clone layout)..."
+# Build a sandbox that mirrors the post-sparse-clone layout: just
+# rapp_brainstem/. No sibling rapp_store/ — that lives in its own repo now.
+echo "▶ Building sandbox at $SANDBOX (mirrors sparse-clone layout)..."
 rm -rf "$SANDBOX"
-mkdir -p "$SANDBOX/src/rapp_brainstem" "$SANDBOX/src/rapp_store/binder"
+mkdir -p "$SANDBOX/src/rapp_brainstem"
 cp -r rapp_brainstem/* "$SANDBOX/src/rapp_brainstem/"
-cp rapp_store/binder/binder_service.py "$SANDBOX/src/rapp_store/binder/"
 # Borrow auth so /chat works (not strictly needed for this test, but consistent)
 for AUTH_SRC in "$HOME/.brainstem/src/rapp_brainstem" "$HOME/.brainstem"; do
     if [ -f "$AUTH_SRC/.copilot_session" ]; then
@@ -45,20 +46,15 @@ for AUTH_SRC in "$HOME/.brainstem/src/rapp_brainstem" "$HOME/.brainstem"; do
         break
     fi
 done
-# Fresh state — no services/, no .brainstem_data/
-rm -rf "$SANDBOX/src/rapp_brainstem/services" "$SANDBOX/src/rapp_brainstem/.brainstem_data"
+# Fresh state — no .brainstem_data/. Keep services/ since the binder ships there.
+rm -rf "$SANDBOX/src/rapp_brainstem/.brainstem_data"
 
-# Replicate install.sh's install_binder_locally step (one cp).
-echo "▶ Running the equivalent of install.sh's install_binder_locally..."
-mkdir -p "$SANDBOX/src/rapp_brainstem/services"
-cp "$SANDBOX/src/rapp_store/binder/binder_service.py" "$SANDBOX/src/rapp_brainstem/services/binder_service.py"
-
-# ── 1. binder_service.py landed in services/ ─────────────────────────
-if [ ! -f "$SANDBOX/src/rapp_brainstem/services/binder_service.py" ]; then
-    echo "FAIL: services/binder_service.py was not created"
+# ── 1. kernel-baked binder is present (no copy step needed) ──────────
+if [ ! -f "$SANDBOX/src/rapp_brainstem/utils/services/binder_service.py" ]; then
+    echo "FAIL: utils/services/binder_service.py is missing — kernel binder didn't ship"
     exit 1
 fi
-echo "PASS: binder_service.py landed in services/"
+echo "PASS: kernel-baked binder_service.py is present"
 
 # Launch the brainstem
 echo "▶ Launching brainstem on :$PORT..."
