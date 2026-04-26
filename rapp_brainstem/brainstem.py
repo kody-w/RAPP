@@ -229,6 +229,26 @@ _TWIN_FACES = {
     "puzzled":  [r"|?.?|", r"(0.0)", r"|x.x|", r"(O_o)", r"[?_?]"],
     "error":    [r"|x_x|", r"(T_T)", r"|>.<|", r"(@_@)", r"[X_X]"],
 }
+# Pool of twin-flavored "stream of consciousness" snippets per mood.
+# Picked at random per frame so the twin sounds like itself, not like
+# a parrot of the user's input. The body line is "<line> [· <ctx>]" —
+# the twin says SOMETHING, optionally with a brief contextual suffix
+# (tool name, error code) but NEVER the user's message verbatim.
+_TWIN_LINES = {
+    "awake":    ["awake", "stretching", "tools loaded", "good morning", "what's up", "ready"],
+    "thinking": ["hmm…", "let me think", "processing…", "ooh, interesting", "give me a sec",
+                 "mulling it over", "weighing options", "thinking it through", "considering",
+                 "sifting through it"],
+    "working":  ["on it", "checking", "running it", "one sec", "doing the thing", "fetching",
+                 "reaching out", "calling up", "delegating", "passing it along"],
+    "puzzled":  ["huh?", "blank stare", "wait what", "nothing came back", "that's odd",
+                 "no signal", "expected something"],
+    "error":    ["oof", "uh oh", "that broke", "yikes", "not good", "snag", "didn't land",
+                 "stumbled", "swing and a miss"],
+    # 'done' has no pool — the assistant's actual content excerpt is
+    # what the twin "says" in that mood. The twin's voice IS the response.
+    "done":     [],
+}
 _TWIN_COLORS = {
     "awake":    "\033[36m",  # cyan
     "thinking": "\033[35m",  # magenta
@@ -248,7 +268,11 @@ _twin_state = {"pos": 0, "dir": 1, "frame": 0}
 _TWIN_CAGE_W = 8  # 0..7 horizontal positions
 
 def _twin_emit(message="", mood="working"):
-    """Render one frame of the twin in its cage."""
+    """Render one frame of the twin in its cage. `message` is OPTIONAL
+    contextual suffix (tool name, error code, or — for 'done' mood —
+    the assistant's actual content excerpt). The twin's own line comes
+    from _TWIN_LINES[mood] picked at random; we never echo the user's
+    input verbatim — that would make the twin a parrot, not a personality."""
     if not TWIN_MODE:
         return
     _twin_state["frame"] += 1
@@ -263,7 +287,23 @@ def _twin_emit(message="", mood="working"):
 
     pool = _TWIN_FACES.get(mood, _TWIN_FACES["working"])
     face = _twin_random.choice(pool)
-    msg = (message or "").strip().replace("\n", " ")[:48]
+
+    # Compose the body line. For 'done' the message IS the twin's voice
+    # (the assistant's response excerpt) — print it as-is. For every
+    # other mood, prepend a random twin-line so the twin sounds like
+    # itself first, with the contextual suffix (tool name, error code)
+    # appended after a separator. Suffixes are pre-truncated by callers.
+    line_pool = _TWIN_LINES.get(mood, [])
+    twin_line = _twin_random.choice(line_pool) if line_pool else ""
+    ctx = (message or "").strip().replace("\n", " ")
+    if mood == "done":
+        msg = ctx[:48]  # the response excerpt is the twin's voice
+    elif twin_line and ctx:
+        msg = f"{twin_line} · {ctx}"[:48]
+    elif twin_line:
+        msg = twin_line[:48]
+    else:
+        msg = ctx[:48]
 
     width = 55  # internal width of the cage
     indent_face = (" " * (pos * 6)) + face
@@ -946,18 +986,12 @@ def call_copilot(messages, tools=None):
             body["tool_choice"] = "auto"
 
     print(f"[brainstem] API call: model={MODEL}, tools={len(tools) if tools else 0}, tool_choice={body.get('tool_choice', 'NONE')}")
-    # Twin frame: thinking. Try to surface what's actually being thought
-    # about — last user message in the conversation. Falls back to a
-    # mood-only frame if we can't derive a snippet.
-    _twin_hint = ""
-    try:
-        for _m in reversed(messages or []):
-            if _m.get("role") == "user":
-                _twin_hint = (_m.get("content") or "").strip().split("\n")[0][:40]
-                break
-    except Exception:
-        pass
-    _twin_emit(f"thinking · {_twin_hint}" if _twin_hint else "thinking…", "thinking")
+    # Twin frame: thinking. Pure mood — the twin says its own line
+    # ("hmm…" / "let me think" / etc.) without echoing the user's
+    # message back. Echoing was making the twin look like a parrot
+    # instead of a personality. The user's actual message is already
+    # logged via the [brainstem] line above for operators who care.
+    _twin_emit("", "thinking")
 
     resp = requests.post(url, headers=headers, json=body, timeout=60)
     if resp.status_code != 200:
@@ -1013,16 +1047,16 @@ def call_copilot(messages, tools=None):
     if has_tools:
         names = [tc.get("function", {}).get("name", "?") for tc in msg["tool_calls"]]
         print(f"[brainstem]   tool_calls: {names}")
-        _twin_emit(f"calling · {', '.join(names)[:36]}", "working")
-    else:
-        # Plain text response — twin "speaks" a brief excerpt of what
-        # it just said, if anything came back. Empty response → puzzled.
-        _content = (msg.get("content") or "").strip()
-        if _content:
-            _excerpt = _content.split("\n")[0][:42]
-            _twin_emit(f"speaking · {_excerpt}", "done")
-        else:
-            _twin_emit("hmm · empty response", "puzzled")
+        # In-flight working frame — stock line, just a status indicator
+        # while the twin is busy. The TWIN's actual voice for this turn
+        # comes from the |||TWIN||| block emitted at the end of the
+        # whole chat round (see /chat handler), not from per-step lines.
+        _twin_emit(f"{', '.join(names)[:36]}", "working")
+    # No 'speaking' / 'puzzled' frame here anymore — those are emitted
+    # in the /chat handler AFTER parsing the |||TWIN||| block out of the
+    # final reply. Doing it here would print the assistant content
+    # (which may still contain |||VOICE||| / |||TWIN||| markers) instead
+    # of the twin's intended voice.
 
     return result
 
@@ -1225,6 +1259,33 @@ def chat():
             if unwrapped != reply.strip():
                 result["response"] = unwrapped
                 result["assistant_response"] = unwrapped
+
+        # Final twin frame for this chat round. The twin's voice IS the
+        # |||TWIN||| block the LLM generated — the user's digital twin
+        # reacting in first-person to what just happened. Strip XML tags
+        # like <probe>/<calibration>/<telemetry>/<action> that are part
+        # of the twin protocol but not human-readable.
+        # Falls back to a short excerpt of the assistant's main response
+        # if the LLM didn't emit a twin block (silent-twin is allowed).
+        if TWIN_MODE:
+            import re as _re
+            twin_voice = (result.get("twin_response") or "").strip()
+            if twin_voice:
+                # Strip XML protocol tags, collapse whitespace
+                twin_voice = _re.sub(r"<(probe|calibration|telemetry|action)[^>]*?(/>|>.*?</\1>)", "", twin_voice, flags=_re.DOTALL)
+                twin_voice = _re.sub(r"\s+", " ", twin_voice).strip()
+            if twin_voice:
+                _twin_emit(twin_voice, "done")
+            else:
+                # Twin was silent — show a brief excerpt of the main reply
+                # so the cage isn't empty after a turn. Trims voice/twin
+                # markers if anything leaked through.
+                _excerpt = (result.get("response") or "").split("\n")[0]
+                _excerpt = _excerpt.replace("|||VOICE|||", "").replace("|||TWIN|||", "").strip()
+                if _excerpt:
+                    _twin_emit(_excerpt[:48], "done")
+                else:
+                    _twin_emit("", "puzzled")
 
         return jsonify(result)
 
