@@ -407,9 +407,16 @@ class TinyAgent(BasicAgent):
     assertEq(r2, 'Headline. Body copy here');
   });
 
-  await test('soul.md mandates the |||VOICE||| block', () => {
-    const soul = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'soul.md'), 'utf8');
-    assert(/\|\|\|VOICE\|\|\|.*required/i.test(soul.replace(/\n/g, ' ')), 'soul should require the voice block');
+  await test('soul.md instructs the model to emit |||VOICE||| on substantive turns', () => {
+    const soul = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'soul.md'), 'utf8').replace(/\n/g, ' ');
+    // Soul must (a) reference the voice delimiter, (b) tell the model
+    // to emit it on substantive replies. The exact verb (emit / produce
+    // / require) doesn't matter — the directive does.
+    assert(/\|\|\|VOICE\|\|\|/.test(soul), 'soul should reference the voice delimiter');
+    assert(/emit a `?\|\|\|VOICE\|\|\|/.test(soul), 'soul should tell the model to emit the voice block');
+    // Guard against re-introducing the "near-copy of main" phrasing
+    // that caused the model to double-emit content (Apr 2026 regression).
+    assert(!/near.?copy/i.test(soul), 'soul must not tell the model to copy the main reply into voice');
   });
 
   await test('index.html chat hook calls RAPP.Voice.pickVoiceText', () => {
