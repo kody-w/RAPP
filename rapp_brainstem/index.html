@@ -4600,7 +4600,12 @@ async function chatLoop(userInput) {
   const logsArr = Array.isArray(rawLogs) ? rawLogs : [];
   return {
     text: (data.response ?? data.assistant_response ?? '').toString(),
-    voice: (data.voice ?? '').toString(),
+    // Server ships the |||VOICE||| block under `voice_response` (Python
+    // brainstem at brainstem.py:1265/1276). Older/alternative paths may
+    // ship the same content under `voice`. Accept either; never silently
+    // fall back to the main reply (the speaker should NEVER read the
+    // markdown body).
+    voice: (data.voice_response ?? data.voice ?? '').toString(),
     twin: '',  // explicitly dropped — twin removed from the local UI
     agent_logs: logsArr,
   };
