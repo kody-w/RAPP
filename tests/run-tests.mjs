@@ -318,6 +318,109 @@ class TinyAgent(BasicAgent):
     assertEq(back.source, src);
   });
 
+  /* ───── Suite 9b: voice playback contract (Path B) ────────────
+   * Locks in the legacy-parity rule: prefer the |||VOICE||| block,
+   * fall back to a stripped main reply when the model forgets to
+   * emit one, and stay silent when both are empty. The fallback is
+   * what makes voice mode feel "always works" the way the legacy
+   * brainstem did, without re-introducing /voice/toggle coupling. */
+  console.log('\nVoice playback contract (Path B)');
+
+  await test('RAPP.Voice is exposed', () => {
+    assert(RAPP.Voice, 'RAPP.Voice missing');
+    assert(typeof RAPP.Voice.pickVoiceText === 'function', 'pickVoiceText missing');
+    assert(typeof RAPP.Voice.stripMarkdownForVoice === 'function', 'stripMarkdownForVoice missing');
+  });
+
+  await test('pickVoiceText: voice block wins when present', () => {
+    const r = RAPP.Voice.pickVoiceText({
+      voice: 'Two PRs are waiting on you.',
+      text: '## Open PRs\n\n**3 open**, two waiting.\n\nLook at #42 first.',
+    });
+    assertEq(r, 'Two PRs are waiting on you.');
+  });
+
+  await test('pickVoiceText: trims whitespace-only voice and falls back', () => {
+    const r = RAPP.Voice.pickVoiceText({
+      voice: '   \n  ',
+      text: 'Quick reply.',
+    });
+    assertEq(r, 'Quick reply.');
+  });
+
+  await test('pickVoiceText: empty voice → stripped main reply', () => {
+    const r = RAPP.Voice.pickVoiceText({
+      voice: '',
+      text: '## Result\n\n**Done.** See `notes.md` for [details](https://x.test).',
+    });
+    assertEq(r, 'Result. Done. See notes.md for details.');
+  });
+
+  await test('pickVoiceText: both empty → empty string (silent turn)', () => {
+    assertEq(RAPP.Voice.pickVoiceText({ voice: '', text: '' }), '');
+    assertEq(RAPP.Voice.pickVoiceText({}), '');
+    assertEq(RAPP.Voice.pickVoiceText(null), '');
+  });
+
+  await test('pickVoiceText: caps fallback length around 280 chars', () => {
+    const longBody = 'Here is the situation. ' + 'Detail. '.repeat(100);
+    const r = RAPP.Voice.pickVoiceText({ voice: '', text: longBody });
+    assert(r.length <= RAPP.Voice.VOICE_FALLBACK_MAX, `expected ≤ ${RAPP.Voice.VOICE_FALLBACK_MAX}, got ${r.length}`);
+    assert(r.startsWith('Here is the situation.'), 'should start at the top of the body');
+  });
+
+  await test('pickVoiceText: prefers cutting at sentence boundary', () => {
+    const body = 'A'.repeat(100) + '. ' + 'B'.repeat(50) + '. ' + 'C'.repeat(400);
+    const r = RAPP.Voice.pickVoiceText({ voice: '', text: body });
+    assert(r.endsWith('.'), `should end at sentence boundary, got: ${JSON.stringify(r.slice(-30))}`);
+  });
+
+  await test('stripMarkdownForVoice: drops fenced code blocks entirely', () => {
+    const md = 'Run this:\n\n```python\nprint("hi")\n```\n\nThen reload.';
+    const r = RAPP.Voice.stripMarkdownForVoice(md);
+    assertEq(r.includes('print('), false);
+    assertEq(r.includes('```'), false);
+    assert(r.includes('Run this'), 'kept narrative around the code block');
+    assert(r.includes('Then reload'), 'kept narrative after the code block');
+  });
+
+  await test('stripMarkdownForVoice: unwraps inline code, links, bold, italic', () => {
+    const md = 'See `x.py`, **really**, _seriously_, [docs](https://e.test).';
+    const r = RAPP.Voice.stripMarkdownForVoice(md);
+    assertEq(r, 'See x.py, really, seriously, docs.');
+  });
+
+  await test('stripMarkdownForVoice: drops bullet markers but keeps text', () => {
+    const md = '- one\n- two\n- three';
+    const r = RAPP.Voice.stripMarkdownForVoice(md);
+    assertEq(r, 'one two three');
+  });
+
+  await test('stripMarkdownForVoice: collapses paragraph breaks cleanly', () => {
+    // When prior sentence already has terminal punctuation, the
+    // paragraph break collapses to a single space — no awkward "..".
+    const r1 = RAPP.Voice.stripMarkdownForVoice('First.\n\nSecond.\n\nThird.');
+    assertEq(r1, 'First. Second. Third.');
+    // Bare paragraph break (no terminal punctuation) gets a period
+    // inserted so TTS pauses naturally between thoughts.
+    const r2 = RAPP.Voice.stripMarkdownForVoice('Headline\n\nBody copy here');
+    assertEq(r2, 'Headline. Body copy here');
+  });
+
+  await test('soul.md mandates the |||VOICE||| block', () => {
+    const soul = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'soul.md'), 'utf8');
+    assert(/\|\|\|VOICE\|\|\|.*required/i.test(soul.replace(/\n/g, ' ')), 'soul should require the voice block');
+  });
+
+  await test('index.html chat hook calls RAPP.Voice.pickVoiceText', () => {
+    const html = fs.readFileSync(path.join(ROOT, 'rapp_brainstem', 'index.html'), 'utf8');
+    assert(html.includes('RAPP.Voice.pickVoiceText(resp)'),
+      'chat-loop hook should pick spoken text via RAPP.Voice.pickVoiceText');
+    // And must NOT have re-introduced the legacy /voice/toggle round-trip:
+    assert(!/fetch\([^)]*\/voice\/toggle/.test(html),
+      'voice toggle must remain local — no /voice/toggle round-trip');
+  });
+
   /* ───── Suite 10: file presence (digital twin layout) ─────── */
   console.log('\nDigital twin layout');
 

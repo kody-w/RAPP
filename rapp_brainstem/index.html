@@ -4546,13 +4546,22 @@ async function send(userInput) {
     // Keep delimited blocks OUT of conversation history so the model
     // doesn't echo them back; history is just the main reply.
     state.conversation_history.push({ role: 'assistant', content: resp.text });
-    // Speak ONLY the |||VOICE||| block, never the main reply. The voice
-    // channel exists precisely so the assistant can ship a short spoken
-    // line distinct from the long markdown body — falling back to .text
-    // would make the speaker read the entire response and defeat the
-    // split. If the model didn't emit a voice line, voice mode stays
-    // silent for that turn.
-    if (typeof speakText === 'function' && resp.voice) speakText(resp.voice);
+    // Voice playback rule (Path B — legacy-parity reliability fix):
+    //   1. Prefer the |||VOICE||| block. It's the assistant's distilled
+    //      one-liner, exactly the right shape for TTS.
+    //   2. If the model forgot to emit a voice line, fall back to a
+    //      stripped, truncated version of the main reply so a user
+    //      who toggled voice mode on actually hears something. This
+    //      is a purely frontend choice — the agent still ships every
+    //      channel unconditionally; speakText() gates on the local
+    //      voiceMode flag, so off = silent regardless of fallback.
+    //   3. Both empty → silent turn (degenerate case).
+    if (typeof speakText === 'function') {
+      const spoken = (window.RAPP && RAPP.Voice)
+        ? RAPP.Voice.pickVoiceText(resp)
+        : (resp.voice || '');
+      if (spoken) speakText(spoken);
+    }
     if (resp.twin) renderTwinPanel(resp.twin);
     state.fullTranscript.push({ at: new Date().toISOString(), user: userInput, assistant: resp.text, voice: resp.voice, twin: resp.twin, agent_logs: resp.agent_logs, model: state.settings.model });
   } catch (e) {

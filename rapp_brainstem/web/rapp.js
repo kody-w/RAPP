@@ -566,6 +566,58 @@
     return binder;
   }
 
+  /* ───── Voice playback helpers ─────────────────────────────────
+   * Pure, DOM-free helpers for picking what TTS should say given a
+   * parsed chat response { text, voice }. Lives here (not in
+   * index.html) so the Node test runner can assert the contract.
+   *
+   * Rule (Path B from the legacy-parity exercise): prefer the
+   * `|||VOICE|||` block — it's the assistant's distilled spoken line.
+   * If empty, fall back to a stripped, truncated version of the main
+   * reply so a user with voice mode toggled on still hears something.
+   * The fallback is a frontend-only choice: the agent doesn't know
+   * the user enabled local playback. ──────────────────────────── */
+  function stripMarkdownForVoice(s) {
+    if (!s) return '';
+    return s
+      .replace(/```[\s\S]*?```/g, ' ')                  // fenced code blocks → drop
+      .replace(/`([^`]+)`/g, '$1')                      // inline code → unwrap
+      .replace(/!\[[^\]]*\]\([^)]+\)/g, '')             // images → drop
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')          // links → label only
+      .replace(/^\s{0,3}#{1,6}\s+/gm, '')               // ATX headings
+      .replace(/^\s*>\s?/gm, '')                        // blockquote markers
+      .replace(/^\s*[-*+]\s+/gm, '')                    // bullet markers
+      .replace(/^\s*\d+\.\s+/gm, '')                    // ordered list markers
+      .replace(/\*\*([^*]+)\*\*/g, '$1')                // **bold**
+      .replace(/__([^_]+)__/g, '$1')                    // __bold__
+      .replace(/\*([^*\n]+)\*/g, '$1')                  // *italic*
+      .replace(/(?<![A-Za-z0-9])_([^_\n]+)_(?![A-Za-z0-9])/g, '$1') // _italic_
+      .replace(/\|/g, ' ')                              // table pipes
+      .replace(/([.!?])\s*\n{2,}/g, '$1 ')              // sentence-end then break → collapse
+      .replace(/\n{2,}/g, '. ')                         // bare paragraph break → sentence
+      .replace(/\n/g, ' ')                              // soft newlines
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  // Cap fallback length so a 5-page essay doesn't get read aloud.
+  // ~280 chars ≈ 2-3 sentences in browser TTS, plenty to give the
+  // user something audible when the model forgot the voice block.
+  const VOICE_FALLBACK_MAX = 280;
+
+  function pickVoiceText(resp) {
+    if (!resp) return '';
+    const v = (resp.voice || '').trim();
+    if (v) return v;
+    const stripped = stripMarkdownForVoice(resp.text || '');
+    if (!stripped) return '';
+    if (stripped.length <= VOICE_FALLBACK_MAX) return stripped;
+    // Cut at a sentence boundary if we can find one before the cap.
+    const cut = stripped.slice(0, VOICE_FALLBACK_MAX);
+    const lastBreak = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('! '), cut.lastIndexOf('? '));
+    return (lastBreak > 80 ? cut.slice(0, lastBreak + 1) : cut).trim();
+  }
+
   /* ───── Export ─────────────────────────────────────────────────── */
 
   RAPP.AGENT_TYPES = AGENT_TYPES;
@@ -578,6 +630,7 @@
   RAPP.Agent = { parseAgentSource, pythonDictToJson, toSnakeCase };
   RAPP.Card = { mintCard, cardToAgentSource };
   RAPP.Binder = { empty: emptyBinder, addCard: binderAddCard, removeCard: binderRemoveCard };
+  RAPP.Voice = { stripMarkdownForVoice, pickVoiceText, VOICE_FALLBACK_MAX };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = RAPP;
   root.RAPP = RAPP;
