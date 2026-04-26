@@ -1210,6 +1210,30 @@
     position: absolute; bottom: 8px; left: 0; right: 0; text-align: center;
     font-size: 8px; color: rgba(201,168,76,.5); letter-spacing: 1px;
   }
+  /* Back-of-card action row — Copy URL / Print / Open. Sits above
+     the "tap to flip back" hint so taps on the buttons don't fight
+     the wrap's flip-on-click handler. */
+  .ac-back-actions {
+    margin-top: 12px; display: flex; gap: 6px; flex-wrap: wrap; justify-content: center;
+    position: relative; z-index: 2;
+  }
+  .ac-back-btn {
+    background: rgba(201,168,76,.1); color: #c9a84c;
+    border: 1px solid rgba(201,168,76,.4); border-radius: 4px;
+    padding: 4px 10px; font-size: 10px; font-family: "SF Mono", monospace;
+    letter-spacing: .5px; cursor: pointer;
+    transition: background .12s, border-color .12s;
+  }
+  .ac-back-btn:hover { background: rgba(201,168,76,.25); border-color: rgba(201,168,76,.7); }
+
+  /* Print stylesheet — when the user hits Print on the back of a card,
+     hide everything except the QR + agent name. The print payload is
+     just enough for a recipient to scan and install. */
+  @media print {
+    body > *:not(#card-print-stage) { display: none !important; }
+    #card-print-stage { display: block !important; }
+  }
+  #card-print-stage { display: none; }
 
   /* ── First-run tutorial overlay (port of BlazingBeard's quest, web-flavored) ── */
   #tutorial-overlay {
@@ -3633,6 +3657,10 @@ function renderBrowse() {
   // Cap render to avoid hammering the DOM with 138+ entries at once
   const MAX = 200;
   const slice = entries.slice(0, MAX);
+  // Snapshot the visible slice for the card modal's Prev/Next nav. We
+  // use the SLICE (not the full filtered list) so nav matches what the
+  // user can see — paging past the cap would be confusing.
+  _browseVisibleEntries = slice.slice();
   for (const { repo, branch, agent } of slice) {
     const filename = (agent._file || '').split('/').pop() || `${(agent.name || 'agent').replace(/\W+/g, '_')}_agent.py`;
     const isInstalled = installed.has(filename);
@@ -3703,10 +3731,14 @@ function renderBrowse() {
 // openCardModal renderer accepts it, and opens. Cached per (repo,
 // branch, _file) so re-clicking the same row doesn't re-fetch.
 const _registryCardCache = new Map();
-async function openRegistryCardModal(repo, branch, agent, mainEl) {
+async function openRegistryCardModal(repo, branch, agent, mainEl, navCtx) {
+  // Default nav context = the current visible browse list, with this
+  // entry as the starting point. Caller can override (e.g. cardModalNav
+  // passes the existing ctx so position survives across mints).
+  const ctx = navCtx || { kind: 'browse', items: _browseVisibleEntries.slice() };
   const key = `${repo}|${branch}|${agent._file || agent._rapp_id || agent.name}`;
   if (_registryCardCache.has(key)) {
-    openCardModal(_registryCardCache.get(key));
+    openCardModal(_registryCardCache.get(key), ctx);
     return;
   }
   if (mainEl) { mainEl.classList.add('loading'); mainEl.title = 'Loading card…'; }
@@ -3728,8 +3760,14 @@ async function openRegistryCardModal(repo, branch, agent, mainEl) {
     const filename = (agent._file || '').split('/').pop()
       || `${(agent.name || 'agent').replace(/\W+/g, '_')}_agent.py`;
     const card = await RAPP.Card.mintCard(src, filename);
+    // Stash the raw source URL so the back-of-card QR can encode a real
+    // install deeplink. Without this the deeplink only carries a seed
+    // and the receiver can't reconstruct the agent — they'd have to
+    // hunt for it. With it, scanning the QR drops them straight into
+    // an install flow against the public github raw URL.
+    card._sourceUrl = url;
     _registryCardCache.set(key, card);
-    openCardModal(card);
+    openCardModal(card, ctx);
   } catch (e) {
     console.error('[grail] mint failed:', e);
     alert(`Couldn't load the card: ${e.message}`);
@@ -3786,6 +3824,22 @@ async function installFromRegistry(repo, branch, agent, btn) {
 
 /* ───── Card modal ─────────────────────────────────────────── */
 let cardModalCard = null;
+// What list the modal is "browsing through". Set whenever a card is
+// opened. Two shapes:
+//   { kind: 'binder', items: [card, ...] }
+//      — items are pre-minted cards (binder-grid / hand path)
+//   { kind: 'browse', items: [{repo, branch, agent}, ...] }
+//      — items are registry entries (browse panel path); nav lazy-mints
+//        each card on demand via openRegistryCardModal.
+// Without this, ←/→ and the Prev/Next buttons silently no-op'd for any
+// card opened from the browse panel because the only fallback was a
+// findIndex into state.binder.cards (which never contained registry-
+// minted cards).
+let cardModalNavCtx = null;
+// Snapshot of the currently-visible registry entries (post source/
+// publisher/text filter, pre MAX cap). Refreshed on every renderBrowse.
+// Used to construct the navCtx when a row is clicked.
+let _browseVisibleEntries = [];
 
 /* ───── Card art generator — port of RAR/store.html genCreativeArt ─── */
 // Hero glyph SVG paths per agent type. Each takes (color) → markup centered at 100,95.
@@ -3897,9 +3951,20 @@ function holoFrontHtml(c) {
   const typeLine = `${isLegendary ? 'Legendary ' : ''}Agent — ${noun}${types[1] ? ' ' + (TYPE_NOUNS[types[1]] || '') : ''}`;
 
   const TAP = '<span class="holo-pip N" style="display:inline-flex;width:14px;height:14px;font-size:8px;vertical-align:middle;margin:0 2px">T</span>';
-  const rulesHtml = (card.abilities || []).slice(0, 2).map(a =>
-    `<div class="holo-ability"><span class="kw">${escapeHtml(a.name)}${TAP}:</span> ${escapeHtml(a.text || c.manifest.description || "Trigger this agent's perform().")}</div>`
-  ).join('');
+  // Don't paste the manifest description into every ability slot. The
+  // description already appears in the holo-title above and the holo-flavor
+  // below; repeating it on each ability ("Close (T): X. Prospect (T): X.")
+  // looked like the card had nothing distinct to say. Show specific text
+  // when the ability has it, otherwise just the ability name + damage as
+  // a brief functional line ("Close · 47").
+  const rulesHtml = (card.abilities || []).slice(0, 2).map(a => {
+    const text = (a.text || '').trim();
+    const dmg = (typeof a.damage === 'number') ? `<span style="float:right;color:#c9a84c;font-weight:700">${a.damage}</span>` : '';
+    if (text) {
+      return `<div class="holo-ability"><span class="kw">${escapeHtml(a.name)}${TAP}:</span> ${escapeHtml(text)}${dmg}</div>`;
+    }
+    return `<div class="holo-ability"><span class="kw">${escapeHtml(a.name)}${TAP}</span>${dmg}</div>`;
+  }).join('');
 
   const flavorLine = card.flavor || c.manifest.description || 'A single file. A single promise.';
   const flavorHtml = `<div class="holo-flavor">"${escapeHtml(flavorLine)}" <span class="attr">— ${escapeHtml(c.manifest.author || 'RAPP Collective')}</span></div>`;
@@ -3939,8 +4004,16 @@ function holoFrontHtml(c) {
   `;
 }
 
-function openCardModal(c) {
+function openCardModal(c, navCtx) {
   cardModalCard = c;
+  // Caller-supplied nav context wins. Otherwise default to "this card
+  // is part of the binder" so the existing binder-grid path keeps
+  // walking through state.binder.cards as before.
+  if (navCtx) {
+    cardModalNavCtx = navCtx;
+  } else if (state.binder && (state.binder.cards || []).some(x => x.filename === c.filename)) {
+    cardModalNavCtx = { kind: 'binder', items: state.binder.cards.slice() };
+  }
   const card = c.card;
   $('#cd-title').textContent = c.parsed?.agentName || c.manifest.display_name || c.name;
   const playBtn = $('#cd-play');
@@ -3955,13 +4028,29 @@ function openCardModal(c) {
   const rarity = card.rarity || 'core';
   const display = c.manifest.display_name || c.parsed?.agentName || c.name;
 
-  // QR encodes a deeplink that, when opened in a browser, lands here and
-  // (future hook) imports the card from its 64-bit seed. For now, scanning
-  // gets you the brainstem URL with the agent's incantation as a hint.
+  // QR encodes a deeplink that, when scanned with any phone camera,
+  // opens the recipient's brainstem with ?install=<rawurl> set. The
+  // boot handler (search for "applyInstallFromQuery" below) fetches
+  // the public-github raw URL, mints the card, and adds it to the
+  // recipient's binder. So the QR is literally "scan to hot-load this
+  // agent into your brainstem from public github."
+  //
+  // When _sourceUrl is set (registry-minted cards carry the public URL
+  // they were fetched from), we encode that. For binder-local cards
+  // without a recorded URL we fall back to the seed-only deeplink —
+  // the recipient's brainstem can show the seed but can't reconstruct
+  // the agent on its own.
   const seed = card.seed || '';
   const incantation = card.incantation || '';
-  const deeplink = `https://kody-w.github.io/RAPP/rapp_brainstem/web/?seed=${encodeURIComponent(seed)}`;
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=0&data=${encodeURIComponent(deeplink)}`;
+  const sourceUrl = c._sourceUrl || '';
+  const webBase = 'https://kody-w.github.io/RAPP/rapp_brainstem/web/';
+  const deeplink = sourceUrl
+    ? `${webBase}?install=${encodeURIComponent(sourceUrl)}`
+    : `${webBase}?seed=${encodeURIComponent(seed)}`;
+  // Bigger QR (400px) — at 150px display size, the higher-res source
+  // gives crisper edges on retina screens AND cleaner printed output
+  // since the print path uses the same image at native resolution.
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=0&data=${encodeURIComponent(deeplink)}`;
 
   // RAR's exact pip mapping for our agent types → MTG colors (W/U/B/R/G).
   const TYPE_TO_PIP = {
@@ -3980,9 +4069,20 @@ function openCardModal(c) {
 
   // Rules text (kw bolded gold, T inline pip)
   const TAP = '<span class="holo-pip N" style="display:inline-flex;width:14px;height:14px;font-size:8px;vertical-align:middle;margin:0 2px">T</span>';
-  const rulesHtml = (card.abilities || []).slice(0, 2).map(a =>
-    `<div class="holo-ability"><span class="kw">${escapeHtml(a.name)}${TAP}:</span> ${escapeHtml(a.text || c.manifest.description || "Trigger this agent's perform().")}</div>`
-  ).join('');
+  // Don't paste the manifest description into every ability slot. The
+  // description already appears in the holo-title above and the holo-flavor
+  // below; repeating it on each ability ("Close (T): X. Prospect (T): X.")
+  // looked like the card had nothing distinct to say. Show specific text
+  // when the ability has it, otherwise just the ability name + damage as
+  // a brief functional line ("Close · 47").
+  const rulesHtml = (card.abilities || []).slice(0, 2).map(a => {
+    const text = (a.text || '').trim();
+    const dmg = (typeof a.damage === 'number') ? `<span style="float:right;color:#c9a84c;font-weight:700">${a.damage}</span>` : '';
+    if (text) {
+      return `<div class="holo-ability"><span class="kw">${escapeHtml(a.name)}${TAP}:</span> ${escapeHtml(text)}${dmg}</div>`;
+    }
+    return `<div class="holo-ability"><span class="kw">${escapeHtml(a.name)}${TAP}</span>${dmg}</div>`;
+  }).join('');
 
   // Flavor + em-dash author
   const flavorLine = card.flavor || c.manifest.description || 'A single file. A single promise.';
@@ -4039,12 +4139,17 @@ function openCardModal(c) {
       <!-- BACK -->
       <div class="ac-face ac-back">
         <div class="ac-back-logo">RAPP</div>
-        <div class="ac-back-sub">single-file agent</div>
-        <div class="ac-qr">
-          <img src="${qrUrl}" alt="QR code" width="150" height="150" loading="lazy"
+        <div class="ac-back-sub">scan to install</div>
+        <div class="ac-qr" id="ac-qr-wrap" data-deeplink="${escapeHtml(deeplink)}" data-source-url="${escapeHtml(sourceUrl)}">
+          <img src="${qrUrl}" alt="QR code — scan to install this agent" width="150" height="150" loading="lazy"
                onerror="this.outerHTML='<div class=qr-loading>QR unavailable</div>'">
         </div>
         <div class="ac-incant">${escapeHtml(incantation)}</div>
+        <div class="ac-back-actions">
+          <button type="button" class="ac-back-btn" id="ac-qr-copy" title="Copy install URL to clipboard">📋 Copy URL</button>
+          <button type="button" class="ac-back-btn" id="ac-qr-print" title="Print the QR + agent name on a letter-sized page">🖨 Print</button>
+          <button type="button" class="ac-back-btn" id="ac-qr-open" title="Open the install link in a new tab">↗ Open</button>
+        </div>
         <div class="ac-back-hint">tap to flip back</div>
       </div>
     </div>
@@ -4124,17 +4229,113 @@ function openCardModal(c) {
     wrap.style.setProperty('--tilt-y', '0deg');
     wrap.style.setProperty('--angle', '0deg');
   });
-  // Tap card to flip
-  wrap.addEventListener('click', () => wrap.classList.toggle('flipped'));
+  // Tap card to flip — guarded so taps on back-face action buttons
+  // (Copy URL / Print / Open) don't accidentally flip back during use.
+  wrap.addEventListener('click', e => {
+    if (e.target.closest('.ac-back-btn')) return;
+    wrap.classList.toggle('flipped');
+  });
+  // Wire back-face actions. The handlers read deeplink + sourceUrl
+  // from the QR wrap's data-* attrs so they work for any card minted
+  // through this modal — registry entries (with sourceUrl) AND binder
+  // cards (sourceUrl is empty; Copy/Open fall back to the seed-style
+  // deeplink, Print still works fine).
+  const qrWrap = document.getElementById('ac-qr-wrap');
+  const deeplinkAttr = qrWrap?.dataset.deeplink || '';
+  const sourceUrlAttr = qrWrap?.dataset.sourceUrl || '';
+  const cardDisplayName = c.parsed?.agentName || c.manifest.display_name || c.name || 'Agent';
+
+  document.getElementById('ac-qr-copy')?.addEventListener('click', async e => {
+    e.stopPropagation();
+    const btn = e.currentTarget;
+    const orig = btn.textContent;
+    // Prefer the real source URL (raw github) — that's what people
+    // want to paste into a brainstem manually. Fall back to the full
+    // deeplink if no source URL is available.
+    const text = sourceUrlAttr || deeplinkAttr;
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        document.execCommand('copy'); ta.remove();
+      }
+      btn.textContent = '✓ Copied';
+    } catch { btn.textContent = '✗ Copy failed'; }
+    setTimeout(() => btn.textContent = orig, 1400);
+  });
+
+  document.getElementById('ac-qr-open')?.addEventListener('click', e => {
+    e.stopPropagation();
+    if (deeplinkAttr) window.open(deeplinkAttr, '_blank', 'noopener,noreferrer');
+  });
+
+  document.getElementById('ac-qr-print')?.addEventListener('click', e => {
+    e.stopPropagation();
+    // Build a one-shot print stage — just QR + agent name + URL —
+    // sized for a 4×6 index card or letter-sized printout. The print
+    // stylesheet hides everything else; we restore after the dialog
+    // closes (afterprint event) to avoid leaving a hidden stage in
+    // the DOM forever.
+    let stage = document.getElementById('card-print-stage');
+    if (stage) stage.remove();
+    stage = document.createElement('div');
+    stage.id = 'card-print-stage';
+    stage.style.cssText = 'padding:48px;text-align:center;color:#000;background:#fff;font-family:-apple-system,sans-serif;';
+    stage.innerHTML = `
+      <h1 style="font-size:32px;margin-bottom:8px;color:#000">${escapeHtml(cardDisplayName)}</h1>
+      <p style="font-size:13px;color:#444;margin-bottom:32px">Scan to install into any RAPP brainstem.</p>
+      <img src="${qrUrl}" alt="install QR" style="width:340px;height:340px;display:block;margin:0 auto 24px;border:1px solid #ddd;padding:12px;background:#fff">
+      <p style="font-family:'SF Mono',monospace;font-size:11px;color:#666;word-break:break-all;max-width:680px;margin:0 auto">${escapeHtml(sourceUrlAttr || deeplinkAttr)}</p>
+      <p style="font-size:10px;color:#999;margin-top:32px">RAPP single-file agent · curl-pipe-bash install · github.com/kody-w/RAPP</p>
+    `;
+    document.body.appendChild(stage);
+    const cleanup = () => {
+      stage.remove();
+      window.removeEventListener('afterprint', cleanup);
+    };
+    window.addEventListener('afterprint', cleanup);
+    window.print();
+    // Safari's beforeunload-on-print can leave the stage if the user
+    // cancels — clean up after a beat regardless.
+    setTimeout(() => { if (document.getElementById('card-print-stage')) cleanup(); }, 60_000);
+  });
   $('#card-modal').classList.add('open');
 }
 function closeCardModal() {
   $('#card-modal').classList.remove('open');
   cardModalCard = null;
+  cardModalNavCtx = null;
   const sc = document.getElementById('cd-sidecar'); if (sc) sc.remove();
 }
 function cardModalNav(dir) {
-  if (!cardModalCard || !state.binder) return;
+  if (!cardModalCard) return;
+  const ctx = cardModalNavCtx;
+  if (ctx && Array.isArray(ctx.items) && ctx.items.length) {
+    if (ctx.kind === 'binder') {
+      const idx = ctx.items.findIndex(c => c.filename === cardModalCard.filename);
+      const i = (Math.max(0, idx) + dir + ctx.items.length) % ctx.items.length;
+      openCardModal(ctx.items[i], ctx);
+      return;
+    }
+    if (ctx.kind === 'browse') {
+      // Items are {repo, branch, agent} triples — lazy-mint the next one
+      // via the same helper that handled the original row click. Match
+      // by current card's filename derived from agent._file.
+      const curFn = cardModalCard.filename;
+      const curIdx = ctx.items.findIndex(({ agent }) =>
+        ((agent._file || '').split('/').pop() || `${(agent.name || 'agent').replace(/\W+/g, '_')}_agent.py`) === curFn
+      );
+      const i = (Math.max(0, curIdx) + dir + ctx.items.length) % ctx.items.length;
+      const { repo, branch, agent } = ctx.items[i];
+      openRegistryCardModal(repo, branch, agent, null, ctx);
+      return;
+    }
+  }
+  // Last-resort fallback: walk the binder if the card lives there.
+  if (!state.binder) return;
   const cards = state.binder.cards || [];
   const idx = cards.findIndex(c => c.filename === cardModalCard.filename);
   if (idx < 0) return;
@@ -6006,6 +6207,53 @@ document.body.classList.add('is-local');
     }
     persistHand(); renderHand(); renderBinder(); renderAgents();
   }
+  // ?install=<rawurl> handler — the receiving end of the back-of-card
+  // QR code. Scanning a card's QR opens THIS URL with ?install set;
+  // we fetch the public-github-raw .py, mint the card, add it to the
+  // user's binder, then strip the param so a reload doesn't re-install.
+  // SAFETY: only http(s) URLs on raw.githubusercontent.com or the
+  // RAPP github pages host are accepted — refuses arbitrary URLs so
+  // a tampered QR can't drop random code into the binder.
+  await (async function applyInstallFromQuery() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const target = params.get('install');
+      if (!target) return;
+      const trimmed = target.trim();
+      let parsed;
+      try { parsed = new URL(trimmed); } catch { console.warn('[install] bad URL:', trimmed); return; }
+      const allowedHosts = new Set([
+        'raw.githubusercontent.com',
+        'kody-w.github.io',
+      ]);
+      if (parsed.protocol !== 'https:' || !allowedHosts.has(parsed.hostname)) {
+        console.warn('[install] refusing untrusted host:', parsed.hostname);
+        alert(`Install refused: ${parsed.hostname} is not on the allowlist (raw.githubusercontent.com / kody-w.github.io).`);
+        return;
+      }
+      const r = await fetch(trimmed, { cache: 'no-store' });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const src = await r.text();
+      const filename = parsed.pathname.split('/').pop() || 'imported_agent.py';
+      const card = await RAPP.Card.mintCard(src, filename);
+      card._sourceUrl = trimmed;
+      RAPP.Binder.addCard(state.binder, card);
+      persistBinder();
+      // Add to hand so it's immediately callable from chat
+      state.hand.add(filename);
+      persistHand();
+      renderBinder(); renderAgents(); renderHand();
+      // Strip the param so reload doesn't re-import (and a shared URL
+      // doesn't keep installing on someone else who pastes it)
+      const cleanUrl = window.location.origin + window.location.pathname + (window.location.hash || '');
+      window.history.replaceState({}, '', cleanUrl);
+      // Pop the card so the user sees what they just installed
+      setTimeout(() => openCardModal(card), 200);
+    } catch (e) {
+      console.error('[install] failed:', e);
+      alert(`Install failed: ${e.message}`);
+    }
+  })();
   wire();
   if (window.marked) window.marked.setOptions({ breaks: true, gfm: true });
   // Kick off the registry fetch in the background so Settings and Browse
