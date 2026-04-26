@@ -4546,7 +4546,13 @@ async function send(userInput) {
     // Keep delimited blocks OUT of conversation history so the model
     // doesn't echo them back; history is just the main reply.
     state.conversation_history.push({ role: 'assistant', content: resp.text });
-    if (typeof speakText === 'function') speakText(resp.voice || resp.text);
+    // Speak ONLY the |||VOICE||| block, never the main reply. The voice
+    // channel exists precisely so the assistant can ship a short spoken
+    // line distinct from the long markdown body — falling back to .text
+    // would make the speaker read the entire response and defeat the
+    // split. If the model didn't emit a voice line, voice mode stays
+    // silent for that turn.
+    if (typeof speakText === 'function' && resp.voice) speakText(resp.voice);
     if (resp.twin) renderTwinPanel(resp.twin);
     state.fullTranscript.push({ at: new Date().toISOString(), user: userInput, assistant: resp.text, voice: resp.voice, twin: resp.twin, agent_logs: resp.agent_logs, model: state.settings.model });
   } catch (e) {
