@@ -120,33 +120,21 @@ class SwarmFactoryAgent(BasicAgent):
                 "    _SOUL_WRITER     = \"You are a writer. Turn research into 400 words\\n\"\\\n"
                 "                        \"of clean prose. No fluff.\"\n"
                 "    _SOUL_CRITIC     = \"You are a brutal critic. Cut anything weak.\"\n\n"
-                "    # Inlined LLM helper — uses Azure or OpenAI from env.\n"
+                "    # Canonical LLM shim — same as BookFactory's singleton\n"
+                "    # (rapp_store/bookfactory/singleton/bookfactory_agent.py:507).\n"
+                "    # Routes through the brainstem's own dispatcher, which auto-\n"
+                "    # detects provider: Copilot → Azure → OpenAI → Anthropic.\n"
+                "    # The previous template only checked Azure/OpenAI envs and\n"
+                "    # silently returned \"(no LLM configured)\" on Copilot-only\n"
+                "    # setups, making every persona useless.\n"
                 "    def _llm_call(soul, user_prompt):\n"
-                "        msgs = [{\"role\": \"system\", \"content\": soul},\n"
-                "                {\"role\": \"user\", \"content\": user_prompt}]\n"
-                "        ep, key = os.environ.get(\"AZURE_OPENAI_ENDPOINT\", \"\"),\\\n"
-                "                  os.environ.get(\"AZURE_OPENAI_API_KEY\", \"\")\n"
-                "        dep = os.environ.get(\"AZURE_OPENAI_DEPLOYMENT\", \"\")\n"
-                "        if ep and key:\n"
-                "            url = ep.rstrip(\"/\") + f\"/openai/deployments/{dep}/chat/completions?api-version=2025-01-01-preview\"\n"
-                "            return _post(url, {\"messages\": msgs, \"model\": dep},\n"
-                "                          {\"Content-Type\": \"application/json\", \"api-key\": key})\n"
-                "        if os.environ.get(\"OPENAI_API_KEY\"):\n"
-                "            return _post(\"https://api.openai.com/v1/chat/completions\",\n"
-                "                          {\"model\": os.environ.get(\"OPENAI_MODEL\", \"gpt-4o\"), \"messages\": msgs},\n"
-                "                          {\"Content-Type\": \"application/json\",\n"
-                "                           \"Authorization\": \"Bearer \" + os.environ[\"OPENAI_API_KEY\"]})\n"
-                "        return \"(no LLM configured)\"\n\n"
-                "    def _post(url, body, headers):\n"
-                "        req = urllib.request.Request(url,\n"
-                "            data=json.dumps(body).encode(\"utf-8\"), headers=headers, method=\"POST\")\n"
+                "        messages = [{\"role\": \"system\", \"content\": soul},\n"
+                "                    {\"role\": \"user\", \"content\": user_prompt}]\n"
                 "        try:\n"
-                "            with urllib.request.urlopen(req, timeout=120) as r:\n"
-                "                j = json.loads(r.read().decode(\"utf-8\"))\n"
-                "            c = j.get(\"choices\") or []\n"
-                "            return (c[0][\"message\"].get(\"content\") or \"\") if c else \"\"\n"
-                "        except urllib.error.HTTPError as e:\n"
-                "            return f\"(LLM HTTP {e.code}: {e.read().decode('utf-8')[:200]})\"\n\n"
+                "            from utils.llm import call_llm\n"
+                "            return call_llm(messages)\n"
+                "        except Exception as e:\n"
+                "            return f\"(LLM dispatch error: {e})\"\n\n"
                 "    # Internal personas — _Internal prefix keeps them out of\n"
                 "    # the brainstem's *Agent auto-discovery, so only the public\n"
                 "    # composite below shows up in the LLM's tool list.\n"
@@ -174,6 +162,34 @@ class SwarmFactoryAgent(BasicAgent):
                 "                               \"research\": research,\n"
                 "                               \"draft\": draft,\n"
                 "                               \"final\": final})\n\n"
+                "Voting / decision-swarm patterns (read this if your swarm collects\n"
+                "votes from N personas and picks one — the BookFactory pipeline doesn't\n"
+                "vote, but trait-weighted decision swarms do):\n"
+                " 1. PERSONA OUTPUT IS PROSE BY DEFAULT. An LLM persona prompted with\n"
+                "    a SOUL like 'You are a trader. Pick an action.' will reply with a\n"
+                "    full sentence ('I'd advocate for trade because...') — not a single\n"
+                "    word. Comparing `response.strip().lower()` against an allowed-action\n"
+                "    list never matches. Append an explicit one-word constraint to the\n"
+                "    user prompt AND parse the response for the first allowed word:\n"
+                "        def _extract_action(response, allowed):\n"
+                "            for w in (response or '').lower().replace(',',' ').replace('.',' ').split():\n"
+                "                if w in allowed: return w\n"
+                "            return ''\n"
+                " 2. TIE-BREAKING: `max(votes, key=...)` returns the FIRST item at the\n"
+                "    max. Python dicts preserve insertion order — so if all personas\n"
+                "    have equal weight (e.g. caller forgot to pass weights), persona #1\n"
+                "    always wins and the swarm mode-collapses onto one action. Either\n"
+                "    randomize ties (`random.choice([v for v in votes if v.weight==top])`)\n"
+                "    or fall back to `random.choice(actions)` when all weights are the\n"
+                "    default. Pre-fix discovery: a 5-persona rappterverse swarm picked\n"
+                "    'trade' for every agent until tie-break randomness was added.\n"
+                " 3. WEIGHT VALIDATION: If `traits` is the per-call weighting dict and\n"
+                "    a caller passes None or {}, your swarm should detect that and use\n"
+                "    `random.choice` rather than silently defaulting all weights to a\n"
+                "    constant (which triggers #2).\n"
+                " 4. FILTER OUT INVALID VOTES BEFORE WEIGHTING. If a persona returned\n"
+                "    something not in your allowed-action list (parser miss, model hiccup),\n"
+                "    drop that vote rather than letting an empty string become the winner.\n\n"
                 "Memory pattern (drop into any persona that needs it):\n"
                 "    # Module-level constants — deterministic GUIDs baked at\n"
                 "    # code-write time. Pick one strategy per swarm:\n"
@@ -343,13 +359,75 @@ class SwarmFactoryAgent(BasicAgent):
                         "into _Internal<Role> classes (one per persona) plus one "
                         "public BasicAgent composite that orchestrates them.",
                 "class_count": len(classes)})
-        has_perform = any(
+        # Identify the PUBLIC class — the one the brainstem loader will
+        # discover. Heuristic: extends BasicAgent (or a subclass thereof)
+        # by name AND doesn't start with `_Internal`. Internal persona
+        # classes are called from inside the swarm, not by the brainstem,
+        # so they can have any signature they want.
+        def _is_public_agent(cls):
+            if cls.name.startswith("_"):
+                return False
+            for base in cls.bases:
+                # `class FooAgent(BasicAgent):` → base is Name("BasicAgent")
+                # `class FooAgent(SomethingElse):` → could still be public
+                # if SomethingElse extends BasicAgent. We only check by name
+                # because the LLM might use any of these forms.
+                if isinstance(base, ast.Name) and base.id == "BasicAgent":
+                    return True
+                if isinstance(base, ast.Attribute) and base.attr == "BasicAgent":
+                    return True
+            return False
+
+        public_classes = [c for c in classes if _is_public_agent(c)]
+        # Fall back: if no class explicitly extends BasicAgent, treat any
+        # non-`_Internal*` class with a perform() as the public one.
+        if not public_classes:
+            public_classes = [c for c in classes if not c.name.startswith("_")]
+
+        # Find a perform() on at least one public class (any class is fine
+        # for the contract, but **kwargs validation only applies here).
+        any_perform = any(
             isinstance(m, ast.FunctionDef) and m.name == "perform"
             for c in classes for m in c.body
         )
-        if not has_perform:
+        if not any_perform:
             return json.dumps({"status": "error",
-                "message": "No class defines perform(**kwargs). The brainstem won't know how to call this agent."})
+                "message": "No class defines perform(**kwargs). The brainstem won't know how to call this agent.",
+                "hint": "Add `def perform(self, **kwargs): ...` (or with named params + **kwargs) to your public class."})
+
+        # Validate **kwargs ONLY on public class's perform(). Internal
+        # personas are called from inside the swarm with controlled args
+        # so they don't need to absorb the brainstem's user_guid kwarg.
+        public_perform = None
+        public_class = None
+        for c in public_classes:
+            for m in c.body:
+                if isinstance(m, ast.FunctionDef) and m.name == "perform":
+                    public_perform = m
+                    public_class = c
+                    break
+            if public_perform:
+                break
+
+        if public_perform and public_perform.args.kwarg is None:
+            return json.dumps({"status": "error",
+                "message": (
+                    f"{public_class.name}.perform() must accept **kwargs. "
+                    f"The brainstem always passes user_guid via kwargs, so a strict "
+                    f"signature crashes with TypeError on first call."
+                ),
+                "hint": "Change the signature to e.g. `def perform(self, topic=\"\", **kwargs):`",
+                "current_signature_args": [a.arg for a in public_perform.args.args]})
+
+        if not public_perform:
+            return json.dumps({"status": "error",
+                "message": (
+                    f"None of the public class(es) {[c.name for c in public_classes]} "
+                    f"defines a perform() method. The brainstem invokes perform() on "
+                    f"the discovered agent class — without it the agent is unreachable."
+                ),
+                "hint": "Move your top-level orchestrator into a class extending BasicAgent and give it a perform(self, **kwargs) method."})
+
         has_manifest = any(
             isinstance(n, ast.Assign)
             and any(isinstance(t, ast.Name) and t.id == "__manifest__" for t in n.targets)
@@ -361,6 +439,30 @@ class SwarmFactoryAgent(BasicAgent):
         # loader expects this exact import path, so it's a safe fix-up.
         if "from agents.basic_agent import BasicAgent" not in agent_code:
             agent_code = "from agents.basic_agent import BasicAgent\n" + agent_code
+
+        # Auto-inject the canonical _llm_call shim if the agent_code
+        # references it but doesn't define it. Prevents the LLM from
+        # forgetting and producing a NameError at first call. The shim
+        # routes through the brainstem's own provider chain, so it works
+        # on any auth setup the brainstem itself works on (Copilot/Azure/
+        # OpenAI/Anthropic). Same pattern as BookFactory's singleton.
+        references_llm_call = (
+            "_llm_call(" in agent_code
+            and not re.search(r"^\s*def\s+_llm_call\s*\(", agent_code, re.M)
+        )
+        if references_llm_call:
+            agent_code = (
+                "def _llm_call(soul, user_prompt):\n"
+                "    \"\"\"Auto-injected by SwarmFactory — routes through the brainstem's own dispatcher.\"\"\"\n"
+                "    messages = [{\"role\": \"system\", \"content\": soul},\n"
+                "                {\"role\": \"user\", \"content\": user_prompt}]\n"
+                "    try:\n"
+                "        from utils.llm import call_llm\n"
+                "        return call_llm(messages)\n"
+                "    except Exception as e:\n"
+                "        return f\"(LLM dispatch error: {e})\"\n\n\n"
+                + agent_code
+            )
 
         # Filename derives from the swarm_name slug — same convention as
         # the rest of the binder so it shows up in /agents/full and the UI
@@ -383,6 +485,62 @@ class SwarmFactoryAgent(BasicAgent):
         with open(dest, "w") as f:
             f.write(agent_code)
 
+        # Smoke-test the generated module by importing it. AST validation
+        # catches syntax + class structure but misses runtime errors —
+        # missing imports, NameError, undefined helpers. If import fails,
+        # remove the broken file and return the error so the LLM can retry
+        # with corrections. Otherwise the user's agents/ dir gets polluted
+        # with non-loadable files that look "installed" but always crash.
+        smoke_warnings = []
+        try:
+            import importlib.util
+            spec = importlib.util.spec_from_file_location(
+                f"_swarm_factory_smoke_{slug}", dest)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            # Find the agent class — heuristic matches the brainstem loader:
+            # any class whose name ends with "Agent" and isn't BasicAgent.
+            agent_cls = None
+            for attr_name in dir(module):
+                if attr_name.startswith("_") or attr_name == "BasicAgent":
+                    continue
+                obj = getattr(module, attr_name)
+                if isinstance(obj, type) and attr_name.endswith("Agent"):
+                    agent_cls = obj
+                    break
+            if not agent_cls:
+                smoke_warnings.append(
+                    "no class ending in 'Agent' was found at module level — "
+                    "the brainstem loader may not discover this agent")
+            else:
+                # Try to instantiate (most agents do real work in __init__)
+                try:
+                    instance = agent_cls()
+                    if not hasattr(instance, "perform"):
+                        smoke_warnings.append(
+                            f"{agent_cls.__name__} instantiated but has no .perform() method")
+                except Exception as inst_err:
+                    smoke_warnings.append(
+                        f"{agent_cls.__name__}() raised {type(inst_err).__name__}: {inst_err}")
+        except Exception as smoke_err:
+            # Roll back: don't leave a broken file the brainstem will keep
+            # failing to load every request.
+            try:
+                os.remove(dest)
+            except OSError:
+                pass
+            return json.dumps({"status": "error",
+                "message": (
+                    f"agent_code passed AST checks but failed to import at runtime: "
+                    f"{type(smoke_err).__name__}: {smoke_err}"
+                ),
+                "hint": (
+                    "Common causes: missing import (e.g. urllib.error referenced but not imported), "
+                    "module-level code that calls undefined helpers, or a top-level statement that "
+                    "raises. Fix and re-call SwarmFactory.generate."
+                ),
+                "rolled_back": True})
+
         return json.dumps({
             "status": "ok",
             "action": "generate",
@@ -392,10 +550,13 @@ class SwarmFactoryAgent(BasicAgent):
             "bytes": len(agent_code),
             "lines": agent_code.count("\n") + 1,
             "has_manifest": has_manifest,
+            "smoke_test": "passed" if not smoke_warnings else "passed_with_warnings",
+            "smoke_warnings": smoke_warnings,
             "message": (
                 f"Generated agents/{fname} ({len(agent_code)} bytes). "
                 f"It loads automatically on the next request — no restart needed. "
                 f"Try calling it from chat to confirm."
+                + (f" WARNINGS: {'; '.join(smoke_warnings)}" if smoke_warnings else "")
             ),
         })
 
