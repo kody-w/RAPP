@@ -72,7 +72,13 @@ PORT        = int(os.getenv("PORT", 7071))
 # _twin_emit below) is the operator's window into the agent's "world".
 # Watching it pace and react across calls makes non-tech users care
 # about what's happening; turning it off makes the terminal feel dead.
-# Operators who want pure telemetry can set TWIN_MODE=false.
+#
+# NOTE: VOICE_MODE and TWIN_MODE are kept for the /voice and /twin
+# status endpoints' backwards-compat shape, but the chat path no
+# longer gates on them — the server unconditionally instructs the LLM
+# to emit |||VOICE||| and |||TWIN|||, and unconditionally ships
+# voice_response and twin_response when those blocks appear. Frontends
+# decide whether to play the audio or render the cage.
 VOICE_MODE  = os.getenv("VOICE_MODE", "true").lower() == "true"
 TWIN_MODE   = os.getenv("TWIN_MODE", "true").lower() == "true"
 VOICE_ZIP_PW = os.getenv("VOICE_ZIP_PASSWORD", "").encode() or None
@@ -216,9 +222,10 @@ threading.Thread(target=_tlog_autosave, daemon=True).start()
 # the agent is doing — gateway drug to caring about the technical lines
 # underneath. Like a Tamagotchi for the agent.
 #
-# Modular by design: when TWIN_MODE=false, _twin_emit early-returns and the
-# system-prompt twin block is skipped, so the LLM never even emits |||TWIN|||.
-# Zero side-effects on the non-twin telemetry path.
+# The chat path always asks the LLM for a |||TWIN||| block and always
+# ships twin_response. _twin_emit no-ops when the LLM didn't author a
+# <frame> for that turn, so the operator's terminal stays quiet rather
+# than showing a fake/canned animation.
 
 import random as _twin_random
 
@@ -282,8 +289,6 @@ def _twin_emit(mood="done", figure=None):
             silently — the operator just sees the [brainstem] telemetry
             for that turn, no twin frame.
     mood:   only used to color the cage border."""
-    if not TWIN_MODE:
-        return
     if not figure:
         return  # silent twin → silent terminal; no fake animation
     _twin_state["frame"] += 1
@@ -1166,8 +1171,10 @@ def chat():
         # voice-only embeds, transcription pipelines) need the voice line
         # whether or not this particular browser is speaking.
         system_content += "\n\nIMPORTANT: End every response with |||VOICE||| followed by a concise, conversational version of your answer suitable for text-to-speech. Keep the voice version under 2-3 sentences. The part before |||VOICE||| should be the full formatted response."
-        if TWIN_MODE:
-            system_content += (
+        # Twin block is ALWAYS requested and ALWAYS shipped — same reasoning
+        # as the voice block above. Frontends decide whether to render the
+        # twin panel; the server unconditionally produces the channel.
+        system_content += (
                 "\n\nTWIN: After the VOICE section (or after the main reply if VOICE is off), "
                 "append |||TWIN||| followed by the twin's reaction to this turn.\n\n"
                 "THE TWIN BLOCK IS PRIMARILY A CANVAS, NOT PROSE. The brainstem operator's "
@@ -1279,7 +1286,8 @@ def chat():
                 # clients reading those fields.
                 result["response"] = _unwrap(voice_or_main, "main")
                 result["assistant_response"] = result["response"]
-            result["twin_response"] = _unwrap(twin_text, "twin") if TWIN_MODE else ""
+            # Always ship twin_response when the LLM emits |||TWIN|||.
+            result["twin_response"] = _unwrap(twin_text, "twin")
         elif "|||VOICE|||" in reply:
             result["voice_response"] = _unwrap(remainder, "voice")
 
@@ -1296,11 +1304,10 @@ def chat():
         # block — the LLM hand-authors the ASCII art per turn and we
         # render it. No prose extraction, no speech bubble. The art
         # IS the twin's voice. If the LLM didn't ship a frame this
-        # turn, _twin_emit falls back to its 'awake' canned canvas.
-        if TWIN_MODE:
-            twin_text = (result.get("twin_response") or "").strip()
-            twin_figure, _rest = _extract_twin_frame(twin_text)
-            _twin_emit("done", figure=twin_figure)
+        # turn, _twin_emit no-ops silently (no fake animation).
+        twin_text = (result.get("twin_response") or "").strip()
+        twin_figure, _rest = _extract_twin_frame(twin_text)
+        _twin_emit("done", figure=twin_figure)
 
         return jsonify(result)
 
