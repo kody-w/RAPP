@@ -544,8 +544,15 @@
   /* ── Footer ── */
   footer {
     position: relative;          /* anchor for the absolutely-positioned hand */
-    padding: 16px 24px; border-top: 1px solid #21262d;
+    padding: 0 24px 12px; /* no top padding — the bar above the input was
+                             16px of footer-bg-on-chat-bg dead space.
+                             starter-prompts/hand-cards add their own top
+                             margin when present, so spacing inside the
+                             footer stays right. */
     background: #161b22; flex-shrink: 0;
+    /* No border-top — the chat bg (#0d1117) and footer bg (#161b22)
+       are already different enough to read as a boundary. The 1px line
+       on top of that boundary made the band look thicker than it was. */
   }
   /* Opaque "bar" pseudo-element that covers the FULL footer area with
      the footer bg color, sandwiched between the cards (z:1) and the
@@ -1890,6 +1897,8 @@
       <span id="session-id" hidden></span>
     </div>
     <div class="right">
+      <a class="toolbar-link" href="#" id="get-help" title="Open a pre-filled GitHub issue with version + recent context"
+         style="color:#f0883e">🆘 Get help</a>
       <a class="toolbar-link" href="#" id="export-tx">Export transcript</a>
       <a class="toolbar-link" href="#" id="import-tx">Import</a>
       <a class="toolbar-link" href="#" id="clear-tx">Clear</a>
@@ -5316,6 +5325,115 @@ function wire() {
     state.conversation_history = []; state.fullTranscript = []; state.sessionId = crypto.randomUUID();
     $('#chat').innerHTML = `<div class="welcome"><h2>🧠 Cleared</h2><p>Fresh session.</p></div>`;
   });
+  // Get help — open a pre-filled GitHub issue at kody-w/RAPP/issues.
+  //
+  // PRIVACY: this is a PUBLIC issue tracker. Every byte we put in the body
+  // is world-readable forever. So the prefill is intentionally MINIMAL and
+  // PUBLIC-SAFE — version + a coarse browser/OS family + counts. We do
+  // NOT include conversation text, agent names, full UA, file paths, or
+  // anything from the user's saved settings beyond the public mode flags.
+  // The user fills in "what happened" themselves so they decide what to
+  // share. Better to be helpful with less than helpful with too much.
+  $('#get-help').addEventListener('click', async e => {
+    e.preventDefault();
+    let version = 'unknown';
+    try {
+      const r = await fetch('/version', { cache: 'no-cache' });
+      if (r.ok) { const d = await r.json(); version = d.version || version; }
+    } catch { /* offline — fine */ }
+
+    // Parse UA into just BROWSER + OS family. The full UA string carries
+    // GPU model, exact build numbers, and other fingerprintable bits that
+    // don't help debugging but DO leak. Coarse-grained is enough.
+    const uaCoarse = (() => {
+      const ua = navigator.userAgent || '';
+      let browser = 'Unknown';
+      if (/Edg\//.test(ua)) browser = 'Edge';
+      else if (/Chrome\//.test(ua) && !/Edg\//.test(ua)) browser = 'Chrome';
+      else if (/Firefox\//.test(ua)) browser = 'Firefox';
+      else if (/Safari\//.test(ua) && !/Chrome\//.test(ua)) browser = 'Safari';
+      let os = 'Unknown';
+      if (/Mac OS X/.test(ua)) os = 'macOS';
+      else if (/Windows/.test(ua)) os = 'Windows';
+      else if (/Linux/.test(ua)) os = 'Linux';
+      else if (/iPhone|iPad/.test(ua)) os = 'iOS';
+      else if (/Android/.test(ua)) os = 'Android';
+      return `${browser} on ${os}`;
+    })();
+
+    // Public-safe mode flags. Provider TYPE only (e.g. "copilot"), never
+    // an account email/handle. handMode is a pure UI setting. Numbers
+    // are fine — counts don't leak content.
+    const provider = state.settings?.provider || '?';  // copilot|openai|...
+    const model = state.settings?.model || '?';        // public model id
+    const handMode = state.settings?.handMode || 'pills';
+    const handCount = (state.hand?.size ?? 0);
+    const turnCount = (state.conversation_history?.length ?? 0);
+
+    // Console error count only — full strings often carry file paths
+    // (file:///Users/<name>/...), URLs with tokens, etc. The user can
+    // add specific errors in the "What happened" section if relevant.
+    const errCount = (window.__brainstemRecentErrors || []).length;
+
+    const title = `Help — v${version} (${uaCoarse})`;
+    const body = [
+      '## What happened',
+      '<!-- Describe what you tried, what you expected, what actually -->',
+      '<!-- happened. Add a screenshot if useful (drag onto this box). -->',
+      '<!-- Reminder: this is a PUBLIC issue. Don\'t paste API keys, -->',
+      '<!-- tokens, conversation content, or anything you wouldn\'t -->',
+      '<!-- want strangers to see. -->',
+      '',
+      '## Environment (public-safe)',
+      `- **Brainstem:** v${version}`,
+      `- **Browser / OS:** ${uaCoarse}`,
+      `- **Provider:** ${provider}`,
+      `- **Model:** ${model}`,
+      `- **UI mode:** hand=${handMode}`,
+      `- **Counts:** ${turnCount} turn(s) · ${handCount} hand agent(s) · ${errCount} console error(s)`,
+      '',
+      '<sub>Filed via the brainstem UI Get help button. The prefill is</sub>',
+      '<sub>intentionally minimal — version + coarse browser + counts. No</sub>',
+      '<sub>conversation, agent names, or settings content is included.</sub>',
+      '<sub>Add anything else from your session manually if you want it</sub>',
+      '<sub>in the report.</sub>',
+    ].join('\n');
+
+    const url = 'https://github.com/kody-w/RAPP/issues/new'
+      + '?title=' + encodeURIComponent(title)
+      + '&body='  + encodeURIComponent(body)
+      + '&labels=' + encodeURIComponent('help-wanted,from-brainstem-ui');
+    window.open(url, '_blank', 'noopener,noreferrer');
+  });
+  // Capture the last 25 console errors so Get help can include them
+  // without needing a heavyweight logger. Wrap once at boot, dedupe
+  // via a small ring buffer so a noisy library doesn't fill it up.
+  (function captureConsoleErrors(){
+    if (window.__brainstemRecentErrors) return;
+    const buf = [];
+    window.__brainstemRecentErrors = buf;
+    const orig = console.error.bind(console);
+    console.error = function(...args) {
+      try {
+        const msg = args.map(a =>
+          a instanceof Error ? `${a.name}: ${a.message}` :
+          typeof a === 'object' ? JSON.stringify(a).slice(0, 240) : String(a)
+        ).join(' ');
+        if (buf[buf.length - 1] !== msg) {
+          buf.push(msg);
+          if (buf.length > 25) buf.shift();
+        }
+      } catch { /* never let logger crash the page */ }
+      orig(...args);
+    };
+    window.addEventListener('error', e => {
+      const msg = `${e.message} @ ${e.filename}:${e.lineno}:${e.colno}`;
+      if (buf[buf.length - 1] !== msg) {
+        buf.push(msg);
+        if (buf.length > 25) buf.shift();
+      }
+    });
+  })();
 
   // agents drawer
   $('#import-py').addEventListener('click', () => $('#file-py').click());
