@@ -1427,38 +1427,83 @@ emits every sense unconditionally on every reply. Frontends are
 modular consumers — each one picks the senses it cares about and
 ignores the rest.
 
-The two system senses today:
+### What a sense IS — and what it isn't
 
-- **`voice_response`** (the `|||VOICE|||` slot) — a short spoken
-  version of the reply, suitable for text-to-speech.
-- **`twin_response`** (the `|||TWIN|||` slot) — the twin's reaction:
-  the `<frame>` ASCII art for the operator's terminal, plus
-  optional probes / calibrations / telemetry / actions for any UI
-  that wants them.
+**A sense is a TRANSLATION of the main response into a different mode
+of expression.** Same answer, different channel. VOICE is the
+response, said aloud. TWIN is the response, expressed as a felt
+reaction. HAIKU is the response, distilled to 5/7/5. ELI5 is the
+response, re-explained for a five-year-old.
 
-These two are baked in. **More senses can be added over time as the
-organism evolves** — a video sense, a haptic cue, a debug-trace
-sense, an emotion sense, anything an agent author ships behind a
-slot. The pattern is the same for every new sense.
+A sense is NOT new content. A sense is NOT a tool call. A sense is NOT
+a separate query. If the channel produces *new information* — a
+diagram derived from data, a memory persisted to disk, a search across
+a corpus — that is an **agent**, not a sense. Agents do work and
+return data; senses re-perceive what the agent already said.
 
-### The pattern for adding a sense
+The litmus test: *does removing this channel reduce what the agent
+KNOWS, or only how the agent EXPRESSES it?* If knowledge: agent. If
+expression: sense.
 
-A sense is added by:
+### Bundled senses today
 
-1. **Allocating a slot delimiter.** Pick `|||<SLOT>|||` (caps,
-   hyphen-free). Once allocated, the slot is fixed forever (Article
-   II / Sacred Constraint #5).
-2. **Teaching the system prompt to emit it.** The brainstem's
-   default soul (or any rapplication's soul) instructs the model to
-   author a `|||<SLOT>|||` block on every reply. **Always — never
-   gated on a frontend's preference.**
-3. **Splitting it on the server side.** Add the sense's field to the
-   chat response result dict (e.g. `result["video_response"]`).
-   **Always populate it when the LLM emits the slot — never gated.**
-4. **Letting consumers opt in.** Each frontend reads the field it
-   wants. Frontends that don't care about the sense ignore the field.
+- **`voice_response`** (`|||VOICE|||`) — the response, spoken aloud.
+  Frontends with TTS read it and speak.
+- **`twin_response`** (`|||TWIN|||`) — the response, as the operator-
+  twin's tiny ASCII reaction. Frontends render in a panel; the
+  brainstem operator's terminal renders the `<frame>` as a cage.
 
-That's the whole pattern.
+**More senses live in the rapp_store** under `rapp_store/senses/` —
+each a single `*_sense.py` file. Drop one in
+`rapp_brainstem/senses/` and it's installed; delete it and it's gone.
+A dog that wakes up with three legs makes the best of it; the agent
+that loses a sense keeps its identity, just with one fewer mode of
+expression.
+
+### Single-file senses (the pattern)
+
+Senses follow the same single-file discipline as agents (Article III).
+Each `*_sense.py` exposes four module-level vars:
+
+```python
+name           = "haiku"          # short id used by the splitter
+delimiter      = "|||HAIKU|||"    # fixed forever once allocated (Article II)
+response_key   = "haiku_response" # field name in the chat envelope
+system_prompt  = "After your main reply, append `|||HAIKU|||` followed by ..."
+# wrapper_tag (optional) — XML wrapper the LLM may use; defaults to `name`
+```
+
+That's the whole contract. The brainstem auto-discovers `*_sense.py`
+files in `SENSES_PATH`, composes their `system_prompt` fragments into
+the system message as a layer below the soul, and splits the LLM's
+reply by their delimiters into `result[response_key]`. No other
+brainstem changes are required to add a sense.
+
+### What this rules out
+
+- **Frontend buttons that POST to the server to "enable" a sense.**
+  A mic button does not call `/voice/toggle`. A twin-panel show
+  button does not call `/twin/toggle`. UI toggles that relate to a
+  sense are *purely local state* — they decide whether THIS browser
+  plays / renders / consumes the sense, persisted to localStorage,
+  never sent to the server.
+- **Frontend init that GETs server state to learn whether the sense
+  exists.** No `fetch('/voice')` to learn `voice_mode`. The browser
+  decides on its own whether it cares.
+- **Backend gates that look at a server-side flag (e.g.
+  `VOICE_MODE`) to decide whether to emit a sense.** The chat path
+  emits every sense unconditionally. Env-var flags can stay for
+  decorative `/voice`, `/twin` status endpoints, but they MUST NOT
+  gate the chat-path system prompt or the response splitter.
+- **Removing a sense's slot once allocated.** Per Article XXV, the
+  chat envelope is additive-only. A sense field, once shipped, is
+  shipped forever (it can be empty when the LLM didn't author one
+  that turn — but the field key never disappears for clients that
+  have already wired up against it).
+- **Senses that produce new content.** If the channel needs to do
+  work — call an API, read state, run a computation — it's an agent.
+  Senses translate; agents produce. Memory is an agent. Diagrams
+  are an agent. A sense never reaches outside the LLM's reply.
 
 ### What this rules out
 

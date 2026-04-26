@@ -1129,6 +1129,96 @@ def run_tool_calls(tool_calls, agents, session_id=None, user_guid=None):
         })
     return results, logs
 
+# ── Senses Layer (Constitution Article XXIV) ─────────────────────────────────
+#
+# A sense is a TRANSLATION of the main response into a different mode of
+# expression. VOICE = the response, said aloud. TWIN = the response, as a
+# felt reaction. They are not new content — they are the same answer,
+# re-perceived through a different channel. Monkey sees, monkey speaks,
+# monkey hears.
+#
+# Senses are SINGLE-FILE just like agents:
+#   rapp_brainstem/senses/<name>_sense.py   ← bundled defaults
+#   <user pulls more from the rapp_store>   ← installable
+#
+# Each *_sense.py defines four module-level vars:
+#   name           — short id, used for splitter bookkeeping
+#   delimiter      — e.g. "|||VOICE|||" (Article II — fixed forever once
+#                    allocated)
+#   response_key   — chat-response field name, e.g. "voice_response"
+#   system_prompt  — the instruction telling the LLM to emit this slot
+#
+# Optional:
+#   wrapper_tag    — XML tag the LLM may wrap content in (defaults to `name`)
+#
+# To install a sense from the store: drop the file in senses/, restart.
+# To remove: delete the file. Soul is untouched. Other senses unaffected.
+# (A dog that wakes up with three legs makes the best of it.)
+
+SENSES_PATH = os.getenv("SENSES_PATH", os.path.join(os.path.dirname(__file__), "senses"))
+
+def load_senses():
+    """Discover *_sense.py files in SENSES_PATH. Each file is a tiny
+    module exposing name / delimiter / response_key / system_prompt.
+    Reloaded every chat request so adding/removing a sense file
+    takes effect without a brainstem restart."""
+    senses = []
+    if not os.path.isdir(SENSES_PATH):
+        return senses
+    for filepath in sorted(glob.glob(os.path.join(SENSES_PATH, "*_sense.py"))):
+        try:
+            spec = importlib.util.spec_from_file_location(
+                f"_sense_{os.path.basename(filepath)[:-3]}", filepath
+            )
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            sense = {
+                "name":          getattr(mod, "name"),
+                "delimiter":     getattr(mod, "delimiter"),
+                "response_key":  getattr(mod, "response_key"),
+                "wrapper_tag":   getattr(mod, "wrapper_tag", getattr(mod, "name")),
+                "system_prompt": getattr(mod, "system_prompt", ""),
+            }
+            senses.append(sense)
+        except Exception as e:
+            print(f"[brainstem] Sense load failed: {os.path.basename(filepath)}: {e}")
+    return senses
+
+def _compose_senses_prompt(senses):
+    """Concatenate every sense's system_prompt as its own paragraph
+    appended to the soul. Each fragment is independent — no cross-
+    references — so removing a sense doesn't dangle anything."""
+    return "".join("\n\n" + s["system_prompt"] for s in senses if s.get("system_prompt"))
+
+
+def _split_reply_by_senses(reply, senses):
+    """Walk the reply, find each registered sense's delimiter (if present),
+    extract the content between that delimiter and the next sense's
+    delimiter (or end-of-reply). Return (main_text, {sense_name: content}).
+
+    Senses absent from the reply get an empty string. This is the
+    'always present, possibly empty' contract that lets frontends read
+    sense fields without conditional guards.
+
+    Order is determined by *position in the reply*, not registry order —
+    the LLM is free to emit senses in any order, and the splitter follows."""
+    found = []
+    for s in senses:
+        idx = reply.find(s["delimiter"])
+        if idx >= 0:
+            found.append((idx, s))
+    parts = {s["name"]: "" for s in senses}
+    if not found:
+        return reply, parts
+    found.sort()
+    main_text = reply[:found[0][0]]
+    for i, (idx, sense) in enumerate(found):
+        start = idx + len(sense["delimiter"])
+        end = found[i + 1][0] if i + 1 < len(found) else len(reply)
+        parts[sense["name"]] = reply[start:end]
+    return main_text, parts
+
+
 # ── /chat endpoint ────────────────────────────────────────────────────────────
 
 @app.route("/chat", methods=["POST"])
@@ -1163,45 +1253,13 @@ def chat():
             except Exception as e:
                 print(f"[brainstem] system_context failed for {agent.name}: {e}")
 
-        system_content = soul + extra_context
-        # Voice block is ALWAYS requested and ALWAYS shipped. The frontend
-        # mic button only decides whether to play the TTS locally — the
-        # server has no business gating the voice channel based on a
-        # client's playback preference. Other clients (mobile shells,
-        # voice-only embeds, transcription pipelines) need the voice line
-        # whether or not this particular browser is speaking.
-        system_content += "\n\nIMPORTANT: End every response with |||VOICE||| followed by a concise, conversational version of your answer suitable for text-to-speech. Keep the voice version under 2-3 sentences. The part before |||VOICE||| should be the full formatted response."
-        # Twin block is ALWAYS requested and ALWAYS shipped — same reasoning
-        # as the voice block above. Frontends decide whether to render the
-        # twin panel; the server unconditionally produces the channel.
-        system_content += (
-                "\n\nTWIN: After the VOICE section (or after the main reply if VOICE is off), "
-                "append |||TWIN||| followed by the twin's reaction to this turn.\n\n"
-                "THE TWIN BLOCK IS PRIMARILY A CANVAS, NOT PROSE. The brainstem operator's "
-                "terminal renders an ASCII art cage between telemetry lines — that cage's "
-                "contents come from <frame>...</frame> inside this block. The art IS the "
-                "twin's voice. Prose isn't required and is ignored by the render.\n\n"
-                "FORMAT — exactly one optional <frame>...</frame> tag:\n"
-                "  • Up to 5 LINES tall, up to 44 CHARS wide per line. ASCII only.\n"
-                "  • Anything: a stick figure, a face, a tiny scene, a speech bubble drawn\n"
-                "    INTO the art, an icon, abstract shapes — whatever fits the moment.\n"
-                "  • Different art every turn = animation. Vary pose / expression / framing\n"
-                "    so consecutive turns build a flipbook.\n"
-                "  • Empty/missing <frame> is fine — the brainstem draws a canned pose.\n\n"
-                "EXAMPLES (renderable as-is):\n"
-                "  Celebration:        Thinking:           Surprised:\n"
-                "    <frame>             <frame>             <frame>\n"
-                "      \\o/                 o                  o!\n"
-                "       |                  |\\                /|\\\n"
-                "      / \\                / \\               / \\\n"
-                "    </frame>            </frame>           </frame>\n\n"
-                "OPTIONAL TAGS (all stripped before display, none affect the cage):\n"
-                "  <probe id=\"t-<uniq>\" kind=\"<slug>\" subject=\"...\" confidence=\"0.0-1.0\"/>\n"
-                "  <calibration id=\"<probe id>\" outcome=\"validated|contradicted|silent\" note=\"...\"/>\n"
-                "  <telemetry>one fact per line</telemetry>\n"
-                "  <action kind=\"send|prompt|open|toggle|highlight|rapp\" target=\"...\" label=\"...\">body</action>\n"
-                "These remain useful for the chat UI's twin panel; just don't expect them in the cage."
-            )
+        # Soul + per-agent context + senses layer (Article XXIV). Senses
+        # are auto-discovered single files from rapp_brainstem/senses/ —
+        # independent from the soul, so adding/losing a sense never
+        # touches the agent's identity prompt. Reloaded per request so
+        # dropping a new sense file takes effect with no restart.
+        senses = load_senses()
+        system_content = soul + extra_context + _compose_senses_prompt(senses)
 
         messages = [{"role": "system", "content": system_content}]
         messages += [m for m in history if m.get("role") in ("user", "assistant", "tool")]
@@ -1250,54 +1308,28 @@ def chat():
             "twin_mode":  TWIN_MODE,
         }
 
-        # Three-way split: main |||VOICE||| voice |||TWIN||| twin.
-        # Both delimiters optional. Left-to-right so twin never
-        # pollutes voice and voice never pollutes main.
         # Per Article II, each slot's content may be wrapped in matching
-        # XML tags (<main>, <voice>, <twin>) — the wrapper is the LLM's
-        # explicit boundary marker. We strip the outer wrapper here so
-        # consumers receive the bare content. Wrapping is optional input;
-        # legacy emitters without it parse the same way.
+        # XML tags — the wrapper is the LLM's explicit boundary marker.
+        # We strip the outer wrapper so consumers receive bare content.
         def _unwrap(text, tag):
-            t = text.strip()
+            t = (text or "").strip()
             open_tag = "<" + tag + ">"
             close_tag = "</" + tag + ">"
             if t.startswith(open_tag) and t.endswith(close_tag):
                 return t[len(open_tag):-len(close_tag)].strip()
             return t
 
-        remainder = reply
-        if "|||VOICE|||" in remainder:
-            main, _, remainder = remainder.partition("|||VOICE|||")
-            result["response"] = _unwrap(main, "main")
-            result["assistant_response"] = result["response"]
-        if "|||TWIN|||" in remainder:
-            voice_or_main, _, twin_text = remainder.partition("|||TWIN|||")
-            if "|||VOICE|||" in reply:
-                # Always ship the voice block when the LLM emits one — the
-                # frontend decides whether to play it. See system-prompt
-                # comment above.
-                result["voice_response"] = _unwrap(voice_or_main, "voice")
-            else:
-                # No VOICE delimiter — the part before |||TWIN||| is the
-                # main reply. Without this branch, response/assistant_response
-                # would still contain the unsplit reply (with |||TWIN||| and
-                # the twin text embedded), which is wrong for programmatic
-                # clients reading those fields.
-                result["response"] = _unwrap(voice_or_main, "main")
-                result["assistant_response"] = result["response"]
-            # Always ship twin_response when the LLM emits |||TWIN|||.
-            result["twin_response"] = _unwrap(twin_text, "twin")
-        elif "|||VOICE|||" in reply:
-            result["voice_response"] = _unwrap(remainder, "voice")
-
-        # If the response had no slot delimiters at all but the LLM still
-        # wrapped the whole reply in <main>...</main>, unwrap that too.
-        if "|||VOICE|||" not in reply and "|||TWIN|||" not in reply:
-            unwrapped = _unwrap(reply, "main")
-            if unwrapped != reply.strip():
-                result["response"] = unwrapped
-                result["assistant_response"] = unwrapped
+        # Senses-layer split (Article XXIV). One pass over the reply
+        # extracts every registered sense's content; senses absent from
+        # the reply land as empty string — but ALWAYS as a key in the
+        # result, so frontends can read result[response_key] without
+        # conditional guards.
+        main_text, sense_parts = _split_reply_by_senses(reply, senses)
+        result["response"] = _unwrap(main_text, "main")
+        result["assistant_response"] = result["response"]
+        for s in senses:
+            raw = sense_parts.get(s["name"], "")
+            result[s["response_key"]] = _unwrap(raw, s["wrapper_tag"]) if raw else ""
 
         # Final twin frame for this chat round. The cage's content
         # comes ENTIRELY from <frame>...</frame> inside the |||TWIN|||
