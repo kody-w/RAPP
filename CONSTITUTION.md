@@ -1844,10 +1844,12 @@ number is reserved even if a later proposal supersedes it
 ### XXVIII.4 — Authority
 
 The maintainer (currently `@kody-w`) approves proposals. AI agents
-may draft, push, and self-review proposals; they do not self-approve
-the merge. The proposal sits in PR form long enough for a deliberate
-human merge action even when the only "human" in the loop is the
-maintainer's click.
+may draft, push, and self-review proposals. Per **Article XXX**,
+implementation PRs that follow an accepted proposal may be merged by
+the AI agent under the maintainer's standing authorization — the
+proposal is the authority, the implementation is follow-through.
+Constitutional amendments (this document) remain the exception and
+require deliberate human merge per XXX.2.
 
 ### XXVIII.5 — Why
 
@@ -1938,6 +1940,97 @@ They compose: the proposal lays out *what* changes; the front door
 is *how* each step lands. A proposal that calls for moving 7 agents
 to RAR cashes out as 7 RAR `[AGENT]` issues, each linking back to
 the proposal.
+
+---
+
+## Article XXX — Pipelines Run End-to-End Under Standing Authorization
+
+When the maintainer has accepted a proposal (Article XXVIII), an AI
+agent acting on the maintainer's behalf may execute the resulting
+pipeline end-to-end: draft, push, self-review, approve, merge, and
+implement. The maintainer's authorization is at the **proposal
+scope**, not the per-PR merge.
+
+> **The proposal is the authorization. Pipelines do not block at
+> every gate.**
+
+### XXX.1 — What this enables
+
+- Implementation PRs that follow an accepted proposal can be merged
+  by the AI agent itself under standing authorization. Each
+  implementation PR cites the proposal, includes a substantive
+  self-review (not "lgtm"), and lands in the history as a normal
+  squash-merged commit.
+- Cross-repo pipelines (Article XXIX) likewise execute end-to-end:
+  the AI opens submission issues, applies approval labels, monitors
+  promotion workflows, and follows up on the originating repo
+  without per-step human checkpoints.
+- Step ordering and rollback decisions remain the AI's
+  responsibility. If a step surfaces a problem the proposal didn't
+  anticipate, the AI pauses and escalates rather than improvises
+  (XXX.2).
+
+### XXX.2 — What still blocks at the human gate
+
+Three categories of action remain reserved for deliberate human
+merge or human approval, even under a standing authorization:
+
+- **Constitutional amendments (Article XXVI).** Changes to the
+  rules of the system require human review and merge. The rules
+  themselves cannot be auto-merged by an agent operating under a
+  rule the agent is also amending.
+- **The proposal merge itself (Article XXVIII).** The maintainer
+  accepts proposals. The AI drafts, pushes, and self-reviews — but
+  the merge of `docs/proposals/NNNN-*.md` is the moment the
+  maintainer says "yes, do this work."
+- **Out-of-scope discoveries.** If implementation surfaces an
+  artifact the proposal didn't classify, a constraint the proposal
+  didn't address, or a destructive action the proposal didn't
+  authorize, the AI stops, opens an issue (or a follow-up
+  proposal), and waits.
+
+### XXX.3 — Why
+
+- **The maintainer's attention is finite.** A proposal that takes
+  30 seconds to merge but 30 minutes to implement across 8 PRs
+  should not block on 8 separate human merge clicks. Authorization
+  is granted at the body-of-work level; tactics are delegated.
+- **Audit trails come from artifacts, not gates.** Proposals, PRs,
+  commits, reviews, comments, and the workflow history of
+  cross-repo submissions all land in git and GitHub. A merge by an
+  AI agent under standing authorization is as traceable as one by
+  the maintainer.
+- **Per-PR human gates produce review fatigue, not review quality.**
+  The maintainer who has to merge 8 mechanical PRs in a row stops
+  reading them by PR 3. Gates work when they're rare. Reserving
+  human action for proposals + emergencies + constitutional changes
+  keeps the gates honest.
+
+### XXX.4 — Self-review is real review
+
+An AI agent's self-review on its own implementation PR carries
+weight only if it does the work a real reviewer would: read the
+diff, identify what could be wrong, name specific risks, suggest
+alternatives the implementation didn't take. "LGTM" from the AI
+that wrote the code is worse than no review — it implies a check
+that didn't happen.
+
+The self-review remains in the PR record. A maintainer auditing the
+trail later can read both the implementation and the agent's
+critique of it.
+
+### XXX.5 — Standing authorization is bounded
+
+Standing authorization granted by an accepted proposal lasts for the
+implementation of *that proposal*. It does not extend to:
+
+- Subsequent proposals (each requires its own acceptance).
+- Adjacent work the maintainer hasn't asked for.
+- Reverting or amending the originating proposal mid-flight.
+- Constitutional changes (XXX.2).
+
+When the proposal's migration steps are complete, the
+authorization expires. New work needs a new proposal.
 
 ---
 
