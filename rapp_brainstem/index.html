@@ -3302,31 +3302,116 @@ async function runCopilotSignin() {
 }
 
 /* ───── Binder + starter cards ──────────────────────────────── */
+
+// RAR is the canonical card registry. Fetch the manifest + the holo
+// card visuals once per session and index for fast lookup. Anything
+// the local brainstem has on disk is matched into RAR by sha256 of
+// the file contents (registry._sha256) — that's the only identity
+// that survives renames or local edits to the filename.
+const RAR_BASE = 'https://raw.githubusercontent.com/kody-w/RAR/main';
+let _rarPromise = null;
+function fetchRAR() {
+  if (_rarPromise) return _rarPromise;
+  _rarPromise = (async () => {
+    const empty = { agents: [], holo: {}, bySha: new Map(), byName: new Map() };
+    try {
+      const [regR, holoR] = await Promise.all([
+        fetch(`${RAR_BASE}/registry.json`, { cache: 'no-cache' }),
+        fetch(`${RAR_BASE}/cards/holo_cards.json`, { cache: 'no-cache' }),
+      ]);
+      const reg  = regR.ok  ? await regR.json()  : { agents: [] };
+      const holo = holoR.ok ? await holoR.json() : {};
+      const bySha = new Map();
+      const byName = new Map();
+      for (const a of reg.agents || []) {
+        if (a._sha256) bySha.set(a._sha256, a);
+        if (a.name) byName.set(a.name, a);
+      }
+      return { agents: reg.agents || [], holo, bySha, byName };
+    } catch (e) {
+      console.warn('[RAR] fetch failed', e);
+      return empty;
+    }
+  })();
+  return _rarPromise;
+}
+
+async function sha256Hex(text) {
+  const buf = new TextEncoder().encode(text);
+  const hash = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Build the card object cardElement() reads, populated from RAR's
+// holo_cards.json when we matched the file into the registry. No RAR
+// match → null, and cardElement falls back to a stats-less placeholder.
+function buildCardFromHolo(holo) {
+  if (!holo) return null;
+  return {
+    rarity:       holo.rarity || 'common',
+    rarity_label: (holo.rarity || 'common').toUpperCase(),
+    types:        holo.agent_types || [],
+    type_colors:  holo.type_colors || [],
+    stats:        holo.stats || {},
+    hp:           holo.hp || (holo.stats && holo.stats.hp) || 0,
+    flavor:       holo.flavor_text || '',
+    title:        holo.title || '',
+    avatar_svg:   holo.avatar_svg || '',
+    abilities:    holo.abilities || [],
+    mana_cost:    holo.mana_cost || '',
+    colors:       holo.colors || [],
+    type_line:    holo.type_line || '',
+  };
+}
+
 async function bootBinder() {
   // The filesystem is the source of truth. Fetch every agent .py from
-  // the Flask brainstem's /agents/full endpoint and build cards directly
-  // from what Python actually loaded — no regex re-parsing, no mintCard.
+  // the Flask brainstem's /agents/full endpoint, match each into RAR
+  // by sha256, and pull display + card visuals directly from RAR. No
+  // regex re-parsing of source, no client-side procedural card art.
   if (document.body.classList.contains('is-local')) {
     try {
-      const r = await fetch('/agents/full', { cache: 'no-cache' });
+      const [r, rar] = await Promise.all([
+        fetch('/agents/full', { cache: 'no-cache' }),
+        fetchRAR(),
+      ]);
       if (r.ok) {
         const data = await r.json();
         state.binder = { schema: 'rapp-binder/1.0', name: '@local/you', cards: [] };
         for (const f of data.files || []) {
           if (!f.source || f.filename === 'basic_agent.py') continue;
-          // Python already loaded this file and told us every agent name
-          // it instantiated. f.agents[0] is the runtime truth — use it
-          // verbatim. Source comes along for export and the optional
-          // detail view; nothing else here re-parses it.
-          const realName = (f.agents && f.agents[0]) || f.filename.replace(/_agent\.py$/, '');
+          const sha = await sha256Hex(f.source);
+          const rarMatch = rar.bySha.get(sha) || null;
+          const holoCard = rarMatch && rar.holo[rarMatch.name] ? rar.holo[rarMatch.name] : null;
+
+          // Python's runtime truth is f.agents[0]; RAR's display_name
+          // wins when matched (it's the curated label). Filename stem
+          // is the last-resort label for local-only experimental files.
+          const runtimeName = (f.agents && f.agents[0]) || null;
+          const display = (rarMatch && rarMatch.display_name)
+                       || runtimeName
+                       || f.filename.replace(/_agent\.py$/, '');
+
           state.binder.cards.push({
             schema: 'rapp-card/1.0',
-            name: realName,
+            name: (rarMatch && rarMatch.name) || runtimeName || display,
             filename: f.filename,
             source: f.source,
-            display_name: realName,
-            manifest: { display_name: realName },
-            parsed: { agentName: realName },
+            sha256: sha,
+            display_name: display,
+            description: (rarMatch && rarMatch.description) || '',
+            tags: (rarMatch && rarMatch.tags) || [],
+            category: (rarMatch && rarMatch.category) || 'local',
+            quality_tier: (rarMatch && rarMatch.quality_tier) || 'local',
+            rar: rarMatch,
+            card: buildCardFromHolo(holoCard),
+            // Compatibility shims — older renderers still read these:
+            manifest: {
+              display_name: display,
+              description: (rarMatch && rarMatch.description) || '',
+              example_call: rarMatch && rarMatch.example_call,
+            },
+            parsed: { agentName: runtimeName || display },
           });
         }
         // The server auto-exposes every loaded agent to the LLM regardless
@@ -3421,23 +3506,29 @@ function renderBinder() {
   for (const c of state.binder.cards) grid.appendChild(cardElement(c));
 }
 function cardElement(c) {
-  const card = c.card;
+  const card = c.card || {};
   const div = document.createElement('div');
   div.className = `card r-${card.rarity || 'core'}`;
   if (state.hand.has(c.filename)) div.classList.add('in-hand');
-  const swatch = (card.types||['SOCIAL']).map(t =>
-    `<span class="type-chip" style="background:${RAPP.AGENT_TYPES[t].color}">${t}</span>`).join('');
+  // Type chips: RAR's holo_cards.json ships parallel agent_types[] +
+  // type_colors[] arrays. Fall back to a neutral chip color when an
+  // agent isn't in RAR (local-only) so the chip still reads.
+  const types = card.types || [];
+  const typeColors = card.type_colors || [];
+  const swatch = types.map((t, i) =>
+    `<span class="type-chip" style="background:${typeColors[i] || '#30363d'}">${escapeHtml(t)}</span>`
+  ).join('') || '<span class="type-chip" style="background:#30363d">LOCAL</span>';
   const stats = card.stats || {};
   div.innerHTML = `
-    <span class="rare">${(card.rarity_label || card.rarity || '').toUpperCase()}</span>
+    <span class="rare">${(card.rarity_label || card.rarity || 'LOCAL').toUpperCase()}</span>
     <div class="top">
       <div>
-        <div class="nm">${escapeHtml(c.manifest.display_name || c.parsed?.agentName || c.name)}</div>
+        <div class="nm">${escapeHtml(c.display_name || c.manifest?.display_name || c.parsed?.agentName || c.name)}</div>
         <div class="types">${swatch}</div>
       </div>
       <div class="hp">HP ${card.hp || stats.hp || 0}</div>
     </div>
-    <div class="ftxt">${escapeHtml(card.flavor || c.manifest.description || '')}</div>
+    <div class="ftxt">${escapeHtml(card.flavor || c.description || c.manifest?.description || '')}</div>
     <div class="stats-row">
       <span>ATK ${stats.atk||0}</span><span>DEF ${stats.def||0}</span>
       <span>SPD ${stats.spd||0}</span><span>INT ${stats.int||0}</span>
