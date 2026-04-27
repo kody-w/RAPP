@@ -82,7 +82,18 @@
   .step h3{font-size:14px;font-weight:600;margin-bottom:6px}
   .step p{margin:0 0 8px;font-size:13px;color:var(--dim)}
   .step pre{background:#04060c;border:1px solid var(--border);border-radius:6px;
-    padding:10px 12px;overflow-x:auto;color:var(--fg)}
+    padding:10px 12px;overflow-x:auto;color:var(--fg);margin:0}
+  .copy-block{position:relative}
+  .copy-block pre{padding-right:64px}
+  .copy-block .copy-btn{
+    position:absolute;top:6px;right:6px;
+    background:rgba(255,255,255,0.05);border:1px solid var(--border);
+    color:var(--muted);border-radius:4px;padding:3px 8px;
+    font:inherit;font-size:11px;cursor:pointer;
+    transition:background .15s,color .15s,border-color .15s
+  }
+  .copy-block .copy-btn:hover{background:rgba(255,255,255,0.12);color:var(--fg)}
+  .copy-block .copy-btn.copied{background:var(--green-3,#3fb950);color:#04060c;border-color:transparent}
 
   .links{margin-top:32px;text-align:center;font-size:13px;color:var(--muted);max-width:620px}
   .links a{margin:0 10px}
@@ -255,6 +266,31 @@
       cmdRow.classList.add('copied');
       setTimeout(() => cmdRow.classList.remove('copied'), 1200);
     });
+  });
+
+  // Auto-augment every <pre> inside a tier step with a copy button so users
+  // don't have to scroll back to the hero to grab a command. Picks up any
+  // future <pre> block automatically — no per-block markup needed.
+  document.querySelectorAll('.step pre').forEach(pre => {
+    const wrap = document.createElement('div');
+    wrap.className = 'copy-block';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-btn';
+    btn.textContent = 'copy';
+    btn.addEventListener('click', () => {
+      navigator.clipboard.writeText(pre.textContent.trim()).then(() => {
+        btn.textContent = '✓ copied';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = 'copy';
+          btn.classList.remove('copied');
+        }, 1500);
+      });
+    });
+    wrap.appendChild(btn);
   });
 </script>
 
