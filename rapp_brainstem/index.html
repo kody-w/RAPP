@@ -731,6 +731,33 @@
   Drop .py agent file to install
 </div>
 
+<div id="browse-modal" role="dialog" aria-modal="true" aria-label="Browse RAR Registry">
+  <div class="browse-card">
+    <div class="bh-head">
+      <div class="bh-title">
+        🔍 Browse RAR
+        <span class="bh-stats" id="browse-stats">loading…</span>
+      </div>
+      <button class="bh-close" onclick="closeBrowse()">✕ Close</button>
+    </div>
+    <div class="bh-filters">
+      <input type="text" id="browse-search" placeholder="Search name, description, tag…" oninput="renderBrowse()">
+      <select id="browse-category" onchange="renderBrowse()">
+        <option value="">All categories</option>
+      </select>
+      <select id="browse-tier" onchange="renderBrowse()">
+        <option value="">All tiers</option>
+        <option value="official">Official</option>
+        <option value="community">Community</option>
+        <option value="experimental">Experimental</option>
+      </select>
+    </div>
+    <div class="bh-list" id="browse-list">
+      <div class="browse-loading">Loading registry…</div>
+    </div>
+  </div>
+</div>
+
 <div id="rapp-frame" role="dialog" aria-modal="true" aria-label="Rapplication UI">
   <div class="rf-head">
     <div class="rf-title">
@@ -814,6 +841,7 @@
         <div style="font-size:10px; color:#8b949e; margin-top:12px; text-align:center;">
           Drag & drop .py files anywhere to install new agents
         </div>
+        <button id="browse-link" onclick="openBrowse()">🔍 Browse RAR Registry</button>
         <div class="rapps-header" id="rapps-header" style="display:none">📦 Rapplications</div>
         <ul id="rapp-list-ul" style="display:none"><!-- Populated by JS --></ul>
       </div>
@@ -1280,10 +1308,165 @@
     document.getElementById('rf-iframe').src = 'about:blank';
   }
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && document.getElementById('rapp-frame').classList.contains('open')) {
-      closeRappFrame();
-    }
+    if (e.key !== 'Escape') return;
+    if (document.getElementById('rapp-frame').classList.contains('open')) closeRappFrame();
+    else if (document.getElementById('browse-modal').classList.contains('open')) closeBrowse();
   });
+
+  // ── Browse RAR Registry ──
+  // Pulls the canonical registry.json from kody-w/RAR (raw GitHub) and
+  // installs selected agents through the local brainstem's /agents/import.
+  // No server-side proxy, no rapp.js — just two HTTP calls per install.
+  const RAR_BASE = 'https://raw.githubusercontent.com/kody-w/RAR/main';
+  let _rarPromise = null;
+  let _rarReg = null;
+  let _installedFiles = new Set();
+
+  function loadRAR() {
+    if (_rarPromise) return _rarPromise;
+    _rarPromise = (async () => {
+      const r = await fetch(`${RAR_BASE}/registry.json`, { cache: 'no-cache' });
+      if (!r.ok) throw new Error(`registry HTTP ${r.status}`);
+      return await r.json();
+    })();
+    return _rarPromise;
+  }
+
+  async function refreshInstalled() {
+    try {
+      const r = await fetch(`${API}/agents`);
+      const d = await r.json();
+      _installedFiles = new Set((d.files || []).map(f => f.filename));
+    } catch { _installedFiles = new Set(); }
+  }
+
+  async function openBrowse() {
+    const modal = document.getElementById('browse-modal');
+    modal.classList.add('open');
+    document.getElementById('agents-panel').classList.remove('open');
+    document.getElementById('browse-search').value = '';
+    document.getElementById('browse-category').value = '';
+    document.getElementById('browse-tier').value = '';
+    document.getElementById('browse-list').innerHTML = '<div class="browse-loading">Loading registry…</div>';
+    document.getElementById('browse-stats').textContent = 'loading…';
+    try {
+      const [reg] = await Promise.all([loadRAR(), refreshInstalled()]);
+      _rarReg = reg;
+      // Populate category dropdown from registry stats
+      const catSel = document.getElementById('browse-category');
+      const cats = reg.stats?.category_list || [];
+      catSel.innerHTML = '<option value="">All categories</option>' +
+        cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+      const s = reg.stats || {};
+      document.getElementById('browse-stats').textContent =
+        `${s.total_agents || (reg.agents||[]).length} agents · ${s.publishers || '?'} publishers · ${cats.length} categories`;
+      renderBrowse();
+    } catch (e) {
+      document.getElementById('browse-list').innerHTML =
+        `<div class="browse-loading browse-error">Failed to load RAR registry: ${escapeHtml(e.message)}</div>`;
+      document.getElementById('browse-stats').textContent = 'offline';
+    }
+  }
+  function closeBrowse() {
+    document.getElementById('browse-modal').classList.remove('open');
+  }
+  // Click outside the card to close
+  document.getElementById('browse-modal').addEventListener('click', (e) => {
+    if (e.target.id === 'browse-modal') closeBrowse();
+  });
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+      ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
+  }
+
+  function renderBrowse() {
+    if (!_rarReg) return;
+    const q = document.getElementById('browse-search').value.trim().toLowerCase();
+    const cat = document.getElementById('browse-category').value;
+    const tier = document.getElementById('browse-tier').value;
+    const all = _rarReg.agents || [];
+    const filtered = all.filter(a => {
+      if (cat && a.category !== cat) return false;
+      if (tier && a.quality_tier !== tier) return false;
+      if (q) {
+        const hay = [a.display_name, a.name, a.description, ...(a.tags || [])]
+          .join(' ').toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+    const list = document.getElementById('browse-list');
+    if (!filtered.length) {
+      list.innerHTML = '<div class="browse-loading">No agents match these filters.</div>';
+      return;
+    }
+    // Cap to 200 visible entries — rendering all 267+ is wasteful, the
+    // user will narrow with search anyway. Show the count if capped.
+    const cap = 200;
+    const visible = filtered.slice(0, cap);
+    list.innerHTML = visible.map((a, idx) => {
+      const filename = (a._file || '').split('/').pop() || '';
+      const installed = _installedFiles.has(filename);
+      const tags = (a.tags || []).slice(0, 4).map(t =>
+        `<span class="br-chip">${escapeHtml(t)}</span>`).join('');
+      const tierCls = ['official','community','experimental'].includes(a.quality_tier)
+        ? a.quality_tier : 'community';
+      return `
+        <div class="br-row" data-idx="${idx}">
+          <div class="br-body">
+            <div class="br-name">
+              ${escapeHtml(a.display_name || a.name)}
+              <span class="br-tier ${tierCls}">${escapeHtml(a.quality_tier || 'community')}</span>
+            </div>
+            <div class="br-id">${escapeHtml(a.name)}</div>
+            <div class="br-desc">${escapeHtml(a.description || '')}</div>
+            <div class="br-tags">${tags}</div>
+          </div>
+          <button class="br-install ${installed ? 'installed' : ''}"
+                  data-idx="${idx}"
+                  ${installed ? 'disabled' : ''}>
+            ${installed ? 'Installed ✓' : 'Install'}
+          </button>
+        </div>`;
+    }).join('') + (filtered.length > cap
+      ? `<div class="browse-loading">Showing first ${cap} of ${filtered.length} matches — narrow your search.</div>`
+      : '');
+    list.querySelectorAll('.br-install:not([disabled])').forEach(btn => {
+      btn.addEventListener('click', () => installFromRAR(visible[+btn.dataset.idx], btn));
+    });
+  }
+
+  async function installFromRAR(agent, btn) {
+    if (!agent || !agent._file) {
+      alert('This RAR entry has no _file path; cannot install.');
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Installing…';
+    try {
+      const srcUrl = `${RAR_BASE}/${agent._file}`;
+      const r = await fetch(srcUrl, { cache: 'no-cache' });
+      if (!r.ok) throw new Error(`source HTTP ${r.status}`);
+      const text = await r.text();
+      const filename = agent._file.split('/').pop() || 'agent.py';
+      const fd = new FormData();
+      fd.append('file', new Blob([text], { type: 'text/x-python' }), filename);
+      const res = await fetch(`${API}/agents/import`, { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok || data.status !== 'ok') throw new Error(data.error || `HTTP ${res.status}`);
+      _installedFiles.add(filename);
+      btn.textContent = 'Installed ✓';
+      btn.classList.add('installed');
+      // Refresh the open agents panel list (if it's hydrated) so the
+      // user sees their new agent next time they open it.
+      try { loadAgentsList(); } catch {}
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = 'Install';
+      alert(`Install failed: ${e.message}`);
+    }
+  }
 
   async function loadAgentsList() {
     try {
