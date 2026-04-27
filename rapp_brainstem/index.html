@@ -5629,6 +5629,24 @@ async function importPyFile(file) {
   const card = await RAPP.Card.mintCard(text, file.name);
   RAPP.Binder.addCard(state.binder, card);
   persistBinder(); renderBinder(); renderAgents();
+
+  // On the local brainstem, also persist to <root>/agents/ on disk via
+  // /agents/import so the agent survives a refresh and is callable as a
+  // tool from chat. The in-browser binder above covers the virtual mode.
+  const isLocal = document.body.classList.contains('is-local');
+  if (isLocal) {
+    try {
+      const fd = new FormData();
+      fd.append('file', file, file.name);
+      const r = await fetch('/agents/import', { method: 'POST', body: fd });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+      try { renderAgents(); } catch {}
+    } catch (e) {
+      console.warn('agents/import failed', e);
+      alert(`Saved to in-browser binder, but failed to persist to agents/ on disk: ${e.message}`);
+    }
+  }
 }
 async function importCardJson(file) {
   const text = await file.text();
@@ -6017,6 +6035,47 @@ function wire() {
     for (const f of e.target.files) await importPyFile(f);
     e.target.value = '';
   });
+
+  // Window-wide drag & drop for *_agent.py — the welcome message tells
+  // users they can "Drag & drop .py agents" anywhere, and the green
+  // #drop-overlay is already in the DOM. Wire it up so dropping on the
+  // chat surface (not just the agents-aside dropzone) installs the file.
+  (function wireGlobalDrop() {
+    const overlay = document.getElementById('drop-overlay');
+    if (!overlay) return;
+    let depth = 0;
+    const hasFiles = e => Array.from(e.dataTransfer?.types || []).includes('Files');
+    window.addEventListener('dragenter', e => {
+      if (!hasFiles(e)) return;
+      e.preventDefault();
+      depth++;
+      overlay.style.display = 'flex';
+    });
+    window.addEventListener('dragover', e => {
+      if (!hasFiles(e)) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+    });
+    window.addEventListener('dragleave', e => {
+      if (!hasFiles(e)) return;
+      depth--;
+      if (depth <= 0) { depth = 0; overlay.style.display = 'none'; }
+    });
+    window.addEventListener('drop', async e => {
+      if (!hasFiles(e)) return;
+      e.preventDefault();
+      depth = 0;
+      overlay.style.display = 'none';
+      for (const f of e.dataTransfer.files) {
+        if (!/\.py$/i.test(f.name)) {
+          alert(`Skipping ${f.name} — only .py agent files install via drop.`);
+          continue;
+        }
+        try { await importPyFile(f); }
+        catch (err) { alert(`Import failed for ${f.name}: ${err.message}`); }
+      }
+    });
+  })();
   $('#paste-py').addEventListener('click', async () => {
     const src = prompt('Paste agent.py source:');
     if (!src) return;
