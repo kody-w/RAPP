@@ -3303,24 +3303,31 @@ async function runCopilotSignin() {
 
 /* ───── Binder + starter cards ──────────────────────────────── */
 async function bootBinder() {
-  // Local mode: the filesystem is the source of truth. Fetch every
-  // agent .py from the Flask brainstem's /agents/full endpoint and
-  // mint a card per file so the "Installed agents" panel reflects
-  // what Python actually loaded (not the browser's IndexedDB seed).
+  // The filesystem is the source of truth. Fetch every agent .py from
+  // the Flask brainstem's /agents/full endpoint and build cards directly
+  // from what Python actually loaded — no regex re-parsing, no mintCard.
   if (document.body.classList.contains('is-local')) {
     try {
       const r = await fetch('/agents/full', { cache: 'no-cache' });
       if (r.ok) {
         const data = await r.json();
-        state.binder = RAPP.Binder.empty('@local/you');
+        state.binder = { schema: 'rapp-binder/1.0', name: '@local/you', cards: [] };
         for (const f of data.files || []) {
           if (!f.source || f.filename === 'basic_agent.py') continue;
-          try {
-            const c = await RAPP.Card.mintCard(f.source, f.filename);
-            RAPP.Binder.addCard(state.binder, c);
-          } catch (e) {
-            console.warn('local card mint failed', f.filename, e);
-          }
+          // Python already loaded this file and told us every agent name
+          // it instantiated. f.agents[0] is the runtime truth — use it
+          // verbatim. Source comes along for export and the optional
+          // detail view; nothing else here re-parses it.
+          const realName = (f.agents && f.agents[0]) || f.filename.replace(/_agent\.py$/, '');
+          state.binder.cards.push({
+            schema: 'rapp-card/1.0',
+            name: realName,
+            filename: f.filename,
+            source: f.source,
+            display_name: realName,
+            manifest: { display_name: realName },
+            parsed: { agentName: realName },
+          });
         }
         // The server auto-exposes every loaded agent to the LLM regardless
         // of the client-side hand. So on local, the hand is purely a UI
