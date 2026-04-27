@@ -4707,6 +4707,144 @@ function runAgentStub(card, kwargs, upstreamSlush) {
   return JSON.stringify(base);
 }
 
+// utils/llm.py shim injected into Pyodide. Mirrors the local brainstem's
+// utils.llm interface so single-file rapps work unmodified in the
+// browser-only twin: `from utils.llm import call_llm` returns whatever
+// LLM is signed in to the host vBrainstem (Copilot / GitHub Models /
+// OpenAI / Anthropic / custom) — same intelligence the chat surface
+// uses. Also monkey-patches urllib.request.urlopen so legacy agents
+// that hardcode api.openai.com or *.openai.azure.com keep working
+// without per-rapp API keys (BookFactory v0.3.0 etc.).
+const VBRAINSTEM_LLM_SHIM = `"""utils/llm.py — Pyodide shim.
+
+Provides:
+    call_llm(messages, model=None) -> str
+    chat(messages, tools=None, tool_choice="auto", model=None) -> dict
+
+Both route through the host vBrainstem's chat-completion endpoint,
+whose URL + bearer token + model name are stamped into os.environ
+by the JS host before each agent call.
+"""
+import json
+import os
+import urllib.request as _urlreq
+
+from js import XMLHttpRequest
+
+
+def _vb_url():    return os.environ.get("_VB_CHAT_URL", "")
+def _vb_token():  return os.environ.get("_VB_CHAT_TOKEN", "")
+def _vb_model():  return os.environ.get("_VB_DEFAULT_MODEL", "gpt-4o")
+
+
+def _post_to_brainstem(body):
+    """Synchronous POST to the host's chat endpoint. Pyodide runs on
+    the main thread and the agent's perform() is sync, so we use
+    sync XMLHttpRequest — deprecated but the only sync HTTP primitive
+    available without rewriting every agent to async."""
+    url = _vb_url()
+    if not url:
+        raise RuntimeError("vBrainstem LLM URL not set (sign in first?)")
+    xhr = XMLHttpRequest.new()
+    xhr.open("POST", url, False)  # async=False → blocking
+    xhr.setRequestHeader("content-type", "application/json")
+    tok = _vb_token()
+    if tok:
+        xhr.setRequestHeader("authorization", "Bearer " + tok)
+    xhr.send(json.dumps(body))
+    if xhr.status >= 400:
+        raise RuntimeError("vBrainstem LLM HTTP %d: %s" %
+                           (xhr.status, (xhr.responseText or "")[:240]))
+    return json.loads(xhr.responseText or "{}")
+
+
+def call_llm(messages, model=None):
+    body = {"model": model or _vb_model(), "messages": list(messages)}
+    try:
+        data = _post_to_brainstem(body)
+    except Exception as e:
+        return "(LLM dispatch error: %s)" % e
+    choices = data.get("choices") or []
+    if not choices:
+        return ""
+    return (choices[0].get("message") or {}).get("content") or ""
+
+
+def chat(messages, tools=None, tool_choice="auto", model=None):
+    body = {"model": model or _vb_model(), "messages": list(messages)}
+    if tools:
+        body["tools"] = list(tools)
+        body["tool_choice"] = tool_choice
+    data = _post_to_brainstem(body)
+    choices = data.get("choices") or []
+    if not choices:
+        return {"role": "assistant", "content": ""}
+    return choices[0].get("message") or {"role": "assistant", "content": ""}
+
+
+# ─── Legacy compatibility ──────────────────────────────────────────
+# Old agents (BookFactory v0.3.0 etc.) inline an _llm_call that POSTs
+# to api.openai.com or *.openai.azure.com directly, gated on
+# OPENAI_API_KEY / AZURE_OPENAI_*. Two-step bridge so they Just Work:
+#   1. seed OPENAI_API_KEY with a sentinel so their gate passes
+#   2. patch urllib.request.urlopen to detect those endpoints and
+#      reroute through _post_to_brainstem instead
+
+os.environ.setdefault("OPENAI_API_KEY", "_vb_brainstem_dispatch_")
+
+_original_urlopen = _urlreq.urlopen
+
+
+def _is_llm_endpoint(url):
+    if not isinstance(url, str):
+        return False
+    if "/chat/completions" not in url:
+        return False
+    return ("api.openai.com" in url
+            or "openai.azure.com" in url
+            or "cognitiveservices.azure.com" in url)
+
+
+class _FakeResp(object):
+    def __init__(self, payload):
+        self._b = json.dumps(payload).encode("utf-8")
+        self._read = False
+
+    def read(self, *a, **kw):
+        if self._read:
+            return b""
+        self._read = True
+        return self._b
+
+    def getcode(self):
+        return 200
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+
+def _patched_urlopen(req, *args, **kwargs):
+    full_url = getattr(req, "full_url", None) or (req if isinstance(req, str) else "")
+    if _is_llm_endpoint(full_url):
+        try:
+            body = json.loads(req.data.decode("utf-8")) if hasattr(req, "data") and req.data else {}
+        except Exception:
+            body = {}
+        # Override the agent's model pick with whatever the host is
+        # actually using — agent picked an OpenAI/Azure deployment
+        # name that's meaningless to a Copilot/Anthropic provider.
+        body["model"] = _vb_model()
+        data = _post_to_brainstem(body)
+        return _FakeResp(data)
+    return _original_urlopen(req, *args, **kwargs)
+
+
+_urlreq.urlopen = _patched_urlopen
+`;
+
 async function runAgentLive(card, kwargs, upstreamSlush) {
   if (!state.pyodide) {
     if (!state.pyodideLoading) {
@@ -4726,6 +4864,12 @@ async function runAgentLive(card, kwargs, upstreamSlush) {
         state.pyodide.FS.writeFile('/openrappter/__init__.py', '');
         state.pyodide.FS.writeFile('/openrappter/agents/__init__.py', '');
         state.pyodide.FS.writeFile('/openrappter/agents/basic_agent.py', basic);
+        // utils.llm shim — gives agents the same call_llm contract as the
+        // local brainstem so they can route through whatever LLM is
+        // signed into the host (no per-rapp API keys needed).
+        state.pyodide.FS.mkdirTree('/utils');
+        state.pyodide.FS.writeFile('/utils/__init__.py', '');
+        state.pyodide.FS.writeFile('/utils/llm.py', VBRAINSTEM_LLM_SHIM);
         await state.pyodide.runPythonAsync(`import sys; sys.path.insert(0, '/')`);
       })();
     }
@@ -4733,6 +4877,20 @@ async function runAgentLive(card, kwargs, upstreamSlush) {
   }
   // Write the agent file fresh each call (cheap)
   state.pyodide.FS.writeFile('/agents/' + card.filename, card.source);
+  // Stamp current LLM coordinates so the shim picks up provider switches
+  // (Copilot ↔ GitHub Models ↔ OpenAI ↔ custom) without a Pyodide reload.
+  // Done via globals.set + a tiny runPython — strings are passed safely
+  // without quote-escaping.
+  state.pyodide.globals.set('_VB_CHAT_URL_JS', activeChatUrl());
+  state.pyodide.globals.set('_VB_CHAT_TOKEN_JS', activeApiKey() || '');
+  state.pyodide.globals.set('_VB_DEFAULT_MODEL_JS', state.settings.model || 'gpt-4o');
+  state.pyodide.runPython(`
+import os
+os.environ['_VB_CHAT_URL'] = _VB_CHAT_URL_JS
+os.environ['_VB_CHAT_TOKEN'] = _VB_CHAT_TOKEN_JS
+os.environ['_VB_DEFAULT_MODEL'] = _VB_DEFAULT_MODEL_JS
+import utils.llm   # idempotent — installs urlopen patch first time
+`);
   const p = RAPP.Agent.parseAgentSource(card.source, card.filename);
   const className = p.className;
   const modName = card.filename.replace(/\.py$/, '');
