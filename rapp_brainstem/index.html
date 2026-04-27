@@ -1687,27 +1687,29 @@
   <!-- ── v1.9: Rapplications binder management (HTTP /api/binder/*) ── -->
   <aside id="rapps">
     <header class="aside-head"><span class="ttl">📦 Rapplications</span><button class="close" data-close="rapps">×</button></header>
-    <div style="padding: 12px 16px; font-size: 12px; color: #8b949e;">
-      Installed rapplications materialize into <code>&lt;root&gt;/agents/</code> on this twin.
-      Once installed, they're callable from chat as tools <em>and</em> via <code>POST /api/binder/agent</code>.
-    </div>
-    <div style="padding: 0 16px 10px;">
-      <button class="btn" id="btn-import-rapp" title="Import a rapplication file">📥 Import rapplication</button>
-      <input type="file" id="rapp-import-file" accept=".rapplication,.egg,.zip" style="display:none">
-      <div id="rapp-io-status" style="font-size:10px;color:#6e7681;margin-top:6px"></div>
-    </div>
-    <div style="padding: 0 16px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #58a6ff;">
-      Installed <span id="rapps-installed-count" style="color: #8b949e">(0)</span>
-    </div>
-    <div id="rapps-installed" style="padding: 0 16px 16px;"></div>
-    <div style="padding: 0 16px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #58a6ff;">
-      Catalog (RAPPstore) <span id="rapps-catalog-count" style="color: #8b949e">(0)</span>
-    </div>
-    <div id="rapps-catalog" style="padding: 0 16px 16px;"></div>
-    <div style="padding: 8px 16px 16px;">
-      <a href="/binder" target="_blank" style="font-size: 12px; color: #58a6ff; text-decoration: none;">
-        ↗ Open full binder management UI
-      </a>
+    <div class="rapps-scroll" style="flex: 1; overflow-y: auto; min-height: 0;">
+      <div style="padding: 12px 16px; font-size: 12px; color: #8b949e;">
+        Installed rapplications materialize into <code>&lt;root&gt;/agents/</code> on this twin.
+        Once installed, they're callable from chat as tools <em>and</em> via <code>POST /api/binder/agent</code>.
+      </div>
+      <div style="padding: 0 16px 10px;">
+        <button class="btn" id="btn-import-rapp" title="Import a rapplication file">📥 Import rapplication</button>
+        <input type="file" id="rapp-import-file" accept=".rapplication,.egg,.zip" style="display:none">
+        <div id="rapp-io-status" style="font-size:10px;color:#6e7681;margin-top:6px"></div>
+      </div>
+      <div style="padding: 0 16px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #58a6ff;">
+        Installed <span id="rapps-installed-count" style="color: #8b949e">(0)</span>
+      </div>
+      <div id="rapps-installed" style="padding: 0 16px 16px;"></div>
+      <div style="padding: 0 16px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #58a6ff;">
+        Catalog (RAPPstore) <span id="rapps-catalog-count" style="color: #8b949e">(0)</span>
+      </div>
+      <div id="rapps-catalog" style="padding: 0 16px 16px;"></div>
+      <div style="padding: 8px 16px 16px;">
+        <a href="/binder" target="_blank" style="font-size: 12px; color: #58a6ff; text-decoration: none;">
+          ↗ Open full binder management UI
+        </a>
+      </div>
     </div>
   </aside>
 
