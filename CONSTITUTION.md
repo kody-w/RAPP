@@ -1720,5 +1720,226 @@ deserves the same "is this really necessary?" bar as adding a new
 
 ---
 
+## Article XXVII — RAR Holds Files; the Rapp Store Holds Bundles
+
+A bare `agent.py` and a packaged application are different artifacts
+and have different homes. Conflating them creates noise in the rapp
+store and orphans bare agents that would be discoverable through RAR.
+The boundary is mechanical, not a judgment call.
+
+> **One file → RAR. Bundle → rapp store. The manifest decides.**
+
+### XXVII.1 — The test
+
+Look at what the user installs. If the entire deliverable is a single
+`*_agent.py` file, the artifact is a RAR agent — even if the file was
+*built* from a multi-file `source/` tree, even if the file is large,
+even if it composites many internal personas via `_Internal`-prefixed
+classes. The unit of share is one file.
+
+If the deliverable bundles the agent file with any of:
+
+- a UI (`manifest.ui`),
+- a service module (`manifest.service`),
+- a state cartridge under `eggs/`,
+
+then the artifact is a rapplication and lives in the rapp store. The
+unit of share is the directory.
+
+Multi-file `source/` directories are build-time scaffolding, not
+ship-time payload, and do not by themselves promote a bare agent into
+a rapplication. A `tools/build.py` that collapses `source/*.py` into
+one shippable singleton is a builder, not a UI.
+
+### XXVII.2 — Enforcement
+
+The rapp store validator (`SPEC.md` §6 in `kody-w/rapp_store`) rejects
+manifests that declare neither `ui` nor `service` and ship no `eggs/`
+with error code `E_BARE_AGENT_BELONGS_IN_RAR`. The rejection comment
+links the submitter to RAR's `[AGENT]` issue flow with a
+copy-pasteable example. Federation submissions are checked the same
+way: the receiver inspects the source repo's manifest before staging.
+
+RAR does not enforce the inverse. A bare agent submitted to RAR is
+always accepted on its own merits; a rapplication accidentally
+submitted to RAR as a bare agent is a missed opportunity, not a
+breach. The two stores are asymmetric.
+
+### XXVII.3 — Senses are neither
+
+Per Article XXIV, senses are a third artifact type — not bare agents
+(no `BasicAgent`, no `perform`), not rapplications (no manifest in
+the `rapp-application/1.0` schema). They install into
+`rapp_brainstem/senses/` and are catalogued separately. The boundary
+articulated here applies to agents and rapplications only.
+
+### XXVII.4 — What this rules out
+
+- ❌ Listing bare agents in `rapp_store/index.json` for
+  "discoverability." RAR is the discovery layer for bare agents. A
+  rapp store entry that links *out* to a RAR-hosted agent is fine; a
+  rapp store entry that *duplicates* RAR is not.
+- ❌ Adding a stub UI (`<html></html>`) or stub service to a bare
+  agent purely to land it in the rapp store. The validator can't catch
+  this; the maintainer does at review time. The rule is: real surface
+  or RAR.
+- ❌ A "bare agent rapp store" parallel to the rapplication store.
+  Two artifact types, two stores. RAR is the bare-agent store.
+
+### XXVII.5 — Why two stores
+
+A store sells finished products. A registry indexes building blocks.
+They want different metadata, different browse paths, and different
+trust posture. A user shopping for an installable workflow benefits
+from a small curated catalog of complete experiences. A developer
+hunting for a building block benefits from a large indexed registry
+with provenance. Forcing both into one surface degrades both.
+
+---
+
+## Article XXVIII — Material Changes Are Proposed Before They're Applied
+
+Code changes that move artifacts, rename public surfaces, alter the
+catalog schema, or otherwise touch durable structure are proposed in
+writing before they're applied. The proposal lives in the repo it
+changes, references the articles it touches, and remains in the
+history as the audit trail.
+
+> **No silent restructures. The PR is the receipt.**
+
+### XXVIII.1 — What needs a proposal
+
+A change requires a written proposal (in-repo doc + PR) when it:
+
+- moves or deletes published artifacts (rapplications, agents,
+  senses, eggs);
+- changes a spec (`SPEC.md`, manifest schema, validation rules);
+- changes the constitution (this document);
+- changes catalog identifiers — the IDs users `install` against;
+- changes URLs that external systems link to (`singleton_url`, raw
+  paths, registry slugs).
+
+### XXVIII.2 — What does not
+
+Pure additions (a new rapplication, a new agent, a new test, a doc
+fix), bug fixes that preserve all observable behavior, and routine
+operational changes (CI tweaks, dependency bumps, formatting) ship as
+ordinary PRs. Proposals are for restructuring, not contributing.
+
+### XXVIII.3 — The shape of a proposal
+
+One markdown file in `docs/proposals/NNNN-<slug>.md` containing:
+
+- **Status** — draft / accepted / implemented / superseded
+- **Context** — what's true today and why it's wrong
+- **Proposed change** — what specifically gets moved, renamed, deleted
+- **Migration** — step-by-step ordering, one PR per step
+- **Rollback** — how to undo if it goes wrong
+- **References** — links to constitutional articles touched
+
+Numbering is monotonic and permanent. Once a proposal merges, its
+number is reserved even if a later proposal supersedes it
+(supersession links forward, not by renumbering).
+
+### XXVIII.4 — Authority
+
+The maintainer (currently `@kody-w`) approves proposals. AI agents
+may draft, push, and self-review proposals; they do not self-approve
+the merge. The proposal sits in PR form long enough for a deliberate
+human merge action even when the only "human" in the loop is the
+maintainer's click.
+
+### XXVIII.5 — Why
+
+Two reasons:
+
+- **Traceability.** Months later, "why is this entry gone from
+  `index.json`?" has a clean answer: the proposal that moved it,
+  linked from the commit.
+- **Friction in the right place.** Material changes deserve a beat
+  of thought. A draft proposal is the cheapest possible artifact
+  that delivers that beat.
+
+### XXVIII.6 — Relation to Article XXVI
+
+Constitutional amendments (Article XXVI) are a *kind* of material
+change and follow this article's process: a proposal in
+`docs/proposals/` precedes the amendment PR. The amendment PR cites
+the proposal. Both articles apply; neither replaces the other.
+
+---
+
+## Article XXIX — Use the Upstream's Front Door
+
+When acting on another repo in this platform — `kody-w/RAR`,
+`kody-w/rapp_store`, `kody-w/RAPP` — use that repo's documented
+submission flow exactly as an outside contributor would. Do not
+bypass the front door because you happen to have push access.
+
+> **The maintainer should not have a privileged path that the public
+> doesn't.**
+
+### XXIX.1 — The rule
+
+If a repo publishes a submission API (issue template, workflow,
+form, CLI tool), all material changes to its tracked artifacts go
+through that API. Examples:
+
+- New agent for RAR → open an `[AGENT] @publisher/slug` issue per
+  RAR's `process-issues.yml` flow. Do not commit directly to
+  `agents/@publisher/`.
+- New rapplication for the rapp store → open a `[RAPP]` issue or
+  call the `@rapp/publish-to-rapp-store` agent's `submit_*` action.
+  Do not hand-edit `index.json` to add an entry.
+- Migrating an agent from one repo to another → open a submission
+  in the destination repo using its API, then delete from the source.
+
+Direct `git push` on `agents/`, `index.json`, `registry.json`, or
+the equivalent state file in any of these repos is reserved for the
+*output* of the submission flow (the workflow's bot commit), not
+human or AI ad-hoc edits.
+
+### XXIX.2 — Exceptions
+
+Three categories bypass the front door legitimately:
+
+- **The submission flow itself.** The receiver workflow that
+  promotes staged content is the front door's other side; its
+  commits to `agents/` / `index.json` are the rule, not the
+  exception.
+- **Repo-internal changes that don't touch tracked artifacts.** Bug
+  fixes, doc updates, refactors of non-published files, CI
+  configuration. The front door is for artifacts; the kitchen door
+  is for plumbing.
+- **Emergencies.** Live security issue, broken `index.json`, etc.
+  Document the bypass in the commit message and follow up with a
+  proposal explaining why the front door wasn't usable in time.
+
+### XXIX.3 — Why
+
+Two reasons, both about the public API:
+
+- **Dogfooding.** Every submission through the front door tests the
+  flow as an outside contributor would experience it. Bugs surface
+  immediately. A maintainer who only ever pushes direct will ship a
+  broken submission API and not notice.
+- **Equality.** The submission API is a contract with outside
+  contributors. If maintainers route around it, the contract decays
+  — branches that "shouldn't" exist accumulate, fields that "no one"
+  fills get dropped, validations that "internal users" don't need
+  rot. Treating your own repos like external ones keeps the contract
+  alive.
+
+### XXIX.4 — Compatibility with Article XXVIII
+
+Article XXVIII says material changes are proposed first. Article
+XXIX says material changes go through the upstream's front door.
+They compose: the proposal lays out *what* changes; the front door
+is *how* each step lands. A proposal that calls for moving 7 agents
+to RAR cashes out as 7 RAR `[AGENT]` issues, each linking back to
+the proposal.
+
+---
+
 *Ratified for the RAPP platform. The engine stays small so the agents
 can be everything.*
