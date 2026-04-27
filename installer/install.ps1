@@ -864,23 +864,59 @@ function Launch-Brainstem {
 
 # ── Project-local helpers (--here / RAPP_INSTALL_MODE=local) ─────────
 
+function Get-ClaimedPorts {
+    # Read the cross-install peer registry so back-to-back installs (where
+    # neither brainstem is running yet) don't both claim 7072.
+    $helper = Join-Path $BRAINSTEM_HOME "src\rapp_brainstem\utils\peer_registry.py"
+    if (-not (Test-Path $helper)) { return @() }
+    try {
+        $out = & python3 $helper claimed-ports 2>$null
+        if ($LASTEXITCODE -ne 0 -or -not $out) {
+            $out = & python $helper claimed-ports 2>$null
+        }
+        if ($out) {
+            return ($out -split '\s+' | Where-Object { $_ -match '^\d+$' } | ForEach-Object { [int]$_ })
+        }
+    } catch {}
+    return @()
+}
+
+function Register-InPeers {
+    param([string]$BrainstemDir, [int]$Port)
+    $helper = Join-Path $BRAINSTEM_HOME "src\rapp_brainstem\utils\peer_registry.py"
+    if (-not (Test-Path $helper)) { return }
+    $version = ""
+    $vf = Join-Path $BrainstemDir "VERSION"
+    if (Test-Path $vf) { $version = (Get-Content $vf -Raw).Trim() }
+    try {
+        & python3 $helper upsert $BrainstemDir $Port $version 2>$null | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            & python $helper upsert $BrainstemDir $Port $version 2>$null | Out-Null
+        }
+    } catch {}
+}
+
 function Find-FreePort {
     param([int]$StartPort = 7072)
     $lim = $StartPort + 50
+    $claimed = @(Get-ClaimedPorts)
     for ($p = $StartPort; $p -lt $lim; $p++) {
         $inUse = $false
-        try {
-            $conn = Get-NetTCPConnection -LocalPort $p -ErrorAction SilentlyContinue
-            if ($conn) { $inUse = $true }
-        } catch {
-            # Fallback if Get-NetTCPConnection unavailable (older Windows)
+        if ($claimed -contains $p) { $inUse = $true }
+        if (-not $inUse) {
             try {
-                $tcp = New-Object System.Net.Sockets.TcpClient
-                $iar = $tcp.BeginConnect("127.0.0.1", $p, $null, $null)
-                $iar.AsyncWaitHandle.WaitOne(100) | Out-Null
-                if ($tcp.Connected) { $inUse = $true }
-                $tcp.Close()
-            } catch {}
+                $conn = Get-NetTCPConnection -LocalPort $p -ErrorAction SilentlyContinue
+                if ($conn) { $inUse = $true }
+            } catch {
+                # Fallback if Get-NetTCPConnection unavailable (older Windows)
+                try {
+                    $tcp = New-Object System.Net.Sockets.TcpClient
+                    $iar = $tcp.BeginConnect("127.0.0.1", $p, $null, $null)
+                    $iar.AsyncWaitHandle.WaitOne(100) | Out-Null
+                    if ($tcp.Connected) { $inUse = $true }
+                    $tcp.Close()
+                } catch {}
+            }
         }
         if (-not $inUse) { return $p }
     }
@@ -936,6 +972,7 @@ function Main-Local {
     $port = Find-FreePort -StartPort 7072
     Write-LocalLauncher -Port $port
     Update-ProjectGitignore
+    Register-InPeers -BrainstemDir (Join-Path $BRAINSTEM_HOME "src\rapp_brainstem") -Port $port
 
     $installedVersion = ""
     $vf = "$BRAINSTEM_HOME\src\rapp_brainstem\VERSION"
@@ -985,6 +1022,7 @@ function Main {
     Setup-Dependencies
     Install-CLI
     Create-Env
+    Register-InPeers -BrainstemDir (Join-Path $BRAINSTEM_HOME "src\rapp_brainstem") -Port 7071
 
     $installedVersion = ""
     $vf = "$BRAINSTEM_HOME\src\rapp_brainstem\VERSION"

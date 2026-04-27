@@ -1256,16 +1256,43 @@ with open(sys.argv[2], 'w') as f: json.dump(out, f)
 # ── Project-local helpers (--here mode) ──────────────────────────────
 
 find_free_port() {
+    # Pick a port free in three senses (good-neighbor pattern):
+    #   1. No process currently listening (lsof)
+    #   2. No TCP accept on 127.0.0.1 (covers ports without lsof permission)
+    #   3. Not claimed by another brainstem in the peer registry
+    #      (~/.config/rapp/peers.json — set by previous installs that
+    #      haven't started yet, so two back-to-back --here installs don't
+    #      both claim 7072 and crash on first start.)
     local start="${1:-7072}" p="$start" lim=$((start + 50))
+    local registry_helper="$BRAINSTEM_HOME/src/rapp_brainstem/utils/peer_registry.py"
+    local claimed=""
+    if [ -f "$registry_helper" ]; then
+        claimed=$(python3 "$registry_helper" claimed-ports 2>/dev/null || true)
+    fi
     while [ "$p" -lt "$lim" ]; do
         if ! lsof -ti ":$p" >/dev/null 2>&1 && \
-           ! (exec 3<>/dev/tcp/127.0.0.1/$p) 2>/dev/null; then
+           ! (exec 3<>/dev/tcp/127.0.0.1/$p) 2>/dev/null && \
+           ! echo " $claimed " | grep -q " $p "; then
             echo "$p"
             return 0
         fi
         p=$((p + 1))
     done
     echo "$start"
+}
+
+register_in_peers() {
+    # Append this install to the local peer registry so future installs
+    # see its port. The /api/peers endpoint reads the same file at runtime
+    # to render the neighborhood view.
+    local brainstem_dir="$1" port="$2"
+    local registry_helper="$BRAINSTEM_HOME/src/rapp_brainstem/utils/peer_registry.py"
+    local version=""
+    [ -f "$BRAINSTEM_HOME/src/rapp_brainstem/VERSION" ] && \
+        version=$(cat "$BRAINSTEM_HOME/src/rapp_brainstem/VERSION" | tr -d '[:space:]')
+    if [ -f "$registry_helper" ]; then
+        python3 "$registry_helper" upsert "$brainstem_dir" "$port" "$version" >/dev/null 2>&1 || true
+    fi
 }
 
 write_local_launcher() {
@@ -1278,8 +1305,31 @@ write_local_launcher() {
 HERE="\$(cd "\$(dirname "\$0")" && pwd)"
 SRC="\$HERE/src/rapp_brainstem"
 VENV_PYTHON="\$HERE/venv/bin/python"
+PORT_FILE="\$HERE/PORT"
+
+# Good-neighbor pattern: if the install-time port is already taken at
+# launch (e.g. another brainstem grabbed it first), autopick the next
+# free port and persist the new value back to BRAINSTEM_HOME/PORT and
+# the peer registry so siblings see the actual running port.
+desired_port="${port}"
+[ -f "\$PORT_FILE" ] && desired_port=\$(cat "\$PORT_FILE" | tr -d '[:space:]')
+final_port="\$desired_port"
+if lsof -ti ":\$desired_port" >/dev/null 2>&1; then
+    p=\$((desired_port + 1))
+    while [ "\$p" -lt \$((desired_port + 50)) ]; do
+        if ! lsof -ti ":\$p" >/dev/null 2>&1 && \\
+           ! (exec 3<>/dev/tcp/127.0.0.1/\$p) 2>/dev/null; then
+            final_port="\$p"; break
+        fi
+        p=\$((p + 1))
+    done
+    echo "▶ Port \$desired_port busy; using \$final_port instead"
+    echo "\$final_port" > "\$PORT_FILE"
+    REGHELPER="\$SRC/utils/peer_registry.py"
+    [ -f "\$REGHELPER" ] && python3 "\$REGHELPER" upsert "\$SRC" "\$final_port" "" >/dev/null 2>&1 || true
+fi
 cd "\$SRC"
-PORT=${port} exec "\$VENV_PYTHON" brainstem.py "\$@"
+PORT=\$final_port exec "\$VENV_PYTHON" brainstem.py "\$@"
 LAUNCHER
     chmod +x "$launcher"
     echo "$port" > "$BRAINSTEM_HOME/PORT"
@@ -1321,6 +1371,7 @@ main_local() {
     port=$(find_free_port 7072)
     write_local_launcher "$port"
     ensure_project_gitignore
+    register_in_peers "$BRAINSTEM_HOME/src/rapp_brainstem" "$port"
 
     local installed_version
     installed_version=$(cat "$BRAINSTEM_HOME/src/rapp_brainstem/VERSION" 2>/dev/null | tr -d '[:space:]')
@@ -1392,6 +1443,7 @@ main() {
     install_cli
     create_env
     install_binder_locally
+    register_in_peers "$BRAINSTEM_HOME/src/rapp_brainstem" 7071
 
     # Make sure brainstem and gh are on PATH for this session
     export PATH="$BRAINSTEM_BIN:/opt/homebrew/bin:/usr/local/bin:$PATH"
