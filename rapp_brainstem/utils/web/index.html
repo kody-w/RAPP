@@ -12,8 +12,14 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Brainstem">
-<link rel="apple-touch-icon" href="./icon-192.svg">
-<link rel="icon" href="./icon-192.svg">
+<!-- iOS ignores SVG apple-touch-icons — must be PNG (180px is the
+     legacy "Add to Home Screen" size; the 192/512 PNGs back the
+     manifest icons array for Android/PWA installs). -->
+<link rel="apple-touch-icon" href="./icon-180.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./icon-180.png">
+<link rel="apple-touch-icon" sizes="192x192" href="./icon-192.png">
+<link rel="icon" type="image/svg+xml" href="./icon-192.svg">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
 
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>

@@ -8,12 +8,15 @@
 //     itself still needs to be running on :7071 for chat to work; the SW only
 //     promises that the *UI shell* is offline-resilient.
 
-const CACHE_VERSION = 'rapp-brainstem-v1';
+const CACHE_VERSION = 'rapp-brainstem-v2';
 const SHELL = [
   './',
   './index.html',
   './rapp.js',
   './manifest.webmanifest',
+  './icon-180.png',
+  './icon-192.png',
+  './icon-512.png',
   './icon-192.svg',
   './icon-512.svg',
 ];
