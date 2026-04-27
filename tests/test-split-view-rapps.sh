@@ -102,16 +102,35 @@ echo "--- Section 5: multi-rapp tabs (new) ---"
 assert_grep "tab close handler"           'closeTab'                "$INDEX"
 assert_grep "tab active class"            'tab-active'              "$INDEX"
 
+# ── Section 5b: Cmd+K command palette (new) ───────────────────────────
+
+echo ""
+echo "--- Section 5b: Cmd+K command palette (new) ---"
+assert_grep "cmdk-modal exists"          'id="cmdk-modal"'    "$INDEX"
+assert_grep "cmdk-search input"          'id="cmdk-search"'   "$INDEX"
+assert_grep "cmdk-list container"        'id="cmdk-list"'     "$INDEX"
+assert_grep "openCmdK JS fn"             'function openCmdK'  "$INDEX"
+assert_grep "Cmd+K binding (metaKey)"    'metaKey'            "$INDEX"
+assert_grep "Cmd+K binding (ctrlKey)"    'ctrlKey'            "$INDEX"
+assert_grep "key K bound"                "e.key === 'k'"      "$INDEX"
+
+# ── Section 5c: pop-out window for split-pane tab (new) ────────────────
+
+echo ""
+echo "--- Section 5c: pop-out window (new) ---"
+assert_grep "popOutTab JS fn"            'function popOutTab' "$INDEX"
+assert_grep "split-popout button"        'id="split-popout"'  "$INDEX"
+
 # ── Section 6: only ADDITIONS — sanity that we didn't strip key text ───
 
 echo ""
 echo "--- Section 6: file-size sanity (additive only) ---"
 LINES=$(wc -l < "$INDEX")
-if [ "$LINES" -gt 2449 ]; then
-    echo "  ✓ index.html grew (${LINES} lines, was 2449) — additive change"
+if [ "$LINES" -gt 2999 ]; then
+    echo "  ✓ index.html grew (${LINES} lines, was 2999 after split-view) — additive change"
     PASS=$((PASS + 1))
 else
-    echo "  ✗ index.html did not grow (${LINES} lines) — expected additions"
+    echo "  ✗ index.html did not grow past 2999 (${LINES} lines) — expected cmdk+popout additions"
     FAIL=$((FAIL + 1)); FAIL_NAMES+=("file-size-sanity")
 fi
 
