@@ -722,6 +722,154 @@
     color: #24292e;
     border-color: #57606a;
   }
+
+  /* ── NEW: side-by-side rapp split-pane ──────────────────────────
+     Activates only when body.split-active is set. When inactive,
+     #split-pane is display:none and the page renders identically to
+     before. This is purely additive — no existing rule changes. */
+  :root { --split-width: 50vw; }
+
+  /* Wrap (#chat-and-pane) sits between header and footer. When the
+     pane is hidden, it behaves exactly like the old #chat container
+     (single child, flex:1). When active, it splits horizontally. */
+  #chat-and-pane {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    min-height: 0;
+    overflow: hidden;
+  }
+  #chat-and-pane > #chat { flex: 1; min-width: 0; }
+  body.split-active #chat-and-pane > #chat { flex: 0 0 calc(100vw - var(--split-width)); }
+
+  #split-pane {
+    display: none;
+    flex-direction: column;
+    width: var(--split-width);
+    min-width: 320px;
+    background: #0d1117;
+    border-left: 1px solid #21262d;
+    position: relative;
+  }
+  body.split-active #split-pane { display: flex; }
+  body.light-mode #split-pane { background: #ffffff; border-left-color: #d0d7de; }
+
+  #split-divider {
+    position: absolute;
+    top: 0; bottom: 0; left: -3px; width: 6px;
+    cursor: col-resize;
+    z-index: 5;
+    background: transparent;
+    transition: background 0.15s;
+  }
+  #split-divider:hover, #split-divider.dragging { background: rgba(88,166,255,0.4); }
+
+  .split-head {
+    display: flex; align-items: center; gap: 4px;
+    padding: 6px 10px;
+    background: #161b22;
+    border-bottom: 1px solid #21262d;
+    flex-shrink: 0;
+  }
+  body.light-mode .split-head { background: #f6f8fa; border-bottom-color: #d0d7de; }
+  #split-tabs {
+    display: flex; flex: 1; gap: 4px; overflow-x: auto;
+    scrollbar-width: thin;
+  }
+  .split-tab {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #21262d; border: 1px solid #30363d;
+    border-radius: 6px 6px 0 0;
+    padding: 4px 8px 4px 10px;
+    font-size: 12px; color: #8b949e;
+    cursor: pointer; flex-shrink: 0;
+    max-width: 200px;
+    transition: all 0.15s;
+  }
+  .split-tab:hover { color: #e6edf3; border-color: #58a6ff; }
+  .split-tab.tab-active {
+    background: #0d1117; color: #58a6ff;
+    border-bottom-color: #0d1117;
+  }
+  body.light-mode .split-tab { background: #eaeef2; border-color: #d0d7de; color: #57606a; }
+  body.light-mode .split-tab.tab-active { background: #ffffff; color: #0969da; border-bottom-color: #ffffff; }
+  .split-tab .tab-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .split-tab .tab-close {
+    background: transparent; border: none; color: inherit;
+    font-size: 14px; line-height: 1; padding: 0 2px;
+    cursor: pointer; opacity: 0.6;
+  }
+  .split-tab .tab-close:hover { opacity: 1; color: #f85149; }
+  .split-actions { display: flex; gap: 4px; flex-shrink: 0; }
+  .split-actions button {
+    background: #21262d; color: #8b949e; border: 1px solid #30363d;
+    border-radius: 4px; padding: 3px 7px; font-size: 11px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .split-actions button:hover { color: #58a6ff; border-color: #58a6ff; }
+
+  #split-iframes { flex: 1; position: relative; background: #fff; }
+  #split-iframes iframe {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%; border: none; background: #fff;
+    display: none;
+  }
+  #split-iframes iframe.tab-active { display: block; }
+
+  #split-empty {
+    flex: 1;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 32px; text-align: center;
+    color: #8b949e; font-size: 13px;
+  }
+  #split-empty .empty-icon { font-size: 36px; margin-bottom: 12px; opacity: 0.6; }
+  #split-empty .empty-cta {
+    background: #1f6feb; color: #fff; border: none; border-radius: 6px;
+    padding: 8px 14px; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: background 0.15s;
+    margin-top: 12px;
+  }
+  #split-empty .empty-cta:hover { background: #388bfd; }
+
+  /* When split-pane has open tabs, hide empty state and show iframe area */
+  body.split-active.split-has-tabs #split-empty { display: none; }
+  body.split-active:not(.split-has-tabs) #split-iframes { display: none; }
+
+  /* Mobile: stack pane below chat */
+  @media (max-width: 760px) {
+    #chat-and-pane { flex-direction: column; }
+    body.split-active #chat-and-pane > #chat { flex: 1 1 50%; }
+    #split-pane { width: 100%; min-width: 0; border-left: none; border-top: 1px solid #21262d; }
+    #split-divider { top: -3px; left: 0; right: 0; width: auto; height: 6px; cursor: row-resize; }
+  }
+
+  /* ── NEW: Browse RAPP_Store modal — mirrors #browse-modal exactly,
+     re-uses the same .browse-card / .br-* classes for visual parity
+     with Browse RAR. Different list source (binder catalog vs RAR
+     registry) but identical chrome. */
+  #store-modal {
+    display: none; position: fixed; inset: 0;
+    background: rgba(13,17,23,0.85); z-index: 220;
+    align-items: center; justify-content: center;
+  }
+  #store-modal.open { display: flex; }
+  .br-tagline {
+    color: #8b949e; font-size: 11px;
+    margin-top: 4px; font-style: italic;
+  }
+  .br-meta {
+    color: #8b949e; font-size: 10px; font-family: "SF Mono", monospace;
+    margin-top: 6px;
+  }
+  /* Sibling button under "Browse RAR Registry" — same chrome */
+  #store-link {
+    display: block; text-align: center; margin-top: 6px;
+    background: #21262d; color: #d2a8ff; border: 1px solid #30363d;
+    border-radius: 6px; padding: 6px 10px; font-size: 12px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  #store-link:hover { border-color: #d2a8ff; background: rgba(210,168,255,0.08); }
 </style>
 </head>
 <body>
@@ -769,6 +917,29 @@
   <iframe id="rf-iframe" title="Rapplication UI"
           allow="clipboard-read; clipboard-write; camera; microphone; geolocation"
           allowfullscreen></iframe>
+</div>
+
+<!-- ── NEW: Browse RAPP_Store modal — identical chrome to Browse RAR,
+     different list source (binder catalog vs RAR registry). ── -->
+<div id="store-modal" role="dialog" aria-modal="true" aria-label="Browse RAPP_Store">
+  <div class="browse-card">
+    <div class="bh-head">
+      <div class="bh-title">
+        🛍 Browse RAPP_Store
+        <span class="bh-stats" id="store-stats">loading…</span>
+      </div>
+      <button class="bh-close" onclick="closeStore()">✕ Close</button>
+    </div>
+    <div class="bh-filters">
+      <input type="text" id="store-search" placeholder="Search rapplication name, summary, tag…" oninput="renderStore()">
+      <select id="store-category" onchange="renderStore()">
+        <option value="">All categories</option>
+      </select>
+    </div>
+    <div class="bh-list" id="store-list">
+      <div class="browse-loading">Loading catalog…</div>
+    </div>
+  </div>
 </div>
 
 <div id="login-overlay" style="display:none">
@@ -842,6 +1013,7 @@
           Drag & drop .py files anywhere to install new agents
         </div>
         <button id="browse-link" onclick="openBrowse()">🔍 Browse RAR Registry</button>
+        <button id="store-link" onclick="openStore()">🛍 Browse RAPP_Store</button>
         <div class="rapps-header" id="rapps-header" style="display:none">📦 Rapplications</div>
         <ul id="rapp-list-ul" style="display:none"><!-- Populated by JS --></ul>
       </div>
@@ -920,6 +1092,13 @@
   </div>
 </header>
 
+<!-- ── NEW: chat-and-pane wrapper.
+     When body.split-active is unset, this wrapper acts as a single-child
+     flex column equivalent to the old #chat container. When set, it
+     splits horizontally into chat + #split-pane. Existing CSS
+     (#chat { flex:1; ... overflow-y:auto }) is unchanged. ── -->
+<div id="chat-and-pane">
+
 <div id="chat">
   <!-- Subtle Drop Watermark -->
   <div id="chat-watermark">
@@ -941,6 +1120,31 @@
     </div>
   </div>
 </div>
+
+<!-- ── NEW: side-by-side rapp pane.
+     Hidden by default (#split-pane { display:none }). Becomes flex
+     visible when body.split-active is set. Tabs live in #split-tabs;
+     the active iframe is shown via .tab-active in #split-iframes.
+     ── -->
+<aside id="split-pane" aria-label="Rapplications side panel">
+  <div id="split-divider" title="Drag to resize"></div>
+  <div class="split-head">
+    <div id="split-tabs"></div>
+    <div class="split-actions">
+      <button id="split-fullscreen" title="Open active rapp in full-screen">⛶</button>
+      <button id="split-close-all" title="Close pane" onclick="closeSplitPane()">✕</button>
+    </div>
+  </div>
+  <div id="split-iframes"></div>
+  <div id="split-empty">
+    <div class="empty-icon">📦</div>
+    <div>No rapplication open.</div>
+    <div style="margin-top:8px">Open one from the agents panel, or browse the public store.</div>
+    <button class="empty-cta" onclick="openStore()">🛍 Browse RAPP_Store</button>
+  </div>
+</aside>
+
+</div><!-- /#chat-and-pane -->
 
 <footer>
   <div id="starter-prompts">
@@ -1286,7 +1490,10 @@
           const btn = document.createElement('button');
           btn.className = 'open-btn';
           btn.textContent = 'Open ▸';
-          btn.onclick = () => openRappFrame(rapp.id, rapp.name || rapp.id, rapp.ui_filename);
+          // NEW: route the existing "Open ▸" button to the side-by-side pane.
+          // The button label is unchanged. Full-screen overlay (openRappFrame)
+          // remains accessible via the ⛶ button inside the split-pane head.
+          btn.onclick = () => openRappInSplit(rapp.id, rapp.name || rapp.id, rapp.ui_filename);
           li.appendChild(btn);
         }
         ul.appendChild(li);
@@ -2445,6 +2652,349 @@
     };
     reader.readAsText(file);
   }
+
+  // ─────────────────────────────────────────────────────────────────
+  // ── NEW: side-by-side rapp split-pane + RAPP_Store browse modal ──
+  // ─────────────────────────────────────────────────────────────────
+  // All additive — no existing function modified except the one
+  // onclick handler in loadRapplications() that now opens rapps in
+  // split mode. Full-screen overlay (#rapp-frame) is still reachable
+  // via the ⛶ button inside the split-pane header.
+  const SPLIT_STATE_KEY = 'split_pane_state';
+  let _splitTabs = [];     // [{id, name, uiFilename, src}]
+  let _splitActiveTab = null;
+
+  function _loadSplitState() {
+    try { return JSON.parse(localStorage.getItem(SPLIT_STATE_KEY) || '{}'); }
+    catch { return {}; }
+  }
+  function _saveSplitState() {
+    const widthPx = getComputedStyle(document.documentElement)
+      .getPropertyValue('--split-width').trim();
+    localStorage.setItem(SPLIT_STATE_KEY, JSON.stringify({
+      width: widthPx,
+      tabs: _splitTabs.map(t => ({ id: t.id, name: t.name, uiFilename: t.uiFilename })),
+      active: _splitActiveTab,
+    }));
+  }
+
+  function openRappInSplit(id, name, uiFilename) {
+    if (!uiFilename) {
+      // Fall back to chat reply if the rapp has no UI bundle
+      appendMsg('system', `${name || id} has no UI bundle — nothing to open.`);
+      return;
+    }
+    // Already-open tab? Just switch to it.
+    const existing = _splitTabs.find(t => t.id === id);
+    if (existing) { _activateTab(id); return; }
+    const src = `${API}/api/binder/ui/${encodeURIComponent(id)}/${encodeURIComponent(uiFilename)}`;
+    _splitTabs.push({ id, name: name || id, uiFilename, src });
+    document.body.classList.add('split-active', 'split-has-tabs');
+    _renderSplitTabs();
+    _activateTab(id);
+    _saveSplitState();
+    // Close the agents panel so the user can see the pane open
+    document.getElementById('agents-panel')?.classList.remove('open');
+  }
+
+  function closeTab(id) {
+    const idx = _splitTabs.findIndex(t => t.id === id);
+    if (idx < 0) return;
+    // Remove iframe element
+    const frame = document.querySelector(`#split-iframes iframe[data-rapp-id="${CSS.escape(id)}"]`);
+    if (frame) frame.remove();
+    _splitTabs.splice(idx, 1);
+    if (_splitActiveTab === id) {
+      _splitActiveTab = _splitTabs.length ? _splitTabs[Math.max(0, idx - 1)].id : null;
+    }
+    if (!_splitTabs.length) {
+      document.body.classList.remove('split-has-tabs');
+    } else if (_splitActiveTab) {
+      _activateTab(_splitActiveTab);
+    }
+    _renderSplitTabs();
+    _saveSplitState();
+  }
+
+  function closeSplitPane() {
+    // Close every tab and deactivate split mode
+    _splitTabs.forEach(t => {
+      const frame = document.querySelector(`#split-iframes iframe[data-rapp-id="${CSS.escape(t.id)}"]`);
+      if (frame) frame.remove();
+    });
+    _splitTabs = [];
+    _splitActiveTab = null;
+    document.body.classList.remove('split-active', 'split-has-tabs');
+    _renderSplitTabs();
+    _saveSplitState();
+  }
+
+  function _activateTab(id) {
+    _splitActiveTab = id;
+    // Ensure iframe exists
+    let frame = document.querySelector(`#split-iframes iframe[data-rapp-id="${CSS.escape(id)}"]`);
+    if (!frame) {
+      const tab = _splitTabs.find(t => t.id === id);
+      if (!tab) return;
+      frame = document.createElement('iframe');
+      frame.dataset.rappId = id;
+      frame.title = tab.name;
+      frame.setAttribute('allow', 'clipboard-read; clipboard-write; camera; microphone; geolocation');
+      frame.setAttribute('allowfullscreen', '');
+      frame.src = tab.src;
+      document.getElementById('split-iframes').appendChild(frame);
+    }
+    document.querySelectorAll('#split-iframes iframe').forEach(f => {
+      f.classList.toggle('tab-active', f.dataset.rappId === id);
+    });
+    _renderSplitTabs();
+    _saveSplitState();
+  }
+
+  function _renderSplitTabs() {
+    const tabsEl = document.getElementById('split-tabs');
+    if (!tabsEl) return;
+    tabsEl.innerHTML = '';
+    for (const t of _splitTabs) {
+      const el = document.createElement('div');
+      el.className = 'split-tab' + (t.id === _splitActiveTab ? ' tab-active' : '');
+      el.title = `${t.name} (${t.id})`;
+      const name = document.createElement('span');
+      name.className = 'tab-name';
+      name.textContent = t.name;
+      name.onclick = () => _activateTab(t.id);
+      const x = document.createElement('button');
+      x.className = 'tab-close';
+      x.textContent = '×';
+      x.title = 'Close tab';
+      x.onclick = (ev) => { ev.stopPropagation(); closeTab(t.id); };
+      el.appendChild(name);
+      el.appendChild(x);
+      tabsEl.appendChild(el);
+    }
+  }
+
+  // ⛶ → expand the active tab's rapp into the existing full-screen overlay
+  document.getElementById('split-fullscreen')?.addEventListener('click', () => {
+    const tab = _splitTabs.find(t => t.id === _splitActiveTab);
+    if (!tab) return;
+    openRappFrame(tab.id, tab.name, tab.uiFilename);
+  });
+
+  // ── Resizable divider ──
+  (function attachDivider() {
+    const div = document.getElementById('split-divider');
+    if (!div) return;
+    let dragging = false;
+    const onMove = (e) => {
+      if (!dragging) return;
+      const x = (e.touches ? e.touches[0].clientX : e.clientX);
+      const widthPx = Math.max(320, Math.min(window.innerWidth - 320, window.innerWidth - x));
+      document.documentElement.style.setProperty('--split-width', widthPx + 'px');
+    };
+    const onUp = () => {
+      if (!dragging) return;
+      dragging = false;
+      div.classList.remove('dragging');
+      _saveSplitState();
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend', onUp);
+    };
+    const onDown = (e) => {
+      dragging = true;
+      div.classList.add('dragging');
+      e.preventDefault();
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+      document.addEventListener('touchmove', onMove, { passive: false });
+      document.addEventListener('touchend', onUp);
+    };
+    div.addEventListener('mousedown', onDown);
+    div.addEventListener('touchstart', onDown, { passive: false });
+  })();
+
+  // ── postMessage bridge: rapp iframes can post events to the chat ──
+  // Supported envelopes:
+  //   { type: 'chat:append', text: '...' }                — appends an assistant message
+  //   { type: 'chat:send',   text: '...' }                — fills the input and sends
+  //   { type: 'rapp:close' }                              — closes the sender's tab
+  // The sender is identified by event.source matching one of our iframes.
+  window.addEventListener('message', (ev) => {
+    const data = ev.data;
+    if (!data || typeof data !== 'object' || !data.type) return;
+    // Verify the message came from one of our managed iframes
+    const frames = document.querySelectorAll('#split-iframes iframe, #rf-iframe');
+    let senderId = null;
+    for (const f of frames) {
+      if (f.contentWindow === ev.source) {
+        senderId = f.dataset.rappId || 'rapp-frame';
+        break;
+      }
+    }
+    if (!senderId) return;
+    if (data.type === 'chat:append' && typeof data.text === 'string') {
+      appendMsg('assistant', data.text);
+    } else if (data.type === 'chat:send' && typeof data.text === 'string') {
+      const input = document.getElementById('input');
+      if (input) { input.value = data.text; sendMessage(); }
+    } else if (data.type === 'rapp:close') {
+      if (senderId === 'rapp-frame') closeRappFrame();
+      else closeTab(senderId);
+    }
+  });
+
+  // ── Browse RAPP_Store modal (parallel to Browse RAR) ──
+  let _storeCatalog = null;
+  let _installedRappIds = new Set();
+
+  async function openStore() {
+    const modal = document.getElementById('store-modal');
+    modal.classList.add('open');
+    document.getElementById('agents-panel')?.classList.remove('open');
+    document.getElementById('store-search').value = '';
+    document.getElementById('store-category').value = '';
+    document.getElementById('store-list').innerHTML = '<div class="browse-loading">Loading catalog…</div>';
+    document.getElementById('store-stats').textContent = 'loading…';
+    try {
+      const [cat, installed] = await Promise.all([
+        fetch(`${API}/api/binder/catalog`, { cache: 'no-cache' }).then(r => r.ok ? r.json() : Promise.reject(new Error(`catalog HTTP ${r.status}`))),
+        fetch(`${API}/api/binder`).then(r => r.ok ? r.json() : { installed: [] }).catch(() => ({ installed: [] }))
+      ]);
+      _storeCatalog = cat;
+      _installedRappIds = new Set(((installed.installed || installed.rapps || [])).map(x => x.id));
+      const rapps = cat.rapplications || [];
+      const cats = [...new Set(rapps.map(r => r.category).filter(Boolean))].sort();
+      const sel = document.getElementById('store-category');
+      sel.innerHTML = '<option value="">All categories</option>' +
+        cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+      document.getElementById('store-stats').textContent =
+        `${rapps.length} rapplications · ${cats.length} categories`;
+      renderStore();
+    } catch (e) {
+      document.getElementById('store-list').innerHTML =
+        `<div class="browse-loading browse-error">Failed to load RAPP_Store: ${escapeHtml(e.message)}</div>`;
+      document.getElementById('store-stats').textContent = 'offline';
+    }
+  }
+  function closeStore() {
+    document.getElementById('store-modal').classList.remove('open');
+  }
+  document.getElementById('store-modal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'store-modal') closeStore();
+  });
+
+  function renderStore() {
+    if (!_storeCatalog) return;
+    const q = (document.getElementById('store-search').value || '').trim().toLowerCase();
+    const cat = document.getElementById('store-category').value;
+    const all = _storeCatalog.rapplications || [];
+    const filtered = all.filter(r => {
+      if (cat && r.category !== cat) return false;
+      if (q) {
+        const hay = [r.name, r.id, r.summary, r.tagline, ...(r.tags || [])].join(' ').toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+    const list = document.getElementById('store-list');
+    if (!filtered.length) {
+      list.innerHTML = '<div class="browse-loading">No rapplications match these filters.</div>';
+      return;
+    }
+    list.innerHTML = filtered.map((r, idx) => {
+      const installed = _installedRappIds.has(r.id);
+      const tags = (r.tags || []).slice(0, 4).map(t =>
+        `<span class="br-chip">${escapeHtml(t)}</span>`).join('');
+      const tagline = r.tagline ? `<div class="br-tagline">${escapeHtml(r.tagline)}</div>` : '';
+      const bits = [];
+      if (r.version) bits.push(`v${escapeHtml(r.version)}`);
+      if (r.publisher) bits.push(escapeHtml(r.publisher));
+      if (r.singleton_lines) bits.push(`${r.singleton_lines} lines`);
+      const meta = bits.length ? `<div class="br-meta">${bits.join(' · ')}</div>` : '';
+      const btnLabel = installed ? 'Open ▸' : 'Install';
+      const btnCls = installed ? 'br-install installed' : 'br-install';
+      return `
+        <div class="br-row" data-idx="${idx}">
+          <div class="br-body">
+            <div class="br-name">${escapeHtml(r.name || r.id)}</div>
+            <div class="br-id">${escapeHtml(r.id)}</div>
+            ${tagline}
+            <div class="br-desc">${escapeHtml(r.summary || '')}</div>
+            <div class="br-tags">${tags}</div>
+            ${meta}
+          </div>
+          <button class="${btnCls}" data-idx="${idx}" data-id="${escapeHtml(r.id)}">${btnLabel}</button>
+        </div>`;
+    }).join('');
+    list.querySelectorAll('.br-install').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const r = filtered[+btn.dataset.idx];
+        if (_installedRappIds.has(r.id)) {
+          // Already installed → look up ui_filename and open in split
+          fetch(`${API}/api/binder`).then(x => x.json()).then(data => {
+            const installedList = data.installed || data.rapps || [];
+            const entry = installedList.find(x => x.id === r.id);
+            const uiFile = entry && entry.ui_filename;
+            closeStore();
+            if (uiFile) openRappInSplit(r.id, r.name || r.id, uiFile);
+            else appendMsg('system', `${r.name || r.id} has no UI bundle — nothing to open.`);
+          }).catch(() => {});
+        } else {
+          installFromStore(r, btn);
+        }
+      });
+    });
+  }
+
+  async function installFromStore(rapp, btn) {
+    btn.disabled = true;
+    btn.textContent = 'Installing…';
+    try {
+      const r = await fetch(`${API}/api/binder/install`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: rapp.id })
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
+      _installedRappIds.add(rapp.id);
+      btn.textContent = 'Open ▸';
+      btn.classList.add('installed');
+      btn.disabled = false;
+      // Refresh agents-panel listing so the new rapp appears next time
+      try { loadRapplications(); loadAgentsList(); } catch {}
+      // Auto-open the freshly installed rapp in split-view if it has a UI
+      if (d.ui_filename || rapp.ui_url) {
+        const uiFile = d.ui_filename || (rapp.ui_url && rapp.ui_url.split('/').pop());
+        closeStore();
+        if (uiFile) openRappInSplit(rapp.id, rapp.name || rapp.id, uiFile);
+      }
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = 'Install';
+      alert(`Install failed: ${e.message}`);
+    }
+  }
+
+  // Esc closes the store modal too (existing handler also closes browse + rapp-frame)
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && document.getElementById('store-modal').classList.contains('open')) {
+      closeStore();
+    }
+  });
+
+  // ── Rehydrate split-pane state on page load ──
+  (function rehydrateSplit() {
+    const s = _loadSplitState();
+    if (s.width) document.documentElement.style.setProperty('--split-width', s.width);
+    if (Array.isArray(s.tabs) && s.tabs.length) {
+      // We don't auto-open tabs — that would race with #api/binder install
+      // state. Just persist the saved width; user re-opens rapps manually.
+      // (Keeps boot fast; avoids surprise iframes loading.)
+    }
+  })();
 </script>
 </body>
 </html>
