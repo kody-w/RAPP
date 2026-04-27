@@ -145,6 +145,15 @@
         <pre>brainstem</pre>
       </div>
       <div class="step">
+        <h3>Project-local install (optional)</h3>
+        <p>Want a brainstem scoped to a single project instead of machine-wide? <code>cd</code> into the project, then run:</p>
+        <pre>curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash -s -- --here</pre>
+        <p style="font-size:.9em;opacity:.75;margin-top:8px">
+          Drops at <code>./.brainstem/</code>, picks a free port (7072+), runs alongside your global brainstem, auto-gitignored.
+          Each project gets its own <code>agents/</code> and its own catalog. Visit <code>http://localhost:&lt;port&gt;/web/neighborhood.html</code> on any running brainstem to see all installs on this machine.
+        </p>
+      </div>
+      <div class="step">
         <h3>Try it without installing</h3>
         <p>Open the <a href="../brainstem/">virtual brainstem</a> — same UI, in-browser, BYO API key.</p>
       </div>
