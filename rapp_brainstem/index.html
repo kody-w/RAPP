@@ -3588,7 +3588,7 @@ function renderAgents() {
     const inHand = state.hand.has(c.filename);
     div.innerHTML = `
       <div style="flex:1;min-width:0">
-        <div class="name">${escapeHtml(c.parsed?.agentName || c.name)}</div>
+        <div class="name">${escapeHtml(c.manifest?.display_name || c.parsed?.agentName || c.name)}</div>
         <div class="meta">${escapeHtml(c.filename)} · ${inHand ? '<span style="color:var(--green-3)">loaded</span>' : 'in deck'}</div>
       </div>
       <div class="actions">
