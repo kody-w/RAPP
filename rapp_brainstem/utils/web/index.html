@@ -37,6 +37,10 @@
   /* ── Header (mirrors OG) ── */
   header {
     padding: 12px 24px;
+    /* Pad above the iOS status bar so the notch/time doesn't overlap
+       the title on iPhones (we set viewport-fit=cover up top, which
+       extends the page under the status bar). */
+    padding-top: max(12px, env(safe-area-inset-top, 12px));
     border-bottom: 1px solid #21262d;
     display: flex; align-items: center; gap: 10px;
     background: #161b22;
@@ -49,7 +53,7 @@
     display: flex; align-items: center; justify-content: center;
     color: #fff;
   }
-  header h1 { font-size: 15px; font-weight: 600; color: #e6edf3; }
+  header h1 { font-size: 15px; font-weight: 600; color: #e6edf3; white-space: nowrap; }
   header h1 .badge {
     margin-left: 6px; font-size: 9px; letter-spacing: 1.5px;
     color: #58a6ff; vertical-align: middle;
@@ -1194,7 +1198,8 @@
      input doesn't sit under the home indicator. */
   @media (max-width: 720px) {
     aside { right: 12px; left: 12px; width: auto; max-height: 80vh; }
-    header { padding: 10px 12px; gap: 6px; }
+    header { padding: 10px 12px; gap: 6px;
+             padding-top: max(10px, env(safe-area-inset-top, 10px)); }
     header h1 { font-size: 13px; }
     header h1 .badge { display: none; }
     header .controls { gap: 4px; }
@@ -1207,10 +1212,16 @@
        span keeps its sized SVG visible.) */
     .icon-btn { padding: 6px; font-size: 0; }
     .icon-btn .icon { width: 16px; height: 16px; }
-    /* Sign-in stays labeled because it's the primary action. */
-    #btn-signin { font-size: 11px; padding: 4px 8px; }
+    /* Sign-in goes icon-only on phones too — its full label "Sign in
+       with GitHub" wraps to 3 lines at iPhone widths and crowds out
+       Browse/Agents. Tooltip + green border keep it discoverable. */
+    #btn-signin { font-size: 0; padding: 6px; }
     /* Model selector shrinks but stays usable. */
     #model-sel { max-width: 130px; padding: 4px 6px; font-size: 11px; }
+    /* The "Drag & drop .py agents" watermark sits absolute over the chat
+       and overlaps the welcome card on phones — hide it; the welcome
+       bullet for "drag a .py file" already conveys the same info. */
+    #chat-watermark { display: none; }
     /* Welcome card / chat content gets edge-to-edge breathing room. */
     #chat { padding: 12px; gap: 10px; }
     .msg .bubble { max-width: 100%; padding: 10px 12px; font-size: 14px; }
