@@ -2259,7 +2259,12 @@ function escapeAttr(s) {
 // override the canonical structure.
 const SOUL = '[soul rendered dynamically — see buildSystemPrompt()]';
 
-const state = {
+// `var` (not `const`) so the binding lives on `window` and is reachable
+// from the earlier <script> block where rappRow() reads state.settings.tetherUrl.
+// `const` at top level of a <script> creates a script-scoped binding
+// that's invisible to other <script> tags — see the matching note in
+// rapp_brainstem/index.html for the full reasoning.
+var state = {
   sessionId: crypto.randomUUID(),
   conversation_history: [],
   fullTranscript: [],

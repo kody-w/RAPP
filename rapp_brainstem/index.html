@@ -2548,7 +2548,17 @@ function escapeAttr(s) {
 // override the canonical structure.
 const SOUL = '[soul rendered dynamically — see buildSystemPrompt()]';
 
-const state = {
+// `var` (not `const`) so the binding lives on `window` and is reachable
+// from the earlier <script> block (lines ~1733–1978), where rappRow()
+// and exportRapp() read state.settings.tetherUrl. `const` at top level
+// of a <script> creates a script-scoped binding that's invisible to
+// other <script> tags — that's what was throwing
+//   ReferenceError: state is not defined
+// when the rapplications panel rendered. `var` at top level becomes a
+// window property and is reachable from any script tag in the page.
+// Nothing reassigns `state` itself anywhere — only its sub-properties
+// are mutated — so dropping `const` doesn't lose any safety.
+var state = {
   sessionId: crypto.randomUUID(),
   conversation_history: [],
   fullTranscript: [],
