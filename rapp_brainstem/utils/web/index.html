@@ -3464,7 +3464,13 @@ async function installFromRegistry(repo, branch, agent, btn) {
     const filename = agent._file.split('/').pop();
     const card = await RAPP.Card.mintCard(src, filename);
     RAPP.Binder.addCard(state.binder, card);
-    persistBinder();
+    // Auto-load into the hand so the LLM can call it immediately. Otherwise
+    // the card lands in the deck and silently does nothing — users expect
+    // "Install from RAR" to mean "now I can use it", not "now I can manually
+    // promote it from deck to hand". Mirrors local-mode behavior where every
+    // server-side agent is in-hand by default.
+    state.hand.add(card.filename);
+    persistBinder(); persistHand();
     renderBinder(); renderAgents(); renderHand();
     renderBrowse();
   } catch (e) {
@@ -5056,7 +5062,11 @@ function wire() {
     try {
       const card = await RAPP.Card.mintCard(src, fname || '');
       RAPP.Binder.addCard(state.binder, card);
-      persistBinder(); renderBinder(); renderAgents();
+      // Auto-load into hand — same reasoning as the RAR install path: the
+      // user just told us "install this", not "park this in the deck."
+      state.hand.add(card.filename);
+      persistBinder(); persistHand();
+      renderBinder(); renderAgents(); renderHand();
       status.textContent = '✓ Installed ' + card.filename;
       setTimeout(() => $('#paste-agent-modal').classList.remove('open'), 600);
     } catch (e) {
