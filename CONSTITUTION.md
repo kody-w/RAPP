@@ -736,7 +736,7 @@ What earns repo-root residence (the closed list):
   earns root residence by holding running code, not by completing a
   numbered list.
 - **`worker/`** — Cloudflare auth/proxy worker shared across tiers.
-- **The catalog** — moved to its own repo at [`kody-w/rapp_store`](https://github.com/kody-w/rapp_store) on 2026-04-26. Brainstem fetches `index.json` from there via `RAPPSTORE_URL`. A tombstone at `rapp_store/MOVED.md` in this repo points there.
+- **The catalog** — lives in its own repo at [`kody-w/rapp_store`](https://github.com/kody-w/rapp_store) since 2026-04-26. Brainstem fetches `index.json` from there via `RAPPSTORE_URL`. Hosted viewer at https://kody-w.github.io/RAPP_Store/.
 - **The install surface** — `installer/`. Public URLs route through
   this subpath; everything inside is meant to be downloaded or
   curl-piped by a user. Holds the one-liners (`install.sh`,

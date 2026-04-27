@@ -81,7 +81,7 @@ Fetch [`skill.md`](https://kody-w.github.io/RAPP/pages/docs/skill.md) and cache 
 | `rapp_brainstem/agents/` | Showroom (top-level starter agents) + `workspace_agents/` (everything organizational: system, experimental, disabled, local-only, project folders) |
 | `rapp_swarm/` | Tier 2 — Azure Functions target |
 | `worker/` | Cloudflare auth/proxy worker |
-| `rapp_store/MOVED.md` | Tombstone — the catalog moved to [`kody-w/rapp_store`](https://github.com/kody-w/rapp_store) on 2026-04-26. Brainstem fetches `index.json` from there via `RAPPSTORE_URL`. |
+| _(catalog: [`kody-w/rapp_store`](https://github.com/kody-w/rapp_store))_ | Rapplication catalog lives in its own repo. Brainstem fetches `index.json` via `RAPPSTORE_URL`. Hosted viewer: https://kody-w.github.io/RAPP_Store/. |
 | `installer/` | Public install surface — one-liner installers (`install.sh` / `install.ps1` / `install.cmd`), `start-local.sh`, `install-swarm.sh`, ARM template, install widget, and the Tier 3 Copilot Studio bundle (`MSFTAIBASMultiAgentCopilot_*.zip`) |
 | `CONSTITUTION.md` | Articles governing the repo. Peer of `README.md` at root |
 | `pages/` | The full audience-facing site, sectioned: `pages/about/` (leadership, partners, process, security), `pages/product/` (faq, faq-slide, one-pager, use-cases), `pages/release/` (release-notes, roadmap), `pages/docs/` (markdown specs + viewer), `pages/vault/` (Obsidian vault + viewer). Shared chrome under `pages/_site/` (CSS, JS, header/footer partials, site manifest). |

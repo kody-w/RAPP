@@ -106,7 +106,7 @@ These are inviolable — do not break backwards compatibility:
 | `rapp_brainstem/` | Tier 1 local server (Flask, agents, services, web UI) |
 | `rapp_swarm/` | Tier 2 Azure Functions (vendors brainstem core) |
 | `worker/` | Cloudflare auth/proxy worker |
-| `rapp_store/MOVED.md` | Tombstone. The rapplication catalog moved to [`kody-w/rapp_store`](https://github.com/kody-w/rapp_store) on 2026-04-26 — its own public repo, fetched via `RAPPSTORE_URL` (default `raw.githubusercontent.com/kody-w/rapp_store/main/index.json`). |
+| _(catalog lives in [`kody-w/rapp_store`](https://github.com/kody-w/rapp_store))_ | Rapplication catalog is its own public repo since 2026-04-26 — brainstem fetches `index.json` via `RAPPSTORE_URL` (default `raw.githubusercontent.com/kody-w/rapp_store/main/index.json`). Hosted viewer at https://kody-w.github.io/RAPP_Store/. |
 | `tests/` | JS test runner + integration test scripts |
 | `installer/` | Public install surface — one-liner installers (`install.sh`, `install.ps1`, `install.cmd`), `start-local.sh`, `install-swarm.sh`, `azuredeploy.json` (ARM template), install-widget mirror, and the Tier 3 Copilot Studio bundle (`MSFTAIBASMultiAgentCopilot_*.zip`) |
 | `CONSTITUTION.md` | Repo governance — at root as a peer of `README.md` |
