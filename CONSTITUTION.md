@@ -2034,5 +2034,105 @@ authorization expires. New work needs a new proposal.
 
 ---
 
+## Article XXXI — Three Stores, Three Artifacts
+
+The RAPP platform has three peer artifact types. Each has its own
+public store, its own SPEC, its own submission flow, and its own
+canonical install path inside a brainstem. The boundary is mechanical
+— the file's shape decides which store owns it, no judgment call.
+
+> **Bare file → RAR. Bundle → rapp store. Sense → sense store. The
+> shape of the artifact decides.**
+
+### XXXI.1 — The three peers
+
+| Tier | Artifact | Store repo | Brainstem install path | Submission |
+|---|---|---|---|---|
+| Agents | bare `*_agent.py` (one file, BasicAgent subclass, `perform`) | `kody-w/RAR` | `agents/` | `[AGENT] @publisher/slug` |
+| Rapplications | bundles (agent + UI / service / `eggs`) | `kody-w/RAPP_Store` | `agents/` + `utils/services/` + `.brainstem_data/rapp_ui/` | `[RAPP] @publisher/id` |
+| Senses | per-channel output overlays (`name` / `delimiter` / `response_key` / `wrapper_tag` / `system_prompt`) | `kody-w/RAPP_Sense_Store` | `utils/senses/` | `[SENSE] @publisher/slug` |
+
+### XXXI.2 — Detection (mechanical, not editorial)
+
+The shape decides:
+
+1. A directory or `.zip` containing `manifest.json` with
+   `schema: "rapp-application/1.0"` is a **rapplication**.
+2. A `.py` file that imports `BasicAgent`, defines a class ending in
+   `Agent` extending `BasicAgent`, and implements `perform()` is a
+   **bare agent**.
+3. A `.py` file that does NOT import `BasicAgent` and exports the
+   five module-level strings `name`, `delimiter`, `response_key`,
+   `wrapper_tag`, `system_prompt` is a **sense**.
+
+The bare agent `@rapp/rapp_publish_agent` (in RAR) implements this
+detection programmatically. A submitter who isn't sure where their
+thing goes pipes it to that agent and gets routed automatically per
+Article XXIX.
+
+### XXXI.3 — The presentation layer
+
+`kody-w/RAPP_Store` plays a dual role: it's the rapplication catalog
+AND the unified ecosystem front door. Its landing page links to all
+three stores. Its `vbrainstem.html` chat surface aggregates all three
+catalogs. Its `ecosystem.json` (when shipped) is the merged view
+external consumers can hit at one URL.
+
+The other two stores keep their own landing pages — those are the
+**submission-side entry points** (where a submitter lands after
+googling "how do I publish a sense"). The aggregator is a convenience
+on top, not a replacement for the source-of-truth catalog each store
+maintains.
+
+### XXXI.4 — Relation to Articles XXIV and XXVII
+
+- **Article XXIV** ("Senses Are Agent-First; Frontends Are Modular
+  Consumers") defines what a sense IS — the runtime contract. XXXI
+  defines where senses LIVE — the topology. Both apply; neither
+  replaces the other.
+- **Article XXVII** ("RAR Holds Files; the Rapp Store Holds Bundles")
+  was the two-tier framing — agents vs. rapplications. XXXI extends
+  it to three tiers by adding senses. XXVII's mechanical test (one
+  file → RAR, bundle → store) is preserved verbatim as a strict
+  subset of XXXI.2 — anyone reading XXVII still gets the right
+  behavior; XXXI just adds the third case.
+
+### XXXI.5 — The brainstem's binder is the integration point
+
+The kernel-baked `binder_service.py` talks to all three stores via
+separate env-overridable URLs (`RAPPSTORE_URL`, `RAR_URL`,
+`SENSESTORE_URL`). Each has its own `/api/binder/install/<kind>`
+endpoint that places the artifact in the right brainstem directory.
+The kernel-baked `binder_agent.py` is the chat surface for the same.
+
+A user installing via chat — *"install kanban"*, *"add the eli5
+sense"*, *"give me the @rapp/learn_new agent"* — the binder agent
+classifies and routes. Same UX as the publishing agent in XXXI.2,
+just in the install direction.
+
+### XXXI.6 — What this rules out
+
+- ❌ Inventing a fourth tier without a proposal (Article XXVIII).
+  Eggs, swarms, and souls are deliberately deferred — see Proposal
+  0002 in `kody-w/RAPP_Store` for the rationale.
+- ❌ Two artifact types in one repo. The store-repo split is the
+  governance unit.
+- ❌ A unified store that hosts everything in one repo. We tried
+  that (the original `kody-w/RAPP/rapp_store/`) — it conflated
+  agents, rapplications, and senses and made every change cross
+  three concerns. Three repos, three concerns, three workflows.
+
+### XXXI.7 — Why three
+
+A user buying things wants a small curated catalog of complete
+experiences (rapplications). A developer hunting building blocks
+wants a large indexed registry with provenance (agents). A frontend
+author tuning channel behavior wants a focused list of overlays
+(senses). One storefront serving all three serves none of them
+well. Three stores, each tuned for its audience, federated under
+one front door.
+
+---
+
 *Ratified for the RAPP platform. The engine stays small so the agents
 can be everything.*
