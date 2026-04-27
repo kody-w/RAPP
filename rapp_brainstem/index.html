@@ -1820,6 +1820,17 @@
           </div>`;
       }
 
+      // The catalog mixes top-level rapplications with the sub-agent
+      // components they're composed from (personas, editor specialists,
+      // ceo specialists, pipeline pieces). The store should only show
+      // installable rapplications; components belong in the RAR registry
+      // view, not the consumer browse path. Mirrors binder.html.
+      function isRapplication(r) {
+        const tags = r.tags || [];
+        if (tags.some(t => ['persona', 'editor-specialist', 'ceo-specialist'].includes(t))) return false;
+        return tags.some(t => ['rapplication', 'composite', 'singleton'].includes(t));
+      }
+
       function render() {
         const list = BINDER.installed || [];
         $('#rapps-installed-count').textContent = `(${list.length})`;
@@ -1827,7 +1838,7 @@
           ? list.map(e => rappRow(e, true)).join('')
           : '<div style="color:#8b949e;font-style:italic;font-size:11px;">No rapplications installed yet.</div>';
 
-        const cat = (CATALOG.rapplications || []);
+        const cat = (CATALOG.rapplications || []).filter(isRapplication);
         $('#rapps-catalog-count').textContent = `(${cat.length})`;
         $('#rapps-catalog').innerHTML = cat.map(r => rappRow(r, isInstalled(r.id))).join('');
 

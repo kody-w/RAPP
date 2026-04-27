@@ -356,8 +356,19 @@
     `).join('');
   }
 
+  // The catalog mixes top-level rapplications with the sub-agent components
+  // they're composed from (personas, editor specialists, ceo specialists,
+  // pipeline pieces). The store should only show installable rapplications;
+  // components belong in the RAR registry view, not the consumer browse path.
+  function isRapplication(r) {
+    const tags = r.tags || [];
+    if (tags.some(t => ['persona', 'editor-specialist', 'ceo-specialist'].includes(t))) return false;
+    return tags.some(t => ['rapplication', 'composite', 'singleton'].includes(t));
+  }
+
   function renderCatalog() {
-    const list = (CATALOG && CATALOG.rapplications) || [];
+    const all = (CATALOG && CATALOG.rapplications) || [];
+    const list = all.filter(isRapplication);
     $('#catalog-count').textContent = list.length;
     if (list.length === 0) {
       $('#catalog').innerHTML = `<div class="empty">Catalog is empty.</div>`;
