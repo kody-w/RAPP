@@ -140,6 +140,41 @@
     margin-left: auto; font-family: ui-monospace, monospace;
   }
 
+  /* Surface badges (UI / service / eggs) — show what's in each bundle. */
+  .rapp .surfaces {
+    display: flex; gap: 4px; flex-wrap: wrap; margin: 6px 0;
+  }
+  .rapp .surface {
+    font-size: 10px; padding: 1px 7px; border-radius: 999px;
+    text-transform: uppercase; letter-spacing: .5px; font-weight: 700;
+    font-family: ui-monospace, monospace;
+  }
+  .rapp .surface.ui   { background: rgba(88,166,255,.12); color: var(--accent); }
+  .rapp .surface.svc  { background: rgba(63,185,80,.12);  color: var(--good); }
+  .rapp .surface.eggs { background: rgba(188,140,255,.12); color: #bc8cff; }
+  .rapp .surface.cat  { background: rgba(210,153,34,.12); color: var(--warn); }
+  .rapp .surface.tier { background: rgba(255,215,0,.12); color: #ffd700; }
+  .rapp .surface.tier.community { background: var(--border); color: var(--muted); }
+  .rapp .surface.tier.experimental { background: rgba(210,153,34,.12); color: var(--warn); }
+
+  /* Catalog meta line — generated_at + source link */
+  .catalog-meta {
+    font-size: 11px; color: var(--muted);
+    font-family: ui-monospace, monospace;
+    margin-top: -8px; margin-bottom: 12px;
+  }
+  .catalog-meta a { color: var(--accent); }
+
+  /* Sibling-surface links in header */
+  header .siblings {
+    display: flex; gap: 10px; margin-right: 14px; font-size: 12px;
+  }
+  header .siblings a {
+    color: var(--muted); text-decoration: none;
+  }
+  header .siblings a:hover { color: var(--accent); }
+  header .siblings a strong { color: var(--text); }
+
   /* ── Run modal ─────────────────────────────────────── */
   #modal {
     display: none; position: fixed; inset: 0;
@@ -192,7 +227,11 @@
 <body>
 
 <header>
-  <h1>📒 RAPP Binder<span class="badge">v1.8</span></h1>
+  <h1>📒 RAPP Binder<span class="badge">v1.9</span></h1>
+  <div class="siblings">
+    <a href="https://github.com/kody-w/RAPP_Store" target="_blank">store ↗</a>
+    <a href="https://github.com/kody-w/RAR" target="_blank">RAR (bare agents) ↗</a>
+  </div>
   <div class="endpoint">
     brainstem:
     <!-- Default to the origin that served this page — when this is opened
@@ -335,14 +374,25 @@
          Click <b>Install</b> on a catalog entry to materialize one.</div>`;
       return;
     }
-    $('#installed').innerHTML = list.map(e => `
+    $('#installed').innerHTML = list.map(e => {
+      // Cross-reference the catalog so installed cards show the same surface
+      // / category / tier badges as catalog cards — same shape, both columns.
+      const cat = (CATALOG && CATALOG.rapplications || []).find(r => r.id === e.id) || {};
+      const surf = surfaces(cat);
+      return `
       <div class="rapp installed">
         <div class="head">
           <span class="name">${esc(e.id)}</span>
-          <span class="pub">${esc(e.publisher || 'unknown')}</span>
+          <span class="pub">${esc(e.publisher || cat.publisher || 'unknown')}</span>
           <span class="ver">v${esc(e.version || '?')}</span>
           <span class="installed-stamp">✓ installed</span>
         </div>
+        ${(cat.category || surf.length || cat.quality_tier) ? `
+        <div class="surfaces">
+          ${cat.category ? `<span class="surface cat">${esc(cat.category)}</span>` : ''}
+          ${cat.quality_tier ? `<span class="surface tier ${esc(cat.quality_tier)}">${esc(cat.quality_tier)}</span>` : ''}
+          ${surf.map(s => `<span class="surface ${s.kind}">${s.label}</span>`).join('')}
+        </div>` : ''}
         <div class="meta">
           <span><span class="pin">file:</span> ${esc(e.singleton_filename)}</span>
           <span><span class="pin">sha:</span> ${esc((e.singleton_sha256 || '').slice(0, 12))}…</span>
@@ -352,30 +402,50 @@
           <button class="primary" onclick='openRunModal(${JSON.stringify(JSON.stringify(e))})'>▶ Run</button>
           <button class="danger" onclick='uninstall(${JSON.stringify(e.id)})'>Uninstall</button>
         </div>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
   }
 
-  // The catalog mixes top-level rapplications with the sub-agent components
-  // they're composed from (personas, editor specialists, ceo specialists,
-  // pipeline pieces). The store should only show installable rapplications;
-  // components belong in the RAR registry view, not the consumer browse path.
+  // Post-Proposal-0001 the rapp_store catalog is bundles only (Constitution
+  // Article XXVII). Sub-agents that used to clutter the list now live in
+  // kody-w/RAR. We still ignore anything that lacks a singleton URL — those
+  // are service-only rapps that need a bigger install path than this UI
+  // surfaces, OR malformed entries.
   function isRapplication(r) {
-    const tags = r.tags || [];
-    if (tags.some(t => ['persona', 'editor-specialist', 'ceo-specialist'].includes(t))) return false;
-    return tags.some(t => ['rapplication', 'composite', 'singleton'].includes(t));
+    return !!(r.singleton_url || r.service_url);
+  }
+
+  // What surfaces does this rapp ship? Drives the badges shown on each card
+  // so the user sees "this one has a UI, that one is a service" at a glance.
+  function surfaces(r) {
+    const out = [];
+    if (r.ui_url) out.push({ kind: 'ui', label: 'UI' });
+    if (r.service_url) out.push({ kind: 'svc', label: 'service' });
+    if (r.egg_url) out.push({ kind: 'eggs', label: 'eggs' });
+    return out;
   }
 
   function renderCatalog() {
     const all = (CATALOG && CATALOG.rapplications) || [];
     const list = all.filter(isRapplication);
     $('#catalog-count').textContent = list.length;
+
+    // Catalog meta line: when was this generated? Where did it come from?
+    const metaParts = [];
+    if (CATALOG && CATALOG.generated_at) metaParts.push('updated ' + CATALOG.generated_at.replace('T', ' ').replace('Z', ' UTC'));
+    if (CATALOG && CATALOG.schema) metaParts.push(CATALOG.schema);
+    const metaHTML = metaParts.length
+      ? `<div class="catalog-meta">${esc(metaParts.join(' · '))} · <a href="https://github.com/kody-w/RAPP_Store" target="_blank">source ↗</a></div>`
+      : '';
+
     if (list.length === 0) {
-      $('#catalog').innerHTML = `<div class="empty">Catalog is empty.</div>`;
+      $('#catalog').innerHTML = metaHTML + `<div class="empty">Catalog is empty.</div>`;
       return;
     }
-    $('#catalog').innerHTML = list.map(r => {
+    $('#catalog').innerHTML = metaHTML + list.map(r => {
       const installed = isInstalled(r.id);
+      const surf = surfaces(r);
+      const tier = r.quality_tier || '';
       return `
       <div class="rapp ${installed ? 'installed' : ''}">
         <div class="head">
@@ -384,9 +454,14 @@
           <span class="ver">v${esc(r.version || '?')}</span>
           ${installed ? '<span class="installed-stamp">✓ installed</span>' : ''}
         </div>
+        <div class="surfaces">
+          ${r.category ? `<span class="surface cat">${esc(r.category)}</span>` : ''}
+          ${tier ? `<span class="surface tier ${esc(tier)}">${esc(tier)}</span>` : ''}
+          ${surf.map(s => `<span class="surface ${s.kind}">${s.label}</span>`).join('')}
+        </div>
         <div class="summary">${esc((r.summary || '').slice(0, 240))}${(r.summary || '').length > 240 ? '…' : ''}</div>
         <div class="meta">
-          <span><span class="pin">manifest:</span> ${esc(r.manifest_name || '?')}</span>
+          <span><span class="pin">manifest:</span> ${esc(r.manifest_name || r.id || '?')}</span>
           ${r.singleton_lines ? `<span><span class="pin">lines:</span> ${r.singleton_lines}</span>` : ''}
           ${r.singleton_bytes ? `<span><span class="pin">size:</span> ${(r.singleton_bytes/1024).toFixed(1)}KB</span>` : ''}
         </div>
