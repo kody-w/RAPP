@@ -1879,6 +1879,32 @@
   </div>
 </div>
 
+<!-- Paste-agent modal — multi-line textarea so iOS users can paste a
+     full *_agent.py from iMessage/email/Notes and install it. Replaces
+     the prior prompt() flow which truncated to one line on iOS. -->
+<div class="modal" id="paste-agent-modal">
+  <div class="panel">
+    <header><span class="ttl">📋 Paste agent source</span><button class="close" id="paste-agent-close">×</button></header>
+    <div class="body">
+      <div style="font-size:11px;color:#8b949e;margin-bottom:8px">
+        Paste a single-file agent's <code>.py</code> source. Filename is derived from the class name unless you set one below.
+      </div>
+      <textarea id="paste-agent-src" placeholder="class MyAgent(BasicAgent):&#10;    metadata = { ... }&#10;    def perform(self, **kwargs): ..."
+        style="width:100%;min-height:240px;background:#0d1117;color:#e6edf3;border:1px solid #30363d;border-radius:6px;padding:10px;font-family:'SF Mono',ui-monospace,monospace;font-size:12px;outline:none;resize:vertical"></textarea>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <input id="paste-agent-fname" type="text" placeholder="filename (optional, e.g. my_agent.py)"
+          style="flex:1;background:#0d1117;color:#e6edf3;border:1px solid #30363d;border-radius:6px;padding:8px;font-family:'SF Mono',ui-monospace,monospace;font-size:12px;outline:none">
+        <button class="btn" id="paste-agent-clip" type="button" title="Pull clipboard contents into the textarea">📋 From clipboard</button>
+      </div>
+      <div id="paste-agent-status" style="font-size:11px;color:#6e7681;margin-top:8px;min-height:14px"></div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="paste-agent-cancel">Cancel</button>
+      <button class="btn primary" id="paste-agent-install">Install</button>
+    </div>
+  </div>
+</div>
+
 <!-- Deploy-as-Swarm modal -->
 <div class="modal" id="swarm-modal">
   <div class="panel">
@@ -4976,13 +5002,60 @@ function wire() {
     for (const f of e.target.files) await importPyFile(f);
     e.target.value = '';
   });
+  // Paste-from-iMessage flow. Friend texts you a *_agent.py as plaintext,
+  // you copy it, open vBrainstem, and tap "Paste source…". On iOS we try
+  // navigator.clipboard.readText() to auto-fill (Safari 13.4+) — if the
+  // browser blocks it (no user gesture, permission denied), the textarea
+  // is empty and the user just long-presses + Paste. Filename is auto-
+  // derived from the agent's class name in mintCard if left blank.
   $('#paste-py').addEventListener('click', async () => {
-    const src = prompt('Paste agent.py source:');
-    if (!src) return;
-    const fname = (prompt('Filename (e.g. my_agent.py):') || 'pasted_agent.py').trim();
-    const card = await RAPP.Card.mintCard(src, fname);
-    RAPP.Binder.addCard(state.binder, card);
-    persistBinder(); renderBinder(); renderAgents();
+    const ta = $('#paste-agent-src');
+    const fn = $('#paste-agent-fname');
+    const status = $('#paste-agent-status');
+    ta.value = ''; fn.value = ''; status.textContent = '';
+    try {
+      if (navigator.clipboard && navigator.clipboard.readText) {
+        const txt = await navigator.clipboard.readText();
+        // Only auto-fill if the clipboard looks like Python agent source —
+        // avoids dumping random copied text into the field.
+        if (txt && /class\s+\w+|def\s+perform\s*\(/.test(txt)) {
+          ta.value = txt;
+          status.textContent = '✓ Loaded from clipboard. Edit if needed, then tap Install.';
+        }
+      }
+    } catch { /* permission/no-gesture — silent, user pastes manually */ }
+    $('#paste-agent-modal').classList.add('open');
+    ta.focus();
+  });
+  $('#paste-agent-clip').addEventListener('click', async () => {
+    const ta = $('#paste-agent-src');
+    const status = $('#paste-agent-status');
+    try {
+      const txt = await navigator.clipboard.readText();
+      if (!txt) { status.textContent = 'Clipboard is empty.'; return; }
+      ta.value = txt;
+      status.textContent = '✓ Pasted from clipboard.';
+    } catch {
+      status.textContent = 'Clipboard blocked — long-press the box and Paste manually.';
+    }
+  });
+  $('#paste-agent-close').addEventListener('click', () => $('#paste-agent-modal').classList.remove('open'));
+  $('#paste-agent-cancel').addEventListener('click', () => $('#paste-agent-modal').classList.remove('open'));
+  $('#paste-agent-install').addEventListener('click', async () => {
+    const status = $('#paste-agent-status');
+    const src = $('#paste-agent-src').value.trim();
+    if (!src) { status.textContent = 'Paste source first.'; return; }
+    let fname = $('#paste-agent-fname').value.trim();
+    if (fname && !fname.endsWith('.py')) fname += '.py';
+    try {
+      const card = await RAPP.Card.mintCard(src, fname || '');
+      RAPP.Binder.addCard(state.binder, card);
+      persistBinder(); renderBinder(); renderAgents();
+      status.textContent = '✓ Installed ' + card.filename;
+      setTimeout(() => $('#paste-agent-modal').classList.remove('open'), 600);
+    } catch (e) {
+      status.textContent = 'Install failed: ' + (e && e.message ? e.message : e);
+    }
   });
 
   // binder drawer
