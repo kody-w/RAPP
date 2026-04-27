@@ -2,17 +2,31 @@
 binder_service.py — package manager for a brainstem (kernel-baked).
 
 Lives in rapp_brainstem/utils/services/ so it ships with the brainstem
-itself — no rapp-store install step needed. The catalog itself lives in
-the separate kody-w/rapp_store repo (split out of kody-w/RAPP on
-2026-04-26); this service fetches index.json from there via RAPPSTORE_URL.
+itself — no rapp-store install step needed. Talks to all three peer
+stores in the RAPP ecosystem (Constitution Article XXVII / XXXI; Proposal
+0002 in kody-w/RAPP_Store):
+
+    rapplications  → kody-w/RAPP_Store   (RAPPSTORE_URL)
+    bare agents    → kody-w/RAR          (RAR_URL)
+    senses         → kody-w/RAPP_Sense_Store (SENSESTORE_URL)
 
 Endpoints:
-    GET    /api/binder                    — list installed rapplications
-    GET    /api/binder/catalog            — fetch remote catalog
-    POST   /api/binder/install            — install by id (body: {"id": "...", "version"?})
-    DELETE /api/binder/installed/<id>     — uninstall by id
-    GET    /api/binder/export/<id>        — export installed rapp as a .egg cartridge
-    POST   /api/binder/import             — import a .egg cartridge (body: {"egg_b64": "..."})
+    GET    /api/binder                       — list installed (all kinds)
+    GET    /api/binder/catalog               — rapplications catalog
+    GET    /api/binder/catalog/agents        — bare agents (RAR)
+    GET    /api/binder/catalog/senses        — senses
+    GET    /api/binder/catalog/all           — aggregated three-store view
+    POST   /api/binder/install               — install rapplication by id
+                                                (body: {"id": "...", "version"?})
+    POST   /api/binder/install/agent         — install bare agent from RAR
+                                                (body: {"name": "@pub/slug"})
+    POST   /api/binder/install/sense         — install sense
+                                                (body: {"name": "<slug>"} or "@pub/<slug>")
+    DELETE /api/binder/installed/<id>        — uninstall rapplication by id
+    DELETE /api/binder/installed/agent/<name> — uninstall bare agent
+    DELETE /api/binder/installed/sense/<name> — uninstall sense
+    GET    /api/binder/export/<id>           — export rapp as .egg cartridge
+    POST   /api/binder/import                — import a .egg cartridge
 
 Egg format (zip):
     manifest.json   {schema, type:"rapplication", id, version, exported_at,
@@ -52,6 +66,17 @@ _UI_BASE_DIR = os.path.join(_DATA_DIR, "rapp_ui")
 # catalog. A "RAPP Ubuntu" or "RAPP Arch" fork sets this to its own mirror
 # and binder transparently installs from there. Sacred wire stays the same.
 _CATALOG_URL = os.getenv("RAPPSTORE_URL", "https://raw.githubusercontent.com/kody-w/rapp_store/main/index.json")
+# The other two peer stores in the three-store ecosystem (Proposal 0002 in
+# kody-w/RAPP_Store, Constitution Article XXVII/XXXI). The binder talks to
+# all three via separate endpoints so chat can browse / install any of:
+#   - bundles (rapplications) → kody-w/RAPP_Store, RAPPSTORE_URL above
+#   - bare agents             → kody-w/RAR, RAR_URL
+#   - senses                  → kody-w/RAPP_Sense_Store, SENSESTORE_URL
+_RAR_URL = os.getenv("RAR_URL", "https://raw.githubusercontent.com/kody-w/RAR/main/registry.json")
+_SENSESTORE_URL = os.getenv("SENSESTORE_URL", "https://raw.githubusercontent.com/kody-w/RAPP_Sense_Store/main/index.json")
+# Senses install into rapp_brainstem/utils/senses/ (Article XXIV — the
+# brainstem auto-discovers *_sense.py at startup).
+_SENSES_DIR = os.path.join(_BASE_DIR, "utils", "senses")
 
 
 def _read():
@@ -277,16 +302,178 @@ def _import_egg(body):
     return {"status": "ok", "id": rapp_id, "files_restored": files_restored, "installed": installed}, 200
 
 
+# ── Three-store catalog helpers (Proposal 0002) ─────────────────────────
+
+def _fetch_rar():
+    """Fetch the bare-agent registry from kody-w/RAR (or RAR_URL override)."""
+    try:
+        import requests
+        r = requests.get(_RAR_URL, timeout=10)
+        if r.status_code == 200:
+            d = r.json()
+            # Trim each entry so the chat surface sees the useful fields.
+            agents = [{
+                "name": a.get("name"),
+                "display_name": a.get("display_name") or a.get("name"),
+                "version": a.get("version"),
+                "description": (a.get("description") or "")[:240],
+                "tags": a.get("tags", []),
+                "category": a.get("category"),
+                "publisher": a.get("name", "").split("/")[0] if "/" in a.get("name", "") else None,
+            } for a in d.get("agents", [])]
+            return {"agents": agents}
+    except Exception:
+        pass
+    return {"agents": []}
+
+
+def _fetch_sensestore():
+    """Fetch the sense store catalog from kody-w/RAPP_Sense_Store."""
+    try:
+        import requests
+        r = requests.get(_SENSESTORE_URL, timeout=10)
+        if r.status_code == 200:
+            return r.json()
+    except Exception:
+        pass
+    return {"senses": []}
+
+
+def _install_agent(name):
+    """Install a bare agent from RAR by '@publisher/slug'. Writes to
+    <root>/agents/<slug>_agent.py and tracks in binder.json with kind=agent."""
+    if not name or "/" not in name:
+        return {"error": f"agent name must be '@publisher/slug', got {name!r}"}, 400
+    publisher, slug = name.split("/", 1)
+    if not slug.endswith("_agent"):
+        slug_full = slug + "_agent"
+    else:
+        slug_full = slug
+    raw_url = (
+        f"https://raw.githubusercontent.com/kody-w/RAR/main/agents/"
+        f"{publisher}/{slug_full}.py"
+    )
+    try:
+        content = _download(raw_url)
+    except Exception as e:
+        return {"error": f"agent download failed: {e}"}, 502
+    filename = f"{slug_full}.py"
+    _write_to_dir(_AGENTS_DIR, filename, content)
+    installed = {
+        "kind": "agent",
+        "id": name,
+        "version": "?",
+        "agent_filename": filename,
+        "filename": filename,
+        "source_repo": "kody-w/RAR",
+        "source_url": raw_url,
+    }
+    state = _read()
+    state["installed"] = [e for e in state.get("installed", []) if e.get("id") != name]
+    state["installed"].append(installed)
+    _write(state)
+    return {"status": "ok", "installed": installed}, 200
+
+
+def _install_sense(name):
+    """Install a sense from kody-w/RAPP_Sense_Store. The catalog entry's `url`
+    field is the canonical raw URL; we fetch it and drop into utils/senses/."""
+    cat = _fetch_sensestore()
+    entry = next((s for s in cat.get("senses", [])
+                  if s.get("name") == name or
+                     f"{s.get('publisher','')}/{s.get('name','')}" == name),
+                 None)
+    if not entry:
+        return {"error": f"sense '{name}' not found in catalog"}, 404
+    try:
+        content = _download(entry["url"], entry.get("sha256"))
+    except Exception as e:
+        return {"error": f"sense download failed: {e}"}, 502
+    filename = entry.get("filename") or f"{entry['name']}_sense.py"
+    _write_to_dir(_SENSES_DIR, filename, content)
+    installed = {
+        "kind": "sense",
+        "id": f"{entry.get('publisher', '@rapp')}/{entry['name']}",
+        "name": entry["name"],
+        "version": entry.get("version", "?"),
+        "delimiter": entry.get("delimiter"),
+        "surfaces": entry.get("surfaces", ["chat"]),
+        "filename": filename,
+        "source_repo": "kody-w/RAPP_Sense_Store",
+        "source_url": entry["url"],
+    }
+    state = _read()
+    state["installed"] = [e for e in state.get("installed", [])
+                          if not (e.get("kind") == "sense" and e.get("name") == entry["name"])]
+    state["installed"].append(installed)
+    _write(state)
+    return {"status": "ok", "installed": installed}, 200
+
+
+def _uninstall_agent_or_sense(kind, name):
+    """Uninstall a bare agent or sense by id. Different from rapplication
+    uninstall because there's no service / UI / state-cartridge to clean up."""
+    state = _read()
+    entry = next((e for e in state.get("installed", []) if
+                  (kind == "agent" and e.get("kind") == "agent" and e.get("id") == name) or
+                  (kind == "sense" and e.get("kind") == "sense" and
+                   (e.get("id") == name or e.get("name") == name))),
+                 None)
+    if not entry:
+        return {"error": f"not installed as {kind}: {name}"}, 404
+    if kind == "agent":
+        _remove_from_dir(_AGENTS_DIR, entry.get("filename") or entry.get("agent_filename"))
+    else:  # sense
+        _remove_from_dir(_SENSES_DIR, entry.get("filename"))
+    state["installed"] = [e for e in state.get("installed", []) if e is not entry]
+    _write(state)
+    return {"status": "ok", "uninstalled": name, "kind": kind}, 200
+
+
 # ── Dispatch ────────────────────────────────────────────────────────────
 
 def handle(method, path, body):
-    # GET /api/binder — list installed rapplications
+    # GET /api/binder — list installed rapplications + agents + senses
     if method == "GET" and path == "":
         return _read(), 200
 
-    # GET /api/binder/catalog — fetch remote catalog
+    # GET /api/binder/catalog — rapplications (kody-w/RAPP_Store)
     if method == "GET" and path == "catalog":
         return _fetch_catalog(), 200
+
+    # GET /api/binder/catalog/agents — bare agents (kody-w/RAR)
+    if method == "GET" and path == "catalog/agents":
+        return _fetch_rar(), 200
+
+    # GET /api/binder/catalog/senses — senses (kody-w/RAPP_Sense_Store)
+    if method == "GET" and path == "catalog/senses":
+        return _fetch_sensestore(), 200
+
+    # GET /api/binder/catalog/all — aggregated three-store view
+    if method == "GET" and path == "catalog/all":
+        return {
+            "rapplications": _fetch_catalog().get("rapplications", []),
+            "agents":        _fetch_rar().get("agents", []),
+            "senses":        _fetch_sensestore().get("senses", []),
+        }, 200
+
+    # POST /api/binder/install/agent — install bare agent from RAR
+    # body: {"name": "@publisher/slug"}
+    if method == "POST" and path == "install/agent":
+        return _install_agent((body or {}).get("name", ""))
+
+    # POST /api/binder/install/sense — install sense from RAPP_Sense_Store
+    # body: {"name": "<slug>"} or {"name": "@publisher/<slug>"}
+    if method == "POST" and path == "install/sense":
+        return _install_sense((body or {}).get("name", ""))
+
+    # DELETE /api/binder/installed/agent/<name>
+    if method == "DELETE" and path.startswith("installed/agent/"):
+        return _uninstall_agent_or_sense("agent", path[len("installed/agent/"):])
+
+    # DELETE /api/binder/installed/sense/<name>
+    if method == "DELETE" and path.startswith("installed/sense/"):
+        return _uninstall_agent_or_sense("sense", path[len("installed/sense/"):])
 
     # GET /api/binder/export/<id> — export installed rapp as a .egg cartridge
     if method == "GET" and path.startswith("export/"):
