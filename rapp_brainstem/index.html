@@ -457,6 +457,112 @@
     flex: 1; width: 100%; height: 100%; border: none; background: #fff;
   }
 
+  /* ── RAR browse modal ─────────────────────────────────────────
+     Centered overlay for discovering + one-click installing agents
+     from the canonical RAR registry. Fetches registry.json from
+     raw.githubusercontent.com directly; install routes through the
+     local brainstem's /agents/import. */
+  #browse-modal {
+    display: none; position: fixed; inset: 0;
+    background: rgba(13,17,23,0.85); z-index: 220;
+    align-items: center; justify-content: center;
+  }
+  #browse-modal.open { display: flex; }
+  .browse-card {
+    background: #161b22; border: 1px solid #30363d; border-radius: 12px;
+    width: min(720px, 92vw); height: min(80vh, 720px);
+    display: flex; flex-direction: column;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+  }
+  .browse-card .bh-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px; border-bottom: 1px solid #21262d;
+  }
+  .browse-card .bh-title {
+    display: flex; align-items: baseline; gap: 10px;
+    font-size: 14px; font-weight: 600; color: #e6edf3;
+  }
+  .browse-card .bh-stats {
+    color: #8b949e; font-size: 11px; font-family: "SF Mono", monospace;
+  }
+  .browse-card .bh-close {
+    background: #21262d; color: #e6edf3; border: 1px solid #30363d;
+    border-radius: 6px; padding: 4px 10px; font-size: 12px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .browse-card .bh-close:hover { border-color: #58a6ff; color: #58a6ff; }
+  .browse-card .bh-filters {
+    display: flex; gap: 8px; padding: 12px 18px;
+    border-bottom: 1px solid #21262d;
+  }
+  .browse-card #browse-search {
+    flex: 1; background: #0d1117; color: #e6edf3;
+    border: 1px solid #30363d; border-radius: 6px;
+    padding: 6px 10px; font-size: 13px; outline: none;
+  }
+  .browse-card #browse-search:focus { border-color: #1f6feb; }
+  .browse-card #browse-category, .browse-card #browse-tier {
+    background: #0d1117; color: #e6edf3;
+    border: 1px solid #30363d; border-radius: 6px;
+    padding: 6px 8px; font-size: 12px; cursor: pointer; outline: none;
+  }
+  .browse-card .bh-list {
+    flex: 1; overflow-y: auto; padding: 8px 18px;
+  }
+  .br-row {
+    padding: 12px 0; border-bottom: 1px solid #21262d;
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+  .br-row:last-child { border-bottom: none; }
+  .br-body { flex: 1; min-width: 0; }
+  .br-name {
+    font-size: 13px; font-weight: 600; color: #e6edf3;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .br-tier {
+    font-size: 9px; padding: 1px 6px; border-radius: 999px;
+    text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;
+  }
+  .br-tier.official    { background: rgba(63,185,80,0.15);  color: #3fb950; border: 1px solid rgba(63,185,80,0.4); }
+  .br-tier.community   { background: rgba(88,166,255,0.15); color: #58a6ff; border: 1px solid rgba(88,166,255,0.4); }
+  .br-tier.experimental{ background: rgba(210,153,34,0.15); color: #d29922; border: 1px solid rgba(210,153,34,0.4); }
+  .br-id {
+    color: #8b949e; font-size: 10px; font-family: "SF Mono", monospace;
+    margin-top: 2px;
+  }
+  .br-desc {
+    color: #c9d1d9; font-size: 12px; line-height: 1.5;
+    margin-top: 4px;
+  }
+  .br-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+  .br-chip {
+    background: #21262d; color: #8b949e;
+    border-radius: 999px; padding: 1px 7px;
+    font-size: 10px;
+  }
+  .br-install {
+    background: #238636; color: #fff; border: none; border-radius: 6px;
+    padding: 6px 12px; font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: background 0.15s; flex-shrink: 0;
+    align-self: center;
+  }
+  .br-install:hover { background: #2ea043; }
+  .br-install:disabled { opacity: 0.6; cursor: default; }
+  .br-install.installed { background: #1f6feb; }
+  .browse-empty, .browse-loading {
+    text-align: center; color: #8b949e; padding: 40px 20px;
+    font-size: 13px;
+  }
+  .browse-error { color: #f85149; }
+  /* Add-from-RAR link inside agents panel */
+  #browse-link {
+    display: block; text-align: center; margin-top: 12px;
+    background: #21262d; color: #58a6ff; border: 1px solid #30363d;
+    border-radius: 6px; padding: 6px 10px; font-size: 12px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  #browse-link:hover { border-color: #58a6ff; background: rgba(88,166,255,0.08); }
+
   /* ── Rapplications subsection inside agents panel ── */
   #rapp-list-ul { list-style: none; margin: 12px 0 0; padding: 0; }
   #rapp-list-ul li {
@@ -1385,6 +1491,25 @@
   });
 
   // ── Chat rendering ──
+  // Coerce brainstem agent_logs into the joined "[name] output" string
+  // the chat bubble's logs box expects. Accepts:
+  //   - null/undefined → ''
+  //   - string         → trimmed as-is (back-compat for /chat's
+  //                      agent_logs_text field and old transcripts)
+  //   - array          → flattened from {name, args, output} entries
+  //                      (the canonical /chat agent_logs shape)
+  function logsToText(logs) {
+    if (!logs) return '';
+    if (typeof logs === 'string') return logs.trim();
+    if (Array.isArray(logs)) {
+      return logs
+        .map(e => `[${e.name || '?'}] ${e.output != null ? e.output : (e.error || '')}`)
+        .join('\n')
+        .trim();
+    }
+    return '';
+  }
+
   function appendMsg(role, text, logs) {
     const chat = document.getElementById('chat');
     const wrap = document.createElement('div');
@@ -1499,7 +1624,12 @@
 
       const d = await r.json();
       removeTyping();
-      if (d.agent_logs) console.log('[brainstem] agent_logs:', d.agent_logs.slice(0, 200));
+      // brainstem ships agent_logs as a structured array of
+      // {name, args, output, error?} entries, with a joined-string
+      // back-compat at agent_logs_text. The chat bubble's logs box
+      // expects the joined "[name] output" form, so flatten here.
+      const logsText = logsToText(d.agent_logs_text || d.agent_logs);
+      if (logsText) console.log('[brainstem] agent_logs:', logsText.slice(0, 200));
 
       if (d.error) {
         clog('chat.error_response', { error: d.error.slice(0, 200) });
@@ -1540,7 +1670,7 @@
           session_id: d.session_id,
           timestamp: new Date().toISOString()
         });
-        appendMsg('assistant', d.response, d.agent_logs && d.agent_logs.trim() ? d.agent_logs : null);
+        appendMsg('assistant', d.response, logsText || null);
         if (d.voice_response) {
           speakText(d.voice_response);
         } else if (voiceMode) {
@@ -2116,8 +2246,9 @@
             appendMsg('user', content);
           } else if (role === 'assistant') {
             history.push({ role: 'assistant', content });
-            const logs = turn.agent_logs && turn.agent_logs.trim() ? turn.agent_logs : null;
-            appendMsg('assistant', content, logs);
+            // Old transcripts stored agent_logs as a joined string; new
+            // ones store the structured array. logsToText handles both.
+            appendMsg('assistant', content, logsToText(turn.agent_logs) || null);
           }
           fullTranscript.push(turn);
         }
