@@ -2569,6 +2569,13 @@ const SOUL = '[soul rendered dynamically — see buildSystemPrompt()]';
 // window property and is reachable from any script tag in the page.
 // Nothing reassigns `state` itself anywhere — only its sub-properties
 // are mutated — so dropping `const` doesn't lose any safety.
+//
+// NOTE on scope: this whole script is wrapped in an arrow IIFE, so `var`
+// here is function-scoped — it does NOT become a window property the way
+// top-level `var` in a non-IIFE script does. The earlier popup IIFE that
+// reads `state.settings.tetherUrl` would throw "state is not defined"
+// without the `window.state = state` re-export below, which silently
+// kills the rapps render() partway through (catalog count stuck at 0).
 var state = {
   sessionId: crypto.randomUUID(),
   conversation_history: [],
@@ -3165,6 +3172,38 @@ function cooldownCpsigninButton(seconds) {
   _cpsigninCooldownTimer = setInterval(tick, 1000);
 }
 
+// Drive the brainstem's own device-code flow (POST /login/switch + poll
+// POST /login/poll) so the on-disk .copilot_token gets refreshed. The
+// browser-side worker flow only updates localStorage and leaves the
+// brainstem authenticating against a stale file — that's why /chat
+// could 401 even after a "successful" sign-in. Same modal UX.
+async function runBrainstemSignin() {
+  const startResp = await fetch('/login/switch', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+  });
+  const start = await startResp.json();
+  if (!startResp.ok || start.error) throw new Error(start.error || `HTTP ${startResp.status}`);
+  $('#cpsignin-code').textContent = start.user_code;
+  $('#cpsignin-link').href = start.verification_uri;
+  $('#cpsignin-link').textContent = start.verification_uri;
+  $('#cpsignin-step2').hidden = false;
+  const expires = Date.now() + (start.expires_in ? start.expires_in * 1000 : 600_000);
+  const interval = (start.interval || 3) * 1000;
+  while (Date.now() < expires) {
+    await new Promise(r => setTimeout(r, interval));
+    const r = await fetch('/login/poll', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+    });
+    const d = await r.json();
+    if (d.status === 'ok') return;
+    if (d.status === 'expired' || d.status === 'error') {
+      throw new Error(d.error || 'Login failed.');
+    }
+    // status === 'pending' → keep polling
+  }
+  throw new Error('Login timed out — try again.');
+}
+
 async function runCopilotSignin() {
   // Guard against double-clicks while a request is already in flight.
   // The button's disabled state alone protects against pointer events,
@@ -3175,6 +3214,33 @@ async function runCopilotSignin() {
   cooldownCpsigninButton(2);  // baseline guard while the request runs
   $('#cpsignin-step1').hidden = true;
   $('#cpsignin-error').hidden = true;
+
+  // Local mode: hit the brainstem so it owns the token (refreshes
+  // .copilot_token on disk). Skip the browser/worker exchange entirely
+  // since the brainstem makes its own /chat calls server-side.
+  if (document.body.classList.contains('is-local')) {
+    try {
+      await runBrainstemSignin();
+      $('#cpsignin-step2').hidden = true;
+      $('#cpsignin-step3').hidden = false;
+      refreshStatus();
+      cooldownCpsigninButton(0);
+      setTimeout(() => {
+        closeCopilotSigninModal();
+        if (!LS.get('tutorialDismissed', 0)) setTimeout(() => showTutorial(true), 400);
+      }, 1200);
+    } catch (e) {
+      console.error(e);
+      const errEl = $('#cpsignin-error');
+      errEl.textContent = '⚠️ ' + e.message;
+      errEl.hidden = false;
+      $('#cpsignin-step1').hidden = false;
+      $('#cpsignin-step2').hidden = true;
+      cooldownCpsigninButton(3);
+    }
+    return;
+  }
+
   try {
     const { user_code, verification_uri } = await copilotStartDeviceLogin();
     $('#cpsignin-code').textContent = user_code;
@@ -4520,6 +4586,13 @@ function cardModalNav(dir) {
 /* ───── Settings open/close ───────────────────────────────── */
 function openAside(id) { $$('#'+id+'.open, aside.open').forEach(a => a.classList.remove('open')); $('#'+id).classList.add('open'); }
 function closeAside(id) { $('#'+id).classList.remove('open'); }
+// The popup IIFE earlier in the document checks `typeof closeAside === 'function'`
+// before calling it. Re-export onto window so the cross-IIFE reference resolves
+// (without this, the settings panel never closes when you click Rapplications
+// from inside Settings, and both popups stack visually).
+window.state = state;
+window.closeAside = closeAside;
+window.openAside = openAside;
 
 /* ───── Chat send loop (SPEC §8) ──────────────────────────── */
 async function send(userInput) {
