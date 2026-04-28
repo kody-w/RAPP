@@ -287,18 +287,19 @@ def _twin_emit(mood="done", figure=None):
     drawing canned art on its behalf would lie about the twin being
     a real digital organism reacting to the turn.
 
-    figure: REQUIRED. List of ASCII strings (the LLM's hand-authored
-            cage content). When None or empty, this function no-ops
-            silently — the operator just sees the [brainstem] telemetry
-            for that turn, no twin frame.
-    mood:   only used to color the cage border."""
+    figure: List of ASCII strings (the LLM's hand-authored cage content).
+            None / empty → no-op with diagnostic so the operator can see
+            the path was reached but the LLM didn't ship art.
+    mood:   colors the cage border."""
     if not figure:
-        return  # silent twin → silent terminal; no fake animation
+        print(f"[brainstem] twin: silent — no <frame> in this turn's |||TWIN||| block")
+        return
     _twin_state["frame"] += 1
 
     canvas = _normalize_canvas(figure)
     if not any(line.strip() for line in canvas):
-        return  # all-blank frame from the LLM is also silence
+        print(f"[brainstem] twin: silent — <frame> was all whitespace after normalize")
+        return
 
     label = f" twin · {mood} · #{_twin_state['frame']} "
     label_pad = label + ("─" * max(0, _TWIN_CANVAS_W + 2 - len(label)))
@@ -951,45 +952,23 @@ def _auto_install(package):
     except Exception as e:
         print(f"[brainstem] Failed to install {package}: {e}")
 
-_load_agents_seen = {}    # name → relpath, what we've printed before
-_load_agents_count = -1   # last "X agent(s) ready." we printed
-
 def load_agents():
     # Walk AGENTS_PATH recursively per Article XII (workspace_agents/ + nested
     # user folders). Skip reserved subdirs that never auto-load
     # (experimental_agents/, disabled_agents/) and __pycache__.
-    #
-    # Quieted print path (2026-04-28): /health polls every 5s and calls
-    # load_agents(); the per-agent + "ready" lines used to flood the
-    # terminal between [brainstem] log entries, drowning out things like
-    # the twin sense cage. Now: only print on CHANGE — first load, new
-    # agent appears, agent disappears, count changes.
-    global _load_agents_count
     agents = {}
     _SKIP = ("experimental_agents", "disabled_agents", "__pycache__")
     pattern = os.path.join(AGENTS_PATH, "**", "*_agent.py")
     files = [f for f in glob.glob(pattern, recursive=True)
              if not any(s in f.split(os.sep) for s in _SKIP)]
 
-    seen_this_call = set()
     for filepath in files:
         loaded = _load_agent_from_file(filepath)
-        rel = os.path.relpath(filepath, AGENTS_PATH)
         for name, instance in loaded.items():
             agents[name] = instance
-            seen_this_call.add(name)
-            if _load_agents_seen.get(name) != rel:
-                print(f"[brainstem] Agent loaded: {name} ({rel})")
-                _load_agents_seen[name] = rel
+            print(f"[brainstem] Agent loaded: {name} ({os.path.relpath(filepath, AGENTS_PATH)})")
 
-    # Detect agents that vanished since last call
-    for gone in [n for n in list(_load_agents_seen) if n not in seen_this_call]:
-        print(f"[brainstem] Agent unloaded: {gone}")
-        _load_agents_seen.pop(gone, None)
-
-    if len(agents) != _load_agents_count:
-        print(f"[brainstem] {len(agents)} agent(s) ready.")
-        _load_agents_count = len(agents)
+    print(f"[brainstem] {len(agents)} agent(s) ready.")
     return agents
 
 # ── LLM call ─────────────────────────────────────────────────────────────────
@@ -1386,6 +1365,7 @@ def chat():
         # turn, _twin_emit no-ops silently (no fake animation).
         twin_text = (result.get("twin_response") or "").strip()
         twin_figure, _rest = _extract_twin_frame(twin_text)
+        print(f"[brainstem] twin: twin_text_len={len(twin_text)}, has_frame_tag={'<frame>' in twin_text.lower()}, figure_lines={len(twin_figure or [])}")
         _twin_emit("done", figure=twin_figure)
 
         return jsonify(result)
