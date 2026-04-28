@@ -3414,11 +3414,23 @@
   })();
 
   // raw.githubusercontent.com/<u>/<r>/<branch>/<path>
-  //   → cdn.jsdelivr.net/gh/<u>/<r>@<branch>/<path>
-  // jsDelivr serves with the right Content-Type for HTML/JS/CSS so the
-  // iframe actually renders (raw.githubusercontent serves text/plain).
+  //   → kody-w.github.io/RAPP_Store/<path>          when <u>/<r> is the canonical store
+  //   → cdn.jsdelivr.net/gh/<u>/<r>@<branch>/<path>  fallback for other repos
+  //
+  // jsDelivr is the natural pick — but it serves files whose path
+  // contains an "@" segment (every rapp UI is at .../apps/@<publisher>/...)
+  // as text/plain, so the iframe shows raw HTML source instead of
+  // rendering. GitHub Pages handles those paths correctly. The catalog
+  // uses raw.githubusercontent.com URLs for portability; we rewrite at
+  // load time so the iframe gets a correct Content-Type.
+  //
+  // For non-rapp_store github content, jsDelivr is still the fallback —
+  // it's CDN-fast and works fine when the path has no @-segments.
+  const _RAPP_STORE_PAGES = 'https://kody-w.github.io/RAPP_Store';
   function _toCdnUrl(rawUrl) {
     if (!rawUrl || typeof rawUrl !== 'string') return rawUrl;
+    const storeMatch = rawUrl.match(/^https?:\/\/raw\.githubusercontent\.com\/kody-w\/rapp_store\/[^/]+\/(.+)$/);
+    if (storeMatch) return `${_RAPP_STORE_PAGES}/${storeMatch[1]}`;
     const m = rawUrl.match(/^https?:\/\/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\/([^/]+)\/(.+)$/);
     if (m) return `https://cdn.jsdelivr.net/gh/${m[1]}/${m[2]}@${m[3]}/${m[4]}`;
     return rawUrl;

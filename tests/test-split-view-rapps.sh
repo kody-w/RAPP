@@ -91,6 +91,7 @@ assert_grep "store fetches catalog directly (decoupled from binder)" "raw.github
 assert_grep "store installs via /agents/import (decoupled)" "/agents/import" "$INDEX"
 assert_grep "store-installed rapps tracked locally"         "STORE_INSTALLED_KEY" "$INDEX"
 assert_grep "CDN URL rewriter for ui_url"                   "_toCdnUrl"          "$INDEX"
+assert_grep "rapp_store routes through GitHub Pages"        "kody-w.github.io/RAPP_Store" "$INDEX"
 assert_grep "directUrl iframe path (CDN)"                   "directUrl"          "$INDEX"
 
 # ── Section 4: postMessage bridge ──────────────────────────────────────
