@@ -85,8 +85,13 @@ assert_grep "store-search input"          'id="store-search"'       "$INDEX"
 assert_grep "openStore JS fn"             'function openStore'      "$INDEX"
 assert_grep "closeStore JS fn"            'function closeStore'     "$INDEX"
 assert_grep "Browse RAPP_Store button"    'Browse RAPP'             "$INDEX"
-assert_grep "store fetches binder catalog" '/api/binder/catalog'    "$INDEX"
-assert_grep "store installs via binder"   '/api/binder/install'     "$INDEX"
+assert_grep "store fetches catalog directly (decoupled from binder)" "raw.githubusercontent.com/kody-w/rapp_store/main/index.json" "$INDEX"
+# Decoupled architecture: store installs route through /agents/import like
+# drag-drop, not /api/binder/install. Binder remains for egg-imports + admin.
+assert_grep "store installs via /agents/import (decoupled)" "/agents/import" "$INDEX"
+assert_grep "store-installed rapps tracked locally"         "STORE_INSTALLED_KEY" "$INDEX"
+assert_grep "CDN URL rewriter for ui_url"                   "_toCdnUrl"          "$INDEX"
+assert_grep "directUrl iframe path (CDN)"                   "directUrl"          "$INDEX"
 
 # ── Section 4: postMessage bridge ──────────────────────────────────────
 

@@ -426,9 +426,9 @@
   #drop-overlay .icon { width: 64px; height: 64px; margin-bottom: 16px; }
 
   /* ── Rapplication iframe overlay ──
-     Each installed rapplication that ships an HTML UI (ui_filename) gets
-     an Open button in the agents panel. Clicking opens this overlay
-     pointing at /api/binder/ui/<id>/<file>. Close returns to chat. */
+     The full-screen overlay used by the ⛶ button inside the split-pane
+     head. Iframe src is the rapp's direct CDN URL (rewritten from
+     ui_url). Decoupled from the binder service. */
   #rapp-frame {
     display: none; position: fixed; inset: 0;
     background: #0d1117; z-index: 250;
@@ -1730,50 +1730,44 @@
     }
   });
 
-  // ── Rapplications (installed via /api/binder/import) ──
-  // Each installed rapp may ship an iframe UI bundle stored under
-  // .brainstem_data/rapp_ui/<id>/ and served via /api/binder/ui/<id>/<file>.
-  // We list installed rapps under the agents panel; rapps with a
-  // ui_filename get an "Open" button that mounts that UI in #rapp-frame.
+  // ── Rapplications listing ──
+  // Decoupled from the binder service. The chat UI only knows about
+  // rapps the user installed via the store (tracked in localStorage).
+  // The binder service (utils/services/binder_service.py) remains
+  // available at /api/binder/* and has its own UI at /binder for users
+  // who want egg imports + admin — but the chat UI doesn't talk to it.
   async function loadRapplications() {
     const header = document.getElementById('rapps-header');
     const ul = document.getElementById('rapp-list-ul');
-    try {
-      const r = await fetch(`${API}/api/binder`);
-      if (!r.ok) { header.style.display = ul.style.display = 'none'; return; }
-      const data = await r.json();
-      const rapps = data.installed || data.rapps || [];
-      if (!rapps.length) { header.style.display = ul.style.display = 'none'; return; }
-      ul.innerHTML = '';
-      for (const rapp of rapps) {
-        const li = document.createElement('li');
-        const name = document.createElement('span');
-        name.className = 'rapp-name';
-        name.textContent = rapp.name || rapp.id;
-        name.title = rapp.id;
-        li.appendChild(name);
-        if (rapp.ui_filename) {
-          const btn = document.createElement('button');
-          btn.className = 'open-btn';
-          btn.textContent = 'Open ▸';
-          // NEW: route the existing "Open ▸" button to the side-by-side pane.
-          // The button label is unchanged. Full-screen overlay (openRappFrame)
-          // remains accessible via the ⛶ button inside the split-pane head.
-          btn.onclick = () => openRappInSplit(rapp.id, rapp.name || rapp.id, rapp.ui_filename);
-          li.appendChild(btn);
-        }
-        ul.appendChild(li);
+    const rapps = Object.values(_storeInstalled);
+    if (!rapps.length) { header.style.display = ul.style.display = 'none'; return; }
+    ul.innerHTML = '';
+    for (const rapp of rapps) {
+      const li = document.createElement('li');
+      const name = document.createElement('span');
+      name.className = 'rapp-name';
+      name.textContent = rapp.name || rapp.id;
+      name.title = rapp.id;
+      li.appendChild(name);
+      if (rapp.ui_url) {
+        const btn = document.createElement('button');
+        btn.className = 'open-btn';
+        btn.textContent = 'Open ▸';
+        btn.onclick = () => openRappInSplit(rapp.id, rapp.name || rapp.id, null, _toCdnUrl(rapp.ui_url));
+        li.appendChild(btn);
       }
-      header.style.display = ul.style.display = 'block';
-    } catch {
-      header.style.display = ul.style.display = 'none';
+      ul.appendChild(li);
     }
+    header.style.display = ul.style.display = 'block';
   }
 
-  function openRappFrame(id, name, uiFilename) {
+  // openRappFrame(id, name, src)
+  //   src is a full URL — typically the CDN-rewritten ui_url from the
+  //   store catalog. The binder service is no longer in this path.
+  function openRappFrame(id, name, src) {
     document.getElementById('rf-name').textContent = name;
     document.getElementById('rf-id').textContent = id;
-    document.getElementById('rf-iframe').src = `${API}/api/binder/ui/${encodeURIComponent(id)}/${encodeURIComponent(uiFilename)}`;
+    document.getElementById('rf-iframe').src = src;
     document.getElementById('rapp-frame').classList.add('open');
     document.getElementById('agents-panel').classList.remove('open');
   }
@@ -3010,17 +3004,19 @@
     }));
   }
 
-  function openRappInSplit(id, name, uiFilename) {
-    if (!uiFilename) {
-      // Fall back to chat reply if the rapp has no UI bundle
-      appendMsg('system', `${name || id} has no UI bundle — nothing to open.`);
+  // openRappInSplit(id, name, _ignored, directUrl)
+  //   The chat UI only loads rapps via direct URL (CDN-rewritten ui_url).
+  //   The third positional argument exists for backward compatibility
+  //   with older callers but is ignored. The binder service is not in
+  //   the runtime path for this anymore.
+  function openRappInSplit(id, name, _ignored, directUrl) {
+    if (!directUrl) {
+      appendMsg('system', `${name || id} has no UI — nothing to open.`);
       return;
     }
-    // Already-open tab? Just switch to it.
     const existing = _splitTabs.find(t => t.id === id);
     if (existing) { _activateTab(id); return; }
-    const src = `${API}/api/binder/ui/${encodeURIComponent(id)}/${encodeURIComponent(uiFilename)}`;
-    _splitTabs.push({ id, name: name || id, uiFilename, src });
+    _splitTabs.push({ id, name: name || id, src: directUrl });
     document.body.classList.add('split-active', 'split-has-tabs');
     _renderSplitTabs();
     _activateTab(id);
@@ -3106,11 +3102,11 @@
     }
   }
 
-  // ⛶ → expand the active tab's rapp into the existing full-screen overlay
+  // ⛶ → expand the active tab's rapp into the full-screen overlay
   document.getElementById('split-fullscreen')?.addEventListener('click', () => {
     const tab = _splitTabs.find(t => t.id === _splitActiveTab);
     if (!tab) return;
-    openRappFrame(tab.id, tab.name, tab.uiFilename);
+    openRappFrame(tab.id, tab.name, tab.src);
   });
 
   // ── Resizable divider ──
@@ -3178,6 +3174,11 @@
   });
 
   // ── Browse RAPP_Store modal (parallel to Browse RAR) ──
+  // Catalog is fetched DIRECTLY from the public rapp_store URL — the chat
+  // UI doesn't go through the binder service for this. The binder is just
+  // another service; it has no special privilege from the chat UI's
+  // perspective.
+  const RAPP_STORE_URL = 'https://raw.githubusercontent.com/kody-w/rapp_store/main/index.json';
   let _storeCatalog = null;
   let _installedRappIds = new Set();
 
@@ -3190,12 +3191,12 @@
     document.getElementById('store-list').innerHTML = '<div class="browse-loading">Loading catalog…</div>';
     document.getElementById('store-stats').textContent = 'loading…';
     try {
-      const [cat, installed] = await Promise.all([
-        fetch(`${API}/api/binder/catalog`, { cache: 'no-cache' }).then(r => r.ok ? r.json() : Promise.reject(new Error(`catalog HTTP ${r.status}`))),
-        fetch(`${API}/api/binder`).then(r => r.ok ? r.json() : { installed: [] }).catch(() => ({ installed: [] }))
-      ]);
+      const cat = await fetch(RAPP_STORE_URL, { cache: 'no-cache' })
+        .then(r => r.ok ? r.json() : Promise.reject(new Error(`catalog HTTP ${r.status}`)));
       _storeCatalog = cat;
-      _installedRappIds = new Set(((installed.installed || installed.rapps || [])).map(x => x.id));
+      // Installed = whatever the user has installed via this UI
+      // (tracked locally). Binder-imported eggs are managed in /binder.
+      _installedRappIds = new Set(Object.keys(_storeInstalled));
       const rapps = cat.rapplications || [];
       const cats = [...new Set(rapps.map(r => r.category).filter(Boolean))].sort();
       const sel = document.getElementById('store-category');
@@ -3264,15 +3265,12 @@
       btn.addEventListener('click', () => {
         const r = filtered[+btn.dataset.idx];
         if (_installedRappIds.has(r.id)) {
-          // Already installed → look up ui_filename and open in split
-          fetch(`${API}/api/binder`).then(x => x.json()).then(data => {
-            const installedList = data.installed || data.rapps || [];
-            const entry = installedList.find(x => x.id === r.id);
-            const uiFile = entry && entry.ui_filename;
-            closeStore();
-            if (uiFile) openRappInSplit(r.id, r.name || r.id, uiFile);
-            else appendMsg('system', `${r.name || r.id} has no UI bundle — nothing to open.`);
-          }).catch(() => {});
+          closeStore();
+          if (r.ui_url) {
+            openRappInSplit(r.id, r.name || r.id, null, _toCdnUrl(r.ui_url));
+          } else {
+            appendMsg('system', `${r.name || r.id} is installed (no UI to open).`);
+          }
         } else {
           installFromStore(r, btn);
         }
@@ -3280,28 +3278,83 @@
     });
   }
 
+  // ── Decoupled-from-binder install + open ──
+  // The binder remains available as a *local admin* tool (drag-drop egg
+  // imports, /api/binder list/CRUD), but it is NOT in the runtime path
+  // for store rapplications anymore. A rapplication is just:
+  //   agent .py     → installed via /agents/import (same as drag-drop)
+  //   ui_url (opt.) → iframe loads directly from a CDN-rewritten URL,
+  //                   no local hosting, no binder serving
+  // Local bookkeeping for store-installed rapps lives in localStorage so
+  // loadRapplications() can list them in the agents panel.
+  const STORE_INSTALLED_KEY = 'brainstem_store_installed';
+  let _storeInstalled = (() => {
+    try { return JSON.parse(localStorage.getItem(STORE_INSTALLED_KEY) || '{}'); }
+    catch { return {}; }
+  })();
+
+  // raw.githubusercontent.com/<u>/<r>/<branch>/<path>
+  //   → cdn.jsdelivr.net/gh/<u>/<r>@<branch>/<path>
+  // jsDelivr serves with the right Content-Type for HTML/JS/CSS so the
+  // iframe actually renders (raw.githubusercontent serves text/plain).
+  function _toCdnUrl(rawUrl) {
+    if (!rawUrl || typeof rawUrl !== 'string') return rawUrl;
+    const m = rawUrl.match(/^https?:\/\/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\/([^/]+)\/(.+)$/);
+    if (m) return `https://cdn.jsdelivr.net/gh/${m[1]}/${m[2]}@${m[3]}/${m[4]}`;
+    return rawUrl;
+  }
+
+  function _persistStoreInstalled() {
+    localStorage.setItem(STORE_INSTALLED_KEY, JSON.stringify(_storeInstalled));
+  }
+
   async function installFromStore(rapp, btn) {
     btn.disabled = true;
     btn.textContent = 'Installing…';
     try {
-      const r = await fetch(`${API}/api/binder/install`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: rapp.id })
-      });
-      const d = await r.json();
-      if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
+      // Step 1: install the agent .py exactly like drag-drop / Browse RAR.
+      // No binder involvement.
+      const srcUrl = rapp.singleton_url;
+      if (srcUrl) {
+        const fetched = await fetch(srcUrl, { cache: 'no-cache' });
+        if (!fetched.ok) throw new Error(`source HTTP ${fetched.status}`);
+        const text = await fetched.text();
+        const filename = rapp.singleton_filename
+          || srcUrl.split('/').pop()
+          || `${rapp.id}_agent.py`;
+        const fd = new FormData();
+        fd.append('file', new Blob([text], { type: 'text/x-python' }), filename);
+        const res = await fetch(`${API}/agents/import`, { method: 'POST', body: fd });
+        const d = await res.json();
+        if (!res.ok || d.status !== 'ok') throw new Error(d.error || `HTTP ${res.status}`);
+      }
+      // Step 2: if the rapp ships a UI, record it locally so we can open
+      // it later from the iframe directly (no binder hosting). The iframe
+      // src is the CDN-rewritten ui_url — same pattern as localFirstTools.
+      if (rapp.ui_url) {
+        _storeInstalled[rapp.id] = {
+          id: rapp.id,
+          name: rapp.name || rapp.id,
+          ui_url: rapp.ui_url,
+          publisher: rapp.publisher || '',
+          version: rapp.version || '',
+          installed_at: Date.now(),
+        };
+        _persistStoreInstalled();
+      }
       _installedRappIds.add(rapp.id);
-      btn.textContent = 'Open ▸';
-      btn.classList.add('installed');
-      btn.disabled = false;
-      // Refresh agents-panel listing so the new rapp appears next time
-      try { loadRapplications(); loadAgentsList(); } catch {}
-      // Auto-open the freshly installed rapp in split-view if it has a UI
-      if (d.ui_filename || rapp.ui_url) {
-        const uiFile = d.ui_filename || (rapp.ui_url && rapp.ui_url.split('/').pop());
+      try { loadAgentsList(); loadRapplications(); } catch {}
+      if (rapp.ui_url) {
+        btn.textContent = 'Open ▸';
+        btn.classList.add('installed');
+        btn.disabled = false;
         closeStore();
-        if (uiFile) openRappInSplit(rapp.id, rapp.name || rapp.id, uiFile);
+        openRappInSplit(rapp.id, rapp.name || rapp.id, null, _toCdnUrl(rapp.ui_url));
+      } else {
+        // Headless — just an agent. No iframe to open; the LLM has it now.
+        btn.textContent = 'Installed ✓';
+        btn.classList.add('installed');
+        btn.disabled = true;
       }
     } catch (e) {
       btn.disabled = false;
@@ -3391,24 +3444,21 @@
         });
       }
     } catch {}
-    // Installed rapplications
-    try {
-      const r = await fetch(`${API}/api/binder`);
-      const d = await r.json();
-      for (const rapp of (d.installed || d.rapps || [])) {
-        items.push({
-          kind: 'rapp',
-          icon: '📦',
-          title: rapp.name || rapp.id,
-          sub: rapp.ui_filename ? `Open in split-view (${rapp.id})` : `${rapp.id} (no UI)`,
-          exec: () => {
-            closeCmdK();
-            if (rapp.ui_filename) openRappInSplit(rapp.id, rapp.name || rapp.id, rapp.ui_filename);
-            else appendMsg('system', `${rapp.name || rapp.id} has no UI bundle.`);
-          },
-        });
-      }
-    } catch {}
+    // Installed rapplications — store-installed only.
+    // Binder-imported eggs are managed via /binder, not here.
+    for (const id in _storeInstalled) {
+      const rapp = _storeInstalled[id];
+      items.push({
+        kind: 'rapp',
+        icon: '📦',
+        title: rapp.name || rapp.id,
+        sub: `Open in split-view (${rapp.id})`,
+        exec: () => {
+          closeCmdK();
+          openRappInSplit(rapp.id, rapp.name || rapp.id, null, _toCdnUrl(rapp.ui_url));
+        },
+      });
+    }
     return items;
   }
 
