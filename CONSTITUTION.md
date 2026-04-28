@@ -2134,5 +2134,104 @@ one front door.
 
 ---
 
+## Article XXXII — Kernel Is What Chat Requires
+
+The brainstem keeps coming back to the same question: should this code
+live inline in `brainstem.py`, or extract into a `*_service.py` under
+`utils/services/`? Article I tells us "the brainstem stays light" but
+not where the line is. This article is the line.
+
+> **A capability is kernel if `/chat` cannot answer a turn without it.
+> Otherwise it is a service.**
+
+### XXXII.1 — The litmus test
+
+For any candidate piece of brainstem code, ask:
+
+> *Can the brainstem still answer a chat turn if I delete this?*
+
+- **No** → kernel. It must run inline in `brainstem.py` (or a
+  utility it imports). Examples: GitHub Copilot auth + token cache,
+  model catalog + active-model selection, voice/channel config,
+  agent discovery, sense composition, soul loading, the tool-call
+  loop, the senses-to-system-prompt composer.
+- **Yes** → service. It belongs in `utils/services/<name>_service.py`
+  with a `name` and a `handle(method, path, body)` and is wired
+  through the generic `/api/<svc>/<path>` dispatcher. Each service
+  is independent; services don't depend on each other. Examples:
+  binder (admin UI for browsing / installing rapps), neighborhood
+  (peer brainstems), every rapplication's own `*_service.py`,
+  hippocampus if/when it returns, webhook ingestion.
+
+The chat experience by itself — soul + installed `*_agent.py` files
++ senses + tool-call loop — is the brainstem's full default
+capability. Every service on top of that is purely additive admin
+or extension.
+
+### XXXII.2 — Why the test is sharp
+
+Earlier framings — "self-contained," "small," "not core" — produced
+debates because everyone's intuition is different. "Necessary for
+chat" is testable: pull the file, restart the brainstem, type a
+message. If you get a reply, the file was a service. If you don't,
+it was kernel.
+
+A brainstem with **no services at all** — empty `utils/services/`,
+empty `agents/` — still serves chat. The user gets the soul, gets
+sense overlays, can talk to the model. Soul + agents + senses + the
+tool-call loop is the full default. Services are admin and
+extension on top: the binder lets you browse/install rapps but
+isn't required to run one (a rapp's `*_agent.py` and its own
+`*_service.py` are self-contained once present in the brainstem's
+dirs); neighborhood lets you talk to peer brainstems but isn't
+required to talk to your own.
+
+The auth flow is the canonical kernel example: with no Copilot
+token the brainstem can't reach a model, can't generate a reply,
+can't satisfy `/chat`. Auth is a precondition. Same for model
+selection and voice/channel config — every chat turn reads them.
+
+### XXXII.3 — What this rules out
+
+- ❌ Splitting an inline kernel concern into a service "for
+  cleanliness." If `/chat` calls into the service every turn, the
+  decoupling is theatrical — added latency and indirection without
+  modularity. Keep it inline.
+- ❌ Bolting kernel-required features onto an optional service.
+  ("Auth lives in the binder service" would mean the brainstem
+  can't chat without the binder — wrong direction.)
+- ❌ Treating "many endpoints" as a reason to extract. A service is
+  defined by *can be removed*, not by *has multiple URLs*. The
+  kernel is allowed to expose `/chat`, `/health`, `/version`,
+  `/login`, `/models`, `/voice` and still be the kernel because
+  none of those can be removed without breaking chat.
+
+### XXXII.4 — Relation to the rest of the constitution
+
+- **Article I** — "the brainstem stays light." XXXII operationalizes
+  what "light" means: only what `/chat` requires.
+- **Article III** — single-file agents. XXXII tells us what's NOT
+  an agent (kernel and services), so Article III's discipline holds
+  cleanly above this layer.
+- **Article XVI** — engine surface vs. workspace. XVI is about
+  *where files live* (root vs. workspace dir); XXXII is about *what
+  code must run* (kernel vs. removable). Both apply.
+- **Article XXVII / XXXI** — RAR / rapp store / sense store. Those
+  are about artifact catalogs (where things ship from); XXXII is
+  about brainstem-internal organization (what runs in-process).
+
+### XXXII.5 — Why this matters
+
+The brainstem is meant to be small enough that one engineer can hold
+its whole behavior in their head. Every kernel addition pays a
+permanent attention tax on every reader, forever. Services don't —
+you can ignore the binder if you don't care about packages.
+
+Without this rule, every "should this be a service?" debate decays
+into arguments about file size or aesthetic feel. With it, the
+debate is a five-second test.
+
+---
+
 *Ratified for the RAPP platform. The engine stays small so the agents
 can be everything.*
