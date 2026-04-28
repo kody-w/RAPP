@@ -1832,6 +1832,8 @@ def agents_import():
             "type": result.get("type"),
             "id": result.get("id"),
             "name": result.get("name"),
+            "agent_filename": result.get("agent_filename"),
+            "ui_filename": result.get("ui_filename"),
             "files_restored": result.get("files_restored"),
             "message": f"{result.get('type')} egg '{result.get('id')}' restored.",
         })

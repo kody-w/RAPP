@@ -1664,24 +1664,56 @@
     if (!files || files.length === 0) return;
     
     for (const file of files) {
-      if (!file.name.endsWith('.py')) {
-        alert('Only .py agent files are supported.');
+      const lower = file.name.toLowerCase();
+      const isAgent = lower.endsWith('.py') || lower.endsWith('.py.card');
+      const isEgg = lower.endsWith('.egg') || lower.endsWith('.zip');
+      if (!isAgent && !isEgg) {
+        alert('Drop a .py agent or a .egg rapplication.');
         continue;
       }
       const formData = new FormData();
       formData.append('file', file);
-      
+
       try {
         const res = await fetch(`${API}/agents/import`, {
           method: 'POST',
           body: formData
         });
         const data = await res.json();
-        if (data.status === 'ok') {
+        if (data.status !== 'ok') {
+          alert(`Failed to import ${file.name}: ${data.error}`);
+          continue;
+        }
+
+        // Egg rapplication → register in the same local registry the store
+        // install populates, so it shows up in the rapps panel and can be
+        // opened in a split tab. UI files were unpacked to
+        // .brainstem_data/rapp_ui/<id>/ — served by binder_service at
+        // /api/binder/ui/<id>/<file>.
+        if (data.kind === 'egg' && data.type === 'rapplication' && data.id) {
+          const uiFile = data.ui_filename || 'index.html';
+          const agentFile = data.agent_filename || `${data.id}_agent.py`;
+          _storeInstalled[data.id] = {
+            id: data.id,
+            name: data.name || data.id,
+            ui_url: data.ui_filename ? `/api/binder/ui/${encodeURIComponent(data.id)}/${uiFile}` : '',
+            singleton_filename: agentFile,
+            publisher: '',
+            version: '',
+            installed_at: Date.now(),
+          };
+          _persistStoreInstalled();
+          _installedRappIds.add(data.id);
+          loadRapplications();
+          loadAgentsList();
+          if (data.ui_filename) {
+            openRappInSplit(data.id, data.name || data.id, null, _storeInstalled[data.id].ui_url);
+          } else {
+            alert(`Installed rapplication: ${data.name || data.id}`);
+          }
+        } else {
           alert(`Installed agent: ${file.name}`);
           loadAgentsList();
-        } else {
-          alert(`Failed to import ${file.name}: ${data.error}`);
         }
       } catch (err) {
         alert(`Error importing ${file.name}: ${err}`);
