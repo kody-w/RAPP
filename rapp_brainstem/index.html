@@ -946,12 +946,13 @@
   }
   body.light-mode .cmdk-hint kbd { background: #eaeef2; color: #24292e; border-color: #d0d7de; }
 
-  /* ── NEW: multi-chat tabs ──────────────────────────────────────
-     Each tab is its own conversation (own history, sessionId, and
-     enabled-agents subset). Tabs sit above #chat inside a new
-     #chat-column wrapper. When there's only one chat (the default
-     migrated one), the strip is still visible — keeps mental model
-     consistent. */
+  /* ── Multi-chat tabs DISABLED (2026-04-28) ────────────────────
+     The tab strip and per-chat-agent-filter UX broke the chat in
+     practice; we're focusing on rapplications. The data model
+     remains so existing localStorage chats aren't trashed, but the
+     strip is hidden and Cmd+Shift+T no longer creates new chats.
+     One chat surface, restored. */
+  #chat-tabs { display: none !important; }
   #chat-and-pane > #chat-column {
     flex: 1;
     min-width: 0;
