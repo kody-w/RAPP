@@ -181,6 +181,11 @@ _NEVER_PACK = (
     "voice.zip",
     ".DS_Store",
     "Thumbs.db",
+    # stream.json is the per-incarnation identifier — when a twin egg is
+    # summoned onto a new brainstem, the new brainstem mints its OWN
+    # stream_id but inherits the source's RAPPID. That's what makes
+    # parallel-omniscience clear: same twin, attributable streams.
+    "stream.json",
 )
 _NEVER_PACK_DIRS = (
     "venv",

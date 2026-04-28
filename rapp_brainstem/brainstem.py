@@ -1310,6 +1310,28 @@ def chat():
         # a tier-parity violation. Per Article XXV (chat is the only wire,
         # additive-only schema evolution), we emit both keys with the same value
         # so clients of either lineage land on the data they expect.
+        # ── Frame recording ─────────────────────────────────────────
+        # Every interaction is a frame: local virtual time + UTC + payload.
+        # Frames are the unit dreamcatcher reconciles when divergent twin
+        # incarnations are assimilated. The frame log lives at
+        # .brainstem_data/frames.jsonl and is auto-packed in twin/snapshot
+        # eggs (the per-incarnation stream_id is excluded so destination
+        # brainstems mint their own).
+        try:
+            from utils import frames as frames_mod
+            frames_mod.record_frame("chat", {
+                "user_input": user_input,
+                "assistant_response": reply,
+                "session_id": session_id,
+                "user_guid": user_guid,
+                "agent_logs": all_logs,
+                "model": MODEL,
+                "history_len_in": len(history),
+                "rounds": len([m for m in messages if m.get("role") == "assistant"]),
+            })
+        except Exception as e:
+            print(f"[brainstem] frame record failed: {e}")
+
         result = {
             "response": reply,
             "assistant_response": reply,
@@ -1797,12 +1819,20 @@ def agents_import():
             "message": f"{result.get('type')} egg '{result.get('id')}' restored.",
         })
 
-    # Plain .py agent path (existing behavior preserved)
-    if not f.filename.endswith('.py'):
-        return jsonify({"error": "Only .py files or .egg cartridges are supported"}), 400
+    # Plain .py agent path — also accepts .py.card (RAR card-shelled
+    # form). A card with __card__.summon = "<egg url>" is a CARD
+    # INCANTATION: dropping the card both installs the bare agent AND
+    # auto-summons the embedded twin egg. Cards become summon vectors
+    # (alongside QR codes and direct URLs) without any new endpoint.
+    fname = f.filename
+    if not (fname.endswith('.py') or fname.endswith('.py.card')):
+        return jsonify({"error": "Only .py / .py.card files or .egg cartridges are supported"}), 400
 
     os.makedirs(AGENTS_PATH, exist_ok=True)
-    safe_name = werkzeug.utils.secure_filename(f.filename)
+    safe_name = werkzeug.utils.secure_filename(fname)
+    # Strip .card so the brainstem's *_agent.py glob auto-discovers it
+    if safe_name.endswith('.py.card'):
+        safe_name = safe_name[:-5]  # drop ".card" → "<x>.py"
     if not safe_name.endswith('_agent.py'):
         safe_name = safe_name[:-3] + '_agent.py'
 
@@ -1815,7 +1845,62 @@ def agents_import():
     except Exception as e:
         return jsonify({"error": f"Uploaded but failed to load: {e}"}), 500
 
-    return jsonify({"status": "ok", "kind": "agent", "message": f"Agent {safe_name} imported successfully."})
+    # Card incantation: parse __card__ for a summon URL. If present,
+    # fetch + unpack the egg so the card delivers the FULL TWIN, not
+    # just the bare agent. RAR cards become twin-summon vectors.
+    summon_result = None
+    try:
+        import ast
+        src = blob.decode("utf-8", errors="replace")
+        tree = ast.parse(src)
+        card = None
+        for node in tree.body:
+            if isinstance(node, ast.Assign):
+                for tgt in node.targets:
+                    if isinstance(tgt, ast.Name) and tgt.id == "__card__":
+                        try:
+                            card = ast.literal_eval(node.value)
+                        except Exception:
+                            card = None
+                        break
+        if isinstance(card, dict):
+            summon_url = card.get("summon")
+            expected_rappid = card.get("summon_rappid")
+            if isinstance(summon_url, str) and summon_url.startswith(("http://", "https://")):
+                import urllib.request as _ur
+                from utils import egg as egg_mod
+                try:
+                    req = _ur.Request(summon_url, headers={"User-Agent": "rapp-brainstem-card-incant/1.0"})
+                    with _ur.urlopen(req, timeout=30) as r:
+                        egg_blob = r.read()
+                    if egg_mod.is_egg_blob(egg_blob):
+                        if expected_rappid:
+                            info = egg_mod.inspect(egg_blob)
+                            if info.get("ok") and info["manifest"].get("rappid") != expected_rappid:
+                                summon_result = {"skipped": True, "reason": "rappid mismatch"}
+                            else:
+                                summon_result = egg_mod.unpack(egg_blob)
+                        else:
+                            summon_result = egg_mod.unpack(egg_blob)
+                        # Reload agents after egg unpack so newly-restored ones go live
+                        try:
+                            load_agents()
+                        except Exception:
+                            pass
+                except Exception as e:
+                    summon_result = {"error": f"card summon fetch failed: {e}"}
+    except Exception as e:
+        print(f"[brainstem] card incantation parse skipped: {e}")
+
+    resp = {
+        "status": "ok",
+        "kind": "agent" if not summon_result else "card-incantation",
+        "message": f"Agent {safe_name} imported successfully.",
+    }
+    if summon_result:
+        resp["summoned"] = summon_result
+        resp["message"] = f"Card incantation: agent {safe_name} installed, twin egg summoned."
+    return jsonify(resp)
 
 
 # ── Egg cartridge export endpoints ──────────────────────────────────────
@@ -1987,6 +2072,48 @@ def identity():
         "twin_rappid": twin_rappid,
         "rapps": ident.get("rapps", {}),
         "twin_incarnations": ident.get("twin_incarnations", 0),
+    })
+
+
+@app.route("/twin/manifest", methods=["GET"])
+def twin_manifest():
+    """Public-safe twin descriptor — what other twins / brainstems can know.
+
+    Returns RAPPID, stream_id of THIS incarnation, frame log summary,
+    incarnation count. NO state, NO chat history, NO secrets. Safe to
+    expose if a brainstem is reachable on a network. Useful for twins
+    discovering each other before deciding whether to collaborate.
+    """
+    from utils import egg as egg_mod
+    from utils import frames as frames_mod
+    twin_rappid = egg_mod.get_or_create_twin_rappid()
+    ident = egg_mod._read_identity()
+    return jsonify({
+        "schema":            "twin-manifest/1.0",
+        "twin_rappid":       twin_rappid,
+        "stream_id":         frames_mod.get_or_create_stream_id(),
+        "incarnations":      ident.get("twin_incarnations", 0),
+        "frames":            frames_mod.stream_summary(),
+        "version":           VERSION,
+        # Capabilities surface — the "what can this twin do" affordances
+        # other twins should know about. Just the agent name list — no
+        # internals, no metadata that exposes state or strategy.
+        "agent_names":       sorted(load_agents().keys()) if True else [],
+        "rapps_installed":   list(ident.get("rapps", {}).keys()),
+    })
+
+
+@app.route("/frames/recent", methods=["GET"])
+def frames_recent():
+    """Diagnostic — read the last N frames from the local log."""
+    from utils import frames as frames_mod
+    try:
+        limit = int(request.args.get("limit", "50"))
+    except ValueError:
+        limit = 50
+    return jsonify({
+        "stream": frames_mod.stream_summary(),
+        "frames": frames_mod.read_recent(limit=limit),
     })
 
 

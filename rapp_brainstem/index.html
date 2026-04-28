@@ -6,6 +6,7 @@
 <title>RAPP Brainstem</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' fill='%2358a6ff'%3E%3Cpath d='M184 0c-30.9 0-56.5 22.7-61.1 52.3C54.5 67 0 130 0 206.8c0 41.6 17.4 79.2 45.3 105.9-2 9.2-3.3 18.8-3.3 28.7 0 55.3 35.8 102.2 85.5 119C142.2 493 172.6 512 208 512h16c35.3 0 64-28.7 64-64V86c0-8.8-7.2-16-16-16h-16c-8.8 0-16 7.2-16 16v16c0 8.8-7.2 16-16 16s-16-7.2-16-16V64c0-35.3-28.7-64-64-64h40zm144 0c30.9 0 56.5 22.7 61.1 52.3C457.5 67 512 130 512 206.8c0 41.6-17.4 79.2-45.3 105.9 2 9.2 3.3 18.8 3.3 28.7 0 55.3-35.8 102.2-85.5 119C369.8 493 339.4 512 304 512h-16c-35.3 0-64-28.7-64-64V86c0-8.8 7.2-16 16-16h16c8.8 0 16 7.2 16 16v16c0 8.8 7.2 16 16 16s16-7.2 16-16V64c0-35.3 28.7-64 64-64h-40z'/%3E%3C/svg%3E">
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -1088,6 +1089,48 @@
   /* Make the disabled-agents badge on chat tabs clickable */
   .chat-tab .chat-tab-badge { cursor: pointer; }
   .chat-tab .chat-tab-badge:hover { background: rgba(210,153,34,0.15); color: #d29922; }
+
+  /* ── NEW: QR share modal — for global twin summoning. The user pastes
+     a public URL where their twin egg is hosted; we render a QR that
+     other brainstems can scan to summon. localFirstTools-style. */
+  #qr-modal {
+    display: none; position: fixed; inset: 0;
+    background: rgba(13,17,23,0.7); z-index: 230;
+    align-items: center; justify-content: center;
+  }
+  #qr-modal.open { display: flex; }
+  .qr-card {
+    background: #161b22; border: 1px solid #30363d; border-radius: 12px;
+    padding: 24px; width: min(420px, 92vw); text-align: center;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+  }
+  body.light-mode .qr-card { background: #ffffff; border-color: #d0d7de; }
+  .qr-card h3 { font-size: 14px; margin-bottom: 12px; }
+  .qr-card .qr-url {
+    background: #0d1117; color: #7ee787;
+    border: 1px solid #21262d; border-radius: 6px;
+    padding: 8px; font-family: "SF Mono", monospace;
+    font-size: 11px; margin-top: 12px; word-break: break-all;
+  }
+  body.light-mode .qr-card .qr-url { background: #f6f8fa; color: #0969da; border-color: #d0d7de; }
+  .qr-card .qr-img-wrap {
+    background: #fff; border-radius: 8px; padding: 16px; margin: 0 auto;
+    display: inline-block;
+  }
+  .qr-card .qr-img-wrap canvas, .qr-card .qr-img-wrap img { display: block; margin: 0 auto; }
+  .qr-card .qr-actions {
+    display: flex; gap: 8px; margin-top: 14px; justify-content: center;
+  }
+  .qr-card .qr-actions button {
+    background: #21262d; color: #e6edf3; border: 1px solid #30363d;
+    border-radius: 6px; padding: 6px 12px; font-size: 12px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .qr-card .qr-actions button:hover { border-color: #58a6ff; color: #58a6ff; }
+  .qr-rappid {
+    color: #8b949e; font-size: 10px; font-family: "SF Mono", monospace;
+    margin-top: 8px; word-break: break-all;
+  }
 </style>
 </head>
 <body>
@@ -1135,6 +1178,20 @@
   <iframe id="rf-iframe" title="Rapplication UI"
           allow="clipboard-read; clipboard-write; camera; microphone; geolocation"
           allowfullscreen></iframe>
+</div>
+
+<!-- ── NEW: Twin QR share modal ── -->
+<div id="qr-modal" role="dialog" aria-modal="true" aria-label="Share twin via QR">
+  <div class="qr-card">
+    <h3 id="qr-title">🪪 Share twin (QR)</h3>
+    <div id="qr-img-wrap" class="qr-img-wrap"></div>
+    <div class="qr-url" id="qr-url-display">—</div>
+    <div class="qr-rappid" id="qr-rappid-display">—</div>
+    <div class="qr-actions">
+      <button onclick="copyQrUrl()">📋 Copy URL</button>
+      <button onclick="closeQr()">✕ Close</button>
+    </div>
+  </div>
 </div>
 
 <!-- ── NEW: Cmd+K command palette ── -->
@@ -3974,6 +4031,87 @@
     return items;
   }
   _gatherCmdkItems = _gatherCmdkItemsExt;
+
+  // ─────────────────────────────────────────────────────────────────
+  // ── NEW: QR share — global twin summoning UX ────────────────────
+  // ─────────────────────────────────────────────────────────────────
+  // The user pastes the public URL where their twin egg lives (gist,
+  // GitHub release, S3, IPFS, anywhere). We render a QR another
+  // brainstem can scan. Scanning lands on /?summon=<url>&rappid=<exp>
+  // which triggers the deep-link summon flow. RAR cards work the same
+  // way — a card's __card__.summon URL is just another vector.
+  let _qrLastUrl = '';
+
+  function _qrInstallerLink(eggUrl, expectedRappid) {
+    // Anyone who scans the QR lands on the brainstem installer page,
+    // which redirects through the chat UI's ?summon= deep-link. If a
+    // user is offline the same QR works at localhost:7071 once they're
+    // back home — the URL shape is portable.
+    const base = 'https://kody-w.github.io/RAPP/installer/';
+    const params = new URLSearchParams({ summon: eggUrl });
+    if (expectedRappid) params.set('rappid', expectedRappid);
+    return `${base}?${params.toString()}`;
+  }
+
+  async function openQrShare(presetEggUrl) {
+    let eggUrl = (presetEggUrl || '').trim();
+    if (!eggUrl) {
+      eggUrl = (prompt(
+        'Public URL where your twin egg is hosted:\n' +
+        '(GitHub gist raw URL, release attachment, S3, IPFS — anywhere reachable)'
+      ) || '').trim();
+      if (!eggUrl) return;
+    }
+    let expectedRappid = '';
+    try {
+      const id = await fetch(`${API}/identity`).then(r => r.json());
+      expectedRappid = id.twin_rappid || '';
+    } catch {}
+    const summonUrl = _qrInstallerLink(eggUrl, expectedRappid);
+    _qrLastUrl = summonUrl;
+    document.getElementById('qr-url-display').textContent = summonUrl;
+    document.getElementById('qr-rappid-display').textContent = expectedRappid
+      ? `RAPPID pin: ${expectedRappid}`
+      : '(no RAPPID pin — recipient won't verify lineage)';
+    const wrap = document.getElementById('qr-img-wrap');
+    wrap.innerHTML = '';
+    if (typeof qrcode === 'function') {
+      try {
+        const qr = qrcode(0, 'M');
+        qr.addData(summonUrl);
+        qr.make();
+        wrap.innerHTML = qr.createImgTag(5, 16);
+      } catch (e) {
+        wrap.innerHTML = '<div style="color:#f85149">QR generation failed: ' + escapeHtml(e.message) + '</div>';
+      }
+    } else {
+      wrap.innerHTML = '<div style="color:#8b949e">QR library not loaded — copy URL manually below.</div>';
+    }
+    document.getElementById('qr-modal').classList.add('open');
+  }
+  function closeQr() { document.getElementById('qr-modal').classList.remove('open'); }
+  document.getElementById('qr-modal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'qr-modal') closeQr();
+  });
+  function copyQrUrl() {
+    if (!_qrLastUrl) return;
+    navigator.clipboard.writeText(_qrLastUrl).then(() => {
+      const wrap = appendMsg('system', '');
+      wrap.querySelector('.bubble').innerHTML = '📋 Summon URL copied to clipboard.';
+    }).catch(() => {});
+  }
+
+  // Add the share command to Cmd+K
+  const _origGather2 = _gatherCmdkItems;
+  _gatherCmdkItems = async function() {
+    const items = await _origGather2();
+    items.unshift(
+      { kind: 'action', icon: '🔗', title: 'Share twin via QR / link',
+        sub: 'Generate a summon URL + QR for your hosted twin egg',
+        exec: () => { closeCmdK(); openQrShare(); } },
+    );
+    return items;
+  };
 </script>
 </body>
 </html>

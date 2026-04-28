@@ -24,9 +24,12 @@ FAIL_NAMES=()
 cleanup() {
     [ -n "$SERVER_PID" ] && kill $SERVER_PID 2>/dev/null || true
     rm -rf "$TEST_HOME"
-    rm -f /tmp/egg-test.egg /tmp/egg-test-body.json
+    rm -f /tmp/egg-test.egg /tmp/egg-test-body.json /tmp/card_incant_agent.py.card
     rm -rf "$REPO_ROOT/rapp_brainstem/.brainstem_data/_versions"
-    rm -rf "$REPO_ROOT/rapp_brainstem/.brainstem_data/identity.json"
+    rm -f  "$REPO_ROOT/rapp_brainstem/.brainstem_data/identity.json"
+    rm -f  "$REPO_ROOT/rapp_brainstem/.brainstem_data/stream.json"
+    rm -f  "$REPO_ROOT/rapp_brainstem/.brainstem_data/frames.jsonl"
+    rm -f  "$REPO_ROOT/rapp_brainstem/agents/card_incant_agent.py"
 }
 trap cleanup EXIT
 
@@ -156,6 +159,61 @@ assert_contains "snapshot has service_count"          '"service_count":'        
 rm -f /tmp/egg-snap.egg /tmp/snap-manifest.json /tmp/egg-test-manifest.json
 
 # ── Summary ────────────────────────────────────────────────────────────
+
+# ── Section 7: frames + twin manifest + card incantation ──────────────
+
+echo ""
+echo "--- Section 7: frame log + twin manifest ---"
+MANIFEST=$(curl -sS "http://127.0.0.1:$PORT/twin/manifest")
+assert_contains "twin manifest schema"        '"schema":"twin-manifest/1.0"' "$MANIFEST"
+assert_contains "twin manifest has rappid"    '"twin_rappid":"rappid:'        "$MANIFEST"
+assert_contains "twin manifest has stream_id" '"stream_id":"stream-'          "$MANIFEST"
+assert_contains "twin manifest has frames"    '"frames":'                     "$MANIFEST"
+assert_contains "twin manifest has agents"    '"agent_names":'                "$MANIFEST"
+
+FRAMES=$(curl -sS "http://127.0.0.1:$PORT/frames/recent?limit=10")
+assert_contains "frames endpoint responds"    '"frames":'                     "$FRAMES"
+assert_contains "frames stream summary"       '"stream":'                     "$FRAMES"
+
+# ── Section 8: card incantation — drop a .py.card with __card__.summon ─
+
+echo ""
+echo "--- Section 8: card incantation ---"
+# Build a tiny .py.card that points at our existing test egg URL
+TEST_EGG_URL="file:///tmp/egg-test.egg"  # file:// won't work, use http via local server
+# Use the brainstem's own egg-export endpoint as the summon source
+cat > /tmp/card_incant_agent.py.card <<EOF
+"""card_incant_agent — minimal card for incantation test."""
+
+__manifest__ = {
+    "schema": "rapp-agent/1.0",
+    "name": "@test/card_incant",
+    "version": "1.0.0",
+    "display_name": "CardIncant",
+    "description": "Card incantation test fixture.",
+    "author": "test",
+    "tags": ["test"],
+    "category": "general",
+    "quality_tier": "experimental",
+    "requires_env": [],
+    "dependencies": [],
+}
+
+__card__ = {
+    "name": "CardIncant",
+    "summon": "http://127.0.0.1:$PORT/rapps/export/twin?id=card_summon_test",
+}
+
+class CardIncantAgent:
+    def perform(self, **kw):
+        return "ok"
+EOF
+
+INCANT=$(curl -sS -X POST http://127.0.0.1:$PORT/agents/import \
+  -F "file=@/tmp/card_incant_agent.py.card;filename=card_incant_agent.py.card;type=text/x-python")
+assert_contains "card incantation triggered" '"kind":"card-incantation"' "$INCANT"
+assert_contains "incantation summoned twin"  '"summoned":'               "$INCANT"
+rm -f /tmp/card_incant_agent.py.card
 
 echo ""
 echo "─────────────────────────────────────────────────────"
