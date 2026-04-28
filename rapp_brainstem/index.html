@@ -4072,7 +4072,7 @@
     document.getElementById('qr-url-display').textContent = summonUrl;
     document.getElementById('qr-rappid-display').textContent = expectedRappid
       ? `RAPPID pin: ${expectedRappid}`
-      : '(no RAPPID pin — recipient won't verify lineage)';
+      : "(no RAPPID pin — recipient won't verify lineage)";
     const wrap = document.getElementById('qr-img-wrap');
     wrap.innerHTML = '';
     if (typeof qrcode === 'function') {
