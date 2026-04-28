@@ -944,6 +944,132 @@
     padding: 1px 5px; font-family: "SF Mono", monospace; font-size: 10px;
   }
   body.light-mode .cmdk-hint kbd { background: #eaeef2; color: #24292e; border-color: #d0d7de; }
+
+  /* ── NEW: multi-chat tabs ──────────────────────────────────────
+     Each tab is its own conversation (own history, sessionId, and
+     enabled-agents subset). Tabs sit above #chat inside a new
+     #chat-column wrapper. When there's only one chat (the default
+     migrated one), the strip is still visible — keeps mental model
+     consistent. */
+  #chat-and-pane > #chat-column {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  body.split-active #chat-and-pane > #chat-column {
+    flex: 0 0 calc(100vw - var(--split-width));
+  }
+  #chat-column > #chat { flex: 1; min-height: 0; }
+
+  #chat-tabs {
+    display: flex; align-items: stretch;
+    gap: 2px;
+    padding: 6px 12px 0;
+    background: #161b22;
+    border-bottom: 1px solid #21262d;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    flex-shrink: 0;
+  }
+  body.light-mode #chat-tabs { background: #f6f8fa; border-bottom-color: #d0d7de; }
+  .chat-tab {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #21262d; border: 1px solid #30363d; border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    padding: 6px 10px 6px 12px;
+    font-size: 12px; color: #8b949e;
+    cursor: pointer; flex-shrink: 0;
+    max-width: 220px;
+    transition: all 0.15s;
+    position: relative;
+    top: 1px;
+  }
+  .chat-tab:hover { color: #e6edf3; border-color: #58a6ff; }
+  .chat-tab.chat-tab-active {
+    background: #0d1117; color: #e6edf3;
+    border-color: #21262d;
+    border-bottom: 1px solid #0d1117;
+    z-index: 1;
+  }
+  body.light-mode .chat-tab { background: #eaeef2; border-color: #d0d7de; color: #57606a; }
+  body.light-mode .chat-tab.chat-tab-active {
+    background: #ffffff; color: #24292e;
+    border-color: #d0d7de;
+    border-bottom-color: #ffffff;
+  }
+  .chat-tab .chat-tab-name {
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    max-width: 160px;
+  }
+  .chat-tab .chat-tab-name[contenteditable="true"] {
+    outline: 1px solid #58a6ff; outline-offset: 2px;
+    background: #0d1117; padding: 0 2px; border-radius: 2px;
+    cursor: text;
+  }
+  .chat-tab .chat-tab-badge {
+    background: rgba(88,166,255,0.15); color: #58a6ff;
+    font-size: 9px; padding: 1px 5px; border-radius: 999px;
+    font-family: "SF Mono", monospace;
+  }
+  .chat-tab .chat-tab-close {
+    background: transparent; border: none; color: inherit;
+    font-size: 14px; line-height: 1; padding: 0 2px;
+    cursor: pointer; opacity: 0.5;
+  }
+  .chat-tab .chat-tab-close:hover { opacity: 1; color: #f85149; }
+  .chat-tab-add {
+    background: transparent; border: 1px dashed #30363d;
+    border-radius: 6px;
+    color: #8b949e; cursor: pointer; padding: 4px 10px;
+    font-size: 12px; align-self: center;
+    transition: all 0.15s; flex-shrink: 0;
+  }
+  .chat-tab-add:hover { border-color: #58a6ff; color: #58a6ff; }
+  body.light-mode .chat-tab-add { border-color: #d0d7de; color: #57606a; }
+  body.light-mode .chat-tab-add:hover { border-color: #0969da; color: #0969da; }
+
+  /* ── NEW: per-chat agent toggles in the agents panel ──
+     When a chat has agents disabled, the panel shows a small banner
+     and each agent row gets a checkbox bound to the active chat. */
+  .agent-list li .agent-toggle {
+    appearance: none;
+    width: 14px; height: 14px;
+    border: 1px solid #30363d; border-radius: 3px;
+    background: #0d1117; cursor: pointer; flex-shrink: 0;
+    margin-right: 6px;
+    position: relative;
+  }
+  .agent-list li .agent-toggle:checked {
+    background: #1f6feb; border-color: #1f6feb;
+  }
+  .agent-list li .agent-toggle:checked::after {
+    content: '✓';
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 10px; font-weight: 700;
+  }
+  body.light-mode .agent-list li .agent-toggle {
+    background: #ffffff; border-color: #d0d7de;
+  }
+  body.light-mode .agent-list li .agent-toggle:checked {
+    background: #0969da; border-color: #0969da;
+  }
+  .agent-list li.agent-disabled .agent-name { opacity: 0.5; text-decoration: line-through; }
+  .agent-list li {
+    cursor: default;
+  }
+  .agent-list li > .agent-name-wrap {
+    display: flex; align-items: center; flex: 1; min-width: 0;
+  }
+  #agents-banner {
+    background: rgba(210,153,34,0.1); color: #d29922;
+    border: 1px solid rgba(210,153,34,0.3); border-radius: 6px;
+    padding: 6px 10px; font-size: 11px; margin-bottom: 10px;
+    display: none;
+  }
+  #agents-banner.has-disabled { display: block; }
 </style>
 </head>
 <body>
@@ -1093,6 +1219,8 @@
           <span class="icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v4h4v2h-4v4h-2v-4H7v-2h4z"/></svg></span>
           Installed Agents
         </h3>
+        <!-- NEW: per-chat agent filter banner (hidden when all enabled) -->
+        <div id="agents-banner"></div>
         <ul class="agent-list" id="agent-list-ul">
           <!-- Populated by JS -->
         </ul>
@@ -1186,6 +1314,12 @@
      (#chat { flex:1; ... overflow-y:auto }) is unchanged. ── -->
 <div id="chat-and-pane">
 
+<!-- ── NEW: chat-column wrapper holds chat-tabs + chat. ── -->
+<div id="chat-column">
+
+<!-- ── NEW: chat tabs strip — multi-chat with per-chat agent filter. ── -->
+<div id="chat-tabs"></div>
+
 <div id="chat">
   <!-- Subtle Drop Watermark -->
   <div id="chat-watermark">
@@ -1207,6 +1341,8 @@
     </div>
   </div>
 </div>
+
+</div><!-- /#chat-column -->
 
 <!-- ── NEW: side-by-side rapp pane.
      Hidden by default (#split-pane { display:none }). Becomes flex
@@ -1269,6 +1405,17 @@
   let sessionId = null;
   let history = [];
   let fullTranscript = [];
+
+  // ── NEW: multi-chat state.
+  // Each chat has its own history, sessionId, and disabled-agents set.
+  // history/fullTranscript globals above remain in use — they are
+  // rebound to currentChat()'s arrays on every chat switch, so any
+  // existing code that does `history.push(...)` mutates the right chat. */
+  const CHATS_KEY = 'brainstem_chats';
+  const appState = { chats: {}, order: [], currentChatId: null };
+  let _installedAgentNames = [];  // flat list of all installed agent names, refreshed by loadAgentsList
+  function currentChat() { return appState.chats[appState.currentChatId] || null; }
+  function _newChatId() { return 'chat-' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-3); }
   let devMode = localStorage.getItem('brainstem_dev') === 'true';
   if (devMode) document.body.classList.add('dev-mode');
 
@@ -1770,23 +1917,61 @@
       const data = await res.json();
       const ul = document.getElementById('agent-list-ul');
       ul.innerHTML = '';
+      // NEW: refresh the flat list of installed agent NAMES so sendMessage
+      // can build the per-chat enabled_agents allowlist.
+      _installedAgentNames = [];
+      for (const f of (data.files || [])) {
+        for (const n of (f.agents || [])) _installedAgentNames.push(n);
+      }
+      _updateAgentsBanner();
       if (!data.files || data.files.length === 0) {
         ul.innerHTML = '<li><span class="agent-name" style="color:#8b949e">No agents found.</span></li>';
         return;
       }
+      const cc = currentChat();
+      const disabledSet = new Set(cc && Array.isArray(cc.disabledAgents) ? cc.disabledAgents : []);
       for (const item of data.files) {
         const li = document.createElement('li');
+        const fileNames = item.agents || [];
+        const allDisabled = fileNames.length > 0 && fileNames.every(n => disabledSet.has(n));
+        if (allDisabled) li.classList.add('agent-disabled');
+
+        // ── NEW: per-chat enable/disable toggle (one checkbox per file row;
+        //   toggling flips all agent names in the file).
+        const nameWrap = document.createElement('span');
+        nameWrap.className = 'agent-name-wrap';
+        const toggle = document.createElement('input');
+        toggle.type = 'checkbox';
+        toggle.className = 'agent-toggle';
+        toggle.checked = !allDisabled;
+        toggle.title = allDisabled
+          ? `Enable ${fileNames.join(', ') || item.filename} for this chat`
+          : `Disable ${fileNames.join(', ') || item.filename} for this chat`;
+        toggle.onchange = () => {
+          const c = currentChat();
+          if (!c) return;
+          c.disabledAgents = c.disabledAgents || [];
+          const set = new Set(c.disabledAgents);
+          if (toggle.checked) fileNames.forEach(n => set.delete(n));
+          else fileNames.forEach(n => set.add(n));
+          c.disabledAgents = Array.from(set);
+          c.updated = Date.now();
+          _persistChats();
+          loadAgentsList();
+        };
+
         const nameSpan = document.createElement('span');
         nameSpan.className = 'agent-name';
-        
         let displayTxt = item.filename;
         if (item.agents && item.agents.length > 0) {
           displayTxt = `${item.agents.join(', ')} (${item.filename})`;
         }
-        
         nameSpan.textContent = displayTxt;
         nameSpan.title = item.filename;
-        
+
+        nameWrap.appendChild(toggle);
+        nameWrap.appendChild(nameSpan);
+
         const controls = document.createElement('div');
         controls.style.display = 'flex';
         controls.style.gap = '4px';
@@ -1821,7 +2006,7 @@
         controls.appendChild(expBtn);
         controls.appendChild(delBtn);
 
-        li.appendChild(nameSpan);
+        li.appendChild(nameWrap);
         li.appendChild(controls);
         ul.appendChild(li);
       }
@@ -2094,6 +2279,14 @@
     try {
       const body = { user_input: text, conversation_history: history };
       if (sessionId) body.session_id = sessionId;
+      // NEW: per-chat agent filter. If the active chat has any agents
+      // disabled, send the allowlist of names. Empty disabled set or
+      // no current chat → omit (server uses all loaded agents).
+      const cc = currentChat();
+      if (cc && Array.isArray(cc.disabledAgents) && cc.disabledAgents.length && _installedAgentNames.length) {
+        const disabled = new Set(cc.disabledAgents);
+        body.enabled_agents = _installedAgentNames.filter(n => !disabled.has(n));
+      }
 
       const r = await fetch(`${API}/chat`, {
         method: 'POST',
@@ -2137,6 +2330,14 @@
       } else {
         clog('chat.response', { response_len: d.response?.length, has_agents: !!d.agent_logs });
         sessionId = d.session_id;
+        // NEW: sync sessionId + updated timestamp into the active chat
+        // so a tab switch preserves the server session continuation.
+        if (currentChat()) {
+          currentChat().sessionId = sessionId;
+          currentChat().updated = Date.now();
+          _persistChats();
+          _renderChatTabs();
+        }
         const sidEl = document.getElementById('session-id');
         if (sidEl) sidEl.textContent = sessionId?.slice(0, 8) + '...';
         history.push({ role: 'assistant', content: d.response });
@@ -2645,9 +2846,16 @@
 
   // ── Actions ──
   function clearChat() {
-    history = [];
-    fullTranscript = [];
+    // Clear in-place so the chat-tab's array reference stays valid
+    history.length = 0;
+    fullTranscript.length = 0;
     sessionId = null;
+    if (currentChat()) {
+      currentChat().sessionId = null;
+      currentChat().updated = Date.now();
+      _persistChats();
+      _renderChatTabs();
+    }
     const sidEl = document.getElementById('session-id');
     if (sidEl) sidEl.textContent = '\u2014';
     const chat = document.getElementById('chat');
@@ -2698,13 +2906,18 @@
         const turns = data.turns || [];
         if (!turns.length) { alert('No turns found in file.'); return; }
 
-        // Clear current chat and restore session
-        history = [];
-        fullTranscript = [];
+        // Clear current chat and restore session — clear in-place so
+        // the active chat-tab's array reference stays valid
+        history.length = 0;
+        fullTranscript.length = 0;
         const chat = document.getElementById('chat');
         chat.innerHTML = '';
 
         sessionId = data.session_id || null;
+        if (currentChat()) {
+          currentChat().sessionId = sessionId;
+          currentChat().updated = Date.now();
+        }
         const sidEl = document.getElementById('session-id');
         if (sidEl) sidEl.textContent = sessionId ? sessionId.slice(0, 8) + '...' : '\u2014';
 
@@ -3276,6 +3489,242 @@
       else openCmdK();
     }
   });
+
+  // ─────────────────────────────────────────────────────────────────
+  // ── NEW: multi-chat tabs + per-chat agent enable/disable ────────
+  // ─────────────────────────────────────────────────────────────────
+  // Each chat is its own conversation: own history, sessionId, and
+  // disabledAgents set. Hotloading is purely server-side via the
+  // enabled_agents allowlist sent on every /chat call (already wired
+  // in sendMessage above). Persistence: localStorage 'brainstem_chats'.
+  function _persistChats() {
+    try {
+      // Drop any chat-local keys the server side doesn't know about
+      const safe = { order: appState.order, currentChatId: appState.currentChatId, chats: {} };
+      for (const id of appState.order) {
+        const c = appState.chats[id];
+        if (!c) continue;
+        safe.chats[id] = {
+          id: c.id,
+          name: c.name,
+          created: c.created,
+          updated: c.updated,
+          history: c.history,
+          fullTranscript: c.fullTranscript,
+          sessionId: c.sessionId,
+          disabledAgents: c.disabledAgents || [],
+        };
+      }
+      localStorage.setItem(CHATS_KEY, JSON.stringify(safe));
+    } catch (e) { console.warn('persistChats failed', e); }
+  }
+
+  function _loadChats() {
+    try {
+      const raw = localStorage.getItem(CHATS_KEY);
+      if (!raw) return false;
+      const data = JSON.parse(raw);
+      appState.chats = data.chats || {};
+      appState.order = Array.isArray(data.order) ? data.order : Object.keys(appState.chats);
+      appState.currentChatId = data.currentChatId && appState.chats[data.currentChatId]
+        ? data.currentChatId : (appState.order[0] || null);
+      // Make sure each chat has the expected shape
+      for (const id of appState.order) {
+        const c = appState.chats[id];
+        c.history = Array.isArray(c.history) ? c.history : [];
+        c.fullTranscript = Array.isArray(c.fullTranscript) ? c.fullTranscript : [];
+        c.disabledAgents = Array.isArray(c.disabledAgents) ? c.disabledAgents : [];
+      }
+      return appState.order.length > 0;
+    } catch (e) { console.warn('loadChats failed', e); return false; }
+  }
+
+  function createChat(name) {
+    const id = _newChatId();
+    appState.chats[id] = {
+      id,
+      name: name || `Chat ${appState.order.length + 1}`,
+      created: Date.now(),
+      updated: Date.now(),
+      history: [],
+      fullTranscript: [],
+      sessionId: null,
+      disabledAgents: [],
+    };
+    appState.order.push(id);
+    switchChat(id);
+    return id;
+  }
+
+  function switchChat(id) {
+    if (!appState.chats[id]) return;
+    // Sync current state (sessionId, disabledAgents already on chat object)
+    appState.currentChatId = id;
+    const c = appState.chats[id];
+    // Rebind history/fullTranscript to the chat's arrays so existing
+    // code continues to mutate the right buffer.
+    history = c.history;
+    fullTranscript = c.fullTranscript;
+    sessionId = c.sessionId;
+    // Re-render messages from fullTranscript
+    _renderChatMessages();
+    _renderChatTabs();
+    // Refresh agents-panel toggles for the new chat's disabledAgents
+    if (typeof loadAgentsList === 'function') loadAgentsList();
+    if (typeof loadRapplications === 'function') loadRapplications();
+    _persistChats();
+    // Update session-id chrome
+    const sidEl = document.getElementById('session-id');
+    if (sidEl) sidEl.textContent = sessionId ? sessionId.slice(0, 8) + '...' : '—';
+  }
+
+  function closeChat(id) {
+    if (!appState.chats[id]) return;
+    if (appState.order.length <= 1) {
+      // Don't let the user close the last chat — it would orphan the UI.
+      // Clear it instead.
+      const c = appState.chats[id];
+      c.history.length = 0;
+      c.fullTranscript.length = 0;
+      c.sessionId = null;
+      c.name = 'New Chat';
+      c.updated = Date.now();
+      switchChat(id);
+      return;
+    }
+    if (!confirm(`Close "${appState.chats[id].name}"? This conversation will be deleted.`)) return;
+    delete appState.chats[id];
+    const idx = appState.order.indexOf(id);
+    appState.order.splice(idx, 1);
+    if (appState.currentChatId === id) {
+      switchChat(appState.order[Math.max(0, idx - 1)] || appState.order[0]);
+    } else {
+      _renderChatTabs();
+      _persistChats();
+    }
+  }
+
+  function renameChat(id, newName) {
+    const c = appState.chats[id];
+    if (!c) return;
+    c.name = (newName || '').trim() || c.name;
+    c.updated = Date.now();
+    _persistChats();
+    _renderChatTabs();
+  }
+
+  function _renderChatTabs() {
+    const tabsEl = document.getElementById('chat-tabs');
+    if (!tabsEl) return;
+    tabsEl.innerHTML = '';
+    for (const id of appState.order) {
+      const c = appState.chats[id];
+      if (!c) continue;
+      const tab = document.createElement('div');
+      tab.className = 'chat-tab' + (id === appState.currentChatId ? ' chat-tab-active' : '');
+      tab.title = `${c.name} — ${c.history.length} messages`;
+      const name = document.createElement('span');
+      name.className = 'chat-tab-name';
+      name.textContent = c.name;
+      name.onclick = () => switchChat(id);
+      // Double-click to rename inline
+      name.ondblclick = (ev) => {
+        ev.stopPropagation();
+        name.contentEditable = 'true';
+        name.focus();
+        document.execCommand('selectAll', false, null);
+        const finish = () => {
+          name.contentEditable = 'false';
+          renameChat(id, name.textContent);
+        };
+        name.onblur = finish;
+        name.onkeydown = (e) => {
+          if (e.key === 'Enter') { e.preventDefault(); name.blur(); }
+          if (e.key === 'Escape') { name.textContent = c.name; name.blur(); }
+        };
+      };
+      tab.appendChild(name);
+      // Per-chat agent badge: show count of disabled agents
+      if (Array.isArray(c.disabledAgents) && c.disabledAgents.length) {
+        const badge = document.createElement('span');
+        badge.className = 'chat-tab-badge';
+        badge.textContent = `−${c.disabledAgents.length}`;
+        badge.title = `${c.disabledAgents.length} agents disabled in this chat`;
+        tab.appendChild(badge);
+      }
+      const x = document.createElement('button');
+      x.className = 'chat-tab-close';
+      x.textContent = '×';
+      x.title = 'Close chat';
+      x.onclick = (ev) => { ev.stopPropagation(); closeChat(id); };
+      tab.appendChild(x);
+      tabsEl.appendChild(tab);
+    }
+    const addBtn = document.createElement('button');
+    addBtn.className = 'chat-tab-add';
+    addBtn.textContent = '+ New chat';
+    addBtn.title = 'Start a new chat (Ctrl+Shift+T)';
+    addBtn.onclick = () => createChat();
+    tabsEl.appendChild(addBtn);
+  }
+
+  function _renderChatMessages() {
+    const chat = document.getElementById('chat');
+    if (!chat) return;
+    // Wipe existing rendered messages but keep watermark + welcome system msg
+    chat.innerHTML = '';
+    // Re-insert watermark
+    const wm = document.createElement('div');
+    wm.id = 'chat-watermark';
+    wm.innerHTML = 'Drag & Drop .py Agents Here <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>';
+    chat.appendChild(wm);
+    // Replay turns
+    for (const turn of fullTranscript) {
+      if (turn.role === 'user') appendMsg('user', turn.content);
+      else if (turn.role === 'assistant') appendMsg('assistant', turn.content, logsToText(turn.agent_logs) || null);
+      else if (turn.role === 'system') appendMsg('system', turn.content);
+    }
+    // Hide starter prompts if there's already content; show otherwise
+    const sp = document.getElementById('starter-prompts');
+    if (sp) {
+      if (fullTranscript.length) sp.classList.add('hidden-prompts');
+      else sp.classList.remove('hidden-prompts');
+    }
+  }
+
+  function _updateAgentsBanner() {
+    const banner = document.getElementById('agents-banner');
+    if (!banner) return;
+    const c = currentChat();
+    const total = _installedAgentNames.length;
+    if (!c || !c.disabledAgents || !c.disabledAgents.length) {
+      banner.className = '';
+      banner.textContent = '';
+      return;
+    }
+    const enabled = total - c.disabledAgents.length;
+    banner.className = 'has-disabled';
+    banner.textContent = `${enabled} of ${total} agents enabled for this chat — toggle below to change.`;
+  }
+
+  // Ctrl/Cmd+Shift+T → new chat
+  document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'T' || e.key === 't')) {
+      e.preventDefault();
+      createChat();
+    }
+  });
+
+  // Init: load persisted chats or seed a default chat. Has to run after
+  // the DOM is parsed (script is at end of body, so safe).
+  (function initChats() {
+    const loaded = _loadChats();
+    if (!loaded || !appState.order.length) {
+      createChat('Chat 1');  // also calls switchChat, which renders tabs
+    } else {
+      switchChat(appState.currentChatId || appState.order[0]);
+    }
+  })();
 </script>
 </body>
 </html>

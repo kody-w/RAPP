@@ -121,16 +121,47 @@ echo "--- Section 5c: pop-out window (new) ---"
 assert_grep "popOutTab JS fn"            'function popOutTab' "$INDEX"
 assert_grep "split-popout button"        'id="split-popout"'  "$INDEX"
 
+# ── Section 5d: multi-chat tabs + per-chat agent toggles (new) ─────────
+
+echo ""
+echo "--- Section 5d: multi-chat tabs + per-chat agents (new) ---"
+assert_grep "chat-tabs strip exists"        'id="chat-tabs"'           "$INDEX"
+assert_grep "chat-column wrapper exists"    'id="chat-column"'         "$INDEX"
+assert_grep "appState global"               'const appState'           "$INDEX"
+assert_grep "createChat fn"                 'function createChat'      "$INDEX"
+assert_grep "switchChat fn"                 'function switchChat'      "$INDEX"
+assert_grep "closeChat fn"                  'function closeChat'       "$INDEX"
+assert_grep "renameChat fn"                 'function renameChat'      "$INDEX"
+assert_grep "_persistChats fn"              'function _persistChats'   "$INDEX"
+assert_grep "_loadChats fn"                 'function _loadChats'      "$INDEX"
+assert_grep "_renderChatTabs fn"            'function _renderChatTabs' "$INDEX"
+assert_grep "_renderChatMessages fn"        'function _renderChatMessages' "$INDEX"
+assert_grep "agents-banner div"             'id="agents-banner"'       "$INDEX"
+assert_grep "agent-toggle checkbox class"   "agent-toggle"             "$INDEX"
+assert_grep "_installedAgentNames tracking" '_installedAgentNames'     "$INDEX"
+assert_grep "enabled_agents sent on /chat"  'body.enabled_agents'      "$INDEX"
+assert_grep "disabledAgents on chat object" 'disabledAgents'           "$INDEX"
+assert_grep "Ctrl+Shift+T new-chat binding" 'shiftKey'                 "$INDEX"
+assert_grep "brainstem_chats persist key"   'brainstem_chats'          "$INDEX"
+
+# ── Section 5e: server-side enabled_agents filter (brainstem.py) ───────
+
+echo ""
+echo "--- Section 5e: server-side filter (brainstem.py) ---"
+BRAIN="$REPO_ROOT/rapp_brainstem/brainstem.py"
+assert_grep "/chat reads enabled_agents"     'enabled_agents = data.get'        "$BRAIN"
+assert_grep "/chat applies allowlist filter" 'enabled_agents, list'             "$BRAIN"
+
 # ── Section 6: only ADDITIONS — sanity that we didn't strip key text ───
 
 echo ""
 echo "--- Section 6: file-size sanity (additive only) ---"
 LINES=$(wc -l < "$INDEX")
-if [ "$LINES" -gt 2999 ]; then
-    echo "  ✓ index.html grew (${LINES} lines, was 2999 after split-view) — additive change"
+if [ "$LINES" -gt 3280 ]; then
+    echo "  ✓ index.html grew (${LINES} lines, was 3280 after cmdk+popout) — additive change"
     PASS=$((PASS + 1))
 else
-    echo "  ✗ index.html did not grow past 2999 (${LINES} lines) — expected cmdk+popout additions"
+    echo "  ✗ index.html did not grow past 3280 (${LINES} lines) — expected multi-chat additions"
     FAIL=$((FAIL + 1)); FAIL_NAMES+=("file-size-sanity")
 fi
 
