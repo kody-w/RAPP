@@ -3711,47 +3711,13 @@
   // disabledAgents set. Hotloading is purely server-side via the
   // enabled_agents allowlist sent on every /chat call (already wired
   // in sendMessage above). Persistence: localStorage 'brainstem_chats'.
-  function _persistChats() {
-    try {
-      // Drop any chat-local keys the server side doesn't know about
-      const safe = { order: appState.order, currentChatId: appState.currentChatId, chats: {} };
-      for (const id of appState.order) {
-        const c = appState.chats[id];
-        if (!c) continue;
-        safe.chats[id] = {
-          id: c.id,
-          name: c.name,
-          created: c.created,
-          updated: c.updated,
-          history: c.history,
-          fullTranscript: c.fullTranscript,
-          sessionId: c.sessionId,
-          disabledAgents: c.disabledAgents || [],
-        };
-      }
-      localStorage.setItem(CHATS_KEY, JSON.stringify(safe));
-    } catch (e) { console.warn('persistChats failed', e); }
-  }
-
-  function _loadChats() {
-    try {
-      const raw = localStorage.getItem(CHATS_KEY);
-      if (!raw) return false;
-      const data = JSON.parse(raw);
-      appState.chats = data.chats || {};
-      appState.order = Array.isArray(data.order) ? data.order : Object.keys(appState.chats);
-      appState.currentChatId = data.currentChatId && appState.chats[data.currentChatId]
-        ? data.currentChatId : (appState.order[0] || null);
-      // Make sure each chat has the expected shape
-      for (const id of appState.order) {
-        const c = appState.chats[id];
-        c.history = Array.isArray(c.history) ? c.history : [];
-        c.fullTranscript = Array.isArray(c.fullTranscript) ? c.fullTranscript : [];
-        c.disabledAgents = Array.isArray(c.disabledAgents) ? c.disabledAgents : [];
-      }
-      return appState.order.length > 0;
-    } catch (e) { console.warn('loadChats failed', e); return false; }
-  }
+  // ── Chat persistence is OFF by design (2026-04-28).
+  // The user prefers "naked refresh clears chat." _persistChats is a
+  // no-op; _loadChats always returns false. Existing CHATS_KEY data
+  // is wiped on init so old persisted chats from earlier builds don't
+  // ghost back on first load after this change.
+  function _persistChats() { /* intentionally empty */ }
+  function _loadChats() { return false; }
 
   function createChat(name) {
     const id = _newChatId();
@@ -4008,15 +3974,11 @@
     }
   });
 
-  // Init: load persisted chats or seed a default chat. Has to run after
-  // the DOM is parsed (script is at end of body, so safe).
+  // Init: always start with a fresh chat — naked refresh clears chat.
+  // Wipe any legacy persisted state so old chats don't ghost back.
   (function initChats() {
-    const loaded = _loadChats();
-    if (!loaded || !appState.order.length) {
-      createChat('Chat 1');  // also calls switchChat, which renders tabs
-    } else {
-      switchChat(appState.currentChatId || appState.order[0]);
-    }
+    try { localStorage.removeItem(CHATS_KEY); } catch {}
+    createChat('Chat 1');
   })();
 
   // ─────────────────────────────────────────────────────────────────
