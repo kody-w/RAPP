@@ -23,6 +23,9 @@ import threading
 import importlib.util
 import subprocess
 import traceback
+import base64
+import io
+import hashlib
 from datetime import datetime, timezone
 
 import logging
@@ -1745,32 +1748,340 @@ def agents_delete(filename):
 
 @app.route("/agents/import", methods=["POST"])
 def agents_import():
-    """Import an agent .py file via drag & drop."""
+    """Import an agent .py file or a brainstem-egg/2.0 cartridge.
+
+    Auto-detects between:
+      - .py file        → install as a single agent (existing behavior)
+      - .egg / .zip blob → unpack via utils.egg (cartridge restore)
+
+    The egg path is what makes the brainstem local-first: a user can drop
+    their twin.egg or snapshot.egg here and the digital organism restores
+    in place. No binder dependency.
+    """
     import werkzeug.utils
     if 'file' not in request.files:
         return jsonify({"error": "No file uploaded"}), 400
     f = request.files['file']
     if f.filename == '':
         return jsonify({"error": "No selected file"}), 400
+
+    # Sniff the upload — read once, dispatch on shape
+    blob = f.read()
+
+    # Egg cartridge path (zip with manifest.json — recognized regardless
+    # of filename so .egg, .rapplication.egg, .twin.egg all work).
+    try:
+        from utils import egg as egg_mod
+    except ImportError:
+        egg_mod = None
+    if egg_mod and egg_mod.is_egg_blob(blob):
+        result = egg_mod.unpack(blob)
+        if not result.get("ok"):
+            return jsonify({"error": result.get("error", "egg unpack failed")}), 400
+        # Reload agents so newly-restored ones become live for /chat
+        try:
+            load_agents()
+        except Exception as e:
+            return jsonify({
+                "status": "partial",
+                "egg": result,
+                "warning": f"Egg unpacked but agents failed to reload: {e}",
+            }), 200
+        return jsonify({
+            "status": "ok",
+            "kind": "egg",
+            "type": result.get("type"),
+            "id": result.get("id"),
+            "name": result.get("name"),
+            "files_restored": result.get("files_restored"),
+            "message": f"{result.get('type')} egg '{result.get('id')}' restored.",
+        })
+
+    # Plain .py agent path (existing behavior preserved)
     if not f.filename.endswith('.py'):
-        return jsonify({"error": "Only .py files are supported"}), 400
-    
+        return jsonify({"error": "Only .py files or .egg cartridges are supported"}), 400
+
     os.makedirs(AGENTS_PATH, exist_ok=True)
     safe_name = werkzeug.utils.secure_filename(f.filename)
-    # Ensure it matches the glob pattern *_agent.py
     if not safe_name.endswith('_agent.py'):
         safe_name = safe_name[:-3] + '_agent.py'
-        
+
     filepath = os.path.join(AGENTS_PATH, safe_name)
-    f.save(filepath)
-    
-    # Reload agents to include the new one
+    with open(filepath, 'wb') as out:
+        out.write(blob)
+
     try:
         load_agents()
     except Exception as e:
         return jsonify({"error": f"Uploaded but failed to load: {e}"}), 500
-        
-    return jsonify({"status": "ok", "message": f"Agent {safe_name} imported successfully."})
+
+    return jsonify({"status": "ok", "kind": "agent", "message": f"Agent {safe_name} imported successfully."})
+
+
+# ── Egg cartridge export endpoints ──────────────────────────────────────
+# Decoupled from the binder. The brainstem itself owns the cartridge spec
+# (utils/egg.py) and exposes pack/unpack as core endpoints. The binder
+# service may also call these for its own UI; the chat UI calls them
+# directly. Three flavors:
+#
+#   GET /rapps/export/twin              → user's digital twin (agents + memory)
+#   GET /rapps/export/snapshot          → full brainstem snapshot
+#   GET /rapps/export/rapp/<id>         → one rapplication (legacy compat)
+#
+# All return application/zip with Content-Disposition for direct download.
+
+@app.route("/rapps/export/twin", methods=["GET"])
+def rapps_export_twin():
+    from utils import egg as egg_mod
+    twin_id = request.args.get("id", "twin")
+    name = request.args.get("name", "Digital Twin")
+    blob = egg_mod.pack_twin(twin_id, name=name)
+    return blob, 200, {
+        "Content-Type": "application/zip",
+        "Content-Disposition": f'attachment; filename="{twin_id}.twin.egg"',
+        "Content-Length": str(len(blob)),
+    }
+
+
+@app.route("/rapps/export/snapshot", methods=["GET"])
+def rapps_export_snapshot():
+    from utils import egg as egg_mod
+    snap_id = request.args.get("id") or time.strftime("brainstem-%Y%m%d-%H%M%S", time.gmtime())
+    name = request.args.get("name", "Brainstem Snapshot")
+    blob = egg_mod.pack_snapshot(snap_id, name=name)
+    return blob, 200, {
+        "Content-Type": "application/zip",
+        "Content-Disposition": f'attachment; filename="{snap_id}.snapshot.egg"',
+        "Content-Length": str(len(blob)),
+    }
+
+
+@app.route("/rapps/export/rapp/<rapp_id>", methods=["GET"])
+def rapps_export_rapp(rapp_id):
+    from utils import egg as egg_mod
+    # Pull metadata from binder.json if present, else best-effort defaults.
+    binder_state_path = os.path.join(os.path.dirname(__file__), ".brainstem_data", "binder.json")
+    entry = {}
+    if os.path.exists(binder_state_path):
+        try:
+            with open(binder_state_path) as f:
+                state = json.load(f)
+            entry = next((e for e in state.get("installed", []) if e.get("id") == rapp_id), {}) or {}
+        except Exception:
+            pass
+    blob = egg_mod.pack_rapplication(
+        rapp_id=rapp_id,
+        agent_filename=entry.get("agent_filename") or entry.get("filename") or f"{rapp_id}_agent.py",
+        service_filename=entry.get("service_filename"),
+        ui_filename=entry.get("ui_filename"),
+        version=entry.get("version", "?"),
+        name=entry.get("name", rapp_id),
+    )
+    return blob, 200, {
+        "Content-Type": "application/zip",
+        "Content-Disposition": f'attachment; filename="{rapp_id}.rapplication.egg"',
+        "Content-Length": str(len(blob)),
+    }
+
+
+@app.route("/rapps/inspect", methods=["POST"])
+def rapps_inspect():
+    """Read just the manifest of an uploaded egg without unpacking it."""
+    from utils import egg as egg_mod
+    if 'file' not in request.files:
+        return jsonify({"error": "no file uploaded"}), 400
+    blob = request.files['file'].read()
+    return jsonify(egg_mod.inspect(blob))
+
+
+# ── Global twin summoning ───────────────────────────────────────────────
+# A public egg lives at a public URL. Anyone who knows the URL can summon
+# the twin / rapp / snapshot into their own local brainstem. Delivery
+# vectors: clipboard paste, link share, QR scan (the brainstem index.html
+# also accepts ?summon=<url> as a deep-link to trigger this flow).
+#
+# The brainstem is a game console; eggs are the cartridges; URLs +
+# QR codes are how cartridges get distributed across the network.
+# RAPPID inside the manifest is the universal identity that survives
+# the trip.
+
+@app.route("/eggs/summon", methods=["POST"])
+def eggs_summon():
+    """Fetch a .egg from a remote URL and unpack it locally.
+
+    Body: {"url": "https://...egg", "expected_rappid": "..."  (optional)}
+
+    The expected_rappid lets the caller pin a specific identity — useful
+    for QR codes that publish a twin: the QR can encode both the URL
+    and the expected RAPPID so a man-in-the-middle swap is detectable.
+    """
+    from utils import egg as egg_mod
+    import urllib.request as _urlreq
+    import urllib.error as _urlerr
+    body = request.get_json(silent=True) or {}
+    url = (body.get("url") or "").strip()
+    expected_rappid = body.get("expected_rappid")
+    if not url:
+        return jsonify({"error": "url is required"}), 400
+    if not (url.startswith("https://") or url.startswith("http://")):
+        return jsonify({"error": "url must be http(s)"}), 400
+
+    try:
+        req = _urlreq.Request(url, headers={"User-Agent": "rapp-brainstem-egg-summon/1.0"})
+        with _urlreq.urlopen(req, timeout=30) as r:
+            blob = r.read()
+    except (_urlerr.URLError, OSError) as e:
+        return jsonify({"error": f"summon fetch failed: {e}"}), 502
+
+    if not egg_mod.is_egg_blob(blob):
+        return jsonify({"error": "URL did not return a valid egg"}), 400
+
+    # Inspect first so we can verify expected_rappid before extracting
+    info = egg_mod.inspect(blob)
+    if not info.get("ok"):
+        return jsonify({"error": info.get("error", "invalid manifest")}), 400
+    manifest = info["manifest"]
+    actual_rappid = manifest.get("rappid")
+    if expected_rappid and actual_rappid != expected_rappid:
+        return jsonify({
+            "error": "rappid mismatch — refusing to unpack",
+            "expected": expected_rappid,
+            "actual": actual_rappid,
+        }), 409
+
+    # Unpack
+    result = egg_mod.unpack(blob)
+    if not result.get("ok"):
+        return jsonify({"error": result.get("error", "unpack failed")}), 400
+
+    # Reload agents so the summoned twin is live
+    try:
+        load_agents()
+    except Exception as e:
+        return jsonify({
+            "status": "partial",
+            "summoned": result,
+            "warning": f"Egg unpacked but agents failed to reload: {e}",
+        }), 200
+
+    return jsonify({
+        "status": "ok",
+        "summoned": True,
+        "type": result.get("type"),
+        "rappid": actual_rappid,
+        "id": result.get("id"),
+        "name": result.get("name"),
+        "files_restored": result.get("files_restored"),
+        "manifest": manifest,
+        "message": f"Summoned {result.get('type')} {result.get('name') or result.get('id')}.",
+    })
+
+
+@app.route("/identity", methods=["GET"])
+def identity():
+    """Return this brainstem's RAPPIDs (twin + per-rapp). Mints on first call."""
+    from utils import egg as egg_mod
+    twin_rappid = egg_mod.get_or_create_twin_rappid()
+    ident = egg_mod._read_identity()
+    return jsonify({
+        "twin_rappid": twin_rappid,
+        "rapps": ident.get("rapps", {}),
+        "twin_incarnations": ident.get("twin_incarnations", 0),
+    })
+
+
+# ── Dreamcatcher seam: assimilate a divergent version egg ──────────────
+# A "version" is a divergent local incarnation of the home twin: summoned
+# to another brainstem (work laptop, friend's machine, edge device), it
+# accumulated new memories / chats / agent installs while away. When the
+# user returns home, those experiences need to be folded back into the
+# core twin without trampling the home state.
+#
+# The proprietary Rappter dreamcatcher is the production merge engine —
+# three-way merge with conflict resolution, CRDT-aware state, replay of
+# unique experiences. This endpoint is the OPEN-SOURCE SEAM where
+# dreamcatcher slots in. The basic behavior here is conservative: stage
+# the version's contents under .brainstem_data/_versions/<entropy>/ so
+# nothing in the home twin is overwritten. The user (or dreamcatcher)
+# decides what to integrate.
+
+@app.route("/eggs/assimilate", methods=["POST"])
+def eggs_assimilate():
+    from utils import egg as egg_mod
+    import zipfile as _zf
+    import urllib.request as _ur
+    import urllib.error as _ue
+
+    body = request.get_json(silent=True) or {}
+    blob = None
+    if body.get("egg_b64"):
+        try:
+            blob = base64.b64decode(body["egg_b64"])
+        except Exception:
+            return jsonify({"error": "invalid egg_b64"}), 400
+    elif body.get("url"):
+        url = (body["url"] or "").strip()
+        if not (url.startswith("http://") or url.startswith("https://")):
+            return jsonify({"error": "url must be http(s)"}), 400
+        try:
+            req = _ur.Request(url, headers={"User-Agent": "rapp-brainstem-assimilate/1.0"})
+            with _ur.urlopen(req, timeout=30) as r:
+                blob = r.read()
+        except (_ue.URLError, OSError) as e:
+            return jsonify({"error": f"fetch failed: {e}"}), 502
+    else:
+        return jsonify({"error": "egg_b64 or url required"}), 400
+
+    if not egg_mod.is_egg_blob(blob):
+        return jsonify({"error": "not a valid egg"}), 400
+
+    info = egg_mod.inspect(blob)
+    if not info.get("ok"):
+        return jsonify({"error": info["error"]}), 400
+    incoming = info["manifest"]
+    incoming_rappid = incoming.get("rappid") or "unknown"
+    home_rappid = egg_mod.get_or_create_twin_rappid()
+
+    parsed = egg_mod.parse_rappid(incoming_rappid)
+    entropy = parsed["entropy"] if parsed else hashlib.sha1(incoming_rappid.encode()).hexdigest()[:16]
+    stage_root = os.path.join(os.path.dirname(__file__), ".brainstem_data", "_versions", entropy)
+    os.makedirs(stage_root, exist_ok=True)
+
+    files_staged = 0
+    with _zf.ZipFile(io.BytesIO(blob)) as z:
+        for name in z.namelist():
+            if name.endswith("/"):
+                continue
+            target = os.path.abspath(os.path.join(stage_root, name))
+            if not target.startswith(os.path.abspath(stage_root) + os.sep):
+                continue
+            os.makedirs(os.path.dirname(target), exist_ok=True)
+            with open(target, "wb") as fp:
+                fp.write(z.read(name))
+            files_staged += 1
+
+    parent_rappid = (incoming.get("lineage") or {}).get("parent_rappid")
+    if incoming_rappid == home_rappid:
+        merge_kind = "same-twin"  # standard return-from-edge
+    elif parent_rappid == home_rappid:
+        merge_kind = "fork-back"  # forked twin merging into parent
+    else:
+        merge_kind = "cross-lineage"  # different twin entirely
+
+    return jsonify({
+        "ok": True,
+        "staged_at": stage_root,
+        "files_staged": files_staged,
+        "source_rappid": incoming_rappid,
+        "target_rappid": home_rappid,
+        "merge_kind": merge_kind,
+        "manifest": incoming,
+        "next": (
+            "Version staged. Use the Rappter dreamcatcher to merge into "
+            "the home twin. The home twin's state is untouched; nothing "
+            "was overwritten."
+        ),
+    })
 
 @app.route("/health", methods=["GET"])
 def health():

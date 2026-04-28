@@ -34,3 +34,5 @@ rapp_swarm/.local_storage/
 # Vault: keep the markdown, ignore per-user Obsidian state
 pages/vault/.obsidian/
 pages/vault/.trash/
+__azurite_db_blob__.json
+__azurite_db_blob_extent__.json

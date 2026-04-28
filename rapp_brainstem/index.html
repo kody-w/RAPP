@@ -3856,6 +3856,124 @@
       switchChat(appState.currentChatId || appState.order[0]);
     }
   })();
+
+  // ─────────────────────────────────────────────────────────────────
+  // ── NEW: global twin summoning ──────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────
+  // The brainstem is a game console; eggs are cartridges; URLs and QR
+  // codes are how cartridges get distributed. Anyone who has a URL to
+  // a public .egg can summon that twin / rapp / snapshot into their own
+  // local brainstem. Three entry points:
+  //
+  //   1. Deep-link:  /?summon=<url>     ← QR scanners land here
+  //   2. Cmd+K:      "🪄 Summon egg from URL"
+  //   3. Cmd+K:      "📦 Export this brainstem as twin/snapshot egg"
+  //
+  // The egg's RAPPID inside its manifest is the universal identity that
+  // survives the trip. Two brainstems hatching the same egg recognize
+  // they share lineage — even years apart, even continents apart.
+
+  async function summonEggFromUrl(url, expectedRappid) {
+    if (!url) return;
+    appendMsg('system', `🪄 Summoning egg from ${url}…`);
+    try {
+      const body = { url };
+      if (expectedRappid) body.expected_rappid = expectedRappid;
+      const r = await fetch(`${API}/eggs/summon`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const d = await r.json();
+      if (!r.ok || !d.summoned) {
+        const wrap = appendMsg('system', '');
+        wrap.querySelector('.bubble').innerHTML =
+          `❌ Summon failed: ${escapeHtml(d.error || `HTTP ${r.status}`)}`;
+        return;
+      }
+      const counts = d.files_restored || {};
+      const wrap = appendMsg('system', '');
+      wrap.querySelector('.bubble').innerHTML =
+        `✨ <strong>${escapeHtml(d.type)}</strong> egg <strong>${escapeHtml(d.name || d.id)}</strong> hatched.<br>` +
+        `<span style="font-family:monospace;font-size:11px;color:#8b949e">${escapeHtml(d.rappid || '')}</span><br>` +
+        `restored: ${counts.agents || 0} agents · ${counts.services || 0} services · ${counts.ui || 0} ui files · ${counts.data || 0} state files`;
+      try { loadAgentsList(); loadRapplications(); } catch {}
+    } catch (e) {
+      appendMsg('system', `❌ Summon failed: ${e.message}`);
+    }
+  }
+
+  // Deep-link summon: ?summon=<url>&rappid=<expected>
+  (function handleSummonDeepLink() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const summonUrl = params.get('summon');
+      if (!summonUrl) return;
+      const expectedRappid = params.get('rappid') || null;
+      // Confirm before pulling something into the user's brainstem
+      const safe = summonUrl.length > 80 ? summonUrl.slice(0, 80) + '…' : summonUrl;
+      if (confirm(
+        `Summon egg from this URL?\n\n${safe}\n\n` +
+        (expectedRappid ? `Expected RAPPID: ${expectedRappid}\n\n` : '') +
+        `This will install agents, services, UIs, and state from the egg into your local brainstem.`
+      )) {
+        summonEggFromUrl(summonUrl, expectedRappid);
+      }
+      // Strip the param so a refresh doesn't re-summon
+      const cleanUrl = window.location.pathname + window.location.hash;
+      window.history.replaceState({}, '', cleanUrl);
+    } catch (e) { console.warn('summon deep-link parse failed', e); }
+  })();
+
+  // ── Export this brainstem as an egg ──
+  function exportTwinEgg() {
+    const id = (currentChat() && currentChat().name)
+      ? currentChat().name.replace(/\s+/g, '_').toLowerCase()
+      : 'twin';
+    window.open(`${API}/rapps/export/twin?id=${encodeURIComponent(id)}`, '_blank');
+  }
+  function exportSnapshotEgg() {
+    window.open(`${API}/rapps/export/snapshot`, '_blank');
+  }
+
+  // ── Wire into Cmd+K palette ──
+  const _origGatherCmdkItems = _gatherCmdkItems;
+  async function _gatherCmdkItemsExt() {
+    const items = await _origGatherCmdkItems();
+    items.unshift(
+      { kind: 'action', icon: '🪄', title: 'Summon egg from URL',
+        sub: 'Hatch a twin / rapp / snapshot from a public .egg',
+        exec: () => {
+          closeCmdK();
+          const url = prompt('Egg URL (paste a public .egg link):');
+          if (url) summonEggFromUrl(url.trim());
+        } },
+      { kind: 'action', icon: '📦', title: 'Export twin egg',
+        sub: 'Download this brainstem as a portable twin .egg cartridge',
+        exec: () => { closeCmdK(); exportTwinEgg(); } },
+      { kind: 'action', icon: '💾', title: 'Export snapshot egg',
+        sub: 'Full brainstem dump (agents + services + ui + state)',
+        exec: () => { closeCmdK(); exportSnapshotEgg(); } },
+      { kind: 'action', icon: '🪪', title: 'Show my RAPPID',
+        sub: 'This brainstem’s permanent twin identity',
+        exec: async () => {
+          closeCmdK();
+          try {
+            const r = await fetch(`${API}/identity`);
+            const d = await r.json();
+            const wrap = appendMsg('system', '');
+            wrap.querySelector('.bubble').innerHTML =
+              `🪪 <strong>Twin RAPPID</strong> — your permanent digital identity:<br>` +
+              `<code style="font-size:11px">${escapeHtml(d.twin_rappid || '?')}</code><br>` +
+              `<span style="color:#8b949e;font-size:11px">Incarnations: ${d.twin_incarnations || 0}</span>`;
+          } catch (e) {
+            appendMsg('system', `Failed to fetch RAPPID: ${e.message}`);
+          }
+        } },
+    );
+    return items;
+  }
+  _gatherCmdkItems = _gatherCmdkItemsExt;
 </script>
 </body>
 </html>
