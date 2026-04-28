@@ -254,6 +254,41 @@ _TWIN_RESET = "\033[0m"
 _twin_state = {"frame": 0}
 
 
+def _maybe_center_head(lines):
+    """Stick-figure safety net — the LLM sometimes emits a single-glyph
+    head at column 0 above a body indented by 1+ columns, like:
+
+        o          → wrong: head sits to the LEFT of the spine
+         /|\\
+         / \\
+
+    When the first line is 1–2 non-whitespace chars and shorter than
+    the body line below it, shift the head's leading whitespace so
+    its center column lands over the body's center column. Skips when
+    the head is already wider (e.g. `\\o/`) or already aligned. No-op
+    on non-figure art."""
+    if len(lines) < 2:
+        return lines
+    head = lines[0]
+    head_stripped = head.strip()
+    if not head_stripped or len(head_stripped) > 2:
+        return lines
+    body_line = next((l for l in lines[1:] if l.strip()), None)
+    if body_line is None:
+        return lines
+    body_left  = len(body_line) - len(body_line.lstrip())
+    body_right = len(body_line.rstrip())
+    if body_right - body_left < 2:
+        return lines  # body too small to need centering
+    body_center = (body_left + body_right - 1) // 2
+    head_first  = len(head) - len(head.lstrip())
+    target_first = body_center - (len(head_stripped) - 1) // 2
+    if target_first > head_first:
+        shift = target_first - head_first
+        lines = [(" " * shift) + lines[0]] + lines[1:]
+    return lines
+
+
 def _normalize_canvas(art_lines):
     """Pad/truncate a list of strings to exactly _TWIN_CANVAS_H rows ×
     _TWIN_CANVAS_W cols. Lines longer than the canvas get clipped on
@@ -268,6 +303,8 @@ def _normalize_canvas(art_lines):
         lines.pop(0)
     while lines and not lines[-1].strip():
         lines.pop()
+    # Auto-center single-glyph heads over their body (common LLM miss)
+    lines = _maybe_center_head(lines)
     # Truncate vertically
     lines = lines[:_TWIN_CANVAS_H]
     # Vertically center
