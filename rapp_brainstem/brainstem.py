@@ -1230,13 +1230,6 @@ def chat():
     user_input = data.get("user_input", "").strip()
     history    = data.get("conversation_history", [])
     session_id = data.get("session_id") or str(uuid.uuid4())
-    # Per-chat agent filter (additive, backwards compatible). When the
-    # client sends `enabled_agents` as a list, the request only sees those
-    # agent NAMES — both in the LLM tool definitions and in tool-call
-    # dispatch. Omitted/None → all installed agents available (existing
-    # behavior). The chat UI uses this to keep separate chat tabs scoped
-    # to different agent subsets without unloading anything from disk.
-    enabled_agents = data.get("enabled_agents")
     # Optional caller identity (additive, backwards compatible). Tier 1 callers
     # — humans at the keyboard, the local UI — typically omit it; the default
     # routes to shared global memory which IS "your" memory on a single-operator
@@ -1251,15 +1244,6 @@ def chat():
     try:
         soul   = load_soul()
         agents = load_agents()
-        # Apply per-request filter: enabled_agents is the allowlist of
-        # agent NAMES. None/missing = no filter. Empty list = no agents
-        # available for this turn (chat works as a pure LLM convo).
-        if isinstance(enabled_agents, list):
-            allow = set(enabled_agents)
-            filtered_count = len(agents) - sum(1 for n in agents if n in allow)
-            agents = {n: a for n, a in agents.items() if n in allow}
-            if filtered_count > 0:
-                _tlog("chat.agents_filtered", {"requested": len(allow), "active": len(agents), "filtered_out": filtered_count})
         tools  = [a.to_tool() for a in agents.values()] if agents else None
 
         # ── Collect system context from any agent that provides it ──

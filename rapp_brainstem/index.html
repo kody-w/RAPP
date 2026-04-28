@@ -1032,87 +1032,7 @@
   body.light-mode .chat-tab-add { border-color: #d0d7de; color: #57606a; }
   body.light-mode .chat-tab-add:hover { border-color: #0969da; color: #0969da; }
 
-  /* ── NEW: per-chat agent toggles in the agents panel ──
-     When a chat has agents disabled, the panel shows a small banner
-     and each agent row gets a checkbox bound to the active chat. */
-  .agent-list li .agent-toggle {
-    appearance: none;
-    width: 14px; height: 14px;
-    border: 1px solid #30363d; border-radius: 3px;
-    background: #0d1117; cursor: pointer; flex-shrink: 0;
-    margin-right: 6px;
-    position: relative;
-  }
-  .agent-list li .agent-toggle:checked {
-    background: #1f6feb; border-color: #1f6feb;
-  }
-  .agent-list li .agent-toggle:checked::after {
-    content: '✓';
-    position: absolute; inset: 0;
-    display: flex; align-items: center; justify-content: center;
-    color: #fff; font-size: 10px; font-weight: 700;
-  }
-  body.light-mode .agent-list li .agent-toggle {
-    background: #ffffff; border-color: #d0d7de;
-  }
-  body.light-mode .agent-list li .agent-toggle:checked {
-    background: #0969da; border-color: #0969da;
-  }
-  .agent-list li.agent-disabled .agent-name { opacity: 0.5; text-decoration: line-through; }
-  .agent-list li {
-    cursor: default;
-  }
-  .agent-list li > .agent-name-wrap {
-    display: flex; align-items: center; flex: 1; min-width: 0;
-  }
-  #agents-banner {
-    background: rgba(88,166,255,0.08); color: #8b949e;
-    border: 1px solid rgba(88,166,255,0.25); border-radius: 6px;
-    padding: 6px 10px; font-size: 11px; margin-bottom: 10px;
-    line-height: 1.5;
-  }
-  #agents-banner strong { color: #58a6ff; }
-  #agents-banner.has-disabled {
-    background: rgba(210,153,34,0.1); color: #d29922;
-    border-color: rgba(210,153,34,0.3);
-  }
-  #agents-banner.has-disabled strong { color: #d29922; }
-  #agents-bulk { display: flex !important; }
-  #agents-bulk button {
-    background: #21262d; color: #8b949e; border: 1px solid #30363d;
-    border-radius: 4px; padding: 3px 8px; font-size: 10px;
-    cursor: pointer; transition: all 0.15s;
-  }
-  #agents-bulk button:hover { color: #58a6ff; border-color: #58a6ff; }
-  #agents-panel h3 {
-    flex-wrap: wrap;
-  }
-  /* Make the disabled-agents badge on chat tabs clickable */
-  .chat-tab .chat-tab-badge { cursor: pointer; }
-  .chat-tab .chat-tab-badge:hover { background: rgba(210,153,34,0.15); color: #d29922; }
-
-  /* ── Per-chat filter-active chip (above the input row) ─────────────
-     Visible only when the active chat has agents disabled. Lets the
-     user SEE that enabled_agents will be sent with their next /chat
-     call. Click to open the agents panel and adjust. */
-  #filter-chip {
-    max-width: 760px; margin: 0 auto 8px;
-    padding: 6px 12px;
-    background: rgba(210,153,34,0.1); color: #d29922;
-    border: 1px solid rgba(210,153,34,0.3); border-radius: 6px;
-    font-size: 11px; line-height: 1.5;
-    cursor: pointer; transition: all 0.15s;
-  }
-  #filter-chip:hover { background: rgba(210,153,34,0.18); }
-  #filter-chip.show { display: block; }
-  #filter-chip .fc-strong { color: #d29922; font-weight: 600; }
-  #filter-chip .fc-list { color: #8b949e; font-family: "SF Mono", monospace; font-size: 10px; }
-  body.light-mode #filter-chip {
-    background: rgba(154,103,0,0.08);
-    color: #9a6700;
-    border-color: rgba(154,103,0,0.3);
-  }
-  body.light-mode #filter-chip .fc-strong { color: #9a6700; }
+  /* (per-chat agent toggle / filter-chip / agents-banner CSS removed) */
 
   /* ── NEW: QR share modal — for global twin summoning. The user pastes
      a public URL where their twin egg is hosted; we render a QR that
@@ -1317,19 +1237,7 @@
         <h3>
           <span class="icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v4h4v2h-4v4h-2v-4H7v-2h4z"/></svg></span>
           Installed Agents
-          <!-- NEW: dynamically updated to "— Chat 3" so the user can see at
-               a glance that the toggles below are scoped to the active chat. -->
-          <span id="agents-panel-scope" style="color:#58a6ff;font-weight:500;font-size:11px;margin-left:auto"></span>
         </h3>
-        <!-- NEW: per-chat agent filter banner. Always visible when ≥2 chats
-             exist so users see WHO they're configuring. -->
-        <div id="agents-banner"></div>
-        <!-- NEW: bulk actions — quick way to reset to global / mute all -->
-        <div id="agents-bulk" style="display:none; gap:6px; margin-bottom:10px; flex-wrap:wrap;">
-          <button class="export-btn" onclick="enableAllAgentsForCurrentChat()">Enable all</button>
-          <button class="export-btn" onclick="disableAllAgentsForCurrentChat()">Disable all</button>
-          <button class="export-btn" id="agents-reset-global" onclick="resetCurrentChatToGlobal()" style="display:none">Reset to global</button>
-        </div>
         <ul class="agent-list" id="agent-list-ul">
           <!-- Populated by JS -->
         </ul>
@@ -1502,10 +1410,6 @@
       <button class="toolbar-link dev-only" onclick="toggleDevMode()" id="dev-toggle">Dev</button>
     </div>
   </div>
-  <!-- ── NEW: per-chat agent-filter status chip — visible proof that
-       enabled_agents is being sent on /chat for this conversation.
-       Hidden when nothing is filtered. Click to open agents panel. ── -->
-  <div id="filter-chip" style="display:none"></div>
   <div class="input-row">
     <textarea id="input" rows="1" placeholder="Message brainstem..." autocomplete="off"></textarea>
     <button id="send" onclick="sendMessage()">Send</button>
@@ -1526,7 +1430,6 @@
   // existing code that does `history.push(...)` mutates the right chat. */
   const CHATS_KEY = 'brainstem_chats';
   const appState = { chats: {}, order: [], currentChatId: null };
-  let _installedAgentNames = [];  // flat list of all installed agent names, refreshed by loadAgentsList
   function currentChat() { return appState.chats[appState.currentChatId] || null; }
   function _newChatId() { return 'chat-' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-3); }
   let devMode = localStorage.getItem('brainstem_dev') === 'true';
@@ -2027,61 +1930,22 @@
       const data = await res.json();
       const ul = document.getElementById('agent-list-ul');
       ul.innerHTML = '';
-      // NEW: refresh the flat list of installed agent NAMES so sendMessage
-      // can build the per-chat enabled_agents allowlist.
-      _installedAgentNames = [];
-      for (const f of (data.files || [])) {
-        for (const n of (f.agents || [])) _installedAgentNames.push(n);
-      }
-      _updateAgentsBanner();
-      _updateFilterChip();
       if (!data.files || data.files.length === 0) {
         ul.innerHTML = '<li><span class="agent-name" style="color:#8b949e">No agents found.</span></li>';
         return;
       }
-      const cc = currentChat();
-      const disabledSet = new Set(cc && Array.isArray(cc.disabledAgents) ? cc.disabledAgents : []);
       for (const item of data.files) {
         const li = document.createElement('li');
-        const fileNames = item.agents || [];
-        const allDisabled = fileNames.length > 0 && fileNames.every(n => disabledSet.has(n));
-        if (allDisabled) li.classList.add('agent-disabled');
-
-        // ── NEW: per-chat enable/disable toggle (one checkbox per file row;
-        //   toggling flips all agent names in the file).
-        const nameWrap = document.createElement('span');
-        nameWrap.className = 'agent-name-wrap';
-        const toggle = document.createElement('input');
-        toggle.type = 'checkbox';
-        toggle.className = 'agent-toggle';
-        toggle.checked = !allDisabled;
-        toggle.title = allDisabled
-          ? `Enable ${fileNames.join(', ') || item.filename} for this chat`
-          : `Disable ${fileNames.join(', ') || item.filename} for this chat`;
-        toggle.onchange = () => {
-          const c = currentChat();
-          if (!c) return;
-          c.disabledAgents = c.disabledAgents || [];
-          const set = new Set(c.disabledAgents);
-          if (toggle.checked) fileNames.forEach(n => set.delete(n));
-          else fileNames.forEach(n => set.add(n));
-          c.disabledAgents = Array.from(set);
-          c.updated = Date.now();
-          _persistChats();
-          loadAgentsList();
-        };
-
         const nameSpan = document.createElement('span');
         nameSpan.className = 'agent-name';
+
         let displayTxt = item.filename;
         if (item.agents && item.agents.length > 0) {
           displayTxt = `${item.agents.join(', ')} (${item.filename})`;
         }
+
         nameSpan.textContent = displayTxt;
         nameSpan.title = item.filename;
-
-        nameWrap.appendChild(toggle);
-        nameWrap.appendChild(nameSpan);
 
         const controls = document.createElement('div');
         controls.style.display = 'flex';
@@ -2094,65 +1958,30 @@
           window.open(`${API}/agents/export/${encodeURIComponent(item.filename)}`, '_blank');
         };
 
-        // ── Per-chat quick-disable button (1-click; matches what the
-        //   checkbox does, just easier to find).
-        const offBtn = document.createElement('button');
-        offBtn.className = 'export-btn';
-        offBtn.title = `Disable ${fileNames.join(', ') || item.filename} for THIS chat only — other chats keep it enabled`;
-        offBtn.textContent = allDisabled ? 'On' : 'Off';
-        offBtn.onclick = () => {
-          const c = currentChat();
-          if (!c) return;
-          c.disabledAgents = c.disabledAgents || [];
-          const set = new Set(c.disabledAgents);
-          if (allDisabled) fileNames.forEach(n => set.delete(n));
-          else fileNames.forEach(n => set.add(n));
-          c.disabledAgents = Array.from(set);
-          c.updated = Date.now();
-          _persistChats();
-          loadAgentsList();
-          _renderChatTabs();
-        };
-
-        // ── GLOBAL delete (from disk, all chats) — much harder to trigger.
-        // The previous "Trsh" button DELETEd the file with a single
-        // confirm; users were clicking it expecting per-chat disable.
-        // Now: explicit double-warning + filename-typing confirmation.
         const delBtn = document.createElement('button');
         delBtn.className = 'export-btn';
         delBtn.style.color = '#f85149';
-        delBtn.textContent = '🗑';
-        delBtn.title = 'Delete the file from disk — affects ALL chats. Use Off instead for per-chat disable.';
+        delBtn.textContent = 'Trsh';
         delBtn.onclick = async () => {
-          const warn =
-            `⚠ DELETE FILE FROM DISK — affects ALL chats\n\n` +
-            `This will permanently remove ${item.filename} from agents/.\n` +
-            `Every chat that referenced it loses access. Cannot be undone.\n\n` +
-            `For per-chat disable, click "Off" or uncheck the box instead.\n\n` +
-            `Type the filename to confirm:`;
-          const typed = prompt(warn, '');
-          if (typed !== item.filename) {
-            if (typed != null) alert(`Filename did not match. Nothing deleted.`);
-            return;
-          }
-          try {
-            const r = await fetch(`${API}/agents/${encodeURIComponent(item.filename)}`, { method: 'DELETE' });
-            if (r.ok) {
-              loadAgentsList();
-            } else {
-              const err = await r.json();
-              alert(`Error deleting: ${err.error}`);
+          if (confirm(`Are you sure you want to remove ${item.filename}?`)) {
+            try {
+              const r = await fetch(`${API}/agents/${encodeURIComponent(item.filename)}`, { method: 'DELETE' });
+              if (r.ok) {
+                loadAgentsList();
+              } else {
+                const err = await r.json();
+                alert(`Error deleting: ${err.error}`);
+              }
+            } catch (e) {
+              alert('Delete failed: ' + e);
             }
-          } catch (e) {
-            alert('Delete failed: ' + e);
           }
         };
 
-        controls.appendChild(offBtn);
         controls.appendChild(expBtn);
         controls.appendChild(delBtn);
 
-        li.appendChild(nameWrap);
+        li.appendChild(nameSpan);
         li.appendChild(controls);
         ul.appendChild(li);
       }
@@ -2425,14 +2254,6 @@
     try {
       const body = { user_input: text, conversation_history: history };
       if (sessionId) body.session_id = sessionId;
-      // NEW: per-chat agent filter. If the active chat has any agents
-      // disabled, send the allowlist of names. Empty disabled set or
-      // no current chat → omit (server uses all loaded agents).
-      const cc = currentChat();
-      if (cc && Array.isArray(cc.disabledAgents) && cc.disabledAgents.length && _installedAgentNames.length) {
-        const disabled = new Set(cc.disabledAgents);
-        body.enabled_agents = _installedAgentNames.filter(n => !disabled.has(n));
-      }
 
       const r = await fetch(`${API}/chat`, {
         method: 'POST',
@@ -3824,22 +3645,7 @@
         };
       };
       tab.appendChild(name);
-      // Per-chat agent badge: show count of disabled agents.
-      // Clicking the badge switches to that tab AND opens the agents
-      // panel so the user can see exactly which agents are disabled.
-      if (Array.isArray(c.disabledAgents) && c.disabledAgents.length) {
-        const badge = document.createElement('span');
-        badge.className = 'chat-tab-badge';
-        badge.textContent = `−${c.disabledAgents.length}`;
-        badge.title = `${c.disabledAgents.length} agent(s) disabled in this chat — click to manage`;
-        badge.onclick = (ev) => {
-          ev.stopPropagation();
-          if (id !== appState.currentChatId) switchChat(id);
-          document.getElementById('agents-panel')?.classList.add('open');
-          loadAgentsList();
-        };
-        tab.appendChild(badge);
-      }
+      // (disabled-agents badge removed — per-chat agent filter rolled back)
       const x = document.createElement('button');
       x.className = 'chat-tab-close';
       x.textContent = '×';
@@ -3880,91 +3686,9 @@
     }
   }
 
-  // ── NEW: filter-chip — visible-above-input proof that enabled_agents
-  //   is being sent on /chat for the active chat. Updated whenever
-  //   loadAgentsList runs (which is on chat switch + every toggle).
-  function _updateFilterChip() {
-    const chip = document.getElementById('filter-chip');
-    if (!chip) return;
-    const c = currentChat();
-    const total = _installedAgentNames.length;
-    const disabled = c && Array.isArray(c.disabledAgents) ? c.disabledAgents : [];
-    if (!disabled.length || !total) {
-      chip.classList.remove('show');
-      chip.style.display = 'none';
-      chip.innerHTML = '';
-      return;
-    }
-    const enabled = total - disabled.length;
-    const namePreview = disabled.slice(0, 6).join(', ') + (disabled.length > 6 ? `, +${disabled.length - 6} more` : '');
-    chip.innerHTML =
-      `<span class="fc-strong">🔒 Filter active</span> &middot; ` +
-      `<strong>${enabled}</strong> of ${total} agents available to <strong>${escapeHtml(c.name)}</strong>` +
-      `<br><span class="fc-list">disabled: ${escapeHtml(namePreview)}</span>`;
-    chip.style.display = 'block';
-    chip.classList.add('show');
-    chip.onclick = () => {
-      document.getElementById('agents-panel')?.classList.add('open');
-      loadAgentsList();
-    };
-  }
-
-  function _updateAgentsBanner() {
-    const banner = document.getElementById('agents-banner');
-    const scope = document.getElementById('agents-panel-scope');
-    const reset = document.getElementById('agents-reset-global');
-    if (!banner) return;
-    const c = currentChat();
-    const total = _installedAgentNames.length;
-    const chatCount = appState.order.length;
-    const chatName = c ? c.name : 'this chat';
-    if (scope) scope.textContent = c ? `for ${chatName}` : '';
-    const disabledCount = c && Array.isArray(c.disabledAgents) ? c.disabledAgents.length : 0;
-    if (reset) reset.style.display = disabledCount > 0 ? 'inline-block' : 'none';
-
-    if (disabledCount === 0) {
-      // No filter active — chat is "global". Show only when ≥2 chats exist
-      // (single-chat users don't need the explanation noise).
-      if (chatCount > 1) {
-        banner.className = '';
-        banner.innerHTML =
-          `Toggles below affect <strong>${escapeHtml(chatName)}</strong> only. ` +
-          `Disabling an agent here scopes it to this chat — other chats stay global.`;
-      } else {
-        banner.className = '';
-        banner.textContent = '';
-      }
-    } else {
-      const enabled = total - disabledCount;
-      banner.className = 'has-disabled';
-      banner.innerHTML =
-        `<strong>${escapeHtml(chatName)}</strong>: ${enabled} of ${total} agents enabled. ` +
-        `Other chats are unaffected.`;
-    }
-  }
-
-  // ── NEW: bulk per-chat agent actions ──
-  function enableAllAgentsForCurrentChat() {
-    const c = currentChat();
-    if (!c) return;
-    c.disabledAgents = [];
-    c.updated = Date.now();
-    _persistChats();
-    loadAgentsList();
-    _renderChatTabs();
-  }
-  function disableAllAgentsForCurrentChat() {
-    const c = currentChat();
-    if (!c) return;
-    c.disabledAgents = [..._installedAgentNames];
-    c.updated = Date.now();
-    _persistChats();
-    loadAgentsList();
-    _renderChatTabs();
-  }
-  function resetCurrentChatToGlobal() {
-    enableAllAgentsForCurrentChat();
-  }
+  // (per-chat agent filter helpers removed — agents/ directory is the
+  // single source of truth; agent toggles / filter chip / bulk actions
+  // were rolled back per user request.)
 
   // Ctrl/Cmd+Shift+T → new chat
   document.addEventListener('keydown', (e) => {

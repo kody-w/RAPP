@@ -142,21 +142,8 @@ assert_grep "_persistChats fn"              'function _persistChats'   "$INDEX"
 assert_grep "_loadChats fn"                 'function _loadChats'      "$INDEX"
 assert_grep "_renderChatTabs fn"            'function _renderChatTabs' "$INDEX"
 assert_grep "_renderChatMessages fn"        'function _renderChatMessages' "$INDEX"
-assert_grep "agents-banner div"             'id="agents-banner"'       "$INDEX"
-assert_grep "agent-toggle checkbox class"   "agent-toggle"             "$INDEX"
-assert_grep "_installedAgentNames tracking" '_installedAgentNames'     "$INDEX"
-assert_grep "enabled_agents sent on /chat"  'body.enabled_agents'      "$INDEX"
-assert_grep "disabledAgents on chat object" 'disabledAgents'           "$INDEX"
 assert_grep "Ctrl+Shift+T new-chat binding" 'shiftKey'                 "$INDEX"
 assert_grep "brainstem_chats persist key"   'brainstem_chats'          "$INDEX"
-
-# ── Section 5e: server-side enabled_agents filter (brainstem.py) ───────
-
-echo ""
-echo "--- Section 5e: server-side filter (brainstem.py) ---"
-BRAIN="$REPO_ROOT/rapp_brainstem/brainstem.py"
-assert_grep "/chat reads enabled_agents"     'enabled_agents = data.get'        "$BRAIN"
-assert_grep "/chat applies allowlist filter" 'enabled_agents, list'             "$BRAIN"
 
 # ── Section 6: only ADDITIONS — sanity that we didn't strip key text ───
 
