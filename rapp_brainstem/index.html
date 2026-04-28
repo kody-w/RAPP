@@ -1090,6 +1090,29 @@
   .chat-tab .chat-tab-badge { cursor: pointer; }
   .chat-tab .chat-tab-badge:hover { background: rgba(210,153,34,0.15); color: #d29922; }
 
+  /* ── Per-chat filter-active chip (above the input row) ─────────────
+     Visible only when the active chat has agents disabled. Lets the
+     user SEE that enabled_agents will be sent with their next /chat
+     call. Click to open the agents panel and adjust. */
+  #filter-chip {
+    max-width: 760px; margin: 0 auto 8px;
+    padding: 6px 12px;
+    background: rgba(210,153,34,0.1); color: #d29922;
+    border: 1px solid rgba(210,153,34,0.3); border-radius: 6px;
+    font-size: 11px; line-height: 1.5;
+    cursor: pointer; transition: all 0.15s;
+  }
+  #filter-chip:hover { background: rgba(210,153,34,0.18); }
+  #filter-chip.show { display: block; }
+  #filter-chip .fc-strong { color: #d29922; font-weight: 600; }
+  #filter-chip .fc-list { color: #8b949e; font-family: "SF Mono", monospace; font-size: 10px; }
+  body.light-mode #filter-chip {
+    background: rgba(154,103,0,0.08);
+    color: #9a6700;
+    border-color: rgba(154,103,0,0.3);
+  }
+  body.light-mode #filter-chip .fc-strong { color: #9a6700; }
+
   /* ── NEW: QR share modal — for global twin summoning. The user pastes
      a public URL where their twin egg is hosted; we render a QR that
      other brainstems can scan to summon. localFirstTools-style. */
@@ -1478,6 +1501,10 @@
       <button class="toolbar-link dev-only" onclick="toggleDevMode()" id="dev-toggle">Dev</button>
     </div>
   </div>
+  <!-- ── NEW: per-chat agent-filter status chip — visible proof that
+       enabled_agents is being sent on /chat for this conversation.
+       Hidden when nothing is filtered. Click to open agents panel. ── -->
+  <div id="filter-chip" style="display:none"></div>
   <div class="input-row">
     <textarea id="input" rows="1" placeholder="Message brainstem..." autocomplete="off"></textarea>
     <button id="send" onclick="sendMessage()">Send</button>
@@ -2006,6 +2033,7 @@
         for (const n of (f.agents || [])) _installedAgentNames.push(n);
       }
       _updateAgentsBanner();
+      _updateFilterChip();
       if (!data.files || data.files.length === 0) {
         ul.innerHTML = '<li><span class="agent-name" style="color:#8b949e">No agents found.</span></li>';
         return;
@@ -2065,26 +2093,61 @@
           window.open(`${API}/agents/export/${encodeURIComponent(item.filename)}`, '_blank');
         };
 
+        // ── Per-chat quick-disable button (1-click; matches what the
+        //   checkbox does, just easier to find).
+        const offBtn = document.createElement('button');
+        offBtn.className = 'export-btn';
+        offBtn.title = `Disable ${fileNames.join(', ') || item.filename} for THIS chat only — other chats keep it enabled`;
+        offBtn.textContent = allDisabled ? 'On' : 'Off';
+        offBtn.onclick = () => {
+          const c = currentChat();
+          if (!c) return;
+          c.disabledAgents = c.disabledAgents || [];
+          const set = new Set(c.disabledAgents);
+          if (allDisabled) fileNames.forEach(n => set.delete(n));
+          else fileNames.forEach(n => set.add(n));
+          c.disabledAgents = Array.from(set);
+          c.updated = Date.now();
+          _persistChats();
+          loadAgentsList();
+          _renderChatTabs();
+        };
+
+        // ── GLOBAL delete (from disk, all chats) — much harder to trigger.
+        // The previous "Trsh" button DELETEd the file with a single
+        // confirm; users were clicking it expecting per-chat disable.
+        // Now: explicit double-warning + filename-typing confirmation.
         const delBtn = document.createElement('button');
-        delBtn.className = 'export-btn'; // styling reuse
+        delBtn.className = 'export-btn';
         delBtn.style.color = '#f85149';
-        delBtn.textContent = 'Trsh';
+        delBtn.textContent = '🗑';
+        delBtn.title = 'Delete the file from disk — affects ALL chats. Use Off instead for per-chat disable.';
         delBtn.onclick = async () => {
-          if (confirm(`Are you sure you want to remove ${item.filename}?`)) {
-            try {
-              const r = await fetch(`${API}/agents/${encodeURIComponent(item.filename)}`, { method: 'DELETE' });
-              if (r.ok) {
-                loadAgentsList();
-              } else {
-                const err = await r.json();
-                alert(`Error deleting: ${err.error}`);
-              }
-            } catch (e) {
-              alert('Delete failed: ' + e);
+          const warn =
+            `⚠ DELETE FILE FROM DISK — affects ALL chats\n\n` +
+            `This will permanently remove ${item.filename} from agents/.\n` +
+            `Every chat that referenced it loses access. Cannot be undone.\n\n` +
+            `For per-chat disable, click "Off" or uncheck the box instead.\n\n` +
+            `Type the filename to confirm:`;
+          const typed = prompt(warn, '');
+          if (typed !== item.filename) {
+            if (typed != null) alert(`Filename did not match. Nothing deleted.`);
+            return;
+          }
+          try {
+            const r = await fetch(`${API}/agents/${encodeURIComponent(item.filename)}`, { method: 'DELETE' });
+            if (r.ok) {
+              loadAgentsList();
+            } else {
+              const err = await r.json();
+              alert(`Error deleting: ${err.error}`);
             }
+          } catch (e) {
+            alert('Delete failed: ' + e);
           }
         };
 
+        controls.appendChild(offBtn);
         controls.appendChild(expBtn);
         controls.appendChild(delBtn);
 
@@ -3836,6 +3899,35 @@
       if (fullTranscript.length) sp.classList.add('hidden-prompts');
       else sp.classList.remove('hidden-prompts');
     }
+  }
+
+  // ── NEW: filter-chip — visible-above-input proof that enabled_agents
+  //   is being sent on /chat for the active chat. Updated whenever
+  //   loadAgentsList runs (which is on chat switch + every toggle).
+  function _updateFilterChip() {
+    const chip = document.getElementById('filter-chip');
+    if (!chip) return;
+    const c = currentChat();
+    const total = _installedAgentNames.length;
+    const disabled = c && Array.isArray(c.disabledAgents) ? c.disabledAgents : [];
+    if (!disabled.length || !total) {
+      chip.classList.remove('show');
+      chip.style.display = 'none';
+      chip.innerHTML = '';
+      return;
+    }
+    const enabled = total - disabled.length;
+    const namePreview = disabled.slice(0, 6).join(', ') + (disabled.length > 6 ? `, +${disabled.length - 6} more` : '');
+    chip.innerHTML =
+      `<span class="fc-strong">🔒 Filter active</span> &middot; ` +
+      `<strong>${enabled}</strong> of ${total} agents available to <strong>${escapeHtml(c.name)}</strong>` +
+      `<br><span class="fc-list">disabled: ${escapeHtml(namePreview)}</span>`;
+    chip.style.display = 'block';
+    chip.classList.add('show');
+    chip.onclick = () => {
+      document.getElementById('agents-panel')?.classList.add('open');
+      loadAgentsList();
+    };
   }
 
   function _updateAgentsBanner() {
