@@ -1064,12 +1064,30 @@
     display: flex; align-items: center; flex: 1; min-width: 0;
   }
   #agents-banner {
-    background: rgba(210,153,34,0.1); color: #d29922;
-    border: 1px solid rgba(210,153,34,0.3); border-radius: 6px;
+    background: rgba(88,166,255,0.08); color: #8b949e;
+    border: 1px solid rgba(88,166,255,0.25); border-radius: 6px;
     padding: 6px 10px; font-size: 11px; margin-bottom: 10px;
-    display: none;
+    line-height: 1.5;
   }
-  #agents-banner.has-disabled { display: block; }
+  #agents-banner strong { color: #58a6ff; }
+  #agents-banner.has-disabled {
+    background: rgba(210,153,34,0.1); color: #d29922;
+    border-color: rgba(210,153,34,0.3);
+  }
+  #agents-banner.has-disabled strong { color: #d29922; }
+  #agents-bulk { display: flex !important; }
+  #agents-bulk button {
+    background: #21262d; color: #8b949e; border: 1px solid #30363d;
+    border-radius: 4px; padding: 3px 8px; font-size: 10px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  #agents-bulk button:hover { color: #58a6ff; border-color: #58a6ff; }
+  #agents-panel h3 {
+    flex-wrap: wrap;
+  }
+  /* Make the disabled-agents badge on chat tabs clickable */
+  .chat-tab .chat-tab-badge { cursor: pointer; }
+  .chat-tab .chat-tab-badge:hover { background: rgba(210,153,34,0.15); color: #d29922; }
 </style>
 </head>
 <body>
@@ -1218,9 +1236,19 @@
         <h3>
           <span class="icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v4h4v2h-4v4h-2v-4H7v-2h4z"/></svg></span>
           Installed Agents
+          <!-- NEW: dynamically updated to "— Chat 3" so the user can see at
+               a glance that the toggles below are scoped to the active chat. -->
+          <span id="agents-panel-scope" style="color:#58a6ff;font-weight:500;font-size:11px;margin-left:auto"></span>
         </h3>
-        <!-- NEW: per-chat agent filter banner (hidden when all enabled) -->
+        <!-- NEW: per-chat agent filter banner. Always visible when ≥2 chats
+             exist so users see WHO they're configuring. -->
         <div id="agents-banner"></div>
+        <!-- NEW: bulk actions — quick way to reset to global / mute all -->
+        <div id="agents-bulk" style="display:none; gap:6px; margin-bottom:10px; flex-wrap:wrap;">
+          <button class="export-btn" onclick="enableAllAgentsForCurrentChat()">Enable all</button>
+          <button class="export-btn" onclick="disableAllAgentsForCurrentChat()">Disable all</button>
+          <button class="export-btn" id="agents-reset-global" onclick="resetCurrentChatToGlobal()" style="display:none">Reset to global</button>
+        </div>
         <ul class="agent-list" id="agent-list-ul">
           <!-- Populated by JS -->
         </ul>
@@ -1694,7 +1722,10 @@
   document.addEventListener('click', (e) => {
     const p = document.getElementById('agents-panel');
     const b = document.getElementById('agents-btn');
-    if (p.classList.contains('open') && !p.contains(e.target) && !b.contains(e.target)) {
+    // NEW: keep the panel open when clicking a chat tab — user wants to
+    // see the toggles update as they switch tabs to confirm per-chat state.
+    const onChatTab = e.target.closest && e.target.closest('#chat-tabs');
+    if (p.classList.contains('open') && !p.contains(e.target) && !b.contains(e.target) && !onChatTab) {
       p.classList.remove('open');
     }
   });
@@ -3644,12 +3675,20 @@
         };
       };
       tab.appendChild(name);
-      // Per-chat agent badge: show count of disabled agents
+      // Per-chat agent badge: show count of disabled agents.
+      // Clicking the badge switches to that tab AND opens the agents
+      // panel so the user can see exactly which agents are disabled.
       if (Array.isArray(c.disabledAgents) && c.disabledAgents.length) {
         const badge = document.createElement('span');
         badge.className = 'chat-tab-badge';
         badge.textContent = `−${c.disabledAgents.length}`;
-        badge.title = `${c.disabledAgents.length} agents disabled in this chat`;
+        badge.title = `${c.disabledAgents.length} agent(s) disabled in this chat — click to manage`;
+        badge.onclick = (ev) => {
+          ev.stopPropagation();
+          if (id !== appState.currentChatId) switchChat(id);
+          document.getElementById('agents-panel')?.classList.add('open');
+          loadAgentsList();
+        };
         tab.appendChild(badge);
       }
       const x = document.createElement('button');
@@ -3694,17 +3733,59 @@
 
   function _updateAgentsBanner() {
     const banner = document.getElementById('agents-banner');
+    const scope = document.getElementById('agents-panel-scope');
+    const reset = document.getElementById('agents-reset-global');
     if (!banner) return;
     const c = currentChat();
     const total = _installedAgentNames.length;
-    if (!c || !c.disabledAgents || !c.disabledAgents.length) {
-      banner.className = '';
-      banner.textContent = '';
-      return;
+    const chatCount = appState.order.length;
+    const chatName = c ? c.name : 'this chat';
+    if (scope) scope.textContent = c ? `for ${chatName}` : '';
+    const disabledCount = c && Array.isArray(c.disabledAgents) ? c.disabledAgents.length : 0;
+    if (reset) reset.style.display = disabledCount > 0 ? 'inline-block' : 'none';
+
+    if (disabledCount === 0) {
+      // No filter active — chat is "global". Show only when ≥2 chats exist
+      // (single-chat users don't need the explanation noise).
+      if (chatCount > 1) {
+        banner.className = '';
+        banner.innerHTML =
+          `Toggles below affect <strong>${escapeHtml(chatName)}</strong> only. ` +
+          `Disabling an agent here scopes it to this chat — other chats stay global.`;
+      } else {
+        banner.className = '';
+        banner.textContent = '';
+      }
+    } else {
+      const enabled = total - disabledCount;
+      banner.className = 'has-disabled';
+      banner.innerHTML =
+        `<strong>${escapeHtml(chatName)}</strong>: ${enabled} of ${total} agents enabled. ` +
+        `Other chats are unaffected.`;
     }
-    const enabled = total - c.disabledAgents.length;
-    banner.className = 'has-disabled';
-    banner.textContent = `${enabled} of ${total} agents enabled for this chat — toggle below to change.`;
+  }
+
+  // ── NEW: bulk per-chat agent actions ──
+  function enableAllAgentsForCurrentChat() {
+    const c = currentChat();
+    if (!c) return;
+    c.disabledAgents = [];
+    c.updated = Date.now();
+    _persistChats();
+    loadAgentsList();
+    _renderChatTabs();
+  }
+  function disableAllAgentsForCurrentChat() {
+    const c = currentChat();
+    if (!c) return;
+    c.disabledAgents = [..._installedAgentNames];
+    c.updated = Date.now();
+    _persistChats();
+    loadAgentsList();
+    _renderChatTabs();
+  }
+  function resetCurrentChatToGlobal() {
+    enableAllAgentsForCurrentChat();
   }
 
   // Ctrl/Cmd+Shift+T → new chat
