@@ -292,13 +292,11 @@ def _twin_emit(mood="done", figure=None):
             the path was reached but the LLM didn't ship art.
     mood:   colors the cage border."""
     if not figure:
-        print(f"[brainstem] twin: silent — no <frame> in this turn's |||TWIN||| block")
         return
     _twin_state["frame"] += 1
 
     canvas = _normalize_canvas(figure)
     if not any(line.strip() for line in canvas):
-        print(f"[brainstem] twin: silent — <frame> was all whitespace after normalize")
         return
 
     label = f" twin · {mood} · #{_twin_state['frame']} "
@@ -1365,7 +1363,6 @@ def chat():
         # turn, _twin_emit no-ops silently (no fake animation).
         twin_text = (result.get("twin_response") or "").strip()
         twin_figure, _rest = _extract_twin_frame(twin_text)
-        print(f"[brainstem] twin: twin_text_len={len(twin_text)}, has_frame_tag={'<frame>' in twin_text.lower()}, figure_lines={len(twin_figure or [])}")
         _twin_emit("done", figure=twin_figure)
 
         return jsonify(result)
@@ -1753,6 +1750,40 @@ def agents_delete(filename):
             pass
         return jsonify({"status": "ok", "message": f"Agent {safe_name} deleted."})
     return jsonify({"error": "Agent not found"}), 404
+
+# ── Direct agent invocation (NO LLM) ────────────────────────────────────
+# Lets a rapplication iframe call its own agent's perform() directly with
+# typed args, bypassing the LLM dispatcher. Required for rapps like
+# BookFactory whose iframe orchestrates a multi-stage pipeline and expects
+# a single typed call → typed result, not a chat-style round-trip.
+#
+# Used by the chat UI's postMessage bridge: iframe sends `rapp:invoke`
+# → parent forwards here → result returns to iframe as `rapp:invoke:result`.
+@app.route("/agents/invoke/<filename>", methods=["POST"])
+def agents_invoke(filename):
+    import werkzeug.utils
+    safe = werkzeug.utils.secure_filename(filename)
+    if not safe.endswith(".py"):
+        safe += ".py"
+    filepath = os.path.join(AGENTS_PATH, safe)
+    if not os.path.exists(filepath):
+        return jsonify({"error": f"agent file not found: {safe}"}), 404
+    args = request.get_json(silent=True) or {}
+    if not isinstance(args, dict):
+        return jsonify({"error": "args must be a JSON object"}), 400
+    loaded = _load_agent_from_file(filepath)
+    if not loaded:
+        return jsonify({"error": "no agent class found in file"}), 500
+    name, instance = next(iter(loaded.items()))
+    try:
+        result = instance.perform(**args)
+    except TypeError as e:
+        return jsonify({"error": f"bad args: {e}"}), 400
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": f"{type(e).__name__}: {e}"}), 500
+    return jsonify({"agent": name, "filename": safe, "result": result})
+
 
 @app.route("/agents/import", methods=["POST"])
 def agents_import():

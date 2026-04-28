@@ -3126,21 +3126,33 @@
     div.addEventListener('touchstart', onDown, { passive: false });
   })();
 
-  // ── postMessage bridge: rapp iframes can post events to the chat ──
-  // Supported envelopes:
-  //   { type: 'chat:append', text: '...' }                — appends an assistant message
-  //   { type: 'chat:send',   text: '...' }                — fills the input and sends
-  //   { type: 'rapp:close' }                              — closes the sender's tab
-  // The sender is identified by event.source matching one of our iframes.
+  // ── postMessage bridge: rapp iframes ↔ chat ──
+  // Supported envelopes (iframe → parent):
+  //   { type: 'chat:append',     text: '...' }                — appends an assistant message
+  //   { type: 'chat:send',       text: '...' }                — fills the input and sends
+  //   { type: 'rapp:close' }                                  — closes the sender's tab
+  //   { type: 'rapp:get_cartridge' }                          — request context (tether/user/etc.)
+  //   { type: 'rapp:invoke', id: '...', args: {...} }         — call sender's agent.perform(**args)
+  //
+  // Parent → iframe responses:
+  //   { type: 'rapp:cartridge', context: {...} }              — answer to get_cartridge
+  //   { type: 'rapp:invoke:result', id, result }              — success (matches request id)
+  //   { type: 'rapp:invoke:result', id, error }               — failure
+  //
+  // The invoke path is what makes BookFactory and similar pipeline rapps
+  // work: their iframe orchestrates the 5-persona pipeline and needs a
+  // typed call → typed result, not the LLM dispatcher.
   window.addEventListener('message', (ev) => {
     const data = ev.data;
     if (!data || typeof data !== 'object' || !data.type) return;
     // Verify the message came from one of our managed iframes
     const frames = document.querySelectorAll('#split-iframes iframe, #rf-iframe');
     let senderId = null;
+    let senderFrame = null;
     for (const f of frames) {
       if (f.contentWindow === ev.source) {
         senderId = f.dataset.rappId || 'rapp-frame';
+        senderFrame = f;
         break;
       }
     }
@@ -3153,6 +3165,46 @@
     } else if (data.type === 'rapp:close') {
       if (senderId === 'rapp-frame') closeRappFrame();
       else closeTab(senderId);
+    } else if (data.type === 'rapp:get_cartridge') {
+      // Reply with the iframe's context cartridge. We're the local
+      // brainstem, so tether is "active" pointing at our own origin.
+      ev.source.postMessage({
+        type: 'rapp:cartridge',
+        rapp_id: senderId,
+        context: {
+          tether: { active: true, base: API || window.location.origin },
+          user:   null,  // GitHub identity not surfaced in this UI
+          env:    'local-brainstem',
+        },
+      }, '*');
+    } else if (data.type === 'rapp:invoke') {
+      // Direct invoke: look up the rapp's singleton_filename and call
+      // /agents/invoke/<filename> with the iframe's args. Reply with the
+      // matching id so the iframe's promise resolves.
+      const rapp = _storeInstalled[senderId];
+      const filename = rapp && rapp.singleton_filename
+                      ? rapp.singleton_filename
+                      : `${senderId}_agent.py`;
+      const args = (data.args && typeof data.args === 'object') ? data.args : {};
+      const id   = data.id;
+      fetch(`${API}/agents/invoke/${encodeURIComponent(filename)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(args),
+      })
+        .then(r => r.json().then(d => ({ ok: r.ok, d })))
+        .then(({ ok, d }) => {
+          ev.source.postMessage({
+            type: 'rapp:invoke:result',
+            id,
+            ...(ok ? { result: d.result } : { error: d.error || `HTTP error` }),
+          }, '*');
+        })
+        .catch(e => {
+          ev.source.postMessage({
+            type: 'rapp:invoke:result', id, error: e.message,
+          }, '*');
+        });
     }
   });
 
