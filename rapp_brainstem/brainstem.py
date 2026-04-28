@@ -951,23 +951,45 @@ def _auto_install(package):
     except Exception as e:
         print(f"[brainstem] Failed to install {package}: {e}")
 
+_load_agents_seen = {}    # name → relpath, what we've printed before
+_load_agents_count = -1   # last "X agent(s) ready." we printed
+
 def load_agents():
     # Walk AGENTS_PATH recursively per Article XII (workspace_agents/ + nested
     # user folders). Skip reserved subdirs that never auto-load
     # (experimental_agents/, disabled_agents/) and __pycache__.
+    #
+    # Quieted print path (2026-04-28): /health polls every 5s and calls
+    # load_agents(); the per-agent + "ready" lines used to flood the
+    # terminal between [brainstem] log entries, drowning out things like
+    # the twin sense cage. Now: only print on CHANGE — first load, new
+    # agent appears, agent disappears, count changes.
+    global _load_agents_count
     agents = {}
     _SKIP = ("experimental_agents", "disabled_agents", "__pycache__")
     pattern = os.path.join(AGENTS_PATH, "**", "*_agent.py")
     files = [f for f in glob.glob(pattern, recursive=True)
              if not any(s in f.split(os.sep) for s in _SKIP)]
 
+    seen_this_call = set()
     for filepath in files:
         loaded = _load_agent_from_file(filepath)
+        rel = os.path.relpath(filepath, AGENTS_PATH)
         for name, instance in loaded.items():
             agents[name] = instance
-            print(f"[brainstem] Agent loaded: {name} ({os.path.relpath(filepath, AGENTS_PATH)})")
+            seen_this_call.add(name)
+            if _load_agents_seen.get(name) != rel:
+                print(f"[brainstem] Agent loaded: {name} ({rel})")
+                _load_agents_seen[name] = rel
 
-    print(f"[brainstem] {len(agents)} agent(s) ready.")
+    # Detect agents that vanished since last call
+    for gone in [n for n in list(_load_agents_seen) if n not in seen_this_call]:
+        print(f"[brainstem] Agent unloaded: {gone}")
+        _load_agents_seen.pop(gone, None)
+
+    if len(agents) != _load_agents_count:
+        print(f"[brainstem] {len(agents)} agent(s) ready.")
+        _load_agents_count = len(agents)
     return agents
 
 # ── LLM call ─────────────────────────────────────────────────────────────────

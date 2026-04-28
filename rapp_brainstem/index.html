@@ -1737,16 +1737,57 @@
       name.textContent = rapp.name || rapp.id;
       name.title = rapp.id;
       li.appendChild(name);
+
+      const controls = document.createElement('div');
+      controls.style.display = 'flex';
+      controls.style.gap = '4px';
+
       if (rapp.ui_url) {
-        const btn = document.createElement('button');
-        btn.className = 'open-btn';
-        btn.textContent = 'Open ▸';
-        btn.onclick = () => openRappInSplit(rapp.id, rapp.name || rapp.id, null, _toCdnUrl(rapp.ui_url));
-        li.appendChild(btn);
+        const openBtn = document.createElement('button');
+        openBtn.className = 'open-btn';
+        openBtn.textContent = 'Open ▸';
+        openBtn.onclick = () => openRappInSplit(rapp.id, rapp.name || rapp.id, null, _toCdnUrl(rapp.ui_url));
+        controls.appendChild(openBtn);
       }
+
+      const uninstallBtn = document.createElement('button');
+      uninstallBtn.className = 'open-btn';
+      uninstallBtn.style.background = '#21262d';
+      uninstallBtn.style.color = '#f85149';
+      uninstallBtn.textContent = '🗑';
+      uninstallBtn.title = `Uninstall ${rapp.name || rapp.id} — removes the agent .py from disk and the entry from this list`;
+      uninstallBtn.onclick = () => uninstallRapp(rapp.id);
+      controls.appendChild(uninstallBtn);
+
+      li.appendChild(controls);
       ul.appendChild(li);
     }
     header.style.display = ul.style.display = 'block';
+  }
+
+  async function uninstallRapp(id) {
+    const rapp = _storeInstalled[id];
+    if (!rapp) return;
+    const fname = rapp.singleton_filename || `${id}_agent.py`;
+    if (!confirm(
+      `Uninstall ${rapp.name || id}?\n\n` +
+      `• Removes ${fname} from agents/\n` +
+      `• Removes the rapplication from this list\n` +
+      `• Closes any open tab for this rapp`
+    )) return;
+    // Close the tab if open
+    const openTab = _splitTabs.find(t => t.id === id);
+    if (openTab) closeTab(id);
+    // Best-effort delete of the agent file (tolerate 404 — it may already be gone)
+    try {
+      await fetch(`${API}/agents/${encodeURIComponent(fname)}`, { method: 'DELETE' });
+    } catch {}
+    // Remove from local registry
+    delete _storeInstalled[id];
+    _persistStoreInstalled();
+    _installedRappIds.delete(id);
+    // Refresh both lists
+    try { loadRapplications(); loadAgentsList(); } catch {}
   }
 
   // openRappFrame(id, name, src)
@@ -3285,11 +3326,16 @@
       // Step 2: if the rapp ships a UI, record it locally so we can open
       // it later from the iframe directly (no binder hosting). The iframe
       // src is the CDN-rewritten ui_url — same pattern as localFirstTools.
+      // singleton_filename is captured so uninstall can DELETE the agent
+      // file from disk along with removing the local registry entry.
       if (rapp.ui_url) {
         _storeInstalled[rapp.id] = {
           id: rapp.id,
           name: rapp.name || rapp.id,
           ui_url: rapp.ui_url,
+          singleton_filename: rapp.singleton_filename
+            || (rapp.singleton_url || '').split('/').pop()
+            || `${rapp.id}_agent.py`,
           publisher: rapp.publisher || '',
           version: rapp.version || '',
           installed_at: Date.now(),
