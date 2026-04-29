@@ -3165,11 +3165,20 @@
   //   { type: 'rapp:close' }                                  — closes the sender's tab
   //   { type: 'rapp:get_cartridge' }                          — request context (tether/user/etc.)
   //   { type: 'rapp:invoke', id: '...', args: {...} }         — call sender's agent.perform(**args)
+  //   { type: 'rapp:workspace:list', id }                     — list files in this rapp's workspace
+  //   { type: 'rapp:workspace:read', id, name }               — read a file
+  //   { type: 'rapp:workspace:write', id, name, content,
+  //                                   encoding }              — write a file (SPEC §11.3)
+  //   { type: 'rapp:workspace:delete', id, name }             — delete a file
+  //   { type: 'rapp:workspace:reveal', id }                   — open workspace folder in Finder
+  //   { type: 'rapp:workspace:request_files', id, prompt,
+  //                                   patterns }              — ask the user to drop files
   //
   // Parent → iframe responses:
   //   { type: 'rapp:cartridge', context: {...} }              — answer to get_cartridge
   //   { type: 'rapp:invoke:result', id, result }              — success (matches request id)
   //   { type: 'rapp:invoke:result', id, error }               — failure
+  //   { type: 'rapp:workspace:<verb>:result', id, ... }       — workspace op result
   //
   // The invoke path is what makes BookFactory and similar pipeline rapps
   // work: their iframe orchestrates the 5-persona pipeline and needs a
@@ -3200,15 +3209,99 @@
     } else if (data.type === 'rapp:get_cartridge') {
       // Reply with the iframe's context cartridge. We're the local
       // brainstem, so tether is "active" pointing at our own origin.
-      ev.source.postMessage({
-        type: 'rapp:cartridge',
-        rapp_id: senderId,
-        context: {
-          tether: { active: true, base: API || window.location.origin },
-          user:   null,  // GitHub identity not surfaced in this UI
-          env:    'local-brainstem',
-        },
-      }, '*');
+      // SPEC §11 — also probe the rapp's workspace so the iframe can
+      // render its file count / "open folder" affordance immediately.
+      const wsBase = (API || window.location.origin) + '/api/binder/workspace/' + encodeURIComponent(senderId);
+      fetch(wsBase + '/info').then(r => r.ok ? r.json() : null).catch(() => null).then(wsInfo => {
+        ev.source.postMessage({
+          type: 'rapp:cartridge',
+          rapp_id: senderId,
+          context: {
+            tether: { active: true, base: API || window.location.origin },
+            user:   null,  // GitHub identity not surfaced in this UI
+            env:    'local-brainstem',
+            workspace: wsInfo ? {
+              available: true,
+              path:      wsInfo.path,
+              mode:      wsInfo.mode || 'local',
+              file_count: wsInfo.file_count || 0,
+            } : { available: false, path: null, mode: 'local', file_count: 0 },
+          },
+        }, '*');
+      });
+    } else if (data.type && data.type.startsWith('rapp:workspace:')) {
+      // SPEC §11.3 — translate workspace messages into /api/binder/workspace
+      // calls. The bridge enforces that rapps can only touch their own
+      // sender-scoped workspace; senderId is whatever the iframe is, so
+      // even a malicious iframe can't reach into another rapp's dir.
+      const verb = data.type.slice('rapp:workspace:'.length);
+      const wsBase = (API || window.location.origin) + '/api/binder/workspace/' + encodeURIComponent(senderId);
+      const replyType = data.type + ':result';
+      const reply = (payload) => ev.source.postMessage({ type: replyType, id: data.id, ...payload }, '*');
+
+      const safeName = (n) => {
+        if (typeof n !== 'string' || !n) return null;
+        if (n.startsWith('/') || n.startsWith('\\')) return null;
+        if (n.split(/[\\/]/).includes('..')) return null;
+        return n;
+      };
+
+      if (verb === 'list') {
+        fetch(wsBase + '/list').then(r => r.json())
+          .then(d => reply({ files: d.files || [] }))
+          .catch(e => reply({ error: e.message }));
+      } else if (verb === 'read') {
+        const n = safeName(data.name);
+        if (!n) return reply({ error: 'invalid_name' });
+        fetch(wsBase + '/file/' + encodeURI(n))
+          .then(r => r.ok ? r.arrayBuffer().then(buf => ({ buf, type: r.headers.get('Content-Type') || '' }))
+                          : r.json().then(d => Promise.reject(new Error(d.error || ('HTTP ' + r.status)))))
+          .then(({ buf, type }) => {
+            // Text MIMEs → utf-8 string; everything else → base64
+            const isText = /^text\/|application\/json|charset=/.test(type);
+            if (isText) {
+              reply({ content: new TextDecoder().decode(buf), encoding: 'utf-8', mime: type });
+            } else {
+              const bytes = new Uint8Array(buf);
+              let bin = '';
+              for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+              reply({ content: btoa(bin), encoding: 'base64', mime: type });
+            }
+          })
+          .catch(e => reply({ error: e.message }));
+      } else if (verb === 'write') {
+        const n = safeName(data.name);
+        if (!n) return reply({ error: 'invalid_name' });
+        fetch(wsBase + '/file/' + encodeURI(n), {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: data.content || '', encoding: data.encoding || 'utf-8' }),
+        })
+          .then(r => r.json().then(d => r.ok ? reply({ ok: true, name: d.name, size: d.size })
+                                              : reply({ error: d.error || ('HTTP ' + r.status) })))
+          .catch(e => reply({ error: e.message }));
+      } else if (verb === 'delete') {
+        const n = safeName(data.name);
+        if (!n) return reply({ error: 'invalid_name' });
+        fetch(wsBase + '/file/' + encodeURI(n), { method: 'DELETE' })
+          .then(r => r.json().then(d => r.ok ? reply({ ok: true })
+                                              : reply({ error: d.error || ('HTTP ' + r.status) })))
+          .catch(e => reply({ error: e.message }));
+      } else if (verb === 'reveal') {
+        fetch(wsBase + '/reveal', { method: 'POST' })
+          .then(r => r.json().then(d => r.ok ? reply({ ok: true, path: d.path })
+                                              : reply({ error: d.error || ('HTTP ' + r.status) })))
+          .catch(e => reply({ error: e.message }));
+      } else if (verb === 'request_files') {
+        // The chat UI doesn't yet render a request-files prompt to the user.
+        // Surface the prompt as a chat message so the user sees the ask;
+        // resolution is "cancelled" until a richer drawer ships.
+        const prompt = (data.prompt || 'wants you to drop files in its workspace').slice(0, 200);
+        appendMsg('assistant', `📎 **${senderId}** ${prompt}\n\nUse the **Open workspace folder** button in the rapp to drop files in.`);
+        reply({ cancelled: true });
+      } else {
+        reply({ error: 'unknown workspace verb: ' + verb });
+      }
     } else if (data.type === 'rapp:invoke') {
       // Direct invoke: look up the rapp's singleton_filename and call
       // /agents/invoke/<filename> with the iframe's args. Reply with the

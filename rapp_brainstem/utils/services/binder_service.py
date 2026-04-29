@@ -27,6 +27,12 @@ Endpoints:
     DELETE /api/binder/installed/sense/<name> — uninstall sense
     GET    /api/binder/export/<id>           — export rapp as .egg cartridge
     POST   /api/binder/import                — import a .egg cartridge
+    GET    /api/binder/workspace/<id>/info   — workspace path + file count (SPEC §11)
+    GET    /api/binder/workspace/<id>/list   — list files in the rapp's workspace
+    GET    /api/binder/workspace/<id>/file/<name>  — read file content
+    PUT    /api/binder/workspace/<id>/file/<name>  — write file (body: {content, encoding})
+    DELETE /api/binder/workspace/<id>/file/<name>  — delete file
+    POST   /api/binder/workspace/<id>/reveal — open the workspace folder in the OS file browser
 
 Egg format (zip):
     manifest.json   {schema, type:"rapplication", id, version, exported_at,
@@ -41,8 +47,12 @@ import hashlib
 import io
 import json
 import os
+import subprocess
+import sys
 import time
 import zipfile
+
+from utils import workspace as _ws
 
 name = "binder"
 
@@ -299,6 +309,8 @@ def _import_egg(body):
     state["installed"] = [e for e in state.get("installed", []) if e.get("id") != rapp_id]
     state["installed"].append(installed)
     _write(state)
+    # SPEC §11 — ensure workspace dir exists for the imported rapp
+    _ws.ensure_workspace(rapp_id)
     return {"status": "ok", "id": rapp_id, "files_restored": files_restored, "installed": installed}, 200
 
 
@@ -628,6 +640,9 @@ def handle(method, path, body):
         state["installed"] = [e for e in state["installed"] if e.get("id") != rapp_id]
         state["installed"].append(installed)
         _write(state)
+        # SPEC §11 — ensure the rapp's collaborative workspace exists. Idempotent;
+        # preserved on uninstall (it's user data, not engine data).
+        _ws.ensure_workspace(rapp_id)
         return {"status": "ok", "installed": installed}, 200
 
     # DELETE /api/binder/installed/<id> — uninstall a rapplication
@@ -660,6 +675,114 @@ def handle(method, path, body):
 
         state["installed"] = [e for e in state["installed"] if e.get("id") != rapp_id]
         _write(state)
+        # SPEC §11 — workspace dir is intentionally NOT removed on uninstall.
+        # It's user data; if the rapp gets reinstalled later the user's files
+        # are still there.
         return {"status": "ok", "uninstalled": rapp_id}, 200
+
+    # ── SPEC §11 — Per-rapp workspace endpoints ─────────────────────────
+    # These mirror the cartridge protocol's rapp:workspace:* messages over
+    # HTTP so the chat UI's postMessage bridge has somewhere to forward to.
+    # All ops are scoped to a single rapp's workspace dir; safe_workspace_path()
+    # rejects path traversal.
+    if path.startswith("workspace/"):
+        rest = path[len("workspace/"):]
+        # Split rapp_id off the front. Subroute can be "info", "list",
+        # "reveal", or "file/<name>" (name may contain slashes for subdirs).
+        parts = rest.split("/", 2)
+        if len(parts) < 2:
+            return {"error": "workspace route requires <id>/<subroute>"}, 400
+        rapp_id, sub = parts[0], parts[1]
+        tail = parts[2] if len(parts) > 2 else ""
+
+        # GET /api/binder/workspace/<id>/info
+        if method == "GET" and sub == "info":
+            ws = _ws.ensure_workspace(rapp_id)
+            if ws is None:
+                return {"error": "invalid rapp id"}, 400
+            files = _ws.list_workspace(rapp_id)
+            return {
+                "id": rapp_id,
+                "path": str(ws),
+                "exists": True,
+                "mode": "local",
+                "file_count": len(files),
+            }, 200
+
+        # GET /api/binder/workspace/<id>/list
+        if method == "GET" and sub == "list":
+            return {"files": _ws.list_workspace(rapp_id)}, 200
+
+        # GET /api/binder/workspace/<id>/file/<name>
+        # Returns the file content directly. ?encoding=base64 for binary.
+        if method == "GET" and sub == "file" and tail:
+            target = _ws.safe_workspace_path(rapp_id, tail)
+            if target is None:
+                return {"error": "invalid_name"}, 400
+            if not target.is_file():
+                return {"error": "not_found"}, 404
+            blob = target.read_bytes()
+            # The dispatcher's binary path: (bytes, status, headers).
+            ext = target.suffix.lower()
+            mime = {
+                ".txt": "text/plain; charset=utf-8",
+                ".md":  "text/markdown; charset=utf-8",
+                ".json": "application/json",
+                ".csv": "text/csv; charset=utf-8",
+                ".html": "text/html; charset=utf-8",
+                ".png": "image/png",
+                ".jpg": "image/jpeg",
+                ".jpeg": "image/jpeg",
+                ".pdf": "application/pdf",
+            }.get(ext, "application/octet-stream")
+            return blob, 200, {"Content-Type": mime, "Content-Length": str(len(blob))}
+
+        # PUT /api/binder/workspace/<id>/file/<name>
+        # body: {"content": "...", "encoding": "utf-8" | "base64"}
+        if method == "PUT" and sub == "file" and tail:
+            target = _ws.safe_workspace_path(rapp_id, tail)
+            if target is None:
+                return {"error": "invalid_name"}, 400
+            content = body.get("content", "")
+            encoding = body.get("encoding", "utf-8")
+            try:
+                if encoding == "base64":
+                    raw = base64.b64decode(content)
+                else:
+                    raw = str(content).encode("utf-8")
+            except Exception as e:
+                return {"error": f"invalid content: {e}"}, 400
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(raw)
+            return {"ok": True, "name": tail, "size": len(raw)}, 200
+
+        # DELETE /api/binder/workspace/<id>/file/<name>
+        if method == "DELETE" and sub == "file" and tail:
+            target = _ws.safe_workspace_path(rapp_id, tail)
+            if target is None:
+                return {"error": "invalid_name"}, 400
+            if target.is_file():
+                target.unlink()
+            return {"ok": True}, 200
+
+        # POST /api/binder/workspace/<id>/reveal — open in OS file browser.
+        # Local-brainstem only; the cartridge spec promises the host advertises
+        # mode=cloud and clients skip this call there.
+        if method == "POST" and sub == "reveal":
+            ws = _ws.ensure_workspace(rapp_id)
+            if ws is None:
+                return {"error": "invalid rapp id"}, 400
+            try:
+                if sys.platform == "darwin":
+                    subprocess.Popen(["open", str(ws)])
+                elif sys.platform.startswith("win"):
+                    os.startfile(str(ws))  # type: ignore[attr-defined]
+                else:
+                    subprocess.Popen(["xdg-open", str(ws)])
+            except Exception as e:
+                return {"error": f"could not reveal: {e}"}, 500
+            return {"ok": True, "path": str(ws)}, 200
+
+        return {"error": "workspace subroute not found"}, 404
 
     return {"error": "not found"}, 404
