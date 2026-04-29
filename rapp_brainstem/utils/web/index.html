@@ -10,8 +10,14 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <meta name="theme-color" content="#1f6feb">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Brainstem">
+<!-- Stops iOS Safari from auto-linking phone-number-shaped strings in agent
+     output (e.g., GUIDs, model versions, dates), which it otherwise turns
+     into tappable "Call" links inside chat bubbles. -->
+<meta name="format-detection" content="telephone=no, address=no, email=no, date=no">
+<meta name="color-scheme" content="dark">
 <!-- iOS ignores SVG apple-touch-icons — must be PNG (180px is the
      legacy "Add to Home Screen" size; the 192/512 PNGs back the
      manifest icons array for Android/PWA installs). -->
@@ -23,15 +29,27 @@
 
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html { height: 100%; }
+  html, body { overscroll-behavior-y: none; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     background: #0d1117;
     color: #e6edf3;
+    /* dvh = dynamic viewport height — accounts for the iOS keyboard and
+       Safari URL bar so the layout doesn't sit half-occluded when the
+       keyboard opens. vh fallback for browsers without dvh (very old). */
     height: 100vh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
+    /* iOS PWA: prevent text-size auto-adjust + selection on chrome */
+    -webkit-text-size-adjust: 100%;
+    -webkit-touch-callout: none;
   }
+  /* Allow text selection inside chat bubbles + textareas — only the chrome
+     above suppresses long-press. */
+  .bubble, textarea, input, .msg, code, pre { -webkit-touch-callout: default; user-select: text; }
 
   /* ── Inline SVG icon helper ── */
   .icon { display: inline-flex; align-items: center; justify-content: center;
@@ -125,8 +143,7 @@
 
   /* Rapplication iframe overlay — matches the local brainstem's #rapp-frame
      so both pages take over the surface the same way. ui_url (absolute)
-     loads any rapp UI; relative URLs route through the tether to the
-     local brainstem's /api/<service>/ endpoint. */
+     loads any rapp UI; relative URLs hit same-origin /api/<service>/. */
   #rapp-frame {
     display: none; position: fixed; inset: 0;
     z-index: 40; background: #0d1117; flex-direction: column;
@@ -246,22 +263,6 @@
     padding: 4px 6px; border-radius: 4px; font-size: 12px; cursor: pointer;
   }
   .afile button:hover { background: #21262d; color: #e6edf3; border-color: #30363d; }
-
-  /* Tether status pill (header) and Settings row */
-  .tether-pill {
-    background: rgba(63,185,80,.12); color: #3fb950;
-    border: 1px solid #238636; border-radius: 12px;
-    padding: 2px 10px; font-size: 11px; font-weight: 600;
-    cursor: default; white-space: nowrap;
-  }
-  .tether-row { display: flex; gap: 6px; margin-top: 4px; }
-  .tether-row input { flex: 1; }
-  .tether-stat {
-    margin-top: 6px; font-size: 11px; color: #6e7681;
-    font-family: "SF Mono", ui-monospace, monospace;
-  }
-  .tether-stat.ok  { color: #3fb950; }
-  .tether-stat.err { color: #f85149; }
 
   /* Quick-action row in Settings (Binder / Install buttons) */
   .settings-quick-row { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -704,6 +705,117 @@
   }
   #send:hover { background: #388bfd; }
   #send:disabled { opacity: .4; cursor: default; }
+
+  /* Inline action buttons (mic, camera) inside the input row.
+     Sized for mobile thumb (44px touch target on phones, slimmer on desktop). */
+  .iact-btn {
+    background: #0d1117; color: #58a6ff;
+    border: 1px solid #30363d; border-radius: 8px;
+    width: 40px; height: 40px; padding: 0;
+    align-self: flex-end; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all .15s; font-family: inherit;
+  }
+  .iact-btn:hover { background: #21262d; border-color: #58a6ff; }
+  .iact-btn:disabled { opacity: .4; cursor: default; }
+  .iact-btn .icon { width: 18px; height: 18px; }
+  .iact-btn.recording {
+    background: #f85149; color: #fff; border-color: #f85149;
+    animation: rec-pulse 1.1s ease-in-out infinite;
+  }
+  @keyframes rec-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(248,81,73,.55); }
+    50%      { box-shadow: 0 0 0 8px rgba(248,81,73,0); }
+  }
+
+  /* Add-to-Home-Screen full-screen takeover. Shown on first load to
+     iOS/Android tab-mode users. iOS push, badge, wake-lock, persistent
+     storage all require an installed PWA — the overlay teaches the
+     install gesture instead of letting the user sit in tab-mode forever. */
+  #a2hs-overlay {
+    position: fixed; inset: 0; z-index: 9000;
+    background: rgba(13,17,23,.94);
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+  }
+  #a2hs-overlay[hidden] { display: none; }
+  .a2hs-card {
+    background: #161b22; border: 1px solid #30363d; border-radius: 16px;
+    padding: 28px 24px; max-width: 420px; width: 100%;
+    color: #e6edf3; box-shadow: 0 12px 40px rgba(0,0,0,.5);
+    max-height: calc(100dvh - 40px); overflow-y: auto;
+  }
+  .a2hs-card h2 { font-size: 20px; margin-bottom: 8px; text-align: center; font-weight: 700; }
+  .a2hs-icon {
+    width: 64px; height: 64px; margin: 0 auto 14px;
+    background: linear-gradient(135deg, #1f6feb, #58a6ff);
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .a2hs-icon .icon { width: 36px; height: 36px; color: #fff; }
+  .a2hs-blurb {
+    font-size: 13px; color: #8b949e; line-height: 1.55;
+    margin-bottom: 18px; text-align: center;
+  }
+  .a2hs-caps {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;
+    margin: 0 0 18px; font-size: 11px;
+  }
+  .a2hs-caps li {
+    list-style: none; padding: 6px 8px;
+    background: rgba(63,185,80,.08); border: 1px solid rgba(63,185,80,.25);
+    border-radius: 4px; color: #3fb950;
+  }
+  .a2hs-steps {
+    list-style: none; padding: 0; margin: 0 0 18px;
+    counter-reset: a2hs-step;
+  }
+  .a2hs-steps li {
+    font-size: 13px; line-height: 1.55; color: #e6edf3;
+    padding: 10px 12px 10px 40px; margin-bottom: 6px;
+    background: #0d1117; border: 1px solid #21262d; border-radius: 6px;
+    position: relative; counter-increment: a2hs-step;
+  }
+  .a2hs-steps li::before {
+    content: counter(a2hs-step);
+    position: absolute; left: 8px; top: 50%; transform: translateY(-50%);
+    width: 22px; height: 22px;
+    background: #1f6feb; color: #fff; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700;
+  }
+  .a2hs-share-icon {
+    display: inline-flex; vertical-align: middle; margin: 0 2px;
+    color: #58a6ff; width: 16px; height: 16px;
+  }
+  .a2hs-share-icon svg { width: 100%; height: 100%; }
+  .a2hs-actions { display: flex; gap: 8px; flex-direction: column; }
+  .a2hs-primary {
+    background: #1f6feb; color: #fff; border: none; border-radius: 8px;
+    padding: 12px 20px; font-size: 14px; font-weight: 600;
+    cursor: pointer; font-family: inherit; width: 100%;
+  }
+  .a2hs-primary:hover { background: #388bfd; }
+  .a2hs-secondary {
+    background: transparent; color: #8b949e; border: none;
+    padding: 8px; font-size: 12px; cursor: pointer; font-family: inherit;
+    align-self: center;
+  }
+  .a2hs-secondary:hover { color: #e6edf3; }
+
+  /* Persistent install banner — bottom pill, returns after the user
+     dismisses the takeover. So "Not now" doesn't mean "Never". */
+  .a2hs-banner {
+    position: fixed; bottom: 16px; right: 16px;
+    background: #1f6feb; color: #fff; border: none; border-radius: 24px;
+    padding: 10px 16px; font-size: 12px; font-weight: 600;
+    cursor: pointer; box-shadow: 0 4px 14px rgba(31,111,235,.35);
+    z-index: 8000; font-family: inherit;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .a2hs-banner[hidden] { display: none; }
+  .a2hs-banner:hover { background: #388bfd; }
 
   .toolbar-row {
     display: flex; justify-content: space-between; align-items: center;
@@ -1211,8 +1323,6 @@
     header .controls { gap: 4px; }
     /* Status text is noise on a phone — keep just the colored dot. */
     header #status-text { display: none; }
-    /* Tether pill stays visible but loses the agent count to save space. */
-    .tether-pill { font-size: 10px; padding: 2px 6px; }
     /* Drop the text labels from header buttons — icons-only on phones.
        (Text nodes inside .icon-btn collapse via font-size:0; the .icon
        span keeps its sized SVG visible.) */
@@ -1232,10 +1342,20 @@
     #chat { padding: 12px; gap: 10px; }
     .msg .bubble { max-width: 100%; padding: 10px 12px; font-size: 14px; }
     /* Footer respects the iPhone home indicator and trims padding. */
-    footer { padding: 10px 12px env(safe-area-inset-bottom, 10px); }
-    .input-row { gap: 6px; }
+    footer { padding: 10px 12px max(10px, env(safe-area-inset-bottom)); }
+    .input-row { gap: 6px; align-items: flex-end; }
     #input { font-size: 16px; }   /* 16px prevents iOS Safari zoom on focus */
-    #send { padding: 8px 14px; font-size: 13px; }
+    #send { padding: 0 16px; font-size: 13px; min-height: 44px; min-width: 56px; }
+    /* Mic + camera buttons hit 44×44 (Apple HIG minimum touch target). */
+    .iact-btn { width: 44px; height: 44px; }
+    /* Install banner becomes full-width pill at the bottom on phones. */
+    .a2hs-banner {
+      bottom: max(12px, env(safe-area-inset-bottom));
+      left: 12px; right: 12px; justify-content: center;
+    }
+    /* Card-style A2HS overlay sized for phones. */
+    .a2hs-card { padding: 24px 18px; }
+    .a2hs-caps { grid-template-columns: 1fr 1fr; }
     .toolbar-row { font-size: 10px; }
     /* Hand pills — narrower so 3 fit two-up on a phone. */
     .hand-pill { max-width: 240px; font-size: 11px; padding: 5px 10px; }
@@ -1284,7 +1404,6 @@
   <div class="controls">
     <span class="dot offline" id="status-dot"></span>
     <span id="status-text">checking...</span>
-    <span id="tether-pill" class="tether-pill" hidden></span>
     <select id="model-sel"></select>
 
     <button class="icon-btn green" id="btn-signin" hidden title="Sign in with GitHub">
@@ -1384,33 +1503,6 @@
           <input id="source-input" type="text" placeholder="owner/repo" autocomplete="off" />
           <button class="btn" id="add-source">Add</button>
         </div>
-      </div>
-
-      <div class="row virtual-only">
-        <label>
-          <input type="checkbox" id="tether-enabled" style="vertical-align:middle;margin-right:6px" checked>
-          Tether to local brainstem <strong style="color:#3fb950">(recommended)</strong>
-        </label>
-        <div class="tether-row">
-          <input id="tether-url" type="text" placeholder="http://localhost:7071" autocomplete="off" />
-          <button class="btn" id="tether-test">Test</button>
-        </div>
-        <div id="tether-status" class="tether-stat">disabled</div>
-        <div id="tether-install-cta" style="display:none; margin-top:8px; padding:10px 12px;
-             background:#04060c; border:1px solid #21262d; border-left:3px solid #3fb950;
-             border-radius:6px; font-size:12px; line-height:1.55">
-          <div style="color:#8b949e; margin-bottom:6px">
-            ⚠️ Local brainstem not running — agents will fall back to browser Pyodide.
-            Get the real thing with one command:
-          </div>
-          <div id="tether-install-cmd" title="Click to copy"
-               style="font-family:'SF Mono',ui-monospace,monospace; font-size:12px;
-                      padding:8px 10px; background:#0d1117; border:1px solid #30363d;
-                      border-radius:4px; color:#e6edf3; cursor:pointer;
-                      word-break:break-all; user-select:all"></div>
-          <div style="color:#6e7681; font-size:10.5px; margin-top:4px">click to copy · then run in terminal · refresh this page when the brainstem is up</div>
-        </div>
-        <span class="hint">When tethered, agent execution runs in real Python on your machine instead of Pyodide in the browser — full filesystem / subprocess / network access.</span>
       </div>
 
       <div class="row">
@@ -1537,13 +1629,11 @@
         const cat = r.category ? `<span style="font-size:9px;background:#1f6feb22;color:#58a6ff;padding:1px 5px;border-radius:3px;margin-left:6px">${esc(r.category)}</span>` : '';
         const svc = r.service_filename ? `<span style="font-size:9px;color:#8b949e;margin-left:4px">+ service</span>` : '';
         // A rapplication's UI loads in the iframe overlay. Resolution rules:
-        //   - r.ui_url (absolute) → use directly (works standalone or tethered)
-        //   - r.service_filename + tether → tetherUrl + /api/<svc>/
-        //   - r.service_filename + no tether → no Open button (we can't reach it)
+        //   - r.ui_url (absolute) → use directly
+        //   - r.service_filename → same-origin /api/<svc>/ (works when this
+        //     vbrainstem is served by a brainstem that mounts the service)
         const svcName = (r.service_filename || '').replace(/_service\.py$/, '');
-        const tetherBase = (state.settings.tetherUrl || '').replace(/\/+$/, '');
-        const uiUrl = r.ui_url
-          || (svcName && tetherBase ? `${tetherBase}/api/${svcName}/` : '');
+        const uiUrl = r.ui_url || (svcName ? `/api/${svcName}/` : '');
         const openBtn = (installed && uiUrl)
           ? `<button class="primary" data-open="${esc(r.id)}" data-url="${esc(uiUrl)}" data-name="${esc(displayName)}">Open ▸</button>`
           : '';
@@ -1584,16 +1674,14 @@
       }
 
       // Rapplication export / import — virtual mirror of the local
-      // brainstem's flow. Routes through the binder service (tether or
-      // local origin). Internal storage format is a zip; user only ever
-      // sees a `.rapplication` file.
+      // brainstem's flow. Routes through the same-origin binder service.
+      // Internal storage format is a zip; user only ever sees a
+      // `.rapplication` file.
       async function exportRapp(id) {
         const status = document.getElementById('rapp-io-status');
         if (status) status.textContent = `Exporting ${id}…`;
         try {
-          // api() returns {status, json}; for binary we go direct.
-          const tetherBase = (state.settings.tetherUrl || '').replace(/\/+$/, '');
-          const url = `${tetherBase}/api/binder/export/${encodeURIComponent(id)}`;
+          const url = `/api/binder/export/${encodeURIComponent(id)}`;
           const res = await fetch(url);
           if (!res.ok) {
             const err = await res.json().catch(() => ({}));
@@ -1652,7 +1740,7 @@
         // Try local brainstem binder service first
         const r = await api('/api/binder/install', { method: 'POST', body: JSON.stringify({ id }) });
         if (r.status === 200) { await load(); return; }
-        // Standalone: track in localStorage (agent runs when tethered)
+        // Standalone: track in localStorage so the row reflects "installed"
         const entry = (CATALOG.rapplications || []).find(e => e.id === id);
         if (!entry) { alert('Not found in catalog: ' + id); return; }
         const list = JSON.parse(localStorage.getItem('rapp_binder_installed') || '[]');
@@ -1806,6 +1894,12 @@
   </div>
   <div class="input-row">
     <textarea id="input" placeholder="Talk to the brainstem… (Shift+Enter for newline)" rows="1"></textarea>
+    <!-- Tap-to-talk: vb.device.listen() → transcript → into input. Hidden
+         when the browser doesn't expose Web Speech recognition. -->
+    <button class="iact-btn" id="btn-mic" type="button" hidden
+            title="Tap to speak" aria-label="Voice input">
+      <span class="icon"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 11a3 3 0 003-3V3a3 3 0 00-6 0v5a3 3 0 003 3z"/><path d="M3.5 7.5a.5.5 0 011 0V8a3.5 3.5 0 007 0v-.5a.5.5 0 011 0V8A4.5 4.5 0 018.5 12.46V14h2a.5.5 0 010 1h-5a.5.5 0 010-1h2v-1.54A4.5 4.5 0 013.5 8v-.5z"/></svg></span>
+    </button>
     <button id="send">Send</button>
   </div>
   <div class="toolbar-row">
@@ -1990,6 +2084,48 @@
     </div>
   </div>
 </div>
+
+<!-- ╔══════════════════════════════════════════════════════════════════╗
+     ║ Add to Home Screen — full takeover for tab-mode visitors.        ║
+     ║ Push, badges, wake-lock, and persistent storage are all gated   ║
+     ║ behind PWA install on iOS, so we teach the install gesture       ║
+     ║ rather than letting users miss those capabilities forever.       ║
+     ╚══════════════════════════════════════════════════════════════════╝ -->
+<div id="a2hs-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="a2hs-title">
+  <div class="a2hs-card">
+    <div class="a2hs-icon">
+      <span class="icon"><svg viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path d="M184 0c-30.9 0-56.5 22.7-61.1 52.3C54.5 67 0 130 0 206.8c0 41.6 17.4 79.2 45.3 105.9-2 9.2-3.3 18.8-3.3 28.7 0 55.3 35.8 102.2 85.5 119C142.2 493 172.6 512 208 512h16c35.3 0 64-28.7 64-64V86c0-8.8-7.2-16-16-16h-16c-8.8 0-16 7.2-16 16v16c0 8.8-7.2 16-16 16s-16-7.2-16-16V64c0-35.3-28.7-64-64-64h40zm144 0c30.9 0 56.5 22.7 61.1 52.3C457.5 67 512 130 512 206.8c0 41.6-17.4 79.2-45.3 105.9 2 9.2 3.3 18.8 3.3 28.7 0 55.3-35.8 102.2-85.5 119C369.8 493 339.4 512 304 512h-16c-35.3 0-64-28.7-64-64V86c0-8.8 7.2-16 16-16h16c8.8 0 16 7.2 16 16v16c0 8.8 7.2 16 16 16s16-7.2 16-16V64c0-35.3 28.7-64 64-64h-40z"/></svg></span>
+    </div>
+    <h2 id="a2hs-title">Install the Brainstem</h2>
+    <p class="a2hs-blurb">A pocket agent runtime — voice in, GPS aware, wakeable from a notification, runs offline. Installing unlocks the full set:</p>
+    <ul class="a2hs-caps">
+      <li>Push wake-up</li>
+      <li>App badges</li>
+      <li>Wake lock</li>
+      <li>Persistent storage</li>
+      <li>Home-screen icon</li>
+      <li>Full-screen mode</li>
+    </ul>
+    <ol class="a2hs-steps" id="a2hs-steps-ios" hidden>
+      <li>Tap the <strong>Share</strong> button at the bottom of Safari <span class="a2hs-share-icon"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 1.5a.5.5 0 01.354.146l3 3a.5.5 0 01-.708.708L8.5 3.207V11.5a.5.5 0 01-1 0V3.207L5.354 5.354a.5.5 0 11-.708-.708l3-3A.5.5 0 018 1.5zM3 8.5a.5.5 0 01.5.5v4.5A1.5 1.5 0 005 15h6a1.5 1.5 0 001.5-1.5V9a.5.5 0 011 0v4.5A2.5 2.5 0 0111 16H5a2.5 2.5 0 01-2.5-2.5V9a.5.5 0 01.5-.5z"/></svg></span></li>
+      <li>Scroll down and tap <strong>Add to Home Screen</strong></li>
+      <li>Tap <strong>Add</strong> in the upper-right</li>
+    </ol>
+    <ol class="a2hs-steps" id="a2hs-steps-android" hidden>
+      <li>Tap the <strong>⋮</strong> menu in Chrome</li>
+      <li>Tap <strong>Install app</strong> or <strong>Add to Home screen</strong></li>
+      <li>Confirm <strong>Install</strong></li>
+    </ol>
+    <p class="a2hs-blurb" id="a2hs-desktop-note" hidden>Open this page on your iPhone or Android device — installable PWA features (push, wake lock, badges) are mobile-first.</p>
+    <div class="a2hs-actions">
+      <button class="a2hs-primary" id="a2hs-android-install" hidden>Install</button>
+      <button class="a2hs-secondary" id="a2hs-dismiss">Not now</button>
+    </div>
+  </div>
+</div>
+<button id="a2hs-banner" class="a2hs-banner" hidden type="button" aria-label="Install Brainstem">
+  <span aria-hidden="true">📲</span> Install Brainstem
+</button>
 
 <script src="./rapp.js"></script>
 <script>
@@ -2303,7 +2439,7 @@ function escapeAttr(s) {
 const SOUL = '[soul rendered dynamically — see buildSystemPrompt()]';
 
 // `var` (not `const`) so the binding lives on `window` and is reachable
-// from the earlier <script> block where rappRow() reads state.settings.tetherUrl.
+// from the earlier <script> block where rappRow() reads state.settings.
 // `const` at top level of a <script> creates a script-scoped binding
 // that's invisible to other <script> tags — see the matching note in
 // rapp_brainstem/index.html for the full reasoning.
@@ -2346,17 +2482,6 @@ var state = {
     // time so adding a new default propagates to existing users — and are
     // protected from removal in the UI. User-added sources are removable.
     sources: ['kody-w/RAR'],
-    // Tether to a local brainstem (rapp_brainstem/brainstem.py on :7071, which
-    // speaks the rapp-tether/1.0 wire shape). When connected, agent calls
-    // route through the local Python process instead of Pyodide so they get
-    // real filesystem / subprocess / LAN / hardware access.
-    // Default ON: tether is the recommended execution path on the
-    // virtual brainstem (real Python on user's machine > Pyodide in
-    // the browser). If the local brainstem isn't reachable, the UI
-    // surfaces the install one-liner via the #tether-install-cta
-    // block inside Settings → Tether.
-    tetherEnabled: true,
-    tetherUrl: 'http://localhost:7071',
     // Default endpoint that Deploy as Swarm posts to (the local swarm/server.py
     // installed via `install-swarm.sh`, listens on :7080 by default).
     swarmEndpoint: 'http://localhost:7080',
@@ -2364,8 +2489,6 @@ var state = {
     // swarm_url, info_url, endpoint, deployed_at}. Capped at 50.
     deployedSwarms: [],
   },
-  // Live tether status (refreshed by probeTether). Not persisted.
-  tether: { connected: false, agents: [], lastError: null, host: '' },
   pyodide: null,
   pyodideLoading: null,
   pendingDeviceLogin: null,
@@ -2452,8 +2575,6 @@ function loadSettings() {
   $('#custom-key').value = state.settings.customKey;
   $('#exec-mode').value = state.settings.execMode;
   $('#hand-mode-select').value = state.settings.handMode || 'pills';
-  $('#tether-enabled').checked = !!state.settings.tetherEnabled;
-  $('#tether-url').value = state.settings.tetherUrl || 'http://localhost:7071';
   refreshProviderUI();
   refreshModelOptions();
   refreshStatus();
@@ -2522,11 +2643,8 @@ function saveSettings() {
   state.settings.customKey  = $('#custom-key').value.trim();
   state.settings.execMode = $('#exec-mode').value;
   state.settings.model = $('#model-sel').value;
-  state.settings.tetherEnabled = $('#tether-enabled').checked;
-  state.settings.tetherUrl = $('#tether-url').value.trim();
   LS.set('settings', state.settings);
   refreshStatus();
-  probeTether();   // re-probe in case tether settings changed
   closeAside('settings');
 }
 
@@ -3439,8 +3557,7 @@ async function installFromRegistry(repo, branch, agent, btn) {
       // Rapplication — let the brainstem fetch + SHA-validate + write the
       // file server-side. We just need the rapp id.
       if (!agent._rapp_id) throw new Error('rapplication entry has no _rapp_id');
-      const tetherBase = (state.settings.tetherUrl || '').replace(/\/+$/, '') || '';
-      const url = (tetherBase || '') + '/api/binder/install';
+      const url = '/api/binder/install';
       const r = await fetch(url, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -4563,107 +4680,15 @@ function findCardByAgentName(name) {
   return null;
 }
 
-/* ───── Agent execution: tether → live (Pyodide) → stub ──────────────
-   Tether wins when it's connected and exposes the same agent name; the
-   call hits the local brainstem (rapp-tether/1.0 on :7071) and gets real
-   filesystem / subprocess / LAN / hardware access. Falls through to the
-   in-browser executor otherwise. */
+/* ───── Agent execution: live (Pyodide) → stub ───────────────────────
+   Pure browser execution — agents run in Pyodide for full Python
+   semantics, with a deterministic stub fallback for stub-mode chats. */
 async function runAgent(card, kwargs, upstreamSlush) {
-  const p = RAPP.Agent.parseAgentSource(card.source, card.filename);
-  const name = p.name || card.name;
-
-  if (state.tether.connected && state.tether.agents.includes(name)) {
-    try {
-      return await runAgentTethered(name, kwargs);
-    } catch (e) {
-      console.warn('tether call failed, falling back to local exec', e);
-      // Don't return error — fall through so the request still gets answered.
-    }
-  }
   if (state.settings.execMode === 'live') {
     try { return await runAgentLive(card, kwargs, upstreamSlush); }
     catch (e) { return JSON.stringify({status:'error', message:`live exec failed: ${e.message}`}); }
   }
   return runAgentStub(card, kwargs, upstreamSlush);
-}
-
-async function runAgentTethered(name, kwargs) {
-  const url = (state.settings.tetherUrl || '').replace(/\/+$/, '') + '/tether/agent';
-  const r = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, args: kwargs || {} }),
-  });
-  const d = await r.json();
-  if (!r.ok || d.status === 'error') {
-    return JSON.stringify({ status: 'error', message: d.message || `tether HTTP ${r.status}` });
-  }
-  // Local agents return either a string or a JSON-serialized envelope.
-  return typeof d.output === 'string' ? d.output : JSON.stringify(d.output);
-}
-
-async function probeTether() {
-  if (!state.settings.tetherEnabled) {
-    state.tether = { connected: false, agents: [], lastError: null, host: '' };
-    refreshTetherStatus();
-    return;
-  }
-  const base = (state.settings.tetherUrl || '').replace(/\/+$/, '');
-  if (!base) {
-    state.tether = { connected: false, agents: [], lastError: 'no URL set', host: '' };
-    refreshTetherStatus();
-    return;
-  }
-  try {
-    const r = await fetch(base + '/tether/healthz', { cache: 'no-store' });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const d = await r.json();
-    state.tether = {
-      connected: true,
-      agents: d.agents || [],
-      lastError: null,
-      host: d.host || base,
-    };
-  } catch (e) {
-    state.tether = { connected: false, agents: [], lastError: e.message, host: '' };
-  }
-  refreshTetherStatus();
-}
-
-function refreshTetherStatus() {
-  const pill = $('#tether-pill');
-  const stat = $('#tether-status');
-  if (pill) {
-    if (state.tether.connected) {
-      pill.hidden = false;
-      pill.textContent = `⚡ Tethered · ${state.tether.agents.length} local agents`;
-      pill.title = `Routing through ${state.tether.host}\nLocal agents: ${state.tether.agents.join(', ') || '(none)'}`;
-    } else {
-      pill.hidden = true;
-    }
-  }
-  if (stat) {
-    if (!state.settings.tetherEnabled) {
-      stat.textContent = 'disabled';
-      stat.className = 'tether-stat';
-    } else if (state.tether.connected) {
-      stat.textContent = `connected · ${state.tether.agents.length} agents (${state.tether.agents.join(', ') || 'none'})`;
-      stat.className = 'tether-stat ok';
-    } else {
-      stat.textContent = `not reachable${state.tether.lastError ? ' — ' + state.tether.lastError : ''}`;
-      stat.className = 'tether-stat err';
-    }
-  }
-  // Install CTA: show whenever tether is wanted but not reachable. This is
-  // the "Pyodide is the fallback, tether is the recommended path" UX —
-  // users who land on the virtual brainstem and want real agent execution
-  // get the install one-liner right here, no docs hunt.
-  const cta = document.getElementById('tether-install-cta');
-  if (cta) {
-    const wants = !!state.settings.tetherEnabled;
-    const have  = !!state.tether.connected;
-    cta.style.display = (wants && !have) ? 'block' : 'none';
-  }
 }
 
 function runAgentStub(card, kwargs, upstreamSlush) {
@@ -4845,36 +4870,297 @@ def _patched_urlopen(req, *args, **kwargs):
 _urlreq.urlopen = _patched_urlopen
 `;
 
-async function runAgentLive(card, kwargs, upstreamSlush) {
-  if (!state.pyodide) {
-    if (!state.pyodideLoading) {
-      state.pyodideLoading = (async () => {
-        const s = document.createElement('script');
-        s.src = 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js';
-        document.head.appendChild(s);
-        await new Promise(r => s.onload = r);
-        state.pyodide = await window.loadPyodide();
-        // Inject the BasicAgent shim — no Azure deps, no openrappter package.
-        const basic = await (await fetch('../agents/basic_agent.py')).text();
-        state.pyodide.FS.mkdirTree('/agents');
-        state.pyodide.FS.writeFile('/agents/basic_agent.py', basic);
-        state.pyodide.FS.writeFile('/agents/__init__.py', '');
-        // openrappter shim → re-export BasicAgent
-        state.pyodide.FS.mkdirTree('/openrappter/agents');
-        state.pyodide.FS.writeFile('/openrappter/__init__.py', '');
-        state.pyodide.FS.writeFile('/openrappter/agents/__init__.py', '');
-        state.pyodide.FS.writeFile('/openrappter/agents/basic_agent.py', basic);
-        // utils.llm shim — gives agents the same call_llm contract as the
-        // local brainstem so they can route through whatever LLM is
-        // signed into the host (no per-rapp API keys needed).
-        state.pyodide.FS.mkdirTree('/utils');
-        state.pyodide.FS.writeFile('/utils/__init__.py', '');
-        state.pyodide.FS.writeFile('/utils/llm.py', VBRAINSTEM_LLM_SHIM);
-        await state.pyodide.runPythonAsync(`import sys; sys.path.insert(0, '/')`);
-      })();
-    }
-    await state.pyodideLoading;
+// utils/local_storage.py shim — drop-in for the brainstem's
+// AzureFileStorageManager but persisted in window.localStorage so memories
+// survive page reloads. Same API surface as rapp_brainstem/utils/local_storage.py
+// so any agent doing `from utils.azure_file_storage import AzureFileStorageManager`
+// works unmodified.
+const VBRAINSTEM_STORAGE_SHIM = `"""utils/local_storage.py — Pyodide variant.
+
+Drop-in for AzureFileStorageManager. Stores everything in the host page's
+localStorage so memories survive refreshes. Same API as the local
+brainstem's rapp_brainstem/utils/local_storage.py — agents can't tell.
+"""
+import json
+from js import localStorage
+
+_PREFIX = "vbrainstem_storage:"
+
+
+class AzureFileStorageManager:
+    DEFAULT_MARKER_GUID = "c0p110t0-aaaa-bbbb-cccc-123456789abc"
+
+    def __init__(self, share_name=None, **kwargs):
+        self.current_guid = None
+        self.shared_memory_path = "shared_memories"
+        self.default_file_name = "memory.json"
+        self.current_memory_path = self.shared_memory_path
+
+    def set_memory_context(self, user_guid=None):
+        if not user_guid or user_guid == self.DEFAULT_MARKER_GUID:
+            self.current_guid = None
+            self.current_memory_path = self.shared_memory_path
+            return True
+        self.current_guid = user_guid
+        self.current_memory_path = "memory/" + user_guid
+        return True
+
+    def _file_path(self):
+        if self.current_guid:
+            return "memory/" + self.current_guid + "/user_memory.json"
+        return "shared_memories/memory.json"
+
+    def read_json(self, file_path=None):
+        path = file_path or self._file_path()
+        raw = localStorage.getItem(_PREFIX + path)
+        if raw is None:
+            return {}
+        try:
+            return json.loads(raw)
+        except Exception:
+            return {}
+
+    def write_json(self, data, file_path=None):
+        path = file_path or self._file_path()
+        localStorage.setItem(_PREFIX + path, json.dumps(data, default=str))
+        return True
+
+    def read_file(self, file_path):
+        return localStorage.getItem(_PREFIX + file_path)
+
+    def write_file(self, file_path, content):
+        localStorage.setItem(_PREFIX + file_path, content)
+        return True
+
+    def list_files(self, directory=""):
+        prefix = _PREFIX + directory
+        out = []
+        n = localStorage.length
+        for i in range(n):
+            k = localStorage.key(i)
+            if k and k.startswith(prefix):
+                out.append(k[len(_PREFIX):])
+        return out
+
+    def delete_file(self, file_path):
+        if localStorage.getItem(_PREFIX + file_path) is not None:
+            localStorage.removeItem(_PREFIX + file_path)
+            return True
+        return False
+
+    def file_exists(self, file_path):
+        return localStorage.getItem(_PREFIX + file_path) is not None
+`;
+
+// Thin re-export shims so agents that import any of the three storage
+// module names the local brainstem also shims (azure_file_storage,
+// dynamics_storage, storage_factory) all resolve to the same backing class.
+const VBRAINSTEM_AZURE_STORAGE_SHIM = `from utils.local_storage import AzureFileStorageManager
+`;
+const VBRAINSTEM_DYNAMICS_STORAGE_SHIM = `from utils.local_storage import AzureFileStorageManager
+DynamicsStorageManager = AzureFileStorageManager
+`;
+const VBRAINSTEM_STORAGE_FACTORY_SHIM = `from utils.local_storage import AzureFileStorageManager
+
+def get_storage_manager():
+    return AzureFileStorageManager()
+`;
+
+// utils/device.py — bridge from Python agents to the browser's device
+// APIs (geolocation, screen capture, file picker + OPFS, clipboard,
+// speech). All entry points are async; agents that use them declare
+// `async def perform(...)`. The JS side (window.vb.device) handles the
+// gesture-gating modal so an agent that needs screen share / file open
+// surfaces a one-click banner; agents themselves stay clean.
+const VBRAINSTEM_DEVICE_SHIM = `"""utils/device.py — Pyodide bridge to browser device APIs.
+
+Exposes browser-only capabilities to single-file agents running in the
+vbrainstem's Pyodide sandbox. All functions are coroutines — agents that
+call them must declare \`async def perform(...)\`.
+
+Quick reference:
+    capabilities() -> dict[str, bool]      what's supported on this browser
+
+    await geolocation()                    {latitude, longitude, accuracy, ...}
+    await capture_screen()                 {dataUrl, width, height}  (PNG)
+    await open_file(accept=".csv")         {name, type, size, text}
+    await save_file(name, content)         bool
+    await opfs_read(path)                  str
+    await opfs_write(path, content)        bool
+    await opfs_list(prefix="")             [{name, kind}]
+    await clipboard_read()                 str
+    await clipboard_write(text)            bool
+    await speak(text, lang="en-US")        bool   (text-to-speech)
+    await listen(timeout=30, lang=...)     str    (speech-to-text)
+
+    await take_photo()                     {dataUrl, type, size, name}  (mobile camera)
+    await notify(title, body=...)          bool   (Notifications API)
+    await badge(count)                     bool   (PWA app-icon badge)
+    await persist_storage()                bool   (storage.persist — survives eviction)
+    await wake_lock(enable=True)           bool   (keep screen on)
+    vibrate(pattern=10)                    bool   (haptic — pattern is ms or [on,off,on,...])
+"""
+from js import window
+
+
+def _device():
+    return window.vb.device
+
+
+def capabilities():
+    """Return {capability_name: bool} for this browser."""
+    return window.vb.capabilities.to_py()
+
+
+# Geolocation ─────────────────────────────────────────────────────────
+async def geolocation():
+    result = await _device().geolocation()
+    return result.to_py()
+
+
+# Screen capture ──────────────────────────────────────────────────────
+async def capture_screen():
+    """Capture one frame from a user-chosen screen/window/tab. Always
+    shows the permission banner + the browser's native source picker."""
+    result = await _device().captureScreen()
+    return result.to_py()
+
+
+# File system ─────────────────────────────────────────────────────────
+async def open_file(accept=None):
+    """Show file picker; return file contents in one shot.
+
+    accept — comma-separated extensions like ".csv,.txt", or None for any.
+    """
+    result = await _device().openFile(accept or "")
+    return result.to_py()
+
+
+async def save_file(suggested_name, content):
+    """Show save dialog; write content to the user-chosen path."""
+    return bool(await _device().saveFile(suggested_name, content))
+
+
+# OPFS — sandboxed filesystem, no permission prompts, ephemeral per origin
+async def opfs_read(path):
+    return await _device().opfsRead(path)
+
+
+async def opfs_write(path, content):
+    return bool(await _device().opfsWrite(path, content))
+
+
+async def opfs_list(prefix=""):
+    result = await _device().opfsList(prefix)
+    return result.to_py()
+
+
+# Clipboard ───────────────────────────────────────────────────────────
+async def clipboard_read():
+    return await _device().clipboardRead()
+
+
+async def clipboard_write(text):
+    return bool(await _device().clipboardWrite(text))
+
+
+# Speech ──────────────────────────────────────────────────────────────
+async def speak(text, lang="en-US"):
+    return bool(await _device().speak(text, lang))
+
+
+async def listen(timeout=30, lang="en-US"):
+    return await _device().listen(timeout, lang)
+
+
+# Mobile camera ───────────────────────────────────────────────────────
+async def take_photo():
+    """Open the rear camera and capture one photo.
+
+    On iOS / Android this opens the native camera UI. Returns:
+        {dataUrl, type, size, name}  where dataUrl is a base64 image URL.
+    """
+    result = await _device().takePhoto()
+    return result.to_py()
+
+
+# PWA-only capabilities ──────────────────────────────────────────────
+# These work best (or at all) when the page is installed as a PWA. iOS
+# requires Add-to-Home-Screen for push, badges, and wake lock; the JS
+# side gates them automatically.
+async def notify(title, body=None, icon=None):
+    """Show a desktop / lock-screen notification."""
+    opts = {}
+    if body is not None:
+        opts['body'] = body
+    if icon is not None:
+        opts['icon'] = icon
+    return bool(await _device().notify(title, opts))
+
+
+async def badge(count=0):
+    """Set the app-icon badge number (or 0 to clear)."""
+    return bool(await _device().badge(count))
+
+
+async def persist_storage():
+    """Ask the browser to make this origin's storage persistent
+    (won't be evicted under disk pressure). PWA install dramatically
+    raises the grant rate — call after install for best results."""
+    return bool(await _device().persistStorage())
+
+
+async def wake_lock(enable=True):
+    """Keep the screen on while an agent runs. Pass False to release."""
+    return bool(await _device().wakeLock(enable))
+
+
+def vibrate(pattern=10):
+    """Trigger haptic feedback. Pattern: int ms, or list [on, off, on, ...]."""
+    return bool(_device().vibrate(pattern))
+`;
+
+// Single boot path so both runAgentLive() and the headless console API
+// (window.vb) trigger the same Pyodide bring-up. Idempotent — concurrent
+// callers all await the same in-flight promise.
+async function ensurePyodide() {
+  if (state.pyodide) return state.pyodide;
+  if (!state.pyodideLoading) {
+    state.pyodideLoading = (async () => {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js';
+      document.head.appendChild(s);
+      await new Promise(r => s.onload = r);
+      state.pyodide = await window.loadPyodide();
+      // Inject the BasicAgent shim — no Azure deps, no openrappter package.
+      const basic = await (await fetch('../agents/basic_agent.py')).text();
+      state.pyodide.FS.mkdirTree('/agents');
+      state.pyodide.FS.writeFile('/agents/basic_agent.py', basic);
+      state.pyodide.FS.writeFile('/agents/__init__.py', '');
+      // openrappter shim → re-export BasicAgent
+      state.pyodide.FS.mkdirTree('/openrappter/agents');
+      state.pyodide.FS.writeFile('/openrappter/__init__.py', '');
+      state.pyodide.FS.writeFile('/openrappter/agents/__init__.py', '');
+      state.pyodide.FS.writeFile('/openrappter/agents/basic_agent.py', basic);
+      // utils/* shims — llm + the three storage names the local brainstem
+      // also shims into sys.modules. Same API, localStorage-backed.
+      state.pyodide.FS.mkdirTree('/utils');
+      state.pyodide.FS.writeFile('/utils/__init__.py', '');
+      state.pyodide.FS.writeFile('/utils/llm.py', VBRAINSTEM_LLM_SHIM);
+      state.pyodide.FS.writeFile('/utils/local_storage.py', VBRAINSTEM_STORAGE_SHIM);
+      state.pyodide.FS.writeFile('/utils/azure_file_storage.py', VBRAINSTEM_AZURE_STORAGE_SHIM);
+      state.pyodide.FS.writeFile('/utils/dynamics_storage.py', VBRAINSTEM_DYNAMICS_STORAGE_SHIM);
+      state.pyodide.FS.writeFile('/utils/storage_factory.py', VBRAINSTEM_STORAGE_FACTORY_SHIM);
+      state.pyodide.FS.writeFile('/utils/device.py', VBRAINSTEM_DEVICE_SHIM);
+      await state.pyodide.runPythonAsync(`import sys; sys.path.insert(0, '/')`);
+    })();
   }
+  await state.pyodideLoading;
+  return state.pyodide;
+}
+
+async function runAgentLive(card, kwargs, upstreamSlush) {
+  await ensurePyodide();
   // Write the agent file fresh each call (cheap)
   state.pyodide.FS.writeFile('/agents/' + card.filename, card.source);
   // Stamp current LLM coordinates so the shim picks up provider switches
@@ -4897,12 +5183,14 @@ import utils.llm   # idempotent — installs urlopen patch first time
   const argsJson = JSON.stringify(kwargs);
   const slushJson = JSON.stringify(upstreamSlush || {});
   const script = `
-import json, importlib
+import json, importlib, inspect
 mod = importlib.import_module('agents.${modName}')
 importlib.reload(mod)
 agent = mod.${className}()
 agent.context = {'slush': json.loads(${JSON.stringify(slushJson)})}
 result = agent.perform(**json.loads(${JSON.stringify(argsJson)}))
+if inspect.iscoroutine(result):
+    result = await result
 result if isinstance(result, str) else json.dumps(result)
 `;
   const r = await state.pyodide.runPythonAsync(script);
@@ -5045,38 +5333,6 @@ function wire() {
   $('#browse-filter').addEventListener('input', renderBrowse);
   $('#browse-source-filter').addEventListener('change', renderBrowse);
   $('#browse-refresh').addEventListener('click', refreshAllSources);
-  // Click the install one-liner to copy it. Users who read the CTA and
-  // want to spin up a local brainstem can copy-paste-run in one click.
-  (() => {
-    const cmdEl = document.getElementById('tether-install-cmd');
-    if (!cmdEl) return;
-    // Detect OS and show the right one-liner
-    const isWin = navigator.platform.startsWith('Win') || navigator.userAgent.includes('Windows');
-    cmdEl.textContent = isWin
-      ? 'iwr https://kody-w.github.io/RAPP/installer/install.ps1 -useb | iex'
-      : 'curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash';
-    cmdEl.addEventListener('click', () => {
-      const text = cmdEl.textContent.trim();
-      navigator.clipboard.writeText(text).then(() => {
-        const orig = cmdEl.textContent;
-        cmdEl.textContent = '✓ Copied — paste in your terminal';
-        cmdEl.style.color = '#3fb950';
-        setTimeout(() => { cmdEl.textContent = orig; cmdEl.style.color = '#e6edf3'; }, 1600);
-      });
-    });
-  })();
-
-  $('#tether-test').addEventListener('click', async () => {
-    // Pull current values into state without saving so the test reflects what
-    // the user just typed.
-    state.settings.tetherEnabled = true;
-    state.settings.tetherUrl = $('#tether-url').value.trim();
-    await probeTether();
-  });
-  $('#tether-enabled').addEventListener('change', e => {
-    state.settings.tetherEnabled = e.target.checked;
-    probeTether();
-  });
   $('#hand-mode-select').addEventListener('change', e => setHandMode(e.target.value));
   setHandMode(state.settings.handMode || 'pills');
   $('#btn-signin').addEventListener('click', () => {
@@ -5315,12 +5571,12 @@ const INSTALL_CMDS = {
   swarm: {
     mac:   'curl -fsSL https://kody-w.github.io/RAPP/installer/install-swarm.sh | bash',
     linux: 'curl -fsSL https://kody-w.github.io/RAPP/installer/install-swarm.sh | bash',
-    // Windows tether-style ps1 not yet split — same install-swarm.sh in WSL works.
+    // Windows ps1 not yet split — same install-swarm.sh in WSL works.
     win:   'iwr https://kody-w.github.io/RAPP/installer/install-swarm.sh -useb | wsl bash',
   },
 };
 const INSTALL_BLURBS = {
-  brainstem: 'The full local-first stack — Python + Flask + venv + GitHub OAuth. Installs to <code>~/.brainstem/src/rapp_brainstem/</code>, then you can <code>brainstem</code> from any shell. Also speaks the tether protocol on <code>localhost:7071</code> — this browser brainstem can route agent calls through it for real OS access.',
+  brainstem: 'The full local-first stack — Python + Flask + venv + GitHub OAuth. Installs to <code>~/.brainstem/src/rapp_brainstem/</code>, then you can <code>brainstem</code> from any shell. Listens on <code>localhost:7071</code> with the same single-file <code>*_agent.py</code> contract.',
   swarm: 'Stdlib-only multi-tenant swarm server. Hosts <em>many</em> swarms behind one endpoint at <code>localhost:7080</code>, each isolated by GUID — agents and per-user memory both routed by <code>swarm_guid</code> + <code>user_guid</code>. Push from <strong>Settings → Deploy to cloud</strong>.',
 };
 function detectOS() {
@@ -5635,34 +5891,6 @@ document.body.classList.add(RAPP_MODE === 'local' ? 'is-local' : 'is-virtual');
 
 (async () => {
   loadSettings();
-  // ?tether=http://localhost:7071 — the local brainstem's startup banner
-  // prints a one-click link in this shape. Apply it to settings, save,
-  // enable the tether checkbox, then strip the param so reload doesn't
-  // keep re-applying it (and so a shared URL doesn't keep flipping the
-  // tether back on for someone who turned it off).
-  (function applyTetherFromQuery(){
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const t = params.get('tether');
-      if (!t) return;
-      const trimmed = t.trim();
-      if (!/^https?:\/\//i.test(trimmed)) return;  // ignore garbage
-      state.settings.tetherUrl = trimmed;
-      state.settings.tetherEnabled = true;
-      LS.set('settings', state.settings);
-      const urlEl = document.getElementById('tether-url');
-      if (urlEl) urlEl.value = trimmed;
-      const enEl = document.getElementById('tether-enabled');
-      if (enEl) enEl.checked = true;
-      // Strip just the tether param; preserve everything else (?code=…,
-      // hash fragments, etc.) so OAuth + tether handoff coexist cleanly.
-      params.delete('tether');
-      const qs = params.toString();
-      const cleanUrl = window.location.origin + window.location.pathname
-        + (qs ? '?' + qs : '') + (window.location.hash || '');
-      window.history.replaceState({}, '', cleanUrl);
-    } catch (e) { console.warn('[tether] query-param apply failed:', e); }
-  })();
   await handleGitHubAuthCallback();   // pick up ?code=... after OAuth round-trip
   if (state.settings.ghToken && !state.settings.ghUser) await fetchGitHubUser();
   // Refresh model lists from APIs on every load
@@ -5682,15 +5910,616 @@ document.body.classList.add(RAPP_MODE === 'local' ? 'is-local' : 'is-virtual');
     persistHand(); renderHand(); renderBinder(); renderAgents();
   }
   wire();
+  installHeadlessConsoleApi();
+  wireMicButton();
+  setupA2HS();
   if (window.marked) window.marked.setOptions({ breaks: true, gfm: true });
   // Kick off the registry fetch in the background so Settings and Browse
   // show live agent counts as soon as the user opens them.
   refreshAllSources();
-  // Probe the tether (if enabled) and re-check every 30s so the pill goes
-  // dark when the local brainstem stops responding.
-  probeTether();
-  setInterval(probeTether, 30_000);
 })();
+
+// Headless /chat surface for console-driven automation. Exposes the same
+// chat-loop the UI uses as `window.vb.*` so an external driver (Claude in
+// a browser tab, a Playwright script, a manual debugger) can run prompts,
+// inspect state, and invoke agents without touching the DOM.
+function installHeadlessConsoleApi() {
+  const vb = {
+    async chat(text) {
+      if (typeof text !== 'string' || !text.trim()) {
+        throw new Error('vb.chat: pass a non-empty string');
+      }
+      state.conversation_history.push({ role: 'user', content: text });
+      try {
+        const resp = await chatLoop(text);
+        state.conversation_history.push({ role: 'assistant', content: resp.text });
+        state.fullTranscript.push({
+          at: new Date().toISOString(),
+          user: text, assistant: resp.text,
+          voice: resp.voice, twin: resp.twin,
+          agent_logs: resp.agent_logs, model: state.settings.model,
+        });
+        return resp;
+      } catch (e) {
+        // Roll back the user message so a retry doesn't double-up history
+        state.conversation_history.pop();
+        throw e;
+      }
+    },
+    history() { return state.conversation_history.map(m => ({ ...m })); },
+    transcript() { return state.fullTranscript.map(t => ({ ...t })); },
+    reset() {
+      state.conversation_history = [];
+      state.fullTranscript = [];
+      return 'reset';
+    },
+    agents() {
+      return Array.from(state.hand).map(filename => {
+        const card = state.binder.cards.find(c => c.filename === filename);
+        if (!card) return { filename, name: '?', loaded: false };
+        const p = RAPP.Agent.parseAgentSource(card.source, card.filename);
+        return {
+          filename,
+          name: p.name,
+          className: p.className,
+          description: (p.metadata && p.metadata.description) || '',
+        };
+      });
+    },
+    async runAgent(name, kwargs) {
+      const card = findCardByAgentName(name);
+      if (!card) throw new Error(`vb.runAgent: agent '${name}' not in hand`);
+      return await runAgent(card, kwargs || {}, null);
+    },
+    async eval(py) {
+      await ensurePyodide();
+      return await state.pyodide.runPythonAsync(py);
+    },
+    async bootPyodide() {
+      await ensurePyodide();
+      return 'pyodide ready';
+    },
+    setModel(id) {
+      state.settings.model = id;
+      LS.set('settings', state.settings);
+      refreshStatus();
+      return id;
+    },
+    setProvider(p) {
+      state.settings.provider = p;
+      LS.set('settings', state.settings);
+      refreshProviderUI();
+      refreshModelOptions();
+      refreshStatus();
+      return p;
+    },
+    status() {
+      return {
+        provider: state.settings.provider,
+        model: state.settings.model,
+        signedIn: !!(activeApiKey() || (state.settings.provider === 'copilot' && state.settings.ghuToken)),
+        agentsInHand: Array.from(state.hand),
+        historyLength: state.conversation_history.length,
+        pyodideLoaded: !!state.pyodide,
+      };
+    },
+    state,
+    help() {
+      const lines = [
+        'vb.chat(text)            send a message → {text,voice,twin,agent_logs}',
+        'vb.history()             current conversation_history (copy)',
+        'vb.transcript()          full per-turn transcript with metadata',
+        'vb.reset()               clear conversation + transcript',
+        'vb.agents()              agents currently in the hand',
+        'vb.runAgent(name,args)   invoke an agent directly (skips the LLM)',
+        'vb.eval(pyCode)          run Python in Pyodide (auto-boots)',
+        'vb.bootPyodide()         force Pyodide bring-up',
+        'vb.setModel(id)          switch model (use a model id from vb.status())',
+        'vb.setProvider(p)        copilot | github | openai | custom',
+        'vb.status()              provider, model, signin, hand, history len',
+        'vb.state                 raw state reference (mutate at your own risk)',
+        '',
+        'vb.capabilities          {geolocation, screen, fs, opfs, clipboard, ...}',
+        'vb.device.geolocation()              GPS position',
+        'vb.device.captureScreen()            one PNG frame from a chosen screen/window/tab',
+        'vb.device.openFile(accept)           file picker → {name,type,size,text}',
+        'vb.device.saveFile(name, content)    save dialog',
+        'vb.device.opfsRead/Write/List(...)   sandboxed origin-private filesystem',
+        'vb.device.clipboardRead/Write(...)   clipboard text',
+        'vb.device.speak(text)                text-to-speech',
+        'vb.device.listen(timeout)            speech-to-text',
+        'vb.device.takePhoto()                mobile camera → {dataUrl,...}',
+        'vb.device.notify(title, opts)        local notification (PWA-installed: lock-screen)',
+        'vb.device.badge(n)                   set/clear app-icon badge (installed PWA)',
+        'vb.device.persistStorage()           opt into persistent storage',
+        'vb.device.wakeLock(true|false)       keep screen on / release',
+        'vb.device.vibrate(ms | [on,off,...]) haptic feedback',
+      ];
+      console.log(lines.join('\n'));
+      return lines;
+    },
+  };
+  window.vb = vb;
+  installDeviceCapabilities();
+  const live = Object.entries(window.vb.capabilities)
+    .filter(([, v]) => v).map(([k]) => k).join(', ');
+  console.log('%c[vbrainstem] headless API ready — vb.help() for commands', 'color:#3fb950');
+  console.log(`%c[vbrainstem] device caps: ${live || '(none)'}`, 'color:#8b949e');
+}
+
+// Bridge from Python agents to browser device APIs. Each capability is an
+// async function on `window.vb.device`; gesture-gated calls (screen share,
+// file picker, mic) surface a small "Allow / Deny" banner that captures
+// the click as the activation token, then runs the API. Non-gated calls
+// (OPFS, speech synthesis) just go through. Pyodide's utils.device wraps
+// these via `from js import window; await window.vb.device.X()`.
+function installDeviceCapabilities() {
+  const capabilities = {
+    geolocation: 'geolocation' in navigator,
+    screen: !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia),
+    camera: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia),
+    fs: 'showOpenFilePicker' in window,
+    opfs: !!(navigator.storage && navigator.storage.getDirectory),
+    clipboard: !!navigator.clipboard,
+    speechSynthesis: 'speechSynthesis' in window,
+    speechRecognition: !!(window.SpeechRecognition || window.webkitSpeechRecognition),
+    notifications: 'Notification' in window,
+    badge: 'setAppBadge' in navigator,
+    wakeLock: !!navigator.wakeLock,
+    persistStorage: !!(navigator.storage && navigator.storage.persist),
+    vibrate: 'vibrate' in navigator,
+    push: 'PushManager' in window && 'serviceWorker' in navigator,
+    bluetooth: 'bluetooth' in navigator,
+    usb: 'usb' in navigator,
+    serial: 'serial' in navigator,
+    hid: 'hid' in navigator,
+    pwaInstalled: window.matchMedia('(display-mode: standalone)').matches
+                  || window.matchMedia('(display-mode: window-controls-overlay)').matches
+                  || window.navigator.standalone === true,
+  };
+
+  // Gesture-gating modal — shown for capabilities that require fresh user
+  // action. The user's click on "Allow" counts as an activation token for
+  // any API called synchronously inside the resolve handler (transient
+  // activation lasts ~5s, plenty for the await chain that follows).
+  function requestGesture(capability, reason) {
+    return new Promise((resolve, reject) => {
+      const m = document.createElement('div');
+      m.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;background:#161b22;border:1px solid #30363d;border-left:3px solid #1f6feb;border-radius:8px;padding:14px 16px;box-shadow:0 6px 20px rgba(0,0,0,0.6);max-width:340px;font-family:inherit;color:#e6edf3';
+      m.innerHTML = `
+        <div style="font-size:13px;font-weight:600;margin-bottom:6px">Agent requesting: ${capability}</div>
+        <div style="font-size:11px;color:#8b949e;margin-bottom:12px;line-height:1.45">${reason || 'Click Allow to grant access.'}</div>
+        <div style="display:flex;gap:6px;justify-content:flex-end">
+          <button class="btn" data-vb-action="deny">Deny</button>
+          <button class="btn primary" data-vb-action="allow">Allow</button>
+        </div>`;
+      document.body.appendChild(m);
+      m.addEventListener('click', e => {
+        const a = e.target.dataset.vbAction;
+        if (!a) return;
+        m.remove();
+        if (a === 'allow') resolve();
+        else reject(new Error(`user denied: ${capability}`));
+      });
+    });
+  }
+
+  const device = {
+    async geolocation() {
+      if (!capabilities.geolocation) throw new Error('geolocation not supported');
+      try {
+        const perm = await navigator.permissions.query({ name: 'geolocation' });
+        if (perm.state === 'denied') throw new Error('geolocation permission denied');
+      } catch { /* permissions.query unsupported in some browsers — fall through */ }
+      return new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(
+          pos => resolve({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+            accuracy: pos.coords.accuracy,
+            altitude: pos.coords.altitude,
+            heading: pos.coords.heading,
+            speed: pos.coords.speed,
+            timestamp: pos.timestamp,
+          }),
+          err => reject(new Error(`geolocation: ${err.message}`)),
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+      });
+    },
+
+    async captureScreen() {
+      if (!capabilities.screen) throw new Error('screen capture not supported');
+      await requestGesture('Screen capture',
+        'Click Allow, then choose a tab/window/screen to share. The agent receives one PNG frame.');
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+      const track = stream.getVideoTracks()[0];
+      let width, height, source;
+      if (typeof ImageCapture !== 'undefined') {
+        const ic = new ImageCapture(track);
+        const bitmap = await ic.grabFrame();
+        width = bitmap.width; height = bitmap.height; source = bitmap;
+      } else {
+        // Firefox fallback: render one frame from a <video>.
+        const v = document.createElement('video');
+        v.srcObject = stream;
+        await new Promise(r => v.onloadedmetadata = r);
+        await v.play();
+        await new Promise(r => requestAnimationFrame(r));
+        width = v.videoWidth; height = v.videoHeight; source = v;
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(source, 0, 0);
+      track.stop();
+      return { dataUrl: canvas.toDataURL('image/png'), width, height };
+    },
+
+    async openFile(accept) {
+      if (!capabilities.fs) throw new Error('File System Access API not supported (Chromium-only)');
+      await requestGesture('Open file', `Choose a file${accept ? ' (' + accept + ')' : ''}.`);
+      const types = accept
+        ? [{ description: 'Files', accept: { '*/*': accept.split(',').map(s => s.trim()) } }]
+        : [];
+      const [handle] = await window.showOpenFilePicker({ types, multiple: false });
+      const file = await handle.getFile();
+      return { name: file.name, type: file.type, size: file.size, text: await file.text() };
+    },
+
+    async saveFile(suggestedName, content) {
+      if (!capabilities.fs) throw new Error('File System Access API not supported (Chromium-only)');
+      await requestGesture('Save file', `Save "${suggestedName}".`);
+      const handle = await window.showSaveFilePicker({ suggestedName });
+      const writable = await handle.createWritable();
+      await writable.write(content);
+      await writable.close();
+      return true;
+    },
+
+    async opfsRead(path) {
+      if (!capabilities.opfs) throw new Error('OPFS not supported');
+      const root = await navigator.storage.getDirectory();
+      const parts = String(path).split('/').filter(Boolean);
+      const fname = parts.pop();
+      let dir = root;
+      for (const p of parts) dir = await dir.getDirectoryHandle(p, { create: false });
+      const fh = await dir.getFileHandle(fname);
+      return await (await fh.getFile()).text();
+    },
+
+    async opfsWrite(path, content) {
+      if (!capabilities.opfs) throw new Error('OPFS not supported');
+      const root = await navigator.storage.getDirectory();
+      const parts = String(path).split('/').filter(Boolean);
+      const fname = parts.pop();
+      let dir = root;
+      for (const p of parts) dir = await dir.getDirectoryHandle(p, { create: true });
+      const fh = await dir.getFileHandle(fname, { create: true });
+      const w = await fh.createWritable();
+      await w.write(content);
+      await w.close();
+      return true;
+    },
+
+    async opfsList(prefix) {
+      if (!capabilities.opfs) throw new Error('OPFS not supported');
+      const root = await navigator.storage.getDirectory();
+      const parts = String(prefix || '').split('/').filter(Boolean);
+      let dir = root;
+      for (const p of parts) {
+        try { dir = await dir.getDirectoryHandle(p, { create: false }); }
+        catch { return []; }
+      }
+      const out = [];
+      for await (const [name, h] of dir.entries()) out.push({ name, kind: h.kind });
+      return out;
+    },
+
+    async clipboardRead() {
+      if (!capabilities.clipboard) throw new Error('Clipboard API not supported');
+      try { return await navigator.clipboard.readText(); }
+      catch {
+        await requestGesture('Clipboard read', 'Allow agent to read clipboard.');
+        return await navigator.clipboard.readText();
+      }
+    },
+
+    async clipboardWrite(text) {
+      if (!capabilities.clipboard) throw new Error('Clipboard API not supported');
+      try { await navigator.clipboard.writeText(text); return true; }
+      catch {
+        await requestGesture('Clipboard write', 'Allow agent to write to clipboard.');
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    },
+
+    async speak(text, lang) {
+      if (!capabilities.speechSynthesis) throw new Error('Speech synthesis not supported');
+      return new Promise(resolve => {
+        const u = new SpeechSynthesisUtterance(String(text));
+        if (lang) u.lang = lang;
+        u.onend = () => resolve(true);
+        u.onerror = () => resolve(false);
+        speechSynthesis.speak(u);
+      });
+    },
+
+    async listen(timeout, lang) {
+      if (!capabilities.speechRecognition) throw new Error('Speech recognition not supported');
+      const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      return new Promise((resolve, reject) => {
+        const r = new Rec();
+        r.lang = lang || 'en-US';
+        r.continuous = false;
+        r.interimResults = false;
+        let done = false;
+        const timer = setTimeout(() => {
+          if (done) return; done = true;
+          try { r.stop(); } catch {}
+          resolve('');
+        }, ((+timeout) || 30) * 1000);
+        r.onresult = e => {
+          if (done) return; done = true;
+          clearTimeout(timer);
+          resolve(e.results[0][0].transcript);
+        };
+        r.onerror = e => {
+          if (done) return; done = true;
+          clearTimeout(timer);
+          reject(new Error(`speech recognition: ${e.error}`));
+        };
+        r.start();
+      });
+    },
+
+    // Mobile camera — opens the native camera (rear-facing on phones).
+    // Returns {dataUrl, type, size, name}. The hidden <input> with
+    // capture=environment is the only iOS-Safari-compatible way to do
+    // this; getUserMedia would also work but iOS users prefer the
+    // native camera UI (preview, retake, flip).
+    async takePhoto() {
+      return new Promise((resolve, reject) => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.capture = 'environment';
+        input.style.cssText = 'position:fixed;left:-9999px;top:-9999px';
+        input.addEventListener('change', () => {
+          const file = input.files && input.files[0];
+          input.remove();
+          if (!file) { reject(new Error('no photo taken')); return; }
+          const reader = new FileReader();
+          reader.onload = () => resolve({
+            dataUrl: reader.result,
+            type: file.type,
+            size: file.size,
+            name: file.name || 'photo.jpg',
+          });
+          reader.onerror = () => reject(new Error('photo read failed'));
+          reader.readAsDataURL(file);
+        });
+        document.body.appendChild(input);
+        input.click();
+        // Safety: if the user cancels without firing change, clean up
+        // after 5 minutes so we don't leak the input element forever.
+        setTimeout(() => { try { input.remove(); } catch {} }, 5 * 60_000);
+      });
+    },
+
+    // ── PWA-amplified capabilities ─────────────────────────────────
+    // These all work best (or only) once the page is installed as a
+    // PWA. iOS in particular gates Push, Badge, and Wake Lock behind
+    // Add-to-Home-Screen (since 16.4). The A2HS overlay teaches the
+    // install gesture so users actually get here.
+
+    async notify(title, opts) {
+      if (!capabilities.notifications) throw new Error('Notifications API not supported');
+      if (Notification.permission === 'default') {
+        const result = await Notification.requestPermission();
+        if (result !== 'granted') return false;
+      }
+      if (Notification.permission !== 'granted') return false;
+      try {
+        const reg = await (navigator.serviceWorker && navigator.serviceWorker.getRegistration());
+        if (reg) await reg.showNotification(String(title), opts || {});
+        else new Notification(String(title), opts || {});
+      } catch (e) {
+        new Notification(String(title), opts || {});
+      }
+      return true;
+    },
+
+    async badge(count) {
+      if (!capabilities.badge) return false;
+      const n = +count || 0;
+      if (n <= 0) {
+        if (navigator.clearAppBadge) await navigator.clearAppBadge();
+      } else {
+        await navigator.setAppBadge(n);
+      }
+      return true;
+    },
+
+    async persistStorage() {
+      if (!capabilities.persistStorage) return false;
+      return await navigator.storage.persist();
+    },
+
+    async wakeLock(enable) {
+      if (!capabilities.wakeLock) throw new Error('Wake Lock not supported');
+      if (enable === false) {
+        if (state._wakeLock) {
+          try { await state._wakeLock.release(); } catch {}
+          state._wakeLock = null;
+        }
+        return false;
+      }
+      if (state._wakeLock) return true;
+      state._wakeLock = await navigator.wakeLock.request('screen');
+      state._wakeLock.addEventListener('release', () => { state._wakeLock = null; });
+      return true;
+    },
+
+    vibrate(pattern) {
+      if (!capabilities.vibrate) return false;
+      // Pyodide may pass an array as a JsProxy — convert.
+      let p = pattern;
+      if (p && typeof p.to_py === 'function') p = p.to_py();
+      if (p && typeof p === 'object' && 'length' in p) p = Array.from(p);
+      return navigator.vibrate(p == null ? 10 : p);
+    },
+  };
+
+  window.vb.capabilities = capabilities;
+  window.vb.device = device;
+}
+
+// Mic button — tap to record one utterance, transcribe, drop into the
+// chat input. Hidden when the browser doesn't support Web Speech recog
+// (Firefox-Android, older iOS, etc.) so it doesn't sit there as a dead
+// button. Toggle behavior: tap once to start, tap again to stop.
+function wireMicButton() {
+  const btn = document.getElementById('btn-mic');
+  if (!btn) return;
+  if (!window.vb?.capabilities?.speechRecognition) {
+    btn.hidden = true;
+    return;
+  }
+  btn.hidden = false;
+  let active = false;
+  btn.addEventListener('click', async () => {
+    if (active) return;
+    active = true;
+    btn.classList.add('recording');
+    try {
+      // Vibrate as a tactile "I'm listening" cue on phones.
+      if (navigator.vibrate) navigator.vibrate(15);
+      const text = await window.vb.device.listen(20, navigator.language || 'en-US');
+      if (text) {
+        const inp = document.getElementById('input');
+        if (inp) {
+          inp.value = inp.value ? (inp.value + ' ' + text) : text;
+          inp.dispatchEvent(new Event('input'));   // fire autoGrow
+          inp.focus();
+        }
+      }
+    } catch (e) {
+      console.warn('[mic] recognition failed:', e.message);
+    } finally {
+      active = false;
+      btn.classList.remove('recording');
+    }
+  });
+}
+
+// Add-to-Home-Screen flow.
+//
+// Goal: get users into installed-PWA mode ASAP so they unlock the
+// iOS-only capabilities (push, badges, wake lock, persistent storage).
+// iOS doesn't fire `beforeinstallprompt`, so for Apple devices we must
+// teach the Share → Add to Home Screen gesture explicitly. Android
+// Chrome/Edge does fire the event — we capture it and surface a
+// proper one-tap Install button instead.
+//
+// Display-mode `standalone` (or `window-controls-overlay`) means we're
+// already running as the installed PWA — don't show anything. The
+// "Not now" path doesn't mean "Never": dismissal sets a 7-day cooldown,
+// after which the persistent banner returns. Banner is also visible in
+// the meantime so users who change their mind can still install.
+function setupA2HS() {
+  const ua = navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream
+              || (ua.includes('Mac') && navigator.maxTouchPoints > 1);   // iPadOS
+  const isAndroid = /Android/.test(ua);
+  const isMobile = isIOS || isAndroid;
+  const isStandalone = !!window.vb?.capabilities?.pwaInstalled;
+
+  const overlay = document.getElementById('a2hs-overlay');
+  const banner  = document.getElementById('a2hs-banner');
+  const stepsIOS    = document.getElementById('a2hs-steps-ios');
+  const stepsDroid  = document.getElementById('a2hs-steps-android');
+  const desktopNote = document.getElementById('a2hs-desktop-note');
+  const installBtn  = document.getElementById('a2hs-android-install');
+  const dismissBtn  = document.getElementById('a2hs-dismiss');
+
+  if (isStandalone) {
+    document.body.classList.add('is-pwa-installed');
+    onPwaInstalled();
+    return;
+  }
+
+  let deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (installBtn) installBtn.hidden = false;
+  });
+  window.addEventListener('appinstalled', () => {
+    document.body.classList.add('is-pwa-installed');
+    deferredPrompt = null;
+    if (overlay) overlay.hidden = true;
+    if (banner)  banner.hidden  = true;
+    onPwaInstalled();
+  });
+
+  function show() {
+    if (!overlay) return;
+    if (stepsIOS)    stepsIOS.hidden    = !isIOS;
+    if (stepsDroid)  stepsDroid.hidden  = !(isAndroid && !deferredPrompt);
+    if (desktopNote) desktopNote.hidden = isMobile;
+    if (installBtn)  installBtn.hidden  = !(isAndroid && deferredPrompt);
+    overlay.hidden = false;
+    if (banner) banner.hidden = true;
+  }
+  function hide(remember) {
+    if (overlay) overlay.hidden = true;
+    if (remember) LS.set('a2hs_dismiss', Date.now());
+    if (banner)   banner.hidden  = false;
+  }
+
+  if (dismissBtn) dismissBtn.addEventListener('click', () => hide(true));
+  if (installBtn) installBtn.addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    try { await deferredPrompt.userChoice; } catch {}
+    deferredPrompt = null;
+    if (overlay) overlay.hidden = true;
+  });
+  if (banner) banner.addEventListener('click', show);
+
+  const lastDismiss = +(LS.get('a2hs_dismiss', 0) || 0);
+  const cooldown = 7 * 24 * 60 * 60 * 1000;
+  const recentlyDismissed = lastDismiss && (Date.now() - lastDismiss) < cooldown;
+
+  if (recentlyDismissed) {
+    if (banner) banner.hidden = false;
+  } else {
+    // Show the takeover quickly (100ms) so the user sees the install path
+    // immediately — the user explicitly asked for "right away" install
+    // visibility because every iOS capability we want is gated on it.
+    setTimeout(show, 100);
+  }
+}
+
+// Once we detect we're running as an installed PWA, opportunistically
+// claim persistent storage and pre-arm notifications. Both are silent
+// no-ops if unsupported or already in their target state.
+async function onPwaInstalled() {
+  try {
+    if (window.vb?.device?.persistStorage) {
+      const persisted = await window.vb.device.persistStorage();
+      console.log('[vbrainstem] storage persisted:', persisted);
+    }
+    if ('Notification' in window && Notification.permission === 'default') {
+      // Don't auto-prompt on boot — wait for a user-gesture path (e.g.,
+      // first agent that calls vb.device.notify, or a Settings toggle).
+      // Auto-prompts annoy users and tank grant rates.
+    }
+  } catch (e) {
+    console.warn('[vbrainstem] post-install setup:', e);
+  }
+}
 
 })();
 </script>
