@@ -1817,6 +1817,13 @@ def agents_import():
         result = egg_mod.unpack(blob)
         if not result.get("ok"):
             return jsonify({"error": result.get("error", "egg unpack failed")}), 400
+        # SPEC §11 — ensure workspace exists for the just-unpacked rapp
+        try:
+            from utils import workspace as _ws
+            if result.get("id"):
+                _ws.ensure_workspace(result["id"])
+        except Exception:
+            pass
         # Reload agents so newly-restored ones become live for /chat
         try:
             load_agents()
@@ -1858,6 +1865,17 @@ def agents_import():
     filepath = os.path.join(AGENTS_PATH, safe_name)
     with open(filepath, 'wb') as out:
         out.write(blob)
+
+    # SPEC §11 — drop-installed .py agents also get a per-rapp workspace.
+    # Identity is derived from the filename root (matches how agent
+    # discovery and the binder identify rapps elsewhere).
+    try:
+        from utils import workspace as _ws
+        rapp_id_guess = safe_name[:-len("_agent.py")] if safe_name.endswith("_agent.py") else safe_name[:-3]
+        if rapp_id_guess:
+            _ws.ensure_workspace(rapp_id_guess)
+    except Exception:
+        pass
 
     try:
         load_agents()
