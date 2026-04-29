@@ -116,14 +116,70 @@
   .login-btn:disabled { opacity: 0.5; cursor: default; }
   .device-code {
     font-family: "SF Mono", monospace;
-    font-size: 32px; font-weight: 700; letter-spacing: 4px;
-    color: #58a6ff; margin: 16px 0;
+    font-size: 32px; font-weight: 700; letter-spacing: 6px;
+    color: #3fb950; margin: 0;
   }
-  .login-status { color: #8b949e; font-size: 13px; margin-top: 16px; }
+  .device-code-box {
+    background: #0d1117;
+    border: 1px solid #238636;
+    border-radius: 8px;
+    padding: 18px 12px;
+    margin: 16px 0 14px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  body.light-mode .device-code-box {
+    background: #f6f8fa;
+    border-color: #2da44e;
+  }
+  .login-link-btn {
+    display: block;
+    background: #238636; color: #fff;
+    border: none; border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 14px; font-weight: 600;
+    text-align: center; text-decoration: none;
+    transition: background 0.15s;
+    margin-bottom: 14px;
+    word-break: break-all;
+  }
+  .login-link-btn:hover { background: #2ea043; }
+  .login-copy-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%;
+    background: #21262d; color: #e6edf3;
+    border: 1px solid #30363d; border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    margin-bottom: 10px;
+  }
+  .login-copy-btn:hover { background: #30363d; border-color: #484f58; }
+  .login-copy-btn.copied { background: #238636; color: #fff; border-color: #2ea043; }
+  .login-copy-btn .icon svg { width: 16px; height: 16px; fill: currentColor; }
+  body.light-mode .login-copy-btn {
+    background: #f6f8fa; color: #24292e; border-color: #d0d7de;
+  }
+  body.light-mode .login-copy-btn:hover { background: #eaeef2; }
+  .login-status { color: #8b949e; font-size: 13px; margin-top: 4px; }
   .login-success { color: #3fb950; }
+  .login-typing {
+    display: inline-flex; gap: 4px; vertical-align: middle; margin-right: 6px;
+  }
+  .login-typing span {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: #6e7681;
+    animation: login-typing-bounce 1.2s infinite ease-in-out;
+  }
+  .login-typing span:nth-child(2) { animation-delay: 0.2s; }
+  .login-typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes login-typing-bounce {
+    0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+    30% { opacity: 1; transform: translateY(-3px); }
+  }
   .code-row {
     display: flex; align-items: center; justify-content: center;
-    gap: 8px; margin: 16px 0;
+    gap: 8px;
   }
   .code-row .device-code { margin: 0; }
   .copy-btn {
@@ -1181,22 +1237,22 @@
       <span class="icon icon-xl"><svg viewBox="0 0 24 24"><path d="M13 3C9.2 3 6.2 5.9 6 9.7L4.1 12.6c-.3.5.1 1.1.7 1.1H6v3c0 1.1.9 2 2 2h1v3h7v-4.9c2.8-1.5 5-4.8 5-8.1 0-5-4.5-8-8-5zM9.5 9C8.7 9 8 8.3 8 7.5S8.7 6 9.5 6s1.5.7 1.5 1.5S10.3 9 9.5 9zm5 0c-.8 0-1.5-.7-1.5-1.5S13.7 6 14.5 6s1.5.7 1.5 1.5S15.3 9 14.5 9z"/></svg></span>
     </div>
     <h2>RAPP Brainstem</h2>
-    <p>Sign in with your GitHub account to use Copilot AI.</p>
+    <p>Uses GitHub's device-code flow to unlock the full Copilot model catalog (Claude, GPT-4o, o-series, Gemini, etc.) — your Copilot subscription is the engine.</p>
     <div id="login-step1">
-      <button class="login-btn" onclick="startLogin()">Sign in with GitHub</button>
+      <button class="login-btn" onclick="startLogin()">Sign in with GitHub &rarr;</button>
     </div>
     <div id="login-step2" style="display:none">
-      <p style="margin-bottom:8px">Enter this code on GitHub:</p>
-      <div class="code-row">
+      <p style="margin-bottom:0;font-size:13px;color:#8b949e">Open GitHub and enter this code:</p>
+      <div class="device-code-box">
         <div class="device-code" id="device-code"></div>
-        <button class="copy-btn" id="copy-code-btn" onclick="copyDeviceCode()" title="Copy code">
-          <span class="icon"><svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"/><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"/></svg></span>
-        </button>
       </div>
+      <button class="login-copy-btn" id="copy-code-btn" onclick="copyDeviceCode()">
+        <span class="icon"><svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"/><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"/></svg></span>
+        <span id="copy-code-label">Copy code</span>
+      </button>
       <div class="copy-toast" id="copy-toast">&nbsp;</div>
-      <a id="verify-link" href="#" target="_blank" style="color:#58a6ff;font-size:14px">Open GitHub &rarr;</a>
-      <div style="font-size:11px;color:#8b949e;margin-top:4px">If a new tab didn't open, click the link above</div>
-      <div class="login-status" id="login-status">Waiting for authorization...</div>
+      <a id="verify-link" href="#" target="_blank" rel="noopener" class="login-link-btn">https://github.com/login/device &rarr;</a>
+      <div class="login-status" id="login-status"><span class="login-typing"><span></span><span></span><span></span></span>waiting for you to authorize…</div>
     </div>
     <div id="login-step3" style="display:none">
       <div style="margin-bottom:16px;color:#3fb950;">
@@ -1389,9 +1445,9 @@
 
 <footer>
   <div id="starter-prompts">
-    <button class="starter-btn" onclick="useStarter('What exactly can you do?')">What can you do?</button>
-    <button class="starter-btn" onclick="useStarter('What rapplications are available in the public store, and which one should I install first?')">Browse the rapp store</button>
-    <button class="starter-btn" onclick="useStarter('Help me build a new tool.')">Help me build a new tool</button>
+    <button class="starter-btn" onclick="useStarter('Remember that I prefer concise responses.')">Remember that I prefer concise responses.</button>
+    <button class="starter-btn" onclick="useStarter('What do you remember about me?')">What do you remember about me?</button>
+    <button class="starter-btn" onclick="useStarter('What are the top 5 stories on Hacker News right now?')">What are the top 5 stories on Hacker News right now?</button>
   </div>
   <div class="toolbar-row">
     <div class="left">
@@ -1541,12 +1597,10 @@
       document.getElementById('login-step3').style.display = 'none';
       document.getElementById('device-code').textContent = d.user_code;
       document.getElementById('verify-link').href = d.verification_uri;
-      document.getElementById('login-status').textContent = 'Waiting for authorization...';
+      document.getElementById('login-status').innerHTML = '<span class="login-typing"><span></span><span></span><span></span></span>waiting for you to authorize…';
       document.getElementById('login-overlay').style.display = 'flex';
       loginInProgress = true;
       loginDismissed = false;
-      copyDeviceCode();
-      window.open(d.verification_uri, '_blank');
       pollAttempts = 0;
       pollLogin();
     } catch (e) {
@@ -1580,7 +1634,7 @@
         document.getElementById('login-step2').style.display = 'block';
         document.getElementById('device-code').textContent = d.user_code;
         document.getElementById('verify-link').href = d.verification_uri;
-        document.getElementById('login-status').textContent = 'Waiting for authorization...';
+        document.getElementById('login-status').innerHTML = '<span class="login-typing"><span></span><span></span><span></span></span>waiting for you to authorize…';
         loginInProgress = true;
         pollAttempts = 0;
         pollLogin();
@@ -2066,23 +2120,28 @@
   async function copyDeviceCode() {
     const code = document.getElementById('device-code').textContent;
     if (!code) return;
-    try {
-      await navigator.clipboard.writeText(code);
-      const btn = document.getElementById('copy-code-btn');
-      const toast = document.getElementById('copy-toast');
+    const btn = document.getElementById('copy-code-btn');
+    const label = document.getElementById('copy-code-label');
+    const toast = document.getElementById('copy-toast');
+    const flashCopied = () => {
       btn.classList.add('copied');
-      toast.textContent = 'Copied to clipboard';
+      if (label) { label._prev = label.textContent; label.textContent = 'Copied!'; }
+      if (toast) toast.textContent = 'Copied to clipboard';
       setTimeout(() => {
         btn.classList.remove('copied');
-        toast.innerHTML = '&nbsp;';
+        if (label && label._prev) { label.textContent = label._prev; label._prev = null; }
+        if (toast) toast.innerHTML = '&nbsp;';
       }, 2000);
+    };
+    try {
+      await navigator.clipboard.writeText(code);
+      flashCopied();
     } catch {
       const ta = document.createElement('textarea');
       ta.value = code; ta.style.position = 'fixed'; ta.style.opacity = '0';
       document.body.appendChild(ta); ta.select();
       document.execCommand('copy'); document.body.removeChild(ta);
-      document.getElementById('copy-toast').textContent = 'Copied to clipboard';
-      setTimeout(() => { document.getElementById('copy-toast').innerHTML = '&nbsp;'; }, 2000);
+      flashCopied();
     }
   }
 
@@ -2099,8 +2158,6 @@
       document.getElementById('login-step2').style.display = 'block';
       document.getElementById('device-code').textContent = d.user_code;
       document.getElementById('verify-link').href = d.verification_uri;
-      copyDeviceCode();
-      window.open(d.verification_uri, '_blank');
       pollAttempts = 0;
       pollLogin();
     } catch (e) {
@@ -3893,8 +3950,28 @@
     // Re-insert watermark
     const wm = document.createElement('div');
     wm.id = 'chat-watermark';
-    wm.innerHTML = 'Drag & Drop .py Agents Here <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>';
+    wm.innerHTML = 'Drag & Drop .py Agents or .rapplication.egg Bundles Here <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>';
     chat.appendChild(wm);
+    // If transcript is empty, show the welcome / quick-tour bubble so
+    // the chat window is never blank on load or after clearing.
+    if (!fullTranscript.length) {
+      const welcome = document.createElement('div');
+      welcome.className = 'msg system';
+      welcome.innerHTML = `
+        <div class="bubble">
+          <h2>Welcome to your local RAPP Brainstem!</h2>
+          <p>I am your local assistant powered by Copilot. Here is a quick tour to get you started:</p>
+          <ul>
+            <li><strong>Chat</strong>: Just ask me questions below to start building and researching!</li>
+            <li><strong>Agents Panel</strong>: Click the <svg class="iconify" style="vertical-align: middle; width: 1.25em; height: 1.25em;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v4h4v2h-4v4h-2v-4H7v-2h4z"/></svg> icon (top right) to view or remove installed tools.</li>
+            <li><strong>Rapplications</strong>: open the <a href="/binder" target="_blank">Binder</a> to browse and install bundled apps (agent + UI / service / state) from the public <a href="https://github.com/kody-w/RAPP_Store" target="_blank">RAPP store</a> — BookFactory, ExecBrief, Kanban, Dashboard, Webhook, and more.</li>
+            <li><strong>Add Skills</strong>: Drag and drop a <code>.py</code> agent — or a full <code>.rapplication.egg</code> bundle (agent + service + UI) exported from the <a href="https://kody-w.github.io/RAPP_Store/vbrainstem.html" target="_blank">vBrainstem</a> — directly onto this window. For bare single-file agents, browse the <a href="https://github.com/kody-w/RAR" target="_blank">RAR registry</a>.</li>
+          </ul>
+          <p><em>Click one of the prompts below to get started!</em></p>
+        </div>
+      `;
+      chat.appendChild(welcome);
+    }
     // Replay turns
     for (const turn of fullTranscript) {
       if (turn.role === 'user') appendMsg('user', turn.content);
