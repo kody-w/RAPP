@@ -482,7 +482,7 @@ class SwarmFactoryAgent(BasicAgent):
             return json.dumps({"status": "error",
                 "message": f"agents/{fname} already exists. Pick a different swarm_name or call uninstall first."})
 
-        with open(dest, "w") as f:
+        with open(dest, "w", encoding="utf-8") as f:
             f.write(agent_code)
 
         # Smoke-test the generated module by importing it. AST validation
@@ -609,7 +609,7 @@ class SwarmFactoryAgent(BasicAgent):
             if fname == "basic_agent.py":
                 continue
             try:
-                src = open(path).read()
+                src = open(path, encoding="utf-8").read()
                 tree = ast.parse(src, filename=fname)
                 classes = [n for n in tree.body if isinstance(n, ast.ClassDef)
                            and n.name != "BasicAgent"]
@@ -832,7 +832,7 @@ class SwarmFactoryAgent(BasicAgent):
         output_fname = f"{slug}_agent.py"
         brainstem_dir = os.path.dirname(agents_dir)
         output_path = os.path.join(brainstem_dir, output_fname)
-        with open(output_path, 'w') as f:
+        with open(output_path, 'w', encoding="utf-8") as f:
             f.write(out)
 
         n_lines = len(out.split('\n'))

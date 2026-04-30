@@ -91,14 +91,14 @@ _SENSES_DIR = os.path.join(_BASE_DIR, "utils", "senses")
 
 def _read():
     if os.path.exists(_STATE_FILE):
-        with open(_STATE_FILE) as f:
+        with open(_STATE_FILE, encoding="utf-8") as f:
             return json.load(f)
     return {"installed": []}
 
 
 def _write(data):
     os.makedirs(_DATA_DIR, exist_ok=True)
-    with open(_STATE_FILE, "w") as f:
+    with open(_STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
 
 

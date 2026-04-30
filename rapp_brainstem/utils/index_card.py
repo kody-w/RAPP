@@ -68,14 +68,14 @@ class IndexCard:
 
     def _read(self) -> dict:
         try:
-            with open(_path(self.turn_id), "r") as f:
+            with open(_path(self.turn_id), "r", encoding="utf-8") as f:
                 return json.load(f)
         except FileNotFoundError:
             return {}
 
     def _write(self, data: dict) -> None:
         data["updated_at"] = _now()
-        with open(_path(self.turn_id), "w") as f:
+        with open(_path(self.turn_id), "w", encoding="utf-8") as f:
             json.dump(data, f)
 
     def read(self) -> Optional[dict]:
@@ -209,7 +209,7 @@ def current() -> Union[IndexCard, _NoopCard]:
 def read_by_turn(turn_id: str) -> Optional[dict]:
     """Used by the /card/<turn_id> endpoint — no binding needed."""
     try:
-        with open(_path(turn_id), "r") as f:
+        with open(_path(turn_id), "r", encoding="utf-8") as f:
             return json.load(f)
     except FileNotFoundError:
         return None
