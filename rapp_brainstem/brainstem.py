@@ -87,7 +87,7 @@ TWIN_MODE   = os.getenv("TWIN_MODE", "true").lower() == "true"
 VOICE_ZIP_PW = os.getenv("VOICE_ZIP_PASSWORD", "").encode() or None
 
 _version_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "VERSION")
-VERSION = open(_version_file).read().strip() if os.path.exists(_version_file) else "0.0.0"
+VERSION = open(_version_file, encoding="utf-8").read().strip() if os.path.exists(_version_file) else "0.0.0"
 
 # Tier-2 / CommunityRAPP parity: every chat request can carry a `user_guid`
 # identifying who's calling. Default = an INTENTIONALLY INVALID UUID — the
@@ -185,7 +185,7 @@ def _tlog_save():
     try:
         with _flight_log_lock:
             snapshot = list(_flight_log)
-        with open(_flight_log_file, "w") as f:
+        with open(_flight_log_file, "w", encoding="utf-8") as f:
             json.dump(snapshot, f)
     except Exception:
         pass
@@ -196,7 +196,7 @@ def _tlog_load():
     if not os.path.exists(_flight_log_file):
         return
     try:
-        with open(_flight_log_file) as f:
+        with open(_flight_log_file, encoding="utf-8") as f:
             data = json.load(f)
         if isinstance(data, list):
             with _flight_log_lock:
@@ -343,7 +343,7 @@ def _read_token_file():
     if not os.path.exists(_token_file):
         return None
     try:
-        with open(_token_file) as f:
+        with open(_token_file, encoding="utf-8") as f:
             raw = f.read().strip()
         if not raw:
             return None
@@ -406,7 +406,7 @@ def save_github_token(token, refresh_token=None):
         "refresh_token": refresh_token or existing.get("refresh_token"),
         "saved_at": time.time(),
     }
-    with open(_token_file, "w") as f:
+    with open(_token_file, "w", encoding="utf-8") as f:
         json.dump(data, f)
     _tlog("auth.token_saved", {"prefix": token[:4], "has_refresh": bool(refresh_token)})
     print(f"[brainstem] GitHub token saved (prefix: {token[:4]}...)")
@@ -444,7 +444,7 @@ def _load_copilot_cache():
     if not os.path.exists(_copilot_cache_file):
         return None
     try:
-        with open(_copilot_cache_file) as f:
+        with open(_copilot_cache_file, encoding="utf-8") as f:
             data = json.load(f)
         if data.get("token") and time.time() < data.get("expires_at", 0) - 60:
             return data
@@ -455,7 +455,7 @@ def _load_copilot_cache():
 def _save_copilot_cache(token, endpoint, expires_at):
     """Cache Copilot API token to disk so it survives restarts."""
     try:
-        with open(_copilot_cache_file, "w") as f:
+        with open(_copilot_cache_file, "w", encoding="utf-8") as f:
             json.dump({"token": token, "endpoint": endpoint, "expires_at": expires_at}, f)
     except Exception:
         pass
@@ -578,7 +578,7 @@ def _save_pending_login():
     """Persist pending device code to disk so it survives server restarts."""
     try:
         if _pending_login:
-            with open(_pending_login_file, "w") as f:
+            with open(_pending_login_file, "w", encoding="utf-8") as f:
                 json.dump(_pending_login, f)
         elif os.path.exists(_pending_login_file):
             os.remove(_pending_login_file)
@@ -591,7 +591,7 @@ def _load_pending_login():
     if not os.path.exists(_pending_login_file):
         return
     try:
-        with open(_pending_login_file) as f:
+        with open(_pending_login_file, encoding="utf-8") as f:
             data = json.load(f)
         if data.get("device_code") and time.time() < data.get("expires_at", 0):
             _pending_login = data
@@ -768,7 +768,7 @@ def load_soul():
         print(f"[brainstem] Warning: soul file not found at {SOUL_PATH}, using default.")
         _soul_cache = "You are a helpful AI assistant."
         return _soul_cache
-    with open(SOUL_PATH, "r") as f:
+    with open(SOUL_PATH, "r", encoding="utf-8") as f:
         _soul_cache = f.read().strip()
     print(f"[brainstem] Soul loaded: {SOUL_PATH}")
     return _soul_cache
@@ -1986,7 +1986,7 @@ def rapps_export_rapp(rapp_id):
     entry = {}
     if os.path.exists(binder_state_path):
         try:
-            with open(binder_state_path) as f:
+            with open(binder_state_path, encoding="utf-8") as f:
                 state = json.load(f)
             entry = next((e for e in state.get("installed", []) if e.get("id") == rapp_id), {}) or {}
         except Exception:

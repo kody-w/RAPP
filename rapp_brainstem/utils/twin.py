@@ -77,7 +77,7 @@ def log_events(root: str | Path, probes: list, calibrations: list) -> None:
         lines.append(json.dumps({"event": "probe", "ts": ts, **p}, ensure_ascii=False))
     for c in calibrations:
         lines.append(json.dumps({"event": "calibration", "ts": ts, **c}, ensure_ascii=False))
-    with path.open("a") as f:
+    with path.open("a", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
 
 
