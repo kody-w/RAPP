@@ -328,6 +328,20 @@ check_prereqs() {
     fi
 }
 
+# Slim clone: pull only rapp_brainstem/ from kody-w/RAPP via partial +
+# sparse-checkout. The brainstem is the only tier the install one-liner
+# needs to materialize; rapp_swarm/, worker/, pages/, tests/, installer/
+# stay in the object DB and can still be checked out on demand
+# (e.g. binder_service.py restore at line ~580 — git keeps the blobs).
+# Users who later want the swarm tier or worker run their own clone.
+clone_brainstem_sparse() {
+    local dest="$1"
+    git clone --quiet --filter=blob:none --no-checkout "$REPO_URL" "$dest" || return 1
+    git -C "$dest" sparse-checkout init --cone
+    git -C "$dest" sparse-checkout set rapp_brainstem
+    git -C "$dest" checkout --quiet main
+}
+
 install_brainstem() {
     echo ""
     echo "Installing RAPP Brainstem..."
@@ -414,12 +428,7 @@ install_brainstem() {
                 echo "  Re-cloning from scratch to recover..."
                 cd "$BRAINSTEM_HOME"
                 rm -rf "$BRAINSTEM_HOME/src"
-                # Full clone — users typically deploy the swarm tier and worker
-                # later, and the install one-liner is the path everyone takes.
-                # The catalog (rapp_store) is the only repo that's been split out;
-                # everything else (rapp_brainstem, rapp_swarm, worker, installer,
-                # pages, tests) ships as a single tree.
-                if git clone --quiet "$REPO_URL" "$BRAINSTEM_HOME/src"; then
+                if clone_brainstem_sparse "$BRAINSTEM_HOME/src"; then
                     if [ -n "$PIN_TAG" ]; then
                         cd "$BRAINSTEM_HOME/src"
                         git checkout --quiet "$PIN_TAG" 2>/dev/null || \
@@ -476,10 +485,7 @@ install_brainstem() {
     else
         echo "  Fresh install — cloning repository..."
         rm -rf "$BRAINSTEM_HOME/src" 2>/dev/null || true
-        # Full clone of kody-w/RAPP — engine, swarm, worker, installer, pages,
-        # tests. The rapp_store catalog is in a separate repo, fetched at
-        # runtime via RAPPSTORE_URL.
-        git clone --quiet "$REPO_URL" "$BRAINSTEM_HOME/src"
+        clone_brainstem_sparse "$BRAINSTEM_HOME/src"
         if [ -n "$PIN_TAG" ]; then
             cd "$BRAINSTEM_HOME/src"
             if git checkout --quiet "$PIN_TAG" 2>/dev/null; then
