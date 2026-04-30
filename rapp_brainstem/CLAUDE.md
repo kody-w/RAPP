@@ -23,9 +23,26 @@ python3 -m pytest test_local_agents.py -v
 
 # Run a single test
 python3 -m pytest test_local_agents.py::TestLocalStorage::test_write_and_read -v
+
+# Regression tests (stdlib only, also run in CI + pre-commit)
+python3 test_regressions.py
 ```
 
 No build step, linter, or type checker is configured.
+
+## Pinned regressions
+
+`test_regressions.py` is the gate that prevents previously-fixed bugs from
+coming back. Each test names the PR that introduced its guarantee — read
+that PR before deleting or relaxing a check. Currently guards:
+
+- **#29** — chat UI `API` constant must be same-origin (no hardcoded `:7071`).
+- **#30** — every text-mode `open()` / `read_text()` / `write_text()` in
+  this package must pass `encoding="utf-8"` (Windows non-UTF-8 locale fix).
+
+The same script runs as a GitHub Action on PRs touching `rapp_brainstem/`
+and as a `pre-commit` hook locally (see `.pre-commit-config.yaml` at the
+repo root).
 
 ## Architecture
 
