@@ -46,7 +46,7 @@ That's the whole mechanism. The kernel never imports boot.py. The kernel never k
 | Body_function dispatch (`/api/<name>/<path>`) | `body_functions_loader.py` + `utils/body_functions/*_body_function.py` | Doesn't. Boot sidecar attaches. |
 | Static `/web/<path>` mount | `boot.py` + `utils/web/*` | Doesn't. Boot sidecar attaches. |
 | **Sense composition** (any `*_sense.py` → soul prompt + delimiter splitter) | `senses_loader.py` + `utils/senses/*_sense.py` | Doesn't. Boot sidecar attaches. |
-| **vBrainstem mirror** at `/vbrainstem` (the simulator UI as a discoverable peer view of the kernel) | `boot.py` + `utils/web/index.html` | Doesn't. Boot sidecar attaches. |
+| **vBrainstem** (the simulator UI — Pyodide sandbox + in-browser agent runtime) | `utils/web/index.html`, served by the existing `/web/` mount at `/web/index.html` | Already addressable through the static mount; no extra route needed. |
 | Twin frames, index_card polling, egg packing | `utils/{frames,index_card,egg}.py` + body_functions that consume them | Future — boot sidecar can attach more. |
 
 The kernel stays exactly as small as Article XXXII demands ("kernel is what /chat requires"). The body grows around it.
@@ -61,17 +61,11 @@ The canonical kernel only knows `|||VOICE|||`, and only when `VOICE_MODE=true`. 
 
 A new sense is one new file. The kernel never learns about it; the sidecar discovers it on next boot.
 
-## vBrainstem mirror at /vbrainstem
+## The vBrainstem in its simulated environment
 
-The vBrainstem (`utils/web/index.html`) is a self-contained browser-side simulator: Pyodide sandbox, in-browser agent runtime, catalog client. It can run standalone (fetching the catalog from GitHub Pages) or paired with a real kernel (using the kernel's `/chat`, `/agents`, `/api/<name>/<path>` as its backend).
+The vBrainstem lives in `utils/web/index.html` — a self-contained browser-side simulator: Pyodide sandbox, in-browser agent runtime, catalog client. It runs standalone (fetching the catalog from GitHub Pages) or paired with the local kernel (using `/chat`, `/agents`, `/api/<name>/<path>` as its backend).
 
-"Mirror the vBrainstem to the kernel in its simulated environment" means: serve the simulator as a discoverable entrypoint of the kernel itself. The sidecar adds three routes:
-
-- `GET /vbrainstem` → `utils/web/index.html` (the simulator's entry HTML).
-- `GET /vbrainstem/` → same.
-- `GET /vbrainstem/<path:rest>` → any sibling asset under `utils/web/`.
-
-The simulator's network calls land on the same kernel that's serving its HTML — the simulated environment is wired into the live local brainstem. `/web/` continues to serve the same files for body_function viewers; `/vbrainstem` is the explicit name for "open the simulator," not buried under generic static.
+It does not need a dedicated route. The boot sidecar's `/web/` mount already serves it at `/web/index.html`, alongside the rest of `utils/web/`. The simulated environment talks to whatever kernel is hosting it; when that's the local brainstem, the simulator's `/chat` calls land on the same Flask app that served the HTML. One file, one home.
 
 ## What `python brainstem.py` still does
 

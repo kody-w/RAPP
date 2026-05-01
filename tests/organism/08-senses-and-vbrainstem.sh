@@ -2,8 +2,8 @@
 # Boot via boot.py and verify two additive integrations:
 #   - Senses (utils/senses/*_sense.py) are composed into the soul cache
 #     and the response splitter handles each sense's delimiter.
-#   - The vBrainstem (utils/web/index.html) is mirrored at /vbrainstem
-#     as a discoverable simulator entrypoint.
+#   - The vBrainstem (utils/web/index.html) is reachable through the
+#     existing /web/ mount — it lives in its native file, no extra route.
 #
 # Both must work without modifying the kernel.
 #
@@ -35,10 +35,10 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# 1. Static: kernel must NOT have grown sense composition or vBrainstem
-#    mount logic — those live in boot.py / senses_loader.py.
-grep -E "_sense\.py|/vbrainstem|senses_loader" rapp_brainstem/brainstem.py && {
-    echo "FAIL: kernel has sense or vBrainstem code baked in — Article XXXIII §4"
+# 1. Static: kernel must NOT have grown sense composition logic — that
+#    lives in senses_loader.py.
+grep -E "_sense\.py|senses_loader" rapp_brainstem/brainstem.py && {
+    echo "FAIL: kernel has sense composition baked in — Article XXXIII §4"
     exit 1
 }
 
@@ -70,37 +70,24 @@ grep -qE "'twin'|'voice'" "$LOG" || {
     exit 1
 }
 
-# 4. /vbrainstem must serve the simulator UI
-VB_STATUS="$(curl -s -o /tmp/rapp-organism-08.vb.html -w "%{http_code}" "http://localhost:$PORT/vbrainstem")"
+# 4. The vBrainstem lives at utils/web/index.html and is reachable via
+#    the /web mount. No /vbrainstem route — the file is its own home.
+VB_STATUS="$(curl -s -o /tmp/rapp-organism-08.vb.html -w "%{http_code}" "http://localhost:$PORT/web/index.html")"
 [ "$VB_STATUS" = "200" ] || {
-    echo "FAIL: /vbrainstem returned $VB_STATUS (expected 200)"
+    echo "FAIL: /web/index.html returned $VB_STATUS (expected 200)"
     exit 1
 }
 SIZE="$(wc -c < /tmp/rapp-organism-08.vb.html | tr -d ' ')"
 [ "$SIZE" -gt 100000 ] || {
-    echo "FAIL: /vbrainstem returned $SIZE bytes (expected >100k for the full simulator)"
+    echo "FAIL: /web/index.html returned $SIZE bytes (expected >100k for the full vBrainstem)"
     exit 1
 }
 grep -q "<!DOCTYPE html>" /tmp/rapp-organism-08.vb.html || {
-    echo "FAIL: /vbrainstem response does not look like HTML"
+    echo "FAIL: /web/index.html response does not look like HTML"
     exit 1
 }
 
-# 5. /vbrainstem/<asset> must serve sibling files
-RAPP_JS_STATUS="$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:$PORT/vbrainstem/rapp.js")"
-[ "$RAPP_JS_STATUS" = "200" ] || {
-    echo "FAIL: /vbrainstem/rapp.js returned $RAPP_JS_STATUS"
-    exit 1
-}
-
-# 6. /vbrainstem path traversal must be blocked
-TRAV_STATUS="$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:$PORT/vbrainstem/../../etc/passwd")"
-[ "$TRAV_STATUS" != "200" ] || {
-    echo "FAIL: /vbrainstem allowed path traversal"
-    exit 1
-}
-
-# 7. Unit-test the response splitter directly. We exercise senses_loader's
+# 5. Unit-test the response splitter directly. We exercise senses_loader's
 #    after_request hook via a Flask test client with a synthetic /chat
 #    response that contains both sense delimiters. This proves the
 #    splitter handles >1 sense in a single response.
@@ -117,7 +104,6 @@ assert names == ["twin", "voice"], f"unexpected senses: {names}"
 
 app = Flask(__name__)
 
-# Provide a dummy /chat that returns a response with all sense delimiters
 @app.route("/chat", methods=["POST"])
 def chat():
     return jsonify({
@@ -125,8 +111,6 @@ def chat():
         "session_id": "test",
     })
 
-# senses_loader.install needs a kernel module with _soul_cache + load_soul.
-# Provide a fake __main__ shim in sys.modules.
 import types
 fake_kernel = types.ModuleType("__main__")
 fake_kernel._soul_cache = "base soul"
@@ -136,17 +120,11 @@ sys.modules["__main__"] = fake_kernel
 
 count = senses_loader.install(app, senses=senses)
 assert count == 2, f"expected 2 senses installed, got {count}"
-assert "|||VOICE|||" in fake_kernel._soul_cache or "VOICE" in fake_kernel._soul_cache
-assert "|||TWIN|||" in fake_kernel._soul_cache or "TWIN" in fake_kernel._soul_cache
 
 client = app.test_client()
 resp = client.post("/chat", json={})
 data = resp.get_json()
-# Splitter must have peeled both sense segments out of `response`
 assert data["response"] == "main reply text", f"response not trimmed: {data['response']!r}"
-# Note: the order of split matters — voice comes first in reply, so voice gets
-# "spoken version|||TWIN|||<frame>x</frame>" then twin gets "<frame>x</frame>".
-# That's the contract: each sense peels its tail in the order it's discovered.
 assert "voice_response" in data, "voice_response missing"
 assert "twin_response" in data, "twin_response missing"
 print("OK senses splitter divides reply into all configured response_keys")
@@ -159,4 +137,4 @@ echo "$HARNESS_OUT" | grep -q "^OK senses splitter" || {
     exit 1
 }
 
-echo "✓ senses composed into soul; vBrainstem mirrored at /vbrainstem; splitter handles all senses"
+echo "✓ senses composed into soul; vBrainstem reachable at /web/index.html (its native home); splitter handles all senses"

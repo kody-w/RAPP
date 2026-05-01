@@ -68,11 +68,6 @@ def _wrap_flask_run() -> None:
         except Exception as e:
             print(f"[boot] /web mount failed: {e}")
 
-        try:
-            _mount_vbrainstem(self)
-        except Exception as e:
-            print(f"[boot] /vbrainstem mount failed: {e}")
-
         return _real_run(self, *args, **kwargs)
 
     flask.Flask.run = _wrapped_run
@@ -116,54 +111,6 @@ def _mount_web_static(app) -> None:
     app.add_url_rule("/web/", endpoint="_boot_web_root_slash", view_func=web_view, methods=["GET"])
     app.add_url_rule("/web/<path:rest>", endpoint="_boot_web_path", view_func=web_view, methods=["GET"])
     print(f"[boot] /web mounted from {web_dir}")
-
-
-def _mount_vbrainstem(app) -> None:
-    """Mirror the vBrainstem UI under /vbrainstem.
-
-    The vBrainstem (utils/web/index.html) is a self-contained
-    browser-side simulator — Pyodide sandbox, in-browser agent runtime,
-    catalog client. When it runs against a real kernel, it uses the
-    kernel's /chat, /agents, /api/<name> as its backend; "mirror to the
-    kernel in its simulated environment" means: serve the simulator as
-    a peer view of the kernel at /vbrainstem, not just buried under
-    /web/.
-
-    /web/* still serves everything in utils/web/ for body_function
-    viewers; /vbrainstem is the discoverable entrypoint to the
-    simulator.
-    """
-    web_dir = os.path.join(_HERE, "utils", "web")
-    if not os.path.isdir(web_dir):
-        return
-    if not os.path.exists(os.path.join(web_dir, "index.html")):
-        return
-
-    from flask import send_from_directory, abort
-
-    def vb_view(rest: str = ""):
-        target_dir = web_dir
-        target_file = "index.html"
-        if rest:
-            full = os.path.normpath(os.path.join(web_dir, rest))
-            if not full.startswith(web_dir + os.sep) and full != web_dir:
-                return abort(403)
-            if os.path.isdir(full):
-                idx = os.path.join(full, "index.html")
-                if not os.path.exists(idx):
-                    return abort(404)
-                return send_from_directory(full, "index.html")
-            if not os.path.exists(full):
-                return abort(404)
-            target_dir = os.path.dirname(full)
-            target_file = os.path.basename(full)
-        return send_from_directory(target_dir, target_file)
-
-    vb_view.__name__ = "_boot_vbrainstem_view"
-    app.add_url_rule("/vbrainstem", endpoint="_boot_vbrainstem_root", view_func=vb_view, methods=["GET"])
-    app.add_url_rule("/vbrainstem/", endpoint="_boot_vbrainstem_root_slash", view_func=vb_view, methods=["GET"])
-    app.add_url_rule("/vbrainstem/<path:rest>", endpoint="_boot_vbrainstem_path", view_func=vb_view, methods=["GET"])
-    print(f"[boot] /vbrainstem mirrored from {web_dir}")
 
 
 def main() -> None:
