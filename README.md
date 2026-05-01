@@ -132,3 +132,18 @@ The installer honors `BRAINSTEM_VERSION` by checking out the matching tag and re
 ## History
 
 The previous engine code that lived in this repo (the Rapp intelligence engine for Rappterbook) is preserved on the `archive/engine` branch — the "genetic twin" referenced in SPEC §16.
+
+## License
+
+**Source-available, not open-source.** RAPP is a personal project of Kody Wildfeuer.
+
+| Layer | License |
+|---|---|
+| Code (kernel, hatchling, body_functions, senses, boot wrapper, tests) | [PolyForm Small Business 1.0.0](./LICENSE) — free for individuals and small businesses (under 100 people, under $1M revenue); commercial use beyond that needs a separate license |
+| Documentation (Constitution, vault, docs, READMEs) | [CC BY-NC 4.0](./LICENSE-DOCS) — read, quote, and build on with attribution; no commercial repackaging |
+| Trademarks ("RAPP", "rappid", "hatchling", "vBrainstem", "rapplication") | Reserved — see [TRADEMARK.md](./TRADEMARK.md) |
+| Commercial licensing | Open an issue with the `[license]` prefix; see [COMMERCIAL.md](./COMMERCIAL.md) |
+
+**License stability.** Constitution Article XXXV is a public commitment that future licenses can only **relax** these terms, never **tighten** them. The bytes you clone today are licensed at this level forever — past versions cannot be retroactively re-closed. See [CONSTITUTION.md Article XXXV](./CONSTITUTION.md).
+
+**Variants** (per Constitution Article XXXIV) inherit this licensing stance at fork time. A variant fork is free to choose terms no stricter than upstream's at that moment; the parent_rappid chain in the variant's `rappid.json` records the lineage relationship so consumers can walk back to the bytes' original license.

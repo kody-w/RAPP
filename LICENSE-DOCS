@@ -1,0 +1,93 @@
+DOCUMENTATION LICENSE — RAPP
+
+Copyright (c) 2026 Kody Wildfeuer.
+
+The documentation portions of this repository are licensed under the
+**Creative Commons Attribution-NonCommercial 4.0 International License
+(CC BY-NC 4.0)**.
+
+The canonical license text is published at:
+
+    https://creativecommons.org/licenses/by-nc/4.0/legalcode
+
+────────────────────────────────────────────────────────────────────────
+
+## Files covered
+
+This license applies to all human-readable documentation in this
+repository, including:
+
+- `CONSTITUTION.md` and any constitutional amendments
+- `README.md` (root and per-directory READMEs)
+- Everything under `pages/vault/` (architectural essays, fixtures,
+  positioning, manifestos, blog drafts, reading paths, etc.)
+- Everything under `pages/docs/` (specs, glossaries, version history)
+- Doc-style files in any subdirectory (`AGENTS.md`, `CLAUDE.md`,
+  `CONTRIBUTING.md`, etc., when present)
+
+It does **not** apply to the *code* in this repository (Python files,
+shell scripts, JSON manifests, HTML, JavaScript). Code is licensed
+separately under the PolyForm Small Business License 1.0.0; see
+`LICENSE` at the repository root.
+
+It does **not** apply to RAPP's trademarks. See `TRADEMARK.md`.
+
+────────────────────────────────────────────────────────────────────────
+
+## Summary (informational, not the license)
+
+Under CC BY-NC 4.0, you may:
+
+- **Share** — copy and redistribute the material in any medium or
+  format.
+- **Adapt** — remix, transform, and build upon the material.
+
+Under the following terms:
+
+- **Attribution** — you must give appropriate credit, provide a link
+  to this repository, and indicate if changes were made. You may do so
+  in any reasonable manner, but not in any way that suggests the
+  licensor endorses you or your use.
+- **NonCommercial** — you may not use the material for *commercial
+  purposes*. Quoting in academic, journalistic, or personal-blog
+  contexts is fine. Repackaging into a commercial product or service
+  — or using to drive revenue at a for-profit organization larger
+  than the PolyForm Small Business threshold — is not.
+
+This summary is for orientation only. The CC BY-NC 4.0 license text
+linked above is what governs.
+
+## Why a separate license for docs
+
+The Constitution and vault are the architectural thinking that
+makes RAPP coherent — the *digital organism* framing, the rappid
+lineage protocol, the kernel-as-DNA discipline, the additive-only
+chat envelope, the species-archive pattern. Code can be reproduced
+in a weekend by anyone who reads it; this thinking is the platform's
+distinctive substance.
+
+CC BY-NC 4.0 lets the thinking travel — quoted in talks, papers,
+blog posts, classrooms — while preventing wholesale repackaging as
+a competitor's proprietary documentation.
+
+## Future relicensing
+
+Per Constitution Article XXXV (License Stability), the documentation
+license can only be **relaxed** in future releases (e.g., dropping
+the NonCommercial restriction in favor of plain CC BY 4.0), never
+**tightened**. Past releases stay at the license they shipped under.
+
+────────────────────────────────────────────────────────────────────────
+
+## Required attribution
+
+When reusing material under this license, please attribute as:
+
+> Excerpted from RAPP — Rapid Agent Prototyping Platform.
+> Copyright (c) 2026 Kody Wildfeuer.
+> https://github.com/kody-w/RAPP
+> Licensed under CC BY-NC 4.0.
+
+For long-form quotes (more than a paragraph), please include a link
+to the specific file in the repository (e.g.,
+`https://github.com/kody-w/RAPP/blob/main/CONSTITUTION.md`).

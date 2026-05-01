@@ -2528,5 +2528,105 @@ individual.
 
 ---
 
+## Article XXXV — License Stability
+
+RAPP is **source-available** under a non-commercial-friendly licensing
+structure: the code under PolyForm Small Business 1.0.0, the
+documentation under CC BY-NC 4.0, with trademarks separately
+reserved (see `LICENSE`, `LICENSE-DOCS`, `TRADEMARK.md`,
+`COMMERCIAL.md`). This article is the public commitment that future
+license decisions can only **relax** these terms, never **tighten**
+them.
+
+### XXXV.1 — Once relaxed, never tightened
+
+> A version of RAPP that has been published under a license cannot
+> be **retroactively** put under a more restrictive license. Future
+> versions can choose any license that is *equally or more
+> permissive* than the one they replace; they cannot move in the
+> other direction.
+
+If RAPP version 0.12.2 ships under PolyForm Small Business + CC BY-NC,
+then the bytes of 0.12.2 remain under those terms forever. If 0.13.0
+later ships under Apache 2.0 (more permissive), that's allowed.
+0.13.0 cannot ship under a stricter source-available license, and
+0.12.2 cannot have its license changed retroactively under any
+circumstances.
+
+### XXXV.2 — What "more permissive" means
+
+Future relicenses are evaluated against the current license stack.
+Examples of permitted moves:
+
+- PolyForm Small Business → PolyForm Free Trial (more freedom for
+  larger businesses)
+- PolyForm Small Business → Apache 2.0 (full open-source)
+- PolyForm Small Business → MIT (full open-source)
+- CC BY-NC 4.0 → CC BY 4.0 (drops the NonCommercial restriction)
+- CC BY-NC 4.0 → CC0 (public domain)
+
+Examples that are **not** permitted:
+
+- PolyForm Small Business → BUSL (more restrictive — limits
+  commercial use further)
+- PolyForm Small Business → SSPL (more restrictive)
+- PolyForm Small Business → fully proprietary
+- CC BY-NC 4.0 → CC BY-NC-ND 4.0 (adds a NoDerivatives restriction)
+
+The litmus test: would a person whose use was permitted under the
+old license still be permitted under the new one? If not, the move
+violates this article.
+
+### XXXV.3 — Why this article exists
+
+Source-available licenses have credibility only when the licensor
+visibly commits to not pulling the rug. HashiCorp's 2023 relicense
+of Terraform (from MPL 2.0 to BUSL) eroded community trust even
+though the move was strictly speaking permitted by the licenses
+involved — *because users had built their stacks assuming MPL 2.0
+would always apply*.
+
+This article makes that promise legally unambiguous for RAPP. Anyone
+building on RAPP today knows: the code I clone today is licensed at
+this level forever. Future versions might be more open; they will
+never be less.
+
+### XXXV.4 — What this protects against
+
+- A future incorporated entity (e.g., Wildhaven AI Homes Inc.) buying
+  the project and trying to retroactively close it.
+- A future maintainer (whoever inherits stewardship) closing past
+  releases under a stricter license.
+- A future legal pressure environment forcing the project to tighten
+  terms — past versions are immune.
+
+### XXXV.5 — What this does not protect against
+
+- The author choosing to make future versions *less* permissive
+  (e.g., a future v1.0 under proprietary terms). Adopters of past
+  versions are unaffected, but a path toward a more closed future
+  remains available — adopters who want the open future will need to
+  pin to past versions or fork.
+- Patents and trademarks. These are separate from copyright licenses
+  and have their own evolution rules. See `TRADEMARK.md`.
+
+### XXXV.6 — Relation to other articles
+
+- **Article V** (Install one-liner is sacred): URL stability is the
+  delivery promise; license stability is the legal promise.
+  Together, they mean adopters of RAPP get a stable contract on
+  *both* the bytes they receive and the rights to use them.
+- **Article XXXIV** (Variant lineage): variants inherit the
+  parent's license stance at fork time. A variant fork under terms
+  no stricter than upstream is the constitutional default.
+- **Article XXXIII** (Digital organism): drop-in replaceability
+  applies to bytes, not licenses — but in practice, license stability
+  reinforces it. An old organism running v/0.12.2 doesn't have to
+  worry that the bytes they're running suddenly require a different
+  license in the future.
+
+---
+
 *Ratified for the RAPP platform. The engine stays small so the agents
-can be everything. The species stays one so the variants can be many.*
+can be everything. The species stays one so the variants can be many.
+The license never closes once opened.*
