@@ -325,6 +325,15 @@
     overflow-y: auto; border-top: 1px solid #21262d;
   }
   .agent-logs.collapsed { display: none; }
+  /* Light-mode overrides — agent-logs box was stuck on dark in light mode */
+  body.light-mode .agent-logs-wrapper { border-color: #d0d7de; }
+  body.light-mode .logs-label { background: #f6f8fa; color: #57606a; }
+  body.light-mode .logs-label:hover { background: #eaeef2; color: #24292e; }
+  body.light-mode .logs-label .agent-name { color: #8250df; }
+  body.light-mode .agent-logs {
+    background: #f6f8fa; color: #1f883d;
+    border-top-color: #d0d7de;
+  }
 
   .typing { display: flex; gap: 4px; align-items: center; padding: 4px 0; }
   .typing span {
@@ -1407,8 +1416,7 @@
       <ul>
         <li><strong>Chat</strong>: Just ask me questions below to start building and researching!</li>
         <li><strong>Agents Panel</strong>: Click the <svg class="iconify" style="vertical-align: middle; width: 1.25em; height: 1.25em;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v4h4v2h-4v4h-2v-4H7v-2h4z"/></svg> icon (top right) to view or remove installed tools.</li>
-        <li><strong>Rapplications</strong>: open the <a href="/binder" target="_blank">Binder</a> to browse and install bundled apps (agent + UI / service / state) from the public <a href="https://github.com/kody-w/RAPP_Store" target="_blank">RAPP store</a> — BookFactory, ExecBrief, Kanban, Dashboard, Webhook, and more.</li>
-        <li><strong>Add Skills</strong>: Drag and drop any <code>.py</code> agent file directly onto this window to instantly teach me new things. For bare single-file agents, browse the <a href="https://github.com/kody-w/RAR" target="_blank">RAR registry</a>.</li>
+        <li><strong>Add Skills</strong>: Drag and drop any <code>.py</code> agent file directly onto this window to instantly teach me new things.</li>
       </ul>
       <p><em>Click one of the prompts below to get started!</em></p>
     </div>
@@ -1445,9 +1453,9 @@
 
 <footer>
   <div id="starter-prompts">
-    <button class="starter-btn" onclick="useStarter('Remember that I prefer concise responses.')">Remember that I prefer concise responses.</button>
-    <button class="starter-btn" onclick="useStarter('What do you remember about me?')">What do you remember about me?</button>
-    <button class="starter-btn" onclick="useStarter('What are the top 5 stories on Hacker News right now?')">What are the top 5 stories on Hacker News right now?</button>
+    <button class="starter-btn" onclick="useStarter('What exactly can you do?')">What can you do?</button>
+    <button class="starter-btn" onclick="useStarter('Help me build a new tool.')">Help me build a new tool</button>
+    <button class="starter-btn" onclick="useStarter('How do I manage my agent files?')">How do I manage agents?</button>
   </div>
   <div class="toolbar-row">
     <div class="left">
@@ -2965,8 +2973,7 @@
           <ul>
             <li><strong>Chat</strong>: Just ask me questions below to start building and researching!</li>
             <li><strong>Agents Panel</strong>: Click the <svg class="iconify" style="vertical-align: middle; width: 1.25em; height: 1.25em;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v4h4v2h-4v4h-2v-4H7v-2h4z"/></svg> icon (top right) to view or remove installed tools.</li>
-            <li><strong>Rapplications</strong>: open the <a href="/binder" target="_blank">Binder</a> to browse and install bundled apps from the public <a href="https://github.com/kody-w/RAPP_Store" target="_blank">RAPP store</a>.</li>
-            <li><strong>Add Skills</strong>: Drag and drop any <code>.py</code> agent file directly onto this window — for the registry of bare single-file agents, see <a href="https://github.com/kody-w/RAR" target="_blank">RAR</a>.</li>
+            <li><strong>Add Skills</strong>: Drag and drop any <code>.py</code> agent file directly onto this window to instantly teach me new things.</li>
           </ul>
           <p><em>Click one of the prompts below to get started!</em></p>
         </div>
@@ -3965,8 +3972,7 @@
           <ul>
             <li><strong>Chat</strong>: Just ask me questions below to start building and researching!</li>
             <li><strong>Agents Panel</strong>: Click the <svg class="iconify" style="vertical-align: middle; width: 1.25em; height: 1.25em;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v4h4v2h-4v4h-2v-4H7v-2h4z"/></svg> icon (top right) to view or remove installed tools.</li>
-            <li><strong>Rapplications</strong>: open the <a href="/binder" target="_blank">Binder</a> to browse and install bundled apps (agent + UI / service / state) from the public <a href="https://github.com/kody-w/RAPP_Store" target="_blank">RAPP store</a> — BookFactory, ExecBrief, Kanban, Dashboard, Webhook, and more.</li>
-            <li><strong>Add Skills</strong>: Drag and drop a <code>.py</code> agent — or a full <code>.rapplication.egg</code> bundle (agent + service + UI) exported from the <a href="https://kody-w.github.io/RAPP_Store/vbrainstem.html" target="_blank">vBrainstem</a> — directly onto this window. For bare single-file agents, browse the <a href="https://github.com/kody-w/RAR" target="_blank">RAR registry</a>.</li>
+            <li><strong>Add Skills</strong>: Drag and drop any <code>.py</code> agent file directly onto this window to instantly teach me new things.</li>
           </ul>
           <p><em>Click one of the prompts below to get started!</em></p>
         </div>
