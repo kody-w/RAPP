@@ -100,11 +100,33 @@ VENV_DIR="$BRAINSTEM_HOME/venv"
 REPO_URL="https://github.com/kody-w/RAPP.git"
 REMOTE_VERSION_URL="https://raw.githubusercontent.com/kody-w/RAPP/main/rapp_brainstem/VERSION"
 
-# Optional pin: BRAINSTEM_VERSION=X.Y.Z env var → install that tagged
-# version instead of the tip of main. Empty means "latest main".
+# Pin selection (sources, in order):
+#   1. BRAINSTEM_VERSION=X.Y.Z env var       → tag brainstem-vX.Y.Z (explicit pin)
+#   2. RAPP_INSTALL_TRACK=main env var       → main HEAD (developer / unstable opt-in)
+#   3. Default: latest brainstem-vX.Y.Z tag  → frozen release (production-safe)
+#
+# Defaulting to the latest tagged release rather than `main` HEAD prevents
+# the "main was broken for 8 minutes and 200 users got it" failure mode.
+# Releases are immutable; main is a moving target.
 PIN_VERSION="${BRAINSTEM_VERSION:-}"
 PIN_TAG=""
-[ -n "$PIN_VERSION" ] && PIN_TAG="brainstem-v${PIN_VERSION}"
+INSTALL_TRACK="${RAPP_INSTALL_TRACK:-release}"
+if [ -n "$PIN_VERSION" ]; then
+    PIN_TAG="brainstem-v${PIN_VERSION}"
+elif [ "$INSTALL_TRACK" != "main" ]; then
+    # Resolve the latest brainstem-v* tag from the remote. Falls back to
+    # main HEAD only if no tags exist (fresh repo, brand-new variant).
+    LATEST_TAG="$(
+        git ls-remote --tags --refs "$REPO_URL" 'brainstem-v*' 2>/dev/null \
+            | awk -F/ '{print $NF}' \
+            | sort -V \
+            | tail -n1
+    )"
+    if [ -n "$LATEST_TAG" ]; then
+        PIN_TAG="$LATEST_TAG"
+        PIN_VERSION="${LATEST_TAG#brainstem-v}"
+    fi
+fi
 
 # Colors
 RED='\033[0;31m'
