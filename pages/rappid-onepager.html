@@ -382,6 +382,44 @@ html, body{
 .footer-chip a{ color:var(--text-dim); text-decoration:none; }
 .footer-chip a:hover{ color:var(--accent); }
 
+/* Portrait-mode hint — the slide is 16:9 */
+.rotate-hint{
+  display:none;
+  position:fixed; inset:0;
+  background:var(--stage-bg);
+  z-index:200;
+  align-items:center; justify-content:center;
+  flex-direction:column;
+  gap:18px; text-align:center;
+  padding:40px 32px;
+}
+.rotate-hint .rot-icon{
+  width:64px; height:64px;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:14px;
+  background:linear-gradient(135deg, var(--grad-1), var(--grad-2));
+  color:#fff;
+  animation:rotHint 2.4s cubic-bezier(.5,0,.5,1) infinite;
+}
+.rotate-hint .rot-icon svg{ width:30px; height:30px; }
+@keyframes rotHint{
+  0%, 25%   { transform:rotate(0deg); }
+  60%, 80%  { transform:rotate(-90deg); }
+  100%      { transform:rotate(0deg); }
+}
+.rotate-hint h3{
+  font-size:22px; font-weight:800;
+  letter-spacing:-.4px; color:var(--text);
+  line-height:1.2;
+}
+.rotate-hint p{
+  font-size:14px; color:var(--text-dim);
+  max-width:320px; line-height:1.55;
+}
+@media (orientation: portrait) and (max-width: 700px){
+  .rotate-hint{ display:flex; }
+}
+
 @media print{
   html, body{ background:#fff; overflow:visible; height:auto; }
   .stage{ display:block; position:static; background:#fff; }
@@ -395,6 +433,17 @@ html, body{
 </style>
 </head>
 <body>
+
+<div class="rotate-hint">
+  <div class="rot-icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="5" y="2" width="14" height="20" rx="2.5"/>
+      <line x1="12" y1="18" x2="12.01" y2="18"/>
+    </svg>
+  </div>
+  <h3>Rotate to <span style="background:linear-gradient(135deg, var(--grad-1), var(--grad-2), var(--grad-3)); -webkit-background-clip:text; background-clip:text; color:transparent;">landscape</span></h3>
+  <p>This is 16:9. Turn your phone sideways and it'll fill the screen — perfect for screen-sharing or AirPlay.</p>
+</div>
 
 <div class="stage" id="stage">
 
