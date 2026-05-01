@@ -76,6 +76,7 @@
     {"path": "Architecture/Federation via RAR.md", "title": "Federation via RAR", "section": "Architecture", "status": "published"},
 
     {"path": "Fixtures/Fixture 01 — Canonical Kernel local_storage Drop-In.md", "title": "Fixture 01 — Canonical Kernel local_storage Drop-In", "section": "Fixtures", "status": "published"},
+    {"path": "Fixtures/Fixture 02 — Soul Read on Non-UTF-8 Windows Locale.md", "title": "Fixture 02 — Soul Read on Non-UTF-8 Windows Locale", "section": "Fixtures", "status": "published"},
 
     {"path": "Positioning/RAPP vs Copilot Studio.md", "title": "RAPP vs Copilot Studio", "section": "Positioning", "status": "published"},
     {"path": "Positioning/What You Give Up With RAPP.md", "title": "What You Give Up With RAPP", "section": "Positioning", "status": "published"},

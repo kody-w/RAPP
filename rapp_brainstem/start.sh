@@ -26,4 +26,9 @@ if [ ! -f .env ]; then
     cp .env.example .env 2>/dev/null || true
 fi
 
+# Force UTF-8 for all open() calls regardless of OS locale (PEP 540).
+# Belt-and-suspenders — the kernel passes encoding="utf-8" explicitly,
+# but this catches any agent or body_function that does a bare open().
+export PYTHONUTF8=1
+
 exec "$VENV_PYTHON" brainstem.py
