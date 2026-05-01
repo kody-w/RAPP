@@ -1529,7 +1529,8 @@ def diagnostics_report():
 
 if __name__ == "__main__":
     import sys, io
-    if sys.stdout.encoding and sys.stdout.encoding.lower().startswith("cp"):
+    _enc = (sys.stdout.encoding or "").lower().replace("-", "")
+    if _enc and not _enc.startswith(("utf8", "utf16", "utf32")):
         sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
         sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
     _tlog_load()  # Restore previous flight log
