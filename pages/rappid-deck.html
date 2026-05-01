@@ -1815,15 +1815,16 @@ ul.clean li strong{ color:var(--text); font-weight:700; }
     const slide = slides[idx];
     if (!slide) return;
     const isCompact = window.innerWidth < 900 || window.matchMedia('(pointer:coarse)').matches;
-    // Measure the stage (which is shrunk on mobile to leave room for chrome)
-    // rather than window — that way the slide never overlaps nav or theme dial.
+    // Measure the stage (shrunk on mobile to leave room for nav + theme dial)
+    // rather than window — that way the slide never overlaps chrome.
     const stageRect = stage.getBoundingClientRect();
-    const padX = isCompact ? 4 : 40;
-    const padY = isCompact ? 4 : 40;
+    const padX = isCompact ? 4 : 24;
+    const padY = isCompact ? 4 : 24;
     const sw = 1280, sh = 720;
     const aw = stageRect.width  - padX * 2;
     const ah = stageRect.height - padY * 2;
-    const scale = Math.min(aw / sw, ah / sh, 1);
+    // No upper cap — let the slide upscale to fill big monitors.
+    const scale = Math.min(aw / sw, ah / sh);
     slide.style.transform = `scale(${scale})`;
   }
 

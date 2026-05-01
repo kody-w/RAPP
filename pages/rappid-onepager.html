@@ -686,16 +686,17 @@ html, body{
 </div>
 
 <script>
-// Scale the slide to fit the viewport — aggressive on mobile/cast
+// Scale the slide to fit the viewport — aggressive on mobile, fill on desktop
 (function(){
   const slide = document.getElementById('slide');
   const SW = 1280, SH = 720;
   function fit(){
     const isCompact = window.innerWidth < 900 || window.matchMedia('(pointer:coarse)').matches;
-    const pad = isCompact ? 6 : 32;
+    const pad = isCompact ? 6 : 24;
     const aw = window.innerWidth  - pad * 2;
     const ah = window.innerHeight - pad * 2;
-    const scale = Math.min(aw / SW, ah / SH, 1);
+    // No upper cap — let the slide upscale to fill big monitors.
+    const scale = Math.min(aw / SW, ah / SH);
     slide.style.transform = `scale(${scale})`;
   }
   window.addEventListener('resize', fit);
