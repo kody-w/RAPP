@@ -5,7 +5,9 @@ cd "$(dirname "$0")"
 
 PASS=0
 FAIL=0
-for t in 0*.sh; do
+# Match any leading-digit fixture (01-, 02-, ..., 10-, 11-, ...). Sort so
+# numerical order is preserved across two-digit numbers.
+for t in $(ls [0-9]*.sh 2>/dev/null | sort); do
     [ -f "$t" ] || continue
     echo "═══ $t"
     if bash "$t"; then

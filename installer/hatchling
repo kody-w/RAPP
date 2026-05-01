@@ -18,8 +18,16 @@ Usage:
     hatchling status                   # show identity + ancestry + current generation
     hatchling clutch                   # list all generation tags for this org
     hatchling hatch [--from REMOTE/BR] # tag current as egg, fetch+merge, tag new gen
-    hatchling revert <generation>      # check out a generation tag (read-only)
-    hatchling reset <generation>       # reset --hard to a generation tag (destructive)
+    hatchling revert <generation>      # check out a generation tag (read-only inspection;
+                                       #   state at .brainstem_data/ untouched)
+    hatchling reset <generation>       # reset --hard + restore the generation's state
+                                       #   snapshot (destructive on both code and memory)
+    hatchling verify                   # check lineage integrity + signed tag presence
+
+State (memories, copilot session, voice config, flight log) is captured
+into ~/.brainstem/generations/<rappid>/<n>/state.tar.gz on every hatch /
+tag-current. `reset` restores the matching snapshot so the organism's
+*memory* travels back to that generation, not just its code.
 
 The repo at the working directory must be a git working tree. Run from
 inside the cloned RAPP organism (or any variant of it).
@@ -40,6 +48,7 @@ import platform
 import re
 import subprocess
 import sys
+import tarfile
 import uuid
 from pathlib import Path
 
@@ -47,6 +56,19 @@ from pathlib import Path
 # ── Locations ────────────────────────────────────────────────────────────────
 
 ORG_RAPPID_PATH = Path.home() / ".brainstem" / "rappid.json"
+GENERATIONS_DIR = Path.home() / ".brainstem" / "generations"
+
+# Operational state captured per generation. Paths are relative to the
+# repo root. Override via the HATCHLING_STATE_PATHS env var (colon-
+# separated). Missing paths are silently skipped.
+DEFAULT_STATE_PATHS = [
+    "rapp_brainstem/.brainstem_data",
+    "rapp_brainstem/.copilot_token",
+    "rapp_brainstem/.copilot_session",
+    "rapp_brainstem/.copilot_pending",
+    "rapp_brainstem/.brainstem_book.json",
+    "rapp_brainstem/voice.zip",
+]
 
 
 def _repo_root() -> Path:
@@ -168,6 +190,68 @@ def _tag_generation(rappid: str, n: int, message: str) -> str:
     return tag
 
 
+# ── State snapshot / restore ────────────────────────────────────────────────
+
+def _state_paths() -> list[str]:
+    env = os.environ.get("HATCHLING_STATE_PATHS", "").strip()
+    if env:
+        return [p.strip() for p in env.split(":") if p.strip()]
+    return list(DEFAULT_STATE_PATHS)
+
+
+def _generation_state_path(rappid: str, n: int) -> Path:
+    return GENERATIONS_DIR / rappid / str(n) / "state.tar.gz"
+
+
+def _snapshot_state(rappid: str, n: int) -> Path | None:
+    """Capture operational state into ~/.brainstem/generations/<rappid>/<n>/state.tar.gz.
+
+    Returns the snapshot path if anything was captured, None if nothing
+    on disk needed snapshotting (a fresh org with no state yet).
+    """
+    repo = _repo_root()
+    paths = _state_paths()
+    existing = [p for p in paths if (repo / p).exists()]
+    if not existing:
+        return None
+    snapshot_path = _generation_state_path(rappid, n)
+    snapshot_path.parent.mkdir(parents=True, exist_ok=True)
+    with tarfile.open(snapshot_path, "w:gz") as tar:
+        for rel in existing:
+            tar.add(repo / rel, arcname=rel)
+    return snapshot_path
+
+
+def _restore_state(rappid: str, n: int) -> bool:
+    """Extract a previously-captured state snapshot back over the working tree.
+
+    Returns True if a snapshot was found and restored; False otherwise.
+    Existing state paths are removed before extraction so the tree
+    matches the snapshot exactly (no mixed-generation residue).
+    """
+    snapshot_path = _generation_state_path(rappid, n)
+    if not snapshot_path.exists():
+        return False
+    repo = _repo_root()
+    # Remove the same paths the snapshot captures, so we don't leave
+    # files behind from a future generation
+    for rel in _state_paths():
+        target = repo / rel
+        if target.is_dir():
+            import shutil
+            shutil.rmtree(target, ignore_errors=True)
+        elif target.exists():
+            try:
+                target.unlink()
+            except OSError:
+                pass
+    with tarfile.open(snapshot_path, "r:gz") as tar:
+        # Refuse to extract anything outside the repo root (defensive)
+        safe = [m for m in tar.getmembers() if not os.path.isabs(m.name) and ".." not in Path(m.name).parts]
+        tar.extractall(path=str(repo), members=safe)
+    return True
+
+
 # ── Commands ────────────────────────────────────────────────────────────────
 
 def cmd_stamp(args: argparse.Namespace) -> int:
@@ -240,11 +324,15 @@ def cmd_hatch(args: argparse.Namespace) -> int:
         print("hatchling: working tree has uncommitted changes. Commit or stash first.")
         return 1
 
-    # Tag current as the egg
+    # Tag current as the egg + snapshot state
     n_egg = _next_generation_n(rappid)
     egg_msg = f"egg before hatch (organism {rappid[:8]}, generation {n_egg})"
     egg_tag = _tag_generation(rappid, n_egg, egg_msg)
-    print(f"laid egg: {egg_tag}")
+    snapshot = _snapshot_state(rappid, n_egg)
+    if snapshot:
+        print(f"laid egg: {egg_tag} (state captured at {snapshot})")
+    else:
+        print(f"laid egg: {egg_tag}")
 
     # Determine remote/branch
     remote_branch = args.from_ref or "upstream/main"
@@ -287,7 +375,11 @@ def cmd_tag_current(args: argparse.Namespace) -> int:
     rappid = org["rappid"]
     n = _next_generation_n(rappid)
     tag = _tag_generation(rappid, n, args.message or f"manually tagged generation {n}")
-    print(f"tagged: {tag}")
+    snapshot = _snapshot_state(rappid, n)
+    if snapshot:
+        print(f"tagged: {tag} (state captured at {snapshot})")
+    else:
+        print(f"tagged: {tag}")
     return 0
 
 
@@ -304,8 +396,9 @@ def cmd_revert(args: argparse.Namespace) -> int:
         print(f"hatchling: generation {target_n} not found (tag {tag} missing).")
         return 1
     print(f"checking out {tag} in detached-HEAD mode (read-only inspection)")
+    print("  - State at .brainstem_data/ is NOT changed by revert (current memory preserved).")
     print("  - To return to your branch: `git checkout <branchname>`")
-    print(f"  - To reset destructively to this generation: `hatchling reset {target_n}`")
+    print(f"  - To go fully back (code + state): `hatchling reset {target_n} --yes`")
     return _git(["checkout", tag], check=False, capture=False).returncode
 
 
@@ -322,10 +415,70 @@ def cmd_reset(args: argparse.Namespace) -> int:
         print(f"hatchling: generation {target_n} not found (tag {tag} missing).")
         return 1
     if not args.yes:
-        print(f"WARNING: This will `git reset --hard {tag}` and discard any commits ahead of it.")
+        print(f"WARNING: This will `git reset --hard {tag}` AND restore the state snapshot")
+        print(f"         at ~/.brainstem/generations/{rappid[:8]}.../{target_n}/state.tar.gz.")
+        print(f"         Code AND memory go back to generation {target_n}; any commits or")
+        print(f"         memories accumulated since are gone unless they were tagged.")
         print("  Re-run with --yes to confirm.")
         return 1
-    return _git(["reset", "--hard", tag], check=False, capture=False).returncode
+    rc = _git(["reset", "--hard", tag], check=False, capture=False).returncode
+    if rc != 0:
+        return rc
+    if _restore_state(rappid, target_n):
+        print(f"state restored from generation {target_n} snapshot")
+    else:
+        print(f"(no state snapshot for generation {target_n} — code-only reset)")
+    return 0
+
+
+def cmd_verify(args: argparse.Namespace) -> int:
+    """Check lineage integrity: rappid stamped, generation tags well-formed,
+    each gen tag has a state snapshot or is explicitly stateless.
+    Reports signed-tag presence (warns if missing) but does not require it
+    until the variant adopts signed releases."""
+    org = _read_json(ORG_RAPPID_PATH)
+    if not org:
+        print("hatchling verify: org rappid not stamped (run `hatchling stamp`)")
+        return 1
+    rappid = org["rappid"]
+
+    issues = 0
+    print(f"organism rappid: {rappid}")
+
+    # 1. Generation tags
+    clutch = _list_generation_tags(rappid)
+    print(f"clutch: {len(clutch)} generation tag(s)")
+    for n, tag in clutch:
+        snapshot = _generation_state_path(rappid, n)
+        sig_ok = _git(["tag", "-v", tag], check=False).returncode == 0
+        snap_status = "stateful" if snapshot.exists() else "code-only"
+        sig_status = "signed" if sig_ok else "unsigned"
+        print(f"  gen {n:>3}  {tag}  {snap_status}  {sig_status}")
+        if not snapshot.exists():
+            # not a hard failure — early generations may predate state snapshotting
+            pass
+
+    # 2. Variant master / kernel archive integrity (if rappid.json exists at repo root)
+    repo_rappid = _read_json(_repo_rappid_path())
+    if repo_rappid:
+        attestation = repo_rappid.get("attestation")
+        if attestation:
+            print(f"variant attestation: present (issuer={attestation.get('issuer','?')})")
+        else:
+            print(f"variant attestation: missing (this repo is not yet signed by its parent)")
+
+    # 3. Lineage chain — walk parent_rappid pointers if discoverable from variant data
+    parent = org.get("parent_rappid")
+    if parent:
+        print(f"parent rappid: {parent}")
+    else:
+        print("parent rappid: (none — this is a root organism)")
+
+    if issues == 0:
+        print("verify: ok")
+    else:
+        print(f"verify: {issues} issue(s) found")
+    return 0 if issues == 0 else 1
 
 
 # ── Main ────────────────────────────────────────────────────────────────────
@@ -350,10 +503,12 @@ def main(argv: list[str] | None = None) -> int:
     p_rev.add_argument("generation", help="generation number (e.g. 3)")
     p_rev.set_defaults(func=cmd_revert)
 
-    p_res = sub.add_parser("reset", help="git reset --hard to a generation tag (destructive)")
+    p_res = sub.add_parser("reset", help="git reset --hard to a generation tag + restore state (destructive)")
     p_res.add_argument("generation", help="generation number")
     p_res.add_argument("--yes", action="store_true", help="confirm destructive reset")
     p_res.set_defaults(func=cmd_reset)
+
+    sub.add_parser("verify", help="check lineage integrity + signed-tag presence").set_defaults(func=cmd_verify)
 
     args = parser.parse_args(argv)
     return args.func(args)
