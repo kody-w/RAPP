@@ -31,4 +31,14 @@ fi
 # but this catches any agent or body_function that does a bare open().
 export PYTHONUTF8=1
 
-exec "$VENV_PYTHON" brainstem.py
+# Launch via the boot wrapper so body_functions and /web mount are
+# wired in additively. The wrapper runs the canonical kernel verbatim
+# (Constitution Article XXXIII §4 — kernel stays untouched) and
+# injects body_function dispatch right before the server starts.
+# Falls back to running the kernel directly if boot.py is missing
+# (older organism layouts).
+if [ -f boot.py ]; then
+    exec "$VENV_PYTHON" boot.py
+else
+    exec "$VENV_PYTHON" brainstem.py
+fi
