@@ -37,7 +37,7 @@ PYTHON="${PYTHON:-$HOME/.brainstem/venv/bin/python}"
 [ -x "$PYTHON" ] || PYTHON="$(command -v python3)"
 
 echo "▶ booting canonical kernel on :$PORT (python: $PYTHON)"
-( cd rapp_brainstem && PORT="$PORT" "$PYTHON" brainstem.py ) > "$LOG" 2>&1 &
+( cd rapp_brainstem && exec env PORT="$PORT" "$PYTHON" brainstem.py ) > "$LOG" 2>&1 &
 echo $! > "$PID_FILE"
 
 # Wait for /health

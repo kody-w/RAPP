@@ -38,7 +38,7 @@ trap cleanup EXIT
 
 echo "▶ booting canonical kernel under LC_ALL=C PYTHONUTF8=0 on :$PORT (forces ASCII stdout)"
 ( cd rapp_brainstem && \
-    LC_ALL=C LANG=C PYTHONUTF8=0 PORT="$PORT" "$PYTHON" brainstem.py ) > "$LOG" 2>&1 &
+    exec env LC_ALL=C LANG=C PYTHONUTF8=0 PORT="$PORT" "$PYTHON" brainstem.py ) > "$LOG" 2>&1 &
 echo $! > "$PID_FILE"
 
 for i in $(seq 1 30); do

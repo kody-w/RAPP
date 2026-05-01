@@ -42,12 +42,36 @@ That's the whole mechanism. The kernel never imports boot.py. The kernel never k
 | Capability | Where it lives | How the kernel knows |
 |---|---|---|
 | `/chat`, `/agents`, `/health`, `/version` | `brainstem.py` | Kernel ships these. |
-| Voice slot splitting (`|||VOICE|||`) | `brainstem.py` | Kernel ships this. |
+| Voice slot splitting (`|||VOICE|||`, when `VOICE_MODE=true`) | `brainstem.py` | Kernel ships this. |
 | Body_function dispatch (`/api/<name>/<path>`) | `body_functions_loader.py` + `utils/body_functions/*_body_function.py` | Doesn't. Boot sidecar attaches. |
 | Static `/web/<path>` mount | `boot.py` + `utils/web/*` | Doesn't. Boot sidecar attaches. |
-| Senses, twin probes, index_card, frames | `utils/{twin,frames,index_card}.py` + agents that consume them | Future — boot sidecar can attach more. |
+| **Sense composition** (any `*_sense.py` → soul prompt + delimiter splitter) | `senses_loader.py` + `utils/senses/*_sense.py` | Doesn't. Boot sidecar attaches. |
+| **vBrainstem mirror** at `/vbrainstem` (the simulator UI as a discoverable peer view of the kernel) | `boot.py` + `utils/web/index.html` | Doesn't. Boot sidecar attaches. |
+| Twin frames, index_card polling, egg packing | `utils/{frames,index_card,egg}.py` + body_functions that consume them | Future — boot sidecar can attach more. |
 
 The kernel stays exactly as small as Article XXXII demands ("kernel is what /chat requires"). The body grows around it.
+
+## Sense composition (how it actually works)
+
+The canonical kernel only knows `|||VOICE|||`, and only when `VOICE_MODE=true`. Every other sense — `|||TWIN|||`, future delimiters — is invisible to the bare kernel. The sidecar makes them participate:
+
+1. **Discovery.** `senses_loader.discover()` globs `utils/senses/*_sense.py`. Each sense file declares `name`, `delimiter`, `response_key`, `wrapper_tag`, and `system_prompt`.
+2. **Soul augmentation.** Right before `Flask.run`, the sidecar calls `kernel.load_soul()` to populate `_soul_cache`, then concatenates each sense's `system_prompt` and writes the augmented prompt back into `_soul_cache`. The kernel's chat handler reads `_soul_cache` on every turn — so every turn now carries every sense's instruction.
+3. **Response splitting.** The sidecar registers a Flask `after_request` hook that scans `/chat` JSON responses for each sense's delimiter. When a delimiter appears, the trailing segment is peeled into the sense's `response_key` (e.g., `voice_response`, `twin_response`). Senses split in discovery order, so the order of `*_sense.py` files determines splitting precedence. The kernel's hardcoded VOICE block (when `VOICE_MODE=true`) handles voice early; the sidecar handles whatever the kernel left in place.
+
+A new sense is one new file. The kernel never learns about it; the sidecar discovers it on next boot.
+
+## vBrainstem mirror at /vbrainstem
+
+The vBrainstem (`utils/web/index.html`) is a self-contained browser-side simulator: Pyodide sandbox, in-browser agent runtime, catalog client. It can run standalone (fetching the catalog from GitHub Pages) or paired with a real kernel (using the kernel's `/chat`, `/agents`, `/api/<name>/<path>` as its backend).
+
+"Mirror the vBrainstem to the kernel in its simulated environment" means: serve the simulator as a discoverable entrypoint of the kernel itself. The sidecar adds three routes:
+
+- `GET /vbrainstem` → `utils/web/index.html` (the simulator's entry HTML).
+- `GET /vbrainstem/` → same.
+- `GET /vbrainstem/<path:rest>` → any sibling asset under `utils/web/`.
+
+The simulator's network calls land on the same kernel that's serving its HTML — the simulated environment is wired into the live local brainstem. `/web/` continues to serve the same files for body_function viewers; `/vbrainstem` is the explicit name for "open the simulator," not buried under generic static.
 
 ## What `python brainstem.py` still does
 

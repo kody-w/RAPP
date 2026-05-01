@@ -47,7 +47,7 @@ grep -E "^def load_services|^def load_body_functions|service_dispatch|api/<svc>"
 
 # 2. Boot via the sidecar
 echo "▶ booting via boot.py on :$PORT"
-( cd rapp_brainstem && PORT="$PORT" "$PYTHON" boot.py ) > "$LOG" 2>&1 &
+( cd rapp_brainstem && exec env PORT="$PORT" "$PYTHON" boot.py ) > "$LOG" 2>&1 &
 echo $! > "$PID_FILE"
 
 for i in $(seq 1 30); do
