@@ -2492,7 +2492,7 @@ def load_services():
             print(f"[brainstem] Service load error ({mod_name}): {e}")
     return svcs
 
-@app.route("/api/<service>", methods=["GET", "POST", "PUT", "DELETE"])
+@app.route("/api/<service>", methods=["GET", "POST", "PUT", "DELETE"], strict_slashes=False)
 @app.route("/api/<service>/<path:path>", methods=["GET", "POST", "PUT", "DELETE"])
 def service_dispatch(service, path=""):
     svcs = load_services()
