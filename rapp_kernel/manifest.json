@@ -1,5 +1,5 @@
 {
-  "schema": "rapp-kernel/1.0",
+  "schema": "rapp-kernel/1.1",
   "description": "Public source of truth for the RAPP digital-organism kernel. Every released version is preserved here at a stable URL forever. New versions are added; old ones are never modified or removed.",
   "files": [
     "brainstem.py",
@@ -8,13 +8,21 @@
     "manage_memory_agent.py"
   ],
   "latest": "0.12.2",
+  "signing": {
+    "method": null,
+    "key_id": null,
+    "verification_uri": null,
+    "_note": "Signing fields are null until this variant adopts signed releases. When adopted, `method` is one of 'gpg', 'sigstore', 'minisign'; `key_id` identifies the public key; `verification_uri` documents how to verify (e.g. https://keys.openpgp.org/vks/v1/by-fingerprint/<KEYID> or a sigstore identity URI). Per-version attestations live under each `versions[].attestation`."
+  },
   "versions": [
     {
       "version": "0.12.2",
       "path": "v/0.12.2",
       "released_at": "2026-04-28",
       "status": "current",
-      "notes": "Canonical kernel after the digital-organism re-establishment. UTF-8 safe across all OS locales. Fixture 02 included."
+      "notes": "Canonical kernel after the digital-organism re-establishment. UTF-8 safe across all OS locales. Fixture 02 included.",
+      "attestation": null
     }
   ]
 }
+

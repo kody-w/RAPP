@@ -76,6 +76,7 @@
     {"path": "Architecture/Federation via RAR.md", "title": "Federation via RAR", "section": "Architecture", "status": "published"},
     {"path": "Architecture/Boot Sidecar — Integrating Utils Without Modifying the Kernel.md", "title": "Boot Sidecar — Integrating Utils Without Modifying the Kernel", "section": "Architecture", "status": "published"},
     {"path": "Architecture/The Species DNA Archive — rapp_kernel.md", "title": "The Species DNA Archive — rapp_kernel", "section": "Architecture", "status": "published"},
+    {"path": "Architecture/Signed Releases and Variant Attestation.md", "title": "Signed Releases and Variant Attestation", "section": "Architecture", "status": "living"},
 
     {"path": "Fixtures/Fixture 01 — Canonical Kernel local_storage Drop-In.md", "title": "Fixture 01 — Canonical Kernel local_storage Drop-In", "section": "Fixtures", "status": "published"},
     {"path": "Fixtures/Fixture 02 — Soul Read on Non-UTF-8 Windows Locale.md", "title": "Fixture 02 — Soul Read on Non-UTF-8 Windows Locale", "section": "Fixtures", "status": "published"},

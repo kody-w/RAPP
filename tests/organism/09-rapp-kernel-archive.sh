@@ -25,6 +25,8 @@ ARCHIVE="rapp_kernel"
 [ -f "$ARCHIVE/manifest.json" ] || { echo "FAIL: $ARCHIVE/manifest.json missing"; exit 1; }
 
 # 1. Manifest is well-formed and names the four kernel files.
+#    Schema 1.1 requires 'signing' block and per-version 'attestation' field
+#    (both nullable until signing is adopted, but the keys must exist).
 LATEST_VERSION="$("$PYTHON" -c "
 import json
 m = json.load(open('$ARCHIVE/manifest.json'))
@@ -32,9 +34,28 @@ assert m.get('schema', '').startswith('rapp-kernel/'), 'bad schema'
 files = m.get('files', [])
 expected = {'brainstem.py', 'basic_agent.py', 'context_memory_agent.py', 'manage_memory_agent.py'}
 assert set(files) == expected, f'manifest files mismatch: {files}'
+# Schema 1.1: signing block must exist (fields may be null)
+signing = m.get('signing')
+assert isinstance(signing, dict), 'manifest missing signing block'
+for key in ('method', 'key_id', 'verification_uri'):
+    assert key in signing, f'manifest.signing missing {key}'
+# Schema 1.1: every version has an attestation field
+for v in m['versions']:
+    assert 'attestation' in v, f\"version {v.get('version')} missing attestation field\"
 print(m['latest'])
 ")"
 [ -n "$LATEST_VERSION" ] || { echo "FAIL: manifest.latest missing"; exit 1; }
+
+# 1b. rappid.json (master) — schema 1.1 requires the attestation field.
+"$PYTHON" -c "
+import json
+r = json.load(open('rappid.json'))
+assert r.get('schema', '').startswith('rapp-rappid/'), 'bad rappid schema'
+assert 'attestation' in r, 'master rappid.json missing attestation field'
+" || {
+    echo "FAIL: rappid.json schema 1.1 fields missing"
+    exit 1
+}
 
 # 2. latest/ contents match rapp_brainstem/ counterparts byte-for-byte.
 KERNEL_FILES=(brainstem.py)

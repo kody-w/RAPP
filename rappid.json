@@ -1,4 +1,5 @@
 {
+  "schema": "rapp-rappid/1.1",
   "rappid": "0b635450-c042-49fb-b4b1-bdb571044dec",
   "parent_rappid": null,
   "parent_repo": null,
@@ -6,5 +7,8 @@
   "born_at": "2026-05-01T00:00:00Z",
   "name": "rapp",
   "role": "master",
-  "description": "The species root. All RAPP organisms descend from this rappid via the parent_rappid chain. See CONSTITUTION.md Article XXXIV."
+  "description": "The species root. All RAPP organisms descend from this rappid via the parent_rappid chain. See CONSTITUTION.md Article XXXIV.",
+  "attestation": null,
+  "_attestation_note": "When a variant master is created from this rappid, the variant's rappid.json carries an `attestation` envelope signed by THIS rappid's release key, asserting the parent_rappid + parent_commit it forked from. The master rappid itself has no parent, so `attestation` is null. See pages/vault/Architecture/Signed Releases and Variant Attestation.md."
 }
+

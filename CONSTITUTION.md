@@ -2462,7 +2462,53 @@ match `rapp_brainstem/`'s kernel files byte-for-byte. The fixture
 suite enforces this on every change (`tests/organism/09-rapp-kernel-archive.sh`).
 Drift between the archive and the runtime is a test failure.
 
-### XXXIV.7 — Why this matters
+### XXXIV.7 — Signed releases and variant attestation
+
+Lineage is identity. Identity needs to be cryptographically verifiable
+or it is theatrical. The platform's data model carries the fields
+required for end-to-end signed lineage; the signing infrastructure
+itself is opt-in per variant and rolls in over time.
+
+**`rapp_kernel/manifest.json` — schema `rapp-kernel/1.1`** carries a
+`signing` block (method, key_id, verification_uri) and a per-version
+`attestation` field (URL to a sigstore bundle, detached signature, or
+similar). Both are nullable until a variant adopts signing.
+
+**`rappid.json` — schema `rapp-rappid/1.1`** carries an `attestation`
+field. When a variant master is created, the parent's release key
+signs an envelope asserting `(parent_rappid, parent_commit, child_rappid)`,
+and that envelope lives in the variant's `rappid.json`. Walking the
+parent chain becomes cryptographically anchored end-to-end: each step
+is verifiable against the prior step's published key.
+
+**`hatchling verify`** reports lineage health: signed-tag presence,
+state-snapshot completeness, attestation validity. Today most fields
+report `unsigned` or `missing` advisorily; once signing is adopted,
+the same command flips to `signed (issuer=...)` for the same
+generations going forward.
+
+**Acceptable methods (any one is sufficient):**
+
+- Signed git tags (`git tag -s`) verifiable via `git tag -v`.
+- Sigstore (keyless, GH Actions OIDC).
+- minisign or GPG-detached-sig with the public key published at the URL named in `manifest.signing.verification_uri`.
+
+The schema does not lock in a method. A variant chooses; the manifest
+declares; consumers verify.
+
+**The opt-in roll forward.** When a variant adopts signing, all *future*
+releases become signed. Pre-adoption releases stay unsigned at the
+historical record level (consistent with the "v/<n>/ is immutable"
+rule). A consumer who needs a fully-signed chain can always pin to
+post-adoption versions; the unsigned historical record remains
+truthful (these were the bytes; we just didn't sign them at the
+time).
+
+See `pages/vault/Architecture/Signed Releases and Variant Attestation.md`
+for the full data model, attestation envelope shape, key-management
+options, and adoption recipe.
+
+### XXXIV.8 — Why this matters
 
 The platform is designed to evolve through both centralized
 (upstream master) and decentralized (variant) channels at once. With
