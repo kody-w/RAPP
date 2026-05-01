@@ -708,6 +708,55 @@ cmd_open() {
     else echo "Open $URL in your browser"; fi
 }
 
+cmd_ls() {
+    # List the global brainstem and every project-local brainstem registered
+    # in $HOME/.brainstem/projects.json. Probes each port for liveness so the
+    # output reflects what's actually responding right now, not just what was
+    # ever installed. Safe to run from anywhere — read-only.
+    local registry="$HOME/.brainstem/projects.json"
+    printf "%-7s  %-50s  %-7s  %s\n" "PORT" "PATH" "STATE" "VERSION"
+    printf "%-7s  %-50s  %-7s  %s\n" "----" "----" "-----" "-------"
+
+    # Global brainstem (always at :7071 if installed)
+    local g_state="—"
+    if [ -d "$HOME/.brainstem" ]; then
+        if curl -s --max-time 1 "http://localhost:7071/health" >/dev/null 2>&1; then
+            g_state="up"
+        else
+            g_state="down"
+        fi
+        local g_version
+        g_version=$(cat "$HOME/.brainstem/src/rapp_brainstem/VERSION" 2>/dev/null || echo "?")
+        printf "%-7s  %-50s  %-7s  %s\n" "7071" "(global)  $HOME/.brainstem" "$g_state" "$g_version"
+    fi
+
+    # Project-local brainstems from registry
+    if [ ! -f "$registry" ]; then
+        return 0
+    fi
+    python3 - <<PYEOF "$registry"
+import json, sys, urllib.request, os
+try:
+    data = json.load(open(sys.argv[1]))
+except Exception:
+    sys.exit(0)
+for entry in data.get("projects", []):
+    port = entry.get("port", "?")
+    path = entry.get("path", "?")
+    version = entry.get("version", "?")
+    state = "down"
+    try:
+        with urllib.request.urlopen(f"http://localhost:{port}/health", timeout=1) as r:
+            if r.status == 200:
+                state = "up"
+    except Exception:
+        pass
+    if not os.path.isdir(os.path.join(path, ".brainstem")):
+        state = "missing"
+    print(f"{str(port):<7}  {path:<50}  {state:<7}  {version}")
+PYEOF
+}
+
 cmd_doctor() {
     echo "=== RAPP Brainstem doctor ==="
     echo ""
@@ -757,6 +806,8 @@ commands below work whether the background service is installed or not.
   stop      Stop the background service
   restart   Restart the background service
   status    One-line health check + service state
+  ls        List the global brainstem + every registered project-local
+            brainstem with their port and live state (up/down/missing)
   logs      Tail the service log
   doctor    Paste-to-support troubleshooting dump
   run       Run the brainstem in the foreground (for debugging)
@@ -770,6 +821,7 @@ case "${1:-default}" in
     stop)    cmd_stop ;;
     restart) cmd_restart ;;
     status)  cmd_status ;;
+    ls)      cmd_ls ;;
     logs)    cmd_logs ;;
     doctor)  cmd_doctor ;;
     run)     shift; cmd_run "$@" ;;
@@ -1341,6 +1393,45 @@ LAUNCHER
     echo "$port" > "$BRAINSTEM_HOME/PORT"
 }
 
+register_project() {
+    # Add this project-local install to the host-wide registry at
+    # ~/.brainstem/projects.json so `brainstem ls` (running from anywhere)
+    # can see every project-local instance + the global at a glance. Idempotent —
+    # running install.sh --here on the same project twice updates the entry
+    # in place rather than duplicating it. Failure is silent: the registry is
+    # purely informational and must never block the install.
+    local port="$1"
+    local registry_dir="$HOME/.brainstem"
+    local registry="$registry_dir/projects.json"
+    local project_path
+    project_path="$(pwd)"
+    local installed_at
+    installed_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    local version
+    version="$(cat "$BRAINSTEM_HOME/src/rapp_brainstem/VERSION" 2>/dev/null | tr -d '[:space:]' || echo unknown)"
+
+    mkdir -p "$registry_dir" 2>/dev/null || return 0
+    python3 - "$registry" "$project_path" "$port" "$installed_at" "$version" <<'PYEOF' 2>/dev/null || true
+import json, sys, os
+registry_path, project_path, port, installed_at, version = sys.argv[1:6]
+try:
+    data = json.load(open(registry_path)) if os.path.exists(registry_path) else {}
+except Exception:
+    data = {}
+projects = [p for p in data.get("projects", []) if p.get("path") != project_path]
+projects.append({
+    "path": project_path,
+    "port": int(port),
+    "installed_at": installed_at,
+    "version": version,
+})
+data["projects"] = sorted(projects, key=lambda p: p.get("port", 0))
+data["updated_at"] = installed_at
+with open(registry_path, "w") as f:
+    json.dump(data, f, indent=2)
+PYEOF
+}
+
 ensure_project_gitignore() {
     # If cwd is inside a git repo, add .brainstem/ to its .gitignore
     # so the local brainstem's runtime state never ends up tracked.
@@ -1378,6 +1469,7 @@ main_local() {
     write_local_launcher "$port"
     ensure_project_gitignore
     register_in_peers "$BRAINSTEM_HOME/src/rapp_brainstem" "$port"
+    register_project "$port"
 
     local installed_version
     installed_version=$(cat "$BRAINSTEM_HOME/src/rapp_brainstem/VERSION" 2>/dev/null | tr -d '[:space:]')
@@ -1389,6 +1481,9 @@ main_local() {
     echo ""
     echo "  To start this project's brainstem:"
     echo -e "    ${CYAN}./.brainstem/start.sh${NC}"
+    echo ""
+    echo "  See every brainstem on this host (global + project-locals):"
+    echo -e "    ${CYAN}brainstem ls${NC}"
     echo ""
     echo -e "  It'll run at ${CYAN}http://localhost:${port}${NC}"
     echo ""
