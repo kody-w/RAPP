@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="rappid">
 <title>rappid — the fastest path from idea to Copilot Studio agent</title>
 <meta name="description" content="rappid: the fastest path from idea to Copilot Studio agent. One file. Three runtimes. Zero ceremony.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E🚀%3C/text%3E%3C/svg%3E">
@@ -99,7 +103,10 @@ html, body{
   font-feature-settings:"ss01","cv01";
   -webkit-font-smoothing:antialiased;
   height:100%;
+  height:100dvh;
   overflow:hidden;
+  overscroll-behavior:none;
+  -webkit-tap-highlight-color:transparent;
   transition:background-color .25s ease;
 }
 
@@ -109,6 +116,7 @@ html, body{
   display:flex; align-items:center; justify-content:center;
   background:radial-gradient(ellipse at center, var(--stage-bg-grad-1) 0%, var(--stage-bg-grad-2) 100%);
   transition:background .25s ease;
+  touch-action:pan-y;
 }
 
 /* Slide = fixed 16:9 surface, scaled to fit */
@@ -1058,6 +1066,29 @@ ul.clean li strong{ color:var(--text); font-weight:700; }
   }
   .nav, .kbd-hint, .theme-dial{ display:none !important; }
 }
+
+/* Touch / mobile — landscape iPhone, narrow tablet, screen-share cast */
+@media (max-width: 900px), (pointer: coarse){
+  .kbd-hint{ display:none !important; }
+  .nav{
+    bottom:max(8px, env(safe-area-inset-bottom));
+    padding:4px 6px;
+    background:rgba(255,255,255,.6);
+    backdrop-filter:blur(8px);
+    -webkit-backdrop-filter:blur(8px);
+    box-shadow:0 4px 14px rgba(20,30,50,.12);
+  }
+  [data-theme="dark"] .nav{ background:rgba(15,20,30,.55); }
+  .nav .counter{ font-size:10px; padding:0 6px; }
+  .nav button{ width:32px; height:32px; }
+  .theme-dial{
+    top:max(8px, env(safe-area-inset-top));
+    right:max(8px, env(safe-area-inset-right));
+    padding:3px;
+    transform:scale(.85);
+    transform-origin:top right;
+  }
+}
 </style>
 </head>
 <body>
@@ -1586,10 +1617,13 @@ ul.clean li strong{ color:var(--text); font-weight:700; }
   function fitSlide(){
     const slide = slides[idx];
     if (!slide) return;
-    const padding = 40;
+    const isCompact = window.innerWidth < 900 || window.matchMedia('(pointer:coarse)').matches;
+    // Aggressive on mobile/cast — give the slide the whole screen.
+    const padX = isCompact ? 6 : 40;
+    const padY = isCompact ? 6 : 40;
     const sw = 1280, sh = 720;
-    const aw = window.innerWidth - padding * 2;
-    const ah = window.innerHeight - padding * 2;
+    const aw = window.innerWidth  - padX * 2;
+    const ah = window.innerHeight - padY * 2;
     const scale = Math.min(aw / sw, ah / sh, 1);
     slide.style.transform = `scale(${scale})`;
   }
@@ -1665,6 +1699,31 @@ ul.clean li strong{ color:var(--text); font-weight:700; }
   });
 
   window.addEventListener('resize', fitSlide);
+  window.addEventListener('orientationchange', () => setTimeout(fitSlide, 60));
+
+  // ── Touch / swipe navigation — for iOS landscape & cast use ─────
+  let touchX = null, touchY = null, touchT = 0;
+  const stage = document.getElementById('stage');
+  stage.addEventListener('touchstart', e => {
+    if (e.touches.length !== 1) return;
+    touchX = e.touches[0].clientX;
+    touchY = e.touches[0].clientY;
+    touchT = Date.now();
+  }, { passive: true });
+  stage.addEventListener('touchend', e => {
+    if (touchX === null) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchX;
+    const dy = t.clientY - touchY;
+    const dt = Date.now() - touchT;
+    touchX = null; touchY = null;
+    // Ignore taps on interactive elements (download card, theme dial, etc.)
+    if (e.target.closest('a, button, [role="button"]')) return;
+    // Quick horizontal swipe → navigate
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5 && dt < 600){
+      if (dx < 0) next(); else prev();
+    }
+  }, { passive: true });
   window.addEventListener('hashchange', () => {
     const n = parseInt(location.hash.slice(1), 10);
     if (!Number.isNaN(n) && n >= 1 && n <= slides.length) show(n - 1);
