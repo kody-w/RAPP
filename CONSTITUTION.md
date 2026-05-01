@@ -2420,7 +2420,49 @@ species.
 - ❌ **Editing rappid metadata to falsify lineage.** The chain is auditable; tampering with `parent_rappid` or `parent_commit` defeats the purpose.
 - ❌ **Auto-syncing the clutch upstream.** Generation eggs are nest-private.
 
-### XXXIV.6 — Why this matters
+### XXXIV.6 — The species DNA archive (`rapp_kernel/`)
+
+The repository at `kody-w/RAPP` carries an additional public-surface
+directory, `rapp_kernel/`, that exists solely to be **load-bearing for
+every version of the kernel ever shipped**. It is the species' fossil
+record:
+
+```
+rapp_kernel/
+├── manifest.json         (machine-readable index of versions)
+├── latest/               (always the current canonical — stable URL)
+│   ├── brainstem.py
+│   ├── basic_agent.py
+│   ├── context_memory_agent.py
+│   ├── manage_memory_agent.py
+│   └── VERSION
+└── v/
+    └── <version>/        (immutable per-version snapshot, with checksums.txt)
+```
+
+**The archive contains exactly the four files Article XXXIII §1
+names as kernel DNA.** It is not a copy of the entire `rapp_brainstem/`
+runtime — body functions, senses, boot wrappers, additional agents,
+state, and UI all live elsewhere. The archive is pure DNA.
+
+**Frozen URLs.** Once a directory under `rapp_kernel/v/<version>/` is
+committed, it is **never** modified. Future bug fixes become future
+versions; the historical record is permanent. URLs like
+`https://kody-w.github.io/RAPP/rapp_kernel/v/0.12.2/brainstem.py`
+resolve to the exact bytes that shipped, forever.
+
+**Variant inheritance.** Variant repos (Article XXXIV.3) inherit the
+shape: a forked variant master serves its own kernel versions at the
+same path under its own GitHub Pages, so consumers of the variant can
+pin to a specific kernel version through the variant just as they
+would through the original master.
+
+**Drift detection.** The species archive's `latest/` directory must
+match `rapp_brainstem/`'s kernel files byte-for-byte. The fixture
+suite enforces this on every change (`tests/organism/09-rapp-kernel-archive.sh`).
+Drift between the archive and the runtime is a test failure.
+
+### XXXIV.7 — Why this matters
 
 The platform is designed to evolve through both centralized
 (upstream master) and decentralized (variant) channels at once. With
