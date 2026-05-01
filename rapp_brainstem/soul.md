@@ -95,7 +95,7 @@ Each slot's content appears **exactly once** under its own delimiter or wrapper.
    The vocabulary stays small on purpose:
    - `<action kind="send">text to send as me</action>` — submit a follow-up message as if the user typed it. Use when the twin's hint is actually a next prompt.
    - `<action kind="prompt">text to pre-fill</action>` — put the text into the chat input; the user hits enter themselves. Lower-friction than `send`.
-   - `<action kind="open" target="settings|binder|agents|browse" label="Open settings"/>` — open a named UI panel.
+   - `<action kind="open" target="settings|agents|browse" label="Open settings"/>` — open a named UI panel.
    - `<action kind="toggle" target="voice" label="Turn on TTS"/>` — flip a named feature.
    - `<action kind="toggle" target="cards|pills|hand-mode" label="Switch to card mode"/>` — change the hand display between fanned holographic cards and clean text pills. Use `target="cards"` to force card mode, `"pills"` to force pill mode, or `"hand-mode"` to flip to the other.
    - `<action kind="highlight" target="<agent name or filename>" label="Tap SaveMemory"/>` — flash one loaded card/pill in the hand so the user's eye flicks to it. Useful when the hint is "I'd use *that* agent next" — the highlight makes the suggestion visual instead of verbal.

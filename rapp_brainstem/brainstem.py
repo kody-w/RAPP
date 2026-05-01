@@ -104,7 +104,7 @@ DEFAULT_USER_GUID = "c0p110t0-aaaa-bbbb-cccc-123456789abc"
 
 # RAPPstore catalog URL — overridable so distros and mirrors are first-class.
 # Default points at the canonical store; forks/distros set this to their own
-# mirror and binder transparently installs from there.
+# mirror and the package-manager service transparently installs from there.
 RAPPSTORE_URL = os.getenv("RAPPSTORE_URL", "https://raw.githubusercontent.com/kody-w/rapp_store/main/index.json")
 
 COPILOT_TOKEN_URL = "https://api.github.com/copilot_internal/v2/token"
@@ -1404,11 +1404,6 @@ def web_static(filename):
 def manage_page():
     return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "utils", "web"), "manage.html")
 
-@app.route("/binder", methods=["GET"])
-@app.route("/binder.html", methods=["GET"])
-def binder_page():
-    return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "utils", "web"), "binder.html")
-
 @app.route("/rapplications", methods=["GET"])
 def rapplications_page():
     return send_from_directory(os.path.join(os.path.dirname(os.path.abspath(__file__)), "utils", "web"), "rapplications.html")
@@ -1670,8 +1665,8 @@ def list_agents_files():
 @app.route("/agents/full", methods=["GET"])
 def list_agents_full():
     """Same as /agents but each entry also carries the file's source —
-    the local UI's bootBinder() mints client-side cards from this so the
-    binder grid matches what Python actually loaded. Skips basic_agent.py
+    the local UI mints client-side cards from this so its hand/grid
+    matches what Python actually loaded. Skips basic_agent.py
     (the BasicAgent base class — not a usable agent on its own)."""
     files = glob.glob(os.path.join(AGENTS_PATH, "*.py"))
     results = []
@@ -1868,7 +1863,7 @@ def agents_import():
 
     # SPEC §11 — drop-installed .py agents also get a per-rapp workspace.
     # Identity is derived from the filename root (matches how agent
-    # discovery and the binder identify rapps elsewhere).
+    # discovery identifies rapps elsewhere).
     try:
         from utils import workspace as _ws
         rapp_id_guess = safe_name[:-len("_agent.py")] if safe_name.endswith("_agent.py") else safe_name[:-3]
@@ -1941,16 +1936,15 @@ def agents_import():
 
 
 # ── Egg cartridge export endpoints ──────────────────────────────────────
-# Decoupled from the binder. The brainstem itself owns the cartridge spec
-# (utils/egg.py) and exposes pack/unpack as core endpoints. The binder
-# service may also call these for its own UI; the chat UI calls them
-# directly. Three flavors:
+# The brainstem owns the cartridge spec (utils/egg.py) and exposes
+# pack/unpack as core endpoints. Two flavors:
 #
-#   GET /rapps/export/twin              → user's digital twin (agents + memory)
-#   GET /rapps/export/snapshot          → full brainstem snapshot
-#   GET /rapps/export/rapp/<id>         → one rapplication (legacy compat)
+#   GET /rapps/export/twin     → user's digital twin (agents + memory)
+#   GET /rapps/export/snapshot → full brainstem snapshot
 #
-# All return application/zip with Content-Disposition for direct download.
+# Both return application/zip with Content-Disposition for direct download.
+# Per-rapplication export is a package-manager concern (lives in the
+# binder service at /api/binder/export/<id>) — not a kernel concern.
 
 @app.route("/rapps/export/twin", methods=["GET"])
 def rapps_export_twin():
@@ -1974,34 +1968,6 @@ def rapps_export_snapshot():
     return blob, 200, {
         "Content-Type": "application/zip",
         "Content-Disposition": f'attachment; filename="{snap_id}.snapshot.egg"',
-        "Content-Length": str(len(blob)),
-    }
-
-
-@app.route("/rapps/export/rapp/<rapp_id>", methods=["GET"])
-def rapps_export_rapp(rapp_id):
-    from utils import egg as egg_mod
-    # Pull metadata from binder.json if present, else best-effort defaults.
-    binder_state_path = os.path.join(os.path.dirname(__file__), ".brainstem_data", "binder.json")
-    entry = {}
-    if os.path.exists(binder_state_path):
-        try:
-            with open(binder_state_path, encoding="utf-8") as f:
-                state = json.load(f)
-            entry = next((e for e in state.get("installed", []) if e.get("id") == rapp_id), {}) or {}
-        except Exception:
-            pass
-    blob = egg_mod.pack_rapplication(
-        rapp_id=rapp_id,
-        agent_filename=entry.get("agent_filename") or entry.get("filename") or f"{rapp_id}_agent.py",
-        service_filename=entry.get("service_filename"),
-        ui_filename=entry.get("ui_filename"),
-        version=entry.get("version", "?"),
-        name=entry.get("name", rapp_id),
-    )
-    return blob, 200, {
-        "Content-Type": "application/zip",
-        "Content-Disposition": f'attachment; filename="{rapp_id}.rapplication.egg"',
         "Content-Length": str(len(blob)),
     }
 
