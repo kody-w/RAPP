@@ -994,6 +994,84 @@ ul.clean li strong{ color:var(--text); font-weight:700; }
   font-feature-settings:"tnum";
   letter-spacing:.05em;
 }
+.nav .nav-fs{
+  margin-left:4px;
+  border-left:1px solid var(--border2);
+  border-radius:0 999px 999px 0;
+  padding-left:6px;
+  width:34px;
+}
+/* Hide fullscreen button when running as installed PWA — already fullscreen */
+.is-standalone .nav-fs{ display:none; }
+@media (display-mode: standalone){
+  .nav-fs{ display:none; }
+}
+
+/* iOS fullscreen instructions overlay */
+.ios-fs-hint{
+  display:none;
+  position:fixed; inset:0;
+  background:rgba(8,12,20,.55);
+  backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px);
+  z-index:300;
+  align-items:center; justify-content:center;
+  padding:24px;
+}
+.ios-fs-hint.visible{ display:flex; }
+.ios-fs-hint .panel{
+  background:var(--bg);
+  border:1px solid var(--border2);
+  border-radius:16px;
+  padding:24px 26px;
+  max-width:380px;
+  text-align:left;
+  box-shadow:0 24px 60px rgba(0,0,0,.35);
+}
+.ios-fs-hint h3{
+  font-size:18px; font-weight:800;
+  margin-bottom:6px;
+  color:var(--text);
+  letter-spacing:-.3px;
+}
+.ios-fs-hint > .panel > p{
+  font-size:13px; line-height:1.55;
+  color:var(--text-dim);
+  margin-bottom:16px;
+}
+.ios-fs-hint .steps{
+  display:flex; flex-direction:column;
+  gap:10px;
+  margin-bottom:18px;
+}
+.ios-fs-hint .step{
+  display:flex; gap:12px;
+  font-size:13px; line-height:1.5;
+  align-items:flex-start;
+  color:var(--text);
+}
+.ios-fs-hint .step strong{ color:var(--text); font-weight:700; }
+.ios-fs-hint .step-num{
+  width:22px; height:22px;
+  background:linear-gradient(135deg, var(--grad-1), var(--grad-2));
+  color:#fff;
+  border-radius:7px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:11px; font-weight:800;
+  flex-shrink:0;
+}
+.ios-fs-hint #iosFsClose{
+  width:100%;
+  background:var(--accent);
+  color:#fff;
+  border:0;
+  padding:10px 20px;
+  border-radius:999px;
+  font-weight:700; font-size:13px;
+  cursor:pointer;
+  letter-spacing:.04em;
+}
+.ios-fs-hint #iosFsClose:hover{ background:#0550ae; }
 
 .kbd-hint{
   position:fixed;
@@ -1629,6 +1707,25 @@ ul.clean li strong{ color:var(--text); font-weight:700; }
   <button id="prev" aria-label="Previous slide">‹</button>
   <span class="counter"><span id="cur">1</span> / <span id="total">17</span></span>
   <button id="next" aria-label="Next slide">›</button>
+  <button id="fsBtn" class="nav-fs" aria-label="Fullscreen">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/>
+    </svg>
+  </button>
+</div>
+
+<!-- iOS Add-to-Home-Screen instructions for true fullscreen -->
+<div class="ios-fs-hint" id="iosFsHint">
+  <div class="panel">
+    <h3>True fullscreen on iPhone</h3>
+    <p>Safari doesn't support fullscreen pages on iOS. For a chrome-free presentation:</p>
+    <div class="steps">
+      <div class="step"><span class="step-num">1</span><div>Tap the <strong>Share</strong> icon (square with up-arrow) in Safari.</div></div>
+      <div class="step"><span class="step-num">2</span><div>Scroll and choose <strong>Add to Home Screen</strong>.</div></div>
+      <div class="step"><span class="step-num">3</span><div>Launch from the home-screen icon — opens fullscreen, no Safari chrome, perfect for AirPlay.</div></div>
+    </div>
+    <button id="iosFsClose">Got it</button>
+  </div>
 </div>
 
 <!-- Theme dial -->
@@ -1716,6 +1813,48 @@ ul.clean li strong{ color:var(--text); font-weight:700; }
   document.getElementById('next').addEventListener('click', next);
   document.getElementById('prev').addEventListener('click', prev);
 
+  // ── Fullscreen — works on desktop; iOS Safari shows install hint ───
+  function isStandalone(){
+    return window.navigator.standalone === true ||
+           window.matchMedia('(display-mode: standalone)').matches;
+  }
+  function isIOS(){
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1 && !window.MSStream);
+  }
+  if (isStandalone()) document.body.classList.add('is-standalone');
+
+  function toggleFullscreen(){
+    const el = document.documentElement;
+    if (document.fullscreenElement || document.webkitFullscreenElement){
+      (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      return;
+    }
+    if (el.requestFullscreen){
+      el.requestFullscreen().catch(() => showIOSHint());
+      return;
+    }
+    if (el.webkitRequestFullscreen){
+      el.webkitRequestFullscreen();
+      return;
+    }
+    // iOS Safari has no fullscreen API for the page → instruct user
+    if (isIOS() && !isStandalone()){
+      showIOSHint();
+      return;
+    }
+  }
+  function showIOSHint(){
+    document.getElementById('iosFsHint').classList.add('visible');
+  }
+  document.getElementById('fsBtn').addEventListener('click', toggleFullscreen);
+  document.getElementById('iosFsClose').addEventListener('click', () => {
+    document.getElementById('iosFsHint').classList.remove('visible');
+  });
+  document.getElementById('iosFsHint').addEventListener('click', e => {
+    if (e.target.id === 'iosFsHint') e.currentTarget.classList.remove('visible');
+  });
+
   document.addEventListener('keydown', e => {
     if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' '){
       e.preventDefault(); next();
@@ -1726,12 +1865,14 @@ ul.clean li strong{ color:var(--text); font-weight:700; }
     } else if (e.key === 'End'){
       e.preventDefault(); show(slides.length - 1);
     } else if (e.key === 'f' || e.key === 'F'){
-      if (!document.fullscreenElement){ document.documentElement.requestFullscreen(); }
-      else { document.exitFullscreen(); }
+      e.preventDefault(); toggleFullscreen();
     } else if (e.key === 'p' || e.key === 'P'){
       window.print();
     } else if (e.key === 't' || e.key === 'T'){
       e.preventDefault(); toggleTheme();
+    } else if (e.key === 'Escape'){
+      const hint = document.getElementById('iosFsHint');
+      if (hint.classList.contains('visible')) hint.classList.remove('visible');
     }
   });
 
