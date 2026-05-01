@@ -1,0 +1,10 @@
+{
+  "rappid": "0b635450-c042-49fb-b4b1-bdb571044dec",
+  "parent_rappid": null,
+  "parent_repo": null,
+  "parent_commit": null,
+  "born_at": "2026-05-01T00:00:00Z",
+  "name": "rapp",
+  "role": "master",
+  "description": "The species root. All RAPP organisms descend from this rappid via the parent_rappid chain. See CONSTITUTION.md Article XXXIV."
+}

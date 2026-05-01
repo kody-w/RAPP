@@ -1,0 +1,363 @@
+#!/usr/bin/env python3
+"""
+hatchling — the digital organism's lifecycle CLI.
+
+Implements the **hatching cycle** described in Constitution Article XXXIII:
+- stamp the local organism's rappid at first boot (lineage identity)
+- tag the current state as a generation egg before each upgrade
+- fetch + merge upstream (auto-mutation; conflicts use standard git tools)
+- list the clutch of generations
+- revert into any prior egg
+
+There is no custom merge engine. Git is the merge fabric. Generation tags
+are the lineage. The user's normal git workflow applies for conflict
+resolution.
+
+Usage:
+    hatchling stamp                    # stamp ~/.brainstem/rappid.json on first run
+    hatchling status                   # show identity + ancestry + current generation
+    hatchling clutch                   # list all generation tags for this org
+    hatchling hatch [--from REMOTE/BR] # tag current as egg, fetch+merge, tag new gen
+    hatchling revert <generation>      # check out a generation tag (read-only)
+    hatchling reset <generation>       # reset --hard to a generation tag (destructive)
+
+The repo at the working directory must be a git working tree. Run from
+inside the cloned RAPP organism (or any variant of it).
+
+See:
+- Constitution Article XXXIII (Digital Organism)
+- Constitution Article XXXIV (Rappid + Variant Lineage)
+- pages/vault/Fixtures/Fixture 01 — Canonical Kernel local_storage Drop-In.md
+"""
+
+from __future__ import annotations
+
+import argparse
+import datetime
+import json
+import os
+import platform
+import re
+import subprocess
+import sys
+import uuid
+from pathlib import Path
+
+
+# ── Locations ────────────────────────────────────────────────────────────────
+
+ORG_RAPPID_PATH = Path.home() / ".brainstem" / "rappid.json"
+
+
+def _repo_root() -> Path:
+    """Return the git repo root containing CWD, or exit."""
+    try:
+        out = subprocess.check_output(
+            ["git", "rev-parse", "--show-toplevel"],
+            stderr=subprocess.DEVNULL,
+            text=True,
+        ).strip()
+    except subprocess.CalledProcessError:
+        sys.exit("hatchling: not inside a git working tree. Run from a cloned RAPP organism.")
+    return Path(out)
+
+
+def _repo_rappid_path() -> Path:
+    return _repo_root() / "rappid.json"
+
+
+# ── Identity ────────────────────────────────────────────────────────────────
+
+def _read_json(p: Path) -> dict | None:
+    if not p.exists():
+        return None
+    try:
+        return json.loads(p.read_text())
+    except Exception:
+        return None
+
+
+def _write_json(p: Path, data: dict) -> None:
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(data, indent=2) + "\n")
+
+
+def _git(args: list[str], cwd: Path | None = None, check: bool = True, capture: bool = True) -> subprocess.CompletedProcess:
+    cwd = cwd or _repo_root()
+    return subprocess.run(
+        ["git", *args],
+        cwd=str(cwd),
+        capture_output=capture,
+        text=True,
+        check=check,
+    )
+
+
+def _now_iso() -> str:
+    return datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def _short_host() -> str:
+    return f"{platform.system().lower()}-{platform.node().split('.')[0]}"
+
+
+def _stamp_org_rappid() -> dict:
+    """Create ~/.brainstem/rappid.json on first run. Idempotent."""
+    existing = _read_json(ORG_RAPPID_PATH)
+    if existing and existing.get("rappid"):
+        return existing
+
+    repo_rappid = _read_json(_repo_rappid_path()) or {}
+    parent_rappid = repo_rappid.get("rappid")
+    parent_repo = None
+    try:
+        out = _git(["config", "--get", "remote.origin.url"], check=False)
+        if out.returncode == 0:
+            parent_repo = out.stdout.strip() or None
+    except Exception:
+        pass
+    parent_commit = None
+    try:
+        out = _git(["rev-parse", "HEAD"], check=False)
+        if out.returncode == 0:
+            parent_commit = out.stdout.strip() or None
+    except Exception:
+        pass
+
+    org = {
+        "rappid": str(uuid.uuid4()),
+        "parent_rappid": parent_rappid,
+        "parent_repo": parent_repo,
+        "parent_commit": parent_commit,
+        "born_at": _now_iso(),
+        "host": _short_host(),
+    }
+    _write_json(ORG_RAPPID_PATH, org)
+    return org
+
+
+# ── Generation tags ─────────────────────────────────────────────────────────
+
+_TAG_RE = re.compile(r"^generations/(?P<rappid>[0-9a-f-]+)/(?P<n>\d+)$")
+
+
+def _list_generation_tags(rappid: str) -> list[tuple[int, str]]:
+    """Return [(n, tag), ...] sorted by n ascending."""
+    out = _git(["tag", "--list", f"generations/{rappid}/*"], check=False)
+    if out.returncode != 0:
+        return []
+    tags = []
+    for line in out.stdout.splitlines():
+        m = _TAG_RE.match(line.strip())
+        if m and m.group("rappid") == rappid:
+            tags.append((int(m.group("n")), line.strip()))
+    tags.sort(key=lambda t: t[0])
+    return tags
+
+
+def _next_generation_n(rappid: str) -> int:
+    existing = _list_generation_tags(rappid)
+    if not existing:
+        return 1
+    return existing[-1][0] + 1
+
+
+def _tag_generation(rappid: str, n: int, message: str) -> str:
+    tag = f"generations/{rappid}/{n}"
+    _git(["tag", "-a", tag, "-m", message])
+    return tag
+
+
+# ── Commands ────────────────────────────────────────────────────────────────
+
+def cmd_stamp(args: argparse.Namespace) -> int:
+    org = _stamp_org_rappid()
+    print(f"rappid:        {org['rappid']}")
+    print(f"parent:        {org.get('parent_rappid') or '(none — root)'}")
+    print(f"parent_repo:   {org.get('parent_repo') or '(none)'}")
+    print(f"parent_commit: {org.get('parent_commit') or '(none)'}")
+    print(f"born_at:       {org['born_at']}")
+    print(f"host:          {org['host']}")
+    print(f"stamped:       {ORG_RAPPID_PATH}")
+    return 0
+
+
+def cmd_status(args: argparse.Namespace) -> int:
+    org = _read_json(ORG_RAPPID_PATH)
+    if not org:
+        print("hatchling: org rappid not stamped yet. Run `hatchling stamp` first.")
+        return 1
+
+    repo_rappid = _read_json(_repo_rappid_path()) or {}
+    head = _git(["rev-parse", "--short", "HEAD"], check=False).stdout.strip() or "?"
+    branch = _git(["rev-parse", "--abbrev-ref", "HEAD"], check=False).stdout.strip() or "?"
+    clutch = _list_generation_tags(org["rappid"])
+
+    print(f"organism rappid:  {org['rappid']}")
+    print(f"  parent rappid:  {org.get('parent_rappid') or '(none — root organism)'}")
+    print(f"  born at:        {org['born_at']}  on {org.get('host', '?')}")
+    print(f"  parent repo:    {org.get('parent_repo') or '(none)'}")
+    print()
+    print(f"current repo:     {_repo_root()}")
+    print(f"  variant rappid: {repo_rappid.get('rappid') or '(no rappid.json — clone of master?)'}")
+    print(f"  variant role:   {repo_rappid.get('role') or '(unknown)'}")
+    print(f"  HEAD:           {head}  on {branch}")
+    print()
+    if clutch:
+        print(f"clutch ({len(clutch)} generation{'s' if len(clutch) != 1 else ''}):")
+        for n, tag in clutch:
+            sha = _git(["rev-list", "-n", "1", tag], check=False).stdout.strip()[:7]
+            msg = _git(["tag", "-l", "--format=%(contents:subject)", tag], check=False).stdout.strip()
+            print(f"  gen {n:>3}  {sha}  {tag}  {msg}")
+    else:
+        print("clutch:           (no generations yet — run `hatchling hatch` to begin)")
+    return 0
+
+
+def cmd_clutch(args: argparse.Namespace) -> int:
+    org = _read_json(ORG_RAPPID_PATH)
+    if not org:
+        print("hatchling: org rappid not stamped yet. Run `hatchling stamp` first.")
+        return 1
+    clutch = _list_generation_tags(org["rappid"])
+    if not clutch:
+        print("(no generations yet)")
+        return 0
+    for n, tag in clutch:
+        sha = _git(["rev-list", "-n", "1", tag], check=False).stdout.strip()[:7]
+        msg = _git(["tag", "-l", "--format=%(contents:subject)", tag], check=False).stdout.strip()
+        print(f"gen {n:>3}  {sha}  {tag}  {msg}")
+    return 0
+
+
+def cmd_hatch(args: argparse.Namespace) -> int:
+    org = _stamp_org_rappid()  # idempotent
+    rappid = org["rappid"]
+
+    # Verify clean working tree
+    out = _git(["status", "--porcelain"], check=False)
+    if out.stdout.strip():
+        print("hatchling: working tree has uncommitted changes. Commit or stash first.")
+        return 1
+
+    # Tag current as the egg
+    n_egg = _next_generation_n(rappid)
+    egg_msg = f"egg before hatch (organism {rappid[:8]}, generation {n_egg})"
+    egg_tag = _tag_generation(rappid, n_egg, egg_msg)
+    print(f"laid egg: {egg_tag}")
+
+    # Determine remote/branch
+    remote_branch = args.from_ref or "upstream/main"
+    remote, _, branch = remote_branch.partition("/")
+    if not branch:
+        # User passed just "main" or just "upstream"; assume master/main convention
+        remote, branch = "origin", remote
+
+    print(f"fetching {remote}/{branch}...")
+    fetch = _git(["fetch", remote, branch], check=False, capture=False)
+    if fetch.returncode != 0:
+        print(f"hatchling: fetch failed. Egg {egg_tag} preserved.")
+        return fetch.returncode
+
+    print(f"merging {remote}/{branch}...")
+    merge = _git(["merge", "--no-edit", f"{remote}/{branch}"], check=False, capture=False)
+    if merge.returncode != 0:
+        print()
+        print("hatchling: merge had conflicts (this is normal for heavily-mutated organisms).")
+        print(f"  - The egg of generation {n_egg} is preserved at tag: {egg_tag}")
+        print(f"  - Resolve conflicts with your normal git tools (mergetool, editor, VS Code, etc.)")
+        print(f"  - When done, commit and run `hatchling tag-current` to label the new generation.")
+        print(f"  - Or, to abandon the hatch and restore the egg: `git merge --abort`")
+        return merge.returncode
+
+    # Tag new generation
+    n_new = n_egg + 1
+    new_msg = f"hatched generation {n_new} (organism {rappid[:8]}, merged {remote}/{branch})"
+    new_tag = _tag_generation(rappid, n_new, new_msg)
+    print(f"hatched: {new_tag}")
+    return 0
+
+
+def cmd_tag_current(args: argparse.Namespace) -> int:
+    """After a manual conflict-resolution, label HEAD as the next generation."""
+    org = _read_json(ORG_RAPPID_PATH)
+    if not org:
+        print("hatchling: org rappid not stamped yet. Run `hatchling stamp` first.")
+        return 1
+    rappid = org["rappid"]
+    n = _next_generation_n(rappid)
+    tag = _tag_generation(rappid, n, args.message or f"manually tagged generation {n}")
+    print(f"tagged: {tag}")
+    return 0
+
+
+def cmd_revert(args: argparse.Namespace) -> int:
+    org = _read_json(ORG_RAPPID_PATH)
+    if not org:
+        print("hatchling: org rappid not stamped yet. Run `hatchling stamp` first.")
+        return 1
+    rappid = org["rappid"]
+    target_n = int(args.generation)
+    tag = f"generations/{rappid}/{target_n}"
+    out = _git(["rev-parse", "--verify", tag], check=False)
+    if out.returncode != 0:
+        print(f"hatchling: generation {target_n} not found (tag {tag} missing).")
+        return 1
+    print(f"checking out {tag} in detached-HEAD mode (read-only inspection)")
+    print("  - To return to your branch: `git checkout <branchname>`")
+    print(f"  - To reset destructively to this generation: `hatchling reset {target_n}`")
+    return _git(["checkout", tag], check=False, capture=False).returncode
+
+
+def cmd_reset(args: argparse.Namespace) -> int:
+    org = _read_json(ORG_RAPPID_PATH)
+    if not org:
+        print("hatchling: org rappid not stamped yet. Run `hatchling stamp` first.")
+        return 1
+    rappid = org["rappid"]
+    target_n = int(args.generation)
+    tag = f"generations/{rappid}/{target_n}"
+    out = _git(["rev-parse", "--verify", tag], check=False)
+    if out.returncode != 0:
+        print(f"hatchling: generation {target_n} not found (tag {tag} missing).")
+        return 1
+    if not args.yes:
+        print(f"WARNING: This will `git reset --hard {tag}` and discard any commits ahead of it.")
+        print("  Re-run with --yes to confirm.")
+        return 1
+    return _git(["reset", "--hard", tag], check=False, capture=False).returncode
+
+
+# ── Main ────────────────────────────────────────────────────────────────────
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(prog="hatchling", description=__doc__.split("\n", 1)[0])
+    sub = parser.add_subparsers(dest="cmd", required=True)
+
+    sub.add_parser("stamp", help="stamp ~/.brainstem/rappid.json on first run").set_defaults(func=cmd_stamp)
+    sub.add_parser("status", help="show identity, ancestry, current generation").set_defaults(func=cmd_status)
+    sub.add_parser("clutch", help="list all generation tags for this organism").set_defaults(func=cmd_clutch)
+
+    p_hatch = sub.add_parser("hatch", help="tag current as egg, fetch+merge upstream, tag new generation")
+    p_hatch.add_argument("--from", dest="from_ref", help="remote/branch to merge (default: upstream/main)")
+    p_hatch.set_defaults(func=cmd_hatch)
+
+    p_tag = sub.add_parser("tag-current", help="tag HEAD as the next generation (after manual merge resolution)")
+    p_tag.add_argument("-m", "--message", help="annotation message")
+    p_tag.set_defaults(func=cmd_tag_current)
+
+    p_rev = sub.add_parser("revert", help="check out a generation tag (read-only inspection)")
+    p_rev.add_argument("generation", help="generation number (e.g. 3)")
+    p_rev.set_defaults(func=cmd_revert)
+
+    p_res = sub.add_parser("reset", help="git reset --hard to a generation tag (destructive)")
+    p_res.add_argument("generation", help="generation number")
+    p_res.add_argument("--yes", action="store_true", help="confirm destructive reset")
+    p_res.set_defaults(func=cmd_reset)
+
+    args = parser.parse_args(argv)
+    return args.func(args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
