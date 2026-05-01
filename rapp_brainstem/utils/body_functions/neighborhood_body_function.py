@@ -1,24 +1,20 @@
 """
-neighborhood_service.py — peer-discovery service (kernel-baked).
+neighborhood_body_function.py — peer-discovery body_function.
 
 Reads the shared local-machine peer registry (~/.config/rapp/peers.json,
 written by install.sh / install.ps1) and probes each entry's /health
 endpoint with a short timeout to mark it live or offline. The current
 brainstem flags itself via the `is_self` field so the UI can highlight it.
 
-Endpoints (dispatched by brainstem.py at /api/neighborhood/*):
+Endpoints (dispatched at /api/neighborhood/*):
     GET    /api/neighborhood/peers       — list peers with live status
 
 The HTML viewer lives at rapp_brainstem/utils/web/neighborhood.html and
-is served by the brainstem's existing /web/<path> static handler at
-http://localhost:<port>/web/neighborhood.html. No kernel changes needed.
+is served by the static handler at /web/neighborhood.html.
 
-Why a service and not a kernel route: Constitution Article I — "Brainstem
-stays light. New features → new agents or services, not brainstem
-changes." Peer discovery is a feature, not part of the kernel. The
-install-time port-pick fix in install.sh stays where it has to live
-(the install layer); everything that runs *inside* the brainstem ships
-as this service file.
+Why a body_function and not a kernel route: Constitution Article I and
+Article XXXIII — the kernel is DNA, body_functions are the dispatchable
+musculature that grows around it. Peer discovery is a feature, not DNA.
 """
 
 import json
@@ -30,9 +26,9 @@ import urllib.request
 name = "neighborhood"
 
 
-# File lives at rapp_brainstem/utils/services/neighborhood_service.py.
-# Three dirname() walks reach the brainstem root (file → services →
-# utils → root), same as binder_service.py.
+# File lives at rapp_brainstem/utils/body_functions/neighborhood_body_function.py.
+# Three dirname() walks reach the brainstem root (file → body_functions →
+# utils → root).
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 

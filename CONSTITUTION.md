@@ -2136,10 +2136,13 @@ one front door.
 
 ## Article XXXII — Kernel Is What Chat Requires
 
+> **Terminology note (added with Article XXXIII).** This article was ratified using the older term "service" / `*_service.py` / `utils/services/`. **Article XXXIII renamed services to "body_functions"** as part of the digital-organism framing — the dispatchable musculature growing around the DNA kernel. Both terms refer to the same single-file `name + handle(method, path, body)` contract. New code uses `*_body_function.py` under `utils/body_functions/`. Legacy `*_service.py` files in older installs continue to work via transitional discovery during the rename window. The reasoning below is preserved verbatim — read "service" as "body_function" throughout.
+
 The brainstem keeps coming back to the same question: should this code
-live inline in `brainstem.py`, or extract into a `*_service.py` under
-`utils/services/`? Article I tells us "the brainstem stays light" but
-not where the line is. This article is the line.
+live inline in `brainstem.py`, or extract into a `*_body_function.py` under
+`utils/body_functions/` (formerly `*_service.py` under `utils/services/`)?
+Article I tells us "the brainstem stays light" but not where the line is.
+This article is the line.
 
 > **A capability is kernel if `/chat` cannot answer a turn without it.
 > Otherwise it is a service.**
@@ -2233,5 +2236,209 @@ debate is a five-second test.
 
 ---
 
+## Article XXXIII — RAPP Is a Digital Organism
+
+The platform is consciously modeled on a living organism. This isn't
+decoration — it determines how every layer is built, how upgrades flow,
+and what each contributor (human or AI) is permitted to touch.
+
+### XXXIII.1 — The three layers of the organism
+
+| Layer | Substance | Examples | Mutability |
+|---|---|---|---|
+| **DNA (kernel)** | Universal genetic code, identical across every install of this species | `rapp_brainstem/brainstem.py`, `rapp_brainstem/agents/basic_agent.py`, `rapp_swarm/function_app.py` | Sacred. Drop-in replaceable across all organisms of this species. Never edited by AI assistants. (See Article I and XXXII for what changes the kernel admits at all.) |
+| **Body functions** | Single-file musculature growing around the DNA — the dispatchable HTTP organs of the organism | `*_body_function.py` files under `utils/body_functions/` (formerly "services" — Article XXXII used the older term; the metaphor is biological) | Locally mutable per organism. Each body_function exposes `name` + `handle(method, path, body)` and is dispatched at `/api/<name>/...`. |
+| **Local mutations** | Everything the user adapts on-device: agents added, body_functions added, soul edited, configs tweaked, on-disk state | `agents/`, `utils/body_functions/`, `soul.md` overrides, `.brainstem_data/`, `.env` | Local-first. Never auto-synced upstream. Survives every hatching cycle. |
+
+The kernel is the *species*. Body functions and mutations are the
+*individual organism*. Two organisms of the same species (same DNA) can
+have wildly different musculature and adaptations.
+
+### XXXIII.2 — The hatching cycle (how upgrades happen)
+
+When an upstream kernel update arrives, the organism does not simply
+overwrite. It **hatches**: cracks the previous shell (kernel) and
+assumes a new one while the body (mutations) stays continuous.
+
+The cycle, mechanically:
+
+1. **Lay the egg.** The current commit is tagged `generations/<rappid>/<n>` — a recoverable snapshot of the entire org (DNA + body + mutations) just before the hatching.
+2. **Crack the shell.** `git fetch upstream && git merge` (or pull, or rebase — whichever the organism prefers).
+3. **Settle the conflicts.** Git auto-merges where possible. Where it can't, conflicts surface as standard merge markers in the working tree. The user resolves them with whatever tooling they already use (`git mergetool`, VS Code, GitHub Desktop, manual edits). **There is no custom merge engine.** The organism uses the proven biological tool of source control.
+4. **Hatchling becomes generation N+1.** The post-merge commit is tagged `generations/<rappid>/<n+1>`. The egg of generation N stays in the nest indefinitely.
+
+The lineage of a brainstem is the **clutch** of eggs accumulated in
+the nest over time. The user can re-enter any egg in their clutch at
+any time, for any reason — `git checkout generations/<rappid>/<n>` is
+the unconditional revert right.
+
+### XXXIII.3 — Drop-in replaceability is the test, not just the goal
+
+> A canonical kernel must be droppable onto any organism of this
+> species, no matter how heavily mutated, and that organism must
+> continue to live.
+
+This is the architectural promise that makes everything else hold. It
+is **operationalized as a test suite** — the wild-encounter fixtures
+in `tests/organism/`. Every real-world drop-in failure becomes a
+permanent fixture. The suite is the species' immune memory.
+
+Fixture #1 — the canonical kernel's `from local_storage import ...`
+import failing on a stripped layout — was the first such encounter.
+Resolution: the kernel ships a top-level `local_storage.py` shim
+alongside itself; the implementation stays in `utils/`. The shim is
+DNA-adjacent (kernel sibling), not mutation-surface.
+
+### XXXIII.4 — AI assistants do not edit DNA
+
+This is a hard rule, restated explicitly because incremental kernel
+edits are how species drift accumulates and why this article exists at
+all:
+
+> **AI assistants must not propose or apply changes to `brainstem.py`,
+> `basic_agent.py`, or `function_app.py` as part of regular task work.**
+
+Whatever problem looks like "I just need a small fix in the kernel"
+is actually one of:
+
+- a new agent (Article III),
+- a new body_function (Article XXXII),
+- an additive sibling file the kernel imports (e.g., the `local_storage.py` shim),
+- a transitional shim or wrapper that runs *around* the kernel.
+
+If an AI assistant believes a kernel edit is genuinely required — for
+example, a new top-level slot delimiter on the order of `|||VOICE|||`
+— it must stop and ask the user to approve before any edit. Authority
+to change DNA is held by the user, not by the assistant.
+
+### XXXIII.5 — Variant species (see Article XXXIV)
+
+A user may back up their local organism as a new public repo. That
+new repo becomes a **variant master** with its own rappid, and from
+then on can spawn its own organism children. The original master can
+keep pushing kernel updates onto variants; variants merge them via the
+ordinary hatching cycle and retain their accumulated mutations. This
+is how the species tree grows. See Article XXXIV.
+
+### XXXIII.6 — Why this article matters
+
+Without the organism framing, every refactor pressure produces a
+small kernel edit "just to fix this one thing." Each edit is
+defensible in isolation. After a year, the kernel has drifted, and
+dropping the canonical version onto a heavily-mutated install breaks
+the install. This has already happened in this repo: an installed
+brainstem grew from 1543 lines (canonical) to 2545 lines (drift)
+through accumulated edits, until the user reverted the kernel and
+codified this article.
+
+The organism metaphor is the discipline that prevents drift. The DNA
+is the species. Everyone who edits the DNA is editing the species,
+and that authority is reserved.
+
+---
+
+## Article XXXIV — Rappid: Lineage Tracking and Variant Species
+
+Every brainstem ever born — on every machine, in every variant repo —
+carries a globally-unique birth identifier called **rappid**. Rappids
+form an unbounded tree. The tree is the species genealogy of the
+platform globally, until the end of time.
+
+### XXXIV.1 — Rappid is stamped at birth
+
+When a brainstem boots for the first time on a machine, it writes
+`~/.brainstem/rappid.json`:
+
+```json
+{
+  "rappid": "<UUIDv4>",
+  "parent_rappid": "<rappid of the master that birthed this org>",
+  "parent_repo": "https://github.com/kody-w/RAPP",
+  "parent_commit": "<git SHA at birth>",
+  "born_at": "<ISO timestamp>",
+  "host": "<short machine identifier, opaque>"
+}
+```
+
+The rappid is **never regenerated**. It is the organism's permanent
+identity. Backing up the org to a new repo, hatching, reverting,
+moving the directory — none of these change the rappid.
+
+### XXXIV.2 — The rappid tree
+
+Every rappid points at a `parent_rappid`. The chain ascends until it
+reaches the root: **rapp itself** (the master repo at
+`kody-w/RAPP`), which has `parent_rappid: null` and is the species
+ancestor.
+
+```
+rapp (root, parent_rappid = null)
+ ├── rappter (first variant child, parent_rappid → rapp)
+ │    ├── <user A's rappter brainstem>  (parent_rappid → rappter)
+ │    └── <user B's rappter brainstem>  (parent_rappid → rappter)
+ ├── <some other variant>              (parent_rappid → rapp)
+ └── <user C's direct-from-rapp brainstem>  (parent_rappid → rapp)
+```
+
+**rappter is the canonical first variant** — Wildhaven's
+productized brainstem, born from rapp, with its own accumulated
+mutations and its own hatching history. It exists as the worked
+example that proves the variant-lineage pattern: a child of rapp that
+is sovereign, has its own rappid, and can spawn its own children
+indefinitely.
+
+### XXXIV.3 — Becoming a variant master
+
+Any local organism may **lay an egg that becomes a new species**:
+back itself up to a fresh public repo. That new repo becomes a
+**variant master** with its own rappid and its own children:
+
+1. The user pushes their org to a new git remote.
+2. A `rappid.json` is committed at the repo root with `parent_rappid` pointing at the upstream master that birthed this variant, and `parent_commit` recording the SHA where the lineage diverged.
+3. Future brainstems born from this repo inherit the variant's rappid as their parent — they are descendants of the variant, not of the original master.
+
+A variant can keep pulling kernel updates from the original master
+through normal git remotes — the hatching cycle is the same. Each
+variant retains its rappid lineage permanently.
+
+### XXXIV.4 — Local generations are device-private
+
+`generations/<rappid>/<n>` tags **never sync upstream**. The clutch
+of eggs in a brainstem's nest is private to that machine. Backing up
+to a variant repo pushes the **current generation**, not the historical
+clutch. (The variant repo can build its own generation history from
+its own hatchings going forward.)
+
+This is consistent with Article VI (local-first, no phone-home): an
+organism's adaptation history belongs to the organism, not to the
+species.
+
+### XXXIV.5 — What this rules out
+
+- ❌ **Regenerating rappid for any reason.** Not on revert, not on directory move, not on machine migration. The user's organism keeps its identity for the full life of that organism.
+- ❌ **Treating variant masters as second-class.** A variant is sovereign — it can spawn children, fork further, and contribute back to its parent if it wishes. The parent has no special authority over a variant's adaptations.
+- ❌ **Editing rappid metadata to falsify lineage.** The chain is auditable; tampering with `parent_rappid` or `parent_commit` defeats the purpose.
+- ❌ **Auto-syncing the clutch upstream.** Generation eggs are nest-private.
+
+### XXXIV.6 — Why this matters
+
+The platform is designed to evolve through both centralized
+(upstream master) and decentralized (variant) channels at once. With
+rappid lineage, every organism in the wild — no matter how many
+generations downstream of the original master, no matter how variant
+its species path — can be located on a single global tree. New
+organisms inherit a known ancestry. Old organisms can be told where
+they came from. The platform's history is auditable end-to-end across
+every fork, ever.
+
+The variant pattern is also how the platform scales beyond any one
+maintainer: any user who wants to ship their own productized
+brainstem (the way Wildhaven ships rappter) can do so without
+forking the species — they extend it. The master keeps its DNA;
+variants extend the body plan; mutations stay local to each
+individual.
+
+---
+
 *Ratified for the RAPP platform. The engine stays small so the agents
-can be everything.*
+can be everything. The species stays one so the variants can be many.*
