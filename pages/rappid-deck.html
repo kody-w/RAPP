@@ -1584,34 +1584,34 @@ ul.clean li strong{ color:var(--text); font-weight:700; }
 <!-- ─── 16 / The ask ──────────────────────────────────────────── -->
 <section class="slide" data-name="ask">
   <div class="slide-eyebrow">// the ask</div>
-  <h2 class="slide-title">Let us <span class="grad-text">prove the impact</span> — on your terms.</h2>
-  <p class="lede">No org changes. No positioning asks. No engineering investment from Microsoft. Just three simple inputs from you, and you get back numbers.</p>
+  <h2 class="slide-title" style="font-size:42px;">Let us <span class="grad-text">prove the impact</span> — on your terms.</h2>
+  <p class="lede" style="font-size:18px;">No org changes. No positioning asks. No engineering investment from Microsoft. Three inputs from you — you get back numbers.</p>
 
-  <div class="asks">
-    <div class="ask">
+  <div class="asks" style="margin-top:18px; gap:10px;">
+    <div class="ask" style="padding:14px 18px;">
       <div class="marker">1</div>
       <div>
-        <h5>Pick the cohort.</h5>
-        <p>10 non-engineer FTEs from any org you choose — PMs, sales ops, customer success, business analysts, marketing. Whoever you most want to test the "non-engineers shipping agents" thesis on.</p>
+        <h5 style="font-size:15px;">Pick the cohort.</h5>
+        <p style="font-size:13px;">10 non-engineer FTEs from any org — PMs, sales ops, CS, BAs, marketing. Whoever you most want to test the non-engineer-shipping-agents thesis on.</p>
       </div>
     </div>
-    <div class="ask">
+    <div class="ask" style="padding:14px 18px;">
       <div class="marker">2</div>
       <div>
-        <h5>Pick the metrics.</h5>
-        <p>You define what "impact" means. Agents shipped per person. Hours saved. Studio solutions promoted. Customer-call wins. Forecast accuracy. We instrument what you actually care about — and we share the raw data.</p>
+        <h5 style="font-size:15px;">Pick the metrics.</h5>
+        <p style="font-size:13px;">You define impact. Agents shipped per person. Hours saved. Studio solutions promoted. Customer-call wins. We instrument what you care about and share the raw data.</p>
       </div>
     </div>
-    <div class="ask">
+    <div class="ask" style="padding:14px 18px;">
       <div class="marker">3</div>
       <div>
-        <h5>Review the numbers in 30 days.</h5>
-        <p>At the end of the pilot, you get a report — numbers, named outcomes, quoted user feedback, agents the cohort built. You decide what to do with it. If the numbers don't land, that's the answer.</p>
+        <h5 style="font-size:15px;">Review the numbers in 30 days.</h5>
+        <p style="font-size:13px;">You get a report — numbers, named outcomes, quoted feedback, agents the cohort built. You decide what to do with it. If the numbers don't land, that's the answer.</p>
       </div>
     </div>
   </div>
 
-  <div class="slide-name">12 — Ask</div>
+  <div class="slide-name"></div>
   <div class="slide-num"></div>
 </section>
 
@@ -1661,10 +1661,18 @@ ul.clean li strong{ color:var(--text); font-weight:700; }
 
   let idx = 0;
 
-  // Auto-fill slide numbers so adding/removing slides "just works"
+  // Auto-fill slide numbers + names from data-name so adding/removing
+  // slides "just works" (no stale labels left behind by reorders).
   slides.forEach((s, k) => {
-    const num = s.querySelector('.slide-num');
-    if (num) num.textContent = String(k + 1).padStart(2, '0') + ' / ' + String(slides.length).padStart(2, '0');
+    const total = String(slides.length).padStart(2, '0');
+    const idx2  = String(k + 1).padStart(2, '0');
+    const num   = s.querySelector('.slide-num');
+    if (num) num.textContent = idx2 + ' / ' + total;
+    const name = s.querySelector('.slide-name');
+    if (name) {
+      const dn = (s.dataset.name || '').replace(/-/g, ' ');
+      name.textContent = dn ? (idx2 + ' — ' + dn.toUpperCase()) : '';
+    }
   });
 
   function fitSlide(){
