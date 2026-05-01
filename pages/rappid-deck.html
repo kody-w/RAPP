@@ -1167,7 +1167,56 @@ ul.clean li strong{ color:var(--text); font-weight:700; }
   <div class="slide-num">04 / 17</div>
 </section>
 
-<!-- ─── 5 / The Rocket ─────────────────────────────────────────── -->
+<!-- ─── 5 / vs skills.md — code beats prose ──────────────────── -->
+<section class="slide" data-name="vs-skills">
+  <div class="slide-eyebrow">// why we ship code, not descriptions</div>
+  <h2 class="slide-title">skills.md is a wish. <span class="grad-text">agent.py is the contract.</span></h2>
+  <p class="lede">Anthropic and OpenAI bet you can describe a skill in prose and the LLM will execute it correctly every time. That's a workshop demo — it is not a production agent. rappid agents are <strong>code</strong>: the LLM dispatches a named function, and the function runs deterministically, every time, on every model.</p>
+
+  <table class="compare" style="margin-top:18px;">
+    <thead>
+      <tr>
+        <th style="width:18%;">Dimension</th>
+        <th style="width:41%;">Industry — <code style="font-family:var(--font-mono);">skills.md</code> (non-deterministic)</th>
+        <th style="width:41%;">rappid — <code style="font-family:var(--font-mono);">agent.py</code> (deterministic)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="font-family:var(--font-mono); font-size:11px; color:var(--text-dim); letter-spacing:.1em; text-transform:uppercase; font-weight:700;">File</td>
+        <td class="dim">Markdown describing what the skill <em>should</em> do</td>
+        <td class="win">Python file with named functions and explicit logic</td>
+      </tr>
+      <tr>
+        <td style="font-family:var(--font-mono); font-size:11px; color:var(--text-dim); letter-spacing:.1em; text-transform:uppercase; font-weight:700;">LLM's role</td>
+        <td class="dim">Read the description, decide how to fulfill it</td>
+        <td class="win">Pick which function to dispatch — code does the work</td>
+      </tr>
+      <tr>
+        <td style="font-family:var(--font-mono); font-size:11px; color:var(--text-dim); letter-spacing:.1em; text-transform:uppercase; font-weight:700;">Same input →</td>
+        <td class="dim">May produce different behavior across runs &amp; models</td>
+        <td class="win">Same execution path, every time, every model</td>
+      </tr>
+      <tr>
+        <td style="font-family:var(--font-mono); font-size:11px; color:var(--text-dim); letter-spacing:.1em; text-transform:uppercase; font-weight:700;">Debug</td>
+        <td class="dim">Prompt engineering, eval suites, vibe checks</td>
+        <td class="win">Stack traces. Breakpoints. Print statements.</td>
+      </tr>
+      <tr>
+        <td style="font-family:var(--font-mono); font-size:11px; color:var(--text-dim); letter-spacing:.1em; text-transform:uppercase; font-weight:700;">Production</td>
+        <td class="dim">Hope it works on the customer's model</td>
+        <td class="win">Same file, just deployed — laptop → cloud → Studio</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p style="margin-top:22px; text-align:center; font-size:18px; color:var(--text-dim);">If you can't read the file and predict what will happen, <strong style="color:var(--text);">you can't ship it.</strong></p>
+
+  <div class="slide-name">05 — code vs markdown</div>
+  <div class="slide-num"></div>
+</section>
+
+<!-- ─── 6 / The Rocket ─────────────────────────────────────────── -->
 <section class="slide" data-name="how">
   <div class="slide-eyebrow">// how it ships</div>
   <h2 class="slide-title">Three stages of one rocket. <span class="grad-text">Same agent, every stage.</span></h2>
