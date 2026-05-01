@@ -1,0 +1,1665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>rappid — the fastest path from idea to Copilot Studio agent</title>
+<meta name="description" content="rappid: the fastest path from idea to Copilot Studio agent. One file. Three runtimes. Zero ceremony.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E🚀%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  /* LIGHT mode (default) */
+  --bg:#ffffff;
+  --panel:#f6f8fa;
+  --surface:#f6f8fa;
+  --surface2:#eaeef2;
+  --border:#d8dee4;
+  --border2:#afb8c1;
+
+  --text:#1f2328;
+  --text-dim:#59636e;
+  --muted:#8c959f;
+
+  --accent:#0969da;
+  --blue:#0969da;
+  --green:#1a7f37;
+  --purple:#8250df;
+  --teal:#1a7f37;
+  --warn:#9a6700;
+  --pink:#bf3989;
+
+  --grad-1:#2da44e;
+  --grad-2:#0969da;
+  --grad-3:#8250df;
+
+  /* Component tokens (theme-aware) */
+  --stage-bg:#eef1f4;
+  --stage-bg-grad-1:#f3f5f8;
+  --stage-bg-grad-2:#e3e7ed;
+  --slide-shadow:0 30px 80px rgba(20,30,50,.18), 0 0 0 1px rgba(0,0,0,.04);
+  --prompt-bg:#0a0e14;
+  --prompt-text:#e8eef6;
+  --prompt-pl:#7df0c8;
+  --nav-bg:rgba(255,255,255,.92);
+  --marker-text:#ffffff;
+  --tint-1:rgba(45,164,78,.06);
+  --tint-2:rgba(130,80,223,.05);
+  --cover-glow:rgba(9,105,218,.10);
+
+  --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --font-mono:"SF Mono",ui-monospace,"Menlo","Consolas",monospace;
+
+  --slide-w:1280px;
+  --slide-h:720px;
+}
+
+[data-theme="dark"]{
+  --bg:#0a0e14;
+  --panel:#11161f;
+  --surface:#161c27;
+  --surface2:#1c2330;
+  --border:#222a38;
+  --border2:#2e3849;
+
+  --text:#e8eef6;
+  --text-dim:#9aa6b8;
+  --muted:#5d6a7d;
+
+  --accent:#58a6ff;
+  --blue:#1f6feb;
+  --green:#3fb950;
+  --purple:#a78bfa;
+  --teal:#7df0c8;
+  --warn:#d29922;
+  --pink:#f78bc2;
+
+  --grad-1:#7df0c8;
+  --grad-2:#58a6ff;
+  --grad-3:#a78bfa;
+
+  --stage-bg:#000;
+  --stage-bg-grad-1:#0a0e14;
+  --stage-bg-grad-2:#000;
+  --slide-shadow:0 30px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.02);
+  --prompt-bg:#000;
+  --prompt-text:#e8eef6;
+  --prompt-pl:#7df0c8;
+  --nav-bg:rgba(15,20,30,.85);
+  --marker-text:#0a0e14;
+  --tint-1:rgba(125,240,200,.05);
+  --tint-2:rgba(167,139,250,.05);
+  --cover-glow:rgba(125,240,200,.15);
+}
+
+*{box-sizing:border-box; margin:0; padding:0;}
+html, body{
+  background:var(--stage-bg);
+  color:var(--text);
+  font-family:var(--font-sans);
+  font-feature-settings:"ss01","cv01";
+  -webkit-font-smoothing:antialiased;
+  height:100%;
+  overflow:hidden;
+  transition:background-color .25s ease;
+}
+
+/* Stage = the viewport area where the current slide lives */
+.stage{
+  position:fixed; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(ellipse at center, var(--stage-bg-grad-1) 0%, var(--stage-bg-grad-2) 100%);
+  transition:background .25s ease;
+}
+
+/* Slide = fixed 16:9 surface, scaled to fit */
+.slide{
+  width:var(--slide-w);
+  height:var(--slide-h);
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:18px;
+  position:relative;
+  overflow:hidden;
+  box-shadow:var(--slide-shadow);
+  display:none;
+  flex-direction:column;
+  padding:64px 80px;
+  transform-origin:center center;
+  transition:background-color .25s ease, border-color .25s ease, box-shadow .25s ease;
+}
+.slide.active{ display:flex; }
+
+/* Subtle background pattern for slides */
+.slide::before{
+  content:"";
+  position:absolute; inset:0;
+  background:
+    radial-gradient(circle at 15% 10%, var(--tint-1), transparent 35%),
+    radial-gradient(circle at 85% 90%, var(--tint-2), transparent 40%);
+  pointer-events:none;
+}
+
+/* Slide chrome */
+.slide-num{
+  position:absolute; bottom:24px; right:32px;
+  font-family:var(--font-mono);
+  font-size:11px; color:var(--muted);
+  letter-spacing:.1em;
+}
+.slide-name{
+  position:absolute; bottom:24px; left:32px;
+  font-family:var(--font-mono);
+  font-size:11px; color:var(--muted);
+  letter-spacing:.18em; text-transform:uppercase;
+}
+.slide-eyebrow{
+  font-family:var(--font-mono);
+  font-size:11px; color:var(--accent);
+  letter-spacing:.22em; text-transform:uppercase;
+  margin-bottom:24px;
+}
+
+/* Typography */
+h1.slide-title{
+  font-size:64px; font-weight:800;
+  letter-spacing:-1.5px; line-height:1.05;
+  margin-bottom:20px;
+}
+h2.slide-title{
+  font-size:48px; font-weight:800;
+  letter-spacing:-1px; line-height:1.1;
+  margin-bottom:18px;
+}
+h3.slide-title{
+  font-size:32px; font-weight:700;
+  letter-spacing:-.5px; line-height:1.15;
+  margin-bottom:16px;
+}
+.lede{
+  font-size:22px; line-height:1.5;
+  color:var(--text-dim);
+  max-width:820px;
+}
+.lede strong{ color:var(--text); font-weight:600; }
+
+.grad-text{
+  background:linear-gradient(135deg, var(--grad-1), var(--grad-2), var(--grad-3));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+
+/* Cover slide */
+.cover{
+  align-items:flex-start; justify-content:center;
+  padding:80px 100px;
+}
+.cover h1{
+  font-size:140px; font-weight:900;
+  letter-spacing:-5px; line-height:.95;
+  margin:0 0 28px;
+}
+.cover .tag{
+  font-size:28px; font-weight:500;
+  color:var(--text-dim);
+  max-width:780px;
+  line-height:1.35;
+}
+.cover .glow{
+  position:absolute; top:-200px; right:-200px;
+  width:600px; height:600px;
+  background:radial-gradient(circle, var(--cover-glow), transparent 60%);
+  pointer-events:none;
+}
+
+/* Two-column layout */
+.cols{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:48px;
+  align-items:start;
+  margin-top:24px;
+}
+.cols.tight{ gap:32px; }
+
+/* Cards */
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:24px 26px;
+}
+.card .label{
+  font-family:var(--font-mono);
+  font-size:10px; color:var(--accent);
+  letter-spacing:.2em; text-transform:uppercase;
+  margin-bottom:10px;
+}
+.card h4{
+  font-size:18px; font-weight:700;
+  margin-bottom:10px;
+}
+.card p{
+  color:var(--text-dim);
+  font-size:14px; line-height:1.55;
+}
+
+/* Number callouts */
+.stats{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:32px;
+  margin-top:32px;
+}
+.stat .n{
+  font-size:64px; font-weight:800;
+  letter-spacing:-2px; line-height:1;
+  background:linear-gradient(135deg, var(--grad-1), var(--grad-2));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.stat .label{
+  margin-top:8px;
+  font-size:13px; color:var(--text-dim);
+  line-height:1.4;
+}
+
+/* Quote block */
+.pull-quote{
+  font-size:34px; font-weight:600;
+  letter-spacing:-.5px; line-height:1.3;
+  color:var(--text);
+  border-left:3px solid var(--accent);
+  padding:8px 0 8px 28px;
+  margin:24px 0;
+  max-width:880px;
+}
+.pull-quote .by{
+  display:block; margin-top:16px;
+  font-size:14px; font-weight:500;
+  color:var(--text-dim); letter-spacing:.04em;
+}
+
+/* Rocket / stages */
+.rocket{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:18px;
+  margin-top:40px;
+}
+.stage-card{
+  background:linear-gradient(180deg, var(--surface), var(--surface2));
+  border:1px solid var(--border2);
+  border-radius:14px;
+  padding:24px;
+  position:relative;
+  overflow:hidden;
+}
+.stage-card .stage-num{
+  font-family:var(--font-mono);
+  font-size:11px; letter-spacing:.2em; color:var(--accent);
+  text-transform:uppercase; margin-bottom:16px;
+}
+.stage-card h4{
+  font-size:22px; font-weight:700;
+  margin-bottom:8px;
+}
+.stage-card .where{
+  font-size:13px; color:var(--text-dim);
+  margin-bottom:14px;
+  font-family:var(--font-mono);
+}
+.stage-card p{
+  font-size:13px; line-height:1.55;
+  color:var(--text-dim);
+}
+.stage-card.active{
+  border-color:var(--accent);
+  box-shadow:0 0 0 1px rgba(88,166,255,.2), 0 12px 30px rgba(88,166,255,.08);
+}
+.stage-arrow{
+  display:flex; align-items:center; justify-content:center;
+  font-size:24px; color:var(--muted);
+}
+
+/* Pipeline diagram */
+.pipeline{
+  display:flex; align-items:stretch; gap:0;
+  margin-top:40px;
+}
+.pipe-node{
+  flex:1;
+  background:var(--surface);
+  border:1px solid var(--border2);
+  border-radius:14px;
+  padding:22px;
+  position:relative;
+}
+.pipe-node h5{
+  font-size:16px; font-weight:700; margin-bottom:6px;
+}
+.pipe-node .kind{
+  font-family:var(--font-mono);
+  font-size:10px; color:var(--accent);
+  letter-spacing:.2em; text-transform:uppercase;
+  margin-bottom:12px;
+}
+.pipe-node p{
+  font-size:13px; line-height:1.5; color:var(--text-dim);
+}
+.pipe-arrow{
+  display:flex; align-items:center; justify-content:center;
+  width:40px;
+  color:var(--accent); font-size:20px;
+}
+
+/* Use case grid */
+.uc-grid{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:14px;
+  margin-top:32px;
+}
+.uc-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:18px 16px;
+  position:relative;
+  min-height:155px;
+}
+.uc-card .uc-num{
+  font-family:var(--font-mono);
+  font-size:10px; color:var(--muted);
+  letter-spacing:.18em;
+  margin-bottom:8px;
+}
+.uc-card h5{
+  font-size:15px; font-weight:700;
+  margin-bottom:8px; line-height:1.25;
+}
+.uc-card p{
+  font-size:12px; line-height:1.45;
+  color:var(--text-dim);
+}
+
+/* Use case spotlight */
+.spotlight{
+  display:grid;
+  grid-template-columns:1.05fr 1fr;
+  gap:48px;
+  margin-top:24px;
+  align-items:start;
+}
+.spotlight .prompt-block{
+  background:var(--prompt-bg);
+  border:1px solid var(--border2);
+  border-left:3px solid var(--accent);
+  border-radius:10px;
+  padding:22px 24px;
+  font-family:var(--font-mono);
+  font-size:14px; line-height:1.55;
+  color:var(--prompt-text);
+  white-space:pre-wrap;
+}
+.spotlight .prompt-block .pl{
+  color:var(--prompt-pl);
+  font-size:11px; letter-spacing:.2em;
+  text-transform:uppercase;
+  display:block; margin-bottom:14px;
+  font-family:var(--font-sans); font-weight:600;
+}
+.spot-meta dt{
+  font-family:var(--font-mono);
+  font-size:10px; color:var(--accent);
+  letter-spacing:.2em; text-transform:uppercase;
+  margin-top:18px; margin-bottom:6px;
+}
+.spot-meta dt:first-child{ margin-top:0; }
+.spot-meta dd{
+  font-size:16px; line-height:1.5;
+  color:var(--text);
+}
+.spot-meta dd.dim{ color:var(--text-dim); font-size:15px; }
+
+/* Ecosystem chips */
+.eco-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:16px;
+  margin-top:36px;
+}
+.eco-card{
+  background:var(--surface);
+  border:1px solid var(--border2);
+  border-radius:14px;
+  padding:22px 20px;
+  text-align:left;
+}
+.eco-card .icon{
+  font-size:26px; margin-bottom:14px;
+}
+.eco-card h5{
+  font-size:16px; font-weight:700; margin-bottom:6px;
+}
+.eco-card p{
+  font-size:13px; line-height:1.5; color:var(--text-dim);
+}
+.eco-card.center{
+  background:linear-gradient(135deg, rgba(125,240,200,.08), rgba(167,139,250,.08));
+  border-color:var(--accent);
+}
+
+/* Ask checklist */
+.asks{
+  display:flex; flex-direction:column; gap:14px;
+  margin-top:28px; max-width:920px;
+}
+.ask{
+  display:flex; gap:18px; align-items:flex-start;
+  padding:18px 22px;
+  background:var(--surface);
+  border:1px solid var(--border2);
+  border-radius:12px;
+}
+.ask .marker{
+  width:28px; height:28px;
+  flex-shrink:0;
+  border-radius:8px;
+  background:linear-gradient(135deg, var(--grad-1), var(--grad-2));
+  color:var(--marker-text);
+  font-weight:800; font-size:14px;
+  display:flex; align-items:center; justify-content:center;
+}
+.ask h5{
+  font-size:17px; font-weight:700;
+  margin-bottom:4px;
+}
+.ask p{
+  font-size:14px; line-height:1.55; color:var(--text-dim);
+}
+
+/* Bullets */
+ul.clean{
+  list-style:none;
+  padding:0; margin:18px 0 0;
+}
+ul.clean li{
+  font-size:17px; line-height:1.55;
+  color:var(--text);
+  padding:10px 0 10px 28px;
+  position:relative;
+}
+ul.clean li::before{
+  content:"";
+  position:absolute;
+  left:0; top:18px;
+  width:14px; height:2px;
+  background:var(--accent);
+}
+ul.clean li strong{ color:var(--text); font-weight:700; }
+
+/* Comparison table */
+.compare{
+  width:100%; margin-top:24px;
+  border-collapse:separate;
+  border-spacing:0;
+}
+.compare th, .compare td{
+  text-align:left;
+  padding:14px 18px;
+  font-size:15px;
+  border-bottom:1px solid var(--border);
+}
+.compare th{
+  font-family:var(--font-mono);
+  font-size:11px; color:var(--text-dim);
+  letter-spacing:.18em; text-transform:uppercase;
+  font-weight:600;
+}
+.compare td.dim{ color:var(--text-dim); }
+.compare td.win{ color:var(--teal); font-weight:600; }
+
+/* Closing */
+.closing{
+  align-items:center; justify-content:center;
+  text-align:center;
+}
+.closing h1{
+  font-size:120px; font-weight:900;
+  letter-spacing:-4px; line-height:1;
+  margin-bottom:24px;
+}
+.closing .tag{
+  font-size:24px; color:var(--text-dim);
+  max-width:700px; line-height:1.4;
+}
+
+/* ── Brief mockup (the artifact) ─────────────────────────────── */
+.brief-layout{
+  display:grid;
+  grid-template-columns:1.6fr 1fr;
+  gap:22px;
+  margin-top:18px;
+  align-items:start;
+}
+.brief-frame{
+  display:flex; flex-direction:column;
+  gap:10px;
+  min-width:0;
+}
+.brief-chip{
+  display:inline-flex; align-items:center; gap:10px;
+  padding:6px 14px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:999px;
+  align-self:flex-start;
+  font-size:12px;
+  box-shadow:0 4px 14px rgba(20,30,50,.06);
+}
+.brief-chip .dot{
+  width:7px; height:7px;
+  border-radius:999px;
+  background:var(--green);
+  box-shadow:0 0 0 0 rgba(26,127,55,.55);
+  animation:livePulse 1.6s infinite;
+}
+@keyframes livePulse{
+  0%{   box-shadow:0 0 0 0   rgba(26,127,55,.55); }
+  70%{  box-shadow:0 0 0 9px rgba(26,127,55,0);   }
+  100%{ box-shadow:0 0 0 0   rgba(26,127,55,0);   }
+}
+.brief-chip .label{ font-weight:700; color:var(--text); }
+.brief-chip .meta{ color:var(--text-dim); font-family:var(--font-mono); font-size:11px; }
+
+.brief-doc{
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:16px 22px;
+  box-shadow:0 12px 30px rgba(20,30,50,.08);
+  font-size:12px;
+  line-height:1.5;
+  color:var(--text);
+  overflow:hidden;
+}
+[data-theme="dark"] .brief-doc{
+  background:var(--surface);
+}
+.brief-head{
+  border-bottom:1px solid var(--border);
+  padding-bottom:9px;
+  margin-bottom:10px;
+  display:flex; justify-content:space-between; align-items:baseline;
+}
+.brief-head .brief-eyebrow{
+  font-size:14px; font-weight:700;
+  color:var(--text);
+  letter-spacing:0;
+  text-transform:none;
+  font-family:var(--font-sans);
+  margin:0;
+}
+.brief-head .brief-date{
+  font-size:11px; color:var(--text-dim);
+  font-family:var(--font-mono);
+}
+.brief-sec{ margin-bottom:6px; }
+.brief-sec h3{
+  font-size:13px; font-weight:700;
+  color:var(--text);
+  margin:6px 0 3px;
+  letter-spacing:0;
+}
+.brief-sub{
+  font-family:var(--font-mono);
+  font-size:9.5px; color:var(--accent);
+  letter-spacing:.18em; text-transform:uppercase;
+  margin:6px 0 2px;
+  font-weight:700;
+}
+.brief-doc ul{
+  list-style:none;
+  padding:0; margin:0;
+}
+.brief-doc ul li{
+  padding:2px 0 2px 14px;
+  position:relative;
+  font-size:11.5px; line-height:1.5;
+  color:var(--text);
+}
+.brief-doc ul li::before{
+  content:"•";
+  position:absolute;
+  left:2px; top:0;
+  color:var(--text-dim);
+  font-weight:700;
+}
+.brief-doc strong{ font-weight:700; color:var(--text); }
+.brief-doc em.q{
+  color:var(--text-dim);
+  font-style:italic;
+}
+.brief-doc .conseq{
+  color:var(--warn);
+  font-weight:600;
+}
+.brief-doc .dim-light{
+  color:var(--text-dim);
+  font-weight:400;
+  font-size:10.5px;
+}
+.priority-box{
+  background:linear-gradient(135deg, rgba(45,164,78,.10), rgba(9,105,218,.10));
+  border:1px solid var(--accent);
+  border-left:3px solid var(--accent);
+  border-radius:8px;
+  padding:9px 14px;
+  margin:8px 0;
+}
+[data-theme="dark"] .priority-box{
+  background:linear-gradient(135deg, rgba(125,240,200,.08), rgba(88,166,255,.08));
+}
+.priority-tag{
+  font-family:var(--font-mono);
+  font-size:10px; color:var(--accent);
+  letter-spacing:.15em; text-transform:uppercase;
+  font-weight:700; margin-bottom:3px;
+}
+.priority-box p{
+  font-size:11.5px; line-height:1.5;
+  color:var(--text);
+}
+
+/* Notice panel — "look at what's good" annotations */
+.notice-panel{
+  display:flex; flex-direction:column;
+  gap:9px;
+}
+.notice-head{
+  font-family:var(--font-mono);
+  font-size:11px; color:var(--accent);
+  letter-spacing:.2em; text-transform:uppercase;
+  font-weight:700;
+  margin-bottom:2px;
+}
+.notice{
+  display:flex; gap:12px;
+  padding:10px 13px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:10px;
+  align-items:flex-start;
+}
+.notice-num{
+  font-family:var(--font-mono);
+  font-size:10px; color:var(--accent);
+  letter-spacing:.1em;
+  font-weight:700;
+  margin-top:2px;
+  flex-shrink:0;
+}
+.notice h6{
+  font-size:12.5px; font-weight:700;
+  margin-bottom:2px;
+  color:var(--text);
+}
+.notice p{
+  font-size:11px; line-height:1.45;
+  color:var(--text-dim);
+}
+
+/* ── Shareability slide ─────────────────────────────────────── */
+.share-stage{
+  display:flex; flex-direction:column;
+  align-items:center;
+  gap:14px;
+  margin-top:18px;
+}
+.agent-file{
+  background:#0d1117;
+  border:1px solid #30363d;
+  border-radius:10px;
+  width:540px;
+  overflow:hidden;
+  box-shadow:0 14px 36px rgba(20,30,50,.18);
+}
+.agent-file-tab{
+  display:flex; align-items:center; gap:6px;
+  background:#21262d;
+  padding:8px 14px;
+  border-bottom:1px solid #30363d;
+}
+.agent-file-tab .traffic{ width:9px; height:9px; border-radius:999px; }
+.traffic.r{ background:#ed6a5e; }
+.traffic.y{ background:#f5bf4f; }
+.traffic.g{ background:#62c554; }
+.agent-file-tab .filename{
+  font-family:var(--font-mono);
+  font-size:12px;
+  color:#c9d1d9;
+  margin-left:10px;
+}
+.agent-file-preview{
+  padding:12px 18px;
+  font-family:var(--font-mono);
+  font-size:12px;
+  line-height:1.6;
+  color:#c9d1d9;
+}
+.agent-file-preview .ln{ display:block; }
+.agent-file-preview .kw{ color:#ff7b72; }
+.agent-file-preview .cls{ color:#79c0ff; }
+.agent-file-preview .fn{ color:#d2a8ff; }
+.agent-file-preview .arg{ color:#ffa657; }
+.agent-file-preview .cmt{ color:#7d8590; }
+.agent-file-preview .str{ color:#a5d6ff; }
+.agent-file-meta{
+  padding:7px 14px;
+  background:#161b22;
+  border-top:1px solid #30363d;
+  font-family:var(--font-mono);
+  font-size:11px;
+  color:#7d8590;
+  text-align:center;
+}
+.share-arrow{
+  font-family:var(--font-mono);
+  font-size:12px;
+  color:var(--accent);
+  letter-spacing:.18em;
+  font-weight:700;
+}
+.download-card{
+  display:flex;
+  align-items:center;
+  gap:18px;
+  padding:16px 20px;
+  background:var(--surface);
+  border:1px solid var(--border2);
+  border-radius:14px;
+  width:560px;
+  max-width:100%;
+  text-decoration:none;
+  color:var(--text);
+  box-shadow:0 12px 30px rgba(20,30,50,.08);
+  transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+.download-card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 18px 40px rgba(20,30,50,.14);
+  border-color:var(--accent);
+}
+.download-card .file-icon{
+  width:46px; height:46px;
+  background:linear-gradient(135deg, var(--grad-1), var(--grad-2));
+  border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--font-mono);
+  font-size:18px;
+  color:var(--marker-text);
+  font-weight:800;
+  flex-shrink:0;
+  letter-spacing:-1px;
+}
+.download-card .file-info{
+  flex:1;
+  min-width:0;
+}
+.download-card .file-name{
+  font-family:var(--font-mono);
+  font-size:15px; font-weight:700;
+  color:var(--text);
+}
+.download-card .file-sub{
+  font-family:var(--font-mono);
+  font-size:11px;
+  color:var(--text-dim);
+  margin-top:3px;
+  letter-spacing:.01em;
+}
+.download-card .cta-btn{
+  display:inline-flex; align-items:center; gap:7px;
+  background:var(--accent);
+  color:#fff;
+  font-weight:700;
+  font-size:13px;
+  padding:9px 16px;
+  border-radius:999px;
+  letter-spacing:.04em;
+  flex-shrink:0;
+  transition:background-color .15s ease;
+}
+.download-card:hover .cta-btn{
+  background:var(--blue);
+}
+.recipients{
+  display:grid;
+  grid-template-columns:repeat(4, 1fr);
+  gap:12px;
+  width:100%;
+}
+.recipient{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:14px 16px;
+}
+.recipient .recip-icon{
+  font-size:22px;
+  margin-bottom:6px;
+  line-height:1;
+}
+.recipient h5{
+  font-size:14px; font-weight:700;
+  margin-bottom:5px;
+  color:var(--text);
+}
+.recipient p{
+  font-size:11.5px; line-height:1.45;
+  color:var(--text-dim);
+}
+.recipient p strong{ color:var(--text); font-weight:700; }
+.share-punch{
+  text-align:center;
+  margin-top:6px;
+  font-size:18px;
+  color:var(--text-dim);
+  font-weight:500;
+}
+.share-punch strong{
+  color:var(--text);
+  font-weight:700;
+}
+
+/* Sharing methods row — AirDrop / Teams / email / messaging */
+.share-methods{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  width:100%;
+}
+.method{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:11px 14px;
+  display:flex; align-items:center; gap:12px;
+}
+.method-icon{
+  font-size:22px; line-height:1;
+  flex-shrink:0;
+}
+.method-text{
+  display:flex; flex-direction:column;
+  min-width:0;
+}
+.method-name{
+  font-size:13px; font-weight:700;
+  color:var(--text);
+}
+.method-time{
+  font-size:10.5px;
+  color:var(--text-dim);
+  font-family:var(--font-mono);
+  margin-top:1px;
+  letter-spacing:.02em;
+}
+
+/* Three pillars — speed / simplicity / teachability */
+.pillars{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:12px;
+  width:100%;
+}
+.pillar{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:13px 16px;
+}
+.pillar-label{
+  font-family:var(--font-mono);
+  font-size:10px; color:var(--accent);
+  letter-spacing:.22em; text-transform:uppercase;
+  font-weight:700;
+  margin-bottom:5px;
+}
+.pillar h5{
+  font-size:14px; font-weight:700;
+  color:var(--text);
+  margin-bottom:4px;
+  line-height:1.3;
+}
+.pillar p{
+  font-size:11.5px; line-height:1.5;
+  color:var(--text-dim);
+}
+
+/* Streaming animation — runs once when slide becomes active */
+.mockup-slide .stream-in{
+  opacity:0;
+  transform:translateY(6px);
+}
+.mockup-slide.live .stream-in{
+  animation:streamIn .38s cubic-bezier(.22,.61,.36,1) forwards;
+  animation-delay:var(--d, 0s);
+}
+@keyframes streamIn{
+  from{ opacity:0; transform:translateY(6px); }
+  to{   opacity:1; transform:translateY(0);   }
+}
+@media print, (prefers-reduced-motion:reduce){
+  .mockup-slide .stream-in{ opacity:1 !important; transform:none !important; animation:none !important; }
+  .brief-chip .dot{ animation:none !important; }
+}
+
+/* Navigation */
+.nav{
+  position:fixed;
+  bottom:14px; left:50%;
+  transform:translateX(-50%);
+  display:flex; gap:8px; align-items:center;
+  background:var(--nav-bg);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  border:1px solid var(--border2);
+  border-radius:999px;
+  padding:6px 8px;
+  font-family:var(--font-mono);
+  font-size:11px; color:var(--text-dim);
+  z-index:50;
+  user-select:none;
+  box-shadow:0 6px 24px rgba(20,30,50,.08);
+}
+.nav button{
+  background:transparent;
+  border:0; color:var(--text-dim);
+  width:28px; height:28px;
+  border-radius:999px;
+  cursor:pointer;
+  font-size:13px;
+  display:flex; align-items:center; justify-content:center;
+}
+.nav button:hover{ color:var(--text); background:var(--border); }
+.nav .counter{
+  padding:0 10px;
+  font-feature-settings:"tnum";
+  letter-spacing:.05em;
+}
+
+.kbd-hint{
+  position:fixed;
+  bottom:16px; right:16px;
+  font-family:var(--font-mono); font-size:10px;
+  color:var(--muted); letter-spacing:.1em;
+  z-index:40;
+}
+
+/* Theme dial — sun/moon pill toggle, top right */
+.theme-dial{
+  position:fixed;
+  top:16px; right:16px;
+  display:flex; align-items:center;
+  background:var(--nav-bg);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  border:1px solid var(--border2);
+  border-radius:999px;
+  padding:4px;
+  cursor:pointer;
+  z-index:50;
+  user-select:none;
+  box-shadow:0 6px 24px rgba(20,30,50,.08);
+  transition:background-color .25s ease, border-color .25s ease;
+}
+.theme-dial .knob{
+  position:relative;
+  display:flex;
+  width:64px; height:28px;
+}
+.theme-dial .icon{
+  flex:1;
+  display:flex; align-items:center; justify-content:center;
+  z-index:2;
+  color:var(--text-dim);
+  transition:color .2s ease;
+}
+.theme-dial .icon svg{ width:14px; height:14px; }
+.theme-dial .pill{
+  position:absolute;
+  top:0; left:0;
+  width:32px; height:28px;
+  background:linear-gradient(135deg, var(--grad-1), var(--grad-2));
+  border-radius:999px;
+  transition:left .25s cubic-bezier(.4,0,.2,1);
+  z-index:1;
+  box-shadow:0 2px 8px rgba(0,0,0,.15);
+}
+[data-theme="dark"] .theme-dial .pill{ left:32px; }
+/* light mode: sun sits on the pill (active), moon is dim */
+.theme-dial .icon.sun{ color:var(--marker-text); }
+.theme-dial .icon.moon{ color:var(--text-dim); }
+/* dark mode: moon sits on the pill (active), sun is dim */
+[data-theme="dark"] .theme-dial .icon.sun{ color:var(--text-dim); }
+[data-theme="dark"] .theme-dial .icon.moon{ color:var(--marker-text); }
+
+/* Print mode — one slide per page */
+@media print{
+  html, body{ background:#fff; overflow:visible; height:auto; }
+  .stage{ display:block; position:static; background:#fff; }
+  .slide{
+    display:flex !important;
+    page-break-after:always;
+    margin:0; box-shadow:none;
+    border-radius:0;
+    width:100%; height:auto;
+    min-height:96vh;
+    transform:none !important;
+  }
+  .nav, .kbd-hint, .theme-dial{ display:none !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="stage" id="stage">
+
+<!-- ─── 1 / Cover ─────────────────────────────────────────────── -->
+<section class="slide cover active" data-name="cover">
+  <div class="glow"></div>
+  <h1 class="grad-text">rappid</h1>
+  <p class="tag">The fastest path from idea to <strong style="color:var(--text)">Copilot Studio</strong> agent.<br>One file. Three runtimes. Zero ceremony.</p>
+  <div class="slide-num">01 / 17</div>
+</section>
+
+<!-- ─── 2 / The 90-second story ────────────────────────────────── -->
+<section class="slide" data-name="proof">
+  <div class="slide-eyebrow">// the 90-second story</div>
+  <h2 class="slide-title">A non-engineer just shipped <span class="grad-text">a five-figure consulting deliverable</span> in week one.</h2>
+  <p class="lede">A functional consultant trained on rappid for one hour. By the end of the week she had used it to scope work she had just delivered manually. The agent came back with a build plan equivalent to <strong>~195 hours of partner-consultant time</strong> — a <strong>$35–50K SOW</strong>, generated by a non-engineer, while the customer was still on the call.</p>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="n">1 hr</div>
+      <div class="label">From "what is this" to first working agent</div>
+    </div>
+    <div class="stat">
+      <div class="n">~195</div>
+      <div class="label">Hours of partner-consultant work the agent scoped</div>
+    </div>
+    <div class="stat">
+      <div class="n">~50</div>
+      <div class="label">Active adopters today, zero marketing, organic only</div>
+    </div>
+  </div>
+
+  <div class="slide-name">02 — Proof</div>
+  <div class="slide-num">02 / 17</div>
+</section>
+
+<!-- ─── 3 / Why ─────────────────────────────────────────────────── -->
+<section class="slide" data-name="why">
+  <div class="slide-eyebrow">// the problem</div>
+  <h2 class="slide-title">The industry made agent-building <span class="grad-text">an engineering discipline</span>. It shouldn't be.</h2>
+  <p class="lede">Every major framework — SDKs, registries, planners, multi-agent graphs — assumed the builder is a developer. The result: the people closest to the customer can't ship the agents the customer needs. Copilot Studio's TAM is gated by builder skill, not by demand.</p>
+
+  <table class="compare">
+    <thead>
+      <tr>
+        <th>What builders get today</th>
+        <th>What they actually need</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="dim">SDK + framework + build step + registry</td>
+        <td class="win">One file. Drop it in. Done.</td>
+      </tr>
+      <tr>
+        <td class="dim">"Pick your orchestrator"</td>
+        <td class="win">It just runs. Locally. Then in the cloud. Then in Studio.</td>
+      </tr>
+      <tr>
+        <td class="dim">PR review to publish a tool</td>
+        <td class="win">Email a teammate the file. They run it.</td>
+      </tr>
+      <tr>
+        <td class="dim">Weeks to first working prototype</td>
+        <td class="win">An hour to first agent that does real work.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="slide-name">03 — Why</div>
+  <div class="slide-num">03 / 17</div>
+</section>
+
+<!-- ─── 4 / What is rappid ─────────────────────────────────────── -->
+<section class="slide" data-name="what">
+  <div class="slide-eyebrow">// what it is</div>
+  <h2 class="slide-title">rappid is the <span class="grad-text">prototyping front door</span> to Copilot Studio.</h2>
+  <p class="lede">A radically simple agent format that anyone can author, share, and run. The same file moves up the stack — laptop today, cloud tomorrow, Copilot Studio in production — without a rewrite.</p>
+
+  <div class="cols tight">
+    <div>
+      <ul class="clean">
+        <li><strong>One file = one agent.</strong> No build step, no SDK, no framework lock-in.</li>
+        <li><strong>Shareable like a script.</strong> DM the file, drop it in, it runs.</li>
+        <li><strong>Portable across runtimes.</strong> Same artifact, three environments.</li>
+        <li><strong>Convertible.</strong> A one-click pipeline turns it into a Copilot Studio solution.</li>
+      </ul>
+    </div>
+    <div>
+      <div class="card">
+        <div class="label">// the contract</div>
+        <h4>One class. One <code>perform()</code>. One metadata dict.</h4>
+        <p>That's the whole spec. If a person can describe the tool in plain English, they can ship the tool. The platform handles discovery, dispatch, telemetry, and promotion to higher tiers automatically.</p>
+      </div>
+      <div class="card" style="margin-top:14px;">
+        <div class="label">// the philosophy</div>
+        <h4>"Engine, not experience."</h4>
+        <p>rappid is infrastructure. It does not impose a UI, a workflow, or a vendor story. It produces artifacts that other Microsoft surfaces — Copilot Studio, Foundry, Cowork, Work IQ — can consume natively.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide-name">04 — What</div>
+  <div class="slide-num">04 / 17</div>
+</section>
+
+<!-- ─── 5 / The Rocket ─────────────────────────────────────────── -->
+<section class="slide" data-name="how">
+  <div class="slide-eyebrow">// how it ships</div>
+  <h2 class="slide-title">Three stages of one rocket. <span class="grad-text">Same agent, every stage.</span></h2>
+  <p class="lede">A builder starts on their laptop, promotes to the cloud when it works, and graduates to Copilot Studio when it's ready for production. No rewrites between stages — the contract guarantees portability.</p>
+
+  <div class="rocket">
+    <div class="stage-card">
+      <div class="stage-num">Stage 1 / Local</div>
+      <h4>Brainstem</h4>
+      <div class="where">runs on a laptop · Flask · :7071</div>
+      <p>The author tier. Zero infra. Edit the file, it reloads. This is where 95% of building happens — fast loops, real signals, no deployment.</p>
+    </div>
+    <div class="stage-card">
+      <div class="stage-num">Stage 2 / Cloud</div>
+      <h4>Swarm</h4>
+      <div class="where">Azure Functions · same file · same contract</div>
+      <p>The teamwork tier. Promote the agent to a cloud endpoint with one command. Now teammates and pilots can call it. Still the same file.</p>
+    </div>
+    <div class="stage-card active">
+      <div class="stage-num">Stage 3 / Studio</div>
+      <h4>Copilot Studio</h4>
+      <div class="where">production orchestration · governed · GA-ready</div>
+      <p>The ship tier. The conversion pipeline turns the agent into a native Copilot Studio solution. Orchestration officially lives here. rappid is the on-ramp.</p>
+    </div>
+  </div>
+
+  <div class="slide-name">05 — How</div>
+  <div class="slide-num">05 / 17</div>
+</section>
+
+<!-- ─── 6 / Conversion pipeline ────────────────────────────────── -->
+<section class="slide" data-name="pipeline">
+  <div class="slide-eyebrow">// the load-bearing claim</div>
+  <h2 class="slide-title">Every rappid artifact <span class="grad-text">becomes a native Copilot Studio agent.</span></h2>
+  <p class="lede">This is the reason rappid matters to Business Applications. The platform is not a parallel ecosystem — it is a feeder. Anything authored in rappid can be promoted into Copilot Studio as a native solution, where it inherits Studio's orchestration, governance, and distribution.</p>
+
+  <div class="pipeline">
+    <div class="pipe-node">
+      <div class="kind">// source</div>
+      <h5>rappid agent</h5>
+      <p>Single Python file. Authored in an hour. Tested locally with real data.</p>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-node">
+      <div class="kind">// transform</div>
+      <h5>Conversion pipeline</h5>
+      <p>Pipeline maps the agent contract onto Copilot Studio primitives — topics, actions, knowledge.</p>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-node">
+      <div class="kind">// target</div>
+      <h5>Copilot Studio solution</h5>
+      <p>Native Power Platform import. Studio owns orchestration, identity, governance, and ALM.</p>
+    </div>
+  </div>
+
+  <div style="margin-top:36px; padding:18px 22px; background:var(--surface); border:1px solid var(--border2); border-radius:12px; max-width:920px;">
+    <p style="font-size:15px; line-height:1.55; color:var(--text-dim);"><strong style="color:var(--text);">Why this matters:</strong> the bottleneck for Studio adoption is not Studio — it is the cost of getting from "I have an idea" to "I have a working draft." rappid collapses that gap from weeks to an afternoon, and every working draft lands in your house.</p>
+  </div>
+
+  <div class="slide-name">06 — Pipeline</div>
+  <div class="slide-num">06 / 17</div>
+</section>
+
+<!-- ─── 7 / Ecosystem fit ──────────────────────────────────────── -->
+<section class="slide" data-name="ecosystem">
+  <div class="slide-eyebrow">// where rappid sits in the stack</div>
+  <h2 class="slide-title">A complement, not a competitor, to <span class="grad-text">every adjacent Microsoft surface.</span></h2>
+  <p class="lede">rappid does not duplicate Foundry, Work IQ, Cowork, or Studio. It plugs into them. Adopters today are already chaining rappid agents to Foundry models, Work IQ signals, and Studio orchestrations.</p>
+
+  <div class="eco-grid">
+    <div class="eco-card">
+      <div class="icon">🧠</div>
+      <h5>Foundry</h5>
+      <p>Models and tools. rappid agents call Foundry as a backend.</p>
+    </div>
+    <div class="eco-card">
+      <div class="icon">📡</div>
+      <h5>Work IQ</h5>
+      <p>Signal source. rappid agents read Work IQ as the substrate for personalized work.</p>
+    </div>
+    <div class="eco-card">
+      <div class="icon">🤝</div>
+      <h5>Cowork</h5>
+      <p>Collaboration surface. rappid agents are summonable inside Cowork sessions.</p>
+    </div>
+    <div class="eco-card center">
+      <div class="icon">🚀</div>
+      <h5>Copilot Studio</h5>
+      <p>The destination. rappid is the prototyping on-ramp; Studio is the production runtime.</p>
+    </div>
+  </div>
+
+  <p style="margin-top:32px; font-size:15px; color:var(--text-dim); max-width:880px; line-height:1.55;">Anthropic, OpenAI, and the open-source ecosystem ship SDKs. Microsoft can ship a <strong style="color:var(--text);">product</strong> — one that funnels every prototype into the Business Applications stack.</p>
+
+  <div class="slide-name">07 — Ecosystem</div>
+  <div class="slide-num">07 / 17</div>
+</section>
+
+<!-- ─── 8 / Adoption signal ────────────────────────────────────── -->
+<section class="slide" data-name="adoption">
+  <div class="slide-eyebrow">// the signal so far</div>
+  <h2 class="slide-title">~50 adopters. <span class="grad-text">Zero marketing.</span> Real consulting work being delivered in real time.</h2>
+
+  <div class="cols">
+    <div>
+      <div class="pull-quote">"AI shouldn't be this simple."
+        <span class="by">— recurring reaction from new adopters in the first week</span>
+      </div>
+
+      <ul class="clean">
+        <li><strong>Functional consultants</strong> are scoping and building solutions <em>during</em> customer calls.</li>
+        <li><strong>Field sellers</strong> are using it to draft battlecards, account briefs, and follow-ups against their own M365 signal.</li>
+        <li><strong>Non-engineers</strong> are publishing to a community catalog — the way scripts spread through finance teams in the 90s.</li>
+      </ul>
+    </div>
+    <div>
+      <div class="card">
+        <div class="label">// what makes it spread</div>
+        <h4>Shareability and portability.</h4>
+        <p style="margin-bottom:14px;">The whole agent is one file. You can DM it. You can paste it. You can fork it. The competitive moat in agent platforms is not model quality — it is whether a human can give a working agent to another human in under a minute.</p>
+        <p>Today, in the rest of the industry, they cannot. In rappid, they can.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide-name">08 — Adoption</div>
+  <div class="slide-num">08 / 17</div>
+</section>
+
+<!-- ─── 9 / Top use cases ──────────────────────────────────────── -->
+<section class="slide" data-name="killer-use-case">
+  <div class="slide-eyebrow">// the killer use case</div>
+  <h2 class="slide-title">Meet <span class="grad-text">Chief of Staff</span> — one file, your whole executive workflow.</h2>
+  <p class="lede" style="font-size:19px;">A non-engineer wrote it. It reads their live Microsoft 365 signal through Work IQ and produces what a real chief of staff would prepare — quoted source sentences, ranked by consequence, honest about what got dropped.</p>
+
+  <div class="cols tight" style="margin-top:18px;">
+    <div>
+      <div class="card">
+        <div class="label">// what makes it work</div>
+        <h4>The agent has a personality, and the personality is the constraint.</h4>
+        <p>"Brutally concise. No pleasantries." "Quote the EXACT sentence containing the ask." "Rank by consequence of non-response, not arbitrary urgency flags." "Never give generic productivity advice." Every output cites a specific signal from real data.</p>
+      </div>
+    </div>
+    <div>
+      <div class="stats" style="grid-template-columns:1fr; gap:14px; margin-top:0;">
+        <div class="stat">
+          <div class="n" style="font-size:48px;">9</div>
+          <div class="label">distinct executive actions on the same agent — brief, triage, prep, focus, draft, commitments, catch-up, pulse, weekly review</div>
+        </div>
+        <div class="stat">
+          <div class="n" style="font-size:48px;">LIVE</div>
+          <div class="label">Microsoft 365 signal via Work IQ — no mocks, no copy-paste</div>
+        </div>
+        <div class="stat">
+          <div class="n" style="font-size:48px;">1 file</div>
+          <div class="label">any user can read, fork, and DM to a teammate</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide-name">09 — Killer use case</div>
+  <div class="slide-num"></div>
+</section>
+
+<!-- ─── 10 / Sharing is the moat ─────────────────────────────── -->
+<section class="slide mockup-slide" data-name="shareability">
+  <div class="slide-eyebrow">// the actual differentiator</div>
+  <h2 class="slide-title">It spreads at the speed of <span class="grad-text">AirDrop.</span></h2>
+  <p class="lede" style="font-size:18px; max-width:920px;">Cowork can produce a brief. Copilot can produce a brief. Neither can be in your teammate's hands in eight seconds — running, against their data, with no signup, no SaaS, no docs to read.</p>
+
+  <div class="share-stage">
+    <a class="download-card stream-in" href="https://raw.githubusercontent.com/kody-w/RAR/main/agents/@howardh/chief_of_staff_agent.py" download="chief_of_staff_agent.py" style="--d:0s">
+      <div class="file-icon">{ }</div>
+      <div class="file-info">
+        <div class="file-name">chief_of_staff_agent.py</div>
+        <div class="file-sub">live from the RAR registry · one file · zero infra</div>
+      </div>
+      <div class="cta-btn">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3v12M6 11l6 6 6-6M5 21h14"/>
+        </svg>
+        <span>Download</span>
+      </div>
+    </a>
+
+    <div class="share-methods">
+      <div class="method stream-in" style="--d:0.25s">
+        <div class="method-icon">🍎</div>
+        <div class="method-text">
+          <div class="method-name">AirDrop</div>
+          <div class="method-time">~8 seconds, Mac → Mac</div>
+        </div>
+      </div>
+      <div class="method stream-in" style="--d:0.35s">
+        <div class="method-icon">💬</div>
+        <div class="method-text">
+          <div class="method-name">Teams chat</div>
+          <div class="method-time">drag &amp; drop the file</div>
+        </div>
+      </div>
+      <div class="method stream-in" style="--d:0.45s">
+        <div class="method-icon">📧</div>
+        <div class="method-text">
+          <div class="method-name">Email attach</div>
+          <div class="method-time">works for anyone</div>
+        </div>
+      </div>
+      <div class="method stream-in" style="--d:0.55s">
+        <div class="method-icon">🔗</div>
+        <div class="method-text">
+          <div class="method-name">Slack / DM / SMS</div>
+          <div class="method-time">it&apos;s just a file</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pillars">
+      <div class="pillar stream-in" style="--d:0.75s">
+        <div class="pillar-label">SPEED</div>
+        <h5>The transfer is the install.</h5>
+        <p>SaaS sharing means invite link, signup, onboarding, license. rappid sharing means drop the file, run it.</p>
+      </div>
+      <div class="pillar stream-in" style="--d:0.9s">
+        <div class="pillar-label">SIMPLICITY</div>
+        <h5>It&apos;s a single Python file.</h5>
+        <p>No build step. No SDK. No vendor onboarding. No SaaS dashboard. The whole agent fits on one screen.</p>
+      </div>
+      <div class="pillar stream-in" style="--d:1.05s">
+        <div class="pillar-label">TEACHABILITY</div>
+        <h5>The recipient can read it.</h5>
+        <p>Prompts are in plain English. They change the tone, swap actions, add their own. Their version, in five minutes.</p>
+      </div>
+    </div>
+
+    <p class="share-punch stream-in" style="--d:1.3s">The agent is a file. The file is a DM. <strong>The DM is now their agent.</strong></p>
+  </div>
+
+  <div class="slide-name">10 — Sharing is the moat</div>
+  <div class="slide-num"></div>
+</section>
+
+
+<!-- ─── 14 / Why this matters to BizApps ──────────────────────── -->
+<section class="slide" data-name="bizapps">
+  <div class="slide-eyebrow">// why business applications cares</div>
+  <h2 class="slide-title">Four reasons rappid is <span class="grad-text">a Business Applications-shaped opportunity.</span></h2>
+
+  <div class="cols tight" style="margin-top:8px;">
+    <div>
+      <div class="card">
+        <div class="label">// 01 — TAM expansion</div>
+        <h4>Lowers the floor for who builds agents.</h4>
+        <p>The bottleneck for Copilot Studio is not Studio — it is the cost of going from idea to working draft. rappid moves that from "developer" to "anyone who can describe the work."</p>
+      </div>
+      <div class="card" style="margin-top:14px;">
+        <div class="label">// 02 — Funnel into Studio</div>
+        <h4>Every artifact lands in your house.</h4>
+        <p>The conversion pipeline ensures rappid doesn't fragment the ecosystem. Every working agent becomes a native Copilot Studio solution — Studio owns the production runtime.</p>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <div class="label">// 03 — Differentiation</div>
+        <h4>Anthropic and OpenAI ship SDKs. We ship a product.</h4>
+        <p>The competition's strategy is to make agent-building <em>more powerful for engineers</em>. Ours is to make it <em>possible for everyone</em>. The two goals don't compete — but the second one wins distribution.</p>
+      </div>
+      <div class="card" style="margin-top:14px;">
+        <div class="label">// 04 — Field accelerator</div>
+        <h4>Real solutions during the customer call.</h4>
+        <p>Functional consultants are already using rappid to scope and stand up custom solutions while the customer is on the line. That's not a demo — that's a sales motion.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide-name">15 — Business Apps angle</div>
+  <div class="slide-num">15 / 17</div>
+</section>
+
+<!-- ─── 16 / The ask ──────────────────────────────────────────── -->
+<section class="slide" data-name="ask">
+  <div class="slide-eyebrow">// the ask</div>
+  <h2 class="slide-title">What we want from this review.</h2>
+  <p class="lede">Three concrete steps. None of them are "go build it" — that part is already happening.</p>
+
+  <div class="asks">
+    <div class="ask">
+      <div class="marker">1</div>
+      <div>
+        <h5>Position rappid as the prototyping front door to Copilot Studio.</h5>
+        <p>Officially: rappid is the "build phase," Studio is the "ship phase." Make the relationship explicit so the field stops treating them as competing answers.</p>
+      </div>
+    </div>
+    <div class="ask">
+      <div class="marker">2</div>
+      <div>
+        <h5>Place the conversion pipeline under Copilot Studio.</h5>
+        <p>The bridge from rappid artifact to Studio solution belongs to the Studio team. Owning it locks in the "every agent ends in Studio" promise and removes any ambiguity about where orchestration lives.</p>
+      </div>
+    </div>
+    <div class="ask">
+      <div class="marker">3</div>
+      <div>
+        <h5>Take it inside the building.</h5>
+        <p>Consultants already ship with rappid every day. The next proof point is internal: pick 10 non-engineer FTEs — PMs, sales ops, customer success, business analysts, marketing. Give them rappid for 30 days. Measure agents shipped per person, hours saved, and the work that got done that otherwise wouldn't have. Publish the numbers.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide-name">16 — Ask</div>
+  <div class="slide-num">16 / 17</div>
+</section>
+
+<!-- ─── 17 / Closing ───────────────────────────────────────────── -->
+<section class="slide closing" data-name="close">
+  <h1 class="grad-text">rappid</h1>
+  <p class="tag">The fastest path from idea<br>to Copilot Studio agent.</p>
+  <div class="slide-num">17 / 17</div>
+</section>
+
+</div>
+
+<!-- Navigation -->
+<div class="nav">
+  <button id="prev" aria-label="Previous slide">‹</button>
+  <span class="counter"><span id="cur">1</span> / <span id="total">17</span></span>
+  <button id="next" aria-label="Next slide">›</button>
+</div>
+
+<!-- Theme dial -->
+<div class="theme-dial" id="themeDial" role="button" tabindex="0" aria-label="Toggle dark mode">
+  <div class="knob">
+    <span class="pill"></span>
+    <span class="icon sun" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="4"/>
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+      </svg>
+    </span>
+    <span class="icon moon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+    </span>
+  </div>
+</div>
+
+<div class="kbd-hint">← → SPACE · F fullscreen · P print · T theme</div>
+
+<script>
+(function(){
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const cur = document.getElementById('cur');
+  const total = document.getElementById('total');
+  const stage = document.getElementById('stage');
+  total.textContent = slides.length;
+
+  let idx = 0;
+
+  // Auto-fill slide numbers so adding/removing slides "just works"
+  slides.forEach((s, k) => {
+    const num = s.querySelector('.slide-num');
+    if (num) num.textContent = String(k + 1).padStart(2, '0') + ' / ' + String(slides.length).padStart(2, '0');
+  });
+
+  function fitSlide(){
+    const slide = slides[idx];
+    if (!slide) return;
+    const padding = 40;
+    const sw = 1280, sh = 720;
+    const aw = window.innerWidth - padding * 2;
+    const ah = window.innerHeight - padding * 2;
+    const scale = Math.min(aw / sw, ah / sh, 1);
+    slide.style.transform = `scale(${scale})`;
+  }
+
+  function show(i){
+    idx = Math.max(0, Math.min(slides.length - 1, i));
+    slides.forEach((s, k) => {
+      const isActive = k === idx;
+      s.classList.toggle('active', isActive);
+      // Retrigger streaming animation on slides that opt in
+      if (s.classList.contains('mockup-slide')){
+        s.classList.remove('live');
+        if (isActive){
+          void s.offsetWidth; // force reflow so the animation restarts
+          s.classList.add('live');
+        }
+      }
+    });
+    cur.textContent = idx + 1;
+    if (location.hash !== '#' + (idx + 1)){
+      history.replaceState(null, '', '#' + (idx + 1));
+    }
+    fitSlide();
+  }
+
+  function next(){ show(idx + 1); }
+  function prev(){ show(idx - 1); }
+
+  document.getElementById('next').addEventListener('click', next);
+  document.getElementById('prev').addEventListener('click', prev);
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' '){
+      e.preventDefault(); next();
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp'){
+      e.preventDefault(); prev();
+    } else if (e.key === 'Home'){
+      e.preventDefault(); show(0);
+    } else if (e.key === 'End'){
+      e.preventDefault(); show(slides.length - 1);
+    } else if (e.key === 'f' || e.key === 'F'){
+      if (!document.fullscreenElement){ document.documentElement.requestFullscreen(); }
+      else { document.exitFullscreen(); }
+    } else if (e.key === 'p' || e.key === 'P'){
+      window.print();
+    } else if (e.key === 't' || e.key === 'T'){
+      e.preventDefault(); toggleTheme();
+    }
+  });
+
+  // Theme dial — light is default, dark is opt-in, choice persists
+  const THEME_KEY = 'rappid-deck-theme';
+  function applyTheme(t){
+    if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+    else document.documentElement.removeAttribute('data-theme');
+  }
+  function currentTheme(){
+    return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  }
+  function toggleTheme(){
+    const next = currentTheme() === 'dark' ? 'light' : 'dark';
+    applyTheme(next);
+    try{ localStorage.setItem(THEME_KEY, next); }catch(_){}
+  }
+  try{
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved === 'dark') applyTheme('dark');
+  }catch(_){}
+  const dial = document.getElementById('themeDial');
+  dial.addEventListener('click', toggleTheme);
+  dial.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggleTheme(); }
+  });
+
+  window.addEventListener('resize', fitSlide);
+  window.addEventListener('hashchange', () => {
+    const n = parseInt(location.hash.slice(1), 10);
+    if (!Number.isNaN(n) && n >= 1 && n <= slides.length) show(n - 1);
+  });
+
+  const start = parseInt(location.hash.slice(1), 10);
+  if (!Number.isNaN(start) && start >= 1 && start <= slides.length) show(start - 1);
+  else show(0);
+
+  // ── Agent file download — fetched live from the public RAR registry ─
+  const AGENT_PY_URL = "https://raw.githubusercontent.com/kody-w/RAR/main/agents/@howardh/chief_of_staff_agent.py";
+  const AGENT_PY_FILENAME = "chief_of_staff_agent.py";
+  async function downloadAgentPy(e){
+    e.preventDefault();
+    const card = e.currentTarget;
+    const cta = card.querySelector('.cta-btn span');
+    const original = cta ? cta.textContent : null;
+    if (cta) cta.textContent = 'Fetching…';
+    try{
+      const resp = await fetch(AGENT_PY_URL, { cache: 'no-store' });
+      if (!resp.ok) throw new Error('fetch failed: ' + resp.status);
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = AGENT_PY_FILENAME;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        if (cta) cta.textContent = original;
+      }, 100);
+    } catch (err){
+      // Fallback: open the raw URL directly
+      if (cta) cta.textContent = original;
+      window.location.href = AGENT_PY_URL;
+    }
+  }
+  document.querySelectorAll('a.download-card').forEach(a => {
+    a.addEventListener('click', downloadAgentPy);
+  });
+})();
+</script>
+
+</body>
+</html>
