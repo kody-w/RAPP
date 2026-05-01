@@ -1001,6 +1001,28 @@ ul.clean li strong{ color:var(--text); font-weight:700; }
   padding-left:6px;
   width:34px;
 }
+.nav .nav-start{
+  width:auto !important;
+  height:28px;
+  padding:0 10px;
+  gap:6px;
+  font-family:var(--font-mono);
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--text-dim);
+  margin-right:4px;
+  border-right:1px solid var(--border2);
+  border-radius:999px 0 0 999px;
+  padding-right:10px;
+}
+.nav .nav-start:hover{ color:var(--accent); background:transparent; }
+.nav .nav-start[hidden]{ display:none !important; }
+@media (max-width: 900px), (pointer: coarse){
+  .nav .nav-start span{ display:none; }
+  .nav .nav-start{ padding:0 8px; width:32px !important; }
+}
 /* Hide fullscreen button when running as installed PWA — already fullscreen */
 .is-standalone .nav-fs{ display:none; }
 @media (display-mode: standalone){
@@ -1714,6 +1736,13 @@ ul.clean li strong{ color:var(--text); font-weight:700; }
 
 <!-- Navigation -->
 <div class="nav">
+  <button id="startBtn" class="nav-start" aria-label="Start from beginning" hidden>
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 12a9 9 0 1 0 3-6.7"/>
+      <polyline points="3 4 3 9 8 9"/>
+    </svg>
+    <span>Start</span>
+  </button>
   <button id="prev" aria-label="Previous slide">‹</button>
   <span class="counter"><span id="cur">1</span> / <span id="total">17</span></span>
   <button id="next" aria-label="Next slide">›</button>
@@ -1813,6 +1842,12 @@ ul.clean li strong{ color:var(--text); font-weight:700; }
       }
     });
     cur.textContent = idx + 1;
+    // Show "Start over" only when we're not on slide 1
+    const startBtn = document.getElementById('startBtn');
+    if (startBtn){
+      if (idx > 0) startBtn.removeAttribute('hidden');
+      else startBtn.setAttribute('hidden', '');
+    }
     if (location.hash !== '#' + (idx + 1)){
       history.replaceState(null, '', '#' + (idx + 1));
     }
@@ -1824,6 +1859,7 @@ ul.clean li strong{ color:var(--text); font-weight:700; }
 
   document.getElementById('next').addEventListener('click', next);
   document.getElementById('prev').addEventListener('click', prev);
+  document.getElementById('startBtn').addEventListener('click', () => show(0));
 
   // ── Fullscreen — works on desktop; iOS Safari shows install hint ───
   function isStandalone(){
