@@ -2731,7 +2731,10 @@
       // If the chosen id differs from what the server thinks is current,
       // tell the server. Silent — the user shouldn't see "Model: x"
       // chatter just from page load. This is also a no-op when cache
-      // matches server state, which is the common case.
+      // matches server state, which is the common case. Also persist
+      // to /api/preferences/model so the kernel boots with this on the
+      // next restart (covers users who had a localStorage cache but
+      // never explicitly re-picked since the prefs file was added).
       if (chosen && chosen !== d.current) {
         try {
           await fetch(`${API}/models/set`, {
@@ -2740,7 +2743,26 @@
             body: JSON.stringify({ model: chosen })
           });
         } catch {}
+        _persistModelPreference(chosen);
       }
+    } catch {}
+  }
+
+  // Persist a model selection to the brainstem so the kernel boots
+  // with it next restart. Wraps the in-memory /models/set with a write
+  // to /api/preferences/model — boot.py's _seed_env_from_prefs reads
+  // that file at startup and sets GITHUB_MODEL before the kernel reads
+  // it, so the boot banner and the very first /chat after restart both
+  // honor the user's pick instead of falling back to .env's gpt-4o.
+  // Silent on /api/preferences failure (older kernels without boot.py
+  // wrapper) — localStorage cache is the fallback.
+  async function _persistModelPreference(modelId) {
+    try {
+      await fetch(`${API}/api/preferences/model`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: modelId }),
+      });
     } catch {}
   }
 
@@ -2754,9 +2776,12 @@
       const d = await r.json();
       if (d.error) alert(d.error);
       else {
-        // Persist the user's pick so it survives the next brainstem
-        // restart and the next install one-liner.
+        // Persist the user's pick three ways:
+        //   • localStorage so the chat UI reapplies on next page load
+        //   • /api/preferences/model so the kernel uses it on next boot
+        //   • the just-now /models/set covers the running process
         try { localStorage.setItem(_MODEL_KEY, modelId); } catch {}
+        _persistModelPreference(modelId);
         appendMsg('system', `Model: ${modelId}`);
       }
     } catch (e) { alert('Failed to switch model: ' + e.message); }

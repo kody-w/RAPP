@@ -97,6 +97,11 @@ def _wrap_flask_run() -> None:
         except Exception as e:
             print(f"[boot] /api/workspace routes failed: {e}")
 
+        try:
+            _install_preferences_routes(self)
+        except Exception as e:
+            print(f"[boot] /api/preferences routes failed: {e}")
+
         return _real_run(self, *args, **kwargs)
 
     flask.Flask.run = _wrapped_run
@@ -498,8 +503,155 @@ def _lineage_guard() -> None:
         print(f"[boot] lineage check skipped: {e}")
 
 
+def _install_preferences_routes(app) -> None:
+    """User-scoped runtime preferences that need to survive a restart
+    of the kernel. Today: which model the chat UI selected. Tomorrow:
+    other "I picked this once, don't make me pick it again" knobs.
+
+    Stored under ~/.brainstem/preferences/<key>.txt — plain files, one
+    value per file, easy to inspect and back up. _seed_env_from_prefs
+    runs at boot.py main() before runpy and bridges these into the
+    kernel's environment view.
+
+        GET  /api/preferences          → all known prefs as JSON
+        GET  /api/preferences/<key>    → { value }
+        POST /api/preferences/<key>    body: { value }
+        DELETE /api/preferences/<key>  reset to default
+    """
+    from flask import request, jsonify
+
+    prefs_dir = os.path.join(os.path.expanduser("~"), ".brainstem", "preferences")
+    # Whitelist of keys so an open POST endpoint can't be used to write
+    # arbitrary files via path traversal. New prefs land here as we add
+    # them.
+    _ALLOWED = {"model"}
+
+    def _safe_path(key):
+        if not isinstance(key, str) or key not in _ALLOWED:
+            return None
+        return os.path.join(prefs_dir, f"{key}.txt")
+
+    def _read_pref(key):
+        p = _safe_path(key)
+        if not p:
+            return None
+        try:
+            with open(p, "r", encoding="utf-8") as f:
+                return f.read().strip()
+        except OSError:
+            return None
+
+    def _write_pref(key, value):
+        p = _safe_path(key)
+        if not p:
+            return False
+        os.makedirs(prefs_dir, exist_ok=True)
+        try:
+            with open(p, "w", encoding="utf-8") as f:
+                f.write(str(value).strip())
+            return True
+        except OSError:
+            return False
+
+    def _delete_pref(key):
+        p = _safe_path(key)
+        if not p:
+            return False
+        try:
+            os.remove(p)
+            return True
+        except OSError:
+            return False
+
+    def _list_view():
+        out = {}
+        for k in _ALLOWED:
+            v = _read_pref(k)
+            if v is not None:
+                out[k] = v
+        return jsonify({"preferences": out, "dir": prefs_dir})
+
+    def _get_view(key):
+        if key not in _ALLOWED:
+            return jsonify({"error": f"unknown preference '{key}'"}), 404
+        return jsonify({"key": key, "value": _read_pref(key)})
+
+    def _post_view(key):
+        if key not in _ALLOWED:
+            return jsonify({"error": f"unknown preference '{key}'"}), 404
+        body = request.get_json(silent=True) or {}
+        value = body.get("value")
+        if not isinstance(value, str) or not value.strip():
+            return jsonify({"error": "missing 'value' in body"}), 400
+        if not _write_pref(key, value):
+            return jsonify({"error": "could not persist"}), 500
+        # For the model preference, reflect the change into the live
+        # process env too, so the kernel's MODEL global picks it up
+        # next time chat.py reads os.environ. The kernel's /models/set
+        # already mutated the in-memory MODEL — this just keeps the
+        # ambient env in sync for any code path that re-reads.
+        if key == "model":
+            os.environ["GITHUB_MODEL"] = value.strip()
+        return jsonify({"key": key, "value": value.strip()})
+
+    def _delete_view(key):
+        if key not in _ALLOWED:
+            return jsonify({"error": f"unknown preference '{key}'"}), 404
+        _delete_pref(key)
+        return jsonify({"key": key, "value": None})
+
+    _list_view.__name__ = "_boot_prefs_list"
+    _get_view.__name__ = "_boot_prefs_get"
+    _post_view.__name__ = "_boot_prefs_post"
+    _delete_view.__name__ = "_boot_prefs_delete"
+    app.add_url_rule("/api/preferences",
+                     endpoint="_boot_prefs_list",
+                     view_func=_list_view, methods=["GET"])
+    app.add_url_rule("/api/preferences/<key>",
+                     endpoint="_boot_prefs_get",
+                     view_func=_get_view, methods=["GET"])
+    app.add_url_rule("/api/preferences/<key>",
+                     endpoint="_boot_prefs_post",
+                     view_func=_post_view, methods=["POST"])
+    app.add_url_rule("/api/preferences/<key>",
+                     endpoint="_boot_prefs_delete",
+                     view_func=_delete_view, methods=["DELETE"])
+    print("[boot] /api/preferences/* wired")
+
+
+def _seed_env_from_prefs() -> None:
+    """Bridge the chat UI's per-user model pick into the kernel.
+
+    The kernel reads MODEL from os.environ['GITHUB_MODEL'] once at
+    module import. .env's default ("gpt-4o") is loaded by python-dotenv
+    inside the kernel before that read. The chat UI persists the user's
+    selected model into ~/.brainstem/preferences/model.txt on every
+    /models/set; we splice that file's contents into the environment
+    BEFORE runpy executes the kernel so the boot banner, the first
+    /chat after restart, and every internal reference to MODEL all line
+    up with the user's pick.
+
+    Falls back silently if the prefs file is missing — kernel default
+    wins. Refusing to overwrite an explicit env-passed GITHUB_MODEL so
+    `GITHUB_MODEL=foo brainstem run` still works as an override.
+    """
+    if os.environ.get("GITHUB_MODEL"):
+        return
+    pref_file = os.path.join(
+        os.path.expanduser("~"), ".brainstem", "preferences", "model.txt"
+    )
+    try:
+        with open(pref_file, "r", encoding="utf-8") as f:
+            model = f.read().strip()
+        if model:
+            os.environ["GITHUB_MODEL"] = model
+    except OSError:
+        pass
+
+
 def main() -> None:
     _lineage_guard()
+    _seed_env_from_prefs()
     _wrap_flask_run()
     # Run the canonical kernel as if launched directly.
     kernel_path = os.path.join(_BRAINSTEM_DIR, "brainstem.py")
