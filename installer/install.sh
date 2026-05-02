@@ -405,6 +405,51 @@ _version_gt() {
     [ "$greater" = "$1" ]
 }
 
+# Opt-in gate for upgrades. The kernel + user state are non-trivial to
+# rebuild from scratch — the install one-liner must never silently
+# overwrite an existing organism. Returns 0 to proceed, 1 to skip.
+#
+# Env var BRAINSTEM_UPGRADE=1 → confirmed, skip prompt.
+# Interactive (TTY)           → prompt, default No.
+# Piped without env var       → refuse, print exact opt-in command.
+_confirm_upgrade() {
+    local from="$1"
+    local to="$2"
+
+    if [ "${BRAINSTEM_UPGRADE:-}" = "1" ] || [ "${BRAINSTEM_UPGRADE:-}" = "yes" ] || [ "${BRAINSTEM_UPGRADE:-}" = "y" ]; then
+        echo -e "  ${GREEN}✓${NC} BRAINSTEM_UPGRADE=1 — proceeding without prompt"
+        return 0
+    fi
+
+    echo ""
+    echo -e "  ${YELLOW}⬆${NC}  Upgrade available: v${from} → v${to}"
+    echo ""
+    echo "    The new framework will overlay your existing install."
+    echo "    Custom agents, soul.md, .env, and state are preserved."
+    echo "    A timestamped backup is saved to ~/.brainstem/.bond/backups/"
+    echo "    so you can revert if anything breaks."
+    echo ""
+
+    if [ -t 0 ] && [ -t 1 ]; then
+        # Interactive — prompt with default No
+        local reply
+        printf "  Proceed with upgrade? [y/N]: "
+        read -r reply
+        case "$reply" in
+            y|Y|yes|YES) return 0 ;;
+            *) echo -e "  ${GREEN}✓${NC} Keeping v${from} — no changes made"; return 1 ;;
+        esac
+    fi
+
+    # Piped (curl | bash) — no TTY for read. Refuse to wipe silently.
+    echo "  Re-run with BRAINSTEM_UPGRADE=1 to confirm:"
+    echo ""
+    echo "    BRAINSTEM_UPGRADE=1 curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash"
+    echo ""
+    echo -e "  ${GREEN}✓${NC} Keeping v${from} — no changes made"
+    return 1
+}
+
 install_brainstem() {
     echo ""
     echo "Installing RAPP Brainstem..."
@@ -469,6 +514,18 @@ install_brainstem() {
             return 0
         fi
 
+        # OPT-IN GATE — never wipe an existing organism without consent.
+        # PIN_EXPLICIT=1 means the user passed BRAINSTEM_VERSION explicitly,
+        # which is itself an opt-in (they asked for that exact version), so
+        # skip the prompt in that case. Otherwise default behaviour: ask
+        # (interactive) or refuse and print the BRAINSTEM_UPGRADE=1 command
+        # (piped).
+        if [ "$PIN_EXPLICIT" != "1" ]; then
+            if ! _confirm_upgrade "$LOCAL_VER" "$REMOTE_VER"; then
+                return 0
+            fi
+        fi
+
         if [ $legacy_git -eq 1 ]; then
             echo "  Detaching from upstream RAPP repo (no longer a git clone)..."
         fi
@@ -485,18 +542,33 @@ install_brainstem() {
         local TO_COMMIT
         TO_COMMIT=$(git -C "$STAGE" rev-parse HEAD 2>/dev/null || echo "")
 
-        # 2. LEGACY BACKUP — always-on safety net. Even if the bond.py egg
-        # step fails (older pinned kernel without bond.py support, python
-        # missing, disk full, anything), this backup of soul/.env/custom-
-        # agents survives the overlay and gets restored at the end. Costs
-        # nothing on the happy path; saves the user's data on the sad path.
-        local BACKUP="/tmp/brainstem-bond-$$"
+        # 2. PERSISTENT BACKUP — always-on safety net, kept *across* the
+        # bond so users can revert if anything breaks (or if a hatched
+        # state surfaces a regression a week later). Even if the bond.py
+        # egg step fails (older pinned kernel without bond.py support,
+        # python missing, disk full, anything), this backup of soul +
+        # .env + custom agents survives the overlay AND survives the
+        # whole install. Located at:
+        #
+        #   ~/.brainstem/.bond/backups/v<from>-to-v<to>-<utc-stamp>/
+        #
+        # Contains: soul.md, .env, agents/*.py, optionally pre-bond.egg.
+        # Cleanup is the user's job — keep them or rm them by hand.
+        local BACKUP_STAMP
+        BACKUP_STAMP=$(date -u +"%Y%m%dT%H%M%SZ" 2>/dev/null || date +"%Y%m%dT%H%M%S")
+        local BACKUP="$BRAINSTEM_HOME/.bond/backups/v${LOCAL_VER}-to-v${REMOTE_VER}-${BACKUP_STAMP}"
         mkdir -p "$BACKUP/agents"
         [ -f "$SOUL_FILE" ] && cp "$SOUL_FILE" "$BACKUP/soul.md" 2>/dev/null || true
         [ -f "$ENV_FILE" ] && cp "$ENV_FILE" "$BACKUP/.env" 2>/dev/null || true
         if [ -d "$AGENTS_DIR" ]; then
             cp "$AGENTS_DIR"/*.py "$BACKUP/agents/" 2>/dev/null || true
         fi
+        # rappid + bonds log: identity files that should ride along with
+        # any backup so a manual revert restores the same organism, not
+        # a freshly-minted one.
+        [ -f "$BRAINSTEM_HOME/rappid.json" ] && cp "$BRAINSTEM_HOME/rappid.json" "$BACKUP/rappid.json" 2>/dev/null || true
+        [ -f "$BRAINSTEM_HOME/bonds.json" ]  && cp "$BRAINSTEM_HOME/bonds.json"  "$BACKUP/bonds.json"  2>/dev/null || true
+        echo -e "  ${GREEN}💾${NC} Backup: ${BACKUP/$HOME/~}"
 
         # 3. Mint rappid if missing — needs bond.py from the stage.
         # Tolerated failure if bond.py isn't available (older pin).
@@ -510,8 +582,11 @@ install_brainstem() {
         fi
 
         # 4. 🥚 Egg the current organism — full cartridge if bond.py is
-        # available, skip cleanly otherwise (legacy backup at step 2 is
-        # the safety net).
+        # available, skip cleanly otherwise (the persistent backup at
+        # step 2 is the safety net regardless). On success, the egg is
+        # also copied into the per-bond backup folder so each upgrade
+        # owns its own egg slot — last-pre-bond.egg only ever holds the
+        # most recent one and would be overwritten by the next upgrade.
         EGG_PATH="$BRAINSTEM_HOME/.bond/last-pre-bond.egg"
         mkdir -p "$BRAINSTEM_HOME/.bond"
         local egg_ok=0
@@ -522,6 +597,8 @@ install_brainstem() {
                 local egg_kb
                 egg_kb=$(du -k "$EGG_PATH" 2>/dev/null | awk '{print $1}')
                 echo -e "  ${GREEN}🥚${NC} Egged organism (${egg_kb:-?} KB) → ${EGG_PATH/$HOME/~}"
+                # Tuck a per-bond copy into the persistent backup folder
+                cp "$EGG_PATH" "$BACKUP/pre-bond.egg" 2>/dev/null || true
             fi
         fi
         if [ $egg_ok -eq 0 ]; then
@@ -534,14 +611,15 @@ install_brainstem() {
 
         # 6. 🌐 Overlay new kernel. cp -R "$STAGE/rapp_brainstem/." dest/
         # copies contents in place — framework files refreshed, user-only
-        # files (custom agents, .brainstem_data) stay put.
+        # files (custom agents, .brainstem_data) stay put. The persistent
+        # backup at $BACKUP is never deleted so a manual revert is always
+        # possible.
         mkdir -p "$SRC_ROOT"
         if ! cp -R "$STAGE/rapp_brainstem/." "$SRC_ROOT/" 2>/dev/null; then
             echo -e "  ${RED}✗${NC} Overlay failed — restoring from backup"
             [ -f "$BACKUP/soul.md" ] && cp "$BACKUP/soul.md" "$SOUL_FILE" || true
             [ -f "$BACKUP/.env" ] && cp "$BACKUP/.env" "$ENV_FILE" || true
             rm -rf "$STAGE"
-            rm -rf "$BACKUP"
             return 1
         fi
         rm -rf "$STAGE"
@@ -581,7 +659,8 @@ install_brainstem() {
             echo -e "  ${GREEN}🧷${NC} Legacy restore: soul + .env + ${restored} custom agent(s)"
         fi
 
-        rm -rf "$BACKUP"
+        # Backup is intentionally retained — it lives at $BACKUP for manual
+        # revert. No `rm -rf "$BACKUP"` here.
 
         # 9. Record the bond + bump incarnations (best-effort).
         if _bond_available; then
@@ -592,6 +671,8 @@ install_brainstem() {
         fi
 
         echo -e "  ${GREEN}✓${NC} Bond complete: v${LOCAL_VER} → v${REMOTE_VER}"
+        echo -e "  ${CYAN}↩${NC}  Revert: cp -R \"${BACKUP/$HOME/~}/.\" pieces back into place,"
+        echo -e "      or hatch \"${BACKUP/$HOME/~}/pre-bond.egg\" with: brainstem hatch <egg>"
     else
         # ── FRESH INSTALL: birth event, no egg yet (nothing to pack) ──
         echo "  Fresh install — fetching framework..."
