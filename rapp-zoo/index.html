@@ -774,9 +774,14 @@
   }
 
   function _bundledStarterCardHTML(s) {
+    // Same visual treatment as catalog rapps: deterministic pixel-pet
+    // sprite generated from the rappid. Keeps the page typographically
+    // consistent — bundled and catalog cards read as one collection,
+    // not two stylesheets glued together.
+    const sprite = `<div style="width:96px;height:96px;display:block;margin:0 auto 6px;border-radius:8px;overflow:hidden">${spriteSvg(s.rappid || ('starter:' + s.id), 'organism')}</div>`;
     return `
       <div class="info-card">
-        <div style="font-size:48px;text-align:center;margin-bottom:8px">${escapeHtml(s.emoji || '🌱')}</div>
+        ${sprite}
         <h3 style="text-align:center;margin-bottom:4px">${escapeHtml(s.name || s.id)}</h3>
         <p style="text-align:center">${escapeHtml(s.tagline || '')}</p>
         <div class="row" style="justify-content:center;margin-top:10px">
