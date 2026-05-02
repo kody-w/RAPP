@@ -87,6 +87,16 @@ def _wrap_flask_run() -> None:
         except Exception as e:
             print(f"[boot] /api/snapshot routes failed: {e}")
 
+        try:
+            _install_senses_routes(self)
+        except Exception as e:
+            print(f"[boot] /api/senses routes failed: {e}")
+
+        try:
+            _install_workspace_routes(self)
+        except Exception as e:
+            print(f"[boot] /api/workspace routes failed: {e}")
+
         return _real_run(self, *args, **kwargs)
 
     flask.Flask.run = _wrapped_run
@@ -221,6 +231,226 @@ def _install_snapshot_routes(app) -> None:
                      endpoint="_boot_snapshot_import",
                      view_func=_import_view, methods=["POST"])
     print("[boot] /api/snapshot/export + /api/snapshot/import wired")
+
+
+def _install_senses_routes(app) -> None:
+    """Always-on sense file install/list/remove. Senses live under
+    utils/senses/<id>_sense.py and are auto-composed at request time.
+    The chat UI's RAPP_Store senses tab posts here.
+
+        GET    /api/senses              → list installed sense files
+        POST   /api/senses/install      → { filename, content }
+        DELETE /api/senses/<filename>   → remove
+    """
+    from flask import request, jsonify
+
+    senses_dir = os.path.join(_HERE, "senses")
+
+    def _safe_filename(filename):
+        if not isinstance(filename, str) or not filename:
+            return None
+        if "/" in filename or "\\" in filename or filename.startswith("."):
+            return None
+        if not filename.endswith("_sense.py"):
+            return None
+        return filename
+
+    def _list_files():
+        if not os.path.isdir(senses_dir):
+            return []
+        out = []
+        for name_ in sorted(os.listdir(senses_dir)):
+            if not name_.endswith("_sense.py"):
+                continue
+            full = os.path.join(senses_dir, name_)
+            try:
+                st = os.stat(full)
+                out.append({
+                    "filename": name_,
+                    "id": name_[:-len("_sense.py")],
+                    "bytes": st.st_size,
+                    "mtime": int(st.st_mtime),
+                })
+            except OSError:
+                continue
+        return out
+
+    def _list_view():
+        return jsonify({"senses": _list_files(), "dir": senses_dir})
+
+    def _install_view():
+        body = request.get_json(silent=True) or {}
+        filename = _safe_filename(body.get("filename"))
+        content = body.get("content")
+        if not filename:
+            return jsonify({"error": "invalid filename — must be <id>_sense.py"}), 400
+        if not isinstance(content, str) or not content.strip():
+            return jsonify({"error": "missing content"}), 400
+        os.makedirs(senses_dir, exist_ok=True)
+        target = os.path.join(senses_dir, filename)
+        try:
+            with open(target, "w", encoding="utf-8") as f:
+                f.write(content)
+        except OSError as e:
+            return jsonify({"error": f"write failed: {e}"}), 500
+        return jsonify({"status": "ok", "filename": filename, "path": target})
+
+    def _delete_view(filename):
+        f = _safe_filename(filename)
+        if not f:
+            return jsonify({"error": "invalid filename"}), 400
+        target = os.path.join(senses_dir, f)
+        if not os.path.isfile(target):
+            return jsonify({"error": "not found"}), 404
+        try:
+            os.remove(target)
+        except OSError as e:
+            return jsonify({"error": f"delete failed: {e}"}), 500
+        return jsonify({"status": "ok", "filename": f})
+
+    _list_view.__name__ = "_boot_senses_list"
+    _install_view.__name__ = "_boot_senses_install"
+    _delete_view.__name__ = "_boot_senses_delete"
+    app.add_url_rule("/api/senses",
+                     endpoint="_boot_senses_list",
+                     view_func=_list_view, methods=["GET"])
+    app.add_url_rule("/api/senses/install",
+                     endpoint="_boot_senses_install",
+                     view_func=_install_view, methods=["POST"])
+    app.add_url_rule("/api/senses/<filename>",
+                     endpoint="_boot_senses_delete",
+                     view_func=_delete_view, methods=["DELETE"])
+    print("[boot] /api/senses* wired")
+
+
+def _install_workspace_routes(app) -> None:
+    """Always-on per-rapp workspace file IO. Mirrors what the legacy
+    binder service exposed at /api/binder/workspace/<id>/*, but lives
+    in the boot wrapper so the chat UI's iframe bridge works without
+    any binder dependency.
+
+        GET    /api/workspace/<id>/info        → { path, mode, file_count }
+        GET    /api/workspace/<id>/list        → { files: [...] }
+        GET    /api/workspace/<id>/file/<name> → raw bytes
+        PUT    /api/workspace/<id>/file/<name> → { content, encoding } → { name, size }
+        DELETE /api/workspace/<id>/file/<name>
+        POST   /api/workspace/<id>/reveal      → opens folder in OS file manager
+    """
+    from flask import request, jsonify, send_from_directory, abort
+    import mimetypes
+    import subprocess
+    import sys as _sys
+
+    try:
+        import workspace as _ws  # type: ignore
+    except Exception as e:
+        print(f"[boot] /api/workspace disabled — workspace import failed: {e}")
+        return
+
+    def _info(rapp_id):
+        path = _ws.ensure_workspace(rapp_id)
+        if path is None:
+            return jsonify({"error": "invalid rapp id"}), 400
+        try:
+            files = _ws.list_workspace(rapp_id)
+        except Exception:
+            files = []
+        return jsonify({
+            "path": str(path),
+            "mode": "local",
+            "file_count": len(files),
+        })
+
+    def _list(rapp_id):
+        try:
+            return jsonify({"files": _ws.list_workspace(rapp_id)})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    def _file_get(rapp_id, name):
+        target = _ws.safe_workspace_path(rapp_id, name)
+        if target is None:
+            return jsonify({"error": "invalid path"}), 400
+        if not target.is_file():
+            return jsonify({"error": "not found"}), 404
+        mime, _ = mimetypes.guess_type(str(target))
+        return send_from_directory(str(target.parent), target.name,
+                                   mimetype=mime or "application/octet-stream")
+
+    def _file_put(rapp_id, name):
+        target = _ws.safe_workspace_path(rapp_id, name)
+        if target is None:
+            return jsonify({"error": "invalid path"}), 400
+        body = request.get_json(silent=True) or {}
+        content = body.get("content", "")
+        encoding = body.get("encoding", "utf-8")
+        try:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            if encoding == "base64":
+                import base64
+                target.write_bytes(base64.b64decode(content))
+            else:
+                target.write_text(str(content), encoding="utf-8")
+        except OSError as e:
+            return jsonify({"error": f"write failed: {e}"}), 500
+        return jsonify({"name": name, "size": target.stat().st_size})
+
+    def _file_delete(rapp_id, name):
+        target = _ws.safe_workspace_path(rapp_id, name)
+        if target is None:
+            return jsonify({"error": "invalid path"}), 400
+        if not target.exists():
+            return jsonify({"error": "not found"}), 404
+        try:
+            if target.is_dir():
+                import shutil
+                shutil.rmtree(target)
+            else:
+                target.unlink()
+        except OSError as e:
+            return jsonify({"error": f"delete failed: {e}"}), 500
+        return jsonify({"status": "ok"})
+
+    def _reveal(rapp_id):
+        path = _ws.ensure_workspace(rapp_id)
+        if path is None:
+            return jsonify({"error": "invalid rapp id"}), 400
+        try:
+            if _sys.platform == "darwin":
+                subprocess.run(["open", str(path)], check=False)
+            elif _sys.platform.startswith("win"):
+                subprocess.run(["explorer", str(path)], check=False, shell=False)
+            else:
+                subprocess.run(["xdg-open", str(path)], check=False)
+        except Exception as e:
+            return jsonify({"error": f"reveal failed: {e}"}), 500
+        return jsonify({"status": "ok", "path": str(path)})
+
+    _info.__name__ = "_boot_ws_info"
+    _list.__name__ = "_boot_ws_list"
+    _file_get.__name__ = "_boot_ws_file_get"
+    _file_put.__name__ = "_boot_ws_file_put"
+    _file_delete.__name__ = "_boot_ws_file_delete"
+    _reveal.__name__ = "_boot_ws_reveal"
+    app.add_url_rule("/api/workspace/<rapp_id>/info",
+                     endpoint="_boot_ws_info",
+                     view_func=_info, methods=["GET"])
+    app.add_url_rule("/api/workspace/<rapp_id>/list",
+                     endpoint="_boot_ws_list",
+                     view_func=_list, methods=["GET"])
+    app.add_url_rule("/api/workspace/<rapp_id>/file/<path:name>",
+                     endpoint="_boot_ws_file_get",
+                     view_func=_file_get, methods=["GET"])
+    app.add_url_rule("/api/workspace/<rapp_id>/file/<path:name>",
+                     endpoint="_boot_ws_file_put",
+                     view_func=_file_put, methods=["PUT"])
+    app.add_url_rule("/api/workspace/<rapp_id>/file/<path:name>",
+                     endpoint="_boot_ws_file_delete",
+                     view_func=_file_delete, methods=["DELETE"])
+    app.add_url_rule("/api/workspace/<rapp_id>/reveal",
+                     endpoint="_boot_ws_reveal",
+                     view_func=_reveal, methods=["POST"])
+    print("[boot] /api/workspace/<id>/* wired")
 
 
 def _lineage_guard() -> None:

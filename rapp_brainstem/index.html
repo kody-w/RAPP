@@ -614,7 +614,7 @@
   /* ── Rapplication iframe overlay ──
      The full-screen overlay used by the ⛶ button inside the split-pane
      head. Iframe src is the rapp's direct CDN URL (rewritten from
-     ui_url). Decoupled from the binder service. */
+     ui_url). */
   #rapp-frame {
     display: none; position: fixed; inset: 0;
     background: #0d1117; z-index: 250;
@@ -1146,10 +1146,8 @@
     #split-divider { top: -3px; left: 0; right: 0; width: auto; height: 6px; cursor: row-resize; }
   }
 
-  /* ── NEW: Browse RAPP_Store modal — mirrors #browse-modal exactly,
-     re-uses the same .browse-card / .br-* classes for visual parity
-     with Browse RAR. Different list source (binder catalog vs RAR
-     registry) but identical chrome. */
+  /* ── Browse RAPP_Store modal — three-tab unified browser using the
+     shared .browse-card / .br-* chrome. */
   #store-modal {
     display: none; position: fixed; inset: 0;
     background: rgba(13,17,23,0.85); z-index: 220;
@@ -2297,36 +2295,8 @@
           continue;
         }
 
-        // Egg rapplication → register in the same local registry the store
-        // install populates, so it shows up in the rapps panel and can be
-        // opened in a split tab. UI files were unpacked to
-        // .brainstem_data/rapp_ui/<id>/ — served by binder_service at
-        // /api/binder/ui/<id>/<file>.
-        if (data.kind === 'egg' && data.type === 'rapplication' && data.id) {
-          const uiFile = data.ui_filename || 'index.html';
-          const agentFile = data.agent_filename || `${data.id}_agent.py`;
-          _storeInstalled[data.id] = {
-            id: data.id,
-            name: data.name || data.id,
-            ui_url: data.ui_filename ? `/api/binder/ui/${encodeURIComponent(data.id)}/${uiFile}` : '',
-            singleton_filename: agentFile,
-            publisher: '',
-            version: '',
-            installed_at: Date.now(),
-          };
-          _persistStoreInstalled();
-          _installedRappIds.add(data.id);
-          loadRapplications();
-          loadAgentsList();
-          if (data.ui_filename) {
-            openRappInSplit(data.id, data.name || data.id, null, _storeInstalled[data.id].ui_url);
-          } else {
-            alert(`Installed rapplication: ${data.name || data.id}`);
-          }
-        } else {
-          alert(`Installed agent: ${file.name}`);
-          loadAgentsList();
-        }
+        alert(`Installed agent: ${file.name}`);
+        loadAgentsList();
       } catch (err) {
         alert(`Error importing ${file.name}: ${err}`);
       }
@@ -2363,11 +2333,9 @@
   });
 
   // ── Rapplications listing ──
-  // Decoupled from the binder service. The chat UI only knows about
-  // rapps the user installed via the store (tracked in localStorage).
-  // The binder service (utils/services/binder_service.py) remains
-  // available at /api/binder/* and has its own UI at /binder for users
-  // who want egg imports + admin — but the chat UI doesn't talk to it.
+  // Lists the rapps the user installed via the store (tracked in
+  // localStorage). Headless agents land in the agents panel above;
+  // rapps with a UI also surface here so they're one click to open.
   async function loadRapplications() {
     const header = document.getElementById('rapps-header');
     const ul = document.getElementById('rapp-list-ul');
@@ -2436,7 +2404,7 @@
 
   // openRappFrame(id, name, src)
   //   src is a full URL — typically the CDN-rewritten ui_url from the
-  //   store catalog. The binder service is no longer in this path.
+  //   store catalog.
   function openRappFrame(id, name, src) {
     document.getElementById('rf-name').textContent = name;
     document.getElementById('rf-id').textContent = id;
@@ -3626,9 +3594,8 @@
 
   // openRappInSplit(id, name, _ignored, directUrl)
   //   The chat UI only loads rapps via direct URL (CDN-rewritten ui_url).
-  //   The third positional argument exists for backward compatibility
-  //   with older callers but is ignored. The binder service is not in
-  //   the runtime path for this anymore.
+  //   The third positional argument is unused (kept for caller signature
+  //   stability).
   function openRappInSplit(id, name, _ignored, directUrl) {
     if (!directUrl) {
       appendMsg('system', `${name || id} has no UI — nothing to open.`);
@@ -3816,7 +3783,7 @@
       // brainstem, so tether is "active" pointing at our own origin.
       // SPEC §11 — also probe the rapp's workspace so the iframe can
       // render its file count / "open folder" affordance immediately.
-      const wsBase = (API || window.location.origin) + '/api/binder/workspace/' + encodeURIComponent(senderId);
+      const wsBase = (API || window.location.origin) + '/api/workspace/' + encodeURIComponent(senderId);
       fetch(wsBase + '/info').then(r => r.ok ? r.json() : null).catch(() => null).then(wsInfo => {
         ev.source.postMessage({
           type: 'rapp:cartridge',
@@ -3835,12 +3802,12 @@
         }, '*');
       });
     } else if (data.type && data.type.startsWith('rapp:workspace:')) {
-      // SPEC §11.3 — translate workspace messages into /api/binder/workspace
+      // SPEC §11.3 — translate workspace messages into /api/workspace
       // calls. The bridge enforces that rapps can only touch their own
       // sender-scoped workspace; senderId is whatever the iframe is, so
       // even a malicious iframe can't reach into another rapp's dir.
       const verb = data.type.slice('rapp:workspace:'.length);
-      const wsBase = (API || window.location.origin) + '/api/binder/workspace/' + encodeURIComponent(senderId);
+      const wsBase = (API || window.location.origin) + '/api/workspace/' + encodeURIComponent(senderId);
       const replyType = data.type + ':result';
       const reply = (payload) => ev.source.postMessage({ type: replyType, id: data.id, ...payload }, '*');
 
@@ -4276,13 +4243,10 @@
     }
   }
 
-  // ── Decoupled-from-binder install + open ──
-  // The binder remains available as a *local admin* tool (drag-drop egg
-  // imports, /api/binder list/CRUD), but it is NOT in the runtime path
-  // for store rapplications anymore. A rapplication is just:
+  // ── Store rapp install + open ──
+  // A rapplication is just:
   //   agent .py     → installed via /agents/import (same as drag-drop)
-  //   ui_url (opt.) → iframe loads directly from a CDN-rewritten URL,
-  //                   no local hosting, no binder serving
+  //   ui_url (opt.) → iframe loads directly from a CDN-rewritten URL
   // Local bookkeeping for store-installed rapps lives in localStorage so
   // loadRapplications() can list them in the agents panel.
   const STORE_INSTALLED_KEY = 'brainstem_store_installed';
@@ -4323,7 +4287,6 @@
     btn.textContent = 'Installing…';
     try {
       // Step 1: install the agent .py exactly like drag-drop / Browse RAR.
-      // No binder involvement.
       const srcUrl = rapp.singleton_url;
       if (srcUrl) {
         const fetched = await fetch(srcUrl, { cache: 'no-cache' });
@@ -4339,10 +4302,10 @@
         if (!res.ok || d.status !== 'ok') throw new Error(d.error || `HTTP ${res.status}`);
       }
       // Step 2: if the rapp ships a UI, record it locally so we can open
-      // it later from the iframe directly (no binder hosting). The iframe
-      // src is the CDN-rewritten ui_url — same pattern as localFirstTools.
-      // singleton_filename is captured so uninstall can DELETE the agent
-      // file from disk along with removing the local registry entry.
+      // it later via the CDN-rewritten ui_url — same pattern as
+      // localFirstTools. singleton_filename is captured so uninstall
+      // can DELETE the agent file from disk along with removing the
+      // local registry entry.
       if (rapp.ui_url) {
         _storeInstalled[rapp.id] = {
           id: rapp.id,
@@ -4390,9 +4353,9 @@
     const s = _loadSplitState();
     if (s.width) document.documentElement.style.setProperty('--split-width', s.width);
     if (Array.isArray(s.tabs) && s.tabs.length) {
-      // We don't auto-open tabs — that would race with #api/binder install
-      // state. Just persist the saved width; user re-opens rapps manually.
-      // (Keeps boot fast; avoids surprise iframes loading.)
+      // We don't auto-open tabs — just persist the saved width and let
+      // the user re-open rapps manually. Keeps boot fast and avoids
+      // surprise iframes loading from stale registry entries.
     }
   })();
 
@@ -4459,7 +4422,6 @@
       }
     } catch {}
     // Installed rapplications — store-installed only.
-    // Binder-imported eggs are managed via /binder, not here.
     for (const id in _storeInstalled) {
       const rapp = _storeInstalled[id];
       items.push({
