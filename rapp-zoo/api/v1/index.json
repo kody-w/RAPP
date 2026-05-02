@@ -1,0 +1,27 @@
+{
+  "schema": "rapp-zoo-api/1.0",
+  "name": "rapp-zoo",
+  "version": "1.0.0",
+  "description": "Local-first Pokédex for digital organisms. The page itself is a static HTML at /rapp-zoo/. This JSON drives what the page shows in the Starters and Discover tabs without anyone touching the HTML.",
+  "generated_at": "2026-05-02T22:51:35Z",
+  "self_url": "https://kody-w.github.io/RAPP/rapp-zoo/api/v1/index.json",
+
+  "sources": {
+    "rapp_store": "https://raw.githubusercontent.com/kody-w/rapp_store/main/api/v1/index.json"
+  },
+
+  "links": {
+    "rapp_store_ui":          "https://kody-w.github.io/RAPP_Store/",
+    "rapp_brainstem_install": "https://kody-w.github.io/RAPP/",
+    "rapp_brainstem_repo":    "https://github.com/kody-w/RAPP",
+    "rapp_zoo_source":        "https://github.com/kody-w/RAPP/tree/main/rapp-zoo"
+  },
+
+  "featured_starters": [],
+
+  "notes": [
+    "featured_starters is a list of rapplication ids from the RAPP_Store v1 catalog that should surface in the rapp-zoo Starters tab. Currently empty — when starter cartridges are promoted, add their ids here and the page picks them up on next load. No HTML change required.",
+    "Discover tab pulls the full RAPP_Store catalog from sources.rapp_store and renders one card per rapplication.",
+    "The rapp-zoo never holds .egg blobs of its own — every cartridge link points at the RAPP_Store v1 /api/v1/egg/<id>.egg path. One canonical source of truth for cartridge bytes, indirected through this manifest for curation."
+  ]
+}

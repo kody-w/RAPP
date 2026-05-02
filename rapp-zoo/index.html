@@ -674,14 +674,18 @@
     document.getElementById('count-collection').textContent = idx.organisms.length;
 
     const main = document.getElementById('main');
-    if (_activeTab === 'collection') main.innerHTML = renderCollection(idx);
-    else if (_activeTab === 'starters') main.innerHTML = renderStarters();
-    else if (_activeTab === 'discover') main.innerHTML = renderDiscover();
-
-    // Card click handlers
-    main.querySelectorAll('.card').forEach(el => {
-      el.addEventListener('click', () => openCard(el.dataset.rappid));
-    });
+    if (_activeTab === 'collection') {
+      main.innerHTML = renderCollection(idx);
+      // Card click handlers (collection only — starters/discover use
+      // their own per-card buttons rather than whole-card clicks)
+      main.querySelectorAll('.card').forEach(el => {
+        el.addEventListener('click', () => openCard(el.dataset.rappid));
+      });
+    } else if (_activeTab === 'starters') {
+      renderStartersAsync();
+    } else if (_activeTab === 'discover') {
+      renderDiscoverAsync();
+    }
   }
 
   function renderCollection(idx) {
@@ -717,69 +721,125 @@
     return `<div class="grid">${cards}</div>`;
   }
 
-  function renderStarters() {
-    const starters = [
-      { id: 'workday',  emoji: '💼', name: 'Workday',  desc: 'A focused organism for daily standups, OKRs, calendar triage. Hatches with a soul tuned for terse, action-oriented replies.' },
-      { id: 'playtime', emoji: '🎮', name: 'Playtime', desc: 'Creative + curious. Music + games + storytelling. Less business voice; more weird-tangent friend.' },
-      { id: 'journal',  emoji: '📓', name: 'Journal',  desc: 'A long-memory keeper. Designed to recall what you told it last week and tie threads together over months.' },
-    ];
+  // ─────────────────────────────────────────────────────────────
+  // External data — driven by ./api/v1/index.json so what shows in
+  // Starters and Discover is data, not HTML. Updates to the catalog
+  // don't require any change to this page.
+  // ─────────────────────────────────────────────────────────────
+  let _zooApi = null;     // ./api/v1/index.json
+  let _storeCatalog = null; // RAPP_Store v1 catalog (lazy)
+
+  async function loadZooApi() {
+    if (_zooApi) return _zooApi;
+    try {
+      const r = await fetch('./api/v1/index.json', { cache: 'no-cache' });
+      if (r.ok) _zooApi = await r.json();
+    } catch {}
+    return _zooApi;
+  }
+
+  async function loadStoreCatalog() {
+    if (_storeCatalog) return _storeCatalog;
+    const api = await loadZooApi();
+    const url = (api && api.sources && api.sources.rapp_store) ||
+                'https://raw.githubusercontent.com/kody-w/rapp_store/main/api/v1/index.json';
+    try {
+      const r = await fetch(url, { cache: 'no-cache' });
+      if (r.ok) _storeCatalog = await r.json();
+    } catch {}
+    return _storeCatalog;
+  }
+
+  function _rappCardHTML(rapp) {
+    // The RAPP_Store v1 thin index has: id, name, kind, publisher,
+    // category, version, has_skin, url (detail), sprite, egg.
+    const name = escapeHtml(rapp.name || rapp.id);
+    const sprite = rapp.sprite
+      ? `<img src="${escapeAttr(rapp.sprite)}" alt="" style="width:96px;height:96px;display:block;margin:0 auto 6px;border-radius:8px;background:var(--bg-elevated)" loading="lazy">`
+      : `<div style="width:96px;height:96px;display:flex;align-items:center;justify-content:center;margin:0 auto 6px;border-radius:8px;background:var(--bg-elevated);font-size:36px">📦</div>`;
+    const meta = [];
+    if (rapp.publisher) meta.push(escapeHtml(rapp.publisher));
+    if (rapp.version)   meta.push('v' + escapeHtml(rapp.version));
+    if (rapp.category)  meta.push(escapeHtml(rapp.category));
     return `
       <div class="info-card">
-        <h3>Bundled starter organisms</h3>
-        <p>
-          Three personalities pre-cooked. Click one to download its <code>.egg</code>
-          and drop it back here (or onto your local brainstem) to hatch.
-        </p>
-      </div>
-      <div class="grid" style="margin-top:14px">
-        ${starters.map(s => `
-          <div class="info-card">
-            <div style="font-size:48px;text-align:center;margin-bottom:8px">${s.emoji}</div>
-            <h3 style="text-align:center;margin-bottom:6px">${s.name}</h3>
-            <p style="text-align:center">${s.desc}</p>
-            <div class="row" style="justify-content:center">
-              <a class="btn primary" href="https://raw.githubusercontent.com/kody-w/RAPP/main/rapp-zoo/starters/${s.id}.egg" download>
-                ⬇ Download .egg
-              </a>
-            </div>
-          </div>
-        `).join('')}
+        ${sprite}
+        <h3 style="text-align:center;margin-bottom:4px">${name}</h3>
+        ${meta.length ? `<p style="text-align:center;font-size:11px;color:var(--text-faint)">${meta.join(' · ')}</p>` : ''}
+        <div class="row" style="justify-content:center;margin-top:10px">
+          ${rapp.egg ? `<a class="btn primary" href="${escapeAttr(rapp.egg)}" download>⬇ Download .egg</a>` : ''}
+          ${rapp.url ? `<a class="btn" href="${escapeAttr(rapp.url)}" target="_blank" rel="noopener">Details</a>` : ''}
+        </div>
       </div>`;
   }
 
-  function renderDiscover() {
-    return `
+  async function renderStartersAsync() {
+    const main = document.getElementById('main');
+    main.innerHTML = `<div class="empty"><p>Loading starters…</p></div>`;
+    const api = await loadZooApi();
+    const ids = (api && Array.isArray(api.featured_starters)) ? api.featured_starters : [];
+    const intro = `
+      <div class="info-card">
+        <h3>Starter organisms</h3>
+        <p>
+          A curated set of starter eggs. Download one, then drop it back
+          here (or onto your local brainstem) to hatch. The list below
+          is driven by <code>./api/v1/index.json</code> — when new
+          starters are promoted, they show up here on next load.
+        </p>
+      </div>`;
+    if (!ids.length) {
+      main.innerHTML = `${intro}
+        <div class="empty" style="margin-top:14px">
+          <div class="big-emoji">🌱</div>
+          <h2>No starters featured yet</h2>
+          <p>
+            Browse the full <strong>Discover</strong> tab to find rapplications
+            you can drop into your collection right now.
+          </p>
+          <a class="btn primary" onclick="switchTab('discover')" style="margin-top:6px;cursor:pointer">🛍 Open Discover</a>
+        </div>`;
+      return;
+    }
+    const cat = await loadStoreCatalog();
+    const all = (cat && Array.isArray(cat.rapplications)) ? cat.rapplications : [];
+    const featured = ids.map(id => all.find(r => r.id === id)).filter(Boolean);
+    main.innerHTML = `${intro}<div class="grid" style="margin-top:14px">${featured.map(_rappCardHTML).join('')}</div>`;
+  }
+
+  async function renderDiscoverAsync() {
+    const main = document.getElementById('main');
+    main.innerHTML = `<div class="empty"><p>Loading catalog…</p></div>`;
+    const cat = await loadStoreCatalog();
+    if (!cat || !Array.isArray(cat.rapplications)) {
+      main.innerHTML = `
+        <div class="empty">
+          <div class="big-emoji">🌐</div>
+          <h2>Couldn't reach the catalog</h2>
+          <p>
+            <code>${escapeHtml((_zooApi && _zooApi.sources && _zooApi.sources.rapp_store) || 'rapp_store')}</code>
+            didn't respond. Try again in a moment, or
+            <a href="https://kody-w.github.io/RAPP_Store/" target="_blank" rel="noopener">browse the store directly</a>.
+          </p>
+        </div>`;
+      return;
+    }
+    const rapps = cat.rapplications;
+    const intro = `
       <div class="info-card">
         <h3>🛍 RAPP_Store catalog</h3>
         <p>
-          Browse cataloged rapplications, agents, and senses. Each entry has its
-          own <code>.egg</code> you can download and drop into your collection here,
-          or install directly into your local brainstem.
+          ${rapps.length} cataloged rapplication${rapps.length === 1 ? '' : 's'}.
+          Each entry has its own <code>.egg</code> — download and drop it
+          on the page to add it to your collection, or hatch directly into
+          your local brainstem.
         </p>
         <div class="row">
-          <a class="btn primary" href="https://kody-w.github.io/RAPP_Store/" target="_blank" rel="noopener">Open store →</a>
-          <a class="btn" href="https://raw.githubusercontent.com/kody-w/rapp_store/main/api/v1/index.json" target="_blank" rel="noopener">v1 API JSON</a>
+          <a class="btn" href="https://kody-w.github.io/RAPP_Store/" target="_blank" rel="noopener">Open store →</a>
+          <a class="btn" href="${escapeAttr((_zooApi && _zooApi.sources && _zooApi.sources.rapp_store) || '#')}" target="_blank" rel="noopener">Source JSON</a>
         </div>
-      </div>
-      <div class="info-card">
-        <h3>🧠 Get a brainstem</h3>
-        <p>
-          The Pokédex is most fun when you have a brainstem to hatch eggs into.
-          One curl-pipe-bash on macOS / Linux, no API keys required.
-        </p>
-        <div class="row">
-          <a class="btn primary" href="https://kody-w.github.io/RAPP/" target="_blank" rel="noopener">Install RAPP brainstem →</a>
-          <a class="btn" href="https://github.com/kody-w/RAPP" target="_blank" rel="noopener">Source</a>
-        </div>
-      </div>
-      <div class="info-card">
-        <h3>🤝 AirDrop trick</h3>
-        <p>
-          Two Pokédex on different devices? AirDrop the same <code>.egg</code> to both.
-          Drop it here on each. Same rappid lights up on both — same organism, two
-          incarnations. The brainstem behind it knows when its sibling appears.
-        </p>
       </div>`;
+    main.innerHTML = `${intro}<div class="grid" style="margin-top:14px">${rapps.map(_rappCardHTML).join('')}</div>`;
   }
 
   // ─────────────────────────────────────────────────────────────
