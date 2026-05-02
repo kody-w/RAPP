@@ -2886,6 +2886,11 @@
         }
       } else {
         clog('chat.response', { response_len: d.response?.length, has_agents: !!d.agent_logs });
+        // A successful chat round-trip is the strongest possible health
+        // signal — kernel up, Copilot auth working, agents loadable.
+        // Mark status connected immediately so the pill stops showing
+        // a stale "connecting…" while /health hasn't repolled yet.
+        _setStatus('ok', 'connected');
         sessionId = d.session_id;
         // NEW: sync sessionId + updated timestamp into the active chat
         // so a tab switch preserves the server session continuation.
