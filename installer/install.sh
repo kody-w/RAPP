@@ -1142,7 +1142,15 @@ cmd_logs() {
 cmd_run() {
     _ensure_venv
     cd "$SRC"
-    exec "$VENV_PYTHON" brainstem.py "$@"
+    # Always prefer the boot wrapper — it composes additive routes
+    # (/api/snapshot, /api/senses, /api/workspace) onto the kernel
+    # before serving. Falls back to the bare kernel for older clones
+    # that predate utils/boot.py.
+    if [ -f utils/boot.py ]; then
+        exec "$VENV_PYTHON" utils/boot.py "$@"
+    else
+        exec "$VENV_PYTHON" brainstem.py "$@"
+    fi
 }
 
 cmd_open() {
@@ -1634,6 +1642,13 @@ _install_service_macos() {
     # Bootout any previously-loaded copy so we pick up new paths/flags.
     launchctl bootout "gui/$(id -u)/$plist_id" 2>/dev/null || true
 
+    # Prefer the boot wrapper (utils/boot.py) so additive routes
+    # (/api/snapshot/*, /api/senses/*, /api/workspace/*, /web/) get
+    # registered. launchd's ProgramArguments doesn't do shell
+    # expansion, so we pick the entry path at install time.
+    local entry="brainstem.py"
+    [ -f "$src_dir/utils/boot.py" ] && entry="utils/boot.py"
+
     cat > "$plist_path" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -1644,7 +1659,7 @@ _install_service_macos() {
     <key>ProgramArguments</key>
     <array>
         <string>${venv_python}</string>
-        <string>brainstem.py</string>
+        <string>${entry}</string>
     </array>
     <key>WorkingDirectory</key>
     <string>${src_dir}</string>
@@ -1705,7 +1720,7 @@ After=network.target
 [Service]
 Type=simple
 WorkingDirectory=${src_dir}
-ExecStart=${venv_python} brainstem.py
+ExecStart=/bin/sh -c '[ -f utils/boot.py ] && exec ${venv_python} utils/boot.py || exec ${venv_python} brainstem.py'
 Restart=always
 RestartSec=3
 StandardOutput=append:${log}
@@ -2019,10 +2034,15 @@ with open(sys.argv[2], 'w') as f: json.dump(out, f)
     # TTY though; when piped (curl | bash), exec can lose the TTY and
     # the process orphans. Direct invocation in the piped case still
     # gets killed when the terminal closes (parent pid gone).
+    # Always prefer the boot wrapper so additive routes (/api/snapshot,
+    # /api/senses, /api/workspace, /web/) get registered. Falls back to
+    # the canonical kernel if utils/boot.py isn't present (older clones).
+    local entry="brainstem.py"
+    [ -f utils/boot.py ] && entry="utils/boot.py"
     if [ -t 0 ]; then
-        exec "$venv_python" brainstem.py
+        exec "$venv_python" "$entry"
     else
-        "$venv_python" brainstem.py </dev/tty
+        "$venv_python" "$entry" </dev/tty
     fi
 }
 
@@ -2102,7 +2122,9 @@ if lsof -ti ":\$desired_port" >/dev/null 2>&1; then
     [ -f "\$REGHELPER" ] && python3 "\$REGHELPER" upsert "\$SRC" "\$final_port" "" >/dev/null 2>&1 || true
 fi
 cd "\$SRC"
-PORT=\$final_port exec "\$VENV_PYTHON" brainstem.py "\$@"
+ENTRY="brainstem.py"
+[ -f "\$SRC/utils/boot.py" ] && ENTRY="utils/boot.py"
+PORT=\$final_port exec "\$VENV_PYTHON" "\$ENTRY" "\$@"
 LAUNCHER
     chmod +x "$launcher"
     echo "$port" > "$BRAINSTEM_HOME/PORT"
