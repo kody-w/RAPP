@@ -17,6 +17,33 @@
     "rapp_zoo_source":        "https://github.com/kody-w/RAPP/tree/main/rapp-zoo"
   },
 
+  "starters": [
+    {
+      "id": "workday",
+      "name": "Workday",
+      "tagline": "Focused, terse organism for daily standups, OKRs, calendar triage.",
+      "emoji": "💼",
+      "egg": "./starters/workday.egg",
+      "rappid": "rappid:v2:starter:@rapp/workday:d14445a43e8ea99902ad811cdc94bb0b"
+    },
+    {
+      "id": "playtime",
+      "name": "Playtime",
+      "tagline": "Curious, expressive, weird-tangent friend. Music + games + storytelling.",
+      "emoji": "🎮",
+      "egg": "./starters/playtime.egg",
+      "rappid": "rappid:v2:starter:@rapp/playtime:785411e3edd8293d2d24efe1236b49d0"
+    },
+    {
+      "id": "journal",
+      "name": "Journal",
+      "tagline": "Long-memory keeper. Recalls what you told it last week.",
+      "emoji": "📓",
+      "egg": "./starters/journal.egg",
+      "rappid": "rappid:v2:starter:@rapp/journal:ef5edcfe86102d6d6bf583c5968e8baf"
+    }
+  ],
+
   "featured_starters": [
     "egg_hatcher",
     "wildhaven_ceo",
@@ -26,8 +53,9 @@
   ],
 
   "notes": [
-    "featured_starters is a list of rapplication ids from the RAPP_Store v1 catalog that should surface in the rapp-zoo Starters tab. Currently empty — when starter cartridges are promoted, add their ids here and the page picks them up on next load. No HTML change required.",
+    "starters is the bundled set — three personality eggs (workday/playtime/journal) that live in this repo at rapp-zoo/starters/<id>.egg. Each is a brainstem-egg/2.2-organism with a soul.md + a deterministic rappid. Hatching the same starter on two machines gets the same rappid, so the organisms recognize each other.",
+    "featured_starters is a curation of rapplication ids from the RAPP_Store v1 catalog — bigger, full-featured cartridges that round out what the Starters tab presents. The page renders the bundled `starters` first, then the featured RAPP_Store rapps below.",
     "Discover tab pulls the full RAPP_Store catalog from sources.rapp_store and renders one card per rapplication.",
-    "The rapp-zoo never holds .egg blobs of its own — every cartridge link points at the RAPP_Store v1 /api/v1/egg/<id>.egg path. One canonical source of truth for cartridge bytes, indirected through this manifest for curation."
+    "Bundled starter .egg files are built by rapp-zoo/starters/_build.py — re-run it after changing a soul.md and commit the regenerated eggs."
   ]
 }

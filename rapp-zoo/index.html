@@ -773,38 +773,71 @@
       </div>`;
   }
 
+  function _bundledStarterCardHTML(s) {
+    return `
+      <div class="info-card">
+        <div style="font-size:48px;text-align:center;margin-bottom:8px">${escapeHtml(s.emoji || '🌱')}</div>
+        <h3 style="text-align:center;margin-bottom:4px">${escapeHtml(s.name || s.id)}</h3>
+        <p style="text-align:center">${escapeHtml(s.tagline || '')}</p>
+        <div class="row" style="justify-content:center;margin-top:10px">
+          <a class="btn primary" href="${escapeAttr(s.egg)}" download>⬇ Download .egg</a>
+        </div>
+      </div>`;
+  }
+
   async function renderStartersAsync() {
     const main = document.getElementById('main');
     main.innerHTML = `<div class="empty"><p>Loading starters…</p></div>`;
     const api = await loadZooApi();
-    const ids = (api && Array.isArray(api.featured_starters)) ? api.featured_starters : [];
+    const bundled = (api && Array.isArray(api.starters)) ? api.starters : [];
+    const featuredIds = (api && Array.isArray(api.featured_starters)) ? api.featured_starters : [];
+
     const intro = `
       <div class="info-card">
         <h3>Starter organisms</h3>
         <p>
-          A curated set of starter eggs. Download one, then drop it back
-          here (or onto your local brainstem) to hatch. The list below
-          is driven by <code>./api/v1/index.json</code> — when new
-          starters are promoted, they show up here on next load.
+          Three personalities pre-cooked, plus a curated set from the
+          public catalog. Download one, then drop it back here (or onto
+          your local brainstem) to hatch. The list below is driven by
+          <code>./api/v1/index.json</code> — promote a new one and it
+          shows up on next load.
         </p>
       </div>`;
-    if (!ids.length) {
+
+    let bundledSection = '';
+    if (bundled.length) {
+      bundledSection = `
+        <h3 style="margin:18px 0 8px;color:var(--text-muted);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">
+          Bundled
+        </h3>
+        <div class="grid">${bundled.map(_bundledStarterCardHTML).join('')}</div>`;
+    }
+
+    let featuredSection = '';
+    if (featuredIds.length) {
+      const cat = await loadStoreCatalog();
+      const all = (cat && Array.isArray(cat.rapplications)) ? cat.rapplications : [];
+      const featured = featuredIds.map(id => all.find(r => r.id === id)).filter(Boolean);
+      if (featured.length) {
+        featuredSection = `
+          <h3 style="margin:24px 0 8px;color:var(--text-muted);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">
+            From the catalog
+          </h3>
+          <div class="grid">${featured.map(_rappCardHTML).join('')}</div>`;
+      }
+    }
+
+    if (!bundledSection && !featuredSection) {
       main.innerHTML = `${intro}
         <div class="empty" style="margin-top:14px">
           <div class="big-emoji">🌱</div>
           <h2>No starters featured yet</h2>
-          <p>
-            Browse the full <strong>Discover</strong> tab to find rapplications
-            you can drop into your collection right now.
-          </p>
+          <p>Browse the full <strong>Discover</strong> tab to find rapplications you can drop into your collection right now.</p>
           <a class="btn primary" onclick="switchTab('discover')" style="margin-top:6px;cursor:pointer">🛍 Open Discover</a>
         </div>`;
       return;
     }
-    const cat = await loadStoreCatalog();
-    const all = (cat && Array.isArray(cat.rapplications)) ? cat.rapplications : [];
-    const featured = ids.map(id => all.find(r => r.id === id)).filter(Boolean);
-    main.innerHTML = `${intro}<div class="grid" style="margin-top:14px">${featured.map(_rappCardHTML).join('')}</div>`;
+    main.innerHTML = intro + bundledSection + featuredSection;
   }
 
   async function renderDiscoverAsync() {
