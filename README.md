@@ -38,7 +38,7 @@ Drop that file in `agents/`, it auto-discovers on the next request. The `metadat
 ## Why it might be interesting
 
 - **Every install is a digital organism.** Your `~/.brainstem/` has its own [rappid identity](https://github.com/kody-w/RAPP/blob/main/pages/vault/Architecture/Rappid.md), its own personality (`soul.md`), its own memory (`.brainstem_data/`), and a lineage log (`bonds.json`) of every kernel evolution it has lived through. The kernel is just the runtime; **the organism evolves under the kernel, not the other way around.** Re-run the one-liner → the bond cycle eggs your organism, overlays the new kernel, hatches you back. Same identity, every customization preserved. ([Visual anatomy diagram](https://kody-w.github.io/RAPP/pages/about/anatomy.html).)
-- **Portable cartridges.** Your organism packs into a `.egg` ([brainstem-egg/2.2-organism schema](./rapp_brainstem/utils/bond.py)). AirDrop it to your phone; the brainstem there hatches the same organism — same memory, same agents, continues elsewhere. `brainstem egg` and `brainstem hatch` are CLI commands, or use the [rapp-zoo Pokédex](https://github.com/kody-w/rapp-zoo) for drag-drop.
+- **Portable cartridges.** Your organism packs into a `.egg` ([brainstem-egg/2.2-organism schema](./rapp_brainstem/utils/bond.py)). AirDrop it to your phone; the brainstem there hatches the same organism — same memory, same agents, continues elsewhere. `brainstem egg` and `brainstem hatch` are CLI commands, or use the [rapp-zoo Pokédex](https://kody-w.github.io/RAPP/rapp-zoo/) for drag-drop.
 - **Single-file plugin contract.** One file = one class = one `metadata` = one `perform()`. Reload-on-disk every request, so you edit and test without restarting the server.
 - **GitHub Copilot as the LLM backend.** Exchanges your `gh auth` token for short-lived Copilot API tokens cached in `~/.brainstem/`. No new credentials to manage.
 - **Same file runs on three tiers.** Local Flask server (this repo), Azure Functions deployment in `rapp_swarm/`, and a Cloudflare worker that proxies into Microsoft Copilot Studio in `worker/`. The `*_agent.py` file is the contract; the engine ports.
@@ -57,7 +57,7 @@ The platform is three sibling repos plus a Pokédex:
 | [`kody-w/RAR`](https://github.com/kody-w/RAR) | Bare agents (skinless single-celled organisms) | 280+ agents, drop-in to any brainstem |
 | [`kody-w/RAPP_Store`](https://github.com/kody-w/RAPP_Store) | Rapplications (organisms with skin) + the [Pokédex API](https://raw.githubusercontent.com/kody-w/RAPP_Store/main/api/v1/index.json) | PokeAPI-style static catalog: sprite + lineage + downloadable .egg per entry |
 | [`kody-w/RAPP_Sense_Store`](https://github.com/kody-w/RAPP_Sense_Store) | Sense overlays (`*_sense.py`) | Per-channel output extensions a brainstem installs |
-| [`kody-w/rapp-zoo`](https://github.com/kody-w/rapp-zoo) | The local-first Pokédex UI | Drag-drop import / one-click export / discover from the catalog |
+| [`rapp-zoo/`](./rapp-zoo/) ([live](https://kody-w.github.io/RAPP/rapp-zoo/)) | The local-first Pokédex UI (lives in this repo) | Drag-drop import / one-click export / discover from the catalog |
 
 Per [Constitution Article XXXVII](./CONSTITUTION.md), all of the above hold *organisms*; the shape of the artifact decides which repo holds which.
 

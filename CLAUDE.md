@@ -118,7 +118,7 @@ Every locally-installed brainstem is its own digital organism with persistent id
 ## Visual anatomy + Pokédex (where to send users to learn)
 
 - [`pages/about/anatomy.html`](./pages/about/anatomy.html) — full visual diagram of an organism. DNA / soul / organs / senses / cells / memory / skin / egg with hover-to-highlight cards. Linked from the brainstem's settings panel as the canonical onboarding artifact.
-- [`kody-w/rapp-zoo`](https://github.com/kody-w/rapp-zoo) — the local-first Pokédex. Three tabs (My collection / Starters / Discover), drag-drop egg import, deterministic SVG sprites per organism, three bundled starters (workday/playtime/journal).
+- [`rapp-zoo/`](./rapp-zoo/) ([live at `kody-w.github.io/RAPP/rapp-zoo/`](https://kody-w.github.io/RAPP/rapp-zoo/)) — the local-first Pokédex. Three tabs (My collection / Starters / Discover), drag-drop egg import, deterministic SVG sprites per organism, three bundled starters (workday/playtime/journal). Single-file static page; localStorage holds metadata, IndexedDB holds blobs, the whole collection round-trips through one JSON for backup.
 - [`kody-w/RAPP_Store`](https://github.com/kody-w/RAPP_Store) `/api/v1/` — PokeAPI-style static catalog. Each cataloged rapplication has an entry JSON, a sprite SVG, and a downloadable `.egg`. Hosted via `raw.githubusercontent.com`.
 
 ## Key Directories

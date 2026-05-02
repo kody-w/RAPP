@@ -2783,7 +2783,7 @@ The shape rule from [Article XXXI](#article-xxxi--three-stores-three-artifacts) 
 
 - **Catalogs differentiate by shape, not by "organism vs not."** RAR holds skinless single-celled organisms (bare agents). RAPP_Sense_Store holds organism *organs* of one type (sense overlays — extensions to host perception, not standalone bodies). RAPP_Store holds **organisms with skin** — the ones that earn names like "BookFactory" instead of identifiers like `bookfactory_agent.py`. All three hold organisms; the shape decides which.
 - **Eggs work at any scale.** `brainstem-egg/2.2-rapplication` is a sibling of `2.2-organism` — same zip layout, smaller include set. The unpacker dispatches on `manifest.type`. No parallel egg systems.
-- **One Pokédex for everything.** The [`rapp-zoo`](https://github.com/kody-w/rapp-zoo) renders catalog rapps, locally-hatched instances, and AirDropped organisms with the same card model. Three sources, one collection.
+- **One Pokédex for everything.** The [`rapp-zoo`](./rapp-zoo/) ([live](https://kody-w.github.io/RAPP/rapp-zoo/)) renders catalog rapps, locally-hatched instances, and AirDropped organisms with the same card model. Three sources, one collection.
 - **One identity protocol at every scale.** Every rappid has a parent rappid that walks back to the species root, regardless of organism size. Lineage is unbroken.
 
 ### XXXVII.5 — What stays the same — by design
@@ -2798,7 +2798,7 @@ The shape rule from [Article XXXI](#article-xxxi--three-stores-three-artifacts) 
 - Visual anatomy: [`pages/about/anatomy.html`](./pages/about/anatomy.html) (the diagram)
 - Egg pack/unpack at both scales: [`rapp_brainstem/utils/bond.py`](./rapp_brainstem/utils/bond.py) (`pack_organism` + `pack_rapplication`)
 - Pokédex API consuming the unification: [`kody-w/RAPP_Store`](https://github.com/kody-w/RAPP_Store) `/api/v1/`
-- Pokédex UI rendering the unified card: [`kody-w/rapp-zoo`](https://github.com/kody-w/rapp-zoo) (Tier 1+2 PR merged 2026-05-02)
+- Pokédex UI rendering the unified card: [`rapp-zoo/`](./rapp-zoo/) ([live](https://kody-w.github.io/RAPP/rapp-zoo/)) — moved into this repo 2026-05-02 to keep the federation simpler
 
 ---
 
