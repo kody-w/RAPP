@@ -2360,8 +2360,13 @@
     if (logs) {
       const wrapper = document.createElement('div');
       wrapper.className = 'agent-logs-wrapper';
-      // Extract agent names from log lines like "[AgentName] result"
-      const agentNames = [...new Set((logs.match(/\[([^\]]+)\]/g) || []).map(m => m.slice(1, -1)))];
+      // Extract agent names from log lines like "[AgentName] result".
+      // Anchor to start-of-line — agent outputs (e.g. HackerNews JSON)
+      // contain their own [...] arrays that would otherwise leak into
+      // the label and blow up the chrome with uppercased JSON soup.
+      const agentNames = [...new Set(
+        (logs.match(/^\[([^\]\n]+)\]/gm) || []).map(m => m.slice(1, m.indexOf(']')))
+      )];
       const label = document.createElement('div');
       label.className = 'logs-label';
       const nameSpan = agentNames.length > 0
