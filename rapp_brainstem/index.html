@@ -2370,9 +2370,14 @@
       label.innerHTML = '<span class="arrow">\u25B6</span> agent called' + nameSpan;
       const logBox = document.createElement('div');
       logBox.className = 'agent-logs collapsed';
+      // Belt-and-suspenders: also set inline display:none so the collapsed
+      // default survives any stale CSS cache. Toggled in lockstep with
+      // the .collapsed class on click.
+      logBox.style.display = 'none';
       logBox.textContent = logs;
       label.onclick = () => {
-        logBox.classList.toggle('collapsed');
+        const open = logBox.classList.toggle('collapsed');  // returns true when added
+        logBox.style.display = open ? 'none' : 'block';
         label.querySelector('.arrow').classList.toggle('open');
       };
       wrapper.appendChild(label);
