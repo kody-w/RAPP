@@ -11,6 +11,7 @@
       "label": "About",
       "description": "Who RAPP is for, how it gets adopted, what it doesn't try to be.",
       "pages": [
+        { "path": "about/anatomy.html",    "title": "Anatomy of a digital organism", "audience": "Anyone curious", "description": "The full visual diagram: DNA, soul, organs, senses, cells, memory, skin, egg — every layer mapped from biology to code." },
         { "path": "about/leadership.html", "title": "Leadership one-pager", "audience": "Executive sponsor", "description": "Workshops become production-bound agents. Same week. One file." },
         { "path": "about/partners.html",    "title": "Partner one-pager",    "audience": "System integrator", "description": "What partners receive, what they build, what they own." },
         { "path": "about/process.html",     "title": "How a session runs",   "audience": "Workshop lead",     "description": "60-minute customer session → working agent by week's end." },
