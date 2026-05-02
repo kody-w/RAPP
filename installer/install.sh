@@ -632,24 +632,35 @@ _confirm_upgrade() {
 
     _bond_log "gate-shown" mode=interactive
     if [ -t 0 ] && [ -t 1 ]; then
-        # Interactive — prompt with default No
+        # Interactive — prompt with default Yes. Re-running the
+        # installer in a terminal is itself an opt-in, but we still
+        # show the choice so a user who typo-scrolled-and-hit-enter has
+        # one chance to bail before files move.
         local reply
-        printf "  Proceed with upgrade? [y/N]: "
+        printf "  Proceed with upgrade? [Y/n]: "
         read -r reply
         case "$reply" in
-            y|Y|yes|YES) _bond_log "gate-confirmed" reply="$reply"; return 0 ;;
-            *) _bond_log "gate-skipped" reply="${reply:-empty}"; echo -e "  ${GREEN}✓${NC} Keeping v${from} — no changes made"; return 1 ;;
+            n|N|no|NO) _bond_log "gate-skipped" reply="$reply"; echo -e "  ${GREEN}✓${NC} Keeping v${from} — no changes made"; return 1 ;;
+            *)        _bond_log "gate-confirmed" reply="${reply:-default_yes}"; return 0 ;;
         esac
     fi
 
-    # Piped (curl | bash) — no TTY for read. Refuse to wipe silently.
-    _bond_log "gate-skipped" reason=no_tty
-    echo "  Re-run with BRAINSTEM_UPGRADE=1 to confirm:"
-    echo ""
-    echo "    BRAINSTEM_UPGRADE=1 curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash"
-    echo ""
-    echo -e "  ${GREEN}✓${NC} Keeping v${from} — no changes made"
-    return 1
+    # Piped (curl | bash) without TTY: re-running the one-liner IS the
+    # opt-in. The persistent backup at ~/.brainstem/.bond/backups/ + the
+    # immutable emergency baseline are the real safety nets — refusing
+    # to upgrade because there's no TTY is friction, not protection.
+    # BRAINSTEM_NO_UPGRADE=1 still gives users an explicit way to opt
+    # OUT of the upgrade if they're piping intentionally and want the
+    # short-circuit behavior.
+    if [ "${BRAINSTEM_NO_UPGRADE:-}" = "1" ] || [ "${BRAINSTEM_NO_UPGRADE:-}" = "yes" ]; then
+        _bond_log "gate-skipped" reason=BRAINSTEM_NO_UPGRADE_env
+        echo -e "  ${GREEN}✓${NC} BRAINSTEM_NO_UPGRADE=1 — keeping v${from}, no changes made"
+        return 1
+    fi
+    _bond_log "gate-bypassed" reason=piped_install
+    echo -e "  ${YELLOW}⬆${NC}  Proceeding (re-running the one-liner is the opt-in)"
+    echo "       To skip future upgrades non-interactively: BRAINSTEM_NO_UPGRADE=1"
+    return 0
 }
 
 install_brainstem() {
