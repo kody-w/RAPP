@@ -1950,9 +1950,11 @@
         // brainstem ships with it OOTB — but a brainstem that booted
         // before this code was on disk won't have the routes registered
         // until it restarts. Tell the user exactly what to do instead
-        // of silently downgrading to a JSON.
+        // of silently downloading a misleading JSON the user didn't ask
+        // for. NO auto-fallback — a JSON is not a .egg.
         if (r.status === 404 || r.status === 405) {
-          return _exportBookJsonFallback({ needsRestart: true });
+          _showSnapshotRestartHint();
+          return;
         }
         let msg = `HTTP ${r.status}`;
         try { msg = (await r.json()).error || msg; } catch {}
@@ -1982,25 +1984,22 @@
     }
   }
 
-  async function _exportBookJsonFallback({ needsRestart = false } = {}) {
-    const book = await _buildBackupBook({ sanitize: false });
-    const blob = new Blob([JSON.stringify(book, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `rapp-brainstem-diagnostics-${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.json`;
-    a.click();
-    URL.revokeObjectURL(a.href);
+  // No auto-download. The .egg is the only backup vehicle the user
+  // asked for; if the route isn't reachable, hand them the exact
+  // command that fixes it and a copy-to-clipboard for friction-zero
+  // recovery. No silent JSON downloads pretending to be a backup.
+  function _showSnapshotRestartHint() {
+    const cmd = 'brainstem restart';
     const wrap = appendMsg('system', '');
-    if (needsRestart) {
-      wrap.querySelector('.bubble').innerHTML =
-        '📖 Saved a diagnostics JSON. <strong>.egg export needs a brainstem restart</strong> ' +
-        'to come online — every brainstem ships with it OOTB, but a process that booted before ' +
-        'the snapshot routes were on disk has to restart to register them.<br>' +
-        '<code>brainstem restart</code> in your terminal, then click Export again.';
-    } else {
-      wrap.querySelector('.bubble').innerHTML =
-        '📖 Diagnostics saved as <code>book.json</code>.';
-    }
+    wrap.querySelector('.bubble').innerHTML =
+      '🥚 <strong>.egg export needs a brainstem restart.</strong><br>' +
+      'Every brainstem ships with the snapshot route via <code>utils/boot.py</code>, ' +
+      'but a process that booted before the route was on disk has to restart to register it.<br><br>' +
+      'In your terminal:<br>' +
+      `<code style="display:inline-block;padding:4px 8px;margin:2px 0;background:rgba(110,118,129,0.15);border:1px solid rgba(110,118,129,0.3);border-radius:4px">${cmd}</code> ` +
+      `<button onclick="navigator.clipboard.writeText('${cmd}').then(()=>this.textContent='Copied!')" ` +
+      `style="margin-left:6px;background:#21262d;color:#c9d1d9;border:1px solid #30363d;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer">Copy</button>` +
+      '<br><br>Then click Export again. (Your live install isn\'t touched by a restart.)';
   }
 
   // Download a sanitized book.json to disk, used by both the Get Help
