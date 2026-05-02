@@ -1855,12 +1855,15 @@
     'rapp_theme',
     'brainstem_model',
     'voice_provider',
+    'brainstem_voice_mode',
     'az_speech_region',
     'az_voice_name',
     'el_model',
     'el_voice_id',
     'brainstem_dev',
     'brainstem_store_installed',
+    'brainstem_store_tab',
+    'brainstem_agents_panel_open',
     'split_pane_state',
     // 'brainstem_tether' is intentionally excluded — host-specific URL
     // that would mislead a restore on a different machine.
@@ -2330,6 +2333,7 @@
     const p = document.getElementById('agents-panel');
     const open = p.classList.toggle('open');
     if (open) { loadAgentsList(); loadRapplications(); }
+    try { localStorage.setItem('brainstem_agents_panel_open', open ? '1' : '0'); } catch {}
   }
   document.addEventListener('click', (e) => {
     const p = document.getElementById('agents-panel');
@@ -2339,8 +2343,22 @@
     const onChatTab = e.target.closest && e.target.closest('#chat-tabs');
     if (p.classList.contains('open') && !p.contains(e.target) && !b.contains(e.target) && !onChatTab) {
       p.classList.remove('open');
+      try { localStorage.setItem('brainstem_agents_panel_open', '0'); } catch {}
     }
   });
+  // Restore agents panel open state on load.
+  (function _restoreAgentsPanel() {
+    try {
+      if (localStorage.getItem('brainstem_agents_panel_open') === '1') {
+        const p = document.getElementById('agents-panel');
+        if (p) {
+          p.classList.add('open');
+          // Defer hydration so loadAgentsList et al exist when called.
+          setTimeout(() => { try { loadAgentsList(); loadRapplications(); } catch {} }, 0);
+        }
+      }
+    } catch {}
+  })();
 
   // ── Rapplications listing ──
   // Lists the rapps the user installed via the store (tracked in
@@ -2978,7 +2996,15 @@
   }
 
   // ── Voice (Azure Speech + ElevenLabs + browser fallback) ──
-  let voiceMode = false;
+  // voiceMode is mirrored both client-side (so a refresh reads back
+  // the user's last choice without a server round-trip) and via the
+  // /voice endpoint (which the kernel still owns). Server is the
+  // authoritative source on the next /voice fetch; cache is a hint
+  // for the immediate-render UI.
+  let voiceMode = (function() {
+    try { return localStorage.getItem('brainstem_voice_mode') === '1'; }
+    catch { return false; }
+  })();
   let voiceProvider = localStorage.getItem('voice_provider') || 'azure';
 
   // Azure Speech state
@@ -3339,6 +3365,7 @@
       const r = await fetch(`${API}/voice/toggle`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: '{}' });
       const d = await r.json();
       voiceMode = d.voice_mode;
+      try { localStorage.setItem('brainstem_voice_mode', voiceMode ? '1' : '0'); } catch {}
       updateVoiceBtn();
       if (voiceMode) {
         appendMsg('system', '');
@@ -3503,8 +3530,13 @@
     }
   }
 
+  // Render the cached voice-mode state immediately so a refresh
+  // doesn't flash the wrong icon. Server is the authoritative source —
+  // reconcile when /voice answers, and re-cache the answer.
+  updateVoiceBtn();
   fetch(`${API}/voice`).then(r => r.json()).then(d => {
     voiceMode = d.voice_mode;
+    try { localStorage.setItem('brainstem_voice_mode', voiceMode ? '1' : '0'); } catch {}
     updateVoiceBtn();
   }).catch(() => {});
 
@@ -3973,7 +4005,15 @@
   let _storeAgents = null;           // RAR registry agents (lazy)
   let _installedRappIds = new Set();
   let _installedSenseFiles = new Set();
-  let _storeTab = 'rapps';
+  // Initial _storeTab honors the user's last pick across reloads —
+  // open the store modal twice and you don't have to re-click your tab.
+  let _storeTab = (function() {
+    try {
+      const v = localStorage.getItem('brainstem_store_tab');
+      if (v && ['rapps','senses','agents'].includes(v)) return v;
+    } catch {}
+    return 'rapps';
+  })();
 
   async function openStore() {
     const modal = document.getElementById('store-modal');
@@ -3981,8 +4021,7 @@
     document.getElementById('agents-panel')?.classList.remove('open');
     document.getElementById('store-search').value = '';
     document.getElementById('store-category').value = '';
-    // Default tab on every open is rapps — most common starting point.
-    _storeTab = 'rapps';
+    // Use the cached tab; user expects to land where they left off.
     _syncStoreTabUi();
     await _loadStoreTab(_storeTab);
   }
@@ -4014,6 +4053,7 @@
   async function switchStoreTab(tab) {
     if (!['rapps','senses','agents'].includes(tab)) return;
     _storeTab = tab;
+    try { localStorage.setItem('brainstem_store_tab', tab); } catch {}
     document.getElementById('store-search').value = '';
     document.getElementById('store-category').value = '';
     _syncStoreTabUi();
