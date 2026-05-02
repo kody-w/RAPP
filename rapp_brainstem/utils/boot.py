@@ -82,6 +82,11 @@ def _wrap_flask_run() -> None:
         except Exception as e:
             print(f"[boot] /web mount failed: {e}")
 
+        try:
+            _install_snapshot_routes(self)
+        except Exception as e:
+            print(f"[boot] /api/snapshot routes failed: {e}")
+
         return _real_run(self, *args, **kwargs)
 
     flask.Flask.run = _wrapped_run
@@ -125,6 +130,97 @@ def _mount_web_static(app) -> None:
     app.add_url_rule("/web/", endpoint="_boot_web_root_slash", view_func=web_view, methods=["GET"])
     app.add_url_rule("/web/<path:rest>", endpoint="_boot_web_path", view_func=web_view, methods=["GET"])
     print(f"[boot] /web mounted from {web_dir}")
+
+
+def _install_snapshot_routes(app) -> None:
+    """Always-on .egg export/import — basic backup the chat UI depends on.
+
+    Lives in the boot wrapper rather than an organ so it works OOTB with
+    no organ wiring required. Same kernel-untouched contract as /web/.
+
+        GET  /api/snapshot/export  → application/zip with the organism egg
+        POST /api/snapshot/import  → body { content_b64, filename? }
+                                     hatches the egg over this brainstem
+    """
+    from flask import request, jsonify, make_response
+    import base64
+    from datetime import datetime, timezone
+
+    try:
+        import bond  # type: ignore
+    except Exception as e:
+        print(f"[boot] /api/snapshot disabled — bond import failed: {e}")
+        return
+
+    def _rapp_home() -> str:
+        return os.environ.get("RAPP_HOME") or os.path.join(os.path.expanduser("~"), ".brainstem")
+
+    def _kernel_version() -> str:
+        vfile = os.path.join(_BRAINSTEM_DIR, "VERSION")
+        try:
+            with open(vfile, "r", encoding="utf-8") as f:
+                return f.read().strip()
+        except OSError:
+            return "0.0.0"
+
+    def _export_view():
+        try:
+            blob = bond.pack_organism(_rapp_home(), _BRAINSTEM_DIR, _kernel_version())
+        except Exception as e:
+            return jsonify({"error": f"pack failed: {e}"}), 500
+        slug = "brainstem"
+        try:
+            ident = bond._read_json(bond._rappid_path(_rapp_home())) or {}
+            rappid = ident.get("rappid") or ""
+            if rappid:
+                parts = rappid.split(":")
+                if len(parts) >= 4:
+                    name_part = parts[3]
+                    if "/" in name_part:
+                        name_part = name_part.split("/", 1)[1]
+                    if name_part:
+                        slug = name_part.replace(" ", "_")
+        except Exception:
+            pass
+        stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%SZ")
+        filename = f"{slug}-{stamp}.egg"
+        resp = make_response(blob, 200)
+        resp.headers["Content-Type"] = "application/zip"
+        resp.headers["Content-Disposition"] = f'attachment; filename="{filename}"'
+        resp.headers["X-Egg-Filename"] = filename
+        resp.headers["Content-Length"] = str(len(blob))
+        return resp
+
+    def _import_view():
+        body = request.get_json(silent=True) or {}
+        b64 = body.get("content_b64")
+        if not isinstance(b64, str) or not b64:
+            return jsonify({"error": "missing content_b64"}), 400
+        try:
+            blob = base64.b64decode(b64)
+        except Exception as e:
+            return jsonify({"error": f"invalid base64: {e}"}), 400
+        try:
+            counts = bond.unpack_organism(blob, _rapp_home(), _BRAINSTEM_DIR)
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+        except Exception as e:
+            return jsonify({"error": f"hatch failed: {e}"}), 500
+        return jsonify({
+            "status": "ok",
+            "counts": counts,
+            "filename": body.get("filename") or None,
+        }), 200
+
+    _export_view.__name__ = "_boot_snapshot_export"
+    _import_view.__name__ = "_boot_snapshot_import"
+    app.add_url_rule("/api/snapshot/export",
+                     endpoint="_boot_snapshot_export",
+                     view_func=_export_view, methods=["GET"])
+    app.add_url_rule("/api/snapshot/import",
+                     endpoint="_boot_snapshot_import",
+                     view_func=_import_view, methods=["POST"])
+    print("[boot] /api/snapshot/export + /api/snapshot/import wired")
 
 
 def _lineage_guard() -> None:
