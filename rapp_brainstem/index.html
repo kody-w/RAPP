@@ -214,6 +214,11 @@
     opacity: 0.6;
   }
   #chat-watermark svg { width: 20px; height: 20px; fill: #30363d; }
+  #chat-watermark code {
+    font-family: "SF Mono", ui-monospace, monospace; font-size: 12px;
+    color: inherit; background: rgba(110,118,129,0.1);
+    padding: 0 4px; border-radius: 3px;
+  }
 
   .avatar {
     width: 34px; height: 34px; border-radius: 50%;
@@ -455,32 +460,69 @@
   .agents-wrapper { position: relative; }
   #agents-panel {
     display: none;
-    position: absolute; top: 100%; right: 0; margin-top: 6px;
-    background: #161b22; border: 1px solid #30363d; border-radius: 10px;
-    padding: 16px; width: 300px; z-index: 50;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    position: absolute; top: 100%; right: 0; margin-top: 8px;
+    background: #161b22; border: 1px solid #30363d; border-radius: 12px;
+    padding: 14px 14px 12px; width: 320px; z-index: 50;
+    box-shadow: 0 16px 32px rgba(0,0,0,0.5);
     font-size: 13px;
-    max-height: 400px; overflow-y: auto;
+    max-height: 480px; overflow-y: auto;
   }
   #agents-panel.open { display: block; }
   #agents-panel h3 {
-    font-size: 13px; font-weight: 600; margin-bottom: 12px;
-    display: flex; align-items: center; justify-content: space-between;
+    font-size: 11px; font-weight: 600; margin-bottom: 8px;
+    color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px;
+    display: flex; align-items: center; gap: 6px;
   }
+  #agents-panel h3 .icon { width: 12px; height: 12px; }
   .agent-list { list-style: none; margin: 0; padding: 0; }
   .agent-list li {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 8px 0; border-bottom: 1px solid #21262d;
-    font-size: 12px;
+    gap: 10px; padding: 9px 0; border-bottom: 1px solid #21262d;
+    font-size: 12px; min-width: 0;
   }
   .agent-list li:last-child { border-bottom: none; }
-  .agent-list .agent-name { color: #e6edf3; font-family: "SF Mono", monospace; }
+  .agent-list .agent-name {
+    display: flex; flex-direction: column; gap: 2px;
+    min-width: 0; flex: 1;
+  }
+  .agent-list .agent-name .agent-class {
+    color: #e6edf3; font-weight: 500;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .agent-list .agent-name .agent-file {
+    color: #6e7681; font-size: 10px;
+    font-family: "SF Mono", ui-monospace, monospace;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .agent-list .agent-controls {
+    display: flex; gap: 4px; flex-shrink: 0;
+  }
+  .agent-list .icon-action {
+    background: transparent; color: #8b949e;
+    border: 1px solid transparent; border-radius: 6px;
+    padding: 4px; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .agent-list .icon-action svg { width: 13px; height: 13px; fill: currentColor; }
+  .agent-list .icon-action:hover { background: #21262d; color: #58a6ff; border-color: #30363d; }
+  .agent-list .icon-action.danger:hover { color: #f85149; border-color: rgba(248,81,73,0.35); }
+  /* Legacy class kept in case external code references it. */
   .agent-list .export-btn {
     background: #21262d; color: #e6edf3; border: 1px solid #30363d;
     border-radius: 4px; padding: 3px 6px; font-size: 10px;
     cursor: pointer; transition: all 0.15s;
   }
   .agent-list .export-btn:hover { border-color: #58a6ff; color: #58a6ff; }
+  .panel-hint {
+    font-size: 10px; color: #6e7681; line-height: 1.4;
+    margin: 10px 0; text-align: center;
+  }
+  .panel-hint code {
+    background: rgba(110,118,129,0.15); color: #8b949e;
+    padding: 1px 4px; border-radius: 3px;
+    font-family: "SF Mono", ui-monospace, monospace; font-size: 10px;
+  }
   
   /* ── Drag & Drop Overlay ── */
   #drop-overlay {
@@ -616,24 +658,43 @@
   .browse-error { color: #f85149; }
 
   /* ── Rapplications subsection inside agents panel ── */
-  #rapp-list-ul { list-style: none; margin: 12px 0 0; padding: 0; }
+  #rapp-list-ul { list-style: none; margin: 8px 0 0; padding: 0; }
   #rapp-list-ul li {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 6px 0; border-bottom: 1px solid #21262d; font-size: 12px;
+    gap: 10px; padding: 8px 0; border-bottom: 1px solid #21262d;
+    font-size: 12px; min-width: 0;
   }
   #rapp-list-ul li:last-child { border-bottom: none; }
-  #rapp-list-ul .rapp-name { color: #e6edf3; }
-  #rapp-list-ul .open-btn {
-    background: #1f6feb; color: #fff; border: none;
-    border-radius: 4px; padding: 3px 8px; font-size: 10px;
-    cursor: pointer; transition: background 0.15s;
+  #rapp-list-ul .rapp-name {
+    color: #e6edf3; flex: 1; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
-  #rapp-list-ul .open-btn:hover { background: #388bfd; }
+  #rapp-list-ul .open-btn {
+    background: rgba(31,111,235,0.15); color: #58a6ff;
+    border: 1px solid rgba(31,111,235,0.4);
+    border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: 500;
+    cursor: pointer; transition: all 0.15s;
+  }
+  #rapp-list-ul .open-btn:hover {
+    background: rgba(31,111,235,0.25); border-color: #58a6ff;
+  }
+  /* Icon-action buttons can also live in the rapps list — share styling. */
+  #rapp-list-ul .icon-action {
+    background: transparent; color: #8b949e;
+    border: 1px solid transparent; border-radius: 6px;
+    padding: 4px; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  #rapp-list-ul .icon-action svg { width: 13px; height: 13px; fill: currentColor; }
+  #rapp-list-ul .icon-action:hover { background: #21262d; color: #58a6ff; border-color: #30363d; }
+  #rapp-list-ul .icon-action.danger:hover { color: #f85149; border-color: rgba(248,81,73,0.35); }
   .rapps-header {
-    font-size: 11px; font-weight: 600; color: #58a6ff;
+    font-size: 11px; font-weight: 600; color: #8b949e;
     text-transform: uppercase; letter-spacing: 0.5px;
     margin-top: 16px; padding-top: 12px;
     border-top: 1px solid #21262d;
+    display: flex; align-items: center; gap: 6px;
   }
 
   /* ── Starter Prompts ── */
@@ -922,14 +983,23 @@
     color: #8b949e; font-size: 10px; font-family: "SF Mono", monospace;
     margin-top: 6px;
   }
-  /* Sibling button under "Browse RAR Registry" — same chrome */
+  /* Primary CTA inside the agents panel — opens the unified store */
   #store-link {
-    display: block; text-align: center; margin-top: 6px;
-    background: #21262d; color: #d2a8ff; border: 1px solid #30363d;
-    border-radius: 6px; padding: 6px 10px; font-size: 12px;
-    cursor: pointer; transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    width: 100%; margin: 4px 0 0;
+    background: linear-gradient(180deg, #1f6feb 0%, #1858c4 100%);
+    color: #fff; border: 1px solid rgba(31,111,235,0.6);
+    border-radius: 8px; padding: 8px 12px;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.1px;
+    cursor: pointer; transition: filter 0.15s, transform 0.05s;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.05) inset, 0 2px 4px rgba(0,0,0,0.25);
   }
-  #store-link:hover { border-color: #d2a8ff; background: rgba(210,168,255,0.08); }
+  #store-link:hover { filter: brightness(1.08); }
+  #store-link:active { transform: translateY(0.5px); }
+  body.light-mode #store-link {
+    background: linear-gradient(180deg, #2d8aff 0%, #1f6feb 100%);
+    border-color: rgba(31,111,235,0.5);
+  }
 
   /* RAPP_Store tab strip — Rapplications / Senses / Agents */
   .store-tabs {
@@ -1316,10 +1386,10 @@
         <ul class="agent-list" id="agent-list-ul">
           <!-- Populated by JS -->
         </ul>
-        <div style="font-size:10px; color:#8b949e; margin-top:12px; text-align:center;">
-          Drag & drop .py files anywhere to install new agents
+        <div class="panel-hint">
+          Drop a <code>.py</code> agent or <code>.egg</code> rapp anywhere to install
         </div>
-        <button id="store-link" onclick="openStore()">🛍 Browse RAPP_Store</button>
+        <button id="store-link" onclick="openStore()">🛍 Browse the Store</button>
         <div class="rapps-header" id="rapps-header" style="display:none">📦 Rapplications</div>
         <ul id="rapp-list-ul" style="display:none"><!-- Populated by JS --></ul>
       </div>
@@ -1444,7 +1514,7 @@
 <div id="chat">
   <!-- Subtle Drop Watermark -->
   <div id="chat-watermark">
-    Drag & Drop .py Agents Here
+    Drop a <code>.py</code> or <code>.egg</code> to install
     <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
   </div>
 
@@ -1877,6 +1947,7 @@
     const rapps = Object.values(_storeInstalled);
     if (!rapps.length) { header.style.display = ul.style.display = 'none'; return; }
     ul.innerHTML = '';
+    const SVG_TRASH_ICON = '<svg viewBox="0 0 16 16"><path d="M11 1.75V3h2.25a.75.75 0 010 1.5H2.75a.75.75 0 010-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75zM4.496 6.675l.66 6.6A1.75 1.75 0 006.897 14.85h2.205a1.75 1.75 0 001.741-1.575l.66-6.6a.75.75 0 00-1.493-.15l-.66 6.6a.25.25 0 01-.249.225H6.897a.25.25 0 01-.249-.225l-.66-6.6a.75.75 0 00-1.492.15zM6.5 1.75v1.25h3V1.75a.25.25 0 00-.25-.25h-2.5a.25.25 0 00-.25.25z"/></svg>';
     for (const rapp of rapps) {
       const li = document.createElement('li');
       const name = document.createElement('span');
@@ -1886,23 +1957,22 @@
       li.appendChild(name);
 
       const controls = document.createElement('div');
-      controls.style.display = 'flex';
-      controls.style.gap = '4px';
+      controls.className = 'agent-controls';
 
       if (rapp.ui_url) {
         const openBtn = document.createElement('button');
         openBtn.className = 'open-btn';
-        openBtn.textContent = 'Open ▸';
+        openBtn.textContent = 'Open';
+        openBtn.title = `Open ${rapp.name || rapp.id} in a side panel`;
         openBtn.onclick = () => openRappInSplit(rapp.id, rapp.name || rapp.id, null, _toCdnUrl(rapp.ui_url));
         controls.appendChild(openBtn);
       }
 
       const uninstallBtn = document.createElement('button');
-      uninstallBtn.className = 'open-btn';
-      uninstallBtn.style.background = '#21262d';
-      uninstallBtn.style.color = '#f85149';
-      uninstallBtn.textContent = '🗑';
+      uninstallBtn.className = 'icon-action danger';
+      uninstallBtn.innerHTML = SVG_TRASH_ICON;
       uninstallBtn.title = `Uninstall ${rapp.name || rapp.id} — removes the agent .py from disk and the entry from this list`;
+      uninstallBtn.setAttribute('aria-label', `Uninstall ${rapp.name || rapp.id}`);
       uninstallBtn.onclick = () => uninstallRapp(rapp.id);
       controls.appendChild(uninstallBtn);
 
@@ -2029,34 +2099,45 @@
         ul.innerHTML = '<li><span class="agent-name" style="color:#8b949e">No agents found.</span></li>';
         return;
       }
+      const SVG_DOWNLOAD = '<svg viewBox="0 0 16 16"><path d="M7.47 10.78a.75.75 0 001.06 0l3.75-3.75a.75.75 0 00-1.06-1.06L8.75 8.44V1.75a.75.75 0 00-1.5 0v6.69L4.78 5.97a.75.75 0 00-1.06 1.06l3.75 3.75zM3.75 13a.75.75 0 000 1.5h8.5a.75.75 0 000-1.5h-8.5z"/></svg>';
+        const SVG_TRASH = '<svg viewBox="0 0 16 16"><path d="M11 1.75V3h2.25a.75.75 0 010 1.5H2.75a.75.75 0 010-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75zM4.496 6.675l.66 6.6A1.75 1.75 0 006.897 14.85h2.205a1.75 1.75 0 001.741-1.575l.66-6.6a.75.75 0 00-1.493-.15l-.66 6.6a.25.25 0 01-.249.225H6.897a.25.25 0 01-.249-.225l-.66-6.6a.75.75 0 00-1.492.15zM6.5 1.75v1.25h3V1.75a.25.25 0 00-.25-.25h-2.5a.25.25 0 00-.25.25z"/></svg>';
       for (const item of data.files) {
         const li = document.createElement('li');
-        const nameSpan = document.createElement('span');
-        nameSpan.className = 'agent-name';
 
-        let displayTxt = item.filename;
+        const nameWrap = document.createElement('div');
+        nameWrap.className = 'agent-name';
+        const className = (item.agents && item.agents.length > 0)
+          ? item.agents.join(', ')
+          : item.filename;
+        const classEl = document.createElement('span');
+        classEl.className = 'agent-class';
+        classEl.textContent = className;
+        nameWrap.appendChild(classEl);
         if (item.agents && item.agents.length > 0) {
-          displayTxt = `${item.agents.join(', ')} (${item.filename})`;
+          const fileEl = document.createElement('span');
+          fileEl.className = 'agent-file';
+          fileEl.textContent = item.filename;
+          nameWrap.appendChild(fileEl);
         }
-
-        nameSpan.textContent = displayTxt;
-        nameSpan.title = item.filename;
+        nameWrap.title = item.filename;
 
         const controls = document.createElement('div');
-        controls.style.display = 'flex';
-        controls.style.gap = '4px';
+        controls.className = 'agent-controls';
 
         const expBtn = document.createElement('button');
-        expBtn.className = 'export-btn';
-        expBtn.textContent = 'Export';
+        expBtn.className = 'icon-action';
+        expBtn.title = `Export ${item.filename}`;
+        expBtn.setAttribute('aria-label', `Export ${item.filename}`);
+        expBtn.innerHTML = SVG_DOWNLOAD;
         expBtn.onclick = () => {
           window.open(`${API}/agents/export/${encodeURIComponent(item.filename)}`, '_blank');
         };
 
         const delBtn = document.createElement('button');
-        delBtn.className = 'export-btn';
-        delBtn.style.color = '#f85149';
-        delBtn.textContent = 'Trsh';
+        delBtn.className = 'icon-action danger';
+        delBtn.title = `Remove ${item.filename}`;
+        delBtn.setAttribute('aria-label', `Remove ${item.filename}`);
+        delBtn.innerHTML = SVG_TRASH;
         delBtn.onclick = async () => {
           if (confirm(`Are you sure you want to remove ${item.filename}?`)) {
             try {
@@ -2076,7 +2157,7 @@
         controls.appendChild(expBtn);
         controls.appendChild(delBtn);
 
-        li.appendChild(nameSpan);
+        li.appendChild(nameWrap);
         li.appendChild(controls);
         ul.appendChild(li);
       }
@@ -4205,7 +4286,7 @@
     // Re-insert watermark
     const wm = document.createElement('div');
     wm.id = 'chat-watermark';
-    wm.innerHTML = 'Drag & Drop .py Agents or .rapplication.egg Bundles Here <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>';
+    wm.innerHTML = 'Drop a <code>.py</code> or <code>.egg</code> to install <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>';
     chat.appendChild(wm);
     // If transcript is empty, show the welcome / quick-tour bubble so
     // the chat window is never blank on load or after clearing.
