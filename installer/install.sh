@@ -405,6 +405,57 @@ _version_gt() {
     [ "$greater" = "$1" ]
 }
 
+# Bond flight recorder. Every step of the upgrade cycle appends a
+# JSONL event to ~/.brainstem/.bond/bond-history.jsonl with timestamp,
+# stage, and a state fingerprint (file counts, sizes, paths). When
+# something goes wrong we read the log back like a flight data
+# recorder — exact play-by-play of what the install did, in order, to
+# whose files, with what result.
+#
+# Usage:
+#   _bond_log <stage> [key=value ...]
+#
+# Stages used in install_brainstem (in order):
+#   gate-shown, gate-confirmed, gate-skipped, gate-bypassed,
+#   stage-fetched, backup-init, backup-written, egg-packed, egg-skipped,
+#   git-init, overlay-applied, overlay-failed, hatch-applied,
+#   hatch-skipped, legacy-restored, prune-completed, baseline-seeded,
+#   git-committed, bond-recorded, complete, fresh-install
+_bond_log() {
+    local log_dir="$BRAINSTEM_HOME/.bond"
+    mkdir -p "$log_dir" 2>/dev/null || return 0
+    local log_file="$log_dir/bond-history.jsonl"
+
+    local stage="$1"
+    shift
+
+    local ts
+    ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date)
+
+    # Build the event JSON. Values are escaped naively (newlines and
+    # double quotes only) — every value passed in is a short string we
+    # control, so this is safe enough for log purposes.
+    local pid="$$"
+    local from_v="${LOCAL_VER:-?}"
+    local to_v="${REMOTE_VER:-?}"
+    local entry='{"ts":"'"$ts"'","pid":'"$pid"',"stage":"'"$stage"'","from":"'"$from_v"'","to":"'"$to_v"'"'
+
+    while [ $# -gt 0 ]; do
+        local kv="$1"
+        local k="${kv%%=*}"
+        local v="${kv#*=}"
+        # Escape inner quotes + collapse newlines so each event is one line.
+        v=${v//\\/\\\\}
+        v=${v//\"/\\\"}
+        v=${v//$'\n'/\\n}
+        entry+=',"'"$k"'":"'"$v"'"'
+        shift
+    done
+    entry+='}'
+
+    printf '%s\n' "$entry" >> "$log_file" 2>/dev/null || true
+}
+
 # Initialize the local git repo at ~/.brainstem/.bond/backups/.git the
 # first time we lay down a backup. Once it exists, every bond auto-
 # commits — `git log` becomes the lineage of the organism's evolution
@@ -561,8 +612,11 @@ _seed_emergency_baseline() {
 _confirm_upgrade() {
     local from="$1"
     local to="$2"
+    LOCAL_VER="$from"
+    REMOTE_VER="$to"
 
     if [ "${BRAINSTEM_UPGRADE:-}" = "1" ] || [ "${BRAINSTEM_UPGRADE:-}" = "yes" ] || [ "${BRAINSTEM_UPGRADE:-}" = "y" ]; then
+        _bond_log "gate-bypassed" reason=BRAINSTEM_UPGRADE_env
         echo -e "  ${GREEN}✓${NC} BRAINSTEM_UPGRADE=1 — proceeding without prompt"
         return 0
     fi
@@ -576,18 +630,20 @@ _confirm_upgrade() {
     echo "    so you can revert if anything breaks."
     echo ""
 
+    _bond_log "gate-shown" mode=interactive
     if [ -t 0 ] && [ -t 1 ]; then
         # Interactive — prompt with default No
         local reply
         printf "  Proceed with upgrade? [y/N]: "
         read -r reply
         case "$reply" in
-            y|Y|yes|YES) return 0 ;;
-            *) echo -e "  ${GREEN}✓${NC} Keeping v${from} — no changes made"; return 1 ;;
+            y|Y|yes|YES) _bond_log "gate-confirmed" reply="$reply"; return 0 ;;
+            *) _bond_log "gate-skipped" reply="${reply:-empty}"; echo -e "  ${GREEN}✓${NC} Keeping v${from} — no changes made"; return 1 ;;
         esac
     fi
 
     # Piped (curl | bash) — no TTY for read. Refuse to wipe silently.
+    _bond_log "gate-skipped" reason=no_tty
     echo "  Re-run with BRAINSTEM_UPGRADE=1 to confirm:"
     echo ""
     echo "    BRAINSTEM_UPGRADE=1 curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash"
@@ -679,14 +735,17 @@ install_brainstem() {
 
         # 1. Stage the new framework. bond.py from the stage drives every
         # step below — same code on both sides of the upgrade.
+        _bond_log "stage-fetch-begin"
         rm -rf "$STAGE"
         if ! stage_brainstem_framework "$STAGE"; then
+            _bond_log "stage-fetched" status=failed
             echo -e "  ${RED}✗${NC} Failed to fetch framework — keeping existing install"
             rm -rf "$STAGE"
             return 1
         fi
         local TO_COMMIT
         TO_COMMIT=$(git -C "$STAGE" rev-parse HEAD 2>/dev/null || echo "")
+        _bond_log "stage-fetched" status=ok stage="$STAGE" to_commit="$TO_COMMIT"
 
         # 2. PERSISTENT BACKUP — always-on safety net, kept *across* the
         # bond so users can revert if anything breaks (or if a hatched
@@ -717,6 +776,12 @@ install_brainstem() {
         # a freshly-minted one.
         [ -f "$BRAINSTEM_HOME/rappid.json" ] && cp "$BRAINSTEM_HOME/rappid.json" "$BACKUP/rappid.json" 2>/dev/null || true
         [ -f "$BRAINSTEM_HOME/bonds.json" ]  && cp "$BRAINSTEM_HOME/bonds.json"  "$BACKUP/bonds.json"  2>/dev/null || true
+        local _backup_count
+        _backup_count=$(ls -1 "$BACKUP/agents"/*.py 2>/dev/null | wc -l | tr -d ' ')
+        _bond_log "backup-written" path="$BACKUP" agents="$_backup_count" \
+            soul=$([ -f "$BACKUP/soul.md" ] && echo 1 || echo 0) \
+            env=$([ -f "$BACKUP/.env" ] && echo 1 || echo 0) \
+            rappid=$([ -f "$BACKUP/rappid.json" ] && echo 1 || echo 0)
         echo -e "  ${GREEN}💾${NC} Backup: ${BACKUP/$HOME/~}"
 
         # 3. Mint rappid if missing — needs bond.py from the stage.
@@ -748,9 +813,11 @@ install_brainstem() {
                 echo -e "  ${GREEN}🥚${NC} Egged organism (${egg_kb:-?} KB) → ${EGG_PATH/$HOME/~}"
                 # Tuck a per-bond copy into the persistent backup folder
                 cp "$EGG_PATH" "$BACKUP/pre-bond.egg" 2>/dev/null || true
+                _bond_log "egg-packed" path="$EGG_PATH" kb="${egg_kb:-?}"
             fi
         fi
         if [ $egg_ok -eq 0 ]; then
+            _bond_log "egg-skipped" reason=bond_unavailable
             echo -e "  ${YELLOW}!${NC} bond.py egg unavailable — using legacy backup safety net"
             EGG_PATH=""
         fi
@@ -765,6 +832,7 @@ install_brainstem() {
         # possible.
         mkdir -p "$SRC_ROOT"
         if ! cp -R "$STAGE/rapp_brainstem/." "$SRC_ROOT/" 2>/dev/null; then
+            _bond_log "overlay-failed" backup="$BACKUP"
             echo -e "  ${RED}✗${NC} Overlay failed — restoring from backup"
             [ -f "$BACKUP/soul.md" ] && cp "$BACKUP/soul.md" "$SOUL_FILE" || true
             [ -f "$BACKUP/.env" ] && cp "$BACKUP/.env" "$ENV_FILE" || true
@@ -772,6 +840,7 @@ install_brainstem() {
             return 1
         fi
         rm -rf "$STAGE"
+        _bond_log "overlay-applied" src="$SRC_ROOT"
         echo -e "  ${GREEN}🌐${NC} Overlayed new kernel onto src/rapp_brainstem"
 
         # 7. 🐣 Hatch the egg back if we have one. soul/agents/organs/
@@ -780,10 +849,14 @@ install_brainstem() {
         if [ -n "$EGG_PATH" ] && [ -f "$EGG_PATH" ] && _bond_available; then
             if _run_bond hatch "$BRAINSTEM_HOME" "$EGG_PATH" >/dev/null 2>&1; then
                 echo -e "  ${GREEN}🐣${NC} Hatched egg back over new kernel"
+                _bond_log "hatch-applied" egg="$EGG_PATH"
                 hatched=1
             else
+                _bond_log "hatch-failed" egg="$EGG_PATH"
                 echo -e "  ${YELLOW}!${NC} Hatch reported errors — falling back to legacy restore"
             fi
+        else
+            _bond_log "hatch-skipped" reason=no_egg_or_bond
         fi
 
         # 8. LEGACY RESTORE — runs whenever the bond hatch didn't.
@@ -805,6 +878,7 @@ install_brainstem() {
                 cp "$agent_file" "$AGENTS_DIR/$fname"
                 restored=$((restored + 1))
             done
+            _bond_log "legacy-restored" agents="$restored"
             echo -e "  ${GREEN}🧷${NC} Legacy restore: soul + .env + ${restored} custom agent(s)"
         fi
 
@@ -823,18 +897,22 @@ install_brainstem() {
         # so the on-disk dirs we're about to drop still survive in
         # `git log`. Each bond becomes one commit on the backups repo.
         _commit_backup_to_git "$BACKUP"
+        _bond_log "git-committed" backup="$(basename "$BACKUP")"
 
         # Sliding window — drop old backups beyond the keep limit so the
         # backups dir doesn't grow without bound. The static emergency
         # baseline is separate and never pruned. Pruned backups still
         # survive in the local git history committed above.
         _prune_backups
+        _bond_log "prune-completed" keep="${BRAINSTEM_BACKUP_KEEP:-5}"
 
         # Seed the emergency baseline if it hasn't been set yet (legacy
         # organisms that predate this safety net get one on their first
         # post-upgrade bond).
         _seed_emergency_baseline "$SRC_ROOT"
+        _bond_log "baseline-checked"
 
+        _bond_log "complete" backup="$BACKUP"
         echo -e "  ${GREEN}✓${NC} Bond complete: v${LOCAL_VER} → v${REMOTE_VER}"
         echo -e "  ${CYAN}↩${NC}  Revert: cp -R \"${BACKUP/$HOME/~}/.\" pieces back into place,"
         echo -e "      or hatch \"${BACKUP/$HOME/~}/pre-bond.egg\" with: brainstem hatch <egg>"
@@ -878,6 +956,7 @@ install_brainstem() {
         # first install. Future bonds never touch it. `brainstem safe-mode`
         # boots from this snapshot if the live install gets corrupted.
         _seed_emergency_baseline "$BRAINSTEM_HOME/src/rapp_brainstem"
+        REMOTE_VER="$REMOTE_VER" _bond_log "fresh-install" version="$REMOTE_VER" to_commit="$TO_COMMIT"
     fi
     echo -e "  ${GREEN}✓${NC} Source code ready"
 }
@@ -1172,6 +1251,20 @@ cmd_doctor() {
         echo "Pre-bond backups:    none yet"
     fi
     echo ""
+    echo ""
+    echo "=== Bond flight recorder ==="
+    local _bondlog="$BRAINSTEM_HOME/.bond/bond-history.jsonl"
+    if [ -f "$_bondlog" ]; then
+        local _n
+        _n=$(wc -l < "$_bondlog" 2>/dev/null | tr -d ' ')
+        echo "Events: ${_n}  ($_bondlog)"
+        echo "Last 5:"
+        tail -n 5 "$_bondlog" | sed 's/^/  /'
+        echo "  → Full log: brainstem bond-log [--all|<n>]"
+    else
+        echo "(none yet — events are recorded on every install/upgrade)"
+    fi
+    echo ""
     echo "=== End doctor report ==="
 }
 
@@ -1287,6 +1380,39 @@ cmd_backups() {
     fi
 }
 
+cmd_bond_log() {
+    # Tail-style view of the bond flight recorder. Default tail length
+    # is 50; pass --all to dump everything, or a number to override.
+    local log="$BRAINSTEM_HOME/.bond/bond-history.jsonl"
+    if [ ! -f "$log" ]; then
+        echo "(no bond log yet at $log)"
+        echo "Bond events are recorded automatically on every install/upgrade."
+        return 0
+    fi
+    local n=50
+    case "${1:-}" in
+        --all|-a) n=999999 ;;
+        ''|*[!0-9]*) n=50 ;;
+        *) n="$1" ;;
+    esac
+    local total
+    total=$(wc -l < "$log" 2>/dev/null | tr -d ' ')
+    echo "=== Bond flight recorder ==="
+    echo "Log: $log"
+    echo "Events: $total total, showing last $n"
+    echo ""
+    tail -n "$n" "$log"
+    echo ""
+    echo "Each line is one event. Stages: gate-shown / gate-confirmed /"
+    echo "stage-fetched / backup-written / egg-packed / overlay-applied /"
+    echo "hatch-applied / legacy-restored / git-committed / prune-completed /"
+    echo "baseline-checked / complete (or fresh-install for birth events)."
+    echo ""
+    echo "Replay-friendly: parse with jq, e.g."
+    echo "  jq -c 'select(.stage==\"complete\")' $log"
+    echo "  jq -c 'select(.from==\"0.14.2\")' $log"
+}
+
 cmd_safe_mode() {
     # Boot a brainstem from the emergency baseline regardless of what
     # state the live src/ tree is in. The minimum-viable kernel + soul
@@ -1383,6 +1509,8 @@ commands below work whether the background service is installed or not.
              identity; --preserve-rappid keeps local identity instead)
 
   backups    List per-bond backups, local git history, + baseline status
+  bond-log   Play-by-play flight recorder of every install/bond
+             (last 50 events; pass a number or --all to override)
   safe-mode  Boot from the emergency baseline (port 7072 by default)
              when the live install is broken. Read-only — does NOT
              touch your live install.
@@ -1414,6 +1542,7 @@ case "${1:-default}" in
     egg)      shift; cmd_egg "$@" ;;
     hatch)    shift; cmd_hatch "$@" ;;
     backups)  cmd_backups ;;
+    bond-log|bondlog) shift; cmd_bond_log "$@" ;;
     safe-mode|safemode|safe_mode) shift; cmd_safe_mode "$@" ;;
     help|-h|--help) cmd_help ;;
     default)

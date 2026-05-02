@@ -1853,6 +1853,7 @@
   // they intentionally never enter book.json.
   const _SAFE_LOCALSTORAGE_KEYS = [
     'rapp_theme',
+    'brainstem_model',
     'voice_provider',
     'az_speech_region',
     'az_voice_name',
@@ -1942,11 +1943,13 @@
     try {
       const r = await fetch(`${API}/api/snapshot/export`);
       if (!r.ok) {
-        // The snapshot organ ships in newer brainstems; older kernels
-        // fall back to the diagnostic book.json so the button still
-        // produces SOMETHING the user can hand to their admin.
+        // /api/snapshot/* is wired by utils/boot.py at startup. Every
+        // brainstem ships with it OOTB — but a brainstem that booted
+        // before this code was on disk won't have the routes registered
+        // until it restarts. Tell the user exactly what to do instead
+        // of silently downgrading to a JSON.
         if (r.status === 404 || r.status === 405) {
-          return _exportBookJsonFallback();
+          return _exportBookJsonFallback({ needsRestart: true });
         }
         let msg = `HTTP ${r.status}`;
         try { msg = (await r.json()).error || msg; } catch {}
@@ -1976,7 +1979,7 @@
     }
   }
 
-  async function _exportBookJsonFallback() {
+  async function _exportBookJsonFallback({ needsRestart = false } = {}) {
     const book = await _buildBackupBook({ sanitize: false });
     const blob = new Blob([JSON.stringify(book, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
@@ -1984,10 +1987,17 @@
     a.download = `rapp-brainstem-diagnostics-${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.json`;
     a.click();
     URL.revokeObjectURL(a.href);
-    appendMsg('system',
-      '📖 Diagnostics saved (older kernel — no snapshot organ). ' +
-      'Update the brainstem to get .egg snapshots.'
-    );
+    const wrap = appendMsg('system', '');
+    if (needsRestart) {
+      wrap.querySelector('.bubble').innerHTML =
+        '📖 Saved a diagnostics JSON. <strong>.egg export needs a brainstem restart</strong> ' +
+        'to come online — every brainstem ships with it OOTB, but a process that booted before ' +
+        'the snapshot routes were on disk has to restart to register them.<br>' +
+        '<code>brainstem restart</code> in your terminal, then click Export again.';
+    } else {
+      wrap.querySelector('.bubble').innerHTML =
+        '📖 Diagnostics saved as <code>book.json</code>.';
+    }
   }
 
   // Download a sanitized book.json to disk, used by both the Get Help
@@ -2668,7 +2678,16 @@
   }
 
   // ── Models ──
+  // Model selection survives both browser refresh AND brainstem
+  // restart by living in localStorage. The kernel's MODEL is in-memory
+  // only and reverts to .env's GITHUB_MODEL on every restart, so the
+  // chat UI is the source of truth for "which model the user wants" —
+  // it re-applies the cached id via /models/set after the model list
+  // loads. If the cached id no longer exists in the model list (model
+  // deprecated upstream), we silently fall back to whatever the server
+  // returned as `current`.
   let modelsLoaded = false;
+  const _MODEL_KEY = 'brainstem_model';
   async function loadModels() {
     if (modelsLoaded) return;
     try {
@@ -2676,13 +2695,35 @@
       const d = await r.json();
       const sel = document.getElementById('model-select');
       sel.innerHTML = '';
+      const ids = new Set();
       (d.models || []).forEach(m => {
         const opt = document.createElement('option');
         opt.value = m.id; opt.textContent = m.name;
-        if (m.id === d.current) opt.selected = true;
         sel.appendChild(opt);
+        ids.add(m.id);
       });
+      // Pick the cached id if it's still in the list; otherwise the
+      // server's current; otherwise the first available.
+      let cached = null;
+      try { cached = localStorage.getItem(_MODEL_KEY); } catch {}
+      let chosen = (cached && ids.has(cached)) ? cached
+                 : (ids.has(d.current) ? d.current
+                 : (sel.options[0] && sel.options[0].value));
+      if (chosen) sel.value = chosen;
       modelsLoaded = true;
+      // If the chosen id differs from what the server thinks is current,
+      // tell the server. Silent — the user shouldn't see "Model: x"
+      // chatter just from page load. This is also a no-op when cache
+      // matches server state, which is the common case.
+      if (chosen && chosen !== d.current) {
+        try {
+          await fetch(`${API}/models/set`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ model: chosen })
+          });
+        } catch {}
+      }
     } catch {}
   }
 
@@ -2695,7 +2736,12 @@
       });
       const d = await r.json();
       if (d.error) alert(d.error);
-      else appendMsg('system', `Model: ${modelId}`);
+      else {
+        // Persist the user's pick so it survives the next brainstem
+        // restart and the next install one-liner.
+        try { localStorage.setItem(_MODEL_KEY, modelId); } catch {}
+        appendMsg('system', `Model: ${modelId}`);
+      }
     } catch (e) { alert('Failed to switch model: ' + e.message); }
   }
 
