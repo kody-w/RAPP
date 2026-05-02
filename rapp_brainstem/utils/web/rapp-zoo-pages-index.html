@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<!--
+  rapp-zoo — local-first Pokédex for digital organisms.
+
+  Drop this file into kody-w/rapp-zoo/index.html (replacing the existing
+  one). It's a single self-contained static page meant for GitHub Pages
+  hosting at https://kody-w.github.io/rapp-zoo/.
+
+  Storage model — two layers, refresh-survives by design:
+
+    localStorage["rapp_zoo_index"]
+      = { schema, version, updated_at,
+          organisms: [{ rappid, name, kind, host, kernel_version,
+                        exported_at, size_bytes, sprite_seed,
+                        added_at }] }
+      Metadata only. Renders the grid instantly on first paint without
+      waiting for IndexedDB.
+
+    IndexedDB "rapp-zoo" → "eggs" object store
+      key = rappid
+      value = { rappid, blob: ArrayBuffer, manifest: {...} }
+      The actual .egg bytes live here. Larger quota than localStorage
+      (typically 50%+ of disk).
+
+  Backup is one click:
+    📥 Export → downloads rapp-zoo-collection-<ts>.json containing
+       every egg as base64 + the index. Drop the same JSON back via
+       📤 Import to restore on a new device.
+
+  Re-uploading a .egg or a JSON updates localStorage so the latest
+  upload always survives a refresh.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>rapp-zoo · local-first Pokédex for digital organisms</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='28' fill='%23ee2c2c'/%3E%3Crect x='4' y='30' width='56' height='4' fill='%23111'/%3E%3Ccircle cx='32' cy='32' r='8' fill='%23fff' stroke='%23111' stroke-width='2'/%3E%3C/svg%3E">
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0d1117;
+      --bg-card: #161b22;
+      --bg-elevated: #1c2128;
+      --border: #30363d;
+      --border-subtle: #21262d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --text-faint: #6e7681;
+      --accent: #58a6ff;
+      --accent-strong: #1f6feb;
+      --green: #3fb950;
+      --red: #f85149;
+      --yellow: #d29922;
+      --purple: #d2a8ff;
+    }
+    html, body { height: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: var(--bg-card);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    header .logo {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    header .logo .badge {
+      background: rgba(63,185,80,0.12);
+      color: var(--green);
+      border: 1px solid rgba(63,185,80,0.4);
+      padding: 1px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+    }
+    header .stats {
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-left: 8px;
+    }
+    header .actions {
+      margin-left: auto;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      background: var(--bg-elevated);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s;
+      text-decoration: none;
+    }
+    .btn:hover { border-color: var(--accent); color: var(--accent); }
+    .btn.primary {
+      background: linear-gradient(180deg, #1f6feb 0%, #1858c4 100%);
+      color: #fff;
+      border-color: rgba(31,111,235,0.6);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.08) inset, 0 2px 4px rgba(0,0,0,0.25);
+    }
+    .btn.primary:hover { filter: brightness(1.08); color: #fff; }
+    .btn.danger:hover { border-color: var(--red); color: var(--red); }
+
+    .tabs {
+      display: flex;
+      gap: 2px;
+      padding: 0 24px;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .tab {
+      background: transparent;
+      color: var(--text-muted);
+      border: none;
+      border-bottom: 2px solid transparent;
+      padding: 12px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.tab-active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .tab .count {
+      background: rgba(110,118,129,0.2);
+      color: var(--text-muted);
+      border-radius: 999px;
+      padding: 1px 8px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .tab.tab-active .count {
+      background: rgba(88,166,255,0.18);
+      color: var(--accent);
+    }
+
+    main {
+      flex: 1;
+      padding: 24px;
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    /* Card grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 14px;
+    }
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 14px;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 180px;
+    }
+    .card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+    .card .sprite {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 8px;
+      background: var(--bg-elevated);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card .sprite svg { width: 100%; height: 100%; }
+    .card .name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .card .kind {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .card .kind-pill {
+      background: rgba(88,166,255,0.12);
+      color: var(--accent);
+      padding: 1px 7px;
+      border-radius: 999px;
+      border: 1px solid rgba(88,166,255,0.3);
+      font-weight: 600;
+    }
+    .card .kind-pill.organism    { background: rgba(63,185,80,0.12);  color: var(--green);  border-color: rgba(63,185,80,0.3); }
+    .card .kind-pill.rapplication{ background: rgba(210,168,255,0.12); color: var(--purple); border-color: rgba(210,168,255,0.3); }
+    .card .kind-pill.variant     { background: rgba(210,153,34,0.12);  color: var(--yellow); border-color: rgba(210,153,34,0.3); }
+
+    /* Empty state */
+    .empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 24px;
+      text-align: center;
+      color: var(--text-muted);
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.01);
+    }
+    .empty .big-emoji { font-size: 48px; margin-bottom: 16px; opacity: 0.6; }
+    .empty h2 { color: var(--text); font-size: 18px; margin-bottom: 6px; font-weight: 600; }
+    .empty p { font-size: 14px; max-width: 480px; line-height: 1.5; margin-bottom: 18px; }
+    .empty code { background: rgba(110,118,129,0.16); padding: 1px 6px; border-radius: 4px; font-family: "SF Mono", ui-monospace, monospace; font-size: 12px; }
+
+    /* Drop overlay */
+    #drop-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(31,111,235,0.85);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      color: #fff;
+      font-size: 24px;
+      font-weight: 600;
+      pointer-events: none;
+      border: 6px dashed rgba(255,255,255,0.5);
+      border-radius: 16px;
+      margin: 16px;
+      letter-spacing: -0.3px;
+    }
+    #drop-overlay .big { font-size: 64px; margin-bottom: 12px; }
+
+    /* Modal */
+    .modal-bg {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.75);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .modal-bg.open { display: flex; }
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      max-width: 720px;
+      width: 100%;
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+    }
+    .modal header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: transparent;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .modal header h3 { font-size: 16px; flex: 1; margin: 0; }
+    .modal .body {
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .modal .sprite-big {
+      width: 200px; height: 200px;
+      border-radius: 12px;
+      background: var(--bg-elevated);
+      flex-shrink: 0;
+    }
+    .modal .sprite-big svg { width: 100%; height: 100%; }
+    .modal .meta { flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 8px; }
+    .modal .meta dl {
+      display: grid;
+      grid-template-columns: max-content 1fr;
+      gap: 4px 12px;
+      font-size: 13px;
+    }
+    .modal .meta dt { color: var(--text-faint); }
+    .modal .meta dd {
+      color: var(--text);
+      font-family: "SF Mono", ui-monospace, monospace;
+      font-size: 12px;
+      word-break: break-all;
+    }
+    .modal .actions-row {
+      display: flex;
+      gap: 8px;
+      padding: 14px 20px;
+      border-top: 1px solid var(--border-subtle);
+      flex-wrap: wrap;
+    }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 24px; left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--bg-elevated);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 13px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.2s;
+      z-index: 300;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #toast.error { border-color: var(--red); }
+    #toast.success { border-color: var(--green); }
+
+    /* Discover/Starters specific */
+    .info-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 18px;
+      line-height: 1.55;
+    }
+    .info-card h3 { font-size: 15px; margin-bottom: 8px; color: var(--text); }
+    .info-card p { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; }
+    .info-card a { color: var(--accent); text-decoration: none; }
+    .info-card a:hover { text-decoration: underline; }
+    .info-card .row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .info-card + .info-card { margin-top: 12px; }
+    .footer {
+      max-width: 1200px;
+      margin: 24px auto 16px;
+      padding: 0 24px;
+      color: var(--text-faint);
+      font-size: 11px;
+      text-align: center;
+    }
+    .footer a { color: var(--text-muted); }
+  </style>
+</head>
+<body>
+
+<header>
+  <span class="logo">
+    🐾 rapp-zoo
+    <span class="badge">local-first</span>
+  </span>
+  <span class="stats" id="stats">0 organisms</span>
+  <div class="actions">
+    <button class="btn" onclick="exportCollection()" title="Save your whole collection as a single JSON backup">
+      📥 Export
+    </button>
+    <button class="btn" onclick="document.getElementById('json-import').click()" title="Restore a collection from a previously exported JSON">
+      📤 Import
+    </button>
+    <input type="file" id="json-import" accept=".json,application/json" hidden onchange="importCollectionJson(event)">
+    <button class="btn danger" onclick="clearCollection()" title="Wipe local collection">
+      🗑 Clear
+    </button>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="tab tab-active" data-tab="collection" onclick="switchTab('collection')">
+    🃏 My Collection <span class="count" id="count-collection">0</span>
+  </button>
+  <button class="tab" data-tab="starters" onclick="switchTab('starters')">
+    🌱 Starters
+  </button>
+  <button class="tab" data-tab="discover" onclick="switchTab('discover')">
+    🛍 Discover
+  </button>
+</nav>
+
+<main id="main"></main>
+
+<div class="footer">
+  Drag any <code style="background:rgba(110,118,129,0.16);padding:1px 6px;border-radius:4px">.egg</code>
+  cartridge anywhere on the page to add it to your collection.
+  Everything stays in your browser — nothing uploads anywhere.
+  ·
+  <a href="https://github.com/kody-w/rapp-zoo" target="_blank" rel="noopener">source</a>
+  ·
+  <a href="https://github.com/kody-w/RAPP" target="_blank" rel="noopener">RAPP</a>
+</div>
+
+<div id="drop-overlay">
+  <div class="big">🥚</div>
+  Drop the .egg to add to your collection
+</div>
+
+<div class="modal-bg" id="card-modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="card-modal-inner"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  // ─────────────────────────────────────────────────────────────
+  // Storage layer — two tiers
+  //   localStorage["rapp_zoo_index"] = metadata only
+  //   IndexedDB "rapp-zoo"."eggs"  = key=rappid, value={blob, manifest}
+  // ─────────────────────────────────────────────────────────────
+
+  const SCHEMA = 'rapp-zoo-collection/1.0';
+  const LS_KEY = 'rapp_zoo_index';
+  const IDB_NAME = 'rapp-zoo';
+  const IDB_STORE = 'eggs';
+
+  // Local-only index (metadata). Reads/writes are sync; first paint
+  // doesn't wait on IndexedDB. Egg blobs live in IDB.
+  function readIndex() {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) return _emptyIndex();
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.schema === SCHEMA && Array.isArray(parsed.organisms)) {
+        return parsed;
+      }
+    } catch {}
+    return _emptyIndex();
+  }
+  function writeIndex(idx) {
+    idx.updated_at = new Date().toISOString();
+    localStorage.setItem(LS_KEY, JSON.stringify(idx));
+  }
+  function _emptyIndex() {
+    return { schema: SCHEMA, version: 1, updated_at: null, organisms: [] };
+  }
+
+  // IndexedDB helpers
+  let _dbPromise = null;
+  function _db() {
+    if (_dbPromise) return _dbPromise;
+    _dbPromise = new Promise((resolve, reject) => {
+      const req = indexedDB.open(IDB_NAME, 1);
+      req.onupgradeneeded = () => req.result.createObjectStore(IDB_STORE, { keyPath: 'rappid' });
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    return _dbPromise;
+  }
+  async function idbPut(rappid, blob, manifest) {
+    const db = await _db();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(IDB_STORE, 'readwrite');
+      tx.objectStore(IDB_STORE).put({ rappid, blob, manifest });
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+  async function idbGet(rappid) {
+    const db = await _db();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(IDB_STORE, 'readonly');
+      const req = tx.objectStore(IDB_STORE).get(rappid);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+  async function idbDelete(rappid) {
+    const db = await _db();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(IDB_STORE, 'readwrite');
+      tx.objectStore(IDB_STORE).delete(rappid);
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+  async function idbClear() {
+    const db = await _db();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(IDB_STORE, 'readwrite');
+      tx.objectStore(IDB_STORE).clear();
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // .egg parsing — every egg is a zip with a manifest.json at root
+  // ─────────────────────────────────────────────────────────────
+  async function parseEgg(arrayBuffer) {
+    const zip = await JSZip.loadAsync(arrayBuffer);
+    const manifestEntry = zip.file('manifest.json');
+    if (!manifestEntry) throw new Error('not a brainstem egg — no manifest.json at root');
+    const manifestText = await manifestEntry.async('string');
+    let manifest;
+    try { manifest = JSON.parse(manifestText); }
+    catch { throw new Error('manifest.json is not valid JSON'); }
+    if (!manifest.rappid && !manifest.rapp_id) {
+      throw new Error('manifest is missing rappid');
+    }
+    return manifest;
+  }
+
+  function deriveDisplayName(manifest) {
+    const r = manifest.rappid || '';
+    if (manifest.name) return String(manifest.name);
+    // rappid format: rappid:v2:<kind>:<owner>/<name>:<short>
+    const parts = String(r).split(':');
+    if (parts.length >= 4) {
+      let np = parts[3];
+      if (np.includes('/')) np = np.split('/', 2)[1];
+      if (np) return np;
+    }
+    return r || 'unnamed';
+  }
+  function deriveKind(manifest) {
+    return (manifest.type || manifest.kind || 'organism').toLowerCase();
+  }
+
+  async function ingestEggBlob(arrayBuffer, sourceName) {
+    const manifest = await parseEgg(arrayBuffer);
+    const rappid = manifest.rappid || manifest.rapp_id;
+    const name = deriveDisplayName(manifest);
+    const kind = deriveKind(manifest);
+
+    // Persist the blob in IDB (full egg, lossless)
+    await idbPut(rappid, arrayBuffer, manifest);
+
+    // Update the localStorage index
+    const idx = readIndex();
+    const existing = idx.organisms.findIndex(o => o.rappid === rappid);
+    const summary = {
+      rappid,
+      name,
+      kind,
+      host: manifest.host || null,
+      kernel_version: manifest.kernel_version || null,
+      exported_at: manifest.exported_at || null,
+      size_bytes: arrayBuffer.byteLength,
+      added_at: new Date().toISOString(),
+      source_name: sourceName || null,
+    };
+    if (existing >= 0) idx.organisms[existing] = summary;
+    else idx.organisms.unshift(summary);
+    writeIndex(idx);
+
+    return { rappid, name, kind, replaced: existing >= 0 };
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Sprite generation — deterministic from rappid
+  //   Same rappid → same sprite forever, no server needed.
+  // ─────────────────────────────────────────────────────────────
+  function hashCode(str) {
+    let h = 5381;
+    for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0;
+    return Math.abs(h);
+  }
+  function spriteSvg(rappid, kind) {
+    const h = hashCode(rappid || 'default');
+    const palettes = [
+      ['#ff6b6b', '#ffd166', '#06d6a0'],
+      ['#118ab2', '#06d6a0', '#ffd166'],
+      ['#ef476f', '#ffd166', '#06d6a0'],
+      ['#7209b7', '#3a86ff', '#06d6a0'],
+      ['#fb5607', '#ffbe0b', '#3a86ff'],
+      ['#8338ec', '#ff006e', '#fb5607'],
+      ['#06d6a0', '#118ab2', '#073b4c'],
+      ['#ee2c2c', '#ffd166', '#06d6a0'],
+    ];
+    const pal = palettes[h % palettes.length];
+    const eyes = (h >> 4) % 3;       // 0..2
+    const mouth = (h >> 6) % 4;      // 0..3
+    const ears = (h >> 8) % 3;       // 0..2
+    const bodyHue = (h >> 10) % 360;
+    // Body shape based on kind
+    const isOrg = kind === 'organism';
+    const bodyShape = isOrg
+      ? `<circle cx="32" cy="36" r="22" fill="${pal[0]}" stroke="#111" stroke-width="2"/>`
+      : `<rect x="10" y="14" width="44" height="44" rx="8" fill="${pal[0]}" stroke="#111" stroke-width="2"/>`;
+    const earShape = ears === 0
+      ? `<polygon points="14,16 22,4 26,18" fill="${pal[1]}" stroke="#111" stroke-width="1.5"/><polygon points="50,16 42,4 38,18" fill="${pal[1]}" stroke="#111" stroke-width="1.5"/>`
+      : ears === 1
+      ? `<circle cx="18" cy="14" r="4" fill="${pal[1]}" stroke="#111" stroke-width="1.5"/><circle cx="46" cy="14" r="4" fill="${pal[1]}" stroke="#111" stroke-width="1.5"/>`
+      : '';
+    const eyeShape = eyes === 0
+      ? `<circle cx="24" cy="32" r="3" fill="#111"/><circle cx="40" cy="32" r="3" fill="#111"/>`
+      : eyes === 1
+      ? `<circle cx="24" cy="32" r="4" fill="#fff" stroke="#111" stroke-width="1.5"/><circle cx="24" cy="32" r="2" fill="#111"/><circle cx="40" cy="32" r="4" fill="#fff" stroke="#111" stroke-width="1.5"/><circle cx="40" cy="32" r="2" fill="#111"/>`
+      : `<line x1="20" y1="30" x2="28" y2="34" stroke="#111" stroke-width="2.5" stroke-linecap="round"/><line x1="36" y1="34" x2="44" y2="30" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>`;
+    const mouthShape = mouth === 0
+      ? `<path d="M 26 44 Q 32 50 38 44" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round"/>`
+      : mouth === 1
+      ? `<rect x="28" y="44" width="8" height="2.5" fill="#111"/>`
+      : mouth === 2
+      ? `<path d="M 26 46 Q 32 40 38 46" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round"/>`
+      : `<circle cx="32" cy="46" r="2.5" fill="#111"/>`;
+    return `
+      <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="bg-${h}" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="hsl(${bodyHue},30%,18%)"/>
+            <stop offset="100%" stop-color="hsl(${bodyHue},30%,8%)"/>
+          </linearGradient>
+        </defs>
+        <rect width="64" height="64" fill="url(#bg-${h})"/>
+        <circle cx="32" cy="58" r="14" fill="${pal[2]}" opacity="0.4"/>
+        ${earShape}
+        ${bodyShape}
+        ${eyeShape}
+        ${mouthShape}
+      </svg>`;
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Render
+  // ─────────────────────────────────────────────────────────────
+  let _activeTab = 'collection';
+
+  function switchTab(tab) {
+    _activeTab = tab;
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('tab-active', t.dataset.tab === tab));
+    render();
+  }
+
+  function render() {
+    const idx = readIndex();
+    document.getElementById('stats').textContent =
+      `${idx.organisms.length} organism${idx.organisms.length === 1 ? '' : 's'}` +
+      (idx.updated_at ? ` · last updated ${new Date(idx.updated_at).toLocaleString()}` : '');
+    document.getElementById('count-collection').textContent = idx.organisms.length;
+
+    const main = document.getElementById('main');
+    if (_activeTab === 'collection') main.innerHTML = renderCollection(idx);
+    else if (_activeTab === 'starters') main.innerHTML = renderStarters();
+    else if (_activeTab === 'discover') main.innerHTML = renderDiscover();
+
+    // Card click handlers
+    main.querySelectorAll('.card').forEach(el => {
+      el.addEventListener('click', () => openCard(el.dataset.rappid));
+    });
+  }
+
+  function renderCollection(idx) {
+    if (!idx.organisms.length) {
+      return `
+        <div class="empty">
+          <div class="big-emoji">🥚</div>
+          <h2>Your collection is empty</h2>
+          <p>
+            Drop a <code>.egg</code> cartridge anywhere on this page to add it to
+            your local Pokédex. Eggs come from a brainstem's Export button, from
+            the rapp-zoo on another machine, or from a friend who AirDropped you
+            their organism.
+          </p>
+          <p style="margin-top:8px">
+            Already have a backup JSON? Click <strong>📤 Import</strong> at the top.
+            Want a starter to play with? Open the <strong>🌱 Starters</strong> tab.
+          </p>
+        </div>`;
+    }
+    const cards = idx.organisms.map(org => {
+      const kindCls = ['organism','rapplication','variant'].includes(org.kind) ? org.kind : 'organism';
+      return `
+        <div class="card" data-rappid="${escapeAttr(org.rappid)}">
+          <div class="sprite">${spriteSvg(org.rappid, org.kind)}</div>
+          <div class="name" title="${escapeAttr(org.rappid)}">${escapeHtml(org.name)}</div>
+          <div class="kind">
+            <span class="kind-pill ${kindCls}">${escapeHtml(org.kind)}</span>
+            <span style="margin-left:auto">${formatBytes(org.size_bytes)}</span>
+          </div>
+        </div>`;
+    }).join('');
+    return `<div class="grid">${cards}</div>`;
+  }
+
+  function renderStarters() {
+    const starters = [
+      { id: 'workday',  emoji: '💼', name: 'Workday',  desc: 'A focused organism for daily standups, OKRs, calendar triage. Hatches with a soul tuned for terse, action-oriented replies.' },
+      { id: 'playtime', emoji: '🎮', name: 'Playtime', desc: 'Creative + curious. Music + games + storytelling. Less business voice; more weird-tangent friend.' },
+      { id: 'journal',  emoji: '📓', name: 'Journal',  desc: 'A long-memory keeper. Designed to recall what you told it last week and tie threads together over months.' },
+    ];
+    return `
+      <div class="info-card">
+        <h3>Bundled starter organisms</h3>
+        <p>
+          Three personalities pre-cooked. Click one to download its <code>.egg</code>
+          and drop it back here (or onto your local brainstem) to hatch.
+        </p>
+      </div>
+      <div class="grid" style="margin-top:14px">
+        ${starters.map(s => `
+          <div class="info-card">
+            <div style="font-size:48px;text-align:center;margin-bottom:8px">${s.emoji}</div>
+            <h3 style="text-align:center;margin-bottom:6px">${s.name}</h3>
+            <p style="text-align:center">${s.desc}</p>
+            <div class="row" style="justify-content:center">
+              <a class="btn primary" href="https://raw.githubusercontent.com/kody-w/rapp-zoo/main/starters/${s.id}.egg" download>
+                ⬇ Download .egg
+              </a>
+            </div>
+          </div>
+        `).join('')}
+      </div>`;
+  }
+
+  function renderDiscover() {
+    return `
+      <div class="info-card">
+        <h3>🛍 RAPP_Store catalog</h3>
+        <p>
+          Browse cataloged rapplications, agents, and senses. Each entry has its
+          own <code>.egg</code> you can download and drop into your collection here,
+          or install directly into your local brainstem.
+        </p>
+        <div class="row">
+          <a class="btn primary" href="https://kody-w.github.io/RAPP_Store/" target="_blank" rel="noopener">Open store →</a>
+          <a class="btn" href="https://raw.githubusercontent.com/kody-w/rapp_store/main/api/v1/index.json" target="_blank" rel="noopener">v1 API JSON</a>
+        </div>
+      </div>
+      <div class="info-card">
+        <h3>🧠 Get a brainstem</h3>
+        <p>
+          The Pokédex is most fun when you have a brainstem to hatch eggs into.
+          One curl-pipe-bash on macOS / Linux, no API keys required.
+        </p>
+        <div class="row">
+          <a class="btn primary" href="https://kody-w.github.io/RAPP/" target="_blank" rel="noopener">Install RAPP brainstem →</a>
+          <a class="btn" href="https://github.com/kody-w/RAPP" target="_blank" rel="noopener">Source</a>
+        </div>
+      </div>
+      <div class="info-card">
+        <h3>🤝 AirDrop trick</h3>
+        <p>
+          Two Pokédex on different devices? AirDrop the same <code>.egg</code> to both.
+          Drop it here on each. Same rappid lights up on both — same organism, two
+          incarnations. The brainstem behind it knows when its sibling appears.
+        </p>
+      </div>`;
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Card detail modal
+  // ─────────────────────────────────────────────────────────────
+  async function openCard(rappid) {
+    const idx = readIndex();
+    const org = idx.organisms.find(o => o.rappid === rappid);
+    if (!org) return;
+    const inner = document.getElementById('card-modal-inner');
+    const kindCls = ['organism','rapplication','variant'].includes(org.kind) ? org.kind : 'organism';
+    inner.innerHTML = `
+      <header>
+        <h3>${escapeHtml(org.name)}</h3>
+        <span class="kind-pill ${kindCls}" style="font-size:10px;padding:2px 8px;border-radius:999px;text-transform:uppercase;letter-spacing:0.4px">${escapeHtml(org.kind)}</span>
+        <button class="btn" onclick="closeModal()" style="padding:4px 10px">✕</button>
+      </header>
+      <div class="body">
+        <div class="sprite-big">${spriteSvg(org.rappid, org.kind)}</div>
+        <div class="meta">
+          <dl>
+            <dt>RAPPID</dt><dd>${escapeHtml(org.rappid)}</dd>
+            ${org.host ? `<dt>Host</dt><dd>${escapeHtml(org.host)}</dd>` : ''}
+            ${org.kernel_version ? `<dt>Kernel</dt><dd>v${escapeHtml(org.kernel_version)}</dd>` : ''}
+            ${org.exported_at ? `<dt>Exported</dt><dd>${escapeHtml(new Date(org.exported_at).toLocaleString())}</dd>` : ''}
+            <dt>Added</dt><dd>${escapeHtml(new Date(org.added_at).toLocaleString())}</dd>
+            <dt>Size</dt><dd>${formatBytes(org.size_bytes)}</dd>
+          </dl>
+        </div>
+      </div>
+      <div class="actions-row">
+        <button class="btn primary" onclick="downloadEgg('${escapeAttr(org.rappid)}')">⬇ Re-export .egg</button>
+        <button class="btn" onclick="hatchInLocalBrainstem('${escapeAttr(org.rappid)}')">🧠 Hatch in localhost brainstem</button>
+        <button class="btn danger" onclick="removeOrganism('${escapeAttr(org.rappid)}')" style="margin-left:auto">🗑 Remove</button>
+      </div>`;
+    document.getElementById('card-modal').classList.add('open');
+  }
+  function closeModal() {
+    document.getElementById('card-modal').classList.remove('open');
+  }
+
+  async function downloadEgg(rappid) {
+    const rec = await idbGet(rappid);
+    if (!rec) { toast('Egg blob missing — try re-importing the collection JSON', 'error'); return; }
+    const idx = readIndex();
+    const org = idx.organisms.find(o => o.rappid === rappid);
+    const slug = (org && org.name ? org.name : rappid)
+      .replace(/[^a-zA-Z0-9@._-]/g, '-')
+      .replace(/-+/g, '-').replace(/^-|-$/g, '');
+    const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+    const fname = `${slug}__${stamp}Z.egg`;
+    const blob = new Blob([rec.blob], { type: 'application/zip' });
+    triggerDownload(blob, fname);
+    toast(`Downloaded ${fname}`, 'success');
+  }
+
+  async function hatchInLocalBrainstem(rappid) {
+    const rec = await idbGet(rappid);
+    if (!rec) { toast('Egg blob missing', 'error'); return; }
+    const b64 = await blobToBase64(new Blob([rec.blob]));
+    const ports = ['7071', '7072'];
+    let ok = false;
+    for (const port of ports) {
+      try {
+        const r = await fetch(`http://localhost:${port}/api/snapshot/import`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename: rappid + '.egg', content_b64: b64 }),
+        });
+        if (r.ok) {
+          const d = await r.json();
+          if (d.status === 'ok') {
+            toast(`Hatched into brainstem on :${port}`, 'success');
+            ok = true;
+            break;
+          }
+        }
+      } catch {}
+    }
+    if (!ok) {
+      toast('No brainstem reachable on localhost:7071 / :7072 — start one and retry', 'error');
+    }
+  }
+
+  async function removeOrganism(rappid) {
+    if (!confirm('Remove this organism from your collection? The egg will be deleted from local storage.')) return;
+    await idbDelete(rappid);
+    const idx = readIndex();
+    idx.organisms = idx.organisms.filter(o => o.rappid !== rappid);
+    writeIndex(idx);
+    closeModal();
+    render();
+    toast('Removed');
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Drag-drop ingest
+  // ─────────────────────────────────────────────────────────────
+  const dropOverlay = document.getElementById('drop-overlay');
+  let _dragCounter = 0;
+  window.addEventListener('dragenter', (e) => {
+    if (e.dataTransfer && Array.from(e.dataTransfer.types || []).includes('Files')) {
+      _dragCounter++;
+      dropOverlay.style.display = 'flex';
+    }
+  });
+  window.addEventListener('dragover', (e) => {
+    if (e.dataTransfer && Array.from(e.dataTransfer.types || []).includes('Files')) {
+      e.preventDefault();
+    }
+  });
+  window.addEventListener('dragleave', () => {
+    _dragCounter = Math.max(0, _dragCounter - 1);
+    if (_dragCounter === 0) dropOverlay.style.display = 'none';
+  });
+  window.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    _dragCounter = 0;
+    dropOverlay.style.display = 'none';
+    const files = e.dataTransfer ? e.dataTransfer.files : null;
+    if (!files || !files.length) return;
+    let added = 0, failed = 0, replaced = 0;
+    for (const f of files) {
+      const lower = f.name.toLowerCase();
+      if (lower.endsWith('.json')) {
+        // JSON drag = collection import
+        try { await importCollectionFile(f); added++; }
+        catch (err) { failed++; toast(`Import failed: ${err.message}`, 'error'); }
+        continue;
+      }
+      if (!(lower.endsWith('.egg') || lower.endsWith('.zip'))) {
+        toast(`Skipped ${f.name} — not a .egg`, 'error');
+        failed++;
+        continue;
+      }
+      try {
+        const buf = await f.arrayBuffer();
+        const r = await ingestEggBlob(buf, f.name);
+        added++;
+        if (r.replaced) replaced++;
+      } catch (err) {
+        failed++;
+        toast(`${f.name}: ${err.message}`, 'error');
+      }
+    }
+    render();
+    if (added) toast(`Added ${added}${replaced ? ` (${replaced} replaced)` : ''}`, 'success');
+  });
+
+  // ─────────────────────────────────────────────────────────────
+  // Collection import / export — single JSON, base64 inline blobs
+  // ─────────────────────────────────────────────────────────────
+  async function exportCollection() {
+    const idx = readIndex();
+    if (!idx.organisms.length) { toast('Nothing to export — collection is empty', 'error'); return; }
+    const out = { schema: SCHEMA, version: 1, exported_at: new Date().toISOString(), organisms: [] };
+    for (const org of idx.organisms) {
+      const rec = await idbGet(org.rappid);
+      out.organisms.push({
+        ...org,
+        manifest: rec ? rec.manifest : null,
+        egg_b64: rec ? await arrayBufferToBase64(rec.blob) : null,
+      });
+    }
+    const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+    const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+    triggerDownload(blob, `rapp-zoo-collection-${stamp}Z.json`);
+    toast(`Exported ${idx.organisms.length} organism${idx.organisms.length === 1 ? '' : 's'}`, 'success');
+  }
+
+  function importCollectionJson(event) {
+    const f = event.target.files && event.target.files[0];
+    if (!f) return;
+    event.target.value = '';
+    importCollectionFile(f).catch(err => toast(`Import failed: ${err.message}`, 'error'));
+  }
+  async function importCollectionFile(file) {
+    const text = await file.text();
+    const parsed = JSON.parse(text);
+    if (!parsed || parsed.schema !== SCHEMA || !Array.isArray(parsed.organisms)) {
+      throw new Error('not a rapp-zoo collection JSON');
+    }
+    const idx = readIndex();
+    let added = 0, replaced = 0;
+    for (const org of parsed.organisms) {
+      if (!org.rappid) continue;
+      const existing = idx.organisms.findIndex(o => o.rappid === org.rappid);
+      const summary = {
+        rappid: org.rappid,
+        name: org.name || deriveDisplayName({ rappid: org.rappid }),
+        kind: org.kind || 'organism',
+        host: org.host || null,
+        kernel_version: org.kernel_version || null,
+        exported_at: org.exported_at || null,
+        size_bytes: org.size_bytes || 0,
+        added_at: org.added_at || new Date().toISOString(),
+        source_name: org.source_name || null,
+      };
+      if (existing >= 0) { idx.organisms[existing] = summary; replaced++; }
+      else { idx.organisms.unshift(summary); added++; }
+      if (org.egg_b64) {
+        try {
+          const buf = base64ToArrayBuffer(org.egg_b64);
+          await idbPut(org.rappid, buf, org.manifest || null);
+        } catch {}
+      }
+    }
+    writeIndex(idx);
+    render();
+    toast(`Imported ${added + replaced} organism${added + replaced === 1 ? '' : 's'} (${replaced} replaced)`, 'success');
+  }
+
+  async function clearCollection() {
+    const idx = readIndex();
+    if (!idx.organisms.length) { toast('Already empty'); return; }
+    if (!confirm(`Wipe all ${idx.organisms.length} organisms from this Pokédex? Export first if you want a backup.`)) return;
+    await idbClear();
+    localStorage.removeItem(LS_KEY);
+    render();
+    toast('Collection cleared');
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Tiny helpers
+  // ─────────────────────────────────────────────────────────────
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+      ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
+  }
+  function escapeAttr(s) { return escapeHtml(s).replace(/`/g, '&#96;'); }
+  function formatBytes(n) {
+    if (!n) return '—';
+    if (n < 1024) return n + ' B';
+    if (n < 1024*1024) return (n / 1024).toFixed(1) + ' KB';
+    return (n / 1024 / 1024).toFixed(2) + ' MB';
+  }
+  function triggerDownload(blob, filename) {
+    const a = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    a.href = url; a.download = filename; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  async function arrayBufferToBase64(buf) {
+    const bytes = new Uint8Array(buf);
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) {
+      bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    }
+    return btoa(bin);
+  }
+  function base64ToArrayBuffer(b64) {
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes.buffer;
+  }
+  function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => {
+        const s = String(r.result || '');
+        const i = s.indexOf(',');
+        resolve(i >= 0 ? s.slice(i + 1) : s);
+      };
+      r.onerror = () => reject(r.error);
+      r.readAsDataURL(blob);
+    });
+  }
+  let _toastTimer = null;
+  function toast(msg, kind) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.remove('error','success');
+    if (kind) el.classList.add(kind);
+    el.classList.add('show');
+    if (_toastTimer) clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+  }
+
+  // Esc closes modal
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeModal();
+  });
+
+  // Initial render — localStorage gives us the cards immediately, no
+  // wait for IndexedDB. The blobs only get pulled when the user opens
+  // a card or triggers an export.
+  render();
+</script>
+</body>
+</html>
