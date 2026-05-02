@@ -98,6 +98,28 @@ These are inviolable — do not break backwards compatibility:
 4. **Brainstem stays light.** The kernel is `brainstem.py` + `basic_agent.py`. It is the **DNA** of the digital organism (Constitution Article XXXIII) — universal, drop-in replaceable, **never edited by AI assistants**. New features → new agents or new organs, never kernel changes.
 5. **Delimited slots are fixed forever.** `|||VOICE|||` and `|||TWIN|||` never get repurposed or overloaded. New sub-capabilities use tags inside the slot.
 6. **Tier portability guarantee.** An agent that runs in Tier 1 must run unmodified in Tier 2 & 3.
+7. **Rapplications ARE organisms** ([Constitution Article XXXVII](./CONSTITUTION.md), shipped 2026-05-02). Same rappid format, same egg distribution, same bonding lifecycle, just different scope. "Rapplication" is a quality tier (graduated, has skin), not a structural type. All five catalog forms (organism / rapplication / variant / sense / bare agent) live on one address space.
+
+## Identity & bonding (the organism layer)
+
+Every locally-installed brainstem is its own digital organism with persistent identity:
+
+- `~/.brainstem/rappid.json` — organism identity (parent_rappid points at the species root, [`kody-w/RAPP`](https://github.com/kody-w/RAPP)). Minted ONCE per machine on first install. Survives every kernel upgrade.
+- `~/.brainstem/bonds.json` — append-only lineage log. Event kinds: `birth`, `bond` (kernel upgrade), `adoption` (legacy install retroactively given identity), `hatch` (egg arrived from elsewhere).
+- `~/.brainstem/.bond/last-pre-bond.egg` — recovery checkpoint, snapshot of organism state right before the last kernel overlay.
+- **Bond cycle** runs every time the install one-liner detects a remote VERSION upgrade: 🥚 egg the organism → 🌐 overlay the new kernel → 🐣 hatch the egg back. rappid + soul + custom agents + memory + secrets all preserved. Implemented in `installer/install.sh` + `rapp_brainstem/utils/bond.py` (stdlib-only, runs before the venv exists).
+- **Egg formats** (all `brainstem-egg/*` schemas live in `utils/bond.py`):
+  - `2.2-organism` — full instance cartridge (rappid + soul + .env + agents + organs + senses + services + .brainstem_data)
+  - `2.2-rapplication` — single rapp cartridge (rappid + agent + UI + per-rapp state)
+  - `2.1` — variant repo cartridge (templated brainstem clone)
+- **CLI**: `brainstem identity` / `brainstem egg [out]` / `brainstem hatch <egg>`
+- **API**: `GET /api/identity` returns rappid + bonds + kernel version. `GET /api/lineage` walks parent_rappid back to species root.
+
+## Visual anatomy + Pokédex (where to send users to learn)
+
+- [`pages/about/anatomy.html`](./pages/about/anatomy.html) — full visual diagram of an organism. DNA / soul / organs / senses / cells / memory / skin / egg with hover-to-highlight cards. Linked from the brainstem's settings panel as the canonical onboarding artifact.
+- [`kody-w/rapp-zoo`](https://github.com/kody-w/rapp-zoo) — the local-first Pokédex. Three tabs (My collection / Starters / Discover), drag-drop egg import, deterministic SVG sprites per organism, three bundled starters (workday/playtime/journal).
+- [`kody-w/RAPP_Store`](https://github.com/kody-w/RAPP_Store) `/api/v1/` — PokeAPI-style static catalog. Each cataloged rapplication has an entry JSON, a sprite SVG, and a downloadable `.egg`. Hosted via `raw.githubusercontent.com`.
 
 ## Key Directories
 

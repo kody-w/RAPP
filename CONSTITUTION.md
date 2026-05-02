@@ -2748,7 +2748,62 @@ The Foundation embodiment of this article — Wildhaven AI Homes LLC's first swa
 
 ---
 
+## Article XXXVII — Rapplications Are Organisms (One Protocol at Every Scale)
+
+> **Rapplication and digital organism are the same kind of thing at different scopes. Both have rappids, both ride in eggs, both bond, both evolve. The real distinction is *quality* — a rapplication is an organism that has graduated.**
+
+The platform held two parallel concepts for too long: *rapplication* (a thing inside a brainstem — drops into `agents/`, has its own rappid scoped under `identity.json["rapps"]`) and *digital organism* (the brainstem instance itself — owns the top-level `rappid.json`, has soul, has memory, bonds with kernel upgrades). The split was implementation accident, not architecture. The biological metaphor in [Article XXXIII](#article-xxxiii--rapp-is-a-digital-organism) demands the recursion: a cell is an organism, and a multicellular body is also an organism — the category is recursive. This article ratifies that.
+
+### XXXVII.1 — The unification
+
+A **rapplication** is an organism with smaller scope: one agent (+ optional UI / organ / per-rapp state) instead of a whole brainstem instance. Same rappid format ([Article XXXIV](#article-xxxiv--rappid-lineage-tracking-and-variant-species)). Same egg distribution unit ([`utils/bond.py`](./rapp_brainstem/utils/bond.py)). Same bonding lifecycle ([Article XXXIII](#article-xxxiii--rapp-is-a-digital-organism)). What scopes the difference is the include set the egg packs, not a different protocol.
+
+| Scope | Schema | Egg includes |
+|---|---|---|
+| Organism (full instance) | `brainstem-egg/2.2-organism` | rappid + soul + .env + all agents + all organs/senses/services + all data |
+| Rapplication (one cell) | `brainstem-egg/2.2-rapplication` | rappid + agent + optional organ + UI bundle + per-rapp state |
+| Variant (templated repo) | `brainstem-egg/2.1` | full repo tree + brainstem source pointer |
+| Bare agent (skinless) | none required | a single `*_agent.py` file |
+
+All five live on the same rappid address space. The lineage walker traces them all back to the species root the same way regardless of scope.
+
+### XXXVII.2 — "Rapplication" is a quality tier
+
+The word survives but its meaning collapses to one thing: **an organism that has been graduated — passed catalog review, earned skin (a UI bundle), suitable for hosting inside someone else's brainstem.** Like a Pokémon that's been entered into the Pokédex. The promotion path the team has used internally — *agents → swarms → rapplications* — was always tracking quality, never type.
+
+A rapplication is a graduated organism. A bare agent is a skinless organism. A swarm is a federated set of organisms. A twin is an organism with cross-substrate identity ([Article XXXVI](#article-xxxvi--the-swarm-estate-cross-substrate-entity-identity)). A locally-hatched brainstem instance is an organism. They are all organisms.
+
+### XXXVII.3 — Skin is the criterion
+
+What makes "rapplication" earn its name: a UI bundle (`.brainstem_data/rapp_ui/<id>/`). A bare agent is a single-celled organism — internal, functional, but skinless; it can only be invoked through the host's mouth (chat). A rapplication has its own face — a UI bundle that lets a user interact with it directly, recognize it across hosts, identify it on sight. That's why a rapplication needs more than a `.py`: a graduated organism requires skin.
+
+The shape rule from [Article XXXI](#article-xxxi--three-stores-three-artifacts) was always tracking this without saying it: bundles need their own catalog because they have skin to ship; bare agents don't. Now we have the word.
+
+### XXXVII.4 — What this changes mechanically
+
+- **Catalogs differentiate by shape, not by "organism vs not."** RAR holds skinless single-celled organisms (bare agents). RAPP_Sense_Store holds organism *organs* of one type (sense overlays — extensions to host perception, not standalone bodies). RAPP_Store holds **organisms with skin** — the ones that earn names like "BookFactory" instead of identifiers like `bookfactory_agent.py`. All three hold organisms; the shape decides which.
+- **Eggs work at any scale.** `brainstem-egg/2.2-rapplication` is a sibling of `2.2-organism` — same zip layout, smaller include set. The unpacker dispatches on `manifest.type`. No parallel egg systems.
+- **One Pokédex for everything.** The [`rapp-zoo`](https://github.com/kody-w/rapp-zoo) renders catalog rapps, locally-hatched instances, and AirDropped organisms with the same card model. Three sources, one collection.
+- **One identity protocol at every scale.** Every rappid has a parent rappid that walks back to the species root, regardless of organism size. Lineage is unbroken.
+
+### XXXVII.5 — What stays the same — by design
+
+- **Process boundaries.** Organism-instances run as their own processes (their own port, their own brainstem.py). Rapplication-scope organisms run as code inside someone else's process. This is a runtime choice — many cells share a body — not a kind difference.
+- **Bare `.py` distribution.** The killer-simplicity case (`curl ... > agents/foo.py` and it works) isn't going anywhere. The unification doesn't force every distributed organism through an egg wrapper — bare singletons remain valid for stateless single-cell organisms. The egg form is for organisms that bring more than code (UI, state, organs, custom soul).
+- **The constitutional articles already in force.** [XXXI](#article-xxxi--three-stores-three-artifacts), [XXXIII](#article-xxxiii--rapp-is-a-digital-organism), [XXXIV](#article-xxxiv--rappid-lineage-tracking-and-variant-species), [XXXVI](#article-xxxvi--the-swarm-estate-cross-substrate-entity-identity). This article reads them in light of the unification — it doesn't relitigate them.
+
+### XXXVII.6 — Reference implementation
+
+- Vault decision narrative: [`pages/vault/Architecture/Rapplications Are Organisms.md`](./pages/vault/Architecture/Rapplications%20Are%20Organisms.md) (the *why* + biological vocabulary)
+- Visual anatomy: [`pages/about/anatomy.html`](./pages/about/anatomy.html) (the diagram)
+- Egg pack/unpack at both scales: [`rapp_brainstem/utils/bond.py`](./rapp_brainstem/utils/bond.py) (`pack_organism` + `pack_rapplication`)
+- Pokédex API consuming the unification: [`kody-w/RAPP_Store`](https://github.com/kody-w/RAPP_Store) `/api/v1/`
+- Pokédex UI rendering the unified card: [`kody-w/rapp-zoo`](https://github.com/kody-w/rapp-zoo) (Tier 1+2 PR merged 2026-05-02)
+
+---
+
 *Ratified for the RAPP platform. The engine stays small so the agents
 can be everything. The species stays one so the variants can be many.
 The license never closes once opened. The estate persists so the
-organism can be everywhere.*
+organism can be everywhere. The rapplication is an organism, so
+everything is one protocol.*

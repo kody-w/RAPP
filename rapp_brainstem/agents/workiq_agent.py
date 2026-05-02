@@ -30,6 +30,27 @@ import shutil
 import json
 from agents.basic_agent import BasicAgent
 
+__manifest__ = {
+    "schema": "rapp-agent/1.0",
+    "name": "@kody/workiq",
+    "version": "1.0.0",
+    "display_name": "WorkIQ",
+    "description": "Natural-language access to Microsoft 365 data — emails, calendar, SharePoint/OneDrive, Teams messages, people. Wraps the workiq CLI (Entra ID auth required).",
+    "author": "Kody",
+    "tags": ["m365", "microsoft", "email", "calendar", "teams", "sharepoint", "workiq"],
+    "category": "integrations",
+    "quality_tier": "community",
+    "requires_env": [],
+    "dependencies": ["@rapp/basic_agent"],
+    "external_prereqs": [
+        "npm install -g @microsoft/workiq",
+        "workiq accept-eula",
+        "Entra ID login (run `workiq ask` once)",
+    ],
+    "example_call": "What emails did I receive from my manager this week?",
+}
+
+
 
 _ANSI_RE = re.compile(r'\x1b(?:\[[0-9;?]*[a-zA-Z]|\][^\x07\x1b]*(?:\x07|\x1b\\))')
 

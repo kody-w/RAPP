@@ -37,12 +37,29 @@ Drop that file in `agents/`, it auto-discovers on the next request. The `metadat
 
 ## Why it might be interesting
 
+- **Every install is a digital organism.** Your `~/.brainstem/` has its own [rappid identity](https://github.com/kody-w/RAPP/blob/main/pages/vault/Architecture/Rappid.md), its own personality (`soul.md`), its own memory (`.brainstem_data/`), and a lineage log (`bonds.json`) of every kernel evolution it has lived through. The kernel is just the runtime; **the organism evolves under the kernel, not the other way around.** Re-run the one-liner → the bond cycle eggs your organism, overlays the new kernel, hatches you back. Same identity, every customization preserved. ([Visual anatomy diagram](https://kody-w.github.io/RAPP/pages/about/anatomy.html).)
+- **Portable cartridges.** Your organism packs into a `.egg` ([brainstem-egg/2.2-organism schema](./rapp_brainstem/utils/bond.py)). AirDrop it to your phone; the brainstem there hatches the same organism — same memory, same agents, continues elsewhere. `brainstem egg` and `brainstem hatch` are CLI commands, or use the [rapp-zoo Pokédex](https://github.com/kody-w/rapp-zoo) for drag-drop.
 - **Single-file plugin contract.** One file = one class = one `metadata` = one `perform()`. Reload-on-disk every request, so you edit and test without restarting the server.
-- **GitHub Copilot as the LLM backend.** Exchanges your `gh auth` token for short-lived Copilot API tokens cached in `~/.brainstem/`. No new credentials to manage. (Yes, this is a load-bearing OAuth flow — see the auth chain in `brainstem.py`.)
+- **GitHub Copilot as the LLM backend.** Exchanges your `gh auth` token for short-lived Copilot API tokens cached in `~/.brainstem/`. No new credentials to manage.
 - **Same file runs on three tiers.** Local Flask server (this repo), Azure Functions deployment in `rapp_swarm/`, and a Cloudflare worker that proxies into Microsoft Copilot Studio in `worker/`. The `*_agent.py` file is the contract; the engine ports.
 - **Project-local install mode.** `curl ... | bash -s -- --here` drops the brainstem into `./.brainstem/` in the current directory, picks a free port (7072+), writes a self-contained `start.sh`, and adds itself to the project's `.gitignore`. Runs alongside your global install.
-- **Agent-aware install handshake.** Setting `RAPP_INSTALL_ASSIST=1` on the bash side of the pipe makes the installer print a structured prompt (delimited by `<<<RAPP_INSTALLER_HANDSHAKE v=1>>>`) instead of installing — so an LLM running the one-liner on a user's behalf can ask global vs. local before committing. See `skill.md` for the agent protocol.
+- **Cloud UI flag.** Settings panel has a "Cloud UI" toggle that switches the page from the local `index.html` to the live GitHub Pages copy, tethered back to localhost. Lets you iterate on the static UI by pushing to `main` without re-running the install one-liner.
+- **Agent-aware install handshake.** Setting `RAPP_INSTALL_ASSIST=1` makes the installer print a structured prompt instead of installing — so an LLM running the one-liner on a user's behalf can ask global vs. local before committing. See `skill.md`.
 - **About 1,100 lines of Flask** (`rapp_brainstem/brainstem.py`). The whole engine is one file you can read in an afternoon.
+
+## The federation
+
+The platform is three sibling repos plus a Pokédex:
+
+| Repo | Holds | Role |
+|---|---|---|
+| [`kody-w/RAPP`](https://github.com/kody-w/RAPP) (this repo) | The engine — `brainstem.py`, `bond.py`, the kernel | Drop-in DNA every organism's egg can hatch into |
+| [`kody-w/RAR`](https://github.com/kody-w/RAR) | Bare agents (skinless single-celled organisms) | 280+ agents, drop-in to any brainstem |
+| [`kody-w/RAPP_Store`](https://github.com/kody-w/RAPP_Store) | Rapplications (organisms with skin) + the [Pokédex API](https://raw.githubusercontent.com/kody-w/RAPP_Store/main/api/v1/index.json) | PokeAPI-style static catalog: sprite + lineage + downloadable .egg per entry |
+| [`kody-w/RAPP_Sense_Store`](https://github.com/kody-w/RAPP_Sense_Store) | Sense overlays (`*_sense.py`) | Per-channel output extensions a brainstem installs |
+| [`kody-w/rapp-zoo`](https://github.com/kody-w/rapp-zoo) | The local-first Pokédex UI | Drag-drop import / one-click export / discover from the catalog |
+
+Per [Constitution Article XXXVII](./CONSTITUTION.md), all of the above hold *organisms*; the shape of the artifact decides which repo holds which.
 
 ## What it is *not*
 

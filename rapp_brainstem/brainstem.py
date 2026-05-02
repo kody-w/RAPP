@@ -1125,6 +1125,64 @@ def get_identity():
         "host":    request.host,
     })
 
+
+@app.route("/api/lineage", methods=["GET"])
+def get_lineage():
+    """Walk parent_rappid back to the species root and return the chain.
+
+    Each link in the chain is an organism (this brainstem instance, its
+    parent variant, its grandparent variant, …, the species root). The
+    walker is local-first: it reads the current organism's rappid.json,
+    then resolves parents from any local registry it knows about. For
+    parents that aren't on this device, the chain entry has only the
+    rappid string — no metadata. Future versions will fetch missing
+    metadata from the rapp_store Pokédex API on demand.
+
+    Powers the Pokédex's "where did this organism come from" timeline.
+    """
+    rappid = _read_json_file(_RAPPID_FILE_PATH)
+    if not rappid:
+        return jsonify({"chain": [], "depth": 0,
+                        "note": "no rappid yet — has the brainstem been installed via the one-liner?"})
+
+    chain = []
+    seen = set()
+    current = rappid
+    SPECIES_ROOT = "rappid:v2:prototype:@rapp/origin:0b635450c04249fbb4b1bdb571044dec@github.com/kody-w/RAPP"
+    while current and isinstance(current, dict):
+        rid = current.get("rappid")
+        if not rid or rid in seen:
+            break
+        seen.add(rid)
+        chain.append({
+            "rappid":   rid,
+            "name":     current.get("name"),
+            "kind":     current.get("kind"),
+            "parent":   current.get("parent_rappid"),
+            "born_at":  current.get("born_at"),
+            "incarnations": current.get("incarnations"),
+        })
+        # Termination at species root
+        if rid == SPECIES_ROOT:
+            break
+        # Future: lookup parent_rappid in a local cache or fetch from the
+        # Pokédex API. For now, attach the parent as a stub-only entry.
+        parent_rid = current.get("parent_rappid")
+        if parent_rid and parent_rid not in seen:
+            chain.append({
+                "rappid": parent_rid,
+                "name": ("species root" if parent_rid == SPECIES_ROOT else None),
+                "kind": ("prototype" if parent_rid == SPECIES_ROOT else None),
+                "parent": None,
+                "_stub": True,
+            })
+        break  # one local hop + parent stub for v1
+    return jsonify({
+        "chain": chain,
+        "depth": len(chain),
+        "species_root": SPECIES_ROOT,
+    })
+
 @app.route("/login", methods=["POST"])
 def login():
     """Start GitHub device code OAuth flow."""
