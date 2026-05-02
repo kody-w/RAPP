@@ -269,11 +269,14 @@
     <title id="anatomy-title">Digital organism cross-section</title>
     <desc id="anatomy-desc">Concentric layers of a RAPP digital organism — egg cartridge, skin (UI), membrane (process boundary), soul (system prompt), organs, senses, memory, sub-cells, and DNA (kernel).</desc>
 
-    <!-- Egg cartridge — the outermost portable shell (dashed) -->
+    <!-- Egg cartridge — the outermost portable shell (dashed).
+         Label sits ABOVE the ellipse top edge (y=30) on a solid backing
+         band so the dashed perimeter doesn't read through the text. -->
     <g class="layer layer-egg" data-layer-key="egg">
-      <ellipse cx="460" cy="360" rx="430" ry="330" class="layer-egg" />
-      <text x="460" y="44" class="layer-label" text-anchor="middle" fill="var(--layer-egg)">.egg cartridge</text>
-      <text x="460" y="58" class="layer-label tiny body" text-anchor="middle">portable form — travels via AirDrop, catalog, USB</text>
+      <ellipse cx="460" cy="360" rx="430" ry="328" class="layer-egg" />
+      <rect x="270" y="6" width="380" height="38" rx="6" fill="var(--bg)" />
+      <text x="460" y="20" class="layer-label" text-anchor="middle" fill="var(--layer-egg)">.egg cartridge</text>
+      <text x="460" y="36" class="layer-label tiny body" text-anchor="middle">portable form — travels via AirDrop, catalog, USB</text>
     </g>
 
     <!-- Skin — the visible outer layer (UI) -->
@@ -341,18 +344,20 @@
       <text x="460" y="526" class="layer-label tiny body" text-anchor="middle">the runtime any organism's egg can hatch into</text>
     </g>
 
-    <!-- Identity strip at bottom -->
+    <!-- Identity strip at bottom — solid fill so the dashed egg doesn't
+         bleed through the label text. -->
     <g class="layer" aria-hidden="true">
-      <rect x="155" y="585" width="610" height="55" rx="8" fill="none" stroke="var(--border)" stroke-width="1" />
+      <rect x="155" y="585" width="610" height="55" rx="8" fill="var(--bg)" stroke="var(--border)" stroke-width="1" />
       <text x="460" y="608" class="layer-label" text-anchor="middle" fill="var(--text)">IDENTITY  ·  rappid.json + bonds.json</text>
       <text x="460" y="624" class="layer-label tiny body" text-anchor="middle">organism's permanent ID + lineage of every kernel evolution</text>
     </g>
 
-    <!-- Annotated callout: skin is the criterion -->
+    <!-- Skin-criterion callout: leader points INTO the skin layer (right side, no clipping) -->
     <g aria-hidden="true">
-      <line x1="40" y1="100" x2="78" y2="100" stroke="var(--layer-skin)" stroke-width="1.5" />
-      <text x="35" y="92" class="layer-label tiny" text-anchor="end" fill="var(--layer-skin)">skin earns the rapplication tier</text>
-      <text x="35" y="106" class="layer-label tiny body" text-anchor="end">a bare agent has none — it's single-celled</text>
+      <line x1="785" y1="100" x2="845" y2="68" stroke="var(--layer-skin)" stroke-width="1.5" />
+      <rect x="765" y="48" width="150" height="32" rx="4" fill="var(--bg)" stroke="var(--layer-skin)" stroke-width="1" stroke-dasharray="3 2" opacity="0.95" />
+      <text x="840" y="62" class="layer-label tiny" text-anchor="end" fill="var(--layer-skin)">SKIN EARNS THE TIER</text>
+      <text x="840" y="74" class="layer-label tiny body" text-anchor="end">bare agents have none</text>
     </g>
   </svg>
 </section>
