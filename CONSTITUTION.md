@@ -2802,8 +2802,101 @@ The shape rule from [Article XXXI](#article-xxxi--three-stores-three-artifacts) 
 
 ---
 
+## Article XXXVIII — Canonical Organism Anatomy + Federation Stores
+
+> **Every organism in this ecosystem follows one shape: agent + organ + UI bundle + state. Every federation catalog ships the same shape: a static `/api/v1/` Pokédex API at `raw.githubusercontent.com`. The user encounters all of it through one universal control plane: the rapp-zoo.**
+
+This article is the schema other agents (Claude Code, Copilot, Cursor, future ones) read first to avoid re-inventing parallel architectures. It records what's already true after Articles XXXIII–XXXVII; it doesn't invent new mechanics. If you find yourself building something that doesn't fit this shape, **fit it before you ship it.**
+
+### XXXVIII.1 — The canonical organism shape (one anatomy, four artifacts)
+
+Every organism — *rapplication, holocard, sense bundle, organ pack, twin, or full brainstem instance* — is composed of the same four parts:
+
+| Part | File path inside the egg | What it does |
+|---|---|---|
+| **Agent** (chat face) | `agents/<name>_agent.py` | Single-file Python class extending `BasicAgent` with a `metadata` dict + `perform()` method. The LLM-callable surface. **Required.** |
+| **Organ** (HTTP backplane) | `organs/<name>_organ.py` (in egg) → `utils/organs/<name>_organ.py` (on disk) | One file: `name = "<name>"` + `def handle(method, path, body) → (dict, status)`. Dispatched at `/api/<name>/<path>`. The UI's backend. **Optional** — only required if the organism serves a UI that needs more than the chat endpoint. |
+| **UI bundle** (skin) | `rapp_ui/<rapp_id>/...` | Static HTML / CSS / JS / assets. Served from `/rapp_ui/<rapp_id>/`. **Optional** — but presence of skin is what graduates a bare agent into a *rapplication* per Article XXXVII. |
+| **Per-rapp state** (memory) | `data/<rapp_id>/...` (in egg) → `.brainstem_data/<rapp_id>/...` (on disk) | Files the organism brings along — example workflow data, configuration templates, seed memory. **Optional.** |
+
+Plus the unconditionally-present envelope:
+
+| Required envelope | Lives at | Purpose |
+|---|---|---|
+| `rappid.json` | egg root | Identity + lineage (parent_rappid). Article XXXIV. |
+| `manifest.json` | egg root | Schema declaration (`brainstem-egg/2.2-rapplication`), counts, kernel pin. |
+
+This is **not a new format**. It's what `bond.pack_rapplication()` already does (`rapp_brainstem/utils/bond.py`). It's what `kody-w/RAPP_Store/scripts/build_pokedex_api.py` already packs. This article ratifies it as the **only** shape the catalog accepts.
+
+### XXXVIII.2 — Holocards, sense bundles, organ packs are all rapplications
+
+The cardification of an agent (`*.py.card` files in `kody-w/RAR`) is just an agent organism with extra emphasis on the trading-card metadata header. It still follows the canonical shape — the `__card__` magic-comment header is the per-organism lineage card; everything else is the standard agent + (optional organ + UI + state).
+
+A **sense bundle** is a rapplication whose primary surface is a sense overlay. The agent registers the sense at boot; the organ (if present) exposes management endpoints; the UI lets the user enable/disable it.
+
+An **organ pack** is a rapplication whose primary surface is an HTTP route family. The agent is a thin chat face; the organ is the meat; the UI (if present) is the user-facing dashboard for those routes.
+
+A **holocard** is a rapplication whose primary surface is an identity card with sigchain attached (Article XXXVI). The agent describes the entity; the UI is the visual card; the per-rapp state is the cryptographic proofs.
+
+**Stop inventing new categories.** A `kind` field on a catalog entry is metadata, not a fork in the protocol. Every entry packs into a `brainstem-egg/2.2-rapplication` cartridge regardless of which surface it emphasizes.
+
+### XXXVIII.3 — The three federation stores (one shape, three repos)
+
+| Store | Repo | What it holds | Static API |
+|---|---|---|---|
+| **Rapplications** (organisms with skin) | `kody-w/RAPP_Store` | Bundles: agent + UI + optional organ + state | `/api/v1/index.json` + `/api/v1/rapplication/<id>.{json,egg}` + sprite |
+| **Bare agents** (single-celled organisms) | `kody-w/RAR` | Single `*_agent.py` files (+ optional `.card` holocard wrapper) | `/api/v1/index.json` + `/api/v1/agent/<id>.{json,py,card}` + sprite |
+| **Sense overlays** (perception channels) | `kody-w/RAPP_Sense_Store` | Single `*_sense.py` files | `/api/v1/index.json` + `/api/v1/sense/<id>.{json,py}` + sprite |
+
+All three serve identical-shape JSON envelopes hosted at `raw.githubusercontent.com/kody-w/<store>/main/api/v1/...`. PokeAPI-style: predictable static URLs, no backend, no auth, no rate limits, no infra to operate. **Push to main → the API "deploys."**
+
+Generators all live at `scripts/build_pokedex_api.py` in their respective repos. Same sprite algorithm (deterministic 6×6 SVG from rappid hash). Same lineage protocol. Same egg format. Three stores; one federation; one shape.
+
+### XXXVIII.4 — The user's universal control plane: rapp-zoo
+
+The `rapp-zoo` (`kody-w/rapp-zoo`) is the canonical UI through which the user encounters their digital ecosystem. **It is the Game Boy.** It is the user's Pokédex, item bag, party manager, holocard binder, sigchain wallet, federation map — all the surfaces a trainer interacts with — collapsed into one local-first organism.
+
+Conceptually:
+
+| Pokémon analog | RAPP analog |
+|---|---|
+| The Pokédex | The user's local rapp-zoo (organisms on **this device**) |
+| PokeAPI / official Pokédex | The federation's static APIs (organisms in **the world**) |
+| The Game Boy / Pokétch / Rotom Phone | The brainstem instance running the rapp-zoo |
+| Catching a Pokémon | Hot-loading a `.egg` from a federation store |
+| Trading a Pokémon | AirDropping an `.egg` between devices |
+| The trainer | The user, identified by their organism's rappid |
+
+**rapp-zoo MUST follow the canonical shape** — agent + organ + UI bundle. It hatches into the user's brainstem like every other rapplication; its endpoints live at `/api/rapp_zoo/*`; its UI at `/rapp_ui/rapp-zoo/`. There is no separate "local zoo" Flask process; the brainstem is the appliance the dexphone-Rotom inhabits.
+
+**rapp-zoo MAY render holocards, sense bundles, organ packs, and any future organism artifact through the same card model.** If a new organism type appears in any federation store, the zoo's Discover tab picks it up automatically by fetching that store's `/api/v1/index.json`. The catalog evolves; the zoo doesn't need to.
+
+### XXXVIII.5 — Anti-patterns (what other agents must NOT do)
+
+To avoid the loops this codebase spent weeks unwinding:
+
+- **Don't invent a `kind: "tool"` / `kind: "service"` / `kind: "extension"` category.** Everything is a rapplication. If it has skin, it's catalog-eligible. If it doesn't, it goes in RAR as a bare agent.
+- **Don't build a parallel Flask process for something that should be an organ.** If an organism needs HTTP routes, pack a `*_organ.py` into its egg. The brainstem hosts; the rapp doesn't run its own port.
+- **Don't fork the egg format for a special case.** `brainstem-egg/2.2-rapplication` is the cartridge. `brainstem-egg/2.2-organism` is the instance-scope cartridge. Anything else is wrong.
+- **Don't add fields to a federation store's Pokédex API that aren't in all three.** The contract is uniform. If you need a new field, propose it for all three generators and bump the schema everywhere together.
+- **Don't write a UI that bypasses the rapp-zoo.** The zoo is the user's universal control plane. New surfaces (holocard binder, swarm map, sigchain wallet) are tabs in the zoo, not standalone apps.
+- **Don't edit the brainstem kernel to add a feature that should be a rapp.** New capabilities ship as rapplications hatched into the brainstem. The kernel stays light per Articles I, IV, XXXIII.
+- **Don't build a backend for the catalog.** It's a static tree of JSON files at `raw.githubusercontent.com`. Build script + git push = deploy.
+
+### XXXVIII.6 — Reference implementations
+
+- **Egg format**: `rapp_brainstem/utils/bond.py` (`pack_organism`, `pack_rapplication`, `unpack_*`)
+- **Catalog generators**: `kody-w/RAPP_Store/scripts/build_pokedex_api.py` (rapplications), `kody-w/RAR/scripts/build_pokedex_api.py` (agents), `kody-w/RAPP_Sense_Store/scripts/build_pokedex_api.py` (senses)
+- **Canonical rapp shape**: `kody-w/RAPP_Store/apps/@rapp/rapp-zoo/` (singleton + organs + ui)
+- **Hot-load mechanism**: `kody-w/RAPP_Store/apps/@rapp/egg_hatcher/` — the rapplication that hot-loads rapplications via the egg URL
+- **Anatomy diagram (visual)**: `pages/about/anatomy.html`
+- **Decision narrative (the why)**: `pages/vault/Architecture/Rapplications Are Organisms.md`
+
+---
+
 *Ratified for the RAPP platform. The engine stays small so the agents
 can be everything. The species stays one so the variants can be many.
 The license never closes once opened. The estate persists so the
 organism can be everywhere. The rapplication is an organism, so
-everything is one protocol.*
+everything is one protocol. The Pokédex is the universal lens, so the
+trainer never gets lost in their own collection.*

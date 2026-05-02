@@ -105,13 +105,70 @@ The handshake block is delimited by `<<<RAPP_INSTALLER_HANDSHAKE v=1>>>` / `<<<E
 
 ## Rapplications (full-stack extensions)
 
-A rapplication = agent file (required) + optional service file. The agent is the primary interface — any AI can drive it. The service adds HTTP endpoints for UIs.
+A rapplication = agent file (required) + optional organ file + optional UI bundle. The agent is the primary interface — any AI can drive it. The organ adds HTTP endpoints for the UI bundle.
 
 - **Agent contract:** extends `BasicAgent`, defines `metadata` + `perform(**kwargs) → str`
-- **Service contract:** module-level `name` string + `handle(method, path, body) → (dict, int)`
-- Both share `.brainstem_data/{name}.json` storage
-- Install = drop files in `agents/` and `services/`. Uninstall = delete them.
+- **Organ contract:** module-level `name` string + `handle(method, path, body) → (dict, int)` (legacy term: "service")
+- All share `.brainstem_data/{name}.json` storage
+- Install = hot-load via `brainstem hatch <egg-url>` OR drop files in `agents/` + `utils/organs/` + `.brainstem_data/rapp_ui/`
 - Full SDK: https://kody-w.github.io/RAPP/pages/docs/rapplication-sdk.md
+
+## Canonical organism shape (Constitution Article XXXVIII)
+
+**Read this before building anything new in this ecosystem.** Every organism — *rapplication, holocard, sense bundle, organ pack, twin, or full brainstem instance* — has the same anatomy:
+
+```
+agents/<name>_agent.py            ← chat face (LLM-callable)         REQUIRED
+utils/organs/<name>_organ.py      ← HTTP backplane (UI backend)      OPTIONAL
+.brainstem_data/rapp_ui/<id>/     ← skin (UI bundle)                  OPTIONAL
+.brainstem_data/<id>/             ← per-rapp state (memory)           OPTIONAL
+```
+
+Plus the always-present envelope:
+
+```
+rappid.json                        ← identity + lineage (parent_rappid)
+manifest.json                      ← schema = brainstem-egg/2.2-rapplication
+```
+
+This is what `bond.pack_rapplication()` already packs. It is what every catalog generator already produces. **Do not invent new shapes.** Holocards, sense bundles, organ packs are all rapplications with different surface emphasis — same shape underneath.
+
+## The three federation stores (one shape, three repos)
+
+All three serve identical-shape JSON envelopes hosted at `raw.githubusercontent.com/kody-w/<store>/main/api/v1/...`. PokeAPI-style — predictable static URLs, no backend, no auth, no rate limits. **Push to main → the API "deploys."**
+
+| Store | Repo | What it holds | Static API |
+|---|---|---|---|
+| **Rapplications** (organisms with skin) | [`kody-w/RAPP_Store`](https://github.com/kody-w/RAPP_Store) | Bundles: agent + UI + optional organ + state | `/api/v1/index.json` + `/api/v1/rapplication/<id>.{json,egg}` + sprite |
+| **Bare agents** (single-celled organisms) | [`kody-w/RAR`](https://github.com/kody-w/RAR) | `*_agent.py` files (+ optional `.card` holocards) | `/api/v1/index.json` + `/api/v1/agent/<id>.{json,py,card}` + sprite |
+| **Sense overlays** (perception channels) | [`kody-w/RAPP_Sense_Store`](https://github.com/kody-w/RAPP_Sense_Store) | `*_sense.py` files | `/api/v1/index.json` + `/api/v1/sense/<id>.{json,py}` + sprite |
+
+To browse the federation programmatically, fetch the three index URLs and union them. To install an organism, fetch its `.egg` (or `.py` for bare agents) and either drop it into the brainstem's directories OR ask the brainstem's `egg_hatcher` rapp via `/chat` to install it.
+
+## The user's universal control plane: rapp-zoo
+
+The [`rapp-zoo`](https://github.com/kody-w/rapp-zoo) (cataloged at `kody-w/RAPP_Store/apps/@rapp/rapp-zoo/`) is the user's Game Boy / Pokédex / holocard binder / federation map. It hatches into the user's brainstem like every other rapplication — endpoints at `/api/rapp_zoo/*`, UI at `/rapp_ui/rapp-zoo/`. **Do not build a parallel UI for managing organisms.** Add tabs to the rapp-zoo instead.
+
+The mental model:
+
+| Pokémon | RAPP |
+|---|---|
+| The Pokédex | The user's local rapp-zoo |
+| PokeAPI | The federation's static APIs (RAPP_Store + RAR + RAPP_Sense_Store) |
+| Game Boy / Pokétch / Rotom Phone | The brainstem instance hosting the zoo |
+| Catching a Pokémon | Hot-loading a `.egg` via `egg_hatcher` |
+| Trading | AirDropping a `.egg` between devices |
+| The trainer | The user, identified by their organism's rappid |
+
+## Anti-patterns (DO NOT do these — they violate the constitution)
+
+- ❌ **Don't invent a `kind: "tool"` / `"service"` / `"extension"` category.** Every catalog entry is a rapplication.
+- ❌ **Don't build a parallel Flask process for something that should be an organ.** Pack a `*_organ.py`, the brainstem hosts.
+- ❌ **Don't fork the egg format for a special case.** `brainstem-egg/2.2-rapplication` is the cartridge. Period.
+- ❌ **Don't add fields to one federation store's API that aren't in all three.** The contract is uniform across RAPP_Store / RAR / RAPP_Sense_Store.
+- ❌ **Don't write a UI that bypasses the rapp-zoo.** New surfaces are tabs in the zoo.
+- ❌ **Don't edit the brainstem kernel to add a feature that should be a rapp.** New capabilities ship as rapplications.
+- ❌ **Don't build a backend for the catalog.** It's a static tree at `raw.githubusercontent.com`. Build script + git push = deploy.
 
 ## Config pattern — agents ask, don't require editing
 
