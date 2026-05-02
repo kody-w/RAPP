@@ -110,9 +110,11 @@ REMOTE_VERSION_URL="https://raw.githubusercontent.com/kody-w/RAPP/main/rapp_brai
 # Releases are immutable; main is a moving target.
 PIN_VERSION="${BRAINSTEM_VERSION:-}"
 PIN_TAG=""
+PIN_EXPLICIT=0  # 1 → user passed BRAINSTEM_VERSION; 0 → defaulted to latest tag
 INSTALL_TRACK="${RAPP_INSTALL_TRACK:-release}"
 if [ -n "$PIN_VERSION" ]; then
     PIN_TAG="brainstem-v${PIN_VERSION}"
+    PIN_EXPLICIT=1
 elif [ "$INSTALL_TRACK" != "main" ]; then
     # Resolve the latest brainstem-v* tag from the remote. Falls back to
     # main HEAD only if no tags exist (fresh repo, brand-new variant).
@@ -369,20 +371,38 @@ stage_brainstem_framework() {
     fi
 }
 
-# Run the framework's bond.py CLI. Always uses the freshest copy of
-# bond.py available — the staged one during a bond, the installed one
-# otherwise. bond.py is stdlib-only by design so it works before the
-# venv is built. Args after the flags are forwarded to bond.py.
+# Run the framework's bond.py CLI. Always uses the freshest bond.py
+# available — the staged one during a bond, the installed one otherwise.
+# bond.py is stdlib-only by design so it works before the venv is built.
+#
+# Returns 2 if bond.py is unavailable (e.g. pinning to an older release
+# that pre-dates the bonding lifecycle). Callers MUST tolerate that —
+# the legacy backup/restore path is the safety net. Every call site
+# guards with `|| true` so `set -e` doesn't abort the whole install when
+# the older kernel can't run bond.
 _run_bond() {
     local bond_root=""
-    if [ -d "$STAGE/rapp_brainstem/utils" ]; then
+    if [ -f "$STAGE/rapp_brainstem/utils/bond.py" ]; then
         bond_root="$STAGE/rapp_brainstem"
-    elif [ -d "$BRAINSTEM_HOME/src/rapp_brainstem/utils" ]; then
+    elif [ -f "$BRAINSTEM_HOME/src/rapp_brainstem/utils/bond.py" ]; then
         bond_root="$BRAINSTEM_HOME/src/rapp_brainstem"
     else
-        return 2  # bond.py not available — caller should fall back
+        return 2
     fi
     (cd "$bond_root" && "$PYTHON_CMD" -m utils.bond "$@")
+}
+
+_bond_available() {
+    [ -f "$STAGE/rapp_brainstem/utils/bond.py" ] || \
+        [ -f "$BRAINSTEM_HOME/src/rapp_brainstem/utils/bond.py" ]
+}
+
+# Numeric semver compare. Returns 0 if $1 > $2.
+_version_gt() {
+    [ "$1" = "$2" ] && return 1
+    local greater
+    greater=$(printf '%s\n%s\n' "$1" "$2" | sort -V | tail -n1)
+    [ "$greater" = "$1" ]
 }
 
 install_brainstem() {
@@ -402,10 +422,18 @@ install_brainstem() {
         # ── EXISTING ORGANISM: bond cycle (egg → overlay → hatch) ──
         local LOCAL_VER="0.0.0"
         [ -f "$LOCAL_VERSION_FILE" ] && LOCAL_VER=$(cat "$LOCAL_VERSION_FILE" 2>/dev/null || echo "0.0.0")
-        local REMOTE_VER=$(curl -sf "$REMOTE_VERSION_URL" 2>/dev/null || echo "0.0.0")
+        local REMOTE_VER
+        REMOTE_VER=$(curl -sf "$REMOTE_VERSION_URL" 2>/dev/null || echo "0.0.0")
 
-        if [ -n "$PIN_VERSION" ]; then
+        # Honest messaging: distinguish a user-explicit pin (BRAINSTEM_VERSION
+        # env var) from the default "latest release tag" resolution. The old
+        # code conflated the two and printed "Pin requested" every time the
+        # default flow picked up a tag, even when the user passed nothing.
+        if [ "$PIN_EXPLICIT" = "1" ]; then
             echo "  ⚑ Pin requested: v${PIN_VERSION} (will check out tag ${PIN_TAG})"
+            REMOTE_VER="$PIN_VERSION"
+        elif [ -n "$PIN_VERSION" ]; then
+            echo "  Latest release: v${PIN_VERSION} (tag ${PIN_TAG})"
             REMOTE_VER="$PIN_VERSION"
         fi
 
@@ -419,14 +447,25 @@ install_brainstem() {
             echo -e "  ${GREEN}✓${NC} Already up to date (v${LOCAL_VER})"
             # Even an up-to-date organism gets adopted into the lineage
             # system if it predates the rappid layer.
-            if [ ! -f "$BRAINSTEM_HOME/rappid.json" ]; then
-                _run_bond mint-rappid "$BRAINSTEM_HOME" >/dev/null 2>&1 && \
-                    _run_bond record-bond "$BRAINSTEM_HOME" adoption \
-                        --to-version "$LOCAL_VER" \
-                        --note "Existing organism adopted into lineage system" \
-                        >/dev/null 2>&1
-                echo -e "  ${GREEN}🧬${NC} Adopted into lineage (rappid minted)"
+            if [ ! -f "$BRAINSTEM_HOME/rappid.json" ] && _bond_available; then
+                _run_bond mint-rappid "$BRAINSTEM_HOME" >/dev/null 2>&1 || true
+                _run_bond record-bond "$BRAINSTEM_HOME" adoption \
+                    --to-version "$LOCAL_VER" \
+                    --note "Existing organism adopted into lineage system" \
+                    >/dev/null 2>&1 || true
+                [ -f "$BRAINSTEM_HOME/rappid.json" ] && \
+                    echo -e "  ${GREEN}🧬${NC} Adopted into lineage (rappid minted)"
             fi
+            return 0
+        fi
+
+        # Refuse to bond *backward* unless the user explicitly asked for it
+        # via BRAINSTEM_VERSION=. The default-latest flow would otherwise
+        # downgrade users when their local is ahead of the latest tag (e.g.
+        # they're tracking main HEAD or running an unreleased build).
+        if [ "$PIN_EXPLICIT" != "1" ] && _version_gt "$LOCAL_VER" "$REMOTE_VER"; then
+            echo -e "  ${GREEN}✓${NC} Local v${LOCAL_VER} is ahead of latest release v${REMOTE_VER} — staying put"
+            echo -e "  ${YELLOW}!${NC} To force a downgrade: BRAINSTEM_VERSION=${REMOTE_VER} curl ... | bash"
             return 0
         fi
 
@@ -446,65 +485,113 @@ install_brainstem() {
         local TO_COMMIT
         TO_COMMIT=$(git -C "$STAGE" rev-parse HEAD 2>/dev/null || echo "")
 
-        # 2. Mint rappid if missing (legacy installs get adopted here so
-        # the egg about to be packed carries identity from the start).
-        if [ ! -f "$BRAINSTEM_HOME/rappid.json" ]; then
-            _run_bond mint-rappid "$BRAINSTEM_HOME" --parent-commit "$TO_COMMIT" >/dev/null 2>&1
-            _run_bond record-bond "$BRAINSTEM_HOME" adoption \
-                --from-version "$LOCAL_VER" \
-                --note "Adopted at first bond" >/dev/null 2>&1
-            echo -e "  ${GREEN}🧬${NC} Minted rappid for legacy organism"
+        # 2. LEGACY BACKUP — always-on safety net. Even if the bond.py egg
+        # step fails (older pinned kernel without bond.py support, python
+        # missing, disk full, anything), this backup of soul/.env/custom-
+        # agents survives the overlay and gets restored at the end. Costs
+        # nothing on the happy path; saves the user's data on the sad path.
+        local BACKUP="/tmp/brainstem-bond-$$"
+        mkdir -p "$BACKUP/agents"
+        [ -f "$SOUL_FILE" ] && cp "$SOUL_FILE" "$BACKUP/soul.md" 2>/dev/null || true
+        [ -f "$ENV_FILE" ] && cp "$ENV_FILE" "$BACKUP/.env" 2>/dev/null || true
+        if [ -d "$AGENTS_DIR" ]; then
+            cp "$AGENTS_DIR"/*.py "$BACKUP/agents/" 2>/dev/null || true
         fi
 
-        # 3. 🥚 Egg the current organism — full cartridge: identity,
-        # soul, .env, agents, organs, senses, services, .brainstem_data.
-        # The egg is the recovery checkpoint; if anything below fails the
-        # user can `tar -xzf` it back manually (or hatch via a future
-        # `brainstem hatch <egg>` invocation, see Phase 2 / rappzoo).
+        # 3. Mint rappid if missing — needs bond.py from the stage.
+        # Tolerated failure if bond.py isn't available (older pin).
+        if [ ! -f "$BRAINSTEM_HOME/rappid.json" ] && _bond_available; then
+            _run_bond mint-rappid "$BRAINSTEM_HOME" --parent-commit "$TO_COMMIT" >/dev/null 2>&1 || true
+            _run_bond record-bond "$BRAINSTEM_HOME" adoption \
+                --from-version "$LOCAL_VER" \
+                --note "Adopted at first bond" >/dev/null 2>&1 || true
+            [ -f "$BRAINSTEM_HOME/rappid.json" ] && \
+                echo -e "  ${GREEN}🧬${NC} Minted rappid for legacy organism"
+        fi
+
+        # 4. 🥚 Egg the current organism — full cartridge if bond.py is
+        # available, skip cleanly otherwise (legacy backup at step 2 is
+        # the safety net).
+        EGG_PATH="$BRAINSTEM_HOME/.bond/last-pre-bond.egg"
         mkdir -p "$BRAINSTEM_HOME/.bond"
-        if _run_bond egg "$BRAINSTEM_HOME" "$EGG_PATH" \
-                --kernel-version "$LOCAL_VER" --src "$SRC_ROOT" >/dev/null 2>&1; then
-            local egg_kb
-            egg_kb=$(du -k "$EGG_PATH" 2>/dev/null | awk '{print $1}')
-            echo -e "  ${GREEN}🥚${NC} Egged organism (${egg_kb:-?} KB) → ${EGG_PATH/$HOME/~}"
-        else
-            echo -e "  ${YELLOW}⚠${NC} Egg failed — bond will skip the hatch-back step"
+        local egg_ok=0
+        if _bond_available; then
+            if _run_bond egg "$BRAINSTEM_HOME" "$EGG_PATH" \
+                    --kernel-version "$LOCAL_VER" --src "$SRC_ROOT" >/dev/null 2>&1; then
+                egg_ok=1
+                local egg_kb
+                egg_kb=$(du -k "$EGG_PATH" 2>/dev/null | awk '{print $1}')
+                echo -e "  ${GREEN}🥚${NC} Egged organism (${egg_kb:-?} KB) → ${EGG_PATH/$HOME/~}"
+            fi
+        fi
+        if [ $egg_ok -eq 0 ]; then
+            echo -e "  ${YELLOW}!${NC} bond.py egg unavailable — using legacy backup safety net"
             EGG_PATH=""
         fi
 
-        # 4. Scrub legacy .git so the new src/ is unambiguously plain files.
+        # 5. Scrub legacy .git so the new src/ is unambiguously plain files.
         [ $legacy_git -eq 1 ] && rm -rf "$BRAINSTEM_HOME/src/.git"
 
-        # 5. 🌐 Overlay new kernel. cp -R "$STAGE/rapp_brainstem/." dest/
-        # copies contents in place — framework files are refreshed,
-        # user-only files (custom agents, .brainstem_data) stay put.
+        # 6. 🌐 Overlay new kernel. cp -R "$STAGE/rapp_brainstem/." dest/
+        # copies contents in place — framework files refreshed, user-only
+        # files (custom agents, .brainstem_data) stay put.
         mkdir -p "$SRC_ROOT"
         if ! cp -R "$STAGE/rapp_brainstem/." "$SRC_ROOT/" 2>/dev/null; then
-            echo -e "  ${RED}✗${NC} Overlay failed — egg preserved at ${EGG_PATH/$HOME/~}"
+            echo -e "  ${RED}✗${NC} Overlay failed — restoring from backup"
+            [ -f "$BACKUP/soul.md" ] && cp "$BACKUP/soul.md" "$SOUL_FILE" || true
+            [ -f "$BACKUP/.env" ] && cp "$BACKUP/.env" "$ENV_FILE" || true
             rm -rf "$STAGE"
+            rm -rf "$BACKUP"
             return 1
         fi
         rm -rf "$STAGE"
         echo -e "  ${GREEN}🌐${NC} Overlayed new kernel onto src/rapp_brainstem"
 
-        # 6. 🐣 Hatch the egg back. soul/agents/organs/senses/services/data
-        # all flow back over the new kernel; rappid stays untouched (egg
-        # carries the same one we just minted/loaded).
-        if [ -n "$EGG_PATH" ] && [ -f "$EGG_PATH" ]; then
+        # 7. 🐣 Hatch the egg back if we have one. soul/agents/organs/
+        # senses/services/data flow back over the new kernel.
+        local hatched=0
+        if [ -n "$EGG_PATH" ] && [ -f "$EGG_PATH" ] && _bond_available; then
             if _run_bond hatch "$BRAINSTEM_HOME" "$EGG_PATH" >/dev/null 2>&1; then
                 echo -e "  ${GREEN}🐣${NC} Hatched egg back over new kernel"
+                hatched=1
             else
-                echo -e "  ${YELLOW}⚠${NC} Hatch reported errors — egg preserved at ${EGG_PATH/$HOME/~}"
+                echo -e "  ${YELLOW}!${NC} Hatch reported errors — falling back to legacy restore"
             fi
         fi
 
-        # 7. Record the bond + bump incarnations counter.
-        _run_bond bump-incarnations "$BRAINSTEM_HOME" >/dev/null 2>&1
-        _run_bond record-bond "$BRAINSTEM_HOME" bond \
-            --from-version "$LOCAL_VER" --to-version "$REMOTE_VER" \
-            --to-commit "$TO_COMMIT" >/dev/null 2>&1
+        # 8. LEGACY RESTORE — runs whenever the bond hatch didn't.
+        # Restores soul.md + .env + custom agents from the backup at step 2.
+        # If the new framework already ships an agent of the same name, the
+        # framework version wins (a true overlap, not a custom).
+        if [ $hatched -eq 0 ]; then
+            [ -f "$BACKUP/soul.md" ] && cp "$BACKUP/soul.md" "$SOUL_FILE" || true
+            [ -f "$BACKUP/.env" ] && cp "$BACKUP/.env" "$ENV_FILE" || true
+            local restored=0
+            for agent_file in "$BACKUP/agents"/*.py; do
+                [ -f "$agent_file" ] || continue
+                local fname
+                fname=$(basename "$agent_file")
+                case "$fname" in
+                    basic_agent.py|__init__.py) continue ;;
+                esac
+                [ -f "$AGENTS_DIR/$fname" ] && continue
+                cp "$agent_file" "$AGENTS_DIR/$fname"
+                restored=$((restored + 1))
+            done
+            echo -e "  ${GREEN}🧷${NC} Legacy restore: soul + .env + ${restored} custom agent(s)"
+        fi
 
-        echo -e "  ${GREEN}✓${NC} Bond complete: v${LOCAL_VER} → v${REMOTE_VER} (rappid preserved)"
+        rm -rf "$BACKUP"
+
+        # 9. Record the bond + bump incarnations (best-effort).
+        if _bond_available; then
+            _run_bond bump-incarnations "$BRAINSTEM_HOME" >/dev/null 2>&1 || true
+            _run_bond record-bond "$BRAINSTEM_HOME" bond \
+                --from-version "$LOCAL_VER" --to-version "$REMOTE_VER" \
+                --to-commit "$TO_COMMIT" >/dev/null 2>&1 || true
+        fi
+
+        echo -e "  ${GREEN}✓${NC} Bond complete: v${LOCAL_VER} → v${REMOTE_VER}"
     else
         # ── FRESH INSTALL: birth event, no egg yet (nothing to pack) ──
         echo "  Fresh install — fetching framework..."
@@ -525,11 +612,19 @@ install_brainstem() {
         rm -rf "$STAGE"
 
         # Mint identity & record birth — rappid is set ONCE per machine
-        # and survives every future bond.
-        _run_bond mint-rappid "$BRAINSTEM_HOME" --parent-commit "$TO_COMMIT" >/dev/null 2>&1
-        _run_bond record-bond "$BRAINSTEM_HOME" birth \
-            --to-version "$REMOTE_VER" --to-commit "$TO_COMMIT" >/dev/null 2>&1
-        echo -e "  ${GREEN}🥚${NC} Organism born — rappid minted, framework v${REMOTE_VER} hatched"
+        # and survives every future bond. Tolerated: an older pinned
+        # framework without bond.py support won't mint, that's fine —
+        # the next upgrade-to-current will adopt the install retroactively.
+        if _bond_available; then
+            _run_bond mint-rappid "$BRAINSTEM_HOME" --parent-commit "$TO_COMMIT" >/dev/null 2>&1 || true
+            _run_bond record-bond "$BRAINSTEM_HOME" birth \
+                --to-version "$REMOTE_VER" --to-commit "$TO_COMMIT" >/dev/null 2>&1 || true
+            [ -f "$BRAINSTEM_HOME/rappid.json" ] && \
+                echo -e "  ${GREEN}🥚${NC} Organism born — rappid minted, framework v${REMOTE_VER} hatched" || \
+                echo -e "  ${GREEN}✓${NC} Framework v${REMOTE_VER} installed"
+        else
+            echo -e "  ${GREEN}✓${NC} Framework v${REMOTE_VER} installed (older release; rappid will mint on next upgrade)"
+        fi
     fi
     echo -e "  ${GREEN}✓${NC} Source code ready"
 }
