@@ -173,27 +173,51 @@ def _install_snapshot_routes(app) -> None:
         except OSError:
             return "0.0.0"
 
+    def _sanitize_rappid_for_filename(rappid):
+        """Make the rappid safe to use as a filename across macOS / Linux /
+        Windows / FAT. Replaces colons and slashes (path separators on
+        every major OS) and anything non-alphanumeric+@.+_- with a dash;
+        collapses runs and trims leading/trailing separators. Returns ''
+        if the input is empty or unusable."""
+        if not isinstance(rappid, str) or not rappid:
+            return ""
+        out = []
+        for ch in rappid:
+            if ch.isalnum() or ch in "@._-":
+                out.append(ch)
+            else:
+                # ':' (rappid section separator), '/' (owner/name separator),
+                # spaces, anything else → dash
+                out.append("-")
+        s = "".join(out)
+        # Collapse multi-dashes and trim
+        while "--" in s:
+            s = s.replace("--", "-")
+        return s.strip("-._")
+
     def _export_view():
         try:
             blob = bond.pack_organism(_rapp_home(), _BRAINSTEM_DIR, _kernel_version())
         except Exception as e:
             return jsonify({"error": f"pack failed: {e}"}), 500
+        # Filename is <sanitized-rappid>__<utc-stamp>.egg so multiple
+        # organism eggs in a Downloads folder are uniquely identifiable
+        # on sight (rappid encodes machine + lineage) and chronologically
+        # sortable. The double underscore between the two halves is the
+        # only never-occurs-in-rappid sentinel so a parser can split the
+        # rappid back out cleanly. Falls back to "brainstem" if the
+        # rappid file is missing (very early in an organism's life).
         slug = "brainstem"
         try:
             ident = bond._read_json(bond._rappid_path(_rapp_home())) or {}
             rappid = ident.get("rappid") or ""
-            if rappid:
-                parts = rappid.split(":")
-                if len(parts) >= 4:
-                    name_part = parts[3]
-                    if "/" in name_part:
-                        name_part = name_part.split("/", 1)[1]
-                    if name_part:
-                        slug = name_part.replace(" ", "_")
+            sanitized = _sanitize_rappid_for_filename(rappid)
+            if sanitized:
+                slug = sanitized
         except Exception:
             pass
         stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%SZ")
-        filename = f"{slug}-{stamp}.egg"
+        filename = f"{slug}__{stamp}.egg"
         resp = make_response(blob, 200)
         resp.headers["Content-Type"] = "application/zip"
         resp.headers["Content-Disposition"] = f'attachment; filename="{filename}"'
