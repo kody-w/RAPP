@@ -113,7 +113,30 @@ def _mount_web_static(app) -> None:
     print(f"[boot] /web mounted from {web_dir}")
 
 
+def _lineage_guard() -> None:
+    """Refuse to boot if rappid.json identity doesn't match git location.
+
+    A template clone that hasn't run initialize-variant.sh carries the
+    parent's rappid in a non-parent location — running the brainstem on
+    that workspace would corrupt the lineage chain. The guard runs
+    before the kernel and any sibling loaders.
+
+    Bypass: RAPP_SKIP_LINEAGE_CHECK=1 (logged, for emergency repair).
+    """
+    try:
+        utils_dir = os.path.join(_HERE, "utils")
+        if utils_dir not in sys.path:
+            sys.path.insert(0, utils_dir)
+        from lineage_check import assert_initialized  # type: ignore
+        assert_initialized()
+    except SystemExit:
+        raise
+    except Exception as e:
+        print(f"[boot] lineage check skipped: {e}")
+
+
 def main() -> None:
+    _lineage_guard()
     _wrap_flask_run()
     # Run the canonical kernel as if launched directly.
     kernel_path = os.path.join(_HERE, "brainstem.py")

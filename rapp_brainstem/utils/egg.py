@@ -76,6 +76,7 @@ _DATA_DIR = os.path.join(_BRAINSTEM_ROOT, ".brainstem_data")
 _UI_BASE_DIR = os.path.join(_DATA_DIR, "rapp_ui")
 
 EGG_SCHEMA_V2 = "brainstem-egg/2.0"
+EGG_SCHEMA_V2_1 = "brainstem-egg/2.1"  # variant-repo aware (carries source pointer + brainstem pin)
 EGG_SCHEMA_V1 = "rapp-egg/1.0"  # legacy binder format
 
 # ── RAPPID — perpetual, globally-unique digital identity ────────────────
@@ -643,3 +644,231 @@ def inspect(blob: bytes) -> dict:
             return {"ok": True, "manifest": json.loads(z.read("manifest.json"))}
         except Exception as e:
             return {"ok": False, "error": f"invalid manifest: {e}"}
+
+
+# ── Schema 2.1: variant-repo eggs (universal twin cartridge) ────────────
+#
+# A variant-repo egg captures the entire local-first twin layout: the
+# kernel snapshot at root, the agents dir, utils, installer, content
+# files (soul.md, MANIFEST.md, README.md, LICENSE, vbrainstem.html), and
+# .brainstem_data state. The egg is self-sufficient — it can materialize
+# the twin onto any host with just a kernel runtime, no upstream fetch
+# required (though the manifest carries source pointers for verification
+# and optional re-sync).
+#
+# This is the cartridge the user names "rappid.egg" — pack on device A,
+# transport, summon on device B with a vanilla brainstem, twin appears.
+
+# Top-level files at the variant-repo root that are part of the organism
+# and must travel in the egg. Anything else at root is excluded unless
+# explicitly listed.
+_REPO_ROOT_FILES = {
+    "brainstem.py",       # kernel snapshot
+    "rappid.json",        # lineage anchor + brainstem pin
+    "soul.md",            # voice
+    "MANIFEST.md",        # vision doc
+    "README.md",          # public-facing intro
+    "LICENSE",            # license posture
+    "SUMMON.md",          # summon URL convention
+    "TEMPLATE.md",        # template usage doc
+    "index.html",         # GitHub Pages landing
+    "vbrainstem.html",    # browser simulator
+    "summon.svg",         # QR code
+    ".gitignore",
+}
+
+# Subdirectories at the variant-repo root that travel as full trees.
+_REPO_ROOT_DIRS = ("agents", "utils", "installer", "app")
+
+# Path pieces that are NEVER packed (mirror _NEVER_PACK_DIRS but applied
+# to the variant-repo tree, not the brainstem-instance tree).
+_REPO_NEVER_DIRS = ("__pycache__", ".pytest_cache", "venv", ".git", "node_modules")
+_REPO_NEVER_FILES = (".DS_Store", "Thumbs.db", ".env", ".env.local")
+
+
+def _is_repo_excluded(rel_path: str) -> bool:
+    parts = rel_path.replace("\\", "/").split("/")
+    if any(p in _REPO_NEVER_DIRS for p in parts):
+        return True
+    if any(p in _REPO_NEVER_FILES for p in parts):
+        return True
+    if "private" in parts:
+        # .brainstem_data/private/ — explicit no-share
+        return True
+    return False
+
+
+def _walk_repo_tree(src: str, arc_prefix: str, z: zipfile.ZipFile) -> int:
+    """Add every non-excluded file under src to the zip at arc_prefix/. Returns count."""
+    if not os.path.isdir(src):
+        return 0
+    n = 0
+    for root, dirs, files in os.walk(src):
+        dirs[:] = [d for d in dirs if d not in _REPO_NEVER_DIRS]
+        for fn in files:
+            if fn in _REPO_NEVER_FILES:
+                continue
+            full = os.path.join(root, fn)
+            rel = os.path.relpath(full, src).replace(os.sep, "/")
+            if _is_repo_excluded(rel):
+                continue
+            z.write(full, f"{arc_prefix}/{rel}" if arc_prefix else rel)
+            n += 1
+    return n
+
+
+def pack_twin_from_repo(repo_path: str,
+                        bundled_repo: bool = True,
+                        bundled_state: bool = True,
+                        attestation: Optional[dict] = None) -> bytes:
+    """Pack a hatched variant repo into a brainstem-egg/2.1 blob.
+
+    Layout produced inside the zip:
+        manifest.json                  — schema 2.1, source + brainstem pin
+        repo/<rel>                     — the variant-repo tree (if bundled_repo)
+        data/<rel>                     — .brainstem_data tree (if bundled_state)
+
+    The repo MUST have rappid.json at its root and SHOULD have brainstem.py
+    + an agents/ dir + a utils/ dir. Unbundled fields are recorded in the
+    manifest but their tree is omitted (smaller egg, requires online fetch
+    on summon — not implemented yet, reserved).
+    """
+    repo = os.path.abspath(repo_path)
+    rappid_json_path = os.path.join(repo, "rappid.json")
+    if not os.path.exists(rappid_json_path):
+        raise ValueError(f"no rappid.json at {repo} — not a variant repo")
+
+    with open(rappid_json_path, "r", encoding="utf-8") as f:
+        rj = json.load(f)
+
+    rappid_uuid = rj.get("rappid")
+    if not rappid_uuid:
+        raise ValueError("rappid.json has no 'rappid' field")
+
+    bs_block = rj.get("brainstem") or {}
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        repo_files = 0
+        data_files = 0
+
+        if bundled_repo:
+            # Top-level files at root
+            for fname in _REPO_ROOT_FILES:
+                full = os.path.join(repo, fname)
+                if os.path.exists(full) and os.path.isfile(full):
+                    z.write(full, f"repo/{fname}")
+                    repo_files += 1
+            # Subdirs as full trees
+            for d in _REPO_ROOT_DIRS:
+                src = os.path.join(repo, d)
+                repo_files += _walk_repo_tree(src, f"repo/{d}", z)
+
+        if bundled_state:
+            data_src = os.path.join(repo, ".brainstem_data")
+            data_files = _walk_repo_tree(data_src, "data", z)
+
+        manifest = {
+            "schema": EGG_SCHEMA_V2_1,
+            "type": "twin",
+            "rappid": rj.get("name") and f"rappid:twin:@source/{rj['name']}:{secrets.token_hex(8)}" or None,
+            "exported_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "source": {
+                "rappid_uuid": rappid_uuid,
+                "parent_rappid_uuid": rj.get("parent_rappid"),
+                "repo": rj.get("parent_repo"),
+                "commit": rj.get("parent_commit"),
+                "name": rj.get("name"),
+            },
+            "brainstem": {
+                "version": bs_block.get("version"),
+                "source_repo": bs_block.get("source_repo"),
+                "source_commit": bs_block.get("source_commit"),
+            },
+            "bundled_repo": bool(bundled_repo),
+            "bundled_state": bool(bundled_state),
+            "repo_file_count": repo_files,
+            "data_file_count": data_files,
+            "attestation": attestation or rj.get("attestation"),
+            "size_kb_approx": None,  # filled below
+        }
+
+        z.writestr("manifest.json", json.dumps(manifest, indent=2))
+
+    blob = buf.getvalue()
+    return blob
+
+
+def summon_twin_egg(blob: bytes, host_root: str,
+                    keep_existing_kernel: bool = False) -> str:
+    """Materialize a brainstem-egg/2.1 blob into a workspace under host_root.
+
+    Workspace path: <host_root>/<rappid_uuid>/
+
+    The summon flow:
+      1. Read manifest, extract rappid_uuid.
+      2. Create or reuse <host_root>/<rappid_uuid>/.
+      3. Extract repo/ → workspace/.
+      4. Extract data/ → workspace/.brainstem_data/.
+      5. (if keep_existing_kernel) restore the workspace's previous brainstem.py
+         after extraction — used for the egg-based hatching cycle where the
+         host already swapped to a newer kernel before summon.
+
+    Returns the workspace absolute path.
+    """
+    if not is_egg_blob(blob):
+        raise ValueError("not a valid egg blob")
+
+    with zipfile.ZipFile(io.BytesIO(blob), "r") as z:
+        try:
+            manifest = json.loads(z.read("manifest.json"))
+        except Exception as e:
+            raise ValueError(f"invalid egg manifest: {e}")
+
+        schema = manifest.get("schema")
+        if schema not in (EGG_SCHEMA_V2_1, EGG_SCHEMA_V2):
+            raise ValueError(f"unsupported egg schema for variant summon: {schema}")
+
+        source = manifest.get("source") or {}
+        rappid_uuid = source.get("rappid_uuid")
+        if not rappid_uuid:
+            raise ValueError("egg manifest has no source.rappid_uuid")
+
+        host = os.path.abspath(host_root)
+        workspace = os.path.join(host, rappid_uuid)
+        os.makedirs(workspace, exist_ok=True)
+
+        # If the caller wants to preserve the workspace's existing kernel
+        # (the hatching-cycle usecase), stash it before extraction.
+        preserved_kernel: Optional[bytes] = None
+        if keep_existing_kernel:
+            kpath = os.path.join(workspace, "brainstem.py")
+            if os.path.exists(kpath):
+                with open(kpath, "rb") as f:
+                    preserved_kernel = f.read()
+
+        # Extract repo/ → workspace root
+        for name in z.namelist():
+            if name.startswith("repo/") and not name.endswith("/"):
+                rel = name[len("repo/"):]
+                target = _safe_join(workspace, rel)
+                if target is None:
+                    continue
+                os.makedirs(os.path.dirname(target), exist_ok=True)
+                with z.open(name) as src, open(target, "wb") as dst:
+                    dst.write(src.read())
+            elif name.startswith("data/") and not name.endswith("/"):
+                rel = name[len("data/"):]
+                target = _safe_join(os.path.join(workspace, ".brainstem_data"), rel)
+                if target is None:
+                    continue
+                os.makedirs(os.path.dirname(target), exist_ok=True)
+                with z.open(name) as src, open(target, "wb") as dst:
+                    dst.write(src.read())
+
+        # Restore preserved kernel if requested
+        if keep_existing_kernel and preserved_kernel is not None:
+            with open(os.path.join(workspace, "brainstem.py"), "wb") as f:
+                f.write(preserved_kernel)
+
+        return workspace
