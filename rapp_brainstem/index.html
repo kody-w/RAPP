@@ -54,13 +54,44 @@
     font-size: 12px;
     color: #8b949e;
   }
-  .dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: #3fb950;
-    animation: pulse 2s infinite;
+  /* (3) Status pill — wraps the dot + connected/checking text into one
+     tinted cluster. Faint divider before the model select keeps the
+     header from feeling like 3 disjoint bits. */
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px 3px 8px;
+    background: rgba(63,185,80,0.08);
+    border: 1px solid rgba(63,185,80,0.25);
+    border-radius: 999px;
+    color: #7ee787; font-size: 11px; font-weight: 500;
+    transition: all 0.2s;
   }
-  .dot.offline { background: #f85149; animation: none; }
-  .dot.pending { background: #d29922; animation: pulse 1s infinite; }
+  .status-pill.is-pending {
+    background: rgba(210,153,34,0.08);
+    border-color: rgba(210,153,34,0.25);
+    color: #d29922;
+  }
+  .status-pill.is-offline {
+    background: rgba(248,81,73,0.08);
+    border-color: rgba(248,81,73,0.25);
+    color: #f85149;
+  }
+  body.light-mode .status-pill { background: rgba(31,136,61,0.08); border-color: rgba(31,136,61,0.3); color: #1f883d; }
+  body.light-mode .status-pill.is-pending { background: rgba(180,124,30,0.08); border-color: rgba(180,124,30,0.3); color: #9a6700; }
+  body.light-mode .status-pill.is-offline { background: rgba(207,34,46,0.08); border-color: rgba(207,34,46,0.3); color: #cf222e; }
+  .ctrl-divider {
+    width: 1px; height: 18px; background: #30363d;
+    margin: 0 2px;
+  }
+  body.light-mode .ctrl-divider { background: #d0d7de; }
+  .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: currentColor;
+    animation: pulse 2s infinite;
+    flex-shrink: 0;
+  }
+  .dot.offline, .status-pill.is-offline .dot { animation: none; }
+  .dot.pending, .status-pill.is-pending .dot { animation: pulse 1s infinite; }
   @keyframes pulse {
     0%, 100% { opacity: 1; } 50% { opacity: 0.4; }
   }
@@ -198,10 +229,15 @@
   /* ── Chat ── */
   #chat {
     flex: 1; overflow-y: auto; padding: 24px;
-    display: flex; flex-direction: column; gap: 16px;
+    display: flex; flex-direction: column; gap: 20px;
     position: relative;
   }
   .msg { display: flex; gap: 12px; max-width: 760px; z-index: 2; }
+  /* (8) Message rhythm — same-author consecutive messages tighten to
+     ~8px; author switch (default 20px above) keeps breathing room. */
+  .msg.user + .msg.user,
+  .msg.assistant + .msg.assistant,
+  .msg.system + .msg.system { margin-top: -12px; }
   .msg.user { align-self: flex-end; flex-direction: row-reverse; }
   .msg.system { align-self: center; }
 
@@ -236,7 +272,7 @@
   }
   .msg.assistant .bubble {
     background: #161b22; border: 1px solid #21262d;
-    border-radius: 4px 12px 12px 12px;
+    border-radius: 6px 14px 14px 14px;
   }
   .msg.assistant .bubble a { color: #58a6ff; text-decoration: none; }
   .msg.assistant .bubble a:hover { text-decoration: underline; }
@@ -247,14 +283,23 @@
   .msg.assistant .bubble p:first-child { margin-top: 0; }
   .msg.assistant .bubble p:last-child { margin-bottom: 0; }
   .msg.assistant .bubble code {
-    background: #0d1117; padding: 2px 6px; border-radius: 4px;
-    font-family: "SF Mono", monospace; font-size: 12px;
+    background: rgba(110,118,129,0.16); padding: 1px 6px; border-radius: 4px;
+    font-family: "SF Mono", ui-monospace, monospace; font-size: 12px;
+    border: 1px solid rgba(110,118,129,0.18);
   }
+  /* (7) Code block softening — softer tinted background + subtle inner
+     border so blocks breathe inside the bubble rather than slamming. */
   .msg.assistant .bubble pre {
-    background: #0d1117; padding: 10px; border-radius: 6px;
-    overflow-x: auto; margin: 8px 0;
+    background: rgba(13,17,23,0.6);
+    border: 1px solid #21262d;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+    padding: 12px 14px; border-radius: 8px;
+    overflow-x: auto; margin: 10px 0;
   }
-  .msg.assistant .bubble pre code { padding: 0; background: none; }
+  .msg.assistant .bubble pre code {
+    padding: 0; background: none; border: none;
+    font-size: 12px; line-height: 1.55;
+  }
   .msg.assistant .bubble table {
     border-collapse: collapse; width: 100%; margin: 10px 0;
     font-size: 13px;
@@ -287,7 +332,7 @@
   }
   .msg.user .bubble {
     background: #1f6feb; color: #fff;
-    border-radius: 12px 4px 12px 12px;
+    border-radius: 14px 6px 14px 14px;
     white-space: pre-wrap;
   }
   .msg.user .bubble a { color: #cae3ff; }
@@ -364,39 +409,70 @@
     display: flex; gap: 10px;
     max-width: 760px; margin: 0 auto;
   }
+  /* (2) Input focus glow — soft blue ring on focus, not just a border
+     color change. Reads as a focused field instead of a hairline shift. */
   #input {
     flex: 1; background: #0d1117;
-    border: 1px solid #30363d; border-radius: 8px;
+    border: 1px solid #30363d; border-radius: 10px;
     color: #e6edf3; font-size: 14px;
     padding: 10px 14px; resize: none; outline: none;
     line-height: 1.5; max-height: 120px;
-    transition: border-color 0.15s;
+    transition: border-color 0.15s, box-shadow 0.15s;
   }
-  #input:focus { border-color: #1f6feb; }
+  #input:focus {
+    border-color: #1f6feb;
+    box-shadow: 0 0 0 3px rgba(31,111,235,0.18);
+  }
   #input::placeholder { color: #484f58; }
+  /* (1) Send button — paper-plane icon + the same gradient + inset
+     highlight as the store CTA. No longer reads as a flat blue slab. */
   #send {
-    background: #1f6feb; color: #fff; border: none; border-radius: 8px;
-    padding: 10px 18px; font-size: 14px; font-weight: 600;
-    cursor: pointer; transition: background 0.15s, opacity 0.15s;
+    display: inline-flex; align-items: center; gap: 6px;
+    background: linear-gradient(180deg, #1f6feb 0%, #1858c4 100%);
+    color: #fff; border: 1px solid rgba(31,111,235,0.6);
+    border-radius: 10px; padding: 10px 16px;
+    font-size: 14px; font-weight: 600; letter-spacing: 0.1px;
+    cursor: pointer; transition: filter 0.15s, transform 0.05s, opacity 0.15s;
     align-self: flex-end;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.08) inset, 0 2px 4px rgba(0,0,0,0.25);
   }
-  #send:hover { background: #388bfd; }
-  #send:disabled { opacity: 0.4; cursor: default; }
+  #send svg {
+    width: 14px; height: 14px; fill: currentColor;
+    transition: transform 0.15s;
+  }
+  #send:hover { filter: brightness(1.08); }
+  #send:hover svg { transform: translateX(1px); }
+  #send:active { transform: translateY(0.5px); }
+  #send:disabled { opacity: 0.4; cursor: default; filter: none; }
+  body.light-mode #send {
+    background: linear-gradient(180deg, #2d8aff 0%, #1f6feb 100%);
+    border-color: rgba(31,111,235,0.5);
+  }
 
+  /* (5) Toolbar de-noising — Export / Import / Clear are demoted to a
+     muted secondary tier; Tutorial + Get Help breathe in their original
+     weight. */
   .toolbar-row {
     display: flex; justify-content: space-between; align-items: center;
-    max-width: 760px; margin: 0 auto 8px;
+    max-width: 760px; margin: 0 auto 6px;
     font-size: 11px; color: #484f58;
   }
   .toolbar-row .left { display: flex; align-items: center; gap: 12px; }
-  .toolbar-row .right { display: flex; align-items: center; gap: 10px; }
+  .toolbar-row .right { display: flex; align-items: center; gap: 4px; }
   .toolbar-link {
     background: none; border: none; color: #484f58;
     cursor: pointer; font-size: 11px;
-    display: inline-flex; align-items: center; gap: 3px;
-    text-decoration: none; transition: color 0.15s;
+    display: inline-flex; align-items: center; gap: 4px;
+    text-decoration: none; transition: color 0.15s, background 0.15s;
+    padding: 4px 8px; border-radius: 6px;
   }
-  .toolbar-link:hover { color: #8b949e; }
+  .toolbar-link:hover { color: #c9d1d9; background: rgba(110,118,129,0.08); }
+  .toolbar-link.subtle { color: #484f58; opacity: 0.75; font-size: 10.5px; }
+  .toolbar-link.subtle:hover { color: #8b949e; opacity: 1; }
+  .toolbar-divider {
+    width: 1px; height: 12px; background: #21262d; margin: 0 4px;
+  }
+  body.light-mode .toolbar-divider { background: #d0d7de; }
   #session-id { font-family: "SF Mono", monospace; }
   .dev-only { display: none; }
   body.dev-mode .dev-only { display: flex; }
@@ -698,20 +774,125 @@
   }
 
   /* ── Starter Prompts ── */
+  /* (4) Tighter rhythm to the input below + a muted "Try one →" label
+     reading as a hint, not a button. Chips lose their hard borders so
+     they read as suggestions. */
   #starter-prompts {
-    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
-    max-width: 760px; margin: 0 auto 16px; padding: 0 24px;
+    display: flex; flex-wrap: wrap; gap: 6px;
+    align-items: center; justify-content: center;
+    max-width: 760px; margin: 0 auto 10px; padding: 0 24px;
     transition: opacity 0.3s, transform 0.3s;
   }
+  #starter-prompts::before {
+    content: 'Try one →';
+    color: #6e7681; font-size: 11px;
+    letter-spacing: 0.2px; margin-right: 4px;
+    flex-shrink: 0;
+  }
+  body.light-mode #starter-prompts::before { color: #8b949e; }
   .starter-btn {
-    background: #161b22; color: #58a6ff; border: 1px solid #30363d;
-    border-radius: 20px; padding: 8px 16px; font-size: 13px;
-    cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    background: rgba(88,166,255,0.06); color: #58a6ff;
+    border: 1px solid rgba(88,166,255,0.18);
+    border-radius: 999px; padding: 6px 14px; font-size: 12.5px;
+    cursor: pointer; white-space: nowrap;
+    transition: background 0.15s, border-color 0.15s, transform 0.05s;
   }
   .starter-btn:hover {
-    background: #21262d; border-color: #58a6ff; transform: translateY(-1px);
+    background: rgba(88,166,255,0.12);
+    border-color: rgba(88,166,255,0.35);
   }
+  .starter-btn:active { transform: translateY(0.5px); }
   .hidden-prompts { opacity: 0; pointer-events: none; transform: translateY(10px); display: none !important; }
+
+  /* (10) Welcome card framing — wraps the first-run system bubble in a
+     soft bordered card with a small "Welcome" pill so it reads as
+     onboarding, not a transcript message. */
+  .msg.system .bubble.welcome-card {
+    background: linear-gradient(180deg, rgba(31,111,235,0.04) 0%, rgba(22,27,34,0.6) 100%);
+    border: 1px solid #21262d; border-radius: 12px;
+    padding: 18px 20px 16px; max-width: 640px;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.02) inset;
+    color: #c9d1d9;
+  }
+  .msg.system .bubble.welcome-card .welcome-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(31,111,235,0.12); color: #58a6ff;
+    border: 1px solid rgba(31,111,235,0.3);
+    border-radius: 999px; padding: 2px 10px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.3px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .msg.system .bubble.welcome-card h2 {
+    color: #e6edf3; font-size: 17px;
+    margin: 0 0 6px 0; line-height: 1.3;
+  }
+  .msg.system .bubble.welcome-card p { margin: 8px 0; line-height: 1.55; }
+  .msg.system .bubble.welcome-card ul { margin: 10px 0; padding-left: 22px; }
+  .msg.system .bubble.welcome-card li { margin: 6px 0; line-height: 1.5; }
+  .msg.system .bubble.welcome-card code {
+    background: rgba(110,118,129,0.15);
+    padding: 1px 6px; border-radius: 4px;
+    border: 1px solid rgba(110,118,129,0.18);
+    font-family: "SF Mono", ui-monospace, monospace; font-size: 12px;
+  }
+  body.light-mode .msg.system .bubble.welcome-card {
+    background: linear-gradient(180deg, rgba(9,105,218,0.05) 0%, rgba(246,248,250,0.9) 100%);
+    border-color: #d0d7de;
+    color: #24292e;
+  }
+  body.light-mode .msg.system .bubble.welcome-card h2 { color: #24292e; }
+
+  /* (6) Themed scrollbars — thin 6px dark-themed bars across the chat,
+     panels, and modal lists. macOS overlay scrollbars stay overlay; on
+     Linux/Windows these replace the default chrome. */
+  #chat::-webkit-scrollbar,
+  #agents-panel::-webkit-scrollbar,
+  #voice-panel::-webkit-scrollbar,
+  .bh-list::-webkit-scrollbar,
+  .agent-logs::-webkit-scrollbar,
+  #cmdk-list::-webkit-scrollbar,
+  #split-tabs::-webkit-scrollbar,
+  #chat-tabs::-webkit-scrollbar { width: 8px; height: 8px; }
+  #chat::-webkit-scrollbar-track,
+  #agents-panel::-webkit-scrollbar-track,
+  #voice-panel::-webkit-scrollbar-track,
+  .bh-list::-webkit-scrollbar-track,
+  .agent-logs::-webkit-scrollbar-track,
+  #cmdk-list::-webkit-scrollbar-track,
+  #split-tabs::-webkit-scrollbar-track,
+  #chat-tabs::-webkit-scrollbar-track { background: transparent; }
+  #chat::-webkit-scrollbar-thumb,
+  #agents-panel::-webkit-scrollbar-thumb,
+  #voice-panel::-webkit-scrollbar-thumb,
+  .bh-list::-webkit-scrollbar-thumb,
+  .agent-logs::-webkit-scrollbar-thumb,
+  #cmdk-list::-webkit-scrollbar-thumb,
+  #split-tabs::-webkit-scrollbar-thumb,
+  #chat-tabs::-webkit-scrollbar-thumb {
+    background: #30363d; border-radius: 999px;
+    border: 2px solid transparent; background-clip: padding-box;
+  }
+  #chat::-webkit-scrollbar-thumb:hover,
+  #agents-panel::-webkit-scrollbar-thumb:hover,
+  #voice-panel::-webkit-scrollbar-thumb:hover,
+  .bh-list::-webkit-scrollbar-thumb:hover,
+  .agent-logs::-webkit-scrollbar-thumb:hover,
+  #cmdk-list::-webkit-scrollbar-thumb:hover { background: #484f58; background-clip: padding-box; }
+  body.light-mode #chat::-webkit-scrollbar-thumb,
+  body.light-mode #agents-panel::-webkit-scrollbar-thumb,
+  body.light-mode #voice-panel::-webkit-scrollbar-thumb,
+  body.light-mode .bh-list::-webkit-scrollbar-thumb,
+  body.light-mode .agent-logs::-webkit-scrollbar-thumb,
+  body.light-mode #cmdk-list::-webkit-scrollbar-thumb { background: #d0d7de; }
+  /* Firefox */
+  #chat, #agents-panel, #voice-panel, .bh-list, .agent-logs, #cmdk-list, #split-tabs, #chat-tabs {
+    scrollbar-width: thin; scrollbar-color: #30363d transparent;
+  }
+  body.light-mode #chat, body.light-mode #agents-panel, body.light-mode #voice-panel,
+  body.light-mode .bh-list, body.light-mode .agent-logs, body.light-mode #cmdk-list {
+    scrollbar-color: #d0d7de transparent;
+  }
 
   /* ── Light Mode Overrides ── */
   body.light-mode {
@@ -1362,8 +1543,11 @@
   </div>
   <h1>RAPP Brainstem <span id="version-tag" style="font-size:11px;font-weight:400;color:#8b949e;vertical-align:middle"></span></h1>
   <div class="controls">
-    <div class="dot" id="dot"></div>
-    <span id="status-text">checking...</span>
+    <span class="status-pill is-pending" id="status-pill">
+      <span class="dot pending" id="dot"></span>
+      <span id="status-text">checking…</span>
+    </span>
+    <span class="ctrl-divider"></span>
     <select id="model-select" onchange="changeModel(this.value)"></select>
 
     <button class="icon-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle Light/Dark Mode">
@@ -1519,15 +1703,16 @@
   </div>
 
   <div class="msg system">
-    <div class="bubble">
-      <h2>Welcome to your local RAPP Brainstem!</h2>
-      <p>I am your local assistant powered by Copilot. Here is a quick tour to get you started:</p>
+    <div class="bubble welcome-card">
+      <span class="welcome-pill">👋 Welcome</span>
+      <h2>Your local RAPP Brainstem</h2>
+      <p>A local assistant powered by Copilot. Quick tour:</p>
       <ul>
-        <li><strong>Chat</strong>: Just ask me questions below to start building and researching!</li>
-        <li><strong>Agents Panel</strong>: Click the <svg class="iconify" style="vertical-align: middle; width: 1.25em; height: 1.25em;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v4h4v2h-4v4h-2v-4H7v-2h4z"/></svg> icon (top right) to view or remove installed tools.</li>
-        <li><strong>Add Skills</strong>: Drag and drop any <code>.py</code> agent file directly onto this window to instantly teach me new things.</li>
+        <li><strong>Chat</strong> — ask anything below to start building and researching.</li>
+        <li><strong>Agents</strong> — click the <svg class="iconify" style="vertical-align: middle; width: 1.1em; height: 1.1em;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v4h4v2h-4v4h-2v-4H7v-2h4z"/></svg> icon (top right) to manage installed tools.</li>
+        <li><strong>Add skills</strong> — drag a <code>.py</code> agent or <code>.egg</code> rapp onto this window to install it.</li>
       </ul>
-      <p><em>Click one of the prompts below to get started!</em></p>
+      <p><em>Try one of the prompts below to get started.</em></p>
     </div>
   </div>
 </div>
@@ -1571,21 +1756,22 @@
       <span class="dev-only">Session: <span id="session-id">—</span></span>
     </div>
     <div class="right">
-      <button class="toolbar-link" onclick="exportChat()" title="Export transcript">
-        <span class="icon"><svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M7.47 10.78a.75.75 0 001.06 0l3.75-3.75a.75.75 0 00-1.06-1.06L8.75 8.44V1.75a.75.75 0 00-1.5 0v6.69L4.78 5.97a.75.75 0 00-1.06 1.06l3.75 3.75zM3.75 13a.75.75 0 000 1.5h8.5a.75.75 0 000-1.5h-8.5z"/></svg></span>
-        Export
-      </button>
-      <button class="toolbar-link" onclick="document.getElementById('chat-import').click()" title="Import transcript">Import</button>
+      <button class="toolbar-link subtle" onclick="exportChat()" title="Export transcript">Export</button>
+      <button class="toolbar-link subtle" onclick="document.getElementById('chat-import').click()" title="Import transcript">Import</button>
       <input type="file" id="chat-import" accept=".json" style="display:none" onchange="importChat(event)">
-      <button class="toolbar-link" onclick="clearChat()">Clear</button>
+      <button class="toolbar-link subtle" onclick="clearChat()" title="Clear chat">Clear</button>
+      <span class="toolbar-divider"></span>
       <a class="toolbar-link" href="https://blazingbeard.github.io/quests/rapp-brainstem.html" target="_blank" title="Guided training quest with checkpoints">📚 Tutorial</a>
       <button class="toolbar-link" onclick="shareWithAdmin()" title="Share diagnostics with admin for help" style="color:#f0883e">🆘 Get Help</button>
-      <button class="toolbar-link dev-only" onclick="toggleDevMode()" id="dev-toggle">Dev</button>
+      <button class="toolbar-link subtle dev-only" onclick="toggleDevMode()" id="dev-toggle">Dev</button>
     </div>
   </div>
   <div class="input-row">
     <textarea id="input" rows="1" placeholder="Message brainstem..." autocomplete="off"></textarea>
-    <button id="send" onclick="sendMessage()">Send</button>
+    <button id="send" onclick="sendMessage()" aria-label="Send message">
+      <span>Send</span>
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M.989 8.4l4.852 1.612 1.61 4.85a.5.5 0 00.93.04L15.46 1.799a.5.5 0 00-.658-.659L.95 7.466a.5.5 0 00.04.934z"/></svg>
+    </button>
   </div>
 </footer>
 
@@ -1779,16 +1965,31 @@
 
   let healthInterval = null;
 
+  function _setStatus(state, text) {
+    // Drives both the dot and the wrapping pill so the chrome stays
+    // in sync. Polish-only: behaviour identical to the prior dot-only
+    // signaling.
+    const dot = document.getElementById('dot');
+    const pill = document.getElementById('status-pill');
+    const statusText = document.getElementById('status-text');
+    if (dot) dot.className = 'dot ' + (state === 'ok' ? '' : state);
+    if (pill) {
+      pill.classList.remove('is-pending', 'is-offline');
+      if (state === 'pending') pill.classList.add('is-pending');
+      if (state === 'offline') pill.classList.add('is-offline');
+    }
+    if (statusText && text != null) statusText.textContent = text;
+  }
+
   async function checkHealth() {
     try {
       const r = await fetch(`${API}/health`);
       const d = await r.json();
-      const dot = document.getElementById('dot');
       const statusText = document.getElementById('status-text');
 
       if (d.status === 'ok') {
-        dot.className = d.copilot === '\u2713' ? 'dot' : 'dot pending';
-        statusText.textContent = d.copilot === '\u2713' ? 'connected' : 'connecting...';
+        const copilotOk = d.copilot === '\u2713';
+        _setStatus(copilotOk ? 'ok' : 'pending', copilotOk ? 'connected' : 'connecting\u2026');
         statusText.style.cursor = 'pointer';
         statusText.title = 'Click to switch account';
         statusText.onclick = () => { if (confirm('Switch GitHub account?')) switchAccount(); };
@@ -1802,8 +2003,7 @@
         if (healthInterval) clearInterval(healthInterval);
         healthInterval = setInterval(checkHealth, 30000);
       } else {
-        dot.className = 'dot offline';
-        statusText.textContent = 'sign in';
+        _setStatus('offline', 'sign in');
         statusText.style.cursor = 'pointer';
         statusText.onclick = showLoginOverlay;
         clog('health.unauthenticated', { status: d.status });
@@ -1816,12 +2016,11 @@
         healthInterval = setInterval(checkHealth, 5000);
       }
     } catch {
-      document.getElementById('dot').className = 'dot offline';
-      document.getElementById('status-text').textContent = 'offline';
+      _setStatus('offline', 'offline');
     }
   }
   // Start with yellow dot (checking)
-  document.getElementById('dot').className = 'dot pending';
+  _setStatus('pending', 'checking…');
   checkHealth();
   healthInterval = setInterval(checkHealth, 5000);
 
@@ -3079,15 +3278,16 @@
     const chat = document.getElementById('chat');
     chat.innerHTML = `
       <div class="msg system">
-        <div class="bubble">
-          <h2>Welcome to your local RAPP Brainstem!</h2>
-          <p>I am your local assistant powered by Copilot. Here is a quick tour to get you started:</p>
+        <div class="bubble welcome-card">
+          <span class="welcome-pill">👋 Welcome</span>
+          <h2>Your local RAPP Brainstem</h2>
+          <p>A local assistant powered by Copilot. Quick tour:</p>
           <ul>
-            <li><strong>Chat</strong>: Just ask me questions below to start building and researching!</li>
-            <li><strong>Agents Panel</strong>: Click the <svg class="iconify" style="vertical-align: middle; width: 1.25em; height: 1.25em;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v4h4v2h-4v4h-2v-4H7v-2h4z"/></svg> icon (top right) to view or remove installed tools.</li>
-            <li><strong>Add Skills</strong>: Drag and drop any <code>.py</code> agent file directly onto this window to instantly teach me new things.</li>
+            <li><strong>Chat</strong> — ask anything below to start building and researching.</li>
+            <li><strong>Agents</strong> — click the <svg class="iconify" style="vertical-align: middle; width: 1.1em; height: 1.1em;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v4h4v2h-4v4h-2v-4H7v-2h4z"/></svg> icon (top right) to manage installed tools.</li>
+            <li><strong>Add skills</strong> — drag a <code>.py</code> agent or <code>.egg</code> rapp onto this window to install it.</li>
           </ul>
-          <p><em>Click one of the prompts below to get started!</em></p>
+          <p><em>Try one of the prompts below to get started.</em></p>
         </div>
       </div>
     `;
@@ -4310,15 +4510,16 @@
       const welcome = document.createElement('div');
       welcome.className = 'msg system';
       welcome.innerHTML = `
-        <div class="bubble">
-          <h2>Welcome to your local RAPP Brainstem!</h2>
-          <p>I am your local assistant powered by Copilot. Here is a quick tour to get you started:</p>
+        <div class="bubble welcome-card">
+          <span class="welcome-pill">👋 Welcome</span>
+          <h2>Your local RAPP Brainstem</h2>
+          <p>A local assistant powered by Copilot. Quick tour:</p>
           <ul>
-            <li><strong>Chat</strong>: Just ask me questions below to start building and researching!</li>
-            <li><strong>Agents Panel</strong>: Click the <svg class="iconify" style="vertical-align: middle; width: 1.25em; height: 1.25em;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v4h4v2h-4v4h-2v-4H7v-2h4z"/></svg> icon (top right) to view or remove installed tools.</li>
-            <li><strong>Add Skills</strong>: Drag and drop any <code>.py</code> agent file directly onto this window to instantly teach me new things.</li>
+            <li><strong>Chat</strong> — ask anything below to start building and researching.</li>
+            <li><strong>Agents</strong> — click the <svg class="iconify" style="vertical-align: middle; width: 1.1em; height: 1.1em;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v4h4v2h-4v4h-2v-4H7v-2h4z"/></svg> icon (top right) to manage installed tools.</li>
+            <li><strong>Add skills</strong> — drag a <code>.py</code> agent or <code>.egg</code> rapp onto this window to install it.</li>
           </ul>
-          <p><em>Click one of the prompts below to get started!</em></p>
+          <p><em>Try one of the prompts below to get started.</em></p>
         </div>
       `;
       chat.appendChild(welcome);
