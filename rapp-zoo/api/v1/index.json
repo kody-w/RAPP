@@ -3,7 +3,7 @@
   "name": "rapp-zoo",
   "version": "1.0.0",
   "description": "Local-first Pokédex for digital organisms. The page itself is a static HTML at /rapp-zoo/. This JSON drives what the page shows in the Starters and Discover tabs without anyone touching the HTML.",
-  "generated_at": "2026-05-02T22:51:35Z",
+  "generated_at": "2026-05-02T23:02:00Z",
   "self_url": "https://kody-w.github.io/RAPP/rapp-zoo/api/v1/index.json",
 
   "sources": {
@@ -17,7 +17,13 @@
     "rapp_zoo_source":        "https://github.com/kody-w/RAPP/tree/main/rapp-zoo"
   },
 
-  "featured_starters": [],
+  "featured_starters": [
+    "egg_hatcher",
+    "wildhaven_ceo",
+    "bookfactory",
+    "spine_dag",
+    "rapp-zoo"
+  ],
 
   "notes": [
     "featured_starters is a list of rapplication ids from the RAPP_Store v1 catalog that should surface in the rapp-zoo Starters tab. Currently empty — when starter cartridges are promoted, add their ids here and the page picks them up on next load. No HTML change required.",
