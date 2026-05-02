@@ -1992,16 +1992,42 @@
     );
   }
 
+  // Download a sanitized book.json to disk, used by both the Get Help
+  // flow and as a manual export. PII-stripped, includes local_settings
+  // so the user can hand-restore on another brainstem if needed.
+  async function _downloadSanitizedBook() {
+    const safeBook = await _buildBackupBook({ sanitize: true });
+    const json = JSON.stringify(safeBook, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+    const filename = `book-${stamp}.json`;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    return { filename, json };
+  }
+
+  // Get Help = the diagnostic-share path. The user gets a local copy
+  // of book.json (same shape that lands in the issue body) AND the
+  // sanitized snapshot is posted to GitHub. Two sides of the same
+  // action — pinned to one button so they stay in sync.
   async function shareWithAdmin() {
     clog('client.share_with_admin');
     const desc = prompt('Describe what went wrong (optional):') || '';
+
+    // Step 1: hand the user a local copy of book.json before we even
+    // try to talk to GitHub, so they always have it even if the
+    // network or auth fails.
+    let local = null;
+    try { local = await _downloadSanitizedBook(); } catch (e) {
+      clog('client.book_download_failed', { error: e.message });
+    }
+
+    // Step 2: submit the same book to /diagnostics/report → GitHub issue.
     try {
-      // Build a sanitized backup snapshot and embed it in the
-      // description so the issue carries the user's restorable
-      // settings — the user (or admin) can copy it back into a new
-      // brainstem and pick up where they left off.
-      const safeBook = await _buildBackupBook({ sanitize: true });
-      const safeBookJson = JSON.stringify(safeBook, null, 2);
+      const safeBookJson = local ? local.json : JSON.stringify(await _buildBackupBook({ sanitize: true }), null, 2);
       const fullDesc =
         (desc || '_No description provided_') +
         '\n\n---\n\n## Local settings backup (PII-stripped)\n\n' +
@@ -2018,19 +2044,20 @@
       if (d.issue_url) {
         const wrap = appendMsg('system', '');
         wrap.querySelector('.bubble').innerHTML =
-          `✅ Help request submitted with a PII-stripped backup of your settings:<br>` +
-          `<a href="${d.issue_url}" target="_blank" style="color:#58a6ff">${d.issue_url}</a>`;
+          '✅ Help request submitted — the same book.json was saved locally as <code>' +
+          escapeHtml(local ? local.filename : 'book.json') + '</code>.<br>' +
+          '<a href="' + d.issue_url + '" target="_blank" style="color:#58a6ff">' + d.issue_url + '</a>';
       } else {
         throw new Error(d.error || 'Could not create issue');
       }
     } catch (e) {
-      // Fallback: download book.json + open issue URL manually
       clog('client.share_fallback', { error: e.message });
-      try { await exportBook(); } catch {}
-      appendMsg('system',
-        '📖 Backup saved locally. Attach it to a new issue at ' +
-        'github.com/kody-w/rapp-installer/issues/new or share with your admin.'
-      );
+      const wrap = appendMsg('system', '');
+      wrap.querySelector('.bubble').innerHTML =
+        '📖 Saved <code>' + escapeHtml(local ? local.filename : 'book.json') + '</code> locally. ' +
+        'Couldn\'t reach GitHub (' + escapeHtml(e.message) + ') — attach it to a new issue at ' +
+        '<a href="https://github.com/kody-w/rapp-installer/issues/new" target="_blank" style="color:#58a6ff">github.com/kody-w/rapp-installer/issues/new</a> ' +
+        'or send it to your admin.';
     }
   }
 
