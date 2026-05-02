@@ -405,6 +405,86 @@ _version_gt() {
     [ "$greater" = "$1" ]
 }
 
+# Initialize the local git repo at ~/.brainstem/.bond/backups/.git the
+# first time we lay down a backup. Once it exists, every bond auto-
+# commits — `git log` becomes the lineage of the organism's evolution
+# and `git checkout <sha>` is a working revert mechanism even after the
+# sliding window has pruned the on-disk directory.
+#
+# The .gitignore is conservative: secrets (.env) and large blobs
+# (pre-bond.egg) stay out of history. Custom agents, soul, rappid, and
+# the bond log all get versioned. Identity files in git let `git log`
+# read like a biography.
+#
+# All silent on failure. Git is required by the installer prereqs, but
+# if it's somehow gone or the user revoked permissions, we still have
+# the on-disk backup directory tier and the immutable emergency baseline.
+_init_backup_git() {
+    local backups_dir="$BRAINSTEM_HOME/.bond/backups"
+    [ -d "$backups_dir" ] || mkdir -p "$backups_dir"
+
+    # Already initialized? Nothing to do.
+    if [ -d "$backups_dir/.git" ]; then
+        return 0
+    fi
+
+    command -v git >/dev/null 2>&1 || return 0
+
+    (
+        cd "$backups_dir" || exit 0
+        git init --quiet 2>/dev/null || exit 0
+        # Local-only commits — never need a remote for this.
+        # Use a stable identity so the user doesn't need git config set up.
+        git config user.email "brainstem@local" 2>/dev/null || true
+        git config user.name  "brainstem"        2>/dev/null || true
+        # Some hosts default commit.gpgsign=true globally; the repo
+        # creator may not have a key. Disable per-repo so we never
+        # blow up on a sign attempt.
+        git config commit.gpgsign false           2>/dev/null || true
+        # Conservative ignore: secrets + large blobs out of history.
+        # Sanitized soul/agents/rappid/bonds is what gets versioned.
+        cat > .gitignore <<'GITIGNORE'
+# Secrets — never commit. The on-disk backup keeps them; git is for
+# non-sensitive history only.
+**/.env
+**/.copilot_session
+**/.copilot_token
+
+# Egg blobs — large, binary, already a self-contained backup. The
+# on-disk pre-bond.egg is the canonical restore vehicle.
+**/*.egg
+GITIGNORE
+        git add .gitignore 2>/dev/null || true
+        git commit -m "init local backup history" --quiet 2>/dev/null || true
+    )
+}
+
+# Commit the freshly-written backup directory to the local git repo so
+# that even after the sliding window prunes it from disk, the contents
+# survive in `git log`. Safe to call when git isn't available — it just
+# no-ops.
+_commit_backup_to_git() {
+    local backup_dir="$1"
+    [ -n "$backup_dir" ] || return 0
+    [ -d "$backup_dir" ] || return 0
+    local backups_dir="$BRAINSTEM_HOME/.bond/backups"
+    [ -d "$backups_dir/.git" ] || return 0
+    command -v git >/dev/null 2>&1 || return 0
+
+    local rel
+    rel=$(basename "$backup_dir")
+    (
+        cd "$backups_dir" || exit 0
+        git add "$rel" 2>/dev/null || true
+        # Skip the commit if there's nothing staged (e.g. .env-only
+        # backups where every file was ignored).
+        if git diff --cached --quiet 2>/dev/null; then
+            return 0
+        fi
+        git commit -m "${rel}" --quiet 2>/dev/null || true
+    )
+}
+
 # Sliding-window backup pruner. Keeps the last N pre-bond backups under
 # ~/.brainstem/.bond/backups/ and removes older ones, so the directory
 # doesn't grow without bound. N defaults to 5; user can override via
@@ -623,6 +703,9 @@ install_brainstem() {
         local BACKUP_STAMP
         BACKUP_STAMP=$(date -u +"%Y%m%dT%H%M%SZ" 2>/dev/null || date +"%Y%m%dT%H%M%S")
         local BACKUP="$BRAINSTEM_HOME/.bond/backups/v${LOCAL_VER}-to-v${REMOTE_VER}-${BACKUP_STAMP}"
+        # Ensure the backups dir is a local git repo before laying anything
+        # down. _init_backup_git is idempotent + silent on failure.
+        _init_backup_git
         mkdir -p "$BACKUP/agents"
         [ -f "$SOUL_FILE" ] && cp "$SOUL_FILE" "$BACKUP/soul.md" 2>/dev/null || true
         [ -f "$ENV_FILE" ] && cp "$ENV_FILE" "$BACKUP/.env" 2>/dev/null || true
@@ -736,9 +819,15 @@ install_brainstem() {
                 --to-commit "$TO_COMMIT" >/dev/null 2>&1 || true
         fi
 
+        # Commit the new backup to the local git repo BEFORE pruning
+        # so the on-disk dirs we're about to drop still survive in
+        # `git log`. Each bond becomes one commit on the backups repo.
+        _commit_backup_to_git "$BACKUP"
+
         # Sliding window — drop old backups beyond the keep limit so the
         # backups dir doesn't grow without bound. The static emergency
-        # baseline is separate and never pruned.
+        # baseline is separate and never pruned. Pruned backups still
+        # survive in the local git history committed above.
         _prune_backups
 
         # Seed the emergency baseline if it hasn't been set yet (legacy
@@ -749,6 +838,7 @@ install_brainstem() {
         echo -e "  ${GREEN}✓${NC} Bond complete: v${LOCAL_VER} → v${REMOTE_VER}"
         echo -e "  ${CYAN}↩${NC}  Revert: cp -R \"${BACKUP/$HOME/~}/.\" pieces back into place,"
         echo -e "      or hatch \"${BACKUP/$HOME/~}/pre-bond.egg\" with: brainstem hatch <egg>"
+        echo -e "      or git: cd ~/.brainstem/.bond/backups && git log"
         echo -e "  ${CYAN}🛟${NC} If anything breaks: brainstem safe-mode  (emergency baseline)"
     else
         # ── FRESH INSTALL: birth event, no egg yet (nothing to pack) ──
@@ -1069,7 +1159,14 @@ cmd_doctor() {
     if [ -d "$_backups_dir" ]; then
         local _n
         _n=$(ls -1d "$_backups_dir"/*/ 2>/dev/null | wc -l | tr -d ' ')
-        echo "Pre-bond backups:    ${_n} kept  ($_backups_dir)"
+        echo "Pre-bond backups:    ${_n} on disk  ($_backups_dir)"
+        if [ -d "$_backups_dir/.git" ] && command -v git >/dev/null 2>&1; then
+            local _git_n
+            _git_n=$(git -C "$_backups_dir" rev-list --count HEAD 2>/dev/null || echo 0)
+            echo "Local git history:   ${_git_n} commits  (cd $_backups_dir && git log)"
+        else
+            echo "Local git history:   not initialised (will be on first bond)"
+        fi
         echo "  → List + revert: brainstem backups"
     else
         echo "Pre-bond backups:    none yet"
@@ -1140,10 +1237,11 @@ cmd_hatch() {
 
 cmd_backups() {
     # List the per-bond backups under ~/.brainstem/.bond/backups/
-    # plus the static emergency baseline. Newest-first.
+    # plus the static emergency baseline and local git history (if any).
+    # Newest-first.
     local backups_dir="$BRAINSTEM_HOME/.bond/backups"
     local baseline="$BRAINSTEM_HOME/.bond/emergency-baseline"
-    echo "=== Pre-bond backups ==="
+    echo "=== Pre-bond backups (on disk) ==="
     if [ -d "$backups_dir" ]; then
         local count=0
         for d in $(ls -1dt "$backups_dir"/*/ 2>/dev/null); do
@@ -1160,6 +1258,22 @@ cmd_backups() {
         fi
     else
         echo "  (none yet — backups are written before each upgrade bond)"
+    fi
+    echo ""
+    echo "=== Local git history (every bond, even pruned ones) ==="
+    if [ -d "$backups_dir/.git" ] && command -v git >/dev/null 2>&1; then
+        local n
+        n=$(git -C "$backups_dir" rev-list --count HEAD 2>/dev/null || echo 0)
+        echo "  ${n} commit(s) at $backups_dir"
+        echo ""
+        git -C "$backups_dir" log --pretty=format:'  %h  %ad  %s' --date=short -n 10 2>/dev/null || true
+        echo ""
+        echo ""
+        echo "  Browse:  cd $backups_dir && git log"
+        echo "  Inspect: git -C $backups_dir show <sha>"
+        echo "  Restore: git -C $backups_dir checkout <sha> -- <path>"
+    else
+        echo "  (no git repo yet — initialised on first bond)"
     fi
     echo ""
     echo "=== Emergency baseline (static) ==="
@@ -1268,7 +1382,7 @@ commands below work whether the background service is installed or not.
   hatch <e>  Hatch a received .egg over this kernel (adopts the egg's
              identity; --preserve-rappid keeps local identity instead)
 
-  backups    List per-bond backups + emergency baseline status
+  backups    List per-bond backups, local git history, + baseline status
   safe-mode  Boot from the emergency baseline (port 7072 by default)
              when the live install is broken. Read-only — does NOT
              touch your live install.
