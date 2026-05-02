@@ -174,12 +174,38 @@
       margin: 0 auto;
     }
 
-    /* Card grid */
+    /* Card grid — fixed column width so cards stay the same size
+       regardless of how many fit per row. Otherwise a 3-card row
+       stretches each card wider than a 4-card row.  */
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fill, 220px);
       gap: 14px;
+      justify-content: start;
     }
+
+    /* Sprite cell: two stacked frames; hover animates between them.
+       Deterministic per-rappid breathing — same organism, same
+       breath pattern, every time. The 1.4s steps(2) keyframes flip
+       opacity so the visible frame alternates rest → breath → rest.  */
+    .sprite-cell {
+      position: relative;
+      margin: 0 auto 6px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--bg-elevated);
+    }
+    .sprite-frame {
+      position: absolute; inset: 0;
+      transition: opacity 0.12s;
+    }
+    .sprite-frame.sprite-breath { opacity: 0; }
+    .info-card:hover .sprite-frame.sprite-rest,
+    .card:hover       .sprite-frame.sprite-rest   { animation: zoo-rest   1.4s steps(2) infinite; }
+    .info-card:hover .sprite-frame.sprite-breath,
+    .card:hover       .sprite-frame.sprite-breath { animation: zoo-breath 1.4s steps(2) infinite; }
+    @keyframes zoo-rest   { 0%, 50% { opacity: 1; } 50.01%, 100% { opacity: 0; } }
+    @keyframes zoo-breath { 0%, 50% { opacity: 0; } 50.01%, 100% { opacity: 1; } }
     .card {
       background: var(--bg-card);
       border: 1px solid var(--border-subtle);
@@ -805,18 +831,30 @@
     'plain', 'belly', 'stripes', 'dots', 'cross', 'diamond', 'tum-stripe', 'spots-2',
   ];
 
-  function spriteSvg(rappid, kind) {
+  // phase = 0 (rest) | 1 (breath). Deterministic per-rappid mutation
+  // applied at phase 1: eye-blink / mouth-shift / body-squash. The
+  // mutation choice is hashed from the rappid so every organism has
+  // its own consistent "breathing" pattern.
+  function spriteSvg(rappid, kind, phase = 0) {
     const seed = rappid || 'default';
     const [h1, h2, h3, h4] = _hashStream(seed);
 
     const pal      = _SPRITE_PALETTES[h1 % _SPRITE_PALETTES.length];
     const body     = _BODIES[(h1 >> 4) % _BODIES.length];
     const headtop  = _HEADTOPS[(h2) % _HEADTOPS.length];
-    const eyeStyle = _EYE_STYLES[(h2 >> 6) % _EYE_STYLES.length];
+    let eyeStyle = _EYE_STYLES[(h2 >> 6) % _EYE_STYLES.length];
     const eyeX     = 1 + ((h2 >> 12) % 3); // 1..3 from center
-    const mouth    = _MOUTH_STYLES[(h3) % _MOUTH_STYLES.length];
+    let mouth    = _MOUTH_STYLES[(h3) % _MOUTH_STYLES.length];
     const pattern  = _PATTERNS[(h3 >> 6) % _PATTERNS.length];
     const bgHue    = (h4) % 360;
+    // Mutation kind: 0 = blink, 1 = mouth-flip, 2 = body-squash.
+    const mutation = (h4 >> 4) % 3;
+    let bodyOffset = 0;
+    if (phase === 1) {
+      if (mutation === 0)      eyeStyle = 'closed';
+      else if (mutation === 1) mouth = mouth === 'smile' ? 'open' : (mouth === 'flat' ? 'smile' : 'flat');
+      else                     bodyOffset = 1; // 1-pixel squash down
+    }
 
     // Build the 16x16 grid. grid[row][col] is the color index for that
     // pixel: 0 = empty, 1 = body, 2 = shadow, 3 = accent, 4 = eye.
@@ -849,9 +887,9 @@
       }
     }
 
-    // 2) Body on rows 3..14
+    // 2) Body on rows 3..14 (offset down by bodyOffset for breath squash)
     for (let r = 0; r < body.length; r++) {
-      const yy = 3 + r;
+      const yy = 3 + r + bodyOffset;
       if (yy >= H) break;
       for (let c = 0; c < 8; c++) {
         const v = parseInt(body[r][c], 10);
@@ -927,17 +965,34 @@
       }
     }
 
+    // Unique gradient id per (rappid, phase) so two stacked frames in
+    // the same DOM don't share an id and clobber each other.
+    const gid = 'bg-' + (h1 >>> 0).toString(36) + '-' + (h2 >>> 0).toString(36) + '-p' + phase;
     return `
-      <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" preserveAspectRatio="xMidYMid meet" style="image-rendering:pixelated">
+      <svg width="100%" height="100%" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" preserveAspectRatio="xMidYMid meet" style="image-rendering:pixelated;display:block">
         <defs>
-          <linearGradient id="bg-${h1}-${h2}" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stop-color="hsl(${bgHue},35%,16%)"/>
             <stop offset="100%" stop-color="hsl(${bgHue},35%,7%)"/>
           </linearGradient>
         </defs>
-        <rect width="${W}" height="${H}" fill="url(#bg-${h1}-${h2})"/>
+        <rect width="${W}" height="${H}" fill="url(#${gid})"/>
         ${rects.join('')}
       </svg>`;
+  }
+
+  // Two-frame breathing rendering. Returns a div containing both
+  // sprite frames stacked; CSS hover triggers a 2-step animation that
+  // alternates which frame is visible. Same rappid → same breath
+  // pattern, every time.
+  function spriteCellHTML(rappid, kind, sizePx = 96) {
+    const rest   = spriteSvg(rappid, kind, 0);
+    const breath = spriteSvg(rappid, kind, 1);
+    return `
+      <div class="sprite-cell" style="width:${sizePx}px;height:${sizePx}px">
+        <div class="sprite-frame sprite-rest">${rest}</div>
+        <div class="sprite-frame sprite-breath">${breath}</div>
+      </div>`;
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -992,9 +1047,11 @@
     }
     const cards = idx.organisms.map(org => {
       const kindCls = ['organism','rapplication','variant'].includes(org.kind) ? org.kind : 'organism';
+      // Sprite cell sized to fill the card column: 220px wide card −
+      // 28px padding = ~192px square avatar area.
       return `
         <div class="card" data-rappid="${escapeAttr(org.rappid)}">
-          <div class="sprite">${spriteSvg(org.rappid, org.kind)}</div>
+          ${spriteCellHTML(org.rappid, org.kind, 192)}
           <div class="name" title="${escapeAttr(org.rappid)}">${escapeHtml(org.name)}</div>
           <div class="kind">
             <span class="kind-pill ${kindCls}">${escapeHtml(org.kind)}</span>
@@ -1035,12 +1092,14 @@
   }
 
   function _rappCardHTML(rapp) {
-    // The RAPP_Store v1 thin index has: id, name, kind, publisher,
-    // category, version, has_skin, url (detail), sprite, egg.
+    // Use the same deterministic sprite generator as bundled starters.
+    // Catalog rapps' RAPP_Store sprite URLs (rapp.sprite) are
+    // intentionally ignored so every card on the page reads with one
+    // visual language. Sprite seed is the rappid (catalog) or id
+    // (fallback for entries without a rappid in the v1 thin index).
     const name = escapeHtml(rapp.name || rapp.id);
-    const sprite = rapp.sprite
-      ? `<img src="${escapeAttr(rapp.sprite)}" alt="" style="width:96px;height:96px;display:block;margin:0 auto 6px;border-radius:8px;background:var(--bg-elevated)" loading="lazy">`
-      : `<div style="width:96px;height:96px;display:flex;align-items:center;justify-content:center;margin:0 auto 6px;border-radius:8px;background:var(--bg-elevated);font-size:36px">📦</div>`;
+    const sprite = spriteCellHTML(rapp.rappid || rapp.id || rapp.name || 'unknown',
+                                   rapp.kind || 'rapplication', 96);
     const meta = [];
     if (rapp.publisher) meta.push(escapeHtml(rapp.publisher));
     if (rapp.version)   meta.push('v' + escapeHtml(rapp.version));
@@ -1059,10 +1118,9 @@
 
   function _bundledStarterCardHTML(s) {
     // Same visual treatment as catalog rapps: deterministic pixel-pet
-    // sprite generated from the rappid. Keeps the page typographically
-    // consistent — bundled and catalog cards read as one collection,
-    // not two stylesheets glued together.
-    const sprite = `<div style="width:96px;height:96px;display:block;margin:0 auto 6px;border-radius:8px;overflow:hidden">${spriteSvg(s.rappid || ('starter:' + s.id), 'organism')}</div>`;
+    // sprite generated from the rappid, hover-breathing across two
+    // frames. One visual language across the whole page.
+    const sprite = spriteCellHTML(s.rappid || ('starter:' + s.id), 'organism', 96);
     return `
       <div class="info-card">
         ${sprite}
