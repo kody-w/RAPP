@@ -405,6 +405,72 @@ _version_gt() {
     [ "$greater" = "$1" ]
 }
 
+# Sliding-window backup pruner. Keeps the last N pre-bond backups under
+# ~/.brainstem/.bond/backups/ and removes older ones, so the directory
+# doesn't grow without bound. N defaults to 5; user can override via
+# BRAINSTEM_BACKUP_KEEP=10 (or BRAINSTEM_BACKUP_KEEP=0 to keep none —
+# discouraged but supported). The static emergency baseline at
+# ~/.brainstem/.bond/emergency-baseline/ is *never* touched by this.
+_prune_backups() {
+    local backups_dir="$BRAINSTEM_HOME/.bond/backups"
+    [ -d "$backups_dir" ] || return 0
+    local keep="${BRAINSTEM_BACKUP_KEEP:-5}"
+    case "$keep" in
+        ''|*[!0-9]*) keep=5 ;;
+    esac
+    # Newest-first by mtime; drop everything past index $keep.
+    local count=0
+    while IFS= read -r dir; do
+        count=$((count + 1))
+        if [ "$count" -gt "$keep" ]; then
+            rm -rf "$dir" 2>/dev/null || true
+        fi
+    done < <(ls -1dt "$backups_dir"/*/ 2>/dev/null)
+}
+
+# Emergency baseline — the immutable "in case of catastrophic failure"
+# snapshot. Set ONCE on first install (or first bond from a legacy
+# install that predates this concept) and never overwritten by future
+# bonds. Contains the absolute minimum to boot a working chat surface:
+#
+#   brainstem.py, basic_agent.py, soul.md, VERSION, requirements.txt,
+#   start.sh, index.html
+#
+# `brainstem safe-mode` boots from this baseline regardless of whatever
+# state the live src/ tree is in. Custom user agents are NOT included
+# here — they live in the live agents/ dir and the per-bond backups.
+# Refresh with: brainstem doctor refresh-emergency.
+_seed_emergency_baseline() {
+    local src_root="$1"
+    local baseline="$BRAINSTEM_HOME/.bond/emergency-baseline"
+    if [ -d "$baseline" ] && [ -f "$baseline/brainstem.py" ]; then
+        return 0  # already seeded — never overwrite
+    fi
+    if [ ! -f "$src_root/brainstem.py" ]; then
+        return 0  # nothing to copy from
+    fi
+    mkdir -p "$baseline/agents"
+    for f in brainstem.py basic_agent.py soul.md VERSION requirements.txt start.sh start.ps1 index.html; do
+        [ -f "$src_root/$f" ] && cp "$src_root/$f" "$baseline/$f" 2>/dev/null || true
+    done
+    # The agents/ subdir gets only basic_agent.py — emergency mode is
+    # bare metal. User agents are NOT mirrored here (they're already
+    # preserved in per-bond backups).
+    if [ -f "$src_root/agents/basic_agent.py" ]; then
+        cp "$src_root/agents/basic_agent.py" "$baseline/agents/basic_agent.py" 2>/dev/null || true
+    elif [ -f "$src_root/basic_agent.py" ]; then
+        cp "$src_root/basic_agent.py" "$baseline/agents/basic_agent.py" 2>/dev/null || true
+    fi
+    # Mark when the baseline was set so the user can tell how old it is.
+    {
+        echo "Created: $(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date)"
+        [ -f "$src_root/VERSION" ] && echo "Version: $(cat "$src_root/VERSION" | tr -d '[:space:]')"
+        echo ""
+        echo "Static emergency baseline. Boots via: brainstem safe-mode"
+        echo "Refresh via: brainstem doctor refresh-emergency"
+    } > "$baseline/README.txt"
+}
+
 # Opt-in gate for upgrades. The kernel + user state are non-trivial to
 # rebuild from scratch — the install one-liner must never silently
 # overwrite an existing organism. Returns 0 to proceed, 1 to skip.
@@ -670,9 +736,20 @@ install_brainstem() {
                 --to-commit "$TO_COMMIT" >/dev/null 2>&1 || true
         fi
 
+        # Sliding window — drop old backups beyond the keep limit so the
+        # backups dir doesn't grow without bound. The static emergency
+        # baseline is separate and never pruned.
+        _prune_backups
+
+        # Seed the emergency baseline if it hasn't been set yet (legacy
+        # organisms that predate this safety net get one on their first
+        # post-upgrade bond).
+        _seed_emergency_baseline "$SRC_ROOT"
+
         echo -e "  ${GREEN}✓${NC} Bond complete: v${LOCAL_VER} → v${REMOTE_VER}"
         echo -e "  ${CYAN}↩${NC}  Revert: cp -R \"${BACKUP/$HOME/~}/.\" pieces back into place,"
         echo -e "      or hatch \"${BACKUP/$HOME/~}/pre-bond.egg\" with: brainstem hatch <egg>"
+        echo -e "  ${CYAN}🛟${NC} If anything breaks: brainstem safe-mode  (emergency baseline)"
     else
         # ── FRESH INSTALL: birth event, no egg yet (nothing to pack) ──
         echo "  Fresh install — fetching framework..."
@@ -706,6 +783,11 @@ install_brainstem() {
         else
             echo -e "  ${GREEN}✓${NC} Framework v${REMOTE_VER} installed (older release; rappid will mint on next upgrade)"
         fi
+
+        # Seed the immutable emergency baseline. Static — only set on
+        # first install. Future bonds never touch it. `brainstem safe-mode`
+        # boots from this snapshot if the live install gets corrupted.
+        _seed_emergency_baseline "$BRAINSTEM_HOME/src/rapp_brainstem"
     fi
     echo -e "  ${GREEN}✓${NC} Source code ready"
 }
@@ -973,6 +1055,26 @@ cmd_doctor() {
     echo "=== Last 40 log lines ==="
     tail -n 40 "$LOG" 2>/dev/null || echo "(no log yet)"
     echo ""
+    echo "=== Safety net ==="
+    local _baseline="$BRAINSTEM_HOME/.bond/emergency-baseline"
+    if [ -f "$_baseline/brainstem.py" ]; then
+        local _bv="?"
+        [ -f "$_baseline/VERSION" ] && _bv=$(cat "$_baseline/VERSION" | tr -d '[:space:]')
+        echo "Emergency baseline: v${_bv}  ($_baseline)"
+        echo "  → Boot if live install is broken: brainstem safe-mode"
+    else
+        echo "Emergency baseline: (not seeded — run: brainstem doctor refresh-emergency)"
+    fi
+    local _backups_dir="$BRAINSTEM_HOME/.bond/backups"
+    if [ -d "$_backups_dir" ]; then
+        local _n
+        _n=$(ls -1d "$_backups_dir"/*/ 2>/dev/null | wc -l | tr -d ' ')
+        echo "Pre-bond backups:    ${_n} kept  ($_backups_dir)"
+        echo "  → List + revert: brainstem backups"
+    else
+        echo "Pre-bond backups:    none yet"
+    fi
+    echo ""
     echo "=== End doctor report ==="
 }
 
@@ -1036,6 +1138,111 @@ cmd_hatch() {
     fi
 }
 
+cmd_backups() {
+    # List the per-bond backups under ~/.brainstem/.bond/backups/
+    # plus the static emergency baseline. Newest-first.
+    local backups_dir="$BRAINSTEM_HOME/.bond/backups"
+    local baseline="$BRAINSTEM_HOME/.bond/emergency-baseline"
+    echo "=== Pre-bond backups ==="
+    if [ -d "$backups_dir" ]; then
+        local count=0
+        for d in $(ls -1dt "$backups_dir"/*/ 2>/dev/null); do
+            count=$((count + 1))
+            local name=$(basename "${d%/}")
+            local size=$(du -sh "$d" 2>/dev/null | awk '{print $1}')
+            local egg=""
+            [ -f "${d}pre-bond.egg" ] && egg="  +.egg" || egg=""
+            echo "  ${count}. ${name}  (${size:-?})${egg}"
+            echo "       ${d}"
+        done
+        if [ $count -eq 0 ]; then
+            echo "  (none yet — backups are written before each upgrade bond)"
+        fi
+    else
+        echo "  (none yet — backups are written before each upgrade bond)"
+    fi
+    echo ""
+    echo "=== Emergency baseline (static) ==="
+    if [ -d "$baseline" ] && [ -f "$baseline/brainstem.py" ]; then
+        local bv="?"
+        [ -f "$baseline/VERSION" ] && bv=$(cat "$baseline/VERSION" | tr -d '[:space:]')
+        echo "  v${bv}  ${baseline}"
+        echo "  (boot via: brainstem safe-mode)"
+    else
+        echo "  (not seeded — run: brainstem doctor refresh-emergency)"
+    fi
+}
+
+cmd_safe_mode() {
+    # Boot a brainstem from the emergency baseline regardless of what
+    # state the live src/ tree is in. The minimum-viable kernel + soul
+    # gets you a working chat surface even after a botched bond.
+    #
+    # Default port is BRAINSTEM_PORT (env) or 7072 — running on a
+    # different port from the regular install so the user can run them
+    # side-by-side and copy files over without first stopping the main
+    # service.
+    local baseline="$BRAINSTEM_HOME/.bond/emergency-baseline"
+    if [ ! -f "$baseline/brainstem.py" ]; then
+        echo "✗ No emergency baseline at $baseline"
+        echo "  Re-run the installer to seed it, or:"
+        echo "    brainstem doctor refresh-emergency"
+        return 1
+    fi
+    local port="${BRAINSTEM_PORT:-7072}"
+    [ "${1:-}" = "--port" ] && [ -n "${2:-}" ] && port="$2"
+    echo "🛟 Safe mode — booting emergency baseline at http://localhost:${port}"
+    echo "   Path: $baseline"
+    echo "   (This does NOT touch your live install at $SRC.)"
+    echo ""
+    # Use the venv if it works; fall back to system python so safe mode
+    # works even when the venv itself is the broken thing.
+    local py="$VENV_PYTHON"
+    if [ ! -x "$py" ] || ! "$py" -c "import flask" 2>/dev/null; then
+        py=$(command -v python3 || command -v python || echo "")
+        if [ -z "$py" ]; then
+            echo "✗ No working python found — install python 3.11+ and retry"
+            return 1
+        fi
+        echo "  (venv unavailable; using system $py)"
+    fi
+    cd "$baseline" || return 1
+    PORT="$port" exec "$py" brainstem.py
+}
+
+cmd_doctor_refresh_emergency() {
+    # Explicit refresh of the emergency baseline from the current live
+    # install. Use after a known-good upgrade if you want safe mode to
+    # carry the new kernel forward. Destructive (overwrites the baseline)
+    # so it requires explicit confirmation.
+    local baseline="$BRAINSTEM_HOME/.bond/emergency-baseline"
+    if [ -d "$baseline" ] && [ -f "$baseline/brainstem.py" ]; then
+        echo "Existing baseline at $baseline"
+        if [ -t 0 ] && [ -t 1 ]; then
+            local reply
+            printf "Overwrite with the current live kernel? [y/N]: "
+            read -r reply
+            case "$reply" in y|Y|yes|YES) ;; *) echo "Aborted."; return 0 ;; esac
+        else
+            echo "Refusing to refresh non-interactively. Run from a terminal."
+            return 1
+        fi
+        rm -rf "$baseline"
+    fi
+    mkdir -p "$baseline/agents"
+    for f in brainstem.py basic_agent.py soul.md VERSION requirements.txt start.sh start.ps1 index.html; do
+        [ -f "$SRC/$f" ] && cp "$SRC/$f" "$baseline/$f" 2>/dev/null || true
+    done
+    [ -f "$SRC/agents/basic_agent.py" ] && cp "$SRC/agents/basic_agent.py" "$baseline/agents/basic_agent.py" 2>/dev/null || true
+    {
+        echo "Refreshed: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+        [ -f "$SRC/VERSION" ] && echo "Version: $(cat "$SRC/VERSION" | tr -d '[:space:]')"
+        echo ""
+        echo "Static emergency baseline. Boots via: brainstem safe-mode"
+    } > "$baseline/README.txt"
+    echo "✓ Emergency baseline refreshed at $baseline"
+}
+
 cmd_help() {
     cat <<EOF
 Usage: brainstem [COMMAND]
@@ -1061,6 +1268,14 @@ commands below work whether the background service is installed or not.
   hatch <e>  Hatch a received .egg over this kernel (adopts the egg's
              identity; --preserve-rappid keeps local identity instead)
 
+  backups    List per-bond backups + emergency baseline status
+  safe-mode  Boot from the emergency baseline (port 7072 by default)
+             when the live install is broken. Read-only — does NOT
+             touch your live install.
+  doctor refresh-emergency
+             Overwrite the emergency baseline with the current live
+             install (use after a known-good upgrade).
+
   help       Show this message
 EOF
 }
@@ -1072,12 +1287,20 @@ case "${1:-default}" in
     status)   cmd_status ;;
     ls)       cmd_ls ;;
     logs)     cmd_logs ;;
-    doctor)   cmd_doctor ;;
+    doctor)
+        if [ "${2:-}" = "refresh-emergency" ]; then
+            cmd_doctor_refresh_emergency
+        else
+            cmd_doctor
+        fi
+        ;;
     run)      shift; cmd_run "$@" ;;
     open)     cmd_open ;;
     identity) cmd_identity ;;
     egg)      shift; cmd_egg "$@" ;;
     hatch)    shift; cmd_hatch "$@" ;;
+    backups)  cmd_backups ;;
+    safe-mode|safemode|safe_mode) shift; cmd_safe_mode "$@" ;;
     help|-h|--help) cmd_help ;;
     default)
         # No arg: ensure service is running, give it a second to come up,
