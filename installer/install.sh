@@ -361,14 +361,25 @@ check_prereqs() {
 # upstream RAPP repo. Re-running the one-liner is the only upgrade path.
 stage_brainstem_framework() {
     local stage="$1"
-    git clone --quiet --filter=blob:none --no-checkout "$REPO_URL" "$stage" || return 1
-    git -C "$stage" sparse-checkout init --cone 2>/dev/null || true
-    git -C "$stage" sparse-checkout set rapp_brainstem 2>/dev/null || true
-    git -C "$stage" checkout --quiet main || return 1
+    # Silence the "remote: Enumerating objects..." chatter from the git
+    # server — looks alarming in the install output even though it's
+    # entirely normal. Errors go to a temp file so we can surface them
+    # if the clone actually fails.
+    local errlog
+    errlog=$(mktemp -t brainstem-clone-err.XXXXXX 2>/dev/null || echo "/tmp/brainstem-clone-err.$$")
+    if ! git clone --quiet --filter=blob:none --no-checkout "$REPO_URL" "$stage" >/dev/null 2>"$errlog"; then
+        cat "$errlog" 2>/dev/null
+        rm -f "$errlog"
+        return 1
+    fi
+    git -C "$stage" sparse-checkout init --cone >/dev/null 2>&1 || true
+    git -C "$stage" sparse-checkout set rapp_brainstem >/dev/null 2>&1 || true
+    git -C "$stage" checkout --quiet main >/dev/null 2>"$errlog" || { cat "$errlog" 2>/dev/null; rm -f "$errlog"; return 1; }
     if [ -n "$PIN_TAG" ]; then
-        git -C "$stage" checkout --quiet "$PIN_TAG" 2>/dev/null || \
+        git -C "$stage" checkout --quiet "$PIN_TAG" >/dev/null 2>&1 || \
             echo -e "  ${YELLOW}⚠${NC} Pin tag ${PIN_TAG} not found — staying on main"
     fi
+    rm -f "$errlog"
 }
 
 # Run the framework's bond.py CLI. Always uses the freshest bond.py
@@ -621,45 +632,28 @@ _confirm_upgrade() {
         return 0
     fi
 
-    echo ""
-    echo -e "  ${YELLOW}⬆${NC}  Upgrade available: v${from} → v${to}"
-    echo ""
-    echo "    The new framework will overlay your existing install."
-    echo "    Custom agents, soul.md, .env, and state are preserved."
-    echo "    A timestamped backup is saved to ~/.brainstem/.bond/backups/"
-    echo "    so you can revert if anything breaks."
-    echo ""
-
     _bond_log "gate-shown" mode=interactive
     if [ -t 0 ] && [ -t 1 ]; then
         # Interactive — prompt with default Yes. Re-running the
-        # installer in a terminal is itself an opt-in, but we still
-        # show the choice so a user who typo-scrolled-and-hit-enter has
-        # one chance to bail before files move.
+        # installer in a terminal is itself an opt-in; the prompt only
+        # exists to catch a scroll-hit-enter accident before files move.
         local reply
-        printf "  Proceed with upgrade? [Y/n]: "
+        printf "  Update v${from} → v${to}? [Y/n]: "
         read -r reply
         case "$reply" in
-            n|N|no|NO) _bond_log "gate-skipped" reply="$reply"; echo -e "  ${GREEN}✓${NC} Keeping v${from} — no changes made"; return 1 ;;
+            n|N|no|NO) _bond_log "gate-skipped" reply="$reply"; echo -e "  ${GREEN}✓${NC} Keeping v${from}"; return 1 ;;
             *)        _bond_log "gate-confirmed" reply="${reply:-default_yes}"; return 0 ;;
         esac
     fi
 
     # Piped (curl | bash) without TTY: re-running the one-liner IS the
-    # opt-in. The persistent backup at ~/.brainstem/.bond/backups/ + the
-    # immutable emergency baseline are the real safety nets — refusing
-    # to upgrade because there's no TTY is friction, not protection.
-    # BRAINSTEM_NO_UPGRADE=1 still gives users an explicit way to opt
-    # OUT of the upgrade if they're piping intentionally and want the
-    # short-circuit behavior.
+    # opt-in. BRAINSTEM_NO_UPGRADE=1 lets a piped run opt out instead.
     if [ "${BRAINSTEM_NO_UPGRADE:-}" = "1" ] || [ "${BRAINSTEM_NO_UPGRADE:-}" = "yes" ]; then
         _bond_log "gate-skipped" reason=BRAINSTEM_NO_UPGRADE_env
-        echo -e "  ${GREEN}✓${NC} BRAINSTEM_NO_UPGRADE=1 — keeping v${from}, no changes made"
+        echo -e "  ${GREEN}✓${NC} Keeping v${from} (BRAINSTEM_NO_UPGRADE=1)"
         return 1
     fi
     _bond_log "gate-bypassed" reason=piped_install
-    echo -e "  ${YELLOW}⬆${NC}  Proceeding (re-running the one-liner is the opt-in)"
-    echo "       To skip future upgrades non-interactively: BRAINSTEM_NO_UPGRADE=1"
     return 0
 }
 
@@ -688,21 +682,17 @@ install_brainstem() {
         # code conflated the two and printed "Pin requested" every time the
         # default flow picked up a tag, even when the user passed nothing.
         if [ "$PIN_EXPLICIT" = "1" ]; then
-            echo "  ⚑ Pin requested: v${PIN_VERSION} (will check out tag ${PIN_TAG})"
+            echo "  Pinned to v${PIN_VERSION}"
             REMOTE_VER="$PIN_VERSION"
         elif [ -n "$PIN_VERSION" ]; then
-            echo "  Latest release: v${PIN_VERSION} (tag ${PIN_TAG})"
             REMOTE_VER="$PIN_VERSION"
         fi
-
-        echo "  Local:  v${LOCAL_VER}"
-        echo "  Target: v${REMOTE_VER}"
 
         local legacy_git=0
         [ -d "$BRAINSTEM_HOME/src/.git" ] && legacy_git=1
 
         if [ "$LOCAL_VER" = "$REMOTE_VER" ] && [ $legacy_git -eq 0 ]; then
-            echo -e "  ${GREEN}✓${NC} Already up to date (v${LOCAL_VER})"
+            echo -e "  ${GREEN}✓${NC} Already on v${LOCAL_VER}"
             # Even an up-to-date organism gets adopted into the lineage
             # system if it predates the rappid layer.
             if [ ! -f "$BRAINSTEM_HOME/rappid.json" ] && _bond_available; then
@@ -711,19 +701,15 @@ install_brainstem() {
                     --to-version "$LOCAL_VER" \
                     --note "Existing organism adopted into lineage system" \
                     >/dev/null 2>&1 || true
-                [ -f "$BRAINSTEM_HOME/rappid.json" ] && \
-                    echo -e "  ${GREEN}🧬${NC} Adopted into lineage (rappid minted)"
             fi
             return 0
         fi
 
         # Refuse to bond *backward* unless the user explicitly asked for it
         # via BRAINSTEM_VERSION=. The default-latest flow would otherwise
-        # downgrade users when their local is ahead of the latest tag (e.g.
-        # they're tracking main HEAD or running an unreleased build).
+        # downgrade users when their local is ahead of the latest tag.
         if [ "$PIN_EXPLICIT" != "1" ] && _version_gt "$LOCAL_VER" "$REMOTE_VER"; then
-            echo -e "  ${GREEN}✓${NC} Local v${LOCAL_VER} is ahead of latest release v${REMOTE_VER} — staying put"
-            echo -e "  ${YELLOW}!${NC} To force a downgrade: BRAINSTEM_VERSION=${REMOTE_VER} curl ... | bash"
+            echo -e "  ${GREEN}✓${NC} On v${LOCAL_VER} (newer than latest release v${REMOTE_VER})"
             return 0
         fi
 
@@ -739,10 +725,7 @@ install_brainstem() {
             fi
         fi
 
-        if [ $legacy_git -eq 1 ]; then
-            echo "  Detaching from upstream RAPP repo (no longer a git clone)..."
-        fi
-        echo "  Bonding v${LOCAL_VER} → v${REMOTE_VER}..."
+        echo "  Updating v${LOCAL_VER} → v${REMOTE_VER}..."
 
         # 1. Stage the new framework. bond.py from the stage drives every
         # step below — same code on both sides of the upgrade.
@@ -793,7 +776,7 @@ install_brainstem() {
             soul=$([ -f "$BACKUP/soul.md" ] && echo 1 || echo 0) \
             env=$([ -f "$BACKUP/.env" ] && echo 1 || echo 0) \
             rappid=$([ -f "$BACKUP/rappid.json" ] && echo 1 || echo 0)
-        echo -e "  ${GREEN}💾${NC} Backup: ${BACKUP/$HOME/~}"
+        echo -e "  ${GREEN}✓${NC} Backup saved (${_backup_count} agents · soul · env)"
 
         # 3. Mint rappid if missing — needs bond.py from the stage.
         # Tolerated failure if bond.py isn't available (older pin).
@@ -802,8 +785,6 @@ install_brainstem() {
             _run_bond record-bond "$BRAINSTEM_HOME" adoption \
                 --from-version "$LOCAL_VER" \
                 --note "Adopted at first bond" >/dev/null 2>&1 || true
-            [ -f "$BRAINSTEM_HOME/rappid.json" ] && \
-                echo -e "  ${GREEN}🧬${NC} Minted rappid for legacy organism"
         fi
 
         # 4. 🥚 Egg the current organism — full cartridge if bond.py is
@@ -821,7 +802,6 @@ install_brainstem() {
                 egg_ok=1
                 local egg_kb
                 egg_kb=$(du -k "$EGG_PATH" 2>/dev/null | awk '{print $1}')
-                echo -e "  ${GREEN}🥚${NC} Egged organism (${egg_kb:-?} KB) → ${EGG_PATH/$HOME/~}"
                 # Tuck a per-bond copy into the persistent backup folder
                 cp "$EGG_PATH" "$BACKUP/pre-bond.egg" 2>/dev/null || true
                 _bond_log "egg-packed" path="$EGG_PATH" kb="${egg_kb:-?}"
@@ -829,7 +809,6 @@ install_brainstem() {
         fi
         if [ $egg_ok -eq 0 ]; then
             _bond_log "egg-skipped" reason=bond_unavailable
-            echo -e "  ${YELLOW}!${NC} bond.py egg unavailable — using legacy backup safety net"
             EGG_PATH=""
         fi
 
@@ -852,19 +831,16 @@ install_brainstem() {
         fi
         rm -rf "$STAGE"
         _bond_log "overlay-applied" src="$SRC_ROOT"
-        echo -e "  ${GREEN}🌐${NC} Overlayed new kernel onto src/rapp_brainstem"
 
-        # 7. 🐣 Hatch the egg back if we have one. soul/agents/organs/
-        # senses/services/data flow back over the new kernel.
+        # 7. Hatch the egg back if we have one. Soul / agents / organs /
+        # senses / services / data flow back over the new kernel.
         local hatched=0
         if [ -n "$EGG_PATH" ] && [ -f "$EGG_PATH" ] && _bond_available; then
             if _run_bond hatch "$BRAINSTEM_HOME" "$EGG_PATH" >/dev/null 2>&1; then
-                echo -e "  ${GREEN}🐣${NC} Hatched egg back over new kernel"
                 _bond_log "hatch-applied" egg="$EGG_PATH"
                 hatched=1
             else
                 _bond_log "hatch-failed" egg="$EGG_PATH"
-                echo -e "  ${YELLOW}!${NC} Hatch reported errors — falling back to legacy restore"
             fi
         else
             _bond_log "hatch-skipped" reason=no_egg_or_bond
@@ -890,7 +866,6 @@ install_brainstem() {
                 restored=$((restored + 1))
             done
             _bond_log "legacy-restored" agents="$restored"
-            echo -e "  ${GREEN}🧷${NC} Legacy restore: soul + .env + ${restored} custom agent(s)"
         fi
 
         # Backup is intentionally retained — it lives at $BACKUP for manual
@@ -924,18 +899,15 @@ install_brainstem() {
         _bond_log "baseline-checked"
 
         _bond_log "complete" backup="$BACKUP"
-        echo -e "  ${GREEN}✓${NC} Bond complete: v${LOCAL_VER} → v${REMOTE_VER}"
-        echo -e "  ${CYAN}↩${NC}  Revert: cp -R \"${BACKUP/$HOME/~}/.\" pieces back into place,"
-        echo -e "      or hatch \"${BACKUP/$HOME/~}/pre-bond.egg\" with: brainstem hatch <egg>"
-        echo -e "      or git: cd ~/.brainstem/.bond/backups && git log"
-        echo -e "  ${CYAN}🛟${NC} If anything breaks: brainstem safe-mode  (emergency baseline)"
+        echo -e "  ${GREEN}✓${NC} Updated to v${REMOTE_VER}"
+        echo "    Need to revert? Run: brainstem backups"
     else
         # ── FRESH INSTALL: birth event, no egg yet (nothing to pack) ──
-        echo "  Fresh install — fetching framework..."
+        echo "  Fresh install — downloading..."
         rm -rf "$BRAINSTEM_HOME/src" 2>/dev/null || true
         rm -rf "$STAGE"
         if ! stage_brainstem_framework "$STAGE"; then
-            echo -e "  ${RED}✗${NC} Failed to fetch framework"
+            echo -e "  ${RED}✗${NC} Download failed"
             rm -rf "$STAGE"
             return 1
         fi
@@ -956,12 +928,8 @@ install_brainstem() {
             _run_bond mint-rappid "$BRAINSTEM_HOME" --parent-commit "$TO_COMMIT" >/dev/null 2>&1 || true
             _run_bond record-bond "$BRAINSTEM_HOME" birth \
                 --to-version "$REMOTE_VER" --to-commit "$TO_COMMIT" >/dev/null 2>&1 || true
-            [ -f "$BRAINSTEM_HOME/rappid.json" ] && \
-                echo -e "  ${GREEN}🥚${NC} Organism born — rappid minted, framework v${REMOTE_VER} hatched" || \
-                echo -e "  ${GREEN}✓${NC} Framework v${REMOTE_VER} installed"
-        else
-            echo -e "  ${GREEN}✓${NC} Framework v${REMOTE_VER} installed (older release; rappid will mint on next upgrade)"
         fi
+        echo -e "  ${GREEN}✓${NC} v${REMOTE_VER} installed"
 
         # Seed the immutable emergency baseline. Static — only set on
         # first install. Future bonds never touch it. `brainstem safe-mode`
@@ -969,7 +937,6 @@ install_brainstem() {
         _seed_emergency_baseline "$BRAINSTEM_HOME/src/rapp_brainstem"
         REMOTE_VER="$REMOTE_VER" _bond_log "fresh-install" version="$REMOTE_VER" to_commit="$TO_COMMIT"
     fi
-    echo -e "  ${GREEN}✓${NC} Source code ready"
 }
 
 setup_venv() {
@@ -1922,20 +1889,6 @@ with open(sys.argv[2], 'w') as f: json.dump(out, f)
     fi
 
     # Step 2: Launch brainstem
-    echo ""
-    echo -e "  ${CYAN}Starting RAPP Brainstem...${NC}"
-    # One-click tether handoff. The web UI reads ?tether=… on boot,
-    # writes it into Settings.tether_url, flips the tether checkbox on,
-    # then strips the param so a reload doesn't re-apply (or a shared
-    # URL doesn't keep flipping someone else's tether back on).
-    # Most modern terminals (iTerm2, macOS Terminal, Windows Terminal,
-    # VSCode terminal, gnome-terminal) auto-detect URLs and make them
-    # cmd-/ctrl-clickable — no need for explicit OSC-8 escape sequences
-    # which would render as raw bytes in terminals that don't speak it.
-    echo -e "  ${CYAN}Use the virtual brainstem with this machine as the tether:${NC}"
-    echo -e "  https://kody-w.github.io/RAPP/rapp_brainstem/web/?tether=http://localhost:7071"
-    echo ""
-
     cd "$BRAINSTEM_HOME/src/rapp_brainstem"
 
     # Port-in-use detection. Almost always a previous brainstem still running.
@@ -2018,7 +1971,6 @@ with open(sys.argv[2], 'w') as f: json.dump(out, f)
     # so it doesn't race for :7071 with the foreground process we're
     # about to start.
     if [ -f "$HOME/Library/LaunchAgents/io.github.kodyw.rapp-brainstem.plist" ]; then
-        echo -e "  ${CYAN}(unloading prior launchd service so foreground process owns :7071)${NC}"
         launchctl unload "$HOME/Library/LaunchAgents/io.github.kodyw.rapp-brainstem.plist" 2>/dev/null || true
     fi
 
@@ -2026,7 +1978,7 @@ with open(sys.argv[2], 'w') as f: json.dump(out, f)
     (sleep 2 && (open "http://localhost:7071" 2>/dev/null || xdg-open "http://localhost:7071" 2>/dev/null)) &
 
     echo ""
-    echo -e "  ${GREEN}✓${NC} Brainstem starting in this terminal — close the window or press Ctrl-C to stop it."
+    echo -e "  ${GREEN}↗${NC} Opening http://localhost:7071 — Ctrl-C here to stop"
     echo ""
 
     # Use exec to replace this shell process — closing the terminal then
@@ -2212,9 +2164,7 @@ main_local() {
     installed_version=$(cat "$BRAINSTEM_HOME/src/rapp_brainstem/VERSION" 2>/dev/null | tr -d '[:space:]')
 
     echo ""
-    echo "═══════════════════════════════════════════════════"
-    echo -e "  ${GREEN}✓ RAPP Brainstem v${installed_version} installed (project-local)${NC}"
-    echo "═══════════════════════════════════════════════════"
+    echo -e "  ${GREEN}✓ Ready — RAPP Brainstem v${installed_version} (project-local)${NC}"
     echo ""
     echo "  To start this project's brainstem:"
     echo -e "    ${CYAN}./.brainstem/start.sh${NC}"
@@ -2260,9 +2210,7 @@ main() {
     installed_version=$(cat "$BRAINSTEM_HOME/src/rapp_brainstem/VERSION" 2>/dev/null | tr -d '[:space:]')
 
     echo ""
-    echo "═══════════════════════════════════════════════════"
-    echo -e "  ${GREEN}✓ RAPP Brainstem v${installed_version} installed!${NC}"
-    echo "═══════════════════════════════════════════════════"
+    echo -e "  ${GREEN}✓ Ready — RAPP Brainstem v${installed_version}${NC}"
     echo ""
 
     launch_brainstem
