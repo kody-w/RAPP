@@ -695,42 +695,6 @@ ensure_deps() {
     echo -e "  ${GREEN}✓${NC} Dependencies installed"
 }
 
-install_binder_locally() {
-    # Binder is baked into the kernel — rapp_brainstem/utils/services/binder_service.py
-    # ships with the brainstem itself. If it's missing (e.g. user uninstalled
-    # the binder rapp via the UI, which deleted its own service file as a
-    # rapp side-effect), restore from git HEAD so /api/binder/* keeps
-    # working. This is non-destructive — it only writes if the file is gone.
-    local src_dir="$BRAINSTEM_HOME/src/rapp_brainstem"
-    local services="$src_dir/utils/services"
-    local kernel_binder="$services/binder_service.py"
-    mkdir -p "$services"
-    if [ -f "$kernel_binder" ]; then
-        # Happy path — binder file shipped with the kernel and is still
-        # there. The user doesn't need to know about a default that
-        # behaved as expected; this branch stays silent so the install
-        # output only mentions the binder when something was actually
-        # done (restore, copy, or warn).
-        :
-    else
-        # No git checkout fallback — src/ is plain files now. Re-stage from
-        # upstream so the kernel-baked binder file lands again. Common
-        # trigger: user uninstalled the binder rapp from the catalog, which
-        # nuked the kernel-baked file as a side-effect.
-        local stage="$BRAINSTEM_HOME/.framework_stage_binder"
-        rm -rf "$stage"
-        if stage_brainstem_framework "$stage" 2>/dev/null && \
-           [ -f "$stage/rapp_brainstem/utils/services/binder_service.py" ]; then
-            cp "$stage/rapp_brainstem/utils/services/binder_service.py" "$kernel_binder"
-            echo -e "  ${GREEN}OK${NC} Binder restored from upstream"
-        else
-            echo -e "  ${YELLOW}!${NC} binder_service.py missing - package manager unavailable"
-        fi
-        rm -rf "$stage"
-    fi
-}
-
-
 install_cli() {
     echo ""
     echo "Installing CLI..."
@@ -1707,7 +1671,6 @@ main() {
     setup_deps
     install_cli
     create_env
-    install_binder_locally
     register_in_peers "$BRAINSTEM_HOME/src/rapp_brainstem" 7071
 
     # Make sure brainstem and gh are on PATH for this session
