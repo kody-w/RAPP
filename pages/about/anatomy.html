@@ -107,7 +107,12 @@
 .layer-memory   .layer-bg { stroke: var(--layer-memory); }
 .layer-cell     .layer-bg { stroke: var(--layer-cell); }
 .layer-dna      .layer-bg { stroke: var(--layer-dna); fill: var(--bg); }
-.layer-egg      { stroke: var(--layer-egg); fill: none; stroke-width: 2.5; stroke-dasharray: 8 6; opacity: .65; }
+/* Scoped to the ellipse element only. Earlier this rule was bare
+   `.layer-egg`, which matched the parent <g> too — and SVG presentation
+   attributes inherit to children, so every text glyph inside the group
+   was getting a 2.5px dashed gold stroke around it. That's why the
+   .egg cartridge label rendered doubled / scrambled. */
+.layer-egg-shell { stroke: var(--layer-egg); fill: none; stroke-width: 2.5; stroke-dasharray: 8 6; opacity: .65; }
 
 .layer-label {
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
@@ -272,11 +277,11 @@
     <!-- Egg cartridge — the outermost portable shell (dashed).
          Label sits ABOVE the ellipse top edge (y=30) on a solid backing
          band so the dashed perimeter doesn't read through the text. -->
-    <g class="layer layer-egg" data-layer-key="egg">
-      <ellipse cx="460" cy="360" rx="430" ry="328" class="layer-egg" />
+    <g class="layer" data-layer-key="egg">
+      <ellipse cx="460" cy="360" rx="430" ry="328" class="layer-egg-shell" />
       <rect x="270" y="6" width="380" height="38" rx="6" fill="var(--bg)" />
-      <text x="460" y="20" class="layer-label" text-anchor="middle" fill="var(--layer-egg)">.egg cartridge</text>
-      <text x="460" y="36" class="layer-label tiny body" text-anchor="middle">portable form — travels via AirDrop, catalog, USB</text>
+      <text x="460" y="20" class="layer-label" text-anchor="middle" fill="var(--layer-egg)" stroke="none">.egg cartridge</text>
+      <text x="460" y="36" class="layer-label tiny body" text-anchor="middle" stroke="none">portable form — travels via AirDrop, catalog, USB</text>
     </g>
 
     <!-- Skin — the visible outer layer (UI) -->
