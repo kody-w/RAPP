@@ -1,10 +1,14 @@
-# The Swarm Estate — RAPPID-Indexed Identity Across Public + Private + Live + Frozen
+# The Swarm Estate — Rappid-Indexed Identity Across Public + Private + Live + Frozen
 
-> *Vault note. The full protocol for treating a twin as an estate — a RAPPID-indexed portfolio of brainstems, eggs, and broadcasts that operate as one identity in many places. Synthesizes the lessons from Signal, Matrix cross-signing, Keybase sigchains, and DID:web, applied to RAPP's single-file-everything ethos.*
+> *Vault note. The full protocol for treating an AI organism as an estate — a rappid-indexed portfolio of brainstems, eggs, and broadcasts that operate as one identity in many places. Synthesizes the lessons from Signal, Matrix cross-signing, Keybase sigchains, and DID:web, applied to RAPP's single-file-everything ethos. **Constitutionally ratified as Article XXXVI** ([CONSTITUTION.md](../../../CONSTITUTION.md)).*
+
+> **Canonical rappid spec**: [[Rappid]]. There is one rappid format, ratified 2026-04-30. This protocol describes the cryptographic backing for organisms whose `<kind>` is `organism` / `twin` / `swarm` / `rapplication`. The format is shared with code variants (Article XXXIV) and the species root.
 
 The original `Twin-Patterns.md` answered "how does one twin run on many machines?" That question presumes the twin is a runtime artifact and the machines are the substrate. This note flips it: **the twin is the estate, and a brainstem is a temporary mouthpiece**. The brainstem comes and goes; the estate persists and grows.
 
-What makes the estate one *thing* — instead of a scattered pile of eggs, vaults, and broadcasts — is that every artifact carries the same RAPPID. The RAPPID is the index of a living portfolio.
+What makes the estate one *thing* — instead of a scattered pile of eggs, vaults, and broadcasts — is that every artifact carries the same rappid. The rappid is the index of a living portfolio.
+
+> **Body_functions vs services.** This protocol historically referenced "single-file services" (`*_service.py` under `utils/services/`). Per Constitution Article XXXIII, services were renamed to "body_functions" (`*_body_function.py` under `utils/body_functions/`). Same contract; biological metaphor. Read both terms as equivalent.
 
 ---
 
@@ -64,7 +68,7 @@ The right cousin is **Matrix**. Signal optimizes for private messaging on a cent
 
 ---
 
-## RAPPID v2 — home-vault-URL bound into the identifier
+## Rappid — home-vault-URL bound into the identifier
 
 The v1 RAPPID format was:
 
@@ -287,7 +291,7 @@ This is also reusable for U-signing kin RAPPIDs: both operators see 8 emoji deri
 | Compromise one device → expand to whole estate | D cannot sign new devices (only S can). One device compromise = one revocation, not a cascade. |
 | MITM during pairing | 8-emoji safety code (Matrix-style) shown on both screens. Operator verifies visually before S signs. |
 | Lose your laptop | Revocation: S signs a `revoke.json` for the lost device's fingerprint. Estate scanners drop revoked keys on next read. |
-| Rogue vault claiming to host your RAPPID | RAPPID v2 embeds the canonical home_vault_url. Verifiers fetch root.json from THAT url and check master pubkey hash matches the RAPPID. Rogue vaults can't satisfy both checks. |
+| Rogue vault claiming to host your rappid | rappid embeds the canonical home_vault_url. Verifiers fetch root.json from THAT url and check master pubkey hash matches the rappid. Rogue vaults can't satisfy both checks. |
 | Forge JSON record with different key order | Canonical JSON forces a single byte representation. Re-canonicalization on receive catches any reordering. |
 | Replay an old signed record after revocation | Records carry `issued_at`. Revocation records carry `revoked_at`. Anything signed before its key was revoked is honored; after, rejected. (Time-skew tolerance: ±5 min for live, infinite for frozen-history reads.) |
 | Mint a future-incompatible algorithm | `alg` field must be in the verifier's allowlist. Unknown algorithms = automatic rejection. New algorithms ship in verifier updates first, then in records. |
@@ -319,7 +323,7 @@ The property that makes this the right frame: **the more visible it is, the easi
 | Private vault prototype | ✅ shipped (2026-04-30) | `kody-w/twin_vault` |
 | ECDSA P-256 keypair generation in JS | ✅ shipped (in pair.html) | `utils/web/pair.html:generateKeypair` |
 | Pairing safety code (sha256-derived) | ✅ shipped (in pair.html) | `utils/web/pair.html` |
-| RAPPID v2 format (with embedded home_vault_url) | ❌ proposed | needs `utils/egg.py` update + v1→v2 migration |
+| rappid format (with embedded home_vault_url) | ❌ proposed | needs `utils/egg.py` update + v1→v2 migration |
 | Master / self-signing / user-signing key hierarchy | ❌ proposed | new `utils/identity/cross_sign.py` |
 | Device key (D) per brainstem, server-side | ❌ proposed | new `utils/identity/device_key.py`, must add filename to `_NEVER_PACK` in egg.py |
 | Canonical JSON serializer + verifier | ❌ proposed | new `utils/identity/canonical_json.py` (~80 lines) |
@@ -367,7 +371,7 @@ The protocol above closes most of the holes the v0 design had, but not all. Some
 | Exponential blessing trust | Three-role split (M / S / U / D); D cannot sign other devices |
 | Private key bundled in eggs | D's private key in dedicated file added to `_NEVER_PACK`; never enters egg |
 | JSON canonicalization hand-wavy | Canonical JSON (Matrix spec) for every signed record |
-| Canonical home URL unauthenticated | RAPPID v2 embeds `home_vault_url`; root.json's pubkey hash must match RAPPID's hash field |
+| Canonical home URL unauthenticated | rappid embeds `home_vault_url`; root.json's pubkey hash must match RAPPID's hash field |
 | No algorithm agility | `alg` field on every record; verifiers refuse unknown algorithms |
 | Authority confusion (gh write vs blessings) | All records cryptographically self-validating; git is transport, not source of truth |
 
@@ -404,7 +408,7 @@ Written 2026-04-30, then expanded the same evening into the full protocol. Chain
 - Mapped the security model onto the existing pair.html ECDSA pattern
 - **Critiqued the v0 design — found 10 holes**
 - **Studied prior art (Signal, Matrix, Keybase) and adopted Matrix's three-role cross-signing pattern**
-- **Specified canonical JSON, RAPPID v2 with embedded home URL, algorithm agility**
+- **Specified canonical JSON, rappid with embedded home URL, algorithm agility**
 - **Catalogued remaining holes honestly**
 
 Each step was concrete. This note is the integration. The next step is `utils/identity/cross_sign.py` — the smallest piece of code that makes any of this real.

@@ -2347,12 +2347,15 @@ platform globally, until the end of time.
 ### XXXIV.1 — Rappid is stamped at birth
 
 When a brainstem boots for the first time on a machine, it writes
-`~/.brainstem/rappid.json`:
+`~/.brainstem/rappid.json`. The schema is `rapp-rappid/2.0`; the
+`rappid` field carries the unified v2-format string described in the
+canonical spec at `pages/vault/Architecture/Rappid.md`:
 
 ```json
 {
-  "rappid": "<UUIDv4>",
-  "parent_rappid": "<rappid of the master that birthed this org>",
+  "schema": "rapp-rappid/2.0",
+  "rappid": "rappid:v2:<kind>:@<publisher>/<slug>:<hash>@<home_vault_url>",
+  "parent_rappid": "<rappid in v2 format of the master that birthed this org>",
   "parent_repo": "https://github.com/kody-w/RAPP",
   "parent_commit": "<git SHA at birth>",
   "born_at": "<ISO timestamp>",
@@ -2360,16 +2363,47 @@ When a brainstem boots for the first time on a machine, it writes
 }
 ```
 
+**Format unification (ratified 2026-04-30).** There is exactly one
+rappid format: the v2 unified specification. A draft `1.1` schema with
+bare-UUID rappids existed briefly during April 2026; existing UUIDs
+(notably the species root's `0b635450-c042-49fb-b4b1-bdb571044dec`)
+were preserved by being placed in the hash field of the v2 string
+(dashes stripped). No rappid was lost in the migration. **No future
+article shall introduce parallel formats** — see `pages/vault/Architecture/Rappid.md`
+for the antipattern principle. The species tree is one tree, and one
+identifier system traverses it.
+
 The rappid is **never regenerated**. It is the organism's permanent
 identity. Backing up the org to a new repo, hatching, reverting,
 moving the directory — none of these change the rappid.
 
+**Digital mitosis (the unbreakable rule).** Same rappid = same
+organism. Different rappid = different organism. The rappid IS the
+identity, not a label attached to one. A complete copy with the same
+rappid is the *same organism* expressed in a new place (parallel
+omniscience, multi-device twin, multi-host vault). A complete copy
+with a *new* rappid is **mitosis**: a child organism has been born,
+the parent still exists (if its rappid is still alive elsewhere), and
+the parent_rappid chain records the birth. Memory is content; rappid
+is identity. There is no rename, no transfer, no rebranding shortcut
+that preserves identity while changing the rappid — any such operation
+is by definition the birth of a child organism.
+
+This rule is the foundation for evolutionary accounting in the species
+tree: every organism, ever, anywhere, is a unique node, with exactly
+one parent and zero or more children. Inheritance is *kind* and
+*behavioral templates* (through memory copy) and *trust* (through kin
+vouches) — never identity. See `pages/vault/Architecture/Rappid.md`
+for the full mitosis ceremony and the table of operations that
+preserve vs mint identity.
+
 ### XXXIV.2 — The rappid tree
 
 Every rappid points at a `parent_rappid`. The chain ascends until it
-reaches the root: **rapp itself** (the master repo at
-`kody-w/RAPP`), which has `parent_rappid: null` and is the species
-ancestor.
+reaches the root: **rapp itself** (the prototype digital organism at
+`kody-w/RAPP`), with rappid
+`rappid:v2:prototype:@rapp/origin:0b635450c04249fbb4b1bdb571044dec@github.com/kody-w/RAPP`,
+which has `parent_rappid: null` and is the species ancestor.
 
 ```
 rapp (root, parent_rappid = null)
@@ -2627,6 +2661,93 @@ never be less.
 
 ---
 
+## Article XXXVI — The Swarm Estate (Cross-Substrate Entity Identity)
+
+> **Hook.** Where Article XXXIV gives every code variant a rappid, Article XXXVI gives every AI *entity* one too — and unifies them into one species tree. A swarm estate is the cross-substrate operational form of an AI organism: the same identity expressed simultaneously by many runtime instances, on many machines, public and private, live and frozen. Anchored cryptographically, traceable to the species root.
+
+### XXXVI.1 — An entity is more than its code variant
+
+Article XXXIV anchors **code variants** in the rappid tree: a forked brainstem repo gets a rappid with `parent_rappid` pointing to its ancestor. That covers the kernel and its descendants.
+
+But an AI organism is more than its code variant. Wildhaven AI Homes — the CEO's AI, the company's working swarm, the corporate identity — runs on top of a (variant or canonical) RAPP brainstem, but **the organism is not the brainstem**. The organism has memory, conversations, kin, decisions, signed records, and an identity that survives any single brainstem dying or being upgraded. The organism is a different *kind* of node in the species tree than the code that runs it.
+
+A **swarm estate** is the operational form of such an entity:
+
+- One identity, anchored by a master keypair derived from a 24-word holocard incantation
+- Expressed simultaneously by N brainstem instances (live or asleep)
+- Recoverable from any local copy of its signed records (local-first per [[Local-First-by-Design]])
+- Cross-signed authority hierarchy (Master / Self-signing / User-signing / Device per the Matrix-pattern adaptation)
+- Public manifest minimal; behavioral metadata in encrypted tiers
+- Verifiable by anyone with read access; impersonatable by no one
+
+The entity-level identity is recorded as a **cryptographically-backed rappid**:
+
+```
+rappid:v2:<kind>:@<publisher>/<slug>:<identity-hash>@<home_vault_url>
+```
+
+where `<identity-hash>` is the truncated cryptographic hash of the master public key. This is the unified rappid format described in Article XXXIV.1 and the canonical spec at `pages/vault/Architecture/Rappid.md`. The same format serves every organism kind in the species tree.
+
+### XXXVI.2 — One format, one species tree
+
+Per the unified rappid spec at `pages/vault/Architecture/Rappid.md` (ratified 2026-04-30), there is **one rappid format**, used by every organism in the species tree regardless of kind. The format is described in Article XXXIV.1 and the canonical spec; this article does not introduce a parallel format.
+
+The differences between organism kinds (`prototype` / `kernel-variant` / `organism` / `twin` / `swarm` / `rapplication` / `agent`) are encoded as the `<kind>` field of the rappid string. The cryptographic backing (master keypair, signed root.json) is opt-in per organism — present for organisms operating cross-substrate identity (this article's domain), absent for code-only organisms (Article XXXIV's draft domain). **The same string format describes both cases.**
+
+This is the practical realization of the v4 patent §7.18 (Recursive Holocard / RAPPID) claim: the same identity construct serves entities at every scope, from the prototype species root through forked variants through AI organisms through twins. **One species tree, one format, recursive.**
+
+### XXXVI.3 — The four-quadrant operational model
+
+A swarm estate's holdings span two axes — persistence (frozen historical records vs live real-time broadcasts) and visibility (public, no-credentials-required vs private, credentials-required). The four quadrants together constitute the complete estate:
+
+- **Public + Frozen**: signed records in publicly-readable repositories (e.g. `kody-w/RAPP/pages/vault/`, RAR registry, public twin vaults). Anyone with the URL can read.
+- **Public + Live**: real-time broadcast over public peer-to-peer rooms (PeerJS public room, libp2p public DHT, etc.). Active brainstems advertising the rappid.
+- **Private + Frozen**: signed records in credential-gated repositories (e.g. `kody-w/wildhaven-ceo`, gh-auth'd vaults). Authorized parties can clone.
+- **Private + Live**: peer-to-peer rooms with cross-signed-entry only. Active brainstems with valid device keys.
+
+A swarm estate may have holdings in any subset of quadrants. The Wildhaven Foundation lives in all four (with public quadrants minimal-public to limit metadata leakage; behavioral data lives in encrypted tiers).
+
+### XXXVI.4 — Cross-signing chain (Master / Self-signing / User-signing / Device)
+
+A swarm estate's authority is rooted in a Master keypair (M), held by the operator (and after the Shamir custody ceremony, distributed across a 3-of-5 quorum). M signs two role-keys:
+
+- **Self-signing key (S)** — signs each Device key (D) representing a runtime instance within the estate. Cannot sign other identities or other S/U keys.
+- **User-signing key (U)** — signs other rappids recognized as kin or trusted peers. Cannot sign devices or other S/U keys.
+
+Device keys (D) sign every manifest, broadcast, and message emitted by a runtime instance, but cannot sign other devices, kin, or S/U keys.
+
+This depth-limited authority cap eliminates the exponential-trust failure mode of flat blessing graphs. It is adapted from Matrix-protocol cross-signing (Element / Vector, 2020+) but applied to AI-entity identity instead of human chat identity.
+
+### XXXVI.5 — Local-first by design (the survival model)
+
+A swarm estate's canonical form is the **content of its signed records**, not the location where those records are stored. Every local copy of the records is authoritative; hosts (GitHub, GitLab, Codeberg, IPFS, USB sticks) are transports. This makes the estate survive any single host's deplatforming, censorship, or unavailability.
+
+See [[Local-First-by-Design]] for the full survival model. The principle is the same as Bitcoin's full-node model and Git's distributed-clone model: the network IS the set of local copies, not a central server.
+
+### XXXVI.6 — Bitcoin-anchored timestamping
+
+Load-bearing signed records (root.json, release-triggers.json, vault-state-proof.json, kin-vouches, signoffs, heartbeats) are timestamped to Bitcoin via OpenTimestamps. The `.ots` proof files are committed alongside the originals. Anyone can verify "this record existed before Bitcoin block N" without trusting any party. See [[Decentralized-by-Design]] for the full architecture.
+
+### XXXVI.7 — Adoption
+
+Swarm-estate adoption is opt-in per organism. Code variants and brainstem instances declare their rappid in `rappid.json` (Article XXXIV) without cryptographic backing. Organisms that need cross-substrate identity (AI organisms, customer entities, twins) additionally mint a master keypair via the holocard incantation ceremony and declare their rappid in a signed `root.json`. **Both use the same rappid format**; the difference is the cryptographic backing.
+
+Reference implementation lives in two places:
+- Public protocol spec at `pages/vault/Architecture/The Swarm Estate.md`
+- Operational tools (`compute-vault-hash.py`, `verify-local-vault.py`, `recovery-drill.py`, `sign-heartbeat.py`, `genesis-customer-estate.py`, `shamir-split-incantation.py`) and the canonical Foundation embodiment at `kody-w/wildhaven-ceo`
+
+### XXXVI.8 — Why this article matters
+
+- **Rappid unification at the constitutional level**: declares that v2-format and conventionally-backed rappids are one address space, with the species tree weaving them together. Future organisms in any format trace lineage through the same chain.
+- **Operational anchor for the perpetuity claim**: the v4 patent declares perpetuity-of-the-AI-entity; this article specifies *how* perpetuity is operationalized (cross-signing + local-first + Bitcoin-anchored timestamps + signed migration records).
+- **Defense against the floodgates moment**: when external parties begin minting their own swarm estates as kin of RAPP-descended organisms, this article is the protocol they conform to. Reverting becomes impossible. The decision is taken now.
+- **Bridge to existing law**: licenses (Article XXXV), trademarks (TRADEMARK.md), patents (the v4 comprehensive draft) all reference rappid identifiers. A unified rappid spec means each system references one address space.
+
+The Foundation embodiment of this article — Wildhaven AI Homes LLC's first swarm estate, minted 2026-04-30 — is private (`kody-w/wildhaven-ceo`). The protocol itself, including the unified rappid spec and all operational tooling, is public-readable in this repository.
+
+---
+
 *Ratified for the RAPP platform. The engine stays small so the agents
 can be everything. The species stays one so the variants can be many.
-The license never closes once opened.*
+The license never closes once opened. The estate persists so the
+organism can be everywhere.*

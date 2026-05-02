@@ -30,7 +30,7 @@ This is how Bitcoin's full nodes work, how Git itself works at its core, how IPF
 
 ### `home_vault_url` is a *hint*, not authority
 
-The RAPPID v2 format embeds a `home_vault_url`:
+The rappid format embeds a `home_vault_url`:
 
 ```
 rappid:v2:organism:@wildhaven/ai-homes:144d67...@github.com/kody-w/wildhaven-ceo
@@ -87,7 +87,7 @@ No transport is privileged. The vault arrives via *any* of them; verification is
 
 ## What stays the same
 
-- **The cryptographic identity model** — RAPPID v2, three-role cross-signing, canonical JSON, signed records — unchanged.
+- **The cryptographic identity model** — rappid, three-role cross-signing, canonical JSON, signed records — unchanged.
 - **The Dreamcatcher semantics** — divergent local copies merge via the same assimilation pattern as divergent twin streams. Local-first makes divergence the *expected* steady state, not an exception.
 - **The patent positioning** — the perpetuity claim covers any vendor whose multi-device deployment must reconcile divergent state. Local-first design doesn't change the claim; it strengthens the operational truth that customers will inevitably need this reconciliation.
 
@@ -134,7 +134,7 @@ The strongest property: **the Foundation cannot be killed by removing access to 
 - **`bootstrap-seeds.json`** — well-known starting list, ships with the protocol
 - **Sync workflow documentation** — how to push/pull across transports, how to invoke Dreamcatcher when divergent
 
-The first three are simple Python tools. The fourth is a tiny static file. The fifth is documentation. None of this requires protocol changes — RAPPID v2 already supports it; we just commit to interpreting the URL as a hint and adding the content-hash discipline.
+The first three are simple Python tools. The fourth is a tiny static file. The fifth is documentation. None of this requires protocol changes — rappid already supports it; we just commit to interpreting the URL as a hint and adding the content-hash discipline.
 
 ---
 

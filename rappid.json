@@ -1,14 +1,15 @@
 {
-  "schema": "rapp-rappid/1.1",
-  "rappid": "0b635450-c042-49fb-b4b1-bdb571044dec",
+  "schema": "rapp-rappid/2.0",
+  "rappid": "rappid:v2:prototype:@rapp/origin:0b635450c04249fbb4b1bdb571044dec@github.com/kody-w/RAPP",
   "parent_rappid": null,
   "parent_repo": null,
   "parent_commit": null,
   "born_at": "2026-05-01T00:00:00Z",
   "name": "rapp",
-  "role": "master",
-  "description": "The species root. All RAPP organisms descend from this rappid via the parent_rappid chain. See CONSTITUTION.md Article XXXIV.",
+  "role": "prototype",
+  "description": "The species root — the prototype digital organism. Every RAPP-descended organism (variants, AI organisms, twins, swarms, customer estates, future androids/clouds/hybrids) traces parent_rappid back to this rappid. There is one rappid format, one species tree, one godfather. See pages/vault/Architecture/Rappid.md and CONSTITUTION.md Article XXXIV.",
   "attestation": null,
-  "_attestation_note": "When a variant master is created from this rappid, the variant's rappid.json carries an `attestation` envelope signed by THIS rappid's release key, asserting the parent_rappid + parent_commit it forked from. The master rappid itself has no parent, so `attestation` is null. See pages/vault/Architecture/Signed Releases and Variant Attestation.md."
+  "_legacy_uuid": "0b635450-c042-49fb-b4b1-bdb571044dec",
+  "_legacy_uuid_note": "On 2026-04-30 the rappid format was unified into a single v2 specification (Constitution Article XXXIV ratification). Prior to this, the species root was identified by the raw UUID 0b635450-c042-49fb-b4b1-bdb571044dec. That UUID is preserved as the hash component of the unified rappid string above (dashes stripped). Any artifact referencing the bare UUID (legacy or otherwise) refers to this same rappid.",
+  "_attestation_note": "When a variant master is created from this rappid, the variant's rappid.json carries an `attestation` envelope signed by THIS rappid's release key, asserting the parent_rappid + parent_commit it forked from. The species root itself has no parent, so `attestation` is null. See pages/vault/Architecture/Signed Releases and Variant Attestation.md."
 }
-

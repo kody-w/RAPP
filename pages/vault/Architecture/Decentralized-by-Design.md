@@ -13,7 +13,7 @@ Bitcoin's survival properties are six things. We need each one, but in a differe
 | Bitcoin property | Why we need it | How we get it |
 |---|---|---|
 | **Trustless verification** | Anyone can verify any record without trusting a third party | Cross-signing chain + canonical JSON + signed records (already shipped) |
-| **Permissionless participation** | Anyone can mint a RAPPID, run a verifier, host a vault | RAPPID v2 minting requires no permission; tools are public Python (already shipped) |
+| **Permissionless participation** | Anyone can mint a rappid, run a verifier, host a vault | rappid minting requires no permission; tools are public Python (already shipped) |
 | **Censorship resistance** | No host can remove records that have been signed | Local-first: any local copy IS the network. Multi-host adds availability, not authority. |
 | **Append-only history** | Past signatures cannot be silently rewritten | Git's commit DAG (Merkle, SHA-256) + signed records refuse modification |
 | **Public auditability** | Whole ledger readable by anyone | `raw.githubusercontent.com` + multi-host mirroring + IPFS pinning + verify-local-vault.py |
@@ -28,7 +28,7 @@ What Bitcoin needs that *we don't* — proof-of-work, miners, global consensus, 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │  IDENTITY LAYER — what the protocol does                         │
-│  • RAPPID v2 with embedded home_vault_url                       │
+│  • rappid with embedded home_vault_url                       │
 │  • Three-role cross-signing (M / S / U / D) per Matrix pattern  │
 │  • Canonical JSON record format with `alg` field                │
 │  • Recursive holocard: agent → swarm → rapplication → organism  │
@@ -141,7 +141,7 @@ Each adversary action requires defeating a different layer. To take down the net
 
 | Element | Specified | Implemented |
 |---|---|---|
-| RAPPID v2 minting | ✅ | ✅ Block 0 + Block 1 in `kody-w/wildhaven-ceo` |
+| rappid minting | ✅ | ✅ Block 0 + Block 1 in `kody-w/wildhaven-ceo` |
 | Three-role cross-signing | ✅ | ✅ M/S/U keys for both estates |
 | Canonical JSON records | ✅ | ✅ All signed records use Matrix-spec canonical JSON |
 | `alg` field for algorithm agility | ✅ | ✅ Every record has `alg: ecdsa-p256` |
