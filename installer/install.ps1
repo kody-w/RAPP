@@ -294,6 +294,31 @@ function Stage-BrainstemFramework {
     return $true
 }
 
+# Run the framework's bond.py CLI. Picks the freshest copy of bond.py
+# available — staged one during a bond, installed one otherwise.
+# bond.py is stdlib-only so it works before the venv is built.
+function Invoke-Bond {
+    param([string]$Stage, [string[]]$Args)
+    $bondRoot = $null
+    if (Test-Path "$Stage\rapp_brainstem\utils\bond.py") {
+        $bondRoot = "$Stage\rapp_brainstem"
+    } elseif (Test-Path "$BRAINSTEM_HOME\src\rapp_brainstem\utils\bond.py") {
+        $bondRoot = "$BRAINSTEM_HOME\src\rapp_brainstem"
+    } else {
+        return 2  # bond.py unavailable
+    }
+    $py = Get-Command python -ErrorAction SilentlyContinue
+    if (-not $py) { $py = Get-Command python3 -ErrorAction SilentlyContinue }
+    if (-not $py) { return 3 }
+    Push-Location $bondRoot
+    try {
+        & $py.Source -m utils.bond @Args 2>&1 | Out-Null
+        return $LASTEXITCODE
+    } finally {
+        Pop-Location
+    }
+}
+
 function Install-Brainstem {
     Write-Host ""
     Write-Host "Installing RAPP Brainstem..."
@@ -303,67 +328,90 @@ function Install-Brainstem {
     }
 
     $SrcRoot = "$BRAINSTEM_HOME\src\rapp_brainstem"
-    $AgentsDir = "$SrcRoot\agents"
-    $SoulFile = "$SrcRoot\soul.md"
-    $EnvFile = "$SrcRoot\.env"
     $VerFile = "$SrcRoot\VERSION"
     $Stage = "$BRAINSTEM_HOME\.framework_stage"
+    $EggPath = "$BRAINSTEM_HOME\.bond\last-pre-bond.egg"
+    $RappidFile = "$BRAINSTEM_HOME\rappid.json"
     $LegacyGit = (Test-Path "$BRAINSTEM_HOME\src\.git")
 
     if ((Test-Path $VerFile) -or $LegacyGit) {
-        # ── Existing install: backup user files, restage framework as plain files ──
+        # ── EXISTING ORGANISM: bond cycle (egg → overlay → hatch) ──
         $LocalVer = "0.0.0"
         if (Test-Path $VerFile) { $LocalVer = (Get-Content $VerFile -Raw).Trim() }
         try { $RemoteVer = (Invoke-WebRequest -Uri $REMOTE_VERSION_URL -UseBasicParsing -TimeoutSec 5).Content.Trim() } catch { $RemoteVer = "0.0.0" }
 
         Write-Host "  Local:  v$LocalVer"
-        Write-Host "  Remote: v$RemoteVer"
+        Write-Host "  Target: v$RemoteVer"
 
         if (($LocalVer -eq $RemoteVer) -and (-not $LegacyGit)) {
             Write-Host "  [OK] Already up to date (v$LocalVer)" -ForegroundColor Green
-        } else {
-            if ($LegacyGit) {
-                Write-Host "  Detaching from upstream RAPP repo (no longer a git clone)..." -ForegroundColor Yellow
+            # Adopt legacy installs into the lineage system on the way through.
+            if (-not (Test-Path $RappidFile)) {
+                Invoke-Bond -Stage $Stage -Args @("mint-rappid", $BRAINSTEM_HOME) | Out-Null
+                Invoke-Bond -Stage $Stage -Args @("record-bond", $BRAINSTEM_HOME, "adoption", "--to-version", $LocalVer, "--note", "Existing organism adopted into lineage system") | Out-Null
+                Write-Host "  [OK] Adopted into lineage (rappid minted)" -ForegroundColor Green
             }
-            Write-Host "  Upgrading v$LocalVer -> v$RemoteVer..."
-
-            $Backup = "$env:TEMP\brainstem-upgrade-$(Get-Random)"
-            New-Item -ItemType Directory -Force -Path $Backup | Out-Null
-            if (Test-Path $SoulFile) { Copy-Item $SoulFile "$Backup\soul.md" }
-            if (Test-Path $EnvFile)  { Copy-Item $EnvFile  "$Backup\.env" }
-            if (Test-Path $AgentsDir) { Copy-Item "$AgentsDir\*.py" "$Backup\" -ErrorAction SilentlyContinue }
-            Write-Host "  [OK] Backed up soul, agents, config" -ForegroundColor Green
-
-            if (-not (Stage-BrainstemFramework -Stage $Stage)) {
-                Write-Host "  [X] Failed to fetch framework — keeping existing install" -ForegroundColor Red
-                Remove-Item -Recurse -Force $Stage -ErrorAction SilentlyContinue
-                Remove-Item -Recurse -Force $Backup -ErrorAction SilentlyContinue
-                exit 1
-            }
-
-            # Scrub legacy .git so the new src/ is unambiguously plain files.
-            if ($LegacyGit) { Remove-Item -Recurse -Force "$BRAINSTEM_HOME\src\.git" -ErrorAction SilentlyContinue }
-
-            if (-not (Test-Path $SrcRoot)) { New-Item -ItemType Directory -Force -Path $SrcRoot | Out-Null }
-            # Overlay framework files (preserves user-only files like .brainstem_data\)
-            Copy-Item -Recurse -Force "$Stage\rapp_brainstem\*" $SrcRoot
-            Remove-Item -Recurse -Force $Stage -ErrorAction SilentlyContinue
-            Write-Host "  [OK] Framework staged into $SrcRoot" -ForegroundColor Green
-
-            # Restore user files
-            if (Test-Path "$Backup\soul.md") { Copy-Item "$Backup\soul.md" $SoulFile -Force }
-            if (Test-Path "$Backup\.env")    { Copy-Item "$Backup\.env"    $EnvFile  -Force }
-            Get-ChildItem "$Backup\*.py" -ErrorAction SilentlyContinue | ForEach-Object {
-                if ($_.Name -notin @("basic_agent.py", "__init__.py")) {
-                    # Only restore agents the framework didn't ship (custom user agents).
-                    if (-not (Test-Path "$AgentsDir\$($_.Name)")) {
-                        Copy-Item $_.FullName "$AgentsDir\$($_.Name)" -Force
-                    }
-                }
-            }
-            Remove-Item -Recurse -Force $Backup -ErrorAction SilentlyContinue
-            Write-Host "  [OK] Upgrade complete: v$LocalVer -> v$RemoteVer" -ForegroundColor Green
+            return
         }
+
+        if ($LegacyGit) {
+            Write-Host "  Detaching from upstream RAPP repo (no longer a git clone)..." -ForegroundColor Yellow
+        }
+        Write-Host "  Bonding v$LocalVer -> v$RemoteVer..."
+
+        # 1. Stage the new framework
+        if (-not (Stage-BrainstemFramework -Stage $Stage)) {
+            Write-Host "  [X] Failed to fetch framework — keeping existing install" -ForegroundColor Red
+            Remove-Item -Recurse -Force $Stage -ErrorAction SilentlyContinue
+            exit 1
+        }
+        $ToCommit = ""
+        try { $ToCommit = (git -C $Stage rev-parse HEAD 2>$null).Trim() } catch {}
+
+        # 2. Mint rappid if missing (legacy install adoption — egg about to be
+        # packed needs identity).
+        if (-not (Test-Path $RappidFile)) {
+            Invoke-Bond -Stage $Stage -Args @("mint-rappid", $BRAINSTEM_HOME, "--parent-commit", $ToCommit) | Out-Null
+            Invoke-Bond -Stage $Stage -Args @("record-bond", $BRAINSTEM_HOME, "adoption", "--from-version", $LocalVer, "--note", "Adopted at first bond") | Out-Null
+            Write-Host "  [OK] Minted rappid for legacy organism" -ForegroundColor Green
+        }
+
+        # 3. Egg the current organism (full cartridge: identity + soul + .env +
+        # agents + organs + senses + services + .brainstem_data).
+        New-Item -ItemType Directory -Force -Path "$BRAINSTEM_HOME\.bond" | Out-Null
+        $eggResult = Invoke-Bond -Stage $Stage -Args @("egg", $BRAINSTEM_HOME, $EggPath, "--kernel-version", $LocalVer, "--src", $SrcRoot)
+        if ($eggResult -eq 0 -and (Test-Path $EggPath)) {
+            $eggKB = [math]::Round((Get-Item $EggPath).Length / 1024, 1)
+            Write-Host "  [Egg] Egged organism ($eggKB KB) -> $EggPath" -ForegroundColor Green
+        } else {
+            Write-Host "  [!] Egg failed — bond will skip the hatch-back step" -ForegroundColor Yellow
+            $EggPath = $null
+        }
+
+        # 4. Scrub legacy .git
+        if ($LegacyGit) { Remove-Item -Recurse -Force "$BRAINSTEM_HOME\src\.git" -ErrorAction SilentlyContinue }
+
+        # 5. Overlay new kernel
+        if (-not (Test-Path $SrcRoot)) { New-Item -ItemType Directory -Force -Path $SrcRoot | Out-Null }
+        Copy-Item -Recurse -Force "$Stage\rapp_brainstem\*" $SrcRoot
+        Remove-Item -Recurse -Force $Stage -ErrorAction SilentlyContinue
+        Write-Host "  [Overlay] New kernel layered onto src\rapp_brainstem" -ForegroundColor Green
+
+        # 6. Hatch the egg back over the new kernel
+        if ($EggPath -and (Test-Path $EggPath)) {
+            $hatchResult = Invoke-Bond -Stage $Stage -Args @("hatch", $BRAINSTEM_HOME, $EggPath, "--src", $SrcRoot)
+            if ($hatchResult -eq 0) {
+                Write-Host "  [Hatch] Egg restored over new kernel" -ForegroundColor Green
+            } else {
+                Write-Host "  [!] Hatch reported errors — egg preserved at $EggPath" -ForegroundColor Yellow
+            }
+        }
+
+        # 7. Bond log + incarnations bump
+        Invoke-Bond -Stage $Stage -Args @("bump-incarnations", $BRAINSTEM_HOME) | Out-Null
+        Invoke-Bond -Stage $Stage -Args @("record-bond", $BRAINSTEM_HOME, "bond", "--from-version", $LocalVer, "--to-version", $RemoteVer, "--to-commit", $ToCommit) | Out-Null
+
+        Write-Host "  [OK] Bond complete: v$LocalVer -> v$RemoteVer (rappid preserved)" -ForegroundColor Green
     } else {
         if (Test-Path "$BRAINSTEM_HOME\src") {
             Remove-Item -Recurse -Force "$BRAINSTEM_HOME\src" -ErrorAction SilentlyContinue
@@ -374,9 +422,19 @@ function Install-Brainstem {
             Remove-Item -Recurse -Force $Stage -ErrorAction SilentlyContinue
             exit 1
         }
+        $ToCommit = ""
+        try { $ToCommit = (git -C $Stage rev-parse HEAD 2>$null).Trim() } catch {}
+        $RemoteVer = (Get-Content "$Stage\rapp_brainstem\VERSION" -Raw).Trim()
+
         New-Item -ItemType Directory -Force -Path "$BRAINSTEM_HOME\src" | Out-Null
         Copy-Item -Recurse -Force "$Stage\rapp_brainstem" "$BRAINSTEM_HOME\src\"
         Remove-Item -Recurse -Force $Stage -ErrorAction SilentlyContinue
+
+        # Birth event — mint identity, log it. rappid is set ONCE per
+        # machine and survives every future bond.
+        Invoke-Bond -Stage $Stage -Args @("mint-rappid", $BRAINSTEM_HOME, "--parent-commit", $ToCommit) | Out-Null
+        Invoke-Bond -Stage $Stage -Args @("record-bond", $BRAINSTEM_HOME, "birth", "--to-version", $RemoteVer, "--to-commit", $ToCommit) | Out-Null
+        Write-Host "  [Egg] Organism born — rappid minted, framework v$RemoteVer hatched" -ForegroundColor Green
     }
     Write-Host "  [OK] Source code ready" -ForegroundColor Green
 }

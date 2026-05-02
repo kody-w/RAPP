@@ -369,25 +369,37 @@ stage_brainstem_framework() {
     fi
 }
 
+# Run the framework's bond.py CLI. Always uses the freshest copy of
+# bond.py available — the staged one during a bond, the installed one
+# otherwise. bond.py is stdlib-only by design so it works before the
+# venv is built. Args after the flags are forwarded to bond.py.
+_run_bond() {
+    local bond_root=""
+    if [ -d "$STAGE/rapp_brainstem/utils" ]; then
+        bond_root="$STAGE/rapp_brainstem"
+    elif [ -d "$BRAINSTEM_HOME/src/rapp_brainstem/utils" ]; then
+        bond_root="$BRAINSTEM_HOME/src/rapp_brainstem"
+    else
+        return 2  # bond.py not available — caller should fall back
+    fi
+    (cd "$bond_root" && "$PYTHON_CMD" -m utils.bond "$@")
+}
+
 install_brainstem() {
     echo ""
     echo "Installing RAPP Brainstem..."
     mkdir -p "$BRAINSTEM_HOME"
 
     local SRC_ROOT="$BRAINSTEM_HOME/src/rapp_brainstem"
-    local AGENTS_DIR="$SRC_ROOT/agents"
-    local SOUL_FILE="$SRC_ROOT/soul.md"
-    local ENV_FILE="$SRC_ROOT/.env"
     local LOCAL_VERSION_FILE="$SRC_ROOT/VERSION"
     local STAGE="$BRAINSTEM_HOME/.framework_stage"
+    local EGG_PATH="$BRAINSTEM_HOME/.bond/last-pre-bond.egg"
 
     # Detect prior install via the VERSION file rather than .git — the
-    # installed copy is plain files, not a clone. (Pre-decoupling installs
-    # had a .git inside src/; if we see one, treat it as legacy and let
-    # the upgrade flow nuke + re-stage from scratch so the user ends up
-    # in the new clean-folder world.)
+    # installed copy is plain files. Pre-decoupling installs had a .git
+    # inside src/; treat them as legacy and migrate on the way in.
     if [ -f "$LOCAL_VERSION_FILE" ] || [ -d "$BRAINSTEM_HOME/src/.git" ]; then
-        # ── SMART UPDATE: preserve user files, restage framework ──
+        # ── EXISTING ORGANISM: bond cycle (egg → overlay → hatch) ──
         local LOCAL_VER="0.0.0"
         [ -f "$LOCAL_VERSION_FILE" ] && LOCAL_VER=$(cat "$LOCAL_VERSION_FILE" 2>/dev/null || echo "0.0.0")
         local REMOTE_VER=$(curl -sf "$REMOTE_VERSION_URL" 2>/dev/null || echo "0.0.0")
@@ -405,82 +417,96 @@ install_brainstem() {
 
         if [ "$LOCAL_VER" = "$REMOTE_VER" ] && [ $legacy_git -eq 0 ]; then
             echo -e "  ${GREEN}✓${NC} Already up to date (v${LOCAL_VER})"
-        else
-            if [ $legacy_git -eq 1 ]; then
-                echo "  Detaching from upstream RAPP repo (no longer a git clone)..."
+            # Even an up-to-date organism gets adopted into the lineage
+            # system if it predates the rappid layer.
+            if [ ! -f "$BRAINSTEM_HOME/rappid.json" ]; then
+                _run_bond mint-rappid "$BRAINSTEM_HOME" >/dev/null 2>&1 && \
+                    _run_bond record-bond "$BRAINSTEM_HOME" adoption \
+                        --to-version "$LOCAL_VER" \
+                        --note "Existing organism adopted into lineage system" \
+                        >/dev/null 2>&1
+                echo -e "  ${GREEN}🧬${NC} Adopted into lineage (rappid minted)"
             fi
-            echo "  Upgrading v${LOCAL_VER} → v${REMOTE_VER}..."
-
-            # 1. Backup user files (soul, custom agents, .env). .brainstem_data/
-            # stays in place — it's untouched by the overlay step.
-            local BACKUP="/tmp/brainstem-upgrade-$$"
-            mkdir -p "$BACKUP"
-            [ -f "$SOUL_FILE" ] && cp "$SOUL_FILE" "$BACKUP/soul.md"
-            [ -f "$ENV_FILE" ] && cp "$ENV_FILE" "$BACKUP/.env"
-            if [ -d "$AGENTS_DIR" ]; then
-                mkdir -p "$BACKUP/agents"
-                cp "$AGENTS_DIR"/*.py "$BACKUP/agents/" 2>/dev/null || true
-            fi
-            echo -e "  ${GREEN}✓${NC} Backed up soul, agents, config"
-
-            # 2. Stage the new framework into a temp directory using git, then
-            # overlay it into the user's src/ as plain files. The stage gets
-            # torn down at the end — no .git ever lands in the user's tree.
-            rm -rf "$STAGE"
-            if ! stage_brainstem_framework "$STAGE"; then
-                echo -e "  ${RED}✗${NC} Failed to fetch framework — keeping existing install"
-                rm -rf "$STAGE"
-                rm -rf "$BACKUP"
-                return 1
-            fi
-
-            # If the legacy clone is around, scrub it before overlay so the
-            # new src/ is unambiguously "just files".
-            [ $legacy_git -eq 1 ] && rm -rf "$BRAINSTEM_HOME/src/.git"
-
-            mkdir -p "$SRC_ROOT"
-            # Overlay framework files. cp -R src/. dest/ copies contents (not
-            # the dir itself), so existing user-only files in dest stay put
-            # and framework files get refreshed in place.
-            if ! cp -R "$STAGE/rapp_brainstem/." "$SRC_ROOT/" 2>/dev/null; then
-                echo -e "  ${RED}✗${NC} Overlay failed — restoring backup"
-                rm -rf "$STAGE"
-                rm -rf "$BACKUP"
-                return 1
-            fi
-            rm -rf "$STAGE"
-            echo -e "  ${GREEN}✓${NC} Framework staged into ~/.brainstem/src/rapp_brainstem"
-
-            # 3. Restore user files
-            [ -f "$BACKUP/soul.md" ] && cp "$BACKUP/soul.md" "$SOUL_FILE"
-            [ -f "$BACKUP/.env" ] && cp "$BACKUP/.env" "$ENV_FILE"
-            if [ -d "$BACKUP/agents" ]; then
-                local restored=0
-                for agent_file in "$BACKUP/agents"/*.py; do
-                    [ -f "$agent_file" ] || continue
-                    local fname=$(basename "$agent_file")
-                    case "$fname" in
-                        basic_agent.py|__init__.py) continue ;;
-                    esac
-                    # If the new framework already shipped this file, the
-                    # framework version wins (an upgrade, or it was always
-                    # bundled). Only restore agents the framework doesn't
-                    # ship — those are user-created.
-                    [ -f "$AGENTS_DIR/$fname" ] && continue
-                    cp "$agent_file" "$AGENTS_DIR/$fname"
-                    restored=$((restored + 1))
-                done
-                if [ $restored -gt 0 ]; then
-                    echo -e "  ${GREEN}✓${NC} Restored $restored custom agent(s) + soul + config"
-                else
-                    echo -e "  ${GREEN}✓${NC} Restored soul + config"
-                fi
-            fi
-
-            rm -rf "$BACKUP"
-            echo -e "  ${GREEN}✓${NC} Upgrade complete: v${LOCAL_VER} → v${REMOTE_VER}"
+            return 0
         fi
+
+        if [ $legacy_git -eq 1 ]; then
+            echo "  Detaching from upstream RAPP repo (no longer a git clone)..."
+        fi
+        echo "  Bonding v${LOCAL_VER} → v${REMOTE_VER}..."
+
+        # 1. Stage the new framework. bond.py from the stage drives every
+        # step below — same code on both sides of the upgrade.
+        rm -rf "$STAGE"
+        if ! stage_brainstem_framework "$STAGE"; then
+            echo -e "  ${RED}✗${NC} Failed to fetch framework — keeping existing install"
+            rm -rf "$STAGE"
+            return 1
+        fi
+        local TO_COMMIT
+        TO_COMMIT=$(git -C "$STAGE" rev-parse HEAD 2>/dev/null || echo "")
+
+        # 2. Mint rappid if missing (legacy installs get adopted here so
+        # the egg about to be packed carries identity from the start).
+        if [ ! -f "$BRAINSTEM_HOME/rappid.json" ]; then
+            _run_bond mint-rappid "$BRAINSTEM_HOME" --parent-commit "$TO_COMMIT" >/dev/null 2>&1
+            _run_bond record-bond "$BRAINSTEM_HOME" adoption \
+                --from-version "$LOCAL_VER" \
+                --note "Adopted at first bond" >/dev/null 2>&1
+            echo -e "  ${GREEN}🧬${NC} Minted rappid for legacy organism"
+        fi
+
+        # 3. 🥚 Egg the current organism — full cartridge: identity,
+        # soul, .env, agents, organs, senses, services, .brainstem_data.
+        # The egg is the recovery checkpoint; if anything below fails the
+        # user can `tar -xzf` it back manually (or hatch via a future
+        # `brainstem hatch <egg>` invocation, see Phase 2 / rappzoo).
+        mkdir -p "$BRAINSTEM_HOME/.bond"
+        if _run_bond egg "$BRAINSTEM_HOME" "$EGG_PATH" \
+                --kernel-version "$LOCAL_VER" --src "$SRC_ROOT" >/dev/null 2>&1; then
+            local egg_kb
+            egg_kb=$(du -k "$EGG_PATH" 2>/dev/null | awk '{print $1}')
+            echo -e "  ${GREEN}🥚${NC} Egged organism (${egg_kb:-?} KB) → ${EGG_PATH/$HOME/~}"
+        else
+            echo -e "  ${YELLOW}⚠${NC} Egg failed — bond will skip the hatch-back step"
+            EGG_PATH=""
+        fi
+
+        # 4. Scrub legacy .git so the new src/ is unambiguously plain files.
+        [ $legacy_git -eq 1 ] && rm -rf "$BRAINSTEM_HOME/src/.git"
+
+        # 5. 🌐 Overlay new kernel. cp -R "$STAGE/rapp_brainstem/." dest/
+        # copies contents in place — framework files are refreshed,
+        # user-only files (custom agents, .brainstem_data) stay put.
+        mkdir -p "$SRC_ROOT"
+        if ! cp -R "$STAGE/rapp_brainstem/." "$SRC_ROOT/" 2>/dev/null; then
+            echo -e "  ${RED}✗${NC} Overlay failed — egg preserved at ${EGG_PATH/$HOME/~}"
+            rm -rf "$STAGE"
+            return 1
+        fi
+        rm -rf "$STAGE"
+        echo -e "  ${GREEN}🌐${NC} Overlayed new kernel onto src/rapp_brainstem"
+
+        # 6. 🐣 Hatch the egg back. soul/agents/organs/senses/services/data
+        # all flow back over the new kernel; rappid stays untouched (egg
+        # carries the same one we just minted/loaded).
+        if [ -n "$EGG_PATH" ] && [ -f "$EGG_PATH" ]; then
+            if _run_bond hatch "$BRAINSTEM_HOME" "$EGG_PATH" >/dev/null 2>&1; then
+                echo -e "  ${GREEN}🐣${NC} Hatched egg back over new kernel"
+            else
+                echo -e "  ${YELLOW}⚠${NC} Hatch reported errors — egg preserved at ${EGG_PATH/$HOME/~}"
+            fi
+        fi
+
+        # 7. Record the bond + bump incarnations counter.
+        _run_bond bump-incarnations "$BRAINSTEM_HOME" >/dev/null 2>&1
+        _run_bond record-bond "$BRAINSTEM_HOME" bond \
+            --from-version "$LOCAL_VER" --to-version "$REMOTE_VER" \
+            --to-commit "$TO_COMMIT" >/dev/null 2>&1
+
+        echo -e "  ${GREEN}✓${NC} Bond complete: v${LOCAL_VER} → v${REMOTE_VER} (rappid preserved)"
     else
+        # ── FRESH INSTALL: birth event, no egg yet (nothing to pack) ──
         echo "  Fresh install — fetching framework..."
         rm -rf "$BRAINSTEM_HOME/src" 2>/dev/null || true
         rm -rf "$STAGE"
@@ -489,9 +515,21 @@ install_brainstem() {
             rm -rf "$STAGE"
             return 1
         fi
+        local TO_COMMIT
+        TO_COMMIT=$(git -C "$STAGE" rev-parse HEAD 2>/dev/null || echo "")
+        local REMOTE_VER
+        REMOTE_VER=$(cat "$STAGE/rapp_brainstem/VERSION" 2>/dev/null | tr -d '[:space:]')
+
         mkdir -p "$BRAINSTEM_HOME/src"
         cp -R "$STAGE/rapp_brainstem" "$BRAINSTEM_HOME/src/"
         rm -rf "$STAGE"
+
+        # Mint identity & record birth — rappid is set ONCE per machine
+        # and survives every future bond.
+        _run_bond mint-rappid "$BRAINSTEM_HOME" --parent-commit "$TO_COMMIT" >/dev/null 2>&1
+        _run_bond record-bond "$BRAINSTEM_HOME" birth \
+            --to-version "$REMOTE_VER" --to-commit "$TO_COMMIT" >/dev/null 2>&1
+        echo -e "  ${GREEN}🥚${NC} Organism born — rappid minted, framework v${REMOTE_VER} hatched"
     fi
     echo -e "  ${GREEN}✓${NC} Source code ready"
 }
@@ -798,6 +836,66 @@ cmd_doctor() {
     echo "=== End doctor report ==="
 }
 
+cmd_identity() {
+    # Print this organism's identity card (rappid + bond log).
+    if [ ! -f "$BRAINSTEM_HOME/rappid.json" ]; then
+        echo "(no identity yet — has the brainstem been installed via the one-liner?)"
+        return 1
+    fi
+    echo "=== Organism ==="
+    cat "$BRAINSTEM_HOME/rappid.json"
+    echo ""
+    if [ -f "$BRAINSTEM_HOME/bonds.json" ]; then
+        echo "=== Bonds (lineage of evolution) ==="
+        cat "$BRAINSTEM_HOME/bonds.json"
+    fi
+}
+
+cmd_egg() {
+    # Pack the local organism into a portable .egg cartridge.
+    # Default output: ~/.brainstem/<rappid-slug>-<timestamp>.egg
+    local out="${1:-}"
+    local kver
+    kver=$(cat "$SRC/VERSION" 2>/dev/null | tr -d '[:space:]')
+    if [ -z "$out" ]; then
+        local slug
+        slug=$("$VENV_PYTHON" -c "import json,sys; print(json.load(open('$BRAINSTEM_HOME/rappid.json')).get('name','organism'))" 2>/dev/null || echo organism)
+        local ts
+        ts=$(date -u +"%Y%m%dT%H%M%SZ")
+        out="$BRAINSTEM_HOME/${slug}-${ts}.egg"
+    fi
+    if (cd "$SRC" && "$VENV_PYTHON" -m utils.bond egg "$BRAINSTEM_HOME" "$out" \
+            --kernel-version "${kver:-?}" --src "$SRC"); then
+        echo "🥚 Egg written: $out"
+    else
+        echo "✗ Egg failed"
+        return 1
+    fi
+}
+
+cmd_hatch() {
+    # Hatch a .egg cartridge over the local kernel. By default this
+    # ADOPTS the egg's identity — useful when receiving an organism
+    # from another machine. Use --preserve-rappid to keep the local
+    # identity (e.g. just restoring agents/data from a backup egg).
+    local egg="${1:-}"
+    local preserve_flag=""
+    [ "$2" = "--preserve-rappid" ] && preserve_flag="--preserve-rappid"
+    if [ -z "$egg" ] || [ ! -f "$egg" ]; then
+        echo "Usage: brainstem hatch <egg-file> [--preserve-rappid]"
+        return 1
+    fi
+    if (cd "$SRC" && "$VENV_PYTHON" -m utils.bond hatch "$BRAINSTEM_HOME" "$egg" \
+            --src "$SRC" $preserve_flag); then
+        "$VENV_PYTHON" -m utils.bond record-bond "$BRAINSTEM_HOME" hatch \
+            --note "Hatched from $(basename "$egg")" >/dev/null 2>&1 || true
+        echo "🐣 Egg hatched"
+    else
+        echo "✗ Hatch failed"
+        return 1
+    fi
+}
+
 cmd_help() {
     cat <<EOF
 Usage: brainstem [COMMAND]
@@ -805,30 +903,41 @@ Usage: brainstem [COMMAND]
 With no command, starts the service and opens the browser. All the
 commands below work whether the background service is installed or not.
 
-  start     Start the background service (or foreground if no service)
-  stop      Stop the background service
-  restart   Restart the background service
-  status    One-line health check + service state
-  ls        List the global brainstem + every registered project-local
-            brainstem with their port and live state (up/down/missing)
-  logs      Tail the service log
-  doctor    Paste-to-support troubleshooting dump
-  run       Run the brainstem in the foreground (for debugging)
-  open      Open http://localhost:7071 in your browser
-  help      Show this message
+  start      Start the background service (or foreground if no service)
+  stop       Stop the background service
+  restart    Restart the background service
+  status     One-line health check + service state
+  ls         List the global brainstem + every registered project-local
+             brainstem with their port and live state (up/down/missing)
+  logs       Tail the service log
+  doctor     Paste-to-support troubleshooting dump
+  run        Run the brainstem in the foreground (for debugging)
+  open       Open http://localhost:7071 in your browser
+
+  identity   Print this organism's rappid + bond/lineage history
+  egg [out]  Pack the organism into a portable .egg (full cartridge —
+             AirDrop / send to another machine to continue the same
+             organism elsewhere)
+  hatch <e>  Hatch a received .egg over this kernel (adopts the egg's
+             identity; --preserve-rappid keeps local identity instead)
+
+  help       Show this message
 EOF
 }
 
 case "${1:-default}" in
-    start)   cmd_start ;;
-    stop)    cmd_stop ;;
-    restart) cmd_restart ;;
-    status)  cmd_status ;;
-    ls)      cmd_ls ;;
-    logs)    cmd_logs ;;
-    doctor)  cmd_doctor ;;
-    run)     shift; cmd_run "$@" ;;
-    open)    cmd_open ;;
+    start)    cmd_start ;;
+    stop)     cmd_stop ;;
+    restart)  cmd_restart ;;
+    status)   cmd_status ;;
+    ls)       cmd_ls ;;
+    logs)     cmd_logs ;;
+    doctor)   cmd_doctor ;;
+    run)      shift; cmd_run "$@" ;;
+    open)     cmd_open ;;
+    identity) cmd_identity ;;
+    egg)      shift; cmd_egg "$@" ;;
+    hatch)    shift; cmd_hatch "$@" ;;
     help|-h|--help) cmd_help ;;
     default)
         # No arg: ensure service is running, give it a second to come up,
