@@ -1095,6 +1095,36 @@ def set_ui_mode():
         return jsonify({"error": "could not persist UI mode"}), 500
     return jsonify({"ok": True, "mode": mode})
 
+
+# ── Identity endpoint ─────────────────────────────────────────────────────────
+# Reads ~/.brainstem/rappid.json + bonds.json so the UI (and `curl
+# localhost:7071/api/identity`) can show this organism's identity and
+# evolution log without shelling out to the bond.py CLI. Both files live
+# above the kernel src tree precisely so they survive every overlay.
+
+_RAPPID_FILE_PATH = os.path.join(os.path.expanduser("~"), ".brainstem", "rappid.json")
+_BONDS_FILE_PATH  = os.path.join(os.path.expanduser("~"), ".brainstem", "bonds.json")
+
+
+def _read_json_file(path):
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, IOError, ValueError):
+        return None
+
+
+@app.route("/api/identity", methods=["GET"])
+def get_identity():
+    rappid = _read_json_file(_RAPPID_FILE_PATH)
+    bonds  = _read_json_file(_BONDS_FILE_PATH)
+    return jsonify({
+        "rappid":  rappid,                                  # full identity dict, or null
+        "bonds":   (bonds or {}).get("events", []),         # lineage event list
+        "kernel":  {"version": VERSION},
+        "host":    request.host,
+    })
+
 @app.route("/login", methods=["POST"])
 def login():
     """Start GitHub device code OAuth flow."""
@@ -1651,6 +1681,16 @@ if __name__ == "__main__":
     _tlog_load()  # Restore previous flight log
     _tlog("server.starting", {"version": VERSION, "model": MODEL, "port": PORT})
     print(f"\n🧠 RAPP Brainstem v{VERSION} starting on http://localhost:{PORT}")
+    # Show this organism's identity in the boot banner so users see
+    # what they're hosting at a glance — and so a kernel upgrade is
+    # visibly attached to the same organism after every bond.
+    _identity = _read_json_file(_RAPPID_FILE_PATH) or {}
+    _rappid_str = _identity.get("rappid")
+    if _rappid_str:
+        _name = _identity.get("name", "organism")
+        _inc  = _identity.get("incarnations", 1)
+        print(f"   🥚 Organism: {_name} (incarnations={_inc})")
+        print(f"   🆔 Rappid:   {_rappid_str}")
     print(f"   Soul:   {SOUL_PATH}")
     print(f"   Agents: {AGENTS_PATH}")
     print(f"   Model:  {MODEL}")
