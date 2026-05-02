@@ -1034,9 +1034,66 @@ def chat():
 
 # ── /health endpoint ──────────────────────────────────────────────────────────
 
+_UI_MODE_FILE = os.path.join(os.path.expanduser("~"), ".brainstem", ".ui-mode")
+# Cloud UI lives on GitHub Pages and tracks main automatically — flipping
+# to it lets users iterate on the static UI without re-running the install
+# one-liner each time. Pinned URL: see CONSTITUTION.md Article V.
+CLOUD_UI_URL = "https://kody-w.github.io/RAPP/rapp_brainstem/index.html"
+
+
+def _read_ui_mode():
+    try:
+        with open(_UI_MODE_FILE, "r", encoding="utf-8") as f:
+            mode = f.read().strip().lower()
+            return mode if mode in ("local", "cloud") else "local"
+    except (OSError, IOError):
+        return "local"
+
+
+def _write_ui_mode(mode):
+    if mode not in ("local", "cloud"):
+        return False
+    try:
+        os.makedirs(os.path.dirname(_UI_MODE_FILE), exist_ok=True)
+        with open(_UI_MODE_FILE, "w", encoding="utf-8") as f:
+            f.write(mode)
+        return True
+    except (OSError, IOError):
+        return False
+
+
 @app.route("/", methods=["GET"])
 def index():
+    # If the user has flipped UI to "cloud", redirect them to the live
+    # GitHub Pages copy with a tether back to this brainstem so the cloud
+    # UI talks to the local server. Lets users iterate on the static UI
+    # by pushing to main without redeploying via the install one-liner.
+    # An explicit ?ui=local query forces the local UI even when the
+    # preference is cloud (escape hatch for debugging).
+    if request.args.get("ui") == "local":
+        return send_from_directory(os.path.dirname(os.path.abspath(__file__)), "index.html")
+    if _read_ui_mode() == "cloud":
+        # Tether = the brainstem the cloud UI should bind its API calls to.
+        # request.host_url already includes scheme + host + port + trailing slash.
+        tether = request.host_url.rstrip("/")
+        return f'<!doctype html><meta http-equiv="refresh" content="0;url={CLOUD_UI_URL}?tether={tether}"><a href="{CLOUD_UI_URL}?tether={tether}">Loading cloud UI…</a>', 200
     return send_from_directory(os.path.dirname(os.path.abspath(__file__)), "index.html")
+
+
+@app.route("/api/ui-mode", methods=["GET"])
+def get_ui_mode():
+    return jsonify({"mode": _read_ui_mode(), "cloud_url": CLOUD_UI_URL})
+
+
+@app.route("/api/ui-mode", methods=["POST"])
+def set_ui_mode():
+    data = request.get_json(silent=True) or {}
+    mode = (data.get("mode") or "").lower()
+    if mode not in ("local", "cloud"):
+        return jsonify({"error": "mode must be 'local' or 'cloud'"}), 400
+    if not _write_ui_mode(mode):
+        return jsonify({"error": "could not persist UI mode"}), 500
+    return jsonify({"ok": True, "mode": mode})
 
 @app.route("/login", methods=["POST"])
 def login():

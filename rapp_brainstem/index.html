@@ -1391,6 +1391,18 @@
           <input type="file" id="voice-import" accept=".zip,.json" style="display:none" onchange="importVoiceConfig(event)">
         </div>
         <div class="panel-status" id="voice-panel-status"></div>
+        <hr style="border:none; border-top:1px solid #30363d; margin:14px 0 10px">
+        <label for="ui-mode-select">UI Source</label>
+        <select id="ui-mode-select" onchange="setUIMode(this.value)">
+          <option value="local">Local (this brainstem's index.html)</option>
+          <option value="cloud">Cloud (always-fresh from kody-w.github.io)</option>
+        </select>
+        <div style="font-size:11px; color:#8b949e; margin-top:6px; line-height:1.4">
+          Cloud UI tracks <code>main</code> on GitHub — push to the repo and the
+          UI updates without re-running the install one-liner. Cloud UI tethers
+          back to this brainstem at <code id="ui-mode-tether-host">localhost</code>,
+          so all chat / agents / data still run on your machine.
+        </div>
       </div>
     </div>
     <a class="icon-btn" href="vscode://file/$HOME/.brainstem/src/rapp_brainstem" id="vscode-link" title="Open in VS Code">
@@ -1491,9 +1503,22 @@
 </footer>
 
 <script>
-  // Same-origin: the page is served by the brainstem itself, so use whatever port that is.
-  // (Project-local installs from `install.sh --here` pick a free port that may not be 7071.)
-  const API = '';
+  // API base resolution. Default: same-origin (page served by brainstem).
+  // Override: ?tether=http://localhost:7071 — used when this UI is loaded
+  // from the cloud (kody-w.github.io) but should still talk to the local
+  // brainstem. The tether persists in localStorage so reloads keep
+  // pointing at the same brainstem without needing the query string.
+  const _tetherParams = new URLSearchParams(window.location.search);
+  const _tetherParam = _tetherParams.get('tether');
+  if (_tetherParam) {
+    try { localStorage.setItem('brainstem_tether', _tetherParam); } catch {}
+  }
+  const _persistedTether = (() => { try { return localStorage.getItem('brainstem_tether'); } catch { return null; } })();
+  // Use tether only when this page is NOT same-origin with the brainstem
+  // (i.e., when served from kody-w.github.io). Local installs always
+  // talk to themselves, regardless of any stale tether in localStorage.
+  const _isCloudHost = /github\.io$/i.test(window.location.hostname) || /github\.com$/i.test(window.location.hostname);
+  const API = (_isCloudHost && (_tetherParam || _persistedTether)) || '';
   let sessionId = null;
   let history = [];
   let fullTranscript = [];
@@ -2572,7 +2597,11 @@
   }
 
   function toggleVoicePanel() {
-    document.getElementById('voice-panel').classList.toggle('open');
+    const panel = document.getElementById('voice-panel');
+    panel.classList.toggle('open');
+    // Refresh the UI mode dropdown each time the panel opens so it
+    // reflects whatever the brainstem currently has on disk.
+    if (panel.classList.contains('open')) loadUIMode();
   }
 
   document.addEventListener('click', (e) => {
@@ -2747,6 +2776,58 @@
     }
     status.style.color = '#3fb950';
     setTimeout(() => { status.textContent = ''; }, 3000);
+  }
+
+  // ── UI source (local index.html vs. live cloud copy) ──
+  // Cloud UI lives at kody-w.github.io/RAPP/rapp_brainstem/index.html and
+  // tracks main automatically. Flipping to it makes UI iteration a git
+  // push instead of a one-liner re-run; the cloud page tethers back to
+  // this brainstem so all chat / agents / data still execute locally.
+  async function loadUIMode() {
+    const select = document.getElementById('ui-mode-select');
+    const tetherEl = document.getElementById('ui-mode-tether-host');
+    if (tetherEl) tetherEl.textContent = window.location.host || 'localhost:7071';
+    if (!select) return;
+    try {
+      const r = await fetch(`${API}/api/ui-mode`, { cache: 'no-store' });
+      if (r.ok) {
+        const d = await r.json();
+        select.value = d.mode || 'local';
+      }
+    } catch {}
+  }
+
+  async function setUIMode(mode) {
+    const status = document.getElementById('voice-panel-status');
+    try {
+      const r = await fetch(`${API}/api/ui-mode`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode })
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    } catch (e) {
+      if (status) {
+        status.textContent = `Could not save UI mode: ${e.message}`;
+        status.style.color = '#f85149';
+      }
+      return;
+    }
+    if (mode === 'cloud') {
+      // Redirect this tab to the cloud UI tethered to this brainstem.
+      const tether = window.location.origin;
+      window.location.href = `https://kody-w.github.io/RAPP/rapp_brainstem/index.html?tether=${encodeURIComponent(tether)}`;
+    } else if (_isCloudHost) {
+      // We're already on the cloud UI and the user just flipped back to
+      // local — bounce to the tethered brainstem.
+      const tether = (_tetherParam || _persistedTether || 'http://localhost:7071').replace(/\/+$/, '');
+      window.location.href = tether + '/?ui=local';
+    } else {
+      if (status) {
+        status.textContent = 'UI mode set to local — already serving local copy.';
+        status.style.color = '#3fb950';
+      }
+    }
   }
 
   function clearVoiceSettings() {
