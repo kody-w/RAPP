@@ -3508,11 +3508,14 @@
   });
 
   // ── Browse RAPP_Store modal (parallel to Browse RAR) ──
-  // Catalog is fetched DIRECTLY from the public rapp_store URL — the chat
-  // UI doesn't go through the binder service for this. The binder is just
-  // another service; it has no special privilege from the chat UI's
-  // perspective.
-  const RAPP_STORE_URL = 'https://raw.githubusercontent.com/kody-w/rapp_store/main/index.json';
+  // Catalog is fetched DIRECTLY from the public rapp_store v1 PokeAPI —
+  // /api/v1/index.json gives a thin summary list, and each entry's
+  // detail JSON at /api/v1/rapplication/<id>.json carries the full card
+  // payload (summary, tagline, tags, singleton_url, ui_url, …). We
+  // hydrate the index with parallel detail fetches so renderStore() and
+  // installFromStore() see the same shape they did under the legacy
+  // root index.json.
+  const RAPP_STORE_URL = 'https://raw.githubusercontent.com/kody-w/rapp_store/main/api/v1/index.json';
   let _storeCatalog = null;
   let _installedRappIds = new Set();
 
@@ -3525,13 +3528,36 @@
     document.getElementById('store-list').innerHTML = '<div class="browse-loading">Loading catalog…</div>';
     document.getElementById('store-stats').textContent = 'loading…';
     try {
-      const cat = await fetch(RAPP_STORE_URL, { cache: 'no-cache' })
+      const idx = await fetch(RAPP_STORE_URL, { cache: 'no-cache' })
         .then(r => r.ok ? r.json() : Promise.reject(new Error(`catalog HTTP ${r.status}`)));
-      _storeCatalog = cat;
+      const summary = idx.rapplications || [];
+      // Hydrate each entry with its detail JSON in parallel. Detail
+      // entries that fail to load fall back to the summary so the rapp
+      // still appears in the list (just with less metadata).
+      const details = await Promise.all(summary.map(s =>
+        s.url
+          ? fetch(s.url, { cache: 'no-cache' })
+              .then(r => r.ok ? r.json() : null)
+              .catch(() => null)
+          : Promise.resolve(null)
+      ));
+      const rapps = summary.map((s, i) => {
+        const d = details[i] || {};
+        const merged = { ...s, ...d };
+        // singleton_filename isn't in the detail JSON — derive from URL
+        if (!merged.singleton_filename && merged.singleton_url) {
+          merged.singleton_filename = merged.singleton_url.split('/').pop();
+        }
+        // ui_filename likewise
+        if (!merged.ui_filename && merged.ui_url) {
+          merged.ui_filename = merged.ui_url.split('/').pop();
+        }
+        return merged;
+      });
+      _storeCatalog = { ...idx, rapplications: rapps };
       // Installed = whatever the user has installed via this UI
       // (tracked locally). Binder-imported eggs are managed in /binder.
       _installedRappIds = new Set(Object.keys(_storeInstalled));
-      const rapps = cat.rapplications || [];
       const cats = [...new Set(rapps.map(r => r.category).filter(Boolean))].sort();
       const sel = document.getElementById('store-category');
       sel.innerHTML = '<option value="">All categories</option>' +
