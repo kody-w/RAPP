@@ -947,6 +947,37 @@
   }
   #store-link:hover { border-color: #d2a8ff; background: rgba(210,168,255,0.08); }
 
+  /* RAPP_Store tab strip — Rapplications / Senses / Agents */
+  .store-tabs {
+    display: flex; gap: 2px;
+    padding: 0 18px;
+    background: #161b22;
+    border-bottom: 1px solid #21262d;
+  }
+  .store-tab {
+    background: transparent; color: #8b949e;
+    border: none; border-bottom: 2px solid transparent;
+    padding: 10px 14px; font-size: 12px; font-weight: 500;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .store-tab:hover { color: #e6edf3; }
+  .store-tab.store-tab-active {
+    color: #58a6ff; border-bottom-color: #58a6ff;
+  }
+  body.light-mode .store-tabs { background: #f6f8fa; border-bottom-color: #d0d7de; }
+  body.light-mode .store-tab { color: #57606a; }
+  body.light-mode .store-tab:hover { color: #24292e; }
+  body.light-mode .store-tab.store-tab-active { color: #0969da; border-bottom-color: #0969da; }
+  /* Sense / agent rows reuse .br-row chrome but get a download fallback */
+  .br-secondary {
+    background: #21262d; color: #c9d1d9;
+    border: 1px solid #30363d;
+    border-radius: 6px; padding: 6px 10px;
+    font-size: 11px; cursor: pointer; margin-left: 4px;
+    transition: all 0.15s;
+  }
+  .br-secondary:hover { border-color: #58a6ff; color: #58a6ff; }
+
   /* ── NEW: Cmd+K command palette ────────────────────────────────
      Universal launcher: agents, rapps, store, RAR, quick actions.
      Keyboard-first; ↑/↓ navigates, Enter activates, Esc closes. */
@@ -1226,8 +1257,15 @@
   </div>
 </div>
 
-<!-- ── NEW: Browse RAPP_Store modal — identical chrome to Browse RAR,
-     different list source (binder catalog vs RAR registry). ── -->
+<!-- ── NEW: Browse RAPP_Store modal — three-tab unified browser.
+     Same chrome as Browse RAR, but the body switches between three
+     public catalogs sourced from their respective static APIs:
+       • Rapplications — rapp_store /api/v1/index.json (PokeAPI-style)
+       • Senses        — rapp_store /index.json `senses` array
+       • Agents        — RAR /registry.json
+     Each tab renders rows with the install action appropriate to its
+     kind. Senses install through utils/organs/senses_organ.py (which
+     writes to utils/senses/<id>_sense.py). ── -->
 <div id="store-modal" role="dialog" aria-modal="true" aria-label="Browse RAPP_Store">
   <div class="browse-card">
     <div class="bh-head">
@@ -1237,8 +1275,13 @@
       </div>
       <button class="bh-close" onclick="closeStore()">✕ Close</button>
     </div>
+    <div class="store-tabs" id="store-tabs">
+      <button class="store-tab store-tab-active" data-tab="rapps" onclick="switchStoreTab('rapps')">📦 Rapplications</button>
+      <button class="store-tab" data-tab="senses" onclick="switchStoreTab('senses')">👁 Senses</button>
+      <button class="store-tab" data-tab="agents" onclick="switchStoreTab('agents')">🤖 Agents</button>
+    </div>
     <div class="bh-filters">
-      <input type="text" id="store-search" placeholder="Search rapplication name, summary, tag…" oninput="renderStore()">
+      <input type="text" id="store-search" placeholder="Search…" oninput="renderStore()">
       <select id="store-category" onchange="renderStore()">
         <option value="">All categories</option>
       </select>
@@ -3507,17 +3550,24 @@
     }
   });
 
-  // ── Browse RAPP_Store modal (parallel to Browse RAR) ──
-  // Catalog is fetched DIRECTLY from the public rapp_store v1 PokeAPI —
-  // /api/v1/index.json gives a thin summary list, and each entry's
-  // detail JSON at /api/v1/rapplication/<id>.json carries the full card
-  // payload (summary, tagline, tags, singleton_url, ui_url, …). We
-  // hydrate the index with parallel detail fetches so renderStore() and
-  // installFromStore() see the same shape they did under the legacy
-  // root index.json.
-  const RAPP_STORE_URL = 'https://raw.githubusercontent.com/kody-w/rapp_store/main/api/v1/index.json';
-  let _storeCatalog = null;
+  // ── Browse RAPP_Store modal — three-tab unified browser ──
+  // The store consolidates three public catalogs:
+  //   • rapps  — rapp_store /api/v1/index.json (PokeAPI, hydrated per-id)
+  //   • senses — rapp_store /index.json `senses` array
+  //   • agents — RAR /registry.json (canonical agent registry)
+  // Each tab has its own data source and install path; the chrome is
+  // shared. Switching tabs re-renders without re-fetching once data is
+  // hydrated.
+  const RAPP_STORE_V1_URL    = 'https://raw.githubusercontent.com/kody-w/rapp_store/main/api/v1/index.json';
+  const RAPP_STORE_LEGACY_URL = 'https://raw.githubusercontent.com/kody-w/rapp_store/main/index.json';
+  // RAR_BASE is already declared earlier for the standalone Browse RAR
+  // modal; we reuse it here so registry caching is shared.
+  let _storeCatalog = null;          // hydrated rapplications
+  let _storeSenses = null;           // sense entries from legacy index.json
+  let _storeAgents = null;           // RAR registry agents (lazy)
   let _installedRappIds = new Set();
+  let _installedSenseFiles = new Set();
+  let _storeTab = 'rapps';
 
   async function openStore() {
     const modal = document.getElementById('store-modal');
@@ -3525,51 +3575,10 @@
     document.getElementById('agents-panel')?.classList.remove('open');
     document.getElementById('store-search').value = '';
     document.getElementById('store-category').value = '';
-    document.getElementById('store-list').innerHTML = '<div class="browse-loading">Loading catalog…</div>';
-    document.getElementById('store-stats').textContent = 'loading…';
-    try {
-      const idx = await fetch(RAPP_STORE_URL, { cache: 'no-cache' })
-        .then(r => r.ok ? r.json() : Promise.reject(new Error(`catalog HTTP ${r.status}`)));
-      const summary = idx.rapplications || [];
-      // Hydrate each entry with its detail JSON in parallel. Detail
-      // entries that fail to load fall back to the summary so the rapp
-      // still appears in the list (just with less metadata).
-      const details = await Promise.all(summary.map(s =>
-        s.url
-          ? fetch(s.url, { cache: 'no-cache' })
-              .then(r => r.ok ? r.json() : null)
-              .catch(() => null)
-          : Promise.resolve(null)
-      ));
-      const rapps = summary.map((s, i) => {
-        const d = details[i] || {};
-        const merged = { ...s, ...d };
-        // singleton_filename isn't in the detail JSON — derive from URL
-        if (!merged.singleton_filename && merged.singleton_url) {
-          merged.singleton_filename = merged.singleton_url.split('/').pop();
-        }
-        // ui_filename likewise
-        if (!merged.ui_filename && merged.ui_url) {
-          merged.ui_filename = merged.ui_url.split('/').pop();
-        }
-        return merged;
-      });
-      _storeCatalog = { ...idx, rapplications: rapps };
-      // Installed = whatever the user has installed via this UI
-      // (tracked locally). Binder-imported eggs are managed in /binder.
-      _installedRappIds = new Set(Object.keys(_storeInstalled));
-      const cats = [...new Set(rapps.map(r => r.category).filter(Boolean))].sort();
-      const sel = document.getElementById('store-category');
-      sel.innerHTML = '<option value="">All categories</option>' +
-        cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
-      document.getElementById('store-stats').textContent =
-        `${rapps.length} rapplications · ${cats.length} categories`;
-      renderStore();
-    } catch (e) {
-      document.getElementById('store-list').innerHTML =
-        `<div class="browse-loading browse-error">Failed to load RAPP_Store: ${escapeHtml(e.message)}</div>`;
-      document.getElementById('store-stats').textContent = 'offline';
-    }
+    // Default tab on every open is rapps — most common starting point.
+    _storeTab = 'rapps';
+    _syncStoreTabUi();
+    await _loadStoreTab(_storeTab);
   }
   function closeStore() {
     document.getElementById('store-modal').classList.remove('open');
@@ -3578,7 +3587,123 @@
     if (e.target.id === 'store-modal') closeStore();
   });
 
+  function _syncStoreTabUi() {
+    document.querySelectorAll('#store-tabs .store-tab').forEach(b => {
+      b.classList.toggle('store-tab-active', b.dataset.tab === _storeTab);
+    });
+    const search = document.getElementById('store-search');
+    const cat = document.getElementById('store-category');
+    if (_storeTab === 'rapps') {
+      search.placeholder = 'Search rapplication name, summary, tag…';
+      cat.style.display = '';
+    } else if (_storeTab === 'senses') {
+      search.placeholder = 'Search senses…';
+      cat.style.display = 'none';
+    } else if (_storeTab === 'agents') {
+      search.placeholder = 'Search agent name, description, tag…';
+      cat.style.display = '';
+    }
+  }
+
+  async function switchStoreTab(tab) {
+    if (!['rapps','senses','agents'].includes(tab)) return;
+    _storeTab = tab;
+    document.getElementById('store-search').value = '';
+    document.getElementById('store-category').value = '';
+    _syncStoreTabUi();
+    await _loadStoreTab(tab);
+  }
+
+  async function _loadStoreTab(tab) {
+    const list = document.getElementById('store-list');
+    const stats = document.getElementById('store-stats');
+    list.innerHTML = '<div class="browse-loading">Loading catalog…</div>';
+    stats.textContent = 'loading…';
+    try {
+      if (tab === 'rapps') {
+        if (!_storeCatalog) await _loadStoreRapps();
+        _populateCategorySelect((_storeCatalog?.rapplications || []).map(r => r.category));
+        stats.textContent = `${(_storeCatalog?.rapplications || []).length} rapplications`;
+      } else if (tab === 'senses') {
+        if (!_storeSenses) await _loadStoreSenses();
+        await _refreshInstalledSenses();
+        stats.textContent = `${(_storeSenses || []).length} senses`;
+      } else if (tab === 'agents') {
+        if (!_storeAgents) await _loadStoreAgents();
+        _populateCategorySelect((_storeAgents || []).map(a => a.category));
+        await refreshInstalled();  // refreshes _installedFiles for RAR
+        stats.textContent = `${(_storeAgents || []).length} agents`;
+      }
+      renderStore();
+    } catch (e) {
+      list.innerHTML =
+        `<div class="browse-loading browse-error">Failed to load: ${escapeHtml(e.message)}</div>`;
+      stats.textContent = 'offline';
+    }
+  }
+
+  function _populateCategorySelect(rawCats) {
+    const cats = [...new Set((rawCats || []).filter(Boolean))].sort();
+    const sel = document.getElementById('store-category');
+    sel.innerHTML = '<option value="">All categories</option>' +
+      cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  }
+
+  async function _loadStoreRapps() {
+    const idx = await fetch(RAPP_STORE_V1_URL, { cache: 'no-cache' })
+      .then(r => r.ok ? r.json() : Promise.reject(new Error(`catalog HTTP ${r.status}`)));
+    const summary = idx.rapplications || [];
+    // Hydrate each entry with its detail JSON in parallel. Failed
+    // detail fetches fall back to the thin summary entry.
+    const details = await Promise.all(summary.map(s =>
+      s.url
+        ? fetch(s.url, { cache: 'no-cache' })
+            .then(r => r.ok ? r.json() : null)
+            .catch(() => null)
+        : Promise.resolve(null)
+    ));
+    const rapps = summary.map((s, i) => {
+      const d = details[i] || {};
+      const merged = { ...s, ...d };
+      if (!merged.singleton_filename && merged.singleton_url) {
+        merged.singleton_filename = merged.singleton_url.split('/').pop();
+      }
+      if (!merged.ui_filename && merged.ui_url) {
+        merged.ui_filename = merged.ui_url.split('/').pop();
+      }
+      return merged;
+    });
+    _storeCatalog = { ...idx, rapplications: rapps };
+    _installedRappIds = new Set(Object.keys(_storeInstalled));
+  }
+
+  async function _loadStoreSenses() {
+    const idx = await fetch(RAPP_STORE_LEGACY_URL, { cache: 'no-cache' })
+      .then(r => r.ok ? r.json() : Promise.reject(new Error(`legacy index HTTP ${r.status}`)));
+    _storeSenses = idx.senses || [];
+  }
+
+  async function _refreshInstalledSenses() {
+    try {
+      const r = await fetch(`${API}/api/senses`);
+      const d = await r.json();
+      _installedSenseFiles = new Set(((d && d.senses) || []).map(s => s.filename));
+    } catch { _installedSenseFiles = new Set(); }
+  }
+
+  async function _loadStoreAgents() {
+    // Reuse RAR_BASE / loadRAR() from the standalone Browse RAR modal.
+    const reg = await loadRAR();
+    _storeAgents = reg.agents || [];
+  }
+
   function renderStore() {
+    if (_storeTab === 'rapps')  return _renderStoreRapps();
+    if (_storeTab === 'senses') return _renderStoreSenses();
+    if (_storeTab === 'agents') return _renderStoreAgents();
+  }
+
+  function _renderStoreRapps() {
     if (!_storeCatalog) return;
     const q = (document.getElementById('store-search').value || '').trim().toLowerCase();
     const cat = document.getElementById('store-category').value;
@@ -3636,6 +3761,131 @@
         }
       });
     });
+  }
+
+  function _renderStoreSenses() {
+    if (!_storeSenses) return;
+    const q = (document.getElementById('store-search').value || '').trim().toLowerCase();
+    const filtered = _storeSenses.filter(s => {
+      if (!q) return true;
+      const hay = [s.id, s.name, s.summary, s.slot, s.delimiter].join(' ').toLowerCase();
+      return hay.includes(q);
+    });
+    const list = document.getElementById('store-list');
+    if (!filtered.length) {
+      list.innerHTML = '<div class="browse-loading">No senses match this search.</div>';
+      return;
+    }
+    list.innerHTML = filtered.map((s, idx) => {
+      const installed = _installedSenseFiles.has(s.filename);
+      const slotChip = s.slot ? `<span class="br-chip">${escapeHtml(s.slot)}</span>` : '';
+      const delim = s.delimiter ? `<span class="br-chip">${escapeHtml(s.delimiter)}</span>` : '';
+      const bits = [];
+      if (s.lines) bits.push(`${s.lines} lines`);
+      if (s.bytes) bits.push(`${s.bytes} bytes`);
+      const meta = bits.length ? `<div class="br-meta">${bits.join(' · ')}</div>` : '';
+      const btnLabel = installed ? 'Installed ✓' : 'Install';
+      const btnCls = installed ? 'br-install installed' : 'br-install';
+      return `
+        <div class="br-row" data-idx="${idx}">
+          <div class="br-body">
+            <div class="br-name">${escapeHtml(s.name || s.id)}</div>
+            <div class="br-id">${escapeHtml(s.filename || '')}</div>
+            <div class="br-desc">${escapeHtml(s.summary || '')}</div>
+            <div class="br-tags">${slotChip}${delim}</div>
+            ${meta}
+          </div>
+          <button class="${btnCls}" data-idx="${idx}" ${installed ? 'disabled' : ''}>${btnLabel}</button>
+        </div>`;
+    }).join('');
+    list.querySelectorAll('.br-install:not([disabled])').forEach(btn => {
+      btn.addEventListener('click', () => installSense(filtered[+btn.dataset.idx], btn));
+    });
+  }
+
+  function _renderStoreAgents() {
+    if (!_storeAgents) return;
+    const q = (document.getElementById('store-search').value || '').trim().toLowerCase();
+    const cat = document.getElementById('store-category').value;
+    const all = _storeAgents;
+    const filtered = all.filter(a => {
+      if (cat && a.category !== cat) return false;
+      if (q) {
+        const hay = [a.display_name, a.name, a.description, ...(a.tags || [])]
+          .join(' ').toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+    const list = document.getElementById('store-list');
+    if (!filtered.length) {
+      list.innerHTML = '<div class="browse-loading">No agents match these filters.</div>';
+      return;
+    }
+    // Cap at 200 visible to keep render fast — RAR has 280+ entries.
+    const cap = 200;
+    const visible = filtered.slice(0, cap);
+    list.innerHTML = visible.map((a, idx) => {
+      const filename = (a._file || '').split('/').pop() || '';
+      const installed = _installedFiles.has(filename);
+      const tags = (a.tags || []).slice(0, 4).map(t =>
+        `<span class="br-chip">${escapeHtml(t)}</span>`).join('');
+      const tierCls = ['official','community','experimental'].includes(a.quality_tier)
+        ? a.quality_tier : 'community';
+      const tier = `<span class="br-tier ${tierCls}">${escapeHtml(a.quality_tier || 'community')}</span>`;
+      return `
+        <div class="br-row" data-idx="${idx}">
+          <div class="br-body">
+            <div class="br-name">${escapeHtml(a.display_name || a.name)} ${tier}</div>
+            <div class="br-id">${escapeHtml(a.name)}</div>
+            <div class="br-desc">${escapeHtml(a.description || '')}</div>
+            <div class="br-tags">${tags}</div>
+          </div>
+          <button class="br-install ${installed ? 'installed' : ''}"
+                  data-idx="${idx}" ${installed ? 'disabled' : ''}>
+            ${installed ? 'Installed ✓' : 'Install'}
+          </button>
+        </div>`;
+    }).join('') + (filtered.length > cap
+      ? `<div class="browse-loading">Showing first ${cap} of ${filtered.length} matches — narrow your search.</div>`
+      : '');
+    list.querySelectorAll('.br-install:not([disabled])').forEach(btn => {
+      btn.addEventListener('click', () => installFromRAR(visible[+btn.dataset.idx], btn));
+    });
+  }
+
+  // Install a sense — fetch the .py from the catalog URL, then POST
+  // {filename, content} to the senses organ which writes it under
+  // utils/senses/. Senses are auto-discovered there on every request.
+  async function installSense(sense, btn) {
+    if (!sense || !sense.url || !sense.filename) {
+      alert('This sense entry is missing url/filename — cannot install.');
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Installing…';
+    try {
+      const r = await fetch(sense.url, { cache: 'no-cache' });
+      if (!r.ok) throw new Error(`source HTTP ${r.status}`);
+      const text = await r.text();
+      const res = await fetch(`${API}/api/senses/install`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: sense.filename, content: text }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.status !== 'ok') {
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+      _installedSenseFiles.add(sense.filename);
+      btn.textContent = 'Installed ✓';
+      btn.classList.add('installed');
+      btn.disabled = true;
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = 'Install';
+      alert(`Install failed: ${e.message}`);
+    }
   }
 
   // ── Decoupled-from-binder install + open ──
