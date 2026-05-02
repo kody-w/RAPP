@@ -209,7 +209,10 @@ def check_lineage(repo_root: pathlib.Path | str | None = None) -> dict[str, Any]
         }
 
     # Case 2: declared species root.
-    if role == "master" and parent_rappid is None and parent_repo is None:
+    # The role field accepts both "master" (legacy term, pre-2026-04-30) and
+    # "prototype" (post-unification term aligned with the v2 rappid kind).
+    # See pages/vault/Architecture/Rappid.md.
+    if role in ("master", "prototype") and parent_rappid is None and parent_repo is None:
         return {
             **base,
             "status": "master",
