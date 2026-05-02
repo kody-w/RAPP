@@ -40,12 +40,14 @@ if ($gh) {
 
 Write-Host ""
 Write-Host "Starting RAPP Brainstem..." -ForegroundColor Cyan
-# Launch via the boot wrapper so body_functions and /web mount are
-# wired in additively. The wrapper runs the canonical kernel verbatim
-# (Constitution Article XXXIII §4) and injects body_function dispatch
-# right before the server starts. Falls back to running the kernel
-# directly if boot.py is missing (older organism layouts).
-if (Test-Path "boot.py") {
+# Launch via the boot wrapper so organs, senses, and the /web mount
+# are wired in additively. The wrapper runs the canonical kernel
+# verbatim (Constitution Article XXXIII §4 — kernel stays untouched).
+# Falls back to legacy boot.py at root, then to the kernel directly,
+# for older organism layouts.
+if (Test-Path "utils/boot.py") {
+    python utils/boot.py
+} elseif (Test-Path "boot.py") {
     python boot.py
 } else {
     python brainstem.py

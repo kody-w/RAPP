@@ -685,8 +685,12 @@ def _register_shims():
         print(f"[brainstem] Warning: Could not load BasicAgent: {e}")
         pass
     
-    # Shim: utils.azure_file_storage → local_storage.py
-    from local_storage import AzureFileStorageManager as _LSM
+    # Shim: utils.azure_file_storage → utils/local_storage.py
+    try:
+        from utils.local_storage import AzureFileStorageManager as _LSM
+    except ImportError:
+        # Older organism layouts had local_storage.py at the brainstem root.
+        from local_storage import AzureFileStorageManager as _LSM  # type: ignore
     if "utils" not in sys.modules:
         utils_mod = types.ModuleType("utils")
         utils_mod.__path__ = [os.path.join(brainstem_dir, "utils")]

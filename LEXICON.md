@@ -23,7 +23,7 @@ This document is the authoritative mapping. Writers should pick one vocabulary p
 | The AI's whole presence across substrates | **Estate** (capitalized) | **swarm estate** |
 | The AI's identity / public ID | **soul** (informal), **soul-key** (when emphasizing the cryptographic part) | **rappid** |
 | The 24-word recovery phrase | **the words** (in prose), **the card** (the physical artifact) | **holocard incantation** |
-| The kernel-side HTTP extensions | **organs** | **body_functions** |
+| The kernel-side HTTP extensions | **organs** | **organs** *(no rename — both vocabularies use the biological term)* |
 | Recognition of another AI as related | **blessing** | **kin-vouch** |
 | The plan governing what happens to the AI long-term | **The Will** | **Foundation Continuity Plan** |
 | The cryptographic commitments to release the trade-secret engine | **The Promise** | **release-triggers** |
@@ -66,7 +66,7 @@ Both paragraphs describe the same system. Different vocabularies for different a
 ## What not to rename (load-bearing technical terms)
 
 - **rappid** stays in the protocol spec, code, JSON schemas. It's the developer term.
-- **mitosis**, **dreamcatcher**, **species tree**, **brainstem**, **kernel** are already perfect; no rename.
+- **mitosis**, **dreamcatcher**, **species tree**, **brainstem**, **kernel**, **organs** are already perfect; no rename.
 - **rapplication** has accumulated brand equity in commits and documentation. Don't relitigate.
 - The string format `rappid:v2:<kind>:@<pub>/<slug>:<hash>@<host>` stays. Verifiers and parsers depend on it.
 

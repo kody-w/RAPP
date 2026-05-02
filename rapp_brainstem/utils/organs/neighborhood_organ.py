@@ -1,5 +1,5 @@
 """
-neighborhood_body_function.py — peer-discovery body_function.
+neighborhood_organ.py — peer-discovery organ.
 
 Reads the shared local-machine peer registry (~/.config/rapp/peers.json,
 written by install.sh / install.ps1) and probes each entry's /health
@@ -12,9 +12,9 @@ Endpoints (dispatched at /api/neighborhood/*):
 The HTML viewer lives at rapp_brainstem/utils/web/neighborhood.html and
 is served by the static handler at /web/neighborhood.html.
 
-Why a body_function and not a kernel route: Constitution Article I and
-Article XXXIII — the kernel is DNA, body_functions are the dispatchable
-musculature that grows around it. Peer discovery is a feature, not DNA.
+Why an organ and not a kernel route: Constitution Article I and Article
+XXXIII — the kernel is DNA, organs are the dispatchable musculature that
+grows around it. Peer discovery is a feature, not DNA.
 """
 
 import json
@@ -26,15 +26,15 @@ import urllib.request
 name = "neighborhood"
 
 
-# File lives at rapp_brainstem/utils/body_functions/neighborhood_body_function.py.
-# Three dirname() walks reach the brainstem root (file → body_functions →
+# File lives at rapp_brainstem/utils/organs/neighborhood_organ.py.
+# Three dirname() walks reach the brainstem root (file → organs →
 # utils → root).
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def _peers_payload() -> dict:
     """Build the /api/neighborhood/peers response. Lazy-imports peer_registry
-    so a missing helper degrades to an empty list instead of crashing the service."""
+    so a missing helper degrades to an empty list instead of crashing the organ."""
     try:
         # peer_registry.py lives in rapp_brainstem/utils/. The brainstem
         # process always runs with cwd=rapp_brainstem (set by start.sh /
@@ -98,7 +98,7 @@ def _peers_payload() -> dict:
 
 
 def handle(method: str, path: str, body: dict):
-    """Service entry point — see brainstem.py service_dispatch."""
+    """Organ entry point — dispatched by utils/organs."""
     if method == "GET" and path in ("peers", "peers/", ""):
         return _peers_payload(), 200
     return {"error": f"unknown route: {method} /api/neighborhood/{path}"}, 404

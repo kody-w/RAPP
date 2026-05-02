@@ -1,24 +1,24 @@
 """
-swarm_estate_body_function.py — kernel-side endpoints for rappid + lineage + verification.
+swarm_estate_organ.py — kernel-side endpoints for rappid + lineage + verification.
 
 The Swarm Estate Protocol (Constitution Article XXXVI) is implemented in
 Wildhaven's private vault and described in `pages/vault/Architecture/`.
-This body_function is the kernel-side runtime that exposes the protocol's
+This organ is the kernel-side runtime that exposes the protocol's
 verification primitives at HTTP endpoints. Any operator running a brainstem
 gets these endpoints for free; they're transport-only — no Foundation IP
 exposed, just verification of public records.
 
 Endpoints (dispatched at /api/swarm-estate/*):
 
-    GET  /api/swarm-estate/                   — body_function index + version info
+    GET  /api/swarm-estate/                   — organ index + version info
     GET  /api/swarm-estate/parse?rappid=<s>   — parse a rappid string into structured fields
     POST /api/swarm-estate/walk               — walk a parent_rappid chain in a vault
     POST /api/swarm-estate/verify-record      — verify a signed record against its declared signer
     GET  /api/swarm-estate/species-root       — return the canonical species-root rappid
 
-Companion to estate_body_function.py (which is the local-device twin
-view); together they cover both layers of the Article XXXVI / Article
-XXXIV identity stack.
+Companion to estate_organ.py (which is the local-device twin view);
+together they cover both layers of the Article XXXVI / Article XXXIV
+identity stack.
 
 Spec: pages/vault/Architecture/Rappid.md, pages/vault/Architecture/The Swarm Estate.md
 """
@@ -66,7 +66,7 @@ def _lineage_module():
 def _index() -> dict:
     rmod = _rappid_module()
     return {
-        "schema": "swarm-estate-body-function/1.0",
+        "schema": "swarm-estate-organ/1.0",
         "name": "swarm-estate",
         "purpose": "Verification primitives for the rappid identity system (Constitution Articles XXXIV, XXXVI).",
         "spec_urls": [
@@ -238,7 +238,7 @@ def _species_root() -> tuple[dict, int]:
 
 
 def handle(method: str, path: str, body: dict):
-    """Body_function entry point — see brainstem.py service_dispatch.
+    """Organ entry point — dispatched by utils/organs.
 
     Path is everything after /api/swarm-estate/ (or empty for the index).
     """

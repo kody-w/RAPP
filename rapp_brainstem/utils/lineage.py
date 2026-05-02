@@ -14,7 +14,7 @@ locations.
 External walking (across hosts, into other repos) is not done here —
 this module is local-first: it walks records that are already on disk.
 For network-fetched lineage walks, layer this module under a
-swarm_estate body_function or similar.
+swarm_estate organ or similar.
 """
 from __future__ import annotations
 

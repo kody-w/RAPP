@@ -65,10 +65,10 @@ This isn't "a bug." This is the architectural promise being tested. **Article XX
 
 Two ways to satisfy the promise:
 
-1. **The kernel ships with everything it imports.** Every bare import in the kernel must resolve to a sibling file the kernel ships alongside. The kernel cannot reach into the mutation surface (`utils/`, `agents/` body, body_functions) for resolution.
+1. **The kernel ships with everything it imports.** Every bare import in the kernel must resolve to a sibling file the kernel ships alongside. The kernel cannot reach into the mutation surface (`utils/`, `agents/` body, organs) for resolution.
 2. **The kernel adds path manipulation before its imports.** This was the bloated-kernel approach (`sys.path.insert`). It works but it's a kernel edit — and kernel edits are how species drift accumulates.
 
-The architecture chooses (1): the kernel ships its sibling deps. Anything the kernel imports at module load or during shim registration must exist at the kernel's own directory level, period.
+The architecture originally chose (1): the kernel shipped its sibling deps. As of the front-porch cleanup (utils/ contains all wizardry), the storage shim resolves through `utils/local_storage.py` with a fallback to the legacy root sibling for older organism layouts. Both paths are kept on the import line so the kernel can drop onto either layout.
 
 ## The resolution shape
 

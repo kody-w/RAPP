@@ -1,5 +1,5 @@
 """
-estate_body_function.py — twin-estate operations layer.
+estate_organ.py — twin-estate operations layer.
 
 The neighborhood (peer_registry) is the data layer: a flat list of
 brainstems on this device. The estate is a *view* over that data,
@@ -34,7 +34,7 @@ import time
 name = "estate"
 
 
-# Two dirname() walks: file → body_functions/ → utils/
+# Two dirname() walks: file → organs/ → utils/
 _UTILS_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _UTILS_DIR not in sys.path:
     sys.path.insert(0, _UTILS_DIR)
@@ -300,7 +300,7 @@ def _hatch(body: dict) -> tuple[dict, int]:
 
 
 def handle(method: str, path: str, body: dict):
-    """Service entry point — see brainstem.py service_dispatch."""
+    """Organ entry point — dispatched by utils/organs."""
     p = (path or "").strip("/")
     if method == "GET" and p in ("twins", "twins/", ""):
         return _list_twins(), 200

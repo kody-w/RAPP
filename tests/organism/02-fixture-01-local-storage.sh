@@ -1,61 +1,64 @@
 #!/usr/bin/env bash
-# Fixture #1: canonical kernel's bare `from local_storage import ...`
-# must resolve via a kernel-sibling shim, not by editing the kernel.
+# Fixture #1: the kernel's storage shim must resolve cleanly. The
+# canonical layout has the implementation at utils/local_storage.py
+# and the kernel imports it directly (with a fallback to a legacy
+# root sibling for older organism layouts).
 #
 # Asserts:
-#   - rapp_brainstem/local_storage.py exists at the kernel's directory level
-#   - it re-exports AzureFileStorageManager from utils.local_storage
-#   - the shim resolves cleanly under the same Python sys.path the kernel sets up
+#   - rapp_brainstem/utils/local_storage.py is the implementation
+#   - the kernel resolves the import without any sys.path manipulation
+#     of its own (the brainstem dir is on sys.path because it IS cwd
+#     when the kernel runs)
+#   - the resolved class lives under utils.local_storage
 #
 # Reference: pages/vault/Fixtures/Fixture 01 — Canonical Kernel local_storage Drop-In.md
 
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
-SHIM="rapp_brainstem/local_storage.py"
 IMPL="rapp_brainstem/utils/local_storage.py"
+LEGACY_SHIM="rapp_brainstem/local_storage.py"
 
-# 1. The shim must exist as a kernel sibling (NOT in utils/ or anywhere mutable).
-[ -f "$SHIM" ] || { echo "FAIL: $SHIM does not exist (kernel-sibling shim missing)"; exit 1; }
+# 1. The implementation must live in utils/.
+[ -f "$IMPL" ] || { echo "FAIL: $IMPL missing"; exit 1; }
 
-# 2. The implementation must remain in utils/.
-[ -f "$IMPL" ] || { echo "FAIL: $IMPL missing (the actual implementation is gone)"; exit 1; }
-
-# 3. The shim must re-export AzureFileStorageManager.
-grep -q "AzureFileStorageManager" "$SHIM" || {
-    echo "FAIL: $SHIM does not mention AzureFileStorageManager"
-    exit 1
-}
-
-# 4. The shim must NOT reach into the mutation surface (e.g., import from agents/, body_functions/).
-grep -qE "from (agents|utils\.body_functions|utils\.services)" "$SHIM" && {
-    echo "FAIL: shim imports from mutation surface — it must only reach into kernel-adjacent code"
-    exit 1
-}
-
-# 5. The kernel itself must NOT have been edited to add sys.path manipulation
-#    around the local_storage import. (The whole point of the shim is that the
-#    kernel stays unchanged.)
+# 2. The kernel must not introduce its own sys.path.insert for utils
+#    around the local_storage import — the brainstem dir is already on
+#    sys.path because it's the kernel's own directory.
 grep -E "sys\.path\.insert.*utils_dir" rapp_brainstem/brainstem.py && {
-    echo "FAIL: kernel was edited to add sys.path.insert — that defeats the additive-shim discipline"
+    echo "FAIL: kernel was edited to add sys.path.insert — that defeats the additive discipline"
     exit 1
 }
 
-# 6. With brainstem_dir on sys.path, the bare import must resolve.
+# 3. With brainstem_dir on sys.path, the kernel's import shape must resolve.
 PYTHON="${PYTHON:-$HOME/.brainstem/venv/bin/python}"
 [ -x "$PYTHON" ] || PYTHON="$(command -v python3)"
 
 OUT="$("$PYTHON" -c "
 import sys
 sys.path.insert(0, 'rapp_brainstem')
-from local_storage import AzureFileStorageManager
-print('OK', AzureFileStorageManager.__module__)
+try:
+    from utils.local_storage import AzureFileStorageManager
+    print('OK', AzureFileStorageManager.__module__)
+except ImportError:
+    # Legacy organism layout: root sibling shim.
+    from local_storage import AzureFileStorageManager  # type: ignore
+    print('OK', AzureFileStorageManager.__module__)
 " 2>&1)"
 
 echo "  $OUT"
-echo "$OUT" | grep -q "^OK utils.local_storage$" || {
-    echo "FAIL: bare import did not resolve to utils.local_storage"
+echo "$OUT" | grep -qE "^OK (utils\.local_storage|local_storage)$" || {
+    echo "FAIL: kernel storage import did not resolve to utils.local_storage or local_storage"
     exit 1
 }
 
-echo "✓ fixture 01: kernel-sibling local_storage.py shim resolves cleanly"
+# 4. If the legacy root shim exists in this organism (older layout),
+#    it must not reach into the mutation surface beyond utils.local_storage.
+if [ -f "$LEGACY_SHIM" ]; then
+    grep -qE "from (agents|utils\.body_functions|utils\.services|utils\.organs)" "$LEGACY_SHIM" && {
+        echo "FAIL: legacy shim imports from mutation surface"
+        exit 1
+    }
+fi
+
+echo "✓ fixture 01: kernel storage shim resolves cleanly via utils/local_storage.py"

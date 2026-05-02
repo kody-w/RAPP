@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# The boot.py sidecar must wire body_function dispatch and /web mount
-# onto the canonical kernel without modifying brainstem.py. End-to-end:
-# fresh boot via boot.py → /api/<name>/<path> answers, /web/<file>
+# The boot sidecar must wire organ dispatch and /web mount onto the
+# canonical kernel without modifying brainstem.py. End-to-end: fresh
+# boot via utils/boot.py → /api/<name>/<path> answers, /web/<file>
 # serves static, /health still ok, /chat still answers as the kernel
 # would.
 #
 # Asserts:
-#   - boot.py runs the canonical kernel (kernel /health responds)
-#   - body_function dispatcher is wired (/api/neighborhood/peers → 200)
+#   - boot sidecar runs the canonical kernel (kernel /health responds)
+#   - organ dispatcher is wired (/api/neighborhood/peers → 200)
 #   - /web mount is wired (/web/neighborhood.html → 200)
 #   - the kernel itself was NOT modified by this addition
 #
@@ -38,23 +38,31 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# 1. The kernel itself must NOT have been edited to add body_function
-#    or /web dispatch — that's the additive-only rule.
-grep -E "^def load_services|^def load_body_functions|service_dispatch|api/<svc>" rapp_brainstem/brainstem.py && {
-    echo "FAIL: kernel has body_function/service dispatch baked in — that violates Article XXXIII §4"
+# 1. The kernel itself must NOT have been edited to add organ or /web
+#    dispatch — that's the additive-only rule.
+grep -E "^def load_services|^def load_body_functions|^def load_organs|service_dispatch|organ_dispatch|api/<svc>" rapp_brainstem/brainstem.py && {
+    echo "FAIL: kernel has organ/body_function/service dispatch baked in — that violates Article XXXIII §4"
     exit 1
 }
 
 # 2. Boot via the sidecar
-echo "▶ booting via boot.py on :$PORT"
-( cd rapp_brainstem && exec env PORT="$PORT" "$PYTHON" boot.py ) > "$LOG" 2>&1 &
+BOOT_PATH=""
+if [ -f rapp_brainstem/utils/boot.py ]; then
+    BOOT_PATH="utils/boot.py"
+elif [ -f rapp_brainstem/boot.py ]; then
+    BOOT_PATH="boot.py"  # legacy layout
+else
+    echo "FAIL: no boot sidecar found"; exit 1
+fi
+echo "▶ booting via $BOOT_PATH on :$PORT"
+( cd rapp_brainstem && exec env PORT="$PORT" "$PYTHON" "$BOOT_PATH" ) > "$LOG" 2>&1 &
 echo $! > "$PID_FILE"
 
 for i in $(seq 1 30); do
     if curl -sf "http://localhost:$PORT/health" >/dev/null 2>&1; then break; fi
     sleep 0.5
     if [ "$i" = "30" ]; then
-        echo "FAIL: kernel did not boot via boot.py in 15s"
+        echo "FAIL: kernel did not boot via $BOOT_PATH in 15s"
         echo "--- log tail ---"
         tail -40 "$LOG"
         exit 1
@@ -68,7 +76,7 @@ echo "$HEALTH" | grep -qE '"status":"(ok|unauthenticated)"' || {
     exit 1
 }
 
-# 4. body_function dispatch must be wired (neighborhood is shipped)
+# 4. organ dispatch must be wired (neighborhood is shipped)
 NEIGHBOR_STATUS="$(curl -s -o /tmp/rapp-organism-07.neighbor.json -w "%{http_code}" "http://localhost:$PORT/api/neighborhood/peers")"
 if [ "$NEIGHBOR_STATUS" != "200" ]; then
     echo "FAIL: /api/neighborhood/peers returned $NEIGHBOR_STATUS (expected 200)"
@@ -81,7 +89,7 @@ grep -q "peers" /tmp/rapp-organism-07.neighbor.json || {
     exit 1
 }
 
-# 5. /web mount must serve static (neighborhood.html ships with the body_function)
+# 5. /web mount must serve static (neighborhood.html ships with the organ)
 WEB_STATUS="$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:$PORT/web/neighborhood.html")"
 if [ "$WEB_STATUS" != "200" ]; then
     echo "FAIL: /web/neighborhood.html returned $WEB_STATUS (expected 200)"
@@ -95,4 +103,4 @@ if [ "$TRAV_STATUS" = "200" ]; then
     exit 1
 fi
 
-echo "✓ boot sidecar wires body_functions + /web onto unmodified kernel"
+echo "✓ boot sidecar wires organs + /web onto unmodified kernel"

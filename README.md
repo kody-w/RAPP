@@ -139,7 +139,7 @@ The previous engine code that lived in this repo (the Rapp intelligence engine f
 
 | Layer | License |
 |---|---|
-| Code (kernel, hatchling, body_functions, senses, boot wrapper, tests) | [PolyForm Small Business 1.0.0](./LICENSE) — free for individuals and small businesses (under 100 people, under $1M revenue); commercial use beyond that needs a separate license |
+| Code (kernel, hatchling, organs, senses, boot wrapper, tests) | [PolyForm Small Business 1.0.0](./LICENSE) — free for individuals and small businesses (under 100 people, under $1M revenue); commercial use beyond that needs a separate license |
 | Documentation (Constitution, vault, docs, READMEs) | [CC BY-NC 4.0](./LICENSE-DOCS) — read, quote, and build on with attribution; no commercial repackaging |
 | Trademarks ("RAPP", "rappid", "hatchling", "vBrainstem", "rapplication") | Reserved — see [TRADEMARK.md](./TRADEMARK.md) |
 | Commercial licensing | Open an issue with the `[license]` prefix; see [COMMERCIAL.md](./COMMERCIAL.md) |

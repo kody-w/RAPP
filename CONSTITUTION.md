@@ -2136,11 +2136,12 @@ one front door.
 
 ## Article XXXII — Kernel Is What Chat Requires
 
-> **Terminology note (added with Article XXXIII).** This article was ratified using the older term "service" / `*_service.py` / `utils/services/`. **Article XXXIII renamed services to "body_functions"** as part of the digital-organism framing — the dispatchable musculature growing around the DNA kernel. Both terms refer to the same single-file `name + handle(method, path, body)` contract. New code uses `*_body_function.py` under `utils/body_functions/`. Legacy `*_service.py` files in older installs continue to work via transitional discovery during the rename window. The reasoning below is preserved verbatim — read "service" as "body_function" throughout.
+> **Terminology note (twice-revised).** This article was ratified using the term "service" / `*_service.py` / `utils/services/`. Article XXXIII first renamed it to "body_function" / `*_body_function.py` / `utils/body_functions/`. The current canonical term is **organ** / `*_organ.py` / `utils/organs/` — single word, biological, matches the metaphor the rest of the constitution already uses (kernel = DNA, organs = dispatchable musculature). All three suffixes refer to the same single-file `name + handle(method, path, body)` contract. New code uses `*_organ.py` under `utils/organs/`. Legacy `*_body_function.py` and `*_service.py` files in older installs continue to work via transitional discovery during the rename window. The reasoning below is preserved verbatim — read "service" as "organ" throughout.
 
 The brainstem keeps coming back to the same question: should this code
-live inline in `brainstem.py`, or extract into a `*_body_function.py` under
-`utils/body_functions/` (formerly `*_service.py` under `utils/services/`)?
+live inline in `brainstem.py`, or extract into a `*_organ.py` under
+`utils/organs/` (formerly `*_body_function.py` under `utils/body_functions/`,
+originally `*_service.py` under `utils/services/`)?
 Article I tells us "the brainstem stays light" but not where the line is.
 This article is the line.
 
@@ -2247,10 +2248,10 @@ and what each contributor (human or AI) is permitted to touch.
 | Layer | Substance | Examples | Mutability |
 |---|---|---|---|
 | **DNA (kernel)** | Universal genetic code, identical across every install of this species | `rapp_brainstem/brainstem.py`, `rapp_brainstem/agents/basic_agent.py`, `rapp_swarm/function_app.py` | Sacred. Drop-in replaceable across all organisms of this species. Never edited by AI assistants. (See Article I and XXXII for what changes the kernel admits at all.) |
-| **Body functions** | Single-file musculature growing around the DNA — the dispatchable HTTP organs of the organism | `*_body_function.py` files under `utils/body_functions/` (formerly "services" — Article XXXII used the older term; the metaphor is biological) | Locally mutable per organism. Each body_function exposes `name` + `handle(method, path, body)` and is dispatched at `/api/<name>/...`. |
-| **Local mutations** | Everything the user adapts on-device: agents added, body_functions added, soul edited, configs tweaked, on-disk state | `agents/`, `utils/body_functions/`, `soul.md` overrides, `.brainstem_data/`, `.env` | Local-first. Never auto-synced upstream. Survives every hatching cycle. |
+| **Organs** | Single-file musculature growing around the DNA — the dispatchable HTTP surface of the organism | `*_organ.py` files under `utils/organs/` (originally "services" — Article XXXII; later "body_functions" — Article XXXIII rev. 1) | Locally mutable per organism. Each organ exposes `name` + `handle(method, path, body)` and is dispatched at `/api/<name>/...`. |
+| **Local mutations** | Everything the user adapts on-device: agents added, organs added, soul edited, configs tweaked, on-disk state | `agents/`, `utils/organs/`, `soul.md` overrides, `.brainstem_data/`, `.env` | Local-first. Never auto-synced upstream. Survives every hatching cycle. |
 
-The kernel is the *species*. Body functions and mutations are the
+The kernel is the *species*. Organs and mutations are the
 *individual organism*. Two organisms of the same species (same DNA) can
 have wildly different musculature and adaptations.
 
@@ -2302,7 +2303,7 @@ Whatever problem looks like "I just need a small fix in the kernel"
 is actually one of:
 
 - a new agent (Article III),
-- a new body_function (Article XXXII),
+- a new organ (Article XXXII),
 - an additive sibling file the kernel imports (e.g., the `local_storage.py` shim),
 - a transitional shim or wrapper that runs *around* the kernel.
 

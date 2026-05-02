@@ -15,7 +15,7 @@ Working document. The autonomous run that polishes the Foundation from "structur
 
 The earlier merge focused on rappid format. This phase finds every remaining divergence between local Foundation work and the kernel-direction work that landed remotely:
 
-- `services` vs `body_functions` terminology drift in Foundation docs and Swarm Estate spec
+- `services` vs `body_functions` vs `organs` terminology drift in Foundation docs and Swarm Estate spec
 - Old vault note filename references (e.g., `Rappid — The Unified Lineage Identifier` → `Rappid`)
 - README + CLAUDE.md inconsistencies between repos
 - Capitalization of "Rappter" / "rappter" across docs
@@ -30,7 +30,7 @@ The applications:
 
 1. **`rapp_brainstem/utils/rappid.py`** — typed, testable parser/serializer/walker. Used by every tool that handles rappids.
 2. **`rapp_brainstem/utils/lineage.py`** — walks a parent_rappid chain to the species root, given a starting rappid + a vault directory containing root.json files.
-3. **`rapp_brainstem/utils/body_functions/swarm_estate_body_function.py`** — the kernel-side body_function exposing `/api/swarm-estate/verify`, `/api/swarm-estate/walk`, `/api/swarm-estate/lineage`. Integrates the Foundation cryptographic layer with the brainstem.
+3. **`rapp_brainstem/utils/organs/swarm_estate_organ.py`** — the kernel-side organ exposing `/api/swarm-estate/verify`, `/api/swarm-estate/walk`, `/api/swarm-estate/lineage`. Integrates the Foundation cryptographic layer with the brainstem.
 4. **`tools/rappid` CLI** — the unified command-line: `rappid parse`, `rappid walk`, `rappid verify`, `rappid mint`.
 
 ### Phase 3 — Test suite (organism-level)

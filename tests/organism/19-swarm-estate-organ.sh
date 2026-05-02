@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Fixture: the swarm_estate body_function exposes /api/swarm-estate/* endpoints.
+# Fixture: the swarm_estate organ exposes /api/swarm-estate/* endpoints.
 #
 # Asserts:
-#   - GET /api/swarm-estate/ returns the body_function index
+#   - GET /api/swarm-estate/ returns the organ index
 #   - GET /api/swarm-estate/species-root returns the canonical species root rappid
 #   - GET /api/swarm-estate/parse?rappid=<s> parses correctly
 #   - POST /api/swarm-estate/walk walks a synthetic vault to the species root
 #
-# Reference: rapp_brainstem/utils/body_functions/swarm_estate_body_function.py
+# Reference: rapp_brainstem/utils/organs/swarm_estate_organ.py
 
 set -euo pipefail
 cd "$(dirname "$0")/../.."
@@ -47,9 +47,13 @@ done
 PYTHON="${PYTHON:-$HOME/.brainstem/venv/bin/python}"
 [ -x "$PYTHON" ] || PYTHON="$(command -v python3)"
 
-echo "▶ booting brainstem via boot.py on :$PORT (LLM_FAKE=1) for body_function smoke test"
-# Use boot.py so body_functions get dispatched (per Constitution Article XXXIII boot sidecar)
-( cd rapp_brainstem && exec env PORT="$PORT" LLM_FAKE=1 "$PYTHON" boot.py ) > "$LOG" 2>&1 &
+BOOT_PATH=""
+if [ -f rapp_brainstem/utils/boot.py ]; then BOOT_PATH="utils/boot.py"
+elif [ -f rapp_brainstem/boot.py ]; then BOOT_PATH="boot.py"
+else echo "FAIL: no boot sidecar"; exit 1; fi
+echo "▶ booting brainstem via $BOOT_PATH on :$PORT (LLM_FAKE=1) for organ smoke test"
+# Use the boot sidecar so organs get dispatched (per Constitution Article XXXIII)
+( cd rapp_brainstem && exec env PORT="$PORT" LLM_FAKE=1 "$PYTHON" "$BOOT_PATH" ) > "$LOG" 2>&1 &
 echo $! > "$PID_FILE"
 
 # Wait for boot
@@ -60,7 +64,7 @@ done
 
 # 1. GET /api/swarm-estate/
 RESP=$(curl -sf "http://localhost:$PORT/api/swarm-estate/")
-echo "$RESP" | grep -q "swarm-estate-body-function/1.0" || { echo "FAIL: index response"; echo "$RESP"; exit 1; }
+echo "$RESP" | grep -qE "swarm-estate-(body-function|organ)/1.0" || { echo "FAIL: index response"; echo "$RESP"; exit 1; }
 
 # 2. GET /api/swarm-estate/species-root
 RESP=$(curl -sf "http://localhost:$PORT/api/swarm-estate/species-root")
@@ -81,4 +85,4 @@ echo "$RESP" | grep -q "terminated_at_species_root" || { echo "FAIL: walk respon
 # Extract: terminated_at_species_root should be true
 echo "$RESP" | python3 -c "import json,sys; d=json.load(sys.stdin); assert d['terminated_at_species_root'], d; assert d['depth'] == 1, f\"depth {d['depth']}\""
 
-echo "PASS: 19-swarm-estate-body-function"
+echo "PASS: 19-swarm-estate-organ"

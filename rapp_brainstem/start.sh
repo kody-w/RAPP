@@ -28,16 +28,17 @@ fi
 
 # Force UTF-8 for all open() calls regardless of OS locale (PEP 540).
 # Belt-and-suspenders — the kernel passes encoding="utf-8" explicitly,
-# but this catches any agent or body_function that does a bare open().
+# but this catches any agent or organ that does a bare open().
 export PYTHONUTF8=1
 
-# Launch via the boot wrapper so body_functions and /web mount are
-# wired in additively. The wrapper runs the canonical kernel verbatim
-# (Constitution Article XXXIII §4 — kernel stays untouched) and
-# injects body_function dispatch right before the server starts.
-# Falls back to running the kernel directly if boot.py is missing
-# (older organism layouts).
-if [ -f boot.py ]; then
+# Launch via the boot wrapper so organs, senses, and the /web mount
+# are wired in additively. The wrapper runs the canonical kernel
+# verbatim (Constitution Article XXXIII §4 — kernel stays untouched).
+# Falls back to legacy boot.py at root, then to the kernel directly,
+# for older organism layouts.
+if [ -f utils/boot.py ]; then
+    exec "$VENV_PYTHON" utils/boot.py
+elif [ -f boot.py ]; then
     exec "$VENV_PYTHON" boot.py
 else
     exec "$VENV_PYTHON" brainstem.py

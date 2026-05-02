@@ -8,7 +8,7 @@ The original `Twin-Patterns.md` answered "how does one twin run on many machines
 
 What makes the estate one *thing* — instead of a scattered pile of eggs, vaults, and broadcasts — is that every artifact carries the same rappid. The rappid is the index of a living portfolio.
 
-> **Body_functions vs services.** This protocol historically referenced "single-file services" (`*_service.py` under `utils/services/`). Per Constitution Article XXXIII, services were renamed to "body_functions" (`*_body_function.py` under `utils/body_functions/`). Same contract; biological metaphor. Read both terms as equivalent.
+> **Organs vs body_functions vs services.** This protocol historically referenced "single-file services" (`*_service.py` under `utils/services/`), then "body_functions" (`*_body_function.py` under `utils/body_functions/`). Current canonical: **organ** (`*_organ.py` under `utils/organs/`). Same contract; biological metaphor. Read all three terms as equivalent.
 
 ---
 

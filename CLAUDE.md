@@ -93,9 +93,9 @@ Routes to GitHub Copilot API (default), Azure OpenAI, OpenAI, Anthropic, or a de
 These are inviolable — do not break backwards compatibility:
 
 1. **Single-file agents are the plugin system.** One file = one class = one `perform()` = one metadata dict. No build steps, no sibling imports, no frameworks.
-2. **Single-file body_functions are the HTTP extension system.** One file = `name` + `handle(method, path, body) → (dict, status)`. Dispatched via `/api/<name>/<path>`. Body_functions serve UIs; agents serve LLMs. They never overlap. (Constitution Article XXXIII renames the older "service" term to "body_function" — same contract, biological metaphor; legacy `*_service.py` files in older installs continue to work via transitional discovery.)
-3. **Agent-first rule.** Every rapplication MUST work fully through the agent alone. The body_function is always optional — it's a view, not the application.
-4. **Brainstem stays light.** The kernel is `brainstem.py` + `basic_agent.py`. It is the **DNA** of the digital organism (Constitution Article XXXIII) — universal, drop-in replaceable, **never edited by AI assistants**. New features → new agents or new body_functions, never kernel changes.
+2. **Single-file organs are the HTTP extension system.** One file = `name` + `handle(method, path, body) → (dict, status)`. Dispatched via `/api/<name>/<path>`. Organs serve UIs; agents serve LLMs. They never overlap. (Constitution Article XXXIII canonical: `*_organ.py` under `utils/organs/`. Legacy `*_body_function.py` and `*_service.py` files in older installs continue to work via transitional discovery.)
+3. **Agent-first rule.** Every rapplication MUST work fully through the agent alone. The organ is always optional — it's a view, not the application.
+4. **Brainstem stays light.** The kernel is `brainstem.py` + `basic_agent.py`. It is the **DNA** of the digital organism (Constitution Article XXXIII) — universal, drop-in replaceable, **never edited by AI assistants**. New features → new agents or new organs, never kernel changes.
 5. **Delimited slots are fixed forever.** `|||VOICE|||` and `|||TWIN|||` never get repurposed or overloaded. New sub-capabilities use tags inside the slot.
 6. **Tier portability guarantee.** An agent that runs in Tier 1 must run unmodified in Tier 2 & 3.
 
@@ -103,7 +103,7 @@ These are inviolable — do not break backwards compatibility:
 
 | Directory | Purpose |
 |-----------|---------|
-| `rapp_brainstem/` | Tier 1 local server (Flask, agents, body_functions under `utils/body_functions/`, web UI) |
+| `rapp_brainstem/` | Tier 1 local server (Flask, agents, organs under `utils/organs/`, web UI) |
 | `rapp_swarm/` | Tier 2 Azure Functions (vendors brainstem core) |
 | `worker/` | Cloudflare auth/proxy worker |
 | _(catalog lives in [`kody-w/rapp_store`](https://github.com/kody-w/rapp_store))_ | Rapplication catalog is its own public repo since 2026-04-26 — brainstem fetches `index.json` via `RAPPSTORE_URL` (default `raw.githubusercontent.com/kody-w/rapp_store/main/index.json`). Hosted viewer at https://kody-w.github.io/RAPP_Store/. |

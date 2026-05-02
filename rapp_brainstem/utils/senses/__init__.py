@@ -1,11 +1,12 @@
 """
-senses_loader.py — additive sense composer (kernel sibling).
+utils/senses — additive sense composer.
 
-Discovers `*_sense.py` files under `utils/senses/`, augments the
-kernel's soul cache with each sense's `system_prompt`, and installs
-an `after_request` hook that splits `/chat` responses on each
-sense's delimiter, exposing the parsed segment under its
-`response_key`.
+`from utils.senses import install` is the API. Boot calls it with the
+kernel's Flask app; this package discovers `*_sense.py` files that
+live alongside, augments the kernel's soul cache with each sense's
+`system_prompt`, and installs an `after_request` hook that splits
+`/chat` responses on each sense's delimiter, exposing the parsed
+segment under its `response_key`.
 
 A sense is a single-file unit:
     name: str               # e.g. "twin"
@@ -15,7 +16,7 @@ A sense is a single-file unit:
     system_prompt: str      # appended to the soul on every chat turn
 
 The canonical kernel hardcodes only `|||VOICE|||` (when VOICE_MODE=true).
-This loader makes every sense in `utils/senses/` participate without
+This package makes every sense in `utils/senses/` participate without
 modifying the kernel: senses are discovered at boot, their prompts
 augment `_soul_cache` once, and the response splitter handles all
 configured delimiters uniformly.
@@ -34,14 +35,15 @@ import sys
 import traceback
 
 
-_BRAINSTEM_DIR = os.path.dirname(os.path.abspath(__file__))
+_HERE = os.path.dirname(os.path.abspath(__file__))           # utils/senses/
+_UTILS_DIR = os.path.dirname(_HERE)                          # utils/
+_BRAINSTEM_DIR = os.path.dirname(_UTILS_DIR)                 # rapp_brainstem/
 
 
 def _discover_sense_files() -> list[str]:
-    senses_dir = os.path.join(_BRAINSTEM_DIR, "utils", "senses")
-    if not os.path.isdir(senses_dir):
+    if not os.path.isdir(_HERE):
         return []
-    return sorted(glob.glob(os.path.join(senses_dir, "*_sense.py")))
+    return sorted(glob.glob(os.path.join(_HERE, "*_sense.py")))
 
 
 def _import_sense(filepath: str, idx: int):
@@ -85,7 +87,6 @@ def _find_kernel_module():
     main = sys.modules.get("__main__")
     if main and hasattr(main, "_soul_cache") and hasattr(main, "load_soul"):
         return main
-    # Fallback: any module with a brainstem.py file path
     for mod in list(sys.modules.values()):
         try:
             f = getattr(mod, "__file__", "") or ""
@@ -97,9 +98,9 @@ def _find_kernel_module():
 
 
 def install(app, senses: list | None = None) -> int:
-    """Augment the kernel's soul cache with sense prompts and install the
-    response splitter on app's /chat route. Returns the number of senses
-    installed.
+    """Augment the kernel's soul cache with sense prompts and install
+    the response splitter on app's /chat route. Returns the number
+    of senses installed.
     """
     if senses is None:
         senses = discover()
@@ -109,27 +110,16 @@ def install(app, senses: list | None = None) -> int:
 
     kernel = _find_kernel_module()
     if kernel is None:
-        print("[boot] senses_loader: could not locate kernel module")
+        print("[boot] senses: could not locate kernel module")
         return 0
 
-    # Pull current soul (kernel's load_soul populates _soul_cache on first
-    # call; the kernel's __main__ block already called it before app.run,
-    # so the cache is set by now).
     base_soul = kernel.load_soul() or ""
     sense_prompts = "\n\n".join(s.system_prompt for s in senses)
 
-    # Replace the cache so every subsequent kernel.load_soul() returns the
-    # augmented prompt. Kernel never reloads from disk after first call.
     kernel._soul_cache = base_soul.rstrip() + "\n\n" + sense_prompts.strip()
 
     print(f"[boot] {len(senses)} sense(s) composed into soul: {[s.name for s in senses]}")
 
-    # ── Response splitter ────────────────────────────────────────────────
-    # Install an after_request hook that scans /chat JSON responses for
-    # each sense's delimiter, peeling the trailing segment into the
-    # sense's response_key. Idempotent for senses the kernel already
-    # split itself (kernel handles VOICE under VOICE_MODE=true; we re-split
-    # if the delimiter still appears in the trimmed response).
     from flask import request
 
     @app.after_request
@@ -162,3 +152,6 @@ def install(app, senses: list | None = None) -> int:
         return response
 
     return len(senses)
+
+
+__all__ = ["install", "discover"]
