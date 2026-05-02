@@ -14,6 +14,7 @@ GET  /health  Status, model, loaded agents, token state
 """
 
 import os
+import re
 import sys
 import json
 import uuid
@@ -61,6 +62,53 @@ AVAILABLE_MODELS = [
 # Models that don't support OpenAI-style tool_choice parameter
 _NO_TOOL_CHOICE_MODELS = set()
 _models_fetched = False
+
+# soul.md instructs the model to wrap each slot in <main>/<voice>/<twin> and
+# split them with |||VOICE||| then |||TWIN|||. The wrappers are emission
+# scaffolding — the user never sees them. This pair of helpers normalizes
+# both representations into clean strings the chat UI can render directly.
+_SLOT_WRAPPERS = ("main", "voice", "twin")
+
+def _strip_wrapper(text, tag):
+    if not text:
+        return ""
+    s = text.strip()
+    open_tag = f"<{tag}>"
+    close_tag = f"</{tag}>"
+    if s.startswith(open_tag):
+        s = s[len(open_tag):]
+        if s.endswith(close_tag):
+            s = s[: -len(close_tag)]
+    else:
+        # Some models forget the opening tag but still close it, or sprinkle
+        # the wrapper mid-string. Pull the inner span out either way.
+        m = re.search(rf"<{tag}\b[^>]*>(.*?)</{tag}>", s, re.DOTALL | re.IGNORECASE)
+        if m:
+            s = m.group(1)
+    return s.strip()
+
+def _split_slots(reply):
+    """Split a model reply on |||VOICE||| / |||TWIN||| and unwrap the per-slot
+    XML tags soul.md asks the model to emit. Returns (main, voice, twin) —
+    any slot that wasn't emitted comes back as "".
+    """
+    if not reply:
+        return "", "", ""
+    main, voice, twin = reply, "", ""
+    if "|||VOICE|||" in main:
+        main, rest = main.split("|||VOICE|||", 1)
+        if "|||TWIN|||" in rest:
+            voice, twin = rest.split("|||TWIN|||", 1)
+        else:
+            voice = rest
+    elif "|||TWIN|||" in main:
+        # Voice slot omitted but twin present — still split.
+        main, twin = main.split("|||TWIN|||", 1)
+    return (
+        _strip_wrapper(main, "main"),
+        _strip_wrapper(voice, "voice"),
+        _strip_wrapper(twin, "twin"),
+    )
 
 def _fetch_copilot_models():
     """Fetch available models from Copilot API. Updates AVAILABLE_MODELS in place."""
@@ -943,19 +991,25 @@ def chat():
                 break
 
         reply = msg.get("content") or ""
-        
+
+        # Always split slot delimiters server-side. soul.md tells the model
+        # to emit |||VOICE||| and |||TWIN||| on every turn — they're slots,
+        # not part of the visible chat body. Older code only split when
+        # VOICE_MODE was on, which leaked the raw delimiter text into the
+        # assistant bubble whenever TTS was off.
+        main_text, voice_text, twin_text = _split_slots(reply)
+
         result = {
-            "response": reply,
+            "response": main_text,
             "session_id": session_id,
             "agent_logs": "\n".join(all_logs),
             "voice_mode": VOICE_MODE,
         }
-        
-        if VOICE_MODE and "|||VOICE|||" in reply:
-            parts = reply.split("|||VOICE|||", 1)
-            result["response"] = parts[0].strip()
-            result["voice_response"] = parts[1].strip()
-        
+        if voice_text:
+            result["voice_response"] = voice_text
+        if twin_text:
+            result["twin_response"] = twin_text
+
         return jsonify(result)
 
     except requests.exceptions.HTTPError as e:

@@ -276,6 +276,24 @@ function Check-Prerequisites {
     }
 }
 
+function Stage-BrainstemFramework {
+    # Clone just rapp_brainstem/ from kody-w/RAPP into a throwaway stage dir.
+    # The caller copies the brainstem source out and discards the stage; the
+    # user's installed copy at $BRAINSTEM_HOME\src\ stays plain files. That
+    # decoupling matters: this folder is the user's experimental playground
+    # and clicking "Open in VS Code" must not let an accidental commit-and-
+    # push leak edits back into the upstream RAPP repo.
+    param([string]$Stage)
+    if (Test-Path $Stage) { Remove-Item -Recurse -Force $Stage -ErrorAction SilentlyContinue }
+    git clone --quiet --filter=blob:none --no-checkout $REPO_URL $Stage 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) { return $false }
+    git -C $Stage sparse-checkout init --cone 2>&1 | Out-Null
+    git -C $Stage sparse-checkout set rapp_brainstem 2>&1 | Out-Null
+    git -C $Stage checkout --quiet main 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) { return $false }
+    return $true
+}
+
 function Install-Brainstem {
     Write-Host ""
     Write-Host "Installing RAPP Brainstem..."
@@ -284,114 +302,81 @@ function Install-Brainstem {
         New-Item -ItemType Directory -Force -Path $BRAINSTEM_HOME | Out-Null
     }
 
-    if (Test-Path "$BRAINSTEM_HOME\src\.git") {
-        # If the existing clone points at a different repo (e.g. rapp-installer
-        # vs RAPP), back up user files, nuke the old clone, and re-clone from
-        # the correct repo so the two installers don't fight each other.
-        $currentRemote = ""
-        try {
-            $currentRemote = (git -C "$BRAINSTEM_HOME\src" remote get-url origin 2>&1 | Out-String).Trim()
-        } catch {}
+    $SrcRoot = "$BRAINSTEM_HOME\src\rapp_brainstem"
+    $AgentsDir = "$SrcRoot\agents"
+    $SoulFile = "$SrcRoot\soul.md"
+    $EnvFile = "$SrcRoot\.env"
+    $VerFile = "$SrcRoot\VERSION"
+    $Stage = "$BRAINSTEM_HOME\.framework_stage"
+    $LegacyGit = (Test-Path "$BRAINSTEM_HOME\src\.git")
 
-        # Normalize for comparison (strip .git suffix, lowercase)
-        $normalCurrent = $currentRemote.ToLower().TrimEnd('/') -replace '\.git$', ''
-        $normalExpected = $REPO_URL.ToLower().TrimEnd('/') -replace '\.git$', ''
+    if ((Test-Path $VerFile) -or $LegacyGit) {
+        # ── Existing install: backup user files, restage framework as plain files ──
+        $LocalVer = "0.0.0"
+        if (Test-Path $VerFile) { $LocalVer = (Get-Content $VerFile -Raw).Trim() }
+        try { $RemoteVer = (Invoke-WebRequest -Uri $REMOTE_VERSION_URL -UseBasicParsing -TimeoutSec 5).Content.Trim() } catch { $RemoteVer = "0.0.0" }
 
-        if ($normalCurrent -ne $normalExpected) {
-            Write-Host "  [..] Switching source repo ($currentRemote -> $REPO_URL)" -ForegroundColor Yellow
-            # Backup user files before nuking
+        Write-Host "  Local:  v$LocalVer"
+        Write-Host "  Remote: v$RemoteVer"
+
+        if (($LocalVer -eq $RemoteVer) -and (-not $LegacyGit)) {
+            Write-Host "  [OK] Already up to date (v$LocalVer)" -ForegroundColor Green
+        } else {
+            if ($LegacyGit) {
+                Write-Host "  Detaching from upstream RAPP repo (no longer a git clone)..." -ForegroundColor Yellow
+            }
+            Write-Host "  Upgrading v$LocalVer -> v$RemoteVer..."
+
             $Backup = "$env:TEMP\brainstem-upgrade-$(Get-Random)"
             New-Item -ItemType Directory -Force -Path $Backup | Out-Null
-            $AgentsDir = "$BRAINSTEM_HOME\src\rapp_brainstem\agents"
-            $SoulFile = "$BRAINSTEM_HOME\src\rapp_brainstem\soul.md"
-            $EnvFile = "$BRAINSTEM_HOME\src\rapp_brainstem\.env"
             if (Test-Path $SoulFile) { Copy-Item $SoulFile "$Backup\soul.md" }
-            if (Test-Path $EnvFile) { Copy-Item $EnvFile "$Backup\.env" }
+            if (Test-Path $EnvFile)  { Copy-Item $EnvFile  "$Backup\.env" }
             if (Test-Path $AgentsDir) { Copy-Item "$AgentsDir\*.py" "$Backup\" -ErrorAction SilentlyContinue }
             Write-Host "  [OK] Backed up soul, agents, config" -ForegroundColor Green
 
-            # Remove old clone and re-clone from the correct repo.
-            # Rename first (instant, avoids locked-file issues), then delete.
-            $oldSrc = "$BRAINSTEM_HOME\src-old-$(Get-Random)"
-            Rename-Item "$BRAINSTEM_HOME\src" $oldSrc -Force
-            Remove-Item -Recurse -Force $oldSrc -ErrorAction SilentlyContinue
-            # Full clone of kody-w/RAPP — engine + swarm + worker + installer.
-            # rapp_store is the only repo split out (fetched at runtime via
-            # RAPPSTORE_URL).
-            git clone --quiet $REPO_URL "$BRAINSTEM_HOME\src" 2>&1
-            if ($LASTEXITCODE -ne 0) {
-                Write-Host "  [X] Failed to clone repository" -ForegroundColor Red
+            if (-not (Stage-BrainstemFramework -Stage $Stage)) {
+                Write-Host "  [X] Failed to fetch framework — keeping existing install" -ForegroundColor Red
+                Remove-Item -Recurse -Force $Stage -ErrorAction SilentlyContinue
+                Remove-Item -Recurse -Force $Backup -ErrorAction SilentlyContinue
                 exit 1
             }
-            Write-Host "  [OK] Re-cloned from correct repo" -ForegroundColor Green
+
+            # Scrub legacy .git so the new src/ is unambiguously plain files.
+            if ($LegacyGit) { Remove-Item -Recurse -Force "$BRAINSTEM_HOME\src\.git" -ErrorAction SilentlyContinue }
+
+            if (-not (Test-Path $SrcRoot)) { New-Item -ItemType Directory -Force -Path $SrcRoot | Out-Null }
+            # Overlay framework files (preserves user-only files like .brainstem_data\)
+            Copy-Item -Recurse -Force "$Stage\rapp_brainstem\*" $SrcRoot
+            Remove-Item -Recurse -Force $Stage -ErrorAction SilentlyContinue
+            Write-Host "  [OK] Framework staged into $SrcRoot" -ForegroundColor Green
 
             # Restore user files
-            $AgentsDir = "$BRAINSTEM_HOME\src\rapp_brainstem\agents"
-            $SoulFile = "$BRAINSTEM_HOME\src\rapp_brainstem\soul.md"
-            $EnvFile = "$BRAINSTEM_HOME\src\rapp_brainstem\.env"
             if (Test-Path "$Backup\soul.md") { Copy-Item "$Backup\soul.md" $SoulFile -Force }
-            if (Test-Path "$Backup\.env") { Copy-Item "$Backup\.env" $EnvFile -Force }
+            if (Test-Path "$Backup\.env")    { Copy-Item "$Backup\.env"    $EnvFile  -Force }
             Get-ChildItem "$Backup\*.py" -ErrorAction SilentlyContinue | ForEach-Object {
                 if ($_.Name -notin @("basic_agent.py", "__init__.py")) {
-                    Copy-Item $_.FullName "$AgentsDir\$($_.Name)" -Force
-                }
-            }
-            Remove-Item -Recurse -Force $Backup -ErrorAction SilentlyContinue
-        } else {
-            # Same repo -normal upgrade path
-            $LocalVer = "0.0.0"
-            $VerFile = "$BRAINSTEM_HOME\src\rapp_brainstem\VERSION"
-            if (Test-Path $VerFile) { $LocalVer = (Get-Content $VerFile -Raw).Trim() }
-            try { $RemoteVer = (Invoke-WebRequest -Uri $REMOTE_VERSION_URL -UseBasicParsing -TimeoutSec 5).Content.Trim() } catch { $RemoteVer = "0.0.0" }
-
-            Write-Host "  Local:  v$LocalVer"
-            Write-Host "  Remote: v$RemoteVer"
-
-            if ($LocalVer -eq $RemoteVer) {
-                Write-Host "  [OK] Already up to date (v$LocalVer)" -ForegroundColor Green
-            } else {
-                Write-Host "  Upgrading v$LocalVer -> v$RemoteVer..."
-                $Backup = "$env:TEMP\brainstem-upgrade-$(Get-Random)"
-                New-Item -ItemType Directory -Force -Path $Backup | Out-Null
-
-                # Backup user files
-                $AgentsDir = "$BRAINSTEM_HOME\src\rapp_brainstem\agents"
-                $SoulFile = "$BRAINSTEM_HOME\src\rapp_brainstem\soul.md"
-                $EnvFile = "$BRAINSTEM_HOME\src\rapp_brainstem\.env"
-                if (Test-Path $SoulFile) { Copy-Item $SoulFile "$Backup\soul.md" }
-                if (Test-Path $EnvFile) { Copy-Item $EnvFile "$Backup\.env" }
-                if (Test-Path $AgentsDir) { Copy-Item "$AgentsDir\*.py" "$Backup\" -ErrorAction SilentlyContinue }
-                Write-Host "  [OK] Backed up soul, agents, config" -ForegroundColor Green
-
-                # Pull latest
-                Push-Location "$BRAINSTEM_HOME\src"
-                try { git stash --quiet 2>&1 | Out-Null } catch {}
-                try { git pull --quiet 2>&1 | Out-Null } catch {}
-                Pop-Location
-                Write-Host "  [OK] Framework updated" -ForegroundColor Green
-
-                # Restore user files
-                if (Test-Path "$Backup\soul.md") { Copy-Item "$Backup\soul.md" $SoulFile -Force }
-                if (Test-Path "$Backup\.env") { Copy-Item "$Backup\.env" $EnvFile -Force }
-                Get-ChildItem "$Backup\*.py" -ErrorAction SilentlyContinue | ForEach-Object {
-                    if ($_.Name -notin @("basic_agent.py", "__init__.py")) {
+                    # Only restore agents the framework didn't ship (custom user agents).
+                    if (-not (Test-Path "$AgentsDir\$($_.Name)")) {
                         Copy-Item $_.FullName "$AgentsDir\$($_.Name)" -Force
                     }
                 }
-                Remove-Item -Recurse -Force $Backup -ErrorAction SilentlyContinue
-                Write-Host "  [OK] Upgrade complete: v$LocalVer -> v$RemoteVer" -ForegroundColor Green
             }
+            Remove-Item -Recurse -Force $Backup -ErrorAction SilentlyContinue
+            Write-Host "  [OK] Upgrade complete: v$LocalVer -> v$RemoteVer" -ForegroundColor Green
         }
     } else {
         if (Test-Path "$BRAINSTEM_HOME\src") {
             Remove-Item -Recurse -Force "$BRAINSTEM_HOME\src" -ErrorAction SilentlyContinue
         }
-        Write-Host "  Cloning repository..."
-        git clone --quiet $REPO_URL "$BRAINSTEM_HOME\src" 2>&1
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "  [X] Failed to clone repository" -ForegroundColor Red
+        Write-Host "  Fetching framework..."
+        if (-not (Stage-BrainstemFramework -Stage $Stage)) {
+            Write-Host "  [X] Failed to fetch framework" -ForegroundColor Red
+            Remove-Item -Recurse -Force $Stage -ErrorAction SilentlyContinue
             exit 1
         }
+        New-Item -ItemType Directory -Force -Path "$BRAINSTEM_HOME\src" | Out-Null
+        Copy-Item -Recurse -Force "$Stage\rapp_brainstem" "$BRAINSTEM_HOME\src\"
+        Remove-Item -Recurse -Force $Stage -ErrorAction SilentlyContinue
     }
     Write-Host "  [OK] Source code ready" -ForegroundColor Green
 }
@@ -684,12 +669,9 @@ function Create-Env {
 }
 
 function Launch-Brainstem {
-    # Always pull latest before launching
-    if (Test-Path "$BRAINSTEM_HOME\src\.git") {
-        Push-Location "$BRAINSTEM_HOME\src"
-        try { git pull --quiet 2>&1 | Out-Null } catch {}
-        Pop-Location
-    }
+    # No auto-pull — $BRAINSTEM_HOME\src\ is plain files now, not a clone.
+    # Users upgrade by re-running the install one-liner; Install-Brainstem
+    # handles framework refresh + user-file backup.
 
     $tokenFile = "$BRAINSTEM_HOME\src\rapp_brainstem\.copilot_token"
     $clientId = "Iv1.b507a08c87ecfe98"
@@ -1001,11 +983,14 @@ function Main {
 
     Print-Banner
 
-    # Check if this is an upgrade of an existing install
-    if (Test-Path "$BRAINSTEM_HOME\src\.git") {
+    # Check if this is an upgrade of an existing install. Detection now
+    # uses VERSION (or a legacy .git) since src/ is plain files.
+    $VerFileExists = Test-Path "$BRAINSTEM_HOME\src\rapp_brainstem\VERSION"
+    $LegacyGitExists = Test-Path "$BRAINSTEM_HOME\src\.git"
+    if ($VerFileExists -or $LegacyGitExists) {
         Write-Host "Checking for updates..."
-        if (-not (Check-ForUpgrade)) {
-            # Already up to date -still verify venv + deps + CLI before launch
+        if (-not $LegacyGitExists -and -not (Check-ForUpgrade)) {
+            # Already up to date — still verify venv + deps + CLI before launch
             Check-Prerequisites
             Setup-Venv
             Setup-Dependencies

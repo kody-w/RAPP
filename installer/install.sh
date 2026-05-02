@@ -350,18 +350,23 @@ check_prereqs() {
     fi
 }
 
-# Slim clone: pull only rapp_brainstem/ from kody-w/RAPP via partial +
-# sparse-checkout. The brainstem is the only tier the install one-liner
-# needs to materialize; rapp_swarm/, worker/, pages/, tests/, installer/
-# stay in the object DB and can still be checked out on demand
-# (e.g. binder_service.py restore at line ~580 — git keeps the blobs).
-# Users who later want the swarm tier or worker run their own clone.
-clone_brainstem_sparse() {
-    local dest="$1"
-    git clone --quiet --filter=blob:none --no-checkout "$REPO_URL" "$dest" || return 1
-    git -C "$dest" sparse-checkout init --cone
-    git -C "$dest" sparse-checkout set rapp_brainstem
-    git -C "$dest" checkout --quiet main
+# Stage just rapp_brainstem/ from kody-w/RAPP into a throwaway directory.
+# The caller copies the brainstem source out and discards the stage — the
+# user's installed copy at ~/.brainstem/src/ is **plain files**, never a
+# git clone. That decoupling is intentional: this directory is the user's
+# experimental playground and clicking the "Open in VS Code" shortcut
+# must not let an accidental commit-and-push leak edits back into the
+# upstream RAPP repo. Re-running the one-liner is the only upgrade path.
+stage_brainstem_framework() {
+    local stage="$1"
+    git clone --quiet --filter=blob:none --no-checkout "$REPO_URL" "$stage" || return 1
+    git -C "$stage" sparse-checkout init --cone 2>/dev/null || true
+    git -C "$stage" sparse-checkout set rapp_brainstem 2>/dev/null || true
+    git -C "$stage" checkout --quiet main || return 1
+    if [ -n "$PIN_TAG" ]; then
+        git -C "$stage" checkout --quiet "$PIN_TAG" 2>/dev/null || \
+            echo -e "  ${YELLOW}⚠${NC} Pin tag ${PIN_TAG} not found — staying on main"
+    fi
 }
 
 install_brainstem() {
@@ -369,19 +374,24 @@ install_brainstem() {
     echo "Installing RAPP Brainstem..."
     mkdir -p "$BRAINSTEM_HOME"
 
-    local AGENTS_DIR="$BRAINSTEM_HOME/src/rapp_brainstem/agents"
-    local SOUL_FILE="$BRAINSTEM_HOME/src/rapp_brainstem/soul.md"
-    local ENV_FILE="$BRAINSTEM_HOME/src/rapp_brainstem/.env"
-    local LOCAL_VERSION_FILE="$BRAINSTEM_HOME/src/rapp_brainstem/VERSION"
+    local SRC_ROOT="$BRAINSTEM_HOME/src/rapp_brainstem"
+    local AGENTS_DIR="$SRC_ROOT/agents"
+    local SOUL_FILE="$SRC_ROOT/soul.md"
+    local ENV_FILE="$SRC_ROOT/.env"
+    local LOCAL_VERSION_FILE="$SRC_ROOT/VERSION"
+    local STAGE="$BRAINSTEM_HOME/.framework_stage"
 
-    if [ -d "$BRAINSTEM_HOME/src/.git" ]; then
-        # ── SMART UPDATE: preserve local files, upgrade framework ──
+    # Detect prior install via the VERSION file rather than .git — the
+    # installed copy is plain files, not a clone. (Pre-decoupling installs
+    # had a .git inside src/; if we see one, treat it as legacy and let
+    # the upgrade flow nuke + re-stage from scratch so the user ends up
+    # in the new clean-folder world.)
+    if [ -f "$LOCAL_VERSION_FILE" ] || [ -d "$BRAINSTEM_HOME/src/.git" ]; then
+        # ── SMART UPDATE: preserve user files, restage framework ──
         local LOCAL_VER="0.0.0"
         [ -f "$LOCAL_VERSION_FILE" ] && LOCAL_VER=$(cat "$LOCAL_VERSION_FILE" 2>/dev/null || echo "0.0.0")
         local REMOTE_VER=$(curl -sf "$REMOTE_VERSION_URL" 2>/dev/null || echo "0.0.0")
 
-        # Pinned-version override: users can fall back to an older released
-        # version if a newer one broke something for them.
         if [ -n "$PIN_VERSION" ]; then
             echo "  ⚑ Pin requested: v${PIN_VERSION} (will check out tag ${PIN_TAG})"
             REMOTE_VER="$PIN_VERSION"
@@ -390,106 +400,73 @@ install_brainstem() {
         echo "  Local:  v${LOCAL_VER}"
         echo "  Target: v${REMOTE_VER}"
 
-        if [ "$LOCAL_VER" = "$REMOTE_VER" ]; then
+        local legacy_git=0
+        [ -d "$BRAINSTEM_HOME/src/.git" ] && legacy_git=1
+
+        if [ "$LOCAL_VER" = "$REMOTE_VER" ] && [ $legacy_git -eq 0 ]; then
             echo -e "  ${GREEN}✓${NC} Already up to date (v${LOCAL_VER})"
         else
+            if [ $legacy_git -eq 1 ]; then
+                echo "  Detaching from upstream RAPP repo (no longer a git clone)..."
+            fi
             echo "  Upgrading v${LOCAL_VER} → v${REMOTE_VER}..."
 
-            # 1. Backup user's local files (soul, custom agents, .env)
+            # 1. Backup user files (soul, custom agents, .env). .brainstem_data/
+            # stays in place — it's untouched by the overlay step.
             local BACKUP="/tmp/brainstem-upgrade-$$"
             mkdir -p "$BACKUP"
             [ -f "$SOUL_FILE" ] && cp "$SOUL_FILE" "$BACKUP/soul.md"
             [ -f "$ENV_FILE" ] && cp "$ENV_FILE" "$BACKUP/.env"
             if [ -d "$AGENTS_DIR" ]; then
                 mkdir -p "$BACKUP/agents"
-                # Backup ALL agents — user-created ones will be restored
                 cp "$AGENTS_DIR"/*.py "$BACKUP/agents/" 2>/dev/null || true
             fi
             echo -e "  ${GREEN}✓${NC} Backed up soul, agents, config"
 
-            # 2. Hard-sync framework files to origin/main. User files (soul,
-            # agents, .env) are already backed up above — we restore them at
-            # step 3. `git pull` was getting wedged on untracked files or
-            # merge conflicts and silently failing, leaving users pinned to
-            # old VERSIONs. Hard reset always wins the race.
-            cd "$BRAINSTEM_HOME/src"
-            # Make sure the origin URL is the canonical repo — users can end
-            # up on forks/mirrors or old HTTPS→SSH migrations where fetch
-            # pulls from somewhere stale.
-            git remote set-url origin "$REPO_URL" 2>/dev/null || true
-            git stash --quiet --include-untracked 2>/dev/null || true
-            # Ensure we're on main — clones can drift to other branches
-            git checkout main --quiet 2>/dev/null || true
-            # Fetch main + tags so both "latest" and "pin" flows work.
-            git fetch --quiet --tags origin main 2>/dev/null || true
-            # Choose reset target: a pinned tag if requested, else origin/main.
-            local reset_target="origin/main"
-            if [ -n "$PIN_TAG" ]; then
-                if git rev-parse --verify "$PIN_TAG" >/dev/null 2>&1; then
-                    reset_target="$PIN_TAG"
-                else
-                    echo -e "  ${YELLOW}⚠${NC} Pin tag ${PIN_TAG} not found on remote — falling back to origin/main"
-                fi
-            fi
-            if git reset --hard --quiet "$reset_target" 2>/dev/null; then
-                git clean -fdq 2>/dev/null || true
-                echo -e "  ${GREEN}✓${NC} Framework hard-synced to ${reset_target}"
-            else
-                echo -e "  ${YELLOW}Warning: git reset failed — falling back to pull${NC}"
-                git pull --quiet 2>/dev/null || echo -e "  ${YELLOW}Warning: Could not pull${NC}"
+            # 2. Stage the new framework into a temp directory using git, then
+            # overlay it into the user's src/ as plain files. The stage gets
+            # torn down at the end — no .git ever lands in the user's tree.
+            rm -rf "$STAGE"
+            if ! stage_brainstem_framework "$STAGE"; then
+                echo -e "  ${RED}✗${NC} Failed to fetch framework — keeping existing install"
+                rm -rf "$STAGE"
+                rm -rf "$BACKUP"
+                return 1
             fi
 
-            # 2b. Verify the sync actually landed. If VERSION still doesn't
-            # match the remote, something deeper is wrong with the user's
-            # local clone (detached HEAD, wrong branch, broken origin, a
-            # stale object cache) — nuke and re-clone. Backup is safe.
-            local post_sync_ver="0.0.0"
-            [ -f "$LOCAL_VERSION_FILE" ] && post_sync_ver=$(cat "$LOCAL_VERSION_FILE" 2>/dev/null | tr -d '[:space:]')
-            if [ "$post_sync_ver" != "$REMOTE_VER" ]; then
-                echo -e "  ${YELLOW}⚠${NC} Post-sync VERSION is v${post_sync_ver} (expected v${REMOTE_VER})"
-                echo "  Re-cloning from scratch to recover..."
-                cd "$BRAINSTEM_HOME"
-                rm -rf "$BRAINSTEM_HOME/src"
-                if clone_brainstem_sparse "$BRAINSTEM_HOME/src"; then
-                    if [ -n "$PIN_TAG" ]; then
-                        cd "$BRAINSTEM_HOME/src"
-                        git checkout --quiet "$PIN_TAG" 2>/dev/null || \
-                            echo -e "  ${YELLOW}Warning: Could not check out tag ${PIN_TAG}; staying on main${NC}"
-                    fi
-                    echo -e "  ${GREEN}✓${NC} Fresh clone successful"
-                else
-                    echo -e "  ${RED}✗${NC} Fresh clone failed — please check connectivity and retry"
-                    return 1
-                fi
-            fi
+            # If the legacy clone is around, scrub it before overlay so the
+            # new src/ is unambiguously "just files".
+            [ $legacy_git -eq 1 ] && rm -rf "$BRAINSTEM_HOME/src/.git"
 
-            # 3. Restore user's local files (merge, don't overwrite)
+            mkdir -p "$SRC_ROOT"
+            # Overlay framework files. cp -R src/. dest/ copies contents (not
+            # the dir itself), so existing user-only files in dest stay put
+            # and framework files get refreshed in place.
+            if ! cp -R "$STAGE/rapp_brainstem/." "$SRC_ROOT/" 2>/dev/null; then
+                echo -e "  ${RED}✗${NC} Overlay failed — restoring backup"
+                rm -rf "$STAGE"
+                rm -rf "$BACKUP"
+                return 1
+            fi
+            rm -rf "$STAGE"
+            echo -e "  ${GREEN}✓${NC} Framework staged into ~/.brainstem/src/rapp_brainstem"
+
+            # 3. Restore user files
             [ -f "$BACKUP/soul.md" ] && cp "$BACKUP/soul.md" "$SOUL_FILE"
             [ -f "$BACKUP/.env" ] && cp "$BACKUP/.env" "$ENV_FILE"
             if [ -d "$BACKUP/agents" ]; then
-                # Only restore truly custom agents — ones the user created
-                # that don't exist in the repo after reset. Agents the repo
-                # deleted must stay deleted.
                 local restored=0
                 for agent_file in "$BACKUP/agents"/*.py; do
+                    [ -f "$agent_file" ] || continue
                     local fname=$(basename "$agent_file")
                     case "$fname" in
                         basic_agent.py|__init__.py) continue ;;
                     esac
-                    # If the repo already has this file after reset, skip —
-                    # the repo version wins (updated or still present).
-                    # If the repo DOESN'T have it, it's either a custom agent
-                    # or one the repo deleted. Check git to distinguish.
-                    if [ -f "$AGENTS_DIR/$fname" ]; then
-                        continue
-                    fi
-                    # File not in repo after reset — was it ever tracked?
-                    # If git knows about it, the repo intentionally deleted it.
-                    if git -C "$BRAINSTEM_HOME/src" log --oneline -1 -- "rapp_brainstem/agents/$fname" >/dev/null 2>&1 && \
-                       [ -n "$(git -C "$BRAINSTEM_HOME/src" log --oneline -1 -- "rapp_brainstem/agents/$fname" 2>/dev/null)" ]; then
-                        echo -e "  ${YELLOW}⚠${NC} Skipping deleted repo agent: $fname"
-                        continue
-                    fi
+                    # If the new framework already shipped this file, the
+                    # framework version wins (an upgrade, or it was always
+                    # bundled). Only restore agents the framework doesn't
+                    # ship — those are user-created.
+                    [ -f "$AGENTS_DIR/$fname" ] && continue
                     cp "$agent_file" "$AGENTS_DIR/$fname"
                     restored=$((restored + 1))
                 done
@@ -500,22 +477,21 @@ install_brainstem() {
                 fi
             fi
 
-            # 4. Clean up backup
             rm -rf "$BACKUP"
             echo -e "  ${GREEN}✓${NC} Upgrade complete: v${LOCAL_VER} → v${REMOTE_VER}"
         fi
     else
-        echo "  Fresh install — cloning repository..."
+        echo "  Fresh install — fetching framework..."
         rm -rf "$BRAINSTEM_HOME/src" 2>/dev/null || true
-        clone_brainstem_sparse "$BRAINSTEM_HOME/src"
-        if [ -n "$PIN_TAG" ]; then
-            cd "$BRAINSTEM_HOME/src"
-            if git checkout --quiet "$PIN_TAG" 2>/dev/null; then
-                echo -e "  ${GREEN}✓${NC} Checked out tag ${PIN_TAG}"
-            else
-                echo -e "  ${YELLOW}Warning: Tag ${PIN_TAG} not found — staying on main${NC}"
-            fi
+        rm -rf "$STAGE"
+        if ! stage_brainstem_framework "$STAGE"; then
+            echo -e "  ${RED}✗${NC} Failed to fetch framework"
+            rm -rf "$STAGE"
+            return 1
         fi
+        mkdir -p "$BRAINSTEM_HOME/src"
+        cp -R "$STAGE/rapp_brainstem" "$BRAINSTEM_HOME/src/"
+        rm -rf "$STAGE"
     fi
     echo -e "  ${GREEN}✓${NC} Source code ready"
 }
@@ -603,16 +579,21 @@ install_binder_locally() {
         # output only mentions the binder when something was actually
         # done (restore, copy, or warn).
         :
-    elif [ -d "$BRAINSTEM_HOME/src/.git" ] && \
-         git -C "$BRAINSTEM_HOME/src" cat-file -e HEAD:rapp_brainstem/utils/services/binder_service.py 2>/dev/null; then
-        # File is in git HEAD but missing on disk — restore it. Most common
-        # cause: user uninstalled the binder rapp from the catalog, which
-        # nuked the kernel-baked file as a side-effect. Works with sparse
-        # checkout too — git keeps the blob in the object DB.
-        git -C "$BRAINSTEM_HOME/src" checkout HEAD -- rapp_brainstem/utils/services/binder_service.py 2>/dev/null
-        echo -e "  ${GREEN}OK${NC} Binder restored from git HEAD"
     else
-        echo -e "  ${YELLOW}!${NC} binder_service.py missing - package manager unavailable"
+        # No git checkout fallback — src/ is plain files now. Re-stage from
+        # upstream so the kernel-baked binder file lands again. Common
+        # trigger: user uninstalled the binder rapp from the catalog, which
+        # nuked the kernel-baked file as a side-effect.
+        local stage="$BRAINSTEM_HOME/.framework_stage_binder"
+        rm -rf "$stage"
+        if stage_brainstem_framework "$stage" 2>/dev/null && \
+           [ -f "$stage/rapp_brainstem/utils/services/binder_service.py" ]; then
+            cp "$stage/rapp_brainstem/utils/services/binder_service.py" "$kernel_binder"
+            echo -e "  ${GREEN}OK${NC} Binder restored from upstream"
+        else
+            echo -e "  ${YELLOW}!${NC} binder_service.py missing - package manager unavailable"
+        fi
+        rm -rf "$stage"
     fi
 }
 
@@ -1044,23 +1025,9 @@ open_browser() {
 launch_brainstem() {
     export PATH="$BRAINSTEM_BIN:/opt/homebrew/bin:/usr/local/bin:$PATH"
 
-    # Always pull latest code before launching — ensure we're on main
-    if [ -d "$BRAINSTEM_HOME/src/.git" ]; then
-        cd "$BRAINSTEM_HOME/src"
-        local current_branch
-        current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
-        if [ "$current_branch" != "main" ]; then
-            git stash --quiet --include-untracked 2>/dev/null || true
-            git checkout main --quiet 2>/dev/null || true
-        fi
-        git fetch --quiet origin main 2>/dev/null || true
-        git reset --hard origin/main --quiet 2>/dev/null || true
-        # NEVER `git clean rapp_brainstem/agents/` — that directory is the
-        # user's workspace (Article XVII) and contains rapplications they
-        # installed via binder. git clean would wipe them on every upgrade.
-        # The git reset above already restores any tracked files in agents/;
-        # untracked files (the user's installed agents) stay put.
-    fi
+    # No auto-pull on launch — ~/.brainstem/src/ is plain files now,
+    # not a git clone. Users upgrade by re-running the install one-liner;
+    # install_brainstem() handles the framework refresh + user-file backup.
 
     local venv_python="$VENV_DIR/bin/python"
 
@@ -1522,41 +1489,12 @@ main() {
 
     print_banner
 
-    # Check if this is an upgrade of an existing install
-    if [ -d "$BRAINSTEM_HOME/src/.git" ]; then
+    # Existing install? Run the full install_brainstem path so VERSION,
+    # legacy .git scrubbing, and overlay all happen in one place. The old
+    # check_for_upgrade fast-path that ran `git pull` against the user's
+    # working tree is gone — there's no .git in src/ anymore.
+    if [ -f "$BRAINSTEM_HOME/src/rapp_brainstem/VERSION" ] || [ -d "$BRAINSTEM_HOME/src/.git" ]; then
         echo "Checking for updates..."
-        if ! check_for_upgrade; then
-            # VERSION matches, but UI changes and kernel-service updates
-            # ship without version bumps — pull latest origin/main anyway
-            # so a curl|bash always lands on the freshest files. Fast-
-            # forward only: we never clobber locally modified files
-            # (.env, runtime-installed agents, user data).
-            if cd "$BRAINSTEM_HOME/src" 2>/dev/null; then
-                git remote set-url origin "$REPO_URL" 2>/dev/null || true
-                git fetch --quiet origin main 2>/dev/null || true
-                local before_sha after_sha
-                before_sha=$(git rev-parse HEAD 2>/dev/null)
-                if git merge --ff-only --quiet origin/main 2>/dev/null; then
-                    after_sha=$(git rev-parse HEAD 2>/dev/null)
-                    if [ "$before_sha" != "$after_sha" ]; then
-                        echo -e "  ${GREEN}✓${NC} Pulled latest UI / kernel files (${before_sha:0:7} → ${after_sha:0:7})"
-                    fi
-                else
-                    echo -e "  ${YELLOW}⚠${NC} Could not fast-forward — local changes blocking. Run 'git -C $BRAINSTEM_HOME/src status' to inspect."
-                fi
-                cd - >/dev/null
-            fi
-            check_prereqs
-            setup_venv
-            ensure_deps
-            install_cli
-            create_env
-            install_binder_locally
-            export PATH="$BRAINSTEM_BIN:/opt/homebrew/bin:/usr/local/bin:$PATH"
-            launch_brainstem
-            exit $?  # launch uses exec, but guard against fall-through
-        fi
-        # Upgrade available — fall through to full install path
     fi
 
     check_prereqs
