@@ -1641,8 +1641,8 @@
         <hr style="border:none; border-top:1px solid #30363d; margin:14px 0 10px">
         <label for="ui-mode-select">UI Source</label>
         <select id="ui-mode-select" onchange="setUIMode(this.value)">
-          <option value="local">Local (this brainstem's index.html)</option>
-          <option value="cloud">Cloud (always-fresh from kody-w.github.io)</option>
+          <option value="local">Local (this brainstem)</option>
+          <option value="cloud">Cloud (always-fresh)</option>
         </select>
         <div style="font-size:11px; color:#8b949e; margin-top:6px; line-height:1.4">
           Cloud UI tracks <code>main</code> on GitHub — push to the repo and the
@@ -1657,7 +1657,7 @@
             🥚 Export as .egg →
           </button>
           <a class="panel-btn" href="https://kody-w.github.io/RAPP/rapp-zoo/" target="_blank" rel="noopener" style="text-decoration:none; text-align:left;">
-            🐾 Open the Pokédex →
+            🐾 Open RAPPZoo →
           </a>
         </div>
       </div>
@@ -3099,6 +3099,14 @@
     const p = document.getElementById('voice-provider').value;
     document.getElementById('azure-fields').style.display = p === 'azure' ? 'block' : 'none';
     document.getElementById('elevenlabs-fields').style.display = p === 'elevenlabs' ? 'block' : 'none';
+    // Wipe any stale error/success message left over from a previous
+    // provider so the user doesn't see "Error: HTTP 401" sitting under
+    // the panel after switching to Browser (which needs no auth).
+    const status = document.getElementById('voice-panel-status');
+    if (status) {
+      status.textContent = '';
+      status.style.color = '';
+    }
   }
 
   function toggleVoicePanel() {
