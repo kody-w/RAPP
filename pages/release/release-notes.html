@@ -94,11 +94,11 @@
       <span class="version">Release Notes</span>
     </a>
     <div class="nav-links">
-      <a href="./one-pager.html">One-pager</a>
-      <a href="./faq.html">FAQ</a>
+      <a href="../product/one-pager.html">One-pager</a>
+      <a href="../product/faq.html">FAQ</a>
       <a href="./roadmap.html">Roadmap</a>
-      <a href="./vault/">Vault — second-brain wiki</a>
-  <a href="https://github.com/kody-w/RAPP">GitHub</a>
+      <a href="../vault/">Vault</a>
+      <a href="https://github.com/kody-w/RAPP">GitHub</a>
     </div>
   </nav>
 </header>
@@ -114,8 +114,64 @@
 BRAINSTEM_VERSION=0.12.0 curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash</pre>
   </div>
 
-  <!-- v0.12.3 ──────────────────────────────────────────────────── -->
+  <!-- v0.16.0 (unreleased) ──────────────────────────────────────── -->
   <article class="release latest">
+    <h2>v0.16.0 <span class="tag-chip">on main · unreleased</span></h2>
+    <p class="oneline">Installer shrinks 92% (2219 → 186 lines). Kernel lifecycle moves to LLM-driven reserved agents.</p>
+    <ul>
+      <li><strong>Installer cut to OOTB simplicity.</strong> The one-liner now does only the OS-essentials: prereq check (git + python3) → sparse-clone <code>kody-w/RAPP</code> for <code>rapp_brainstem/</code> + <code>installer/</code> → venv → pip install → auto-launch on :7071 → open browser. Sacred URL preserved (Article V); content shrinks ~92%.</li>
+      <li><strong>Reserved agents pattern (new).</strong> First-party lifecycle code ships in <code>utils/reserved_agents/</code>, follows the same <code>BasicAgent</code> contract, but lives <em>outside</em> the kernel's <code>agents/*_agent.py</code> auto-discovery glob. They never enter the LLM's default tool palette — they're invoked on demand by the lifecycle organ.</li>
+      <li><strong>Lifecycle organ.</strong> <code>/api/lifecycle/</code> exposes the catalog of reserved agents; <code>/api/lifecycle/upgrade</code> (POST) drives the kernel-upgrade reserved agent. Wire-level confirm: non-read actions refuse without <code>confirm: true</code> in the request body.</li>
+      <li><strong>First reserved agent — <code>upgrade_brainstem</code>.</strong> Three-phase upgrade: snapshot via <code>utils/bond.pack_organism</code> → re-run the minimal installer in subprocess → verify health (rollback hint via egg path if anything regresses).</li>
+      <li><strong>Soul.md handshake protocol.</strong> New <code>&lt;lifecycle_handshake&gt;</code> section teaches the LLM to explain → get explicit yes → POST with <code>confirm:true</code> → report artifact path. Defense in depth: organ enforces the same contract on the wire even if the LLM forgets the protocol.</li>
+      <li><strong>Cut from the installer (now LLM-driven, on demand):</strong> bond cycle, backups-as-git-repo, emergency baseline seeding, upgrade-confirmation flow, brainstem CLI subcommands (<code>egg</code>, <code>hatch</code>, <code>ls</code>, <code>identity</code>, <code>doctor</code>, <code>safe-mode</code>, <code>backups</code>), peer/registry, service install (launchd/systemd), boot.py wrapper. None of this disappeared from the platform — it just moved from pre-flight bash to runtime conversation.</li>
+      <li><strong>Tests.</strong> <code>rapp_brainstem/test_reserved_agents.py</code> — 13 cases covering directory layout, BasicAgent contract, discovery isolation, version shape, refuse-without-confirm, organ catalog, route dispatch, lifecycle.log audit trail.</li>
+    </ul>
+  </article>
+
+  <!-- v0.15.x ────────────────────────────────────────────────────── -->
+  <article class="release">
+    <h2>v0.15.0 – v0.15.9 <span class="tag-chip">brainstem-v0.15.x</span></h2>
+    <p class="oneline">Boot wrapper, model persistence, RAPPZoo/Pokédex, sprite art, Settings panel polish.</p>
+    <ul>
+      <li><strong>v0.15.9</strong> — pixel sprites get true 16×16 detail (per-rappid hash → species/color/pattern); RAPPZoo card chrome rebranded "Trapper-Keeper" for the holographic-binder vibe.</li>
+      <li><strong>v0.15.8</strong> — Settings: "Pokédex" → "RAPPZoo", no stale errors on first load, no overflow on long org names.</li>
+      <li><strong>v0.15.7</strong> — Settings: egg export sits next to the RAPPZoo link (one organism-in/organism-out concept).</li>
+      <li><strong>v0.15.6</strong> — rapp-zoo Pages site moves into this repo at <code>rapp-zoo/</code>; Settings panel decluttered.</li>
+      <li><strong>v0.15.5</strong> — egg export moves into Settings; rapp-zoo header link points at the Pages copy.</li>
+      <li><strong>v0.15.4</strong> — model selection survives kernel restart (<code>/models/set</code> now persists); boot banner reflects the active model instead of the .env default.</li>
+      <li><strong>v0.15.3</strong> — egg filenames carry the full rappid + UTC stamp so two organisms on the same machine can't collide.</li>
+      <li><strong>v0.15.2</strong> — installer output: calmer, terser, fewer scary lines on the happy path.</li>
+      <li><strong>v0.15.1</strong> — installer launches via <code>utils/boot.py</code> wrapper (not raw <code>python brainstem.py</code>) so <code>/api/snapshot/*</code>, <code>/api/senses/*</code>, <code>/api/workspace/*</code> are wired uniformly across foreground / cmd_run / launchd / systemd / project-local.</li>
+      <li><strong>v0.15.0</strong> — boot.py-native .egg export/import + opt-in upgrades (one-liner short-circuits at "already up to date" when local VERSION matches latest tag) + safety net for partial downloads.</li>
+    </ul>
+  </article>
+
+  <!-- v0.14.x ────────────────────────────────────────────────────── -->
+  <article class="release">
+    <h2>v0.14.0 – v0.14.2 <span class="tag-chip">brainstem-v0.14.x</span></h2>
+    <p class="oneline">Rapplications-as-organisms (Article XXXVII), federation pattern (Article XXXVIII).</p>
+    <ul>
+      <li><strong>v0.14.2</strong> — Article XXXVIII: canonical organism shape + federation pattern. The schema other AI assistants (Claude Code, Copilot, Cursor) read first to avoid re-inventing parallel architectures.</li>
+      <li><strong>v0.14.1</strong> — Tier C polish: Article XXXVII (rapplications ARE organisms), <code>/api/lineage</code> walker for the rapp-zoo Pokédex, anatomy diagram link in Settings, README/CLAUDE refresh.</li>
+      <li><strong>v0.14.0</strong> — <code>brainstem-egg/2.2-rapplication</code> schema. Rapplications are organisms with smaller scope — same egg layout, tighter include set. Adds <code>pack_rapplication()</code> + <code>unpack_rapplication()</code>.</li>
+    </ul>
+  </article>
+
+  <!-- v0.13.x ────────────────────────────────────────────────────── -->
+  <article class="release">
+    <h2>v0.13.0 – v0.13.3 <span class="tag-chip">brainstem-v0.13.x</span></h2>
+    <p class="oneline">Local installs become first-class digital organisms with persistent identity + bonding lifecycle.</p>
+    <ul>
+      <li><strong>v0.13.3</strong> — <code>GET /api/identity</code> reads <code>~/.brainstem/{rappid,bonds}.json</code>; organism rappid surfaces in the boot banner.</li>
+      <li><strong>v0.13.2</strong> — installer: bond cycle survives older pins; honest version messaging when a pre-bond install runs the upgrade.</li>
+      <li><strong>v0.13.1</strong> — Cloud UI source toggle: flip <code>/</code> between local <code>index.html</code> and the live GitHub Pages copy without re-running the installer.</li>
+      <li><strong>v0.13.0</strong> — bonding lifecycle: every local install gets a perpetual rappid at first hatch; one-liner runs egg → overlay → hatch on every kernel upgrade so identity, soul, custom agents, and memory survive in place. Implemented in <code>utils/bond.py</code>.</li>
+    </ul>
+  </article>
+
+  <!-- v0.12.3 ──────────────────────────────────────────────────── -->
+  <article class="release">
     <h2>v0.12.3 <span class="tag-chip">brainstem-v0.12.3</span></h2>
     <p class="oneline">CORS tightened + <code>/debug/auth</code> no longer returns the Copilot token body.</p>
     <ul>
@@ -187,7 +243,7 @@ BRAINSTEM_VERSION=0.12.0 curl -fsSL https://kody-w.github.io/RAPP/installer/inst
   <footer>
     Tags are immutable. If a release ever goes wrong, pin to the prior version with
     <code>BRAINSTEM_VERSION=…</code> and the installer will restore it byte-for-byte.
-    See <a href="./faq.html">FAQ</a> · <a href="./roadmap.html">Roadmap</a>.
+    See <a href="../product/faq.html">FAQ</a> · <a href="./roadmap.html">Roadmap</a>.
   </footer>
 </main>
 <div id="site-footer"></div>
