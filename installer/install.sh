@@ -138,11 +138,20 @@ if [ ! -f "$KERNEL_DIR/.env" ] && [ -f "$KERNEL_DIR/.env.example" ]; then
     cp "$KERNEL_DIR/.env.example" "$KERNEL_DIR/.env"
 fi
 
+# ── Pick the launcher: utils/boot.py if it exists (wires organs, senses,
+# /web/ static, /api/snapshot/*, /api/senses/*, /api/workspace/*); fall
+# back to bare brainstem.py for older clones that predate the wrapper.
+# brainstem.py is the kernel; boot.py is the launcher (Article XXXIII).
+LAUNCHER="brainstem.py"
+if [ -f "$KERNEL_DIR/utils/boot.py" ]; then
+    LAUNCHER="utils/boot.py"
+fi
+
 # ── --here / no-autostart mode: print the start command and exit ─────
 # Power-user mode. The user knows what they're doing; they want a path.
 if [ "$LOCAL_MODE" = "1" ] || [ "${RAPP_NO_AUTOSTART:-0}" = "1" ]; then
     echo ""
-    echo -e "${GREEN}✓ ready${NC}  ${VENV_DIR}/bin/python ${KERNEL_DIR}/brainstem.py"
+    echo -e "${GREEN}✓ ready${NC}  ${VENV_DIR}/bin/python ${KERNEL_DIR}/${LAUNCHER}"
     echo ""
     exit 0
 fi
@@ -151,7 +160,7 @@ fi
 PORT="${PORT:-7071}"
 LOG_FILE="$BRAINSTEM_HOME/brainstem.log"
 echo -e "${CYAN}▸ starting your brainstem...${NC}"
-( cd "$KERNEL_DIR" && PORT=$PORT nohup "$VENV_DIR/bin/python" brainstem.py > "$LOG_FILE" 2>&1 & )
+( cd "$KERNEL_DIR" && PORT=$PORT nohup "$VENV_DIR/bin/python" "$LAUNCHER" > "$LOG_FILE" 2>&1 & )
 
 # Brief health check (non-fatal — slow boots still succeed)
 sleep 2
