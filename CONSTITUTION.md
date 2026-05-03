@@ -2894,9 +2894,103 @@ To avoid the loops this codebase spent weeks unwinding:
 
 ---
 
+## Article XXXIX — The One-Liner Is The Only Human Surface (Everything Else Is LLM-to-LLM)
+
+> **Humans run `curl … | bash` once. Every interaction after that is LLM-to-LLM: the user opens whatever AI chat they already trust (Copilot, Claude Code, Cursor, ChatGPT desktop, the brainstem's own UI), tells it what they want in plain English, and that LLM speaks to the brainstem's `/chat` endpoint on the user's behalf. The brainstem replies in plain English. The user gets a report card sent home from school — never a dashboard, never a JSON envelope, never a route they have to memorize.**
+
+> **This is the electric bicycle for the mind loop.** Steve Jobs's "bicycle for the mind" was the personal computer making humans more capable; the electric bicycle is the LLM doing the hard pedaling so the human only does the fun part. *Humans do the fun work — deciding what they want, enjoying the result. LLMs do the hard work — figuring out which route to call, holding the confirmation state, parsing the JSON, translating the answer back into a sentence.* The brainstem is the destination; the user's chosen LLM is the motor; the human steers and enjoys the ride.
+
+This article is the membrane between the human and the machinery. It exists because the platform's most powerful capabilities — kernel upgrades, organism snapshots, peer registration, recovery from a bad bond, autostart installation — are also the ones humans should never have to drive by hand. Every one of those operations is implemented behind `/api/lifecycle/*` (Article XXXIII reserved agents), and the only thing that should ever POST to those routes is an LLM that's been asked, in plain English, to take care of something for the user.
+
+### XXXIX.1 — The two layers (and only two)
+
+| Layer | Who's there | What it touches |
+|---|---|---|
+| **Layer 1 — the one-liner** | Human, in a terminal, exactly once | `curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh \| bash`. Brainstem on disk and running. |
+| **Layer 2 — everything else** | LLM, on behalf of the human | The brainstem's `/chat` endpoint. The brainstem-internal LLM loop orchestrates agents (`agents/*_agent.py`) and reserved agents (`utils/reserved_agents/*` via `/api/lifecycle/*`) and returns a plain-English reply. |
+
+There is no Layer 1.5. There is no "user opens Settings and clicks Upgrade." There is no `brainstem upgrade` CLI. The five-command process CLI (`start | stop | restart | status | logs`) exists for one job — running the daemon — and that's it.
+
+### XXXIX.2 — The user's chat is whatever they already trust
+
+The user does not need to learn a new chat to operate their organism. **Any LLM client that can hit an HTTP endpoint can be the user's interpreter.** Copilot in VS Code. Claude Code in a terminal. Cursor inline. ChatGPT desktop with a tool. The brainstem's own built-in chat UI. A future Apple Intelligence, a future Pixel Assistant, a future MCP-aware shell — all valid Layer 2 clients.
+
+The user says, in plain English:
+
+- *"hey, check on my brainstem"*
+- *"is there an update for my organism?"*
+- *"back up my brainstem before this risky thing"*
+- *"register me with the other brainstems on my network"*
+- *"my brainstem feels broken, can you fix it"*
+
+Their LLM hits `POST /chat` with that intent. The brainstem-internal LLM loops through agents, calls the lifecycle organ when needed, and returns plain English. The external LLM relays. The user sees a sentence, not a stack trace.
+
+### XXXIX.3 — Report card, not dashboard
+
+The brainstem's reply style is **a kid's school report card sent home to a parent**. Plain English. Honest about what happened. Includes recovery handles only when it'd matter for a follow-up question. The calling LLM forwards or paraphrases — either way, the user reads English.
+
+| ✅ Report card | ❌ Dashboard |
+|---|---|
+| "Your brainstem is healthy. There's an update available — want me to apply it?" | `{ "ok": true, "current_version": "0.15.9", "latest_version": "0.16.0", "needs_upgrade": true }` |
+| "I made a backup first; if anything goes wrong I can restore you exactly where you are now." | "Snapshot egg written to `/Users/kodyw/.brainstem/eggs/upgrade-2026-05-02T22-12-15Z.egg`" |
+| "All done — you're now on v0.16.0. Any new chat will feel the same; the upgrade was invisible." | "installer_exit_code: 0; pre_version: 0.15.9; post_version: 0.16.0" |
+| "Something went sideways during the upgrade. I rolled you back. Want me to try again or just leave it?" | "ERROR: bond cycle aborted at phase 2; rollback initiated; see `~/.brainstem/lifecycle.log`" |
+
+This style is enforced by `soul.md` (the brainstem's system prompt), not by the calling LLM. The brainstem-side prompt is the only place this rule has to live, because it owns the wire.
+
+### XXXIX.4 — The brainstem-LLM does not need to know who's calling
+
+The same protocol works whether the chat client is a human typing or another LLM relaying:
+
+1. Brainstem replies plainly. Plain English survives one extra hop.
+2. The lifecycle handshake (explain → get yes → apply with `confirm: true` → report artifact) survives the hop too — the calling LLM relays the question to the user, the user says yes, the calling LLM relays "yes" back. Same wire, same bytes.
+3. If the human is in the brainstem's own chat UI (no external LLM in the loop), there's just one fewer translation step. The plain-English output already works for them.
+
+There is **no dispatch** based on caller type. There is no `is_human=true` flag. The brainstem doesn't try to detect what's at the other end of `/chat`. It just replies plainly, and plainness composes.
+
+### XXXIX.5 — Brainstem-to-brainstem is the federation test case
+
+The LLM-to-LLM principle has a natural corollary: **a peer brainstem can be the calling LLM too.** Two brainstems on the same network — or two brainstems across the swarm estate (Article XXXVI) — can drive each other through the same `/chat` endpoint and the same lifecycle organ, with no protocol changes.
+
+In practice this is **not the fastest path** (Copilot, Claude Code, Cursor, ChatGPT desktop all have lower latency and richer client UX than a brainstem-as-client). But it is **the most important test case**:
+
+- It exercises whether `agents/*_agent.py` and reserved-agent perform() methods are deterministic enough to behave correctly when driven by an LLM that isn't the model the kernel happens to be running on. The Copilot model loop, the Anthropic model loop, the Azure OpenAI loop, the GitHub Models loop — *and* a peer brainstem's loop — all should reach the same agent calls for the same English request.
+- It validates the federation surface: the calling brainstem's reply is plain English, addressed to whoever asked. The receiving brainstem doesn't care that the asker is itself an organism. Plain English composes across LLMs because plain English is the wire format.
+- It is the ground truth for "agent ran in the wild." If an agent only behaves correctly when Copilot drives it, the agent is overfit to one LLM and the soul/metadata/parameter shape needs work.
+
+When you add a new reserved agent or change the soul.md handshake, **the question to ask is "would a peer brainstem driving this end up doing the right thing?"** If the answer is "only if the calling LLM happens to know route X" or "only if it remembers JSON shape Y," the contract is too tight to the calling LLM and the LLM diversity test will fail.
+
+The fast path is human → trusted LLM → brainstem. The proof-of-architecture path is brainstem → brainstem. Both work; both must keep working.
+
+### XXXIX.6 — Anti-patterns (what other agents must NOT do)
+
+To preserve the membrane:
+
+- **Don't add a "Click to upgrade" button** anywhere — Settings panel, system tray, terminal CLI. Human-facing buttons for kernel operations are the failure mode this article exists to prevent.
+- **Don't add `brainstem upgrade` or `brainstem snapshot` CLI subcommands.** The CLI is `start | stop | restart | status | logs` — process management only. Lifecycle is conversational.
+- **Don't write user docs that say "POST to /api/lifecycle/upgrade with `{confirm: true}`".** Write docs that say "ask your AI to check on the brainstem." If the user is reading a `/api/*` URL, the doc is wrong.
+- **Don't expect users to type JSON, paths, route names, version strings, tag names, or rappid hashes.** Their LLM does that work for them.
+- **Don't ship a "monthly health report" cron or scheduled UI panel.** The report card is on demand. The user asks; the LLM checks; the LLM responds. No timers, no notifications, no inboxes filling up.
+- **Don't expect humans to read a diff.** Whatever a lifecycle agent returns gets translated into plain English by the brainstem-LLM before it leaves `/chat`. If you find yourself returning a diff to the user, you're skipping the membrane.
+- **Don't gate operations behind a human-readable consent UI ("are you sure? [yes/no]").** Gate them behind `confirm: true` on the wire and let the LLM relay the question in whatever chat the user is already in.
+- **Don't build a "first-time onboarding wizard"** that tours the user through advanced operations. The first-time experience is the one-liner running, the chat opening, and a single sentence: *"hey, I'm your brainstem — try asking me anything, or ask your favorite AI to check on me."*
+
+### XXXIX.6 — Reference implementations
+
+- **The membrane itself**: `rapp_brainstem/utils/organs/lifecycle_organ.py` — LLM-only entry point, requires `confirm: true` on the wire for non-read actions.
+- **Reserved agents (the kernel-internal lifecycle code the LLM drives)**: `rapp_brainstem/utils/reserved_agents/` — first-party agents that do not auto-load into the LLM's default tool palette; reachable only via the lifecycle organ.
+- **Soul.md handshake protocol**: `<lifecycle_handshake>` section in `rapp_brainstem/soul.md` — the brainstem-LLM's instruction set for the explain → confirm → apply → report-card flow.
+- **The companion install rule** (terminal-output equivalent of this article at the OS layer): `installer/install.sh` shows banner + 3 progress lines + ✓ ready, then opens the browser. No paths, no routes, no how-to prose. Same membrane, expressed in shell.
+- **The human-facing CLI surface (process management only)**: `~/.brainstem/bin/brainstem` — `start | stop | restart | status | logs`. That's the entire human-typed CLI. Anything else lives in chat.
+
+---
+
 *Ratified for the RAPP platform. The engine stays small so the agents
 can be everything. The species stays one so the variants can be many.
 The license never closes once opened. The estate persists so the
 organism can be everywhere. The rapplication is an organism, so
 everything is one protocol. The Pokédex is the universal lens, so the
-trainer never gets lost in their own collection.*
+trainer never gets lost in their own collection. The human only touches
+the one-liner — everything else is LLM-to-LLM, and the brainstem
+answers in report cards. The bicycle is electric: humans do the fun
+work, LLMs do the hard work, and the organism just gets ridden.*
