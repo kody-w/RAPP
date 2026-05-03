@@ -106,6 +106,11 @@ need python3
 # ── Clone (sparse — only rapp_brainstem/ + installer/) ───────────────
 mkdir -p "$BRAINSTEM_HOME"
 if [ -d "$SRC_DIR/.git" ]; then
+    # Earlier installs may have set origin to a different repo (e.g.
+    # the legacy kody-w/rapp-installer URL). Force it to RAPP before
+    # fetching so we always pull from the right place.
+    git -C "$SRC_DIR" remote set-url origin "$REPO_URL" 2>/dev/null || \
+        git -C "$SRC_DIR" remote add origin "$REPO_URL" 2>/dev/null || true
     echo -e "${CYAN}▸ getting latest...${NC}"
     git -C "$SRC_DIR" fetch -q --depth 1 origin "$PIN_REF" || {
         echo -e "${RED}✗ git fetch failed for ref ${PIN_REF}${NC}"; exit 1; }
