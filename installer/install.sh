@@ -106,12 +106,12 @@ need python3
 # ── Clone (sparse — only rapp_brainstem/ + installer/) ───────────────
 mkdir -p "$BRAINSTEM_HOME"
 if [ -d "$SRC_DIR/.git" ]; then
-    echo -e "${CYAN}▸ updating kernel src...${NC}"
+    echo -e "${CYAN}▸ getting latest...${NC}"
     git -C "$SRC_DIR" fetch -q --depth 1 origin "$PIN_REF" || {
         echo -e "${RED}✗ git fetch failed for ref ${PIN_REF}${NC}"; exit 1; }
     git -C "$SRC_DIR" checkout -q FETCH_HEAD
 else
-    echo -e "${CYAN}▸ cloning kernel src to $SRC_DIR...${NC}"
+    echo -e "${CYAN}▸ getting code...${NC}"
     rm -rf "$SRC_DIR"
     git clone -q --depth 1 --branch "$PIN_REF" --filter=blob:none --no-checkout "$REPO_URL" "$SRC_DIR" || {
         echo -e "${RED}✗ git clone failed for ref ${PIN_REF}${NC}"; exit 1; }
@@ -125,9 +125,8 @@ if [ ! -f "$KERNEL_DIR/brainstem.py" ]; then
     exit 1
 fi
 
-# ── Venv + deps ──────────────────────────────────────────────────────
+# ── Venv + deps (silent on the happy path) ───────────────────────────
 if [ ! -d "$VENV_DIR" ]; then
-    echo -e "${CYAN}▸ creating venv...${NC}"
     python3 -m venv "$VENV_DIR"
 fi
 echo -e "${CYAN}▸ installing dependencies...${NC}"
@@ -139,32 +138,27 @@ if [ ! -f "$KERNEL_DIR/.env" ] && [ -f "$KERNEL_DIR/.env.example" ]; then
     cp "$KERNEL_DIR/.env.example" "$KERNEL_DIR/.env"
 fi
 
-# ── Done — auto-launch in global mode only ───────────────────────────
-# In --here / project-local mode, the user is in a project shell and can
-# start the brainstem on whatever port they want. Don't auto-launch.
-# In global mode, the one-liner promise is "everything works after this"
-# — so we launch on :7071 and open the browser, unless the caller opts out.
+# ── --here / no-autostart mode: print the start command and exit ─────
+# Power-user mode. The user knows what they're doing; they want a path.
 if [ "$LOCAL_MODE" = "1" ] || [ "${RAPP_NO_AUTOSTART:-0}" = "1" ]; then
     echo ""
-    echo -e "${GREEN}✓ install complete${NC}"
-    echo "  src:    $KERNEL_DIR"
-    echo "  venv:   $VENV_DIR"
-    echo "  start:  ${VENV_DIR}/bin/python ${KERNEL_DIR}/brainstem.py"
+    echo -e "${GREEN}✓ ready${NC}  ${VENV_DIR}/bin/python ${KERNEL_DIR}/brainstem.py"
     echo ""
     exit 0
 fi
 
+# ── Global mode: launch + open browser. Magic. ───────────────────────
 PORT="${PORT:-7071}"
 LOG_FILE="$BRAINSTEM_HOME/brainstem.log"
-echo -e "${CYAN}▸ launching brainstem on :$PORT...${NC}"
+echo -e "${CYAN}▸ starting your brainstem...${NC}"
 ( cd "$KERNEL_DIR" && PORT=$PORT nohup "$VENV_DIR/bin/python" brainstem.py > "$LOG_FILE" 2>&1 & )
 
 # Brief health check (non-fatal — slow boots still succeed)
 sleep 2
 if command -v curl &> /dev/null && curl -fsS "http://localhost:$PORT/health" > /dev/null 2>&1; then
-    echo -e "${GREEN}✓ brainstem is up at http://localhost:$PORT${NC}"
+    echo -e "${GREEN}✓ ready at http://localhost:$PORT${NC}"
 else
-    echo -e "${YELLOW}△ brainstem may still be starting — tail ${LOG_FILE} if it doesn't come up${NC}"
+    echo -e "${YELLOW}△ still starting — give it a few more seconds${NC}"
 fi
 
 if [ "${RAPP_NO_BROWSER:-0}" != "1" ]; then
@@ -175,12 +169,4 @@ if [ "${RAPP_NO_BROWSER:-0}" != "1" ]; then
     fi
 fi
 
-echo ""
-echo -e "${GREEN}✓ done${NC}"
-echo "  src:    $KERNEL_DIR"
-echo "  venv:   $VENV_DIR"
-echo "  logs:   $LOG_FILE"
-echo ""
-echo "  ask the brainstem to upgrade itself any time — it has a lifecycle agent."
-echo "  routes: GET /api/lifecycle/  ·  POST /api/lifecycle/upgrade"
 echo ""
