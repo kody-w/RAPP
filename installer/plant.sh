@@ -1,0 +1,874 @@
+#!/bin/bash
+#
+# plant.sh — plant your AI's front door on the public internet.
+#
+# Creates a kernel-compliant RAPP mirror as a public GitHub repo + Pages
+# site at <your-handle>.github.io/<your-name>. The kernel is byte-synced
+# from grail; the rest of the mirror (soul, agents, UI) is yours to grow.
+#
+# Usage (interactive):
+#   curl -fsSL https://kody-w.github.io/RAPP/installer/plant.sh | bash
+#
+# Usage (env vars):
+#   MIRROR_REPO_NAME=my-front-door \
+#   MIRROR_DISPLAY_NAME="My Front Door" \
+#   curl -fsSL https://kody-w.github.io/RAPP/installer/plant.sh | bash
+#
+# Optional MIRROR_PARENT (lineage tag — who introduced you):
+#   MIRROR_PARENT=alice/her-mirror curl ... plant.sh | bash
+#
+# Dry run (writes locally, doesn't push to GitHub):
+#   PLANT_DRY_RUN=1 PLANT_DRY_RUN_DIR=/tmp/plant-test \
+#   PLANT_GH_USER=test-user MIRROR_REPO_NAME=demo \
+#   bash ./plant.sh
+
+set -e
+
+# ── constants ─────────────────────────────────────────────────────────
+GRAIL_REPO="kody-w/rapp-installer"
+GRAIL_RAW="https://raw.githubusercontent.com/${GRAIL_REPO}/main"
+SPECIES_ROOT_RAPPID="0b635450-c042-49fb-b4b1-bdb571044dec"
+
+KERNEL_FILES=(
+    "rapp_brainstem/brainstem.py"
+    "rapp_brainstem/VERSION"
+    "rapp_brainstem/agents/basic_agent.py"
+)
+
+# ── colors ────────────────────────────────────────────────────────────
+RED=$'\033[0;31m'
+GREEN=$'\033[0;32m'
+YELLOW=$'\033[1;33m'
+CYAN=$'\033[0;36m'
+NC=$'\033[0m'
+
+err()  { printf "%s✗%s %s\n" "$RED"   "$NC" "$*" >&2; exit 1; }
+ok()   { printf "%s✓%s %s\n" "$GREEN" "$NC" "$*"; }
+info() { printf "%s→%s %s\n" "$CYAN"  "$NC" "$*"; }
+warn() { printf "%s!%s %s\n" "$YELLOW" "$NC" "$*"; }
+
+# ── prereqs ───────────────────────────────────────────────────────────
+check_prereqs() {
+    command -v curl    >/dev/null || err "curl required"
+    command -v git     >/dev/null || err "git required"
+    command -v python3 >/dev/null || err "python3 required (for UUID minting)"
+
+    if [[ "${PLANT_DRY_RUN:-0}" != "1" ]]; then
+        command -v gh >/dev/null || err "gh CLI required (https://cli.github.com)"
+        gh auth status >/dev/null 2>&1 || err "Run 'gh auth login' first"
+    fi
+}
+
+# ── interactive prompts ───────────────────────────────────────────────
+read_tty() {
+    local prompt="$1" default="$2" result
+    if [ -t 0 ]; then
+        read -r -p "$prompt" result
+    elif [ -e /dev/tty ]; then
+        read -r -p "$prompt" result < /dev/tty
+    else
+        result=""
+    fi
+    echo "${result:-$default}"
+}
+
+prompt_inputs() {
+    if [[ "${PLANT_DRY_RUN:-0}" == "1" ]]; then
+        [[ -n "${MIRROR_REPO_NAME:-}" ]] || err "MIRROR_REPO_NAME required for dry run"
+    elif [[ -z "${MIRROR_REPO_NAME:-}" ]]; then
+        echo ""
+        echo "What slug should your front door live at?"
+        echo "  Example: my-front-door  →  ${PLANT_GH_USER:-<you>}.github.io/my-front-door"
+        echo "  Lowercase letters, digits, hyphens, underscores. No spaces."
+        echo ""
+        MIRROR_REPO_NAME=$(read_tty "Slug: " "")
+    fi
+
+    [[ -n "${MIRROR_REPO_NAME:-}" ]] || err "no MIRROR_REPO_NAME provided"
+
+    if ! [[ "$MIRROR_REPO_NAME" =~ ^[a-z0-9][a-z0-9_-]*$ ]]; then
+        err "'$MIRROR_REPO_NAME' is not a valid slug (lowercase, digits, hyphens, underscores)"
+    fi
+
+    if [[ -z "${MIRROR_DISPLAY_NAME:-}" ]]; then
+        local default_name
+        default_name=$(echo "$MIRROR_REPO_NAME" | python3 -c "
+import sys, re
+s = sys.stdin.read().strip()
+parts = [p for p in re.split(r'[-_]+', s) if p]
+print(' '.join(p.capitalize() for p in parts))
+")
+        if [[ "${PLANT_DRY_RUN:-0}" != "1" ]]; then
+            echo ""
+            echo "Display name (what visitors see)?"
+            MIRROR_DISPLAY_NAME=$(read_tty "Display name [$default_name]: " "$default_name")
+        else
+            MIRROR_DISPLAY_NAME="$default_name"
+        fi
+    fi
+
+    export MIRROR_REPO_NAME MIRROR_DISPLAY_NAME
+    info "Slug:    $MIRROR_REPO_NAME"
+    info "Display: $MIRROR_DISPLAY_NAME"
+    if [[ -n "${MIRROR_PARENT:-}" ]]; then
+        info "Lineage: planted from $MIRROR_PARENT"
+    fi
+}
+
+# ── identity ──────────────────────────────────────────────────────────
+mint_rappid() { python3 -c "import uuid; print(uuid.uuid4())"; }
+now_iso()     { date -u +"%Y-%m-%dT%H:%M:%SZ"; }
+
+# ── kernel fetch (drift-proof: always re-fetch from grail) ────────────
+fetch_kernel() {
+    local target_dir="$1"
+    info "Fetching kernel from grail..."
+    for f in "${KERNEL_FILES[@]}"; do
+        local target="$target_dir/$f"
+        mkdir -p "$(dirname "$target")"
+        curl -fsSL "$GRAIL_RAW/$f" -o "$target" \
+            || err "fetch failed: $f"
+        ok "  $f"
+    done
+}
+
+# ── file generation ───────────────────────────────────────────────────
+write_install_sh() {
+    local target_dir="$1"
+    mkdir -p "$target_dir/installer"
+    cat > "$target_dir/installer/install.sh" << 'EOF'
+#!/bin/bash
+#
+# Mirror installer — thin proxy to the grail kernel installer.
+#
+# Per the Mirror Spec (https://kody-w.github.io/RAPP/pages/vault/), every
+# valid mirror's installer re-fetches the canonical installer from the
+# grail's raw GitHub URL on every run, so no mirror's installer can drift
+# from the upstream source of truth.
+
+set -e
+
+GRAIL_INSTALLER_URL="https://raw.githubusercontent.com/kody-w/rapp-installer/main/install.sh"
+
+curl -fsSL "$GRAIL_INSTALLER_URL" | bash -s -- "$@"
+EOF
+    chmod +x "$target_dir/installer/install.sh"
+}
+
+write_rappid_json() {
+    local target_dir="$1" gh_user="$2" rappid="$3" now="$4"
+    local planted_from_json="null"
+    [[ -n "${MIRROR_PARENT:-}" ]] && planted_from_json="\"$MIRROR_PARENT\""
+
+    # Use Python json to ensure correct escaping of display names with quotes/etc.
+    PLANT_RJ_PATH="$target_dir/rappid.json" \
+    PLANT_RAPPID="$rappid" \
+    PLANT_NOW="$now" \
+    PLANT_GH_USER="$gh_user" \
+    PLANT_REPO_NAME="$MIRROR_REPO_NAME" \
+    PLANT_DISPLAY_NAME="$MIRROR_DISPLAY_NAME" \
+    PLANT_PARENT_RAPPID="$SPECIES_ROOT_RAPPID" \
+    PLANT_PARENT="${MIRROR_PARENT:-}" \
+    python3 - <<'PYEOF'
+import os, json, pathlib
+data = {
+    "schema": "rapp-rappid/1.1",
+    "rappid": os.environ["PLANT_RAPPID"],
+    "kind": "mirror",
+    "name": os.environ["PLANT_REPO_NAME"],
+    "display_name": os.environ["PLANT_DISPLAY_NAME"],
+    "github": f"https://github.com/{os.environ['PLANT_GH_USER']}/{os.environ['PLANT_REPO_NAME']}",
+    "url":    f"https://{os.environ['PLANT_GH_USER']}.github.io/{os.environ['PLANT_REPO_NAME']}",
+    "parent_rappid": os.environ["PLANT_PARENT_RAPPID"],
+    "parent_repo":   "https://github.com/kody-w/rapp-installer",
+    "planted_by":    os.environ["PLANT_GH_USER"],
+    "planted_at":    os.environ["PLANT_NOW"],
+    "planted_from":  os.environ["PLANT_PARENT"] or None,
+    "kernel_version": "0.6.0",
+}
+pathlib.Path(os.environ["PLANT_RJ_PATH"]).write_text(json.dumps(data, indent=2) + "\n")
+PYEOF
+}
+
+write_gitignore() {
+    local target_dir="$1"
+    cat > "$target_dir/.gitignore" << 'EOF'
+.brainstem_data/
+.copilot_token
+.copilot_session
+.env
+.env.local
+__pycache__/
+*.pyc
+.DS_Store
+node_modules/
+venv/
+.pytest_cache/
+EOF
+}
+
+write_readme() {
+    local target_dir="$1" gh_user="$2" rappid="$3"
+    local lineage_line=""
+    [[ -n "${MIRROR_PARENT:-}" ]] && lineage_line="Planted from: \`$MIRROR_PARENT\`"
+
+    cat > "$target_dir/README.md" << EOF
+# $MIRROR_DISPLAY_NAME
+
+> A RAPP front door on the public internet. Real estate, not software.
+
+- **Address:** \`$gh_user.github.io/$MIRROR_REPO_NAME\`
+- **Rappid:** \`$rappid\`
+- **Kernel:** v0.6.0 (byte-identical to the grail at \`kody-w/rapp-installer\`)
+- **Planted by:** [@$gh_user](https://github.com/$gh_user)
+$lineage_line
+
+## What's behind this door
+
+The kernel files in \`rapp_brainstem/\` are kernel-compliant per the
+[Mirror Spec](https://kody-w.github.io/RAPP/pages/vault/Architecture/Mirror%20Spec.md).
+Everything else — \`agents/\`, the soul, the UI surfaces — is what the
+operator chose to put inside.
+
+## Visit the front door
+
+Open the URL in any browser:
+
+\`\`\`
+https://$gh_user.github.io/$MIRROR_REPO_NAME
+\`\`\`
+
+## Install this front door's brainstem locally
+
+\`\`\`
+curl -fsSL https://$gh_user.github.io/$MIRROR_REPO_NAME/installer/install.sh | bash
+\`\`\`
+
+That installer is a thin wrapper that re-fetches the canonical kernel
+installer from the grail on every run — this front door cannot drift
+from the kernel.
+
+## Plant your own front door
+
+\`\`\`
+curl -fsSL https://kody-w.github.io/RAPP/installer/plant.sh | bash
+\`\`\`
+
+## Verify this front door has not drifted from the grail
+
+\`\`\`bash
+for f in rapp_brainstem/brainstem.py rapp_brainstem/VERSION rapp_brainstem/agents/basic_agent.py; do
+  diff <(curl -fsSL "https://raw.githubusercontent.com/kody-w/rapp-installer/main/\$f") "\$f" \\
+    || echo "DRIFT: \$f"
+done
+\`\`\`
+
+Three empty diffs = compliant. Anything else = not a valid mirror.
+EOF
+}
+
+write_index_html() {
+    local target_dir="$1" gh_user="$2" rappid="$3"
+    local mirror_url="https://$gh_user.github.io/$MIRROR_REPO_NAME"
+    local lineage_html=""
+    [[ -n "${MIRROR_PARENT:-}" ]] && lineage_html="<div class=\"chip\">planted from <code>$MIRROR_PARENT</code></div>"
+
+    # Use a non-expanding heredoc + sed substitution to avoid escaping headaches
+    # with the embedded JS.
+    cat > "$target_dir/index.html" << 'TEMPLATE_EOF'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no, address=no, email=no, date=no">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0d1117">
+<title>__DISPLAY_NAME__ — Front Door</title>
+<meta name="description" content="A RAPP front door — __DISPLAY_NAME__ on the public internet.">
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #0d1117;
+    color: #e6edf3;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    -webkit-text-size-adjust: 100%;
+    overflow: hidden;
+  }
+  header {
+    padding: 16px 24px;
+    padding-top: max(16px, env(safe-area-inset-top, 16px));
+    border-bottom: 1px solid #21262d;
+    background: #0d1117;
+  }
+  h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+  .sub { font-size: 12px; color: #8b949e; margin-top: 4px; }
+  main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .identity {
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .identity-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; }
+  .identity-row + .identity-row { border-top: 1px solid #21262d; margin-top: 6px; padding-top: 10px; }
+  .identity-key { color: #8b949e; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .identity-val { font-family: "SF Mono", Menlo, monospace; font-size: 12px; color: #e6edf3; word-break: break-all; }
+  .chip {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #21262d;
+    color: #8b949e;
+    font-size: 11px;
+    margin-right: 6px;
+    margin-top: 6px;
+  }
+  .chip code { font-family: "SF Mono", Menlo, monospace; color: #c9d1d9; }
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  @media (min-width: 480px) { .actions { grid-template-columns: repeat(3, 1fr); } }
+  button.action {
+    background: #1f6feb;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+    -webkit-appearance: none;
+  }
+  button.action:hover { background: #2477f3; }
+  button.action.secondary { background: #21262d; color: #c9d1d9; }
+  button.action.secondary:hover { background: #2d333b; }
+  .pane {
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 12px;
+  }
+  .pane h2 { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: #c9d1d9; }
+  .pane p { font-size: 13px; color: #8b949e; margin-bottom: 10px; line-height: 1.5; }
+  .input-row { display: flex; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
+  input[type="text"], textarea {
+    flex: 1;
+    min-width: 200px;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: #e6edf3;
+    font-size: 14px;
+    font-family: inherit;
+  }
+  input[type="text"]:focus, textarea:focus { outline: none; border-color: #1f6feb; }
+  button.small {
+    background: #21262d;
+    color: #c9d1d9;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  button.small:hover { background: #2d333b; }
+  button.primary { background: #1f6feb; border-color: #1f6feb; color: white; }
+  button.primary:hover { background: #2477f3; }
+  .my-id {
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 13px;
+    background: #0d1117;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #21262d;
+    word-break: break-all;
+    margin: 8px 0;
+  }
+  .chat-log {
+    background: #0d1117;
+    border: 1px solid #21262d;
+    border-radius: 8px;
+    padding: 12px;
+    height: 240px;
+    overflow-y: auto;
+    margin: 12px 0;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .msg { padding: 4px 0; }
+  .msg.me { color: #58a6ff; }
+  .msg.peer { color: #3fb950; }
+  .msg.system { color: #8b949e; font-style: italic; font-size: 12px; }
+  .qr-img { display: block; margin: 12px auto; max-width: 280px; border-radius: 8px; background: white; padding: 12px; }
+  .qr-url {
+    text-align: center;
+    font-size: 12px;
+    color: #8b949e;
+    word-break: break-all;
+    margin-top: 8px;
+    font-family: "SF Mono", Menlo, monospace;
+  }
+  pre.cmd {
+    background: #0d1117;
+    border: 1px solid #21262d;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 12px;
+    color: #c9d1d9;
+    overflow-x: auto;
+    font-family: "SF Mono", Menlo, monospace;
+  }
+  .status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #6e7681;
+    margin-right: 6px;
+  }
+  .status-dot.ok    { background: #3fb950; }
+  .status-dot.warn  { background: #d29922; }
+  .status-dot.err   { background: #f85149; }
+  footer {
+    padding: 12px 24px;
+    border-top: 1px solid #21262d;
+    font-size: 11px;
+    color: #6e7681;
+    text-align: center;
+  }
+  footer a { color: #58a6ff; text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>__DISPLAY_NAME__</h1>
+  <div class="sub">A RAPP front door · planted by <a href="https://github.com/__GH_USER__" style="color:#58a6ff;text-decoration:none;">@__GH_USER__</a></div>
+</header>
+
+<main>
+  <section class="identity">
+    <div class="identity-row">
+      <span class="identity-key">Slug</span>
+      <span class="identity-val">__REPO_NAME__</span>
+    </div>
+    <div class="identity-row">
+      <span class="identity-key">Rappid</span>
+      <span class="identity-val">__RAPPID__</span>
+    </div>
+    <div class="identity-row">
+      <span class="identity-key">Kernel</span>
+      <span class="identity-val">v0.6.0 (grail-synced)</span>
+    </div>
+    <div style="margin-top:12px;">
+      <span class="chip">kind: <code>mirror</code></span>
+      __LINEAGE_HTML__
+    </div>
+  </section>
+
+  <div class="actions">
+    <button class="action" id="btn-tether">Open Door (tether)</button>
+    <button class="action secondary" id="btn-qr">Show QR</button>
+    <button class="action secondary" id="btn-install">Install Brainstem</button>
+  </div>
+
+  <section class="pane" id="pane-tether" hidden>
+    <h2>Tether — cross-device chat</h2>
+    <p>Two devices, one channel. Open this page on another device, copy that one's ID, paste here, connect. WebRTC end-to-end encrypted (DTLS). Signaling via PeerJS public broker; once connected, the broker drops out.</p>
+
+    <div>
+      <span class="identity-key">My peer ID:</span>
+      <div class="my-id" id="my-id"><span class="status-dot" id="peer-status"></span><span id="my-id-text">(connecting to broker...)</span></div>
+      <button class="small" id="btn-copy-id">Copy ID</button>
+      <button class="small" id="btn-show-tether-qr">Show QR for this ID</button>
+    </div>
+
+    <div class="input-row" style="margin-top:16px;">
+      <input type="text" id="peer-id-input" placeholder="Paste peer's ID here">
+      <button class="small primary" id="btn-connect">Connect</button>
+    </div>
+
+    <div class="chat-log" id="chat-log">
+      <div class="msg system">Tether will appear here once connected.</div>
+    </div>
+
+    <div class="input-row">
+      <input type="text" id="chat-input" placeholder="Type a message and hit Enter" disabled>
+      <button class="small primary" id="btn-send" disabled>Send</button>
+    </div>
+
+    <div id="tether-qr-pane" hidden style="margin-top:16px;">
+      <p>Scan to land on this front door + this peer ID:</p>
+      <img class="qr-img" id="tether-qr-img" alt="Peer ID QR">
+      <div class="qr-url" id="tether-qr-url"></div>
+    </div>
+  </section>
+
+  <section class="pane" id="pane-qr" hidden>
+    <h2>QR for this front door</h2>
+    <p>Scan to land at <code>__URL__</code>.</p>
+    <img class="qr-img" id="qr-img" alt="Front door QR">
+    <div class="qr-url" id="qr-url"></div>
+  </section>
+
+  <section class="pane" id="pane-install" hidden>
+    <h2>Install this front door's brainstem locally</h2>
+    <p>Runs the canonical kernel under <code>~/.brainstem/</code> on your machine. Per the Mirror Spec, the installer re-fetches the canonical install logic from the grail, so it cannot drift.</p>
+    <pre class="cmd" id="install-cmd">curl -fsSL __URL__/installer/install.sh | bash</pre>
+    <button class="small primary" id="btn-copy-install">Copy command</button>
+  </section>
+</main>
+
+<footer>
+  <a href="https://kody-w.github.io/RAPP/">RAPP</a> ·
+  <a href="https://kody-w.github.io/RAPP/installer/plant.sh">plant your own front door</a> ·
+  <a href="https://github.com/__GH_USER__/__REPO_NAME__">source</a>
+</footer>
+
+<script>
+"use strict";
+
+const FD = {
+  rappid: "__RAPPID__",
+  displayName: "__DISPLAY_NAME__",
+  slug: "__REPO_NAME__",
+  ghUser: "__GH_USER__",
+  url: "__URL__",
+};
+
+let peer = null;
+let conn = null;
+
+function hideAllPanes() {
+  for (const id of ["pane-tether", "pane-qr", "pane-install"]) {
+    document.getElementById(id).hidden = true;
+  }
+}
+
+function showPane(id) {
+  hideAllPanes();
+  document.getElementById(id).hidden = false;
+}
+
+function appendMsg(text, cls) {
+  const log = document.getElementById("chat-log");
+  // Clear initial system message on first real message
+  if (log.children.length === 1 && log.firstChild.classList.contains("system") &&
+      log.firstChild.textContent.startsWith("Tether will appear")) {
+    log.innerHTML = "";
+  }
+  const div = document.createElement("div");
+  div.className = "msg " + (cls || "system");
+  div.textContent = text;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+function setStatus(state) {
+  const dot = document.getElementById("peer-status");
+  dot.className = "status-dot " + state;
+}
+
+async function ensurePeer() {
+  if (peer) return peer;
+  setStatus("warn");
+  try {
+    peer = new Peer();
+  } catch (e) {
+    setStatus("err");
+    document.getElementById("my-id-text").textContent = "PeerJS failed to load";
+    appendMsg("Could not initialize PeerJS: " + e.message, "system");
+    throw e;
+  }
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => {
+      setStatus("err");
+      document.getElementById("my-id-text").textContent = "broker timeout";
+      reject(new Error("PeerJS broker timeout"));
+    }, 12000);
+    peer.on("open", id => {
+      clearTimeout(t);
+      setStatus("ok");
+      document.getElementById("my-id-text").textContent = id;
+      resolve(peer);
+    });
+    peer.on("connection", c => {
+      conn = c;
+      wireConn(c);
+      appendMsg("Peer connected: " + c.peer, "system");
+    });
+    peer.on("error", e => {
+      setStatus("err");
+      appendMsg("PeerJS error: " + e.type + (e.message ? " — " + e.message : ""), "system");
+    });
+  });
+}
+
+function wireConn(c) {
+  c.on("open", () => {
+    appendMsg("Channel open — DTLS encrypted, peer-to-peer.", "system");
+    document.getElementById("chat-input").disabled = false;
+    document.getElementById("btn-send").disabled = false;
+  });
+  c.on("data", data => {
+    appendMsg(typeof data === "string" ? data : JSON.stringify(data), "peer");
+  });
+  c.on("close", () => {
+    appendMsg("Peer disconnected.", "system");
+    document.getElementById("chat-input").disabled = true;
+    document.getElementById("btn-send").disabled = true;
+  });
+}
+
+async function openTether() {
+  showPane("pane-tether");
+  try {
+    await ensurePeer();
+  } catch (_) { /* error already shown */ }
+}
+
+async function connectToPeer() {
+  const id = document.getElementById("peer-id-input").value.trim();
+  if (!id) return;
+  if (!peer) await ensurePeer();
+  appendMsg("Dialing " + id + "...", "system");
+  conn = peer.connect(id);
+  wireConn(conn);
+}
+
+function sendMessage() {
+  const input = document.getElementById("chat-input");
+  const txt = input.value.trim();
+  if (!txt || !conn || !conn.open) return;
+  conn.send(txt);
+  appendMsg(txt, "me");
+  input.value = "";
+}
+
+function showFrontDoorQR() {
+  showPane("pane-qr");
+  const url = location.origin + location.pathname;
+  document.getElementById("qr-img").src =
+    "https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=0&data=" +
+    encodeURIComponent(url);
+  document.getElementById("qr-url").textContent = url;
+}
+
+function showTetherQR() {
+  const myId = document.getElementById("my-id-text").textContent;
+  if (!myId || myId.includes("...") || myId.includes("timeout") || myId.includes("failed")) {
+    appendMsg("No peer ID yet — wait for the broker handshake to finish.", "system");
+    return;
+  }
+  const tetherPane = document.getElementById("tether-qr-pane");
+  tetherPane.hidden = false;
+  const url = location.origin + location.pathname + "?peer=" + encodeURIComponent(myId);
+  document.getElementById("tether-qr-img").src =
+    "https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=0&data=" +
+    encodeURIComponent(url);
+  document.getElementById("tether-qr-url").textContent = url;
+}
+
+function showInstall() { showPane("pane-install"); }
+
+async function copy(text) {
+  try { await navigator.clipboard.writeText(text); } catch (_) { /* silent */ }
+}
+
+// Wire up buttons
+document.getElementById("btn-tether").onclick = openTether;
+document.getElementById("btn-qr").onclick = showFrontDoorQR;
+document.getElementById("btn-install").onclick = showInstall;
+document.getElementById("btn-connect").onclick = connectToPeer;
+document.getElementById("btn-show-tether-qr").onclick = showTetherQR;
+document.getElementById("btn-send").onclick = sendMessage;
+document.getElementById("btn-copy-id").onclick = () => {
+  copy(document.getElementById("my-id-text").textContent);
+};
+document.getElementById("btn-copy-install").onclick = () => {
+  copy(document.getElementById("install-cmd").textContent);
+};
+document.getElementById("chat-input").addEventListener("keydown", e => {
+  if (e.key === "Enter") sendMessage();
+});
+document.getElementById("peer-id-input").addEventListener("keydown", e => {
+  if (e.key === "Enter") connectToPeer();
+});
+
+// Auto-tether if URL has ?peer=<id> (from a scanned tether QR)
+(async function autoTether() {
+  const params = new URLSearchParams(location.search);
+  const peerId = params.get("peer");
+  if (peerId) {
+    await openTether();
+    document.getElementById("peer-id-input").value = peerId;
+    // Give the broker a moment to connect us, then dial
+    setTimeout(connectToPeer, 1500);
+  }
+})();
+</script>
+</body>
+</html>
+TEMPLATE_EOF
+
+    # Substitute placeholders via Python, passing values through env vars
+    # to avoid any shell-quoting headaches with display names containing
+    # spaces, quotes, or other special chars. (bash 3.2-safe — no @Q.)
+    PLANT_INDEX_PATH="$target_dir/index.html" \
+    PLANT_DISPLAY_NAME="$MIRROR_DISPLAY_NAME" \
+    PLANT_REPO_NAME="$MIRROR_REPO_NAME" \
+    PLANT_GH_USER="$gh_user" \
+    PLANT_RAPPID="$rappid" \
+    PLANT_URL="$mirror_url" \
+    PLANT_LINEAGE_HTML="$lineage_html" \
+    python3 - <<'PYEOF'
+import os, pathlib
+path = pathlib.Path(os.environ["PLANT_INDEX_PATH"])
+text = path.read_text()
+subs = [
+    ("__DISPLAY_NAME__", os.environ["PLANT_DISPLAY_NAME"]),
+    ("__REPO_NAME__",    os.environ["PLANT_REPO_NAME"]),
+    ("__GH_USER__",      os.environ["PLANT_GH_USER"]),
+    ("__RAPPID__",       os.environ["PLANT_RAPPID"]),
+    ("__URL__",          os.environ["PLANT_URL"]),
+    ("__LINEAGE_HTML__", os.environ["PLANT_LINEAGE_HTML"]),
+]
+for k, v in subs:
+    text = text.replace(k, v)
+path.write_text(text)
+PYEOF
+}
+
+# ── banner ────────────────────────────────────────────────────────────
+print_banner() {
+    cat << EOF
+
+  ${CYAN}🚪 RAPP front door planter${NC}
+
+  Plant your AI's front door on the public internet.
+  Kernel-compliant by structural fact. Yours forever.
+
+EOF
+}
+
+# ── main ──────────────────────────────────────────────────────────────
+main() {
+    print_banner
+    check_prereqs
+    prompt_inputs
+
+    local rappid now gh_user workspace
+    rappid="$(mint_rappid)"
+    now="$(now_iso)"
+
+    if [[ "${PLANT_DRY_RUN:-0}" == "1" ]]; then
+        gh_user="${PLANT_GH_USER:-test-user}"
+    else
+        gh_user="$(gh api user -q .login)"
+    fi
+
+    if [[ "${PLANT_DRY_RUN:-0}" == "1" ]]; then
+        workspace="${PLANT_DRY_RUN_DIR:-$(mktemp -d)}"
+        mkdir -p "$workspace"
+        info "Dry run — building in $workspace"
+    else
+        workspace=$(mktemp -d)
+    fi
+
+    fetch_kernel "$workspace"
+    write_install_sh   "$workspace"
+    write_rappid_json  "$workspace" "$gh_user" "$rappid" "$now"
+    write_gitignore    "$workspace"
+    write_readme       "$workspace" "$gh_user" "$rappid"
+    write_index_html   "$workspace" "$gh_user" "$rappid"
+
+    if [[ "${PLANT_DRY_RUN:-0}" == "1" ]]; then
+        echo ""
+        ok "Dry run complete. Files written:"
+        ( cd "$workspace" && find . -type f | sort | sed 's|^\./|  |' )
+        echo ""
+        echo "Path: $workspace"
+        return 0
+    fi
+
+    info "Initializing git repo..."
+    cd "$workspace"
+    git init -q -b main
+    git add .
+    git -c user.email="${gh_user}@users.noreply.github.com" \
+        -c user.name="$gh_user" \
+        commit -q -m "plant: ${MIRROR_REPO_NAME} (rappid ${rappid:0:8}…)"
+    ok "Initial commit"
+
+    info "Creating GitHub repo: $gh_user/$MIRROR_REPO_NAME"
+    gh repo create "$MIRROR_REPO_NAME" --public --source=. --push \
+        --description "$MIRROR_DISPLAY_NAME — RAPP front door" \
+        || err "gh repo create failed (does the repo already exist?)"
+    ok "Repo created and pushed"
+
+    info "Enabling GitHub Pages..."
+    if gh api -X POST "/repos/$gh_user/$MIRROR_REPO_NAME/pages" \
+        -f "source[branch]=main" -f "source[path]=/" >/dev/null 2>&1; then
+        ok "Pages enabled"
+    else
+        warn "Pages may already be enabled, or hit a transient error — check repo Settings → Pages"
+    fi
+
+    cat << EOF
+
+═══════════════════════════════════════════════════════════════════
+  ${GREEN}✓ Front door planted!${NC}
+═══════════════════════════════════════════════════════════════════
+
+  Repo:    https://github.com/$gh_user/$MIRROR_REPO_NAME
+  URL:     https://$gh_user.github.io/$MIRROR_REPO_NAME
+  Rappid:  $rappid
+
+  Pages takes 1–3 minutes to deploy. Once live:
+
+  ${CYAN}Visit your front door:${NC}
+    https://$gh_user.github.io/$MIRROR_REPO_NAME
+
+  ${CYAN}Anyone can install your kernel locally with:${NC}
+    curl -fsSL https://$gh_user.github.io/$MIRROR_REPO_NAME/installer/install.sh | bash
+
+  ${CYAN}Generate a QR for sharing:${NC}
+    https://kody-w.github.io/RAPP/installer/plant_qr.html?to=https://$gh_user.github.io/$MIRROR_REPO_NAME
+
+  ${CYAN}Drift-check your mirror anytime:${NC}
+    for f in rapp_brainstem/brainstem.py rapp_brainstem/VERSION rapp_brainstem/agents/basic_agent.py; do
+      diff <(curl -fsSL "https://raw.githubusercontent.com/kody-w/rapp-installer/main/\$f") \\
+           <(curl -fsSL "https://raw.githubusercontent.com/$gh_user/$MIRROR_REPO_NAME/main/\$f") \\
+        || echo "DRIFT: \$f"
+    done
+    # Three empty diffs = compliant. Anything else = drift.
+
+EOF
+}
+
+main "$@"
