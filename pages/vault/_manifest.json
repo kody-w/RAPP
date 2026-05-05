@@ -281,6 +281,12 @@
       "status": "published"
     },
     {
+      "path": "Founding Decisions/The Front Door.md",
+      "title": "The Front Door",
+      "section": "Founding Decisions",
+      "status": "published"
+    },
+    {
       "path": "Removals/Why hatch_rapp Was Killed.md",
       "title": "Why hatch_rapp Was Killed",
       "section": "Removals",
@@ -498,7 +504,13 @@
     },
     {
       "path": "Architecture/Rapplications Are Organisms.md",
-      "title": "Rapplications Are Organisms — collapsing a false distinction",
+      "title": "Rapplications Are Organisms \u2014 collapsing a false distinction",
+      "section": "Architecture",
+      "status": "published"
+    },
+    {
+      "path": "Architecture/Mirror Spec.md",
+      "title": "Mirror Spec",
       "section": "Architecture",
       "status": "published"
     },
