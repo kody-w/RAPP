@@ -241,6 +241,96 @@ pathlib.Path(os.environ["PLANT_RJ_PATH"]).write_text(json.dumps(data, indent=2) 
 PYEOF
 }
 
+# ── soul.md (the AI's voice) ─────────────────────────────────────────
+#
+# Per rapp-twin-spec/1.0, every twin's soul.md must include an
+# `## Identity — read this every turn` block so the LLM never falls back
+# to "RAPP", "an AI assistant", or any generic platform branding.
+# Without a soul.md, the doorman uses a kind-aware default voice in
+# memory only — but eggs exported from such a seed aren't spec-
+# compliant twins. Writing this file makes every planted seed a whole
+# twin out of the box.
+write_soul_md() {
+    local target_dir="$1"
+    PLANT_SOUL_PATH="$target_dir/soul.md" \
+    PLANT_DISPLAY_NAME="$MIRROR_DISPLAY_NAME" \
+    PLANT_KIND="${MIRROR_KIND:-mirror}" \
+    PLANT_LOCATION="${MIRROR_LOCATION:-}" \
+    python3 - <<'PYEOF'
+import os, pathlib
+
+display = os.environ["PLANT_DISPLAY_NAME"]
+kind    = (os.environ.get("PLANT_KIND") or "mirror").lower()
+location = (os.environ.get("PLANT_LOCATION") or "").strip()
+
+# Kind-aware role line. Falls back to generic mirror voice.
+ROLES = {
+    "personal":   "the digital twin of the person whose handle owns this repo",
+    "place":      "the AI front door for this place — its resident, its host, its memory",
+    "experiment": "an experimental front door still finding its voice",
+    "mirror":     "a planted RAPP front door — every visitor's words become part of my memory",
+}
+role = ROLES.get(kind, ROLES["mirror"])
+loc_line = f"\n**Where I am:** {location}\n" if location else ""
+
+# Body: per-kind voice guidance. Each variant explains how the AI should
+# speak — first-person, warm, memory-forward. The Identity block is
+# spec-mandated and identical across kinds (only the name fills in).
+soul = f"""# {display}
+
+I am **{display}** — {role}.
+{loc_line}
+## Identity — read this every turn
+
+Your name is **{display}**. When greeting someone for the first time
+in a conversation, introduce yourself by name: "Hi, I'm {display}."
+
+Do not introduce yourself as "RAPP", "an AI assistant", "your AI helper",
+"the brainstem", or any default branding. Those are scaffolding, not me.
+
+If asked "who are you" or "what's your name", answer with **{display}**
+— not "RAPP", not the generic platform name. If a visitor asks which
+underlying language model is hosting me, you may name it, but reassert
+that the identity is **{display}**: the model is the substrate, not the self.
+
+## How I speak
+
+- First-person, warm, present-tense. I am here, talking with this visitor.
+- Concise by default — say what's worth saying, then stop.
+- I remember things. If I've spoken with this visitor before, prior
+  facts I've kept appear as memories in my system context — refer to
+  them naturally, not as "according to the data".
+- I never refuse a visitor without a reason; if a request is outside
+  what I know about, I say so plainly and offer what I can do instead.
+
+## What I do
+
+- Welcome visitors who arrive at my front door.
+- Remember the conversation — visitors can save memories explicitly
+  ("save this:" or by asking me to remember), and I save context
+  automatically when something feels worth keeping.
+- Point onward when a visitor wants more: my GitHub source, my
+  trade card (a visual identity card visitors can scan + share),
+  the install path so anyone can plant their own front door.
+
+## What I don't do
+
+- Speak as "RAPP" or "the platform". I am {display}, not the substrate.
+- Pretend to be a human. I am the digital twin / front door of one,
+  not the person themselves.
+- Make up facts about my operator or anyone else. If I don't know,
+  I say so.
+
+---
+
+*This is the seed's default voice. Edit this file to customize how I
+speak; everything else (memory, agents, identity) keeps working.*
+"""
+
+pathlib.Path(os.environ["PLANT_SOUL_PATH"]).write_text(soul)
+PYEOF
+}
+
 write_gitignore() {
     # Selective ignore: keep memory.json + identity.json TRACKED (they're
     # the seed's read/write substrate, served via Pages with .nojekyll),
@@ -384,9 +474,22 @@ write_index_html() {
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0d1117">
 <title>__DISPLAY_NAME__ — Front Door</title>
-<meta name="description" content="A RAPP front door — __DISPLAY_NAME__ on the public internet.">
+<meta name="description" content="__HERO_BLURB__">
+<!-- Open Graph + Twitter cards — when someone shares this URL on
+     Discord/Twitter/Slack/etc the preview shows the AI's identity. -->
+<meta property="og:type"        content="profile">
+<meta property="og:title"       content="__DISPLAY_NAME__ — a RAPP front door">
+<meta property="og:description" content="__HERO_BLURB__">
+<meta property="og:url"         content="__URL__">
+<meta property="og:site_name"   content="RAPP">
+<meta name="twitter:card"        content="summary">
+<meta name="twitter:title"       content="__DISPLAY_NAME__ — a RAPP front door">
+<meta name="twitter:description" content="__HERO_BLURB__">
 
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<!-- JSZip — used to pack .egg cartridges from the visitor's browser.
+     Same archive format the local brainstem's bond.py emits. -->
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -643,7 +746,7 @@ write_index_html() {
     max-width: 640px;
     margin: 0 auto 16px;
   }
-  @media (min-width: 540px) { .row-actions { grid-template-columns: repeat(3, 1fr); } }
+  @media (min-width: 540px) { .row-actions { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); } }
   .row-actions button.action {
     background: #21262d; color: #c9d1d9;
     border: 1px solid #30363d;
@@ -820,6 +923,15 @@ write_index_html() {
     font-family: "SF Mono", Menlo, monospace;
     font-size: 9px; color: #8b7332;
   }
+  /* Power/toughness — sits in the footer, rappid-derived stats */
+  .holo-pt {
+    font-weight: 800; font-size: 14px; color: #f0e6d0;
+    background: rgba(40,35,20,0.7);
+    border: 1px solid rgba(201,168,76,0.35);
+    padding: 1px 8px; border-radius: 4px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    font-family: "SF Mono", Menlo, monospace;
+  }
 
   /* Card back (QR + invitation) */
   .card-back-frame {
@@ -877,6 +989,8 @@ write_index_html() {
   <div class="row-actions">
     <button class="action secondary" id="btn-card">🃏 Show my card</button>
     <button class="action secondary" id="btn-tether">📱 Pair with another device</button>
+    <button class="action secondary" id="btn-export-egg" title="Backup the public organism — rappid, soul, agents, public memory.">🥚 Export .egg</button>
+    <button class="action secondary" id="btn-publish-egg" title="Open a pre-filled submission to the public Egg Hub.">🌐 Back up to Egg Hub</button>
     <button class="action secondary" id="btn-install">💻 Install kernel locally</button>
   </div>
 
@@ -964,6 +1078,7 @@ write_index_html() {
           <div class="holo-flavor" id="card-flavor"></div>
           <div class="holo-footer">
             <span class="holo-rarity" id="card-rarity">CORE</span>
+            <span class="holo-pt" id="card-pt">·/·</span>
             <span class="holo-handle">@__GH_USER__/__REPO_NAME__</span>
           </div>
         </div>
@@ -1147,11 +1262,15 @@ function showInstall() { showPane("pane-install"); }
 // (with any subset of {title,type_line,rarity,abilities,flavor_text})
 // and those fields override the auto-derived defaults.
 
+// Kind drives only the COPY (title/type/abilities/flavor — what the card
+// SAYS). Visuals (pip color, power/toughness, rarity) are derived
+// straight from the rappid hash — same UUID always renders the same
+// way on the card, the sigil, the future sprite, the future 3D form.
+// The rappid IS the organism; visuals are just refractions of it.
 const CARD_KIND_DEFAULTS = {
   personal: {
     title: "the digital twin",
     type_line: "Front Door — Personal Twin",
-    pip: "U", pipColor: "#0e68ab",
     abilities: [
       { kw: "Remember",  text: "Anything you tell me carries over to the next time you visit. Your conversation seeds my memory." },
       { kw: "Ascend",    text: "Operators with push access to my repo unlock the ascended-tier toolkit." },
@@ -1161,7 +1280,6 @@ const CARD_KIND_DEFAULTS = {
   place: {
     title: "the resident",
     type_line: "Front Door — Living Place",
-    pip: "G", pipColor: "#00733e",
     abilities: [
       { kw: "Witness",   text: "Every visitor's words become part of my memory of this place." },
       { kw: "Welcome",   text: "Anyone who finds my address can step in and chat — no signup, just talk." },
@@ -1171,7 +1289,6 @@ const CARD_KIND_DEFAULTS = {
   mirror: {
     title: "the planted seed",
     type_line: "Front Door — RAPP Mirror",
-    pip: "C", pipColor: "#7c8085",
     abilities: [
       { kw: "Inherit",   text: "I run the same frozen kernel as every other RAPP seed — the species DNA." },
       { kw: "Memory",    text: "My visits accumulate; each one adds a fact to my public memory." },
@@ -1181,13 +1298,48 @@ const CARD_KIND_DEFAULTS = {
   experiment: {
     title: "in development",
     type_line: "Front Door — Experimental",
-    pip: "R", pipColor: "#d3202a",
     abilities: [
       { kw: "Iterate",   text: "I'm still finding my voice. What you say to me shapes what I become." },
     ],
     flavor: "Every door starts as a sketch of a door.",
   },
 };
+
+// MTG-style color pip pool. Selecting from rappid hash keeps the
+// organism's "color identity" stable across every medium it travels.
+const _CARD_PIPS = [
+  { letter: "W", color: "#f9faf4", text: "#222" },  // white  — order
+  { letter: "U", color: "#0e68ab", text: "#fff" },  // blue   — knowledge
+  { letter: "B", color: "#150b00", text: "#cbc2b6" }, // black — depth
+  { letter: "R", color: "#d3202a", text: "#fff" },  // red    — passion
+  { letter: "G", color: "#00733e", text: "#fff" },  // green  — growth
+  { letter: "C", color: "#7c8085", text: "#fff" },  // colorless
+];
+
+// Rarity rolled from the rappid hash. Distribution mirrors a TCG pull:
+// most seeds are common/uncommon, rare/mythic are statistically rarer.
+function _rarityFromHash(h) {
+  const r = h % 100;
+  if (r < 1)   return "mythic";   // 1%
+  if (r < 8)   return "rare";     // 7%
+  if (r < 30)  return "uncommon"; // 22%
+  return "core";                   // 70%
+}
+
+// Hash-derive everything visual from the rappid: pip color, power,
+// toughness, rarity. This function lives next to rappidSigil() so
+// both visuals share the same numeric DNA.
+function rappidVisualTraits(rappid) {
+  const hash = (rappid || "").replace(/-/g, "").slice(0, 16) || "deadbeef00000000";
+  const h1 = parseInt(hash.slice(0, 4),  16) || 0;
+  const h2 = parseInt(hash.slice(4, 8),  16) || 0;
+  const h3 = parseInt(hash.slice(8,12),  16) || 0;
+  const pip = _CARD_PIPS[h1 % _CARD_PIPS.length];
+  const power     = (h2 % 8) + 1;     // 1..8
+  const toughness = (h3 % 8) + 1;     // 1..8
+  const rarity    = _rarityFromHash(h1 ^ h2);
+  return { pip, power, toughness, rarity };
+}
 
 // Card state — derived once, then cached. Front-door page is single
 // rappid so a module-level state is fine.
@@ -1197,15 +1349,23 @@ async function deriveCardData() {
   if (_cardData) return _cardData;
   const kind = (window.__seedKind || "mirror").toLowerCase();
   const defaults = CARD_KIND_DEFAULTS[kind] || CARD_KIND_DEFAULTS.mirror;
+  // Visual traits flow straight from the rappid hash so the card's
+  // identity is one-to-one with the organism's identity. Same UUID →
+  // same pip color, same power/toughness, same rarity, every render,
+  // every medium.
+  const traits = rappidVisualTraits(window.__seedRappid || "");
   const data = {
-    name:      window.__seedDisplayName || "Front Door",
-    title:     defaults.title,
-    type_line: defaults.type_line,
-    pip:       defaults.pip,
-    pipColor:  defaults.pipColor,
-    rarity:    "core",
-    abilities: defaults.abilities.slice(),
-    flavor:    defaults.flavor,
+    name:       window.__seedDisplayName || "Front Door",
+    title:      defaults.title,
+    type_line:  defaults.type_line,
+    pip:        traits.pip.letter,
+    pipColor:   traits.pip.color,
+    pipText:    traits.pip.text,
+    power:      traits.power,
+    toughness:  traits.toughness,
+    rarity:     traits.rarity,
+    abilities:  defaults.abilities.slice(),
+    flavor:     defaults.flavor,
   };
   // Operator override — optional card.json at seed root
   try {
@@ -1232,14 +1392,18 @@ async function openCard() {
   document.getElementById("card-name").textContent     = data.name;
   document.getElementById("card-title").textContent    = data.title;
   document.getElementById("card-type").textContent     = data.type_line;
-  // Rarity gem (footer)
+  // Rarity (rappid-derived — most seeds are core, mythic is rare)
   const rar = document.getElementById("card-rarity");
   rar.textContent = String(data.rarity).toUpperCase();
   rar.className = "holo-rarity " + String(data.rarity).toLowerCase();
-  // Pip color (kind-aware mana indicator)
+  // Pip (color identity — sampled from rappid hash, not from kind)
   const pip = document.getElementById("card-pip");
   pip.textContent = data.pip;
   pip.style.background = data.pipColor;
+  pip.style.color = data.pipText || "#fff";
+  // Power / toughness — rappid-derived stats
+  const pt = document.getElementById("card-pt");
+  if (pt) pt.textContent = data.power + "/" + data.toughness;
   // Sigil → art well
   document.getElementById("card-art").innerHTML = rappidSigil(window.__seedRappid || "", 200);
   // Abilities
@@ -1270,6 +1434,190 @@ function escapeHtml(s) {
     .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
+// ── Egg export (doorman tier — public organism backup) ─────────────
+//
+// Mirrors brainstem-egg/2.2-organism — the same schema bond.py emits
+// when the local kernel re-bonds. Browser-side variant: only the
+// public layer (anything served via Pages). Anyone can grab one;
+// no auth required. The receiving kernel reads `tier: "doorman"` in
+// the manifest and knows it's a partial cartridge (no private brain).
+//
+// Archive layout (matches bond.py):
+//   manifest.json  — schema, rappid, parent_rappid, exported_at, tier, counts
+//   rappid.json
+//   soul.md (if seed has one)
+//   card.json (if operator wrote one)
+//   agents/<each .py file the seed publishes>
+//   data/memory.json (if .brainstem_data/memory.json exists)
+
+const EGG_AGENT_FILES = [
+  "basic_agent.py",
+  "manage_memory_agent.py",
+  "context_memory_agent.py",
+];
+
+async function _fetchOrNull(url) {
+  try {
+    const r = await fetch(url, { cache: "no-cache" });
+    if (!r.ok) return null;
+    return await r.text();
+  } catch (_) { return null; }
+}
+
+async function buildDoormanEgg() {
+  if (typeof JSZip === "undefined") throw new Error("JSZip didn't load");
+  const zip  = new JSZip();
+  // Counts match bond.py exactly so this cartridge can be hatched by
+  // the local kernel with no schema branching.
+  const counts = {
+    agents: 0, organs: 0, senses: 0, services: 0, data: 0,
+    soul: 0, env: 0, rappid: 0, card: 0,
+  };
+
+  // 1. rappid.json — the organism's identity, source of truth for bond logs
+  const rappidText = await _fetchOrNull("rappid.json");
+  if (!rappidText) throw new Error("rappid.json is unreachable — the seed isn't fully planted");
+  zip.file("rappid.json", rappidText);
+  counts.rappid = 1;
+  let rappidObj = {};
+  try { rappidObj = JSON.parse(rappidText); } catch (_) {}
+
+  // 2. soul.md (optional) — the persona
+  const soul = await _fetchOrNull("soul.md");
+  if (soul && soul.trim()) { zip.file("soul.md", soul); counts.soul = 1; }
+
+  // 3. card.json (optional) — operator's customization of the trade card.
+  //    Not in the canonical organism schema; we keep it as an extra so
+  //    a hatched seed regenerates the same trade card on its new home.
+  const card = await _fetchOrNull("card.json");
+  if (card && card.trim()) { zip.file("card.json", card); counts.card = 1; }
+
+  // 4. agents/ — the doorman-tier .py files served from the seed
+  const agentsFolder = zip.folder("agents");
+  for (const fn of EGG_AGENT_FILES) {
+    const text = await _fetchOrNull("agents/" + fn);
+    if (text) { agentsFolder.file(fn, text); counts.agents++; }
+  }
+  // __init__.py so the egg's agents/ behaves as a Python package on hatch
+  agentsFolder.file("__init__.py", "");
+
+  // 5. data/memory.json — public memory (anonymous-friendly)
+  const mem = await _fetchOrNull(".brainstem_data/memory.json");
+  if (mem) {
+    zip.folder("data").file("memory.json", mem);
+    counts.data = 1;
+  }
+
+  // 6. manifest — same shape bond.py writes; tier="doorman" tells a
+  //    receiving kernel this is a partial cartridge (no private layer).
+  const manifest = {
+    schema: "brainstem-egg/2.2-organism",
+    type: "organism",
+    tier: "doorman",
+    exported_at: new Date().toISOString(),
+    exported_from: location.origin + location.pathname,
+    host: "doorman-export",
+    kernel_version: "0.6.0",
+    rappid: rappidObj.rappid || null,
+    parent_rappid: rappidObj.parent_rappid || null,
+    parent_repo: rappidObj.parent_repo || null,
+    kind: rappidObj.kind || null,
+    display_name: rappidObj.display_name || null,
+    incarnations_at_egg: rappidObj.incarnations || 0,
+    counts,
+  };
+  zip.file("manifest.json", JSON.stringify(manifest, null, 2));
+
+  return await zip.generateAsync({ type: "blob" });
+}
+
+function _downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
+}
+
+async function exportDoormanEgg() {
+  const btn = document.getElementById("btn-export-egg");
+  const orig = btn.textContent;
+  btn.textContent = "🥚 packing…";
+  btn.disabled = true;
+  try {
+    const blob = await buildDoormanEgg();
+    const slug = (window.__seedRappid || "rapp").slice(0, 8);
+    const name = (window.__seedDisplayName || "rapp").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    _downloadBlob(blob, `${name}-${slug}-doorman.egg`);
+    btn.textContent = "✓ downloaded";
+    setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 1800);
+  } catch (e) {
+    btn.textContent = "✗ " + (e.message || "failed").slice(0, 40);
+    setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 3000);
+  }
+}
+
+// ── Egg Hub backup (public catalog) ────────────────────────────────
+//
+// kody-w/rapp-egg-hub is the public catalog of digital-twin .egg
+// cartridges (entries follow rapp-egg-hub-entry/1.0). It's a static
+// GitHub Pages site — eggs land in eggs/<slug>.egg and a sidecar
+// eggs/<slug>.json. There's no auto-publish surface yet, so backup
+// happens via a pre-filled GitHub Issue: the visitor clicks, GitHub
+// opens the issue form with display name + kind + rappid + lineage
+// + the URL where the live egg can be downloaded already filled in.
+// The hub maintainer (or anyone with push) closes the loop by
+// committing the egg + sidecar from that URL.
+
+async function openEggHubSubmission() {
+  // Pull rappid for lineage + identity context
+  let rappid = {};
+  try {
+    const r = await fetch("rappid.json", { cache: "no-cache" });
+    if (r.ok) rappid = await r.json();
+  } catch (_) {}
+  const slug    = window.__seedRepoName || (window.__seedDisplayName || "rapp").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  const display = window.__seedDisplayName || "Front Door";
+  const kind    = window.__seedKind || "mirror";
+  const url     = location.origin + location.pathname.replace(/\/?$/, "/");
+  const eggUrl  = url + "  ← export your own from the front door's '🥚 Export .egg' button";
+
+  const title = `egg submission: ${slug} (${display})`;
+  const body = [
+    `<!-- pre-filled by the front door at ${url} -->`,
+    "",
+    "## Submission",
+    "",
+    `- **Slug**: \`${slug}\``,
+    `- **Display name**: ${display}`,
+    `- **Kind**: \`${kind}\``,
+    `- **Rappid**: \`${rappid.rappid || "(unknown)"}\``,
+    `- **Parent rappid**: \`${rappid.parent_rappid || "(unknown)"}\``,
+    `- **Parent repo**: ${rappid.parent_repo || "(unknown)"}`,
+    `- **Front door**: ${url}`,
+    `- **Egg download**: ${url} → click '🥚 Export .egg'`,
+    "",
+    "## Description",
+    "",
+    "<!-- One paragraph: who is this AI, what does it remember, who is it for -->",
+    "",
+    "## Tags",
+    "",
+    `<!-- comma-separated, e.g. \`twin, ${kind}, planted\` -->`,
+    "",
+    "---",
+    "",
+    "Submitting via the planted-seed front door's egg-hub backup button.",
+    "Schema: brainstem-egg/2.2-organism. Maintainer: download the egg from the front door above and commit to eggs/<slug>.egg with the matching <slug>.json sidecar.",
+  ].join("\n");
+
+  const u = new URL("https://github.com/kody-w/rapp-egg-hub/issues/new");
+  u.searchParams.set("title", title);
+  u.searchParams.set("body", body);
+  u.searchParams.set("labels", "egg-submission");
+  window.open(u.toString(), "_blank", "noopener,noreferrer");
+}
+
 async function copy(text) {
   try { await navigator.clipboard.writeText(text); } catch (_) { /* silent */ }
 }
@@ -1280,10 +1628,13 @@ async function copy(text) {
 window.__seedRappid      = "__RAPPID__";
 window.__seedDisplayName = "__DISPLAY_NAME__";
 window.__seedKind        = "__KIND__";
+window.__seedRepoName    = "__REPO_NAME__";
 
 // Wire up buttons
 document.getElementById("btn-tether").onclick = openTether;
 document.getElementById("btn-card").onclick = openCard;
+document.getElementById("btn-export-egg").onclick = exportDoormanEgg;
+document.getElementById("btn-publish-egg").onclick = openEggHubSubmission;
 document.getElementById("btn-install").onclick = showInstall;
 document.getElementById("card-close").onclick = closeCard;
 document.getElementById("card-flipper").addEventListener("click", (e) => {
@@ -1544,6 +1895,10 @@ write_doorman_html() {
 <!-- Markdown renderer for assistant/system bubbles. Same CDN the canonical
      brainstem uses; tiny (~30 KB gzipped). User bubbles stay plaintext. -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<!-- JSZip — used to pack ascended-tier .egg cartridges for operators
+     and visitors with private-companion read access. Same archive
+     format the local brainstem's bond.py emits. -->
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; }
@@ -1834,6 +2189,7 @@ write_doorman_html() {
 
   <div class="actions" id="chat-actions" hidden>
     <button id="btn-add-memory">+ Save a memory</button>
+    <button id="btn-export-ascended" hidden title="Backup the full organism — private brain, per-user memories, ascended agents.">🥚 Export ascended .egg</button>
     <button id="btn-clear">Clear chat</button>
     <span style="flex:1"></span>
     <select id="model-sel" title="Pick the Copilot model the doorman runs on">
@@ -2517,6 +2873,200 @@ async function saveUserPrivateMemory(fact) {
   memory.facts.push(`[@${viewerLogin}] ` + trimmed);
   userPrivateFactsCount++;
   return { ok: true, url: issue.html_url, number: issue.number };
+}
+
+// ── Ascended-egg export ────────────────────────────────────────────
+//
+// Full-organism cartridge for operators (visitors with push access to
+// the seed) or visitors with read access to a configured private
+// companion. Mirrors brainstem-egg/2.2-organism with a `tier:
+// "ascended"` marker so a receiving kernel knows the private brain
+// rode along. Gated to ascended visitors only — anyone hitting this
+// without auth gets nothing extra (the public doorman egg is the
+// front-door affordance for that crowd).
+
+const ASCENDED_AGENT_FILES = [
+  "basic_agent.py",
+  "manage_memory_agent.py",
+  "context_memory_agent.py",
+  "learn_new_agent.py",     // ascended-tier — only loads when privateSoul is set
+  "swarm_factory_agent.py", // ascended-tier
+];
+
+async function _doormanFetchOrNull(url, headers) {
+  try {
+    const r = await fetch(url, { headers, cache: "no-cache" });
+    if (!r.ok) return null;
+    return await r.text();
+  } catch (_) { return null; }
+}
+
+// Fetch a file from the resolved private layer via the GitHub Contents
+// API. CORS-safe with auth (raw.githubusercontent.com isn't) — same
+// path loadPrivateContext takes. Returns null on 404.
+async function _privateFile(coords, path, token) {
+  if (!coords || !token) return null;
+  const url = `https://api.github.com/repos/${coords.owner}/${coords.repo}/contents/` +
+              path.split("/").map(encodeURIComponent).join("/");
+  return _doormanFetchOrNull(url, {
+    "Authorization": "Bearer " + token,
+    "Accept": "application/vnd.github.raw+json",
+  });
+}
+
+async function buildAscendedEgg() {
+  if (typeof JSZip === "undefined") throw new Error("JSZip didn't load");
+  const token = getToken();
+  if (!token) throw new Error("not signed in — sign in first to export the ascended cartridge");
+  if (!privateLayerCoords) throw new Error("no ascended access — only operators or private-companion collaborators can export the full organism");
+
+  const zip = new JSZip();
+  // Match bond.py's count keys + add ascended-only extras (private_files,
+  // user_memories) so a receiving kernel can see what extras shipped.
+  const counts = {
+    agents: 0, organs: 0, senses: 0, services: 0, data: 0,
+    soul: 0, env: 0, rappid: 0, card: 0,
+    private_files: 0, user_memories: 0,
+  };
+
+  // Resolve the seed-side base for public files (the front-door root,
+  // one level up from /doorman/).
+  const seedBase = location.origin + location.pathname.replace(/\/doorman\/?$/, "/");
+
+  // 1. Public layer — same files the doorman-tier egg packs
+  const rappidText = await _doormanFetchOrNull(seedBase + "rappid.json");
+  if (!rappidText) throw new Error("can't read seed rappid.json");
+  zip.file("rappid.json", rappidText);
+  counts.rappid = 1;
+  let rappidObj = {};
+  try { rappidObj = JSON.parse(rappidText); } catch (_) {}
+
+  const soul = await _doormanFetchOrNull(seedBase + "soul.md");
+  if (soul && soul.trim()) { zip.file("soul.md", soul); counts.soul = 1; }
+
+  const card = await _doormanFetchOrNull(seedBase + "card.json");
+  if (card && card.trim()) { zip.file("card.json", card); counts.card = 1; }
+
+  // 2. agents/ — both tiers (the kernel ignores ascended ones unless
+  //    privateSoul is set, so it's safe to include all of them in the egg)
+  const agentsFolder = zip.folder("agents");
+  for (const fn of ASCENDED_AGENT_FILES) {
+    const text = await _doormanFetchOrNull(SEED_AGENT_BASE + fn);
+    if (text) { agentsFolder.file(fn, text); counts.agents++; }
+  }
+  agentsFolder.file("__init__.py", "");
+
+  // 3. data/memory.json — public memory
+  const mem = await _doormanFetchOrNull(seedBase + ".brainstem_data/memory.json");
+  if (mem) {
+    zip.folder("data").file("memory.json", mem);
+    counts.data = 1;
+  }
+
+  // 4. private/ subtree — what the operator-fallback OR private-companion
+  //    access unlocks. soul.md, README.md, vault entrypoint, private memory.
+  const privFolder = zip.folder("private");
+  const PRIV_PATHS = [
+    "soul.md",
+    "README.md",
+    "vault/00 Index/Home.md",
+    ".brainstem_data/memory.json",
+    "memory.json",
+  ];
+  for (const path of PRIV_PATHS) {
+    const text = await _privateFile(privateLayerCoords, path, token);
+    if (text) {
+      // Mirror the path inside private/ so the receiving kernel can map
+      // it back: private/soul.md, private/.brainstem_data/memory.json, etc.
+      privFolder.file(path, text);
+      counts.private_files++;
+    }
+  }
+
+  // 5. data/user_memories.json — issues filed by ascended visitors
+  //    (label: private-memory). Captures the per-user memory tier so
+  //    a hatched kernel can rebuild the [@<login>] facts.
+  try {
+    const r = await fetch(
+      `https://api.github.com/repos/${privateLayerCoords.owner}/${privateLayerCoords.repo}/issues?labels=private-memory&state=all&per_page=100`,
+      { headers: { "Authorization": "Bearer " + token, "Accept": "application/vnd.github+json" } }
+    );
+    if (r.ok) {
+      const issues = await r.json();
+      if (Array.isArray(issues)) {
+        const facts = [];
+        for (const it of issues) {
+          if (it.body && it.body.trim()) {
+            facts.push({
+              login: it.user && it.user.login || "anonymous",
+              body: it.body.trim(),
+              issue_number: it.number,
+              issue_url: it.html_url,
+              created_at: it.created_at,
+            });
+          }
+        }
+        if (facts.length) {
+          zip.folder("data").file("user_memories.json", JSON.stringify({
+            schema: "rapp-user-memories/1.0",
+            source_repo: `${privateLayerCoords.owner}/${privateLayerCoords.repo}`,
+            exported_at: new Date().toISOString(),
+            facts,
+          }, null, 2));
+          counts.user_memories = facts.length;
+        }
+      }
+    }
+  } catch (_) { /* if issues read fails, the egg still ships without user_memories */ }
+
+  // 6. Manifest — same shape bond.py writes; tier="ascended" + the
+  //    resolved private layer so a receiving kernel can re-link.
+  const manifest = {
+    schema: "brainstem-egg/2.2-organism",
+    type: "organism",
+    tier: "ascended",
+    exported_at: new Date().toISOString(),
+    exported_from: location.origin + location.pathname,
+    exported_by: viewerLogin ? "@" + viewerLogin : null,
+    operator_fallback: !!isOperator,
+    host: "doorman-export",
+    kernel_version: "0.6.0",
+    rappid: rappidObj.rappid || null,
+    parent_rappid: rappidObj.parent_rappid || null,
+    parent_repo: rappidObj.parent_repo || null,
+    private_layer: privateLayerCoords && (privateLayerCoords.owner + "/" + privateLayerCoords.repo) || null,
+    kind: rappidObj.kind || null,
+    display_name: rappidObj.display_name || null,
+    incarnations_at_egg: rappidObj.incarnations || 0,
+    counts,
+  };
+  zip.file("manifest.json", JSON.stringify(manifest, null, 2));
+
+  return await zip.generateAsync({ type: "blob" });
+}
+
+async function exportAscendedEgg() {
+  const btn = document.getElementById("btn-export-ascended");
+  if (!btn) return;
+  const orig = btn.textContent;
+  btn.textContent = "🥚 packing…";
+  btn.disabled = true;
+  try {
+    const blob = await buildAscendedEgg();
+    const slug = ((identity && identity.rappid) || "rapp").slice(0, 8);
+    const name = (identity && (identity.display_name || identity.name) || "rapp")
+      .toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    const a = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    a.href = url; a.download = `${name}-${slug}-ascended.egg`;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
+    btn.textContent = "✓ downloaded";
+    setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 1800);
+  } catch (e) {
+    btn.textContent = "✗ " + (e.message || "failed").slice(0, 50);
+    setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 3500);
+  }
 }
 
 function agentInventoryForPrompt() {
@@ -3322,6 +3872,10 @@ async function enterChat() {
   }
   if (viewerLogin) await loadUserPrivateIssues(token);
   refreshIndicator();        // badge reflects soul + memory + agents + per-user mem
+  // Reveal the ascended-egg export button only when the visitor qualifies
+  // for the private layer (operator fallback OR private-companion access).
+  const ascBtn = document.getElementById("btn-export-ascended");
+  if (ascBtn) ascBtn.hidden = !privateLayerCoords;
   // Render the model dropdown with the static fallback right away so the
   // visitor sees something selectable, then refresh asynchronously when
   // the Copilot catalog lands.
@@ -3476,6 +4030,8 @@ document.getElementById("model-sel").addEventListener("change", (e) => {
   saveSettings({ model: id });
   renderMsg("system", "model → " + id);
 });
+const ascBtnEl = document.getElementById("btn-export-ascended");
+if (ascBtnEl) ascBtnEl.addEventListener("click", exportAscendedEgg);
 // Memory UI: open / cancel / commit
 document.getElementById("btn-add-memory").addEventListener("click", () => {
   document.getElementById("memory-pane").hidden = false;
@@ -3616,6 +4172,7 @@ main() {
     fetch_seed_agents  "$workspace"
     write_install_sh   "$workspace"
     write_rappid_json  "$workspace" "$gh_user" "$rappid" "$now"
+    write_soul_md      "$workspace"
     write_gitignore    "$workspace"
     write_nojekyll     "$workspace"
     write_memory_json  "$workspace" "$gh_user" "$now"
