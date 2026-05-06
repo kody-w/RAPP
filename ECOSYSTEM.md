@@ -71,7 +71,7 @@ What `installer/plant.sh` writes into a fresh seed:
 ```
 
 Files added by visitors over time:
-- `agents/<custom>_agent.py` — skills proposed via PR
+- `agents/<custom>_agent.py` — new agents proposed via PR
 - `data/frames.json` — frame log (when the doorman writes one)
 - `.brainstem_data/memory.json` accumulates facts as conversations happen
 
@@ -186,7 +186,7 @@ A self-describing portable cartridge of an organism. Two tiers.
       "mem_count":          <int>,
       "mutation_count":     <int>,
       "fork_count":         <int>,
-      "custom_skill_count": <int>,
+      "custom_agent_count": <int>,
       "age_days":           <float>,
       "last_commit_at":     "<iso8601>",
       "activity_kind":      "active" | "slowing" | "dormant" | "stasis",
@@ -225,13 +225,13 @@ Public profile. Anonymous-friendly. No auth required for any action on this page
 | Hero stats chips | Signs of life | memory.json + age + frozen-kernel marker |
 | **Track Record / What I bring to the table** | The resume | All sources below |
 | ⌬ **MMR + tier** | Single global rating | Live formula — see §6 |
-| **Skills** | What capabilities exist | `agents/` listing via Contents API (cached) |
+| **Agents** | What capabilities exist | `agents/` listing via Contents API (cached) |
 | **Achievements** | Milestones earned | Derived from mem count + age + mut count |
 | **Mutation log** | Live evolution feed | Last 5 commits via Commits API (cached) |
 | **Lineage** | Where this organism descends from | rappid.parent_repo + parent_rappid |
 | 🃏 Show my card | Trade card overlay | Auto-derived; tap to flip → QR back |
 | 📱 Pair with another device | WebRTC tether | PeerJS broker → DTLS, QR auto-renders |
-| 🌱 Propose a skill | The lineage-evolution path | Pre-fills GitHub create-file URL |
+| 🌱 Propose an agent | The lineage-evolution path | Pre-fills GitHub create-file URL |
 | 🥚 Export .egg | Doorman-tier cartridge | Self-contained organism backup |
 | 🔬 Verify an .egg | Non-GMO check | sha256 against manifest + deep-verify against repo |
 | 🕸️ Dream Catcher | Parallel-dimension reassimilation | Diff two eggs, surface candidate frames |
@@ -289,7 +289,7 @@ The doorman's system prompt assembles all three at chat time:
   base_mmr = 1000
            + memCount × 30          (each conversation deepens us)
            + sqrt(mutCount) × 250   (each operator commit shapes us)
-           + customSkills × 350     (each new agent earned beyond defaults)
+           + customAgents × 350     (each new agent earned beyond defaults)
            + sqrt(ageDays) × 80     (lived time matters)
            + sqrt(forkCount) × 400  (offspring planted from this lineage)
 
@@ -345,11 +345,11 @@ visitor finds useful pattern        →  packages as <name>_agent.py
                               global lineage           personal branch
                               moves forward            of this organism
                               (everyone sees           (only that visitor
-                              new skill on next        sees the mutation)
+                              new agent on next        sees the mutation)
                               page render)
 ```
 
-The 🌱 Propose-a-skill pane drafts a `BasicAgent` skeleton, accepts the visitor's name + description + agent code, and opens GitHub's `/new/<branch>?filename=...&value=...` URL. GitHub auto-handles fork + branch + PR for non-collaborators. Operator reviews and decides.
+The 🌱 Propose-an-agent pane drafts a `BasicAgent` skeleton, accepts the visitor's name + description + agent code, and opens GitHub's `/new/<branch>?filename=...&value=...` URL. GitHub auto-handles fork + branch + PR for non-collaborators. Operator reviews and decides.
 
 ---
 
@@ -433,7 +433,7 @@ The 🕸️ pane on the front door:
 ```
               ┌────────────────────────────────┐
               │     MODE A: ONLINE              │
-              │   GitHub APIs flowing           │   Live MMR, live skills,
+              │   GitHub APIs flowing           │   Live MMR, live agents,
               │   raw.githubusercontent.com     │   live mutation log,
               │   reachable                     │   deep-verify works
               └────────────────────────────────┘
@@ -489,7 +489,7 @@ The auth worker (Cloudflare Worker, `worker/`) is a thin proxy — it doesn't st
 
 ### GitHub Contents/Commits/Issues APIs
 Used by the front door's Track Record:
-- `/repos/<owner>/<repo>/contents/agents` — list skills
+- `/repos/<owner>/<repo>/contents/agents` — list agents
 - `/repos/<owner>/<repo>/commits?per_page=N` — mutation log
 - `/repos/<owner>/<repo>` — fork count, repo metadata
 - `/repos/<owner>/<repo>/issues?labels=private-memory&creator=<login>` — per-user memory
@@ -542,7 +542,7 @@ Files added on demand:
 - Hero: tap `💬 Talk to <Name>` → `/doorman/`
 - 🃏 Show my card → overlay → tap card to flip → QR back → tap to flip back
 - 📱 Pair with another device → broker handshake → QR auto-renders → other device scans → DTLS channel
-- 🌱 Propose a skill → fill form → submits to GitHub create-file URL → PR auto-forks for non-collaborators
+- 🌱 Propose an agent → fill form → submits to GitHub create-file URL → PR auto-forks for non-collaborators
 - 🥚 Export .egg → JSZip pack → download
 - 🔬 Verify an .egg → drop in → recomputes sha256 → optional deep-verify against live repo
 - 🕸️ Dream Catcher → drop two eggs → frame diff → reassimilation issue
@@ -581,7 +581,7 @@ Files added on demand:
 - Verify + deep-verify against public repo
 - Dream Catcher diff (set-based by hash)
 - Local-first rendering (cachedGhJson)
-- Propose-a-skill PR flow
+- Propose-an-agent PR flow
 - Egg Hub backup (issue-based)
 
 ⚠ **Partial — works, can be tightened:**

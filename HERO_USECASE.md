@@ -83,7 +83,7 @@ This document defines the hero scenarios the RAPP platform must satisfy. Every a
 | Pair with another device                    | Click "📱 Pair" → other device scans QR      |
 | Back up the organism                        | Click "🥚 Export .egg" → file downloads      |
 | Verify an egg isn't tampered                | Click "🔬 Verify" → drag egg in              |
-| Submit a useful mutation back to lineage    | Click "🌱 Propose a skill" → fill form → submit |
+| Submit a useful mutation back to lineage    | Click "🌱 Propose an agent" → fill form → submit |
 | Reassimilate parallel dimensions            | Click "🕸️ Dream Catcher" → drag both eggs in |
 
 **Acceptance criteria.** A user with no programming background can complete the full Charizard-in-the-woods loop on a phone in under 5 minutes from first visit.

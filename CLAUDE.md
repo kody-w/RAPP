@@ -152,14 +152,15 @@ Azure OpenAI (Tier 2): `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_O
 
 The platform's install path is one curl pipe: `curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash`. GitHub Pages serves the repo verbatim; `raw.githubusercontent.com` is the implicit content channel for everything the install script fetches afterward. The install one-liner's URL shape is sacred (Constitution Article V) — when relocating files, prefer keeping the URL stable over a marginally cleaner layout.
 
-## Hero use case + ecosystem layout (READ FIRST)
+## Hero use case + ecosystem + antipatterns (READ FIRST)
 
-Two checked-in specs are the contract for this codebase. Read both before proposing structural changes:
+Three checked-in specs are the contract for this codebase. Read all three before proposing structural changes:
 
 - [`HERO_USECASE.md`](./HERO_USECASE.md) — *what* this platform must do. Canonical scenarios this codebase must satisfy: Charizard-in-the-woods (offline-share over QR pair), Dream Catcher (parallel-dimension reassimilation), Mom's Mixtape (accessibility floor), Pizza Place (future location-aware layer). Every architectural decision is judged against whether these stories still work.
-- [`ECOSYSTEM.md`](./ECOSYSTEM.md) — *how* the pieces fit together. End-to-end layout of a planted organism: file structure, identity stack, the two surfaces, memory tiers, MMR system, evolution path, egg cartridges, integrity stack, Dream Catcher, network modes, external integrations, surface inventory, schema reference. The architecture-level companion to `HERO_USECASE.md`.
+- [`ECOSYSTEM.md`](./ECOSYSTEM.md) — *how* the pieces fit together. End-to-end layout of a planted organism: file structure, identity stack, the two surfaces, memory tiers, MMR system, evolution path, egg cartridges, integrity stack, Dream Catcher, network modes, external integrations, surface inventory, schema reference.
+- [`ANTIPATTERNS.md`](./ANTIPATTERNS.md) — *what we will never do*. Locked rules: ONE term for the plugin unit (always `agent`, never `skill`/`routine`/`loop`/`plugin`); frozen kernel never moves; no half-released-feature shims; no fallback to "RAPP"/"an AI assistant" branding; no network calls without local-first fallback. Append-only.
 
-PRs that would degrade a ✅ row in `HERO_USECASE.md` must explain why. PRs that change schemas in `ECOSYSTEM.md` §3 must update the version string and document the migration.
+PRs that would degrade a ✅ row in `HERO_USECASE.md` must explain why. PRs that change schemas in `ECOSYSTEM.md` §3 must update the version string and document the migration. PRs that violate `ANTIPATTERNS.md` rules don't merge.
 
 ## Background context (the vault)
 
