@@ -3132,6 +3132,32 @@ A mobile operator's reality:
 
 **Catalog repos are neighborhood-specific gatekeepers, not the canonical layer.** Anyone can stand up an egg-hub-style repo — `team-x/our-egg-hub`, `family-y/our-twins`, `lab-z/research-organisms`, `discord-server-w/member-twins` — that lists which organisms are part of THAT community's collaboration network. `kody-w/rapp-egg-hub` is ONE example among many. The platform doesn't bless any single catalog. Different neighborhoods curate themselves through different gatekeeper repos, and an organism can be listed in zero, one, or many of them simultaneously without affecting its own canonical identity. **The seed's own URL is the only globally-binding identity**; the catalogs are downstream advertisements. This keeps the network resistant to any single point of curation control: if one catalog goes hostile or stale, neighborhoods rebuild around new ones without anyone needing permission from the platform.
 
+**The trade card + its QR code ARE the embodiment of this discovery principle.** Every planted seed forges a holographic-style trade card on its front door — front face: rappid-derived sigil, display name, persona, type line, abilities, kind-aware archetype. Back face: a QR code whose payload is the seed's canonical front-door URL. Tap the card → flips → scan QR → recipient lands on the seed's front door. **The card IS the shareable identity primitive**: print it, AirDrop it, screenshot it on Twitter, paste it into a Slack channel, hand it across a coffee table on someone's phone. The QR is the bridge between the physical world (paper cards, posters, name tags, t-shirts, billboards) and the canonical URL (`<owner>.github.io/<repo>/`). An operator who shares their card has shared the entire discovery handle — anyone who scans it reaches the public state, can chat with the doorman, can declare a neighborhood relationship via PR, can ring the doorbell for collaboration per Article XLIV.
+
+This is why the trade card is a constitutional artifact, not a UI flourish: it's the cross-medium adapter for the platform's discovery primitive. The URL works in chat apps and browsers; the QR works in photographs, prints, and physical-world handoffs. Same identity, same payload, both expressions are byte-equivalent down to the canonical front-door URL. **The card is the URL made shareable in physical space.** The platform's commitment to "share your front door anywhere" is structurally enforced by every planted seed minting one of these as a default surface — no additional setup, no configuration, every seed gets its card the moment it's planted.
+
+**The operator's GitHub handle is implementation detail, not the share primitive.** Operators never have to say "find me on GitHub at @kody-w" or "type this URL exactly." The card is the share primitive, and the card carries everything the recipient needs (sigil, name, persona, the QR resolving to the canonical URL). The recipient scans the QR; they land on Heimdall's front door; they meet **Heimdall**, not "kody-w/heimdall." The handle is structurally present in the URL because GitHub's pathnames work that way, but the platform's UX never asks the operator to surface it as the social primitive. **You share Heimdall. Heimdall happens to live at a path that includes who planted it. That's all.**
+
+This is meaningful because:
+
+- Many operators don't want to advertise their personal GitHub handle as the social channel for their organism — they planted a place ("Cloud Gate"), a memorial twin ("Grandma Rose"), a project organism ("the lab's project tracker"). The named identity is what matters; the operator's identity is incidental.
+- Recipients don't need to know who planted the organism to use it — they meet the organism directly.
+- A visitor reading the cardis primed by the persona on the front face, then taps the QR; they never have to interpret a GitHub URL, never have to know what "kody-w/heimdall" means as a social handle.
+- This compounds with Article XL (secure-first plant): not only does accumulated state route private-by-default, but the operator's social handle stays in the structural layer (where it has to be for the URL to resolve) without being elevated to the social-share layer (where it would invite scrutiny they didn't ask for).
+
+**What this article forbids:**
+
+- A doorman or front-door surface that highlights the operator's handle as if IT is the discovery primitive (e.g. "Visit kody-w on GitHub" as the primary CTA — wrong; the right CTA is "Talk to Heimdall").
+- A planter that requires operators to think about whether their handle is "shareable" before planting. They plant; the card's the share artifact; their handle stays in the URL but never as the share label.
+- A catalog or listing that surfaces "@kody-w/heimdall" as the prominent display name (instead of "Heimdall" with the handle as backing metadata).
+
+**What this article requires:**
+
+- Trade card front face leads with the organism's display name + sigil, NOT the operator's handle.
+- QR back encodes the URL only — recipients scan and arrive at the front door, never see "github.com/kody-w/" framing.
+- Front door's hero leads with the display name + persona; the @owner/repo handle exists as small monospaced metadata (consistent with the platform's social-card aesthetic), never as the prominent CTA.
+- Sharing affordances ("Send my card", egg exports, neighborhood-PR submissions) all carry the canonical URL as the share primitive, never the bare GitHub handle as the social channel.
+
 **The vbrainstem-as-mobile-product framing**:
 
 When designing any new doorman feature, the question is not "is this nice on desktop?" — desktop will mostly take care of itself. The question is: **does this feel native on a phone with one thumb and a flaky signal?**
