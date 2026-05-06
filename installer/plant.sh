@@ -1105,6 +1105,8 @@ let identity = null;
 let privateContext = "";       // supporting prose (README, vault entrypoint) — context, not voice
 let privateSoul = null;        // soul.md from the private companion — when loaded, the doorman ASCENDS into the full twin's voice
 let privateFactsCount = 0;
+let publicAgents = [];         // filenames at <seed>/agents/
+let privateAgents = [];        // filenames at <private_companion>/agents/ — only loaded when authed-with-access (silent 404 otherwise)
 let memory = { schema: "rapp-memory/1.0", facts: [], preserved_by: "", preserved_at: "" };
 let memorySha = null;  // GitHub blob sha for the current memory.json (needed for PUT)
 let history = [];
@@ -1289,6 +1291,10 @@ function buildSystemPrompt() {
   const memBlock = memoryFactsForPrompt();
   if (memBlock) lines.push(memBlock);
 
+  // Agent inventory: public always; private only when authed-with-access.
+  const agentBlock = agentInventoryForPrompt();
+  if (agentBlock) lines.push(agentBlock);
+
   // Supporting prose (README, vault) — only present when authed-with-access.
   if (privateContext) {
     lines.push("");
@@ -1410,6 +1416,67 @@ async function getViewerHandle(token) {
   return u.login ? "@" + u.login : null;
 }
 
+// ── agent inventory (silent escalation, same as memory) ────────────
+//
+// Lists .py files at the seed's /agents/ directory and the private
+// companion's /agents/ directory. Public always resolves; private
+// returns 404 without read access. Filename-only for v1 — descriptions
+// would need a fetch per file. The LLM uses filenames + the fact that
+// they exist to know what tools its body has when its kernel is
+// installed locally (the doorman itself is JS, not Pyodide-yet, so
+// these don't execute here — but the AI is aware of them).
+async function loadAgents(token) {
+  publicAgents = [];
+  privateAgents = [];
+  const { owner, repo } = repoCoords();
+  if (owner && repo) {
+    publicAgents = await listAgentFiles(owner, repo, token);
+  }
+  if (identity && identity.private_companion && identity.private_companion.repo) {
+    const m = identity.private_companion.repo.match(/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?\/?$/);
+    if (m) {
+      privateAgents = await listAgentFiles(m[1], m[2], token);
+    }
+  }
+}
+
+async function listAgentFiles(owner, repo, token) {
+  if (!owner || !repo) return [];
+  const headers = { Accept: "application/vnd.github+json" };
+  if (token) headers.Authorization = "Bearer " + token;
+  try {
+    const r = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/contents/agents`,
+      { headers }
+    );
+    if (!r.ok) return []; // 404 (no agents/ dir, or no access) — silent
+    const list = await r.json();
+    if (!Array.isArray(list)) return [];
+    return list
+      .filter(f => f.type === "file" && f.name.endsWith(".py") && !f.name.startsWith("_"))
+      .map(f => f.name)
+      .sort();
+  } catch (_) {
+    return [];
+  }
+}
+
+function agentInventoryForPrompt() {
+  if (publicAgents.length === 0 && privateAgents.length === 0) return "";
+  const lines = ["", "=== Agent inventory (capabilities your body has) ==="];
+  if (publicAgents.length) {
+    lines.push("Public agents (always available, install kernel locally to run them):");
+    for (const f of publicAgents) lines.push("  - agents/" + f);
+  }
+  if (privateAgents.length) {
+    lines.push("Private agents (loaded because the visitor authenticated with private-brain access):");
+    for (const f of privateAgents) lines.push("  - agents/" + f + " [private]");
+  }
+  lines.push("Note: this chat surface (the doorman) doesn't execute these directly — it's a JS vbrainstem. Reference them by name when describing your own capabilities; they become live tools when someone installs your kernel locally.");
+  lines.push("=== End agent inventory ===");
+  return lines.join("\n");
+}
+
 // ── private companion: best-effort fetch ───────────────────────────
 //
 // Silent escalation pattern. Same raw.githubusercontent.com URL shape
@@ -1488,19 +1555,28 @@ async function loadPrivateContext(token) {
     } catch (_) { /* silent */ }
   }
 
-  // Badge: ascended (full soul) takes priority; fall back to "private brain"
+  // Badge defer — we'll render it in refreshIndicator() after loadAgents
+  // also runs (agent count is part of the badge in ascended mode).
+}
+
+function refreshIndicator() {
   const ind = document.getElementById("private-indicator");
+  if (!ind) return;
   if (privateSoul) {
     const extras = [];
-    if (privateContext)        extras.push(`+ ${privateContext.length}c prose`);
-    if (privateFactsCount > 0) extras.push(`+ ${privateFactsCount} private mem`);
+    if (privateContext)         extras.push(`+ ${privateContext.length}c prose`);
+    if (privateFactsCount > 0)  extras.push(`+ ${privateFactsCount} private mem`);
+    if (privateAgents.length)   extras.push(`+ ${privateAgents.length} private agent${privateAgents.length === 1 ? "" : "s"}`);
     const tail = extras.length ? ` (${extras.join(", ")})` : "";
     ind.innerHTML = `<span class="private-badge">✓ ascended — full twin voice loaded${tail}</span>`;
-  } else if (privateContext || privateFactsCount > 0) {
+  } else if (privateContext || privateFactsCount > 0 || privateAgents.length > 0) {
     const bits = [];
     if (privateContext)        bits.push(`prose ${privateContext.length}c`);
     if (privateFactsCount > 0) bits.push(`+${privateFactsCount} private mem`);
+    if (privateAgents.length)  bits.push(`+${privateAgents.length} private agent${privateAgents.length === 1 ? "" : "s"}`);
     ind.innerHTML = `<span class="private-badge">✓ private brain loaded — ${bits.join(", ")}</span>`;
+  } else {
+    ind.innerHTML = "";
   }
 }
 
@@ -1578,6 +1654,8 @@ async function enterChat() {
   // Best effort: refresh from GH API (gives us the sha for write + freshest content)
   refreshMemorySha(token);  // fire-and-forget — doorman can chat without it
   await loadPrivateContext(token);
+  await loadAgents(token);  // agent inventory (public always, private if authed-with-access)
+  refreshIndicator();        // badge reflects soul + memory + agents
   const place = identity.display_name || identity.name || "this place";
   const memCount = (memory.facts || []).length;
   const memNote = memCount ? ` I'm carrying ${memCount} memor${memCount === 1 ? "y" : "ies"} from past visits.` : "";
