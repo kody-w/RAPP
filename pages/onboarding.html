@@ -310,16 +310,11 @@
   </ul>
   <p>When the script finishes, your front door is at <code>https://&lt;your-handle&gt;.github.io/&lt;slug&gt;/</code>. Visit it. You'll see your new organism's profile, trade card, and chat surface.</p>
 
-  <h3>Option B — Plant from your phone</h3>
-  <p>Phones don't have terminals natively, but three paths actually work:</p>
-  <ol>
-    <li><strong>Hand it to your AI in a chat app</strong> (easiest). Open Claude, ChatGPT, Gemini, or any AI assistant on your phone. Paste the prompt below. The AI runs the plant on its own infrastructure and reports the URL back to you. This is the most mobile-friendly path because the AI does all the terminal work.</li>
-    <li><strong>GitHub Codespaces</strong> (free 60 hours/month). Sign in to GitHub on your phone's browser, fork <a href="https://github.com/kody-w/RAPP">kody-w/RAPP</a>, tap the green Code button → Codespaces → "Create codespace on main". A full Linux terminal opens in your browser. Run the one-liner from Option A. Codespaces ships with <code>gh</code> CLI pre-authenticated to your account, so it just works.</li>
-    <li><strong>Termux (Android) or a-Shell / iSH (iOS)</strong>. Install a real shell app on your phone, install the <code>gh</code> CLI inside it (<code>pkg install gh</code> on Termux; <code>apk add github-cli</code> on iSH), authenticate (<code>gh auth login</code>), then run the Option A one-liner. Same as a desktop terminal, just in your pocket.</li>
-  </ol>
-  <p style="margin-top:14px;">All three paths produce the same outcome: a public seed at <code>&lt;your-handle&gt;.github.io/&lt;slug&gt;/</code> + a paired private companion repo (per Constitution Article XL — secure-first by default). No phone-specific quirks; the seed renders the same on whatever device visits it.</p>
+  <h3>Option B — From your phone (just chat with your AI)</h3>
+  <p>You don't need a terminal, a token, or a fork. Open whatever AI chat app you already use — Claude, ChatGPT, Gemini, Perplexity, GitHub Copilot Chat — and paste the prompt below. Your AI handles the technical work; you get the URL back when it's done.</p>
+  <p style="font-size:13px;color:#8b949e;line-height:1.6;">This is the platform-wide promise: <a href="https://github.com/kody-w/RAPP/blob/main/CONSTITUTION.md">Constitution Article XLI</a> — the operator's experience is conversation, end-to-end. We never ask you to copy a token. We never ask you to open a terminal. We never ask you to fork a repo. The AI does the dirty work; you stay in chat. If you ever hit a technical wall during onboarding, that's a bug — file it.</p>
 
-  <h3>Option C — Hand the job to your AI assistant</h3>
+  <h3>The AI prompt — paste-and-go</h3>
   <p>Paste this into Claude / ChatGPT / Gemini / your CLI agent. It will read it as a runnable plan.</p>
 <pre>Plant a new RAPP organism for me. Steps:
 

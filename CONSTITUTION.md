@@ -2985,6 +2985,64 @@ To preserve the membrane:
 
 ---
 
+## Article XLI — The Operator's Experience Is Conversation (Never a Token, Never a Terminal)
+
+> **A non-technical operator must be able to do anything this platform supports by chatting with an AI assistant.** Their experience is conversation, end-to-end. The AI does the dirty work — running shell commands, setting env vars, calling APIs, parsing JSON, handling auth. The operator never copies a token, never opens a terminal, never forks a repo, never sets an Actions secret, never edits a config file, never memorizes a command, never reads documentation before they can act. **If we tell the operator to paste a GitHub token, we have failed.**
+
+This is a commandment, not a guideline. It is enforced at the design-review layer: any feature that exposes terminal mechanics, secret management, fork mechanics, or technical configuration directly to the operator does not ship. We either build the abstraction so the AI handles it, or we don't ship the feature.
+
+**The single allowed human surface** is the install one-liner (Article V) and the chat surface. Every other operation — planting, hatching, exporting an egg, importing an egg, deploying changes, federating with neighbors, adjusting permissions, promoting private memory to public, anything — flows through the operator's chosen AI assistant. The AI calls the brainstem's `/chat` endpoint, the LLM there calls agents that do the work, and the operator gets a report card in plain English.
+
+**Why this is foundational.** A sketchy AI platform asks me to set up an account, generate a token, paste it into a config file, restart something, and only then can I use it. We are not that. The promise is: download once, then talk. Every barrier we put between "open the chat" and "thing is done" makes us slightly more like the sketchy ones. Compound enough barriers and we're indistinguishable; the operator goes back to ChatGPT and we lose the chance to show what self-hosted, open-substrate, operator-sovereign AI can be.
+
+**The three rules**:
+
+1. **No tokens in user-facing flows.** If a feature needs auth, the AI gets the token via OAuth flow it manages, or via the operator's already-authenticated tooling (gh CLI in their shell, the brainstem's stored Copilot session, etc.). The operator never sees the token, never types the token, never even knows the token exists.
+
+2. **No terminals in user-facing flows.** The operator never has to open Terminal.app, run a one-liner outside the install moment, type a path, or know what a path even is. If a workflow requires terminal mechanics, the AI runs the terminal commands on the operator's behalf via its shell-tool access.
+
+3. **No technical-config in user-facing flows.** The operator never edits YAML, JSON, .env, .yaml, or any config file. The operator never has to know what a fork is, what a secret is, what a workflow is, what a PAT is, what `MIRROR_*` env vars are. The AI translates plain-English intent ("plant a twin of me called Heimdall") into the technical configuration and executes it.
+
+**How this applies to mobile**:
+
+Mobile operators are the canonical case for this article. They genuinely cannot open a terminal — phones don't have one. They cannot copy-paste tokens between apps without leaking them through clipboards. They cannot fork repos and set Actions secrets without the most miserable UX imaginable on a 6-inch screen.
+
+The seamless mobile-plant flow is therefore: the operator opens whatever AI chat app they already use (Claude, ChatGPT, Gemini, Perplexity, GitHub Copilot Chat, Microsoft 365 Copilot, etc.), tells it in plain English what they want ("plant a RAPP organism that's a digital twin of me, named X, kind=personal"), and the AI does the work via its existing shell-tool access. The operator gets the URL back. They tap it. They start chatting with their newly-planted organism.
+
+The AI-paste prompt at `pages/onboarding.html` is the platform's official handoff to AI assistants. It tells the AI exactly what to do — clone, customize env vars, run plant.sh, report back the URL. Any AI with shell-tool access can execute it. The operator's only action is paste-and-tap-send.
+
+**What we delete**:
+
+Any documentation, button, or path that walks an operator through manual technical steps gets deleted. Specifically forbidden in operator-facing surfaces:
+
+- "Create a fine-grained PAT with these scopes…"
+- "Fork this repo, then add a secret called…"
+- "Open Termux on Android and run `pkg install gh`…"
+- "Edit your devcontainer.json to set…"
+- "Open a Codespace and run `bash installer/plant.sh`…"
+
+All of these are valid implementation paths internally, but **they are not operator-facing**. They live in `CONTRIBUTING.md` or developer docs at most. The operator-facing path is always: ask your AI.
+
+**What we build instead**:
+
+When a feature genuinely requires technical setup, we either:
+- Build an in-AI tool the operator's AI can call (so the AI does it on their behalf), OR
+- Build a one-tap OAuth/installation flow that handles auth invisibly, OR
+- Defer the feature until one of the above is buildable.
+
+We never compromise by exposing the technical path to the operator with the framing "it's only a few steps." Five seconds of friction multiplied across a hundred operators across a thousand sessions is the difference between a platform people actually use and a platform people forget about.
+
+**Where this lives**:
+
+- **The platform-wide enforcement**: This article. Every PR-review pass checks new operator-facing paths against these rules.
+- **The chat-as-surface rule**: Article XXXIX (the one-liner is the only human surface, everything else is LLM-to-LLM). XLI is the operator-facing companion.
+- **The mobile case**: `pages/onboarding.html` § "Planting from your phone" — should describe one path: hand it to your AI. No PATs, no Codespaces, no Termux instructions surfaced as primary options.
+- **Developer-docs scope**: Technical paths (Codespace devcontainer, GitHub Action workflow with PAT, etc.) live in `CONTRIBUTING.md` or `docs/` for developers building against the platform — never in operator onboarding.
+
+This article is THE measure of whether the platform deserves the operators we want. Every time an operator hits a technical wall, we fail at the promise. Every time the AI handles it transparently, we succeed.
+
+---
+
 ## Article XL — Secure-First Plant, Operator-Curated Promotion Later
 
 > **Every planted organism starts with a paired private companion repo by default.** Accumulated memory, custom agents the operator forged, and the mutation log all route to the private side at plant time. The public seed carries only the AI's discoverable identity (soul, baseline agents, empty initial memory). Operators promote pieces from private → public over time, with their AI helping decide what's worth being seen by the world. **We never lose trust by leaking accumulated state into a public repo by accident.**
