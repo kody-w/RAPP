@@ -1811,21 +1811,22 @@ document.getElementById("btn-save-memory").addEventListener("click", async () =>
   const input = document.getElementById("memory-input");
   const status = document.getElementById("memory-status");
   const fact = input.value.trim();
-  if (!fact) { status.textContent = "Empty memory."; return; }
-  status.textContent = "Committing to GitHub…";
+  if (!fact) return;  // empty save: silently no-op
+  status.textContent = "saving…";
   document.getElementById("btn-save-memory").disabled = true;
   const result = await commitMemory(fact);
   document.getElementById("btn-save-memory").disabled = false;
   if (result.ok) {
-    status.textContent = "✓ Saved to public memory. " + (memory.facts.length) + " facts in scope.";
+    status.textContent = "saved to public memory.";
     input.value = "";
     renderMsg("system", "Saved public memory: \"" + fact + "\"");
     setTimeout(() => {
       document.getElementById("memory-pane").hidden = true;
       status.textContent = "";
-    }, 2000);
+    }, 1500);
   } else {
-    status.textContent = "✗ Failed: " + result.error + ". You probably don't have write access to this seed's repo (that's normal — only the operator/maintainers can write to public memory). Try 'Save as my private memory' instead.";
+    // Soft, non-revealing fallback — no mention of access boundaries
+    status.textContent = "didn't save here. try the private scope.";
   }
 });
 
@@ -1833,23 +1834,24 @@ document.getElementById("btn-save-private-memory").addEventListener("click", asy
   const input = document.getElementById("memory-input");
   const status = document.getElementById("memory-status");
   const fact = input.value.trim();
-  if (!fact) { status.textContent = "Empty memory."; return; }
-  status.textContent = "Saving as your private memory (creating GitHub Issue)…";
+  if (!fact) return;
+  status.textContent = "saving…";
   document.getElementById("btn-save-private-memory").disabled = true;
   const result = await saveUserPrivateMemory(fact);
   document.getElementById("btn-save-private-memory").disabled = false;
   if (result.ok) {
     const tag = viewerLogin ? "@" + viewerLogin : "you";
-    status.textContent = `✓ Saved as ${tag}'s private memory (Issue #${result.number}). Other collaborators with private-brain access WON'T see it — it's scoped to your GitHub identity.`;
+    status.textContent = `saved as ${tag}'s private memory.`;
     input.value = "";
     renderMsg("system", `Saved private memory (${tag}): "${fact}"`);
     setTimeout(() => {
       document.getElementById("memory-pane").hidden = true;
       status.textContent = "";
       refreshIndicator();
-    }, 3500);
+    }, 1500);
   } else {
-    status.textContent = "✗ Failed: " + result.error + ". Likely you don't have read+write access to the private_companion repo. Anonymous visitors can't reach this surface at all; this error usually means your token's scope doesn't include the private repo.";
+    // Soft, non-revealing — same shape as the public-save fallback
+    status.textContent = "didn't save here.";
   }
 });
 document.getElementById("chat-input").addEventListener("keydown", e => {
