@@ -421,7 +421,7 @@ The 🕸️ pane on the front door:
 3. Lineage check: rappids must match (cross-species reassimilation isn't supported)
 4. **Reassimilation action**: opens a pre-filled GitHub Issue listing every parallel-only frame as a candidate. Operator reviews on GitHub and cherry-picks what's worth bonding back.
 
-**Conflict-resolution doctrine** (per the Gareth conversation, partially implemented):
+**Conflict-resolution doctrine** (per the operator's design conversation, partially implemented):
 - UTC-first canon: whichever frame hit the UTC first is canonical
 - Non-contradicting later frames layer on
 - Contradicting frames (same `(utc, frame_n)` PK, different content): preserved as alternate-dimension data, not lost

@@ -8,7 +8,7 @@
 
 **The rule.** A single `*_agent.py` file is called an **agent**. Never a *skill*, *routine*, *loop*, *plugin*, *tool*, *function*, *capability*, *cassette*, or any other synonym in user-facing copy, code, or documentation.
 
-**Why.** Anthropic's product surface introduced overlapping taxonomies — agents, skills, MCP, plugins, routines — that all describe roughly the same thing in slightly different framings. From the May 2026 Kody → Gareth conversation:
+**Why.** Anthropic's product surface introduced overlapping taxonomies — agents, skills, MCP, plugins, routines — that all describe roughly the same thing in slightly different framings. The operator captured the cost in a private design conversation (May 2026):
 
 > *"Anthropic… they really screwed up by introducing all of the different taxonomy that basically does the same thing. I mean, think about it, right? So agents, skills, routines, loops, plugins. I, like, who knows MCP, like whatever else they'll come up with. That basically poisoned the industry for onboarding."*
 

@@ -2,7 +2,7 @@
 
 > *"Picture you have two phones and through a QR code where it's on your device because it's all local first... so if you have the Internet, if you have a local model, it will run just the same. It won't be as good. So it's like degrading... It's not like a constant cutoff. It's like, 'Hey, I lost access to the best model, but I'm still here for you where I can.'"*
 >
-> — Kody → Gareth, on the canonical scenario this platform must satisfy
+> — the operator, on the canonical scenario this platform must satisfy
 
 This document defines the hero scenarios the RAPP platform must satisfy. Every architectural decision is judged against whether it makes these stories work. They are checked-in here so the bar doesn't drift.
 
@@ -160,4 +160,4 @@ All four must be green before merging changes that touch the surfaces named in t
 
 ## Source
 
-Hero scenarios are extracted from the May 2026 Kody → Gareth conversation on Agent Shareability. The conversation document lives in the operator's records; the canonical scenarios are checked in here so they're part of the repo's permanent specification.
+Hero scenarios are extracted from a private design conversation on Agent Shareability (May 2026). The conversation document lives in the operator's records; the canonical scenarios are checked in here so they're part of the repo's permanent specification.

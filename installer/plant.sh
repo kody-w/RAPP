@@ -528,6 +528,203 @@ pathlib.Path(os.environ["PLANT_NEIGHBORS_PATH"]).write_text(
 PYEOF
 }
 
+# Pre-extract the rappid from an egg so the rest of the planter can
+# use it. Outputs the rappid string to stdout, exits non-zero on error.
+# Used by main() so all the HTML/README substitutions reference the
+# preserved UUID instead of the freshly-minted one we'd otherwise use.
+extract_egg_rappid_or_die() {
+    local egg_src="$1"
+    local egg_path
+    if [[ "$egg_src" =~ ^https?:// ]]; then
+        egg_path=$(mktemp -t plant-egg.XXXXXX.egg)
+        curl -fsSL "$egg_src" -o "$egg_path" \
+            || { echo "couldn't download egg" >&2; exit 1; }
+    elif [[ -f "$egg_src" ]]; then
+        egg_path="$egg_src"
+    else
+        echo "PLANT_FROM_EGG points to nothing readable: $egg_src" >&2
+        exit 1
+    fi
+    # Verify the egg's full sha256 chain BEFORE returning the rappid.
+    # This way, if the egg is tampered, no file gets written anywhere
+    # (the planter aborts before the first write_rappid_json call).
+    PLANT_EGG_PATH="$egg_path" python3 - <<'PYEOF' || exit 1
+import os, sys, json, hashlib, zipfile
+egg_path = os.environ["PLANT_EGG_PATH"]
+if not zipfile.is_zipfile(egg_path):
+    print("not a valid .egg", file=sys.stderr); sys.exit(2)
+with zipfile.ZipFile(egg_path) as z:
+    if "manifest.json" not in z.namelist():
+        print("no manifest.json", file=sys.stderr); sys.exit(2)
+    m = json.loads(z.read("manifest.json").decode("utf-8"))
+    rappid = m.get("rappid")
+    if not rappid:
+        print("manifest has no rappid", file=sys.stderr); sys.exit(2)
+    # sha256 verification — refuse tampered eggs at extraction time
+    prov = m.get("provenance") or {}
+    file_hashes = prov.get("file_hashes") or {}
+    if file_hashes:
+        names = set(z.namelist())
+        for path, expected in file_hashes.items():
+            if path not in names:
+                print(f"manifest declares {path} but it's missing from the egg (tamper)", file=sys.stderr)
+                sys.exit(2)
+            actual = hashlib.sha256(z.read(path)).hexdigest()
+            if actual != expected:
+                print(f"sha256 mismatch on {path} — egg has been tampered with", file=sys.stderr)
+                sys.exit(2)
+    # All checks pass; emit the rappid for the planter to use
+    print(rappid)
+PYEOF
+}
+
+# ── Egg overlay (resurrection from local brainstem) ────────────────
+#
+# When PLANT_FROM_EGG=<path|url> is set, the planter overlays the
+# egg's contents on top of the freshly-generated seed. Preserves the
+# organism's identity (rappid), voice (soul.md), accumulated memory,
+# custom agents, and frame history. The first commit message reflects
+# the import.
+#
+# Verification: the egg's manifest provenance (sha256 chain) is
+# checked before any file is overlaid. Tampered eggs are refused
+# (planter exits with err()). private/ subtree is intentionally
+# skipped — public seeds are not the home for operator-only data.
+#
+# Use case: an organism that's been alive on a local brainstem for
+# weeks, has accumulated memories + custom agents + soul edits, gets
+# a public front door. The local brainstem stays running unchanged;
+# the public seed is its byte-identical mirror at the moment of
+# planting. Bond-cycles after that work normally because the rappid
+# is preserved.
+overlay_egg_if_set() {
+    local target_dir="$1"
+    local egg_src="${PLANT_FROM_EGG:-}"
+    if [[ -z "$egg_src" ]]; then
+        return 0
+    fi
+
+    info "Importing organism state from egg: $egg_src"
+
+    # Resolve the source — local file or remote URL — into a stable temp file.
+    local egg_path
+    if [[ "$egg_src" =~ ^https?:// ]]; then
+        egg_path=$(mktemp -t plant-egg.XXXXXX.egg)
+        curl -fsSL "$egg_src" -o "$egg_path" \
+            || err "couldn't download egg: $egg_src"
+    elif [[ -f "$egg_src" ]]; then
+        egg_path="$egg_src"
+    else
+        err "PLANT_FROM_EGG points to nothing readable: $egg_src"
+    fi
+
+    # Verify + extract via python (zipfile + sha256). Refuses tampered
+    # eggs by exiting non-zero, which err()s the planter.
+    PLANT_EGG_PATH="$egg_path" \
+    PLANT_TARGET_DIR="$target_dir" \
+    python3 - <<'PYEOF' || err "egg import failed (verification or extract)"
+import os, sys, json, hashlib, zipfile, pathlib, shutil
+
+egg_path  = os.environ["PLANT_EGG_PATH"]
+target    = pathlib.Path(os.environ["PLANT_TARGET_DIR"])
+
+if not zipfile.is_zipfile(egg_path):
+    print(f"  ✗ not a valid zip/.egg file: {egg_path}", file=sys.stderr)
+    sys.exit(2)
+
+with zipfile.ZipFile(egg_path) as z:
+    names = set(z.namelist())
+    if "manifest.json" not in names:
+        print("  ✗ egg has no manifest.json — refusing to import", file=sys.stderr)
+        sys.exit(2)
+    try:
+        manifest = json.loads(z.read("manifest.json").decode("utf-8"))
+    except Exception as e:
+        print(f"  ✗ manifest.json is invalid JSON: {e}", file=sys.stderr)
+        sys.exit(2)
+
+    rappid = manifest.get("rappid")
+    schema = manifest.get("schema", "")
+    tier   = manifest.get("tier", "doorman")
+    prov   = manifest.get("provenance") or {}
+    file_hashes = prov.get("file_hashes") or {}
+
+    # Schema sanity — accept brainstem-egg/2.x family
+    if not schema.startswith("brainstem-egg/2"):
+        print(f"  ⚠ unexpected schema {schema!r}; importing anyway but verify what shipped", file=sys.stderr)
+
+    # Verify per-file sha256 against the manifest table when available
+    if file_hashes:
+        for path, expected in file_hashes.items():
+            if path not in names:
+                print(f"  ✗ manifest declares {path} but it's missing from the egg", file=sys.stderr)
+                sys.exit(2)
+            actual = hashlib.sha256(z.read(path)).hexdigest()
+            if actual != expected:
+                print(f"  ✗ sha256 mismatch on {path} (egg has been tampered with)", file=sys.stderr)
+                print(f"    expected {expected}", file=sys.stderr)
+                print(f"    got      {actual}", file=sys.stderr)
+                sys.exit(2)
+        print(f"  ✓ provenance verified — {len(file_hashes)} files match egg manifest")
+    else:
+        print("  ⚠ egg has no file_hashes (older schema); importing without sha256 verification")
+
+    # Allowed top-level overlays. private/ is excluded on purpose —
+    # public seeds aren't the home for operator-only files.
+    OVERLAY_PATHS = {
+        "rappid.json":             "rappid.json",
+        "soul.md":                 "soul.md",
+        "card.json":               "card.json",
+        "data/memory.json":        ".brainstem_data/memory.json",
+        "data/frames.json":        "data/frames.json",
+        "data/user_memories.json": "data/user_memories.json",  # ascended-tier export
+    }
+    counts = {"top_files": 0, "agents": 0, "data": 0}
+
+    # Top-level files
+    for src, dst in OVERLAY_PATHS.items():
+        if src not in names:
+            continue
+        out = target / dst
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_bytes(z.read(src))
+        if dst.startswith("data/") or dst.startswith(".brainstem_data/"):
+            counts["data"] += 1
+        else:
+            counts["top_files"] += 1
+
+    # Agents — copy every *.py the egg ships under agents/
+    for name in names:
+        if name.startswith("agents/") and name.endswith(".py"):
+            base = name[len("agents/"):]
+            if "/" in base:  # nested → skip (we only ship flat agents)
+                continue
+            out = target / "agents" / base
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_bytes(z.read(name))
+            counts["agents"] += 1
+
+    # Stash a marker so the planter can use it for the commit message.
+    summary = {
+        "imported_from":      os.path.basename(egg_path),
+        "schema":             schema,
+        "tier":               tier,
+        "rappid":             rappid,
+        "display_name":       manifest.get("display_name"),
+        "files_overlaid":     counts,
+        "verified_hashes":    len(file_hashes),
+        "exported_at":        manifest.get("exported_at") or prov.get("sealed_at"),
+    }
+    pathlib.Path(target / ".plant-import.json").write_text(
+        json.dumps(summary, indent=2) + "\n"
+    )
+    print(f"  ✓ imported {counts['top_files']} top files + {counts['agents']} agents + {counts['data']} data files")
+    print(f"  ✓ rappid preserved: {rappid}")
+PYEOF
+
+    ok "Organism state imported from egg"
+}
+
 write_readme() {
     local target_dir="$1" gh_user="$2" rappid="$3"
     local lineage_line=""
@@ -3188,7 +3385,7 @@ function _dcRenderDiff() {
 
   // ── Dream Catcher merge doctrine ─────────────────────────────────
   //
-  // From the Gareth conversation:
+  // From the operator's design conversation:
   //   "Whatever frame hit the UTC one first, that's canon, and then
   //    anything that doesn't contradict that, I'm going to layer on
   //    that... There are contradictions, so that doesn't get synced.
@@ -7169,8 +7366,18 @@ main() {
     prompt_inputs
 
     local rappid now gh_user workspace
-    rappid="$(mint_rappid)"
     now="$(now_iso)"
+
+    # If PLANT_FROM_EGG is set, use the egg's rappid (preserve the
+    # organism's identity) instead of minting a fresh one. Also pre-
+    # populates MIRROR_DISPLAY_NAME / MIRROR_KIND from the egg's
+    # rappid.json when those env vars aren't already set.
+    if [[ -n "${PLANT_FROM_EGG:-}" ]]; then
+        rappid="$(extract_egg_rappid_or_die "$PLANT_FROM_EGG")"
+        info "Resuming organism from egg — preserving rappid: $rappid"
+    else
+        rappid="$(mint_rappid)"
+    fi
 
     if [[ "${PLANT_DRY_RUN:-0}" == "1" ]]; then
         gh_user="${PLANT_GH_USER:-test-user}"
@@ -7198,6 +7405,7 @@ main() {
     write_readme       "$workspace" "$gh_user" "$rappid"
     write_index_html   "$workspace" "$gh_user" "$rappid"
     write_doorman_html "$workspace" "$gh_user" "$rappid"
+    overlay_egg_if_set "$workspace"
 
     if [[ "${PLANT_DRY_RUN:-0}" == "1" ]]; then
         echo ""
@@ -7212,9 +7420,26 @@ main() {
     cd "$workspace"
     git init -q -b main
     git add .
+    # Commit message reflects whether this is a fresh plant or a
+    # resurrection from an egg (PLANT_FROM_EGG) — the latter says so
+    # explicitly so future readers know the rappid was preserved.
+    local commit_msg="plant: ${MIRROR_REPO_NAME} (rappid ${rappid:0:8}…)"
+    if [[ -f .plant-import.json ]]; then
+        local imp_summary
+        imp_summary=$(python3 -c "
+import json
+d = json.load(open('.plant-import.json'))
+c = d.get('files_overlaid', {})
+print(f\"imported from egg ({d.get('schema','?')}, tier={d.get('tier','?')}, {d.get('verified_hashes',0)} hashes verified) — preserved rappid {d.get('rappid','?')[:8]}…, overlaid {c.get('top_files',0)} top files + {c.get('agents',0)} agents + {c.get('data',0)} data files\")
+" 2>/dev/null || echo "imported from egg")
+        commit_msg="plant (resume from egg): ${MIRROR_REPO_NAME}
+
+${imp_summary}"
+        rm -f .plant-import.json
+    fi
     git -c user.email="${gh_user}@users.noreply.github.com" \
         -c user.name="$gh_user" \
-        commit -q -m "plant: ${MIRROR_REPO_NAME} (rappid ${rappid:0:8}…)"
+        commit -q -m "$commit_msg"
     ok "Initial commit"
 
     info "Creating GitHub repo: $gh_user/$MIRROR_REPO_NAME"
