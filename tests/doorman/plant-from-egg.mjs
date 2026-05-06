@@ -217,26 +217,47 @@ class FetchWeatherAgent(BasicAgent):
   const result = plantFromEgg(SEED_B, EGG_PATH);
   step("plant from egg exited cleanly", result.status === 0, `code=${result.status} stderr=${(result.stderr || "").slice(0, 200)}`);
 
-  // 5. Assertions
+  // 5. Assertions — public seed gets ONLY soul + baseline + identity.
+  // Accumulated content (memories, custom agents) routes to the
+  // sibling private workspace by default (Constitution Article XL).
   if (!existsSync(`${SEED_B}/rappid.json`)) {
     step("seed B has rappid.json", false, "file missing");
     return;
   }
   const rappidB = JSON.parse(readFileSync(`${SEED_B}/rappid.json`, "utf8"));
-  step("seed B's rappid === seed A's rappid (preserved)", rappidB.rappid === rappidA.rappid,
+  step("public seed B's rappid === seed A's rappid (preserved)", rappidB.rappid === rappidA.rappid,
     `A=${rappidA.rappid} B=${rappidB.rappid}`);
 
   const soulB = readFileSync(`${SEED_B}/soul.md`, "utf8");
-  step("seed B's soul.md is the egg's edited version (not the kind default)",
+  step("public seed B's soul.md is the egg's edited version",
     soulB.includes("42 conversations"), `soul: ${soulB.slice(0, 100)}`);
 
-  step("seed B carries the custom agent", existsSync(`${SEED_B}/agents/fetch_weather_agent.py`));
+  // Public should NOT have custom agent or accumulated memory by default
+  step("public seed B has NO custom agent (private-by-default)",
+    !existsSync(`${SEED_B}/agents/fetch_weather_agent.py`));
 
   const memB = JSON.parse(readFileSync(`${SEED_B}/.brainstem_data/memory.json`, "utf8"));
-  step("seed B has all 3 accumulated memories", memB.facts.length === 3,
+  step("public seed B has the planter's seed-of-context fact only (1 fact)",
+    Array.isArray(memB.facts) && memB.facts.length === 1,
     `got ${memB.facts.length} facts: ${JSON.stringify(memB.facts).slice(0, 200)}`);
-  step("memories survived (ginger ale)",  memB.facts.some(f => /ginger ale/i.test(f)));
-  step("memories survived (Stella's)",     memB.facts.some(f => /stella/i.test(f)));
+
+  // Private companion should have all the accumulated content
+  const PRIVATE_B = `${SEED_B}-private`;
+  step("private companion workspace exists", existsSync(`${PRIVATE_B}/rappid.json`),
+    `expected ${PRIVATE_B}/rappid.json`);
+
+  const memPrivB = JSON.parse(readFileSync(`${PRIVATE_B}/.brainstem_data/memory.json`, "utf8"));
+  step("private companion has all 3 accumulated memories",
+    memPrivB.facts.length === 3,
+    `got ${memPrivB.facts.length} facts: ${JSON.stringify(memPrivB.facts).slice(0, 200)}`);
+  step("private memory survived (ginger ale)",  memPrivB.facts.some(f => /ginger ale/i.test(f)));
+  step("private memory survived (Stella's)",     memPrivB.facts.some(f => /stella/i.test(f)));
+  step("private companion has the custom agent", existsSync(`${PRIVATE_B}/agents/fetch_weather_agent.py`));
+
+  // Public rappid.json now points at the private companion
+  step("public rappid.json declares private_companion field",
+    rappidB.private_companion && /-private/.test(rappidB.private_companion.repo || ""),
+    `got: ${JSON.stringify(rappidB.private_companion || null).slice(0, 200)}`);
 }
 
 async function testTamperDetection() {

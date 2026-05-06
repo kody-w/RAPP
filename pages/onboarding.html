@@ -202,7 +202,7 @@
     <li><a href="#what">What is a planted organism?</a></li>
     <li><a href="#why-safe">Why this isn't sketchy</a></li>
     <li><a href="#tiers">Three trust tiers</a></li>
-    <li><a href="#plant">Plant your first one (60s)</a></li>
+    <li><a href="#plant">Plant your first one (60s)</a> · <a href="#plant" style="color:#7ee787">📱 mobile-friendly</a></li>
     <li><a href="#agents">Growth happens through agents</a></li>
     <li><a href="#neighborhoods">Neighborhoods + the twin chat protocol</a></li>
     <li><a href="#faq">FAQ</a></li>
@@ -310,7 +310,16 @@
   </ul>
   <p>When the script finishes, your front door is at <code>https://&lt;your-handle&gt;.github.io/&lt;slug&gt;/</code>. Visit it. You'll see your new organism's profile, trade card, and chat surface.</p>
 
-  <h3>Option B — Hand the job to your AI assistant</h3>
+  <h3>Option B — Plant from your phone</h3>
+  <p>Phones don't have terminals natively, but three paths actually work:</p>
+  <ol>
+    <li><strong>Hand it to your AI in a chat app</strong> (easiest). Open Claude, ChatGPT, Gemini, or any AI assistant on your phone. Paste the prompt below. The AI runs the plant on its own infrastructure and reports the URL back to you. This is the most mobile-friendly path because the AI does all the terminal work.</li>
+    <li><strong>GitHub Codespaces</strong> (free 60 hours/month). Sign in to GitHub on your phone's browser, fork <a href="https://github.com/kody-w/RAPP">kody-w/RAPP</a>, tap the green Code button → Codespaces → "Create codespace on main". A full Linux terminal opens in your browser. Run the one-liner from Option A. Codespaces ships with <code>gh</code> CLI pre-authenticated to your account, so it just works.</li>
+    <li><strong>Termux (Android) or a-Shell / iSH (iOS)</strong>. Install a real shell app on your phone, install the <code>gh</code> CLI inside it (<code>pkg install gh</code> on Termux; <code>apk add github-cli</code> on iSH), authenticate (<code>gh auth login</code>), then run the Option A one-liner. Same as a desktop terminal, just in your pocket.</li>
+  </ol>
+  <p style="margin-top:14px;">All three paths produce the same outcome: a public seed at <code>&lt;your-handle&gt;.github.io/&lt;slug&gt;/</code> + a paired private companion repo (per Constitution Article XL — secure-first by default). No phone-specific quirks; the seed renders the same on whatever device visits it.</p>
+
+  <h3>Option C — Hand the job to your AI assistant</h3>
   <p>Paste this into Claude / ChatGPT / Gemini / your CLI agent. It will read it as a runnable plan.</p>
 <pre>Plant a new RAPP organism for me. Steps:
 
@@ -387,7 +396,17 @@ class FetchWeatherAgent(BasicAgent):
 
   <details class="qa">
     <summary>What happens to my conversations?</summary>
-    <div>Per-user private memories you save explicitly become GitHub Issues on the seed repo (or its private companion if configured). Public memories are committed to the repo. Device-local memories stay in your browser's localStorage and never leave that device. There is no other persistence layer — no logs, no analytics, no telemetry of any kind.</div>
+    <div>
+      <p><strong>Private by default.</strong> Every planted organism gets a paired <em>private companion repo</em> automatically — your accumulated memories, custom agents, mutation log, and per-user issues all live there from day one. The public seed only carries the AI's identity (soul, baseline agents, empty initial memory).</p>
+      <p>This is locked into the platform as <a href="https://github.com/kody-w/RAPP/blob/main/CONSTITUTION.md">Constitution Article XL — Secure-First Plant, Operator-Curated Promotion Later</a>. We start you safe; you decide later (with your AI's help) what's worth being public.</p>
+      <p>The three memory tiers:</p>
+      <ul style="margin:8px 0 8px 20px;">
+        <li><strong>Public</strong> (seed repo) — anything the operator has explicitly committed. Anyone can read.</li>
+        <li><strong>Private companion</strong> (paired repo, auto-created) — accumulated facts, custom agents, frames, per-user GitHub Issues. Only collaborators on the private repo can read.</li>
+        <li><strong>Device-local</strong> (your browser's localStorage) — never leaves your device. The organism remembers per-visitor things this way without any commits.</li>
+      </ul>
+      <p>There is no other persistence layer — no logs, no analytics, no telemetry of any kind. Disable the auto-private behavior with <code>PLANT_AUTO_PRIVATE=0</code> only if you explicitly want a fully-public organism (memorial twins, public exhibits).</p>
+    </div>
   </details>
 
   <details class="qa">

@@ -528,6 +528,58 @@ pathlib.Path(os.environ["PLANT_NEIGHBORS_PATH"]).write_text(
 PYEOF
 }
 
+# Returns 0 (true) if the egg carries accumulated private-worthy
+# content beyond the bare-minimum public seed: custom agents (more
+# than the two baseline ones), >1 memory fact, or any frame/user-
+# memory data files. Used to decide whether to auto-create a private
+# companion repo when PLANT_FROM_EGG is set.
+egg_has_private_content() {
+    local egg_src="$1"
+    local egg_path
+    if [[ "$egg_src" =~ ^https?:// ]]; then
+        egg_path=$(mktemp -t plant-egg-check.XXXXXX.egg)
+        curl -fsSL "$egg_src" -o "$egg_path" 2>/dev/null || return 1
+    elif [[ -f "$egg_src" ]]; then
+        egg_path="$egg_src"
+    else
+        return 1
+    fi
+    PLANT_EGG_PATH="$egg_path" python3 - <<'PYEOF' >/dev/null 2>&1
+import os, sys, json, zipfile
+egg_path = os.environ["PLANT_EGG_PATH"]
+BASELINE_AGENTS = {
+    "agents/basic_agent.py",
+    "agents/manage_memory_agent.py",
+    "agents/context_memory_agent.py",
+    "agents/__init__.py",
+}
+with zipfile.ZipFile(egg_path) as z:
+    names = set(z.namelist())
+    # Custom agents beyond the baseline?
+    custom = [n for n in names
+              if n.startswith("agents/") and n.endswith(".py")
+              and n not in BASELINE_AGENTS]
+    if custom:
+        sys.exit(0)
+    # Frame log present?
+    if "data/frames.json" in names:
+        sys.exit(0)
+    # User memories (ascended-tier exports)?
+    if "data/user_memories.json" in names:
+        sys.exit(0)
+    # >1 fact in memory?
+    if "data/memory.json" in names:
+        try:
+            mem = json.loads(z.read("data/memory.json").decode("utf-8"))
+            if isinstance(mem.get("facts"), list) and len(mem["facts"]) > 1:
+                sys.exit(0)
+        except Exception:
+            pass
+    # No private-worthy content
+    sys.exit(1)
+PYEOF
+}
+
 # Pre-extract the rappid from an egg so the rest of the planter can
 # use it. Outputs the rappid string to stdout, exits non-zero on error.
 # Used by main() so all the HTML/README substitutions reference the
@@ -599,6 +651,7 @@ PYEOF
 # is preserved.
 overlay_egg_if_set() {
     local target_dir="$1"
+    local private_dir="${2:-}"  # optional — when set, secure-by-default split routes private content here
     local egg_src="${PLANT_FROM_EGG:-}"
     if [[ -z "$egg_src" ]]; then
         return 0
@@ -619,14 +672,28 @@ overlay_egg_if_set() {
     fi
 
     # Verify + extract via python (zipfile + sha256). Refuses tampered
-    # eggs by exiting non-zero, which err()s the planter.
+    # eggs by exiting non-zero, which err()s the planter. When
+    # private_dir is set, files split between public + private.
     PLANT_EGG_PATH="$egg_path" \
     PLANT_TARGET_DIR="$target_dir" \
+    PLANT_PRIVATE_DIR="${private_dir}" \
     python3 - <<'PYEOF' || err "egg import failed (verification or extract)"
 import os, sys, json, hashlib, zipfile, pathlib, shutil
 
 egg_path  = os.environ["PLANT_EGG_PATH"]
 target    = pathlib.Path(os.environ["PLANT_TARGET_DIR"])
+private_path = os.environ.get("PLANT_PRIVATE_DIR") or ""
+private = pathlib.Path(private_path) if private_path else None
+SPLIT = private is not None
+
+# Baseline agents that ALWAYS go public (the doorman-tier minimum
+# every seed needs). Anything else custom routes to private when
+# we're doing a split.
+PUBLIC_BASELINE_AGENTS = {
+    "basic_agent.py",
+    "manage_memory_agent.py",
+    "context_memory_agent.py",
+}
 
 if not zipfile.is_zipfile(egg_path):
     print(f"  ✗ not a valid zip/.egg file: {egg_path}", file=sys.stderr)
@@ -669,40 +736,106 @@ with zipfile.ZipFile(egg_path) as z:
     else:
         print("  ⚠ egg has no file_hashes (older schema); importing without sha256 verification")
 
-    # Allowed top-level overlays. private/ is excluded on purpose —
-    # public seeds aren't the home for operator-only files.
-    OVERLAY_PATHS = {
-        "rappid.json":             "rappid.json",
-        "soul.md":                 "soul.md",
-        "card.json":               "card.json",
+    # File routing:
+    #
+    # PUBLIC ROUTE (always goes to target):
+    #   rappid.json        identity is public (already includes private_companion field)
+    #   soul.md            voice is public
+    #   card.json          trade card is public
+    #   agents/basic_agent.py + manage_memory_agent.py + context_memory_agent.py
+    #                       baseline agents needed to read public memory
+    #
+    # PRIVATE ROUTE (goes to private_dir when SPLIT, else target):
+    #   data/memory.json   accumulated facts → .brainstem_data/memory.json
+    #   data/frames.json   mutation log
+    #   data/user_memories.json  per-user issue exports (ascended-tier)
+    #   agents/<custom>.py any non-baseline agents the operator forged
+    #
+    # When SPLIT is on, the public memory.json is REPLACED with an
+    # empty initial state so the public face stays clean by default.
+    # Operator can promote private→public later by committing.
+
+    # Public-only top files
+    PUBLIC_TOP = {
+        "rappid.json": "rappid.json",
+        "soul.md":     "soul.md",
+        "card.json":   "card.json",
+    }
+    # Files that may go either public or private depending on SPLIT
+    PRIVATE_ROUTE = {
         "data/memory.json":        ".brainstem_data/memory.json",
         "data/frames.json":        "data/frames.json",
-        "data/user_memories.json": "data/user_memories.json",  # ascended-tier export
+        "data/user_memories.json": "data/user_memories.json",
     }
-    counts = {"top_files": 0, "agents": 0, "data": 0}
+    counts = {"public_top": 0, "public_agents": 0, "public_data": 0,
+              "private_top": 0, "private_agents": 0, "private_data": 0}
 
-    # Top-level files
-    for src, dst in OVERLAY_PATHS.items():
+    # Public top-level files
+    for src, dst in PUBLIC_TOP.items():
         if src not in names:
             continue
         out = target / dst
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_bytes(z.read(src))
-        if dst.startswith("data/") or dst.startswith(".brainstem_data/"):
-            counts["data"] += 1
-        else:
-            counts["top_files"] += 1
+        counts["public_top"] += 1
 
-    # Agents — copy every *.py the egg ships under agents/
+    # Memory + frames + user-memories — route based on SPLIT
+    for src, dst in PRIVATE_ROUTE.items():
+        if src not in names:
+            continue
+        if SPLIT:
+            out = private / dst
+            counts["private_data"] += 1
+        else:
+            out = target / dst
+            counts["public_data"] += 1
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_bytes(z.read(src))
+
+    # Agents: baseline (basic + manage_memory + context_memory) always
+    # public. Custom agents go private when SPLIT, else public.
     for name in names:
         if name.startswith("agents/") and name.endswith(".py"):
             base = name[len("agents/"):]
-            if "/" in base:  # nested → skip (we only ship flat agents)
+            if "/" in base:  # nested → skip
                 continue
-            out = target / "agents" / base
+            is_baseline = (base in PUBLIC_BASELINE_AGENTS)
+            if SPLIT and not is_baseline:
+                out = private / "agents" / base
+                counts["private_agents"] += 1
+            else:
+                out = target / "agents" / base
+                counts["public_agents"] += 1
             out.parent.mkdir(parents=True, exist_ok=True)
             out.write_bytes(z.read(name))
-            counts["agents"] += 1
+
+    # When splitting, also seed the private repo with a minimal layout:
+    # rappid.json mirror (so it's discoverable as a brainstem repo too)
+    # and an __init__.py for the agents package. Soul mirrored from
+    # public so the private side can render a chat surface independently
+    # (operators chatting on the private repo's deployment, if any).
+    if SPLIT:
+        if "rappid.json" in names:
+            (private / "rappid.json").write_bytes(z.read("rappid.json"))
+            counts["private_top"] += 1
+        if "soul.md" in names:
+            (private / "soul.md").write_bytes(z.read("soul.md"))
+            counts["private_top"] += 1
+        # Mark the private repo with a marker file so it's recognizable
+        (private / "agents").mkdir(parents=True, exist_ok=True)
+        (private / "agents" / "__init__.py").write_text("")
+        # Add a README explaining what the private repo is for
+        (private / "README.md").write_text(
+            "# Private companion repo\n\n"
+            f"This repo is the private brain layer for the public seed.\n\n"
+            "It carries accumulated memories, custom agents, and the mutation\n"
+            "log that the operator chose to keep private by default.\n\n"
+            "Visitors with read access (GitHub collaborators) get the richer\n"
+            "context when they sign in to the public front door's doorman.\n\n"
+            "See: https://github.com/kody-w/RAPP/blob/main/NEIGHBORHOOD_PROTOCOL.md\n"
+        )
+        # And a minimal .gitignore (matches the public seed's pattern)
+        (private / ".gitignore").write_text("*.egg\n*.pyc\n__pycache__/\n.DS_Store\n")
 
     # Stash a marker so the planter can use it for the commit message.
     summary = {
@@ -714,11 +847,20 @@ with zipfile.ZipFile(egg_path) as z:
         "files_overlaid":     counts,
         "verified_hashes":    len(file_hashes),
         "exported_at":        manifest.get("exported_at") or prov.get("sealed_at"),
+        "split":              SPLIT,
     }
     pathlib.Path(target / ".plant-import.json").write_text(
         json.dumps(summary, indent=2) + "\n"
     )
-    print(f"  ✓ imported {counts['top_files']} top files + {counts['agents']} agents + {counts['data']} data files")
+    if SPLIT:
+        # Also stash a marker on the private side
+        pathlib.Path(private / ".plant-import.json").write_text(
+            json.dumps(summary, indent=2) + "\n"
+        )
+        print(f"  ✓ public route: {counts['public_top']} top + {counts['public_agents']} agents (baseline)")
+        print(f"  ✓ private route: {counts['private_top']} top + {counts['private_agents']} custom agents + {counts['private_data']} data files")
+    else:
+        print(f"  ✓ imported {counts['public_top']} top + {counts['public_agents']} agents + {counts['public_data']} data files")
     print(f"  ✓ rappid preserved: {rappid}")
 PYEOF
 
@@ -7365,18 +7507,40 @@ main() {
     check_prereqs
     prompt_inputs
 
-    local rappid now gh_user workspace
+    local rappid now gh_user workspace workspace_private
     now="$(now_iso)"
 
     # If PLANT_FROM_EGG is set, use the egg's rappid (preserve the
-    # organism's identity) instead of minting a fresh one. Also pre-
-    # populates MIRROR_DISPLAY_NAME / MIRROR_KIND from the egg's
-    # rappid.json when those env vars aren't already set.
+    # organism's identity) instead of minting a fresh one.
     if [[ -n "${PLANT_FROM_EGG:-}" ]]; then
         rappid="$(extract_egg_rappid_or_die "$PLANT_FROM_EGG")"
         info "Resuming organism from egg — preserving rappid: $rappid"
     else
         rappid="$(mint_rappid)"
+    fi
+
+    # Secure-by-default: every plant gets a paired private companion
+    # repo. Public seed carries the AI's discoverable identity (soul,
+    # rappid, baseline memory + agents). Private companion carries
+    # the accumulated brain — operator-curated memory, custom agents,
+    # mutation logs, per-user issue memories. Operator can promote
+    # private→public over time via commit; default starts safe.
+    #
+    # Disable with PLANT_AUTO_PRIVATE=0 if the operator explicitly
+    # wants a fully-public organism (e.g. memorial twins, public
+    # exhibits, demo seeds).
+    if [[ "${PLANT_AUTO_PRIVATE:-1}" == "1" ]] && [[ -z "${MIRROR_PRIVATE_COMPANION:-}" ]]; then
+        local _u="${PLANT_GH_USER:-$(gh api user -q .login 2>/dev/null || echo "test-user")}"
+        MIRROR_PRIVATE_COMPANION="${_u}/${MIRROR_REPO_NAME}-private"
+        export MIRROR_PRIVATE_COMPANION
+        info "Secure-by-default: auto-creating private companion ${MIRROR_PRIVATE_COMPANION}"
+        if [[ -n "${PLANT_FROM_EGG:-}" ]]; then
+            info "  → accumulated memory, custom agents, frame log → private"
+            info "  → soul + baseline agents stay public"
+        else
+            info "  → fresh plant: per-user memories + custom agents will route here as the AI grows"
+            info "  → soul + baseline doorman agents stay public for any visitor"
+        fi
     fi
 
     if [[ "${PLANT_DRY_RUN:-0}" == "1" ]]; then
@@ -7393,6 +7557,20 @@ main() {
         workspace=$(mktemp -d)
     fi
 
+    # When MIRROR_PRIVATE_COMPANION is set (auto-derived above for the
+    # secure-by-default path, OR explicitly set by the visitor), we
+    # also build a sibling workspace for the private repo. Files
+    # split between the two during overlay; the public seed gets
+    # planted as --public, the private companion as --private.
+    if [[ -n "${MIRROR_PRIVATE_COMPANION:-}" ]] && [[ "${PLANT_AUTO_PRIVATE:-1}" == "1" ]]; then
+        if [[ "${PLANT_DRY_RUN:-0}" == "1" ]]; then
+            workspace_private="${workspace}-private"
+            mkdir -p "$workspace_private"
+        else
+            workspace_private=$(mktemp -d)
+        fi
+    fi
+
     fetch_kernel       "$workspace"
     fetch_seed_agents  "$workspace"
     write_install_sh   "$workspace"
@@ -7405,14 +7583,23 @@ main() {
     write_readme       "$workspace" "$gh_user" "$rappid"
     write_index_html   "$workspace" "$gh_user" "$rappid"
     write_doorman_html "$workspace" "$gh_user" "$rappid"
-    overlay_egg_if_set "$workspace"
+    overlay_egg_if_set "$workspace" "$workspace_private"
 
     if [[ "${PLANT_DRY_RUN:-0}" == "1" ]]; then
         echo ""
         ok "Dry run complete. Files written:"
         ( cd "$workspace" && find . -type f | sort | sed 's|^\./|  |' )
-        echo ""
-        echo "Path: $workspace"
+        if [[ -n "$workspace_private" ]] && [[ -d "$workspace_private" ]]; then
+            echo ""
+            ok "Private companion files:"
+            ( cd "$workspace_private" && find . -type f 2>/dev/null | sort | sed 's|^\./|  |' )
+            echo ""
+            echo "Public path:  $workspace"
+            echo "Private path: $workspace_private"
+        else
+            echo ""
+            echo "Path: $workspace"
+        fi
         return 0
     fi
 
@@ -7454,6 +7641,55 @@ ${imp_summary}"
         ok "Pages enabled"
     else
         warn "Pages may already be enabled, or hit a transient error — check repo Settings → Pages"
+    fi
+
+    # Plant the private companion repo, if we built one. The accumulated
+    # brain (custom agents, memory, frames, per-user issues) lives here
+    # by default — secure-first per Constitution Article XL. Operator
+    # curates what gets promoted to the public seed over time.
+    if [[ -n "${workspace_private:-}" ]] && [[ -d "$workspace_private" ]]; then
+        local priv_files
+        priv_files=$(find "$workspace_private" -type f 2>/dev/null | wc -l | tr -d ' ')
+        if [[ "$priv_files" -gt 0 ]]; then
+            info "Planting private companion: $MIRROR_PRIVATE_COMPANION"
+            local priv_name="${MIRROR_PRIVATE_COMPANION##*/}"
+            cd "$workspace_private"
+            git init -q -b main
+            git add .
+            local priv_commit_msg="private companion: ${priv_name} (rappid ${rappid:0:8}…)
+
+The accumulated brain layer for the public seed at
+github.com/${gh_user}/${MIRROR_REPO_NAME}. Carries custom agents,
+operator-curated memory, mutation log, and per-user issue exports.
+Visitors with read access here unlock the doorman's ascended mode."
+            if [[ -f .plant-import.json ]]; then
+                local priv_imp_summary
+                priv_imp_summary=$(python3 -c "
+import json
+d = json.load(open('.plant-import.json'))
+c = d.get('files_overlaid', {})
+print(f\"imported from egg ({d.get('schema','?')}, {d.get('verified_hashes',0)} hashes verified) — preserved rappid {d.get('rappid','?')[:8]}…, accumulated {c.get('private_top',0)} top + {c.get('private_agents',0)} agents + {c.get('private_data',0)} data files\")
+" 2>/dev/null || echo "imported from egg")
+                priv_commit_msg="private companion (resume from egg): ${priv_name}
+
+${priv_imp_summary}"
+                rm -f .plant-import.json
+            fi
+            git -c user.email="${gh_user}@users.noreply.github.com" \
+                -c user.name="$gh_user" \
+                commit -q -m "$priv_commit_msg"
+
+            # Create as --private. If the visitor already has a repo at
+            # this name, gh fails — print a helpful warning.
+            if gh repo create "$priv_name" --private --source=. --push \
+                --description "Private brain layer for ${MIRROR_REPO_NAME} — see Article XL" \
+                >/dev/null 2>&1; then
+                ok "Private companion planted: github.com/${gh_user}/${priv_name}"
+            else
+                warn "Couldn't create private repo ${priv_name} — does it already exist? Files staged at $workspace_private"
+            fi
+            cd - >/dev/null
+        fi
     fi
 
     cat << EOF

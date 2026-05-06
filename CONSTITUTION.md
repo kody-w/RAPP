@@ -2985,6 +2985,43 @@ To preserve the membrane:
 
 ---
 
+## Article XL — Secure-First Plant, Operator-Curated Promotion Later
+
+> **Every planted organism starts with a paired private companion repo by default.** Accumulated memory, custom agents the operator forged, and the mutation log all route to the private side at plant time. The public seed carries only the AI's discoverable identity (soul, baseline agents, empty initial memory). Operators promote pieces from private → public over time, with their AI helping decide what's worth being seen by the world. **We never lose trust by leaking accumulated state into a public repo by accident.**
+
+The organism's brain is private until the operator says otherwise. This is the inverse of the historical assumption (everything's public unless gated); the new default flips it. A fresh visitor arriving at a planted seed sees the AI's voice and identity; the years of conversations, the operator's hand-tuned agents, and the mutation history live on the private side, accessible to the operator + collaborators they explicitly add to the private repo's GitHub permissions.
+
+**The default behaviors**:
+
+- `installer/plant.sh` auto-derives `MIRROR_PRIVATE_COMPANION="<owner>/<slug>-private"` for every new plant unless `PLANT_AUTO_PRIVATE=0` is set.
+- The private companion repo is created `--private` on GitHub via `gh repo create` alongside the public seed.
+- When `PLANT_FROM_EGG` resurrects a locally-alive organism, accumulated content (memory, custom agents, frames, per-user issue exports) routes to the private companion. Only `soul.md` + `card.json` + the two baseline doorman agents (`manage_memory_agent.py`, `context_memory_agent.py`) are written to the public seed.
+- The doorman's per-user memory writes go to GitHub Issues on the private companion repo (already wired through `private_companion` field in `rappid.json`).
+- The doorman's "ascended mode" auto-fires for visitors who have read access to the private companion — they see the richer context as a natural consequence of GitHub permissions, not via a separate auth dance.
+
+**The promotion flow**:
+
+The operator (or their AI assistant) decides what becomes public over time. The promotion paths:
+- **A memory becomes public**: operator commits a fact from the private `.brainstem_data/memory.json` to the public seed's `.brainstem_data/memory.json` via PR.
+- **An agent becomes public**: operator commits a custom `*_agent.py` from the private `agents/` to the public seed's `agents/`. The doorman picks it up automatically on the next chat turn.
+- **A frame is published**: operator extracts a noteworthy frame from the private `data/frames.json` and writes it as a public memory or as a commit message describing the lesson.
+
+The operator is encouraged to chat with their own AI ("review what's in my private brain — what's worth making public?") and let the LLM draft the PR. This matches the platform's general principle: humans steer, LLMs do the hard work.
+
+**Why this article exists**:
+
+A previous draft of the planter dumped everything into the public seed — soul, memory, custom agents, mutation log, the works. That's a data-breach pattern by default. Visitors who pasted in private thoughts during a casual chat would discover those thoughts on the public web months later when the operator finally got around to setting up Pages. We never want a user to lose trust by surprise. **The secure default is the only acceptable default.**
+
+**Where this lives**:
+- **Planter logic**: `installer/plant.sh::main()` auto-derives `MIRROR_PRIVATE_COMPANION` and `installer/plant.sh::overlay_egg_if_set()` does the public/private split during egg import.
+- **Doorman ascension gate**: `installer/plant.sh` (doorman page) `loadPrivateContext` + `_viewerIsOperator` check for push access to the private companion.
+- **Trust framing**: `pages/onboarding.html` FAQ "What happens to my conversations?" reflects the private-by-default posture.
+- **Disable knob**: `PLANT_AUTO_PRIVATE=0` for explicit fully-public organisms (memorial twins, public exhibits, demo seeds — rare).
+
+This article supersedes the implicit assumption from earlier drafts that "operator can opt-in to a private companion." Now: the operator opts OUT if they really want everything public. The platform protects them by default.
+
+---
+
 *Ratified for the RAPP platform. The engine stays small so the agents
 can be everything. The species stays one so the variants can be many.
 The license never closes once opened. The estate persists so the
@@ -2993,4 +3030,6 @@ everything is one protocol. The Pokédex is the universal lens, so the
 trainer never gets lost in their own collection. The human only touches
 the one-liner — everything else is LLM-to-LLM, and the brainstem
 answers in report cards. The bicycle is electric: humans do the fun
-work, LLMs do the hard work, and the organism just gets ridden.*
+work, LLMs do the hard work, and the organism just gets ridden. The
+brain stays private until the operator says otherwise — secure first,
+operator-curated promotion later, no surprises.*
