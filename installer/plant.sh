@@ -2,9 +2,9 @@
 #
 # plant.sh — plant your AI's front door on the public internet.
 #
-# Creates a kernel-compliant RAPP mirror as a public GitHub repo + Pages
-# site at <your-handle>.github.io/<your-name>. The kernel is byte-synced
-# from grail; the rest of the mirror (soul, agents, UI) is yours to grow.
+# Drops a kernel-compliant seed at <your-handle>.github.io/<your-name>.
+# The kernel is the seed's DNA — byte-synced from grail. The rest of the
+# front door (soul, agents, UI) grows from the seed and is yours forever.
 #
 # Usage (interactive):
 #   curl -fsSL https://kody-w.github.io/RAPP/installer/plant.sh | bash
@@ -870,7 +870,7 @@ main() {
   ${CYAN}Generate a QR for sharing:${NC}
     https://kody-w.github.io/RAPP/installer/plant_qr.html?to=https://$gh_user.github.io/$MIRROR_REPO_NAME
 
-  ${CYAN}Drift-check your mirror anytime:${NC}
+  ${CYAN}Verify your kernel still matches grail (drift check):${NC}
     for f in rapp_brainstem/brainstem.py rapp_brainstem/VERSION rapp_brainstem/agents/basic_agent.py; do
       diff <(curl -fsSL "https://raw.githubusercontent.com/kody-w/rapp-installer/main/\$f") \\
            <(curl -fsSL "https://raw.githubusercontent.com/$gh_user/$MIRROR_REPO_NAME/main/\$f") \\
