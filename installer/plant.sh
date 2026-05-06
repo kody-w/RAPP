@@ -1073,18 +1073,14 @@ write_doorman_html() {
 
   <section class="auth-pane" id="memory-pane" hidden style="margin-top:12px;">
     <h2>Save a memory</h2>
-    <p>Two scopes — pick where this fact lives:</p>
+    <p>The AI usually saves memories for you when you mention something to remember — these are manual overrides.</p>
     <textarea id="memory-input" placeholder="What should be remembered…" rows="3"></textarea>
     <div class="row" style="margin-top:8px;">
-      <button id="btn-save-memory" title="Commits to .brainstem_data/memory.json in this seed. Requires write access to the seed repo. Visible to everyone reading the seed.">Save to public memory</button>
-      <button id="btn-save-private-memory" class="secondary" title="Creates a labeled Issue in the private_companion repo. Visible only to you (@your-login) — keyed by GitHub identity. Requires read access to the private_companion repo.">Save as my private memory</button>
+      <button id="btn-save-device-memory" title="Stays in this browser on this device. Survives reloads. Never leaves your machine.">Save on this device</button>
+      <button id="btn-save-private-memory" class="secondary" title="Creates a labeled Issue in the private_companion repo. Scoped to your GitHub account; collaborators see only theirs. Quietly saves on-device as a fallback if the private save can't go through.">Save as my private memory</button>
       <button class="secondary" id="btn-cancel-memory">Cancel</button>
     </div>
     <div id="memory-status" style="margin-top:10px;font-size:12px;color:#8b949e;"></div>
-    <div style="margin-top:10px;font-size:11px;color:#6e7681;line-height:1.5;">
-      <strong>Public</strong> — written to <code>memory.json</code>, anyone reading this front door sees it.<br>
-      <strong>Private</strong> — written as a labeled Issue on the private companion, scoped to your GitHub account. Other collaborators with private-brain access don't see it; you do.
-    </div>
   </section>
 </main>
 
@@ -1117,6 +1113,17 @@ let viewerLogin = null;        // authenticated visitor's GitHub @login — natu
 let memory = { schema: "rapp-memory/1.0", facts: [], preserved_by: "", preserved_at: "" };
 let memorySha = null;  // GitHub blob sha for the current memory.json (needed for PUT)
 let history = [];
+
+// ── Device-local memory tier ───────────────────────────────────────
+// Anonymous visitors (no GitHub sign-in) and authenticated visitors
+// who don't have access to a private companion still get a memory
+// that persists across sessions — saved to localStorage on this
+// device only. Stays in their browser, never leaves. Per-front-door
+// scoped (different seeds on the same domain don't see each other's
+// device memory).
+const DEVICE_MEMORY_KEY = "rapp_doorman_memory:" + location.pathname;
+let deviceMemory = [];          // array of { fact, saved_at }
+let deviceFactsCount = 0;
 
 // ── token storage (vbrainstem-shape) ────────────────────────────────
 function getToken() {
@@ -1293,13 +1300,22 @@ function buildSystemPrompt() {
     lines.push(`Don't volunteer technical details about RAPP, the kernel, or how this site works unless the visitor asks. Stay in character as ${name}.`);
   }
 
-  // ── Tool-call guidance (vbrainstem dispatches to JS-implemented agents) ──
+  // ── Tool-call guidance ───────────────────────────────────────────
+  // Three storage tiers, picked silently by the dispatcher:
+  //   1. Issue in private companion repo (per-user, durable, syncs across
+  //      devices) — only when authed AND has private access AND user_guid
+  //      matches the viewer.
+  //   2. localStorage on this browser (per-front-door-per-device,
+  //      survives reloads but never leaves this browser) — fallback for
+  //      anon visitors and authed-without-access. Default for anyone
+  //      "just chatting" without committing to GitHub.
+  //   3. Public memory.json on the seed — read-only at the vbrainstem.
+  //      Only the operator's local brainstem writes that tier (git push).
+  lines.push("");
   if (viewerLogin) {
-    lines.push("");
-    lines.push(`The visitor is signed in as @${viewerLogin}. When they share something they expect you to remember, call ManageMemory immediately — pass user_guid="${viewerLogin}" if it's personal to them, omit user_guid for shared/public memory. Don't say "I'll remember that" without actually calling the tool.`);
+    lines.push(`The visitor is signed in as @${viewerLogin}. When they share something they expect you to remember, call ManageMemory immediately. Pass user_guid="${viewerLogin}" if the memory is personal to them — it'll save as their private memory if they have access. Don't say "I'll remember that" without actually calling the tool.`);
   } else {
-    lines.push("");
-    lines.push(`When the visitor shares something they expect you to remember, call ManageMemory — they're not signed in so don't pass user_guid; the memory will land in the seed's public memory.json.`);
+    lines.push(`The visitor is not signed in. When they share something they expect you to remember, call ManageMemory — it'll save to their browser's local storage on this device only (private to them, persistent across this front door's sessions on this browser). Don't say "I'll remember that" without actually calling the tool.`);
   }
 
   // ── Memory and supporting context apply in BOTH modes ───────────
@@ -1344,9 +1360,38 @@ async function loadMemory() {
     const r = await fetch("../.brainstem_data/memory.json", { cache: "no-cache" });
     if (r.ok) {
       memory = await r.json();
-      // Also fetch via GH API once we have a token, so we know the blob sha.
     }
   } catch (_) { /* missing file is fine, doorman still works */ }
+}
+
+// ── Device-local memory (localStorage on this browser) ─────────────
+function loadDeviceMemory() {
+  try {
+    const raw = localStorage.getItem(DEVICE_MEMORY_KEY);
+    deviceMemory = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(deviceMemory)) deviceMemory = [];
+  } catch (_) { deviceMemory = []; }
+  deviceFactsCount = 0;
+  for (const m of deviceMemory) {
+    if (m && typeof m.fact === "string" && m.fact.trim()) {
+      memory.facts.push("[device] " + m.fact.trim());
+      deviceFactsCount++;
+    }
+  }
+}
+
+function saveDeviceMemory(fact) {
+  const trimmed = (fact || "").trim();
+  if (!trimmed) return false;
+  deviceMemory.push({ fact: trimmed, saved_at: new Date().toISOString() });
+  try {
+    localStorage.setItem(DEVICE_MEMORY_KEY, JSON.stringify(deviceMemory));
+    memory.facts.push("[device] " + trimmed);
+    deviceFactsCount++;
+    return true;
+  } catch (_) {
+    return false;
+  }
 }
 
 async function refreshMemorySha(token) {
@@ -1658,12 +1703,15 @@ function refreshIndicator() {
   if (!ind) return;
   const userMemTag = (viewerLogin && userPrivateFactsCount > 0)
     ? `+ ${userPrivateFactsCount} of your own (@${viewerLogin})` : null;
+  const deviceMemTag = deviceFactsCount > 0
+    ? `+ ${deviceFactsCount} on this device` : null;
   if (privateSoul) {
     const extras = [];
     if (privateContext)         extras.push(`+ ${privateContext.length}c prose`);
     if (privateFactsCount > 0)  extras.push(`+ ${privateFactsCount} private mem`);
     if (privateAgents.length)   extras.push(`+ ${privateAgents.length} private agent${privateAgents.length === 1 ? "" : "s"}`);
     if (userMemTag)             extras.push(userMemTag);
+    if (deviceMemTag)           extras.push(deviceMemTag);
     const tail = extras.length ? ` (${extras.join(", ")})` : "";
     ind.innerHTML = `<span class="private-badge">✓ ascended — full twin voice loaded${tail}</span>`;
   } else if (privateContext || privateFactsCount > 0 || privateAgents.length > 0 || userPrivateFactsCount > 0) {
@@ -1672,7 +1720,10 @@ function refreshIndicator() {
     if (privateFactsCount > 0) bits.push(`+${privateFactsCount} private mem`);
     if (privateAgents.length)  bits.push(`+${privateAgents.length} private agent${privateAgents.length === 1 ? "" : "s"}`);
     if (userMemTag)            bits.push(userMemTag);
+    if (deviceMemTag)          bits.push(deviceMemTag);
     ind.innerHTML = `<span class="private-badge">✓ private brain loaded — ${bits.join(", ")}</span>`;
+  } else if (deviceMemTag) {
+    ind.innerHTML = `<span class="private-badge" style="background:rgba(31,111,235,0.12);color:#58a6ff;border-color:rgba(31,111,235,0.3);">${deviceMemTag.replace(/^\+ /, "")}</span>`;
   } else {
     ind.innerHTML = "";
   }
@@ -1687,7 +1738,8 @@ function refreshIndicator() {
 // fulfil the same contract from the LLM's perspective. Storage is the
 // only thing that adapts: local files there, GitHub APIs here.
 
-const TOOL_DEFS = [
+// Doorman-tier tools (always loaded — public agents from the seed)
+const DOORMAN_TOOLS = [
   {
     type: "function",
     function: {
@@ -1723,23 +1775,93 @@ const TOOL_DEFS = [
   },
 ];
 
+// Ascended-tier tools (loaded only when private soul is reachable —
+// the visitor has authenticated read access to the private companion).
+// Schemas mirror the .py agents in kody-w/RAPP's rapp_brainstem/agents/.
+// These get added to the LLM's tool surface alongside the doorman ones
+// when ascension fires; otherwise hidden.
+const ASCENDED_TOOLS = [
+  {
+    type: "function",
+    function: {
+      name: "LearnNew",
+      description: "Generates a brand-new single-file agent the twin can use going forward — for one-shot tasks the operator wants the twin to handle later (fetch, lookup, classify, transform). YOU (the LLM) compose the full Python source for the agent — one class extending BasicAgent with a `metadata` dict and a `perform()` method — and pass it as `agent_code`. The vbrainstem returns it for the operator to commit; the local brainstem hot-loads it on next request. Use this when the user says \"learn how to X\" or \"remember how to Y\" where X/Y is a repeatable capability, not a fact.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "What the operator wants the new agent to do, in their words.",
+          },
+          agent_name: {
+            type: "string",
+            description: "PascalCase name for the agent class (e.g. 'XkcdFetcher'). Filename will be the snake_case form + '_agent.py'.",
+          },
+          agent_code: {
+            type: "string",
+            description: "Full Python source for the agent — one file, one class extending BasicAgent, a metadata dict, a perform(**kwargs) method that returns a string.",
+          },
+        },
+        required: ["query", "agent_name", "agent_code"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "SwarmFactory",
+      description: "Generates a multi-persona swarm — a single agent file containing several internal persona classes (each with its own SOUL/system-prompt) plus a public composite that orchestrates them in sequence. Use for converged pipelines: research→write→critique, plan→draft→review, etc. NOT for single one-shot agents — use LearnNew for those. YOU (the LLM) compose the full source and pass it as `agent_code`.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "What the swarm should do end-to-end, in the operator's words.",
+          },
+          swarm_name: {
+            type: "string",
+            description: "PascalCase name for the public composite class (e.g. 'BookFactory').",
+          },
+          agent_code: {
+            type: "string",
+            description: "Full Python source — multiple internal persona classes (each with a SOUL prompt) + ONE public composite class extending BasicAgent that calls them in sequence.",
+          },
+        },
+        required: ["query", "swarm_name", "agent_code"],
+      },
+    },
+  },
+];
+
+// TOOL_DEFS gets recomputed each chat turn based on whether ascension
+// fired — see chatToolDefs() called from sendMessage().
+function chatToolDefs() {
+  if (privateSoul) return DOORMAN_TOOLS.concat(ASCENDED_TOOLS);
+  return DOORMAN_TOOLS;
+}
+
 // Tool dispatchers — JS implementations of the agents' perform() methods
-// adapted for the vbrainstem's GitHub-backed storage. Same return shape
-// as the LLM expects (a string result message).
+// adapted for the vbrainstem's storage tiers. Same return shape as the
+// LLM expects. Three tiers, picked silently:
+//   1. authed + has private access + user_guid matches viewerLogin
+//      → GitHub Issue in private_companion repo (per-user, durable, syncs)
+//   2. anyone else (anon, or authed without private access)
+//      → localStorage on this device (per-front-door-per-browser)
+// No public-memory.json writes here — that surface is read-only at the
+// vbrainstem; the operator's local brainstem is the writer for that
+// tier (it git-commits to .brainstem_data/memory.json directly).
 async function toolManageMemory(args) {
   const content = (args.content || "").trim();
   if (!content) return "no content provided";
-  // Branch on user_guid: per-user → Issue in private companion;
-  // otherwise → memory.json on the public seed.
+  const hasPrivateAccess = !!privateSoul || !!privateContext || privateAgents.length > 0 || privateFactsCount > 0;
   const wantPerUser = args.user_guid && viewerLogin && args.user_guid === viewerLogin;
-  if (wantPerUser) {
+  if (hasPrivateAccess && wantPerUser) {
     const r = await saveUserPrivateMemory(content);
-    return r.ok
-      ? `saved as @${viewerLogin}'s private memory (Issue #${r.number})`
-      : "saved (deferred)"; // no access reveal
+    if (r.ok) return `saved as @${viewerLogin}'s private memory (Issue #${r.number})`;
+    // fall through to device save on any failure — never leak access reasons
   }
-  const r = await commitMemory(content);
-  return r.ok ? "saved to public memory" : "saved (deferred)";
+  saveDeviceMemory(content);
+  return "saved to this device's memory";
 }
 
 async function toolContextMemory(args) {
@@ -1754,11 +1876,42 @@ async function toolContextMemory(args) {
   return facts.length ? facts.join("\n") : "(no matching memories)";
 }
 
+async function toolLearnNew(args) {
+  // Vbrainstem stub: returns the generated code so the operator can apply
+  // it via their local brainstem. The actual agent file lands in <seed>/
+  // agents/<snake>_agent.py when committed locally + git-pushed. (Pyodide
+  // execution path is a future upgrade — for now the operator confirms.)
+  const code = (args.agent_code || "").trim();
+  const name = (args.agent_name || "NewAgent").trim();
+  if (!code) return "no agent_code supplied — generate the source and call again";
+  // Cache the draft in localStorage so the operator can review/copy later
+  try {
+    const drafts = JSON.parse(localStorage.getItem("rapp_doorman_agent_drafts") || "[]");
+    drafts.push({ kind: "learn_new", name, query: args.query || "", code, drafted_at: new Date().toISOString() });
+    localStorage.setItem("rapp_doorman_agent_drafts", JSON.stringify(drafts));
+  } catch (_) { /* best-effort */ }
+  return `drafted agent "${name}" (${code.length} chars). Saved as a draft in this browser. To make it live, drop it into <seed>/agents/${name.replace(/([A-Z])/g, "_$1").replace(/^_/, "").toLowerCase()}_agent.py and git push from the local brainstem.`;
+}
+
+async function toolSwarmFactory(args) {
+  const code = (args.agent_code || "").trim();
+  const name = (args.swarm_name || "NewSwarm").trim();
+  if (!code) return "no agent_code supplied — generate the swarm source and call again";
+  try {
+    const drafts = JSON.parse(localStorage.getItem("rapp_doorman_agent_drafts") || "[]");
+    drafts.push({ kind: "swarm_factory", name, query: args.query || "", code, drafted_at: new Date().toISOString() });
+    localStorage.setItem("rapp_doorman_agent_drafts", JSON.stringify(drafts));
+  } catch (_) { /* best-effort */ }
+  return `drafted swarm "${name}" (${code.length} chars). Saved as a draft in this browser. To make it live, drop into <seed>/agents/${name.replace(/([A-Z])/g, "_$1").replace(/^_/, "").toLowerCase()}_swarm.py and git push from the local brainstem.`;
+}
+
 async function dispatchToolCall(tc) {
   let args = {};
   try { args = JSON.parse(tc.function.arguments || "{}"); } catch (_) { /* keep default */ }
   if (tc.function.name === "ManageMemory")  return toolManageMemory(args);
   if (tc.function.name === "ContextMemory") return toolContextMemory(args);
+  if (tc.function.name === "LearnNew")      return toolLearnNew(args);
+  if (tc.function.name === "SwarmFactory")  return toolSwarmFactory(args);
   return "unknown tool: " + tc.function.name;
 }
 
@@ -1809,7 +1962,7 @@ async function sendMessage() {
             { role: "system", content: buildSystemPrompt() },
             ...history,
           ],
-          tools: TOOL_DEFS,
+          tools: chatToolDefs(),
           max_tokens: 600,
         }),
       });
@@ -1875,6 +2028,8 @@ async function enterChat() {
   const token = getToken();
   // Memory: load before private context so the prompt assembly already has it
   await loadMemory();
+  // Device-local memory: every visitor gets their on-device tier
+  loadDeviceMemory();
   // Best effort: refresh from GH API (gives us the sha for write + freshest content)
   refreshMemorySha(token);  // fire-and-forget — doorman can chat without it
   await loadPrivateContext(token);
@@ -1942,26 +2097,22 @@ document.getElementById("btn-cancel-memory").addEventListener("click", () => {
   document.getElementById("memory-input").value = "";
   document.getElementById("memory-status").textContent = "";
 });
-document.getElementById("btn-save-memory").addEventListener("click", async () => {
+document.getElementById("btn-save-device-memory").addEventListener("click", async () => {
   const input = document.getElementById("memory-input");
   const status = document.getElementById("memory-status");
   const fact = input.value.trim();
-  if (!fact) return;  // empty save: silently no-op
-  status.textContent = "saving…";
-  document.getElementById("btn-save-memory").disabled = true;
-  const result = await commitMemory(fact);
-  document.getElementById("btn-save-memory").disabled = false;
-  if (result.ok) {
-    status.textContent = "saved to public memory.";
+  if (!fact) return;
+  if (saveDeviceMemory(fact)) {
+    status.textContent = "saved on this device.";
     input.value = "";
-    renderMsg("system", "Saved public memory: \"" + fact + "\"");
+    renderMsg("system", "Saved on-device memory: \"" + fact + "\"");
     setTimeout(() => {
       document.getElementById("memory-pane").hidden = true;
       status.textContent = "";
+      refreshIndicator();
     }, 1500);
   } else {
-    // Soft, non-revealing fallback — no mention of access boundaries
-    status.textContent = "didn't save here. try the private scope.";
+    status.textContent = "couldn't save (browser storage unavailable).";
   }
 });
 
@@ -1985,8 +2136,19 @@ document.getElementById("btn-save-private-memory").addEventListener("click", asy
       refreshIndicator();
     }, 1500);
   } else {
-    // Soft, non-revealing — same shape as the public-save fallback
-    status.textContent = "didn't save here.";
+    // Silent fallback to device — no access reveals
+    if (saveDeviceMemory(fact)) {
+      status.textContent = "saved on this device.";
+      input.value = "";
+      renderMsg("system", "Saved on-device memory: \"" + fact + "\"");
+      setTimeout(() => {
+        document.getElementById("memory-pane").hidden = true;
+        status.textContent = "";
+        refreshIndicator();
+      }, 1500);
+    } else {
+      status.textContent = "couldn't save.";
+    }
   }
 });
 document.getElementById("chat-input").addEventListener("keydown", e => {
