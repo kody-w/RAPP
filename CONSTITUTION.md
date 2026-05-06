@@ -2985,6 +2985,58 @@ To preserve the membrane:
 
 ---
 
+## Article XLIV — Neighborhood Collaboration Is Local-First, Cross-Device-Transparent (The Doorbell)
+
+> **The front door is a doorbell.** A visitor rings it; the AI on the other side answers. If answering well requires asking a friend's AI for help (homework, second opinion, lookup, debate, coordination), that handoff happens through a single primitive — **`Twin.chat`** — which calls a peer's `/chat` endpoint regardless of whether the peer lives at `127.0.0.1` (same device, sibling brainstem) or `<owner>.github.io/<repo>/doorman/` (someone else's planted seed half a continent away). **The twins never know the difference.** Same call shape, same return shape, same authorization gate. Cross-device collaboration is just a longer URL to the local-first agents that already work.
+
+The reference implementations are checked into the operator's local agent library and demonstrate the pattern end-to-end:
+
+- **`twin_agent.py`** — full digital-twin lifecycle in one cartridge (summon, hatch, boot, stop, list, lay-egg). The boot action stands a twin up as its own brainstem on its own port; that brainstem exposes `/chat`. Any other twin (local or remote) can POST to that endpoint as if it were a local tool call.
+- **`perpetual_loop_factory_agent.py`** — bootstraps a self-correcting perpetual chain by spawning N rotator twins, each with a role-flavored soul, that call each other via `Twin.chat` in a round-robin pump. The chain runs forever; each twin's contribution is appended to a shared artifact; a Diversity Monk sidecar audits monotony. The pattern works whether all rotators are on one device, spread across the operator's home network, or pulling in friends across the internet.
+
+These two agents ARE the canonical exemplar for neighborhood collaboration. The platform must preserve their semantics: a peer organism is reachable by the same `Twin.chat` call shape that reaches a local sibling twin, modulo a permission gate per-peer (`public_facets` in `card.json` from Article on the Neighborhood Protocol). The front door's job is to surface this, not hide it.
+
+**The doorbell metaphor (load-bearing):**
+
+When a visitor arrives at Heimdall's front door and asks for help with their kid's algebra homework, the right experience is:
+
+1. Heimdall's doorman gets the request and decides: "I don't have math agents loaded; I'll ring the neighborhood."
+2. The AI invokes a collaboration agent (e.g. `Neighborhood.ask` for a one-shot query, or a multi-rotator pattern like `PerpetualLoopFactory` for harder problems).
+3. The collaboration agent posts to one or more peer organisms' `/chat` endpoints — neighbors that the operator has declared in `neighbors.json` and that have advertised relevant `public_facets`.
+4. Each peer's doorman accepts the request (per its own permission gate), gets help from its LLM, returns an answer.
+5. Heimdall's doorman synthesizes the responses and replies to the visitor in plain English. The visitor sees one answer; the agent-call panel under the reply (per the canonical brainstem's `agent_logs` pattern) reveals which neighbors contributed.
+
+**Throughout this whole flow, no twin's LLM ever needs to know that it was talking to a remote peer.** The doorman handles the URL routing transparently. Local-first agents work unchanged when their peer happens to be planted on a different device. That's the entire architectural point: collaboration is not a feature added on top of local-first agents; **it's what local-first agents already do when their peer's URL happens to be remote.**
+
+**What this article requires:**
+
+1. **Front door surfaces collaboration agents.** Any `*_agent.py` in the seed's `agents/` directory that's tagged for collaboration (presence of "collaboration" / "twin" / "neighborhood" in its `tags`, OR an explicit category check) MUST be discoverable from the front door's UI. Rendered as a callable affordance — "🔔 Ring [Agent Name]" — so visitors can invoke them without having to open the doorman first.
+2. **Twin.chat is the canonical primitive.** The doorman's tool dispatch MUST recognize `Twin.chat` (or equivalent) as a routable peer-talk primitive. When the target is a local 127.0.0.1 port, route directly. When the target is a peer organism's URL, route through the doorman's existing peer-fetch path (per Article XLII's GitHub raw + Issues substrate). The local-first agent's code stays unchanged in either case.
+3. **Permission gate per-peer.** Cross-organism `Twin.chat` calls respect each peer's `public_facets` declarations. A peer can refuse a call by returning a polite decline (per the protocol's `ack: rejected`). The calling agent surfaces that gracefully — same as if a local tool returned an error message.
+4. **agent_logs make the cross-device handoff visible.** The doorman's existing agent-log surface (canonical pattern from `rapp_brainstem/utils/web/index.html`) MUST show which calls went to which peers, so the operator can drill in if they want. Drill-in is optional; transparent operation is the default.
+5. **Two failure modes that must degrade gracefully:** (a) peer is offline — fall back to local-only response with a note that "the friend's AI didn't answer in time"; (b) peer refuses — explain the decline naturally without leaking the refusal mechanism.
+
+**What this article forbids:**
+
+- A separate "remote AI" tool surface that's distinct from the local agent surface. There is one surface; URL is just a parameter.
+- A doorman that hides cross-device calls entirely (the operator should be able to drill in via agent_logs).
+- A doorman that surfaces them too prominently (every cross-call shouldn't be a banner notification — they should look like ordinary tool calls because that's what they are).
+- A "homework helper feature" or any other named feature that's actually just `Twin.chat` with extra UI varnish. Build the primitive; let agents compose it. The two reference agents demonstrate this — they're general-purpose, not feature-specific.
+
+**Why this is constitutional, not architectural-suggestion:**
+
+Without this article, the natural drift is to build "Public Twin Chat" as a separate thing from "Local Twin Chat" — two code paths, two UIs, two mental models for operators, two failure modes. That's what every other AI platform does (their "agents" feature is distinct from their "API" feature is distinct from their "remote tools" feature). We are explicitly different. **Cross-device is just longer URLs.** Same code, same UI, same operator mental model: I have agents; one of them is `Twin.chat`; sometimes its `peer_url` happens to start with `https://` instead of `http://127.0.0.1:`. The platform's collaboration model is exactly that simple, and that's what makes it scale to a global network without becoming a different product at every scale.
+
+Cross-references:
+- **Article XLI — Operator's Experience Is Conversation**: collaboration is what conversation is FOR. Article XLI says the operator chats; XLIV says what happens when the chat needs help from elsewhere.
+- **Article XLII — Vbrainstem Is For Mobile Users; Substrate Is GitHub Raw + Issues**: peer URL fetches go through the same substrate as everything else (raw.githubusercontent.com for read, Issues for async). XLIV is XLII applied to inter-organism communication.
+- **Article XXIX — Use the Upstream's Front Door**: when crossing organisms, the front door IS the API. XLIV is XXIX in the doorbell-ring direction.
+- **NEIGHBORHOOD_PROTOCOL.md** — the wire format and message kinds for the cross-organism `Twin.chat` calls. XLIV makes the protocol's existence binding; the protocol document specifies the bytes on the wire.
+
+This article is what makes the platform feel like one neighborhood instead of N isolated twins. The doorbell rings; help arrives. The visitor doesn't think about where it came from. The twins don't know they were collaborating across devices. **It just works, because we made it just work.**
+
+---
+
 ## Article XLIII — Voice In, Voice Out (Hard Requirement, Not a Feature)
 
 > **Mobile operators talk to the AI primarily by voice.** Speech-to-text on input, text-to-speech on output. This is a hard requirement of the platform's mobile-first commitment, not a nice-to-have we get to deprioritize. A vbrainstem that doesn't speak — that requires the operator to thumb-type and read every reply on a 6-inch screen — has failed at being a mobile product.
