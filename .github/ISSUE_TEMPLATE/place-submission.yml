@@ -1,0 +1,128 @@
+name: 🌱 Plant a public place
+description: Nominate a real-world public location to be planted as a place-brainstem POI on the RAPP network.
+title: "[place] "
+labels: ["place-submission", "needs-review"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for nominating a place. The rules below mirror Pokémon Go's
+        PokéStop submission spirit — only public, permanent, culturally
+        meaningful spaces. Every submission is reviewed before it's planted.
+
+        **Easiest path:** open
+        [seed.html](https://kody-w.github.io/RAPP/installer/seed.html)
+        on your phone — it captures your location automatically and pre-fills
+        this form for you.
+
+  - type: input
+    id: place_name
+    attributes:
+      label: Place name
+      description: The human-friendly name of this place.
+      placeholder: e.g., Pike Place Market
+    validations:
+      required: true
+
+  - type: input
+    id: display_name
+    attributes:
+      label: Display name (what visitors see)
+      description: Usually the same as place name. Can include a subtitle (e.g., "Cloud Gate (The Bean)").
+      placeholder: e.g., Cloud Gate (The Bean)
+    validations:
+      required: true
+
+  - type: input
+    id: slug
+    attributes:
+      label: Slug
+      description: Lowercase, hyphens only. Becomes the GitHub repo name and the URL path. By convention, prefix with `pkstop-` for places.
+      placeholder: pkstop-pike-place-market
+    validations:
+      required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: Location (city + region)
+      description: Human-readable location.
+      placeholder: Seattle, Washington
+    validations:
+      required: true
+
+  - type: input
+    id: coordinates
+    attributes:
+      label: Coordinates (lat,lng)
+      description: Captured from your device or entered manually. Used for the public map.
+      placeholder: 47.6097,-122.3422
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Why this place
+      description: 2–4 sentences on the cultural, historical, educational, or recreational value of this location.
+    validations:
+      required: true
+
+  - type: input
+    id: photo_url
+    attributes:
+      label: Photo URL (optional)
+      description: A photo from public space. Imgur/Flickr/Wikimedia link is fine. Avoid people's faces.
+      placeholder: https://...
+
+  - type: input
+    id: submitter
+    attributes:
+      label: Your GitHub handle (optional)
+      description: Recorded as the nominator. We'll credit you in the planted mirror's lineage if approved.
+      placeholder: "@your-handle"
+
+  - type: checkboxes
+    id: eligibility
+    attributes:
+      label: Eligibility — every box must be checked
+      description: |
+        These mirror the Pokémon Go / Niantic Wayfarer guidelines for public
+        POI submissions. If any is false, this place can't be planted.
+      options:
+        - label: Publicly accessible (not gated, not private property)
+          required: true
+        - label: Permanent installation — not a pop-up, festival, or temporary event
+          required: true
+        - label: Has clear cultural, historical, educational, or recreational value
+          required: true
+        - label: NOT a K-12 school or daycare (children's privacy)
+          required: true
+        - label: NOT a hospital, police station, fire station, or other emergency facility
+          required: true
+        - label: NOT a private residence
+          required: true
+        - label: NOT an adult business
+          required: true
+        - label: NOT primarily a generic chain business (a Walmart parking lot is not a place; a historic mural inside one might be — be specific)
+          required: true
+        - label: Photographable from public space without trespassing
+          required: true
+        - label: I'm submitting in good faith and understand this is a public commons
+          required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        **What happens next**
+
+        - A reviewer will check this submission against the rules above.
+        - Approved submissions get planted via `plant.sh` — a public mirror at
+          `kody-w.github.io/<slug>` with `kind: place` and your nominated
+          location metadata.
+        - Anyone can then visit that front door, scan the QR, tether across
+          devices, or build agents/twins for that place.
+        - Rejected submissions get a comment explaining which rule failed.
+
+        Thanks for growing the network.
