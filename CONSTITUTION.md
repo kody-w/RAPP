@@ -2985,6 +2985,64 @@ To preserve the membrane:
 
 ---
 
+## Article XLII — The Virtual Brainstem Is For Mobile Users; The Global Substrate Is GitHub Raw + Issues
+
+> **The vbrainstem (the planted seed's doorman page at `<owner>.github.io/<repo>/doorman/`) is the platform's mobile-first surface.** Most operators most of the time reach the platform through their phone. Every design decision for the doorman is judged against whether it works fluently on a 6-inch touch screen with intermittent connectivity. The desktop case is the developer case; the mobile case is the operator case.
+
+> **The global substrate is GitHub raw + Issues.** Anywhere the platform needs to read public state, fetch via `raw.githubusercontent.com/<owner>/<repo>/<branch-or-sha>/<path>` — anonymous, globally cached, mobile-ready, free CDN. Anywhere the platform needs to write authenticated state, post via the GitHub Issues REST API — OAuth handled by the AI per Article XLI, durable, queryable, free. Anywhere the platform needs offline continuity, cache to `localStorage` on the visitor's origin, stamped with last-sync timestamp.
+
+This article enshrines the architectural pattern that has emerged from the codebase: **we don't run servers because GitHub already is the server.** Every feature that needs state routes through one of three primitives:
+
+1. **Read public state** → `raw.githubusercontent.com/...` (or the Contents/Commits/Issues APIs for richer fetches). No auth required for public repos. Browser fetches work from any origin (CORS-permissive). Mobile-friendly. Free at any volume we'll plausibly hit.
+2. **Write authenticated state** → GitHub Issues API on the relevant repo, with predefined labels for type-routing (`private-memory`, `egg-submission`, `dream-catcher`, `agent-proposal`, `neighborhood`, etc.). The AI assists the operator with auth (Article XLI handles the OAuth dance invisibly). Issues are durable, paginatable, searchable, and free.
+3. **Cache for offline / local-first** → `localStorage` on each origin, stamped with last-sync timestamp, served stale with a `📡 stale` flag when the network drops. A vbrainstem in airplane mode keeps rendering its own resume from the last successful sync. This is already wired via `cachedGhJson` / `cachedGhText` in the front-door codebase.
+
+**Why this is the right substrate for mobile**:
+
+A mobile operator's reality:
+- They tap a URL or scan a QR code. The vbrainstem loads as a single static page from GitHub Pages — no app install, no app store review, no platform-specific permissions.
+- They sign in once with the AI's help (per Article XLI). Their token persists in `localStorage` on this origin for that device.
+- They chat. Per-user memories flow to private GitHub Issues. Reads come from the cached `localStorage` first, then `raw.githubusercontent.com` if online — never blocking on a server they don't control.
+- They go offline (subway, plane, woods). The vbrainstem keeps working from cache. Memories they save accumulate locally; they sync up when network returns.
+- They share with a friend. The friend visits the same URL on their phone, gets a different `localStorage` cache, has their own per-user memory tier, sees the same public layer.
+
+**No piece of this requires us to operate a backend.** GitHub Pages serves the static surface. raw.githubusercontent.com serves the data. Issues store the per-user writes. localStorage caches everything. The platform is a static site that uses GitHub as its database, the open web as its CDN, and the visitor's browser as its runtime. That is exactly the right shape for a mobile-first operator network.
+
+**The vbrainstem-as-mobile-product framing**:
+
+When designing any new doorman feature, the question is not "is this nice on desktop?" — desktop will mostly take care of itself. The question is: **does this feel native on a phone with one thumb and a flaky signal?**
+
+Concrete implications:
+- Touch targets are ≥44px. No tiny links or hover-only affordances.
+- Page loads under 2 seconds on 4G. Inline-everything for the critical path; lazy-load Pyodide.
+- All GitHub fetches go through `cachedGhJson` / `cachedGhText` so the initial render works from cache while live data refreshes in the background. Never block the chat shell on a network call.
+- File uploads (agents, content files the operator wants to feed in) happen via either a peer device (tether QR, already shipped) or via OAuth-mediated Issue posts to the private companion repo — never via "open this URL in a desktop browser to upload."
+- QR codes are the canonical cross-device handoff. Cards have QR backs. Tether pairs over QR. Eggs trade over the tether channel.
+- Every action that touches GitHub state is routed through the AI per Article XLI — operator says what they want, AI does the technical work, operator gets the result.
+
+**What this article forbids**:
+
+- Inventing a new database or storage tier when raw.githubusercontent.com / Issues / localStorage can do it.
+- Designing primary doorman features that only feel good on desktop. (A development-time-only feature surfaced via a separate desktop-only URL is OK if it's clearly labeled as such.)
+- Requiring a separate auth provider beyond GitHub when the data lives on GitHub anyway.
+- Adding a native mobile app. The vbrainstem IS the mobile app. Browser is the runtime; Pages is the install channel.
+
+**What this article requires**:
+
+Every operator-facing feature checks the three boxes:
+- ✓ Reads via raw.githubusercontent.com (with cache fallback) where possible
+- ✓ Writes via GitHub Issues API where authenticated state is needed
+- ✓ Renders fluently on a 6-inch touch screen as the primary case
+
+Cross-references:
+- **Article VI — Local First, No Phone-Home**: this article is the implementation. raw + Issues + localStorage IS the local-first stack.
+- **Article XXIX — Use the Upstream's Front Door**: when crossing organisms, fetch their public layer via raw, write feedback via Issues to their seed.
+- **Article XLI — Operator's Experience Is Conversation**: the AI mediates auth so the operator never sees the GitHub token despite it being the platform's actual write key.
+
+This article is what makes the platform mobile-first by default. The vbrainstem isn't a desktop tool with a mobile fallback — it's a mobile tool that also happens to work on desktop because the substrate is the same in both places.
+
+---
+
 ## Article XLI — The Operator's Experience Is Conversation (Never a Token, Never a Terminal)
 
 > **A non-technical operator must be able to do anything this platform supports by chatting with an AI assistant.** Their experience is conversation, end-to-end. The AI does the dirty work — running shell commands, setting env vars, calling APIs, parsing JSON, handling auth. The operator never copies a token, never opens a terminal, never forks a repo, never sets an Actions secret, never edits a config file, never memorizes a command, never reads documentation before they can act. **If we tell the operator to paste a GitHub token, we have failed.**
