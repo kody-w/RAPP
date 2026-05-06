@@ -169,12 +169,14 @@ write_rappid_json() {
     PLANT_DISPLAY_NAME="$MIRROR_DISPLAY_NAME" \
     PLANT_PARENT_RAPPID="$SPECIES_ROOT_RAPPID" \
     PLANT_PARENT="${MIRROR_PARENT:-}" \
+    PLANT_KIND="${MIRROR_KIND:-mirror}" \
+    PLANT_LOCATION="${MIRROR_LOCATION:-}" \
     python3 - <<'PYEOF'
 import os, json, pathlib
 data = {
     "schema": "rapp-rappid/1.1",
     "rappid": os.environ["PLANT_RAPPID"],
-    "kind": "mirror",
+    "kind": os.environ.get("PLANT_KIND") or "mirror",
     "name": os.environ["PLANT_REPO_NAME"],
     "display_name": os.environ["PLANT_DISPLAY_NAME"],
     "github": f"https://github.com/{os.environ['PLANT_GH_USER']}/{os.environ['PLANT_REPO_NAME']}",
@@ -186,6 +188,9 @@ data = {
     "planted_from":  os.environ["PLANT_PARENT"] or None,
     "kernel_version": "0.6.0",
 }
+loc = os.environ.get("PLANT_LOCATION") or ""
+if loc:
+    data["location"] = loc
 pathlib.Path(os.environ["PLANT_RJ_PATH"]).write_text(json.dumps(data, indent=2) + "\n")
 PYEOF
 }
@@ -210,7 +215,10 @@ EOF
 write_readme() {
     local target_dir="$1" gh_user="$2" rappid="$3"
     local lineage_line=""
-    [[ -n "${MIRROR_PARENT:-}" ]] && lineage_line="Planted from: \`$MIRROR_PARENT\`"
+    local kind_line="**Kind:** \`${MIRROR_KIND:-mirror}\`"
+    local location_line=""
+    [[ -n "${MIRROR_PARENT:-}" ]]   && lineage_line="**Planted from:** \`$MIRROR_PARENT\`"
+    [[ -n "${MIRROR_LOCATION:-}" ]] && location_line="**Location:** $MIRROR_LOCATION"
 
     cat > "$target_dir/README.md" << EOF
 # $MIRROR_DISPLAY_NAME
@@ -219,9 +227,11 @@ write_readme() {
 
 - **Address:** \`$gh_user.github.io/$MIRROR_REPO_NAME\`
 - **Rappid:** \`$rappid\`
+- $kind_line
 - **Kernel:** v0.6.0 (byte-identical to the grail at \`kody-w/rapp-installer\`)
 - **Planted by:** [@$gh_user](https://github.com/$gh_user)
-$lineage_line
+$([ -n "$location_line" ] && echo "- $location_line")
+$([ -n "$lineage_line" ]  && echo "- $lineage_line")
 
 ## What's behind this door
 
