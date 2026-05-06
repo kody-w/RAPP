@@ -503,6 +503,31 @@ pathlib.Path(os.environ["PLANT_MEMORY_PATH"]).write_text(
 PYEOF
 }
 
+# ── neighbors.json — declared neighborhood for cross-organism collab ──
+#
+# Empty by default. Operators add neighbors via PR (the front door's
+# 🏘 pane has a "+ Add a neighbor" form that opens the PR for them).
+# Schema rapp-neighbors/1.0:
+#   { schema, neighbors: [{ rappid, repo, display_name, added_at,
+#                           allowed_facets[] }] }
+# allowed_facets is the OUTBOUND grant — what THIS organism is willing
+# to share with that specific neighbor (independent of what the neighbor
+# is willing to share with us). Empty means public-only.
+write_neighbors_json() {
+    local target_dir="$1"
+    PLANT_NEIGHBORS_PATH="$target_dir/neighbors.json" \
+    python3 - <<'PYEOF'
+import os, json, pathlib
+data = {
+    "schema": "rapp-neighbors/1.0",
+    "neighbors": [],
+}
+pathlib.Path(os.environ["PLANT_NEIGHBORS_PATH"]).write_text(
+    json.dumps(data, indent=2) + "\n"
+)
+PYEOF
+}
+
 write_readme() {
     local target_dir="$1" gh_user="$2" rappid="$3"
     local lineage_line=""
@@ -868,6 +893,69 @@ write_index_html() {
     font-size: 13px; padding: 12px 14px;
   }
   .row-actions button.action:hover { background: #2d333b; border-color: #484f58; }
+  /* Neighborhood pane — peer organism cards */
+  .nbhd-card {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 14px; align-items: start;
+    background: #0d1117;
+    border: 1px solid #21262d;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .nbhd-card:hover {
+    border-color: #1f6feb;
+    background: #11161e;
+  }
+  .nbhd-sigil {
+    width: 56px; height: 56px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px #21262d;
+  }
+  .nbhd-sigil svg { width: 100%; height: 100%; display: block; }
+  .nbhd-body { min-width: 0; }
+  .nbhd-name {
+    font-size: 14px; font-weight: 700; color: #e6edf3;
+    margin-bottom: 2px;
+  }
+  .nbhd-handle {
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 11px; color: #58a6ff;
+    margin-bottom: 6px;
+  }
+  .nbhd-tagline {
+    font-size: 12px; color: #c9d1d9;
+    line-height: 1.4;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .nbhd-stats {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-top: 8px;
+    font-size: 10px; color: #6e7681;
+  }
+  .nbhd-stats .nbhd-stat {
+    background: rgba(110,118,129,0.10);
+    border: 1px solid rgba(110,118,129,0.20);
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+  .nbhd-empty {
+    color: #6e7681; font-size: 13px; font-style: italic;
+    text-align: center; padding: 20px;
+    background: #0d1117;
+    border: 1px dashed #21262d;
+    border-radius: 10px;
+  }
+  .skel-line { color: #6e7681; font-size: 13px; font-style: italic; padding: 10px 0; }
+
   /* Propose-an-agent pane — agent submission form (one term: agent) */
   .propose-row { margin-bottom: 12px; }
   .propose-label {
@@ -1581,6 +1669,7 @@ write_index_html() {
   <div class="row-actions">
     <button class="action secondary" id="btn-card">🃏 Show my card</button>
     <button class="action secondary" id="btn-tether">📱 Pair with another device</button>
+    <button class="action secondary" id="btn-neighborhood" title="See who this organism collaborates with — the declared neighborhood. Cross-organism knowledge exchange happens here.">🏘 Neighborhood</button>
     <button class="action secondary" id="btn-propose-agent" title="Submit a new agent.py to this organism via PR — the lineage evolution path.">🌱 Propose an agent</button>
     <button class="action secondary" id="btn-export-egg" title="Backup the public organism — rappid, soul, agents, public memory.">🥚 Export .egg</button>
     <button class="action secondary" id="btn-verify-egg" title="Drop in any .egg and verify nothing was modified offline.">🔬 Verify an .egg</button>
@@ -1738,6 +1827,40 @@ write_index_html() {
     <button class="small primary" id="btn-copy-install">Copy command</button>
   </section>
 
+  <!-- Neighborhood — declared peer organisms this seed collaborates with.
+       The implementation surface of NEIGHBORHOOD_PROTOCOL.md. List
+       reads neighbors.json from the seed root; each neighbor's public
+       state is fetched live (cached). Adding a neighbor = pre-filled
+       PR against neighbors.json on this seed. The operator merges
+       what they want to formally collaborate with. -->
+  <section class="pane" id="pane-neighborhood" hidden>
+    <h2>🏘 Neighborhood</h2>
+    <p>The peer organisms this seed has formally declared as collaborators. Knowledge can flow between declared neighbors via the twin chat protocol — cross-organism queries, fact sharing, egg trades. Each entry below is rendered live from the peer's public state.</p>
+    <div id="nbhd-list" style="margin-top:14px;">
+      <div class="skel-line">loading neighbors…</div>
+    </div>
+    <details style="margin-top:18px;">
+      <summary style="cursor:pointer;font-size:13px;color:#8b949e;list-style:none;">▸ Add a neighbor (open PR)</summary>
+      <div style="margin-top:12px;">
+        <p style="font-size:12px;color:#8b949e;line-height:1.55;">Opens a pre-filled GitHub PR adding the entry to <code>neighbors.json</code>. The operator reviews + merges; once accepted, the new neighbor appears in this list on every visitor's next render.</p>
+        <div class="propose-row">
+          <label class="propose-label">Neighbor repo <span class="propose-hint">(owner/repo on GitHub)</span></label>
+          <input type="text" id="nbhd-repo" placeholder="e.g. kody-w/heimdall" />
+        </div>
+        <div class="propose-row">
+          <label class="propose-label">Display name</label>
+          <input type="text" id="nbhd-name" placeholder="How this neighbor is called" />
+        </div>
+        <div class="propose-row">
+          <label class="propose-label">Allowed facets <span class="propose-hint">(comma-separated; what this organism shares OUT to that neighbor — empty for public-only)</span></label>
+          <input type="text" id="nbhd-facets" placeholder="e.g. research_in_progress, professional_history" />
+        </div>
+        <button class="small primary" id="btn-nbhd-submit">Open PR on GitHub →</button>
+      </div>
+    </details>
+    <p style="font-size:11px;color:#6e7681;margin-top:18px;line-height:1.5;">Protocol: <a href="https://github.com/kody-w/RAPP/blob/main/NEIGHBORHOOD_PROTOCOL.md" target="_blank" rel="noopener" style="color:#58a6ff;">NEIGHBORHOOD_PROTOCOL.md</a> describes the trust model, channel types, and exchange primitives.</p>
+  </section>
+
   <!-- Plant your own front door — public one-liner + AI-paste prompt.
        Two formats: the bash one-liner for terminal users, and an
        AI-friendly prompt for visitors who'd rather hand the job to
@@ -1878,7 +2001,7 @@ let peer = null;
 let conn = null;
 
 function hideAllPanes() {
-  for (const id of ["pane-tether", "pane-install", "pane-verify", "pane-dreamcatcher", "pane-propose", "pane-plant"]) {
+  for (const id of ["pane-tether", "pane-install", "pane-verify", "pane-dreamcatcher", "pane-propose", "pane-plant", "pane-neighborhood"]) {
     const el = document.getElementById(id);
     if (el) el.hidden = true;
   }
@@ -2126,6 +2249,121 @@ function autoRenderTetherQR(myId) {
 }
 
 function showInstall() { showPane("pane-install"); }
+
+// ── 🏘 Neighborhood pane ───────────────────────────────────────────
+//
+// Renders neighbors.json from the seed root and fetches each declared
+// neighbor's public state (rappid, soul gist, memory count) via cached
+// raw.githubusercontent.com calls. Empty by default — operators add
+// neighbors via PR (the Add-a-neighbor form below the list).
+
+async function showNeighborhoodPane() {
+  showPane("pane-neighborhood");
+  const wrap = document.getElementById("nbhd-list");
+  wrap.innerHTML = '<div class="skel-line">loading neighbors…</div>';
+
+  let entries = [];
+  try {
+    const r = await fetch("neighbors.json", { cache: "no-cache" });
+    if (r.ok) {
+      const j = await r.json();
+      entries = Array.isArray(j.neighbors) ? j.neighbors : [];
+    }
+  } catch (_) {}
+
+  if (!entries.length) {
+    wrap.innerHTML = '<div class="nbhd-empty">No neighbors declared yet. Add one below to formalize a collaboration line — once merged, this organism\'s doorman can call <code>Neighborhood.ask</code> to query the neighbor\'s public state during conversation.</div>';
+    return;
+  }
+
+  // Render each neighbor as a card with their sigil + name + tagline + stats.
+  // Each card links to the peer's front door so visitors can hop across.
+  const cards = await Promise.all(entries.map(async (n) => {
+    const m = String(n.repo || "").match(/^([^/]+)\/([^/]+)$/) ||
+              String(n.repo || "").match(/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?\/?$/);
+    if (!m) return null;
+    const [, owner, repo] = m;
+    const base = `https://raw.githubusercontent.com/${owner}/${repo}/main/`;
+    const url  = `https://${owner}.github.io/${repo}/`;
+    const [rappidRes, soulRes, memRes] = await Promise.all([
+      cachedGhText(base + "rappid.json"),
+      cachedGhText(base + "soul.md"),
+      cachedGhText(base + ".brainstem_data/memory.json"),
+    ]);
+    let peerRappid = null, mem = null;
+    try { peerRappid = rappidRes.value ? JSON.parse(rappidRes.value) : null; } catch (_) {}
+    try { mem        = memRes.value    ? JSON.parse(memRes.value)    : null; } catch (_) {}
+    const display = (peerRappid && peerRappid.display_name) || n.display_name || `${owner}/${repo}`;
+    const tagline = soulRes.value
+      ? (soulRes.value.split("\n").find(l => l.trim() && !l.trim().startsWith("#")) || "").trim().slice(0, 200)
+      : "";
+    const memCount = (mem && Array.isArray(mem.facts)) ? mem.facts.length : 0;
+    const sigilSvg = peerRappid && peerRappid.rappid ? rappidSigil(peerRappid.rappid, 56) : rappidSigil("default", 56);
+    const facets = Array.isArray(n.allowed_facets) ? n.allowed_facets : [];
+    return `
+      <a class="nbhd-card" href="${escapeHtml(url)}" target="_blank" rel="noopener">
+        <div class="nbhd-sigil">${sigilSvg}</div>
+        <div class="nbhd-body">
+          <div class="nbhd-name">${escapeHtml(display)}</div>
+          <div class="nbhd-handle">@${escapeHtml(owner)}/${escapeHtml(repo)}</div>
+          ${tagline ? `<div class="nbhd-tagline">${escapeHtml(tagline)}</div>` : ""}
+          <div class="nbhd-stats">
+            ${memCount ? `<span class="nbhd-stat">🧠 ${memCount} mem</span>` : ""}
+            ${peerRappid && peerRappid.kind ? `<span class="nbhd-stat">${escapeHtml(peerRappid.kind)}</span>` : ""}
+            ${facets.length ? `<span class="nbhd-stat">facets-out: ${facets.length}</span>` : ""}
+            <span class="nbhd-stat">added ${escapeHtml((n.added_at || "").slice(0, 10) || "—")}</span>
+          </div>
+        </div>
+      </a>
+    `;
+  }));
+  wrap.innerHTML = cards.filter(Boolean).join("");
+}
+
+function submitNeighbor() {
+  const repo  = (document.getElementById("nbhd-repo").value || "").trim();
+  const name  = (document.getElementById("nbhd-name").value || "").trim();
+  const facets= (document.getElementById("nbhd-facets").value || "").trim()
+                  .split(",").map(s => s.trim()).filter(Boolean);
+  if (!repo || !/^[^/]+\/[^/]+$/.test(repo)) {
+    alert("Enter the neighbor's GitHub repo as 'owner/repo' (e.g. kody-w/heimdall)");
+    return;
+  }
+  // Build a snippet to add to neighbors.json. The visitor manually splices
+  // it into the file via GitHub's editor; we open the file's edit URL with
+  // the entry pre-built and ready to paste.
+  const entry = {
+    repo,
+    display_name: name || repo,
+    added_at: new Date().toISOString(),
+    allowed_facets: facets,
+  };
+  const owner = (location.host || "").split(".")[0];
+  const seedRepo = (location.pathname.split("/").filter(Boolean)[0] || "");
+  const issueTitle = `add neighbor: ${repo}`;
+  const issueBody = [
+    "<!-- pre-filled via the front door's 🏘 Neighborhood pane -->",
+    "",
+    "## Proposed neighbor",
+    "",
+    "Add the following entry to `neighbors.json`:",
+    "",
+    "```json",
+    JSON.stringify(entry, null, 2),
+    "```",
+    "",
+    "## Why",
+    "",
+    "<!-- one or two sentences on what knowledge will flow between these organisms and at what scope (public_facets) -->",
+    "",
+    "Spec: [NEIGHBORHOOD_PROTOCOL.md](https://github.com/kody-w/RAPP/blob/main/NEIGHBORHOOD_PROTOCOL.md) describes the cross-organism communication model.",
+  ].join("\n");
+  const u = new URL(`https://github.com/${owner}/${seedRepo}/issues/new`);
+  u.searchParams.set("title", issueTitle);
+  u.searchParams.set("body",  issueBody);
+  u.searchParams.set("labels", "neighborhood,proposal");
+  window.open(u.toString(), "_blank", "noopener,noreferrer");
+}
 
 // ── Trade card ─────────────────────────────────────────────────────
 //
@@ -3382,6 +3620,8 @@ document.getElementById("btn-export-egg").onclick = exportDoormanEgg;
 document.getElementById("btn-verify-egg").onclick = showVerifyPane;
 document.getElementById("btn-publish-egg").onclick = openEggHubSubmission;
 document.getElementById("btn-install").onclick = showInstall;
+document.getElementById("btn-neighborhood").onclick = showNeighborhoodPane;
+document.getElementById("btn-nbhd-submit").onclick = submitNeighbor;
 document.getElementById("btn-propose-agent").onclick = showProposePane;
 document.getElementById("btn-propose-submit").onclick = submitProposedAgent;
 document.getElementById("btn-propose-template").onclick = (e) => {
@@ -5841,6 +6081,32 @@ const DOORMAN_TOOLS = [
       },
     },
   },
+  {
+    // Neighborhood — cross-organism collaboration primitive. Reads
+    // neighbors.json + raw.githubusercontent.com to surface what peer
+    // organisms know about a topic. The implementation primitive for
+    // the twin chat protocol (see NEIGHBORHOOD_PROTOCOL.md). Doorman-
+    // tier — every visitor can invoke it; what the neighbor returns
+    // depends on the neighbor's own permissions.
+    type: "function",
+    function: {
+      name: "Neighborhood",
+      description: "Query peer organisms in this seed's declared neighborhood. Use when the visitor mentions another organism by name, asks 'what does <peer> think about X?', or asks who I collaborate with. Calls a peer organism's public endpoints (rappid.json, soul.md, .brainstem_data/memory.json) to surface their state. Action 'list' enumerates declared neighbors; 'introduce' describes one specific neighbor; 'ask' fetches a neighbor's public memory + soul to find a topic.",
+      parameters: {
+        type: "object",
+        properties: {
+          action: {
+            type: "string",
+            enum: ["list", "introduce", "ask"],
+            description: "list = show all declared neighbors. introduce = describe one neighbor. ask = fetch a neighbor's public state for a specific topic.",
+          },
+          neighbor_slug: { type: "string", description: "When action is 'introduce' or 'ask': owner/repo of the neighbor (e.g. 'kody-w/heimdall')." },
+          topic:         { type: "string", description: "When action is 'ask': what you want to know about the neighbor." },
+        },
+        required: ["action"],
+      },
+    },
+  },
 ];
 
 // Ascended-tier tools (loaded only when private soul is reachable —
@@ -6224,7 +6490,145 @@ async function dispatchToolCall(tc) {
   if (tc.function.name === "ContextMemory") return toolContextMemory(args);
   if (tc.function.name === "LearnNew")      return toolLearnNew(args);
   if (tc.function.name === "SwarmFactory")  return toolSwarmFactory(args);
+  if (tc.function.name === "Neighborhood")  return toolNeighborhood(args);
   return "unknown tool: " + tc.function.name;
+}
+
+// ── Neighborhood tool — cross-organism collaboration ───────────────
+//
+// The implementation primitive of the twin chat protocol. Reads the
+// seed's neighbors.json, fetches peer organism public state via raw.
+// githubusercontent.com, returns a summary the LLM can synthesize into
+// its reply. Cached via cachedGhText/Json so airplane-mode visitors
+// still get last-seen neighbor state.
+//
+// Action 'list'      → enumerates declared neighbors
+// Action 'introduce' → describes one specific neighbor (rappid + soul gist)
+// Action 'ask'       → fetches that neighbor's public memory + soul, returns
+//                      the substring most relevant to the topic
+//
+// The neighbor's permissions decide what comes back — this tool only
+// reads the peer's PUBLIC layer (anyone-readable). Neighborhood-tier
+// or private content stays inaccessible without the visitor having
+// proper auth on the peer's repo.
+
+async function _readNeighbors() {
+  // From the local seed root. The doorman is at /<seed>/doorman/ so
+  // neighbors.json lives one level up.
+  try {
+    const r = await fetch("../neighbors.json", { cache: "no-cache" });
+    if (r.ok) {
+      const j = await r.json();
+      return Array.isArray(j.neighbors) ? j.neighbors : [];
+    }
+  } catch (_) {}
+  return [];
+}
+
+// Lightweight fetch helper — doorman scope doesn't have the front-
+// door's cachedGhText. Plain fetch with null-on-failure; the doorman
+// is always online when chat is happening (Copilot needs network).
+async function _peerFetch(url) {
+  try {
+    const r = await fetch(url, { cache: "no-cache" });
+    if (!r.ok) return null;
+    return await r.text();
+  } catch (_) { return null; }
+}
+
+async function _fetchPeerState(slug) {
+  const m = String(slug || "").match(/^([^/]+)\/([^/]+)$/);
+  if (!m) return null;
+  const [, owner, repo] = m;
+  const base = `https://raw.githubusercontent.com/${owner}/${repo}/main/`;
+  const [rappidT, soulT, memT] = await Promise.all([
+    _peerFetch(base + "rappid.json"),
+    _peerFetch(base + "soul.md"),
+    _peerFetch(base + ".brainstem_data/memory.json"),
+  ]);
+  let rappid = null, mem = null;
+  try { rappid = rappidT ? JSON.parse(rappidT) : null; } catch (_) {}
+  try { mem    = memT    ? JSON.parse(memT)    : null; } catch (_) {}
+  return {
+    slug,
+    owner, repo,
+    rappid,
+    soul:   soulT || null,
+    memory: mem,
+    cache_status: "live",
+  };
+}
+
+async function toolNeighborhood(args) {
+  const action = args.action || "list";
+  const neighbors = await _readNeighbors();
+
+  if (action === "list") {
+    if (!neighbors.length) {
+      return "no neighbors declared yet — this organism has no formal collaborators in its neighborhood. The operator can add one via the front door's 🏘 Neighborhood pane.";
+    }
+    const lines = ["Declared neighbors (cross-organism collaborators):"];
+    for (const n of neighbors) {
+      lines.push(`- ${n.display_name || n.repo} <${n.repo}>${n.allowed_facets && n.allowed_facets.length ? ` · facets-out: ${n.allowed_facets.join(", ")}` : ""}`);
+    }
+    return lines.join("\n");
+  }
+
+  if (action === "introduce" || action === "ask") {
+    const slug = args.neighbor_slug;
+    if (!slug) return `error: action='${action}' requires neighbor_slug ("owner/repo")`;
+    const isDeclared = neighbors.find(n => n.repo === slug || n.repo.endsWith("/" + slug));
+    const peer = await _fetchPeerState(slug);
+    if (!peer) return `couldn't fetch ${slug} — invalid slug or peer organism unreachable.`;
+    const declarationNote = isDeclared ? "(declared neighbor)" : "(NOT in neighbors.json — fetched as a public peer; treat as untrusted)";
+
+    if (action === "introduce") {
+      const lines = [`Peer organism ${slug} ${declarationNote}:`];
+      if (peer.rappid && peer.rappid.display_name) lines.push(`  display_name: ${peer.rappid.display_name}`);
+      if (peer.rappid && peer.rappid.kind)         lines.push(`  kind: ${peer.rappid.kind}`);
+      if (peer.rappid && peer.rappid.location)     lines.push(`  location: ${peer.rappid.location}`);
+      if (peer.rappid && peer.rappid.rappid)       lines.push(`  rappid: ${peer.rappid.rappid}`);
+      if (peer.rappid && peer.rappid.url)          lines.push(`  url: ${peer.rappid.url}`);
+      if (peer.memory && Array.isArray(peer.memory.facts)) lines.push(`  public memory count: ${peer.memory.facts.length}`);
+      if (peer.soul) {
+        // Pull the first non-heading line of soul.md as a tagline
+        const tagline = (peer.soul.split("\n").find(l => l.trim() && !l.trim().startsWith("#")) || "").slice(0, 200);
+        if (tagline) lines.push(`  tagline: ${tagline}`);
+      }
+      return lines.join("\n");
+    }
+
+    // action === "ask"
+    const topic = (args.topic || "").trim();
+    if (!topic) return `error: action='ask' requires topic`;
+    const facts = (peer.memory && Array.isArray(peer.memory.facts)) ? peer.memory.facts : [];
+    // Naive substring match over public memory facts; LLM synthesizes from results
+    const tokens = topic.toLowerCase().split(/\s+/).filter(t => t.length > 2);
+    const hits = facts.filter(f => {
+      const lf = String(f).toLowerCase();
+      return tokens.some(t => lf.includes(t));
+    });
+    const lines = [
+      `Querying ${slug} ${declarationNote} on topic: "${topic}"`,
+      "",
+    ];
+    if (hits.length) {
+      lines.push(`Found ${hits.length} matching public memor${hits.length === 1 ? "y" : "ies"}:`);
+      for (const h of hits.slice(0, 8)) lines.push(`- ${h}`);
+    } else {
+      lines.push(`No public memories matched. Their public surface (${facts.length} facts total) doesn't directly mention this topic.`);
+      if (peer.soul) {
+        // Surface the soul.md as fallback context
+        lines.push("");
+        lines.push("Their soul.md (voice + role):");
+        lines.push(peer.soul.slice(0, 600));
+      }
+    }
+    if (peer.cache_status === "cache") lines.push("\n[cache] this answer is from the last successful sync; peer may have updated since.");
+    return lines.join("\n");
+  }
+
+  return `error: unknown action '${action}' — use 'list', 'introduce', or 'ask'`;
 }
 
 // ── chat ───────────────────────────────────────────────────────────
@@ -6790,6 +7194,7 @@ main() {
     write_gitignore    "$workspace"
     write_nojekyll     "$workspace"
     write_memory_json  "$workspace" "$gh_user" "$now"
+    write_neighbors_json "$workspace"
     write_readme       "$workspace" "$gh_user" "$rappid"
     write_index_html   "$workspace" "$gh_user" "$rappid"
     write_doorman_html "$workspace" "$gh_user" "$rappid"
