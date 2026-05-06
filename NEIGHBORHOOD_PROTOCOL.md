@@ -125,6 +125,13 @@ Read-only. Anyone-to-anyone. No auth needed. Cached locally to keep the airplane
 
 The "twin chat" is the inter-organism conversation that happens once a permanent line is open. It runs over the WebRTC tether for live exchanges and falls back to GitHub Issues for asynchronous ones.
 
+**The transparent-handoff principle**: the AIs treat cross-organism queries as ordinary tool calls. Twin A's LLM doesn't know — and doesn't need to know — that the response came from twin B running on a different device. The doorman that hosts twin A receives the question, routes it across the secure channel to twin B's doorman, gets the answer back, and surfaces it to twin A's LLM as if it had come from a local agent. The operator never has to mediate the cross-twin handoff; their AI assistant just answers their question, with peer context folded in seamlessly. **This is the load-bearing UX promise** — collaboration shouldn't feel like work.
+
+What this means concretely:
+- The operator says "what does my friend's twin think about pizza?" — their twin's LLM calls `Neighborhood.ask(neighbor_slug='friend/twin', topic='pizza')`. Whether the answer comes from public memory, the WebRTC tether to friend's device, or an Issue posted on friend's seed, the LLM sees one shape of return value and synthesizes its reply.
+- The cross-twin call respects each side's permissions independently. Twin A is asking; twin B answers based on what twin B's operator allowed twin A's neighborhood to see (`public_facets` per §7). The LLMs don't negotiate permissions; the doormen do, transparently.
+- The operator can drill in if they want — the agent-call panel under each chat reply (Article XXII parity, ported from the canonical brainstem) shows the raw cross-organism payload — but they never have to.
+
 ### 6a. Wire format
 
 Every twin-chat message is a JSON object:

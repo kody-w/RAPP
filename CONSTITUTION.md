@@ -2985,6 +2985,74 @@ To preserve the membrane:
 
 ---
 
+## Article XLIII — Voice In, Voice Out (Hard Requirement, Not a Feature)
+
+> **Mobile operators talk to the AI primarily by voice.** Speech-to-text on input, text-to-speech on output. This is a hard requirement of the platform's mobile-first commitment, not a nice-to-have we get to deprioritize. A vbrainstem that doesn't speak — that requires the operator to thumb-type and read every reply on a 6-inch screen — has failed at being a mobile product.
+
+The kernel already supports the voice channel (Article II — delimited slots: `|||VOICE|||` is reserved as a fixed resource for voice-targeted text). The vbrainstem must surface this. **A doorman page that doesn't render mic-input → speech-to-text → chat AND assistant-response → `|||VOICE|||` slot → text-to-speech is not a complete vbrainstem.**
+
+**Why this is a commandment**:
+
+A mobile operator's most common posture for using an AI:
+- Walking, driving, cooking, exercising, falling asleep — anywhere their hands are busy or their eyes are elsewhere.
+- They want to speak the question and hear the answer. Not type. Not read.
+- Every other LLM product they use already supports this (ChatGPT mobile voice mode, Claude voice on iOS, Gemini, Pi, Inflection, etc.). If we don't, we feel obviously inferior on the surface where it matters most.
+- The kernel has been ready for this since the `|||VOICE|||` slot was carved out of the protocol. The platform commitment was always there; the doorman just needs to honor it.
+
+This article makes the doorman's voice I/O a baseline, not a milestone. PRs that add or modify the doorman's chat surface must preserve voice in/out parity. PRs that intentionally regress voice need to justify why through this article (and likely shouldn't merge).
+
+**The three required behaviors** (in this order of priority):
+
+1. **Voice input.** A microphone button next to the chat input. Tap to start listening; tap again to stop OR auto-stop on silence. The Web Speech API (`SpeechRecognition` / `webkitSpeechRecognition`) transcribes into the input field. The operator can review the transcript and edit before sending, OR enable an "auto-send" mode that sends as soon as transcription finalizes. Either path is valid; both are supported.
+
+2. **Voice output.** When an assistant reply contains a `|||VOICE|||` slot (per Article II), that slot's content is spoken via the Web Speech API (`speechSynthesisUtterance` + `speechSynthesis.speak`). When no `|||VOICE|||` slot is present, the visible text content is spoken (operator chooses verbose vs voice-tailored via a setting). The operator can pause, resume, or skip mid-utterance.
+
+3. **Voice settings persistence.** Voice on/off, voice selection (browser native voices), speech rate, and auto-send-after-STT all persist in `rapp_settings` localStorage (Article XLII substrate). Operator's last choice carries across sessions. Every doorman that supports a given browser shows the same set of voices.
+
+**Implementation substrate**:
+
+The Web Speech API ships native in every modern mobile browser: Safari on iOS (16.4+), Chrome on Android, Edge, Firefox (with flag). Free, no external service, no auth, no rate limit, no API key, no infrastructure on our side. **This matches Article XLII perfectly** — voice is just another browser-native primitive we use directly, the same way we use `fetch` and `localStorage`.
+
+For browsers that don't support Web Speech (rare on mobile, more common on Linux desktop), the doorman shows a clear "voice unsupported on this browser — use the text fallback" message and degrades gracefully. The text input never disappears; voice is added on top, never required as the only path.
+
+**The premium-voice exception (the ONE sanctioned key-paste flow):**
+
+Browser-native TTS is the baseline that ALWAYS works. But the operator may optionally paste an ElevenLabs API key, an Azure Speech key + region, or a similar premium TTS provider's credential to upgrade the spoken-reply quality on demand. **This is the only place in the entire platform where the operator is permitted to paste an API key**, and it's allowed for these specific reasons:
+
+1. The browser-native voices, while free and universal, are noticeably robotic compared to neural premium voices. For an operator who uses voice as their primary modality (the common case per this article), the difference is not aesthetic — it's the difference between "I use this every day" and "I tolerate it."
+2. The paste is purely additive. The default path (browser-native) keeps working; the operator opts in to a better voice when they have a key on hand.
+3. The keys belong to the operator's own provider account. Nothing flows through us; the doorman calls the provider directly with the operator's credential. Same trust posture as Article XLII (substrate is the operator's own auth, not ours).
+4. Keys can be shared via AirDrop, email, or any other ad-hoc channel — including a friend who already has an ElevenLabs sub airdropping their key for one-off use. That casual key-share scenario is a real mobile-operator pattern; the article doesn't pretend otherwise.
+
+The doorman's voice settings UI MUST surface this carefully: clear labeling that the key stays in this device's `localStorage` only, an obvious "clear key" action, and no telemetry on what the key is used for. When a key is set, the doorman uses that provider's TTS for the spoken reply; when not set, browser-native TTS handles it. Operator decides every time, never us.
+
+**What this article forbids**:
+
+- A doorman page that lacks a mic button on its input bar.
+- A doorman that ignores `|||VOICE|||` slots in assistant replies (treating them as plain text only).
+- Gating voice itself behind a paid tier — voice is baseline. (The premium-voice key paste is opt-in upgrade, not a feature gate.)
+- A "Pro feature" flag that disables voice for some operators while enabling it for others. Voice is baseline.
+- Routing voice through external services without operator-explicit credential consent. Browser-native works for free; premium is opt-in via the operator's own key.
+- Asking the operator to paste a key for ANYTHING ELSE — auth tokens, GitHub PATs, Copilot credentials, etc. all stay invisible per Article XLI. **Premium TTS is the only carve-out**, and the carve-out is documented here so it's not a precedent for relaxing XLI elsewhere.
+
+**What this article requires**:
+
+- Mic button in the doorman's input bar — visible, ≥44px touch target, with clear visual feedback when listening.
+- TTS playback for every assistant reply, gated by the operator's voice-on/off setting.
+- A voice settings panel (or section in the existing settings) with: voice on/off, voice picker, rate slider, auto-send toggle, language code.
+- Graceful degradation when the browser doesn't support Web Speech: text fallback works, no errors, message explains.
+- Matching support across both surfaces of the planted seed: any doorman page that grows from this codebase ships with voice I/O.
+
+Cross-references:
+- **Article II — Delimited Slots Are a Fixed Resource**: `|||VOICE|||` is the channel; this article makes the doorman honor it.
+- **Article XLI — Operator's Experience Is Conversation**: voice is the most literal form of conversation. XLIII is the implementation of XLI's "talk to your AI" promise on the surface where talking literally means talking.
+- **Article XLII — Vbrainstem Is For Mobile Users; Substrate Is GitHub Raw + Issues**: voice is mobile-first, browser-native, no-server. Same architectural posture, applied to I/O modality.
+- **Article VIII — Degrade Gracefully**: when Web Speech is unavailable, text input remains the working fallback. We don't break; we display a clear message and continue.
+
+This article is what makes the vbrainstem feel like a real mobile AI assistant rather than a pretty mobile-styled web form. The mic button is the difference between "this looks nice on my phone" and "I actually use this on my phone."
+
+---
+
 ## Article XLII — The Virtual Brainstem Is For Mobile Users; The Global Substrate Is GitHub Raw + Issues
 
 > **The vbrainstem (the planted seed's doorman page at `<owner>.github.io/<repo>/doorman/`) is the platform's mobile-first surface.** Most operators most of the time reach the platform through their phone. Every design decision for the doorman is judged against whether it works fluently on a 6-inch touch screen with intermittent connectivity. The desktop case is the developer case; the mobile case is the operator case.
@@ -3007,6 +3075,8 @@ A mobile operator's reality:
 - They share with a friend. The friend visits the same URL on their phone, gets a different `localStorage` cache, has their own per-user memory tier, sees the same public layer.
 
 **No piece of this requires us to operate a backend.** GitHub Pages serves the static surface. raw.githubusercontent.com serves the data. Issues store the per-user writes. localStorage caches everything. The platform is a static site that uses GitHub as its database, the open web as its CDN, and the visitor's browser as its runtime. That is exactly the right shape for a mobile-first operator network.
+
+**The front door is the global discovery primitive.** Once a seed is planted, its public state is reachable by any organism, anywhere, with zero infrastructure on our side — `raw.githubusercontent.com/<owner>/<repo>/main/*` serves the seed's rappid.json, soul.md, memory.json, card.json, agents/*, and neighbors.json through GitHub's CDN, free at any volume, no auth, every device. **That's what makes the platform a global collaboration network without us running anything.** The front door isn't decoration — it's the discoverable surface that makes everything below it possible. Other planted seeds reference yours by URL; their AIs fetch your public state directly during chat; visitors walk lineage chains by following `parent_repo` pointers. Discovery is GitHub URLs. Permanent lines layer on top via WebRTC tether (live) or Issues (async). The whole network is a graph of public repos that AIs can navigate without us mediating any of it.
 
 **The vbrainstem-as-mobile-product framing**:
 
@@ -3050,6 +3120,8 @@ This article is what makes the platform mobile-first by default. The vbrainstem 
 This is a commandment, not a guideline. It is enforced at the design-review layer: any feature that exposes terminal mechanics, secret management, fork mechanics, or technical configuration directly to the operator does not ship. We either build the abstraction so the AI handles it, or we don't ship the feature.
 
 **The single allowed human surface** is the install one-liner (Article V) and the chat surface. Every other operation — planting, hatching, exporting an egg, importing an egg, deploying changes, federating with neighbors, adjusting permissions, promoting private memory to public, anything — flows through the operator's chosen AI assistant. The AI calls the brainstem's `/chat` endpoint, the LLM there calls agents that do the work, and the operator gets a report card in plain English.
+
+**The single sanctioned key-paste exception** (defined in Article XLIII): operators may optionally paste an ElevenLabs / Azure TTS / similar premium-voice provider key to upgrade their spoken-reply quality. That carve-out is bounded to voice quality only and stored in `localStorage` on the operator's device. It does not authorize key-paste flows for any other purpose; auth tokens, GitHub PATs, Copilot credentials, etc. all remain invisible to the operator per the rules above.
 
 **Why this is foundational.** A sketchy AI platform asks me to set up an account, generate a token, paste it into a config file, restart something, and only then can I use it. We are not that. The promise is: download once, then talk. Every barrier we put between "open the chat" and "thing is done" makes us slightly more like the sketchy ones. Compound enough barriers and we're indistinguishable; the operator goes back to ChatGPT and we lose the chance to show what self-hosted, open-substrate, operator-sovereign AI can be.
 

@@ -5067,6 +5067,37 @@ write_doorman_html() {
     margin-top: 8px;
   }
   .input-bar textarea { flex: 1; }
+  /* Voice I/O buttons (Article XLIII baseline). 44px touch targets
+     per Article XLII mobile-first sizing rule. Mic pulses while
+     listening; speaker shows on/off state. */
+  #btn-mic, #btn-voice-out {
+    width: 44px; height: 44px;
+    flex-shrink: 0;
+    background: #21262d; color: #c9d1d9;
+    border: 1px solid #30363d; border-radius: 8px;
+    font-size: 18px; line-height: 1;
+    cursor: pointer; padding: 0;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  #btn-mic:hover, #btn-voice-out:hover {
+    background: #2d333b;
+    border-color: #484f58;
+  }
+  #btn-mic.listening {
+    background: rgba(248, 81, 73, 0.18);
+    border-color: #f85149;
+    color: #f85149;
+    animation: micPulse 1.2s ease-in-out infinite;
+  }
+  @keyframes micPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(248, 81, 73, 0.5); }
+    50%      { box-shadow: 0 0 0 6px rgba(248, 81, 73, 0); }
+  }
+  #btn-voice-out.on {
+    background: rgba(63, 185, 80, 0.16);
+    border-color: #3fb950;
+    color: #3fb950;
+  }
   .actions {
     display: flex; gap: 8px;
     padding: 6px 0;
@@ -5185,12 +5216,21 @@ write_doorman_html() {
   <div class="chat-log" id="chat-log" hidden></div>
 
   <div class="input-bar" id="input-bar" hidden>
+    <!-- Voice in. Constitution Article XLIII makes mic input a baseline
+         requirement on the doorman. Web Speech API handles transcription
+         in-browser; no external service. Tap to listen, tap again to stop. -->
+    <button id="btn-mic" type="button" title="Tap to talk (Article XLIII)" aria-label="Voice input">🎤</button>
     <textarea id="chat-input" placeholder="Talk to the doorman…" rows="1"></textarea>
+    <!-- Voice out toggle. When on, assistant replies' |||VOICE||| slots
+         (Article II) are spoken via speechSynthesis. Persists in
+         rapp_settings localStorage (Article XLII substrate). -->
+    <button id="btn-voice-out" type="button" title="Voice replies on/off" aria-label="Voice output">🔇</button>
     <button id="btn-send">Send</button>
   </div>
 
   <div class="actions" id="chat-actions" hidden>
     <button id="btn-add-memory">+ Save a memory</button>
+    <button id="btn-voice-settings" title="Voice settings — premium TTS keys (the one allowed paste, per Article XLIII)">🎙 Voice</button>
     <button id="btn-export-ascended" hidden title="Backup the full organism — private brain, per-user memories, ascended agents.">🥚 Export ascended .egg</button>
     <button id="btn-clear">Clear chat</button>
     <span style="flex:1"></span>
@@ -5199,6 +5239,48 @@ write_doorman_html() {
     </select>
     <button id="btn-logout">Sign out</button>
   </div>
+
+  <!-- Premium-voice settings pane (Article XLIII carve-out — the
+       only sanctioned key-paste flow on the platform). Browser-native
+       TTS works without any of this; these fields are an opt-in
+       upgrade for operators who want premium voice quality. Keys
+       stay in localStorage on this device only. -->
+  <section class="auth-pane" id="voice-pane" hidden style="margin-top:12px;">
+    <h2>🎙 Voice settings</h2>
+    <p style="font-size:12px;color:#8b949e;margin-bottom:8px;">Browser-native voice (free, on every device) is the baseline. Optionally paste an ElevenLabs or Azure TTS key for higher-quality voice. <strong>Keys stay in this device's localStorage only</strong> — never sent anywhere except directly to the provider you chose. Per Constitution Article XLIII, this is the one place on the platform we ask you to paste a key; we use your provider account, not ours.</p>
+    <div class="row">
+      <label style="font-size:12px;color:#8b949e;flex:0 0 110px;">Voice provider</label>
+      <select id="voice-provider" style="flex:1">
+        <option value="browser">Browser native (free)</option>
+        <option value="elevenlabs">ElevenLabs (your key)</option>
+        <option value="azure">Azure TTS (your key + region)</option>
+      </select>
+    </div>
+    <div id="voice-elevenlabs-fields" hidden style="margin-top:10px;">
+      <div class="row">
+        <input type="password" id="voice-eleven-key" placeholder="ElevenLabs API key (xi-…)" />
+      </div>
+      <div class="row" style="margin-top:6px;">
+        <input type="text" id="voice-eleven-voice" placeholder="Voice ID (e.g. 21m00Tcm4TlvDq8ikWAM)" />
+      </div>
+    </div>
+    <div id="voice-azure-fields" hidden style="margin-top:10px;">
+      <div class="row">
+        <input type="password" id="voice-azure-key" placeholder="Azure Speech key" />
+      </div>
+      <div class="row" style="margin-top:6px;">
+        <input type="text" id="voice-azure-region" placeholder="Region (e.g. eastus)" />
+      </div>
+      <div class="row" style="margin-top:6px;">
+        <input type="text" id="voice-azure-voice" placeholder="Voice (e.g. en-US-AvaMultilingualNeural)" />
+      </div>
+    </div>
+    <div class="row" style="margin-top:14px;gap:8px;">
+      <button id="btn-voice-save" class="primary">Save</button>
+      <button id="btn-voice-clear">Clear all keys</button>
+      <button id="btn-voice-cancel">Close</button>
+    </div>
+  </section>
 
   <section class="auth-pane" id="memory-pane" hidden style="margin-top:12px;">
     <h2>Save a memory</h2>
@@ -7048,6 +7130,196 @@ function setPendingLabel(div, label) {
     div.appendChild(el);
   }
   el.textContent = label || "";
+}
+
+// ── Voice I/O (Article XLIII baseline) ─────────────────────────────
+//
+// Web Speech API: native in every modern mobile browser, free, no
+// external service, no auth. STT on the mic button, TTS on assistant
+// replies' |||VOICE||| slot (Article II — already kernel-supported).
+// Settings persist in rapp_settings localStorage (Article XLII).
+//
+// Graceful degrade: when the browser doesn't support SpeechRecognition,
+// the mic button stays disabled with a tooltip explaining; text input
+// remains the working fallback (Article VIII).
+
+let _recognition = null;
+let _isListening = false;
+
+function _supportsSTT() {
+  return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+}
+function _supportsTTS() {
+  return !!(window.speechSynthesis && window.SpeechSynthesisUtterance);
+}
+
+function isVoiceOutOn() {
+  return !!loadSettings().voiceOut;
+}
+
+function setVoiceOut(on) {
+  saveSettings({ voiceOut: !!on });
+  const btn = document.getElementById("btn-voice-out");
+  if (btn) {
+    btn.textContent = on ? "🔊" : "🔇";
+    btn.classList.toggle("on", !!on);
+    btn.title = on ? "Voice replies ON — tap to mute" : "Voice replies OFF — tap to enable";
+  }
+  // Stop any in-progress utterance when turned off
+  if (!on && _supportsTTS()) speechSynthesis.cancel();
+}
+
+function startListening() {
+  if (!_supportsSTT()) {
+    appendMsg("voice input isn't supported in this browser — text input still works", "system");
+    return;
+  }
+  if (_isListening) { stopListening(); return; }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  _recognition = new SR();
+  _recognition.continuous     = false;
+  _recognition.interimResults = true;
+  _recognition.lang           = (loadSettings().voiceLang || navigator.language || "en-US");
+  const input = document.getElementById("chat-input");
+  let final = "";
+  _recognition.onresult = (e) => {
+    let interim = "";
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) final += t;
+      else                       interim += t;
+    }
+    input.value = (final + interim).trim();
+  };
+  _recognition.onerror = (e) => {
+    appendMsg("voice input error: " + (e.error || "unknown"), "system");
+    stopListening();
+  };
+  _recognition.onend = () => {
+    _isListening = false;
+    document.getElementById("btn-mic").classList.remove("listening");
+    // Auto-send: if the operator opted in, send right after STT finalizes
+    if (loadSettings().voiceAutoSend && input.value.trim()) {
+      sendMessage();
+    }
+  };
+  try {
+    _recognition.start();
+    _isListening = true;
+    document.getElementById("btn-mic").classList.add("listening");
+  } catch (e) {
+    appendMsg("couldn't start voice input: " + e.message, "system");
+  }
+}
+
+function stopListening() {
+  if (_recognition) { try { _recognition.stop(); } catch (_) {} }
+  _isListening = false;
+  document.getElementById("btn-mic").classList.remove("listening");
+}
+
+// Parse out the |||VOICE||| slot for spoken delivery. Article II says
+// the slot is a fixed resource; the kernel emits it when the LLM has
+// composed a voice-tailored line distinct from the visible text. When
+// no slot is present, fall back to the full text (cleaned of markdown).
+function _extractVoiceText(replyText) {
+  if (!replyText) return "";
+  const m = replyText.match(/\|\|\|VOICE\|\|\|([\s\S]*?)(?:\|\|\||$)/);
+  if (m && m[1]) return m[1].trim();
+  // Strip simple markdown so TTS doesn't read asterisks aloud
+  return replyText
+    .replace(/\|\|\|TWIN\|\|\|[\s\S]*$/, "")  // drop twin slot if present
+    .replace(/```[\s\S]*?```/g, "")          // drop code blocks
+    .replace(/`([^`]+)`/g, "$1")             // unwrap inline code
+    .replace(/\*\*?([^*]+)\*\*?/g, "$1")     // unwrap bold/italic
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") // unwrap links
+    .replace(/^#+\s*/gm, "")                  // strip heading markers
+    .trim();
+}
+
+async function speakReply(replyText) {
+  if (!isVoiceOutOn()) return;
+  const text = _extractVoiceText(replyText);
+  if (!text) return;
+  const s = loadSettings();
+  // Premium voice (Constitution Article XLIII carve-out): if the
+  // operator has pasted an ElevenLabs or Azure key, route TTS to that
+  // provider for higher-quality voice. Falls back silently to browser-
+  // native if the request fails — voice never breaks.
+  const provider = s.voiceProvider || "browser";
+  if (provider === "elevenlabs" && s.elevenLabsKey && s.elevenLabsVoiceId) {
+    try { return await _speakElevenLabs(text, s); } catch (_) { /* fall through */ }
+  }
+  if (provider === "azure" && s.azureKey && s.azureRegion) {
+    try { return await _speakAzure(text, s); } catch (_) { /* fall through */ }
+  }
+  // Browser-native baseline (always available)
+  if (!_supportsTTS()) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = s.voiceRate || 1.0;
+  u.lang = s.voiceLang || navigator.language || "en-US";
+  if (s.voiceURI) {
+    const v = speechSynthesis.getVoices().find(vv => vv.voiceURI === s.voiceURI);
+    if (v) u.voice = v;
+  }
+  speechSynthesis.speak(u);
+}
+
+// Premium TTS: ElevenLabs. Operator pastes their own API key in
+// settings; the key stays in localStorage on this device. Calls the
+// provider directly; nothing flows through us. (Article XLIII
+// premium-voice exception to Article XLI.)
+async function _speakElevenLabs(text, s) {
+  const voiceId = s.elevenLabsVoiceId || "21m00Tcm4TlvDq8ikWAM";  // Rachel default
+  const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}`, {
+    method: "POST",
+    headers: {
+      "xi-api-key":   s.elevenLabsKey,
+      "Content-Type": "application/json",
+      "Accept":       "audio/mpeg",
+    },
+    body: JSON.stringify({
+      text,
+      model_id: s.elevenLabsModel || "eleven_turbo_v2_5",
+      voice_settings: { stability: 0.5, similarity_boost: 0.75 },
+    }),
+  });
+  if (!r.ok) throw new Error("elevenlabs " + r.status);
+  const blob = await r.blob();
+  await _playAudioBlob(blob);
+}
+
+// Premium TTS: Azure Speech. Operator pastes their key + region.
+async function _speakAzure(text, s) {
+  const region = s.azureRegion;
+  const voice  = s.azureVoice || "en-US-AvaMultilingualNeural";
+  const ssml = `<speak version='1.0' xml:lang='en-US'><voice name='${voice}'>${text.replace(/[<>&]/g, c => ({"<":"&lt;",">":"&gt;","&":"&amp;"}[c]))}</voice></speak>`;
+  const r = await fetch(`https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`, {
+    method: "POST",
+    headers: {
+      "Ocp-Apim-Subscription-Key": s.azureKey,
+      "Content-Type":              "application/ssml+xml",
+      "X-Microsoft-OutputFormat":  "audio-16khz-32kbitrate-mono-mp3",
+      "User-Agent":                "rapp-doorman",
+    },
+    body: ssml,
+  });
+  if (!r.ok) throw new Error("azure " + r.status);
+  const blob = await r.blob();
+  await _playAudioBlob(blob);
+}
+
+// Shared audio playback for premium-TTS responses.
+let _activeAudio = null;
+async function _playAudioBlob(blob) {
+  if (_activeAudio) { try { _activeAudio.pause(); } catch (_) {} }
+  const url = URL.createObjectURL(blob);
+  const audio = new Audio(url);
+  _activeAudio = audio;
+  audio.addEventListener("ended", () => { URL.revokeObjectURL(url); if (_activeAudio === audio) _activeAudio = null; });
+  audio.addEventListener("error", () => { URL.revokeObjectURL(url); if (_activeAudio === audio) _activeAudio = null; });
+  await audio.play().catch(() => { /* user-gesture blocked; degrade silently */ });
 }
 
 async function sendMessage() {
