@@ -237,6 +237,116 @@ if priv:
             "scope_required": "repo (or fine-grained Contents: Read on the private_companion repo)",
         },
     }
+
+# ── Plant-time lineage snapshot (genes + epigenetics) ───────────────
+#
+# When MIRROR_PARENT is set, fetch the parent's CURRENT public signals
+# (memory.json count, fork count, last commit date, agents/) and bake
+# the parent's MMR-at-our-birth into rappid.json. The front door's
+# _parentLineageGift then prefers this snapshot over a live fetch —
+# the child's gift is fixed at birth (true epigenetics).
+#
+# stdlib-only because plant.sh runs in environments without requests/
+# httpx. urllib.request handles the API calls; gracefully no-op on any
+# error so a network blip during planting doesn't break the seed.
+import urllib.request, urllib.error, json as _j, math
+def _fetch_json(url, timeout=8):
+    try:
+        with urllib.request.urlopen(url, timeout=timeout) as r:
+            return _j.loads(r.read().decode("utf-8"))
+    except Exception:
+        return None
+def _fetch_text(url, timeout=8):
+    try:
+        with urllib.request.urlopen(url, timeout=timeout) as r:
+            return r.read().decode("utf-8", errors="replace")
+    except Exception:
+        return None
+
+parent = (os.environ.get("PLANT_PARENT") or "").strip()
+# Match github.com/<owner>/<repo>(.git)?
+import re as _re
+m = _re.search(r"github\.com/([^/]+)/([^/.]+)", parent) if parent else None
+if m:
+    owner, repo = m.group(1), m.group(2)
+    # Pull the parent's signals — same set the front-door MMR formula uses
+    repo_data = _fetch_json(f"https://api.github.com/repos/{owner}/{repo}")
+    commits   = _fetch_json(f"https://api.github.com/repos/{owner}/{repo}/commits?per_page=6")
+    agents    = _fetch_json(f"https://api.github.com/repos/{owner}/{repo}/contents/agents")
+    mem_text  = _fetch_text(f"https://raw.githubusercontent.com/{owner}/{repo}/main/.brainstem_data/memory.json")
+    if repo_data:
+        # Compute parent's MMR using the same formula the front-door
+        # JS computes. Numbers must match — keep these in lock-step.
+        from datetime import datetime, timezone
+        def _iso_to_ts(s):
+            if not s: return None
+            try:
+                return datetime.fromisoformat(s.replace("Z", "+00:00")).timestamp()
+            except Exception:
+                return None
+        created = _iso_to_ts(repo_data.get("created_at"))
+        now = datetime.now(timezone.utc).timestamp()
+        age_days = max(0.0, (now - created) / 86400) if created else 0.0
+        forks = max(0, int(repo_data.get("forks_count") or 0))
+        mut_count = 0
+        last_commit = None
+        if isinstance(commits, list) and commits:
+            mut_count = len(commits)
+            try:
+                last_commit = commits[0]["commit"]["author"]["date"]
+            except Exception:
+                pass
+        mem_count = 0
+        if mem_text:
+            try:
+                mj = _j.loads(mem_text)
+                if isinstance(mj.get("facts"), list):
+                    mem_count = len(mj["facts"])
+            except Exception:
+                pass
+        # Custom-agent count: anything in /agents/ that isn't a known doorman/ascended baseline
+        baseline = {"basic_agent", "manage_memory_agent", "context_memory_agent", "learn_new_agent", "swarm_factory_agent"}
+        custom_agents = 0
+        if isinstance(agents, list):
+            for f in agents:
+                if f.get("type") == "file" and f.get("name", "").endswith(".py"):
+                    stem = f["name"][:-3]
+                    if stem not in baseline:
+                        custom_agents += 1
+        # Activity factor (same step function the front door uses)
+        if last_commit:
+            try:
+                lc_ts = datetime.fromisoformat(last_commit.replace("Z", "+00:00")).timestamp()
+                days_since = (now - lc_ts) / 86400
+                if   days_since <= 30:    af = 1.00
+                elif days_since <= 180:   af = 0.85
+                elif days_since <= 1095:  af = 0.65
+                else:                      af = 0.45
+            except Exception:
+                af = 1.00
+        else:
+            af = 1.00
+        # MMR formula — identical to computeMMR in JS
+        raw = 1000 + mem_count * 30 + math.sqrt(mut_count) * 250 + custom_agents * 350 + math.sqrt(age_days) * 80 + math.sqrt(forks) * 400
+        above = max(0, raw - 1000)
+        parent_mmr = round(1000 + above * af)
+        # Snapshot — child reads this on every render instead of live-fetching.
+        # Parent regression doesn't affect already-planted children (true
+        # epigenetics: your inheritance is fixed at conception).
+        data["lineage_snapshot"] = {
+            "schema":              "rapp-lineage-snapshot/1.0",
+            "snapshotted_at":      os.environ["PLANT_NOW"],
+            "parent_repo":         f"https://github.com/{owner}/{repo}",
+            "parent_repo_label":   f"{owner}/{repo}",
+            "parent_mmr_at_birth": parent_mmr,
+            "parent_age_days":     round(age_days, 1),
+            "parent_mem_count":    mem_count,
+            "parent_mut_count":    mut_count,
+            "parent_fork_count":   forks,
+            "parent_custom_agent_count": custom_agents,
+            "parent_last_commit_at": last_commit,
+            "parent_activity_factor": af,
+        }
 pathlib.Path(os.environ["PLANT_RJ_PATH"]).write_text(json.dumps(data, indent=2) + "\n")
 PYEOF
 }
@@ -830,6 +940,11 @@ write_index_html() {
   .dc-frame-list li.shared {
     color: #6e7681;
   }
+  .dc-frame-list li.contradiction {
+    background: rgba(247,176,32,0.06);
+    border-left: 3px solid #d29922;
+  }
+  .dc-frame-list li.contradiction .dc-frame-msg { color: #f0c674; }
   .dc-frame-icon { width: 18px; flex-shrink: 0; }
   .dc-frame-body { flex: 1; min-width: 0; }
   .dc-frame-pk {
@@ -1397,6 +1512,15 @@ write_index_html() {
       <button class="small primary" id="btn-send" disabled>Send</button>
     </div>
 
+    <!-- One-tap egg send over the open tether channel. The frozen
+         kernel is on both devices already; we just stream the .egg
+         bytes through the DTLS data channel. Receiver auto-prompts
+         to save. Hero-use-case Charizard scenario step 4. -->
+    <div class="input-row" style="margin-top:10px;">
+      <button class="small" id="btn-send-egg" disabled title="Stream this organism's .egg to the paired device — Charizard handoff.">🥚 Send my egg →</button>
+      <span id="tether-egg-status" style="font-size:11px;color:#8b949e;align-self:center;"></span>
+    </div>
+
     <details class="tether-fallback">
       <summary>Can't scan? Pair by ID instead.</summary>
       <div class="fallback-body">
@@ -1558,8 +1682,9 @@ let peer = null;
 let conn = null;
 
 function hideAllPanes() {
-  for (const id of ["pane-tether", "pane-qr", "pane-install"]) {
-    document.getElementById(id).hidden = true;
+  for (const id of ["pane-tether", "pane-install", "pane-verify", "pane-dreamcatcher", "pane-propose"]) {
+    const el = document.getElementById(id);
+    if (el) el.hidden = true;
   }
 }
 
@@ -1570,10 +1695,17 @@ function showPane(id) {
 
 function appendMsg(text, cls) {
   const log = document.getElementById("chat-log");
-  // Clear initial system message on first real message
-  if (log.children.length === 1 && log.firstChild.classList.contains("system") &&
-      log.firstChild.textContent.startsWith("Tether will appear")) {
-    log.innerHTML = "";
+  if (!log) return;
+  // Clear initial placeholder system message on first real message.
+  // Use firstElementChild to skip whitespace text nodes between tags.
+  const first = log.firstElementChild;
+  if (log.children.length === 1 && first && first.classList && first.classList.contains("system")) {
+    const txt = first.textContent || "";
+    if (txt.startsWith("Tether will appear") ||
+        txt.startsWith("Once a device scans") ||
+        txt.startsWith("Once paired")) {
+      log.innerHTML = "";
+    }
   }
   const div = document.createElement("div");
   div.className = "msg " + (cls || "system");
@@ -1626,20 +1758,126 @@ async function ensurePeer() {
   });
 }
 
+// Egg transfer protocol over the DTLS data channel. Wire format:
+//   { type: "egg-begin",  size, sha256, name }
+//   { type: "egg-chunk",  seq, b64 }     ← repeat for each ~16KB chunk
+//   { type: "egg-end" }
+// Receiver verifies sha256 on completion and prompts to save.
+const EGG_CHUNK_BYTES = 16 * 1024;
+let _eggRecv = null;  // assembly buffer on the receive side
+
 function wireConn(c) {
   c.on("open", () => {
     appendMsg("Channel open — DTLS encrypted, peer-to-peer.", "system");
     document.getElementById("chat-input").disabled = false;
     document.getElementById("btn-send").disabled = false;
+    const eggBtn = document.getElementById("btn-send-egg");
+    if (eggBtn) eggBtn.disabled = false;
   });
-  c.on("data", data => {
+  c.on("data", async data => {
+    // Try to detect egg-protocol messages first; fall through to chat.
+    let parsed = null;
+    if (typeof data === "string") {
+      try { parsed = JSON.parse(data); } catch (_) {}
+    }
+    if (parsed && parsed.type && parsed.type.startsWith("egg-")) {
+      await _handleEggMessage(parsed);
+      return;
+    }
     appendMsg(typeof data === "string" ? data : JSON.stringify(data), "peer");
   });
   c.on("close", () => {
     appendMsg("Peer disconnected.", "system");
     document.getElementById("chat-input").disabled = true;
     document.getElementById("btn-send").disabled = true;
+    const eggBtn = document.getElementById("btn-send-egg");
+    if (eggBtn) eggBtn.disabled = true;
   });
+}
+
+async function _handleEggMessage(msg) {
+  if (msg.type === "egg-begin") {
+    _eggRecv = { size: msg.size, sha256: msg.sha256, name: msg.name || "received.egg", chunks: [], received: 0 };
+    appendMsg(`📦 receiving ${msg.name || "egg"} (${Math.round(msg.size / 1024)} KB)…`, "system");
+    return;
+  }
+  if (msg.type === "egg-chunk" && _eggRecv) {
+    // Decode base64 chunk
+    const bin = atob(msg.b64);
+    const buf = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+    _eggRecv.chunks.push(buf);
+    _eggRecv.received += buf.length;
+    return;
+  }
+  if (msg.type === "egg-end" && _eggRecv) {
+    // Concatenate chunks → verify sha256 → trigger download
+    const total = new Uint8Array(_eggRecv.size);
+    let off = 0;
+    for (const c of _eggRecv.chunks) { total.set(c, off); off += c.length; }
+    const hash = await crypto.subtle.digest("SHA-256", total);
+    const hex = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, "0")).join("");
+    if (hex !== _eggRecv.sha256) {
+      appendMsg(`✗ received egg failed integrity check (sha256 mismatch).`, "system");
+      _eggRecv = null;
+      return;
+    }
+    const blob = new Blob([total], { type: "application/zip" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = _eggRecv.name;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
+    appendMsg(`✓ received ${_eggRecv.name} — sha256 verified, file saved.`, "system");
+    _eggRecv = null;
+    return;
+  }
+}
+
+// Stream THIS organism's doorman-tier egg through the given channel.
+// Chunks are base64 over the existing JSON-string send path so we
+// reuse the chat-message wire (PeerJS DataChannel handles binary too,
+// but b64-over-JSON keeps the wire format simple + portable).
+//
+// Takes an explicit channel object so tests can drive it without going
+// through the live PeerJS broker. The button-bound entrypoint
+// `sendEggToPeer()` reads the module's `conn` and forwards.
+async function _streamEggThroughChannel(chan) {
+  const status = document.getElementById("tether-egg-status");
+  if (status) status.textContent = "packing egg…";
+  try {
+    const blob = await buildDoormanEgg();
+    const buf  = new Uint8Array(await blob.arrayBuffer());
+    const sha256 = await sha256Hex(buf);
+    const name = ((window.__seedDisplayName || "rapp").toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-doorman.egg");
+    chan.send(JSON.stringify({ type: "egg-begin", size: buf.length, sha256, name }));
+    let sent = 0;
+    for (let off = 0; off < buf.length; off += EGG_CHUNK_BYTES) {
+      const slice = buf.subarray(off, off + EGG_CHUNK_BYTES);
+      let bin = "";
+      for (let i = 0; i < slice.length; i++) bin += String.fromCharCode(slice[i]);
+      const b64 = btoa(bin);
+      chan.send(JSON.stringify({ type: "egg-chunk", seq: Math.floor(off / EGG_CHUNK_BYTES), b64 }));
+      sent += slice.length;
+      if (status) status.textContent = `sending ${Math.round(sent / 1024)} / ${Math.round(buf.length / 1024)} KB…`;
+      await new Promise(r => setTimeout(r, 0));
+    }
+    chan.send(JSON.stringify({ type: "egg-end" }));
+    if (status) status.textContent = `✓ sent ${Math.round(buf.length / 1024)} KB`;
+    appendMsg(`✓ sent ${name} (${Math.round(buf.length / 1024)} KB) — receiver should be saving now.`, "system");
+    setTimeout(() => { if (status) status.textContent = ""; }, 4000);
+  } catch (e) {
+    if (status) status.textContent = "✗ " + (e.message || "send failed").slice(0, 50);
+    appendMsg("✗ egg send failed: " + e.message, "system");
+    throw e;
+  }
+}
+async function sendEggToPeer() {
+  if (!conn || !conn.open) {
+    appendMsg("✗ no peer channel open — pair first.", "system");
+    return;
+  }
+  return _streamEggThroughChannel(conn);
 }
 
 async function openTether() {
@@ -2457,6 +2695,7 @@ async function _dcHandleSlot(file, slot) {
 
 function _dcRenderDiff() {
   const wrap = document.getElementById("dc-results");
+  if (!wrap) return;  // pane not in DOM yet
   wrap.hidden = false;
   if (!_dcCanonical || !_dcParallel) return;
 
@@ -2470,33 +2709,72 @@ function _dcRenderDiff() {
     lineageWarn = `<div class="verify-summary tampered">⚠ different rappids: <code>${escapeHtml(cRap.slice(0,8))}</code> vs <code>${escapeHtml(pRap.slice(0,8))}</code>. These are different organisms — reassimilation crossing species lines isn't supported.</div>`;
   }
 
-  // Frame-set diff. Hash is the identity — if a frame's hash exists
-  // in canonical, it's already-known to the lineage. Otherwise it's
-  // a parallel-only frame and a candidate for reassimilation.
-  const canonHashes = new Set(c.frames.map(f => f.hash).filter(Boolean));
-  const sharedFrames = p.frames.filter(f => canonHashes.has(f.hash));
-  const newFrames    = p.frames.filter(f => !canonHashes.has(f.hash));
+  // ── Dream Catcher merge doctrine ─────────────────────────────────
+  //
+  // From the Gareth conversation:
+  //   "Whatever frame hit the UTC one first, that's canon, and then
+  //    anything that doesn't contradict that, I'm going to layer on
+  //    that... There are contradictions, so that doesn't get synced.
+  //    It gets put into a different dimension of that aspect of that
+  //    life, so you don't lose that data."
+  //
+  // Three categories per frame:
+  //   ✓ shared      — same hash exists in canonical; already canon
+  //   🌱 new        — hash absent from canonical AND no PK collision;
+  //                   safe to reassimilate (layer on)
+  //   ⚡ contradiction — hash absent from canonical BUT same PK
+  //                   (utc + frame_n) collides with a canon frame.
+  //                   Saved as alternate-dimension data — visible in
+  //                   the diff so the operator can decide.
 
-  // Sort all parallel frames by UTC for the timeline view
+  const canonHashes = new Set(c.frames.map(f => f.hash).filter(Boolean));
+  // PK index: same-stream frames keyed by frame_n; cross-stream by utc
+  const canonByPK = new Map();
+  for (const f of c.frames) {
+    canonByPK.set(`${f.stream_id || ""}|${f.frame_n}`, f);
+    canonByPK.set(`utc:${f.utc}`, f);
+  }
+  const shared = [], newFrames = [], contradictions = [];
+  for (const f of p.frames) {
+    if (canonHashes.has(f.hash)) { shared.push(f); continue; }
+    const sameStream = canonByPK.get(`${f.stream_id || ""}|${f.frame_n}`);
+    const sameUtc    = canonByPK.get(`utc:${f.utc}`);
+    if ((sameStream && sameStream.hash !== f.hash) ||
+        (sameUtc && sameUtc.hash !== f.hash)) {
+      contradictions.push({ frame: f, conflicts_with: sameStream || sameUtc });
+    } else {
+      newFrames.push(f);
+    }
+  }
+
+  // Sort all parallel frames by UTC for the timeline view (UTC-first
+  // ordering is the canon resolution rule — earlier UTC wins).
   const ordered = p.frames.slice().sort((a, b) => (a.utc || "").localeCompare(b.utc || ""));
+  const contradictionHashes = new Set(contradictions.map(x => x.frame.hash));
 
   let summaryClass, summaryText;
-  if (newFrames.length === 0) {
+  if (newFrames.length === 0 && contradictions.length === 0) {
     summaryClass = "ok";
-    summaryText = `✓ parallel dimension is fully reflected in canonical — ${sharedFrames.length} frame${sharedFrames.length === 1 ? "" : "s"} match. Nothing to reassimilate.`;
+    summaryText = `✓ parallel dimension is fully reflected in canonical — ${shared.length} frame${shared.length === 1 ? "" : "s"} match. Nothing to reassimilate.`;
+  } else if (contradictions.length > 0) {
+    summaryClass = "partial";
+    summaryText = `🕸️ ${newFrames.length} layer-on frame${newFrames.length === 1 ? "" : "s"} + ${contradictions.length} contradiction${contradictions.length === 1 ? "" : "s"}. Layer-on frames are safe to reassimilate (UTC-first canon already holds). Contradictions occupy the same PK as a canonical frame — they're saved as alternate-dimension data; the operator decides whether to fold them in.`;
   } else {
     summaryClass = "partial";
-    summaryText = `🕸️ ${newFrames.length} parallel-only frame${newFrames.length === 1 ? "" : "s"} found, not yet in canonical. Review each below; reassimilation happens by replaying the frame as a commit on the seed repo (a PR per frame, or batch a single PR with all of them).`;
+    summaryText = `🕸️ ${newFrames.length} parallel-only frame${newFrames.length === 1 ? "" : "s"} ready to layer on (UTC-first canon resolved). No contradictions — reassimilation is clean.`;
   }
 
   const rows = ordered.map(f => {
-    const isNew = !canonHashes.has(f.hash);
+    let cls, icon;
+    if (canonHashes.has(f.hash))               { cls = "shared";        icon = "·";  }
+    else if (contradictionHashes.has(f.hash))  { cls = "contradiction"; icon = "⚡"; }
+    else                                        { cls = "new";           icon = "🌱"; }
     const utcShort = (f.utc || "").slice(0, 19).replace("T", " ");
     const msg = f.kind === "commit"
       ? (f.payload && f.payload.message || "(no message)")
       : `${f.kind}: ${JSON.stringify(f.payload).slice(0, 80)}`;
-    return `<li class="${isNew ? "new" : "shared"}">
-      <span class="dc-frame-icon">${isNew ? "🌱" : "·"}</span>
+    return `<li class="${cls}">
+      <span class="dc-frame-icon">${icon}</span>
       <div class="dc-frame-body">
         <div class="dc-frame-pk">${escapeHtml(utcShort)} · frame_n=${f.frame_n} · <code>${escapeHtml((f.hash || "").slice(0,10))}…</code></div>
         <div class="dc-frame-msg">${escapeHtml(msg)}</div>
@@ -2782,6 +3060,7 @@ async function deepVerifyAgainstOrigin(out) {
 async function _handleVerifyFile(file) {
   if (!file) return;
   const wrap = document.getElementById("verify-results");
+  if (!wrap) return;  // pane not in DOM
   wrap.hidden = false;
   wrap.innerHTML = `<div class="verify-summary partial">verifying ${escapeHtml(file.name)}…</div>`;
   try {
@@ -2941,6 +3220,7 @@ document.addEventListener("keydown", (e) => {
 });
 document.getElementById("btn-connect").onclick = connectToPeer;
 document.getElementById("btn-send").onclick = sendMessage;
+document.getElementById("btn-send-egg").onclick = sendEggToPeer;
 document.getElementById("btn-copy-id").onclick = () => {
   copy(document.getElementById("my-id-text").textContent);
 };
@@ -3359,6 +3639,24 @@ function computeMMR({ memCount, mutCount, customAgents, ageDays, forkCount, acti
 // set or isn't a github.com URL.
 async function _parentLineageGift(rappidObj) {
   if (!rappidObj || !rappidObj.parent_repo) return null;
+  // Plant-time snapshot wins if it was baked into rappid.json at plant.
+  // This is the genes/epigenetics layer: the parent's MMR-at-our-birth
+  // is fixed; later regression on the parent doesn't affect children
+  // already planted from it. Same shape the live fetcher returns so
+  // the rest of the pipeline doesn't branch.
+  if (rappidObj.lineage_snapshot && typeof rappidObj.lineage_snapshot.parent_mmr_at_birth === "number") {
+    const snap = rappidObj.lineage_snapshot;
+    const gift = Math.round(Math.max(0, (snap.parent_mmr_at_birth - 1000) * 0.30));
+    return {
+      parentMMR:        snap.parent_mmr_at_birth,
+      gift:             gift,
+      parentRepoLabel:  snap.parent_repo_label || (snap.parent_repo || "").replace(/^https?:\/\/github\.com\//, "").replace(/\.git$/, ""),
+      source:           "snapshot",
+      snapshotted_at:   snap.snapshotted_at,
+    };
+  }
+  // No snapshot → live fetch (the path we used before; kept for older
+  // seeds planted before this commit).
   const m = rappidObj.parent_repo.match(/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?\/?$/);
   if (!m) return null;
   const [, owner, repo] = m;
@@ -3400,7 +3698,7 @@ async function _parentLineageGift(rappidObj) {
   });
   // Child inherits 30% of parent's above-baseline as the lineage gift.
   const gift = Math.round(Math.max(0, (parentMMR - 1000) * 0.30));
-  return { parentMMR, gift, parentRepoLabel: owner + "/" + repo };
+  return { parentMMR, gift, parentRepoLabel: owner + "/" + repo, source: "live" };
 }
 
 // Calibration check — has the organism graduated from placement?
@@ -4014,6 +4312,65 @@ let viewerLogin = null;        // authenticated visitor's GitHub @login — natu
 let privateLayerCoords = null; // resolved {owner,repo} for the "private" layer — explicit private_companion if set, else the seed repo itself when the authed visitor has push access (operator fallback)
 let isOperator = false;        // authed visitor has push access to the seed repo (= seed owner). Operator fallback grants ascended-tier tools without needing a separate private companion.
 let memory = { schema: "rapp-memory/1.0", facts: [], preserved_by: "", preserved_at: "" };
+
+// ── Local frame log (offline mutation tracking) ────────────────────
+//
+// Every meaningful event in this doorman session writes a content-
+// addressed frame to localStorage. The Dream Catcher reads these
+// when an ascended egg is exported, so a parallel hatched dimension's
+// offline mutations can be reassimilated back into the canonical
+// lineage via PR. ANTIPATTERN GUARD: each entry references an
+// "agent" — never "skill"/"plugin"/etc.
+//
+// Stream id is per-(rappid, device) — same device hatching the same
+// organism keeps appending to one stream. Different device = different
+// stream = parallel dimension by definition.
+
+const _FRAME_KEY = "rapp_frames_v1";
+
+function _instanceId() {
+  // Stable per-device random id. localStorage scopes per-origin so
+  // each planted seed gets its own stream id naturally.
+  let id = localStorage.getItem("rapp_instance_id");
+  if (!id) {
+    id = (crypto.randomUUID && crypto.randomUUID().slice(0, 8))
+       || (Math.random().toString(36).slice(2, 10));
+    localStorage.setItem("rapp_instance_id", id);
+  }
+  return id;
+}
+
+function _loadFrames() {
+  try {
+    const raw = localStorage.getItem(_FRAME_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (_) {}
+  return { schema: "rapp-frame/1.0", stream_id: null, frames: [] };
+}
+
+function _saveFrames(log) {
+  try { localStorage.setItem(_FRAME_KEY, JSON.stringify(log)); } catch (_) {}
+}
+
+async function appendFrame(kind, payload) {
+  // Loads, appends, saves. Each frame's hash chains to the previous.
+  // If we don't have an identity yet (loadIdentity hasn't run) the
+  // call is buffered into the log with a placeholder stream_id which
+  // gets back-filled on the next call.
+  const log = _loadFrames();
+  if (!log.stream_id && identity && identity.rappid) {
+    log.stream_id = identity.rappid.slice(0, 8) + ":" + _instanceId();
+  }
+  const prev = log.frames.length ? log.frames[log.frames.length - 1].hash : "";
+  const utc = new Date().toISOString();
+  const frame_n = log.frames.length;
+  const body = (prev || "") + "|" + utc + "|" + frame_n + "|" + kind + "|" + JSON.stringify(payload || {});
+  // SHA-256 via SubtleCrypto — same primitive the egg verifier uses.
+  const hashBytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(body));
+  const hash = Array.from(new Uint8Array(hashBytes)).map(b => b.toString(16).padStart(2, "0")).join("");
+  log.frames.push({ stream_id: log.stream_id, frame_n, utc, kind, payload: payload || {}, prev_hash: prev, hash });
+  _saveFrames(log);
+}
 let memorySha = null;  // GitHub blob sha for the current memory.json (needed for PUT)
 let history = [];
 
@@ -4645,6 +5002,16 @@ async function saveUserPrivateMemory(fact) {
   const issue = await r.json();
   memory.facts.push(`[@${viewerLogin}] ` + trimmed);
   userPrivateFactsCount++;
+  // Frame log: per-user memory write is a high-signal mutation —
+  // it persists to GitHub so it's already canonical, but we log it
+  // locally too so the Dream Catcher can correlate with conversation
+  // turns from the same session.
+  appendFrame("memory_added", {
+    scope: "private",
+    by: "@" + viewerLogin,
+    issue_number: issue.number,
+    body_len: trimmed.length,
+  }).catch(() => {});
   return { ok: true, url: issue.html_url, number: issue.number };
 }
 
@@ -4813,6 +5180,17 @@ async function buildAscendedEgg() {
       }
     }
   } catch (_) { /* if issues read fails, the egg still ships without user_memories */ }
+
+  // 6. data/frames.json — the local frame log accumulated by THIS
+  //    hatched dimension. Each meaningful event (chat turn, tool call,
+  //    memory write) is a content-addressed frame with sha256 chain.
+  //    The Dream Catcher reads this when reassimilating parallel
+  //    dimensions back into the canonical lineage.
+  const frameLog = _loadFrames();
+  if (frameLog && Array.isArray(frameLog.frames) && frameLog.frames.length) {
+    const blob = JSON.stringify(frameLog, null, 2);
+    await _doormanAddFile(zip, "data/frames.json", blob, hashes);
+  }
 
   // Provenance — non-GMO integrity. Same scheme as the doorman egg.
   const manifestHash = await _doormanSha256Hex(_doormanCanonicalHashTable(hashes));
@@ -5562,6 +5940,9 @@ async function sendMessage() {
   input.style.height = "auto";
   renderMsg("user", userMsg);
   history.push({ role: "user", content: userMsg });
+  // Frame log: record the conversation turn so the Dream Catcher can
+  // see this dimension's chat history when this egg is reassimilated.
+  appendFrame("conversation", { role: "user", content_len: userMsg.length }).catch(() => {});
 
   const pending = renderPending();
   const sendBtn = document.getElementById("btn-send");
@@ -5653,6 +6034,13 @@ async function sendMessage() {
           if (tc.function.name === "ManageMemory" && result.startsWith("saved")) {
             renderMsg("system", "memory saved");
           }
+          // Frame log: each tool call is a mutation event. payload is
+          // small (just the tool name + args summary) — full conversation
+          // history isn't logged for privacy.
+          appendFrame("tool_call", {
+            tool: tc.function.name,
+            args_keys: Object.keys((function(){ try { return JSON.parse(tc.function.arguments || "{}"); } catch(_) { return {}; } })()),
+          }).catch(() => {});
         }
         // Tools done → back to thinking while the LLM composes the reply.
         setPendingLabel(pending, "");

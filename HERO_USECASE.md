@@ -19,11 +19,11 @@ This document defines the hero scenarios the RAPP platform must satisfy. Every a
 | Both phones reach a chat surface offline         | Doorman page is fully static + Pyodide + cached     | ✅     |
 | Pair-by-QR (no copy-paste IDs)                   | `📱 Pair with another device` → autoRenderTetherQR  | ✅     |
 | Cross-device WebRTC channel (DTLS encrypted)     | PeerJS (broker only for handshake)                  | ✅     |
-| Agent transfers device-to-device                 | `🥚 Export .egg` + tether channel send              | ⚠ partial — egg export works, sending over tether is manual paste |
+| Agent transfers device-to-device                 | `🥚 Send my egg →` button on tether pane streams chunked egg over the open WebRTC channel; receiver auto-saves after sha256 verify | ✅ ([test](../tests/doorman/tether-egg.mjs)) |
 | Receiver runs agent locally                      | Pyodide loads agent .py from local filesystem       | ✅     |
 | Graceful degrade when no network                 | `cachedGhJson` returns last-cached state            | ✅     |
 | Local model fallback                             | Doorman config supports custom Copilot endpoint     | ⚠ partial — works for self-hosted endpoint, no offline LLM yet |
-| Mutations stay local until bonded back           | `state_at_seal` snapshots; PRs are explicit consent  | ✅     |
+| Mutations stay local until bonded back           | `state_at_seal` + `data/frames.json` in egg; PRs are explicit consent | ✅     |
 
 **Acceptance criteria.** Two devices, both in airplane mode, can:
 1. Open their front doors and chat with each other through the tether QR (no internet, no broker once the channel is open)
@@ -49,8 +49,9 @@ This document defines the hero scenarios the RAPP platform must satisfy. Every a
 | PK = (utc, frame_n)                               | both fields in every frame                              | ✅     |
 | Eggs carry their frame log                        | `data/frames.json` in egg, fallback to `state_at_seal.recent_mutations` synthesized from Git history | ✅     |
 | Diff two parallel dimensions visually             | `🕸️ Dream Catcher` pane — drop both eggs, see diff      | ✅     |
-| UTC-first canon resolution                        | sort by UTC ascending; first occurrence wins             | ⚠ partial — current diff is set-based (by hash); UTC-first ordering is shown but conflicts aren't yet flagged-as-contradiction |
-| Contradictions saved as alternate dimensions      | preserve same-PK-different-content frames separately     | ❌ not yet — needs a contradictions store |
+| UTC-first canon resolution                        | timeline sorted by UTC ascending; same-hash frames classified `shared`; same-PK-different-hash classified `contradiction` | ✅ ([test](../tests/doorman/dreamcatcher.mjs)) |
+| Contradictions saved as alternate dimensions      | parallel-only frames with PK collision rendered as ⚡ contradiction (alternate-dimension data); not auto-merged | ✅ ([test](../tests/doorman/dreamcatcher.mjs)) |
+| Doorman writes a frame log offline                | `appendFrame()` on chat turn / tool call / memory save → localStorage `rapp_frames_v1`; ascended egg packs `data/frames.json` | ✅     |
 | Reassimilation via PR                             | "Open reassimilation issue on GitHub →" pre-fills issue | ✅     |
 | Cross-species check (same rappid required)        | lineage warning fires when rappids differ               | ✅     |
 
@@ -104,6 +105,48 @@ This document defines the hero scenarios the RAPP platform must satisfy. Every a
 - **Sync-back on reconnect** — the Dream Catcher already handles reassimilation of frames; proximity-acquired frames are just another stream
 
 **Acceptance criteria** (when implemented): a user who plants a `place` seed for the local pizza place sees, when revisiting that pizza place from another organism's front door, the public facets the operator has chosen to expose (e.g. "best times to come", aggregated visitor reactions).
+
+---
+
+## 5. MMR & Lineage (the cohort layer)
+
+**The story.** Every planted organism gets a single global MMR rating (Dota-style, formula identical across the species). Children inherit a fixed snapshot of the parent's MMR-at-our-birth as a lineage gift — true epigenetics: parent regression after the child is planted doesn't reduce the child's inherited cred.
+
+**What must work:**
+
+| Requirement                                       | Implementation                                          | Status |
+|---                                                |---                                                      |---     |
+| Single global MMR formula                         | `computeMMR()` in front-door — same code on every seed  | ✅     |
+| Calibration phase                                 | first 5 mutations OR 7 days → `📐 Calibrating · X%`     | ✅     |
+| Activity decay                                     | last-commit recency scales above-baseline (1.0 → 0.45)  | ✅     |
+| Plant-time lineage snapshot                       | `lineage_snapshot` block in rappid.json captures parent's MMR-at-our-birth at plant time | ✅ ([test](../tests/doorman/lineage-snapshot.mjs)) |
+| Child reads snapshot first, falls back to live    | `_parentLineageGift` prefers `rappid.lineage_snapshot.parent_mmr_at_birth`; live fetch on older seeds | ✅     |
+| Offspring boost                                   | `forks_count` adds `sqrt(forks) * 400` to MMR           | ✅     |
+
+**Acceptance criteria.** Plant a child seed with `MIRROR_PARENT=https://github.com/<owner>/<parent-repo>`:
+1. The child's `rappid.json` contains a `lineage_snapshot` block with `parent_mmr_at_birth`
+2. The child's front-door resume shows the lineage gift derived from the snapshot, not a live fetch
+3. Subsequent regression on the parent's MMR doesn't reduce the child's gift
+
+---
+
+## Test Commands
+
+```bash
+# Plant tests (syntax + file layout)
+bash installer/test_plant.sh
+
+# Frame log + Dream Catcher (Hero §2)
+node tests/doorman/dreamcatcher.mjs
+
+# Tether egg send protocol (Hero §1)
+node tests/doorman/tether-egg.mjs
+
+# Plant-time lineage snapshot (Hero §5)
+node tests/doorman/lineage-snapshot.mjs
+```
+
+All four must be green before merging changes that touch the surfaces named in the rows above.
 
 ---
 

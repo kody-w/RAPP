@@ -36,6 +36,30 @@
 
 import { chromium } from "playwright";
 import { execSync } from "node:child_process";
+import { readFileSync, existsSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
+
+// Find a ghu_* Copilot OAuth token from the canonical local-brainstem
+// install. Tries the standard locations a `bash installer/install.sh`
+// run leaves behind. Returns null if nothing's authed yet.
+function findLocalCopilotToken() {
+  const candidates = [
+    join(homedir(), ".brainstem/src/rapp_brainstem/.copilot_token"),
+    join(homedir(), ".brainstem/.copilot_token"),
+    "/Users/kodywildfeuer/RAPP/rapp_brainstem/.copilot_token",
+  ];
+  for (const p of candidates) {
+    if (!existsSync(p)) continue;
+    try {
+      const raw = readFileSync(p, "utf8").trim();
+      if (raw.startsWith("ghu_") || raw.startsWith("gho_")) return raw;
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed.access_token === "string") return parsed.access_token;
+    } catch (_) { /* try next */ }
+  }
+  return null;
+}
 
 function arg(name) {
   const flag = "--" + name;
@@ -60,11 +84,20 @@ if (!url) {
 
 let token = arg("token");
 if (token === "auto" || token === true) {
-  try {
-    token = execSync("gh auth token", { encoding: "utf8" }).trim() || null;
-  } catch {
-    console.error("[chat.js] gh auth token failed; running anonymous");
-    token = null;
+  // Prefer the canonical brainstem's ghu_* token (works with the Copilot
+  // exchange + chat endpoint). Fall back to gh CLI as a last resort, but
+  // note that gh's gho_* token won't pass the Copilot exchange.
+  token = findLocalCopilotToken();
+  if (!token) {
+    try {
+      token = execSync("gh auth token", { encoding: "utf8" }).trim() || null;
+      console.error("[chat.js] using gh CLI token (gho_*) — Copilot exchange may fail; run brainstem.py once to mint a ghu_*");
+    } catch {
+      console.error("[chat.js] no ghu_* token found and gh CLI unavailable; running anonymous");
+      token = null;
+    }
+  } else {
+    console.error("[chat.js] using ghu_* from local brainstem .copilot_token");
   }
 }
 
@@ -85,6 +118,11 @@ if (verbose) {
   page.on("console", m => console.error("[browser]", m.type(), m.text()));
   page.on("pageerror", e => console.error("[pageerror]", e.message));
   page.on("requestfailed", r => console.error("[request-failed]", r.url(), r.failure()?.errorText));
+  page.on("response", r => {
+    if (r.status() >= 400 && r.url().match(/api\.|raw\.|rapp-auth|github/)) {
+      console.error("[http-error]", r.status(), r.url());
+    }
+  });
 }
 
 // Pre-seed token in localStorage so the doorman skips the auth pane and
