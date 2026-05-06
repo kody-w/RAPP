@@ -152,9 +152,14 @@ Azure OpenAI (Tier 2): `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_O
 
 The platform's install path is one curl pipe: `curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash`. GitHub Pages serves the repo verbatim; `raw.githubusercontent.com` is the implicit content channel for everything the install script fetches afterward. The install one-liner's URL shape is sacred (Constitution Article V) — when relocating files, prefer keeping the URL stable over a marginally cleaner layout.
 
-## Hero use case (`HERO_USECASE.md`)
+## Hero use case + ecosystem layout (READ FIRST)
 
-Before changing anything in the front door, doorman, egg export/import, or pairing flow: read [`HERO_USECASE.md`](./HERO_USECASE.md). It defines the canonical scenarios this platform must satisfy — Charizard-in-the-woods (offline-share over QR pair), Dream Catcher (parallel-dimension reassimilation), Mom's Mixtape (accessibility floor), Pizza Place (future location-aware layer). Every architectural decision is judged against whether these stories still work. PRs that would degrade a `✅` row must explain why.
+Two checked-in specs are the contract for this codebase. Read both before proposing structural changes:
+
+- [`HERO_USECASE.md`](./HERO_USECASE.md) — *what* this platform must do. Canonical scenarios this codebase must satisfy: Charizard-in-the-woods (offline-share over QR pair), Dream Catcher (parallel-dimension reassimilation), Mom's Mixtape (accessibility floor), Pizza Place (future location-aware layer). Every architectural decision is judged against whether these stories still work.
+- [`ECOSYSTEM.md`](./ECOSYSTEM.md) — *how* the pieces fit together. End-to-end layout of a planted organism: file structure, identity stack, the two surfaces, memory tiers, MMR system, evolution path, egg cartridges, integrity stack, Dream Catcher, network modes, external integrations, surface inventory, schema reference. The architecture-level companion to `HERO_USECASE.md`.
+
+PRs that would degrade a ✅ row in `HERO_USECASE.md` must explain why. PRs that change schemas in `ECOSYSTEM.md` §3 must update the version string and document the migration.
 
 ## Background context (the vault)
 
