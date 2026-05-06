@@ -92,9 +92,11 @@ if (verbose) {
 if (token) {
   await ctx.addInitScript((t) => {
     try {
+      // Same shape as rapp_brainstem/utils/web — ghuToken is the long-lived
+      // GitHub OAuth token from the device-code flow. The doorman exchanges
+      // it for a short-lived Copilot session token on the first chat turn.
       localStorage.setItem("rapp_settings", JSON.stringify({
-        ghToken: t,
-        provider: "github",
+        ghuToken: t,
       }));
     } catch (_) { /* ignore */ }
   }, token);
@@ -104,29 +106,19 @@ console.error("[chat.js] →", url, token ? "(authed)" : "(anonymous)");
 
 await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
 
-// Wait for either the auth-pane (anon) or the chat input (signed in)
-await page.waitForFunction(() =>
-  (document.querySelector("#auth-pane") && !document.querySelector("#auth-pane").hidden) ||
-  document.querySelector("#chat-input"),
-  null,
-  { timeout: 20000 }
-);
-
-// If signed in, wait for the chat input to be present (enterChat ran)
-const authPaneVisible = await page.locator("#auth-pane").isVisible();
-if (!authPaneVisible && !token) {
-  // Anonymous + no auth pane visible → chat is open. Anonymous chat is
-  // possible if the doorman accepts it; on this template it won't,
-  // since we gate chat behind sign-in. Print state.
-}
-
-if (token) {
-  // Wait for chat input to be enabled (means enterChat completed)
-  try {
-    await page.waitForSelector("#chat-input:not([disabled])", { timeout: 30000 });
-  } catch {
-    console.error("[chat.js] chat input never enabled — token may not have GitHub Models access");
-  }
+// Wait until enterChat() (or the auth pane render) has finished. We
+// detect "ready to interact" via the welcome system message dropping
+// in (signed-in case) OR the auth pane being visible (anonymous case).
+try {
+  await page.waitForFunction(() => {
+    const sys = document.querySelector(".msg.system");
+    if (sys && sys.textContent && sys.textContent.trim()) return true;
+    const auth = document.querySelector("#auth-pane");
+    if (auth && !auth.hidden) return true;
+    return false;
+  }, null, { timeout: 25000 });
+} catch {
+  console.error("[chat.js] doorman didn't finish rendering within 25s");
 }
 
 // Read the badge + welcome lines

@@ -84,8 +84,10 @@ for (const s of fleet) {
   if (token && !anonOnly) {
     await ctx.addInitScript((t) => {
       try {
+        // ghuToken = the long-lived GitHub OAuth token from device-code flow.
+        // Doorman exchanges it for a short-lived Copilot session on first chat.
         localStorage.setItem("rapp_settings", JSON.stringify({
-          ghToken: t, provider: "github",
+          ghuToken: t,
         }));
       } catch (_) {}
     }, token);
@@ -95,18 +97,33 @@ for (const s of fleet) {
   let detail = "";
   try {
     await page.goto(s.url, { waitUntil: "domcontentloaded", timeout: 25000 });
-    await page.waitForSelector("#chat-input, #pat-input", { timeout: 20000 });
+    // Wait for first system welcome msg (signed-in) or auth pane (anon)
+    await page.waitForFunction(() => {
+      const sys = document.querySelector(".msg.system");
+      if (sys && sys.textContent && sys.textContent.trim()) return true;
+      const auth = document.querySelector("#auth-pane");
+      if (auth && !auth.hidden) return true;
+      return false;
+    }, null, { timeout: 25000 });
 
-    if (token && !anonOnly) {
-      await page.waitForSelector("#chat-input:not([disabled])", { timeout: 30000 });
+    // Welcome / persona check — scan ALL system messages (the Pyodide
+    // loader chats "loading agents…" BEFORE the persona welcome lands;
+    // we want to find any message that contains an expected substring)
+    let welcomeOK = false;
+    let welcome = "";
+    const deadline = Date.now() + 30000;
+    while (Date.now() < deadline && !welcomeOK) {
+      const all = await page.locator(".msg.system").allTextContents();
+      welcome = all.join(" │ ");
+      welcomeOK = s.expect_in_welcome.some(w =>
+        all.some(m => m.includes(w))
+      );
+      if (welcomeOK) break;
+      await page.waitForTimeout(500);
     }
-
-    // Welcome / persona check
-    const welcome = (await page.locator(".msg.system").first().textContent().catch(() => "")) || "";
-    const welcomeOK = s.expect_in_welcome.some(w => welcome.includes(w));
     if (!welcomeOK) {
       ok = false;
-      detail = `welcome missing any of [${s.expect_in_welcome.join(",")}] — got: ${welcome.slice(0, 100)}`;
+      detail = `welcome missing any of [${s.expect_in_welcome.join(",")}] — got: ${welcome.slice(0, 200)}`;
     }
 
     // Message turn (only if authed)
