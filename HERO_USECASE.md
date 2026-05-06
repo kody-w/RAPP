@@ -1,0 +1,120 @@
+# Hero Use Case — Shareable Digital Organisms
+
+> *"Picture you have two phones and through a QR code where it's on your device because it's all local first... so if you have the Internet, if you have a local model, it will run just the same. It won't be as good. So it's like degrading... It's not like a constant cutoff. It's like, 'Hey, I lost access to the best model, but I'm still here for you where I can.'"*
+>
+> — Kody → Gareth, on the canonical scenario this platform must satisfy
+
+This document defines the hero scenarios the RAPP platform must satisfy. Every architectural decision is judged against whether it makes these stories work. They are checked-in here so the bar doesn't drift.
+
+---
+
+## 1. Charizard in the Woods (the offline-share canon)
+
+**The story.** Two friends are in the woods. No internet. Each has a phone. One of them has a useful agent — call it Charizard — and the other one needs it. They open their RAPP front doors on their phones, scan each other's pairing QR codes (Game-Boy-linked-cable style), and the agent transfers device-to-device over WebRTC. The receiver runs the agent locally on their device with whatever local model they have. Both organisms accumulate their own offline experiences. When the network returns, useful mutations rejoin the canonical lineage via PR.
+
+**What must work, end-to-end:**
+
+| Requirement                                      | Implementation                                      | Status |
+|---                                               |---                                                  |---     |
+| Both phones reach a chat surface offline         | Doorman page is fully static + Pyodide + cached     | ✅     |
+| Pair-by-QR (no copy-paste IDs)                   | `📱 Pair with another device` → autoRenderTetherQR  | ✅     |
+| Cross-device WebRTC channel (DTLS encrypted)     | PeerJS (broker only for handshake)                  | ✅     |
+| Agent transfers device-to-device                 | `🥚 Export .egg` + tether channel send              | ⚠ partial — egg export works, sending over tether is manual paste |
+| Receiver runs agent locally                      | Pyodide loads agent .py from local filesystem       | ✅     |
+| Graceful degrade when no network                 | `cachedGhJson` returns last-cached state            | ✅     |
+| Local model fallback                             | Doorman config supports custom Copilot endpoint     | ⚠ partial — works for self-hosted endpoint, no offline LLM yet |
+| Mutations stay local until bonded back           | `state_at_seal` snapshots; PRs are explicit consent  | ✅     |
+
+**Acceptance criteria.** Two devices, both in airplane mode, can:
+1. Open their front doors and chat with each other through the tether QR (no internet, no broker once the channel is open)
+2. Trade an `.egg` over the tether
+3. Each receiver hatches the egg and reads the trade card / persona / agent inventory from the egg's `state_at_seal` block — no GitHub call required
+4. The receiver runs at least one of the agents in the egg via Pyodide locally
+
+---
+
+## 2. The Dream Catcher (parallel-dimension reassimilation)
+
+**The story.** Once an organism is hatched on a device, it lives its own offline life. Memories accumulate, mutations happen. Eventually it comes back online. Multiple parallel hatched dimensions exist — same rappid lineage, divergent histories. The Dream Catcher folds them back into the canonical organism without losing anything: UTC-first frames are canon, contradictions are preserved as alternate dimensions, the operator chooses what bonds back.
+
+**The doctrine** (from the transcript, lines 67–78):
+
+> *"Whatever frame hit the UTC one first, that's canon, and then anything that doesn't contradict that. I'm going to layer on that... There are contradictions, so that doesn't get synced. It gets put into a different dimension of that aspect of that life, so you don't lose that data."*
+
+**What must work:**
+
+| Requirement                                       | Implementation                                          | Status |
+|---                                                |---                                                      |---     |
+| Frames are content-addressed                      | `rapp-frame/1.0` schema with `prev_hash` + `hash` chain | ✅     |
+| PK = (utc, frame_n)                               | both fields in every frame                              | ✅     |
+| Eggs carry their frame log                        | `data/frames.json` in egg, fallback to `state_at_seal.recent_mutations` synthesized from Git history | ✅     |
+| Diff two parallel dimensions visually             | `🕸️ Dream Catcher` pane — drop both eggs, see diff      | ✅     |
+| UTC-first canon resolution                        | sort by UTC ascending; first occurrence wins             | ⚠ partial — current diff is set-based (by hash); UTC-first ordering is shown but conflicts aren't yet flagged-as-contradiction |
+| Contradictions saved as alternate dimensions      | preserve same-PK-different-content frames separately     | ❌ not yet — needs a contradictions store |
+| Reassimilation via PR                             | "Open reassimilation issue on GitHub →" pre-fills issue | ✅     |
+| Cross-species check (same rappid required)        | lineage warning fires when rappids differ               | ✅     |
+
+**Acceptance criteria.** Drop two eggs of the same lineage into the Dream Catcher:
+1. Frames common to both render greyed-out (shared canon)
+2. Frames only in the parallel egg render highlighted (reassimilation candidates)
+3. If two frames share `(utc, frame_n)` PK but have different payload hashes → flagged as contradiction; both kept, marked as alternate-dimension data
+4. Operator can open a pre-filled GitHub Issue listing every parallel-only frame as a reassimilation candidate
+
+---
+
+## 3. Mom's Mixtape (the accessibility floor)
+
+**The story.** From the transcript, line 137:
+
+> *"If you can share your mix tape with your mom, and she can use it, that opens up everyone."*
+
+**What must work:** every step of the canonical paths above must be doable without:
+- Opening a terminal
+- Knowing what a brainstem is
+- Understanding GitHub mechanics
+- Reading documentation
+
+**The accessibility test:**
+
+| Path                                        | Steps for a non-technical user               |
+|---                                          |---                                            |
+| Talk to a planted organism                  | Open URL → click "Talk to X" → chat          |
+| Show its trade card                         | Click "🃏 Show my card" → tap card to flip   |
+| Pair with another device                    | Click "📱 Pair" → other device scans QR      |
+| Back up the organism                        | Click "🥚 Export .egg" → file downloads      |
+| Verify an egg isn't tampered                | Click "🔬 Verify" → drag egg in              |
+| Submit a useful mutation back to lineage    | Click "🌱 Propose a skill" → fill form → submit |
+| Reassimilate parallel dimensions            | Click "🕸️ Dream Catcher" → drag both eggs in |
+
+**Acceptance criteria.** A user with no programming background can complete the full Charizard-in-the-woods loop on a phone in under 5 minutes from first visit.
+
+---
+
+## 4. The Pizza Place / Pokémon-Go Layer (future, defined for parity)
+
+**The story.** From the transcript, lines 38–66:
+
+> *"I like this pizza place. I want you to check going forward where the best times are and then if there are any discounts. So your digital twin is actually planted there or a version of that digital twin in that virtual [location]... You can have intelligence swarms, location-based collaborating in public through the cloud endpoints. And then through the cloud endpoints, you can actually sync back with your digital twin on device when it comes back on device."*
+
+**What's needed** (not yet implemented; flagged so it doesn't get reinvented):
+
+- **Location-tied seeds** — `kind: "place"` already exists on rappid.json; need a `location_geohash` field for proximity-matching
+- **Anonymous proximity swarm** — two organisms in the same geohash cell can discover each other and share what their operators have consented to share publicly
+- **Public-twin consent layer** — `card.json` already supports `flavor` / `abilities`; needs an explicit `public_facets` field listing what's shareable in proximity
+- **Sync-back on reconnect** — the Dream Catcher already handles reassimilation of frames; proximity-acquired frames are just another stream
+
+**Acceptance criteria** (when implemented): a user who plants a `place` seed for the local pizza place sees, when revisiting that pizza place from another organism's front door, the public facets the operator has chosen to expose (e.g. "best times to come", aggregated visitor reactions).
+
+---
+
+## How This Document Is Used
+
+- **Every PR** that touches the front door, doorman, egg export/import, or pairing flow must declare which hero requirement it advances or preserves.
+- **Every architecture proposal** that would change one of the ✅ rows must justify why the hero use case is preserved or improved, never degraded.
+- **Every release** runs the acceptance criteria as an explicit smoke test (currently manual; CI'd later).
+
+---
+
+## Source
+
+Hero scenarios are extracted from the May 2026 Kody → Gareth conversation on Agent Shareability. The conversation document lives in the operator's records; the canonical scenarios are checked in here so they're part of the repo's permanent specification.

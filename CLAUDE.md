@@ -152,6 +152,10 @@ Azure OpenAI (Tier 2): `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_O
 
 The platform's install path is one curl pipe: `curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash`. GitHub Pages serves the repo verbatim; `raw.githubusercontent.com` is the implicit content channel for everything the install script fetches afterward. The install one-liner's URL shape is sacred (Constitution Article V) — when relocating files, prefer keeping the URL stable over a marginally cleaner layout.
 
+## Hero use case (`HERO_USECASE.md`)
+
+Before changing anything in the front door, doorman, egg export/import, or pairing flow: read [`HERO_USECASE.md`](./HERO_USECASE.md). It defines the canonical scenarios this platform must satisfy — Charizard-in-the-woods (offline-share over QR pair), Dream Catcher (parallel-dimension reassimilation), Mom's Mixtape (accessibility floor), Pizza Place (future location-aware layer). Every architectural decision is judged against whether these stories still work. PRs that would degrade a `✅` row must explain why.
+
 ## Background context (the vault)
 
 Every non-trivial architecture decision in this repo has a long-form essay in `pages/vault/` that explains the *why*. Before proposing a change to the brainstem, the slot delimiters, the agent contract, the vendoring discipline, or the tier model, read the relevant vault note — most "could we relax constraint X?" conversations are already settled there. The reading paths in `pages/vault/Reading Paths/` are tuned for different audiences (engineer, architect, partner, exec, contributor).
