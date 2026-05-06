@@ -479,6 +479,12 @@
       "status": "stub"
     },
     {
+      "path": "Blog Drafts/public-front-doors-private-brains.md",
+      "title": "Public Front Doors with Private Brains",
+      "section": "Blog Drafts",
+      "status": "draft"
+    },
+    {
       "path": "Architecture/Rappid.md",
       "title": "Rappid \u2014 The One Identifier",
       "section": "Architecture",
@@ -511,6 +517,12 @@
     {
       "path": "Architecture/Mirror Spec.md",
       "title": "Mirror Spec",
+      "section": "Architecture",
+      "status": "published"
+    },
+    {
+      "path": "Architecture/Layered Mirrors and the Public-Private Body Stack.md",
+      "title": "Layered Mirrors and the Public/Private Body Stack",
       "section": "Architecture",
       "status": "published"
     },
