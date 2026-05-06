@@ -71,7 +71,9 @@ check pages/release/release-notes.html "cross-links to FAQ"                     
 echo "▶ roadmap content anchors..."
 check pages/release/roadmap.html "three horizons columns"                       'Now|Next|Later'
 check pages/release/roadmap.html "Tier 2 cloud item"                            'Tier 2.*[cC]loud|provision-twin-lite'
-check pages/release/roadmap.html "swarm factory distribution item"              'swarm factory|Swarm factory|workshop'
+# swarm-factory item dropped from roadmap; assertion removed rather than locking
+# the document to copy nobody plans to ship (Article XIX-style: don't write
+# tests that require future content).
 check pages/release/roadmap.html "on-device / offline item"                     'on-device|offline|IoT'
 check pages/release/roadmap.html "one-pager linked"                             'one-pager\.html'
 check pages/release/roadmap.html "Article references"                           'Article I-A|Article II|Article V'

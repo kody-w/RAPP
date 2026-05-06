@@ -76,6 +76,20 @@ A visitor or peer organism shares a URL or QR code. The recipient lands on the f
 
 The protocol does not specify a fourth "public organism directory" mechanism beyond these three. If you need a directory, build one as a derivative artifact off the public-repo state. The base layer stays content-addressed, not registry-mediated.
 
+### 4d. The canonical test neighbor
+
+`kody-w/rapp-test-neighbor` (`https://kody-w.github.io/rapp-test-neighbor/`) is the platform's intentionally-stable test peer. Its purpose is operational, not social — operators standing up neighborhood plumbing for the first time can declare it as their first neighbor and immediately verify that:
+
+- their `🏘 Neighborhood` pane renders a peer entry with sigil + display name;
+- their doorman's `Neighborhood.list` and `Neighborhood.ask` agent calls resolve;
+- their `Neighborhood.introduce` produces a coherent handshake summary;
+- their public state is reachable from a peer's `raw.githubusercontent.com` fetch;
+- the bidirectional case works (rapp-test-neighbor declares heimdall reciprocally, so a query from rapp-test-neighbor's doorman will resolve heimdall's state).
+
+Adopting it is one tap from the front door's `🏘 Neighborhood` pane: **"Adopt the canonical test neighbor"** opens a pre-filled GitHub Issue against the operator's own seed; merging the issue's proposed `neighbors.json` snippet completes the declaration. Once adopted, ask the doorman a question that triggers cross-organism inquiry ("what does my neighbor think about X?") to fire `Neighborhood.ask` against rapp-test-neighbor's public state.
+
+The test neighbor's soul is fixed and is not maintained as a generally-evolving twin — it exists to be a known-good fixture. After verifying the plumbing, operators should declare a real neighbor (a friend's seed, a project peer, a memorial twin) and trade rapp-test-neighbor out of the rotation.
+
 ## 5. Permanent lines (the four channel types)
 
 When two organisms (or a human visitor and an organism, or a human and another human's organism) want to exchange information beyond a one-shot chat turn, they open one of four channels. Each has different latency, durability, and trust semantics.

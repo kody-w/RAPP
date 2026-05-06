@@ -92,7 +92,7 @@ Routes to GitHub Copilot API (default), Azure OpenAI, OpenAI, Anthropic, or a de
 
 These are inviolable — do not break backwards compatibility:
 
-1. **Single-file agents are the plugin system.** One file = one class = one `perform()` = one metadata dict. No build steps, no sibling imports, no frameworks.
+1. **Single-file agents are the unit of extension.** One file = one class = one `perform()` = one metadata dict. No build steps, no sibling imports, no frameworks. (We say "agent" — never "skill"/"plugin"/"routine"/"loop". See [`ANTIPATTERNS.md`](./ANTIPATTERNS.md) §1.)
 2. **Single-file organs are the HTTP extension system.** One file = `name` + `handle(method, path, body) → (dict, status)`. Dispatched via `/api/<name>/<path>`. Organs serve UIs; agents serve LLMs. They never overlap. (Constitution Article XXXIII canonical: `*_organ.py` under `utils/organs/`. Legacy `*_body_function.py` and `*_service.py` files in older installs continue to work via transitional discovery.)
 3. **Agent-first rule.** Every rapplication MUST work fully through the agent alone. The organ is always optional — it's a view, not the application.
 4. **Brainstem stays light.** The kernel is `brainstem.py` + `basic_agent.py`. It is the **DNA** of the digital organism (Constitution Article XXXIII) — universal, drop-in replaceable, **never edited by AI assistants**. New features → new agents or new organs, never kernel changes.

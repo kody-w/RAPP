@@ -2178,6 +2178,16 @@ write_index_html() {
     <div id="nbhd-list" style="margin-top:14px;">
       <div class="skel-line">loading neighbors…</div>
     </div>
+    <!-- One-tap adopt the canonical test neighbor. Opens a pre-filled
+         issue (same flow as the manual form) but with kody-w/rapp-test-neighbor
+         already filled in. Lets a fresh operator verify their plumbing in
+         seconds — see Article XLII (the URL is the discovery primitive,
+         the card is the share primitive) and HERO_USECASE.md. -->
+    <div style="margin-top:18px;padding:14px;background:rgba(88,166,255,0.06);border:1px solid rgba(88,166,255,0.18);border-radius:10px;">
+      <div style="font-size:13px;color:#c9d1d9;font-weight:600;margin-bottom:6px;">🌱 First time? Adopt the canonical test neighbor</div>
+      <p style="font-size:12px;color:#8b949e;line-height:1.55;margin:0 0 10px 0;"><code>kody-w/rapp-test-neighbor</code> is the platform's intentionally-stable test peer. Adopt it to verify your <code>Neighborhood.ask</code> plumbing works — then go declare a real friend.</p>
+      <button class="small primary" id="btn-nbhd-adopt-test">Adopt kody-w/rapp-test-neighbor →</button>
+    </div>
     <details style="margin-top:18px;">
       <summary style="cursor:pointer;font-size:13px;color:#8b949e;list-style:none;">▸ Add a neighbor (open PR)</summary>
       <div style="margin-top:12px;">
@@ -3961,6 +3971,17 @@ document.getElementById("btn-publish-egg").onclick = openEggHubSubmission;
 document.getElementById("btn-install").onclick = showInstall;
 document.getElementById("btn-neighborhood").onclick = showNeighborhoodPane;
 document.getElementById("btn-nbhd-submit").onclick = submitNeighbor;
+// One-tap adopt the canonical test neighbor — pre-fills the form fields
+// and reuses submitNeighbor so the rest of the PR flow stays single-pathed.
+{
+  const btn = document.getElementById("btn-nbhd-adopt-test");
+  if (btn) btn.onclick = () => {
+    document.getElementById("nbhd-repo").value   = "kody-w/rapp-test-neighbor";
+    document.getElementById("nbhd-name").value   = "RAPP Test Neighbor";
+    document.getElementById("nbhd-facets").value = "";
+    submitNeighbor();
+  };
+}
 document.getElementById("btn-propose-agent").onclick = showProposePane;
 document.getElementById("btn-propose-submit").onclick = submitProposedAgent;
 document.getElementById("btn-propose-template").onclick = (e) => {

@@ -61,7 +61,7 @@ What I can do without physical operator action:
 
 ### Phase 5 — Thought leadership blog posts
 
-The frontier-mapping content. Ideas listed in [[#Blog post catalog]] below. Each lands in `wildhaven-ceo/content/blog/` (private drafts; ready to publish on `kodyw.com` or similar when the operator chooses).
+The frontier-mapping content. Ideas listed in the **Blog post catalog** section below. Each lands in `wildhaven-ceo/content/blog/` (private drafts; ready to publish on `kodyw.com` or similar when the operator chooses).
 
 ### Phase 6 — Public publish
 
