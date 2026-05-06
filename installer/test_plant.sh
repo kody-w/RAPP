@@ -190,7 +190,7 @@ assert_contains "$INDEX" "peerjs@1.5.4"         "PeerJS CDN script embedded"
 assert_contains "$INDEX" 'id="my-id"'           "tether: my-id element present"
 assert_contains "$INDEX" 'id="peer-id-input"'   "tether: peer-id input present"
 assert_contains "$INDEX" 'id="chat-input"'      "tether: chat-input present"
-assert_contains "$INDEX" 'id="qr-img"'          "QR display element present"
+assert_contains "$INDEX" 'id="card-back-qr"'    "Trade-card back QR present (front-door QR moved to card back)"
 assert_contains "$INDEX" 'id="install-cmd"'     "install command element present"
 
 # Auto-tether via ?peer= URL param
