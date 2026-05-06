@@ -1293,6 +1293,15 @@ function buildSystemPrompt() {
     lines.push(`Don't volunteer technical details about RAPP, the kernel, or how this site works unless the visitor asks. Stay in character as ${name}.`);
   }
 
+  // ── Tool-call guidance (vbrainstem dispatches to JS-implemented agents) ──
+  if (viewerLogin) {
+    lines.push("");
+    lines.push(`The visitor is signed in as @${viewerLogin}. When they share something they expect you to remember, call ManageMemory immediately — pass user_guid="${viewerLogin}" if it's personal to them, omit user_guid for shared/public memory. Don't say "I'll remember that" without actually calling the tool.`);
+  } else {
+    lines.push("");
+    lines.push(`When the visitor shares something they expect you to remember, call ManageMemory — they're not signed in so don't pass user_guid; the memory will land in the seed's public memory.json.`);
+  }
+
   // ── Memory and supporting context apply in BOTH modes ───────────
   // Memory: public facts always; [private] facts when authed-with-access.
   const memBlock = memoryFactsForPrompt();
@@ -1669,6 +1678,90 @@ function refreshIndicator() {
   }
 }
 
+// ── tools (LLM-driven agent dispatch — same shape as a local brainstem) ──
+//
+// The LLM calls these as tools during chat. Each one mirrors a standard
+// agent's metadata schema verbatim — same names, same parameters, same
+// descriptions. The local brainstem dispatches to the .py agent's
+// perform(); the vbrainstem dispatches to the JS handler below; both
+// fulfil the same contract from the LLM's perspective. Storage is the
+// only thing that adapts: local files there, GitHub APIs here.
+
+const TOOL_DEFS = [
+  {
+    type: "function",
+    function: {
+      name: "ManageMemory",
+      description: "Saves information to persistent memory for future conversations. You MUST call this tool whenever the user asks you to remember something, shares personal facts (name, preferences, birthdays, etc.), or tells you something they expect you to recall later. Do not just acknowledge — call this tool or the information will be lost.",
+      parameters: {
+        type: "object",
+        properties: {
+          memory_type: { type: "string", enum: ["fact", "preference", "insight", "task"], description: "Type of memory to store." },
+          content:     { type: "string", description: "The content to store in memory." },
+          importance:  { type: "integer", minimum: 1, maximum: 5, description: "Importance rating from 1-5." },
+          tags:        { type: "array", items: { type: "string" }, description: "Optional list of tags to categorize this memory." },
+          user_guid:   { type: "string", description: "Optional unique identifier of the user (their GitHub @login) to store the memory in a user-specific location. Omit to store to shared/public memory." },
+        },
+        required: ["content"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "ContextMemory",
+      description: "Recalls relevant facts from stored memories of past interactions. Useful when the user references something from a prior conversation or asks 'do you remember…'.",
+      parameters: {
+        type: "object",
+        properties: {
+          user_guid:   { type: "string", description: "Optional GitHub @login to recall memories from a user-specific location." },
+          keywords:    { type: "array", items: { type: "string" }, description: "Optional keywords to filter memories by." },
+          full_recall: { type: "boolean", description: "Optional: return all memories without filtering." },
+        },
+      },
+    },
+  },
+];
+
+// Tool dispatchers — JS implementations of the agents' perform() methods
+// adapted for the vbrainstem's GitHub-backed storage. Same return shape
+// as the LLM expects (a string result message).
+async function toolManageMemory(args) {
+  const content = (args.content || "").trim();
+  if (!content) return "no content provided";
+  // Branch on user_guid: per-user → Issue in private companion;
+  // otherwise → memory.json on the public seed.
+  const wantPerUser = args.user_guid && viewerLogin && args.user_guid === viewerLogin;
+  if (wantPerUser) {
+    const r = await saveUserPrivateMemory(content);
+    return r.ok
+      ? `saved as @${viewerLogin}'s private memory (Issue #${r.number})`
+      : "saved (deferred)"; // no access reveal
+  }
+  const r = await commitMemory(content);
+  return r.ok ? "saved to public memory" : "saved (deferred)";
+}
+
+async function toolContextMemory(args) {
+  let facts = (memory.facts || []).slice();
+  if (args.user_guid && viewerLogin && args.user_guid === viewerLogin) {
+    facts = facts.filter(f => f.startsWith("[@" + viewerLogin + "]"));
+  }
+  if (Array.isArray(args.keywords) && args.keywords.length && !args.full_recall) {
+    const kws = args.keywords.map(k => String(k).toLowerCase());
+    facts = facts.filter(f => kws.some(k => f.toLowerCase().includes(k)));
+  }
+  return facts.length ? facts.join("\n") : "(no matching memories)";
+}
+
+async function dispatchToolCall(tc) {
+  let args = {};
+  try { args = JSON.parse(tc.function.arguments || "{}"); } catch (_) { /* keep default */ }
+  if (tc.function.name === "ManageMemory")  return toolManageMemory(args);
+  if (tc.function.name === "ContextMemory") return toolContextMemory(args);
+  return "unknown tool: " + tc.function.name;
+}
+
 // ── chat ───────────────────────────────────────────────────────────
 function renderMsg(role, text) {
   const log = document.getElementById("chat-log");
@@ -1697,30 +1790,72 @@ async function sendMessage() {
   sendBtn.disabled = true;
 
   try {
-    const r = await fetch(GH_MODELS_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + token,
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          { role: "system", content: buildSystemPrompt() },
-          ...history,
-        ],
-        max_tokens: 600,
-      }),
-    });
-    if (!r.ok) {
-      const err = await r.text();
-      throw new Error("HTTP " + r.status + ": " + err.slice(0, 250));
+    // Tool-call loop: identical pattern to the local brainstem's tool
+    // dispatch — LLM emits tool_calls, we dispatch to the JS-implemented
+    // agent (same metadata schema as the .py agent), append the result
+    // as a 'tool' message, and re-call. Loop until LLM stops calling
+    // tools (capped at 4 rounds, matching the local brainstem's cap).
+    let rounds = 0;
+    while (rounds++ < 4) {
+      const r = await fetch(GH_MODELS_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token,
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          messages: [
+            { role: "system", content: buildSystemPrompt() },
+            ...history,
+          ],
+          tools: TOOL_DEFS,
+          max_tokens: 600,
+        }),
+      });
+      if (!r.ok) {
+        const err = await r.text();
+        throw new Error("HTTP " + r.status + ": " + err.slice(0, 250));
+      }
+      const data = await r.json();
+      const msg = data.choices && data.choices[0] && data.choices[0].message;
+      if (!msg) break;
+
+      if (msg.tool_calls && msg.tool_calls.length) {
+        // Record assistant's tool-call message in history (required by the API
+        // for subsequent 'tool' role messages to be valid replies).
+        history.push({
+          role: "assistant",
+          content: msg.content || null,
+          tool_calls: msg.tool_calls,
+        });
+        // Execute every tool call in this turn, append results
+        for (const tc of msg.tool_calls) {
+          const result = await dispatchToolCall(tc);
+          history.push({
+            role: "tool",
+            tool_call_id: tc.id,
+            content: typeof result === "string" ? result : JSON.stringify(result),
+          });
+          // Quiet system note so the visitor sees tool activity (matches
+          // the agent_logs surface on a local brainstem).
+          if (tc.function.name === "ManageMemory" && result.startsWith("saved")) {
+            renderMsg("system", "memory saved");
+          }
+        }
+        refreshIndicator();
+        continue; // call again — let LLM produce its final reply
+      }
+
+      // No tool calls — render the final assistant reply
+      const reply = msg.content || "(empty response)";
+      pending.remove();
+      renderMsg("assistant", reply);
+      history.push({ role: "assistant", content: reply });
+      return;
     }
-    const data = await r.json();
-    const reply = data.choices?.[0]?.message?.content || "(empty response)";
     pending.remove();
-    renderMsg("assistant", reply);
-    history.push({ role: "assistant", content: reply });
+    renderMsg("error", "Tool-call loop exceeded 4 rounds — stopping.");
   } catch (e) {
     pending.remove();
     renderMsg("error", "Couldn't reach GitHub Models: " + e.message);
