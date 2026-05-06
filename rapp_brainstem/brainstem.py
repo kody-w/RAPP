@@ -14,7 +14,6 @@ GET  /health  Status, model, loaded agents, token state
 """
 
 import os
-import re
 import sys
 import json
 import uuid
@@ -46,7 +45,7 @@ VOICE_MODE  = os.getenv("VOICE_MODE", "false").lower() == "true"
 VOICE_ZIP_PW = os.getenv("VOICE_ZIP_PASSWORD", "").encode() or None
 
 _version_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "VERSION")
-VERSION = open(_version_file, encoding="utf-8").read().strip() if os.path.exists(_version_file) else "0.0.0"
+VERSION = open(_version_file).read().strip() if os.path.exists(_version_file) else "0.0.0"
 
 COPILOT_TOKEN_URL = "https://api.github.com/copilot_internal/v2/token"
 
@@ -62,53 +61,6 @@ AVAILABLE_MODELS = [
 # Models that don't support OpenAI-style tool_choice parameter
 _NO_TOOL_CHOICE_MODELS = set()
 _models_fetched = False
-
-# soul.md instructs the model to wrap each slot in <main>/<voice>/<twin> and
-# split them with |||VOICE||| then |||TWIN|||. The wrappers are emission
-# scaffolding — the user never sees them. This pair of helpers normalizes
-# both representations into clean strings the chat UI can render directly.
-_SLOT_WRAPPERS = ("main", "voice", "twin")
-
-def _strip_wrapper(text, tag):
-    if not text:
-        return ""
-    s = text.strip()
-    open_tag = f"<{tag}>"
-    close_tag = f"</{tag}>"
-    if s.startswith(open_tag):
-        s = s[len(open_tag):]
-        if s.endswith(close_tag):
-            s = s[: -len(close_tag)]
-    else:
-        # Some models forget the opening tag but still close it, or sprinkle
-        # the wrapper mid-string. Pull the inner span out either way.
-        m = re.search(rf"<{tag}\b[^>]*>(.*?)</{tag}>", s, re.DOTALL | re.IGNORECASE)
-        if m:
-            s = m.group(1)
-    return s.strip()
-
-def _split_slots(reply):
-    """Split a model reply on |||VOICE||| / |||TWIN||| and unwrap the per-slot
-    XML tags soul.md asks the model to emit. Returns (main, voice, twin) —
-    any slot that wasn't emitted comes back as "".
-    """
-    if not reply:
-        return "", "", ""
-    main, voice, twin = reply, "", ""
-    if "|||VOICE|||" in main:
-        main, rest = main.split("|||VOICE|||", 1)
-        if "|||TWIN|||" in rest:
-            voice, twin = rest.split("|||TWIN|||", 1)
-        else:
-            voice = rest
-    elif "|||TWIN|||" in main:
-        # Voice slot omitted but twin present — still split.
-        main, twin = main.split("|||TWIN|||", 1)
-    return (
-        _strip_wrapper(main, "main"),
-        _strip_wrapper(voice, "voice"),
-        _strip_wrapper(twin, "twin"),
-    )
 
 def _fetch_copilot_models():
     """Fetch available models from Copilot API. Updates AVAILABLE_MODELS in place."""
@@ -173,7 +125,7 @@ def _tlog_save():
     try:
         with _flight_log_lock:
             snapshot = list(_flight_log)
-        with open(_flight_log_file, "w", encoding="utf-8") as f:
+        with open(_flight_log_file, "w") as f:
             json.dump(snapshot, f)
     except Exception:
         pass
@@ -184,7 +136,7 @@ def _tlog_load():
     if not os.path.exists(_flight_log_file):
         return
     try:
-        with open(_flight_log_file, encoding="utf-8") as f:
+        with open(_flight_log_file) as f:
             data = json.load(f)
         if isinstance(data, list):
             with _flight_log_lock:
@@ -214,7 +166,7 @@ def _read_token_file():
     if not os.path.exists(_token_file):
         return None
     try:
-        with open(_token_file, encoding="utf-8") as f:
+        with open(_token_file) as f:
             raw = f.read().strip()
         if not raw:
             return None
@@ -277,7 +229,7 @@ def save_github_token(token, refresh_token=None):
         "refresh_token": refresh_token or existing.get("refresh_token"),
         "saved_at": time.time(),
     }
-    with open(_token_file, "w", encoding="utf-8") as f:
+    with open(_token_file, "w") as f:
         json.dump(data, f)
     _tlog("auth.token_saved", {"prefix": token[:4], "has_refresh": bool(refresh_token)})
     print(f"[brainstem] GitHub token saved (prefix: {token[:4]}...)")
@@ -315,7 +267,7 @@ def _load_copilot_cache():
     if not os.path.exists(_copilot_cache_file):
         return None
     try:
-        with open(_copilot_cache_file, encoding="utf-8") as f:
+        with open(_copilot_cache_file) as f:
             data = json.load(f)
         if data.get("token") and time.time() < data.get("expires_at", 0) - 60:
             return data
@@ -326,7 +278,7 @@ def _load_copilot_cache():
 def _save_copilot_cache(token, endpoint, expires_at):
     """Cache Copilot API token to disk so it survives restarts."""
     try:
-        with open(_copilot_cache_file, "w", encoding="utf-8") as f:
+        with open(_copilot_cache_file, "w") as f:
             json.dump({"token": token, "endpoint": endpoint, "expires_at": expires_at}, f)
     except Exception:
         pass
@@ -449,7 +401,7 @@ def _save_pending_login():
     """Persist pending device code to disk so it survives server restarts."""
     try:
         if _pending_login:
-            with open(_pending_login_file, "w", encoding="utf-8") as f:
+            with open(_pending_login_file, "w") as f:
                 json.dump(_pending_login, f)
         elif os.path.exists(_pending_login_file):
             os.remove(_pending_login_file)
@@ -462,7 +414,7 @@ def _load_pending_login():
     if not os.path.exists(_pending_login_file):
         return
     try:
-        with open(_pending_login_file, encoding="utf-8") as f:
+        with open(_pending_login_file) as f:
             data = json.load(f)
         if data.get("device_code") and time.time() < data.get("expires_at", 0):
             _pending_login = data
@@ -639,7 +591,7 @@ def load_soul():
         print(f"[brainstem] Warning: soul file not found at {SOUL_PATH}, using default.")
         _soul_cache = "You are a helpful AI assistant."
         return _soul_cache
-    with open(SOUL_PATH, "r", encoding="utf-8") as f:
+    with open(SOUL_PATH, "r") as f:
         _soul_cache = f.read().strip()
     print(f"[brainstem] Soul loaded: {SOUL_PATH}")
     return _soul_cache
@@ -733,12 +685,8 @@ def _register_shims():
         print(f"[brainstem] Warning: Could not load BasicAgent: {e}")
         pass
     
-    # Shim: utils.azure_file_storage → utils/local_storage.py
-    try:
-        from utils.local_storage import AzureFileStorageManager as _LSM
-    except ImportError:
-        # Older organism layouts had local_storage.py at the brainstem root.
-        from local_storage import AzureFileStorageManager as _LSM  # type: ignore
+    # Shim: utils.azure_file_storage → local_storage.py
+    from local_storage import AzureFileStorageManager as _LSM
     if "utils" not in sys.modules:
         utils_mod = types.ModuleType("utils")
         utils_mod.__path__ = [os.path.join(brainstem_dir, "utils")]
@@ -991,25 +939,19 @@ def chat():
                 break
 
         reply = msg.get("content") or ""
-
-        # Always split slot delimiters server-side. soul.md tells the model
-        # to emit |||VOICE||| and |||TWIN||| on every turn — they're slots,
-        # not part of the visible chat body. Older code only split when
-        # VOICE_MODE was on, which leaked the raw delimiter text into the
-        # assistant bubble whenever TTS was off.
-        main_text, voice_text, twin_text = _split_slots(reply)
-
+        
         result = {
-            "response": main_text,
+            "response": reply,
             "session_id": session_id,
             "agent_logs": "\n".join(all_logs),
             "voice_mode": VOICE_MODE,
         }
-        if voice_text:
-            result["voice_response"] = voice_text
-        if twin_text:
-            result["twin_response"] = twin_text
-
+        
+        if VOICE_MODE and "|||VOICE|||" in reply:
+            parts = reply.split("|||VOICE|||", 1)
+            result["response"] = parts[0].strip()
+            result["voice_response"] = parts[1].strip()
+        
         return jsonify(result)
 
     except requests.exceptions.HTTPError as e:
@@ -1034,154 +976,9 @@ def chat():
 
 # ── /health endpoint ──────────────────────────────────────────────────────────
 
-_UI_MODE_FILE = os.path.join(os.path.expanduser("~"), ".brainstem", ".ui-mode")
-# Cloud UI lives on GitHub Pages and tracks main automatically — flipping
-# to it lets users iterate on the static UI without re-running the install
-# one-liner each time. Pinned URL: see CONSTITUTION.md Article V.
-CLOUD_UI_URL = "https://kody-w.github.io/RAPP/rapp_brainstem/index.html"
-
-
-def _read_ui_mode():
-    try:
-        with open(_UI_MODE_FILE, "r", encoding="utf-8") as f:
-            mode = f.read().strip().lower()
-            return mode if mode in ("local", "cloud") else "local"
-    except (OSError, IOError):
-        return "local"
-
-
-def _write_ui_mode(mode):
-    if mode not in ("local", "cloud"):
-        return False
-    try:
-        os.makedirs(os.path.dirname(_UI_MODE_FILE), exist_ok=True)
-        with open(_UI_MODE_FILE, "w", encoding="utf-8") as f:
-            f.write(mode)
-        return True
-    except (OSError, IOError):
-        return False
-
-
 @app.route("/", methods=["GET"])
 def index():
-    # If the user has flipped UI to "cloud", redirect them to the live
-    # GitHub Pages copy with a tether back to this brainstem so the cloud
-    # UI talks to the local server. Lets users iterate on the static UI
-    # by pushing to main without redeploying via the install one-liner.
-    # An explicit ?ui=local query forces the local UI even when the
-    # preference is cloud (escape hatch for debugging).
-    if request.args.get("ui") == "local":
-        return send_from_directory(os.path.dirname(os.path.abspath(__file__)), "index.html")
-    if _read_ui_mode() == "cloud":
-        # Tether = the brainstem the cloud UI should bind its API calls to.
-        # request.host_url already includes scheme + host + port + trailing slash.
-        tether = request.host_url.rstrip("/")
-        return f'<!doctype html><meta http-equiv="refresh" content="0;url={CLOUD_UI_URL}?tether={tether}"><a href="{CLOUD_UI_URL}?tether={tether}">Loading cloud UI…</a>', 200
     return send_from_directory(os.path.dirname(os.path.abspath(__file__)), "index.html")
-
-
-@app.route("/api/ui-mode", methods=["GET"])
-def get_ui_mode():
-    return jsonify({"mode": _read_ui_mode(), "cloud_url": CLOUD_UI_URL})
-
-
-@app.route("/api/ui-mode", methods=["POST"])
-def set_ui_mode():
-    data = request.get_json(silent=True) or {}
-    mode = (data.get("mode") or "").lower()
-    if mode not in ("local", "cloud"):
-        return jsonify({"error": "mode must be 'local' or 'cloud'"}), 400
-    if not _write_ui_mode(mode):
-        return jsonify({"error": "could not persist UI mode"}), 500
-    return jsonify({"ok": True, "mode": mode})
-
-
-# ── Identity endpoint ─────────────────────────────────────────────────────────
-# Reads ~/.brainstem/rappid.json + bonds.json so the UI (and `curl
-# localhost:7071/api/identity`) can show this organism's identity and
-# evolution log without shelling out to the bond.py CLI. Both files live
-# above the kernel src tree precisely so they survive every overlay.
-
-_RAPPID_FILE_PATH = os.path.join(os.path.expanduser("~"), ".brainstem", "rappid.json")
-_BONDS_FILE_PATH  = os.path.join(os.path.expanduser("~"), ".brainstem", "bonds.json")
-
-
-def _read_json_file(path):
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except (OSError, IOError, ValueError):
-        return None
-
-
-@app.route("/api/identity", methods=["GET"])
-def get_identity():
-    rappid = _read_json_file(_RAPPID_FILE_PATH)
-    bonds  = _read_json_file(_BONDS_FILE_PATH)
-    return jsonify({
-        "rappid":  rappid,                                  # full identity dict, or null
-        "bonds":   (bonds or {}).get("events", []),         # lineage event list
-        "kernel":  {"version": VERSION},
-        "host":    request.host,
-    })
-
-
-@app.route("/api/lineage", methods=["GET"])
-def get_lineage():
-    """Walk parent_rappid back to the species root and return the chain.
-
-    Each link in the chain is an organism (this brainstem instance, its
-    parent variant, its grandparent variant, …, the species root). The
-    walker is local-first: it reads the current organism's rappid.json,
-    then resolves parents from any local registry it knows about. For
-    parents that aren't on this device, the chain entry has only the
-    rappid string — no metadata. Future versions will fetch missing
-    metadata from the rapp_store Pokédex API on demand.
-
-    Powers the Pokédex's "where did this organism come from" timeline.
-    """
-    rappid = _read_json_file(_RAPPID_FILE_PATH)
-    if not rappid:
-        return jsonify({"chain": [], "depth": 0,
-                        "note": "no rappid yet — has the brainstem been installed via the one-liner?"})
-
-    chain = []
-    seen = set()
-    current = rappid
-    SPECIES_ROOT = "rappid:v2:prototype:@rapp/origin:0b635450c04249fbb4b1bdb571044dec@github.com/kody-w/RAPP"
-    while current and isinstance(current, dict):
-        rid = current.get("rappid")
-        if not rid or rid in seen:
-            break
-        seen.add(rid)
-        chain.append({
-            "rappid":   rid,
-            "name":     current.get("name"),
-            "kind":     current.get("kind"),
-            "parent":   current.get("parent_rappid"),
-            "born_at":  current.get("born_at"),
-            "incarnations": current.get("incarnations"),
-        })
-        # Termination at species root
-        if rid == SPECIES_ROOT:
-            break
-        # Future: lookup parent_rappid in a local cache or fetch from the
-        # Pokédex API. For now, attach the parent as a stub-only entry.
-        parent_rid = current.get("parent_rappid")
-        if parent_rid and parent_rid not in seen:
-            chain.append({
-                "rappid": parent_rid,
-                "name": ("species root" if parent_rid == SPECIES_ROOT else None),
-                "kind": ("prototype" if parent_rid == SPECIES_ROOT else None),
-                "parent": None,
-                "_stub": True,
-            })
-        break  # one local hop + parent stub for v1
-    return jsonify({
-        "chain": chain,
-        "depth": len(chain),
-        "species_root": SPECIES_ROOT,
-    })
 
 @app.route("/login", methods=["POST"])
 def login():
@@ -1731,24 +1528,9 @@ def diagnostics_report():
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    import sys, io
-    _enc = (sys.stdout.encoding or "").lower().replace("-", "")
-    if _enc and not _enc.startswith(("utf8", "utf16", "utf32")):
-        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
-        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
     _tlog_load()  # Restore previous flight log
     _tlog("server.starting", {"version": VERSION, "model": MODEL, "port": PORT})
     print(f"\n🧠 RAPP Brainstem v{VERSION} starting on http://localhost:{PORT}")
-    # Show this organism's identity in the boot banner so users see
-    # what they're hosting at a glance — and so a kernel upgrade is
-    # visibly attached to the same organism after every bond.
-    _identity = _read_json_file(_RAPPID_FILE_PATH) or {}
-    _rappid_str = _identity.get("rappid")
-    if _rappid_str:
-        _name = _identity.get("name", "organism")
-        _inc  = _identity.get("incarnations", 1)
-        print(f"   🥚 Organism: {_name} (incarnations={_inc})")
-        print(f"   🆔 Rappid:   {_rappid_str}")
     print(f"   Soul:   {SOUL_PATH}")
     print(f"   Agents: {AGENTS_PATH}")
     print(f"   Model:  {MODEL}")
