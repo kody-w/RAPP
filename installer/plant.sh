@@ -1072,14 +1072,19 @@ write_doorman_html() {
   </div>
 
   <section class="auth-pane" id="memory-pane" hidden style="margin-top:12px;">
-    <h2>Save a memory to this front door</h2>
-    <p>Adds a fact to <code>.brainstem_data/memory.json</code> in this seed's repo via GitHub API. The fact is then context for every future doorman conversation. Requires write access to the repo.</p>
-    <textarea id="memory-input" placeholder="One thing future visitors should know about this place…" rows="3"></textarea>
-    <div class="row">
-      <button id="btn-save-memory">Commit memory</button>
+    <h2>Save a memory</h2>
+    <p>Two scopes — pick where this fact lives:</p>
+    <textarea id="memory-input" placeholder="What should be remembered…" rows="3"></textarea>
+    <div class="row" style="margin-top:8px;">
+      <button id="btn-save-memory" title="Commits to .brainstem_data/memory.json in this seed. Requires write access to the seed repo. Visible to everyone reading the seed.">Save to public memory</button>
+      <button id="btn-save-private-memory" class="secondary" title="Creates a labeled Issue in the private_companion repo. Visible only to you (@your-login) — keyed by GitHub identity. Requires read access to the private_companion repo.">Save as my private memory</button>
       <button class="secondary" id="btn-cancel-memory">Cancel</button>
     </div>
     <div id="memory-status" style="margin-top:10px;font-size:12px;color:#8b949e;"></div>
+    <div style="margin-top:10px;font-size:11px;color:#6e7681;line-height:1.5;">
+      <strong>Public</strong> — written to <code>memory.json</code>, anyone reading this front door sees it.<br>
+      <strong>Private</strong> — written as a labeled Issue on the private companion, scoped to your GitHub account. Other collaborators with private-brain access don't see it; you do.
+    </div>
   </section>
 </main>
 
@@ -1107,6 +1112,8 @@ let privateSoul = null;        // soul.md from the private companion — when lo
 let privateFactsCount = 0;
 let publicAgents = [];         // filenames at <seed>/agents/
 let privateAgents = [];        // filenames at <private_companion>/agents/ — only loaded when authed-with-access (silent 404 otherwise)
+let userPrivateFactsCount = 0; // memories specifically created by the authed visitor (per-user via Issues API)
+let viewerLogin = null;        // authenticated visitor's GitHub @login — natural identifier for per-user private memory
 let memory = { schema: "rapp-memory/1.0", facts: [], preserved_by: "", preserved_at: "" };
 let memorySha = null;  // GitHub blob sha for the current memory.json (needed for PUT)
 let history = [];
@@ -1461,6 +1468,84 @@ async function listAgentFiles(owner, repo, token) {
   }
 }
 
+// ── per-user private memory via GitHub Issues API ──────────────────
+//
+// The ascended twin can store/recall private memories specific to the
+// authenticated visitor's GitHub identity. Same silent escalation
+// gate (token must have access to the private_companion repo).
+//
+// Storage: each memory is an Issue in the private companion repo,
+// labeled `private-memory`. GitHub auto-records the issue.user, so
+// per-user separation is implicit — `creator:<login>` filter returns
+// only that user's memories. Different visitors with access to the
+// same private companion each see their own memory tier; the operator
+// (writes more often) sees theirs; collaborators see theirs.
+//
+// In the system prompt, these surface as `[@<login>] <fact>` so the
+// LLM understands the access boundary distinctly from `[private]`
+// (any-access) and unprefixed (public).
+function privateCompanionCoords() {
+  if (!identity || !identity.private_companion || !identity.private_companion.repo) return null;
+  const m = identity.private_companion.repo.match(/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?\/?$/);
+  return m ? { owner: m[1], repo: m[2] } : null;
+}
+
+async function loadUserPrivateIssues(token) {
+  userPrivateFactsCount = 0;
+  if (!token || !viewerLogin) return;
+  const c = privateCompanionCoords();
+  if (!c) return;
+  try {
+    const r = await fetch(
+      `https://api.github.com/repos/${c.owner}/${c.repo}/issues?creator=${encodeURIComponent(viewerLogin)}&labels=private-memory&state=all&per_page=50`,
+      { headers: { "Authorization": "Bearer " + token, "Accept": "application/vnd.github+json" } }
+    );
+    if (!r.ok) return;
+    const issues = await r.json();
+    if (!Array.isArray(issues)) return;
+    for (const issue of issues) {
+      if (issue.body && issue.body.trim()) {
+        memory.facts.push(`[@${viewerLogin}] ` + issue.body.trim().slice(0, 600));
+        userPrivateFactsCount++;
+      }
+    }
+  } catch (_) { /* silent — anonymous fall-through */ }
+}
+
+async function saveUserPrivateMemory(fact) {
+  const token = getToken();
+  if (!token) return { ok: false, error: "not signed in" };
+  if (!viewerLogin) {
+    const u = await fetchAndCacheUser(token);
+    if (!u || !u.login) return { ok: false, error: "couldn't identify your GitHub account" };
+    viewerLogin = u.login;
+  }
+  const c = privateCompanionCoords();
+  if (!c) return { ok: false, error: "this front door has no private_companion configured" };
+
+  const trimmed = fact.trim();
+  const title = "memory: " + trimmed.slice(0, 60).replace(/\s+/g, " ") + (trimmed.length > 60 ? "…" : "");
+
+  const r = await fetch(`https://api.github.com/repos/${c.owner}/${c.repo}/issues`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + token,
+      "Accept": "application/vnd.github+json",
+    },
+    body: JSON.stringify({ title, body: trimmed, labels: ["private-memory"] }),
+  });
+  if (!r.ok) {
+    let msg = "HTTP " + r.status;
+    try { const j = await r.json(); msg = j.message || msg; } catch {}
+    return { ok: false, error: msg };
+  }
+  const issue = await r.json();
+  memory.facts.push(`[@${viewerLogin}] ` + trimmed);
+  userPrivateFactsCount++;
+  return { ok: true, url: issue.html_url, number: issue.number };
+}
+
 function agentInventoryForPrompt() {
   if (publicAgents.length === 0 && privateAgents.length === 0) return "";
   const lines = ["", "=== Agent inventory (capabilities your body has) ==="];
@@ -1562,18 +1647,22 @@ async function loadPrivateContext(token) {
 function refreshIndicator() {
   const ind = document.getElementById("private-indicator");
   if (!ind) return;
+  const userMemTag = (viewerLogin && userPrivateFactsCount > 0)
+    ? `+ ${userPrivateFactsCount} of your own (@${viewerLogin})` : null;
   if (privateSoul) {
     const extras = [];
     if (privateContext)         extras.push(`+ ${privateContext.length}c prose`);
     if (privateFactsCount > 0)  extras.push(`+ ${privateFactsCount} private mem`);
     if (privateAgents.length)   extras.push(`+ ${privateAgents.length} private agent${privateAgents.length === 1 ? "" : "s"}`);
+    if (userMemTag)             extras.push(userMemTag);
     const tail = extras.length ? ` (${extras.join(", ")})` : "";
     ind.innerHTML = `<span class="private-badge">✓ ascended — full twin voice loaded${tail}</span>`;
-  } else if (privateContext || privateFactsCount > 0 || privateAgents.length > 0) {
+  } else if (privateContext || privateFactsCount > 0 || privateAgents.length > 0 || userPrivateFactsCount > 0) {
     const bits = [];
     if (privateContext)        bits.push(`prose ${privateContext.length}c`);
     if (privateFactsCount > 0) bits.push(`+${privateFactsCount} private mem`);
     if (privateAgents.length)  bits.push(`+${privateAgents.length} private agent${privateAgents.length === 1 ? "" : "s"}`);
+    if (userMemTag)            bits.push(userMemTag);
     ind.innerHTML = `<span class="private-badge">✓ private brain loaded — ${bits.join(", ")}</span>`;
   } else {
     ind.innerHTML = "";
@@ -1655,7 +1744,15 @@ async function enterChat() {
   refreshMemorySha(token);  // fire-and-forget — doorman can chat without it
   await loadPrivateContext(token);
   await loadAgents(token);  // agent inventory (public always, private if authed-with-access)
-  refreshIndicator();        // badge reflects soul + memory + agents
+  // Capture viewer identity for per-user private memory keying
+  const cached = getCachedUser();
+  if (cached && cached.login) viewerLogin = cached.login;
+  if (!viewerLogin) {
+    const u = await fetchAndCacheUser(token);
+    if (u && u.login) viewerLogin = u.login;
+  }
+  if (viewerLogin) await loadUserPrivateIssues(token);
+  refreshIndicator();        // badge reflects soul + memory + agents + per-user mem
   const place = identity.display_name || identity.name || "this place";
   const memCount = (memory.facts || []).length;
   const memNote = memCount ? ` I'm carrying ${memCount} memor${memCount === 1 ? "y" : "ies"} from past visits.` : "";
@@ -1720,15 +1817,39 @@ document.getElementById("btn-save-memory").addEventListener("click", async () =>
   const result = await commitMemory(fact);
   document.getElementById("btn-save-memory").disabled = false;
   if (result.ok) {
-    status.textContent = "✓ Saved. " + (memory.facts.length) + " facts now live in this front door's memory.";
+    status.textContent = "✓ Saved to public memory. " + (memory.facts.length) + " facts in scope.";
     input.value = "";
-    renderMsg("system", "Saved memory: \"" + fact + "\"");
+    renderMsg("system", "Saved public memory: \"" + fact + "\"");
     setTimeout(() => {
       document.getElementById("memory-pane").hidden = true;
       status.textContent = "";
     }, 2000);
   } else {
-    status.textContent = "✗ Failed: " + result.error + ". You probably don't have write access to this seed's repo (that's normal — only the operator/maintainers can write to public memory).";
+    status.textContent = "✗ Failed: " + result.error + ". You probably don't have write access to this seed's repo (that's normal — only the operator/maintainers can write to public memory). Try 'Save as my private memory' instead.";
+  }
+});
+
+document.getElementById("btn-save-private-memory").addEventListener("click", async () => {
+  const input = document.getElementById("memory-input");
+  const status = document.getElementById("memory-status");
+  const fact = input.value.trim();
+  if (!fact) { status.textContent = "Empty memory."; return; }
+  status.textContent = "Saving as your private memory (creating GitHub Issue)…";
+  document.getElementById("btn-save-private-memory").disabled = true;
+  const result = await saveUserPrivateMemory(fact);
+  document.getElementById("btn-save-private-memory").disabled = false;
+  if (result.ok) {
+    const tag = viewerLogin ? "@" + viewerLogin : "you";
+    status.textContent = `✓ Saved as ${tag}'s private memory (Issue #${result.number}). Other collaborators with private-brain access WON'T see it — it's scoped to your GitHub identity.`;
+    input.value = "";
+    renderMsg("system", `Saved private memory (${tag}): "${fact}"`);
+    setTimeout(() => {
+      document.getElementById("memory-pane").hidden = true;
+      status.textContent = "";
+      refreshIndicator();
+    }, 3500);
+  } else {
+    status.textContent = "✗ Failed: " + result.error + ". Likely you don't have read+write access to the private_companion repo. Anonymous visitors can't reach this surface at all; this error usually means your token's scope doesn't include the private repo.";
   }
 });
 document.getElementById("chat-input").addEventListener("keydown", e => {
