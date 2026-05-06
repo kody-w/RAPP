@@ -1620,6 +1620,71 @@ write_index_html() {
     <button class="small primary" id="btn-copy-install">Copy command</button>
   </section>
 
+  <!-- Plant your own front door — public one-liner + AI-paste prompt.
+       Two formats: the bash one-liner for terminal users, and an
+       AI-friendly prompt for visitors who'd rather hand the job to
+       their AI assistant. (We always design for both modes — see
+       HERO_USECASE.md §3 Mom's Mixtape.) -->
+  <section class="pane" id="pane-plant" hidden>
+    <h2>🌱 Plant your own front door</h2>
+    <p>Plants a brand-new RAPP organism — a public GitHub repo with its own front door, doorman chat surface, identity, and trade card. Same kernel + skeleton this seed runs.</p>
+
+    <div style="margin-top:14px;">
+      <div class="propose-label" style="margin-bottom:6px;">Run in your terminal</div>
+      <pre class="cmd" id="plant-cmd">curl -fsSL https://kody-w.github.io/RAPP/installer/plant.sh \
+  | MIRROR_REPO_NAME=my-twin \
+    MIRROR_DISPLAY_NAME="My Twin" \
+    MIRROR_KIND=personal \
+    bash</pre>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button class="small primary" id="btn-copy-plant">Copy command</button>
+        <span style="font-size:11px;color:#6e7681;align-self:center;">edit the names + kind, paste in any shell</span>
+      </div>
+    </div>
+
+    <div style="margin-top:18px;">
+      <div class="propose-label" style="margin-bottom:6px;">Or hand it to your AI assistant</div>
+      <p style="font-size:12px;color:#8b949e;margin-bottom:6px;">Paste this prompt into Claude / ChatGPT / Gemini / your CLI agent. It walks them through running the plant for you.</p>
+      <pre class="cmd" id="plant-ai-prompt" style="white-space:pre-wrap;">Plant a new RAPP organism for me. Steps:
+
+1. Run this one-liner in a terminal you have access to:
+   curl -fsSL https://kody-w.github.io/RAPP/installer/plant.sh \
+     | MIRROR_REPO_NAME=&lt;slug&gt; \
+       MIRROR_DISPLAY_NAME=&quot;&lt;Display Name&gt;&quot; \
+       MIRROR_KIND=&lt;personal|place|experiment|mirror&gt; \
+       bash
+
+2. Substitute:
+   - &lt;slug&gt;: snake_case name for the GitHub repo (e.g. my_twin, dadjoke_bot)
+   - &lt;Display Name&gt;: human-readable name shown on the front door
+   - &lt;kind&gt;: 'personal' for a digital twin, 'place' for a location-tied
+     organism, 'experiment' for in-development, 'mirror' for a generic
+     planted seed
+
+3. Optional env vars:
+   - MIRROR_LOCATION=&quot;&lt;human-readable place&gt;&quot; (e.g. &quot;Bifrost · the watcher's threshold&quot;)
+   - MIRROR_PARENT=https://github.com/&lt;owner&gt;/&lt;parent-repo&gt; (lineage gift)
+   - MIRROR_PRIVATE_COMPANION=&lt;owner&gt;/&lt;private-repo&gt; (operator brain layer)
+
+4. The script needs gh CLI authenticated (gh auth status) and creates a
+   public GitHub repo + sets up GitHub Pages. If &quot;gh: command not found&quot;,
+   ask me to install gh and run &quot;gh auth login&quot; first.
+
+5. After it finishes, the new front door is at
+   https://&lt;your-gh-handle&gt;.github.io/&lt;slug&gt;/. Report the URL back.
+
+Spec: HERO_USECASE.md and ECOSYSTEM.md at https://github.com/kody-w/RAPP
+explain the platform — read those if anything in the script's output
+is unclear.</pre>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button class="small primary" id="btn-copy-plant-ai">Copy AI prompt</button>
+        <span style="font-size:11px;color:#6e7681;align-self:center;">paste into any AI assistant; they'll handle the rest</span>
+      </div>
+    </div>
+
+    <p style="font-size:11px;color:#6e7681;margin-top:18px;line-height:1.5;">Plant.sh source is open: <a href="https://kody-w.github.io/RAPP/installer/plant.sh" target="_blank" rel="noopener" style="color:#58a6ff;">view it before piping to bash</a> if you'd like.</p>
+  </section>
+
   <!-- Trade card overlay — tap to flip, back of card has the QR.
        Card is auto-derived from the seed's rappid + soul; the operator
        can override copy by dropping a card.json at the seed root. -->
@@ -1650,7 +1715,7 @@ write_index_html() {
       </div>
       <div class="card-face card-back">
         <div class="card-back-frame">
-          <h2 class="card-back-title">Scan to step in</h2>
+          <h2 class="card-back-title">Scan to summon</h2>
           <p class="card-back-sub" id="card-back-sub">__DISPLAY_NAME__'s front door</p>
           <img class="card-back-qr" id="card-back-qr" alt="Front-door QR">
           <div class="card-back-url" id="card-back-url"></div>
@@ -1663,7 +1728,7 @@ write_index_html() {
 
 <footer>
   <a href="https://kody-w.github.io/RAPP/">RAPP</a> ·
-  <a href="https://kody-w.github.io/RAPP/installer/plant.sh">plant your own front door</a> ·
+  <a href="#" id="footer-plant">plant your own front door</a> ·
   <a href="https://github.com/__GH_USER__/__REPO_NAME__">source</a>
 </footer>
 
@@ -1682,7 +1747,7 @@ let peer = null;
 let conn = null;
 
 function hideAllPanes() {
-  for (const id of ["pane-tether", "pane-install", "pane-verify", "pane-dreamcatcher", "pane-propose"]) {
+  for (const id of ["pane-tether", "pane-install", "pane-verify", "pane-dreamcatcher", "pane-propose", "pane-plant"]) {
     const el = document.getElementById(id);
     if (el) el.hidden = true;
   }
@@ -3227,6 +3292,19 @@ document.getElementById("btn-copy-id").onclick = () => {
 document.getElementById("btn-copy-install").onclick = () => {
   copy(document.getElementById("install-cmd").textContent);
 };
+// Footer "plant your own front door" → opens the plant pane (one-liner
+// + AI-paste prompt). Used to dump you on the raw plant.sh script;
+// now it's an in-page affordance both humans + AI assistants can act on.
+document.getElementById("footer-plant").onclick = (e) => {
+  e.preventDefault();
+  showPane("pane-plant");
+};
+document.getElementById("btn-copy-plant").onclick = () => {
+  copy(document.getElementById("plant-cmd").textContent);
+};
+document.getElementById("btn-copy-plant-ai").onclick = () => {
+  copy(document.getElementById("plant-ai-prompt").textContent);
+};
 document.getElementById("chat-input").addEventListener("keydown", e => {
   if (e.key === "Enter") sendMessage();
 });
@@ -4039,6 +4117,12 @@ write_doorman_html() {
   .chat-log {
     flex: 1; overflow-y: auto;
     padding-bottom: 12px;
+    /* Flex column so bubbles can self-align (.msg.user → right,
+       .msg.assistant → left) and respect their max-width. Without
+       this, align-self + margin-left:auto on children does nothing
+       and bubbles stretch to full width. */
+    display: flex;
+    flex-direction: column;
   }
   .msg {
     margin: 10px 0;
@@ -4046,7 +4130,8 @@ write_doorman_html() {
     border-radius: 14px;
     font-size: 14px;
     line-height: 1.5;
-    max-width: 85%;
+    max-width: min(720px, 85%);
+    width: fit-content;
     word-wrap: break-word;
   }
   .msg.user {
