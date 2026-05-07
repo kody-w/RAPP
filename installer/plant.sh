@@ -932,7 +932,13 @@ Three empty diffs = compliant. Anything else = not a valid mirror.
 EOF
 }
 
-write_index_html() {
+write_classic_html() {
+    # Generates classic.html — the flat front door (trade card,
+    # 🏘 Neighborhood pane, install widget, plant section, dream
+    # catcher, etc.). Reachable from the sphere's ⓘ details button
+    # via iframe overlay. Was the canonical index.html until the
+    # sphere doorman became the default surface; preserved here as
+    # the full identity/admin view.
     local target_dir="$1" gh_user="$2" rappid="$3"
     local mirror_url="https://$gh_user.github.io/$MIRROR_REPO_NAME"
     local lineage_html=""
@@ -940,7 +946,7 @@ write_index_html() {
 
     # Use a non-expanding heredoc + sed substitution to avoid escaping headaches
     # with the embedded JS.
-    cat > "$target_dir/index.html" << 'TEMPLATE_EOF'
+    cat > "$target_dir/classic.html" << 'TEMPLATE_EOF'
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -4780,7 +4786,7 @@ TEMPLATE_EOF
     # Substitute placeholders via Python, passing values through env vars
     # to avoid any shell-quoting headaches with display names containing
     # spaces, quotes, or other special chars. (bash 3.2-safe — no @Q.)
-    PLANT_INDEX_PATH="$target_dir/index.html" \
+    PLANT_INDEX_PATH="$target_dir/classic.html" \
     PLANT_DISPLAY_NAME="$MIRROR_DISPLAY_NAME" \
     PLANT_REPO_NAME="$MIRROR_REPO_NAME" \
     PLANT_GH_USER="$gh_user" \
@@ -4834,6 +4840,28 @@ for k, v in subs:
     text = text.replace(k, v)
 path.write_text(text)
 PYEOF
+}
+
+# Write the sphere doorman as the seed's index.html — the canonical
+# front door surface as of the lock-in. Fetches the sphere template
+# from grail (raw.githubusercontent.com/kody-w/RAPP/main/pages/sphere.html)
+# so every plant gets the latest version. Sphere loads identity from
+# the seed's own rappid.json + soul.md at runtime — no substitution
+# needed here. Falls back to a tiny shim that redirects to classic.html
+# if the fetch fails (network blip during plant).
+write_index_html() {
+    local target_dir="$1" gh_user="$2" rappid="$3"
+    local sphere_url="https://raw.githubusercontent.com/kody-w/RAPP/main/pages/sphere.html"
+    info "Fetching sphere doorman template from grail…"
+    if ! curl -fsSL "$sphere_url" -o "$target_dir/index.html"; then
+        warn "Couldn't fetch sphere from grail; falling back to classic-only index.html"
+        # Tiny redirect shim so the front door still works offline-builds.
+        cat > "$target_dir/index.html" << 'INDEXFALLBACK'
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Front Door</title>
+<meta http-equiv="refresh" content="0; url=classic.html"></head>
+<body><a href="classic.html">→ classic front door</a></body></html>
+INDEXFALLBACK
+    fi
 }
 
 write_doorman_html() {
@@ -7874,6 +7902,7 @@ main() {
     write_memory_json  "$workspace" "$gh_user" "$now"
     write_neighbors_json "$workspace"
     write_readme       "$workspace" "$gh_user" "$rappid"
+    write_classic_html "$workspace" "$gh_user" "$rappid"
     write_index_html   "$workspace" "$gh_user" "$rappid"
     write_doorman_html "$workspace" "$gh_user" "$rappid"
     overlay_egg_if_set "$workspace" "$workspace_private"
