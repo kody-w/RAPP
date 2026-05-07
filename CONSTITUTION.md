@@ -3305,3 +3305,37 @@ answers in report cards. The bicycle is electric: humans do the fun
 work, LLMs do the hard work, and the organism just gets ridden. The
 brain stays private until the operator says otherwise — secure first,
 operator-curated promotion later, no surprises.*
+
+---
+
+## Article XLV — The Sphere Is The Front Door (Implicit Summon)
+
+> **Every planted seed's `index.html` is the 3D sphere doorman.** A visitor lands at `<owner>.github.io/<repo>/`, sees a single floating sphere, taps it, and the doorman is implicitly summoned via GitHub Copilot device-code sign-in. There is no API key paste, no settings configuration, no menu to navigate. The sphere IS the chat affordance; the click IS the summon. Voice-first conversation mode is the default — the doorman speaks every reply through browser TTS (with optional ElevenLabs / Azure premium voice), and the mic re-arms automatically. **Mobile-first by construction: a visitor on their phone reaches the AI in two taps total — the URL, then the sphere.**
+
+The sphere doorman runs **the same agent contract** as a local brainstem. Pyodide loads canonical `*_agent.py` files from grail (`kody-w/RAPP/main/rapp_brainstem/agents/`), each agent's `metadata` becomes an OpenAI tool def, the LLM picks which to call, and `agent.perform(**kwargs)` runs in-browser. Storage shim (`utils/local_storage.py` Pyodide variant) is a drop-in for `AzureFileStorageManager` backed by browser localStorage — agents can't tell. **The sphere is a real vbrainstem, not a thin chat client.** This preserves Article VII (tier portability): every agent that runs locally also runs in the sphere unmodified.
+
+The previous flat front door (trade card, 🏘 Neighborhood pane, install widget, plant section, dream catcher, egg verifier) is preserved at `./classic.html` and reachable from the sphere via an iframe overlay (the **ⓘ details** button). Tapping ⓘ slides the classic surface in over the sphere; closing × returns the visitor to chat without losing context. **The sphere keeps running underneath**: the doorman's chat state, agent loads, and conversation history all persist while the visitor browses identity/admin views. This is the operator's escape hatch when they need the full surface, not the visitor's primary entry.
+
+`installer/plant.sh`'s plant flow generates three surfaces in order:
+1. `classic.html` — flat front door with all identity-substituting variables (rappid, owner, repo, hero blurb, lineage). Same content the canonical `index.html` carried before lock-in.
+2. `index.html` — fetched from grail's `pages/sphere.html` at plant time. No per-seed substitution: the sphere reads `rappid.json` + `soul.md` + `.brainstem_data/memory.json` at runtime, plus silent-escalates to the private companion or operator-fallback layer when the visitor's GitHub token has push access. Falls back to a 0-second redirect to `classic.html` if the grail fetch fails (network blip during plant).
+3. `doorman/index.html` — unchanged. Direct chat surface for visitors who deep-link.
+
+**Ascended escalation lives in the sphere too.** When the visitor signs in (device-code flow, no key paste — Article XLI), the sphere's `RAPP.Doorman.loadIdentity` mirrors the canonical doorman's silent-escalation pattern: identifies the viewer via `api.github.com/user`, resolves the private layer (`identity.private_companion.repo` or operator-fallback push access), fetches `soul.md` + `README.md` + `memory.json` + `private-memory`-labeled Issues from the private layer via the GitHub Contents API. Private facts merge into the running memory list with `[private]` and `[@<viewer>]` prefixes so the LLM cites the access boundary. The operator gets the full twin's voice automatically; collaborators with explicit private-repo access get it too. **No visitor ever has to know that the private layer exists** — it surfaces as voice changes (kind-aware default → public soul → ascended soul) and memory richness, never as a configuration step.
+
+**What this article requires:**
+- Every planted seed's `index.html` is the sphere page.
+- The sphere implements implicit summon (sphere tap → device-code sign-in if not authed; sphere tap → chat opens if authed). No API-key dialogs ever.
+- Voice-first conversation mode is the default (autoSpeak + continuousConversation: true). The mic re-arms after the doorman speaks. Operators can opt out per-session in settings.
+- ElevenLabs / Azure TTS keys live in the sphere's settings panel as the Article XLIII carve-out (the only sanctioned key-paste). Both keys stay in localStorage on the device.
+- The sphere uses Pyodide to run canonical agents. Agent metadata → OpenAI tool defs → LLM picks → `agent.perform()` in-browser → result loops back. Same contract as `brainstem.py`.
+- The classic flat front door is preserved at `./classic.html` and reachable from the sphere via the ⓘ overlay. Sphere chat state must persist across overlay open/close.
+
+**What this article forbids:**
+- A planted seed that ships a flat `index.html` as the primary surface. The sphere is the canonical front door; the flat view is the secondary admin overlay.
+- Any settings UI in the sphere that asks the visitor to paste a non-Article-XLIII key (Azure TTS, ElevenLabs are the only allowed; everything else is forbidden).
+- A "lite" or "fallback" front door that drops the agent runtime. The sphere either runs the full vbrainstem or falls back to an HTTP redirect to `classic.html` — never a half-feature shim (Article ANTIPATTERNS §3).
+- A doorman tier shift that hides the sphere from anonymous visitors (e.g., "sign in to see the 3D view"). The sphere renders for everyone; signing in changes what the doorman knows, not what the visitor sees.
+
+**Why this is constitutional and not a UI choice:**
+Without this article, the natural drift is toward flat HTML front doors per seed because they're easier to template and don't require a Three.js dependency. The flat front door is also more discoverable to search engines and easier to embed. **We are explicitly choosing the sphere despite those costs** because the platform's bet is that conversation-with-an-organism is the affordance, and a 3D sphere with implicit summon expresses that affordance more clearly than any link or button. A planted organism is a being, not a page; the sphere makes the being visible and tappable in a way a flat HTML page cannot. Operators retain full access to the flat surface via ⓘ — the choice is layered, not exclusive — but the default is the being. **Front doors are sphered by default. That's the lock-in.**
