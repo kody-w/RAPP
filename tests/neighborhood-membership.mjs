@@ -251,8 +251,8 @@ await test('master plan exists at repo root and references the one-liner', () =>
   assert(src.includes('Master Plan, Part Deux'), 'must have Part Deux');
 });
 
-await test('all four scenario shell scripts exist + are executable', () => {
-  for (const name of ['01-local-on-device.sh', '02-cross-device.sh', '03-public-art.sh', '04-private-workspace.sh', '_lib.sh']) {
+await test('all five scenario shell scripts exist + are executable', () => {
+  for (const name of ['01-local-on-device.sh', '02-cross-device.sh', '03-public-art.sh', '04-private-workspace.sh', '05-braintrust.sh', '_lib.sh']) {
     const p = path.join(ROOT, 'tests', 'scenarios', name);
     assert(exists(p), `tests/scenarios/${name} missing`);
     const stat = fs.statSync(p);
@@ -260,6 +260,88 @@ await test('all four scenario shell scripts exist + are executable', () => {
       assert((stat.mode & 0o111) !== 0, `tests/scenarios/${name} must be executable`);
     }
   }
+});
+
+// --- Braintrust template (Scenario 5) ---
+
+const BRAINTRUST_SEED = path.join(ROOT, 'installer', 'neighborhood-seeds', 'braintrust-template');
+
+await test('braintrust-template has kind=braintrust + private-workspace visibility', () => {
+  const n = readJSON(path.join(BRAINTRUST_SEED, 'neighborhood.json'));
+  assert(n.kind === 'braintrust', `kind: ${n.kind}`);
+  assert(n.visibility === 'private-workspace', `visibility: ${n.visibility}`);
+  assert(n.gate_repo === null, 'braintrust must have null gate_repo');
+});
+
+await test('braintrust-template declares the protocol schema set', () => {
+  const n = readJSON(path.join(BRAINTRUST_SEED, 'neighborhood.json'));
+  assert(n.braintrust_protocol, 'braintrust_protocol block missing');
+  const expected = [
+    'rapp-braintrust-request/1.0',
+    'rapp-braintrust-contribution/1.0',
+    'rapp-braintrust-citation/1.0',
+    'rapp-braintrust-report/1.0',
+  ];
+  for (const s of expected) {
+    assert(n.braintrust_protocol.schema_set.includes(s), `schema_set missing ${s}`);
+  }
+  assert(n.braintrust_protocol.consensus_via === 'pull_request_review',
+    'consensus_via must be pull_request_review');
+});
+
+await test('braintrust-template ships the five federation agents', () => {
+  const dir = path.join(BRAINTRUST_SEED, 'agents');
+  const files = fs.readdirSync(dir).filter(f => f.endsWith('_agent.py') && f !== 'basic_agent.py').sort();
+  const expected = [
+    'braintrust_cite_agent.py',
+    'braintrust_contribute_agent.py',
+    'braintrust_request_agent.py',
+    'braintrust_synthesize_agent.py',
+    'library_query_agent.py',
+  ];
+  assert(JSON.stringify(files) === JSON.stringify(expected),
+    `expected ${JSON.stringify(expected)}, got ${JSON.stringify(files)}`);
+});
+
+await test('braintrust-template carries reports/ + requests/ + state/inbox skeleton', () => {
+  for (const p of ['reports/.gitkeep', 'requests/.gitkeep', 'state/decisions/.gitkeep', 'state/inbox/.gitkeep']) {
+    assert(exists(path.join(BRAINTRUST_SEED, p)), `${p} missing`);
+  }
+});
+
+await test('synthesize agent has adapt-to-whats-home semantics in source', () => {
+  const src = fs.readFileSync(path.join(BRAINTRUST_SEED, 'agents', 'braintrust_synthesize_agent.py'), 'utf8');
+  assert(src.includes('adapt-to-who') || src.includes('adapt') || src.includes('who is home'),
+    'synthesize agent should explicitly reference adapt-to-whats-home pattern');
+  assert(src.includes('force_quorum'),
+    'synthesize agent must support force_quorum override');
+  assert(src.includes('contributors_present'),
+    'synthesize agent must distinguish present vs absent contributors');
+});
+
+await test('library_query agent default impl is operator-overridable', () => {
+  const src = fs.readFileSync(path.join(BRAINTRUST_SEED, 'agents', 'library_query_agent.py'), 'utf8');
+  assert(src.includes('OVERRIDE THIS LOCALLY') || src.includes('Drop a smarter library_query'),
+    'library_query must document the operator-override pattern');
+});
+
+await test('seed rappids: split neighborhoods share rappid; standalone ones are distinct', () => {
+  // SE team is ONE neighborhood split across two repos — they MUST share rappid
+  const sePub = readJSON(path.join(ROOT, 'installer', 'neighborhood-seeds', 'microsoft-se-team-neighborhood', 'neighborhood.json'));
+  const sePrv = readJSON(path.join(ROOT, 'installer', 'neighborhood-seeds', 'microsoft-se-team-neighborhood-private', 'neighborhood.json'));
+  assert(sePub.neighborhood_rappid === sePrv.neighborhood_rappid,
+    'SE team gate + private companion MUST share rappid (two faces of one neighborhood)');
+
+  const standalone = ['public-art-collective', 'private-workspace-template', 'local-only-test', 'braintrust-template'];
+  const rappids = new Set([sePub.neighborhood_rappid]);
+  for (const s of standalone) {
+    const n = readJSON(path.join(ROOT, 'installer', 'neighborhood-seeds', s, 'neighborhood.json'));
+    assert(n.schema === 'rapp-neighborhood/1.0', `${s} bad schema: ${n.schema}`);
+    assert(n.neighborhood_rappid, `${s} missing rappid`);
+    assert(!rappids.has(n.neighborhood_rappid), `${s} rappid collision: ${n.neighborhood_rappid}`);
+    rappids.add(n.neighborhood_rappid);
+  }
+  assert(rappids.size === 5, `expected 5 distinct neighborhood identities (1 split + 4 standalone), got ${rappids.size}`);
 });
 
 console.log(`\n  ${pass} passing, ${fail} failing\n`);

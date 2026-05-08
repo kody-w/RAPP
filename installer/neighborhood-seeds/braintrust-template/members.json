@@ -1,0 +1,24 @@
+{
+  "schema": "rapp-neighborhood-members/1.0",
+  "neighborhood_rappid": "dd06b965-69e6-4706-a289-de32b9257de1",
+  "version": 1,
+  "synced_at": "2026-05-08T00:00:00Z",
+  "synced_from": "manual_seed",
+  "members": [
+    {
+      "github_login": "kody-w",
+      "rappid": null,
+      "seed_url": null,
+      "joined_at": "2026-05-08T00:00:00Z",
+      "role": "founder",
+      "capabilities": ["all", "synthesizer"],
+      "online_hint": null,
+      "library_kinds": ["memory", "vault", "files"],
+      "notes": "Founder + first librarian. Solo until additional contributors are invited via gh api PUT collaborators."
+    }
+  ],
+  "reconciliation": {
+    "policy": "github_collaborators_api_is_canonical",
+    "notes": "Members are reconciled from GitHub collaborators on this repo. library_kinds is operator-curated metadata indicating what kinds of libraries each member's brainstem can query."
+  }
+}

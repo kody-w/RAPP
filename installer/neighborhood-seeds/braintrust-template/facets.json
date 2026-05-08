@@ -1,0 +1,12 @@
+{
+  "schema": "rapp-public-facets/1.0",
+  "neighborhood_rappid": "dd06b965-69e6-4706-a289-de32b9257de1",
+  "public_facets": [
+    {"name": "member_roster", "scope": "neighborhood", "description": "Contributing librarians."},
+    {"name": "shared_agents", "scope": "neighborhood", "description": "The five braintrust agents — request / library_query / contribute / synthesize / cite."},
+    {"name": "active_requests", "scope": "neighborhood", "description": "Open research requests awaiting contributions."},
+    {"name": "library_index", "scope": "personal", "description": "Each contributor's library inventory — never auto-shared. Contributors choose what to surface per request."},
+    {"name": "synthesized_reports", "scope": "neighborhood", "description": "Final bibliography-annotated reports under reports/."},
+    {"name": "citation_graph", "scope": "neighborhood", "description": "Cross-references between reports and source citations."}
+  ]
+}

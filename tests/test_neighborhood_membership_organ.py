@@ -240,6 +240,56 @@ class LocalMode(_OrganTestCase):
         self.assertIn("local-fixture", names)
 
 
+class ByRappid(_OrganTestCase):
+    """The rappid-as-global-passport lookup: given an operator's rappid, find
+    every neighborhood in the local subscription set where they appear as a
+    member. The rappid is the AI's identity primitive — it travels with the
+    operator and is the spine of the global estate view."""
+
+    def _stage_with_two_neighborhoods(self):
+        # Stage two neighborhood caches with overlapping members
+        cache_a = os.path.join(self.organ.CACHE_DIR, "kody-w__se-team")
+        cache_b = os.path.join(self.organ.CACHE_DIR, "kody-w__home-photos")
+        os.makedirs(cache_a, exist_ok=True)
+        os.makedirs(cache_b, exist_ok=True)
+        with open(os.path.join(cache_a, "members.json"), "w") as f:
+            f.write('{"members": [{"github_login": "kody-w", "rappid": "AAAA-1111", "role": "founder"}, {"github_login": "rappter1", "rappid": "BBBB-2222", "role": "member"}]}')
+        with open(os.path.join(cache_b, "members.json"), "w") as f:
+            f.write('{"members": [{"github_login": "kody-w", "rappid": "AAAA-1111", "role": "founder"}, {"github_login": "alex", "rappid": "CCCC-3333", "role": "member"}]}')
+
+        self.organ._save_subs({
+            "schema": "rapp-neighborhoods-cache/1.0",
+            "subscriptions": [
+                {"name": "se-team", "kind": "neighborhood", "gate_repo": "kody-w/se-team", "cache_dir": cache_a, "visibility": "private-workspace"},
+                {"name": "home-photos", "kind": "neighborhood", "gate_repo": "kody-w/home-photos", "cache_dir": cache_b, "visibility": "private-workspace"},
+            ],
+        })
+
+    def test_by_rappid_finds_operator_across_neighborhoods(self):
+        self._stage_with_two_neighborhoods()
+        body, status = self.organ.handle("GET", "by-rappid/aaaa-1111", None)
+        self.assertEqual(status, 200)
+        self.assertEqual(body["rappid"], "aaaa-1111")
+        self.assertEqual(body["appears_in_count"], 2)
+        names = sorted(a["neighborhood_name"] for a in body["appearances"])
+        self.assertEqual(names, ["home-photos", "se-team"])
+
+    def test_by_rappid_returns_zero_for_unknown(self):
+        self._stage_with_two_neighborhoods()
+        body, status = self.organ.handle("GET", "by-rappid/unknown-rappid-999", None)
+        self.assertEqual(status, 200)
+        self.assertEqual(body["appears_in_count"], 0)
+        self.assertEqual(body["appearances"], [])
+
+    def test_by_rappid_finds_only_neighborhoods_where_rappid_appears(self):
+        self._stage_with_two_neighborhoods()
+        body, status = self.organ.handle("GET", "by-rappid/bbbb-2222", None)
+        self.assertEqual(status, 200)
+        self.assertEqual(body["appears_in_count"], 1)
+        self.assertEqual(body["appearances"][0]["neighborhood_name"], "se-team")
+        self.assertEqual(body["appearances"][0]["github_login_in_this_neighborhood"], "rappter1")
+
+
 class Estate(_OrganTestCase):
     """The estate view is the metropolis lens: multi-neighborhood, multi-zone,
     operator-identity-preserved synthesized view. Tests the empty case and the

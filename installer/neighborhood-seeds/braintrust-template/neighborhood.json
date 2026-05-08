@@ -1,0 +1,38 @@
+{
+  "schema": "rapp-neighborhood/1.0",
+  "neighborhood_rappid": "dd06b965-69e6-4706-a289-de32b9257de1",
+  "kind": "braintrust",
+  "name": "braintrust-template",
+  "display_name": "Project Braintrust (template)",
+  "github": "https://github.com/kody-w/braintrust-template",
+  "url": null,
+  "visibility": "private-workspace",
+  "purpose": "Federated research workspace. Contributors are GitHub collaborators on this repo. When a request lands, every online contributor's brainstem queries THEIR own library, posts findings with provenance, and the requester (or a designated coordinator) synthesizes a bibliography-annotated report with full consensus through PR review. Each contributor is the librarian of their own knowledge.",
+  "private_companion": null,
+  "gate_repo": null,
+  "parent_rappid": null,
+  "parent_repo": "https://github.com/kody-w/RAPP",
+  "planted_by": "kody-w",
+  "planted_at": "2026-05-08T00:00:00Z",
+  "kernel_version": "0.6.0",
+  "lineage_label": "Braintrust template — federated research with bibliography v1",
+  "membership_policy": {
+    "default_collaborator_permission": "push",
+    "founder_only_seats": ["admin"],
+    "join_path": "out_of_band"
+  },
+  "braintrust_protocol": {
+    "schema_set": [
+      "rapp-braintrust-request/1.0",
+      "rapp-braintrust-contribution/1.0",
+      "rapp-braintrust-citation/1.0",
+      "rapp-braintrust-report/1.0"
+    ],
+    "request_label": "braintrust-request",
+    "contribution_label": "braintrust-contribution",
+    "report_label": "braintrust-report",
+    "consensus_via": "pull_request_review",
+    "default_quorum": 1,
+    "default_deadline_hours": 24
+  }
+}

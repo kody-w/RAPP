@@ -603,6 +603,60 @@ def _leave(slug):
 _TERMINAL_VERBS = {"sync", "members", "leave"}
 
 
+def _by_rappid(rappid):
+    """Look up a rappid across all subscribed neighborhoods.
+
+    The rappid is the AI's identity passport. Given a rappid, this returns
+    every neighborhood (in the local brainstem's subscription set) where
+    that rappid appears as a member. This is the global-estate-view by
+    operator-identity — exactly what makes 'who is this AI? where do they
+    show up?' answerable from any node in the network."""
+    if not rappid:
+        return {"error": "missing rappid"}
+    rappid = rappid.strip().lower()
+    doc = _load_subs()
+    appearances = []
+    for sub in (doc.get("subscriptions") or []):
+        cache = sub.get("cache_dir")
+        if not cache:
+            continue
+        members_path = os.path.join(cache, "members.json")
+        try:
+            with open(members_path, "r") as f:
+                members_doc = json.load(f)
+        except (FileNotFoundError, ValueError):
+            continue
+        for m in (members_doc.get("members") or []):
+            mr = (m.get("rappid") or "").lower()
+            if mr == rappid:
+                appearances.append({
+                    "neighborhood_name": sub.get("name"),
+                    "neighborhood_display_name": sub.get("display_name"),
+                    "neighborhood_rappid": sub.get("neighborhood_rappid"),
+                    "kind": sub.get("kind"),
+                    "visibility": sub.get("visibility"),
+                    "github_login_in_this_neighborhood": m.get("github_login"),
+                    "role": m.get("role"),
+                    "joined_at": m.get("joined_at"),
+                    "capabilities": m.get("capabilities") or [],
+                })
+                break
+    return {
+        "schema": "rapp-rappid-estate-view/1.0",
+        "rappid": rappid,
+        "appears_in_count": len(appearances),
+        "appearances": appearances,
+        "note": (
+            "This is the global view of where this rappid (operator identity) "
+            "shows up across the local brainstem's known subscriptions. The "
+            "rappid is the AI's passport — it travels with the operator across "
+            "every neighborhood they enter, and this lookup walks the full "
+            "estate to find them. (Cross-brainstem global lookup is Phase 2: "
+            "uses the same primitive against any peer's public estate-view.)"
+        ),
+    }
+
+
 def handle(method, path, body):
     """Organ entry point — dispatched by utils/organs at /api/neighborhoods/*.
 
@@ -619,6 +673,9 @@ def handle(method, path, body):
 
     if method == "GET" and path == "estate":
         return _estate_view(), 200
+
+    if method == "GET" and path.startswith("by-rappid/"):
+        return _by_rappid(path[len("by-rappid/"):]), 200
 
     if method == "POST" and path == "join":
         return _join(body)
@@ -646,6 +703,7 @@ def handle(method, path, body):
         "valid_routes": [
             "GET    /api/neighborhoods",
             "GET    /api/neighborhoods/estate",
+            "GET    /api/neighborhoods/by-rappid/<rappid>",
             "POST   /api/neighborhoods/join",
             "POST   /api/neighborhoods/<owner>/<repo>/sync",
             "GET    /api/neighborhoods/<owner>/<repo>/members",

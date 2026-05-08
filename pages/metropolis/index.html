@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RAPP Metropolis — decentralized neighborhood directory</title>
+  <meta name="description" content="A Kazaa/torrent-style index of active RAPP neighborhoods. Brainstems are the seeders. Agents are the work. The protocol is the network." />
+  <meta property="og:title" content="RAPP Metropolis" />
+  <meta property="og:description" content="Decentralized index of active RAPP neighborhoods. Brainstems are the seeders. Agents are the work." />
+  <style>
+    :root {
+      --bg: #0a0e14;
+      --bg-card: #0d1117;
+      --fg: #e6edf3;
+      --muted: #8b949e;
+      --accent: #58a6ff;
+      --gate: #db61a2;
+      --green: #3fb950;
+      --orange: #f0883e;
+      --border: #30363d;
+      --row-hover: #161b22;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg);
+                  font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code { font: 12px/1.4 ui-monospace, "SF Mono", Menlo, monospace;
+           background: var(--row-hover); padding: 1px 5px; border-radius: 3px; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 28px 20px 80px; }
+
+    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; }
+    h1 { margin: 0; font-size: 26px; letter-spacing: -0.01em; }
+    .subtitle { color: var(--muted); font-size: 14px; margin: 4px 0 24px; }
+
+    .pill { display: inline-block; background: rgba(63,185,80,0.15); color: var(--green);
+            font-size: 11px; padding: 3px 9px; border-radius: 999px; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; }
+    .pill.warn { background: rgba(240,136,62,0.15); color: var(--orange); }
+    .pill.gate { background: rgba(219,97,162,0.15); color: var(--gate); }
+
+    .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+    .search { flex: 1; min-width: 260px; padding: 8px 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; color: var(--fg); font: inherit; }
+    .filter-btn { background: var(--bg-card); border: 1px solid var(--border); color: var(--fg); padding: 6px 11px; border-radius: 6px; cursor: pointer; font: inherit; font-size: 13px; }
+    .filter-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+    .stats { display: flex; gap: 24px; flex-wrap: wrap; padding: 14px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 18px; font-size: 13px; }
+    .stat-num { font-size: 22px; font-weight: 700; color: var(--accent); }
+    .stat-label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+    table { width: 100%; border-collapse: collapse; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+    tr:last-child td { border-bottom: none; }
+    tr.entry { cursor: pointer; }
+    tr.entry:hover { background: var(--row-hover); }
+    .seed-bar { display: inline-block; width: 60px; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; vertical-align: middle; margin-right: 6px; }
+    .seed-bar > span { display: block; height: 100%; background: var(--green); width: 0%; transition: width 0.4s ease; }
+
+    .tags { display: flex; gap: 4px; flex-wrap: wrap; }
+    .tag { background: var(--row-hover); color: var(--muted); padding: 1px 7px; border-radius: 3px; font-size: 11px; }
+
+    footer { margin-top: 36px; padding-top: 24px; border-top: 1px solid var(--border);
+             color: var(--muted); font-size: 12px; }
+
+    .empty { padding: 40px; text-align: center; color: var(--muted); }
+    .loading { padding: 30px; text-align: center; color: var(--muted); font-style: italic; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>🏙 RAPP Metropolis</h1>
+      <div class="subtitle">Decentralized index of active RAPP neighborhoods. Brainstems are the seeders. Agents are the work. <em>The protocol is the network.</em></div>
+    </div>
+    <div>
+      <a href="https://github.com/kody-w/RAPP/blob/main/MASTER_PLAN.md" class="pill">⭐ Master Plan</a>
+    </div>
+  </header>
+
+  <div class="stats" id="stats">
+    <div><div class="stat-num" id="stat-total">—</div><div class="stat-label">Listed</div></div>
+    <div><div class="stat-num" id="stat-public">—</div><div class="stat-label">Public</div></div>
+    <div><div class="stat-num" id="stat-gated">—</div><div class="stat-label">Gated</div></div>
+    <div><div class="stat-num" id="stat-private">—</div><div class="stat-label">Private</div></div>
+    <div><div class="stat-num" id="stat-live">—</div><div class="stat-label">Reachable now</div></div>
+  </div>
+
+  <div class="controls">
+    <input class="search" id="q" placeholder="search by name, kind, or tag…" autocomplete="off" />
+    <button class="filter-btn active" data-filter="all">all</button>
+    <button class="filter-btn" data-filter="public">public</button>
+    <button class="filter-btn" data-filter="gated">gated</button>
+    <button class="filter-btn" data-filter="private">private</button>
+    <button class="filter-btn" data-filter="braintrust">braintrust</button>
+    <button class="filter-btn" data-filter="workspace">workspace</button>
+  </div>
+
+  <table id="grid">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Kind</th>
+        <th>Visibility</th>
+        <th>Tags</th>
+        <th>Seeders</th>
+        <th>Join</th>
+      </tr>
+    </thead>
+    <tbody id="rows"><tr><td colspan="6" class="loading">Loading the metropolis…</td></tr></tbody>
+  </table>
+
+  <footer>
+    <p>This is a Kazaa/torrent-style index. Each entry points at a real GitHub repo (the seed). When a brainstem joins a neighborhood, that brainstem becomes a seeder. The metropolis itself is just a directory — there is no central server, no platform-operated database, no admission ceremony. <strong>Anyone can fork this index and run their own tracker.</strong> The protocol is the network, not this URL.</p>
+    <p>Schema: <code>rapp-metropolis-index/1.0</code> · Tracker: <code>kody-w</code> · Source: <a href="https://github.com/kody-w/RAPP/blob/main/pages/metropolis/index.json">index.json</a> · <a href="https://github.com/kody-w/RAPP/blob/main/pages/metropolis/README.md">protocol README</a></p>
+    <p>To register your own neighborhood: open a PR adding an entry to <code>pages/metropolis/index.json</code>, OR run your own tracker by forking this directory.</p>
+  </footer>
+</div>
+
+<script>
+(async function () {
+  const rows = document.getElementById("rows");
+  let entries = [];
+  let activeFilter = "all";
+  let activeQuery = "";
+
+  function pillFor(visibility) {
+    if (visibility === "public") return '<span class="pill">public</span>';
+    if (visibility === "public-gate") return '<span class="pill gate">gated</span>';
+    if (visibility === "private") return '<span class="pill warn">private</span>';
+    if (visibility === "private-workspace") return '<span class="pill warn">private</span>';
+    return '<span class="pill warn">' + (visibility || "?") + '</span>';
+  }
+
+  function joinHint(e) {
+    if (e.gate_url) return '<a href="' + e.gate_url + '">visit gate →</a>';
+    if (e.gate_repo) return '<a href="' + e.gate_repo + '">visit repo →</a>';
+    return '<span style="color: var(--muted)">' + (e.join_via || "—") + '</span>';
+  }
+
+  function matchesFilter(e) {
+    if (activeFilter === "all") return true;
+    if (activeFilter === "public") return e.visibility === "public";
+    if (activeFilter === "gated") return e.visibility === "public-gate";
+    if (activeFilter === "private") return e.visibility === "private" || e.visibility === "private-workspace";
+    if (activeFilter === "braintrust") return e.kind === "braintrust";
+    if (activeFilter === "workspace") return e.kind === "workspace";
+    return true;
+  }
+
+  function matchesQuery(e) {
+    if (!activeQuery) return true;
+    const q = activeQuery.toLowerCase();
+    return (e.name || "").toLowerCase().includes(q)
+        || (e.display_name || "").toLowerCase().includes(q)
+        || (e.kind || "").toLowerCase().includes(q)
+        || (e.tags || []).some(t => t.toLowerCase().includes(q));
+  }
+
+  function render() {
+    const filtered = entries.filter(e => matchesFilter(e) && matchesQuery(e));
+    if (filtered.length === 0) {
+      rows.innerHTML = '<tr><td colspan="6" class="empty">No matches.</td></tr>';
+      return;
+    }
+    rows.innerHTML = filtered.map(e => {
+      const seedW = Math.min(100, ((e.seeders_live ?? e.seeders_min ?? 0) / 5) * 100);
+      const seedCount = e.seeders_live != null ? e.seeders_live : (e.seeders_min || 0);
+      const tags = (e.tags || []).map(t => '<span class="tag">' + t + '</span>').join("");
+      const repoLink = e.gate_repo ? '<a href="' + e.gate_repo + '">' + (e.display_name || e.name) + '</a>' : (e.display_name || e.name);
+      const reachable = e.live_status === "reachable" ? " 🟢" : (e.live_status === "unreachable" ? " ⚫" : "");
+      return `
+        <tr class="entry">
+          <td><strong>${repoLink}</strong>${reachable}<br><code>${e.name}</code></td>
+          <td>${e.kind || "—"}</td>
+          <td>${pillFor(e.visibility)}</td>
+          <td><div class="tags">${tags}</div></td>
+          <td><span class="seed-bar"><span style="width:${seedW}%"></span></span>${seedCount}</td>
+          <td>${joinHint(e)}</td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  function updateStats() {
+    const T = entries.length;
+    const P = entries.filter(e => e.visibility === "public").length;
+    const G = entries.filter(e => e.visibility === "public-gate").length;
+    const Pr = entries.filter(e => (e.visibility || "").startsWith("private")).length;
+    const L = entries.filter(e => e.live_status === "reachable").length;
+    document.getElementById("stat-total").textContent = T;
+    document.getElementById("stat-public").textContent = P;
+    document.getElementById("stat-gated").textContent = G;
+    document.getElementById("stat-private").textContent = Pr;
+    document.getElementById("stat-live").textContent = L;
+  }
+
+  // Live-probe: fetch each entry's gate URL with a HEAD; mark reachable / unreachable.
+  // Done after the initial render so the page paints fast.
+  async function probeLive() {
+    const probes = entries.map(async (e) => {
+      const url = e.gate_url || e.gate_repo;
+      if (!url) { e.live_status = "unknown"; return; }
+      try {
+        const r = await fetch(url, { method: "HEAD", mode: "no-cors", cache: "no-store" });
+        e.live_status = "reachable";
+      } catch {
+        e.live_status = "unreachable";
+      }
+    });
+    await Promise.allSettled(probes);
+    render(); updateStats();
+  }
+
+  try {
+    const r = await fetch("./index.json", { cache: "no-store" });
+    const idx = await r.json();
+    entries = idx.entries || [];
+    render(); updateStats();
+    probeLive();
+  } catch (e) {
+    rows.innerHTML = '<tr><td colspan="6" class="empty">Could not load index.json.</td></tr>';
+  }
+
+  document.getElementById("q").addEventListener("input", (e) => { activeQuery = e.target.value; render(); });
+  for (const btn of document.querySelectorAll(".filter-btn")) {
+    btn.addEventListener("click", () => {
+      for (const b of document.querySelectorAll(".filter-btn")) b.classList.remove("active");
+      btn.classList.add("active");
+      activeFilter = btn.dataset.filter;
+      render();
+    });
+  }
+})();
+</script>
+</body>
+</html>
