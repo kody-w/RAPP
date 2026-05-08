@@ -1,0 +1,53 @@
+{
+  "schema": "rapp-metropolis-index/1.0",
+  "tracker_name": "RAPP Metropolis — federated demo tracker",
+  "tracker_url": "https://kody-w.github.io/RAPP/pages/metropolis/federated-demo.json",
+  "tracker_operator": "kody-w",
+  "purpose": "A second tracker file in the same repo demonstrating that federated_trackers actually federate. The directory page fetches this URL alongside index.json and merges the entries (deduped by neighborhood_rappid). Anyone running their own tracker exposes their index at any URL; trackers reference each other to compose a multi-tracker view of the metropolis. No central authority.",
+  "synced_at": "2026-05-08T00:00:00Z",
+  "federated_trackers": [
+    "https://kody-w.github.io/RAPP/pages/metropolis/index.json"
+  ],
+  "entries": [
+    {
+      "schema": "rapp-metropolis-entry/1.0",
+      "name": "rapp-zoo-federated-mirror",
+      "display_name": "RAPP Zoo (federated mirror)",
+      "kind": "directory",
+      "visibility": "public",
+      "neighborhood_rappid": "625b4272-05e0-40ed-a88e-ca98d45e453c",
+      "gate_repo": "https://github.com/kody-w/RAPP",
+      "gate_url": "https://kody-w.github.io/RAPP/rapp-zoo/",
+      "private_companion": null,
+      "planted_by": "kody-w",
+      "planted_at": "2026-05-01T00:00:00Z",
+      "tags": ["mirror", "federated", "directory", "demo"],
+      "join_via": "public_link",
+      "seeders_min": 0,
+      "is_template": false,
+      "_federation_note": "This entry is unique to this tracker; the canonical index at index.json does not list it. When the directory page merges, this row materializes only in the federated view."
+    },
+    {
+      "schema": "rapp-metropolis-entry/1.0",
+      "name": "constitution-readers-circle",
+      "display_name": "Constitution Readers Circle (demo)",
+      "kind": "neighborhood",
+      "visibility": "public",
+      "neighborhood_rappid": "086cfdb2-288a-4379-ab5f-4970d8fd0152",
+      "gate_repo": null,
+      "gate_url": null,
+      "private_companion": null,
+      "planted_by": "demo",
+      "planted_at": "2026-05-08T00:00:00Z",
+      "tags": ["demo", "federated-only", "reading-group"],
+      "join_via": "out_of_band_invite",
+      "seeders_min": 0,
+      "is_template": false,
+      "_federation_note": "Demo entry that lives ONLY in this peer tracker. Proves the federation primitive surfaces non-canonical entries via the merge."
+    }
+  ],
+  "protocol": {
+    "merge_rule": "Entries are deduped by neighborhood_rappid; canonical index entries take precedence on conflict; unique-to-peer entries are added with a `from_tracker` annotation in the merged view.",
+    "self_reference_safe": "A tracker can list itself in federated_trackers without infinite recursion — the directory page tracks fetched URLs and skips duplicates."
+  }
+}

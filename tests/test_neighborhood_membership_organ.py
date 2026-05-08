@@ -332,5 +332,84 @@ class Estate(_OrganTestCase):
         self.assertNotIn("alex", bridges, "alex only in home-photos — not a bridge")
 
 
+class Federation(_OrganTestCase):
+    """Real brainstem-to-brainstem federation: POST /api/.../contribute persists
+    a receipt; GET /api/.../contributions lists them. No GitHub round-trip; no
+    stubs; the receiver's filesystem holds the proof."""
+
+    def _stage_subscription(self, slug="local/test", cache_subdir="local__test"):
+        cache = os.path.join(self.organ.CACHE_DIR, cache_subdir)
+        os.makedirs(cache, exist_ok=True)
+        with open(os.path.join(cache, "neighborhood.json"), "w") as f:
+            f.write('{"schema":"rapp-neighborhood/1.0","name":"test","display_name":"Test"}')
+        self.organ._save_subs({
+            "schema": "rapp-neighborhoods-cache/1.0",
+            "subscriptions": [{
+                "name": "test",
+                "kind": "neighborhood",
+                "gate_repo": slug,
+                "cache_dir": cache,
+                "neighborhood_rappid": "test-r",
+            }],
+        })
+        return slug, cache
+
+    def test_contribute_persists_receipt_with_provenance(self):
+        slug, cache = self._stage_subscription()
+        contribution = {
+            "request_id": "abc123",
+            "contributor": {"github_login": "rappter1", "rappid": "fake-rappid"},
+            "findings": [{"snippet": "x", "source": {"kind": "files", "ref": "/x"}}],
+        }
+        body, status = self.organ.handle(
+            "POST", f"{slug}/contribute",
+            {"request_id": "abc123", "contribution": contribution, "from_peer": "rappter1@laptop"},
+        )
+        self.assertEqual(status, 200)
+        self.assertTrue(body["received"])
+        self.assertTrue(os.path.exists(body["stored_at"]))
+
+    def test_contribute_rejects_missing_request_id(self):
+        slug, _ = self._stage_subscription()
+        body, status = self.organ.handle("POST", f"{slug}/contribute", {"no": "request_id"})
+        self.assertEqual(status, 400)
+        self.assertIn("request_id", body["error"])
+
+    def test_contribute_rejects_unsubscribed_neighborhood(self):
+        body, status = self.organ.handle("POST", "unknown/repo/contribute", {"request_id": "x"})
+        self.assertEqual(status, 404)
+
+    def test_list_contributions_returns_persisted_receipts(self):
+        slug, _ = self._stage_subscription()
+        for login in ["alice", "bob", "carol"]:
+            self.organ.handle("POST", f"{slug}/contribute", {
+                "request_id": "shared-req",
+                "contribution": {
+                    "request_id": "shared-req",
+                    "contributor": {"github_login": login},
+                    "findings": [],
+                },
+            })
+        body, status = self.organ.handle("GET", f"{slug}/contributions", None)
+        self.assertEqual(status, 200)
+        self.assertEqual(body["count"], 3)
+        logins = {c["contribution"]["contributor"]["github_login"] for c in body["contributions"]}
+        self.assertEqual(logins, {"alice", "bob", "carol"})
+
+    def test_list_contributions_filters_by_request_id(self):
+        slug, _ = self._stage_subscription()
+        self.organ.handle("POST", f"{slug}/contribute", {
+            "request_id": "req-A",
+            "contribution": {"request_id": "req-A", "contributor": {"github_login": "alice"}},
+        })
+        self.organ.handle("POST", f"{slug}/contribute", {
+            "request_id": "req-B",
+            "contribution": {"request_id": "req-B", "contributor": {"github_login": "bob"}},
+        })
+        body, _ = self.organ.handle("GET", f"{slug}/contributions", {"request_id": "req-A"})
+        self.assertEqual(body["count"], 1)
+        self.assertEqual(body["contributions"][0]["contribution"]["contributor"]["github_login"], "alice")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

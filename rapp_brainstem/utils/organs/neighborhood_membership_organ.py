@@ -600,7 +600,104 @@ def _leave(slug):
     }, 200
 
 
-_TERMINAL_VERBS = {"sync", "members", "leave"}
+_TERMINAL_VERBS = {"sync", "members", "leave", "contribute", "contributions"}
+
+
+def _contribute(slug, body):
+    """Accept a contribution from a peer brainstem (or local agent).
+
+    This is the receiver side of brainstem-to-brainstem federation. A peer
+    brainstem POSTs `{request_id, topic, contribution}` to this endpoint;
+    we record it under the subscription's cache so the operator's
+    synthesizer can later fold it into a report.
+
+    No GitHub round-trip. No auth ceremony beyond the local subscription —
+    if the receiver has subscribed to this neighborhood (file:// or remote),
+    contributions from peers are accepted into their cache. The trust
+    boundary at the network edge is whatever fronts the brainstem (firewall,
+    same-machine peer registry, manually-shared peer URL)."""
+    doc = _load_subs()
+    sub = _find_sub(doc, slug)
+    if not sub:
+        return {"error": f"not subscribed to {slug}"}, 404
+    if not isinstance(body, dict):
+        return {"error": "body must be a JSON object"}, 400
+
+    contribution = body.get("contribution") or body
+    request_id = body.get("request_id") or contribution.get("request_id")
+    if not request_id:
+        return {"error": "missing request_id"}, 400
+    contributor_login = (
+        (contribution.get("contributor") or {}).get("github_login")
+        or body.get("contributor_login")
+        or "unknown"
+    )
+
+    cache_dir = sub.get("cache_dir")
+    if not cache_dir:
+        return {"error": "subscription has no cache directory"}, 409
+    contrib_dir = os.path.join(cache_dir, "contributions", request_id)
+    os.makedirs(contrib_dir, exist_ok=True)
+    fname = f"{_now().replace(':', '').replace('-', '')}-{contributor_login}.json"
+    path = os.path.join(contrib_dir, fname)
+    receipt = {
+        "schema": "rapp-braintrust-contribution-receipt/1.0",
+        "request_id": request_id,
+        "received_at": _now(),
+        "received_by_neighborhood": slug,
+        "contribution": contribution,
+        "from_peer": body.get("from_peer"),
+    }
+    try:
+        with open(path, "w") as f:
+            json.dump(receipt, f, indent=2)
+    except OSError as e:
+        return {"error": f"could not write receipt: {e}"}, 500
+
+    return {
+        "received": True,
+        "request_id": request_id,
+        "contributor_login": contributor_login,
+        "stored_at": path,
+        "schema": "rapp-braintrust-contribution-receipt/1.0",
+    }, 200
+
+
+def _list_contributions(slug, body=None):
+    """List contributions stored for this subscription, optionally
+    filtered by request_id."""
+    doc = _load_subs()
+    sub = _find_sub(doc, slug)
+    if not sub:
+        return {"error": f"not subscribed to {slug}"}, 404
+    cache_dir = sub.get("cache_dir")
+    if not cache_dir:
+        return {"contributions": [], "note": "no cache yet"}, 200
+    contrib_root = os.path.join(cache_dir, "contributions")
+    if not os.path.isdir(contrib_root):
+        return {"contributions": [], "request_count": 0}, 200
+
+    request_filter = (body or {}).get("request_id")
+    out = []
+    for req_id in sorted(os.listdir(contrib_root)):
+        if request_filter and req_id != request_filter:
+            continue
+        req_dir = os.path.join(contrib_root, req_id)
+        if not os.path.isdir(req_dir):
+            continue
+        for fn in sorted(os.listdir(req_dir)):
+            if not fn.endswith(".json"):
+                continue
+            try:
+                with open(os.path.join(req_dir, fn), "r") as f:
+                    out.append(json.load(f))
+            except (ValueError, OSError):
+                continue
+    return {
+        "contributions": out,
+        "count": len(out),
+        "request_filter": request_filter,
+    }, 200
 
 
 def _by_rappid(rappid):
@@ -693,6 +790,10 @@ def handle(method, path, body):
             return _members(slug)
         if method == "POST" and verb == "leave":
             return _leave(slug)
+        if method == "POST" and verb == "contribute":
+            return _contribute(slug, body)
+        if method == "GET" and verb == "contributions":
+            return _list_contributions(slug, body)
         return {"error": f"verb /{verb} does not accept {method}"}, 405
 
     if method == "GET" and len(parts) >= 1:
@@ -709,5 +810,7 @@ def handle(method, path, body):
             "GET    /api/neighborhoods/<owner>/<repo>/members",
             "GET    /api/neighborhoods/<owner>/<repo>",
             "POST   /api/neighborhoods/<owner>/<repo>/leave",
+            "POST   /api/neighborhoods/<owner>/<repo>/contribute",
+            "GET    /api/neighborhoods/<owner>/<repo>/contributions",
         ],
     }, 404

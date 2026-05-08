@@ -5,7 +5,9 @@
   "tracker_operator": "kody-w",
   "purpose": "Kazaa-style decentralized index of active RAPP neighborhoods. Each entry points at a planted neighborhood seed; brainstems are the seeders; agents are the work. Anyone can fork this index and run their own tracker — the protocol is the network, not this URL.",
   "synced_at": "2026-05-08T00:00:00Z",
-  "federated_trackers": [],
+  "federated_trackers": [
+    "https://kody-w.github.io/RAPP/pages/metropolis/federated-demo.json"
+  ],
   "entries": [
     {
       "schema": "rapp-metropolis-entry/1.0",

@@ -85,6 +85,7 @@
     <div><div class="stat-num" id="stat-gated">—</div><div class="stat-label">Templates</div></div>
     <div><div class="stat-num" id="stat-private">—</div><div class="stat-label">Private</div></div>
     <div><div class="stat-num" id="stat-live">—</div><div class="stat-label">Verified 200</div></div>
+    <div><div class="stat-num" id="trackers-count">1</div><div class="stat-label">Trackers federated</div></div>
   </div>
 
   <div class="controls">
@@ -224,14 +225,59 @@
     render(); updateStats();
   }
 
+  // Real cross-tracker federation: fetch the canonical index, then walk
+  // federated_trackers and merge their entries (deduped by neighborhood_rappid).
+  // Annotates each entry with the source tracker so the UI can show which
+  // entries came from peers vs. the canonical tracker.
+  async function fetchTracker(url, fetched) {
+    if (fetched.has(url)) return null;
+    fetched.add(url);
+    try {
+      const r = await fetch(url, { cache: "no-store" });
+      if (!r.ok) return null;
+      return await r.json();
+    } catch { return null; }
+  }
+
   try {
-    const r = await fetch("./index.json", { cache: "no-store" });
-    const idx = await r.json();
-    entries = idx.entries || [];
+    const fetched = new Set();
+    const canonical = await fetchTracker("./index.json", fetched);
+    if (!canonical) throw new Error("canonical index unreachable");
+
+    // Index by neighborhood_rappid; canonical wins on collision.
+    const byRappid = new Map();
+    const byName = new Map();
+    const trackerSources = new Set([canonical.tracker_url || "canonical"]);
+    for (const e of canonical.entries || []) {
+      e._from_tracker = canonical.tracker_url || "canonical";
+      if (e.neighborhood_rappid) byRappid.set(e.neighborhood_rappid, e);
+      else byName.set(e.name, e);
+    }
+
+    // Walk federated_trackers and merge — entries unique to peers materialize
+    // here; conflicts (same rappid) defer to the canonical version.
+    for (const peerUrl of (canonical.federated_trackers || [])) {
+      const peer = await fetchTracker(peerUrl, fetched);
+      if (!peer) continue;
+      trackerSources.add(peer.tracker_url || peerUrl);
+      for (const e of peer.entries || []) {
+        e._from_tracker = peer.tracker_url || peerUrl;
+        if (e.neighborhood_rappid && !byRappid.has(e.neighborhood_rappid)) {
+          byRappid.set(e.neighborhood_rappid, e);
+        } else if (!e.neighborhood_rappid && !byName.has(e.name)) {
+          byName.set(e.name, e);
+        }
+        // (collision = canonical wins; we do nothing.)
+      }
+    }
+
+    entries = [...byRappid.values(), ...byName.values()];
+    document.getElementById("trackers-count")?.textContent &&
+      (document.getElementById("trackers-count").textContent = String(trackerSources.size));
     render(); updateStats();
     probeLive();
   } catch (e) {
-    rows.innerHTML = '<tr><td colspan="6" class="empty">Could not load index.json.</td></tr>';
+    rows.innerHTML = '<tr><td colspan="6" class="empty">Could not load metropolis index. ' + (e.message || "") + '</td></tr>';
   }
 
   document.getElementById("q").addEventListener("input", (e) => { activeQuery = e.target.value; render(); });
