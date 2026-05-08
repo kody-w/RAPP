@@ -59,6 +59,14 @@
       "pages": [
         { "path": "vault/",                    "title": "Vault home",            "audience": "Curious contributor", "description": "Real Obsidian vault of founding decisions, removals, manifestos. Static SPA viewer." }
       ]
+    },
+    {
+      "key": "metropolis",
+      "label": "Metropolis",
+      "description": "Decentralized index of active RAPP neighborhoods. Kazaa-style tracker; anyone can fork + run their own.",
+      "pages": [
+        { "path": "metropolis/",               "title": "RAPP Metropolis",       "audience": "Anyone discovering neighborhoods", "description": "Live directory of planted neighborhoods. Brainstems are the seeders. Agents are the work. The protocol is the network." }
+      ]
     }
   ],
   "root_pinned": [
