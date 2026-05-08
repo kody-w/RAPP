@@ -156,6 +156,7 @@ The platform's install path is one curl pipe: `curl -fsSL https://kody-w.github.
 
 Three checked-in specs are the contract for this codebase. Read all three before proposing structural changes:
 
+- [`ECOSYSTEM_MAP.md`](./ECOSYSTEM_MAP.md) — *the index*. Single canonical synthesis: schemas, files, decision table, drift gaps. **Read this first; it points at the rest.**
 - [`HERO_USECASE.md`](./HERO_USECASE.md) — *what* this platform must do. Canonical scenarios this codebase must satisfy: Charizard-in-the-woods (offline-share over QR pair), Dream Catcher (parallel-dimension reassimilation), Mom's Mixtape (accessibility floor), Pizza Place (future location-aware layer). Every architectural decision is judged against whether these stories still work.
 - [`ECOSYSTEM.md`](./ECOSYSTEM.md) — *how* the pieces fit together. End-to-end layout of a planted organism: file structure, identity stack, the two surfaces, memory tiers, MMR system, evolution path, egg cartridges, integrity stack, Dream Catcher, network modes, external integrations, surface inventory, schema reference.
 - [`ANTIPATTERNS.md`](./ANTIPATTERNS.md) — *what we will never do*. Locked rules: ONE term for the plugin unit (always `agent`, never `skill`/`routine`/`loop`/`plugin`); frozen kernel never moves; no half-released-feature shims; no fallback to "RAPP"/"an AI assistant" branding; no network calls without local-first fallback. Append-only.
