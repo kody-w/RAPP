@@ -79,7 +79,7 @@ heading "What to test by hand for cross-device"
 cat <<'EOF'
   Machine A (laptop):
     1. Pull the latest RAPP main: cd ~/RAPP && git pull origin main
-    2. Push the seed pair (one-time, see installer/neighborhood-seeds/README.md)
+    2. Push the seed pair (one-time, see neighborhood-seeds/README.md)
     3. Start brainstem; subscribe:
          brainstem join https://github.com/kody-w/microsoft-se-team-neighborhood
     4. Verify roster:

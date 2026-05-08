@@ -22,7 +22,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, '..');
 
-const SEED_DIR = path.join(ROOT, 'installer', 'neighborhood-seeds');
+const SEED_DIR = path.join(ROOT, 'neighborhood-seeds');
 const PUBLIC_SEED  = path.join(SEED_DIR, 'microsoft-se-team-neighborhood');
 const PRIVATE_SEED = path.join(SEED_DIR, 'microsoft-se-team-neighborhood-private');
 
@@ -168,9 +168,9 @@ await test('membership organ supports file:// local mode', () => {
 
 // --- New seeds (local-only-test, public-art-collective, private-workspace-template) ---
 
-const LOCAL_TEST_SEED   = path.join(ROOT, 'installer', 'neighborhood-seeds', 'local-only-test');
-const PUBLIC_ART_SEED   = path.join(ROOT, 'installer', 'neighborhood-seeds', 'public-art-collective');
-const PRIVATE_WS_SEED   = path.join(ROOT, 'installer', 'neighborhood-seeds', 'private-workspace-template');
+const LOCAL_TEST_SEED   = path.join(ROOT, 'neighborhood-seeds', 'local-only-test');
+const PUBLIC_ART_SEED   = path.join(ROOT, 'neighborhood-seeds', 'public-art-collective');
+const PRIVATE_WS_SEED   = path.join(ROOT, 'neighborhood-seeds', 'private-workspace-template');
 
 await test('local-only-test seed has visibility=public + null github', () => {
   const n = readJSON(path.join(LOCAL_TEST_SEED, 'neighborhood.json'));
@@ -264,7 +264,7 @@ await test('all five scenario shell scripts exist + are executable', () => {
 
 // --- Braintrust template (Scenario 5) ---
 
-const BRAINTRUST_SEED = path.join(ROOT, 'installer', 'neighborhood-seeds', 'braintrust-template');
+const BRAINTRUST_SEED = path.join(ROOT, 'neighborhood-seeds', 'braintrust-template');
 
 await test('braintrust-template has kind=braintrust + private-workspace visibility', () => {
   const n = readJSON(path.join(BRAINTRUST_SEED, 'neighborhood.json'));
@@ -327,15 +327,15 @@ await test('library_query agent default impl is operator-overridable', () => {
 
 await test('seed rappids: split neighborhoods share rappid; standalone ones are distinct', () => {
   // SE team is ONE neighborhood split across two repos — they MUST share rappid
-  const sePub = readJSON(path.join(ROOT, 'installer', 'neighborhood-seeds', 'microsoft-se-team-neighborhood', 'neighborhood.json'));
-  const sePrv = readJSON(path.join(ROOT, 'installer', 'neighborhood-seeds', 'microsoft-se-team-neighborhood-private', 'neighborhood.json'));
+  const sePub = readJSON(path.join(ROOT, 'neighborhood-seeds', 'microsoft-se-team-neighborhood', 'neighborhood.json'));
+  const sePrv = readJSON(path.join(ROOT, 'neighborhood-seeds', 'microsoft-se-team-neighborhood-private', 'neighborhood.json'));
   assert(sePub.neighborhood_rappid === sePrv.neighborhood_rappid,
     'SE team gate + private companion MUST share rappid (two faces of one neighborhood)');
 
   const standalone = ['public-art-collective', 'private-workspace-template', 'local-only-test', 'braintrust-template'];
   const rappids = new Set([sePub.neighborhood_rappid]);
   for (const s of standalone) {
-    const n = readJSON(path.join(ROOT, 'installer', 'neighborhood-seeds', s, 'neighborhood.json'));
+    const n = readJSON(path.join(ROOT, 'neighborhood-seeds', s, 'neighborhood.json'));
     assert(n.schema === 'rapp-neighborhood/1.0', `${s} bad schema: ${n.schema}`);
     assert(n.neighborhood_rappid, `${s} missing rappid`);
     assert(!rappids.has(n.neighborhood_rappid), `${s} rappid collision: ${n.neighborhood_rappid}`);

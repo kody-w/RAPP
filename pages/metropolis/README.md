@@ -81,5 +81,5 @@ For now, `seeders_min` is the manually-known minimum; `seeders_live` is filled i
 ## Related
 
 - [`MASTER_PLAN.md`](../../MASTER_PLAN.md) — first-principles north star
-- [`installer/neighborhood-seeds/`](../../installer/neighborhood-seeds/) — the canonical seeds the index points at
+- [`neighborhood-seeds/`](../../neighborhood-seeds/) — the canonical seeds the index points at
 - [`pages/vault/Field Notes/`](../vault/Field%20Notes/) — engineering essays, including the bibliography-as-protocol field note

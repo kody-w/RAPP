@@ -74,8 +74,8 @@ Established in the rappter1 + kody-w design session, 2026-05-08, when the operat
 
 ## Related
 
-- `installer/neighborhood-seeds/microsoft-se-team-neighborhood/` — first canonical gate
-- `installer/neighborhood-seeds/microsoft-se-team-neighborhood-private/` — first private companion
+- `neighborhood-seeds/microsoft-se-team-neighborhood/` — first canonical gate
+- `neighborhood-seeds/microsoft-se-team-neighborhood-private/` — first private companion
 - `rapp_brainstem/utils/organs/neighborhood_membership_organ.py` — the runtime; carries `_estate_view()`
 - `NEIGHBORHOOD_PROTOCOL.md` — the wire-level companion (already in the repo, predates this decision; extends cleanly)
 - `HERO_USECASE.md` — needs a new §6 "Cross-Estate Metropolis" once Phase 2 lands

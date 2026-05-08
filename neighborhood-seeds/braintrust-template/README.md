@@ -2,7 +2,7 @@
 
 A federated-research RAPP neighborhood. Drop a request in; every online contributor's brainstem queries THEIR own library; findings synthesize into a bibliography-annotated report with full consensus before merge.
 
-This is the **fifth canonical seed** in `installer/neighborhood-seeds/`, demonstrating the **Project Braintrust pattern** — the pattern where a distributed neighborhood of librarians collaborates asynchronously without anyone having to be in the loop synchronously.
+This is the **fifth canonical seed** in `neighborhood-seeds/`, demonstrating the **Project Braintrust pattern** — the pattern where a distributed neighborhood of librarians collaborates asynchronously without anyone having to be in the loop synchronously.
 
 ## The flow
 

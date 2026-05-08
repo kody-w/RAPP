@@ -48,7 +48,7 @@ These are the exact commands kody-w runs to push both repos and invite rappter1.
 ### 1. Push the public gate
 
 ```bash
-cd installer/neighborhood-seeds/microsoft-se-team-neighborhood
+cd neighborhood-seeds/microsoft-se-team-neighborhood
 git init -b main
 git add .
 git commit -m "Plant Microsoft SE Team neighborhood — public gate"

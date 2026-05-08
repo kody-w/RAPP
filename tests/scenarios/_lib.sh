@@ -14,7 +14,7 @@ else
 fi
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-SEEDS_DIR="$REPO_ROOT/installer/neighborhood-seeds"
+SEEDS_DIR="$REPO_ROOT/neighborhood-seeds"
 ORGAN_PATH="$REPO_ROOT/rapp_brainstem/utils/organs/neighborhood_membership_organ.py"
 
 DRY_RUN=0

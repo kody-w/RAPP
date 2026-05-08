@@ -71,7 +71,7 @@ This walks through the rows above that are mechanically testable — verifies eg
 
 ## The "neighborhood seeds in main RAPP repo" question
 
-A previous concern: *if seeds live in `installer/neighborhood-seeds/`, then RAPP going down takes down the seeds too.* The corrective:
+A previous concern: *if seeds live in `neighborhood-seeds/`, then RAPP going down takes down the seeds too.* The corrective:
 
 1. **Templates** stay in RAPP as patterns (transparency + source-of-truth)
 2. **Live instances** are planted as their own GitHub repos (proven 2026-05-08 — `kody-w/microsoft-se-team-neighborhood`, `kody-w/public-art-collective`, etc.)
