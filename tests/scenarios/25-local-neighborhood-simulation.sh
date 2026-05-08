@@ -26,7 +26,7 @@ PORT_B=$((40000 + RANDOM % 1000))
 TMP=$(mktemp -d -t rapp-sim-XXXXXX)
 HOME_A="$TMP/brainstem-A"
 HOME_B="$TMP/brainstem-B"
-SEED="$SEEDS_DIR/local-only-test"
+SEED="$FIXTURES_DIR/local-only-test"
 SEED_URL="file://$SEED"
 
 cleanup() {

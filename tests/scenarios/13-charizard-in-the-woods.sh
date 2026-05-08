@@ -23,7 +23,7 @@ PHONE_B="$TMP/phone-b"
 mkdir -p "$PHONE_A" "$PHONE_B"
 
 # 1. Phone A has the local-only-test seed acting as Charizard
-cp -R "$SEEDS_DIR/local-only-test" "$PHONE_A/charizard"
+cp -R "$FIXTURES_DIR/local-only-test" "$PHONE_A/charizard"
 step_pass "Phone A has Charizard organism"
 
 # 2. Pack as an "egg" — for this scenario, just zip + sha256

@@ -81,5 +81,5 @@ For now, `seeders_min` is the manually-known minimum; `seeders_live` is filled i
 ## Related
 
 - [`MASTER_PLAN.md`](../../MASTER_PLAN.md) — first-principles north star
-- [`neighborhood-seeds/`](../../neighborhood-seeds/) — the canonical seeds the index points at
+- The seeds the index points at live as their own GitHub repos (e.g. [`kody-w/microsoft-se-team-neighborhood`](https://github.com/kody-w/microsoft-se-team-neighborhood), [`kody-w/braintrust-template`](https://github.com/kody-w/braintrust-template)). Each is a planted organism — same pattern as a planted twin (e.g. [`kody-w/heimdall`](https://github.com/kody-w/heimdall)). The metropolis directory is the **card catalog** that points at all of them.
 - [`pages/vault/Field Notes/`](../vault/Field%20Notes/) — engineering essays, including the bibliography-as-protocol field note

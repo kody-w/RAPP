@@ -20,7 +20,7 @@ note "Pattern: one agent.py + a Discord webhook → fully-planted neighborhood +
 note "Showcases: the simplest possible discord-bridged neighborhood setup"
 
 AGENT="$REPO_ROOT/rapp_brainstem/agents/plant_discord_neighborhood_agent.py"
-TEMPLATE_SEED="$SEEDS_DIR/braintrust-template"
+TEMPLATE_SEED="$FIXTURES_DIR/local-only-test"
 
 # 1. Agent file exists + is well-formed Python
 heading "Step 1 — Agent file present + parseable"

@@ -18,7 +18,7 @@ note "Showcases: federation transport is wired, not stubbed"
 ORGAN="$REPO_ROOT/rapp_brainstem/utils/organs/neighborhood_membership_organ.py"
 
 # Use the local-only-test seed as the shared neighborhood
-SEED="$SEEDS_DIR/local-only-test"
+SEED="$FIXTURES_DIR/local-only-test"
 SEED_URL="file://$SEED"
 
 # 1. Verify the new endpoints are in the dispatch table

@@ -71,14 +71,14 @@ This walks through the rows above that are mechanically testable — verifies eg
 
 ## The "neighborhood seeds in main RAPP repo" question
 
-A previous concern: *if seeds live in `neighborhood-seeds/`, then RAPP going down takes down the seeds too.* The corrective:
+**Resolved 2026-05-08:** seeds do NOT live in this repo. Like a planted twin (e.g. `kody-w/heimdall`), every neighborhood is its own GitHub repo: `kody-w/microsoft-se-team-neighborhood`, `kody-w/public-art-collective`, `kody-w/braintrust-template`, etc. RAPP holds the **kernel + spec only** (the parent species root). If RAPP goes offline:
 
-1. **Templates** stay in RAPP as patterns (transparency + source-of-truth)
-2. **Live instances** are planted as their own GitHub repos (proven 2026-05-08 — `kody-w/microsoft-se-team-neighborhood`, `kody-w/public-art-collective`, etc.)
-3. **GitHub template repos** (`is_template=true`) on the templates make them forkable from GitHub UI without touching RAPP
-4. RAPP-as-source becomes one of N redundant copies, not the only one
+1. Live neighborhoods continue — they're independent repos
+2. Template repos (`is_template=true` on GitHub) remain forkable
+3. The kernel (already installed on every brainstem) keeps running
+4. Only impact: install-one-liner URL needs a mirror
 
-So: even if RAPP goes offline, the live neighborhoods continue, the templates remain forkable from GitHub, and operators with cached copies keep running.
+This is what makes the repo survive nuclear blasts: zero single-point-of-failure for any planted seed.
 
 ## Cross-references
 

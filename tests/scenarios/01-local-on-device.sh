@@ -14,10 +14,10 @@ source "$(dirname "$0")/_lib.sh"
 scenario_parse_args "$@"
 
 heading "Scenario 1 — Local on-device neighborhood"
-note "Seed: $SEEDS_DIR/local-only-test"
+note "Seed: $FIXTURES_DIR/local-only-test"
 note "Mode: file:// (no GitHub, no auth)"
 
-SEED="$SEEDS_DIR/local-only-test"
+SEED="$FIXTURES_DIR/local-only-test"
 SEED_URL="file://$SEED"
 
 # 1. Seed exists + is well-formed

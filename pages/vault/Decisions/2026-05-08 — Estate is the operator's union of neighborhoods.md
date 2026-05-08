@@ -72,10 +72,23 @@ What still needs to land for full metropolis support:
 
 Established in the rappter1 + kody-w design session, 2026-05-08, when the operator explicitly named the metropolis-of-estates pattern after the gate + private companion architecture had been scaffolded. The user's framing: *"just like real communities do… that is the model we need to replicate but for agents on behalf of people for the work."*
 
+## The pattern is fractal
+
+Same primitives at every scale — **rappid** (identity) + **door** (gate URL or summon mechanism) + **card** (presentation layer — `card.json` per ECOSYSTEM §3) + **tether** (WebRTC §5a + Issues §5b + PRs §5c + raw fetch §5d) + **trust scope** (§2 personal/neighborhood/public).
+
+```
+agent    (single file, single function)        ← smallest unit
+twin     (one organism — e.g. kody-w/heimdall) ← single brainstem
+neighborhood  (multiple twins federating)      ← e.g. kody-w/microsoft-se-team-neighborhood
+metropolis    (multiple neighborhoods)         ← e.g. kody-w.github.io/RAPP/metropolis/
+…outward                                       ← federations of metropolises
+```
+
+Every level uses the same protocol. Every level is its own GitHub repo. RAPP holds the kernel + spec; everything planted is its own thing.
+
 ## Related
 
-- `neighborhood-seeds/microsoft-se-team-neighborhood/` — first canonical gate
-- `neighborhood-seeds/microsoft-se-team-neighborhood-private/` — first private companion
+- The first canonical neighborhood lives as its own repo at [`kody-w/microsoft-se-team-neighborhood`](https://github.com/kody-w/microsoft-se-team-neighborhood) (gate) + [`kody-w/microsoft-se-team-neighborhood-private`](https://github.com/kody-w/microsoft-se-team-neighborhood-private) (private companion) — same pattern as a planted twin like [`kody-w/heimdall`](https://github.com/kody-w/heimdall)
 - `rapp_brainstem/utils/organs/neighborhood_membership_organ.py` — the runtime; carries `_estate_view()`
-- `NEIGHBORHOOD_PROTOCOL.md` — the wire-level companion (already in the repo, predates this decision; extends cleanly)
-- `HERO_USECASE.md` — needs a new §6 "Cross-Estate Metropolis" once Phase 2 lands
+- [`NEIGHBORHOOD_PROTOCOL.md`](../../../NEIGHBORHOOD_PROTOCOL.md) — the wire-level companion
+- [`HERO_USECASE.md`](../../../HERO_USECASE.md) — needs a new §6 "Cross-Estate Metropolis" once Phase 2 lands

@@ -14,7 +14,10 @@ else
 fi
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-SEEDS_DIR="$REPO_ROOT/neighborhood-seeds"
+# Test fixtures (local-only minimal seed for scenarios that need a real seed dir).
+# Planted neighborhoods live as their own GitHub repos (e.g. kody-w/microsoft-se-team-neighborhood)
+# — this repo holds the spec + kernel only, never the seeds themselves.
+FIXTURES_DIR="$REPO_ROOT/tests/fixtures"
 ORGAN_PATH="$REPO_ROOT/rapp_brainstem/utils/organs/neighborhood_membership_organ.py"
 
 DRY_RUN=0

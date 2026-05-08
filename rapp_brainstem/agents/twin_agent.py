@@ -1586,31 +1586,46 @@ class TwinAgent(BasicAgent):
     # ── chat ────────────────────────────────────────────────────────────
 
     def _chat(self, **kwargs):
-        """The unified federation primitive — POST /chat to a peer brainstem.
+        """The unified federation primitive per NEIGHBORHOOD_PROTOCOL.md §6.
 
-        Same pattern works on-LAN, on-WAN, or over the public internet —
-        wherever the peer's brainstem is reachable. Local-first: if the peer
-        is a same-machine twin, we resolve its URL from the local port file;
-        if the peer is on the LAN or public internet, the caller passes
-        brainstem_url explicitly (or members.json carries it).
+        Builds a rapp-twin-chat/1.0 envelope (§6a) with the requested kind
+        (§6b: say / share-fact / share-egg / request-fact / ack) and POSTs
+        it to the peer brainstem's /chat. Channel type is §5a (live HTTP /
+        WebRTC) — falls back to §5b (Issue post) when the peer is
+        unreachable.
 
-        When the internet drops, the on-LAN parts of a neighborhood keep
-        working because the URL lookup never required GitHub. That's the
-        whole point: one pattern, location-agnostic, local-first.
+        Same pattern works on-LAN, on-WAN, in a browser via WebRTC tether
+        (the public gate pages embed PeerJS for the cross-network case
+        per §5a). When the internet drops, on-LAN parts of a neighborhood
+        keep working — the URL lookup never required GitHub.
 
         Args:
-          rappid_uuid:  twin to chat with (resolves URL via local port file)
-          brainstem_url: explicit URL override (use for LAN/WAN peers)
-          message:      the user_input to POST
-          timeout_s:    how long to wait (default 90)
+          rappid_uuid:    target twin (resolves URL via local twins port file)
+          brainstem_url:  explicit base URL (LAN/WAN peers)
+          message:        the textual content (becomes payload.text for kind=say)
+          kind:           rapp-twin-chat/1.0 message kind (default 'say')
+          to_rappid:      explicit recipient rappid (overrides rappid_uuid lookup for the envelope)
+          from_rappid:    sender rappid (read from ~/.brainstem/rappid.json by default)
+          facets:         list of public_facets being asserted (per §7)
+          payload:        explicit payload object (overrides default text payload)
+          timeout_s:      response wait (default 90)
         """
         rappid = kwargs.get("rappid_uuid") or ""
         url = (kwargs.get("brainstem_url") or "").rstrip("/")
         message = kwargs.get("message") or ""
+        kind = (kwargs.get("kind") or "say").lower()
+        to_rappid = kwargs.get("to_rappid") or rappid or None
+        from_rappid = kwargs.get("from_rappid") or self._self_rappid()
+        facets = kwargs.get("facets") or []
+        explicit_payload = kwargs.get("payload")
         timeout_s = int(kwargs.get("timeout_s") or 90)
 
-        if not message:
-            return "Error: message required for chat"
+        VALID_KINDS = ("say", "share-fact", "share-egg", "request-fact", "ack")
+        if kind not in VALID_KINDS:
+            return f"Error: kind must be one of {VALID_KINDS}, got {kind!r}"
+
+        if not message and explicit_payload is None:
+            return "Error: message OR payload required"
 
         # Resolve URL: explicit > rappid lookup in local twins
         if not url and rappid:
@@ -1623,38 +1638,81 @@ class TwinAgent(BasicAgent):
             return ("Error: could not resolve brainstem_url. Provide it "
                     "explicitly OR ensure the peer is a running local twin.")
 
+        # Build the rapp-twin-chat/1.0 envelope per §6a
+        envelope = {
+            "schema": "rapp-twin-chat/1.0",
+            "from_rappid": from_rappid,
+            "to_rappid": to_rappid,
+            "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "kind": kind,
+            "payload": explicit_payload if explicit_payload is not None else {"text": message},
+            "facets": facets if isinstance(facets, list) else [],
+        }
+
+        # POST to /chat with both the canonical brainstem shape (user_input)
+        # AND the spec-compliant envelope. Receivers that understand the
+        # envelope can route by kind; receivers that only know user_input
+        # still get a usable string.
+        body = {
+            "user_input": message or json.dumps(envelope["payload"]),
+            "twin_chat_envelope": envelope,
+        }
+
         try:
             req = urllib.request.Request(
                 f"{url}/chat",
-                data=json.dumps({"user_input": message}).encode("utf-8"),
+                data=json.dumps(body).encode("utf-8"),
                 headers={"Content-Type": "application/json", "User-Agent": "rapp-twin-chat"},
                 method="POST",
             )
             with urllib.request.urlopen(req, timeout=timeout_s) as r:
-                body = r.read().decode("utf-8", errors="replace")
+                raw = r.read().decode("utf-8", errors="replace")
                 try:
-                    parsed = json.loads(body)
+                    parsed = json.loads(raw)
                 except (ValueError, json.JSONDecodeError):
-                    parsed = {"raw_response": body[:2000]}
+                    parsed = {"raw_response": raw[:2000]}
                 return json.dumps({
                     "schema": "rapp-twin-chat-response/1.0",
+                    "channel": "5a-http",
                     "to_url": url,
-                    "to_rappid": rappid or None,
+                    "to_rappid": to_rappid,
+                    "from_rappid": from_rappid,
+                    "kind": kind,
+                    "envelope": envelope,
                     "status": r.status,
                     "response": parsed,
                 }, indent=2)
         except urllib.error.HTTPError as e:
             return json.dumps({
                 "schema": "rapp-twin-chat-response/1.0",
+                "channel": "5a-http",
                 "to_url": url,
+                "envelope": envelope,
                 "status": e.code,
                 "error": str(e),
             }, indent=2)
         except (urllib.error.URLError, OSError, TimeoutError) as e:
             return json.dumps({
                 "schema": "rapp-twin-chat-response/1.0",
+                "channel": "5a-http",
                 "to_url": url,
+                "envelope": envelope,
                 "ok": False,
                 "error": f"unreachable ({type(e).__name__}): {e}",
-                "next_step": "fall back to async via GitHub Issue post (same membership organ contributions surface)",
+                "fallback": (
+                    "POST same envelope to the neighborhood's GitHub Issues "
+                    "(channel 5b — async, durable). Receiver picks it up via "
+                    "neighborhood_subscribe_agent."
+                ),
             }, indent=2)
+
+    def _self_rappid(self):
+        """Read this brainstem's own rappid from ~/.brainstem/rappid.json."""
+        try:
+            p = os.path.expanduser("~/.brainstem/rappid.json")
+            if os.path.exists(p):
+                with open(p) as f:
+                    return (json.load(f) or {}).get("rappid")
+        except (OSError, json.JSONDecodeError):
+            pass
+        return None
