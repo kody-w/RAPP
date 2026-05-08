@@ -1,0 +1,25 @@
+{
+  "schema": "rapp-neighborhood/1.0",
+  "neighborhood_rappid": "c9c9ce25-0c03-4c7b-a859-713469a3ebcb",
+  "kind": "workspace",
+  "name": "private-workspace-template",
+  "display_name": "Private Workspace (template)",
+  "github": "https://github.com/kody-w/private-workspace-template",
+  "url": null,
+  "visibility": "private-workspace",
+  "purpose": "A standalone private workspace per Bill's pattern — solo at start, collaborators added one-by-one. No public gate. The workspace IS the workflow. Use this template by cloning + renaming + planting as a fresh private repo for any team scope (factory, workshop, project group).",
+  "private_companion": null,
+  "gate_repo": null,
+  "parent_rappid": null,
+  "parent_repo": "https://github.com/kody-w/RAPP",
+  "planted_by": "kody-w",
+  "planted_at": "2026-05-08T00:00:00Z",
+  "kernel_version": "0.6.0",
+  "lineage_label": "Private workspace template v1",
+  "membership_policy": {
+    "default_collaborator_permission": "push",
+    "founder_only_seats": ["admin"],
+    "join_path": "out_of_band",
+    "notes": "No public-facing join Issue path. Founder grants access via `gh api -X PUT /repos/<owner>/<repo>/collaborators/<login>` after an out-of-band conversation."
+  }
+}

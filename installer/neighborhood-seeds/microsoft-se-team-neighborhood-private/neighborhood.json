@@ -1,0 +1,22 @@
+{
+  "schema": "rapp-neighborhood/1.0",
+  "neighborhood_rappid": "869ea057-4755-47ec-80df-54551ecf8581",
+  "kind": "neighborhood",
+  "name": "microsoft-se-team-neighborhood-private",
+  "display_name": "Microsoft SE Team (private workflow)",
+  "github": "https://github.com/kody-w/microsoft-se-team-neighborhood-private",
+  "url": null,
+  "visibility": "private",
+  "purpose": "Member-only workflow for the Microsoft SE Team neighborhood. Shared agents, members.json roster, twin chat, decision log, runbooks. Auth-gated to GitHub collaborators on this repo.",
+  "gate_repo": {
+    "repo": "https://github.com/kody-w/microsoft-se-team-neighborhood",
+    "purpose": "Public gate — identity, card, join path. Anonymous-friendly.",
+    "url": "https://kody-w.github.io/microsoft-se-team-neighborhood/"
+  },
+  "parent_rappid": null,
+  "parent_repo": "https://github.com/kody-w/RAPP",
+  "planted_by": "kody-w",
+  "planted_at": "2026-05-08T00:00:00Z",
+  "kernel_version": "0.6.0",
+  "lineage_label": "Microsoft SE Team — private companion v1"
+}

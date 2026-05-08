@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Microsoft SE Team — RAPP Neighborhood</title>
+  <meta name="description" content="The public gate for the Microsoft SE Team RAPP neighborhood. Workflow is private to authenticated members." />
+  <style>
+    :root {
+      --bg: #0a0e14;
+      --fg: #e6edf3;
+      --muted: #8b949e;
+      --accent: #58a6ff;
+      --warn: #f0883e;
+      --gate: #db61a2;
+      --card-bg: #0d1117;
+      --card-border: #30363d;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0;
+      font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      color: var(--fg); background: var(--bg);
+    }
+    body { padding: 32px 20px 80px; max-width: 720px; margin: 0 auto; }
+    a { color: var(--accent); }
+    code { font: 13px/1.4 ui-monospace, "SF Mono", Menlo, monospace; background: #161b22; padding: 2px 6px; border-radius: 4px; }
+    h1, h2 { letter-spacing: -0.01em; }
+    h1 { margin: 0 0 4px; font-size: 28px; }
+    h2 { margin: 32px 0 12px; font-size: 18px; color: var(--fg); }
+    .muted { color: var(--muted); }
+    .sigil {
+      width: 96px; height: 96px; border-radius: 24px; margin-bottom: 18px;
+      background: linear-gradient(135deg, #db61a2 0%, #58a6ff 50%, #3fb950 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 38px; font-weight: 700; color: #fff;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    .gate-banner {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 12px; border-radius: 999px;
+      background: rgba(219, 97, 162, 0.12); color: var(--gate);
+      font-size: 13px; font-weight: 500;
+      margin-bottom: 16px;
+    }
+    .card {
+      border: 1px solid var(--card-border); background: var(--card-bg);
+      border-radius: 12px; padding: 20px; margin: 16px 0;
+    }
+    .ability { margin: 8px 0; }
+    .kw { display: inline-block; background: rgba(88,166,255,0.15); color: var(--accent);
+          font-weight: 600; padding: 2px 8px; border-radius: 4px; margin-right: 8px; font-size: 13px; }
+    .flavor { font-style: italic; color: var(--muted); margin-top: 14px; padding-top: 14px;
+              border-top: 1px solid var(--card-border); }
+    .cta {
+      display: inline-block; background: var(--gate); color: #fff;
+      padding: 12px 24px; border-radius: 8px; text-decoration: none;
+      font-weight: 600; margin: 8px 8px 8px 0;
+    }
+    .cta.secondary { background: transparent; color: var(--accent); border: 1px solid var(--card-border); }
+    .door {
+      border: 1px dashed var(--card-border); padding: 16px; border-radius: 8px;
+      margin: 16px 0; font-size: 14px;
+    }
+    .door .label { color: var(--gate); font-weight: 600; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 6px; }
+    .stack { display: flex; flex-direction: column; gap: 6px; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .pill { font-size: 12px; padding: 3px 10px; border-radius: 999px; background: #161b22; color: var(--muted); }
+    footer { margin-top: 48px; font-size: 12px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="sigil">SE</div>
+  <div class="gate-banner">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M5.75 3.5a2.25 2.25 0 1 1 4.5 0v2.5h.5A1.75 1.75 0 0 1 12.5 7.75v5A1.75 1.75 0 0 1 10.75 14.5h-5.5A1.75 1.75 0 0 1 3.5 12.75v-5C3.5 6.78 4.28 6 5.25 6h.5V3.5Zm1.5 2.5h1.5V3.5a.75.75 0 1 0-1.5 0V6Z"/></svg>
+    Gated neighborhood — workflow is private
+  </div>
+
+  <h1>Microsoft SE Team</h1>
+  <div class="muted">A RAPP neighborhood · planted by <a href="https://github.com/kody-w">@kody-w</a></div>
+
+  <div class="card">
+    <div class="row" style="margin-bottom: 8px;">
+      <span class="pill">rare</span>
+      <span class="pill">Front Door — Neighborhood</span>
+    </div>
+    <div class="ability"><span class="kw">Gated</span>Workflow is private. The gate is public.</div>
+    <div class="ability"><span class="kw">Outcome-First</span>Members deliver outcomes; the network self-organizes.</div>
+    <div class="ability"><span class="kw">Self-Healing</span>Twin chat federates across online members; offline members catch up async.</div>
+    <div class="flavor">Solutions Engineering, distributed. Bring your agents.</div>
+  </div>
+
+  <h2>What this is</h2>
+  <p>
+    A <strong>RAPP neighborhood</strong> is a planted GitHub repo whose collaborators are its members.
+    This neighborhood is for the Microsoft SE Team — outcome-driven automation, distributed across the team.
+    The public gate (this page) carries the identity and the join path. The actual workflow — shared agents,
+    member roster, decision log, twin chat — lives in a private companion repo, gated by GitHub collaborator
+    membership.
+  </p>
+
+  <div class="door">
+    <div class="label">Door 1 — Public</div>
+    Anyone can see the identity, the card, and how to request access.
+  </div>
+  <div class="door" id="door-private">
+    <div class="label">Door 2 — Members</div>
+    The private companion at <code id="private-repo-link">microsoft-se-team-neighborhood-private</code>
+    carries the workflow. If you are a GitHub collaborator there, your brainstem will mount the
+    neighborhood agents on subscribe.
+  </div>
+
+  <h2>Request access</h2>
+  <p class="muted">A current member must add you as a collaborator on the private companion.</p>
+  <p>
+    <a class="cta" id="cta-issue" href="#">📨 Open a join Issue</a>
+    <a class="cta secondary" id="cta-private" href="#">🔒 Try the private companion</a>
+  </p>
+
+  <h2>If you have a brainstem</h2>
+  <p>Subscribe with one command:</p>
+  <p><code>brainstem join https://github.com/kody-w/microsoft-se-team-neighborhood</code></p>
+  <p class="muted">
+    Your brainstem will read this gate, find the private companion, and check whether your GitHub
+    token has access. If yes — the neighborhood agents mount. If no — it offers to open a join Issue
+    for you.
+  </p>
+
+  <h2>Lineage</h2>
+  <p class="muted">
+    Planted from the RAPP species root: <a href="https://github.com/kody-w/RAPP">kody-w/RAPP</a>.
+    First canonical demonstration of the public-gate / private-workflow pattern.
+  </p>
+
+  <footer>
+    Schema: <code>rapp-neighborhood/1.0</code> · neighborhood_rappid:
+    <code>869ea057-4755-47ec-80df-54551ecf8581</code>
+  </footer>
+
+  <script>
+    // Derive the join-issue URL + private-companion URL from neighborhood.json so this page
+    // never goes stale. Falls back gracefully if the JSON isn't reachable yet.
+    (async function () {
+      try {
+        const r = await fetch("./neighborhood.json", { cache: "no-store" });
+        if (!r.ok) return;
+        const n = await r.json();
+        const pcRepo = (n.private_companion && n.private_companion.repo) || "";
+        const gateRepo = n.github || "";
+        document.getElementById("private-repo-link").textContent =
+          pcRepo.replace(/^https?:\/\/github\.com\//, "") || "—";
+        if (pcRepo) document.getElementById("cta-private").href = pcRepo;
+        if (gateRepo) {
+          const title = encodeURIComponent("Request access — " + (n.display_name || n.name));
+          const body = encodeURIComponent(
+            "GitHub login: \nWhy I'd like to join: \nWhat I bring (agents / capabilities): \n"
+          );
+          document.getElementById("cta-issue").href =
+            gateRepo + "/issues/new?title=" + title + "&body=" + body + "&labels=join-request";
+        }
+      } catch (e) {
+        // Offline / not yet pushed — leave fallback hrefs in place.
+      }
+    })();
+  </script>
+</body>
+</html>

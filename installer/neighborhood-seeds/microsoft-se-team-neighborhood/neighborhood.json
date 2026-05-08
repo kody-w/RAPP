@@ -1,0 +1,25 @@
+{
+  "schema": "rapp-neighborhood/1.0",
+  "neighborhood_rappid": "869ea057-4755-47ec-80df-54551ecf8581",
+  "kind": "neighborhood",
+  "name": "microsoft-se-team-neighborhood",
+  "display_name": "Microsoft SE Team",
+  "github": "https://github.com/kody-w/microsoft-se-team-neighborhood",
+  "url": "https://kody-w.github.io/microsoft-se-team-neighborhood/",
+  "visibility": "public-gate",
+  "purpose": "Solutions Engineering team workspace — outcome-driven automation across SE function. The gate is public; the workflow is private to authenticated members.",
+  "private_companion": {
+    "repo": "https://github.com/kody-w/microsoft-se-team-neighborhood-private",
+    "purpose": "Member-only workflow: shared agents, members.json roster, twin chat, decisions, runbooks.",
+    "auth": {
+      "scheme": "github_token",
+      "scope_required": "repo"
+    }
+  },
+  "parent_rappid": null,
+  "parent_repo": "https://github.com/kody-w/RAPP",
+  "planted_by": "kody-w",
+  "planted_at": "2026-05-08T00:00:00Z",
+  "kernel_version": "0.6.0",
+  "lineage_label": "Microsoft SE Team — neighborhood seed v1"
+}

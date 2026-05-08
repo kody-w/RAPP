@@ -1,0 +1,12 @@
+{
+  "schema": "rapp-card/1.0",
+  "title": "Private Workspace — solo-then-shared",
+  "type_line": "Workspace — Private",
+  "rarity": "uncommon",
+  "abilities": [
+    {"kw": "Solo Start", "text": "Plant it for yourself. Decide when to invite others."},
+    {"kw": "Collaborator-Gated", "text": "Membership = GitHub collaborator status. No public face."},
+    {"kw": "Outcome Inbox", "text": "Async work products land here, attributed to whichever member did the work."}
+  ],
+  "flavor_text": "The workshop. Yours first. Shared when you're ready."
+}

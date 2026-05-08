@@ -1,0 +1,36 @@
+{
+  "schema": "rapp-public-facets/1.0",
+  "neighborhood_rappid": "869ea057-4755-47ec-80df-54551ecf8581",
+  "public_facets": [
+    {
+      "name": "member_roster",
+      "scope": "neighborhood",
+      "description": "List of GitHub logins + rappids of the neighborhood members."
+    },
+    {
+      "name": "shared_agents",
+      "scope": "neighborhood",
+      "description": "Inventory of agents every member's brainstem mounts on subscribe."
+    },
+    {
+      "name": "decisions_log",
+      "scope": "neighborhood",
+      "description": "Shared decision narratives (state/decisions/)."
+    },
+    {
+      "name": "runbooks",
+      "scope": "neighborhood",
+      "description": "Shared operational runbooks (state/runbooks/)."
+    },
+    {
+      "name": "twin_chat",
+      "scope": "neighborhood",
+      "description": "Federated twin chat traffic — issues with label `neighborhood-message` plus live WebRTC tethers."
+    },
+    {
+      "name": "personal_workspace",
+      "scope": "personal",
+      "description": "Per-member scratch space — never auto-shared."
+    }
+  ]
+}

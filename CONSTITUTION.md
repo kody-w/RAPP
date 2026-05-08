@@ -5,6 +5,11 @@
 [SPEC.md](./SPEC.md) is the wire contract. This is the authoring discipline
 that keeps the wire contract shippable for a decade.
 
+[MASTER_PLAN.md](./MASTER_PLAN.md) is the why-axis — the first-principles
+north star. When this Constitution and the Master Plan disagree about
+*what* should be true, the Master Plan wins; this Constitution describes
+*how* that plan is executed.
+
 ---
 
 ## Article 0 — The Sacred Tenet (restated from SPEC)

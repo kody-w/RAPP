@@ -1,0 +1,19 @@
+{
+  "schema": "rapp-neighborhood/1.0",
+  "neighborhood_rappid": "f42ae7f7-6b3b-46ea-9673-4566787348ef",
+  "kind": "neighborhood",
+  "name": "local-only-test",
+  "display_name": "Local-Only Test Neighborhood",
+  "github": null,
+  "url": null,
+  "visibility": "public",
+  "purpose": "Standalone local-only neighborhood used by the on-device verification scenario. Mounted via file:// URL; does not require GitHub auth or network. Two brainstems on the same machine subscribe to the same path and verify the membership organ's local-mode flow.",
+  "private_companion": null,
+  "gate_repo": null,
+  "parent_rappid": null,
+  "parent_repo": "https://github.com/kody-w/RAPP",
+  "planted_by": "kody-w",
+  "planted_at": "2026-05-08T00:00:00Z",
+  "kernel_version": "0.6.0",
+  "lineage_label": "Local-only test fixture v1"
+}

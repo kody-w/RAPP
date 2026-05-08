@@ -1,0 +1,41 @@
+{
+  "schema": "rapp-public-facets/1.0",
+  "neighborhood_rappid": "869ea057-4755-47ec-80df-54551ecf8581",
+  "public_facets": [
+    {
+      "name": "neighborhood_purpose",
+      "scope": "public",
+      "description": "What this neighborhood is, why it exists."
+    },
+    {
+      "name": "neighborhood_lineage",
+      "scope": "public",
+      "description": "Parent species and planting lineage."
+    },
+    {
+      "name": "join_path",
+      "scope": "public",
+      "description": "How outsiders request access (Issue → collaborator add)."
+    },
+    {
+      "name": "member_roster",
+      "scope": "neighborhood",
+      "description": "Who is in. Visible only to authenticated members of the private companion."
+    },
+    {
+      "name": "shared_agents",
+      "scope": "neighborhood",
+      "description": "Neighborhood-shared agent inventory."
+    },
+    {
+      "name": "decisions_log",
+      "scope": "neighborhood",
+      "description": "Shared decision narratives."
+    },
+    {
+      "name": "twin_chat",
+      "scope": "neighborhood",
+      "description": "Federated twin chat surface across online members."
+    }
+  ]
+}

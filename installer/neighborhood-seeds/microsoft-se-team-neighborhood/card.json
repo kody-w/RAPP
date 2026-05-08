@@ -1,0 +1,12 @@
+{
+  "schema": "rapp-card/1.0",
+  "title": "Microsoft SE Team — gated neighborhood",
+  "type_line": "Front Door — Neighborhood",
+  "rarity": "rare",
+  "abilities": [
+    {"kw": "Gated", "text": "Workflow is private. The gate is public."},
+    {"kw": "Outcome-First", "text": "Members deliver outcomes; the network self-organizes."},
+    {"kw": "Self-Healing", "text": "Twin chat federates across online members; offline members catch up async."}
+  ],
+  "flavor_text": "Solutions Engineering, distributed. Bring your agents."
+}

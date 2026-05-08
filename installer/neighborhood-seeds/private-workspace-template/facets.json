@@ -1,0 +1,12 @@
+{
+  "schema": "rapp-public-facets/1.0",
+  "neighborhood_rappid": "c9c9ce25-0c03-4c7b-a859-713469a3ebcb",
+  "public_facets": [
+    {"name": "member_roster", "scope": "neighborhood", "description": "Workspace members. Visible only inside the workspace."},
+    {"name": "shared_agents", "scope": "neighborhood", "description": "Workspace agents — init / decision / invite / inbox."},
+    {"name": "decisions_log", "scope": "neighborhood", "description": "Decision narratives logged by members."},
+    {"name": "runbooks", "scope": "neighborhood", "description": "Operational runbooks shared inside the workspace."},
+    {"name": "inbox", "scope": "neighborhood", "description": "Async work products from federated agents — attributed to operator-rappid."},
+    {"name": "personal_notes", "scope": "personal", "description": "Per-member scratch space. Not auto-shared."}
+  ]
+}
