@@ -74,7 +74,8 @@
       <h1>🏙 RAPP Metropolis</h1>
       <div class="subtitle">Decentralized index of active RAPP neighborhoods. Brainstems are the seeders. Agents are the work. <em>The protocol is the network.</em></div>
     </div>
-    <div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <a href="./plant-from-discord.html" class="pill" style="background: rgba(88,101,242,0.16); color: #5865f2;">📱 Plant from Discord</a>
       <a href="https://github.com/kody-w/RAPP/blob/main/MASTER_PLAN.md" class="pill">⭐ Master Plan</a>
     </div>
   </header>
@@ -107,11 +108,12 @@
         <th>Kind</th>
         <th>Visibility</th>
         <th>Tags</th>
+        <th>Active 15m</th>
         <th>Seeders</th>
         <th>Join</th>
       </tr>
     </thead>
-    <tbody id="rows"><tr><td colspan="6" class="loading">Loading the metropolis…</td></tr></tbody>
+    <tbody id="rows"><tr><td colspan="7" class="loading">Loading the metropolis…</td></tr></tbody>
   </table>
 
   <footer>
@@ -172,7 +174,7 @@
   function render() {
     const filtered = entries.filter(e => matchesFilter(e) && matchesQuery(e));
     if (filtered.length === 0) {
-      rows.innerHTML = '<tr><td colspan="6" class="empty">No matches.</td></tr>';
+      rows.innerHTML = '<tr><td colspan="7" class="empty">No matches.</td></tr>';
       return;
     }
     rows.innerHTML = filtered.map(e => {
@@ -181,17 +183,60 @@
       const tags = (e.tags || []).map(t => '<span class="tag">' + t + '</span>').join("");
       const repoLink = e.gate_repo ? '<a href="' + e.gate_repo + '">' + (e.display_name || e.name) + '</a>' : (e.display_name || e.name);
       const reachable = e.live_status === "reachable" ? " 🟢" : (e.live_status === "unreachable" ? " ⚫" : "");
+      const activeId = "active-" + (e.neighborhood_rappid || e.name).replace(/[^a-z0-9]/gi, "-");
+      const activeCell = '<span id="' + activeId + '" class="muted">…</span>';
       return `
-        <tr class="entry">
+        <tr class="entry" data-rappid="${e.neighborhood_rappid || ''}" data-slug="${(e.gate_repo || '').replace(/^https?:\/\/github\.com\//, '').replace(/\/$/, '')}">
           <td><strong>${repoLink}</strong>${reachable}<br><code>${e.name}</code></td>
           <td>${e.kind || "—"}</td>
           <td>${pillFor(e)}</td>
           <td><div class="tags">${tags}</div></td>
+          <td>${activeCell}</td>
           <td><span class="seed-bar"><span style="width:${seedW}%"></span></span>${seedCount}</td>
           <td>${joinHint(e)}</td>
         </tr>
       `;
     }).join("");
+  }
+
+  // Live presence per entry: count unique actors active in the last 15 min on
+  // each repo's GitHub events stream. Anonymous API; one fetch per public entry.
+  // Graceful fail (— displayed) when rate-limited or offline.
+  async function probeActiveCounts() {
+    const cutoff = Date.now() - 15 * 60 * 1000;
+    for (const e of entries) {
+      const slug = (e.gate_repo || "").replace(/^https?:\/\/github\.com\//, "").replace(/\/$/, "");
+      const cellId = "active-" + (e.neighborhood_rappid || e.name).replace(/[^a-z0-9]/gi, "-");
+      const cell = document.getElementById(cellId);
+      if (!cell) continue;
+      if (!slug || (e.visibility || "").startsWith("private")) {
+        cell.textContent = "—";
+        continue;
+      }
+      try {
+        const r = await fetch(
+          "https://api.github.com/repos/" + slug + "/events?per_page=50",
+          { headers: { "Accept": "application/vnd.github+json" } }
+        );
+        if (!r.ok) { cell.textContent = "—"; continue; }
+        const events = await r.json();
+        const actors = new Set();
+        for (const ev of events) {
+          if (new Date(ev.created_at).getTime() >= cutoff && ev.actor && ev.actor.login) {
+            actors.add(ev.actor.login);
+          }
+        }
+        if (actors.size > 0) {
+          cell.innerHTML = '<span style="color:var(--green); font-weight:600;">🟢 ' + actors.size + '</span>';
+          e.active_count = actors.size;
+        } else {
+          cell.innerHTML = '<span class="muted">○ 0</span>';
+          e.active_count = 0;
+        }
+      } catch {
+        cell.textContent = "—";
+      }
+    }
   }
 
   function updateStats() {
@@ -276,8 +321,9 @@
       (document.getElementById("trackers-count").textContent = String(trackerSources.size));
     render(); updateStats();
     probeLive();
+    probeActiveCounts();
   } catch (e) {
-    rows.innerHTML = '<tr><td colspan="6" class="empty">Could not load metropolis index. ' + (e.message || "") + '</td></tr>';
+    rows.innerHTML = '<tr><td colspan="7" class="empty">Could not load metropolis index. ' + (e.message || "") + '</td></tr>';
   }
 
   document.getElementById("q").addEventListener("input", (e) => { activeQuery = e.target.value; render(); });
