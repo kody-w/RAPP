@@ -108,6 +108,7 @@ Same primitives at every scale: **rappid + door + card + tether + trust scope.**
 |---|---|---|
 | `MASTER_PLAN.md` | First-principles north star (Part 1 + Part Deux); single-sentence: *"use everyone else's hardware to run the network"* | Strategic direction disputes |
 | `CONSTITUTION.md` | Repo governance + sacred constraints + 38+ articles | Structural change, new contributor |
+| `OSI.md` | The 7-layer model — substrate / identity / discovery / channels / trust / envelope / application — with schemas + tests per layer | Designing a new feature; figuring out which layer something belongs to |
 | `HERO_USECASE.md` | Four canonical scenarios (Charizard, Dream Catcher, Mom's Mixtape, Pizza Place) that judge any change | PR review, roadmap |
 | `ECOSYSTEM.md` | Anatomy of one organism (file layout, identity stack, two surfaces, memory tiers, MMR, eggs, integrity, 3 network modes) | Organism-level work |
 | `NEIGHBORHOOD_PROTOCOL.md` | Cross-organism wire (4 channels, twin chat, facets, knowledge primitives, adversarial scenarios) | Federation work |
