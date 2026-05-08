@@ -37,6 +37,7 @@
             font-size: 11px; padding: 3px 9px; border-radius: 999px; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; }
     .pill.warn { background: rgba(240,136,62,0.15); color: var(--orange); }
     .pill.gate { background: rgba(219,97,162,0.15); color: var(--gate); }
+    .pill.template { background: rgba(88,166,255,0.15); color: var(--accent); }
 
     .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
     .search { flex: 1; min-width: 260px; padding: 8px 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; color: var(--fg); font: inherit; }
@@ -80,15 +81,17 @@
 
   <div class="stats" id="stats">
     <div><div class="stat-num" id="stat-total">—</div><div class="stat-label">Listed</div></div>
-    <div><div class="stat-num" id="stat-public">—</div><div class="stat-label">Public</div></div>
-    <div><div class="stat-num" id="stat-gated">—</div><div class="stat-label">Gated</div></div>
+    <div><div class="stat-num" id="stat-public">—</div><div class="stat-label">Live</div></div>
+    <div><div class="stat-num" id="stat-gated">—</div><div class="stat-label">Templates</div></div>
     <div><div class="stat-num" id="stat-private">—</div><div class="stat-label">Private</div></div>
-    <div><div class="stat-num" id="stat-live">—</div><div class="stat-label">Reachable now</div></div>
+    <div><div class="stat-num" id="stat-live">—</div><div class="stat-label">Verified 200</div></div>
   </div>
 
   <div class="controls">
     <input class="search" id="q" placeholder="search by name, kind, or tag…" autocomplete="off" />
     <button class="filter-btn active" data-filter="all">all</button>
+    <button class="filter-btn" data-filter="live">live</button>
+    <button class="filter-btn" data-filter="templates">templates</button>
     <button class="filter-btn" data-filter="public">public</button>
     <button class="filter-btn" data-filter="gated">gated</button>
     <button class="filter-btn" data-filter="private">private</button>
@@ -124,12 +127,17 @@
   let activeFilter = "all";
   let activeQuery = "";
 
-  function pillFor(visibility) {
-    if (visibility === "public") return '<span class="pill">public</span>';
-    if (visibility === "public-gate") return '<span class="pill gate">gated</span>';
-    if (visibility === "private") return '<span class="pill warn">private</span>';
-    if (visibility === "private-workspace") return '<span class="pill warn">private</span>';
-    return '<span class="pill warn">' + (visibility || "?") + '</span>';
+  function pillFor(entry) {
+    const v = entry.visibility;
+    let pills = "";
+    if (v === "public") pills += '<span class="pill">public</span> ';
+    else if (v === "public-gate") pills += '<span class="pill gate">gated</span> ';
+    else if (v === "private" || v === "private-workspace") pills += '<span class="pill warn">private</span> ';
+    else pills += '<span class="pill warn">' + (v || "?") + '</span> ';
+    if (entry.is_template || entry.entry_role === "template") {
+      pills += '<span class="pill template">template</span>';
+    }
+    return pills;
   }
 
   function joinHint(e) {
@@ -138,9 +146,12 @@
     return '<span style="color: var(--muted)">' + (e.join_via || "—") + '</span>';
   }
 
+  function isTemplate(e) { return !!(e.is_template || e.entry_role === "template"); }
   function matchesFilter(e) {
     if (activeFilter === "all") return true;
-    if (activeFilter === "public") return e.visibility === "public";
+    if (activeFilter === "live") return !isTemplate(e);
+    if (activeFilter === "templates") return isTemplate(e);
+    if (activeFilter === "public") return e.visibility === "public" && !isTemplate(e);
     if (activeFilter === "gated") return e.visibility === "public-gate";
     if (activeFilter === "private") return e.visibility === "private" || e.visibility === "private-workspace";
     if (activeFilter === "braintrust") return e.kind === "braintrust";
@@ -173,7 +184,7 @@
         <tr class="entry">
           <td><strong>${repoLink}</strong>${reachable}<br><code>${e.name}</code></td>
           <td>${e.kind || "—"}</td>
-          <td>${pillFor(e.visibility)}</td>
+          <td>${pillFor(e)}</td>
           <td><div class="tags">${tags}</div></td>
           <td><span class="seed-bar"><span style="width:${seedW}%"></span></span>${seedCount}</td>
           <td>${joinHint(e)}</td>
@@ -184,13 +195,14 @@
 
   function updateStats() {
     const T = entries.length;
-    const P = entries.filter(e => e.visibility === "public").length;
+    const live = entries.filter(e => !isTemplate(e)).length;
+    const tpl = entries.filter(e => isTemplate(e)).length;
     const G = entries.filter(e => e.visibility === "public-gate").length;
     const Pr = entries.filter(e => (e.visibility || "").startsWith("private")).length;
-    const L = entries.filter(e => e.live_status === "reachable").length;
+    const L = entries.filter(e => e.live_status === "reachable" || e.live_status === "verified_200").length;
     document.getElementById("stat-total").textContent = T;
-    document.getElementById("stat-public").textContent = P;
-    document.getElementById("stat-gated").textContent = G;
+    document.getElementById("stat-public").textContent = live;
+    document.getElementById("stat-gated").textContent = tpl;
     document.getElementById("stat-private").textContent = Pr;
     document.getElementById("stat-live").textContent = L;
   }

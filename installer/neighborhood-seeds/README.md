@@ -9,6 +9,21 @@ microsoft-se-team-neighborhood-private/  ← private workflow (auth-gated)
 
 Both seeds carry the same `neighborhood_rappid` (`869ea057-4755-47ec-80df-54551ecf8581`) — they are two faces of one neighborhood, cross-referenced via `private_companion` (in the gate) and `gate_repo` (in the companion).
 
+## Templates vs. live instances — what's actually in this directory
+
+These are **reference seed implementations** checked into the RAPP repo for transparency + version control. Each one is **also planted as its own standalone GitHub repo** so the platform survives even if RAPP itself goes offline. See [`SURVIVAL.md`](../../SURVIVAL.md) at the repo root for the full failure-mode contract.
+
+| Seed in this directory | Planted as GitHub repo | Role |
+|---|---|---|
+| `microsoft-se-team-neighborhood/` | `kody-w/microsoft-se-team-neighborhood` (public, is_template) | Live + cloneable |
+| `microsoft-se-team-neighborhood-private/` | `kody-w/microsoft-se-team-neighborhood-private` (private) | Live private companion |
+| `public-art-collective/` | `kody-w/public-art-collective` (public, is_template) | Live + cloneable |
+| `private-workspace-template/` | `kody-w/private-workspace-template` (public, is_template) | Pure template |
+| `braintrust-template/` | `kody-w/braintrust-template` (public, is_template) | Pure template |
+| `local-only-test/` | (no GitHub repo — local fixture only) | Diagnostic |
+
+**Verified 2026-05-08:** all 5 GitHub repos return 200 via `gh api`; Pages URLs return 200 with seed content; `is_template` flag set on the four cloneable ones.
+
 ## The bigger picture — estate × metropolis
 
 A user's brainstem subscribes to **many** neighborhoods. Their **estate** is the union of all those subscriptions — local on-device, cross-device, public, private. Estates mesh through shared neighborhoods, and an **AI metropolis** is the emergent topology of all those meshes — exactly like physical urban zoning is emergent rather than declared.
