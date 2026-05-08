@@ -97,6 +97,27 @@ def _build_handler(organ, port, home_dir):
                     "organ": "neighborhood_membership_organ",
                 })
                 return
+            # /chat — the unified twin-chat federation primitive. Returns the
+            # SAME shape as the canonical brainstem.py /chat ({response,
+            # agent_logs}), so callers (human OR twin OR vbrainstem) are
+            # agnostic to who's on the other end. Real Flask brainstems route
+            # through the LLM + tool-call loop; this stand-in just echoes a
+            # structured response so cross-process federation is verifiable
+            # without an LLM.
+            if path == "/chat" and method == "POST":
+                body = self._read_body() or {}
+                user_input = body.get("user_input") or ""
+                self._send(200, {
+                    "response": f"[test brainstem at :{port}] received: {user_input[:200]}",
+                    "agent_logs": "",
+                    "schema": "rapp-chat-response/1.0",
+                    "_test_meta": {
+                        "to_port": port,
+                        "to_home": home_dir,
+                        "echo": True,
+                    },
+                })
+                return
             if not path.startswith("/api/neighborhoods"):
                 self._send(404, {"error": "no route"})
                 return

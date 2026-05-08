@@ -71,6 +71,7 @@ ACTIONS = (
     "summon", "hatch", "boot", "stop", "list",
     "update_identity", "update_soul", "lay_egg",
     "overview", "inspect", "eggs", "history", "lineage",
+    "chat",
 )
 KINDS = ("personal", "pre-founder", "memorial", "project", "place", "custom")
 
@@ -948,7 +949,13 @@ class TwinAgent(BasicAgent):
                 "details (need rappid_uuid); 'history' for soul.md "
                 "version history of one twin (need rappid_uuid); 'eggs' "
                 "for all .egg backups on disk; 'lineage' for the family "
-                "tree grouped by parent_rappid. "
+                "tree grouped by parent_rappid; "
+                "'chat' to POST a message to a peer brainstem's /chat "
+                "endpoint — the unified federation primitive. Same pattern "
+                "works on-LAN, on-WAN, or over the public internet (pass "
+                "brainstem_url for non-local peers). Local-first: when the "
+                "internet drops, on-LAN parts of a neighborhood keep "
+                "working because the URL lookup never required GitHub. "
                 "Every soul edit creates a timestamped backup at "
                 "~/.rapp/twins/<rappid>/.brainstem_data/soul_history/ so "
                 "you can always revert."
@@ -1002,6 +1009,18 @@ class TwinAgent(BasicAgent):
                         "type": "string",
                         "description": "Optional sha256 hex digest the egg must match before unpacking (hatch). Refuses to hatch if the local egg's hash doesn't match. Use when hatching from URLs you don't fully trust — combined with auto-fetched hub sidecars, gives content-integrity verification.",
                     },
+                    "brainstem_url": {
+                        "type": "string",
+                        "description": "Used by chat. Explicit base URL of the peer brainstem to chat with (e.g. http://192.168.1.50:7071 on LAN, https://my-tunnel.example.com over the public internet). Omit when the peer is a same-machine twin — chat resolves the URL from the local port file via rappid_uuid.",
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "Used by chat. The user_input to POST to the peer brainstem's /chat endpoint.",
+                    },
+                    "timeout_s": {
+                        "type": "integer",
+                        "description": "Used by chat. How long to wait for the peer's response in seconds (default 90).",
+                    },
                 },
                 "required": ["action"],
             },
@@ -1018,6 +1037,7 @@ class TwinAgent(BasicAgent):
         if action == "boot":            return self._boot(**kwargs)
         if action == "stop":            return self._stop(**kwargs)
         if action == "list":            return self._list(**kwargs)
+        if action == "chat":            return self._chat(**kwargs)
         if action == "update_identity": return self._update_identity(**kwargs)
         if action == "update_soul":     return self._update_soul(**kwargs)
         if action == "lay_egg":         return self._lay_egg(**kwargs)
@@ -1562,3 +1582,79 @@ class TwinAgent(BasicAgent):
             )
         lines.append("\nBoot any twin: action='boot', rappid_uuid='<rappid>'")
         return "\n".join(lines)
+
+    # ── chat ────────────────────────────────────────────────────────────
+
+    def _chat(self, **kwargs):
+        """The unified federation primitive — POST /chat to a peer brainstem.
+
+        Same pattern works on-LAN, on-WAN, or over the public internet —
+        wherever the peer's brainstem is reachable. Local-first: if the peer
+        is a same-machine twin, we resolve its URL from the local port file;
+        if the peer is on the LAN or public internet, the caller passes
+        brainstem_url explicitly (or members.json carries it).
+
+        When the internet drops, the on-LAN parts of a neighborhood keep
+        working because the URL lookup never required GitHub. That's the
+        whole point: one pattern, location-agnostic, local-first.
+
+        Args:
+          rappid_uuid:  twin to chat with (resolves URL via local port file)
+          brainstem_url: explicit URL override (use for LAN/WAN peers)
+          message:      the user_input to POST
+          timeout_s:    how long to wait (default 90)
+        """
+        rappid = kwargs.get("rappid_uuid") or ""
+        url = (kwargs.get("brainstem_url") or "").rstrip("/")
+        message = kwargs.get("message") or ""
+        timeout_s = int(kwargs.get("timeout_s") or 90)
+
+        if not message:
+            return "Error: message required for chat"
+
+        # Resolve URL: explicit > rappid lookup in local twins
+        if not url and rappid:
+            port = _read_port(rappid)
+            pid = _read_pid(rappid)
+            if port and _pid_alive(pid):
+                url = f"http://127.0.0.1:{port}"
+
+        if not url:
+            return ("Error: could not resolve brainstem_url. Provide it "
+                    "explicitly OR ensure the peer is a running local twin.")
+
+        try:
+            req = urllib.request.Request(
+                f"{url}/chat",
+                data=json.dumps({"user_input": message}).encode("utf-8"),
+                headers={"Content-Type": "application/json", "User-Agent": "rapp-twin-chat"},
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=timeout_s) as r:
+                body = r.read().decode("utf-8", errors="replace")
+                try:
+                    parsed = json.loads(body)
+                except (ValueError, json.JSONDecodeError):
+                    parsed = {"raw_response": body[:2000]}
+                return json.dumps({
+                    "schema": "rapp-twin-chat-response/1.0",
+                    "to_url": url,
+                    "to_rappid": rappid or None,
+                    "status": r.status,
+                    "response": parsed,
+                }, indent=2)
+        except urllib.error.HTTPError as e:
+            return json.dumps({
+                "schema": "rapp-twin-chat-response/1.0",
+                "to_url": url,
+                "status": e.code,
+                "error": str(e),
+            }, indent=2)
+        except (urllib.error.URLError, OSError, TimeoutError) as e:
+            return json.dumps({
+                "schema": "rapp-twin-chat-response/1.0",
+                "to_url": url,
+                "ok": False,
+                "error": f"unreachable ({type(e).__name__}): {e}",
+                "next_step": "fall back to async via GitHub Issue post (same membership organ contributions surface)",
+            }, indent=2)

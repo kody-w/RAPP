@@ -238,6 +238,80 @@ else
   step_fail "rappid mismatch: A=$RA B=$RB"
 fi
 
+# 12. The unified federation primitive: Twin.chat = POST /chat to peer URL
+#     Same pattern works on-LAN (this test) and over the public internet
+#     (just change the URL). Local-first: the URL lookup never requires
+#     GitHub, so when the internet drops, on-LAN federation keeps working.
+heading "Step 12 — Twin.chat unified primitive (works on-LAN AND over public internet)"
+TWIN_OUT=$(REPO_ROOT="$REPO_ROOT" PEER_URL="http://127.0.0.1:$PORT_B" python3 - <<'PY'
+import importlib.util, json, os, sys
+sys.path.insert(0, os.path.join(os.environ["REPO_ROOT"], "rapp_brainstem"))
+spec = importlib.util.spec_from_file_location("ta", os.path.join(os.environ["REPO_ROOT"], "rapp_brainstem", "agents", "twin_agent.py"))
+ta = importlib.util.module_from_spec(spec); spec.loader.exec_module(ta)
+agent = ta.TwinAgent()
+out = agent.perform(
+    action="chat",
+    brainstem_url=os.environ["PEER_URL"],
+    message="hello from twin A — federate using the unified Twin.chat primitive",
+    timeout_s=5,
+)
+print(out)
+PY
+)
+if echo "$TWIN_OUT" | grep -q "rapp-twin-chat-response/1.0" && \
+   echo "$TWIN_OUT" | grep -q '"response":' && \
+   echo "$TWIN_OUT" | grep -q "test brainstem at :$PORT_B"; then
+  step_pass "Twin.chat → peer brainstem /chat → canonical {response, agent_logs} shape"
+else
+  step_fail "Twin.chat unified primitive failed: $TWIN_OUT"
+fi
+
+# 13. Demonstrate location-agnostic property: same call shape would work
+#     against a public-internet URL. The peer URL is the only thing that
+#     changes between LAN and public.
+heading "Step 13 — Same call shape, any URL: location-agnostic federation"
+TWIN_OUT2=$(REPO_ROOT="$REPO_ROOT" PEER_URL="http://127.0.0.1:$PORT_A" python3 - <<'PY'
+import importlib.util, json, os, sys
+sys.path.insert(0, os.path.join(os.environ["REPO_ROOT"], "rapp_brainstem"))
+spec = importlib.util.spec_from_file_location("ta", os.path.join(os.environ["REPO_ROOT"], "rapp_brainstem", "agents", "twin_agent.py"))
+ta = importlib.util.module_from_spec(spec); spec.loader.exec_module(ta)
+out = ta.TwinAgent().perform(
+    action="chat",
+    brainstem_url=os.environ["PEER_URL"],
+    message="reciprocal chat from twin B",
+    timeout_s=5,
+)
+print(out)
+PY
+)
+if echo "$TWIN_OUT2" | grep -q '"response":' && echo "$TWIN_OUT2" | grep -q "test brainstem at :$PORT_A"; then
+  step_pass "Twin.chat reciprocal call works (same code path, different URL)"
+else
+  step_fail "reciprocal Twin.chat failed: $TWIN_OUT2"
+fi
+
+# 14. Graceful failure when peer is unreachable — fallback hint surfaced
+heading "Step 14 — Twin.chat to dead peer returns clear next-step (no crash)"
+TWIN_DEAD=$(REPO_ROOT="$REPO_ROOT" python3 - <<'PY'
+import importlib.util, json, os, sys
+sys.path.insert(0, os.path.join(os.environ["REPO_ROOT"], "rapp_brainstem"))
+spec = importlib.util.spec_from_file_location("ta", os.path.join(os.environ["REPO_ROOT"], "rapp_brainstem", "agents", "twin_agent.py"))
+ta = importlib.util.module_from_spec(spec); spec.loader.exec_module(ta)
+out = ta.TwinAgent().perform(
+    action="chat",
+    brainstem_url="http://127.0.0.1:1",  # unreachable
+    message="this should fail gracefully",
+    timeout_s=2,
+)
+print(out)
+PY
+)
+if echo "$TWIN_DEAD" | grep -q '"ok": false' && echo "$TWIN_DEAD" | grep -q "GitHub Issue"; then
+  step_pass "unreachable peer → clear error + fallback to async GitHub Issue"
+else
+  step_fail "graceful-fail expected but got: $TWIN_DEAD"
+fi
+
 heading "Why this matters"
 cat <<EOF
   This is THE local neighborhood: two brainstems on this machine joined
