@@ -119,17 +119,22 @@
     },
   ];
 
-  const VBRAINSTEM_URL = "/RAPP/pages/vbrainstem/";
+  // Where to send people after summoning. Default = chat (so they can immediately TALK to the twin).
+  // Pass ?next=vbrainstem in the URL to redirect to vbrainstem instead.
+  const params0 = new URLSearchParams(window.location.search);
+  const NEXT = params0.get("next") === "vbrainstem"
+    ? "/RAPP/pages/vbrainstem/"
+    : "/RAPP/pages/chat.html";
 
   function summon(twin) {
-    // Same-origin localStorage hand-off — vbrainstem will adopt this rappid on next load.
+    // Same-origin localStorage hand-off — chat.html / vbrainstem will adopt this rappid on next load.
     try {
       localStorage.setItem("vbs_rappid", twin.rappid);
-      // Don't touch vbs_token — user signs in inside vbrainstem.
+      // Don't touch vbs_token — user signs in inside vbrainstem (then chat reuses).
       const banner = document.getElementById("summoning");
       banner.style.display = "block";
-      banner.textContent = `✓ Embodying ${twin.name} — redirecting to vbrainstem in 1.5s…`;
-      setTimeout(() => { window.location.href = VBRAINSTEM_URL + "#summoned=" + twin.id; }, 1500);
+      banner.textContent = `✓ Embodying ${twin.name} — opening chat in 1.5s…`;
+      setTimeout(() => { window.location.href = NEXT + "#summoned=" + twin.id; }, 1500);
     } catch (e) {
       const banner = document.getElementById("summoning");
       banner.className = "summon-banner warn";
