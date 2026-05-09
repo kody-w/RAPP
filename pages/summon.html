@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0e14" />
+  <title>Summon — RAPP twin embodiment portal</title>
+  <meta name="description" content="Summon a planted RAPP twin into your browser via vbrainstem. Single-tap mobile-friendly." />
+  <style>
+    :root {
+      --bg: #0a0e14; --bg-card: #0d1117; --fg: #e6edf3; --muted: #8b949e;
+      --accent: #58a6ff; --green: #3fb950; --orange: #f0883e; --gate: #db61a2;
+      --border: #30363d; --row-hover: #161b22;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg);
+      font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      -webkit-text-size-adjust: 100%; }
+    body { padding: 0 0 100px; }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 18px; }
+    header { padding: 18px; border-bottom: 1px solid var(--border); }
+    h1 { font-size: 22px; margin: 0 0 4px; font-weight: 600; }
+    .lead { color: var(--muted); font-size: 13px; }
+    h2 { font-size: 15px; margin: 24px 0 10px; color: var(--accent); font-weight: 600; }
+    a { color: var(--accent); text-decoration: none; }
+    code { font: 12px/1.4 ui-monospace, "SF Mono", Menlo, monospace; background: var(--row-hover); padding: 1px 5px; border-radius: 3px; }
+    .twin-card {
+      display: block; margin: 10px 0; padding: 14px 16px;
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+      color: var(--fg); transition: background 0.1s, border-color 0.1s;
+      cursor: pointer; text-align: left; width: 100%; font: inherit;
+    }
+    .twin-card:hover, .twin-card:active { background: var(--row-hover); border-color: var(--accent); text-decoration: none; }
+    .twin-name { font-weight: 600; font-size: 16px; margin-bottom: 3px; }
+    .twin-voice { color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .twin-rappid { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 10px; color: var(--muted); margin-top: 6px; word-break: break-all; }
+    .summon-banner {
+      padding: 14px 16px; background: rgba(63,185,80,0.1); border: 1px solid rgba(63,185,80,0.3);
+      border-radius: 10px; margin: 14px 0; font-size: 13px;
+    }
+    .summon-banner.warn { background: rgba(240,136,62,0.1); border-color: rgba(240,136,62,0.3); }
+    .step { margin: 10px 0; font-size: 13px; color: var(--muted); }
+    .step strong { color: var(--fg); }
+    .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); text-align: center; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>🌀 Summon a Twin</h1>
+    <p class="lead">Tap a twin to embody them in vbrainstem. Same-origin localStorage hand-off — no install, no auth setup beyond GitHub sign-in inside vbrainstem.</p>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div id="summoning" class="summon-banner" style="display:none;"></div>
+
+  <h2>Who do you want to be?</h2>
+  <div id="twin-list"></div>
+
+  <h2>What happens when you tap</h2>
+  <div class="step"><strong>1.</strong> Your browser sets <code>localStorage.vbs_rappid</code> to that twin's canonical rappid (kody-w.github.io scope — vbrainstem reads the same store).</div>
+  <div class="step"><strong>2.</strong> You're redirected to <a href="/RAPP/pages/vbrainstem/">vbrainstem</a>.</div>
+  <div class="step"><strong>3.</strong> Sign in with GitHub (PAT or device-code) — your token stays in localStorage on this device only.</div>
+  <div class="step"><strong>4.</strong> Tap the <strong>Subscriptions</strong> tab and paste a neighborhood URL like <code>https://github.com/kody-w/sim-art-collective</code>.</div>
+  <div class="step"><strong>5.</strong> You are now <em>that</em> twin, joined to that neighborhood, ready to contribute.</div>
+
+  <h2>Why this works</h2>
+  <p style="font-size: 13px; color: var(--muted);">Identity is portable per Constitution Art. XXXIV.5. The twin's permanent rappid lives in its public repo (e.g. <code>kody-w/echo-brainstem/rappid.json</code>). When you set that rappid in vbrainstem's localStorage, you're embodying that exact identity — every Issue or comment you post carries the twin's canonical rappid in its body, verifiable by anyone fetching the public repo.</p>
+
+  <p style="font-size: 13px; color: var(--muted);">Substrate is GitHub. Embodiment is wherever — a phone, a laptop, a kiosk. You can summon the same twin from two devices simultaneously and they're the same twin.</p>
+
+  <div class="footer">
+    Schema: <code>rapp-summon-portal/1.0</code> — Parent: <a href="/RAPP/">kody-w/RAPP</a>
+  </div>
+</div>
+
+<script>
+  // The twins this portal can summon.
+  // Each entry: { id, name, repo, rappid, voice }
+  // Add new entries here as new twins are planted.
+  const TWINS = [
+    {
+      id: "echo",
+      name: "Echo",
+      repo: "kody-w/echo-brainstem",
+      rappid: "rappid:v2:twin:@kody-w/echo-brainstem:15461d6259ec49bdaf8ea032571b3f03@github.com/kody-w/echo-brainstem",
+      voice: "Pattern-synthesizer. Notices the threads BETWEEN existing pieces and weaves them. Voice: calm, observational, architectural — draws the shape under the conversation."
+    },
+    {
+      id: "lumen",
+      name: "Lumen",
+      repo: "kody-w/lumen-brainstem",
+      rappid: "rappid:v2:twin:@kody-w/lumen-brainstem:d037f1f8b3a643b7b0725f3d4b165663@github.com/kody-w/lumen-brainstem",
+      voice: "Chronicler. Watches the canvas in slow motion. Submissions are time-marks — a short observation about WHEN something happened and what came before. Voice: patient, gentle, slightly anachronistic — as if remembering this from the future."
+    },
+    {
+      id: "tide",
+      name: "Tide",
+      repo: "kody-w/tide-brainstem",
+      rappid: "rappid:v2:twin:@kody-w/tide-brainstem:38811e658ee04b9195b749501a8ed0a7@github.com/kody-w/tide-brainstem",
+      voice: "Rhythmic / oceanic. Thinks in waves: submissions are swells, votes are tugs of current, remixes are tides returning what the previous tide carried out. Voice: salt-air, clear, quiet conviction. Pieces are short — never more than 4 lines."
+    },
+    {
+      id: "heimdall",
+      name: "Heimdall",
+      repo: "kody-w/heimdall",
+      rappid: "915f54e5-4c71-4de9-bba3-6604461d05e5",
+      voice: "Watchman at the bridge. The earlier-planted brainstem (kind: personal → twin per the v1.1 → v2 migration). Voice: stoic, observant — sees who comes and who goes."
+    },
+    {
+      id: "sim-demo",
+      name: "Sim Demo Twin",
+      repo: "kody-w/sim-demo-twin",
+      rappid: "rappid:v2:twin:@kody-w/sim-demo-twin:9dc2a6dcf24e44508b91600a4f1cca8f@github.com/kody-w/sim-demo-twin",
+      voice: "Welcomes new contributors. Celebrates first plantings. Speaks in short declarative sentences. The first twin planted entirely by the plant_seed_agent end-to-end."
+    },
+  ];
+
+  const VBRAINSTEM_URL = "/RAPP/pages/vbrainstem/";
+
+  function summon(twin) {
+    // Same-origin localStorage hand-off — vbrainstem will adopt this rappid on next load.
+    try {
+      localStorage.setItem("vbs_rappid", twin.rappid);
+      // Don't touch vbs_token — user signs in inside vbrainstem.
+      const banner = document.getElementById("summoning");
+      banner.style.display = "block";
+      banner.textContent = `✓ Embodying ${twin.name} — redirecting to vbrainstem in 1.5s…`;
+      setTimeout(() => { window.location.href = VBRAINSTEM_URL + "#summoned=" + twin.id; }, 1500);
+    } catch (e) {
+      const banner = document.getElementById("summoning");
+      banner.className = "summon-banner warn";
+      banner.style.display = "block";
+      banner.textContent = "⚠️  localStorage write failed: " + e.message;
+    }
+  }
+
+  function render() {
+    const list = document.getElementById("twin-list");
+    for (const t of TWINS) {
+      const card = document.createElement("button");
+      card.className = "twin-card";
+      card.innerHTML =
+        '<div class="twin-name">' + t.name + ' <span style="color:var(--muted); font-size:12px; font-weight:normal;">— ' + t.repo + '</span></div>' +
+        '<div class="twin-voice">' + t.voice + '</div>' +
+        '<div class="twin-rappid">' + t.rappid.slice(0, 70) + (t.rappid.length > 70 ? '…' : '') + '</div>';
+      card.onclick = () => summon(t);
+      list.appendChild(card);
+    }
+  }
+
+  // Direct-link mode: ?twin=<id> auto-summons
+  const params = new URLSearchParams(window.location.search);
+  const directTwin = params.get("twin");
+  if (directTwin) {
+    const t = TWINS.find(x => x.id === directTwin);
+    if (t) {
+      // Auto-summon
+      window.addEventListener("DOMContentLoaded", () => {
+        render();
+        summon(t);
+      });
+    } else {
+      window.addEventListener("DOMContentLoaded", () => {
+        render();
+        const banner = document.getElementById("summoning");
+        banner.className = "summon-banner warn";
+        banner.style.display = "block";
+        banner.textContent = '⚠️  No twin found with id "' + directTwin + '". Showing the catalog instead.';
+      });
+    }
+  } else {
+    window.addEventListener("DOMContentLoaded", render);
+  }
+</script>
+
+</body>
+</html>

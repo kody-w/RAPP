@@ -4,17 +4,19 @@
 # Each invocation:
 #   1. Tick Bill        (1 LLM call → 1 action: submit/vote/remix/observe-only)
 #   2. Tick Alice       (1 LLM call → 1 action)
-#   3. Push canvas      (git add+commit+push the local neighborhood → public repo)
-#   4. Observe          (no LLM — pure filesystem read + optional ecosystem pulse)
-#   5. Print summary; exit
+#   3. Tick Echo        (1 LLM call → 1 action — pattern-synthesizer twin,
+#                        embodies the public kody-w/echo-brainstem)
+#   4. Push canvas      (git add+commit+push the local neighborhood → public repo)
+#   5. Observe          (no LLM — pure filesystem read + optional ecosystem pulse)
+#   6. Print summary; exit
 #
-# After step 3, vbrainstem (and any other browser/public observer) sees Bill +
-# Alice's autonomous tick contributions on github.com/kody-w/sim-art-collective.
+# After step 4, vbrainstem (and any other browser/public observer) sees all three
+# twins' autonomous tick contributions on github.com/kody-w/sim-art-collective.
 #
 # Designed to be installed in cron or launchd. Recommended cadence:
 #   */20 * * * *  /Users/<you>/.../loop_orchestrator.sh >> /tmp/rapp-sim.log 2>&1
 #
-# Cost: 2 LLM calls per cycle. ~$0.01–$0.05/cycle on Sonnet/Opus depending on prompt size.
+# Cost: 3 LLM calls per cycle. ~$0.02–$0.08/cycle on Sonnet/Opus depending on prompt size.
 #
 # Always real LLM ticks — there is no fake / deterministic / pre-scripted
 # persona mode. Autonomous means autonomous. (Per memory feedback
@@ -36,7 +38,11 @@ log() { echo "[$(ts)] $*"; }
 
 log "=== orchestrator cycle start (real LLM ticks) ==="
 
-for twin in bill-brainstem alice-brainstem; do
+for twin in bill-brainstem alice-brainstem echo-brainstem; do
+  if [ ! -d "$HOME/RAPP-sim/$twin" ]; then
+    log "skip → $twin (not present at ~/RAPP-sim/$twin)"
+    continue
+  fi
   log "tick → $twin"
   if ! python3 "$SIM/tick_twin.py" --twin "$twin"; then
     log "  tick failed for $twin (continuing)"
