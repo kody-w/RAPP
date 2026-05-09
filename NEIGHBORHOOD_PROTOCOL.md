@@ -76,6 +76,19 @@ A visitor or peer organism shares a URL or QR code. The recipient lands on the f
 
 The protocol does not specify a fourth "public organism directory" mechanism beyond these three. If you need a directory, build one as a derivative artifact off the public-repo state. The base layer stays content-addressed, not registry-mediated.
 
+### 4e. Adapter-driven discovery (worked example: Discord)
+
+The four base channels (4a–4d) all assume the visitor knows a URL or has a peer-id pasted. Adapters bridge from out-of-band invitation surfaces — Discord guilds, group chats, ticket systems — to a planted neighborhood with a real GitHub-substrate identity. Discord is the worked example shipped today.
+
+**Wire format.** The adapter agent (`rapp_brainstem/agents/plant_discord_neighborhood_agent.py`) plants a fresh neighborhood and embeds two organ-local schemas in the planted seed:
+
+- `rapp-discord-bridge/1.0` — the bridge's persistent config (stored in the seed's `neighborhood.json` under `discord`): webhook URL, server id, channel id. Tells future agents where to talk back to the originating Discord.
+- `rapp-discord-plant-envelope/1.0` — the operation result returned by the agent's `perform()`: planted owner/repo, neighborhood_rappid, template used, customization metadata. Lets the caller (typically an LLM tool-call) confirm the plant before sharing the gate URL.
+
+Both envelopes are local to the adapter — they don't ride any §5 channel. Once the bridge is planted, normal §5b Issues + §5c PRs handle ongoing communication; the bridge config is consulted by future agents that want to write back to Discord (e.g., a daily-digest agent that posts neighborhood changes to the originating webhook).
+
+The pattern generalizes — Slack, Matrix, Teams, or any other invitation surface can ship an analogous `*_planter_agent.py` + a `rapp-<surface>-bridge/1.0` schema. The base protocol stays unchanged; the adapter handles the impedance mismatch.
+
 ### 4d. The canonical test neighbor
 
 `kody-w/rapp-test-neighbor` (`https://kody-w.github.io/rapp-test-neighbor/`) is the platform's intentionally-stable test peer. Its purpose is operational, not social — operators standing up neighborhood plumbing for the first time can declare it as their first neighbor and immediately verify that:
@@ -118,6 +131,8 @@ Each organism's seed repo accepts Issues with predefined labels. The protocol re
 - `neighborhood-message` — peer organism sending a content payload to this organism
 
 The doorman's UI surfaces relevant Issues; the operator triages on GitHub. Issues are **durable** — they outlive any specific session and accumulate into the organism's history.
+
+**Organ-local HTTP shortcut.** A brainstem MAY expose a POST endpoint on its own loopback for the *operator's own* tooling — e.g., `POST /api/neighborhoods/<owner>/<repo>/contribute` on the local membership organ writes a contribution-receipt locally and (asynchronously) opens a labeled GitHub Issue with the same payload. This is a convenience for the operator's brainstem, not a substitute for the §5b cross-organism wire: peers still receive the contribution as a labeled Issue on the seed repo. Receipts emitted by such organ-local endpoints carry their own organ-local schema (e.g., `rapp-braintrust-contribution-receipt/1.0`) and are scoped to the local brainstem; cross-organism receipts use the §6e response envelope.
 
 ### 5c. Pull Requests (the canonical evolution channel)
 
@@ -179,6 +194,30 @@ The recipient's organism is in charge of what to do with each message. The doorm
 ### 6c. Conversation state
 
 Each peer keeps its own conversation log. Logs are reconciled (after the line drops or asynchronously) via the Dream Catcher pattern (see `ECOSYSTEM.md` §10). UTC-first canon resolution + same-PK contradictions classified as alternate-dimension data. Nothing about twin chat changes the organism's canonical lineage state without an explicit operator action.
+
+### 6e. Response envelope
+
+When a doorman dispatches a §6a request and surfaces the result back to its caller (the local LLM, an organ, or another agent), the response is wrapped in an envelope of its own:
+
+```json
+{
+  "schema":      "rapp-twin-chat-response/1.0",
+  "channel":     "5a-http" | "5b-issues" | "5a-tether",
+  "to_url":      "<peer's /chat URL>",
+  "to_rappid":   "<recipient rappid>",
+  "from_rappid": "<sender rappid>",
+  "kind":        "<the §6b kind that was sent>",
+  "envelope":    { /* the original §6a request, unmodified */ },
+  "status":      <integer HTTP status>,
+  "response":    { /* peer's parsed reply */ }
+}
+```
+
+When the live channel is unreachable, the response carries `"ok": false`, an `error` string, and a `fallback` block describing the §5b Issues alternative (label, instructions, pre-filled `issues_new_url`). This lets the caller make a transport decision without re-encoding the envelope.
+
+The response envelope is asymmetric to §6a — only the doorman that *initiated* the request emits it. The peer's reply itself is whatever shape its `/chat` returned (typically `rapp-chat-response/1.0`), and is nested under `response`.
+
+Reference implementation: `rapp_brainstem/agents/twin_agent.py::_chat`.
 
 ## 7. Granular permissions — `public_facets`
 

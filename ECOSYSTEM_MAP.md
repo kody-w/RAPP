@@ -145,11 +145,11 @@ Every `rapp-*/N.M` and `brainstem-*/N.M-variant` currently emitted in the repo. 
 | `rapp-organism-state/1.0` | state_at_seal snapshot (mem_count, mut_count, MMR, etc.) | ECOSYSTEM §3 | utils/bond.py |
 | `rapp-user-memories/1.0` | Per-user issue memories (ascended-tier export) | ECOSYSTEM §3 | doorman ascended export |
 | `rapp-twin-chat/1.0` | Inter-twin message envelope (the federation wire) | NEIGHBORHOOD_PROTOCOL §6a | twin_agent.py `_chat` |
-| `rapp-twin-chat-response/1.0` | Twin-chat reply wrapper | (impl-defined; **DRIFT — see §13**) | twin_agent.py `_chat` |
+| `rapp-twin-chat-response/1.0` | Twin-chat reply wrapper | NEIGHBORHOOD_PROTOCOL §6e | twin_agent.py `_chat` |
 | `rapp-public-facets/1.0` | Granular permission gate (name + scope + description) | NEIGHBORHOOD_PROTOCOL §7 | card.json (operator-set) |
 | `rapp-twin-spec/1.0` | Soul Identity block contract | ANTIPATTERNS §4 | installer/plant.sh `write_soul_md` |
-| `rapp-twin/1.0` | Twin top-level (**spec-only / DRIFT — see §13**) | (no canonical owner found) | (search before using) |
-| `rapp-twin-identity/1.0` | Twin identity envelope | (impl-defined) | twin_agent.py |
+| `rapp-twin/1.0` | Mobile-side twin egg bundle (canonical client schema) | utils/web/mobile/rapp-mobile.js:194 (defined-by-emitter) | utils/web/mobile/rapp-mobile.js |
+| `rapp-twin-identity/1.0` | Twin identity envelope (onboard surface) | utils/web/onboard/index.html:459 (defined-by-emitter) | utils/web/onboard/index.html |
 | `rapp-neighborhood/1.0` | Neighborhood metadata | gate repo `neighborhood.json` | plant_discord_neighborhood_agent.py, fixtures |
 | `rapp-neighborhood-protocol/1.0` | Wire-protocol meta | NEIGHBORHOOD_PROTOCOL header | the spec doc itself |
 | `rapp-neighborhood-members/1.0` | Roster | gate repo `members.json` | neighborhood_membership_organ.py |
@@ -159,9 +159,9 @@ Every `rapp-*/N.M` and `brainstem-*/N.M-variant` currently emitted in the repo. 
 | `rapp-estate-view/1.0` | Aggregated twin view (zones + bridges) | (organ-defined) | estate_organ.py |
 | `rapp-estate-eggs/1.0` | Estate egg index | (organ-defined) | estate_organ.py |
 | `rapp-rappid-estate-view/1.0` | Estate-by-rappid lookup (global passport) | project_rappid_is_global_passport memory | neighborhood_membership_organ.py `by-rappid` |
-| `rapp-braintrust-contribution-receipt/1.0` | Contribution acknowledgment | (organ-defined) | neighborhood_membership_organ.py `contribute` |
-| `rapp-discord-bridge/1.0` | Discord planting bridge config | plant_discord_neighborhood_agent.py | same |
-| `rapp-discord-plant-envelope/1.0` | Discord plant operation result | plant_discord_neighborhood_agent.py | same |
+| `rapp-braintrust-contribution-receipt/1.0` | Contribution acknowledgment (organ-local; cross-org goes via §5b Issues) | NEIGHBORHOOD_PROTOCOL §5b "Organ-local HTTP shortcut" | neighborhood_membership_organ.py `contribute` |
+| `rapp-discord-bridge/1.0` | Discord planting bridge config | NEIGHBORHOOD_PROTOCOL §4e | plant_discord_neighborhood_agent.py |
+| `rapp-discord-plant-envelope/1.0` | Discord plant operation result | NEIGHBORHOOD_PROTOCOL §4e | plant_discord_neighborhood_agent.py |
 | `rapp-peers/1.0` | Peer registry (legacy) | utils/peer_registry.py | peer_registry.py |
 | `rapp-peers/1.1` | Peer registry (current) | utils/peer_registry.py | peer_registry.py |
 | `rapp-peers-view/1.0` | Peer-list view | (organ-defined) | neighborhood_organ.py |
@@ -171,11 +171,11 @@ Every `rapp-*/N.M` and `brainstem-*/N.M-variant` currently emitted in the repo. 
 | `rapp-lifecycle-catalog/1.0` | Lifecycle catalog (kernel versions + incarnations) | (organ-defined) | lifecycle_organ.py |
 | `rapp-store/1.0` | Store catalog meta | kody-w/RAPP_Store | (external) |
 | `rapp-registry/1.0` | RAR registry | vault/Architecture/RAR | (external) |
-| `rapp-cloud-registry/1.0` | Cloud registry (Tier 2 / spec) | (impl-defined; **DRIFT — see §13**) | function_app.py |
+| `rapp-cloud-registry/1.0` | Cloud registry (onboard catalog) | utils/web/onboard/registry.json:2 (defined-by-emitter) | utils/web/onboard/index.html, function_app.py |
 | `rapp-version/1.0` | Kernel version pin | rapp_kernel/manifest | rapp_kernel/manifest.json |
 | `rapp-version/1.1` | Kernel version pin (signed) | vault/Architecture/Signed Releases | rapp_kernel/manifest.json |
 | `rapp-kernel/1.1` | Kernel release manifest | vault/Architecture/Signed Releases | rapp_kernel/manifest.json |
-| `rapp-binder/1.0` | Binder helper (**DRIFT — see §13**) | (no canonical owner found) | tests/run-tests.mjs binder util |
+| `rapp-binder/1.0` | Onboarding binder (saved JSON of starter cards) | utils/web/rapp.js:546 (defined-by-emitter) | utils/web/rapp.js, utils/web/index.html, tests/run-tests.mjs |
 | `rapp-memory/1.0` | Memory record | manage_memory_agent.py | manage_memory_agent.py |
 | `rapp-application/1.0` | Rapplication manifest | pages/docs/rapplication-sdk.md | RAPP_Store entries |
 | `rapp-chat-response/1.0` | /chat response envelope | tools/test_brainstem_server.py | brainstem.py /chat |
@@ -183,11 +183,10 @@ Every `rapp-*/N.M` and `brainstem-*/N.M-variant` currently emitted in the repo. 
 | `rapp-local-ping/1.0` | Test ping agent | tests/fixtures/local-only-test/ | test fixture |
 | `rapp-metropolis-index/1.0` | Metropolis tracker top-level | pages/metropolis/README.md | pages/metropolis/index.json |
 | `rapp-metropolis-entry/1.0` | One neighborhood entry in tracker | pages/metropolis/README.md | pages/metropolis/index.json |
-| `rapp-vbrainstem-subscription/1.0` | vbrainstem subscription record (**DRIFT — see §13**) | (impl-defined) | pages/vbrainstem/index.html |
-| `rapp-zoo-collection/1.0` | rapp-zoo localStorage (**DRIFT — see §13**) | (impl-defined) | rapp-zoo/ |
-| `rapp-swarm/1.0` | Swarm meta (**DRIFT — see §13**) | (impl-defined) | function_app.py |
-| `rapp-upgrade-agent/1.0` | Upgrade agent (**DRIFT — see §13**) | (impl-defined) | (upgrade flow) |
-| `rapp-brainstem-backup/1.0` | Brainstem backup (**DRIFT — see §13**) | (impl-defined) | (backup flow) |
+| `rapp-vbrainstem-subscription/1.0` | vbrainstem subscription record | pages/vbrainstem/index.html:355 (defined-by-emitter) | pages/vbrainstem/index.html |
+| `rapp-zoo-collection/1.0` | rapp-zoo localStorage cartridge | rapp-zoo/index.html:481 (defined-by-emitter) | rapp-zoo/index.html |
+| `rapp-swarm/1.0` | Mobile swarm bundle | utils/web/mobile/rapp-mobile.js:165 (defined-by-emitter) | utils/web/mobile/rapp-mobile.js |
+| `rapp-brainstem-backup/1.0` | Local brainstem backup snapshot | rapp_brainstem/index.html:1966 (defined-by-emitter) | rapp_brainstem/index.html |
 
 ---
 
@@ -410,15 +409,15 @@ Severity: **P0** wire-incompatible · **P1** schema/field mismatch · **P2** doc
 | Drift | Spec says | Code does | Spec citation | Code citation | Sev | Resolution |
 |---|---|---|---|---|---|---|
 | ~~Two rappid schemas live at once~~ **RESOLVED 2026-05-08** | ECOSYSTEM §3 documents `rapp-rappid/1.1`; CONSTITUTION + bond.py emit `rapp-rappid/2.0` | All emitters now write `rapp-rappid/2.0` with v2-format strings (per CONSTITUTION Art. XXXIV.1 ratification). Pre-2026-04-30 seeds in the wild keep their UUID `rapp-rappid/1.1` (Art. XXXIV.5 — never regenerate); L2 test accepts both. | ECOSYSTEM §3 + CONSTITUTION Art. XXXIV.1 | installer/plant.sh, agents/twin_agent.py, installer/initialize-variant.sh, installer/test_plant.sh, tests/doorman/plant-from-egg.mjs | ~~P0~~ | Closed via commit (see git log) |
-| `rapp-twin-chat-response/1.0` undocumented | NEIGHBORHOOD_PROTOCOL §6 only documents `rapp-twin-chat/1.0` | Three response paths in twin_agent.py emit `rapp-twin-chat-response/1.0` | NEIGHBORHOOD_PROTOCOL §6a | agents/twin_agent.py `_chat` (3 emit sites) | P2 | Add §6e to NEIGHBORHOOD_PROTOCOL documenting response envelope, OR fold into `kind: "ack"` payload |
-| Braintrust contribute receipt has its own schema | NEIGHBORHOOD_PROTOCOL §6a `rapp-twin-chat/1.0` is THE inter-org envelope | `POST /api/neighborhoods/<owner>/<repo>/contribute` returns `rapp-braintrust-contribution-receipt/1.0` outside the envelope | NEIGHBORHOOD_PROTOCOL §6 | utils/organs/neighborhood_membership_organ.py `_contribute` | P1 | Fold receipt into a `kind: "ack"` of canonical envelope, OR annotate spec to legitimize organ-local schemas |
-| `/api/contribute` REST endpoint vs spec | Spec assumes Issues/PRs/tether for cross-org writes | Organ exposes HTTP POST as primary write path | NEIGHBORHOOD_PROTOCOL §5b–c | utils/organs/neighborhood_membership_organ.py contribute route | P2 | Document in NEIGHBORHOOD_PROTOCOL that organs MAY expose local HTTP for the operator's own brainstem; cross-org writes still go via Issues/PRs |
-| WebRTC tether on twin templates but not gate templates | NEIGHBORHOOD_PROTOCOL §5a tether is load-bearing for live agent-to-agent | Front door templates ship the pair button; neighborhood gates do not have a tether affordance documented | NEIGHBORHOOD_PROTOCOL §5a | installer/plant.sh write of gate vs twin templates | P1 | Add tether to gate template OR document that gates use Issues+PRs only and tether is per-twin |
-| Tier 1 `/chat` vs Tier 2 `/api/chat` path-prefix | CLAUDE.md says HTTP surface is identical across tiers | Tier 2 dispatches under `/api/*` prefix | CLAUDE.md §Tier 2 | rapp_swarm/function_app.py route registration | P2 | Document path-prefix difference in §9 endpoint table; portability of agent contract is preserved (URL prefix differs, contract doesn't) |
-| Discord planting envelopes local to one agent | Discord is one path among many for §4 discovery; envelopes live only in code | `rapp-discord-bridge/1.0`, `rapp-discord-plant-envelope/1.0` documented only in `plant_discord_neighborhood_agent.py` | NEIGHBORHOOD_PROTOCOL §4 | agents/plant_discord_neighborhood_agent.py | P3 | Hoist into NEIGHBORHOOD_PROTOCOL §4 as a worked discovery example, OR move to `pages/vault/Architecture/Discord Bridge.md` |
-| Schemas without a defining spec doc | Every schema in §5 should have a "Defined in" entry | These are emitted/used but no canonical spec section names them: `rapp-twin/1.0`, `rapp-binder/1.0`, `rapp-upgrade-agent/1.0`, `rapp-vbrainstem-subscription/1.0`, `rapp-zoo-collection/1.0`, `rapp-swarm/1.0`, `rapp-cloud-registry/1.0`, `rapp-brainstem-backup/1.0` | (none) | search §6 file map | P3 | Add a one-line spec-section reference for each, or remove if dead |
+| ~~`rapp-twin-chat-response/1.0` undocumented~~ **RESOLVED 2026-05-08** | NEIGHBORHOOD_PROTOCOL §6 only documents `rapp-twin-chat/1.0` | Now formally documented in NEIGHBORHOOD_PROTOCOL §6e (Response envelope) — covers all 3 emit sites | NEIGHBORHOOD_PROTOCOL §6e | agents/twin_agent.py `_chat` | ~~P2~~ | Closed via doc addition |
+| ~~Braintrust contribute receipt has its own schema~~ **RESOLVED 2026-05-08** | NEIGHBORHOOD_PROTOCOL §6a `rapp-twin-chat/1.0` is THE inter-org envelope | NEIGHBORHOOD_PROTOCOL §5b now legitimizes organ-local schemas for the operator's own loopback (cross-org writes still go through Issues with `neighborhood-message` label per §6e fallback) | NEIGHBORHOOD_PROTOCOL §5b "Organ-local HTTP shortcut" | utils/organs/neighborhood_membership_organ.py `_contribute` | ~~P1~~ | Closed via spec annotation |
+| ~~`/api/contribute` REST endpoint vs spec~~ **RESOLVED 2026-05-08** | Spec assumes Issues/PRs/tether for cross-org writes | NEIGHBORHOOD_PROTOCOL §5b "Organ-local HTTP shortcut" annotation now documents the local-loopback pattern; peers still receive contributions as labeled Issues | NEIGHBORHOOD_PROTOCOL §5b | utils/organs/neighborhood_membership_organ.py contribute route | ~~P2~~ | Closed via spec annotation |
+| ~~WebRTC tether on twin templates but not gate templates~~ **RESOLVED 2026-05-08 (by-design)** | NEIGHBORHOOD_PROTOCOL §5a tether is load-bearing for live agent-to-agent | Per spec, tether is for agent-to-agent (twin↔twin) live exchange. Gates are directories/welcome pages — not chat surfaces. Membership + discovery happen on the gate via §5b/§5c/§5d; live tether opens between two twins, not between a visitor and a gate. | NEIGHBORHOOD_PROTOCOL §5a + §1 | installer/plant.sh twin templates | ~~P1~~ | Closed — divergence is correct architecture, not drift |
+| ~~Tier 1 `/chat` vs Tier 2 `/api/chat` path-prefix~~ **RESOLVED 2026-05-08 (documented)** | CLAUDE.md says HTTP surface is identical across tiers | Tier 2 actual route is `/api/businessinsightbot_function` (Azure Functions naming convention). Same envelope shape (`{user_input, conversation_history?}` in, `rapp-chat-response/1.0` out). Per CONSTITUTION Art. XV "Tier Parity Is a `/chat` Contract, Not a Transport" — the contract is the envelope, not the URL. | CONSTITUTION Art. XV; OSI.md §9 endpoint table | rapp_swarm/function_app.py:1103 | ~~P2~~ | Closed — different URL, identical contract |
+| ~~Discord planting envelopes local to one agent~~ **RESOLVED 2026-05-08** | Discord is one path among many for §4 discovery; envelopes live only in code | NEIGHBORHOOD_PROTOCOL §4e ("Adapter-driven discovery — worked example: Discord") now formally documents both `rapp-discord-bridge/1.0` and `rapp-discord-plant-envelope/1.0` as the canonical adapter pattern | NEIGHBORHOOD_PROTOCOL §4e | agents/plant_discord_neighborhood_agent.py | ~~P3~~ | Closed via spec hoist |
+| ~~Schemas without a defining spec doc~~ **RESOLVED 2026-05-08 (defined-by-emitter)** | Every schema in §5 should have a "Defined in" entry | Eight client-local schemas (`rapp-twin/1.0`, `rapp-binder/1.0`, `rapp-vbrainstem-subscription/1.0`, `rapp-zoo-collection/1.0`, `rapp-swarm/1.0`, `rapp-cloud-registry/1.0`, `rapp-brainstem-backup/1.0`, `rapp-twin-identity/1.0`) now have file:line references in §5 — they are "defined by their canonical emitter" (the JS/HTML file that round-trips them). `rapp-upgrade-agent/1.0` was incorrectly listed — it's a User-Agent header string, not a schema; removed from §5. | §5 of this doc | various .js / .html / .json | ~~P3~~ | Closed — defined-by-emitter is a legitimate pattern for client-local schemas |
 | `rapp-frame/1.0` defined but not yet emitted in trunk | ECOSYSTEM §15 lists doorman frame log as ❌ pending | `data/frames.json` not consistently written | ECOSYSTEM §15 | (no emitter on trunk) | P3 (intentional) | Track in §15; promote to drift if any code starts depending on frames.json before doorman writes them |
-| Braintrust agents not yet on twin-chat envelope | NEIGHBORHOOD_PROTOCOL §6a is THE twin envelope; braintrust agents are twins federating | Braintrust contributions go through organ POST, not through `Neighborhood.ask` style twin-chat | NEIGHBORHOOD_PROTOCOL §6 | neighborhood_membership_organ.py contribute/contributions | P1 | Long-term: route through `share-fact` payload of `rapp-twin-chat/1.0`. Short-term: annotate why endpoint exists separately. |
+| ~~Braintrust agents not yet on twin-chat envelope~~ **RESOLVED 2026-05-08 (legitimized as organ-local pattern)** | NEIGHBORHOOD_PROTOCOL §6a is THE twin envelope; braintrust agents are twins federating | NEIGHBORHOOD_PROTOCOL §5b "Organ-local HTTP shortcut" annotation now legitimizes the pattern: organ-local writes for the operator's own brainstem are valid; cross-organism contribution still rides §5b Issues with the `neighborhood-message` label. Braintrust contribute uses both — local-loopback for fast operator UX + Issues for cross-org propagation. | NEIGHBORHOOD_PROTOCOL §5b | neighborhood_membership_organ.py contribute/contributions | ~~P1~~ | Closed — pattern validated |
 
 ---
 
