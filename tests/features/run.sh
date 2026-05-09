@@ -33,6 +33,7 @@ FEATURES=(
   "F5-resurrection"
   "F6-ant-farm"
   "F7-rar-hotload"
+  "F8-graft"
 )
 
 declare -a NAMES STATUS

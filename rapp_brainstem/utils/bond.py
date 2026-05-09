@@ -223,6 +223,12 @@ def record_bond(home: str, kind: str,
       bond        — kernel upgrade-in-place (egg → overlay → hatch)
       adoption    — legacy install detected, identity minted retroactively
       hatch       — egg arrived from another machine and was applied
+      graft       — RAPP neighborhood scaffolding was overlaid on an
+                    existing public repo (the upstream is the "local
+                    mutation"; the RAPP layer is additive). Same bond
+                    technique: existing files are preserved; only new
+                    files land. The graft event records the upstream
+                    commit so the lineage can be reconstructed later.
     """
     os.makedirs(home, exist_ok=True)
     path = _bonds_path(home)
@@ -831,7 +837,7 @@ def main(argv=None):
 
     rb = sub.add_parser("record-bond", help="Append an event to bonds.json")
     rb.add_argument("home")
-    rb.add_argument("kind", choices=["birth", "bond", "adoption", "hatch"])
+    rb.add_argument("kind", choices=["birth", "bond", "adoption", "hatch", "graft"])
     rb.add_argument("--from-version", default=None)
     rb.add_argument("--to-version", default=None)
     rb.add_argument("--from-commit", default=None)
