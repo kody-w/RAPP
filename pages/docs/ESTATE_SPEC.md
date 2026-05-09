@@ -1,0 +1,194 @@
+# ESTATE_SPEC — The Rappid Is The Global Address
+
+> **Schema:** `rapp-estate/1.1` · **Status:** Constitutional (Article XLVI) · **Authority:** this file · **First shipped:** 2026-05-09
+
+This is the load-bearing spec for **how any door (twin or neighborhood) is discovered and addressed across the network**. It locks in a property the rappid format has always implied but the codebase had not enforced: from a single rappid string, with zero auth and zero API calls, you can compute every canonical URL the door has and fetch its full identity from `raw.githubusercontent.com`.
+
+If you are writing a planter, an estate agent, a federation walker, a holocard renderer, a discovery UI, or any code that maps from "I have a rappid" → "I want to read the door" — this spec is the contract. There are no fallbacks; the spec describes what is true.
+
+---
+
+## 1. The rappid IS the URL
+
+The canonical v2 rappid format:
+
+```
+rappid:v2:<kind>:@<owner>/<repo>:<32-hex-no-dashes>@github.com/<owner>/<repo>
+```
+
+The `<owner>/<repo>` segment appears **twice** by design — first as the abbreviated identity reference, then as the full origin pin. Both MUST be the same string. A rappid where they disagree is invalid and MUST be rejected (Article XLVI.5).
+
+From this string alone, by **string parsing** (not lookup, not config, not env), you derive:
+
+| Field | How |
+|---|---|
+| `kind` | The token between `rappid:v2:` and `:@` |
+| `owner` | Everything after `@` and before `/` in the first segment |
+| `repo` | Everything after `/` and before `:` in the first segment |
+| `door_type` | `"front_door"` if `kind == "twin"`, else `"gate"` (XLVI.2) |
+
+**Valid kinds** (frozen as of 2026-05-09): `twin`, `neighborhood`, `ant-farm`, `braintrust`, `workspace`, `hatched`, `rapplication`, `prototype`, `operator`. Adding a new kind requires a CONSTITUTION amendment because every consumer derives behavior from this token.
+
+---
+
+## 2. The Canonical Door URL Set
+
+Every planted door MUST be reachable at these URLs. The planter MUST emit each one as appropriate to the door's type. A consumer holding a rappid MUST be able to fetch any of these URLs without an API call:
+
+| # | Name | URL pattern | Required for |
+|---|---|---|---|
+| 1 | `repo` | `https://github.com/<owner>/<repo>` | all (the canonical browsing URL) |
+| 2 | `front` | `https://<owner>.github.io/<repo>/` | all (the heimdall snapshot — the operator-facing chat surface) |
+| 3 | `identity` | `https://raw.githubusercontent.com/<owner>/<repo>/main/rappid.json` | all (`rapp-rappid/2.0`) |
+| 4 | `holocard` | `https://raw.githubusercontent.com/<owner>/<repo>/main/card.json` | all (`rappcards/1.1.2`) |
+| 5 | `holo_md` | `https://raw.githubusercontent.com/<owner>/<repo>/main/holo.md` | all (the friendly entry doc) |
+| 6 | `avatar` | `https://raw.githubusercontent.com/<owner>/<repo>/main/holo.svg` | all (procedural sprite) |
+| 7 | `summon_qr` | `https://raw.githubusercontent.com/<owner>/<repo>/main/holo-qr.svg` | all (QR encoding the front-door URL) |
+| 8 | `members` | `https://raw.githubusercontent.com/<owner>/<repo>/main/members.json` | gates only (`rapp-neighborhood-members/1.0`) |
+| 9 | `facets` | `https://raw.githubusercontent.com/<owner>/<repo>/main/facets.json` | all (`rapp-facets/1.0` — the door's published-capability declaration) |
+
+**The .nojekyll + index.html invariant.** A planted door's index.html serves the heimdall front-door grail; for that to work over GitHub Pages, the repo MUST contain a `.nojekyll` file at root. The planter emits it. The backfill enforces it.
+
+**The specs/ invariant.** Per "specs travel with the planted repo" (CONSTITUTION Article XXIII; memory: `feedback_specs_travel_with_planting.md`), every planted door MUST also carry the `specs/` bundle (RAPPID_SPEC, HOLOCARD_SPEC, ANTIPATTERNS, SOUL_IDENTITY, PARTICIPATION, AGENT_SPEC, RAPPLICATION_SPEC, SENSE_SPEC, the kind-specific protocol, and **ESTATE_SPEC** as of bundle v1.1.0).
+
+---
+
+## 3. The Estate Stores Only Rappid + Provenance
+
+The user's **estate** is the door catalog — every door they own (`created`) plus every door they're a contributor in (`member`). It lives in two places:
+
+- **Local source of truth:** `~/.brainstem/estate.json`
+- **Public mirror (optional):** `https://raw.githubusercontent.com/<github-handle>/rapp-estate/main/estate.json`
+
+Per Article XLVI.3, each entry stores **only**:
+
+```json
+{
+  "rappid": "rappid:v2:twin:@owner/repo:hex@github.com/owner/repo",
+  "added_at": "2026-05-09T00:00:00Z",
+  "via": "created" | "scan" | "manual" | "import" | "published-by-other"
+}
+```
+
+Everything else (owner, repo, kind, door_type, name, summon_url, holocard URL, all 9 canonical URLs) is **DERIVED** at read time via `door_from_rappid(rappid)`. There are no stored fallback fields. There are no patched URLs. If the rappid changes, every derived field updates. If the rappid is invalid, the entry surfaces as an error — never silently fixed up.
+
+This is the constitutional answer to *"don't do all of these exception things."*
+
+### 3.1 The full estate.json schema
+
+```json
+{
+  "schema": "rapp-estate/1.1",
+  "owner": {
+    "rappid": "rappid:v2:operator:@<github>/<their-twin-or-brainstem>:hex@github.com/<github>/...",
+    "github": "<github-handle>"
+  },
+  "created": [{ "rappid": "...", "added_at": "...", "via": "created" }],
+  "member":  [{ "rappid": "...", "added_at": "...", "via": "scan" }],
+  "updated_at": "2026-05-09T00:00:00Z"
+}
+```
+
+The `owner.rappid` is the operator's **personal** rappid — minted once at first install, lives at `~/.brainstem/rappid.json`. It is the universal anchor for both sides of the estate:
+
+- **As ancestor** of `created[]`: every door the operator planted has `parent_rappid = owner.rappid` in its own `rappid.json`.
+- **As member-proof** for `member[]`: every gate the operator joined lists `owner.rappid` in its own `members.json`.
+
+The same identity, two roles. No additional ID system needed.
+
+---
+
+## 4. Discovery Is Pure Raw Fetch
+
+A consumer MUST be able to discover any door, and any user's full estate, with `curl` alone. No `gh` CLI, no API token, no rate limit (for public repos), no auth.
+
+### 4.1 Discover one door from its rappid
+
+```bash
+# From the rappid, parse <owner>/<repo>:
+RAPPID='rappid:v2:twin:@kody-w/echo-brainstem:abc...@github.com/kody-w/echo-brainstem'
+OWNER_REPO=$(echo "$RAPPID" | sed 's|.*:@\([^:]*\):.*|\1|')
+
+# Fetch identity, holocard, holo.md, etc.:
+curl -fsSL "https://raw.githubusercontent.com/${OWNER_REPO}/main/rappid.json"
+curl -fsSL "https://raw.githubusercontent.com/${OWNER_REPO}/main/card.json"
+curl -fsSL "https://raw.githubusercontent.com/${OWNER_REPO}/main/holo.md"
+```
+
+### 4.2 Discover a user's full estate from their GitHub handle
+
+```bash
+# A single roundtrip, no auth, no API:
+curl -fsSL "https://raw.githubusercontent.com/<github-handle>/rapp-estate/main/estate.json"
+```
+
+This returns the full door catalog. From there, every entry's rappid expands to the door's own URL set via `door_from_rappid()`.
+
+### 4.3 The chain rule
+
+To enumerate every door in a user's reach: fetch their estate → for each entry's rappid, fetch the door's `rappid.json` → if you want to walk into a gate's membership, fetch its `members.json` → each member's rappid expands to their estate URL. Federation is a graph walk over pure raw fetches.
+
+---
+
+## 5. The `door_from_rappid` Derivation Contract
+
+Every consumer that maps rappid → door URLs MUST use a function with this contract:
+
+```python
+def door_from_rappid(rappid: str) -> dict:
+    """Return the canonical door object for a rappid. Pure function.
+
+    Returns:
+      {
+        "rappid": str,
+        "owner": str,
+        "repo": str,
+        "kind": str,
+        "door_type": "front_door" | "gate",
+        "urls": {
+          "repo": "https://github.com/<owner>/<repo>",
+          "front": "https://<owner>.github.io/<repo>/",
+          "identity": "https://raw.githubusercontent.com/<owner>/<repo>/main/rappid.json",
+          "holocard": "https://raw.githubusercontent.com/<owner>/<repo>/main/card.json",
+          "holo_md": "https://raw.githubusercontent.com/<owner>/<repo>/main/holo.md",
+          "avatar": "https://raw.githubusercontent.com/<owner>/<repo>/main/holo.svg",
+          "summon_qr": "https://raw.githubusercontent.com/<owner>/<repo>/main/holo-qr.svg",
+          "members": "https://raw.githubusercontent.com/<owner>/<repo>/main/members.json",  # gates only
+          "facets": "https://raw.githubusercontent.com/<owner>/<repo>/main/facets.json"
+        }
+      }
+
+    Raises:
+      InvalidRappidError if the string is not a valid v2 rappid OR if the
+      <owner>/<repo> appears differently in the two segments.
+    """
+```
+
+Implementation lives at `tools/door_address.py`. Imported by `plant_seed_agent.py`, `estate_agent.py`, and any future federation/discovery consumer. One implementation, one contract — no per-consumer reinventions.
+
+---
+
+## 6. Adoption + Compliance
+
+- **All NEW plantings** (after this spec ships) emit the full Door URL Set. No exceptions.
+- **All EXISTING plantings** are backfilled by `tools/backfill_seeds.py` — runnable any time, idempotent. The script downloads each known seed's `rappid.json`, validates it against the spec, and PUTs the missing canonical files. It is the operator's responsibility to run it for plantings created before 2026-05-09.
+- **Stale rappids** (where the `<owner>/<repo>` doesn't match the actual hosting URL) are rejected by `door_from_rappid()` and reissued by the backfill script (the historical `sim-art-collective` case is the canonical example).
+
+---
+
+## 7. Cross-references
+
+- **CONSTITUTION Article XLVI** — the principles in load-bearing form.
+- **CONSTITUTION Article XXXIV** — Rappid: Lineage Tracking and Variant Species (where the format originated).
+- **CONSTITUTION Article XXIII** — the vault as long-term memory; specs travel with plantings.
+- **CONSTITUTION Article XLII** — the global substrate is GitHub Raw + Issues (this spec is the formal version of that article's promise).
+- **`specs/RAPPID_SPEC.md`** (bundled in every planting) — the format definition itself.
+- **`specs/HOLOCARD_SPEC.md`** — the rappcards/1.1.2 schema for `card.json`.
+- **`tools/door_address.py`** — the pure derivation implementation.
+- **`rapp_brainstem/agents/estate_agent.py`** — the local-first agent that reads/writes the estate.
+- **`rapp_brainstem/agents/plant_seed_agent.py`** — the planter that emits the Door URL Set on every new plant.
+- **`tests/features/F13-estate-spec.sh`** — conformance gate.
+
+---
+
+*The rappid encodes the address. The address encodes the door. The door encodes the contract. There is no other map.*

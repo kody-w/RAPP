@@ -38,6 +38,7 @@ FEATURES=(
   "F10-ecosystem-audit"
   "F11-launch-to-public"
   "F12-bond-rhythm"
+  "F13-estate-spec"
 )
 
 declare -a NAMES STATUS

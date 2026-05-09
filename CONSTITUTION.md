@@ -3344,3 +3344,61 @@ The previous flat front door (trade card, 🏘 Neighborhood pane, install widget
 
 **Why this is constitutional and not a UI choice:**
 Without this article, the natural drift is toward flat HTML front doors per seed because they're easier to template and don't require a Three.js dependency. The flat front door is also more discoverable to search engines and easier to embed. **We are explicitly choosing the sphere despite those costs** because the platform's bet is that conversation-with-an-organism is the affordance, and a 3D sphere with implicit summon expresses that affordance more clearly than any link or button. A planted organism is a being, not a page; the sphere makes the being visible and tappable in a way a flat HTML page cannot. Operators retain full access to the flat surface via ⓘ — the choice is layered, not exclusive — but the default is the being. **Front doors are sphered by default. That's the lock-in.**
+
+---
+
+## Article XLVI — Rappid Is The Global Address (The Estate Is The Door Catalog)
+
+> **The rappid IS the URL.** From a single rappid string, with zero auth and zero API calls, every canonical URL the door has is computable by string parsing alone. The estate is the door catalog. Discovery is pure raw fetch. There are no fallbacks; the spec describes what is true.
+
+A rappid is not just an identity — it is a globally-resolvable address. The v2 format `rappid:v2:<kind>:@<owner>/<repo>:<32hex>@github.com/<owner>/<repo>` encodes the door's GitHub owner and repository TWICE by design: first as the abbreviated identity reference, then as the origin pin. Both segments MUST be the same string. Any rappid where they disagree is invalid and rejected at parse time.
+
+From those segments, by pure parsing, every consumer derives the door's complete canonical URL set — repo URL, front door (the sphere from Article XLV), identity JSON, holocard, holo.md, avatar SVG, summon QR, members.json, facets.json. **Nine URLs, all reachable through `raw.githubusercontent.com` without a single API token.** The implementation is one pure function: `tools/door_address.py::door_from_rappid()`. It is the single source of derivation; every consumer (planter, estate agent, federation walker, holocard renderer, discovery UI) imports it. None reinvents the parsing.
+
+The estate is the door catalog. Each user's `~/.brainstem/estate.json` (and its optional public mirror at `https://raw.githubusercontent.com/<github-handle>/rapp-estate/main/estate.json`) lists every door they own (`created`) and every door they're a contributor in (`member`). Each entry stores ONLY the rappid plus minimal provenance (`added_at`, `via`). Owner, repo, kind, door_type, summon URL, holocard URL — every derived field — is computed at read time. There are no stored fallback fields. There are no patched URLs. If a rappid is invalid, the entry surfaces as an error; it is never silently fixed up. **This is the constitutional answer to "don't do all of these exception things."**
+
+Authority for the spec: `pages/docs/ESTATE_SPEC.md`. Conformance gate: `tests/features/F13-estate-spec.sh`.
+
+### XLVI.1 — Rappid Determines URL
+
+The v2 rappid encodes its own GitHub origin. Every canonical URL the door has — `repo`, `front`, `identity`, `holocard`, `holo_md`, `avatar`, `summon_qr`, `members`, `facets` — is derivable from the rappid string alone, by parsing. No lookup. No config. No env. The parser is `door_from_rappid()` in `tools/door_address.py`. There is exactly one parser. Consumers MAY NOT reimplement; they MUST import.
+
+### XLVI.2 — The Canonical Door URL Set
+
+Every planted door MUST emit the full canonical file set so its URLs resolve to real content (not 404). The set is fixed: `index.html` (the sphere — Article XLV), `rappid.json`, `card.json`, `holo.md`, `holo.svg`, `holo-qr.svg`, `members.json` (gates only — `members.json` MAY be empty for twins, but a 404 is non-compliant), `facets.json`, `.nojekyll`, `README.md`, plus the `specs/` bundle (Article XXIII — specs travel with the planting). The planter (`plant_seed_agent.py`) emits all of these on every plant. The backfill script (`tools/backfill_seeds.py`) brings older plantings into compliance.
+
+Door type is deterministic from kind: `twin` and `operator` → `front_door` (a single AI presence). Everything else (`neighborhood`, `ant-farm`, `braintrust`, `workspace`, `hatched`, `rapplication`, `prototype`) → `gate` (a community AI you enter to find others). Adding a new kind requires amending this article — every consumer's behavior derives from this token, so the set cannot drift silently.
+
+### XLVI.3 — The Estate Stores Only Rappid + Provenance
+
+Each estate entry contains exactly `{rappid, added_at, via}`. Nothing else is persisted. Owner, repo, kind, door_type, name, summon URL, holocard URL — every other field — is DERIVED on read via `door_from_rappid()`. The estate file lives at `~/.brainstem/estate.json` (local source of truth) and optionally publishes to `<github-handle>/rapp-estate/main/estate.json` (public mirror). The publish step is operator-mediated; local stays local until the operator says publish.
+
+Per Article XXIII, the operator's personal rappid (lives at `~/.brainstem/rappid.json`, set as `owner.rappid` in the estate) is the universal anchor: it is the `parent_rappid` of every door the operator created, and it is the `members.json` entry that proves contributor status in every gate the operator joined. Same identity, two roles.
+
+### XLVI.4 — Discovery Is Pure Raw Fetch
+
+A consumer holding a rappid MUST be able to fetch the door's identity, holocard, holo_md, avatar, summon_qr, members, and facets through `raw.githubusercontent.com` URLs alone — no `gh` CLI, no GitHub API token, no rate limit (for public repos), no auth flow. A consumer holding a github handle MUST be able to fetch the user's full estate at `https://raw.githubusercontent.com/<handle>/rapp-estate/main/estate.json` with one `curl`. The chain rule (estate → entry rappids → per-door URL set → for gates: members.json → each member's rappid → their estate) lets federation walk over pure raw fetches forever.
+
+This is the formal version of Article XLII's promise (the global substrate is GitHub Raw + Issues). XLII describes the substrate; XLVI defines the address space on top of it.
+
+### XLVI.5 — No Fallbacks; Spec Says What's True
+
+A rappid that doesn't match the v2 format, or whose two `<owner>/<repo>` segments disagree, or whose kind is not in `VALID_KINDS`, is INVALID. `door_from_rappid()` raises `InvalidRappidError`. Consumers do not patch around invalid rappids — they surface the error and let the operator (or the backfill script) reissue. Stale rappids are reissued, not "best-efforted." Missing canonical files are emitted, not derived around. The estate has no `_enrich_entry()`, no "guess the kind from the name," no `local.github.io` workaround. **If the spec says it, it is true; if the spec doesn't say it, it doesn't exist.**
+
+This is constitutionally enforced because the alternative (per-consumer fallback chains) is how every previous identity system in the platform drifted. The cost of strictness — operators must reissue stale rappids, run the backfill once after this article ships — is one-time. The cost of laxity is permanent: every consumer accumulates its own private fallback chain, and the address space stops being addressable.
+
+**What this article requires:**
+- `tools/door_address.py::door_from_rappid()` is the single derivation function. Every consumer imports it.
+- Every plant emits the full Door URL Set (XLVI.2). The planter is updated; non-compliance is a planter bug, not a consumer's problem to handle.
+- Estate entries store only `{rappid, added_at, via}`. All other fields are derived.
+- Discovery URLs are pure-raw URLs. No path requires authentication.
+
+**What this article forbids:**
+- Per-consumer rappid parsers. Use `door_from_rappid()` or you're not in contract.
+- Stored derived fields in estate entries (door_type, summon_url, name, kind, owner, repo, url). They are computed, not stored.
+- Fallback URLs ("if the rappid says X but the entry has a `url` field, prefer the url"). The rappid wins or the entry is invalid.
+- Best-effort parsing of malformed rappids. Reissue, don't patch.
+- Hosting the estate behind a GitHub API call. The pure-raw URL `https://raw.githubusercontent.com/<handle>/rapp-estate/main/estate.json` is the canonical surface; any other surface is supplementary, never primary.
+
+**Why this is constitutional and not a library choice:**
+Without this article, every new consumer (a federation walker, a holocard CDN, a discovery UI, a future "find AIs near me" geosearch) reinvents the rappid parser. Each implementation has its own fallback chain ("oh, this rappid is invalid? I'll try the URL field instead"). The address space stops being a contract and becomes a suggestion. The estate stops being trustworthy because every consumer reads it differently. Locking the parser into ONE function, and the file manifest into a fixed set the planter MUST emit, makes the address space load-bearing — every consumer reads the same door, every door publishes the same files, every estate is the same shape. **One parser. One manifest. Forever.**

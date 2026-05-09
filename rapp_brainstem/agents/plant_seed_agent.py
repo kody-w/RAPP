@@ -206,6 +206,17 @@ def _build_neighborhood_files(rappid: str, kind: str, owner: str, name: str,
                      "_note": f"The operator who planted this {kind}."}],
     }, indent=2) + "\n").encode()
 
+    # facets.json — Door URL Set §9 (ESTATE_SPEC). Empty by default; the door
+    # declares its published capabilities (chat, summon, sense streams, etc.)
+    # by appending to this file over time. Reachable at the canonical raw URL
+    # whether populated or not.
+    files["facets.json"] = (json.dumps({
+        "schema": "rapp-facets/1.0",
+        "rappid": rappid,
+        "facets": {},
+        "_note": "Declare published capabilities here over time. See SPEC.md §3.",
+    }, indent=2) + "\n").encode()
+
     files["soul.md"] = (
         f"# {display_name} — Soul\n\n"
         f"## Identity — read this every turn\n\n"
@@ -379,6 +390,26 @@ def _build_twin_files(rappid: str, owner: str, name: str, display_name: str,
     files[".nojekyll"] = b""
     files[".gitignore"] = b".DS_Store\n*.swp\n.brainstem_data/\n"
 
+    # members.json — Door URL Set §8 (ESTATE_SPEC). Twins ship an EMPTY members
+    # list by design (a twin is a single AI, not a community), but the URL must
+    # exist for spec compliance. The owner field tracks who minted this twin.
+    files["members.json"] = (json.dumps({
+        "schema": "rapp-neighborhood-members/1.0",
+        "neighborhood": f"{owner}/{name}",
+        "updated_at": _now_iso(), "open_to_anyone": False,
+        "members": [],
+        "_note": f"Twins have no members; this twin's operator is {owner}.",
+    }, indent=2) + "\n").encode()
+
+    # facets.json — Door URL Set §9 (ESTATE_SPEC). See neighborhood emit for
+    # rationale. Always present, populated as the twin gains capabilities.
+    files["facets.json"] = (json.dumps({
+        "schema": "rapp-facets/1.0",
+        "rappid": rappid,
+        "facets": {},
+        "_note": "Declare published capabilities here over time. See SPEC.md §3.",
+    }, indent=2) + "\n").encode()
+
     # index.html — front door = grail redirect (heimdall) embodied as this twin
     files["index.html"] = _fetch_grail_template().encode()
 
@@ -545,16 +576,16 @@ class PlantSeedAgent(BasicAgent):
         plan["holo_md_url"] = f"https://raw.githubusercontent.com/{owner}/{name}/main/holo.md"
 
         # Append to the local estate (single JSON at ~/.brainstem/estate.json).
-        # Soft-fail: estate sync never blocks a plant.
+        # Per ESTATE_SPEC §4.2 / Article XLVI.3: each entry stores ONLY
+        # {rappid, added_at, via}. Owner, repo, kind, door_type, summon URL,
+        # holocard URL — every other field — is DERIVED at read time via
+        # door_from_rappid(). Soft-fail: estate sync never blocks a plant.
         try:
             from estate_agent import append_to_estate
             append_to_estate("created", {
                 "rappid": rappid,
-                "kind": kind,
-                "name": name,
-                "url": plan["live_url"],
-                "pages_url": plan["pages_url"],
                 "added_at": _now_iso(),
+                "via": "created",
             })
             plan["estate_updated"] = True
         except Exception as e:
