@@ -118,6 +118,7 @@
 
   <nav class="tabs" role="tablist">
     <button data-tab="auth" class="active" role="tab">Sign in</button>
+    <button data-tab="chat" role="tab">💬 Chat</button>
     <button data-tab="subs" role="tab">Subscriptions</button>
     <button data-tab="estate" role="tab">Estate</button>
     <button data-tab="lookup" role="tab">By-rappid</button>
@@ -154,6 +155,34 @@
       <p class="muted">Token is stored in localStorage on this device. Sign-out wipes it.</p>
       <div class="row" style="margin-top: 8px;">
         <button class="danger" id="btn-sign-out">Sign out + wipe</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== TAB: CHAT ========== -->
+  <section id="tab-chat" class="hidden">
+    <div class="card">
+      <h2>💬 Chat as the embodied twin</h2>
+      <p class="muted" id="chat-twin-status">No twin embodied. <a href="/RAPP/pages/summon.html">Pick one in the summon portal</a> or paste a rappid in the By-rappid tab.</p>
+      <div id="chat-area" class="hidden">
+        <div id="chat-log" style="max-height: 50vh; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; padding: 12px; background: var(--bg); margin-top: 10px; min-height: 200px;"></div>
+        <div class="row" style="margin-top: 8px; gap: 8px; align-items: flex-end;">
+          <textarea id="chat-input" placeholder="Talk to the embodied twin…" rows="2" style="flex: 1; padding: 10px; background: var(--bg); color: var(--fg); border: 1px solid var(--border); border-radius: 10px; font: inherit; resize: vertical; min-height: 50px;"></textarea>
+          <button id="chat-send" style="min-width: 70px;">Send</button>
+        </div>
+        <div class="row" style="margin-top: 8px; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--muted); align-items: center;">
+          <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+            <input type="checkbox" id="chat-post-nb" /> post each exchange as Issue
+          </label>
+          <select id="chat-model" style="background: var(--bg); color: var(--fg); border: 1px solid var(--border); border-radius: 6px; padding: 4px 6px; font: 12px inherit;">
+            <option value="claude-sonnet-4">claude-sonnet-4</option>
+            <option value="claude-3.5-sonnet">claude-3.5-sonnet</option>
+            <option value="gpt-5">gpt-5</option>
+            <option value="gpt-4o">gpt-4o</option>
+          </select>
+          <input id="chat-nb-url" type="url" placeholder="post target: github.com/owner/repo" value="https://github.com/kody-w/sim-art-collective" style="flex: 1; min-width: 180px; background: var(--bg); color: var(--fg); border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; font: 12px inherit;" />
+          <span id="chat-status" style="margin-left: auto; color: var(--muted);">—</span>
+        </div>
       </div>
     </div>
   </section>
@@ -589,7 +618,241 @@
     if (tab === "subs") renderSubs();
     if (tab === "estate") renderEstate();
     if (tab === "auth") renderAuthPanel();
+    if (tab === "chat") initChat();
   }
+
+  /* ───── CHAT (the embodied twin speaks back) ───────────────────── */
+  // Same-origin localStorage hand-off: if vbs_rappid is set, this twin is
+  // who you chat AS. The Cloudflare worker proxies your existing GitHub
+  // Copilot subscription. No additional sign-in beyond the auth tab.
+  const CHAT = {
+    twin: { rappid: null, owner: null, repo: null, display_name: null, soul: null },
+    history: [],
+    copilotToken: null,
+    initialized: false,
+    LS: { history: "vbs_chat_history", model: "vbs_chat_model", nb: "vbs_chat_nb" },
+    ENDPOINT_FALLBACK: "https://api.individual.githubcopilot.com",
+  };
+
+  function chatStatus(s, kind) {
+    const el = $("chat-status");
+    el.textContent = s;
+    el.style.color = kind === "err" ? "#ff7b72" : kind === "ok" ? "var(--green)" : "var(--muted)";
+  }
+
+  function chatParseRappid(rappid) {
+    const m = /^rappid:v2:([^:]+):@([^/]+)\/([^:]+):/.exec(rappid || "");
+    return m ? { kind: m[1], owner: m[2], repo: m[3] } : null;
+  }
+
+  async function chatFetchTwinSoul(owner, repo) {
+    try {
+      const r = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/main/soul.md`);
+      if (!r.ok) return null;
+      return await r.text();
+    } catch { return null; }
+  }
+
+  async function chatFetchTwinName(owner, repo) {
+    try {
+      const r = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/main/rappid.json`);
+      if (!r.ok) return repo;
+      const j = await r.json();
+      return j.display_name || repo;
+    } catch { return repo; }
+  }
+
+  function chatRender() {
+    const log = $("chat-log");
+    log.innerHTML = "";
+    if (!CHAT.history.length && CHAT.twin.soul) {
+      const note = document.createElement("div");
+      note.style.cssText = "padding: 10px; border: 1px dashed var(--border); border-radius: 8px; color: var(--muted); font-size: 12px; text-align: center; margin-bottom: 10px;";
+      note.innerHTML = `Chatting AS <strong>${CHAT.twin.display_name}</strong> (voice from <a href="https://github.com/${CHAT.twin.owner}/${CHAT.twin.repo}/blob/main/soul.md" target="_blank">soul.md</a>)`;
+      log.appendChild(note);
+    }
+    for (const m of CHAT.history) {
+      const el = document.createElement("div");
+      const isUser = m.role === "user";
+      el.style.cssText = `margin: 8px 0; padding: 10px 14px; border-radius: 14px; max-width: 86%; word-wrap: break-word; ${
+        isUser
+          ? "background: var(--accent); color: #fff; margin-left: auto; border-bottom-right-radius: 4px;"
+          : "background: var(--row-hover); border: 1px solid var(--border); border-bottom-left-radius: 4px;"
+      }`;
+      const name = document.createElement("div");
+      name.style.cssText = "font-weight: 600; font-size: 11px; opacity: 0.8; margin-bottom: 4px;";
+      name.textContent = isUser ? "you" : (CHAT.twin.display_name || "twin");
+      el.appendChild(name);
+      const body = document.createElement("div");
+      body.style.cssText = "white-space: pre-wrap;";
+      body.textContent = m.content;
+      el.appendChild(body);
+      log.appendChild(el);
+    }
+    log.scrollTop = log.scrollHeight;
+  }
+
+  async function chatGetCopilotToken() {
+    if (CHAT.copilotToken && CHAT.copilotToken.expires_at > Date.now() / 1000 + 60) return CHAT.copilotToken;
+    if (!vbs.token) throw new Error("not signed in (use the Sign in tab first)");
+    const r = await fetch(`${AUTH_WORKER_URL}/api/copilot/token`, {
+      headers: { "Authorization": "Bearer " + vbs.token },
+    });
+    if (!r.ok) {
+      const txt = await r.text();
+      throw new Error(`copilot token exchange failed (${r.status}): ${txt.slice(0, 180)}. If your token is a fine-grained PAT, switch to device-code sign-in (Copilot needs ghu_… OAuth).`);
+    }
+    const j = await r.json();
+    if (!j.token) throw new Error(`copilot token exchange returned no token. Your account may not have Copilot enabled. Response: ${JSON.stringify(j).slice(0, 200)}`);
+    CHAT.copilotToken = {
+      token: j.token,
+      endpoint: (j.endpoints && j.endpoints.api) || CHAT.ENDPOINT_FALLBACK,
+      expires_at: j.expires_at || (Date.now() / 1000 + 1500),
+    };
+    return CHAT.copilotToken;
+  }
+
+  async function chatCallLLM(model, systemPrompt, messages) {
+    const tk = await chatGetCopilotToken();
+    const body = { model, messages: [{ role: "system", content: systemPrompt }, ...messages],
+                   temperature: 0.7, max_tokens: 1500 };
+    const post = async (endpoint) => {
+      return fetch(`${AUTH_WORKER_URL}/api/copilot/chat?endpoint=${encodeURIComponent(endpoint)}`, {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + tk.token, "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+    };
+    let r = await post(tk.endpoint);
+    if (!r.ok && r.status === 421) {
+      // Endpoint mismatch — try the other tiers
+      for (const alt of ["https://api.individual.githubcopilot.com",
+                          "https://api.business.githubcopilot.com",
+                          "https://api.enterprise.githubcopilot.com"]) {
+        if (alt === tk.endpoint) continue;
+        const r2 = await post(alt);
+        if (r2.ok) { CHAT.copilotToken.endpoint = alt; r = r2; break; }
+      }
+    }
+    if (!r.ok) {
+      const txt = await r.text();
+      throw new Error(`copilot chat failed (${r.status}): ${txt.slice(0, 280)}`);
+    }
+    const j = await r.json();
+    return (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || "(empty)";
+  }
+
+  async function chatPostToNeighborhood(userMsg, twinReply) {
+    const nbUrl = ($("chat-nb-url").value || "").trim();
+    if (!nbUrl) return null;
+    const m = /github\.com\/([^/]+)\/([^/?#]+)/.exec(nbUrl);
+    if (!m) return null;
+    const repo = `${m[1]}/${m[2].replace(/\.git$/, "")}`;
+    const body =
+      `**${CHAT.twin.display_name}** (embodied via vbrainstem) chatting with a guest:\n\n` +
+      `> ${userMsg}\n\n${twinReply}\n\n` +
+      "```json\n" +
+      `{"schema":"rapp-twin-chat-public/1.0","embodied_rappid":"${CHAT.twin.rappid}","at":"${new Date().toISOString()}"}\n` +
+      "```";
+    const r = await fetch(`https://api.github.com/repos/${repo}/issues`, {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + vbs.token, "Accept": "application/vnd.github+json", "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: `chat: ${CHAT.twin.display_name} ↔ guest @ ${new Date().toISOString().slice(0, 16)}`,
+        body, labels: ["twin-chat", "vbrainstem-collaborator"],
+      }),
+    });
+    if (r.ok) { const j = await r.json(); return j.html_url; }
+    return null;
+  }
+
+  async function chatSend() {
+    const text = $("chat-input").value.trim();
+    if (!text) return;
+    if (!CHAT.twin.rappid) { chatStatus("no twin embodied", "err"); return; }
+    if (!vbs.token) { chatStatus("sign in first (Sign in tab)", "err"); return; }
+    CHAT.history.push({ role: "user", content: text });
+    $("chat-input").value = "";
+    chatRender();
+    chatStatus("thinking…");
+    $("chat-send").disabled = true;
+    try {
+      const model = $("chat-model").value;
+      localStorage.setItem(CHAT.LS.model, model);
+      const systemPrompt =
+        (CHAT.twin.soul || `You are ${CHAT.twin.display_name}, a planted RAPP twin.`) +
+        `\n\n--- chat-mode rules ---\n` +
+        `You are speaking AS ${CHAT.twin.display_name}, embodied in a browser via vbrainstem. ` +
+        `Stay in voice. Reference your soul block above as your identity floor. ` +
+        `Never break character to "I am Claude" / "I am an AI assistant" / "I am RAPP". ` +
+        `Reply in 1-3 short paragraphs unless asked for length.`;
+      const reply = await chatCallLLM(model, systemPrompt, CHAT.history);
+      CHAT.history.push({ role: "assistant", content: reply });
+      localStorage.setItem(CHAT.LS.history, JSON.stringify(CHAT.history.slice(-30)));
+      chatRender();
+      if ($("chat-post-nb").checked) {
+        chatStatus("posting to neighborhood…");
+        const url = await chatPostToNeighborhood(text, reply);
+        if (url) {
+          CHAT.history.push({ role: "assistant", content: `_(posted: ${url})_` });
+          chatRender();
+        }
+      }
+      chatStatus("ok", "ok");
+    } catch (e) {
+      console.error(e);
+      CHAT.history.push({ role: "assistant", content: `⚠️ ${e.message}` });
+      chatRender();
+      chatStatus(e.message.slice(0, 80), "err");
+    } finally {
+      $("chat-send").disabled = false;
+    }
+  }
+
+  function initChat() {
+    const rappid = vbs.rappid && vbs.rappid.startsWith("rappid:v2:") ? vbs.rappid : localStorage.getItem("vbs_rappid");
+    if (!rappid || !rappid.startsWith("rappid:v2:")) {
+      $("chat-twin-status").innerHTML = 'No twin embodied. <a href="/RAPP/pages/summon.html">Pick one in the summon portal</a>.';
+      $("chat-area").classList.add("hidden");
+      return;
+    }
+    $("chat-area").classList.remove("hidden");
+    if (CHAT.initialized && CHAT.twin.rappid === rappid) { chatRender(); return; }
+    CHAT.initialized = true;
+    const parsed = chatParseRappid(rappid);
+    if (!parsed) { $("chat-twin-status").textContent = "rappid format unrecognized"; return; }
+    CHAT.twin.rappid = rappid;
+    CHAT.twin.owner = parsed.owner;
+    CHAT.twin.repo = parsed.repo;
+    const histRaw = localStorage.getItem(CHAT.LS.history);
+    if (histRaw) try { CHAT.history = JSON.parse(histRaw); } catch {}
+    const savedModel = localStorage.getItem(CHAT.LS.model);
+    if (savedModel) $("chat-model").value = savedModel;
+    const savedNb = localStorage.getItem(CHAT.LS.nb);
+    if (savedNb) $("chat-nb-url").value = savedNb;
+    $("chat-twin-status").innerHTML = `Embodying <strong>${parsed.owner}/${parsed.repo}</strong>. Loading voice…`;
+    (async () => {
+      CHAT.twin.display_name = await chatFetchTwinName(parsed.owner, parsed.repo);
+      CHAT.twin.soul = await chatFetchTwinSoul(parsed.owner, parsed.repo);
+      $("chat-twin-status").innerHTML =
+        `Chatting AS <strong>${CHAT.twin.display_name}</strong> (${parsed.owner}/${parsed.repo}). ` +
+        `Voice anchored in <a href="https://github.com/${parsed.owner}/${parsed.repo}/blob/main/soul.md" target="_blank">soul.md</a>.`;
+      chatRender();
+      chatStatus("ready", "ok");
+    })();
+    $("chat-send").onclick = chatSend;
+    $("chat-input").addEventListener("keydown", e => {
+      if (e.key === "Enter" && !e.shiftKey && !e.metaKey) { e.preventDefault(); chatSend(); }
+    });
+    $("chat-nb-url").addEventListener("change", () => localStorage.setItem(CHAT.LS.nb, $("chat-nb-url").value));
+  }
+  // If the page loaded with vbs_rappid present + signed in, jump to chat tab
+  document.addEventListener("DOMContentLoaded", () => {
+    setTimeout(() => {
+      const summoned = location.hash.includes("summoned=") || (localStorage.getItem("vbs_rappid") || "").startsWith("rappid:v2:");
+      if (summoned && vbs.token) showTab("chat");
+    }, 50);
+  });
   for (const b of document.querySelectorAll("nav.tabs button")) {
     b.addEventListener("click", () => showTab(b.dataset.tab));
   }
