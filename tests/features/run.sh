@@ -34,6 +34,7 @@ FEATURES=(
   "F6-ant-farm"
   "F7-rar-hotload"
   "F8-graft"
+  "F9-universal-docking"
 )
 
 declare -a NAMES STATUS

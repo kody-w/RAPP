@@ -10,16 +10,16 @@ the **docking** primitive at the neighborhood-within-a-repo scope. It is
 the same operation the Dream Catcher (`installer/plant.sh::dream_catcher`
 + ECOSYSTEM §10) does at the frame-within-an-organism scope.
 
-| Property | Dream Catcher (frame scope) | Docking / Graft (neighborhood scope) | Bond cycle (kernel scope) |
-|---|---|---|---|
-| Unit | one `rapp-frame/1.0` | one neighborhood (rappid + agents + rar/) | the entire kernel (brainstem.py + agents/) |
-| Container | a planted organism | a single GitHub repo | a brainstem install on one machine |
-| Identity preserved | yes — content-addressed `hash` | yes — each neighborhood's `rapp-rappid/2.0` | yes — `~/.brainstem/rappid.json` |
-| Merge rule | UTC-first canon; same `(utc, frame_n)` different content → contradiction (preserved) | additive only — sha256-verified; existing files preserved; new files added | additive only — `unpack_organism` preserves any file the egg doesn't mention |
-| Append-only log | `data/frames.json` (chain via `prev_hash`) | `_metropolis.json` (entries[]) + `bonds.json` (events[]) | `bonds.json` (events[]) |
-| Operator control | reassimilation Issue (label: `dream-catcher`) | re-grafting (event kind: `graft`) | re-running install one-liner (event kind: `bond`) |
-| Lost data? | never — contradictions preserved as alternate-dimension data | never — `bond_preserve_local` block + restore-from-backup if anything clobbered | never — `unpack_organism`'s "additive on the kernel side" property |
-| Cross-scope chain | each frame → its parent in `prev_hash`; back to the organism's first frame | each neighborhood → species root via `parent_rappid`; up to global metropolis via `_metropolis.json.federated_trackers` | each install → its parent kernel commit via `parent_commit` in rappid.json |
+| Property | Dream Catcher (frame scope) | Docking / Graft (neighborhood scope) | Bond cycle (kernel scope) | DockAgent (registry scope) | rar_loader (file/install scope) | ant_agent (pheromone scope) |
+|---|---|---|---|---|---|---|
+| Unit | one `rapp-frame/1.0` | one neighborhood (rappid + agents + rar/) | the entire kernel (brainstem.py + agents/) | one entry inside any rar-shaped JSON | one agent/organ/sense file (sha256-verified) | one `rapp-pheromone/1.0` |
+| Container | a planted organism | a single GitHub repo | a brainstem install on one machine | any list-of-dicts JSON registry | the local brainstem's `agents/`/`organs/`/etc. | `ant-pheromone`-labeled GitHub Issues |
+| Identity preserved | yes — content-addressed `hash` | yes — each neighborhood's `rapp-rappid/2.0` | yes — `~/.brainstem/rappid.json` | yes — `key_field` dedup (default `name`; supports `sha256`) | yes — sha256 must match published manifest | yes — content-addressed via `hash` + `prev_hash` chain |
+| Merge rule | UTC-first canon; same `(utc, frame_n)` different content → contradiction (preserved) | additive only — sha256-verified; existing files preserved; new files added | additive only — `unpack_organism` preserves any file the egg doesn't mention | additive only — duplicate `key_field` SKIPPED, never overwrites | additive only — install only if file absent OR sha256 matches | additive only — every pheromone is a new Issue |
+| Append-only log | `data/frames.json` (chain via `prev_hash`) | `_metropolis.json` (entries[]) + `bonds.json` (events[]) | `bonds.json` (events[]) | `bonds.json` event kind="dock" | (the install IS the log) | the GitHub Issues list IS the log |
+| Operator control | reassimilation Issue (label: `dream-catcher`) | re-grafting (event kind: `graft`) | re-running install one-liner (event kind: `bond`) | calling DockAgent.perform | calling RarLoader.perform | calling Ant.perform |
+| Lost data? | never — contradictions preserved as alternate-dimension data | never — `bond_preserve_local` block + restore-from-backup if anything clobbered | never — `unpack_organism`'s "additive on the kernel side" property | never — duplicates skipped; pre/post sha256 stamped | never — sha256 mismatch refuses install | never — Issues are immutable; "closed" pheromones are still in history |
+| Cross-scope chain | each frame → its parent in `prev_hash`; back to the organism's first frame | each neighborhood → species root via `parent_rappid`; up to global metropolis via `_metropolis.json.federated_trackers` | each install → its parent kernel commit via `parent_commit` in rappid.json | the dock event records pre/post sha256 | the rar/index.json chains back to its emitter | each pheromone's `prev_hash` → previous in chain |
 
 All three are instances of the same architectural primitive:
 
@@ -80,6 +80,51 @@ canon. They observe the local frame log; pick what's worth bonding;
 reassimilate via PR.
 
 Same property. Different scope. Same primitive.
+
+## How things literally "grow" in these repos
+
+> *"this is how things will literally grow in these repos"* — operator,
+> 2026-05-09
+
+The dock-without-destruction primitive is the **growth mechanism** of a
+RAPP digital organism — at every scale of the fractal:
+
+```
+   one cell (a single agent.py)
+        │  add another agent → dock into agents/ (sha256-verified)
+        ▼
+   multi-cell (multiple agents in one brainstem)
+        │  add a brainstem.py → dock as neighborhood at root
+        ▼
+   single brainstem (one brainstem.py + tiny scaffolding = neighborhood)
+        │  add another neighborhood → dock into neighborhoods/<name>/
+        ▼
+   town (root neighborhood + sibling neighborhoods)
+        │  add more siblings → _metropolis.json grows
+        ▼
+   city (multi-neighborhood repo as self-contained metropolis)
+        │  federate to other repos via federated_trackers
+        ▼
+   metropolis (this repo + N other federated repos)
+        │  metropolises mesh through shared neighborhoods
+        ▼
+   global swarm (the operator's full estate across many repos)
+```
+
+At every step the same primitive applies:
+
+- **Read** the existing state (egg the local mutations).
+- **Add** new content additively (overlay).
+- **Verify** nothing was clobbered (hatch back the egg if it was).
+- **Log** the addition in an append-only ledger (bonds.json + _metropolis.json + …).
+
+This is what `dock_agent` makes generic: any rar-shaped registry, any
+list-of-dicts JSON file, any append-only ledger gets the same property
+for free. Together with the per-scope dockers (`ant_agent`,
+`rar_loader_agent`, `graft_neighborhood_agent`, `bond.py`, Dream Catcher),
+the entire RAPP stack supports growth-without-destruction at every level.
+
+**The repo doesn't get architected. It grows.**
 
 ## Related
 
