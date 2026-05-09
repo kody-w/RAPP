@@ -186,6 +186,50 @@ def append_to_estate(side: str, entry: dict) -> None:
     _save_local(estate)
 
 
+def _scan_user_repos(github_user: str, max_repos: int = 200) -> list[dict]:
+    """List all public repos owned by github_user via gh."""
+    rc, out, _ = _gh([
+        "api", "--paginate",
+        f"/users/{github_user}/repos?per_page=100&type=owner",
+    ])
+    if rc != 0:
+        return []
+    try:
+        items = json.loads(out) if out.strip().startswith("[") else []
+    except Exception:
+        return []
+    return items[:max_repos]
+
+
+def _probe_repo_rappid(owner: str, repo: str) -> tuple[str, str]:
+    """Try to read a rappid + kind from <owner>/<repo>/main/rappid.json or holo.md."""
+    for path in ("rappid.json", "holo.md"):
+        url = f"https://raw.githubusercontent.com/{owner}/{repo}/main/{path}"
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "rapp-estate-agent/1.0"})
+            with urllib.request.urlopen(req, timeout=_FETCH_TIMEOUT) as r:
+                body = r.read().decode("utf-8", errors="replace")
+        except Exception:
+            continue
+        rappid = ""
+        if path == "rappid.json":
+            try:
+                d = json.loads(body)
+                rappid = d.get("rappid", "") or d.get("self", {}).get("rappid", "")
+            except Exception:
+                pass
+        else:
+            for line in body.splitlines():
+                s = line.strip()
+                if s.startswith("rappid:") and "rappid:v2:" in s:
+                    rappid = s.split(":", 1)[1].strip().strip('"').strip("'")
+                    break
+        if rappid.startswith("rappid:v2:"):
+            kind = rappid.split(":")[2]
+            return rappid, kind
+    return "", ""
+
+
 class EstateAgent(BasicAgent):
     metadata = {
         "name": "estate",
@@ -200,7 +244,7 @@ class EstateAgent(BasicAgent):
             "properties": {
                 "action": {
                     "type": "string",
-                    "enum": ["show", "export", "import", "publish", "fetch", "add", "remove"],
+                    "enum": ["show", "export", "import", "publish", "fetch", "add", "remove", "scan"],
                     "description": "Which estate operation to perform.",
                 },
                 "path": {"type": "string", "description": "File path for export (write) or import (read)."},
@@ -343,6 +387,51 @@ class EstateAgent(BasicAgent):
                 "side": side,
                 "entry": entry,
                 "totals": {"created": len(estate["created"]), "member": len(estate["member"])},
+            }, indent=2)
+
+        if action == "scan":
+            estate = _load_local()
+            github = estate["owner"].get("github") or kwargs.get("user")
+            if not github:
+                return json.dumps({"ok": False, "error": "owner.github unknown — pass user=<gh handle>"}, indent=2)
+            repos = _scan_user_repos(github)
+            if not repos:
+                return json.dumps({"ok": False, "error": f"no repos found for {github} (gh auth may be missing)"}, indent=2)
+            scanned = []
+            added = []
+            skipped = []
+            for r in repos:
+                name = r.get("name", "")
+                if not name or r.get("fork"):
+                    skipped.append({"repo": name, "reason": "fork or empty"})
+                    continue
+                rappid, kind = _probe_repo_rappid(github, name)
+                scanned.append({"repo": name, "has_rappid": bool(rappid)})
+                if not rappid:
+                    skipped.append({"repo": name, "reason": "no rappid.json or holo.md"})
+                    continue
+                entry = {
+                    "rappid": rappid,
+                    "kind": kind,
+                    "name": name,
+                    "url": f"https://github.com/{github}/{name}",
+                    "pages_url": f"https://{github}.github.io/{name}/",
+                    "added_at": _now_iso(),
+                    "discovered_via": "scan",
+                }
+                append_to_estate("created", entry)
+                added.append({"repo": name, "kind": kind, "rappid": rappid})
+            estate = _load_local()
+            return json.dumps({
+                "ok": True,
+                "action": "scan",
+                "github_user": github,
+                "repos_scanned": len(scanned),
+                "added_count": len(added),
+                "skipped_count": len(skipped),
+                "added": added,
+                "totals": {"created": len(estate["created"]), "member": len(estate["member"])},
+                "next_step": "action=publish to push to <user>/rapp-estate; action=show to view.",
             }, indent=2)
 
         if action == "remove":
