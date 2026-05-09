@@ -100,46 +100,43 @@ def _gh_create_repo(owner: str, name: str, description: str, public: bool = True
     return False, err.strip()[:300]
 
 
-# ─── Grail-redirect index.html (every planting's front door points at heimdall) ──
-GRAIL_BRAINSTEM_URL = "https://kody-w.github.io/heimdall/"
+# ─── Grail brainstem (kody-w/heimdall snapshot) — COPIED into every planting ──
+# Per the operator: "copy over the heimdall into the rapp repo so then it can be
+# utilized when planting any more of these — not directing every summon to the
+# heimdall repo for the chat." Each planted seed serves its own grail copy at
+# index.html. Identity derives from URL location (location.host + repo). Self-
+# contained. Portable. Zero cross-repo dependency at runtime.
+GRAIL_BRAINSTEM_TEMPLATE_URL = "https://raw.githubusercontent.com/kody-w/RAPP/main/pages/grail-brainstem/index.html"
 
-def _grail_redirect_html(owner: str, name: str, display_name: str, kind: str) -> str:
-    """Tiny HTML that redirects to heimdall (the canonical browser brainstem)
-    with ?seed=<owner>/<name>. Same single-source-of-truth pattern: heimdall
-    is the grail; every planting's front door is a 0.6s redirect to it
-    embodied as that planting's identity. Stops the 'rebuild this thing
-    everywhere' problem before it starts."""
-    seed = f"{owner}/{name}"
+_GRAIL_TEMPLATE_CACHE = None  # in-process cache so we only fetch once per planter run
+
+def _fetch_grail_template() -> str:
+    """Fetch the canonical grail brainstem (snapshot of heimdall) from RAPP.
+    Cached for the lifetime of the process. Returns the full HTML to write
+    as the planted seed's index.html."""
+    global _GRAIL_TEMPLATE_CACHE
+    if _GRAIL_TEMPLATE_CACHE is not None:
+        return _GRAIL_TEMPLATE_CACHE
+    try:
+        import urllib.request
+        with urllib.request.urlopen(GRAIL_BRAINSTEM_TEMPLATE_URL, timeout=20) as r:
+            _GRAIL_TEMPLATE_CACHE = r.read().decode("utf-8")
+        return _GRAIL_TEMPLATE_CACHE
+    except Exception as e:
+        # Fallback: tiny redirect (recoverable; operator can retrofit later)
+        return _minimal_redirect_fallback(e)
+
+def _minimal_redirect_fallback(err) -> str:
+    """If fetching the canonical grail fails (offline / rate-limit), write
+    a small redirect as a placeholder. Operator retrofits later."""
     return f"""<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#000" />
-  <title>{display_name} — front door</title>
-  <link rel="canonical" href="{GRAIL_BRAINSTEM_URL}?seed={seed}" />
-  <meta property="og:title" content="{display_name}" />
-  <meta property="og:description" content="A planted RAPP {kind}. Embodied via the grail browser brainstem (heimdall)." />
-  <style>
-    body {{ background: #000; color: #fff; font: 15px/1.55 -apple-system, system-ui, sans-serif;
-      margin: 0; padding: 60px 20px; text-align: center; }}
-    a {{ color: #58a6ff; }}
-    h1 {{ font-weight: 600; font-size: 18px; }}
-    code {{ background: #161b22; padding: 1px 5px; border-radius: 3px; font-size: 12px; }}
-    .pulse {{ display: inline-block; animation: p 1.4s infinite; }}
-    @keyframes p {{ 0%,100% {{ opacity: 0.4; }} 50% {{ opacity: 1; }} }}
-  </style>
-</head>
-<body>
-  <h1>{display_name}</h1>
-  <p>A planted RAPP <code>{kind}</code>. Opening in the grail browser brainstem<span class="pulse">…</span></p>
-  <p style="margin-top: 28px;"><a href="{GRAIL_BRAINSTEM_URL}?seed={seed}">{GRAIL_BRAINSTEM_URL}?seed={seed}</a></p>
-  <p style="margin-top: 30px;"><small>The grail (kody-w/heimdall's index.html) supports embodying any planted twin via <code>?seed=&lt;owner&gt;/&lt;repo&gt;</code>. One file, every twin. <a href="https://kody-w.github.io/RAPP/pages/summon.html">Summon a different one →</a></small></p>
-  <script>
-    setTimeout(() => location.replace("{GRAIL_BRAINSTEM_URL}?seed={seed}"), 600);
-  </script>
-</body>
-</html>
+<html><head><meta charset="utf-8" /><title>Front door</title>
+<style>body{{background:#000;color:#fff;font:15px/1.55 -apple-system,system-ui,sans-serif;margin:0;padding:60px 20px;text-align:center}}a{{color:#58a6ff}}</style>
+</head><body>
+<h1>Grail brainstem fetch failed at planting time</h1>
+<p>Open in the canonical grail: <a href="https://kody-w.github.io/heimdall/">https://kody-w.github.io/heimdall/</a></p>
+<p style="font-size:11px;color:#666">err: {err}</p>
+</body></html>
 """
 
 
@@ -249,7 +246,7 @@ def _build_neighborhood_files(rappid: str, kind: str, owner: str, name: str,
     files[".gitignore"] = b".DS_Store\n*.swp\n*.swo\n.brainstem_data/\n"
 
     # index.html — front door = grail redirect (heimdall) embodied as this neighborhood
-    files["index.html"] = _grail_redirect_html(owner, name, display_name, kind).encode()
+    files["index.html"] = _fetch_grail_template().encode()
 
     # specs/ bundle
     bundle = fds.bundle_for_kind(kind, owner=owner, name=name,
@@ -369,7 +366,7 @@ def _build_twin_files(rappid: str, owner: str, name: str, display_name: str,
     files[".gitignore"] = b".DS_Store\n*.swp\n.brainstem_data/\n"
 
     # index.html — front door = grail redirect (heimdall) embodied as this twin
-    files["index.html"] = _grail_redirect_html(owner, name, display_name, "twin").encode()
+    files["index.html"] = _fetch_grail_template().encode()
 
     # specs/ bundle (TWIN_PROTOCOL.md included)
     bundle = fds.bundle_for_kind("twin", owner=owner, name=name,
