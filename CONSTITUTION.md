@@ -2514,7 +2514,7 @@ itself is opt-in per variant and rolls in over time.
 `attestation` field (URL to a sigstore bundle, detached signature, or
 similar). Both are nullable until a variant adopts signing.
 
-**`rappid.json` — schema `rapp-rappid/1.1`** carries an `attestation`
+**`rappid.json` — schema `rapp-rappid/2.0`** carries an `attestation`
 field. When a variant master is created, the parent's release key
 signs an envelope asserting `(parent_rappid, parent_commit, child_rappid)`,
 and that envelope lives in the variant's `rappid.json`. Walking the

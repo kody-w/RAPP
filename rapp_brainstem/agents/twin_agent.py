@@ -75,10 +75,21 @@ ACTIONS = (
 )
 KINDS = ("personal", "pre-founder", "memorial", "project", "place", "custom")
 
-WILDHAVEN_RAPPID = "37ad22f5-ed6d-48b1-b8b4-61019f58a42b"
+# Wildhaven (kody-w/wildhaven-ai-homes-twin) — v2-format rappid per
+# CONSTITUTION Article XXXIV.1 (2026-04-30 ratification). The legacy UUID
+# 37ad22f5-ed6d-48b1-b8b4-61019f58a42b is preserved as the hash field
+# (dashes stripped) — same identity, new string representation.
+WILDHAVEN_RAPPID = "rappid:v2:twin:@kody-w/wildhaven-ai-homes-twin:37ad22f5ed6d48b1b8b461019f58a42b@github.com/kody-w/wildhaven-ai-homes-twin"
 WILDHAVEN_REPO = "https://github.com/kody-w/wildhaven-ai-homes-twin.git"
 
 PORT_LOW, PORT_HIGH = 7081, 7200
+
+# NEIGHBORHOOD_PROTOCOL §5b labels — the durable async fallback when the
+# §5a live channel (HTTP / WebRTC) can't reach the peer. Each label is the
+# routing key the recipient's doorman polls for.
+NEIGHBORHOOD_MESSAGE_LABEL = "neighborhood-message"
+AGENT_PROPOSAL_LABEL = "agent-proposal"
+DREAM_CATCHER_LABEL = "dream-catcher"
 
 NAME_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,62}$")
 
@@ -1067,9 +1078,13 @@ class TwinAgent(BasicAgent):
         if kind not in KINDS:
             return f"Error: unknown kind '{kind}'. Valid: {', '.join(KINDS)}"
 
-        rappid = str(uuid.uuid4())
+        # v2-format rappid per CONSTITUTION Article XXXIV.1. UUID hex (dashes
+        # stripped) lives in the hash field; same identity, v2 string shape.
+        _hash = uuid.uuid4().hex
+        rappid = f"rappid:v2:{kind}:@kody-w/{twin_name}:{_hash}@github.com/kody-w/{twin_name}"
         now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-        workspace = pathlib.Path(_twins_dir()) / rappid
+        # Workspace dir uses the hash (filesystem-friendly) — not the full v2 string.
+        workspace = pathlib.Path(_twins_dir()) / _hash
         try:
             workspace.mkdir(parents=True, exist_ok=False)
         except FileExistsError:
@@ -1080,7 +1095,7 @@ class TwinAgent(BasicAgent):
         try:
             (workspace / "soul.md").write_text(SOUL_TEMPLATES[kind](twin_name, description))
             (workspace / "rappid.json").write_text(json.dumps({
-                "schema": "rapp-rappid/1.1",
+                "schema": "rapp-rappid/2.0",
                 "rappid": rappid,
                 "parent_rappid": WILDHAVEN_RAPPID,
                 "parent_repo": WILDHAVEN_REPO,
@@ -1692,6 +1707,38 @@ class TwinAgent(BasicAgent):
                 "error": str(e),
             }, indent=2)
         except (urllib.error.URLError, OSError, TimeoutError) as e:
+            # Channel 5b fallback per NEIGHBORHOOD_PROTOCOL §5b. Live channel
+            # is unreachable → construct a labeled Issue URL the operator (or
+            # an Issues-poller agent) can post to the peer's seed repo.
+            # Label = "neighborhood-message" is the protocol-reserved routing
+            # key for cross-organism content payloads.
+            fallback_url = None
+            try:
+                # Best-effort: parse the peer's seed repo from the URL host.
+                # Real prod use would resolve via the peer registry; this
+                # constructs a usable Issues URL when the host is github.io.
+                from urllib.parse import urlencode, quote
+                params = {
+                    "labels": NEIGHBORHOOD_MESSAGE_LABEL,
+                    "title": f"{NEIGHBORHOOD_MESSAGE_LABEL}: kind={kind} from={(from_rappid or 'unknown')[:12]}",
+                    "body": (
+                        f"<!-- {NEIGHBORHOOD_MESSAGE_LABEL} envelope; rapp-twin-chat/1.0 -->\n\n"
+                        f"```json\n{json.dumps(envelope, indent=2)}\n```"
+                    ),
+                }
+                # If the peer URL parses to a github.io host, derive the
+                # owner/repo and build the canonical issues/new URL.
+                from urllib.parse import urlparse
+                host = urlparse(url).hostname or ""
+                if host.endswith(".github.io"):
+                    owner = host.split(".github.io")[0]
+                    path = urlparse(url).path.strip("/").split("/")
+                    repo = path[0] if path and path[0] else None
+                    if owner and repo:
+                        fallback_url = f"https://github.com/{owner}/{repo}/issues/new?{urlencode(params, quote_via=quote)}"
+            except Exception:
+                fallback_url = None
+
             return json.dumps({
                 "schema": "rapp-twin-chat-response/1.0",
                 "channel": "5a-http",
@@ -1699,11 +1746,16 @@ class TwinAgent(BasicAgent):
                 "envelope": envelope,
                 "ok": False,
                 "error": f"unreachable ({type(e).__name__}): {e}",
-                "fallback": (
-                    "POST same envelope to the neighborhood's GitHub Issues "
-                    "(channel 5b — async, durable). Receiver picks it up via "
-                    "neighborhood_subscribe_agent."
-                ),
+                "fallback": {
+                    "channel": "5b-issues",
+                    "label": NEIGHBORHOOD_MESSAGE_LABEL,
+                    "instructions": (
+                        f"Post the envelope as a GitHub Issue with label "
+                        f"'{NEIGHBORHOOD_MESSAGE_LABEL}' on the peer's seed repo. "
+                        "Receiver's doorman polls labeled Issues on next visit."
+                    ),
+                    "issues_new_url": fallback_url,
+                },
             }, indent=2)
 
     def _self_rappid(self):

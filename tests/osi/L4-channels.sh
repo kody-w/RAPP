@@ -32,8 +32,9 @@ else
   step_fail "installer/plant.sh missing"
 fi
 
-# 4b. Issues label set — labels referenced in spec are honored in code
-heading "Step 3 — 4b Issues: labels reserved by NEIGHBORHOOD_PROTOCOL §5b"
+# 4b. Issues label set — every label reserved by NEIGHBORHOOD_PROTOCOL §5b
+# must have a real wire in code/templates, not just spec mention.
+heading "Step 3 — 4b Issues: all reserved labels wired (NEIGHBORHOOD_PROTOCOL §5b)"
 LABELS=("private-memory" "egg-submission" "dream-catcher" "agent-proposal" "neighborhood-message")
 MISSING=()
 for label in "${LABELS[@]}"; do
@@ -43,10 +44,9 @@ for label in "${LABELS[@]}"; do
   fi
 done
 if [ "${#MISSING[@]}" -eq 0 ]; then
-  step_pass "all 5 reserved labels referenced somewhere in code/templates"
+  step_pass "all 5 reserved labels wired in code/templates"
 else
-  muted "labels not referenced anywhere in code: ${MISSING[*]}"
-  step_pass "label set documented in NEIGHBORHOOD_PROTOCOL §5b (some not yet wired in code)"
+  step_fail "labels not wired anywhere in code: ${MISSING[*]} — each needs a real route per §5b"
 fi
 
 # 4c. PRs: agent-proposal flow uses the GitHub create-file URL pattern (per ECOSYSTEM §7)

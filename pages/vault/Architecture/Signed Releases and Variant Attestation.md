@@ -47,16 +47,16 @@ These are the same problems the broader software supply-chain world has spent th
 
 ```jsonc
 {
-  "schema": "rapp-rappid/1.1",
-  "rappid": "<UUID>",
-  "parent_rappid": "<parent UUID or null>",
+  "schema": "rapp-rappid/2.0",
+  "rappid": "rappid:v2:<kind>:@<pub>/<slug>:<hash>@<host>",
+  "parent_rappid": "<parent v2-format string or null>",
   "parent_repo": "https://...",
   "parent_commit": "<sha>",
   "attestation": null           // future: envelope signed by parent's release key
 }
 ```
 
-The schema field is what consumers check first; clients that understand `1.1` know how to interpret the new fields, clients on `1.0` ignore them harmlessly.
+The schema field is what consumers check first; clients that understand `2.0` know how to interpret the v2-format string and the new fields. Pre-2026-04-30 seeds on `rapp-rappid/1.1` with bare-UUID rappids remain valid (Art. XXXIV.5 — never regenerate); their UUID hex is the hash field of an equivalent v2 string.
 
 ## What an attestation is
 

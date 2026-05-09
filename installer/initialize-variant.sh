@@ -37,7 +37,8 @@ fi
 
 # ── Identity (hardcoded — single-parent rule) ────────────────────────────
 
-PARENT_RAPPID="0b635450-c042-49fb-b4b1-bdb571044dec"
+# Species root v2-format rappid per CONSTITUTION Article XXXIV.1.
+PARENT_RAPPID="rappid:v2:prototype:@rapp/origin:0b635450c04249fbb4b1bdb571044dec@github.com/kody-w/RAPP"
 PARENT_REPO="https://github.com/kody-w/RAPP.git"
 
 # ── Freshness check via lineage_check.py ─────────────────────────────────
@@ -94,7 +95,14 @@ VARIANT_NAME="${VARIANT_NAME:-$DEFAULT_NAME}"
 
 # ── Generate rappid ──────────────────────────────────────────────────────
 
-NEW_RAPPID="$(python3 -c "import uuid; print(uuid.uuid4())")"
+# v2-format rappid per CONSTITUTION Article XXXIV.1. UUID hex (dashes
+# stripped) as hash; pub/slug derived from this repo's git remote.
+_VAR_OWNER="$(git config --get remote.origin.url 2>/dev/null | sed -nE 's#.*[/:]([^/]+)/[^/]+(\.git)?$#\1#p')"
+_VAR_OWNER="${_VAR_OWNER:-anon}"
+_VAR_REPO="$(git config --get remote.origin.url 2>/dev/null | sed -nE 's#.*/([^/]+)\.git$#\1#p; s#.*/([^/]+)$#\1#p' | head -1)"
+_VAR_REPO="${_VAR_REPO:-$VARIANT_NAME}"
+_VAR_HASH="$(python3 -c "import uuid; print(uuid.uuid4().hex)")"
+NEW_RAPPID="rappid:v2:variant:@${_VAR_OWNER}/${_VAR_REPO}:${_VAR_HASH}@github.com/${_VAR_OWNER}/${_VAR_REPO}"
 NOW="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 PARENT_COMMIT="$(curl -fsSL "https://api.github.com/repos/kody-w/RAPP/commits/main" 2>/dev/null \
@@ -120,7 +128,7 @@ data["parent_commit"] = parent_commit or None
 data["born_at"] = born_at
 data["name"] = name
 data["role"] = "variant"
-data.setdefault("schema", "rapp-rappid/1.1")
+data["schema"] = "rapp-rappid/2.0"
 # attestation resets because the new rappid hasn't been attested yet.
 data["attestation"] = None
 
