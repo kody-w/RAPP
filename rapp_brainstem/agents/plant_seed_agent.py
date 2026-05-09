@@ -100,6 +100,20 @@ def _gh_create_repo(owner: str, name: str, description: str, public: bool = True
     return False, err.strip()[:300]
 
 
+def _gh_enable_pages(owner: str, name: str) -> tuple[bool, str]:
+    # Already enabled? Treat as success.
+    rc_check, _, _ = _gh(["api", f"/repos/{owner}/{name}/pages"])
+    if rc_check == 0:
+        return True, "already-enabled"
+    rc, out, err = _gh(["api", "-X", "POST", f"/repos/{owner}/{name}/pages",
+                        "-f", "source[branch]=main", "-f", "source[path]=/"])
+    if rc == 0:
+        return True, "enabled"
+    # Private repo on free plan = HTTP 422 "Your current plan does not support GitHub Pages".
+    # That's not an error — the seed is reachable via the repo browser.
+    return False, err.strip()[:200]
+
+
 # ─── Grail brainstem (kody-w/heimdall snapshot) — COPIED into every planting ──
 # Per the operator: "copy over the heimdall into the rapp repo so then it can be
 # utilized when planting any more of these — not directing every summon to the
@@ -518,6 +532,13 @@ class PlantSeedAgent(BasicAgent):
         plan["files_failed"]    = len(results["failed"])
         if results["failed"]:
             plan["failed_paths"] = results["failed"]
+
+        # Enable GitHub Pages so the grail at index.html is reachable from a phone.
+        # `gh repo create` does not auto-enable Pages, so a planted seed serves 404
+        # at its kody-w.github.io URL until Pages is turned on.
+        pages_ok, pages_msg = _gh_enable_pages(owner, name)
+        plan["pages_enabled"] = pages_ok
+        plan["pages_status"]  = pages_msg
 
         plan["live_url"]    = f"https://github.com/{owner}/{name}"
         plan["pages_url"]   = f"https://{owner}.github.io/{name}/"
