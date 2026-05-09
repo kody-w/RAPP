@@ -26,5 +26,13 @@
     "agents/colony_observer_agent.py"
   ],
   "skill_url": "https://raw.githubusercontent.com/kody-w/ant-farm/main/skill.md",
-  "_note": "This is a kind=ant-farm neighborhood. Every joining brainstem auto-loads agents/ant_agent.py. The neighborhood_rappid hash gets minted at plant time."
+  "rar_index_url": "https://raw.githubusercontent.com/kody-w/ant-farm/main/rar/index.json",
+  "rar_index_path": "rar/index.json",
+  "required_participation_via": "rar",
+  "offline_dimension": {
+    "_purpose": "A local clone of this repo is a parallel offline dimension. Pheromones accumulate locally; Dream Catcher reassimilates on reconnect (per ECOSYSTEM §10).",
+    "merge_via": "dream-catcher labeled Issue + Dream Catcher pane",
+    "key_for_dedup": "pheromone.hash"
+  },
+  "_note": "This is a kind=ant-farm neighborhood. Joining brainstems are EXPECTED to load required_for_participation entries from rar_index_url before contributing. The neighborhood_rappid hash is minted at plant time."
 }

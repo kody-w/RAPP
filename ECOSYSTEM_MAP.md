@@ -158,6 +158,9 @@ Every `rapp-*/N.M` and `brainstem-*/N.M-variant` currently emitted in the repo. 
 | `rapp-pheromone/1.0` | Ant-farm pheromone (content-addressed, prev_hash chained) | kody-w/ant-farm/skill.md | agents/ant_agent.py + ant-pheromone-labeled GitHub Issues |
 | `rapp-colony-observation/1.0` | Ant-farm collective state synthesis | (defined-by-emitter) | agents/colony_observer_agent.py |
 | `rapp-ant-tick/1.0` | Ant-agent tick result envelope | (defined-by-emitter) | agents/ant_agent.py perform() |
+| `rapp-rar-index/1.0` | Per-neighborhood RAR registry — required participation kit | (defined-by-emitter; published per planted seed at `rar/index.json`) | every planted seed; loader: rapp_brainstem/agents/rar_loader_agent.py |
+| `rapp-rar-manifest/1.0` | sha256 verification block inside `rar/index.json` | (companion to rapp-rar-index/1.0) | every planted seed |
+| `rapp-rar-loadout/1.0` | Result envelope — what the RarLoader installed/skipped/errored | (defined-by-emitter) | rapp_brainstem/agents/rar_loader_agent.py |
 | `rapp-twin/1.0` | Mobile-side twin egg bundle (canonical client schema) | utils/web/mobile/rapp-mobile.js:194 (defined-by-emitter) | utils/web/mobile/rapp-mobile.js |
 | `rapp-twin-identity/1.0` | Twin identity envelope (onboard surface) | utils/web/onboard/index.html:459 (defined-by-emitter) | utils/web/onboard/index.html |
 | `rapp-neighborhood/1.0` | Neighborhood metadata | gate repo `neighborhood.json` | plant_discord_neighborhood_agent.py, fixtures |
@@ -221,6 +224,7 @@ Every `rapp-*/N.M` and `brainstem-*/N.M-variant` currently emitted in the repo. 
 | `rapp_brainstem/agents/resurrection_ceremony_agent.py` | Stasis recovery ceremony | ECOSYSTEM §15, Art. XXXIV.5 |
 | `rapp_brainstem/agents/ant_agent.py` | Ant Farm participant — drops `rapp-pheromone/1.0` envelopes via labeled Issues | kody-w/ant-farm/skill.md, NEIGHBORHOOD_PROTOCOL §5b |
 | `rapp_brainstem/agents/colony_observer_agent.py` | Ant Farm aggregator — synthesizes swarm state | (companion to ant_agent) |
+| `rapp_brainstem/agents/rar_loader_agent.py` | Universal RAR hot-loader — fetches a planted seed's `rar/index.json`, sha256-verifies, installs to local `agents/`/`organs/`/`senses/`/`rapps/`. Default dry_run; supports federation to kody-w/RAR/RAPP_Store/RAPP_Sense_Store. | rapp-rar-index/1.0 + rapp-rar-loadout/1.0 |
 | `tools/sign_release.py` | ed25519 keygen / sign / verify for `rapp_kernel/manifest.json` | CONSTITUTION Art. XXXIV.7 |
 | `rapp_brainstem/utils/organs/neighborhood_organ.py` | `/api/peers`, peer view (legacy) | NEIGHBORHOOD_PROTOCOL §4 |
 | `rapp_brainstem/utils/organs/neighborhood_membership_organ.py` | `/api/neighborhoods/*` — join/sync/members/leave/contribute/estate/by-rappid | vault Decision 2026-05-08, NEIGHBORHOOD_PROTOCOL §2 |
