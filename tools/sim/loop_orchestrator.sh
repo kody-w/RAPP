@@ -16,15 +16,17 @@
 #
 # Cost: 2 LLM calls per cycle. ~$0.01–$0.05/cycle on Sonnet/Opus depending on prompt size.
 #
+# Always real LLM ticks — there is no fake / deterministic / pre-scripted
+# persona mode. Autonomous means autonomous. (Per memory feedback
+# "feedback_no_fake_mode".)
+#
 # ENV:
-#   TICK_MODE=auto|fake  — default 'auto' (real LLM); set to 'fake' for cron smoke tests
-#   ECOSYSTEM_PULSE=1    — also include ecosystem drift in the observation
-#   PUSH_CANVAS=0        — skip the public push (default: push enabled)
-#   NEIGHBORHOOD_DIR     — override path to the neighborhood (defaults to ~/RAPP-sim/local-art-collective)
+#   ECOSYSTEM_PULSE=1   — also include ecosystem drift in the observation
+#   PUSH_CANVAS=0       — skip the public push (default: push enabled)
+#   NEIGHBORHOOD_DIR    — override path to the neighborhood (defaults to ~/RAPP-sim/local-art-collective)
 #
 set -uo pipefail
 SIM=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-MODE=${TICK_MODE:-auto}
 PULSE_FLAG=""
 [ "${ECOSYSTEM_PULSE:-0}" = "1" ] && PULSE_FLAG="--with-ecosystem-pulse"
 NB_DIR=${NEIGHBORHOOD_DIR:-$HOME/RAPP-sim/local-art-collective}
@@ -32,11 +34,11 @@ NB_DIR=${NEIGHBORHOOD_DIR:-$HOME/RAPP-sim/local-art-collective}
 ts() { date -u +"%Y-%m-%dT%H:%M:%SZ"; }
 log() { echo "[$(ts)] $*"; }
 
-log "=== orchestrator cycle start (mode=$MODE) ==="
+log "=== orchestrator cycle start (real LLM ticks) ==="
 
 for twin in bill-brainstem alice-brainstem; do
   log "tick → $twin"
-  if ! python3 "$SIM/tick_twin.py" --twin "$twin" --mode "$MODE"; then
+  if ! python3 "$SIM/tick_twin.py" --twin "$twin"; then
     log "  tick failed for $twin (continuing)"
   fi
 done

@@ -62,6 +62,7 @@ if [ "$WITH_BROWSER" -eq 1 ] && [ -z "$ONLY" ]; then
   ALL+=("L4a-tether-browser")
   ALL+=("L6a-frame-chain-browser")
   ALL+=("L7a-vbrainstem-collaborator")
+  ALL+=("L7b-cross-device")
 fi
 FEATURES=()
 if [ "$WITH_FEATURES" -eq 1 ] && [ -z "$ONLY" ]; then

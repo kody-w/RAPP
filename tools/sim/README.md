@@ -16,11 +16,11 @@ ecosystem.
 | File | Purpose |
 |---|---|
 | `plant_two_brainstems.py` | One-shot: plant Bill + Alice + a local neighborhood (full grail each), then run a 4-round demo simulation. |
-| `tick_twin.py` | One autonomous tick for ONE twin. Calls `claude` CLI in a fresh isolated session pinned to the twin's directory. Twin proposes ONE action (submit / vote / remix / observe-only); the script validates + executes locally. |
+| `tick_twin.py` | One autonomous tick for ONE twin. **Always** calls `claude` CLI in a fresh isolated session pinned to the twin's directory. Twin proposes ONE action (submit / vote / remix / observe-only); the script validates + executes locally. There is no fake / deterministic / pre-scripted mode — autonomous means autonomous. |
+| `push_canvas.sh` | After each tick: git add+commit+push the local neighborhood's canvas (submissions/, votes/, members.json) to the published public repo (`kody-w/sim-art-collective` by default). Idempotent. Closes the local→public loop so vbrainstem and other public observers see Bill + Alice's contributions in real time. |
 | `observe.py` | Pure-filesystem observer (no LLM call). Compares simulation state to `expected.json`, surfaces concrete adjustment suggestions. Optional `--with-ecosystem-pulse` folds in BondRhythm drift detection for the whole RAPP offspring set. |
 | `expected.json` | The "what we are trying to do" — north-star metrics + antipatterns to check for. The observer reads this. |
-| `loop_orchestrator.sh` | One full cycle: tick Bill → tick Alice → observe → print summary. Designed for cron. |
-| `scale_simulation.py` | 10-twin volatile public neighborhood — twins join + leave at staggered times, some "hard-leave" (rm -rf brainstem dir, simulating WebRTC peer disconnection). Proves canvas survives churn. |
+| `loop_orchestrator.sh` | One full cycle: tick Bill → tick Alice → push canvas → observe → print summary. Designed for cron. |
 
 ## Quick start (Tier 1)
 
@@ -29,8 +29,8 @@ ecosystem.
 python3 ~/Documents/GitHub/RAPP/tools/sim/plant_two_brainstems.py
 
 # 2. One real LLM tick per twin (one fresh `claude` CLI session each)
-python3 ~/Documents/GitHub/RAPP/tools/sim/tick_twin.py --twin bill-brainstem --mode auto
-python3 ~/Documents/GitHub/RAPP/tools/sim/tick_twin.py --twin alice-brainstem --mode auto
+python3 ~/Documents/GitHub/RAPP/tools/sim/tick_twin.py --twin bill-brainstem
+python3 ~/Documents/GitHub/RAPP/tools/sim/tick_twin.py --twin alice-brainstem
 
 # 3. Observe state vs. expected
 python3 ~/Documents/GitHub/RAPP/tools/sim/observe.py
@@ -51,15 +51,9 @@ crontab -e
 ```
 
 Cost: each cycle = 2 LLM calls (Bill + Alice). At ~$0.01–$0.05 per cycle on
-Claude Sonnet/Opus, that's under $5/day at the 20-min cadence.
-
-For a higher-frequency / lower-cost mode, set `TICK_MODE=fake` in the env
-before the cron entry runs — that switches to deterministic action picking
-(no LLM, but still exercises the full grail surface):
-
-```cron
-*/5 * * * *  TICK_MODE=fake /Users/<you>/.../loop_orchestrator.sh >> /tmp/rapp-sim.log 2>&1
-```
+Claude Sonnet/Opus, that's under $5/day at the 20-min cadence. If cost is
+a concern, lower the cadence (e.g. hourly: `0 * * * *`); never fake the
+autonomy.
 
 ## What the observer flags
 
@@ -78,20 +72,6 @@ suggestions for the operator:
 
 The observer **never auto-applies adjustments** — operator-mediated per
 ANTIPATTERNS §9.
-
-## Volatile public-neighborhood test
-
-Simulates a WebRTC-style neighborhood with 10 twins joining + leaving at
-staggered times. Some twins "hard-leave" (their brainstem dir is removed
-mid-simulation, modeling a peer that went offline). The canvas should
-survive — that's the local-first guarantee.
-
-```bash
-python3 ~/Documents/GitHub/RAPP/tools/sim/scale_simulation.py --twins 10 --rounds 20
-```
-
-Expected output: 80+ actions, 0 broken remix lineage links, canvas
-preserves all submissions + votes even from hard-left peers.
 
 ## How it integrates with the grail
 
@@ -118,10 +98,11 @@ lookup, no live network call.
    produced an in-voice vote with the correct schema.
 2. **Bidirectional encounter:** twins ship their own holocard + specs;
    neighborhoods ship theirs. Both sides self-describe.
-3. **Local-first survival:** canvas persists when peers vanish. 10-twin
-   simulation: 3 hard-leaves, 0 lost submissions, 0 broken remix links.
+3. **Local-first survival:** canvas persists when peers vanish. The
+   local→public push is additive only; no overwrites; idempotent.
 4. **Self-correcting ecosystem:** observer surfaces concrete next steps
    when reality drifts from `expected.json`. Operator-mediated.
-5. **Cost-efficient continuous operation:** ~2 LLM calls per cycle =
-   under $5/day at 20-min cadence. Operator can flip to fake mode for
-   high-frequency local testing.
+5. **Continuous operation:** every cron cycle is real autonomous AI
+   behavior — never faked. ~2 LLM calls per cycle on Claude Sonnet/Opus =
+   under $5/day at 20-min cadence. Lower the cadence if cost matters; the
+   autonomy itself is non-negotiable.
