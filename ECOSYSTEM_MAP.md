@@ -371,6 +371,7 @@ The most load-bearing section. Workflow trigger → pre-check (≤30s) → spec 
 | Use an existing schema | §5 row → defining doc column → read that section | the doc the row points at |
 | Plant on GitHub (twin/neighborhood/etc.) | §14 (existing planted state), §3 primitives (rappid + door + card + tether + scope all present?), §5 `rapp-rar-index/1.0` (every plant auto-scaffolds rar/ via plant.sh::write_rar_index) | TEMPLATE.md, ECOSYSTEM §2 + §13; F7-rar-hotload.sh |
 | Hot-load a planted seed's required participation kit | §5 `rapp-rar-index/1.0` (sha256 verified) | rapp_brainstem/agents/rar_loader_agent.py; F7 |
+| Plant a neighborhood ON TOP of an existing public repo (or dock multiple within one repo) | bond technique additive overlay; multi-neighborhood mode emits `docking` block — same fractal step as Dream Catcher (ECOSYSTEM §10) at neighborhood scope vs frame scope | rapp_brainstem/agents/graft_neighborhood_agent.py; F8; vault note `pages/vault/Decisions/2026-05-09 — Dream Catcher and Docking are the same operation.md` |
 | Federate two organisms | §7 channel matrix, §8 message kinds, §3 trust scope | NEIGHBORHOOD_PROTOCOL §5, §6, §7, §9 |
 | Touch the kernel (any file in §10) | **STOP** — write an agent/organ instead | MASTER_PLAN Part 1 §1; ANTIPATTERNS §2; CONSTITUTION Art. XXXIII |
 | Touch install one-liner | **STOP** — URL is sacred (Art. V) | CONSTITUTION Art. V; SURVIVAL §"RAPP itself goes down" |

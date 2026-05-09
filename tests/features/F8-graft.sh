@@ -305,6 +305,34 @@ assert len(rar_hashes) == 2, "each neighborhood's rar/index.json must be unique 
 print("OK")
 PY
 
+heading "Step 9c2 — Docking semantic: agent reports docking in multi-neighborhood mode"
+python3 - "$AGENT" "$UPSTREAM3" <<'PY' && step_pass "docking block emitted; parallel-to-dreamcatcher recorded; preserved_local_neighborhoods enumerated" || step_fail "docking block missing/wrong"
+import importlib.util, json, os, sys, tempfile, shutil
+sys.modules.setdefault("agents.basic_agent", type(sys)("agents.basic_agent"))
+sys.modules["agents.basic_agent"].BasicAgent = type("B", (), {"__init__": lambda self: None})
+spec = importlib.util.spec_from_file_location("graft", sys.argv[1])
+m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+tmp = tempfile.mkdtemp(prefix="rapp-graft-step9c2-")
+upstream_copy = os.path.join(tmp, "u")
+shutil.copytree(sys.argv[2], upstream_copy)
+out = json.loads(m.GraftNeighborhoodAgent().perform(
+    upstream_repo="fakeowner/fake-upstream-already-grafted",
+    neighborhood_name="dock-test",
+    dry_run=False, _local_upstream_dir=upstream_copy,
+    _workspace_dir=os.path.join(tmp, "ws"), _skip_push=True,
+))
+docking = out.get("docking") or {}
+assert docking.get("is_docking") is True, "should be in docking mode (root has existing neighborhood)"
+assert docking.get("is_solo_graft") is False
+assert "dock-test" in (docking.get("docked_neighborhoods") or [])
+preserved = docking.get("preserved_local_neighborhoods") or []
+assert "first-town" in preserved, f"existing 'first-town' should appear in preserved_local; got {preserved}"
+parallel = docking.get("parallel_to_dreamcatcher") or {}
+assert parallel.get("docking_scope") and parallel.get("dream_catcher_scope")
+shutil.rmtree(tmp)
+print("OK")
+PY
+
 heading "Step 9d — Bond technique end-state: bonds.json log accumulates one event per graft"
 python3 - "$WS/fork" <<'PY' && step_pass "bonds.json events[] has graft entries for every graft" || step_fail "bonds.json wrong"
 import json, os, sys
@@ -315,6 +343,121 @@ assert len(graft_events) >= 2, f"expected ≥ 2 graft events; got {len(graft_eve
 # Each event references a different to_rappid
 to_rappids = [e["to_rappid"] for e in graft_events]
 assert len(set(to_rappids)) == len(to_rappids), "each graft must record a distinct rappid"
+print("OK")
+PY
+
+heading "Step 9e — Minimum viable: graft a single brainstem.py into a repo (1-file neighborhood)"
+UPSTREAM4="$SANDBOX/fake-upstream-bare"
+mkdir -p "$UPSTREAM4"
+echo "# Bare repo" > "$UPSTREAM4/README.md"
+WS_MIN="$SANDBOX/min-workspace"
+python3 - "$AGENT" "$UPSTREAM4" "$WS_MIN" <<'PY' && step_pass "single-file brainstem graft is a complete neighborhood + can grow later" || step_fail "minimum viable graft broken"
+import importlib.util, json, os, sys
+sys.modules.setdefault("agents.basic_agent", type(sys)("agents.basic_agent"))
+sys.modules["agents.basic_agent"].BasicAgent = type("B", (), {"__init__": lambda self: None})
+spec = importlib.util.spec_from_file_location("graft", sys.argv[1])
+m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+# Minimum viable: just one brainstem-style file as the entire payload
+brainstem_file = b"""# brainstem.py - minimum viable single-file neighborhood
+# Per the operator's framing: a neighborhood can be a single brainstem.py.
+class Brainstem:
+    def __init__(self): self.name = 'minimum-viable'
+    def run(self): return 'alive'
+"""
+out = json.loads(m.GraftNeighborhoodAgent().perform(
+    upstream_repo="fakeowner/fake-upstream-bare",
+    neighborhood_name="solo-brainstem",
+    kind="neighborhood",
+    extra_agents={"agents/solo_brainstem.py": brainstem_file},
+    dry_run=False, _local_upstream_dir=sys.argv[2],
+    _workspace_dir=sys.argv[3], _skip_push=True,
+))
+assert out["ok"]
+assert out["bond_preserve_local"]["upstream_files_clobbered"] == 0
+written = [w["path"] for w in out["graft"]["files_written"]]
+# The minimum viable graft includes the one custom file PLUS the small scaffolding
+assert "agents/solo_brainstem.py" in written
+assert "rappid.json" in written
+assert "rar/index.json" in written
+# This is in solo-graft (root) mode since UPSTREAM4 has no existing neighborhood
+assert out["graft"]["graft_path_mode"] == "root", f"expected root mode for bare upstream; got {out['graft']['graft_path_mode']}"
+assert out["docking"]["is_solo_graft"] is True
+print("OK")
+PY
+
+heading "Step 9f — That same single-file neighborhood can grow: graft another agent later"
+python3 - "$AGENT" "$UPSTREAM4" "$WS_MIN" <<'PY' && step_pass "growth path: 2nd graft into the same workspace adds capability without destruction" || step_fail "growth-from-minimum failed"
+import importlib.util, json, os, sys
+sys.modules.setdefault("agents.basic_agent", type(sys)("agents.basic_agent"))
+sys.modules["agents.basic_agent"].BasicAgent = type("B", (), {"__init__": lambda self: None})
+spec = importlib.util.spec_from_file_location("graft", sys.argv[1])
+m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+# Workspace from Step 9e already has a root neighborhood (solo-brainstem).
+# A second graft should auto-route into neighborhoods/<name>/ — town → city.
+extra = b"# additional_agent.py\nclass AdditionalAgent: pass\n"
+out = json.loads(m.GraftNeighborhoodAgent().perform(
+    upstream_repo="fakeowner/fake-upstream-bare",
+    neighborhood_name="grew-into-this",
+    kind="ant-farm",
+    extra_agents={"agents/additional_agent.py": extra},
+    dry_run=False, _local_upstream_dir=sys.argv[2],
+    _workspace_dir=sys.argv[3], _skip_push=True,
+))
+assert out["graft"]["graft_path"] == "neighborhoods/grew-into-this"
+# Solo brainstem from Step 9e is preserved (in pre-existing neighborhoods)
+preserved = out["docking"]["preserved_local_neighborhoods"]
+assert "solo-brainstem" in preserved or any("solo-brainstem" in p for p in preserved if p), \
+    f"original solo brainstem should be preserved; got {preserved}"
+# bonds.json now has multiple graft events
+import json as J
+bonds = J.load(open(os.path.join(sys.argv[3], "fork", "bonds.json")))
+graft_events = [e for e in bonds["events"] if e["kind"] == "graft"]
+assert len(graft_events) >= 2
+print("OK")
+PY
+
+heading "Step 9g — Graft a neighborhood onto a repo with a pre-existing custom-mutated brainstem.py"
+UPSTREAM5="$SANDBOX/fake-upstream-with-brainstem"
+mkdir -p "$UPSTREAM5"
+echo "# Repo with custom brainstem" > "$UPSTREAM5/README.md"
+# Pre-existing brainstem.py with operator mutations the graft must NOT touch
+cat > "$UPSTREAM5/brainstem.py" <<'PY'
+# This brainstem has been locally evolved for months.
+# It has operator-specific mutations the graft must NOT destroy.
+LOCAL_MUTATION_TOKEN = "PRESERVED_FOREVER_v17"
+def boot():
+    return LOCAL_MUTATION_TOKEN
+PY
+PRE_HASH=$(shasum -a 256 "$UPSTREAM5/brainstem.py" | awk '{print $1}')
+WS_BS="$SANDBOX/preserve-brainstem-ws"
+python3 - "$AGENT" "$UPSTREAM5" "$WS_BS" "$PRE_HASH" <<'PY' && step_pass "graft preserves locally-mutated brainstem.py byte-identical (sha256 unchanged)" || step_fail "brainstem mutations were clobbered"
+import importlib.util, hashlib, json, os, sys
+sys.modules.setdefault("agents.basic_agent", type(sys)("agents.basic_agent"))
+sys.modules["agents.basic_agent"].BasicAgent = type("B", (), {"__init__": lambda self: None})
+spec = importlib.util.spec_from_file_location("graft", sys.argv[1])
+m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+out = json.loads(m.GraftNeighborhoodAgent().perform(
+    upstream_repo="fakeowner/fake-upstream-with-brainstem",
+    neighborhood_name="layered-on-top",
+    kind="neighborhood",
+    dry_run=False, _local_upstream_dir=sys.argv[2],
+    _workspace_dir=sys.argv[3], _skip_push=True,
+))
+# Bond-preserve-local: every existing file byte-identical
+assert out["bond_preserve_local"]["upstream_files_clobbered"] == 0
+# Re-verify the brainstem.py's sha256 directly
+post = os.path.join(sys.argv[3], "fork", "brainstem.py")
+with open(post, "rb") as f:
+    actual_hash = hashlib.sha256(f.read()).hexdigest()
+expected_hash = sys.argv[4]
+assert actual_hash == expected_hash, f"brainstem.py mutations clobbered! pre={expected_hash[:12]}, post={actual_hash[:12]}"
+# And the graft scaffolding still landed (rappid + neighborhood + rar/) alongside
+written = [w["path"] for w in out["graft"]["files_written"]]
+assert "rappid.json" in written and "neighborhood.json" in written and "rar/index.json" in written
+# Operator's LOCAL_MUTATION_TOKEN is still readable in the file
+with open(post) as f:
+    src = f.read()
+assert "PRESERVED_FOREVER_v17" in src, "operator's mutation token must survive verbatim"
 print("OK")
 PY
 

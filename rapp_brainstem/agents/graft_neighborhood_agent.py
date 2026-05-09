@@ -1,9 +1,30 @@
 """graft_neighborhood_agent — plant a neighborhood on top of an existing public repo.
 
-The bond technique applied to a NEW scope. The kernel-bond cycle (in
-`installer/install.sh` + `rapp_brainstem/utils/bond.py`) overlays a new
-kernel onto a locally-mutated brainstem WITHOUT overwriting the local
-mutations:
+Also known as: **docking**. The same operation Dream Catcher does at the
+frame-within-an-organism scope, applied at the neighborhood-within-a-repo
+scope. They're the same fractal step:
+
+    Dream Catcher (frame scope):
+        two parallel-dimension organisms with the same rappid →
+        diff frames by hash → shared / new / contradiction →
+        reassimilate via PR (UTC-first canon, contradictions preserved)
+
+    Docking / Graft (neighborhood scope):
+        N locally-evolved neighborhoods within one repo →
+        each preserves its own rappid + agents + rar/ →
+        _metropolis.json roll-up "docks" them under one shared roof →
+        federated_trackers chain UP to the global metropolis at
+        kody-w/RAPP/pages/metropolis (the canonical estate)
+
+Both operations:
+  - never overwrite an existing dimension's mutations
+  - record the merge in an append-only log (frame chain / bonds.json)
+  - preserve identity (rappid is permanent per Art. XXXIV.5)
+  - allow the operator to "reestablish active control" of a long-evolved
+    local artifact without killing it
+
+The bond technique itself (`installer/install.sh` + `utils/bond.py`)
+is the same primitive at the kernel scope:
 
     egg the local mutations  →  overlay the new kernel  →  hatch back
 
@@ -17,6 +38,7 @@ README.md, src/, docs/, anything already there.
                   →  overlay RAPP scaffolding (additive only)
                   →  hatch back any conflicts (upstream wins)
                   →  record_bond kind="graft"
+                  →  if multi-neighborhood: dock under _metropolis.json
                   →  commit + push
 
 Result: the fork is now a planted RAPP neighborhood RELATED to the
@@ -26,7 +48,18 @@ in the gaps. Joining brainstems hot-load the rar/ kit.
 
 This is universal — works on any public repo: a docs site, an open-
 source library, a personal blog, a research repo. Anything forkable
-becomes a neighborhood candidate.
+becomes a neighborhood candidate. And N grafts into the same repo
+**dock** into one self-contained metropolis (town → city → metropolis
+emergent-design pattern).
+
+**Minimum viable graft.** A neighborhood can be as small as a single
+`brainstem.py` (per the operator's framing: "a neighborhood can be a
+single brainstem.py"). Pass `extra_agents={"brainstem.py": <bytes>}` to
+include just one file plus the standard tiny scaffolding (rappid +
+neighborhood + soul + card + rar/). The graft agent never requires a
+big payload — N can be 1. The same pattern then grows that single-file
+neighborhood outward as new use cases arrive (more grafts → more
+docked sub-neighborhoods → metropolis).
 
 Schema: `rapp-graft-result/1.0`. Default dry_run=True (safety).
 """
@@ -789,6 +822,27 @@ class GraftNeighborhoodAgent(BasicAgent):
                     "neighborhoods_in_repo": len(metropolis_index.get("entries", [])),
                     "metropolis_index_path": METROPOLIS_INDEX_FILE,
                     "existing_neighborhoods_at_graft_time": existing_neighborhoods,
+                },
+                "docking": {
+                    "_purpose": (
+                        "Same fractal step as Dream Catcher (frame scope), applied at the "
+                        "neighborhood scope. Each previously-independent neighborhood within "
+                        "this repo keeps its own rappid + agents + rar/, but is now 'docked' "
+                        "under the repo-local metropolis roll-up. Operator can reestablish "
+                        "active control of a long-evolved local artifact without killing its "
+                        "evolution. Information never lost; mutations preserved; merges are "
+                        "additive only — same property as Dream Catcher's UTC-first canon + "
+                        "contradictions-as-alternate-dimensions doctrine."
+                    ),
+                    "is_docking": graft_path_mode == "container",
+                    "is_solo_graft": graft_path_mode == "root",
+                    "docked_neighborhoods": [e.get("name") for e in metropolis_index.get("entries", [])],
+                    "preserved_local_neighborhoods": [n.get("name") for n in existing_neighborhoods],
+                    "parallel_to_dreamcatcher": {
+                        "dream_catcher_scope": "frame within an organism (rapp-frame/1.0 chain)",
+                        "docking_scope": "neighborhood within a repo (rapp-rappid/2.0 each)",
+                        "shared_property": "additive, content-addressed, append-only, identity preserved",
+                    },
                 },
                 "bond_preserve_local": {
                     "_purpose": "Mirrors bond.py's hatch-back step: every upstream file should be byte-identical after overlay.",
