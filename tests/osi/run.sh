@@ -28,7 +28,7 @@ for arg in "$@"; do
     --help|-h)
       echo "Usage: $0 [--offline] [--layer=L1|L2|...|X1|X2|...] [--with-browser] [--with-features] [--all]"
       echo "  --with-browser  Also run Playwright browser tests (L4a tether, L6a frame chain) — ~150MB first-run."
-      echo "  --with-features Also run tests/features/run.sh (5 feature conformance tests)."
+      echo "  --with-features Also run tests/features/run.sh (12 feature conformance tests)."
       echo "  --all           Both --with-browser and --with-features."
       exit 0
       ;;
@@ -64,7 +64,7 @@ if [ "$WITH_BROWSER" -eq 1 ] && [ -z "$ONLY" ]; then
 fi
 FEATURES=()
 if [ "$WITH_FEATURES" -eq 1 ] && [ -z "$ONLY" ]; then
-  FEATURES=("F1-lineage-rollup" "F2-leaderboard" "F3-proximity" "F4-ed25519-sign" "F5-resurrection" "F6-ant-farm" "F7-rar-hotload" "F8-graft" "F9-universal-docking")
+  FEATURES=("F1-lineage-rollup" "F2-leaderboard" "F3-proximity" "F4-ed25519-sign" "F5-resurrection" "F6-ant-farm" "F7-rar-hotload" "F8-graft" "F9-universal-docking" "F10-ecosystem-audit" "F11-launch-to-public" "F12-bond-rhythm")
 fi
 
 if [ -n "$ONLY" ]; then

@@ -35,7 +35,8 @@ else
 fi
 
 heading "Step 2 — utils/bond.py record-bond accepts kind='graft'"
-if grep -q '"birth", "bond", "adoption", "hatch", "graft"' "$BOND"; then
+# Loose substring check — choices list may grow with future kinds (launch, rhythm, etc.)
+if grep -q '"graft"' "$BOND" && grep -q 'choices=\[.*"graft"' "$BOND"; then
   step_pass "bond.py CLI argparse accepts kind='graft'"
 else
   step_fail "bond.py choices missing 'graft'"

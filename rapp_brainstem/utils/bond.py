@@ -229,6 +229,14 @@ def record_bond(home: str, kind: str,
                     technique: existing files are preserved; only new
                     files land. The graft event records the upstream
                     commit so the lineage can be reconstructed later.
+      launch      — local brainstem snapshot launched as public repo via
+                    launch_to_public_agent (the LOCAL→GLOBAL half of the
+                    Bond Pulse). Records egg sha256 + target_repo so a
+                    cloud AI can resume from raw.githubusercontent.com.
+      rhythm      — Bond Pulse heartbeat event (audit drift, classify,
+                    suggest direction; the rhythm agent SUGGESTS, never
+                    auto-executes). Records drift_count + suggested
+                    action count + degraded mode for observability.
     """
     os.makedirs(home, exist_ok=True)
     path = _bonds_path(home)
@@ -837,7 +845,7 @@ def main(argv=None):
 
     rb = sub.add_parser("record-bond", help="Append an event to bonds.json")
     rb.add_argument("home")
-    rb.add_argument("kind", choices=["birth", "bond", "adoption", "hatch", "graft"])
+    rb.add_argument("kind", choices=["birth", "bond", "adoption", "hatch", "graft", "launch", "rhythm"])
     rb.add_argument("--from-version", default=None)
     rb.add_argument("--to-version", default=None)
     rb.add_argument("--from-commit", default=None)

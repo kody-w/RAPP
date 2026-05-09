@@ -1,6 +1,6 @@
 {
   "schema": "rapp-neighborhood/1.0",
-  "neighborhood_rappid": "f42ae7f7-6b3b-46ea-9673-4566787348ef",
+  "neighborhood_rappid": "rappid:v2:neighborhood:@local/local-only-test:f42ae7f76b3b46ea96734566787348ef@local/local-only-test",
   "kind": "neighborhood",
   "name": "local-only-test",
   "display_name": "Local-Only Test Neighborhood",

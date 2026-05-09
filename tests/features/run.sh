@@ -35,13 +35,16 @@ FEATURES=(
   "F7-rar-hotload"
   "F8-graft"
   "F9-universal-docking"
+  "F10-ecosystem-audit"
+  "F11-launch-to-public"
+  "F12-bond-rhythm"
 )
 
 declare -a NAMES STATUS
 TOTAL_PASS=0 TOTAL_FAIL=0
 START=$(date +%s)
 
-printf "\n${BOLD}${BLUE}━━━ RAPP Feature Conformance Suite (5 features) ━━━${RESET}\n"
+printf "\n${BOLD}${BLUE}━━━ RAPP Feature Conformance Suite (${#FEATURES[@]} features) ━━━${RESET}\n"
 
 for f in "${FEATURES[@]}"; do
   TEST="$HERE/$f.sh"
