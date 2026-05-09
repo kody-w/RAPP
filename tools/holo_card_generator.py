@@ -169,7 +169,47 @@ _KIND_PROFILE = {
              "type": "CRAFT"},
         ],
     },
+    # ── twin: an AI / brainstem planting (heimdall, kody-twin, etc.) ────────
+    # Twins ARE the AIs. When a neighborhood encounters a twin (or vice versa),
+    # both sides ship their own self-describing front door so they can
+    # negotiate participation without prior knowledge of each other.
+    "twin": {
+        "agent_types": ["LOGIC", "DATA"],
+        "weakness":    "WEALTH",
+        "resistance":  "HEAL",
+        "rarity_tier": "rare",
+        "type_line":   "Brainstem — AI / Twin",
+        "flavor_text": "An AI with a permanent address and persistent memory. Visits neighborhoods.",
+        "abilities_template": [
+            {"name": "Chat",        "cost": 1, "damage": 30,
+             "text": "Operator interacts via /chat. Tool calls dispatch agents; soul.md anchors voice.",
+             "type": "LOGIC"},
+            {"name": "Recall",      "cost": 0, "damage": 0,
+             "text": "Persistent memory across sessions via the kernel's memory agents + bonds.json.",
+             "type": "DATA"},
+            {"name": "Twin-Chat",   "cost": 2, "damage": 0,
+             "text": "Reach another twin over rapp-twin-chat/1.0 envelope (NEIGHBORHOOD_PROTOCOL §6).",
+             "type": "DATA"},
+            {"name": "Join",        "cost": 1, "damage": 0,
+             "text": "Visit a neighborhood, read its holo.md + specs/, contribute within contract.",
+             "type": "LOGIC"},
+        ],
+    },
 }
+
+# Aliases for legacy rappid kinds (v1.1) → canonical v2 kinds
+_KIND_ALIASES = {
+    "personal":          "twin",     # heimdall, kody-twin (legacy "personal" → twin)
+    "place":             "twin",     # pkstop-* (planted places ARE twins of a location)
+    "swarm":             "ant-farm", # legacy swarm → ant-farm
+    "pre-founder-twin":  "twin",     # wildhaven-ai-homes-twin
+    "mirror":            "twin",     # rapp-test-neighbor (mirror is a twin variant)
+}
+
+
+def normalize_kind(kind: str) -> str:
+    """Map legacy/alias kinds to canonical v2 kinds."""
+    return _KIND_ALIASES.get(kind, kind)
 
 
 def available_kinds() -> list[str]:
@@ -241,12 +281,14 @@ def generate_avatar_svg(seed: int, kind: str = "neighborhood") -> str:
         cy = 100 + rad * math.sin(ang)
         dots += f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="2" fill="{accent}" opacity="0.7"/>'
 
-    # Center glyph: small triangle, square, or circle based on kind
+    # Center glyph: small shape based on kind
+    kind = normalize_kind(kind)
     kind_glyph = {
         "ant-farm":     '<circle cx="100" cy="100" r="10" fill="' + accent + '"/>',
         "neighborhood": '<rect x="90" y="90" width="20" height="20" fill="' + accent + '" transform="rotate(45 100 100)"/>',
         "braintrust":   '<polygon points="100,88 112,108 88,108" fill="' + accent + '"/>',
         "workspace":    '<rect x="88" y="92" width="24" height="16" fill="' + accent + '"/>',
+        "twin":         '<circle cx="100" cy="100" r="6" fill="' + accent + '"/><circle cx="100" cy="100" r="14" fill="none" stroke="' + accent + '" stroke-width="1.2" opacity="0.8"/>',
     }.get(kind, '<circle cx="100" cy="100" r="8" fill="' + accent + '"/>')
 
     return (
@@ -339,6 +381,7 @@ def generate_holo_card(rappid: str, kind: str, owner: str, name: str,
     `name`: neighborhood slug (lowercase, alphanumeric + hyphens).
     `display_name`: human-readable card title.
     """
+    kind = normalize_kind(kind)
     profile = _KIND_PROFILE.get(kind, _KIND_PROFILE["neighborhood"])
     seed = derive_seed(rappid)
     stats = _derive_stats(seed)
