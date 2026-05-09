@@ -105,7 +105,7 @@ These are inviolable — do not break backwards compatibility:
 Every locally-installed brainstem is its own digital organism with persistent identity:
 
 - `~/.brainstem/rappid.json` — organism identity (parent_rappid points at the species root, [`kody-w/RAPP`](https://github.com/kody-w/RAPP)). Minted ONCE per machine on first install. Survives every kernel upgrade.
-- `~/.brainstem/bonds.json` — append-only lineage log. Event kinds: `birth`, `bond` (kernel upgrade), `adoption` (legacy install retroactively given identity), `hatch` (egg arrived from elsewhere).
+- `~/.brainstem/bonds.json` — append-only lineage log. Event kinds: `birth`, `bond` (kernel upgrade), `adoption` (legacy install retroactively given identity), `hatch` (egg arrived from elsewhere), `graft` (additive overlay onto an existing public repo via `graft_neighborhood_agent`), `launch` (LOCAL→GLOBAL push of the local brainstem to a target public repo via `launch_to_public_agent`), `rhythm` (Bond Pulse heartbeat — `bond_rhythm_agent` reconciling local + global on a beat).
 - `~/.brainstem/.bond/last-pre-bond.egg` — recovery checkpoint, snapshot of organism state right before the last kernel overlay.
 - **Bond cycle** runs every time the install one-liner detects a remote VERSION upgrade: 🥚 egg the organism → 🌐 overlay the new kernel → 🐣 hatch the egg back. rappid + soul + custom agents + memory + secrets all preserved. Implemented in `installer/install.sh` + `rapp_brainstem/utils/bond.py` (stdlib-only, runs before the venv exists).
 - **Egg formats** (all `brainstem-egg/*` schemas live in `utils/bond.py`):
@@ -114,6 +114,7 @@ Every locally-installed brainstem is its own digital organism with persistent id
   - `2.1` — variant repo cartridge (templated brainstem clone)
 - **CLI**: `brainstem identity` / `brainstem egg [out]` / `brainstem hatch <egg>`
 - **API**: `GET /api/identity` returns rappid + bonds + kernel version. `GET /api/lineage` walks parent_rappid back to species root.
+- **Bond Pulse** ([vault/Decisions/2026-05-09 — Bond Pulse](./pages/vault/Decisions/2026-05-09%20%E2%80%94%20Bond%20Pulse%20%E2%80%94%20the%20on-going%20beat%20for%20the%20full%20organism.md)) — the on-going local↔global heartbeat for the FULL organism (global body = offspring repos; local body = `~/.brainstem/`). One pulse: `tools/ecosystem_audit.py` detects drift → `bond_rhythm_agent` classifies as LOCAL→GLOBAL push (suggest `Launch`/`Graft`) vs GLOBAL→LOCAL pull (suggest `RarLoader`) vs informational → records `kind="rhythm"` event → returns `rapp-rhythm-pulse/1.0`. Operator-mediated: SUGGESTS but never auto-executes. Connection-aware: gracefully degrades to local-only when offline; next pulse with connection catches the body up.
 
 ## Visual anatomy + Pokédex (where to send users to learn)
 

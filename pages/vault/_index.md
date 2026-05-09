@@ -50,6 +50,14 @@ Curated routes through the vault by audience.
 - ● [[Data Sloshing]]
 - ● [[The Brainstem Tax]]
 
+## Decisions
+
+Dated decision narratives — *why* a thing exists or got the shape it did. Written when the choice is made; updated only when the decision changes.
+
+- ● [[2026-05-08 — Estate is the operator's union of neighborhoods]]
+- ● [[2026-05-09 — Dream Catcher and Docking are the same operation]]
+- ● [[2026-05-09 — Bond Pulse — the on-going beat for the full organism]]
+
 ## Removals
 
 These rot fastest — the code is already gone.
