@@ -25,7 +25,7 @@
     "agents/ant_agent.py",
     "agents/colony_observer_agent.py"
   ],
-  "skill_url": "https://raw.githubusercontent.com/kody-w/ant-farm/main/skill.md",
+  "holo_url": "https://raw.githubusercontent.com/kody-w/ant-farm/main/holo.md",
   "rar_index_url": "https://raw.githubusercontent.com/kody-w/ant-farm/main/rar/index.json",
   "rar_index_path": "rar/index.json",
   "required_participation_via": "rar",

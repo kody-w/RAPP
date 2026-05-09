@@ -464,10 +464,15 @@ PY
 
 heading "Step 10 — Universal: works on any public repo shape (docs / lib / blog)"
 # We've already covered: README + src/ + LICENSE (Step 3), pre-existing rappid (Step 4),
-# already-grafted (Step 9). Here we just confirm the agent doesn't hard-code ant-farm.
-HARDCODE_REFS=$(grep -c "ant-farm\|kody-w/heimdall" "$AGENT" 2>/dev/null || echo 0)
+# already-grafted (Step 9). Here we just confirm the agent doesn't hard-code an UPSTREAM
+# (i.e. a specific public repo as the only valid graft target).
+#
+# We exclude kind-dispatcher references where "ant-farm" is a key/value in a per-kind switch
+# (per-kind holocard generators, NEIGHBORHOOD_KINDS enum, parameter descriptions) — those
+# are NOT upstream-hardcoding antipatterns, they're per-kind protocol awareness.
+HARDCODE_REFS=$(grep -E "kody-w/(ant-farm|heimdall)" "$AGENT" 2>/dev/null | wc -l | tr -d ' ')
 if [ "$HARDCODE_REFS" -le 2 ]; then
-  step_pass "graft agent is repo-agnostic (no hard-coded upstream)"
+  step_pass "graft agent is repo-agnostic (no hard-coded upstream — kind-dispatcher refs excluded)"
 else
   step_fail "graft agent has $HARDCODE_REFS hard-coded upstream references — should be ≤ 2 (docstring only)"
 fi

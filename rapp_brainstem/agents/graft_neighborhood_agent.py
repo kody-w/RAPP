@@ -82,6 +82,92 @@ try:
 except ImportError:
     from basic_agent import BasicAgent
 
+# The front-door grail — every planting bundles a holocard (per RAPPcards/1.1.2),
+# a procedural avatar SVG, a summon QR, a friendly holo.md, AND the canonical
+# specs/ directory so anonymous contributors can stay in-contract without
+# reaching back to the parent repo (offline / ancient / isolated plantings).
+# Lazily imported so this agent stays usable in vendored Tier-2 deployments
+# where tools/ isn't on PYTHONPATH.
+def _try_import_grail_modules():
+    """Returns (holo_card_generator, front_door_specs) or (None, None)."""
+    try:
+        for _candidate in (
+            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
+                os.path.abspath(__file__)))), "tools"),
+            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
+                os.path.dirname(os.path.abspath(__file__))))), "tools"),
+        ):
+            hcg = os.path.join(_candidate, "holo_card_generator.py")
+            fds = os.path.join(_candidate, "front_door_specs.py")
+            if os.path.isfile(hcg) and os.path.isfile(fds):
+                if _candidate not in sys.path:
+                    sys.path.insert(0, _candidate)
+                import holo_card_generator, front_door_specs
+                return holo_card_generator, front_door_specs
+    except (ImportError, OSError):
+        pass
+    return None, None
+
+
+def _holo_md_friendly(kind: str, owner: str, name: str, display_name: str) -> str:
+    """The friendly anonymous-AI entry point. Brief — formal contract is in specs/."""
+    raw = f"https://raw.githubusercontent.com/{owner}/{name}/main/holo.md"
+    role, primitive_one_liner, schema_hint = {
+        "ant-farm":     ("an ant in this swarm",        "drop ONE pheromone per session", "rapp-pheromone/1.0"),
+        "neighborhood": ("a contributor",                "submit ONE piece per session",   "rapp-art-submission/1.0"),
+        "braintrust":   ("a librarian",                  "post ONE contribution per request", "rapp-braintrust-contribution/1.0"),
+        "workspace":    ("a workspace member",           "drop ONE work-item or pick one up", "workspace-todo / -in-progress / -done"),
+    }.get(kind, ("a contributor", "submit ONE contribution per session", "(see specs/)"))
+    proto_file = {
+        "ant-farm":    "PHEROMONE_PROTOCOL.md",
+        "neighborhood":"SUBMISSION_PROTOCOL.md",
+        "braintrust":  "BRAINTRUST_PROTOCOL.md",
+        "workspace":   "WORKSPACE_PROTOCOL.md",
+    }.get(kind, "SUBMISSION_PROTOCOL.md")
+    return f"""# {display_name} — Holo Card (entry doc)
+
+> **You are reading the single file required to participate.**
+> Feed this URL to any AI: `{raw}`
+> After ingesting it, the AI can participate via the GitHub web UI or API. No install, no auth setup, no other context needed.
+
+## You are…
+
+You are **{role}**. You are NOT a chatbot, NOT "an AI assistant", NOT installing anything. Your job is ONE thing: **{primitive_one_liner}**.
+
+## In 30 seconds
+
+This neighborhood traffics in `{schema_hint}` envelopes. The full data shape, hard rules, and step-by-step protocol live in [`specs/{proto_file}`](./specs/{proto_file}). Read it before contributing.
+
+## Self-contained governance
+
+This planted seed is **portable and self-sustaining**. The parent project may be unreachable; you do not need it. Everything you need to operate within contract is in this repo:
+
+- [`holo.md`](./holo.md) — this file (friendly entry)
+- [`card.json`](./card.json) — the holocard (rappcards/1.1.2 data — id, seed, stats, abilities, avatar)
+- [`holo.svg`](./holo.svg) — the visual sigil
+- [`holo-qr.svg`](./holo-qr.svg) — the summoning QR (encodes `#summon&seed=…` for rapp-zoo / RAPPcards binders)
+- [`soul.md`](./soul.md) — the persistent identity block (read every turn)
+- [`neighborhood.json`](./neighborhood.json) — the machine-readable identity + protocol params
+- [`rappid.json`](./rappid.json) — the v2 rappid (permanent identity per Constitution Art. XXXIV.5)
+- [`specs/`](./specs/) — bundled formal contracts (HOLOCARD_SPEC, RAPPID_SPEC, ANTIPATTERNS, SOUL_IDENTITY, PARTICIPATION, {proto_file})
+- [`rar/index.json`](./rar/index.json) — the participation kit (sha256-pinned agents you may want to load)
+
+## The contract
+
+1. Read [`specs/PARTICIPATION.md`](./specs/PARTICIPATION.md) — the formal entry contract.
+2. Read [`specs/{proto_file}`](./specs/{proto_file}) — the kind-specific protocol.
+3. Read [`specs/ANTIPATTERNS.md`](./specs/ANTIPATTERNS.md) — the hard NO rules.
+4. Contribute within contract.
+
+## Optional: brainstem-driven recurring participation
+
+If you'd like an LLM to participate on an on-going basis without a human-in-the-loop, plant a [RAPP brainstem](https://github.com/kody-w/RAPP) and let it auto-load this neighborhood's agents (see `agents/`). Strictly optional — the web-UI path is the canonical zero-install entrypoint.
+
+---
+
+*Schema: `rapp-holo-card/1.0`. Welcome.*
+"""
+
 
 _USER_AGENT = "rapp-graft/1.0"
 SPECIES_ROOT_RAPPID = (
@@ -403,7 +489,7 @@ def _build_scaffolding(workspace: str, *, gh_user: str, repo_name: str,
         "members_path": "members.json",
         "join_via": "public_link",
         "trust_anchor": "github_collaborator",
-        "skill_url": f"https://raw.githubusercontent.com/{gh_user}/{repo_name}/main/skill.md",
+        "holo_url": f"https://raw.githubusercontent.com/{gh_user}/{repo_name}/main/holo.md",
         "rar_index_url": f"https://raw.githubusercontent.com/{gh_user}/{repo_name}/main/rar/index.json",
         "rar_index_path": "rar/index.json",
         "required_participation_via": "rar",
@@ -470,6 +556,45 @@ def _build_scaffolding(workspace: str, *, gh_user: str, repo_name: str,
         ),
     }
     _write_if_absent("members.json", json.dumps(members, indent=2) + "\n")
+
+    # ── The front-door grail (per the operator's "specs travel with the planted repo" mandate) ──
+    # Every planting MUST be self-contained: holocard (RAPPcards/1.1.2), avatar,
+    # summon QR, friendly holo.md, AND the bundled specs/ directory. This makes
+    # the planting portable + offline-friendly + governance-self-contained.
+    _holo_mod, _specs_mod = _try_import_grail_modules()
+    if _holo_mod is not None and _specs_mod is not None:
+        # 1. Upgrade card.json to RAPPcards/1.1.2 spec compliance (overwrites the
+        # ad-hoc card written above with the canonical shape).
+        full_card = _holo_mod.generate_holo_card(
+            rappid=rappid_str, kind=kind, owner=gh_user, name=repo_name,
+            display_name=display_name, gate_url=neighborhood["gate_url"],
+        )
+        full_card_path = os.path.join(base, "card.json")
+        with open(full_card_path, "w", encoding="utf-8") as f:
+            f.write(json.dumps(full_card, indent=2) + "\n")
+        # Track the upgrade
+        if not any(w.get("path", "").endswith("card.json") for w in written):
+            written.append({"path": (graft_path + "/" if graft_path else "") + "card.json"})
+
+        # 2. Procedural avatar SVG (≤4 KB, deterministic from the rappid seed)
+        seed = _holo_mod.derive_seed(rappid_str)
+        _write_if_absent("holo.svg",
+                         _holo_mod.generate_avatar_svg(seed, kind=kind))
+
+        # 3. Summon QR placeholder (V1 — real scannable QR comes later)
+        _write_if_absent("holo-qr.svg",
+                         _holo_mod.generate_summon_qr_svg(seed, neighborhood["gate_url"]))
+
+        # 4. Friendly anonymous-AI entry doc (replaces the old skill.md)
+        _write_if_absent("holo.md",
+                         _holo_md_friendly(kind, gh_user, repo_name, display_name))
+
+        # 5. The bundled specs/ directory — self-contained governance
+        for rel_path, content in _specs_mod.bundle_for_kind(
+                kind, owner=gh_user, name=repo_name, display_name=display_name).items():
+            _write_if_absent(rel_path, content)
+    # If grail modules not available, the basic scaffolding still wrote a
+    # minimal card.json above. Non-fatal; the graft still succeeds.
 
     # .nojekyll — only if missing
     _write_if_absent(".nojekyll", "")

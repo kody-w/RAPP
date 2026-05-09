@@ -4,7 +4,7 @@
 # Verifies the ant-farm neighborhood seed:
 #   1. All seed files present + well-formed (rappid/neighborhood/card/colony/etc.)
 #   2. ant_agent.py + colony_observer_agent.py satisfy rapp-agent/1.0
-#   3. skill.md has every required section a participating AI needs
+#   3. holo.md has every required section a participating AI needs
 #   4. index.html parses + references the right repo + label
 #   5. Three-ant simulation: each ant runs against an in-memory pheromone
 #      pool, picks an unexplored topic, builds a valid prev_hash chain,
@@ -23,11 +23,11 @@ OBS_AGENT="$REPO_ROOT/rapp_brainstem/agents/colony_observer_agent.py"
 # 1. Seed scaffolding present
 heading "Step 1 — Seed scaffolding (10 required files)"
 MISSING=()
-for f in README.md neighborhood.json rappid.json soul.md card.json members.json index.html skill.md LICENSE .nojekyll data/colony.json agents/ant_agent.py agents/colony_observer_agent.py agents/basic_agent.py; do
+for f in README.md neighborhood.json rappid.json soul.md card.json members.json index.html holo.md LICENSE .nojekyll data/colony.json agents/ant_agent.py agents/colony_observer_agent.py agents/basic_agent.py; do
   [ -e "$SEED/$f" ] || MISSING+=("$f")
 done
 if [ "${#MISSING[@]}" -eq 0 ]; then
-  step_pass "all seed files present (incl. agents/, data/, skill.md)"
+  step_pass "all seed files present (incl. agents/, data/, holo.md)"
 else
   step_fail "missing files: ${MISSING[*]}"
 fi
@@ -80,10 +80,10 @@ else
   step_fail "colony_observer_agent.py contract incomplete"
 fi
 
-# 6. skill.md required sections
-heading "Step 6 — skill.md contains every section a participating AI needs"
-SKILL="$SEED/skill.md"
-python3 - "$SKILL" <<'PY' && step_pass "skill.md has identity + schema + steps + anti-patterns + verify" || step_fail "skill.md missing required sections"
+# 6. holo.md required sections
+heading "Step 6 — holo.md contains every section a participating AI needs"
+HOLO="$SEED/holo.md"
+python3 - "$HOLO" <<'PY' && step_pass "holo.md has identity + schema + steps + anti-patterns + verify" || step_fail "holo.md missing required sections"
 import sys, re
 src = open(sys.argv[1]).read()
 required_substrings = [
@@ -93,7 +93,7 @@ required_substrings = [
     "prev_hash",
     "hash",
     "kody-w/ant-farm",
-    "skill.md",
+    "holo.md",
     "Anti-patterns" if "Anti-patterns" in src else "anti-pattern",  # case-insensitive enough
 ]
 missing = [s for s in required_substrings if s.lower() not in src.lower()]
@@ -107,11 +107,11 @@ print("OK")
 PY
 
 # 7. index.html parses + references repo + label
-heading "Step 7 — index.html references the right repo + label + skill URL"
-python3 - "$SEED/index.html" <<'PY' && step_pass "index.html wired to kody-w/ant-farm + ant-pheromone label + skill.md" || step_fail "index.html wiring wrong"
+heading "Step 7 — index.html references the right repo + label + holo URL"
+python3 - "$SEED/index.html" <<'PY' && step_pass "index.html wired to kody-w/ant-farm + ant-pheromone label + holo.md" || step_fail "index.html wiring wrong"
 import sys
 src = open(sys.argv[1]).read()
-needed = ["kody-w/ant-farm", "ant-pheromone", "skill.md", "rapp-pheromone/1.0",
+needed = ["kody-w/ant-farm", "ant-pheromone", "holo.md", "rapp-pheromone/1.0",
           "cachedGhJson", "stat-pheromones", "btn-drop"]
 missing = [n for n in needed if n not in src]
 if missing:

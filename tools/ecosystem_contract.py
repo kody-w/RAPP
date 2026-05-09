@@ -74,11 +74,11 @@ CONTRACTS: dict = {
         "identity_block_required": True,
         "rar_required":            True,
         "kernel_base_check":       True,
-        "optional_files":          ["index.html", "skill.md", "data/colony.json"],
+        "optional_files":          ["index.html", "holo.md", "data/colony.json"],
         "notes": "Standard collaborator-gated neighborhood. Public gate + optional private companion.",
     },
 
-    # ── ant-farm: same as neighborhood + skill.md is REQUIRED ───────────────
+    # ── ant-farm: same as neighborhood + holo.md is REQUIRED ────────────────
     "ant-farm": {
         "required_files": [
             "rappid.json",
@@ -87,7 +87,7 @@ CONTRACTS: dict = {
             "card.json",
             "members.json",
             "rar/index.json",
-            "skill.md",
+            "holo.md",
             ".nojekyll",
         ],
         "expected_schemas": {
@@ -102,7 +102,7 @@ CONTRACTS: dict = {
         "rar_required":            True,
         "kernel_base_check":       True,
         "optional_files":          ["index.html", "data/colony.json"],
-        "notes": "Autonomous distributed swarm. skill.md is the any-AI-ingestable contract — required, not optional.",
+        "notes": "Autonomous distributed swarm. holo.md is the any-AI-ingestable contract — required, not optional.",
     },
 
     # ── twin: a single planted organism (e.g. heimdall) ────────────────────
