@@ -128,11 +128,14 @@
     soul_cache: "vbs_soul_cache",
   };
   const AUTH_WORKER_URL = "https://rapp-auth.kwildfeuer.workers.dev";
-  const COPILOT_ENDPOINT = "https://api.individual.githubcopilot.com";
+  // The Copilot endpoint is per-user — extracted from the token-exchange response.
+  // Different accounts (individual / business / enterprise) get different endpoints.
+  // Fallback only if the response doesn't include one.
+  const COPILOT_ENDPOINT_FALLBACK = "https://api.individual.githubcopilot.com";
   const $ = id => document.getElementById(id);
 
   let twin = { rappid: null, owner: null, repo: null, display_name: null, soul: null, voice: null };
-  let copilotToken = null; // exchanged from gh oauth token; cached in memory
+  let copilotToken = null; // exchanged from gh oauth token; cached in memory; includes per-user endpoint
   let history = [];
 
   function setStatus(s, kind) {
@@ -204,7 +207,7 @@
   }
 
   async function getCopilotToken() {
-    if (copilotToken && copilotToken.expires_at > Date.now() / 1000 + 60) return copilotToken.token;
+    if (copilotToken && copilotToken.expires_at > Date.now() / 1000 + 60) return copilotToken;
     const ghToken = localStorage.getItem(LS.token);
     if (!ghToken) throw new Error("no GitHub OAuth token in localStorage (vbs_token). Sign in via vbrainstem first.");
     const r = await fetch(`${AUTH_WORKER_URL}/api/copilot/token`, {
@@ -215,25 +218,57 @@
       throw new Error(`copilot token exchange failed (${r.status}): ${txt.slice(0, 200)}. Your GH token may be a PAT — Copilot requires an OAuth ghu_… token from the device-code flow.`);
     }
     const j = await r.json();
-    copilotToken = { token: j.token, expires_at: j.expires_at || (Date.now() / 1000 + 1500) };
-    return copilotToken.token;
+    if (!j.token) {
+      throw new Error(`copilot token exchange returned no token. Response: ${JSON.stringify(j).slice(0, 300)}. Your account may not have Copilot enabled, or the token lacks copilot scope.`);
+    }
+    // Per-user endpoint extraction (matches brainstem.py canonical):
+    // data.get("endpoints", {}).get("api", "https://api.individual.githubcopilot.com")
+    const endpoint = (j.endpoints && j.endpoints.api) || COPILOT_ENDPOINT_FALLBACK;
+    copilotToken = {
+      token: j.token,
+      endpoint,
+      expires_at: j.expires_at || (Date.now() / 1000 + 1500),
+    };
+    return copilotToken;
   }
 
   async function callLLM(model, systemPrompt, messages) {
-    const tok = await getCopilotToken();
+    const tk = await getCopilotToken();
     const body = {
       model,
       messages: [{ role: "system", content: systemPrompt }, ...messages],
       temperature: 0.7,
       max_tokens: 1500,
     };
-    const r = await fetch(`${AUTH_WORKER_URL}/api/copilot/chat?endpoint=${encodeURIComponent(COPILOT_ENDPOINT)}`, {
+    const r = await fetch(`${AUTH_WORKER_URL}/api/copilot/chat?endpoint=${encodeURIComponent(tk.endpoint)}`, {
       method: "POST",
-      headers: { "Authorization": "Bearer " + tok, "Content-Type": "application/json" },
+      headers: { "Authorization": "Bearer " + tk.token, "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
     if (!r.ok) {
       const txt = await r.text();
+      // 421 Misdirected Request → endpoint mismatch. Try the other known endpoints.
+      if (r.status === 421) {
+        const alts = [
+          "https://api.individual.githubcopilot.com",
+          "https://api.business.githubcopilot.com",
+          "https://api.enterprise.githubcopilot.com",
+        ].filter(e => e !== tk.endpoint);
+        for (const alt of alts) {
+          const r2 = await fetch(`${AUTH_WORKER_URL}/api/copilot/chat?endpoint=${encodeURIComponent(alt)}`, {
+            method: "POST",
+            headers: { "Authorization": "Bearer " + tk.token, "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          if (r2.ok) {
+            // Cache the working endpoint for next time
+            copilotToken.endpoint = alt;
+            const j2 = await r2.json();
+            return (j2.choices && j2.choices[0] && j2.choices[0].message && j2.choices[0].message.content) || "(empty)";
+          }
+        }
+        throw new Error(`copilot chat failed (421 Misdirected Request) on all endpoints — your account may need to be on a different Copilot tier. Original endpoint tried: ${tk.endpoint}. Body: ${txt.slice(0, 200)}`);
+      }
       throw new Error(`copilot chat failed (${r.status}): ${txt.slice(0, 300)}`);
     }
     const j = await r.json();
