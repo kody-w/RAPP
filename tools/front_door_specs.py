@@ -75,6 +75,9 @@ def bundle_for_kind(kind: str, *, owner: str = "<owner>", name: str = "<name>",
         "specs/ANTIPATTERNS.md":   _antipatterns(common),
         "specs/SOUL_IDENTITY.md":  _soul_identity(common),
         "specs/PARTICIPATION.md":  _participation(common, kind),
+        "specs/AGENT_SPEC.md":         _agent_spec(common),
+        "specs/RAPPLICATION_SPEC.md":  _rapplication_spec(common),
+        "specs/SENSE_SPEC.md":         _sense_spec(common),
     }
     # Per-kind protocol
     if kind == "ant-farm":
@@ -111,6 +114,9 @@ This directory was bundled on **{c['lifted_at']}** from `{BUNDLE_LIFTED_FROM}`. 
 | `SOUL_IDENTITY.md` | The soul-block contract — how identity persists in `soul.md` |
 | `PARTICIPATION.md` | The formal entry contract — what an anonymous AI / human can do here |
 | `{_protocol_filename(kind)}` | The kind-specific protocol — what `{kind}` neighborhoods uniquely traffic in |
+| `AGENT_SPEC.md` | How to author a single-file `*_agent.py` for THIS neighborhood (rapp-agent/1.0) |
+| `RAPPLICATION_SPEC.md` | How to publish a rapplication (manifest + singleton + optional UI) — works for the canonical RAPP_Store AND for a neighborhood-local store |
+| `SENSE_SPEC.md` | How to author a `*_sense.py` (rapp-sense/1.0) — ambient on-each-turn suggestion engine |
 
 ## How to use
 
@@ -143,6 +149,223 @@ This pulls a fresh bundle from `{c['parent_repo']}` and overlays it (additive �
 
 *The bundle exists because the planting must be self-sufficient. A seed should not need to phone home to know what kind of plant it is.*
 """
+
+
+# ─── AGENT_SPEC.md (rapp-agent/1.0) ───────────────────────────────────────
+
+def _agent_spec(c: dict) -> str:
+    return f"""# AGENT_SPEC — single-file `*_agent.py` (rapp-agent/1.0)
+
+> **Frozen excerpt** of the canonical agent contract. Bundled at planting time on {c['lifted_at']}.
+
+A RAPP agent is **one file = one class = one `metadata` dict = one `perform()` method.** That's the entire contract. Drop the file in `agents/`; the brainstem auto-discovers it on next request — no restart, no build step, no framework.
+
+## Required structure
+
+```python
+\"\"\"<one-line description>.
+
+<Longer description: what this agent does, when to use it, what it returns.>
+\"\"\"
+
+try:
+    from agents.basic_agent import BasicAgent
+except ImportError:
+    from basic_agent import BasicAgent
+
+
+class MyExampleAgent(BasicAgent):
+    metadata = {{
+        "name":        "MyExample",
+        "description": "<what this agent does — read by the LLM to know when to call>",
+        "parameters":  {{
+            "type": "object",
+            "properties": {{
+                "topic": {{"type": "string", "description": "..."}},
+            }},
+            "required": ["topic"],
+        }},
+    }}
+
+    def __init__(self):
+        self.name = "MyExample"
+
+    def perform(self, **kwargs) -> str:
+        topic = kwargs.get("topic", "")
+        # do work
+        return json.dumps({{"schema": "rapp-my-example-result/1.0", "ok": True, ...}})
+```
+
+## Filename convention
+
+`<verb>_<object>_agent.py` — e.g. `manage_memory_agent.py`, `bond_rhythm_agent.py`, `plant_seed_agent.py`. Lives in `agents/` (NOT subdirectories — flat only).
+
+## What `perform()` returns
+
+A JSON-serializable string. Conventionally: `{{"schema": "rapp-<name>-result/1.0", "ok": bool, ...payload}}`. The brainstem feeds this back to the LLM as the tool result.
+
+## What metadata.parameters declares
+
+OpenAI function-calling schema — the LLM uses it to decide when + how to call this agent. Required fields go in `required`; optional fields just appear in `properties`.
+
+## Neighborhood-local agents
+
+This neighborhood can ship its OWN agents in `../agents/` (alongside the rar/ kit). They're discovered + loaded by any brainstem that subscribes to this neighborhood. Same contract as the canonical kernel agents.
+
+## Hard rules
+
+- **One file, one class, one perform.** No sibling imports; no build step.
+- **Operator-mediated for global writes.** Default `dry_run=True` for any agent that touches the network or shared state (per ANTIPATTERNS §9).
+- **No fake/deterministic mode.** Real LLM calls or real work — never pre-scripted persona shortcuts (per `feedback_no_fake_mode`).
+- **Use the right schema.** Search `HOLOCARD_SPEC.md` and the parent's ECOSYSTEM_MAP first. Don't reinvent envelopes.
+
+---
+
+*Schema: `rapp-agent/1.0`. The plugin unit is always called an **agent** — never `skill` / `routine` / `loop` / `plugin` (per ANTIPATTERNS §1).*
+"""
+
+
+# ─── RAPPLICATION_SPEC.md (rapp-application/1.0) ──────────────────────────
+
+def _rapplication_spec(c: dict) -> str:
+    return f"""# RAPPLICATION_SPEC — `rapp-application/1.0`
+
+> **Frozen excerpt** of the canonical rapplication contract. Bundled at planting time on {c['lifted_at']}.
+
+A **rapplication** is a graduated agent: an organism with skin (UI) and a manifest. Same rappid format, same egg distribution, same bonding lifecycle as a bare agent — just a quality tier higher (per Constitution Article XXXVII, "Rapplications ARE organisms").
+
+## Where rapplications live
+
+The canonical store is [`kody-w/RAPP_Store`](https://github.com/kody-w/RAPP_Store). A planted neighborhood like THIS one can ALSO host its own rapplications — same shape, just under THIS repo's `apps/` directory. Every neighborhood is potentially its own micro-store.
+
+## Required file layout
+
+```
+apps/@<publisher>/<id>/
+├── manifest.json                          # rapp-application/1.0 envelope
+├── singleton/<id>_agent.py                # the agent (one file)
+└── ui/index.html                          # optional UI (skin)
+```
+
+## manifest.json (rapp-application/1.0)
+
+```json
+{{
+  "schema":      "rapp-application/1.0",
+  "id":          "<lowercase-with-hyphens>",
+  "name":        "<Display Name>",
+  "version":     "0.1.0",
+  "publisher":   "@<github-handle>",
+  "kind":        "rapplication",
+  "quality_tier": "experimental | community | verified | official",
+  "summary":     "<1–2 sentences>",
+  "tagline":     "<short hook>",
+  "category":    "core | productivity | meta | demo | …",
+  "tags":        ["…"],
+  "license":     "BSD-style | MIT | CC0-1.0 | …",
+  "homepage":    "https://github.com/{c['owner']}/{c['name']}/tree/main/apps/@<publisher>/<id>",
+  "repo_url":    "https://github.com/{c['owner']}/{c['name']}",
+  "_note":       "Optional free-form note about install/dependencies/etc."
+}}
+```
+
+## Singleton agent
+
+Same contract as `AGENT_SPEC.md` — one file, one class, one `perform()`. Plus an optional `__manifest__` dict at module level for `.py.card`-style discovery.
+
+## Optional UI
+
+A single `ui/index.html` (no build step) that renders the rapplication's surface. The brainstem at `/chat` can hand off to the UI via slot delimiters or by linking out.
+
+## Catalog entry
+
+The store auto-generates `api/v1/rapplication/<id>.json` (`rapp-pokedex-rapp/1.0` schema) from the manifest. Operators don't author this file directly.
+
+## Hard rules
+
+- **One singleton per rapplication.** Multi-agent compositions are themselves agents that route to others.
+- **Operator-mediated for installs.** Every rapplication ships an egg; install via `egg_hatcher` or `brainstem hatch <egg-url>`.
+- **License compatibility with the store.** This neighborhood's accepted licenses are listed in `../neighborhood.json` (or default to repo's LICENSE).
+- **Holocard required.** Every rapplication has a `card.json` per `HOLOCARD_SPEC.md` (rappcards/1.1.2). Generate via `tools/holo_card_generator.py` if available.
+
+---
+
+*Schema: `rapp-application/1.0`. Canonical store: kody-w/RAPP_Store. Local store (this neighborhood): `apps/`.*
+"""
+
+
+# ─── SENSE_SPEC.md (rapp-sense/1.0) ───────────────────────────────────────
+
+def _sense_spec(c: dict) -> str:
+    return f"""# SENSE_SPEC — `rapp-sense/1.0`
+
+> **Frozen excerpt** of the canonical sense contract. Bundled at planting time on {c['lifted_at']}.
+
+A **sense** is an ambient on-each-turn suggestion engine. It rides the LLM's reply — appended after a delimiter — and produces a parallel artifact (a translation, a suggestion, an emoji summary, a creative prompt). Frontends consume the side channel; the main reply stays clean.
+
+## Where senses live
+
+The canonical store is [`kody-w/RAPP_Sense_Store`](https://github.com/kody-w/RAPP_Sense_Store). This neighborhood can ALSO host its own senses under `senses/<publisher>/<id>_sense.py` — neighborhood-specific senses (e.g. an art-collective's `critique_sense` that suggests next remixes; a braintrust's `cite-find_sense` that suggests citation gaps).
+
+## File contract (single file, single module)
+
+```python
+\"\"\"<NAME> — <one-line description>.
+
+<Longer description: what this sense produces, why it exists.>
+\"\"\"
+
+name = "<short-name>"                   # stable identifier
+delimiter = "|||<NAME>|||"              # appears between main reply and the sense's output
+response_key = "<name>_response"        # JSON field for frontends
+wrapper_tag = "<name>"                  # HTML tag for inline rendering
+system_prompt = (
+    "After your main reply, append `|||<NAME>|||` followed by "
+    "<what the sense should produce>. Always emit — empty is not allowed."
+)
+
+__manifest__ = {{
+    "schema":      "rapp-sense/1.0",
+    "name":        "@<publisher>/<short-name>",
+    "version":     "0.1.0",
+    "description": "<one-line>",
+}}
+```
+
+## How the brainstem uses senses
+
+On each `/chat` turn, the brainstem:
+1. Concatenates active senses' `system_prompt` into the system prompt.
+2. The LLM emits the main reply + each sense's delimiter + its content.
+3. The brainstem splits on each delimiter, stores the side channel in `<response_key>`.
+4. Frontends render the main reply + any sense channels they care about.
+
+## Multiple senses compose
+
+If you have `eli5_sense` + `emoji_sense` + `spark_sense` all loaded, the response has 3 side channels. Each delimiter is unique; order doesn't matter; senses don't interact.
+
+## Neighborhood-local senses
+
+This neighborhood can ship its OWN senses for participants who subscribe. Examples that fit the kind:
+
+- **ant-farm:** `next_topic_sense` — suggests the colony task with lowest pheromone count
+- **art-collective:** `critique_sense` — appends a 2-sentence aesthetic note about the recent submission
+- **braintrust:** `cite_find_sense` — appends a candidate citation the contributor missed
+- **workspace:** `next_action_sense` — appends "the next workspace-todo I'd pick if I were you"
+- **twin:** `voice_drift_sense` — flags when the twin's reply drifted from soul.md voice
+
+## Hard rules
+
+- **Decoupled by design.** A sense NEVER auto-feeds its output into another agent. Operator agency is the whole point.
+- **Always emit.** Empty side channels confuse frontends. If nothing meaningful, emit a placeholder and explain.
+- **No self-reference.** A sense should not analyze ITSELF or critique its own delimiter. Keep them independent.
+- **Don't drift the main reply.** The sense system prompt should not influence what the main reply IS — only what gets appended after.
+
+---
+
+*Schema: `rapp-sense/1.0`. Canonical store: kody-w/RAPP_Sense_Store. Local store (this neighborhood): `senses/`.*
+"""
+
 
 
 def _protocol_filename(kind: str) -> str:
