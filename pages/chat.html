@@ -3,24 +3,36 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0a0e14" />
-  <title>chat → vbrainstem</title>
-  <meta http-equiv="refresh" content="0; url=/RAPP/pages/vbrainstem/#chat" />
-  <link rel="canonical" href="/RAPP/pages/vbrainstem/#chat" />
+  <meta name="theme-color" content="#000" />
+  <title>chat → grail brainstem</title>
   <style>
-    body { background: #0a0e14; color: #e6edf3; font: 15px/1.55 -apple-system, system-ui, sans-serif;
-      margin: 0; padding: 40px 20px; text-align: center; }
+    body { background: #000; color: #fff; font: 15px/1.55 -apple-system, system-ui, sans-serif;
+      margin: 0; padding: 60px 20px; text-align: center; }
     a { color: #58a6ff; }
     h1 { font-weight: 600; font-size: 18px; }
+    code { background: #161b22; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
   </style>
 </head>
 <body>
-  <h1>chat is now part of vbrainstem (the grail)</h1>
-  <p>Redirecting you to <a href="/RAPP/pages/vbrainstem/#chat">/RAPP/pages/vbrainstem/#chat</a>…</p>
-  <p><small>The standalone chat.html has been merged into the canonical vbrainstem so we stop rebuilding the same surface in different places.</small></p>
+  <h1>chat is now the grail brainstem (heimdall)</h1>
+  <p>Redirecting you to <span id="dest">…</span></p>
+  <p><small>Per "use this as the grail brainstem: kody-w/heimdall" — heimdall's index.html IS the canonical browser brainstem and already supports embodying any twin via <code>?seed=&lt;owner&gt;/&lt;repo&gt;</code>. We stopped rebuilding it.</small></p>
+  <p style="margin-top: 30px;"><a id="manual" href="/RAPP/pages/summon.html">Tap a twin in the summon portal →</a></p>
   <script>
-    // Prefer hash-based redirect to put us on the Chat tab
-    setTimeout(() => { location.replace("/RAPP/pages/vbrainstem/#chat"); }, 100);
+    // If the user previously summoned a twin, vbs_rappid is in localStorage.
+    // Derive the repo from the rappid and redirect to the grail.
+    const GRAIL = "https://kody-w.github.io/heimdall/";
+    const rappid = localStorage.getItem("vbs_rappid") || "";
+    const m = /^rappid:v2:[^:]+:@([^/]+)\/([^:]+):/.exec(rappid);
+    if (m) {
+      const dest = `${GRAIL}?seed=${encodeURIComponent(m[1] + "/" + m[2])}`;
+      document.getElementById("dest").innerHTML = `<a href="${dest}">${dest}</a>`;
+      setTimeout(() => location.replace(dest), 600);
+    } else {
+      // No twin embodied — bounce to the summon portal
+      document.getElementById("dest").innerHTML = `<a href="/RAPP/pages/summon.html">summon portal</a>`;
+      setTimeout(() => location.replace("/RAPP/pages/summon.html"), 1200);
+    }
   </script>
 </body>
 </html>

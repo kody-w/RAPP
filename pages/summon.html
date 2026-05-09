@@ -61,14 +61,13 @@
   <div id="twin-list"></div>
 
   <h2>What happens when you tap</h2>
-  <div class="step"><strong>1.</strong> Your browser sets <code>localStorage.vbs_rappid</code> to that twin's canonical rappid (kody-w.github.io scope — vbrainstem reads the same store).</div>
-  <div class="step"><strong>2.</strong> You're redirected to <a href="/RAPP/pages/vbrainstem/">vbrainstem</a>.</div>
-  <div class="step"><strong>3.</strong> Sign in with GitHub (PAT or device-code) — your token stays in localStorage on this device only.</div>
-  <div class="step"><strong>4.</strong> Tap the <strong>Subscriptions</strong> tab and paste a neighborhood URL like <code>https://github.com/kody-w/sim-art-collective</code>.</div>
-  <div class="step"><strong>5.</strong> You are now <em>that</em> twin, joined to that neighborhood, ready to contribute.</div>
+  <div class="step"><strong>1.</strong> Your browser opens the grail brainstem at <code>kody-w.github.io/heimdall/?seed=&lt;owner&gt;/&lt;repo&gt;</code>.</div>
+  <div class="step"><strong>2.</strong> The grail loads that twin's <code>rappid.json</code> + <code>soul.md</code> + memory directly from the planted public repo — no install, no setup.</div>
+  <div class="step"><strong>3.</strong> Sign in to GitHub once (device-code) — your Copilot subscription powers the chat.</div>
+  <div class="step"><strong>4.</strong> You're now talking <em>as</em> that twin, in their voice, ready to collaborate.</div>
 
-  <h2>Why this works</h2>
-  <p style="font-size: 13px; color: var(--muted);">Identity is portable per Constitution Art. XXXIV.5. The twin's permanent rappid lives in its public repo (e.g. <code>kody-w/echo-brainstem/rappid.json</code>). When you set that rappid in vbrainstem's localStorage, you're embodying that exact identity — every Issue or comment you post carries the twin's canonical rappid in its body, verifiable by anyone fetching the public repo.</p>
+  <h2>Why one grail</h2>
+  <p style="font-size: 13px; color: var(--muted);">Identity is portable per Constitution Art. XXXIV.5. Heimdall's <code>index.html</code> IS the canonical grail brainstem — it already supports embodying any planted twin via <code>?seed=&lt;owner&gt;/&lt;repo&gt;</code>. One file, every twin. We stop rebuilding the same UI in different places.</p>
 
   <p style="font-size: 13px; color: var(--muted);">Substrate is GitHub. Embodiment is wherever — a phone, a laptop, a kiosk. You can summon the same twin from two devices simultaneously and they're the same twin.</p>
 
@@ -119,27 +118,29 @@
     },
   ];
 
-  // Where to send people after summoning. Default = chat (so they can immediately TALK to the twin).
-  // Pass ?next=vbrainstem in the URL to redirect to vbrainstem instead.
-  const params0 = new URLSearchParams(window.location.search);
-  const NEXT = params0.get("next") === "vbrainstem"
-    ? "/RAPP/pages/vbrainstem/"
-    : "/RAPP/pages/chat.html";
+  // The grail brainstem is heimdall's index.html. It already supports
+  // embodying ANY planted twin via ?seed=<owner>/<repo>. We pass the
+  // selected twin as a seed param + cache the rappid in localStorage
+  // for cross-tab reuse.
+  const GRAIL_BRAINSTEM = "https://kody-w.github.io/heimdall/";
 
   function summon(twin) {
-    // Same-origin localStorage hand-off — chat.html / vbrainstem will adopt this rappid on next load.
     try {
+      // Cache rappid same-origin (RAPP pages may use it later)
       localStorage.setItem("vbs_rappid", twin.rappid);
-      // Don't touch vbs_token — user signs in inside vbrainstem (then chat reuses).
       const banner = document.getElementById("summoning");
       banner.style.display = "block";
-      banner.textContent = `✓ Embodying ${twin.name} — opening chat in 1.5s…`;
-      setTimeout(() => { window.location.href = NEXT + "#summoned=" + twin.id; }, 1500);
+      banner.textContent = `✓ Embodying ${twin.name} — opening grail brainstem in 1.5s…`;
+      // Heimdall is the grail. ?seed=<owner>/<repo> embodies that twin.
+      const repoSlug = twin.repo; // already in form "kody-w/echo-brainstem"
+      setTimeout(() => {
+        window.location.href = `${GRAIL_BRAINSTEM}?seed=${encodeURIComponent(repoSlug)}`;
+      }, 1500);
     } catch (e) {
       const banner = document.getElementById("summoning");
       banner.className = "summon-banner warn";
       banner.style.display = "block";
-      banner.textContent = "⚠️  localStorage write failed: " + e.message;
+      banner.textContent = "⚠️  " + e.message;
     }
   }
 
