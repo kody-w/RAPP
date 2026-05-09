@@ -155,6 +155,9 @@ Every `rapp-*/N.M` and `brainstem-*/N.M-variant` currently emitted in the repo. 
 | `rapp-resurrection-ceremony/1.0` | Resurrection frame + next-step commit template | ECOSYSTEM §15, Art. XXXIV.5 | agents/resurrection_ceremony_agent.py |
 | `rapp-release-key/1.0` | ed25519 keypair generation envelope | CONSTITUTION Art. XXXIV.7 | tools/sign_release.py keygen |
 | `rapp-release-signature/1.0` | ed25519 detached signature sidecar | CONSTITUTION Art. XXXIV.7 | tools/sign_release.py sign |
+| `rapp-pheromone/1.0` | Ant-farm pheromone (content-addressed, prev_hash chained) | kody-w/ant-farm/skill.md | agents/ant_agent.py + ant-pheromone-labeled GitHub Issues |
+| `rapp-colony-observation/1.0` | Ant-farm collective state synthesis | (defined-by-emitter) | agents/colony_observer_agent.py |
+| `rapp-ant-tick/1.0` | Ant-agent tick result envelope | (defined-by-emitter) | agents/ant_agent.py perform() |
 | `rapp-twin/1.0` | Mobile-side twin egg bundle (canonical client schema) | utils/web/mobile/rapp-mobile.js:194 (defined-by-emitter) | utils/web/mobile/rapp-mobile.js |
 | `rapp-twin-identity/1.0` | Twin identity envelope (onboard surface) | utils/web/onboard/index.html:459 (defined-by-emitter) | utils/web/onboard/index.html |
 | `rapp-neighborhood/1.0` | Neighborhood metadata | gate repo `neighborhood.json` | plant_discord_neighborhood_agent.py, fixtures |
@@ -216,6 +219,8 @@ Every `rapp-*/N.M` and `brainstem-*/N.M-variant` currently emitted in the repo. 
 | `rapp_brainstem/agents/species_leaderboard_agent.py` | Global Herald → Immortal ladder | ECOSYSTEM §15 (shipped 2026-05-08) |
 | `rapp_brainstem/agents/proximity_discovery_agent.py` | Pizza Place / Pokémon-Go geohash discovery | ECOSYSTEM §15, HERO_USECASE §4 |
 | `rapp_brainstem/agents/resurrection_ceremony_agent.py` | Stasis recovery ceremony | ECOSYSTEM §15, Art. XXXIV.5 |
+| `rapp_brainstem/agents/ant_agent.py` | Ant Farm participant — drops `rapp-pheromone/1.0` envelopes via labeled Issues | kody-w/ant-farm/skill.md, NEIGHBORHOOD_PROTOCOL §5b |
+| `rapp_brainstem/agents/colony_observer_agent.py` | Ant Farm aggregator — synthesizes swarm state | (companion to ant_agent) |
 | `tools/sign_release.py` | ed25519 keygen / sign / verify for `rapp_kernel/manifest.json` | CONSTITUTION Art. XXXIV.7 |
 | `rapp_brainstem/utils/organs/neighborhood_organ.py` | `/api/peers`, peer view (legacy) | NEIGHBORHOOD_PROTOCOL §4 |
 | `rapp_brainstem/utils/organs/neighborhood_membership_organ.py` | `/api/neighborhoods/*` — join/sync/members/leave/contribute/estate/by-rappid | vault Decision 2026-05-08, NEIGHBORHOOD_PROTOCOL §2 |
@@ -441,6 +446,7 @@ Severity: **P0** wire-incompatible · **P1** schema/field mismatch · **P2** doc
 
 ## §14 — Live planted state (kody-w GitHub)
 
+- **Ant Farm (autonomous swarm scale demo):** [`kody-w/ant-farm`](https://github.com/kody-w/ant-farm) — `kind: "ant-farm"` neighborhood; every participant runs their own brainstem (or just feeds [skill.md](https://raw.githubusercontent.com/kody-w/ant-farm/main/skill.md) to any AI); pheromones are `ant-pheromone`-labeled GitHub Issues; gate at <https://kody-w.github.io/ant-farm/>
 - **Twin (canonical example):** [`kody-w/heimdall`](https://github.com/kody-w/heimdall) — front door + doorman, planted, GitHub Pages live
 - **Neighborhood gate (private+public split):** [`kody-w/microsoft-se-team-neighborhood`](https://github.com/kody-w/microsoft-se-team-neighborhood) + companion `*-private`
 - **Neighborhood gate (public, autonomous):** [`kody-w/public-art-collective`](https://github.com/kody-w/public-art-collective)

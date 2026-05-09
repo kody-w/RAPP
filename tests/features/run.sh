@@ -31,6 +31,7 @@ FEATURES=(
   "F3-proximity"
   "F4-ed25519-sign"
   "F5-resurrection"
+  "F6-ant-farm"
 )
 
 declare -a NAMES STATUS

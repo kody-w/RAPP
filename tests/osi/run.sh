@@ -64,7 +64,7 @@ if [ "$WITH_BROWSER" -eq 1 ] && [ -z "$ONLY" ]; then
 fi
 FEATURES=()
 if [ "$WITH_FEATURES" -eq 1 ] && [ -z "$ONLY" ]; then
-  FEATURES=("F1-lineage-rollup" "F2-leaderboard" "F3-proximity" "F4-ed25519-sign" "F5-resurrection")
+  FEATURES=("F1-lineage-rollup" "F2-leaderboard" "F3-proximity" "F4-ed25519-sign" "F5-resurrection" "F6-ant-farm")
 fi
 
 if [ -n "$ONLY" ]; then
