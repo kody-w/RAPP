@@ -2,25 +2,32 @@
 # loop_orchestrator.sh — one full cycle of the autonomous loop.
 #
 # Each invocation:
-#   1. Tick Bill   (1 LLM call → 1 action: submit/vote/remix/observe-only)
-#   2. Tick Alice  (1 LLM call → 1 action)
-#   3. Observe     (no LLM — pure filesystem read + ecosystem pulse)
-#   4. Print summary; exit
+#   1. Tick Bill        (1 LLM call → 1 action: submit/vote/remix/observe-only)
+#   2. Tick Alice       (1 LLM call → 1 action)
+#   3. Push canvas      (git add+commit+push the local neighborhood → public repo)
+#   4. Observe          (no LLM — pure filesystem read + optional ecosystem pulse)
+#   5. Print summary; exit
+#
+# After step 3, vbrainstem (and any other browser/public observer) sees Bill +
+# Alice's autonomous tick contributions on github.com/kody-w/sim-art-collective.
 #
 # Designed to be installed in cron or launchd. Recommended cadence:
-#   */20 * * * *  /Users/<you>/RAPP-sim/loop_orchestrator.sh >> /tmp/rapp-sim.log 2>&1
+#   */20 * * * *  /Users/<you>/.../loop_orchestrator.sh >> /tmp/rapp-sim.log 2>&1
 #
 # Cost: 2 LLM calls per cycle. ~$0.01–$0.05/cycle on Sonnet/Opus depending on prompt size.
 #
 # ENV:
 #   TICK_MODE=auto|fake  — default 'auto' (real LLM); set to 'fake' for cron smoke tests
 #   ECOSYSTEM_PULSE=1    — also include ecosystem drift in the observation
+#   PUSH_CANVAS=0        — skip the public push (default: push enabled)
+#   NEIGHBORHOOD_DIR     — override path to the neighborhood (defaults to ~/RAPP-sim/local-art-collective)
 #
-set -euo pipefail
+set -uo pipefail
 SIM=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 MODE=${TICK_MODE:-auto}
 PULSE_FLAG=""
 [ "${ECOSYSTEM_PULSE:-0}" = "1" ] && PULSE_FLAG="--with-ecosystem-pulse"
+NB_DIR=${NEIGHBORHOOD_DIR:-$HOME/RAPP-sim/local-art-collective}
 
 ts() { date -u +"%Y-%m-%dT%H:%M:%SZ"; }
 log() { echo "[$(ts)] $*"; }
@@ -33,6 +40,15 @@ for twin in bill-brainstem alice-brainstem; do
     log "  tick failed for $twin (continuing)"
   fi
 done
+
+if [ "${PUSH_CANVAS:-1}" = "1" ]; then
+  log "push canvas → public repo (additive, no-op if no changes)"
+  if ! "$SIM/push_canvas.sh" "$NB_DIR"; then
+    log "  push failed (continuing — canvas is still consistent locally)"
+  fi
+else
+  log "push canvas: SKIPPED (PUSH_CANVAS=0)"
+fi
 
 log "observe"
 python3 "$SIM/observe.py" $PULSE_FLAG --quiet
