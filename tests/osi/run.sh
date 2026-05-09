@@ -16,11 +16,17 @@ REPO_ROOT="$(cd "$RUN_DIR/../.." && pwd)"
 
 OFFLINE=0
 ONLY=""
+WITH_BROWSER=0
 for arg in "$@"; do
   case "$arg" in
     --offline) OFFLINE=1 ;;
     --layer=*) ONLY="${arg#*=}" ;;
-    --help|-h) echo "Usage: $0 [--offline] [--layer=L1|L2|...|X1|X2|...]"; exit 0 ;;
+    --with-browser) WITH_BROWSER=1 ;;
+    --help|-h)
+      echo "Usage: $0 [--offline] [--layer=L1|L2|...|X1|X2|...] [--with-browser]"
+      echo "  --with-browser  Also run tests/osi/L4a-tether-browser.sh (Playwright; ~150MB on first run)."
+      exit 0
+      ;;
   esac
 done
 
@@ -47,6 +53,9 @@ CROSS=(
 )
 
 ALL=("${LAYERS[@]}" "${CROSS[@]}")
+if [ "$WITH_BROWSER" -eq 1 ] && [ -z "$ONLY" ]; then
+  ALL+=("L4a-tether-browser")
+fi
 
 if [ -n "$ONLY" ]; then
   ALL=()
