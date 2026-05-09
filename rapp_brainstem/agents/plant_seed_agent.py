@@ -544,6 +544,23 @@ class PlantSeedAgent(BasicAgent):
         plan["pages_url"]   = f"https://{owner}.github.io/{name}/"
         plan["holo_md_url"] = f"https://raw.githubusercontent.com/{owner}/{name}/main/holo.md"
 
+        # Append to the local estate (single JSON at ~/.brainstem/estate.json).
+        # Soft-fail: estate sync never blocks a plant.
+        try:
+            from estate_agent import append_to_estate
+            append_to_estate("created", {
+                "rappid": rappid,
+                "kind": kind,
+                "name": name,
+                "url": plan["live_url"],
+                "pages_url": plan["pages_url"],
+                "added_at": _now_iso(),
+            })
+            plan["estate_updated"] = True
+        except Exception as e:
+            plan["estate_updated"] = False
+            plan["estate_error"]   = str(e)[:200]
+
         if register_in_metropolis and kind != "twin":
             plan["_metropolis_registration_note"] = (
                 "Metropolis registration not auto-applied (operator-mediated). "
