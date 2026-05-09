@@ -596,12 +596,15 @@ Files added on demand:
 - Local-LLM fallback in doorman (today: custom Copilot endpoints work; no offline-LLM path)
 - Plant-time MMR snapshot for lineage gift (today: live-fetched at view time)
 
+✅ **Recently shipped (2026-05-08):**
+- **Lineage roll-up stats** (avg/median/min/max MMR across the lineage tree). Agent: `rapp_brainstem/agents/lineage_rollup_agent.py` (`LineageRollup` tool); test: `tests/features/F1-lineage-rollup.sh`.
+- **Global leaderboard** (aggregate the species via fork-tree walking, Herald → Immortal tier ladder, 10-min cache). Agent: `rapp_brainstem/agents/species_leaderboard_agent.py` (`SpeciesLeaderboard` tool); test: `tests/features/F2-leaderboard.sh`.
+- **Location-aware proximity swarm** (Pizza Place / Pokémon-Go layer). Pure-stdlib geohash + match-by-prefix; `kind: "place"` seeds get `location_geohash` written by plant.sh when `MIRROR_LOCATION_LAT` + `MIRROR_LOCATION_LNG` set. Agent: `rapp_brainstem/agents/proximity_discovery_agent.py` (`Proximity` tool); test: `tests/features/F3-proximity.sh`.
+- **ed25519 publisher signatures** (offline-only verification chains per CONSTITUTION Art. XXXIV.7). Tool: `tools/sign_release.py` (keygen / sign / verify); manifest at `rapp_kernel/manifest.json` declares `signing.preferred_method = "ed25519"`. Test: `tests/features/F4-ed25519-sign.sh`.
+- **Stasis recovery / resurrection ceremony**. Agent: `rapp_brainstem/agents/resurrection_ceremony_agent.py` (`Resurrection` tool — assess + compose actions); emits a `kind: "resurrection"` `rapp-frame/1.0` frame; the fresh commit lifts the activity multiplier per ECOSYSTEM §6. Test: `tests/features/F5-resurrection.sh`.
+
 ❌ **Not yet built (defined for parity):**
-- Lineage roll-up stats (avg/median MMR across the lineage tree)
-- Global leaderboard (aggregate the species via fork-tree walking)
-- Location-aware proximity swarm (Pizza Place / Pokémon-Go layer)
-- ed25519 publisher signatures (for offline-only verification chains)
-- Stasis recovery / resurrection ceremony
+- (none currently — the §15 backlog is empty as of 2026-05-08)
 
 ---
 

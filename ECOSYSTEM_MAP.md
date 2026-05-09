@@ -148,6 +148,13 @@ Every `rapp-*/N.M` and `brainstem-*/N.M-variant` currently emitted in the repo. 
 | `rapp-twin-chat-response/1.0` | Twin-chat reply wrapper | NEIGHBORHOOD_PROTOCOL §6e | twin_agent.py `_chat` |
 | `rapp-public-facets/1.0` | Granular permission gate (name + scope + description) | NEIGHBORHOOD_PROTOCOL §7 | card.json (operator-set) |
 | `rapp-twin-spec/1.0` | Soul Identity block contract | ANTIPATTERNS §4 | installer/plant.sh `write_soul_md` |
+| `rapp-lineage-rollup/1.0` | Lineage tree aggregation result (avg/median/min/max MMR) | ECOSYSTEM §15 | agents/lineage_rollup_agent.py |
+| `rapp-species-leaderboard/1.0` | Global Herald → Immortal ladder | ECOSYSTEM §15 | agents/species_leaderboard_agent.py |
+| `rapp-proximity-match/1.0` | Geohash-prefix match result (Pizza Place layer) | ECOSYSTEM §15, HERO_USECASE §4 | agents/proximity_discovery_agent.py |
+| `rapp-resurrection-assessment/1.0` | Stasis-state diagnosis | ECOSYSTEM §15 | agents/resurrection_ceremony_agent.py |
+| `rapp-resurrection-ceremony/1.0` | Resurrection frame + next-step commit template | ECOSYSTEM §15, Art. XXXIV.5 | agents/resurrection_ceremony_agent.py |
+| `rapp-release-key/1.0` | ed25519 keypair generation envelope | CONSTITUTION Art. XXXIV.7 | tools/sign_release.py keygen |
+| `rapp-release-signature/1.0` | ed25519 detached signature sidecar | CONSTITUTION Art. XXXIV.7 | tools/sign_release.py sign |
 | `rapp-twin/1.0` | Mobile-side twin egg bundle (canonical client schema) | utils/web/mobile/rapp-mobile.js:194 (defined-by-emitter) | utils/web/mobile/rapp-mobile.js |
 | `rapp-twin-identity/1.0` | Twin identity envelope (onboard surface) | utils/web/onboard/index.html:459 (defined-by-emitter) | utils/web/onboard/index.html |
 | `rapp-neighborhood/1.0` | Neighborhood metadata | gate repo `neighborhood.json` | plant_discord_neighborhood_agent.py, fixtures |
@@ -205,6 +212,11 @@ Every `rapp-*/N.M` and `brainstem-*/N.M-variant` currently emitted in the repo. 
 | `rapp_brainstem/agents/hacker_news_agent.py` | Demo HN agent | (example) |
 | `rapp_brainstem/agents/workiq_agent.py` | WorkIQ signals | (example) |
 | `rapp_brainstem/agents/plant_discord_neighborhood_agent.py` | Discord-driven neighborhood planting | NEIGHBORHOOD_PROTOCOL §4 (discovery) |
+| `rapp_brainstem/agents/lineage_rollup_agent.py` | Lineage-tree aggregation (avg/median MMR) | ECOSYSTEM §15 (shipped 2026-05-08) |
+| `rapp_brainstem/agents/species_leaderboard_agent.py` | Global Herald → Immortal ladder | ECOSYSTEM §15 (shipped 2026-05-08) |
+| `rapp_brainstem/agents/proximity_discovery_agent.py` | Pizza Place / Pokémon-Go geohash discovery | ECOSYSTEM §15, HERO_USECASE §4 |
+| `rapp_brainstem/agents/resurrection_ceremony_agent.py` | Stasis recovery ceremony | ECOSYSTEM §15, Art. XXXIV.5 |
+| `tools/sign_release.py` | ed25519 keygen / sign / verify for `rapp_kernel/manifest.json` | CONSTITUTION Art. XXXIV.7 |
 | `rapp_brainstem/utils/organs/neighborhood_organ.py` | `/api/peers`, peer view (legacy) | NEIGHBORHOOD_PROTOCOL §4 |
 | `rapp_brainstem/utils/organs/neighborhood_membership_organ.py` | `/api/neighborhoods/*` — join/sync/members/leave/contribute/estate/by-rappid | vault Decision 2026-05-08, NEIGHBORHOOD_PROTOCOL §2 |
 | `rapp_brainstem/utils/organs/estate_organ.py` | `/api/estate/*` — twins, eggs, lay-egg, summon, hatch | vault Decision 2026-05-08 |
@@ -245,6 +257,12 @@ Every `rapp-*/N.M` and `brainstem-*/N.M-variant` currently emitted in the repo. 
 | `tests/scenarios/*.sh` | E2E scenarios (incl. survival) | SURVIVAL "How to test" |
 | `tests/doorman/` | Tether + Dream Catcher conformance | HERO_USECASE.md §1, §2 |
 | `tests/dreamcatcher-conformance/` | Dream Catcher protocol conformance | HERO_USECASE.md §2 |
+| `tests/features/F1-lineage-rollup.sh` | Lineage rollup conformance | ECOSYSTEM §15 |
+| `tests/features/F2-leaderboard.sh` | Species leaderboard conformance | ECOSYSTEM §15 |
+| `tests/features/F3-proximity.sh` | Proximity discovery conformance | ECOSYSTEM §15, HERO_USECASE §4 |
+| `tests/features/F4-ed25519-sign.sh` | ed25519 signing conformance | CONSTITUTION Art. XXXIV.7 |
+| `tests/features/F5-resurrection.sh` | Resurrection ceremony conformance | ECOSYSTEM §15, Art. XXXIV.5 |
+| `tests/features/run.sh` | Feature suite master runner | (this doc) |
 | `tools/test_brainstem_server.py` | Lightweight HTTP server for federation tests | (test infra) |
 | `.github/workflows/plant-approved-place.yml` | Auto-plant approved place submissions | (CI) |
 | `.github/prompts/write-agent.prompt.md` | AI prompt to author an agent | ECOSYSTEM §7 |

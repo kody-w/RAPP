@@ -17,14 +17,19 @@ REPO_ROOT="$(cd "$RUN_DIR/../.." && pwd)"
 OFFLINE=0
 ONLY=""
 WITH_BROWSER=0
+WITH_FEATURES=0
 for arg in "$@"; do
   case "$arg" in
     --offline) OFFLINE=1 ;;
     --layer=*) ONLY="${arg#*=}" ;;
     --with-browser) WITH_BROWSER=1 ;;
+    --with-features) WITH_FEATURES=1 ;;
+    --all) WITH_BROWSER=1; WITH_FEATURES=1 ;;
     --help|-h)
-      echo "Usage: $0 [--offline] [--layer=L1|L2|...|X1|X2|...] [--with-browser]"
-      echo "  --with-browser  Also run tests/osi/L4a-tether-browser.sh (Playwright; ~150MB on first run)."
+      echo "Usage: $0 [--offline] [--layer=L1|L2|...|X1|X2|...] [--with-browser] [--with-features] [--all]"
+      echo "  --with-browser  Also run Playwright browser tests (L4a tether, L6a frame chain) — ~150MB first-run."
+      echo "  --with-features Also run tests/features/run.sh (5 feature conformance tests)."
+      echo "  --all           Both --with-browser and --with-features."
       exit 0
       ;;
   esac
@@ -56,6 +61,10 @@ ALL=("${LAYERS[@]}" "${CROSS[@]}")
 if [ "$WITH_BROWSER" -eq 1 ] && [ -z "$ONLY" ]; then
   ALL+=("L4a-tether-browser")
   ALL+=("L6a-frame-chain-browser")
+fi
+FEATURES=()
+if [ "$WITH_FEATURES" -eq 1 ] && [ -z "$ONLY" ]; then
+  FEATURES=("F1-lineage-rollup" "F2-leaderboard" "F3-proximity" "F4-ed25519-sign" "F5-resurrection")
 fi
 
 if [ -n "$ONLY" ]; then
@@ -102,6 +111,22 @@ for s in "${ALL[@]}"; do
   fi
 done
 
+# Feature suite (separate dir; per-feature .sh files)
+FEATURES_DIR="$REPO_ROOT/tests/features"
+for f in "${FEATURES[@]}"; do
+  TEST_FILE="$FEATURES_DIR/$f.sh"
+  if [ ! -f "$TEST_FILE" ]; then
+    printf "${RED}MISSING: $TEST_FILE${RESET}\n"
+    NAMES+=("$f"); STATUS+=("✗"); TOTAL_FAIL=$((TOTAL_FAIL+1)); continue
+  fi
+  printf "\n${BOLD}▶ Running $f${RESET}\n"
+  if bash "$TEST_FILE" ${EXTRA_FLAGS[@]+"${EXTRA_FLAGS[@]}"}; then
+    NAMES+=("$f"); STATUS+=("✓"); TOTAL_PASS=$((TOTAL_PASS+1))
+  else
+    NAMES+=("$f"); STATUS+=("✗"); TOTAL_FAIL=$((TOTAL_FAIL+1))
+  fi
+done
+
 ELAPSED=$(($(date +%s) - START))
 
 # Matrix output
@@ -117,7 +142,8 @@ for i in "${!NAMES[@]}"; do
     printf "  %-22s ${RED}%s FAIL${RESET}\n" "$name" "$status"
   fi
 done
-printf "\n  ${BOLD}%d passing, %d failing${RESET} (of ${#ALL[@]} suites, ${ELAPSED}s)\n\n" "$TOTAL_PASS" "$TOTAL_FAIL"
+TOTAL_RUN=$((${#ALL[@]} + ${#FEATURES[@]}))
+printf "\n  ${BOLD}%d passing, %d failing${RESET} (of %d suites, ${ELAPSED}s)\n\n" "$TOTAL_PASS" "$TOTAL_FAIL" "$TOTAL_RUN"
 
 if [ "$TOTAL_FAIL" -gt 0 ]; then
   exit 1

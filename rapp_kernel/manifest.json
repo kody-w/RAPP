@@ -9,10 +9,12 @@
   ],
   "latest": "0.12.2",
   "signing": {
+    "preferred_method": "ed25519",
     "method": null,
     "key_id": null,
     "verification_uri": null,
-    "_note": "Signing fields are null until this variant adopts signed releases. When adopted, `method` is one of 'gpg', 'sigstore', 'minisign'; `key_id` identifies the public key; `verification_uri` documents how to verify (e.g. https://keys.openpgp.org/vks/v1/by-fingerprint/<KEYID> or a sigstore identity URI). Per-version attestations live under each `versions[].attestation`."
+    "tool": "tools/sign_release.py",
+    "_note": "Per CONSTITUTION Art. XXXIV.7 the signing infrastructure is opt-in per variant. ed25519 is the project's preferred method (deterministic; 32-byte pubkey; pure verify with no chain-of-trust dependency). Generate a keypair with `python3 tools/sign_release.py keygen --out ~/.rapp/release-keys`; then sign with `... sign --in rapp_kernel/manifest.json --out rapp_kernel/manifest.sig --key ~/.rapp/release-keys/private.pem`. Populate `key_id` with the 16-char fingerprint and `verification_uri` with the published location of public.pem. Other acceptable methods (signed git tags, sigstore, minisign) remain valid per Art. XXXIV.7."
   },
   "versions": [
     {

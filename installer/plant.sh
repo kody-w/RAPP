@@ -209,6 +209,9 @@ write_rappid_json() {
     PLANT_PARENT="${MIRROR_PARENT:-}" \
     PLANT_KIND="${MIRROR_KIND:-mirror}" \
     PLANT_LOCATION="${MIRROR_LOCATION:-}" \
+    PLANT_LOCATION_LAT="${MIRROR_LOCATION_LAT:-}" \
+    PLANT_LOCATION_LNG="${MIRROR_LOCATION_LNG:-}" \
+    PLANT_LOCATION_PRECISION="${MIRROR_LOCATION_PRECISION:-5}" \
     PLANT_PRIVATE_COMPANION="${MIRROR_PRIVATE_COMPANION:-}" \
     PLANT_PRIVATE_PURPOSE="${MIRROR_PRIVATE_PURPOSE:-}" \
     python3 - <<'PYEOF'
@@ -231,6 +234,37 @@ data = {
 loc = os.environ.get("PLANT_LOCATION") or ""
 if loc:
     data["location"] = loc
+
+# Optional location_geohash for kind=place organisms (HERO_USECASE §4 — Pizza Place layer).
+# Pure-stdlib geohash encoder; if MIRROR_LOCATION_LAT and MIRROR_LOCATION_LNG are set,
+# the seed becomes proximity-discoverable via proximity_discovery_agent.
+_lat_s = os.environ.get("PLANT_LOCATION_LAT") or ""
+_lng_s = os.environ.get("PLANT_LOCATION_LNG") or ""
+if _lat_s and _lng_s:
+    try:
+        _lat, _lng = float(_lat_s), float(_lng_s)
+        _prec = int(os.environ.get("PLANT_LOCATION_PRECISION") or "5")
+        _BASE32 = "0123456789bcdefghjkmnpqrstuvwxyz"
+        _lat_lo, _lat_hi, _lng_lo, _lng_hi = -90.0, 90.0, -180.0, 180.0
+        _bits, _bit, _ch, _even = [], 0, 0, True
+        while len(_bits) < _prec:
+            if _even:
+                _mid = (_lng_lo + _lng_hi) / 2
+                if _lng >= _mid: _ch |= 1 << (4 - _bit); _lng_lo = _mid
+                else:                                          _lng_hi = _mid
+            else:
+                _mid = (_lat_lo + _lat_hi) / 2
+                if _lat >= _mid: _ch |= 1 << (4 - _bit); _lat_lo = _mid
+                else:                                          _lat_hi = _mid
+            _even = not _even
+            _bit += 1
+            if _bit == 5:
+                _bits.append(_BASE32[_ch]); _bit, _ch = 0, 0
+        data["location_geohash"] = "".join(_bits)
+        data["location_lat"] = _lat
+        data["location_lng"] = _lng
+    except (ValueError, TypeError):
+        pass
 # private_companion: a separate GitHub repo that holds richer/private brain
 # content. Visitors with read access (logged in to GitHub with appropriate
 # scope) get richer context; anonymous visitors see only public seed data.
