@@ -81,6 +81,29 @@ def _mint_rappid(kind: str, owner: str, name: str) -> str:
     return f"rappid:v2:{kind}:@{owner}/{name}:{uuid.uuid4().hex}@github.com/{owner}/{name}"
 
 
+def _read_operator_rappid() -> str | None:
+    """Return the operator's personal rappid from ~/.brainstem/rappid.json,
+    or None if the brainstem hasn't been seeded yet (fresh install).
+
+    Per ESTATE_SPEC §4.3 + Article XLVI.6, every planted door's rappid.json
+    sets `parent_rappid` to this value so the network is recomputable: any
+    consumer with a door's rappid can trace it back to its planter, then
+    fetch their public estate at `<owner>/rapp-estate/main/estate.json`.
+    """
+    p = os.path.expanduser("~/.brainstem/rappid.json")
+    if not os.path.isfile(p):
+        return None
+    try:
+        with open(p) as f:
+            d = json.load(f)
+        rappid = d.get("rappid", "")
+        if isinstance(rappid, str) and rappid.startswith("rappid:v2:"):
+            return rappid
+    except Exception:
+        pass
+    return None
+
+
 def _gh(args: list[str], timeout: int = 30) -> tuple[int, str, str]:
     p = subprocess.run(["gh"] + args, capture_output=True, text=True, timeout=timeout)
     return p.returncode, p.stdout, p.stderr
@@ -176,7 +199,7 @@ def _build_neighborhood_files(rappid: str, kind: str, owner: str, name: str,
         "schema": "rapp-rappid/2.0", "rappid": rappid, "kind": kind,
         "name": name, "display_name": display_name,
         "github": f"https://github.com/{owner}/{name}", "url": gate_url,
-        "parent_rappid": None,
+        "parent_rappid": _read_operator_rappid(),
         "parent_repo": "https://github.com/kody-w/RAPP",
         "planted_by": owner, "planted_at": _now_iso(),
         "kernel_version": "0.6.0",
@@ -325,7 +348,7 @@ def _build_twin_files(rappid: str, owner: str, name: str, display_name: str,
         "schema": "rapp-rappid/2.0", "rappid": rappid, "kind": "twin",
         "name": name, "display_name": display_name,
         "github": f"https://github.com/{owner}/{name}", "url": gate_url,
-        "parent_rappid": None,
+        "parent_rappid": _read_operator_rappid(),
         "parent_repo": "https://github.com/kody-w/RAPP",
         "planted_by": owner, "planted_at": _now_iso(),
         "kernel_version": "0.6.0",

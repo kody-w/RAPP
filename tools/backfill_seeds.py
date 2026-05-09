@@ -154,7 +154,7 @@ def _canonical_rappid(owner: str, repo: str, kind: str) -> str:
 
 
 def _build_rappid_json(rappid: str, owner: str, repo: str, kind: str,
-                       display_name: str) -> bytes:
+                       display_name: str, parent_rappid: str | None = None) -> bytes:
     return (json.dumps({
         "schema": "rapp-rappid/2.0",
         "rappid": rappid,
@@ -163,7 +163,7 @@ def _build_rappid_json(rappid: str, owner: str, repo: str, kind: str,
         "display_name": display_name,
         "github": f"https://github.com/{owner}/{repo}",
         "url": f"https://{owner}.github.io/{repo}/",
-        "parent_rappid": None,
+        "parent_rappid": parent_rappid,
         "parent_repo": "https://github.com/kody-w/RAPP",
         "planted_by": owner,
         "planted_at": _now_iso(),
@@ -357,12 +357,66 @@ def apply_plan(plan: dict, kind: str, display_name: str, dry_run: bool) -> dict:
 
 # ─── CLI ──────────────────────────────────────────────────────────────────
 
+def patch_parents(seeds: list, operator_rappid: str, dry_run: bool) -> dict:
+    """Standalone --patch-parents pass: ensure every seed's rappid.json carries
+    parent_rappid = operator_rappid (Article XLVI.6). Idempotent: skip seeds
+    that already have it set correctly. Used to retroactively fill the
+    network's edges so tools/rebuild_estate.py can walk back to operators."""
+    # Validate the operator rappid before touching anything
+    door_from_rappid(operator_rappid)
+    report = {
+        "schema":    "rapp-backfill-report/1.0",
+        "mode":      "DRY-RUN" if dry_run else "APPLY",
+        "operation": "patch-parents",
+        "operator_rappid": operator_rappid,
+        "started_at": _now_iso(),
+        "results": [],
+        "totals": {"already_correct": 0, "patched": 0, "unreachable": 0, "failed": 0},
+    }
+    for owner, repo, _kind, _display in seeds:
+        print(f"  · patching parent_rappid on {owner}/{repo}…", file=sys.stderr)
+        code, body = _raw_fetch(owner, repo, "rappid.json")
+        if code != 200 or not body:
+            report["results"].append({"repo": f"{owner}/{repo}", "status": "unreachable",
+                                       "code": code})
+            report["totals"]["unreachable"] += 1
+            continue
+        try:
+            d = json.loads(body)
+        except Exception as e:
+            report["results"].append({"repo": f"{owner}/{repo}", "status": "parse_error",
+                                       "error": str(e)[:100]})
+            report["totals"]["failed"] += 1
+            continue
+        if d.get("parent_rappid") == operator_rappid:
+            report["results"].append({"repo": f"{owner}/{repo}", "status": "already_correct"})
+            report["totals"]["already_correct"] += 1
+            continue
+        d["parent_rappid"] = operator_rappid
+        d.setdefault("_backfill_reason_parent", "Article XLVI.6 — parent_rappid for rebuild")
+        new_body = (json.dumps(d, indent=2) + "\n").encode()
+        ok, msg = _put_file(owner, repo, "rappid.json", new_body,
+                             "backfill: set parent_rappid (Article XLVI.6)", dry_run)
+        if ok:
+            report["results"].append({"repo": f"{owner}/{repo}", "status": "patched", "msg": msg})
+            report["totals"]["patched"] += 1
+        else:
+            report["results"].append({"repo": f"{owner}/{repo}", "status": "put_failed", "msg": msg})
+            report["totals"]["failed"] += 1
+    report["finished_at"] = _now_iso()
+    return report
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--dry-run", action="store_true", help="report planned actions; do not write")
     ap.add_argument("--apply",   action="store_true", help="execute the plan via gh api PUTs")
     ap.add_argument("--only",    default="", help="restrict to a single seed by repo name")
     ap.add_argument("--owner",   default="", help="restrict to seeds with this owner")
+    ap.add_argument("--patch-parents", default="",
+                    help="set parent_rappid=<this rappid> on every seed's rappid.json. "
+                         "Used to retroactively backfill the planter→door pointer needed "
+                         "by tools/rebuild_estate.py (Article XLVI.6).")
     args = ap.parse_args()
 
     if not args.dry_run and not args.apply:
@@ -378,6 +432,12 @@ def main() -> int:
     if not seeds:
         print("error: no seeds matched filter", file=sys.stderr)
         return 2
+
+    # --patch-parents pass: just fix parent_rappid; skip the full compliance flow
+    if args.patch_parents:
+        report = patch_parents(seeds, args.patch_parents, dry_run=args.dry_run)
+        print(json.dumps(report, indent=2))
+        return 0 if report["totals"]["failed"] == 0 else 1
 
     overall = {
         "schema": "rapp-backfill-report/1.0",

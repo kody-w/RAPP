@@ -129,7 +129,27 @@ curl -fsSL https://raw.githubusercontent.com/<handle>/rapp-estate/main/estate.js
 # federation walk over pure raw fetches forever.
 ```
 
-### §4.5 No fallbacks; spec says what's true
+### §4.5 Recompute From The Network (disaster recovery)
+
+The estate file is a **cache** of relationships the network already publishes. If both the local file and the published mirror are gone, the estate is recomputable from public data given just the operator's GitHub handle:
+
+```bash
+python3 tools/rebuild_estate.py --handle <gh>           # dry-run
+python3 tools/rebuild_estate.py --handle <gh> --apply   # writes ~/.brainstem/estate.json
+```
+
+The rebuild walks two relationships, both publicly visible:
+
+- **Created**: every door the operator planted has `parent_rappid = <operator-rappid>` in its `rappid.json`. Discovery: walk `<handle>/*` repos, filter by `parent_rappid`.
+- **Member**: every gate the operator joined lists their rappid in `members.json`. Discovery: `gh search code "<operator-rappid>" filename:members.json`.
+
+The constitutional invariant (Article XLVI.6) is that every planted door's `rappid.json` MUST set `parent_rappid` to the planter's personal rappid — never to None. The planter enforces this on every new plant; `tools/backfill_seeds.py --patch-parents <op-rappid>` fixes older plantings.
+
+Two consequences:
+- **Disaster recovery**: laptop dies → rebuild from any other device with `gh` auth.
+- **Drop-in rappid lookup**: pass ANY rappid to `estate fetch rappid=<rappid>` → the agent traces `parent_rappid` and fetches whoever owns that door's published estate.
+
+### §4.6 No fallbacks; spec says what's true
 
 - A rappid that doesn't match v2 format, OR whose two `<owner>/<repo>` segments disagree, OR whose kind is not in §2.1 → INVALID → consumer raises an error.
 - An estate entry with stored derived fields → leakage; on next save those fields are dropped.

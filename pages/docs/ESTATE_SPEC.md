@@ -168,7 +168,63 @@ Implementation lives at `tools/door_address.py`. Imported by `plant_seed_agent.p
 
 ---
 
-## 6. Adoption + Compliance
+## 6. Disaster Recovery — The Estate Is Recomputable
+
+The estate file is a **cache** of relationships the network already publishes. Both copies (`~/.brainstem/estate.json` locally and `<handle>/rapp-estate/main/estate.json` publicly) can be reconstructed from scratch given just the operator's GitHub handle. **This is the load-bearing property the spec exists to guarantee.** If both caches are gone, the rebuild walks public data and produces an identical estate.
+
+### 6.1 The two relationships, both publicly visible
+
+- **Created** — every door the operator planted has its `rappid.json` carry `parent_rappid = <operator-rappid>`. Discovery: walk `<handle>/*` repos, fetch each `rappid.json`, filter on `parent_rappid` matching the operator.
+- **Member** — every gate the operator joined lists their rappid in `members.json`. Discovery: search public GitHub for any `members.json` containing the operator's rappid string.
+
+### 6.2 The rebuild procedure
+
+```bash
+python3 tools/rebuild_estate.py --handle <gh>            # dry-run, prints
+python3 tools/rebuild_estate.py --handle <gh> --apply    # writes ~/.brainstem/estate.json
+```
+
+Pseudo-code:
+
+```python
+def rebuild(handle):
+    operator_rappid = discover_operator(handle)            # § 6.3
+    created = []
+    for repo in gh_repo_list(handle):
+        rappid_meta = raw_fetch(handle, repo, "rappid.json")
+        if rappid_meta and rappid_meta["parent_rappid"] == operator_rappid:
+            created.append({"rappid": rappid_meta["rappid"], "added_at": now(), "via": "rebuild"})
+    member = []
+    for hit in gh_search_code(operator_rappid, filename="members.json"):
+        gate = raw_fetch_rappid_json(hit.repo)
+        member.append({"rappid": gate["rappid"], "added_at": now(), "via": "rebuild"})
+    return {"schema": "rapp-estate/1.1", "owner": {...}, "created": created, "member": member}
+```
+
+### 6.3 Operator-rappid discovery
+
+The rebuild needs to know the operator's personal rappid before it can filter `parent_rappid` matches. Discovery order:
+
+1. **Local** — `~/.brainstem/rappid.json` (fast path when the operator runs the rebuild on their own machine).
+2. **Conventional repos** — `<handle>/<handle>-twin`, `<handle>/<handle>-brainstem`, `<handle>/.brainstem`, plus operator-specific anchors. If any has a valid rappid, derive the operator rappid by ensuring `kind` is `operator` (swap from `twin` if necessary; same owner/repo/hex).
+3. **Repo scan** — walk `<handle>/*` for any `rappid.json` with `kind=operator` or `kind=twin` matching the conventional pattern.
+4. **Operator hint** — if all automatic discovery fails, the operator passes `--operator-rappid <rappid>` explicitly.
+
+### 6.4 The constitutional invariant
+
+Per Article XLVI.6:
+- Every planted door's `rappid.json` MUST set `parent_rappid` to the planter's personal rappid (NOT to None, NOT to the species root). The planter (`plant_seed_agent.py`) enforces this on every new plant; `tools/backfill_seeds.py --patch-parents <op-rappid>` brings older plantings into compliance.
+- The rebuild tool is operator-tooling, but the **property** it proves is load-bearing: relationships are knowable from public data. Losing local state is recoverable.
+
+### 6.5 What this enables
+
+- **Disaster recovery**: laptop dies, no backup → the estate rebuilds from any other device with `gh` auth.
+- **Drop-in rappid lookup**: pass any rappid to `estate fetch rappid=<rappid>` → the agent parses, traces `parent_rappid` if needed, and fetches whoever owns that door's published estate. No local state required.
+- **Federation auditing**: anyone can verify a published estate's claims by running the rebuild for the same handle and comparing results.
+
+---
+
+## 7. Adoption + Compliance
 
 - **All NEW plantings** (after this spec ships) emit the full Door URL Set. No exceptions.
 - **All EXISTING plantings** are backfilled by `tools/backfill_seeds.py` — runnable any time, idempotent. The script downloads each known seed's `rappid.json`, validates it against the spec, and PUTs the missing canonical files. It is the operator's responsibility to run it for plantings created before 2026-05-09.
@@ -176,7 +232,7 @@ Implementation lives at `tools/door_address.py`. Imported by `plant_seed_agent.p
 
 ---
 
-## 7. Cross-references
+## 8. Cross-references
 
 - **CONSTITUTION Article XLVI** — the principles in load-bearing form.
 - **CONSTITUTION Article XXXIV** — Rappid: Lineage Tracking and Variant Species (where the format originated).

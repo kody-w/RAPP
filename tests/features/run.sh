@@ -39,6 +39,7 @@ FEATURES=(
   "F11-launch-to-public"
   "F12-bond-rhythm"
   "F13-estate-spec"
+  "F14-estate-rebuild"
 )
 
 declare -a NAMES STATUS

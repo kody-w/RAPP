@@ -380,8 +380,8 @@ class EstateAgent(BasicAgent):
             "properties": {
                 "action": {
                     "type": "string",
-                    "enum": ["show", "export", "import", "publish", "fetch", "add", "remove", "scan"],
-                    "description": "Which estate operation to perform.",
+                    "enum": ["show", "export", "import", "publish", "fetch", "add", "remove", "scan", "rebuild"],
+                    "description": "Which estate operation to perform. 'rebuild' reconstructs the estate from pure GitHub raw data (Article XLVI.6 disaster recovery). 'fetch' accepts user= OR rappid= (drop in any rappid → see whose estate owns that door).",
                 },
                 "path":   {"type": "string", "description": "File path for export (write) or import (read)."},
                 "user":   {"type": "string", "description": "GitHub user whose published estate to fetch."},
@@ -486,9 +486,49 @@ class EstateAgent(BasicAgent):
             }, indent=2)
 
         if action == "fetch":
-            user = kwargs.get("user")
+            user = kwargs.get("user", "")
+            rappid_in = kwargs.get("rappid", "")
+            via = "user"
+
+            # Drop in any rappid → resolve to the OPERATOR's handle, then fetch.
+            # If rappid is an operator-kind rappid → owner is the operator's handle.
+            # If rappid is a door-kind rappid → fetch the door's rappid.json,
+            # read parent_rappid (the operator's rappid), use its owner.
+            if not user and rappid_in:
+                try:
+                    door = door_from_rappid(rappid_in)
+                except InvalidRappidError as e:
+                    return json.dumps({"ok": False, "error": f"invalid rappid: {e}"}, indent=2)
+                if door["kind"] == "operator":
+                    user = door["owner"]
+                    via = "rappid:operator-direct"
+                else:
+                    # Door rappid — fetch its rappid.json to find parent
+                    try:
+                        req = urllib.request.Request(door["urls"]["identity"],
+                                                      headers={"User-Agent": "rapp-estate-agent/1.0"})
+                        with urllib.request.urlopen(req, timeout=_FETCH_TIMEOUT) as r:
+                            door_meta = json.loads(r.read())
+                        parent = door_meta.get("parent_rappid", "")
+                        if not parent:
+                            return json.dumps({
+                                "ok": False,
+                                "error": "door has no parent_rappid; cannot trace to operator's estate",
+                                "hint": "operator can run tools/backfill_seeds.py --patch-parents to set it",
+                            }, indent=2)
+                        parent_door = door_from_rappid(parent)
+                        user = parent_door["owner"]
+                        via = "rappid:door-via-parent"
+                    except urllib.error.HTTPError as e:
+                        return json.dumps({"ok": False, "error": f"HTTP {e.code} fetching door's rappid.json"}, indent=2)
+                    except (InvalidRappidError, ValueError) as e:
+                        return json.dumps({"ok": False, "error": f"door's parent_rappid malformed: {e}"}, indent=2)
+                    except Exception as e:
+                        return json.dumps({"ok": False, "error": f"door trace failed: {e}"}, indent=2)
+
             if not user:
-                return json.dumps({"ok": False, "error": "user= required (the GitHub handle to fetch)"}, indent=2)
+                return json.dumps({"ok": False, "error": "fetch requires user=<handle> OR rappid=<any-rappid>"}, indent=2)
+
             try:
                 remote = _fetch_remote(user)
                 remote.setdefault("created", [])
@@ -500,6 +540,7 @@ class EstateAgent(BasicAgent):
                     "ok": True,
                     "action": "fetch",
                     "user": user,
+                    "via": via,
                     "source": _RAW_URL_TEMPLATE.format(user=user),
                     "doors": _doors_view(remote),
                     "estate": remote,
@@ -577,6 +618,48 @@ class EstateAgent(BasicAgent):
                 "invalid": invalid,
                 "totals": {"created": len(estate["created"]), "member": len(estate["member"])},
                 "next_step": "Reissue any invalid rappids (Article XLVI.5). Then action=publish to push to <user>/rapp-estate.",
+            }, indent=2)
+
+        if action == "rebuild":
+            # Article XLVI.6: reconstruct the estate from pure GitHub raw data.
+            # Delegates to tools/rebuild_estate.py, which walks <handle>/* repos
+            # for created[] and uses gh search code for member[]. Default is
+            # dry-run (just returns the reconstructed estate); apply=true writes
+            # to ~/.brainstem/estate.json (operator-mediated).
+            estate = _load_local()
+            handle = kwargs.get("user") or estate["owner"].get("github", "")
+            if not handle:
+                return json.dumps({"ok": False, "error": "rebuild requires user=<handle> OR a seeded ~/.brainstem/rappid.json"}, indent=2)
+            apply_flag = bool(kwargs.get("apply", False))
+            # Find tools/rebuild_estate.py by walking up to repo root
+            here = os.path.abspath(__file__)
+            for cand in (
+                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(here))), "tools", "rebuild_estate.py"),
+                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(here)))), "tools", "rebuild_estate.py"),
+            ):
+                if os.path.isfile(cand):
+                    rebuild_script = cand
+                    break
+            else:
+                return json.dumps({"ok": False, "error": "tools/rebuild_estate.py not found"}, indent=2)
+            cmd = ["python3", rebuild_script, "--handle", handle]
+            if apply_flag:
+                cmd.append("--apply")
+            if kwargs.get("operator_rappid"):
+                cmd += ["--operator-rappid", kwargs["operator_rappid"]]
+            p = subprocess.run(cmd, capture_output=True, text=True)
+            try:
+                report = json.loads(p.stdout) if p.stdout.strip() else {"ok": False, "error": "rebuild emitted no output"}
+            except Exception as e:
+                return json.dumps({"ok": False, "error": f"rebuild output not JSON: {e}", "stderr": p.stderr[:300]}, indent=2)
+            return json.dumps({
+                "ok":         report.get("ok", False),
+                "action":     "rebuild",
+                "applied":    apply_flag,
+                "handle":     handle,
+                "rebuild":    report.get("_rebuild", {}),
+                "estate":     {k: v for k, v in report.items() if k not in ("_rebuild", "ok", "error")},
+                "stderr":     p.stderr[-500:] if p.stderr else "",
             }, indent=2)
 
         if action == "remove":

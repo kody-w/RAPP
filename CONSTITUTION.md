@@ -3402,3 +3402,24 @@ This is constitutionally enforced because the alternative (per-consumer fallback
 
 **Why this is constitutional and not a library choice:**
 Without this article, every new consumer (a federation walker, a holocard CDN, a discovery UI, a future "find AIs near me" geosearch) reinvents the rappid parser. Each implementation has its own fallback chain ("oh, this rappid is invalid? I'll try the URL field instead"). The address space stops being a contract and becomes a suggestion. The estate stops being trustworthy because every consumer reads it differently. Locking the parser into ONE function, and the file manifest into a fixed set the planter MUST emit, makes the address space load-bearing — every consumer reads the same door, every door publishes the same files, every estate is the same shape. **One parser. One manifest. Forever.**
+
+### XLVI.6 — Recompute From The Network (Disaster Recovery)
+
+The estate file is a CACHE of relationships the network already publishes. Both copies — the local `~/.brainstem/estate.json` and the public mirror at `<handle>/rapp-estate/main/estate.json` — can be reconstructed from scratch given just the operator's GitHub handle. **The estate is not the source of truth. The network is the source of truth. The estate is the cache.**
+
+This is constitutionally enforced by one invariant on every planted door: every `rappid.json` MUST set `parent_rappid` to the planter's personal rappid (never to None, never to the species root). With that edge populated, the estate is recomputable: walk `<handle>/*` repos, filter by `parent_rappid` matching the operator → that's `created[]`. Search public GitHub for the operator's rappid in any `members.json` → that's `member[]`. The full estate falls out of two enumerations and a series of raw fetches.
+
+The reference rebuild lives at `tools/rebuild_estate.py`. The estate agent's `rebuild` action delegates to it. The planter's `_read_operator_rappid()` helper writes the parent edge on every new plant. The backfill's `--patch-parents <op-rappid>` mode patches older plantings that were planted before this invariant existed.
+
+**What this article requires:**
+- Every planted door's `rappid.json` carries `parent_rappid = <operator-rappid>` (NOT None, NOT the species root).
+- The rebuild tool exists, walks public data only, and produces a spec-compliant estate.
+- The estate agent's `fetch` action accepts `rappid=<any-rappid>` — drop in any rappid, follow `parent_rappid` if needed, return whoever owns that door's published estate.
+
+**What this article forbids:**
+- Planting a door without setting `parent_rappid`. The planter MUST know the operator's identity at plant time. Fresh installs without a personal rappid get a clear error, not a None-edged door.
+- Estate agents that require local state to function. The local file is a convenience; the rebuild path proves the network is the source.
+- Federation walkers that reimplement the rebuild logic. They import `tools/rebuild_estate.py::rebuild` (or a faithful port) — same single-implementation discipline as XLVI.5 applies to the rebuild as well as the parser.
+
+**Why this is constitutional and not a feature:**
+Every operator's relationships in the network are publicly knowable by design. If the rebuild property doesn't hold, the platform's local-first promise becomes "local-trapped": lose your laptop and you've lost your network presence. With the rebuild property, the network IS the backup. Constitutionalizing this prevents the common drift where a future "convenience" change starts caching mutable state that isn't reproducible from public data — exactly the kind of drift Article XLVI.5 forbids in derived fields, now extended to the whole estate.

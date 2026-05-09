@@ -71,6 +71,34 @@ The fallback hell isn't just gone — it's been made constitutionally impossible
 
 ---
 
+## Round 2 (2026-05-09 evening): Disaster Recovery — the estate is recomputable
+
+Hours after Article XLVI shipped, the operator asked the question that exposed the deepest property: *"and can this be completely rebuilt by basically reading the estate from the global githubrawuser data across this full network to basically rebuild this data structure from scratch if we lose it... that's the point..."*
+
+The exploration surfaced one missing edge: every planted door's `rappid.json` was hard-coding `parent_rappid: None`. With no parent edge, a planted door had no pointer back to its operator — even though the operator's identity was the most important fact about the door. The rebuild couldn't traverse from a discovered door back to its planter. The graph was missing its most important arrow.
+
+### What shipped in Round 2
+
+- `_read_operator_rappid()` in `plant_seed_agent.py`: every new plant now reads `~/.brainstem/rappid.json` and writes that as `parent_rappid` on the door's `rappid.json`. The planter knows who the planter is.
+- `--patch-parents <op-rappid>` mode in `tools/backfill_seeds.py`: a one-shot pass that fetches every existing seed's `rappid.json`, sets `parent_rappid`, and PUTs it back. Idempotent.
+- 16/16 backfilled doors now publicly trace back to `rappid:v2:operator:@kody-w/kody-twin:91d006ca7b…`. The graph is whole.
+- `tools/rebuild_estate.py`: walks public GitHub data, given just a handle, and reconstructs the estate. Discovery: operator rappid (local → conventional repos → repo scan), `created[]` (gh repo list + raw `rappid.json` filtered by `parent_rappid`), `member[]` (gh search code on `members.json`).
+- `estate rebuild` action in the agent: subprocess-delegates to the tool. Default dry-run; explicit `apply=true` writes the file.
+- `estate fetch rappid=<any-rappid>`: drop in any rappid → if it's an operator's, fetch their estate; if it's a door's, trace `parent_rappid` to find the operator and fetch theirs. The most important UX win — a single rappid is now a complete address into anyone's published estate.
+- §XLVI.6 added to CONSTITUTION: "The estate is not the source of truth. The network is the source of truth. The estate is the cache."
+- §6 added to ESTATE_SPEC + §4.5 to specs/SPEC.md (the bundled god spec, so every future planting carries the disaster-recovery spec).
+- Conformance test F14 (8 steps, all green): proves the property end-to-end. The headline assertion: `tools/rebuild_estate.py --handle kody-w` discovered 16 created doors from public data alone.
+
+### Why this is the deepest property of the architecture
+
+Local-first means "works offline." Recompute-from-network means "your relationships are public facts that can be reconstructed by any device with `gh` auth." The first protects you from connectivity loss. The second protects you from device loss + cache loss + every other failure mode that previously meant "your network identity is gone."
+
+The estate file always was a cache; the operator's framing made me see that we hadn't proven it was just a cache. After Round 2, the proof is the rebuild — and the constitutional invariant (`parent_rappid` is required) keeps the proof valid forever.
+
+The headline: **the network IS the backup.**
+
+---
+
 ## Cross-references
 
 - Spec: [`pages/docs/ESTATE_SPEC.md`](../../docs/ESTATE_SPEC.md)
@@ -80,7 +108,8 @@ The fallback hell isn't just gone — it's been made constitutionally impossible
 - Estate agent: [`rapp_brainstem/agents/estate_agent.py`](../../../rapp_brainstem/agents/estate_agent.py)
 - Planter: [`rapp_brainstem/agents/plant_seed_agent.py`](../../../rapp_brainstem/agents/plant_seed_agent.py)
 - Backfill: [`tools/backfill_seeds.py`](../../../tools/backfill_seeds.py)
-- Conformance: [`tests/features/F13-estate-spec.sh`](../../../tests/features/F13-estate-spec.sh)
-- Constitution: [`CONSTITUTION.md`](../../../CONSTITUTION.md) Article XLVI
+- Rebuild (Round 2): [`tools/rebuild_estate.py`](../../../tools/rebuild_estate.py)
+- Conformance: [`tests/features/F13-estate-spec.sh`](../../../tests/features/F13-estate-spec.sh) (Round 1) + [`tests/features/F14-estate-rebuild.sh`](../../../tests/features/F14-estate-rebuild.sh) (Round 2)
+- Constitution: [`CONSTITUTION.md`](../../../CONSTITUTION.md) Article XLVI (with §XLVI.6 added in Round 2)
 - Companion vault notes:
   - [`2026-05-09 — Bond Pulse — the on-going beat for the full organism`](2026-05-09%20%E2%80%94%20Bond%20Pulse%20%E2%80%94%20the%20on-going%20beat%20for%20the%20full%20organism.md) — the heartbeat that keeps local + global in sync
