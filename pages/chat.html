@@ -75,30 +75,57 @@
 </header>
 
 <div id="setup">
-  <h2>Setup</h2>
+  <!-- ─── Step 1: SIGN IN (the big friction; one-button device flow) ──── -->
+  <div id="signin-block" class="step">
+    <strong>Sign in to chat</strong>
+    <p style="color: var(--muted); font-size: 13px; margin: 6px 0 12px;">One-tap GitHub sign-in. Your token gives chat access via your existing Copilot subscription. Stored in this browser only — sign out wipes it.</p>
 
-  <div class="step">
-    <strong>1.</strong> Embody a twin
-    <p style="color: var(--muted); font-size: 12px; margin: 4px 0;">Either <a href="/RAPP/pages/summon.html">tap a twin in the summon portal</a>, or paste a rappid here:</p>
-    <label>vbs_rappid (the twin you want to chat AS)</label>
-    <input id="setup-rappid" type="text" placeholder="rappid:v2:twin:@kody-w/echo-brainstem:..." />
+    <button id="btn-signin" onclick="signInDevice()" style="background: var(--accent); color: #fff; font-size: 16px; padding: 14px;">
+      Sign in with GitHub
+    </button>
+
+    <div id="device-state" style="display:none; margin-top: 16px; padding: 14px; background: #0a0e14; border: 1px solid var(--accent); border-radius: 10px;">
+      <div style="font-size: 13px; color: var(--muted); margin-bottom: 8px;">1. Tap <strong>Open GitHub</strong> below (opens in a new tab)</div>
+      <a id="device-uri" href="https://github.com/login/device" target="_blank" rel="noopener"
+         style="display:block; padding: 10px; background: var(--accent); color: #fff; text-align: center; text-decoration: none; border-radius: 8px; font-weight: 600; margin-bottom: 12px;">
+        Open GitHub → enter code
+      </a>
+      <div style="font-size: 13px; color: var(--muted); margin-bottom: 8px;">2. Enter this code:</div>
+      <div id="device-code" style="font: 600 28px/1 ui-monospace, Menlo, monospace; letter-spacing: 4px; text-align: center; padding: 14px; background: #161b22; border-radius: 8px; user-select: all; -webkit-user-select: all;"></div>
+      <button onclick="copyCode()" style="background: #21262d; border: 1px solid var(--border); color: var(--fg); margin-top: 10px; padding: 8px; font-size: 12px;">Copy code</button>
+      <div id="device-poll-status" style="margin-top: 12px; font-size: 12px; color: var(--muted); text-align: center;">Waiting for you to authorize on GitHub…</div>
+    </div>
   </div>
 
-  <div class="step">
-    <strong>2.</strong> Sign in (GitHub) — required for Copilot chat proxy
-    <p style="color: var(--muted); font-size: 12px; margin: 4px 0;">Easiest: <a href="/RAPP/pages/vbrainstem/" target="_blank">sign in via vbrainstem</a> first (device-code flow), then come back here. Or paste a GitHub OAuth token below (must start with <code>ghu_</code>).</p>
-    <label>vbs_token (ghu_… GitHub OAuth — needed for Copilot)</label>
-    <input id="setup-token" type="password" placeholder="ghu_…" />
+  <div id="signed-in-block" class="step" style="display:none;">
+    <strong>Signed in as <span id="signed-in-as">…</span></strong>
+    <p style="color: var(--muted); font-size: 12px; margin: 4px 0 8px;">Token cached in localStorage. Sign-out wipes it.</p>
+    <button onclick="signOut()" style="background: rgba(255,123,114,0.15); color: #ff7b72; border: 1px solid rgba(255,123,114,0.4); padding: 8px 12px; font-size: 13px;">Sign out + wipe</button>
   </div>
 
+  <!-- ─── Step 2: which twin (auto-loaded from summon portal) ─────────── -->
   <div class="step">
-    <strong>3.</strong> (Optional) which neighborhood to post the chat into
-    <label>neighborhood gate URL</label>
+    <strong>Twin</strong>
+    <p style="color: var(--muted); font-size: 12px; margin: 4px 0;">
+      <span id="twin-status">No twin embodied yet.</span>
+      <a href="/RAPP/pages/summon.html">Pick one in the summon portal →</a>
+    </p>
+    <details style="margin-top: 8px;">
+      <summary style="font-size: 12px; color: var(--muted); cursor: pointer;">Or paste a rappid manually</summary>
+      <input id="setup-rappid" type="text" placeholder="rappid:v2:twin:@kody-w/echo-brainstem:..." style="margin-top: 8px;" />
+      <button onclick="saveRappid()" style="margin-top: 8px; background: var(--accent); color: #fff; padding: 8px 12px; font-size: 13px;">Embody this twin</button>
+    </details>
+  </div>
+
+  <!-- ─── Step 3: optional neighborhood post-target ───────────────────── -->
+  <div class="step">
+    <strong>Post chats to a neighborhood</strong> <span style="color: var(--muted); font-size: 12px;">(optional)</span>
+    <p style="color: var(--muted); font-size: 12px; margin: 4px 0 8px;">When the "post to neighborhood" toggle is on (bottom toolbar), every exchange becomes a public Issue.</p>
     <input id="setup-nb" type="url" placeholder="https://github.com/kody-w/sim-art-collective" value="https://github.com/kody-w/sim-art-collective" />
-    <p style="color: var(--muted); font-size: 12px; margin: 6px 0 0;">When the toolbar's "post to nb" toggle is on, every exchange becomes a comment on a chosen Issue (or opens a new one).</p>
+    <button onclick="saveNb()" style="margin-top: 8px; background: var(--accent); color: #fff; padding: 8px 12px; font-size: 13px;">Save</button>
   </div>
 
-  <button onclick="saveSetup()">Save and chat</button>
+  <button onclick="closeSetup()" style="margin-top: 16px;">Done</button>
 </div>
 
 <div id="log"></div>
@@ -128,6 +155,8 @@
     soul_cache: "vbs_soul_cache",
   };
   const AUTH_WORKER_URL = "https://rapp-auth.kwildfeuer.workers.dev";
+  const COPILOT_CLIENT_ID = "Iv1.b507a08c87ecfe98"; // GitHub Copilot Chat OAuth app
+  const GH_API = "https://api.github.com";
   // The Copilot endpoint is per-user — extracted from the token-exchange response.
   // Different accounts (individual / business / enterprise) get different endpoints.
   // Fallback only if the response doesn't include one.
@@ -144,17 +173,136 @@
     el.style.color = kind === "err" ? "#ff7b72" : kind === "ok" ? "var(--green)" : "var(--muted)";
   }
 
-  function toggleSetup() { $("setup").classList.toggle("show"); }
+  function toggleSetup() { $("setup").classList.toggle("show"); refreshSetupUI(); }
+  function closeSetup() { $("setup").classList.remove("show"); init(); }
 
-  function saveSetup() {
+  function saveRappid() {
     const r = $("setup-rappid").value.trim();
-    const t = $("setup-token").value.trim();
+    if (r) { localStorage.setItem(LS.rappid, r); init(); }
+  }
+  function saveNb() {
     const nb = $("setup-nb").value.trim();
-    if (r) localStorage.setItem(LS.rappid, r);
-    if (t) localStorage.setItem(LS.token, t);
     if (nb) localStorage.setItem(LS.chat_nb, nb);
-    $("setup").classList.remove("show");
-    init();
+    setStatus("neighborhood saved", "ok");
+  }
+
+  function copyCode() {
+    const code = $("device-code").textContent;
+    navigator.clipboard.writeText(code).then(() => setStatus("code copied", "ok"));
+  }
+
+  // ─── Inline GitHub device-code flow (no bouncing to vbrainstem) ──────
+  let deviceFlowState = null;
+  let deviceFlowTimer = null;
+
+  async function signInDevice() {
+    const btn = $("btn-signin");
+    btn.disabled = true;
+    btn.textContent = "Starting…";
+    try {
+      const r = await fetch(`${AUTH_WORKER_URL}/api/auth/device`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ client_id: COPILOT_CLIENT_ID, scope: "repo read:user user:email" }),
+      });
+      if (!r.ok) throw new Error("device flow start failed: " + r.status);
+      const data = await r.json();
+      deviceFlowState = data;
+      $("device-uri").href = data.verification_uri || "https://github.com/login/device";
+      $("device-code").textContent = data.user_code || "—";
+      $("device-state").style.display = "block";
+      btn.style.display = "none";
+      const intervalMs = (data.interval || 5) * 1000;
+      deviceFlowTimer = setInterval(() => pollDevice(intervalMs), intervalMs);
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = "Sign in with GitHub";
+      setStatus("sign-in failed: " + e.message, "err");
+    }
+  }
+
+  async function pollDevice(intervalMs) {
+    if (!deviceFlowState) return;
+    try {
+      const r = await fetch(`${AUTH_WORKER_URL}/api/auth/device/poll`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ client_id: COPILOT_CLIENT_ID, device_code: deviceFlowState.device_code }),
+      });
+      const j = await r.json();
+      if (j.access_token) {
+        clearInterval(deviceFlowTimer);
+        localStorage.setItem(LS.token, j.access_token);
+        // Try to fetch the user's login + cache it
+        const u = await fetch(`${GH_API}/user`, {
+          headers: { "Authorization": "Bearer " + j.access_token, "Accept": "application/vnd.github+json" },
+        });
+        if (u.ok) {
+          const uj = await u.json();
+          if (uj.login) localStorage.setItem(LS.login, uj.login);
+        }
+        $("device-state").style.display = "none";
+        $("device-poll-status").textContent = "✓ Signed in!";
+        refreshSetupUI();
+        setStatus("signed in", "ok");
+        // Auto-close setup if both rappid + token are now present
+        setTimeout(() => {
+          if (localStorage.getItem(LS.rappid) && localStorage.getItem(LS.token)) {
+            $("setup").classList.remove("show");
+            init();
+          }
+        }, 800);
+      } else if (j.error === "authorization_pending") {
+        $("device-poll-status").textContent = "Waiting for you to authorize on GitHub… (the page polls every " + (intervalMs / 1000) + "s)";
+      } else if (j.error === "slow_down") {
+        // Intentionally do nothing; the next interval will be slower
+      } else if (j.error === "expired_token" || j.error === "access_denied") {
+        clearInterval(deviceFlowTimer);
+        $("device-state").style.display = "none";
+        $("btn-signin").style.display = "block";
+        $("btn-signin").disabled = false;
+        $("btn-signin").textContent = "Sign in with GitHub";
+        setStatus("device flow " + j.error, "err");
+      }
+    } catch (e) {
+      $("device-poll-status").textContent = "Network error: " + e.message;
+    }
+  }
+
+  function signOut() {
+    localStorage.removeItem(LS.token);
+    localStorage.removeItem(LS.login);
+    copilotToken = null;
+    refreshSetupUI();
+    setStatus("signed out");
+  }
+
+  function refreshSetupUI() {
+    const token = localStorage.getItem(LS.token);
+    const login = localStorage.getItem(LS.login);
+    const rappid = localStorage.getItem(LS.rappid);
+    if (token) {
+      $("signin-block").style.display = "none";
+      $("signed-in-block").style.display = "block";
+      $("signed-in-as").textContent = login || "(unknown)";
+    } else {
+      $("signin-block").style.display = "block";
+      $("signed-in-block").style.display = "none";
+      $("btn-signin").style.display = "block";
+      $("btn-signin").disabled = false;
+      $("btn-signin").textContent = "Sign in with GitHub";
+    }
+    if (rappid) {
+      const parsed = parseRappid(rappid);
+      $("twin-status").textContent = parsed
+        ? `Embodying: ${parsed.owner}/${parsed.repo}.`
+        : `Embodied (legacy rappid: ${rappid.slice(0, 24)}…).`;
+      $("setup-rappid").value = rappid;
+    } else {
+      $("twin-status").textContent = "No twin embodied yet.";
+    }
+    const nb = localStorage.getItem(LS.chat_nb);
+    if (nb) $("setup-nb").value = nb;
   }
 
   function parseRappid(rappid) {
@@ -364,15 +512,17 @@
 
     if (model) $("model-pick").value = model;
     if (nb) $("setup-nb").value = nb;
-    if (rappid) $("setup-rappid").value = rappid;
-    if (token) $("setup-token").value = token;
     if (histRaw) try { history = JSON.parse(histRaw); } catch {}
 
-    if (!rappid) {
+    refreshSetupUI();
+
+    // Show setup if either is missing
+    if (!rappid || !token) {
       $("setup").classList.add("show");
-      setStatus("paste a rappid to begin");
+      setStatus(!token ? "sign in to begin" : "embody a twin", "err");
       return;
     }
+
     const parsed = parseRappid(rappid);
     if (!parsed) {
       setStatus("rappid format unrecognized (need v2 string)", "err");
@@ -387,9 +537,10 @@
     $("display-name").textContent = twin.display_name;
     $("rappid-line").textContent = rappid.slice(0, 90) + (rappid.length > 90 ? "…" : "");
     $("avatar").textContent = (twin.display_name || "?")[0].toUpperCase();
-    setStatus(token ? "ready" : "sign in needed", token ? "ok" : "err");
-    if (!token) $("setup").classList.add("show");
+    setStatus("ready", "ok");
     renderHistory();
+    // Hide setup if everything is good
+    $("setup").classList.remove("show");
   }
 
   init();
