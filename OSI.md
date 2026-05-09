@@ -169,7 +169,7 @@ Plus `public_facets` per §7 — operator declares which aspects of the organism
 - `rapp_brainstem/utils/egg.py` — legacy egg utilities
 - `tests/doorman/dreamcatcher.mjs` — `rapp-frame/1.0` chain validation
 
-**Tests.** `tests/osi/L6-envelope.sh` — verifies (a) all 5 `rapp-twin-chat/1.0` `kind` values round-trip between two test brainstems; (b) egg pack → SHA verify → hatch produces identical content; (c) `rapp-egg-provenance/1.0` hashes catch tampering; (d) `rapp-frame/1.0` prev_hash chain is unbroken.
+**Tests.** `tests/osi/L6-envelope.sh` — verifies (a) all 5 `rapp-twin-chat/1.0` `kind` values round-trip between two test brainstems; (b) egg pack → SHA verify → hatch produces identical content; (c) `rapp-egg-provenance/1.0` hashes catch tampering; (d) `rapp-frame/1.0` prev_hash chain is unbroken (synthetic 5-frame chain). Plus `tests/osi/L6a-frame-chain-browser.sh` (Playwright, --with-browser) — drives the real `appendFrame()` in plant.sh's doorman + verifies Dream Catcher reassimilation classifies shared / new / contradiction correctly per HERO_USECASE.md §2 doctrine.
 
 **What L6 does NOT do.** No agent invocation (that's L7). No transport selection (that's L4).
 

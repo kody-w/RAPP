@@ -19,14 +19,18 @@
 import { chromium } from "playwright";
 import { spawn, execSync } from "node:child_process";
 import { writeFileSync, readFileSync, existsSync, mkdirSync, rmSync } from "node:fs";
-import { resolve } from "node:path";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
 // ── plumbing ────────────────────────────────────────────────────────
 
-const RAPP_ROOT = "/Users/kodywildfeuer/RAPP";
+// Derive RAPP_ROOT from this file's location: tests/doorman/dreamcatcher.mjs
+// → repo root. Allows the test to run from any clone path.
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const RAPP_ROOT = resolve(__dirname, "..", "..");
 const PLANT = `${RAPP_ROOT}/installer/plant.sh`;
-const SERVE_DIR = "/tmp/dc-test-fresh";
-const PORT = 8773;
+const SERVE_DIR = `/tmp/rapp-dc-test-${process.pid}`;
+const PORT = parseInt(process.env.RAPP_DC_PORT || "8773", 10);
 
 let server, browser;
 let pass = 0, fail = 0;
@@ -168,8 +172,13 @@ async function runDreamCatcher(canonicalEggPath, parallelEggPath) {
   const ctx = await browser.newContext();
   const page = await ctx.newPage();
   page.on("pageerror", e => console.log("  [dc pageerror]", e.message));
-  await page.goto(`http://127.0.0.1:${PORT}/`, { waitUntil: "networkidle", timeout: 15000 });
-  await page.waitForTimeout(800);
+  // Sphere (/) is now the front door (Constitution Article XLV — implicit
+  // summon); the classic action-button row lives at /classic.html.
+  // domcontentloaded (not networkidle) — GitHub API 401s with the dummy
+  // token keep the network busy indefinitely, but the buttons render
+  // synchronously from the inline script.
+  await page.goto(`http://127.0.0.1:${PORT}/classic.html`, { waitUntil: "domcontentloaded", timeout: 15000 });
+  await page.waitForSelector("#btn-dreamcatcher", { timeout: 10000 });
   await page.click("#btn-dreamcatcher");
   await page.waitForTimeout(300);
   await page.setInputFiles("#dc-file-canonical", canonicalEggPath);

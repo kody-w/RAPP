@@ -55,6 +55,7 @@ CROSS=(
 ALL=("${LAYERS[@]}" "${CROSS[@]}")
 if [ "$WITH_BROWSER" -eq 1 ] && [ -z "$ONLY" ]; then
   ALL+=("L4a-tether-browser")
+  ALL+=("L6a-frame-chain-browser")
 fi
 
 if [ -n "$ONLY" ]; then

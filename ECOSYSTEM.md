@@ -585,21 +585,20 @@ Files added on demand:
 - Operator-fallback ascension
 - Egg export (doorman + ascended tiers) with sha256 + state_at_seal
 - Verify + deep-verify against public repo
-- Dream Catcher diff (set-based by hash)
+- Dream Catcher diff (set-based by hash) + UTC-first canon resolution + contradictions-as-alternate-dimensions
 - Local-first rendering (cachedGhJson)
 - Propose-an-agent PR flow
 - Egg Hub backup (issue-based)
+- **Doorman-side `appendFrame()` writing content-addressed `rapp-frame/1.0` to localStorage `rapp_frames_v1`** (chat turn, tool call, memory save). Ascended egg packs `data/frames.json`. End-to-end conformance: `tests/osi/L6a-frame-chain-browser.sh` (drives `tests/doorman/dreamcatcher.mjs` — 17/17).
 
 ⚠ **Partial — works, can be tightened:**
 - Egg send over the tether channel (today: manual paste via tether chat; should be one-tap stream)
-- Dream Catcher conflict-resolution: UTC-first canon + contradictions-as-alternate-dimensions (today: set-based by hash, no contradiction flagging)
 - Local-LLM fallback in doorman (today: custom Copilot endpoints work; no offline-LLM path)
 - Plant-time MMR snapshot for lineage gift (today: live-fetched at view time)
 
 ❌ **Not yet built (defined for parity):**
 - Lineage roll-up stats (avg/median MMR across the lineage tree)
 - Global leaderboard (aggregate the species via fork-tree walking)
-- Doorman-side mutation tracker writing `data/frames.json`
 - Location-aware proximity swarm (Pizza Place / Pokémon-Go layer)
 - ed25519 publisher signatures (for offline-only verification chains)
 - Stasis recovery / resurrection ceremony

@@ -145,14 +145,70 @@ for path in expected_hashes:
 print("OK — pack → verify → hatch is bit-for-bit identical")
 PY
 
-# 7. rapp-frame/1.0 schema referenced (content-addressed mutation events)
-heading "Step 7 — rapp-frame/1.0 (content-addressed frame log, ECOSYSTEM §3)"
+# 7. rapp-frame/1.0 schema is wired AND emitted on the doorman path
+heading "Step 7 — rapp-frame/1.0 doorman emission (appendFrame in plant.sh)"
 if grep -rq "rapp-frame/1.0" "$REPO_ROOT/rapp_brainstem/" "$REPO_ROOT/pages/" "$REPO_ROOT/installer/" "$REPO_ROOT/tests/" 2>/dev/null; then
   step_pass "rapp-frame/1.0 referenced in implementation surfaces"
 else
-  muted "rapp-frame/1.0 not yet emitted in trunk (ECOSYSTEM §15 — pending)"
-  step_pass "frame schema documented; emission is roadmap (not a regression)"
+  step_fail "rapp-frame/1.0 not referenced anywhere — frame log broken"
 fi
+# appendFrame must exist in plant.sh's doorman template + chain via prev_hash
+if grep -q "function appendFrame\|async function appendFrame" "$REPO_ROOT/installer/plant.sh" \
+   && grep -q "prev_hash\b" "$REPO_ROOT/installer/plant.sh"; then
+  step_pass "appendFrame() + prev_hash chain wired in doorman template"
+else
+  step_fail "appendFrame or prev_hash chain missing from plant.sh"
+fi
+# Ascended egg must pack data/frames.json
+if grep -q "data/frames.json" "$REPO_ROOT/installer/plant.sh"; then
+  step_pass "ascended egg packs data/frames.json (buildAscendedEgg)"
+else
+  step_fail "ascended egg does not pack data/frames.json — Dream Catcher can't reassimilate"
+fi
+
+# 7b. Synthetic frame chain validation — verify the wire format works
+# without spinning up a browser. Mirrors plant.sh's appendFrame logic.
+heading "Step 7b — Synthetic frame chain (rapp-frame/1.0 prev_hash chain)"
+python3 - <<'PY' && step_pass "5-frame chain: prev_hash links unbroken; (utc, frame_n) PK monotonic" || step_fail "synthetic frame chain broken"
+import hashlib, json
+from datetime import datetime, timezone, timedelta
+
+def append_frame(log, kind, payload, utc=None, frame_n=None):
+    """Mirrors plant.sh::appendFrame line 5447. Content-addressed; chains via prev_hash."""
+    prev = log["frames"][-1]["hash"] if log["frames"] else ""
+    utc = utc or datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    frame_n = frame_n if frame_n is not None else len(log["frames"])
+    body = (prev or "") + "|" + utc + "|" + str(frame_n) + "|" + kind + "|" + json.dumps(payload or {}, separators=(",", ":"))
+    h = hashlib.sha256(body.encode()).hexdigest()
+    log["frames"].append({"stream_id": log["stream_id"], "frame_n": frame_n, "utc": utc, "kind": kind, "payload": payload or {}, "prev_hash": prev, "hash": h})
+    return log
+
+log = {"schema": "rapp-frame/1.0", "stream_id": "synth:test123", "frames": []}
+base = datetime(2026, 5, 8, 20, 0, 0, tzinfo=timezone.utc)
+for i, (kind, payload) in enumerate([
+    ("conversation", {"role": "user", "content_len": 12}),
+    ("tool_call",    {"tool": "ManageMemory", "args_keys": ["fact"]}),
+    ("memory_added", {"scope": "private", "body_len": 24}),
+    ("agent_loaded", {"agent": "echo_agent"}),
+    ("commit",       {"sha": "abc123", "message": "test"}),
+]):
+    append_frame(log, kind, payload, utc=(base + timedelta(seconds=i)).isoformat().replace("+00:00", "Z"))
+
+# Assertions per ECOSYSTEM §3 + HERO_USECASE §2
+assert len(log["frames"]) == 5, "expected 5 frames"
+assert log["frames"][0]["prev_hash"] == "", "first frame has no prev_hash"
+assert all(log["frames"][i]["prev_hash"] == log["frames"][i-1]["hash"] for i in range(1, 5)), "chain link broken"
+assert all(log["frames"][i]["frame_n"] == i for i in range(5)), "frame_n must be monotonic"
+assert all(len(f["hash"]) == 64 for f in log["frames"]), "hash must be sha256 hex (64 chars)"
+
+# Tampering detection: mutate a payload mid-chain → recomputed hash differs from stored
+tampered = json.loads(json.dumps(log))
+tampered["frames"][2]["payload"]["body_len"] = 9999
+recomputed_body = (tampered["frames"][2]["prev_hash"] + "|" + tampered["frames"][2]["utc"] + "|" + str(tampered["frames"][2]["frame_n"]) + "|" + tampered["frames"][2]["kind"] + "|" + json.dumps(tampered["frames"][2]["payload"], separators=(",", ":")))
+assert hashlib.sha256(recomputed_body.encode()).hexdigest() != tampered["frames"][2]["hash"], "tampering not detected"
+
+print("OK")
+PY
 
 # 8. SHA-256 tampering detection
 heading "Step 8 — SHA-256 tampering detection: edit a file → verify FAILS"
