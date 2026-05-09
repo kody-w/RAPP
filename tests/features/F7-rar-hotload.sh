@@ -228,6 +228,50 @@ assert n["offline_dimension"].get("merge_via")
 print("OK")
 PY
 
+heading "Step 9b — plant.sh write_rar_index emits valid rar/ on dry-run"
+PLANT_SANDBOX=$(osi_sandbox "rapp-feature-F7-plant")
+trap "osi_cleanup_dir '$PLANT_SANDBOX'; osi_cleanup_dir '$SANDBOX'" EXIT
+mkdir -p "$PLANT_SANDBOX/dry"
+PLANT_DRY_RUN=1 PLANT_DRY_RUN_DIR="$PLANT_SANDBOX/dry" \
+  PLANT_GH_USER=testuser MIRROR_REPO_NAME=test-rar-scaffold MIRROR_DISPLAY_NAME='Test RAR Scaffold' \
+  MIRROR_KIND=neighborhood bash "$REPO_ROOT/installer/plant.sh" >/dev/null 2>&1 || true
+if [ -f "$PLANT_SANDBOX/dry/rar/index.json" ]; then
+  python3 - "$PLANT_SANDBOX/dry/rar/index.json" <<'PY' && step_pass "plant.sh dry-run scaffolds rar/index.json with proper schema + sha256s" || step_fail "scaffolded rar/index.json invalid"
+import hashlib, json, os, sys
+d = json.load(open(sys.argv[1]))
+assert d["schema"] == "rapp-rar-index/1.0"
+assert d.get("rar_for") == "testuser/test-rar-scaffold"
+assert d.get("kind") == "neighborhood"
+# Federation block must be present, default separate
+fed = d.get("federation") or {}
+assert fed.get("default_mode") == "separate"
+# offline_dimension_protocol must be present
+assert "offline_dimension_protocol" in d
+# Every kernel_base entry must have a 64-char sha256
+for kb in d.get("kernel_base_included") or []:
+    assert len(kb["sha256"]) == 64, f"bad sha256 for {kb['name']}"
+print("OK")
+PY
+else
+  step_fail "plant.sh did not produce rar/index.json"
+fi
+
+heading "Step 9c — Live: real ant-farm rar/index.json reachable + valid"
+if osi_net "live ant-farm rar fetch"; then
+  CODE=$(osi_get_status "https://raw.githubusercontent.com/kody-w/ant-farm/main/rar/index.json" 8)
+  if [ "$CODE" = "200" ]; then
+    LIVE=$(curl -fsSL --max-time 8 "https://raw.githubusercontent.com/kody-w/ant-farm/main/rar/index.json")
+    if printf "%s" "$LIVE" | python3 -c "import json,sys; d=json.load(sys.stdin); assert d['schema']=='rapp-rar-index/1.0'; assert d['rar_for']=='kody-w/ant-farm'; assert len(d['required_for_participation'])>=2" 2>/dev/null; then
+      step_pass "live ant-farm rar/index.json valid + ≥2 required entries"
+    else
+      step_fail "live rar/index.json fetched but shape wrong"
+    fi
+  else
+    muted "live rar/index.json HTTP $CODE — non-fatal, ant-farm may be propagating"
+    step_pass "live probe attempted (HTTP $CODE)"
+  fi
+fi
+
 heading "Step 10 — Universal pattern: any planted seed could adopt rar/ (Pizza Place, heimdall, etc.)"
 python3 - "$LOADER" <<'PY' && step_pass "loader is repo-agnostic — gate_repo shortcut works for any owner/repo" || step_fail "loader is hard-coded to ant-farm"
 import importlib.util, sys

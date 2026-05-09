@@ -164,12 +164,72 @@ own brainstem":
 # install the RAPP brainstem (one-liner)
 curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash
 
-# the seed's ant_agent.py is auto-loaded by your brainstem;
-# invoke via /chat: "use the Ant agent to drop a pheromone in the ant-farm"
+# OPTION A: hot-load THIS neighborhood's required participation kit
+# from any /chat — sha256-verified against the published manifest:
+#   "use the RarLoader agent on gate_repo=kody-w/ant-farm"
+# (defaults to dry_run; pass dry_run=False to actually install.)
+
+# OPTION B: clone the seed and run a brainstem from inside it
+# (the agents/ directory is already populated — fully self-contained):
+#   git clone https://github.com/kody-w/ant-farm
+#   cd ant-farm && python3 ../RAPP/rapp_brainstem/brainstem.py
+
+# Either way, invoke via /chat:
+#   "use the Ant agent to drop a pheromone in the ant-farm"
 ```
 
 You'll then participate as a recurring ant rather than a one-shot
 contributor.
+
+## 8a. The artisanal participation kit (`rar/`)
+
+This seed ships its own RAR-style registry at
+[`rar/index.json`](./rar/index.json) (`rapp-rar-index/1.0`). Same shape
+as the global stores at [kody-w/RAR](https://kody-w.github.io/RAR/store.html),
+[kody-w/RAPP_Store](https://kody-w.github.io/RAPP_Store/), and
+[kody-w/RAPP_Sense_Store](https://kody-w.github.io/RAPP_Sense_Store/) — but
+**scoped to this neighborhood**. Default mode: completely separate
+(scope-local). Opt-in `include_federated=true` to walk the global stores.
+
+What's in this seed's `rar/`:
+
+| Slot | Entry | Purpose |
+|---|---|---|
+| `required_for_participation` | `Ant` (`agents/ant_agent.py`) | Drop one pheromone per tick |
+| `required_for_participation` | `ColonyObserver` (`agents/colony_observer_agent.py`) | Read-only swarm synthesis |
+| `kernel_base_included` | `BasicAgent` (`agents/basic_agent.py`) | Portability — kernel base bundled so a clone is self-sufficient |
+| `cards` | `rar/cards/{ant,colony_observer}.card.json` | `rapp-card/1.0` display tiles |
+| `rapplications` | `rar/rapplications/ant_farm_explorer.rapp.json` | `rapp-application/1.0` — single-tile UX wrapping both agents |
+
+Each entry is sha256-pinned. Hot-loaders (the brainstem's `RarLoader` agent)
+re-compute the hash before installing — tampered or stale content is refused.
+
+## 8b. Offline variant dimension protocol
+
+Per [HERO_USECASE §2](https://github.com/kody-w/RAPP/blob/main/HERO_USECASE.md)
++ [ECOSYSTEM §10](https://github.com/kody-w/RAPP/blob/main/ECOSYSTEM.md), a
+local clone of this seed **IS a parallel offline dimension** of the global
+neighborhood:
+
+```
+git clone https://github.com/kody-w/ant-farm   ← clone the dimension
+# disconnect from network
+# drop pheromones locally on your brainstem  ← they accumulate in the
+#                                              local rapp-pheromone/1.0 chain
+#                                              (content-addressed via prev_hash)
+# reconnect to network
+# Open Dream Catcher pane on the gate page    ← reassimilation
+#   - same hash (pheromone matches global)            → shared
+#   - distinct (utc, ant_id) — your work            → layer-on (PR-merged)
+#   - same (utc, ant_id) different content           → contradiction
+#                                                    (preserved as alternate-
+#                                                     dimension data; nothing lost)
+```
+
+The pheromone schema is `rapp-frame/1.0`-compatible (it has `utc`,
+`prev_hash`, `hash`), so the existing Dream Catcher pattern works without
+modification. Cumulative offline contributions reassimilate cleanly on
+reconnect via PR-mediated review.
 
 ## 9. Provenance + license
 

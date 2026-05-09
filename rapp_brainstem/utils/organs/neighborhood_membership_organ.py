@@ -491,6 +491,32 @@ def _join(body):
     doc["subscriptions"] = subs
     _save_subs(doc)
 
+    # Surface the per-neighborhood RAR participation kit (rapp-rar-index/1.0)
+    # if the gate declares one. Joining brainstems can hot-load it via the
+    # RarLoader agent — sha256-verified, dry_run by default. This is the
+    # universal pattern: every planted seed's `rar/index.json` declares the
+    # agents/cards/rapps/organs required to participate; the loader installs
+    # them. See ECOSYSTEM_MAP §5 (rapp-rar-index/1.0) + tests/features/F7.
+    rar_url = (
+        gate_n.get("rar_index_url")
+        or f"https://raw.githubusercontent.com/{gate_slug}/main/rar/index.json"
+    )
+    rar_kit = {
+        "rar_index_url": rar_url,
+        "load_via": (
+            "Invoke the RarLoader agent on /chat: "
+            f"\"use the RarLoader agent on gate_repo={gate_slug}\" "
+            "(defaults to dry_run; pass dry_run=False to install). "
+            "Or POST to /api/neighborhoods/" + gate_slug + "/rar-loadout for a server-side loadout report."
+        ),
+        "default_mode": "dry_run",
+        "_note": (
+            "Per the universal RAR pattern: every joining brainstem MAY hot-load "
+            "the gate's required participation kit. Default off — the operator "
+            "opts in. Local-first: cached at ~/.brainstem/rar_cache/ once fetched."
+        ),
+    }
+
     return {
         "joined": True,
         "subscription": sub,
@@ -501,11 +527,11 @@ def _join(body):
         "agents_pending_mount": [
             os.path.basename(p) for p in private_agents
         ] if private_slug and membership.get("is_member") else [],
+        "rar_kit": rar_kit,
         "phase": (
-            "Phase 1: subscription recorded, content cached. Hot-mounting "
-            "the neighborhood agents into the running brainstem's agent "
-            "discovery is a Phase 2 step (will copy them into agents/ "
-            "with a `neigh_<slug>_` prefix once the user opts in)."
+            "Phase 1: subscription recorded, content cached, rar kit pointer "
+            "surfaced. Hot-mounting the gate's required RAR entries is operator-opt-in "
+            "via the RarLoader agent (defaults to dry_run for safety)."
         ),
     }, 200
 

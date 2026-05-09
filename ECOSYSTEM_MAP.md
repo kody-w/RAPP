@@ -367,7 +367,8 @@ The most load-bearing section. Workflow trigger → pre-check (≤30s) → spec 
 | Call /chat from new code | §11 row "tether"; use `rapp-twin-chat/1.0` envelope; §6 row twin_agent.py reference impl | NEIGHBORHOOD_PROTOCOL §6a |
 | Define a new schema | §5 — search first; if exists, use; if not, ANTIPATTERNS §3 (bump cleanly, no shims) | ANTIPATTERNS §3 |
 | Use an existing schema | §5 row → defining doc column → read that section | the doc the row points at |
-| Plant on GitHub (twin/neighborhood/etc.) | §14 (existing planted state), §3 primitives (rappid + door + card + tether + scope all present?) | TEMPLATE.md, ECOSYSTEM §2 + §13 |
+| Plant on GitHub (twin/neighborhood/etc.) | §14 (existing planted state), §3 primitives (rappid + door + card + tether + scope all present?), §5 `rapp-rar-index/1.0` (every plant auto-scaffolds rar/ via plant.sh::write_rar_index) | TEMPLATE.md, ECOSYSTEM §2 + §13; F7-rar-hotload.sh |
+| Hot-load a planted seed's required participation kit | §5 `rapp-rar-index/1.0` (sha256 verified) | rapp_brainstem/agents/rar_loader_agent.py; F7 |
 | Federate two organisms | §7 channel matrix, §8 message kinds, §3 trust scope | NEIGHBORHOOD_PROTOCOL §5, §6, §7, §9 |
 | Touch the kernel (any file in §10) | **STOP** — write an agent/organ instead | MASTER_PLAN Part 1 §1; ANTIPATTERNS §2; CONSTITUTION Art. XXXIII |
 | Touch install one-liner | **STOP** — URL is sacred (Art. V) | CONSTITUTION Art. V; SURVIVAL §"RAPP itself goes down" |

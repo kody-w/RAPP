@@ -193,6 +193,170 @@ EOF
     chmod +x "$target_dir/installer/install.sh"
 }
 
+# write_rar_index — scaffold a per-seed rar/index.json (rapp-rar-index/1.0).
+#
+# Every planted seed ships its own RAR registry — same shape as the global
+# kody-w/RAR + RAPP_Store + RAPP_Sense_Store but scoped to ONE repo. Joining
+# brainstems hot-load the listed agents/cards/rapps via rar_loader_agent
+# (sha256-verified). Makes the seed self-sufficient + portable.
+#
+# Kernel-base agents (basic / manage_memory / context_memory) go in
+# `kernel_base_included` (informational — every brainstem already has them).
+# All other agents go in either `required_for_participation` (when kind is a
+# neighborhood-style cooperative) or `optional_for_participation` (when kind
+# is a single-twin organism).
+write_rar_index() {
+    local target_dir="$1" gh_user="$2" repo_name="$3" kind="$4"
+    [[ -d "$target_dir/agents" ]] || return 0
+
+    # Hands-off if PLANT_FROM_EGG already provided a rar/ — eggs preserve their own.
+    [[ -n "${PLANT_FROM_EGG:-}" && -f "$target_dir/rar/index.json" ]] && return 0
+
+    mkdir -p "$target_dir/rar/cards" "$target_dir/rar/rapplications"
+
+    PLANT_RAR_TARGET="$target_dir" \
+    PLANT_RAR_GH_USER="$gh_user" \
+    PLANT_RAR_REPO="$repo_name" \
+    PLANT_RAR_KIND="$kind" \
+    PLANT_RAR_NOW="$(now_iso)" \
+    python3 <<'PYEOF'
+import hashlib, json, os, time
+
+target = os.environ["PLANT_RAR_TARGET"]
+gh_user = os.environ["PLANT_RAR_GH_USER"]
+repo = os.environ["PLANT_RAR_REPO"]
+kind = os.environ["PLANT_RAR_KIND"] or "mirror"
+now = os.environ["PLANT_RAR_NOW"]
+
+agents_dir = os.path.join(target, "agents")
+agent_files = sorted(
+    f for f in os.listdir(agents_dir)
+    if f.endswith(".py") and os.path.isfile(os.path.join(agents_dir, f))
+)
+
+KERNEL_BASE = {"basic_agent.py", "manage_memory_agent.py", "context_memory_agent.py"}
+NEIGHBORHOOD_KINDS = {"ant-farm", "neighborhood", "braintrust", "swarm", "place"}
+
+def sha256_of(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(8192), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+def class_name_for(filename):
+    """Best-effort agent class name from filename (foo_bar_agent.py → FooBarAgent)."""
+    stem = filename[:-3]
+    parts = stem.replace("_agent", "").split("_")
+    return "".join(p.capitalize() for p in parts if p) + "Agent"
+
+def metadata_name_for(path):
+    """Pull metadata['name'] if present; fall back to class-derived."""
+    try:
+        with open(path) as f:
+            src = f.read()
+        # naive grep — tolerant of formatting
+        import re
+        m = re.search(r'"name":\s*"([A-Za-z][A-Za-z0-9_]*)"', src)
+        if m:
+            return m.group(1)
+    except Exception:
+        pass
+    return class_name_for(os.path.basename(path))
+
+raw_prefix = f"https://raw.githubusercontent.com/{gh_user}/{repo}/main"
+
+required, optional, kernel_base = [], [], []
+for fname in agent_files:
+    p = os.path.join(agents_dir, fname)
+    entry = {
+        "kind": "agent",
+        "name": metadata_name_for(p),
+        "file": f"agents/{fname}",
+        "raw_url": f"{raw_prefix}/agents/{fname}",
+        "sha256": sha256_of(p),
+        "schema": "rapp-agent/1.0",
+    }
+    if fname in KERNEL_BASE:
+        kernel_base.append(entry)
+    elif kind in NEIGHBORHOOD_KINDS:
+        required.append(entry)
+    else:
+        optional.append(entry)
+
+index = {
+    "schema": "rapp-rar-index/1.0",
+    "name": repo,
+    "rar_for": f"{gh_user}/{repo}",
+    "purpose": (
+        "Per-seed RAR registry — agents/cards/organs/senses/rapplications required to "
+        f"participate in this {kind}. Same shape as kody-w/RAR + RAPP_Store + "
+        "RAPP_Sense_Store but scoped to one repo. sha256-verified at hot-load time."
+    ),
+    "version": "1.0",
+    "created_at": now,
+    "raw_url_prefix": raw_prefix,
+    "kind": kind,
+    "required_for_participation": required,
+    "optional_for_participation": optional,
+    "kernel_base_included": kernel_base,
+    "organs": [],
+    "senses": [],
+    "rapplications": [],
+    "cards": [],
+    "verification": {
+        "schema": "rapp-rar-manifest/1.0",
+        "scheme": "sha256",
+        "_instructions": (
+            "Joining brainstems should re-compute sha256(file) and compare to the "
+            "published value before installing. Mismatch = refuse install (tampered or stale)."
+        ),
+    },
+    "federation": {
+        "_purpose": (
+            "This per-seed RAR is a SCOPED variant of the global stores at kody-w/RAR + "
+            "RAPP_Store + RAPP_Sense_Store. DEFAULT: separate (scope-local). OPT-IN: federate "
+            "via federation.federates_with."
+        ),
+        "default_mode": "separate",
+        "federates_with": [],
+        "_known_global_stores": [
+            {"name": "kody-w/RAR", "purpose": "Open agent registry (Pokédex)",
+             "index_url": "https://kody-w.github.io/RAR/store.html"},
+            {"name": "kody-w/RAPP_Store", "purpose": "Rapplications catalog",
+             "index_url": "https://kody-w.github.io/RAPP_Store/"},
+            {"name": "kody-w/RAPP_Sense_Store", "purpose": "Senses catalog",
+             "index_url": "https://kody-w.github.io/RAPP_Sense_Store/"},
+        ],
+    },
+    "offline_dimension_protocol": {
+        "_purpose": (
+            "Per HERO_USECASE §2 + ECOSYSTEM §10, a local clone of this seed is a "
+            "parallel offline dimension. Local mutations (frames/pheromones) accumulate "
+            "content-addressed (prev_hash chained). On reconnect, the existing Dream "
+            "Catcher reassimilates: same hash → shared, same (utc, source_id) different "
+            "content → contradiction (preserved as alternate dimension). No mutations lost."
+        ),
+        "merge_via": "Dream Catcher pane on the gate page (label: dream-catcher)",
+    },
+    "_install_one_liner": (
+        "From any brainstem: use the RarLoader agent on "
+        f"gate_repo={gh_user}/{repo} (defaults to dry_run; pass dry_run=false to install)."
+    ),
+    "_portability_note": (
+        f"`git clone https://github.com/{gh_user}/{repo}` → boot a local brainstem from "
+        "inside the cloned dir → agents/ is already populated; rar/ exists for joining "
+        "brainstems that have a kernel running elsewhere."
+    ),
+}
+
+out = os.path.join(target, "rar", "index.json")
+with open(out, "w") as f:
+    json.dump(index, f, indent=2)
+    f.write("\n")
+PYEOF
+}
+
 write_rappid_json() {
     local target_dir="$1" gh_user="$2" rappid="$3" now="$4"
     local planted_from_json="null"
@@ -7972,6 +8136,9 @@ main() {
     write_index_html   "$workspace" "$gh_user" "$rappid"
     write_doorman_html "$workspace" "$gh_user" "$rappid"
     overlay_egg_if_set "$workspace" "$workspace_private"
+    # rar/ scaffolding — sha256-pinned participation kit. Runs LAST so it
+    # captures any agents that overlay_egg_if_set added on top of fetch_seed_agents.
+    write_rar_index    "$workspace" "$gh_user" "$MIRROR_REPO_NAME" "${MIRROR_KIND:-mirror}"
 
     if [[ "${PLANT_DRY_RUN:-0}" == "1" ]]; then
         echo ""

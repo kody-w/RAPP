@@ -185,6 +185,8 @@ Plus `public_facets` per §7 — operator declares which aspects of the organism
 - `rapp-agent/1.0` — agent metadata dict (function-calling shape)
 - `rapp-chat-response/1.0` — `/chat` response envelope (`{response, agent_logs, ...}`)
 - `rapp-twin-spec/1.0` — soul Identity block
+- `rapp-rar-index/1.0` — per-seed RAR registry declaring required agents/cards/rapps/organs/senses (sha256-pinned). Every planted seed ships one (plant.sh scaffolds it). Hot-loaders verify against the published manifest before installing. Defaults to scope-local; opt-in federation to kody-w/RAR + RAPP_Store + RAPP_Sense_Store.
+- `rapp-rar-loadout/1.0` — RarLoader install-result envelope
 
 **Implementation.**
 - `rapp_brainstem/brainstem.py` — Flask + `/chat` + provider dispatch (KERNEL — Art. XXXIII)
