@@ -1,0 +1,20 @@
+{
+  "schema": "rapp-network-seed/1.0",
+  "_note": "The well-known DNS-root analog for the RAPP network. Pure-raw discoverable at https://raw.githubusercontent.com/kody-w/RAPP/main/.well-known/rapp-network-seed.json. Sniffers BFS from this seed across operators' beacons (each beacon's federation_hints[] adds new nodes). No Search API required; no rate limits for public raw URLs.",
+  "spec_version": "rapp-protocol/1.0",
+  "constitutional_anchor": "https://raw.githubusercontent.com/kody-w/RAPP/main/CONSTITUTION.md",
+  "constitutional_article": "Article XLVII — Discoverability Without A Central Registry",
+  "operators": [
+    {
+      "github": "kody-w",
+      "estate_url": "https://raw.githubusercontent.com/kody-w/rapp-estate/main/estate.json",
+      "beacon_url": "https://raw.githubusercontent.com/kody-w/rapp-estate/main/.well-known/rapp-network.json",
+      "grail_url":  "https://kody-w.github.io/rapp-estate/",
+      "role": "species-root-operator",
+      "added_at": "2026-05-09T00:00:00Z"
+    }
+  ],
+  "self_replication_note": "Anyone can fork kody-w/RAPP and host their own seed at <handle>/RAPP/main/.well-known/rapp-network-seed.json. Sniffers can start from any seed; the network is a graph, not a tree.",
+  "how_to_add_yourself": "Open a PR against kody-w/RAPP modifying this file. Include your github handle, estate_url, beacon_url, and (optionally) grail_url. Or — preferred — get listed in some other operator's beacon's federation_hints[] and the next sniff pass will pick you up transitively.",
+  "updated_at": "2026-05-09T00:00:00Z"
+}
