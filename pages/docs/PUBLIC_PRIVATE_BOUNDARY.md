@@ -1,8 +1,10 @@
-# PUBLIC_PRIVATE_BOUNDARY — The Two-Tier Estate (Mandatory)
+# PUBLIC_PRIVATE_BOUNDARY — The Three-Tier Estate (Mandatory)
 
-> **Schema:** `rapp-private-estate/1.0` · **Status:** Constitutional (Article XLVIII) · **Authority:** this file · **First shipped:** 2026-05-09 · **Bumps:** `rapp-network-beacon/1.0` → `1.1`
+> **Schema:** `rapp-private-estate/1.1` · **Status:** Constitutional (Article XLVIII; XLVIII.9 added 2026-05-10) · **Authority:** this file · **First shipped:** 2026-05-09 (1.0) · **Tightened:** 2026-05-10 (1.1 — third tier added) · **Bumps:** `rapp-network-beacon/1.1` → `1.2`
 
-This is the spec for the platform's two-tier estate model. **Every Article-XLVIII-compliant operator has BOTH a public estate AND a private estate from first install.** The public estate is the discovery surface (rappid, door catalog, beacon, federation feed). The private estate is the substance surface (PII, contacts, mailbox content, conversation history, private trust signals). Both are first-class infrastructure; neither is opt-in.
+This is the spec for the platform's estate model. **Every Article-XLVIII-compliant operator has THREE tiers from first install:** the public estate (discovery), the private estate (the *bones* — workflow + sanitized structure), and the local-only on-device tier (the *substance* — PII, customer data, real content). All three are first-class infrastructure; none are opt-in.
+
+The 2026-05-10 tightening (§1.5 below) corrects an earlier ambiguity: the private estate was previously described as "where PII lives," which encouraged operators to push real customer data into a GitHub-private repo. That trades one threat model (the public web seeing PII) for another (GitHub-the-vendor seeing PII). The third tier — the operator's local device — is the default home for PII. The private repo holds the *bones* of the digital organism so collaborators can run the workflow; the substance the workflow operates on stays on the operator's machine unless they explicitly override.
 
 This spec also introduces **URL opacity** as a load-bearing privacy property: the URLs themselves inside the private repo cannot be allowed to leak semantic information, because URLs surface in beacons, error pages, agent logs, browser history, and 404 responses to unauthorized viewers. A URL is metadata even when its content is access-gated.
 
@@ -10,37 +12,88 @@ If you are writing a planter, an estate agent, a sniffer, a mailbox client, a wi
 
 ---
 
-## §1 — Why two tiers (and why mandatory)
+## §1 — Why three tiers (and why mandatory)
 
-A public-only estate is a toy. The federation primitives that make the platform useful for real work — Inbox, Bilateral Channel, Web of Trust private signals, Presence opt-in, secret ballots — cannot exist on a public-only substrate. Real work involves PII (real names, contacts, dated correspondence, decisions you don't want indexed by search engines).
+A public-only estate is a toy. The federation primitives that make the platform useful for real work — Inbox, Bilateral Channel, Web of Trust private signals, Presence opt-in, secret ballots — cannot exist on a public-only substrate.
 
-If private is opt-in, the dominant outcome is operators stay public-only because it's "easier" — and then they leak PII to public when real work happens, OR they leave the platform when real work needs to happen. Both outcomes destroy the platform's value.
+But a **two-tier-with-PII-in-private** estate is also broken — see §1.5. The version that actually works has three tiers. Each addresses a distinct threat model.
 
-**Article XLVIII makes the two-tier estate mandatory from first install.** Every operator gets both `<handle>/rapp-estate` (public) and `<handle>/rapp-estate-private` (private GitHub repo) atomically. The private estate may be empty at install (no PII yet to land); the substrate is what matters. Adding PII later doesn't require an architectural upgrade.
+**Article XLVIII makes all three tiers mandatory from first install.** Every operator atomically gets:
 
-**Cost:** one additional free private repo per operator. GitHub's free tier supports unlimited private repos for individuals.
+1. `<handle>/rapp-estate` — public discovery surface (zero PII)
+2. `<handle>/rapp-estate-private` — private GitHub repo for the *bones* (workflow agents, sanitized member metadata, structural artifacts; collaborator-gated; **no PII by default**)
+3. `~/.brainstem/neighborhoods/<slug>/<handle>/customers/` (or equivalent per-neighborhood path) — **local on-device** for the *substance* (PII, customer specifics, real content)
 
-**Benefit:** the platform is structurally usable for sensitive work, not just public showcase.
+**Cost:** one additional free private repo per operator + the operator's existing disk space. GitHub's free tier supports unlimited private repos for individuals.
+
+**Benefit:** the platform is structurally usable for sensitive work AND structurally invisible to the GitHub-as-vendor threat model AND survives airgapped customer sites without configuration.
 
 ---
 
-## §2 — The boundary (what goes where)
+## §1.5 — Why the private repo doesn't hold PII by default (the 2026-05-10 tightening)
 
-| Lives in PUBLIC estate | Lives in PRIVATE estate |
-|---|---|
-| Operator's personal rappid | Real names of contacts |
-| Door catalog (rappids only) | Email addresses, phone numbers |
-| Beacon (`.well-known/rapp-network.json`) | Mailbox content (received + sent) |
-| Federation feed (`feed.jsonl`) | Bilateral channel transcripts |
-| Witness cache of OTHERS' public estates | Private trust signatures |
-| Activity timeline (own actions, public-shaped) | Personal memory / journal entries |
-| `private_estate_pointer` + commitment hash | Conversation history with patients/clients/partners |
-| `private_door_count` (transparency, no leak) | Private door rappids (doors not advertised publicly) |
-| ZERO PII | All PII |
+The original spec described the private estate as "where PII lives." That description traded one threat model for another:
 
-**The bridge:** the public beacon's `private_estate_pointer` field tells anyone who lands on the public estate: "this operator has private content; if you're authorized, fetch from `<that URL>` via `gh api` with your auth." Sniffers SURFACE the existence (count + commitment), NEVER attempt to fetch.
+- **Threat A — the public web sees PII.** Mitigated by putting PII in a GitHub-private repo (collaborator-gated). ✓
+- **Threat B — GitHub-the-vendor sees PII.** **NOT mitigated** by putting PII in a private repo. GitHub admins can read your private repos. A breach of GitHub exposes private repo contents. A subpoena to GitHub extracts your private repo without your knowledge. Future TOS changes around content scanning of private repos land first on the contents you most want unscanned.
+- **Threat C — collaborators-of-collaborators see PII.** A collaborator on your private repo who is also a collaborator on someone else's private repo can correlate contents. Not mitigated by repo-level access controls.
 
-**What the public never sees:** the contents of the private estate, its internal paths, the names of recipients, topic strings, dates of correspondence, or any other metadata that would allow an unauthorized viewer to characterize the private content.
+For most consumer use (personal notes, casual correspondence) Threat A is the only one that matters. For the use cases that monetize the platform — regulated industries, cross-org legal/financial/healthcare correspondence, M&A diligence, anything subpoenable — **Threats B and C are the ones that close deals**. A platform that ships PII straight to GitHub-private fails the second threat model and loses those buyers.
+
+**The fix:** make the local device the canonical home for PII; make the private repo the canonical home for the *bones* (workflow + sanitized structure that collaborators need to run the workflow). The two-tier-with-PII-in-private layout from `1.0` was a stepping-stone; the three-tier-with-PII-on-device layout from `1.1` is the ratified spec.
+
+This is a tightening, not a breaking change. Operators who already pushed PII into their private estate may keep doing so by exercising the explicit override (§1.6). New operators get the on-device default automatically. Existing data is not migrated by the platform — operators choose if and when to extract PII from their private repo onto the device.
+
+---
+
+## §1.6 — The override (operator-mediated, never automatic)
+
+The local-on-device default is just that — a default. Operators MAY put PII in the private repo when their use case calls for it. Examples:
+
+- **Compliance archival** — a regulated industry that requires off-device retention with audit trails the auditor can pull from a single repo.
+- **Public-by-construction engagements** — work where the customer name and outcome are PR material, the customer has explicitly consented to the engagement being public, and the operator wants the record co-located with the workflow.
+- **Sole-operator backup** — a single-operator neighborhood where the private repo IS the operator's backup of their own work.
+- **Cross-org diligence rooms** — a 72-hour ephemeral gate where both parties have agreed to ratify the contents into both their private estates.
+
+The override is **never automatic**. It is exercised by one of these explicit actions, in order of increasing intentionality:
+
+1. **Per-file:** the operator places a file directly inside `ses/<handle>/projects/<slug>/` (in the workspace, outside the gitignored local data directory). They consciously chose to put it there. The .gitignore does not exclude it. `git add` works. They commit it.
+
+2. **Per-engagement:** the operator marks a specific customer slug for repo-archival via `~/.brainstem/neighborhoods/<slug>/<handle>/customers/<slug>/.publish-to-repo` (a flag file). The factory + pinger respect this flag and copy the customer's sanitized-or-full content (operator's choice, named per-file in the flag's body) into the workspace at commit time.
+
+3. **Repo-wide:** the operator edits the workspace's `.gitignore` to remove the `.brainstem/` exclusion. This is highly unusual; it disables the on-device-canonical guarantee for the whole neighborhood. The brainstem warns when it detects this on next chat, but does not refuse — the operator is sovereign.
+
+4. **Encrypted-at-rest** (deferred — see `pages/vault/Decisions/2026-05-10 — Feature freeze (LFPE deferred).md`): a future Article XLVIII.7 may add client-side envelope encryption for the private estate, which would let operators push PII in encrypted form so even GitHub-the-vendor sees only ciphertext. This is not yet ratified.
+
+The override exists precisely so the spec doesn't dictate the operator's compliance posture. Defaults are local-canonical; intentional acts move data into the repo. Article VIII (operator-mediated) governs throughout.
+
+---
+
+---
+
+## §2 — The boundary (what goes where, by default)
+
+| Lives in PUBLIC estate | Lives in PRIVATE estate (the *bones*) | Lives LOCAL ON-DEVICE only (the *substance*) |
+|---|---|---|
+| Operator's personal rappid | Workflow agents (`agents/*_agent.py`) | Real names of customers / clients / patients |
+| Door catalog (rappids only) | Rapplications (`rapplications/<name>/`) | Email addresses, phone numbers, contracts |
+| Beacon (`.well-known/rapp-network.json`) | Sanitized member metadata (handle + role only) | Customer-specific outcomes, KPIs, contract values |
+| Federation feed (`feed.jsonl`) | Per-operator front doors (`ses/<handle>/`) — sanitized | Mailbox content (received + sent) |
+| Witness cache of OTHERS' public estates | `projects.json` per operator — slugs + status enums + dates ONLY | Bilateral channel transcripts |
+| Activity timeline (own actions, public-shaped) | `members.json` — handles + roles | Personal memory / journal entries |
+| `private_estate_pointer` + commitment hash | `neighborhood.json` + `rappid.json` + `soul.md` | Working notes, attachments, drafts |
+| `private_door_count` (transparency, no leak) | Manifest (`rar/index.json`) + sha256s | Voice recordings, screenshots, photos |
+| ZERO PII | ZERO PII by default — see §5 for explicit override | Everything that would be PII or competitive data |
+
+**The new bridge:** the private estate's `projects.json` per operator carries only an opaque slug, a status enum (`active` / `blocked` / `awaiting` / `shipped`), and a last-touched timestamp. The slug correlates to a customer-data directory ONLY on the operator's own device; teammates with collaborator access to the private repo see the slug + status, never the customer name behind it.
+
+**The .gitignore enforcement:** every planted neighborhood ships with a `.gitignore` excluding the local-on-device path (`.brainstem/`, `.bwat-data/`, etc). `git add` of any path under that exclusion fails by construction. PII reaching the private repo by accident is structurally impossible without the operator explicitly editing `.gitignore` (an action they will notice).
+
+**What the public never sees:** the contents of the private estate, its internal paths, recipient handles beyond what they consented to publish, topic strings, dates of correspondence, or any metadata that would allow an unauthorized viewer to characterize the private content.
+
+**What collaborators on the private estate see:** the workflow + sanitized member metadata + each operator's project slugs + status. They do NOT see PII, customer names, contract values, or any substance — that's on each operator's own device.
+
+**What GitHub-the-vendor sees:** the same as a collaborator on the private repo. Workflow code (which is identical across all operators of this neighborhood, so leaks no operator-specific intelligence) + sanitized metadata. A subpoena served to GitHub for an operator's private repo extracts the bones, not the substance.
 
 ---
 
