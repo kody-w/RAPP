@@ -3696,3 +3696,81 @@ Therefore every path inside the private repo carries **zero semantic information
 
 **Why this is constitutional and not a library choice:**
 Without this article, the platform's promise to operators handling sensitive work — doctors, lawyers, therapists, families coordinating PII — is a lie. Either they leak PII to public (because the platform made it easier than the alternative) or they leave (because the platform isn't safe for their context). Constitutionalizing the two-tier-mandatory + URL-opacity model means **the platform is structurally safe for sensitive work from minute 1**. The friction operators feel from "you have a private repo whether you want one or not" is the price of the substrate being load-bearing for real use cases. Federation primitives (mailbox, bilateral channel, etc.) become POSSIBLE only because this substrate exists.
+
+---
+
+## Article XLIX — A Twin Is A Persistent AI Presence With An Address And A Workbench
+
+> **A "twin" is the unit of AI personality in this substrate.** Not an agent (which is a tool), not an organism (which is the whole running brainstem), not a rapplication (which is a graduated-quality persona). A twin is a persistent AI presence: it has a permanent identity (rappid), a voice (soul.md), a working area (workbench), and lifecycle continuity across kernel upgrades. Multiple twins can co-host on one brainstem; siblings on the same device can peek into each other's workbenches; cross-device collaboration travels via egg or via the bilateral channels of Article XLVIII.
+
+The platform has used "twin" loosely throughout earlier articles — Article XLVI.2 stipulates that `kind: twin | operator → front_door`; planted twins (BillTwin, BillTwinAgent, kody-twin, tide-brainstem, lumen-brainstem) appear in `plant_seed_agent.py`; the twin-as-owner-proxy concept is anchored in Article XXV. This article formalizes the primitive so all those references resolve to one definition.
+
+Authority for the spec: this article + `pages/docs/PUBLIC_PRIVATE_BOUNDARY.md` §1.7 (workbench substrate). Conformance: `tests/features/F17-twin-primitive.sh` (planned).
+
+### XLIX.1 — What a twin IS (and isn't)
+
+A **twin** is:
+
+- A persistent AI presence with a **permanent rappid** (Article XLVI v2 format) — survives every kernel upgrade via the egg→overlay→hatch bond cycle (Article XXXVII).
+- A voice anchored in a **`soul.md`** file — the disposition the LLM adopts when speaking as this twin.
+- A **workbench** at `~/.brainstem/workbenches/<slug>/` (or via association with one) where the twin's working state lives — see PUBLIC_PRIVATE_BOUNDARY §1.7.
+- A **single AI presence behind a front_door** — Article XLVI.2 (`kind: twin → front_door`).
+- Sibling-aware on its own device — other twins co-hosted by the same brainstem can peek into this twin's workbench by default (PUBLIC_PRIVATE_BOUNDARY §1.7.3).
+
+A twin is **not**:
+
+- An agent. Agents are single-file `*_agent.py` tools (Article XXXIII). A twin USES agents. An agent is not a twin.
+- An organism. An organism is the whole running brainstem with all its agents, organs, senses, memory, secrets (Article XXXVII). A twin LIVES IN an organism. Multiple twins can co-host one organism.
+- A rapplication. A rapplication is a graduated, certified workflow shipped as one (Article XXXVII). A twin can BE the entry agent of a rapplication, but the twin and the rapplication are different units.
+- A neighborhood. A neighborhood is a community gate (Article XLVI.2 `kind: neighborhood → gate`). A twin can be a member of a neighborhood; a twin is not itself a neighborhood.
+
+### XLIX.2 — Two species: owner-proxy twins and planted twins
+
+The platform supports two twin shapes that share the primitive:
+
+**Owner-proxy twin.** A twin that represents the operator themselves. Per Article XXV, the twin is "redefined as owner-proxy" — when the operator's brainstem speaks as this twin, the LLM is acting AS the operator (with their voice, their patterns, their consent boundary). Identity: the operator's own rappid (`~/.brainstem/rappid.json`) doubles as the owner-proxy twin's rappid. The owner-proxy twin's workbench is the operator's universal working area.
+
+**Planted twin.** A twin that represents a distinct entity — an organization, a colleague's persona, a published character, a digital figure. Identity: a fresh rappid minted by `plant_seed_agent.py` (kind: twin). The twin's home is its planted public repo (e.g. `kody-w/heimdall`, `kody-w/tide-brainstem`); each operator who runs this twin spawns a local instance in their brainstem with a sibling-peekable workbench.
+
+Both species share the identity, voice, workbench, and front_door semantics. They differ only in whose voice they carry and whose rappid they wear.
+
+### XLIX.3 — Lifecycle: mint → bond → fork → die
+
+A twin's life follows the kernel's organism lifecycle (Article XXXVII) at twin scope:
+
+- **Mint.** First rappid generated. For the owner-proxy twin, this happens in the install one-liner. For a planted twin, this happens when `plant_seed_agent.py` runs with `kind: twin`. The mint event records the parent rappid (the planter's identity, which becomes this twin's lineage anchor — Article XXXIV variant attestation).
+- **Bond.** Each kernel upgrade preserves the twin's rappid, soul, workbench, and bond log via the egg→overlay→hatch cycle. The twin's identity is durable.
+- **Fork.** A twin MAY fork (Article XLVII allows variant attestation chains). Forks are signed; the variant attestation envelope chains parent → fork. Forks may diverge in soul / workbench while preserving lineage.
+- **Die.** A twin MAY die when its operator decides — by deleting its workbench + soul + bond record. Dead twins leave a tombstone (rappid + final commit) but no further activity. Per Article XLVII their rappid remains globally addressable forever (the URLs resolve to the final state); only the heartbeat goes silent.
+
+### XLIX.4 — Workbench association (the default permissive cross-twin peek)
+
+Per PUBLIC_PRIVATE_BOUNDARY §1.7, a twin's workbench lives at `~/.brainstem/workbenches/<slug>/`. The workbench's `meta.json` lists `twin_rappids[]` — the twins that consider this workbench part of their working set.
+
+**Default:** any twin running on the operator's device can read any other twin's workbench by walking `~/.brainstem/workbenches/`. The default is permissive because all twins on the device share the same operator + the same OS-level trust boundary. A planted twin (BillTwin) running in your brainstem can read your owner-proxy twin's workbench to learn context; your owner-proxy twin can read BillTwin's workbench to see what BillTwin is currently working on.
+
+**Opt-out:** a workbench's `meta.json` MAY set `peers_visible: false` to restrict reads to its listed `twin_rappids[]`. The operator owns this choice per workbench.
+
+**Cross-device peek is NOT default.** A twin on your laptop cannot peek into a twin on someone else's machine without one of: an explicit egg sneakernet (Article XLVII.5), a bilateral channel exchange (Article XLVIII), or a federated estate read (the chain rule, Article XLVI). Local peek is permissive; cross-device requires intent.
+
+### XLIX.5 — Where else "twin" appears (cross-references)
+
+This article is the canonical definition. Earlier articles that use "twin" should be read against this definition:
+
+- **Article XXV** (load-bearing decisions): twin redefined as owner-proxy. Now: that's species 1 of XLIX.2.
+- **Article XLVI.2** (door types): `kind: twin → front_door`. Now: every twin (both species) gets a `front_door`.
+- **Article XLVII** (discoverability): planted twins emit a public estate. Now: planted twin = species 2 of XLIX.2.
+- **Article XLVIII** (two-tier estate): the bilateral channel is operator-to-operator, which means twin-to-twin in practice. Owner-proxy twins exchange letters via the channel.
+- **`pages/docs/PUBLIC_PRIVATE_BOUNDARY.md` §1.7** (workbench): the workbench is per-twin per this article.
+- **`rapp_brainstem/agents/plant_seed_agent.py`** (planter): the implementation of "mint a planted twin" per XLIX.3.
+- **`rapp_brainstem/agents/twin_agent.py`** (kernel default twin): the canonical reference twin agent.
+- **The BWAT neighborhood (`agents/bill_twin_agent.py`)**: a planted twin in the wild, conforming to this article.
+- **`pages/docs/SUBSTRATE_FEDERATION.md`**: substrate-portable twins — the rappid + workbench can move between GitHub / GitLab / Codeberg per Article XLVII.5.
+
+If you find a place in the platform that uses "twin" without obeying this article, file the discrepancy as an issue. The article is the spec; the references update.
+
+### XLIX.6 — What this article does NOT change
+
+This article formalizes a primitive that already existed; it does not break any existing twin. Existing planted twins (BillTwin, kody-twin, heimdall, tide-brainstem, lumen-brainstem, echo-brainstem, sim-demo-twin) continue to function. The only new requirement is conformance with §XLIX.4 (workbench peek discipline) when the twin is running on a brainstem that hosts other twins. Workbench paths that don't yet exist for an existing twin can be created by the operator on first peek-attempt (the brainstem auto-creates the empty workbench dir + meta.json with `twin_rappids: [<this twin's rappid>]` and `peers_visible: true`).
+
+**Why this is constitutional and not a library choice:** the loose use of "twin" across the platform was an inconsistency that made the substrate harder to reason about. Operators building planted twins didn't have a reference for what "twin" meant; agents that wanted to read twin state didn't know where to look; collaborators planting twin-shaped things into RAPP had to derive the contract by reading source code. This article is the reference implementation in prose. The substrate is more usable when its primitives are named and defined; this article names "twin."

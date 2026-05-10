@@ -69,6 +69,51 @@ The override exists precisely so the spec doesn't dictate the operator's complia
 
 ---
 
+## §1.7 — Workbench is the canonical local-tier primitive (per-twin, sibling-peekable)
+
+The local on-device tier is structured as **workbenches**. A workbench is one twin's working area for one ongoing thing — a customer engagement, a research thread, a personal project, a code experiment, a pattern they're debugging, anything. The customer-data dir from BWAT (`~/.brainstem/neighborhoods/<slug>/<handle>/customers/`) is one specialization; the generic primitive is broader.
+
+### §1.7.1 — Path convention
+
+```
+~/.brainstem/workbenches/
+├── <workbench-slug>/
+│   ├── meta.json                ← {owner_rappid, twin_rappids[], type, created, neighborhood?, peers_visible}
+│   ├── status.json              ← schema-versioned status enum + last-touched
+│   ├── notes.md                 ← working notes
+│   ├── (any files the twin needs — outcomes, intakes, attachments, scratch)
+│   └── attachments/
+└── <another-workbench-slug>/
+```
+
+Workbench slugs are operator-chosen (e.g. `acme-corp-q3`, `mars-physics-paper`, `house-renovation-2026`). The slug is the only identifier that ever leaves the device by default — the contents are local-only per §1.5.
+
+The pre-existing path `~/.brainstem/neighborhoods/<slug>/<handle>/customers/<project>/` from BWAT and similar neighborhoods continues to work as a specialized form (`type: "customer-engagement"` in meta.json, neighborhood field set). Operators MAY use either path layout; the canonical local-tier primitive is the workbench.
+
+### §1.7.2 — Per-twin association
+
+A workbench's `meta.json` includes `twin_rappids[]` — the list of twins that consider this workbench part of their working set. A twin's own workbench is one where its rappid appears in that list.
+
+The operator's primary twin (rappid in `~/.brainstem/rappid.json`) implicitly owns every workbench unless the workbench explicitly opts out. Planted twins (BillTwin, AliceTwin, neighborhood twins) become workbench-associated when the operator runs them on a workbench.
+
+### §1.7.3 — Sibling peek (cross-twin local collaboration)
+
+**Default:** any twin running on the operator's device can read any other twin's workbench by walking `~/.brainstem/workbenches/`. The default is permissive because all twins on the device share the same operator + the same trust boundary (the operator's user account on their machine).
+
+**Why this matters:** cross-twin collaboration becomes a local file read. BillTwin working on a customer engagement can ask AliceTwin's workbench "what did you learn last quarter on a similar engagement?" without any network call, any vendor, any RPC, any auth. The two twins are both local; the workbench is the substrate they share.
+
+**Opt-out:** a workbench's `meta.json` MAY set `peers_visible: false` to restrict reads to the workbench's listed `twin_rappids[]` only. Sibling twins receive a "permission denied by workbench owner" instead of contents. This is the workbench owner's choice, not a kernel-imposed restriction.
+
+**Opt-in cross-device:** sibling-peek is local-only by default. Cross-device workbench sharing requires either (a) explicit sneakernet of the workbench (zip + AirDrop, like an egg), or (b) the override paths in §1.6 to push specific workbench contents into the repo. There is no automatic cross-device peek.
+
+### §1.7.4 — Implication for agents
+
+Agents that need to read a workbench MUST go through `~/.brainstem/workbenches/` as the canonical entry point. Agents that need to write to a workbench MUST honor its `peers_visible` setting. Agents that create workbenches MUST set `meta.json` with at minimum `owner_rappid`, `created`, and `twin_rappids[]` (which can be `[<the-creating-twin's-rappid>]`).
+
+Workbench discovery is filesystem-native: `ls ~/.brainstem/workbenches/` returns the slugs; reading each `meta.json` returns the indexable metadata. No registry. No central index. The filesystem IS the index.
+
+---
+
 ---
 
 ## §2 — The boundary (what goes where, by default)
@@ -83,7 +128,7 @@ The override exists precisely so the spec doesn't dictate the operator's complia
 | Activity timeline (own actions, public-shaped) | `members.json` — handles + roles | Personal memory / journal entries |
 | `private_estate_pointer` + commitment hash | `neighborhood.json` + `rappid.json` + `soul.md` | Working notes, attachments, drafts |
 | `private_door_count` (transparency, no leak) | Manifest (`rar/index.json`) + sha256s | Voice recordings, screenshots, photos |
-| ZERO PII | ZERO PII by default — see §5 for explicit override | Everything that would be PII or competitive data |
+| ZERO PII | ZERO PII by default — see §1.6 for explicit override | Per-twin workbenches at `~/.brainstem/workbenches/<slug>/` (canonical, per §1.7) — siblings on the same device can peek by default |
 
 **The new bridge:** the private estate's `projects.json` per operator carries only an opaque slug, a status enum (`active` / `blocked` / `awaiting` / `shipped`), and a last-touched timestamp. The slug correlates to a customer-data directory ONLY on the operator's own device; teammates with collaborator access to the private repo see the slug + status, never the customer name behind it.
 
