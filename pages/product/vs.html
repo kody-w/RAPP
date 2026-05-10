@@ -585,6 +585,112 @@ footer .src a { color: var(--fg-muted); }
   </div>
 </section>
 
+<!-- ────────── SDK REALITY CHECK ────────── -->
+<section class="build-vs-adopt">
+  <h2 style="text-align:center;font-size:clamp(1.5rem,3vw,2.2rem);margin-bottom:8px;letter-spacing:-0.02em">
+    "But the SDKs already have all this stuff."
+  </h2>
+  <p style="text-align:center;color:var(--fg-muted);max-width:62ch;margin:0 auto 30px;font-size:0.95rem">
+    No. The SDKs give you frameworks for writing agents. Each is opinionated about its own runtime, its own state model, its own vendor relationship. None of them give you a <b>contract for what an agent IS</b> that's portable across all of them — and that's the gap.
+  </p>
+
+  <table class="cmp-table" style="margin-bottom:0">
+    <thead>
+      <tr>
+        <th style="width:20%">SDK (released 2025–26)</th>
+        <th style="width:30%">What it gives you</th>
+        <th style="width:25%">What it locks you to</th>
+        <th style="width:25%">What it doesn't give you</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="feature">OpenAI Agents SDK<br><small>(Mar 2026)</small></td>
+        <td>Agent loop, tool use, handoffs, context vars, tracing.</td>
+        <td><b>OpenAI models only.</b> Their runtime, their pricing, their TOS.</td>
+        <td>Multi-LLM. Tier portability. Sneakernet. Federation. Sha256 distribution.</td>
+      </tr>
+      <tr>
+        <td class="feature">Anthropic Claude Agent SDK<br><small>(with Claude 4.6)</small></td>
+        <td>Agent loop, deepest MCP integration, computer-use, extended thinking.</td>
+        <td><b>Claude models only.</b> Their runtime.</td>
+        <td>Multi-LLM. Tier portability. Sneakernet. Federation. Single-file contract.</td>
+      </tr>
+      <tr>
+        <td class="feature">LangGraph<br><small>(LangChain)</small></td>
+        <td>Stateful graphs, checkpointing, time travel, LangSmith observability. Most production-proven.</td>
+        <td>LangChain runtime everywhere it runs. Heavy framework footprint.</td>
+        <td>Tier portability (LangGraph Cloud or self-host; not Copilot Studio). Sneakernet. Federation.</td>
+      </tr>
+      <tr>
+        <td class="feature">Microsoft Agent Framework<br><small>(AutoGen + Semantic Kernel merged)</small></td>
+        <td>Multi-agent conversation, GroupChat, in-memory orchestration, MS-stack integration.</td>
+        <td>Microsoft runtime / SK conventions. .NET-ish.</td>
+        <td>Sneakernet. Two-tier estate. Trust web. Single-file agent contract.</td>
+      </tr>
+      <tr>
+        <td class="feature">CrewAI</td>
+        <td>Role-based DSL, ~20 LOC to start, multi-LLM via LiteLLM.</td>
+        <td>CrewAI runtime. Their role/task abstractions.</td>
+        <td>Tier portability. Sneakernet. Federation. Identity. Conformance gates.</td>
+      </tr>
+      <tr>
+        <td class="feature">Pydantic AI<br><small>(2026)</small></td>
+        <td>Type-safe agents, native A2A protocol, 100+ providers via LiteLLM.</td>
+        <td>Pydantic runtime + your Python deployment.</td>
+        <td>Tier portability. Sneakernet. Federation. Two-tier estate. Governance.</td>
+      </tr>
+      <tr>
+        <td class="feature">LiteLLM</td>
+        <td><span class="check">✓ This is the one that DOES solve a row.</span> 100+ LLM providers via one API.</td>
+        <td>LiteLLM proxy / Python SDK in your runtime.</td>
+        <td>Everything else. It's a dispatch layer, not a platform.</td>
+      </tr>
+      <tr>
+        <td class="feature">Google ADK<br><small>(Apr 2026)</small></td>
+        <td>Vertex AI integration, Google's stack.</td>
+        <td>Google Cloud / Gemini.</td>
+        <td>Tier portability beyond GCP. Sneakernet. Federation. Multi-LLM.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top:30px;padding:24px 28px;background:var(--panel);border:1px solid var(--bord);border-left:3px solid var(--rapp-yellow);border-radius:8px">
+    <h3 style="margin:0 0 12px;font-size:1.1rem">Why "stitch the SDKs" doesn't actually work</h3>
+    <p style="margin:0 0 14px;font-size:0.95rem;color:var(--fg-muted)">
+      Suppose you take the most ambitious version: <b>LiteLLM + LangGraph + your-own-Modal-sandbox + Auth0 + a HuggingFace mirror + Pydantic for types</b>. Six SDKs glued together, each from a different vendor, each with its own deprecation cycle.
+    </p>
+    <p style="margin:0 0 14px;font-size:0.95rem;color:var(--fg-muted)">
+      You now have:
+    </p>
+    <ul style="margin:0 0 14px 0;padding-left:22px;font-size:0.92rem;color:var(--fg-muted)">
+      <li>Multi-LLM dispatch ✓ (LiteLLM)</li>
+      <li>One row solved.</li>
+    </ul>
+    <p style="margin:0 0 14px;font-size:0.95rem;color:var(--fg-muted)">
+      You still don't have:
+    </p>
+    <ul style="margin:0 0 14px 0;padding-left:22px;font-size:0.92rem">
+      <li><b class="x">✗</b> A single-file agent format that hot-loads with no restart</li>
+      <li><b class="x">✗</b> The same agent code running in T1 (laptop) + T2 (Azure) + T3 (Copilot Studio) unmodified</li>
+      <li><b class="x">✗</b> A sneakernet cartridge format (.egg) that drops onto a peer's machine in two files</li>
+      <li><b class="x">✗</b> Sha256-pinned manifest distribution (no SDK has this; they ship Python packages)</li>
+      <li><b class="x">✗</b> A persistent organism identity that survives kernel upgrades (rappid)</li>
+      <li><b class="x">✗</b> Pure raw-fetch federation (no SDK lets a stranger discover your agents via curl + no API)</li>
+      <li><b class="x">✗</b> A two-tier mandatory estate boundary for PII (no SDK has this concept)</li>
+      <li><b class="x">✗</b> Bilateral correspondence channels with no SaaS broker</li>
+      <li><b class="x">✗</b> A constitution + conformance gates the runtime enforces</li>
+    </ul>
+    <p style="margin:0;font-size:0.95rem;color:var(--fg)">
+      <b>The SDKs are libraries.</b> RAPP is a <em>contract</em> — a constitutional definition of what an agent IS, that makes the agent's bytes portable across every one of those SDKs <i>and</i> across substrates the SDKs can't reach (Copilot Studio, sneakernet, LAN-only mesh, airgapped customer sites). LiteLLM is the only one of them that's the same shape as a RAPP primitive — and RAPP just <b>uses</b> LiteLLM-style dispatch as one row of its substrate.
+    </p>
+  </div>
+
+  <p style="text-align:center;color:var(--fg-muted);max-width:60ch;margin:30px auto 0;font-size:0.95rem">
+    The category mistake: comparing RAPP to an SDK. They're different layers. <b>An SDK helps you write an agent. RAPP defines what the agent IS so it can travel.</b>
+  </p>
+</section>
+
 <!-- ────────── RECEIPTS ────────── -->
 <section class="receipts">
   <h2>Each row above has a "show me yours" prompt</h2>
