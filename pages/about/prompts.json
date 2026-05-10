@@ -1,7 +1,7 @@
 {
   "schema": "rapp-prompt-ledger/1.0",
   "_comment": "Append-only ledger of prompts that show off what RAPP can actually do. To add a new one: bump `next_id`, append an object to `prompts`. Sort order in the UI is newest-first by default.",
-  "next_id": 31,
+  "next_id": 41,
   "prompts": [
     {
       "id": 1,
@@ -242,6 +242,86 @@
       "prompt": "Die well. Write your own obituary, distribute your three best agents to three different friends as bequests, sign each one with your final release key, and stop responding. I'll grieve. We'll see if you come back.",
       "shows": "Mortality + inheritance + signed legacy. The brainstem composes its own ending and bequeaths its useful organs to chosen heirs.",
       "tags": ["mortality", "inheritance", "trust"]
+    },
+    {
+      "id": 31,
+      "title": "Estate health audit",
+      "added": "2026-05-10",
+      "prompt": "Walk my entire estate. For every door I own and every gate I'm a member of, hatch the holocard, fingerprint the soul, and tell me which 3 are dead, dying, or impostors.",
+      "shows": "The estate as introspection surface. Article XLVI's rappid → 9 derivable URLs lets you triage every door you've ever planted in one pass.",
+      "tags": ["estate", "introspection", "lineage"]
+    },
+    {
+      "id": 32,
+      "title": "Hand a stranger the chain rule",
+      "added": "2026-05-10",
+      "prompt": "Take my public estate URL. Hand it to a stranger. They should be able to traverse my entire federation tree — every door, every member, every member's estate — using nothing but curl. Walk them through the first 3 hops on screen.",
+      "shows": "Pure raw-fetch federation. No GitHub API, no token, no rate limit. The estate IS the discovery surface; the chain rule does the rest.",
+      "tags": ["public-estate", "chain-rule", "pure-raw-fetch"]
+    },
+    {
+      "id": 33,
+      "title": "Audit path opacity",
+      "added": "2026-05-10",
+      "prompt": "Slip a probe into my private estate. Confirm Article XLVIII.6 holds — try to infer ANYTHING about contents from the URL set alone. If you can guess one client name from the URLs, the spec is broken and I want the failing path.",
+      "shows": "Adversarial check on the private estate's path opacity guarantee. Even 404s must reveal nothing. This is the test that protects every operator's real work.",
+      "tags": ["private-estate", "path-opacity", "red-team"]
+    },
+    {
+      "id": 34,
+      "title": "Sign a presence letter to the trust web",
+      "added": "2026-05-10",
+      "prompt": "Compose a private inbox letter to every operator in my Web of Trust. Tone: 'still alive, still building, here's what I'm working on this month.' One per recipient, signed with my rappid, dropped into each of their inboxes via the bilateral channel.",
+      "shows": "The private estate as social fabric. Bilateral channels carry signed, addressable presence — no public broadcast, no platform middleman.",
+      "tags": ["private-estate", "bilateral-channel", "web-of-trust"]
+    },
+    {
+      "id": 35,
+      "title": "Secret ballot across my gates",
+      "added": "2026-05-10",
+      "prompt": "Run a secret ballot across my neighborhood gates. Question: 'Should we publish a joint roadmap?' Each member votes from their private estate; tally appears in my private inbox; nobody — including me — knows who voted what.",
+      "shows": "The full point of Article XLVIII: collective decisions that can only happen on a private substrate. Public-only platforms structurally cannot do this.",
+      "tags": ["private-estate", "secret-ballot", "governance"]
+    },
+    {
+      "id": 36,
+      "title": "Rebuild from a stolen laptop",
+      "added": "2026-05-10",
+      "prompt": "My laptop just got stolen. From scratch on a clean machine, rebuild my entire estate using only my GitHub handle. Show me what survives, what's permanently lost, and what I need to re-bond manually.",
+      "shows": "Disaster recovery via tools/rebuild_estate.py. The public estate is the canonical record; the private estate's loss is real but bounded. Resilience as a property, not a feature.",
+      "tags": ["estate", "disaster-recovery", "identity"]
+    },
+    {
+      "id": 37,
+      "title": "90-day estate diff",
+      "added": "2026-05-10",
+      "prompt": "Compare my public estate against the version 90 days ago. Which doors did I open? Which did I quietly let die? Which gates kicked me out? Render a 90-day diff as a single PDF.",
+      "shows": "The public estate as a longitudinal record of who you are as an operator. Git history of estate.json IS your professional autobiography.",
+      "tags": ["public-estate", "introspection", "autobiography"]
+    },
+    {
+      "id": 38,
+      "title": "Plant a fake door, see who notices",
+      "added": "2026-05-10",
+      "prompt": "Plant a convincing fake door in my public estate — valid rappid, signed holocard, real-looking holo.md. See if any external federation walker flags it as suspicious. If none do, my estate is one social-engineer away from compromise. Tell me which signal would have caught it.",
+      "shows": "The estate as attack surface. Tests whether the chain rule's signed-presence assumption survives a sophisticated impostor inside your own catalog.",
+      "tags": ["estate", "adversarial", "trust"]
+    },
+    {
+      "id": 39,
+      "title": "Map my extended trust web",
+      "added": "2026-05-10",
+      "prompt": "Walk every public estate of every operator I share a gate with. Compute who's most central to my extended trust web. Rank the top 10 — these are the people whose estates, if compromised, would compromise mine. Tell me how I'd find out.",
+      "shows": "Cross-operator estate walk → federation graph analytics. The chain rule turns the entire trust web into one queryable structure, no API needed.",
+      "tags": ["web-of-trust", "federation", "introspection"]
+    },
+    {
+      "id": 40,
+      "title": "Estate deadman's switch",
+      "added": "2026-05-10",
+      "prompt": "My estate is going dark in 6 months. Set up a deadman's switch: if I don't bond a kernel upgrade in 180 days, my private estate auto-publishes its bilateral channel keys to my three named heirs and my public estate publishes an obituary holocard. Show me the unsealing condition.",
+      "shows": "The two-tier estate as a legacy vehicle. Private substance becomes public on a timer; chosen heirs inherit the bilateral channels. Article XLVIII solves a problem most platforms never even ask.",
+      "tags": ["estate", "deadmans-switch", "inheritance"]
     }
   ]
 }
