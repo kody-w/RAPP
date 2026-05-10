@@ -198,6 +198,54 @@ _NETWORK_TOPIC = "rapp-estate"
 _BEACON_SCHEMA = "rapp-network-beacon/1.1"  # bumped for Article XLVIII (private extension)
 
 
+def _grail_template_path() -> str:
+    """Resolve tools/templates/rapp_estate_grail.html relative to this agent."""
+    here = os.path.abspath(__file__)
+    for cand in (
+        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(here))),
+                     "tools", "templates", "rapp_estate_grail.html"),
+        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(here)))),
+                     "tools", "templates", "rapp_estate_grail.html"),
+    ):
+        if os.path.isfile(cand):
+            return cand
+    return ""
+
+
+def _build_grail_page(github_user: str) -> bytes | None:
+    """Read the grail template + substitute {HANDLE} placeholders.
+
+    Returns bytes ready for `gh api PUT`, or None if the template is missing.
+    The page is JS-driven (fetches estate.json at runtime); only OG meta + the
+    'View source' link + the rebuild example need substitution. Everything
+    else is universal across operators.
+    """
+    path = _grail_template_path()
+    if not path:
+        return None
+    try:
+        body = open(path, "r", encoding="utf-8").read()
+    except Exception:
+        return None
+    return body.replace("{HANDLE}", github_user).encode("utf-8")
+
+
+def _gh_enable_pages_for(repo: str) -> tuple[bool, str]:
+    """Idempotently enable GitHub Pages for `<owner>/<name>`.
+    Already-enabled is treated as success. Private repos on free plan return
+    HTTP 422 ('plan does not support Pages') — surfaced in the message but
+    not raised, since the raw URL is still reachable for read.
+    """
+    rc_check, _, _ = _gh(["api", f"/repos/{repo}/pages"])
+    if rc_check == 0:
+        return True, "already-enabled"
+    rc, _, err = _gh(["api", "-X", "POST", f"/repos/{repo}/pages",
+                      "-f", "source[branch]=main", "-f", "source[path]=/"])
+    if rc == 0:
+        return True, "enabled"
+    return False, err.strip()[:160]
+
+
 def _read_private_extension_for(github_user: str) -> dict:
     """Look up the operator's private extension info — REQUIRED for Article XLVIII.
 
@@ -416,6 +464,60 @@ def _publish_to_github(estate: dict, github_user: str, create_if_missing: bool,
 
     # ─── 3. Set repo topic so `gh search repos topic:rapp-estate` finds us ──
     _ensure_topic(repo, _NETWORK_TOPIC)  # non-blocking; main publish already succeeded
+
+    # ─── 4. Push the grail page (index.html) + .nojekyll + enable Pages ──
+    # So <handle>.github.io/rapp-estate/ serves a human-friendly view of the
+    # operator's estate (renders estate.json live via vanilla JS). Without this,
+    # the human-shareable URL would 404 even though the raw catalog is fine.
+    grail_bytes = _build_grail_page(github_user)
+    grail_status = "skipped: template not found"
+    if grail_bytes is not None:
+        # PUT index.html (idempotent; needs sha if it already exists)
+        rc_get, out_get, _ = _gh(["api", f"/repos/{repo}/contents/index.html"])
+        ix_sha_args = []
+        if rc_get == 0:
+            try:
+                sha = json.loads(out_get).get("sha", "")
+                if sha:
+                    ix_sha_args = ["-f", f"sha={sha}"]
+            except Exception:
+                pass
+        ix_b64 = base64.b64encode(grail_bytes).decode("ascii")
+        rc_ix, _, ix_err = _gh([
+            "api", "-X", "PUT", f"/repos/{repo}/contents/index.html",
+            "-f", f"message=grail: rapp-estate front door @ {_now_iso()}",
+            "-f", f"content={ix_b64}",
+            *ix_sha_args,
+        ])
+        if rc_ix == 0:
+            grail_status = "pushed"
+        else:
+            grail_status = f"index.html PUT failed: {ix_err.strip()[:120]}"
+
+        # PUT .nojekyll so Pages serves index.html literally (no Jekyll processing)
+        rc_nj_get, out_nj_get, _ = _gh(["api", f"/repos/{repo}/contents/.nojekyll"])
+        nj_sha_args = []
+        if rc_nj_get == 0:
+            try:
+                sha = json.loads(out_nj_get).get("sha", "")
+                if sha:
+                    nj_sha_args = ["-f", f"sha={sha}"]
+            except Exception:
+                pass
+        _gh([
+            "api", "-X", "PUT", f"/repos/{repo}/contents/.nojekyll",
+            "-f", f"message=grail: .nojekyll for Pages literal serving",
+            "-f", "content=",
+            *nj_sha_args,
+        ])  # non-blocking
+
+        # Enable Pages so the URL actually serves
+        pages_ok, pages_msg = _gh_enable_pages_for(repo)
+        audit["pages_enabled"] = pages_ok
+        audit["pages_status"] = pages_msg
+
+    audit["grail_status"] = grail_status
+    audit["grail_url"] = f"https://{github_user}.github.io/rapp-estate/"
 
     return True, _RAW_URL_TEMPLATE.format(user=github_user), audit
 
@@ -699,13 +801,19 @@ class EstateAgent(BasicAgent):
                 "action": "publish",
                 "github_user": github,
                 "result": msg,
-                "public_url": _RAW_URL_TEMPLATE.format(user=github) if ok else None,
+                "public_url":          _RAW_URL_TEMPLATE.format(user=github) if ok else None,
+                "grail_url":           audit.get("grail_url", ""),
                 "auto_created_private": audit.get("auto_created_private", False),
                 "private_status":       audit.get("private_status", ""),
+                "grail_status":         audit.get("grail_status", ""),
+                "pages_enabled":        audit.get("pages_enabled"),
+                "pages_status":         audit.get("pages_status", ""),
                 "_xlviii_note": (
                     "Article XLVIII.1: publish is constitutionally atomic two-tier. "
                     "If your private estate didn't exist, it was auto-created. "
-                    "Pass skip_private_create=true to opt out (beacon will be flagged compliance: legacy)."
+                    "Grail page (index.html) + Pages auto-deploy so your "
+                    "<handle>.github.io/rapp-estate/ is human-shareable from minute 1. "
+                    "Pass skip_private_create=true to opt out (beacon flagged compliance: legacy)."
                 ),
             }, indent=2)
 
