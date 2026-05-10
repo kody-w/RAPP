@@ -193,6 +193,48 @@ def _fetch_remote(github_user: str) -> dict:
         return json.loads(r.read())
 
 
+_NETWORK_BEACON_PATH = ".well-known/rapp-network.json"
+_NETWORK_TOPIC = "rapp-estate"
+_BEACON_SCHEMA = "rapp-network-beacon/1.0"
+
+
+def _build_network_beacon(estate: dict, github_user: str) -> dict:
+    """Construct the .well-known/rapp-network.json beacon. Per Article XLVII:
+    publishing the beacon IS the network signal. No central registry exists;
+    sniffers use `gh search repos topic:rapp-estate` + this beacon to discover
+    new estates."""
+    return {
+        "schema": _BEACON_SCHEMA,
+        "operator_rappid": estate.get("owner", {}).get("rappid", ""),
+        "github": github_user,
+        "estate_url": _RAW_URL_TEMPLATE.format(user=github_user),
+        "estate_html_url": f"https://kody-w.github.io/RAPP/" if github_user == "kody-w" else "",
+        "grail_url": f"https://{github_user}.github.io/rapp-estate/",
+        "protocol": {
+            "spec_version": "rapp-protocol/1.0",
+            "estate_schema": "rapp-estate/1.1",
+            "implements": [
+                "article-xlvi",
+                "article-xlvi.6",
+                "article-xlvii",
+            ],
+            "spec_url": "https://raw.githubusercontent.com/kody-w/RAPP/main/specs/SPEC.md",
+        },
+        "discovery": {
+            "indexable": True,
+            "consent": "public-discovery-ok",
+            "federation_hints": [],
+            "_note": "Set indexable=false to opt out of network sniffing. Honor like robots.txt.",
+        },
+        "minted_at": _now_iso(),
+        "_note": (
+            "Network sniffers: this beacon confirms a public RAPP estate. "
+            "Discovery via `gh search repos topic:rapp-estate`; this file "
+            "validates each match. See https://raw.githubusercontent.com/kody-w/RAPP/main/CONSTITUTION.md (Article XLVII)."
+        ),
+    }
+
+
 def _publish_to_github(estate: dict, github_user: str, create_if_missing: bool) -> tuple[bool, str]:
     repo = f"{github_user}/rapp-estate"
     rc_check, _, _ = _gh(["repo", "view", repo])
@@ -206,6 +248,7 @@ def _publish_to_github(estate: dict, github_user: str, create_if_missing: bool) 
         if rc_create != 0:
             return False, f"gh repo create failed: {err.strip()[:200]}"
 
+    # ─── 1. PUT estate.json ────────────────────────────────────────────
     body = json.dumps(estate, indent=2).encode("utf-8")
     b64 = base64.b64encode(body).decode("ascii")
 
@@ -227,7 +270,54 @@ def _publish_to_github(estate: dict, github_user: str, create_if_missing: bool) 
     ])
     if rc_put != 0:
         return False, f"gh api PUT failed: {err.strip()[:200]}"
+
+    # ─── 2. PUT .well-known/rapp-network.json (Article XLVII beacon) ────
+    beacon = _build_network_beacon(estate, github_user)
+    beacon_body = json.dumps(beacon, indent=2).encode("utf-8")
+    beacon_b64 = base64.b64encode(beacon_body).decode("ascii")
+    beacon_sha_args = []
+    rc_bget, out_bget, _ = _gh(["api", f"/repos/{repo}/contents/{_NETWORK_BEACON_PATH}"])
+    if rc_bget == 0:
+        try:
+            sha = json.loads(out_bget).get("sha", "")
+            if sha:
+                beacon_sha_args = ["-f", f"sha={sha}"]
+        except Exception:
+            pass
+    _gh([
+        "api", "-X", "PUT", f"/repos/{repo}/contents/{_NETWORK_BEACON_PATH}",
+        "-f", f"message=beacon: rapp-network signal @ {_now_iso()}",
+        "-f", f"content={beacon_b64}",
+        *beacon_sha_args,
+    ])  # non-blocking — main publish already succeeded
+
+    # ─── 3. Set repo topic so `gh search repos topic:rapp-estate` finds us ──
+    _ensure_topic(repo, _NETWORK_TOPIC)  # non-blocking; main publish already succeeded
+
     return True, _RAW_URL_TEMPLATE.format(user=github_user)
+
+
+def _ensure_topic(repo: str, topic: str) -> bool:
+    """Idempotently add `topic` to a repo's topic list without clobbering others.
+    Used to make published estate repos discoverable via `gh search repos topic:rapp-estate`.
+    """
+    rc_get, out_get, _ = _gh(["api", f"/repos/{repo}/topics",
+                                "-H", "Accept: application/vnd.github.mercy-preview+json"])
+    existing: list = []
+    if rc_get == 0:
+        try:
+            existing = json.loads(out_get).get("names", []) or []
+        except Exception:
+            existing = []
+    if topic in existing:
+        return True
+    merged = sorted(set(existing + [topic]))
+    args = ["api", "-X", "PUT", f"/repos/{repo}/topics",
+            "-H", "Accept: application/vnd.github.mercy-preview+json"]
+    for t in merged:
+        args += ["-f", f"names[]={t}"]
+    rc_put, _, _ = _gh(args)
+    return rc_put == 0
 
 
 def _scan_user_repos(github_user: str, max_repos: int = 200) -> list[dict]:

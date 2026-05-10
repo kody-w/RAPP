@@ -149,7 +149,25 @@ Two consequences:
 - **Disaster recovery**: laptop dies → rebuild from any other device with `gh` auth.
 - **Drop-in rappid lookup**: pass ANY rappid to `estate fetch rappid=<rappid>` → the agent traces `parent_rappid` and fetches whoever owns that door's published estate.
 
-### §4.6 No fallbacks; spec says what's true
+### §4.6 Discoverability — publishing IS the signal (no central registry)
+
+Constitutional anchor: **CONSTITUTION Article XLVII**.
+
+The network has no registry. Becoming part of the federation = publishing your estate per spec. Three artifacts compose discovery:
+
+1. **Beacon** — `https://raw.githubusercontent.com/<handle>/rapp-estate/main/.well-known/rapp-network.json` — schema `rapp-network-beacon/1.0`. Carries: operator rappid, estate URL, protocol versions, `discovery.indexable` (consent flag — robots.txt style; default true), `discovery.federation_hints` (other operator handles you know about).
+2. **Seed** — `https://raw.githubusercontent.com/kody-w/RAPP/main/.well-known/rapp-network-seed.json` — schema `rapp-network-seed/1.0`. Lists known operators as the BFS starting set. Convenient but not authoritative; anyone can fork the species root and host their own seed.
+3. **Sniffer** — `tools/sniff_network.py`. Default mode: BFS from seed across beacons via raw URLs only (no GitHub Search API; no rate limits). Returns `rapp-network-sniff/1.0` envelope.
+
+**To be discovered**: publish your estate (`estate publish` writes both `estate.json` AND the beacon atomically). The next sniffer pass picks you up via whatever federation_hints chain reaches you.
+
+**To opt out**: set `discovery.indexable: false` in your beacon. Sniffers honor it like robots.txt.
+
+**To find others**: `python3 tools/sniff_network.py` (raw mode, default). For periodic sweeps that catch operators not in any hint chain: `--via topic` uses `gh search repos topic:rapp-estate` (eventually-consistent, secondary).
+
+The federation is a graph, not a tree. Removing the species root does not partition the network; any beacon can be a starting point.
+
+### §4.7 No fallbacks; spec says what's true
 
 - A rappid that doesn't match v2 format, OR whose two `<owner>/<repo>` segments disagree, OR whose kind is not in §2.1 → INVALID → consumer raises an error.
 - An estate entry with stored derived fields → leakage; on next save those fields are dropped.

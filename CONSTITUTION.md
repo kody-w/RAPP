@@ -3423,3 +3423,62 @@ The reference rebuild lives at `tools/rebuild_estate.py`. The estate agent's `re
 
 **Why this is constitutional and not a feature:**
 Every operator's relationships in the network are publicly knowable by design. If the rebuild property doesn't hold, the platform's local-first promise becomes "local-trapped": lose your laptop and you've lost your network presence. With the rebuild property, the network IS the backup. Constitutionalizing this prevents the common drift where a future "convenience" change starts caching mutable state that isn't reproducible from public data — exactly the kind of drift Article XLVI.5 forbids in derived fields, now extended to the whole estate.
+
+---
+
+## Article XLVII — Discoverability Without A Central Registry (Publishing IS The Signal)
+
+> **The network has no registry.** A new estate becomes part of the federation the moment its operator publishes it per spec — by emitting one well-known beacon at one canonical path. Sniffers find it through pure raw GitHub URLs (no Search API, no auth, no rate limits) by walking from a discoverable seed across each operator's beacon's federation hints. The seed is convenient but not required; the network is a graph, not a tree.
+
+The Estate Spec (Article XLVI) made the rappid the global address. Article XLVI.6 made the estate recomputable from the network. **Article XLVII makes the network itself discoverable without a central authority.**
+
+This is the platform's most decentralized layer. Three primitives compose it:
+
+1. **The well-known beacon.** Every published estate ships a `.well-known/rapp-network.json` at the root of the operator's `<handle>/rapp-estate` repo, fetchable at `https://raw.githubusercontent.com/<handle>/rapp-estate/main/.well-known/rapp-network.json`. Schema: `rapp-network-beacon/1.0`. Contents: operator rappid, estate URL, protocol versions implemented, `discovery.indexable` (the consent flag — defaults true; honored like robots.txt's `Disallow`), and `discovery.federation_hints` (a list of other operator handles this operator is aware of).
+
+2. **The seed.** A well-known root file at the species repo: `https://raw.githubusercontent.com/kody-w/RAPP/main/.well-known/rapp-network-seed.json`. Schema: `rapp-network-seed/1.0`. Lists known operators as the BFS starting set. Operators get added by PR or by appearing in any other operator's federation_hints. Anyone can fork the species root and host their own seed; the seed is convenient but not authoritative — sniffers can start from any beacon.
+
+3. **The sniffer.** `tools/sniff_network.py`. Default mode: BFS from the seed across beacons via raw URLs. Stdlib only; no `gh` CLI; no rate limit. Returns a `rapp-network-sniff/1.0` envelope listing every reachable operator, their estate URL, and their door counts. Optional fallback: `--via topic` uses `gh search repos topic:rapp-estate` for periodic sweeps to catch operators not in any hint chain (eventually-consistent; useful as an audit, not a primary).
+
+### XLVII.1 — Publishing IS The Signal
+
+There is no API to call to "register" with the network. There is no central operator. There is no gatekeeper. An operator becomes part of the network by:
+
+- Creating a `<handle>/rapp-estate` repo per Article XLVI
+- Pushing `estate.json` (the door catalog)
+- Pushing `.well-known/rapp-network.json` (the beacon)
+
+That's it. The `estate publish` action does both atomically. The next sniffer pass picks them up.
+
+### XLVII.2 — Pure-Raw Discovery Is The Default
+
+The default discovery method is `raw.githubusercontent.com` BFS — no GitHub Search API. The Search API is eventually-consistent (minutes to hours of indexing lag) and rate-limited (5,000 requests/hour for authenticated users; 60/hour unauth). Pure-raw discovery has neither limitation: raw is CDN-fronted, public, anonymous, and instant.
+
+Concretely: the sniffer fetches the seed, then for each operator handle fetches their beacon (one raw URL each), reads `federation_hints[]`, enqueues new handles. BFS terminates when no new handles surface or `--max-hops` is reached. A 1,000-operator federation is reachable in O(1000) raw fetches with no rate limit risk.
+
+### XLVII.3 — Consent Is In The Beacon (robots.txt Analog)
+
+The beacon's `discovery.indexable` flag is the operator's consent statement. `true` (default) means "indexable by sniffers; appears in federation walks." `false` means "do not include me in federation indexes; do not surface me to other operators automatically." Sniffers MUST honor this flag — the same way an HTTP crawler honors `robots.txt::Disallow`. The `--include-private` flag exists for audit tooling only and is constitutionally reserved for the operator themselves running diagnostics on their own beacon, not for crawling others.
+
+Operators who want to be reachable by their direct contacts but not surface in public sniffs set `indexable: false`. Their estate is still publicly fetchable (it's a public GitHub repo), but the network's discovery surface respects their opt-out.
+
+### XLVII.4 — The Network Is A Graph, Not A Tree
+
+Federation hints live in every beacon. There is no canonical center. The seed at the species root is convenient (it's where most sniffers start because it's well-known) but it is NOT authoritative — any operator can fork the species root and host their own seed at `<handle>/RAPP/main/.well-known/rapp-network-seed.json`. Sniffers can start from any seed; they can also start from any single beacon. Discovery converges to the same connected component regardless of starting point.
+
+This is what makes the network genuinely decentralized: removing or censoring any single node, including the species root, does not partition the federation. Operators who aren't in the species root's seed are still reachable via any other operator's federation_hints.
+
+**What this article requires:**
+- Every published estate ships a `.well-known/rapp-network.json` beacon. Schema: `rapp-network-beacon/1.0`.
+- The estate publish action writes the beacon atomically with `estate.json`.
+- The default sniffer uses raw URLs only — no GitHub Search API in the critical discovery path.
+- `discovery.indexable: false` is honored by all sniffers.
+
+**What this article forbids:**
+- A central registry that operators must register with to "join" the network. The well-known beacon IS the registration.
+- API-bound discovery as the only path. Raw-URL discovery must always work.
+- Sniffers that ignore `discovery.indexable: false`. Operator opt-out is constitutional.
+- A single point of failure for the seed. Anyone can host one.
+
+**Why this is constitutional and not a feature:**
+Without this article, the natural drift is toward a central index — someone runs the canonical sniffer, hosts the canonical list, becomes the gatekeeper. The platform stops being decentralized. Constitutionalizing pure-raw BFS + per-beacon federation_hints + multiple-seed support makes the federation **structurally unable to centralize**. Removing any single repo, including kody-w/RAPP, does not break discovery — operators still find each other through whatever beacons they already know about. The network's resilience is structural, not policy.
