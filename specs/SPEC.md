@@ -167,7 +167,28 @@ The network has no registry. Becoming part of the federation = publishing your e
 
 The federation is a graph, not a tree. Removing the species root does not partition the network; any beacon can be a starting point.
 
-### §4.7 No fallbacks; spec says what's true
+### §4.7 Two-tier estate (mandatory from day one)
+
+Constitutional anchor: **CONSTITUTION Article XLVIII**.
+
+**Every operator has BOTH a public estate AND a private estate from first install.** No opt-in. The public estate (`<handle>/rapp-estate`) is the discovery surface; the private estate (`<handle>/rapp-estate-private`, GitHub-private) is where real work happens — PII, contacts, mailbox content, conversation history, private trust signals.
+
+**Beacon (rapp-network-beacon/1.1) carries REQUIRED private extension fields:**
+- `private_estate_pointer` — URL of the private repo
+- `private_estate_commitment` — sha256 of normalized private state (proof of existence + integrity, no disclosure)
+- `private_door_count` — integer (transparency, no enumeration)
+
+A beacon WITHOUT these is non-compliant. Sniffers flag such operators as `compliance: legacy`.
+
+**URL opacity (XLVIII.6):** every path inside the private repo carries zero semantic information. Two well-known paths exempt (`meta.json`, `README.md`); all other content lives at `objects/<sha256>.json` (content-addressed) or `kinds/<HMAC>/<HMAC>.json` (HMAC'd kind+id, keyed by the operator's per-install secret). A 404 to an unauthorized viewer reveals nothing about what would have been there.
+
+**The operator's HMAC secret** lives at `~/.brainstem/private-estate-secret` (file mode 0600). NEVER appears in any committed file, beacon, log, or error message. Keys-to-the-kingdom for decoding the operator's own opaque paths.
+
+**Receiver controls (XLVIII.4):** senders propose to public surfaces; receivers verify and MOVE accepted content to private. No automatic flow ever crosses tier from anyone's private to anyone else's public.
+
+**To get compliant:** `estate init_private` (one call, idempotent). Future installs do this automatically as part of onboarding.
+
+### §4.8 No fallbacks; spec says what's true
 
 - A rappid that doesn't match v2 format, OR whose two `<owner>/<repo>` segments disagree, OR whose kind is not in §2.1 → INVALID → consumer raises an error.
 - An estate entry with stored derived fields → leakage; on next save those fields are dropped.

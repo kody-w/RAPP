@@ -53,7 +53,7 @@ from door_address import door_from_rappid, InvalidRappidError, estate_url  # noq
 
 _TOPIC = "rapp-estate"
 _BEACON_PATH = ".well-known/rapp-network.json"
-_BEACON_SCHEMA = "rapp-network-beacon/1.0"
+_BEACON_SCHEMA_VERSIONS = {"rapp-network-beacon/1.0", "rapp-network-beacon/1.1"}
 _SEED_SCHEMA = "rapp-network-seed/1.0"
 _DEFAULT_SEED_URL = "https://raw.githubusercontent.com/kody-w/RAPP/main/.well-known/rapp-network-seed.json"
 _FETCH_TIMEOUT = 8
@@ -91,7 +91,7 @@ def fetch_beacon_for_handle(handle: str) -> dict | None:
     d = _raw_get_json(url)
     if not isinstance(d, dict):
         return None
-    if d.get("schema") != _BEACON_SCHEMA:
+    if d.get("schema") not in _BEACON_SCHEMA_VERSIONS:
         return None
     return d
 
@@ -175,6 +175,26 @@ def sniff_via_raw(seed_url: str = _DEFAULT_SEED_URL,
             "discovered_via":  source,
             "hop":             hop,
         }
+
+        # Article XLVIII: surface private extension presence WITHOUT fetching.
+        # The beacon's private_estate_pointer + private_estate_commitment are
+        # the only signals we report. The CONTENT of the private repo is never
+        # touched — that's receiver-controls (XLVIII.4) + URL-opacity (XLVIII.6).
+        priv_pointer = beacon.get("private_estate_pointer", "") or ""
+        priv_commit  = beacon.get("private_estate_commitment", "") or ""
+        priv_count   = beacon.get("private_door_count", 0)
+        record["has_private_extension"] = bool(priv_pointer)
+        record["private_estate_pointer"] = priv_pointer
+        record["private_estate_commitment"] = priv_commit
+        record["private_door_count"] = priv_count
+        if not priv_pointer:
+            # Operator hasn't migrated to Article XLVIII yet — public-only is
+            # legacy mode now. Sniffer surfaces the compliance gap.
+            record["compliance"] = "legacy"
+        elif "article-xlviii" in (beacon.get("protocol", {}).get("implements", []) or []):
+            record["compliance"] = "xlviii"
+        else:
+            record["compliance"] = "partial"
 
         if fetch_estates:
             estate = fetch_estate_for_handle(handle)
@@ -316,10 +336,20 @@ def _print_summary(out: dict) -> None:
         cc = op.get("created_count", "?")
         mc = op.get("member_count", "?")
         hop_info = f"hop={op.get('hop')}" if "hop" in op else "topic"
-        print(f"  {marker} {op['github']:24s}  doors: {cc:>3} created · {mc:>3} member  ({hop_info}, via {op.get('discovered_via','?')})")
+        compliance = op.get("compliance", "?")
+        compliance_marker = {
+            "xlviii": "🔒",       # full Article XLVIII compliance
+            "legacy": "⚠️",       # public-only (pre-XLVIII)
+            "partial": "·",      # has pointer but doesn't declare XLVIII
+        }.get(compliance, "?")
+        print(f"  {marker} {op['github']:24s}  doors: {cc:>3} created · {mc:>3} member  ({hop_info}, via {op.get('discovered_via','?')})  [{compliance_marker} {compliance}]")
         print(f"    estate: {op.get('estate_url','')}")
         if op.get("grail_url"):
             print(f"    grail:  {op['grail_url']}")
+        if op.get("has_private_extension"):
+            commit = (op.get("private_estate_commitment") or "")[:16]
+            count = op.get("private_door_count", 0)
+            print(f"    private extension: {op['private_estate_pointer']}  (commit: {commit}…, doors: {count}) [content NOT fetched per XLVIII.4]")
     if out["skipped"]:
         print()
         print(f"  Skipped ({out['operators_skipped']}):")

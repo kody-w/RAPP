@@ -3482,3 +3482,79 @@ This is what makes the network genuinely decentralized: removing or censoring an
 
 **Why this is constitutional and not a feature:**
 Without this article, the natural drift is toward a central index — someone runs the canonical sniffer, hosts the canonical list, becomes the gatekeeper. The platform stops being decentralized. Constitutionalizing pure-raw BFS + per-beacon federation_hints + multiple-seed support makes the federation **structurally unable to centralize**. Removing any single repo, including kody-w/RAPP, does not break discovery — operators still find each other through whatever beacons they already know about. The network's resilience is structural, not policy.
+
+---
+
+## Article XLVIII — Public Discovery, Private Substance (the Two-Tier Estate is Mandatory)
+
+> **A public-only estate is a toy.** The federation primitives that make the platform useful for real work — Inbox, Bilateral Channel, Web of Trust private signals, Presence opt-in, secret ballots, real client/patient/partner correspondence — cannot exist on a public-only substrate. Article XLVIII makes the **two-tier estate mandatory from first install**: every operator gets BOTH a public estate (`<handle>/rapp-estate`) AND a private estate (`<handle>/rapp-estate-private`, GitHub-private repo). The public estate is the discovery surface; the private estate is where real work happens. The boundary is constitutional: no cross-tier smuggling, no opt-in-to-private (it's automatic), and crucially **the URLs themselves inside the private repo cannot leak semantic information** — even a 404 must reveal nothing.
+
+The Estate Spec (Article XLVI) made the rappid the global address. Article XLVII made discovery decentralized and pure-raw. **Article XLVIII makes the platform structurally usable for sensitive work.** Without it, the dominant outcome is: operators stay public-only (because it's easier), then leak PII to public when real work happens, then leave the platform when real work needs to happen. Both outcomes destroy the platform's value. Making the boundary mandatory means every operator has the substrate for real work from day one, even if they don't use it for weeks.
+
+Authority for the spec: `pages/docs/PUBLIC_PRIVATE_BOUNDARY.md`. Bumps `rapp-network-beacon/1.0` → `1.1`. Conformance: `tests/features/F15-private-estate.sh`.
+
+### XLVIII.1 — The Two-Tier Estate Is Mandatory
+
+Every Article-XLVIII-compliant operator has BOTH `<handle>/rapp-estate` (public) AND `<handle>/rapp-estate-private` (private GitHub repo) from first install. No opt-in. No "I'll add the private side later." A beacon WITHOUT a `private_estate_pointer` is non-compliant; sniffers flag such operators as `compliance: legacy`. Existing operators backfill via `brainstem estate init_private` (one call, idempotent).
+
+The cost is one additional free private repo per operator. GitHub's free tier supports unlimited private repos for individuals — the mandatory tier costs operators $0. The benefit is the platform is structurally ready for real work; operators don't have to architect privacy into the platform after the fact.
+
+### XLVIII.2 — Beacon Commits To Private State Without Leaking
+
+The public beacon contains:
+- `private_estate_pointer` — URL of the private repo (REQUIRED).
+- `private_estate_commitment` — sha256 of the private estate's normalized JSON (REQUIRED). Lets peers verify the operator hasn't substituted a different private estate behind their back, even without read access. Empty private estate has a stable empty-state hash.
+- `private_door_count` — integer count of private doors (transparency, no enumeration).
+
+The beacon CANNOT contain: any internal private-repo path beyond the well-known `meta.json`; any recipient handle, contact name, topic string, or other semantic identifier; any field that would let a sniffer characterize what's inside. This is the Bitcoin-commitment pattern: prove existence + integrity without revealing substance.
+
+### XLVIII.3 — Audience Is A First-Class Field
+
+Every entry that crosses the brainstem's path has an audience: `public` (lives in public estate) or `private` (lives in private estate). The default is `private` for any new content involving identifiable parties (correspondence, contacts, conversation history). The default is `public` only for content whose explicit purpose is publication (the door catalog, the federation feed of own actions).
+
+Operators can override the audience per-entry, but the brainstem MUST surface a clear consent prompt when shifting an entry from private to public (the inverse direction — public to private — is always allowed and never asks).
+
+### XLVIII.4 — Receiver Controls (Operator-Mediated)
+
+Senders/peers cannot force content into the operator's public estate. The pattern: senders publish proposals to THEIR public surface (their own `<sender>/rapp-mailbox-public/...`); the recipient's brainstem polls trusted senders, reviews proposals, MOVES accepted content to the recipient's private estate, optionally deletes the public copy. This is the Webmention discipline: receiver verifies, receiver renders.
+
+No automatic flow ever moves content from anyone's private estate to anyone else's public estate. Constitutionally enforced.
+
+### XLVIII.5 — No Cross-Tier Smuggling
+
+The brainstem MUST NOT publish private-estate content to the public estate without explicit operator action. The `publish` action is single-direction: it writes the public estate (rappid catalog, beacon with commitment to private state, federation feed of own actions). It NEVER copies content from private to public except via explicit operator instruction (e.g. "publicly announce that I planted X" — and even then, the brainstem strips PII before publishing).
+
+The audit (F15) verifies: no PII patterns in any operator's public estate; no leaked path semantics in any beacon; no cross-tier copies in commit history.
+
+### XLVIII.6 — The URL Space Is Opaque
+
+**Static URLs leak metadata even when their content is access-gated.** A URL like `<handle>/rapp-estate-private/main/mailbox/inbox/dr-jones-oncology/2026-05-09-test-results.json` reveals — *just by existing in any system that touches it* — that kody-w receives correspondence from dr-jones-oncology dated 2026-05-09 about test results. The CONTENT is access-gated; the **URL is not**. URLs surface in beacons, commit history, browser history, agent logs, error messages, and 404 responses to unauthorized viewers.
+
+Therefore every path inside the private repo carries **zero semantic information**, with two exemptions: `meta.json` (schema + index pointer; content-free; safe to expose) and `README.md` (instructions). All other content lives at one of two opaque-path patterns:
+
+- `objects/<sha256-of-content>.json` — content-addressed; hash is deterministic but reveals nothing about what the content represents.
+- `kinds/<HMAC(secret, kind)>/<HMAC(secret, id)>.json` — for queryable content; kind+id are HMAC'd with the operator's per-install secret so only authorized parties (who have the secret) can navigate.
+
+**The HMAC secret** lives at `~/.brainstem/private-estate-secret` (file mode 0600). It MUST NEVER appear in any committed file, any beacon field, any agent log, any error message, any process argument list. Lost secret means the URLs still exist but no one can decode them from structure alone — fall back to walking `meta.json`'s index.
+
+**The local map** at `~/.brainstem/private-estate-map.json` records the human-readable ↔ opaque mapping. Encrypted at rest with the operator's secret. NEVER published.
+
+**The publish-time invariant:** the estate agent's `publish` action invokes `tools/path_opacity.py::audit_paths()` against the private repo before computing the commitment hash. If any path violates the opacity regex `^(meta\.json|README\.md|objects/(\.gitkeep|[a-f0-9]+\.json)|kinds/(\.gitkeep|[a-f0-9]+(/[a-f0-9]+\.json)?))$`, the publish is REFUSED with a clear error pointing at the offending path. Catches operator drift (someone editing private repo files manually with semantic names).
+
+**What this article requires:**
+- Every operator has both public and private estates from first install. No opt-in.
+- The public beacon's `private_estate_pointer` + `private_estate_commitment` are REQUIRED fields.
+- Every path inside the private repo (other than `meta.json` and `README.md`) is opaque.
+- The HMAC secret stays local, file-mode-0600, never published.
+- The publish action audits opacity before committing the commitment hash.
+
+**What this article forbids:**
+- Public-only estates (planting without a private side).
+- Beacons that don't carry the private-extension fields.
+- Any path inside the private repo that leaks semantic information (e.g. `mailbox/inbox/dr-jones/cancer-results.json`).
+- Cross-tier smuggling (publishing private content to public without explicit operator action).
+- Logging or echoing the HMAC secret in any way.
+- Enumerating private content in the public beacon (count is allowed; identities are not).
+
+**Why this is constitutional and not a library choice:**
+Without this article, the platform's promise to operators handling sensitive work — doctors, lawyers, therapists, families coordinating PII — is a lie. Either they leak PII to public (because the platform made it easier than the alternative) or they leave (because the platform isn't safe for their context). Constitutionalizing the two-tier-mandatory + URL-opacity model means **the platform is structurally safe for sensitive work from minute 1**. The friction operators feel from "you have a private repo whether you want one or not" is the price of the substrate being load-bearing for real use cases. Federation primitives (mailbox, bilateral channel, etc.) become POSSIBLE only because this substrate exists.

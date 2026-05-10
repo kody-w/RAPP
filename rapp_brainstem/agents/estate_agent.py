@@ -195,14 +195,69 @@ def _fetch_remote(github_user: str) -> dict:
 
 _NETWORK_BEACON_PATH = ".well-known/rapp-network.json"
 _NETWORK_TOPIC = "rapp-estate"
-_BEACON_SCHEMA = "rapp-network-beacon/1.0"
+_BEACON_SCHEMA = "rapp-network-beacon/1.1"  # bumped for Article XLVIII (private extension)
+
+
+def _read_private_extension_for(github_user: str) -> dict:
+    """Look up the operator's private extension info — REQUIRED for Article XLVIII.
+
+    Returns:
+      {pointer, commitment, door_count} when the private estate exists +
+      we have access to compute its commitment.
+      {pointer, commitment: "", door_count: 0} when the repo exists but
+      we can't fetch (e.g. running unauthenticated). Sniffer treats this
+      as "private exists; commitment unverified."
+    """
+    slug = f"{github_user}/rapp-estate-private"
+    pointer = f"https://github.com/{slug}"
+
+    # Best-effort: ask gh whether the repo exists (auth required for private)
+    rc, _, _ = _gh(["repo", "view", slug])
+    if rc != 0:
+        return {"pointer": "", "commitment": "", "door_count": 0,
+                "note": "no private estate exists yet — operator should run estate.init_private"}
+
+    # Try to compute the commitment by walking the tree + reading meta.json.
+    # If we don't have read access (unauthenticated), commitment stays empty.
+    try:
+        # Lazy import — tools/private_estate_init.py provides the canonical helper
+        import sys as _sys, os as _os
+        _here = _os.path.dirname(_os.path.abspath(__file__))
+        for cand in (
+            _os.path.join(_os.path.dirname(_os.path.dirname(_here)), "tools"),
+            _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(_here))), "tools"),
+        ):
+            if _os.path.isfile(_os.path.join(cand, "private_estate_init.py")):
+                if cand not in _sys.path:
+                    _sys.path.insert(0, cand)
+                import private_estate_init as _pei  # noqa: PLC0415
+                rc_meta, out_meta, _ = _gh(["api", f"/repos/{slug}/contents/meta.json"])
+                if rc_meta == 0:
+                    d = json.loads(out_meta)
+                    meta_bytes = base64.b64decode(d.get("content", "").replace("\n", ""))
+                    door_count = 0
+                    try:
+                        meta_parsed = json.loads(meta_bytes)
+                        door_count = int(meta_parsed.get("private_door_count", 0) or 0)
+                    except Exception:
+                        pass
+                    tree = _pei._gh_list_tree(slug)
+                    commitment = _pei._normalized_state_hash(meta_bytes, tree)
+                    return {"pointer": pointer, "commitment": commitment, "door_count": door_count}
+                break
+    except Exception:
+        pass
+    return {"pointer": pointer, "commitment": "", "door_count": 0,
+            "note": "private estate exists; commitment unverified (no auth?)"}
 
 
 def _build_network_beacon(estate: dict, github_user: str) -> dict:
     """Construct the .well-known/rapp-network.json beacon. Per Article XLVII:
-    publishing the beacon IS the network signal. No central registry exists;
-    sniffers use `gh search repos topic:rapp-estate` + this beacon to discover
-    new estates."""
+    publishing the beacon IS the network signal. Per Article XLVIII: the
+    beacon REQUIRES private_estate_pointer + private_estate_commitment +
+    private_door_count. A beacon missing these is non-compliant; sniffers
+    flag such operators as `compliance: legacy`."""
+    private_ext = _read_private_extension_for(github_user)
     return {
         "schema": _BEACON_SCHEMA,
         "operator_rappid": estate.get("owner", {}).get("rappid", ""),
@@ -217,6 +272,7 @@ def _build_network_beacon(estate: dict, github_user: str) -> dict:
                 "article-xlvi",
                 "article-xlvi.6",
                 "article-xlvii",
+                "article-xlviii",
             ],
             "spec_url": "https://raw.githubusercontent.com/kody-w/RAPP/main/specs/SPEC.md",
         },
@@ -226,6 +282,10 @@ def _build_network_beacon(estate: dict, github_user: str) -> dict:
             "federation_hints": [],
             "_note": "Set indexable=false to opt out of network sniffing. Honor like robots.txt.",
         },
+        # Article XLVIII required fields — private extension pointer + commitment
+        "private_estate_pointer":   private_ext["pointer"],
+        "private_estate_commitment": private_ext["commitment"],
+        "private_door_count":        private_ext["door_count"],
         "minted_at": _now_iso(),
         "_note": (
             "Network sniffers: this beacon confirms a public RAPP estate. "
@@ -470,8 +530,8 @@ class EstateAgent(BasicAgent):
             "properties": {
                 "action": {
                     "type": "string",
-                    "enum": ["show", "export", "import", "publish", "fetch", "add", "remove", "scan", "rebuild"],
-                    "description": "Which estate operation to perform. 'rebuild' reconstructs the estate from pure GitHub raw data (Article XLVI.6 disaster recovery). 'fetch' accepts user= OR rappid= (drop in any rappid → see whose estate owns that door).",
+                    "enum": ["show", "export", "import", "publish", "fetch", "add", "remove", "scan", "rebuild", "init_private", "verify_private"],
+                    "description": "Which estate operation to perform. 'rebuild' reconstructs the estate from pure GitHub raw data (Article XLVI.6 disaster recovery). 'fetch' accepts user= OR rappid= (drop in any rappid → see whose estate owns that door). 'init_private' creates the operator's <handle>/rapp-estate-private repo (Article XLVIII; mandatory two-tier). 'verify_private' recomputes the commitment hash + compares to the published beacon.",
                 },
                 "path":   {"type": "string", "description": "File path for export (write) or import (read)."},
                 "user":   {"type": "string", "description": "GitHub user whose published estate to fetch."},
@@ -767,6 +827,45 @@ class EstateAgent(BasicAgent):
                 "action": "remove",
                 "side": side,
                 "removed": removed,
+            }, indent=2)
+
+        if action in ("init_private", "verify_private"):
+            # Article XLVIII: bootstrap the operator's mandatory private estate
+            # by delegating to tools/private_estate_init.py. Same subprocess
+            # pattern we use for `rebuild`.
+            estate_local = _load_local()
+            handle = kwargs.get("user") or estate_local["owner"].get("github", "")
+            if not handle:
+                return json.dumps({"ok": False, "error": "init_private requires user=<handle> OR a seeded ~/.brainstem/rappid.json"}, indent=2)
+            here = os.path.abspath(__file__)
+            init_script = ""
+            for cand in (
+                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(here))), "tools", "private_estate_init.py"),
+                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(here)))), "tools", "private_estate_init.py"),
+            ):
+                if os.path.isfile(cand):
+                    init_script = cand
+                    break
+            if not init_script:
+                return json.dumps({"ok": False, "error": "tools/private_estate_init.py not found"}, indent=2)
+            cmd = ["python3", init_script, "--handle", handle]
+            if action == "verify_private":
+                cmd.append("--verify-commitment")
+            elif kwargs.get("dry_run"):
+                cmd.append("--dry-run")
+            p = subprocess.run(cmd, capture_output=True, text=True)
+            try:
+                report = json.loads(p.stdout) if p.stdout.strip() else {"ok": False, "error": "init script emitted no output"}
+            except Exception as e:
+                return json.dumps({"ok": False, "error": f"init output not JSON: {e}", "stderr": p.stderr[:300]}, indent=2)
+            return json.dumps({
+                "ok":     report.get("ok", False),
+                "action": action,
+                "handle": handle,
+                "report": report,
+                "next_step": ("Re-run estate.publish to refresh the beacon with private_estate_pointer + commitment."
+                              if action == "init_private" and report.get("ok") else
+                              report.get("diagnosis", "")),
             }, indent=2)
 
         return json.dumps({"ok": False, "error": f"unknown action: {action}"}, indent=2)

@@ -232,6 +232,14 @@ Per Article XLVI.6:
 
 ---
 
+## 7. Public/Private Boundary (Article XLVIII)
+
+**The two-tier estate is mandatory from first install.** Discovery is public (this spec); substance is private. Every operator gets BOTH `<handle>/rapp-estate` (public) AND `<handle>/rapp-estate-private` (private GitHub repo). The public beacon's `private_estate_pointer` + `private_estate_commitment` + `private_door_count` (REQUIRED in `rapp-network-beacon/1.1`) advertise the existence and integrity of private state without leaking what it contains. URLs inside the private repo are opaque (Article XLVIII.6) so even a 404 reveals nothing.
+
+Authority: [`pages/docs/PUBLIC_PRIVATE_BOUNDARY.md`](./PUBLIC_PRIVATE_BOUNDARY.md). Constitutional anchor: CONSTITUTION Article XLVIII (6 subsections). Conformance: `tests/features/F15-private-estate.sh` (10 steps).
+
+---
+
 ## 8. Cross-references
 
 - **CONSTITUTION Article XLVI** — the principles in load-bearing form.

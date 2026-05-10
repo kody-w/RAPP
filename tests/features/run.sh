@@ -40,6 +40,7 @@ FEATURES=(
   "F12-bond-rhythm"
   "F13-estate-spec"
   "F14-estate-rebuild"
+  "F15-private-estate"
 )
 
 declare -a NAMES STATUS
