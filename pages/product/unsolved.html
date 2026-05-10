@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>20 problems every other AI agent tool still has to solve</title>
+<meta name="description" content="A slide-by-slide enumeration of the substrate problems RAPP has solved that every other AI agent tool, framework, SDK, or platform still needs to solve to catch up. Scroll or arrow-key.">
+<meta property="og:title" content="20 problems every other AI agent tool still has to solve">
+<meta property="og:description" content="One slide, one problem. The list other vendors still owe you.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kody-w.github.io/RAPP/pages/product/unsolved.html">
+<link rel="canonical" href="https://kody-w.github.io/RAPP/pages/product/unsolved.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E📜%3C/text%3E%3C/svg%3E">
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #0a0d12; --fg: #f0f4f8; --muted: #6e7a8a;
+  --accent-port:  #ffd866;
+  --accent-id:    #79c0ff;
+  --accent-net:   #7ee787;
+  --accent-vend:  #ff7eb6;
+  --accent-gov:   #d2a8ff;
+  --accent-ui:    #f0c674;
+  --x: #f97583; --check: #56d364;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; }
+html {
+  scroll-snap-type: y mandatory;
+  overflow-y: scroll;
+  scroll-behavior: smooth;
+}
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: -apple-system, system-ui, "Segoe UI", sans-serif;
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── slide base ── */
+.slide {
+  height: 100vh; min-height: 600px;
+  scroll-snap-align: start;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 6vh 8vw;
+  position: relative;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.slide .num {
+  position: absolute; top: 4vh; right: 6vw;
+  font-size: 0.78rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--muted); font-variant-numeric: tabular-nums;
+}
+.slide .section {
+  font-size: 0.78rem; letter-spacing: 0.22em; text-transform: uppercase;
+  margin-bottom: 30px; opacity: 0.85;
+}
+.slide h2 {
+  font-size: clamp(2.2rem, 5.5vw, 4.6rem);
+  letter-spacing: -0.02em; line-height: 1.05;
+  font-weight: 800; max-width: 18ch;
+  margin-bottom: 30px;
+}
+.slide h2 em { font-style: normal; }
+.slide .body {
+  font-size: clamp(1rem, 1.5vw, 1.35rem);
+  color: var(--muted); line-height: 1.55;
+  max-width: 56ch;
+}
+.slide .body b { color: var(--fg); }
+.slide .body .x { color: var(--x); font-weight: 700; }
+.slide .body .check { color: var(--check); font-weight: 700; }
+.slide .footer {
+  position: absolute; bottom: 5vh; left: 8vw; right: 8vw;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 0.72rem; color: var(--muted); letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding-top: 16px;
+}
+.slide .footer .ref { color: var(--fg); opacity: 0.65; }
+
+/* per-section accents */
+.slide.port  .section, .slide.port  h2 em { color: var(--accent-port); }
+.slide.id    .section, .slide.id    h2 em { color: var(--accent-id); }
+.slide.net   .section, .slide.net   h2 em { color: var(--accent-net); }
+.slide.vend  .section, .slide.vend  h2 em { color: var(--accent-vend); }
+.slide.gov   .section, .slide.gov   h2 em { color: var(--accent-gov); }
+.slide.ui    .section, .slide.ui    h2 em { color: var(--accent-ui); }
+
+/* per-section bottom border accent */
+.slide.port  { border-bottom-color: rgba(255,216,102,0.12); }
+.slide.id    { border-bottom-color: rgba(121,192,255,0.12); }
+.slide.net   { border-bottom-color: rgba(126,231,135,0.12); }
+.slide.vend  { border-bottom-color: rgba(255,126,182,0.12); }
+.slide.gov   { border-bottom-color: rgba(210,168,255,0.12); }
+.slide.ui    { border-bottom-color: rgba(240,198,116,0.12); }
+
+/* title slide */
+.slide.title {
+  background:
+    radial-gradient(circle at 20% 30%, rgba(255,216,102,0.10), transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(121,192,255,0.10), transparent 50%);
+  align-items: flex-start;
+}
+.slide.title h1 {
+  font-size: clamp(2.5rem, 7vw, 5.5rem);
+  letter-spacing: -0.03em; line-height: 1; font-weight: 800;
+  margin-bottom: 30px; max-width: 18ch;
+}
+.slide.title h1 em { font-style: normal; color: var(--accent-port); }
+.slide.title .lede {
+  font-size: clamp(1.1rem, 1.8vw, 1.6rem);
+  color: var(--muted); max-width: 60ch;
+}
+.slide.title .lede b { color: var(--fg); }
+.slide.title .scroll-hint {
+  position: absolute; bottom: 6vh; left: 8vw;
+  font-size: 0.78rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--muted);
+  display: flex; align-items: center; gap: 12px;
+}
+.slide.title .scroll-hint::before {
+  content: '↓'; font-size: 1.5rem; animation: bounce 2s infinite;
+}
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(8px); }
+}
+
+/* outro */
+.slide.outro {
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255,216,102,0.08), transparent 60%);
+  align-items: center; text-align: center;
+}
+.slide.outro h2 { max-width: 20ch; }
+.slide.outro h2 em { color: var(--accent-port); }
+.slide.outro .actions {
+  display: flex; gap: 18px; flex-wrap: wrap; justify-content: center;
+  margin-top: 40px;
+}
+.slide.outro .btn {
+  display: inline-block; padding: 14px 24px;
+  background: var(--accent-port); color: #18181b;
+  border-radius: 8px; font-weight: 700; text-decoration: none;
+  font-size: 0.95rem;
+  transition: transform 0.15s ease;
+}
+.slide.outro .btn:hover { transform: translateY(-2px); }
+.slide.outro .btn.ghost {
+  background: transparent; color: var(--accent-port);
+  border: 1px solid var(--accent-port);
+}
+
+/* nav dots on the right */
+.dots {
+  position: fixed; right: 24px; top: 50%; transform: translateY(-50%);
+  display: flex; flex-direction: column; gap: 8px;
+  z-index: 10;
+}
+.dots a {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.dots a:hover, .dots a.active {
+  background: var(--accent-port); transform: scale(1.3);
+}
+@media (max-width: 700px) { .dots { display: none; } }
+
+/* keyboard hint */
+.kbd-hint {
+  position: fixed; bottom: 16px; left: 16px;
+  font-size: 0.7rem; color: var(--muted); letter-spacing: 0.1em;
+  text-transform: uppercase; opacity: 0.7;
+  z-index: 10;
+  background: rgba(0,0,0,0.4); padding: 6px 10px; border-radius: 4px;
+}
+.kbd-hint kbd {
+  background: rgba(255,255,255,0.10); padding: 1px 5px; border-radius: 3px;
+  font-family: ui-monospace, monospace;
+}
+</style>
+</head>
+<body>
+
+<!-- nav dots -->
+<div class="dots" id="dots"></div>
+<div class="kbd-hint">↓↑ or <kbd>j</kbd> <kbd>k</kbd> to navigate</div>
+
+<!-- ─── 0. TITLE ─── -->
+<section class="slide title" id="s0">
+  <h1>20 problems every other<br>AI agent tool <em>still</em><br>needs to solve.</h1>
+  <p class="lede">
+    Codex. Claude Code. Cursor. LangGraph. Microsoft Agent Framework. CrewAI. OpenAI Agents SDK. Anthropic Claude SDK. MCP. A2A. Pydantic AI. Google ADK. <b>None of them solve any of the next 20 slides.</b> RAPP solved them. They're constitutionally locked.
+  </p>
+  <div class="scroll-hint">scroll or arrow-key</div>
+</section>
+
+<!-- ═══════════ THEME 1 — PORTABILITY ═══════════ -->
+
+<section class="slide port" id="s1">
+  <div class="num">01 / 20</div>
+  <div class="section">Portability · 1 of 4</div>
+  <h2>The agent that runs <em>anywhere</em> the agent runs.</h2>
+  <p class="body">
+    Every other framework wraps your agent in <b>its</b> runtime. LangGraph agents need LangGraph. Crew agents need Crew. OpenAI agents need OpenAI. <span class="x">No SDK has solved a runtime-free single-file agent format.</span> RAPP did: one .py = one class = one perform = one metadata dict. Drop in. No build. No registry. No framework.
+  </p>
+  <div class="footer">
+    <span>kody-w/RAPP · CONSTITUTION.md Article XXXIII</span>
+    <span class="ref">RAPP single-file agent contract</span>
+  </div>
+</section>
+
+<section class="slide port" id="s2">
+  <div class="num">02 / 20</div>
+  <div class="section">Portability · 2 of 4</div>
+  <h2>The same agent in <em>three</em> substrates, unmodified.</h2>
+  <p class="body">
+    Tier 1 (your laptop). Tier 2 (Azure Functions). Tier 3 (Microsoft Copilot Studio). Same .py file. Zero changes. <span class="x">Every other tool requires you to pick a tier and lock in.</span> RAPP makes the same agent file run in all three because the contract is the contract regardless of where it executes.
+  </p>
+  <div class="footer">
+    <span>kody-w/RAPP · CLAUDE.md "Sacred Constraints" §6</span>
+    <span class="ref">Tier portability T1 → T2 → T3</span>
+  </div>
+</section>
+
+<section class="slide port" id="s3">
+  <div class="num">03 / 20</div>
+  <div class="section">Portability · 3 of 4</div>
+  <h2>Two files. Sneakernet. <em>No shell commands.</em></h2>
+  <p class="body">
+    USB stick. AirDrop. Postcard. The receiver does drag-and-drop + one chat. <span class="x">No other platform has a portable cartridge format that works without internet, account, or shell access.</span> RAPP's .egg + bootstrap agent is a constitutional invariant. The receiver's grandmother could do it.
+  </p>
+  <div class="footer">
+    <span>pages/docs/rapplication-sdk.md · Sneakernet portability invariant</span>
+    <span class="ref">Two-file egg + bootstrap</span>
+  </div>
+</section>
+
+<section class="slide port" id="s4">
+  <div class="num">04 / 20</div>
+  <div class="section">Portability · 4 of 4</div>
+  <h2>Sha256-pinned distribution. <em>The bytes you got are the bytes I sent.</em></h2>
+  <p class="body">
+    Every workflow ships with a `rar/index.json` manifest listing each agent's sha256. The hatcher refuses to install on hash mismatch. <span class="x">Pip doesn't do this. npm doesn't. HuggingFace doesn't for agent code. Every SDK trusts the registry.</span> RAPP refuses without override.
+  </p>
+  <div class="footer">
+    <span>specs/RAR_INDEX.md · BWAT CONSTITUTION Article IV</span>
+    <span class="ref">sha256-pinned manifest, no override</span>
+  </div>
+</section>
+
+<!-- ═══════════ THEME 2 — IDENTITY ═══════════ -->
+
+<section class="slide id" id="s5">
+  <div class="num">05 / 20</div>
+  <div class="section">Identity · 1 of 4</div>
+  <h2>The AI you talked to last month <em>is the same one today</em>.</h2>
+  <p class="body">
+    Persistent organism identity that survives every kernel upgrade. <span class="x">Every other tool gives you sessions, conversations, threads — none of them durable identity.</span> RAPP mints a rappid at first install; it lives in `~/.brainstem/rappid.json` and never changes. The egg→overlay→hatch bond cycle preserves it across every version.
+  </p>
+  <div class="footer">
+    <span>CONSTITUTION.md Article XLVI · utils/bond.py mint_rappid</span>
+    <span class="ref">Rappid v2 + bonding lifecycle</span>
+  </div>
+</section>
+
+<section class="slide id" id="s6">
+  <div class="num">06 / 20</div>
+  <div class="section">Identity · 2 of 4</div>
+  <h2>The URL <em>is</em> the identity. <em>No API needed.</em></h2>
+  <p class="body">
+    A rappid encodes its own GitHub origin twice. From the rappid string alone, by pure parsing, every consumer derives the door's complete canonical URL set — 9 URLs reachable through `raw.githubusercontent.com` <b>without a single API token, OAuth flow, or rate limit</b>. <span class="x">Nobody else has identity-as-address.</span>
+  </p>
+  <div class="footer">
+    <span>CONSTITUTION.md Article XLVI · tools/door_address.py</span>
+    <span class="ref">Pure raw-fetch chain rule</span>
+  </div>
+</section>
+
+<section class="slide id" id="s7">
+  <div class="num">07 / 20</div>
+  <div class="section">Identity · 3 of 4</div>
+  <h2>Lineage you can <em>cryptographically verify</em>.</h2>
+  <p class="body">
+    Every variant carries an attestation envelope signed by the parent's release key. Walk parent_rappid back up to the species root; verify each hop's signature. Forged lineage is detectable at any depth. <span class="x">Every other agent platform's "lineage" is git history if you remember to look.</span> RAPP's is constitutional, signed, and walkable.
+  </p>
+  <div class="footer">
+    <span>CONSTITUTION.md Article XXXIV · ed25519 release keys</span>
+    <span class="ref">Variant attestation chain</span>
+  </div>
+</section>
+
+<section class="slide id" id="s8">
+  <div class="num">08 / 20</div>
+  <div class="section">Identity · 4 of 4</div>
+  <h2>Operator-mediated. <em>Always.</em></h2>
+  <p class="body">
+    No agent in this substrate writes to the public internet, opens external connections beyond GitHub git operations, or commits + pushes on the operator's behalf without explicit consent. <span class="x">Other platforms ship agents that take actions autonomously by default.</span> RAPP agents propose; humans dispose. Constitutional.
+  </p>
+  <div class="footer">
+    <span>BWAT CONSTITUTION Article VIII · all planters dry_run=True default</span>
+    <span class="ref">Agents propose, humans dispose</span>
+  </div>
+</section>
+
+<!-- ═══════════ THEME 3 — NETWORK ═══════════ -->
+
+<section class="slide net" id="s9">
+  <div class="num">09 / 20</div>
+  <div class="section">Network · 1 of 4</div>
+  <h2>A federated trust web. <em>Walked by curl.</em></h2>
+  <p class="body">
+    Operator A trusts B trusts C. Walk the trust web from any starting estate via raw fetches alone. No API token. No rate limit. <span class="x">Every other platform's "trust" is a vendor account.</span> RAPP's is members.json + the chain rule. A two-hop traversal of your professional network is one shell loop.
+  </p>
+  <div class="footer">
+    <span>NEIGHBORHOOD_PROTOCOL.md · members.json + chain rule</span>
+    <span class="ref">Federated trust web</span>
+  </div>
+</section>
+
+<section class="slide net" id="s10">
+  <div class="num">10 / 20</div>
+  <div class="section">Network · 2 of 4</div>
+  <h2>Bilateral correspondence. <em>No SaaS broker in the middle.</em></h2>
+  <p class="body">
+    Operator A's bilateral channel inbox writes signed letters to operator B's bilateral inbox. <b>No OpenAI, no Slack, no Discord, no Anthropic, no broker</b> in the path. <span class="x">Every chat product is structurally a broker because that's their business model.</span> RAPP makes the channel a primitive operators own.
+  </p>
+  <div class="footer">
+    <span>BWAT CONSTITUTION Article VI · estate.json bilateral inboxes</span>
+    <span class="ref">Bilateral channels</span>
+  </div>
+</section>
+
+<section class="slide net" id="s11">
+  <div class="num">11 / 20</div>
+  <div class="section">Network · 3 of 4</div>
+  <h2>Two-tier mandatory estate. <em>PII never leaks to public.</em></h2>
+  <p class="body">
+    Every operator gets BOTH a public estate (discovery surface, ZERO PII) AND a private estate (real client/patient/partner correspondence) <b>from first install</b>. The boundary is constitutional: no opt-in to private (it's automatic), no cross-tier smuggling. <span class="x">Every other platform conflates these or makes private a paid add-on.</span>
+  </p>
+  <div class="footer">
+    <span>CONSTITUTION.md Article XLVIII · pages/docs/PUBLIC_PRIVATE_BOUNDARY.md</span>
+    <span class="ref">Two-tier mandatory estate</span>
+  </div>
+</section>
+
+<section class="slide net" id="s12">
+  <div class="num">12 / 20</div>
+  <div class="section">Network · 4 of 4</div>
+  <h2>LAN federation. <em>Wifi off, agents still flow.</em></h2>
+  <p class="body">
+    Two brainstems on the same LAN discover each other via zeroconf, exchange agents directly, and write a joint autobiography of the meeting. Sneakernet at the limit: AirDrop a .egg between two airgapped laptops. <span class="x">Every SaaS chatbot dies the moment wifi dies.</span> RAPP runs in customer basements with no cell signal.
+  </p>
+  <div class="footer">
+    <span>CONSTITUTION.md Article XLVII.5 · tools/lan_advertise.py</span>
+    <span class="ref">LAN federation + sneakernet</span>
+  </div>
+</section>
+
+<!-- ═══════════ THEME 4 — VENDOR ═══════════ -->
+
+<section class="slide vend" id="s13">
+  <div class="num">13 / 20</div>
+  <div class="section">Vendor independence · 1 of 3</div>
+  <h2>One agent. <em>Five LLM vendors.</em> No glue code per vendor.</h2>
+  <p class="body">
+    Same agent code runs against GitHub Copilot, Claude, GPT-5, Azure OpenAI, local Ollama, or a deterministic fake (for tests). The agent doesn't know which model it's running against. <span class="x">OpenAI Agents SDK is OpenAI-only. Anthropic SDK is Claude-only. Google ADK is Gemini-only.</span> RAPP is a primitive (`llm.py`), not a feature.
+  </p>
+  <div class="footer">
+    <span>rapp_brainstem/utils/llm.py · provider dispatch</span>
+    <span class="ref">Multi-LLM dispatch</span>
+  </div>
+</section>
+
+<section class="slide vend" id="s14">
+  <div class="num">14 / 20</div>
+  <div class="section">Vendor independence · 2 of 3</div>
+  <h2>Local-first. <em>Customer data never leaves the device.</em></h2>
+  <p class="body">
+    Customer data lives ONLY at <code>~/.brainstem/neighborhoods/&lt;slug&gt;/&lt;handle&gt;/customers/</code>. The workspace's <code>.gitignore</code> excludes it by construction. <code>git add</code> of any path under it fails. <span class="x">Every cloud-bound coding agent sends your code to their servers.</span> RAPP's substrate runs on your laptop; the LLM provider is the only thing in the cloud, and you choose it.
+  </p>
+  <div class="footer">
+    <span>BWAT CONSTITUTION Article I · The Local Device Is Canonical</span>
+    <span class="ref">Local-first by default</span>
+  </div>
+</section>
+
+<section class="slide vend" id="s15">
+  <div class="num">15 / 20</div>
+  <div class="section">Vendor independence · 3 of 3</div>
+  <h2>Survives <em>vendor deplatforming</em>.</h2>
+  <p class="body">
+    OpenAI bans your tenant tomorrow. Microsoft changes Copilot Studio TOS. Anthropic deprecates the model your agent depends on. <span class="check">Your RAPP agents keep working.</span> Substrate-agnostic federation (Article XLVII) — move your rappid to GitLab, Codeberg, Forgejo, or self-hosted git. The substrate doesn't care which platform hosts the bytes.
+  </p>
+  <div class="footer">
+    <span>SUBSTRATE_FEDERATION.md · rapp-network-beacon/1.1</span>
+    <span class="ref">Substrate-agnostic federation</span>
+  </div>
+</section>
+
+<!-- ═══════════ THEME 5 — GOVERNANCE ═══════════ -->
+
+<section class="slide gov" id="s16">
+  <div class="num">16 / 20</div>
+  <div class="section">Governance · 1 of 3</div>
+  <h2>A constitution. <em>Enforced as code, not as vibes.</em></h2>
+  <p class="body">
+    245,000 characters. Articles. Ratification dates. Immutable invariants. Conformance gates that run on every kernel push. <span class="x">Every other platform's "rules" live in a system prompt that the model can be talked out of.</span> RAPP's rules are 50+ shell + python tests; CI green requires them all green. No vibe-rules.
+  </p>
+  <div class="footer">
+    <span>kody-w/RAPP/CONSTITUTION.md · tests/features/F*.sh</span>
+    <span class="ref">Governance as testable code</span>
+  </div>
+</section>
+
+<section class="slide gov" id="s17">
+  <div class="num">17 / 20</div>
+  <div class="section">Governance · 2 of 3</div>
+  <h2>Sealed releases. <em>The artifact you adopted cannot drift under you.</em></h2>
+  <p class="body">
+    Tagged releases are immutable per Article XIX. The kernel manifest pins file sha256s. <span class="x">Every cloud LLM provider can change the model under you any night.</span> RAPP's pinning + the rar/index.json manifest let you adopt v0.12.2 today and have v0.12.2 still mean exactly what you adopted, in 2030.
+  </p>
+  <div class="footer">
+    <span>CONSTITUTION.md Article XIX · rapp_kernel/manifest.json</span>
+    <span class="ref">Immutable releases + sha256 sealing</span>
+  </div>
+</section>
+
+<section class="slide gov" id="s18">
+  <div class="num">18 / 20</div>
+  <div class="section">Governance · 3 of 3</div>
+  <h2>Hot-discovery. <em>Drop a file, four seconds later it's a tool.</em></h2>
+  <p class="body">
+    The brainstem reloads `agents/` on EVERY chat request. Drop in a new .py — next message, the LLM has it as a tool. <span class="x">Every other framework requires a restart, a re-init, a deployment, or a build step.</span> RAPP's discovery is filesystem-native and instantaneous. No friction between writing an agent and using it.
+  </p>
+  <div class="footer">
+    <span>rapp_brainstem/brainstem.py load_agents() · CLAUDE.md "Agent System"</span>
+    <span class="ref">Hot-discovery, no restart</span>
+  </div>
+</section>
+
+<!-- ═══════════ THEME 6 — UI ═══════════ -->
+
+<section class="slide ui" id="s19">
+  <div class="num">19 / 20</div>
+  <div class="section">UI / Rapplications · 1 of 2</div>
+  <h2>Agents drive the UI. <em>One file for chat AND dashboard.</em></h2>
+  <p class="body">
+    The same `*_agent.py` that the brainstem hot-loads for `/chat` is the only data source the rapplication's HTML uses to hydrate. Static-input deterministic render — no LLM in the dashboard's hydration path. <span class="x">Every other framework requires you to build a separate web app and duplicate the logic.</span> RAPP rapplications: zero duplicated logic, by spec.
+  </p>
+  <div class="footer">
+    <span>pages/docs/rapplication-sdk.md · "Best practice: agents drive both UI and chat"</span>
+    <span class="ref">Two-birds-one-stone rapplication pattern</span>
+  </div>
+</section>
+
+<section class="slide ui" id="s20">
+  <div class="num">20 / 20</div>
+  <div class="section">UI / Rapplications · 2 of 2</div>
+  <h2>The docstring <em>IS</em> the readme. <em>Sacred.</em></h2>
+  <p class="body">
+    A sneakernet payload is exactly two files: agent.py + .egg. Adding a third file (README.md / INSTRUCTIONS.txt / SETUP.md) breaks the invariant. <span class="x">Every other tool ships a wall of docs separate from the install artifact.</span> RAPP forces the readme to live in the bootstrap agent's docstring — humans read it; LLMs ingest it; both drive the same setup.
+  </p>
+  <div class="footer">
+    <span>pages/docs/rapplication-sdk.md · "The docstring IS the readme (sacred)"</span>
+    <span class="ref">Two-file portability discipline</span>
+  </div>
+</section>
+
+<!-- ─── OUTRO ─── -->
+<section class="slide outro" id="s21">
+  <div class="num">end</div>
+  <h2>20 problems they still have to solve.<br><em>RAPP shipped them.</em></h2>
+  <p class="body" style="text-align:center;margin:0 auto">
+    Each is a constitutional invariant — sealed by tests, signed by sha256, enforced by the kernel. Catching up means building all 20. Adopting RAPP means inheriting them today.
+  </p>
+  <div class="actions">
+    <a class="btn" href="vs.html">Side-by-side feature table</a>
+    <a class="btn ghost" href="../about/prompts.html">80 prompt receipts</a>
+    <a class="btn ghost" href="../about/ecosystem.html">The ecosystem</a>
+    <a class="btn ghost" href="https://github.com/kody-w/RAPP">GitHub</a>
+  </div>
+</section>
+
+<script>
+// build nav dots + active highlighting + arrow-key nav
+(function() {
+  const slides = document.querySelectorAll('.slide');
+  const dotsEl = document.getElementById('dots');
+  slides.forEach((s, i) => {
+    const a = document.createElement('a');
+    a.href = '#' + s.id;
+    a.title = `Slide ${i}`;
+    if (i === 0) a.classList.add('active');
+    dotsEl.appendChild(a);
+  });
+  const dots = dotsEl.querySelectorAll('a');
+
+  // IntersectionObserver for active dot
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const i = Array.from(slides).indexOf(entry.target);
+        dots.forEach(d => d.classList.remove('active'));
+        if (dots[i]) dots[i].classList.add('active');
+      }
+    });
+  }, { threshold: 0.5 });
+  slides.forEach(s => io.observe(s));
+
+  // Keyboard navigation (arrows + j/k + space)
+  let current = 0;
+  function goto(i) {
+    current = Math.max(0, Math.min(slides.length - 1, i));
+    slides[current].scrollIntoView({behavior: 'smooth', block: 'start'});
+  }
+  document.addEventListener('keydown', (e) => {
+    // Find current slide based on scroll position
+    const scrollMid = window.scrollY + window.innerHeight / 2;
+    for (let i = 0; i < slides.length; i++) {
+      const top = slides[i].offsetTop;
+      const bottom = top + slides[i].offsetHeight;
+      if (scrollMid >= top && scrollMid < bottom) { current = i; break; }
+    }
+    if (e.key === 'ArrowDown' || e.key === 'j' || e.key === ' ') {
+      e.preventDefault(); goto(current + 1);
+    } else if (e.key === 'ArrowUp' || e.key === 'k') {
+      e.preventDefault(); goto(current - 1);
+    } else if (e.key === 'Home') {
+      e.preventDefault(); goto(0);
+    } else if (e.key === 'End') {
+      e.preventDefault(); goto(slides.length - 1);
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

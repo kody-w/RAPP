@@ -29,7 +29,8 @@
         { "path": "product/faq-slide.html",  "title": "FAQ slide",     "audience": "Speaker companion",     "description": "Single-slide version of the FAQ for a presentation deck." },
         { "path": "product/one-pager.html",  "title": "Platform one-pager","audience": "Reader in a hurry","description": "The whole product in one page." },
         { "path": "product/use-cases.html",  "title": "Use cases",     "audience": "Buyer building scenarios","description": "What teams actually build with RAPP, by industry and shape." },
-        { "path": "product/vs.html",         "title": "RAPP vs Codex (and the rest)", "audience": "Skeptic asking 'why not just use Claude Code'", "description": "Feature-by-feature. The most-advanced AI coding agent of 2026 (OpenAI Codex / Claude Code / Cursor) writes code; RAPP networks the result. Sega-vs-Nintendo style receipt page for the skeptic who thinks they should just vibe-code their own." }
+        { "path": "product/vs.html",         "title": "RAPP vs Codex (and the rest)", "audience": "Skeptic asking 'why not just use Claude Code'", "description": "Feature-by-feature. The most-advanced AI coding agent of 2026 (OpenAI Codex / Claude Code / Cursor) writes code; RAPP networks the result. Sega-vs-Nintendo style receipt page for the skeptic who thinks they should just vibe-code their own." },
+        { "path": "product/unsolved.html",   "title": "20 problems they still need to solve", "audience": "Skeptic who needs the punchy version", "description": "Slide-by-slide deck enumerating the 20 substrate problems every other AI agent tool, framework, SDK, or platform still owes you. Scroll or arrow-key. RAPP shipped them all; competitors haven't started." }
       ]
     },
     {
