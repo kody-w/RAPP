@@ -225,6 +225,14 @@ If any step fails, the publish is REVERTED (best-effort; the public repo's prior
 
 ---
 
+## §7.5 — This boundary applies on every substrate
+
+The two-tier model defined here is **substrate-independent**. Whether your estate is served via GitHub raw, LAN HTTP + Bonjour, an AirDrop'd egg, or a sneakernet `file://` URL — the public/private boundary holds, the URL opacity contract holds, the receiver-controls discipline holds. See [`SUBSTRATE_FEDERATION.md`](./SUBSTRATE_FEDERATION.md) for the full substrate ladder (Articles XLVII.5 / .5.1 / .5.2 / .5.3).
+
+A peer who receives your egg over AirDrop or sneakernet ALSO sees only your public estate from the egg by default — the private estate is referenced via `private_estate_pointer` in the bundled beacon, but the actual private content is in a separate (PRIVATE) repo or an encrypted file you exchange separately. The boundary doesn't dissolve when the substrate changes.
+
+---
+
 ## §8 — Cross-references
 
 - **CONSTITUTION Article XLVIII** — the boundary, in load-bearing form (6 subsections).

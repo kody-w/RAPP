@@ -149,22 +149,41 @@ Two consequences:
 - **Disaster recovery**: laptop dies → rebuild from any other device with `gh` auth.
 - **Drop-in rappid lookup**: pass ANY rappid to `estate fetch rappid=<rappid>` → the agent traces `parent_rappid` and fetches whoever owns that door's published estate.
 
-### §4.5.5 Substrate-agnostic federation (LAN, file://, etc.) — Article XLVII.5
+### §4.5.5 Substrate-agnostic federation — the four substrates (Article XLVII.5)
 
-**The federation walks across whatever URLs serve the canonical JSON.** GitHub raw is the default substrate, not the only one. When GitHub is unavailable or an operator's account is flagged, their brainstem stays alive on their device and can serve their estate over LAN HTTP, file://, USB share, etc. Same JSON shapes, same protocol, same `door_from_rappid()`.
+**The federation walks across whatever URLs serve the canonical JSON.** GitHub raw is the default substrate, not the only one. The protocol is JSON shapes + `door_from_rappid()`; the substrate is whatever URL serves them. **No centralized substrate is load-bearing for federation** — peers find you on whatever substrate you publish to.
 
-Concretely, seed entries + beacon `federation_hints[]` accept either form:
+The four substrates form a ladder of decreasing connectivity requirements. Each layer's tools live at `tools/<name>` in every planted seed (and in every hatched egg) — no kody-w/RAPP install required to use them.
 
-```json
-"kody-w"                                                 // bare handle → github raw URLs
-{"github": "rappter1", "beacon_url": "http://192.168.1.42:8080/.well-known/rapp-network.json", "estate_url": "http://192.168.1.42:8080/estate.json"}
-```
+**Substrate 1 — GitHub raw (default; needs internet)**
+- Beacon at `https://raw.githubusercontent.com/<handle>/rapp-estate/main/.well-known/rapp-network.json`
+- Discovery via the federation seed: `python3 tools/sniff_network.py` (default `--via raw`)
+- Setup: `estate publish` (handles the github side)
 
-To host your beacon + estate over LAN: `cd ~/.brainstem && python3 -m http.server 8080`. Tell the peer your LAN IP; they add a federation hint pointing at `http://<your-ip>:8080/...` to their seed file. The sniffer walks both github-raw and LAN-http nodes in one BFS. Substrate label (`github-raw`, `lan-http`, `file`, `http`) surfaces in the sniff record per node.
+**Substrate 2 — LAN HTTP + Bonjour mDNS (XLVII.5.1; needs shared LAN)**
+The LAN equivalent of GitHub's `topic:rapp-estate` is the Bonjour service type `_rapp-estate._tcp.local`. Same UX as `gh search repos topic:rapp-estate`, scoped to the LAN, zero-config.
+- Advertise: `python3 tools/lan_advertise.py` — wraps `python3 -m http.server` (in `~/.brainstem/`) + `dns-sd -R` registration with TXT records carrying rappid + beacon path
+- Discover: `python3 tools/sniff_network.py --via bonjour` — runs `dns-sd -B` then resolves each instance + walks the bundled BFS
+- Mapping: `topic:rapp-estate` ↔ `_rapp-estate._tcp`; `gh search` ↔ `dns-sd -B`; raw URL ↔ TXT record + LAN HTTP URL
+- Canonical TXT-record schema: `rappid`, `github`, `beacon_path`, `estate_path`, `schema=rapp-network-beacon/1.1`, `spec_version=rapp-protocol/1.0`, `indexable=true|false`
 
-**Auto-discovery on the LAN via Bonjour/mDNS** (Article XLVII.5.1): the LAN equivalent of GitHub's topic-search is the Bonjour service type `_rapp-estate._tcp.local`. Run `tools/lan_advertise.py` to register your brainstem on the LAN with TXT records carrying your rappid + beacon path; peers discover via `tools/sniff_network.py --via bonjour` (which calls `dns-sd -B _rapp-estate._tcp local.` under the hood). Zero-config; same UX as `gh search repos topic:rapp-estate` but scoped to the LAN.
+**Substrate 3 — Egg cartridge over AirDrop / Wi-Fi Direct (XLVII.5.2; no shared network needed)**
+The `brainstem-egg/2.2-organism` cartridge bundles the LAN federation toolchain at `tools/<name>` inside the egg + a `lan-quickstart.sh` launcher at the egg root. AirDrop a `.egg` to anyone with a Mac — they extract, run `bash lan-quickstart.sh advertise` (or `sniff` or `both`), and they're on the LAN federation. **Works between two Macs that aren't on the same network** (AirDrop uses peer-to-peer Wi-Fi Direct; Bonjour multicast rides the same path).
+- Pack: `brainstem egg <out>` (uses `bond.py::pack_organism`)
+- Hatch: `unzip <egg>` (or `brainstem hatch <egg>`)
+- Federate: `bash lan-quickstart.sh both`
 
-This is the platform's **censorship-resilience floor**: no centralized substrate is load-bearing for federation. Your peers can find you on whatever substrate you publish to — github raw, LAN HTTP, file://, or anything else that serves the canonical JSON.
+**Substrate 4 — Sneakernet via file:// (XLVII.5.3; ZERO connectivity needed)**
+The Charizard floor: two devices with no shared network at all. Just file exchange — USB stick, link cable, SD card, paper printout someone OCRs. The egg IS a federation packet. Operator A hands B an egg via any non-network medium; B's brainstem registers A as a peer by extracting + adding a `file://` URL to B's local seed.
+- Import: `python3 tools/import_peer_egg.py /path/to/received.egg` (or `bash lan-quickstart.sh import-peer <egg>`)
+- Sniff via local seed: `python3 tools/sniff_network.py --via raw --seed-url file://~/.brainstem/network-seed.json` (or `bash lan-quickstart.sh sniff-via-seed`)
+- Symmetric: A imports B's egg, B imports A's egg, both have each other in their local seeds
+
+**One sniffer for all four.** `tools/sniff_network.py::_resolve_node()` normalizes seed/hint entries into `(handle, beacon_url, estate_url)` tuples — bare strings template to github raw URLs; dicts with explicit `beacon_url` use them as-is. The substrate label (`github-raw`, `lan-http`, `file`, `http`, `https`) surfaces in each sniff record so consumers know which substrate the node was reached through. Snapshot vs. live can be distinguished by substrate label.
+
+**One protocol on every substrate.** Same `rapp-network-beacon/1.1` JSON, same `door_from_rappid()` parser, same `discovery.indexable` consent flag (honored everywhere; robots.txt-style opt-out). Federation properties (consent, integrity commitment, no central registry) hold uniformly across substrates.
+
+### §4.6 Discoverability — publishing IS the signal (no central registry)
 
 ### §4.6 Discoverability — publishing IS the signal (no central registry)
 

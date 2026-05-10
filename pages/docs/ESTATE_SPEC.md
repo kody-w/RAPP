@@ -232,6 +232,21 @@ Per Article XLVI.6:
 
 ---
 
+## 6.5 Substrate-Agnostic Federation (Article XLVII.5)
+
+This spec defines the rappid as the global address. **What URL substrate that address is fetched over** is a separate concern, covered in [`SUBSTRATE_FEDERATION.md`](./SUBSTRATE_FEDERATION.md). The four substrates — GitHub raw, LAN HTTP + Bonjour, AirDrop'd egg cartridges, sneakernet `file://` — all serve the same rappid-keyed JSON. The estate spec applies uniformly across all of them.
+
+The TL;DR: an operator's estate.json + beacon are reachable via:
+
+- `https://raw.githubusercontent.com/<handle>/rapp-estate/main/...` (default)
+- `http://<lan-ip>:8080/...` (LAN, via `tools/lan_advertise.py`)
+- AirDrop'd `.egg` extracted to a peer's machine (the egg bundles the federation tools)
+- `file://...` URLs from sneakernet-imported eggs (`tools/import_peer_egg.py`)
+
+The sniffer (`tools/sniff_network.py`) walks all four substrates uniformly. Authority for the substrate model: SUBSTRATE_FEDERATION.md + CONSTITUTION Article XLVII.
+
+---
+
 ## 7. Public/Private Boundary (Article XLVIII)
 
 **The two-tier estate is mandatory from first install.** Discovery is public (this spec); substance is private. Every operator gets BOTH `<handle>/rapp-estate` (public) AND `<handle>/rapp-estate-private` (private GitHub repo). The public beacon's `private_estate_pointer` + `private_estate_commitment` + `private_door_count` (REQUIRED in `rapp-network-beacon/1.1`) advertise the existence and integrity of private state without leaking what it contains. URLs inside the private repo are opaque (Article XLVIII.6) so even a 404 reveals nothing.
