@@ -1,7 +1,7 @@
 {
   "schema": "rapp-prompt-ledger/1.0",
   "_comment": "Append-only ledger of prompts that show off what RAPP can actually do. To add a new one: bump `next_id`, append an object to `prompts`. Sort order in the UI is newest-first by default.",
-  "next_id": 41,
+  "next_id": 51,
   "prompts": [
     {
       "id": 1,
@@ -322,6 +322,86 @@
       "prompt": "My estate is going dark in 6 months. Set up a deadman's switch: if I don't bond a kernel upgrade in 180 days, my private estate auto-publishes its bilateral channel keys to my three named heirs and my public estate publishes an obituary holocard. Show me the unsealing condition.",
       "shows": "The two-tier estate as a legacy vehicle. Private substance becomes public on a timer; chosen heirs inherit the bilateral channels. Article XLVIII solves a problem most platforms never even ask.",
       "tags": ["estate", "deadmans-switch", "inheritance"]
+    },
+    {
+      "id": 41,
+      "title": "Backfill resurrection",
+      "added": "2026-05-10",
+      "prompt": "Find every door I planted before Article XLVI was ratified. Bring them all into compliance — emit the full canonical URL set, regenerate holocards, attach variant attestation envelopes. Show me which ones can't be backfilled and why (orphan rappids, missing keys, dead repos), and propose a one-line tombstone for each unsalvageable one.",
+      "shows": "tools/backfill_seeds.py at scale. The estate as a migration target — older plantings get retrofitted into the spec without breaking their rappid. Surfaces what was lost permanently before the spec existed.",
+      "tags": ["backfill", "estate", "lineage"]
+    },
+    {
+      "id": 42,
+      "title": "Phantom holocard recruiting",
+      "added": "2026-05-10",
+      "prompt": "Generate a holocard for a door I haven't planted yet — name, soul aphorism, summon QR pointing at a future rappid. Use it as a recruiting flyer at a conference. Track who scans the QR. Only actually plant the door once 5 distinct people have summoned it. If 5 don't show up in 30 days, the holocard expires and the rappid is never minted.",
+      "shows": "The holocard as a marketing artifact decoupled from the door itself. Demand-driven planting. The estate gets populated by attention, not by intention.",
+      "tags": ["holocard", "summon-qr", "public-estate"]
+    },
+    {
+      "id": 43,
+      "title": "Facet-by-facet stripping",
+      "added": "2026-05-10",
+      "prompt": "Walk my private estate's facets.json. For each public-facing capability I expose to the trust web, ask: 'would a sophisticated stranger derive a vulnerability — operational, social, or behavioral — from this signal alone?' Strip facets one by one until the answer is no for every remaining facet. Hand me the diff.",
+      "shows": "facets.json as the granular permission surface from NEIGHBORHOOD_PROTOCOL.md. The brainstem audits its own public exposure adversarially and ratchets it down. Permission as ongoing hygiene, not one-time configuration.",
+      "tags": ["facets", "path-opacity", "private-estate"]
+    },
+    {
+      "id": 44,
+      "title": "Twin-or-gate audit",
+      "added": "2026-05-10",
+      "prompt": "Audit every door in my estate. For every front_door (twin/operator kind), prove it's actually a single AI presence — only one identity speaks, no member list. For every gate (neighborhood/braintrust/workspace/etc.), prove members.json isn't lying — every listed member's rappid resolves and their estate confirms membership. Surface the misclassified doors and the ghost members.",
+      "shows": "The Article XLVI.2 door-type invariant audited end-to-end. Twin/gate confusion is silent; this prompt makes it loud. Two-way membership consistency check across federated estates.",
+      "tags": ["estate", "introspection", "members-json"]
+    },
+    {
+      "id": 45,
+      "title": "Summon QR in the wild",
+      "added": "2026-05-10",
+      "prompt": "Print my operator summon QR on a sticker. Hand it to one stranger per day for 30 days, telling them only 'point your camera at this.' Log who actually summoned, who didn't, and what each scan brought into my private estate's inbox. End of month, write a short ethnographic report on what kinds of strangers convert to neighbors.",
+      "shows": "The summon QR as a conversion funnel. Real-world A/B test of the rappid → 9 URLs purity claim — does it actually work for a non-technical first-time scanner? The estate is the landing page.",
+      "tags": ["summon-qr", "public-estate", "accessibility"]
+    },
+    {
+      "id": 46,
+      "title": "Cross-substrate handshake",
+      "added": "2026-05-10",
+      "prompt": "Federate my estate with one operator on each substrate I don't already touch — GitLab, Codeberg, a self-hosted Forgejo, and a LAN-only mesh. Confirm beacon 1.1 carries my rappid through every hop without semantic loss. If any substrate corrupts the rappid v2 string, file the bug at the layer it broke.",
+      "shows": "The new SUBSTRATE_FEDERATION.md spec under stress. Proves the rappid is genuinely substrate-agnostic and the estate can live on any git-shaped surface. Github isn't load-bearing — the rappid is.",
+      "tags": ["substrate-federation", "federation", "chain-rule"]
+    },
+    {
+      "id": 47,
+      "title": "Variant attestation chain",
+      "added": "2026-05-10",
+      "prompt": "Pick any descendant rappid in my estate. Walk parent_rappid back up to the species root. At every step, verify the variant's attestation envelope was signed by the parent's release key. Surface any unsigned hop, any signature mismatch, any orphan — that's where lineage is forgeable. Treat each finding as a CVE: severity, exploitability, fix.",
+      "shows": "Article XXXIV variant attestation walked end-to-end. Lineage is only as strong as its weakest signed link; this prompt finds the weak link before an attacker does.",
+      "tags": ["variant-attestation", "lineage", "trust"]
+    },
+    {
+      "id": 48,
+      "title": "members.json poisoning drill",
+      "added": "2026-05-10",
+      "prompt": "On a sandboxed gate I own, add a fake member with a real-looking rappid (but no corresponding estate entry on the impostor's side). Run the chain-rule federation walker on a second machine and see if it flags the inconsistency. The walker should notice that the impostor's estate doesn't list this gate as a 'member' entry — bidirectional membership is the assumption. If it doesn't catch it, our trust assumption is broken and I want the patch.",
+      "shows": "Two-sided membership invariant under attack. The chain rule's strength lives in the cross-check; without it, a malicious gate operator can claim anyone as a member.",
+      "tags": ["members-json", "adversarial", "web-of-trust"]
+    },
+    {
+      "id": 49,
+      "title": "Inbox-only week",
+      "added": "2026-05-10",
+      "prompt": "For one week, only correspond with my collaborators via private-estate inbox letters signed with my rappid. No Slack, no email, no DMs, no GitHub comments. At end of week, count: what conversations would not have been possible without the bilateral channel? What conversations were strictly worse? What broke that I had to fall back on?",
+      "shows": "The bilateral inbox vs incumbent collaboration tools, head-to-head, in real working conditions. The estate as a Slack replacement isn't a thought experiment if you actually do it.",
+      "tags": ["bilateral-channel", "inbox", "private-estate"]
+    },
+    {
+      "id": 50,
+      "title": "Estate-as-resume",
+      "added": "2026-05-10",
+      "prompt": "Generate a single PDF from my public estate that reads as a professional resume: every door I've planted (with dates and current health), every gate I've joined (with my contribution rank from members.json), my parent_rappid lineage as 'who I learned from,' and the holocards rendered inline as visual proof. Hand it to a recruiter and tell me which sections they actually read.",
+      "shows": "The public estate as the canonical record of operator-as-builder. A git-history-backed resume that can't be fabricated, because every claim is rappid-resolvable on raw.githubusercontent.com.",
+      "tags": ["public-estate", "autobiography", "holocard"]
     }
   ]
 }
