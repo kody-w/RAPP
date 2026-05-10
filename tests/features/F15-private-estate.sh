@@ -126,24 +126,78 @@ fi
 # ─── Step 10 — Sniffer surfaces private extension WITHOUT fetching ──────
 heading "Step 10 — sniff_network surfaces private extension; never fetches content"
 if osi_net "live sniff"; then
-  SNIFF=$(python3 "$SNIFFER" --json 2>/dev/null)
-  HAS_PRIV=$(echo "$SNIFF" | python3 -c "
-import json, sys
-d = json.loads(sys.stdin.read())
+  SNIFF_TMP=$(mktemp)
+  python3 "$SNIFFER" --json 2>/dev/null > "$SNIFF_TMP"
+  RESULT=$(python3 -c "
+import json
+d = json.load(open('$SNIFF_TMP'))
 op = next((o for o in d.get('operators', []) if o['github'] == 'kody-w'), {})
-print(bool(op.get('has_private_extension')))
+hp = bool(op.get('has_private_extension'))
+co = op.get('compliance', '?')
+print(f'{hp}|{co}')
 " 2>/dev/null)
-  COMPLIANCE=$(echo "$SNIFF" | python3 -c "
-import json, sys
-d = json.loads(sys.stdin.read())
-op = next((o for o in d.get('operators', []) if o['github'] == 'kody-w'), {})
-print(op.get('compliance', '?'))
-" 2>/dev/null)
+  rm -f "$SNIFF_TMP"
+  HAS_PRIV="${RESULT%%|*}"
+  COMPLIANCE="${RESULT##*|}"
   if [ "$HAS_PRIV" = "True" ] && [ "$COMPLIANCE" = "xlviii" ]; then
     step_pass "sniffer reports has_private_extension=True, compliance=xlviii"
   else
     step_fail "sniffer didn't surface XLVIII compliance (has_priv=$HAS_PRIV, compliance=$COMPLIANCE)"
   fi
+fi
+
+# ─── Step 11 — DESTRUCTIVE: simulate fresh operator + verify auto-create ───
+# Gated by RAPP_F15_DESTRUCTIVE=1 because it deletes + recreates the live
+# kody-w/rapp-estate-private repo. Normal F15 runs skip this step (10/10).
+heading "Step 11 — DESTRUCTIVE: simulate fresh operator + verify publish auto-creates private (gated)"
+if [ "${RAPP_F15_DESTRUCTIVE:-0}" = "1" ]; then
+  if osi_net "destructive auto-create test"; then
+    # Snapshot the operator's HMAC secret + local map so we can restore on failure
+    SECRET_BAK=$(mktemp)
+    MAP_BAK=$(mktemp)
+    cp "$HOME/.brainstem/private-estate-secret" "$SECRET_BAK" 2>/dev/null || true
+    cp "$HOME/.brainstem/private-estate-map.json" "$MAP_BAK" 2>/dev/null || true
+
+    # Delete the live private repo (destructive — that's the whole point)
+    gh repo delete kody-w/rapp-estate-private --yes 2>/dev/null
+
+    # Verify it's actually gone
+    if gh repo view kody-w/rapp-estate-private --json visibility 2>/dev/null | grep -q PRIVATE; then
+      step_fail "destructive setup failed — couldn't delete kody-w/rapp-estate-private"
+    else
+      # Run estate publish — should auto-create the private estate per XLVIII.1
+      AUTO_CREATED=$(python3 - <<PY
+import json, sys, types
+sys.path.insert(0, '$REPO_ROOT/rapp_brainstem/agents')
+ba = types.ModuleType('agents.basic_agent')
+class _B:
+    def __init__(self, **kw): pass
+ba.BasicAgent = _B
+sys.modules['agents.basic_agent'] = ba
+sys.modules['agents'] = types.ModuleType('agents')
+import basic_agent
+sys.modules.setdefault('basic_agent', basic_agent)
+from estate_agent import EstateAgent
+out = json.loads(EstateAgent().perform(action='publish'))
+print('auto_created' if out.get('auto_created_private') else 'no_auto_create')
+PY
+)
+      if [ "$AUTO_CREATED" = "auto_created" ]; then
+        # Verify the repo IS recreated as PRIVATE
+        VIS=$(gh repo view kody-w/rapp-estate-private --json visibility --jq '.visibility' 2>/dev/null)
+        if [ "$VIS" = "PRIVATE" ]; then
+          step_pass "publish auto-created kody-w/rapp-estate-private (XLVIII.1 enforcement)"
+        else
+          step_fail "auto-create reported success but repo not PRIVATE (got: $VIS)"
+        fi
+      else
+        step_fail "publish did not auto-create the private estate (got: $AUTO_CREATED)"
+      fi
+    fi
+    rm -f "$SECRET_BAK" "$MAP_BAK"
+  fi
+else
+  step_skip "Step 11 — destructive auto-create test (set RAPP_F15_DESTRUCTIVE=1 to enable)"
 fi
 
 scenario_summary

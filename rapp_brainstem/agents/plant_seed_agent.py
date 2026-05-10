@@ -625,6 +625,8 @@ class PlantSeedAgent(BasicAgent):
         plan["next_step"] = (
             f"Planting complete. Browse: {plan['live_url']}. "
             f"Anyone can join via vbrainstem (paste the gate URL). "
-            f"Embody this seed in browser: localStorage.setItem('vbs_rappid', '{rappid}')."
+            f"Embody this seed in browser: localStorage.setItem('vbs_rappid', '{rappid}'). "
+            f"NEXT: Run `estate publish` to make this door discoverable on the network "
+            f"(first-time publish atomically creates your private estate per Article XLVIII.1)."
         )
         return json.dumps(plan, indent=2)

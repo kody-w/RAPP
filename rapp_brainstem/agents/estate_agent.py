@@ -295,18 +295,81 @@ def _build_network_beacon(estate: dict, github_user: str) -> dict:
     }
 
 
-def _publish_to_github(estate: dict, github_user: str, create_if_missing: bool) -> tuple[bool, str]:
+def _ensure_private_estate(github_user: str) -> tuple[bool, bool, str]:
+    """Article XLVIII.1 enforcement: ensure <github_user>/rapp-estate-private
+    exists. If missing, invokes tools/private_estate_init.py to bootstrap it.
+
+    Returns (ok, was_created, message). The publish action calls this BEFORE
+    building the beacon so the beacon's `private_estate_pointer` and
+    `private_estate_commitment` fields are populated correctly on first publish.
+    Idempotent: re-running when the private estate already exists is a no-op.
+    """
+    slug = f"{github_user}/rapp-estate-private"
+    rc, _, _ = _gh(["repo", "view", slug])
+    if rc == 0:
+        return True, False, f"private estate {slug} already exists"
+
+    # Find tools/private_estate_init.py + invoke as subprocess (mirrors how
+    # `rebuild` action delegates to tools/rebuild_estate.py)
+    here = os.path.abspath(__file__)
+    init_script = ""
+    for cand in (
+        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(here))), "tools", "private_estate_init.py"),
+        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(here)))), "tools", "private_estate_init.py"),
+    ):
+        if os.path.isfile(cand):
+            init_script = cand
+            break
+    if not init_script:
+        return False, False, "tools/private_estate_init.py not found; cannot auto-create private estate"
+    p = subprocess.run(["python3", init_script, "--handle", github_user],
+                        capture_output=True, text=True)
+    try:
+        report = json.loads(p.stdout) if p.stdout.strip() else {"ok": False, "error": "init script emitted no output"}
+    except Exception:
+        return False, False, f"private_estate_init output not JSON; stderr: {p.stderr[:200]}"
+    if not report.get("ok"):
+        return False, False, f"private_estate_init failed: {report.get('error', 'unknown')[:200]}"
+    return True, True, f"auto-created {slug} (Article XLVIII.1 enforcement)"
+
+
+def _publish_to_github(estate: dict, github_user: str, create_if_missing: bool,
+                       skip_private_create: bool = False) -> tuple[bool, str, dict]:
+    """Atomic two-tier publish (Article XLVIII.1).
+
+    Step 0: ensure private estate exists (auto-create via _ensure_private_estate).
+    Step 1: ensure public repo exists (existing logic).
+    Step 2: PUT estate.json + beacon (with XLVIII fields now populated).
+    Step 3: Set rapp-estate topic (Article XLVII discovery surface).
+
+    The skip_private_create=True opt-out exists for operators who explicitly
+    want to stay public-only — beacon will lack private_estate_pointer and
+    sniffers will flag them `compliance: legacy`. Default is full XLVIII.
+
+    Returns (ok, public_url, audit) where audit carries auto_created_private + msg.
+    """
+    audit: dict = {"auto_created_private": False, "private_status": ""}
+
+    # Step 0: Article XLVIII.1 — ensure private estate exists
+    if not skip_private_create:
+        priv_ok, was_created, priv_msg = _ensure_private_estate(github_user)
+        audit["auto_created_private"] = was_created
+        audit["private_status"] = priv_msg
+        # Soft-fail: if auto-create fails (e.g. no auth, or paid-plan limitation),
+        # publish still proceeds with empty private fields — beacon will be flagged
+        # legacy. We log the issue rather than blocking the public publish.
+
     repo = f"{github_user}/rapp-estate"
     rc_check, _, _ = _gh(["repo", "view", repo])
     if rc_check != 0:
         if not create_if_missing:
-            return False, f"repo {repo} does not exist; pass create_if_missing=true to plant it"
+            return False, f"repo {repo} does not exist; pass create_if_missing=true to plant it", audit
         rc_create, _, err = _gh([
             "repo", "create", repo, "--public",
             "--description", f"{github_user}'s RAPP estate (local-first inventory)",
         ])
         if rc_create != 0:
-            return False, f"gh repo create failed: {err.strip()[:200]}"
+            return False, f"gh repo create failed: {err.strip()[:200]}", audit
 
     # ─── 1. PUT estate.json ────────────────────────────────────────────
     body = json.dumps(estate, indent=2).encode("utf-8")
@@ -329,7 +392,7 @@ def _publish_to_github(estate: dict, github_user: str, create_if_missing: bool) 
         *sha_args,
     ])
     if rc_put != 0:
-        return False, f"gh api PUT failed: {err.strip()[:200]}"
+        return False, f"gh api PUT failed: {err.strip()[:200]}", audit
 
     # ─── 2. PUT .well-known/rapp-network.json (Article XLVII beacon) ────
     beacon = _build_network_beacon(estate, github_user)
@@ -354,7 +417,7 @@ def _publish_to_github(estate: dict, github_user: str, create_if_missing: bool) 
     # ─── 3. Set repo topic so `gh search repos topic:rapp-estate` finds us ──
     _ensure_topic(repo, _NETWORK_TOPIC)  # non-blocking; main publish already succeeded
 
-    return True, _RAW_URL_TEMPLATE.format(user=github_user)
+    return True, _RAW_URL_TEMPLATE.format(user=github_user), audit
 
 
 def _ensure_topic(repo: str, topic: str) -> bool:
@@ -626,13 +689,24 @@ class EstateAgent(BasicAgent):
             github = estate["owner"].get("github") or kwargs.get("user")
             if not github:
                 return json.dumps({"ok": False, "error": "owner.github unknown — pass user= or set ~/.brainstem/rappid.json"}, indent=2)
-            ok, msg = _publish_to_github(estate, github, bool(kwargs.get("create_if_missing", True)))
+            ok, msg, audit = _publish_to_github(
+                estate, github,
+                bool(kwargs.get("create_if_missing", True)),
+                skip_private_create=bool(kwargs.get("skip_private_create", False)),
+            )
             return json.dumps({
                 "ok": ok,
                 "action": "publish",
                 "github_user": github,
                 "result": msg,
                 "public_url": _RAW_URL_TEMPLATE.format(user=github) if ok else None,
+                "auto_created_private": audit.get("auto_created_private", False),
+                "private_status":       audit.get("private_status", ""),
+                "_xlviii_note": (
+                    "Article XLVIII.1: publish is constitutionally atomic two-tier. "
+                    "If your private estate didn't exist, it was auto-created. "
+                    "Pass skip_private_create=true to opt out (beacon will be flagged compliance: legacy)."
+                ),
             }, indent=2)
 
         if action == "fetch":

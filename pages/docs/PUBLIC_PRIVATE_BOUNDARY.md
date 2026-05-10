@@ -197,11 +197,25 @@ This is the Webmention pattern + IndieWeb's POSSE: the receiver decides what to 
 
 ---
 
-## §7 — The publish flow (atomic two-tier)
+## §7 — The publish flow (atomic two-tier; Article XLVIII.1 enforced)
 
-The estate agent's `publish` action (Article XLVIII.1 enforces atomicity):
+The estate agent's `publish` action is constitutionally atomic. Whatever path the operator takes (install.sh → chat, programmatic, AI walking through skill.md), they all converge on `publish`. Hooking the auto-create here means EVERY operator on EVERY path ends up XLVIII-compliant.
 
-1. **Verify private estate exists.** If `<handle>/rapp-estate-private` doesn't exist, INVOKE `init_private` first. No public publish can occur without a private estate present.
+**Step 0 — Auto-create private estate (NEW; the constitutional enforcement):**
+If `<handle>/rapp-estate-private` does NOT exist, the publish action invokes `tools/private_estate_init.py::init_private_estate()` automatically. This:
+- Creates the private repo (`gh repo create --private`).
+- Mints the operator's HMAC secret to `~/.brainstem/private-estate-secret` (mode 0600).
+- Scaffolds the opaque file set (`meta.json`, `README.md`, `objects/.gitkeep`, `kinds/.gitkeep`).
+- Returns the URL + commitment hash for the public beacon.
+
+The publish action surfaces `auto_created_private: true` in its response so the operator sees what happened. Idempotent: re-publishing when the private estate already exists is a no-op.
+
+**Operator opt-out (rare; produces non-compliance):**
+Pass `skip_private_create=true` to the publish action. The auto-create is skipped; the beacon's `private_estate_pointer` + `private_estate_commitment` are empty; sniffers flag the operator as `compliance: legacy`. This exists for operators who insist on public-only mode on principle, but it's against Article XLVIII.
+
+**Continuing steps:**
+
+1. **Verify private estate exists** (always true after step 0 unless skip_private_create).
 2. **Compute commitment hash.** sha256 of the private estate's normalized JSON tree (sorted by path, content concatenated). Deterministic; verifiable by anyone with read access.
 3. **Audit URL opacity.** Run `tools/path_opacity.py::audit_paths()`. Any non-opaque path → REFUSE publish with clear error.
 4. **Write public estate** (estate.json + beacon with `private_estate_pointer` + `private_estate_commitment` + `private_door_count`).

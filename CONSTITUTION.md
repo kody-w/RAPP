@@ -3499,6 +3499,8 @@ Every Article-XLVIII-compliant operator has BOTH `<handle>/rapp-estate` (public)
 
 The cost is one additional free private repo per operator. GitHub's free tier supports unlimited private repos for individuals — the mandatory tier costs operators $0. The benefit is the platform is structurally ready for real work; operators don't have to architect privacy into the platform after the fact.
 
+**Publish-time enforcement:** the `estate publish` action is constitutionally atomic. If the private estate doesn't exist when publish is invoked, the action auto-creates it (`tools/private_estate_init.py` invoked as the first step) before writing the public beacon. This means EVERY operator on EVERY path (install.sh + chat, programmatic API, AI walking through skill.md) ends up XLVIII-compliant after their first publish — no separate `init_private` step needed. Operators who explicitly insist on public-only mode pass `skip_private_create=true`; their resulting beacon is flagged `compliance: legacy` by sniffers (just like `discovery.indexable: false` is honored but flagged in Article XLVII).
+
 ### XLVIII.2 — Beacon Commits To Private State Without Leaking
 
 The public beacon contains:

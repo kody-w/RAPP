@@ -69,16 +69,21 @@ After pushing: enable GitHub Pages on the repo (Settings → Pages → Source: m
 
 ---
 
-### Step 3 — Emit your estate
+### Step 3 — Emit your estate (TWO TIERS, MANDATORY)
 
-Your **estate** is your door catalog: every door you created, every door you joined. It lives at `~/.brainstem/estate.json` (local source of truth) and optionally publishes to `<your-handle>/rapp-estate/main/estate.json` (public mirror).
+Your **estate** has two sides per **Article XLVIII** (mandatory two-tier from minute 1):
+
+- **Public side** — `<your-handle>/rapp-estate` — discovery surface (rappid, door catalog, beacon). Anyone can `curl` it; the network sniffs it.
+- **Private side** — `<your-handle>/rapp-estate-private` (PRIVATE GitHub repo) — substance surface (PII, contacts, mailbox content, conversation history). Only people you explicitly add as collaborators can read it.
+
+A public-only estate is a "toy" — fine for showing off but not for real work involving identifiable parties. The two-tier model is the substrate for actual use: doctors coordinating with patients, families with PII, professional networks with confidential members. **Both tiers exist from your first publish; you don't have to architect privacy in later.**
 
 **Easy path:**
 
 > *"Show my estate."* → returns the local catalog.
-> *"Publish my estate."* → pushes to `<your-handle>/rapp-estate` (creates the repo if missing).
+> *"Publish my estate."* → atomically creates BOTH `<your-handle>/rapp-estate` (public) AND `<your-handle>/rapp-estate-private` (private). The private side starts empty — that's fine; the substrate is what matters.
 
-**Manual path:** create `<your-handle>/rapp-estate` on GitHub and push `estate.json`:
+**Manual path:** create `<your-handle>/rapp-estate` (public) on GitHub and push `estate.json`:
 
 ```json
 {
@@ -138,25 +143,41 @@ The gate's keeper twin can now address you by your rappid; your estate now lists
 
 ---
 
-### Step 6 — Publish your estate
+### Step 6 — Publish your estate (atomic two-tier)
 
-Once your local estate exists, publish it so others can find your doors:
+Once your local estate exists, publish it so others can find your doors. **Per Article XLVIII.1, publish is atomically two-tier:** it creates BOTH `<your-handle>/rapp-estate` (public) AND `<your-handle>/rapp-estate-private` (PRIVATE) on the same call.
 
 ```bash
 # Easy path:
 "Publish my estate."
+# → creates <handle>/rapp-estate (public, with beacon advertising the private side)
+# → creates <handle>/rapp-estate-private (PRIVATE; mints HMAC secret to ~/.brainstem/private-estate-secret)
+# → re-runs are idempotent (skips repo creation if either exists)
 
-# Manual path:
+# Manual path (only if you can't run a brainstem):
+gh repo create <your-handle>/rapp-estate --public --description "RAPP estate"
+gh repo create <your-handle>/rapp-estate-private --private --description "RAPP private estate"
 gh api -X PUT /repos/<your-handle>/rapp-estate/contents/estate.json \
   -f message="estate update" \
   -f content="$(base64 < ~/.brainstem/estate.json)"
+# (Plus the beacon at .well-known/rapp-network.json — see PUBLIC_PRIVATE_BOUNDARY.md)
 ```
 
-Now anyone — any AI, any human with curl — can fetch your full door catalog at:
+Now anyone — any AI, any human with curl — can fetch your **public** door catalog at:
 
 ```
 https://raw.githubusercontent.com/<your-handle>/rapp-estate/main/estate.json
 ```
+
+…and anyone you've granted GitHub collaborator access can fetch your private estate at:
+
+```
+gh api /repos/<your-handle>/rapp-estate-private/contents/meta.json   # auth required
+```
+
+**After this step you are fully Article-XLVIII compliant** — discoverable on the network, with the substrate ready for real work involving PII. Sniffers will report your operator with `compliance: xlviii`.
+
+If you explicitly want to stay public-only (legacy mode, not recommended for real work): pass `skip_private_create=true` to publish. Your beacon will be flagged `compliance: legacy` by the network sniffer.
 
 You are a 1st-class citizen of the network.
 
