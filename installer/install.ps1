@@ -27,6 +27,13 @@ switch ($env:RAPP_INSTALL_MODE) {
     "local"  { $LOCAL_MODE = $true }
     "global" { $LOCAL_MODE = $false }
 }
+# Implicit project-local: if cwd already has .\.brainstem\, the operator
+# previously chose project-local in this directory. Treat the re-run as
+# a project-local upgrade (don't silently install a separate global one).
+# Single zero-false-positive signal - no broader heuristic.
+if (-not $LOCAL_MODE -and (Test-Path (Join-Path (Get-Location).Path ".brainstem"))) {
+    $LOCAL_MODE = $true
+}
 
 # Agent-assist handshake: fire only if an agent asked for assist AND
 # no explicit mode has been chosen yet.
