@@ -351,36 +351,25 @@ If your rapplication's UI duplicates logic that already lives in a brainstem age
 
 
 
-## The sneakernet portability invariant
 
-**A portable artifact shared between operators consists of EXACTLY two files: one `agent.py` + one `.egg`. The receiver MUST be able to use it with two actions only — drag the `.py` into their brainstem's `agents/` directory, and chat one command. Anything else is not portable.**
 
-This rule is non-negotiable. If your sharing flow requires the receiver to:
+### The docstring IS the readme (sacred)
 
-- Run a shell command (any: `cd`, `pip install`, `bash setup.sh`, `cp`)
-- Edit a config file by hand
-- Restart their brainstem
-- Set environment variables
-- Have a second tool installed beyond the brainstem itself
-- Send a follow-up chat to "complete" the setup
+**No separate `README.md`, `README.txt`, `INSTRUCTIONS.md`, `SETUP.md`, or any other accompanying documentation file in a sneakernet payload.** The bootstrap agent's top-level docstring is the readme. Adding a third file expands the payload past two files and breaks the invariant — there is no exception, including "but it's just a README."
 
-…then your artifact is **not sneakernet-portable** and cannot be considered a portable neighborhood, rapplication, or workflow pack.
+The agent's docstring MUST contain:
 
-The bootstrap agent is responsible for everything past the drag-and-drop:
+1. **A human-readable section** at the top stating: "you received this file along with a `.egg`," followed by the literal two steps (drag this `.py` into your brainstem's `agents/` directory; send one chat command). The first thing a human opening the file in a text editor sees should be the entire setup procedure.
 
-- Detecting the operator's handle (gh / env / arg)
-- Unpacking the .egg / cloning the repo / starting from a template
-- Sha256-verifying every file in the manifest
-- Installing all workflow agents into the brainstem
-- Minting the operator's rappid (idempotent)
-- Minting the operator's per-handle workspace (front door + local data dir)
-- Recording the subscription
-- Returning a single message that tells the operator the workflow is ready
+2. **An LLM-readable section** giving the LLM the same procedure plus the boundary rules it must honor (sha256 verification, no `git commit` without consent, no shell commands suggested to the operator, no improvised extra steps). Any LLM (Claude, GPT, Copilot, Gemini, local Ollama) that is shown the agent.py file should be able to drive the setup correctly without any additional context.
 
-ONE agent. ONE chat. Done.
+3. **The complete mode reference** — every action argument the bootstrap agent accepts (`from_egg`, `from_repo`, `pack_egg`, `status`), with one-line descriptions of each.
 
-The corollary is that the bootstrap agent is necessarily multi-mode — it handles every scenario the receiver might be in: airgapped (`from_egg`), online (`from_repo`), packing for re-share (`pack_egg`), readiness probe (`status`). There is no "offline bootstrap" vs "online bootstrap"; there is one bootstrap with mode arguments.
+This discipline forces the readme to live in the same file as the bootstrap code, so they cannot get out of sync. It also forces brevity: a docstring is not a place for marketing copy or aspirational design notes; it is the operator's literal instruction sheet.
 
+A 4–6 KB docstring is a reasonable target. Smaller is better when possible. Anything materially over 10 KB suggests the docstring is reaching for the role of a manual; trim it back to the procedure.
+
+If you find yourself wanting to add a `README.md` "just for one extra paragraph," you have two choices: (a) put the paragraph in the docstring, or (b) put it in a markdown file *inside* the .egg (where it gets unpacked into the receiver's workspace post-hatch and is no longer part of the sneakernet payload). Never a third file alongside the .py and .egg.
 
 ## Publishing to the RAPPstore
 
@@ -416,6 +405,26 @@ ONE agent. ONE chat. Done.
 
 The corollary is that the bootstrap agent is necessarily multi-mode — it handles every scenario the receiver might be in: airgapped (`from_egg`), online (`from_repo`), packing for re-share (`pack_egg`), readiness probe (`status`). There is no "offline bootstrap" vs "online bootstrap"; there is one bootstrap with mode arguments.
 
+
+
+
+### The docstring IS the readme (sacred)
+
+**No separate `README.md`, `README.txt`, `INSTRUCTIONS.md`, `SETUP.md`, or any other accompanying documentation file in a sneakernet payload.** The bootstrap agent's top-level docstring is the readme. Adding a third file expands the payload past two files and breaks the invariant — there is no exception, including "but it's just a README."
+
+The agent's docstring MUST contain:
+
+1. **A human-readable section** at the top stating: "you received this file along with a `.egg`," followed by the literal two steps (drag this `.py` into your brainstem's `agents/` directory; send one chat command). The first thing a human opening the file in a text editor sees should be the entire setup procedure.
+
+2. **An LLM-readable section** giving the LLM the same procedure plus the boundary rules it must honor (sha256 verification, no `git commit` without consent, no shell commands suggested to the operator, no improvised extra steps). Any LLM (Claude, GPT, Copilot, Gemini, local Ollama) that is shown the agent.py file should be able to drive the setup correctly without any additional context.
+
+3. **The complete mode reference** — every action argument the bootstrap agent accepts (`from_egg`, `from_repo`, `pack_egg`, `status`), with one-line descriptions of each.
+
+This discipline forces the readme to live in the same file as the bootstrap code, so they cannot get out of sync. It also forces brevity: a docstring is not a place for marketing copy or aspirational design notes; it is the operator's literal instruction sheet.
+
+A 4–6 KB docstring is a reasonable target. Smaller is better when possible. Anything materially over 10 KB suggests the docstring is reaching for the role of a manual; trim it back to the procedure.
+
+If you find yourself wanting to add a `README.md` "just for one extra paragraph," you have two choices: (a) put the paragraph in the docstring, or (b) put it in a markdown file *inside* the .egg (where it gets unpacked into the receiver's workspace post-hatch and is no longer part of the sneakernet payload). Never a third file alongside the .py and .egg.
 
 ## Publishing to the RAPPstore
 
