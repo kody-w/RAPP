@@ -349,7 +349,73 @@ Why this pattern is load-bearing:
 
 If your rapplication's UI duplicates logic that already lives in a brainstem agent, you're holding it wrong. Move the logic into the agent; have the rapplication call it.
 
+
+
+## The sneakernet portability invariant
+
+**A portable artifact shared between operators consists of EXACTLY two files: one `agent.py` + one `.egg`. The receiver MUST be able to use it with two actions only — drag the `.py` into their brainstem's `agents/` directory, and chat one command. Anything else is not portable.**
+
+This rule is non-negotiable. If your sharing flow requires the receiver to:
+
+- Run a shell command (any: `cd`, `pip install`, `bash setup.sh`, `cp`)
+- Edit a config file by hand
+- Restart their brainstem
+- Set environment variables
+- Have a second tool installed beyond the brainstem itself
+- Send a follow-up chat to "complete" the setup
+
+…then your artifact is **not sneakernet-portable** and cannot be considered a portable neighborhood, rapplication, or workflow pack.
+
+The bootstrap agent is responsible for everything past the drag-and-drop:
+
+- Detecting the operator's handle (gh / env / arg)
+- Unpacking the .egg / cloning the repo / starting from a template
+- Sha256-verifying every file in the manifest
+- Installing all workflow agents into the brainstem
+- Minting the operator's rappid (idempotent)
+- Minting the operator's per-handle workspace (front door + local data dir)
+- Recording the subscription
+- Returning a single message that tells the operator the workflow is ready
+
+ONE agent. ONE chat. Done.
+
+The corollary is that the bootstrap agent is necessarily multi-mode — it handles every scenario the receiver might be in: airgapped (`from_egg`), online (`from_repo`), packing for re-share (`pack_egg`), readiness probe (`status`). There is no "offline bootstrap" vs "online bootstrap"; there is one bootstrap with mode arguments.
+
+
 ## Publishing to the RAPPstore
+
+
+
+## The sneakernet portability invariant
+
+**A portable artifact shared between operators consists of EXACTLY two files: one `agent.py` + one `.egg`. The receiver MUST be able to use it with two actions only — drag the `.py` into their brainstem's `agents/` directory, and chat one command. Anything else is not portable.**
+
+This rule is non-negotiable. If your sharing flow requires the receiver to:
+
+- Run a shell command (any: `cd`, `pip install`, `bash setup.sh`, `cp`)
+- Edit a config file by hand
+- Restart their brainstem
+- Set environment variables
+- Have a second tool installed beyond the brainstem itself
+- Send a follow-up chat to "complete" the setup
+
+…then your artifact is **not sneakernet-portable** and cannot be considered a portable neighborhood, rapplication, or workflow pack.
+
+The bootstrap agent is responsible for everything past the drag-and-drop:
+
+- Detecting the operator's handle (gh / env / arg)
+- Unpacking the .egg / cloning the repo / starting from a template
+- Sha256-verifying every file in the manifest
+- Installing all workflow agents into the brainstem
+- Minting the operator's rappid (idempotent)
+- Minting the operator's per-handle workspace (front door + local data dir)
+- Recording the subscription
+- Returning a single message that tells the operator the workflow is ready
+
+ONE agent. ONE chat. Done.
+
+The corollary is that the bootstrap agent is necessarily multi-mode — it handles every scenario the receiver might be in: airgapped (`from_egg`), online (`from_repo`), packing for re-share (`pack_egg`), readiness probe (`status`). There is no "offline bootstrap" vs "online bootstrap"; there is one bootstrap with mode arguments.
+
 
 ## Publishing to the RAPPstore
 
