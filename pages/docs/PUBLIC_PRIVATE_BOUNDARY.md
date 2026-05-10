@@ -114,6 +114,73 @@ Workbench discovery is filesystem-native: `ls ~/.brainstem/workbenches/` returns
 
 ---
 
+## §1.8 — The private repo IS the full digital organism (bones, organs, senses, agents, rar, rapplications, holocards) — MINUS PII
+
+Read together: §1.5 (PII not in private repo by default), §1.7 (PII lives in workbenches on-device). The corollary is the load-bearing claim of the new model:
+
+**Cloning the private repo gives you a fully runnable digital organism. It has every anatomical layer the organism needs to function — just no operator-specific PII.**
+
+### §1.8.1 — What "the bones of the digital organism" means concretely
+
+The private repo carries the COMPLETE shape of the organism, minus substance. Per the visual anatomy at `pages/about/anatomy.html` and the implementations in `rapp_brainstem/`, that means every contributor's pull-down of the repo includes:
+
+- **Identity** — `rappid.json`, `neighborhood.json`, `members.json`
+- **Soul** — `soul.md` (the voice anchor)
+- **Agents** — `agents/*_agent.py` (sha256-pinned per `rar/index.json`, the kernel-defined units of work — Article XXXIII)
+- **Organs** — `utils/organs/*_organ.py` (HTTP extension surfaces — Article XXXIII)
+- **Senses** — modular per-channel output overlays (eli5, headlines, etc., from `kody-w/RAPP_Sense_Store`)
+- **Rapplications** — `rapplications/<name>/` (graduated workflows — Article XXXVII)
+- **Holocards** — `card.json`, `holo.svg`, `holo.md`, `holo-qr.svg`, `facets.json` (identity proof + summon QR — Article XLVI.2 door URL set)
+- **Specs bundle** — `specs/AGENT_CONTRACT.md`, `specs/NEIGHBORHOOD_PROTOCOL.md`, `specs/RAR_INDEX.md` (so the repo is self-documenting)
+- **Rar / participation kit** — `rar/index.json` (the sha256-pinned manifest)
+- **Constitution + governance** — `CONSTITUTION.md`, `SKILL.md`, `SETUP.md`, `QUICK_START.md`, `onboarding.html`, `README.md`
+- **Per-contributor front doors** — `ses/<handle>/front_door.md`, `ses/<handle>/projects.json` (sanitized, slugs + status only)
+- **`.gitignore`** that excludes the local on-device PII path (`.brainstem/`)
+
+### §1.8.2 — What does NOT enter the repo (per-contributor PII)
+
+The PII for each contributor's specific use of this organism stays on THEIR device only:
+
+- Real names of customers / clients / patients / counterparties
+- Email addresses, phone numbers, addresses, contracts
+- Customer-specific outcomes, KPI values, financial details, technical specifics
+- Mailbox content, conversation transcripts, working notes, drafts
+- Personal memory / journal entries
+- Voice recordings, screenshots, attachments
+
+All of the above lives at `~/.brainstem/workbenches/<slug>/` per §1.7. Each contributor has their own workbenches; their PII belongs to them. The repo holds the substrate they all share; the device holds the substance they each own.
+
+### §1.8.3 — Why this is the right architecture for active multi-contributor neighborhoods
+
+When a new contributor joins the neighborhood (gets added as a collaborator on the private repo + clones it):
+
+1. **They get a fully runnable organism on day one.** Every agent, every organ, every rapplication, every holocard. They can run the workflow against their own customers immediately, without needing anyone else's data.
+2. **They never see anyone else's PII.** Other contributors' real customer names + outcomes + notes never lived in the repo, so cloning doesn't expose them.
+3. **They never accidentally leak their own PII.** The `.gitignore` excludes `.brainstem/`. PII reaching the repo would require an explicit operator override per §1.6.
+4. **The neighborhood scales without compounding privacy risk.** Adding the 50th contributor to a regulated-industry neighborhood doesn't expand the attack surface for the first 49. Each contributor's substance is on their own device; the substrate they share is bones-only.
+5. **The neighborhood survives any contributor leaving.** A departing contributor takes their PII with them (it was always on their device); the substrate they contributed to (the bones — agents they wrote, rapplications they shipped) stays in the repo for the rest of the neighborhood.
+
+### §1.8.4 — Conformance for active contributors
+
+**Every active contributor of a neighborhood MUST follow this pattern.** Specifically:
+
+- They MUST keep customer / project PII in `~/.brainstem/workbenches/<slug>/` (or the per-neighborhood specialization at `~/.brainstem/neighborhoods/<slug>/<handle>/customers/<slug>/`).
+- They MUST NOT `git add` files containing customer-specific PII into the repo unless they exercise an explicit override per §1.6 with a documented reason in the commit message.
+- They MUST honor the workspace's `.gitignore` exclusion of `.brainstem/` and `.bwat-data/` and similar per-neighborhood data paths.
+- They SHOULD periodically audit `git diff` against `main` before pushing to confirm no customer-specific content slipped in (the local-data dirs are gitignored, but a copy/paste into `ses/<handle>/projects.json` could leak — visual review catches this).
+
+**Enforcement is per-contributor honor + structural defaults**, not platform policing. The platform CAN'T inspect the contents of a contributor's commits without violating their privacy; the discipline is operator-mediated per Article VIII. The structural defaults (gitignore, workbench convention, sanitized projects.json, override paths) make the right thing the easy thing.
+
+### §1.8.5 — Cross-reference: this is exactly Article XXXVII (rapplications-as-organisms) at neighborhood scale
+
+Article XXXVII (Rapplications ARE Organisms, shipped 2026-05-02) established that the egg → overlay → hatch lifecycle applies at the rapplication scope, not just the kernel scope. Section §1.8 here applies the same insight at the neighborhood scope: **the private repo IS the neighborhood-organism's distributable shape**. Cloning it = hatching the neighborhood-organism into your brainstem. Adding your PII = giving the hatched organism a body to operate against.
+
+The kernel constitution Article XLIX (twin primitive) closes the loop: each contributor's local instance of the neighborhood-organism IS a twin (or hosts twins). The twin's workbench is where their PII-bearing work lives. Sibling twins on the same device peek as permitted by §1.7.3.
+
+The result is structural: **the repo is the substrate, the device is the substance, the twin is the unit of work, the workbench is the unit of state.** Every layer has a home. Every contributor knows where their data lives. Every neighborhood knows what it ships.
+
+---
+
 ---
 
 ## §2 — The boundary (what goes where, by default)
