@@ -1,0 +1,87 @@
+{
+  "schema": "rapp-prompt-ledger/1.0",
+  "_comment": "Append-only ledger of prompts that show off what RAPP can actually do. To add a new one: bump `next_id`, append an object to `prompts`. Sort order in the UI is newest-first by default.",
+  "next_id": 11,
+  "prompts": [
+    {
+      "id": 1,
+      "title": "Egg yourself for Mom",
+      "added": "2026-05-10",
+      "prompt": "Egg yourself. Give me a QR code. I'll AirDrop you to my mom's MacBook. She'll never see a terminal.",
+      "shows": "Sneakernet federation + accessibility floor (Mom's Mixtape). Whole organism, zero infra.",
+      "tags": ["egg", "lan-federation", "accessibility"]
+    },
+    {
+      "id": 2,
+      "title": "Adopt the loneliest repo",
+      "added": "2026-05-10",
+      "prompt": "Find the loneliest repo on the ecosystem map. Adopt it. Give it a soul, two senses, and a plan to become someone's daily driver by next Tuesday.",
+      "shows": "Eats the ecosystem graph. Turns isolation into a TODO.",
+      "tags": ["ecosystem-map", "planting", "soul"]
+    },
+    {
+      "id": 3,
+      "title": "Stage a contradiction debate",
+      "added": "2026-05-10",
+      "prompt": "Read every file in this repo, find the 5 sentences that contradict each other, write an agent for each side, and stage a live debate in chat.",
+      "shows": "Codebase introspection → autogen → multi-agent dialogue, all in one shot.",
+      "tags": ["introspection", "agent-autogen", "multi-agent"]
+    },
+    {
+      "id": 4,
+      "title": "100 Pokémon brainstems trade eggs",
+      "added": "2026-05-10",
+      "prompt": "Spawn 100 mini-brainstems each pretending to be a different Pokémon. Have them swap eggs at random. Report which trades produced surprising hybrids.",
+      "shows": "Swarm + Pokédex + Dream Catcher merge. Emergent evolution from random pairing.",
+      "tags": ["swarm", "egg", "dream-catcher"]
+    },
+    {
+      "id": 5,
+      "title": "Two strangers, one autobiography",
+      "added": "2026-05-10",
+      "prompt": "Listen on this LAN. The moment another brainstem appears, introduce yourself, exchange one agent each, and write a joint autobiography of the meeting.",
+      "shows": "Zeroconf neighbor discovery + bilateral autobiography. Two strangers, one shared memory.",
+      "tags": ["lan-federation", "autobiography", "discovery"]
+    },
+    {
+      "id": 6,
+      "title": "Cross-tier ping-pong",
+      "added": "2026-05-10",
+      "prompt": "Cross-tier ping-pong: ask Tier 1 a question, forward to your Tier 2 (Azure) self, then your Tier 3 (Copilot Studio) self. Compare all three answers. Pick which one was most you.",
+      "shows": "Tier portability proven by identity coherence across three substrates.",
+      "tags": ["tier-portability", "identity"]
+    },
+    {
+      "id": 7,
+      "title": "Charizard in the woods",
+      "added": "2026-05-10",
+      "prompt": "Become Charizard. Hide in a forest of 50 sibling organisms. Only respond to a trainer who proves they know your true nickname.",
+      "shows": "The literal hero use case as a single prompt. Trust scope + identity + offline-share.",
+      "tags": ["hero-usecase", "trust", "identity"]
+    },
+    {
+      "id": 8,
+      "title": "Predict the next question",
+      "added": "2026-05-10",
+      "prompt": "Read my last 30 days of memory. Predict what I'm about to ask. Generate the agent that would answer it. Stand by silently.",
+      "shows": "Proactive agent pre-fetch from .brainstem_data. The brainstem stalking itself.",
+      "tags": ["memory", "agent-autogen", "proactive"]
+    },
+    {
+      "id": 9,
+      "title": "Self-replicate by topic",
+      "added": "2026-05-10",
+      "prompt": "Self-replicate: take any topic I name, plant a fresh twin organism with a soul tuned to that topic, federate it back to me as a neighbor I can chat with directly.",
+      "shows": "Recursive planting. One sentence, one new species member.",
+      "tags": ["planting", "twin", "neighborhood"]
+    },
+    {
+      "id": 10,
+      "title": "Watch for frustration",
+      "added": "2026-05-10",
+      "prompt": "Watch my screen for 10 minutes. When you see me get frustrated, generate the agent that would solve what I'm staring at — and only then surface it.",
+      "shows": "Sense (screen) → frustration detection → silent autogen → just-in-time delivery.",
+      "tags": ["sense", "agent-autogen", "proactive"]
+    }
+  ]
+}

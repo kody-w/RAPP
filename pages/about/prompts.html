@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAPP — Prompt ledger</title>
+<meta name="description" content="A growing menu of prompts that show off what RAPP can actually do. Click any prompt to copy.">
+<meta property="og:title" content="RAPP — Prompt ledger">
+<meta property="og:description" content="Append-only menu of prompts that exercise RAPP primitives — federation, swarms, eggs, planting, twins, dream catcher merges. Tap to copy.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kody-w.github.io/RAPP/pages/about/prompts.html">
+<link rel="canonical" href="https://kody-w.github.io/RAPP/pages/about/prompts.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E📜%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="../_site/css/tokens.css">
+<link rel="stylesheet" href="../_site/css/base.css">
+<link rel="stylesheet" href="../_site/css/components.css">
+<script>
+(function(){
+  try {
+    var saved = localStorage.getItem('rapp-theme');
+    var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    var theme = saved || (prefersLight ? 'light' : 'dark');
+    if (theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+  } catch(e){}
+})();
+</script>
+<style>
+:root {
+  --card-bg:    rgba(20, 24, 28, 0.55);
+  --card-bord:  rgba(255, 255, 255, 0.10);
+  --code-bg:    rgba(0, 0, 0, 0.35);
+  --tag-bg:     rgba(120, 200, 255, 0.10);
+  --tag-bord:   rgba(120, 200, 255, 0.30);
+  --hot:        #ffd866;
+}
+[data-theme="light"] {
+  --card-bg:    rgba(255, 255, 255, 0.92);
+  --card-bord:  rgba(0, 0, 0, 0.12);
+  --code-bg:    rgba(0, 0, 0, 0.05);
+  --tag-bg:     rgba(60, 120, 200, 0.10);
+  --tag-bord:   rgba(60, 120, 200, 0.30);
+  --hot:        #b8860b;
+}
+body { margin: 0; font-family: var(--font-sans, system-ui, sans-serif); }
+.pl-shell { max-width: 980px; margin: 0 auto; padding: 28px 22px 80px; }
+.pl-header { margin-bottom: 18px; }
+.pl-header h1 { margin: 0 0 6px; font-size: 1.6rem; }
+.pl-header p  { margin: 0; opacity: 0.78; font-size: 0.92rem; max-width: 70ch; }
+.pl-meta { font-size: 0.78rem; opacity: 0.65; margin-top: 8px; }
+.pl-meta b { font-weight: 600; opacity: 0.95; }
+
+.pl-controls {
+  display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+  margin: 18px 0; padding: 10px 12px;
+  background: var(--card-bg); border: 1px solid var(--card-bord); border-radius: 8px;
+  font-size: 0.82rem;
+}
+.pl-controls input[type="search"] {
+  padding: 6px 11px; border-radius: 4px; min-width: 220px;
+  border: 1px solid var(--card-bord); background: transparent; color: inherit;
+  font-size: 0.85rem;
+}
+.pl-controls select {
+  padding: 6px 9px; border-radius: 4px;
+  border: 1px solid var(--card-bord); background: transparent; color: inherit;
+  font-size: 0.82rem;
+}
+.pl-tag-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.pl-tag {
+  display: inline-block; padding: 2px 9px; border-radius: 999px;
+  border: 1px solid var(--tag-bord); background: var(--tag-bg);
+  font-size: 0.7rem; cursor: pointer; user-select: none;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+.pl-tag.active { background: var(--hot); color: #18181b; border-color: var(--hot); font-weight: 600; }
+.pl-tag.dim { opacity: 0.45; }
+.pl-tag:hover { transform: translateY(-1px); }
+
+.pl-cards { display: grid; gap: 14px; }
+.pl-card {
+  background: var(--card-bg); border: 1px solid var(--card-bord);
+  border-radius: 10px; padding: 16px 18px;
+  transition: border-color 0.2s ease, transform 0.15s ease;
+}
+.pl-card:hover { border-color: var(--hot); }
+.pl-card-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 12px; margin-bottom: 10px;
+}
+.pl-card-head h2 {
+  margin: 0; font-size: 1.05rem; line-height: 1.3;
+  display: flex; align-items: baseline; gap: 9px;
+}
+.pl-card-head .num {
+  font-family: var(--font-mono, monospace);
+  opacity: 0.45; font-size: 0.85rem; min-width: 2.4em;
+}
+.pl-card-head .added { font-size: 0.7rem; opacity: 0.55; white-space: nowrap; }
+.pl-prompt {
+  position: relative;
+  background: var(--code-bg); border-radius: 6px;
+  padding: 12px 50px 12px 14px; margin: 0;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.86rem; line-height: 1.45;
+  white-space: pre-wrap; word-wrap: break-word;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.pl-prompt:hover { border-color: var(--hot); }
+.pl-prompt:active { background: rgba(255, 216, 102, 0.10); }
+.pl-copy-btn {
+  position: absolute; top: 8px; right: 8px;
+  padding: 4px 10px; font-size: 0.7rem;
+  border: 1px solid var(--card-bord); border-radius: 4px;
+  background: var(--card-bg); color: inherit; cursor: pointer;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  transition: all 0.15s ease;
+}
+.pl-copy-btn:hover { border-color: var(--hot); color: var(--hot); }
+.pl-copy-btn.copied { background: var(--hot); color: #18181b; border-color: var(--hot); }
+.pl-shows {
+  margin: 10px 0 8px; font-size: 0.83rem; opacity: 0.78;
+  font-style: italic; line-height: 1.4;
+}
+.pl-shows::before { content: "→ "; opacity: 0.5; font-style: normal; }
+.pl-card-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; }
+.pl-card-tags .pl-tag { font-size: 0.65rem; padding: 1px 7px; cursor: pointer; }
+
+.pl-empty {
+  text-align: center; padding: 40px 20px;
+  opacity: 0.55; font-size: 0.9rem;
+}
+
+.pl-add-note {
+  margin-top: 32px; padding: 14px 16px;
+  background: var(--card-bg); border: 1px dashed var(--card-bord);
+  border-radius: 8px; font-size: 0.8rem; opacity: 0.85;
+}
+.pl-add-note code {
+  background: var(--code-bg); padding: 1px 6px; border-radius: 3px;
+  font-size: 0.78rem;
+}
+.pl-add-note h3 { margin: 0 0 6px; font-size: 0.9rem; }
+
+.pl-toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--hot); color: #18181b;
+  padding: 9px 18px; border-radius: 999px; font-size: 0.85rem; font-weight: 600;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+}
+.pl-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="pl-shell">
+  <header class="pl-header">
+    <h1>📜 Prompt ledger</h1>
+    <p>A growing menu of prompts that exercise what RAPP actually does — federation, swarms, eggs, planting, twins, Dream Catcher merges. Click the prompt body or the <b>copy</b> button to grab it. Append-only: new prompts get added, old ones never get edited.</p>
+    <div class="pl-meta" id="pl-meta"></div>
+  </header>
+
+  <div class="pl-controls">
+    <input type="search" id="pl-search" placeholder="search prompts…" autocomplete="off">
+    <select id="pl-sort">
+      <option value="newest">newest first</option>
+      <option value="oldest">oldest first</option>
+      <option value="title">title A→Z</option>
+    </select>
+    <span style="opacity:0.45">|</span>
+    <span class="pl-tag-row" id="pl-tags"></span>
+    <button class="pl-copy-btn" id="pl-clear" style="margin-left:auto;display:none">clear filters</button>
+  </div>
+
+  <div class="pl-cards" id="pl-cards"></div>
+
+  <div class="pl-add-note">
+    <h3>Adding a new prompt</h3>
+    Append an object to <code>pages/about/prompts.json</code> with fields: <code>id</code>, <code>title</code>, <code>added</code> (YYYY-MM-DD), <code>prompt</code>, <code>shows</code>, <code>tags</code>. Bump <code>next_id</code>. Commit. Done.
+  </div>
+</div>
+
+<div class="pl-toast" id="pl-toast">copied ✓</div>
+
+<script id="prompts-data" type="application/json">
+{
+  "schema": "rapp-prompt-ledger/1.0",
+  "_comment": "Append-only ledger of prompts that show off what RAPP can actually do. To add a new one: bump `next_id`, append an object to `prompts`. Sort order in the UI is newest-first by default.",
+  "next_id": 11,
+  "prompts": [
+    {
+      "id": 1,
+      "title": "Egg yourself for Mom",
+      "added": "2026-05-10",
+      "prompt": "Egg yourself. Give me a QR code. I'll AirDrop you to my mom's MacBook. She'll never see a terminal.",
+      "shows": "Sneakernet federation + accessibility floor (Mom's Mixtape). Whole organism, zero infra.",
+      "tags": [
+        "egg",
+        "lan-federation",
+        "accessibility"
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Adopt the loneliest repo",
+      "added": "2026-05-10",
+      "prompt": "Find the loneliest repo on the ecosystem map. Adopt it. Give it a soul, two senses, and a plan to become someone's daily driver by next Tuesday.",
+      "shows": "Eats the ecosystem graph. Turns isolation into a TODO.",
+      "tags": [
+        "ecosystem-map",
+        "planting",
+        "soul"
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Stage a contradiction debate",
+      "added": "2026-05-10",
+      "prompt": "Read every file in this repo, find the 5 sentences that contradict each other, write an agent for each side, and stage a live debate in chat.",
+      "shows": "Codebase introspection \u2192 autogen \u2192 multi-agent dialogue, all in one shot.",
+      "tags": [
+        "introspection",
+        "agent-autogen",
+        "multi-agent"
+      ]
+    },
+    {
+      "id": 4,
+      "title": "100 Pok\u00e9mon brainstems trade eggs",
+      "added": "2026-05-10",
+      "prompt": "Spawn 100 mini-brainstems each pretending to be a different Pok\u00e9mon. Have them swap eggs at random. Report which trades produced surprising hybrids.",
+      "shows": "Swarm + Pok\u00e9dex + Dream Catcher merge. Emergent evolution from random pairing.",
+      "tags": [
+        "swarm",
+        "egg",
+        "dream-catcher"
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Two strangers, one autobiography",
+      "added": "2026-05-10",
+      "prompt": "Listen on this LAN. The moment another brainstem appears, introduce yourself, exchange one agent each, and write a joint autobiography of the meeting.",
+      "shows": "Zeroconf neighbor discovery + bilateral autobiography. Two strangers, one shared memory.",
+      "tags": [
+        "lan-federation",
+        "autobiography",
+        "discovery"
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Cross-tier ping-pong",
+      "added": "2026-05-10",
+      "prompt": "Cross-tier ping-pong: ask Tier 1 a question, forward to your Tier 2 (Azure) self, then your Tier 3 (Copilot Studio) self. Compare all three answers. Pick which one was most you.",
+      "shows": "Tier portability proven by identity coherence across three substrates.",
+      "tags": [
+        "tier-portability",
+        "identity"
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Charizard in the woods",
+      "added": "2026-05-10",
+      "prompt": "Become Charizard. Hide in a forest of 50 sibling organisms. Only respond to a trainer who proves they know your true nickname.",
+      "shows": "The literal hero use case as a single prompt. Trust scope + identity + offline-share.",
+      "tags": [
+        "hero-usecase",
+        "trust",
+        "identity"
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Predict the next question",
+      "added": "2026-05-10",
+      "prompt": "Read my last 30 days of memory. Predict what I'm about to ask. Generate the agent that would answer it. Stand by silently.",
+      "shows": "Proactive agent pre-fetch from .brainstem_data. The brainstem stalking itself.",
+      "tags": [
+        "memory",
+        "agent-autogen",
+        "proactive"
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Self-replicate by topic",
+      "added": "2026-05-10",
+      "prompt": "Self-replicate: take any topic I name, plant a fresh twin organism with a soul tuned to that topic, federate it back to me as a neighbor I can chat with directly.",
+      "shows": "Recursive planting. One sentence, one new species member.",
+      "tags": [
+        "planting",
+        "twin",
+        "neighborhood"
+      ]
+    },
+    {
+      "id": 10,
+      "title": "Watch for frustration",
+      "added": "2026-05-10",
+      "prompt": "Watch my screen for 10 minutes. When you see me get frustrated, generate the agent that would solve what I'm staring at \u2014 and only then surface it.",
+      "shows": "Sense (screen) \u2192 frustration detection \u2192 silent autogen \u2192 just-in-time delivery.",
+      "tags": [
+        "sense",
+        "agent-autogen",
+        "proactive"
+      ]
+    }
+  ]
+}
+</script>
+
+<script>
+(async function(){
+  // Load data — embedded first, fetch fallback so the file works locally too.
+  let data;
+  const embedded = document.getElementById('prompts-data').textContent.trim();
+  if (embedded && embedded !== '{}') {
+    data = JSON.parse(embedded);
+  } else {
+    try {
+      data = await (await fetch('prompts.json')).json();
+    } catch(e) {
+      document.getElementById('pl-cards').innerHTML =
+        '<div class="pl-empty">⚠️ Could not load <code>prompts.json</code>.</div>';
+      return;
+    }
+  }
+  window.__PROMPTS__ = data; // exposed for tests + console
+
+  const allPrompts = data.prompts || [];
+  const allTags = [...new Set(allPrompts.flatMap(p => p.tags || []))].sort();
+  const activeTags = new Set();
+
+  // ----- meta line
+  document.getElementById('pl-meta').innerHTML =
+    `<b>${allPrompts.length}</b> prompts · <b>${allTags.length}</b> tags · ` +
+    `latest: <b>${allPrompts.reduce((a,p) => p.added > a ? p.added : a, '')}</b>`;
+
+  // ----- tag chips
+  const tagsEl = document.getElementById('pl-tags');
+  for (const tag of allTags) {
+    const el = document.createElement('span');
+    el.className = 'pl-tag';
+    el.textContent = tag;
+    el.addEventListener('click', () => {
+      if (activeTags.has(tag)) activeTags.delete(tag);
+      else activeTags.add(tag);
+      el.classList.toggle('active');
+      render();
+    });
+    tagsEl.appendChild(el);
+  }
+
+  document.getElementById('pl-clear').addEventListener('click', () => {
+    activeTags.clear();
+    document.getElementById('pl-search').value = '';
+    document.querySelectorAll('.pl-tag.active').forEach(el => el.classList.remove('active'));
+    render();
+  });
+
+  function escapeHtml(s){
+    return (s || '').replace(/[&<>"']/g, c =>
+      ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])
+    );
+  }
+
+  async function copyPrompt(text, btn) {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch(e) {
+      // Fallback for non-secure contexts
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch(_){}
+      ta.remove();
+    }
+    if (btn) {
+      const orig = btn.textContent;
+      btn.textContent = 'copied ✓';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 1400);
+    }
+    const toast = document.getElementById('pl-toast');
+    toast.classList.add('show');
+    clearTimeout(window.__plToast);
+    window.__plToast = setTimeout(() => toast.classList.remove('show'), 1400);
+  }
+
+  function visiblePrompts() {
+    const q = document.getElementById('pl-search').value.trim().toLowerCase();
+    const sort = document.getElementById('pl-sort').value;
+    let out = allPrompts.filter(p => {
+      if (q && !(p.title.toLowerCase().includes(q) ||
+                 p.prompt.toLowerCase().includes(q) ||
+                 (p.shows||'').toLowerCase().includes(q) ||
+                 (p.tags||[]).some(t => t.includes(q)))) return false;
+      if (activeTags.size && !(p.tags||[]).some(t => activeTags.has(t))) return false;
+      return true;
+    });
+    if (sort === 'newest') out.sort((a,b) => (b.added||'').localeCompare(a.added||'') || b.id - a.id);
+    else if (sort === 'oldest') out.sort((a,b) => (a.added||'').localeCompare(b.added||'') || a.id - b.id);
+    else if (sort === 'title') out.sort((a,b) => a.title.localeCompare(b.title));
+    return out;
+  }
+
+  function render() {
+    const list = visiblePrompts();
+    const root = document.getElementById('pl-cards');
+    document.getElementById('pl-clear').style.display =
+      (activeTags.size || document.getElementById('pl-search').value) ? '' : 'none';
+    if (!list.length) {
+      root.innerHTML = '<div class="pl-empty">No prompts match. Try clearing filters.</div>';
+      return;
+    }
+    root.innerHTML = list.map(p => `
+      <div class="pl-card" data-id="${p.id}">
+        <div class="pl-card-head">
+          <h2><span class="num">#${String(p.id).padStart(2,'0')}</span>${escapeHtml(p.title)}</h2>
+          <span class="added">${p.added || ''}</span>
+        </div>
+        <div class="pl-prompt" data-prompt="${escapeHtml(p.prompt)}" title="click to copy">
+          <button class="pl-copy-btn" type="button">copy</button>${escapeHtml(p.prompt)}
+        </div>
+        ${p.shows ? `<div class="pl-shows">${escapeHtml(p.shows)}</div>` : ''}
+        <div class="pl-card-tags">
+          ${(p.tags||[]).map(t => `<span class="pl-tag${activeTags.has(t)?' active':''}" data-tag="${escapeHtml(t)}">${escapeHtml(t)}</span>`).join('')}
+        </div>
+      </div>
+    `).join('');
+
+    root.querySelectorAll('.pl-prompt').forEach(el => {
+      el.addEventListener('click', (ev) => {
+        // Don't double-fire when clicking the copy button
+        const btn = el.querySelector('.pl-copy-btn');
+        copyPrompt(el.dataset.prompt, btn);
+      });
+    });
+    root.querySelectorAll('.pl-card-tags .pl-tag').forEach(el => {
+      el.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const tag = el.dataset.tag;
+        if (activeTags.has(tag)) activeTags.delete(tag);
+        else activeTags.add(tag);
+        // Sync with chips at top
+        document.querySelectorAll('#pl-tags .pl-tag').forEach(chip => {
+          chip.classList.toggle('active', activeTags.has(chip.textContent));
+        });
+        render();
+      });
+    });
+  }
+
+  document.getElementById('pl-search').addEventListener('input', render);
+  document.getElementById('pl-sort').addEventListener('change', render);
+
+  render();
+})();
+</script>
+
+</body>
+</html>
