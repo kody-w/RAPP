@@ -30,11 +30,6 @@ case "${RAPP_INSTALL_MODE:-}" in
     local)  LOCAL_MODE=1 ;;
     global) LOCAL_MODE=0 ;;
 esac
-# Implicit project-local: if cwd already has ./.brainstem/, the operator
-# previously chose --here in this directory. Treat the re-run as a
-# project-local upgrade (don't silently install a separate global one).
-# Single zero-false-positive signal — no broader heuristic.
-[ "$LOCAL_MODE" = "0" ] && [ -d "$(pwd)/.brainstem" ] && LOCAL_MODE=1
 
 # ── Agent-assist handshake ───────────────────────────────────────────
 # When an LLM (Claude Code, Copilot CLI, etc.) runs the installer with
