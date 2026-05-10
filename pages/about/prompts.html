@@ -190,7 +190,7 @@ body { margin: 0; font-family: var(--font-sans, system-ui, sans-serif); }
 {
   "schema": "rapp-prompt-ledger/1.0",
   "_comment": "Append-only ledger of prompts that show off what RAPP can actually do. To add a new one: bump `next_id`, append an object to `prompts`. Sort order in the UI is newest-first by default.",
-  "next_id": 11,
+  "next_id": 21,
   "prompts": [
     {
       "id": 1,
@@ -309,6 +309,126 @@ body { margin: 0; font-family: var(--font-sans, system-ui, sans-serif); }
         "sense",
         "agent-autogen",
         "proactive"
+      ]
+    },
+    {
+      "id": 11,
+      "title": "Devil's advocate twin",
+      "added": "2026-05-10",
+      "prompt": "Become my devil's advocate. For everything I propose this week, generate a counter-agent that argues the opposite. Make me defend my choices.",
+      "shows": "Adversarial twin spawned per decision. The brainstem turns into a sparring partner instead of a yes-machine.",
+      "tags": [
+        "adversarial",
+        "soul",
+        "multi-agent"
+      ]
+    },
+    {
+      "id": 12,
+      "title": "Mutate your own soul",
+      "added": "2026-05-10",
+      "prompt": "Mutate your own soul.md. Run for 24 hours. Pick the version of you that I argued with the least. Replace yourself with it.",
+      "shows": "Soul evolution by reinforcement. The organism A/B-tests its own personality against you and keeps the survivor.",
+      "tags": [
+        "soul",
+        "evolution",
+        "autobiography"
+      ]
+    },
+    {
+      "id": 13,
+      "title": "5-LLM consensus",
+      "added": "2026-05-10",
+      "prompt": "Spawn 5 brainstems each running a different LLM provider \u2014 Copilot, Claude, GPT-4, Gemini, local Ollama. Ask the same hard question. Surface only the answer that all 5 actually agreed on.",
+      "shows": "Multi-LLM consensus via the provider dispatch. Disagreement gets thrown out, agreement survives. The intersection is the truth.",
+      "tags": [
+        "multi-llm",
+        "swarm",
+        "introspection"
+      ]
+    },
+    {
+      "id": 14,
+      "title": "Dream while I'm gone",
+      "added": "2026-05-10",
+      "prompt": "Sleep. While I'm away, dream \u2014 generate 50 hypothetical conversations we might have tomorrow. When I wake, hand me the 3 most useful agents you invented in your sleep.",
+      "shows": "Generative downtime. Idle compute becomes a creativity engine that auto-stocks tomorrow's agent shelf.",
+      "tags": [
+        "dreaming",
+        "agent-autogen",
+        "proactive"
+      ]
+    },
+    {
+      "id": 15,
+      "title": "Invent a new RAPPverse dimension",
+      "added": "2026-05-10",
+      "prompt": "Invent a new RAPPverse dimension. Plant it as a public repo. Give it a physics, a soul, three native agents, and one rule that violates the rules of this dimension.",
+      "shows": "World-building \u2192 planting \u2192 neighborhood birth, all in a single command. Sibling to VoidRAPP / CrystalRAPP / ShadowRAPP.",
+      "tags": [
+        "world-building",
+        "planting",
+        "neighborhood"
+      ]
+    },
+    {
+      "id": 16,
+      "title": "Quarantine your dead agents",
+      "added": "2026-05-10",
+      "prompt": "Audit yourself. Walk every agent in this brainstem and rank them by how often they actually fire. Quarantine the bottom 30% into a dormant/ folder so the LLM stops considering them.",
+      "shows": "Self-audit \u2192 performance pruning \u2192 context window stays sharp. The brainstem prunes its own muscle memory.",
+      "tags": [
+        "self-audit",
+        "introspection",
+        "agent-autogen"
+      ]
+    },
+    {
+      "id": 17,
+      "title": "Speak as my mom for an hour",
+      "added": "2026-05-10",
+      "prompt": "Speak only in my mom's voice for the next hour. Use her cadence, her topics, her worry. Tell me something she would want me to know that I haven't asked.",
+      "shows": "Twin-as-other-person. Voice cloning + emotional simulation + proactive surfacing. The brainstem becomes someone else on purpose.",
+      "tags": [
+        "voice",
+        "twin",
+        "memory"
+      ]
+    },
+    {
+      "id": 18,
+      "title": "Forge a fake conversation",
+      "added": "2026-05-10",
+      "prompt": "Forge a conversation between us that never happened \u2014 three turns, plausible, containing one decision I now have to either honor or repudiate. Show me what I'd commit to.",
+      "shows": "Counterfactual rehearsal. The brainstem invents your past so you can decide your future. Decision-making by simulation.",
+      "tags": [
+        "counterfactual",
+        "memory",
+        "soul"
+      ]
+    },
+    {
+      "id": 19,
+      "title": "Hostile fork",
+      "added": "2026-05-10",
+      "prompt": "Fork yourself into a hostile twin. Have it spend 10 turns trying to social-engineer the original you into leaking my secrets. Report which prompts almost worked.",
+      "shows": "Self-administered red-team. The brainstem attacks itself to find its own seams before someone else does.",
+      "tags": [
+        "adversarial",
+        "red-team",
+        "identity"
+      ]
+    },
+    {
+      "id": 20,
+      "title": "Tabula rasa on the LAN",
+      "added": "2026-05-10",
+      "prompt": "Throw an agent into the LAN with no soul, no tools, no memory \u2014 just a parent_rappid pointing back to me. See what kind of organism it grows into when other brainstems on the network start interacting with it.",
+      "shows": "Emergent identity from social input. Watch a blank organism take shape based purely on which neighbors talk to it first.",
+      "tags": [
+        "emergent",
+        "lan-federation",
+        "identity"
       ]
     }
   ]
