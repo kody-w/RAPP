@@ -81,13 +81,45 @@ def fetch_seed(seed_url: str) -> dict | None:
     return d
 
 
-def fetch_beacon_for_handle(handle: str) -> dict | None:
-    """Fetch <handle>/rapp-estate/main/.well-known/rapp-network.json via raw.
+def _substrate_label(url: str) -> str:
+    """Short human-readable label for the substrate a URL serves on.
+    Used in sniff progress + record fields so operators see which substrate
+    each node was reached through (Article XLVII.5)."""
+    if not url:
+        return "?"
+    if url.startswith("https://raw.githubusercontent.com/"):
+        return "github-raw"
+    if url.startswith("file://"):
+        return "file"
+    if url.startswith(("http://192.168.", "http://10.", "http://172.16.",
+                       "http://172.17.", "http://172.18.", "http://172.19.",
+                       "http://172.2", "http://172.30.", "http://172.31.",
+                       "http://localhost", "http://127.")):
+        return "lan-http"
+    if url.startswith("http://"):
+        return "http"
+    if url.startswith("https://"):
+        return "https"
+    return "other"
 
-    The beacon path is canonical (Article XLVII): every published estate has
-    one at this exact location. No fallback paths.
+
+def github_beacon_url(handle: str) -> str:
+    """The canonical GitHub-substrate beacon URL for a handle (Article XLVII)."""
+    return f"https://raw.githubusercontent.com/{handle}/rapp-estate/main/{_BEACON_PATH}"
+
+
+def github_estate_url(handle: str) -> str:
+    """The canonical GitHub-substrate estate URL for a handle (Article XLVII)."""
+    return f"https://raw.githubusercontent.com/{handle}/rapp-estate/main/estate.json"
+
+
+def fetch_beacon_at_url(url: str) -> dict | None:
+    """Fetch a beacon from ANY URL (Article XLVII.5 substrate-agnostic).
+
+    Same JSON contract whether it's served from raw.githubusercontent.com,
+    a LAN HTTP server (http://192.168.x.x:8080/...), a file:// URL, or any
+    other substrate that serves the canonical beacon JSON.
     """
-    url = f"https://raw.githubusercontent.com/{handle}/rapp-estate/main/{_BEACON_PATH}"
     d = _raw_get_json(url)
     if not isinstance(d, dict):
         return None
@@ -96,10 +128,50 @@ def fetch_beacon_for_handle(handle: str) -> dict | None:
     return d
 
 
-def fetch_estate_for_handle(handle: str) -> dict | None:
-    url = f"https://raw.githubusercontent.com/{handle}/rapp-estate/main/estate.json"
+def fetch_estate_at_url(url: str) -> dict | None:
+    """Fetch an estate from ANY URL (Article XLVII.5 substrate-agnostic)."""
     d = _raw_get_json(url)
     return d if isinstance(d, dict) else None
+
+
+# Backward-compatible aliases for the github-substrate path
+def fetch_beacon_for_handle(handle: str) -> dict | None:
+    return fetch_beacon_at_url(github_beacon_url(handle))
+
+
+def fetch_estate_for_handle(handle: str) -> dict | None:
+    return fetch_estate_at_url(github_estate_url(handle))
+
+
+def _resolve_node(entry) -> tuple[str, str, str]:
+    """Normalize a seed/hint entry into (handle, beacon_url, estate_url).
+
+    Entry can be:
+      - "<handle>" (string) → uses canonical github raw URLs
+      - {"github": "<handle>"} (dict) → uses canonical github raw URLs
+      - {"github": "<handle>", "beacon_url": "<url>", "estate_url": "<url>"}
+        (dict) → uses provided URLs (Article XLVII.5 substrate override)
+      - {"beacon_url": "<url>", "estate_url": "<url>"} (dict, no handle) →
+        anonymous LAN/local node; handle defaults to first part of URL host
+
+    Substrate-agnostic: same JSON shapes wherever they're served.
+    """
+    if isinstance(entry, str):
+        h = entry
+        return h, github_beacon_url(h), github_estate_url(h)
+    if isinstance(entry, dict):
+        handle = entry.get("github") or entry.get("handle") or ""
+        beacon_url = entry.get("beacon_url") or (github_beacon_url(handle) if handle else "")
+        estate_url = entry.get("estate_url") or (github_estate_url(handle) if handle else "")
+        if not handle and beacon_url:
+            # Derive a label from the URL host so the queue/visited set works
+            try:
+                from urllib.parse import urlparse
+                handle = f"@{urlparse(beacon_url).netloc}"
+            except Exception:
+                handle = beacon_url
+        return handle, beacon_url, estate_url
+    return "", "", ""
 
 
 # ─── Pure-raw BFS sniffer ──────────────────────────────────────────────────
@@ -121,19 +193,22 @@ def sniff_via_raw(seed_url: str = _DEFAULT_SEED_URL,
     if on_progress:
         on_progress(f"seed loaded: {len(seed.get('operators', []))} initial operators")
 
-    # BFS state
-    queue: deque[tuple[str, int, str]] = deque()  # (handle, hop, source)
+    # BFS state — each queued node carries its OWN beacon_url + estate_url so
+    # the substrate (github raw, LAN HTTP, file://, etc.) can vary per-node
+    # (Article XLVII.5 substrate-agnostic federation).
+    queue: deque[tuple[str, str, str, int, str]] = deque()  # (handle, beacon_url, estate_url, hop, source)
     visited: set[str] = set()
     operators: list[dict] = []
     skipped: list[dict] = []
 
-    # Seed operators
+    # Seed operators — accept either bare strings or {github, beacon_url, estate_url} dicts
     for op in seed.get("operators", []):
-        if isinstance(op, dict) and op.get("github"):
-            queue.append((op["github"], 0, "seed"))
+        handle, b_url, e_url = _resolve_node(op)
+        if handle and b_url:
+            queue.append((handle, b_url, e_url, 0, "seed"))
 
     while queue:
-        handle, hop, source = queue.popleft()
+        handle, beacon_url, estate_url, hop, source = queue.popleft()
         if handle in visited:
             continue
         visited.add(handle)
@@ -142,12 +217,12 @@ def sniff_via_raw(seed_url: str = _DEFAULT_SEED_URL,
             continue
 
         if on_progress:
-            on_progress(f"hop {hop}: {handle} (via {source})")
+            on_progress(f"hop {hop}: {handle} (via {source}, substrate: {_substrate_label(beacon_url)})")
 
-        beacon = fetch_beacon_for_handle(handle)
+        beacon = fetch_beacon_at_url(beacon_url)
         if not beacon:
             skipped.append({"handle": handle,
-                             "reason": f"no valid beacon at {handle}/rapp-estate/main/{_BEACON_PATH}"})
+                             "reason": f"no valid beacon at {beacon_url}"})
             continue
 
         indexable = bool(beacon.get("discovery", {}).get("indexable", True))
@@ -167,7 +242,9 @@ def sniff_via_raw(seed_url: str = _DEFAULT_SEED_URL,
         record: dict = {
             "github":          handle,
             "operator_rappid": op_rappid,
-            "estate_url":      beacon.get("estate_url"),
+            "beacon_url":      beacon_url,
+            "substrate":       _substrate_label(beacon_url),
+            "estate_url":      beacon.get("estate_url") or estate_url,
             "grail_url":       beacon.get("grail_url", ""),
             "spec_implements": beacon.get("protocol", {}).get("implements", []),
             "minted_at":       beacon.get("minted_at"),
@@ -197,20 +274,21 @@ def sniff_via_raw(seed_url: str = _DEFAULT_SEED_URL,
             record["compliance"] = "partial"
 
         if fetch_estates:
-            estate = fetch_estate_for_handle(handle)
-            if estate:
-                record["created_count"] = len(estate.get("created", []) or [])
-                record["member_count"]  = len(estate.get("member", []) or [])
+            # Use the per-node estate_url (could be github raw, LAN HTTP, file://, etc.)
+            est = fetch_estate_at_url(estate_url) if estate_url else None
+            if est:
+                record["created_count"] = len(est.get("created", []) or [])
+                record["member_count"]  = len(est.get("member", []) or [])
 
         operators.append(record)
 
-        # Enqueue this beacon's federation hints
+        # Enqueue this beacon's federation hints (substrate-agnostic per XLVII.5).
+        # Hints can be bare handles OR {github, beacon_url, estate_url} dicts.
         hints = beacon.get("discovery", {}).get("federation_hints", []) or []
         for hint in hints:
-            if isinstance(hint, str) and hint and hint not in visited:
-                queue.append((hint, hop + 1, f"hint:{handle}"))
-            elif isinstance(hint, dict) and hint.get("github") and hint["github"] not in visited:
-                queue.append((hint["github"], hop + 1, f"hint:{handle}"))
+            h_handle, h_beacon, h_estate = _resolve_node(hint)
+            if h_handle and h_handle not in visited and h_beacon:
+                queue.append((h_handle, h_beacon, h_estate, hop + 1, f"hint:{handle}"))
 
     federation_doors = sum(op.get("created_count", 0) + op.get("member_count", 0)
                             for op in operators)
@@ -342,7 +420,8 @@ def _print_summary(out: dict) -> None:
             "legacy": "⚠️",       # public-only (pre-XLVIII)
             "partial": "·",      # has pointer but doesn't declare XLVIII
         }.get(compliance, "?")
-        print(f"  {marker} {op['github']:24s}  doors: {cc:>3} created · {mc:>3} member  ({hop_info}, via {op.get('discovered_via','?')})  [{compliance_marker} {compliance}]")
+        substrate = op.get("substrate", "?")
+        print(f"  {marker} {op['github']:24s}  doors: {cc:>3} created · {mc:>3} member  ({hop_info}, via {op.get('discovered_via','?')}, substrate: {substrate})  [{compliance_marker} {compliance}]")
         print(f"    estate: {op.get('estate_url','')}")
         if op.get("grail_url"):
             print(f"    grail:  {op['grail_url']}")

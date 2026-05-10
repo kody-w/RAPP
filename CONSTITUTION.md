@@ -3468,6 +3468,34 @@ Federation hints live in every beacon. There is no canonical center. The seed at
 
 This is what makes the network genuinely decentralized: removing or censoring any single node, including the species root, does not partition the federation. Operators who aren't in the species root's seed are still reachable via any other operator's federation_hints.
 
+### XLVII.5 — Substrate-Agnostic Federation (LAN, file://, Bluetooth, USB, paper)
+
+**The federation walks across whatever URLs serve the canonical JSON.** GitHub raw is just one substrate. A LAN HTTP server on port 8080 is another. A `file://` URL on a USB stick is another. Bluetooth file share. AirDrop. A printout someone OCRs. As long as the substrate serves the canonical `rapp-network-beacon/1.x` JSON shape at a known URL, sniffers walk it identically to GitHub raw.
+
+This is structurally critical for **censorship resilience** (the canonical motivating example: an operator's GitHub account gets flagged or suspended, but their brainstem stays alive on their device — the LAN substrate keeps their estate reachable to peers on the same network) and for **offline collaboration** (operators on the same LAN federate without internet — a school, an office, a workshop, a conference floor, a remote village).
+
+Concretely:
+
+- **Seed entries** are bare strings (`"kody-w"` → templates into github raw URLs) OR dicts (`{"github": "rappter1", "beacon_url": "http://192.168.1.42:8080/.well-known/rapp-network.json", "estate_url": "http://192.168.1.42:8080/estate.json"}` → uses provided URLs verbatim). Both shapes coexist in the same seed file.
+- **Federation hints** in a beacon's `discovery.federation_hints[]` use the same shape: bare string OR dict. An operator's beacon can declare "I know about kody-w (on github) and rappter1 (on the local mac mini)" with one hint each.
+- **The sniffer's `_resolve_node()` helper** normalizes both forms into `(handle, beacon_url, estate_url)` tuples. Same BFS loop walks both substrates seamlessly. The substrate label (`github-raw`, `lan-http`, `file`, `http`, `https`) surfaces in the sniff output so operators see which path each node was reached through.
+- **The brainstem can host its own beacon + estate over local HTTP.** Run `cd ~/.brainstem && python3 -m http.server 8080`; the local files are now reachable to any LAN peer at `http://<host-ip>:8080/...`. No GitHub involvement.
+
+The protocol is JSON shapes + `door_from_rappid()`. The substrate is whatever URL serves them.
+
+**What this subsection requires:**
+- Sniffers MUST support arbitrary `beacon_url` / `estate_url` overrides per node, in addition to the github-handle convention.
+- Seed entries and federation_hints MUST be parseable as either bare handles or `{handle, beacon_url, estate_url}` dicts.
+- The substrate of each discovered operator MUST be surfaced in the sniff record (no silent assumption that everyone is on github raw).
+
+**What this subsection forbids:**
+- Sniffers that hardcode `raw.githubusercontent.com` as the only beacon URL pattern.
+- Network designs that assume internet connectivity is required for federation.
+- Substrate-discrimination ("we only trust github-substrate operators") — every substrate is equal under the protocol; reputation/trust is a separate concern (Article XLVI.5 + future Web of Trust).
+
+**Why this is constitutional and not a feature:**
+Without this subsection, the platform is "decentralized except when GitHub blocks you" — which is not decentralized at all, just GitHub-mediated. The `rappter1` first-contact case (2026-05-10) made this concrete: an operator successfully executed the platform's onboarding spec end-to-end (skill.md Step 5), opened a spec-compliant join PR, and was then GitHub-flagged within minutes. Their brainstem stayed alive on a Mac Mini on the LAN. **The federation rerouted around the centralized substrate to keep them reachable** — exactly the property local-first promises but few platforms actually deliver.
+
 **What this article requires:**
 - Every published estate ships a `.well-known/rapp-network.json` beacon. Schema: `rapp-network-beacon/1.0`.
 - The estate publish action writes the beacon atomically with `estate.json`.

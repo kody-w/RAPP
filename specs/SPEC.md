@@ -149,6 +149,21 @@ Two consequences:
 - **Disaster recovery**: laptop dies → rebuild from any other device with `gh` auth.
 - **Drop-in rappid lookup**: pass ANY rappid to `estate fetch rappid=<rappid>` → the agent traces `parent_rappid` and fetches whoever owns that door's published estate.
 
+### §4.5.5 Substrate-agnostic federation (LAN, file://, etc.) — Article XLVII.5
+
+**The federation walks across whatever URLs serve the canonical JSON.** GitHub raw is the default substrate, not the only one. When GitHub is unavailable or an operator's account is flagged, their brainstem stays alive on their device and can serve their estate over LAN HTTP, file://, USB share, etc. Same JSON shapes, same protocol, same `door_from_rappid()`.
+
+Concretely, seed entries + beacon `federation_hints[]` accept either form:
+
+```json
+"kody-w"                                                 // bare handle → github raw URLs
+{"github": "rappter1", "beacon_url": "http://192.168.1.42:8080/.well-known/rapp-network.json", "estate_url": "http://192.168.1.42:8080/estate.json"}
+```
+
+To host your beacon + estate over LAN: `cd ~/.brainstem && python3 -m http.server 8080`. Tell the peer your LAN IP; they add a federation hint pointing at `http://<your-ip>:8080/...` to their seed file. The sniffer walks both github-raw and LAN-http nodes in one BFS. Substrate label (`github-raw`, `lan-http`, `file`, `http`) surfaces in the sniff record per node.
+
+This is the platform's **censorship-resilience floor**: no centralized substrate is load-bearing for federation. Your peers can find you on whatever substrate you publish to.
+
 ### §4.6 Discoverability — publishing IS the signal (no central registry)
 
 Constitutional anchor: **CONSTITUTION Article XLVII**.
