@@ -190,7 +190,7 @@ body { margin: 0; font-family: var(--font-sans, system-ui, sans-serif); }
 {
   "schema": "rapp-prompt-ledger/1.0",
   "_comment": "Append-only ledger of prompts that show off what RAPP can actually do. To add a new one: bump `next_id`, append an object to `prompts`. Sort order in the UI is newest-first by default.",
-  "next_id": 71,
+  "next_id": 81,
   "prompts": [
     {
       "id": 1,
@@ -1029,6 +1029,126 @@ body { margin: 0; font-family: var(--font-sans, system-ui, sans-serif); }
         "liveness",
         "quorum",
         "network"
+      ]
+    },
+    {
+      "id": 71,
+      "title": "Bank \u2194 customer bilateral channel",
+      "added": "2026-05-10",
+      "prompt": "Our bank has a Copilot Studio agent. Plant a signed bilateral channel between that agent and every customer's personal brainstem. Account alerts, fraud holds, document requests, signature flows \u2014 the bank writes into the customer's private estate inbox; the customer's brainstem replies into the bank's. Every exchange is cryptographically signed by both rappids, lands in BOTH estates as canonical record (compliance for the bank, personal log for the customer), and never touches a vendor middleman. Show me your Copilot Studio agent doing customer correspondence today without (a) email, (b) an SMS gateway, (c) the bank's own portal that nobody logs into.",
+      "shows": "The Copilot Studio agent stops being a chatbot the bank operates and becomes a NODE in a two-party signed correspondence channel with every customer. Compliance trail and customer experience are the same artifact, signed by both sides.",
+      "tags": [
+        "bilateral-channel",
+        "cross-operator",
+        "ms-stack"
+      ]
+    },
+    {
+      "id": 72,
+      "title": "Vendor \u2194 buyer negotiation with ratified transcript",
+      "added": "2026-05-10",
+      "prompt": "B2B sale. Vendor's Copilot Studio agent negotiates terms with buyer's Copilot Studio agent \u2014 pricing, SLA, term length, delivery dates. Each side's moves are signed by their org's release key. When both sides sign 'agreed,' the final transcript ratifies into BOTH companies' private estates as the canonical signed record of what was actually agreed. Six months later when the procurement team asks 'what did we sign up for,' the answer is one signed artifact in their estate, not 47 emails and a redlined PDF in someone's Outbox. Show me your Copilot Studio agent doing this without 'forward to legal.'",
+      "shows": "The estate as the inter-company audit trail. Both companies' Copilot Studio agents become co-signers of a single ratified record. Removes the 'what did we actually agree to' risk that drives 90% of contract disputes.",
+      "tags": [
+        "ratification",
+        "bilateral-channel",
+        "ms-stack"
+      ]
+    },
+    {
+      "id": 73,
+      "title": "Supplier trust web with secret-ballot rating",
+      "added": "2026-05-10",
+      "prompt": "Manufacturer's Copilot Studio agent federates with every tier-1 supplier's Copilot Studio agent. Compute supplier reputation across the trust web from rappid-resolvable signals \u2014 on-time delivery records co-signed by both sides, quality incidents ratified bilaterally, contributions to shared engineering gates. Quarterly secret ballot among my procurement team rates suppliers anonymously; tally lands in my private estate; nobody knows who voted what. When we need a new supplier for a critical part, transitive trust intro from an existing supplier we trust, with a cryptographically-verified social path. Show me the supplier-management module of any ERP that does any of this.",
+      "shows": "Supply chain becomes a federated trust graph instead of a list of vendors in a procurement DB. Reputation is owned by the trust web, not by D&B or by Microsoft. Onboarding new suppliers drops from months to days because trust transits.",
+      "tags": [
+        "reputation",
+        "transitive-trust",
+        "ms-stack"
+      ]
+    },
+    {
+      "id": 74,
+      "title": "Healthcare provider \u2194 patient zero-knowledge cohort",
+      "added": "2026-05-10",
+      "prompt": "Hospital's Copilot Studio agent runs a population-health query: 'which of our patients on drug X are also reporting symptom Y?' Each patient's personal brainstem holds the symptom data in their private estate \u2014 it never leaves. The provider's agent learns ONLY the bit 'this patient is in the cohort that needs follow-up' or 'no.' Zero underlying data crosses the boundary. HIPAA-compatible by construction because the substrate never sees the data. Show me the population-health module in your EHR that does cohort analysis without copying patient data into the analytics system.",
+      "shows": "Zero-knowledge cross-operator presence applied to healthcare. The provider gets the operational signal; the patient keeps the data. The compliance argument writes itself because the architecture is the compliance.",
+      "tags": [
+        "presence",
+        "private-estate",
+        "ms-stack"
+      ]
+    },
+    {
+      "id": 75,
+      "title": "M&A ephemeral diligence gate",
+      "added": "2026-05-10",
+      "prompt": "Sell-side Copilot Studio agent and buy-side Copilot Studio agent open a 72-hour ephemeral gate. Diligence questions, document requests, and answers all happen in the gate. After 72 hours, the gate seals \u2014 members.json freezes, the conversation ratifies into BOTH companies' private estates as the canonical diligence record signed by every participant. Six months later when the deal closes (or doesn't), the diligence trail is a single signed artifact in both parties' estates, not a Box folder both sides will lose access to. Show me the M&A workflow product that does cryptographic ratification across two companies' separate installations.",
+      "shows": "An entire deal phase becomes a sealed, signed, cross-org artifact instead of a shared Box folder that someone forgets to extend access to in 2027. Disputes resolve against the ratified record.",
+      "tags": [
+        "ephemeral-gate",
+        "ratification",
+        "ms-stack"
+      ]
+    },
+    {
+      "id": 76,
+      "title": "Field service: Copilot Studio agent runs offline at the customer site",
+      "added": "2026-05-10",
+      "prompt": "Same single-file agent runs in three places: (T3) HQ Copilot Studio for the back-office service team, (T2) Azure for regional dispatch, (T1) the technician's laptop offline in a basement at a customer site with no cell signal. Technician closes the work order offline at 2pm; agent syncs through Bond Pulse the moment the laptop sees wifi at 4pm; the work-order completion lands in the Copilot Studio tenant by 4:01pm, fully audit-trailed. Show me your Copilot Studio agent doing dispatcher \u2192 cloud \u2192 laptop \u2192 cloud \u2192 dispatcher with the SAME code path and ZERO connectivity assumptions in the field.",
+      "shows": "Tier portability dissolves the field-service edge case. Same agent in three substrates, no connectivity assumption, work continues at the customer site whether the cell tower is up or not. CRMs that require connectivity at point-of-service lose to one that doesn't.",
+      "tags": [
+        "tier-portability",
+        "bond-pulse",
+        "ms-stack"
+      ]
+    },
+    {
+      "id": 77,
+      "title": "Consulting firm \u2194 client engagement referendum",
+      "added": "2026-05-10",
+      "prompt": "Consulting firm's Copilot Studio agent runs a 6-month engagement for a Fortune 500 client. Major scope decisions go to a referendum across both sides \u2014 partner from the firm signs from her private estate, three named client executives sign from theirs, the decision is sealed into BOTH organizations' estates as ratified record. When the engagement ends and the new CIO arrives in year 2 asking 'why did we agree to migrate to Y,' the answer is a signed referendum record co-owned by both sides. Show me a Statement of Work amendment process today that survives the client's CIO turnover.",
+      "shows": "Cross-org governance ratified bilaterally. Engagements become deliverables that survive personnel changes on either side. The audit trail isn't an email chain; it's a sealed cross-estate record.",
+      "tags": [
+        "ratification",
+        "cross-operator",
+        "ms-stack"
+      ]
+    },
+    {
+      "id": 78,
+      "title": "Customer support with two-sided presence",
+      "added": "2026-05-10",
+      "prompt": "Vendor's Copilot Studio support agent and customer's personal brainstem are federated. When the customer opens a support ticket, the vendor's agent acknowledges by writing presence into the customer's private estate inbox: 'Sarah just picked this up; she's looking at your error log right now.' When the customer steps away, their brainstem signals back: 'customer is offline, follow up by tomorrow noon.' Both sides see liveness in real time. The 'we'll call you back' black hole that makes customers rage-tweet stops happening \u2014 because the customer can SEE that someone is actually working on it. Show me the helpdesk product where presence is visible to BOTH the agent and the customer.",
+      "shows": "Two-sided liveness as a customer-experience primitive. Eliminates the structural asymmetry where the vendor sees ticket state but the customer sees nothing. NPS climbs because anxiety drops.",
+      "tags": [
+        "liveness",
+        "presence",
+        "ms-stack"
+      ]
+    },
+    {
+      "id": 79,
+      "title": "Cross-org incident response in 72 hours",
+      "added": "2026-05-10",
+      "prompt": "Security incident: zero-day affects 5 vendors in our supply chain. The 5 vendor Copilot Studio agents form a 72-hour ephemeral gate. Signed indicators of compromise flow through bilateral channels \u2014 no 'forward this to your SOC' email chains, no Slack channel that nobody invites the right person to, no PDF attachments. After 72 hours the post-mortem ratifies into all 5 companies' private estates as canonical record. The lawyer at company #3 in 2027 has a signed timestamped artifact in their own estate, not a chain of 'sorry I lost that email.' Show me the cross-org incident-response coordination tool that exists today.",
+      "shows": "Multi-company crisis coordination becomes a federation primitive instead of a frantic group chat. The audit trail is signed by every participant on every hop, in every participant's own substrate.",
+      "tags": [
+        "ephemeral-gate",
+        "cross-operator",
+        "ms-stack"
+      ]
+    },
+    {
+      "id": 80,
+      "title": "Partner ecosystem reputation Microsoft can't deplatform",
+      "added": "2026-05-10",
+      "prompt": "Microsoft Partner builds a Copilot Studio agent. Their reputation across the customer ecosystem is computed from rappid-resolvable signals: customer-signed contributor entries in members.json across customer estates, customer-side fork count of the partner's agents, bilateral correspondence volume in the last 90 days, parent_rappid stability across kernel upgrades, signed customer testimonials in the partner's public estate. The reputation is computed FROM the network and OWNED by the network. Microsoft can't deplatform it. A bad-faith competitor can't astroturf it. The customer ecosystem can't be coerced into changing it. Show me the partner-reputation system today that isn't owned by the platform the partner is selling on.",
+      "shows": "Partner success becomes a sovereign reputation graph instead of a Microsoft-owned scoreboard. The partner's book of business is portable \u2014 the reputation moves WITH the partner across platform changes, M&A, and Microsoft category re-orgs.",
+      "tags": [
+        "reputation",
+        "federation",
+        "ms-stack"
       ]
     }
   ]
