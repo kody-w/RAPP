@@ -310,6 +310,47 @@ Both resolve to the same file. The agent is the source of truth; the service is 
 5. **JSON in, JSON out.** `perform()` returns a JSON string. `handle()` returns a `(dict, int)` tuple. No exceptions.
 6. **Shared storage.** Agent and service read/write the same `.brainstem_data/{name}.json`. Never two sources of truth.
 
+## Best practice: agents drive both UI hydration AND chat
+
+The same `*_agent.py` files that the brainstem hot-loads for `/chat` should be the **only** data source the rapplication's UI uses to hydrate. Two birds, one stone:
+
+- **Through chat**, the operator says "show me X" and the LLM picks the agent, fills in args, calls `perform()`, returns a natural-language answer.
+- **For UI hydration**, the rapplication calls the same `perform()` directly with **static, predetermined inputs** — bypassing the LLM entirely. One shot, deterministic, no follow-up questions, no token cost, no clarification rounds.
+
+A "rapplication renderer" agent (e.g. `xyz_dashboard_render_agent.py`) is just a thin composition: it imports its sibling agents, calls them with hardcoded action + parameter dicts, assembles their JSON outputs, renders an HTML file to disk, and returns the path. The HTML is self-contained; the operator opens it in a browser. Re-run + refresh = updated state.
+
+The pattern in code:
+
+```python
+def perform(self, **kwargs) -> str:
+    # Static inputs — no LLM in the loop
+    team = self._call("CustomerProjectPingerAgent",
+                       "agents.customer_project_pinger_agent",
+                       action="team_status")
+    nudge = self._call("BillTwinAgent",
+                        "agents.bill_twin_agent",
+                        action="next_move")
+    pm = self._call("BwatPmAgent", "agents.bwat_pm_agent",
+                     action="status_report", lookback_days=7)
+
+    html = self._render(team=team, nudge=nudge, pm=pm)
+    out_path = os.path.expanduser("~/.bwat-data/<handle>/dashboard.html")
+    open(out_path, "w").write(html)
+    return json.dumps({"ok": True, "html_path": out_path,
+                        "open_in_browser": f"file://{out_path}"})
+```
+
+Why this pattern is load-bearing:
+
+- **Zero logic duplication.** The rapplication doesn't reimplement `team_status` — every fix to `CustomerProjectPinger` automatically improves the dashboard with no changes here.
+- **Determinism.** Same inputs → same outputs every render. The UI is reliable in a way LLM-routed UIs cannot be.
+- **Speed + cost.** No LLM call latency, no token spend per render.
+- **Reuse for chat.** The same agents the rapplication composes are still callable through `/chat` — operators get conversational access to the exact same data the UI shows.
+
+If your rapplication's UI duplicates logic that already lives in a brainstem agent, you're holding it wrong. Move the logic into the agent; have the rapplication call it.
+
+## Publishing to the RAPPstore
+
 ## Publishing to the RAPPstore
 
 ### Directory structure
