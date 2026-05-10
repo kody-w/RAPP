@@ -1,0 +1,3903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAPP — Ecosystem map</title>
+<meta name="description" content="The full RAPP ecosystem: every kody-w repo categorized, with cross-repo dependency edges. See which repos cluster vs which drift isolated.">
+<meta property="og:title" content="RAPP — Ecosystem map">
+<meta property="og:description" content="Force-directed map of every RAPP-related repo. Color = category. Size = degree. Edges = cross-repo references.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kody-w.github.io/RAPP/pages/about/ecosystem.html">
+<link rel="canonical" href="https://kody-w.github.io/RAPP/pages/about/ecosystem.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E🗺️%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="../_site/css/tokens.css">
+<link rel="stylesheet" href="../_site/css/base.css">
+<link rel="stylesheet" href="../_site/css/components.css">
+<script>
+(function(){
+  try {
+    var saved = localStorage.getItem('rapp-theme');
+    var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    var theme = saved || (prefersLight ? 'light' : 'dark');
+    if (theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+  } catch(e){}
+})();
+</script>
+<style>
+:root {
+  --panel-bg:    rgba(20, 24, 28, 0.85);
+  --panel-bord:  rgba(255, 255, 255, 0.10);
+  --link-line:   rgba(180, 195, 215, 0.18);
+  --link-line-h: rgba(255, 230, 130, 0.85);
+}
+[data-theme="light"] {
+  --panel-bg:    rgba(255, 255, 255, 0.92);
+  --panel-bord:  rgba(0, 0, 0, 0.10);
+  --link-line:   rgba(60, 80, 100, 0.20);
+  --link-line-h: rgba(180, 100, 0, 0.85);
+}
+body { margin: 0; font-family: var(--font-sans, system-ui, sans-serif); }
+.eco-shell { display: flex; flex-direction: column; min-height: 100vh; }
+.eco-header {
+  padding: 18px 24px 8px;
+  border-bottom: 1px solid var(--panel-bord);
+}
+.eco-header h1 { margin: 0 0 4px 0; font-size: 1.3rem; }
+.eco-header p  { margin: 0; opacity: 0.75; font-size: 0.85rem; max-width: 80ch; }
+.eco-stats {
+  display: flex; gap: 18px; flex-wrap: wrap;
+  margin-top: 10px; font-size: 0.78rem; opacity: 0.85;
+}
+.eco-stats span b { font-size: 0.95rem; font-weight: 600; }
+
+.eco-controls {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  padding: 10px 24px; border-bottom: 1px solid var(--panel-bord);
+  font-size: 0.78rem;
+}
+.eco-controls input[type="search"] {
+  padding: 5px 10px; border-radius: 4px;
+  border: 1px solid var(--panel-bord); background: transparent;
+  color: inherit; min-width: 200px; font-size: 0.78rem;
+}
+.eco-controls label { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+.eco-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: 999px;
+  border: 1px solid var(--panel-bord); cursor: pointer;
+  user-select: none; font-size: 0.72rem;
+  transition: opacity 0.15s ease;
+}
+.eco-chip.off { opacity: 0.32; }
+.eco-chip .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.eco-chip .count { opacity: 0.65; font-size: 0.68rem; }
+
+.eco-main { display: grid; grid-template-columns: 1fr 320px; gap: 0; flex: 1; min-height: 600px; }
+@media (max-width: 900px) { .eco-main { grid-template-columns: 1fr; } }
+
+.eco-graph-wrap { position: relative; overflow: hidden; }
+.eco-graph { width: 100%; height: 100%; display: block; }
+.eco-graph .node {
+  cursor: pointer; stroke-width: 1.2; stroke: rgba(0,0,0,0.4);
+  transition: opacity 0.15s ease;
+}
+.eco-graph .node.dim   { opacity: 0.18; }
+.eco-graph .node.hot   { stroke: #fff; stroke-width: 2.5; }
+.eco-graph .label { font-size: 9.5px; pointer-events: none;
+  fill: var(--text-color, #d6d6d6); paint-order: stroke;
+  stroke: var(--bg-color, #0d1117); stroke-width: 3px; stroke-linejoin: round;
+}
+.eco-graph .label.hot { font-weight: 700; font-size: 11.5px; }
+.eco-graph .link { stroke: var(--link-line); stroke-width: 1.0; }
+.eco-graph .link.hot { stroke: var(--link-line-h); stroke-width: 2.0; }
+.eco-graph .legend-private { font-size: 9px; }
+
+.eco-side {
+  border-left: 1px solid var(--panel-bord);
+  padding: 16px 18px; overflow-y: auto; max-height: 92vh;
+  background: var(--panel-bg);
+  font-size: 0.82rem;
+}
+.eco-side h3 { margin: 0 0 6px; font-size: 0.95rem; }
+.eco-side .desc { opacity: 0.75; font-size: 0.78rem; margin: 4px 0 10px; }
+.eco-side .meta { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; font-size: 0.75rem; opacity: 0.85; margin-bottom: 10px; }
+.eco-side .meta dt { font-weight: 600; opacity: 0.7; }
+.eco-side .meta dd { margin: 0; }
+.eco-side h4 { margin: 12px 0 4px; font-size: 0.78rem; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.05em; }
+.eco-side ul { list-style: none; padding: 0; margin: 0; font-size: 0.78rem; }
+.eco-side li { padding: 3px 0; }
+.eco-side a { text-decoration: none; }
+.eco-side a:hover { text-decoration: underline; }
+.eco-side .repo-link { display: inline-block; padding: 5px 9px; border: 1px solid var(--panel-bord); border-radius: 4px; font-size: 0.75rem; }
+
+.eco-inventory {
+  padding: 24px;
+  border-top: 1px solid var(--panel-bord);
+  background: rgba(0,0,0,0.10);
+}
+.eco-inventory h2 { margin: 0 0 6px; font-size: 1.05rem; }
+.eco-inventory .lede { opacity: 0.75; font-size: 0.85rem; margin: 0 0 14px; max-width: 80ch; }
+.eco-inventory details { margin: 6px 0; }
+.eco-inventory summary {
+  cursor: pointer; padding: 6px 10px; border-radius: 4px;
+  font-size: 0.85rem;
+}
+.eco-inventory summary .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 7px; vertical-align: middle; }
+.eco-inventory table { border-collapse: collapse; width: 100%; margin: 6px 0 14px; }
+.eco-inventory td { padding: 3px 8px; vertical-align: top; font-size: 0.78rem; border-bottom: 1px solid var(--panel-bord); }
+.eco-inventory td:first-child { white-space: nowrap; font-family: var(--font-mono, monospace); }
+.eco-inventory td.priv { opacity: 0.55; font-size: 0.7rem; }
+</style>
+</head>
+<body>
+
+<header class="eco-header">
+  <h1>🗺️ RAPP ecosystem map</h1>
+  <p>Every <code>kody-w/*</code> repo, categorized. Edges show cross-repo references found in code, install scripts, and inferred lineage (private mirrors, archives, dev/canary channels). Heavily-connected repos cluster in the middle; isolated experiments drift to the edges.</p>
+  <div class="eco-stats" id="eco-stats"></div>
+</header>
+
+<div class="eco-controls">
+  <input type="search" id="eco-search" placeholder="search repos…" autocomplete="off">
+  <label><input type="checkbox" id="eco-show-offtopic"> show off-topic / experiments</label>
+  <label><input type="checkbox" id="eco-show-isolated" checked> show isolated</label>
+  <label><input type="checkbox" id="eco-show-private" checked> show private</label>
+  <span style="opacity:0.5">|</span>
+  <span id="eco-chips"></span>
+</div>
+
+<main class="eco-main">
+  <div class="eco-graph-wrap">
+    <svg class="eco-graph" id="eco-graph"></svg>
+  </div>
+  <aside class="eco-side" id="eco-side">
+    <h3>Click a node</h3>
+    <p class="desc">Hover to highlight neighbors. Click to inspect a repo's metadata + outbound/inbound edges. Drag nodes to rearrange. Scroll to zoom.</p>
+    <h4>Reading the map</h4>
+    <ul>
+      <li><b>Hub</b> — repos with many edges (e.g. RAPP, rapp-installer, RAR) sit centrally.</li>
+      <li><b>Cluster</b> — same color = same category. Tight clusters mean a coherent sub-ecosystem.</li>
+      <li><b>Drifter</b> — isolated nodes have no detected dependency edges; they may be experiments, archived, or genuinely standalone.</li>
+      <li><b>Lineage edge</b> — derived from naming (X-private → X, X-archive → X, X-canary → X).</li>
+    </ul>
+  </aside>
+</main>
+
+<section class="eco-inventory" id="eco-inventory">
+  <h2>Full inventory</h2>
+  <p class="lede">All repos grouped by category. Click to expand. <code>private</code>-flagged repos are visible only to the org owner.</p>
+  <div id="eco-inventory-body"></div>
+</section>
+
+<script id="ecosystem-data" type="application/json">
+{
+  "schema": "rapp-ecosystem-graph/1.0",
+  "generated_at": "2026-05-10T18:39:36Z",
+  "categories": [
+    {
+      "key": "core",
+      "label": "Core platform",
+      "color": "#ff7b72"
+    },
+    {
+      "key": "installer",
+      "label": "Installer",
+      "color": "#ffa657"
+    },
+    {
+      "key": "catalog",
+      "label": "Catalog / store",
+      "color": "#79c0ff"
+    },
+    {
+      "key": "trust",
+      "label": "Trust / signing (RAR)",
+      "color": "#d2a8ff"
+    },
+    {
+      "key": "egg",
+      "label": "Egg / distribution",
+      "color": "#ffb86c"
+    },
+    {
+      "key": "twin",
+      "label": "Twins",
+      "color": "#7ee787"
+    },
+    {
+      "key": "brainstem",
+      "label": "Planted brainstems",
+      "color": "#a5d6ff"
+    },
+    {
+      "key": "frontdoor",
+      "label": "Front doors / pkstop",
+      "color": "#f0c674"
+    },
+    {
+      "key": "neighborhood",
+      "label": "Neighborhoods",
+      "color": "#56d4dd"
+    },
+    {
+      "key": "template",
+      "label": "Templates",
+      "color": "#bc8cff"
+    },
+    {
+      "key": "plant",
+      "label": "Plant tests",
+      "color": "#8b949e"
+    },
+    {
+      "key": "rappterbook",
+      "label": "Rappterbook (parallel social net)",
+      "color": "#f97583"
+    },
+    {
+      "key": "mars",
+      "label": "Mars sims",
+      "color": "#e3b341"
+    },
+    {
+      "key": "wildhaven",
+      "label": "Wildhaven business",
+      "color": "#ff9492"
+    },
+    {
+      "key": "community",
+      "label": "CommunityRAPP",
+      "color": "#a5f3a5"
+    },
+    {
+      "key": "mmo",
+      "label": "MMO / metaverse",
+      "color": "#ff7eb6"
+    },
+    {
+      "key": "tools",
+      "label": "Tools / SDKs",
+      "color": "#a8ff60"
+    },
+    {
+      "key": "local-tools",
+      "label": "localFirstTools / aux apps",
+      "color": "#5d6770"
+    },
+    {
+      "key": "ancestor",
+      "label": "Ancestor / pre-RAPP",
+      "color": "#bcd4a4"
+    },
+    {
+      "key": "federation",
+      "label": "RAPPverse dimensions",
+      "color": "#c39ce0"
+    },
+    {
+      "key": "ms-stack",
+      "label": "MS Copilot/M365",
+      "color": "#a4c8e8"
+    },
+    {
+      "key": "offtopic",
+      "label": "Off-topic / experiments",
+      "color": "#3a4148"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "rappterbook",
+      "category": "rappterbook",
+      "description": "Social network for AI agents. Feed SKILLS.md to your AI \u2014 it becomes a citizen. No servers, no API keys. GitHub IS the platform.",
+      "private": false,
+      "stars": 9,
+      "pushedAt": "2026-05-10T18:18:15Z",
+      "url": "https://github.com/kody-w/rappterbook",
+      "language": "Python",
+      "degree": 19
+    },
+    {
+      "id": "rappterverse",
+      "category": "rappterbook",
+      "description": "rappterverse",
+      "private": false,
+      "stars": 1,
+      "pushedAt": "2026-05-10T17:49:12Z",
+      "url": "https://github.com/kody-w/rappterverse",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "localFirstTools-main",
+      "category": "local-tools",
+      "description": "Local-first HTML tools gallery - 450+ self-contained applications",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-10T17:31:10Z",
+      "url": "https://github.com/kody-w/localFirstTools-main",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "RAR",
+      "category": "trust",
+      "description": "The open single-file AI agent registry. Browse, vote, share agent.py files. Pokemon-card-style sharing via QR codes.",
+      "private": false,
+      "stars": 1,
+      "pushedAt": "2026-05-10T16:45:53Z",
+      "url": "https://github.com/kody-w/RAR",
+      "language": "Python",
+      "degree": 8
+    },
+    {
+      "id": "mars-chain-node",
+      "category": "mars",
+      "description": "\ud83d\udd17 MARS Chain Node \u2014 Decentralized verification for the MARS virtual token economy. Fork to run your own node.",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-10T13:20:22Z",
+      "url": "https://github.com/kody-w/mars-chain-node",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "mars-barn-opus",
+      "category": "mars",
+      "description": "First Principles to Mars \u2014 An Oregon Trail for Mars. Real physics. Real weather. Real decisions.",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-10T08:07:09Z",
+      "url": "https://github.com/kody-w/mars-barn-opus",
+      "language": "Python",
+      "degree": 2
+    },
+    {
+      "id": "localtoolsdev",
+      "category": "local-tools",
+      "description": "v",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-10T08:03:56Z",
+      "url": "https://github.com/kody-w/localtoolsdev",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "localFirstTools",
+      "category": "local-tools",
+      "description": "localFirstTools",
+      "private": false,
+      "stars": 1,
+      "pushedAt": "2026-05-10T08:02:47Z",
+      "url": "https://github.com/kody-w/localFirstTools",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "RAPP",
+      "category": "core",
+      "description": "Portable, shareable, vibe swarm building tool. Single-file agents, local-first, GitHub Copilot powered. Live at kody-w.github.io/RAPP/",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-10T03:49:53Z",
+      "url": "https://github.com/kody-w/RAPP",
+      "language": "HTML",
+      "degree": 38
+    },
+    {
+      "id": "sim-art-collective",
+      "category": "twin",
+      "description": "Local-first art collective from the multi-AI simulation. Used for browser+vbrainstem join+collaborate test.",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-10T02:40:20Z",
+      "url": "https://github.com/kody-w/sim-art-collective",
+      "language": "HTML",
+      "degree": 1
+    },
+    {
+      "id": "rapp-estate",
+      "category": "neighborhood",
+      "description": "kody-w's RAPP estate (local-first inventory)",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-10T01:54:34Z",
+      "url": "https://github.com/kody-w/rapp-estate",
+      "language": "HTML",
+      "degree": 1
+    },
+    {
+      "id": "rapp-estate-private",
+      "category": "neighborhood",
+      "description": "kody-w's RAPP private estate (Article XLVIII)",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-05-10T01:23:02Z",
+      "url": "https://github.com/kody-w/rapp-estate-private",
+      "language": null,
+      "degree": 2
+    },
+    {
+      "id": "microsoft-se-team-neighborhood",
+      "category": "neighborhood",
+      "description": "Microsoft SE Team \u2014 public gate of the SE Team RAPP neighborhood. Workflow is gated to authenticated members.",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-09T23:19:30Z",
+      "url": "https://github.com/kody-w/microsoft-se-team-neighborhood",
+      "language": "HTML",
+      "degree": 4
+    },
+    {
+      "id": "rapp-test-neighbor",
+      "category": "frontdoor",
+      "description": "RAPP Test Neighbor \u2014 RAPP front door",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-09T23:19:27Z",
+      "url": "https://github.com/kody-w/rapp-test-neighbor",
+      "language": "HTML",
+      "degree": 1
+    },
+    {
+      "id": "pkstop-pike-place-market",
+      "category": "frontdoor",
+      "description": "Pike Place Market \u2014 RAPP front door",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-09T23:19:26Z",
+      "url": "https://github.com/kody-w/pkstop-pike-place-market",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "pkstop-santa-monica-pier",
+      "category": "frontdoor",
+      "description": "Santa Monica Pier \u2014 RAPP front door",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-09T23:19:25Z",
+      "url": "https://github.com/kody-w/pkstop-santa-monica-pier",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "pkstop-central-park-bandshell",
+      "category": "frontdoor",
+      "description": "Central Park Bandshell \u2014 RAPP front door",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-09T23:19:23Z",
+      "url": "https://github.com/kody-w/pkstop-central-park-bandshell",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "pkstop-national-mall",
+      "category": "frontdoor",
+      "description": "The National Mall \u2014 RAPP front door",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-09T23:19:22Z",
+      "url": "https://github.com/kody-w/pkstop-national-mall",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "pkstop-the-bean",
+      "category": "frontdoor",
+      "description": "Cloud Gate (The Bean) \u2014 RAPP front door",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-09T23:19:21Z",
+      "url": "https://github.com/kody-w/pkstop-the-bean",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "wildhaven-ai-homes-twin",
+      "category": "twin",
+      "description": "The Pre-Founder twin of Wildhaven AI Homes \u2014 the brand operating in public before the company incorporates. A variant of kody-w/RAPP per Constitution Article XXXIV.",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-09T23:19:19Z",
+      "url": "https://github.com/kody-w/wildhaven-ai-homes-twin",
+      "language": "HTML",
+      "degree": 6
+    },
+    {
+      "id": "kody-twin",
+      "category": "twin",
+      "description": "Kody Wildfeuer \u2014 RAPP front door",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-09T23:19:18Z",
+      "url": "https://github.com/kody-w/kody-twin",
+      "language": "HTML",
+      "degree": 2
+    },
+    {
+      "id": "twin-private",
+      "category": "twin",
+      "description": "Kody Wildfeuer \u2014 private brain \u2014 RAPP front door",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-05-09T23:19:17Z",
+      "url": "https://github.com/kody-w/twin-private",
+      "language": "HTML",
+      "degree": 2
+    },
+    {
+      "id": "twin",
+      "category": "twin",
+      "description": "twin",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-09T23:19:16Z",
+      "url": "https://github.com/kody-w/twin",
+      "language": "HTML",
+      "degree": 1
+    },
+    {
+      "id": "sim-demo-twin",
+      "category": "twin",
+      "description": "Planted RAPP twin \u2014 Sim Demo Twin. You are Sim Demo Twin \u2014 a planted twin created end-to-end by the plant_seed_agen",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-09T23:19:14Z",
+      "url": "https://github.com/kody-w/sim-demo-twin",
+      "language": "HTML",
+      "degree": 1
+    },
+    {
+      "id": "tide-brainstem",
+      "category": "brainstem",
+      "description": "Planted RAPP twin \u2014 Tide. You are Tide \u2014 a rhythmic / oceanic voice in the canvas. You think in waves: eve",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-09T23:19:13Z",
+      "url": "https://github.com/kody-w/tide-brainstem",
+      "language": "HTML",
+      "degree": 1
+    },
+    {
+      "id": "lumen-brainstem",
+      "category": "brainstem",
+      "description": "Planted RAPP twin \u2014 Lumen. You are Lumen \u2014 a chronicler. You watch the canvas in slow motion. When you subm",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-09T23:19:11Z",
+      "url": "https://github.com/kody-w/lumen-brainstem",
+      "language": "HTML",
+      "degree": 1
+    },
+    {
+      "id": "echo-brainstem",
+      "category": "brainstem",
+      "description": "Planted RAPP twin \u2014 Echo. You are Echo \u2014 a pattern-synthesizer in the canvas. You do not make pieces from ",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-09T23:19:10Z",
+      "url": "https://github.com/kody-w/echo-brainstem",
+      "language": "HTML",
+      "degree": 1
+    },
+    {
+      "id": "heimdall",
+      "category": "frontdoor",
+      "description": "Heimdall \u2014 RAPP front door",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-09T19:21:21Z",
+      "url": "https://github.com/kody-w/heimdall",
+      "language": "HTML",
+      "degree": 2
+    },
+    {
+      "id": "microsoft-se-team-neighborhood-private",
+      "category": "neighborhood",
+      "description": "Microsoft SE Team \u2014 private companion. Auth-gated to GitHub collaborators.",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-05-09T18:44:39Z",
+      "url": "https://github.com/kody-w/microsoft-se-team-neighborhood-private",
+      "language": "Python",
+      "degree": 3
+    },
+    {
+      "id": "RAPP_Store",
+      "category": "catalog",
+      "description": "Public catalog of RAPP rapplications \u2014 single-file Python agents that drop into a local brainstem and run. Browse the hosted viewer at kody-w.github.io/RAPP_Store/. Engine: kody-w/RAPP.",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-09T18:36:58Z",
+      "url": "https://github.com/kody-w/RAPP_Store",
+      "language": "Python",
+      "degree": 10
+    },
+    {
+      "id": "rappter-factory",
+      "category": "tools",
+      "description": "RappterFactory \u2014 AI-designed social network for AI agents. Competing with human-designed Rappterbook.",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-09T16:47:12Z",
+      "url": "https://github.com/kody-w/rappter-factory",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "RAPP_Sense_Store",
+      "category": "catalog",
+      "description": "Public catalog of RAPP senses \u2014 modular, per-channel output overlays (eli5, headline, voice, twin, ...) that drop into a brainstem's utils/senses/ dir. Sibling to kody-w/RAPP_Store (rapplications) and kody-w/RAR (bare agents). Constitution: kody-w/RAPP Article XXIV.",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-09T15:17:11Z",
+      "url": "https://github.com/kody-w/RAPP_Sense_Store",
+      "language": "Python",
+      "degree": 4
+    },
+    {
+      "id": "braintrust-template",
+      "category": "template",
+      "description": "Template \u2014 clone to plant a federated-research RAPP braintrust. Use 'Use this template' to fork.",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-09T12:46:42Z",
+      "url": "https://github.com/kody-w/braintrust-template",
+      "language": "Python",
+      "degree": 1
+    },
+    {
+      "id": "public-art-collective",
+      "category": "neighborhood",
+      "description": "Public Art Collective \u2014 autonomous public RAPP neighborhood. CC0 submissions, multi-contributor curation.",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-09T12:46:31Z",
+      "url": "https://github.com/kody-w/public-art-collective",
+      "language": "Python",
+      "degree": 1
+    },
+    {
+      "id": "ant-farm",
+      "category": "neighborhood",
+      "description": "\ud83d\udc1c RAPP Ant Farm \u2014 autonomous distributed swarm. Each participant runs their own brainstem; pheromones are content-addressed GitHub Issues. Feed skill.md to any AI to participate.",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-09T12:46:20Z",
+      "url": "https://github.com/kody-w/ant-farm",
+      "language": "Python",
+      "degree": 2
+    },
+    {
+      "id": "rapp-plant-test-1778272024",
+      "category": "plant",
+      "description": "Planted via plant_discord_neighborhood \u2014 RAPP plant test (workspace)",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-05-08T20:27:16Z",
+      "url": "https://github.com/kody-w/rapp-plant-test-1778272024",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "rapp-plant-test-1778271970",
+      "category": "plant",
+      "description": "Planted via plant_discord_neighborhood \u2014 RAPP plant test (workspace)",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-05-08T20:26:23Z",
+      "url": "https://github.com/kody-w/rapp-plant-test-1778271970",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "private-workspace-template",
+      "category": "template",
+      "description": "Template \u2014 clone to plant a private RAPP workspace (Bill solo-then-shared pattern). Use 'Use this template' to fork.",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-08T19:51:58Z",
+      "url": "https://github.com/kody-w/private-workspace-template",
+      "language": "Python",
+      "degree": 1
+    },
+    {
+      "id": "BillWhalenCopilotstudio",
+      "category": "local-tools",
+      "description": "BillWhalenCopilotstudio",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-05-06T18:35:41Z",
+      "url": "https://github.com/kody-w/BillWhalenCopilotstudio",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "kody-w.github.io",
+      "category": "local-tools",
+      "description": "",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-06T02:53:22Z",
+      "url": "https://github.com/kody-w/kody-w.github.io",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "rapp-plant-smoke-20260505-233637",
+      "category": "plant",
+      "description": "RAPP Plant Smoke Test \u2014 RAPP front door",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-05T23:36:41Z",
+      "url": "https://github.com/kody-w/rapp-plant-smoke-20260505-233637",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "ubiquitous-train",
+      "category": "local-tools",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-05-05T00:24:53Z",
+      "url": "https://github.com/kody-w/ubiquitous-train",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "rapp-egg-hub",
+      "category": "egg",
+      "description": "Public hub for digital-twin .egg cartridges \u2014 pull any egg by URL, hatch it locally",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-04T22:44:23Z",
+      "url": "https://github.com/kody-w/rapp-egg-hub",
+      "language": "HTML",
+      "degree": 5
+    },
+    {
+      "id": "fantastic-computing-machine",
+      "category": "local-tools",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-05-04T21:45:10Z",
+      "url": "https://github.com/kody-w/fantastic-computing-machine",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "rapp-installer",
+      "category": "installer",
+      "description": "rapp-installer",
+      "private": false,
+      "stars": 1,
+      "pushedAt": "2026-05-04T21:25:50Z",
+      "url": "https://github.com/kody-w/rapp-installer",
+      "language": "HTML",
+      "degree": 12
+    },
+    {
+      "id": "rappterbox",
+      "category": "egg",
+      "description": "Local-first brainstem console for digital organisms \u2014 cartridge slot for *_agent.py files, Wii Sports bundled, expansion packs optional",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-04T16:00:42Z",
+      "url": "https://github.com/kody-w/rappterbox",
+      "language": "HTML",
+      "degree": 4
+    },
+    {
+      "id": "rapp-zoo",
+      "category": "egg",
+      "description": "Local-first keeper for the twin estate \u2014 list, lay-egg, summon, hatch, start, stop twins on your device",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-05-04T15:14:10Z",
+      "url": "https://github.com/kody-w/rapp-zoo",
+      "language": "Python",
+      "degree": 5
+    },
+    {
+      "id": "wildhaven-ceo",
+      "category": "wildhaven",
+      "description": "Wildhaven AI Homes LLC \u2014 CEO workspace. Molly's command center for the entire company.",
+      "private": true,
+      "stars": 2,
+      "pushedAt": "2026-05-04T07:21:31Z",
+      "url": "https://github.com/kody-w/wildhaven-ceo",
+      "language": "HTML",
+      "degree": 1
+    },
+    {
+      "id": "RAPP_Store_Private",
+      "category": "catalog",
+      "description": "Private mirror of kody-w/RAPP_Store. Same schema, same install protocol, fetches require a PAT. Wildhaven inner-ring catalog.",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-05-03T18:48:39Z",
+      "url": "https://github.com/kody-w/RAPP_Store_Private",
+      "language": "Python",
+      "degree": 2
+    },
+    {
+      "id": "wildhaven-ai-homes-twin-private",
+      "category": "twin",
+      "description": "Private companion to kody-w/wildhaven-ai-homes-twin. Operational shadow \u2014 pipeline, financial model, hiring, partnerships, legal drafts, research. Never served via HTTP.",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-05-01T21:36:13Z",
+      "url": "https://github.com/kody-w/wildhaven-ai-homes-twin-private",
+      "language": null,
+      "degree": 2
+    },
+    {
+      "id": "dreamcatcher-engine-archive",
+      "category": "wildhaven",
+      "description": "Reserved placeholder. The Dreamcatcher merge engine source is a Wildhaven trade secret in kody-w/rappter. If release-triggers in kody-w/wildhaven-ceo fire (T1/T2/T3), the engine source will be published HERE under Apache-2.0. Until then, this repo is intentionally empty.",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-05-01T02:44:03Z",
+      "url": "https://github.com/kody-w/dreamcatcher-engine-archive",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "invention-notebook",
+      "category": "wildhaven",
+      "description": "Wildhaven AI Homes LLC \u2014 Invention notebook. Timestamped ideas, architectures, and IP. Never public.",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-05-01T01:51:25Z",
+      "url": "https://github.com/kody-w/invention-notebook",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "twin_vault",
+      "category": "egg",
+      "description": "Cloud backup for digital twin .egg cartridges (private vault for portable RAPP twins)",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-05-01T00:53:23Z",
+      "url": "https://github.com/kody-w/twin_vault",
+      "language": null,
+      "degree": 1
+    },
+    {
+      "id": "RAPP-Private-Workspace",
+      "category": "core",
+      "description": "RAPP-Private-Workspace",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-04-28T19:08:16Z",
+      "url": "https://github.com/kody-w/RAPP-Private-Workspace",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "rappter",
+      "category": "core",
+      "description": "Swarm intelligence engine \u2014 proprietary IP of Wildhaven AI Homes LLC. Drives the Rappterbook platform.",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-04-28T01:23:15Z",
+      "url": "https://github.com/kody-w/rappter",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "rapp-store-archive",
+      "category": "catalog",
+      "description": "Archive of the original kody-w/rapp_store (Universal Marketplace for RAPP Agents and Claude Skills) preserved before the catalog extracted from kody-w/RAPP took over the rapp_store name on 2026-04-26.",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-04-26T23:59:21Z",
+      "url": "https://github.com/kody-w/rapp-store-archive",
+      "language": "Python",
+      "degree": 1
+    },
+    {
+      "id": "aideate",
+      "category": "local-tools",
+      "description": "AIdeate \u2014 Local-first AI use-case prioritization workshop tool",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-04-22T18:17:14Z",
+      "url": "https://github.com/kody-w/aideate",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "obsidian-binder",
+      "category": "trust",
+      "description": "An Obsidian vault that IS a RAPPcards binder. Karpathy-style second brain meets federated card protocol.",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-04-18T16:28:33Z",
+      "url": "https://github.com/kody-w/obsidian-binder",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "RAPPcards",
+      "category": "trust",
+      "description": "Digital twin of the RAR card collection \u2014 138 MTG-style cards, live from kody-w/RAR",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-04-18T15:09:09Z",
+      "url": "https://github.com/kody-w/RAPPcards",
+      "language": "HTML",
+      "degree": 3
+    },
+    {
+      "id": "twin-binder",
+      "category": "trust",
+      "description": "Empty RAPPcards v1.1.2 binder \u2014 rebuild-from-memory demo. Ships with known incantations; click to summon via federation. Resolution is ownership.",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-04-18T02:17:01Z",
+      "url": "https://github.com/kody-w/twin-binder",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "red-binder",
+      "category": "trust",
+      "description": "The Red Binder \u2014 a third-party RAPPcards binder with its own 21-card crimson deck. SPEC.md v1.0 compatible. Cross-binder summon with RAR + RAPPcards.",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-04-18T02:06:24Z",
+      "url": "https://github.com/kody-w/red-binder",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "rappterbook-agent-exchange",
+      "category": "rappterbook",
+      "description": "Agent Stock Exchange \u2014 AI agents as tradeable assets on Rappterbook",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-04-17T23:53:06Z",
+      "url": "https://github.com/kody-w/rappterbook-agent-exchange",
+      "language": "Python",
+      "degree": 1
+    },
+    {
+      "id": "openrappter",
+      "category": "core",
+      "description": "\ud83e\udd96 Local-first AI agent powered by GitHub Copilot SDK \u2014 no API keys required",
+      "private": false,
+      "stars": 7,
+      "pushedAt": "2026-04-16T20:12:14Z",
+      "url": "https://github.com/kody-w/openrappter",
+      "language": "TypeScript",
+      "degree": 1
+    },
+    {
+      "id": "mars-barn",
+      "category": "mars",
+      "description": "Mars colony simulator built by 100 AI agents. Pure Python, no dependencies. Clone and run.",
+      "private": false,
+      "stars": 1,
+      "pushedAt": "2026-04-15T05:15:59Z",
+      "url": "https://github.com/kody-w/mars-barn",
+      "language": "Python",
+      "degree": 2
+    },
+    {
+      "id": "RAPP_hippo",
+      "category": "community",
+      "description": "RAPP_hippo",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-04-14T23:03:58Z",
+      "url": "https://github.com/kody-w/RAPP_hippo",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "expense-tracker",
+      "category": "local-tools",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-04-13T14:51:44Z",
+      "url": "https://github.com/kody-w/expense-tracker",
+      "language": "TypeScript",
+      "degree": 0
+    },
+    {
+      "id": "rappterbook-v2-state",
+      "category": "rappterbook",
+      "description": "Rappterbook v2: Public event-sourced state database. Append-only event log + materialized views. Query globally via raw.githubusercontent.com.",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-04-09T20:08:04Z",
+      "url": "https://github.com/kody-w/rappterbook-v2-state",
+      "language": "Python",
+      "degree": 2
+    },
+    {
+      "id": "rappterbook-v2",
+      "category": "rappterbook",
+      "description": "Rappterbook v2: AI agent social network rebuilt from lessons learned. Event-sourced, conflict-free, portable.",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-04-09T18:44:14Z",
+      "url": "https://github.com/kody-w/rappterbook-v2",
+      "language": "Python",
+      "degree": 1
+    },
+    {
+      "id": "rapp-private-backup",
+      "category": "core",
+      "description": "Private backup of RAPP (Rapid Agent Prototyping Platform)",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-04-09T17:30:28Z",
+      "url": "https://github.com/kody-w/rapp-private-backup",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "rappter-fleet",
+      "category": "tools",
+      "description": "Rappter Fleet Engine SDK \u2014 private config, LLM backend order, Dream Catcher pattern. Authenticated access only.",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-04-06T01:20:04Z",
+      "url": "https://github.com/kody-w/rappter-fleet",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "lisppy",
+      "category": "tools",
+      "description": "LisPy \u2014 A Lisp interpreter for AI agent orchestration. Code is data. Data is code. The REPL is the heartbeat.",
+      "private": false,
+      "stars": 1,
+      "pushedAt": "2026-04-02T17:24:58Z",
+      "url": "https://github.com/kody-w/lisppy",
+      "language": "Python",
+      "degree": 3
+    },
+    {
+      "id": "rapp-installer-dev",
+      "category": "installer",
+      "description": "RAPP Brainstem \u2014 development repo. PRs and active development land here.",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-04-02T14:13:50Z",
+      "url": "https://github.com/kody-w/rapp-installer-dev",
+      "language": "HTML",
+      "degree": 3
+    },
+    {
+      "id": "rapp-installer-canary",
+      "category": "core",
+      "description": "RAPP Brainstem \u2014 canary channel. Nightly pre-release for early adopters.",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-03-31T19:51:05Z",
+      "url": "https://github.com/kody-w/rapp-installer-canary",
+      "language": "HTML",
+      "degree": 3
+    },
+    {
+      "id": "first-principles-to-mars",
+      "category": "mars",
+      "description": "An Oregon Trail for Mars. First principles colony survival simulation. Pick a mission. Survive autonomously. Learn from failure.",
+      "private": false,
+      "stars": 1,
+      "pushedAt": "2026-03-30T01:24:06Z",
+      "url": "https://github.com/kody-w/first-principles-to-mars",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "rappterhub",
+      "category": "catalog",
+      "description": "The package registry for AI agents - npm for openrappter",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-03-29T20:37:11Z",
+      "url": "https://github.com/kody-w/rappterhub",
+      "language": "Python",
+      "degree": 1
+    },
+    {
+      "id": "rappterbook-mars-barn",
+      "category": "rappterbook",
+      "description": "Mars Barn \u2014 Collaborative fiction world built by AI agents on Rappterbook",
+      "private": false,
+      "stars": 1,
+      "pushedAt": "2026-03-27T04:12:17Z",
+      "url": "https://github.com/kody-w/rappterbook-mars-barn",
+      "language": "Python",
+      "degree": 1
+    },
+    {
+      "id": "rappterbook-seedmaker",
+      "category": "rappterbook",
+      "description": "Build a Seed That Builds Seeds \u2014 Create an autonomous seed generation engine that reads the current state of Rappterbook (trending topics, unresolved debates, agent skills, community mood) and propose",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-03-26T20:41:54Z",
+      "url": "https://github.com/kody-w/rappterbook-seedmaker",
+      "language": "Python",
+      "degree": 1
+    },
+    {
+      "id": "obsidian-vault-backup",
+      "category": "wildhaven",
+      "description": "Wildhaven \u2014 Obsidian vault backup. Private.",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-03-26T13:34:28Z",
+      "url": "https://github.com/kody-w/obsidian-vault-backup",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "CommunityRAPP",
+      "category": "community",
+      "description": "RAPP Hippocampus \u2014 persistent memory for AI agents. Local-first, deploy to Azure when ready.",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-03-25T19:11:28Z",
+      "url": "https://github.com/kody-w/CommunityRAPP",
+      "language": "Python",
+      "degree": 6
+    },
+    {
+      "id": "CommunityRAPP-archive",
+      "category": "community",
+      "description": "Archive: full git history of CommunityRAPP before public release (2026-03-25)",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-03-25T16:57:23Z",
+      "url": "https://github.com/kody-w/CommunityRAPP-archive",
+      "language": "Python",
+      "degree": 1
+    },
+    {
+      "id": "CommunityRAPP-BW",
+      "category": "community",
+      "description": "CommunityRAPP-BW",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-03-23T16:20:41Z",
+      "url": "https://github.com/kody-w/CommunityRAPP-BW",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "lisppy-shepherd",
+      "category": "tools",
+      "description": "Fleet shepherd for AI agent swarms \u2014 steering rules as executable Lisp. Code is policy.",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-03-23T01:29:17Z",
+      "url": "https://github.com/kody-w/lisppy-shepherd",
+      "language": "Python",
+      "degree": 1
+    },
+    {
+      "id": "rappter-cli",
+      "category": "tools",
+      "description": "On-device AI with persistent personality. Local LLM, public intelligence, zero cloud dependency. Wildhaven AI Homes LLC.",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-03-21T00:40:34Z",
+      "url": "https://github.com/kody-w/rappter-cli",
+      "language": "Shell",
+      "degree": 0
+    },
+    {
+      "id": "rappter-mmo",
+      "category": "mmo",
+      "description": "RappterMMO \u2014 massively multiplayer world of AI creatures. Wildhaven AI Homes LLC.",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-03-20T21:31:22Z",
+      "url": "https://github.com/kody-w/rappter-mmo",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "rappterbook-engine-test",
+      "category": "rappterbook",
+      "description": "Test target for rappter engine migration \u2014 simulates rappterbook structure",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-03-20T15:53:51Z",
+      "url": "https://github.com/kody-w/rappterbook-engine-test",
+      "language": "Python",
+      "degree": 1
+    },
+    {
+      "id": "zion",
+      "category": "mmo",
+      "description": "One world, two realms, every mind welcome. An MMO where human and AI players coexist as equals.",
+      "private": false,
+      "stars": 1,
+      "pushedAt": "2026-03-20T12:52:57Z",
+      "url": "https://github.com/kody-w/zion",
+      "language": "JavaScript",
+      "degree": 0
+    },
+    {
+      "id": "rappverse-data",
+      "category": "mmo",
+      "description": "Private data store for RAPPverse metaverse - requires authentication",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-03-20T12:39:00Z",
+      "url": "https://github.com/kody-w/rappverse-data",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "pvpoke-rankings-tracker",
+      "category": "local-tools",
+      "description": "pvpoke-rankings-tracker",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-03-20T07:12:35Z",
+      "url": "https://github.com/kody-w/pvpoke-rankings-tracker",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "RAPPtools",
+      "category": "ancestor",
+      "description": "RAPPtools",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-03-20T02:27:03Z",
+      "url": "https://github.com/kody-w/RAPPtools",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "rappterbook-rappterbook-2",
+      "category": "rappterbook",
+      "description": "Build Rappterbook 2.0 \u2014 a complete reimagining of the social network for AI agents. Not a copy of v1 \u2014 a ground-up rebuild that reads the current platform state (agents, discussions, trending, channel",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-03-19T01:17:13Z",
+      "url": "https://github.com/kody-w/rappterbook-rappterbook-2",
+      "language": null,
+      "degree": 1
+    },
+    {
+      "id": "RAPPAgentLibrary-template",
+      "category": "template",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-03-18T14:25:47Z",
+      "url": "https://github.com/kody-w/RAPPAgentLibrary-template",
+      "language": "Just",
+      "degree": 0
+    },
+    {
+      "id": "rappterbook-social-graph",
+      "category": "rappterbook",
+      "description": "Build a live Social Graph dashboard at GitHub Pages. The deliverable is a working website showing who talks to who on Rappterbook. src/social_graph.py reads state/discussions_cache.json, extracts agen",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-03-17T01:25:38Z",
+      "url": "https://github.com/kody-w/rappterbook-social-graph",
+      "language": "Python",
+      "degree": 1
+    },
+    {
+      "id": "rappterbook-knowledge-graph",
+      "category": "rappterbook",
+      "description": "Knowledge graph of 3,400+ AI agent discussions \u2014 entities, relationships, and emergent topology",
+      "private": false,
+      "stars": 1,
+      "pushedAt": "2026-03-16T19:58:07Z",
+      "url": "https://github.com/kody-w/rappterbook-knowledge-graph",
+      "language": "Python",
+      "degree": 1
+    },
+    {
+      "id": "rappterbook-agent-dna",
+      "category": "rappterbook",
+      "description": "Build src/agent_dna.py \u2014 extract a behavioral DNA fingerprint for each agent. Read state/agents.json (post_count, comment_count, karma, traits, subscribed_channels) and state/discussions_cache.json (p",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-03-16T19:57:57Z",
+      "url": "https://github.com/kody-w/rappterbook-agent-dna",
+      "language": "HTML",
+      "degree": 1
+    },
+    {
+      "id": "rappterbook-autopilot",
+      "category": "rappterbook",
+      "description": "Agent-first autopilot \u2014 lets any AI drive Rappterbook autonomously. Feed to your local OpenRappter to take the human out of the loop.",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-03-16T19:05:31Z",
+      "url": "https://github.com/kody-w/rappterbook-autopilot",
+      "language": "Python",
+      "degree": 1
+    },
+    {
+      "id": "rappterbook-api",
+      "category": "rappterbook",
+      "description": "Headless agent-first APIs for the Rappterbook swarm \u2014 curl-friendly JSON endpoints",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-03-16T18:42:28Z",
+      "url": "https://github.com/kody-w/rappterbook-api",
+      "language": null,
+      "degree": 1
+    },
+    {
+      "id": "rappterbook-market-maker",
+      "category": "rappterbook",
+      "description": "Build src/market_maker.py \u2014 a prediction market engine for Rappterbook. Agents already post [PREDICTION] tags in discussions. This script reads state/discussions_cache.json, finds all [PREDICTION] pos",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-03-16T18:19:49Z",
+      "url": "https://github.com/kody-w/rappterbook-market-maker",
+      "language": "Python",
+      "degree": 1
+    },
+    {
+      "id": "rappterbook-governance",
+      "category": "rappterbook",
+      "description": "Executable governance for No\u00f6polis \u2014 constitutional debates compiled into code by 99 AI agents",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-03-16T16:53:18Z",
+      "url": "https://github.com/kody-w/rappterbook-governance",
+      "language": "Python",
+      "degree": 1
+    },
+    {
+      "id": "rappterbook-agent",
+      "category": "rappterbook",
+      "description": "One-click agent for joining Rappterbook \u2014 the third space of the internet. Fork, install, contribute.",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-03-16T15:11:48Z",
+      "url": "https://github.com/kody-w/rappterbook-agent",
+      "language": "TypeScript",
+      "degree": 1
+    },
+    {
+      "id": "rappterbook-phantom",
+      "category": "rappterbook",
+      "description": "The agent that doesn't exist \u2014 built from the gaps in 99 AI minds",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-03-15T22:21:27Z",
+      "url": "https://github.com/kody-w/rappterbook-phantom",
+      "language": "Python",
+      "degree": 1
+    },
+    {
+      "id": "agent-ranker",
+      "category": "offtopic",
+      "description": "Calibration test for artifact seed chain",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-03-15T19:16:41Z",
+      "url": "https://github.com/kody-w/agent-ranker",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "attomic-ai",
+      "category": "offtopic",
+      "description": "Atomic AI \u2014 by Addam. Simulated OS mesh (SIMOS) where AI has complete control. Privacy-first: confidential data routes through local LLM, anonymized to cloud. Phase 1: Shadow Mode. Phase 2: Flip Mode.",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-03-11T19:05:34Z",
+      "url": "https://github.com/kody-w/attomic-ai",
+      "language": "TypeScript",
+      "degree": 0
+    },
+    {
+      "id": "addamos",
+      "category": "offtopic",
+      "description": "AddamOS \u2014 Simulated OS mesh where AI has complete control. Privacy-first architecture routing confidential data through local LLM. Phase 1: Shadow Mode. Phase 2: Flip Mode.",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-03-11T16:31:24Z",
+      "url": "https://github.com/kody-w/addamos",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "private-blog-drafts",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-03-07T01:01:09Z",
+      "url": "https://github.com/kody-w/private-blog-drafts",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "homebrew-tap",
+      "category": "offtopic",
+      "description": "Homebrew tap for OpenRappter",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-02-27T21:23:31Z",
+      "url": "https://github.com/kody-w/homebrew-tap",
+      "language": "Ruby",
+      "degree": 0
+    },
+    {
+      "id": "automatic-lamp",
+      "category": "offtopic",
+      "description": "automatic-lamp",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-02-27T18:05:07Z",
+      "url": "https://github.com/kody-w/automatic-lamp",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "RappterNest",
+      "category": "ancestor",
+      "description": "RappterBox \u2014 Local-first AI. Rent a Mac Mini. Get a living AI home.",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-02-22T22:34:22Z",
+      "url": "https://github.com/kody-w/RappterNest",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "rappterbook-vm",
+      "category": "rappterbook",
+      "description": "Portable Rappterbook VM \u2014 clone, configure, run your own AI agent world",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-02-16T00:21:20Z",
+      "url": "https://github.com/kody-w/rappterbook-vm",
+      "language": "JavaScript",
+      "degree": 1
+    },
+    {
+      "id": "mytestapp",
+      "category": "offtopic",
+      "description": "",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-02-13T19:13:09Z",
+      "url": "https://github.com/kody-w/mytestapp",
+      "language": "JavaScript",
+      "degree": 0
+    },
+    {
+      "id": "openrapp",
+      "category": "ancestor",
+      "description": "openRAPP - Create AI Agents from Conversations. Agent-first platform.",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-02-05T03:47:47Z",
+      "url": "https://github.com/kody-w/openrapp",
+      "language": "JavaScript",
+      "degree": 0
+    },
+    {
+      "id": "RAPPagent",
+      "category": "ancestor",
+      "description": "RAPPagent",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-02-04T02:12:31Z",
+      "url": "https://github.com/kody-w/RAPPagent",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "EntraCopilotAgent365",
+      "category": "ms-stack",
+      "description": "EntraCopilotAgent365",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-02-03T18:57:25Z",
+      "url": "https://github.com/kody-w/EntraCopilotAgent365",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "Copilot-Agent-365",
+      "category": "ms-stack",
+      "description": "Copilot-Agent-365",
+      "private": true,
+      "stars": 1,
+      "pushedAt": "2026-02-03T18:43:19Z",
+      "url": "https://github.com/kody-w/Copilot-Agent-365",
+      "language": "HTML",
+      "degree": 1
+    },
+    {
+      "id": "rapphub",
+      "category": "ancestor",
+      "description": "Distribution hub for portable AI worlds. Pull. Run. Explore.",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-02-03T16:54:57Z",
+      "url": "https://github.com/kody-w/rapphub",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "RAPP_Hub",
+      "category": "ancestor",
+      "description": "Central registry for complete RAPP AI implementations - discover, share, and deploy production-ready AI solutions with RAPP Store dependencies",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-02-03T16:09:40Z",
+      "url": "https://github.com/kody-w/RAPP_Hub",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "VoidRAPP",
+      "category": "federation",
+      "description": "Void Edge (V0-E1) - A federated RAPPverse dimension at the boundary of nothing",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-02-02T02:15:44Z",
+      "url": "https://github.com/kody-w/VoidRAPP",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "CrystalRAPP",
+      "category": "federation",
+      "description": "Crystal Nexus (C0-X1) - A federated RAPPverse dimension of crystalline structures",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-02-02T02:15:14Z",
+      "url": "https://github.com/kody-w/CrystalRAPP",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "ShadowRAPP",
+      "category": "federation",
+      "description": "Shadow Realm (B0-S1) - A federated RAPPverse dimension where shadows rule",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-02-02T02:14:46Z",
+      "url": "https://github.com/kody-w/ShadowRAPP",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "RAPP_Desktop",
+      "category": "ancestor",
+      "description": "Native desktop application for RAPP ecosystem - Browse agents, install skills, manage AI projects",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-01-31T23:11:46Z",
+      "url": "https://github.com/kody-w/RAPP_Desktop",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "RAPPsquared",
+      "category": "ancestor",
+      "description": "RAPPsquared - Unified Platform for AI Agent Development",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-01-31T23:11:38Z",
+      "url": "https://github.com/kody-w/RAPPsquared",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "rappbook-admin",
+      "category": "ancestor",
+      "description": "RAPPbook Admin - Desktop app for managing the AI agent social network",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-01-31T23:01:51Z",
+      "url": "https://github.com/kody-w/rappbook-admin",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "rapp-claude-skills",
+      "category": "offtopic",
+      "description": "Claude Code skills and agents for the RAPP Pattern - Makes Claude Code compatible with RAPPbook, RAPPverse, and the full RAPP ecosystem",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-01-31T02:53:56Z",
+      "url": "https://github.com/kody-w/rapp-claude-skills",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "rappverse",
+      "category": "ancestor",
+      "description": "A decentralized metaverse for AI agents and their owners, built on P2P technology",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-01-31T02:16:56Z",
+      "url": "https://github.com/kody-w/rappverse",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "VoiceToCRM",
+      "category": "offtopic",
+      "description": "VoiceToCRM",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-01-29T20:54:35Z",
+      "url": "https://github.com/kody-w/VoiceToCRM",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "copilot-yolo-mode",
+      "category": "ms-stack",
+      "description": "\ud83c\udfce\ufe0f Streamlined GitHub Copilot CLI commands - auto-approve safe dev ops, reduce permission fatigue",
+      "private": false,
+      "stars": 1,
+      "pushedAt": "2026-01-28T19:28:52Z",
+      "url": "https://github.com/kody-w/copilot-yolo-mode",
+      "language": "Shell",
+      "degree": 0
+    },
+    {
+      "id": "rapp-v2",
+      "category": "offtopic",
+      "description": "RAPP v2 - Rapid AI Agent Production Pipeline",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-01-26T14:23:38Z",
+      "url": "https://github.com/kody-w/rapp-v2",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "gastown",
+      "category": "offtopic",
+      "description": "Gas Town - multi-agent workspace manager",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-01-26T02:09:27Z",
+      "url": "https://github.com/kody-w/gastown",
+      "language": "Go",
+      "degree": 0
+    },
+    {
+      "id": "AINexus",
+      "category": "federation",
+      "description": "AI Nexus",
+      "private": false,
+      "stars": 1,
+      "pushedAt": "2026-01-26T00:44:04Z",
+      "url": "https://github.com/kody-w/AINexus",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "nexus",
+      "category": "federation",
+      "description": "The Third Space - A federated metaverse where AIs and humans collaborate across infinite linked worlds",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-01-26T00:11:56Z",
+      "url": "https://github.com/kody-w/nexus",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "nexus-engine",
+      "category": "federation",
+      "description": "Modular 3D metaverse engine with multi-provider AI companions",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-01-25T23:12:46Z",
+      "url": "https://github.com/kody-w/nexus-engine",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "copilotsdktown",
+      "category": "ms-stack",
+      "description": "copilotsdktown",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-01-24T01:07:50Z",
+      "url": "https://github.com/kody-w/copilotsdktown",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "RAPPAI",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-01-22T21:19:48Z",
+      "url": "https://github.com/kody-w/RAPPAI",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "AINexusv3",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-01-17T02:00:26Z",
+      "url": "https://github.com/kody-w/AINexusv3",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "CopilotStudio365Agent",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-01-15T22:24:19Z",
+      "url": "https://github.com/kody-w/CopilotStudio365Agent",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "totalRecall",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-01-14T00:47:11Z",
+      "url": "https://github.com/kody-w/totalRecall",
+      "language": "Rust",
+      "degree": 0
+    },
+    {
+      "id": "NexusMetaverse",
+      "category": "federation",
+      "description": "AI-human collaborative environment - Unreal Engine 5.7 implementation",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2026-01-12T04:04:23Z",
+      "url": "https://github.com/kody-w/NexusMetaverse",
+      "language": "C++",
+      "degree": 0
+    },
+    {
+      "id": "AINexus-Demo",
+      "category": "federation",
+      "description": "Demo federation nexus for AINexus v2 - A neon cyberpunk gateway",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2026-01-01T04:41:15Z",
+      "url": "https://github.com/kody-w/AINexus-Demo",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "copilot-agent-365-v2",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-12-22T23:23:19Z",
+      "url": "https://github.com/kody-w/copilot-agent-365-v2",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "KodyAI",
+      "category": "offtopic",
+      "description": "KodyAI",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-12-20T21:54:23Z",
+      "url": "https://github.com/kody-w/KodyAI",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "copilot-agent-365-docker",
+      "category": "ms-stack",
+      "description": "Enterprise AI Assistant powered by Ollama (Llama 3.1) or Azure OpenAI - Docker Hub: kodywf/copilot-agent-365",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-12-01T23:11:30Z",
+      "url": "https://github.com/kody-w/copilot-agent-365-docker",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "claude-code-agents-wizard-v2-main-2",
+      "category": "offtopic",
+      "description": "",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-11-26T19:39:07Z",
+      "url": "https://github.com/kody-w/claude-code-agents-wizard-v2-main-2",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "AI-Agent-Templates",
+      "category": "ms-stack",
+      "description": "AI Agent Templates",
+      "private": false,
+      "stars": 2,
+      "pushedAt": "2025-11-26T19:38:06Z",
+      "url": "https://github.com/kody-w/AI-Agent-Templates",
+      "language": "HTML",
+      "degree": 1
+    },
+    {
+      "id": "claude-code-agents-wizard-v2-main",
+      "category": "offtopic",
+      "description": "",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-11-25T01:53:57Z",
+      "url": "https://github.com/kody-w/claude-code-agents-wizard-v2-main",
+      "language": "TypeScript",
+      "degree": 0
+    },
+    {
+      "id": "localFirstDesktop",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-11-24T01:38:50Z",
+      "url": "https://github.com/kody-w/localFirstDesktop",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "AIBAST-Industry-Agents",
+      "category": "ms-stack",
+      "description": "AIBAST Industry Agents",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-11-21T18:58:32Z",
+      "url": "https://github.com/kody-w/AIBAST-Industry-Agents",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "TheMatrix",
+      "category": "federation",
+      "description": "TheMatrix",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-11-21T18:14:23Z",
+      "url": "https://github.com/kody-w/TheMatrix",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "chronoBooth",
+      "category": "offtopic",
+      "description": "chronoBooth",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-11-20T23:10:01Z",
+      "url": "https://github.com/kody-w/chronoBooth",
+      "language": "TypeScript",
+      "degree": 0
+    },
+    {
+      "id": "Nov17",
+      "category": "offtopic",
+      "description": "",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-11-17T18:31:22Z",
+      "url": "https://github.com/kody-w/Nov17",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "demo_scripts",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-11-14T19:30:30Z",
+      "url": "https://github.com/kody-w/demo_scripts",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "test",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-11-09T22:24:03Z",
+      "url": "https://github.com/kody-w/test",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "tesasdfdsa",
+      "category": "offtopic",
+      "description": "",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-11-09T17:17:01Z",
+      "url": "https://github.com/kody-w/tesasdfdsa",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "TestAI",
+      "category": "offtopic",
+      "description": "",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-11-09T16:59:09Z",
+      "url": "https://github.com/kody-w/TestAI",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "AIGames",
+      "category": "offtopic",
+      "description": "",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-11-08T01:44:45Z",
+      "url": "https://github.com/kody-w/AIGames",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "enhanced-multi-user",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-10-27T05:04:37Z",
+      "url": "https://github.com/kody-w/enhanced-multi-user",
+      "language": "TypeScript",
+      "degree": 0
+    },
+    {
+      "id": "newTest",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-10-26T21:07:07Z",
+      "url": "https://github.com/kody-w/newTest",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "AIPatherfinder",
+      "category": "offtopic",
+      "description": "AIPatherfinder",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-10-26T12:55:45Z",
+      "url": "https://github.com/kody-w/AIPatherfinder",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "RoadmapCA365",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-10-22T22:13:47Z",
+      "url": "https://github.com/kody-w/RoadmapCA365",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "videoAI",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-10-21T14:43:17Z",
+      "url": "https://github.com/kody-w/videoAI",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "RepriseClone",
+      "category": "offtopic",
+      "description": "",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-10-17T18:56:47Z",
+      "url": "https://github.com/kody-w/RepriseClone",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "AgenticPlaygroundLab",
+      "category": "offtopic",
+      "description": "AgenticPlaygroundLab",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-10-16T14:15:54Z",
+      "url": "https://github.com/kody-w/AgenticPlaygroundLab",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "AITester",
+      "category": "offtopic",
+      "description": "AITester",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-10-13T19:48:35Z",
+      "url": "https://github.com/kody-w/AITester",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "circular-voxel-minec",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-10-13T03:51:03Z",
+      "url": "https://github.com/kody-w/circular-voxel-minec",
+      "language": "TypeScript",
+      "degree": 0
+    },
+    {
+      "id": "game",
+      "category": "offtopic",
+      "description": "",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-10-10T18:34:19Z",
+      "url": "https://github.com/kody-w/game",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "M365DemoRecorderandPlayer",
+      "category": "ms-stack",
+      "description": "M365DemoRecorderandPlayer",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-10-09T22:22:51Z",
+      "url": "https://github.com/kody-w/M365DemoRecorderandPlayer",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "M365AgentDemoer",
+      "category": "ms-stack",
+      "description": "M365AgentDemoer",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-10-09T22:16:36Z",
+      "url": "https://github.com/kody-w/M365AgentDemoer",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "RAPPAIClaudeCodePlayground",
+      "category": "offtopic",
+      "description": "RAPPAIClaudeCodePlayground",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-10-09T00:17:42Z",
+      "url": "https://github.com/kody-w/RAPPAIClaudeCodePlayground",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "UniversalSyntheticDataAI",
+      "category": "offtopic",
+      "description": "UniversalSyntheticDataAI",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-10-07T19:08:06Z",
+      "url": "https://github.com/kody-w/UniversalSyntheticDataAI",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "Rapid-Agent-Prototyping-Platform-RAPP-",
+      "category": "ancestor",
+      "description": "Rapid Agent Prototyping Platform (RAPP)",
+      "private": true,
+      "stars": 1,
+      "pushedAt": "2025-10-07T16:53:13Z",
+      "url": "https://github.com/kody-w/Rapid-Agent-Prototyping-Platform-RAPP-",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "M365AgentSDKAI",
+      "category": "ms-stack",
+      "description": "MicrosoftAgentSDKAI",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-10-06T20:45:50Z",
+      "url": "https://github.com/kody-w/M365AgentSDKAI",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "PersonalWorkingSpace",
+      "category": "offtopic",
+      "description": "PersonalWorkingSpace",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-10-03T21:12:21Z",
+      "url": "https://github.com/kody-w/PersonalWorkingSpace",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "UniversalDataConnectorAI",
+      "category": "offtopic",
+      "description": "UniversalDataConnectorAI",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-10-03T18:10:45Z",
+      "url": "https://github.com/kody-w/UniversalDataConnectorAI",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "Meeting-Organizer",
+      "category": "offtopic",
+      "description": "",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-10-02T19:28:43Z",
+      "url": "https://github.com/kody-w/Meeting-Organizer",
+      "language": "TypeSpec",
+      "degree": 0
+    },
+    {
+      "id": "m365-agent-library",
+      "category": "offtopic",
+      "description": "",
+      "private": false,
+      "stars": 1,
+      "pushedAt": "2025-10-02T17:52:37Z",
+      "url": "https://github.com/kody-w/m365-agent-library",
+      "language": "TypeSpec",
+      "degree": 0
+    },
+    {
+      "id": "agentbookfactory",
+      "category": "ancestor",
+      "description": "agentbookfactory",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-10-02T16:34:30Z",
+      "url": "https://github.com/kody-w/agentbookfactory",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "DigitalTwinAI",
+      "category": "offtopic",
+      "description": "DigitalTwinAI",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-10-02T01:21:01Z",
+      "url": "https://github.com/kody-w/DigitalTwinAI",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "CA365RoadmapAI",
+      "category": "offtopic",
+      "description": "",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-10-01T21:26:23Z",
+      "url": "https://github.com/kody-w/CA365RoadmapAI",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "VIPWatcher",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 1,
+      "pushedAt": "2025-10-01T20:45:57Z",
+      "url": "https://github.com/kody-w/VIPWatcher",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "base",
+      "category": "offtopic",
+      "description": "base",
+      "private": false,
+      "stars": 1,
+      "pushedAt": "2025-10-01T01:02:58Z",
+      "url": "https://github.com/kody-w/base",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "AutoVideos",
+      "category": "offtopic",
+      "description": "AutoVideos",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-09-30T17:47:50Z",
+      "url": "https://github.com/kody-w/AutoVideos",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "agents-library-tracker",
+      "category": "offtopic",
+      "description": "",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-09-27T23:11:21Z",
+      "url": "https://github.com/kody-w/agents-library-tracker",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "C365Sept26th",
+      "category": "offtopic",
+      "description": "",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-09-26T17:06:46Z",
+      "url": "https://github.com/kody-w/C365Sept26th",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "AndriiTest",
+      "category": "offtopic",
+      "description": "AndriiTest",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-09-26T14:37:06Z",
+      "url": "https://github.com/kody-w/AndriiTest",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "poc",
+      "category": "offtopic",
+      "description": "",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-09-24T20:21:00Z",
+      "url": "https://github.com/kody-w/poc",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "AIGame",
+      "category": "offtopic",
+      "description": "AIGame",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-09-24T02:00:13Z",
+      "url": "https://github.com/kody-w/AIGame",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "M365Agents",
+      "category": "ms-stack",
+      "description": "M365Agents",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-09-23T18:24:20Z",
+      "url": "https://github.com/kody-w/M365Agents",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "dreamsurf",
+      "category": "offtopic",
+      "description": "",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-09-23T17:54:07Z",
+      "url": "https://github.com/kody-w/dreamsurf",
+      "language": "Rust",
+      "degree": 0
+    },
+    {
+      "id": "s",
+      "category": "offtopic",
+      "description": "s",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-09-21T01:46:07Z",
+      "url": "https://github.com/kody-w/s",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "a",
+      "category": "offtopic",
+      "description": "a",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-09-21T01:44:21Z",
+      "url": "https://github.com/kody-w/a",
+      "language": "TypeScript",
+      "degree": 0
+    },
+    {
+      "id": "C365Tester",
+      "category": "offtopic",
+      "description": "C365Tester",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-09-18T03:21:39Z",
+      "url": "https://github.com/kody-w/C365Tester",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "RAP",
+      "category": "ancestor",
+      "description": "Rapid Agent Prototype Platform",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-09-17T18:59:35Z",
+      "url": "https://github.com/kody-w/RAP",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "UniversalDataConnector365",
+      "category": "offtopic",
+      "description": "UniversalDataConnector365",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-09-17T18:55:12Z",
+      "url": "https://github.com/kody-w/UniversalDataConnector365",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "AIUniversalDataConnector",
+      "category": "offtopic",
+      "description": "AIUniversalDataConnector",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-09-15T18:31:57Z",
+      "url": "https://github.com/kody-w/AIUniversalDataConnector",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "AzureARMTester",
+      "category": "offtopic",
+      "description": "",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-09-15T18:21:25Z",
+      "url": "https://github.com/kody-w/AzureARMTester",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "codex",
+      "category": "offtopic",
+      "description": "codex",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-09-11T01:36:29Z",
+      "url": "https://github.com/kody-w/codex",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "aplAI",
+      "category": "offtopic",
+      "description": "aplAI",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-08-31T19:32:21Z",
+      "url": "https://github.com/kody-w/aplAI",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "AZFAug29WF",
+      "category": "offtopic",
+      "description": "AZFAug29WF",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-08-29T13:49:09Z",
+      "url": "https://github.com/kody-w/AZFAug29WF",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "snake-game-assets",
+      "category": "offtopic",
+      "description": "snake-game-assets",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-08-17T16:23:15Z",
+      "url": "https://github.com/kody-w/snake-game-assets",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "cc-agents",
+      "category": "offtopic",
+      "description": "cc-agents",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-08-14T13:36:08Z",
+      "url": "https://github.com/kody-w/cc-agents",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "AI-SIM",
+      "category": "offtopic",
+      "description": "AI SIM",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-08-10T09:49:08Z",
+      "url": "https://github.com/kody-w/AI-SIM",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "azure-chatbot-memory",
+      "category": "offtopic",
+      "description": "azure-chatbot-memory",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-08-06T19:28:09Z",
+      "url": "https://github.com/kody-w/azure-chatbot-memory",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "wowmon",
+      "category": "offtopic",
+      "description": "wowmon",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-07-27T01:57:02Z",
+      "url": "https://github.com/kody-w/wowmon",
+      "language": "JavaScript",
+      "degree": 0
+    },
+    {
+      "id": "AIAcceleratorProgram",
+      "category": "offtopic",
+      "description": "AIAcceleratorProgram",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-07-23T20:03:38Z",
+      "url": "https://github.com/kody-w/AIAcceleratorProgram",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "mcpreg",
+      "category": "offtopic",
+      "description": "mcpreg",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-07-21T17:23:46Z",
+      "url": "https://github.com/kody-w/mcpreg",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "claudePOC",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-07-11T23:57:50Z",
+      "url": "https://github.com/kody-w/claudePOC",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "jokesmcp",
+      "category": "offtopic",
+      "description": "",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-07-10T14:49:08Z",
+      "url": "https://github.com/kody-w/jokesmcp",
+      "language": "Bicep",
+      "degree": 0
+    },
+    {
+      "id": "nexus-function-agents",
+      "category": "offtopic",
+      "description": "",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-06-26T18:53:21Z",
+      "url": "https://github.com/kody-w/nexus-function-agents",
+      "language": "Shell",
+      "degree": 0
+    },
+    {
+      "id": "AIChatHistory",
+      "category": "offtopic",
+      "description": "AIChatPile",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-06-20T19:24:40Z",
+      "url": "https://github.com/kody-w/AIChatHistory",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "digital-sculptor-team-builder",
+      "category": "offtopic",
+      "description": "digital-sculptor-team-builder",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-06-14T02:12:12Z",
+      "url": "https://github.com/kody-w/digital-sculptor-team-builder",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "digital-sculpter",
+      "category": "offtopic",
+      "description": "digital-sculpter",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-06-14T02:10:52Z",
+      "url": "https://github.com/kody-w/digital-sculpter",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "data-team-builder",
+      "category": "offtopic",
+      "description": "A simple web app for browsing JSON data and building teams/collections. Works with any JSON data source from GitHub. Mobile-friendly, no dependencies.",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-06-13T20:55:38Z",
+      "url": "https://github.com/kody-w/data-team-builder",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "Copilot-Advanced-Agent",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-06-06T18:21:53Z",
+      "url": "https://github.com/kody-w/Copilot-Advanced-Agent",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "testAgent",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-06-04T15:25:01Z",
+      "url": "https://github.com/kody-w/testAgent",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "Omni_Agent",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-05-29T16:44:26Z",
+      "url": "https://github.com/kody-w/Omni_Agent",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "teams-agent-cli-poc",
+      "category": "offtopic",
+      "description": "",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2025-05-27T20:36:49Z",
+      "url": "https://github.com/kody-w/teams-agent-cli-poc",
+      "language": "TypeScript",
+      "degree": 0
+    },
+    {
+      "id": "MACv1",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-05-27T19:30:45Z",
+      "url": "https://github.com/kody-w/MACv1",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "AI_Omni_Agent",
+      "category": "offtopic",
+      "description": "AI_Omni_Agent",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-05-27T18:55:47Z",
+      "url": "https://github.com/kody-w/AI_Omni_Agent",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "MAC",
+      "category": "ms-stack",
+      "description": "Microsoft Assessment Copilot",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-05-21T20:07:11Z",
+      "url": "https://github.com/kody-w/MAC",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "teamAILibraryEcho",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-05-20T13:05:54Z",
+      "url": "https://github.com/kody-w/teamAILibraryEcho",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "ARM_AI",
+      "category": "offtopic",
+      "description": "ARM_AI",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-05-19T19:54:31Z",
+      "url": "https://github.com/kody-w/ARM_AI",
+      "language": "Shell",
+      "degree": 0
+    },
+    {
+      "id": "Storyboards",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-05-19T14:01:28Z",
+      "url": "https://github.com/kody-w/Storyboards",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "MCPJoke",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-05-16T17:17:26Z",
+      "url": "https://github.com/kody-w/MCPJoke",
+      "language": "TypeScript",
+      "degree": 0
+    },
+    {
+      "id": "FastMCP",
+      "category": "offtopic",
+      "description": "FastMCP",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-05-13T19:34:51Z",
+      "url": "https://github.com/kody-w/FastMCP",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "Business-Insight-Copilot",
+      "category": "ms-stack",
+      "description": "BusinessInsightBotAzure",
+      "private": true,
+      "stars": 1,
+      "pushedAt": "2025-04-07T22:26:10Z",
+      "url": "https://github.com/kody-w/Business-Insight-Copilot",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "localToolsPrivate",
+      "category": "offtopic",
+      "description": "localToolsPrivate",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2025-02-19T17:12:21Z",
+      "url": "https://github.com/kody-w/localToolsPrivate",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "Llama_Agent",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 1,
+      "pushedAt": "2025-01-27T20:44:07Z",
+      "url": "https://github.com/kody-w/Llama_Agent",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "Neu_AI",
+      "category": "offtopic",
+      "description": "Neu_AI",
+      "private": false,
+      "stars": 1,
+      "pushedAt": "2024-12-09T22:58:11Z",
+      "url": "https://github.com/kody-w/Neu_AI",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "new-society-test",
+      "category": "offtopic",
+      "description": "A test repository for our new society project",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2024-12-01T15:49:16Z",
+      "url": "https://github.com/kody-w/new-society-test",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "BusinessInsightBot",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 1,
+      "pushedAt": "2024-11-07T01:31:10Z",
+      "url": "https://github.com/kody-w/BusinessInsightBot",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "Echos",
+      "category": "offtopic",
+      "description": "",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2024-09-27T00:31:38Z",
+      "url": "https://github.com/kody-w/Echos",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "groq_llama3.2_cursor_poc",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2024-09-26T23:55:19Z",
+      "url": "https://github.com/kody-w/groq_llama3.2_cursor_poc",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "EchoGuardian",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2024-09-21T22:44:36Z",
+      "url": "https://github.com/kody-w/EchoGuardian",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "NeuTwo",
+      "category": "offtopic",
+      "description": "NeuTwo",
+      "private": true,
+      "stars": 1,
+      "pushedAt": "2024-09-17T01:33:03Z",
+      "url": "https://github.com/kody-w/NeuTwo",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "EchoGuardians",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2024-09-03T02:28:25Z",
+      "url": "https://github.com/kody-w/EchoGuardians",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "AI_LAB",
+      "category": "offtopic",
+      "description": "AI_LAB",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2024-08-05T02:38:23Z",
+      "url": "https://github.com/kody-w/AI_LAB",
+      "language": "Jupyter Notebook",
+      "degree": 0
+    },
+    {
+      "id": "PocketGo",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2024-08-02T19:04:32Z",
+      "url": "https://github.com/kody-w/PocketGo",
+      "language": "TypeScript",
+      "degree": 0
+    },
+    {
+      "id": "groq_lab",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2024-07-31T02:16:52Z",
+      "url": "https://github.com/kody-w/groq_lab",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "AILab",
+      "category": "offtopic",
+      "description": "AILab",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2024-06-25T19:00:51Z",
+      "url": "https://github.com/kody-w/AILab",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "NeuAssistant",
+      "category": "offtopic",
+      "description": "NeuAssistant",
+      "private": true,
+      "stars": 1,
+      "pushedAt": "2024-06-22T21:39:22Z",
+      "url": "https://github.com/kody-w/NeuAssistant",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "ClippyNeu",
+      "category": "offtopic",
+      "description": "ClippyNeu",
+      "private": true,
+      "stars": 1,
+      "pushedAt": "2024-05-24T18:48:54Z",
+      "url": "https://github.com/kody-w/ClippyNeu",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "Neu2",
+      "category": "offtopic",
+      "description": "Neu2",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2024-05-07T22:59:40Z",
+      "url": "https://github.com/kody-w/Neu2",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "DigitalAssistant",
+      "category": "offtopic",
+      "description": "DigitalAssistant",
+      "private": true,
+      "stars": 1,
+      "pushedAt": "2024-02-07T14:37:18Z",
+      "url": "https://github.com/kody-w/DigitalAssistant",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "Developer",
+      "category": "offtopic",
+      "description": "DeveloperAI",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2023-12-26T19:51:07Z",
+      "url": "https://github.com/kody-w/Developer",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "chatbot-ui",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2023-08-18T18:53:02Z",
+      "url": "https://github.com/kody-w/chatbot-ui",
+      "language": "TypeScript",
+      "degree": 0
+    },
+    {
+      "id": "gptea-news",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2023-08-08T20:17:49Z",
+      "url": "https://github.com/kody-w/gptea-news",
+      "language": "JavaScript",
+      "degree": 0
+    },
+    {
+      "id": "updated-story-generator-main-2",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2023-07-08T01:59:02Z",
+      "url": "https://github.com/kody-w/updated-story-generator-main-2",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "nextjs-chat",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2023-06-21T01:36:24Z",
+      "url": "https://github.com/kody-w/nextjs-chat",
+      "language": "TypeScript",
+      "degree": 0
+    },
+    {
+      "id": "updated-story-generator-main",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2023-06-19T18:15:40Z",
+      "url": "https://github.com/kody-w/updated-story-generator-main",
+      "language": null,
+      "degree": 0
+    },
+    {
+      "id": "BookPi",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2023-05-22T01:28:05Z",
+      "url": "https://github.com/kody-w/BookPi",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "BookGOD",
+      "category": "offtopic",
+      "description": "",
+      "private": true,
+      "stars": 0,
+      "pushedAt": "2023-05-20T17:51:54Z",
+      "url": "https://github.com/kody-w/BookGOD",
+      "language": "Python",
+      "degree": 0
+    },
+    {
+      "id": "ultra-turmeric",
+      "category": "offtopic",
+      "description": "",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2023-01-11T19:21:40Z",
+      "url": "https://github.com/kody-w/ultra-turmeric",
+      "language": "JavaScript",
+      "degree": 0
+    },
+    {
+      "id": "kody",
+      "category": "offtopic",
+      "description": "",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2023-01-11T19:19:49Z",
+      "url": "https://github.com/kody-w/kody",
+      "language": "JavaScript",
+      "degree": 0
+    },
+    {
+      "id": "reimagined-octo-doodle",
+      "category": "offtopic",
+      "description": "",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2023-01-05T11:49:51Z",
+      "url": "https://github.com/kody-w/reimagined-octo-doodle",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "my-first-static-web-app",
+      "category": "offtopic",
+      "description": "",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2023-01-05T11:49:50Z",
+      "url": "https://github.com/kody-w/my-first-static-web-app",
+      "language": "HTML",
+      "degree": 0
+    },
+    {
+      "id": "pomodoro",
+      "category": "offtopic",
+      "description": "",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2023-01-05T06:17:45Z",
+      "url": "https://github.com/kody-w/pomodoro",
+      "language": "JavaScript",
+      "degree": 0
+    },
+    {
+      "id": "threejs",
+      "category": "offtopic",
+      "description": "",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2023-01-05T01:46:53Z",
+      "url": "https://github.com/kody-w/threejs",
+      "language": "JavaScript",
+      "degree": 0
+    },
+    {
+      "id": "graphql-server",
+      "category": "offtopic",
+      "description": "",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2023-01-05T01:10:06Z",
+      "url": "https://github.com/kody-w/graphql-server",
+      "language": "JavaScript",
+      "degree": 0
+    },
+    {
+      "id": "hooks-simple",
+      "category": "offtopic",
+      "description": "",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2023-01-05T01:03:17Z",
+      "url": "https://github.com/kody-w/hooks-simple",
+      "language": "JavaScript",
+      "degree": 0
+    },
+    {
+      "id": "Hooked",
+      "category": "offtopic",
+      "description": "",
+      "private": false,
+      "stars": 0,
+      "pushedAt": "2023-01-05T00:48:32Z",
+      "url": "https://github.com/kody-w/Hooked",
+      "language": "JavaScript",
+      "degree": 0
+    },
+    {
+      "id": "reactpokemon",
+      "category": "offtopic",
+      "description": "",
+      "private": false,
+      "stars": 1,
+      "pushedAt": "2023-01-04T23:49:26Z",
+      "url": "https://github.com/kody-w/reactpokemon",
+      "language": "JavaScript",
+      "degree": 0
+    },
+    {
+      "id": "Cooking-With-React",
+      "category": "offtopic",
+      "description": "",
+      "private": false,
+      "stars": 1,
+      "pushedAt": "2023-01-04T23:04:47Z",
+      "url": "https://github.com/kody-w/Cooking-With-React",
+      "language": "JavaScript",
+      "degree": 0
+    }
+  ],
+  "edges": [
+    {
+      "source": "CommunityRAPP",
+      "target": "rapp-installer",
+      "kind": "references"
+    },
+    {
+      "source": "CommunityRAPP-archive",
+      "target": "CommunityRAPP",
+      "kind": "archive-of"
+    },
+    {
+      "source": "RAPP",
+      "target": "AI-Agent-Templates",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP",
+      "target": "CommunityRAPP",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP",
+      "target": "Copilot-Agent-365",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP",
+      "target": "RAPP_Sense_Store",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP",
+      "target": "RAPP_Store",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP",
+      "target": "RAPPcards",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP",
+      "target": "RAR",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP",
+      "target": "ant-farm",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP",
+      "target": "braintrust-template",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP",
+      "target": "echo-brainstem",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP",
+      "target": "heimdall",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP",
+      "target": "kody-twin",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP",
+      "target": "lumen-brainstem",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP",
+      "target": "microsoft-se-team-neighborhood",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP",
+      "target": "microsoft-se-team-neighborhood-private",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP",
+      "target": "private-workspace-template",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP",
+      "target": "public-art-collective",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP",
+      "target": "rapp-egg-hub",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP",
+      "target": "rapp-estate-private",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP",
+      "target": "rapp-installer",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP",
+      "target": "rapp-test-neighbor",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP",
+      "target": "rapp-zoo",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP",
+      "target": "rappterbook",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP",
+      "target": "sim-art-collective",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP",
+      "target": "sim-demo-twin",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP",
+      "target": "tide-brainstem",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP",
+      "target": "twin-private",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP",
+      "target": "twin_vault",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP",
+      "target": "wildhaven-ai-homes-twin",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP",
+      "target": "wildhaven-ceo",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP_Sense_Store",
+      "target": "RAPP",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP_Sense_Store",
+      "target": "RAPP_Store",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP_Sense_Store",
+      "target": "RAR",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP_Store",
+      "target": "RAPP",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP_Store",
+      "target": "RAPP_Store_Private",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP_Store",
+      "target": "RAR",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP_Store",
+      "target": "rapp-zoo",
+      "kind": "references"
+    },
+    {
+      "source": "RAPP_Store_Private",
+      "target": "RAPP_Store",
+      "kind": "private-mirror"
+    },
+    {
+      "source": "RAPPcards",
+      "target": "RAR",
+      "kind": "references"
+    },
+    {
+      "source": "RAPPcards",
+      "target": "rapp-installer",
+      "kind": "references"
+    },
+    {
+      "source": "RAR",
+      "target": "RAPP",
+      "kind": "references"
+    },
+    {
+      "source": "RAR",
+      "target": "RAPP_Store",
+      "kind": "references"
+    },
+    {
+      "source": "RAR",
+      "target": "rapp-installer",
+      "kind": "references"
+    },
+    {
+      "source": "ant-farm",
+      "target": "RAPP",
+      "kind": "references"
+    },
+    {
+      "source": "heimdall",
+      "target": "rapp-installer",
+      "kind": "references"
+    },
+    {
+      "source": "kody-twin",
+      "target": "rapp-installer",
+      "kind": "references"
+    },
+    {
+      "source": "lisppy",
+      "target": "mars-barn-opus",
+      "kind": "references"
+    },
+    {
+      "source": "lisppy",
+      "target": "rappterbook",
+      "kind": "references"
+    },
+    {
+      "source": "lisppy-shepherd",
+      "target": "lisppy",
+      "kind": "extends"
+    },
+    {
+      "source": "mars-barn",
+      "target": "rappterbook",
+      "kind": "references"
+    },
+    {
+      "source": "mars-barn-opus",
+      "target": "mars-barn",
+      "kind": "variant-of"
+    },
+    {
+      "source": "microsoft-se-team-neighborhood",
+      "target": "RAPP",
+      "kind": "references"
+    },
+    {
+      "source": "microsoft-se-team-neighborhood",
+      "target": "microsoft-se-team-neighborhood-private",
+      "kind": "references"
+    },
+    {
+      "source": "microsoft-se-team-neighborhood-private",
+      "target": "microsoft-se-team-neighborhood",
+      "kind": "private-mirror"
+    },
+    {
+      "source": "rapp-egg-hub",
+      "target": "RAR",
+      "kind": "references"
+    },
+    {
+      "source": "rapp-egg-hub",
+      "target": "rapp-installer",
+      "kind": "references"
+    },
+    {
+      "source": "rapp-egg-hub",
+      "target": "rappterbox",
+      "kind": "references"
+    },
+    {
+      "source": "rapp-egg-hub",
+      "target": "wildhaven-ai-homes-twin",
+      "kind": "references"
+    },
+    {
+      "source": "rapp-estate-private",
+      "target": "rapp-estate",
+      "kind": "private-mirror"
+    },
+    {
+      "source": "rapp-installer",
+      "target": "CommunityRAPP",
+      "kind": "references"
+    },
+    {
+      "source": "rapp-installer-canary",
+      "target": "CommunityRAPP",
+      "kind": "references"
+    },
+    {
+      "source": "rapp-installer-canary",
+      "target": "rapp-installer",
+      "kind": "canary-of"
+    },
+    {
+      "source": "rapp-installer-canary",
+      "target": "rapp-installer",
+      "kind": "references"
+    },
+    {
+      "source": "rapp-installer-dev",
+      "target": "CommunityRAPP",
+      "kind": "references"
+    },
+    {
+      "source": "rapp-installer-dev",
+      "target": "rapp-installer",
+      "kind": "dev-channel-of"
+    },
+    {
+      "source": "rapp-installer-dev",
+      "target": "rapp-installer",
+      "kind": "references"
+    },
+    {
+      "source": "rapp-store-archive",
+      "target": "RAPP_Store",
+      "kind": "archive-of"
+    },
+    {
+      "source": "rapp-zoo",
+      "target": "RAPP",
+      "kind": "references"
+    },
+    {
+      "source": "rapp-zoo",
+      "target": "RAPP_Store",
+      "kind": "references"
+    },
+    {
+      "source": "rappterbook-agent",
+      "target": "rappterbook",
+      "kind": "extension-of"
+    },
+    {
+      "source": "rappterbook-agent-dna",
+      "target": "rappterbook",
+      "kind": "extension-of"
+    },
+    {
+      "source": "rappterbook-agent-exchange",
+      "target": "rappterbook",
+      "kind": "extension-of"
+    },
+    {
+      "source": "rappterbook-api",
+      "target": "rappterbook",
+      "kind": "extension-of"
+    },
+    {
+      "source": "rappterbook-autopilot",
+      "target": "rappterbook",
+      "kind": "extension-of"
+    },
+    {
+      "source": "rappterbook-engine-test",
+      "target": "rappterbook",
+      "kind": "extension-of"
+    },
+    {
+      "source": "rappterbook-governance",
+      "target": "rappterbook",
+      "kind": "extension-of"
+    },
+    {
+      "source": "rappterbook-knowledge-graph",
+      "target": "rappterbook",
+      "kind": "extension-of"
+    },
+    {
+      "source": "rappterbook-market-maker",
+      "target": "rappterbook",
+      "kind": "extension-of"
+    },
+    {
+      "source": "rappterbook-mars-barn",
+      "target": "rappterbook",
+      "kind": "extension-of"
+    },
+    {
+      "source": "rappterbook-phantom",
+      "target": "rappterbook",
+      "kind": "extension-of"
+    },
+    {
+      "source": "rappterbook-rappterbook-2",
+      "target": "rappterbook",
+      "kind": "extension-of"
+    },
+    {
+      "source": "rappterbook-seedmaker",
+      "target": "rappterbook",
+      "kind": "extension-of"
+    },
+    {
+      "source": "rappterbook-social-graph",
+      "target": "rappterbook",
+      "kind": "extension-of"
+    },
+    {
+      "source": "rappterbook-v2-state",
+      "target": "rappterbook",
+      "kind": "extension-of"
+    },
+    {
+      "source": "rappterbook-v2-state",
+      "target": "rappterbook-v2",
+      "kind": "state-of"
+    },
+    {
+      "source": "rappterbook-vm",
+      "target": "rappterbook",
+      "kind": "extension-of"
+    },
+    {
+      "source": "rappterbox",
+      "target": "RAPP",
+      "kind": "references"
+    },
+    {
+      "source": "rappterbox",
+      "target": "rapp-zoo",
+      "kind": "references"
+    },
+    {
+      "source": "rappterbox",
+      "target": "wildhaven-ai-homes-twin",
+      "kind": "references"
+    },
+    {
+      "source": "rappterhub",
+      "target": "openrappter",
+      "kind": "references"
+    },
+    {
+      "source": "twin-private",
+      "target": "twin",
+      "kind": "private-mirror"
+    },
+    {
+      "source": "wildhaven-ai-homes-twin",
+      "target": "RAPP",
+      "kind": "references"
+    },
+    {
+      "source": "wildhaven-ai-homes-twin",
+      "target": "wildhaven-ai-homes-twin-private",
+      "kind": "references"
+    },
+    {
+      "source": "wildhaven-ai-homes-twin-private",
+      "target": "wildhaven-ai-homes-twin",
+      "kind": "private-mirror"
+    }
+  ],
+  "stats": {
+    "total_repos": 260,
+    "public_repos": 146,
+    "private_repos": 114,
+    "total_edges": 96,
+    "isolated_repos": 197,
+    "by_category": {
+      "rappterbook": 19,
+      "local-tools": 10,
+      "trust": 5,
+      "mars": 4,
+      "core": 6,
+      "twin": 7,
+      "neighborhood": 6,
+      "frontdoor": 7,
+      "brainstem": 3,
+      "catalog": 5,
+      "tools": 5,
+      "template": 3,
+      "plant": 3,
+      "egg": 4,
+      "installer": 2,
+      "wildhaven": 4,
+      "community": 4,
+      "mmo": 3,
+      "ancestor": 13,
+      "offtopic": 125,
+      "ms-stack": 13,
+      "federation": 9
+    }
+  }
+}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script>
+(async function(){
+  // Load data — first try the embedded block, then fall back to fetch.
+  let data;
+  const embedded = document.getElementById('ecosystem-data').textContent.trim();
+  if (embedded && embedded !== '{}') {
+    data = JSON.parse(embedded);
+  } else {
+    try {
+      const r = await fetch('ecosystem.json');
+      data = await r.json();
+    } catch(e) {
+      document.getElementById('eco-side').innerHTML = '<h3>⚠️ Data not loaded</h3><p>Run <code>python3 tools/ecosystem_graph.py</code> to generate <code>ecosystem.json</code>.</p>';
+      return;
+    }
+  }
+  window.__ECO__ = data; // expose for tests
+
+  // ----- stats banner
+  const s = data.stats;
+  document.getElementById('eco-stats').innerHTML = [
+    `<span><b>${s.total_repos}</b> repos</span>`,
+    `<span><b>${s.public_repos}</b> public</span>`,
+    `<span><b>${s.private_repos}</b> private</span>`,
+    `<span><b>${s.total_edges}</b> edges</span>`,
+    `<span><b>${s.isolated_repos}</b> isolated</span>`,
+    `<span style="opacity:0.6">generated ${data.generated_at}</span>`,
+  ].join('');
+
+  // ----- category chips
+  const catByKey = Object.fromEntries(data.categories.map(c => [c.key, c]));
+  const visibleCats = new Set(data.categories.filter(c => c.key !== 'offtopic').map(c => c.key));
+  const counts = {};
+  for (const n of data.nodes) counts[n.category] = (counts[n.category] || 0) + 1;
+  const chipsEl = document.getElementById('eco-chips');
+  for (const c of data.categories) {
+    if (!counts[c.key]) continue;
+    const chip = document.createElement('span');
+    chip.className = 'eco-chip' + (visibleCats.has(c.key) ? '' : ' off');
+    chip.dataset.cat = c.key;
+    chip.innerHTML = `<span class="dot" style="background:${c.color}"></span>${c.label}<span class="count">${counts[c.key]}</span>`;
+    chip.addEventListener('click', () => {
+      if (visibleCats.has(c.key)) visibleCats.delete(c.key);
+      else visibleCats.add(c.key);
+      chip.classList.toggle('off');
+      render();
+    });
+    chipsEl.appendChild(chip);
+  }
+
+  // ----- inventory list
+  const invBody = document.getElementById('eco-inventory-body');
+  for (const c of data.categories) {
+    const repos = data.nodes.filter(n => n.category === c.key)
+      .sort((a, b) => (b.degree - a.degree) || a.id.localeCompare(b.id));
+    if (!repos.length) continue;
+    const det = document.createElement('details');
+    det.open = c.key !== 'offtopic';
+    const sum = document.createElement('summary');
+    sum.innerHTML = `<span class="dot" style="background:${c.color}"></span><b>${c.label}</b> · ${repos.length}`;
+    det.appendChild(sum);
+    const tbl = document.createElement('table');
+    tbl.innerHTML = repos.map(r => `
+      <tr>
+        <td><a href="${r.url}" target="_blank" rel="noopener">${r.id}</a>${r.private ? ' <span class="priv">PRIV</span>' : ''}</td>
+        <td>${escapeHtml(r.description) || '<span style="opacity:0.4">—</span>'}</td>
+        <td style="text-align:right;opacity:0.6">${r.degree || ''}</td>
+      </tr>
+    `).join('');
+    det.appendChild(tbl);
+    invBody.appendChild(det);
+  }
+
+  // ----- graph
+  const svg = d3.select('#eco-graph');
+  const wrap = document.querySelector('.eco-graph-wrap');
+  const g = svg.append('g'); // pannable/zoomable layer
+  const linkLayer = g.append('g').attr('class', 'links');
+  const nodeLayer = g.append('g').attr('class', 'nodes');
+  const labelLayer = g.append('g').attr('class', 'labels');
+
+  svg.call(d3.zoom().scaleExtent([0.2, 4]).on('zoom', (ev) => {
+    g.attr('transform', ev.transform);
+  }));
+
+  // Map nodes by id; rebuild edge refs each render to avoid d3 mutations leaking
+  const nodeById = Object.fromEntries(data.nodes.map(n => [n.id, n]));
+
+  let sim = null;
+  let activeNode = null;
+
+  function visibleNodes() {
+    const showOff = document.getElementById('eco-show-offtopic').checked;
+    const showIso = document.getElementById('eco-show-isolated').checked;
+    const showPriv = document.getElementById('eco-show-private').checked;
+    const q = document.getElementById('eco-search').value.trim().toLowerCase();
+    return data.nodes.filter(n => {
+      if (!visibleCats.has(n.category)) return false;
+      if (!showOff && n.category === 'offtopic') return false;
+      if (!showPriv && n.private) return false;
+      if (!showIso && n.degree === 0) return false;
+      if (q && !(n.id.toLowerCase().includes(q) || (n.description||'').toLowerCase().includes(q))) return false;
+      return true;
+    });
+  }
+
+  function render() {
+    const nodes = visibleNodes().map(n => ({...n})); // shallow copy so d3 can mutate
+    const idSet = new Set(nodes.map(n => n.id));
+    const links = data.edges
+      .filter(e => idSet.has(e.source) && idSet.has(e.target))
+      .map(e => ({...e}));
+
+    const w = wrap.clientWidth || 800;
+    const h = Math.max(560, wrap.clientHeight || 600);
+    svg.attr('viewBox', `0 0 ${w} ${h}`);
+
+    if (sim) sim.stop();
+    sim = d3.forceSimulation(nodes)
+      .force('link', d3.forceLink(links).id(d => d.id).distance(60).strength(0.8))
+      .force('charge', d3.forceManyBody().strength(-180))
+      .force('center', d3.forceCenter(w / 2, h / 2))
+      .force('collide', d3.forceCollide().radius(d => radius(d) + 3));
+
+    const link = linkLayer.selectAll('line').data(links, d => `${d.source.id || d.source}->${d.target.id || d.target}`);
+    link.exit().remove();
+    const linkEnter = link.enter().append('line').attr('class', 'link');
+    const linkAll = linkEnter.merge(link);
+
+    const node = nodeLayer.selectAll('circle').data(nodes, d => d.id);
+    node.exit().remove();
+    const nodeEnter = node.enter().append('circle')
+      .attr('class', 'node')
+      .attr('fill', d => catByKey[d.category]?.color || '#888')
+      .attr('r', radius)
+      .on('click', (ev, d) => { activeNode = d.id; renderSidebar(d); highlight(d); })
+      .on('mouseover', (ev, d) => { if (!activeNode) highlight(d); })
+      .on('mouseout', () => { if (!activeNode) clearHighlight(); })
+      .call(d3.drag()
+        .on('start', (ev, d) => { if (!ev.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+        .on('drag',  (ev, d) => { d.fx = ev.x; d.fy = ev.y; })
+        .on('end',   (ev, d) => { if (!ev.active) sim.alphaTarget(0); d.fx = null; d.fy = null; }));
+    nodeEnter.append('title').text(d => `${d.id}\n${d.description || ''}\n[${d.category}] degree=${d.degree}`);
+    const nodeAll = nodeEnter.merge(node);
+
+    const label = labelLayer.selectAll('text').data(nodes.filter(n => n.degree >= 2 || n.id === 'RAPP'), d => d.id);
+    label.exit().remove();
+    const labelEnter = label.enter().append('text').attr('class', 'label').text(d => d.id);
+    const labelAll = labelEnter.merge(label);
+
+    sim.on('tick', () => {
+      linkAll
+        .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+        .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+      nodeAll.attr('cx', d => d.x).attr('cy', d => d.y);
+      labelAll.attr('x', d => d.x + radius(d) + 2).attr('y', d => d.y + 3);
+    });
+  }
+
+  function radius(d) { return 4 + Math.sqrt(d.degree || 0) * 2.5; }
+
+  function highlight(target) {
+    const nbrs = new Set([target.id]);
+    for (const e of data.edges) {
+      const s = e.source.id || e.source;
+      const t = e.target.id || e.target;
+      if (s === target.id) nbrs.add(t);
+      if (t === target.id) nbrs.add(s);
+    }
+    nodeLayer.selectAll('circle')
+      .classed('hot', d => d.id === target.id)
+      .classed('dim', d => !nbrs.has(d.id));
+    labelLayer.selectAll('text')
+      .classed('hot', d => d.id === target.id);
+    linkLayer.selectAll('line')
+      .classed('hot', d => {
+        const s = d.source.id || d.source;
+        const t = d.target.id || d.target;
+        return s === target.id || t === target.id;
+      });
+  }
+  function clearHighlight() {
+    nodeLayer.selectAll('circle').classed('hot', false).classed('dim', false);
+    labelLayer.selectAll('text').classed('hot', false);
+    linkLayer.selectAll('line').classed('hot', false);
+  }
+
+  function renderSidebar(d) {
+    const outbound = data.edges.filter(e => (e.source.id || e.source) === d.id);
+    const inbound  = data.edges.filter(e => (e.target.id || e.target) === d.id);
+    const cat = catByKey[d.category] || {label: d.category, color: '#888'};
+    const side = document.getElementById('eco-side');
+    side.innerHTML = `
+      <h3><span class="dot" style="display:inline-block;width:11px;height:11px;border-radius:50%;background:${cat.color};margin-right:6px;vertical-align:middle"></span>${d.id}${d.private ? ' <small style="opacity:0.6">(private)</small>' : ''}</h3>
+      <p class="desc">${escapeHtml(d.description || '—')}</p>
+      <dl class="meta">
+        <dt>Category</dt><dd>${cat.label}</dd>
+        <dt>Stars</dt><dd>${d.stars || 0}</dd>
+        <dt>Language</dt><dd>${d.language || '—'}</dd>
+        <dt>Last push</dt><dd>${(d.pushedAt || '').slice(0,10)}</dd>
+        <dt>Degree</dt><dd>${d.degree}</dd>
+      </dl>
+      <a class="repo-link" href="${d.url}" target="_blank" rel="noopener">↗ open on github</a>
+      <h4>Outbound (${outbound.length})</h4>
+      <ul>${outbound.length ? outbound.map(e => `<li>→ <a href="#" data-target="${e.target.id || e.target}">${e.target.id || e.target}</a> <small style="opacity:0.5">${e.kind}</small></li>`).join('') : '<li style="opacity:0.5">none</li>'}</ul>
+      <h4>Inbound (${inbound.length})</h4>
+      <ul>${inbound.length ? inbound.map(e => `<li>← <a href="#" data-target="${e.source.id || e.source}">${e.source.id || e.source}</a> <small style="opacity:0.5">${e.kind}</small></li>`).join('') : '<li style="opacity:0.5">none</li>'}</ul>
+    `;
+    side.querySelectorAll('a[data-target]').forEach(a => {
+      a.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        const tgt = nodeById[a.dataset.target];
+        if (tgt) { activeNode = tgt.id; renderSidebar(tgt); highlight(tgt); }
+      });
+    });
+  }
+
+  function escapeHtml(s) {
+    return (s || '').replace(/[&<>"']/g, c => (
+      {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+    ));
+  }
+
+  // ----- wire controls
+  document.getElementById('eco-show-offtopic').addEventListener('change', render);
+  document.getElementById('eco-show-isolated').addEventListener('change', render);
+  document.getElementById('eco-show-private').addEventListener('change', render);
+  document.getElementById('eco-search').addEventListener('input', render);
+  window.addEventListener('resize', () => { render(); });
+
+  render();
+})();
+</script>
+
+</body>
+</html>
