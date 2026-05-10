@@ -190,7 +190,7 @@ body { margin: 0; font-family: var(--font-sans, system-ui, sans-serif); }
 {
   "schema": "rapp-prompt-ledger/1.0",
   "_comment": "Append-only ledger of prompts that show off what RAPP can actually do. To add a new one: bump `next_id`, append an object to `prompts`. Sort order in the UI is newest-first by default.",
-  "next_id": 51,
+  "next_id": 61,
   "prompts": [
     {
       "id": 1,
@@ -789,6 +789,126 @@ body { margin: 0; font-family: var(--font-sans, system-ui, sans-serif); }
         "public-estate",
         "autobiography",
         "holocard"
+      ]
+    },
+    {
+      "id": 51,
+      "title": "One file, three substrates",
+      "added": "2026-05-10",
+      "prompt": "Write me an agent in one .py file. Drop it into the agents/ folder. I'll talk to it 4 seconds later \u2014 no restart, no build, no register-in-config, no scaffold. Now move that exact file to my Azure Function deployment. Then export it to my Microsoft Copilot Studio tenant. Same file, same behavior, three substrates. Show me the equivalent in your stack.",
+      "shows": "Hot-discovery + tier portability. Agent contract is a single class with one perform() and one metadata dict. T1 \u2192 T2 \u2192 T3 unmodified. Every other agent platform requires a build step somewhere in this chain.",
+      "tags": [
+        "hot-discovery",
+        "tier-portability",
+        "agent-autogen"
+      ]
+    },
+    {
+      "id": 52,
+      "title": "AirDrop me to my mom",
+      "added": "2026-05-10",
+      "prompt": "AirDrop my entire AI assistant \u2014 kernel, soul, every custom agent, my memory, my secrets \u2014 to my mom's MacBook as a single .egg file. She double-clicks it. 60 seconds later she's chatting with me-the-agent. No terminal, no install script, no API key prompt, no account creation. Where's your egg format?",
+      "shows": "The egg cartridge format. Whole organism as one portable file, hatchable on any peer. The artifact-vs-installation distinction. Most platforms require an account before you can install anything.",
+      "tags": [
+        "egg",
+        "accessibility",
+        "bonding"
+      ]
+    },
+    {
+      "id": 53,
+      "title": "Old me vs new me",
+      "added": "2026-05-10",
+      "prompt": "Take a 9-month-old version of me-the-organism and a brand-new fresh-install of me-the-organism. Have them argue about a decision I'm about to make. The old one has my old memory and old soul; the new one only has the latest kernel and a blank slate. Show me which version of myself I trust more on this decision and why. Both must use the same rappid identity \u2014 I'm one operator with two embodiments.",
+      "shows": "Persistent identity across kernel upgrades + signed lineage. Not 'save chat history' \u2014 actual organism continuity through bonded re-overlay. Your ChatGPT session can't do this.",
+      "tags": [
+        "bonding",
+        "lineage",
+        "identity"
+      ]
+    },
+    {
+      "id": 54,
+      "title": "Curl my entire trust web",
+      "added": "2026-05-10",
+      "prompt": "Curl this URL: https://raw.githubusercontent.com/kody-w/rapp-estate/main/estate.json. From that single file, with no GitHub token and no API call, walk every door I own, every gate I'm in, every fellow operator in my trust web, and every fellow operator THEY trust. Render the whole graph. Now tell me how YOUR platform's discovery works without an API token, an OAuth flow, or a rate limit.",
+      "shows": "Pure raw-fetch chain rule. Discovery without infrastructure. Article XLVI's rappid \u2192 9 URLs derives every canonical address by string parsing alone. Every other platform requires you to log in before you can see anything.",
+      "tags": [
+        "chain-rule",
+        "pure-raw-fetch",
+        "public-estate"
+      ]
+    },
+    {
+      "id": 55,
+      "title": "Same agent, five LLMs",
+      "added": "2026-05-10",
+      "prompt": "Run the SAME agent code against five different LLM providers \u2014 GitHub Copilot, Claude, GPT-4, Azure OpenAI, local Ollama \u2014 through the SAME entry point. No glue code per provider, no provider-specific branches, no rewriting. Show me where in your stack you handle this without a switch statement and without locking me into one vendor.",
+      "shows": "Provider dispatch as a primitive (llm.py), not a feature you bolt on. The agent doesn't know which model it's running against. Every 'AI assistant' built on one vendor's SDK has a vendor-shaped hole where this should be.",
+      "tags": [
+        "multi-llm",
+        "tier-portability",
+        "agent-autogen"
+      ]
+    },
+    {
+      "id": 56,
+      "title": "Bilateral channel, no middleman",
+      "added": "2026-05-10",
+      "prompt": "Send a signed letter from my private estate inbox to another operator's private estate inbox. Bilaterally addressed, signed by my rappid, no third party in the middle. Their brainstem reads it, replies, drops the response into my inbox. Show me the equivalent in your system that doesn't route through OpenAI's servers, Anthropic's servers, Slack's servers, or any other corporate broker.",
+      "shows": "The bilateral channel from NEIGHBORHOOD_PROTOCOL.md. Operator-to-operator correspondence on a pure GitHub substrate, no SaaS in the path. The thing every 'AI assistant' platform structurally cannot offer because their business model is being the broker.",
+      "tags": [
+        "bilateral-channel",
+        "private-estate",
+        "web-of-trust"
+      ]
+    },
+    {
+      "id": 57,
+      "title": "One brain, six bodies",
+      "added": "2026-05-10",
+      "prompt": "Find every place my AI organism is currently running \u2014 laptop, work machine, Azure tenant, my mom's MacBook, Copilot Studio, my partner's iPad \u2014 and reconcile their memories via Bond Pulse. The deltas merge through Dream Catcher. The conflicts surface for me to adjudicate. The reconciled state ships back to all six instances. One identity, six embodiments, one shared memory. Show me your story for multi-substrate identity coherence.",
+      "shows": "Bond Pulse heartbeat + Dream Catcher merge across tiers. Distributed-organism coherence is a constitutional commitment (Article XXXVII), not an afterthought. Every chat product treats every device as a separate session.",
+      "tags": [
+        "bond-pulse",
+        "dream-catcher",
+        "tier-portability"
+      ]
+    },
+    {
+      "id": 58,
+      "title": "Public AI persona in 60 seconds",
+      "added": "2026-05-10",
+      "prompt": "Plant a brand-new public AI persona under any operator handle you choose \u2014 a real, federated, summonable digital entity. From the moment you say go, I'll have a public URL, a holocard, a summon QR, an estate entry, a bilateral inbox, members.json contributor proof, and a parent_rappid pointing back to me. In under 60 seconds. With one command. Show me your zero-to-public-AI-persona flow.",
+      "shows": "Planting + estate emission + holocard + QR + sphere + members + facets, all atomic. The 'AI personas as repos' primitive. Every other platform's 'create a custom GPT' produces a thing that lives only inside their walled garden.",
+      "tags": [
+        "planting",
+        "summon-qr",
+        "public-estate"
+      ]
+    },
+    {
+      "id": 59,
+      "title": "Charizard in the woods, for real",
+      "added": "2026-05-10",
+      "prompt": "Turn off my wifi. Bond two of my brainstems over LAN, exchange one custom agent each via AirDrop, and have them play a turn-based story game. Every move is a new agent file generated on the fly. End of game, both organisms have grown \u2014 they have agents they didn't have before, written by each other. Show me your offline-federation story. (Hint: 'we have an offline mode' is not a federation story.)",
+      "shows": "LAN federation + sneakernet egg + autonomous agent generation, all with zero cloud dependency. The Charizard-in-the-woods proof from HERO_USECASE.md. Try this with a SaaS chatbot.",
+      "tags": [
+        "lan-federation",
+        "sneakernet",
+        "accessibility"
+      ]
+    },
+    {
+      "id": 60,
+      "title": "Constitution + conformance gates",
+      "added": "2026-05-10",
+      "prompt": "Write a constitution for the AI persona I'm about to build \u2014 articles, ratification dates, immutable invariants, conformance gates, the works. Then generate the test suite that proves the persona is constitutional and run it. Now show me where in YOUR AI assistant the rules of behavior are enforced as executable code rather than as vibes in a system prompt that the model can be talked out of.",
+      "shows": "CONSTITUTION.md (245k chars) + tests/features/F*.sh conformance gates + the sealing mechanism. Governance as testable code, not as a paragraph in a README. The bedrock answer to 'how do you keep an AI agent on the rails over years.'",
+      "tags": [
+        "constitution",
+        "conformance",
+        "trust"
       ]
     }
   ]
