@@ -93,6 +93,7 @@ ORGANISM_LAN_FEDERATION_TOOLS = (
     "path_opacity.py",       # XLVIII.6 URL-opacity helpers (used by sniffer)
     "private_estate_init.py",# XLVIII bootstrap (lets a hatched op recreate private side)
     "rebuild_estate.py",     # XLVI.6 disaster-recovery rebuild
+    "import_peer_egg.py",    # XLVII.5.3 sneakernet federation (import a received egg)
 )
 
 # Files that travel as kernel-shipped infrastructure, not as organism
@@ -471,14 +472,41 @@ case "${1:-help}" in
     pkill -f "http.server $PORT" 2>/dev/null || true
     pkill -f "dns-sd -R" 2>/dev/null || true
     ;;
-  *)
-    echo "Usage: bash lan-quickstart.sh [advertise|sniff|both] [PORT|SECONDS]"
-    echo "  advertise    Broadcast this egg's brainstem on the LAN via Bonjour"
-    echo "  sniff        Discover LAN peers via _rapp-estate._tcp browse"
-    echo "  both         advertise in background, then sniff once"
+  import-peer)
+    EGG="${2:-}"
+    if [ -z "$EGG" ]; then
+      echo "error: usage: bash lan-quickstart.sh import-peer <path-to-received.egg>"
+      exit 2
+    fi
+    echo "  ▸ importing peer egg $EGG (Article XLVII.5.3 sneakernet federation)"
+    python3 "$EGG_DIR/tools/import_peer_egg.py" "$EGG"
     echo ""
-    echo "Article XLVII.5.1: same UX as 'gh search repos topic:rapp-estate'"
-    echo "but for the LAN, no GitHub required. Fully local-first."
+    echo "  Now run: bash $0 sniff-via-seed"
+    ;;
+  sniff-via-seed)
+    SEED="${2:-$BRAINSTEM_HOME/network-seed.json}"
+    if [ ! -f "$SEED" ]; then
+      echo "error: seed file not found: $SEED"
+      echo "  Hint: run 'bash $0 import-peer <egg>' first to create one"
+      exit 2
+    fi
+    echo "  ▸ sniffing via local seed (includes sneakernet-imported peers): $SEED"
+    exec python3 "$EGG_DIR/tools/sniff_network.py" --via raw --seed-url "file://$SEED"
+    ;;
+  *)
+    echo "Usage: bash lan-quickstart.sh [advertise|sniff|both|import-peer|sniff-via-seed] ..."
+    echo ""
+    echo "  LAN substrate (Article XLVII.5.1, requires shared LAN + Bonjour):"
+    echo "    advertise        Broadcast this brainstem on the LAN via Bonjour"
+    echo "    sniff            Discover LAN peers via _rapp-estate._tcp browse"
+    echo "    both             advertise in background, then sniff once"
+    echo ""
+    echo "  Sneakernet substrate (Article XLVII.5.3, NO network required):"
+    echo "    import-peer EGG  Add a received egg as a federation hint (file://)"
+    echo "    sniff-via-seed   Walk all peers in your local seed file"
+    echo ""
+    echo "Same JSON shapes, same door_from_rappid(), different substrate."
+    echo "Federation walks github raw, LAN HTTP, Bonjour, and file:// — uniformly."
     ;;
 esac
 """

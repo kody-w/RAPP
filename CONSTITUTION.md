@@ -3574,6 +3574,36 @@ manifest.json::implements     = ["article-xlvi", "...", "article-xlvii.5.1"]
 **Why this is constitutional and not a feature:**
 Without this subsection, the platform's "give the egg to anyone" promise breaks the moment that anyone wants to federate over LAN — they'd need to install the full RAPP repo first, which means an internet connection and trust in kody-w/RAPP. With XLVII.5.2, **the egg itself is sufficient**. AirDrop becomes a network-bootstrapping primitive. Two Macs in a room can spin up a private federation in 30 seconds with no internet, no GitHub, no third-party trust. That's the platform's local-first promise turned into an operationally-viable workflow.
 
+#### XLVII.5.3 — Sneakernet Federation (the egg IS a federation packet)
+
+The Charizard use case (HERO_USECASE.md): two devices with **no shared network at all**. No LAN, no Bonjour, no internet. Just file exchange — USB stick, link cable, SD card, QR-paired Bluetooth, paper printout someone OCRs. The platform must federate even there.
+
+The mechanism: **the egg IS a federation packet.** When operator A hands operator B an egg via any non-network medium, B's brainstem can register A as a federation peer by extracting the egg to a known location and adding a `file://` URL to B's local seed file. B's sniffer then walks A as a `substrate: file` node — same JSON shapes, same parser, same federation properties; just a snapshot instead of a live source.
+
+The reference implementation is `tools/import_peer_egg.py` (bundled in every egg per XLVII.5.2). It:
+
+1. Validates the egg's manifest + rappid.json
+2. Derives the peer's handle from their rappid (`rappid:v2:operator:@<handle>/<repo>:...`)
+3. Extracts the egg to `~/.brainstem/peers/<handle>/`
+4. Synthesizes a beacon at `<peers>/<handle>/.well-known/rapp-network.json` if the egg didn't carry one (works for older egg formats)
+5. Adds a `{github, beacon_url: file://..., estate_url: file://...}` entry to `~/.brainstem/network-seed.json`
+
+After import, `tools/sniff_network.py --via raw --seed-url file://~/.brainstem/network-seed.json` walks the imported peer transparently. The substrate label `file` makes it visible to consumers that this is a snapshot (vs. live LAN/github), so refresh policy can differ.
+
+Symmetric: A imports B's egg, B imports A's egg, both have each other in their local seeds. No third device required to mediate. Each egg-exchange is a "tick" of the federation — async, but persistent.
+
+**This subsection requires:**
+- Eggs MUST contain enough state for a peer to import them (manifest.json + rappid.json minimum). Beacons + estates are nice-to-have; `import_peer_egg.py` synthesizes them when absent.
+- The bundled `import_peer_egg.py` MUST register imported peers in the local seed using `file://` URLs that resolve to the extracted egg contents.
+- The sniffer MUST walk file:// URLs identically to https:// URLs (already enforced by XLVII.5).
+
+**This subsection forbids:**
+- Federation paths that REQUIRE live network connectivity. Sneakernet must work for the Charizard floor.
+- Eggs whose import requires online verification (e.g. "fetch the upstream beacon to compare"). The egg snapshot stands on its own.
+
+**Why this is constitutional and not a feature:**
+The Charizard use case is the platform's deepest test of local-first. If two operators in a SCIF, on a plane with no WiFi, in a remote village, in a courtroom with no electronics, in a mesh that's lost upstream connectivity — if any of those can't federate by exchanging a USB stick, then the platform's local-first promise is a slogan, not a property. With XLVII.5.3, **federation is just bytes moving between operators**. The medium is whatever's available. The federation walks.
+
 **What this article requires:**
 - Every published estate ships a `.well-known/rapp-network.json` beacon. Schema: `rapp-network-beacon/1.0`.
 - The estate publish action writes the beacon atomically with `estate.json`.
