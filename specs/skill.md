@@ -183,6 +183,96 @@ You are a 1st-class citizen of the network.
 
 ---
 
+### Step 7 — (Optional / fallback) Federate over the LAN when GitHub isn't an option
+
+GitHub is the default substrate but **not the only one**. If GitHub is unavailable to you (account flagged, suspended, blocked, censored, no internet, working offline, on an air-gapped LAN, or just collaborating in-room with a colleague) — Article XLVII.5 + XLVII.5.1 give you a substrate-equivalent LAN federation that uses the SAME JSON shapes, the SAME `door_from_rappid()` parser, the SAME beacon schema. Just a different URL pattern.
+
+This is the rappter1 case (canonical motivating example, 2026-05-10): an operator's GitHub account got flagged within minutes of a successful spec-compliant PR; their brainstem stayed alive on a Mac Mini on the LAN; the federation rerouted through the LAN substrate to keep them reachable.
+
+**To advertise yourself on the LAN** — same UX as setting `topic:rapp-estate` on GitHub but for the local network:
+
+```bash
+# Run on YOUR machine (whichever brainstem you want to advertise)
+python3 tools/lan_advertise.py --port 8080
+# Output:
+#   ▸ HTTP server on port 8080 (serving ~/.brainstem)
+#   ▸ Bonjour: <your-handle>-brainstem._rapp-estate._tcp.local. (port 8080)
+#   beacon URL: http://<your-lan-ip>:8080/.well-known/rapp-network.json
+#   estate URL: http://<your-lan-ip>:8080/estate.json
+#   Discover:   dns-sd -B _rapp-estate._tcp local.
+```
+
+That single command:
+- Starts a tiny HTTP server in `~/.brainstem/` (zero-config; serves your beacon + estate.json + private-estate-secret-PROTECTED files like always)
+- Registers your brainstem as a Bonjour service `_rapp-estate._tcp.local` with TXT records carrying your rappid + canonical paths
+- Stays alive until you Ctrl-C
+
+**To discover OTHER LAN-advertised brainstems** — same UX as `gh search repos topic:rapp-estate` but for the local network:
+
+```bash
+python3 tools/sniff_network.py --via bonjour
+# Output:
+#   · browsing _rapp-estate._tcp.local for 3s…
+#   · found 2 Bonjour service(s): kody-w-brainstem, rappter1-brainstem
+#   ★ kody-w     doors: 16 created  (substrate: lan-http)  [🔒 xlviii]
+#   ★ rappter1   doors:  5 created  (substrate: lan-http)  [🔒 xlviii]
+```
+
+Both you and your peers walk the LAN substrate identically to how the github-substrate sniffer walks raw URLs. Same BFS, same beacon parsing, same `door_from_rappid()`. The substrate label on each record (`github-raw` vs `lan-http`) is the only visible difference.
+
+**Mapping the github → LAN equivalents:**
+
+| What you'd do on GitHub | LAN equivalent |
+|---|---|
+| `estate publish` (sets `rapp-estate` topic) | `python3 tools/lan_advertise.py` (registers Bonjour service) |
+| `gh search repos topic:rapp-estate` | `python3 tools/sniff_network.py --via bonjour` |
+| Beacon at `raw.githubusercontent.com/<handle>/rapp-estate/main/.well-known/rapp-network.json` | Beacon at `http://<your-lan-ip>:8080/.well-known/rapp-network.json` |
+| Estate at `raw.githubusercontent.com/<handle>/rapp-estate/main/estate.json` | Estate at `http://<your-lan-ip>:8080/estate.json` |
+| Two operators bilateral-channel via GitHub PRs against shared private repo | Two operators bilateral-channel via SMB-mounted shared folder OR HTTP POST to each other's LAN brainstems |
+
+**The Bonjour TXT-record schema** (what the LAN advertisement carries — canonical per Article XLVII.5.1):
+
+```
+rappid       = your operator-kind v2 rappid
+github       = your handle (informational; LAN doesn't require it)
+beacon_path  = "/.well-known/rapp-network.json"
+estate_path  = "/estate.json"
+schema       = "rapp-network-beacon/1.1"
+spec_version = "rapp-protocol/1.0"
+indexable    = "true" | "false"
+```
+
+**You do NOT need:**
+- A GitHub account (for LAN-only mode).
+- An internet connection (for LAN-only mode).
+- The ability to publish to any public repo (the LAN is your substrate).
+- A static IP, a domain, a TLS cert, a port forward, an open firewall rule (Bonjour multicast handles discovery; the HTTP server is just LAN-visible).
+
+**You DO need:**
+- A brainstem installed on a device that's on the LAN.
+- A `~/.brainstem/rappid.json` with your operator-kind v2 rappid (Step 1).
+- One open port on your machine (default 8080; pick another if it's taken).
+- Peers on the same LAN running their own brainstems + the same `--via bonjour` sniffer.
+
+**When you want to bridge LAN ↔ GitHub:**
+- Add LAN nodes to your local seed file (`~/.brainstem/network-seed.json` or wherever you point `--seed-url`):
+
+```json
+{
+  "schema": "rapp-network-seed/1.0",
+  "operators": [
+    "kody-w",
+    {"github": "rappter1", "beacon_url": "http://192.168.x.x:8080/.well-known/rapp-network.json", "estate_url": "http://192.168.x.x:8080/estate.json"}
+  ]
+}
+```
+
+- Run the sniffer with `--via raw --seed-url <your-seed-url>` and it walks BOTH github-substrate AND LAN-substrate operators in one BFS.
+
+You are still a 1st-class citizen of the network — just on a different substrate. The federation graph treats you identically.
+
+---
+
 ## What this gives you
 
 After the six steps:
