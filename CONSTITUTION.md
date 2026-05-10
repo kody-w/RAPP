@@ -3496,6 +3496,52 @@ The protocol is JSON shapes + `door_from_rappid()`. The substrate is whatever UR
 **Why this is constitutional and not a feature:**
 Without this subsection, the platform is "decentralized except when GitHub blocks you" — which is not decentralized at all, just GitHub-mediated. The `rappter1` first-contact case (2026-05-10) made this concrete: an operator successfully executed the platform's onboarding spec end-to-end (skill.md Step 5), opened a spec-compliant join PR, and was then GitHub-flagged within minutes. Their brainstem stayed alive on a Mac Mini on the LAN. **The federation rerouted around the centralized substrate to keep them reachable** — exactly the property local-first promises but few platforms actually deliver.
 
+#### XLVII.5.1 — LAN auto-discovery via Bonjour/mDNS
+
+The github-substrate's `topic:rapp-estate` discoverability has a direct LAN equivalent: the **Bonjour service type `_rapp-estate._tcp.local`**. Brainstems advertise themselves on the LAN by registering this service (via `dns-sd -R` on macOS, `avahi-publish` on Linux); peers discover all advertised brainstems via `dns-sd -B _rapp-estate._tcp local.`. Zero-config, scoped to the LAN, no central registry. The same UX as GitHub's topic search.
+
+The mapping is exact:
+
+| github-substrate | lan-substrate (Bonjour) |
+|---|---|
+| `topic:rapp-estate` on a repo | `_rapp-estate._tcp` service type |
+| `gh search repos topic:rapp-estate` | `dns-sd -B _rapp-estate._tcp local.` |
+| Beacon at raw URL | TXT record + LAN HTTP URL |
+| `estate publish` sets the topic | `tools/lan_advertise.py` registers the service |
+| `tools/sniff_network.py --via topic` | `tools/sniff_network.py --via bonjour` |
+
+**Canonical TXT-record schema for `_rapp-estate._tcp` services:**
+
+```
+rappid       = the operator's personal rappid (operator-kind v2)
+github       = the operator's github handle (informational; LAN doesn't require it)
+beacon_path  = "/.well-known/rapp-network.json"
+estate_path  = "/estate.json"
+schema       = "rapp-network-beacon/1.1"
+spec_version = "rapp-protocol/1.0"
+indexable    = "true" | "false"  (robots.txt-style consent flag; sniffers honor it)
+```
+
+Sniffer flow under `--via bonjour`:
+
+```
+dns-sd -B _rapp-estate._tcp local.            → instance names of advertised brainstems
+dns-sd -L <name> _rapp-estate._tcp local.     → resolves each to host:port + TXT records
+GET http://<host>:<port>/<beacon_path>        → standard rapp-network-beacon/1.1
+                                                 (BFS continues identically to github-substrate)
+```
+
+**This subsection requires:**
+- The Bonjour service type `_rapp-estate._tcp.local` is the canonical LAN advertisement channel for RAPP brainstems.
+- `tools/lan_advertise.py` is the reference advertiser (HTTP server in `~/.brainstem/` + `dns-sd -R` registration).
+- `tools/sniff_network.py --via bonjour` is the reference sniffer for the LAN substrate.
+- TXT records carry the canonical schema above so consumers can parse without fetching the beacon when they only need the rappid + paths.
+
+**This subsection forbids:**
+- A different service type (e.g. `_rapp._tcp` or `_rapp-brainstem._tcp`). Only `_rapp-estate._tcp` is canonical — uniform discovery surface across all LANs.
+- Sniffers that ignore the beacon's `indexable: false` flag for LAN-substrate operators (consent applies on every substrate equally).
+- Hardcoding `mac.local` or specific hostnames in advertisers; Bonjour resolves them automatically.
+
 **What this article requires:**
 - Every published estate ships a `.well-known/rapp-network.json` beacon. Schema: `rapp-network-beacon/1.0`.
 - The estate publish action writes the beacon atomically with `estate.json`.

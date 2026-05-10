@@ -37,6 +37,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -315,6 +316,168 @@ def _gh(args: list[str]) -> tuple[int, str, str]:
     return p.returncode, p.stdout, p.stderr
 
 
+def sniff_via_bonjour(browse_seconds: int = 3, include_private: bool = False,
+                       fetch_estates: bool = True, on_progress=None) -> dict:
+    """LAN-substrate discovery via Bonjour/mDNS (Article XLVII.5).
+
+    The LAN equivalent of `topic:rapp-estate` is the Bonjour service type
+    `_rapp-estate._tcp.local`. Brainstems advertise themselves via
+    `tools/lan_advertise.py` (which calls `dns-sd -R`); sniffers discover via
+    `dns-sd -B _rapp-estate._tcp local.`.
+
+    For each discovered service, resolve its host:port + TXT records via
+    `dns-sd -L`, derive the LAN HTTP beacon URL, then walk it through the
+    same substrate-agnostic BFS as github-substrate (substrate label = "lan-http").
+    """
+    if not shutil.which("dns-sd"):
+        return {"schema": "rapp-network-sniff/1.0", "via": "bonjour",
+                 "ok": False, "error": "dns-sd CLI not found (required for Bonjour discovery on macOS / Avahi on Linux)"}
+
+    if on_progress:
+        on_progress(f"browsing _rapp-estate._tcp.local for {browse_seconds}s…")
+
+    # Step 1: Browse for service instances
+    browse = subprocess.Popen(
+        ["dns-sd", "-B", "_rapp-estate._tcp", "local."],
+        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
+    )
+    time.sleep(browse_seconds)
+    try:
+        browse.terminate()
+        browse_out, _ = browse.communicate(timeout=2)
+    except subprocess.TimeoutExpired:
+        browse.kill()
+        browse_out, _ = browse.communicate()
+
+    # Parse out service instance names. dns-sd -B output lines look like:
+    #   23:03:39.723  Add        3  14 local.               _http._tcp.          NAS8C4560
+    # Columns: timestamp, A/R, flags, interface, domain, service_type, instance_name
+    instance_names: list[str] = []
+    for line in browse_out.splitlines():
+        parts = line.split()
+        # Match the "Add" rows for our service type. Service type is parts[5]
+        # (after timestamp, A/R, flags, interface, domain). Name is parts[6:].
+        if (len(parts) >= 7
+                and parts[1] in ("Add", "Adding")
+                and parts[5].startswith("_rapp-estate._tcp")):
+            name = " ".join(parts[6:])
+            if name and name not in instance_names:
+                instance_names.append(name)
+
+    if on_progress:
+        on_progress(f"found {len(instance_names)} Bonjour service(s): {', '.join(instance_names) or '(none)'}")
+
+    operators: list[dict] = []
+    skipped: list[dict] = []
+
+    # Step 2: For each instance, resolve to host:port + TXT records
+    for name in instance_names:
+        if on_progress:
+            on_progress(f"resolving {name}…")
+        resolve = subprocess.Popen(
+            ["dns-sd", "-L", name, "_rapp-estate._tcp", "local."],
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
+        )
+        time.sleep(1.5)
+        try:
+            resolve.terminate()
+            resolve_out, _ = resolve.communicate(timeout=2)
+        except subprocess.TimeoutExpired:
+            resolve.kill()
+            resolve_out, _ = resolve.communicate()
+
+        # Parse the resolve output for "can be reached at <host>.local.:<port>" + TXT records
+        host = ""
+        port = 0
+        txt_records: dict[str, str] = {}
+        for line in resolve_out.splitlines():
+            line = line.strip()
+            if "can be reached at" in line:
+                # "kody-w-brainstem._rapp-estate._tcp.local. can be reached at mac.local.:8080 (interface 4)"
+                try:
+                    chunk = line.split("can be reached at", 1)[1].strip()
+                    hostport = chunk.split(" ")[0].rstrip(".")
+                    host, port_s = hostport.rsplit(":", 1)
+                    port = int(port_s)
+                except Exception:
+                    pass
+            # TXT records appear as " key=value" lines (one per line, indented)
+            if "=" in line and not line.startswith(("16:", "17:", "18:", "19:", "20:", "21:", "22:", "23:", "00:", "01:", "02:", "03:", "04:", "05:", "06:", "07:", "08:", "09:", "10:", "11:", "12:", "13:", "14:", "15:")):
+                # Could be a TXT record line. dns-sd shows them as quoted "key=value"
+                stripped = line.strip().strip('"')
+                if "=" in stripped and " " not in stripped.split("=", 1)[0]:
+                    k, v = stripped.split("=", 1)
+                    if k and v and not k.startswith(("DATE", "Browse", "Lookup", "STARTING", "Timestamp", "Add", "Rmv", "Domain")):
+                        txt_records[k] = v
+
+        if not host or not port:
+            skipped.append({"service": name, "reason": "could not resolve host:port"})
+            continue
+
+        beacon_path = txt_records.get("beacon_path", f"/{_BEACON_PATH}").lstrip("/")
+        estate_path = txt_records.get("estate_path", "/estate.json").lstrip("/")
+        beacon_url = f"http://{host}:{port}/{beacon_path}"
+        estate_url_lan = f"http://{host}:{port}/{estate_path}"
+        github_hint = txt_records.get("github", "") or f"@{host}"
+
+        beacon = fetch_beacon_at_url(beacon_url)
+        if not beacon:
+            skipped.append({"service": name, "host": host, "port": port,
+                             "reason": f"no valid beacon at {beacon_url}"})
+            continue
+
+        indexable = bool(beacon.get("discovery", {}).get("indexable", True))
+        if not indexable and not include_private:
+            skipped.append({"service": name, "reason": "indexable=false (opt-out honored)"})
+            continue
+
+        op_rappid = beacon.get("operator_rappid", "")
+        try:
+            door_from_rappid(op_rappid)
+        except InvalidRappidError as e:
+            skipped.append({"service": name, "reason": f"operator_rappid invalid: {str(e)[:120]}"})
+            continue
+
+        record: dict = {
+            "github":          github_hint,
+            "service_name":    name,
+            "operator_rappid": op_rappid,
+            "beacon_url":      beacon_url,
+            "substrate":       "lan-http",
+            "estate_url":      beacon.get("estate_url") or estate_url_lan,
+            "minted_at":       beacon.get("minted_at"),
+            "indexable":       indexable,
+            "discovered_via":  "bonjour",
+            "compliance":      ("xlviii" if "article-xlviii" in (beacon.get("protocol", {}).get("implements", []) or []) else "partial"),
+            "txt_records":     txt_records,
+        }
+
+        if fetch_estates:
+            est = fetch_estate_at_url(estate_url_lan)
+            if est:
+                record["created_count"] = len(est.get("created", []) or [])
+                record["member_count"]  = len(est.get("member", []) or [])
+
+        operators.append(record)
+
+    federation_doors = sum(op.get("created_count", 0) + op.get("member_count", 0)
+                            for op in operators)
+    return {
+        "schema":            "rapp-network-sniff/1.0",
+        "via":               "bonjour",
+        "ok":                True,
+        "service_type":      "_rapp-estate._tcp.local",
+        "browsed_seconds":   browse_seconds,
+        "services_found":    len(instance_names),
+        "operators_indexed": len(operators),
+        "operators_skipped": len(skipped),
+        "federation_doors":  federation_doors,
+        "operators":         operators,
+        "skipped":           skipped,
+        "sniffed_at":        _now_iso(),
+    }
+
+
 def sniff_via_topic(limit: int = 100, include_private: bool = False,
                      fetch_estates: bool = True, on_progress=None) -> dict:
     """Use `gh search repos topic:rapp-estate`. Eventually-consistent (lags
@@ -402,8 +565,12 @@ def _print_summary(out: dict) -> None:
     if out["via"] == "raw":
         print(f"  seed:              {out['seed_url']}")
         print(f"  max hops:          {out['max_hops']}")
+    elif out["via"] == "bonjour":
+        print(f"  service type:      {out.get('service_type', '_rapp-estate._tcp.local')}")
+        print(f"  browse window:     {out.get('browsed_seconds', '?')}s")
+        print(f"  services found:    {out.get('services_found', '?')}")
     else:
-        print(f"  topic:             {out['topic']}")
+        print(f"  topic:             {out.get('topic', '?')}")
         print(f"  repos found:       {out.get('repos_found', '?')}")
     print(f"  operators indexed: {out['operators_indexed']}")
     print(f"  federation doors:  {out['federation_doors']}")
@@ -439,8 +606,10 @@ def _print_summary(out: dict) -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("--via", choices=["raw", "topic"], default="raw",
-                    help="discovery method (default: raw — pure URL fetches, no API)")
+    ap.add_argument("--via", choices=["raw", "topic", "bonjour"], default="raw",
+                    help="discovery method (raw=pure URL fetches; topic=gh search; bonjour=LAN mDNS)")
+    ap.add_argument("--bonjour-seconds", type=int, default=3,
+                    help="for --via bonjour: how long to browse for services (default 3s)")
     ap.add_argument("--seed-url", default=_DEFAULT_SEED_URL,
                     help="raw URL to start the BFS (default: kody-w/RAPP seed)")
     ap.add_argument("--max-hops", type=int, default=10,
@@ -466,6 +635,11 @@ def main() -> int:
                              include_private=args.include_private,
                              fetch_estates=not args.no_estates,
                              on_progress=_progress)
+    elif args.via == "bonjour":
+        out = sniff_via_bonjour(browse_seconds=args.bonjour_seconds,
+                                 include_private=args.include_private,
+                                 fetch_estates=not args.no_estates,
+                                 on_progress=_progress)
     else:
         out = sniff_via_topic(limit=args.limit,
                                include_private=args.include_private,

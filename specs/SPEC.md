@@ -162,7 +162,9 @@ Concretely, seed entries + beacon `federation_hints[]` accept either form:
 
 To host your beacon + estate over LAN: `cd ~/.brainstem && python3 -m http.server 8080`. Tell the peer your LAN IP; they add a federation hint pointing at `http://<your-ip>:8080/...` to their seed file. The sniffer walks both github-raw and LAN-http nodes in one BFS. Substrate label (`github-raw`, `lan-http`, `file`, `http`) surfaces in the sniff record per node.
 
-This is the platform's **censorship-resilience floor**: no centralized substrate is load-bearing for federation. Your peers can find you on whatever substrate you publish to.
+**Auto-discovery on the LAN via Bonjour/mDNS** (Article XLVII.5.1): the LAN equivalent of GitHub's topic-search is the Bonjour service type `_rapp-estate._tcp.local`. Run `tools/lan_advertise.py` to register your brainstem on the LAN with TXT records carrying your rappid + beacon path; peers discover via `tools/sniff_network.py --via bonjour` (which calls `dns-sd -B _rapp-estate._tcp local.` under the hood). Zero-config; same UX as `gh search repos topic:rapp-estate` but scoped to the LAN.
+
+This is the platform's **censorship-resilience floor**: no centralized substrate is load-bearing for federation. Your peers can find you on whatever substrate you publish to — github raw, LAN HTTP, file://, or anything else that serves the canonical JSON.
 
 ### §4.6 Discoverability — publishing IS the signal (no central registry)
 
