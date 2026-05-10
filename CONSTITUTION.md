@@ -3542,6 +3542,38 @@ GET http://<host>:<port>/<beacon_path>        → standard rapp-network-beacon/1
 - Sniffers that ignore the beacon's `indexable: false` flag for LAN-substrate operators (consent applies on every substrate equally).
 - Hardcoding `mac.local` or specific hostnames in advertisers; Bonjour resolves them automatically.
 
+#### XLVII.5.2 — The Egg Carries The Federation Tools (AirDrop-portable LAN federation)
+
+A `brainstem-egg/2.2-organism` cartridge bundles not only the operator's identity, soul, agents, organs, senses, and `.brainstem_data/`, but also — by constitutional requirement — the LAN federation tools at `tools/` inside the egg + a `lan-quickstart.sh` launcher at the egg root. After hatching the egg on any device (extract via `unzip` or `brainstem hatch`), the operator can run `bash lan-quickstart.sh advertise` or `bash lan-quickstart.sh sniff` immediately — no `kody-w/RAPP` install required.
+
+This means **the egg is a fully portable federation node**. AirDrop a `.egg` to anyone with a Mac, they extract, run the quickstart, and they're advertising on `_rapp-estate._tcp.local`. **AirDrop uses peer-to-peer Wi-Fi Direct between devices that aren't on the same network** — combined with Bonjour multicast, this means the federation can spin up between two Macs in a coffee shop, on a plane with no WiFi, in a SCIF, anywhere two Macs can see each other. The egg is the entire deliverable.
+
+**Tools bundled at `tools/` inside every organism egg:**
+
+```
+tools/lan_advertise.py        → broadcast on _rapp-estate._tcp
+tools/sniff_network.py        → --via bonjour discovers LAN peers
+tools/door_address.py         → canonical rappid parser (Article XLVI.5)
+tools/path_opacity.py         → URL-opacity helpers (Article XLVIII.6)
+tools/private_estate_init.py  → bootstrap private side on the new device
+tools/rebuild_estate.py       → disaster-recovery rebuild from public data
+lan-quickstart.sh             → launcher script (advertise|sniff|both)
+manifest.json::lan_federation_ready = true
+manifest.json::implements     = ["article-xlvi", "...", "article-xlvii.5.1"]
+```
+
+**This subsection requires:**
+- `pack_organism()` in `bond.py` MUST bundle the LAN federation tools at `tools/<name>` inside the egg, with a `lan-quickstart.sh` at the egg root.
+- The egg's `manifest.json` MUST declare `lan_federation_ready: true` when the bundle succeeded.
+- The quickstart launcher MUST work on a clean device with only `python3` + `dns-sd` (or `avahi-utils` on Linux) installed.
+
+**This subsection forbids:**
+- Eggs whose only path to LAN federation requires fetching external code (`pip install <something>`, `gh clone <somewhere>`, etc.). The egg IS the deliverable.
+- Hardcoding paths inside the bundled tools that assume the kody-w/RAPP repo layout. The bundled tools resolve paths relative to themselves.
+
+**Why this is constitutional and not a feature:**
+Without this subsection, the platform's "give the egg to anyone" promise breaks the moment that anyone wants to federate over LAN — they'd need to install the full RAPP repo first, which means an internet connection and trust in kody-w/RAPP. With XLVII.5.2, **the egg itself is sufficient**. AirDrop becomes a network-bootstrapping primitive. Two Macs in a room can spin up a private federation in 30 seconds with no internet, no GitHub, no third-party trust. That's the platform's local-first promise turned into an operationally-viable workflow.
+
 **What this article requires:**
 - Every published estate ships a `.well-known/rapp-network.json` beacon. Schema: `rapp-network-beacon/1.0`.
 - The estate publish action writes the beacon atomically with `estate.json`.

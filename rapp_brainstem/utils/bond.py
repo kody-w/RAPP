@@ -80,6 +80,21 @@ ORGANISM_TREES = {
     "data":     ".brainstem_data",
 }
 
+# LAN-federation tools bundled at the root of every organism egg so a
+# hatched egg works completely local-first on any device — no
+# kody-w/RAPP install required to advertise on the LAN or sniff peers.
+# Files live OUTSIDE brainstem-src (at <repo-root>/tools/); resolved at
+# pack time as os.path.join(os.path.dirname(src), "tools", <name>).
+# Per Article XLVII.5.1 — Bonjour LAN auto-discovery.
+ORGANISM_LAN_FEDERATION_TOOLS = (
+    "lan_advertise.py",      # broadcast brainstem on _rapp-estate._tcp.local
+    "sniff_network.py",      # --via bonjour discovers LAN peers
+    "door_address.py",       # the canonical rappid parser (Article XLVI.5)
+    "path_opacity.py",       # XLVIII.6 URL-opacity helpers (used by sniffer)
+    "private_estate_init.py",# XLVIII bootstrap (lets a hatched op recreate private side)
+    "rebuild_estate.py",     # XLVI.6 disaster-recovery rebuild
+)
+
 # Files that travel as kernel-shipped infrastructure, not as organism
 # state. Skip them on egg AND ignore them on hatch.
 INFRA_FILES = {"basic_agent.py", "__init__.py"}
@@ -316,7 +331,12 @@ def pack_organism(home: str, src: str, kernel_version: str) -> bytes:
     rappid = _read_json(_rappid_path(home)) or {}
     buf = io.BytesIO()
     counts = {"agents": 0, "organs": 0, "senses": 0, "services": 0, "data": 0,
-              "soul": 0, "env": 0, "rappid": 0}
+              "soul": 0, "env": 0, "rappid": 0, "lan_tools": 0, "quickstart": 0}
+
+    # LAN federation tools live at <repo-root>/tools/ — one level above brainstem-src.
+    # Article XLVII.5.1: every egg ships them so a hatched device can
+    # advertise on Bonjour + sniff LAN peers without needing the kody-w/RAPP install.
+    tools_src = os.path.join(os.path.dirname(os.path.abspath(src)), "tools")
 
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
         # Identity (always at the root of the egg, so inspectors see it
@@ -343,6 +363,26 @@ def pack_organism(home: str, src: str, kernel_version: str) -> bytes:
                 os.path.join(src, rel_path), arc_prefix, z
             )
 
+        # LAN federation tools (Article XLVII.5.1) — bundled at tools/<name>
+        # inside the egg so a hatched egg works fully local-first. If the
+        # tools dir doesn't exist (egg packed from a non-standard layout),
+        # gracefully degrade — the egg still works, just without LAN portability.
+        if os.path.isdir(tools_src):
+            for tool_name in ORGANISM_LAN_FEDERATION_TOOLS:
+                tp = os.path.join(tools_src, tool_name)
+                if os.path.isfile(tp):
+                    with open(tp, "r", encoding="utf-8", errors="replace") as f:
+                        z.writestr(f"tools/{tool_name}", f.read())
+                    counts["lan_tools"] += 1
+
+        # lan-quickstart.sh — tiny launcher at the egg root so users can
+        # `bash lan-quickstart.sh advertise|sniff` after extracting the egg.
+        # No Python imports beyond stdlib + the bundled tools/ files.
+        if counts["lan_tools"] > 0:
+            quickstart = _LAN_QUICKSTART_SCRIPT
+            z.writestr("lan-quickstart.sh", quickstart)
+            counts["quickstart"] = 1
+
         manifest = {
             "schema": SCHEMA,
             "type": "organism",
@@ -354,10 +394,94 @@ def pack_organism(home: str, src: str, kernel_version: str) -> bytes:
             "parent_repo": rappid.get("parent_repo"),
             "incarnations_at_egg": rappid.get("incarnations"),
             "counts": counts,
+            "lan_federation_ready": counts["lan_tools"] > 0,  # XLVII.5.1
+            "implements": [
+                "article-xlvi", "article-xlvi.6",
+                "article-xlvii", "article-xlvii.5", "article-xlvii.5.1",
+                "article-xlviii",
+            ],
         }
         z.writestr("manifest.json", json.dumps(manifest, indent=2))
 
     return buf.getvalue()
+
+
+_LAN_QUICKSTART_SCRIPT = """#!/usr/bin/env bash
+# lan-quickstart.sh — bundled with every brainstem-egg/2.2-organism.
+#
+# After extracting the egg, you can advertise this brainstem on the LAN
+# (Article XLVII.5.1 Bonjour discovery) or sniff for LAN peers — completely
+# local-first, no kody-w/RAPP install required.
+#
+# WORKS OVER AIRDROP: AirDrop the .egg to anyone with a Mac. They extract,
+# run `bash lan-quickstart.sh advertise`, and they're on the LAN federation.
+# Even works without shared WiFi (AirDrop uses peer-to-peer Wi-Fi Direct;
+# Bonjour discovery rides the same multicast). Genuinely substrate-agnostic.
+#
+# USAGE:
+#   bash lan-quickstart.sh advertise [PORT]
+#   bash lan-quickstart.sh sniff [SECONDS]
+#   bash lan-quickstart.sh both [PORT]            # advertise in background, then sniff
+#   bash lan-quickstart.sh                         # show this help
+#
+# REQUIREMENTS:
+#   - python3 (for tools/* and the HTTP server)
+#   - dns-sd (macOS native; on Linux install avahi-utils)
+#   - This egg's contents extracted to a directory that contains:
+#       tools/lan_advertise.py  tools/sniff_network.py
+#       rappid.json  (your operator identity)
+#       optional: .well-known/rapp-network.json + estate.json
+#
+# If you don't have a beacon staged, lan_advertise.py synthesizes one
+# from your rappid.json automatically.
+
+set -euo pipefail
+EGG_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$EGG_DIR"
+
+# Stage rappid.json + soul.md + .brainstem_data into a fake home so the
+# bundled tools see the operator's state via the standard ~/.brainstem path.
+# We use a temp dir with a symlinked .brainstem inside it.
+BRAINSTEM_HOME="${RAPP_BRAINSTEM_HOME:-$HOME/.brainstem}"
+mkdir -p "$BRAINSTEM_HOME"
+[ -f "$EGG_DIR/rappid.json" ] && [ ! -f "$BRAINSTEM_HOME/rappid.json" ] && \\
+    cp "$EGG_DIR/rappid.json" "$BRAINSTEM_HOME/rappid.json"
+[ -d "$EGG_DIR/.well-known" ] && [ ! -d "$BRAINSTEM_HOME/.well-known" ] && \\
+    cp -r "$EGG_DIR/.well-known" "$BRAINSTEM_HOME/.well-known"
+
+case "${1:-help}" in
+  advertise)
+    PORT="${2:-8080}"
+    echo "  ▸ advertising this brainstem on _rapp-estate._tcp.local (port $PORT)"
+    exec python3 "$EGG_DIR/tools/lan_advertise.py" --port "$PORT"
+    ;;
+  sniff)
+    SECS="${2:-3}"
+    echo "  ▸ sniffing LAN for _rapp-estate._tcp peers (browse $SECS sec)"
+    exec python3 "$EGG_DIR/tools/sniff_network.py" --via bonjour --bonjour-seconds "$SECS"
+    ;;
+  both)
+    PORT="${2:-8080}"
+    echo "  ▸ advertising in background + sniffing"
+    python3 "$EGG_DIR/tools/lan_advertise.py" --port "$PORT" >/tmp/lan-advertise.log 2>&1 &
+    ADV_PID=$!
+    sleep 4
+    python3 "$EGG_DIR/tools/sniff_network.py" --via bonjour --bonjour-seconds 5 || true
+    kill "$ADV_PID" 2>/dev/null || true
+    pkill -f "http.server $PORT" 2>/dev/null || true
+    pkill -f "dns-sd -R" 2>/dev/null || true
+    ;;
+  *)
+    echo "Usage: bash lan-quickstart.sh [advertise|sniff|both] [PORT|SECONDS]"
+    echo "  advertise    Broadcast this egg's brainstem on the LAN via Bonjour"
+    echo "  sniff        Discover LAN peers via _rapp-estate._tcp browse"
+    echo "  both         advertise in background, then sniff once"
+    echo ""
+    echo "Article XLVII.5.1: same UX as 'gh search repos topic:rapp-estate'"
+    echo "but for the LAN, no GitHub required. Fully local-first."
+    ;;
+esac
+"""
 
 
 # ── rapplication-scope packing ────────────────────────────────────────────
