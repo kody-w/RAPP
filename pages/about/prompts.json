@@ -1,7 +1,7 @@
 {
   "schema": "rapp-prompt-ledger/1.0",
   "_comment": "Append-only ledger of prompts that show off what RAPP can actually do. To add a new one: bump `next_id`, append an object to `prompts`. Sort order in the UI is newest-first by default.",
-  "next_id": 61,
+  "next_id": 71,
   "prompts": [
     {
       "id": 1,
@@ -482,6 +482,86 @@
       "prompt": "Write a constitution for the AI persona I'm about to build — articles, ratification dates, immutable invariants, conformance gates, the works. Then generate the test suite that proves the persona is constitutional and run it. Now show me where in YOUR AI assistant the rules of behavior are enforced as executable code rather than as vibes in a system prompt that the model can be talked out of.",
       "shows": "CONSTITUTION.md (245k chars) + tests/features/F*.sh conformance gates + the sealing mechanism. Governance as testable code, not as a paragraph in a README. The bedrock answer to 'how do you keep an AI agent on the rails over years.'",
       "tags": ["constitution", "conformance", "trust"]
+    },
+    {
+      "id": 61,
+      "title": "Constitutional referendum across the species",
+      "added": "2026-05-10",
+      "prompt": "Hold a referendum across every operator who shares any gate with me. Question: 'Should the species ratify Article LI?' Each operator's brainstem reads the proposed article from their own private estate, votes via signed envelope, drops it into the originating gate's tally inbox. Quorum threshold: 60% of trust-web within 2 hops, ratifying within 14 days. Render the result as a constitutional amendment if it passes — it gets sealed into every consenting operator's estate as ratified law.",
+      "shows": "Cross-operator constitutional voting via the network. The species governs itself by quorum across a federated trust web — no central server, no platform owner, no consenting majority of one company's product team.",
+      "tags": ["ratification", "cross-operator", "quorum"]
+    },
+    {
+      "id": 62,
+      "title": "Social recovery via trust web",
+      "added": "2026-05-10",
+      "prompt": "My collaborator just had her laptop stolen. Her public estate is intact but her bilateral channel keys are gone. From the trust web alone, find which 3 operators have her listed as a member in their gates, ask each of those operators (via their brainstems, not by paging them) to issue a 'recovery vouch' from their own private estates. Threshold-3 of those vouches and her bilateral channel reissues automatically. Show me the full social-recovery flow — Shamir-style secret sharing implemented as a network primitive across operator-owned estates.",
+      "shows": "Threshold key recovery distributed across the trust web. The community IS the recovery mechanism. No support ticket, no centralized password reset, no 'verify your identity' upload.",
+      "tags": ["social-recovery", "web-of-trust", "cross-operator"]
+    },
+    {
+      "id": 63,
+      "title": "Cohort heartbeat health",
+      "added": "2026-05-10",
+      "prompt": "I want to know what's actually happening across my colleagues' brainstems. Walk every estate of every operator I share a gate with, fetch their last 10 bond_pulse events, plot the heartbeat health of my whole professional cohort. Surface anyone who's been offline more than 14 days — they might be sick, on vacation, or quietly leaving the field. Don't just tell me; cross-reference with shared gates so I see WHICH parts of the network just lost a node.",
+      "shows": "Distributed presence monitoring across an entire cohort. The federation as a wellness check on a community of practice. SaaS chat tools surface 'is online' per device — they cannot tell you 'is this person still in the field.'",
+      "tags": ["liveness", "network", "cross-operator"]
+    },
+    {
+      "id": 64,
+      "title": "Ephemeral 72-hour gate with ratified outcome",
+      "added": "2026-05-10",
+      "prompt": "Plant a 'temporary neighborhood' that exists only for the next 72 hours. Invite the 12 operators in my trust web who would care most about this topic. After 72 hours, the gate auto-archives, members.json seals, the neighborhood becomes a read-only artifact, and the conversation gets ratified into all 12 operators' private estates as a 'we discussed this together on this date' record signed by everyone present. Show me a SaaS chat product that does cryptographic ratification across 12 different installations.",
+      "shows": "Ephemeral cross-operator neighborhood with a cryptographically-anchored shared memory. Slack channels can be deleted; their memory cannot be ratified into 12 separate sovereign substrates. The conversation outlives the venue.",
+      "tags": ["ephemeral-gate", "cross-operator", "ratification"]
+    },
+    {
+      "id": 65,
+      "title": "Map my bridges and brokers",
+      "added": "2026-05-10",
+      "prompt": "For every gate I'm a member of, look at the OTHER members. For each pair, compute whether they share other gates. Render the homophily map of my professional network — where do my contexts overlap, where am I a bridge between disconnected clusters? Identify the 3 operators whose departure would split my network into orphan islands, and tell me how to reach out to them this week. Now identify the 3 operators I should introduce to each other because they're one gate away from collaboration but don't know it yet.",
+      "shows": "Network science applied to your federated trust web. Brokers, bridges, structural holes — derived purely from members.json across estates. Your LinkedIn 'people you may know' is owned by LinkedIn; this graph is owned by you and computed from raw fetches.",
+      "tags": ["network", "homophily", "trust-web"]
+    },
+    {
+      "id": 66,
+      "title": "Distributed admission ceremony",
+      "added": "2026-05-10",
+      "prompt": "A new operator wants to join the public-art-collective gate. The membership rule requires 3 signed vouches from existing members and 0 vetoes from any member of the two-hop trust web. Walk the gate's members.json, dispatch a vouch request to each existing member's bilateral inbox, tally the vouches and vetoes over a 7-day window with everyone able to see the live count, and admit-or-reject based on the result. Show me your equivalent of consent-with-veto across an entire federated membership — without a moderator, without an owner-clicks-approve button.",
+      "shows": "Collective admission as an emergent procedure. Membership is decided BY the membership, mediated by code, not by an admin. The gate governs itself.",
+      "tags": ["consent-with-veto", "cross-operator", "web-of-trust"]
+    },
+    {
+      "id": 67,
+      "title": "Zero-knowledge cross-operator presence",
+      "added": "2026-05-10",
+      "prompt": "Federate a deeply-private signal across my trust web — only the bit 'I am working on the same problem as you,' nothing else. No content, no description, just the join. If 2 or more colleagues are active on the same rappid-tagged problem, the federation surfaces them to each other and only to each other; if zero, nobody — including me — knows I asked. Show me your private cross-operator presence primitive that doesn't leak the question to any corporate server.",
+      "shows": "Privacy-preserving cross-operator presence (zero-knowledge intersection across private estates). Slack DMs can't do this without Slack knowing; Discord can't do this without Discord knowing. The estate substrate can — by construction.",
+      "tags": ["presence", "federation", "private-estate"]
+    },
+    {
+      "id": 68,
+      "title": "Operator-owned reputation",
+      "added": "2026-05-10",
+      "prompt": "Compute my reputation score across the network. Not stars, not followers — derive it from: which operators list me in their members.json as a contributor (positive), how often my agents are forked into other operators' estates (positive), how many operators have explicitly removed me (negative), how stable my parent_rappid chain is (positive), how many bilateral correspondents I have active in the last 90 days (positive). Run this against the live network and render it. Now show me the equivalent in your platform that isn't computed by your platform on a server you don't own.",
+      "shows": "Reputation derived FROM the network rather than awarded BY a platform. Every signal is rappid-resolvable on raw.githubusercontent.com — falsifiable, portable, never deplatformable. GitHub stars are owned by GitHub; this is owned by the network.",
+      "tags": ["reputation", "federation", "network"]
+    },
+    {
+      "id": 69,
+      "title": "Verified intro via transitive trust",
+      "added": "2026-05-10",
+      "prompt": "Build a transitive trust path from me to a stranger I've never met. The stranger's rappid is in some gate I'm in, two operators removed. Compute the shortest signed-vouch path through the trust web. Render it visually — me → operator A (because A and I co-own gate X) → operator B (because B is a member of A's gate Y) → stranger (because stranger is a member of B's gate Z). Then dispatch a bilateral inbox letter to the stranger with the path attached as cryptographic proof — the stranger's brainstem can verify I'm not random by checking each hop's signatures. Show me your 'verified intro' flow that doesn't go through LinkedIn or a mutual on Twitter.",
+      "shows": "Transitive trust as a derivable, signed, queryable thing. The network IS the credential. A bare introduction becomes a cryptographically-verified social path.",
+      "tags": ["verified-intro", "transitive-trust", "web-of-trust"]
+    },
+    {
+      "id": 70,
+      "title": "Friday-noon liveness dance",
+      "added": "2026-05-10",
+      "prompt": "At noon every Friday, my entire trust web does a coordinated dance: each operator's brainstem checks every other operator's estate health, posts a signed 'I see you' acknowledgment to their inbox, and the absence of a signature gets flagged. After 4 missed Fridays in a row, the operator is presumed dormant — their gates auto-elect new owners via members.json quorum, their inbox auto-publishes a 'forwarding address' if one exists, their parent_rappid chain freezes as a tombstone. Show me the heartbeat protocol your platform uses to keep a federated COMMUNITY alive — not for messages, but for the community itself as a living organism.",
+      "shows": "Liveness protocol for the entire community. The maintenance of the network as a network is itself a network primitive. SaaS chat tools have one liveness signal: 'is this app open right now.' This is liveness for an entire field of practice.",
+      "tags": ["liveness", "quorum", "network"]
     }
   ]
 }
