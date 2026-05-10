@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAPP does what Codex don't</title>
+<meta name="description" content="Side-by-side: OpenAI Codex (the most-advanced AI coding agent of 2026) gets your code written. RAPP gets your AI tooling networked. Different layers. Both matter. One actually composes.">
+<meta property="og:title" content="RAPP does what Codex don't">
+<meta property="og:description" content="Codex / Claude Code / Cursor write your code. RAPP networks the result. Feature-by-feature receipts.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kody-w.github.io/RAPP/pages/product/vs.html">
+<link rel="canonical" href="https://kody-w.github.io/RAPP/pages/product/vs.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E⚔️%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="../_site/css/tokens.css">
+<link rel="stylesheet" href="../_site/css/base.css">
+<link rel="stylesheet" href="../_site/css/components.css">
+<script>
+(function(){
+  try {
+    var saved = localStorage.getItem('rapp-theme');
+    var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    var theme = saved || (prefersLight ? 'light' : 'dark');
+    if (theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+  } catch(e){}
+})();
+</script>
+<style>
+:root {
+  --rapp-blue:    #79c0ff;
+  --rapp-yellow:  #ffd866;
+  --them-grey:    #6e7681;
+  --bg-deep:      #0a0d12;
+  --panel:        #161b22;
+  --bord:         rgba(255, 255, 255, 0.10);
+  --fg:           #e6edf3;
+  --fg-muted:     #9da7b3;
+  --check:        #56d364;
+  --x-mark:       #f97583;
+  --highlight:    #ffd866;
+  --code-bg:      rgba(255, 255, 255, 0.06);
+}
+[data-theme="light"] {
+  --bg-deep: #ffffff; --panel: #f6f8fa; --bord: rgba(0,0,0,0.10);
+  --fg: #1f2328; --fg-muted: #59636e; --code-bg: rgba(0,0,0,0.05);
+  --them-grey: #8b949e;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg-deep); color: var(--fg);
+       font-family: -apple-system, system-ui, "Segoe UI", sans-serif;
+       line-height: 1.55; }
+
+/* ── HERO ── */
+.hero {
+  padding: 80px 24px 60px;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255, 216, 102, 0.08), transparent 50%),
+    radial-gradient(circle at 80% 60%, rgba(121, 192, 255, 0.08), transparent 50%);
+  text-align: center;
+  border-bottom: 1px solid var(--bord);
+}
+.hero-eyebrow {
+  display: inline-block;
+  font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--rapp-yellow); font-weight: 700;
+  margin-bottom: 18px;
+}
+.hero h1 {
+  font-size: clamp(2.5rem, 7vw, 5rem);
+  margin: 0 0 16px; line-height: 1.05; letter-spacing: -0.03em;
+  font-weight: 800;
+}
+.hero h1 .strike { text-decoration: line-through; opacity: 0.4; }
+.hero h1 em { font-style: normal; color: var(--rapp-yellow); }
+.hero-sub {
+  font-size: clamp(1rem, 2vw, 1.3rem);
+  color: var(--fg-muted); max-width: 60ch; margin: 0 auto 30px;
+}
+.hero-pills {
+  display: inline-flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+  font-size: 0.85rem;
+}
+.hero-pills span {
+  padding: 6px 14px; border-radius: 999px;
+  border: 1px solid var(--bord);
+}
+.hero-pills .accent { background: var(--rapp-yellow); color: #18181b; border-color: var(--rapp-yellow); font-weight: 600; }
+
+/* ── SETUP NARRATIVE ── */
+.setup {
+  max-width: 880px; margin: 60px auto; padding: 0 24px;
+}
+.setup .lede {
+  font-size: 1.15rem; color: var(--fg-muted); margin-bottom: 24px;
+}
+.setup .lede b { color: var(--fg); }
+.setup-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
+  margin: 30px 0;
+}
+@media (max-width: 700px) { .setup-row { grid-template-columns: 1fr; } }
+.setup-card {
+  background: var(--panel); border: 1px solid var(--bord);
+  padding: 22px 24px; border-radius: 10px;
+}
+.setup-card h3 { margin: 0 0 6px; font-size: 1rem; }
+.setup-card .who {
+  font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--fg-muted); margin-bottom: 14px;
+}
+.setup-card.them { border-left: 3px solid var(--them-grey); }
+.setup-card.us { border-left: 3px solid var(--rapp-yellow); }
+.setup-card .quote {
+  font-style: italic; color: var(--fg-muted); font-size: 0.92rem;
+}
+
+/* ── COMPARISON TABLE ── */
+.compare-section {
+  max-width: 1100px; margin: 80px auto; padding: 0 24px;
+}
+.compare-section h2 {
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  margin: 0 0 8px; letter-spacing: -0.02em;
+}
+.compare-section .sub {
+  color: var(--fg-muted); margin: 0 0 30px; font-size: 0.95rem;
+}
+
+.cmp-table {
+  width: 100%; border-collapse: collapse;
+  background: var(--panel); border: 1px solid var(--bord);
+  border-radius: 10px; overflow: hidden;
+  margin-bottom: 30px;
+}
+.cmp-table thead {
+  background: rgba(255, 255, 255, 0.03);
+}
+.cmp-table th {
+  text-align: left; padding: 16px 16px;
+  font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--fg-muted); font-weight: 600;
+  border-bottom: 1px solid var(--bord);
+}
+.cmp-table th.them { color: var(--them-grey); text-align: center; width: 22%; }
+.cmp-table th.us {
+  color: var(--rapp-yellow); text-align: center; width: 22%;
+  background: rgba(255, 216, 102, 0.05);
+}
+.cmp-table td {
+  padding: 14px 16px; border-bottom: 1px solid var(--bord);
+  vertical-align: top; font-size: 0.92rem;
+}
+.cmp-table td.feature { font-weight: 600; }
+.cmp-table td.feature small {
+  display: block; font-weight: normal; color: var(--fg-muted);
+  margin-top: 3px; font-size: 0.78rem;
+}
+.cmp-table td.them, .cmp-table td.us {
+  text-align: center; font-size: 1.05rem;
+}
+.cmp-table td.us { background: rgba(255, 216, 102, 0.04); }
+.cmp-table td.them small, .cmp-table td.us small {
+  display: block; font-size: 0.72rem; margin-top: 4px; opacity: 0.7;
+  text-align: left; line-height: 1.3;
+}
+.check { color: var(--check); font-weight: 700; }
+.x { color: var(--x-mark); font-weight: 700; }
+.partial { color: var(--rapp-yellow); }
+
+.cmp-table tbody tr.section-divider td {
+  background: rgba(0, 0, 0, 0.20);
+  font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--fg-muted); font-weight: 700;
+  padding: 10px 16px;
+  border-top: 2px solid var(--bord);
+}
+[data-theme="light"] .cmp-table tbody tr.section-divider td {
+  background: rgba(0,0,0,0.04);
+}
+
+/* ── BIG-LETTER PUNCHLINE ── */
+.punchline {
+  max-width: 1100px; margin: 100px auto; padding: 0 24px;
+  text-align: center;
+}
+.punchline h2 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  margin: 0 0 30px; letter-spacing: -0.02em; font-weight: 800;
+  line-height: 1.1;
+}
+.punchline h2 em { font-style: normal; color: var(--rapp-yellow); }
+.punchline .bigtext {
+  font-size: 1.15rem; color: var(--fg-muted);
+  max-width: 60ch; margin: 0 auto;
+}
+.punchline .bigtext b { color: var(--fg); }
+
+/* ── TWO-COLUMN BUILD-VS-ADOPT ── */
+.build-vs-adopt {
+  max-width: 1100px; margin: 80px auto; padding: 0 24px;
+}
+.bva-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+  margin-top: 30px;
+}
+@media (max-width: 800px) { .bva-grid { grid-template-columns: 1fr; } }
+.bva-col {
+  background: var(--panel); border: 1px solid var(--bord);
+  border-radius: 10px; padding: 28px 30px;
+}
+.bva-col.them { border-top: 4px solid var(--them-grey); }
+.bva-col.us { border-top: 4px solid var(--rapp-yellow); }
+.bva-col h3 {
+  margin: 0 0 8px; font-size: 1.15rem;
+}
+.bva-col .tagline {
+  color: var(--fg-muted); font-size: 0.85rem; margin-bottom: 22px;
+}
+.bva-col ul { list-style: none; padding: 0; margin: 0; }
+.bva-col li {
+  padding: 10px 0 10px 28px; position: relative;
+  border-top: 1px solid var(--bord); font-size: 0.92rem;
+}
+.bva-col li:first-of-type { border-top: 0; padding-top: 0; }
+.bva-col li:before {
+  position: absolute; left: 0; top: 11px;
+  font-weight: 700;
+}
+.bva-col.them li:before { content: '✗'; color: var(--x-mark); top: 10px; }
+.bva-col.us li:before { content: '✓'; color: var(--check); top: 10px; }
+.bva-col.them li:first-of-type:before { top: 0; }
+.bva-col.us li:first-of-type:before { top: 0; }
+
+/* ── RECEIPTS ── */
+.receipts {
+  max-width: 1000px; margin: 80px auto; padding: 0 24px;
+  text-align: center;
+}
+.receipts h2 {
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  margin: 0 0 12px; letter-spacing: -0.02em;
+}
+.receipts p { color: var(--fg-muted); max-width: 60ch; margin: 0 auto 30px; }
+.receipts a.btn {
+  display: inline-block; padding: 14px 28px;
+  background: var(--rapp-yellow); color: #18181b;
+  border-radius: 8px; font-weight: 700; text-decoration: none;
+  font-size: 0.95rem;
+  transition: transform 0.15s ease;
+}
+.receipts a.btn:hover { transform: translateY(-2px); }
+
+/* ── INSTALL CTA ── */
+.cta {
+  max-width: 1100px; margin: 80px auto; padding: 0 24px;
+  text-align: center;
+}
+.cta-block {
+  background: var(--panel); border: 1px solid var(--bord);
+  border-radius: 12px; padding: 40px 32px;
+}
+.cta-block h2 { margin: 0 0 8px; font-size: 1.4rem; }
+.cta-block p { color: var(--fg-muted); margin: 0 0 22px; }
+.cta-block code {
+  display: block; background: var(--code-bg);
+  padding: 14px 18px; border-radius: 6px; margin: 16px auto 0;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.92rem; max-width: 600px;
+  overflow-x: auto; white-space: nowrap;
+}
+.cta-links {
+  display: inline-flex; gap: 14px; flex-wrap: wrap;
+  justify-content: center; margin-top: 26px; font-size: 0.85rem;
+}
+.cta-links a { color: var(--rapp-yellow); text-decoration: none; }
+.cta-links a:hover { text-decoration: underline; }
+
+/* ── footer ── */
+footer {
+  max-width: 1100px; margin: 60px auto 30px; padding: 0 24px;
+  text-align: center;
+  color: var(--fg-muted); font-size: 0.78rem;
+}
+footer .src { font-size: 0.72rem; margin-top: 14px; }
+footer .src a { color: var(--fg-muted); }
+</style>
+</head>
+<body>
+
+<!-- ────────── HERO ────────── -->
+<section class="hero">
+  <div class="hero-eyebrow">⚔ FEATURE-BY-FEATURE</div>
+  <h1>RAPP does what<br><em>Codex don't</em>.</h1>
+  <p class="hero-sub">
+    OpenAI Codex is the most-advanced AI coding agent of 2026 —
+    2&nbsp;million weekly devs, 8 parallel cloud agents, GPT-5.5,
+    surpasses Claude Code on coding benchmarks. <b>It still doesn't
+    give you what your team actually needs.</b>
+  </p>
+  <div class="hero-pills">
+    <span>OpenAI Codex</span>
+    <span>Claude Code</span>
+    <span>Cursor</span>
+    <span>GitHub Copilot</span>
+    <span class="accent">vs. RAPP</span>
+  </div>
+</section>
+
+<!-- ────────── SETUP ────────── -->
+<section class="setup">
+  <p class="lede">
+    Codex/Claude Code/Cursor make <b>one</b> developer faster at writing
+    code. They were built for that. They are good at it. <br><br>
+    What they don't do — what nobody else is doing — is give your
+    <b>team</b> a portable, sneakernet-shareable, sha256-pinned,
+    multi-LLM, federated workflow substrate that the AI's output can
+    actually live inside. The agents your AI just wrote get stranded on
+    your laptop. They don't compose. They don't travel. They don't share.
+    They die when you switch tools.
+  </p>
+  <div class="setup-row">
+    <div class="setup-card them">
+      <div class="who">What you get with the leader</div>
+      <h3>OpenAI Codex (or pick any of them)</h3>
+      <p class="quote">
+        "I asked the agent to write me a customer-engagement workflow.
+        It produced 600 lines of beautiful Python in 8 isolated VMs.
+        Now I have 600 lines of beautiful Python on my laptop.
+        Now what?"
+      </p>
+    </div>
+    <div class="setup-card us">
+      <div class="who">What you get with RAPP</div>
+      <h3>The substrate underneath</h3>
+      <p class="quote">
+        Single-file agent contract. Tier T1→T2→T3 portable.
+        Sha256-pinned. Sneakernet-deliverable as a 70KB egg.
+        Multi-LLM. Bilateral channels with no broker. The 600 lines
+        Codex wrote for you become a thing your whole team can use,
+        sign, fork, and federate.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ────────── BIG TABLE ────────── -->
+<section class="compare-section">
+  <h2>The receipts</h2>
+  <p class="sub">
+    Codex column reflects features as of Feb–Apr 2026 per published comparisons.
+    Sources at the bottom of the page. Same row pattern applies to
+    Claude Code, Cursor, and other AI coding tools — they're the same
+    category mistake.
+  </p>
+
+  <table class="cmp-table">
+    <thead>
+      <tr>
+        <th>Capability</th>
+        <th class="them">OpenAI Codex<br><small style="font-weight:normal">(the leader)</small></th>
+        <th class="us">RAPP<br><small style="font-weight:normal">(the substrate)</small></th>
+      </tr>
+    </thead>
+    <tbody>
+
+      <tr class="section-divider"><td colspan="3">CODE GENERATION (where Codex wins — RAPP isn't competing)</td></tr>
+      <tr>
+        <td class="feature">Write code from a prompt
+          <small>"build me X"</small></td>
+        <td class="them"><span class="check">✓</span><small>GPT-5.5; SOTA; 2M+ weekly devs.</small></td>
+        <td class="us"><span class="x">—</span><small>Not a coding tool. Use Codex (or Claude Code) for this.</small></td>
+      </tr>
+      <tr>
+        <td class="feature">Background parallel agents
+          <small>spawn N tasks, walk away</small></td>
+        <td class="them"><span class="check">✓</span><small>8 isolated VMs, opens PR when done.</small></td>
+        <td class="us"><span class="x">—</span><small>Not RAPP's job. RAPP is the layer the agents' output lives in.</small></td>
+      </tr>
+
+      <tr class="section-divider"><td colspan="3">AGENT CONTRACT — what makes the AI's output PORTABLE</td></tr>
+      <tr>
+        <td class="feature">Single-file agent format
+          <small>one .py = one class = one perform()</small></td>
+        <td class="them"><span class="x">✗</span><small>You roll your own structure, every time, differently.</small></td>
+        <td class="us"><span class="check">✓</span><small>Constitutional. Hot-loaded. No build step. No registration.</small></td>
+      </tr>
+      <tr>
+        <td class="feature">Hot-discovery (no restart)
+          <small>drop a .py, it's live in 4 seconds</small></td>
+        <td class="them"><span class="x">✗</span><small>Restart your IDE / re-init your session.</small></td>
+        <td class="us"><span class="check">✓</span><small>Brainstem reloads agents/ on every chat request.</small></td>
+      </tr>
+      <tr>
+        <td class="feature">Tier portability T1→T2→T3
+          <small>same .py runs locally, on Azure, in Copilot Studio</small></td>
+        <td class="them"><span class="x">✗</span><small>You write 3 implementations. Or pick a tier and lock in.</small></td>
+        <td class="us"><span class="check">✓</span><small>Constitutional invariant. Same file, three substrates, unmodified.</small></td>
+      </tr>
+
+      <tr class="section-divider"><td colspan="3">DISTRIBUTION — getting your AI's output to a teammate</td></tr>
+      <tr>
+        <td class="feature">Sneakernet-portable cartridge
+          <small>two files, USB stick, no internet</small></td>
+        <td class="them"><span class="x">✗</span><small>"Send them the repo URL." They need the same vendor account.</small></td>
+        <td class="us"><span class="check">✓</span><small>.egg + egg_hatcher.py. Drag + chat. Sha256-verified hatch.</small></td>
+      </tr>
+      <tr>
+        <td class="feature">Sha256-pinned manifest
+          <small>"the file you got is the file I sent"</small></td>
+        <td class="them"><span class="x">✗</span><small>Trust the registry. Trust the network. No verification path.</small></td>
+        <td class="us"><span class="check">✓</span><small>rar/index.json. Refuses install on hash mismatch. No override.</small></td>
+      </tr>
+      <tr>
+        <td class="feature">Drop into Copilot Studio harness
+          <small>your agent.py becomes a Copilot Studio agent unmodified</small></td>
+        <td class="them"><span class="x">✗</span><small>Use their adapter. Or rewrite for the Copilot Studio SDK.</small></td>
+        <td class="us"><span class="check">✓</span><small>Tier 3 of the same agent contract. Already shipped.</small></td>
+      </tr>
+
+      <tr class="section-divider"><td colspan="3">IDENTITY — who is this thing, who can I trust?</td></tr>
+      <tr>
+        <td class="feature">Persistent organism identity
+          <small>the AI you talked to last month is the same one today</small></td>
+        <td class="them"><span class="x">✗</span><small>Sessions. Conversations. No durable identity.</small></td>
+        <td class="us"><span class="check">✓</span><small>Rappid v2 in ~/.brainstem/. Survives every kernel upgrade.</small></td>
+      </tr>
+      <tr>
+        <td class="feature">URL = address (no API needed)
+          <small>any consumer derives 9 canonical URLs by string parsing</small></td>
+        <td class="them"><span class="x">✗</span><small>API + auth + rate limits to find anything.</small></td>
+        <td class="us"><span class="check">✓</span><small>Article XLVI. Pure raw-fetch. No GitHub token. No rate limit.</small></td>
+      </tr>
+      <tr>
+        <td class="feature">Signed lineage (variant attestation)
+          <small>prove this descendant came from that parent</small></td>
+        <td class="them"><span class="x">✗</span><small>Git history, if you remember to look.</small></td>
+        <td class="us"><span class="check">✓</span><small>Article XXXIV. ed25519. Walkable chain to the species root.</small></td>
+      </tr>
+
+      <tr class="section-divider"><td colspan="3">NETWORK — the thing nobody else has built</td></tr>
+      <tr>
+        <td class="feature">Federated trust web
+          <small>operator-A trusts operator-B trusts operator-C</small></td>
+        <td class="them"><span class="x">✗</span><small>Slack channels and shared docs.</small></td>
+        <td class="us"><span class="check">✓</span><small>members.json + chain rule. Two-hop traversal via curl.</small></td>
+      </tr>
+      <tr>
+        <td class="feature">Bilateral channels (no broker)
+          <small>operator-A ↔ operator-B without OpenAI/Slack/Discord in the path</small></td>
+        <td class="them"><span class="x">✗</span><small>Their servers. Their TOS. Their rate limits.</small></td>
+        <td class="us"><span class="check">✓</span><small>Private estate inboxes. Signed by rappid.</small></td>
+      </tr>
+      <tr>
+        <td class="feature">Two-tier estate (mandatory)
+          <small>public discovery + private substance</small></td>
+        <td class="them"><span class="x">✗</span><small>Public-only or you build it yourself.</small></td>
+        <td class="us"><span class="check">✓</span><small>Article XLVIII. Mandatory from first install. PII never on public.</small></td>
+      </tr>
+      <tr>
+        <td class="feature">LAN federation (offline)
+          <small>two brainstems meet over wifi, exchange agents, no internet</small></td>
+        <td class="them"><span class="x">✗</span><small>"Make sure you're online." That's the answer.</small></td>
+        <td class="us"><span class="check">✓</span><small>Article XLVII.5. AirDrop the egg. Bond pulse converges later.</small></td>
+      </tr>
+
+      <tr class="section-divider"><td colspan="3">VENDOR / RUNTIME — what happens when the bill arrives</td></tr>
+      <tr>
+        <td class="feature">Multi-LLM provider dispatch
+          <small>same agent runs against Claude, GPT, Copilot, Gemini, Ollama</small></td>
+        <td class="them"><span class="x">✗</span><small>OpenAI-only. Locked to GPT-5.5 / o3 family.</small></td>
+        <td class="us"><span class="check">✓</span><small>llm.py dispatch. No agent code knows which model it's running on.</small></td>
+      </tr>
+      <tr>
+        <td class="feature">Local-first by default
+          <small>customer data never leaves your device</small></td>
+        <td class="them"><span class="x">✗</span><small>Cloud-bound. Your code goes to OpenAI's servers.</small></td>
+        <td class="us"><span class="check">✓</span><small>~/.brainstem/. Enforced by .gitignore. Article I of every neighborhood.</small></td>
+      </tr>
+      <tr>
+        <td class="feature">Survives vendor deplatforming
+          <small>OpenAI bans your tenant — what then?</small></td>
+        <td class="them"><span class="x">✗</span><small>Your agents stop working. Your account is gone.</small></td>
+        <td class="us"><span class="check">✓</span><small>Substrate-agnostic. Move the rappid to GitLab/Codeberg/Forgejo.</small></td>
+      </tr>
+      <tr>
+        <td class="feature">Cost
+          <small>monthly per-seat to use the platform itself</small></td>
+        <td class="them"><span class="x">$200/mo</span><small>Codex Business; usage-priced beyond.</small></td>
+        <td class="us"><span class="check">$0</span><small>RAPP is the substrate. Bring your own LLM key (or use a free local model).</small></td>
+      </tr>
+
+      <tr class="section-divider"><td colspan="3">GOVERNANCE — what keeps the AI on the rails over time</td></tr>
+      <tr>
+        <td class="feature">Constitution (enforced, not vibes)
+          <small>articles + ratification dates + immutable invariants</small></td>
+        <td class="them"><span class="x">✗</span><small>"It's in the system prompt." The model can be talked out of it.</small></td>
+        <td class="us"><span class="check">✓</span><small>CONSTITUTION.md (245k chars) + tests/features/F*.sh conformance gates.</small></td>
+      </tr>
+      <tr>
+        <td class="feature">Conformance test suite
+          <small>CI that proves your AI is constitutional</small></td>
+        <td class="them"><span class="x">✗</span><small>Use their evals product. Or write your own.</small></td>
+        <td class="us"><span class="check">✓</span><small>50+ shell + python tests. Required to ship a kernel update.</small></td>
+      </tr>
+      <tr>
+        <td class="feature">Sealing mechanism
+          <small>once published, the artifact cannot drift</small></td>
+        <td class="them"><span class="x">✗</span><small>The provider can change the model under you any night.</small></td>
+        <td class="us"><span class="check">✓</span><small>Sha256 pinning + Article XIX (releases are immutable).</small></td>
+      </tr>
+
+      <tr class="section-divider"><td colspan="3">UI / RAPPLICATIONS — when you want to give your AI a face</td></tr>
+      <tr>
+        <td class="feature">Agents drive UI hydration
+          <small>same .py serves /chat and a deterministic dashboard</small></td>
+        <td class="them"><span class="x">✗</span><small>Build a separate web app. Duplicate the logic.</small></td>
+        <td class="us"><span class="check">✓</span><small>Per kernel rapplication-sdk.md "agents drive both" pattern.</small></td>
+      </tr>
+      <tr>
+        <td class="feature">Single-file rapplication
+          <small>one .py + optional service.py = installable app</small></td>
+        <td class="them"><span class="x">✗</span><small>Repo, build, deploy, publish. Different cycle than the agent.</small></td>
+        <td class="us"><span class="check">✓</span><small>Drop in. Brainstem auto-discovers. No manifest, no registration.</small></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ────────── PUNCHLINE ────────── -->
+<section class="punchline">
+  <h2>Codex writes the code.<br><em>RAPP networks the AI.</em></h2>
+  <p class="bigtext">
+    Different layers. Both matter. <b>One actually composes.</b><br><br>
+    The argument isn't "stop using Codex." Codex is great at what it
+    does. Use it. The argument is: when Codex hands you the 600 lines
+    it wrote for you, those lines need a substrate to live inside —
+    something that makes them portable, sha256-verifiable,
+    sneakernet-shareable, multi-LLM-runnable, federation-ready, and
+    constitutionally-governed. That substrate doesn't come from your
+    coding tool. It comes from RAPP.
+  </p>
+</section>
+
+<!-- ────────── BUILD VS ADOPT ────────── -->
+<section class="build-vs-adopt">
+  <h2 style="text-align:center;font-size:clamp(1.5rem,3vw,2.2rem);margin-bottom:8px;letter-spacing:-0.02em">
+    "I'll just vibe-code my own."
+  </h2>
+  <p style="text-align:center;color:var(--fg-muted);max-width:60ch;margin:0 auto;font-size:0.95rem">
+    Sure. Here's what you'll be building from scratch, every team, in
+    parallel, all over again, with subtle incompatibilities. Or you can
+    not.
+  </p>
+  <div class="bva-grid">
+    <div class="bva-col them">
+      <h3>Vibe-coding it yourself</h3>
+      <div class="tagline">What you have to build (and maintain forever)</div>
+      <ul>
+        <li>Define an agent file format. Get it wrong twice. Settle on a third.</li>
+        <li>Build hot-discovery (or restart for every change).</li>
+        <li>Pick a vendor and lock in. Or build a provider-dispatch layer.</li>
+        <li>Build a distribution mechanism. (Pip? GitHub releases? URLs in Slack?)</li>
+        <li>Build a verification mechanism. (Sha256? Trust on first use?)</li>
+        <li>Build identity. (UUIDs? Random hashes? GitHub usernames?)</li>
+        <li>Build cross-tier portability. (Or pick one tier and live with it.)</li>
+        <li>Build offline / sneakernet path. (Or skip — "we have wifi.")</li>
+        <li>Build per-operator workspaces.</li>
+        <li>Build the trust web. (Or skip — "Slack works fine.")</li>
+        <li>Build governance. (Or skip — "we'll be careful.")</li>
+        <li>Build conformance tests for all of the above.</li>
+        <li>Maintain it. Forever. Across every team that adopts it.</li>
+      </ul>
+    </div>
+    <div class="bva-col us">
+      <h3>Adopting RAPP</h3>
+      <div class="tagline">What you actually do</div>
+      <ul>
+        <li><code>curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash</code></li>
+        <li>Drop your existing <code>agent.py</code> into <code>~/.brainstem/agents/</code>.</li>
+        <li>Tell your brainstem what you want. It runs.</li>
+        <li>To share with a teammate: chat "pack the workspace as an egg." Send them two files.</li>
+        <li>To deploy to Copilot Studio: same .py. Tier 3. Unmodified.</li>
+        <li>Everything above (rappid, federation, sha256, conformance, two-tier estate, multi-LLM, sneakernet, governance) <b>is already built</b>. You inherit it.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ────────── RECEIPTS ────────── -->
+<section class="receipts">
+  <h2>Each row above has a "show me yours" prompt</h2>
+  <p>
+    The Prompt Ledger is 80 specific challenges that any agent
+    platform should be able to satisfy. RAPP can. Try them on Codex.
+    Try them on whatever you're vibe-coding. See what happens.
+  </p>
+  <a class="btn" href="../about/prompts.html">Open the Prompt Ledger →</a>
+</section>
+
+<!-- ────────── INSTALL CTA ────────── -->
+<section class="cta">
+  <div class="cta-block">
+    <h2>Install in 30 seconds</h2>
+    <p>Mac/Linux. Local-first. No account. No credit card.</p>
+    <code>curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash</code>
+    <div class="cta-links">
+      <a href="../about/anatomy.html">Anatomy of a digital organism</a> ·
+      <a href="../about/ecosystem.html">Ecosystem map</a> ·
+      <a href="../about/prompts.html">Prompt ledger (80 receipts)</a> ·
+      <a href="https://github.com/kody-w/RAPP">GitHub</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div>
+    Comparison reflects published benchmarks + feature lists as of
+    Feb–Apr 2026. Codex is a registered trademark of OpenAI.
+    Claude Code is a registered trademark of Anthropic.
+    No affiliation, just receipts.
+  </div>
+  <div class="src">
+    Sources:
+    <a href="https://www.digitalocean.com/resources/articles/claude-code-alternatives" target="_blank" rel="noopener">DigitalOcean — 10 Claude Code Alternatives</a> ·
+    <a href="https://www.morphllm.com/comparisons/claude-code-alternatives" target="_blank" rel="noopener">Morph LLM — Claude Code Alternatives 2026</a> ·
+    <a href="https://www.builder.io/blog/codex-vs-claude-code" target="_blank" rel="noopener">Builder.io — Codex vs Claude Code</a> ·
+    <a href="https://www.codeagentswarm.com/en/guides/claude-code-vs-cursor-vs-codex" target="_blank" rel="noopener">CodeAgentSwarm — Honest Comparison</a> ·
+    <a href="https://www.mindstudio.ai/blog/codex-vs-claude-code-2026" target="_blank" rel="noopener">MindStudio — Codex vs Claude Code 2026</a>
+  </div>
+</footer>
+
+</body>
+</html>

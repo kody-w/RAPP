@@ -28,7 +28,8 @@
         { "path": "product/faq.html",        "title": "FAQ",          "audience": "Engineer evaluating",   "description": "Straight answers — how is RAPP different from GPT, Copilot, Studio?" },
         { "path": "product/faq-slide.html",  "title": "FAQ slide",     "audience": "Speaker companion",     "description": "Single-slide version of the FAQ for a presentation deck." },
         { "path": "product/one-pager.html",  "title": "Platform one-pager","audience": "Reader in a hurry","description": "The whole product in one page." },
-        { "path": "product/use-cases.html",  "title": "Use cases",     "audience": "Buyer building scenarios","description": "What teams actually build with RAPP, by industry and shape." }
+        { "path": "product/use-cases.html",  "title": "Use cases",     "audience": "Buyer building scenarios","description": "What teams actually build with RAPP, by industry and shape." },
+        { "path": "product/vs.html",         "title": "RAPP vs Codex (and the rest)", "audience": "Skeptic asking 'why not just use Claude Code'", "description": "Feature-by-feature. The most-advanced AI coding agent of 2026 (OpenAI Codex / Claude Code / Cursor) writes code; RAPP networks the result. Sega-vs-Nintendo style receipt page for the skeptic who thinks they should just vibe-code their own." }
       ]
     },
     {
