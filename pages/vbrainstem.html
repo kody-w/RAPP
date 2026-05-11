@@ -441,8 +441,9 @@
         <div id="signin-code" style="font-family:'SF Mono',Menlo,monospace;font-size:30px;letter-spacing:6px;color:#58a6ff;font-weight:700;">XXXX-XXXX</div>
       </div>
       <button id="signin-copy" type="button" style="display:block;width:100%;background:#21262d;border:1px solid #30363d;color:#e6edf3;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:14px;">📋 Copy code</button>
-      <a href="#" id="signin-link" target="_blank" rel="noopener" style="display:block;text-align:center;background:#58a6ff;color:#04101e;border-radius:8px;padding:12px;text-decoration:none;font-size:14px;font-weight:700;margin-bottom:14px;">Open github.com/login/device →</a>
-      <div id="signin-poll-status" style="font-size:12px;color:#8b949e;text-align:center;">Waiting for you to enter the code…</div>
+      <a href="#" id="signin-link" target="_blank" rel="noopener" style="display:block;text-align:center;background:#58a6ff;color:#04101e;border-radius:8px;padding:12px;text-decoration:none;font-size:14px;font-weight:700;margin-bottom:10px;">Open github.com/login/device →</a>
+      <button id="signin-check-now" type="button" style="display:block;width:100%;background:#3fb950;border:none;color:#04101e;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;">I entered the code — check now</button>
+      <div id="signin-poll-status" style="font-size:11px;color:#8b949e;text-align:center;font-family:'SF Mono',Menlo,monospace;">Auto-checking every 2s…</div>
     </div>
     <div id="signin-step3" style="display:none;text-align:center;padding:20px 0;">
       <div style="font-size:34px;margin-bottom:10px;">✓</div>
@@ -465,6 +466,9 @@
 <!-- ── External libraries (CDN) ─────────────────────────────────────── -->
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+<!-- Pyodide — deferred so it loads in the background; Doorman.initPyodide()
+     polls for `loadPyodide` symbol before initializing. -->
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js" defer></script>
 
 <!-- ── RAPP.Doorman — GitHub Copilot device-flow auth + chat ────────
      Cloned from pages/sphere.html so vbrainstem reuses the same
@@ -560,31 +564,235 @@ window.RAPP.Doorman = (function () {
     return AUTH_WORKER_URL + "/api/copilot/chat?endpoint=" +
            encodeURIComponent(s.copilotEndpoint || COPILOT_DEFAULT_API);
   }
-  async function chat({ system, history, message, model, max_tokens }) {
+  // ── Pyodide-loaded Python agents — actual *_agent.py files run
+  //    in-browser via Pyodide. Same pattern as pages/sphere.html.
+  //    The vbrainstem itself runs the agents; Copilot is just the LLM
+  //    brain that decides which tool to call. No localhost dep.
+  let pyodide = null;
+  let pyAgents = {};   // agentName → { instance, metadata, source }
+  let pyodideLoadingPromise = null;
+
+  // Source these from kody-w/RAPP@main directly so the page is always
+  // loading the canonical agent code.
+  const SEED_AGENT_BASE = "https://raw.githubusercontent.com/kody-w/RAPP/main/rapp_brainstem/agents/";
+  const BASIC_AGENT_URL = SEED_AGENT_BASE + "basic_agent.py";
+  const PYODIDE_AGENTS = [
+    { file: "hacker_news_agent.py",    className: "HackerNewsAgent",     exposeAs: "HackerNews" },
+    { file: "manage_memory_agent.py",  className: "ManageMemoryAgent",   exposeAs: "ManageMemory" },
+    { file: "context_memory_agent.py", className: "ContextMemoryAgent",  exposeAs: "ContextMemory" },
+  ];
+
+  // utils/local_storage.py shim — drop-in for AzureFileStorageManager
+  // backed by browser localStorage. Memory agents survive page reloads.
+  const VB_LOCAL_STORAGE_PY = "\"\"\"utils/local_storage.py — Pyodide variant.\"\"\"\n" +
+"import json\n" +
+"from js import localStorage\n" +
+"_PREFIX = \"vbs_storage:\"\n" +
+"class AzureFileStorageManager:\n" +
+"    DEFAULT_MARKER_GUID = \"c0p110t0-aaaa-bbbb-cccc-123456789abc\"\n" +
+"    def __init__(self, share_name=None, **kwargs):\n" +
+"        self.current_guid = None\n" +
+"        self.shared_memory_path = \"shared_memories\"\n" +
+"        self.default_file_name = \"memory.json\"\n" +
+"        self.current_memory_path = self.shared_memory_path\n" +
+"    def set_memory_context(self, user_guid=None):\n" +
+"        if not user_guid or user_guid == self.DEFAULT_MARKER_GUID:\n" +
+"            self.current_guid = None\n" +
+"            self.current_memory_path = self.shared_memory_path\n" +
+"            return True\n" +
+"        self.current_guid = user_guid\n" +
+"        self.current_memory_path = \"memory/\" + user_guid\n" +
+"        return True\n" +
+"    def _file_path(self):\n" +
+"        if self.current_guid:\n" +
+"            return \"memory/\" + self.current_guid + \"/user_memory.json\"\n" +
+"        return \"shared_memories/memory.json\"\n" +
+"    def read_json(self, file_path=None):\n" +
+"        path = file_path or self._file_path()\n" +
+"        raw = localStorage.getItem(_PREFIX + path)\n" +
+"        if raw is None: return {}\n" +
+"        try: return json.loads(raw)\n" +
+"        except Exception: return {}\n" +
+"    def write_json(self, data, file_path=None):\n" +
+"        path = file_path or self._file_path()\n" +
+"        localStorage.setItem(_PREFIX + path, json.dumps(data, default=str))\n" +
+"        return True\n" +
+"    def read_file(self, file_path):\n" +
+"        return localStorage.getItem(_PREFIX + file_path)\n" +
+"    def write_file(self, file_path, content):\n" +
+"        localStorage.setItem(_PREFIX + file_path, content)\n" +
+"        return True\n" +
+"    def list_files(self, directory=\"\"):\n" +
+"        prefix = _PREFIX + directory\n" +
+"        out = []\n" +
+"        n = localStorage.length\n" +
+"        for i in range(n):\n" +
+"            k = localStorage.key(i)\n" +
+"            if k and k.startswith(prefix):\n" +
+"                out.append(k[len(_PREFIX):])\n" +
+"        return out\n" +
+"    def delete_file(self, file_path):\n" +
+"        if localStorage.getItem(_PREFIX + file_path) is not None:\n" +
+"            localStorage.removeItem(_PREFIX + file_path)\n" +
+"            return True\n" +
+"        return False\n" +
+"    def file_exists(self, file_path):\n" +
+"        return localStorage.getItem(_PREFIX + file_path) is not None\n";
+  const VB_AZURE_REEXPORT_PY    = "from utils.local_storage import AzureFileStorageManager\n";
+  const VB_DYNAMICS_REEXPORT_PY = "from utils.local_storage import AzureFileStorageManager\nDynamicsStorageManager = AzureFileStorageManager\n";
+  const VB_FACTORY_PY           = "from utils.local_storage import AzureFileStorageManager\ndef get_storage_manager():\n    return AzureFileStorageManager()\n";
+
+  async function initPyodide() {
+    if (pyodide && Object.keys(pyAgents).length) return pyodide;
+    if (pyodideLoadingPromise) return pyodideLoadingPromise;
+    pyodideLoadingPromise = (async () => {
+      try {
+        // Wait for Pyodide CDN to define loadPyodide
+        let waited = 0;
+        while (typeof loadPyodide === "undefined" && waited < 15000) {
+          await new Promise(r => setTimeout(r, 100));
+          waited += 100;
+        }
+        if (typeof loadPyodide === "undefined") {
+          console.warn("[vbs] Pyodide CDN didn't load");
+          return null;
+        }
+        pyodide = await loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/" });
+        // Fetch canonical BasicAgent
+        let basicPy = "class BasicAgent:\n    def __init__(self, name=None, metadata=None):\n        if name is not None: self.name = name\n        if metadata is not None: self.metadata = metadata\n    def system_context(self):\n        return None\n";
+        try {
+          const r = await fetch(BASIC_AGENT_URL, { cache: "force-cache" });
+          if (r.ok) basicPy = await r.text();
+        } catch (e) { console.warn("[vbs] basic_agent fetch failed, using stub", e); }
+        pyodide.FS.mkdirTree("/agents");
+        pyodide.FS.writeFile("/agents/basic_agent.py", basicPy);
+        pyodide.FS.writeFile("/agents/__init__.py", "");
+        pyodide.FS.mkdirTree("/utils");
+        pyodide.FS.writeFile("/utils/__init__.py", "");
+        pyodide.FS.writeFile("/utils/local_storage.py", VB_LOCAL_STORAGE_PY);
+        pyodide.FS.writeFile("/utils/azure_file_storage.py", VB_AZURE_REEXPORT_PY);
+        pyodide.FS.writeFile("/utils/dynamics_storage.py", VB_DYNAMICS_REEXPORT_PY);
+        pyodide.FS.writeFile("/utils/storage_factory.py", VB_FACTORY_PY);
+        await pyodide.runPythonAsync("import sys; sys.path.insert(0, '/')");
+        // Load each canonical agent
+        for (const cfg of PYODIDE_AGENTS) {
+          try {
+            const r = await fetch(SEED_AGENT_BASE + cfg.file, { cache: "no-cache" });
+            if (!r.ok) { console.warn("[vbs] couldn't fetch", cfg.file, r.status); continue; }
+            const source = await r.text();
+            pyodide.FS.writeFile("/agents/" + cfg.file, source);
+            const moduleName = cfg.file.replace(/\.py$/, "");
+            const expose = cfg.exposeAs;
+            await pyodide.runPythonAsync(
+              "from agents." + moduleName + " import " + cfg.className + " as _Cls\n" +
+              "_inst = _Cls()\n" +
+              "_agent_" + expose + " = _inst\n"
+            );
+            const instance = pyodide.globals.get("_agent_" + expose);
+            if (!instance) continue;
+            const metadataPy = instance.metadata;
+            const metadata = metadataPy && metadataPy.toJs
+              ? metadataPy.toJs({ dict_converter: Object.fromEntries })
+              : metadataPy;
+            const agentName = (instance.name && String(instance.name)) || expose;
+            pyAgents[agentName] = { instance, metadata, source };
+            console.info("[vbs] loaded agent", agentName, "from", cfg.file);
+          } catch (e) {
+            console.warn("[vbs] agent load failed for", cfg.file, ":", e && (e.message || e));
+          }
+        }
+        console.info("[vbs] Pyodide ready, agents:", Object.keys(pyAgents).join(", "));
+        return pyodide;
+      } catch (e) {
+        console.warn("[vbs] Pyodide init failed:", e && (e.message || e));
+        pyodide = null;
+        return null;
+      }
+    })();
+    return pyodideLoadingPromise;
+  }
+
+  function pyAgentsToolDefs() {
+    const defs = [];
+    for (const [name, info] of Object.entries(pyAgents)) {
+      if (!info || !info.metadata) continue;
+      const m = info.metadata;
+      defs.push({
+        type: "function",
+        function: {
+          name,
+          description: m.description || ("Run " + name),
+          parameters: m.parameters || { type: "object", properties: {}, required: [] },
+        },
+      });
+    }
+    return defs;
+  }
+
+  async function dispatchPyodideToolCall(name, args) {
+    const info = pyAgents[name];
+    if (!info) return "agent '" + name + "' is not loaded";
+    try {
+      pyodide.globals.set("_call_args", pyodide.toPy(args || {}));
+      const result = await pyodide.runPythonAsync(
+        "import json\n" +
+        "_a = _call_args.to_py() if hasattr(_call_args, 'to_py') else dict(_call_args)\n" +
+        "_r = _agent_" + name + ".perform(**_a)\n" +
+        "_r if isinstance(_r, str) else json.dumps(_r)\n"
+      );
+      return typeof result === "string" ? result : String(result);
+    } catch (e) {
+      return "agent error: " + (e && e.message ? e.message : String(e));
+    }
+  }
+
+  async function chat({ system, history, message, model, max_tokens, onAgentLog }) {
+    // Pyodide warms up in the background; if it's ready by now we'll get
+    // tools, otherwise we go without and Reporter won't fetch HN — that's OK.
+    initPyodide().catch(() => {});
     const tok = await ensureCopilotToken();
     const messages = [];
     if (system) messages.push({ role: "system", content: system });
     if (Array.isArray(history)) for (const h of history) messages.push(h);
     messages.push({ role: "user", content: message });
-    const body = {
-      model: model || loadSettings().model || DEFAULT_MODEL,
-      messages,
-      max_tokens: max_tokens || 600,
-    };
-    const r = await fetch(activeChatUrl(), {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + tok },
-      body: JSON.stringify(body),
-    });
-    if (r.status === 401) { clearAuthState(); throw new Error("Sign-in expired — sign in again."); }
-    if (!r.ok) throw new Error(`HTTP ${r.status}: ${(await r.text()).slice(0,200)}`);
-    const d = await r.json();
-    const msg = d.choices && d.choices[0] && d.choices[0].message;
-    let content = (msg && msg.content) || "";
-    // Strip |||VOICE||| block if present (we don't use the voice slot here)
-    const split = content.split("|||VOICE|||");
-    if (split.length === 2) content = split[0].trim();
-    return content;
+    let rounds = 0;
+    while (rounds++ < 4) {
+      const tools = pyAgentsToolDefs();
+      const body = {
+        model: model || loadSettings().model || DEFAULT_MODEL,
+        messages,
+        max_tokens: max_tokens || 600,
+        ...(tools.length ? { tools, tool_choice: "auto" } : {}),
+      };
+      const r = await fetch(activeChatUrl(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + tok },
+        body: JSON.stringify(body),
+      });
+      if (r.status === 401) { clearAuthState(); throw new Error("Sign-in expired — sign in again."); }
+      if (!r.ok) throw new Error("HTTP " + r.status + ": " + (await r.text()).slice(0,200));
+      const d = await r.json();
+      const msg = d.choices && d.choices[0] && d.choices[0].message;
+      if (!msg) break;
+      if (msg.tool_calls && msg.tool_calls.length) {
+        messages.push({ role: "assistant", content: msg.content || null, tool_calls: msg.tool_calls });
+        for (const tc of msg.tool_calls) {
+          let args = {};
+          try { args = JSON.parse(tc.function.arguments || "{}"); } catch (e) {}
+          const out = await dispatchPyodideToolCall(tc.function.name, args);
+          messages.push({ role: "tool", tool_call_id: tc.id, content: out });
+          if (typeof onAgentLog === "function") {
+            try { onAgentLog({ name: tc.function.name, args, output: out }); } catch (e) {}
+          }
+        }
+        continue;
+      }
+      let content = (msg && msg.content) || "";
+      const split = content.split("|||VOICE|||");
+      if (split.length === 2) content = split[0].trim();
+      return content;
+    }
+    return "(stopped after 4 tool-call rounds)";
   }
 
   return {
@@ -592,8 +800,12 @@ window.RAPP.Doorman = (function () {
     loadSettings, saveSettings, getToken, clearAuthState, isSignedIn,
     startDeviceLogin, pollDeviceLogin, copilotExchange,
     ensureCopilotToken, activeChatUrl, chat,
+    initPyodide, pyAgentsToolDefs, dispatchPyodideToolCall,
+    get pyAgents() { return pyAgents; },
   };
 })();
+// Kick off Pyodide warm-up immediately so it's ready by the time the demo runs.
+window.RAPP.Doorman.initPyodide().catch(() => {});
 </script>
 
 <script>
@@ -676,6 +888,7 @@ const state = {
   seenEventIds: new Set(),
   eventCounter: 0,
   brainstemOnline: false,
+  stubMode: false,         // flips on after first Copilot 401 — keeps demo runnable
   demoRunning: false,
   demoStep: 0,
   llmInflight: 0,
@@ -1208,19 +1421,19 @@ function composeSend() {
   const text = inp.value.trim();
   if (!text) return;
   inp.value = ''; inp.style.height = 'auto';
+  // Default responder = Coordinator (the operator's autonomous twin).
+  // Free-text routes there; @TwinName overrides.
+  const target = addressFromText(text) || 'Coordinator';
   recordEvent({
     event_id: mintEventId(),
     kind: 'operator_input',
     ts: nowIso(),
     by: 'Operator',
-    data: { text, addressed: addressFromText(text) },
+    data: { text, addressed: target },
   });
-  // If addressed and we're host, dispatch immediately
-  const target = addressFromText(text);
-  if (target && state.role === 'host') {
+  if (state.role === 'host' || state.isCartMode) {
     runTwinTurn(target, text);
-  } else if (target && state.role === 'guest') {
-    // Relay to host
+  } else if (state.role === 'guest') {
     state.conn?.send({ type: 'chat_request_relay', twinName: target, cue: text });
   }
 }
@@ -1310,7 +1523,21 @@ async function runTwinTurn(twinName, cue) {
     });
   } catch (e) {
     hideTypingFor(twinName);
-    // Try fallback: HackerNews direct fetch if the twin is Reporter
+    const errMsg = (e && e.message) || String(e);
+    const is401 = /401|copilot exchange/i.test(errMsg) || /Copilot subscription/i.test(errMsg);
+    // First time we hit Copilot 401, flip into stub mode + emit a one-time
+    // system note explaining what's happening — beats repeating the error.
+    if (is401 && !state.stubMode) {
+      state.stubMode = true;
+      recordEvent({
+        event_id: mintEventId(),
+        kind: 'session_start',
+        ts: nowIso(),
+        by: 'system',
+        data: { note: 'Copilot subscription not active on this GitHub account — switching to STUB mode so the demo workflow still runs end-to-end. (To get real LLM replies: sign in with a Copilot-enabled GitHub account, or open with ?brainstem=http://localhost:7071 to use a local kernel.)' },
+      });
+    }
+    // Reporter has a real fallback: direct HN fetch, no LLM needed
     if (twinName === 'Reporter') {
       try {
         const fb = await hackerNewsFallback();
@@ -1319,28 +1546,71 @@ async function runTwinTurn(twinName, cue) {
           kind: 'twin_response',
           ts: nowIso(),
           by: twinName,
-          data: { text: fb, via: 'fallback' },
+          data: { text: fb, via: 'hn-fallback' },
         });
-      } catch (e2) {
-        recordEvent({
-          event_id: mintEventId(),
-          kind: 'twin_response',
-          ts: nowIso(),
-          by: twinName,
-          data: { text: '(error: ' + (e.message || e) + ')' },
-        });
-      }
+        return;
+      } catch (e2) { /* fall through to stub */ }
+    }
+    if (state.stubMode || is401) {
+      const stub = stubTwinResponse(twinName, cue);
+      recordEvent({
+        event_id: mintEventId(),
+        kind: 'twin_response',
+        ts: nowIso(),
+        by: twinName,
+        data: { text: stub, via: 'stub' },
+      });
     } else {
       recordEvent({
         event_id: mintEventId(),
         kind: 'twin_response',
         ts: nowIso(),
         by: twinName,
-        data: { text: '(error: ' + (e.message || e) + ')' },
+        data: { text: '(error: ' + errMsg + ')' },
       });
     }
   } finally {
     state.llmInflight -= 1;
+  }
+}
+
+// ── Stub responses — used when Copilot isn't available, so the demo
+//    still demonstrates the workflow + cross-device sync end-to-end. ──
+function stubTwinResponse(twinName, cue) {
+  // Pull the most recent Reporter response so DebaterA/B/Editor can quote it
+  let lastReporter = '';
+  for (let i = state.transcript.length - 1; i >= 0; i--) {
+    const e = state.transcript[i];
+    if (e.kind === 'twin_response' && e.by === 'Reporter') { lastReporter = (e.data && e.data.text) || ''; break; }
+  }
+  const titleMatch = lastReporter.match(/TITLE:\s*([^\n]+)/i);
+  const title = (titleMatch && titleMatch[1].trim()) || 'the top Hacker News story';
+  switch (twinName) {
+    case 'Coordinator':
+      return '(stub) ' + (cue.length < 60 ? 'Got it — ' + cue : 'Acknowledged. I\'ll route this to the appropriate twin.') + ' [Copilot unavailable; running in stub mode.]';
+    case 'Reporter':
+      return 'TITLE: (stub) Sample HN story\nURL: https://news.ycombinator.com/\nSUMMARY: Stub data — direct HN fetch failed too.';
+    case 'DebaterA':
+      return '(stub · DebaterA) "' + title + '" matters because:\n' +
+             '1) It surfaces a real shift in how the platform is shaped.\n' +
+             '2) The discussion around it is where industry norms get set.\n' +
+             '3) Ignoring it now would mean reacting to its consequences later.\n' +
+             '4) The signal-to-noise on this one is unusually high.';
+    case 'DebaterB':
+      return '(stub · DebaterB) "' + title + '" is overhyped because:\n' +
+             '1) HN front-page bias toward narratives over substance is well documented.\n' +
+             '2) The story will be old news in 72 hours.\n' +
+             '3) The actual practitioners aren\'t the ones upvoting.\n' +
+             '4) Acting on a single ranked story is itself the antipattern.';
+    case 'Editor':
+      return '(stub · Editor newsletter) Today on the front page:\n' +
+             title + '.\n' +
+             'One side argues this is a real signal worth tracking; the other says HN ranking != importance.\n' +
+             'The truth is between — the story names a tension worth thinking about, but action requires more than a click.\n' +
+             'Read it. Argue both sides. Decide later.\n' +
+             '— vBrainstem stub mode (Copilot unavailable on this account).';
+    default:
+      return '(stub · ' + twinName + ') Acknowledged: ' + cue.slice(0, 120);
   }
 }
 
@@ -1371,13 +1641,27 @@ async function callBrainstemForTwin(twin, cue) {
   }
 
   // Default path: GitHub Copilot via rapp-auth worker (Doorman). Persona
-  // becomes the system prompt; cue becomes the user message.
+  // becomes the system prompt; cue becomes the user message. Pyodide-loaded
+  // Python agents (HackerNews, ManageMemory, ContextMemory) are passed as
+  // tool defs and dispatched in-browser when the LLM tool-calls them.
   if (!window.RAPP || !window.RAPP.Doorman) throw new Error('Doorman not loaded');
   return await window.RAPP.Doorman.chat({
     system: twin.persona,
     history,
     message: cue,
     max_tokens: 600,
+    onAgentLog: (entry) => {
+      // Surface every Pyodide tool dispatch as a cart_state event so both
+      // peers see "agent X ran with args Y → returned Z" in the transcript.
+      const preview = (entry.output || '').toString().slice(0, 220);
+      recordEvent({
+        event_id: mintEventId(),
+        kind: 'cart_state',
+        ts: nowIso(),
+        by: twinName,
+        data: { text: '[' + entry.name + '] ' + preview, agent: entry.name, args: entry.args, via: 'pyodide' },
+      });
+    },
   });
 }
 
@@ -1479,14 +1763,19 @@ async function pollBrainstem() {
     setInterval(tick, 8000);
     return;
   }
-  // Copilot path — check signed-in state on a fast tick (no network)
+  // Copilot path — check signed-in state + agent count on a fast tick
   function tick() {
     const signedIn = window.RAPP && window.RAPP.Doorman && window.RAPP.Doorman.isSignedIn();
     setBrainstemPill(!!signedIn);
     const p = $('#bs-pill');
     if (p) {
-      if (signedIn) { p.textContent = 'Copilot ✓'; p.style.cursor = 'default'; p.onclick = null; }
-      else { p.textContent = 'Sign in'; p.style.cursor = 'pointer'; p.onclick = openSignInModal; }
+      if (signedIn) {
+        const n = (window.RAPP.Doorman.pyAgents && Object.keys(window.RAPP.Doorman.pyAgents).length) || 0;
+        p.textContent = n ? ('Copilot ✓ · ' + n + ' agents') : 'Copilot ✓ · loading agents…';
+        p.style.cursor = 'default'; p.onclick = null;
+      } else {
+        p.textContent = 'Sign in'; p.style.cursor = 'pointer'; p.onclick = openSignInModal;
+      }
     }
   }
   tick();
@@ -1607,11 +1896,52 @@ function closeSignInModal() {
   m.hidden = true; m.style.display = 'none';
   if (_signinPollTimer) { clearInterval(_signinPollTimer); _signinPollTimer = null; }
 }
+let _signinAttemptCount = 0;
+let _signinLastResult = '(not started)';
+
+async function attemptPollOnce() {
+  const errBox = $('#signin-error');
+  const statusEl = $('#signin-poll-status');
+  const Doorman = window.RAPP.Doorman;
+  _signinAttemptCount += 1;
+  if (statusEl) statusEl.textContent = `polling… (attempt ${_signinAttemptCount}, last: ${_signinLastResult})`;
+  try {
+    const tok = await Doorman.pollDeviceLogin();
+    if (tok) {
+      _signinLastResult = 'token received';
+      if (_signinPollTimer) { clearInterval(_signinPollTimer); _signinPollTimer = null; }
+      if (statusEl) statusEl.textContent = 'GitHub OK — exchanging for Copilot token…';
+      try {
+        await Doorman.copilotExchange();
+      } catch (e) {
+        errBox.textContent = 'GitHub auth OK but Copilot exchange failed: ' + e.message + ' (active Copilot subscription required?)';
+        errBox.style.display = 'block';
+        return;
+      }
+      $('#signin-step2').style.display = 'none';
+      $('#signin-step3').style.display = 'block';
+      setTimeout(closeSignInModal, 900);
+      return;
+    }
+    _signinLastResult = 'pending';
+    if (statusEl) statusEl.textContent = `auto-checking every 2s… (attempt ${_signinAttemptCount}, server says: pending)`;
+  } catch (e) {
+    _signinLastResult = 'error: ' + (e.message || e).slice(0, 80);
+    if (_signinPollTimer) { clearInterval(_signinPollTimer); _signinPollTimer = null; }
+    errBox.textContent = 'Poll failed: ' + (e.message || e);
+    errBox.style.display = 'block';
+    if (statusEl) statusEl.textContent = 'auto-poll stopped — see error above. Click "check now" to retry.';
+  }
+}
+
 async function startSignInFlow() {
   const errBox = $('#signin-error');
+  const statusEl = $('#signin-poll-status');
   errBox.style.display = 'none';
   $('#signin-go').disabled = true;
   $('#signin-go').textContent = 'Starting…';
+  _signinAttemptCount = 0;
+  _signinLastResult = '(not started)';
   try {
     const Doorman = window.RAPP.Doorman;
     const { user_code, verification_uri } = await Doorman.startDeviceLogin();
@@ -1619,28 +1949,11 @@ async function startSignInFlow() {
     $('#signin-step2').style.display = 'block';
     $('#signin-code').textContent = user_code;
     $('#signin-link').href = verification_uri || 'https://github.com/login/device';
-    // Poll every 5s
-    _signinPollTimer = setInterval(async () => {
-      try {
-        const tok = await Doorman.pollDeviceLogin();
-        if (tok) {
-          clearInterval(_signinPollTimer); _signinPollTimer = null;
-          // Exchange for Copilot token immediately so the next twin turn doesn't lag
-          try { await Doorman.copilotExchange(); } catch (e) {
-            errBox.textContent = 'GitHub auth OK but Copilot exchange failed: ' + e.message + ' (do you have an active Copilot subscription?)';
-            errBox.style.display = 'block';
-            return;
-          }
-          $('#signin-step2').style.display = 'none';
-          $('#signin-step3').style.display = 'block';
-          setTimeout(closeSignInModal, 900);
-        }
-      } catch (e) {
-        clearInterval(_signinPollTimer); _signinPollTimer = null;
-        errBox.textContent = 'Sign-in failed: ' + (e.message || e);
-        errBox.style.display = 'block';
-      }
-    }, 5000);
+    if (statusEl) statusEl.textContent = 'auto-checking every 2s…';
+    // Auto-poll every 2s — short enough to feel snappy, long enough to respect
+    // the GitHub-suggested interval (5s minimum is for the GH side; the worker
+    // de-dupes for us). Worker will return slow_down if we're too aggressive.
+    _signinPollTimer = setInterval(attemptPollOnce, 2000);
   } catch (e) {
     errBox.textContent = 'Couldn\'t start sign-in: ' + (e.message || e);
     errBox.style.display = 'block';
@@ -1650,6 +1963,7 @@ async function startSignInFlow() {
 }
 $('#signin-close')?.addEventListener('click', closeSignInModal);
 $('#signin-go')?.addEventListener('click', startSignInFlow);
+$('#signin-check-now')?.addEventListener('click', () => { attemptPollOnce(); });
 $('#signin-copy')?.addEventListener('click', () => {
   const txt = $('#signin-code').textContent;
   navigator.clipboard?.writeText(txt).then(() => {
