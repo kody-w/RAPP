@@ -141,6 +141,10 @@ Every `rapp-*/N.M` and `brainstem-*/N.M-variant` currently emitted in the repo. 
 | `brainstem-egg/2.1` | Variant repo cartridge | CLAUDE.md egg formats | utils/bond.py, twin_agent.py |
 | `brainstem-egg/2.2-organism` | Full instance cartridge (rappid + soul + .env + agents + organs + senses + services + .brainstem_data) | ECOSYSTEM §3, §8 | utils/bond.py |
 | `brainstem-egg/2.2-rapplication` | Single rapp cartridge (rappid + agent + UI + per-rapp state) | CLAUDE.md egg formats | utils/bond.py |
+| `brainstem-egg/2.3-session` | Session cartridge (JSON; rappid + sha256-pinned runtime + transcript + participants) — the vbrainstem tether's portable format | SPEC.md §18.10, §18.11; rappterbox/carts/SCHEMA.md | pages/vbrainstem.html (export); rappterbox/console.html + pages/vbrainstem.html (mount); rapp_brainstem/agents/egg_hatcher_agent.py (introspect+route) |
+| `brainstem-egg/2.3-neighborhood` *(planned)* | Neighborhood gate cartridge (ZIP; rappid + neighborhood.json + members.json + agents/ + rapplications/ + ses/ + soul.md + CONSTITUTION.md + rar/index.json) | SPEC.md §18.10 | egg_hatcher_agent.py (manual instructions; auto-mint planned) |
+| `brainstem-egg/2.3-estate` *(planned)* | Estate cartridge — operator's whole multi-tier identity portable across substrates (public discovery + private bones pointer + sealed PII pointer) | SPEC.md §18.10, ESTATE_SPEC.md, PUBLIC_PRIVATE_BOUNDARY.md | egg_hatcher_agent.py (manual instructions; auto-anchor planned) |
+| `rappterbox-cart/0.1` | Legacy session cartridge schema (superseded by brainstem-egg/2.3-session 2026-05-10; loader still accepts both for one release) | rappterbox/carts/SCHEMA.md | pages/vbrainstem.html (legacy export); rappterbox/console.html (legacy load) |
 | `rapp-egg-provenance/1.0` | SHA-256 file hashes + manifest hash + origin commit SHA | ECOSYSTEM §3, §9 | utils/bond.py |
 | `rapp-organism-state/1.0` | state_at_seal snapshot (mem_count, mut_count, MMR, etc.) | ECOSYSTEM §3 | utils/bond.py |
 | `rapp-user-memories/1.0` | Per-user issue memories (ascended-tier export) | ECOSYSTEM §3 | doorman ascended export |
@@ -206,7 +210,7 @@ Every `rapp-*/N.M` and `brainstem-*/N.M-variant` currently emitted in the repo. 
 | `rapp-local-ping/1.0` | Test ping agent | tests/fixtures/local-only-test/ | test fixture |
 | `rapp-metropolis-index/1.0` | Metropolis tracker top-level | pages/metropolis/README.md | pages/metropolis/index.json |
 | `rapp-metropolis-entry/1.0` | One neighborhood entry in tracker | pages/metropolis/README.md | pages/metropolis/index.json |
-| `rapp-vbrainstem-subscription/1.0` | vbrainstem subscription record | pages/vbrainstem/index.html:355 (defined-by-emitter) | pages/vbrainstem/index.html |
+| `rapp-vbrainstem-subscription/1.0` | vbrainstem subscription record (LEGACY surface — the **older** mobile vbrainstem at `pages/vbrainstem/index.html`, distinct from the new `pages/vbrainstem.html` tethered surface added 2026-05-10) | pages/vbrainstem/index.html:355 (defined-by-emitter) | pages/vbrainstem/index.html |
 | `rapp-zoo-collection/1.0` | rapp-zoo localStorage cartridge | rapp-zoo/index.html:481 (defined-by-emitter) | rapp-zoo/index.html |
 | `rapp-swarm/1.0` | Mobile swarm bundle | utils/web/mobile/rapp-mobile.js:165 (defined-by-emitter) | utils/web/mobile/rapp-mobile.js |
 | `rapp-brainstem-backup/1.0` | Local brainstem backup snapshot | rapp_brainstem/index.html:1966 (defined-by-emitter) | rapp_brainstem/index.html |
@@ -226,6 +230,8 @@ Every `rapp-*/N.M` and `brainstem-*/N.M-variant` currently emitted in the repo. 
 | `rapp_brainstem/agents/swarm_factory_agent.py` | Tier-2 deploy factory | rapp_swarm/ |
 | `rapp_brainstem/agents/perpetual_loop_factory_agent.py` | Background-loop factory | (no spec section yet — see §13) |
 | `rapp_brainstem/agents/hacker_news_agent.py` | Demo HN agent | (example) |
+| `rapp_brainstem/agents/egg_hatcher_agent.py` | Universal `.egg` hatcher. Reads any `.egg` from local path or URL, **introspects** `manifest.schema`/`type`, routes by kind: organism→bond.hatch_organism / rapplication→bond.hatch_rapplication / session→returns mount URL (rappterbox console or vbrainstem.html, since Python brainstem can't iframe) / neighborhood→manual GitHub-mint instructions (auto planned) / estate→manual substrate-migration instructions (auto planned) / unknown→**REFUSES**, never destructive fallback. Single-file agent per §5. | brainstem-egg/2.x family — SPEC.md §18.10 |
+| `pages/vbrainstem.html` | Public tethered surface — multi-participant browser-tab brainstem. QR-pair WebRTC handshake (PeerJS broker, ECDSA P-256 keypair, 6-digit safety code), three exchangeable LLM backends (localhost default / `?brainstem=URL` / `?copilot=1` via Doorman + Pyodide), Coordinator-driven debate-demo workflow. Exports the live session as a `brainstem-egg/2.3-session` cartridge. | SPEC.md §18.11; brainstem-egg/2.3-session |
 | `rapp_brainstem/agents/workiq_agent.py` | WorkIQ signals | (example) |
 | `rapp_brainstem/agents/plant_discord_neighborhood_agent.py` | Discord-driven neighborhood planting | NEIGHBORHOOD_PROTOCOL §4 (discovery) |
 | `rapp_brainstem/agents/lineage_rollup_agent.py` | Lineage-tree aggregation (avg/median MMR) | ECOSYSTEM §15 (shipped 2026-05-08) |

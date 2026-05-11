@@ -122,6 +122,15 @@ Every locally-installed brainstem is its own digital organism with persistent id
 - [`rapp-zoo/`](./rapp-zoo/) ([live at `kody-w.github.io/RAPP/rapp-zoo/`](https://kody-w.github.io/RAPP/rapp-zoo/)) — the local-first Pokédex. Three tabs (My collection / Starters / Discover), drag-drop egg import, deterministic SVG sprites per organism, three bundled starters (workday/playtime/journal). Single-file static page; localStorage holds metadata, IndexedDB holds blobs, the whole collection round-trips through one JSON for backup.
 - [`kody-w/RAPP_Store`](https://github.com/kody-w/RAPP_Store) `/api/v1/` — PokeAPI-style static catalog. Each cataloged rapplication has an entry JSON, a sprite SVG, and a downloadable `.egg`. Hosted via `raw.githubusercontent.com`.
 
+## vBrainstem + the `.egg` cartridge family (the tethered surface)
+
+Shipped 2026-05-10. See `pages/docs/SPEC.md` §18.10–§18.12 for the canonical spec.
+
+- [`pages/vbrainstem.html`](./pages/vbrainstem.html) ([live at `kody-w.github.io/RAPP/pages/vbrainstem.html`](https://kody-w.github.io/RAPP/pages/vbrainstem.html)) — multi-participant browser-tab tether. Two devices pair via QR (PeerJS public broker → WebRTC data channel, ECDSA P-256 keypair + 6-digit safety code), both screens stay synced; an autonomous Coordinator twin drives a 4-step debate workflow (Reporter fetches HN top story → DebaterA → DebaterB → Editor newsletter). Three exchangeable LLM backends: localhost `:7071` (default), `?brainstem=URL`, `?copilot=1` (Pyodide-loaded Python agents + Copilot via Doorman). The session IS a `brainstem-egg/2.3-session` cartridge — exportable as `.egg`.
+- The `.egg` cartridge family (single sneakernet primitive across the ecosystem; same extension, same rappzoo Pokédex shelf): `brainstem-egg/2.2-organism`, `2.2-rapplication`, `2.3-session`, `2.3-neighborhood` (planned), `2.3-estate` (planned). Master spec: [`kody-w/rappterbox/carts/SCHEMA.md`](https://github.com/kody-w/rappterbox/blob/main/carts/SCHEMA.md). Master packers/unpackers (ZIP variants): [`rapp_brainstem/utils/bond.py`](./rapp_brainstem/utils/bond.py).
+- [`rapp_brainstem/agents/egg_hatcher_agent.py`](./rapp_brainstem/agents/egg_hatcher_agent.py) — kernel agent. Drop into a brainstem, restart, the LLM gets a `HatchEgg(egg_path=...)` tool. Reads any `.egg` from a local path or URL, **introspects** the manifest's schema/type, routes by kind. Never guesses; refuses on unknown kinds. Session cartridges return a mount URL (Python brainstem can't iframe — points at rappterbox console or vbrainstem.html).
+- The Doorman pattern (Copilot via Cloudflare Worker — same flow `pages/sphere.html` uses): `RAPP.Doorman` namespace inside vbrainstem.html clones from sphere.html. Reads `localStorage.rapp_settings` (in-memory mirror fallback for Edge Tracking Prevention).
+
 ## Key Directories
 
 | Directory | Purpose |
@@ -133,7 +142,7 @@ Every locally-installed brainstem is its own digital organism with persistent id
 | `tests/` | JS test runner + integration test scripts |
 | `installer/` | Public install surface — one-liner installers (`install.sh`, `install.ps1`, `install.cmd`), `start-local.sh`, `install-swarm.sh`, `azuredeploy.json` (ARM template), install-widget mirror, and the Tier 3 Copilot Studio bundle (`MSFTAIBASMultiAgentCopilot_*.zip`) |
 | `CONSTITUTION.md` | Repo governance — at root as a peer of `README.md` |
-| `pages/` | The full audience-facing site (not a folder of orphan pages). Sectioned: `pages/about/`, `pages/product/`, `pages/release/`, `pages/docs/` (markdown viewer), `pages/vault/` (Obsidian vault + viewer). Shared chrome at `pages/_site/` (`css/`, `js/`, `partials/`, `index.json`). New audience HTML drops into the matching section; the manifest at `pages/_site/index.json` is the canonical inventory. |
+| `pages/` | The full audience-facing site (not a folder of orphan pages). Sectioned: `pages/about/`, `pages/product/`, `pages/release/`, `pages/docs/` (markdown viewer), `pages/vault/` (Obsidian vault + viewer). Shared chrome at `pages/_site/` (`css/`, `js/`, `partials/`, `index.json`). Specialty surfaces at `pages/` root: `pages/vbrainstem.html` (tethered multi-participant tab + QR pair, see SPEC §18.11), `pages/sphere.html` (3D doorman). New audience HTML drops into the matching section; the manifest at `pages/_site/index.json` is the canonical inventory. |
 | `pages/vault/` | Long-term memory: decision narratives, removal stories, manifestos. Real Obsidian vault — open `pages/vault/` directly in any Obsidian client. **When you learn *why* a decision was made, write it here as a stub or a published note — don't bury it in a commit message.** See `CONSTITUTION.md` Article XXIII. |
 
 ## Environment

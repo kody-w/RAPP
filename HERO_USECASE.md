@@ -16,20 +16,23 @@ This document defines the hero scenarios the RAPP platform must satisfy. Every a
 
 | Requirement                                      | Implementation                                      | Status |
 |---                                               |---                                                  |---     |
-| Both phones reach a chat surface offline         | Doorman page is fully static + Pyodide + cached     | ✅     |
-| Pair-by-QR (no copy-paste IDs)                   | `📱 Pair with another device` → autoRenderTetherQR  | ✅     |
-| Cross-device WebRTC channel (DTLS encrypted)     | PeerJS (broker only for handshake)                  | ✅     |
+| Both phones reach a chat surface offline         | Doorman page (`installer/plant.sh`) + new public `pages/vbrainstem.html` — both fully static + Pyodide + cached | ✅     |
+| Pair-by-QR (no copy-paste IDs)                   | `📱 Pair with another device` → autoRenderTetherQR (doorman); **Generate QR** button + 6-digit safety code (vbrainstem.html, ECDSA P-256 keypair fingerprint embedded) | ✅     |
+| Cross-device WebRTC channel (DTLS encrypted)     | PeerJS (broker only for handshake) — same in both surfaces | ✅     |
 | Agent transfers device-to-device                 | `🥚 Send my egg →` button on tether pane streams chunked egg over the open WebRTC channel; receiver auto-saves after sha256 verify | ✅ ([test](../tests/doorman/tether-egg.mjs)) |
-| Receiver runs agent locally                      | Pyodide loads agent .py from local filesystem       | ✅     |
-| Graceful degrade when no network                 | `cachedGhJson` returns last-cached state            | ✅     |
-| Local model fallback                             | Doorman config supports custom Copilot endpoint     | ⚠ partial — works for self-hosted endpoint, no offline LLM yet |
-| Mutations stay local until bonded back           | `state_at_seal` + `data/frames.json` in egg; PRs are explicit consent | ✅     |
+| Receiver runs agent locally                      | Pyodide loads agent .py from local filesystem (doorman); Pyodide loads `basic_agent.py` + `hacker_news_agent.py` + memory agents from `raw.githubusercontent.com/kody-w/RAPP/main/rapp_brainstem/agents/` (vbrainstem.html in `?copilot=1` mode) | ✅     |
+| Live tethered group chat (vs. one-way egg trade) | `pages/vbrainstem.html` — both screens stay synced as the Coordinator twin drives a multi-step workflow. Operator-mic interjection takes priority. Transcript is the canonical state; both peers append-only-dedupe by event_id. Shipped 2026-05-10 (SPEC §18.11). | ✅     |
+| Graceful degrade when no network                 | `cachedGhJson` returns last-cached state; vbrainstem falls back to in-memory mirror when Edge Tracking Prevention blocks localStorage | ✅     |
+| Local model fallback                             | Doorman config supports custom Copilot endpoint; vbrainstem.html `?brainstem=URL` override + localhost-7071 default | ⚠ partial — works for self-hosted endpoint, no offline LLM yet |
+| Mutations stay local until bonded back           | `state_at_seal` + `data/frames.json` in egg; PRs are explicit consent. Session cartridges (`brainstem-egg/2.3-session`) carry transcript + sha256-pinned runtime end-to-end. | ✅     |
+| One hatcher routes any cartridge kind            | `rapp_brainstem/agents/egg_hatcher_agent.py` (kernel) introspects manifest schema/type and routes: organism / rapplication / session / neighborhood (planned) / estate (planned). Refuses on unknown kinds. | ✅     |
 
 **Acceptance criteria.** Two devices, both in airplane mode, can:
 1. Open their front doors and chat with each other through the tether QR (no internet, no broker once the channel is open)
 2. Trade an `.egg` over the tether
 3. Each receiver hatches the egg and reads the trade card / persona / agent inventory from the egg's `state_at_seal` block — no GitHub call required
 4. The receiver runs at least one of the agents in the egg via Pyodide locally
+5. *(2026-05-10 addition)* Either operator can run a live tethered group-chat session (vbrainstem.html) where their Coordinator twin executes a structured workflow on their behalf, both screens synced turn-by-turn — the **session itself is portable** as a `.egg` cartridge.
 
 ---
 
