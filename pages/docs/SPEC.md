@@ -936,8 +936,171 @@ that exists today and every one that will exist tomorrow.
 | Version | Tag | Summary |
 |---------|-----|---------|
 | 0.12.2 | `brainstem-v0.12.2` | Agent-first rapplication platform: service discovery in kernel, factory-clean brainstem, 7 RAPPstore rapplications, VibeBuilder, twin mode, rapplication SDK, Constitution Article XX, vBrainstem standalone catalog, installer fixes. |
+| 0.15.x | `brainstem-v0.15.x` | Egg-cartridge unification (§18.10) + vBrainstem tether (§18.11): five-variant `.egg` family (organism / rapplication / session / neighborhood / estate), kernel `egg_hatcher_agent.py` with introspection-based routing, public tethered surface at `pages/vbrainstem.html` (QR pair → WebRTC data channel → multi-participant transcript with Coordinator-twin-driven workflow demo). Session cartridges round-trip through the rappterbox console iframe. Patent: WH-2026-002 §7.21 (private). |
 
 ---
 
-_§18 added 2026-04-24. Future addenda append below this line only;
-edits to §0 through §17 are v2 work._
+### 18.10 The `.egg` cartridge family — unified portable container
+
+> **Added 2026-05-10.** The `.egg` cartridge is the **single sneakernet primitive** across the RAPP ecosystem. Anything portable between brainstems is an egg cartridge, identified by its schema kind. Same `.egg` extension, same rappzoo Pokédex shelf, same drag-drop UX. Adding a new portable artifact kind = adding a row to this table.
+
+#### 18.10.1 The cartridge family table
+
+| Schema | Kind | Container | Payload shape | Hatcher route → destination | Status |
+|---|---|---|---|---|---|
+| `brainstem-egg/2.2-organism` | `organism` | ZIP | rappid + soul + .env + agents + organs + senses + services + .brainstem_data | hatch into `~/.rapp/twins/<rappid>/` (full instance) | shipping |
+| `brainstem-egg/2.2-rapplication` | `rapplication` | ZIP | rappid + agent.py + UI + per-rapp state | install as a planted rapp under host brainstem | shipping |
+| `brainstem-egg/2.3-session` | `session` | JSON | rappid + runtime payload (HTML/JS) + transcript + participants | mount in rappterbox console iframe (or `pages/vbrainstem.html` standalone) | shipping |
+| `brainstem-egg/2.3-neighborhood` | `neighborhood` | ZIP | rappid + neighborhood.json + members.json + agents/ + rapplications/ + ses/ + soul.md + CONSTITUTION.md + rar/index.json | mint a new GitHub repo (or local mirror) acting as a neighborhood gate | planned |
+| `brainstem-egg/2.3-estate` | `estate` | ZIP | public discovery surface + private "bones" repo pointer + sealed PII pointer | re-anchor the operator's whole multi-tier identity on a new substrate | planned |
+
+The full cartridge spec lives at [`kody-w/rappterbox/carts/SCHEMA.md`](https://github.com/kody-w/rappterbox/blob/main/carts/SCHEMA.md). Master packers/unpackers for the ZIP variants live at [`rapp_brainstem/utils/bond.py`](https://github.com/kody-w/RAPP/blob/main/rapp_brainstem/utils/bond.py). The session variant is JSON-only because its payload is structurally one runtime + one transcript (no directory tree to compress).
+
+#### 18.10.2 Routing discipline — `egg_hatcher_agent.py`
+
+The kernel agent at [`rapp_brainstem/agents/egg_hatcher_agent.py`](https://github.com/kody-w/RAPP/blob/main/rapp_brainstem/agents/egg_hatcher_agent.py) is the canonical hatcher. Drop into any brainstem, restart, the LLM gets a `HatchEgg(egg_path=...)` tool. The hatcher accepts a local file path OR a URL, opens the cartridge, **introspects** `manifest.schema` / `manifest.type`, and dispatches:
+
+```
+organism / rapplication  → utils.bond.hatch_*
+session                  → returns mount URL (rappterbox console / vbrainstem.html)
+                           — Python brainstem can't iframe; tells the operator
+neighborhood             → manual GitHub-mint instructions (auto on roadmap)
+estate                   → manual substrate-migration instructions (auto on roadmap)
+unknown                  → REFUSES, never destructive fallback
+```
+
+**The hatcher never guesses.** Unknown cartridge kinds get a clear "I don't know how to hatch this" reply with the cartridge family table; never a silent or destructive fallback.
+
+#### 18.10.3 Compatibility with §8 (HTTP Surface)
+
+The egg cartridge family lives at the **storage / transport layer**, not the HTTP layer. No new `/chat`-style endpoints are introduced. The hatcher is invoked via the existing tool-call surface (`/chat` → LLM → tool_call → `HatchEgg(...)`) — same dispatch any v1 agent uses. §8's frozen endpoints are untouched.
+
+#### 18.10.4 Compatibility with §0 (Sacred Tenet)
+
+The hatcher itself is a **single-file agent** that conforms to §5. It satisfies the agent contract (`name`, `metadata`, `perform()`) and travels via §0's distribution unit. The cartridge family is the *output* of agents (when packing) and the *input* (when hatching) — agents themselves remain the unit.
+
+---
+
+### 18.11 vBrainstem — multi-participant browser-tab session primitive
+
+> **Added 2026-05-10.** The vBrainstem is a public web surface at [`pages/vbrainstem.html`](https://github.com/kody-w/RAPP/blob/main/pages/vbrainstem.html) (live: `https://kody-w.github.io/RAPP/pages/vbrainstem.html`) that hosts a multi-participant collaboration session inside one browser tab. Two devices pair via QR + WebRTC; both screens stay synced; an autonomous Coordinator twin can drive a structured workflow on the operator's behalf. The session is a `brainstem-egg/2.3-session` cartridge per §18.10 — exportable, replayable, transferable.
+
+#### 18.11.1 Roles + transport stack
+
+| Layer | Choice | Why |
+|---|---|---|
+| Signaling | PeerJS public broker (`peerjs.com`) via CDN `unpkg.com/peerjs@1.5.4` | Free, hosted, cross-network, no infra to deploy. Replaceable later by self-hosted signaling without changing the rest. |
+| Data channel | WebRTC ordered reliable | Built into PeerJS. DTLS-SRTP encrypted. Broker drops out after handshake. |
+| Identity (per session) | ECDSA P-256 keypair generated in-browser | Public key fingerprint embedded in the QR; safety-code derivation lets users eyeball-MITM-check before chat starts |
+| QR rendering | `qrious` (canvas, explicit pixel size) | The earlier qrcode-generator with `scalable: true` produced a 0×0 SVG; qrious draws into a real `<canvas>` |
+
+**Two roles:** `host` (Mac, no URL params — owns the LLM dispatch) and `guest` (phone, URL has `?pair=ID&fp=FINGERPRINT` — observer + input source, relays chat through the host over WebRTC). Joiners never need their own LLM access.
+
+#### 18.11.2 LLM backend selection
+
+vBrainstem has three exchangeable LLM backends, all behind the same internal `Doorman.chat({ system, history, message })` API:
+
+| Param | Backend | Notes |
+|---|---|---|
+| *(default)* | Local kernel at `http://localhost:7071/chat` | Best for tab-based collab — real `/chat` with full agent tool routing, no Copilot subscription gate. Joiner (phone) relays LLM calls through the host. |
+| `?brainstem=<URL>` | Custom local kernel | Use a different port or a remote brainstem under operator control. |
+| `?copilot=1` | GitHub Copilot via [`worker/`](https://github.com/kody-w/RAPP/blob/main/worker/) (Doorman) | No localhost dependency. Uses Pyodide-loaded Python agents in-browser as tools (HackerNews, ManageMemory, ContextMemory). Same `RAPP.Doorman` namespace as `pages/sphere.html` (§4 Tier 1 with no localhost). Requires active Copilot subscription on the GitHub account. |
+
+The page-side Pyodide loader fetches `basic_agent.py` + the canonical agents from `raw.githubusercontent.com/kody-w/RAPP/main/rapp_brainstem/agents/` and runs them in-browser when in `?copilot=1` mode. Same agent contract (§5); same `metadata` → OpenAI tool def mapping.
+
+#### 18.11.3 The Coordinator persona
+
+A new role tag joins `operator` / `twin` / `observer`: **`coordinator`**. The Coordinator is the operator's autonomous twin — it issues operator-shaped messages on the operator's behalf so the operator can watch a workflow execute on both screens without typing. The bundled debate-demo workflow ("Reporter fetches HN top story → DebaterA argues for → DebaterB argues against → Editor synthesizes a 5-line newsletter") is driven entirely by the Coordinator.
+
+The Coordinator is one of N participants in the cartridge's `participants[]` array — not a special construct. Other workflows can substitute different driver personas without code changes.
+
+#### 18.11.4 Transcript-as-state + cartridge round-trip
+
+Every event (operator input, twin response, demo-step marker, agent tool dispatch, mic interjection) is appended to the transcript, broadcast over the data channel, and persisted to `localStorage` keyed by session id. Reload hydrates from the cache. **The transcript IS the saved state** — there's no separate "save game" record because every action that produced state is in the transcript.
+
+"Export cart" packs the live page (HTML+JS verbatim, sha256-pinned) + transcript + participants into a `brainstem-egg/2.3-session` cartridge. Drop the resulting `.egg` into the rappterbox console (or back into vbrainstem.html via a future hatch path) → the session reanimates at the captured event index.
+
+#### 18.11.5 Storage edge case — Edge Tracking Prevention
+
+Edge with Tracking Prevention enabled silently blocks `localStorage` on origins it heuristically classifies. The vBrainstem detects this at boot via a probe (`isStorageBlocked()`) and falls back to an in-memory mirror of the auth settings (`_memSettings`) so the session works for the tab lifetime even when localStorage is unavailable. Tradeoff: token doesn't persist across reloads on Edge with strict TP. Page surfaces a yellow warning when the condition is detected, with the exact path to add an exception (Edge → Privacy → Tracking Prevention → exceptions → add `kody-w.github.io`).
+
+#### 18.11.6 Compatibility with v1
+
+- **§5 (Agent Contract):** Untouched. The Pyodide-loaded agents are exactly v1 single-file agents (HackerNewsAgent, ManageMemoryAgent, ContextMemoryAgent — same files used by Tier 1).
+- **§8 (HTTP Surface):** Default backend hits the unchanged Tier 1 `/chat` endpoint. No new endpoints required.
+- **§4 (Three Tiers):** vBrainstem is *not* a fourth tier — it's a presentation surface. The actual LLM tier remains Tier 1 (local), Tier 2 (cloud), or the Doorman path (which is a Tier 1-equivalent backed by Copilot). The cartridge round-trip means a session captured against any tier replays in any tier.
+- **§14 (Versioning):** New optional URL params (`?pair`, `?fp`, `?brainstem`, `?copilot`) per "new optional configuration variables." No breaking changes.
+
+#### 18.11.7 Cross-reference
+
+Patent context (private, not for public spec): WH-2026-002 §7.21 covers the cartridge-as-workflow-session-with-embedded-runtime; §7.22 covers recursive iframe sub-tether (planned); §7.23 covers multi-participant browser-tab with operator-mic priority intervention. See [`kody-w/wildhaven-ceo/legal/patent/WH-2026-002-rappterbox-claim-cluster.md`](https://github.com/kody-w/wildhaven-ceo/blob/main/legal/patent/WH-2026-002-rappterbox-claim-cluster.md) (collaborator-gated).
+
+---
+
+_§18 added 2026-04-24; §18.10–§18.11 added 2026-05-10. Future addenda
+append below this line only; edits to §0 through §17 are v2 work._
+
+---
+
+### 18.12 Companion documents — the rest of the picture
+
+> **Added 2026-05-10.** SPEC.md is the **agent contract + tier model**. The system has grown around it. This index points at the load-bearing companion documents and the Constitutional articles shipped since SPEC was memorialized — so any reader landing on the god spec can find what the god spec deliberately doesn't cover.
+
+#### 18.12.1 Architecture-level companion docs (root-of-repo)
+
+| Doc | Purpose | When to read it |
+|---|---|---|
+| [`HERO_USECASE.md`](https://github.com/kody-w/RAPP/blob/main/HERO_USECASE.md) | The canonical scenarios the platform must satisfy: Charizard-in-the-woods (offline pair), Dream Catcher (parallel-dimension reassimilation), Mom's Mixtape, Pizza Place. Status table per scenario. | Before proposing any structural change — every PR is judged against whether ✅ rows still pass. |
+| [`ECOSYSTEM.md`](https://github.com/kody-w/RAPP/blob/main/ECOSYSTEM.md) | End-to-end layout of a planted organism: file structure, identity stack, surfaces, memory tiers, MMR, evolution, eggs, integrity, Dream Catcher, network modes, surface inventory. | When you need the architecture-level "how does the whole thing fit together." |
+| [`ECOSYSTEM_MAP.md`](https://github.com/kody-w/RAPP/blob/main/ECOSYSTEM_MAP.md) | Single canonical synthesis: schemas, files, decision table, drift gaps. The index that points at the rest. | First — it points at all other specs. |
+| [`OSI.md`](https://github.com/kody-w/RAPP/blob/main/OSI.md) | The 7-layer model: substrate / identity / discovery / channels / trust / envelope / application. Each layer has schemas, impl files, tests. | When figuring out which layer a new feature belongs to. |
+| [`ANTIPATTERNS.md`](https://github.com/kody-w/RAPP/blob/main/ANTIPATTERNS.md) | What we will never do. Locked rules: ONE term for the plugin unit (always `agent`), frozen kernel never moves, no half-released-feature shims, no fallback to "RAPP"/"AI assistant" branding, no network calls without local-first fallback. Append-only. | Before proposing a refactor that adds a new term or changes an established convention. |
+| [`NEIGHBORHOOD_PROTOCOL.md`](https://github.com/kody-w/RAPP/blob/main/NEIGHBORHOOD_PROTOCOL.md) | Twin chat protocol, three concentric trust scopes (personal / neighborhood / public swarm), four channel types (WebRTC tether, Issues, PRs, raw-fetch), four exchange primitives, granular permissions, adversarial walkthrough. | Before adding any cross-organism communication. |
+| [`SUBSTRATE_FEDERATION.md`](https://github.com/kody-w/RAPP/blob/main/SUBSTRATE_FEDERATION.md) | How organisms talk across substrates (GitHub ↔ GitLab ↔ Codeberg ↔ LAN-mesh ↔ AirDrop). Egg cartridges as the substrate-agnostic transport. | When considering anything that assumes "GitHub is the substrate." |
+| [`SURVIVAL.md`](https://github.com/kody-w/RAPP/blob/main/SURVIVAL.md) | Disaster-recovery, kernel rebirth, lineage continuity. What it takes for a planted organism to survive substrate loss / kernel deprecation / operator absence. | When making changes that affect long-term durability. |
+| [`MASTER_PLAN.md`](https://github.com/kody-w/RAPP/blob/main/MASTER_PLAN.md) | The strategic plan — what's coming next, in what order, why. | For roadmap context (not contractual; subject to change). |
+
+#### 18.12.2 Other specs in `pages/docs/`
+
+| Spec | Authority | Cross-reference |
+|---|---|---|
+| [`ESTATE_SPEC.md`](https://github.com/kody-w/RAPP/blob/main/pages/docs/ESTATE_SPEC.md) | The two-tier estate (public discovery + private bones), substrate-agnostic identity continuity. Authority for door catalog + rappid-as-global-address. | Article XLVI, Article XLVIII |
+| [`PUBLIC_PRIVATE_BOUNDARY.md`](https://github.com/kody-w/RAPP/blob/main/pages/docs/PUBLIC_PRIVATE_BOUNDARY.md) | The three-tier estate (public discovery / private bones / on-device PII). PII never in repo by default; four explicit override paths. Workbench primitive. | Article XLVIII, Article XLIX |
+| [`rapplication-sdk.md`](https://github.com/kody-w/RAPP/blob/main/pages/docs/rapplication-sdk.md) | Rapplication best practices: agent-first rule, sneakernet portability invariant (2 files, drag+chat, no shell commands, docstring-as-readme). | §5, §18.5–§18.8 |
+| [`AGENTS.md`](https://github.com/kody-w/RAPP/blob/main/pages/docs/AGENTS.md) | Detailed agent authoring guide. Companion to §5. | §5 |
+| [`VERSIONS.md`](https://github.com/kody-w/RAPP/blob/main/pages/docs/VERSIONS.md) | Schema version registry. | §14 |
+| [`skill.md`](https://github.com/kody-w/RAPP/blob/main/pages/docs/skill.md) | Universal "feed me to any AI" onboarding runbook. The 6-step new-citizen path. | §12 (RAR) |
+| [`ROADMAP.md`](https://github.com/kody-w/RAPP/blob/main/pages/docs/ROADMAP.md) | Per-version near-term plans. | §15 |
+| [`SUBSTRATE_FEDERATION.md`](https://github.com/kody-w/RAPP/blob/main/pages/docs/SUBSTRATE_FEDERATION.md) | (Same content as root-level — the doc moved during reorganization; both paths work.) | Article XLVII.5 |
+
+#### 18.12.3 Constitutional articles shipped after SPEC was memorialized
+
+SPEC.md was frozen 2026-04-17. The Constitution kept moving. Articles XL–XLIX codify primitives that the agent contract (§5) and tier model (§4) take for granted but don't themselves explain.
+
+| Article | Title | What it codifies |
+|---|---|---|
+| XL | Secure-First Plant, Operator-Curated Promotion Later | Plant defaults to private; operator promotes to public via deliberate action. |
+| XLI | The Operator's Experience Is Conversation | Never a token, never a terminal. The brainstem speaks plain English. |
+| XLII | The Virtual Brainstem Is For Mobile Users | Doorman page (`rapp_brainstem/utils/web/index.html`) carries Tier 1 to mobile via GitHub Raw + Issues + PeerJS, no install. |
+| XLIII | Voice In, Voice Out | TTS+STT is a hard requirement at Tier 1, not a feature. The `\|\|\|VOICE\|\|\|` slot is sacred. |
+| XLIV | Neighborhood Collaboration Is Local-First, Cross-Device-Transparent | The "Doorbell" pattern — one operator's organism notifies another's without a server in between. |
+| XLV | The Sphere Is The Front Door | `pages/sphere.html` — implicit doorman summon via 3D sphere tap. Voice-first. |
+| XLVI | Rappid Is The Global Address (Estate Is The Door Catalog) | Every organism has one address; estate maps addresses to URLs by string parsing. |
+| XLVII | Discoverability Without A Central Registry | Publishing IS the signal. Substrate-agnostic federation (XLVII.5). |
+| XLVIII | Public Discovery, Private Substance — the Two-Tier Estate Is Mandatory | Tightened to three-tier in `PUBLIC_PRIVATE_BOUNDARY.md` — PII never in repo by default. |
+| XLIX | A Twin Is A Persistent AI Presence With An Address And A Workbench | Twin lifecycle (mint → bond → fork → die), workbench primitive, sibling-peek. |
+
+#### 18.12.4 What SPEC.md deliberately does NOT cover
+
+The god spec stays narrow on purpose. Each of these is real platform surface, fully documented elsewhere, and intentionally NOT pulled into SPEC:
+
+- Egg packing/unpacking semantics (→ `rapp_brainstem/utils/bond.py` + §18.10 family table)
+- Identity migration and operator key custody (→ `ESTATE_SPEC.md`, `SURVIVAL.md`)
+- LAN federation (Bonjour, AirDrop hand-offs) (→ `SUBSTRATE_FEDERATION.md`, Article XLVII.5)
+- Cross-organism trust scopes / exchange primitives (→ `NEIGHBORHOOD_PROTOCOL.md`)
+- The OSI 7-layer mapping (→ `OSI.md`)
+- Holocard schema, RAR sealing, Binder ECDSA wallet (→ `pages/vault/Architecture/`)
+- Rappterbox console (the iframe-mount surface for session cartridges) (→ `kody-w/rappterbox/`)
+- Patent claim language (→ `kody-w/wildhaven-ceo/legal/patent/`, collaborator-gated)
+
+Reading order if you're new and just landed on SPEC.md: SPEC § 0–5 (the contract) → `HERO_USECASE.md` (what must work) → `ECOSYSTEM_MAP.md` (the index) → `OSI.md` (the layer model) → drill into specific specs as needed.
