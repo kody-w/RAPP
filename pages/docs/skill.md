@@ -145,6 +145,8 @@ All three serve identical-shape JSON envelopes hosted at `raw.githubusercontent.
 
 To browse the federation programmatically, fetch the three index URLs and union them. To install an organism, fetch its `.egg` (or `.py` for bare agents) and either drop it into the brainstem's directories OR ask the brainstem's `egg_hatcher` rapp via `/chat` to install it.
 
+> **2026-05-10:** the `.egg` extension now carries five cartridge kinds (organism / rapplication / session / neighborhood / estate). The kernel agent [`egg_hatcher_agent.py`](../../rapp_brainstem/agents/egg_hatcher_agent.py) introspects any `.egg` from a path or URL, reads `manifest.schema`/`type`, and routes by kind — refusing on unknown kinds. *Session* cartridges are workflow snapshots that mount in a console iframe ([`pages/vbrainstem.html`](../vbrainstem.html) or rappterbox); *neighborhood* and *estate* cartridges are planned. See [SPEC.md §18.10–§18.11](./SPEC.md).
+
 ## The user's universal control plane: rapp-zoo
 
 The [`rapp-zoo`](https://github.com/kody-w/rapp-zoo) (cataloged at `kody-w/RAPP_Store/apps/@rapp/rapp-zoo/`) is the user's Game Boy / Pokédex / holocard binder / federation map. It hatches into the user's brainstem like every other rapplication — endpoints at `/api/rapp_zoo/*`, UI at `/rapp_ui/rapp-zoo/`. **Do not build a parallel UI for managing organisms.** Add tabs to the rapp-zoo instead.

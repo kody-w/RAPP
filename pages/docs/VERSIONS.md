@@ -49,6 +49,24 @@ exists.
 | `brainstem-v0.7.1` | Twin can run rapplications via `<action kind="rapp">` + auto-inject binder context |
 | `brainstem-v0.7.2` | Fixed `rapp.js` 404 + SOUL_RESPONSE_FORMAT template literal breakage |
 | `brainstem-v0.12.2` | Agent-first rapplication platform. Service discovery in kernel (`services/*_service.py` → `/api/<name>`). Factory-clean brainstem (4 core agents, empty `services/`). RAPPstore with 7 rapplications (kanban, webhook, dashboard, vibe_builder, learn_new, swarm_factory + binder/swarms services). VibeBuilder meta-agent generates rapplications from natural language. Twin mode restored with `|||TWIN|||` + action chips. Rapplication SDK (`rapplication-sdk.md`). Constitution Article XX (kernel/extensions/factory-installed rule). vBrainstem: standalone RAPPstore catalog, OS-aware install one-liner, tether default port fix. Login UI polished (green code box, animated dots, model catalog messaging). Windows installer fixes (dep-check SyntaxError, hidden background service, PYTHONIOENCODING, repo-switch detection). `build.sh` vendors services + rsync fallback for Windows. |
+| `brainstem-v0.15.x` | **Egg-cartridge unification + tethered vBrainstem (2026-05-10).** Five-variant `.egg` family: `brainstem-egg/2.3-session` (shipping), `brainstem-egg/2.3-neighborhood` + `brainstem-egg/2.3-estate` (planned), joining the existing `2.2-organism` and `2.2-rapplication`. New kernel agent `egg_hatcher_agent.py` introspects any egg's manifest schema/type and routes by kind (refuses on unknown). New public surface `pages/vbrainstem.html` — multi-participant browser-tab tether with QR-pair WebRTC handshake (PeerJS + ECDSA P-256 + 6-digit safety code), three exchangeable LLM backends (localhost default / `?brainstem=URL` / `?copilot=1` via Doorman + Pyodide), Coordinator-driven debate-demo workflow. Spec additions: SPEC.md §18.10–§18.12. |
+
+## Schema version registry
+
+This table tracks the wire-format schemas currently in use across the
+brainstem ecosystem. New schemas append; old schemas stay resolvable
+forever (same discipline as version tags).
+
+| Schema | Status | Owner | Reference |
+|---|---|---|---|
+| `brainstem-egg/2.0` | legacy | `utils/egg.py` | (legacy twin egg) |
+| `brainstem-egg/2.1` | legacy | `utils/bond.py`, `twin_agent.py` | variant repo cartridge |
+| `brainstem-egg/2.2-organism` | shipping | `utils/bond.py` | full instance cartridge |
+| `brainstem-egg/2.2-rapplication` | shipping | `utils/bond.py` | single rapp cartridge |
+| `brainstem-egg/2.3-session` | shipping (2026-05-10) | `pages/vbrainstem.html` (export); `egg_hatcher_agent.py` (route) | session cartridge — JSON; rappid + sha256-pinned runtime + transcript + participants. Spec: [`kody-w/rappterbox/carts/SCHEMA.md`](https://github.com/kody-w/rappterbox/blob/main/carts/SCHEMA.md) |
+| `brainstem-egg/2.3-neighborhood` | planned | `egg_hatcher_agent.py` (manual instructions for now) | neighborhood gate cartridge |
+| `brainstem-egg/2.3-estate` | planned | `egg_hatcher_agent.py` (manual instructions for now) | operator-identity cartridge — whole multi-tier identity portable across substrates |
+| `rappterbox-cart/0.1` | deprecated | `kody-w/rappterbox/console.html` (loader) | superseded by `brainstem-egg/2.3-session` 2026-05-10; loader accepts both for one release |
 
 ## When cutting a new version (maintainer checklist)
 

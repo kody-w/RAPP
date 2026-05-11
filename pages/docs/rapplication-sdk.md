@@ -11,6 +11,8 @@ A rapplication is the installable unit in the RAPP ecosystem. It's one or two fi
 
 Install = drop files in. Uninstall = delete them. Nothing else.
 
+> **2026-05-10 — distribution unit:** rapplications travel as `brainstem-egg/2.2-rapplication` cartridges in the `.egg` family (one of five kinds; see [SPEC §18.10](./SPEC.md)). Sneakernet portable per the kernel rule below: drag the `.egg` into a target brainstem, the universal [`egg_hatcher_agent.py`](../../rapp_brainstem/agents/egg_hatcher_agent.py) introspects + routes. A live multi-participant collaboration session captured during rapplication use is itself a `brainstem-egg/2.3-session` cartridge — the workflow becomes shareable as a file.
+
 ## The agent-first rule
 
 > **The agent is the API. The service is a view.**

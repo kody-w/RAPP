@@ -12,6 +12,8 @@ Read [SPEC.md](./SPEC.md) before making any architectural changes — it is the 
 
 Everything in this repo exists to serve the single-file agent. If a change breaks this contract, the change is wrong.
 
+**Notable kernel agents** (single-file, conform to the contract above): `basic_agent.py` (base class), `manage_memory_agent.py` + `context_memory_agent.py` (memory R/W via local-storage shim), `hacker_news_agent.py` (HN via Pyodide-friendly fetch), `egg_hatcher_agent.py` (universal `.egg` cartridge router — introspects manifest schema/type and dispatches to the right hatch path; refuses on unknown kinds; per [SPEC §18.10](./SPEC.md)).
+
 ## Commands
 
 ```bash

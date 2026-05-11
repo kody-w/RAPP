@@ -106,7 +106,7 @@ Plus the metropolis tracker pattern (`pages/metropolis/index.json`, schema `rapp
 - (Issues/PRs/raw use HTTP/JSON; no RAPP-specific transport schema)
 
 **Implementation.**
-- 4a tether: `installer/plant.sh` writes the pair button + autoRenderTetherQR; PeerJS in browser
+- 4a tether: `installer/plant.sh` writes the pair button + autoRenderTetherQR (doorman). `pages/vbrainstem.html` is the public canonical implementation — multi-participant, ECDSA P-256 keypair + 6-digit safety code, host-owns-LLM relay (see SPEC §18.11). Both use the PeerJS public broker.
 - 4b Issues: `cachedGhJson('/repos/.../issues?labels=...')`
 - 4c PRs: `gh pr create` from `learn_new_agent.py` and the front door's "Propose an agent" pane
 - 4d raw fetch: `cachedGhJson` / `cachedGhText` wrappers — REQUIRED per ANTIPATTERNS §5
@@ -158,6 +158,9 @@ Plus `public_facets` per §7 — operator declares which aspects of the organism
 - `rapp-twin-chat/1.0` — inter-twin message envelope (NEIGHBORHOOD_PROTOCOL §6a). Fields: `schema`, `from_rappid`, `to_rappid`, `utc`, `kind` (one of: `say` / `share-fact` / `share-egg` / `request-fact` / `ack`), `payload`, `facets`
 - `brainstem-egg/2.2-organism` — full instance cartridge
 - `brainstem-egg/2.2-rapplication` — single rapp cartridge
+- `brainstem-egg/2.3-session` — workflow-session cartridge (JSON; rappid + sha256-pinned runtime + transcript + participants); shipping 2026-05-10. Per SPEC §18.10–§18.11.
+- `brainstem-egg/2.3-neighborhood` *(planned)* — neighborhood gate cartridge (ZIP)
+- `brainstem-egg/2.3-estate` *(planned)* — operator-identity-portable cartridge (ZIP)
 - `rapp-egg-provenance/1.0` — file hashes + manifest hash + origin commit SHA
 - `rapp-organism-state/1.0` — state_at_seal block
 - `rapp-frame/1.0` — content-addressed mutation event (prev_hash chain)
@@ -165,8 +168,10 @@ Plus `public_facets` per §7 — operator declares which aspects of the organism
 
 **Implementation.**
 - `rapp_brainstem/agents/twin_agent.py::_chat` — emits + consumes `rapp-twin-chat/1.0`
-- `rapp_brainstem/utils/bond.py` — packs + verifies eggs
+- `rapp_brainstem/utils/bond.py` — packs + verifies organism + rapplication eggs
 - `rapp_brainstem/utils/egg.py` — legacy egg utilities
+- `pages/vbrainstem.html::exportCart` — emits `brainstem-egg/2.3-session` cartridges
+- `rapp_brainstem/agents/egg_hatcher_agent.py` — universal hatcher; introspects egg manifest schema/type and routes by kind (organism / rapplication / session / neighborhood / estate); refuses on unknown kinds
 - `tests/doorman/dreamcatcher.mjs` — `rapp-frame/1.0` chain validation
 
 **Tests.** `tests/osi/L6-envelope.sh` — verifies (a) all 5 `rapp-twin-chat/1.0` `kind` values round-trip between two test brainstems; (b) egg pack → SHA verify → hatch produces identical content; (c) `rapp-egg-provenance/1.0` hashes catch tampering; (d) `rapp-frame/1.0` prev_hash chain is unbroken (synthetic 5-frame chain). Plus `tests/osi/L6a-frame-chain-browser.sh` (Playwright, --with-browser) — drives the real `appendFrame()` in plant.sh's doorman + verifies Dream Catcher reassimilation classifies shared / new / contradiction correctly per HERO_USECASE.md §2 doctrine.

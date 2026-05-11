@@ -21,6 +21,15 @@
       ]
     },
     {
+      "key": "surface",
+      "label": "Surfaces",
+      "description": "Live runnable artifacts at pages/ root — single-file, self-contained, no build step.",
+      "pages": [
+        { "path": "vbrainstem.html", "title": "vBrainstem · Tethered", "audience": "Operator + 1 collaborator", "description": "Multi-participant browser-tab tether. Open on Mac, scan the QR with phone, both screens stay synced as the autonomous Coordinator twin runs a workflow on your behalf. WebRTC data channel (PeerJS broker for handshake, ECDSA P-256 keypair + 6-digit safety code), three exchangeable LLM backends (localhost default / ?brainstem=URL / ?copilot=1 via Doorman + Pyodide). Session exports as a brainstem-egg/2.3-session cartridge. Spec: SPEC §18.11." },
+        { "path": "sphere.html",     "title": "Sphere · 3D doorman",   "audience": "Mobile-first visitor",      "description": "3D Three.js sphere as the implicit doorman summon. Voice-first. Per Constitution Article XLV." }
+      ]
+    },
+    {
       "key": "product",
       "label": "Product",
       "description": "What the platform actually does, with examples.",

@@ -3774,3 +3774,60 @@ If you find a place in the platform that uses "twin" without obeying this articl
 This article formalizes a primitive that already existed; it does not break any existing twin. Existing planted twins (BillTwin, kody-twin, heimdall, tide-brainstem, lumen-brainstem, echo-brainstem, sim-demo-twin) continue to function. The only new requirement is conformance with §XLIX.4 (workbench peek discipline) when the twin is running on a brainstem that hosts other twins. Workbench paths that don't yet exist for an existing twin can be created by the operator on first peek-attempt (the brainstem auto-creates the empty workbench dir + meta.json with `twin_rappids: [<this twin's rappid>]` and `peers_visible: true`).
 
 **Why this is constitutional and not a library choice:** the loose use of "twin" across the platform was an inconsistency that made the substrate harder to reason about. Operators building planted twins didn't have a reference for what "twin" meant; agents that wanted to read twin state didn't know where to look; collaborators planting twin-shaped things into RAPP had to derive the contract by reading source code. This article is the reference implementation in prose. The substrate is more usable when its primitives are named and defined; this article names "twin."
+
+## Article L — The `.egg` Is The Universal Portable Unit (One Extension, Many Kinds)
+
+> **DRAFT — appended by AI 2026-05-10. Operator should review, refine the cadence to match XLVII–XLIX, and either ratify or rewrite. The principle below is correct; the prose may need the operator's voice.**
+
+> **Across the substrate, `.egg` is the only portable container.** An organism is a `.egg`. A rapplication is a `.egg`. A workflow session is a `.egg`. A neighborhood gate is a `.egg`. An estate is a `.egg`. Same extension, same Pokédex shelf, same drag-drop UX, one universal hatcher (`egg_hatcher_agent.py`) that introspects the cartridge and routes by kind. There is one portable unit in this platform; everything else is a variant.
+
+The five kinds (`organism` / `rapplication` / `session` / `neighborhood` / `estate`) live under one schema family `brainstem-egg/2.x-<kind>`. The hatcher reads the manifest, dispatches by kind, **refuses on unknown kinds**, never silently or destructively guesses. New portable artifact = new row in the family table; not a new file format.
+
+### L.1 — Why one extension (and not five)
+
+Operators don't think in schemas. They think in "I have a thing; how do I share it?" The answer must be the same regardless of what the thing is: drop the `.egg` on the next device, the universal hatcher figures out what to do with it. Five extensions would mean operators learning five names; five Pokédex shelves; five sneakernet conventions. We refuse that. One extension. One mental model.
+
+### L.2 — The five kinds (canonical table)
+
+See `pages/docs/SPEC.md` §18.10 for the authoritative family table and `kody-w/rappterbox/carts/SCHEMA.md` for the session-variant spec. Two kinds (organism + rapplication) ship as ZIP because they have directory trees; one kind (session) ships as JSON because its payload is structurally one runtime + one transcript; two kinds (neighborhood + estate) are planned as ZIP. Container shape is local to the kind; the `.egg` extension is universal.
+
+### L.3 — The hatcher refuses, never guesses
+
+The kernel `egg_hatcher_agent.py` (per Article XX, lives at `rapp_brainstem/agents/`) is the only thing that decides where a cartridge hatches. It MUST:
+
+- Read the cartridge from a local path or URL
+- Introspect `manifest.schema` and `manifest.type`
+- Dispatch by recognized kind, OR
+- Return a clear "unknown cartridge kind — operator action required" message naming the family table
+
+It MUST NOT:
+
+- Default to a fallback hatch path on unknown kinds
+- Silently re-classify (treat an unknown as if it were an organism)
+- Destructively write to the operator's filesystem on an unrecognized cartridge
+
+This is the same discipline as Article XLVII (no central registry — refuse to invent one if asked) and Article XLVIII (no PII in repo by default — refuse to silently put it there). Refusal is a feature.
+
+### L.4 — Backwards compatibility (the deprecation discipline)
+
+Old schemas never die. `brainstem-egg/2.0` (legacy twin egg), `brainstem-egg/2.1` (variant repo), and `rappterbox-cart/0.1` (the pre-unification session schema) MUST remain readable by their loaders forever — same discipline as Article XXIII (vault is append-only) and as version-tag immutability per `pages/docs/VERSIONS.md`. The hatcher can prefer new schemas, but it MUST NOT reject old ones.
+
+### L.5 — Where the cartridges travel
+
+A `.egg` of any kind MUST round-trip across all five substrates of Article XLVII.5 + the WebRTC tether of SPEC §18.11 without loss. AirDrop a session-egg, hatch it on the receiver, replay the transcript identically. Sneakernet an estate-egg, re-anchor it on a new substrate, the operator's whole multi-tier identity continues. The cartridge is the substrate-agnostic transport unit; the substrate is the transport.
+
+### L.6 — Cross-references
+
+- **`pages/docs/SPEC.md` §18.10** — the canonical family table + version registry
+- **`kody-w/rappterbox/carts/SCHEMA.md`** — the session-variant spec
+- **`rapp_brainstem/agents/egg_hatcher_agent.py`** — the universal hatcher implementation
+- **`rapp_brainstem/utils/bond.py`** — master packer/unpacker for organism + rapplication ZIP variants
+- **Article XLVII.5** — the four substrates the cartridges travel across
+- **Article XLVIII** — the two-tier estate that an `estate`-egg captures
+- **Article XLIX** — twins that a `session`-egg lets you watch live across two devices
+- **`pages/vault/Decisions/2026-05-10 — Egg cartridge unification + tethered vBrainstem ship.md`** — the WHY behind this article
+
+### L.7 — What this article does NOT do
+
+This article does not invent the cartridge family — it formalizes what shipped 2026-05-10. The previous status was: organism + rapplication shipping as `.egg` per `bond.py`, but session shipping as `.cart.json` per the freshly-invented `rappterbox-cart/0.1` schema, and no convention yet for neighborhood or estate. The unification consolidated those into one extension with one hatcher. The article protects the convention going forward — anyone proposing a new portable artifact MUST add a row to the family table, not invent a new extension.
+

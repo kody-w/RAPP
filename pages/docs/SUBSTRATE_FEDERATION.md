@@ -20,6 +20,9 @@ The four substrates form a ladder of decreasing connectivity requirements:
 | 2 | LAN HTTP + Bonjour mDNS | Shared LAN | XLVII.5.1 | `tools/lan_advertise.py` + `tools/sniff_network.py --via bonjour` |
 | 3 | Egg cartridge over AirDrop | Wi-Fi Direct (no shared net) | XLVII.5.2 | The `.egg` itself + bundled `lan-quickstart.sh` |
 | 4 | Sneakernet via `file://` | **Zero — just byte exchange** | XLVII.5.3 | `tools/import_peer_egg.py` (extract + add to local seed) |
+| 5 | WebRTC tether (operator-pair, ephemeral) | Internet (broker for handshake only); P2P after | XLIX (Twin) + SPEC §18.11 | `pages/vbrainstem.html` (QR-pair → ECDSA P-256 + 6-digit safety code → DTLS-SRTP data channel) |
+
+> **Note (2026-05-10):** Substrate #5 (WebRTC tether) carries **live multi-participant sessions** — both peers see the same evolving transcript, the host runs the LLM, the joiner relays through. The session itself is portable as a `brainstem-egg/2.3-session` cartridge (egg-cartridge family — see [`SPEC.md` §18.10–§18.11](./SPEC.md)), so a tether session can be dropped onto Substrate #3 (AirDrop) or #4 (file://) for offline replay. The **egg-cartridge family** (`organism` / `rapplication` / `session` / `neighborhood` / `estate`) is the substrate-agnostic transport unit across all five substrates.
 
 **Same protocol on all four:**
 - Same `rapp-network-beacon/1.1` JSON shape for beacons

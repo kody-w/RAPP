@@ -6,6 +6,19 @@ no frameworks, no new primitives where an existing pattern will do.
 
 ---
 
+## Recently shipped
+
+### 2026-05-10 — `.egg` cartridge unification + tethered vBrainstem
+
+**Status:** SHIPPED. See [SPEC.md §18.10–§18.12](./SPEC.md).
+
+- **Egg-cartridge family.** Five variants under one `.egg` extension, one rappzoo Pokédex shelf, one introspection-routing kernel agent ([`egg_hatcher_agent.py`](../../rapp_brainstem/agents/egg_hatcher_agent.py)): `brainstem-egg/2.2-organism` (shipping), `2.2-rapplication` (shipping), `2.3-session` (shipping), `2.3-neighborhood` (planned), `2.3-estate` (planned).
+- **Tethered vBrainstem.** Public surface at [`pages/vbrainstem.html`](../vbrainstem.html). Multi-participant browser-tab brainstem with QR-pair WebRTC handshake (PeerJS broker + ECDSA P-256 keypair + 6-digit safety code), three exchangeable LLM backends (localhost default / `?brainstem=URL` / `?copilot=1` via Doorman + Pyodide-loaded Python agents), Coordinator-driven debate-demo workflow, transcript-as-cartridge round-trip.
+
+**Next on this thread:** automate `neighborhood` and `estate` hatch paths in `egg_hatcher_agent.py` (currently they return manual instructions). When those land, .egg = absolute parity across organism / rapplication / session / neighborhood / estate.
+
+---
+
 ## Native GUI installer for non-technical users
 
 **Status:** proposed · **Shape:** OS-native installer package · **Depends on:** background service (shipped)

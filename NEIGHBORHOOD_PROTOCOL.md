@@ -120,6 +120,8 @@ Device A ─── PeerJS broker ──── Device B
 
 The tether is **ephemeral** — closing the tab terminates it. State accumulated during the tether (memories, agent calls, frames) lives in the local frame log of each side and can be reassimilated to the canonical organism via PR after the fact.
 
+> **Updated 2026-05-10:** the canonical public implementation of 5a is [`pages/vbrainstem.html`](./pages/vbrainstem.html) (live at `https://kody-w.github.io/RAPP/pages/vbrainstem.html`). Multi-participant browser-tab session, ECDSA P-256 keypair + 6-digit safety code, three exchangeable LLM backends (localhost default / `?brainstem=URL` / `?copilot=1` via Doorman). The session itself is portable as a `brainstem-egg/2.3-session` cartridge — close the tab and the transcript replays anywhere via the universal `egg_hatcher_agent.py`. See [SPEC.md §18.11](./pages/docs/SPEC.md) for the full primitive.
+
 ### 5b. GitHub Issues (asynchronous, durable)
 
 Each organism's seed repo accepts Issues with predefined labels. The protocol reserves these labels:

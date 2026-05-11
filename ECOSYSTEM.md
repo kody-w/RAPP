@@ -359,9 +359,19 @@ The 🌱 Propose-an-agent pane drafts a `BasicAgent` skeleton, accepts the visit
 
 ---
 
-## 8. Egg cartridges — portable organisms
+## 8. Egg cartridges — portable organisms (and other portable units)
 
 Eggs are zip archives matching the `brainstem-egg/2.2-organism` schema. Two tiers (front door exports doorman; doorman exports ascended).
+
+> **Updated 2026-05-10:** the egg-cartridge family expanded. The `.egg` extension now carries five kinds, all addressable through the same kernel `egg_hatcher_agent.py` (introspects `manifest.schema`/`type`, routes by kind, refuses on unknown). See [`pages/docs/SPEC.md` §18.10](./pages/docs/SPEC.md) for the canonical family table and [`kody-w/rappterbox/carts/SCHEMA.md`](https://github.com/kody-w/rappterbox/blob/main/carts/SCHEMA.md) for the session-variant spec.
+>
+> | Schema | Kind | Container | Hatch destination | Status |
+> |---|---|---|---|---|
+> | `brainstem-egg/2.2-organism` | `organism` | ZIP | `~/.rapp/twins/<rappid>/` | shipping |
+> | `brainstem-egg/2.2-rapplication` | `rapplication` | ZIP | planted rapp under host | shipping |
+> | `brainstem-egg/2.3-session` | `session` | JSON | rappterbox console iframe / `pages/vbrainstem.html` | shipping |
+> | `brainstem-egg/2.3-neighborhood` | `neighborhood` | ZIP | mint new GitHub repo / local mirror | planned |
+> | `brainstem-egg/2.3-estate` | `estate` | ZIP | re-anchor whole identity on new substrate | planned |
 
 ### Doorman tier — anyone can export
 Layout:

@@ -30,6 +30,8 @@ But a **two-tier-with-PII-in-private** estate is also broken — see §1.5. The 
 
 ---
 
+> **2026-05-10 cartridge cross-reference:** the operator's whole multi-tier estate (this document's three tiers — public discovery + private bones + on-device PII) is itself portable as a planned `brainstem-egg/2.3-estate` cartridge. Substrate migration (GitHub → GitLab → Codeberg → LAN-mirror) lifts the entire estate via one egg, hatched on the new substrate by [`egg_hatcher_agent.py`](../rapp_brainstem/agents/egg_hatcher_agent.py). See [SPEC.md §18.10](./SPEC.md) family table.
+
 ## §1.5 — Why the private repo doesn't hold PII by default (the 2026-05-10 tightening)
 
 The original spec described the private estate as "where PII lives." That description traded one threat model for another:

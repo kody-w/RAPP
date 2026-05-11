@@ -60,6 +60,8 @@ No build step, linter, or type checker is configured.
 | `index.html` | Built-in web UI served at `/` |
 | `VERSION` | Semantic version string (currently 0.4.0) |
 | `CONSTITUTION.md` | Governance doc defining what belongs in this repo |
+| `agents/egg_hatcher_agent.py` | Universal `.egg` cartridge router (added 2026-05-10). Drop into a brainstem, restart, the LLM gets a `HatchEgg(egg_path=...)` tool. Reads any `.egg` from a local path or URL, **introspects** `manifest.schema`/`type`, and routes by kind: organism / rapplication / session / neighborhood / estate. Never guesses on unknown kinds. See `pages/docs/SPEC.md` §18.10 for the cartridge family. |
+| `utils/bond.py` | Master egg packer/unpacker for organism + rapplication ZIP cartridges. The cartridge family lives at `brainstem-egg/2.x` schemas. |
 
 ## Writing Agents
 

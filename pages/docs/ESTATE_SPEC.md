@@ -6,6 +6,8 @@ This is the load-bearing spec for **how any door (twin or neighborhood) is disco
 
 If you are writing a planter, an estate agent, a federation walker, a holocard renderer, a discovery UI, or any code that maps from "I have a rappid" → "I want to read the door" — this spec is the contract. There are no fallbacks; the spec describes what is true.
 
+> **2026-05-10 — estate is portable:** the entire estate (every door, every rappid, the door catalog, the public/private/on-device tiers per [`PUBLIC_PRIVATE_BOUNDARY.md`](./PUBLIC_PRIVATE_BOUNDARY.md)) is a planned `brainstem-egg/2.3-estate` cartridge. Substrate-migrate the whole identity by exporting → AirDropping/sneakernetting → re-anchoring on the new substrate via [`egg_hatcher_agent.py`](../../rapp_brainstem/agents/egg_hatcher_agent.py). The estate cartridge is the missing identity-portability primitive — paired with the rappid-as-global-address property below, the operator's whole digital identity becomes substrate-agnostic. See [SPEC.md §18.10](./SPEC.md) family table.
+
 ---
 
 ## 1. The rappid IS the URL
