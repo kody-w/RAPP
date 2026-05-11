@@ -297,8 +297,15 @@ function Stage-BrainstemFramework {
 # Run the framework's bond.py CLI. Picks the freshest copy of bond.py
 # available — staged one during a bond, installed one otherwise.
 # bond.py is stdlib-only so it works before the venv is built.
+#
+# NOTE: the parameter is named $BondArgs (NOT $Args). PowerShell reserves
+# $Args as an automatic variable inside functions, and naming a parameter
+# $Args makes @Args silently splat the (empty) automatic instead of the
+# passed-in array — invoking `python -m utils.bond` with no subcommand
+# and exiting non-zero. That bug is what halted Windows installs that
+# tried to upgrade an existing v0.4.x kernel.
 function Invoke-Bond {
-    param([string]$Stage, [string[]]$Args)
+    param([string]$Stage, [string[]]$BondArgs)
     $bondRoot = $null
     if (Test-Path "$Stage\rapp_brainstem\utils\bond.py") {
         $bondRoot = "$Stage\rapp_brainstem"
@@ -312,11 +319,52 @@ function Invoke-Bond {
     if (-not $py) { return 3 }
     Push-Location $bondRoot
     try {
-        & $py.Source -m utils.bond @Args 2>&1 | Out-Null
+        & $py.Source -m utils.bond @BondArgs 2>&1 | Out-Null
         return $LASTEXITCODE
     } finally {
         Pop-Location
     }
+}
+
+# Subdirectories that count as "extension surface" — safe to refresh
+# additively (copy NEW files only) over an existing kernel without
+# touching the kernel's sacred files (brainstem.py / basic_agent.py /
+# function_app.py / soul.md / .env / .brainstem_data).
+$Script:NON_KERNEL_SUBTREES = @(
+    "agents",
+    "utils\organs",
+    "utils\senses",
+    "utils\services",
+    "utils\reserved_agents",
+    "utils\body_functions",
+    "utils\web"
+)
+
+function Refresh-NonKernelSurface {
+    param([string]$Stage, [string]$SrcRoot)
+    $stageRoot = Join-Path $Stage "rapp_brainstem"
+    $added = 0
+    $skipped = 0
+    foreach ($sub in $Script:NON_KERNEL_SUBTREES) {
+        $stageDir = Join-Path $stageRoot $sub
+        $destDir  = Join-Path $SrcRoot $sub
+        if (-not (Test-Path $stageDir)) { continue }
+        if (-not (Test-Path $destDir)) {
+            New-Item -ItemType Directory -Force -Path $destDir | Out-Null
+        }
+        Get-ChildItem -Recurse -File $stageDir | ForEach-Object {
+            $rel = $_.FullName.Substring($stageDir.Length).TrimStart('\')
+            $destFile = Join-Path $destDir $rel
+            if (Test-Path $destFile) { $skipped++; return }
+            $destParent = Split-Path $destFile -Parent
+            if (-not (Test-Path $destParent)) {
+                New-Item -ItemType Directory -Force -Path $destParent | Out-Null
+            }
+            Copy-Item -Force $_.FullName $destFile
+            $added++
+        }
+    }
+    return @{ added = $added; skipped = $skipped }
 }
 
 function Install-Brainstem {
@@ -330,112 +378,80 @@ function Install-Brainstem {
     $SrcRoot = "$BRAINSTEM_HOME\src\rapp_brainstem"
     $VerFile = "$SrcRoot\VERSION"
     $Stage = "$BRAINSTEM_HOME\.framework_stage"
-    $EggPath = "$BRAINSTEM_HOME\.bond\last-pre-bond.egg"
     $RappidFile = "$BRAINSTEM_HOME\rappid.json"
+    $KernelExists = Test-Path "$SrcRoot\brainstem.py"
     $LegacyGit = (Test-Path "$BRAINSTEM_HOME\src\.git")
 
-    if ((Test-Path $VerFile) -or $LegacyGit) {
-        # ── EXISTING ORGANISM: bond cycle (egg → overlay → hatch) ──
+    # ── KERNEL-PRESERVING REFRESH (default for any existing install) ──
+    # Per CONSTITUTION: kernel files (brainstem.py / basic_agent.py /
+    # function_app.py) are sacred and never edited in place. Once a kernel
+    # exists, leave it alone. Refresh the non-kernel surface (agents/,
+    # organs/, senses/, services/, web/) additively — new files only, no
+    # overwrites of customized files. If anything ends up broken, the
+    # local LLM heals it via /chat. Set BRAINSTEM_FORCE_KERNEL_REFRESH=1
+    # to override (full overlay; the old egg→overlay→hatch path is gone).
+    if ($KernelExists -or $LegacyGit) {
         $LocalVer = "0.0.0"
         if (Test-Path $VerFile) { $LocalVer = (Get-Content $VerFile -Raw).Trim() }
-        try { $RemoteVer = (Invoke-WebRequest -Uri $REMOTE_VERSION_URL -UseBasicParsing -TimeoutSec 5).Content.Trim() } catch { $RemoteVer = "0.0.0" }
+        try { $RemoteVer = (Invoke-WebRequest -Uri $REMOTE_VERSION_URL -UseBasicParsing -TimeoutSec 5).Content.Trim() } catch { $RemoteVer = $LocalVer }
 
-        Write-Host "  Local:  v$LocalVer"
+        Write-Host "  Local:  v$LocalVer (kernel preserved)"
         Write-Host "  Target: v$RemoteVer"
 
-        if (($LocalVer -eq $RemoteVer) -and (-not $LegacyGit)) {
-            Write-Host "  [OK] Already up to date (v$LocalVer)" -ForegroundColor Green
-            # Adopt legacy installs into the lineage system on the way through.
-            if (-not (Test-Path $RappidFile)) {
-                Invoke-Bond -Stage $Stage -Args @("mint-rappid", $BRAINSTEM_HOME) | Out-Null
-                Invoke-Bond -Stage $Stage -Args @("record-bond", $BRAINSTEM_HOME, "adoption", "--to-version", $LocalVer, "--note", "Existing organism adopted into lineage system") | Out-Null
+        # Try to fetch the framework so we can refresh non-kernel files.
+        # If the network or git fails, that's fine — keep existing as-is.
+        $stageOK = Stage-BrainstemFramework -Stage $Stage
+        if ($stageOK) {
+            # Scrub legacy .git so future installs don't treat this as a clone.
+            if ($LegacyGit) {
+                Remove-Item -Recurse -Force "$BRAINSTEM_HOME\src\.git" -ErrorAction SilentlyContinue
+                Write-Host "  Detached from upstream git clone (kernel files untouched)" -ForegroundColor Yellow
+            }
+            $refresh = Refresh-NonKernelSurface -Stage $Stage -SrcRoot $SrcRoot
+            if (-not (Test-Path $SrcRoot)) { New-Item -ItemType Directory -Force -Path $SrcRoot | Out-Null }
+            # Bump VERSION so downstream tooling reads the new target.
+            Set-Content -Path $VerFile -Value $RemoteVer -NoNewline
+            Remove-Item -Recurse -Force $Stage -ErrorAction SilentlyContinue
+            Write-Host ("  [OK] Refreshed surface: {0} new file(s) added, {1} preserved (kernel + customized files untouched)" -f $refresh.added, $refresh.skipped) -ForegroundColor Green
+        } else {
+            Write-Host "  [!] Couldn't fetch updates — keeping existing install as-is" -ForegroundColor Yellow
+            Remove-Item -Recurse -Force $Stage -ErrorAction SilentlyContinue
+        }
+
+        # Mint rappid for legacy organisms that never had one.
+        if (-not (Test-Path $RappidFile)) {
+            Invoke-Bond -Stage "" -BondArgs @("mint-rappid", $BRAINSTEM_HOME) | Out-Null
+            Invoke-Bond -Stage "" -BondArgs @("record-bond", $BRAINSTEM_HOME, "adoption", "--to-version", $LocalVer, "--note", "Existing organism adopted into lineage system") | Out-Null
+            if (Test-Path $RappidFile) {
                 Write-Host "  [OK] Adopted into lineage (rappid minted)" -ForegroundColor Green
             }
-            return
         }
-
-        if ($LegacyGit) {
-            Write-Host "  Detaching from upstream RAPP repo (no longer a git clone)..." -ForegroundColor Yellow
-        }
-        Write-Host "  Bonding v$LocalVer -> v$RemoteVer..."
-
-        # 1. Stage the new framework
-        if (-not (Stage-BrainstemFramework -Stage $Stage)) {
-            Write-Host "  [X] Failed to fetch framework — keeping existing install" -ForegroundColor Red
-            Remove-Item -Recurse -Force $Stage -ErrorAction SilentlyContinue
-            exit 1
-        }
-        $ToCommit = ""
-        try { $ToCommit = (git -C $Stage rev-parse HEAD 2>$null).Trim() } catch {}
-
-        # 2. Mint rappid if missing (legacy install adoption — egg about to be
-        # packed needs identity).
-        if (-not (Test-Path $RappidFile)) {
-            Invoke-Bond -Stage $Stage -Args @("mint-rappid", $BRAINSTEM_HOME, "--parent-commit", $ToCommit) | Out-Null
-            Invoke-Bond -Stage $Stage -Args @("record-bond", $BRAINSTEM_HOME, "adoption", "--from-version", $LocalVer, "--note", "Adopted at first bond") | Out-Null
-            Write-Host "  [OK] Minted rappid for legacy organism" -ForegroundColor Green
-        }
-
-        # 3. Egg the current organism (full cartridge: identity + soul + .env +
-        # agents + organs + senses + services + .brainstem_data).
-        New-Item -ItemType Directory -Force -Path "$BRAINSTEM_HOME\.bond" | Out-Null
-        $eggResult = Invoke-Bond -Stage $Stage -Args @("egg", $BRAINSTEM_HOME, $EggPath, "--kernel-version", $LocalVer, "--src", $SrcRoot)
-        if ($eggResult -eq 0 -and (Test-Path $EggPath)) {
-            $eggKB = [math]::Round((Get-Item $EggPath).Length / 1024, 1)
-            Write-Host "  [Egg] Egged organism ($eggKB KB) -> $EggPath" -ForegroundColor Green
-        } else {
-            Write-Host "  [!] Egg failed — bond will skip the hatch-back step" -ForegroundColor Yellow
-            $EggPath = $null
-        }
-
-        # 4. Scrub legacy .git
-        if ($LegacyGit) { Remove-Item -Recurse -Force "$BRAINSTEM_HOME\src\.git" -ErrorAction SilentlyContinue }
-
-        # 5. Overlay new kernel
-        if (-not (Test-Path $SrcRoot)) { New-Item -ItemType Directory -Force -Path $SrcRoot | Out-Null }
-        Copy-Item -Recurse -Force "$Stage\rapp_brainstem\*" $SrcRoot
-        Remove-Item -Recurse -Force $Stage -ErrorAction SilentlyContinue
-        Write-Host "  [Overlay] New kernel layered onto src\rapp_brainstem" -ForegroundColor Green
-
-        # 6. Hatch the egg back over the new kernel
-        if ($EggPath -and (Test-Path $EggPath)) {
-            $hatchResult = Invoke-Bond -Stage $Stage -Args @("hatch", $BRAINSTEM_HOME, $EggPath, "--src", $SrcRoot)
-            if ($hatchResult -eq 0) {
-                Write-Host "  [Hatch] Egg restored over new kernel" -ForegroundColor Green
-            } else {
-                Write-Host "  [!] Hatch reported errors — egg preserved at $EggPath" -ForegroundColor Yellow
-            }
-        }
-
-        # 7. Bond log + incarnations bump
-        Invoke-Bond -Stage $Stage -Args @("bump-incarnations", $BRAINSTEM_HOME) | Out-Null
-        Invoke-Bond -Stage $Stage -Args @("record-bond", $BRAINSTEM_HOME, "bond", "--from-version", $LocalVer, "--to-version", $RemoteVer, "--to-commit", $ToCommit) | Out-Null
-
-        Write-Host "  [OK] Bond complete: v$LocalVer -> v$RemoteVer (rappid preserved)" -ForegroundColor Green
-    } else {
-        if (Test-Path "$BRAINSTEM_HOME\src") {
-            Remove-Item -Recurse -Force "$BRAINSTEM_HOME\src" -ErrorAction SilentlyContinue
-        }
-        Write-Host "  Fetching framework..."
-        if (-not (Stage-BrainstemFramework -Stage $Stage)) {
-            Write-Host "  [X] Failed to fetch framework" -ForegroundColor Red
-            Remove-Item -Recurse -Force $Stage -ErrorAction SilentlyContinue
-            exit 1
-        }
-        $ToCommit = ""
-        try { $ToCommit = (git -C $Stage rev-parse HEAD 2>$null).Trim() } catch {}
-        $RemoteVer = (Get-Content "$Stage\rapp_brainstem\VERSION" -Raw).Trim()
-
-        New-Item -ItemType Directory -Force -Path "$BRAINSTEM_HOME\src" | Out-Null
-        Copy-Item -Recurse -Force "$Stage\rapp_brainstem" "$BRAINSTEM_HOME\src\"
-        Remove-Item -Recurse -Force $Stage -ErrorAction SilentlyContinue
-
-        # Birth event — mint identity, log it. rappid is set ONCE per
-        # machine and survives every future bond.
-        Invoke-Bond -Stage $Stage -Args @("mint-rappid", $BRAINSTEM_HOME, "--parent-commit", $ToCommit) | Out-Null
-        Invoke-Bond -Stage $Stage -Args @("record-bond", $BRAINSTEM_HOME, "birth", "--to-version", $RemoteVer, "--to-commit", $ToCommit) | Out-Null
-        Write-Host "  [Egg] Organism born — rappid minted, framework v$RemoteVer hatched" -ForegroundColor Green
+        return
     }
+
+    # ── FRESH BIRTH (no existing kernel) ─────────────────────────────
+    if (Test-Path "$BRAINSTEM_HOME\src") {
+        Remove-Item -Recurse -Force "$BRAINSTEM_HOME\src" -ErrorAction SilentlyContinue
+    }
+    Write-Host "  Fetching framework..."
+    if (-not (Stage-BrainstemFramework -Stage $Stage)) {
+        Write-Host "  [X] Failed to fetch framework" -ForegroundColor Red
+        Remove-Item -Recurse -Force $Stage -ErrorAction SilentlyContinue
+        exit 1
+    }
+    $ToCommit = ""
+    try { $ToCommit = (git -C $Stage rev-parse HEAD 2>$null).Trim() } catch {}
+    $RemoteVer = (Get-Content "$Stage\rapp_brainstem\VERSION" -Raw).Trim()
+
+    New-Item -ItemType Directory -Force -Path "$BRAINSTEM_HOME\src" | Out-Null
+    Copy-Item -Recurse -Force "$Stage\rapp_brainstem" "$BRAINSTEM_HOME\src\"
+    Remove-Item -Recurse -Force $Stage -ErrorAction SilentlyContinue
+
+    # Birth event — mint identity. rappid is set ONCE per machine and
+    # survives every future refresh.
+    Invoke-Bond -Stage "" -BondArgs @("mint-rappid", $BRAINSTEM_HOME, "--parent-commit", $ToCommit) | Out-Null
+    Invoke-Bond -Stage "" -BondArgs @("record-bond", $BRAINSTEM_HOME, "birth", "--to-version", $RemoteVer, "--to-commit", $ToCommit) | Out-Null
+    Write-Host "  [Egg] Organism born — rappid minted, framework v$RemoteVer hatched" -ForegroundColor Green
     Write-Host "  [OK] Source code ready" -ForegroundColor Green
 }
 

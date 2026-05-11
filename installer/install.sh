@@ -103,12 +103,70 @@ need() {
 need git
 need python3
 
-# ── Clone (sparse — only rapp_brainstem/ + installer/) ───────────────
+# ── Kernel-preserving install ───────────────────────────────────────
+# Per CONSTITUTION: brainstem.py / basic_agent.py / function_app.py are
+# sacred — never edited in place. Once a kernel is on disk, leave it
+# alone. Refresh only the non-kernel extension surface (agents/, organs/,
+# senses/, services/, web/) additively (new files only, no overwrites
+# of customized files). If anything ends up broken, the local LLM heals
+# it via /chat. Set BRAINSTEM_FORCE_KERNEL_REFRESH=1 to override.
 mkdir -p "$BRAINSTEM_HOME"
-if [ -d "$SRC_DIR/.git" ]; then
-    # Earlier installs may have set origin to a different repo (e.g.
-    # the legacy kody-w/rapp-installer URL). Force it to RAPP before
-    # fetching so we always pull from the right place.
+
+NON_KERNEL_SUBTREES=(agents utils/organs utils/senses utils/services utils/reserved_agents utils/body_functions utils/web)
+
+refresh_non_kernel_surface() {
+    local stage_kernel="$1"   # e.g. $STAGE/rapp_brainstem
+    local live_kernel="$2"    # e.g. $KERNEL_DIR
+    local added=0 skipped=0
+    for sub in "${NON_KERNEL_SUBTREES[@]}"; do
+        local sdir="$stage_kernel/$sub"
+        local ddir="$live_kernel/$sub"
+        [ -d "$sdir" ] || continue
+        mkdir -p "$ddir"
+        while IFS= read -r -d '' f; do
+            rel="${f#$sdir/}"
+            dest="$ddir/$rel"
+            if [ -e "$dest" ]; then
+                skipped=$((skipped + 1))
+            else
+                mkdir -p "$(dirname "$dest")"
+                cp "$f" "$dest"
+                added=$((added + 1))
+            fi
+        done < <(find "$sdir" -type f -print0)
+    done
+    echo -e "  ${GREEN}✓${NC} refreshed surface: $added new file(s), $skipped preserved (kernel + customized files untouched)"
+}
+
+STAGE="$BRAINSTEM_HOME/.framework_stage"
+
+if [ -f "$KERNEL_DIR/brainstem.py" ] && [ "${BRAINSTEM_FORCE_KERNEL_REFRESH:-0}" != "1" ]; then
+    # Existing kernel — keep it, refresh peripherals around it.
+    local_ver="0.0.0"
+    [ -f "$KERNEL_DIR/VERSION" ] && local_ver=$(tr -d '[:space:]' < "$KERNEL_DIR/VERSION")
+    echo -e "${CYAN}▸ existing kernel detected (v$local_ver) — preserving; refreshing surface...${NC}"
+    rm -rf "$STAGE"
+    if git clone -q --depth 1 --branch "$PIN_REF" --filter=blob:none --no-checkout "$REPO_URL" "$STAGE" 2>/dev/null; then
+        git -C "$STAGE" sparse-checkout init --cone 2>/dev/null
+        git -C "$STAGE" sparse-checkout set rapp_brainstem 2>/dev/null
+        git -C "$STAGE" checkout -q 2>/dev/null
+        # If this used to be a git-clone install, scrub the .git so future
+        # installs don't re-trigger the kernel-overwrite path.
+        if [ -d "$SRC_DIR/.git" ]; then
+            rm -rf "$SRC_DIR/.git"
+            echo -e "  ${YELLOW}detached from upstream git clone (kernel untouched)${NC}"
+        fi
+        refresh_non_kernel_surface "$STAGE/rapp_brainstem" "$KERNEL_DIR"
+        # Bump VERSION so downstream tooling sees the new target.
+        if [ -f "$STAGE/rapp_brainstem/VERSION" ]; then
+            cp "$STAGE/rapp_brainstem/VERSION" "$KERNEL_DIR/VERSION"
+        fi
+    else
+        echo -e "  ${YELLOW}△ couldn't fetch updates — keeping existing install as-is${NC}"
+    fi
+    rm -rf "$STAGE"
+elif [ -d "$SRC_DIR/.git" ]; then
+    # Legacy: was a git clone but no brainstem.py (broken state) — full reset.
     git -C "$SRC_DIR" remote set-url origin "$REPO_URL" 2>/dev/null || \
         git -C "$SRC_DIR" remote add origin "$REPO_URL" 2>/dev/null || true
     echo -e "${CYAN}▸ getting latest...${NC}"
@@ -116,6 +174,7 @@ if [ -d "$SRC_DIR/.git" ]; then
         echo -e "${RED}✗ git fetch failed for ref ${PIN_REF}${NC}"; exit 1; }
     git -C "$SRC_DIR" checkout -q FETCH_HEAD
 else
+    # Fresh install — full clone.
     echo -e "${CYAN}▸ getting code...${NC}"
     rm -rf "$SRC_DIR"
     git clone -q --depth 1 --branch "$PIN_REF" --filter=blob:none --no-checkout "$REPO_URL" "$SRC_DIR" || {
