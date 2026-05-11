@@ -81,28 +81,34 @@ footer { margin-top: 40px; font-size: 0.82rem; color: var(--mut); text-align: ce
 footer a { color: inherit; }
 </style>
 
-<!-- minimal inline QR generator (deterministic, no deps) -->
+<!-- Real QR code via QRious (https://github.com/neocotic/qrious, MIT) -->
+<script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
 <script>
-// QR encoding helper: kado / qrcodegen by Project Nayuki (MIT) — minified subset.
-// Kept tiny intentionally; encodes a single string as an SVG path at runtime.
-// Full QR Code library; see source: https://www.nayuki.io/page/qr-code-generator-library
-// (Included inline so this page works offline / from file://.)
-// For a 100-byte URL, this produces a ~33x33 module matrix.
-function qrSvg(text, scale){
-  // Generate a QR code (mode auto, ECC LOW) using a compact polyfill.
-  // For the commons URL we only need ~80 ASCII chars — well within v3-L capacity.
-  const data = new TextEncoder().encode(text);
-  // ─── Tiny QR encoder fallback: render as a placeholder grid pinging the real URL.
-  // (The repo build will replace this with kody-w/RAPP/pages/_site/js/qrcode.js
-  //  at plant time; for the scaffold view we display the URL plainly so the
-  //  reader can copy it.)
-  return null;
-}
 window.addEventListener('DOMContentLoaded', function(){
   const target = document.getElementById('qr-target');
   if (!target) return;
-  // Render a stylized placeholder; the live commons replaces this with a real QR.
-  target.innerHTML = '<div style="width:144px;height:144px;background:repeating-linear-gradient(45deg,#000,#000 4px,#fff 4px,#fff 8px);border-radius:6px"></div>';
+  // Canonical URL: scanning this fetches the neighborhood-invite egg.
+  // egg_hatcher routes it (manifest.schema === 'brainstem-egg/2.3-neighborhood')
+  // and appends {rappid, added_at, via} to the operator's two-tier estate.
+  const url = (location.origin && location.origin !== 'null'
+                 ? location.origin + location.pathname.replace(/\/[^/]*$/, '')
+                 : 'https://kody-w.github.io/rapp-commons')
+              + '/.well-known/neighborhood.egg';
+  if (typeof QRious === 'undefined') {
+    // CDN unreachable (offline / file://). Show URL plainly so it can be copied.
+    target.innerHTML = '<div style="width:144px;height:144px;background:#fff;color:#000;display:flex;align-items:center;justify-content:center;font-size:0.62rem;text-align:center;padding:8px;border-radius:6px;font-family:monospace">QRious unavailable<br>(offline / no CDN).<br><br>Open URL directly:<br>'+url+'</div>';
+    return;
+  }
+  const canvas = document.createElement('canvas');
+  target.appendChild(canvas);
+  new QRious({
+    element:    canvas,
+    value:      url,
+    size:       144,
+    background: '#ffffff',
+    foreground: '#000000',
+    level:      'M'
+  });
 });
 </script>
 </head>
