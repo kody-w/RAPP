@@ -118,10 +118,13 @@ test('every demo cue addresses its target twin by name', () => {
 });
 
 // ── LLM backend default ─────────────────────────────────────────────
-test('Default LLM backend is Copilot via Doorman (no localhost dep)', () => {
-  // The new default uses RAPP.Doorman; localhost is opt-in via ?brainstem=URL
+test('Default LLM backend is local :7071, opt-in Copilot via ?copilot=1', () => {
+  // Default flipped back to localhost for tab-based collab to work without
+  // Copilot subscription gate. Copilot path still available via ?copilot=1.
+  ok(/return\s+'http:\/\/localhost:7071'/.test(scriptSrc), 'localhost:7071 default missing');
+  ok(/params\.get\('copilot'\)\s*===\s*'1'/.test(scriptSrc), 'copilot opt-in missing');
   ok(/USE_LOCAL_BRAINSTEM\s*=\s*!!BRAINSTEM_BASE/.test(scriptSrc), 'USE_LOCAL_BRAINSTEM toggle missing');
-  ok(/RAPP\.Doorman\.chat/.test(scriptSrc), 'Doorman chat call missing');
+  ok(/RAPP\.Doorman\.chat/.test(scriptSrc), 'Doorman chat call missing (still needed for ?copilot=1)');
 });
 
 // ── Run + report ────────────────────────────────────────────────────

@@ -346,7 +346,7 @@
       <h2>Open the tether</h2>
       <p class="blurb">Tether two devices into one synchronized vbrainstem session. Generate a QR, scan it from the other device, and both screens see the same transcript while the AI twins drive a workflow on your behalf.</p>
       <button class="btn" id="btn-host-start">Generate QR</button>
-      <p style="margin-top:14px;font-size:11px;color:#6e7681;">Powered by <strong>GitHub Copilot</strong> — sign in once with your GitHub account, no API keys, no localhost. (Or override with <code style="background:#0d1117;padding:2px 6px;border-radius:3px;font-size:10px;">?brainstem=URL</code> to use a local kernel.) The tether itself works either way.</p>
+      <p style="margin-top:14px;font-size:11px;color:#6e7681;">Tab-based collab uses your <strong>local brainstem</strong> at <code style="background:#0d1117;padding:2px 6px;border-radius:3px;font-size:10px;">:7071</code> — start it with <code style="background:#0d1117;padding:2px 6px;border-radius:3px;font-size:10px;">bash rapp_brainstem/start.sh</code>. Joiner (phone) relays LLM calls through the host. (No-localhost fallback: append <code style="background:#0d1117;padding:2px 6px;border-radius:3px;font-size:10px;">?copilot=1</code> to use GitHub Copilot via Doorman instead.)</p>
     </div>
   </div>
 </main>
@@ -831,8 +831,16 @@ window.RAPP.Doorman = (function () {
     get pyAgents() { return pyAgents; },
   };
 })();
-// Kick off Pyodide warm-up immediately so it's ready by the time the demo runs.
-window.RAPP.Doorman.initPyodide().catch(() => {});
+// Pyodide warm-up is only needed when the page is calling Copilot directly
+// (then it provides the tools the LLM tool-routes to). In default localhost
+// mode the local brainstem owns its own agents — no Pyodide needed.
+(function maybeWarmPyodide() {
+  try {
+    const params = new URLSearchParams(location.search);
+    const usingCopilot = !params.get('brainstem') && params.get('copilot') === '1';
+    if (usingCopilot) window.RAPP.Doorman.initPyodide().catch(() => {});
+  } catch (e) {}
+})();
 </script>
 
 <script>
@@ -846,15 +854,22 @@ const $$ = (s) => Array.from(document.querySelectorAll(s));
 //  Constants — these define what counts as a brainstem and the demo
 // ────────────────────────────────────────────────────────────────────
 
-// LLM backend selection. Default is GitHub Copilot via the rapp-auth worker
-// (same flow as pages/sphere.html — sign in once, reused across the kody-w.github.io
-// origin). Override with ?brainstem=URL to use a local brainstem on a port (e.g.
-// ?brainstem=http://localhost:7071).
+// LLM backend selection. Default is the LOCAL brainstem at :7071 — the
+// tab-based collab works best when the host's local kernel runs the LLM
+// (real /chat with full agent tool routing, no Copilot subscription gate,
+// no rapp-auth worker round-trip). Joiners (phone) relay through the host
+// over WebRTC; only the host needs the brainstem.
+//
+// Overrides:
+//   ?brainstem=http://localhost:7072  → use a different local port
+//   ?copilot=1                        → use GitHub Copilot via Doorman
+//                                       (no localhost dep, but needs Copilot sub)
 function pickBrainstemBase() {
   const params = new URLSearchParams(location.search);
   const fromQuery = params.get('brainstem');
   if (fromQuery) return fromQuery.replace(/\/$/, '');
-  return null;  // null → use Copilot via Doorman
+  if (params.get('copilot') === '1') return null;  // null → use Copilot via Doorman
+  return 'http://localhost:7071';
 }
 const BRAINSTEM_BASE = pickBrainstemBase();
 const USE_LOCAL_BRAINSTEM = !!BRAINSTEM_BASE;
