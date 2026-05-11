@@ -3831,3 +3831,41 @@ A `.egg` of any kind MUST round-trip across all five substrates of Article XLVII
 
 This article does not invent the cartridge family — it formalizes what shipped 2026-05-10. The previous status was: organism + rapplication shipping as `.egg` per `bond.py`, but session shipping as `.cart.json` per the freshly-invented `rappterbox-cart/0.1` schema, and no convention yet for neighborhood or estate. The unification consolidated those into one extension with one hatcher. The article protects the convention going forward — anyone proposing a new portable artifact MUST add a row to the family table, not invent a new extension.
 
+---
+
+## Article LI — Every Neighborhood Front Gate MUST Display A Tether QR
+
+> **DRAFT — appended by AI 2026-05-11. Operator should review and ratify.**
+
+> **Every neighborhood's planted front gate (`index.html` at the repo root, served via GitHub Pages or any other substrate) MUST display a tether QR code on first paint.** The QR is the neighborhood's phone number; the tether (`pages/tether.html` and its deployed copies) is the universal payphone. Without the QR, casual operators have no on-ramp.
+
+The QR MUST encode a URL that resolves to enough information for any tether to dial in. The preferred encoding is the `.well-known/neighborhood.egg` URL (a `brainstem-egg/2.3-neighborhood` JSON invite — see Article L). The fallback encoding is the `neighborhood.json` URL directly. The tether smart-unwraps either.
+
+### LI.1 — Why mandatory
+
+The hero use case (`HERO_USECASE.md`) includes "scan a poster on the wall to join a neighborhood" — the Charizard-in-the-woods scenario generalized. That use case is broken if neighborhoods can elect not to publish a scannable on-ramp. Substrate-agnostic federation (Article XLVII) loses its visible handoff point. Public discovery (Article XLVIII) loses its first surface.
+
+We refuse to leave that to neighborhood-author choice. Every front gate, every neighborhood, every substrate — the QR is there or the gate is non-conforming.
+
+### LI.2 — The canonical snippet
+
+`pages/docs/QR_FRONT_GATE.md` carries the authoritative drop-in HTML snippet. Planted neighborhoods include it verbatim (the snippet auto-detects deploy URL via `location.origin + location.pathname`, so the same HTML works in any neighborhood without hardcoding). Generators (`installer/plant.sh` and successors) MUST inject it into every neighborhood `index.html` they emit.
+
+### LI.3 — Graceful degrade
+
+When the QR generator (QRious via jsdelivr CDN) is unreachable — offline, file://, blocked CDN — the snippet replaces the canvas with the plain URL, so the operator can still copy/paste into a tether's Paste mode. The neighborhood remains dialable even when the visual QR fails. Substrate-agnostic federation, all the way down.
+
+### LI.4 — Conformance + lint
+
+The federation roll-up's lint pass (planned, future tooling under `tools/`) flags non-conforming gates with a `front-gate-qr-missing` warning recorded in the neighborhood's `rar/index.json`. Conformance is binary: the QR renders on first paint (no user interaction required) and encodes one of the recognized URL forms, or the gate is flagged.
+
+### LI.5 — What this article does NOT do
+
+This article does not specify branding, layout, or surrounding content for the front gate. Neighborhoods are free to design their gate however they want — the QR is the only mandatory element. The rest of the gate is the neighborhood's character, soul, and quirks.
+
+### LI.6 — Source-of-truth files
+
+- **`pages/docs/QR_FRONT_GATE.md`** — full spec, canonical snippet, conformance rules, migration steps for pre-2026-05-11 plantings.
+- **`pages/tether.html`** — the universal public payphone (reference implementation of the tether-side reverse contract).
+- **`examples/rapp-commons/index.html`** — reference implementation of the conforming front-gate snippet in a real neighborhood (live at https://kody-w.github.io/rapp-commons/).
+

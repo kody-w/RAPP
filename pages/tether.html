@@ -1384,9 +1384,20 @@ async function loadMnemonicWords() {
 }
 
 function applyMnemonicWords(words) {
+  // CANONICAL order (preserved from rapp_sdk.MNEMONIC_WORDS — never reorder
+  // this; the position in `words[]` IS the 10-bit identity used by
+  // words_to_seed). Storage = canonical index. Display = alphabetical.
   phone.summon.words = words;
   phone.summon.wordToIdx = {};
   words.forEach((w, i) => { phone.summon.wordToIdx[w] = i; });
+
+  // sortedIndices: alphabetical permutation of canonical positions.
+  // Wheel cursor is an index INTO sortedIndices; pressing maps back to
+  // canonical via sortedIndices[cursor], which is what we store in slots.
+  phone.summon.sortedIndices = words
+    .map((w, i) => i)
+    .sort((a, b) => words[a].localeCompare(words[b]));
+
   phone.summon.slots = [null, null, null, null, null, null, null];
   phone.summon.cursor = 0;
   renderSummonSlots();
@@ -1416,13 +1427,15 @@ function renderSummonSlots() {
 function renderSummonWheel() {
   const strip = document.getElementById('summon-wheel-strip');
   if (!strip || !phone.summon.words.length) return;
-  const N = phone.summon.words.length;
+  const sorted = phone.summon.sortedIndices;
+  const N = sorted.length;
   const visible = 5;  // (active + 2 above + 2 below)
   let html = '';
   for (let off = -visible; off <= visible; off++) {
-    const idx = ((phone.summon.cursor + off) % N + N) % N;
+    const cursorPos = ((phone.summon.cursor + off) % N + N) % N;
+    const canonIdx  = sorted[cursorPos];
     const active = off === 0 ? ' active' : '';
-    html += `<div class="summon-wheel-item${active}">${phone.summon.words[idx]}</div>`;
+    html += `<div class="summon-wheel-item${active}">${phone.summon.words[canonIdx]}</div>`;
   }
   strip.innerHTML = html;
   // Center the active row (it's at the visible-th position; each row 40px)
@@ -1431,22 +1444,25 @@ function renderSummonWheel() {
 }
 
 function wheelStep(delta) {
-  if (!phone.summon.words.length) return;
-  const N = phone.summon.words.length;
+  if (!phone.summon.sortedIndices?.length) return;
+  const N = phone.summon.sortedIndices.length;
   phone.summon.cursor = ((phone.summon.cursor + delta) % N + N) % N;
   renderSummonWheel();
 }
 
 function pressWheel() {
-  if (!phone.summon.words.length) return;
+  if (!phone.summon.sortedIndices?.length) return;
   const nextIdx = phone.summon.slots.findIndex(s => s === null);
   if (nextIdx === -1) {
     setPhoneStatus('summon-status', '7 words already chosen — clear a slot to add another.');
     return;
   }
-  phone.summon.slots[nextIdx] = phone.summon.cursor;
+  // Store the CANONICAL index (rapp_sdk position) — even though the wheel
+  // shows alphabetical, encoding has to match rapp_sdk.words_to_seed.
+  const canonIdx = phone.summon.sortedIndices[phone.summon.cursor];
+  phone.summon.slots[nextIdx] = canonIdx;
   renderSummonSlots();
-  setPhoneStatus('summon-status', `slot ${nextIdx + 1}: ${phone.summon.words[phone.summon.cursor]}`);
+  setPhoneStatus('summon-status', `slot ${nextIdx + 1}: ${phone.summon.words[canonIdx]}`);
 }
 
 function updateSummonButton() {

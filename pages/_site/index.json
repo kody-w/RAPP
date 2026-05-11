@@ -71,7 +71,8 @@
         { "path": "docs/viewer.html?doc=AGENTS",   "title": "AGENTS",        "audience": "AI assistant","description": "Guidance to AI assistants editing this repo." },
         { "path": "docs/viewer.html?doc=VERSIONS", "title": "VERSIONS",      "audience": "Operator",   "description": "Tag history and rollback discipline." },
         { "path": "docs/viewer.html?doc=skill",    "title": "skill.md",      "audience": "AI assistant","description": "Canonical AI-readable skill manifest." },
-        { "path": "docs/viewer.html?doc=rapplication-sdk", "title": "Rapplication SDK", "audience": "Builder", "description": "SDK-shaped reference for building rapplications." }
+        { "path": "docs/viewer.html?doc=rapplication-sdk", "title": "Rapplication SDK", "audience": "Builder", "description": "SDK-shaped reference for building rapplications." },
+        { "path": "docs/viewer.html?doc=QR_FRONT_GATE", "title": "QR Front Gate (mandatory)", "audience": "Neighborhood planter", "description": "Every neighborhood's planted index.html MUST display a tether QR on first paint (Article LI). Spec + canonical drop-in snippet (QRious + auto-detect deploy URL + graceful degrade to plain-URL text when the CDN is unreachable). Conformance is binary; non-conforming gates flag a warning in the federation roll-up." }
       ]
     },
     {
