@@ -21,12 +21,27 @@
 $ErrorActionPreference = "Stop"
 
 # ── Install mode: global (default) vs. project-local ────────────────
-# Project-local one-liner (short form, paste-friendly):
-#     $env:here=1
-#     irm https://kody-w.github.io/RAPP/installer/install.ps1 | iex
-# (The longer `$env:BRAINSTEM_LOCAL = "1"` and `$env:RAPP_INSTALL_MODE = "local"`
-# still work — `here` is just a shorter alias.)
+# Project-local one-liner — three equivalent paste-friendly forms:
+#
+#   (1) trailing HERE token via scriptblock wrap (HERE at the end):
+#       & { irm https://kody-w.github.io/RAPP/installer/install.ps1 | iex } HERE
+#
+#   (2) short env-var prefix:
+#       $env:here=1
+#       irm https://kody-w.github.io/RAPP/installer/install.ps1 | iex
+#
+#   (3) explicit env-var name (back-compat with older docs):
+#       $env:BRAINSTEM_LOCAL = "1"
+#       irm https://kody-w.github.io/RAPP/installer/install.ps1 | iex
+#
+# Why no plain `iex --here` form: `iex` is a PowerShell cmdlet with only
+# a -Command parameter — additional tokens bind to iex itself and error
+# out before the installer ever runs. The scriptblock wrap above sends
+# the trailing token to $args of the wrapper, which the installer reads.
 $LOCAL_MODE = $false
+foreach ($a in $args) {
+    if ($a -match '^(--?here|here|HERE|--local|local|LOCAL)$') { $LOCAL_MODE = $true }
+}
 if ($env:here -eq "1" -or $env:HERE -eq "1") { $LOCAL_MODE = $true }
 if ($env:BRAINSTEM_LOCAL -eq "1") { $LOCAL_MODE = $true }
 switch ($env:RAPP_INSTALL_MODE) {
