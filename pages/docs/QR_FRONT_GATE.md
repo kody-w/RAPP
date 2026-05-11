@@ -1,8 +1,18 @@
-# QR Front Gate — Mandatory for Every Planted Neighborhood
+# Front Gate Trio — QR + Holocard + Incantation (Mandatory)
 
 **Status:** mandatory as of 2026-05-11.
-**Schema:** `rapp-front-gate-qr/1.0`
-**Spec layer:** ECOSYSTEM_MAP §6 (Implementation map) — bound under Article XLVII (substrate-agnostic federation) and Article L (substrate federation umbrella).
+**Schema:** `rapp-front-gate-qr/1.0` (QR) + `rapp-card/1.1.2` (holocard) + `rapp-front-gate-incantation/1.0` (incantation).
+**Spec layer:** ECOSYSTEM_MAP §6 (Implementation map) — bound under Article XLVII (substrate-agnostic federation) and Article LI (front-gate mandates).
+
+## Three summoning surfaces, one front gate
+
+Every planted neighborhood (and operator twin) front gate surfaces THREE redundant ways to dial in:
+
+1. **QR code** — point a camera at it (scan from any tether).
+2. **Holocard** — visual card identity rendered from `card.json` (recognition + provenance at a glance).
+3. **7-word incantation** — memorable mnemonic derived from the rappid's first 64 bits via 10-bits-per-word against the 1024-word `MNEMONIC_WORDS` dictionary (spin into any tether's Dial wheel; no network needed for resolution itself).
+
+All three resolve to the same rappid. The QR is for casual visitors with cameras; the holocard is for recognition and provenance; the incantation is the hero use case — memorize 7 words, summon anywhere.
 
 ---
 
