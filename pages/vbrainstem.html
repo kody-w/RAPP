@@ -1830,9 +1830,9 @@ async function pollBrainstem() {
 window.addEventListener('message', (ev) => {
   const m = ev.data || {};
   if (!state.isIframed) return;
-  if (m.kind === 'cart_init') {
+  if (m.kind === 'cart_init' || m.kind === 'egg_init') {
     state.isCartMode = true;
-    state.sessionId = m.cart_rappid || ('cart-' + crypto.randomUUID().slice(0, 12));
+    state.sessionId = m.cart_rappid || m.egg_rappid || ('cart-' + crypto.randomUUID().slice(0, 12));
     state.cast = (m.participants && m.participants.length ? m.participants.map(p => ({
       name: p.name, role: p.role, sprite: p.sprite || (p.role === 'twin' ? '🧠' : '🧍'),
       persona: p.persona || (DEFAULT_CAST.find(d => d.name === p.name)?.persona || ''),
@@ -1876,8 +1876,13 @@ async function exportCart() {
   if (!runtime) runtime = document.documentElement.outerHTML;
   const sha = await sha256Hex(runtime);
   const now = nowIso();
-  const cart = {
-    schema: 'rappterbox-cart/0.1',
+  // brainstem-egg/2.3-session — session eggs are JSON (vs. ZIP for organism /
+  // rapplication eggs) because their payload is structurally one runtime
+  // + one transcript, not a directory tree. Same egg ecosystem, same
+  // sneakernet UX, same rappzoo Pokédex shelf — just JSON-only.
+  const egg = {
+    schema: 'brainstem-egg/2.3-session',
+    type: 'session',
     rappid: 'rappid:v2:cart:@kody-w/RAPP#vbrainstem:' + sha.slice(0, 32) + '@github.com/kody-w/RAPP',
     name: 'vbrainstem',
     title: 'vBrainstem · Tethered',
@@ -1887,13 +1892,15 @@ async function exportCart() {
     participants: state.cast.map(c => ({ name: c.name, role: c.role, sprite: c.sprite, persona: c.persona })),
     runtime: { type: 'html', sha256: sha, payload: runtime },
     transcript: state.transcript,
+    exported_at: now,
     minted_at: now,
     minted_by: 'rappid:v2:agent:@kody-w/RAPP#vbrainstem-export:browser@github.com/kody-w/RAPP',
+    implements: ['article-xlvi', 'article-xlix'],
   };
-  const blob = new Blob([JSON.stringify(cart, null, 2)], { type: 'application/json' });
+  const blob = new Blob([JSON.stringify(egg, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = 'vbrainstem-' + state.sessionId + '.cart.json';
+  a.href = url; a.download = 'vbrainstem-' + state.sessionId + '.egg';
   document.body.appendChild(a); a.click();
   setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
 }
