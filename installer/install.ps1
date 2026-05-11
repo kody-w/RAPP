@@ -21,7 +21,13 @@
 $ErrorActionPreference = "Stop"
 
 # ── Install mode: global (default) vs. project-local ────────────────
+# Project-local one-liner (short form, paste-friendly):
+#     $env:here=1
+#     irm https://kody-w.github.io/RAPP/installer/install.ps1 | iex
+# (The longer `$env:BRAINSTEM_LOCAL = "1"` and `$env:RAPP_INSTALL_MODE = "local"`
+# still work — `here` is just a shorter alias.)
 $LOCAL_MODE = $false
+if ($env:here -eq "1" -or $env:HERE -eq "1") { $LOCAL_MODE = $true }
 if ($env:BRAINSTEM_LOCAL -eq "1") { $LOCAL_MODE = $true }
 switch ($env:RAPP_INSTALL_MODE) {
     "local"  { $LOCAL_MODE = $true }

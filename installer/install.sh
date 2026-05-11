@@ -21,10 +21,16 @@ set -e
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'
 
 # ── Mode selection (global default vs --here) ────────────────────────
+# Project-local one-liner (short form, paste-friendly):
+#     curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | here=1 bash
+# (The longer `--here` flag and the BRAINSTEM_LOCAL / RAPP_INSTALL_MODE
+# env vars still work — `here=1` is just a shorter alias.)
 LOCAL_MODE=0
 for arg in "$@"; do
     case "$arg" in --here|--local) LOCAL_MODE=1 ;; esac
 done
+[ "${here:-0}" = "1" ] && LOCAL_MODE=1
+[ "${HERE:-0}" = "1" ] && LOCAL_MODE=1
 [ "${BRAINSTEM_LOCAL:-0}" = "1" ] && LOCAL_MODE=1
 case "${RAPP_INSTALL_MODE:-}" in
     local)  LOCAL_MODE=1 ;;
