@@ -488,14 +488,40 @@ window.RAPP.Doorman = (function () {
   const STORAGE_KEY        = "rapp_settings";
   const DEFAULT_MODEL      = "claude-sonnet-4";
 
+  // In-memory mirror of rapp_settings. Edge Tracking Prevention silently
+  // blocks localStorage on third-party-classified origins; without an in-
+  // memory fallback, the auth token round-trip would always read back null.
+  // Strategy: try localStorage first (real persistence across reloads),
+  // fall back to _memSettings for the session lifetime.
+  let _memSettings = null;
+  function _readStorage() {
+    try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : null; }
+    catch (e) { return null; }
+  }
+  function _writeStorage(obj) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); return true; }
+    catch (e) { return false; }
+  }
   function loadSettings() {
-    try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : {}; }
-    catch { return {}; }
+    if (_memSettings) return _memSettings;
+    const fromLs = _readStorage();
+    if (fromLs) { _memSettings = fromLs; return fromLs; }
+    return {};
   }
   function saveSettings(patch) {
-    const s = Object.assign(loadSettings(), patch);
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch {}
+    const s = Object.assign(_memSettings || _readStorage() || {}, patch);
+    _memSettings = s;
+    _writeStorage(s);  // best-effort; if blocked, in-memory still works
     return s;
+  }
+  function isStorageBlocked() {
+    try {
+      const k = '_vbs_storage_probe';
+      localStorage.setItem(k, '1');
+      const ok = localStorage.getItem(k) === '1';
+      localStorage.removeItem(k);
+      return !ok;
+    } catch (e) { return true; }
   }
   function getToken() { return loadSettings().ghuToken || null; }
   function clearAuthState() {
@@ -798,6 +824,7 @@ window.RAPP.Doorman = (function () {
   return {
     AUTH_WORKER_URL, COPILOT_CLIENT_ID, DEFAULT_MODEL,
     loadSettings, saveSettings, getToken, clearAuthState, isSignedIn,
+    isStorageBlocked,
     startDeviceLogin, pollDeviceLogin, copilotExchange,
     ensureCopilotToken, activeChatUrl, chat,
     initPyodide, pyAgentsToolDefs, dispatchPyodideToolCall,
@@ -1942,6 +1969,16 @@ async function startSignInFlow() {
   $('#signin-go').textContent = 'Starting…';
   _signinAttemptCount = 0;
   _signinLastResult = '(not started)';
+  // Detect Edge / Brave Tracking Prevention blocking localStorage and warn
+  // up-front so the user knows token won't persist across reloads (the
+  // in-memory mirror still makes the session work).
+  if (window.RAPP?.Doorman?.isStorageBlocked && window.RAPP.Doorman.isStorageBlocked()) {
+    errBox.textContent = 'Heads up: this browser is blocking localStorage (Tracking Prevention or similar). Sign-in will work for THIS tab only — close the tab and you\'ll have to re-auth. To get persistence: Edge → Settings → Privacy → Tracking Prevention → Add kody-w.github.io as an exception. Or use Chrome / Safari / Firefox.';
+    errBox.style.background = 'rgba(210,153,34,0.1)';
+    errBox.style.color = '#d29922';
+    errBox.style.borderColor = 'rgba(210,153,34,0.3)';
+    errBox.style.display = 'block';
+  }
   try {
     const Doorman = window.RAPP.Doorman;
     const { user_code, verification_uri } = await Doorman.startDeviceLogin();
