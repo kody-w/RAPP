@@ -23,10 +23,10 @@ const PAGE_PATH = resolve(__dirname, '..', 'pages', 'vbrainstem.html');
 
 const html = readFileSync(PAGE_PATH, 'utf-8');
 
-// Extract the inline <script> block (the one without src=)
-const scriptMatch = html.match(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/);
-if (!scriptMatch) { console.error('FAIL: no inline <script> found'); process.exit(2); }
-const scriptSrc = scriptMatch[1];
+// Extract ALL inline <script> blocks and concatenate
+const scriptMatches = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)];
+if (!scriptMatches.length) { console.error('FAIL: no inline <script> found'); process.exit(2); }
+const scriptSrc = scriptMatches.map(m => m[1]).join('\n;\n');
 
 const tests = [];
 function test(name, fn) { tests.push({ name, fn }); }
@@ -117,9 +117,11 @@ test('every demo cue addresses its target twin by name', () => {
   for (const s of steps) ok(s.cue.toLowerCase().includes(s.twin.toLowerCase()), `cue for ${s.twin} doesn't name them: ${s.cue}`);
 });
 
-// ── BRAINSTEM_BASE default ──────────────────────────────────────────
-test('BRAINSTEM_BASE defaults to localhost:7071', () => {
-  ok(scriptSrc.includes("'http://localhost:7071'"), 'default base missing');
+// ── LLM backend default ─────────────────────────────────────────────
+test('Default LLM backend is Copilot via Doorman (no localhost dep)', () => {
+  // The new default uses RAPP.Doorman; localhost is opt-in via ?brainstem=URL
+  ok(/USE_LOCAL_BRAINSTEM\s*=\s*!!BRAINSTEM_BASE/.test(scriptSrc), 'USE_LOCAL_BRAINSTEM toggle missing');
+  ok(/RAPP\.Doorman\.chat/.test(scriptSrc), 'Doorman chat call missing');
 });
 
 // ── Run + report ────────────────────────────────────────────────────

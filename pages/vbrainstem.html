@@ -346,7 +346,7 @@
       <h2>Open the tether</h2>
       <p class="blurb">Tether two devices into one synchronized vbrainstem session. Generate a QR, scan it from the other device, and both screens see the same transcript while the AI twins drive a workflow on your behalf.</p>
       <button class="btn" id="btn-host-start">Generate QR</button>
-      <p style="margin-top:14px;font-size:11px;color:#6e7681;">Brainstem on <code style="background:#0d1117;padding:2px 6px;border-radius:3px;font-size:10px;">localhost:7071</code> is required for AI replies. The tether itself works either way.</p>
+      <p style="margin-top:14px;font-size:11px;color:#6e7681;">Powered by <strong>GitHub Copilot</strong> — sign in once with your GitHub account, no API keys, no localhost. (Or override with <code style="background:#0d1117;padding:2px 6px;border-radius:3px;font-size:10px;">?brainstem=URL</code> to use a local kernel.) The tether itself works either way.</p>
     </div>
   </div>
 </main>
@@ -423,6 +423,34 @@
   </div>
 </main>
 
+<!-- ── Sign-in modal (Copilot device-code, mirrors sphere.html) ─────── -->
+<div id="signin-modal" hidden style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;">
+  <div style="background:#161b22;border:1px solid #30363d;border-radius:12px;padding:24px;max-width:380px;width:90%;color:#e6edf3;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <h2 style="font-size:16px;font-weight:700;margin:0;">Sign in with GitHub</h2>
+      <button id="signin-close" style="background:transparent;border:none;color:#8b949e;font-size:22px;cursor:pointer;">×</button>
+    </div>
+    <div id="signin-error" style="display:none;background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);color:#f85149;padding:10px 12px;border-radius:8px;margin-bottom:14px;font-size:13px;"></div>
+    <div id="signin-step1">
+      <p style="font-size:13px;color:#9aa6b3;margin-bottom:16px;line-height:1.55;">vBrainstem runs on your GitHub Copilot subscription — no API keys to paste, no localhost dependency. One-time device-code sign in (~30 seconds). If you already signed in via sphere.html on this domain, this just picks up the existing session.</p>
+      <button id="signin-go" class="btn" style="width:100%;">Sign in with GitHub →</button>
+    </div>
+    <div id="signin-step2" style="display:none;">
+      <p style="font-size:13px;color:#9aa6b3;margin-bottom:12px;">Open GitHub on any device and enter this code:</p>
+      <div id="signin-code-box" title="Tap to copy" style="background:#000;border:1.5px solid #58a6ff;border-radius:10px;padding:18px 14px;text-align:center;margin-bottom:10px;cursor:pointer;user-select:all;">
+        <div id="signin-code" style="font-family:'SF Mono',Menlo,monospace;font-size:30px;letter-spacing:6px;color:#58a6ff;font-weight:700;">XXXX-XXXX</div>
+      </div>
+      <button id="signin-copy" type="button" style="display:block;width:100%;background:#21262d;border:1px solid #30363d;color:#e6edf3;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:14px;">📋 Copy code</button>
+      <a href="#" id="signin-link" target="_blank" rel="noopener" style="display:block;text-align:center;background:#58a6ff;color:#04101e;border-radius:8px;padding:12px;text-decoration:none;font-size:14px;font-weight:700;margin-bottom:14px;">Open github.com/login/device →</a>
+      <div id="signin-poll-status" style="font-size:12px;color:#8b949e;text-align:center;">Waiting for you to enter the code…</div>
+    </div>
+    <div id="signin-step3" style="display:none;text-align:center;padding:20px 0;">
+      <div style="font-size:34px;margin-bottom:10px;">✓</div>
+      <p style="font-size:14px;color:#3fb950;font-weight:700;">Signed in. Closing…</p>
+    </div>
+  </div>
+</div>
+
 <!-- ── Error ────────────────────────────────────────────────────────── -->
 <main id="screen-error" hidden>
   <div class="card-wrap">
@@ -438,6 +466,136 @@
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
 
+<!-- ── RAPP.Doorman — GitHub Copilot device-flow auth + chat ────────
+     Cloned from pages/sphere.html so vbrainstem reuses the same
+     localStorage.rapp_settings key. If the visitor already signed in
+     via sphere.html on this same origin (kody-w.github.io), the token
+     transfers transparently — no second sign-in.
+     Backed by https://rapp-auth.kwildfeuer.workers.dev (Cloudflare
+     Worker that exchanges the GitHub OAuth token for a Copilot API
+     token and proxies /chat/completions, sidestepping the in-browser
+     CORS block on the Copilot endpoints). -->
+<script>
+window.RAPP = window.RAPP || {};
+window.RAPP.Doorman = (function () {
+  const AUTH_WORKER_URL    = "https://rapp-auth.kwildfeuer.workers.dev";
+  const COPILOT_CLIENT_ID  = "Iv1.b507a08c87ecfe98";
+  const COPILOT_DEFAULT_API= "https://api.individual.githubcopilot.com";
+  const STORAGE_KEY        = "rapp_settings";
+  const DEFAULT_MODEL      = "claude-sonnet-4";
+
+  function loadSettings() {
+    try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : {}; }
+    catch { return {}; }
+  }
+  function saveSettings(patch) {
+    const s = Object.assign(loadSettings(), patch);
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch {}
+    return s;
+  }
+  function getToken() { return loadSettings().ghuToken || null; }
+  function clearAuthState() {
+    saveSettings({ ghuToken:"", copilotToken:"", copilotEndpoint:"", copilotExpiresAt:0, ghUser:null });
+  }
+  function isSignedIn() {
+    const s = loadSettings();
+    return !!(s.ghuToken || (s.copilotToken && Date.now() < (s.copilotExpiresAt || 0)));
+  }
+
+  let pendingDevice = null;
+  async function startDeviceLogin() {
+    const r = await fetch(AUTH_WORKER_URL + "/api/auth/device", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ client_id: COPILOT_CLIENT_ID, scope:"read:user" }),
+    });
+    if (!r.ok) throw new Error(`device start ${r.status}`);
+    const d = await r.json();
+    pendingDevice = {
+      device_code: d.device_code,
+      interval: d.interval || 5,
+      expires_at: Date.now() + (d.expires_in || 900) * 1000,
+    };
+    return { user_code: d.user_code, verification_uri: d.verification_uri };
+  }
+  async function pollDeviceLogin() {
+    if (!pendingDevice) return null;
+    const r = await fetch(AUTH_WORKER_URL + "/api/auth/device/poll", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ device_code: pendingDevice.device_code, client_id: COPILOT_CLIENT_ID }),
+    });
+    const d = await r.json();
+    if (d.access_token) {
+      saveSettings({ ghuToken: d.access_token });
+      pendingDevice = null;
+      return d.access_token;
+    }
+    if (d.error === "authorization_pending" || d.error === "slow_down") return null;
+    if (d.error) { pendingDevice = null; throw new Error(d.error_description || d.error); }
+    return null;
+  }
+  async function copilotExchange() {
+    const ghu = getToken();
+    if (!ghu) throw new Error("Not signed in");
+    const r = await fetch(AUTH_WORKER_URL + "/api/copilot/token", {
+      headers:{"Authorization":"Bearer "+ghu},
+    });
+    if (!r.ok) throw new Error(`copilot exchange ${r.status}`);
+    const d = await r.json();
+    if (!d.token) throw new Error("Copilot subscription required");
+    saveSettings({
+      copilotToken: d.token,
+      copilotEndpoint: (d.endpoints && d.endpoints.api) || COPILOT_DEFAULT_API,
+      copilotExpiresAt: (d.expires_at || (Date.now()/1000 + 600)) * 1000,
+    });
+    return d.token;
+  }
+  async function ensureCopilotToken() {
+    const s = loadSettings();
+    const fresh = s.copilotToken && Date.now() < (s.copilotExpiresAt || 0) - 60000;
+    if (fresh) return s.copilotToken;
+    return copilotExchange();
+  }
+  function activeChatUrl() {
+    const s = loadSettings();
+    return AUTH_WORKER_URL + "/api/copilot/chat?endpoint=" +
+           encodeURIComponent(s.copilotEndpoint || COPILOT_DEFAULT_API);
+  }
+  async function chat({ system, history, message, model, max_tokens }) {
+    const tok = await ensureCopilotToken();
+    const messages = [];
+    if (system) messages.push({ role: "system", content: system });
+    if (Array.isArray(history)) for (const h of history) messages.push(h);
+    messages.push({ role: "user", content: message });
+    const body = {
+      model: model || loadSettings().model || DEFAULT_MODEL,
+      messages,
+      max_tokens: max_tokens || 600,
+    };
+    const r = await fetch(activeChatUrl(), {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + tok },
+      body: JSON.stringify(body),
+    });
+    if (r.status === 401) { clearAuthState(); throw new Error("Sign-in expired — sign in again."); }
+    if (!r.ok) throw new Error(`HTTP ${r.status}: ${(await r.text()).slice(0,200)}`);
+    const d = await r.json();
+    const msg = d.choices && d.choices[0] && d.choices[0].message;
+    let content = (msg && msg.content) || "";
+    // Strip |||VOICE||| block if present (we don't use the voice slot here)
+    const split = content.split("|||VOICE|||");
+    if (split.length === 2) content = split[0].trim();
+    return content;
+  }
+
+  return {
+    AUTH_WORKER_URL, COPILOT_CLIENT_ID, DEFAULT_MODEL,
+    loadSettings, saveSettings, getToken, clearAuthState, isSignedIn,
+    startDeviceLogin, pollDeviceLogin, copilotExchange,
+    ensureCopilotToken, activeChatUrl, chat,
+  };
+})();
+</script>
+
 <script>
 'use strict';
 (() => {
@@ -449,17 +607,18 @@ const $$ = (s) => Array.from(document.querySelectorAll(s));
 //  Constants — these define what counts as a brainstem and the demo
 // ────────────────────────────────────────────────────────────────────
 
-// Brainstem endpoint: where the host calls to run LLM completions. Operator
-// can override with ?brainstem=URL (must be http(s)://). Default is the kernel
-// install on :7071.
+// LLM backend selection. Default is GitHub Copilot via the rapp-auth worker
+// (same flow as pages/sphere.html — sign in once, reused across the kody-w.github.io
+// origin). Override with ?brainstem=URL to use a local brainstem on a port (e.g.
+// ?brainstem=http://localhost:7071).
 function pickBrainstemBase() {
   const params = new URLSearchParams(location.search);
   const fromQuery = params.get('brainstem');
   if (fromQuery) return fromQuery.replace(/\/$/, '');
-  // sensible default — the standard kernel port
-  return 'http://localhost:7071';
+  return null;  // null → use Copilot via Doorman
 }
 const BRAINSTEM_BASE = pickBrainstemBase();
+const USE_LOCAL_BRAINSTEM = !!BRAINSTEM_BASE;
 
 // Default cast: one Coordinator (the operator's twin who drives the workflow)
 // + four worker twins. Each gets a system-prompt seed that scopes their voice.
@@ -1100,12 +1259,15 @@ async function runTwinTurn(twinName, cue) {
     return;
   }
   if (!state.brainstemOnline && !state.isCartMode) {
+    const msg = USE_LOCAL_BRAINSTEM
+      ? '(brainstem at ' + BRAINSTEM_BASE + ' is unreachable — start it on the host with `bash rapp_brainstem/start.sh`)'
+      : '(not signed in to GitHub Copilot — click "Sign in with GitHub" in the toolbar)';
     recordEvent({
       event_id: mintEventId(),
       kind: 'twin_response',
       ts: nowIso(),
       by: twinName,
-      data: { text: '(brainstem at ' + BRAINSTEM_BASE + ' is unreachable — start it on the host with `bash rapp_brainstem/start.sh`)' },
+      data: { text: msg },
     });
     return;
   }
@@ -1184,10 +1346,8 @@ async function runTwinTurn(twinName, cue) {
 
 async function callBrainstemForTwin(twin, cue) {
   // Build conversation history that embeds the twin's persona + the relevant
-  // prior transcript context. Persona seed goes in as a system-style assistant
-  // message because /chat doesn't take a system override.
+  // prior transcript context.
   const history = [];
-  history.push({ role: 'assistant', content: twin.persona });
   // Include the last few transcript events for context
   const recent = state.transcript.slice(-12);
   for (const ev of recent) {
@@ -1195,17 +1355,30 @@ async function callBrainstemForTwin(twin, cue) {
     if (ev.kind === 'twin_response')   history.push({ role: 'assistant', content: '[' + (ev.by || 'twin') + '] ' + (ev.data && ev.data.text) });
     if (ev.kind === 'cart_state')      history.push({ role: 'user', content: '[' + (ev.by || 'system') + '] ' + (ev.data && ev.data.text) });
   }
-  const r = await fetch(BRAINSTEM_BASE + '/chat', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      user_input: cue,
-      conversation_history: history,
-    }),
+
+  if (USE_LOCAL_BRAINSTEM) {
+    // Power-user path: local brainstem at ?brainstem=URL. Persona goes in
+    // as a synthetic assistant message because /chat doesn't take a system override.
+    const localHistory = [{ role: 'assistant', content: twin.persona }, ...history];
+    const r = await fetch(BRAINSTEM_BASE + '/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_input: cue, conversation_history: localHistory }),
+    });
+    if (!r.ok) throw new Error('brainstem returned ' + r.status);
+    const data = await r.json();
+    return data.response || data.message || '';
+  }
+
+  // Default path: GitHub Copilot via rapp-auth worker (Doorman). Persona
+  // becomes the system prompt; cue becomes the user message.
+  if (!window.RAPP || !window.RAPP.Doorman) throw new Error('Doorman not loaded');
+  return await window.RAPP.Doorman.chat({
+    system: twin.persona,
+    history,
+    message: cue,
+    max_tokens: 600,
   });
-  if (!r.ok) throw new Error('brainstem returned ' + r.status);
-  const data = await r.json();
-  return data.response || data.message || '';
 }
 
 async function hackerNewsFallback() {
@@ -1279,24 +1452,45 @@ function promptOneOff(twinName) {
 }
 
 // ────────────────────────────────────────────────────────────────────
-//  Brainstem health poll (host only)
+//  LLM backend health poll (host only)
+//  Default: Copilot via Doorman → "Copilot ✓" or "Sign in"
+//  Override: ?brainstem=URL → "brainstem ✓" or "no brainstem"
 // ────────────────────────────────────────────────────────────────────
 async function pollBrainstem() {
   if (state.isIframed) {
-    // Cart-iframed: assume parent owns the brainstem; mark as "via parent"
+    // Cart-iframed: parent owns the LLM; mark as "via parent"
     const p = $('#bs-pill');
-    if (p) { p.hidden = false; p.className = 'conn-pill bs-on'; p.textContent = 'brainstem via cart'; }
+    if (p) { p.hidden = false; p.className = 'conn-pill bs-on'; p.textContent = 'LLM via cart'; }
     state.brainstemOnline = true;
     return;
   }
-  async function tick() {
-    try {
-      const r = await fetch(BRAINSTEM_BASE + '/health', { cache: 'no-store' });
-      setBrainstemPill(r.ok);
-    } catch (e) { setBrainstemPill(false); }
+  if (USE_LOCAL_BRAINSTEM) {
+    async function tick() {
+      try {
+        const r = await fetch(BRAINSTEM_BASE + '/health', { cache: 'no-store' });
+        setBrainstemPill(r.ok);
+        const p = $('#bs-pill'); if (p) p.textContent = r.ok ? 'brainstem ✓' : 'no brainstem';
+      } catch (e) {
+        setBrainstemPill(false);
+        const p = $('#bs-pill'); if (p) p.textContent = 'no brainstem';
+      }
+    }
+    tick();
+    setInterval(tick, 8000);
+    return;
+  }
+  // Copilot path — check signed-in state on a fast tick (no network)
+  function tick() {
+    const signedIn = window.RAPP && window.RAPP.Doorman && window.RAPP.Doorman.isSignedIn();
+    setBrainstemPill(!!signedIn);
+    const p = $('#bs-pill');
+    if (p) {
+      if (signedIn) { p.textContent = 'Copilot ✓'; p.style.cursor = 'default'; p.onclick = null; }
+      else { p.textContent = 'Sign in'; p.style.cursor = 'pointer'; p.onclick = openSignInModal; }
+    }
   }
   tick();
-  setInterval(tick, 8000);
+  setInterval(tick, 2000);
 }
 
 // ────────────────────────────────────────────────────────────────────
@@ -1394,6 +1588,79 @@ function clearSession() {
     data: { note: 'session cleared' },
   });
 }
+
+// ────────────────────────────────────────────────────────────────────
+//  Sign-in modal (Copilot device-code flow via RAPP.Doorman)
+// ────────────────────────────────────────────────────────────────────
+let _signinPollTimer = null;
+function openSignInModal() {
+  const m = $('#signin-modal');
+  m.hidden = false;
+  m.style.display = 'flex';
+  $('#signin-step1').style.display = 'block';
+  $('#signin-step2').style.display = 'none';
+  $('#signin-step3').style.display = 'none';
+  $('#signin-error').style.display = 'none';
+}
+function closeSignInModal() {
+  const m = $('#signin-modal');
+  m.hidden = true; m.style.display = 'none';
+  if (_signinPollTimer) { clearInterval(_signinPollTimer); _signinPollTimer = null; }
+}
+async function startSignInFlow() {
+  const errBox = $('#signin-error');
+  errBox.style.display = 'none';
+  $('#signin-go').disabled = true;
+  $('#signin-go').textContent = 'Starting…';
+  try {
+    const Doorman = window.RAPP.Doorman;
+    const { user_code, verification_uri } = await Doorman.startDeviceLogin();
+    $('#signin-step1').style.display = 'none';
+    $('#signin-step2').style.display = 'block';
+    $('#signin-code').textContent = user_code;
+    $('#signin-link').href = verification_uri || 'https://github.com/login/device';
+    // Poll every 5s
+    _signinPollTimer = setInterval(async () => {
+      try {
+        const tok = await Doorman.pollDeviceLogin();
+        if (tok) {
+          clearInterval(_signinPollTimer); _signinPollTimer = null;
+          // Exchange for Copilot token immediately so the next twin turn doesn't lag
+          try { await Doorman.copilotExchange(); } catch (e) {
+            errBox.textContent = 'GitHub auth OK but Copilot exchange failed: ' + e.message + ' (do you have an active Copilot subscription?)';
+            errBox.style.display = 'block';
+            return;
+          }
+          $('#signin-step2').style.display = 'none';
+          $('#signin-step3').style.display = 'block';
+          setTimeout(closeSignInModal, 900);
+        }
+      } catch (e) {
+        clearInterval(_signinPollTimer); _signinPollTimer = null;
+        errBox.textContent = 'Sign-in failed: ' + (e.message || e);
+        errBox.style.display = 'block';
+      }
+    }, 5000);
+  } catch (e) {
+    errBox.textContent = 'Couldn\'t start sign-in: ' + (e.message || e);
+    errBox.style.display = 'block';
+    $('#signin-go').disabled = false;
+    $('#signin-go').textContent = 'Sign in with GitHub →';
+  }
+}
+$('#signin-close')?.addEventListener('click', closeSignInModal);
+$('#signin-go')?.addEventListener('click', startSignInFlow);
+$('#signin-copy')?.addEventListener('click', () => {
+  const txt = $('#signin-code').textContent;
+  navigator.clipboard?.writeText(txt).then(() => {
+    const b = $('#signin-copy'); const orig = b.textContent;
+    b.textContent = '✓ Copied'; setTimeout(() => b.textContent = orig, 1400);
+  });
+});
+$('#signin-code-box')?.addEventListener('click', () => {
+  const txt = $('#signin-code').textContent;
+  navigator.clipboard?.writeText(txt);
+});
 
 // ────────────────────────────────────────────────────────────────────
 //  Boot
