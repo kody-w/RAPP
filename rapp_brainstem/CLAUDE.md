@@ -60,8 +60,17 @@ No build step, linter, or type checker is configured.
 | `index.html` | Built-in web UI served at `/` |
 | `VERSION` | Semantic version string (currently 0.4.0) |
 | `CONSTITUTION.md` | Governance doc defining what belongs in this repo |
-| `agents/egg_hatcher_agent.py` | Universal `.egg` cartridge router (added 2026-05-10). Drop into a brainstem, restart, the LLM gets a `HatchEgg(egg_path=...)` tool. Reads any `.egg` from a local path or URL, **introspects** `manifest.schema`/`type`, and routes by kind: organism / rapplication / session / neighborhood / estate. Never guesses on unknown kinds. See `pages/docs/SPEC.md` §18.10 for the cartridge family. |
 | `utils/bond.py` | Master egg packer/unpacker for organism + rapplication ZIP cartridges. The cartridge family lives at `brainstem-egg/2.x` schemas. |
+
+## Kernel-shipped agents (the minimum, not the menu)
+
+The base install ships ONLY: `basic_agent.py`, `context_memory_agent.py`, `manage_memory_agent.py`, `learn_new_agent.py`, `swarm_factory_agent.py`, `hacker_news_agent.py`. Everything else lives in RAR (`kody-w/RAR`) and is installed on demand once the operator is ready.
+
+Notably **not** kernel — installable from RAR:
+- `@rapp/twin_agent` + `@rapp/egg_hatcher` — the Organism Lifecycle pack (`binders/@rapp-organism-lifecycle.json`). Install when you need to host sub-twins or hatch .egg cartridges (organism / rapplication / session / neighborhood / estate).
+- `@kody/workiq_agent` — Microsoft 365 access (emails, calendar, Teams, SharePoint/OneDrive). Install when you have a workiq CLI + Entra ID login.
+
+Past installs that have these three under `agents/` keep working — discovery is flat-glob; they just aren't shipped on a fresh brainstem anymore.
 
 ## Writing Agents
 

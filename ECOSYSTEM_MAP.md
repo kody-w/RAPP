@@ -84,7 +84,8 @@ Same primitives at every scale: **rappid + door + card + tether + trust scope.**
 │  tether: in-process                                        │
 │  scope: inherits caller's                                  │
 │  contract: ANTIPATTERNS §1 + CONSTITUTION Art. XXXIII      │
-│  examples: rapp_brainstem/agents/twin_agent.py + 9 others  │
+│  examples: rapp_brainstem/agents/learn_new_agent.py +      │
+│            installable RAR agents (e.g. @rapp/twin_agent)  │
 └────────────────────────────────────────────────────────────┘
 ```
 
@@ -225,14 +226,14 @@ Every `rapp-*/N.M` and `brainstem-*/N.M-variant` currently emitted in the repo. 
 | `rapp_brainstem/agents/basic_agent.py` | Agent base class | KERNEL — CONSTITUTION Art. XXXIII |
 | `rapp_brainstem/agents/manage_memory_agent.py` | Memory R/W | KERNEL — ECOSYSTEM §5 |
 | `rapp_brainstem/agents/context_memory_agent.py` | Conversation context | KERNEL — ECOSYSTEM §5 |
-| `rapp_brainstem/agents/twin_agent.py` | Cross-twin chat (rapp-twin-chat/1.0), egg ops, lifecycle | NEIGHBORHOOD_PROTOCOL §6, §7 |
+| RAR: `agents/@rapp/twin_agent.py` *(installable; not kernel-shipped)* | Cross-twin chat (rapp-twin-chat/1.0), egg ops, lifecycle. Install via the **Organism Lifecycle pack** (`binders/@rapp-organism-lifecycle.json`). | NEIGHBORHOOD_PROTOCOL §6, §7 |
 | `rapp_brainstem/agents/learn_new_agent.py` | Author new agents at runtime | ECOSYSTEM §7 (Evolution) |
 | `rapp_brainstem/agents/swarm_factory_agent.py` | Tier-2 deploy factory | rapp_swarm/ |
 | `rapp_brainstem/agents/perpetual_loop_factory_agent.py` | Background-loop factory | (no spec section yet — see §13) |
 | `rapp_brainstem/agents/hacker_news_agent.py` | Demo HN agent | (example) |
-| `rapp_brainstem/agents/egg_hatcher_agent.py` | Universal `.egg` hatcher. Reads any `.egg` from local path or URL, **introspects** `manifest.schema`/`type`, routes by kind: organism→bond.hatch_organism / rapplication→bond.hatch_rapplication / session→returns mount URL (rappterbox console or vbrainstem.html, since Python brainstem can't iframe) / neighborhood→manual GitHub-mint instructions (auto planned) / estate→manual substrate-migration instructions (auto planned) / unknown→**REFUSES**, never destructive fallback. Single-file agent per §5. | brainstem-egg/2.x family — SPEC.md §18.10 |
+| RAR: `agents/@rapp/egg_hatcher_agent.py` *(installable; not kernel-shipped)* | Universal `.egg` hatcher. Reads any `.egg` from local path or URL, **introspects** `manifest.schema`/`type`, routes by kind: organism→bond.hatch_organism / rapplication→bond.hatch_rapplication / session→returns mount URL (rappterbox console or vbrainstem.html, since Python brainstem can't iframe) / neighborhood→manual GitHub-mint instructions (auto planned) / estate→manual substrate-migration instructions (auto planned) / unknown→**REFUSES**, never destructive fallback. Install via the **Organism Lifecycle pack**. | brainstem-egg/2.x family — SPEC.md §18.10 |
 | `pages/vbrainstem.html` | Public tethered surface — multi-participant browser-tab brainstem. QR-pair WebRTC handshake (PeerJS broker, ECDSA P-256 keypair, 6-digit safety code), three exchangeable LLM backends (localhost default / `?brainstem=URL` / `?copilot=1` via Doorman + Pyodide), Coordinator-driven debate-demo workflow. Exports the live session as a `brainstem-egg/2.3-session` cartridge. | SPEC.md §18.11; brainstem-egg/2.3-session |
-| `rapp_brainstem/agents/workiq_agent.py` | WorkIQ signals | (example) |
+| RAR: `agents/@kody/workiq_agent.py` *(installable; not kernel-shipped)* | Microsoft 365 access (email/calendar/Teams/SharePoint/OneDrive) via the workiq CLI + Entra ID. Solo install from RAR; no pack. | (example) |
 | `rapp_brainstem/agents/plant_discord_neighborhood_agent.py` | Discord-driven neighborhood planting | NEIGHBORHOOD_PROTOCOL §4 (discovery) |
 | `rapp_brainstem/agents/lineage_rollup_agent.py` | Lineage-tree aggregation (avg/median MMR) | ECOSYSTEM §15 (shipped 2026-05-08) |
 | `rapp_brainstem/agents/species_leaderboard_agent.py` | Global Herald → Immortal ladder | ECOSYSTEM §15 (shipped 2026-05-08) |
