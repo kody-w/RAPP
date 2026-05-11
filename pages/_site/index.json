@@ -52,6 +52,14 @@
       ]
     },
     {
+      "key": "tutorials",
+      "label": "Tutorials",
+      "description": "Hands-on walkthroughs. Bundle the agent, bundle the cartridge, run the routing.",
+      "pages": [
+        { "path": "tutorials/hatch-egg.html", "title": "Hatch your first .egg", "audience": "Operator new to eggs", "description": "Install the egg_hatcher agent (one file, no kernel changes), then hatch the bundled sample-session.egg to see manifest-schema routing run end-to-end. Works offline." }
+      ]
+    },
+    {
       "key": "docs",
       "label": "Docs",
       "description": "The contract, the agent guide, the SDK reference.",
