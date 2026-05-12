@@ -397,6 +397,70 @@ header h1 .icon { font-size: 1.25em; }
 
   <div>
 
+    <!-- ╭─── ROCKET LAUNCH SEQUENCE ──────────────────────────────────╮
+         Walks the operator through getting two devices synced when the
+         local tether is on http://localhost (Edge / corp-net peerjs
+         block workaround). Stages auto-advance as the underlying state
+         changes; the only interactive ones are Stage 2 (ignite bridge)
+         and Stage 4 (ground brainstem).
+    -->
+    <div class="panel" id="rocket-panel" style="padding:18px;margin-bottom:18px;background:linear-gradient(180deg,rgba(88,166,255,0.05),rgba(0,0,0,0));border:1px solid rgba(88,166,255,0.25)">
+      <h2 style="display:flex;justify-content:space-between;align-items:center;font-size:1.1rem;margin-bottom:6px">
+        <span>🚀 Tether Launch Sequence</span>
+        <span id="rocket-status" style="font-size:0.7rem;padding:3px 10px;border-radius:999px;background:var(--bd);color:var(--mut)">on the pad</span>
+      </h2>
+      <p style="font-size:0.78rem;color:var(--dim);line-height:1.5;margin-bottom:14px">Four stages to get both devices talking through this neighborhood. Each lights up as it completes. The bridge popup in Stage 2 is the secret sauce — it dodges Edge's tracking-prevention block on peerjs.com by running the signaling code from a first-party HTTPS context (kody-w.github.io).</p>
+
+      <div id="rocket-stages" style="display:flex;flex-direction:column;gap:10px">
+        <!-- Stage 1: Booster (HTTP tether running) -->
+        <div class="rocket-stage" data-stage="1" style="display:flex;gap:12px;padding:10px 12px;background:var(--s2);border:1px solid var(--bd);border-radius:8px;align-items:center">
+          <div class="rocket-icon" style="font-size:1.5rem;line-height:1;width:32px;text-align:center">🪐</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline">
+              <strong style="font-size:0.92rem">Stage 1 — Booster</strong>
+              <span class="rocket-pill" style="font-size:0.66rem;padding:2px 8px;border-radius:999px;background:var(--bd);color:var(--mut)">checking…</span>
+            </div>
+            <div class="rocket-sub" style="font-size:0.74rem;color:var(--dim);margin-top:2px;line-height:1.4">Local HTTP tether running so we can freely reach <code style="font-size:0.7rem">localhost:7071</code> later.</div>
+          </div>
+        </div>
+        <!-- Stage 2: Lobby Ignition (bridge popup) -->
+        <div class="rocket-stage" data-stage="2" style="display:flex;gap:12px;padding:10px 12px;background:var(--s2);border:1px solid var(--bd);border-radius:8px;align-items:center;opacity:0.55">
+          <div class="rocket-icon" style="font-size:1.5rem;line-height:1;width:32px;text-align:center">🚀</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline">
+              <strong style="font-size:0.92rem">Stage 2 — Lobby Ignition</strong>
+              <span class="rocket-pill" style="font-size:0.66rem;padding:2px 8px;border-radius:999px;background:var(--bd);color:var(--mut)">locked</span>
+            </div>
+            <div class="rocket-sub" style="font-size:0.74rem;color:var(--dim);margin-top:2px;line-height:1.4">Opens a tiny bridge popup at kody-w.github.io that owns the PeerJS connection. Keep that window open while you're in orbit.</div>
+            <button id="rocket-ignite-btn" style="display:none;margin-top:8px;background:var(--acc);color:#000;border:none;padding:7px 14px;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:inherit">🚀 Ignite Stage 2</button>
+          </div>
+        </div>
+        <!-- Stage 3: Orbit (phone/second device joined) -->
+        <div class="rocket-stage" data-stage="3" style="display:flex;gap:12px;padding:10px 12px;background:var(--s2);border:1px solid var(--bd);border-radius:8px;align-items:center;opacity:0.4">
+          <div class="rocket-icon" style="font-size:1.5rem;line-height:1;width:32px;text-align:center">📡</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline">
+              <strong style="font-size:0.92rem">Stage 3 — Orbit (Crew Aboard)</strong>
+              <span class="rocket-pill" style="font-size:0.66rem;padding:2px 8px;border-radius:999px;background:var(--bd);color:var(--mut)">locked</span>
+            </div>
+            <div class="rocket-sub" style="font-size:0.74rem;color:var(--dim);margin-top:2px;line-height:1.4">Scan the invite QR with your phone — it joins this lobby via the live HTTPS tether and meets you here.</div>
+          </div>
+        </div>
+        <!-- Stage 4: Docking (grounded to brainstem) -->
+        <div class="rocket-stage" data-stage="4" style="display:flex;gap:12px;padding:10px 12px;background:var(--s2);border:1px solid var(--bd);border-radius:8px;align-items:center;opacity:0.4">
+          <div class="rocket-icon" style="font-size:1.5rem;line-height:1;width:32px;text-align:center">🛰️</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline">
+              <strong style="font-size:0.92rem">Stage 4 — Brainstem Docking</strong>
+              <span class="rocket-pill" style="font-size:0.66rem;padding:2px 8px;border-radius:999px;background:var(--bd);color:var(--mut)">locked</span>
+            </div>
+            <div class="rocket-sub" style="font-size:0.74rem;color:var(--dim);margin-top:2px;line-height:1.4">Route every lobby message through your local brainstem at <code style="font-size:0.7rem">localhost:7071</code>. The phone now controls your kernel 1:1.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- ╰────────────────────────────────────────────────────────────╯ -->
+
     <!-- ╭─── PRIMARY: lobby (multi-device collab is the headline) ──────╮ -->
     <div class="panel" id="lobby-panel" style="display:none;padding:18px;margin-bottom:18px">
       <h2 style="display:flex;justify-content:space-between;align-items:center;font-size:1.1rem;margin-bottom:8px">
@@ -2981,9 +3045,9 @@ async function plantPrivateEstate() {
 //   guest: rapp-<rappid-hash:16>-<operator-hash:8>
 // ────────────────────────────────────────────────────────────────────────
 const lobby = {
-  peer:    null,    // PeerJS instance
-  hostConn: null,    // (guest) data channel to host
-  guests:  new Map(), // (host) peer id → DataConnection
+  peer:    null,    // PeerJS instance (direct mode) — null in bridge mode
+  hostConn: null,    // (guest) data channel to host — BridgedConn in bridge mode
+  guests:  new Map(), // (host) peer id → DataConnection / BridgedConn
   isHost:  false,
   peerId:  null,
   hostId:  null,
@@ -2991,7 +3055,240 @@ const lobby = {
   messages: [],
   greeted: false,
   grounded: false,  // host-side: if true, lobby chat is forwarded to localhost:7071/chat
+  mode:    null,    // 'direct' | 'bridge' — set by initLobby
 };
+
+// ────────────────────────────────────────────────────────────────────────
+// BRIDGE TRANSPORT — for tethers running on http://localhost or any
+// browser whose tracking-prevention list blocks peerjs.com as a tracker
+// (Edge "Balanced", many corp networks). A popup at kody-w.github.io is a
+// first-party HTTPS context where peerjs.com behaves normally; we relay
+// signal events via postMessage. WebRTC is direct P2P after handshake.
+//
+// Auto-engages when location.protocol is http: or file:, or when the
+// URL includes ?bridge=1. On github.io we use direct PeerJS like before.
+// ────────────────────────────────────────────────────────────────────────
+const BRIDGE_URL = 'https://kody-w.github.io/RAPP/pages/lobby.html';
+
+function shouldUseBridge() {
+  try {
+    const url = new URL(location.href);
+    if (url.searchParams.get('bridge') === '0') return false;
+    if (url.searchParams.get('bridge') === '1') return true;
+    // Default: on (any non-github.io HTTPS origin needs the bridge to
+    // dodge tracking prevention; localhost / file:// likewise).
+    const host = location.hostname || '';
+    if (/(^|\.)github\.io$/.test(host)) return false;
+    return true;
+  } catch { return true; }
+}
+
+const bridge = {
+  win:        null,
+  ready:      false,
+  initDone:   false,
+  rocketCb:   null,   // rocket-stage UI callback ('opening'|'ready'|'role'|'guest-joined'|'guest-left'|'closed')
+  _openPromise: null,
+
+  async open(hostId, guestId, name) {
+    if (this.win && !this.win.closed) return this;
+    this.ready = false;
+    this.initDone = false;
+    const w = window.open(BRIDGE_URL, 'rapp-lobby-bridge',
+                          'width=560,height=540,resizable=yes,scrollbars=yes');
+    if (!w) {
+      // popup blocked
+      this._notify('blocked');
+      return null;
+    }
+    this.win = w;
+    this._notify('opening');
+
+    // Wait for the popup to send {type:'ready'}
+    const ok = await new Promise((resolve) => {
+      const t = setTimeout(() => resolve(false), 10000);
+      const handler = (e) => {
+        if (e.source !== w) return;
+        const m = e.data;
+        if (!m || m.schema !== 'rapp-lobby-bridge/1.0') return;
+        if (m.type === 'ready') {
+          clearTimeout(t);
+          window.removeEventListener('message', handler);
+          resolve(true);
+        }
+      };
+      window.addEventListener('message', handler);
+    });
+    if (!ok) {
+      this._notify('timeout');
+      try { w.close(); } catch {}
+      this.win = null;
+      return null;
+    }
+    this.ready = true;
+    this._notify('ready');
+
+    // Send init now
+    try {
+      w.postMessage({
+        schema: 'rapp-lobby-bridge/1.0',
+        type:   'init',
+        hostId, guestId,
+        neighborhoodName: name || ''
+      }, '*');
+      this.initDone = true;
+    } catch (e) {
+      log('bridge init postMessage failed: ' + e.message, 'warn');
+      return null;
+    }
+    return this;
+  },
+
+  send(to, payload) {
+    if (!this.win || this.win.closed) return;
+    try { this.win.postMessage({ schema:'rapp-lobby-bridge/1.0', type:'send', to, payload }, '*'); } catch {}
+  },
+  broadcast(payload, excludePeer) {
+    if (!this.win || this.win.closed) return;
+    try { this.win.postMessage({ schema:'rapp-lobby-bridge/1.0', type:'broadcast', payload, excludePeer }, '*'); } catch {}
+  },
+  destroy() {
+    if (this.win && !this.win.closed) {
+      try { this.win.postMessage({ schema:'rapp-lobby-bridge/1.0', type:'destroy' }, '*'); } catch {}
+      try { this.win.close(); } catch {}
+    }
+    this.win = null;
+    this.ready = false;
+    this.initDone = false;
+    this._notify('closed');
+  },
+  _notify(stage, extra) {
+    if (typeof this.rocketCb === 'function') {
+      try { this.rocketCb(stage, extra); } catch (e) { console.error(e); }
+    }
+  }
+};
+
+// A duck-typed DataConnection-compatible shim. Routes send() through the
+// bridge popup; events are driven by incoming postMessage 'recv', 'open',
+// 'close'. lobbyWireConn() doesn't know or care it's not real PeerJS.
+class BridgedConn {
+  constructor(peerId) {
+    this.peer = peerId;
+    this._h = { data: [], open: [], close: [], error: [] };
+  }
+  on(event, fn) {
+    (this._h[event] ||= []).push(fn);
+    return this;
+  }
+  send(payload) {
+    bridge.send(this.peer, payload);
+  }
+  close() {
+    // Bridge owns the underlying DataConnection lifecycle; this is a
+    // best-effort hint. We rely on host-side 'guest-disconnected' events
+    // (and vice versa) to fire 'close' through _emit.
+  }
+  _emit(event, ...args) {
+    for (const fn of (this._h[event] || [])) {
+      try { fn(...args); } catch (e) { console.error(e); }
+    }
+  }
+}
+
+// Global bridge message router. Maintains a single listener that
+// dispatches into our existing lobby state machine.
+function installBridgeListener() {
+  if (installBridgeListener._installed) return;
+  installBridgeListener._installed = true;
+  window.addEventListener('message', (e) => {
+    if (!bridge.win || e.source !== bridge.win) return;
+    const m = e.data;
+    if (!m || m.schema !== 'rapp-lobby-bridge/1.0') return;
+    switch (m.type) {
+      case 'role': {
+        if (m.role === 'host') {
+          lobby.isHost = true;
+          lobby.peerId = m.peerId;
+          lobby.guests = new Map();
+          lobby.members = new Map();
+          setLobbyPill('host', 'host');
+          log('lobby · claimed host via bridge ' + (m.peerId || ''), 'ok');
+          // host gets the ground toggle once host role is confirmed
+          const groundBtn = document.getElementById('ground-toggle');
+          if (groundBtn) groundBtn.style.display = 'block';
+          lobbyAppend({ kind: 'system', from: 'lobby', text: 'You\'re the host (via lobby-bridge popup). Phone-scanned guests connect through that popup; their chat is real-time WebRTC P2P.', ts: new Date().toISOString() });
+          renderLobbyPeers();
+          bridge._notify('role', { role: 'host', peerId: m.peerId });
+        } else if (m.role === 'guest') {
+          lobby.isHost = false;
+          lobby.peerId = m.peerId;
+          setLobbyPill('connecting to host…', '');
+          bridge._notify('role', { role: 'guest', peerId: m.peerId });
+        } else if (m.role === 'unavailable') {
+          lobbyUnavailable('bridge: ' + (m.reason || 'unknown'));
+          bridge._notify('role', { role: 'unavailable', reason: m.reason });
+        }
+        break;
+      }
+      case 'guest-connected': {
+        // Host side: a guest dialed in via the bridge.
+        const conn = new BridgedConn(m.peerId);
+        lobby.guests.set(m.peerId, conn);  // ensure presence before wire
+        lobbyWireConn(conn);
+        conn._emit('open');
+        bridge._notify('guest-joined', { peerId: m.peerId });
+        break;
+      }
+      case 'guest-disconnected': {
+        const conn = lobby.guests.get(m.peerId);
+        if (conn) conn._emit('close');
+        bridge._notify('guest-left', { peerId: m.peerId });
+        break;
+      }
+      case 'host-connected': {
+        // Guest side: connected to host via bridge.
+        const conn = new BridgedConn(lobby.hostId);
+        lobby.hostConn = conn;
+        lobbyWireConn(conn);
+        conn._emit('open');
+        setLobbyPill('connected', 'guest');
+        // send the hello so host can register us
+        try {
+          const me = lobbyMe();
+          conn.send({ kind: 'hello', handle: me.handle, rappid: me.rappid });
+        } catch {}
+        bridge._notify('host-connected', {});
+        break;
+      }
+      case 'host-disconnected': {
+        if (lobby.hostConn) lobby.hostConn._emit('close');
+        lobby.hostConn = null;
+        setLobbyPill('host disconnected', 'warn');
+        break;
+      }
+      case 'recv': {
+        let conn;
+        if (lobby.isHost) {
+          conn = lobby.guests.get(m.from);
+        } else {
+          conn = lobby.hostConn;
+        }
+        if (conn) conn._emit('data', m.payload);
+        break;
+      }
+      case 'error': {
+        log('bridge error: ' + m.reason, m.fatal ? 'err' : 'warn');
+        if (m.fatal) {
+          lobbyUnavailable('bridge: ' + m.reason);
+          bridge._notify('error', { reason: m.reason, fatal: true });
+        }
+        break;
+      }
+      case 'pong': break;
+    }
+  });
+}
 
 function lobbyIdsFor(nbhd) {
   const m = (nbhd?.rappid || '').match(/:([a-f0-9]+)@/);
@@ -3059,6 +3356,10 @@ function lobbyAppend(msg) {
 function lobbyBroadcast(msg, excludePeer) {
   // Host-side: relay to all guests except the sender
   if (!lobby.isHost) return;
+  if (lobby.mode === 'bridge') {
+    bridge.broadcast(msg, excludePeer);
+    return;
+  }
   for (const [pid, conn] of lobby.guests) {
     if (pid === excludePeer) continue;
     try { conn.send(msg); } catch (e) { log('broadcast send failed: ' + e.message, 'warn'); }
@@ -3154,7 +3455,7 @@ function handleLobbyMessage(msg, conn) {
 }
 
 async function initLobby() {
-  if (!state.nbhd || typeof Peer === 'undefined') return;
+  if (!state.nbhd) return;
   // Tear down any prior session (operator changed neighborhoods)
   destroyLobby();
 
@@ -3171,8 +3472,57 @@ async function initLobby() {
   const me = lobbyMe();
   const guestId = `${prefix}-${me.fp}`;
 
-  // Try to claim host ID first. If unavailable, fall back to guest.
+  // Bridge mode: open the kody-w.github.io popup that runs PeerJS in a
+  // first-party HTTPS context (Edge tracking-prevention workaround).
+  // Direct mode: classic — run PeerJS in this window.
+  if (shouldUseBridge()) {
+    lobby.mode = 'bridge';
+    installBridgeListener();
+    // Don't auto-open the popup — wait for the user to click the rocket
+    // stage 2 button. That avoids browsers blocking auto-popups, gives
+    // operators a chance to read the explanation, and lets the rocket UI
+    // drive the flow.
+    setLobbyPill('awaiting ignition…', '');
+    if (typeof rocket !== 'undefined') {
+      rocket.set(2, 'ready');
+      rocket.subText(2, 'Click "🚀 Ignite Stage 2" to open the lobby bridge popup. It must stay open while you\'re in orbit.');
+    }
+    return;
+  }
+
+  // Fall through to direct mode for github.io / explicit ?bridge=0.
+  if (typeof Peer === 'undefined') return;
+  lobby.mode = 'direct';
+  if (typeof rocket !== 'undefined') {
+    rocket.set(2, 'complete');
+    rocket.subText(2, '✓ Direct PeerJS mode — no bridge popup needed on this origin.');
+    rocket.set(3, 'ready');
+  }
   await tryClaimHost(hostId, guestId);
+}
+
+// Called by Rocket Stage 2 ignition button (and by anything that wants
+// to open the bridge programmatically once init has set hostId).
+async function igniteBridge() {
+  if (lobby.mode !== 'bridge') return;
+  if (bridge.win && !bridge.win.closed) {
+    // Already open — focus it.
+    try { bridge.win.focus(); } catch {}
+    return;
+  }
+  if (!lobby.hostId) {
+    log('bridge: no hostId yet (no neighborhood loaded?)', 'warn');
+    return;
+  }
+  const me = lobbyMe();
+  const { prefix } = lobbyIdsFor(state.nbhd);
+  const guestId = `${prefix}-${me.fp}`;
+  setLobbyPill('opening bridge…', '');
+  const ok = await bridge.open(lobby.hostId, guestId, state.nbhd?.name || '');
+  if (!ok) {
+    setLobbyPill('bridge blocked', 'warn');
+    log('bridge popup blocked or timed out — operator must allow popups on this origin', 'warn');
+  }
 }
 
 async function tryClaimHost(hostId, guestId) {
@@ -3478,6 +3828,7 @@ async function maybeForwardToBrainstem(msg) {
 
 function destroyLobby() {
   try { if (lobby.peer) lobby.peer.destroy(); } catch {}
+  try { bridge.destroy(); } catch {}
   lobby.peer = null;
   lobby.hostConn = null;
   lobby.guests = new Map();
@@ -3487,6 +3838,7 @@ function destroyLobby() {
   lobby.hostId = null;
   lobby.messages = [];
   lobby.grounded = false;
+  lobby.mode = null;
   setLobbyPill('offline', '');
   renderLobbyPeers();
   renderLobbyMessages();
@@ -3497,6 +3849,196 @@ function destroyLobby() {
 }
 
 window.addEventListener('beforeunload', destroyLobby);
+
+// ────────────────────────────────────────────────────────────────────────
+// ROCKET LAUNCH SEQUENCE — UI controller. Reflects the underlying lobby
+// state into the 4-stage panel and drives Stage 2 ignition.
+// ────────────────────────────────────────────────────────────────────────
+const rocket = {
+  state: { 1: 'checking', 2: 'locked', 3: 'locked', 4: 'locked' },
+  // Visual styling per state (pill-color, pill-text, row-opacity).
+  styles: {
+    checking: { bg: 'var(--bd)',          color: 'var(--mut)', label: 'checking…', opacity: 1   },
+    locked:   { bg: 'var(--bd)',          color: 'var(--mut)', label: 'locked',    opacity: 0.4 },
+    ready:    { bg: 'rgba(88,166,255,0.2)', color: '#a8d4ff', label: 'ready',     opacity: 1   },
+    igniting: { bg: 'rgba(255,180,80,0.25)', color: '#ffce80', label: 'igniting…', opacity: 1   },
+    burning:  { bg: 'rgba(255,180,80,0.25)', color: '#ffce80', label: 'igniting…', opacity: 1   },
+    complete: { bg: 'rgba(63,185,80,0.25)', color: '#7adf8f',  label: 'complete',  opacity: 1   },
+    failed:   { bg: 'rgba(220,80,80,0.25)', color: '#df7a8f',  label: 'failed',    opacity: 1   },
+  },
+  set(stage, status) {
+    if (this.state[stage] === status) return;
+    this.state[stage] = status;
+    this.render(stage);
+    this.renderHeader();
+  },
+  render(stage) {
+    const row = document.querySelector(`.rocket-stage[data-stage="${stage}"]`);
+    if (!row) return;
+    const status = this.state[stage];
+    const s = this.styles[status] || this.styles.locked;
+    row.style.opacity = String(s.opacity);
+    const pill = row.querySelector('.rocket-pill');
+    if (pill) {
+      pill.style.background = s.bg;
+      pill.style.color      = s.color;
+      pill.textContent      = s.label;
+    }
+    // Stage 2 button visibility
+    if (stage === 2) {
+      const btn = document.getElementById('rocket-ignite-btn');
+      if (btn) btn.style.display = (status === 'ready' || status === 'failed') ? 'inline-block' : 'none';
+    }
+  },
+  renderAll() {
+    [1,2,3,4].forEach(s => this.render(s));
+    this.renderHeader();
+  },
+  renderHeader() {
+    const el = document.getElementById('rocket-status');
+    if (!el) return;
+    const order = ['checking', 'locked', 'ready', 'igniting', 'burning', 'complete', 'failed'];
+    const states = [this.state[1], this.state[2], this.state[3], this.state[4]];
+    const completeCount = states.filter(s => s === 'complete').length;
+    const anyFailed     = states.some(s => s === 'failed');
+    if (anyFailed) {
+      el.textContent = 'launch hold';
+      el.style.background = 'rgba(220,80,80,0.25)';
+      el.style.color      = '#df7a8f';
+    } else if (completeCount === 4) {
+      el.textContent = '✨ all systems go';
+      el.style.background = 'rgba(63,185,80,0.25)';
+      el.style.color      = '#7adf8f';
+    } else if (completeCount > 0) {
+      el.textContent = `T-${4 - completeCount} · ${completeCount}/4 staged`;
+      el.style.background = 'rgba(88,166,255,0.18)';
+      el.style.color      = '#a8d4ff';
+    } else {
+      el.textContent = 'on the pad';
+      el.style.background = 'var(--bd)';
+      el.style.color      = 'var(--mut)';
+    }
+  },
+
+  // ── Initial check: are we even running on a local HTTP origin? ─────
+  initStage1() {
+    const proto = location.protocol;
+    const host  = location.hostname || '';
+    if (proto === 'http:' && (host === 'localhost' || host === '127.0.0.1' || /^192\.168\.|^10\.|^172\.(1[6-9]|2\d|3[01])\./.test(host))) {
+      this.set(1, 'complete');
+      this.subText(1, `✓ Local HTTP tether at ${location.origin} — can reach localhost:7071 freely.`);
+    } else if (/(^|\.)github\.io$/.test(host)) {
+      this.set(1, 'complete');
+      this.subText(1, '✓ Live HTTPS tether (kody-w.github.io). PeerJS works directly — bridge isn\'t needed, this is the "cloud" path.');
+    } else if (proto === 'file:') {
+      this.set(1, 'complete');
+      this.subText(1, '✓ file:// origin — bridge mode active.');
+    } else {
+      this.set(1, 'complete');
+      this.subText(1, `Loaded from ${location.origin}. Bridge mode active.`);
+    }
+  },
+  subText(stage, text) {
+    const row = document.querySelector(`.rocket-stage[data-stage="${stage}"] .rocket-sub`);
+    if (row) row.textContent = text;
+  },
+
+  // ── Wire bridge events into the rocket UI ──────────────────────────
+  wire() {
+    // Stage 2 ignition button
+    const btn = document.getElementById('rocket-ignite-btn');
+    if (btn) btn.onclick = () => igniteBridge();
+
+    // bridge state machine → stage 2 + 3
+    bridge.rocketCb = (stage, extra) => {
+      switch (stage) {
+        case 'opening':    this.set(2, 'igniting'); this.subText(2, 'Opening kody-w.github.io/RAPP/pages/lobby.html in a popup window…'); break;
+        case 'ready':      this.set(2, 'burning');  this.subText(2, 'Popup loaded. Handshaking with peerjs.com from first-party HTTPS context…'); break;
+        case 'blocked':    this.set(2, 'failed');   this.subText(2, '✗ Popup blocked. Allow popups for this origin and click "Ignite" again.'); break;
+        case 'timeout':    this.set(2, 'failed');   this.subText(2, '✗ Popup didn\'t respond in 10s. Close it and try again.'); break;
+        case 'role':
+          if (extra?.role === 'host') {
+            this.set(2, 'complete');
+            this.subText(2, '✓ Booster engaged — you\'re the lobby host (via bridge popup). Phone-scanned guests dial through there.');
+            this.set(3, 'ready');
+            this.subText(3, 'Tap "📱 Bring another device" or just scan the QR below — your phone joins the lobby through the live HTTPS tether.');
+          } else if (extra?.role === 'guest') {
+            this.set(2, 'complete');
+            this.subText(2, '✓ Connected — you\'re a guest in this neighborhood\'s lobby.');
+            this.set(3, 'ready');
+            this.subText(3, 'Waiting on the host to acknowledge you. Other devices visible below as they join.');
+          } else if (extra?.role === 'unavailable') {
+            this.set(2, 'failed');
+            this.subText(2, `✗ ${extra.reason || 'broker unreachable'}.`);
+          }
+          break;
+        case 'guest-joined':
+          if (this.state[3] !== 'complete') {
+            this.set(3, 'complete');
+            this.subText(3, `✓ ${extra?.peerId ? extra.peerId.slice(-12) : 'guest'} aboard. Tap "Ground" to forward their messages through your brainstem.`);
+            this.set(4, 'ready');
+          }
+          break;
+        case 'host-connected':
+          this.set(3, 'complete');
+          this.subText(3, '✓ Connected to the lobby host. Their grounded brainstem (if enabled) will respond to your chat.');
+          break;
+        case 'closed':
+          this.set(2, 'failed');
+          this.subText(2, 'Bridge popup closed. Click "Ignite" again to reopen.');
+          this.set(3, 'locked');
+          this.set(4, 'locked');
+          break;
+        case 'error':
+          this.set(2, 'failed');
+          this.subText(2, `✗ ${extra?.reason || 'bridge error'}.`);
+          break;
+      }
+    };
+
+    // Stage 4: ground toggle
+    const groundBtn = document.getElementById('ground-toggle');
+    if (groundBtn) {
+      const origClick = groundBtn.onclick;
+      groundBtn.addEventListener('click', () => {
+        // Defer one tick — toggleGrounding() flips lobby.grounded synchronously.
+        setTimeout(() => {
+          if (lobby.grounded) {
+            rocket.set(4, 'complete');
+            rocket.subText(4, '✓ Grounded — every lobby message is being POSTed to localhost:7071/chat.');
+          } else {
+            rocket.set(4, 'ready');
+            rocket.subText(4, 'Ungrounded. Tap again to re-enable brainstem routing.');
+          }
+        }, 50);
+      });
+    }
+  }
+};
+
+// Boot the rocket UI after DOM is ready (script is at end of body, but
+// the lobby panel that we patch into may be touched later — wrap in
+// rAF to play safe).
+function bootRocket() {
+  if (!document.getElementById('rocket-panel')) return;
+  rocket.renderAll();
+  rocket.initStage1();
+  rocket.wire();
+  // If init already happened (mode set), reflect it.
+  if (lobby.mode === 'bridge') {
+    rocket.set(2, 'ready');
+    rocket.subText(2, 'Click "🚀 Ignite Stage 2" to open the lobby bridge popup. It must stay open while you\'re in orbit.');
+  } else if (lobby.mode === 'direct') {
+    rocket.set(2, 'complete');
+    rocket.subText(2, '✓ Direct PeerJS mode — no bridge popup needed on this origin.');
+    rocket.set(3, 'ready');
+  }
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootRocket);
+} else {
+  bootRocket();
+}
 
 // ── Invite QR — generate a "scan to join" QR encoding the current
 //    tether's deep link (?neighborhood=<url>). Mobile scans → opens the
