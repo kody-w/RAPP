@@ -135,7 +135,7 @@ Shipped 2026-05-10. See `pages/docs/SPEC.md` §18.10–§18.12 for the canonical
 
 | Directory | Purpose |
 |-----------|---------|
-| `rapp_brainstem/` | Tier 1 local server (Flask, agents, organs under `utils/organs/`, web UI) |
+| `rapp_brainstem/` | Tier 1 local server (Flask, agents, organs under `utils/organs/`, web UI). Sibling `tls_proxy.py` (stdlib + openssl) wraps the kernel in self-signed HTTPS at `:7072` so the live tether at `kody-w.github.io` can talk to it without a tunnel — kernel `brainstem.py` stays untouched per Article XXXIII. |
 | `rapp_swarm/` | Tier 2 Azure Functions (vendors brainstem core) |
 | `worker/` | Cloudflare auth/proxy worker |
 | _(catalog lives in [`kody-w/rapp_store`](https://github.com/kody-w/rapp_store))_ | Rapplication catalog is its own public repo since 2026-04-26 — brainstem fetches `index.json` via `RAPPSTORE_URL` (default `raw.githubusercontent.com/kody-w/rapp_store/main/index.json`). Hosted viewer at https://kody-w.github.io/RAPP_Store/. |
