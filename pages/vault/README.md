@@ -5,6 +5,8 @@ description: Entry point for the RAPP Vault — the second-brain wiki for the pl
 
 # RAPP Vault
 
+> **Looking for a guided entry into the vault?** The [**Kernel hub**](../kernel.html) surfaces the vault's five curated Reading Paths (Exec / Engineer / Architect / Partner / New Contributor) alongside the rest of the canon. Start there if you want a 15–40 min guided read rather than browsing notes ad-hoc.
+
 This folder is a real Obsidian vault. Open it directly with **File → Open folder as vault** in any Obsidian client and it Just Works. The same files are also served through a static HTML viewer at [`pages/vault/`](../pages/vault/index.html).
 
 ## What this is

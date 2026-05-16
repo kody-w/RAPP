@@ -2,6 +2,8 @@
 
 > Single canonical synthesis of the RAPP ecosystem. **Start every session here.**
 > Schema: `rapp-ecosystem-map/1.0`. Append-only. Derivative — if it disagrees with `MASTER_PLAN.md` or `CONSTITUTION.md`, the spec wins and this map is wrong; fix the map.
+>
+> *Human-facing companion: the [**Kernel hub**](https://kody-w.github.io/RAPP/pages/kernel.html) surfaces this map alongside the trilogy, the law, the specs, and the vault Reading Paths in one rendered page.*
 
 ## How to read this
 

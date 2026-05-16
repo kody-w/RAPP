@@ -4,6 +4,8 @@ A local-first AI agent server. One dependency: a GitHub account with Copilot acc
 
 The brainstem runs on your machine, uses GitHub Copilot as the LLM, auto-discovers agents from Python files, and exposes a chat API + web UI on `localhost:7071`. No API keys, no cloud setup, no config.
 
+> **Looking for the wider context?** This README is the Tier 1 component quickstart. The repo-wide entry point is the [**Kernel hub**](https://kody-w.github.io/RAPP/pages/kernel.html) — canonical reading order for the whole platform (trilogy, law, specs, vault Reading Paths).
+
 ---
 
 ## Install

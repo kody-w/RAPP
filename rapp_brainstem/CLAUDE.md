@@ -1,6 +1,8 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with the **brainstem component** in this repo.
+
+> **For repo-wide guidance** (canon, governance, reading order across the whole platform) start at the [**Kernel hub**](https://kody-w.github.io/RAPP/pages/kernel.html) or the root [`CLAUDE.md`](../CLAUDE.md). This file (`rapp_brainstem/CLAUDE.md`) is scoped to the Tier 1 Brainstem itself.
 
 ## Project Overview
 

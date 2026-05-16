@@ -1,5 +1,7 @@
 # `docs/` — Governance and reference
 
+> **Browsing for the right doc?** The [**Kernel hub**](../kernel.html) surfaces every spec here alongside the trilogy, the law, and the vault Reading Paths — useful when you don't yet know whether your question is a spec question, a vault question, or a governance question.
+
 Long-form, stable documents that aren't the catalog card (`README.md`)
 or running code. The kind of file you read once to understand a
 contract, not the kind you grep daily.

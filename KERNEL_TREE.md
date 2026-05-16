@@ -1,5 +1,7 @@
 # RAPP kernel tree
 
+> **Looking for the human-facing entry point?** The [**Kernel hub**](https://kody-w.github.io/RAPP/pages/kernel.html) is the unified reading order for the whole canon — trilogy, law, reference, specs, vault Reading Paths. This page (KERNEL_TREE.md) is the file-by-file *inventory* of what's in this repo; the hub is the *narrative* that explains how it all fits.
+
 This repo (`kody-w/RAPP`) is a **mirror** of the RAPP grail kernel at [`kody-w/rapp-installer`](https://github.com/kody-w/rapp-installer). Its purpose is to show the **full kernel tree end-to-end in one repo** — every file the kernel ships, plus the mirror's own optional surfaces (Pages site, audience docs, drift-check tests).
 
 Per the [Mirror Spec](./pages/vault/Architecture/Mirror%20Spec.md), only **three** files must be byte-identical to grail. Everything else is the mirror's prerogative — RAPP carries the full grail tree at its grail paths plus a few mirror-only additions (`pages/`, `tests/mirror-drift.sh`, `rappid.json`).

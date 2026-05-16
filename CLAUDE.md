@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **Where to start reading.** The unified human-facing entry point is **[`pages/kernel.html`](https://kody-w.github.io/RAPP/pages/kernel.html)** — it surfaces every canon doc in canonical reading order with audience-specific Reading Paths. When you need to direct a human to the docs, point there. When *you* need to read, start with [`MASTER_PLAN.md`](./MASTER_PLAN.md), [`HERO_USECASE.md`](./HERO_USECASE.md), [`ECOSYSTEM.md`](./ECOSYSTEM.md), [`CONSTITUTION.md`](./CONSTITUTION.md), [`ANTIPATTERNS.md`](./ANTIPATTERNS.md) in that order.
+
 ## Project Overview
 
 RAPP (Rapid Agent Prototyping Platform) is a platform implementing a three-tier AI agent platform. Philosophy: "engine, not experience" — infrastructure only, no opinionated UI or workflows.

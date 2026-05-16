@@ -8,7 +8,7 @@ curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash
 
 Brainstem comes up at `http://localhost:7071`. One GitHub account with Copilot access is the only dependency. No OpenAI/Anthropic key. No cloud account. No enterprise gate.
 
-> **First-time visitor?** Read [`MASTER_PLAN.md`](./MASTER_PLAN.md) — Tesla-Master-Plan-style first-principles north star. Part 1 (what we built) + Part Deux (where this goes) on one page. The single-sentence version: *"Use everyone else's hardware to run the network."*
+> **First-time visitor?** Start at the **[Kernel hub](https://kody-w.github.io/RAPP/pages/kernel.html)** — the unified entry point that surfaces every canon doc in canonical reading order. From there: the trilogy ([MASTER_PLAN](./MASTER_PLAN.md) → [HERO_USECASE](./HERO_USECASE.md) → [ECOSYSTEM](./ECOSYSTEM.md)), the law ([CONSTITUTION](./CONSTITUTION.md), [ANTIPATTERNS](./ANTIPATTERNS.md)), the [specs](./pages/docs/), and the [vault](./pages/vault/) with curated Reading Paths for every audience.
 
 ## What an "agent" is here
 
