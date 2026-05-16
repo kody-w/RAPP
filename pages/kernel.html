@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAPP — The Kernel · Read me first</title>
+<meta name="description" content="The canonical reading order for the RAPP kernel: the trilogy (Master Plan, Hero Use Case, Ecosystem), the law (Constitution, Antipatterns), the specs, the vault. One page to find anything.">
+<meta property="og:title" content="RAPP — The Kernel">
+<meta property="og:description" content="The canonical reading order for everyone — operators, contributors, engineers, partners, AI assistants.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://kody-w.github.io/RAPP/pages/kernel.html">
+<link rel="canonical" href="https://kody-w.github.io/RAPP/pages/kernel.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E🧠%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="./_site/css/tokens.css">
+<link rel="stylesheet" href="./_site/css/base.css">
+<link rel="stylesheet" href="./_site/css/components.css">
+<script src="./_site/js/theme.js"></script>
+<style>
+  .kernel-hero {
+    text-align: center;
+    padding: 72px 16px 32px;
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  .kernel-hero .eyebrow {
+    color: var(--text-muted, #8b949e);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 14px;
+  }
+  .kernel-hero h1 {
+    font-size: 44px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+    margin-bottom: 16px;
+  }
+  .kernel-hero h1 .grad {
+    background: linear-gradient(90deg, #7df0c8, #58a6ff, #a78bfa);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .kernel-hero .lede {
+    font-size: 17px;
+    color: var(--text-muted, #8b949e);
+    max-width: 620px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+  .quickbar {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 28px;
+  }
+  .quickbar a {
+    padding: 9px 18px;
+    border: 1px solid var(--border-default, #30363d);
+    border-radius: 999px;
+    color: var(--text-default, #e6edf3) !important;
+    font-size: 13px;
+    background: var(--surface-elevated, #161b22);
+    text-decoration: none;
+    transition: border-color .15s, color .15s;
+  }
+  .quickbar a:hover {
+    border-color: #3fb950;
+    color: #3fb950 !important;
+  }
+  .toc {
+    max-width: 760px;
+    margin: 24px auto 48px;
+    padding: 16px 22px;
+    background: var(--surface-elevated, #161b22);
+    border: 1px solid var(--border-default, #30363d);
+    border-radius: 12px;
+    font-size: 13px;
+    color: var(--text-muted, #8b949e);
+  }
+  .toc strong { color: var(--text-default, #e6edf3); }
+  .toc a { color: var(--text-default, #e6edf3); }
+  .toc .sep { color: var(--text-muted, #8b949e); margin: 0 8px; }
+</style>
+</head>
+<body>
+
+<main>
+
+  <div class="kernel-hero">
+    <div class="eyebrow">Read me first</div>
+    <h1>The <span class="grad">RAPP</span> Kernel</h1>
+    <p class="lede">One page. The canonical reading order for everyone — operators, contributors, engineers, partners, AI assistants. Every section points to the authoritative doc; nothing is duplicated. If you only read one page on this site, this is the one.</p>
+    <div class="quickbar">
+      <a href="./">← Install &amp; pitch</a>
+      <a href="./onboarding.html">Onboarding</a>
+      <a href="https://github.com/kody-w/RAPP/blob/main/KERNEL_TREE.md">Kernel tree ↗</a>
+      <a href="https://github.com/kody-w/rappter-distro">Rappter distro ↗</a>
+    </div>
+  </div>
+
+  <div class="toc">
+    <strong>On this page —</strong>
+    <a href="#trilogy">The trilogy</a><span class="sep">·</span>
+    <a href="#law">The law</a><span class="sep">·</span>
+    <a href="#reference">Reference</a><span class="sep">·</span>
+    <a href="#specs">Specs</a><span class="sep">·</span>
+    <a href="#paths">Reading Paths</a><span class="sep">·</span>
+    <a href="#vault">The vault</a><span class="sep">·</span>
+    <a href="#tree">Kernel tree</a><span class="sep">·</span>
+    <a href="#related">Related repos</a>
+  </div>
+
+  <section class="home-section" id="trilogy">
+    <div class="section-head">
+      <h2>The trilogy</h2>
+      <span class="section-sub">Why, what, how — read in this order</span>
+    </div>
+    <div class="audience-grid">
+      <a class="card" href="https://github.com/kody-w/RAPP/blob/main/MASTER_PLAN.md">
+        <span class="card-eyebrow">Why we exist</span>
+        <h3>Master Plan</h3>
+        <p>Tesla-Master-Plan-style first-principles north star. The single-sentence version: <em>"Use everyone else's hardware to run the network."</em></p>
+        <span class="card-meta">MASTER_PLAN.md</span>
+      </a>
+      <a class="card" href="https://github.com/kody-w/RAPP/blob/main/HERO_USECASE.md">
+        <span class="card-eyebrow">What we must do</span>
+        <h3>Hero Use Case</h3>
+        <p>The canonical scenarios this codebase must satisfy — Charizard-in-the-woods, Dream Catcher, Mom's Mixtape, Pizza Place. Every architectural decision is judged against whether these stories still work.</p>
+        <span class="card-meta">HERO_USECASE.md</span>
+      </a>
+      <a class="card" href="https://github.com/kody-w/RAPP/blob/main/ECOSYSTEM.md">
+        <span class="card-eyebrow">How it fits together</span>
+        <h3>Ecosystem</h3>
+        <p>End-to-end layout of a planted organism: file structure, identity stack, the two surfaces, memory tiers, MMR, egg cartridges, integrity, Dream Catcher, network modes.</p>
+        <span class="card-meta">ECOSYSTEM.md</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="home-section" id="law">
+    <div class="section-head">
+      <h2>The law</h2>
+      <span class="section-sub">Discipline that's locked in</span>
+    </div>
+    <div class="audience-grid">
+      <a class="card" href="https://github.com/kody-w/RAPP/blob/main/CONSTITUTION.md">
+        <span class="card-eyebrow">Governance</span>
+        <h3>Constitution</h3>
+        <p>40+ articles governing the repo: kernel immutability, single-file agents, vault discipline, licensing, identity. When docs disagree, Master Plan wins; otherwise the Constitution does.</p>
+        <span class="card-meta">CONSTITUTION.md</span>
+      </a>
+      <a class="card" href="https://github.com/kody-w/RAPP/blob/main/ANTIPATTERNS.md">
+        <span class="card-eyebrow">Locked rules</span>
+        <h3>Antipatterns</h3>
+        <p>Append-only. One term for the plugin unit (always "agent"). Frozen kernel. No half-released shims. No fallback branding. No network-only paths. PRs that violate don't merge.</p>
+        <span class="card-meta">ANTIPATTERNS.md</span>
+      </a>
+      <a class="card" href="https://github.com/kody-w/RAPP/blob/main/DEFINITION_OF_DONE.md">
+        <span class="card-eyebrow">Verification</span>
+        <h3>Definition of Done</h3>
+        <p>The checklist a "done" thing has actually passed — for planted repos, code changes, features, links. A done thing is verified, not assumed.</p>
+        <span class="card-meta">DEFINITION_OF_DONE.md</span>
+      </a>
+      <a class="card" href="https://github.com/kody-w/RAPP/blob/main/ECOSYSTEM_MAP.md">
+        <span class="card-eyebrow">Index</span>
+        <h3>Ecosystem Map</h3>
+        <p>The authority order, decision table, schema registry, drift gaps — start every session here when in doubt about which doc owns a topic.</p>
+        <span class="card-meta">ECOSYSTEM_MAP.md</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="home-section" id="reference">
+    <div class="section-head">
+      <h2>Reference</h2>
+      <span class="section-sub">When you're operating, not reading</span>
+    </div>
+    <div class="audience-grid">
+      <a class="card" href="https://github.com/kody-w/RAPP/blob/main/SURVIVAL.md">
+        <span class="card-eyebrow">Failure modes</span>
+        <h3>Survival</h3>
+        <p>The matrix of what survives if the network breaks, GitHub goes dark, hardware dies, identity is lost. Defense-in-depth redundancy stack — the SLA you can trust.</p>
+        <span class="card-meta">SURVIVAL.md</span>
+      </a>
+      <a class="card" href="https://github.com/kody-w/RAPP/blob/main/LEXICON.md">
+        <span class="card-eyebrow">Vocabulary</span>
+        <h3>Lexicon</h3>
+        <p>Two vocabularies (human vs. developer) and the 1:1 mapping. Writers pick one per doc and stay consistent. Why we say "agent," never "skill" / "plugin" / "routine."</p>
+        <span class="card-meta">LEXICON.md</span>
+      </a>
+      <a class="card" href="https://github.com/kody-w/RAPP/blob/main/KERNEL_TREE.md">
+        <span class="card-eyebrow">What's in this mirror</span>
+        <h3>Kernel Tree</h3>
+        <p>The full grail kernel tree end-to-end, file by file, organized by sacred files / T1 / T2 / T3 / installer family / Pages / community / specs. What grail ships and where each piece lives.</p>
+        <span class="card-meta">KERNEL_TREE.md</span>
+      </a>
+      <a class="card" href="https://github.com/kody-w/RAPP/blob/main/NEIGHBORHOOD_PROTOCOL.md">
+        <span class="card-eyebrow">Wire spec</span>
+        <h3>Neighborhood Protocol</h3>
+        <p>How organisms talk: twin chat protocol, three concentric trust scopes, four channel types, four exchange primitives, granular permissions via public_facets. Read before adding cross-organism communication.</p>
+        <span class="card-meta">NEIGHBORHOOD_PROTOCOL.md</span>
+      </a>
+      <a class="card" href="https://github.com/kody-w/RAPP/blob/main/OSI.md">
+        <span class="card-eyebrow">7-layer model</span>
+        <h3>OSI</h3>
+        <p>RAPP mapped to a 7-layer stack with schemas at each layer: substrate / identity / discovery / channels / trust / envelope / application. Use to figure out which layer a new feature belongs to.</p>
+        <span class="card-meta">OSI.md</span>
+      </a>
+      <a class="card" href="https://github.com/kody-w/RAPP/blob/main/COMMERCIAL.md">
+        <span class="card-eyebrow">Licensing</span>
+        <h3>Commercial</h3>
+        <p>License thresholds (less than 100 employees and less than $1M revenue = free; else commercial). For everyone else, the platform is open and self-hosted.</p>
+        <span class="card-meta">COMMERCIAL.md</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="home-section" id="specs">
+    <div class="section-head">
+      <h2>The specs</h2>
+      <span class="section-sub">Wire contracts and the SDK</span>
+    </div>
+    <div class="audience-grid">
+      <a class="card" href="./docs/SPEC.md">
+        <span class="card-eyebrow">v1 wire contract</span>
+        <h3>SPEC</h3>
+        <p>The frozen v1 contract for single-file agents — what perform() takes, what it returns, how metadata travels, the delimited slots (|||VOICE|||, |||TWIN|||). The API.</p>
+        <span class="card-meta">pages/docs/SPEC.md</span>
+      </a>
+      <a class="card" href="./docs/ROADMAP.md">
+        <span class="card-eyebrow">v2+ directions</span>
+        <h3>Roadmap</h3>
+        <p>Post-v1 directions that must honor the v1 contract. Where the platform is going, with hard constraints on backwards compatibility.</p>
+        <span class="card-meta">pages/docs/ROADMAP.md</span>
+      </a>
+      <a class="card" href="./docs/ESTATE_SPEC.md">
+        <span class="card-eyebrow">Multi-tier identity</span>
+        <h3>Estate Spec</h3>
+        <p>The whole-organism cartridge — how an operator's full identity stack (kernel + soul + agents + memory + lineage + bonds) packs into a portable artifact.</p>
+        <span class="card-meta">pages/docs/ESTATE_SPEC.md</span>
+      </a>
+      <a class="card" href="./docs/rapplication-sdk.md">
+        <span class="card-eyebrow">SDK</span>
+        <h3>Rapplication SDK</h3>
+        <p>Reference for building rapplications — graduated, certified agents that ship with their own UI and per-rapp state.</p>
+        <span class="card-meta">pages/docs/rapplication-sdk.md</span>
+      </a>
+      <a class="card" href="https://github.com/kody-w/RAPP/blob/main/skill.md">
+        <span class="card-eyebrow">For LLMs</span>
+        <h3>Skill manifest</h3>
+        <p>Canonical AI-readable skill manifest. Feed this to any LLM (Claude, Copilot, GPT) and it can extend RAPP correctly without further prompting.</p>
+        <span class="card-meta">skill.md</span>
+      </a>
+      <a class="card" href="./docs/">
+        <span class="card-eyebrow">Index</span>
+        <h3>All specs</h3>
+        <p>Browse every spec under pages/docs/ — SUBSTRATE_FEDERATION, PUBLIC_PRIVATE_BOUNDARY, QR_FRONT_GATE, VERSIONS, AGENTS, more.</p>
+        <span class="card-meta">pages/docs/</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="home-section" id="paths">
+    <div class="section-head">
+      <h2>Reading Paths</h2>
+      <span class="section-sub">Curated note sequences for different audiences — ~30 min each</span>
+    </div>
+    <div class="audience-grid">
+      <a class="card" href="./vault/Reading%20Paths/Reading%20Path%20%E2%80%94%20Exec%20Asking%20What%20This%20Is.md">
+        <span class="card-eyebrow">~15 min</span>
+        <h3>Exec asking what this is</h3>
+        <p>The shortest credible read. What it is, why it matters, what it changes — without engineering depth.</p>
+        <span class="card-meta">vault/Reading Paths/</span>
+      </a>
+      <a class="card" href="./vault/Reading%20Paths/Reading%20Path%20%E2%80%94%20Engineer%20Evaluating%20RAPP.md">
+        <span class="card-eyebrow">~30 min</span>
+        <h3>Engineer evaluating RAPP</h3>
+        <p>8 notes. The fastest credible read for a senior engineer deciding whether the platform is worth integrating. Architecture, constraints, tradeoffs.</p>
+        <span class="card-meta">vault/Reading Paths/</span>
+      </a>
+      <a class="card" href="./vault/Reading%20Paths/Reading%20Path%20%E2%80%94%20Architect%20Deciding%20to%20Bet.md">
+        <span class="card-eyebrow">~40 min</span>
+        <h3>Architect deciding to bet</h3>
+        <p>For an architect or staff engineer weighing whether to bet a roadmap on RAPP. The constraints, the immune system, the why behind every locked rule.</p>
+        <span class="card-meta">vault/Reading Paths/</span>
+      </a>
+      <a class="card" href="./vault/Reading%20Paths/Reading%20Path%20%E2%80%94%20Partner%20Pricing%20a%20Project.md">
+        <span class="card-eyebrow">~25 min</span>
+        <h3>Partner pricing a project</h3>
+        <p>For implementation partners, ISVs, and consultants pricing a build on RAPP. What you ship, what you bill, what's commodified.</p>
+        <span class="card-meta">vault/Reading Paths/</span>
+      </a>
+      <a class="card" href="./vault/Reading%20Paths/Reading%20Path%20%E2%80%94%20New%20Contributor.md">
+        <span class="card-eyebrow">~35 min</span>
+        <h3>New contributor</h3>
+        <p>For a developer about to submit their first PR. The vault notes that make every code review go smoothly.</p>
+        <span class="card-meta">vault/Reading Paths/</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="home-section" id="vault">
+    <div class="section-head">
+      <h2>The vault</h2>
+      <span class="section-sub">The why — decision narratives, removal stories, architecture essays</span>
+    </div>
+    <div class="audience-grid">
+      <a class="card" href="./vault/">
+        <span class="card-eyebrow">Long-term memory</span>
+        <h3>Vault index</h3>
+        <p>~100 published notes across Architecture, Decisions, Founding Decisions, Foundations, Manifestos, Removals, Twin and UX, Positioning. The why behind every locked rule and every shipped feature.</p>
+        <span class="card-meta">pages/vault/</span>
+      </a>
+      <a class="card" href="./vault/Architecture/">
+        <span class="card-eyebrow">Deep dives</span>
+        <h3>Architecture essays</h3>
+        <p>Rappid, eggs, bonding, federation, mirror spec, layered mirrors, public-private body stack, neighborhood protocol — the engineering essays that justify the decisions in the law.</p>
+        <span class="card-meta">vault/Architecture/</span>
+      </a>
+      <a class="card" href="./vault/Decisions/">
+        <span class="card-eyebrow">Why we chose</span>
+        <h3>Decisions</h3>
+        <p>Each major design call documented with rationale, alternatives considered, and what would change our mind. The audit trail.</p>
+        <span class="card-meta">vault/Decisions/</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="home-section" id="tree">
+    <div class="section-head">
+      <h2>The kernel tree</h2>
+      <span class="section-sub">What this repo actually contains, end to end</span>
+    </div>
+    <div class="audience-grid">
+      <a class="card" href="https://github.com/kody-w/RAPP/blob/main/KERNEL_TREE.md">
+        <span class="card-eyebrow">Full inventory</span>
+        <h3>KERNEL_TREE.md</h3>
+        <p>The complete grail kernel tree at grail paths — sacred files, T1 Brainstem, T2 Swarm, T3 Copilot Studio, installer family, Pages content, community surface, specs, plumbing — plus this mirror's prerogative additions.</p>
+        <span class="card-meta">KERNEL_TREE.md</span>
+      </a>
+      <a class="card" href="https://github.com/kody-w/RAPP/blob/main/rappid.json">
+        <span class="card-eyebrow">Species root</span>
+        <h3>rappid.json</h3>
+        <p>The identity of the RAPP species — every descendant organism's parent_rappid chain ends here. The platform's genealogical zero.</p>
+        <span class="card-meta">rappid.json</span>
+      </a>
+      <a class="card" href="./vault/Architecture/Mirror%20Spec.md">
+        <span class="card-eyebrow">Mirror discipline</span>
+        <h3>Mirror Spec</h3>
+        <p>The frozen-kernel pattern. Why three files must stay byte-identical to grail, why the installer is a sync wire not an installer, how to verify drift in one shell command.</p>
+        <span class="card-meta">vault/Architecture/Mirror Spec.md</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="home-section" id="related">
+    <div class="section-head">
+      <h2>Related repos</h2>
+      <span class="section-sub">The ecosystem this kernel anchors</span>
+    </div>
+    <div class="audience-grid">
+      <a class="card" href="https://github.com/kody-w/rapp-installer">
+        <span class="card-eyebrow">The grail</span>
+        <h3>kody-w/rapp-installer</h3>
+        <p>The frozen kernel. The source of truth this repo mirrors. Never modified by AI — only Kody updates grail. Read-only for everyone else.</p>
+        <span class="card-meta">github.com/kody-w/rapp-installer ↗</span>
+      </a>
+      <a class="card" href="https://github.com/kody-w/rappter-distro">
+        <span class="card-eyebrow">The distro</span>
+        <h3>kody-w/rappter-distro</h3>
+        <p>The Rappter organism layer — organs, senses, lineage / bonding lib, rich UI, post-kernel agents. Opt-in. Install with <code>--rappter</code> on the kernel one-liner.</p>
+        <span class="card-meta">github.com/kody-w/rappter-distro ↗</span>
+      </a>
+      <a class="card" href="https://github.com/kody-w/RAR">
+        <span class="card-eyebrow">Trust layer</span>
+        <h3>kody-w/RAR</h3>
+        <p>The bare-agent registry — signing, identity, provenance. Where individual single-file agents are published and discovered.</p>
+        <span class="card-meta">github.com/kody-w/RAR ↗</span>
+      </a>
+      <a class="card" href="https://github.com/kody-w/rapp_store">
+        <span class="card-eyebrow">Catalog</span>
+        <h3>kody-w/rapp_store</h3>
+        <p>The rapplication catalog — graduated, certified agents with their own UI and per-rapp state. Browse at kody-w.github.io/RAPP_Store/.</p>
+        <span class="card-meta">github.com/kody-w/rapp_store ↗</span>
+      </a>
+    </div>
+  </section>
+
+</main>
+
+</body>
+</html>
