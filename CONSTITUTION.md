@@ -2788,7 +2788,7 @@ The shape rule from [Article XXXI](#article-xxxi--three-stores-three-artifacts) 
 
 - **Catalogs differentiate by shape, not by "organism vs not."** RAR holds skinless single-celled organisms (bare agents). RAPP_Sense_Store holds organism *organs* of one type (sense overlays — extensions to host perception, not standalone bodies). RAPP_Store holds **organisms with skin** — the ones that earn names like "BookFactory" instead of identifiers like `bookfactory_agent.py`. All three hold organisms; the shape decides which.
 - **Eggs work at any scale.** `brainstem-egg/2.2-rapplication` is a sibling of `2.2-organism` — same zip layout, smaller include set. The unpacker dispatches on `manifest.type`. No parallel egg systems.
-- **One Pokédex for everything.** The [`rapp-zoo`](./rapp-zoo/) ([live](https://kody-w.github.io/RAPP/rapp-zoo/)) renders catalog rapps, locally-hatched instances, and AirDropped organisms with the same card model. Three sources, one collection.
+- **One Pokédex for everything.** The [`rapp-zoo`](https://github.com/kody-w/rappter-distro/tree/main/rapp-zoo) (lives in [kody-w/rappter-distro](https://github.com/kody-w/rappter-distro) as of 2026-05-16) renders catalog rapps, locally-hatched instances, and AirDropped organisms with the same card model. Three sources, one collection.
 - **One identity protocol at every scale.** Every rappid has a parent rappid that walks back to the species root, regardless of organism size. Lineage is unbroken.
 
 ### XXXVII.5 — What stays the same — by design
@@ -2803,7 +2803,7 @@ The shape rule from [Article XXXI](#article-xxxi--three-stores-three-artifacts) 
 - Visual anatomy: [`pages/about/anatomy.html`](./pages/about/anatomy.html) (the diagram)
 - Egg pack/unpack at both scales: [`rapp_brainstem/utils/bond.py`](./rapp_brainstem/utils/bond.py) (`pack_organism` + `pack_rapplication`)
 - Pokédex API consuming the unification: [`kody-w/RAPP_Store`](https://github.com/kody-w/RAPP_Store) `/api/v1/`
-- Pokédex UI rendering the unified card: [`rapp-zoo/`](./rapp-zoo/) ([live](https://kody-w.github.io/RAPP/rapp-zoo/)) — moved into this repo 2026-05-02 to keep the federation simpler
+- Pokédex UI rendering the unified card: [`rapp-zoo/`](https://github.com/kody-w/rappter-distro/tree/main/rapp-zoo) — moved into the kernel repo 2026-05-02 to keep the federation simpler, then moved into [kody-w/rappter-distro](https://github.com/kody-w/rappter-distro) on 2026-05-16 (Marie-Kondo audit: the Pokédex is organism-layer UX, not a kernel SPEC). Article XXXVIII.4 below was amended to reflect the new home.
 
 ---
 
@@ -2859,7 +2859,9 @@ Generators all live at `scripts/build_pokedex_api.py` in their respective repos.
 
 ### XXXVIII.4 — The user's universal control plane: rapp-zoo
 
-The `rapp-zoo` (`kody-w/rapp-zoo`) is the canonical UI through which the user encounters their digital ecosystem. **It is the Game Boy.** It is the user's Pokédex, item bag, party manager, holocard binder, sigchain wallet, federation map — all the surfaces a trainer interacts with — collapsed into one local-first organism.
+> **Amended 2026-05-16:** rapp-zoo now lives in [`kody-w/rappter-distro/rapp-zoo/`](https://github.com/kody-w/rappter-distro/tree/main/rapp-zoo), not in this kernel-mirror repo. The Pokédex UI is organism-layer UX (it composes onto a brainstem; the brainstem doesn't need it to function) and per the kernel/distro split adopted on 2026-05-16, organism-layer features live in the Rappter distro. The kernel SPEC (this article) is unchanged; only the canonical location of the implementation moved. Any distro can ship its own zoo-like control plane; Rappter's is the reference implementation.
+
+The `rapp-zoo` is the canonical UI through which the user encounters their digital ecosystem. **It is the Game Boy.** It is the user's Pokédex, item bag, party manager, holocard binder, sigchain wallet, federation map — all the surfaces a trainer interacts with — collapsed into one local-first organism.
 
 Conceptually:
 
