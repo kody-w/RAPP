@@ -1,5 +1,7 @@
 # RAPP v1 — Specification
 
+> **Scope:** the **single-file agent contract**. What `perform()` takes, what it returns, how metadata travels, the delimited slots (`|||VOICE|||`, `|||TWIN|||`). The agent API. **Not** the network protocol — for that read [`specs/SPEC.md`](../../specs/SPEC.md). See [`specs/README.md`](../../specs/README.md) for the spec-directory map.
+>
 > **Memorialized:** 2026-04-17
 > **Status:** Frozen. v1 is the canonical reference. All future versions must remain backwards-compatible with the v1 agent contract.
 > **Companion doctrine:** [Single File Agents — rappterhub](https://kody-w.github.io/rappterhub/single-file-agents.html)
