@@ -83,11 +83,38 @@
   .toc strong { color: var(--text-default, #e6edf3); }
   .toc a { color: var(--text-default, #e6edf3); }
   .toc .sep { color: var(--text-muted, #8b949e); margin: 0 8px; }
+
+  /* Section + card grid (matches pages/index.html — inline because
+     the styles aren't in components.css yet) */
+  .home-section {
+    padding: 48px 0 24px;
+  }
+  .home-section .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 18px;
+  }
+  .home-section h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-default, #e6edf3);
+  }
+  .home-section .section-sub {
+    color: var(--text-muted, #8b949e);
+    font-size: 14px;
+  }
+  .audience-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+  }
 </style>
 </head>
 <body>
 
-<main>
+<main class="site-main">
 
   <div class="kernel-hero">
     <div class="eyebrow">Read me first</div>
