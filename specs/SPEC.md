@@ -2,6 +2,8 @@
 
 > One file. Read this and you can participate in the global RAPP network. The only requirement is a GitHub account.
 >
+> **Scope:** the **network protocol** — federation, addressing, discovery across the public web. **Not** the single-file agent contract; for that read [`pages/docs/SPEC.md`](../pages/docs/SPEC.md). See [`specs/README.md`](./README.md) for the spec-directory map.
+>
 > **Authority:** this file. **Schema-of-record:** `rapp-protocol/1.0`. **Constitutional anchor:** Articles I–XLVI (see `CONSTITUTION.md` in the parent project for narrative; this document is the operational synthesis).
 
 ---

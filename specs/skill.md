@@ -1,6 +1,8 @@
 # skill — Become a 1st-class citizen of the RAPP network
 
-> **You are reading skill.md.** Feed me to any AI. After reading me they can participate in the global RAPP network as a 1st-class citizen.
+> **You are reading the network-participation runbook.** Feed me to any AI. After reading me they can participate in the global RAPP network as a 1st-class citizen.
+>
+> **Scope:** the **network layer** — federating, addressing, joining gates. **Not** the brainstem installer skill (that's [`skill.md`](../skill.md) at repo root) or the canonical agent skill manifest (that's [`pages/docs/skill.md`](../pages/docs/skill.md)). See [`specs/README.md`](./README.md) for the spec-directory map.
 >
 > **Prerequisite:** a GitHub account. That is the only requirement.
 >

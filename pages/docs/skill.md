@@ -6,6 +6,15 @@ canonical_url: https://kody-w.github.io/RAPP/pages/docs/skill.md
 repo: https://github.com/kody-w/RAPP
 ---
 
+<!--
+SCOPE OF THIS FILE: the canonical agent skill manifest for RAPP — the
+official "what RAPP is + how to use it" rendered through the docs viewer.
+This is canonical (per canonical_url above). The installer-only skill is at
+/skill.md (root); the network-participation runbook is at specs/skill.md.
+See pages/kernel.html for the unified reading order.
+-->
+
+
 # RAPP Brainstem — Agent Skill
 
 ## What it is

@@ -6,6 +6,16 @@ homepage: https://kody-w.github.io/rapp-installer/
 metadata: {"emoji":"","category":"ai-agents","repo":"https://github.com/kody-w/rapp-installer"}
 ---
 
+<!--
+SCOPE OF THIS FILE: the installer skill manifest. This is the skill an LLM
+(Claude / Copilot CLI / etc.) loads when asked to install RAPP Brainstem on
+the user's behalf. It's not the canonical agent skill (that's
+pages/docs/skill.md) and it's not the network-participation runbook (that's
+specs/skill.md). All three intentionally exist because they serve different
+audiences. See pages/kernel.html for the canonical reading order.
+-->
+
+
 # RAPP Brainstem
 
 A local-first AI agent server. No API keys. No cloud setup. Just a GitHub account.
