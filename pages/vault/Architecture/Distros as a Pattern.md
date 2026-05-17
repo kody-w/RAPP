@@ -79,6 +79,7 @@ Multiple distros mean:
 ## See also
 
 - [[The Kernel-as-God-SPEC]] — the framing that makes distros possible
+- [[The Distro Hatcher Agent Pattern]] — the single-file brainstem agent that delivers a distro into a side-by-side folder, no shell installer needed
 - [[Boot Sidecar — Integrating Utils Without Modifying the Kernel]] — the load-bearing mechanism
 - [[Mirror Spec]] — the byte-identical-to-grail discipline distros must respect
 - [[2026-05-16 — Kernel-Distro Split]] — the decision that made the distro pattern explicit
