@@ -365,6 +365,12 @@
       "status": "published"
     },
     {
+      "path": "Architecture/The Federated Twin Egg Hatcher Pattern.md",
+      "title": "The Federated Twin Egg Hatcher Pattern",
+      "section": "Architecture",
+      "status": "published"
+    },
+    {
       "path": "Architecture/Boot Sidecar \u2014 Integrating Utils Without Modifying the Kernel.md",
       "title": "Boot Sidecar \u2014 Integrating Utils Without Modifying the Kernel",
       "section": "Architecture",

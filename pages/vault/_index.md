@@ -77,6 +77,7 @@ These rot fastest — the code is already gone.
 - ● [[Surfaces — Mobile, Watch, Voice]]
 - ● [[The skill.md Pattern]]
 - ● [[Federation via RAR]]
+- ● [[The Federated Twin Egg Hatcher Pattern]]
 
 ## Positioning
 
