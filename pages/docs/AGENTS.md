@@ -12,7 +12,9 @@ Read [SPEC.md](./SPEC.md) before making any architectural changes — it is the 
 
 Everything in this repo exists to serve the single-file agent. If a change breaks this contract, the change is wrong.
 
-**Notable kernel agents** (single-file, conform to the contract above): `basic_agent.py` (base class), `manage_memory_agent.py` + `context_memory_agent.py` (memory R/W via local-storage shim), `hacker_news_agent.py` (HN via Pyodide-friendly fetch), `egg_hatcher_agent.py` (universal `.egg` cartridge router — introspects manifest schema/type and dispatches to the right hatch path; refuses on unknown kinds; per [SPEC §18.10](./SPEC.md)).
+**Notable kernel agents** (single-file, conform to the contract above): `basic_agent.py` (base class), `manage_memory_agent.py` + `context_memory_agent.py` (memory R/W via local-storage shim), `hacker_news_agent.py` (HN via Pyodide-friendly fetch), `egg_hatcher_agent.py` (universal `.egg` cartridge router — introspects `manifest.schema` / `manifest.type` and dispatches to the right hatch path; refuses on unknown kinds; per [SPEC §18.10](./SPEC.md)), `twin_agent.py` (federation primitive — `summon` / `hatch` / `boot` / `stop` / `list` / `chat` / `inspect` / `lay_egg` / `history` / `lineage` across every workspace under `~/.rapp/twins/<hash>/`).
+
+Under `rapp-egg/2.0` (SPEC §18.10.5), the hatcher is *multi-scale*: it reads `manifest.scale` and routes to the right destination — `agent` lands in `agents/`, `twin` lands in `~/.rapp/twins/<hash>/`, `brainstem` provisions a fresh `~/.brainstem/` install, `neighborhood` lands in `~/.rapp/neighborhoods/<hash>/`, and so on up through `swarm` / `factory` / `industry` / `estate`. Same single-file hatcher, one switch on `scale`. See [[The Federated Twin Egg Hatcher Pattern]] for the end-to-end pattern and the four-twin worked example.
 
 ## Commands
 

@@ -110,6 +110,10 @@ In each case, the protocol is the same: a `registry.json` + a `skill.md` + agent
 - `skill.md` is the AI-facing surface; `registry.json` is the machine-readable index; the README is the human surface. All three live in every well-formed registry.
 - When proposing a feature that touches discovery or distribution, ask: *"does this work without a central server?"* If the answer is no, the feature is the wrong shape.
 
+## Recent registry landings
+
+**As of 2026-05:** the generic twin-egg-hatcher ships as a registered RAR agent — `@kody/twin_egg_hatcher` v1.0.0, merged in PR #98 — plus a stack at `stacks/fleet-management/` (PR #100, merged) that bundles the hatcher with the SSH-driven Fleet adapter. Tier promotions for all `@kody/*` and `@rapp/*` agents to `official` landed in PR #101; `.py.stub` gated entries are exempt and stay `private` by design. See [[The Federated Twin Egg Hatcher Pattern]] for the pattern these submissions instantiate.
+
 ## Related
 
 - [[The skill.md Pattern]]

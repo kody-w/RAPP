@@ -40,7 +40,20 @@ Drift check: `bash tests/mirror-drift.sh`
 | `rapp_brainstem/agents/context_memory_agent.py` | Reads persistent memory storage; injects per-turn context. |
 | `rapp_brainstem/agents/manage_memory_agent.py` | Writes persistent memory. |
 | `rapp_brainstem/agents/hacker_news_agent.py` | Fetches + summarizes HN front page. |
+| `rapp_brainstem/agents/egg_hatcher_agent.py` | Universal `.egg` cartridge router — introspects `manifest.schema` / `manifest.type` and dispatches per kind (organism, rapplication, session, neighborhood, estate). Multi-scale dispatch under the `rapp-egg/2.0` family. See [[The Federated Twin Egg Hatcher Pattern]]. |
+| `rapp_brainstem/agents/twin_agent.py` | Twin federation primitive. Actions: `summon`, `hatch`, `boot`, `stop`, `list`, `chat`, `inspect`, `lay_egg`, `history`, `lineage`. Federates every workspace under `~/.rapp/twins/<hash>/` through one tool. See [[The Federated Twin Egg Hatcher Pattern]]. |
 | `rapp_brainstem/agents/experimental/copilot_research_agent.py` | Experimental Copilot-research agent. |
+
+### 🥚 Hatched workspaces (runtime, not in this repo)
+
+Twin and neighborhood eggs hatch into well-known runtime directories under the operator's home — mirror locations to the kernel's own `~/.brainstem/` install, but for *organisms the kernel federates* rather than the kernel itself:
+
+| Path | Purpose |
+|---|---|
+| `~/.rapp/twins/<hash>/` | Canonical per-twin workspace. Holds the hatched `rappid.json` + `soul.md` + `agents/` for each twin. The kernel's built-in `twin_agent.py` (see above) lists, boots, stops, and chats with every workspace under this folder. `<hash>` is the 32-hex portion of a v2 rappid or a bare UUID for legacy v1.x twins. |
+| `~/.rapp/neighborhoods/<hash>/` | Canonical per-neighborhood roster. Hatched from a `rapp-egg/2.0` neighborhood cartridge. |
+
+These directories are *not* committed to this repo — they are produced at runtime by the generic `twin_egg_hatcher_agent.py` (or the in-kernel `egg_hatcher_agent.py`) when an egg is hatched. See [[The Federated Twin Egg Hatcher Pattern]] for the end-to-end flow.
 
 ### ☁️ Tier 2 — Swarm (Azure Functions deployment)
 

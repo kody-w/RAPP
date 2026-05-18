@@ -39,6 +39,8 @@ Every operation in the ecosystem can be expressed in terms of this atom: plantin
 
 The lifecycle is non-linear: an organism can be hatched many times in parallel (each device = one parallel dimension), each accumulates its own mutations, and the Dream Catcher reassimilates them via PR.
 
+**Re-hatching is the cross-substrate migration step.** Mutate → reassimilate is the *content* lifecycle (frames bond back into the trunk via PR). Egg re-hatching is the *substrate* lifecycle: an `.egg` cartridge is the organism in suspended animation, and re-anchoring it on a new brainstem (a fresh laptop, an AirDropped peer, a sneakernet handoff) revives the organism in place without disturbing its rappid, its cross-signed device chain, or its frame log. The egg is how the organism crosses substrates; the PR loop is how it accumulates time. The two operate on orthogonal dimensions — see §16 (Multi-scale eggs) and [[The Federated Twin Egg Hatcher Pattern]] for the federation-scale extension.
+
 ---
 
 ## 2. File layout of a planted organism
@@ -615,6 +617,41 @@ Files added on demand:
 
 ❌ **Not yet built (defined for parity):**
 - (none currently — the §15 backlog is empty as of 2026-05-08)
+
+---
+
+## 15.5 Multi-scale eggs and the federation lifecycle
+
+§8 covers organism-scale eggs (`brainstem-egg/2.2-organism`) — one twin in, one twin out. The egg family generalizes: the `rapp-egg/2.0` envelope declares a `scale` field that picks one of five hatch destinations. The same `twin_egg_hatcher_agent.py` (canonical `@kody/twin_egg_hatcher` v1.1.0, RAR PR #98) introspects `manifest.scale` and dispatches per scale; unknown scales are refused outright (no silent fallback).
+
+| Scale | What it carries | Where it hatches | Status |
+|---|---|---|---|
+| `twin` | One twin's identity + soul + agents + memories | `~/.rapp/twins/<hash>/` | shipping |
+| `brainstem` | A whole brainstem distro (kernel + agents + organs) | target brainstem folder | shipping ([[The Distro Hatcher Agent Pattern]]) |
+| `neighborhood` | N federated twins + roster + member memories | `~/.rapp/twins/<hash>/` per member + `~/.rapp/neighborhoods/<hash>/` for the roster | shipping |
+| `swarm` / `factory` / `industry` | Container scales above neighborhood | `~/.rapp/<scale>s/<hash>/` as best-effort scaffolding | partial — scale-specific handlers TBD |
+| `estate` | Whole operator identity: catalog + every nested twin / neighborhood cartridge + memories | recursive dispatch, restores `~/.brainstem/estate.json` | planned ([[ESTATE_SPEC]] §7.6) |
+
+### The four-twin AIBAST federation, in one file
+
+The first neighborhood-scale cartridge that shipped is `aibast-federation.egg` — **19,903 bytes** (about 20 KB) total. It bundles four twins:
+
+- 🌈 **Heimdall** on port 7081 (`personal` rappid)
+- 🧬 **@kody-w** on port 7082 (`operator` rappid)
+- 🏭 **Bots in Blazers** on port 7083 (`project` rappid)
+- ⚡ **AIBAST** on port 7084 (`project` rappid)
+
+Each member's `rappid.json` + `soul.md` + `agents/*.py` + `.brainstem_data/` rides inside the cartridge. Hatching on a fresh laptop reproduces the entire four-twin conversation surface byte-for-byte — memories travel by design (`.brainstem_data/` is intentionally inside the egg per [[NEIGHBORHOOD_PROTOCOL]] §5e). A complete federation, suspended in 20 KB, AirDroppable, sneakernet-friendly, GitHub-optional.
+
+### Why the scale matters for the lifecycle
+
+§1's lifecycle (PLANT → HATCH → LIVE → MUTATE → REASSIM.) was originally framed for a single organism. The multi-scale extension layers cleanly:
+
+- **Twin scale** — the lifecycle as written.
+- **Neighborhood scale** — the federation lifecycle. PLANT is collective (one cartridge plants N members); HATCH is one motion; LIVE is the four-channel grid in [[The Swarm Estate]]; MUTATE happens per-member but cross-twin handoff is a first-class chat verb (Fleet's `mesh_chat` action fans a single prompt across every twin on every peer); REASSIM. uses the same Dream Catcher pattern per member.
+- **Estate scale** — the substrate lifecycle. Re-anchoring is the move; no re-cross-signing is required because rappids stay intact across substrates.
+
+Cross-references: [[The Federated Twin Egg Hatcher Pattern]] for the kernel-side hatcher and the four-twin worked example; [[ESTATE_SPEC]] §7.5–§7.6 for the formal neighborhood-scale and estate-scale schemas; [[NEIGHBORHOOD_PROTOCOL]] §5e for the on-the-wire neighborhood cartridge layout.
 
 ---
 

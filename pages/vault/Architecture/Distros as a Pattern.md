@@ -70,6 +70,14 @@ Multiple distros mean:
 - **Audience-specific distributions.** A minimal embedded distro for IoT devices; an enterprise distro with audit logging; a research distro with experimental telemetry. All compose on the same kernel.
 - **Federation across distros.** Two organisms on different distros can still talk to each other because the network protocol (specs/SPEC.md) and the agent contract (pages/docs/SPEC.md) are kernel-level, not distro-level.
 
+## Sibling pattern: the twin-egg-hatcher
+
+Distros extend the kernel — a distro hatcher writes a composed organism into a target brainstem source folder beside `~/.brainstem/`, and the hatched tree boots as its own (kernel-byte-identical) brainstem. The [[The Federated Twin Egg Hatcher Pattern|twin-egg-hatcher]] is the sibling pattern: it writes *twins* into `~/.rapp/twins/<hash>/` and never touches the kernel source at all. The global brainstem's built-in `Twin` agent then federates `list`, `boot`, and `chat` across every twin under that folder.
+
+Same single-file ethos, different scope: distro hatcher = *extend the kernel*; twin hatcher = *add to the federation without touching the kernel*. Both ship as drop-in `*_agent.py` files reachable via [[Federation via RAR|RAR]], and both respect the [[Mirror Spec|kernel-untouched contract]] — they just write to different roots.
+
+See [[The Distro Hatcher Agent Pattern]] and [[The Federated Twin Egg Hatcher Pattern]] for the delivery mechanics on either side.
+
 ## Open questions (still being figured out)
 
 - **Distro discovery.** Today the only distro is `kody-w/rappter-distro`. When a second distro appears, how do users discover it? Probably a catalog file at a well-known URL, but unspecified.

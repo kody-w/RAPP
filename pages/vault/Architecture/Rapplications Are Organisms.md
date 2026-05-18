@@ -43,6 +43,8 @@ The note [[The Swarm Estate]] (Article XXXVI) already flipped this orientation o
 
 **The egg format doesn't change either.** A rapplication-scope `.egg` and an organism-scope `.egg` use the same zip-with-manifest layout. The manifest's `type` and `counts` declare the scope; the unpacker dispatches accordingly. The schemas (`brainstem-egg/2.2-organism`, future `brainstem-egg/2.2-rapplication`) are siblings, not different formats.
 
+**Multi-scale eggs make the recursion real on disk.** The `rapp-egg/2.0` manifest carries a `scale` field — `agent` / `twin` / `brainstem` / `neighborhood` / `swarm` / `factory` / `industry` / `estate` — and the same hatcher dispatches to the right unpacker per scale. A neighborhood egg is just an organism at neighborhood scale: the hatcher writes each member twin into its own `~/.rapp/twins/<hash>/` workspace and lays down a `~/.rapp/neighborhoods/<hash>/` roster pointing at them. One pack format, one hatcher, every scale of organism. See [[The Federated Twin Egg Hatcher Pattern]] for the contract.
+
 **The bonding lifecycle doesn't change.** `egg → overlay → hatch` works at any scope. An organism-scale bond replaces the kernel under the whole instance. A rapplication-scale bond replaces a single rapp's code while keeping its `.brainstem_data/<rapp_id>/` state intact. Same three steps, same identity preservation.
 
 **What does change:**

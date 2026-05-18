@@ -34,7 +34,7 @@ rappid:v2:<kind>:@<publisher>/<slug>:<hash>@<home_vault_url>
 |---|---|
 | `rappid:` | Always literal. Identifies this string as a rappid. |
 | `v2` | Format version. v2 is the unified format ratified 2026-04-30. There was a draft v1 (UUID-only) era; v2 supersedes it. |
-| `<kind>` | What kind of organism this is. Open enumeration; current values: `prototype`, `kernel-variant`, `organism`, `twin`, `swarm`, `rapplication`, `agent`. New kinds may be added as the species evolves (e.g. `android`, `cloud`, `embodied`). |
+| `<kind>` | What kind of organism this is. Open enumeration; current values: `prototype`, `kernel-variant`, `organism`, `twin`, `swarm`, `rapplication`, `agent`, `personal`, `operator`, `project`. `operator` is now in active use for Article-XLVI front doors (e.g. `kody-w-twin`) — see [[The Federated Twin Egg Hatcher Pattern]]. New kinds may be added as the species evolves (e.g. `android`, `cloud`, `embodied`). |
 | `@<publisher>/<slug>` | Namespace. Publisher is the owning brand/entity; slug is the entity name within that publisher. Like a Docker image path. |
 | `<hash>` | Stable, immutable identifier. For organisms with cryptographic identity (master keypair): `sha256(master_pubkey_SPKI)[:32]`. For organisms without keypairs (the species root, code variants without keys): a unique stable identifier (UUID-derived or commit-derived). |
 | `@<home_vault_url>` | Where the canonical signed records live (or, for code-only organisms, where the repo lives). Network-resolvable. **A discovery hint, not a binding** — per [[Local-First-by-Design]], local copies are authoritative; hosts are transports. |
@@ -50,6 +50,15 @@ rappid:v2:organism:@wildhaven/ai-homes:144d673475618dfbc9710e999e7d2907@github.c
 
 rappid:v2:twin:@wildhaven/molly:74f0dc145d9c86decd61fbad53c67f2e@github.com/kody-w/wildhaven-ceo
 ```
+
+### Hash extraction for the hatcher
+
+The generic twin egg hatcher (`twin_egg_hatcher_agent.py`, v1.1.0) needs a stable filesystem key from any rappid to land a twin workspace at `~/.rapp/twins/<extracted-key>/`. Two cases:
+
+- **v2 rappids** — extract the 32-hex `<hash>` segment from `rappid:v2:<kind>:@<owner>/<slug>:<hash>@...`. Example: `@kody-w` resolves to `5b8ba4796692197aa4ccde5dfa5beb51`, so its workspace is `~/.rapp/twins/5b8ba4796692197aa4ccde5dfa5beb51/`.
+- **Legacy bare-UUID rappids** — use the rappid string verbatim. Example: Heimdall's `915f54e5-4c71-4de9-bba3-6604461d05e5` becomes `~/.rapp/twins/915f54e5-4c71-4de9-bba3-6604461d05e5/`.
+
+This convention keeps v1 and v2 organisms in one federated namespace on disk. See [[The Federated Twin Egg Hatcher Pattern]] for the full hatcher contract.
 
 ### Why this format
 
@@ -225,6 +234,7 @@ This antipattern protection is ratified in Constitution Article XXXIV and XXXVI 
 - [[Local-First-by-Design]] — survival model for any rappid (signed records are local-first; hosts are transports)
 - [[Decentralized-by-Design]] — full four-layer architecture
 - [[Twin-Patterns]] — how one organism runs on N brainstems
+- [[The Federated Twin Egg Hatcher Pattern]] — how rappid hash extraction maps to on-disk twin workspaces
 - [[The Species DNA Archive — rapp_kernel]] — the kernel's versioned source code archive
 - [[Signed Releases and Variant Attestation]] — Article XXXIV.7 cryptographic backing for code variants
 - `CONSTITUTION.md` Articles XXXIII (organism), XXXIV (rappid + lineage), XXXV (license stability), XXXVI (swarm estate)

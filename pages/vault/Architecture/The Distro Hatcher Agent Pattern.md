@@ -11,6 +11,8 @@ hook: A single Python file you drop into ~/.brainstem/agents/ that, on its first
 
 [[Distros as a Pattern]] explains *what* a distro is and the byte-identical-to-grail contract it must respect. This doc describes a specific *delivery vehicle* for distros: a brainstem-loaded agent that does the install in-process.
 
+The [[The Federated Twin Egg Hatcher Pattern|twin-egg-hatcher]] is the sibling. It distributes *twins* into `~/.rapp/twins/<hash>/` instead of distros into a brainstem-source folder. Same single-file mechanics — `__manifest__`, `BasicAgent` subclass, always-confirm gate, stdlib only — but the scope flips: distro hatcher = *extend the kernel*; twin hatcher = *add to the federation without touching the kernel*. If you're authoring something that lays a hatched organism beside the grail kernel, this doc is the right one; if you're shipping a twin identity that plugs into the existing brainstem's federation, see [[The Federated Twin Egg Hatcher Pattern]].
+
 ## The shape
 
 A distro hatcher is one `*_agent.py` file with five properties:

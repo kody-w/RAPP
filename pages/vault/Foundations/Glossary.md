@@ -51,6 +51,10 @@ The optional `data_slush` key inside an agent's JSON return value. The downstrea
 
 In RAPP terms, *agent discovery* — the brainstem globs `agents/*_agent.py` and instantiates `BasicAgent` subclasses. There is no registry; the filesystem is the registry. → [[The Single-File Agent Bet]].
 
+## Egg / `.egg`
+
+A portable `.egg` zip file carrying everything needed to materialize some scale of AI organism — from a single agent up through a whole estate. Every egg contains a top-level `manifest.json` declaring its `scale`, and the hatcher dispatches on that field to route the payload to the right unpacker. The egg is the unit of transport between machines; hatching is the unit of installation. → [[The Federated Twin Egg Hatcher Pattern]], [[Twin egg]], [[Neighborhood egg]].
+
 ## Engine
 
 The brainstem + the small set of shared utilities (`utils/`). Distinct from the *agents*, which are user code. The engine stays small so agents can be everything. → [[The Engine Stays Small]].
@@ -59,9 +63,17 @@ The brainstem + the small set of shared utilities (`utils/`). Distinct from the 
 
 A deterministic provider in `utils/llm.py` (`chat_fake()`). When tools are available, calls the first one with empty arguments; otherwise echoes the last user message. Load-bearing for the test suite — it makes pipelines testable without a real LLM. → [[The Deterministic Fake LLM]].
 
+## Fleet agent
+
+The SSH-driven adapter that lets one brainstem manage a network of peer brainstems — typically Mac-minis racked as a federation. Ships as `stacks/fleet-management/` in RAR (merged PR #100). Exposes 23 actions across discovery (`discover`, `ping`, `authorize`), execution (`exec`, `chat`, `mesh_chat`, `mesh_exec`), filesystem (`read`, `write`, `ls`, `tail`), introspection (`ports`, `ps`, `brainstem_health`, `status`), provisioning (`provision_brainstem`, `install_agent`, `hatch_egg`, `boot_federation`), and self-extension (`custom`, `extend`, `cap`, `list_caps`) — meaning the fleet agent can grow new capabilities at runtime without an edit-deploy cycle. → [[The Federated Twin Egg Hatcher Pattern]].
+
 ## Hatch / hatch_rapp
 
-The (deleted) 2,138-line mega-agent that tried to *generate* other agents. Killed because it was multiple agents wearing one filename. The pattern survived in `swarm_factory_agent.py` and `vibe_builder_agent.py`. → [[Why hatch_rapp Was Killed]].
+The (deleted) 2,138-line mega-agent that tried to *generate* other agents. Killed because it was multiple agents wearing one filename. The pattern survived in `swarm_factory_agent.py` and `vibe_builder_agent.py`. → [[Why hatch_rapp Was Killed]]. *Not to be confused with the egg verb* `hatch` *— see below.*
+
+## Hatch / Hatcher (the verb)
+
+To *hatch* an egg is to materialize it into a working directory the kernel can run. The verb is owned by the generic hatcher `twin_egg_hatcher_agent.py` (v1.1.0), published as `@kody/twin_egg_hatcher` in RAR (merged PR #98). The hatcher reads the egg's `manifest.json`, dispatches on `scale` (agent → `agents/`, twin → `~/.rapp/twins/<hash>/`, neighborhood → multi-twin layout, and so on), and unpacks accordingly. One verb, many scales — the dispatch table is the whole trick. → [[The Federated Twin Egg Hatcher Pattern]], [[Egg / `.egg`]], [[Scale (egg)]].
 
 ## Install one-liner
 
@@ -83,6 +95,10 @@ Persisted state about the user. Two agents handle it: `manage_memory_agent.py` (
 
 The dict on every agent declaring its `name`, `description`, and `parameters` schema. OpenAI function-calling shape. Operative — the description determines when the LLM calls the agent. → [[The Agent IS the Spec]].
 
+## Neighborhood egg
+
+An egg whose `manifest.json` declares `scale: neighborhood` — meaning it packs multiple twin workspaces side by side, along with a `members.json` roster describing the federation's membership. Re-hatching a neighborhood egg on another machine resurrects the whole federation: every twin gets a workspace under `~/.rapp/twins/<hash>/`, the roster is restored, and the brainstems can rediscover each other. The unit of "back up a whole community of AIs and move them." → [[The Federated Twin Egg Hatcher Pattern]], [[Egg / `.egg`]].
+
 ## Power Platform solution
 
 The Tier 3 distribution artifact. A `.zip` the customer imports into their Microsoft tenant. → [[Tier 3 — Enterprise Power Platform]].
@@ -103,9 +119,17 @@ A single-file *composed pipeline* — one `*_agent.py` that orchestrates other a
 
 The catalog of community-publishable agents and services. Each entry is a directory with a `manifest.json`. → [[Roots Are Public Surfaces]].
 
+## RAR tier
+
+The trust band assigned to each entry in RAR (the RAPP Agent Registry). Four values: `official` for first-party agents under `@kody/*` and `@rapp/*` (uniformly applied after PR #101 normalized older `community`/`experimental` tags); `community` for third-party publishers; `experimental` discouraged for new entries; and `private` reserved for `.py.stub` gated agents whose real source is held back behind a license check. The tier is what the brainstem reads to decide whether to install silently, warn, or refuse. → [[Roots Are Public Surfaces]].
+
 ## Sacred constraint
 
 One of the six inviolable rules that the platform's claims depend on: single-file agents, single-file services, agent-first rule, brainstem light, slots forever, tier portability. → [[The Sacred Constraints]].
+
+## Scale (egg)
+
+The size class declared in an egg's `manifest.json`, smallest to largest: `agent`, `twin`, `brainstem`, `neighborhood`, `swarm`, `factory`, `industry`, `estate`. The hatcher dispatches on this field alone — one verb (`hatch`), many unpackers. The scale ladder is how the same egg format scales from one capability to a whole estate without splintering into per-size formats. → [[The Federated Twin Egg Hatcher Pattern]], [[Egg / `.egg`]], [[Hatch / Hatcher (the verb)]].
 
 ## Service (rapp store)
 
@@ -146,6 +170,10 @@ The OpenAI function-calling shape. Each loaded agent becomes a tool the LLM can 
 ## Twin
 
 The user's digital twin — a model of their thinking, talking back to them in first-person. Lives in the `|||TWIN|||` slot. Offers, never demands. → [[The Twin Offers, The User Accepts]].
+
+## Twin egg
+
+A `.egg` zip whose `manifest.json` declares `scale: twin`, carrying exactly one twin's identity: `rappid.json` (the public identity), `soul.md` (the system prompt), `agents/*.py` (the twin's installed capabilities), and `.brainstem_data/` (its calibrated state). Hatching unpacks the bundle into `~/.rapp/twins/<hash>/`, where `<hash>` is derived from the rappid. The unit of "this twin, exactly, on another machine." → [[Egg / `.egg`]], [[The Federated Twin Egg Hatcher Pattern]].
 
 ## Vendoring
 

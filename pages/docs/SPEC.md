@@ -981,6 +981,23 @@ The egg cartridge family lives at the **storage / transport layer**, not the HTT
 
 The hatcher itself is a **single-file agent** that conforms to §5. It satisfies the agent contract (`name`, `metadata`, `perform()`) and travels via §0's distribution unit. The cartridge family is the *output* of agents (when packing) and the *input* (when hatching) — agents themselves remain the unit.
 
+#### 18.10.5 The `rapp-egg/2.0` multi-scale schema (additive extension)
+
+> **Added 2026-05-18.** Beyond the v1 agent contract, agents and aggregates may be packaged and distributed as `rapp-egg/2.0` cartridges. An egg's `manifest.json` declares its `scale`, which determines the hatch path. The generic single-file hatcher `twin_egg_hatcher_agent.py` (RAR: `@kody/twin_egg_hatcher`, public mirror: [`kody-w/twin-egg-hatcher`](https://github.com/kody-w/twin-egg-hatcher)) introspects the manifest and dispatches per scale. This is a strict superset of §18.10.1 — every existing cartridge kind has a corresponding `scale`, and the table is extensible without touching the v1 agent contract.
+
+| `scale` | Hatches into | Notes |
+|---|---|---|
+| `agent` | host brainstem's `agents/` | One single-file `*_agent.py`, the §5 unit. |
+| `twin` | `~/.rapp/twins/<hash>/` | A child brainstem identity (`rappid.json` + `soul.md` + `agents/`). Federated by the kernel's `twin_agent.py`. |
+| `brainstem` | a fresh `~/.brainstem/` install | A full kernel instance — the §0/§4 Tier 1 unit. |
+| `neighborhood` | `~/.rapp/neighborhoods/<hash>/` | Roster + shared agents + gate (per [Part Deux §1–§3 of the Master Plan](../../MASTER_PLAN.md)). |
+| `swarm` | a Tier 2 Function App | The cloud deployment unit (§4 Tier 2). |
+| `factory` | a multi-tenant brainstem cluster | Aggregate of swarms; planned. |
+| `industry` | a federation of factories | Cross-org aggregate; planned. |
+| `estate` | a re-anchored multi-tier operator identity | Substrate migration (per §18.10.1 estate row). |
+
+See [[The Federated Twin Egg Hatcher Pattern]] for the worked end-to-end pattern (the four-twin AIBAST federation: Heimdall, @kody-w, Bots in Blazers, AIBAST). The v1 agent contract (§5) and the wire contract (§0.1) are untouched — `rapp-egg/2.0` is a packaging/distribution layer that sits *above* the agent file, not inside it.
+
 ---
 
 ### 18.11 vBrainstem — multi-participant browser-tab session primitive

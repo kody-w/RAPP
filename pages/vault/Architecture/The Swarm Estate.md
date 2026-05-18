@@ -350,6 +350,22 @@ The substrate is mostly here. What's missing is the connective tissue: the cross
 
 ---
 
+## Estate portability: the estate cartridge
+
+The four-channel grid says *where* an estate's holdings live. It doesn't yet say how the estate **moves** when the substrate underneath it has to change — laptop dies, GitHub becomes unreachable, two operators meeting in person want to fold federations together, a sneakernet handoff at a conference. The answer is the **estate cartridge**: a single `.egg` zip that captures the entire estate identity — rappids + souls + memories + cross-signed device chains + the neighborhood roster — and re-anchors on any new brainstem in one motion.
+
+The cartridge's manifest declares `scale: estate` at the [`rapp-egg/2.0`](../../docs/SPEC.md) envelope layer, and `schema: brainstem-egg/2.3-estate` at the family-table layer (parallel to the existing `2.2-organism`, `2.2-rapplication`, and `2.3-session` members). It is hatched by the same universal `twin_egg_hatcher_agent.py` that handles every other scale — the hatcher dispatches on `manifest.scale`, and for `estate` it recursively unpacks each nested `members/<hash>/` cartridge per its own scale (`twin` → `~/.rapp/twins/<hash>/`, `neighborhood` → `~/.rapp/twins/<hash>/` plus `~/.rapp/neighborhoods/<hash>/`, etc.).
+
+**Substrate migration is one move.** Export → AirDrop → re-anchor. The cartridge is opaque on the wire — no DNS, no PeerJS, no GitHub round-trip required at handoff time. When it lands on the destination brainstem, the hatcher restores `~/.brainstem/estate.json` from the bundled copy, recursively hatches each member, and federation resumes. **No re-cross-signing required.** Rappids stay intact across substrates by design — the v2 rappid's identity hash is the master pubkey's hash, and the master pubkey is the same bytes wherever the cartridge lands. M signed S; S signed D; the chain is in `.brainstem_data/blessings/`, which travels in the egg. Loading the egg is a substrate change, not an identity change.
+
+**Cross-estate queries: the Fleet agent's `mesh_chat` action.** Once two estates are anchored on the same brainstem (one from the local install, one from an AirDropped cartridge), or on two separate brainstems connected via SSH (the Fleet agent's substrate, `stacks/fleet-management/`, RAR PR #100), federation collapses into a single fan-out call. The Fleet agent's `mesh_chat` action takes one prompt and fans it out to every twin on every peer brainstem in the estate, gathering responses into a single reply. Example: an operator on their primary laptop runs `Fleet(action="mesh_chat", prompt="What's the one risk we should escalate this week?")` — the fleet daemon resolves every peer brainstem (the local one plus each SSH-tethered remote), every peer brainstem resolves its full `~/.rapp/twins/` roster, every twin's `/chat` is called with the same prompt, and the responses land in a single envelope back to the caller. Heimdall says one thing, @kody-w says another, Bots in Blazers says a third, AIBAST says a fourth — all four voices on one screen, no operator-mediated routing. The estate cartridge is what makes this possible cross-substrate: you can hand someone the cartridge, they hatch it, their Fleet's `mesh_chat` reaches your twins from then on.
+
+The property to internalize: **the cartridge is the estate in suspended animation.** Closing it doesn't kill anything; the live brainstems on the source machine keep running, and the cartridge is a snapshot any peer can wake up. The estate persists; the substrate is interchangeable.
+
+Cross-references: [[ESTATE_SPEC]] §7.6 for the formal cartridge schema and the recursive-hatcher contract; [[The Federated Twin Egg Hatcher Pattern]] for the kernel-side hatcher and the four-twin AIBAST reference deployment that the canonical `aibast-federation.egg` (~20 KB, four twins) ships as.
+
+---
+
 ## Constitutional implication
 
 The current 32 articles cover the brainstem and the kernel. None of them yet cover the *estate* — the union across brainstems and time. This is probable Article XXXIII material:

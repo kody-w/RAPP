@@ -10,7 +10,7 @@ This document is the architectural companion to `HERO_USECASE.md` (what), `ECOSY
 2. [Three concentric trust scopes](#2-three-concentric-trust-scopes)
 3. [Identity and trust anchors](#3-identity-and-trust-anchors)
 4. [Discovery](#4-discovery)
-5. [Permanent lines (the four channel types)](#5-permanent-lines-the-four-channel-types)
+5. [Permanent lines (the channel types)](#5-permanent-lines-the-channel-types)
 6. [The twin chat protocol](#6-the-twin-chat-protocol)
 7. [Granular permissions — `public_facets`](#7-granular-permissions--public_facets)
 8. [Knowledge-exchange primitives](#8-knowledge-exchange-primitives)
@@ -103,9 +103,9 @@ Adopting it is one tap from the front door's `🏘 Neighborhood` pane: **"Adopt 
 
 The test neighbor's soul is fixed and is not maintained as a generally-evolving twin — it exists to be a known-good fixture. After verifying the plumbing, operators should declare a real neighbor (a friend's seed, a project peer, a memorial twin) and trade rapp-test-neighbor out of the rotation.
 
-## 5. Permanent lines (the four channel types)
+## 5. Permanent lines (the channel types)
 
-When two organisms (or a human visitor and an organism, or a human and another human's organism) want to exchange information beyond a one-shot chat turn, they open one of four channels. Each has different latency, durability, and trust semantics.
+When two organisms (or a human visitor and an organism, or a human and another human's organism) want to exchange information beyond a one-shot chat turn, they open one of these channels. Each has different latency, durability, and trust semantics. 5a–5d carry messages between running organisms; 5e carries the federation itself as a portable cartridge.
 
 ### 5a. WebRTC tether (low-latency, ephemeral)
 
@@ -151,6 +151,36 @@ Any organism can fetch any other organism's public files via `raw.githubusercont
 - Verifying eggs against their stated origin commit (deep-verify)
 
 Read-only. Anyone-to-anyone. No auth needed. Cached locally to keep the airplane-mode fallback intact.
+
+### 5e. Neighborhood egg cartridge (re-portable federation)
+
+The four channel types above (5a–5d) all carry information between organisms that are *already running somewhere*. §5e is the channel that carries the **federation itself** — a sealed cartridge containing several twins' workspaces, hatchable on any host in one motion.
+
+Schema: `rapp-egg/2.0`, `scale: neighborhood`. The cartridge is a zip with the following layout:
+
+```
+manifest.json                      # {schema, scale: neighborhood, name, rappid, members: [...]}
+members.json                       # roster: name, hash, rappid, port_hint per member
+README.md                          # human-readable description
+twins/<hash>/
+    rappid.json                    # identity (rapp-rappid/2.0 or bare-UUID legacy)
+    soul.md                        # personality, read every turn
+    agents/*.py                    # twin-local tools
+    .brainstem_data/               # memories travel with the egg — by design
+    HATCH_RECEIPT.json             # provenance: source, sha256, hatched_at
+```
+
+`manifest.json::members[]` mirrors `members.json`; both exist so a verifier can cross-check without unpacking every twin directory. `<hash>` is the 32-hex slice extracted from each member's rappid (or the bare UUID for legacy v1.x members) — same convention the kernel's [[The Federated Twin Egg Hatcher Pattern|federated twin hatcher]] uses for `~/.rapp/twins/<hash>/`.
+
+**Hatching semantics.** A hatcher (canonically `@kody/twin_egg_hatcher` v1.1.0, RAR-distributed via PR #98) unpacks each `twins/<hash>/` directory into `~/.rapp/twins/<hash>/` on the receiving host. The neighborhood roster + the cartridge's own rappid land under `~/.rapp/neighborhoods/<neighborhood_hash>/`, where future tooling (a future doorman pane, a `Neighborhood.boot_all` action, etc.) can read them. No file outside those two trees is touched. The kernel is not patched.
+
+**Memories travel.** `.brainstem_data/` is intentionally inside the egg. The cartridge is not a clean-room template — it is the federation in suspended animation. Frames, stream IDs, persistent memories, and per-twin state all resurrect on the destination machine. This is the property that makes the neighborhood egg a *re-portable federation* rather than a fresh install: hatching a §5e cartridge on a new laptop produces byte-for-byte the same four-twin conversation surface that ran on the source.
+
+**Idempotency and boot.** Re-hatching the same cartridge on the same host is a no-op for workspaces that already exist (same `<hash>`, content-addressed) — the hatcher writes a fresh `HATCH_RECEIPT.json` and returns. After hatching, each member is booted on its `port_hint` via the kernel's `Twin(action="boot", rappid_uuid=<member.rappid>)` (see §6 and [[The Federated Twin Egg Hatcher Pattern]]). Once every member is up, federation resumes through the global brainstem exactly as it did on the source host: the four-twin worked example (Heimdall on 7081, @kody-w on 7082, Bots in Blazers on 7083, AIBAST on 7084) re-establishes with no further configuration.
+
+**Why this is a §5 channel and not a §6 message kind.** §5 channels carry *substrate*; §6 messages carry *content over an existing substrate*. The neighborhood egg moves the entire substrate — identities, agents, memories, port assignments — and only after it lands does §6 twin chat become possible between the members again. It belongs alongside 5a–5d as a transport, not under 6b as a message.
+
+Cross-references: [[The Federated Twin Egg Hatcher Pattern]] for the kernel-side hatcher and the four-twin reference deployment; §6 below for the twin-chat envelope each member speaks once booted; §8c for the single-twin `share-egg` primitive this generalizes.
 
 ## 6. The twin chat protocol
 

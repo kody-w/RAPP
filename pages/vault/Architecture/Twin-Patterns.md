@@ -61,6 +61,40 @@ If your rapplication's use case requires it, your twin can call another twin's p
 
 Collaboration is **completely optional**. Most rapplications won't need it. The pattern exists because chat is universal, not because anything special was built.
 
+### 5. Federation via the kernel's `Twin` agent
+
+Cross-twin chat (pattern 4) treats the peer like a stranger. **Federation** is what you get when several twins share a kernel and a roster: many child brainstems on one machine, one front-door brainstem at `localhost:7071`, and the user only ever sees the front door.
+
+The kernel ships a `Twin` agent (`rapp_brainstem/agents/twin_agent.py`). Its actions are the federation primitives:
+
+| Action | One-line semantics |
+|---|---|
+| `summon`   | Mint a brand-new twin (fresh rappid, fresh workspace under `~/.rapp/twins/<hash>/`). |
+| `hatch`    | Unpack an existing `.egg` into a workspace — identity + agents + memories preserved. |
+| `boot`     | Start the workspace as a child brainstem on its own port via `start.sh`. |
+| `stop`     | Kill the child brainstem (PID tracked at `~/.rapp/pids/<rappid_key>.pid`). |
+| `list`     | Enumerate every workspace under `~/.rapp/twins/`. |
+| `chat`     | Send a `rapp-twin-chat/1.0` envelope to a peer's `/chat` (port resolved via `~/.rapp/ports/<rappid_key>.port`). |
+| `inspect`  | Read a peer's manifest, soul, and agent list without sending a message. |
+| `lay_egg`  | Re-export a workspace as a `.egg` cartridge (round-trips via `hatch`). |
+| `history`  | Replay a peer's frame log. |
+| `lineage`  | Walk `parent_rappid` chains back to the [[The Species DNA Archive — rapp_kernel|kernel root]]. |
+
+`chat` is the load-bearing call. Same wire format as cross-twin collaboration (§6a of `NEIGHBORHOOD_PROTOCOL.md`), but the transport is loopback HTTP rather than WebRTC — federation runs inside one machine. The brainstem at 7071 holds no twin identity of its own; it just dispatches `Twin(action="chat", ...)` to whichever child the LLM picked.
+
+**Four-twin worked example** — the first federation deployment, all on one laptop:
+
+| Twin | Port | Kind | Rappid (abbrev) |
+|---|---|---|---|
+| Heimdall | 7081 | personal | `915f54e5-4c71-4de9-bba3-6604461d05e5` (bare UUID) |
+| @kody-w | 7082 | operator | `rappid:v2:operator:@kody-w/twin:5b8ba…@github.com/kody-w/kody-w-twin` |
+| Bots in Blazers | 7083 | project | `rappid:v2:project:@kody-w/bots-in-blazers:eae15…@github.com/kody-w/bots-in-blazers-twin` |
+| AIBAST | 7084 | project | `rappid:v2:project:@kody-w/aibast:3a159…@github.com/kody-w/aibast-twin` |
+
+Each child runs under its own `soul.md`, its own `agents/`, its own `.brainstem_data/`. The user types into one chat box. The LLM picks the peer, the front-door brainstem composes `Twin(action="chat", rappid_uuid=...)`, the envelope crosses to the right port, and the reply comes back as if it were a local tool call — the [[The Federated Twin Egg Hatcher Pattern#Federate through the global brainstem in plain English|transparent-handoff principle]] applies the same way it does across machines.
+
+Federation is patterns 2–4 collapsed onto one host: parallel omniscience (many incarnations), twin-squared (multiple perspectives), and cross-twin collaboration (chat is the seam), unified under one entry point. See [[The Federated Twin Egg Hatcher Pattern]] for how the workspaces get there, and [[Rappid]] for the v2 schema the keys are built on.
+
 ---
 
 ## Summon vectors — how an egg arrives

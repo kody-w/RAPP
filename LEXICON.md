@@ -41,6 +41,14 @@ This document is the authoritative mapping. Writers should pick one vocabulary p
 | The local AI server | **brainstem** | **brainstem** |
 | The kernel itself | **kernel** | **kernel** |
 | A graduated rapplication | **rapplication** | **rapplication** *(brand equity preserved)* |
+| A portable bundle that becomes a working AI when opened | **egg** | **`.egg`** (zip with `manifest.json`) |
+| The act of opening an egg into a runnable workspace | **hatch** | **hatch** *(no rename — the verb is the verb)* |
+| The agent that opens eggs | **the hatcher** | **`twin_egg_hatcher_agent.py`** (generic, dispatches by scale; published as `@kody/twin_egg_hatcher` v1.1.0 in RAR, PR #98) |
+| An egg carrying one twin's identity (`rappid.json` + `soul.md` + `agents/` + `.brainstem_data/`) | **twin egg** | **twin-scale egg** (`manifest.json` declares `scale: twin`, hatches into `~/.rapp/twins/<hash>/`) |
+| The size class of an egg | **scale** | **scale** (declared in `manifest.json`; known values smallest→largest: `agent`, `twin`, `brainstem`, `neighborhood`, `swarm`, `factory`, `industry`, `estate`) |
+| An egg packing several twins together so a federation can be resurrected on another machine | **neighborhood egg** | **neighborhood-scale egg** (`scale: neighborhood` + `members.json` roster; see [[The Federated Twin Egg Hatcher Pattern]]) |
+| The thing that drives a network of Mac-mini brainstems over SSH | **fleet agent** | **`stacks/fleet-management/`** (23 actions: discover, ping, authorize, exec, read, write, ls, tail, ports, ps, brainstem_health, chat, mesh_chat, mesh_exec, provision_brainstem, install_agent, hatch_egg, boot_federation, status, plus self-extending custom/extend/cap/list_caps; merged PR #100) |
+| The RAR tier reserved for first-party `@kody/*` and `@rapp/*` agents | **official** | **`tier: official`** (uniform across `@kody/*` and `@rapp/*` per PR #101; `community` for third-party, `experimental` discouraged, `private` reserved for `.py.stub` gated agents) |
 
 ## Naming principles
 
