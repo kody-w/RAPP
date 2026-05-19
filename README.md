@@ -8,6 +8,8 @@ curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash
 
 Brainstem comes up at `http://localhost:7071`. One GitHub account with Copilot access is the only dependency. No OpenAI/Anthropic key. No cloud account. No enterprise gate.
 
+> **The platform stance:** [**The Brainstem Mandate**](./BRAINSTEM_MANDATE.md) — the foundational directive.  *The brainstem is the platform surface.  Build agents.*  Read it first; everything else assumes it.
+
 > **First-time visitor?** Start at the **[Kernel hub](https://kody-w.github.io/RAPP/pages/kernel.html)** — the unified entry point that surfaces every canon doc in canonical reading order. From there: the trilogy ([MASTER_PLAN](./MASTER_PLAN.md) → [HERO_USECASE](./HERO_USECASE.md) → [ECOSYSTEM](./ECOSYSTEM.md)), the law ([CONSTITUTION](./CONSTITUTION.md), [ANTIPATTERNS](./ANTIPATTERNS.md)), the [specs](./pages/docs/), and the [vault](./pages/vault/) with curated Reading Paths for every audience.
 
 ## What an "agent" is here
