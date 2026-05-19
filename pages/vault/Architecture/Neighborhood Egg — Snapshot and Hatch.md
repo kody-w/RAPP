@@ -82,10 +82,40 @@ The peer roster lives in `~/.rapp/peers.json` (or `BRAINSTEM_PEERS` env).  Each 
 | Carrier | Status | When members live on… | Read | Write |
 |---|---|---|---|---|
 | **LAN-SSH** | ✅ shipping | A LAN with SSH access | `ssh peer 'tar -czf - -C ~/.rapp/twins <hash>'` | `cat tarball \| ssh peer 'tar -xzf - -C ~/.rapp/twins'` |
-| **GitHub-neighborhood** | ✅ shipping (read-only) | Public neighborhood repos like [`kody-w/rapp-commons`](https://github.com/kody-w/rapp-commons) — peer entry declares `github_neighborhood: "<owner>/<repo>"`; snapshot walks `members.json`, parses each member's v2 rappid (per [[ESTATE_SPEC]] §1), fetches the member's own repo, packs as a tarball | `gh api repos/<member-owner>/<member-repo>/git/trees/main?recursive=1` → fetch each blob via contents API + base64-decode → tarball | Not yet — github write would be PR or commit; v1 in-place hatch skips github peers with a "use local-simulate or PR manually" message. local-simulate works regardless |
+| **GitHub-neighborhood** | ✅ shipping (read + opt-in PR write) | Public neighborhood repos like [`kody-w/rapp-commons`](https://github.com/kody-w/rapp-commons) — peer entry declares `github_neighborhood: "<owner>/<repo>"`; snapshot walks `members.json`, parses each member's v2 rappid (per [[ESTATE_SPEC]] §1), fetches the member's own repo, packs as a tarball | `gh api repos/<m-o>/<m-r>/git/trees/main?recursive=1` → fetch each blob via contents API + base64-decode → tarball | **Opt-in PR mode** (`github_write_enabled=true` on hatch): clone the captured twin's source repo shallow → apply the snapshot's tarball → if anything changed, branch + commit + push + `gh pr create`.  Never writes to `main` directly.  Supports `github_write_dry_run=true` to preview the diff without pushing |
+| **Tailscale** | ✅ shipping (implicit) | A Tailnet (peer's `ssh_host` resolves over the Tailscale interface) | Same as LAN-SSH | Same as LAN-SSH |
 | **HTTPS w/ auth** | planned | Brainstems behind a front-gate ([[The Auth Cascade]]) | `GET /api/twin/<hash>/workspace` | `PUT /api/twin/<hash>/workspace` |
-| **Tailscale** | planned | A Tailnet | Same as LAN-SSH over the Tailscale interface | Same |
 | **file:// + sneakernet** | (already covered by §4 of [[SUBSTRATE_FEDERATION]]) | A USB stick / SD card | Read peer's exported egg sub-cartridge | Hand the operator a `.egg` to drop in |
+
+### Verifying the Tailscale path
+
+Tailscale doesn't need its own carrier — it works through the LAN-SSH carrier transparently when the peer's `ssh_host` resolves over the Tailnet.  To verify on a new Tailnet:
+
+1. Confirm `ssh tailnet-hostname.tail-net.ts.net` succeeds with key-only auth (`-o BatchMode=yes`).
+2. In `~/.rapp/peers.json`, set `ssh_host` to the Tailnet hostname (e.g., `mac-mini-2.tail-net.ts.net`) and `ssh_user` to the peer's username.
+3. Run a snapshot.  The peer entry's `ssh_ok` should be `true` and twins should be captured under `peers/<name>/twins/<hash>.tar.gz` — same as a plain LAN run.
+
+No code change needed.  The `subprocess.run(["ssh", ...])` call resolves through whichever interface `ssh_host` points at.
+
+### Opt-in github-write (PR mode)
+
+When the egg has captured a github-neighborhood peer and the operator wants to push *back* to GitHub, set `github_write_enabled=true` on the hatch.  Behavior:
+
+```
+target=in-place + github_write_enabled=true:
+  for each captured twin in the github peer:
+    1. gh repo clone <member-source-repo> /tmp/<work> --depth 1
+    2. untar peers/<peer>/twins/<hash>.tar.gz into /tmp/<work>, stripping
+       the leading <hash>/ so files land at repo root
+    3. git status — if nothing changed: report no_changes, skip
+    4. else: checkout -b rapp-neighborhood-restore/<timestamp>
+            git add -A && git commit -m "rapp neighborhood-egg restore @ <ts>"
+            git push -u origin <branch>
+            gh pr create --base main --head <branch> ...
+    5. record PR URL in the hatch report
+```
+
+Always opens a PR — **never writes to `main` directly**.  Operator reviews + merges.  Pass `github_write_dry_run=true` to clone+diff+report without pushing or PR-ing, useful for previewing what would change.
 
 The currently-shipped LAN-SSH carrier uses BatchMode key-only SSH auth (no password prompts).  No agent or daemon needs to be installed on the peer — just sshd, tar, gzip.  This is what lets a fresh peer join the neighborhood just by authorizing one SSH key.
 

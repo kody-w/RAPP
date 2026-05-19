@@ -198,9 +198,9 @@ The egg format is substrate-agnostic.  Each peer entry's carrier is selected by 
 | Carrier | Selected by | Read | Write | Status |
 |---|---|---|---|---|
 | **LAN-SSH** | `ssh_user` + `ssh_host` | `ssh peer 'COPYFILE_DISABLE=1 tar --exclude="._*" -czf - -C $HOME/.rapp/twins <hash>'` | `ssh peer 'cd $HOME/.rapp/twins && tar -xzf -'` (stdin = tarball) | ✅ shipping (v1) |
-| **GitHub-neighborhood** | `github_neighborhood: "<owner>/<repo>"` (a neighborhood repo like `kody-w/rapp-commons` that has a `members.json` per `rapp-members/1.0`) | (1) fetch neighborhood metadata files (`rappid.json`, `members.json`, `neighborhood.json`, `soul.md`, `README.md`, `card.json`, `holo.md`) into `peers/<peer>/neighborhood/`; (2) read `members.json`; (3) for each member's v2 rappid (per [[ESTATE_SPEC]] §1) parse out `owner/repo/hash`; (4) `gh api repos/<member-owner>/<member-repo>/git/trees/main?recursive=1` lists blobs; (5) fetch each blob via the contents API + base64-decode; (6) build a tarball with entries `<hash>/<rel>` matching §5.2's shape | Not in v1 — github-write would be PR or commit; v1 in-place hatch skips github peers with "use `target=local-simulate`, or PR manually" | ✅ shipping (read-only) |
+| **GitHub-neighborhood** | `github_neighborhood: "<owner>/<repo>"` (a neighborhood repo with `members.json` per `rapp-members/1.0`) | (1) fetch neighborhood metadata files into `peers/<peer>/neighborhood/`; (2) read `members.json`; (3) for each member's v2 rappid (per [[ESTATE_SPEC]] §1) parse out `owner/repo/hash`; (4) `gh api repos/<m-o>/<m-r>/git/trees/main?recursive=1` lists blobs; (5) fetch each blob via the contents API + base64-decode; (6) build a tarball with entries `<hash>/<rel>` matching §5.2's shape | **Opt-in PR mode.**  `gh repo clone <member-repo> --depth 1` → apply the snapshot's tarball → if anything changed, `git checkout -b rapp-neighborhood-restore/<ts>` → commit → push → `gh pr create --base main --head <branch>`.  Never writes `main` directly.  Hatcher options: `github_write_enabled=true` to actually open PRs, `github_write_dry_run=true` to preview the diff without pushing | ✅ shipping (read + opt-in PR write) |
+| **Tailscale** | (uses LAN-SSH; the peer's `ssh_host` resolves through the Tailnet) | Same as LAN-SSH | Same | ✅ shipping (implicit) — no carrier code change needed |
 | **HTTPS w/ auth** | `auth_url` + `auth_token_env` (planned) | `GET <auth_url>/twin/<hash>/workspace.tar.gz` | `PUT <auth_url>/twin/<hash>/workspace.tar.gz` | planned |
-| **Tailscale** | (uses LAN-SSH; the peer's `ssh_host` just resolves through the Tailnet) | Same as LAN-SSH | Same | implicit — no carrier code change needed |
 | **file:// import** | `egg_path: "..."` (planned — a peer cartridge sub-bundle) | Read entries from an attached `.egg` | Hand the operator a `.egg` to deliver | planned (covered by [[SUBSTRATE_FEDERATION]] §4–§5) |
 
 A peer entry MAY declare multiple carriers; the snapshot agent picks the first one that works.  A peer entry with only `url` falls back to HTTP-probe-only — the manifest records the probe result but captures no workspace bytes (the peer appears in the egg but with `twins: []`).
@@ -238,8 +238,22 @@ A hatcher MUST support two `target` values:
 ### §8.1 — `target=in-place` (default)
 
 - Local member assets restored to their canonical paths (`agents/` → brainstem's agents dir, `core/` → brainstem dir, `data/` → brainstem's `.brainstem_data/`, `global_state/` → `~/.brainstem/`, `twins/<hash>/` → `~/.rapp/twins/<hash>/`).
-- For each peer in `members.peers`: invoke the **carrier** matched by the peer's coordinate fields (§6.1).  The carrier's write half checks whether each twin already exists on the peer and either skips (default safety, unless `overwrite_peer_twins=true`) or pushes the tarball.  For the LAN-SSH carrier (v1 shipping), this is `cat tarball | ssh peer 'cd $HOME/.rapp/twins && tar -xzf -'`.  Future carriers (HTTPS-with-auth, GitHub PR, Tailscale) follow the same pattern with their own write primitives.
+- For each peer in `members.peers`: invoke the **carrier** matched by the peer's coordinate fields (§6.1).  The carrier's write half checks whether each twin already exists on the peer and either skips (default safety, unless `overwrite_peer_twins=true`) or pushes the tarball.
+  - **LAN-SSH** carrier: `cat tarball | ssh peer 'cd $HOME/.rapp/twins && tar -xzf -'`.
+  - **GitHub-neighborhood** carrier: opt-in PR mode — only fires when `github_write_enabled=true` (or `github_write_dry_run=true`).  Clones the member's source repo shallow, applies the tarball, and if anything changed: branches, commits, pushes, opens a PR via `gh pr create`.  Never writes `main` directly.  Without the opt-in flag, github peers are skipped with a clear message pointing at `target=local-simulate` or the dry-run option.
+  - Future carriers (HTTPS-with-auth, file://-import) follow the same pattern with their own write primitives.
 - After restore, twins in `members.local.twins` with `alive_at_snapshot=true` are booted via this brainstem's Twin agent (`action="boot", rappid_uuid="<hash>"`).
+
+#### §8.1.1 — GitHub-write opt-in flags
+
+| Flag | Effect |
+|---|---|
+| `github_write_enabled` (bool) | Actually open PRs for each captured github-peer twin whose snapshot diverges from the current repo state.  Default `false`. |
+| `github_write_dry_run` (bool) | Same flow up through clone-and-diff; reports what *would* change without pushing or opening a PR.  Useful as a sanity check before flipping the real flag. |
+| `github_branch_prefix` (string) | Branch name prefix for the PR.  Default `"rapp-neighborhood-restore"`.  Full branch: `<prefix>/<YYYYMMDD-HHMMSS>`. |
+| `github_base_branch` (string) | PR base branch.  Default `"main"`. |
+
+A snapshot that already matches the github repo state produces `no_changes: true` and opens no PR.
 
 ### §8.2 — `target=local-simulate`
 
