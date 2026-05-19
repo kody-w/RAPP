@@ -106,6 +106,31 @@ spec_version = "rapp-protocol/1.0"
 indexable    = "true" | "false"
 ```
 
+### §3.1 — LAN-SSH as a cartridge carrier
+
+Substrate 2 also covers **direct SSH-tar transport** for full-state cartridges, used by the neighborhood-egg snapshot/hatch pattern ([[Neighborhood Egg — Snapshot and Hatch]], [`NEIGHBORHOOD_EGG_SPEC.md`](./NEIGHBORHOOD_EGG_SPEC.md)).  Bonjour + LAN HTTP is for *advertising* and *discovery*; LAN-SSH is for *moving the bytes*.  Same substrate, different carrier.
+
+**Carrier (capture side):**
+
+```bash
+# capturing peer twin workspaces into a snapshot:
+ssh peer 'COPYFILE_DISABLE=1 tar --exclude="._*" --exclude=".DS_Store" \
+  -czf - -C $HOME/.rapp/twins <hash>'
+# stdout = .tar.gz stream → snapshot agent embeds at peers/<peer>/twins/<hash>.tar.gz
+```
+
+**Carrier (restore side):**
+
+```bash
+# restoring a peer twin workspace from a snapshot:
+cat peers/<peer>/twins/<hash>.tar.gz \
+  | ssh peer 'mkdir -p $HOME/.rapp/twins && cd $HOME/.rapp/twins && tar -xzf -'
+```
+
+**Auth:** SSH with `BatchMode=yes`, `StrictHostKeyChecking=accept-new`, key-only.  No password prompts.  Peer hosts are listed in `~/.rapp/peers.json` (see [`NEIGHBORHOOD_EGG_SPEC.md`](./NEIGHBORHOOD_EGG_SPEC.md) §6).
+
+**No agent on the peer required.**  The peer just needs sshd, tar, gzip — all macOS/Linux default.  This is what lets a fresh peer be "joined" to the federation just by authorizing one SSH key.
+
 ---
 
 ## §4 — Substrate 3: AirDrop'd egg cartridge (Article XLVII.5.2)

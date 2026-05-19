@@ -25,6 +25,8 @@ A planted organism is a public GitHub repo with a fixed file layout (see `ECOSYS
 
 The trust anchor across all of this is **GitHub push permission**. If you can push to a repo, you are an operator of that organism. If you can't, you are a visitor. Visitors can propose mutations (PRs); operators decide what merges. That's the entire authorization model. Everything below is consent layered on top of it.
 
+> **The two senses of "neighborhood."** This document defines *neighborhood* as a **trust scope** — the middle tier between Personal and Public Swarm, bounded by GitHub collaborator membership.  Separately, *neighborhood-scale-egg* (the cartridge family entry in `LEXICON.md`, fully specified in [[NEIGHBORHOOD_EGG_SPEC]] / [[Neighborhood Egg — Snapshot and Hatch]]) is a **portable file format** that snapshots a running federation across a LAN.  Both use the word "neighborhood" because both describe *a group of organisms that recognize each other* — one's the cross-organism trust contract on the public substrate, the other's the LAN-private cartridge of running state.  They compose: an operator may run a neighborhood-protocol session whose members were brought up from a neighborhood-egg snapshot.
+
 ## 2. Three concentric trust scopes
 
 | Scope | Boundary | Persistence | Visibility |
