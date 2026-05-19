@@ -17,6 +17,94 @@ no frameworks, no new primitives where an existing pattern will do.
 
 **Next on this thread:** automate `neighborhood` and `estate` hatch paths in `egg_hatcher_agent.py` (currently they return manual instructions). When those land, .egg = absolute parity across organism / rapplication / session / neighborhood / estate.
 
+### 2026-05-18 — Neighborhood-egg snapshot/hatch, multi-carrier
+
+**Status:** SHIPPED. See [[Neighborhood Egg — Snapshot and Hatch]] and [`NEIGHBORHOOD_EGG_SPEC.md`](./NEIGHBORHOOD_EGG_SPEC.md).  Implementation in [`kody-w/rappLocalFirstFleet`](https://github.com/kody-w/rappLocalFirstFleet).
+
+- **Matched-pair agents.** `NeighborhoodSnapshot` (snapshot / inspect / list_eggs) + `NeighborhoodRun` (inspect / plan / hatch / list_eggs).  Single-file, BasicAgent contract, hot-loaded into any brainstem.
+- **Cross-substrate carriers.** The cartridge format is substrate-agnostic; per-peer carrier is selected by which coordinate fields are present in `~/.rapp/peers.json`:
+  - **LAN-SSH** ✅ shipping — `ssh_user` + `ssh_host`; `tar -czf -` over SSH for capture, `tar -xzf -` for restore.
+  - **GitHub-neighborhood** ✅ shipping (read + opt-in PR write) — `github_neighborhood: "<owner>/<repo>"`; reads `members.json`, parses each member's v2 rappid (per [`ESTATE_SPEC.md`](./ESTATE_SPEC.md) §1) → owner/repo/hash, fetches the repo tree via `gh api`, packs as a tarball.  PR-mode write is opt-in (`github_write_enabled=true`), never touches `main` directly.  `github_write_dry_run=true` previews the diff.
+  - **Tailscale** ✅ shipping (implicit) — uses LAN-SSH with `ssh_host` resolving over the Tailnet.  No carrier code change.
+- **Two hatch targets.**  `target=in-place` (default) pushes peer assets back via each peer's carrier.  `target=local-simulate` extracts peer assets into `~/.rapp/simulated/<peer>/twins/<hash>/` on the host doing the hatch — no network, full offline replay.
+- **Safety model.**  Hatch defaults to gap-filling.  Per-category opt-in flags (`overwrite_agents`, `overwrite_core`, `overwrite_data`, `overwrite_global_state`, `overwrite_twins`, `overwrite_peer_twins`) for destructive operations.  `plan` action does a read-only dry-run.
+- **Allowlist/denylist for global state.**  `rappid.json`, `estate.json`, `self_healing_cron_state.json` travel; `private-estate-secret`, `keys/`, `venv/`, `logs/` never do.  Secrets stay home.
+- **Verified end-to-end.**  Cross-device destructive restore on two LAN peers (RappterTwo, MacBookPro3) + GitHub capture from `kody-w/rapp-commons` walking its `members.json` → `kody-w/RAPP` → 1107-file tarball → simulated locally.  Github-write dry-run against the live RappCommons egg.
+
+### 2026-05-18 — The Brainstem Mandate
+
+**Status:** SHIPPED.  See [`BRAINSTEM_MANDATE.md`](../../BRAINSTEM_MANDATE.md).  Foundational directive written in deliberate parallel to the 2002 API Mandate.  The local brainstem is the platform surface; APIs are not.  Eight tenets, declarative, with consequences.  Linked from the README front matter.
+
+---
+
+## Neighborhood-egg — remaining carrier work
+
+**Status:** proposed · **Depends on:** neighborhood-egg snapshot/hatch (shipped 2026-05-18)
+
+Three carriers left after LAN-SSH + GitHub + Tailscale.  Each enables a different substrate the neighborhood-egg format can ride on without changing the format itself.
+
+### HTTPS-with-auth carrier
+
+**Why:**  Brainstems behind a Cloudflare tunnel, behind an Auth-Cascade front gate, behind a corporate proxy — anywhere SSH isn't viable but HTTPS-with-token is.  Closes the substrate ladder for the "I'm a brainstem operator but my peer's network is locked down" case.
+
+**Shape:**
+
+- Peer entry declares `auth_url: "https://peer.example.com/api"` and `auth_token_env: "PEER_TOKEN"` (env var name holding the token, not the token itself).
+- **Receiver side** (new): brainstem grows two opt-in endpoints, gated by `BRAINSTEM_ALLOW_REMOTE_TWIN_SNAPSHOT=true` + Bearer-token auth:
+  - `GET /api/twin/<hash>/workspace.tar.gz` → tarballed workspace
+  - `PUT /api/twin/<hash>/workspace.tar.gz` → restore from tarball (respects same `overwrite_*` semantics)
+  - `GET /api/twins` → list of twin hashes + metadata (mirrors `Twin.list` output shape)
+- **Carrier side** (in NeighborhoodSnapshot / NeighborhoodRun): HTTP GET/PUT, bearer-token auth.
+- Bearer tokens live in operator env, **never in `peers.json`**.
+
+**Acceptance:**
+- Snapshot from a brainstem on Mac A → captures twins from a brainstem on Mac B reachable only via Cloudflare Tunnel HTTPS.
+- Hatch with `target=in-place` pushes back via the same HTTPS+token path.
+- Secrets denylist holds: token env-var names are recorded in the egg; values never are.
+
+### `github_repos` carrier (individual twin repos, no neighborhood wrapper)
+
+**Why:**  Today the GitHub carrier requires a *neighborhood* repo (a repo with `members.json`).  Sometimes you just want to snapshot a few individual twin repos directly — no neighborhood envelope.  The selector already exists in `_select_carrier()` (`github_repos: ["owner1/repo1", "owner2/repo2"]`) but the implementation branch isn't wired.
+
+**Shape:**
+
+- Each repo in `github_repos` is one twin.
+- Selector returns `"github-repos"`; the snapshot loop dispatches to a sibling of `github-neighborhood` that skips the `members.json` walk and goes straight to fetching each listed repo.
+- The hatch write path mirrors github-neighborhood (clone + apply + PR + opt-in `github_write_enabled`).
+
+**Acceptance:**  Snapshot a peer entry with `github_repos: ["kody-w/aibast-twin", "kody-w/heimdall"]` → both repos captured as twins, manifest's `peers[].twins` lists both, local-simulate extracts both correctly.
+
+### Boot-simulated-peers
+
+**Why:**  Today `target=local-simulate` extracts peer twin workspaces into `~/.rapp/simulated/<peer>/twins/<hash>/` but **does not boot them**.  Simulated twins are file-level replays only.  For a true offline-replay demo (every peer twin queryable like the real one), the simulated twins should boot on local ports the local Twin agent knows about.
+
+**Shape:**
+
+- New flag on `NeighborhoodRun.hatch`: `boot_simulated_peers=true`.
+- Each simulated twin gets a rebased local port — `simulated_port = base + offset_from_peer_index*100 + twin_index`, or some deterministic-but-collision-safe scheme.
+- The Twin agent gets a sibling registry path (`~/.rapp/simulated/<peer>/.brainstem_data/twin_registry.json`) so `Twin.list` can enumerate simulated peers alongside real ones, namespaced as `<peer>/<name>`.
+- `Twin.chat` works against simulated twins same as real twins.
+
+**Acceptance:**  `target=local-simulate` + `boot_simulated_peers=true` → every captured peer twin is reachable via `Twin.chat` on this Mac, on a port the runner picked.  The originals on the real peers remain untouched.
+
+### Real github-write PR acceptance test
+
+**Why:**  The github-write code path is verified via dry-run.  No PR has yet been opened by it.  Before recommending it for non-trivial use, run it end-to-end against a real sandbox repo and inspect the resulting PR for sanity (branch naming, commit message, file diff layout, PR body framing).
+
+**Shape:**  pick a private sandbox repo, capture it as a github-peer, modify a file in the simulated workspace, hatch with `github_write_enabled=true`, review the PR.
+
+### SelfHealingCron pattern doc + cron daemon
+
+**Status:** half-shipped 2026-05-18.
+
+`SelfHealingCron` agent ships (canonical home `kody-w/rappLocalFirstFleet`, also available on the local brainstem).  Action surface: setup / check / status / history / teardown.  Disk-persisted state at `~/.brainstem/self_healing_cron_state.json` so jobs survive the brainstem's per-`/chat` agent reload.
+
+**Missing pieces:**
+- **Pattern doc.**  Goes at `pages/vault/Architecture/The Self-Healing Cron Pattern.md`.  Same shape as the other Architecture vault notes: hook, the shape, why-it-works, worked example.
+- **Real tick daemon.**  The `schedule` field is stored but inert — nothing ticks `check` on the schedule.  Two options: a launchd plist generator (clean for single-machine ops) or an external tick process the operator runs (cleaner for multi-machine ops).  Recommend launchd plist generator first — it's the smaller surface and matches macOS native primitives.
+
+**Acceptance:**  Pattern doc reviewed and merged.  Tick daemon ships such that `SelfHealingCron(action="setup", schedule="*/5 * * * *", ...)` plus a follow-up "make this routine real" call actually wakes `check` every 5 minutes without the operator running anything else.
+
 ---
 
 ## Native GUI installer for non-technical users

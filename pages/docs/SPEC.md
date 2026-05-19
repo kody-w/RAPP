@@ -953,7 +953,7 @@ that exists today and every one that will exist tomorrow.
 | `brainstem-egg/2.2-organism` | `organism` | ZIP | rappid + soul + .env + agents + organs + senses + services + .brainstem_data | hatch into `~/.rapp/twins/<rappid>/` (full instance) | shipping |
 | `brainstem-egg/2.2-rapplication` | `rapplication` | ZIP | rappid + agent.py + UI + per-rapp state | install as a planted rapp under host brainstem | shipping |
 | `brainstem-egg/2.3-session` | `session` | JSON | rappid + runtime payload (HTML/JS) + transcript + participants | mount in rappterbox console iframe (or `pages/vbrainstem.html` standalone) | shipping |
-| `brainstem-egg/2.3-neighborhood` | `neighborhood` | ZIP | rappid + neighborhood.json + members.json + agents/ + rapplications/ + ses/ + soul.md + CONSTITUTION.md + rar/index.json | mint a new GitHub repo (or local mirror) acting as a neighborhood gate | planned |
+| `brainstem-egg/2.3-neighborhood` | `neighborhood` | ZIP | rappid + neighborhood.json + members.json + agents/ + rapplications/ + ses/ + soul.md + CONSTITUTION.md + rar/index.json | mint a new GitHub repo (or local mirror) acting as a neighborhood gate (public-substrate form) | planned (this row is the *public-substrate* form: a GitHub-resident gate); shipping equivalent for local-substrate LAN snapshots is `rapp-egg/2.0 scale=neighborhood` — see §18.10.5 and [`NEIGHBORHOOD_EGG_SPEC.md`](./NEIGHBORHOOD_EGG_SPEC.md) |
 | `brainstem-egg/2.3-estate` | `estate` | ZIP | public discovery surface + private "bones" repo pointer + sealed PII pointer | re-anchor the operator's whole multi-tier identity on a new substrate | planned |
 
 The full cartridge spec lives at [`kody-w/rappterbox/carts/SCHEMA.md`](https://github.com/kody-w/rappterbox/blob/main/carts/SCHEMA.md). Master packers/unpackers for the ZIP variants live at [`rapp_brainstem/utils/bond.py`](https://github.com/kody-w/RAPP/blob/main/rapp_brainstem/utils/bond.py). The session variant is JSON-only because its payload is structurally one runtime + one transcript (no directory tree to compress).
@@ -990,7 +990,7 @@ The hatcher itself is a **single-file agent** that conforms to §5. It satisfies
 | `agent` | host brainstem's `agents/` | One single-file `*_agent.py`, the §5 unit. |
 | `twin` | `~/.rapp/twins/<hash>/` | A child brainstem identity (`rappid.json` + `soul.md` + `agents/`). Federated by the kernel's `twin_agent.py`. |
 | `brainstem` | a fresh `~/.brainstem/` install | A full kernel instance — the §0/§4 Tier 1 unit. |
-| `neighborhood` | `~/.rapp/neighborhoods/<hash>/` | Roster + shared agents + gate (per [Part Deux §1–§3 of the Master Plan](../../MASTER_PLAN.md)). |
+| `neighborhood` | `~/.rapp/neighborhoods/<hash>/` (legacy local mirror) OR — for snapshot-style federation eggs — local + peer assets per [`NEIGHBORHOOD_EGG_SPEC.md`](./NEIGHBORHOOD_EGG_SPEC.md) §8 | Roster + shared agents + gate (per [Part Deux §1–§3 of the Master Plan](../../MASTER_PLAN.md)).  Snapshot/hatch implementation shipping 2026-05-18: [[Neighborhood Egg — Snapshot and Hatch]]; matched-pair agents `NeighborhoodSnapshot` + `NeighborhoodRun` (canonical home [`kody-w/rappLocalFirstFleet`](https://github.com/kody-w/rappLocalFirstFleet)).  Two hatch targets: `in-place` (SSH-push peers) and `local-simulate` (extract peers into `~/.rapp/simulated/<peer>/twins/`). |
 | `swarm` | a Tier 2 Function App | The cloud deployment unit (§4 Tier 2). |
 | `factory` | a multi-tenant brainstem cluster | Aggregate of swarms; planned. |
 | `industry` | a federation of factories | Cross-org aggregate; planned. |

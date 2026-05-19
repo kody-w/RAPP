@@ -25,6 +25,8 @@ A planted organism is a public GitHub repo with a fixed file layout (see `ECOSYS
 
 The trust anchor across all of this is **GitHub push permission**. If you can push to a repo, you are an operator of that organism. If you can't, you are a visitor. Visitors can propose mutations (PRs); operators decide what merges. That's the entire authorization model. Everything below is consent layered on top of it.
 
+> **One neighborhood, two concerns.** A neighborhood is *a group of organisms that recognize each other* — that's the whole concept, and it's independent of where the members live (GitHub, LAN, Tailscale, AirDrop'd off a thumb drive).  This document specifies the **protocol** — how members are identified, what trust scopes apply, how knowledge and consent move between them.  Separately, [[NEIGHBORHOOD_EGG_SPEC]] / [[Neighborhood Egg — Snapshot and Hatch]] specifies the **cartridge** — how to snapshot a neighborhood's running state into one portable file.  The cartridge is substrate-agnostic: today's snapshot agent uses LAN-SSH as its carrier (one carrier among several), but a neighborhood whose members are reachable through GitHub raw (per [[ESTATE_SPEC]] §1 rappid-as-URL), Tailscale, or HTTPS-with-auth can be snapshotted the same way once those carriers ship.  Protocol and cartridge compose: snapshot a LAN neighborhood today, hatch it on a GitHub-resident neighborhood tomorrow — the members and trust contract come along; only the substrate changes.
+
 ## 2. Three concentric trust scopes
 
 | Scope | Boundary | Persistence | Visibility |
