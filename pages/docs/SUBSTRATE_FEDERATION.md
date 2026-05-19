@@ -106,9 +106,11 @@ spec_version = "rapp-protocol/1.0"
 indexable    = "true" | "false"
 ```
 
-### §3.1 — LAN-SSH as a cartridge carrier
+### §3.1 — LAN-SSH as a neighborhood-egg carrier (shipping, v1)
 
-Substrate 2 also covers **direct SSH-tar transport** for full-state cartridges, used by the neighborhood-egg snapshot/hatch pattern ([[Neighborhood Egg — Snapshot and Hatch]], [`NEIGHBORHOOD_EGG_SPEC.md`](./NEIGHBORHOOD_EGG_SPEC.md)).  Bonjour + LAN HTTP is for *advertising* and *discovery*; LAN-SSH is for *moving the bytes*.  Same substrate, different carrier.
+Substrate 2 also covers **direct SSH-tar transport** for full-state cartridges, used by the neighborhood-egg snapshot/hatch pattern ([[Neighborhood Egg — Snapshot and Hatch]], [`NEIGHBORHOOD_EGG_SPEC.md`](./NEIGHBORHOOD_EGG_SPEC.md)).  Bonjour + LAN HTTP advertises and discovers; LAN-SSH moves the bytes.  Same substrate, different carrier.
+
+The cartridge format itself is **substrate-agnostic** — see [`NEIGHBORHOOD_EGG_SPEC.md`](./NEIGHBORHOOD_EGG_SPEC.md) §6.1 for the full carrier matrix (LAN-SSH today; GitHub raw, HTTPS-with-auth, Tailscale planned).  This subsection documents the LAN-SSH carrier specifically because it's the v1 shipping path.
 
 **Carrier (capture side):**
 
@@ -129,7 +131,9 @@ cat peers/<peer>/twins/<hash>.tar.gz \
 
 **Auth:** SSH with `BatchMode=yes`, `StrictHostKeyChecking=accept-new`, key-only.  No password prompts.  Peer hosts are listed in `~/.rapp/peers.json` (see [`NEIGHBORHOOD_EGG_SPEC.md`](./NEIGHBORHOOD_EGG_SPEC.md) §6).
 
-**No agent on the peer required.**  The peer just needs sshd, tar, gzip — all macOS/Linux default.  This is what lets a fresh peer be "joined" to the federation just by authorizing one SSH key.
+**No agent on the peer required.**  The peer just needs sshd, tar, gzip — all macOS/Linux default.  This is what lets a fresh peer be "joined" to the neighborhood just by authorizing one SSH key.
+
+**The same neighborhood format on other substrates.**  When members live on GitHub (per [[ESTATE_SPEC]] §1 — rappid-as-URL), the carrier is `gh api` + raw URL fetch + PR-on-write.  When members live behind an auth gate ([[The Auth Cascade]]), the carrier is HTTPS-with-token.  When members live on a Tailnet, the LAN-SSH carrier still works — `ssh_host` just resolves through the Tailscale interface.  The egg contents are the same regardless.
 
 ---
 

@@ -2,14 +2,16 @@
 title: Neighborhood Egg — Snapshot and Hatch
 status: published
 section: Architecture
-hook: A single `.egg` file captures the full state of a federation across this Mac and every reachable peer on the LAN — every twin's workspace, every brainstem's agents, allowlisted global state, all of memory. Hatching it restores the federation either in place (push peer assets back over SSH) or as a single-device replay (extract peer assets into `~/.rapp/simulated/<peer>/twins/<hash>/`). One egg, two targets, full round-trip verified.
+hook: A single `.egg` file captures the full state of a *neighborhood* — every twin's workspace, every brainstem's agents, allowlisted global state, all of memory — across whatever substrate the members happen to live on. Hatching it restores the federation either in place (push peer assets back to where they came from) or as a single-device replay (extract peer assets into `~/.rapp/simulated/<peer>/twins/<hash>/`). One egg, two targets, multiple carriers (LAN-SSH today; GitHub-raw + Tailscale + HTTPS-with-auth planned). Round-trip verified end-to-end on LAN-SSH.
 ---
 
 # Neighborhood Egg — Snapshot and Hatch
 
-> **Hook.** A single `.egg` file captures the full state of a federation across this Mac and every reachable peer on the LAN.  Hatching it restores the federation either *in place* (push peer assets back over SSH) or as a *single-device replay* (extract peer assets into `~/.rapp/simulated/<peer>/twins/<hash>/`).  One egg, two targets, full round-trip verified.
+> **Hook.** A single `.egg` file captures the full state of a *neighborhood*.  Hatching it restores the federation either *in place* (push peer assets back to where they came from) or as a *single-device replay* (extract peer assets into `~/.rapp/simulated/<peer>/twins/<hash>/`).  One egg, two targets, multiple carriers — full round-trip verified on LAN-SSH; the format itself is substrate-agnostic.
 
-[[The Federated Twin Egg Hatcher Pattern]] describes how to package and hatch *one* twin.  This doc describes the sibling pattern that packages and hatches *a whole federation* — every twin on this Mac plus every twin on every SSH-reachable peer — into one cartridge.  Same `.egg` extension, same `rapp-egg/2.0` family, `scale: neighborhood`.
+[[The Federated Twin Egg Hatcher Pattern]] describes how to package and hatch *one* twin.  This doc describes the sibling pattern that packages and hatches *a whole neighborhood* — every twin on this Mac plus every twin on every reachable peer, wherever those peers happen to live — into one cartridge.  Same `.egg` extension, same `rapp-egg/2.0` family, `scale: neighborhood`.
+
+A **neighborhood** is a group of organisms that recognize each other ([[NEIGHBORHOOD_PROTOCOL]] defines the recognition protocol).  Members can live on a LAN, on GitHub, on Tailscale, behind an HTTPS-with-auth front door — anywhere a [[SUBSTRATE_FEDERATION|RAPP substrate]] can reach them.  This doc is about *capturing the running state of those members into one file*, regardless of where they live.
 
 The canonical wire-level spec is [[NEIGHBORHOOD_EGG_SPEC]]; this doc explains the *why* and the *how to use it*.
 
@@ -58,9 +60,11 @@ Defaults fill gaps only.  Files that already exist on disk are skipped.
 
 Before any destructive hatch, run `action="plan"` — it prints exactly how many files would be created vs. overwritten vs. skipped per category, plus which twins would get booted afterward.  Plan is read-only.
 
-## Cross-device transport
+## Carriers
 
-The snapshot reads `~/.rapp/peers.json` for the peer roster:
+The egg's *format* is substrate-agnostic.  The snapshot and hatch agents need to read and write peer-side state somehow — and "somehow" is pluggable.  Each carrier is a (read, write) pair that knows how to enumerate twins on a peer and move workspace bytes in and out.
+
+The peer roster lives in `~/.rapp/peers.json` (or `BRAINSTEM_PEERS` env).  Each entry declares the carrier-specific coordinates:
 
 ```json
 {
@@ -73,11 +77,19 @@ The snapshot reads `~/.rapp/peers.json` for the peer roster:
 }
 ```
 
-For each peer, the snapshot agent runs `tar -czf - -C ~/.rapp/twins <hash>` over SSH (BatchMode key-only auth, no password prompts).  The tarball streams straight into the zip as `peers/<peer>/twins/<hash>.tar.gz`.  Peer brainstem agents source is similarly pulled file by file.  No agent or daemon needs to be installed on the peer — just SSH access.
+### Carriers, today and planned
 
-For hatch with `target=in-place`, the inverse: for each peer member in the egg, SSH in, check whether each twin already exists, and either skip (default safety) or stream `tar -xzf -` of the tarball into `~/.rapp/twins/`.
+| Carrier | Status | When members live on… | Read | Write |
+|---|---|---|---|---|
+| **LAN-SSH** | ✅ shipping | A LAN with SSH access | `ssh peer 'tar -czf - -C ~/.rapp/twins <hash>'` | `cat tarball \| ssh peer 'tar -xzf - -C ~/.rapp/twins'` |
+| **GitHub raw** | planned | Public twin repos (per [[ESTATE_SPEC]] §1 — rappid-as-URL) | `gh api repos/<o>/<r>/contents/...` or raw URL fetch | PR to the repo (operator merge required) |
+| **HTTPS w/ auth** | planned | Brainstems behind a front-gate ([[The Auth Cascade]]) | `GET /api/twin/<hash>/workspace` | `PUT /api/twin/<hash>/workspace` |
+| **Tailscale** | planned | A Tailnet | Same as LAN-SSH over the Tailscale interface | Same |
+| **file:// + sneakernet** | (already covered by §4 of [[SUBSTRATE_FEDERATION]]) | A USB stick / SD card | Read peer's exported egg sub-cartridge | Hand the operator a `.egg` to drop in |
 
-This is Substrate 2 (LAN) per [[SUBSTRATE_FEDERATION|substrate federation]], specifically using SSH-tar as the carrier — a documented alternative to LAN HTTP + Bonjour for cartridge transport.
+The currently-shipped LAN-SSH carrier uses BatchMode key-only SSH auth (no password prompts).  No agent or daemon needs to be installed on the peer — just sshd, tar, gzip.  This is what lets a fresh peer join the neighborhood just by authorizing one SSH key.
+
+Each carrier is small enough to be its own helper module; the snapshot/run agents dispatch on which carrier coords the peer entry provides (`ssh_user` → LAN-SSH; future: `github_repo` → GitHub raw; `auth_url` → HTTPS; etc.).  See [[SUBSTRATE_FEDERATION]] for how these line up with the broader substrate ladder.
 
 ## The local-simulate target
 

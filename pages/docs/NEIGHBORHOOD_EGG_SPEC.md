@@ -2,7 +2,9 @@
 
 > **Schema:** `rapp-egg/2.0` with `scale: neighborhood` · **Status:** Shipping · **Authority:** this file · **First shipped:** 2026-05-18
 
-This is the wire-level spec for **the cartridge that snapshots a LAN-spanning federation into one file**.  See [[Neighborhood Egg — Snapshot and Hatch]] for the pattern doc (the *why*); this doc is the *what* — exact field shapes, exact directory layout, exact dispatch rules.
+This is the wire-level spec for **the cartridge that snapshots a *neighborhood* into one file**.  A neighborhood is a group of organisms that recognize each other ([[NEIGHBORHOOD_PROTOCOL]] defines the recognition contract).  The members can live on any [[SUBSTRATE_FEDERATION|substrate]] — LAN, GitHub, Tailscale, HTTPS-with-auth — the egg's format does not care.  Only the *carrier* (the method used to move workspace bytes in and out of each member) varies by substrate; the format and dispatch rules are uniform.
+
+See [[Neighborhood Egg — Snapshot and Hatch]] for the pattern doc (the *why*); this doc is the *what* — exact field shapes, exact directory layout, exact dispatch rules.
 
 If you are writing a snapshot agent, a hatcher, an inspector, a federation backup tool, or any code that reads or writes a `scale: neighborhood` egg — this is the contract.
 
@@ -153,36 +155,57 @@ If `captured` is `false`, the entry will carry a `reason` field (`"oversize"`, `
 
 ### §5.2 — peer twin tarball
 
-A peer twin's workspace travels as `peers/<peer>/twins/<hash>.tar.gz` — a gzipped tar archive of the workspace, captured on the peer with:
+A peer twin's workspace travels as `peers/<peer>/twins/<hash>.tar.gz` — a gzipped tar archive of the workspace.  The format is uniform regardless of carrier (LAN-SSH, GitHub raw, HTTPS-with-auth, etc.) so the unpacker doesn't need to know how the bytes were captured.
+
+For the **LAN-SSH carrier** (v1 shipping), the tarball is produced on the peer with:
 
 ```
 COPYFILE_DISABLE=1 tar --exclude '._*' --exclude '.DS_Store' \
   -czf - -C $HOME/.rapp/twins <hash>
 ```
 
-The flags suppress macOS AppleDouble (`._*`) resource-fork files and `.DS_Store` noise.  Extractors MUST defensively skip any leftover `._*` or `.DS_Store` members in case the egg was produced by an older snapshotter.
+The flags suppress macOS AppleDouble (`._*`) resource-fork files and `.DS_Store` noise.  Other carriers SHOULD produce equivalent tarballs (no `._*`, no `.DS_Store`).  Extractors MUST defensively skip any leftover `._*` or `.DS_Store` members in case the egg was produced by an older or non-conforming snapshotter.
 
 ## §6 — `peers.json` (on disk, not in egg)
 
-The snapshot host reads `~/.rapp/peers.json` to know which peers to probe.  Schema:
+The snapshot host reads `~/.rapp/peers.json` to know which peers to probe AND which carrier to use for each (see §6.1).  Schema:
 
 ```jsonc
 {
   "peers": [
     {
+      // common fields (every entry)
       "name": "RappterTwo",
-      "url":  "http://RappterTwos-Mac-mini.local:7071",
-      "ssh_user": "rapptertwo",                          // optional but required for deep capture
-      "ssh_host": "RappterTwos-Mac-mini.local"           // optional; defaults to url's host
+      "url":  "http://RappterTwos-Mac-mini.local:7071",   // /health probe URL
+
+      // carrier-specific coords (presence selects the carrier — see §6.1)
+      "ssh_user": "rapptertwo",                            // LAN-SSH carrier
+      "ssh_host": "RappterTwos-Mac-mini.local"
     },
-    "http://192.168.86.116:7071"                         // string form: HTTP probe only, no SSH
+    "http://192.168.86.116:7071"                          // string form: HTTP probe only, no carrier
   ]
 }
 ```
 
-Env override: `BRAINSTEM_PEERS=url1,url2,...` (comma-sep, no SSH coords).
+Env override: `BRAINSTEM_PEERS=url1,url2,...` (comma-sep, HTTP-probe only — no carrier).
 
 Loopback URLs (`localhost`, `127.0.0.1`) are filtered out — those are "local," not peers.
+
+### §6.1 — Carriers
+
+The egg format is substrate-agnostic.  Each peer entry's carrier is selected by which coordinate fields are present:
+
+| Carrier | Selected by | Read | Write | Status |
+|---|---|---|---|---|
+| **LAN-SSH** | `ssh_user` + `ssh_host` | `ssh peer 'COPYFILE_DISABLE=1 tar --exclude="._*" -czf - -C $HOME/.rapp/twins <hash>'` | `ssh peer 'cd $HOME/.rapp/twins && tar -xzf -'` (stdin = tarball) | ✅ shipping (v1) |
+| **GitHub raw** | `github_repo: "<owner>/<repo>"` (planned) | `gh api repos/<o>/<r>/contents/...` and raw URL fetch (no auth for public) | PR to the repo (operator-merge gated) | planned |
+| **HTTPS w/ auth** | `auth_url` + `auth_token_env` (planned) | `GET <auth_url>/twin/<hash>/workspace.tar.gz` | `PUT <auth_url>/twin/<hash>/workspace.tar.gz` | planned |
+| **Tailscale** | `tailscale_name` (planned) | LAN-SSH over the Tailscale interface | Same | planned (no carrier code change needed if `ssh_host` resolves over Tailscale) |
+| **file:// import** | `egg_path: "..."` (planned — a peer cartridge sub-bundle) | Read entries from an attached `.egg` | Hand the operator a `.egg` to deliver | planned (covered by [[SUBSTRATE_FEDERATION]] §4–§5) |
+
+A peer entry MAY declare multiple carriers; the snapshot agent picks the first one that works.  A peer entry with only `url` falls back to HTTP-probe-only — the manifest records the probe result but captures no workspace bytes (the peer appears in the egg but with `twins: []`).
+
+Carriers are pluggable.  Adding a new carrier means: (a) defining its coordinate fields in `peers.json`, (b) implementing the (read, write) pair in the snapshot/run agents, (c) listing it here.  The egg format itself does not change.
 
 ## §7 — Global state allowlist / denylist
 
@@ -215,7 +238,7 @@ A hatcher MUST support two `target` values:
 ### §8.1 — `target=in-place` (default)
 
 - Local member assets restored to their canonical paths (`agents/` → brainstem's agents dir, `core/` → brainstem dir, `data/` → brainstem's `.brainstem_data/`, `global_state/` → `~/.brainstem/`, `twins/<hash>/` → `~/.rapp/twins/<hash>/`).
-- For each peer in `members.peers`: SSH in (using the peer's `ssh_user` + `ssh_host`), check whether each twin exists in `$HOME/.rapp/twins/`, and either skip (default safety) or `tar -xzf -` the tarball into `$HOME/.rapp/twins/`.
+- For each peer in `members.peers`: invoke the **carrier** matched by the peer's coordinate fields (§6.1).  The carrier's write half checks whether each twin already exists on the peer and either skips (default safety, unless `overwrite_peer_twins=true`) or pushes the tarball.  For the LAN-SSH carrier (v1 shipping), this is `cat tarball | ssh peer 'cd $HOME/.rapp/twins && tar -xzf -'`.  Future carriers (HTTPS-with-auth, GitHub PR, Tailscale) follow the same pattern with their own write primitives.
 - After restore, twins in `members.local.twins` with `alive_at_snapshot=true` are booted via this brainstem's Twin agent (`action="boot", rappid_uuid="<hash>"`).
 
 ### §8.2 — `target=local-simulate`
