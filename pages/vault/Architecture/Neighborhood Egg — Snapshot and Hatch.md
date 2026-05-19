@@ -82,7 +82,7 @@ The peer roster lives in `~/.rapp/peers.json` (or `BRAINSTEM_PEERS` env).  Each 
 | Carrier | Status | When members live on… | Read | Write |
 |---|---|---|---|---|
 | **LAN-SSH** | ✅ shipping | A LAN with SSH access | `ssh peer 'tar -czf - -C ~/.rapp/twins <hash>'` | `cat tarball \| ssh peer 'tar -xzf - -C ~/.rapp/twins'` |
-| **GitHub raw** | planned | Public twin repos (per [[ESTATE_SPEC]] §1 — rappid-as-URL) | `gh api repos/<o>/<r>/contents/...` or raw URL fetch | PR to the repo (operator merge required) |
+| **GitHub-neighborhood** | ✅ shipping (read-only) | Public neighborhood repos like [`kody-w/rapp-commons`](https://github.com/kody-w/rapp-commons) — peer entry declares `github_neighborhood: "<owner>/<repo>"`; snapshot walks `members.json`, parses each member's v2 rappid (per [[ESTATE_SPEC]] §1), fetches the member's own repo, packs as a tarball | `gh api repos/<member-owner>/<member-repo>/git/trees/main?recursive=1` → fetch each blob via contents API + base64-decode → tarball | Not yet — github write would be PR or commit; v1 in-place hatch skips github peers with a "use local-simulate or PR manually" message. local-simulate works regardless |
 | **HTTPS w/ auth** | planned | Brainstems behind a front-gate ([[The Auth Cascade]]) | `GET /api/twin/<hash>/workspace` | `PUT /api/twin/<hash>/workspace` |
 | **Tailscale** | planned | A Tailnet | Same as LAN-SSH over the Tailscale interface | Same |
 | **file:// + sneakernet** | (already covered by §4 of [[SUBSTRATE_FEDERATION]]) | A USB stick / SD card | Read peer's exported egg sub-cartridge | Hand the operator a `.egg` to drop in |
