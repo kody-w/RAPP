@@ -1091,6 +1091,7 @@ append below this line only; edits to §0 through §17 are v2 work._
 | [`skill.md`](https://github.com/kody-w/RAPP/blob/main/pages/docs/skill.md) | Universal "feed me to any AI" onboarding runbook. The 6-step new-citizen path. | §12 (RAR) |
 | [`ROADMAP.md`](https://github.com/kody-w/RAPP/blob/main/pages/docs/ROADMAP.md) | Per-version near-term plans. | §15 |
 | [`SUBSTRATE_FEDERATION.md`](https://github.com/kody-w/RAPP/blob/main/pages/docs/SUBSTRATE_FEDERATION.md) | (Same content as root-level — the doc moved during reorganization; both paths work.) | Article XLVII.5 |
+| [`TWIN_LIFECYCLE_SPEC.md`](https://github.com/kody-w/RAPP/blob/main/pages/docs/TWIN_LIFECYCLE_SPEC.md) | Operator-level twin lifecycle: `active / archived / purged` states, disk layout, agent verbs (`archive`, `unarchive`, `purge`, `list_archived`, `list_purged`), tombstone schemas, snapshot interactions, estate-wide fanout. | Article XLIX.3, §18.13 |
 
 #### 18.12.3 Constitutional articles shipped after SPEC was memorialized
 
@@ -1107,7 +1108,7 @@ SPEC.md was frozen 2026-04-17. The Constitution kept moving. Articles XL–XLIX 
 | XLVI | Rappid Is The Global Address (Estate Is The Door Catalog) | Every organism has one address; estate maps addresses to URLs by string parsing. |
 | XLVII | Discoverability Without A Central Registry | Publishing IS the signal. Substrate-agnostic federation (XLVII.5). |
 | XLVIII | Public Discovery, Private Substance — the Two-Tier Estate Is Mandatory | Tightened to three-tier in `PUBLIC_PRIVATE_BOUNDARY.md` — PII never in repo by default. |
-| XLIX | A Twin Is A Persistent AI Presence With An Address And A Workbench | Twin lifecycle (mint → bond → fork → die), workbench primitive, sibling-peek. |
+| XLIX | A Twin Is A Persistent AI Presence With An Address And A Workbench | Twin lifecycle (mint → bond → fork → die), workbench primitive, sibling-peek. Operator-housekeeping refinement in §18.13 + `TWIN_LIFECYCLE_SPEC.md`. |
 
 #### 18.12.4 What SPEC.md deliberately does NOT cover
 
@@ -1123,3 +1124,60 @@ The god spec stays narrow on purpose. Each of these is real platform surface, fu
 - Patent claim language (→ `kody-w/wildhaven-ceo/legal/patent/`, collaborator-gated)
 
 Reading order if you're new and just landed on SPEC.md: SPEC § 0–5 (the contract) → `HERO_USECASE.md` (what must work) → `ECOSYSTEM_MAP.md` (the index) → `OSI.md` (the layer model) → drill into specific specs as needed.
+
+---
+
+### 18.13 Twin operator lifecycle (active / archived / purged)
+
+> **Added 2026-05-19.** Operator-housekeeping refinement of Constitution Article XLIX.3 (`mint → bond → fork → die`). XLIX.3 establishes the philosophical states; this section names the disk layout and agent verbs that let an operator manage a twin estate cleanly across many twins on many machines. "Die" in XLIX.3 corresponds to `purge` here. `archive` is a new operator-level intermediate state — a twin set aside, body preserved, reversible — that XLIX.3 implicitly allows but doesn't formalize. Full schemas in [`TWIN_LIFECYCLE_SPEC.md`](https://github.com/kody-w/RAPP/blob/main/pages/docs/TWIN_LIFECYCLE_SPEC.md). Narrative in [`pages/vault/Architecture/Twin Lifecycle — Active, Archived, Purged.md`](https://github.com/kody-w/RAPP/blob/main/pages/vault/Architecture/Twin%20Lifecycle%20%E2%80%94%20Active%2C%20Archived%2C%20Purged.md).
+
+#### 18.13.1 States and disk layout
+
+| State | Disk location | In default `list` | In default snapshot eggs | Reversible |
+|---|---|---|---|---|
+| `active` | `~/.rapp/twins/<hash>/` | yes | yes | n/a |
+| `archived` | `~/.rapp/twins/.archive/<hash>/` (workspace intact + `archived.json`) | no (`list_archived`) | no (`include_archived=true`) | yes (`unarchive`) |
+| `purged` | `~/.rapp/twins/.purged/<hash>.json` (tombstone only; body removed) | no (`list_purged`) | never | NO |
+
+Transitions: `active → archived → purged`. No direct `active → purged`; archive is the safety rail.
+
+#### 18.13.2 Scanner rule (companion to §5 discovery)
+
+`_scan_twins()` in `twin_agent.py` MUST skip any direct child of `~/.rapp/twins/` whose name starts with `.`. This formalizes the dotdir convention (`.archive/`, `.purged/`, `.cache/`, `.staging/` are all reserved at zero cost) and fixes a latent bug where the historical `.trash/` stub appeared as a phantom twin in `Twin action=list`.
+
+#### 18.13.3 Agent verbs (Twin agent)
+
+| Action | Form | Notes |
+|---|---|---|
+| `archive` | single (`rappid_uuid`) or bulk (`filter` + `confirm`) | Bulk is dry-run unless `confirm=true`. Running twins are stopped first; no `force` flag. |
+| `unarchive` | single only | Does not auto-boot. |
+| `purge` | single only | Requires `confirm=true`. Only valid on already-archived twins. Irreversible. |
+| `list_archived` | — | Enumerates `.archive/` with tombstone metadata. |
+| `list_purged` | — | Enumerates `.purged/` ledger. |
+
+Filter clauses: `kind`, `name_prefix`, `name_regex`, `stopped_for_days`, `exclude_kinds`. Conjunctive. Unknown clauses MUST be rejected (no silent skip).
+
+#### 18.13.4 Tombstone schema
+
+`archived.json` (schema `rapp-twin-tombstone/1.0`) is written into the archived workspace. `.purged/<hash>.json` (schema `rapp-twin-purged/1.0`) is written when a twin is purged. The purge ledger is the local-brainstem realization of Constitution XLIX.3's required tombstone. Full schemas in `TWIN_LIFECYCLE_SPEC.md` §4 and §5.
+
+#### 18.13.5 Snapshot / hatch interactions
+
+- `NeighborhoodSnapshot` default: active only. Opt-in `include_archived=true` packs `.archive/`. `.purged/` ledgers never travel.
+- `NeighborhoodRun.hatch` default: restore active only. Opt-in `restore_archived=true` lays archived entries into the target host's `.archive/` without auto-unarchive.
+- Egg manifest's `twins[]` array gains `lifecycle: "active" | "archived"` per entry. Missing field reads as `"active"` (backwards-compatible with pre-2026-05-19 eggs).
+
+#### 18.13.6 Estate-wide fanout
+
+`Fleet action=archive_estate` composes `Twin action=archive` against every peer in `~/.rapp/peers.json` via the existing SSH carrier from `NeighborhoodRun`. Dry-run by default. No atomic rollback — partial archive is recoverable because archive is reversible. No estate-wide `unarchive` or `purge` in v1.0; those stay deliberate per-host.
+
+#### 18.13.7 Consistency with prior specs
+
+- **Constitution Article XLIX.3:** elaborates rather than contradicts. "Die" = `purge`. Tombstone requirement is satisfied by `.purged/<hash>.json`.
+- **Article XLVII:** preserved. The rappid of a purged twin remains globally addressable; purging removes the local body, not the substrate identity.
+- **§18.10 (egg cartridge family):** snapshot eggs gain an opt-in flag without changing the schema family.
+- **Article XLI (Conversation):** all verbs flow through `/chat` in natural language. No new HTTP endpoints, no slash commands.
+
+#### 18.13.8 Migration
+
+Implementations encountering a legacy `~/.rapp/twins/.trash/<hash>/` dir SHOULD migrate it to `~/.rapp/twins/.archive/<hash>/` with a synthesized `archived.json` (`archived_by: "migration"`). The historical empty `.trash/` stub MAY be removed.
