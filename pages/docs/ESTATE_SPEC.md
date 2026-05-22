@@ -29,7 +29,7 @@ From this string alone, by **string parsing** (not lookup, not config, not env),
 | `repo` | Everything after `/` and before `:` in the first segment |
 | `door_type` | `"front_door"` if `kind == "twin"`, else `"gate"` (XLVI.2) |
 
-**Valid kinds** (frozen as of 2026-05-09): `twin`, `neighborhood`, `ant-farm`, `braintrust`, `workspace`, `hatched`, `rapplication`, `prototype`, `operator`. Adding a new kind requires a CONSTITUTION amendment because every consumer derives behavior from this token.
+**Valid kinds** (frozen as of 2026-05-22): `twin`, `neighborhood`, `ant-farm`, `braintrust`, `workspace`, `hatched`, `rapplication`, `prototype`, `operator`, `project`. Adding a new kind requires a CONSTITUTION amendment because every consumer derives behavior from this token.
 
 ---
 
