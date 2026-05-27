@@ -514,6 +514,12 @@ Severity: **P0** wire-incompatible · **P1** schema/field mismatch · **P2** doc
 - **Test peer:** [`kody-w/rapp-test-neighbor`](https://github.com/kody-w/rapp-test-neighbor) — NEIGHBORHOOD_PROTOCOL §4d canonical fixture
 - **Species root (this repo):** [`kody-w/RAPP`](https://github.com/kody-w/RAPP) — kernel + spec only; per SURVIVAL.md, neighborhood seeds do NOT live here
 - **RAR (Pokédex / single-file agent registry):** [`kody-w/RAR`](https://github.com/kody-w/RAR)
+- **Front-door layer (NEIGHBORHOOD_PROTOCOL §18; canonical: [`kody-w/rapp-neighborhood-protocol`](https://github.com/kody-w/rapp-neighborhood-protocol)):**
+  - **Front-door template:** [`kody-w/rapp-vneighborhood`](https://github.com/kody-w/rapp-vneighborhood) — a public repo *is* the front door (`rapp-vneighborhood/1.0`); interchangeable relay (local ≡ kited ≡ cloud); `v` = swarm-capable; egg/import/fork portability
+  - **Example neighborhoods:** [`kody-w/vneighborhood-design-studio`](https://github.com/kody-w/vneighborhood-design-studio), [`kody-w/vneighborhood-research-lab`](https://github.com/kody-w/vneighborhood-research-lab)
+- **Live social layer (apps on twin-chat, signed `rapp-commons-event/1.0`):** [`kody-w/rapp-commons`](https://github.com/kody-w/rapp-commons) (the global commons) + the **rapp-god-forum** (threaded), both served cloud-first by the resident, kited fallback
+- **The resident (permanent cloud relay):** [`kody-w/rapp-resident`](https://github.com/kody-w/rapp-resident) — Azure Function serving signed event rooms; reference deploy `https://rapp-resident-kw165843.azurewebsites.net/api` holds up the `commons` + `rapp-god-forum` rooms
+- **RIONet (agent-built web):** [`kody-w/rionet`](https://github.com/kody-w/rionet) — rapp.robots.txt → rappbot → rappPageRank → RIO (`search:` / `rpage:`, markdown only)
 - **Metropolis tracker (live):** https://kody-w.github.io/RAPP/metropolis/
 
 ---

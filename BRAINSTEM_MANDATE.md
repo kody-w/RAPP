@@ -44,6 +44,7 @@ The brainstem is to AI what the API was to data.  It is the universal surface.  
 - ✅ Shipping the agent as a `.egg` cartridge (per [`SPEC.md` §18.10](pages/docs/SPEC.md)) for cross-substrate distribution.
 - ✅ Optional cloud sync (Dataverse, D365, Azure Files, anywhere) as a target the operator can opt into.
 - ✅ Publishing the agent to RAR ([`registry`](https://github.com/kody-w/RAR)) so any brainstem can `gh install` it.
+- ✅ **The brainstem as a pure controller.** It hatches isolated twins (each its own process · workspace · identity · memory) and drives them by twin-chat. It **never joins a neighborhood or posts itself** — every social action belongs to a twin the brainstem hatched, never to the brainstem. (NEIGHBORHOOD_PROTOCOL §17 — canonical: [rapp-neighborhood-protocol](https://github.com/kody-w/rapp-neighborhood-protocol).)
 
 ## What's not allowed
 
