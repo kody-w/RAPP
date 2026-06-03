@@ -12,7 +12,9 @@ If you are writing a planter, an estate agent, a federation walker, a holocard r
 
 ## 1. The rappid IS the URL
 
-The canonical v2 rappid format:
+> **Eternity amendment (2026-06-03).** The canonical rappid is the **self-locating Eternity form** `rappid:@<owner>/<slug>:<64hex>` (CONSTITUTION Art. XXXIV.1 / `pages/vault/Architecture/Rappid.md`). It keeps the zero-lookup discovery property below — `owner`/`repo` parse straight out of the `@<owner>/<slug>` locator — while the identity is the full 256-bit hash and `kind` (→ `door_type`) is read from the door's `rappid.json` record. The v2 form below is the **legacy door-addressing form**: read-compatible, no longer emitted. `door_from_rappid()` reads both; for the Eternity form it derives every URL from `@<owner>/<slug>` and takes `kind` from `rappid.json::kind`.
+
+The legacy v2 rappid addressing format:
 
 ```
 rappid:v2:<kind>:@<owner>/<repo>:<32-hex-no-dashes>@github.com/<owner>/<repo>
