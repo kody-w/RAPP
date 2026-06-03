@@ -26,32 +26,21 @@ Think of a rappid as the species' social-security number. Universal. Singular. T
 
 ## The format (one format, forever)
 
-> **AMENDMENT — the Eternity standard, self-locating refinement (locked 2026-06-01, finalized 2026-06-03). This is THE canonical rappid; everything below it is legacy.**
->
-> ```
-> rappid:@<owner>/<slug>:<64hex>
-> ```
->
-> - `@<owner>/<slug>` — **locator + namespace**. `<slug>` is the immutable birth name (gene name); `<owner>` is the publishing handle. The pair makes the rappid **self-locating**: the door lives at `github.com/<owner>/<slug>`, served at `<owner>.github.io/<slug>`, identity at `raw.githubusercontent.com/<owner>/<slug>/main/rappid.json` — all derivable from the string with **zero lookup** (preserves Article XLVI / ESTATE_SPEC discovery).
-> - `<64hex>` — the **full 256-bit SHA-256** identity hash, **never truncated to 128**. The hash is the identity and the **join key**: matching/dedup is ALWAYS on the hash.
-> - **Everything else lives in the `rappid.json` record** as additive, versionless fields: `kind` (→ `door_type`), `pubkey`, `sig_suite`, `birth_attestation`, `key_succession`, `registry_anchor`, `parent_rappid`, and `home_vault` (a non-GitHub canonical home, when not the default `github.com/<owner>/<slug>`). **The string is never re-versioned** — that was the v2/v3 mistake.
-> - Reference implementation: `kody-w/rapp-egg-hub` SPEC §2.
->
-> **Compatibility contract:** consumers **read every legacy form forever** and **emit only** the canonical Eternity string. Legacy forms and how they canonicalize:
-> - **v2** `rappid:v2:<kind>:@<owner>/<slug>:<32hex>@<host>` — take `@<owner>/<slug>`; `kind`/`host` move to the record; the 32-hex hash is recomputed to the full 64-hex from the master pubkey (`sha256(pubkey_SPKI)`) when present, else the door is re-anchored once (old string preserved in `_migrated_from`).
-> - **bare Eternity** `rappid:<slug>:<64hex>` — prepend `@<owner>/` from the record.
-> - **bare UUID** (draft v1) — genesis re-anchor; the UUID is preserved in `_migrated_from`.
->
-> The v2-structured form below is the legacy door-addressing form (ratified 2026-04-30): read-compatible, **no longer emitted**.
+```
+rappid:@<owner>/<slug>:<64hex>
+```
+
+The **consolidated** rappid (locked 2026-06-03) — one string that is **both identity and self-locating**, unifying the three prior forms (v1 bare-UUID, v2-structured, bare-Eternity) into one:
 
 | Field | Meaning |
 |---|---|
 | `rappid:` | Always literal. Identifies this string as a rappid. |
-| `v2` | Format version. v2 is the unified format ratified 2026-04-30. There was a draft v1 (UUID-only) era; v2 supersedes it. |
-| `<kind>` | What kind of organism this is. Open, **amendment-gated** enumeration spanning the recursive species tree (scale axis: `prototype`, `kernel-variant`, `organism`, `twin`, `swarm`, `rapplication`, `agent`) plus identity kinds (`personal`, `operator`, `project`, …). The **door-bearing** subset — kinds that resolve to a door address + `door_type` — is frozen canonically in CONSTITUTION Art. XLVI.2 / `tools/door_address.py` (`VALID_KINDS`); code-only kinds (`kernel-variant`, `organism`, `swarm`, `agent`) carry a kind but no door. `operator` is in active use for Article-XLVI front doors (e.g. `kody-w-twin`) — see [[The Federated Twin Egg Hatcher Pattern]]. New kinds are added as the species evolves (e.g. `android`, `cloud`, `embodied`) via the Art. XLVI.2 amendment process when door-bearing. |
-| `@<publisher>/<slug>` | Namespace. Publisher is the owning brand/entity; slug is the entity name within that publisher. Like a Docker image path. |
-| `<hash>` | Stable, immutable identifier. For organisms with cryptographic identity (master keypair): `sha256(master_pubkey_SPKI)[:32]`. For organisms without keypairs (the species root, code variants without keys): a unique stable identifier (UUID-derived or commit-derived). |
-| `@<home_vault_url>` | Where the canonical signed records live (or, for code-only organisms, where the repo lives). Network-resolvable. **A discovery hint, not a binding** — per [[Local-First-by-Design]], local copies are authoritative; hosts are transports. |
+| `@<owner>/<slug>` | The **location**: `github.com/<owner>/<slug>` is the door/repo. Every door URL derives from this by **string parsing — no lookup, no API** (CONSTITUTION Art. XLVI). `<slug>` is the immutable birth name (the gene name / routing hint). |
+| `<64hex>` | The full **256-bit SHA-256** identity hash — `sha256(master_pubkey_SPKI)`, **never truncated to 128**. The hash IS the identity and the **join key**: matching/dedup is always on the hash, never the slug. Keyless organisms (the species root, code variants) use a stable hash (UUID/commit-derived), re-anchored to 256-bit when minted fresh. |
+
+**`kind` and all other structure live in the `rappid.json` RECORD, not the string.** `kind` → `door_type` per CONSTITUTION Art. XLVI.2 (`VALID_KINDS` in `tools/door_address.py`); ownership keypair (`pubkey`/`sig_suite`), `birth_attestation`, `key_succession`, `registry_anchor` are additive, versionless record fields. **The string is never re-versioned** — new richness goes in the record (that was the v2/v3 mistake).
+
+**Legacy forms — read forever, emit only the consolidated form.** v1 bare-UUID, v2 `rappid:v2:<kind>:@<owner>/<repo>:<32hex>@github.com/<owner>/<repo>`, and bare-Eternity `rappid:<slug>:<64hex>` are all READ and `canonicalize_rappid()`'d to the form above. `tools/door_address.py` is the one parser; consumers MUST import it.
 
 ### Concrete examples
 

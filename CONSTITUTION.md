@@ -2353,15 +2353,16 @@ platform globally, until the end of time.
 ### XXXIV.1 — Rappid is stamped at birth
 
 When a brainstem boots for the first time on a machine, it writes
-`~/.brainstem/rappid.json`. The schema is `rapp-rappid/2.0`; the
-`rappid` field carries the unified v2-format string described in the
-canonical spec at `pages/vault/Architecture/Rappid.md`:
+`~/.brainstem/rappid.json`. The `rappid` field carries the **consolidated**
+rappid string described in the canonical spec at
+`pages/vault/Architecture/Rappid.md`:
 
 ```json
 {
   "schema": "rapp-rappid/2.0",
-  "rappid": "rappid:v2:<kind>:@<publisher>/<slug>:<hash>@<home_vault_url>",
-  "parent_rappid": "<rappid in v2 format of the master that birthed this org>",
+  "rappid": "rappid:@<owner>/<slug>:<64hex>",
+  "kind": "<organism kind — door_type derives from this; see Art. XLVI.2>",
+  "parent_rappid": "rappid:@<owner>/<slug>:<64hex>",
   "parent_repo": "https://github.com/kody-w/RAPP",
   "parent_commit": "<git SHA at birth>",
   "born_at": "<ISO timestamp>",
@@ -2369,25 +2370,19 @@ canonical spec at `pages/vault/Architecture/Rappid.md`:
 }
 ```
 
-**Eternity amendment (locked 2026-06-01, self-locating refinement finalized
-2026-06-03) — supersedes the 2026-04-30 v2 format.** The canonical rappid is the
-**self-locating Eternity form** `rappid:@<owner>/<slug>:<64hex>`: an `@<owner>/<slug>`
-locator (the door is at `github.com/<owner>/<slug>` — preserves Article XLVI zero-lookup
-discovery) and the **full 256-bit SHA-256** identity hash (never truncated). The hash is
-the identity and the join key. **The string is never re-versioned** — all other structure
-(`kind`→`door_type`, ownership keypair, succession, attestation, `parent_rappid`,
-`home_vault`) lives in the `rappid.json` record as additive, versionless fields. Canonical
-spec: `pages/vault/Architecture/Rappid.md`; reference implementation: `kody-w/rapp-egg-hub`
-SPEC §2. The species tree is one tree, one identifier traverses it, and that identifier is
-the self-locating Eternity rappid.
-
-**Compatibility (the v2 form is now legacy).** The 2026-04-30 v2 unified format
-(`rappid:v2:<kind>:@<owner>/<slug>:<32hex>@<host>`) and the brief draft `1.1` bare-UUID form
-are **legacy forms**: read forever, canonicalize to Eternity (extract `@<owner>/<slug>`;
-recompute the 64-hex hash from the master pubkey, else re-anchor with the old string in
-`_migrated_from`), but **no longer emitted**. No rappid is lost (the species root's
-`0b635450-c042-49fb-b4b1-bdb571044dec` canonicalizes losslessly). **No future article shall
-introduce a parallel *identity* format**; the record carries new richness, never the string.
+**Format consolidation (locked 2026-06-03).** There is exactly one rappid
+format: `rappid:@<owner>/<slug>:<64hex>` — one string that is both the
+256-bit identity (the hash is the join key) and self-locating
+(`@<owner>/<slug>` → the door, no lookup). It consolidates the three prior
+forms into one: the draft v1 bare-UUID, the v2-structured
+`rappid:v2:<kind>:@<owner>/<repo>:<32hex>@github.com/...`, and the bare-Eternity
+`rappid:<slug>:<64hex>`. **`kind` and all structure live in the record**, never
+the string; **the string is never re-versioned** (new richness is an additive
+record field). Every legacy form is **read forever** and canonicalized
+(`tools/door_address.py::canonicalize_rappid`) — no rappid is lost (the species
+root's `0b635450-c042-49fb-b4b1-bdb571044dec` canonicalizes losslessly). **No
+future article shall introduce a parallel identity format.** The species tree is
+one tree, and one identifier system traverses it.
 
 The rappid is **never regenerated**. It is the organism's permanent
 identity. Backing up the org to a new repo, hatching, reverting,
