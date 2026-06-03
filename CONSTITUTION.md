@@ -2369,15 +2369,25 @@ canonical spec at `pages/vault/Architecture/Rappid.md`:
 }
 ```
 
-**Format unification (ratified 2026-04-30).** There is exactly one
-rappid format: the v2 unified specification. A draft `1.1` schema with
-bare-UUID rappids existed briefly during April 2026; existing UUIDs
-(notably the species root's `0b635450-c042-49fb-b4b1-bdb571044dec`)
-were preserved by being placed in the hash field of the v2 string
-(dashes stripped). No rappid was lost in the migration. **No future
-article shall introduce parallel formats** — see `pages/vault/Architecture/Rappid.md`
-for the antipattern principle. The species tree is one tree, and one
-identifier system traverses it.
+**Eternity amendment (locked 2026-06-01, self-locating refinement finalized
+2026-06-03) — supersedes the 2026-04-30 v2 format.** The canonical rappid is the
+**self-locating Eternity form** `rappid:@<owner>/<slug>:<64hex>`: an `@<owner>/<slug>`
+locator (the door is at `github.com/<owner>/<slug>` — preserves Article XLVI zero-lookup
+discovery) and the **full 256-bit SHA-256** identity hash (never truncated). The hash is
+the identity and the join key. **The string is never re-versioned** — all other structure
+(`kind`→`door_type`, ownership keypair, succession, attestation, `parent_rappid`,
+`home_vault`) lives in the `rappid.json` record as additive, versionless fields. Canonical
+spec: `pages/vault/Architecture/Rappid.md`; reference implementation: `kody-w/rapp-egg-hub`
+SPEC §2. The species tree is one tree, one identifier traverses it, and that identifier is
+the self-locating Eternity rappid.
+
+**Compatibility (the v2 form is now legacy).** The 2026-04-30 v2 unified format
+(`rappid:v2:<kind>:@<owner>/<slug>:<32hex>@<host>`) and the brief draft `1.1` bare-UUID form
+are **legacy forms**: read forever, canonicalize to Eternity (extract `@<owner>/<slug>`;
+recompute the 64-hex hash from the master pubkey, else re-anchor with the old string in
+`_migrated_from`), but **no longer emitted**. No rappid is lost (the species root's
+`0b635450-c042-49fb-b4b1-bdb571044dec` canonicalizes losslessly). **No future article shall
+introduce a parallel *identity* format**; the record carries new richness, never the string.
 
 The rappid is **never regenerated**. It is the organism's permanent
 identity. Backing up the org to a new repo, hatching, reverting,

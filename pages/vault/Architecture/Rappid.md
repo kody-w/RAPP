@@ -26,9 +26,23 @@ Think of a rappid as the species' social-security number. Universal. Singular. T
 
 ## The format (one format, forever)
 
-```
-rappid:v2:<kind>:@<publisher>/<slug>:<hash>@<home_vault_url>
-```
+> **AMENDMENT — the Eternity standard, self-locating refinement (locked 2026-06-01, finalized 2026-06-03). This is THE canonical rappid; everything below it is legacy.**
+>
+> ```
+> rappid:@<owner>/<slug>:<64hex>
+> ```
+>
+> - `@<owner>/<slug>` — **locator + namespace**. `<slug>` is the immutable birth name (gene name); `<owner>` is the publishing handle. The pair makes the rappid **self-locating**: the door lives at `github.com/<owner>/<slug>`, served at `<owner>.github.io/<slug>`, identity at `raw.githubusercontent.com/<owner>/<slug>/main/rappid.json` — all derivable from the string with **zero lookup** (preserves Article XLVI / ESTATE_SPEC discovery).
+> - `<64hex>` — the **full 256-bit SHA-256** identity hash, **never truncated to 128**. The hash is the identity and the **join key**: matching/dedup is ALWAYS on the hash.
+> - **Everything else lives in the `rappid.json` record** as additive, versionless fields: `kind` (→ `door_type`), `pubkey`, `sig_suite`, `birth_attestation`, `key_succession`, `registry_anchor`, `parent_rappid`, and `home_vault` (a non-GitHub canonical home, when not the default `github.com/<owner>/<slug>`). **The string is never re-versioned** — that was the v2/v3 mistake.
+> - Reference implementation: `kody-w/rapp-egg-hub` SPEC §2.
+>
+> **Compatibility contract:** consumers **read every legacy form forever** and **emit only** the canonical Eternity string. Legacy forms and how they canonicalize:
+> - **v2** `rappid:v2:<kind>:@<owner>/<slug>:<32hex>@<host>` — take `@<owner>/<slug>`; `kind`/`host` move to the record; the 32-hex hash is recomputed to the full 64-hex from the master pubkey (`sha256(pubkey_SPKI)`) when present, else the door is re-anchored once (old string preserved in `_migrated_from`).
+> - **bare Eternity** `rappid:<slug>:<64hex>` — prepend `@<owner>/` from the record.
+> - **bare UUID** (draft v1) — genesis re-anchor; the UUID is preserved in `_migrated_from`.
+>
+> The v2-structured form below is the legacy door-addressing form (ratified 2026-04-30): read-compatible, **no longer emitted**.
 
 | Field | Meaning |
 |---|---|

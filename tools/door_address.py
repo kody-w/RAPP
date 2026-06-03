@@ -2,6 +2,12 @@
 
 Authority: pages/docs/ESTATE_SPEC.md (CONSTITUTION Article XLVI).
 
+Canonical form: the self-locating Eternity rappid `rappid:@<owner>/<slug>:<64hex>`
+(CONSTITUTION Art. XXXIV.1, finalized 2026-06-03) — owner/slug locate the door, the
+256-bit hash is the identity, and `kind` lives in the door's rappid.json record.
+The legacy v2 form (`rappid:v2:<kind>:@<owner>/<repo>:<32hex>@github.com/<owner>/<repo>`)
+is read-compatible per the compatibility contract (read every legacy form, emit Eternity).
+
 This is the SINGLE implementation of the Estate Spec's `door_from_rappid()`
 contract (ESTATE_SPEC §5). Every consumer that maps rappid → door URLs uses
 this module — never reinvents the parsing, never patches around it.
@@ -19,7 +25,16 @@ from __future__ import annotations
 import re
 
 
-# Canonical v2 rappid regex — anchored, no wiggle room.
+# Canonical: the self-locating Eternity rappid (CONSTITUTION Art. XXXIV.1, 2026-06-03).
+# rappid:@<owner>/<slug>:<64hex> — owner/slug locate the door; the 256-bit hash is the
+# identity; `kind` is NOT in the string (it lives in the rappid.json record and is passed
+# to door_from_rappid). 64 lowercase hex = full SHA-256, never the truncated 32.
+_ETERNITY_RE = re.compile(
+    r"^rappid:@(?P<owner>[A-Za-z0-9][A-Za-z0-9._-]*)/(?P<slug>[A-Za-z0-9][A-Za-z0-9._-]*):"
+    r"(?P<hex>[a-f0-9]{64})$"
+)
+
+# Legacy v2 rappid addressing regex — read-compatible, no longer emitted.
 # rappid:v2:<kind>:@<owner>/<repo>:<32-hex-no-dashes>@github.com/<owner2>/<repo2>
 # Where (owner, repo) MUST equal (owner2, repo2) — that equality is checked
 # explicitly below because regex backreferences make the pattern unreadable.
@@ -69,63 +84,15 @@ class InvalidRappidError(ValueError):
     """
 
 
-def door_from_rappid(rappid: str) -> dict:
-    """Return the canonical door object for a rappid. Pure function.
-
-    Implements the contract in ESTATE_SPEC §5.
-
-    Args:
-      rappid: the v2 rappid string.
-
-    Returns:
-      A dict with the keys: rappid, owner, repo, kind, door_type, urls.
-      `urls` is a dict with keys: repo, front, identity, holocard, holo_md,
-      avatar, summon_qr, members, facets. The `members` URL is included for
-      ALL doors but is only populated content for gates — twins return an
-      empty members.json (or 404). Consumers that distinguish should check
-      door_type first.
-
-    Raises:
-      InvalidRappidError: if the string is not a valid v2 rappid, OR the
-        (owner, repo) on the left of the rappid don't match the (owner, repo)
-        on the right (the @github.com/... origin pin), OR kind is not in
-        VALID_KINDS.
-    """
-    if not isinstance(rappid, str):
-        raise InvalidRappidError(f"rappid must be a string, got {type(rappid).__name__}")
-
-    m = _RAPPID_RE.match(rappid)
-    if not m:
-        raise InvalidRappidError(
-            f"rappid does not match v2 format: {rappid!r}. "
-            f"Expected: rappid:v2:<kind>:@<owner>/<repo>:<32hex>@github.com/<owner>/<repo>"
-        )
-
-    owner = m.group("owner")
-    repo = m.group("repo")
-    owner2 = m.group("owner2")
-    repo2 = m.group("repo2")
-    kind = m.group("kind")
-
-    if owner != owner2 or repo != repo2:
-        raise InvalidRappidError(
-            f"rappid origin mismatch: identity says @{owner}/{repo}, "
-            f"origin pin says @github.com/{owner2}/{repo2}. The two MUST be equal."
-        )
-
-    if kind not in VALID_KINDS:
-        raise InvalidRappidError(
-            f"rappid kind {kind!r} is not in VALID_KINDS={sorted(VALID_KINDS)}. "
-            f"Adding a kind requires a CONSTITUTION amendment (Article XLVI)."
-        )
-
+def _door_dict(rappid: str, owner: str, repo: str, kind: str | None) -> dict:
+    """Build the canonical door object from a located (owner, repo) and optional kind."""
     raw_base = f"https://raw.githubusercontent.com/{owner}/{repo}/main"
     return {
         "rappid": rappid,
         "owner": owner,
         "repo": repo,
         "kind": kind,
-        "door_type": _door_type_for_kind(kind),
+        "door_type": _door_type_for_kind(kind) if kind else None,
         "urls": {
             "repo":      f"https://github.com/{owner}/{repo}",
             "front":     f"https://{owner}.github.io/{repo}/",
@@ -138,6 +105,67 @@ def door_from_rappid(rappid: str) -> dict:
             "facets":    f"{raw_base}/facets.json",
         },
     }
+
+
+def door_from_rappid(rappid: str, kind: str | None = None) -> dict:
+    """Return the canonical door object for a rappid. Pure function.
+
+    Implements the contract in ESTATE_SPEC §5. Accepts the **canonical self-locating
+    Eternity** rappid `rappid:@<owner>/<slug>:<64hex>` and the **legacy v2** form
+    `rappid:v2:<kind>:@<owner>/<repo>:<32hex>@github.com/<owner>/<repo>`.
+
+    Args:
+      rappid: the rappid string (Eternity canonical, or legacy v2).
+      kind: the organism kind, read from the door's rappid.json record. Used only for the
+        Eternity form (whose string carries no kind); ignored for v2 (kind parsed from the
+        string). If omitted for an Eternity rappid, `kind` and `door_type` come back None.
+
+    Returns:
+      A dict with keys: rappid, owner, repo, kind, door_type, urls. `urls` has keys:
+      repo, front, identity, holocard, holo_md, avatar, summon_qr, members, facets. The
+      `members` URL is populated only for gates; twins return an empty members.json (or 404).
+
+    Raises:
+      InvalidRappidError: if the string matches neither the canonical Eternity form nor the
+        legacy v2 form; if a v2 rappid's left (owner, repo) != its origin pin; or if a
+        supplied kind is not in VALID_KINDS.
+    """
+    if not isinstance(rappid, str):
+        raise InvalidRappidError(f"rappid must be a string, got {type(rappid).__name__}")
+
+    # Canonical: the self-locating Eternity form. owner/slug locate the door; kind (and
+    # thus door_type) comes from the record, supplied by the caller.
+    em = _ETERNITY_RE.match(rappid)
+    if em:
+        if kind is not None and kind not in VALID_KINDS:
+            raise InvalidRappidError(
+                f"rappid kind {kind!r} is not in VALID_KINDS={sorted(VALID_KINDS)}. "
+                f"Adding a kind requires a CONSTITUTION amendment (Article XLVI)."
+            )
+        return _door_dict(rappid, em.group("owner"), em.group("slug"), kind)
+
+    # Legacy: the v2 addressing form. kind is parsed from the string.
+    m = _RAPPID_RE.match(rappid)
+    if not m:
+        raise InvalidRappidError(
+            f"rappid matches neither the canonical Eternity form "
+            f"(rappid:@<owner>/<slug>:<64hex>) nor the legacy v2 form: {rappid!r}"
+        )
+
+    owner = m.group("owner")
+    repo = m.group("repo")
+    if owner != m.group("owner2") or repo != m.group("repo2"):
+        raise InvalidRappidError(
+            f"rappid origin mismatch: identity says @{owner}/{repo}, origin pin says "
+            f"@github.com/{m.group('owner2')}/{m.group('repo2')}. The two MUST be equal."
+        )
+    v2_kind = m.group("kind")
+    if v2_kind not in VALID_KINDS:
+        raise InvalidRappidError(
+            f"rappid kind {v2_kind!r} is not in VALID_KINDS={sorted(VALID_KINDS)}. "
+            f"Adding a kind requires a CONSTITUTION amendment (Article XLVI)."
+        )
+    return _door_dict(rappid, owner, repo, v2_kind)
 
 
 def estate_url(github_handle: str) -> str:
