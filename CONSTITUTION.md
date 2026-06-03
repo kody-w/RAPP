@@ -2369,15 +2369,23 @@ canonical spec at `pages/vault/Architecture/Rappid.md`:
 }
 ```
 
-**Format unification (ratified 2026-04-30).** There is exactly one
-rappid format: the v2 unified specification. A draft `1.1` schema with
-bare-UUID rappids existed briefly during April 2026; existing UUIDs
-(notably the species root's `0b635450-c042-49fb-b4b1-bdb571044dec`)
-were preserved by being placed in the hash field of the v2 string
-(dashes stripped). No rappid was lost in the migration. **No future
-article shall introduce parallel formats** — see `pages/vault/Architecture/Rappid.md`
-for the antipattern principle. The species tree is one tree, and one
-identifier system traverses it.
+**Eternity amendment (locked 2026-06-01) — supersedes the 2026-04-30 v2 format.**
+The canonical rappid is now the minimal, eternal form `rappid:<slug>:<64hex>`:
+an immutable birth-slug and the **full 256-bit SHA-256** identity hash (never
+truncated). The hash is the identity and the join key; matching is always on the
+hash. **The string is never re-versioned** — all structure (kind, publisher, host,
+ownership keypair, succession, attestation) lives in the `rappid.json` record as
+additive, versionless fields. Canonical spec: `pages/vault/Architecture/Rappid.md`;
+reference implementation: `kody-w/rapp-egg-hub` SPEC §2. The species tree is one
+tree, one identifier system traverses it, and that identifier is the Eternity hash.
+
+**Compatibility (the v2 form is now legacy).** The 2026-04-30 v2 unified format
+(`rappid:v2:<kind>:@<publisher>/<slug>:<hash>@<home_vault_url>`) and the brief draft
+`1.1` bare-UUID form are **legacy + addressing forms**: read forever, extract the
+64-hex hash, and canonicalize to Eternity — but no longer emitted as identity. No
+rappid is lost (the species root's `0b635450-c042-49fb-b4b1-bdb571044dec` canonicalizes
+losslessly). **No future article shall introduce a parallel *identity* format**; the
+record carries new richness, never the string.
 
 The rappid is **never regenerated**. It is the organism's permanent
 identity. Backing up the org to a new repo, hatching, reverting,

@@ -2,6 +2,15 @@
 
 Authority: pages/docs/ESTATE_SPEC.md (CONSTITUTION Article XLVI).
 
+Identity vs. addressing: the CANONICAL rappid *identity* is the Eternity form
+`rappid:<slug>:<64hex>` (CONSTITUTION Art. XXXIV.1, locked 2026-06-01) — slug + the
+256-bit hash, with kind/owner/host living in the rappid.json record. This module
+parses the LEGACY v2-structured *addressing* form
+(`rappid:v2:<kind>:@<owner>/<slug>:<hash>@<host>`), which carries the door-routing
+fields inline. It is read-compatible per the compatibility contract (read every
+legacy form, emit Eternity); door resolution from a bare Eternity identity string
+reads those routing fields from the record instead.
+
 This is the SINGLE implementation of the Estate Spec's `door_from_rappid()`
 contract (ESTATE_SPEC §5). Every consumer that maps rappid → door URLs uses
 this module — never reinvents the parsing, never patches around it.
