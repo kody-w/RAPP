@@ -36,6 +36,11 @@ import time
 import zipfile
 from pathlib import Path
 
+# The canonical rappid reader (pure stdlib). Reads the consolidated form
+# (rappid:@<owner>/<slug>:<64hex>) AND every legacy form; never reinvent the parse.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from door_address import parse_rappid, owner_repo_from_rappid, InvalidRappidError  # noqa: E402
+
 
 _BRAINSTEM_DIR = Path(os.path.expanduser("~/.brainstem"))
 _PEERS_DIR     = _BRAINSTEM_DIR / "peers"
@@ -82,15 +87,21 @@ def import_egg(egg_path: str, seed_path: Path = _SEED_PATH) -> dict:
             return {"ok": False, "error": f"rappid.json malformed: {e}"}
 
         rappid = rappid_meta.get("rappid", "")
-        if not rappid.startswith("rappid:v2:"):
-            return {"ok": False, "error": f"egg's rappid.json has no v2 rappid: {rappid[:60]}"}
-
-        # Derive the peer's handle from the rappid (Article XLVI parser would
-        # be nicer but stdlib-only here; safe inline parse)
+        # Accept the consolidated form AND every legacy form (parse_rappid reads
+        # them all). The string must be self-locating (carry owner/slug) so we can
+        # derive the peer's handle — a bare UUID can't, and is rejected below.
         try:
-            handle = rappid.split(":@", 1)[1].split("/", 1)[0]
-        except Exception:
-            return {"ok": False, "error": f"could not derive handle from rappid: {rappid[:60]}"}
+            parsed = parse_rappid(rappid) if isinstance(rappid, str) else None
+        except InvalidRappidError:
+            parsed = None
+        if parsed is None:
+            return {"ok": False, "error": f"egg's rappid.json has no recognizable rappid: {str(rappid)[:60]}"}
+
+        # Derive the peer's handle (owner) from the rappid via the canonical parser.
+        try:
+            handle, _repo = owner_repo_from_rappid(rappid)
+        except InvalidRappidError:
+            return {"ok": False, "error": f"could not derive handle from rappid (no location): {str(rappid)[:60]}"}
 
         # Extract to peers/<handle>/
         dest = _PEERS_DIR / handle

@@ -63,7 +63,21 @@ from pathlib import Path
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_REPO_ROOT / "tools"))
 
-from door_address import door_from_rappid, InvalidRappidError, estate_url  # noqa: E402
+from door_address import door_from_rappid, parse_rappid, InvalidRappidError, estate_url  # noqa: E402
+
+
+def _looks_like_rappid(rappid: object) -> bool:
+    """True if `rappid` is a string in ANY known rappid form — the consolidated
+    `rappid:@<owner>/<slug>:<64hex>` OR a legacy form (v2, bare-UUID, …). We read
+    every legacy form forever; canonicalization happens downstream. Used as the
+    cheap "is this worth resolving a door for" gate."""
+    if not isinstance(rappid, str):
+        return False
+    try:
+        parse_rappid(rappid)
+        return True
+    except InvalidRappidError:
+        return False
 
 
 _ESTATE_SCHEMA = "rapp-estate/1.1"
@@ -115,7 +129,7 @@ def _try_local_brainstem() -> str:
     try:
         d = json.loads(p.read_text())
         rappid = d.get("rappid", "")
-        if isinstance(rappid, str) and rappid.startswith("rappid:v2:"):
+        if _looks_like_rappid(rappid):
             return rappid
     except Exception:
         pass
@@ -136,7 +150,7 @@ def _try_conventional_repos(handle: str) -> str:
         if not d:
             continue
         rappid = d.get("rappid", "")
-        if not isinstance(rappid, str) or not rappid.startswith("rappid:v2:"):
+        if not _looks_like_rappid(rappid):
             continue
         # Validate; derive operator rappid by swapping kind token
         try:

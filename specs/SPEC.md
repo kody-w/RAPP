@@ -30,34 +30,39 @@ That's it. Everything else (planting doors, joining gates, summoning twins) is o
 
 ---
 
-## §2 — Identity (the rappid, v2)
+## §2 — Identity (the rappid)
 
-A rappid is the door's globally-resolvable address. Canonical format:
+A rappid is the door's globally-resolvable address. Canonical format (the consolidated form, locked 2026-06-03):
 
 ```
-rappid:v2:<kind>:@<owner>/<repo>:<32-hex-no-dashes>@github.com/<owner>/<repo>
+rappid:@<owner>/<slug>:<64-hex-no-dashes>
 ```
 
-The `<owner>/<repo>` segment appears **twice by design**: first as the abbreviated identity reference, then as the origin pin. Both segments MUST be the same string — a rappid where they disagree is invalid and rejected.
+One string that is BOTH identity and self-locating:
+- `@<owner>/<slug>` — the canonical location; `github.com/<owner>/<slug>` is the door, and every door URL derives from it by string parsing alone (no lookup, no API).
+- `<64-hex>` — the full **256-bit** SHA-256 identity hash. The hash is the identity and the JOIN KEY; matching/dedup is always on the hash, never the slug.
+- `kind` and all other structure live in the door's `rappid.json` RECORD, **never in the string**.
+
+The string is NEVER re-versioned. It consolidates the three prior forms (a bare UUID; `rappid:v2:<kind>:@<owner>/<repo>:<32hex>@github.com/<owner>/<repo>`; and the bare-Eternity `rappid:<slug>:<64hex>`) into this one self-locating Eternity form. Every legacy form is **read forever** and canonicalized; only the consolidated form is emitted. See `tools/door_address.py` (`parse_rappid` / `canonicalize_rappid`).
 
 ### §2.1 Valid kinds (frozen)
 
 `twin`, `neighborhood`, `ant-farm`, `braintrust`, `workspace`, `hatched`, `rapplication`, `prototype`, `operator`.
 
-Adding a new kind requires a CONSTITUTION amendment because every consumer derives behavior from this token.
+`kind` lives in the `rappid.json` RECORD (read it from there), not as a string prefix. Adding a new kind requires a CONSTITUTION amendment because every consumer derives behavior from this token.
 
 ### §2.2 Door type derivation
 
 - `kind ∈ {twin, operator}` → `door_type = "front_door"`
 - everything else → `door_type = "gate"`
 
-### §2.3 Hex derivation (recommended)
+### §2.3 Hash derivation
 
-`hex = BLAKE2b(f"{owner}/{repo}", digest_size=16).hexdigest()` — deterministic from owner+repo. Or `uuid.uuid4().hex` — random. Either is valid; deterministic is preferred so the same `(owner, repo)` always yields the same rappid and rappids can be regenerated without storage.
+Fresh mints use the full 256-bit identity: `hashlib.sha256(uuid.uuid4().bytes).hexdigest()` (64 hex). When merely restructuring a legacy rappid into the consolidated shape, **preserve the existing hash** — `canonicalize_rappid()` never invents one. The one-time 128→256-bit re-anchor (minting a fresh 64-hex, recording the old id in `_migrated_from`) is a separate, explicit step.
 
 ### §2.4 Reissue, never "patch"
 
-If a rappid's two segments disagree (the historical `@local/local-art-collective` case), the door MUST reissue with a correct rappid. Consumers MUST NOT silently fix up. **Spec says what's true; the network has no fallbacks.**
+A legacy rappid that needs restructuring is canonicalized via `canonicalize_rappid()`, which preserves the hash. Consumers MUST NOT silently fix up identity in place. **Spec says what's true; the network has no fallbacks.**
 
 ---
 
@@ -98,7 +103,7 @@ The operator's **estate** lists every door they own (`created`) plus every door 
 {
   "schema": "rapp-estate/1.1",
   "owner": {
-    "rappid": "rappid:v2:operator:@<gh>/<personal-twin-or-brainstem>:hex@github.com/<gh>/...",
+    "rappid": "rappid:@<gh>/<personal-twin-or-brainstem>:<64hex>",
     "github": "<github-handle>"
   },
   "created": [{"rappid": "...", "added_at": "...", "via": "created" }],
@@ -254,7 +259,7 @@ Every door has a `card.json` at `https://raw.githubusercontent.com/<owner>/<repo
   "abilities": [{"name": "...", "cost": 0, "damage": 0, "text": "...", "type": "..."}],  // 1–4
   "rarity_tier": "starter",                    // starter|core|rare|mythic
   "avatar_svg": "<svg>...</svg>",              // ≤64 KB
-  "meta": {"version": "1.1.2", "kind": "twin", "rappid": "rappid:v2:...", "license": "..."}
+  "meta": {"version": "1.1.2", "kind": "twin", "rappid": "rappid:@<owner>/<slug>:<64hex>", "license": "..."}
 }
 ```
 

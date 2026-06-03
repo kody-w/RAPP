@@ -50,6 +50,7 @@ from ecosystem_contract import (  # noqa: E402
     CONTRACTS, KERNEL_BASE_FILES, SEED_REQUIRED_AGENTS,
     kind_for_entry, contract_for_kind, all_kinds,
 )
+from door_address import parse_rappid, InvalidRappidError  # noqa: E402
 
 
 # ── constants ──────────────────────────────────────────────────────────────
@@ -215,6 +216,7 @@ def _diff_offspring(name: str, kind: str, contract: dict,
     sources_seen = set()
     fingerprint_sha256 = None
     rappid = None
+    record_kind = None  # the `kind` FIELD from the rappid.json record (consolidated form)
 
     # 1. required_files presence
     for path in contract.get("required_files", []):
@@ -245,18 +247,37 @@ def _diff_offspring(name: str, kind: str, contract: dict,
                           "detail": f"expected schema={expected_schema!r}, got {actual_schema!r}"})
         if path == "rappid.json" and isinstance(d, dict):
             rappid = d.get("rappid")
+            record_kind = d.get("kind")  # kind lives in the RECORD, not the string
             try:
                 fingerprint_sha256 = _sha256_bytes(body)
             except Exception:
                 pass
 
-    # 3. rappid_kind_prefix check
-    prefix = contract.get("rappid_kind_prefix")
-    if prefix and rappid is not None:
-        if not isinstance(rappid, str) or not rappid.startswith(prefix):
+    # 3. rappid_kind check.
+    #    The consolidated rappid (rappid:@<owner>/<slug>:<64hex>) carries kind in
+    #    the rappid.json RECORD, never as a "rappid:v2:<kind>:" string prefix. So
+    #    we compare the contract's expected kind against the record's `kind` field,
+    #    falling back to a legacy v2 string's inline kind only when the record omits
+    #    it. The rappid STRING itself is read with the canonical parser, which
+    #    accepts the consolidated form AND every legacy form — we never re-impose a
+    #    "rappid:v2:" prefix requirement, and we never flag a string the prior
+    #    prefix check tolerated (placeholder/local-origin fixtures included).
+    expected_kind = contract.get("rappid_kind")
+    if expected_kind is not None and rappid is not None:
+        parsed = None
+        if isinstance(rappid, str):
+            try:
+                parsed = parse_rappid(rappid)
+            except InvalidRappidError:
+                parsed = None
+        # Prefer the record kind; fall back to a legacy v2 string's inline kind.
+        legacy_inline_kind = parsed.get("kind") if parsed else None
+        actual_kind = record_kind if record_kind is not None else legacy_inline_kind
+        if actual_kind != expected_kind:
             drift.append({"category": "rappid_drift",
                           "path": "rappid.json",
-                          "detail": f"expected rappid prefix {prefix!r}, got {str(rappid)[:64]!r}"})
+                          "detail": f"expected kind={expected_kind!r} (from rappid.json record), "
+                                    f"got {actual_kind!r}"})
 
     # 4. identity_block_required (soul.md must mention "Identity")
     if contract.get("identity_block_required"):
