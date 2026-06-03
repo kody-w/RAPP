@@ -26,7 +26,7 @@ Stdlib + macOS `dns-sd` CLI only. No new pip deps. If `dns-sd` is missing
 peers who already know the URL, but not auto-discoverable via Bonjour).
 
 CANONICAL TXT-RECORD SCHEMA (rapp-network-beacon-bonjour/1.0):
-    rappid       = the operator's personal rappid (operator-kind v2)
+    rappid       = the operator's personal rappid (consolidated form; kind lives in the record)
     github       = the operator's github handle (informational; LAN doesn't need it)
     beacon_path  = "/.well-known/rapp-network.json"
     estate_path  = "/estate.json"
@@ -54,6 +54,11 @@ import sys
 import time
 from pathlib import Path
 
+# Canonical rappid reader (pure stdlib): reads the consolidated form AND every
+# legacy form, so the owner-handle derivation works regardless of rappid vintage.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from door_address import owner_repo_from_rappid, InvalidRappidError  # noqa: E402
+
 _BRAINSTEM_DIR = Path(os.path.expanduser("~/.brainstem"))
 _RAPPID_FILE   = _BRAINSTEM_DIR / "rappid.json"
 _BEACON_PATH   = ".well-known/rapp-network.json"
@@ -69,10 +74,12 @@ def _read_operator_rappid() -> tuple[str, str]:
         d = json.loads(_RAPPID_FILE.read_text())
         rappid = d.get("rappid", "")
         github = d.get("github", "")
-        if not github and rappid.startswith("rappid:v2:"):
+        if not github and isinstance(rappid, str):
+            # Derive the owner handle from any self-locating rappid (consolidated
+            # or legacy). A bare UUID carries no location → leave github empty.
             try:
-                github = rappid.split(":@", 1)[1].split("/", 1)[0]
-            except Exception:
+                github, _repo = owner_repo_from_rappid(rappid)
+            except InvalidRappidError:
                 pass
         return rappid, github
     except Exception:

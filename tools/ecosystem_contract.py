@@ -42,8 +42,14 @@ SEED_REQUIRED_AGENTS = (
 #   required_files          paths that MUST exist at offspring root
 #                           (or in the named subdir for path-prefixed entries)
 #   expected_schemas        path → canonical schema string the file MUST declare
-#   rappid_kind_prefix      "rappid:v2:<kind>:" prefix the rappid field MUST start with
-#                           (None = no rappid required, e.g. catalog/template)
+#   rappid_kind             the `kind` the offspring's rappid.json RECORD must
+#                           declare. Per the consolidated rappid form
+#                           (rappid:@<owner>/<slug>:<64hex>), kind lives in the
+#                           rappid.json record FIELD, never as a string prefix —
+#                           so the audit reads d["kind"], not a "rappid:v2:<kind>:"
+#                           string prefix. The rappid STRING is validated by shape
+#                           (consolidated or legacy v2, both accepted) separately.
+#                           (None = kind not enforced, e.g. catalog/template/twin)
 #   identity_block_required soul.md must contain the spec-compliant Identity sentinel
 #   rar_required            rar/index.json must exist + sha256-validate against agents/
 #   kernel_base_check       must ship the three KERNEL_BASE_FILES under agents/
@@ -70,7 +76,7 @@ CONTRACTS: dict = {
             "members.json":      "rapp-neighborhood-members/1.0",
             "rar/index.json":    "rapp-rar-index/1.0",
         },
-        "rappid_kind_prefix":      "rappid:v2:neighborhood:",
+        "rappid_kind":             "neighborhood",
         "identity_block_required": True,
         "rar_required":            True,
         "kernel_base_check":       True,
@@ -97,7 +103,7 @@ CONTRACTS: dict = {
             "members.json":      "rapp-neighborhood-members/1.0",
             "rar/index.json":    "rapp-rar-index/1.0",
         },
-        "rappid_kind_prefix":      "rappid:v2:ant-farm:",
+        "rappid_kind":             "ant-farm",
         "identity_block_required": True,
         "rar_required":            True,
         "kernel_base_check":       True,
@@ -117,7 +123,7 @@ CONTRACTS: dict = {
             "rappid.json": "rapp-rappid/2.0",
             "card.json":   "rapp-card/1.0",
         },
-        "rappid_kind_prefix":      None,  # twin rappids may use various kinds (personal/place/experiment/etc.)
+        "rappid_kind":             None,  # twin rappids may use various kinds (personal/place/experiment/etc.)
         "identity_block_required": True,
         "rar_required":            False,  # twins MAY ship rar/ but it's not required
         "kernel_base_check":       False,
@@ -138,7 +144,7 @@ CONTRACTS: dict = {
             "neighborhood.json": "rapp-neighborhood/1.0",
             "members.json":      "rapp-neighborhood-members/1.0",
         },
-        "rappid_kind_prefix":      "rappid:v2:workspace:",
+        "rappid_kind":             "workspace",
         "identity_block_required": False,  # workspaces are private; gate may be terse
         "rar_required":            False,
         "kernel_base_check":       False,
@@ -160,7 +166,7 @@ CONTRACTS: dict = {
             "card.json":         "rapp-card/1.0",
             "rar/index.json":    "rapp-rar-index/1.0",
         },
-        "rappid_kind_prefix":      "rappid:v2:braintrust:",
+        "rappid_kind":             "braintrust",
         "identity_block_required": True,
         "rar_required":            True,
         "kernel_base_check":       True,
@@ -174,7 +180,7 @@ CONTRACTS: dict = {
             "index.html",  # the only required surface
         ],
         "expected_schemas": {},  # catalogs publish their own catalog schema; not enforced here
-        "rappid_kind_prefix":      None,
+        "rappid_kind":             None,
         "identity_block_required": False,
         "rar_required":            False,
         "kernel_base_check":       False,
@@ -190,7 +196,7 @@ CONTRACTS: dict = {
         "expected_schemas": {
             "rappid.json": "rapp-rappid/2.0",
         },
-        "rappid_kind_prefix":      None,  # templates may carry the kind they spawn (workspace/braintrust)
+        "rappid_kind":             None,  # templates may carry the kind they spawn (workspace/braintrust)
         "identity_block_required": False,
         "rar_required":            False,
         "kernel_base_check":       False,
@@ -205,7 +211,7 @@ CONTRACTS: dict = {
             "install.sh",
         ],
         "expected_schemas": {},
-        "rappid_kind_prefix":      None,
+        "rappid_kind":             None,
         "identity_block_required": False,
         "rar_required":            False,
         "kernel_base_check":       False,
@@ -219,7 +225,7 @@ CONTRACTS: dict = {
             "index.json",
         ],
         "expected_schemas": {},  # entries follow rapp-egg-hub-entry/1.0; index shape is a list
-        "rappid_kind_prefix":      None,
+        "rappid_kind":             None,
         "identity_block_required": False,
         "rar_required":            False,
         "kernel_base_check":       False,
@@ -296,7 +302,7 @@ def _self_check() -> dict:
     """Verify the contract is internally consistent. Useful for tests."""
     issues = []
     for kind, c in CONTRACTS.items():
-        for required_field in ("required_files", "expected_schemas", "rappid_kind_prefix",
+        for required_field in ("required_files", "expected_schemas", "rappid_kind",
                                "identity_block_required", "rar_required", "kernel_base_check",
                                "optional_files", "notes"):
             if required_field not in c:

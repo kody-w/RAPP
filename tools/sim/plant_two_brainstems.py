@@ -52,8 +52,12 @@ def _write(path: str, content) -> None:
 
 
 def _mint_rappid(kind: str, owner: str, name: str) -> str:
-    h = uuid.uuid4().hex
-    return f"rappid:v2:{kind}:@{owner}/{name}:{h}@local/{owner}/{name}"
+    # Mint the consolidated self-locating Eternity rappid:
+    #   rappid:@<owner>/<slug>:<64hex>  (full 256-bit identity).
+    # `kind` is NOT in the string — it lives in the rappid.json record this
+    # caller writes alongside it; accepted here only for call-site compatibility.
+    h = hashlib.sha256(uuid.uuid4().bytes).hexdigest()  # 64 hex, full 256-bit
+    return f"rappid:@{owner}/{name}:{h}"
 
 
 # ─── Plant a brainstem (twin kind) with a distinct voice ──────────────────
