@@ -144,13 +144,16 @@ def _put_file(owner: str, repo: str, path: str, content_bytes: bytes,
     return False, f"PUT failed: {err.strip()[:160]}"
 
 
-def _canonical_rappid(owner: str, repo: str, kind: str) -> str:
-    """Mint the canonical rappid for an (owner, repo, kind).
+def _canonical_rappid(owner: str, repo: str, kind: str = None) -> str:
+    """Mint the canonical self-locating Eternity rappid for an (owner, repo).
 
-    Per SPEC §2.3: hex = BLAKE2b(owner/repo, 16).hexdigest() — deterministic.
+    `rappid:@<owner>/<slug>:<64hex>` per CONSTITUTION Art. XXXIV.1 (Eternity, 2026-06-03):
+    owner/repo locate the door; the **full 256-bit SHA-256** of `<owner>/<repo>` is the
+    (keyless, conventional) identity hash; `kind` is NOT in the string — it lives in the
+    door's rappid.json record. `kind` is accepted for caller compatibility and ignored here.
     """
-    hex32 = hashlib.blake2b(f"{owner}/{repo}".encode(), digest_size=16).hexdigest()
-    return f"rappid:v2:{kind}:@{owner}/{repo}:{hex32}@github.com/{owner}/{repo}"
+    h = hashlib.sha256(f"{owner}/{repo}".encode()).hexdigest()  # 64 hex, full 256-bit
+    return f"rappid:@{owner}/{repo}:{h}"
 
 
 def _build_rappid_json(rappid: str, owner: str, repo: str, kind: str,
