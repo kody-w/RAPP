@@ -9,7 +9,7 @@ hook: Rappid is the public ID — one format, one concept — for every digital 
 
 > **Hook.** Rappid is the public ID — one format, one concept — for every digital organism that descends from RAPP. The species' social-security number. The species tree's lingua franca. There is no other identifier system; there will never be a divergent format.
 
-This note is the canonical specification for the rappid identity system. It is intentionally short, intentionally singular, and intentionally final on the format question. Subsidiary notes elaborate on lineage, signing, and operational tooling — but every reference back to "what is a rappid" lands here.
+This note is the canonical specification for the rappid identity system. It is intentionally short and intentionally singular; the format question is settled by the **Eternity amendment (2026-06-01)** below, which supersedes the 2026-04-30 v2 format. Subsidiary notes elaborate on lineage, signing, and operational tooling — but every reference back to "what is a rappid" lands here.
 
 ## What rappid is
 
@@ -24,7 +24,23 @@ Rappids:
 
 Think of a rappid as the species' social-security number. Universal. Singular. The unit of accounting for digital biology.
 
-## The format (one format, forever)
+## The format
+
+> **AMENDMENT — the Eternity standard, locked 2026-06-01 (supersedes the 2026-04-30 v2 format).**
+> The **canonical** rappid is the minimal, eternal form:
+>
+> ```
+> rappid:<slug>:<64hex>
+> ```
+>
+> - `<slug>` — the immutable **birth name** (gene name + routing hint); self-verifying because it is the literal `name_slot` that derived the hash.
+> - `<64hex>` — the **full 256-bit SHA-256** identity hash, **never truncated to 128**. The hash is the identity and the **join key**: matching/dedup is ALWAYS on the hash, never the slug.
+> - **The string is never re-versioned** (that was the v2/v3 mistake). ALL structure — kind, publisher, host, ownership keypair (`pubkey`/`sig_suite`), `birth_attestation`, `key_succession`, `registry_anchor` — lives in the `rappid.json` **record** as additive, versionless fields.
+> - Reference implementation: `kody-w/rapp-egg-hub` SPEC §2. Rationale (256-bit is the one irreversible choice, sized for an eternal bloodline registry even post-Grover; keypair-bound ownership so a line survives the operator; crypto-agility via the record's `sig_suite`) is locked.
+>
+> **Compatibility contract:** consumers **read every legacy form forever** and **emit only** the canonical Eternity string. The **v2-structured** form below is now a **legacy + addressing form**: read it, *extract the 64-hex hash* (the `v2`/`@host`/kind decorations are record concerns, not string concerns), and canonicalize to Eternity. It is no longer the canonical identity.
+
+The legacy / addressing form (ratified 2026-04-30; read-compatible, no longer emitted):
 
 ```
 rappid:v2:<kind>:@<publisher>/<slug>:<hash>@<home_vault_url>

@@ -12,7 +12,9 @@ If you are writing a planter, an estate agent, a federation walker, a holocard r
 
 ## 1. The rappid IS the URL
 
-The canonical v2 rappid format:
+> **Note (Eternity amendment, 2026-06-01):** the canonical rappid *identity* is the Eternity form `rappid:<slug>:<64hex>` (CONSTITUTION Art. XXXIV.1 / `pages/vault/Architecture/Rappid.md`). The v2 form below is the **door *addressing* form** — read-compatible, carrying the routing fields inline; door resolution from a bare Eternity identity reads them from the `rappid.json` record.
+
+The v2 rappid addressing format:
 
 ```
 rappid:v2:<kind>:@<owner>/<repo>:<32-hex-no-dashes>@github.com/<owner>/<repo>
