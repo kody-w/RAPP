@@ -41,12 +41,13 @@ _RAPPID_RE = re.compile(
 # RAR `@rapp/twin_agent`, and RAPP-Network's `project_twin_agent.py`.
 _FRONT_DOOR_KINDS = frozenset({
     "twin", "operator", "personal", "project", "memorial",
-    "pre-founder", "mirror", "experiment", "place", "custom",
+    "pre-founder", "mirror", "experiment", "custom",
 })
-# Gate kinds: a community AI you enter to find others.
+# Gate kinds: a community AI you enter to find others. `place` is a gate — a
+# location others enter, not a single presence (reclassified 2026-06-03).
 _GATE_KINDS = frozenset({
     "neighborhood", "ant-farm", "braintrust", "workspace",
-    "hatched", "rapplication", "prototype",
+    "hatched", "rapplication", "prototype", "place",
 })
 VALID_KINDS = _FRONT_DOOR_KINDS | _GATE_KINDS
 
