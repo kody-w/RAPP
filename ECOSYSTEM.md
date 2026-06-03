@@ -517,6 +517,9 @@ All wrapped through `cachedGhJson` for local-first rendering.
 ### kody-w/rapp-egg-hub
 Public catalog of digital-twin .egg cartridges. The `🌐 Back up to Egg Hub` button on the front door pre-fills a GitHub Issue with submission metadata. The hub maintainer commits the egg + sidecar to `eggs/<slug>.egg` and updates `index.json`.
 
+### MCP (Model Context Protocol) — kody-w/rapp-mcp
+[`kody-w/rapp-mcp`](https://github.com/kody-w/rapp-mcp) (`rapp-mcp-spec/1.0`) is **transport, not a new unit.** It is the concrete realization of *Chat Is The Only Wire*: an MCP client over stdio is just another Layer-2 caller of `/chat`, sending the same envelope and getting the same envelope back — so it adds no new abstraction and no new taxonomy (precisely the agents/skills/plugins/MCP sprawl ANTIPATTERNS warns against). Two single-file, stdlib-only servers expose the ecosystem to any MCP host (Claude Desktop, the Copilot CLI, Cursor, …): `rapp_mcp.py` serves a folder of drop-in `*_agent.py` (the same `rapp-agent/1.0` unit) as MCP tools, and `rapp_brainstem_mcp.py` bridges a running brainstem — the whole organism over `/chat` as one tool, plus status + self-bootstrap. A **static profile** (`rapp-static-mcp/1.0`, built on `rapp-static-api/1.0`) publishes the catalog + content-addressed agent frames to `raw.githubusercontent.com`: pin a `sha8` and that exact agent runs forever, verified before exec — no server.
+
 ### PeerJS public broker
 Used only for the WebRTC pairing handshake. Once two devices have exchanged peer IDs, the data channel is direct (DTLS encrypted) and the broker drops out.
 
