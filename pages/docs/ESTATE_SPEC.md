@@ -29,7 +29,7 @@ From this string alone, by **string parsing** (not lookup, not config, not env),
 | `repo` | Everything after `/` and before `:` in the first segment |
 | `door_type` | `"front_door"` if `kind == "twin"`, else `"gate"` (XLVI.2) |
 
-**Valid kinds** (frozen as of 2026-05-09): `twin`, `neighborhood`, `ant-farm`, `braintrust`, `workspace`, `hatched`, `rapplication`, `prototype`, `operator`. Adding a new kind requires a CONSTITUTION amendment because every consumer derives behavior from this token.
+**Valid kinds** (frozen as of 2026-05-09; **amended 2026-06-02** per CONSTITUTION Art. XLVI.2 to ratify the single-presence kinds already shipped across the kernel, RAR, and RAPP-Network): single AI presences → `front_door`: `twin`, `operator`, `personal`, `project`, `memorial`, `pre-founder`, `mirror`, `experiment`, `place`, `custom`; community spaces you enter → `gate`: `neighborhood`, `ant-farm`, `braintrust`, `workspace`, `hatched`, `rapplication`, `prototype`. Adding a new kind requires a CONSTITUTION amendment because every consumer derives behavior from this token; the canonical machine-readable set is `VALID_KINDS` / `_FRONT_DOOR_KINDS` in `tools/door_address.py` (the one parser consumers MUST import).
 
 ---
 
