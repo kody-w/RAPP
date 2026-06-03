@@ -35,20 +35,28 @@ _RAPPID_RE = re.compile(
 # Per ESTATE_SPEC §1: valid kinds are frozen as of 2026-05-09. Adding a kind
 # requires a CONSTITUTION amendment because every consumer derives behavior
 # from this token.
-VALID_KINDS = frozenset({
-    "twin", "neighborhood", "ant-farm", "braintrust", "workspace",
-    "hatched", "rapplication", "prototype", "operator",
+# Front-door kinds: a single AI presence. Extended 2026-06-02 (CONSTITUTION
+# Art. XLVI.2 amendment) to ratify the single-presence kinds already emitted
+# across the kernel (TWIN_LIFECYCLE_SPEC, NEIGHBORHOOD_EGG_SPEC, ECOSYSTEM),
+# RAR `@rapp/twin_agent`, and RAPP-Network's `project_twin_agent.py`.
+_FRONT_DOOR_KINDS = frozenset({
+    "twin", "operator", "personal", "project", "memorial",
+    "pre-founder", "mirror", "experiment", "place", "custom",
 })
+# Gate kinds: a community AI you enter to find others.
+_GATE_KINDS = frozenset({
+    "neighborhood", "ant-farm", "braintrust", "workspace",
+    "hatched", "rapplication", "prototype",
+})
+VALID_KINDS = _FRONT_DOOR_KINDS | _GATE_KINDS
 
 
-# Per ESTATE_SPEC §2: door type is deterministic from kind.
-# `twin` is a single AI presence (front door); everything else is a community
-# AI you enter to find others (gate). The `operator` kind names a person's
-# personal brainstem identity, which functions as their own front door.
+# Per ESTATE_SPEC §2 / CONSTITUTION Art. XLVI.2: door type is deterministic
+# from kind. A single AI presence is a front door; a community AI you enter to
+# find others is a gate. The `operator` kind names a person's personal brainstem
+# identity, which functions as their own front door.
 def _door_type_for_kind(kind: str) -> str:
-    if kind in ("twin", "operator"):
-        return "front_door"
-    return "gate"
+    return "front_door" if kind in _FRONT_DOOR_KINDS else "gate"
 
 
 class InvalidRappidError(ValueError):
