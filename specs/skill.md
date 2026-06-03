@@ -31,8 +31,8 @@ curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash
 ```python
 import hashlib
 owner_repo = "your-handle/your-handle-twin"
-hex32 = hashlib.blake2b(owner_repo.encode(), digest_size=16).hexdigest()
-rappid = f"rappid:v2:operator:@{owner_repo}:{hex32}@github.com/{owner_repo}"
+h = hashlib.sha256(owner_repo.encode()).hexdigest()  # full 256-bit SHA-256
+rappid = f"rappid:@{owner_repo}:{h}"  # Eternity: self-locating; kind ('operator') lives in the rappid.json record
 print(rappid)
 ```
 
