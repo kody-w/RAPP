@@ -145,7 +145,7 @@ missing = [k for k in required if k not in d]
 if missing:
     print("FAIL  rappid.json missing keys:", missing)
     sys.exit(1)
-SPECIES_ROOT_V2 = "rappid:v2:prototype:@rapp/origin:0b635450c04249fbb4b1bdb571044dec@github.com/kody-w/RAPP"
+SPECIES_ROOT = "rappid:@kody-w/RAPP:0b635450c04249fbb4b1bdb571044dec"
 checks = [
     (d["schema"] == "rapp-rappid/2.0",       "schema is rapp-rappid/2.0"),
     (d["kind"] == "mirror",                  "kind is mirror"),
@@ -153,10 +153,10 @@ checks = [
     (d["display_name"] == "Test Mirror",     "display_name matches input"),
     (d["planted_by"] == "testuser",          "planted_by matches input"),
     (d["kernel_version"] == "0.6.0",         "kernel_version is 0.6.0"),
-    (d["parent_rappid"] == SPECIES_ROOT_V2,  "parent_rappid is species root v2 string"),
-    (d["rappid"].startswith("rappid:v2:"),   "rappid is v2-format string"),
-    (d["rappid"].count(":") >= 4,            "rappid has the v2 separator structure"),
-    (d["rappid"].count("@") == 2,            "rappid has 2 @ separators (kind:@pub/slug:hash@host)"),
+    (d["parent_rappid"] == SPECIES_ROOT,     "parent_rappid is species root Eternity string"),
+    (d["rappid"].startswith("rappid:@"),     "rappid is consolidated Eternity-format string"),
+    (d["rappid"].count(":") == 2,            "rappid has the Eternity separator structure (rappid:@owner/slug:hash)"),
+    (d["rappid"].count("@") == 1,            "rappid has 1 @ separator (@owner/slug)"),
 ]
 for ok_, desc in checks:
     print(("PASS" if ok_ else "FAIL") + "  " + desc)

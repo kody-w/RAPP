@@ -37,8 +37,9 @@ fi
 
 # ── Identity (hardcoded — single-parent rule) ────────────────────────────
 
-# Species root v2-format rappid per CONSTITUTION Article XXXIV.1.
-PARENT_RAPPID="rappid:v2:prototype:@rapp/origin:0b635450c04249fbb4b1bdb571044dec@github.com/kody-w/RAPP"
+# Species root consolidated Eternity rappid per CONSTITUTION Article XXXIV.1.
+# `kind` (prototype) lives in the species-root rappid.json record, not the string.
+PARENT_RAPPID="rappid:@kody-w/RAPP:0b635450c04249fbb4b1bdb571044dec"
 PARENT_REPO="https://github.com/kody-w/RAPP.git"
 
 # ── Freshness check via lineage_check.py ─────────────────────────────────
@@ -95,14 +96,16 @@ VARIANT_NAME="${VARIANT_NAME:-$DEFAULT_NAME}"
 
 # ── Generate rappid ──────────────────────────────────────────────────────
 
-# v2-format rappid per CONSTITUTION Article XXXIV.1. UUID hex (dashes
-# stripped) as hash; pub/slug derived from this repo's git remote.
+# Consolidated Eternity rappid per CONSTITUTION Article XXXIV.1: self-locating
+# `rappid:@<owner>/<slug>:<hash>` (no v2:/<kind>:/@host). UUID hex (dashes
+# stripped) as hash; owner/slug derived from this repo's git remote. The variant
+# `kind`/role lives in the rappid.json record (set below), not the string.
 _VAR_OWNER="$(git config --get remote.origin.url 2>/dev/null | sed -nE 's#.*[/:]([^/]+)/[^/]+(\.git)?$#\1#p')"
 _VAR_OWNER="${_VAR_OWNER:-anon}"
 _VAR_REPO="$(git config --get remote.origin.url 2>/dev/null | sed -nE 's#.*/([^/]+)\.git$#\1#p; s#.*/([^/]+)$#\1#p' | head -1)"
 _VAR_REPO="${_VAR_REPO:-$VARIANT_NAME}"
 _VAR_HASH="$(python3 -c "import uuid; print(uuid.uuid4().hex)")"
-NEW_RAPPID="rappid:v2:variant:@${_VAR_OWNER}/${_VAR_REPO}:${_VAR_HASH}@github.com/${_VAR_OWNER}/${_VAR_REPO}"
+NEW_RAPPID="rappid:@${_VAR_OWNER}/${_VAR_REPO}:${_VAR_HASH}"
 NOW="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 PARENT_COMMIT="$(curl -fsSL "https://api.github.com/repos/kody-w/RAPP/commits/main" 2>/dev/null \
@@ -128,6 +131,8 @@ data["parent_commit"] = parent_commit or None
 data["born_at"] = born_at
 data["name"] = name
 data["role"] = "variant"
+# Eternity standard: `kind` lives in the record (not the rappid string).
+data.setdefault("kind", "variant")
 data["schema"] = "rapp-rappid/2.0"
 # attestation resets because the new rappid hasn't been attested yet.
 data["attestation"] = None

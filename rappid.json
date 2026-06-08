@@ -1,6 +1,8 @@
 {
   "schema": "rapp-rappid/2.0",
-  "rappid": "rappid:v2:prototype:@rapp/origin:0b635450c04249fbb4b1bdb571044dec@github.com/kody-w/RAPP",
+  "rappid": "rappid:@kody-w/RAPP:0b635450c04249fbb4b1bdb571044dec",
+  "kind": "prototype",
+  "_migrated_from": "rappid:v2:prototype:@rapp/origin:0b635450c04249fbb4b1bdb571044dec@github.com/kody-w/RAPP",
   "parent_rappid": null,
   "parent_repo": null,
   "parent_commit": null,
