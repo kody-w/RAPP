@@ -27,12 +27,13 @@ set -e
 # ── constants ─────────────────────────────────────────────────────────
 GRAIL_REPO="kody-w/rapp-installer"
 GRAIL_RAW="https://raw.githubusercontent.com/${GRAIL_REPO}/main"
-# Species root v2-format rappid — the canonical identifier for kody-w/RAPP
-# per CONSTITUTION Article XXXIV.1 (2026-04-30 ratification). The legacy
-# UUID 0b635450-c042-49fb-b4b1-bdb571044dec is preserved as the hash field
-# (dashes stripped) per the documented migration rule — same identity, new
-# string representation.
-SPECIES_ROOT_RAPPID="rappid:v2:prototype:@rapp/origin:0b635450c04249fbb4b1bdb571044dec@github.com/kody-w/RAPP"
+# Species root consolidated Eternity rappid — the canonical identifier for
+# kody-w/RAPP per CONSTITUTION Article XXXIV.1 (consolidated form, locked
+# 2026-06-03). The legacy UUID 0b635450-c042-49fb-b4b1-bdb571044dec is preserved
+# as the hash field (dashes stripped) per the documented migration rule — same
+# identity, consolidated string representation. `kind` (prototype) lives in the
+# rappid.json record, not the string.
+SPECIES_ROOT_RAPPID="rappid:@kody-w/RAPP:0b635450c04249fbb4b1bdb571044dec"
 
 KERNEL_FILES=(
     "rapp_brainstem/brainstem.py"
@@ -129,14 +130,16 @@ print(' '.join(p.capitalize() for p in parts))
 
 # ── identity ──────────────────────────────────────────────────────────
 # mint_rappid <gh_user> <repo_name> <kind>
-# Mints a v2-format rappid string per CONSTITUTION Article XXXIV.1.
-# Schema: rappid:v2:<kind>:@<gh_user>/<repo_name>:<hash>@github.com/<gh_user>/<repo_name>
+# Mints a consolidated Eternity rappid string per CONSTITUTION Article XXXIV.1.
+# Schema: rappid:@<gh_user>/<repo_name>:<hash>  (self-locating; no v2:/<kind>:/@host).
+# `kind` is NOT encoded in the string — it lives in the rappid.json record. The
+# parameter is kept for call-site compatibility (and to flow into the record).
 # Hash is a fresh UUIDv4 with dashes stripped (32 hex chars).
 mint_rappid() {
     local gh_user="${1:-anon}" repo_name="${2:-unknown}" kind="${3:-mirror}"
     local hash
     hash="$(python3 -c "import uuid; print(uuid.uuid4().hex)")"
-    echo "rappid:v2:${kind}:@${gh_user}/${repo_name}:${hash}@github.com/${gh_user}/${repo_name}"
+    echo "rappid:@${gh_user}/${repo_name}:${hash}"
 }
 now_iso()     { date -u +"%Y-%m-%dT%H:%M:%SZ"; }
 
