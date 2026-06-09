@@ -1,0 +1,19 @@
+# Bones live in the repo; substance stays on-device
+# (PUBLIC_PRIVATE_BOUNDARY.md §1.8 — PII + secrets never enter the batcave).
+.brainstem/
+.brainstem_data/
+.bwat-data/
+.env
+.env.*
+.copilot_token
+.copilot_session
+.lineage_key
+private-estate-secret
+keys/
+*.pem
+__pycache__/
+*.pyc
+.DS_Store
+node_modules/
+venv/
+.venv/

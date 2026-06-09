@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="55%">
+      <stop offset="0%" stop-color="hsl(252,45%,12%)"/>
+      <stop offset="100%" stop-color="hsl(252,55%,4%)"/>
+    </radialGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="2"/></filter>
+  </defs>
+  <rect width="200" height="200" fill="url(#bg)"/>
+  <g filter="url(#glow)" opacity="0.55"><circle cx="100" cy="100" r="30" fill="none" stroke="#06d6a0" stroke-width="0.6" opacity="0.55"/><circle cx="100" cy="100" r="48" fill="none" stroke="#06d6a0" stroke-width="0.6" opacity="0.45"/><circle cx="100" cy="100" r="66" fill="none" stroke="#06d6a0" stroke-width="0.6" opacity="0.35"/></g>
+  <polygon points="154.8,95.2 142.1,135.4 104.8,154.8 64.6,142.1 45.2,104.8 57.9,64.6 95.2,45.2 135.4,57.9" fill="none" stroke="#3a86ff" stroke-width="2.2" opacity="0.85"/>
+  <polygon points="154.8,95.2 142.1,135.4 104.8,154.8 64.6,142.1 45.2,104.8 57.9,64.6 95.2,45.2 135.4,57.9" fill="#1f5cc4" opacity="0.18"/>
+  <rect x="88" y="92" width="24" height="16" fill="#06d6a0"/>
+  <g><circle cx="40.9" cy="110.4" r="2" fill="#06d6a0" opacity="0.7"/><circle cx="49.4" cy="56.0" r="2" fill="#06d6a0" opacity="0.7"/><circle cx="102.6" cy="26.0" r="2" fill="#06d6a0" opacity="0.7"/><circle cx="164.7" cy="51.3" r="2" fill="#06d6a0" opacity="0.7"/><circle cx="185.4" cy="121.3" r="2" fill="#06d6a0" opacity="0.7"/><circle cx="127.5" cy="158.9" r="2" fill="#06d6a0" opacity="0.7"/><circle cx="68.4" cy="164.7" r="2" fill="#06d6a0" opacity="0.7"/></g>
+</svg>

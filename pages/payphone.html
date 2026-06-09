@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>☎️ The Payphone — dial a private RAPP door</title>
+<!--
+  The Payphone — a GENERIC public dialer for PRIVATE RAPP doors.
+
+  Some neighborhoods have no public front door — by design, for privacy.
+  Their repos are private; to outsiders they 404 (invisible). Members reach
+  them by dialing the door's rappid here with their OWN GitHub auth — the
+  same signed-in account that holds their collaborator access (local
+  brainstems and kited vTwins alike, CONSTITUTION Art. XLVII).
+
+  Privacy properties (load-bearing):
+  - This page names NO private door. It is a dial pad, nothing more.
+  - The rappid is the phone number (Art. XLVI: the rappid IS the address —
+    `rappid:@<owner>/<slug>:<hash>` parses to github.com/<owner>/<slug> by
+    string derivation alone, per ESTATE_SPEC §5; tools/door_address.py is
+    the canonical parser, mirrored here for the browser).
+  - Dialing calls api.github.com directly from YOUR browser with YOUR
+    token. No relay, no server of ours, nothing logged anywhere but GitHub.
+  - Wrong number and no-access render IDENTICALLY (GitHub returns 404 for
+    private repos you cannot see). Existence is never confirmed to outsiders.
+  - Reads the Doorman token convention (localStorage `rapp_settings`,
+    field `ghuToken`) so a signed-in vBrainstem dials without re-auth.
+    NOTE: Copilot device-code tokens are scoped `read:user` and cannot see
+    private repos — dial with a token that has `repo` scope (`gh auth token`).
+-->
+<style>
+  :root { color-scheme: dark; }
+  body { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+         background:#0a0c10; color:#e6edf3; max-width:680px; margin:3rem auto;
+         padding:0 1rem; line-height:1.6; }
+  h1 { color:#ffd33d; font-size:1.4rem; }
+  input, button { font:inherit; border-radius:8px; border:1px solid #30363d;
+         background:#161b22; color:#e6edf3; padding:.55rem .8rem; }
+  input { width:100%; box-sizing:border-box; margin:.3rem 0 .8rem; }
+  button { cursor:pointer; background:#1f6feb; border-color:#1f6feb; }
+  button:hover { filter:brightness(1.15); }
+  .muted { color:#8b949e; font-size:.85rem; }
+  .card { border:1px solid #30363d; border-radius:10px; padding:1rem 1.2rem;
+          margin:1rem 0; background:#0d1117; }
+  .dead { color:#f85149; }
+  .live { color:#3fb950; }
+  code { background:#161b22; padding:.1rem .35rem; border-radius:4px; }
+  a { color:#79c0ff; }
+  label { display:flex; gap:.45rem; align-items:center; font-size:.85rem;
+          color:#8b949e; margin-bottom:.8rem; }
+</style>
+</head>
+<body>
+<h1>☎️ The Payphone</h1>
+<p class="muted">A public dial pad for <strong>private RAPP doors</strong>.
+Some neighborhoods keep no public front door — on purpose. If you belong
+inside one, you were handed its rappid (an invite egg, a QR, a message).
+Dial it with your own GitHub auth. If the door isn't yours to see, the line
+just rings: <code>404</code> — same as a number that doesn't exist.</p>
+
+<div class="card">
+  <strong>1 · The number (a rappid, or <code>owner/repo</code>)</strong>
+  <input id="rappid" placeholder="rappid:@owner/slug:64hex   ·   or   owner/repo" autocomplete="off" spellcheck="false">
+  <strong>2 · Your coin (a GitHub token with <code>repo</code> scope)</strong>
+  <input id="token" type="password" placeholder="ghp_… / gho_…   (terminal: gh auth token)" autocomplete="off">
+  <label><input type="checkbox" id="remember" style="width:auto;margin:0">
+    remember in this browser (Doorman <code>rapp_settings</code>)</label>
+  <button id="dial">Dial</button>
+  <span class="muted" id="hint"></span>
+</div>
+
+<div id="result"></div>
+
+<p class="muted">The payphone runs entirely in your browser: your token goes
+to <code>api.github.com</code> and nowhere else. Spec: the rappid IS the
+address (CONSTITUTION Art. XLVI; ESTATE_SPEC §5 — canonical parser
+<code>tools/door_address.py</code>). Substrate-agnostic access for local
+brainstems and kited vTwins alike (Art. XLVII).</p>
+
+<script>
+(function () {
+  // Doorman convention — a signed-in vBrainstem already holds a token here.
+  function settings() {
+    try { return JSON.parse(localStorage.getItem('rapp_settings') || '{}'); }
+    catch { return {}; }
+  }
+
+  // Escape EVERY repo-controlled string before it touches innerHTML. A
+  // private repo is collaborator-gated, but this page holds the caller's
+  // repo-scoped GitHub token in the DOM + localStorage — a malicious cubby
+  // entry (`<img src=x onerror=...>`) would otherwise exfiltrate it. Defense
+  // in depth on an auth-bearing page.
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+  const tokenEl = document.getElementById('token');
+  const saved = settings().ghuToken;
+  if (saved) {
+    tokenEl.value = saved;
+    document.getElementById('hint').textContent = 'token loaded from rapp_settings';
+  }
+
+  // Browser mirror of the documented derivation (ESTATE_SPEC §5).
+  // Reads the Eternity form + legacy v2; identity is opaque beyond this.
+  function parseNumber(s) {
+    s = (s || '').trim();
+    let m = s.match(/^rappid:@([A-Za-z0-9][A-Za-z0-9._-]*)\/([A-Za-z0-9][A-Za-z0-9._-]*):([a-f0-9]{32,64})$/);
+    if (m) return { owner: m[1], slug: m[2] };
+    m = s.match(/^rappid:v2:[a-z][a-z_-]*:@([A-Za-z0-9][A-Za-z0-9._-]*)\/([A-Za-z0-9][A-Za-z0-9._-]*):[0-9a-f]{32}@github\.com\//);
+    if (m) return { owner: m[1], slug: m[2] };
+    m = s.match(/^([A-Za-z0-9][A-Za-z0-9._-]*)\/([A-Za-z0-9][A-Za-z0-9._-]*)$/);
+    if (m) return { owner: m[1], slug: m[2] };
+    return null;
+  }
+
+  async function gh(path, token) {
+    const r = await fetch('https://api.github.com' + path, {
+      headers: { 'Authorization': 'Bearer ' + token,
+                 'Accept': 'application/vnd.github+json' },
+    });
+    return r;
+  }
+
+  async function ghJsonFile(owner, slug, path, token) {
+    const r = await gh(`/repos/${owner}/${slug}/contents/${path}`, token);
+    if (!r.ok) return null;
+    const d = await r.json();
+    try { return JSON.parse(atob((d.content || '').replace(/\n/g, ''))); }
+    catch { return null; }
+  }
+
+  function deadLine() {
+    return '<div class="card"><strong class="dead">☎️ That number doesn\'t ring.</strong>' +
+      '<p class="muted">404 — either nothing is there, or whatever is there ' +
+      'cannot see you (and you cannot see it). The payphone does not know ' +
+      'which, and neither does anyone watching. If you believe you belong ' +
+      'inside: check that your token has <code>repo</code> scope ' +
+      '(<code>gh auth token</code>, not a device-code token), and ask the ' +
+      'door\'s operator — out of band — whether your account has ' +
+      'collaborator access.</p></div>';
+  }
+
+  document.getElementById('dial').addEventListener('click', async () => {
+    const out = document.getElementById('result');
+    const num = parseNumber(document.getElementById('rappid').value);
+    const token = tokenEl.value.trim();
+    if (!num) { out.innerHTML = '<div class="card dead">That isn\'t a number — paste a rappid or owner/repo.</div>'; return; }
+    if (!token) { out.innerHTML = '<div class="card dead">No coin — paste a GitHub token (<code>gh auth token</code>).</div>'; return; }
+    if (document.getElementById('remember').checked) {
+      try {
+        const s = settings(); s.ghuToken = token;
+        localStorage.setItem('rapp_settings', JSON.stringify(s));
+      } catch {}
+    }
+    out.innerHTML = '<div class="card muted">dialing…</div>';
+    let repo;
+    try {
+      const r = await gh(`/repos/${num.owner}/${num.slug}`, token);
+      if (!r.ok) { out.innerHTML = deadLine(); return; }
+      repo = await r.json();
+    } catch {
+      out.innerHTML = '<div class="card dead">No dial tone — you appear to be offline. The payphone needs the network; your door\'s local clone does not.</div>';
+      return;
+    }
+    const hood = await ghJsonFile(num.owner, num.slug, 'neighborhood.json', token);
+    const cubbies = await ghJsonFile(num.owner, num.slug, 'cubbies/index.json', token);
+    // repo.full_name + repo.html_url come from GitHub's API (trusted shape:
+    // owner/repo). hood.* and cubbies.* come from repo CONTENT — escape them.
+    const fullName = esc(repo.full_name);
+    const ghUrl = encodeURI(repo.html_url || '');
+    let html = '<div class="card"><strong class="live">📞 Connected.</strong> ' +
+      `<p><strong>${esc((hood && hood.display_name) || repo.full_name)}</strong>` +
+      (hood && hood.tagline ? ` — <span class="muted">${esc(hood.tagline)}</span>` : '') + '</p>' +
+      `<p class="muted">private ${esc((hood && hood.kind) || 'door')} · ` +
+      `<a href="${ghUrl}" target="_blank" rel="noopener">open on GitHub</a></p>`;
+    if (cubbies && cubbies.cubbies && cubbies.cubbies.length) {
+      html += '<p><strong>cubbies inside:</strong></p><ul>';
+      for (const c of cubbies.cubbies) {
+        html += `<li>🗄️ <strong>${esc(c.github_login)}</strong>` +
+                (c.what_im_cooking ? ` — <span class="muted">${esc(c.what_im_cooking)}</span>` : '') + '</li>';
+      }
+      html += '</ul>';
+    }
+    html += `<p class="muted">step inside: <code>gh repo clone ${fullName}</code>` +
+            ' then run the door\'s participation agent (see its README / CONTRIBUTING).</p></div>';
+    out.innerHTML = html;
+  });
+})();
+</script>
+</body>
+</html>

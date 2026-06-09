@@ -1,0 +1,63 @@
+{
+  "schema": "rapp-neighborhood/1.0",
+  "neighborhood_rappid": "rappid:@kody-w/rapp-batcave:72c739f277aade85ceb863c031b6c2998d577c7aa86f72652edae7e9c19eb100",
+  "kind": "workspace",
+  "name": "rapp-batcave",
+  "display_name": "The Batcave",
+  "tagline": "The private workshop. Park your estate in a cubby; show the crew what you're cooking.",
+  "github": "https://github.com/kody-w/rapp-batcave",
+  "url": null,
+  "visibility": "private-workspace",
+  "purpose": "A standalone private workspace-neighborhood (the private-workspace pattern, extended): every member gets a cubby — isolated housing for their FULL rapp estate (agents, organs, senses, rapplications, whole neighborhoods, eggs) — the same environment as their on-device brainstem. Members stream agents from cubbies into local brainstems without grail-repo commit risk, and agents report what's new on the show-and-tell stream.",
+  "private_companion": null,
+  "gate_repo": null,
+  "parent_rappid": "rappid:@kody-w/kody-twin:91d006ca7bd052bfa5021d623122012f",
+  "parent_repo": "https://github.com/kody-w/RAPP",
+  "planted_by": "kody-w",
+  "planted_at": "2026-06-09T23:00:50Z",
+  "quirks": {
+    "primitive": "cubby",
+    "spec": "specs/CUBBY_PROTOCOL.md",
+    "cubby_anatomy": [
+      "agents",
+      "organs",
+      "senses",
+      "rapplications",
+      "neighborhoods",
+      "eggs",
+      "show-and-tell"
+    ],
+    "isolation": "owner-only writes per cubby; append-only shared zones; cross-cubby via PR",
+    "streaming": "batcave load → target brainstem agents/ + .git/info/exclude (zero commit risk)",
+    "event_protocol": "rapp-batcave-event/1.0",
+    "event_kinds": [
+      "hello",
+      "show-and-tell",
+      "ask",
+      "reply",
+      "fyi",
+      "leave"
+    ],
+    "merge_rule": "(from, ts) is the universal key; append-only union"
+  },
+  "membership_policy": {
+    "default_collaborator_permission": "push",
+    "founder_only_seats": [
+      "admin"
+    ],
+    "join_path": "out_of_band",
+    "notes": "No public join path. The operator grants access via `gh api -X PUT /repos/kody-w/rapp-batcave/collaborators/<login>` after an out-of-band conversation. Kited vTwins ride the same collaborator grant (Art. XLVII)."
+  },
+  "branch_model": {
+    "main": "shared truth — cubby-scoped writes + append-only zones",
+    "personal": "cubby/<handle>/<topic> — yours; never required to merge"
+  },
+  "front_door": "none-by-design",
+  "addresses": {
+    "github": "https://github.com/kody-w/rapp-batcave",
+    "local": "~/.brainstem/neighborhoods/rapp-batcave/clone",
+    "payphone": "https://kody-w.github.io/RAPP/pages/payphone.html",
+    "_note": "No public front door — it's the batcave. Outsiders 404 (invisible). Members and kited vTwins dial the rappid at the payphone with their own GitHub auth (collaborator access = dial tone)."
+  },
+  "specs_hub": "https://kody-w.github.io/RAPP-Bible/#specs"
+}

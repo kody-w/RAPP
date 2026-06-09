@@ -1,0 +1,22 @@
+{
+  "schema": "rapp-batcave-cubby/1.0",
+  "github_login": "kody-w",
+  "rappid": "rappid:@kody-w/kody-twin:91d006ca7bd052bfa5021d623122012f",
+  "display_name": "Kody Wildfeuer",
+  "what_im_cooking": "operator agents streamed out of the grail repo: twins, commons, scheduling, M365 — plus the batcave pattern itself",
+  "created_at": "2026-06-09T23:00:50Z",
+  "estate": {
+    "anatomy": [
+      "agents",
+      "organs",
+      "senses",
+      "rapplications",
+      "neighborhoods",
+      "eggs",
+      "show-and-tell"
+    ]
+  },
+  "streamable": {
+    "agents": true
+  }
+}

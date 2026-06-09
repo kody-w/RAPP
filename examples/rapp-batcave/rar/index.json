@@ -1,0 +1,29 @@
+{
+  "schema": "rapp-rar-index/1.1",
+  "neighborhood_rappid": "rappid:@kody-w/rapp-batcave:72c739f277aade85ceb863c031b6c2998d577c7aa86f72652edae7e9c19eb100",
+  "rar_for": "kody-w/rapp-batcave",
+  "kind": "workspace",
+  "updated_at": "2026-06-09T23:20:50Z",
+  "raw_url_prefix": "https://raw.githubusercontent.com/kody-w/rapp-batcave/main",
+  "note": "Per-neighborhood registry. PRIVATE repo: raw URLs require the fetcher's GitHub auth; the canonical access path is the authenticated clone at ~/.brainstem/neighborhoods/rapp-batcave/clone (batcave mount). sha256 pins let loaders verify streamed files against this manifest.",
+  "agents": [
+    {
+      "name": "@kody-w/batcave",
+      "version": "1.0.0",
+      "class": "BatcaveAgent",
+      "path": "agents/batcave_agent.py",
+      "sha256": "152cc890e7f866f7de946736d1bb8274a51c46c3d0e9b2b14abf4ea8531029c0",
+      "purpose": "Participate in the batcave: join/browse/stash/load/show_and_tell/sync — the cubby contract.",
+      "required_by_tether": true,
+      "schema": "rapp-agent/1.0"
+    }
+  ],
+  "organs": [],
+  "senses": [],
+  "rapps": [],
+  "verification": {
+    "schema": "rapp-rar-manifest/1.0",
+    "scheme": "sha256",
+    "_instructions": "Re-compute sha256(file) for anything you stream and compare before installing."
+  }
+}

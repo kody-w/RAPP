@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Batcave — private RAPP neighborhood</title>
+<style>
+  :root { color-scheme: dark; }
+  body { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+         background:#0d1117; color:#e6edf3; max-width:880px; margin:2rem auto;
+         padding:0 1rem; line-height:1.55; }
+  h1 { color:#ffd33d; } a { color:#79c0ff; }
+  .card { border:1px solid #30363d; border-radius:8px; padding:1rem;
+          margin:.6rem 0; background:#161b22; }
+  .pill { display:inline-block; border:1px solid #30363d; border-radius:999px;
+          padding:.05rem .6rem; margin-right:.4rem; font-size:.8rem;
+          color:#8b949e; }
+  code { background:#161b22; padding:.1rem .3rem; border-radius:4px; }
+</style>
+</head>
+<body>
+<h1>🦇 The Batcave</h1>
+<p><span class="pill">private</span><span class="pill">kind: workspace</span>
+<span class="pill">cubby neighborhood</span></p>
+<p><code>rappid:@kody-w/rapp-batcave:72c739f277aade85ceb863c031b6c2998d577c7aa86f72652edae7e9c19eb100</code></p>
+<p>Every member gets a <strong>cubby</strong> — isolated housing for their full
+rapp estate. Browse the cubbies, learn from each organism, stream agents into
+your own brainstem with <code>batcave load</code>.</p>
+<div class="card">
+  <strong>Join:</strong> ask the operator for collaborator access, then
+  <code>gh repo clone kody-w/rapp-batcave</code> and run <code>batcave join</code>
+  from your brainstem. Full steps: <a href="CONTRIBUTING.md">CONTRIBUTING.md</a>
+  · quirk contract: <a href="specs/CUBBY_PROTOCOL.md">CUBBY_PROTOCOL.md</a>
+</div>
+<div id="cubbies"><div class="card">Serve this directory
+(<code>python3 -m http.server</code> in the clone) to see the live cubby
+gallery — file:// can't fetch. The gallery reads
+<code>cubbies/index.json</code> from the clone: local-first, no network.</div>
+</div>
+<script>
+/* Local-first only: relative fetch against the clone/server. No bare
+   github.com fetches (ANTIPATTERNS §5) — offline keeps rendering. */
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g,
+  c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+fetch('cubbies/index.json').then(r => r.json()).then(idx => {
+  const root = document.getElementById('cubbies');
+  root.innerHTML = '';
+  (idx.cubbies || []).forEach(c => {
+    const d = document.createElement('div');
+    d.className = 'card';
+    const h = esc(c.github_login);
+    d.innerHTML = '<strong>🗄️ ' + h + '</strong> — ' +
+      esc(c.what_im_cooking || '...') +
+      ' <a href="cubbies/' + encodeURIComponent(c.github_login) + '/front_door.md">front door</a>';
+    root.appendChild(d);
+  });
+}).catch(() => { /* offline / file:// — static instructions remain */ });
+</script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "schema": "rapp-neighborhood-members/1.0",
+  "neighborhood_rappid": "rappid:@kody-w/rapp-batcave:72c739f277aade85ceb863c031b6c2998d577c7aa86f72652edae7e9c19eb100",
+  "version": 1,
+  "synced_at": "2026-06-09T23:20:50Z",
+  "synced_from": "plant_batcave",
+  "open_to_anyone": false,
+  "join_path": "out_of_band → operator approval → collaborator add",
+  "members": [
+    {
+      "github_login": "kody-w",
+      "rappid": "rappid:@kody-w/kody-twin:91d006ca7bd052bfa5021d623122012f",
+      "role": "founder",
+      "capabilities": [
+        "all"
+      ],
+      "joined_at": "2026-06-09T23:00:50Z",
+      "via": "genesis",
+      "notes": "Founder seat. Adds members via the invite action / gh api."
+    }
+  ],
+  "reconciliation": {
+    "policy": "github_collaborators_api_is_canonical",
+    "notes": "Membership IS GitHub collaborator status on this repo. members.json is the protocol-layer mirror; reconcile with `gh api repos/kody-w/rapp-batcave/collaborators`."
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "schema": "rapp-batcave-cubby/1.0",
+  "github_login": "<your-handle>",
+  "rappid": "<your operator rappid — opaque string>",
+  "display_name": "<Your Name>",
+  "what_im_cooking": "<one line — shows in the gallery + browse>",
+  "created_at": "<RFC3339 UTC>",
+  "estate": {
+    "note": "A cubby houses a FULL rapp estate, bottom to top: agents (incl. factory agents / industries), organs, senses, rapplications, whole neighborhoods, eggs. Isolated from every other cubby; grow it into its own organism.",
+    "anatomy": [
+      "agents",
+      "organs",
+      "senses",
+      "rapplications",
+      "neighborhoods",
+      "eggs",
+      "show-and-tell"
+    ]
+  },
+  "streamable": {
+    "agents": true,
+    "note": "set false to ask peers not to `batcave load` from here"
+  }
+}
