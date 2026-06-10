@@ -217,6 +217,15 @@ Every `rapp-*/N.M` and `brainstem-*/N.M-variant` currently emitted in the repo. 
 | `rapp-zoo-collection/1.0` | rapp-zoo localStorage cartridge | rapp-zoo/index.html:481 (defined-by-emitter) | rapp-zoo/index.html |
 | `rapp-swarm/1.0` | Mobile swarm bundle | utils/web/mobile/rapp-mobile.js:165 (defined-by-emitter) | utils/web/mobile/rapp-mobile.js |
 | `rapp-brainstem-backup/1.0` | Local brainstem backup snapshot | rapp_brainstem/index.html:1966 (defined-by-emitter) | rapp_brainstem/index.html |
+| `rapp-cubby/1.0` | Universal cubby — per-member estate housing; same anatomy as a brainstem; works on-device AND in a neighborhood (egg-roundtrips) | NEIGHBORHOOD_PROTOCOL §19; PUBLIC_PRIVATE_BOUNDARY §1.8 | `@rapp/rapp` (rapp_agent.py); private cubby neighborhoods |
+| `rapp-super-rar/1.0` | The super-store — one content-aware registry over the WHOLE stack across every cubby (local + neighborhood) | NEIGHBORHOOD_PROTOCOL §19 | `@rapp/rapp` super_rar |
+| `rapp-payphone-dial/1.0` | Dark-door dialer — reach a private door's rappid on the public web with your own auth (404 to outsiders) | NEIGHBORHOOD_PROTOCOL §19 | pages/payphone.html |
+| `brainstem-egg/2.3-cubby` | Cubby cartridge — a digital organism carved from an estate; round-trips local↔neighborhood | NEIGHBORHOOD_PROTOCOL §19; Art. XXXVII | `@rapp/rapp` cubby_egg |
+| `rapp-ecosystem-graph/1.0` | Repo relationship graph (nodes + typed edges) for cross-repo blast-radius traversal | kody-w/rapp-map/graph.json | tools/build_graph.py; `@rapp/drift` blast_radius |
+| `rapp-canon/1.0` | Materialized resolved schema registry — one canonical version per schema, so consumers don't re-traverse scattered specs | (defined-by-emitter) | `@rapp/drift` canon |
+| `rapp-drift-report/1.0` | Cross-repo spec-drift report + authority resolution envelope | (defined-by-emitter) | `@rapp/drift` scan |
+| `rapp-drift-issue/1.0` | Drift-issue machine block — the traceable chain (drift → GitHub issue → PR → operator merge → close) | (defined-by-emitter) | `@rapp/drift` + `@rapp/drift_watcher` |
+| `rapp-rar-steward/1.0` | RAR steward report — catalog health, same-but-different merge clusters, noise/junk | (defined-by-emitter) | `@rapp/rar_steward` |
 
 ---
 
@@ -408,6 +417,7 @@ The most load-bearing section. Workflow trigger → pre-check (≤30s) → spec 
 | Call /chat from new code | §11 row "tether"; use `rapp-twin-chat/1.0` envelope; §6 row twin_agent.py reference impl | NEIGHBORHOOD_PROTOCOL §6a |
 | Define a new schema | §5 — search first; if exists, use; if not, ANTIPATTERNS §3 (bump cleanly, no shims) | ANTIPATTERNS §3 |
 | Use an existing schema | §5 row → defining doc column → read that section | the doc the row points at |
+| Plant a PRIVATE cubby neighborhood (collaborator-gated, no public front door) | §19 dark-door pattern: payphone discovery + collaborator-gated §8 key + kited host-relay lights + cubbies + super-RAR + stream-don't-commit; the pattern is generic (any crew can plant one) | NEIGHBORHOOD_PROTOCOL §19; PUBLIC_PRIVATE_BOUNDARY §1.8; `@rapp/rapp` |
 | Plant on GitHub (twin/neighborhood/etc.) | §14 (existing planted state), §3 primitives (rappid + door + card + tether + scope all present?), §5 `rapp-rar-index/1.0` (every plant auto-scaffolds rar/ via plant.sh::write_rar_index) | TEMPLATE.md, ECOSYSTEM §2 + §13; F7-rar-hotload.sh |
 | Hot-load a planted seed's required participation kit | §5 `rapp-rar-index/1.0` (sha256 verified) | rapp_brainstem/agents/rar_loader_agent.py; F7 |
 | Plant a neighborhood ON TOP of an existing public repo (or dock multiple within one repo) | bond technique additive overlay; multi-neighborhood mode emits `docking` block — same fractal step as Dream Catcher (ECOSYSTEM §10) at neighborhood scope vs frame scope | rapp_brainstem/agents/graft_neighborhood_agent.py; F8; vault note `pages/vault/Decisions/2026-05-09 — Dream Catcher and Docking are the same operation.md` |
