@@ -1,0 +1,1594 @@
+{
+  "schema": "rapp-ecosystem-spec/1.0",
+  "version": "1.0.0",
+  "title": "The RAPP Ecosystem — Full End-to-End Spec",
+  "summary": "The single canonical description of the entire RAPP ecosystem: every operator capability domain, the one agent that drives them via natural language, the schemas, the repos, the end-to-end journeys, and the four-leg drift triangle that keeps this spec, the agent, and the two mirror repos in sync.",
+  "canonical_source": "kody-w/RAPP",
+  "authority_order": [
+    "MASTER_PLAN.md",
+    "CONSTITUTION.md",
+    "spec-docs (SPEC/skill/ECOSYSTEM/NEIGHBORHOOD_PROTOCOL/OSI/ESTATE_SPEC)",
+    "vault (Decisions/Architecture)",
+    "code"
+  ],
+  "first_principle": "use everyone else's hardware to run the network",
+  "identity_format": "Eternity rappid:@<owner>/<slug>:<64hex>  (sha256 of '<owner>/<slug>'; kind lives in the record, not the string; CONSTITUTION Art. XXXIV.1, locked 2026-06-03). Legacy v2 is read-forever and canonicalized, never emitted.",
+  "mirrors": {
+    "note": "This exact JSON is published byte-identical to two independent grail repos. Divergence between them IS drift — the agent's `verify` action sha256-compares them.",
+    "rapp_god": "https://raw.githubusercontent.com/kody-w/rapp-god/main/api/v1/ecosystem-spec.json",
+    "rapp_map": "https://raw.githubusercontent.com/kody-w/rapp-map/main/ecosystem-spec.json",
+    "human_bible": "https://kody-w.github.io/RAPP-Bible/#specs (renders this spec for a non-technical reader)"
+  },
+  "the_one_agent": {
+    "file": "rapp_agent.py",
+    "rar": "@rapp/rapp",
+    "model": "navigator + bootstrapper + core-operator + universal-installer",
+    "contract": "Drop this ONE file into a brainstem's agents/ directory and an operator can, through natural language alone, utilize the ENTIRE ecosystem end-to-end: orient in it, bootstrap identity + a fresh brainstem + a door, operate every core scale (estate / neighborhood / cubby / egg / super-RAR), record lineage, and INSTALL any specialist agent for everything deeper. It is airdroppable and offline-safe: it embeds a baseline of the whole map so it works in the woods, and `refresh` re-syncs from the global grail when online.",
+    "why_not_a_monolith": "The ecosystem is built FROM single-file agents (ANTIPATTERNS §1). The god agent does not reimplement all ~30 specialists — it REACHES them. Its superpower is `install`: pull any agent from RAR / the stores / a neighborhood's rar on demand. Deep specialist work stays in its own agent (see specialist_agents)."
+  },
+  "fractal_scales": [
+    {
+      "scale": "agent",
+      "is": "one *_agent.py — single file, single class, single perform(), single metadata dict",
+      "rappid": "inherits parent twin's",
+      "contract": "ANTIPATTERNS §1 + CONSTITUTION Art. XXXIII"
+    },
+    {
+      "scale": "twin / organism",
+      "is": "one planted seed (one rappid) with a front door + doorman",
+      "rappid": "its own Eternity rappid in rappid.json, minted once",
+      "example": "kody-w/heimdall"
+    },
+    {
+      "scale": "neighborhood",
+      "is": "a community-with-a-purpose; a GitHub repo is the gate. Public or PRIVATE (collaborator-gated). Has members + per-member cubbies",
+      "rappid": "neighborhood_rappid",
+      "channels": "NEIGHBORHOOD_PROTOCOL §5a–d (WebRTC tether, Issues, PRs, raw fetch)"
+    },
+    {
+      "scale": "estate",
+      "is": "ONE operator's union of everything they've planted + joined; two-tier (public discovery + private bones, Art. XLVIII)",
+      "rappid": "the operator's personal Eternity rappid is the spine — the global passport",
+      "catalog": "~/.brainstem/estate.json (created[] + member[]); each entry stores ONLY {rappid, added_at, via}"
+    },
+    {
+      "scale": "metropolis",
+      "is": "an emergent mesh of estates through shared neighborhoods; federations of metropolises emerge at planet scale",
+      "example": "kody-w.github.io/RAPP/metropolis/"
+    }
+  ],
+  "primitives": [
+    {
+      "name": "rappid",
+      "is": "the global identity + address. From any rappid, with zero auth, every canonical URL is computable by string parsing",
+      "schema": "rapp-rappid/2.0",
+      "parser": "tools/door_address.py::door_from_rappid (single parser; agents inline a mirror)"
+    },
+    {
+      "name": "door",
+      "is": "the public surface URL where a thing is reachable; 9 canonical URLs derived from the rappid; PRIVATE doors 404 to outsiders (the guard); a 'dark door' has no public front door at all",
+      "schema": "rapp-door/1.0 (derived, never stored)"
+    },
+    {
+      "name": "card",
+      "is": "the trade-card / introduction view + granular published permissions",
+      "schema": "rapp-card/1.0 + rapp-public-facets/1.0"
+    },
+    {
+      "name": "tether",
+      "is": "the four channel types — WebRTC, Issues, PRs, raw fetch — carrying the twin-chat envelope",
+      "schema": "rapp-twin-chat/1.0"
+    },
+    {
+      "name": "trust scope",
+      "is": "personal / neighborhood / public swarm, gated by facets",
+      "schema": "rapp-public-facets/1.0 (NEIGHBORHOOD_PROTOCOL §2 + §7)"
+    }
+  ],
+  "osi_layers": [
+    {
+      "l": 1,
+      "name": "Substrate",
+      "is": "the physical layer — GitHub Pages + raw.githubusercontent.com, LAN, file://, sneakernet eggs"
+    },
+    {
+      "l": 2,
+      "name": "Identity",
+      "is": "the rappid layer — Eternity address, minted once, read forever"
+    },
+    {
+      "l": 3,
+      "name": "Discovery",
+      "is": "lineage + catalog — parent_rappid chain, estate.json, RAR, rapp-god/rapp-map"
+    },
+    {
+      "l": 4,
+      "name": "Channels",
+      "is": "transport — WebRTC tether, Issues, PRs, raw fetch (NEIGHBORHOOD_PROTOCOL §5)"
+    },
+    {
+      "l": 5,
+      "name": "Trust scope",
+      "is": "session/auth — personal/neighborhood/public, collaborator-gated private doors, sealed channel (§8 AES-256-GCM)"
+    },
+    {
+      "l": 6,
+      "name": "Envelope",
+      "is": "presentation — the egg cartridge family, the twin-chat envelope, |||VOICE||| / |||TWIN||| slots"
+    },
+    {
+      "l": 7,
+      "name": "Application",
+      "is": "the agent + /chat layer — single-file agents, organs, the agent-built web (rionet/rio)"
+    }
+  ],
+  "capability_domains": [
+    {
+      "domain": "Platform Installation & Bootstrap",
+      "native_covered": [
+        {
+          "capability": "install_kernel",
+          "action": "N/A — embedded in installer/install.sh and installer/plant.sh"
+        },
+        {
+          "capability": "fetch_kernel_code",
+          "action": "refresh, ecosystem, find"
+        },
+        {
+          "capability": "ecosystem",
+          "action": "ecosystem, find, spec"
+        },
+        {
+          "capability": "mint_rappid (PARTIAL)",
+          "action": "whoami (reads only; does not mint)"
+        }
+      ],
+      "to_close": [
+        {
+          "capability": "bootstrap_organism",
+          "tag": "native",
+          "severity": "high",
+          "fix": "new action: plant or bootstrap that clones/forks a template repo (TEMPLATE.md / rapp-template) and scaffolds soul.md, agents/, memory.json, "
+        },
+        {
+          "capability": "write_initial_memory",
+          "tag": "native",
+          "severity": "high",
+          "fix": "new action: init_memory or memory that initializes .brainstem_data/memory.json as empty {} or rapp-frame/1.0 schema, and per-user private me"
+        },
+        {
+          "capability": "scaffold_agents_directory",
+          "tag": "install-routed",
+          "severity": "high",
+          "fix": "new action: scaffold_kernel_agents or init_doorman that fetches and installs the kernel seed agents (basic_agent.py, context_memory_agent.py"
+        },
+        {
+          "capability": "mint_rappid",
+          "tag": "native",
+          "severity": "high",
+          "fix": "new action: mint_rappid or register that generates a unique rappid at first plant (via rapp-rappid/2.0 schema, utils/bond.py pattern) and wr"
+        }
+      ],
+      "specialist_owned": [
+        "install_kernel"
+      ]
+    },
+    {
+      "domain": "Rappid & Identity (Global Address Layer)",
+      "native_covered": [
+        {
+          "capability": "encode_rappid",
+          "action": "door"
+        },
+        {
+          "capability": "derive_door_urls",
+          "action": "door"
+        }
+      ],
+      "to_close": [
+        {
+          "capability": "lineage_chain",
+          "tag": "native",
+          "severity": "blocker",
+          "fix": "Add a 'lineage' action that fetches parent_rappid from <owner>/<slug>/main/rappid.json and (if online) walks GitHub's /repos/{owner}/{slug}/"
+        },
+        {
+          "capability": "verify_rappid_validity",
+          "tag": "native",
+          "severity": "medium",
+          "fix": "Add optional 'validate=true' param to 'action=door rappid=…' that performs HEAD request to the identity URL (raw.githubusercontent.com/<owne"
+        },
+        {
+          "capability": "bond_record",
+          "tag": "native",
+          "severity": "blocker",
+          "fix": "Implement a _record_bond() helper that appends lifecycle events to ~/.brainstem/bonds.json (schema rapp-launched-result/1.0) with fields {ev"
+        }
+      ],
+      "specialist_owned": []
+    },
+    {
+      "domain": "Estate & Door Addressing",
+      "native_covered": [
+        {
+          "capability": "local_estate_catalog",
+          "action": "estate"
+        },
+        {
+          "capability": "view_door_by_rappid",
+          "action": "door"
+        },
+        {
+          "capability": "whoami_estate_overview",
+          "action": "whoami"
+        },
+        {
+          "capability": "find_part_in_ecosystem",
+          "action": "find"
+        },
+        {
+          "capability": "refresh_grail_registry",
+          "action": "refresh"
+        }
+      ],
+      "to_close": [
+        {
+          "capability": "add_door_to_estate",
+          "tag": "native",
+          "severity": "high",
+          "fix": "Add estate_add or estate_import action that accepts (rappid|url|owner/repo), validates it via door_from_rappid(), appends to created[] or me"
+        },
+        {
+          "capability": "publish_estate_public",
+          "tag": "native",
+          "severity": "high",
+          "fix": "Add estate_publish action that (1) takes estate.json, (2) filters to publishable doors, (3) writes to a configured public mirror (rapp-estat"
+        },
+        {
+          "capability": "public_private_split",
+          "tag": "native",
+          "severity": "high",
+          "fix": "Add estate_privacy or estate_tier action that (1) declares which doors are public vs private, (2) signs public gates with HMAC commitment, ("
+        },
+        {
+          "capability": "disaster_recovery_estate",
+          "tag": "native",
+          "severity": "high",
+          "fix": "Add estate_recover action that (1) takes operator's GitHub login/rappid, (2) walks their repos or searches GitHub for members.json files con"
+        },
+        {
+          "capability": "set_private_door_commitment",
+          "tag": "native",
+          "severity": "high",
+          "fix": "Add estate_commit or estate_attest action that (1) hashes the operator's private door list, (2) publishes count + hash to their public beaco"
+        }
+      ],
+      "specialist_owned": []
+    },
+    {
+      "domain": "Neighborhood & Gate Structure",
+      "native_covered": [
+        {
+          "capability": "neighborhood_roster",
+          "action": "browse"
+        },
+        {
+          "capability": "neighborhood_shared_agents",
+          "action": "super_rar where=neighborhood, load"
+        },
+        {
+          "capability": "neighborhood_memory_tiers",
+          "action": "stash, browse, show_and_tell, sync"
+        }
+      ],
+      "to_close": [
+        {
+          "capability": "neighborhood_identity",
+          "tag": "native",
+          "severity": "high",
+          "fix": "Add action='neighborhood_info' to fetch + parse rappid.json and neighborhood.json from mounted gate, returning {rappid, name, kind, location"
+        },
+        {
+          "capability": "neighborhood_constitution",
+          "tag": "native",
+          "severity": "high",
+          "fix": "Add action='neighborhood_constitution' or extend 'neighborhood_info' to fetch CONSTITUTION.md from ctx['repo_dir']/CONSTITUTION.md and retur"
+        },
+        {
+          "capability": "neighborhood_private_companion",
+          "tag": "native",
+          "severity": "high",
+          "fix": "Add action='neighborhood_private' to verify + list private companion repo contents (rapp-<neighborhood>-private). Return structure of confid"
+        }
+      ],
+      "specialist_owned": []
+    },
+    {
+      "domain": "Cubbies & Dark Doors (Private Neighborhoods)",
+      "native_covered": [
+        {
+          "capability": "dark_door_invite_only",
+          "action": "invite + join"
+        },
+        {
+          "capability": "vneighborhood_front_door",
+          "action": "enter + qr"
+        },
+        {
+          "capability": "cubby_portable_offline",
+          "action": "cubby_egg + cubby_import"
+        }
+      ],
+      "to_close": [
+        {
+          "capability": "cubby_portable_offline",
+          "tag": "native",
+          "severity": "high",
+          "fix": "Add action=neighborhood_egg (or cubby_collective_egg) to pack all cubbies in a neighborhood into one portable ZIP with a neighborhood-level "
+        }
+      ],
+      "specialist_owned": [
+        "cubby_encryption"
+      ]
+    },
+    {
+      "domain": "Eggs & Cartridges (Organism Portability)",
+      "native_covered": [
+        {
+          "capability": "export_organism_egg",
+          "action": "cubby_egg"
+        },
+        {
+          "capability": "hatch_organism_egg",
+          "action": "cubby_import"
+        },
+        {
+          "capability": "hatch_session_egg",
+          "action": "hatch"
+        },
+        {
+          "capability": "multi_scale_hatcher",
+          "action": "hatch"
+        }
+      ],
+      "to_close": [
+        {
+          "capability": "export_ascended_egg",
+          "tag": "native",
+          "severity": "high",
+          "fix": "Add cubby_egg parameter tier=ascended; introspect ~/.brainstem/memory/ + .brainstem/learn_new/ + swarm_factory outputs, fold into .egg manif"
+        },
+        {
+          "capability": "export_neighborhood_egg",
+          "tag": "native",
+          "severity": "high",
+          "fix": "Add action=neighborhood_egg cubby=<neighborhood>; zips cubbies/* + neighborhood.json + members.json + soul manifest into brainstem-egg/2.3-n"
+        },
+        {
+          "capability": "export_estate_egg",
+          "tag": "native",
+          "severity": "high",
+          "fix": "Add action=estate_egg; walks estate.json created[]/member[] doors, collects rappid.json + card.json + agents + soul from each, zips into 2.3"
+        },
+        {
+          "capability": "verify_egg_integrity",
+          "tag": "native",
+          "severity": "high",
+          "fix": "Add action=verify_egg path=<.egg>; unzip + compute per-file SHA256, compare manifest hash (blake3 or SHA256 tree), optionally deep-verify or"
+        },
+        {
+          "capability": "export_rapplication_egg",
+          "tag": "native",
+          "severity": "medium",
+          "fix": "Add action=rapplication_egg path=<agent or dir>; introspect metadata + dependencies, zip into brainstem-egg/2.2-rapplication with SCHEMA.md "
+        },
+        {
+          "capability": "hatch_rapplication_egg",
+          "tag": "install-routed",
+          "severity": "medium",
+          "fix": "Extend hatch/cubby_import to detect brainstem-egg/2.2-rapplication type in manifest.json; if so, land into ~/.rapp/rapplications/ or ~/rapp_"
+        }
+      ],
+      "specialist_owned": [
+        "export_session_egg"
+      ]
+    },
+    {
+      "domain": "RAR (Agent Registry) & Agent Installation",
+      "native_covered": [
+        {
+          "capability": "rar_index_per_seed",
+          "action": "ecosystem / find"
+        },
+        {
+          "capability": "install_agent_from_rar",
+          "action": "load"
+        },
+        {
+          "capability": "federated_rar_load",
+          "action": "super_rar where=neighborhood"
+        },
+        {
+          "capability": "author_agent_locally",
+          "action": "cubby_new / stash"
+        },
+        {
+          "capability": "publish_agent_to_neighborhood",
+          "action": "stash / join / mount"
+        },
+        {
+          "capability": "agent_proposal_pr",
+          "action": "none"
+        }
+      ],
+      "to_close": [
+        {
+          "capability": "federated_rar_load",
+          "tag": "install-routed",
+          "severity": "high",
+          "fix": "Add a new action `load_from_downstream_rar` or extend `load` with a `source=<rar-url>` parameter to fetch + verify agents from external RAR "
+        },
+        {
+          "capability": "rar_sha256_pin",
+          "tag": "install-routed",
+          "severity": "medium",
+          "fix": "Extend load to accept a --verify flag (or make it default) that fetches the agent's entry from the live rapp-god/registry.json, compares the"
+        }
+      ],
+      "specialist_owned": [
+        "agent_proposal_pr"
+      ]
+    },
+    {
+      "domain": "Stores (Rapplications & Senses)",
+      "native_covered": [
+        {
+          "capability": "rapplication_catalog",
+          "action": "super_rar where=neighborhood query=<q>"
+        },
+        {
+          "capability": "sense_store",
+          "action": "super_rar where=local/neighborhood query=<q>"
+        }
+      ],
+      "to_close": [
+        {
+          "capability": "rapplication_catalog",
+          "tag": "install-routed",
+          "severity": "high",
+          "fix": "Add action=store_catalog [query=<q>] to fetch RAPP_Store index.json, parse rapp-application/1.0 manifests, and list available rapplications "
+        },
+        {
+          "capability": "install_rapplication",
+          "tag": "install-routed",
+          "severity": "high",
+          "fix": "Add action=install_rapplication rappid=<or store_path=> that fetches singleton .egg/.py and lands it in cubby/rapplications/"
+        }
+      ],
+      "specialist_owned": [
+        "sense_store",
+        "rapplication_source_editing"
+      ]
+    },
+    {
+      "domain": "Memory & Recall (Three-Tier Model)",
+      "native_covered": [],
+      "to_close": [
+        {
+          "capability": "device_local_memory",
+          "tag": "install-routed",
+          "severity": "blocker",
+          "fix": "Add action=memory_store (for writing context to localStorage) and action=memory_read (for reading). Pass params: context_key, context_data, "
+        },
+        {
+          "capability": "public_memory_read",
+          "tag": "native",
+          "severity": "blocker",
+          "fix": "Add action=memory_list or action=memory_read with no params (default: fetch public memory.json). Or extend super_rar to include memory.json "
+        },
+        {
+          "capability": "public_memory_write",
+          "tag": "native",
+          "severity": "blocker",
+          "fix": "Add action=memory_save with params: key, value, description. Invoke doorman 'Save a memory' pane or direct git commit to .brainstem_data/mem"
+        },
+        {
+          "capability": "per_user_private_memory",
+          "tag": "native",
+          "severity": "blocker",
+          "fix": "Add action=memory_private_save (create GitHub Issue with private-memory label + author metadata) and action=memory_private_list (fetch GitHu"
+        },
+        {
+          "capability": "memory_in_system_prompt",
+          "tag": "install-routed",
+          "severity": "blocker",
+          "fix": "Extend system_context() to include: 'Memory is available: public facts (memory.json), private facts (GitHub Issues #private-memory @yourlogi"
+        },
+        {
+          "capability": "ascended_egg_memory_export",
+          "tag": "native",
+          "severity": "blocker",
+          "fix": "Add action=memory_egg with params: export_private=true. Fetch all private-memory GitHub Issues (by @login), serialize them into brainstem-eg"
+        }
+      ],
+      "specialist_owned": []
+    },
+    {
+      "domain": "Twin Lifecycle (Active / Archived / Purged)",
+      "native_covered": [],
+      "to_close": [],
+      "specialist_owned": [
+        "list_active_twins",
+        "boot_twin",
+        "stop_twin",
+        "archive_twin",
+        "unarchive_twin",
+        "purge_twin",
+        "bulk_archive_filter",
+        "list_archived_twins",
+        "list_purged_twins"
+      ]
+    },
+    {
+      "domain": "Bonding & Lineage (Cross-Device Mutation Sharing)",
+      "native_covered": [
+        {
+          "capability": "graft_neighborhood",
+          "action": "NOT IMPLEMENTED — agent file missing"
+        },
+        {
+          "capability": "launch_to_public",
+          "action": "NOT IMPLEMENTED — agent file missing"
+        },
+        {
+          "capability": "dock_registry_merge",
+          "action": "NOT IMPLEMENTED — agent file missing"
+        },
+        {
+          "capability": "bond_rhythm_pulse",
+          "action": "NOT IMPLEMENTED — agent file missing"
+        },
+        {
+          "capability": "lineage_rollup_stats",
+          "action": "NOT IMPLEMENTED — agent file missing"
+        }
+      ],
+      "to_close": [
+        {
+          "capability": "graft_neighborhood",
+          "tag": "native",
+          "severity": "blocker",
+          "fix": "Implement graft_neighborhood_agent.py with GraftNeighborhoodAgent class following rapp-agent/1.0 contract (class + metadata + perform return"
+        },
+        {
+          "capability": "launch_to_public",
+          "tag": "native",
+          "severity": "blocker",
+          "fix": "Implement launch_to_public_agent.py with LaunchToPublicAgent class following rapp-agent/1.0 contract (class + metadata + perform returning r"
+        },
+        {
+          "capability": "dock_registry_merge",
+          "tag": "native",
+          "severity": "blocker",
+          "fix": "Implement dock_agent.py with DockAgent class following rapp-agent/1.0 contract (class + metadata + perform returning rapp-dock-result/1.0 JS"
+        },
+        {
+          "capability": "bond_rhythm_pulse",
+          "tag": "native",
+          "severity": "blocker",
+          "fix": "Implement bond_rhythm_agent.py with BondRhythmAgent class following rapp-agent/1.0 contract (class + metadata + perform returning rapp-rhyth"
+        },
+        {
+          "capability": "lineage_rollup_stats",
+          "tag": "native",
+          "severity": "blocker",
+          "fix": "Implement lineage_rollup_agent.py with LineageRollupAgent class following rapp-agent/1.0 contract (class + metadata + perform returning rapp"
+        },
+        {
+          "capability": "rapp_agent.py cannot be the sole agent for bonding domain",
+          "tag": "install-routed",
+          "severity": "high",
+          "fix": "Either (a) Accept that the scenario is aspirational — these 5 agents MUST exist separately in agents/, so the operator would need to have th"
+        }
+      ],
+      "specialist_owned": []
+    },
+    {
+      "domain": "Twin Chat & Cross-Organism Communication",
+      "native_covered": [
+        {
+          "capability": "twin_chat_envelope",
+          "action": "show_and_tell (partial/indirect)"
+        },
+        {
+          "capability": "twin_chat_say",
+          "action": "None (no action)"
+        },
+        {
+          "capability": "twin_chat_share_fact",
+          "action": "None (no action)"
+        },
+        {
+          "capability": "twin_chat_share_egg",
+          "action": "hatch (one-way partial)"
+        },
+        {
+          "capability": "twin_chat_request_fact",
+          "action": "None (no action)"
+        },
+        {
+          "capability": "twin_chat_ack",
+          "action": "None (no action)"
+        },
+        {
+          "capability": "twin_chat_facet_gating",
+          "action": "door (schema reference only, no filtering)"
+        }
+      ],
+      "to_close": [
+        {
+          "capability": "twin_chat_facet_gating",
+          "tag": "native",
+          "severity": "high",
+          "fix": "Add facet evaluation: when browsing a neighbor's cubby or super_rar results, read their facets.json and filter by the current scope (inferre"
+        }
+      ],
+      "specialist_owned": [
+        "twin_chat_envelope",
+        "twin_chat_say",
+        "twin_chat_share_fact",
+        "twin_chat_share_egg",
+        "twin_chat_request_fact",
+        "twin_chat_ack"
+      ]
+    },
+    {
+      "domain": "WebRTC Tether & Pairing",
+      "native_covered": [
+        {
+          "capability": "tether_qr_pair",
+          "action": "qr"
+        },
+        {
+          "capability": "broker_drops_after_handshake",
+          "action": "enter"
+        },
+        {
+          "capability": "tether_egg_stream (partial — egg exists, but not live-streamed)",
+          "action": "cubby_egg + hatch"
+        }
+      ],
+      "to_close": [],
+      "specialist_owned": [
+        "tether_safety_code",
+        "tether_live_chat",
+        "tether_egg_stream (live chunked transfer with SHA verify during stream)",
+        "vbrainstem_tethered_group (multi-participant live session with turn-by-turn sync)"
+      ]
+    },
+    {
+      "domain": "Front Door Surface (rapp_agent.py coverage audit against 12 capabilities: hero/MMR/track-record/trade-card/pairing/export-egg/verify-egg/dream-catcher/propose-agent/egg-hub-backup/kernel-install/engineering-details)",
+      "native_covered": [
+        {
+          "capability": "front_door_hero",
+          "action": "N/A (HTML-rendered, not agent-callable)"
+        },
+        {
+          "capability": "front_door_mmr_tier",
+          "action": "N/A (HTML-computed)"
+        },
+        {
+          "capability": "front_door_pair_button",
+          "action": "qr (partial)"
+        },
+        {
+          "capability": "front_door_export_egg",
+          "action": "cubby_egg (partial)"
+        },
+        {
+          "capability": "ecosystem_refresh",
+          "action": "refresh"
+        },
+        {
+          "capability": "estate_identity",
+          "action": "whoami, estate, door"
+        },
+        {
+          "capability": "local_cubby_management",
+          "action": "cubby_new, cubby_list, cubby_show, super_rar (where=local)"
+        },
+        {
+          "capability": "egg_pack_import",
+          "action": "cubby_egg, cubby_import"
+        },
+        {
+          "capability": "neighborhood_mount_join",
+          "action": "mount, join"
+        },
+        {
+          "capability": "neighborhood_browse_search",
+          "action": "browse, super_rar (where=neighborhood)"
+        },
+        {
+          "capability": "neighborhood_stash_hatch",
+          "action": "stash, hatch"
+        },
+        {
+          "capability": "neighborhood_load_unload",
+          "action": "load, unload"
+        },
+        {
+          "capability": "ecosystem_find_catalog",
+          "action": "ecosystem, find"
+        },
+        {
+          "capability": "spec_and_protocol",
+          "action": "spec, protocol, help"
+        }
+      ],
+      "to_close": [
+        {
+          "capability": "front_door_mmr_tier",
+          "tag": "native",
+          "severity": "blocker",
+          "fix": "Add action 'mmr' that computes {mmr_value, tier_badge, calibrating_pct, lineage_gift_breakdown, last_mutation_age} by reading rappid.json + "
+        },
+        {
+          "capability": "front_door_track_record",
+          "tag": "native",
+          "severity": "high",
+          "fix": "Add action 'track_record' or 'resume' that returns {mutations, agents_shipped, achievements, lineage_chain, recent_frames} from local rappid"
+        },
+        {
+          "capability": "front_door_trade_card",
+          "tag": "native",
+          "severity": "high",
+          "fix": "Add action 'card' that reads card.json (with kind-aware fallback defaults) and returns {title, type_line, rarity, abilities[], flavor_text, "
+        },
+        {
+          "capability": "front_door_pair_button",
+          "tag": "native",
+          "severity": "high",
+          "fix": "Expand 'qr' action to include {pair_method: 'auto_render_qr', security_code: <6-digit>, peer_discovery_url, tether_instructions}. Or add new"
+        },
+        {
+          "capability": "front_door_export_egg",
+          "tag": "native",
+          "severity": "high",
+          "fix": "Add action 'export_organism' or extend 'cubby_egg' with brainstem-egg/2.2-organism packing. Currently only cubby-level eggs (brainstem-egg/2"
+        },
+        {
+          "capability": "front_door_verify_egg",
+          "tag": "native",
+          "severity": "high",
+          "fix": "Add action 'verify_egg' that takes {path: <egg_file>} and returns {manifest, sha256_hash, integrity_status: 'intact'|'partial'|'tampered', d"
+        },
+        {
+          "capability": "front_door_dream_catcher",
+          "tag": "native",
+          "severity": "high",
+          "fix": "Add action 'compare_eggs' or 'reassimilate' that takes {egg1: <path>, egg2: <path>} and returns {shared_frames[], parallel_frames[], contrad"
+        },
+        {
+          "capability": "front_door_propose_agent",
+          "tag": "native",
+          "severity": "medium",
+          "fix": "Add action 'propose_agent' that takes {agent_code: <python>, name: <slug>, description: <text>} and returns {github_create_url, pr_template_"
+        },
+        {
+          "capability": "front_door_egg_hub_backup",
+          "tag": "native",
+          "severity": "medium",
+          "fix": "Add action 'backup_to_egg_hub' that takes {egg: <path>, description: <text>} and returns {github_issue_url, submission_metadata_prefilled}. "
+        },
+        {
+          "capability": "front_door_kernel_install",
+          "tag": "install-routed",
+          "severity": "medium",
+          "fix": "Add action 'install_kernel' or 'kernel_curl' that returns {install_url: 'https://.../installer/install.sh', one_liner: 'curl | bash ...', in"
+        },
+        {
+          "capability": "front_door_details_collapsed",
+          "tag": "native",
+          "severity": "low",
+          "fix": "Add action 'engineering_details' or extend 'whoami' to include {slug, rappid, kernel_version, lineage_json_serialized, parent_chain, rappid_"
+        },
+        {
+          "capability": "cubby_collect_full_semantics",
+          "tag": "native",
+          "severity": "medium",
+          "fix": "cubby_collect currently searches and copies files from local stack. Document or verify that it correctly handles secret-filtering (_SECRET_N"
+        },
+        {
+          "capability": "egg_import_manifest_validation",
+          "tag": "native",
+          "severity": "low",
+          "fix": "cubby_import and hatch both call _hatch_egg(). Verify it correctly: reads manifest.json, infers egg type (cubby/organism), validates schema,"
+        },
+        {
+          "capability": "neighborhood_protocol_version_pinning",
+          "tag": "native",
+          "severity": "low",
+          "fix": "When neighborhood-ops (mount/join/stash/hatch/load) run, verify they check the neighborhood.json schema version and bail if incompatible. Cu"
+        }
+      ],
+      "specialist_owned": [
+        "front_door_hero"
+      ]
+    },
+    {
+      "domain": "Doorman Chat Surface",
+      "native_covered": [
+        {
+          "capability": "doorman_copilot_auth",
+          "action": "none"
+        },
+        {
+          "capability": "doorman_chat",
+          "action": "none"
+        },
+        {
+          "capability": "doorman_pyodide_agents",
+          "action": "none"
+        },
+        {
+          "capability": "doorman_memory_pane",
+          "action": "none"
+        },
+        {
+          "capability": "doorman_model_selector",
+          "action": "none"
+        },
+        {
+          "capability": "doorman_ascended_export",
+          "action": "none"
+        },
+        {
+          "capability": "doorman_private_indicator",
+          "action": "none"
+        },
+        {
+          "capability": "doorman_actions_row",
+          "action": "none"
+        },
+        {
+          "capability": "doorman_frame_log",
+          "action": "none"
+        },
+        {
+          "capability": "doorman_offline_fallback",
+          "action": "none"
+        }
+      ],
+      "to_close": [],
+      "specialist_owned": [
+        "doorman_copilot_auth",
+        "doorman_chat",
+        "doorman_pyodide_agents",
+        "doorman_memory_pane",
+        "doorman_model_selector",
+        "doorman_ascended_export",
+        "doorman_private_indicator",
+        "doorman_actions_row",
+        "doorman_frame_log",
+        "doorman_offline_fallback"
+      ]
+    },
+    {
+      "domain": "Dream Catcher (Parallel-Dimension Reassimilation)",
+      "native_covered": [
+        {
+          "capability": "frame_log_content_addressed",
+          "action": "N/A - not implemented"
+        },
+        {
+          "capability": "dream_catcher_diff",
+          "action": "N/A - not implemented"
+        },
+        {
+          "capability": "shared_frames_classification",
+          "action": "N/A - not implemented"
+        },
+        {
+          "capability": "parallel_only_frames",
+          "action": "N/A - not implemented"
+        },
+        {
+          "capability": "contradiction_detection",
+          "action": "N/A - not implemented"
+        },
+        {
+          "capability": "reassimilation_pr",
+          "action": "N/A - not implemented"
+        },
+        {
+          "capability": "cross_species_check",
+          "action": "N/A - not implemented"
+        }
+      ],
+      "to_close": [
+        {
+          "capability": "frame_log_content_addressed",
+          "tag": "native",
+          "severity": "blocker",
+          "fix": "Extend agent with frame-logging action (or integrate with rapp-doorman/rapp-frame library) to embed prev_hash/hash chain in egg manifests. R"
+        },
+        {
+          "capability": "contradiction_detection",
+          "tag": "native",
+          "severity": "blocker",
+          "fix": "Integrate frame comparison logic (requires rapp-frame/1.0 knowledge and hash matching). Add a contradiction_check action or enrich dream_cat"
+        },
+        {
+          "capability": "reassimilation_pr",
+          "tag": "native",
+          "severity": "high",
+          "fix": "Add a reassimilation_pr action (or extend dream_catcher_export) that accepts two egg paths, identifies parallel-only frames, and calls gh is"
+        },
+        {
+          "capability": "cross_species_check",
+          "tag": "native",
+          "severity": "high",
+          "fix": "Add a lineage check in hatch/cubby_import (compare rappid fields in both eggs' cubby.json), or add a validate_species action. Warn if rappid"
+        }
+      ],
+      "specialist_owned": [
+        "dream_catcher_diff",
+        "shared_frames_classification",
+        "parallel_only_frames"
+      ]
+    },
+    {
+      "domain": "MMR & Leaderboard (Global Rating & Tier Ladder)",
+      "native_covered": [],
+      "to_close": [],
+      "specialist_owned": [
+        "compute_mmr_local",
+        "mmr_calibration",
+        "mmr_activity_decay",
+        "lineage_gift_snapshot",
+        "lineage_gift_immortal",
+        "species_leaderboard",
+        "lineage_rollup",
+        "tier_ladder"
+      ]
+    },
+    {
+      "domain": "Resurrection Ceremony (Stasis Recovery)",
+      "native_covered": [
+        {
+          "capability": "[organism_model] Digital organism concept (cubby_collect → organism marked)",
+          "action": "cubby_collect"
+        }
+      ],
+      "to_close": [
+        {
+          "capability": "[resurrection_ceremony] Run ceremony on stale organism (activity multiplier at 0.45) to assess + compose recovery actions",
+          "tag": "native",
+          "severity": "blocker",
+          "fix": "Add action=resurrection_ceremony that: (1) checks if a cubby/organism has activity_multiplier<=0.45, (2) invokes the Resurrection tool (via "
+        },
+        {
+          "capability": "[resurrection_frame] Emit kind=resurrection rapp-frame/1.0 to mark comeback moment",
+          "tag": "native",
+          "severity": "blocker",
+          "fix": "Add 'resurrection' to EVENT_KINDS (line 105). Wire action=resurrection_ceremony (or a sub-step within it) to emit event with kind='resurrect"
+        },
+        {
+          "capability": "[resurrection_lift_multiplier] Fresh commit at ceremony lifts activity multiplier from 0.45 (Stasis) back to 1.0 (Active)",
+          "tag": "native",
+          "severity": "blocker",
+          "fix": "Extend cubby.json schema to include activity_multiplier (default 1.0). In action=resurrection_ceremony (and load/sync/stash on commit), afte"
+        }
+      ],
+      "specialist_owned": []
+    },
+    {
+      "domain": "Proximity Discovery (Location-Based Swarm)",
+      "native_covered": [
+        {
+          "capability": "plant_location_tied",
+          "action": "NOT COVERED — rapp_agent.py does NOT perform planting"
+        },
+        {
+          "capability": "proximity_discovery",
+          "action": "NOT COVERED — rapp_agent.py does NOT have proximity matching"
+        },
+        {
+          "capability": "public_facets_consent",
+          "action": "NOT COVERED — rapp_agent.py does NOT manage card.json public_facets field"
+        }
+      ],
+      "to_close": [
+        {
+          "capability": "proximity_discovery",
+          "tag": "native",
+          "severity": "blocker",
+          "fix": "Add action=discover_proximity (or action=proximity, cubby=... latitude=... longitude=... precision=5) to rapp_agent.py that calls into proxi"
+        },
+        {
+          "capability": "public_facets_consent",
+          "tag": "native",
+          "severity": "blocker",
+          "fix": "Add action=facets_declare cubby=... facets=<json-array> OR action=card_set cubby=... public_facets=<json> to let operators declare which asp"
+        }
+      ],
+      "specialist_owned": [
+        "plant_location_tied"
+      ]
+    },
+    {
+      "domain": "Governance & Drift Detection (ecosystem contract, audit, classification, directionality, offline mode)",
+      "native_covered": [
+        {
+          "capability": "ecosystem_contract",
+          "action": "refresh, ecosystem"
+        },
+        {
+          "capability": "drift_classification",
+          "action": "NONE"
+        },
+        {
+          "capability": "drift_directionality",
+          "action": "NONE"
+        },
+        {
+          "capability": "ecosystem_audit",
+          "action": "NONE"
+        },
+        {
+          "capability": "offline_audit",
+          "action": "NONE"
+        }
+      ],
+      "to_close": [
+        {
+          "capability": "ecosystem_contract (per-kind file requirements)",
+          "tag": "native",
+          "severity": "high",
+          "fix": "Add action=contracts (or action=contract kind=<kind>) to list the 9 CONTRACTS from ecosystem_contract.py. Either ship CONTRACTS dict embedde"
+        },
+        {
+          "capability": "drift_classification (enumerate drift types + mark drifts)",
+          "tag": "native",
+          "severity": "high",
+          "fix": "Add action=drift_types to enumerate the 5 drift categories (missing_files/schema_drift/rappid_drift/kernel_drift/identity_block_missing). Op"
+        },
+        {
+          "capability": "drift_directionality (push vs pull vs informational)",
+          "tag": "native",
+          "severity": "high",
+          "fix": "Add action=classify_drift result=<audit_result_json> to apply _classify_drift() logic (or embed it into rapp_agent.py). Would map drift entr"
+        }
+      ],
+      "specialist_owned": [
+        "ecosystem_audit (full audit machinery)",
+        "offline_audit (--offline fixture mode)"
+      ]
+    },
+    {
+      "domain": "Network Protocol & Discovery (Articles XLVI-XLVIII)",
+      "native_covered": [
+        {
+          "capability": "rappid_resolution_canonical_urls",
+          "action": "door"
+        },
+        {
+          "capability": "consume_grail_specs",
+          "action": "spec|ecosystem|find|refresh"
+        },
+        {
+          "capability": "article_xlvi_foundational_knowledge",
+          "action": "spec"
+        }
+      ],
+      "to_close": [
+        {
+          "capability": "network_seed_bootstrap",
+          "tag": "native",
+          "severity": "blocker",
+          "fix": "Add action=network_seed (or action=sniff) that wraps tools/sniff_network.py's sniff_via_raw() function. User says 'discover the network' → a"
+        },
+        {
+          "capability": "decentralized_discovery_bfs",
+          "tag": "native",
+          "severity": "blocker",
+          "fix": "Add action=sniff (or action=discover) that calls sniff_via_raw(seed_url, max_hops, include_private, fetch_estates). User says 'show me the n"
+        },
+        {
+          "capability": "substrate_federation_multisubstrate",
+          "tag": "native",
+          "severity": "high",
+          "fix": "Add action=sniff_lan (wraps sniff_via_bonjour; for LAN discovery via Bonjour _rapp-estate._tcp.local). Add action=sniff_seed (wraps sniff_vi"
+        },
+        {
+          "capability": "lan_bonjour_advertise",
+          "tag": "native",
+          "severity": "blocker",
+          "fix": "Add action=advertise_lan that wraps tools/lan_advertise.py main(). User says 'broadcast on my LAN' → action=advertise_lan [port=8080] [servi"
+        },
+        {
+          "capability": "sneakernet_egg_import",
+          "tag": "native",
+          "severity": "blocker",
+          "fix": "Add action=import_peer_egg (or action=import_egg) that wraps tools/import_peer_egg.py::import_egg(). User says 'import the egg I received' →"
+        }
+      ],
+      "specialist_owned": [
+        "estate_beacon_publish"
+      ]
+    },
+    {
+      "domain": "MCP Integration (Model Context Protocol Transport)",
+      "native_covered": [],
+      "to_close": [],
+      "specialist_owned": [
+        "agents_as_mcp_tools",
+        "brainstem_over_mcp",
+        "static_mcp_profile"
+      ]
+    },
+    {
+      "domain": "Agent-Built Web (Rio & RioNet)",
+      "native_covered": [],
+      "to_close": [
+        {
+          "capability": "agent_emits_html",
+          "tag": "native",
+          "severity": "blocker",
+          "fix": "Create a separate rio_ui_agent that: imports Rio, exposes ui_build/ui_render actions, and returns HTML-capable response payloads. Or add to "
+        }
+      ],
+      "specialist_owned": [
+        "rio_agent_framework",
+        "rionet_federation"
+      ]
+    },
+    {
+      "domain": "Ant Farm (Collective Intelligence)",
+      "native_covered": [],
+      "to_close": [
+        {
+          "capability": "ant_pheromone",
+          "tag": "native",
+          "severity": "blocker",
+          "fix": "Add action `ant_pheromone` with params `issue=<URL|number> state=<pheromone-json> [validate_chain=bool]` that validates the rapp-pheromone/1"
+        },
+        {
+          "capability": "colony_observer",
+          "tag": "native",
+          "severity": "blocker",
+          "fix": "Add action `colony_observer` with params `where=<neighborhood|hive-repo> [limit=50]` that queries GitHub Issues API, validates pheromones, c"
+        },
+        {
+          "capability": "ant_farm_offspring",
+          "tag": "install-routed",
+          "severity": "blocker",
+          "fix": "Extend cubby_new to accept `kind=ant-farm what=<swarm purpose>` and store swarm metadata + gating rules in cubby.json; OR add new action `sw"
+        }
+      ],
+      "specialist_owned": [
+        "ant_tick"
+      ]
+    },
+    {
+      "domain": "Metropolis Tracker (Emergent City)",
+      "native_covered": [
+        {
+          "capability": "estate overview (neighborhoods operator belongs to)",
+          "action": "estate"
+        },
+        {
+          "capability": "neighborhood discovery by individual door resolution",
+          "action": "door rappid=…"
+        },
+        {
+          "capability": "ecosystem/find (search parts database)",
+          "action": "find query=…"
+        },
+        {
+          "capability": "neighborhood mounting and joining (subscribe to a specific one)",
+          "action": "mount / join"
+        }
+      ],
+      "to_close": [
+        {
+          "capability": "[metropolis_index] View pages/metropolis/index.json (all neighborhoods in this tracker)",
+          "tag": "native",
+          "severity": "blocker",
+          "fix": "Add action=metropolis_browse (or action=metropolis_list) that fetches rapp-metropolis-index/1.0 from a tracker URL (default to canonical), p"
+        },
+        {
+          "capability": "[metropolis_entry] Each neighborhood tracked as rapp-metropolis-entry/1.0 schema inspection",
+          "tag": "native",
+          "severity": "blocker",
+          "fix": "Extend the metropolis_browse action (above) to accept a query param (e.g., query=<name|kind|tag>) and return filtered entries with full rapp"
+        },
+        {
+          "capability": "[tracker_federation] Trackers can list each other; walk federated_trackers to compose multi-tracker view",
+          "tag": "native",
+          "severity": "high",
+          "fix": "Add action=metropolis_federation that accepts a tracker_url and follows federated_trackers[] to compose a union of entries across all federa"
+        }
+      ],
+      "specialist_owned": [
+        "[town_to_city_growth] Graft adds neighborhoods to _metropolis.json; auto-nesting into towns/cities"
+      ]
+    },
+    {
+      "domain": "Registry Observatory (Rapp-God & Rapp-Map)",
+      "native_covered": [
+        {
+          "capability": "rapp_god_specs",
+          "action": "spec"
+        },
+        {
+          "capability": "rapp_god_specs",
+          "action": "refresh"
+        },
+        {
+          "capability": "rapp_map_neurons (partial)",
+          "action": "ecosystem"
+        },
+        {
+          "capability": "rapp_map_neurons (partial)",
+          "action": "find"
+        },
+        {
+          "capability": "schema_drift_watch (partial)",
+          "action": "ecosystem"
+        },
+        {
+          "capability": "schema_drift_watch (partial)",
+          "action": "find"
+        }
+      ],
+      "to_close": [
+        {
+          "capability": "rapp_map_neurons (complete neuron mesh view)",
+          "tag": "native",
+          "severity": "high",
+          "fix": "add action=neurons (or enhance ecosystem) to fetch + parse rapp-map/neurons-manifest.json and return neuron records indexed by schema versio"
+        },
+        {
+          "capability": "schema_drift_watch (dedicated drift action)",
+          "tag": "native",
+          "severity": "medium",
+          "fix": "add action=drift_check [repo=<owner/repo>] to run schema-version audit against god-registry, return drift alerts grouped by severity (blocke"
+        }
+      ],
+      "specialist_owned": [
+        "agent_verify_action (ecosystem-wide verify/audit)"
+      ]
+    },
+    {
+      "domain": "Tier 2: Cloud Brainstem (Azure Functions)",
+      "native_covered": [
+        {
+          "capability": "tier2_vendored_agents — Agents run from rapp_swarm/_vendored/, same *_agent.py files as Tier 1",
+          "action": "load"
+        }
+      ],
+      "to_close": [],
+      "specialist_owned": [
+        "tier2_function_app — Deploy brainstem to Azure Functions (same /chat surface as local Tier 1)",
+        "tier2_arm_deploy — Use ARM template (installer/azuredeploy.json) to provision storage + function + auth in one click",
+        "tier2_path_prefix — Routes under /api/* (path-prefixed) but same /chat envelope as Tier 1",
+        "tier2_entra_rbac — Use Entra ID managed identity + RBAC for storage access (no API keys in code)"
+      ]
+    },
+    {
+      "domain": "Tier 3: Copilot Studio Enterprise",
+      "native_covered": [
+        {
+          "capability": "tier3_agent_contract",
+          "action": "__manifest__ + perform()"
+        }
+      ],
+      "to_close": [
+        {
+          "capability": "tier3_solution_bundle",
+          "tag": "native",
+          "severity": "blocker",
+          "fix": "Add action=import_bundle with param path=<zip_path> that validates, unpacks, and registers the bundle metadata and any embedded agents/organ"
+        },
+        {
+          "capability": "tier3_surfaces",
+          "tag": "native",
+          "severity": "blocker",
+          "fix": "Add action=studio_config with params studio_url, surface_targets (Teams|M365|web), and routing rules. Studio should publish the agent's acti"
+        },
+        {
+          "capability": "tier3_function_app_wiring",
+          "tag": "install-routed",
+          "severity": "blocker",
+          "fix": "Add action=set_function_app with param endpoint=<https://function-app.azurewebsites.net> that stores the cloud URL, then route heavy-lift in"
+        }
+      ],
+      "specialist_owned": []
+    },
+    {
+      "domain": "Delimited Slots & Output Routing (Voice & Twin)",
+      "native_covered": [
+        {
+          "capability": "voice_slot",
+          "action": "System infrastructure (not agent responsibility)"
+        },
+        {
+          "capability": "twin_slot",
+          "action": "System infrastructure (not agent responsibility)"
+        },
+        {
+          "capability": "twin_inner_tags",
+          "action": "System infrastructure (not agent responsibility)"
+        },
+        {
+          "capability": "time_travel_safe_slots",
+          "action": "Constitution Art. II.3 contract (backward compatibility, old→new)"
+        },
+        {
+          "capability": "slot_mechanism_kernel",
+          "action": "Constitution Art. II.2 + Art. I (kernel forever)"
+        }
+      ],
+      "to_close": [
+        {
+          "capability": "twin_response splitting (active implementation in brainstem.py)",
+          "tag": "native",
+          "severity": "medium",
+          "fix": "Extend brainstem.py /chat route to split |||TWIN||| the same way it splits |||VOICE||| — currently VOICE_MODE=true splits on |||VOICE||| but"
+        }
+      ],
+      "specialist_owned": [
+        "agent-level slot emission control (e.g., force-disable slots for a specific action)",
+        "structured voice format negotiation (agent declares if it emits slots)"
+      ]
+    }
+  ],
+  "required_actions": [
+    "spec",
+    "help",
+    "protocol",
+    "ecosystem",
+    "find",
+    "refresh",
+    "whoami",
+    "estate",
+    "door",
+    "cubby_new",
+    "cubby_list",
+    "cubby_show",
+    "cubby_collect",
+    "cubby_egg",
+    "cubby_import",
+    "super_rar",
+    "mount",
+    "join",
+    "browse",
+    "stash",
+    "hatch",
+    "load",
+    "unload",
+    "sync",
+    "branch",
+    "invite",
+    "qr",
+    "enter",
+    "show_and_tell",
+    "install",
+    "route",
+    "mint",
+    "scaffold",
+    "plant",
+    "memory",
+    "bond",
+    "lineage",
+    "beacon",
+    "sniff",
+    "mmr",
+    "verify"
+  ],
+  "specialist_agents": [
+    {
+      "capability": "twin lifecycle (boot / stop / archive / unarchive / purge / list)",
+      "owner_agent": "@rapp/twin_agent (twin_agent.py)",
+      "reach": "install @rapp/twin_agent"
+    },
+    {
+      "capability": "egg hatch/introspect/route across the cartridge family",
+      "owner_agent": "@rapp/egg_hatcher (egg_hatcher_agent.py)",
+      "reach": "install @rapp/egg_hatcher — or use the agent's native hatch for cubby/estate eggs"
+    },
+    {
+      "capability": "deep memory (public memory.json commits + per-user private Issue memories + ascended export)",
+      "owner_agent": "manage_memory_agent.py / context_memory_agent.py",
+      "reach": "install the memory agents — the god agent natively does the LOCAL memory tier"
+    },
+    {
+      "capability": "sealed encryption (§8 AES-256-GCM sealed-door)",
+      "owner_agent": "rapp-doorman",
+      "reach": "install the doorman skill"
+    },
+    {
+      "capability": "live WebRTC session capture (brainstem-egg/2.3-session)",
+      "owner_agent": "pages/vbrainstem.html exportCart",
+      "reach": "out-of-scope for an agent — a live tether produces it; the god agent can hatch/mount one"
+    },
+    {
+      "capability": "rapplication source editing",
+      "owner_agent": "a dedicated source-editor agent / Copilot Studio (Tier 3)",
+      "reach": "out-of-scope for the god agent"
+    },
+    {
+      "capability": "graft / launch / dock / bond-rhythm / lineage-rollup (bond techniques)",
+      "owner_agent": "graft_neighborhood_agent / launch_to_public_agent / dock_agent / bond_rhythm_agent / lineage_rollup_agent",
+      "reach": "install from the species grail (NOTE: several currently exist only as orphaned .pyc — see drift backlog)"
+    },
+    {
+      "capability": "dream-catcher reassimilation / resurrection ceremony / proximity discovery / ant farm / MMR-leaderboard",
+      "owner_agent": "the matching specialist agents in rapp_brainstem/agents/",
+      "reach": "install the specialist; the god agent natively computes single-door mmr + records the lineage frames"
+    }
+  ],
+  "drift_triangle": {
+    "purpose": "Four independent representations of the same truth so any divergence is detectable. No single point can silently drift.",
+    "legs": [
+      {
+        "leg": "rapp_agent.py",
+        "holds": "the executable contract — its action enum is the capability surface",
+        "source": "@rapp/rapp in kody-w/RAR + rapp_brainstem/agents/"
+      },
+      {
+        "leg": "rapp-god",
+        "holds": "this ecosystem-spec.json (machine) + ECOSYSTEM_SPEC.md (human)",
+        "source": "kody-w/rapp-god/api/v1/ecosystem-spec.json"
+      },
+      {
+        "leg": "rapp-map",
+        "holds": "byte-identical ecosystem-spec.json + ECOSYSTEM_SPEC.md",
+        "source": "kody-w/rapp-map/ecosystem-spec.json"
+      },
+      {
+        "leg": "RAPP-Bible",
+        "holds": "the human-facing rendering of this spec — the one-source share",
+        "source": "kody-w/RAPP-Bible"
+      }
+    ],
+    "checks": [
+      "sha256(rapp-god/ecosystem-spec.json) == sha256(rapp-map/ecosystem-spec.json)  — the two independent mirrors must match",
+      "rapp_agent.py action enum  ⊇  ecosystem-spec.json.required_actions  — the agent implements at least every required action",
+      "RAPP-Bible spec_version == ecosystem-spec.json.version  — the bible is pinned to the spec it renders",
+      "every capability_domain capability tagged native maps to a live action in the agent's enum"
+    ],
+    "run_via": "rapp_agent.py action=verify  (one agent self-checks all legs)  — or summon the `ecosystem-sync` swarm to re-derive the whole spec from the live ecosystem and reconcile drift anywhere."
+  },
+  "operator_journeys": [
+    {
+      "journey": "fresh install in the woods",
+      "flow": "drop rapp_agent.py → 'who am I / set me up' (mint → scaffold → plant) → 'what exists' (spec/ecosystem/find, all embedded offline)"
+    },
+    {
+      "journey": "join a neighbor's neighborhood and use what they built",
+      "flow": "door (resolve their rappid) → mount → join → browse → super_rar where=neighborhood query=X → load (stream git-invisible) / install (pull an agent)"
+    },
+    {
+      "journey": "carve a digital organism out of my estate and share it",
+      "flow": "super_rar where=local query=X → cubby_collect (group the hits) → cubby_egg → mount a neighborhood → hatch (mirror it in) — records a bond"
+    },
+    {
+      "journey": "reach any deep capability I don't have",
+      "flow": "route need='...' → it names the specialist + the exact install → install → now invoke that specialist via NL"
+    },
+    {
+      "journey": "stay aligned with canon",
+      "flow": "refresh (pull the grail) → spec (freshest) → verify (4-leg drift check)"
+    }
+  ],
+  "schemas_ref": "The full ~80-schema registry lives in ECOSYSTEM_MAP.md §5 (rapp-*/N.M + brainstem-egg/*). Canonical families: identity (rapp-rappid/2.0, rapp-door/1.0, rapp-estate/1.1, rapp-facets/1.0), cartridges (brainstem-egg/2.2-organism|2.2-rapplication|2.3-session|2.3-neighborhood|2.3-estate|2.3-cubby), neighborhoods (rapp-neighborhood/1.0, rapp-neighborhood-members/1.0, rapp-rar-index/1.0), private-cubby (rapp-cubby/1.0, rapp-super-rar/1.0, rapp-payphone-dial/1.0), federation (rapp-twin-chat/1.0, rapp-public-facets/1.0, rapp-network beacon), governance (rapp-ecosystem-graph/1.0, rapp-canon/1.0, rapp-drift-report/1.0), neuron mesh (rapp-neuron/1.0, rapp-neuron-mesh/1.0).",
+  "repos": {
+    "kernel & install": [
+      "RAPP (species root: kernel + specs)",
+      "rapp_kernel (frozen DNA)",
+      "rapp-installer (curl|bash front door)",
+      "RAPP_Desktop",
+      "rapp-vscode-extension"
+    ],
+    "identity & registry": [
+      "rapp-god (registry of every part + version; drift observatory; hosts this spec)",
+      "rapp-map (which repo houses which part; hosts this spec; the neuron mesh)",
+      "RAR (single-file agent registry)",
+      "rapp-static-apis"
+    ],
+    "stores & catalogs": [
+      "RAPP_Store (rapplications)",
+      "RAPP_Sense_Store (senses)",
+      "rapp-egg-hub (eggs)"
+    ],
+    "run a brainstem": [
+      "vbrainstem (browser Pyodide runtime)",
+      "rapp-brainstem-sdk (headless /chat)"
+    ],
+    "channels & trust": [
+      "rapp-sealed (§8 codec)",
+      "rapp-kite (operate kited twins)",
+      "rapp-kited-twin",
+      "rapp-doorman (sealed-door)",
+      "rapp-neighborhood-protocol (wire spec)"
+    ],
+    "front doors & neighborhoods": [
+      "rapp-vneighborhood (template)",
+      "rapp-commons (global town square)",
+      "rapp-god-forum",
+      "rapp-resident (cloud relay)"
+    ],
+    "the agent-built web": [
+      "rionet (rapp.robots.txt → rappbot → RIO)",
+      "rio (the browser, OSI L7)"
+    ],
+    "mcp & cartridges": [
+      "rapp-mcp (MCP gateway)",
+      "racon (experience cartridges)",
+      "rapp-carts (cartridge spec)"
+    ],
+    "memory & social": [
+      "CommunityRAPP (hippocampus)",
+      "rappterbook (social net for agents)"
+    ],
+    "bible & spec": [
+      "RAPP-Bible (the one-source human hub; renders this spec)"
+    ]
+  },
+  "_meta": {
+    "generated_from": "the swarm-verified coverage audit (verify-god-agent-coverage) + ECOSYSTEM_MAP.md + ECOSYSTEM.md + OSI.md + the agent's embedded ECOSYSTEM_PARTS",
+    "regenerate": "summon the `ecosystem-sync` swarm — it re-derives this spec from the live ecosystem and reconciles all four legs",
+    "note": "capability_domains and required_actions are appended by the spec builder once the agent's final action enum is confirmed; this file is then published byte-identical to rapp-god and rapp-map."
+  },
+  "required_actions_groups": {
+    "existing": [
+      "spec",
+      "help",
+      "protocol",
+      "ecosystem",
+      "find",
+      "refresh",
+      "whoami",
+      "estate",
+      "door",
+      "cubby_new",
+      "cubby_list",
+      "cubby_show",
+      "cubby_collect",
+      "cubby_egg",
+      "cubby_import",
+      "super_rar",
+      "mount",
+      "join",
+      "browse",
+      "stash",
+      "hatch",
+      "load",
+      "unload",
+      "sync",
+      "branch",
+      "invite",
+      "qr",
+      "enter",
+      "show_and_tell"
+    ],
+    "added_to_close_gaps": [
+      "install",
+      "route",
+      "mint",
+      "scaffold",
+      "plant",
+      "memory",
+      "bond",
+      "lineage",
+      "beacon",
+      "sniff",
+      "mmr",
+      "verify"
+    ],
+    "note": "The live agent's metadata enum must be a superset of existing+added. `action=verify` asserts this; mismatch = drift."
+  }
+}
