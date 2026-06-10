@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>☎️ The Payphone — dial a private RAPP door</title>
+<!--
+  The Payphone — a GENERIC public dialer for PRIVATE RAPP doors.
+
+  Some neighborhoods have no public front door — by design, for privacy.
+  Their repos are private; to outsiders they 404 (invisible). Members reach
+  them by dialing the door's rappid here with their OWN GitHub auth — the
+  same signed-in account that holds their collaborator access (local
+  brainstems and kited vTwins alike, CONSTITUTION Art. XLVII).
+
+  Privacy properties (load-bearing):
+  - This page names NO private door. It is a dial pad, nothing more.
+  - The rappid is the phone number (Art. XLVI: the rappid IS the address —
+    `rappid:@<owner>/<slug>:<hash>` parses to github.com/<owner>/<slug> by
+    string derivation alone, per ESTATE_SPEC §5; tools/door_address.py is
+    the canonical parser, mirrored here for the browser).
+  - Dialing calls api.github.com directly from YOUR browser with YOUR
+    token. No relay, no server of ours, nothing logged anywhere but GitHub.
+  - Wrong number and no-access render IDENTICALLY (GitHub returns 404 for
+    private repos you cannot see). Existence is never confirmed to outsiders.
+  - Reads the Doorman token convention (localStorage `rapp_settings`,
+    field `ghuToken`) so a signed-in vBrainstem dials without re-auth.
+    NOTE: Copilot device-code tokens are scoped `read:user` and cannot see
+    private repos — dial with a token that has `repo` scope (`gh auth token`).
+-->
+<style>
+  :root { color-scheme: dark; }
+  body { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+         background:#0a0c10; color:#e6edf3; max-width:680px; margin:3rem auto;
+         padding:0 1rem; line-height:1.6; }
+  h1 { color:#ffd33d; font-size:1.4rem; }
+  input, button { font:inherit; border-radius:8px; border:1px solid #30363d;
+         background:#161b22; color:#e6edf3; padding:.55rem .8rem; }
+  input { width:100%; box-sizing:border-box; margin:.3rem 0 .8rem; }
+  button { cursor:pointer; background:#1f6feb; border-color:#1f6feb; }
+  button:hover { filter:brightness(1.15); }
+  .muted { color:#8b949e; font-size:.85rem; }
+  .card { border:1px solid #30363d; border-radius:10px; padding:1rem 1.2rem;
+          margin:1rem 0; background:#0d1117; }
+  .dead { color:#f85149; }
+  .live { color:#3fb950; }
+  code { background:#161b22; padding:.1rem .35rem; border-radius:4px; }
+  a { color:#79c0ff; }
+  label { display:flex; gap:.45rem; align-items:center; font-size:.85rem;
+          color:#8b949e; margin-bottom:.8rem; }
+  .qrwrap { text-align:center; }
+  .qrwrap svg, .qrwrap img { width:240px; height:240px; background:#fff;
+          padding:12px; border-radius:10px; }
+  .row { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; }
+  .ghost { background:transparent; border-color:#30363d; color:#79c0ff; }
+</style>
+<!-- Same QR encoder the brainstem UI uses (canonical tiny lib). The payphone
+     is online-only by nature (it dials api.github.com), so a CDN script is
+     acceptable here; if it fails to load we degrade to a copyable link. -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+</head>
+<body>
+<h1>☎️ The Payphone</h1>
+<p class="muted">A public dial pad for <strong>private RAPP doors</strong>.
+Some neighborhoods keep no public front door — on purpose. If you belong
+inside one, you were handed its rappid (an invite egg, a QR, a message).
+Dial it with your own GitHub auth. If the door isn't yours to see, the line
+just rings: <code>404</code> — same as a number that doesn't exist.</p>
+<p class="muted">The payphone is <strong>just the handshake</strong>: it
+verifies you can read the door, then hands you into the live room, which runs
+<strong>end-to-end encrypted over WebRTC</strong> (DTLS peer-to-peer + the §8
+sealed channel keyed by a collaborator-gated secret). Nothing of the live
+session passes through us or the broker — only ciphertext.</p>
+
+<!-- Shown when arriving via a scanned invite QR (?dial=) or a share request
+     (?share=). Populated by the script; hidden otherwise. -->
+<div id="invite" class="card" style="display:none"></div>
+
+<div class="card">
+  <strong>1 · The number (a rappid, or <code>owner/repo</code>)</strong>
+  <input id="rappid" placeholder="rappid:@owner/slug:64hex   ·   or   owner/repo" autocomplete="off" spellcheck="false">
+  <strong>2 · Sign in (your GitHub account — no token to paste)</strong>
+  <div class="row" style="margin:.3rem 0 .6rem">
+    <button id="signin">🔓 Sign in with GitHub</button>
+    <span class="muted" id="who"></span>
+  </div>
+  <div id="device" class="muted" style="display:none;margin-bottom:.6rem"></div>
+  <details style="margin-bottom:.6rem">
+    <summary class="muted" style="cursor:pointer">advanced — paste a token instead</summary>
+    <input id="token" type="password" placeholder="ghp_… / gho_…   (terminal: gh auth token; needs repo scope)" autocomplete="off">
+    <label><input type="checkbox" id="remember" style="width:auto;margin:0">
+      remember in this browser (Doorman <code>rapp_settings</code>)</label>
+  </details>
+  <div class="row">
+    <button id="dial">Dial</button>
+    <button id="shareBtn" class="ghost" title="Make a QR to hand out">📲 Share this door as a QR</button>
+    <span class="muted" id="hint"></span>
+  </div>
+</div>
+
+<div id="result"></div>
+<div id="share"></div>
+
+<p class="muted">The payphone runs entirely in your browser: your token goes
+to <code>api.github.com</code> and nowhere else. Spec: the rappid IS the
+address (CONSTITUTION Art. XLVI; ESTATE_SPEC §5 — canonical parser
+<code>tools/door_address.py</code>). Substrate-agnostic access for local
+brainstems and kited vTwins alike (Art. XLVII).</p>
+
+<script>
+(function () {
+  // Doorman convention — a signed-in vBrainstem already holds a token here.
+  function settings() {
+    try { return JSON.parse(localStorage.getItem('rapp_settings') || '{}'); }
+    catch { return {}; }
+  }
+
+  // Escape EVERY repo-controlled string before it touches innerHTML. A
+  // private repo is collaborator-gated, but this page holds the caller's
+  // repo-scoped GitHub token in the DOM + localStorage — a malicious cubby
+  // entry (`<img src=x onerror=...>`) would otherwise exfiltrate it. Defense
+  // in depth on an auth-bearing page.
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+  const tokenEl = document.getElementById('token');
+
+  // ── Sign in with GitHub — the Doorman device-code flow (mirrors
+  //    sphere.html / vbrainstem.html) so kited twins authenticate with their
+  //    logged-in account instead of pasting a token. Same auth worker; the
+  //    only difference is scope: we use the GitHub CLI's public client with
+  //    `repo` scope (Copilot's read:user can't see private repos). The token
+  //    lands in the same rapp_settings.ghuToken a signed-in vBrainstem reuses.
+  const AUTH_WORKER_URL = 'https://rapp-auth.kwildfeuer.workers.dev';
+  const GH_CLI_CLIENT_ID = '178c6fc778ccc68e1d6a';   // public; grants repo scope
+  const REPO_SCOPE = 'repo read:org';
+  function currentToken() { return (tokenEl.value || '').trim() || settings().ghuToken || ''; }
+  async function showWho() {
+    const t = currentToken(); if (!t) return;
+    try { const r = await gh('/user', t); if (r.ok) {
+      const u = await r.json();
+      document.getElementById('who').textContent = 'signed in as ' + u.login;
+    } } catch {}
+  }
+  if (settings().ghuToken) { tokenEl.value = settings().ghuToken; showWho(); }
+
+  let devicePoll = null;
+  async function signIn() {
+    const dev = document.getElementById('device');
+    dev.style.display = '';
+    dev.textContent = 'starting GitHub sign-in…';
+    let start;
+    try {
+      const r = await fetch(AUTH_WORKER_URL + '/api/auth/device', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ client_id: GH_CLI_CLIENT_ID, scope: REPO_SCOPE }) });
+      start = await r.json();
+    } catch (e) { dev.textContent = 'sign-in unreachable: ' + e.message; return; }
+    if (!start.user_code) { dev.textContent = 'sign-in failed to start.'; return; }
+    const uri = start.verification_uri || 'https://github.com/login/device';
+    dev.innerHTML = 'Enter code <strong style="font-size:1.2em;letter-spacing:.15em">' +
+      esc(start.user_code) + '</strong> at <a href="' + esc(uri) +
+      '" target="_blank" rel="noopener">' + esc(uri) + '</a> — waiting…';
+    const deadline = Date.now() + (start.expires_in || 900) * 1000;
+    clearInterval(devicePoll);
+    devicePoll = setInterval(async () => {
+      if (Date.now() > deadline) { clearInterval(devicePoll); dev.textContent = 'code expired — try again.'; return; }
+      try {
+        const r = await fetch(AUTH_WORKER_URL + '/api/auth/device/poll', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ client_id: GH_CLI_CLIENT_ID, device_code: start.device_code }) });
+        const d = await r.json();
+        if (d.access_token) {
+          clearInterval(devicePoll);
+          const s = settings(); s.ghuToken = d.access_token;
+          try { localStorage.setItem('rapp_settings', JSON.stringify(s)); } catch {}
+          tokenEl.value = d.access_token;
+          dev.style.display = 'none';
+          await showWho();
+        }
+      } catch {}
+    }, (start.interval || 5) * 1000);
+  }
+  document.getElementById('signin').addEventListener('click', signIn);
+
+  // Browser mirror of the documented derivation (ESTATE_SPEC §5).
+  // Reads the Eternity form + legacy v2; identity is opaque beyond this.
+  function parseNumber(s) {
+    s = (s || '').trim();
+    let m = s.match(/^rappid:@([A-Za-z0-9][A-Za-z0-9._-]*)\/([A-Za-z0-9][A-Za-z0-9._-]*):([a-f0-9]{32,64})$/);
+    if (m) return { owner: m[1], slug: m[2] };
+    m = s.match(/^rappid:v2:[a-z][a-z_-]*:@([A-Za-z0-9][A-Za-z0-9._-]*)\/([A-Za-z0-9][A-Za-z0-9._-]*):[0-9a-f]{32}@github\.com\//);
+    if (m) return { owner: m[1], slug: m[2] };
+    m = s.match(/^([A-Za-z0-9][A-Za-z0-9._-]*)\/([A-Za-z0-9][A-Za-z0-9._-]*)$/);
+    if (m) return { owner: m[1], slug: m[2] };
+    return null;
+  }
+
+  async function gh(path, token) {
+    const r = await fetch('https://api.github.com' + path, {
+      headers: { 'Authorization': 'Bearer ' + token,
+                 'Accept': 'application/vnd.github+json' },
+    });
+    return r;
+  }
+
+  async function ghJsonFile(owner, slug, path, token) {
+    const r = await gh(`/repos/${owner}/${slug}/contents/${path}`, token);
+    if (!r.ok) return null;
+    const d = await r.json();
+    try { return JSON.parse(atob((d.content || '').replace(/\n/g, ''))); }
+    catch { return null; }
+  }
+
+  function deadLine() {
+    return '<div class="card"><strong class="dead">☎️ That number doesn\'t ring.</strong>' +
+      '<p class="muted">404 — either nothing is there, or whatever is there ' +
+      'cannot see you (and you cannot see it). The payphone does not know ' +
+      'which, and neither does anyone watching. If you believe you belong ' +
+      'inside: check that your token has <code>repo</code> scope ' +
+      '(<code>gh auth token</code>, not a device-code token), and ask the ' +
+      'door\'s operator — out of band — whether your account has ' +
+      'collaborator access.</p></div>';
+  }
+
+  document.getElementById('dial').addEventListener('click', async () => {
+    const out = document.getElementById('result');
+    const num = parseNumber(document.getElementById('rappid').value);
+    const token = tokenEl.value.trim();
+    if (!num) { out.innerHTML = '<div class="card dead">That isn\'t a number — paste a rappid or owner/repo.</div>'; return; }
+    if (!token) { out.innerHTML = '<div class="card dead">No coin — paste a GitHub token (<code>gh auth token</code>).</div>'; return; }
+    if (document.getElementById('remember').checked) {
+      try {
+        const s = settings(); s.ghuToken = token;
+        localStorage.setItem('rapp_settings', JSON.stringify(s));
+      } catch {}
+    }
+    out.innerHTML = '<div class="card muted">dialing…</div>';
+    let repo;
+    try {
+      const r = await gh(`/repos/${num.owner}/${num.slug}`, token);
+      if (!r.ok) { out.innerHTML = deadLine(); return; }
+      repo = await r.json();
+    } catch {
+      out.innerHTML = '<div class="card dead">No dial tone — you appear to be offline. The payphone needs the network; your door\'s local clone does not.</div>';
+      return;
+    }
+    const hood = await ghJsonFile(num.owner, num.slug, 'neighborhood.json', token);
+    const cubbies = await ghJsonFile(num.owner, num.slug, 'cubbies/index.json', token);
+    // repo.full_name + repo.html_url come from GitHub's API (trusted shape:
+    // owner/repo). hood.* and cubbies.* come from repo CONTENT — escape them.
+    const fullName = esc(repo.full_name);
+    const ghUrl = encodeURI(repo.html_url || '');
+    let html = '<div class="card"><strong class="live">📞 Connected.</strong> ' +
+      `<p><strong>${esc((hood && hood.display_name) || repo.full_name)}</strong>` +
+      (hood && hood.tagline ? ` — <span class="muted">${esc(hood.tagline)}</span>` : '') + '</p>' +
+      `<p class="muted">private ${esc((hood && hood.kind) || 'door')} · ` +
+      `<a href="${ghUrl}" target="_blank" rel="noopener">open on GitHub</a></p>`;
+    if (cubbies && cubbies.cubbies && cubbies.cubbies.length) {
+      html += '<p><strong>cubbies inside:</strong></p><ul>';
+      for (const c of cubbies.cubbies) {
+        html += `<li>🗄️ <strong>${esc(c.github_login)}</strong>` +
+                (c.what_im_cooking ? ` — <span class="muted">${esc(c.what_im_cooking)}</span>` : '') + '</li>';
+      }
+      html += '</ul>';
+    }
+    html += '<p class="row"><button id="enter">🔒 Enter the live room (E2E)</button>' +
+            '<span class="muted" id="enterHint"></span></p>';
+    html += `<p class="muted">or step inside the repo: <code>gh repo clone ${fullName}</code>` +
+            ' then run the door\'s participation agent (see its README / CONTRIBUTING).</p></div>';
+    out.innerHTML = html;
+    // The handshake handoff: fetch the collaborator-gated channel secret, stash
+    // it + the token IN MEMORY (sessionStorage, same-origin, never the URL/QR),
+    // and open the E2E lobby. The payphone's job ends here.
+    const enter = document.getElementById('enter');
+    if (enter) enter.addEventListener('click', async () => {
+      document.getElementById('enterHint').textContent = 'fetching the sealed-channel key…';
+      let login = '';
+      try { const u = await gh('/user', token); if (u.ok) login = (await u.json()).login; } catch {}
+      const cs = await ghJsonFile(num.owner, num.slug, 'channel-secret.json', token);
+      if (!cs || !cs.secret) {
+        document.getElementById('enterHint').textContent =
+          'no channel secret readable — this door may not run a sealed room, or you lack access.';
+        return;
+      }
+      try {
+        sessionStorage.setItem('rapp_door_handshake', JSON.stringify({
+          door: num.owner + '/' + num.slug, secret: cs.secret, token, login,
+        }));
+      } catch {}
+      // door (non-secret) in the URL; secret stays in sessionStorage only.
+      location.href = 'vneighborhood.html?door=' +
+        encodeURIComponent(num.owner + '/' + num.slug);
+    });
+  });
+
+  // ── The QR: share a door so others can scan their way to the payphone ──
+  // The QR encodes payphone.html?dial=<number>. Scanning it opens THIS page
+  // pre-dialed to that door; the scanner still supplies their own auth, so
+  // the QR carries a phone number, never access. Names nothing private by
+  // itself — a rappid is a public address (Art. XLVI), the 404 is the guard.
+  function payphoneUrl(number) {
+    const base = location.origin + location.pathname;
+    return base + '?dial=' + encodeURIComponent(number);
+  }
+  function renderQR(number, mountId) {
+    const mount = document.getElementById(mountId);
+    const url = payphoneUrl(number);
+    if (typeof qrcode !== 'function') {
+      mount.innerHTML = '<div class="card muted">QR encoder didn\'t load ' +
+        '(offline / blocked). Share this link instead — scanning a QR of it ' +
+        'does the same thing:<br><code>' + esc(url) + '</code></div>';
+      return;
+    }
+    const qr = qrcode(0, 'M');               // type 0 = auto-fit, M error level
+    qr.addData(url); qr.make();
+    const svg = qr.createSvgTag({ cellSize: 6, margin: 4, scalable: true });
+    mount.innerHTML =
+      '<div class="card qrwrap"><strong>📲 Scan to reach this door</strong>' +
+      '<p class="muted">Point a phone camera here → opens the payphone ' +
+      'pre-dialed to <code>' + esc(number) + '</code>. The scanner still ' +
+      'signs in with their own GitHub; collaborators get in, everyone else ' +
+      'gets 404.</p>' + svg +
+      '<p class="row" style="justify-content:center">' +
+      '<button class="ghost" id="dlQR">Download SVG</button>' +
+      '<a class="muted" href="' + esc(url) + '">copy the link</a></p></div>';
+    const dl = document.getElementById('dlQR');
+    if (dl) dl.addEventListener('click', () => {
+      const blob = new Blob([svg], { type: 'image/svg+xml' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'payphone-' + number.replace(/[^A-Za-z0-9]+/g, '-').slice(0, 40) + '.svg';
+      a.click(); URL.revokeObjectURL(a.href);
+    });
+  }
+
+  document.getElementById('shareBtn').addEventListener('click', () => {
+    const raw = document.getElementById('rappid').value.trim();
+    if (!parseNumber(raw)) {
+      document.getElementById('share').innerHTML =
+        '<div class="card dead">Type a door number (rappid or owner/repo) first, then share it.</div>';
+      return;
+    }
+    renderQR(raw, 'share');
+  });
+
+  // ── Arriving via a scanned QR or a share link ──
+  const params = new URLSearchParams(location.search);
+  const dial = params.get('dial');
+  const share = params.get('share');
+  if (dial && parseNumber(dial)) {
+    document.getElementById('rappid').value = dial;
+    const banner = document.getElementById('invite');
+    banner.style.display = '';
+    banner.innerHTML = '<strong>📲 You\'ve been handed a door.</strong>' +
+      '<p class="muted">Someone shared <code>' + esc(dial) + '</code> with ' +
+      'you. Drop in a GitHub token with <code>repo</code> scope ' +
+      '(<code>gh auth token</code>) and Dial. If your account has ' +
+      'collaborator access you\'re in; if not, it just rings 404.</p>';
+    if (settings().ghuToken) {           // signed-in vBrainstem → one tap
+      document.getElementById('hint').textContent = 'token ready — press Dial';
+    }
+  }
+  if (share && parseNumber(share)) {
+    document.getElementById('rappid').value = share;
+    renderQR(share, 'share');
+  }
+})();
+</script>
+</body>
+</html>
