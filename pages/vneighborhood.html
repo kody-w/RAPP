@@ -74,13 +74,20 @@
 <span id="doorPill" class="pill"></span><span id="countPill" class="pill"></span></p>
 
 <div id="gate" class="card" style="display:none">
-  <strong>Open me from the payphone.</strong>
-  <p class="muted">This room needs a door + a collaborator-gated channel
-  secret, handed over in memory by the payphone after it verifies your
-  GitHub access. To enter directly, paste a door (<code>owner/repo</code>)
-  and a token with <code>repo</code> scope:</p>
-  <p><input id="mDoor" placeholder="owner/repo" style="width:48%">
-     <input id="mToken" type="password" placeholder="gh auth token" style="width:48%"></p>
+  <strong>Enter the room.</strong>
+  <p class="muted">Sign in with your GitHub account (no token to paste) and
+  enter the door you were given. The room verifies you can read it, then runs
+  end-to-end encrypted — collaborators get in, everyone else 404s.</p>
+  <p><input id="mDoor" placeholder="owner/repo" style="width:100%"></p>
+  <div class="row" style="margin:.2rem 0 .6rem">
+    <button id="mSignin">🔓 Sign in with GitHub</button>
+    <span class="muted" id="mWho"></span>
+  </div>
+  <div id="mDevice" class="muted" style="display:none;margin-bottom:.6rem"></div>
+  <details style="margin-bottom:.6rem">
+    <summary class="muted" style="cursor:pointer">advanced — paste a token instead</summary>
+    <input id="mToken" type="password" placeholder="gh auth token (needs repo scope)" style="width:100%">
+  </details>
   <button id="mGo">Verify &amp; enter</button>
   <span class="muted" id="mHint"></span>
 </div>
@@ -282,9 +289,59 @@
     elect();
   })();
 
+  // Sign in with GitHub — the Doorman device-code flow (same as the payphone
+  // and vbrainstem.html). Kited twins authenticate with their account instead
+  // of pasting a token. GitHub CLI public client + repo scope (Copilot's
+  // read:user can't see private repos). Token lands in rapp_settings.ghuToken.
+  const AUTH_WORKER_URL = 'https://rapp-auth.kwildfeuer.workers.dev';
+  const GH_CLI_CLIENT_ID = '178c6fc778ccc68e1d6a';
+  const REPO_SCOPE = 'repo read:org';
+  function gateToken() { try {
+    return ($('mToken').value || '').trim() ||
+      (JSON.parse(localStorage.getItem('rapp_settings') || '{}').ghuToken) || '';
+  } catch { return ($('mToken').value || '').trim(); } }
+  let gDevicePoll = null;
+  async function gateSignIn() {
+    const dev = $('mDevice'); dev.style.display = ''; dev.textContent = 'starting GitHub sign-in…';
+    let start;
+    try {
+      const r = await fetch(AUTH_WORKER_URL + '/api/auth/device', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ client_id: GH_CLI_CLIENT_ID, scope: REPO_SCOPE }) });
+      start = await r.json();
+    } catch (e) { dev.textContent = 'sign-in unreachable: ' + e.message; return; }
+    if (!start.user_code) { dev.textContent = 'sign-in failed to start.'; return; }
+    const uri = start.verification_uri || 'https://github.com/login/device';
+    dev.innerHTML = 'Enter code <strong style="font-size:1.2em;letter-spacing:.15em">' +
+      esc(start.user_code) + '</strong> at <a href="' + esc(uri) +
+      '" target="_blank" rel="noopener">' + esc(uri) + '</a> — waiting…';
+    const deadline = Date.now() + (start.expires_in || 900) * 1000;
+    clearInterval(gDevicePoll);
+    gDevicePoll = setInterval(async () => {
+      if (Date.now() > deadline) { clearInterval(gDevicePoll); dev.textContent = 'code expired — try again.'; return; }
+      try {
+        const r = await fetch(AUTH_WORKER_URL + '/api/auth/device/poll', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ client_id: GH_CLI_CLIENT_ID, device_code: start.device_code }) });
+        const d = await r.json();
+        if (d.access_token) {
+          clearInterval(gDevicePoll);
+          try { const s = JSON.parse(localStorage.getItem('rapp_settings') || '{}');
+            s.ghuToken = d.access_token; localStorage.setItem('rapp_settings', JSON.stringify(s)); } catch {}
+          dev.style.display = 'none';
+          token = d.access_token;
+          try { const u = await gh('/user'); if (u.ok) $('mWho').textContent = 'signed in as ' + (await u.json()).login; } catch {}
+          if ($('mDoor').value.trim()) $('mGo').click();   // door already known → go
+        }
+      } catch {}
+    }, (start.interval || 5) * 1000);
+  }
+  $('mSignin').addEventListener('click', gateSignIn);
+
   $('mGo').addEventListener('click', async () => {
-    door = $('mDoor').value.trim(); token = $('mToken').value.trim();
-    if (!/^[\w.-]+\/[\w.-]+$/.test(door) || !token) { $('mHint').textContent = 'need owner/repo + a token'; return; }
+    door = $('mDoor').value.trim(); token = gateToken();
+    if (!/^[\w.-]+\/[\w.-]+$/.test(door)) { $('mHint').textContent = 'enter the door (owner/repo)'; return; }
+    if (!token) { $('mHint').textContent = 'sign in with GitHub first (or paste a token under advanced)'; return; }
     $('mHint').textContent = 'verifying…';
     const r = await gh(`/repos/${door}`);
     if (!r.ok) { $('mHint').textContent = '404 — not a collaborator (or wrong door).'; return; }
