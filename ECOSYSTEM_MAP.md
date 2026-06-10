@@ -226,6 +226,9 @@ Every `rapp-*/N.M` and `brainstem-*/N.M-variant` currently emitted in the repo. 
 | `rapp-drift-report/1.0` | Cross-repo spec-drift report + authority resolution envelope | (defined-by-emitter) | `@rapp/drift` scan |
 | `rapp-drift-issue/1.0` | Drift-issue machine block — the traceable chain (drift → GitHub issue → PR → operator merge → close) | (defined-by-emitter) | `@rapp/drift` + `@rapp/drift_watcher` |
 | `rapp-rar-steward/1.0` | RAR steward report — catalog health, same-but-different merge clusters, noise/junk | (defined-by-emitter) | `@rapp/rar_steward` |
+| `rapp-neuron/1.0` | One file-specialist card — a file understood word-level: schemas declared, contracts, version strings, cross-refs, canonical phrases, drift_watch | kody-w/rapp-map NEURON_SWARM.md | build-ecosystem-neuron-mesh workflow |
+| `rapp-neuron-mesh/1.0` | The neuron mesh — every card assembled; the ecosystem's word-level index + drift-sensor set | kody-w/rapp-map/neurons.json | build-ecosystem-neuron-mesh |
+| `rapp-neuron-mesh-manifest/1.0` | Summon index — `summon_index[schema] → [surfaces]`; scopes a swarm to the neurons that matter | kody-w/rapp-map/neurons-manifest.json | build-ecosystem-neuron-mesh |
 
 ---
 
@@ -417,6 +420,7 @@ The most load-bearing section. Workflow trigger → pre-check (≤30s) → spec 
 | Call /chat from new code | §11 row "tether"; use `rapp-twin-chat/1.0` envelope; §6 row twin_agent.py reference impl | NEIGHBORHOOD_PROTOCOL §6a |
 | Define a new schema | §5 — search first; if exists, use; if not, ANTIPATTERNS §3 (bump cleanly, no shims) | ANTIPATTERNS §3 |
 | Use an existing schema | §5 row → defining doc column → read that section | the doc the row points at |
+| Operate on the WHOLE ecosystem (drift / audit / propagation) — word-level, all-encompassing | Summon the **neuron swarm**: load the mesh (rapp-map/neurons.json), summon the relevant file-specialists (manifest summon_index), fan out against their live files + drift_watch, loop, synthesize with the authority order. Reusable: `.claude/workflows/neuron-swarm.js` | kody-w/rapp-map NEURON_SWARM.md; `@rapp/drift` is the resolver |
 | Plant a PRIVATE cubby neighborhood (collaborator-gated, no public front door) | §19 dark-door pattern: payphone discovery + collaborator-gated §8 key + kited host-relay lights + cubbies + super-RAR + stream-don't-commit; the pattern is generic (any crew can plant one) | NEIGHBORHOOD_PROTOCOL §19; PUBLIC_PRIVATE_BOUNDARY §1.8; `@rapp/rapp` |
 | Plant on GitHub (twin/neighborhood/etc.) | §14 (existing planted state), §3 primitives (rappid + door + card + tether + scope all present?), §5 `rapp-rar-index/1.0` (every plant auto-scaffolds rar/ via plant.sh::write_rar_index) | TEMPLATE.md, ECOSYSTEM §2 + §13; F7-rar-hotload.sh |
 | Hot-load a planted seed's required participation kit | §5 `rapp-rar-index/1.0` (sha256 verified) | rapp_brainstem/agents/rar_loader_agent.py; F7 |
