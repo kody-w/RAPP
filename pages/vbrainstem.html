@@ -1883,7 +1883,7 @@ async function exportCart() {
   const egg = {
     schema: 'brainstem-egg/2.3-session',
     type: 'session',
-    rappid: 'rappid:v2:cart:@kody-w/RAPP#vbrainstem:' + sha.slice(0, 32) + '@github.com/kody-w/RAPP',
+    rappid: 'rappid:@kody-w/RAPP:' + sha.slice(0, 32),
     name: 'vbrainstem',
     title: 'vBrainstem · Tethered',
     description: 'Multi-participant tether with QR pair, autonomous Coordinator twin, and 4-step debate workflow.',
@@ -1894,7 +1894,7 @@ async function exportCart() {
     transcript: state.transcript,
     exported_at: now,
     minted_at: now,
-    minted_by: 'rappid:v2:agent:@kody-w/RAPP#vbrainstem-export:browser@github.com/kody-w/RAPP',
+    minted_by: 'rappid:@kody-w/RAPP:0b635450c04249fbb4b1bdb571044dec',
     implements: ['article-xlvi', 'article-xlix'],
   };
   const blob = new Blob([JSON.stringify(egg, null, 2)], { type: 'application/json' });

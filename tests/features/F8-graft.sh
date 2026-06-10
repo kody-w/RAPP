@@ -132,8 +132,8 @@ assert out["ok"]
 # Read the generated rappid.json from the bond_event's reference
 # Actually we can't read it post-cleanup — let's check the rappid string's shape
 rappid = out["neighborhood"]["rappid"]
-assert rappid.startswith("rappid:v2:neighborhood:@fakeowner/fake-upstream:"), f"bad rappid: {rappid}"
-assert rappid.endswith("@github.com/fakeowner/fake-upstream"), f"bad rappid host: {rappid}"
+assert rappid.startswith("rappid:@fakeowner/fake-upstream:"), f"bad rappid: {rappid}"
+assert "@github.com" not in rappid and ":v2:" not in rappid, f"Eternity rappid carries no v2/@host: {rappid}"
 # bond_event has from_commit + from_repo
 ev = out["bond_event"]
 assert ev["kind"] == "graft"

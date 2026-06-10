@@ -101,15 +101,16 @@ All visual and computed properties of an organism derive from a single UUIDv4 `r
 ### `rappid.json` (`rapp-rappid/2.0`)
 The organism's birth certificate. Written once at plant time, never regenerated.
 Per CONSTITUTION Article XXXIV.1 (2026-04-30 ratification) the schema is
-`rapp-rappid/2.0` and the `rappid` field carries the v2-format string
-`rappid:v2:<kind>:@<pub>/<slug>:<hash>@<host>`. Pre-ratification seeds
-on `rapp-rappid/1.1` with bare UUIDs are still valid (their UUID hex,
-dashes stripped, IS the hash field of their v2 string by the documented
-migration rule).
+`rapp-rappid/2.0` and the `rappid` field carries the consolidated **Eternity**
+string `rappid:@<owner>/<slug>:<hash>` (`kind` lives in the record, not the
+string). Pre-ratification seeds on `rapp-rappid/1.1` with bare UUIDs are still
+valid (their UUID hex, dashes stripped, IS the hash field), and legacy
+`rappid:v2:…` strings are canonicalized on read (`tools/door_address.py`), never
+re-emitted.
 ```json
 {
   "schema": "rapp-rappid/2.0",
-  "rappid": "rappid:v2:mirror:@<gh_user>/<repo>:<32-hex-hash>@github.com/<gh_user>/<repo>",
+  "rappid": "rappid:@<gh_user>/<repo>:<hash>",
   "kind": "personal" | "place" | "experiment" | "mirror",
   "name": "<repo-slug>",
   "display_name": "<Human Readable>",

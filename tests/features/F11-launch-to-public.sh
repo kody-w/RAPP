@@ -152,7 +152,7 @@ assert len(launch_events) >= 1
 ev = launch_events[-1]
 assert "egg_sha256" in ev and len(ev["egg_sha256"]) == 64
 assert ev.get("to_repo") == "testowner/test-launched"
-assert ev.get("from_brainstem_rappid", "").startswith("rappid:v2:")
+assert ev.get("from_brainstem_rappid", "").startswith("rappid:@")
 print("OK")
 PY
 

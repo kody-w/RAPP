@@ -25,7 +25,7 @@ Three properties make a twin egg distribution work:
    - `agents/*.py` — optional, twin-specific tools
 3. **No kernel patches.** The hatched workspace at `~/.rapp/twins/<hash>/` is read by the global brainstem's `start.sh` via `SOUL_PATH` / `AGENTS_PATH` / `PORT` env vars. The kernel sees a child brainstem; the user sees a twin. The kernel itself never changes.
 
-The hash extraction handles both shapes: 32-hex from v2 rappids (`rappid:v2:KIND:@OWNER/SLUG:HASH@...`) and bare UUIDs from legacy v1.x front doors. Same workspace dir convention either way.
+The hash extraction handles every shape: the `<hash>` segment from an Eternity rappid (`rappid:@OWNER/SLUG:HASH`), the same from a legacy v2 rappid (`rappid:v2:KIND:@OWNER/SLUG:HASH@...`, canonicalized on read), and bare UUIDs from legacy v1.x front doors. Same workspace dir convention either way.
 
 ## Why one hatcher, many twins
 

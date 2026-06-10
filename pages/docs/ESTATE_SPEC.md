@@ -65,7 +65,7 @@ Per Article XLVI.3, each entry stores **only**:
 
 ```json
 {
-  "rappid": "rappid:v2:twin:@owner/repo:hex@github.com/owner/repo",
+  "rappid": "rappid:@owner/repo:hex",
   "added_at": "2026-05-09T00:00:00Z",
   "via": "created" | "scan" | "manual" | "import" | "published-by-other"
 }
@@ -81,7 +81,7 @@ This is the constitutional answer to *"don't do all of these exception things."*
 {
   "schema": "rapp-estate/1.1",
   "owner": {
-    "rappid": "rappid:v2:operator:@<github>/<their-twin-or-brainstem>:hex@github.com/<github>/...",
+    "rappid": "rappid:@<github>/<their-twin-or-brainstem>:hex",
     "github": "<github-handle>"
   },
   "created": [{ "rappid": "...", "added_at": "...", "via": "created" }],
@@ -107,7 +107,7 @@ A consumer MUST be able to discover any door, and any user's full estate, with `
 
 ```bash
 # From the rappid, parse <owner>/<repo>:
-RAPPID='rappid:v2:twin:@kody-w/echo-brainstem:abc...@github.com/kody-w/echo-brainstem'
+RAPPID='rappid:@kody-w/echo-brainstem:abc...'
 OWNER_REPO=$(echo "$RAPPID" | sed 's|.*:@\([^:]*\):.*|\1|')
 
 # Fetch identity, holocard, holo.md, etc.:
@@ -283,7 +283,7 @@ The estate cartridge is the `brainstem-egg/2.3-estate` member of the egg family 
   "schema": "brainstem-egg/2.3-estate",
   "scale":  "estate",
   "rapp_egg_version": "2.0",
-  "owner_rappid": "rappid:v2:operator:@<gh>/<their-brainstem>:hex@github.com/<gh>/...",
+  "owner_rappid": "rappid:@<gh>/<their-brainstem>:hex",
   "estate_snapshot_at": "<iso8601>",
   "members": [ /* see 7.6.2 */ ]
 }

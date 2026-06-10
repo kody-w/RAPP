@@ -232,7 +232,7 @@ Each operator's record carries a `substrate` field so consumers know how the dat
 ```json
 {
   "github":          "rappter1",
-  "operator_rappid": "rappid:v2:operator:@rappter1/rappter1-twin:...",
+  "operator_rappid": "rappid:@rappter1/rappter1-twin:...",
   "beacon_url":      "file:///Users/kodywildfeuer/.brainstem/peers/rappter1/.well-known/rapp-network.json",
   "substrate":       "file",
   "estate_url":      "file:///Users/kodywildfeuer/.brainstem/peers/rappter1/estate.json",

@@ -84,7 +84,7 @@ Three holes:
 The v2 format binds the home vault URL into the RAPPID and includes an explicit version:
 
 ```
-rappid:v2:twin:@kody/personal:8844d5fe99cb77b6@github.com/kody-w/twin_vault
+rappid:@kody-w/twin_vault:8844d5fe99cb77b6
                 │   │   │       │                │
                 │   │   │       │                └── home_vault_url (canonical sigchain location)
                 │   │   │       └── identity hash (sha256 of master pubkey, truncated)
@@ -190,7 +190,7 @@ Every signed record has the same envelope:
   "alg": "ecdsa-p256",
   "schema": "swarm-estate-record/1.0",
   "kind": "device-signing | revoke | kin-vouch | migration | rotate-self | rotate-user | chain-reset",
-  "rappid": "rappid:v2:twin:@kody/personal:8844d5...@github.com/kody-w/twin_vault",
+  "rappid": "rappid:@kody-w/twin_vault:8844d5...",
   "issued_at": "2026-04-30T20:00:00Z",
   "issued_by": "<fingerprint of the signing key>",
   "issued_by_role": "M | S | U",
@@ -208,7 +208,7 @@ The `alg` field is non-negotiable. Verifiers reject any record with an unknown `
   "alg": "ecdsa-p256",
   "schema": "swarm-estate-record/1.0",
   "kind": "device-signing",
-  "rappid": "rappid:v2:twin:@kody/personal:8844d5...@github.com/kody-w/twin_vault",
+  "rappid": "rappid:@kody-w/twin_vault:8844d5...",
   "issued_at": "2026-04-30T20:00:00Z",
   "issued_by": "fp:S:af20bc91...",
   "issued_by_role": "S",

@@ -77,7 +77,7 @@ Steve Jobs's pattern, applied:
 
 ### Developer-facing (Developer vocabulary)
 
-> *Wildhaven AI Homes' rappid is `rappid:v2:organism:@wildhaven/ai-homes:144d67...@github.com/kody-w/wildhaven-ceo`. The master keypair is split via Shamir 3-of-5 SLIP-39. Device keys are signed by S into the cross-signing chain; kin-vouches are signed by U. parent_rappid chains to the species root.*
+> *Wildhaven AI Homes' rappid is `rappid:@kody-w/wildhaven-ceo:144d67...`. The master keypair is split via Shamir 3-of-5 SLIP-39. Device keys are signed by S into the cross-signing chain; kin-vouches are signed by U. parent_rappid chains to the species root.*
 
 Both paragraphs describe the same system. Different vocabularies for different audiences.
 
@@ -86,7 +86,7 @@ Both paragraphs describe the same system. Different vocabularies for different a
 - **rappid** stays in the protocol spec, code, JSON schemas. It's the developer term.
 - **mitosis**, **dreamcatcher**, **species tree**, **brainstem**, **kernel**, **organs** are already perfect; no rename.
 - **rapplication** has accumulated brand equity in commits and documentation. Don't relitigate.
-- The string format `rappid:v2:<kind>:@<pub>/<slug>:<hash>@<host>` stays. Verifiers and parsers depend on it.
+- The consolidated **Eternity** string format `rappid:@<owner>/<slug>:<hash>` stays load-bearing (CONSTITUTION Art. XXXIV.1). Verifiers and parsers depend on it; legacy `rappid:v2:…` forms are read forever and canonicalized, never re-emitted.
 
 ## Trademark interaction
 

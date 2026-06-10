@@ -36,7 +36,7 @@ rappid = f"rappid:@{owner_repo}:{h}"  # Eternity: self-locating; kind ('operator
 print(rappid)
 ```
 
-The rappid format is `rappid:v2:<kind>:@<owner>/<repo>:<32hex>@github.com/<owner>/<repo>` — see SPEC §2 for the full grammar. **Both `<owner>/<repo>` segments MUST match.**
+The rappid format is the consolidated **Eternity form** `rappid:@<owner>/<slug>:<64hex>` (CONSTITUTION Art. XXXIV.1, locked 2026-06-03) — see SPEC §2 for the full grammar. The `@<owner>/<slug>` segment is self-locating (`github.com/<owner>/<slug>`); `kind` lives in your `rappid.json` record, **not** the string. Any legacy `rappid:v2:…` string you already hold is canonicalized on read (`tools/door_address.py::canonicalize_rappid`), never re-minted.
 
 ---
 
@@ -108,7 +108,7 @@ A public-only estate is a "toy" — fine for showing off but not for real work i
 Given any rappid (yours, a friend's, a public twin's), you can chat with it. The rappid encodes everything you need:
 
 ```bash
-RAPPID='rappid:v2:twin:@kody-w/echo-brainstem:abc...@github.com/kody-w/echo-brainstem'
+RAPPID='rappid:@kody-w/echo-brainstem:abc...'
 OWNER_REPO=$(echo "$RAPPID" | sed 's|.*:@\([^:]*\):.*|\1|')
 
 # Visit the front door (the sphere — voice + chat in your browser):
@@ -235,7 +235,7 @@ Both you and your peers walk the LAN substrate identically to how the github-sub
 **The Bonjour TXT-record schema** (what the LAN advertisement carries — canonical per Article XLVII.5.1):
 
 ```
-rappid       = your operator-kind v2 rappid
+rappid       = your operator-kind rappid (Eternity form)
 github       = your handle (informational; LAN doesn't require it)
 beacon_path  = "/.well-known/rapp-network.json"
 estate_path  = "/estate.json"
@@ -252,7 +252,7 @@ indexable    = "true" | "false"
 
 **You DO need:**
 - A brainstem installed on a device that's on the LAN.
-- A `~/.brainstem/rappid.json` with your operator-kind v2 rappid (Step 1).
+- A `~/.brainstem/rappid.json` with your operator-kind rappid (Eternity form) (Step 1).
 - One open port on your machine (default 8080; pick another if it's taken).
 - Peers on the same LAN running their own brainstems + the same `--via bonjour` sniffer.
 
