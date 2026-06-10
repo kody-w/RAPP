@@ -87,9 +87,9 @@ The kernel ships a `Twin` agent (`rapp_brainstem/agents/twin_agent.py`). Its act
 | Twin | Port | Kind | Rappid (abbrev) |
 |---|---|---|---|
 | Heimdall | 7081 | personal | `915f54e5-4c71-4de9-bba3-6604461d05e5` (bare UUID) |
-| @kody-w | 7082 | operator | `rappid:v2:operator:@kody-w/twin:5b8ba…@github.com/kody-w/kody-w-twin` |
-| Bots in Blazers | 7083 | project | `rappid:v2:project:@kody-w/bots-in-blazers:eae15…@github.com/kody-w/bots-in-blazers-twin` |
-| AIBAST | 7084 | project | `rappid:v2:project:@kody-w/aibast:3a159…@github.com/kody-w/aibast-twin` |
+| @kody-w | 7082 | operator | `rappid:@kody-w/kody-w-twin:5b8ba…` |
+| Bots in Blazers | 7083 | project | `rappid:@kody-w/bots-in-blazers-twin:eae15…` |
+| AIBAST | 7084 | project | `rappid:@kody-w/aibast-twin:3a159…` |
 
 Each child runs under its own `soul.md`, its own `agents/`, its own `.brainstem_data/`. The user types into one chat box. The LLM picks the peer, the front-door brainstem composes `Twin(action="chat", rappid_uuid=...)`, the envelope crosses to the right port, and the reply comes back as if it were a local tool call — the [[The Federated Twin Egg Hatcher Pattern#Federate through the global brainstem in plain English|transparent-handoff principle]] applies the same way it does across machines.
 

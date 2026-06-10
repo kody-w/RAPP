@@ -210,14 +210,21 @@ function copy(elId, btn) {
   });
 }
 
-// Parse a v2 rappid into its semantic parts. Mirrors tools/door_address.py.
+// Parse a rappid into its semantic parts. Mirrors tools/door_address.py.
+// Eternity rappid:@<owner>/<slug>:<hash> is canonical (kind lives in the record);
+// legacy v2 is accepted on read and canonicalized, never emitted.
 function parseRappid(r) {
-  const re = /^rappid:v2:([a-z][a-z0-9-]*):@([A-Za-z0-9][A-Za-z0-9._-]*)\/([A-Za-z0-9][A-Za-z0-9._-]*):([a-f0-9]{32})@github\.com\/([A-Za-z0-9][A-Za-z0-9._-]*)\/([A-Za-z0-9][A-Za-z0-9._-]*)$/;
-  const m = re.exec(r);
-  if (!m) return null;
-  if (m[2] !== m[5] || m[3] !== m[6]) return null;
-  const kind = m[1], owner = m[2], repo = m[3];
-  const door_type = (kind === 'twin' || kind === 'operator') ? 'front_door' : 'gate';
+  let kind = null, owner, repo;
+  const e = /^rappid:@([A-Za-z0-9][A-Za-z0-9._-]*)\/([A-Za-z0-9][A-Za-z0-9._-]*):([a-f0-9]{8,})$/.exec(r);
+  if (e) {
+    owner = e[1]; repo = e[2];
+  } else {
+    const v = /^rappid:v2:([a-z][a-z0-9-]*):@([A-Za-z0-9][A-Za-z0-9._-]*)\/([A-Za-z0-9][A-Za-z0-9._-]*):([a-f0-9]{32})@github\.com\/([A-Za-z0-9][A-Za-z0-9._-]*)\/([A-Za-z0-9][A-Za-z0-9._-]*)$/.exec(r);
+    if (!v) return null;
+    if (v[2] !== v[5] || v[3] !== v[6]) return null;
+    kind = v[1]; owner = v[2]; repo = v[3];
+  }
+  const door_type = (kind === null || kind === 'twin' || kind === 'operator') ? 'front_door' : 'gate';
   const rawBase = `https://raw.githubusercontent.com/${owner}/${repo}/main`;
   return {
     rappid: r, kind, owner, repo, door_type,

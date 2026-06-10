@@ -184,7 +184,7 @@ Written into the archived workspace at archive time.
 ```json
 {
   "schema": "rapp-twin-tombstone/1.0",
-  "rappid": "rappid:v2:project:@kody-w/test-haiku-composer:f7a96540…@github.com/kody-w/...",
+  "rappid": "rappid:@kody-w/test-haiku-composer:f7a96540…",
   "hash": "f7a96540-c422-48f2-b250-563798d3f430",
   "name": "test-haiku-composer",
   "kind": "project",
@@ -227,7 +227,7 @@ Written when a twin is purged. The full archived envelope, minus body-size detai
 ```json
 {
   "schema": "rapp-twin-purged/1.0",
-  "rappid": "rappid:v2:...",
+  "rappid": "rappid:@kody-w/test-haiku-composer:f7a96540…",
   "hash": "f7a96540-...",
   "name": "test-haiku-composer",
   "kind": "project",

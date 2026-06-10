@@ -45,23 +45,24 @@ The **consolidated** rappid (locked 2026-06-03) — one string that is **both id
 ### Concrete examples
 
 ```
-rappid:v2:prototype:@rapp/origin:0b635450c04249fbb4b1bdb571044dec@github.com/kody-w/RAPP
-                                  └ legacy UUID with dashes stripped, preserved as the species root's stable identifier ┘
+rappid:@kody-w/RAPP:0b635450c04249fbb4b1bdb571044dec
+                    └ legacy UUID with dashes stripped, preserved as the species root's stable identifier ┘
 
-rappid:v2:organism:@wildhaven/ai-homes:144d673475618dfbc9710e999e7d2907@github.com/kody-w/wildhaven-ceo
-                                       └ sha256 of master pubkey, truncated ┘
+rappid:@kody-w/kody-twin:91d006ca7bd052bfa5021d623122012f
+                         └ an organism at its own repo; hash is key-derived (sha256 of master pubkey, truncated) ┘
 
-rappid:v2:twin:@wildhaven/molly:74f0dc145d9c86decd61fbad53c67f2e@github.com/kody-w/wildhaven-ceo
+rappid:@<publisher>/<twin-slug>:<64hex>
+                    └ a twin under that organism — one repo = one slug = one self-locating address ┘
 ```
 
 ### Hash extraction for the hatcher
 
 The generic twin egg hatcher (`twin_egg_hatcher_agent.py`, v1.1.0) needs a stable filesystem key from any rappid to land a twin workspace at `~/.rapp/twins/<extracted-key>/`. Two cases:
 
-- **v2 rappids** — extract the 32-hex `<hash>` segment from `rappid:v2:<kind>:@<owner>/<slug>:<hash>@...`. Example: `@kody-w` resolves to `5b8ba4796692197aa4ccde5dfa5beb51`, so its workspace is `~/.rapp/twins/5b8ba4796692197aa4ccde5dfa5beb51/`.
+- **Eternity (and legacy v2) rappids** — extract the `<hash>` segment (the part after the final `:`) from `rappid:@<owner>/<slug>:<hash>` (or a legacy `rappid:v2:<kind>:@<owner>/<slug>:<hash>@...`, canonicalized on read). Example: `rappid:@kody-w/kody-w-twin:5b8ba4796692197aa4ccde5dfa5beb51` → workspace `~/.rapp/twins/5b8ba4796692197aa4ccde5dfa5beb51/`.
 - **Legacy bare-UUID rappids** — use the rappid string verbatim. Example: Heimdall's `915f54e5-4c71-4de9-bba3-6604461d05e5` becomes `~/.rapp/twins/915f54e5-4c71-4de9-bba3-6604461d05e5/`.
 
-This convention keeps v1 and v2 organisms in one federated namespace on disk. See [[The Federated Twin Egg Hatcher Pattern]] for the full hatcher contract.
+This convention keeps v1, v2, and Eternity organisms in one federated namespace on disk. See [[The Federated Twin Egg Hatcher Pattern]] for the full hatcher contract.
 
 ### Why this format
 
@@ -72,21 +73,21 @@ This convention keeps v1 and v2 organisms in one federated namespace on disk. Se
 ## The species tree
 
 ```
-rappid:v2:prototype:@rapp/origin:0b6354...@github.com/kody-w/RAPP        ← godfather, parent_rappid: null
+rappid:@kody-w/RAPP:0b6354...        ← godfather, parent_rappid: null
         │
-        ├── (future) rappid:v2:kernel-variant:@<fork-publisher>/<name>:<hash>@<their-repo>
-        │              parent_rappid: rappid:v2:prototype:@rapp/origin:0b6354...
+        ├── (future) rappid:@<fork-publisher>/<name>:<hash>
+        │              parent_rappid: rappid:@kody-w/RAPP:0b6354...
         │
-        └── rappid:v2:organism:@wildhaven/ai-homes:144d67...@github.com/kody-w/wildhaven-ceo
-                  parent_rappid: rappid:v2:prototype:@rapp/origin:0b6354...
+        └── rappid:@<publisher>/<organism-slug>:<hash>
+                  parent_rappid: rappid:@kody-w/RAPP:0b6354...
                   │
-                  └── rappid:v2:twin:@wildhaven/molly:74f0dc...@github.com/kody-w/wildhaven-ceo
-                            parent_rappid: rappid:v2:organism:@wildhaven/ai-homes:144d67...
+                  └── rappid:@<publisher>/<twin-slug>:<hash>
+                            parent_rappid: rappid:@<publisher>/<organism-slug>:<hash>
                             │
                             └── (future) customer organisms, partner AIs, employee twins, etc.
 ```
 
-There is one tree. Every rappid is a node. Every node except the root has exactly one parent. Walking parent_rappid from any node terminates at the godfather (`@rapp/origin:0b6354...`).
+There is one tree. Every rappid is a node. Every node except the root has exactly one parent. Walking parent_rappid from any node terminates at the godfather (`rappid:@kody-w/RAPP:0b6354...`).
 
 ## Digital mitosis — the rappid IS the identity
 
@@ -152,12 +153,13 @@ This rule is the foundation for evolutionary accounting: "what did `@rapp/origin
 
 ### For organisms with a code repo (kernel variants, code-only organisms)
 
-Declare in `rappid.json` at the repo root. Schema: `rapp-rappid/2.0`. The `rappid` field carries the v2-format string.
+Declare in `rappid.json` at the repo root. Schema: `rapp-rappid/2.0`. The `rappid` field carries the consolidated **Eternity** string `rappid:@<owner>/<slug>:<hash>`; `kind` lives in the record.
 
 ```json
 {
   "schema": "rapp-rappid/2.0",
-  "rappid": "rappid:v2:prototype:@rapp/origin:0b635450c04249fbb4b1bdb571044dec@github.com/kody-w/RAPP",
+  "rappid": "rappid:@kody-w/RAPP:0b635450c04249fbb4b1bdb571044dec",
+  "kind": "prototype",
   "parent_rappid": null,
   "parent_repo": null,
   "parent_commit": null,
@@ -177,12 +179,12 @@ Declare in a signed `root.json` under `blessings/<hash>/` in the home vault:
   "alg": "ecdsa-p256",
   "schema": "swarm-estate-record/1.0",
   "kind": "root",
-  "rappid": "rappid:v2:organism:@wildhaven/ai-homes:144d67...@github.com/kody-w/wildhaven-ceo",
+  "rappid": "rappid:@<publisher>/<organism-slug>:144d67...",
   "issued_by": "fp:M:...",
   "issued_by_role": "M",
   "payload": {
     "master_pubkey": "<base64 SPKI>",
-    "parent_rappid": "rappid:v2:prototype:@rapp/origin:0b6354...@github.com/kody-w/RAPP",
+    "parent_rappid": "rappid:@kody-w/RAPP:0b6354...",
     "self_signing_pubkey": "...",
     "user_signing_pubkey": "...",
     ...
@@ -197,7 +199,7 @@ Both declarations are valid rappid identity records. The first carries no crypto
 
 Per Constitution Articles XXXIV.7 and XXXVI:
 
-- **The species root** (`@rapp/origin`) currently has no master keypair. Its rappid is anchored by convention (the existing UUID, dashes-stripped, preserved in the hash field). A future ceremony may mint a master keypair for RAPP itself; until then, the hash field's stability is sufficient.
+- **The species root** (`rappid:@kody-w/RAPP:0b6354...`) currently has no master keypair. Its rappid is anchored by convention (the existing UUID, dashes-stripped, preserved in the hash field). A future ceremony may mint a master keypair for RAPP itself; until then, the hash field's stability is sufficient.
 - **Code variants** (kernel forks) declare their rappid in `rappid.json`. Cryptographic backing is opt-in via the Article XXXIV.7 attestation envelope (signed by parent's release key).
 - **AI organisms, twins, customer estates** mint a master keypair via the holocard incantation ceremony. They declare their rappid in a `root.json` signed by the master key. The hash field is `sha256(master_pubkey_SPKI)[:32]`.
 
@@ -210,7 +212,7 @@ Before 2026-04-30, two parallel systems briefly coexisted:
 1. **`rapp-rappid/1.1`** (Article XXXIV draft) — rappids in `rappid.json` files at repo roots
 2. **`rappid:v2:` cryptographic format** (Swarm Estate Protocol draft) — structured rappids for AI organisms with master keypairs
 
-These were merged on 2026-04-30 into the unified v2 format. Existing UUIDs (e.g., the species root's `0b635450-...`) are preserved by being placed in the hash field of the v2-format string (dashes stripped). The schema migrated from `1.1` to `2.0`. **No rappid was lost; every existing rappid has a unique v2-format string.**
+These were merged on 2026-04-30 into a unified structured format, then **consolidated again on 2026-06-03 into the single Eternity form** `rappid:@<owner>/<slug>:<hash>` (CONSTITUTION Art. XXXIV.1) — `kind` and host moved into the `rappid.json` record, the string stripped to identity + self-locating address. Existing UUIDs (e.g., the species root's `0b635450-...`) are preserved in the hash field (dashes stripped). The schema migrated from `1.1` to `2.0`; legacy `rappid:v2:…` strings are read forever and canonicalized, never re-emitted. **No rappid was lost; every existing rappid has a unique Eternity string.**
 
 ## Why one format only
 

@@ -94,7 +94,7 @@ Federation is a step in the right direction; we go further by making the hosting
 
 | Property | DID:web | Swarm Estate |
 |---|---|---|
-| Identifier format | `did:web:domain.com:path` | `rappid:v2:kind:@pub/slug:hash@host` |
+| Identifier format | `did:web:domain.com:path` | `rappid:@<owner>/<slug>:<hash>` |
 | Ownership of `did.json` | Whoever controls the domain | Whoever holds the master key |
 | Domain compromise = identity loss | Yes | No (master key is independent of host) |
 | Multi-device support | Manual key cross-signing | Built-in via three-role hierarchy |
@@ -106,7 +106,7 @@ DID:web is a closer cousin than blockchain or federation. We extend it with: cro
 
 | Property | AT Protocol | Swarm Estate |
 |---|---|---|
-| Identifier | `did:plc:...` or `did:web:...` | `rappid:v2:...@host` |
+| Identifier | `did:plc:...` or `did:web:...` | `rappid:@<owner>/<slug>:<hash>` |
 | Account migration | Yes (PDS-to-PDS) | Yes (signed migration record) |
 | Public-by-default | Yes (social media) | Configurable (private vaults supported) |
 | AI-entity perpetuity | Not addressed | First-class |

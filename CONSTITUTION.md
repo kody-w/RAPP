@@ -2694,10 +2694,10 @@ A **swarm estate** is the operational form of such an entity:
 The entity-level identity is recorded as a **cryptographically-backed rappid**:
 
 ```
-rappid:v2:<kind>:@<publisher>/<slug>:<identity-hash>@<home_vault_url>
+rappid:@<publisher>/<slug>:<identity-hash>
 ```
 
-where `<identity-hash>` is the truncated cryptographic hash of the master public key. This is the unified rappid format described in Article XXXIV.1 and the canonical spec at `pages/vault/Architecture/Rappid.md`. The same format serves every organism kind in the species tree.
+where `<identity-hash>` is the truncated cryptographic hash of the master public key. This is the consolidated Eternity format described in Article XXXIV.1 and the canonical spec at `pages/vault/Architecture/Rappid.md` — `kind` and the home-vault location live in the `rappid.json` record, not the string. The same format serves every organism kind in the species tree.
 
 ### XXXVI.2 — One format, one species tree
 
@@ -3358,7 +3358,7 @@ Without this article, the natural drift is toward flat HTML front doors per seed
 
 > **The rappid IS the URL.** From a single rappid string, with zero auth and zero API calls, every canonical URL the door has is computable by string parsing alone. The estate is the door catalog. Discovery is pure raw fetch. There are no fallbacks; the spec describes what is true.
 
-A rappid is not just an identity — it is a globally-resolvable address. The v2 format `rappid:v2:<kind>:@<owner>/<repo>:<32hex>@github.com/<owner>/<repo>` encodes the door's GitHub owner and repository TWICE by design: first as the abbreviated identity reference, then as the origin pin. Both segments MUST be the same string. Any rappid where they disagree is invalid and rejected at parse time.
+A rappid is not just an identity — it is a globally-resolvable address. The consolidated Eternity form `rappid:@<owner>/<slug>:<hash>` encodes the door's GitHub owner and repository ONCE, as a self-locating address: `@<owner>/<slug>` resolves to `github.com/<owner>/<slug>`. (The legacy v2 form `rappid:v2:<kind>:@<owner>/<repo>:<32hex>@github.com/<owner>/<repo>` encoded it TWICE — an abbreviated identity reference plus an origin pin, both required to be the same string — and is canonicalized on read, never re-emitted. A v2 string whose two segments disagree is invalid and rejected at parse time.)
 
 From those segments, by pure parsing, every consumer derives the door's complete canonical URL set — repo URL, front door (the sphere from Article XLV), identity JSON, holocard, holo.md, avatar SVG, summon QR, members.json, facets.json. **Nine URLs, all reachable through `raw.githubusercontent.com` without a single API token.** The implementation is one pure function: `tools/door_address.py::door_from_rappid()`. It is the single source of derivation; every consumer (planter, estate agent, federation walker, holocard renderer, discovery UI) imports it. None reinvents the parsing.
 
@@ -3590,7 +3590,7 @@ The mechanism: **the egg IS a federation packet.** When operator A hands operato
 The reference implementation is `tools/import_peer_egg.py` (bundled in every egg per XLVII.5.2). It:
 
 1. Validates the egg's manifest + rappid.json
-2. Derives the peer's handle from their rappid (`rappid:v2:operator:@<handle>/<repo>:...`)
+2. Derives the peer's handle from their rappid (`rappid:@<handle>/<repo>:...`)
 3. Extracts the egg to `~/.brainstem/peers/<handle>/`
 4. Synthesizes a beacon at `<peers>/<handle>/.well-known/rapp-network.json` if the egg didn't carry one (works for older egg formats)
 5. Adds a `{github, beacon_url: file://..., estate_url: file://...}` entry to `~/.brainstem/network-seed.json`

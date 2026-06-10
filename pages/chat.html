@@ -23,7 +23,8 @@
     // Derive the repo from the rappid and redirect to the grail.
     const GRAIL = "https://kody-w.github.io/heimdall/";
     const rappid = localStorage.getItem("vbs_rappid") || "";
-    const m = /^rappid:v2:[^:]+:@([^/]+)\/([^:]+):/.exec(rappid);
+    // Eternity rappid:@<owner>/<slug>:<hash> (legacy v2 prefix optional, read-compat)
+    const m = /^rappid:(?:v2:[^:]+:)?@([^/]+)\/([^:]+):/.exec(rappid);
     if (m) {
       const dest = `${GRAIL}?seed=${encodeURIComponent(m[1] + "/" + m[2])}`;
       document.getElementById("dest").innerHTML = `<a href="${dest}">${dest}</a>`;

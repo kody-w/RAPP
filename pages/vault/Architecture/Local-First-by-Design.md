@@ -30,13 +30,13 @@ This is how Bitcoin's full nodes work, how Git itself works at its core, how IPF
 
 ### `home_vault_url` is a *hint*, not authority
 
-The rappid format embeds a `home_vault_url`:
+The rappid's self-locating address (`@<owner>/<slug>` → `github.com/<owner>/<slug>`) is a *hint*, not authority:
 
 ```
-rappid:v2:organism:@wildhaven/ai-homes:144d67...@github.com/kody-w/wildhaven-ceo
+rappid:@<publisher>/<organism-slug>:144d67...
 ```
 
-The URL is **a starting point for new peers** who haven't yet joined the network. It is **not** the place the vault must live forever. Verifiers fetching from any other location accept the records as authoritative if and only if:
+The location is **a starting point for new peers** who haven't yet joined the network. It is **not** the place the vault must live forever. Verifiers fetching from any other location accept the records as authoritative if and only if:
 
 - The `master_pubkey` in `root.json` hashes to the embedded `<identity-hash>` (`144d67...`)
 - All signature chains verify

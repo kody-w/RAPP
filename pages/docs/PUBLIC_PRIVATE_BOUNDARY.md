@@ -329,7 +329,7 @@ The beacon CANNOT contain (constitutionally — Article XLVIII.5 + XLVIII.6):
 {
   "schema": "rapp-private-estate/1.0",
   "owner": {
-    "rappid": "rappid:v2:operator:@<handle>/<repo>:<hex>@github.com/<handle>/<repo>",
+    "rappid": "rappid:@<handle>/<repo>:<hex>",
     "github": "<handle>"
   },
   "private_door_count": 0,
