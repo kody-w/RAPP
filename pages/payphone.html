@@ -48,7 +48,16 @@
   a { color:#79c0ff; }
   label { display:flex; gap:.45rem; align-items:center; font-size:.85rem;
           color:#8b949e; margin-bottom:.8rem; }
+  .qrwrap { text-align:center; }
+  .qrwrap svg, .qrwrap img { width:240px; height:240px; background:#fff;
+          padding:12px; border-radius:10px; }
+  .row { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; }
+  .ghost { background:transparent; border-color:#30363d; color:#79c0ff; }
 </style>
+<!-- Same QR encoder the brainstem UI uses (canonical tiny lib). The payphone
+     is online-only by nature (it dials api.github.com), so a CDN script is
+     acceptable here; if it fails to load we degrade to a copyable link. -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 </head>
 <body>
 <h1>☎️ The Payphone</h1>
@@ -58,6 +67,10 @@ inside one, you were handed its rappid (an invite egg, a QR, a message).
 Dial it with your own GitHub auth. If the door isn't yours to see, the line
 just rings: <code>404</code> — same as a number that doesn't exist.</p>
 
+<!-- Shown when arriving via a scanned invite QR (?dial=) or a share request
+     (?share=). Populated by the script; hidden otherwise. -->
+<div id="invite" class="card" style="display:none"></div>
+
 <div class="card">
   <strong>1 · The number (a rappid, or <code>owner/repo</code>)</strong>
   <input id="rappid" placeholder="rappid:@owner/slug:64hex   ·   or   owner/repo" autocomplete="off" spellcheck="false">
@@ -65,11 +78,15 @@ just rings: <code>404</code> — same as a number that doesn't exist.</p>
   <input id="token" type="password" placeholder="ghp_… / gho_…   (terminal: gh auth token)" autocomplete="off">
   <label><input type="checkbox" id="remember" style="width:auto;margin:0">
     remember in this browser (Doorman <code>rapp_settings</code>)</label>
-  <button id="dial">Dial</button>
-  <span class="muted" id="hint"></span>
+  <div class="row">
+    <button id="dial">Dial</button>
+    <button id="shareBtn" class="ghost" title="Make a QR to hand out">📲 Share this door as a QR</button>
+    <span class="muted" id="hint"></span>
+  </div>
 </div>
 
 <div id="result"></div>
+<div id="share"></div>
 
 <p class="muted">The payphone runs entirely in your browser: your token goes
 to <code>api.github.com</code> and nowhere else. Spec: the rappid IS the
@@ -187,6 +204,78 @@ brainstems and kited vTwins alike (Art. XLVII).</p>
             ' then run the door\'s participation agent (see its README / CONTRIBUTING).</p></div>';
     out.innerHTML = html;
   });
+
+  // ── The QR: share a door so others can scan their way to the payphone ──
+  // The QR encodes payphone.html?dial=<number>. Scanning it opens THIS page
+  // pre-dialed to that door; the scanner still supplies their own auth, so
+  // the QR carries a phone number, never access. Names nothing private by
+  // itself — a rappid is a public address (Art. XLVI), the 404 is the guard.
+  function payphoneUrl(number) {
+    const base = location.origin + location.pathname;
+    return base + '?dial=' + encodeURIComponent(number);
+  }
+  function renderQR(number, mountId) {
+    const mount = document.getElementById(mountId);
+    const url = payphoneUrl(number);
+    if (typeof qrcode !== 'function') {
+      mount.innerHTML = '<div class="card muted">QR encoder didn\'t load ' +
+        '(offline / blocked). Share this link instead — scanning a QR of it ' +
+        'does the same thing:<br><code>' + esc(url) + '</code></div>';
+      return;
+    }
+    const qr = qrcode(0, 'M');               // type 0 = auto-fit, M error level
+    qr.addData(url); qr.make();
+    const svg = qr.createSvgTag({ cellSize: 6, margin: 4, scalable: true });
+    mount.innerHTML =
+      '<div class="card qrwrap"><strong>📲 Scan to reach this door</strong>' +
+      '<p class="muted">Point a phone camera here → opens the payphone ' +
+      'pre-dialed to <code>' + esc(number) + '</code>. The scanner still ' +
+      'signs in with their own GitHub; collaborators get in, everyone else ' +
+      'gets 404.</p>' + svg +
+      '<p class="row" style="justify-content:center">' +
+      '<button class="ghost" id="dlQR">Download SVG</button>' +
+      '<a class="muted" href="' + esc(url) + '">copy the link</a></p></div>';
+    const dl = document.getElementById('dlQR');
+    if (dl) dl.addEventListener('click', () => {
+      const blob = new Blob([svg], { type: 'image/svg+xml' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'payphone-' + number.replace(/[^A-Za-z0-9]+/g, '-').slice(0, 40) + '.svg';
+      a.click(); URL.revokeObjectURL(a.href);
+    });
+  }
+
+  document.getElementById('shareBtn').addEventListener('click', () => {
+    const raw = document.getElementById('rappid').value.trim();
+    if (!parseNumber(raw)) {
+      document.getElementById('share').innerHTML =
+        '<div class="card dead">Type a door number (rappid or owner/repo) first, then share it.</div>';
+      return;
+    }
+    renderQR(raw, 'share');
+  });
+
+  // ── Arriving via a scanned QR or a share link ──
+  const params = new URLSearchParams(location.search);
+  const dial = params.get('dial');
+  const share = params.get('share');
+  if (dial && parseNumber(dial)) {
+    document.getElementById('rappid').value = dial;
+    const banner = document.getElementById('invite');
+    banner.style.display = '';
+    banner.innerHTML = '<strong>📲 You\'ve been handed a door.</strong>' +
+      '<p class="muted">Someone shared <code>' + esc(dial) + '</code> with ' +
+      'you. Drop in a GitHub token with <code>repo</code> scope ' +
+      '(<code>gh auth token</code>) and Dial. If your account has ' +
+      'collaborator access you\'re in; if not, it just rings 404.</p>';
+    if (settings().ghuToken) {           // signed-in vBrainstem → one tap
+      document.getElementById('hint').textContent = 'token ready — press Dial';
+    }
+  }
+  if (share && parseNumber(share)) {
+    document.getElementById('rappid').value = share;
+    renderQR(share, 'share');
+  }
 })();
 </script>
 </body>

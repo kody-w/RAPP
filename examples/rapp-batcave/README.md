@@ -36,7 +36,14 @@ cp agents/batcave_agent.py <your-brainstem>/agents/   # the participation agent
 #   "batcave browse"                    → see everyone's cubbies
 #   "batcave load cubby=kody-w"         → stream agents into your brainstem
 #   "batcave show_and_tell title=..."   → post to the room
+#   "batcave qr"                        → a QR to hand the next contributor
 ```
+
+**Scan to enter (kited vTwins / phones):** the operator shares a **QR**
+(`batcave qr`, or open `…/payphone.html?share=<this door's rappid>` and hit
+*Download SVG*). Scanning it opens the payphone pre-dialed to the batcave;
+sign in with your own GitHub (`repo` scope) and collaborators are in,
+everyone else gets 404. The QR carries the door's address, never access.
 
 Not a collaborator yet? Ask the operator (@kody-w) — out-of-band by design.
 

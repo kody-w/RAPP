@@ -291,6 +291,29 @@ class TestScaffoldGrail(unittest.TestCase):
         self.assertIn("payphone", egg)
         self.assertIn("payphone.html", egg["payphone"])
 
+    def test_invite_egg_carries_qr_links(self):
+        egg = _read_json(SCAFFOLD / ".well-known" / "batcave.egg")
+        self.assertIn("?dial=", egg["payphone_dial"])
+        self.assertIn("?share=", egg["payphone_share"])
+        # dial/share encode this door's rappid (the scannable phone number)
+        self.assertIn("rappid", egg["payphone_dial"])
+
+    def test_payphone_renders_scannable_qr(self):
+        html = (REPO_ROOT / "pages" / "payphone.html").read_text()
+        # reads a scanned-QR pre-dial + a share-to-QR request
+        self.assertIn("?dial", html.replace("'", '"')) if "dial" in html else None
+        self.assertIn("dial", html)
+        self.assertIn("share", html)
+        # a real QR encoder (the canonical tiny lib the brainstem also uses),
+        # not the decorative holo-qr placeholder
+        self.assertIn("qrcode", html)
+        self.assertIn("createSvgTag", html)
+        # downloadable artifact to hand out
+        self.assertIn("Download", html)
+        # graceful fallback if the encoder can't load (offline/blocked)
+        self.assertIn("QR encoder", html)
+        self.assertIn("Share this link instead", html)
+
     def test_cubby_protocol_documents_payphone(self):
         proto = (SCAFFOLD / "specs" / "CUBBY_PROTOCOL.md").read_text()
         self.assertIn("payphone", proto.lower())
@@ -337,6 +360,23 @@ class TestAgentContract(unittest.TestCase):
         out = a.perform(action="protocol")
         self.assertIn(EXPECTED_RAPPID, out)
         self.assertIn("private", out.lower())
+
+    def test_qr_action_returns_share_and_dial_links(self):
+        a = self.mod.BatcaveAgent()
+        env = json.loads(a.perform(action="qr"))   # no mount / no auth needed
+        self.assertEqual(env["status"], "success")
+        self.assertIn("payphone.html?dial=", env["dial_url"])
+        self.assertIn("payphone.html?share=", env["share_url"])
+        # the QR encodes THIS door's rappid (url-encoded)
+        self.assertIn("rappid", env["dial_url"])
+        self.assertEqual(env["rappid"], EXPECTED_RAPPID)
+
+    def test_qr_action_accepts_other_door(self):
+        a = self.mod.BatcaveAgent()
+        env = json.loads(a.perform(action="qr",
+                                   rappid_str="rappid:@kody-w/other:" + "a" * 64))
+        self.assertIn("kody-w", env["dial_url"])
+        self.assertIn("other", env["dial_url"])
 
 
 # --------------------------------------------------------------------------

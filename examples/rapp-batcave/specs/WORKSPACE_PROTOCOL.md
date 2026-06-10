@@ -1,6 +1,6 @@
 # WORKSPACE_PROTOCOL — workspace native primitive
 
-> **Frozen subset** bundled on 2026-06-09T23:20:50Z.
+> **Frozen subset** bundled on 2026-06-10T00:00:13Z.
 
 ## The work-item primitive
 

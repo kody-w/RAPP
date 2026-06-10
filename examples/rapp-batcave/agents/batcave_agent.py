@@ -76,6 +76,8 @@ __manifest__ = {
 DEFAULT_REPO = os.environ.get("BATCAVE_REPO", "kody-w/rapp-batcave")
 NEIGHBORHOOD_RAPPID = ("rappid:@kody-w/rapp-batcave:"
                        + hashlib.sha256(b"kody-w/rapp-batcave").hexdigest())
+PAYPHONE_URL = os.environ.get(
+    "BATCAVE_PAYPHONE", "https://kody-w.github.io/RAPP/pages/payphone.html")
 CACHE_SLUG = "rapp-batcave"
 EVENT_SCHEMA = "rapp-batcave-event/1.0"
 EVENT_KINDS = ("hello", "show-and-tell", "ask", "reply", "fyi", "leave")
@@ -257,7 +259,7 @@ class BatcaveAgent(BasicAgent):
                         "enum": ["protocol", "help", "status", "mount",
                                  "join", "browse", "stash", "show_and_tell",
                                  "load", "unload", "sync", "branch",
-                                 "invite"],
+                                 "invite", "qr"],
                         "description": "what to do (see help)",
                     },
                     "cubby": {"type": "string",
@@ -276,6 +278,8 @@ class BatcaveAgent(BasicAgent):
                               "description": "branch: topic suffix for cubby/<you>/<topic>"},
                     "github_login": {"type": "string",
                                      "description": "invite: collaborator to add"},
+                    "rappid_str": {"type": "string",
+                                   "description": "qr: door to encode (default: the batcave)"},
                     "what_im_cooking": {"type": "string",
                                         "description": "join: one-liner for the gallery"},
                     "confirm": {"type": "boolean",
@@ -367,7 +371,7 @@ class BatcaveAgent(BasicAgent):
 
         if action == "help" or action not in (
                 "status", "mount", "join", "browse", "stash", "show_and_tell",
-                "load", "unload", "sync", "branch", "invite"):
+                "load", "unload", "sync", "branch", "invite", "qr"):
             return (
                 "BatcaveAgent — your cubby in the private batcave neighborhood.\n"
                 "  action=status                       identity + mount + loadout\n"
@@ -382,9 +386,30 @@ class BatcaveAgent(BasicAgent):
                 "  action=sync                         pull + what's new since last look\n"
                 "  action=branch topic=wip             start cubby/<you>/<topic>\n"
                 "  action=invite github_login=bob      add a collaborator (dry-run default)\n"
+                "  action=qr                           share-QR + dial link for the batcave\n"
                 "  action=protocol                     the rules\n"
                 "Contract: specs/CUBBY_PROTOCOL.md in the batcave repo."
             )
+
+        # ---- qr (no mount / no auth needed — pure URL construction) ----
+        if action == "qr":
+            from urllib.parse import quote
+            number = kwargs.get("rappid_str") or NEIGHBORHOOD_RAPPID
+            dial_url = f"{PAYPHONE_URL}?dial={quote(number, safe='')}"
+            share_url = f"{PAYPHONE_URL}?share={quote(number, safe='')}"
+            return self._env(action, "success",
+                             rappid=number,
+                             dial_url=dial_url,
+                             share_url=share_url,
+                             how_to=("Open share_url in a browser → it renders "
+                                     "a scannable QR you can download (SVG) "
+                                     "and hand out (Slack/Teams/print). When a "
+                                     "contributor scans it, the payphone opens "
+                                     "pre-dialed to this door; they sign in "
+                                     "with their own GitHub (repo scope). "
+                                     "Collaborators get in; everyone else 404s. "
+                                     "dial_url is the raw scan target the QR "
+                                     "encodes."))
 
         ctx = self._ctx(kwargs)
         mounted = os.path.isdir(ctx["repo_dir"]) and \

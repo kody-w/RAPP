@@ -37,6 +37,7 @@ import shutil
 import sys
 import time
 from pathlib import Path
+from urllib.parse import quote
 
 _TOOLS_DIR = os.path.dirname(os.path.abspath(__file__))
 if _TOOLS_DIR not in sys.path:
@@ -250,15 +251,17 @@ Members dial in instead:
 
 - **Local brainstems**: `gh auth login` once; `batcave mount` clones via
   your collaborator access.
-- **Kited vTwins on the public web**: use the **payphone** — the generic
-  public dialer at https://kody-w.github.io/RAPP/pages/payphone.html. Paste
-  the door's rappid (your phone number, handed to you out-of-band via the
-  invite egg / QR / a message) + your GitHub token (`repo` scope — e.g.
-  `gh auth token`; the page also reads a signed-in vBrainstem's Doorman
-  `rapp_settings`). Collaborator access = dial tone; everyone else hears
-  404. The payphone names no door and logs nothing — it is a dial pad on
-  the public web, nothing more (Art. XLVI: the rappid IS the address;
-  Art. XLVII: same contract on every substrate).
+- **Kited vTwins on the public web**: **scan the door's QR.** The operator
+  shares a QR (open `…/payphone.html?share=<rappid>`, or run `batcave qr`,
+  to render + download one). Scanning it opens the **payphone** — the
+  generic public dialer — pre-dialed to the batcave. The scanner supplies
+  their own GitHub token (`repo` scope — e.g. `gh auth token`; the page
+  also reads a signed-in vBrainstem's Doorman `rapp_settings`). Collaborator
+  access = dial tone; everyone else hears 404. The QR carries only the
+  door's rappid (a public address, Art. XLVI), never access — the auth is
+  always the scanner's own, and the 404 is the guard. The payphone names no
+  door and logs nothing; it is a dial pad on the public web (Art. XLVII:
+  same contract on every substrate).
 
 ## 8. Joining
 
@@ -402,7 +405,14 @@ cp agents/batcave_agent.py <your-brainstem>/agents/   # the participation agent
 #   "batcave browse"                    → see everyone's cubbies
 #   "batcave load cubby=kody-w"         → stream agents into your brainstem
 #   "batcave show_and_tell title=..."   → post to the room
+#   "batcave qr"                        → a QR to hand the next contributor
 ```
+
+**Scan to enter (kited vTwins / phones):** the operator shares a **QR**
+(`batcave qr`, or open `…/payphone.html?share=<this door's rappid>` and hit
+*Download SVG*). Scanning it opens the payphone pre-dialed to the batcave;
+sign in with your own GitHub (`repo` scope) and collaborators are in,
+everyone else gets 404. The QR carries the door's address, never access.
 
 Not a collaborator yet? Ask the operator (@{OWNER}) — out-of-band by design.
 
@@ -828,6 +838,11 @@ def plant(out_dir: str | None = None, *, seed_agents: bool = False) -> dict:
         "neighborhood_url": GATE_URL,
         "neighborhood_json": f"https://raw.githubusercontent.com/{OWNER}/{SLUG}/main/neighborhood.json",
         "payphone": PAYPHONE_URL,
+        "payphone_dial": f"{PAYPHONE_URL}?dial={quote(rappid, safe='')}",
+        "payphone_share": f"{PAYPHONE_URL}?share={quote(rappid, safe='')}",
+        "qr_note": ("Scan the door QR (operator: open payphone_share to make "
+                    "one, or `batcave qr`) → the payphone opens pre-dialed "
+                    "here; sign in with your own GitHub (repo scope)."),
         "join_via": ("collaborator-access → gh repo clone → batcave join. "
                      "This repo is PRIVATE with no public front door: every "
                      "URL above requires the hatcher's GitHub auth (gh CLI / "

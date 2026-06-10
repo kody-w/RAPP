@@ -105,15 +105,17 @@ Members dial in instead:
 
 - **Local brainstems**: `gh auth login` once; `batcave mount` clones via
   your collaborator access.
-- **Kited vTwins on the public web**: use the **payphone** — the generic
-  public dialer at https://kody-w.github.io/RAPP/pages/payphone.html. Paste
-  the door's rappid (your phone number, handed to you out-of-band via the
-  invite egg / QR / a message) + your GitHub token (`repo` scope — e.g.
-  `gh auth token`; the page also reads a signed-in vBrainstem's Doorman
-  `rapp_settings`). Collaborator access = dial tone; everyone else hears
-  404. The payphone names no door and logs nothing — it is a dial pad on
-  the public web, nothing more (Art. XLVI: the rappid IS the address;
-  Art. XLVII: same contract on every substrate).
+- **Kited vTwins on the public web**: **scan the door's QR.** The operator
+  shares a QR (open `…/payphone.html?share=<rappid>`, or run `batcave qr`,
+  to render + download one). Scanning it opens the **payphone** — the
+  generic public dialer — pre-dialed to the batcave. The scanner supplies
+  their own GitHub token (`repo` scope — e.g. `gh auth token`; the page
+  also reads a signed-in vBrainstem's Doorman `rapp_settings`). Collaborator
+  access = dial tone; everyone else hears 404. The QR carries only the
+  door's rappid (a public address, Art. XLVI), never access — the auth is
+  always the scanner's own, and the 404 is the guard. The payphone names no
+  door and logs nothing; it is a dial pad on the public web (Art. XLVII:
+  same contract on every substrate).
 
 ## 8. Joining
 
