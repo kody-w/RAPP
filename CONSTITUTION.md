@@ -3431,6 +3431,36 @@ The reference rebuild lives at `tools/rebuild_estate.py`. The estate agent's `re
 **Why this is constitutional and not a feature:**
 Every operator's relationships in the network are publicly knowable by design. If the rebuild property doesn't hold, the platform's local-first promise becomes "local-trapped": lose your laptop and you've lost your network presence. With the rebuild property, the network IS the backup. Constitutionalizing this prevents the common drift where a future "convenience" change starts caching mutable state that isn't reproducible from public data — exactly the kind of drift Article XLVI.5 forbids in derived fields, now extended to the whole estate.
 
+### XLVI.7 — The Eternity Address Space (Content-Addressed Rappids)
+
+> **A second rappid namespace.** Where the v2 door rappid says *the rappid IS the URL* (XLVI.1), the **Eternity** rappid says *the rappid IS the organism*. They coexist; one constitution governs both. This sub-article names and reconciles the door-less tier that Article XXXIV already admits ("code-only kinds carry a kind but resolve to **no door** … the same string format describes both cases").
+
+The door-less tier's canonical form is the **RAPP Eternity Standard** (`rapp-eternity/1.0`), upstream of record `kody-w/rapp-commons` (MOMENT_SPEC.md §6.1, `hologram/rappid.js`):
+
+**Canonical Eternity form:** `rappid:<slug>:<64hex>` — 256-bit (real SHA-256); the **64-hex is the join key**. The slug is the kind (`moment`, `keeper`, `dimension`, …); the 64-hex is `sha256("<slug>:" + <eternal-source>)`. For a Moment the source is its spacetime coordinate (`sky·<utc_ms>` or `<geohash>·<utc_ms>`), so the address **deterministically regenerates the organism** with zero lookup — the door-less analog of XLVI.1.
+
+**Reconciliations (this sub-article's purpose):**
+
+1. **Two namespaces, one format family.** The v2 door rappid (`rappid:v2:<kind>:@<owner>/<repo>:<32hex>@github.com/...`, frozen in XLVI.2) is the **door-bearing** address; XLVI.1 governs it. The Eternity rappid (`rappid:<slug>:<64hex>`) is the **content-addressed** identity, governed here, and resolves to **no door** by design. They do not conflict. XLVI.5's "no fallbacks" applies *within each* namespace.
+
+2. **Eternity slugs are NOT door-bearing kinds.** `moment`, `keeper`, `dimension`, and any future Eternity slug live on a **separate axis** from the frozen `VALID_KINDS` of XLVI.2. **Adding an Eternity slug does NOT require amending XLVI.2** — it is door-less by construction and resolves to no `door_type`. XLVI.2's amendment-gate binds only **door-bearing** kinds; the Eternity axis is open and additive, subject to `rapp-eternity/1.0`'s compatibility contract (read all legacy forms, emit only canonical, never version the string — crypto-agility lives in a `sig_suite` record field).
+
+3. **The rappid is immutable; ownership is a second, orthogonal chain.** Article XXXIV.5 ("never regenerate a rappid") holds without exception — an Eternity rappid never changes. Where XXXIV's only chain is the **birth lineage** (`parent_rappid`), Eternity adds an **orthogonal deed chain**: ownership is the tip of a per-rappid, hash-linked chain of **signed transfers** (the current owner signs the rights over to a recipient key — human OR agent). The rappid stays stable; the **deed moves**. The transfer ledger is permissionless-append; validity (signature + owner-authorization + hash-linkage) is decided at *resolution*, never at write.
+
+4. **The history is the ledger (append-only).** Eternity records live as static files in a public git repo; their commit history is an append-only, hash-linked chain whose consensus is the **fast-forward push-race** and whose witness is the committer date. This is XLVI.4/XLVI.5's "pure raw, no fallbacks, append-only" discipline applied to a living record set: canonical `main` is never rewritten, and a full-node validator (`zoo_chain`) certifies birth-proof permanence + append-only identity across every block.
+
+**What this sub-article requires:**
+- An Eternity rappid is canonical iff it matches `rappid:<slug>:<64hex>` and its 64-hex is `sha256("<slug>:"+source)` for the declared source.
+- Consumers read all legacy identity forms (a bare UTC ms, a `pk`, a `|` separator) and join on the 64-hex; they emit only the canonical string and never version it.
+- Ownership of an Eternity rappid is resolved by walking its signed deed chain from the minter; the rappid is never reissued to effect a transfer.
+
+**What this sub-article forbids:**
+- Treating an Eternity slug as a door kind (it has no door; do not synthesize a `door_type` or a GitHub URL for it).
+- Mutating an Eternity rappid to change ownership (transfer is a new signed deed, not a reissue) — preserving XXXIV.5.
+- Rewriting published Eternity history to "correct" a record (append a forward record; never force-push) — preserving XLVI.5.
+
+**Why this is constitutional and not a feature:** the ecosystem now has two legitimate addressing needs — *where a door lives* (the estate's URL) and *what an eternal record is* (a content-bound organism, ownable and transferable). Conflating them would force every Moment, keeper, and dimension through door machinery they don't use, or freeze the open Eternity axis under XLVI.2's door-kind gate. Naming the two namespaces — and the one orthogonal deed chain — keeps both the door catalog (Article XLVI) and the Eternity Standard (`rapp-eternity/1.0`) internally consistent, and prevents the exact drift where a new identity kind silently breaks the frozen door set.
+
 ---
 
 ## Article XLVII — Discoverability Without A Central Registry (Publishing IS The Signal)
