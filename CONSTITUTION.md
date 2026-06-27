@@ -2413,7 +2413,7 @@ preserve vs mint identity.
 Every rappid points at a `parent_rappid`. The chain ascends until it
 reaches the root: **rapp itself** (the prototype digital organism at
 `kody-w/RAPP`), with rappid
-`rappid:v2:prototype:@rapp/origin:0b635450c04249fbb4b1bdb571044dec@github.com/kody-w/RAPP`,
+`rappid:@kody-w/RAPP:0b635450c04249fbb4b1bdb571044dec`,
 which has `parent_rappid: null` and is the species ancestor.
 
 ```
