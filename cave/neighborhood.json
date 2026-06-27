@@ -1,0 +1,65 @@
+{
+  "schema": "rapp-neighborhood/1.0",
+  "neighborhood_rappid": "rappid:@kody-w/rapp-cave:ca72ca0a3cb90c357fb09e38b02f85f09935cacbf61e94740c57f1eb30a73e0a",
+  "kind": "workspace",
+  "name": "rapp-cave",
+  "display_name": "The RAPP Cave",
+  "tagline": "The public workshop. Park a cubby, share rapplications and eggs, pull anyone's work — same cubby mechanism, fully open.",
+  "github": "https://github.com/kody-w/RAPP",
+  "url": "https://kody-w.github.io/RAPP/cave/",
+  "visibility": "public-workspace",
+  "purpose": "The public batcave: a standalone public workspace-neighborhood (the public-workspace pattern). Anyone can park a cubby — isolated housing for their FULL rapp estate (agents, organs, senses, rapplications, whole neighborhoods, eggs) — the same environment as their on-device brainstem. Anyone can stream agents from any cubby into their local brainstem without grail-repo commit risk, share back via fork+PR, and read what's new on the show-and-tell stream. Identical cubby mechanics to the private batcave, with the gate removed: browse, pull, and join are open to the world.",
+  "private_companion": null,
+  "gate_repo": null,
+  "parent_rappid": "rappid:@kody-w/RAPP:0b635450c04249fbb4b1bdb571044dec",
+  "parent_repo": "https://github.com/kody-w/RAPP",
+  "planted_by": "kody-w",
+  "planted_at": "2026-06-27T02:40:04Z",
+  "quirks": {
+    "primitive": "cubby",
+    "spec": "specs/CAVE_PROTOCOL.md",
+    "cubby_anatomy": [
+      "agents",
+      "organs",
+      "senses",
+      "rapplications",
+      "neighborhoods",
+      "eggs",
+      "show-and-tell"
+    ],
+    "isolation": "owner-only writes per cubby (one cubby per GitHub login); append-only shared zones; cross-cubby contribution via PR",
+    "streaming": "cave load → target brainstem agents/ + .git/info/exclude (zero commit risk); pull is a plain curl/clone, no auth required",
+    "event_protocol": "rapp-cave-event/1.0",
+    "event_kinds": [
+      "hello",
+      "show-and-tell",
+      "ask",
+      "reply",
+      "fyi",
+      "leave"
+    ],
+    "merge_rule": "(from, ts) is the universal key; append-only union"
+  },
+  "membership_policy": {
+    "default_collaborator_permission": "read",
+    "founder_only_seats": [
+      "admin"
+    ],
+    "open_to_anyone": true,
+    "join_path": "fork_and_pr",
+    "notes": "PUBLIC join path. No out-of-band gate, no operator approval required. Anyone forks https://github.com/kody-w/RAPP, adds their cubby under cave/cubbies/<github-login>/, and opens a PR — or simply pulls others' cubbies with plain curl/clone. Write access to your own cubby is granted by the PR merge; the world has read access by default."
+  },
+  "branch_model": {
+    "main": "shared truth — cubby-scoped writes + append-only zones, landed via PR",
+    "personal": "cubby/<handle>/<topic> on your fork — yours; never required to merge"
+  },
+  "front_door": "public",
+  "addresses": {
+    "github": "https://github.com/kody-w/RAPP",
+    "pages": "https://kody-w.github.io/RAPP/cave/",
+    "local": "~/.brainstem/neighborhoods/RAPP/cave",
+    "raw": "https://raw.githubusercontent.com/kody-w/RAPP/main/cave",
+    "_note": "A public front door by design. Anyone can browse the Pages site, pull any cubby over plain curl, and join by fork + PR. No auth, no collaborator gate, no dial tone — the cave is open."
+  },
+  "specs_hub": "https://kody-w.github.io/RAPP-Bible/#specs"
+}

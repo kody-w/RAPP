@@ -1,0 +1,22 @@
+{
+  "schema": "rapp-cave-cubby/1.0",
+  "github_login": "kody-w",
+  "rappid": "rappid:@kody-w/RAPP:0b635450c04249fbb4b1bdb571044dec",
+  "display_name": "Kody Wildfeuer",
+  "what_im_cooking": "the rapp-installer rapplication (the grail brainstem, egged & self-bootstrapping) — pull it down publicly",
+  "created_at": "2026-06-27T02:40:04Z",
+  "estate": {
+    "anatomy": [
+      "agents",
+      "organs",
+      "senses",
+      "rapplications",
+      "neighborhoods",
+      "eggs",
+      "show-and-tell"
+    ]
+  },
+  "streamable": {
+    "agents": true
+  }
+}

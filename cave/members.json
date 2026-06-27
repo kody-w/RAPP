@@ -1,0 +1,26 @@
+{
+  "schema": "rapp-neighborhood-members/1.0",
+  "neighborhood_rappid": "rappid:@kody-w/rapp-cave:ca72ca0a3cb90c357fb09e38b02f85f09935cacbf61e94740c57f1eb30a73e0a",
+  "version": 1,
+  "synced_at": "2026-06-27T02:40:04Z",
+  "synced_from": "plant_cave",
+  "open_to_anyone": true,
+  "join_path": "fork → add cave/cubbies/<login>/ → open PR (or just pull, no membership required to read)",
+  "members": [
+    {
+      "github_login": "kody-w",
+      "rappid": "rappid:@kody-w/RAPP:0b635450c04249fbb4b1bdb571044dec",
+      "role": "operator",
+      "capabilities": [
+        "all"
+      ],
+      "joined_at": "2026-06-27T02:40:04Z",
+      "via": "genesis",
+      "notes": "Operator seat. Maintains the cave, merges cubby PRs. No gatekeeping — PRs that add a well-formed cubby under cave/cubbies/<login>/ are welcome from anyone."
+    }
+  ],
+  "reconciliation": {
+    "policy": "public_pr_is_canonical",
+    "notes": "Membership is open and additive. A member is anyone with a cubby under cave/cubbies/<login>/ on main. members.json is the protocol-layer mirror; the cubbies/ directory listing is the ground truth. No emails or PII are stored here — public roster only."
+  }
+}

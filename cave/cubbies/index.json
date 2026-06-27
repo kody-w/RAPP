@@ -1,0 +1,12 @@
+{
+  "schema": "rapp-cave-cubbies/1.0",
+  "neighborhood_rappid": "rappid:@kody-w/rapp-cave:ca72ca0a3cb90c357fb09e38b02f85f09935cacbf61e94740c57f1eb30a73e0a",
+  "updated_at": "2026-06-27T02:40:04Z",
+  "cubbies": [
+    {
+      "github_login": "kody-w",
+      "what_im_cooking": "the rapp-installer rapplication (the grail brainstem, egged & self-bootstrapping) — pull it down publicly",
+      "rappid": "rappid:@kody-w/RAPP:0b635450c04249fbb4b1bdb571044dec"
+    }
+  ]
+}

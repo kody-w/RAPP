@@ -1,0 +1,37 @@
+{
+  "schema": "rapp-rar-index/1.1",
+  "neighborhood_rappid": "rappid:@kody-w/rapp-cave:ca72ca0a3cb90c357fb09e38b02f85f09935cacbf61e94740c57f1eb30a73e0a",
+  "rar_for": "kody-w/RAPP",
+  "kind": "workspace",
+  "updated_at": "2026-06-27T02:40:04Z",
+  "raw_url_prefix": "https://raw.githubusercontent.com/kody-w/RAPP/main/cave",
+  "note": "Per-neighborhood registry. PUBLIC repo: raw URLs need NO auth \u2014 anyone can stream every pinned file directly with plain curl or off GitHub Pages (https://raw.githubusercontent.com/kody-w/RAPP/main/cave/... or https://kody-w.github.io/RAPP/cave/). No clone, no gh-auth, no collaborator gate \u2014 the public front door is open. Join = fork + PR (or just pull). sha256 pins let loaders verify streamed files against this manifest.",
+  "agents": [
+    {
+      "name": "@kody-w/rapp_installer",
+      "version": "0.6.1-cubby",
+      "path": "cubbies/kody-w/agents/rapp_installer_agent.py",
+      "sha256": "acdccb947f9001bcff4f3e1b8bf84bb6b831522a2c7df0d6cffa3cbdae5bfc80",
+      "purpose": "Drive the self-contained, repo-independent RAPP Installer rapplication (status / bootstrap one-liner / health) from any brainstem \u2014 the grail ported out of its repo. Stream via `cave load cubby=kody-w` or plain public curl.",
+      "required_by_tether": false,
+      "schema": "rapp-agent/1.0"
+    }
+  ],
+  "organs": [],
+  "senses": [],
+  "rapps": [
+    {
+      "name": "@kody-w/rapp-installer",
+      "version": "0.6.1",
+      "path": "rapplications/rapp-installer/",
+      "purpose": "The rapp-installer grail brainstem, carved out of its git repo into a self-contained, egged rapplication \u2014 full installer parity (T1/T2/T3), self-bootstrapping (hatch.py/bootstrap.sh), zero grail-commit risk. PUBLIC pull (no auth): curl -fsSL https://raw.githubusercontent.com/kody-w/RAPP/main/cave/rapplications/rapp-installer/bootstrap.sh | bash",
+      "schema": "rapp-rapplication/1.0",
+      "agent_sha256": "eae07bfd67b5e5f1b21fc62c7d3d33e1c2bd414ff74be04746f21c700ff789a9"
+    }
+  ],
+  "verification": {
+    "schema": "rapp-rar-manifest/1.0",
+    "scheme": "sha256",
+    "_instructions": "Re-compute sha256(file) for anything you stream and compare before installing."
+  }
+}

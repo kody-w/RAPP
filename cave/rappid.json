@@ -1,0 +1,18 @@
+{
+  "schema": "rapp-rappid/2.0",
+  "rappid": "rappid:@kody-w/rapp-cave:ca72ca0a3cb90c357fb09e38b02f85f09935cacbf61e94740c57f1eb30a73e0a",
+  "kind": "workspace",
+  "name": "rapp-cave",
+  "display_name": "The RAPP Cave",
+  "host": "github.com",
+  "owner": "kody-w",
+  "repo": "RAPP",
+  "path": "cave",
+  "github": "https://github.com/kody-w/RAPP",
+  "url": "https://kody-w.github.io/RAPP/cave/",
+  "parent_rappid": "rappid:@kody-w/RAPP:0b635450c04249fbb4b1bdb571044dec",
+  "parent_repo": "https://github.com/kody-w/RAPP",
+  "planted_by": "kody-w",
+  "minted_at": "2026-06-27T02:40:04Z",
+  "notes": "The RAPP Cave — the public counterpart to the Batcave: a standalone public cubby neighborhood (public-workspace pattern) living under cave/ in the RAPP species repo. Each member's cubby houses their full rapp estate, isolated. Per CONSTITUTION Article XLVI this rappid is the permanent global address. Article XXXIV.1 locks the STRING FORMAT (Eternity `rappid:@<owner>/<slug>:<64hex>`); the 64hex here is the deterministic sha256 of 'kody-w/rapp-cave' — the same self-locating neighborhood-mint convention rapp-commons and rapp-batcave use, at full 256-bit. Membership is open: no collaborator gate. Read access is public; write-to-your-own-cubby is granted by PR merge."
+}

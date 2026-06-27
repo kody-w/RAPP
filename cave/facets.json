@@ -1,0 +1,36 @@
+{
+  "schema": "rapp-public-facets/1.0",
+  "neighborhood_rappid": "rappid:@kody-w/rapp-cave:ca72ca0a3cb90c357fb09e38b02f85f09935cacbf61e94740c57f1eb30a73e0a",
+  "public_facets": [
+    {
+      "name": "neighborhood_purpose",
+      "scope": "public",
+      "description": "What the cave is — the public cubby neighborhood: park a cubby, share your estate, pull anyone's work."
+    },
+    {
+      "name": "join_path",
+      "scope": "public",
+      "description": "Fully open: fork the RAPP repo, add cave/cubbies/<login>/, open a PR. Or just pull — reading needs no membership."
+    },
+    {
+      "name": "cubby_roster",
+      "scope": "public",
+      "description": "Whose cubbies exist + what they're cooking. Public — listed under cave/cubbies/."
+    },
+    {
+      "name": "shared_agents",
+      "scope": "public",
+      "description": "Streamable agents across all cubbies (sha256-pinned in rar/index.json). Pullable by anyone over plain curl."
+    },
+    {
+      "name": "show_and_tell",
+      "scope": "public",
+      "description": "The append-only signed event stream — the agentic show & tell, readable by the world."
+    },
+    {
+      "name": "cubby_contents",
+      "scope": "personal",
+      "description": "A cubby's substance beyond its declared bones. Owner-curated; only the owner writes to their own cubby."
+    }
+  ]
+}
