@@ -318,7 +318,7 @@ The ecosystem is split across many small public repos; each houses one part. `ko
 
 | Cluster | Repos |
 |---|---|
-| **Kernel & install** | `RAPP` (species root: kernel + specs), `rapp_kernel` (frozen DNA), `rapp-installer` (curl\|bash front door), `RAPP_Desktop`, `rapp-vscode-extension` |
+| **Kernel & install** | `RAPP` (species root: kernel + specs + curl\|bash front door), `rapp_kernel` (frozen DNA), `rapp-installer` (legacy installer — archived), `RAPP_Desktop`, `rapp-vscode-extension` |
 | **Identity & registry** | `rapp-god` (registry of every part + version; drift observatory; hosts this spec), `rapp-map` (which repo houses which part; hosts this spec; the neuron mesh), `RAR` (single-file agent registry), `rapp-static-apis` |
 | **Stores & catalogs** | `RAPP_Store` (rapplications), `RAPP_Sense_Store` (senses), `rapp-egg-hub` (eggs) |
 | **Run a brainstem** | `vbrainstem` (browser Pyodide runtime), `rapp-brainstem-sdk` (headless `/chat`) |
