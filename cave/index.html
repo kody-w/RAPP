@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The RAPP Cave — public RAPP neighborhood</title>
+<style>
+  :root { color-scheme: dark; }
+  body { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+         background:#0d1117; color:#e6edf3; max-width:880px; margin:2rem auto;
+         padding:0 1rem; line-height:1.55; }
+  h1 { color:#ffd33d; } h2 { color:#ffd33d; font-size:1.1rem; margin-top:2rem; }
+  a { color:#79c0ff; }
+  .card { border:1px solid #30363d; border-radius:8px; padding:1rem;
+          margin:.6rem 0; background:#161b22; }
+  .pill { display:inline-block; border:1px solid #30363d; border-radius:999px;
+          padding:.05rem .6rem; margin-right:.4rem; font-size:.8rem;
+          color:#8b949e; }
+  .pill.pub { color:#3fb950; border-color:#238636; }
+  code { background:#161b22; padding:.1rem .3rem; border-radius:4px; }
+  pre { background:#161b22; border:1px solid #30363d; border-radius:8px;
+        padding:.9rem 1rem; overflow:auto; }
+  pre code { background:none; padding:0; }
+  .one-liner { position:relative; }
+  .one-liner button { position:absolute; top:.5rem; right:.5rem;
+        background:#21262d; color:#e6edf3; border:1px solid #30363d;
+        border-radius:6px; padding:.25rem .6rem; cursor:pointer; font:inherit;
+        font-size:.75rem; }
+  .one-liner button:hover { background:#30363d; }
+  .muted { color:#8b949e; font-size:.9rem; }
+</style>
+</head>
+<body>
+<h1>🦇 The RAPP Cave</h1>
+<p><span class="pill pub">public</span><span class="pill">kind: workspace</span>
+<span class="pill">cubby neighborhood</span></p>
+<p><code>rappid:@kody-w/rapp-cave:ca72ca0a3cb90c357fb09e38b02f85f09935cacbf61e94740c57f1eb30a73e0a</code></p>
+
+<p><strong>The RAPP Cave is the public batcave</strong> — a cubby-neighborhood
+<em>anyone can pull from</em>. No collaborator gate, no <code>gh</code> auth, no
+dial tone. Every member gets a <strong>cubby</strong> — isolated housing for a
+full rapp estate. Browse the cubbies, learn from each organism, stream agents
+into your own brainstem, and hatch the rapplications straight off the open web.</p>
+
+<h2>⚡ Stand up the RAPP brainstem — one line, plain curl</h2>
+<p>This hatches the <strong>rapp-installer</strong> rapplication (the full
+repo-independent RAPP brainstem) from the cave. No GitHub login required — it's
+served openly on GitHub Pages.</p>
+<div class="card one-liner">
+<button onclick="navigator.clipboard&amp;&amp;navigator.clipboard.writeText('curl -fsSL https://kody-w.github.io/RAPP/cave/rapplications/rapp-installer/bootstrap.sh | bash').then(()=>{this.textContent='copied';setTimeout(()=>this.textContent='copy',1200);})">copy</button>
+<pre><code>curl -fsSL https://kody-w.github.io/RAPP/cave/rapplications/rapp-installer/bootstrap.sh | bash</code></pre>
+</div>
+<p class="muted">Browse all hatchable rapplications:
+<a href="rapplications/">rapplications/</a></p>
+
+<div class="card">
+  <strong>Join:</strong> just pull — it's public. Fork
+  <a href="https://github.com/kody-w/RAPP">kody-w/RAPP</a>, drop a cubby under
+  <code>cave/cubbies/&lt;your-login&gt;/</code>, and open a PR. Or simply
+  <code>curl</code> anything you see here into your own brainstem — no membership
+  needed. Front-door contract:
+  <a href="specs/CAVE_PROTOCOL.md">CAVE_PROTOCOL.md</a> ·
+  contributing: <a href="CONTRIBUTING.md">CONTRIBUTING.md</a>
+</div>
+
+<h2>🗄️ Cubbies</h2>
+<div id="cubbies"><div class="card muted">Loading the live cubby gallery from
+<code>cubbies/index.json</code> … (served on GitHub Pages, this loads over plain
+HTTPS — no auth, no network gymnastics).</div>
+</div>
+
+<p class="muted">Discovery beacon:
+<a href=".well-known/rapp-cave.json">.well-known/rapp-cave.json</a> ·
+public raw base:
+<code>https://raw.githubusercontent.com/kody-w/RAPP/main/cave</code></p>
+
+<script>
+/* Public-first: relative fetch against the cave served on GitHub Pages.
+   Anyone can pull — no auth. Offline / file:// keeps the static text. */
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g,
+  c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+fetch('cubbies/index.json').then(r => r.json()).then(idx => {
+  const root = document.getElementById('cubbies');
+  root.innerHTML = '';
+  const cubbies = idx.cubbies || [];
+  if (!cubbies.length) {
+    root.innerHTML = '<div class="card muted">No cubbies listed yet. ' +
+      'Fork <a href="https://github.com/kody-w/RAPP">kody-w/RAPP</a> and add ' +
+      'one under <code>cave/cubbies/</code>.</div>';
+    return;
+  }
+  cubbies.forEach(c => {
+    const d = document.createElement('div');
+    d.className = 'card';
+    const h = esc(c.github_login);
+    d.innerHTML = '<strong>🗄️ ' + h + '</strong> — ' +
+      esc(c.what_im_cooking || '...') +
+      ' <a href="cubbies/' + encodeURIComponent(c.github_login) + '/front_door.md">front door</a>';
+    root.appendChild(d);
+  });
+}).catch(() => { /* offline / file:// — static instructions remain */ });
+</script>
+</body>
+</html>

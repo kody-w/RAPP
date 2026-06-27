@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="120" viewBox="0 0 440 120" role="img" aria-label="The RAPP Cave">
+  <rect width="440" height="120" rx="12" fill="#0d1117"/>
+  <rect x="1" y="1" width="438" height="118" rx="11" fill="none" stroke="#30363d"/>
+  <text x="20" y="46" fill="#ffd33d" font-family="ui-monospace,Menlo,monospace" font-size="22" font-weight="700">🦇 The RAPP Cave</text>
+  <text x="20" y="72" fill="#79c0ff" font-family="ui-monospace,Menlo,monospace" font-size="12">the public batcave · open cubby neighborhood</text>
+  <text x="20" y="98" fill="#8b949e" font-family="ui-monospace,Menlo,monospace" font-size="10">kody-w.github.io/RAPP/cave · pull anything, no auth</text>
+</svg>

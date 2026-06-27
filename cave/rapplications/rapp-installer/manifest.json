@@ -1,0 +1,28 @@
+{
+  "schema": "rapp-rapplication/1.0",
+  "name": "rapp-installer",
+  "display_name": "RAPP Installer (self-contained brainstem)",
+  "version": "0.6.1",
+  "summary": "The RAPP brainstem — the full rapp-installer engine — ported out of the kody-w/rapp-installer grail repo into a self-contained, repo-independent rapplication. Carries its own copy of the kernel (kernel/brainstem.py, byte-identical to grail) plus the entire installer payload (T1 brainstem, T2 Azure deploy, T3 M365 solution). Run it, build agents against it, and edit it in VS Code with zero risk of accidentally committing to the sacred grail. Hatchable anywhere from one egg.",
+  "primary_agent": null,
+  "entrypoint": "serve.py",
+  "ui": "web/index.html",
+  "kernel": "kernel/brainstem.py",
+  "self_bootstrap": ["hatch.py", "bootstrap.sh", "bootstrap.ps1"],
+  "default_port": 7077,
+  "voice_first": false,
+  "repo_independent": true,
+  "grail_untouched": true,
+  "powered_by": "GitHub Copilot token exchange (no API keys)",
+  "visibility": "public",
+  "home": "https://kody-w.github.io/RAPP/cave/rapplications/rapp-installer/",
+  "raw_base": "https://raw.githubusercontent.com/kody-w/RAPP/main/cave/rapplications/rapp-installer",
+  "install_one_liner": "curl -fsSL https://kody-w.github.io/RAPP/cave/rapplications/rapp-installer/bootstrap.sh | bash",
+  "egg": {
+    "name": "cubby-rapp-installer.egg",
+    "schema": "brainstem-egg/2.3-cubby",
+    "committed": false,
+    "note": "Not committed in this public tree — repacked by the integrator from these source files and published to raw_base. The bootstrap one-liner pulls the freshly repacked public egg via plain curl (no auth)."
+  },
+  "rappid": "rappid:@kody-w/rapp-installer:7d9a33a14ef9fbe2ec8d74aca65ba8de7536aaffe4ec1761ff5b1562f1b26d63"
+}
