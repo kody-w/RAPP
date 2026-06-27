@@ -22,6 +22,10 @@ fork + PR.
   `curl` / `git clone`, no auth), personal branches, the signed `rapp-cave-event/1.0`
   show-and-tell stream, the public front door, and **fork + PR** joining. Section
   §9 is the side-by-side of how the public cave differs from the private batcave.
+- **[`SUPER_RAR.md`](./SUPER_RAR.md)** — the **super-RAR** capability (full parity
+  with the batcave, public): the RAR + super-store indexes, the `build_super_rar.py`
+  builder, the drop-in `Cave` agent (`list` / `super_rar` / `load`, git-invisible
+  streaming), the `rar_steward`, and the CI freshness gate.
 
 ## How this relates to the wider RAPP specs
 

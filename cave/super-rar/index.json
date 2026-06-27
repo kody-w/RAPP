@@ -1,8 +1,9 @@
 {
   "schema": "rapp-super-rar/1.0",
   "neighborhood_rappid": "rappid:@kody-w/rapp-cave:ca72ca0a3cb90c357fb09e38b02f85f09935cacbf61e94740c57f1eb30a73e0a",
-  "built_at": "2026-06-27T02:40:04Z",
   "note": "The super-RAR \u2014 the cave's super-store. A standard RAR stocks agents; this carries the WHOLE RAPP stack (agents, organs, senses, rapplications, neighborhoods, eggs) across every cubby \u2014 one PUBLIC registry over the full ecosystem. Anyone can browse and stream every entry with plain curl off the public raw base (no auth, no collaborator gate, no clone). Find what a neighbor already built and stream it in. Rebuild with `cave super_rar rebuild=true`.",
+  "raw_url_prefix": "https://raw.githubusercontent.com/kody-w/RAPP/main/cave",
+  "built_at": "2026-06-27T13:32:56Z",
   "count": 2,
   "by_kind": {
     "agent": 1,
@@ -10,20 +11,20 @@
   },
   "entries": [
     {
-      "kind": "egg",
-      "name": "cubby-rapp-installer.egg",
-      "cubby": "kody-w",
-      "path": "cubbies/kody-w/eggs/cubby-rapp-installer.egg",
-      "streamable": false,
-      "sha256": "eae07bfd67b5e5f1b21fc62c7d3d33e1c2bd414ff74be04746f21c700ff789a9"
-    },
-    {
       "kind": "agent",
       "name": "rapp_installer_agent.py",
       "cubby": "kody-w",
       "path": "cubbies/kody-w/agents/rapp_installer_agent.py",
       "streamable": true,
       "sha256": "acdccb947f9001bcff4f3e1b8bf84bb6b831522a2c7df0d6cffa3cbdae5bfc80"
+    },
+    {
+      "kind": "egg",
+      "name": "cubby-rapp-installer.egg",
+      "cubby": "kody-w",
+      "path": "cubbies/kody-w/eggs/cubby-rapp-installer.egg",
+      "streamable": false,
+      "sha256": "eae07bfd67b5e5f1b21fc62c7d3d33e1c2bd414ff74be04746f21c700ff789a9"
     }
   ]
 }

@@ -1,0 +1,31 @@
+name: cave super-RAR freshness
+
+# Keep the public RAPP Cave's super-store honest: whenever a cubby's contents or
+# the cave's participation agents change, the committed super-RAR/RAR indexes
+# must have been rebuilt. This is the CI half of the batcave god agent's
+# `super_rar rebuild` — a gate, not a write-back (no loops, no extra perms).
+on:
+  pull_request:
+    paths:
+      - 'cave/cubbies/**'
+      - 'cave/agents/**'
+      - 'cave/rapplications/**'
+      - 'cave/tools/build_super_rar.py'
+  push:
+    branches: [main]
+    paths:
+      - 'cave/cubbies/**'
+      - 'cave/agents/**'
+      - 'cave/rapplications/**'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify the super-RAR indexes are current
+        run: |
+          python3 cave/tools/build_super_rar.py --check
