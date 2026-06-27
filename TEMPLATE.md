@@ -17,7 +17,7 @@ Template from a downstream (e.g., [wildhaven-ai-homes-twin](https://github.com/k
 
 Per [Constitution Article XXXIV](./CONSTITUTION.md), every variant's `parent_rappid` declares the repo whose code it inherited at template time — no exceptions. There is no "claim a different ancestor" flag. If you template from RAPP, your parent is rapp; if you template from wildhaven, your parent is wildhaven.
 
-This is enforced by `rapp_brainstem/utils/lineage_check.py`, which the brainstem boot guard (`rapp_brainstem/boot.py`) calls before serving. An uninitialized template clone — one whose `rappid.json` still carries the parent's rappid but whose git remote points elsewhere — refuses to boot until `installer/initialize-variant.sh` regenerates the rappid.
+This is enforced by `rapp_brainstem/utils/lineage_check.py`, which the brainstem boot guard (`rapp_brainstem/utils/boot.py`) calls before serving. An uninitialized template clone — one whose `rappid.json` still carries the parent's rappid but whose git remote points elsewhere — refuses to boot until `installer/initialize-variant.sh` regenerates the rappid.
 
 ## The flow
 

@@ -39,7 +39,7 @@ The note [[The Swarm Estate]] (Article XXXVI) already flipped this orientation o
 
 ## What changes mechanically (and what doesn't)
 
-**The rappid spec doesn't change.** [[Rappid]] already enumerates `rapplication` as a valid `<kind>` value alongside `organism`, `twin`, `swarm`. The format `rappid:@<publisher>/<slug>:<hash>` accommodates any organism scale today. Rapplications and organisms are *already* identified the same way; we just hadn't said the implication out loud.
+**The rappid spec doesn't change.** `tools/door_address.py`'s `VALID_KINDS` (CONSTITUTION Art. XLVI.2) already includes `rapplication` as a valid `<kind>` value (alongside `twin`, `prototype`, etc.). The format `rappid:@<publisher>/<slug>:<hash>` accommodates any organism scale today. Rapplications and organisms are *already* identified the same way; we just hadn't said the implication out loud.
 
 **The egg format doesn't change either.** A rapplication-scope `.egg` and an organism-scope `.egg` use the same zip-with-manifest layout. The manifest's `type` and `counts` declare the scope; the unpacker dispatches accordingly. The schemas (`brainstem-egg/2.2-organism`, future `brainstem-egg/2.2-rapplication`) are siblings, not different formats.
 
@@ -124,7 +124,7 @@ Each step is independently shippable. Each step holds value even if the next ste
 
 ## Cross-references
 
-- [[Rappid]] — the canonical identifier spec. Already enumerates rapplication and organism as kinds.
+- [[Rappid]] — the canonical identifier spec. `kind` values are enumerated in `tools/door_address.py` (`VALID_KINDS`, per Art. XLVI.2).
 - [[The Swarm Estate]] — the precedent for "the larger entity is the substrate, not the artifact." This note extends that flip downward to the rapplication scope.
 - [[Federation via RAR]] — the trust-without-discrimination posture for catalog-distributed organisms. Doesn't change here; just gets one more thing it covers.
 - [[Local-First-by-Design]] — informs the bond cycle (organism authority lives on the device, hosts are transports). Same principle scales down to per-rapp organisms.

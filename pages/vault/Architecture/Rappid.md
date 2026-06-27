@@ -49,7 +49,7 @@ rappid:@kody-w/RAPP:0b635450c04249fbb4b1bdb571044dec
                     └ legacy UUID with dashes stripped, preserved as the species root's stable identifier ┘
 
 rappid:@kody-w/kody-twin:91d006ca7bd052bfa5021d623122012f
-                         └ an organism at its own repo; hash is key-derived (sha256 of master pubkey, truncated) ┘
+                         └ an organism at its own repo; the hash is its key-derived identity — sha256 of the master pubkey (256-bit; shown abbreviated) ┘
 
 rappid:@<publisher>/<twin-slug>:<64hex>
                     └ a twin under that organism — one repo = one slug = one self-locating address ┘
@@ -124,8 +124,8 @@ When you intentionally mint a new rappid (mitosis), you are deliberately birthin
 
 1. **Generate the child's holocard incantation** (24-word BIP-39 phrase). Each child gets its own.
 2. **Derive the child's master / self-signing / user-signing keys** from the incantation.
-3. **Compute the child's identity-hash** = `sha256(child_master_pubkey_SPKI)[:32]`.
-4. **Mint the child's rappid string** in v2 format with that hash, the chosen kind/publisher/slug, and the child's home_vault_url.
+3. **Compute the child's identity-hash** = `sha256(child_master_pubkey_SPKI)` (full 256-bit hex).
+4. **Mint the child's rappid string** as the consolidated Eternity form `rappid:@<owner>/<slug>:<hash>`. The kind/publisher/slug and the child's `home_vault_url` live in the child's `rappid.json` / `root.json` RECORD, not the string.
 5. **Write the child's signed `root.json`** declaring the child's rappid AND `parent_rappid` pointing to the parent organism's rappid.
 6. **(Optional) Write a kin-vouch from the parent's user-signing key** acknowledging the child as kin.
 7. **OpenTimestamps the child's root.json** to anchor the birth moment in Bitcoin.
@@ -201,7 +201,7 @@ Per Constitution Articles XXXIV.7 and XXXVI:
 
 - **The species root** (`rappid:@kody-w/RAPP:0b6354...`) currently has no master keypair. Its rappid is anchored by convention (the existing UUID, dashes-stripped, preserved in the hash field). A future ceremony may mint a master keypair for RAPP itself; until then, the hash field's stability is sufficient.
 - **Code variants** (kernel forks) declare their rappid in `rappid.json`. Cryptographic backing is opt-in via the Article XXXIV.7 attestation envelope (signed by parent's release key).
-- **AI organisms, twins, customer estates** mint a master keypair via the holocard incantation ceremony. They declare their rappid in a `root.json` signed by the master key. The hash field is `sha256(master_pubkey_SPKI)[:32]`.
+- **AI organisms, twins, customer estates** mint a master keypair via the holocard incantation ceremony. They declare their rappid in a `root.json` signed by the master key. The hash field is `sha256(master_pubkey_SPKI)` (full 256-bit hex).
 
 The same rappid format describes all three cases. The verifier inspects which fields are present and applies the appropriate verification.
 
