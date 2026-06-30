@@ -2366,7 +2366,11 @@ rappid string described in the canonical spec at
   "parent_repo": "https://github.com/kody-w/RAPP",
   "parent_commit": "<git SHA at birth>",
   "born_at": "<ISO timestamp>",
-  "host": "<short machine identifier, opaque>"
+  "name": "<organism name>",
+  "role": "prototype | variant",
+  "description": "<free text>",
+  "attestation": null,
+  "host": "<short machine identifier, opaque — optional>"
 }
 ```
 
@@ -2413,7 +2417,7 @@ preserve vs mint identity.
 Every rappid points at a `parent_rappid`. The chain ascends until it
 reaches the root: **rapp itself** (the prototype digital organism at
 `kody-w/RAPP`), with rappid
-`rappid:v2:prototype:@rapp/origin:0b635450c04249fbb4b1bdb571044dec@github.com/kody-w/RAPP`,
+`rappid:@kody-w/RAPP:0b635450c04249fbb4b1bdb571044dec`,
 which has `parent_rappid: null` and is the species ancestor.
 
 ```
@@ -2697,7 +2701,7 @@ The entity-level identity is recorded as a **cryptographically-backed rappid**:
 rappid:@<publisher>/<slug>:<identity-hash>
 ```
 
-where `<identity-hash>` is the truncated cryptographic hash of the master public key. This is the consolidated Eternity format described in Article XXXIV.1 and the canonical spec at `pages/vault/Architecture/Rappid.md` — `kind` and the home-vault location live in the `rappid.json` record, not the string. The same format serves every organism kind in the species tree.
+where `<identity-hash>` is the SHA-256 cryptographic hash of the master public key (full 256-bit hex; keyless organisms use a stable UUID/commit-derived hash). This is the consolidated Eternity format described in Article XXXIV.1 and the canonical spec at `pages/vault/Architecture/Rappid.md` — `kind` and the home-vault location live in the `rappid.json` record, not the string. The same format serves every organism kind in the species tree.
 
 ### XXXVI.2 — One format, one species tree
 

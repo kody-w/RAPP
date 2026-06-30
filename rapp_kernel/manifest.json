@@ -1,0 +1,21 @@
+{
+  "schema": "rapp-kernel/1.1",
+  "latest": "0.6.0",
+  "files": [
+    "brainstem.py",
+    "basic_agent.py",
+    "context_memory_agent.py",
+    "manage_memory_agent.py"
+  ],
+  "signing": {
+    "method": null,
+    "key_id": null,
+    "verification_uri": null
+  },
+  "versions": [
+    {
+      "version": "0.6.0",
+      "attestation": null
+    }
+  ]
+}

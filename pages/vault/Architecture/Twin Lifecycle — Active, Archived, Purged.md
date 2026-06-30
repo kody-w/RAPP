@@ -78,7 +78,7 @@ When a twin is archived, `archived.json` is written into `~/.rapp/twins/.archive
 ```json
 {
   "schema": "rapp-twin-tombstone/1.0",
-  "rappid": "rappid:v2:project:@kody-w/test-haiku-composer:f7a96540…",
+  "rappid": "rappid:@kody-w/test-haiku-composer:f7a96540…",
   "hash": "f7a96540-c422-48f2-b250-563798d3f430",
   "name": "test-haiku-composer",
   "kind": "project",

@@ -15,6 +15,12 @@ Per **Constitution Article XXXIII §4**, AI assistants — and contributors gene
 
 The question this note answers: **how does the rest of the platform get wired in without ever touching brainstem.py?**
 
+> **Implementation status.** `rapp_brainstem/utils/boot.py` ships today and runs the
+> Article XXXIV **lineage guard** plus the canonical kernel **verbatim**. The organ
+> dispatch, `/web` mount, and sense composition described below are the **additive
+> extension point** this enables — `utils/organs/` and `utils/senses/` are scaffolded
+> (empty) and wire in as those modules land. The pattern below is the design they attach by.
+
 ## The pattern: a kernel-sibling launcher
 
 `rapp_brainstem/utils/boot.py` is a sibling of the kernel — DNA-adjacent, not part of the mutation surface. It does three things:
