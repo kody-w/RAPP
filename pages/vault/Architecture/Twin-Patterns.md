@@ -12,7 +12,7 @@ The brainstem is a runtime. The egg is the digital organism. The RAPPID is the s
 One brainstem, one twin. The default. Identity minted on first call to `/identity`, persisted at `.brainstem_data/identity.json`, immortal across reboots.
 
 ```
-[laptop] ──► twin (rappid:twin:@kody-w/personal:abc...)
+[laptop] ──► twin (rappid:@kody-w/personal:abc...)   # kind ("twin") lives in the record
 ```
 
 ### 2. Parallel omniscience
@@ -93,7 +93,7 @@ The kernel ships a `Twin` agent (`rapp_brainstem/agents/twin_agent.py`). Its act
 
 Each child runs under its own `soul.md`, its own `agents/`, its own `.brainstem_data/`. The user types into one chat box. The LLM picks the peer, the front-door brainstem composes `Twin(action="chat", rappid_uuid=...)`, the envelope crosses to the right port, and the reply comes back as if it were a local tool call — the [[The Federated Twin Egg Hatcher Pattern#Federate through the global brainstem in plain English|transparent-handoff principle]] applies the same way it does across machines.
 
-Federation is patterns 2–4 collapsed onto one host: parallel omniscience (many incarnations), twin-squared (multiple perspectives), and cross-twin collaboration (chat is the seam), unified under one entry point. See [[The Federated Twin Egg Hatcher Pattern]] for how the workspaces get there, and [[Rappid]] for the v2 schema the keys are built on.
+Federation is patterns 2–4 collapsed onto one host: parallel omniscience (many incarnations), twin-squared (multiple perspectives), and cross-twin collaboration (chat is the seam), unified under one entry point. See [[The Federated Twin Egg Hatcher Pattern]] for how the workspaces get there, and [[Rappid]] for the Eternity rappid schema (rapp-rappid/2.0) the keys are built on.
 
 ---
 
@@ -124,7 +124,7 @@ __card__ = {
     # summons the twin egg below. Without these fields, the card
     # is just a bare agent install (existing behavior). ──
     "summon":         "https://kody-w.github.io/rapp_store/apps/kanban/twin.egg",
-    "summon_rappid":  "rappid:rapp:@kody-w/kanban:9d8e7f6a5b4c3d2e",
+    "summon_rappid":  "rappid:@kody-w/kanban:9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f40",
     ...
 }
 
@@ -152,7 +152,7 @@ The result: parallel omniscience is *lossless waiting for merge.* Nothing gets d
 | Layer | What | Where |
 |---|---|---|
 | Egg cartridge format | `brainstem-egg/2.0` zip + manifest schema | Open — `kody-w/RAPP rapp_brainstem/utils/egg.py` |
-| RAPPID format | `rappid:<type>:@publisher/slug:<entropy>` | Open — same file |
+| RAPPID format | `rappid:@<publisher>/<slug>:<hash>` (kind/type lives in the record) | Open — same file |
 | Frame schema | `{frame_id, rappid, stream_id, local_vt, utc, kind, payload}` | Open — `kody-w/RAPP rapp_brainstem/utils/frames.py` |
 | Summon endpoints | `/eggs/summon`, `/agents/import` auto-detect, `/rapps/export/*` | Open — `rapp_brainstem/brainstem.py` |
 | Twin manifest | `/twin/manifest` — public discovery surface | Open — same file |

@@ -31,11 +31,11 @@ fi
 # but this catches any agent or organ that does a bare open().
 export PYTHONUTF8=1
 
-# Launch via the boot wrapper so organs, senses, and the /web mount
-# are wired in additively. The wrapper runs the canonical kernel
-# verbatim (Constitution Article XXXIII §4 — kernel stays untouched).
-# Falls back to legacy boot.py at root, then to the kernel directly,
-# for older organism layouts.
+# Launch via the boot wrapper: it runs the Article XXXIV lineage guard,
+# then the canonical kernel verbatim (Article XXXIII §4 — kernel stays
+# untouched). Organs, senses, and the /web mount wire in additively as
+# those modules land under utils/. Falls back to legacy boot.py at root,
+# then to the kernel directly, for older organism layouts.
 if [ -f utils/boot.py ]; then
     exec "$VENV_PYTHON" utils/boot.py
 elif [ -f boot.py ]; then

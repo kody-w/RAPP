@@ -19,6 +19,14 @@ cd "$(dirname "$0")/../.."
 PYTHON="${PYTHON:-$HOME/.brainstem/venv/bin/python}"
 [ -x "$PYTHON" ] || PYTHON="$(command -v python3)"
 
+# The boot sidecar's organ/sense/web wiring is an additive extension point.
+# boot.py ships the lineage guard + verbatim kernel launch; until actual organ
+# modules land (utils/organs/*_organ.py), there is nothing to dispatch — skip.
+if ! ls rapp_brainstem/utils/organs/*_organ.py >/dev/null 2>&1; then
+    echo "SKIP: organ sidecar not present (boot.py runs the guard + kernel verbatim)"
+    exit 0
+fi
+
 LOG="/tmp/rapp-organism-07.log"
 PID_FILE="/tmp/rapp-organism-07.pid"
 

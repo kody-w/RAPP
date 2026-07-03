@@ -17,7 +17,7 @@ Template from a downstream (e.g., [wildhaven-ai-homes-twin](https://github.com/k
 
 Per [Constitution Article XXXIV](./CONSTITUTION.md), every variant's `parent_rappid` declares the repo whose code it inherited at template time — no exceptions. There is no "claim a different ancestor" flag. If you template from RAPP, your parent is rapp; if you template from wildhaven, your parent is wildhaven.
 
-This is enforced by `rapp_brainstem/utils/lineage_check.py`, which the brainstem boot guard (`rapp_brainstem/boot.py`) calls before serving. An uninitialized template clone — one whose `rappid.json` still carries the parent's rappid but whose git remote points elsewhere — refuses to boot until `installer/initialize-variant.sh` regenerates the rappid.
+This is enforced by `rapp_brainstem/utils/lineage_check.py`, which the brainstem boot guard (`rapp_brainstem/utils/boot.py`) calls before serving. An uninitialized template clone — one whose `rappid.json` still carries the parent's rappid but whose git remote points elsewhere — refuses to boot until `installer/initialize-variant.sh` regenerates the rappid.
 
 ## The flow
 
@@ -42,7 +42,7 @@ This will:
 
 1. Run `rapp_brainstem/utils/lineage_check.py` to verify this is a fresh template clone (refuses to run on the species root itself, or on an already-initialized variant without confirmation).
 2. Generate a fresh rappid (UUIDv4).
-3. Rewrite `rappid.json` with `parent_rappid = 0b635450-c042-49fb-b4b1-bdb571044dec` (rapp's species root) and `parent_repo = https://github.com/kody-w/RAPP.git`.
+3. Rewrite `rappid.json` with `parent_rappid = rappid:@kody-w/RAPP:0b635450c04249fbb4b1bdb571044dec` (rapp's species root) and `parent_repo = https://github.com/kody-w/RAPP.git`.
 4. Record the parent commit.
 
 ### 4. Customize

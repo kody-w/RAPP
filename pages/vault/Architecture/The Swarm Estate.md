@@ -73,7 +73,7 @@ The right cousin is **Matrix**. Signal optimizes for private messaging on a cent
 The v1 RAPPID format was:
 
 ```
-rappid:twin:@anon/kody:8844d5fe99cb77b6
+rappid:@anon/kody:8844d5fe99cb77b68844d5fe99cb77b6   # kind ("twin") lives in the record
 ```
 
 Three holes:
