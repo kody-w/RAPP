@@ -1484,12 +1484,12 @@
       "flow": "refresh (pull the grail) → spec (freshest) → verify (4-leg drift check)"
     }
   ],
-  "schemas_ref": "The full ~80-schema registry lives in ECOSYSTEM_MAP.md §5 (rapp-*/N.M + brainstem-egg/*). Canonical families: identity (rapp-rappid/2.0, rapp-door/1.0, rapp-estate/1.1, rapp-facets/1.0), cartridges (brainstem-egg/2.2-organism|2.2-rapplication|2.3-session|2.3-neighborhood|2.3-estate|2.3-cubby), neighborhoods (rapp-neighborhood/1.0, rapp-neighborhood-members/1.0, rapp-rar-index/1.0), private-cubby (rapp-cubby/1.0, rapp-super-rar/1.0, rapp-payphone-dial/1.0), federation (rapp-twin-chat/1.0, rapp-public-facets/1.0, rapp-network beacon), governance (rapp-ecosystem-graph/1.0, rapp-canon/1.0, rapp-drift-report/1.0), neuron mesh (rapp-neuron/1.0, rapp-neuron-mesh/1.0).",
+  "schemas_ref": "The full ~80-schema registry lives in ECOSYSTEM_MAP.md §5 (rapp-*/N.M + brainstem-egg/*). Canonical families: identity (rapp-rappid/2.0, rapp-eternity/1.0, rapp-door/1.0, rapp-estate/1.1, rapp-facets/1.0), cartridges (brainstem-egg/2.2-organism|2.2-rapplication|2.3-session|2.3-neighborhood|2.3-estate|2.3-cubby), neighborhoods (rapp-neighborhood/1.0, rapp-neighborhood-members/1.0, rapp-rar-index/1.0), private-cubby (rapp-cubby/1.0, rapp-super-rar/1.0, rapp-payphone-dial/1.0), federation (rapp-twin-chat/1.0, rapp-public-facets/1.0, rapp-network beacon), governance (rapp-ecosystem-graph/1.0, rapp-canon/1.0, rapp-drift-report/1.0), neuron mesh (rapp-neuron/1.0, rapp-neuron-mesh/1.0).",
   "repos": {
     "kernel & install": [
       "RAPP (species root: kernel + specs + curl|bash front door)",
       "rapp_kernel (frozen DNA)",
-      "rapp-installer (legacy installer — archived)",
+      "rapp-installer (installer; canonical front door now in RAPP)",
       "RAPP_Desktop",
       "rapp-vscode-extension"
     ],
