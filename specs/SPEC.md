@@ -4,7 +4,7 @@
 >
 > **Scope:** the **network protocol** — federation, addressing, discovery across the public web. **Not** the single-file agent contract; for that read [`pages/docs/SPEC.md`](../pages/docs/SPEC.md). See [`specs/README.md`](./README.md) for the spec-directory map.
 >
-> **Authority:** this file. **Schema-of-record:** `rapp-protocol/1.0`. **Constitutional anchor:** Articles I–XLVI (see `CONSTITUTION.md` in the parent project for narrative; this document is the operational synthesis).
+> **Authority:** this file. **Schema-of-record:** `rapp-protocol/1.0`. **Constitutional anchor:** Articles I–LI (see `CONSTITUTION.md` in the parent project for narrative; this document is the operational synthesis).
 
 ---
 
@@ -419,7 +419,7 @@ See `skill.md` (sibling file in this directory). It is the action-oriented runbo
 
 - **This spec:** `specs/SPEC.md` in the planted repo (frozen at planting time) and at `https://raw.githubusercontent.com/kody-w/RAPP/main/specs/SPEC.md` (canonical, evolving).
 - **Reference implementations:** `tools/door_address.py` (rappid parsing), `rapp_brainstem/agents/plant_seed_agent.py` (planter), `rapp_brainstem/agents/estate_agent.py` (estate), `tools/holo_card_generator.py` (holocard derivation).
-- **Constitutional anchor:** CONSTITUTION.md Articles I–XLVI in the parent project (`kody-w/RAPP`).
+- **Constitutional anchor:** CONSTITUTION.md Articles I–LI in the parent project (`kody-w/RAPP`).
 - **License:** spec text MIT; door content per its own license declaration in `card.json.meta.license`.
 
 ---
