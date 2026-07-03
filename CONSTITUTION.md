@@ -3452,7 +3452,7 @@ Every operator's relationships in the network are publicly knowable by design. I
 
 > **A second rappid namespace.** Where the v2 door rappid says *the rappid IS the URL* (XLVI.1), the **Eternity** rappid says *the rappid IS the organism*. They coexist; one constitution governs both. This sub-article names and reconciles the door-less tier that Article XXXIV already admits ("code-only kinds carry a kind but resolve to **no door** … the same string format describes both cases").
 
-The door-less tier's canonical form is the **RAPP Eternity Standard** — the schema **`rapp-eternity/1.0`** (its reference implementation & upstream-of-record live in `kody-w/rapp-commons`: MOMENT_SPEC.md §6.1, `hologram/rappid.js`):
+The door-less tier's canonical form is the **RAPP Eternity Standard** — the schema **`rapp-eternity/1.0`**, whose **single canonical home** is `kody-w/rapp-eternity/SPEC.md` (locked 2026-06-28; every copy in RAPP-Bible / rapp-egg-hub / rapp-moment is a mirror of it, never an authority — on any discrepancy that SPEC governs). Its Moment reference implementation lives in `kody-w/rapp-commons` (MOMENT_SPEC.md §6.1, `hologram/rappid.js`):
 
 **Canonical Eternity form:** `rappid:<slug>:<64hex>` — 256-bit (real SHA-256); the **64-hex is the join key**. The slug is the kind (`moment`, `keeper`, `dimension`, …); the 64-hex is `sha256("<slug>:" + <eternal-source>)`. For a Moment the source is its spacetime coordinate (`sky·<utc_ms>` or `<geohash>·<utc_ms>`), so the address **deterministically regenerates the organism** with zero lookup — the door-less analog of XLVI.1.
 
