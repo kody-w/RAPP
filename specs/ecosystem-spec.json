@@ -1,6 +1,6 @@
 {
   "schema": "rapp-ecosystem-spec/1.0",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "title": "The RAPP Ecosystem — Full End-to-End Spec",
   "summary": "The single canonical description of the entire RAPP ecosystem: every operator capability domain, the one agent that drives them via natural language, the schemas, the repos, the end-to-end journeys, and the four-leg drift triangle that keeps this spec, the agent, and the two mirror repos in sync.",
   "canonical_source": "kody-w/RAPP",
@@ -1494,6 +1494,8 @@
       "rapp-vscode-extension"
     ],
     "identity & registry": [
+      "rapp-eternity (identity authority — the sole identity standard; schema rapp-eternity/1.0; rapp-rappid-spec/2.0 defers to it)",
+      "rapp-estate (estate spec/template — the Constitutionally-mandated <handle>/rapp-estate public + <handle>/rapp-estate-private family, Art. XLVIII; schema rapp-estate/1.1)",
       "rapp-god (registry of every part + version; drift observatory; hosts this spec)",
       "rapp-map (which repo houses which part; hosts this spec; the neuron mesh)",
       "RAR (single-file agent registry)",
@@ -1519,7 +1521,8 @@
       "rapp-vneighborhood (template)",
       "rapp-commons (global town square)",
       "rapp-god-forum",
-      "rapp-resident (cloud relay)"
+      "rapp-resident (cloud relay)",
+      "RAPP-Network (project-twin neighborhood layer)"
     ],
     "the agent-built web": [
       "rionet (rapp.robots.txt → rappbot → RIO)",
