@@ -366,14 +366,14 @@ The 🌱 Propose-an-agent pane drafts a `BasicAgent` skeleton, accepts the visit
 
 Eggs are zip archives matching the `brainstem-egg/2.2-organism` schema. Two tiers (front door exports doorman; doorman exports ascended).
 
-> **Updated 2026-05-10:** the egg-cartridge family expanded. The `.egg` extension now carries five kinds, all addressable through the same kernel `egg_hatcher_agent.py` (introspects `manifest.schema`/`type`, routes by kind, refuses on unknown). See [`pages/docs/SPEC.md` §18.10](./pages/docs/SPEC.md) for the canonical family table and [`kody-w/rappterbox/carts/SCHEMA.md`](https://github.com/kody-w/rappterbox/blob/main/carts/SCHEMA.md) for the session-variant spec.
+> **Updated 2026-05-10:** the egg-cartridge family expanded. The `.egg` extension now carries five kinds. The kernel hatcher `egg_hatcher_agent.py` is the canonical `.egg` router (introspects `manifest.schema`/`type`, routes by **kind**, refuses on unknown) — per [`pages/docs/SPEC.md` §18.10.2](./pages/docs/SPEC.md). The `rapp-egg/2.0` **scale** dispatcher `twin_egg_hatcher_agent.py` (§15.5, [SPEC §18.10.5](./pages/docs/SPEC.md)) is an **additive superset** of that kind-router — every kind maps to a `scale` — not a competing hatcher. See [`pages/docs/SPEC.md` §18.10](./pages/docs/SPEC.md) for the canonical family table and [`kody-w/rappterbox/carts/SCHEMA.md`](https://github.com/kody-w/rappterbox/blob/main/carts/SCHEMA.md) for the session-variant spec.
 >
 > | Schema | Kind | Container | Hatch destination | Status |
 > |---|---|---|---|---|
 > | `brainstem-egg/2.2-organism` | `organism` | ZIP | `~/.rapp/twins/<rappid>/` | shipping |
 > | `brainstem-egg/2.2-rapplication` | `rapplication` | ZIP | planted rapp under host | shipping |
 > | `brainstem-egg/2.3-session` | `session` | JSON | rappterbox console iframe / `pages/vbrainstem.html` | shipping |
-> | `brainstem-egg/2.3-neighborhood` | `neighborhood` | ZIP | mint new GitHub repo / local mirror | planned |
+> | `brainstem-egg/2.3-neighborhood` | `neighborhood` | ZIP | mint new GitHub repo / local mirror | planned (public-substrate GitHub gate; the local-substrate LAN-snapshot form `rapp-egg/2.0 scale=neighborhood` ships — see §15.5 & SPEC §18.10.5) |
 > | `brainstem-egg/2.3-estate` | `estate` | ZIP | re-anchor whole identity on new substrate | planned |
 
 ### Doorman tier — anyone can export
@@ -626,13 +626,13 @@ Files added on demand:
 
 ## 15.5 Multi-scale eggs and the federation lifecycle
 
-§8 covers organism-scale eggs (`brainstem-egg/2.2-organism`) — one twin in, one twin out. The egg family generalizes: the `rapp-egg/2.0` envelope declares a `scale` field that picks one of five hatch destinations. The same `twin_egg_hatcher_agent.py` (canonical `@kody/twin_egg_hatcher` v1.1.0, RAR PR #98) introspects `manifest.scale` and dispatches per scale; unknown scales are refused outright (no silent fallback).
+§8 covers organism-scale eggs (`brainstem-egg/2.2-organism`) — one twin in, one twin out. The egg family generalizes: the `rapp-egg/2.0` envelope declares a `scale` field that picks one of five hatch destinations. `twin_egg_hatcher_agent.py` (canonical `@kody/twin_egg_hatcher` v1.1.0, RAR PR #98) introspects `manifest.scale` and dispatches **per scale**; unknown scales are refused outright (no silent fallback). This scale dispatcher is the **`rapp-egg/2.0` additive superset** of the kernel's `.egg` **kind**-router `egg_hatcher_agent.py` (§8, [SPEC §18.10.2/§18.10.5](./pages/docs/SPEC.md)) — every kind has a corresponding scale, so the two are one layered system, not two competing hatchers.
 
 | Scale | What it carries | Where it hatches | Status |
 |---|---|---|---|
 | `twin` | One twin's identity + soul + agents + memories | `~/.rapp/twins/<hash>/` | shipping |
 | `brainstem` | A whole brainstem distro (kernel + agents + organs) | target brainstem folder | shipping ([[The Distro Hatcher Agent Pattern]]) |
-| `neighborhood` | N federated twins + roster + member memories | `~/.rapp/twins/<hash>/` per member + `~/.rapp/neighborhoods/<hash>/` for the roster | shipping |
+| `neighborhood` | N federated twins + roster + member memories | `~/.rapp/twins/<hash>/` per member + `~/.rapp/neighborhoods/<hash>/` for the roster | shipping (local-substrate LAN snapshot; the public-substrate GitHub-gate form `brainstem-egg/2.3-neighborhood` is planned — see §8 & SPEC §18.10.1) |
 | `swarm` / `factory` / `industry` | Container scales above neighborhood | `~/.rapp/<scale>s/<hash>/` as best-effort scaffolding | partial — scale-specific handlers TBD |
 | `estate` | Whole operator identity: catalog + every nested twin / neighborhood cartridge + memories | recursive dispatch, restores `~/.brainstem/estate.json` | planned ([[ESTATE_SPEC]] §7.6) |
 
