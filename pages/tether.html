@@ -1493,8 +1493,10 @@ function closeRapp() {
 const tphoneCall = { startedAt: 0, durTimer: 0 };
 
 function parseNbhdCoords(rappid) {
-  // Eternity rappid:@<owner>/<slug>:<hash> (legacy forms read-compatible)
-  const m = (rappid || '').match(/@[^/]+\/([^/]+)\/(.+)$/);
+  // Eternity rappid:@<owner>/<slug>:<hash> (single slash, colon-terminated hash).
+  // Tolerant of legacy @<owner>/<repo>/<hash> and @<owner>/<repo>:<hash>@host too:
+  // owner + slug are just the first two @-anchored path segments.
+  const m = (rappid || '').match(/@([^/]+)\/([^/:]+)/);
   if (!m) return null;
   return { owner: m[1], repo: m[2] };
 }
@@ -2633,7 +2635,7 @@ async function ghPutFile(pat, owner, repo, path, content, msg) {
 
 function buildGrailFor(handle, rappid) {
   const now = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
-  const hash = rappid.match(/:([a-f0-9]+)@/)?.[1] || '';
+  const hash = rappid.match(/:([a-f0-9]+)(?:@|$)/)?.[1] || '';
   return {
     'rappid.json': JSON.stringify({
       schema:    'rapp-rappid/2.0',
@@ -2760,7 +2762,7 @@ function operatorFrontGateHtml(handle, rappid) {
         } catch (e) { return null; }
       }
       function toIncantation(rappid, words) {
-        const m = rappid.match(/:([a-f0-9]+)@/);
+        const m = rappid.match(/:([a-f0-9]+)(?:@|$)/);
         if (!m || !words || words.length !== 1024) return null;
         let seed = BigInt('0x' + m[1].slice(0, 16).padEnd(16, '0'));
         const o = [];
@@ -3293,7 +3295,7 @@ function installBridgeListener() {
 }
 
 function lobbyIdsFor(nbhd) {
-  const m = (nbhd?.rappid || '').match(/:([a-f0-9]+)@/);
+  const m = (nbhd?.rappid || '').match(/:([a-f0-9]+)(?:@|$)/);
   const h = m ? m[1].slice(0, 16) : 'unknown';
   return { hostId: `rapp-${h}-host`, prefix: `rapp-${h}` };
 }

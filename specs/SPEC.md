@@ -192,13 +192,11 @@ The Charizard floor: two devices with no shared network at all. Just file exchan
 
 ### §4.6 Discoverability — publishing IS the signal (no central registry)
 
-### §4.6 Discoverability — publishing IS the signal (no central registry)
-
 Constitutional anchor: **CONSTITUTION Article XLVII**.
 
 The network has no registry. Becoming part of the federation = publishing your estate per spec. Three artifacts compose discovery:
 
-1. **Beacon** — `https://raw.githubusercontent.com/<handle>/rapp-estate/main/.well-known/rapp-network.json` — schema `rapp-network-beacon/1.0`. Carries: operator rappid, estate URL, protocol versions, `discovery.indexable` (consent flag — robots.txt style; default true), `discovery.federation_hints` (other operator handles you know about).
+1. **Beacon** — `https://raw.githubusercontent.com/<handle>/rapp-estate/main/.well-known/rapp-network.json` — schema `rapp-network-beacon/1.1`. Carries: operator rappid, estate URL, protocol versions, `discovery.indexable` (consent flag — robots.txt style; default true), `discovery.federation_hints` (other operator handles you know about), and the three REQUIRED private-extension fields `private_estate_pointer` + `private_estate_commitment` + `private_door_count` (§4.7, Article XLVIII — a beacon without them is flagged `compliance: legacy`).
 2. **Seed** — `https://raw.githubusercontent.com/kody-w/RAPP/main/.well-known/rapp-network-seed.json` — schema `rapp-network-seed/1.0`. Lists known operators as the BFS starting set. Convenient but not authoritative; anyone can fork the species root and host their own seed.
 3. **Sniffer** — `tools/sniff_network.py`. Default mode: BFS from seed across beacons via raw URLs only (no GitHub Search API; no rate limits). Returns `rapp-network-sniff/1.0` envelope.
 
@@ -233,7 +231,7 @@ A beacon WITHOUT these is non-compliant. Sniffers flag such operators as `compli
 
 ### §4.8 No fallbacks; spec says what's true
 
-- A rappid that doesn't match v2 format, OR whose two `<owner>/<repo>` segments disagree, OR whose kind is not in §2.1 → INVALID → consumer raises an error.
+- A rappid that doesn't match the consolidated Eternity form `rappid:@<owner>/<slug>:<64hex>` (§2) — after canonicalizing any legacy form via `door_address.py` — OR whose `kind` (read from the `rappid.json` record) is not in §2.1 → INVALID → consumer raises an error.
 - An estate entry with stored derived fields → leakage; on next save those fields are dropped.
 - A door missing any of §3's required canonical files → non-compliant; the planter (or the backfill) emits the missing file rather than the consumer "best-efforting" around it.
 
