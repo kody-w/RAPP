@@ -67,7 +67,7 @@ What `installer/plant.sh` writes into a fresh seed:
 ├── installer/
 │   └── install.sh                  one-liner kernel installer (visitor flow)
 └── rapp_brainstem/
-    ├── brainstem.py                frozen kernel (v0.6.0 grail)
+    ├── brainstem.py                frozen kernel (tracks the grail, kody-w/rapp-installer)
     ├── VERSION
     └── agents/basic_agent.py       reference copy
 ```
@@ -337,7 +337,7 @@ The formula is identical across all planted seeds, so a 3500 MMR Heimdall is com
 
 ## 7. Evolution — PR-driven, frozen kernel never moves
 
-The kernel (`brainstem.py` + `VERSION` + `basic_agent.py`) is frozen at the v0.6.0 grail. It is never edited. Capabilities grow exclusively through `agent.py` files merged into `/agents/`.
+The kernel (`brainstem.py` + `VERSION` + `basic_agent.py`) is frozen at the grail ([`kody-w/rapp-installer`](https://github.com/kody-w/rapp-installer)) — RAPP mirrors it byte-identically and never edits it locally. The pin tracks the grail's current release rather than any hardcoded number. Capabilities grow exclusively through `agent.py` files merged into `/agents/`.
 
 ```
 visitor finds useful pattern        →  packages as <name>_agent.py

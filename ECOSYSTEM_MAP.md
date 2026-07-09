@@ -470,7 +470,7 @@ A single `*_agent.py` file is called an **agent**. Never a *skill*, *routine*, *
 
 ### 2. THE FROZEN KERNEL NEVER MOVES
 
-`rapp_brainstem/brainstem.py`, `rapp_brainstem/VERSION`, `rapp_brainstem/agents/basic_agent.py` (and the doorman-tier kernel agents) are frozen at v0.6.0. Never edit them. Capabilities grow exclusively through new `*_agent.py` files in `agents/`.
+`rapp_brainstem/brainstem.py`, `rapp_brainstem/VERSION`, `rapp_brainstem/agents/basic_agent.py` (and the doorman-tier kernel agents) are frozen at the grail ([`kody-w/rapp-installer`](https://github.com/kody-w/rapp-installer)) — byte-identical to whatever the grail currently ships. Never edit them locally. Capabilities grow exclusively through new `*_agent.py` files in `agents/`.
 
 When something feels like it requires a kernel change, write a new agent that solves it instead.
 
