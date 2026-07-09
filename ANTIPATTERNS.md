@@ -37,7 +37,7 @@ Hits from this grep that aren't inside an antipattern-guard comment block (comme
 
 ## 2. THE FROZEN KERNEL NEVER MOVES
 
-**The rule.** `rapp_brainstem/brainstem.py`, `rapp_brainstem/VERSION`, and `rapp_brainstem/agents/basic_agent.py` are frozen at v0.6.0. Never edit them. Capabilities grow exclusively through new `*_agent.py` files in `agents/`.
+**The rule.** `rapp_brainstem/brainstem.py`, `rapp_brainstem/VERSION`, and `rapp_brainstem/agents/basic_agent.py` are frozen at the grail ([`kody-w/rapp-installer`](https://github.com/kody-w/rapp-installer)) — byte-identical to whatever the grail currently ships. Never edit them locally. Capabilities grow exclusively through new `*_agent.py` files in `agents/`.
 
 **Why.** A frozen kernel + plug-in agents is what makes an organism portable across substrates and across time. Edit the kernel and you fork the species. The Constitution puts this as a sacred constraint; this file restates it because it's so often the first temptation.
 
