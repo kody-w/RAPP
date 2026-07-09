@@ -243,6 +243,8 @@ This is constitutionally enforced (Article XLVI.5) because the alternative — p
 
 Every door has a `card.json` at `https://raw.githubusercontent.com/<owner>/<repo>/main/card.json`. Schema: `rappcards/1.1.2`.
 
+> **Schema note (card layers).** `rappcards/1.1.2` is the **full `card.json` holocard schema** — the entire door-file. It is distinct from the `rapp-card/1.0` primitive in `ECOSYSTEM_MAP.md §5`, which is the **operator-set override subset** (the fields an operator hand-tunes) layered inside the same `card.json`. They are two layers of one file, not competing schemas; do not unify the identifiers.
+
 ### §5.1 Required fields
 
 ```json
