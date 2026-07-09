@@ -40,7 +40,7 @@ Every planted door MUST be reachable at these URLs. The planter MUST emit each o
 |---|---|---|---|
 | 1 | `repo` | `https://github.com/<owner>/<repo>` | all (the canonical browsing URL) |
 | 2 | `front` | `https://<owner>.github.io/<repo>/` | all (the heimdall snapshot — the operator-facing chat surface) |
-| 3 | `identity` | `https://raw.githubusercontent.com/<owner>/<repo>/main/rappid.json` | all (`rapp-rappid/2.0`) |
+| 3 | `identity` | `https://raw.githubusercontent.com/<owner>/<repo>/main/rappid.json` | all (`rapp-rappid/2.0`, which defers to `rapp-eternity/1.0` — the sole identity standard) |
 | 4 | `holocard` | `https://raw.githubusercontent.com/<owner>/<repo>/main/card.json` | all (`rappcards/1.1.2`) |
 | 5 | `holo_md` | `https://raw.githubusercontent.com/<owner>/<repo>/main/holo.md` | all (the friendly entry doc) |
 | 6 | `avatar` | `https://raw.githubusercontent.com/<owner>/<repo>/main/holo.svg` | all (procedural sprite) |
@@ -160,10 +160,26 @@ def door_from_rappid(rappid: str) -> dict:
       }
 
     Raises:
-      InvalidRappidError if the string is not a valid v2 rappid OR if the
-      <owner>/<repo> appears differently in the two segments.
+      InvalidRappidError only if the string is genuinely malformed (no parseable
+      @<owner>/<slug>:<hash> and no canonicalizable legacy form). It MUST ACCEPT
+      the consolidated Eternity form `rappid:@<owner>/<slug>:<64hex>` (one
+      location segment) and MUST canonicalize every legacy form on read (v2
+      `rappid:v2:<kind>:@<owner>/<repo>:<32hex>@github.com/...`, bare UUID, bare
+      `rappid:<slug>:<64hex>`) via `canonicalize_rappid()` before deriving — it
+      MUST NOT reject a rappid merely for "not being v2".
     """
 ```
+
+> **Amendment (2026-07-08, per CONSTITUTION Art. XXXIV.1 lock 2026-06-03).** An
+> earlier draft of this Raises clause read "*if the string is not a valid v2
+> rappid OR if the `<owner>/<repo>` appears differently in the two segments*."
+> That is superseded: the canonical consolidated Eternity form has ONE
+> `@<owner>/<slug>` segment (not two) and is not a "v2 rappid", so the old clause
+> would reject every currently-mintable rappid. The contract now validates the
+> Eternity form and read-forever-canonicalizes legacy v2 (never emitting it),
+> matching the reference `tools/door_address.py` (`parse_rappid` /
+> `canonicalize_rappid`). Identity is `rapp-eternity/1.0` — the sole identity
+> standard, to which `rapp-rappid/2.0` defers.
 
 Implementation lives at `tools/door_address.py`. Imported by `plant_seed_agent.py`, `estate_agent.py`, and any future federation/discovery consumer. One implementation, one contract — no per-consumer reinventions.
 
@@ -371,6 +387,8 @@ Authority: [`pages/docs/PUBLIC_PRIVATE_BOUNDARY.md`](./PUBLIC_PRIVATE_BOUNDARY.m
 - **`rapp_brainstem/agents/estate_agent.py`** — the local-first agent that reads/writes the estate.
 - **`rapp_brainstem/agents/plant_seed_agent.py`** — the planter that emits the Door URL Set on every new plant.
 - **`rapp_brainstem/agents/twin_egg_hatcher_agent.py`** — the universal hatcher dispatched per `rapp-egg/2.0` scale (twin / brainstem / neighborhood / swarm / factory / industry / estate).
+
+> **Serving-surface note (2026-07-08).** The estate / plant / hatch capabilities are canonically driven as **actions on the one agent** (`@rapp/rapp` — e.g. `estate`, `door`, `whoami`, `hatch`) plus RAR-distributed specialists, not as standalone kernel files at fixed paths. Two hatcher layers coexist (per `pages/docs/SPEC.md` §18.10 / `ECOSYSTEM.md` §15.5): the kernel `.egg` **kind**-router `egg_hatcher_agent.py` and the `rapp-egg/2.0` **scale**-dispatcher `@kody/twin_egg_hatcher` (`twin_egg_hatcher_agent.py`, RAR PR #98, the canonical hatcher per §7.5.2) — an additive superset, not a competitor. Treat the `*_agent.py` filenames above as role labels; resolve the live serving agent through RAR / the one-agent action surface.
 - **[[The Federated Twin Egg Hatcher Pattern]]** — the kernel-side pattern that makes neighborhood-scale federations operable; canonical home of the four-twin AIBAST worked example.
 - **[[NEIGHBORHOOD_PROTOCOL]] §5e** — the on-the-wire format for neighborhood-scale cartridges; §7.5.2 of this spec is the addressing-layer view of the same artifact.
 - **[[The Swarm Estate]]** — the cryptographic backing (M/S/U/D cross-signing) that travels inside each member's `.brainstem_data/` when an estate cartridge migrates substrates.

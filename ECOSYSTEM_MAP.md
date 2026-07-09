@@ -136,9 +136,9 @@ Every `rapp-*/N.M` and `brainstem-*/N.M-variant` currently emitted in the repo. 
 | Schema | Purpose | Defined in | Emitted by |
 |---|---|---|---|
 | `rapp-agent/1.0` | Agent module manifest (function-calling shape) | pages/docs/SPEC.md | every `*_agent.py` metadata dict |
-| `rapp-rappid/1.1` | Organism birth certificate (legacy schema) | ECOSYSTEM §3 | installer/plant.sh, twin_agent.py `_summon` |
-| `rapp-rappid/2.0` | Birth certificate + kernel + bonds (current) | CONSTITUTION; vault/Architecture/Rappid | utils/bond.py, rappid.json |
-| `rapp-card/1.0` | Trade-card override | ECOSYSTEM §3 | card.json (operator-set) |
+| `rapp-rappid/1.1` | Organism birth certificate (legacy schema) | ECOSYSTEM §3 | legacy — no active emitter; read-compat only, retained per Art. XXXIV.5 (never regenerate) |
+| `rapp-rappid/2.0` | Birth certificate + kernel + bonds (current) | CONSTITUTION; vault/Architecture/Rappid | utils/bond.py, rappid.json, installer/plant.sh, twin_agent.py `_summon` |
+| `rapp-card/1.0` | Trade-card override — the operator-set **subset** layered inside the full `rappcards/1.1.2` `card.json` holocard (SPEC.md §5); distinct layers, not competing schemas | ECOSYSTEM §3 | card.json (operator-set) |
 | `rapp-frame/1.0` | Mutation event (content-addressed sha256, prev_hash chain) | ECOSYSTEM §3, HERO_USECASE §2 | installer/plant.sh::appendFrame → localStorage `rapp_frames_v1`; ascended egg packs `data/frames.json` |
 | `brainstem-egg/2.0` | Legacy twin egg | utils/egg.py | (legacy) |
 | `brainstem-egg/2.1` | Variant repo cartridge | CLAUDE.md egg formats | utils/bond.py, twin_agent.py |

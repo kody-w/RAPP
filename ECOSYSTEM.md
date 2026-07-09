@@ -83,7 +83,7 @@ Per-user private memories live in **GitHub Issues** on the seed repo (label `pri
 
 ## 3. Identity stack — everything traces back to the rappid
 
-All visual and computed properties of an organism derive from a single UUIDv4 `rappid` minted at first plant. This is the species identity contract — the rappid IS the organism, every visual is a refraction of it.
+All visual and computed properties of an organism derive from a single `rappid` minted at first plant — the consolidated Eternity string `rappid:@<owner>/<slug>:<64hex>` (`rapp-rappid/2.0`; the 64-hex is the identity hash and sole join key, `kind` in the record). This is the species identity contract — the rappid IS the organism, every visual is a refraction of it.
 
 ```
                               rappid (UUIDv4)
@@ -424,7 +424,7 @@ The 🔬 Verify pane on the front door recomputes everything client-side. Three 
 - ⚠ **partial** — missing or unexpected files
 - ✗ **tampered** — at least one file edited offline
 
-Plus 🌐 **Deep-verify against live repo** — re-fetches every file from `raw.githubusercontent.com/<owner>/<repo>/<sealed_sha>/<path>` and recomputes hashes. If matches: provably authentic, since only the seed's owner can push to the public repo. (This sidesteps phase-2 ed25519 signatures by leaning on GitHub push-permission as the trust anchor — see §11 for the airplane-mode picture.)
+Plus 🌐 **Deep-verify against live repo** — re-fetches every file from `raw.githubusercontent.com/<owner>/<repo>/<sealed_sha>/<path>` and recomputes hashes. If matches: provably authentic, since only the seed's owner can push to the public repo. (GitHub push-permission + sha256 is the primary trust anchor here; ed25519 publisher signatures — shipped 2026-05-08 per CONSTITUTION Art. XXXIV.7 — stay scoped to the offline-only fallback tier and are optional, never mandatory. See §11 for the airplane-mode picture.)
 
 ---
 
@@ -484,7 +484,7 @@ The egg's `state_at_seal` block is a third tier of fallback — for organisms th
 | Online | `raw.githubusercontent.com/<owner>/<repo>/main/...` | Only operator can push |
 | Airplane | localStorage cache stamped with last-sync date | Stale but real signature of last-known state |
 | Hatched offline | egg manifest `state_at_seal` + `provenance.file_hashes` | Self-describing; sha256 chain catches tampering |
-| Phase 2 (future) | ed25519 publisher signatures | Required for offline-only chains where neither GitHub nor recent cache is available |
+| Offline-only | ed25519 publisher signatures (shipped 2026-05-08, Art. XXXIV.7) | Optional fallback for chains where neither GitHub nor recent cache is available — never mandatory |
 
 ---
 
