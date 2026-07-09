@@ -3383,6 +3383,8 @@ The estate is the door catalog. Each user's `~/.brainstem/estate.json` (and its 
 
 Authority for the spec: `pages/docs/ESTATE_SPEC.md`. Conformance gate: `tests/features/F13-estate-spec.sh`.
 
+> **Amendment (2026-07-08) — format supersession, additive per Article XXVI.** Sub-sections below that still speak of "the v2 rappid" / "the v2 format" / "the v2 door rappid" / "two `<owner>/<repo>` segments" (XLVI.1, XLVI.5, XLVI.7 #1, and the echo in XLIX.1) are **superseded by Article XXXIV.1's format lock (2026-06-03)**, matching this article's own intro above. The ONE minted and validated door-bearing form is the consolidated Eternity `rappid:@<owner>/<slug>:<64hex>` — a **single** `@<owner>/<slug>` location segment, a 64-hex identity/join key, with `kind` in the `rappid.json` record (never the string). The legacy `rappid:v2:<kind>:@<owner>/<repo>:<32hex>@github.com/...` is **read-forever and canonicalized on read** (`tools/door_address.py::canonicalize_rappid`), **never emitted**. Read XLVI.5's validity gate accordingly: `door_from_rappid()` MUST accept the consolidated Eternity form and canonicalize legacy v2 — it MUST NOT reject a rappid merely for "not being v2." Identity is `rapp-eternity/1.0` (the sole identity standard, to which `rapp-rappid/2.0` defers). The stale wording is preserved (Article XXVI: additive-only, no removals) but does not govern; this note governs.
+
 ### XLVI.1 — Rappid Determines URL
 
 The v2 rappid encodes its own GitHub origin. Every canonical URL the door has — `repo`, `front`, `identity`, `holocard`, `holo_md`, `avatar`, `summon_qr`, `members`, `facets` — is derivable from the rappid string alone, by parsing. No lookup. No config. No env. The parser is `door_from_rappid()` in `tools/door_address.py`. There is exactly one parser. Consumers MAY NOT reimplement; they MUST import.
@@ -3487,6 +3489,8 @@ The door-less tier's canonical form is the **RAPP Eternity Standard** — the sc
 The Estate Spec (Article XLVI) made the rappid the global address. Article XLVI.6 made the estate recomputable from the network. **Article XLVII makes the network itself discoverable without a central authority.**
 
 This is the platform's most decentralized layer. Three primitives compose it:
+
+> **Amendment (2026-07-08) — beacon schema, additive per Article XXVI.** The beacon schema references below that still read `rapp-network-beacon/1.0` (in this XLVII.1 primitive and in the "What this article requires" list) are **bumped to `rapp-network-beacon/1.1`** by Article XLVIII (which adds the REQUIRED private-extension fields `private_estate_pointer` + `private_estate_commitment` + `private_door_count`), corroborated by XLVII.5.1's own TXT schema (`schema = "rapp-network-beacon/1.1"`). The winning value everywhere is `rapp-network-beacon/1.1`; the `1.0` mentions are preserved (additive-only) but superseded.
 
 1. **The well-known beacon.** Every published estate ships a `.well-known/rapp-network.json` at the root of the operator's `<handle>/rapp-estate` repo, fetchable at `https://raw.githubusercontent.com/<handle>/rapp-estate/main/.well-known/rapp-network.json`. Schema: `rapp-network-beacon/1.0`. Contents: operator rappid, estate URL, protocol versions implemented, `discovery.indexable` (the consent flag — defaults true; honored like robots.txt's `Disallow`), and `discovery.federation_hints` (a list of other operator handles this operator is aware of).
 
