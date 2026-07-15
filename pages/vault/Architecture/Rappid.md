@@ -45,7 +45,7 @@ The **consolidated** rappid (locked 2026-06-03) — one string that is **both id
 ### Concrete examples
 
 ```
-rappid:@kody-w/RAPP:0b635450c04249fbb4b1bdb571044dec
+rappid:@kody-w/rapp:9a8f0a4b5a710e20f4d819a0f37d2a4c9f113b5e78fb3c29e70b54fff48a38f9
                     └ legacy UUID with dashes stripped, preserved as the species root's stable identifier ┘
 
 rappid:@kody-w/kody-twin:91d006ca7bd052bfa5021d623122012f
@@ -158,7 +158,7 @@ Declare in `rappid.json` at the repo root. Schema: `rapp-rappid/2.0`. The `rappi
 ```json
 {
   "schema": "rapp-rappid/2.0",
-  "rappid": "rappid:@kody-w/RAPP:0b635450c04249fbb4b1bdb571044dec",
+  "rappid": "rappid:@kody-w/rapp:9a8f0a4b5a710e20f4d819a0f37d2a4c9f113b5e78fb3c29e70b54fff48a38f9",
   "kind": "prototype",
   "parent_rappid": null,
   "parent_repo": null,

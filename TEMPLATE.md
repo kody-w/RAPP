@@ -42,7 +42,7 @@ This will:
 
 1. Run `rapp_brainstem/utils/lineage_check.py` to verify this is a fresh template clone (refuses to run on the species root itself, or on an already-initialized variant without confirmation).
 2. Generate a fresh rappid (UUIDv4).
-3. Rewrite `rappid.json` with `parent_rappid = rappid:@kody-w/RAPP:0b635450c04249fbb4b1bdb571044dec` (rapp's species root) and `parent_repo = https://github.com/kody-w/RAPP.git`.
+3. Rewrite `rappid.json` with `parent_rappid = rappid:@kody-w/rapp:9a8f0a4b5a710e20f4d819a0f37d2a4c9f113b5e78fb3c29e70b54fff48a38f9` (rapp's species root) and `parent_repo = https://github.com/kody-w/RAPP.git`.
 4. Record the parent commit.
 
 ### 4. Customize

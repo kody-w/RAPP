@@ -8,7 +8,7 @@ on-device brainstem, smashed into a directory the whole world can browse, pull,
 and learn from.
 
 - **Identity:** `rappid:@kody-w/rapp-cave:ca72ca0a3cb90c357fb09e38b02f85f09935cacbf61e94740c57f1eb30a73e0a` (kind `workspace`, Eternity format, Art. XXXIV.1)
-- **Parent:** `rappid:@kody-w/RAPP:0b635450c04249fbb4b1bdb571044dec` (the RAPP species root)
+- **Parent:** `rappid:@kody-w/rapp:9a8f0a4b5a710e20f4d819a0f37d2a4c9f113b5e78fb3c29e70b54fff48a38f9` (the RAPP species root)
 - **Visibility:** public, lives in [`kody-w/RAPP`](https://github.com/kody-w/RAPP) under `cave/`
   (the `public-workspace` pattern; membership = open — fork + PR)
 - **Front door:** PUBLIC, by design. Browse it at <https://kody-w.github.io/RAPP/cave/>;

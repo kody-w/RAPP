@@ -11,7 +11,7 @@
   "purpose": "The public batcave: a standalone public workspace-neighborhood (the public-workspace pattern). Anyone can park a cubby — isolated housing for their FULL rapp estate (agents, organs, senses, rapplications, whole neighborhoods, eggs) — the same environment as their on-device brainstem. Anyone can stream agents from any cubby into their local brainstem without grail-repo commit risk, share back via fork+PR, and read what's new on the show-and-tell stream. Identical cubby mechanics to the private batcave, with the gate removed: browse, pull, and join are open to the world.",
   "private_companion": null,
   "gate_repo": null,
-  "parent_rappid": "rappid:@kody-w/RAPP:0b635450c04249fbb4b1bdb571044dec",
+  "parent_rappid": "rappid:@kody-w/rapp:9a8f0a4b5a710e20f4d819a0f37d2a4c9f113b5e78fb3c29e70b54fff48a38f9",
   "parent_repo": "https://github.com/kody-w/RAPP",
   "planted_by": "kody-w",
   "planted_at": "2026-06-27T02:40:04Z",

@@ -3,7 +3,7 @@
 > Schema doctrine: `PUBLIC_PRIVATE_BOUNDARY.md §1.8` (bones vs substance) ·
 > Enforces `specs/CAVE_PROTOCOL.md §3` for the open web ·
 > Neighborhood: `rappid:@kody-w/rapp-cave:ca72ca0a3cb90c357fb09e38b02f85f09935cacbf61e94740c57f1eb30a73e0a`
-> Parent: `rappid:@kody-w/RAPP:0b635450c04249fbb4b1bdb571044dec` (the RAPP species root)
+> Parent: `rappid:@kody-w/rapp:9a8f0a4b5a710e20f4d819a0f37d2a4c9f113b5e78fb3c29e70b54fff48a38f9` (the RAPP species root)
 
 `CAVE_PROTOCOL.md §3` states the **policy** ("bones, not substance — load-bearing
 on the open web"). This file is the **enforcement**: the exact register of what

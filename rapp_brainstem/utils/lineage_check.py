@@ -32,7 +32,7 @@ import subprocess
 # canonical Eternity rappid  ->  the template repo's canonical "owner/repo".
 # Seeded with the rapp species root (the godfather).
 KNOWN_TEMPLATE_REPOS = {
-    "rappid:@kody-w/RAPP:0b635450c04249fbb4b1bdb571044dec": "kody-w/RAPP",
+    "rappid:@kody-w/rapp:9a8f0a4b5a710e20f4d819a0f37d2a4c9f113b5e78fb3c29e70b54fff48a38f9": "kody-w/RAPP",
 }
 
 
