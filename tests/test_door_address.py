@@ -2,9 +2,10 @@
 
     python3 -m pytest tests/test_door_address.py -v
 
-Covers: canonical parse + door URLs, reading every legacy form (v2, bare UUID),
-canonicalization (idempotent; v2 → canonical preserves the hash), invalid-form
-rejection, kind/door_type sourcing, and the back-compat consumer API.
+Covers: canonical parse + door URLs, reading the non-v2 legacy forms (bare UUID),
+the RETIREMENT of the v2 form (the live parser now refuses it — only the one-shot
+migrate_rappid tool still reads v2, to convert stragglers), canonicalization
+(idempotent), invalid-form rejection, kind/door_type sourcing, back-compat API.
 """
 import sys
 from pathlib import Path
@@ -15,9 +16,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
 import door_address as da  # noqa: E402
 
 H64 = "15461d6259ec49bdaf8ea032571b3f0315461d6259ec49bdaf8ea032571b3f03"  # 64 hex
-H32 = "15461d6259ec49bdaf8ea032571b3f03"                                  # 32 hex (legacy v2)
+H32 = "15461d6259ec49bdaf8ea032571b3f03"                                  # 32 hex (retired v2)
 CANON = f"rappid:@kody-w/echo-brainstem:{H64}"
-V2 = f"rappid:v2:twin:@kody-w/echo-brainstem:{H32}@github.com/kody-w/echo-brainstem"
+V2 = f"rappid:v2:twin:@kody-w/echo-brainstem:{H32}@github.com/kody-w/echo-brainstem"  # RETIRED — live parser refuses
 UUID = "915f54e5-4c71-4de9-bba3-6604461d05e5"
 
 
@@ -28,11 +29,10 @@ def test_parse_canonical():
                  "hash": H64, "hash_bits": 256, "kind": None}
 
 
-def test_parse_v2_legacy():
-    p = da.parse_rappid(V2)
-    assert p["form"] == "v2-legacy"
-    assert p["owner"] == "kody-w" and p["slug"] == "echo-brainstem"
-    assert p["hash"] == H32 and p["hash_bits"] == 128 and p["kind"] == "twin"
+def test_parse_v2_now_refused():
+    # v2 is RETIRED — the live parser no longer reads it (STEAMROLL LEGACY).
+    with pytest.raises(da.InvalidRappidError):
+        da.parse_rappid(V2)
 
 
 def test_parse_uuid_legacy_has_no_location():
@@ -42,7 +42,8 @@ def test_parse_uuid_legacy_has_no_location():
     assert p["hash"] == UUID.replace("-", "")
 
 
-def test_parse_v2_origin_mismatch_rejected():
+def test_parse_v2_variants_all_refused():
+    # Any v2 shape (even a well-formed one) is refused by the live parser now.
     bad = f"rappid:v2:twin:@kody-w/echo-brainstem:{H32}@github.com/kody-w/OTHER"
     with pytest.raises(da.InvalidRappidError):
         da.parse_rappid(bad)
@@ -60,9 +61,11 @@ def test_canonicalize_idempotent():
     assert da.canonicalize_rappid(CANON) == CANON
 
 
-def test_canonicalize_v2_drops_decorations_keeps_hash():
-    # v2 → consolidated structure, hash preserved (no re-anchor here)
-    assert da.canonicalize_rappid(V2) == f"rappid:@kody-w/echo-brainstem:{H32}"
+def test_canonicalize_v2_now_refused():
+    # canonicalize routes through the live parser, which no longer reads v2.
+    # v2 → canonical is now the exclusive job of tools/migrate_rappid.py.
+    with pytest.raises(da.InvalidRappidError):
+        da.canonicalize_rappid(V2)
 
 
 def test_canonicalize_uuid_needs_location():
@@ -83,14 +86,11 @@ def test_door_urls_from_canonical():
     assert d["canonical"] == CANON
 
 
-def test_door_urls_identical_across_canonical_and_v2():
-    # The whole point: a v2 door and its consolidated form resolve to the SAME door.
-    assert da.door_from_rappid(CANON)["urls"] == da.door_from_rappid(V2)["urls"]
-
-
-def test_kind_and_door_type_from_v2_string():
-    d = da.door_from_rappid(V2)
-    assert d["kind"] == "twin" and d["door_type"] == "front_door"
+def test_v2_door_now_refused():
+    # A v2 string no longer resolves to a door on the live path — it must be
+    # migrated to canonical first (tools/migrate_rappid.py).
+    with pytest.raises(da.InvalidRappidError):
+        da.door_from_rappid(V2)
 
 
 def test_kind_from_record_arg_for_canonical():
@@ -113,11 +113,10 @@ def test_bare_uuid_door_raises_without_location():
 # ── back-compat consumer API (rebuild_estate etc. rely on these) ────────────────
 def test_owner_repo_helper():
     assert da.owner_repo_from_rappid(CANON) == ("kody-w", "echo-brainstem")
-    assert da.owner_repo_from_rappid(V2) == ("kody-w", "echo-brainstem")
 
 
 def test_door_dict_has_back_compat_keys():
-    d = da.door_from_rappid(V2)
+    d = da.door_from_rappid(CANON, kind="twin")
     for k in ("rappid", "owner", "repo", "kind", "door_type", "urls"):
         assert k in d, f"consumers rely on door['{k}']"
 

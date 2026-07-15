@@ -255,24 +255,20 @@ def _diff_offspring(name: str, kind: str, contract: dict,
 
     # 3. rappid_kind check.
     #    The consolidated rappid (rappid:@<owner>/<slug>:<64hex>) carries kind in
-    #    the rappid.json RECORD, never as a "rappid:v2:<kind>:" string prefix. So
-    #    we compare the contract's expected kind against the record's `kind` field,
-    #    falling back to a legacy v2 string's inline kind only when the record omits
-    #    it. The rappid STRING itself is read with the canonical parser, which
-    #    accepts the consolidated form AND every legacy form — we never re-impose a
-    #    "rappid:v2:" prefix requirement, and we never flag a string the prior
-    #    prefix check tolerated (placeholder/local-origin fixtures included).
+    #    the rappid.json RECORD, never in the string. The retired v2 form (which
+    #    once carried an inline "rappid:v2:<kind>:" prefix) is no longer read by the
+    #    live parser, so kind now comes exclusively from the record's `kind` field.
+    #    The rappid STRING is validated with the canonical parser (consolidated +
+    #    non-v2 legacy forms); an unparseable string just leaves kind to the record
+    #    and never spuriously flags a placeholder/local-origin fixture.
     expected_kind = contract.get("rappid_kind")
     if expected_kind is not None and rappid is not None:
-        parsed = None
         if isinstance(rappid, str):
             try:
-                parsed = parse_rappid(rappid)
+                parse_rappid(rappid)  # validate form; kind is never taken from the string
             except InvalidRappidError:
-                parsed = None
-        # Prefer the record kind; fall back to a legacy v2 string's inline kind.
-        legacy_inline_kind = parsed.get("kind") if parsed else None
-        actual_kind = record_kind if record_kind is not None else legacy_inline_kind
+                pass
+        actual_kind = record_kind
         if actual_kind != expected_kind:
             drift.append({"category": "rappid_drift",
                           "path": "rappid.json",

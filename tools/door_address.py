@@ -19,17 +19,18 @@ One string that is BOTH identity and self-locating:
   - `kind` and all other structure live in the `rappid.json` RECORD (fetched
     from the located repo), not the string — per the Eternity standard.
 
-The string is NEVER re-versioned. This consolidates the three prior forms:
+The string is NEVER re-versioned. The `rappid:v2:…@github.com/…` form is fully
+RETIRED — it is neither read nor emitted (all v2 data was re-anchored to the
+consolidated form). The remaining non-v2 legacy forms are still read forever:
   - v1  `<uuid>`                                              (bare UUID — not self-locating)
-  - v2  `rappid:v2:<kind>:@<owner>/<repo>:<32hex>@github.com/<owner>/<repo>`
   - the bare-Eternity `rappid:<slug>:<64hex>`                 (not self-locating)
-into the one self-locating Eternity form above.
+and canonicalized (`canonicalize_rappid`) into the one self-locating Eternity
+form above.
 
-COMPATIBILITY: every legacy form is READ FOREVER and canonicalized
-(`canonicalize_rappid`); only the consolidated form is emitted. A consumer
-holding a legacy rappid still resolves; door_from_rappid returns `kind`/
-`door_type` from the legacy v2 string when present, or from a record-supplied
-`kind` for the consolidated form, else None (resolve kind from the record).
+COMPATIBILITY: the non-v2 legacy forms are READ FOREVER and canonicalized; only
+the consolidated form is emitted. A consumer holding such a legacy rappid still
+resolves; door_from_rappid returns `kind`/`door_type` from a record-supplied
+`kind` (resolved from the fetched `rappid.json`), else None.
 
 Pure stdlib. Zero deps. Importable from agents/, tools/, tests/, or anywhere.
 """
@@ -42,12 +43,6 @@ _NAME = r"[A-Za-z0-9][A-Za-z0-9._-]*"
 # Consolidated canonical form: rappid:@<owner>/<slug>:<64hex>
 _CANON_RE = re.compile(
     rf"^rappid:@(?P<owner>{_NAME})/(?P<slug>{_NAME}):(?P<hash>[a-f0-9]{{64}})$"
-)
-# Legacy v2 (read-only): rappid:v2:<kind>:@<owner>/<repo>:<32hex>@github.com/<owner>/<repo>
-_V2_RE = re.compile(
-    rf"^rappid:v2:(?P<kind>[a-z][a-z0-9-]*):"
-    rf"@(?P<owner>{_NAME})/(?P<repo>{_NAME}):(?P<hash>[a-f0-9]{{32}})"
-    rf"@github\.com/(?P<owner2>{_NAME})/(?P<repo2>{_NAME})$"
 )
 # Legacy v1 (read-only): a bare UUID. Carries NO location — callers must supply
 # the repo (owner/slug) out of band to build URLs or canonicalize.
@@ -90,11 +85,11 @@ def parse_rappid(rappid: str) -> dict:
 
       {form, owner, slug, hash, hash_bits, kind}
 
-    - form: "canonical" | "canonical-legacyhash" | "v2-legacy" | "uuid-legacy"
+    - form: "canonical" | "canonical-legacyhash" | "uuid-legacy"
     - owner/slug: the location (None for a bare UUID, which is not self-locating)
     - hash: the identity hash (hex, dashes stripped for UUIDs)
-    - hash_bits: 256 for a full 64-hex, else the legacy bit-width (128 for v2/UUID)
-    - kind: present only for v2-legacy (it carried kind inline); else None
+    - hash_bits: 256 for a full 64-hex, else the legacy bit-width (128 for a UUID)
+    - kind: always None (kind lives in the fetched record, never the string)
 
     Reads every legacy form forever. Raises InvalidRappidError on no match.
     """
@@ -105,15 +100,6 @@ def parse_rappid(rappid: str) -> dict:
     if m:
         return {"form": "canonical", "owner": m["owner"], "slug": m["slug"],
                 "hash": m["hash"], "hash_bits": 256, "kind": None}
-
-    m = _V2_RE.match(rappid)
-    if m:
-        if m["owner"] != m["owner2"] or m["repo"] != m["repo2"]:
-            raise InvalidRappidError(
-                f"v2 rappid origin mismatch: @{m['owner']}/{m['repo']} vs "
-                f"@github.com/{m['owner2']}/{m['repo2']} — the two MUST be equal.")
-        return {"form": "v2-legacy", "owner": m["owner"], "slug": m["repo"],
-                "hash": m["hash"], "hash_bits": 128, "kind": m["kind"]}
 
     m = _UUID_RE.match(rappid)
     if m:
@@ -134,8 +120,8 @@ def canonicalize_rappid(rappid: str, owner: str | None = None, slug: str | None 
     """Return the consolidated canonical string for any rappid form.
 
     Restructures into `rappid:@<owner>/<slug>:<hash>`, PRESERVING the hash (the
-    identity). A v2 string drops its `v2:`/`<kind>`/`@host` decorations; a bare
-    UUID needs `owner`/`slug` supplied (it carries no location). Idempotent on an
+    identity). A bare UUID needs `owner`/`slug` supplied (it carries no location).
+    Idempotent on an
     already-canonical string. The one-time 128→256-bit re-anchor (minting a fresh
     64-hex and recording the old id in `_migrated_from`) is a separate step — this
     function never invents a hash.
@@ -153,12 +139,11 @@ def canonicalize_rappid(rappid: str, owner: str | None = None, slug: str | None 
 def door_from_rappid(rappid: str, kind: str | None = None) -> dict:
     """Return the canonical door object for a rappid. Pure function (no I/O).
 
-    Reads the consolidated form and every legacy form. The door's URLs derive
-    purely from the self-locating `@<owner>/<slug>` (or a v2 string's owner/repo).
+    Reads the consolidated form and the non-v2 legacy forms. The door's URLs
+    derive purely from the self-locating `@<owner>/<slug>`.
 
-    `kind`/`door_type`: taken from the v2-legacy string when present, else from
-    the `kind` argument (which a caller resolves from the fetched `rappid.json`
-    record for the consolidated form), else None.
+    `kind`/`door_type`: taken from the `kind` argument (which a caller resolves
+    from the fetched `rappid.json` record), else None.
 
     Returns: {rappid, canonical, owner, repo, slug, hash, kind, door_type, urls, form}
 
@@ -173,7 +158,7 @@ def door_from_rappid(rappid: str, kind: str | None = None) -> dict:
             f"owner=/slug= before resolving a door.")
 
     owner, slug = p["owner"], p["slug"]
-    resolved_kind = p["kind"] if p["kind"] is not None else kind
+    resolved_kind = kind  # kind lives in the fetched record, never the rappid string
     if resolved_kind is not None and resolved_kind not in VALID_KINDS:
         raise InvalidRappidError(
             f"rappid kind {resolved_kind!r} is not in VALID_KINDS={sorted(VALID_KINDS)}. "

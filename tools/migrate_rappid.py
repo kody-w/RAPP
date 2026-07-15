@@ -21,10 +21,35 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from door_address import canonicalize_rappid, parse_rappid, InvalidRappidError  # noqa: E402
+
+# The retired v2 form: `rappid:v2:<kind>:@<owner>/<repo>:<32hex>@github.com/<owner>/<repo>`.
+# The LIVE parser (door_address) no longer reads v2 — the live door-resolution
+# path refuses it. This one-shot migrator is the ONLY place that still reads v2,
+# because its entire job is to KILL v2 by converting any straggler onto the
+# consolidated form. Self-contained so the live path stays v2-free.
+_NAME = r"[A-Za-z0-9][A-Za-z0-9._-]*"
+_V2_RE = re.compile(
+    rf"^rappid:v2:(?P<kind>[a-z][a-z0-9-]*):"
+    rf"@(?P<owner>{_NAME})/(?P<repo>{_NAME}):(?P<hash>[a-f0-9]{{32}})"
+    rf"@github\.com/(?P<owner2>{_NAME})/(?P<repo2>{_NAME})$"
+)
+
+
+def _parse_v2(s: str) -> dict | None:
+    """Read a retired v2 rappid → {owner, slug, hash, kind}, or None if not v2."""
+    m = _V2_RE.match(s)
+    if not m:
+        return None
+    if m["owner"] != m["owner2"] or m["repo"] != m["repo2"]:
+        raise InvalidRappidError(
+            f"v2 rappid origin mismatch: @{m['owner']}/{m['repo']} vs "
+            f"@github.com/{m['owner2']}/{m['repo2']} — the two MUST be equal.")
+    return {"owner": m["owner"], "slug": m["repo"], "hash": m["hash"], "kind": m["kind"]}
 
 
 def migrate_record(data: dict, owner: str, slug: str) -> tuple[dict, bool]:
@@ -35,12 +60,16 @@ def migrate_record(data: dict, owner: str, slug: str) -> tuple[dict, bool]:
 
     old = data.get("rappid")
     if isinstance(old, str) and old:
-        p = parse_rappid(old)  # raises on a truly unknown form — surfaces, never silently skips
-        # kind was only in a v2 string → lift it into the record
-        if p.get("kind") and not out.get("kind"):
-            out["kind"] = p["kind"]
-            changed = True
-        new = canonicalize_rappid(old, owner=owner, slug=slug)
+        v2 = _parse_v2(old)  # the live parser no longer reads v2 — handle it here
+        if v2 is not None:
+            # kind lived only in the v2 string → lift it into the record
+            if not out.get("kind"):
+                out["kind"] = v2["kind"]
+                changed = True
+            new = f"rappid:@{v2['owner']}/{v2['slug']}:{v2['hash']}"  # hash preserved (re-anchor is separate)
+        else:
+            parse_rappid(old)  # raises on a truly unknown form — surfaces, never silently skips
+            new = canonicalize_rappid(old, owner=owner, slug=slug)
         if new != old:
             out["rappid"] = new
             out.setdefault("_migrated_from", old)
@@ -48,13 +77,20 @@ def migrate_record(data: dict, owner: str, slug: str) -> tuple[dict, bool]:
 
     par = data.get("parent_rappid")
     if isinstance(par, str) and par:
-        try:
-            newp = canonicalize_rappid(par)  # parent must be self-locating already
+        v2p = _parse_v2(par)
+        if v2p is not None:
+            newp = f"rappid:@{v2p['owner']}/{v2p['slug']}:{v2p['hash']}"
             if newp != par:
                 out["parent_rappid"] = newp
                 changed = True
-        except InvalidRappidError:
-            pass  # bare-UUID parent without location — leave it (re-anchor separately)
+        else:
+            try:
+                newp = canonicalize_rappid(par)  # parent must be self-locating already
+                if newp != par:
+                    out["parent_rappid"] = newp
+                    changed = True
+            except InvalidRappidError:
+                pass  # bare-UUID parent without location — leave it (re-anchor separately)
 
     return out, changed
 
