@@ -1,6 +1,6 @@
 {
   "schema": "rapp-ecosystem-spec/1.0",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "title": "The RAPP Ecosystem — Full End-to-End Spec",
   "summary": "The single canonical description of the entire RAPP ecosystem: every operator capability domain, the one agent that drives them via natural language, the schemas, the repos, the end-to-end journeys, and the four-leg drift triangle that keeps this spec, the agent, and the two mirror repos in sync.",
   "canonical_source": "kody-w/RAPP",
@@ -13,6 +13,7 @@
   ],
   "first_principle": "use everyone else's hardware to run the network",
   "identity_format": "Eternity rappid:@<owner>/<slug>:<64hex>  (64hex = sha256 of the master public key for keyed organisms, or a stable UUID/commit-derived hash for keyless; independent of the slug — the hash is the join key, never the slug; kind lives in the record, not the string; CONSTITUTION Art. XXXIV.1/XXXVI.1, locked 2026-06-03). Legacy v2 is read-forever and canonicalized, never emitted.",
+  "lexicon": {"path": "LEXICON.md", "repo": "kody-w/RAPP", "status": "seals at rapp-body genesis (lexicon_sha pinned in the genesis frame)", "constitution_article": "LII"},
   "mirrors": {
     "note": "This exact JSON is published byte-identical to two independent grail repos. Divergence between them IS drift — the agent's `verify` action sha256-compares them.",
     "rapp_god": "https://raw.githubusercontent.com/kody-w/rapp-god/main/api/v1/ecosystem-spec.json",

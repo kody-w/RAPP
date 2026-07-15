@@ -3927,3 +3927,9 @@ This article does not specify branding, layout, or surrounding content for the f
 - **`pages/tether.html`** — the universal public payphone (reference implementation of the tether-side reverse contract).
 - **`examples/rapp-commons/index.html`** — reference implementation of the conforming front-gate snippet in a real neighborhood (live at https://kody-w.github.io/rapp-commons/).
 
+## Article LII — One Language: The Lexicon (2026-07-14)
+
+1. **`LEXICON.md` at the repo root is the canon language file** — the Nine Words, the one operator, the one wire, the three shelves, and the assimilation rulings (R1–R9 at ratification). It names and relates; it never overrides: on any conflict this Constitution wins, then `ANTIPATTERNS.md`, then the schema specs, then the Lexicon.
+2. **Amendment protocol.** The Lexicon amends by appending dated rulings (R10, R11, …), each recording `{previous_sha, new_sha}`. Existing lexicon text is never edited, only superseded by a later ruling that names it — the same append-only discipline as this Constitution (Article XXVI).
+3. **The seal.** The rapp-body genesis frame pins the Lexicon's sha256 as `lexicon_sha`. The seal covers every byte; dated snapshots inside the file are sealed as history, not as live state.
+4. **Discovery.** The ecosystem spec (`specs/ecosystem-spec.json` and its mirrors) carries a `lexicon` pointer to this file. No new spec id is minted — the Lexicon names relationships; it does not invent a protocol.
