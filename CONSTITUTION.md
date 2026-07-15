@@ -3933,3 +3933,30 @@ This article does not specify branding, layout, or surrounding content for the f
 2. **Amendment protocol.** The Lexicon amends by appending dated rulings (R10, R11, …), each recording `{previous_sha, new_sha}`. Existing lexicon text is never edited, only superseded by a later ruling that names it — the same append-only discipline as this Constitution (Article XXVI).
 3. **The seal.** The rapp-body genesis frame pins the Lexicon's sha256 as `lexicon_sha`. The seal covers every byte; dated snapshots inside the file are sealed as history, not as live state.
 4. **Discovery.** The ecosystem spec (`specs/ecosystem-spec.json` and its mirrors) carries a `lexicon` pointer to this file. No new spec id is minted — the Lexicon names relationships; it does not invent a protocol.
+
+## Article LIII — The Standing Guard: Ratify → Sweep, and the Write-Time Ritual (2026-07-14)
+
+Adopted at the close of the OPUS's sixth movement, with its two lead guards chosen by
+the body's own first race (rapp-body frame 26). Prevention beats detection; these rules
+bind every future canon change:
+
+1. **Ratify → sweep → file, same session.** No canon change — a Constitution amendment,
+   an ecosystem-spec version bump, an invariant re-wording, a new-repo registration —
+   is "done" until the retired form has been hunted ecosystem-wide and every hit carries
+   a `drift()` issue. **"Fixed" is a re-sweep verdict, never a merge event.**
+2. **Waivers pin their canon.** Every drift waiver records the sha256 of the exact canon
+   passage it cites. Any change to a canon surface re-validates all pins; a stale pin
+   auto-reopens its finding. (The waiver-freshness watchdog — the race's winning guard:
+   a green produced by exemptions must expire the moment its justification moves.)
+3. **Frames are gated at write time.** No frame is appended to a biography without
+   passing the pre-append gate: chain integrity, the Article LII lexicon pin, census
+   honesty (gaps recorded, never silently thinner), and the mechanical drift-class
+   screen. On an append-only record, write time is the only moment prevention exists.
+4. **Twins bump together.** A JSON artifact and its MD render change in the same commit,
+   versions matching; reflex lint enforces.
+5. **Registration at birth.** A new repo or spec enters `ecosystem-spec.json` (and the
+   spine registry, if load-bearing) in its first ratified commit.
+6. **Mirror headers are contracts.** A mirror is only edited by re-syncing from its
+   declared upstream of record.
+7. **Frozen bundles get a refresh cadence** — quarterly, or on major canon change — so
+   "frozen" never silently means "wrong".
