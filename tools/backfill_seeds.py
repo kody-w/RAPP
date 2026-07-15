@@ -145,15 +145,20 @@ def _put_file(owner: str, repo: str, path: str, content_bytes: bytes,
 
 
 def _canonical_rappid(owner: str, repo: str, kind: str = None) -> str:
-    """Mint the canonical self-locating Eternity rappid for an (owner, repo).
+    """Mint a canonical rappid for an (owner, repo) — RAPP spec §6.2, keyless.
 
-    `rappid:@<owner>/<slug>:<64hex>` per CONSTITUTION Art. XXXIV.1 (Eternity, 2026-06-03):
-    owner/repo locate the door; the **full 256-bit SHA-256** of `<owner>/<repo>` is the
-    (keyless, conventional) identity hash; `kind` is NOT in the string — it lives in the
-    door's rappid.json record. `kind` is accepted for caller compatibility and ignored here.
+    `rappid:@<owner>/<slug>:<64hex>` where owner/repo locate the door and the
+    64-hex tail is ``Hb("rapp/1:rappid", uuid4_bytes)`` — domain separated,
+    minted once. It is NEVER ``sha256("owner/repo")``: hashing a name into an
+    address is the cardinal sin the spec exists to end (the owner/slug in the
+    string already locate the door; the hash is identity, not a name digest).
+    `kind` lives in the rappid.json record, not the string, and is ignored here.
+    Callers are idempotent via the stored rappid.json (mint-once), so a fresh
+    random tail per un-minted repo is correct.
     """
-    h = hashlib.sha256(f"{owner}/{repo}".encode()).hexdigest()  # 64 hex, full 256-bit
-    return f"rappid:@{owner}/{repo}:{h}"
+    import uuid
+    tail = hashlib.sha256(b"rapp/1:rappid\n" + uuid.uuid4().bytes).hexdigest()
+    return f"rappid:@{owner}/{repo}:{tail}"
 
 
 def _build_rappid_json(rappid: str, owner: str, repo: str, kind: str,
