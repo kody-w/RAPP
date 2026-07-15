@@ -212,19 +212,14 @@ function copy(elId, btn) {
 
 // Parse a rappid into its semantic parts. Mirrors tools/door_address.py.
 // Eternity rappid:@<owner>/<slug>:<hash> is canonical (kind lives in the record);
-// legacy v2 is accepted on read and canonicalized, never emitted.
+// Canonical rappid only (spec §6.1). The retired v2 form is refused here just
+// as it is on the live path — migrate it to canonical before resolving a door.
 function parseRappid(r) {
-  let kind = null, owner, repo;
+  const kind = null;
   const e = /^rappid:@([A-Za-z0-9][A-Za-z0-9._-]*)\/([A-Za-z0-9][A-Za-z0-9._-]*):([a-f0-9]{8,})$/.exec(r);
-  if (e) {
-    owner = e[1]; repo = e[2];
-  } else {
-    const v = /^rappid:v2:([a-z][a-z0-9-]*):@([A-Za-z0-9][A-Za-z0-9._-]*)\/([A-Za-z0-9][A-Za-z0-9._-]*):([a-f0-9]{32})@github\.com\/([A-Za-z0-9][A-Za-z0-9._-]*)\/([A-Za-z0-9][A-Za-z0-9._-]*)$/.exec(r);
-    if (!v) return null;
-    if (v[2] !== v[5] || v[3] !== v[6]) return null;
-    kind = v[1]; owner = v[2]; repo = v[3];
-  }
-  const door_type = (kind === null || kind === 'twin' || kind === 'operator') ? 'front_door' : 'gate';
+  if (!e) return null;
+  const owner = e[1], repo = e[2];
+  const door_type = 'front_door';  // kind lives in the record, not the string
   const rawBase = `https://raw.githubusercontent.com/${owner}/${repo}/main`;
   return {
     rappid: r, kind, owner, repo, door_type,

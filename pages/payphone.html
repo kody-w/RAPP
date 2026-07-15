@@ -186,12 +186,11 @@ brainstems and kited vTwins alike (Art. XLVII).</p>
   document.getElementById('signin').addEventListener('click', signIn);
 
   // Browser mirror of the documented derivation (ESTATE_SPEC §5).
-  // Reads the Eternity form + legacy v2; identity is opaque beyond this.
+  // Canonical form only (the retired v2 form is refused, as on the live path);
+  // also accepts the bare owner/slug shorthand as a convenience input.
   function parseNumber(s) {
     s = (s || '').trim();
     let m = s.match(/^rappid:@([A-Za-z0-9][A-Za-z0-9._-]*)\/([A-Za-z0-9][A-Za-z0-9._-]*):([a-f0-9]{32,64})$/);
-    if (m) return { owner: m[1], slug: m[2] };
-    m = s.match(/^rappid:v2:[a-z][a-z_-]*:@([A-Za-z0-9][A-Za-z0-9._-]*)\/([A-Za-z0-9][A-Za-z0-9._-]*):[0-9a-f]{32}@github\.com\//);
     if (m) return { owner: m[1], slug: m[2] };
     m = s.match(/^([A-Za-z0-9][A-Za-z0-9._-]*)\/([A-Za-z0-9][A-Za-z0-9._-]*)$/);
     if (m) return { owner: m[1], slug: m[2] };
