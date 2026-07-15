@@ -1,5 +1,5 @@
 {
-  "schema": "rapp-rappid/2.0",
+  "schema": "rapp/1",
   "rappid": "rappid:@kody-w/ant-farm:__MINTED_AT_PLANT__",
   "kind": "ant-farm",
   "name": "ant-farm",

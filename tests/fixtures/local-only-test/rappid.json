@@ -1,5 +1,5 @@
 {
-  "schema": "rapp-rappid/2.0",
+  "schema": "rapp/1",
   "rappid": "rappid:@local/local-only-test:d04c0b01f1be6849733de41e40a15d466f387110e08fa21bcca36faf18a38276",
   "kind": "neighborhood",
   "name": "local-only-test",
