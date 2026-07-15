@@ -40,7 +40,7 @@ Every planted door MUST be reachable at these URLs. The planter MUST emit each o
 |---|---|---|---|
 | 1 | `repo` | `https://github.com/<owner>/<repo>` | all (the canonical browsing URL) |
 | 2 | `front` | `https://<owner>.github.io/<repo>/` | all (the heimdall snapshot — the operator-facing chat surface) |
-| 3 | `identity` | `https://raw.githubusercontent.com/<owner>/<repo>/main/rappid.json` | all (`rapp-rappid/2.0`, which defers to `rapp-eternity/1.0` — the sole identity standard) |
+| 3 | `identity` | `https://raw.githubusercontent.com/<owner>/<repo>/main/rappid.json` | all (`rapp/1` — the sole identity standard, subsuming the former `rapp-eternity/1.0` content-addressing and the `rapp-rappid/2.0` record name) |
 | 4 | `holocard` | `https://raw.githubusercontent.com/<owner>/<repo>/main/card.json` | all (`rappcards/1.1.2`) |
 | 5 | `holo_md` | `https://raw.githubusercontent.com/<owner>/<repo>/main/holo.md` | all (the friendly entry doc) |
 | 6 | `avatar` | `https://raw.githubusercontent.com/<owner>/<repo>/main/holo.svg` | all (procedural sprite) |
@@ -179,7 +179,7 @@ def door_from_rappid(rappid: str) -> dict:
 > Eternity form and read-forever-canonicalizes legacy v2 (never emitting it),
 > matching the reference `tools/door_address.py` (`parse_rappid` /
 > `canonicalize_rappid`). Identity is `rapp-eternity/1.0` — the sole identity
-> standard, to which `rapp-rappid/2.0` defers.
+> standard, which `rapp/1` subsumes.
 
 Implementation lives at `tools/door_address.py`. Imported by `plant_seed_agent.py`, `estate_agent.py`, and any future federation/discovery consumer. One implementation, one contract — no per-consumer reinventions.
 

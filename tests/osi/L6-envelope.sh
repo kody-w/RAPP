@@ -88,7 +88,7 @@ fi
 heading "Step 6 — Synthetic egg round-trip: pack → SHA verify → hatch"
 SEED="$SANDBOX/seed"
 mkdir -p "$SEED"
-echo '{"schema":"rapp-rappid/2.0","rappid":"00000000-0000-4000-8000-000000000001","kind":"experiment"}' >"$SEED/rappid.json"
+echo '{"schema":"rapp/1","rappid":"00000000-0000-4000-8000-000000000001","kind":"experiment"}' >"$SEED/rappid.json"
 echo "I am a soul." >"$SEED/soul.md"
 mkdir -p "$SEED/agents"
 echo "# placeholder" >"$SEED/agents/placeholder_agent.py"

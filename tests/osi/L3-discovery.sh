@@ -74,9 +74,9 @@ species_root = str(uuid.uuid4())
 parent      = str(uuid.uuid4())
 child       = str(uuid.uuid4())
 chain = {
-    "species_root": {"schema": "rapp-rappid/2.0", "rappid": species_root, "parent_rappid": None},
-    "parent":       {"schema": "rapp-rappid/2.0", "rappid": parent,       "parent_rappid": species_root},
-    "child":        {"schema": "rapp-rappid/2.0", "rappid": child,        "parent_rappid": parent},
+    "species_root": {"schema": "rapp/1", "rappid": species_root, "parent_rappid": None},
+    "parent":       {"schema": "rapp/1", "rappid": parent,       "parent_rappid": species_root},
+    "child":        {"schema": "rapp/1", "rappid": child,        "parent_rappid": parent},
 }
 for name, doc in chain.items():
     with open(os.path.join(sandbox, f"{name}.json"), "w") as fh:

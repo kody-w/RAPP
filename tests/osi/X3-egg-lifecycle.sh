@@ -18,7 +18,7 @@ SEED="$SANDBOX/seed"
 mkdir -p "$SEED/agents" "$SEED/.brainstem_data"
 cat >"$SEED/rappid.json" <<JSON
 {
-  "schema": "rapp-rappid/2.0",
+  "schema": "rapp/1",
   "rappid": "00000000-1111-4000-8000-aaaaaaaaaaaa",
   "kind": "experiment",
   "name": "osi-x3-seed",

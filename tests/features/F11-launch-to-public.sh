@@ -41,7 +41,7 @@ BS="$SANDBOX/brainstem"
 mkdir -p "$BS/agents" "$BS/.brainstem_data"
 cat > "$BS/rappid.json" <<'JSON'
 {
-  "schema": "rapp-rappid/2.0",
+  "schema": "rapp/1",
   "rappid": "rappid:v2:hatched:@local/test-bs:0123456789abcdef0123456789abcdef@local/test",
   "kind": "brainstem-instance",
   "name": "test-bs",

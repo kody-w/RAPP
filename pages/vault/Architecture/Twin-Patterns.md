@@ -93,7 +93,7 @@ The kernel ships a `Twin` agent (`rapp_brainstem/agents/twin_agent.py`). Its act
 
 Each child runs under its own `soul.md`, its own `agents/`, its own `.brainstem_data/`. The user types into one chat box. The LLM picks the peer, the front-door brainstem composes `Twin(action="chat", rappid_uuid=...)`, the envelope crosses to the right port, and the reply comes back as if it were a local tool call — the [[The Federated Twin Egg Hatcher Pattern#Federate through the global brainstem in plain English|transparent-handoff principle]] applies the same way it does across machines.
 
-Federation is patterns 2–4 collapsed onto one host: parallel omniscience (many incarnations), twin-squared (multiple perspectives), and cross-twin collaboration (chat is the seam), unified under one entry point. See [[The Federated Twin Egg Hatcher Pattern]] for how the workspaces get there, and [[Rappid]] for the Eternity rappid schema (rapp-rappid/2.0) the keys are built on.
+Federation is patterns 2–4 collapsed onto one host: parallel omniscience (many incarnations), twin-squared (multiple perspectives), and cross-twin collaboration (chat is the seam), unified under one entry point. See [[The Federated Twin Egg Hatcher Pattern]] for how the workspaces get there, and [[Rappid]] for the Eternity rappid schema (rapp/1) the keys are built on.
 
 ---
 

@@ -47,7 +47,7 @@ These are the same problems the broader software supply-chain world has spent th
 
 ```jsonc
 {
-  "schema": "rapp-rappid/2.0",
+  "schema": "rapp/1",
   "rappid": "rappid:@<pub>/<slug>:<hash>",
   "parent_rappid": "<parent v2-format string or null>",
   "parent_repo": "https://...",

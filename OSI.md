@@ -41,7 +41,7 @@ The model is **fractal**: the same 7 layers apply at every scale (agent / twin /
 
 **Schemas.**
 - `rapp-rappid/1.1` (legacy, ECOSYSTEM §3)
-- `rapp-rappid/2.0` (current — adds kernel + bonds, CONSTITUTION canonical)
+- `rapp/1` (current — the ratified schema name, adds kernel + bonds; formerly `rapp-rappid/2.0`)
 
 **Implementation.**
 - `rapp_brainstem/utils/bond.py` — mints + serializes
@@ -50,7 +50,7 @@ The model is **fractal**: the same 7 layers apply at every scale (agent / twin /
 - `~/.brainstem/rappid.json` for the operator's own brainstem
 - `~/.brainstem/bonds.json` — append-only lineage log
 
-**Tests.** `tests/osi/L2-identity.sh` — verifies (a) UUIDv4 mint; (b) `rapp-rappid/2.0` schema string; (c) `parent_rappid` chain integrity (must point to a real rappid in the lineage walk); (d) re-running `boot.py` does NOT regenerate rappid; (e) bonds.json is append-only.
+**Tests.** `tests/osi/L2-identity.sh` — verifies (a) UUIDv4 mint; (b) `rapp/1` schema string; (c) `parent_rappid` chain integrity (must point to a real rappid in the lineage walk); (d) re-running `boot.py` does NOT regenerate rappid; (e) bonds.json is append-only.
 
 **What L2 does NOT do.** No discovery (that's L3). No trust decisions (that's L5). The identity is just the address — what you do with it is upper-layer business.
 
@@ -69,7 +69,7 @@ The model is **fractal**: the same 7 layers apply at every scale (agent / twin /
 Plus the metropolis tracker pattern (`pages/metropolis/index.json`, schema `rapp-metropolis-index/1.0`) — Kazaa-style federated trackers can list neighborhoods, and trackers can list each other.
 
 **Schemas.**
-- `rapp-rappid/2.0` `parent_rappid` field (lineage walk)
+- `rapp/1` `parent_rappid` field (lineage walk)
 - `rapp-metropolis-index/1.0` (federated tracker)
 - `rapp-metropolis-entry/1.0` (one neighborhood entry)
 - `rapp-egg-hub-entry/1.0` (egg catalog)

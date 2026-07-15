@@ -97,7 +97,7 @@ Same primitives at every scale: **rappid + door + card + tether + trust scope.**
 
 | Primitive | One-line meaning | Defined in | Schema(s) |
 |---|---|---|---|
-| **rappid** | UUIDv4 identity, minted once at plant, never regenerated | ECOSYSTEM §3, NEIGHBORHOOD_PROTOCOL §3 | `rapp-rappid/1.1`, `rapp-rappid/2.0` |
+| **rappid** | UUIDv4 identity, minted once at plant, never regenerated | ECOSYSTEM §3, NEIGHBORHOOD_PROTOCOL §3 | `rapp/1` (current; formerly `rapp-rappid/2.0`, `rapp-rappid/1.1`) |
 | **door** | Public surface URL where this thing is reachable | ECOSYSTEM §4 (front door + doorman); NEIGHBORHOOD_PROTOCOL §1 (Pages URL) | (no separate schema; URL is the contract) |
 | **card** | Trade-card / introduction view | ECOSYSTEM §3 (`card.json`) | `rapp-card/1.0` |
 | **tether** | The four channel types — WebRTC, Issues, PRs, raw fetch | NEIGHBORHOOD_PROTOCOL §5a–d | `rapp-twin-chat/1.0` (over tether) |
@@ -137,7 +137,7 @@ Every `rapp-*/N.M` and `brainstem-*/N.M-variant` currently emitted in the repo. 
 |---|---|---|---|
 | `rapp-agent/1.0` | Agent module manifest (function-calling shape) | pages/docs/SPEC.md | every `*_agent.py` metadata dict |
 | `rapp-rappid/1.1` | Organism birth certificate (legacy schema) | ECOSYSTEM §3 | legacy — no active emitter; read-compat only, retained per Art. XXXIV.5 (never regenerate) |
-| `rapp-rappid/2.0` | Birth certificate + kernel + bonds (current) | CONSTITUTION; vault/Architecture/Rappid | utils/bond.py, rappid.json, installer/plant.sh, twin_agent.py `_summon` |
+| `rapp/1` | Birth certificate + kernel + bonds (current; formerly `rapp-rappid/2.0`) | CONSTITUTION; vault/Architecture/Rappid | utils/bond.py, rappid.json, installer/plant.sh, twin_agent.py `_summon` |
 | `rapp-card/1.0` | Trade-card override — the operator-set **subset** layered inside the full `rappcards/1.1.2` `card.json` holocard (SPEC.md §5); distinct layers, not competing schemas | ECOSYSTEM §3 | card.json (operator-set) |
 | `rapp-frame/1.0` | Mutation event (content-addressed sha256, prev_hash chain) | ECOSYSTEM §3, HERO_USECASE §2 | installer/plant.sh::appendFrame → localStorage `rapp_frames_v1`; ascended egg packs `data/frames.json` |
 | `brainstem-egg/2.0` | Legacy twin egg | utils/egg.py | (legacy) |
@@ -284,7 +284,7 @@ Every `rapp-*/N.M` and `brainstem-*/N.M-variant` currently emitted in the repo. 
 | `rapp_brainstem/utils/organs/estate_organ.py` | `/api/estate/*` — twins, eggs, lay-egg, summon, hatch | vault Decision 2026-05-08 |
 | `rapp_brainstem/utils/organs/swarm_estate_organ.py` | Swarm-level estate | (impl) |
 | `rapp_brainstem/utils/organs/lifecycle_organ.py` | Lifecycle catalog + kernel upgrade | ECOSYSTEM §1 |
-| `rapp_brainstem/utils/bond.py` | Egg/hatch lifecycle, rappid mint, `rapp-rappid/2.0` | CLAUDE.md identity & bonding |
+| `rapp_brainstem/utils/bond.py` | Egg/hatch lifecycle, rappid mint, `rapp/1` | CLAUDE.md identity & bonding |
 | `rapp_brainstem/utils/egg.py` | Legacy egg utilities | ECOSYSTEM §8 |
 | `rapp_brainstem/utils/peer_registry.py` | Peer cache | NEIGHBORHOOD_PROTOCOL §4 |
 | `rapp_brainstem/utils/llm.py` | Provider dispatch (Copilot / Azure / OpenAI / Anthropic / fake) | CLAUDE.md provider dispatch |

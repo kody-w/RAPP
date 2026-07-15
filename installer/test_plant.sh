@@ -145,9 +145,9 @@ missing = [k for k in required if k not in d]
 if missing:
     print("FAIL  rappid.json missing keys:", missing)
     sys.exit(1)
-SPECIES_ROOT = "rappid:@kody-w/RAPP:0b635450c04249fbb4b1bdb571044dec"
+SPECIES_ROOT = "rappid:@kody-w/rapp:9a8f0a4b5a710e20f4d819a0f37d2a4c9f113b5e78fb3c29e70b54fff48a38f9"
 checks = [
-    (d["schema"] == "rapp-rappid/2.0",       "schema is rapp-rappid/2.0"),
+    (d["schema"] == "rapp/1",                "schema is rapp/1 (§12)"),
     (d["kind"] == "mirror",                  "kind is mirror"),
     (d["name"] == "testmirror",              "name matches dry-run input"),
     (d["display_name"] == "Test Mirror",     "display_name matches input"),

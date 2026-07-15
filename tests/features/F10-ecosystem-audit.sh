@@ -75,7 +75,7 @@ PY
 heading "Step 5 — Synthetic drift detection: bare-UUID rappid → rappid_drift"
 mkdir -p "$SANDBOX/synthetic-fixtures/test-bad-seed"
 cat > "$SANDBOX/synthetic-fixtures/test-bad-seed/rappid.json" <<'JSON'
-{"schema": "rapp-rappid/2.0", "rappid": "869ea057-4755-47ec-80df-54551ecf8581"}
+{"schema": "rapp/1", "rappid": "869ea057-4755-47ec-80df-54551ecf8581"}
 JSON
 cat > "$SANDBOX/synthetic-metropolis.json" <<'JSON'
 {

@@ -2,11 +2,11 @@
 # tests/osi/L2-identity.sh — verify the identity layer.
 #
 # L2 = the rappid. UUIDv4 minted once at plant, never regenerated.
-# Schema: rapp-rappid/2.0 (current) — tracked alongside legacy 1.1 entries.
+# Schema: rapp/1 (current, ratified Art. LIV) — legacy rapp-rappid/2.0 + 1.1 still accepted.
 
 source "$(dirname "$0")/_lib.sh"
 
-osi_layer_intro "L2 — Identity" "rappid (UUIDv4) + parent_rappid + kernel_version. Schema: rapp-rappid/2.0"
+osi_layer_intro "L2 — Identity" "rappid (UUIDv4) + parent_rappid + kernel_version. Schema: rapp/1"
 
 # 1. UUIDv4 mint via Python stdlib (no deps)
 heading "Step 1 — UUIDv4 mint (stdlib, no deps)"
@@ -53,7 +53,7 @@ missing = [k for k in required if k not in d]
 if missing:
     print(f"missing: {missing}")
     sys.exit(1)
-if not d["schema"].startswith("rapp-rappid/"):
+if d["schema"] != "rapp/1" and not d["schema"].startswith("rapp-rappid/"):
     print(f"bad schema: {d['schema']}")
     sys.exit(1)
 val = d["rappid"]

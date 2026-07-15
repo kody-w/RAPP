@@ -62,7 +62,7 @@ Every scale in §3 is built from exactly these five things. If you understand th
 
 | Primitive | What it is | Schema(s) |
 |---|---|---|
-| **rappid** | The global identity **and** address. From any rappid, with zero auth, every canonical URL is computable by string parsing. | `rapp-rappid/2.0` — parser: `tools/door_address.py::door_from_rappid` (the single parser; agents inline a mirror) |
+| **rappid** | The global identity **and** address. From any rappid, with zero auth, every canonical URL is computable by string parsing. | `rapp/1` — parser: `tools/door_address.py::door_from_rappid` (the single parser; agents inline a mirror) |
 | **door** | The public surface URL where a thing is reachable. 9 canonical URLs are **derived** from the rappid (never stored). PRIVATE doors 404 to outsiders (the guard). A *dark door* has no public front door at all. | `rapp-door/1.0` (derived, never stored) |
 | **card** | The trade-card / introduction view + granular published permissions. | `rapp-card/1.0` + `rapp-public-facets/1.0` |
 | **tether** | The four channel types — WebRTC, Issues, PRs, raw fetch — carrying the twin-chat envelope. | `rapp-twin-chat/1.0` |
@@ -300,7 +300,7 @@ The end-to-end natural-language flows the one agent is designed to satisfy:
 
 The full registry is ~80 schemas (`rapp-*/N.M` + `brainstem-egg/*`). The canonical, complete list lives in **[`ECOSYSTEM_MAP.md` §5](../ECOSYSTEM_MAP.md)** — search there before defining a new one (`ANTIPATTERNS` §3: bump versions cleanly, never add shims). Summarized by family:
 
-- **Identity** — `rapp-rappid/2.0` (birth certificate + kernel + bonds), `rapp-door/1.0` (derived door object), `rapp-estate/1.1` (local-first door catalog), `rapp-facets/1.0` (per-door capability declaration).
+- **Identity** — `rapp/1` (birth certificate + kernel + bonds; formerly `rapp-rappid/2.0`), `rapp-door/1.0` (derived door object), `rapp-estate/1.1` (local-first door catalog), `rapp-facets/1.0` (per-door capability declaration).
 - **Cartridges (the `.egg` family)** — `brainstem-egg/2.2-organism`, `2.2-rapplication`, `2.3-session`, `2.3-neighborhood` *(planned)*, `2.3-estate` *(planned)*, `2.3-cubby`. One sneakernet primitive, one Pokédex shelf.
 - **Neighborhoods** — `rapp-neighborhood/1.0`, `rapp-neighborhood-members/1.0`, `rapp-rar-index/1.0` (the required per-seed participation kit).
 - **Private cubby** — `rapp-cubby/1.0`, `rapp-super-rar/1.0`, `rapp-payphone-dial/1.0`.

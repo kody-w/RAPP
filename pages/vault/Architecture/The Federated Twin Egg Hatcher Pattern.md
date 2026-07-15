@@ -20,7 +20,7 @@ Three properties make a twin egg distribution work:
    - **`--source REPO`** — public/private GitHub twin repo (raw fetch + Contents API for `agents/`); set `GH_TOKEN` for private
    - **`--egg PATH`** — fully-exported `.egg` zip (brainstem-egg/2.1 layout: files under `repo/`)
 2. **Twin repos hold *only* identity.** No hatcher in-repo.  Each twin repo is just:
-   - `rappid.json` — schema `rapp-rappid/2.0` or legacy bare-UUID, with `name`, `kind`, `parent_rappid`, lineage back to [[The Species DNA Archive — rapp_kernel|kody-w/RAPP]]
+   - `rappid.json` — schema `rapp/1` or legacy bare-UUID, with `name`, `kind`, `parent_rappid`, lineage back to [[The Species DNA Archive — rapp_kernel|kody-w/RAPP]]
    - `soul.md` — read by the brainstem every turn so the twin stays in voice
    - `agents/*.py` — optional, twin-specific tools
 3. **No kernel patches.** The hatched workspace at `~/.rapp/twins/<hash>/` is read by the global brainstem's `start.sh` via `SOUL_PATH` / `AGENTS_PATH` / `PORT` env vars. The kernel sees a child brainstem; the user sees a twin. The kernel itself never changes.

@@ -54,7 +54,7 @@ The `plant_seed_agent` does the rest: creates the GitHub repo, pushes the canoni
 
 | File | Content |
 |---|---|
-| `rappid.json` | `{"schema": "rapp-rappid/2.0", "rappid": "<your-rappid>", "kind": "twin", "name": "<repo>", "github": "https://github.com/...", "url": "https://...github.io/<repo>/", "parent_rappid": "<your-personal-rappid>", "kernel_version": "0.6.0"}` |
+| `rappid.json` | `{"schema": "rapp/1", "rappid": "<your-rappid>", "kind": "twin", "name": "<repo>", "github": "https://github.com/...", "url": "https://...github.io/<repo>/", "parent_rappid": "<your-personal-rappid>", "kernel_version": "0.6.0"}` |
 | `card.json` | rappcards/1.1.2 holocard (SPEC §5). Use [tools/holo_card_generator.py](https://raw.githubusercontent.com/kody-w/RAPP/main/tools/holo_card_generator.py) — it's pure-stdlib, deterministic from rappid. |
 | `holo.svg` | Avatar. `holo_card_generator.generate_avatar_svg(seed)`. |
 | `holo-qr.svg` | Summon QR. `holo_card_generator.generate_summon_qr_svg(seed, gate_url)`. |

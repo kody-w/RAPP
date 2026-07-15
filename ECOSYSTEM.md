@@ -83,7 +83,7 @@ Per-user private memories live in **GitHub Issues** on the seed repo (label `pri
 
 ## 3. Identity stack — everything traces back to the rappid
 
-All visual and computed properties of an organism derive from a single `rappid` minted at first plant — the consolidated Eternity string `rappid:@<owner>/<slug>:<64hex>` (`rapp-rappid/2.0`; the 64-hex is the identity hash and sole join key, `kind` in the record). This is the species identity contract — the rappid IS the organism, every visual is a refraction of it.
+All visual and computed properties of an organism derive from a single `rappid` minted at first plant — the consolidated Eternity string `rappid:@<owner>/<slug>:<64hex>` (`rapp/1`; the 64-hex is the identity hash and sole join key, `kind` in the record). This is the species identity contract — the rappid IS the organism, every visual is a refraction of it.
 
 ```
                               rappid (UUIDv4)
@@ -98,10 +98,10 @@ All visual and computed properties of an organism derive from a single `rappid` 
 
 **Schemas** in this stack:
 
-### `rappid.json` (`rapp-rappid/2.0`)
+### `rappid.json` (`rapp/1`)
 The organism's birth certificate. Written once at plant time, never regenerated.
 Per CONSTITUTION Article XXXIV.1 (2026-04-30 ratification) the schema is
-`rapp-rappid/2.0` and the `rappid` field carries the consolidated **Eternity**
+`rapp/1` and the `rappid` field carries the consolidated **Eternity**
 string `rappid:@<owner>/<slug>:<hash>` (`kind` lives in the record, not the
 string). Pre-ratification seeds on `rapp-rappid/1.1` with bare UUIDs are still
 valid (their UUID hex, dashes stripped, IS the hash field), and legacy
@@ -109,7 +109,7 @@ valid (their UUID hex, dashes stripped, IS the hash field), and legacy
 re-emitted.
 ```json
 {
-  "schema": "rapp-rappid/2.0",
+  "schema": "rapp/1",
   "rappid": "rappid:@<gh_user>/<repo>:<hash>",
   "kind": "personal" | "place" | "experiment" | "mirror",
   "name": "<repo-slug>",

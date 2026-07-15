@@ -153,11 +153,11 @@ This rule is the foundation for evolutionary accounting: "what did `@rapp/origin
 
 ### For organisms with a code repo (kernel variants, code-only organisms)
 
-Declare in `rappid.json` at the repo root. Schema: `rapp-rappid/2.0`. The `rappid` field carries the consolidated **Eternity** string `rappid:@<owner>/<slug>:<hash>`; `kind` lives in the record.
+Declare in `rappid.json` at the repo root. Schema: `rapp/1` (ratified canon; formerly `rapp-rappid/2.0`). The `rappid` field carries the consolidated **Eternity** string `rappid:@<owner>/<slug>:<hash>`; `kind` lives in the record.
 
 ```json
 {
-  "schema": "rapp-rappid/2.0",
+  "schema": "rapp/1",
   "rappid": "rappid:@kody-w/rapp:9a8f0a4b5a710e20f4d819a0f37d2a4c9f113b5e78fb3c29e70b54fff48a38f9",
   "kind": "prototype",
   "parent_rappid": null,
