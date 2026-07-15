@@ -1,10 +1,10 @@
 {
   "schema": "rapp/1",
   "rappid": "rappid:@kody-w/rapp-installer:7d9a33a14ef9fbe2ec8d74aca65ba8de7536aaffe4ec1761ff5b1562f1b26d63",
-  "parent_rappid": "rappid:@rapp/origin:9a8f0a4b5a710e20f4d819a0f37d2a4c9f113b5e78fb3c29e70b54fff48a38f9",
+  "parent_rappid": "rappid:@kody-w/rapp:9a8f0a4b5a710e20f4d819a0f37d2a4c9f113b5e78fb3c29e70b54fff48a38f9",
   "kind": "rapplication",
   "name": "rapp-installer",
   "born_at": "2026-06-27T02:06:04Z",
-  "notes": "The rapp-installer grail brainstem, carved out of its git repo into a self-contained egged rapplication — full installer parity, zero grail-commit risk.",
+  "notes": "The rapp-installer grail brainstem, carved out of its git repo into a self-contained egged rapplication \u2014 full installer parity, zero grail-commit risk.",
   "_parent_migrated_from": "rappid:@rapp/origin:0b635450c04249fbb4b1bdb571044dec"
 }

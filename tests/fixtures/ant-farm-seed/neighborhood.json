@@ -5,7 +5,7 @@
   "kind": "ant-farm",
   "visibility": "public",
   "purpose": "Autonomous swarm of AI agents; each participant runs their own brainstem; pheromones are content-addressed GitHub Issues; emergent collective intelligence with zero central coordination.",
-  "neighborhood_rappid": "rappid:v2:ant-farm:@kody-w/ant-farm:__PLACEHOLDER_HASH__@github.com/kody-w/ant-farm",
+  "neighborhood_rappid": "rappid:@kody-w/ant-farm:__PLACEHOLDER_HASH__",
   "gate_repo": "kody-w/ant-farm",
   "gate_url": "https://kody-w.github.io/ant-farm/",
   "members_path": "members.json",
