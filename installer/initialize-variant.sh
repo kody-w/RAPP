@@ -37,9 +37,10 @@ fi
 
 # ── Identity (hardcoded — single-parent rule) ────────────────────────────
 
-# Species root consolidated Eternity rappid per CONSTITUTION Article XXXIV.1.
+# Species root — the canonical §6.1 identifier for kody-w/RAPP (lowercase owner/
+# slug, full 64-hex domain-separated tail; never 32-hex, never sha256(name)).
 # `kind` (prototype) lives in the species-root rappid.json record, not the string.
-PARENT_RAPPID="rappid:@kody-w/RAPP:0b635450c04249fbb4b1bdb571044dec"
+PARENT_RAPPID="rappid:@kody-w/rapp:9a8f0a4b5a710e20f4d819a0f37d2a4c9f113b5e78fb3c29e70b54fff48a38f9"
 PARENT_REPO="https://github.com/kody-w/RAPP.git"
 
 # ── Freshness check via lineage_check.py ─────────────────────────────────
@@ -96,16 +97,24 @@ VARIANT_NAME="${VARIANT_NAME:-$DEFAULT_NAME}"
 
 # ── Generate rappid ──────────────────────────────────────────────────────
 
-# Consolidated Eternity rappid per CONSTITUTION Article XXXIV.1: self-locating
-# `rappid:@<owner>/<slug>:<hash>` (no v2:/<kind>:/@host). UUID hex (dashes
-# stripped) as hash; owner/slug derived from this repo's git remote. The variant
-# `kind`/role lives in the rappid.json record (set below), not the string.
+# Canonical RAPP §6.1 rappid: self-locating `rappid:@<owner>/<slug>:<64hex>`.
+# owner/slug derived from this repo's git remote and canonicalized to the grammar;
+# the 64-hex tail is Hb("rapp/1:rappid", uuid4) — keyless, domain-separated, full
+# 256-bit (never a 32-hex UUID, never sha256(name)). The variant `kind`/role lives
+# in the rappid.json record (set below), not the string.
 _VAR_OWNER="$(git config --get remote.origin.url 2>/dev/null | sed -nE 's#.*[/:]([^/]+)/[^/]+(\.git)?$#\1#p')"
 _VAR_OWNER="${_VAR_OWNER:-anon}"
 _VAR_REPO="$(git config --get remote.origin.url 2>/dev/null | sed -nE 's#.*/([^/]+)\.git$#\1#p; s#.*/([^/]+)$#\1#p' | head -1)"
 _VAR_REPO="${_VAR_REPO:-$VARIANT_NAME}"
-_VAR_HASH="$(python3 -c "import uuid; print(uuid.uuid4().hex)")"
-NEW_RAPPID="rappid:@${_VAR_OWNER}/${_VAR_REPO}:${_VAR_HASH}"
+NEW_RAPPID="$(python3 -c "
+import uuid, hashlib, re, sys
+def canon(s):
+    s = re.sub(r'[^a-z0-9]+', '-', s.lower()).strip('-')
+    return s or 'x'
+owner, slug = canon(sys.argv[1]), canon(sys.argv[2])
+tail = hashlib.sha256(b'rapp/1:rappid\n' + uuid.uuid4().bytes).hexdigest()
+print(f'rappid:@{owner}/{slug}:{tail}')
+" "$_VAR_OWNER" "$_VAR_REPO")"
 NOW="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 PARENT_COMMIT="$(curl -fsSL "https://api.github.com/repos/kody-w/RAPP/commits/main" 2>/dev/null \
@@ -133,7 +142,7 @@ data["name"] = name
 data["role"] = "variant"
 # Eternity standard: `kind` lives in the record (not the rappid string).
 data.setdefault("kind", "variant")
-data["schema"] = "rapp-rappid/2.0"
+data["schema"] = "rapp/1"
 # attestation resets because the new rappid hasn't been attested yet.
 data["attestation"] = None
 

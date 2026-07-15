@@ -27,13 +27,12 @@ set -e
 # ── constants ─────────────────────────────────────────────────────────
 GRAIL_REPO="kody-w/rapp-installer"
 GRAIL_RAW="https://raw.githubusercontent.com/${GRAIL_REPO}/main"
-# Species root consolidated Eternity rappid — the canonical identifier for
-# kody-w/RAPP per CONSTITUTION Article XXXIV.1 (consolidated form, locked
-# 2026-06-03). The legacy UUID 0b635450-c042-49fb-b4b1-bdb571044dec is preserved
-# as the hash field (dashes stripped) per the documented migration rule — same
-# identity, consolidated string representation. `kind` (prototype) lives in the
-# rappid.json record, not the string.
-SPECIES_ROOT_RAPPID="rappid:@kody-w/RAPP:0b635450c04249fbb4b1bdb571044dec"
+# Species root — the canonical §6.1 identifier for kody-w/RAPP. owner/slug are
+# lowercase per the grammar ([a-z0-9]+(-[a-z0-9]+)*) and the tail is a full
+# 64-hex domain-separated mint, NOT a 32-hex UUID and NOT sha256(name). `kind`
+# (prototype) lives in the rappid.json record, not the string. This is the one
+# true species root every planted door points its parent_rappid at.
+SPECIES_ROOT_RAPPID="rappid:@kody-w/rapp:9a8f0a4b5a710e20f4d819a0f37d2a4c9f113b5e78fb3c29e70b54fff48a38f9"
 
 KERNEL_FILES=(
     "rapp_brainstem/brainstem.py"
@@ -130,16 +129,23 @@ print(' '.join(p.capitalize() for p in parts))
 
 # ── identity ──────────────────────────────────────────────────────────
 # mint_rappid <gh_user> <repo_name> <kind>
-# Mints a consolidated Eternity rappid string per CONSTITUTION Article XXXIV.1.
-# Schema: rappid:@<gh_user>/<repo_name>:<hash>  (self-locating; no v2:/<kind>:/@host).
-# `kind` is NOT encoded in the string — it lives in the rappid.json record. The
-# parameter is kept for call-site compatibility (and to flow into the record).
-# Hash is a fresh UUIDv4 with dashes stripped (32 hex chars).
+# Mints a canonical RAPP §6.1 rappid: `rappid:@<owner>/<slug>:<64hex>`.
+# owner/slug are canonicalized to the grammar [a-z0-9]+(-[a-z0-9]+)* and the
+# 64-hex tail is Hb("rapp/1:rappid", uuid4_bytes) = sha256(b"rapp/1:rappid\n" +
+# uuid4.bytes) — a domain-separated KEYLESS mint, full 256-bit, NEVER a 32-hex
+# UUID and NEVER sha256(name). `kind` lives in the rappid.json record, not the
+# string (the parameter is kept for call-site compatibility).
 mint_rappid() {
     local gh_user="${1:-anon}" repo_name="${2:-unknown}" kind="${3:-mirror}"
-    local hash
-    hash="$(python3 -c "import uuid; print(uuid.uuid4().hex)")"
-    echo "rappid:@${gh_user}/${repo_name}:${hash}"
+    python3 -c "
+import uuid, hashlib, re, sys
+def canon(s):
+    s = re.sub(r'[^a-z0-9]+', '-', s.lower()).strip('-')
+    return s or 'x'
+owner, slug = canon(sys.argv[1]), canon(sys.argv[2])
+tail = hashlib.sha256(b'rapp/1:rappid\n' + uuid.uuid4().bytes).hexdigest()
+print(f'rappid:@{owner}/{slug}:{tail}')
+" "$gh_user" "$repo_name"
 }
 now_iso()     { date -u +"%Y-%m-%dT%H:%M:%SZ"; }
 
@@ -384,7 +390,7 @@ write_rappid_json() {
     python3 - <<'PYEOF'
 import os, json, pathlib
 data = {
-    "schema": "rapp-rappid/2.0",
+    "schema": "rapp/1",
     "rappid": os.environ["PLANT_RAPPID"],
     "kind": os.environ.get("PLANT_KIND") or "mirror",
     "name": os.environ["PLANT_REPO_NAME"],
