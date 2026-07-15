@@ -70,7 +70,7 @@ CONTRACTS: dict = {
             ".nojekyll",
         ],
         "expected_schemas": {
-            "rappid.json":       "rapp-rappid/2.0",
+            "rappid.json":       "rapp/1",
             "neighborhood.json": "rapp-neighborhood/1.0",
             "card.json":         "rapp-card/1.0",
             "members.json":      "rapp-neighborhood-members/1.0",
@@ -97,7 +97,7 @@ CONTRACTS: dict = {
             ".nojekyll",
         ],
         "expected_schemas": {
-            "rappid.json":       "rapp-rappid/2.0",
+            "rappid.json":       "rapp/1",
             "neighborhood.json": "rapp-neighborhood/1.0",
             "card.json":         "rapp-card/1.0",
             "members.json":      "rapp-neighborhood-members/1.0",
@@ -120,7 +120,7 @@ CONTRACTS: dict = {
             "index.html",  # the gate / front door
         ],
         "expected_schemas": {
-            "rappid.json": "rapp-rappid/2.0",
+            "rappid.json": "rapp/1",
             "card.json":   "rapp-card/1.0",
         },
         "rappid_kind":             None,  # twin rappids may use various kinds (personal/place/experiment/etc.)
@@ -140,7 +140,7 @@ CONTRACTS: dict = {
             "members.json",
         ],
         "expected_schemas": {
-            "rappid.json":       "rapp-rappid/2.0",
+            "rappid.json":       "rapp/1",
             "neighborhood.json": "rapp-neighborhood/1.0",
             "members.json":      "rapp-neighborhood-members/1.0",
         },
@@ -161,7 +161,7 @@ CONTRACTS: dict = {
             "rar/index.json",
         ],
         "expected_schemas": {
-            "rappid.json":       "rapp-rappid/2.0",
+            "rappid.json":       "rapp/1",
             "neighborhood.json": "rapp-neighborhood/1.0",
             "card.json":         "rapp-card/1.0",
             "rar/index.json":    "rapp-rar-index/1.0",
@@ -194,7 +194,7 @@ CONTRACTS: dict = {
             "rappid.json",
         ],
         "expected_schemas": {
-            "rappid.json": "rapp-rappid/2.0",
+            "rappid.json": "rapp/1",
         },
         "rappid_kind":             None,  # templates may carry the kind they spawn (workspace/braintrust)
         "identity_block_required": False,

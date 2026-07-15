@@ -56,8 +56,11 @@ def _mint_rappid(kind: str, owner: str, name: str) -> str:
     #   rappid:@<owner>/<slug>:<64hex>  (full 256-bit identity).
     # `kind` is NOT in the string — it lives in the rappid.json record this
     # caller writes alongside it; accepted here only for call-site compatibility.
-    h = hashlib.sha256(uuid.uuid4().bytes).hexdigest()  # 64 hex, full 256-bit
-    return f"rappid:@{owner}/{name}:{h}"
+    import re as _re
+    _o = _re.sub(r"[^a-z0-9]+", "-", (owner or "anon").lower()).strip("-") or "anon"
+    _n = _re.sub(r"[^a-z0-9]+", "-", (name or "x").lower()).strip("-") or "x"
+    h = hashlib.sha256(b"rapp/1:rappid\n" + uuid.uuid4().bytes).hexdigest()  # Hb("rapp/1:rappid", uuid4): keyless, domain-separated
+    return f"rappid:@{_o}/{_n}:{h}"
 
 
 # ─── Plant a brainstem (twin kind) with a distinct voice ──────────────────
@@ -71,7 +74,7 @@ def plant_brainstem(directory: str, name: str, display_name: str,
 
     # 1. rappid.json
     _write(os.path.join(directory, "rappid.json"), json.dumps({
-        "schema":         "rapp-rappid/2.0",
+        "schema":         "rapp/1",
         "rappid":         rappid_str,
         "kind":           "twin",
         "name":           name,
@@ -186,7 +189,7 @@ def plant_local_neighborhood(directory: str, name: str, display_name: str) -> di
 
     # rappid + neighborhood + members
     _write(os.path.join(directory, "rappid.json"), json.dumps({
-        "schema": "rapp-rappid/2.0", "rappid": rappid_str, "kind": "neighborhood",
+        "schema": "rapp/1", "rappid": rappid_str, "kind": "neighborhood",
         "name": name, "display_name": display_name,
         "github": f"local://{name}", "url": f"local://{name}/",
         "parent_rappid": None, "parent_repo": "https://github.com/kody-w/RAPP",
