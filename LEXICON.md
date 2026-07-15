@@ -5,10 +5,10 @@
 > learns the nine words can place the load-bearing surfaces of the ecosystem; the rest
 > is shelved, not new.
 >
-> **Status:** Lexicon v1, pre-seal draft — drafted and revised 2026-07-14. **Ratified and
-> sealed at genesis**: the rapp-body genesis frame pins this file's sha256 as
-> `lexicon_sha`; "v1" names the bytes pinned at that moment, and drafts iterate freely
-> until then. (`kody-w/rapp-body` is deliberately unpublished until genesis — the repo
+> **Status:** Lexicon v1 — drafted and revised 2026-07-14. **Ratified and sealed at
+> genesis**: the rapp-body genesis frame pins this file's sha256 as `lexicon_sha`, and
+> "v1" names the bytes so pinned. (Before that pin exists, this file iterates freely as
+> a draft; once it exists, this Status line describes a sealed fact.) (`kody-w/rapp-body` is deliberately unpublished until genesis — the repo
 > and the seal are born in the same act, so this forward reference resolves at the
 > moment it becomes load-bearing.) The seal covers **every byte** — including the dated snapshots in Part IV,
 > which are sealed *as history* (true as of their writing), not as live state. After the
@@ -85,10 +85,13 @@ back to the species root, CA-free — no certificate authority, no registrar; at
 keys exist (Art. XXXVI.4) and are optional, never required for validity.
 
 - **Law (Constitution Art. XXXIV.1 / XXXVI.1):** the 64hex is `sha256(master_pubkey_SPKI)`
-  when keyed, or stable-UUID-derived when keyless. It is **never** `sha256(owner/slug)` —
-  a name-hash is a name that *can* lie.
-- Legacy forms (bare UUID, `rappid:v2:…`, bare-Eternity `rappid:<slug>:<64hex>`) are read
-  forever and canonicalized on read; they are never re-emitted.
+  when keyed, or stable-UUID-derived when keyless (pre-ratification identities carry the
+  UUID's 32 hex nibbles as the hash — valid forever, Art. XXXIV.2). It is **never**
+  `sha256(owner/slug)` — a name-hash is a name that *can* lie.
+- Legacy forms (bare UUID, `rappid:v2:…`) are read forever and canonicalized on read;
+  they are never re-emitted. The bare-Eternity form `rappid:<slug>:<64hex>` is legacy
+  only for **door-bearing** organisms — door-less organisms (Moments, keepers,
+  dimensions; Arts. XXXIV.1 / XLVI.7) keep the bare form as their canonical shape.
 - **Is not:** a username, a URL, or anything reassignable.
 
 ### 5. the membrane
@@ -261,6 +264,10 @@ has a fixed antecedent.)
   - **Leviathan** — the kody-leviathan wrapped-organism vs. the Leviathan factory
     concept; the spine's collisions table carries the relationship (the precedent this
     ruling generalizes).
+  - **organ** — constitutionally reserved for `*_organ.py` HTTP extensions
+    (Art. XXXIII) vs. the figurative "Organs of the body" shelf in Part II, which names
+    the map layer's instruments. Qualify: *an organ* (code contract) / *organ of the
+    body* (map-layer instrument).
 - **R7 — doorman = posting.** One primitive, two doors (machine-door, persona-door);
   Heimdall is the reference posting; "front door" repos are doors whose doorman is
   static; dark doors (§19) are doors without listings.
