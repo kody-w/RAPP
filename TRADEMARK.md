@@ -16,7 +16,7 @@ Wildfeuer:
 
 | Mark | What it identifies |
 |---|---|
-| **RAPP** | The platform — Rapid Agent Prototyping Platform — at https://github.com/kody-w/RAPP. |
+| **RAPP** | The platform — Rapid Agent Prototype Platform — at https://github.com/kody-w/RAPP. |
 | **rappid** | The lineage-identity protocol described in CONSTITUTION.md Article XXXIV. |
 | **hatchling** | The lifecycle CLI for the digital-organism hatching cycle. |
 | **vBrainstem** | The browser-side simulator (utils/web/index.html in this repo). |

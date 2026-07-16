@@ -865,7 +865,7 @@
     {
       "id": "rapp-private-backup",
       "category": "core",
-      "description": "Private backup of RAPP (Rapid Agent Prototyping Platform)",
+      "description": "Private backup of RAPP (Rapid Agent Prototype Platform)",
       "private": true,
       "stars": 0,
       "pushedAt": "2026-04-09T17:30:28Z",
@@ -1954,7 +1954,7 @@
     {
       "id": "Rapid-Agent-Prototyping-Platform-RAPP-",
       "category": "ancestor",
-      "description": "Rapid Agent Prototyping Platform (RAPP)",
+      "description": "Rapid Agent Prototype Platform (RAPP)",
       "private": true,
       "stars": 1,
       "pushedAt": "2025-10-07T16:53:13Z",

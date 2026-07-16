@@ -3,7 +3,7 @@
 > **Owner:** _<to be assigned>_ · **Status:** DRAFT · **Last updated:** 2026-06-27
 > **Maps to:** A1–A5 · T1–T3 · F1–F3 · RS1–RS3 · PS1–PS2 · I1 (Microsoft Responsible AI Standard v2 + GenAI supplement)
 
-This directory is the Responsible AI (RAI) bundle for **RAPP — the Rapid Agent Prototyping Platform**. It documents how RAPP measures against the [Microsoft Responsible AI Standard v2](https://cdn-dynmedia-1.microsoft.com/is/content/microsoftcorp/microsoft/final/en-us/microsoft-brand/documents/Microsoft-Responsible-AI-Standard-General-Requirements.pdf) (six principles, 17 Goals) and its Generative-AI supplement.
+This directory is the Responsible AI (RAI) bundle for **RAPP — the Rapid Agent Prototype Platform**. It documents how RAPP measures against the [Microsoft Responsible AI Standard v2](https://cdn-dynmedia-1.microsoft.com/is/content/microsoftcorp/microsoft/final/en-us/microsoft-brand/documents/Microsoft-Responsible-AI-Standard-General-Requirements.pdf) (six principles, 17 Goals) and its Generative-AI supplement.
 
 ---
 

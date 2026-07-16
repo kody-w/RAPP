@@ -3460,7 +3460,7 @@ The door-less tier's canonical form is the **RAPP Eternity Standard** — the sc
 
 **Reconciliations (this sub-article's purpose):**
 
-1. **Two namespaces, one format family.** The v2 door rappid (`rappid:v2:<kind>:@<owner>/<repo>:<32hex>@github.com/...`, frozen in XLVI.2) is the **door-bearing** address; XLVI.1 governs it. The Eternity rappid (`rappid:<slug>:<64hex>`) is the **content-addressed** identity, governed here, and resolves to **no door** by design. They do not conflict. XLVI.5's "no fallbacks" applies *within each* namespace.
+1. **Two namespaces, one format family.** The v2 door rappid (`rappid:v2:<kind>:@<owner>/<repo>:<32hex>@github.com/...`, frozen in XLVI.2, legacy/read-forever) is the **door-bearing** address; XLVI.1 governs it. The Eternity rappid (`rappid:<slug>:<64hex>`) is the **content-addressed** identity, governed here, and resolves to **no door** by design. They do not conflict. XLVI.5's "no fallbacks" applies *within each* namespace.
 
 2. **Eternity slugs are NOT door-bearing kinds.** `moment`, `keeper`, `dimension`, and any future Eternity slug live on a **separate axis** from the frozen `VALID_KINDS` of XLVI.2. **Adding an Eternity slug does NOT require amending XLVI.2** — it is door-less by construction and resolves to no `door_type`. XLVI.2's amendment-gate binds only **door-bearing** kinds; the Eternity axis is open and additive, subject to `rapp-eternity/1.0`'s compatibility contract (read all legacy forms, emit only canonical, never version the string — crypto-agility lives in a `sig_suite` record field).
 

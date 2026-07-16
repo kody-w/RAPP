@@ -3,7 +3,7 @@
 > **Owner:** \<to be assigned\> · **Status:** DRAFT · **Last updated:** 2026-06-27
 > **Maps to:** PS2 (Security Policy compliance), RS1 (guidance / operational ranges), with cross-references to A2 (oversight), A5 (human control), PS1 (privacy), T3 (disclosure)
 
-This document is the security threat model for the RAPP (Rapid Agent Prototyping Platform) **Tier-1 brainstem** as shipped today. It exists to satisfy the Privacy & Security goal **PS2** of the Microsoft Responsible AI Standard v2, which requires that systems comply with the Microsoft Security Policy, and to feed the Adverse-Impact section of the RAI Impact Assessment (see [`impact-assessment.md`](./impact-assessment.md)).
+This document is the security threat model for the RAPP (Rapid Agent Prototype Platform) **Tier-1 brainstem** as shipped today. It exists to satisfy the Privacy & Security goal **PS2** of the Microsoft Responsible AI Standard v2, which requires that systems comply with the Microsoft Security Policy, and to feed the Adverse-Impact section of the RAI Impact Assessment (see [`impact-assessment.md`](./impact-assessment.md)).
 
 **Honest posture.** RAPP does **not** pass the Microsoft Responsible AI Standard today. The brainstem executes arbitrary, unsigned, third-party Python in-process, with the live Copilot credential in the same address space, while binding all network interfaces with a wildcard CORS policy. Four of the threats below are rated **P0 — blockers to any RAI sign-off**. This model states the current state plainly and frames every threat as **current state → required control → exit criteria**, drawing remediations directly from the [RAI roadmap](./ROADMAP.md).
 

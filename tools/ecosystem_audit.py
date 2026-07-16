@@ -256,7 +256,7 @@ def _diff_offspring(name: str, kind: str, contract: dict,
     # 3. rappid_kind check.
     #    The consolidated rappid (rappid:@<owner>/<slug>:<64hex>) carries kind in
     #    the rappid.json RECORD, never in the string. The retired v2 form (which
-    #    once carried an inline "rappid:v2:<kind>:" prefix) is no longer read by the
+    #    once carried a legacy inline "rappid:v2:<kind>:" prefix) is no longer read by the
     #    live parser, so kind now comes exclusively from the record's `kind` field.
     #    The rappid STRING is validated with the canonical parser (consolidated +
     #    non-v2 legacy forms); an unparseable string just leaves kind to the record

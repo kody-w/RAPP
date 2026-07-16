@@ -2,7 +2,7 @@
 
 ## Project
 
-RAPP (Rapid Agent Prototyping Platform) — a three-tier AI agent architecture built around **single-file agents**. Local Flask brainstem (Tier 1), Azure Functions cloud (Tier 2), Copilot Studio enterprise (Tier 3).
+RAPP (Rapid Agent Prototype Platform) — a three-tier AI agent architecture built around **single-file agents**. Local Flask brainstem (Tier 1), Azure Functions cloud (Tier 2), Copilot Studio enterprise (Tier 3).
 
 Read [SPEC.md](./SPEC.md) before making any architectural changes — it is the frozen v1 contract. Read [CONSTITUTION.md](../CONSTITUTION.md) before modifying core files.
 

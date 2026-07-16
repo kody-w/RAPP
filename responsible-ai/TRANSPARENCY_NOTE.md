@@ -6,7 +6,7 @@
 
 ## About this document
 
-Microsoft publishes [Transparency Notes](https://learn.microsoft.com/en-us/azure/foundry/responsible-ai/openai/transparency-note) to help people understand how an AI technology works, the choices system owners can make that influence behavior, and the importance of thinking about the whole system — including people, data, and the surrounding environment. This document follows that structure for **RAPP (Rapid Agent Prototyping Platform)**.
+Microsoft publishes [Transparency Notes](https://learn.microsoft.com/en-us/azure/foundry/responsible-ai/openai/transparency-note) to help people understand how an AI technology works, the choices system owners can make that influence behavior, and the importance of thinking about the whole system — including people, data, and the surrounding environment. This document follows that structure for **RAPP (Rapid Agent Prototype Platform)**.
 
 > **HONEST POSTURE — read first.** RAPP does **not** currently meet the Microsoft Responsible AI Standard v2. This Transparency Note is itself one of the P0 governance artifacts required to reach a defensible posture. It is published **before** the technical mitigations it describes are in place, so that anyone evaluating, deploying, or extending RAPP understands the real limitations **today**. Where this note says "no safety layer," "executes unreviewed code," or "sends your conversation to GitHub/Microsoft," those statements describe the **current shipped behavior**, not an aspiration. See the [Impact Assessment](./impact-assessment.md) and [Roadmap](./ROADMAP.md) for the path from current state to required state.
 

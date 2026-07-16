@@ -1,4 +1,4 @@
-# Sensitive Uses Determination — RAPP (Rapid Agent Prototyping Platform)
+# Sensitive Uses Determination — RAPP (Rapid Agent Prototype Platform)
 
 > **Owner:** _to be assigned_ · **Status:** DRAFT · **Last updated:** 2026-06-27 · **Maps to:** A2 (Oversight of significant adverse impacts) — with dependencies on A1, A3, A5, F2, PS2, RS1
 >

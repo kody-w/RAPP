@@ -37,7 +37,7 @@ The diagnosis was right: every fallback was a missed opportunity to formalize. T
 
 ## The "rappid is the URL" insight
 
-The v2 rappid format is `rappid:v2:<kind>:@<owner>/<repo>:<32hex>@github.com/<owner>/<repo>`. The `<owner>/<repo>` segment appears **twice by design** — once as the abbreviated identity reference, once as the origin pin. This was always there. We just hadn't formalized that those segments are not just *consistent* with the GitHub repo URL — they ARE the GitHub repo URL.
+The v2 rappid format is `rappid:v2:<kind>:@<owner>/<repo>:<32hex>@github.com/<owner>/<repo>`. The `<owner>/<repo>` segment appears **twice by design** — once as the abbreviated identity reference, once as the origin pin. This was always there. We just hadn't formalized that those segments are not just *consistent* with the GitHub repo URL — they ARE the GitHub repo URL. <!-- legacy v2 form: read-forever, never written -->
 
 From a single rappid string, by parsing:
 - `https://github.com/<owner>/<repo>` (repo)

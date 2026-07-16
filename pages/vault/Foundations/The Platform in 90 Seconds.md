@@ -11,7 +11,7 @@ hook: The elevator pitch. Read aloud in 90 seconds. If this doesn't land, no oth
 
 ## What RAPP is
 
-RAPP — *Rapid Agent Prototyping Platform* — is a three-tier engine for building, validating, and shipping AI agents inside Microsoft-flavored environments. The platform's job is to make a real working agent in **one hour**, in front of the customer who will use it, and ship that same agent into production without rewriting a line.
+RAPP — *Rapid Agent Prototype Platform* — is a three-tier engine for building, validating, and shipping AI agents inside Microsoft-flavored environments. The platform's job is to make a real working agent in **one hour**, in front of the customer who will use it, and ship that same agent into production without rewriting a line.
 
 ## What's distinctive
 

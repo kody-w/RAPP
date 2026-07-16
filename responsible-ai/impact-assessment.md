@@ -33,7 +33,7 @@ Fields that cannot yet be filled responsibly are marked **`TO COMPLETE (owner)`*
 
 ### 1.1 System overview
 
-**RAPP (Rapid Agent Prototyping Platform)** is a progressive AI-agent platform that teaches the Microsoft AI stack through three self-contained tiers. The unit assessed here is the **engine** — the substrate that loads, orchestrates, and executes user-authored agents — not any individual agent.
+**RAPP (Rapid Agent Prototype Platform)** is a progressive AI-agent platform that teaches the Microsoft AI stack through three self-contained tiers. The unit assessed here is the **engine** — the substrate that loads, orchestrates, and executes user-authored agents — not any individual agent.
 
 | Tier | Name | What it is | Inference provider | Key file |
 |------|------|-----------|--------------------|----------|

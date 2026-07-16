@@ -2,7 +2,7 @@
 
 > **Owner:** _<to be assigned>_ · **Status:** DRAFT · **Last updated:** 2026-06-27 · **Maps to:** A3 (Fit for purpose), underpins A1 (Impact Assessment); cross-refs A2 (Sensitive Uses), F2 (Allocation)
 
-This document declares what RAPP (the Rapid Agent Prototyping Platform) is and is **not** intended for. It is the source of truth for the **Intended Uses** section of the Impact Assessment ([impact-assessment.md](./impact-assessment.md)) and the boundary on which the engine-level Sensitive-Use determination rests ([sensitive-uses.md](./sensitive-uses.md)).
+This document declares what RAPP (the Rapid Agent Prototype Platform) is and is **not** intended for. It is the source of truth for the **Intended Uses** section of the Impact Assessment ([impact-assessment.md](./impact-assessment.md)) and the boundary on which the engine-level Sensitive-Use determination rests ([sensitive-uses.md](./sensitive-uses.md)).
 
 ## Honest posture (read first)
 

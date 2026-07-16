@@ -4,7 +4,7 @@
 > **Last updated:** 2026-06-27 · **Reassessment trigger:** every `VERSION` bump, and at least annually.
 > **Maps to:** Microsoft Responsible AI Standard v2 — Goals A1–A5, T1–T3, F1–F3, RS1–RS3, PS1–PS2, I1, plus the Generative-AI supplement.
 
-This is the path to taking **RAPP** (the Rapid Agent Prototyping Platform) through a
+This is the path to taking **RAPP** (the Rapid Agent Prototype Platform) through a
 Microsoft Responsible AI (RAI) review. It is written to be **honest, not flattering.**
 
 ## TL;DR — current posture

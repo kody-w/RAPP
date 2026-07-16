@@ -2,7 +2,7 @@
 
 > **Owner:** \<to be assigned\> · **Status:** DRAFT · **Last updated:** 2026-06-27 · **Maps to:** A1, A2, A3, A4, A5, T1, T2, T3, F1, F2, F3, RS1, RS2, RS3, PS1, PS2, I1 + Microsoft Generative-AI supplement
 
-This is the at-a-glance compliance board for RAPP (the Rapid Agent Prototyping Platform) against the **Microsoft Responsible AI Standard v2** (June 2022) — six principles, 17 Goals — plus the Microsoft **Generative-AI supplement**. Every other artifact in this directory hangs off a row here.
+This is the at-a-glance compliance board for RAPP (the Rapid Agent Prototype Platform) against the **Microsoft Responsible AI Standard v2** (June 2022) — six principles, 17 Goals — plus the Microsoft **Generative-AI supplement**. Every other artifact in this directory hangs off a row here.
 
 ## Honest posture
 

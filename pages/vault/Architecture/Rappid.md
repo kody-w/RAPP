@@ -210,7 +210,7 @@ The same rappid format describes all three cases. The verifier inspects which fi
 Before 2026-04-30, two parallel systems briefly coexisted:
 
 1. **`rapp-rappid/1.1`** (Article XXXIV draft) — rappids in `rappid.json` files at repo roots
-2. **`rappid:v2:` cryptographic format** (Swarm Estate Protocol draft) — structured rappids for AI organisms with master keypairs
+2. **`rappid:v2:` cryptographic format** (Swarm Estate Protocol draft) — structured rappids for AI organisms with master keypairs <!-- legacy v2 form: read-forever, never written -->
 
 These were merged on 2026-04-30 into a unified structured format, then **consolidated again on 2026-06-03 into the single Eternity form** `rappid:@<owner>/<slug>:<hash>` (CONSTITUTION Art. XXXIV.1) — `kind` and host moved into the `rappid.json` record, the string stripped to identity + self-locating address. Existing UUIDs (e.g., the species root's `0b635450-...`) are preserved in the hash field (dashes stripped). The schema migrated from `1.1` to `2.0`; legacy `rappid:v2:…` strings are read forever and canonicalized, never re-emitted. **No rappid was lost; every existing rappid has a unique Eternity string.**
 

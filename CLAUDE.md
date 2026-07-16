@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-RAPP (Rapid Agent Prototyping Platform) is a platform implementing a three-tier AI agent platform. Philosophy: "engine, not experience" — infrastructure only, no opinionated UI or workflows.
+RAPP (Rapid Agent Prototype Platform) is a platform implementing a three-tier AI agent platform. Philosophy: "engine, not experience" — infrastructure only, no opinionated UI or workflows.
 
 The three tiers are independently runnable and share the same single-file agent contract:
 - **Tier 1 (Local):** `rapp_brainstem/` — Python Flask server on port 7071

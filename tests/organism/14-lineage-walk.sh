@@ -120,7 +120,7 @@ try:
     for h, parent in [(A_hash, B_rappid), (B_hash, A_rappid)]:
         d = cycle_vault / "blessings" / h
         d.mkdir(parents=True)
-        (d / "root.json").write_text(f'{{"rappid":"rappid:v2:organism:@test/{("a" if h == A_hash else "b")}:{h}@local","payload":{{"parent_rappid":"{parent}"}},"signature":"x"}}')
+        (d / "root.json").write_text(f'{{"rappid":"rappid:v2:organism:@test/{("a" if h == A_hash else "b")}:{h}@local","payload":{{"parent_rappid":"{parent}"}},"signature":"x"}}')  # legacy-test: constructs v2 to prove refusal (read-forever)
     try:
         walk_lineage(Rappid.parse(A_rappid), cycle_vault)
         assert False, "cycle should have raised"

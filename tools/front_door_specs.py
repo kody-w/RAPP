@@ -487,7 +487,7 @@ def _self_check() -> dict:
             if len(content) < 200:
                 issues.append(f"kind={kind}: {path} too short ({len(content)} bytes)")
         # SPEC.md must declare the consolidated rappid form and the door URL set.
-        # (kind lives in the rappid.json record, not a "rappid:v2:<kind>:" prefix.)
+        # (kind lives in the rappid.json record, not a legacy "rappid:v2:<kind>:" prefix.)
         spec = bundle.get("specs/SPEC.md", "")
         for needle in ("rappid:@", "raw.githubusercontent.com", "door_from_rappid"):
             if needle not in spec:

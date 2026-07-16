@@ -1,6 +1,6 @@
 ---
 name: rapp-brainstem
-description: Install, configure, or use RAPP (Rapid Agent Prototyping Platform) — a portable, shareable, vibe swarm building tool. Local-first AI agent server powered by GitHub Copilot, where agents are single Python files anyone can drop in, AirDrop, or push to a teammate. Use when the user wants to install RAPP, set up a local or project-scoped brainstem, build or share custom agents without API keys, compose agents into swarms, or asks about a "brainstem" on their machine.
+description: Install, configure, or use RAPP (Rapid Agent Prototype Platform) — a portable, shareable, vibe swarm building tool. Local-first AI agent server powered by GitHub Copilot, where agents are single Python files anyone can drop in, AirDrop, or push to a teammate. Use when the user wants to install RAPP, set up a local or project-scoped brainstem, build or share custom agents without API keys, compose agents into swarms, or asks about a "brainstem" on their machine.
 version: 1
 canonical_url: https://kody-w.github.io/RAPP/pages/docs/skill.md
 repo: https://github.com/kody-w/RAPP
