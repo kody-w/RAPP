@@ -4,10 +4,11 @@ import base64
 
 import pytest
 
-from rapp1_core.canonical import canonical_bytes
+from rapp1_core.canonical import canonical_bytes, strict_loads
 from rapp1_core.frame import (
     FRAME_KEYS,
     FrameAcceptor,
+    FrameAcceptorSnapshot,
     FrameError,
     accept_frame,
     build_frame,
@@ -682,3 +683,54 @@ def test_late_competing_historical_frame_also_quarantines_stream() -> None:
     assert not fork.accepted
     assert fork.error_code == "fork-quarantined"
     assert acceptor.is_quarantined(RID1)
+
+
+def test_fork_quarantine_survives_snapshot_and_restart() -> None:
+    genesis = _body_genesis()
+    registry = _registry(genesis)
+    acceptor = FrameAcceptor(registry)
+    assert acceptor.accept(genesis, declared_stream_id=RID1).accepted
+    branch_a = build_frame(
+        kind="body.pulse",
+        stream_id=RID1,
+        seq=1,
+        utc=UTC1,
+        payload={"branch": "A"},
+        prev=genesis["payload_hash"],
+        prev_wave=None,
+    )
+    branch_b = build_frame(
+        kind="body.pulse",
+        stream_id=RID1,
+        seq=1,
+        utc=UTC1,
+        payload={"branch": "B"},
+        prev=genesis["payload_hash"],
+        prev_wave=None,
+    )
+    assert acceptor.accept(branch_a, declared_stream_id=RID1).accepted
+    assert not acceptor.accept(branch_b, declared_stream_id=RID1).accepted
+
+    persisted = canonical_bytes(acceptor.snapshot().as_dict())
+    restored_value = strict_loads(persisted)
+    assert type(restored_value) is dict
+    restored_snapshot = FrameAcceptorSnapshot.from_dict(restored_value)
+    restarted = FrameAcceptor(registry, snapshot=restored_snapshot)
+    assert restarted.is_quarantined(RID1)
+    assert restarted.head(RID1).frame_hash == branch_a["frame_hash"]
+    assert canonical_bytes(restarted.snapshot().as_dict()) == persisted
+
+    branch_a2 = build_frame(
+        kind="body.pulse",
+        stream_id=RID1,
+        seq=2,
+        utc=UTC2,
+        payload={"branch": "A2"},
+        prev=branch_a["payload_hash"],
+        prev_wave=None,
+    )
+    refused = restarted.accept(branch_a2, declared_stream_id=RID1)
+    assert not refused.accepted
+    assert refused.error_code == "stream-quarantined"
+    with pytest.raises(FrameError, match="quarantine"):
+        restarted.seed_trusted_head(_head(branch_a2, trusted=True))

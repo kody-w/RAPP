@@ -289,6 +289,59 @@ def test_zip_slip_paths_and_duplicate_manifest_paths_are_refused() -> None:
     assert inspect_egg(duplicate).error_code == "duplicate-content-path"
 
 
+@pytest.mark.parametrize(
+    "conflicting_files",
+    [
+        {"a": b"parent", "a/b": b"child"},
+        {"state/data": b"parent", "state/data/child": b"child"},
+        {"manifest.json/child": b"reserved-child"},
+    ],
+)
+def test_ancestor_and_manifest_path_conflicts_never_become_viable(
+    conflicting_files: dict[str, bytes]
+) -> None:
+    files = {
+        "rappid.json": b"{}",
+        "soul.md": b"soul",
+        **conflicting_files,
+    }
+    with pytest.raises(EggError) as packed:
+        pack_egg(
+            variant="organism",
+            rappid=RID_ORG1,
+            created_utc=UTC,
+            payload={},
+            files=files,
+        )
+    assert packed.value.code == "path-prefix-conflict"
+
+    paths = sorted(files, key=lambda value: value.encode("utf-8"))
+    manifest = {
+        "schema": "rapp/1-egg",
+        "variant": "organism",
+        "rappid": RID_ORG1,
+        "created_utc": UTC,
+        "contents": [
+            {"path": path, "hash": hash_bytes(EGG_FILE_SPACE, files[path])}
+            for path in paths
+        ],
+        "payload": {},
+        "sig": None,
+    }
+    raw = _encode_zip(
+        [("manifest.json", canonical_bytes(manifest))]
+        + [(path, files[path]) for path in paths]
+    )
+    inspected = inspect_egg(raw)
+    assert not inspected.structurally_valid
+    assert inspected.error_code == "path-prefix-conflict"
+    accepted = accept_egg(
+        raw, registry=RegistryEvidence(authenticated=True, fresh=True)
+    )
+    assert not accepted.structurally_valid
+    assert not accepted.accepted
+
+
 def test_file_tampering_is_refused_even_with_valid_zip_crc() -> None:
     manifest, files = _manifest_and_files(_organism())
     changed = [(name, b"tampered" if name == "soul.md" else data) for name, data in files]

@@ -612,26 +612,240 @@ def accept_frame(
 
 
 @dataclass(frozen=True)
-class _AcceptedFrameState:
-    head: HeadState
+class AcceptedFrameSnapshot:
+    stream_id: str
+    seq: int
+    utc: str
+    payload_hash: str
+    frame_hash: str
     prev: str | None
     predecessor_known: bool
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "stream_id": self.stream_id,
+            "seq": self.seq,
+            "utc": self.utc,
+            "payload_hash": self.payload_hash,
+            "frame_hash": self.frame_hash,
+            "prev": self.prev,
+            "predecessor_known": self.predecessor_known,
+        }
+
+    @classmethod
+    def from_dict(cls, value: dict[str, Any]) -> "AcceptedFrameSnapshot":
+        expected = {
+            "stream_id",
+            "seq",
+            "utc",
+            "payload_hash",
+            "frame_hash",
+            "prev",
+            "predecessor_known",
+        }
+        if type(value) is not dict or set(value) != expected:
+            raise FrameError(
+                "invalid-acceptor-snapshot",
+                "accepted frame snapshot has an invalid member set",
+            )
+        return cls(
+            stream_id=value["stream_id"],
+            seq=value["seq"],
+            utc=value["utc"],
+            payload_hash=value["payload_hash"],
+            frame_hash=value["frame_hash"],
+            prev=value["prev"],
+            predecessor_known=value["predecessor_known"],
+        )
+
+    def as_head(self) -> HeadState:
+        return HeadState(
+            stream_id=self.stream_id,
+            seq=self.seq,
+            utc=self.utc,
+            payload_hash=self.payload_hash,
+            frame_hash=self.frame_hash,
+            trusted=True,
+        )
+
+
+@dataclass(frozen=True)
+class FrameAcceptorSnapshot:
+    frames: tuple[AcceptedFrameSnapshot, ...]
+    quarantined_streams: tuple[str, ...]
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "frames": [frame.as_dict() for frame in self.frames],
+            "quarantined_streams": list(self.quarantined_streams),
+        }
+
+    @classmethod
+    def from_dict(cls, value: dict[str, Any]) -> "FrameAcceptorSnapshot":
+        if type(value) is not dict or set(value) != {
+            "frames",
+            "quarantined_streams",
+        }:
+            raise FrameError(
+                "invalid-acceptor-snapshot",
+                "acceptor snapshot must contain exactly frames and quarantined_streams",
+            )
+        if type(value["frames"]) is not list or type(
+            value["quarantined_streams"]
+        ) is not list:
+            raise FrameError(
+                "invalid-acceptor-snapshot", "acceptor snapshot members must be arrays"
+            )
+        snapshot = cls(
+            frames=tuple(
+                AcceptedFrameSnapshot.from_dict(frame)
+                for frame in value["frames"]
+            ),
+            quarantined_streams=tuple(value["quarantined_streams"]),
+        )
+        _validate_acceptor_snapshot(snapshot)
+        return snapshot
+
+
+def _validate_acceptor_snapshot(snapshot: FrameAcceptorSnapshot) -> None:
+    if not isinstance(snapshot, FrameAcceptorSnapshot):
+        raise TypeError("snapshot must be FrameAcceptorSnapshot")
+    seen: set[tuple[str, int]] = set()
+    by_stream: dict[str, dict[int, AcceptedFrameSnapshot]] = {}
+    for frame in snapshot.frames:
+        if not isinstance(frame, AcceptedFrameSnapshot):
+            raise FrameError(
+                "invalid-acceptor-snapshot", "snapshot frame has an invalid type"
+            )
+        try:
+            _validate_head_state(frame.as_head())
+            _validate_hash(frame.prev, field="snapshot.prev", nullable=True)
+        except FrameError as exc:
+            raise FrameError(
+                "invalid-acceptor-snapshot", "snapshot frame fields are invalid"
+            ) from exc
+        if type(frame.predecessor_known) is not bool:
+            raise FrameError(
+                "invalid-acceptor-snapshot",
+                "predecessor_known must be a boolean",
+            )
+        key = (frame.stream_id, frame.seq)
+        if key in seen:
+            raise FrameError(
+                "invalid-acceptor-snapshot", "snapshot contains duplicate stream/seq"
+            )
+        seen.add(key)
+        by_stream.setdefault(frame.stream_id, {})[frame.seq] = frame
+        if frame.predecessor_known and (
+            (frame.seq == 0 and frame.prev is not None)
+            or (frame.seq > 0 and frame.prev is None)
+        ):
+            raise FrameError(
+                "invalid-acceptor-snapshot",
+                "known predecessor shape conflicts with frame seq",
+            )
+
+    expected_frames = tuple(
+        sorted(
+            snapshot.frames,
+            key=lambda frame: (frame.stream_id.encode("utf-8"), frame.seq),
+        )
+    )
+    if snapshot.frames != expected_frames:
+        raise FrameError(
+            "invalid-acceptor-snapshot", "snapshot frames are not deterministically sorted"
+        )
+    for stream_frames in by_stream.values():
+        for seq, frame in stream_frames.items():
+            if not frame.predecessor_known or seq == 0:
+                continue
+            predecessor = stream_frames.get(seq - 1)
+            if (
+                predecessor is None
+                or frame.prev != predecessor.payload_hash
+                or frame.utc < predecessor.utc
+            ):
+                raise FrameError(
+                    "invalid-acceptor-snapshot",
+                    "snapshot history is not a contiguous non-regressing chain",
+                )
+
+    if any(type(stream_id) is not str for stream_id in snapshot.quarantined_streams):
+        raise FrameError(
+            "invalid-acceptor-snapshot", "quarantined stream ids must be strings"
+        )
+    expected_quarantine = tuple(
+        sorted(set(snapshot.quarantined_streams), key=lambda value: value.encode("utf-8"))
+    )
+    if snapshot.quarantined_streams != expected_quarantine:
+        raise FrameError(
+            "invalid-acceptor-snapshot",
+            "quarantined stream ids must be unique and sorted",
+        )
+    for stream_id in snapshot.quarantined_streams:
+        try:
+            parse_stream_id(stream_id)
+        except IdentityError as exc:
+            raise FrameError(
+                "invalid-acceptor-snapshot", "quarantined stream id is invalid"
+            ) from exc
+        if stream_id not in by_stream:
+            raise FrameError(
+                "invalid-acceptor-snapshot",
+                "quarantined stream has no persisted accepted head",
+            )
 
 
 class FrameAcceptor:
     """Stateful no-rollback acceptor with persistent fork quarantine."""
 
-    def __init__(self, registry: RegistryEvidence) -> None:
+    def __init__(
+        self,
+        registry: RegistryEvidence,
+        *,
+        snapshot: FrameAcceptorSnapshot | None = None,
+    ) -> None:
         self._registry = registry
         self._heads: dict[str, HeadState] = {}
-        self._history: dict[str, dict[int, _AcceptedFrameState]] = {}
+        self._history: dict[str, dict[int, AcceptedFrameSnapshot]] = {}
         self._quarantined: set[str] = set()
+        if snapshot is not None:
+            self._restore(snapshot)
 
     def head(self, stream_id: str) -> HeadState | None:
         return self._heads.get(stream_id)
 
     def is_quarantined(self, stream_id: str) -> bool:
         return stream_id in self._quarantined
+
+    def snapshot(self) -> FrameAcceptorSnapshot:
+        frames = tuple(
+            sorted(
+                (
+                    frame
+                    for stream_history in self._history.values()
+                    for frame in stream_history.values()
+                ),
+                key=lambda frame: (frame.stream_id.encode("utf-8"), frame.seq),
+            )
+        )
+        quarantined = tuple(
+            sorted(self._quarantined, key=lambda value: value.encode("utf-8"))
+        )
+        snapshot = FrameAcceptorSnapshot(
+            frames=frames, quarantined_streams=quarantined
+        )
+        _validate_acceptor_snapshot(snapshot)
+        return snapshot
+
+    def _restore(self, snapshot: FrameAcceptorSnapshot) -> None:
+        _validate_acceptor_snapshot(snapshot)
+        for frame in snapshot.frames:
+            self._history.setdefault(frame.stream_id, {})[frame.seq] = frame
+            current = self._heads.get(frame.stream_id)
+            if current is None or frame.seq > current.seq:
+                self._heads[frame.stream_id] = frame.as_head()
+        self._quarantined.update(snapshot.quarantined_streams)
 
     @staticmethod
     def _state_failure(
@@ -661,8 +875,14 @@ class FrameAcceptor:
         )
         self._heads[frame["stream_id"]] = head
         self._history.setdefault(frame["stream_id"], {})[frame["seq"]] = (
-            _AcceptedFrameState(
-                head=head, prev=frame["prev"], predecessor_known=True
+            AcceptedFrameSnapshot(
+                stream_id=head.stream_id,
+                seq=head.seq,
+                utc=head.utc,
+                payload_hash=head.payload_hash,
+                frame_hash=head.frame_hash,
+                prev=frame["prev"],
+                predecessor_known=True,
             )
         )
 
@@ -687,8 +907,14 @@ class FrameAcceptor:
             )
         self._heads[head.stream_id] = head
         self._history.setdefault(head.stream_id, {})[head.seq] = (
-            _AcceptedFrameState(
-                head=head, prev=None, predecessor_known=False
+            AcceptedFrameSnapshot(
+                stream_id=head.stream_id,
+                seq=head.seq,
+                utc=head.utc,
+                payload_hash=head.payload_hash,
+                frame_hash=head.frame_hash,
+                prev=None,
+                predecessor_known=False,
             )
         )
 
@@ -793,13 +1019,13 @@ class FrameAcceptor:
                 competing = accept_frame(
                     frame,
                     declared_stream_id=declared_stream_id,
-                    head=None if predecessor is None else predecessor.head,
+                    head=None if predecessor is None else predecessor.as_head(),
                     registry=self._registry,
                 )
                 if (
                     competing.accepted
                     and frame["prev"] == accepted_at_seq.prev
-                    and frame["frame_hash"] != accepted_at_seq.head.frame_hash
+                    and frame["frame_hash"] != accepted_at_seq.frame_hash
                 ):
                     self._quarantined.add(declared_stream_id)
                     return self._state_failure(

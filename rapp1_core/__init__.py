@@ -3,7 +3,9 @@
 from .canonical import canonical_bytes, require_canonical_json, strict_loads
 from .egg import accept_egg, extract_egg, inspect_egg, pack_egg
 from .frame import (
+    AcceptedFrameSnapshot,
     FrameAcceptor,
+    FrameAcceptorSnapshot,
     accept_frame,
     build_frame,
     inspect_frame,
@@ -24,7 +26,9 @@ from .trust import HeadState, RegistryEvidence, TrustStatus
 __all__ = [
     "H",
     "Hb",
+    "AcceptedFrameSnapshot",
     "FrameAcceptor",
+    "FrameAcceptorSnapshot",
     "HeadState",
     "RegistryEvidence",
     "TrustStatus",

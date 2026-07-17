@@ -129,6 +129,24 @@ def _member_filename(rappid: Rappid) -> str:
     return f"{rappid.owner}--{rappid.slug}.egg"
 
 
+def _validate_path_prefixes(paths: list[str]) -> None:
+    path_set = set(paths)
+    for path in paths:
+        if path == "manifest.json" or path.startswith("manifest.json/"):
+            raise EggError(
+                "path-prefix-conflict",
+                "contents cannot replace manifest.json or descend from it",
+            )
+        segments = path.split("/")
+        for length in range(1, len(segments)):
+            ancestor = "/".join(segments[:length])
+            if ancestor in path_set:
+                raise EggError(
+                    "path-prefix-conflict",
+                    f"file path {ancestor!r} is an ancestor of {path!r}",
+                )
+
+
 def _validate_manifest(
     manifest: dict[str, Any], *, container: str
 ) -> tuple[tuple[str, ...], tuple[str, ...]]:
@@ -175,6 +193,7 @@ def _validate_manifest(
         paths.append(path)
     if len(paths) != len(set(paths)):
         raise EggError("duplicate-content-path", "manifest contains duplicate paths")
+    _validate_path_prefixes(paths)
     if paths != sorted(paths, key=lambda item: item.encode("utf-8")):
         raise EggError(
             "unsorted-contents", "contents must be sorted by UTF-8 path bytes"
