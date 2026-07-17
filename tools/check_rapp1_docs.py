@@ -178,6 +178,41 @@ def audit_scope_failures(
                 failures.append(
                     f"scope: R1-DOC-01 path {relative} is not checked or excluded"
                 )
+            disposition_counts = ledger.get("disposition_counts")
+            mirror_paths = ledger.get("mirror_paths")
+            if not isinstance(disposition_counts, dict):
+                failures.append(
+                    "scope: R1-DOC-01 disposition_counts must be an object"
+                )
+            if not isinstance(mirror_paths, list):
+                failures.append("scope: R1-DOC-01 mirror_paths must be a list")
+            else:
+                unique_mirrors = set(mirror_paths)
+                if len(unique_mirrors) != len(mirror_paths):
+                    failures.append(
+                        "scope: R1-DOC-01 mirror_paths contain duplicates"
+                    )
+                if not unique_mirrors.issubset(unique_paths):
+                    failures.append(
+                        "scope: R1-DOC-01 mirror_paths are not all ledger paths"
+                    )
+                if unique_mirrors - excluded:
+                    failures.append(
+                        "scope: R1-DOC-01 mirror paths must be explicitly excluded"
+                    )
+                if isinstance(disposition_counts, dict) and (
+                    disposition_counts.get("mirror") != len(unique_mirrors)
+                    or disposition_counts.get("current-live")
+                    != len(unique_paths) - len(unique_mirrors)
+                    or set(disposition_counts) != {"current-live", "mirror"}
+                ):
+                    failures.append(
+                        "scope: R1-DOC-01 disposition counts do not match its paths"
+                    )
+            if not str(ledger.get("management_note", "")).strip():
+                failures.append(
+                    "scope: R1-DOC-01 disposition/remediation distinction is missing"
+                )
         if not SHA256_PATTERN.fullmatch(str(ledger.get("sha256", ""))):
             failures.append("scope: R1-DOC-01 source has no valid SHA-256")
 

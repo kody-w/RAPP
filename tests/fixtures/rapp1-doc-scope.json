@@ -7,6 +7,16 @@
       "source": "RAPP-file-by-file-audit.tsv",
       "sha256": "9ac01e164dc0eb820d5f53afed82f53c501059c18a8bf66b8b23c533af728ce7",
       "path_count": 56,
+      "disposition_counts": {
+        "current-live": 53,
+        "mirror": 3
+      },
+      "mirror_paths": [
+        "cave/rapplications/rapp-installer/README.md",
+        "cave/rapplications/rapp-installer/installer/community_rapp/skill.md",
+        "cave/rapplications/rapp-installer/manifest.json"
+      ],
+      "management_note": "Gate groups encode remediation treatment, not TSV disposition. Current-live vault paths retain historical bodies behind supersession banners; hard boundaries may exclude other current-live rows.",
       "paths": [
         "CLAUDE.md",
         "CONSTITUTION.md",

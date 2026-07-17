@@ -26,6 +26,17 @@ class Rapp1DocumentationTests(unittest.TestCase):
         self.assertEqual(ledger["path_count"], 56)
         self.assertEqual(len(ledger["paths"]), 56)
         self.assertEqual(
+            ledger["disposition_counts"], {"current-live": 53, "mirror": 3}
+        )
+        self.assertEqual(
+            set(ledger["mirror_paths"]),
+            {
+                "cave/rapplications/rapp-installer/README.md",
+                "cave/rapplications/rapp-installer/installer/community_rapp/skill.md",
+                "cave/rapplications/rapp-installer/manifest.json",
+            },
+        )
+        self.assertEqual(
             ledger["sha256"],
             "9ac01e164dc0eb820d5f53afed82f53c501059c18a8bf66b8b23c533af728ce7",
         )
