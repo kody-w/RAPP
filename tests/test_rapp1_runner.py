@@ -252,6 +252,9 @@ def test_brainstem_boot_gates_require_isolated_unauthenticated_runtime():
     ):
         source = (ROOT / relative).read_text(encoding="utf-8")
         assert "RAPP1_BRAINSTEM_BOOT_DIR" in source
+        assert "git archive --format=tar HEAD rapp_brainstem" in source
+        assert 'HOME="$TEST_HOME"' in source
+        assert 'PYTHONPATH="$OFFLINE_GUARD"' in source
         assert '"status":"unauthenticated"' in source
         assert '"status":"(ok|unauthenticated)"' not in source
 

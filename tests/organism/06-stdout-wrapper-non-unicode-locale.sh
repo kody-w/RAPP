@@ -21,6 +21,12 @@ PYTHON="${PYTHON:-$HOME/.brainstem/venv/bin/python}"
 
 WORK_DIR="${TMPDIR:-$(pwd)/tests/.rapp1-work}/organism-06-$$"
 mkdir -p "$WORK_DIR"
+if [ -z "${RAPP1_BRAINSTEM_BOOT_DIR:-}" ]; then
+    mkdir -p "$WORK_DIR/runtime"
+    git archive --format=tar HEAD rapp_brainstem |
+        tar -xf - -C "$WORK_DIR/runtime"
+    BRAINSTEM_DIR="$WORK_DIR/runtime/rapp_brainstem"
+fi
 TEST_HOME="$WORK_DIR/home"
 mkdir -p "$TEST_HOME"
 OFFLINE_GUARD="$(pwd)/tests/offline_guard"

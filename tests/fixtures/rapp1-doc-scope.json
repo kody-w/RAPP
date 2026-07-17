@@ -7,7 +7,7 @@
     "post_audit_tracked_paths": 691,
     "integrated_main_commit": "bd122780ac90010e607ce9549e7c5ed18bee5d73",
     "integrated_tracked_paths": 693,
-    "integrated_tracked_bytes": 7942893,
+    "integrated_tracked_bytes": 7943854,
     "integration_note": "Current closure tree after target-owned legacy launchers were HTTP-410 contained; the 691-row final verifier ledger remains a dated source report.",
     "status_boundary": "RAPP1_STATUS.md and its code-owned owner-evidence hash were refreshed together for launch containment; integrated counts are recorded here.",
     "path_set_digest": "sha256(sorted UTF-8 paths joined with newline, including final newline)",

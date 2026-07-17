@@ -17,6 +17,13 @@ BRAINSTEM_DIR="${RAPP1_BRAINSTEM_BOOT_DIR:-$REPO_ROOT/rapp_brainstem}"
 BRAINSTEM_SCRIPT="$BRAINSTEM_DIR/brainstem.py"
 WORK_DIR="${TMPDIR:-$REPO_ROOT/tests/.rapp1-work}/organism-01-$$"
 mkdir -p "$WORK_DIR"
+if [ -z "${RAPP1_BRAINSTEM_BOOT_DIR:-}" ]; then
+    mkdir -p "$WORK_DIR/runtime"
+    git archive --format=tar HEAD rapp_brainstem |
+        tar -xf - -C "$WORK_DIR/runtime"
+    BRAINSTEM_DIR="$WORK_DIR/runtime/rapp_brainstem"
+    BRAINSTEM_SCRIPT="$BRAINSTEM_DIR/brainstem.py"
+fi
 TEST_HOME="$WORK_DIR/home"
 mkdir -p "$TEST_HOME"
 OFFLINE_GUARD="$REPO_ROOT/tests/offline_guard"
