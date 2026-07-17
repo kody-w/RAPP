@@ -22,6 +22,7 @@ EXPECTED_FACADE_CODES = [
     "inference-refused",
     "facade-storage-refused",
 ]
+EXPECTED_FACADE_STEPS = ["1", "1a", "2", "3", "4", "5", "6", None]
 EXPECTED_VARIANTS = [
     "organism",
     "rapplication",
@@ -34,6 +35,11 @@ EXPECTED_RE_GENESIS = [
     {"kind": "memory.re-genesis", "family": "memory"},
     {"kind": "body.re-genesis", "family": "body"},
     {"kind": "swarm.re-genesis", "family": "swarm"},
+]
+EXPECTED_INVALID_LEGACY_KINDS = [
+    ("memory_added", "installer/plant.sh:6308"),
+    ("conversation", "installer/plant.sh:7624"),
+    ("tool_call", "installer/plant.sh:7733"),
 ]
 EXPECTED_STATUS_BLOCKERS = [
     "Signed monotonic registry and out-of-band anchor",
@@ -182,6 +188,19 @@ class Rapp1OwnerActionLedgerTests(unittest.TestCase):
         actual = self.ledger["candidate_namespaces"]["facade_error_codes"]
         self.assertEqual(actual, EXPECTED_FACADE_CODES)
         self.assertEqual(len(actual), len(set(actual)))
+        self.assertEqual(
+            self.ledger["candidate_namespaces"]["facade_allowed_steps"],
+            EXPECTED_FACADE_STEPS,
+        )
+        self.assertEqual(
+            self.ledger["candidate_namespaces"][
+                "facade_error_code_registration_state"
+            ],
+            (
+                "zero registered; every listed value is candidate-unregistered, "
+                "including unknown-session"
+            ),
+        )
 
         evidence = self.ledger["known_evidence"]["facade_candidate"]
         self.assertEqual(
@@ -189,6 +208,17 @@ class Rapp1OwnerActionLedgerTests(unittest.TestCase):
             "7f84d84b28bf7b570787af16b0008cec96704f53",
         )
         self.assertEqual(evidence["path"], "rapp_brainstem/rapp1_facade.py")
+        self.assertEqual(evidence["allowed_error_steps"], EXPECTED_FACADE_STEPS)
+        legacy_wire = evidence["audited_legacy_wire"]
+        self.assertEqual(
+            legacy_wire["tier_1_handler"],
+            "rapp_brainstem/brainstem.py:1441-1559",
+        )
+        self.assertIs(legacy_wire["tier_1_is_pinned_grail"], True)
+        self.assertIs(
+            legacy_wire["idempotency_key_in_audited_tier_handlers"], False
+        )
+        self.assertEqual(legacy_wire["tether_request_shape"], "{messages}")
         if FACADE_PATH.exists():
             emitted = list(
                 assigned_literal(FACADE_PATH, "PENDING_REGISTRY_ERROR_CODES")
@@ -204,6 +234,20 @@ class Rapp1OwnerActionLedgerTests(unittest.TestCase):
         self.assertEqual(
             candidates["required_re_genesis_kinds"], EXPECTED_RE_GENESIS
         )
+        legacy_kinds = candidates[
+            "legacy_frame_kinds_requiring_owner_replacement"
+        ]
+        self.assertEqual(
+            [
+                (entry["legacy_kind"], entry["audit_source"])
+                for entry in legacy_kinds
+            ],
+            EXPECTED_INVALID_LEGACY_KINDS,
+        )
+        for entry in legacy_kinds:
+            self.assertIs(entry["valid_current_kind_grammar"], False)
+            self.assertIs(entry["registered"], False)
+            self.assertIsNone(entry["replacement_kind"])
         self.assertIsNone(candidates["other_kind_decisions"])
         self.assertEqual(
             candidates["protocol_pins"],
@@ -256,6 +300,9 @@ class Rapp1OwnerActionLedgerTests(unittest.TestCase):
         self.assertEqual(
             root["migration_commit_authentication"], "false/unsigned"
         )
+        self.assertIsNone(root["attestation"])
+        self.assertEqual(root["candidate_reanchor_case"], "upgrade")
+        self.assertIsNone(root["owner_selected_reanchor_case"])
         invite = evidence["commons_invite"]
         self.assertEqual(invite["retired_target_path"], "pages/tutorials/commons.egg")
         self.assertEqual(
@@ -283,6 +330,8 @@ class Rapp1OwnerActionLedgerTests(unittest.TestCase):
         self.assertEqual(
             continuity["tagged_upgrade_result"], continuity["current_tail"]
         )
+        self.assertEqual(continuity["candidate_reanchor_case"], "upgrade")
+        self.assertIsNone(continuity["owner_selected_reanchor_case"])
         self.assertIs(continuity["authorization_present"], False)
         mirrors = evidence["ecosystem_mirrors"]
         self.assertEqual(
@@ -346,6 +395,8 @@ class Rapp1OwnerActionLedgerTests(unittest.TestCase):
         )
         self.assertEqual(surface["current_schema"], "rapp-ecosystem-spec/1.0")
         self.assertEqual(surface["commit_authentication"], "false/unsigned")
+        self.assertIs(surface["estate_owner_designated"], False)
+        self.assertIs(surface["root_rappid_assumed_estate_owner"], False)
 
         registry_action = next(
             action
@@ -359,6 +410,81 @@ class Rapp1OwnerActionLedgerTests(unittest.TestCase):
         self.assertEqual(
             registry_action["where"]["canonical_registry_path"],
             "ecosystem-spec.json",
+        )
+        registry_test_ids = {
+            check["id"] for check in registry_action["acceptance_tests"]
+        }
+        self.assertIn(
+            "registry-owner-and-legacy-kind-decisions", registry_test_ids
+        )
+
+    def test_root_case_remains_an_explicit_owner_decision(self):
+        action = next(
+            action
+            for action in self.ledger["actions"]
+            if action["id"] == "owner-authorize-root-upgrade-reanchor"
+        )
+        self.assertEqual(action["where"]["candidate_case"], "upgrade")
+        self.assertIsNone(action["owner_inputs"]["selected_case"])
+        self.assertIsNone(
+            action["owner_inputs"]["current_root_selected_as_estate_owner"]
+        )
+        self.assertIsNone(
+            action["owner_inputs"][
+                "outgoing_owner_authorization_evidence_path"
+            ]
+        )
+        combined = " ".join(
+            [action["what"], action["when"], *action["how"]]
+        )
+        self.assertIn("code and tail length must not select the case", combined)
+        self.assertIn(
+            "If this root identity is separately selected as estate owner",
+            combined,
+        )
+
+    def test_kernel_latest_alias_has_safe_disposition_gate(self):
+        alias = self.ledger["known_evidence"]["kernel_latest_alias"]
+        self.assertEqual(alias["manifest_path"], "rapp_kernel/manifest.json")
+        self.assertEqual(
+            alias["manifest_sha256"],
+            "a2826eb8820f4487948bfdb1bf3f80b4"
+            "ca8ccdf902553d5d109cb8de3bb85889",
+        )
+        self.assertEqual(alias["declared_latest"], "0.6.0")
+        self.assertIsNone(alias["signing_method"])
+        self.assertIsNone(alias["signing_key_id"])
+        self.assertIsNone(alias["signing_verification_uri"])
+        self.assertIsNone(alias["version_attestation"])
+        self.assertEqual(
+            alias["latest_brainstem_sha256"],
+            "f7fb359bbe8b6ba3db3665d81cb8e573"
+            "a266c716278d8d21d8962ea40821e5aa",
+        )
+        self.assertEqual(alias["active_pin_tag"], "brainstem-v0.6.9")
+        self.assertIs(alias["payload_edit_allowed"], False)
+        manifest_path = ROOT / alias["manifest_path"]
+        payload_path = ROOT / alias["latest_brainstem_path"]
+        self.assertEqual(
+            hashlib.sha256(manifest_path.read_bytes()).hexdigest(),
+            alias["manifest_sha256"],
+        )
+        self.assertEqual(
+            hashlib.sha256(payload_path.read_bytes()).hexdigest(),
+            alias["latest_brainstem_sha256"],
+        )
+
+        mirror_action = next(
+            action
+            for action in self.ledger["actions"]
+            if action["id"] == "owners-correct-or-retire-external-mirror"
+        )
+        test_ids = {
+            check["id"] for check in mirror_action["acceptance_tests"]
+        }
+        self.assertIn("kernel-latest-retired-or-provenance-pinned", test_ids)
+        self.assertIsNone(
+            mirror_action["owner_inputs"]["kernel_latest_disposition"]
         )
 
     def test_commons_addresses_are_reproducible(self):
