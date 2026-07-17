@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Mapping
+from types import MappingProxyType
+from typing import AbstractSet, Mapping
 
 
 class TrustStatus(str, Enum):
@@ -39,10 +41,44 @@ class RegistryEvidence:
     """Facts from a registry authenticated outside this structural-only core."""
 
     kind_families: Mapping[str, str] = field(default_factory=dict)
-    deprecated_kinds: frozenset[str] = frozenset()
+    deprecated_kinds: AbstractSet[str] = field(default_factory=frozenset)
     genesis_hashes: Mapping[str, str] = field(default_factory=dict)
     authenticated: bool = False
     fresh: bool = False
+
+    def __post_init__(self) -> None:
+        if type(self.authenticated) is not bool or type(self.fresh) is not bool:
+            raise TypeError("registry authentication flags must be booleans")
+        kind_families = deepcopy(dict(self.kind_families))
+        deprecated_kinds = deepcopy(tuple(self.deprecated_kinds))
+        genesis_hashes = deepcopy(dict(self.genesis_hashes))
+        if (
+            any(
+                type(key) is not str or type(value) is not str
+                for key, value in kind_families.items()
+            )
+            or any(
+                type(key) is not str or type(value) is not str
+                for key, value in genesis_hashes.items()
+            )
+            or any(type(kind) is not str for kind in deprecated_kinds)
+        ):
+            raise TypeError("registry mappings and sets must contain only strings")
+        object.__setattr__(
+            self,
+            "kind_families",
+            MappingProxyType(kind_families),
+        )
+        object.__setattr__(
+            self,
+            "deprecated_kinds",
+            frozenset(deprecated_kinds),
+        )
+        object.__setattr__(
+            self,
+            "genesis_hashes",
+            MappingProxyType(genesis_hashes),
+        )
 
 
 @dataclass(frozen=True)

@@ -694,7 +694,17 @@ def test_stateful_acceptor_quarantines_a_b_fork_and_then_a2() -> None:
     assert acceptor.head(RID1).frame_hash == branch_a["frame_hash"]
 
     reset = _re_genesis("body.re-genesis", RID1)
-    genesis_hashes[RID1] = reset["frame_hash"]
+    acceptor.update_registry(
+        RegistryEvidence(
+            kind_families={
+                "body.pulse": "body",
+                "body.re-genesis": "body",
+            },
+            genesis_hashes={RID1: reset["frame_hash"]},
+            authenticated=True,
+            fresh=True,
+        )
+    )
     unsupported_reset = acceptor.accept(reset, declared_stream_id=RID1)
     assert not unsupported_reset.accepted
     assert unsupported_reset.trust_status is TrustStatus.UNVERIFIED
@@ -1122,3 +1132,123 @@ def test_snapshot_cannot_label_rogue_root_as_registry_genesis() -> None:
     assert not refused.accepted
     assert refused.trust_status is TrustStatus.UNVERIFIED
     assert clean.head(RID1) is None
+
+
+def test_registry_evidence_deep_snapshots_caller_collections() -> None:
+    genesis = _body_genesis()
+    kind_families = {"body.pulse": "body"}
+    deprecated_kinds = {"body.legacy"}
+    genesis_hashes = {RID1: genesis["frame_hash"]}
+    registry = RegistryEvidence(
+        kind_families=kind_families,
+        deprecated_kinds=deprecated_kinds,
+        genesis_hashes=genesis_hashes,
+        authenticated=True,
+        fresh=True,
+    )
+
+    kind_families["body.pulse"] = "swarm"
+    deprecated_kinds.add("body.pulse")
+    genesis_hashes[RID1] = "f" * 64
+
+    assert dict(registry.kind_families) == {"body.pulse": "body"}
+    assert registry.deprecated_kinds == frozenset({"body.legacy"})
+    assert dict(registry.genesis_hashes) == {RID1: genesis["frame_hash"]}
+    with pytest.raises(TypeError):
+        registry.genesis_hashes[RID1] = "e" * 64  # type: ignore[index]
+
+
+def test_registry_refresh_cannot_relabel_validated_append(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    genesis = _body_genesis()
+    caller_genesis_hashes = {RID1: genesis["frame_hash"]}
+    initial_registry = RegistryEvidence(
+        kind_families={"body.pulse": "body"},
+        genesis_hashes=caller_genesis_hashes,
+        authenticated=True,
+        fresh=True,
+    )
+    acceptor = FrameAcceptor(initial_registry)
+    assert acceptor.accept(genesis, declared_stream_id=RID1).accepted
+    append = build_frame(
+        kind="body.pulse",
+        stream_id=RID1,
+        seq=1,
+        utc=UTC1,
+        payload={"epoch": "old"},
+        prev=genesis["payload_hash"],
+        prev_wave=None,
+    )
+    replacement_genesis = build_frame(
+        kind="body.pulse",
+        stream_id=RID1,
+        seq=0,
+        utc=UTC0,
+        payload={"epoch": "new"},
+        prev=None,
+        prev_wave=None,
+    )
+    replacement_registry = _registry(replacement_genesis)
+
+    real_accept_frame = frame_module.accept_frame
+    validated = threading.Event()
+    refresh_attempted = threading.Event()
+    refresh_completed = threading.Event()
+
+    def mutate_after_validation(*args: Any, **kwargs: Any) -> FrameInspection:
+        inspected = real_accept_frame(*args, **kwargs)
+        frame = args[0] if args else kwargs["frame"]
+        if frame is append:
+            caller_genesis_hashes[RID1] = replacement_genesis["frame_hash"]
+            validated.set()
+            assert refresh_attempted.wait(timeout=2)
+            assert not refresh_completed.wait(timeout=0.25)
+        return inspected
+
+    def refresh_registry() -> None:
+        assert validated.wait(timeout=2)
+        refresh_attempted.set()
+        acceptor.update_registry(replacement_registry)
+        refresh_completed.set()
+
+    monkeypatch.setattr(frame_module, "accept_frame", mutate_after_validation)
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        append_future = executor.submit(
+            acceptor.accept, append, declared_stream_id=RID1
+        )
+        refresh_future = executor.submit(refresh_registry)
+        appended = append_future.result(timeout=3)
+        refresh_future.result(timeout=3)
+
+    assert appended.accepted
+    assert appended.trust_status is TrustStatus.VERIFIED
+    head = acceptor.head(RID1)
+    assert head is not None
+    assert head.frame_hash == append["frame_hash"]
+    assert head.genesis_hash == genesis["frame_hash"]
+    assert acceptor.is_epoch_frozen(RID1)
+
+    successor = build_frame(
+        kind="body.pulse",
+        stream_id=RID1,
+        seq=2,
+        utc=UTC2,
+        payload={"epoch": "old-successor"},
+        prev=append["payload_hash"],
+        prev_wave=None,
+    )
+    for old_chain_frame in (append, successor):
+        refused = acceptor.accept(old_chain_frame, declared_stream_id=RID1)
+        assert not refused.accepted
+        assert refused.trust_status is TrustStatus.DRIFT
+        assert refused.error_code == "retired-genesis-epoch"
+
+    persisted = acceptor.snapshot()
+    restarted = FrameAcceptor(_registry(genesis), snapshot=persisted)
+    assert restarted.is_epoch_frozen(RID1)
+    refused_after_restart = restarted.accept(
+        successor, declared_stream_id=RID1
+    )
+    assert not refused_after_restart.accepted
+    assert refused_after_restart.error_code == "retired-genesis-epoch"

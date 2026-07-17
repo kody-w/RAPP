@@ -339,6 +339,18 @@ def _validate_head_proof(
         )
 
 
+def _registry_snapshot(registry: RegistryEvidence) -> RegistryEvidence:
+    if not isinstance(registry, RegistryEvidence):
+        raise TypeError("registry must be RegistryEvidence")
+    return RegistryEvidence(
+        kind_families=registry.kind_families,
+        deprecated_kinds=registry.deprecated_kinds,
+        genesis_hashes=registry.genesis_hashes,
+        authenticated=registry.authenticated,
+        fresh=registry.fresh,
+    )
+
+
 def _head_epoch_problem(
     head: HeadState, registry: RegistryEvidence | None
 ) -> tuple[TrustStatus, str, str] | None:
@@ -836,11 +848,13 @@ class AcceptedFrameSnapshot:
 class FrameAcceptorSnapshot:
     frames: tuple[AcceptedFrameSnapshot, ...]
     quarantined_streams: tuple[str, ...]
+    frozen_streams: tuple[str, ...] = ()
 
     def as_dict(self) -> dict[str, Any]:
         return {
             "frames": [frame.as_dict() for frame in self.frames],
             "quarantined_streams": list(self.quarantined_streams),
+            "frozen_streams": list(self.frozen_streams),
         }
 
     @classmethod
@@ -848,14 +862,15 @@ class FrameAcceptorSnapshot:
         if type(value) is not dict or set(value) != {
             "frames",
             "quarantined_streams",
+            "frozen_streams",
         }:
             raise FrameError(
                 "invalid-acceptor-snapshot",
-                "acceptor snapshot must contain exactly frames and quarantined_streams",
+                "acceptor snapshot has an invalid member set",
             )
         if type(value["frames"]) is not list or type(
             value["quarantined_streams"]
-        ) is not list:
+        ) is not list or type(value["frozen_streams"]) is not list:
             raise FrameError(
                 "invalid-acceptor-snapshot", "acceptor snapshot members must be arrays"
             )
@@ -865,6 +880,7 @@ class FrameAcceptorSnapshot:
                 for frame in value["frames"]
             ),
             quarantined_streams=tuple(value["quarantined_streams"]),
+            frozen_streams=tuple(value["frozen_streams"]),
         )
         _validate_acceptor_snapshot(snapshot)
         return snapshot
@@ -1032,30 +1048,36 @@ def _validate_acceptor_snapshot(snapshot: FrameAcceptorSnapshot) -> None:
                     "snapshot history is not a contiguous non-regressing chain",
                 )
 
-    if any(type(stream_id) is not str for stream_id in snapshot.quarantined_streams):
-        raise FrameError(
-            "invalid-acceptor-snapshot", "quarantined stream ids must be strings"
-        )
-    expected_quarantine = tuple(
-        sorted(set(snapshot.quarantined_streams), key=lambda value: value.encode("utf-8"))
-    )
-    if snapshot.quarantined_streams != expected_quarantine:
-        raise FrameError(
-            "invalid-acceptor-snapshot",
-            "quarantined stream ids must be unique and sorted",
-        )
-    for stream_id in snapshot.quarantined_streams:
-        try:
-            parse_stream_id(stream_id)
-        except IdentityError as exc:
-            raise FrameError(
-                "invalid-acceptor-snapshot", "quarantined stream id is invalid"
-            ) from exc
-        if stream_id not in by_stream:
+    for label, stream_ids in (
+        ("quarantined", snapshot.quarantined_streams),
+        ("frozen", snapshot.frozen_streams),
+    ):
+        if any(type(stream_id) is not str for stream_id in stream_ids):
             raise FrameError(
                 "invalid-acceptor-snapshot",
-                "quarantined stream has no persisted accepted head",
+                f"{label} stream ids must be strings",
             )
+        expected = tuple(
+            sorted(set(stream_ids), key=lambda value: value.encode("utf-8"))
+        )
+        if stream_ids != expected:
+            raise FrameError(
+                "invalid-acceptor-snapshot",
+                f"{label} stream ids must be unique and sorted",
+            )
+        for stream_id in stream_ids:
+            try:
+                parse_stream_id(stream_id)
+            except IdentityError as exc:
+                raise FrameError(
+                    "invalid-acceptor-snapshot",
+                    f"{label} stream id is invalid",
+                ) from exc
+            if stream_id not in by_stream:
+                raise FrameError(
+                    "invalid-acceptor-snapshot",
+                    f"{label} stream has no persisted accepted head",
+                )
 
 
 def _validate_snapshot_roots(
@@ -1135,10 +1157,11 @@ class FrameAcceptor:
         snapshot: FrameAcceptorSnapshot | None = None,
     ) -> None:
         self._lock = RLock()
-        self._registry = registry
+        self._registry = _registry_snapshot(registry)
         self._heads: dict[str, HeadState] = {}
         self._history: dict[str, dict[int, AcceptedFrameSnapshot]] = {}
         self._quarantined: set[str] = set()
+        self._frozen_streams: set[str] = set()
         if snapshot is not None:
             self._restore(snapshot)
 
@@ -1149,6 +1172,22 @@ class FrameAcceptor:
     def is_quarantined(self, stream_id: str) -> bool:
         with self._lock:
             return stream_id in self._quarantined
+
+    def is_epoch_frozen(self, stream_id: str) -> bool:
+        with self._lock:
+            return stream_id in self._frozen_streams
+
+    def update_registry(self, registry: RegistryEvidence) -> None:
+        with self._lock:
+            replacement = _registry_snapshot(registry)
+            self._registry = replacement
+            if replacement.authenticated and replacement.fresh:
+                for stream_id, head in self._heads.items():
+                    if (
+                        replacement.genesis_hashes.get(stream_id)
+                        != head.genesis_hash
+                    ):
+                        self._frozen_streams.add(stream_id)
 
     def snapshot(self) -> FrameAcceptorSnapshot:
         with self._lock:
@@ -1168,8 +1207,13 @@ class FrameAcceptor:
         quarantined = tuple(
             sorted(self._quarantined, key=lambda value: value.encode("utf-8"))
         )
+        frozen = tuple(
+            sorted(self._frozen_streams, key=lambda value: value.encode("utf-8"))
+        )
         snapshot = FrameAcceptorSnapshot(
-            frames=frames, quarantined_streams=quarantined
+            frames=frames,
+            quarantined_streams=quarantined,
+            frozen_streams=frozen,
         )
         _validate_acceptor_snapshot(snapshot)
         return snapshot
@@ -1184,6 +1228,7 @@ class FrameAcceptor:
                 if current is None or frame.seq > current.seq:
                     self._heads[frame.stream_id] = frame.as_head()
             self._quarantined.update(snapshot.quarantined_streams)
+            self._frozen_streams.update(snapshot.frozen_streams)
 
     @staticmethod
     def _state_failure(
@@ -1227,13 +1272,8 @@ class FrameAcceptor:
             error=detail,
         )
 
-    def _record(self, frame: dict[str, Any]) -> None:
-        genesis_hash = self._registry.genesis_hashes.get(frame["stream_id"])
-        if genesis_hash is None:
-            raise FrameError(
-                "head-epoch-unverified",
-                "accepted frame lacks current registry genesis proof",
-            )
+    def _record(self, frame: dict[str, Any], *, genesis_hash: str) -> None:
+        _validate_hash(genesis_hash, field="validated genesis_hash")
         head = HeadState(
             stream_id=frame["stream_id"],
             seq=frame["seq"],
@@ -1288,9 +1328,15 @@ class FrameAcceptor:
             raise FrameError(
                 "untrusted-head", "only an externally trusted head can seed state"
             )
+        registry = self._registry
         current = self._heads.get(head.stream_id)
+        if head.stream_id in self._frozen_streams:
+            raise FrameError(
+                "retired-genesis-epoch",
+                "stream is frozen after an authenticated registry epoch change",
+            )
         if current == head:
-            epoch_problem = _head_epoch_problem(head, self._registry)
+            epoch_problem = _head_epoch_problem(head, registry)
             if epoch_problem is not None:
                 _, code, detail = epoch_problem
                 raise FrameError(code, detail)
@@ -1301,7 +1347,7 @@ class FrameAcceptor:
                 "rootless seed requires an explicit AuthenticatedHeadProof",
             )
         _validate_head_proof(head, proof)
-        epoch_problem = _head_epoch_problem(head, self._registry)
+        epoch_problem = _head_epoch_problem(head, registry)
         if epoch_problem is not None:
             _, code, detail = epoch_problem
             raise FrameError(code, detail)
@@ -1352,10 +1398,11 @@ class FrameAcceptor:
         frame: dict[str, Any],
         current: HeadState,
         standalone: FrameInspection,
+        registry: RegistryEvidence,
     ) -> FrameInspection:
-        if not self._registry.authenticated:
+        if not registry.authenticated:
             return replace(standalone, trust_status=TrustStatus.UNVERIFIED)
-        if not self._registry.fresh:
+        if not registry.fresh:
             return replace(standalone, trust_status=TrustStatus.STALE)
         if any(
             check.status is CheckStatus.UNVERIFIED and check.step not in {"4", "5"}
@@ -1468,17 +1515,18 @@ class FrameAcceptor:
         *,
         declared_stream_id: str,
         predecessor: HeadState | None,
+        registry: RegistryEvidence,
     ) -> FrameInspection:
         inspected = inspect_frame(
             frame,
             declared_stream_id=declared_stream_id,
             head=predecessor,
-            registry=self._registry,
+            registry=registry,
         )
         if not inspected.structurally_valid:
             return inspected
         checks = list(inspected.checks)
-        if not self._registry.authenticated:
+        if not registry.authenticated:
             checks.append(
                 CheckResult("6", CheckStatus.UNVERIFIED, "registry is unauthenticated")
             )
@@ -1487,7 +1535,7 @@ class FrameAcceptor:
                 trust_status=TrustStatus.UNVERIFIED,
                 checks=tuple(checks),
             )
-        if not self._registry.fresh:
+        if not registry.fresh:
             checks.append(
                 CheckResult("6", CheckStatus.UNVERIFIED, "registry is stale")
             )
@@ -1508,7 +1556,7 @@ class FrameAcceptor:
                 checks=tuple(checks),
             )
         if predecessor is not None:
-            epoch_problem = _head_epoch_problem(predecessor, self._registry)
+            epoch_problem = _head_epoch_problem(predecessor, registry)
             if epoch_problem is not None:
                 return self._epoch_failure(inspected, epoch_problem)
         stream = parse_stream_id(frame["stream_id"])
@@ -1564,6 +1612,8 @@ class FrameAcceptor:
     def _accept_locked(
         self, frame: dict[str, Any], *, declared_stream_id: str
     ) -> FrameInspection:
+        registry = self._registry
+        validated_genesis = registry.genesis_hashes.get(declared_stream_id)
         current = self._heads.get(declared_stream_id)
         if _is_regenesis(frame):
             return accept_frame(
@@ -1571,16 +1621,32 @@ class FrameAcceptor:
                 declared_stream_id=declared_stream_id,
                 head=current,
                 head_proof=None if current is None else _head_proof(current),
-                registry=self._registry,
+                registry=registry,
+            )
+
+        if declared_stream_id in self._frozen_streams:
+            standalone = inspect_frame(
+                frame,
+                declared_stream_id=declared_stream_id,
+                registry=registry,
+            )
+            if not standalone.structurally_valid:
+                return standalone
+            return self._state_failure(
+                standalone,
+                code="retired-genesis-epoch",
+                detail=(
+                    "stream is frozen after an authenticated registry epoch change"
+                ),
             )
 
         if current is not None:
-            epoch_problem = _head_epoch_problem(current, self._registry)
+            epoch_problem = _head_epoch_problem(current, registry)
             if epoch_problem is not None:
                 standalone = inspect_frame(
                     frame,
                     declared_stream_id=declared_stream_id,
-                    registry=self._registry,
+                    registry=registry,
                 )
                 if not standalone.structurally_valid:
                     return standalone
@@ -1590,7 +1656,7 @@ class FrameAcceptor:
             standalone = inspect_frame(
                 frame,
                 declared_stream_id=declared_stream_id,
-                registry=self._registry,
+                registry=registry,
             )
             if not standalone.structurally_valid:
                 return standalone
@@ -1610,7 +1676,7 @@ class FrameAcceptor:
             standalone = inspect_frame(
                 frame,
                 declared_stream_id=declared_stream_id,
-                registry=self._registry,
+                registry=registry,
             )
             if not standalone.structurally_valid:
                 return standalone
@@ -1618,7 +1684,9 @@ class FrameAcceptor:
                 frame["seq"] == current.seq
                 and frame["frame_hash"] == current.frame_hash
             ):
-                return self._replay_current(frame, current, standalone)
+                return self._replay_current(
+                    frame, current, standalone, registry
+                )
 
             history = self._history.get(declared_stream_id, {})
             accepted_at_seq = history.get(frame["seq"])
@@ -1636,6 +1704,7 @@ class FrameAcceptor:
                     predecessor=None
                     if predecessor is None
                     else predecessor.as_head(),
+                    registry=registry,
                 )
                 if (
                     competing.accepted
@@ -1664,10 +1733,15 @@ class FrameAcceptor:
             declared_stream_id=declared_stream_id,
             head=current,
             head_proof=None if current is None else _head_proof(current),
-            registry=self._registry,
+            registry=registry,
         )
         if inspected.accepted:
-            self._record(frame)
+            if validated_genesis is None:
+                raise FrameError(
+                    "head-epoch-unverified",
+                    "accepted frame lacks validated registry genesis",
+                )
+            self._record(frame, genesis_hash=validated_genesis)
         return inspected
 
 
