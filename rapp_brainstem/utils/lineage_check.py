@@ -28,6 +28,15 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from rapp1_core import parse_rappid, strict_loads
+from rapp1_core.errors import IdentityError
 
 # canonical Eternity rappid  ->  the template repo's canonical "owner/repo".
 # Seeded with the rapp species root (the godfather).
@@ -80,17 +89,12 @@ def _git_remote_owner_repo(root: str) -> str | None:
 
 
 def _rappid_owner_slug(rappid: str) -> str | None:
-    """Parse 'owner/slug' from a canonical Eternity rappid:@<owner>/<slug>:<hash>."""
-    if not isinstance(rappid, str) or not rappid.startswith("rappid:@"):
+    """Parse exact section 6.1 identity and return its owner/slug."""
+    try:
+        parsed = parse_rappid(rappid)
+    except (IdentityError, TypeError):
         return None
-    body = rappid[len("rappid:@"):]
-    if "/" not in body or ":" not in body:
-        return None
-    owner_slug = body.rsplit(":", 1)[0]  # drop ':<hash>'
-    parts = owner_slug.split("/")
-    if len(parts) != 2 or not all(parts):
-        return None
-    return f"{parts[0]}/{parts[1]}"
+    return f"{parsed.owner}/{parsed.slug}"
 
 
 def check_lineage(repo_root: str | None = None) -> dict:
@@ -101,16 +105,24 @@ def check_lineage(repo_root: str | None = None) -> dict:
         return {"status": "no_rappid", "root": root}
 
     try:
-        with open(manifest) as fh:
-            data = json.load(fh)
+        data = strict_loads(Path(manifest).read_bytes())
+        if not isinstance(data, dict):
+            raise ValueError("identity record must be a JSON object")
     except Exception as e:
         return {"status": "lineage_mismatch", "root": root, "detail": f"unreadable rappid.json: {e}"}
 
     rappid = data.get("rappid") or ""
     parent_rappid = data.get("parent_rappid")
+    record_kind = data.get("kind")
     remote = _git_remote_owner_repo(root)
 
-    info = {"root": root, "rappid": rappid, "remote": remote, "parent_rappid": parent_rappid}
+    info = {
+        "root": root,
+        "rappid": rappid,
+        "remote": remote,
+        "parent_rappid": parent_rappid,
+        "kind": record_kind,
+    }
 
     if rappid in KNOWN_TEMPLATE_REPOS:
         canonical = KNOWN_TEMPLATE_REPOS[rappid]
@@ -127,8 +139,15 @@ def check_lineage(repo_root: str | None = None) -> dict:
     if owner_slug is None:
         return {**info, "status": "lineage_mismatch", "detail": f"unparseable rappid: {rappid}"}
 
+    if not parent_rappid or _rappid_owner_slug(parent_rappid) is None:
+        return {
+            **info,
+            "status": "lineage_mismatch",
+            "detail": "initialized variant has no exact parent_rappid",
+        }
+
     # An initialized variant's own rappid owner/slug should match its remote.
-    if remote and owner_slug.lower() != remote.lower():
+    if remote and owner_slug != remote.lower():
         return {**info, "status": "lineage_mismatch",
                 "detail": f"rappid says {owner_slug} but remote is {remote}"}
 

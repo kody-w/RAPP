@@ -28,7 +28,7 @@ The four substrates form a ladder of decreasing connectivity requirements:
 | 1 | GitHub raw URLs | Internet + (optional) `gh` auth | XLVII (default) | `tools/sniff_network.py` (default `--via raw`) |
 | 2 | LAN HTTP + Bonjour mDNS | Shared LAN | XLVII.5.1 | `tools/lan_advertise.py` + `tools/sniff_network.py --via bonjour` |
 | 3 | Egg cartridge over AirDrop | Wi-Fi Direct (no shared net) | XLVII.5.2 | The `.egg` itself + bundled `lan-quickstart.sh` |
-| 4 | Sneakernet via `file://` | **Zero — just byte exchange** | XLVII.5.3 | `tools/import_peer_egg.py` (extract + add to local seed) |
+| 4 | Sneakernet candidate | **Zero — just byte exchange** | XLVII.5.3 history | `tools/import_peer_egg.py` (strict inspect; authenticated import currently blocked) |
 | 5 | WebRTC tether (operator-pair, ephemeral) | Internet (broker for handshake only); P2P after | XLIX (Twin) + SPEC §18.11 | `pages/vbrainstem.html` (QR-pair → ECDSA P-256 + 6-digit safety code → DTLS-SRTP data channel) |
 
 > **Historical note (2026-05-10), superseded structurally.** The contained
@@ -206,21 +206,24 @@ The quickstart copies the egg's `rappid.json` + `.well-known/` into `$RAPP_BRAIN
 
 **Use when:** Two devices with NO shared network at all. Just file exchange — USB stick, link cable, SD card, Bluetooth, paper printout someone OCRs. The Charizard floor.
 
-**The egg IS a federation packet.** When operator A hands B an egg via any non-network medium, B's brainstem registers A as a federation peer by extracting the egg + adding a `file://` URL to B's local seed. B's sniffer walks A as a `substrate: file` node identical to live LAN/github operators.
+Received bytes are an untrusted candidate, not an accepted federation packet.
+The current target can inspect a RAPP/1 egg structurally, but it cannot import
+one until a fresh authenticated §13 registry is available.
 
 **Import a received egg:**
 ```bash
 python3 tools/import_peer_egg.py /path/to/received.egg
-# Or via the bundled launcher:
-bash lan-quickstart.sh import-peer /path/to/received.egg
+python3 tools/import_peer_egg.py --inspect /path/to/received.egg
 ```
 
 What `import_peer_egg.py` does:
-1. Validates the egg's `manifest.json` + `rappid.json`
-2. Derives the peer's handle from their rappid (`@<handle>/<repo>`)
-3. Extracts to `~/.brainstem/peers/<handle>/`
-4. Synthesizes a beacon at `<peers>/<handle>/.well-known/rapp-network.json` if the egg didn't carry one (works for older egg formats)
-5. Adds a `{github, beacon_url: file://..., estate_url: file://...}` entry to `~/.brainstem/network-seed.json`
+1. Runs the strict RAPP/1 §9 structural inspection.
+2. Reports structural status as `UNVERIFIED`; `--inspect` never reports success.
+3. In default mode, calls authenticated `accept_egg` before any extraction.
+4. Fails closed with no writes because no authenticated registry is present.
+
+It does not accept legacy schemas, repair a beacon, extract with `extractall`,
+or mutate the local seed. See `RAPP1_STATUS.md`.
 
 **Sniff via the local seed:**
 ```bash
@@ -291,9 +294,11 @@ The constitutional ladder for substrate-agnostic federation:
   - **XLVII.5** — Substrate-agnostic federation (the general principle; this doc)
     - **XLVII.5.1** — LAN auto-discovery via Bonjour
     - **XLVII.5.2** — The egg carries the federation tools (AirDrop-portable)
-    - **XLVII.5.3** — Sneakernet federation (the egg IS a federation packet)
+    - **XLVII.5.3** — Historical sneakernet proposal; a received egg remains
+      untrusted until authenticated RAPP/1 acceptance
 
-The platform's local-first promise survives every centralized-substrate failure mode. GitHub flagged your account? LAN. No shared LAN? AirDrop the egg. No shared network at all? USB stick. **The federation walks whatever lights up.**
+Offline byte exchange remains possible, but transport does not establish trust.
+Current tooling may inspect those bytes and otherwise fails closed.
 
 ---
 
@@ -303,7 +308,8 @@ The platform's local-first promise survives every centralized-substrate failure 
 - **`specs/SPEC.md` §4.5.5** — bundled into every planted seed (anonymous AI contributors can read it offline)
 - **`tools/sniff_network.py`** — reference unified sniffer (`_resolve_node()` is the single normalizer)
 - **`tools/lan_advertise.py`** — reference Bonjour advertiser (XLVII.5.1)
-- **`tools/import_peer_egg.py`** — reference sneakernet importer (XLVII.5.3)
+- **`tools/import_peer_egg.py`** — strict inspector/authenticated-import gate;
+  import remains blocked without authenticated §13 evidence
 - **`rapp_brainstem/utils/bond.py::ORGANISM_LAN_FEDERATION_TOOLS`** — list of tools bundled in every egg (XLVII.5.2)
 - **Vault note `2026-05-10 — rappter1 first contact + Article XLVII.5 substrate-agnostic federation.md`** — the motivating story
 - **Companion specs:**
@@ -312,6 +318,6 @@ The platform's local-first promise survives every centralized-substrate failure 
 
 ---
 
-*One protocol. Four substrates. Federation walks whatever lights up.*
+*One protocol. Every received artifact is verified before acceptance.*
 
 <!-- RAPP1-HISTORICAL-SECTION-END -->

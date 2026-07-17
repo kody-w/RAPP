@@ -9,7 +9,7 @@
 #   3. backfill_seeds.py has --patch-parents mode
 #   4. estate_agent has 'rebuild' action + extends 'fetch' to accept rappid=
 #   5. A known-backfilled door has parent_rappid set (live raw fetch)
-#   6. door_from_rappid resolves an operator-kind rappid to door_type=front_door
+#   6. door_from_rappid reads operator kind from the identity record
 #   7. The rebuild import + dry-run discovery returns the expected shape
 #   8. Round-trip: backed-up estate's created[] is a subset of rebuild output
 
@@ -69,7 +69,8 @@ if osi_net "live gh api fetch"; then
   PR=$(gh api /repos/kody-w/echo-brainstem/contents/rappid.json --jq '.content' 2>/dev/null \
         | base64 -d 2>/dev/null \
         | python3 -c "import json,sys; print(json.load(sys.stdin).get('parent_rappid','NULL'))" 2>/dev/null)
-  if echo "$PR" | grep -q "^rappid:v2:operator:@"; then
+  if PYTHONPATH="$REPO_ROOT" python3 -c \
+    "from rapp1_core import parse_rappid; parse_rappid('$PR')" 2>/dev/null; then
     step_pass "parent_rappid set: ${PR:0:60}…"
   else
     step_fail "parent_rappid not set or not an operator rappid: $PR"
@@ -77,12 +78,13 @@ if osi_net "live gh api fetch"; then
 fi
 
 # ─── Step 6 — door_from_rappid handles operator kind ──────────────────────
-heading "Step 6 — door_from_rappid resolves operator-kind rappid"
+heading "Step 6 — door_from_rappid reads operator kind from its record"
 python3 -c "
 import sys
 sys.path.insert(0, '$REPO_ROOT/tools')
 from door_address import door_from_rappid
-d = door_from_rappid('rappid:v2:operator:@x/y:abc123abc123abc123abc123abc123ab@github.com/x/y')
+rappid = 'rappid:@x/y:' + 'a' * 64
+d = door_from_rappid(rappid, identity_record={'rappid': rappid, 'kind': 'operator'})
 assert d['kind'] == 'operator'
 assert d['door_type'] == 'front_door'
 " 2>/dev/null && step_pass "operator-kind rappid → door_type=front_door" || step_fail "operator kind not handled"

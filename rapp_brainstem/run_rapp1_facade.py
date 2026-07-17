@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import sys
 import threading
 from pathlib import Path
 from typing import Any, Sequence
@@ -10,6 +11,7 @@ from typing import Any, Sequence
 if __package__:
     from .rapp1_facade import create_app, runtime_config
 else:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     from rapp1_facade import create_app, runtime_config
 
 

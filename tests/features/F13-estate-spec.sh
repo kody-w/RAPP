@@ -3,9 +3,9 @@
 #
 # Verifies the constitutional Estate Spec contract:
 #   1. door_address.py exists + parses + door_from_rappid is the canonical parser
-#   2. Valid v2 rappid → full door object with all 9 canonical URLs
-#   3. Invalid rappid (origin mismatch) raises InvalidRappidError (no fallback)
-#   4. Invalid rappid (bogus kind) raises InvalidRappidError
+#   2. Valid exact §6.1 rappid → full door object with all 9 canonical URLs
+#   3. Provisional/legacy rappid raises InvalidRappidError (no fallback)
+#   4. Kind is accepted only from the matching identity record
 #   5. Bundle 2.0.0 contains specs/SPEC.md + specs/skill.md (god spec + runbook)
 #   6. SPEC.md mentions rappid v2, raw.githubusercontent.com, door_from_rappid
 #   7. skill.md frames "GitHub account" as the ONLY requirement
@@ -36,12 +36,13 @@ else
 fi
 
 # ─── Step 2 — door_from_rappid produces full URL set ──────────────────────
-heading "Step 2 — door_from_rappid produces all 9 canonical URLs for valid rappid"
+heading "Step 2 — door_from_rappid produces all 9 URLs for exact §6.1 rappid"
 python3 -c "
 import sys
 sys.path.insert(0, '$REPO_ROOT/tools')
 from door_address import door_from_rappid
-d = door_from_rappid('rappid:v2:twin:@kody-w/echo-brainstem:abc123abc123abc123abc123abc123ab@github.com/kody-w/echo-brainstem')
+rappid = 'rappid:@kody-w/echo-brainstem:' + 'a' * 64
+d = door_from_rappid(rappid, identity_record={'rappid': rappid, 'kind': 'twin'})
 assert d['owner'] == 'kody-w' and d['repo'] == 'echo-brainstem'
 assert d['kind'] == 'twin' and d['door_type'] == 'front_door'
 required = {'repo', 'front', 'identity', 'holocard', 'holo_md', 'avatar', 'summon_qr', 'members', 'facets'}
@@ -52,26 +53,27 @@ assert d['urls']['front'] == 'https://kody-w.github.io/echo-brainstem/'
 " 2>/dev/null && step_pass "door object has all 9 canonical URLs" || step_fail "door object incomplete"
 
 # ─── Step 3 — invalid rappid (origin mismatch) raises ─────────────────────
-heading "Step 3 — origin-mismatched rappid raises InvalidRappidError (no fallback)"
+heading "Step 3 — provisional rappid raises InvalidRappidError (no fallback)"
 python3 -c "
 import sys
 sys.path.insert(0, '$REPO_ROOT/tools')
 from door_address import door_from_rappid, InvalidRappidError
 try:
-    door_from_rappid('rappid:v2:twin:@kody-w/echo:abc123abc123abc123abc123abc123ab@github.com/kody-w/different')
+    door_from_rappid('rappid:@kody-w/echo:' + 'a' * 32)
 except InvalidRappidError:
     sys.exit(0)
 sys.exit(1)
 " 2>/dev/null && step_pass "origin mismatch correctly rejected" || step_fail "did not raise on origin mismatch"
 
 # ─── Step 4 — invalid rappid (bogus kind) raises ──────────────────────────
-heading "Step 4 — invalid kind raises (kinds are frozen by spec §2.1)"
+heading "Step 4 — kind comes from the matching identity record"
 python3 -c "
 import sys
 sys.path.insert(0, '$REPO_ROOT/tools')
 from door_address import door_from_rappid, InvalidRappidError
+rappid = 'rappid:@x/y:' + 'a' * 64
 try:
-    door_from_rappid('rappid:v2:bogus:@x/y:abc123abc123abc123abc123abc123ab@github.com/x/y')
+    door_from_rappid(rappid, identity_record={'rappid': rappid, 'kind': 'bogus'})
 except InvalidRappidError:
     sys.exit(0)
 sys.exit(1)

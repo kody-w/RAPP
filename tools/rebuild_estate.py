@@ -17,7 +17,7 @@ proves the relationships are recomputable from raw URLs.
 USAGE:
     python3 tools/rebuild_estate.py --handle <gh>                # dry-run, prints
     python3 tools/rebuild_estate.py --handle <gh> --apply        # write to ~/.brainstem/estate.json
-    python3 tools/rebuild_estate.py --handle <gh> --out /tmp/x   # write elsewhere
+    python3 tools/rebuild_estate.py --handle <gh> --out ./estate.json
     python3 tools/rebuild_estate.py --handle <gh> --operator-rappid <rappid>
                                                                   # skip discovery, use this one
 
@@ -27,8 +27,7 @@ DISCOVERY:
      b. Try conventional repos: <handle>/<handle>-twin, <handle>/<handle>-brainstem,
         <handle>/.brainstem, <handle>/kody-twin (operator-specific patterns)
      c. Walk all <handle>/* repos via gh repo list, fetch each rappid.json,
-        derive operator rappid by taking ANY twin-kind rappid + swapping the
-        kind token to "operator"
+        and accept only an exact identity whose record kind is `operator`
      d. Fail with operator-action message ("pass --operator-rappid <rappid>")
 
   2. created[] discovery:
@@ -61,16 +60,15 @@ from pathlib import Path
 
 # Add repo's tools/ to sys.path so we can import door_address
 _REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_REPO_ROOT))
 sys.path.insert(0, str(_REPO_ROOT / "tools"))
 
 from door_address import door_from_rappid, parse_rappid, InvalidRappidError, estate_url  # noqa: E402
+from rapp1_core import strict_loads  # noqa: E402
 
 
 def _looks_like_rappid(rappid: object) -> bool:
-    """True if `rappid` is a string in ANY known rappid form — the consolidated
-    `rappid:@<owner>/<slug>:<64hex>` OR a legacy form (v2, bare-UUID, …). We read
-    every legacy form forever; canonicalization happens downstream. Used as the
-    cheap "is this worth resolving a door for" gate."""
+    """Return whether a value is an exact section 6.1 identity."""
     if not isinstance(rappid, str):
         return False
     try:
@@ -112,8 +110,9 @@ def _raw_fetch_json(owner: str, repo: str, path: str) -> dict | None:
         b64 = d.get("content", "").replace("\n", "")
         if not b64:
             return None
-        body = base64.b64decode(b64).decode("utf-8", errors="replace")
-        return json.loads(body)
+        body = base64.b64decode(b64)
+        value = strict_loads(body)
+        return value if type(value) is dict else None
     except Exception:
         return None
 
@@ -127,18 +126,20 @@ def _try_local_brainstem() -> str:
     if not p.exists():
         return ""
     try:
-        d = json.loads(p.read_text())
+        d = strict_loads(p.read_bytes())
+        if type(d) is not dict:
+            return ""
         rappid = d.get("rappid", "")
-        if _looks_like_rappid(rappid):
+        door = door_from_rappid(rappid, identity_record=d)
+        if door["kind"] == "operator":
             return rappid
-    except Exception:
+    except (InvalidRappidError, OSError, ValueError):
         pass
     return ""
 
 
 def _try_conventional_repos(handle: str) -> str:
-    """Probe conventional anchor repos for an operator rappid. Returns the
-    derived operator rappid (kind-swapped if we found a twin) or ""."""
+    """Probe conventional anchor repos for a record-declared operator rappid."""
     candidates = [
         f"{handle}-twin",
         f"{handle}-brainstem",
@@ -152,21 +153,17 @@ def _try_conventional_repos(handle: str) -> str:
         rappid = d.get("rappid", "")
         if not _looks_like_rappid(rappid):
             continue
-        # Validate; derive operator rappid by swapping kind token
         try:
-            door = door_from_rappid(rappid)
+            door = door_from_rappid(rappid, identity_record=d)
         except InvalidRappidError:
             continue
         if door["kind"] == "operator":
             return rappid
-        if door["kind"] == "twin":
-            # Same owner/repo/hex, different kind token
-            return rappid.replace(":twin:", ":operator:", 1)
     return ""
 
 
 def _scan_handle_for_operator(handle: str) -> str:
-    """Last-ditch: walk every <handle>/* repo, look for a twin/operator rappid."""
+    """Last-ditch: walk every repo for a record-declared operator identity."""
     repos = _gh_get_json(f"/users/{handle}/repos?per_page=100&type=owner")
     if not isinstance(repos, list):
         return ""
@@ -183,13 +180,11 @@ def _scan_handle_for_operator(handle: str) -> str:
         if not isinstance(rappid, str):
             continue
         try:
-            door = door_from_rappid(rappid)
+            door = door_from_rappid(rappid, identity_record=d)
         except InvalidRappidError:
             continue
         if door["kind"] == "operator":
             return rappid
-        if door["kind"] == "twin" and (handle in name or name in ("twin", "brainstem")):
-            return rappid.replace(":twin:", ":operator:", 1)
     return ""
 
 
@@ -271,7 +266,7 @@ def discover_created(handle: str, operator_rappid: str, on_progress=None) -> tup
             skipped.append({"repo": name, "reason": "rappid not a string"})
             continue
         try:
-            door_from_rappid(rappid)
+            door_from_rappid(rappid, identity_record=d)
         except InvalidRappidError as e:
             skipped.append({"repo": name, "reason": f"invalid rappid: {str(e)[:80]}"})
             continue
@@ -339,7 +334,7 @@ def discover_memberships(operator_rappid: str, on_progress=None) -> tuple[list, 
         if not isinstance(gate_rappid, str):
             continue
         try:
-            door_from_rappid(gate_rappid)
+            door_from_rappid(gate_rappid, identity_record=gate_meta)
         except InvalidRappidError as e:
             skipped.append({"repo": full, "reason": f"gate rappid invalid: {str(e)[:60]}"})
             continue

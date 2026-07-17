@@ -10,12 +10,13 @@ from pathlib import Path
 from typing import Any, Sequence
 
 import pytest
+from rapp1_core import canonical_bytes
+from rapp1_core.canonical import MAX_JSON_DEPTH
 
 from rapp_brainstem.rapp1_facade import (
     DEFAULT_HOST,
     DEFAULT_PORT,
     GRAIL_PORT,
-    MAX_JSON_DEPTH,
     PENDING_REGISTRY_ERROR_CODES,
     create_app,
     runtime_config,
@@ -255,7 +256,8 @@ def test_creation_idempotency_is_global_byte_equivalent_and_conflict_safe(
     test_dir,
 ):
     inference = RecordingInference()
-    app = make_app(test_dir / "facade.sqlite3", inference)
+    database = test_dir / "facade.sqlite3"
+    app = make_app(database, inference)
 
     with app.test_client() as client:
         first = post_json(
@@ -284,6 +286,17 @@ def test_creation_idempotency_is_global_byte_equivalent_and_conflict_safe(
     assert duplicate.get_json()["session_id"] == first.get_json()["session_id"]
     assert_error(conflict, "idempotency-conflict")
     assert len(inference.calls) == 1
+    with sqlite3.connect(database) as connection:
+        stored = connection.execute(
+            """
+            SELECT request_canonical
+            FROM idempotency
+            WHERE scope_kind = 'create' AND idempotency_key = 'create-key'
+            """
+        ).fetchone()[0]
+    assert stored == canonical_bytes(
+        {"user_input": "original", "idempotency_key": "create-key"}
+    )
 
 
 def test_existing_session_idempotency_is_scoped_by_session(test_dir):
@@ -456,7 +469,27 @@ def test_crash_leaves_pending_reservation_that_fails_closed(test_dir):
             "application/json",
         ),
         (
+            b'{"user_input":"ok","ignored":1,"ignored":2}',
+            "application/json",
+        ),
+        (
             b'{"user_input":"ok","unknown":NaN}',
+            "application/json",
+        ),
+        (
+            b'{"user_input":"ok","unknown":9007199254740993}',
+            "application/json",
+        ),
+        (
+            b'{"user_input":"ok","unknown":"\\ud800"}',
+            "application/json",
+        ),
+        (
+            b'\xef\xbb\xbf{"user_input":"ok"}',
+            "application/json",
+        ),
+        (
+            b'{"user_input":"ok","unknown":"\xff"}',
             "application/json",
         ),
         (b'{"user_input":"ok"}', "text/plain"),
@@ -483,6 +516,25 @@ def test_oversized_request_is_exact_422(test_dir):
         response = client.post(
             "/chat",
             data=b'{"user_input":"' + (b"x" * 1_048_576) + b'"}',
+            content_type="application/json",
+        )
+
+    assert_error(response, "malformed-request")
+    assert inference.calls == []
+
+
+def test_oversized_canonical_ignored_member_is_exact_422(test_dir):
+    inference = RecordingInference()
+    app = make_app(test_dir / "facade.sqlite3", inference)
+
+    with app.test_client() as client:
+        response = client.post(
+            "/chat",
+            data=(
+                b'{"user_input":"ok","ignored":"'
+                + (b"x" * 1_048_576)
+                + b'"}'
+            ),
             content_type="application/json",
         )
 

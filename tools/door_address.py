@@ -1,206 +1,247 @@
-"""door_address — pure derivation of a door's canonical URL set from its rappid.
+"""Exact RAPP/1 door-address derivation with quarantined legacy observation.
 
-Authority: pages/docs/ESTATE_SPEC.md (CONSTITUTION Article XLVI + XXXIV.1).
-
-This is the SINGLE implementation of the Estate Spec's `door_from_rappid()`
-contract (ESTATE_SPEC §5). Every consumer that maps rappid → door URLs uses
-this module — never reinvents the parsing, never patches around it.
-
-THE CONSOLIDATED RAPPID (the one format, locked 2026-06-03)
-----------------------------------------------------------
-    rappid:@<owner>/<slug>:<64hex>
-
-One string that is BOTH identity and self-locating:
-  - `@<owner>/<slug>` — the canonical location. `github.com/<owner>/<slug>` is
-    the door; every door URL derives from it by string parsing (no lookup, no
-    API), preserving the Article-XLVI curl-discovery property.
-  - `<64hex>` — the full 256-bit SHA-256 identity hash. The hash is the identity
-    and the JOIN KEY; matching/dedup is always on the hash, never the slug.
-  - `kind` and all other structure live in the `rappid.json` RECORD (fetched
-    from the located repo), not the string — per the Eternity standard.
-
-The string is NEVER re-versioned. The `rappid:v2:…@github.com/…` form is fully
-RETIRED — it is neither read nor emitted (all v2 data was re-anchored to the
-consolidated form). The remaining non-v2 legacy forms are still read forever:
-  - v1  `<uuid>`                                              (bare UUID — not self-locating)
-  - the bare-Eternity `rappid:<slug>:<64hex>`                 (not self-locating)
-and canonicalized (`canonicalize_rappid`) into the one self-locating Eternity
-form above.
-
-COMPATIBILITY: the non-v2 legacy forms are READ FOREVER and canonicalized; only
-the consolidated form is emitted. A consumer holding such a legacy rappid still
-resolves; door_from_rappid returns `kind`/`door_type` from a record-supplied
-`kind` (resolved from the fetched `rappid.json`), else None.
-
-Pure stdlib. Zero deps. Importable from agents/, tools/, tests/, or anywhere.
+Normal parsing and URL resolution accept only the section 6.1 rappid grammar.
+Historical forms are visible solely through ``parse_legacy_for_migration``;
+that API preserves evidence but cannot resolve a door or emit a replacement
+identity.
 """
+
 from __future__ import annotations
 
 import re
+import sys
+from dataclasses import asdict, dataclass
+from pathlib import Path
+from typing import Any, Mapping
 
-_NAME = r"[A-Za-z0-9][A-Za-z0-9._-]*"
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
-# Consolidated canonical form: rappid:@<owner>/<slug>:<64hex>
-_CANON_RE = re.compile(
-    rf"^rappid:@(?P<owner>{_NAME})/(?P<slug>{_NAME}):(?P<hash>[a-f0-9]{{64}})$"
-)
-# Legacy v1 (read-only): a bare UUID. Carries NO location — callers must supply
-# the repo (owner/slug) out of band to build URLs or canonicalize.
+from rapp1_core import parse_rappid as _core_parse_rappid  # noqa: E402
+from rapp1_core.errors import IdentityError  # noqa: E402
+from rapp1_core.identity import validate_owner  # noqa: E402
+
+
+_LEGACY_NAME = r"[A-Za-z0-9][A-Za-z0-9._-]*"
 _UUID_RE = re.compile(
-    r"^(?P<hash>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$"
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+    re.ASCII,
 )
-# Grandfathered canonical structure: a legacy hash (e.g. a migrated v2 32-hex not
-# yet re-anchored to 256-bit) carried in the new self-locating structure. Checked
-# LAST so a real 64-hex always matches _CANON_RE first.
-_CANON_LEGACYHASH_RE = re.compile(
-    rf"^rappid:@(?P<owner>{_NAME})/(?P<slug>{_NAME}):(?P<hash>[a-f0-9]{{8,}})$"
+_V2_RE = re.compile(
+    rf"^rappid:v2:(?P<string_kind>[a-z][a-z0-9-]*):"
+    rf"@(?P<owner>{_LEGACY_NAME})/(?P<slug>{_LEGACY_NAME}):"
+    rf"(?P<tail>[0-9a-f]{{32}})@github\.com/"
+    rf"(?P<owner2>{_LEGACY_NAME})/(?P<slug2>{_LEGACY_NAME})$",
+    re.ASCII,
+)
+_PROVISIONAL_RE = re.compile(
+    rf"^rappid:@(?P<owner>{_LEGACY_NAME})/(?P<slug>{_LEGACY_NAME}):"
+    r"(?P<tail>[0-9a-f]{8,63})$",
+    re.ASCII,
 )
 
 
-# Front-door kinds: a single AI presence (CONSTITUTION Art. XLVI.2). `place` is a
-# gate (a location others enter). Extended 2026-06-02; place reclassified 2026-06-03.
-_FRONT_DOOR_KINDS = frozenset({
-    "twin", "operator", "personal", "project", "memorial",
-    "pre-founder", "mirror", "experiment", "custom",
-})
-_GATE_KINDS = frozenset({
-    "neighborhood", "ant-farm", "braintrust", "workspace",
-    "hatched", "rapplication", "prototype", "place",
-})
+_FRONT_DOOR_KINDS = frozenset(
+    {
+        "twin",
+        "operator",
+        "personal",
+        "project",
+        "memorial",
+        "pre-founder",
+        "mirror",
+        "experiment",
+        "custom",
+    }
+)
+_GATE_KINDS = frozenset(
+    {
+        "neighborhood",
+        "ant-farm",
+        "braintrust",
+        "workspace",
+        "hatched",
+        "rapplication",
+        "prototype",
+        "place",
+    }
+)
 VALID_KINDS = _FRONT_DOOR_KINDS | _GATE_KINDS
 
 
-def _door_type_for_kind(kind: str | None) -> str | None:
+class InvalidRappidError(ValueError):
+    """Raised when an active path receives a non-section-6.1 identity."""
+
+
+@dataclass(frozen=True)
+class LegacyRappidObservation:
+    original: str
+    form: str
+    owner: str | None
+    slug: str | None
+    tail: str
+    tail_bits: int
+    string_kind: str | None = None
+    location_match: bool | None = None
+
+    def as_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+def parse_rappid(rappid: str) -> dict[str, Any]:
+    """Parse one exact section 6.1 rappid into the historical consumer shape."""
+
+    try:
+        parsed = _core_parse_rappid(rappid)
+    except (IdentityError, TypeError) as exc:
+        raise InvalidRappidError(str(exc)) from exc
+    return {
+        "form": "canonical",
+        "owner": parsed.owner,
+        "slug": parsed.slug,
+        "hash": parsed.tail,
+        "hash_bits": 256,
+        "kind": None,
+    }
+
+
+def canonicalize_rappid(rappid: str) -> str:
+    """Return an already exact identity unchanged; never migrate or mint."""
+
+    _core_parse(rappid)
+    return rappid
+
+
+def parse_legacy_for_migration(rappid: str) -> LegacyRappidObservation:
+    """Preserve a known historical identity as non-resolvable evidence."""
+
+    if type(rappid) is not str:
+        raise InvalidRappidError("legacy rappid must be a string")
+    try:
+        _core_parse_rappid(rappid)
+    except IdentityError:
+        pass
+    else:
+        raise InvalidRappidError(
+            "identity is already exact RAPP/1 and is not migration input"
+        )
+
+    if _UUID_RE.fullmatch(rappid):
+        tail = rappid.replace("-", "")
+        return LegacyRappidObservation(
+            original=rappid,
+            form="uuid-legacy",
+            owner=None,
+            slug=None,
+            tail=tail,
+            tail_bits=128,
+        )
+
+    v2 = _V2_RE.fullmatch(rappid)
+    if v2 is not None:
+        return LegacyRappidObservation(
+            original=rappid,
+            form="v2-legacy",
+            owner=v2["owner"],
+            slug=v2["slug"],
+            tail=v2["tail"],
+            tail_bits=128,
+            string_kind=v2["string_kind"],
+            location_match=(
+                v2["owner"] == v2["owner2"] and v2["slug"] == v2["slug2"]
+            ),
+        )
+
+    provisional = _PROVISIONAL_RE.fullmatch(rappid)
+    if provisional is not None:
+        tail = provisional["tail"]
+        return LegacyRappidObservation(
+            original=rappid,
+            form="provisional-self-locating",
+            owner=provisional["owner"],
+            slug=provisional["slug"],
+            tail=tail,
+            tail_bits=len(tail) * 4,
+        )
+
+    raise InvalidRappidError("identity is neither exact RAPP/1 nor known migration input")
+
+
+def _core_parse(rappid: str):
+    try:
+        return _core_parse_rappid(rappid)
+    except (IdentityError, TypeError) as exc:
+        raise InvalidRappidError(str(exc)) from exc
+
+
+def _record_kind(
+    rappid: str, identity_record: Mapping[str, Any] | None
+) -> str | None:
+    if identity_record is None:
+        return None
+    if not isinstance(identity_record, Mapping):
+        raise InvalidRappidError("identity_record must be a mapping")
+    recorded_rappid = identity_record.get("rappid")
+    if type(recorded_rappid) is not str:
+        raise InvalidRappidError("identity_record has no exact rappid")
+    _core_parse(recorded_rappid)
+    if recorded_rappid != rappid:
+        raise InvalidRappidError("identity_record belongs to a different rappid")
+    kind = identity_record.get("kind")
     if kind is None:
         return None
-    return "front_door" if kind in _FRONT_DOOR_KINDS else "gate"
+    if type(kind) is not str or kind not in VALID_KINDS:
+        raise InvalidRappidError("identity record has an unsupported door kind")
+    return kind
 
 
-class InvalidRappidError(ValueError):
-    """Raised for a rappid that matches no known form (consolidated or legacy)."""
+def door_from_rappid(
+    rappid: str, identity_record: Mapping[str, Any] | None = None
+) -> dict[str, Any]:
+    """Resolve URLs only for an exact identity; source kind from its record."""
 
-
-def parse_rappid(rappid: str) -> dict:
-    """Parse any rappid form. Returns a dict:
-
-      {form, owner, slug, hash, hash_bits, kind}
-
-    - form: "canonical" | "canonical-legacyhash" | "uuid-legacy"
-    - owner/slug: the location (None for a bare UUID, which is not self-locating)
-    - hash: the identity hash (hex, dashes stripped for UUIDs)
-    - hash_bits: 256 for a full 64-hex, else the legacy bit-width (128 for a UUID)
-    - kind: always None (kind lives in the fetched record, never the string)
-
-    Reads every legacy form forever. Raises InvalidRappidError on no match.
-    """
-    if not isinstance(rappid, str):
-        raise InvalidRappidError(f"rappid must be a string, got {type(rappid).__name__}")
-
-    m = _CANON_RE.match(rappid)
-    if m:
-        return {"form": "canonical", "owner": m["owner"], "slug": m["slug"],
-                "hash": m["hash"], "hash_bits": 256, "kind": None}
-
-    m = _UUID_RE.match(rappid)
-    if m:
-        return {"form": "uuid-legacy", "owner": None, "slug": None,
-                "hash": m["hash"].replace("-", ""), "hash_bits": 128, "kind": None}
-
-    m = _CANON_LEGACYHASH_RE.match(rappid)
-    if m:
-        return {"form": "canonical-legacyhash", "owner": m["owner"], "slug": m["slug"],
-                "hash": m["hash"], "hash_bits": len(m["hash"]) * 4, "kind": None}
-
-    raise InvalidRappidError(
-        f"rappid matches no known form: {rappid!r}. "
-        f"Canonical: rappid:@<owner>/<slug>:<64hex>")
-
-
-def canonicalize_rappid(rappid: str, owner: str | None = None, slug: str | None = None) -> str:
-    """Return the consolidated canonical string for any rappid form.
-
-    Restructures into `rappid:@<owner>/<slug>:<hash>`, PRESERVING the hash (the
-    identity). A bare UUID needs `owner`/`slug` supplied (it carries no location).
-    Idempotent on an
-    already-canonical string. The one-time 128→256-bit re-anchor (minting a fresh
-    64-hex and recording the old id in `_migrated_from`) is a separate step — this
-    function never invents a hash.
-    """
-    p = parse_rappid(rappid)
-    o = p["owner"] or owner
-    s = p["slug"] or slug
-    if not o or not s:
-        raise InvalidRappidError(
-            f"cannot canonicalize {rappid!r}: it carries no location (bare UUID); "
-            f"supply owner=/slug= (the repo it lives in).")
-    return f"rappid:@{o}/{s}:{p['hash']}"
-
-
-def door_from_rappid(rappid: str, kind: str | None = None) -> dict:
-    """Return the canonical door object for a rappid. Pure function (no I/O).
-
-    Reads the consolidated form and the non-v2 legacy forms. The door's URLs
-    derive purely from the self-locating `@<owner>/<slug>`.
-
-    `kind`/`door_type`: taken from the `kind` argument (which a caller resolves
-    from the fetched `rappid.json` record), else None.
-
-    Returns: {rappid, canonical, owner, repo, slug, hash, kind, door_type, urls, form}
-
-    Raises InvalidRappidError if the string matches no form, or carries no
-    location (a bare UUID — supply owner/slug via canonicalize first), or if a
-    provided/parsed kind is not in VALID_KINDS.
-    """
-    p = parse_rappid(rappid)
-    if not p["owner"] or not p["slug"]:
-        raise InvalidRappidError(
-            f"rappid {rappid!r} is a bare UUID (no location). Canonicalize it with "
-            f"owner=/slug= before resolving a door.")
-
-    owner, slug = p["owner"], p["slug"]
-    resolved_kind = kind  # kind lives in the fetched record, never the rappid string
-    if resolved_kind is not None and resolved_kind not in VALID_KINDS:
-        raise InvalidRappidError(
-            f"rappid kind {resolved_kind!r} is not in VALID_KINDS={sorted(VALID_KINDS)}. "
-            f"Adding a kind requires a CONSTITUTION amendment (Article XLVI.2).")
-
+    parsed = _core_parse(rappid)
+    kind = _record_kind(rappid, identity_record)
+    door_type = (
+        None
+        if kind is None
+        else ("front_door" if kind in _FRONT_DOOR_KINDS else "gate")
+    )
+    owner, slug = parsed.owner, parsed.slug
     raw_base = f"https://raw.githubusercontent.com/{owner}/{slug}/main"
     return {
         "rappid": rappid,
-        "canonical": f"rappid:@{owner}/{slug}:{p['hash']}",
+        "canonical": rappid,
         "owner": owner,
-        "repo": slug,   # back-compat alias; slug IS the repo for a door
+        "repo": slug,
         "slug": slug,
-        "hash": p["hash"],
-        "kind": resolved_kind,
-        "door_type": _door_type_for_kind(resolved_kind),
-        "form": p["form"],
+        "hash": parsed.tail,
+        "kind": kind,
+        "door_type": door_type,
+        "form": "canonical",
         "urls": {
-            "repo":      f"https://github.com/{owner}/{slug}",
-            "front":     f"https://{owner}.github.io/{slug}/",
-            "identity":  f"{raw_base}/rappid.json",
-            "holocard":  f"{raw_base}/card.json",
-            "holo_md":   f"{raw_base}/holo.md",
-            "avatar":    f"{raw_base}/holo.svg",
+            "repo": f"https://github.com/{owner}/{slug}",
+            "front": f"https://{owner}.github.io/{slug}/",
+            "identity": f"{raw_base}/rappid.json",
+            "holocard": f"{raw_base}/card.json",
+            "holo_md": f"{raw_base}/holo.md",
+            "avatar": f"{raw_base}/holo.svg",
             "summon_qr": f"{raw_base}/holo-qr.svg",
-            "members":   f"{raw_base}/members.json",
-            "facets":    f"{raw_base}/facets.json",
+            "members": f"{raw_base}/members.json",
+            "facets": f"{raw_base}/facets.json",
         },
     }
 
 
 def estate_url(github_handle: str) -> str:
-    """The canonical pure-raw URL for a user's full estate.
-
-    Per ESTATE_SPEC §4.2 — single roundtrip, no auth, no API.
-    """
-    if not github_handle or "/" in github_handle or " " in github_handle:
-        raise InvalidRappidError(f"invalid github handle: {github_handle!r}")
-    return f"https://raw.githubusercontent.com/{github_handle}/rapp-estate/main/estate.json"
+    try:
+        owner = validate_owner(github_handle)
+    except (IdentityError, TypeError) as exc:
+        raise InvalidRappidError(str(exc)) from exc
+    return f"https://raw.githubusercontent.com/{owner}/rapp-estate/main/estate.json"
 
 
 def owner_repo_from_rappid(rappid: str) -> tuple[str, str]:
-    """Return (owner, repo) for a self-locating rappid. Raises InvalidRappidError
-    for a bare UUID (no location)."""
-    door = door_from_rappid(rappid)
-    return door["owner"], door["repo"]
+    parsed = _core_parse(rappid)
+    return parsed.owner, parsed.slug

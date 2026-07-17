@@ -15,6 +15,7 @@ is refused rather than normalized.
 ## Launch
 
 ```bash
+python3.11 -m pip install -r requirements-rapp1-core.txt -r rapp_brainstem/requirements.txt
 python3.11 rapp_brainstem/run_rapp1_facade.py
 ```
 
@@ -32,7 +33,11 @@ Configuration is limited to `RAPP1_FACADE_HOST`, `RAPP1_FACADE_PORT`, and
 
 `POST /chat` accepts a JSON object with required string `user_input`, optional
 string `session_id`, and optional string `idempotency_key`. Every other member,
-including client-supplied history, is ignored. Success has exactly:
+including client-supplied history, is ignored after the entire request passes
+the strict RAPP I-JSON profile. Duplicate members, invalid UTF-8, a BOM, lone
+surrogates, invalid binary64 numbers, excessive depth, or a canonical form over
+1 MiB are malformed even when they occur only in ignored members. Success has
+exactly:
 
 ```json
 {"response":"...","agent_logs":[],"session_id":"..."}

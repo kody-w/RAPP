@@ -1,36 +1,10 @@
 name: Plant approved place
 
-# When a maintainer adds the `approved` label to a `place-submission` issue,
-# this workflow parses the issue body, validates eligibility, runs plant.sh,
-# and comments back on the issue with the planted URL + rappid. On any
-# failure, it comments with the reason and stops.
-#
-# ─────────────────────────────────────────────────────────────────────────
-#  REQUIRED SETUP — repository secret PLANT_PAT
-# ─────────────────────────────────────────────────────────────────────────
-#  The default GITHUB_TOKEN can read this repo's issues and post comments,
-#  but it CANNOT create new repos in your user namespace. plant.sh needs
-#  to `gh repo create` and enable Pages on a brand-new repo, so this
-#  workflow uses a personal access token stored as the secret PLANT_PAT.
-#
-#  How to make one (one-time setup):
-#    1. github.com/settings/tokens → "Generate new token (classic)"
-#       Scope: `repo` (full repo access — required for repo creation +
-#                       Pages enablement on the new repo).
-#       OR: fine-grained token at /settings/personal-access-tokens/new with
-#       Repository access: All repositories owned by you, with permissions:
-#         - Contents: Read and write
-#         - Metadata: Read
-#         - Pages: Read and write
-#         - Administration: Read and write   (needed to create new repos)
-#    2. github.com/kody-w/RAPP/settings/secrets/actions → New repository secret
-#       Name: PLANT_PAT
-#       Value: <the token>
-#    3. Save. Done. The workflow picks it up on the next labeled-approved event.
-#
-#  When PLANT_PAT is missing, the plant step fails fast with a clear comment
-#  on the issue, so you'll know without digging through Actions logs.
-# ─────────────────────────────────────────────────────────────────────────
+# Planting is intentionally blocked. The legacy planter is a 410 containment
+# marker and no authenticated RAPP/1 planter currently emits a structured
+# result. A replacement must emit one strict machine-readable result containing
+# an exact section 6.1 rappid and URL; this workflow must consume that object
+# directly, never scrape human logs.
 
 on:
   issues:
@@ -57,117 +31,32 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Parse issue body
+      - name: Validate issue body before side effects
         id: parse
         env:
           ISSUE_BODY: ${{ github.event.issue.body }}
         shell: bash
         run: |
-          set -e
-          # Tolerate the rare case where issue body is null
-          echo "${ISSUE_BODY:-}" | python3 .github/scripts/parse_place_issue.py >> "$GITHUB_OUTPUT" \
-            || echo "parse exit code: $?"
+          set -euo pipefail
+          printf '%s' "${ISSUE_BODY:-}" |
+            python3 .github/scripts/parse_place_issue.py >> "$GITHUB_OUTPUT"
 
-      - name: Reject if eligibility incomplete
-        if: steps.parse.outputs.ok != '1'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ISSUE_NUM: ${{ github.event.issue.number }}
-          REPO: ${{ github.repository }}
-        run: |
-          gh issue comment "$ISSUE_NUM" --repo "$REPO" --body "❌ **Auto-plant rejected — eligibility incomplete or required fields missing.**
-
-          Parser output: \`ok=${{ steps.parse.outputs.ok }}\`, eligibility \`${{ steps.parse.outputs.eligibility_checked }}/${{ steps.parse.outputs.eligibility_total }}\`.
-
-          To retry: edit the issue to fix what's missing, remove the \`approved\` label, then re-add it. The workflow re-fires on every label add."
-          exit 1
-
-      - name: Verify PLANT_PAT secret is configured
-        env:
-          PLANT_PAT: ${{ secrets.PLANT_PAT }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ISSUE_NUM: ${{ github.event.issue.number }}
-          REPO: ${{ github.repository }}
-        run: |
-          if [ -z "${PLANT_PAT:-}" ]; then
-            gh issue comment "$ISSUE_NUM" --repo "$REPO" --body "⚠️ **Auto-plant blocked — repository secret \`PLANT_PAT\` is not configured.**
-
-          The workflow needs a personal access token with permission to create new repos in the user namespace. See \`.github/workflows/plant-approved-place.yml\` for one-time setup steps. Re-add the \`approved\` label after configuring the secret."
-            exit 1
-          fi
-
-      - name: Plant the seed
-        id: plant
-        env:
-          GH_TOKEN: ${{ secrets.PLANT_PAT }}
-          MIRROR_REPO_NAME:    ${{ steps.parse.outputs.slug }}
-          MIRROR_DISPLAY_NAME: ${{ steps.parse.outputs.display_name }}
-          MIRROR_KIND:         place
-          MIRROR_LOCATION:     ${{ steps.parse.outputs.location }}
-          MIRROR_PARENT:       ${{ steps.parse.outputs.submitter }}
+      - name: Fail closed before planting
         shell: bash
         run: |
-          set -o pipefail
-          chmod +x installer/plant.sh
-          # Tee output for both human inspection in logs and parsing afterward
-          bash installer/plant.sh 2>&1 | tee /tmp/plant.out
-          URL=$(grep -oE 'https://[^ ]+\.github\.io/[a-zA-Z0-9_-]+' /tmp/plant.out | head -1)
-          RAPPID=$(grep -oE 'Rappid: +[a-f0-9-]+' /tmp/plant.out | awk '{print $2}' | head -1)
-          if [ -z "$URL" ] || [ -z "$RAPPID" ]; then
-              echo "::error::Failed to extract URL or rappid from plant.sh output"
-              exit 1
-          fi
-          echo "url=$URL"        >> "$GITHUB_OUTPUT"
-          echo "rappid=$RAPPID"  >> "$GITHUB_OUTPUT"
+          echo "::error::Place planting is retired until an authenticated RAPP/1 planter emits a strict structured result."
+          echo "::error::No repository, identity, signature, registry entry, or page was created."
+          echo "::error::See RAPP1_STATUS.md."
+          exit 78
 
-      - name: Comment success + close issue
-        if: success()
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ISSUE_NUM: ${{ github.event.issue.number }}
-          REPO: ${{ github.repository }}
-          URL: ${{ steps.plant.outputs.url }}
-          RAPPID: ${{ steps.plant.outputs.rappid }}
-          SLUG: ${{ steps.parse.outputs.slug }}
-          PLACE: ${{ steps.parse.outputs.display_name }}
-          LOC: ${{ steps.parse.outputs.location }}
-          NOMINATOR: ${{ steps.parse.outputs.submitter }}
-        run: |
-          NOMINATOR_LINE=""
-          if [ -n "${NOMINATOR}" ]; then
-              NOMINATOR_LINE="
-          **Nominated by:** ${NOMINATOR} (recorded in \`rappid.json\`'s \`planted_from\` field)"
-          fi
-          gh issue comment "$ISSUE_NUM" --repo "$REPO" --body "🌱 **Planted: ${PLACE}**
-
-          - **URL:** ${URL}
-          - **Repo:** https://github.com/kody-w/${SLUG}
-          - **Rappid:** \`${RAPPID}\`
-          - **Location:** ${LOC}${NOMINATOR_LINE}
-
-          Pages takes 1–3 minutes to deploy. Once live, anyone can visit the URL to talk to the place's twins, scan its QR to tether across devices, or install its kernel locally with:
-
-          \`\`\`
-          curl -fsSL ${URL}/installer/install.sh | bash
-          \`\`\`
-
-          Closing this issue. Thanks for growing the network."
-          gh issue edit "$ISSUE_NUM" --repo "$REPO" \
-              --add-label planted \
-              --remove-label needs-review
-          gh issue close "$ISSUE_NUM" --repo "$REPO"
-
-      - name: Comment on plant failure
+      - name: Comment on authenticated-planter blocker
         if: failure() && steps.parse.outputs.ok == '1'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_NUM: ${{ github.event.issue.number }}
           REPO: ${{ github.repository }}
-          SLUG: ${{ steps.parse.outputs.slug }}
+        shell: bash
         run: |
-          gh issue comment "$ISSUE_NUM" --repo "$REPO" --body "⚠️ **Plant failed.** Check the [workflow run logs](https://github.com/${REPO}/actions) for details.
+          gh issue comment "$ISSUE_NUM" --repo "$REPO" --body "⚠️ **Planting is fail-closed.**
 
-          Common causes:
-          - Slug \`${SLUG}\` already exists as a repo on \`kody-w\` — pick a different slug, edit the issue, and re-add the \`approved\` label.
-          - PLANT_PAT scope insufficient (needs Contents+Administration+Pages, or classic \`repo\` scope).
-          - GitHub Pages quota or transient API error — re-add the \`approved\` label to retry."
+          The submission passed strict input validation, but this repository has no authenticated RAPP/1 place planter or structured plant-result producer. The retired planter was not invoked and no repository, rappid, registry entry, or page was created. See \`RAPP1_STATUS.md\`."

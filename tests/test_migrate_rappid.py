@@ -1,65 +1,109 @@
-"""Tests for the rappid.json → consolidated-form migration tool.
+"""Plan-only rappid migration tests."""
 
-    python3 -m pytest tests/test_migrate_rappid.py -v
-"""
+from __future__ import annotations
+
+import json
+import shutil
 import sys
+import uuid
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
-from migrate_rappid import migrate_record  # noqa: E402
+import pytest
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tools"))
+from migrate_rappid import plan_file, plan_record  # noqa: E402
+
 
 H32 = "15461d6259ec49bdaf8ea032571b3f03"
+H64 = H32 * 2
 UUID = "915f54e5-4c71-4de9-bba3-6604461d05e5"
-V2 = f"rappid:v2:twin:@kody-w/echo-brainstem:{H32}@github.com/kody-w/echo-brainstem"
+V2 = (
+    f"rappid:v2:twin:@kody-w/echo-brainstem:{H32}"
+    "@github.com/kody-w/echo-brainstem"
+)
+CANON = f"rappid:@kody-w/echo-brainstem:{H64}"
 
 
-def test_v2_record_consolidates_and_lifts_kind():
-    rec = {"rappid": V2, "name": "Echo"}
-    out, changed = migrate_record(rec, "kody-w", "echo-brainstem")
-    assert changed
-    assert out["rappid"] == f"rappid:@kody-w/echo-brainstem:{H32}"  # hash preserved
-    assert out["kind"] == "twin"                                    # lifted into the record
-    assert out["_migrated_from"] == V2
-    assert out["name"] == "Echo"                                    # other fields untouched
+@pytest.fixture
+def migration_dir():
+    root = ROOT / "tests" / ".rappid-migration-test-data"
+    path = root / str(uuid.uuid4())
+    path.mkdir(parents=True)
+    try:
+        yield path
+    finally:
+        shutil.rmtree(path, ignore_errors=True)
+        try:
+            root.rmdir()
+        except OSError:
+            pass
 
 
-def test_v2_keeps_existing_kind_field():
-    rec = {"rappid": V2, "kind": "twin"}
-    out, _ = migrate_record(rec, "kody-w", "echo-brainstem")
-    assert out["kind"] == "twin" and "_migrated_from" in out
+@pytest.mark.parametrize("legacy", [V2, UUID, f"rappid:@kody-w/echo:{H32}"])
+def test_legacy_identity_requires_owner_action_without_proposal(legacy):
+    plan = plan_record(
+        {"rappid": legacy, "kind": "neighborhood"},
+        "kody-w",
+        "echo-brainstem",
+    )
+    assert plan["status"] == "OWNER_ACTION_REQUIRED"
+    assert plan["write-permitted"] is False
+    assert plan["authorization-verifier"] == "UNAVAILABLE"
+    assert plan["record-kind"] == "neighborhood"
+    assert plan["legacy-string-kind-authoritative"] is False
+    assert plan["proposed-rappid"] is None
+    assert plan["identity"]["classification"] == "legacy-quarantined"
+    assert plan["required-actions"]
 
 
-def test_bare_uuid_consolidates_with_location():
-    rec = {"rappid": UUID, "kind": "twin"}
-    out, changed = migrate_record(rec, "kody-w", "heimdall")
-    assert changed
-    assert out["rappid"] == f"rappid:@kody-w/heimdall:{UUID.replace('-', '')}"
-    assert out["_migrated_from"] == UUID
+def test_v2_kind_is_not_lifted_from_identity_string():
+    plan = plan_record({"rappid": V2}, "kody-w", "echo-brainstem")
+    observation = plan["identity"]["observation"]
+    assert observation["string_kind"] == "twin"
+    assert plan["record-kind"] is None
 
 
-def test_parent_rappid_is_canonicalized():
-    rec = {"rappid": V2,
-           "parent_rappid": "rappid:v2:operator:@kody-w/kody-w-twin:" + H32 + "@github.com/kody-w/kody-w-twin"}
-    out, _ = migrate_record(rec, "kody-w", "echo-brainstem")
-    assert out["parent_rappid"] == f"rappid:@kody-w/kody-w-twin:{H32}"
+def test_exact_identity_needs_no_migration_and_is_not_rewritten():
+    record = {"rappid": CANON, "kind": "twin", "name": "Echo"}
+    plan = plan_record(record, "kody-w", "echo-brainstem")
+    assert plan["status"] == "NO_ACTION"
+    assert plan["write-permitted"] is False
+    assert plan["identity"]["rappid"] == CANON
+    assert plan["proposed-rappid"] is None
 
 
-def test_idempotent_on_consolidated():
-    rec = {"rappid": f"rappid:@kody-w/echo-brainstem:{H32}", "kind": "twin"}
-    out, changed = migrate_record(rec, "kody-w", "echo-brainstem")
-    assert not changed
-    assert out == rec  # no _migrated_from, no rewrite
+def test_legacy_parent_is_quarantined_without_rewrite():
+    plan = plan_record({"rappid": CANON, "parent_rappid": UUID})
+    assert plan["status"] == "OWNER_ACTION_REQUIRED"
+    assert plan["parent-identity"]["classification"] == "legacy-quarantined"
+    assert plan["proposed-rappid"] is None
 
 
-def test_double_migration_is_stable():
-    rec = {"rappid": V2}
-    once, _ = migrate_record(rec, "kody-w", "echo-brainstem")
-    twice, changed2 = migrate_record(once, "kody-w", "echo-brainstem")
-    assert not changed2 and twice["rappid"] == once["rappid"]
+@pytest.mark.parametrize("parent", ["", 7, {"rappid": CANON}])
+def test_malformed_present_parent_requires_owner_action(parent):
+    plan = plan_record({"rappid": CANON, "parent_rappid": parent})
+    assert plan["status"] == "OWNER_ACTION_REQUIRED"
+    assert plan["write-permitted"] is False
+    assert plan["proposed-rappid"] is None
 
 
-def test_bare_uuid_parent_left_alone():
-    # a parent that is a bare UUID (no location) is left intact, not crashed on
-    rec = {"rappid": V2, "parent_rappid": UUID}
-    out, _ = migrate_record(rec, "kody-w", "echo-brainstem")
-    assert out["parent_rappid"] == UUID
+def test_plan_file_is_strict_and_never_changes_source(migration_dir):
+    path = migration_dir / "rappid.json"
+    original = json.dumps({"rappid": V2, "kind": "twin"}).encode()
+    path.write_bytes(original)
+
+    plan = plan_file(path, "kody-w", "echo-brainstem")
+
+    assert plan["status"] == "OWNER_ACTION_REQUIRED"
+    assert path.read_bytes() == original
+    assert list(migration_dir.iterdir()) == [path]
+
+
+def test_plan_file_rejects_duplicate_json_without_writes(migration_dir):
+    path = migration_dir / "rappid.json"
+    original = b'{"rappid":"first","rappid":"second"}'
+    path.write_bytes(original)
+    with pytest.raises(ValueError):
+        plan_file(path)
+    assert path.read_bytes() == original

@@ -1,128 +1,125 @@
-"""Tests for the consolidated rappid (`rappid:@<owner>/<slug>:<64hex>`) parser.
+"""Exact active-path and quarantined migration tests for door_address."""
 
-    python3 -m pytest tests/test_door_address.py -v
+from __future__ import annotations
 
-Covers: canonical parse + door URLs, reading the non-v2 legacy forms (bare UUID),
-the RETIREMENT of the v2 form (the live parser now refuses it — only the one-shot
-migrate_rappid tool still reads v2, to convert stragglers), canonicalization
-(idempotent), invalid-form rejection, kind/door_type sourcing, back-compat API.
-"""
 import sys
 from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 import door_address as da  # noqa: E402
 
-H64 = "15461d6259ec49bdaf8ea032571b3f0315461d6259ec49bdaf8ea032571b3f03"  # 64 hex
-H32 = "15461d6259ec49bdaf8ea032571b3f03"                                  # 32 hex (retired v2)
+
+H64 = "15461d6259ec49bdaf8ea032571b3f0315461d6259ec49bdaf8ea032571b3f03"
+H32 = "15461d6259ec49bdaf8ea032571b3f03"
 CANON = f"rappid:@kody-w/echo-brainstem:{H64}"
-V2 = f"rappid:v2:twin:@kody-w/echo-brainstem:{H32}@github.com/kody-w/echo-brainstem"  # RETIRED — live parser refuses
+V2 = (
+    f"rappid:v2:twin:@kody-w/echo-brainstem:{H32}"
+    "@github.com/kody-w/echo-brainstem"
+)
 UUID = "915f54e5-4c71-4de9-bba3-6604461d05e5"
 
 
-# ── parse ─────────────────────────────────────────────────────────────────────
-def test_parse_canonical():
-    p = da.parse_rappid(CANON)
-    assert p == {"form": "canonical", "owner": "kody-w", "slug": "echo-brainstem",
-                 "hash": H64, "hash_bits": 256, "kind": None}
-
-
-def test_parse_v2_now_refused():
-    # v2 is RETIRED — the live parser no longer reads it (STEAMROLL LEGACY).
-    with pytest.raises(da.InvalidRappidError):
-        da.parse_rappid(V2)
-
-
-def test_parse_uuid_legacy_has_no_location():
-    p = da.parse_rappid(UUID)
-    assert p["form"] == "uuid-legacy"
-    assert p["owner"] is None and p["slug"] is None
-    assert p["hash"] == UUID.replace("-", "")
-
-
-def test_parse_v2_variants_all_refused():
-    # Any v2 shape (even a well-formed one) is refused by the live parser now.
-    bad = f"rappid:v2:twin:@kody-w/echo-brainstem:{H32}@github.com/kody-w/OTHER"
-    with pytest.raises(da.InvalidRappidError):
-        da.parse_rappid(bad)
-
-
-@pytest.mark.parametrize("bad", ["", "nope", "rappid:@kody-w:abc", f"rappid:@k/s:{H64}x",
-                                 "rappid:@kody-w/echo:xyz", 123])
-def test_parse_invalid_rejected(bad):
-    with pytest.raises(da.InvalidRappidError):
-        da.parse_rappid(bad)
-
-
-# ── canonicalize ────────────────────────────────────────────────────────────────
-def test_canonicalize_idempotent():
+def test_parse_exact_rapp1_uses_core_shape():
+    assert da.parse_rappid(CANON) == {
+        "form": "canonical",
+        "owner": "kody-w",
+        "slug": "echo-brainstem",
+        "hash": H64,
+        "hash_bits": 256,
+        "kind": None,
+    }
     assert da.canonicalize_rappid(CANON) == CANON
 
 
-def test_canonicalize_v2_now_refused():
-    # canonicalize routes through the live parser, which no longer reads v2.
-    # v2 → canonical is now the exclusive job of tools/migrate_rappid.py.
+@pytest.mark.parametrize(
+    "bad",
+    [
+        "",
+        V2,
+        UUID,
+        f"rappid:@kody-w/echo-brainstem:{H32}",
+        f"rappid:@Kody-w/echo-brainstem:{H64}",
+        f"rappid:@kody_w/echo-brainstem:{H64}",
+        f"rappid:@kody-w/echo.brainstem:{H64}",
+        f"rappid:@kody-w/-echo:{H64}",
+        123,
+    ],
+)
+def test_normal_parser_and_canonicalizer_reject_non_section_6_1(bad):
     with pytest.raises(da.InvalidRappidError):
-        da.canonicalize_rappid(V2)
+        da.parse_rappid(bad)
+    with pytest.raises((da.InvalidRappidError, TypeError)):
+        da.canonicalize_rappid(bad)
 
 
-def test_canonicalize_uuid_needs_location():
+@pytest.mark.parametrize(
+    ("legacy", "form", "bits"),
+    [
+        (V2, "v2-legacy", 128),
+        (UUID, "uuid-legacy", 128),
+        (
+            f"rappid:@kody-w/echo-brainstem:{H32}",
+            "provisional-self-locating",
+            128,
+        ),
+    ],
+)
+def test_explicit_migration_api_preserves_but_never_resolves(legacy, form, bits):
+    observation = da.parse_legacy_for_migration(legacy)
+    report = observation.as_dict()
+    assert report["original"] == legacy
+    assert report["form"] == form
+    assert report["tail_bits"] == bits
+    assert "canonical" not in report
+    assert "urls" not in report
     with pytest.raises(da.InvalidRappidError):
-        da.canonicalize_rappid(UUID)  # bare UUID carries no owner/slug
-    assert da.canonicalize_rappid(UUID, owner="kody-w", slug="heimdall") == \
-        f"rappid:@kody-w/heimdall:{UUID.replace('-', '')}"
+        da.door_from_rappid(legacy)
 
 
-# ── door_from_rappid: self-location + URLs ──────────────────────────────────────
-def test_door_urls_from_canonical():
-    d = da.door_from_rappid(CANON)
-    assert d["owner"] == "kody-w" and d["repo"] == "echo-brainstem"
-    assert d["urls"]["repo"] == "https://github.com/kody-w/echo-brainstem"
-    assert d["urls"]["front"] == "https://kody-w.github.io/echo-brainstem/"
-    assert d["urls"]["identity"] == \
-        "https://raw.githubusercontent.com/kody-w/echo-brainstem/main/rappid.json"
-    assert d["canonical"] == CANON
-
-
-def test_v2_door_now_refused():
-    # A v2 string no longer resolves to a door on the live path — it must be
-    # migrated to canonical first (tools/migrate_rappid.py).
+def test_migration_api_is_not_a_second_exact_parser():
     with pytest.raises(da.InvalidRappidError):
-        da.door_from_rappid(V2)
+        da.parse_legacy_for_migration(CANON)
 
 
-def test_kind_from_record_arg_for_canonical():
-    assert da.door_from_rappid(CANON)["kind"] is None          # not in the string
-    assert da.door_from_rappid(CANON)["door_type"] is None
-    d = da.door_from_rappid(CANON, kind="neighborhood")        # supplied from the record
-    assert d["kind"] == "neighborhood" and d["door_type"] == "gate"
+def test_door_urls_resolve_only_exact_identity():
+    door = da.door_from_rappid(CANON)
+    assert door["owner"] == "kody-w"
+    assert door["repo"] == "echo-brainstem"
+    assert door["canonical"] == CANON
+    assert door["kind"] is None
+    assert door["urls"]["identity"] == (
+        "https://raw.githubusercontent.com/kody-w/"
+        "echo-brainstem/main/rappid.json"
+    )
 
 
-def test_invalid_kind_rejected():
+def test_kind_is_read_from_matching_identity_record_not_string():
+    record = {"rappid": CANON, "kind": "neighborhood"}
+    door = da.door_from_rappid(CANON, identity_record=record)
+    assert door["kind"] == "neighborhood"
+    assert door["door_type"] == "gate"
+
     with pytest.raises(da.InvalidRappidError):
-        da.door_from_rappid(CANON, kind="not-a-kind")
-
-
-def test_bare_uuid_door_raises_without_location():
+        da.door_from_rappid(
+            CANON,
+            identity_record={
+                "rappid": f"rappid:@kody-w/other:{'a' * 64}",
+                "kind": "twin",
+            },
+        )
     with pytest.raises(da.InvalidRappidError):
-        da.door_from_rappid(UUID)
+        da.door_from_rappid(CANON, identity_record={"kind": "not-a-kind"})
+    with pytest.raises(da.InvalidRappidError):
+        da.door_from_rappid(CANON, identity_record={"kind": "twin"})
 
 
-# ── back-compat consumer API (rebuild_estate etc. rely on these) ────────────────
-def test_owner_repo_helper():
+def test_owner_helpers_enforce_lowercase_grammar():
     assert da.owner_repo_from_rappid(CANON) == ("kody-w", "echo-brainstem")
-
-
-def test_door_dict_has_back_compat_keys():
-    d = da.door_from_rappid(CANON, kind="twin")
-    for k in ("rappid", "owner", "repo", "kind", "door_type", "urls"):
-        assert k in d, f"consumers rely on door['{k}']"
-
-
-def test_estate_url():
-    assert da.estate_url("kody-w") == \
+    assert da.estate_url("kody-w") == (
         "https://raw.githubusercontent.com/kody-w/rapp-estate/main/estate.json"
-    with pytest.raises(da.InvalidRappidError):
-        da.estate_url("bad/handle")
+    )
+    for invalid in ("Kody-w", "kody_w", "bad/handle", "-bad"):
+        with pytest.raises(da.InvalidRappidError):
+            da.estate_url(invalid)

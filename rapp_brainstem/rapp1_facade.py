@@ -18,14 +18,13 @@ from pathlib import Path
 from typing import Any, Callable, Iterator, Mapping, Sequence
 
 from flask import Flask, Response, request
+from rapp1_core import canonical_bytes, strict_loads
 from werkzeug.exceptions import RequestEntityTooLarge
 
 
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 7073
 GRAIL_PORT = 7071
-MAX_REQUEST_BYTES = 1_048_576
-MAX_JSON_DEPTH = 64
 
 # These names are candidates awaiting the authenticated RAPP/1 section 13
 # owner registry. They are explicitly NOT registered error codes.
@@ -128,35 +127,6 @@ def _error_response(code: str) -> Response:
     return _http_response(_error_body(code), 422)
 
 
-def _reject_duplicate_members(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-    value: dict[str, Any] = {}
-    for key, member in pairs:
-        if key in value:
-            raise ValueError("duplicate JSON member")
-        value[key] = member
-    return value
-
-
-def _reject_non_json_constant(value: str) -> None:
-    raise ValueError(f"non-JSON numeric constant: {value}")
-
-
-def _enforce_json_depth(value: Any) -> None:
-    stack = [(value, 0)]
-    while stack:
-        current, parent_depth = stack.pop()
-        if type(current) is dict:
-            depth = parent_depth + 1
-            if depth > MAX_JSON_DEPTH:
-                raise ValueError("JSON exceeds maximum depth")
-            stack.extend((member, depth) for member in current.values())
-        elif type(current) is list:
-            depth = parent_depth + 1
-            if depth > MAX_JSON_DEPTH:
-                raise ValueError("JSON exceeds maximum depth")
-            stack.extend((member, depth) for member in current)
-
-
 def _parse_request() -> tuple[str, str | None, str | None]:
     if request.mimetype != "application/json":
         raise FacadeRefusal("malformed-request")
@@ -164,19 +134,8 @@ def _parse_request() -> tuple[str, str | None, str | None]:
     if not raw:
         raise FacadeRefusal("malformed-request")
     try:
-        text = raw.decode("utf-8")
-        data = json.loads(
-            text,
-            object_pairs_hook=_reject_duplicate_members,
-            parse_constant=_reject_non_json_constant,
-        )
-        _enforce_json_depth(data)
-    except (
-        UnicodeDecodeError,
-        ValueError,
-        json.JSONDecodeError,
-        RecursionError,
-    ) as exc:
+        data = strict_loads(raw)
+    except (TypeError, ValueError, RecursionError) as exc:
         raise FacadeRefusal("malformed-request") from exc
     if type(data) is not dict:
         raise FacadeRefusal("malformed-request")
@@ -643,7 +602,6 @@ def create_app(
         database_path if database_path is not None else default_database_path()
     )
     app = Flask("rapp1_facade", static_folder=None)
-    app.config["MAX_CONTENT_LENGTH"] = MAX_REQUEST_BYTES
     app.extensions["rapp1_facade_store"] = store
 
     @app.post("/chat")
@@ -657,10 +615,12 @@ def create_app(
             canonical_request = {"user_input": user_input}
             if session_id is not None:
                 canonical_request["session_id"] = session_id
+            if idempotency_key is not None:
+                canonical_request["idempotency_key"] = idempotency_key
             reserved = store.reserve(
                 session_id,
                 idempotency_key,
-                _json_bytes(canonical_request),
+                canonical_bytes(canonical_request),
             )
         except FacadeRefusal as refusal:
             return _error_response(refusal.code)

@@ -37,9 +37,13 @@ import time
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_REPO_ROOT))
 sys.path.insert(0, str(_REPO_ROOT / "tools"))
 
 from path_opacity import OPACITY_REGEX, audit_paths  # noqa: E402
+from rapp1_core import parse_rappid, strict_loads  # noqa: E402
+from rapp1_core.errors import IdentityError  # noqa: E402
+from rapp1_core.identity import validate_owner  # noqa: E402
 
 
 _SCHEMA = "rapp-private-estate/1.0"
@@ -152,6 +156,18 @@ def _build_readme(github_handle: str) -> bytes:
     ).encode()
 
 
+def _load_operator_identity(path: Path) -> tuple[str, str]:
+    value = strict_loads(path.read_bytes())
+    if type(value) is not dict:
+        raise ValueError("operator identity record must be an object")
+    rappid = value.get("rappid")
+    parsed = parse_rappid(rappid)
+    kind = value.get("kind")
+    if kind != "operator":
+        raise ValueError("operator identity record kind must be 'operator'")
+    return str(parsed), kind
+
+
 def _normalized_state_hash(meta_bytes: bytes, file_paths: list[str]) -> str:
     """Compute the private estate's commitment hash.
 
@@ -226,7 +242,20 @@ def init_private_estate(github_handle: str, dry_run: bool = False) -> dict:
 
     Idempotent. Returns an envelope with the repo URL + commitment hash.
     """
+    try:
+        github_handle = validate_owner(github_handle)
+    except (IdentityError, TypeError) as exc:
+        return {"ok": False, "error": f"invalid exact owner: {exc}"}
     slug = f"{github_handle}/rapp-estate-private"
+
+    rappid_path = Path(os.path.expanduser("~/.brainstem/rappid.json"))
+    try:
+        operator_rappid, operator_kind = _load_operator_identity(rappid_path)
+    except (IdentityError, OSError, TypeError, ValueError) as exc:
+        return {
+            "ok": False,
+            "error": f"exact operator identity required before initialization: {exc}",
+        }
 
     # 1. Ensure the operator has an HMAC secret
     if not dry_run:
@@ -235,15 +264,6 @@ def init_private_estate(github_handle: str, dry_run: bool = False) -> dict:
         secret_present = True
     else:
         secret_present = _SECRET_PATH.exists()
-
-    # 2. Get operator's rappid for meta.json's owner field
-    rappid_path = Path(os.path.expanduser("~/.brainstem/rappid.json"))
-    operator_rappid = ""
-    if rappid_path.exists():
-        try:
-            operator_rappid = json.loads(rappid_path.read_text()).get("rappid", "")
-        except Exception:
-            pass
 
     # 3. Create the repo if missing
     repo_created = False
@@ -254,6 +274,7 @@ def init_private_estate(github_handle: str, dry_run: bool = False) -> dict:
                 "would_create": slug, "private": True,
                 "secret_present": secret_present,
                 "operator_rappid": operator_rappid,
+                "operator_kind": operator_kind,
                 "next_step": f"re-run without --dry-run to create {slug} as PRIVATE",
             }
         ok, msg = _gh_create_private(slug, f"{github_handle}'s RAPP private estate (Article XLVIII)")
@@ -283,6 +304,7 @@ def init_private_estate(github_handle: str, dry_run: bool = False) -> dict:
             "would_write": sorted(files.keys()),
             "secret_present": secret_present,
             "operator_rappid": operator_rappid,
+            "operator_kind": operator_kind,
         }
 
     # 6. PUT each file
@@ -318,6 +340,7 @@ def init_private_estate(github_handle: str, dry_run: bool = False) -> dict:
         "secret_present": True,
         "local_map_path": str(_LOCAL_MAP_PATH),
         "operator_rappid": operator_rappid,
+        "operator_kind": operator_kind,
         "next_step": (
             f"Beacon should be updated with private_estate_pointer=https://github.com/{slug}, "
             f"private_estate_commitment={commitment[:16]}…, private_door_count=0. "

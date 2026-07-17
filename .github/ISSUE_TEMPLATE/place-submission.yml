@@ -79,8 +79,8 @@ body:
     id: submitter
     attributes:
       label: Your GitHub handle (optional)
-      description: Recorded as the nominator. We'll credit you in the planted mirror's lineage if approved.
-      placeholder: "@your-handle"
+      description: Lowercase alphanumeric and single hyphens only; recorded as the nominator.
+      placeholder: "your-handle"
 
   - type: checkboxes
     id: eligibility
@@ -118,11 +118,11 @@ body:
         **What happens next**
 
         - A reviewer will check this submission against the rules above.
-        - Approved submissions get planted via `plant.sh` — a public mirror at
-          `kody-w.github.io/<slug>` with `kind: place` and your nominated
-          location metadata.
-        - Anyone can then visit that front door, scan the QR, tether across
-          devices, or build agents/twins for that place.
+        - Approved submissions remain queued. Planting currently fails closed
+          until an authenticated RAPP/1 planter emits a strict structured
+          result; see `RAPP1_STATUS.md`.
+        - No repository, identity, registry entry, or page is created while
+          that owner-action blocker remains.
         - Rejected submissions get a comment explaining which rule failed.
 
         Thanks for growing the network.

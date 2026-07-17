@@ -74,6 +74,15 @@ Only the estate owner can close these dependencies:
 No contributor or automation may fabricate signatures, keys, registry
 authority, or a re-anchor to make these blockers appear closed.
 
+## Active-path residual
+
+Approved-place planting is fail-closed before repository creation. The retained
+legacy planter is contained with HTTP 410 semantics, and no authenticated
+RAPP/1 replacement currently emits a strict machine-readable plant result.
+`.github/workflows/plant-approved-place.yml` may be re-enabled only after such a
+producer returns an exact §6.1 rappid and URL as structured data rather than a
+human log.
+
 ## Immutable grail boundary
 
 The files pinned by [`KERNEL_PIN.json`](./KERNEL_PIN.json) remain read-only and

@@ -69,14 +69,18 @@ case "$LINEAGE_STATUS" in
         exit 1
         ;;
     variant_initialized)
-        echo "WARNING: this variant is already initialized. Re-running will"
-        echo "         overwrite its rappid with a fresh one — descendants"
-        echo "         that point at the current rappid will lose their link."
-        read -p "Continue? [y/N] " confirm
-        case "$confirm" in
-            y|Y|yes|Yes) ;;
-            *) echo "aborted."; exit 1 ;;
-        esac
+        EXISTING_RAPPID="$(python3 - <<'PYEOF'
+import json
+from rapp1_core import parse_rappid
+
+with open("rappid.json", encoding="utf-8") as handle:
+    value = json.load(handle)["rappid"]
+print(parse_rappid(value))
+PYEOF
+)"
+        echo "UNCHANGED: this variant is already initialized."
+        echo "           Reusing mint-once identity: $EXISTING_RAPPID"
+        exit 0
         ;;
     lineage_mismatch|no_rappid|error:*)
         echo "FAIL: lineage check returned: $LINEAGE_STATUS"
@@ -98,23 +102,33 @@ VARIANT_NAME="${VARIANT_NAME:-$DEFAULT_NAME}"
 # ── Generate rappid ──────────────────────────────────────────────────────
 
 # Canonical RAPP §6.1 rappid: self-locating `rappid:@<owner>/<slug>:<64hex>`.
-# owner/slug derived from this repo's git remote and canonicalized to the grammar;
+# owner/slug derived from this repo's git remote and validated against the grammar;
 # the 64-hex tail is Hb("rapp/1:rappid", uuid4) — keyless, domain-separated, full
 # 256-bit (never a 32-hex UUID, never sha256(name)). The variant `kind`/role lives
 # in the rappid.json record (set below), not the string.
-_VAR_OWNER="$(git config --get remote.origin.url 2>/dev/null | sed -nE 's#.*[/:]([^/]+)/[^/]+(\.git)?$#\1#p')"
-_VAR_OWNER="${_VAR_OWNER:-anon}"
-_VAR_REPO="$(git config --get remote.origin.url 2>/dev/null | sed -nE 's#.*/([^/]+)\.git$#\1#p; s#.*/([^/]+)$#\1#p' | head -1)"
-_VAR_REPO="${_VAR_REPO:-$VARIANT_NAME}"
-NEW_RAPPID="$(python3 -c "
-import uuid, hashlib, re, sys
-def canon(s):
-    s = re.sub(r'[^a-z0-9]+', '-', s.lower()).strip('-')
-    return s or 'x'
-owner, slug = canon(sys.argv[1]), canon(sys.argv[2])
-tail = hashlib.sha256(b'rapp/1:rappid\n' + uuid.uuid4().bytes).hexdigest()
-print(f'rappid:@{owner}/{slug}:{tail}')
-" "$_VAR_OWNER" "$_VAR_REPO")"
+_REMOTE_URL="$(git config --get remote.origin.url 2>/dev/null || true)"
+NEW_RAPPID="$(python3 - "$_REMOTE_URL" <<'PYEOF'
+import sys
+from rapp1_core import mint_keyless_rappid
+
+url = sys.argv[1].rstrip("/").removesuffix(".git")
+for prefix in (
+    "https://github.com/",
+    "http://github.com/",
+    "git@github.com:",
+    "ssh://git@github.com/",
+):
+    if url.startswith(prefix):
+        location = url[len(prefix):]
+        break
+else:
+    raise SystemExit("FAIL: origin is not a recognized GitHub repository URL")
+parts = location.split("/")
+if len(parts) != 2:
+    raise SystemExit("FAIL: origin does not identify one owner/repository")
+print(mint_keyless_rappid(parts[0], parts[1]))
+PYEOF
+)"
 NOW="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 PARENT_COMMIT="$(curl -fsSL "https://api.github.com/repos/kody-w/RAPP/commits/main" 2>/dev/null \
