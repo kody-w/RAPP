@@ -31,16 +31,21 @@ Semantic, runtime, and cryptographic depth was applied where relevant to each
 artifact's role. This full audit is separate from the named checker:
 `rapp_check.py` is a shallow checker and is insufficient by itself. Its output
 must not be substituted for the full file/archive review and contextual ledger.
+The existing verifier report is scoped exactly to commit
+`f71810db3259fea533b4112c1df300d4b0dc781c` and has SHA-256
+`9ac01e164dc0eb820d5f53afed82f53c501059c18a8bf66b8b23c533af728ce7`.
 
 Complete review coverage and classification do not establish full RAPP/1
 conformance or authenticated acceptance. The migration and owner-action
 blockers below remain open.
 
-A fresh post-remediation audit on **2026-07-17** reviewed **691/691 tracked
-paths**. The increase is repository growth after the dated 640-path baseline,
-not a correction to that baseline. The post-audit inventory uses an explicit
-current-document ledger and separately classifies immutable history, generated
-artifacts, archives, and external mirrors.
+A fresh target-owned post-remediation inventory on **2026-07-17** counted
+**691/691 tracked paths** and reviewed the requested POST documentation scope.
+The increase is repository growth after the dated 640-path baseline, not a
+correction to that baseline. This is not a rerun of `verify-rapp-files`, and
+the original report's totals are not used to reconcile the 691-path tree. The
+post-docs ledger separately records current documents, immutable prepared-clone
+history, generated observations, archives, and external mirrors.
 
 Maintainer evidence is retained in Copilot session
 `9ac7ec28-fb92-4452-a8c9-477a2363685d`; no machine-local audit path is part of

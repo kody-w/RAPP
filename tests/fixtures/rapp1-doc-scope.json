@@ -1,11 +1,106 @@
 {
   "schema_version": "rapp1-documentation-scope/2.0",
   "audit": {
-    "source": "verify-rapp-files",
+    "source": "post-docs-target-ledger",
     "report_date": "2026-07-17",
     "baseline_tracked_paths": 640,
     "post_audit_tracked_paths": 691,
     "path_set_digest": "sha256(sorted UTF-8 paths joined with newline, including final newline)",
+    "provenance": {
+      "existing_report": {
+        "source": "verify-rapp-files",
+        "report_sha256": "9ac01e164dc0eb820d5f53afed82f53c501059c18a8bf66b8b23c533af728ce7",
+        "scope_commit": "f71810db3259fea533b4112c1df300d4b0dc781c",
+        "tracked_path_count": 640,
+        "scope_note": "Existing 640-path report only; it was not rerun and its totals do not reconcile the later 691-path tree.",
+        "definitions": {
+          "current-live": "an active implementation/declaration/document that readers, tooling, or runtime may treat as current authority",
+          "R1-DOC-01": "current documentation re-specifies or advertises a retired identity/frame/wire/egg/protocol contract instead of subordinating itself to root SPEC.md",
+          "excluded_from_stale_live": "Genuine dated history, fixtures, generated observations, immutable snapshots, and unrelated material were not treated as stale-live merely for containing retired vocabulary."
+        },
+        "R1-DOC-01": {
+          "expected_count": 56,
+          "current_live_count": 53,
+          "mirror_count": 3,
+          "path_set_sha256": "7b1c758ee0fc0cc89b6161821fce079cff9c083aa37c46991a0a6aee09bb87ed",
+          "current_live_path_set_sha256": "ffc717314bce93b9c65f51896c51473948d3986423e02e94efd6f20854df2c82",
+          "mirror_path_set_sha256": "0b60a5d764cf307c0a76b8ef19525b65282961d79cdebabfe73c3064fc2b8719",
+          "current_live_paths": [
+            "CLAUDE.md",
+            "CONSTITUTION.md",
+            "ECOSYSTEM.md",
+            "ECOSYSTEM_MAP.md",
+            "HERO_USECASE.md",
+            "KERNEL_TREE.md",
+            "LEXICON.md",
+            "MASTER_PLAN.md",
+            "OSI.md",
+            "README.md",
+            "SURVIVAL.md",
+            "cave/cubbies/kody-w/front_door.md",
+            "cave/rappid.json",
+            "cave/rapplications/rapp-installer/HATCH.md",
+            "community_rapp/skill.md",
+            "pages/_site/index.json",
+            "pages/about/anatomy.html",
+            "pages/docs/AGENTS.md",
+            "pages/docs/ESTATE_SPEC.md",
+            "pages/docs/NEIGHBORHOOD_EGG_SPEC.md",
+            "pages/docs/PUBLIC_PRIVATE_BOUNDARY.md",
+            "pages/docs/QR_FRONT_GATE.md",
+            "pages/docs/ROADMAP.md",
+            "pages/docs/SPEC.md",
+            "pages/docs/SUBSTRATE_FEDERATION.md",
+            "pages/docs/TWIN_LIFECYCLE_SPEC.md",
+            "pages/docs/VERSIONS.md",
+            "pages/docs/rapplication-sdk.md",
+            "pages/docs/skill.md",
+            "pages/tutorials/hatch-egg.html",
+            "pages/vault/Architecture/Boot Sidecar — Integrating Utils Without Modifying the Kernel.md",
+            "pages/vault/Architecture/Layered Mirrors and the Public-Private Body Stack.md",
+            "pages/vault/Architecture/Neighborhood Egg — Snapshot and Hatch.md",
+            "pages/vault/Architecture/Rappid.md",
+            "pages/vault/Architecture/Rapplications Are Organisms.md",
+            "pages/vault/Architecture/Signed Releases and Variant Attestation.md",
+            "pages/vault/Architecture/Surfaces — Mobile, Watch, Voice.md",
+            "pages/vault/Architecture/The Federated Twin Egg Hatcher Pattern.md",
+            "pages/vault/Architecture/The Swarm Estate.md",
+            "pages/vault/Architecture/Twin-Patterns.md",
+            "pages/vault/Foundations/Tier 1 — Local Brainstem.md",
+            "pages/vault/Manifestos/Chat Is The Only Wire.md",
+            "rapp_brainstem/CLAUDE.md",
+            "rapp_brainstem/CONSTITUTION.md",
+            "rapp_brainstem/README.md",
+            "rapp_swarm/README.md",
+            "skill.md",
+            "specs/ECOSYSTEM_SPEC.md",
+            "specs/README.md",
+            "specs/SPEC.md",
+            "specs/ecosystem-spec.json",
+            "specs/skill.md",
+            "tools/sim/observe.py"
+          ],
+          "mirror_paths": [
+            "cave/rapplications/rapp-installer/README.md",
+            "cave/rapplications/rapp-installer/installer/community_rapp/skill.md",
+            "cave/rapplications/rapp-installer/manifest.json"
+          ]
+        },
+        "superseding_boundaries": {
+          "generated": [
+            "pages/_site/index.json",
+            "specs/ecosystem-spec.json"
+          ],
+          "immutable_prepared_clone": [
+            "cave/rapplications/rapp-installer/HATCH.md",
+            "cave/rapplications/rapp-installer/README.md",
+            "cave/rapplications/rapp-installer/installer/community_rapp/skill.md",
+            "cave/rapplications/rapp-installer/manifest.json"
+          ]
+        }
+      },
+      "post_scope": "Fresh target-owned 691-path closure ledger derived from the requested POST categories and current ownership boundaries; not represented as a verify-rapp-files rescan."
+    },
     "categories": {
       "POST-STALE-LIVE-DOC": {
         "expected_count": 60,
@@ -274,6 +369,7 @@
       "pages/release/release-notes.html",
       "pages/release/roadmap.html",
       "pages/vault/Architecture/Mirror Spec.md",
+      "pages/vault/Architecture/Rappid.md",
       "pages/vault/Architecture/Surfaces — Mobile, Watch, Voice.md",
       "pages/vault/Architecture/The Kernel-as-God-SPEC.md",
       "pages/vault/Architecture/The Species DNA Archive — rapp_kernel.md",
@@ -288,6 +384,16 @@
       "pages/docs/NEIGHBORHOOD_EGG_SPEC.md",
       "pages/docs/SPEC.md",
       "pages/tutorials/hatch-egg.html",
+      "pages/vault/Architecture/Boot Sidecar — Integrating Utils Without Modifying the Kernel.md",
+      "pages/vault/Architecture/Layered Mirrors and the Public-Private Body Stack.md",
+      "pages/vault/Architecture/Neighborhood Egg — Snapshot and Hatch.md",
+      "pages/vault/Architecture/Rapplications Are Organisms.md",
+      "pages/vault/Architecture/Signed Releases and Variant Attestation.md",
+      "pages/vault/Architecture/The Federated Twin Egg Hatcher Pattern.md",
+      "pages/vault/Architecture/The Swarm Estate.md",
+      "pages/vault/Architecture/Twin-Patterns.md",
+      "pages/vault/Foundations/Tier 1 — Local Brainstem.md",
+      "rapp_swarm/README.md",
       "specs/SPEC.md",
       "specs/skill.md"
     ],
@@ -295,18 +401,32 @@
       "CONSTITUTION.md",
       "RAPP1_AUTHORITY.json",
       "RAPP1_STATUS.md",
+      "cave/rappid.json",
+      "cave/rapplications/rapp-installer/HATCH.md",
+      "cave/rapplications/rapp-installer/README.md",
+      "cave/rapplications/rapp-installer/installer/community_rapp/skill.md",
+      "cave/rapplications/rapp-installer/manifest.json",
       "pages/_site/index.json",
       "pages/about/ecosystem.html",
-      "rapp_brainstem/CONSTITUTION.md"
+      "rapp_brainstem/CONSTITUTION.md",
+      "specs/ecosystem-spec.json",
+      "tools/sim/observe.py"
     ]
   },
   "exclusion_reasons": {
     "CONSTITUTION.md": "constitutional invariant source",
     "RAPP1_AUTHORITY.json": "machine-readable authority source",
     "RAPP1_STATUS.md": "authority/status record checked by dedicated tests",
+    "cave/rappid.json": "generated identity declaration; owner-authorized regeneration required",
+    "cave/rapplications/rapp-installer/HATCH.md": "immutable prepared-clone payload",
+    "cave/rapplications/rapp-installer/README.md": "immutable prepared-clone payload",
+    "cave/rapplications/rapp-installer/installer/community_rapp/skill.md": "immutable prepared-clone mirror payload",
+    "cave/rapplications/rapp-installer/manifest.json": "immutable prepared-clone payload",
     "pages/_site/index.json": "generated navigation metadata; category rules validate it directly",
     "pages/about/ecosystem.html": "generated visualization mirror",
-    "rapp_brainstem/CONSTITUTION.md": "brainstem constitutional invariant source"
+    "rapp_brainstem/CONSTITUTION.md": "brainstem constitutional invariant source",
+    "specs/ecosystem-spec.json": "generated non-authoritative ecosystem observation",
+    "tools/sim/observe.py": "code-owned simulation tool; documentation gate records but does not modify it"
   },
   "category_rules": {
     "POST-MARKETING-LEGACY": {

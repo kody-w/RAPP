@@ -43,9 +43,9 @@ class Rapp1DocumentationTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("documentation gate passed", result.stdout)
 
-    def test_fresh_verify_rapp_files_ledger_is_exact(self) -> None:
+    def test_fresh_post_ledger_is_exact_and_distinct_from_baseline(self) -> None:
         audit = self.fixture["audit"]
-        self.assertEqual(audit["source"], "verify-rapp-files")
+        self.assertEqual(audit["source"], "post-docs-target-ledger")
         self.assertEqual(audit["report_date"], "2026-07-17")
         self.assertEqual(audit["baseline_tracked_paths"], 640)
         self.assertEqual(audit["post_audit_tracked_paths"], 691)
@@ -78,6 +78,35 @@ class Rapp1DocumentationTests(unittest.TestCase):
                 name,
             )
 
+    def test_existing_verify_report_provenance_is_exact(self) -> None:
+        report = self.fixture["audit"]["provenance"]["existing_report"]
+        self.assertEqual(report["source"], "verify-rapp-files")
+        self.assertEqual(
+            report["report_sha256"],
+            "9ac01e164dc0eb820d5f53afed82f53c501059c18a8bf66b8b23c533af728ce7",
+        )
+        self.assertEqual(
+            report["scope_commit"], "f71810db3259fea533b4112c1df300d4b0dc781c"
+        )
+        self.assertEqual(report["tracked_path_count"], 640)
+        self.assertIn("not rerun", report["scope_note"])
+        self.assertNotIn("report_path", report)
+
+        r1_doc = report["R1-DOC-01"]
+        current = r1_doc["current_live_paths"]
+        mirrors = r1_doc["mirror_paths"]
+        self.assertEqual((len(current), len(mirrors)), (53, 3))
+        self.assertEqual(len(set(current + mirrors)), 56)
+        for field, paths in (
+            ("current_live_path_set_sha256", current),
+            ("mirror_path_set_sha256", mirrors),
+            ("path_set_sha256", current + mirrors),
+        ):
+            payload = "".join(f"{path}\n" for path in sorted(paths))
+            self.assertEqual(
+                r1_doc[field], hashlib.sha256(payload.encode()).hexdigest()
+            )
+
     def test_every_post_path_has_one_disposition(self) -> None:
         disposition = {}
         for classification, paths in self.fixture["classifications"].items():
@@ -101,6 +130,31 @@ class Rapp1DocumentationTests(unittest.TestCase):
             any(escaped in error and "no disposition" in error for error in errors),
             errors,
         )
+
+    def test_original_r1_doc_path_cannot_escape_fixture(self) -> None:
+        fixture = copy.deepcopy(self.fixture)
+        original = fixture["audit"]["provenance"]["existing_report"]["R1-DOC-01"]
+        escaped = "CONSTITUTION.md"
+        self.assertIn(escaped, original["current_live_paths"])
+        for paths in fixture["classifications"].values():
+            if escaped in paths:
+                paths.remove(escaped)
+        fixture["exclusion_reasons"].pop(escaped)
+        errors = self.checker._validate_fixture(fixture)
+        self.assertTrue(
+            any(
+                escaped in error and "original R1-DOC-01" in error
+                for error in errors
+            ),
+            errors,
+        )
+
+    def test_superseding_boundaries_remain_excluded(self) -> None:
+        report = self.fixture["audit"]["provenance"]["existing_report"]
+        excluded = set(self.fixture["classifications"]["excluded"])
+        boundaries = report["superseding_boundaries"]
+        self.assertLessEqual(set(boundaries["generated"]), excluded)
+        self.assertLessEqual(set(boundaries["immutable_prepared_clone"]), excluded)
 
     def test_category_count_and_digest_are_fail_closed(self) -> None:
         fixture = copy.deepcopy(self.fixture)

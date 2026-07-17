@@ -106,8 +106,8 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
     audit = fixture.get("audit")
     if not isinstance(audit, dict):
         return errors + ["fixture: audit must be an object"]
-    if audit.get("source") != "verify-rapp-files":
-        errors.append("fixture: audit source must be verify-rapp-files")
+    if audit.get("source") != "post-docs-target-ledger":
+        errors.append("fixture: audit source must be post-docs-target-ledger")
     if audit.get("baseline_tracked_paths") != 640:
         errors.append("fixture: dated baseline must remain 640 paths")
     if audit.get("post_audit_tracked_paths") != 691:
@@ -124,6 +124,77 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
             "fixture: post-audit tracked-path count does not match git ls-files "
             f"({len(tracked_paths)} != {audit.get('post_audit_tracked_paths')})"
         )
+
+    provenance = audit.get("provenance", {})
+    existing_report = provenance.get("existing_report", {})
+    if existing_report.get("source") != "verify-rapp-files":
+        errors.append("fixture: existing report source must be verify-rapp-files")
+    expected_report_fields = {
+        "report_sha256": (
+            "9ac01e164dc0eb820d5f53afed82f53c501059c18a8bf66b8b23c533af728ce7"
+        ),
+        "scope_commit": "f71810db3259fea533b4112c1df300d4b0dc781c",
+        "tracked_path_count": 640,
+    }
+    for field, expected in expected_report_fields.items():
+        if existing_report.get(field) != expected:
+            errors.append(f"fixture: existing report {field} does not match evidence")
+    definitions = existing_report.get("definitions", {})
+    expected_definitions = {
+        "current-live": (
+            "an active implementation/declaration/document that readers, tooling, "
+            "or runtime may treat as current authority"
+        ),
+        "R1-DOC-01": (
+            "current documentation re-specifies or advertises a retired "
+            "identity/frame/wire/egg/protocol contract instead of subordinating "
+            "itself to root SPEC.md"
+        ),
+        "excluded_from_stale_live": (
+            "Genuine dated history, fixtures, generated observations, immutable "
+            "snapshots, and unrelated material were not treated as stale-live "
+            "merely for containing retired vocabulary."
+        ),
+    }
+    if definitions != expected_definitions:
+        errors.append("fixture: original stale-live definitions do not match evidence")
+
+    original_r1_doc = existing_report.get("R1-DOC-01", {})
+    original_current = original_r1_doc.get("current_live_paths", [])
+    original_mirrors = original_r1_doc.get("mirror_paths", [])
+    original_all = original_current + original_mirrors
+    original_counts = (
+        original_r1_doc.get("expected_count"),
+        original_r1_doc.get("current_live_count"),
+        original_r1_doc.get("mirror_count"),
+    )
+    if original_counts != (56, 53, 3):
+        errors.append("fixture: original R1-DOC-01 counts must remain 56/53/3")
+    if len(set(original_all)) != 56:
+        errors.append("fixture: original R1-DOC-01 paths must be 56 unique paths")
+    for field, paths in (
+        ("path_set_sha256", original_all),
+        ("current_live_path_set_sha256", original_current),
+        ("mirror_path_set_sha256", original_mirrors),
+    ):
+        if original_r1_doc.get(field) != _path_set_digest(paths):
+            errors.append(f"fixture: original R1-DOC-01 {field} mismatch")
+
+    boundaries = existing_report.get("superseding_boundaries", {})
+    expected_generated = {
+        "pages/_site/index.json",
+        "specs/ecosystem-spec.json",
+    }
+    expected_immutable = {
+        "cave/rapplications/rapp-installer/HATCH.md",
+        "cave/rapplications/rapp-installer/README.md",
+        "cave/rapplications/rapp-installer/installer/community_rapp/skill.md",
+        "cave/rapplications/rapp-installer/manifest.json",
+    }
+    if set(boundaries.get("generated", [])) != expected_generated:
+        errors.append("fixture: superseding generated boundary drifted")
+    if set(boundaries.get("immutable_prepared_clone", [])) != expected_immutable:
+        errors.append("fixture: immutable prepared-clone boundary drifted")
 
     categories = audit.get("categories")
     required_categories = {
@@ -197,6 +268,12 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
                 errors.append(
                     f"fixture: {category_name} path has no disposition: {path}"
                 )
+    for path in original_all:
+        if path not in seen:
+            errors.append(f"fixture: original R1-DOC-01 path has no disposition: {path}")
+    for path in expected_generated | expected_immutable:
+        if seen.get(path) != "excluded":
+            errors.append(f"fixture: superseding boundary must be excluded: {path}")
 
     for path in fixture.get("required_files", []):
         if not (ROOT / path).is_file():
