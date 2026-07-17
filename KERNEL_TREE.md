@@ -1,8 +1,16 @@
 # RAPP kernel tree
 
+> **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
+> wire, eggs, registry, trust, and protocol evolution, follow
+> [`RAPP1_AUTHORITY.json`](./RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](./RAPP1_STATUS.md). This inventory may describe legacy
+> files, but only the pinned standard defines current protocol artifacts.
+
 > **Looking for the human-facing entry point?** The [**Kernel hub**](https://kody-w.github.io/RAPP/pages/kernel.html) is the unified reading order for the whole canon — trilogy, law, reference, specs, vault Reading Paths. This page (KERNEL_TREE.md) is the file-by-file *inventory* of what's in this repo; the hub is the *narrative* that explains how it all fits.
 
-This repo (`kody-w/RAPP`) is a **mirror** of the RAPP grail kernel at [`kody-w/rapp-installer`](https://github.com/kody-w/rapp-installer). Its purpose is to show the **full kernel tree end-to-end in one repo** — every file the kernel ships, plus the mirror's own optional surfaces (Pages site, audience docs, drift-check tests).
+This repo (`kody-w/RAPP`) mirrors the immutable RAPP grail at
+[`kody-w/rapp-installer@brainstem-v0.6.9`](https://github.com/kody-w/rapp-installer/tree/brainstem-v0.6.9).
+The exact pin—not a moving branch—governs the three pinned bytes.
 
 Per the [Mirror Spec](./pages/vault/Architecture/Mirror%20Spec.md), only **three** files must be byte-identical to grail. Everything else is the mirror's prerogative — RAPP carries the full grail tree at its grail paths plus a few mirror-only additions (`pages/`, `tests/mirror-drift.sh`, `rappid.json`).
 
@@ -10,7 +18,7 @@ The full-bodied **Rappter distro** (organs, senses, lineage/bonding lib, rich UI
 
 ## The complete grail tree
 
-### 🔒 Sacred files (Mirror Spec — byte-identical to grail forever)
+### 🔒 Sacred files (byte-identical to the exact grail pin)
 
 | Path | Purpose |
 |---|---|
@@ -18,7 +26,9 @@ The full-bodied **Rappter distro** (organs, senses, lineage/bonding lib, rich UI
 | `rapp_brainstem/VERSION` | Kernel semver. |
 | `rapp_brainstem/agents/basic_agent.py` | Agent ABI. Base class every single-file agent extends. |
 
-Drift check: `bash tests/mirror-drift.sh`
+`tests/mirror-drift.sh` is a legacy moving-main diagnostic and is not
+authoritative for the immutable pin. Validate against the authority/KERNEL_PIN
+recorded tag and digests.
 
 ### 🧠 Tier 1 — Brainstem (local Python server)
 
@@ -40,7 +50,7 @@ Drift check: `bash tests/mirror-drift.sh`
 | `rapp_brainstem/agents/context_memory_agent.py` | Reads persistent memory storage; injects per-turn context. |
 | `rapp_brainstem/agents/manage_memory_agent.py` | Writes persistent memory. |
 | `rapp_brainstem/agents/hacker_news_agent.py` | Fetches + summarizes HN front page. |
-| `rapp_brainstem/agents/egg_hatcher_agent.py` | Universal `.egg` cartridge router — introspects `manifest.schema` / `manifest.type` and dispatches per kind (organism, rapplication, session, neighborhood, estate). Multi-scale dispatch under the `rapp-egg/2.0` family. See [[The Federated Twin Egg Hatcher Pattern]]. |
+| `rapp_brainstem/agents/egg_hatcher_agent.py` | Legacy cartridge router under migration. Its retired `rapp-egg/2.0` dispatch is not current RAPP/1 §9 acceptance and must not be presented as such. |
 | `rapp_brainstem/agents/twin_agent.py` | Twin federation primitive. Actions: `summon`, `hatch`, `boot`, `stop`, `list`, `chat`, `inspect`, `lay_egg`, `history`, `lineage`. Federates every workspace under `~/.rapp/twins/<hash>/` through one tool. See [[The Federated Twin Egg Hatcher Pattern]]. |
 | `rapp_brainstem/agents/experimental/copilot_research_agent.py` | Experimental Copilot-research agent. |
 
@@ -51,7 +61,7 @@ Twin and neighborhood eggs hatch into well-known runtime directories under the o
 | Path | Purpose |
 |---|---|
 | `~/.rapp/twins/<hash>/` | Canonical per-twin workspace. Holds the hatched `rappid.json` + `soul.md` + `agents/` for each twin. The kernel's built-in `twin_agent.py` (see above) lists, boots, stops, and chats with every workspace under this folder. `<hash>` is the 32-hex portion of a v2 rappid or a bare UUID for legacy v1.x twins. |
-| `~/.rapp/neighborhoods/<hash>/` | Canonical per-neighborhood roster. Hatched from a `rapp-egg/2.0` neighborhood cartridge. |
+| `~/.rapp/neighborhoods/<hash>/` | Application-local roster path used by the legacy runtime. Retired `rapp-egg/2.0` cartridges are migration inputs; a current neighborhood egg is the verified RAPP/1 §9 `neighborhood` variant. |
 
 These directories are *not* committed to this repo — they are produced at runtime by the generic `twin_egg_hatcher_agent.py` (or the in-kernel `egg_hatcher_agent.py`) when an egg is hatched. See [[The Federated Twin Egg Hatcher Pattern]] for the end-to-end flow.
 
@@ -107,7 +117,7 @@ These directories are *not* committed to this repo — they are produced at runt
 
 | Path | Purpose |
 |---|---|
-| `skill.md` | Top-level agent skill spec (LLM-consumable). |
+| `skill.md` | Historically named, non-runtime host-onboarding runbook; not a RAPP agent or capability. |
 | `tests/test_installer.sh` | Grail's installer test. |
 | `tests/mirror-drift.sh` | **Mirror-only.** Verifies the three sacred files match grail main on GitHub. |
 
@@ -121,7 +131,7 @@ These directories are *not* committed to this repo — they are produced at runt
 | `README.md` | Repo README. |
 | `CONSTITUTION.md` | Protocol governance (peer of README, at root). |
 | `LICENSE`, `LICENSE-DOCS` | Licenses. |
-| `rappid.json` | **Mirror-only.** Species root identity — every RAPP descendant's `parent_rappid` chain ends here. |
+| `rappid.json` | **Mirror-only legacy application record.** Current identity and anchor resolution follow RAPP/1 §§6/13; `parent_rappid` is not a trust chain. |
 | `pages/` | **Mirror-only.** Rappter audience-facing site (Mirror Spec explicitly lists `pages/` as free-to-change). |
 
 ## The distro layer (not in this repo)
@@ -149,4 +159,6 @@ The distro never modifies the three sacred kernel files; it composes onto the ke
 bash tests/mirror-drift.sh
 ```
 
-Three `OK` lines = the kernel mirror is byte-identical to grail main. Anything else = drift, restore from grail.
+The legacy script's three `OK` lines compare its configured source only.
+Authoritative equality means the three files match the exact
+`kody-w/rapp-installer@brainstem-v0.6.9` pin; never restore from moving main.

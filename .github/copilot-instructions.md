@@ -1,5 +1,12 @@
 # Copilot Instructions — RAPP Brainstem
 
+> **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
+> wire, eggs, registry, trust, and protocol evolution, follow
+> [`RAPP1_AUTHORITY.json`](../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../RAPP1_STATUS.md). Runtime facts below do not redefine
+> protocol. The `KERNEL_PIN.json` bytes from
+> `kody-w/rapp-installer@brainstem-v0.6.9` are read-only.
+
 ## Architecture
 
 RAPP Brainstem is a progressive AI agent platform using a biological metaphor (see `CONSTITUTION.md` for architectural principles):
@@ -8,7 +15,9 @@ RAPP Brainstem is a progressive AI agent platform using a biological metaphor (s
 2. **Spinal Cord** (`azuredeploy.json`, `deploy.sh`) — Azure deployment. ARM template creates Function App, Azure OpenAI, Storage, App Insights. All Entra ID auth.
 3. **Nervous System** (`MSFTAIBASMultiAgentCopilot_*.zip`) — Power Platform solution for Copilot Studio. Connects the Azure Function to Teams and M365 Copilot.
 
-Everything else in the repo root (install scripts, index.html, docs/) is onboarding infrastructure. `community_rapp/` contains public skill gateways for private backend repos.
+Everything else in the repo root (install scripts, index.html, docs/) is
+onboarding infrastructure. `community_rapp/` contains non-runtime host
+onboarding manifests, not RAPP agents or capabilities.
 
 ### Brainstem internals
 
@@ -64,7 +73,7 @@ No linter or type-checker is configured.
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/` | GET | Serves `index.html` (chat UI) |
-| `/chat` | POST | `{"user_input": "...", "conversation_history": [], "session_id": "..."}` |
+| `/chat` | POST | RAPP/1 §8: required `user_input`; optional `session_id`, `idempotency_key` |
 | `/health` | GET | Status, model, loaded agents, token state |
 | `/login` | POST | Start GitHub device code OAuth flow |
 | `/login/poll` | POST | Poll for completed device code auth |
@@ -83,6 +92,10 @@ No linter or type-checker is configured.
 | `/voice/import` | POST | Import `voice.zip` from upload |
 | `/version` | GET | Server version (reads `VERSION` file) |
 | `/debug/auth` | GET | Auth diagnostics |
+
+Only `/chat` is the RAPP synchronous wire. The other routes are
+application-local UI/administration surfaces and do not add protocol
+capabilities. See RAPP/1 §8 for the exact 200 and 422 response bodies.
 
 ## Writing Agents
 
@@ -123,5 +136,8 @@ class MyAgent(BasicAgent):
 - **Config via `.env`** — `GITHUB_TOKEN`, `GITHUB_MODEL`, `SOUL_PATH`, `AGENTS_PATH`, `PORT`, `VOICE_ZIP_PASSWORD` (see `.env.example`)
 - **Local-first storage**: `local_storage.py` stores to `.brainstem_data/` on disk, mirroring the CommunityRAPP Azure File Storage layout (`shared_memories/memory.json` for shared, `memory/{guid}/user_memory.json` for per-user)
 - **Soul file** (`soul.md`): System prompt loaded as the first message in every conversation. Users customize by editing it or pointing `SOUL_PATH` to their own
-- **Skill-based onboarding**: `skill.md` uses the Moltbook pattern — YAML frontmatter, autonomous execution steps, ⏸️ pause points for user input, state saved to `~/.config/brainstem/state.json`
+- **Host-onboarding runbook**: the non-runtime `skill.md` uses YAML
+  frontmatter, autonomous execution steps, ⏸️ pause points for user input, and
+  state saved to `~/.config/brainstem/state.json`. It is not a RAPP agent or
+  protocol capability.
 - **Single-file server**: All server logic lives in `brainstem.py` — auth, routing, LLM calls, agent orchestration. Keep it that way.

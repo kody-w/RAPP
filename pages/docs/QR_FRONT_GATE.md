@@ -1,7 +1,16 @@
 # Front Gate Trio — QR + Holocard + Incantation (Mandatory)
 
-**Status:** mandatory as of 2026-05-11.
-**Schema:** `rapp-front-gate-qr/1.0` (QR) + `rapp-card/1.1.2` (holocard) + `rapp-front-gate-incantation/1.0` (incantation).
+> **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
+> wire, eggs, registry, trust, and protocol evolution, follow
+> [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md). A QR invite is current only when
+> it is the signed RAPP/1 §9 `invite` variant accepted through §13 trust.
+
+**Status:** product front-gate convention; protocol acceptance remains RAPP/1.
+**Application metadata:** `rapp-front-gate-qr/1.0` (QR) +
+`rapp-card/1.1.2` (holocard) +
+`rapp-front-gate-incantation/1.0` (incantation). These are not RAPP protocol
+schemas.
 **Spec layer:** ECOSYSTEM_MAP §6 (Implementation map) — bound under Article XLVII (substrate-agnostic federation) and Article LI (front-gate mandates).
 
 ## Three summoning surfaces, one front gate
@@ -10,7 +19,9 @@ Every planted neighborhood (and operator twin) front gate surfaces THREE redunda
 
 1. **QR code** — point a camera at it (scan from any tether).
 2. **Holocard** — visual card identity rendered from `card.json` (recognition + provenance at a glance).
-3. **7-word incantation** — memorable mnemonic derived from the rappid's first 64 bits via 10-bits-per-word against the 1024-word `MNEMONIC_WORDS` dictionary (spin into any tether's Dial wheel; no network needed for resolution itself).
+3. **7-word incantation** — application mnemonic for a candidate rappid. It is
+   not identity, proof, or a trust anchor; resolve the complete §6 rappid and
+   §13 state before use.
 
 All three resolve to the same rappid. The QR is for casual visitors with cameras; the holocard is for recognition and provenance; the incantation is the hero use case — memorize 7 words, summon anywhere.
 
@@ -34,7 +45,11 @@ A URL that resolves to enough information for any tether to tether to this neigh
 https://<host>/<repo>/.well-known/neighborhood.egg
 ```
 
-The egg is a `brainstem-egg/2.3-neighborhood` JSON invite carrying `rappid` + canonical URLs (`neighborhood_json`, `tether_url`, `homepage`). The tether scans → fetches the egg → reads `neighborhood_json` → loads the manifest → hot-loads `tether_requirements.agents`. A server-side brainstem reads the same egg via `@rapp/egg_hatcher` → joins via two-tier estate per Article XLVI.
+The URL points to a canonical JSON RAPP/1 §9 `invite` manifest:
+`schema:"rapp/1-egg"`, `variant:"invite"`, `contents:[]`, and payload
+`{target_rappid, target_url, target_kind:"neighborhood"}`. Its `sig` is
+required and must verify with an estate-owner key resolved through §13. Only
+after full §9.3 validation may an application follow `target_url`.
 
 **Acceptable** (manifest-direct):
 
@@ -42,7 +57,9 @@ The egg is a `brainstem-egg/2.3-neighborhood` JSON invite carrying `rappid` + ca
 https://<host>/<repo>/neighborhood.json
 ```
 
-Lighter; works only for the tether path (no server-side hatch flow).
+This lighter application discovery link is not a signed RAPP invite. Treat its
+contents as untrusted until normal identity, registry, and artifact
+verification succeeds.
 
 ---
 
@@ -136,8 +153,11 @@ The richer commons example at `kody-w/rapp-commons/index.html` adds branding, st
 
 Any tether that claims to dial neighborhoods MUST handle a scanned QR whose payload is:
 
-1. **An `.egg` URL** (preferred) — fetch the JSON, read `neighborhood_json` (or `neighborhood_url` as fallback), then continue as if that URL were the scan.
-2. **A `neighborhood.json` URL** — load directly as the manifest.
+1. **An `.egg` URL** (preferred) — fetch the exact §9 `invite`, verify its
+   required estate-owner signature and all manifest rules, then follow
+   `payload.target_url`.
+2. **A `neighborhood.json` URL** — application discovery only; never treat it
+   as authenticated invite acceptance.
 3. **A bare URL with `?neighborhood=<URL>` or `?egg=<URL>` query params** — extract the param and resolve as above.
 
 The `tether.html` at `kody-w/RAPP/pages/tether.html` implements all three (see `setNeighborhoodUrl` and `resolveNeighborhoodUrl` in that file). Other tethers should match.

@@ -1,5 +1,11 @@
 # RAPP — Master Plan
 
+> **Current RAPP/1 authority (rev-5).** This plan governs strategy, but
+> canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+> evolution are governed by [`RAPP1_AUTHORITY.json`](./RAPP1_AUTHORITY.json)
+> and the claim limits in [`RAPP1_STATUS.md`](./RAPP1_STATUS.md). Strategic
+> intent never overrides the pinned byte-level standard.
+
 > *"The world hasn't been ready so I've just been waiting and planning."*
 > — the operator, 2026-05-08
 
@@ -13,13 +19,22 @@ It is published openly so future-us, future contributors, and anyone joining the
 
 So, in short, the plan to date is:
 
-1. **Build a kernel and freeze it.** One Flask process. No build step. No frameworks. Drop it on any computer that can run Python and it works. The kernel is DNA — universal, drop-in replaceable, never edited again.
+1. **Build a kernel and freeze it.** The immutable grail is exactly
+   `kody-w/rapp-installer@brainstem-v0.6.9`; its `brainstem.py`,
+   `agents/basic_agent.py`, and `VERSION` bytes never follow moving latest and
+   are never edited locally.
 
 2. **Make agents the only unit of extension.** One file, one class, one `perform()`. Never plugins, skills, routines, loops, cassettes, capabilities, or any synonym. If you want to teach the AI something new, you write an `agent.py`. That is the entire vocabulary.
 
 3. **Plant the AI as a public GitHub repo.** The repo IS the organism — its identity (`rappid`), its voice (`soul.md`), its body (`agents/`), its memory (`.brainstem_data/`), its skin (`index.html` + `doorman/`). All committed files. No server runs anywhere. GitHub Pages serves the surface; the visitor's browser runs the surface; the visitor's own GitHub Copilot subscription pays for the inference.
 
-4. **Use eggs to share organisms device-to-device, even offline.** A `.egg` is a self-describing cartridge of the whole organism, SHA-256-sealed against tampering. Trade eggs via QR scan, WebRTC tether, USB, attached to PRs, dropped in Issues, or fetched from the public egg-hub. They hatch identically on any kernel that supports the schema. Two phones in the woods with no internet can do this. That is not a feature; that is a contract. **(2026-05-10 — the .egg family unified.** The same `.egg` extension now carries five kinds: organism, rapplication, session, neighborhood, estate. One universal `egg_hatcher_agent.py` introspects the manifest and routes by kind. The `session` kind makes a *live multi-participant tether* portable — see [`pages/vbrainstem.html`](./pages/vbrainstem.html) and [SPEC §18.10–§18.11](./pages/docs/SPEC.md). The `estate` kind makes the *operator's whole multi-tier identity* portable across substrates. Same `.egg`, five different things you can sneakernet.**) **(2026-05-18 — multi-scale generalization.** The cartridge format graduated to `rapp-egg/2.0`, whose manifest declares a `scale` field. Every level of the platform is now portable under one extension: `agent`, `twin`, `brainstem`, `neighborhood`, `swarm`, `factory`, `industry`, `estate`. One generic hatcher (`twin_egg_hatcher_agent.py`) dispatches by `scale` — no per-scale tooling. See [[The Federated Twin Egg Hatcher Pattern]] for the end-to-end pattern.**)
+4. **Use eggs to share organisms device-to-device, even offline.** A current
+   `.egg` follows RAPP/1 §9: `schema:"rapp/1-egg"`, a registered variant,
+   domain-separated hashes, deterministic storage, and required signature
+   verification. Two phones in the woods must still be able to trade one.
+   **Historical context:** the 2026-05-10 five-kind family and the 2026-05-18
+   `rapp-egg/2.0` scale design record earlier shipped approaches. Those schema
+   strings are retired migration inputs, not current emission instructions.
 
 5. **Use everyone else's hardware to run the network.** GitHub has already paid for the global CDN (`raw.githubusercontent.com`), the auth system (`gh auth`), the durable async mailbox (Issues), the consent gate (Pull Requests), and the edge endpoints (`<owner>.github.io/<repo>/`). We do not build a network. We use the one already running. Operators run brainstems on their own machines. The network is the union of those machines plus the public substrate they all share.
 
@@ -33,9 +48,18 @@ So, in short, where this is going:
 
 2. **Estates mesh through shared neighborhoods. The mesh is the metropolis.** Just like physical urban zoning is not declared top-down — it emerges from which communities which people join for which purposes — the AI metropolis emerges from which neighborhoods which operators subscribe to for which outcomes. We do not plan the city. We give it the substrate and the shape so it can build itself.
 
-3. **Workflows that need privacy use the public gate / private companion split.** The gate is anonymous-friendly — identity, trade card, lineage, a "request access" join path. The companion is auth-gated — roster, neighborhood-shared agents, decisions, runbooks, twin chat. The trust anchor is GitHub collaborator status on the private companion. **Any team in any company can plug into the network without exposing their workflow.** That is the unlock that makes this work for enterprises, families, and friend groups in the same shape.
+3. **Workflows that need privacy use the public gate / private companion
+   split.** GitHub collaborator status may gate application content, but it is
+   not the RAPP trust anchor. Authenticated protocol acceptance requires the
+   signed, monotonic RAPP/1 §13 registry rooted in an out-of-band estate-owner
+   rappid.
 
-4. **AIs travel along the network in four modes.** *Cold* (the full organism cartridge moves to a new device). *Warm* (the agents are fetched and run remotely; state stays home). *Soul* (parallel hatched dimensions live independent offline lives, reconciled later by the Dream Catcher). *Message* (only the thought travels — over WebRTC tether for live, over GitHub Issue for async). Identity persists across all four modes because the address (`rappid`) is content-addressed in the seed repo, not registered with anyone who can shut it down.
+4. **AIs travel along the network in four modes.** *Cold* (the full organism
+   cartridge moves), *Warm* (agents move while state stays home), *Soul*
+   (parallel offline dimensions reconcile later), and *Message* (only a
+   thought travels). Identity persists because RAPP/1 §6 mints its tail once
+   and §13 records lawful trust and succession—not because a name or repo
+   location derives identity.
 
 5. **The user is in the loop async, not synchronous.** Agents do work in zones across the metropolis on behalf of their operator. Work products attribute back to the operator's `rappid`. Results land in the operator's estate inbox. The user checks back when they want to — the network does not stop because they went to bed. **The network is the engine. Once it has enough nodes, it builds itself out.**
 
@@ -53,11 +77,11 @@ When the road forks and we don't know which way to go, **come back here**. Ask: 
 |---|---|---|
 | A kernel change | …add or modify lines in `brainstem.py` / `basic_agent.py` / `VERSION` | **Breaks Part 1 §1.** Reject. Write an agent or an organ instead. |
 | A new abstraction between agents and the LLM | …introduce a "skill", "plugin", "routine", "loop" terminology | **Breaks Part 1 §2.** Reject. It is just an agent. |
-| A central server, registry, marketplace, or signaling broker | …add infra beyond GitHub + PeerJS-handshake + the existing Cloudflare auth-proxy | **Breaks Part 1 §5.** Reject. Use the substrate that exists. |
-| A separate identity layer or PKI | …add private keys, certificates, tokens not derived from `gh auth` | **Breaks Part Deux §3.** Reject. GitHub collaborator status IS the auth. |
+| A central application server, marketplace, or signaling broker | …add infra beyond GitHub + PeerJS-handshake + the existing Cloudflare auth-proxy | **Breaks Part 1 §5.** Reject. This does not prohibit the required signed RAPP/1 §13 registry. |
+| A trust shortcut | …treat `gh auth`, collaborator status, or an unsigned file as protocol authentication | **Breaks RAPP/1 §§10/13.** Reject. Verify the signed registry and anchored key succession. |
 | A workflow that doesn't survive offline | …require live network for the user-visible operation | **Breaks Part Deux §4.** Reject. Soul travel + cached fallback is mandatory. |
 | A design that requires every member online | …block the network when a peer is offline | **Breaks Part Deux §5.** Reject. Async loop-back is the user contract. |
-| A feature flag, backwards-compat shim, or "temporary" toggle | …leave dead code paths behind for half-released features | **Breaks ANTIPATTERNS §3.** Reject. Bump the schema and ship cleanly. |
+| A feature flag, perpetual legacy shim, or "temporary" toggle | …leave dead code paths behind for half-released features | **Breaks RAPP/1 §12 and ANTIPATTERNS §3.** Reject. Migrate totally and retire the old form. |
 
 Things this plan deliberately does **NOT** decide. They are intentionally left to operators:
 - Which model runs in any given brainstem (BYO).
@@ -106,13 +130,16 @@ This is the *why-axis*. The *how-axis* is documented in:
 - [`CONSTITUTION.md`](./CONSTITUTION.md) — repo governance + sacred constraints
 - [`HERO_USECASE.md`](./HERO_USECASE.md) — the canonical scenarios that prove the plan works
 - [`ECOSYSTEM.md`](./ECOSYSTEM.md) — how the pieces fit together (file layout, schemas, surfaces, network modes)
-- [`NEIGHBORHOOD_PROTOCOL.md`](./NEIGHBORHOOD_PROTOCOL.md) — wire-level rules for cross-organism communication
+- [`NEIGHBORHOOD_PROTOCOL.md`](./NEIGHBORHOOD_PROTOCOL.md) — historical and
+  application federation adapters; RAPP/1 §8 is the current wire
 - [`ANTIPATTERNS.md`](./ANTIPATTERNS.md) — what we will never do
 - [`COMMERCIAL.md`](./COMMERCIAL.md) — the commercial layer on top of the free protocol
 - [`TRADEMARK.md`](./TRADEMARK.md) — the wordmark + how it's used
 - [`pages/vault/`](./pages/vault/) — long-form essays explaining the *why* behind major decisions
 
-When those documents and this one disagree, **this one wins**. They tell us how to execute the plan; this one IS the plan.
+Within product strategy, this plan explains the why-axis. It never wins a
+conflict with `RAPP1_AUTHORITY.json`, `RAPP1_STATUS.md`, or Constitution
+Article LV.
 
 ---
 

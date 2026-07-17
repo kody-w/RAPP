@@ -1,8 +1,17 @@
 # SUBSTRATE_FEDERATION — The Four Substrates of the RAPP Network
 
-> **Schema:** `rapp-network-beacon/1.1` · **Status:** Constitutional (Article XLVII + .5/.5.1/.5.2/.5.3) · **Authority:** this file · **First shipped:** 2026-05-09
+> **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
+> wire, eggs, registry, trust, and protocol evolution, follow
+> [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md). Carrier choice never changes the
+> RAPP/1 §7/§8 envelope, §9 egg, or §13 trust requirements.
 
-This is the canonical spec for **how RAPP brainstems find each other across any medium**: GitHub raw (the default), LAN HTTP + Bonjour (shared LAN), AirDrop'd egg cartridges (no shared network), and sneakernet file:// (zero connectivity at all). One protocol, four substrates, same JSON shapes throughout.
+> **Application metadata:** `rapp-network-beacon/1.1` · **Status:** carrier
+> architecture, subordinate to RAPP/1 · **First shipped:** 2026-05-09
+
+This document describes application discovery across several media. It does
+not define RAPP protocol structure: every medium carries the same exact §7/§8
+forms and §9 eggs, and authenticated acceptance always uses §§10/13.
 
 If you're writing a sniffer, an advertiser, an egg importer, or any code that maps from "I want to find peers" → "they showed up in my catalog" — this is the contract.
 
@@ -22,9 +31,12 @@ The four substrates form a ladder of decreasing connectivity requirements:
 | 4 | Sneakernet via `file://` | **Zero — just byte exchange** | XLVII.5.3 | `tools/import_peer_egg.py` (extract + add to local seed) |
 | 5 | WebRTC tether (operator-pair, ephemeral) | Internet (broker for handshake only); P2P after | XLIX (Twin) + SPEC §18.11 | `pages/vbrainstem.html` (QR-pair → ECDSA P-256 + 6-digit safety code → DTLS-SRTP data channel) |
 
-> **Note (2026-05-10):** Substrate #5 (WebRTC tether) carries **live multi-participant sessions** — both peers see the same evolving transcript, the host runs the LLM, the joiner relays through. The session itself is portable as a `brainstem-egg/2.3-session` cartridge (egg-cartridge family — see [`SPEC.md` §18.10–§18.11](./SPEC.md)), so a tether session can be dropped onto Substrate #3 (AirDrop) or #4 (file://) for offline replay. The **egg-cartridge family** (`organism` / `rapplication` / `session` / `neighborhood` / `estate`) is the substrate-agnostic transport unit across all five substrates.
+> **Historical note (2026-05-10), superseded structurally.** The contained
+> WebRTC surface emitted a retired `brainstem-egg/2.3-session` cartridge.
+> Current portability uses the registered RAPP/1 §9 variants; changing carrier
+> never changes the manifest or verification rules.
 
-**Same protocol on all four:**
+**Same application discovery metadata on all four:**
 - Same `rapp-network-beacon/1.1` JSON shape for beacons
 - Same `rapp-estate/1.1` JSON shape for estates
 - Same `door_from_rappid()` parser (per Article XLVI.5)
@@ -94,19 +106,28 @@ python3 tools/sniff_network.py --via bonjour
 # ★ rappter1   doors:  5 created  (substrate: lan-http)  [🔒 xlviii]
 ```
 
-**Canonical TXT-record schema** (advertisers must populate; sniffers may parse without fetching the beacon if they only need rappid + paths):
+**Application TXT-record convention** (advertisers may publish this discovery
+metadata; consumers still validate §6 and resolve §13 before use):
 
 ```
-rappid       = the operator's personal rappid (operator-kind v2)
+rappid       = the operator's exact RAPP/1 §6 rappid
 github       = the operator's github handle (informational; LAN doesn't require it)
 beacon_path  = "/.well-known/rapp-network.json"
 estate_path  = "/estate.json"
 schema       = "rapp-network-beacon/1.1"
-spec_version = "rapp-protocol/1.0"
 indexable    = "true" | "false"
 ```
 
-### §3.1 — LAN-SSH as a neighborhood-egg carrier (shipping, v1)
+## Historical pre-RAPP/1 carrier appendix (superseded)
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
+
+The remaining carrier procedures record the shipped legacy implementation.
+Their old egg layouts, schema strings, synthesized beacons, and acceptance
+steps are migration evidence only. A current carrier transports a valid
+RAPP/1 §9 egg unchanged and never bypasses §§6, 10, or 13 verification.
+
+### §3.1 — LAN-SSH as a neighborhood-egg carrier (historical v1)
 
 Substrate 2 also covers **direct SSH-tar transport** for full-state cartridges, used by the neighborhood-egg snapshot/hatch pattern ([[Neighborhood Egg — Snapshot and Hatch]], [`NEIGHBORHOOD_EGG_SPEC.md`](./NEIGHBORHOOD_EGG_SPEC.md)).  Bonjour + LAN HTTP advertises and discovers; LAN-SSH moves the bytes.  Same substrate, different carrier.
 
@@ -292,3 +313,5 @@ The platform's local-first promise survives every centralized-substrate failure 
 ---
 
 *One protocol. Four substrates. Federation walks whatever lights up.*
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

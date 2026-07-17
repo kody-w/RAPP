@@ -1,14 +1,24 @@
 # RAPP Ecosystem Map
 
-> Single canonical synthesis of the RAPP ecosystem. **Start every session here.**
-> Schema: `rapp-ecosystem-map/1.0`. Append-only. Derivative — if it disagrees with `MASTER_PLAN.md` or `CONSTITUTION.md`, the spec wins and this map is wrong; fix the map.
+> **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
+> wire, eggs, registry, trust, and protocol evolution, follow
+> [`RAPP1_AUTHORITY.json`](./RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](./RAPP1_STATUS.md). This map inventories product concepts
+> and migration work; it does not register protocol schemas or establish trust.
+
+> Current product-map synthesis of the RAPP ecosystem. **Start every session
+> here, then follow the authority links above.** Its
+> `rapp-ecosystem-map/1.0` label is application metadata, not a protocol
+> schema. If this map disagrees with the pinned RAPP/1 rev-5 authority, this
+> map is wrong.
 >
 > *Human-facing companion: the [**Kernel hub**](https://kody-w.github.io/RAPP/pages/kernel.html) surfaces this map alongside the trilogy, the law, the specs, and the vault Reading Paths in one rendered page.*
 
 ## How to read this
 
 1. **§11 first if you're about to DO anything** — the decision table answers "before I do X, what should I check?"
-2. **§5 if you need a schema** — every `rapp-*/N.M` and `brainstem-*/N.M` schema with its defining doc.
+2. **§5 if you encounter a schema token** — it separates the tiny current
+   RAPP/1 surface from application-local and legacy declaration inventory.
 3. **§6 if you need an existing implementation** — file path → spec section it satisfies.
 4. **§13 if your code seems to disagree with the spec** — known drift gaps with citations.
 5. **§12 antipatterns are LAW** — re-read before any non-trivial commit.
@@ -19,11 +29,17 @@
 
 When two docs disagree, this is the precedence:
 
-1. **`MASTER_PLAN.md`** wins on strategic direction. *"When those documents and this one disagree, this one wins. They tell us how to execute the plan; this one IS the plan."* (MASTER_PLAN.md L114)
-2. **`CONSTITUTION.md`** governs the repo (38+ articles).
-3. **Spec docs** (HERO_USECASE.md, ECOSYSTEM.md, NEIGHBORHOOD_PROTOCOL.md, ANTIPATTERNS.md, SURVIVAL.md, COMMERCIAL.md, TRADEMARK.md, LEXICON.md, DEFINITION_OF_DONE.md, TEMPLATE.md) execute the plan.
-4. **`pages/vault/`** — the *why* essays (Constitution Article XXIII).
-5. **Code** comments and runtime behavior — last because code rots; the spec is canonical.
+1. **`RAPP1_AUTHORITY.json` + its exact rev-5 pin**, as adopted by
+   Constitution Article LV, govern RAPP/1 structure.
+2. **`RAPP1_STATUS.md`** governs what this repository may currently claim;
+   the repository is not yet fully conformant.
+3. **`CONSTITUTION.md`** governs repository policy, subordinate to Article
+   LV's structural authority; `MASTER_PLAN.md` and current teaching docs
+   execute that authority.
+4. **`pages/vault/`, dated decisions, and release notes** preserve history and
+   rationale but do not override current protocol.
+5. **Code and generated observations** report implementation state; behavior
+   does not create structural authority.
 
 ---
 
@@ -69,7 +85,7 @@ Same primitives at every scale: **rappid + door + card + tether + trust scope.**
                ↓
 ┌──────────────────────── Twin (organism) ──────────────────┐
 │  ONE planted seed (one rappid)                             │
-│  rappid: UUIDv4 in rappid.json (never regenerated)         │
+│  rappid: RAPP/1 §6 self-locating form; tail minted once    │
 │  door: front-door index.html + doorman/                    │
 │  card: card.json — ECOSYSTEM §3                            │
 │  tether: ECOSYSTEM §4 surfaces                             │
@@ -97,11 +113,11 @@ Same primitives at every scale: **rappid + door + card + tether + trust scope.**
 
 | Primitive | One-line meaning | Defined in | Schema(s) |
 |---|---|---|---|
-| **rappid** | UUIDv4 identity, minted once at plant, never regenerated | ECOSYSTEM §3, NEIGHBORHOOD_PROTOCOL §3 | `rapp/1` (current; formerly `rapp-rappid/2.0`, `rapp-rappid/1.1`) |
+| **rappid** | `rappid:@owner/slug:<64hex>`; tail domain-minted once from UUIDv4 octets or SPKI, never name-derived | RAPP/1 §6 | grammar, not a schema token |
 | **door** | Public surface URL where this thing is reachable | ECOSYSTEM §4 (front door + doorman); NEIGHBORHOOD_PROTOCOL §1 (Pages URL) | (no separate schema; URL is the contract) |
 | **card** | Trade-card / introduction view | ECOSYSTEM §3 (`card.json`) | `rapp-card/1.0` |
-| **tether** | The four channel types — WebRTC, Issues, PRs, raw fetch | NEIGHBORHOOD_PROTOCOL §5a–d | `rapp-twin-chat/1.0` (over tether) |
-| **trust scope** | Personal / Neighborhood / Public swarm | NEIGHBORHOOD_PROTOCOL §2 + §7 | `rapp-public-facets/1.0` |
+| **tether** | Application transports that must map to an allowed RAPP wire form | RAPP/1 §8; historical channel notes in NEIGHBORHOOD_PROTOCOL | exact `/chat` or verified asynchronous §7 frame |
+| **trust scope** | Application authorization labels, distinct from protocol authentication | RAPP/1 §§10/13; app policy in NEIGHBORHOOD_PROTOCOL | signed registry and anchored key succession govern RAPP trust |
 
 ---
 
@@ -129,30 +145,36 @@ Same primitives at every scale: **rappid + door + card + tether + trust scope.**
 
 ---
 
-## §5 — Schema quick reference
+## §5 — Protocol quick reference and observed declarations
 
-Every `rapp-*/N.M` and `brainstem-*/N.M-variant` currently emitted in the repo. If it isn't here, search before defining a new one (ANTIPATTERNS §3 — bump versions, no shims).
+The only current protocol tokens in this inventory are the RAPP/1 §7 frame
+`spec:"rapp/1"` and §9 egg `schema:"rapp/1-egg"`. The §6 rappid is a grammar;
+the §8 wire and §13 signed registry are exact contracts, not permission to
+mint another schema name. Every other row is an **observed application-local
+declaration or legacy migration input**, not protocol authority. An emitter or
+defining document cannot register it; registration follows RAPP/1 §13.
 
 | Schema | Purpose | Defined in | Emitted by |
 |---|---|---|---|
-| `rapp-agent/1.0` | Agent module manifest (function-calling shape) | pages/docs/SPEC.md | every `*_agent.py` metadata dict |
-| `rapp-rappid/1.1` | Organism birth certificate (legacy schema) | ECOSYSTEM §3 | legacy — no active emitter; read-compat only, retained per Art. XXXIV.5 (never regenerate) |
-| `rapp/1` | Birth certificate + kernel + bonds (current; formerly `rapp-rappid/2.0`) | CONSTITUTION; vault/Architecture/Rappid | utils/bond.py, rappid.json, installer/plant.sh, twin_agent.py `_summon` |
+| `rapp-agent/1.0` | Application-local agent module manifest | superseded pages/docs/SPEC.md | legacy/runtime metadata; not a RAPP protocol schema |
+| `rapp-rappid/1.1` | Legacy organism birth certificate | historical ECOSYSTEM §3 | bounded §12 migration input; never current emission |
+| `rapp/1` | **Current exact eleven-key frame token** | pinned RAPP/1 §7 | target for conformant frame producers/consumers |
+| `rapp/1-egg` | **Current exact seven-member egg manifest token** | pinned RAPP/1 §9 | target for conformant egg producers/consumers |
 | `rapp-card/1.0` | Trade-card override — the operator-set **subset** layered inside the full `rappcards/1.1.2` `card.json` holocard (SPEC.md §5); distinct layers, not competing schemas | ECOSYSTEM §3 | card.json (operator-set) |
-| `rapp-frame/1.0` | Mutation event (content-addressed sha256, prev_hash chain) | ECOSYSTEM §3, HERO_USECASE §2 | installer/plant.sh::appendFrame → localStorage `rapp_frames_v1`; ascended egg packs `data/frames.json` |
+| `rapp-frame/1.0` | Legacy mutation event with retired chain shape | historical ECOSYSTEM §3 | migration-only browser emitter; not RAPP/1 §7 |
 | `brainstem-egg/2.0` | Legacy twin egg | utils/egg.py | (legacy) |
-| `brainstem-egg/2.1` | Variant repo cartridge | CLAUDE.md egg formats | utils/bond.py, twin_agent.py |
-| `brainstem-egg/2.2-organism` | Full instance cartridge (rappid + soul + .env + agents + organs + senses + services + .brainstem_data) | ECOSYSTEM §3, §8 | utils/bond.py |
-| `brainstem-egg/2.2-rapplication` | Single rapp cartridge (rappid + agent + UI + per-rapp state) | CLAUDE.md egg formats | utils/bond.py |
-| `brainstem-egg/2.3-session` | Session cartridge (JSON; rappid + sha256-pinned runtime + transcript + participants) — the vbrainstem tether's portable format | SPEC.md §18.10, §18.11; rappterbox/carts/SCHEMA.md | pages/vbrainstem.html (export); rappterbox/console.html + pages/vbrainstem.html (mount); rapp_brainstem/agents/egg_hatcher_agent.py (introspect+route) |
-| `brainstem-egg/2.3-neighborhood` *(planned)* | Neighborhood gate cartridge (ZIP; rappid + neighborhood.json + members.json + agents/ + rapplications/ + ses/ + soul.md + CONSTITUTION.md + rar/index.json) | SPEC.md §18.10 | egg_hatcher_agent.py (manual instructions; auto-mint planned) |
-| `brainstem-egg/2.3-estate` *(planned)* | Estate cartridge — operator's whole multi-tier identity portable across substrates (public discovery + private bones pointer + sealed PII pointer) | SPEC.md §18.10, ESTATE_SPEC.md, PUBLIC_PRIVATE_BOUNDARY.md | egg_hatcher_agent.py (manual instructions; auto-anchor planned) |
+| `brainstem-egg/2.1` | Legacy variant-repo cartridge | historical CLAUDE guidance | bounded migration input |
+| `brainstem-egg/2.2-organism` | Legacy full-instance cartridge | historical ECOSYSTEM §3/§8 | bounded migration input |
+| `brainstem-egg/2.2-rapplication` | Legacy single-rapp cartridge | historical CLAUDE guidance | bounded migration input |
+| `brainstem-egg/2.3-session` | Legacy contained-browser session cartridge | superseded local SPEC / external history | bounded migration input |
+| `brainstem-egg/2.3-neighborhood` | Retired neighborhood proposal | superseded local SPEC | historical only |
+| `brainstem-egg/2.3-estate` | Retired estate proposal | superseded local SPEC | historical only |
 | `rappterbox-cart/0.1` | Legacy session cartridge schema (superseded by brainstem-egg/2.3-session 2026-05-10; loader still accepts both for one release) | rappterbox/carts/SCHEMA.md | pages/vbrainstem.html (legacy export); rappterbox/console.html (legacy load) |
 | `rapp-egg-provenance/1.0` | SHA-256 file hashes + manifest hash + origin commit SHA | ECOSYSTEM §3, §9 | utils/bond.py |
 | `rapp-organism-state/1.0` | state_at_seal snapshot (mem_count, mut_count, MMR, etc.) | ECOSYSTEM §3 | utils/bond.py |
 | `rapp-user-memories/1.0` | Per-user issue memories (ascended-tier export) | ECOSYSTEM §3 | doorman ascended export |
-| `rapp-twin-chat/1.0` | Inter-twin message envelope (the federation wire) | NEIGHBORHOOD_PROTOCOL §6a | twin_agent.py `_chat` |
-| `rapp-twin-chat-response/1.0` | Twin-chat reply wrapper | NEIGHBORHOOD_PROTOCOL §6e | twin_agent.py `_chat` |
+| `rapp-twin-chat/1.0` | Legacy/application inter-twin adapter; not a RAPP wire form | historical NEIGHBORHOOD_PROTOCOL §6a | migration-only twin_agent.py `_chat` |
+| `rapp-twin-chat-response/1.0` | Legacy twin-chat reply wrapper | historical NEIGHBORHOOD_PROTOCOL §6e | migration-only twin_agent.py `_chat` |
 | `rapp-public-facets/1.0` | Granular permission gate (name + scope + description) | NEIGHBORHOOD_PROTOCOL §7 | card.json (operator-set) |
 | `rapp-twin-spec/1.0` | Soul Identity block contract | ANTIPATTERNS §4 | installer/plant.sh `write_soul_md` |
 | `rapp-lineage-rollup/1.0` | Lineage tree aggregation result (avg/median/min/max MMR) | ECOSYSTEM §15 | agents/lineage_rollup_agent.py |
@@ -175,16 +197,16 @@ Every `rapp-*/N.M` and `brainstem-*/N.M-variant` currently emitted in the repo. 
 | `rapp-ecosystem-audit/1.0` | Drift detector envelope — per-offspring drift entries + by-kind counts + suggested next-actions classified as LOCAL_TO_GLOBAL / GLOBAL_TO_LOCAL / INFORMATIONAL | (defined-by-emitter; written to `pages/_audit/ecosystem-audit.{md,json}`) | tools/ecosystem_audit.py |
 | `rapp-rhythm-pulse/1.0` | Bond Pulse heartbeat envelope — pulse_at + audit_summary + suggested_actions[] + by_direction counts + degraded flag + bond_event reference. Operator-mediated; never auto-executes. | (defined-by-emitter; companion to bond.py kind="rhythm") | rapp_brainstem/agents/bond_rhythm_agent.py |
 | `rapp-dock-result/1.0` | Universal additive-merge result envelope (added/skipped + pre/post sha256 + parallel-to-other-dock-scopes mapping + optional bond event) | (defined-by-emitter; companion to bond.py kind="dock") | rapp_brainstem/agents/dock_agent.py |
-| `rapp-twin/1.0` | Mobile-side twin egg bundle (canonical client schema) | utils/web/mobile/rapp-mobile.js:194 (defined-by-emitter) | utils/web/mobile/rapp-mobile.js |
+| `rapp-twin/1.0` | Legacy mobile-side bundle; not a RAPP/1 egg schema | utils/web/mobile/rapp-mobile.js:194 (defined-by-emitter) | migration-only mobile client |
 | `rapp-twin-identity/1.0` | Twin identity envelope (onboard surface) | utils/web/onboard/index.html:459 (defined-by-emitter) | utils/web/onboard/index.html |
 | `rapp-neighborhood/1.0` | Neighborhood metadata | gate repo `neighborhood.json` | plant_discord_neighborhood_agent.py, fixtures |
-| `rapp-neighborhood-protocol/1.0` | Wire-protocol meta | NEIGHBORHOOD_PROTOCOL header | the spec doc itself |
+| `rapp-neighborhood-protocol/1.0` | Application federation metadata; not a RAPP wire | NEIGHBORHOOD_PROTOCOL header | historical/external guide |
 | `rapp-neighborhood-members/1.0` | Roster | gate repo `members.json` | neighborhood_membership_organ.py |
 | `rapp-neighborhood-subscription/1.0` | One subscription record (gate_url, role, etc.) | (organ-defined) | neighborhood_membership_organ.py |
 | `rapp-neighborhoods-cache/1.0` | Local cache file | (organ-defined) | neighborhood_membership_organ.py |
 | `rapp-estate/1.0` | Estate top-level (organ-aggregated view, server-side) | vault/Decisions 2026-05-08 | neighborhood_membership_organ.py `_estate_view` |
 | `rapp-estate/1.1` | Local-first estate FILE format (door catalog at `~/.brainstem/estate.json` + `<gh>/rapp-estate/main/estate.json`). Each entry stores ONLY `{rappid, added_at, via}`. **Authority: pages/docs/ESTATE_SPEC.md, CONSTITUTION Article XLVI** | pages/docs/ESTATE_SPEC.md | rapp_brainstem/agents/estate_agent.py |
-| `rapp-door/1.0` | Derived door object returned by `door_from_rappid()` — owner, repo, kind, door_type, all 9 canonical URLs. Pure derivation; never stored. | pages/docs/ESTATE_SPEC.md §5 | tools/door_address.py |
+| `rapp-door/1.0` | Application-local candidate door URLs; pure parsing does not establish the current anchor | superseded ESTATE_SPEC derivation appendix | legacy `tools/door_address.py`; verify §13 |
 | `rapp-facets/1.0` | Per-door published-capability declaration at `<owner>/<repo>/main/facets.json` | pages/docs/ESTATE_SPEC.md §3 (Door URL Set #9) | rapp_brainstem/agents/plant_seed_agent.py |
 | `rapp-estate-view/1.0` | Aggregated twin view (zones + bridges) | (organ-defined) | estate_organ.py |
 | `rapp-estate-eggs/1.0` | Estate egg index | (organ-defined) | estate_organ.py |
@@ -208,7 +230,7 @@ Every `rapp-*/N.M` and `brainstem-*/N.M-variant` currently emitted in the repo. 
 | `rapp-binder/1.0` | Onboarding binder (saved JSON of starter cards) | utils/web/rapp.js:546 (defined-by-emitter) | utils/web/rapp.js, utils/web/index.html, tests/run-tests.mjs |
 | `rapp-memory/1.0` | Memory record | manage_memory_agent.py | manage_memory_agent.py |
 | `rapp-application/1.0` | Rapplication manifest | pages/docs/rapplication-sdk.md | RAPP_Store entries |
-| `rapp-chat-response/1.0` | /chat response envelope | tools/test_brainstem_server.py | brainstem.py /chat |
+| `rapp-chat-response/1.0` | Legacy/application-local chat wrapper | tools/test_brainstem_server.py | migrate boundary to exact RAPP/1 §8 response |
 | `rapp-test-brainstem/1.0` | Test fixture identity | tools/test_brainstem_server.py | test fixture |
 | `rapp-local-ping/1.0` | Test ping agent | tests/fixtures/local-only-test/ | test fixture |
 | `rapp-metropolis-index/1.0` | Metropolis tracker top-level | pages/metropolis/README.md | pages/metropolis/index.json |
@@ -218,12 +240,12 @@ Every `rapp-*/N.M` and `brainstem-*/N.M-variant` currently emitted in the repo. 
 | `rapp-swarm/1.0` | Mobile swarm bundle | utils/web/mobile/rapp-mobile.js:165 (defined-by-emitter) | utils/web/mobile/rapp-mobile.js |
 | `rapp-brainstem-backup/1.0` | Local brainstem backup snapshot | rapp_brainstem/index.html:1966 (defined-by-emitter) | rapp_brainstem/index.html |
 | `rapp-cubby/1.0` | Universal cubby — per-member estate housing; same anatomy as a brainstem; works on-device AND in a neighborhood (egg-roundtrips) | NEIGHBORHOOD_PROTOCOL §19; PUBLIC_PRIVATE_BOUNDARY §1.8 | `@rapp/rapp` (rapp_agent.py); private cubby neighborhoods |
-| `rapp-super-rar/1.0` | The super-store — one content-aware registry over the WHOLE stack across every cubby (local + neighborhood) | NEIGHBORHOOD_PROTOCOL §19 | `@rapp/rapp` super_rar |
+| `rapp-super-rar/1.0` | Application content catalog across cubbies; not the RAPP/1 §13 registry | historical NEIGHBORHOOD_PROTOCOL §19 | legacy `@rapp/rapp` super_rar |
 | `rapp-payphone-dial/1.0` | Dark-door dialer — reach a private door's rappid on the public web with your own auth (404 to outsiders) | NEIGHBORHOOD_PROTOCOL §19 | pages/payphone.html |
-| `brainstem-egg/2.3-cubby` | Cubby cartridge — a digital organism carved from an estate; round-trips local↔neighborhood | NEIGHBORHOOD_PROTOCOL §19; Art. XXXVII | `@rapp/rapp` cubby_egg |
+| `brainstem-egg/2.3-cubby` | Legacy cubby-cartridge proposal; not a RAPP/1 §9 variant | historical NEIGHBORHOOD_PROTOCOL §19 | migration inventory only |
 | `rapp-ecosystem-graph/1.0` | Repo relationship graph (nodes + typed edges) for cross-repo blast-radius traversal | kody-w/rapp-map/graph.json | tools/build_graph.py; `@rapp/drift` blast_radius |
-| `rapp-canon/1.0` | Materialized resolved schema registry — one canonical version per schema, so consumers don't re-traverse scattered specs | (defined-by-emitter) | `@rapp/drift` canon |
-| `rapp-drift-report/1.0` | Cross-repo spec-drift report + authority resolution envelope | (defined-by-emitter) | `@rapp/drift` scan |
+| `rapp-canon/1.0` | Application drift index; not structural authority or the signed §13 registry | (defined-by-emitter) | `@rapp/drift` observation |
+| `rapp-drift-report/1.0` | Cross-repo drift observation; cannot resolve or create RAPP authority | (defined-by-emitter) | `@rapp/drift` scan |
 | `rapp-drift-issue/1.0` | Drift-issue machine block — the traceable chain (drift → GitHub issue → PR → operator merge → close) | (defined-by-emitter) | `@rapp/drift` + `@rapp/drift_watcher` |
 | `rapp-rar-steward/1.0` | RAR steward report — catalog health, same-but-different merge clusters, noise/junk | (defined-by-emitter) | `@rapp/rar_steward` |
 | `rapp-neuron/1.0` | One file-specialist card — a file understood word-level: schemas declared, contracts, version strings, cross-refs, canonical phrases, drift_watch | kody-w/rapp-map NEURON_SWARM.md | build-ecosystem-neuron-mesh workflow |
@@ -240,13 +262,13 @@ Every `rapp-*/N.M` and `brainstem-*/N.M-variant` currently emitted in the repo. 
 | `rapp_brainstem/agents/basic_agent.py` | Agent base class | KERNEL — CONSTITUTION Art. XXXIII |
 | `rapp_brainstem/agents/manage_memory_agent.py` | Memory R/W | KERNEL — ECOSYSTEM §5 |
 | `rapp_brainstem/agents/context_memory_agent.py` | Conversation context | KERNEL — ECOSYSTEM §5 |
-| RAR: `agents/@rapp/twin_agent.py` *(installable; not kernel-shipped)* | Cross-twin chat (rapp-twin-chat/1.0), egg ops, lifecycle. Install via the **Organism Lifecycle pack** (`binders/@rapp-organism-lifecycle.json`). | NEIGHBORHOOD_PROTOCOL §6, §7 |
+| RAR: `agents/@rapp/twin_agent.py` *(legacy; not kernel-shipped)* | Historical twin-chat and egg adapter. It is not current §8 wire or §9 acceptance. | historical NEIGHBORHOOD_PROTOCOL §6, §7 |
 | `rapp_brainstem/agents/learn_new_agent.py` | Author new agents at runtime | ECOSYSTEM §7 (Evolution) |
 | `rapp_brainstem/agents/swarm_factory_agent.py` | Tier-2 deploy factory | rapp_swarm/ |
 | `rapp_brainstem/agents/perpetual_loop_factory_agent.py` | Background-loop factory | (no spec section yet — see §13) |
 | `rapp_brainstem/agents/hacker_news_agent.py` | Demo HN agent | (example) |
-| RAR: `agents/@rapp/egg_hatcher_agent.py` *(installable; not kernel-shipped)* | Universal `.egg` hatcher. Reads any `.egg` from local path or URL, **introspects** `manifest.schema`/`type`, routes by kind: organism→bond.hatch_organism / rapplication→bond.hatch_rapplication / session→returns mount URL (rappterbox console or vbrainstem.html, since Python brainstem can't iframe) / neighborhood→manual GitHub-mint instructions (auto planned) / estate→manual substrate-migration instructions (auto planned) / unknown→**REFUSES**, never destructive fallback. Install via the **Organism Lifecycle pack**. | brainstem-egg/2.x family — SPEC.md §18.10 |
-| `pages/vbrainstem.html` | Public tethered surface — multi-participant browser-tab brainstem. QR-pair WebRTC handshake (PeerJS broker, ECDSA P-256 keypair, 6-digit safety code), three exchangeable LLM backends (localhost default / `?brainstem=URL` / `?copilot=1` via Doorman + Pyodide), Coordinator-driven debate-demo workflow. Exports the live session as a `brainstem-egg/2.3-session` cartridge. | SPEC.md §18.11; brainstem-egg/2.3-session |
+| RAR: `agents/@rapp/egg_hatcher_agent.py` *(installable; not kernel-shipped)* | Legacy hatcher inventory. Its schema/type router is not current §9 dispatch; a conformant replacement dispatches registered `variant` only after all §9.3 checks. | retired `brainstem-egg/2.x` family |
+| `pages/vbrainstem.html` | Contained legacy browser surface whose retired `brainstem-egg/2.3-session` export is migration evidence, not a current RAPP egg. | superseded local SPEC history |
 | RAR: `agents/@kody/workiq_agent.py` *(installable; not kernel-shipped)* | Microsoft 365 access (email/calendar/Teams/SharePoint/OneDrive) via the workiq CLI + Entra ID. Solo install from RAR; no pack. | (example) |
 | `rapp_brainstem/agents/plant_discord_neighborhood_agent.py` | Discord-driven neighborhood planting | NEIGHBORHOOD_PROTOCOL §4 (discovery) |
 | `rapp_brainstem/agents/lineage_rollup_agent.py` | Lineage-tree aggregation (avg/median MMR) | ECOSYSTEM §15 (shipped 2026-05-08) |
@@ -255,7 +277,7 @@ Every `rapp-*/N.M` and `brainstem-*/N.M-variant` currently emitted in the repo. 
 | `rapp_brainstem/agents/resurrection_ceremony_agent.py` | Stasis recovery ceremony | ECOSYSTEM §15, Art. XXXIV.5 |
 | `rapp_brainstem/agents/ant_agent.py` | Ant Farm participant — drops `rapp-pheromone/1.0` envelopes via labeled Issues | kody-w/ant-farm/skill.md, NEIGHBORHOOD_PROTOCOL §5b |
 | `rapp_brainstem/agents/colony_observer_agent.py` | Ant Farm aggregator — synthesizes swarm state | (companion to ant_agent) |
-| `rapp_brainstem/agents/rar_loader_agent.py` | Universal RAR hot-loader — fetches a planted seed's `rar/index.json`, sha256-verifies, installs to local `agents/`/`organs/`/`senses/`/`rapps/`. Default dry_run; supports federation to kody-w/RAR/RAPP_Store/RAPP_Sense_Store. | rapp-rar-index/1.0 + rapp-rar-loadout/1.0 |
+| `rapp_brainstem/agents/rar_loader_agent.py` | Legacy/application RAR loader. Its SHA-256 check establishes integrity only; current installation must also verify applicable §§10/13 trust before acting. | rapp-rar-index/1.0 + rapp-rar-loadout/1.0 |
 | `rapp_brainstem/agents/graft_neighborhood_agent.py` | Bond-technique graft. Forks an existing public repo; overlays RAPP scaffolding additively (upstream files preserved per the bond cycle); auto-detects existing neighborhood at root and routes new grafts into `neighborhoods/<name>/` (town → city → metropolis growth pattern); maintains a repo-local `_metropolis.json` (`rapp-metropolis-index/1.0`) roll-up; records `kind="graft"` event in `bonds.json`. Default dry_run; supports `_workspace_dir` + `_local_upstream_dir` for offline test fixtures. | rapp-graft-result/1.0 + rapp-metropolis-index/1.0 + bond.py event "graft" |
 | `rapp_brainstem/agents/dock_agent.py` | Universal additive-merge primitive — the dock-without-destruction property at the entry/registry scope. Works on ANY rar-shaped JSON: rar/index.json, _metropolis.json, members.json, neighborhood entries. `key_field` dedup (default 'name'; supports nested dotted paths); top-level lists or nested entries paths. Optional `log_path` writes a bond event kind="dock". Default dry_run. | rapp-dock-result/1.0 + bond.py event "dock" |
 | `rapp_brainstem/agents/launch_to_public_agent.py` | LOCAL→GLOBAL actuator. Snapshots local brainstem state via `bond.py::pack_organism`; emits `rapp-launch-continuation/1.0` manifest; plants/grafts to a target public repo (forks if needed); preserves any pre-existing upstream files (bond technique). Records `kind="launch"` event in `bonds.json`. Default dry_run; supports `_local_brainstem_dir`/`_local_target_dir`/`_workspace_dir`/`_skip_push` test hooks. | rapp-launch-result/1.0 + rapp-launch-continuation/1.0 + rapp-launch-fingerprint/1.0 + bond.py event "launch" |
@@ -264,8 +286,8 @@ Every `rapp-*/N.M` and `brainstem-*/N.M-variant` currently emitted in the repo. 
 | `tools/ecosystem_audit.py` | Stdlib-only drift detector. Reads `pages/metropolis/index.json` → diffs each offspring against `ecosystem_contract` → classifies drift (missing_files / schema_drift / rappid_drift / kernel_drift / identity_block_missing) → emits `pages/_audit/ecosystem-audit.{md,json}`. CLI: `--offline` (default; uses fixtures), `--online`, `--repo`, `--metropolis`, `--fixtures-dir`, `--out-dir`, `--no-write`, `--strict/--lenient`. Exit 1 on drift (default strict). | rapp-ecosystem-audit/1.0 |
 | `tools/sign_release.py` | ed25519 keygen / sign / verify for `rapp_kernel/manifest.json` | CONSTITUTION Art. XXXIV.7 |
 | `tools/door_address.py` | THE rappid parser. Pure stdlib `door_from_rappid(rappid)` → owner, repo, kind, door_type, all 9 canonical URLs. Per Article XLVI per-consumer parsers are forbidden — every consumer imports this. | rapp-door/1.0 |
-| `tools/backfill_seeds.py` | One-shot operator-tooling: walks known seeds, validates rappid via `door_from_rappid`, reissues invalid rappids, emits missing canonical files (facets.json, members.json, .nojekyll, README). Two modes: default compliance pass + `--patch-parents <op-rappid>` to set every door's `parent_rappid` to the operator's personal rappid (Article XLVI.6). Idempotent. | (no schema; uses gh api PUTs) |
-| `tools/rebuild_estate.py` | Article XLVI.6 disaster recovery. Given a GitHub handle, walks public data and reconstructs the estate from scratch: discovers operator rappid (local → conventional repos → repo scan → operator-hint fallback), enumerates `created[]` via `gh repo list` + raw `rappid.json` fetches filtered by `parent_rappid`, enumerates `member[]` via `gh search code` for the operator's rappid in `members.json` files. Stdlib + gh CLI only. Default dry-run; `--apply` writes `~/.brainstem/estate.json`. | rapp-estate/1.1 |
+| `tools/backfill_seeds.py` | Legacy application-file migration tool. It must not reissue or re-mint a RAPP/1 identity without a valid §6.3 owner-authorized re-anchor recorded in §13. | historical estate tooling |
+| `tools/rebuild_estate.py` | Application catalog recovery from untrusted GitHub candidates. Handle/repo and `parent_rappid` fallbacks do not establish identity; preserve §6 tails and verify §13 state. | product recovery, subordinate to RAPP/1 |
 | `tools/sniff_network.py` | Article XLVII decentralized discovery. Default mode: BFS-from-seed via raw URLs only (no GitHub Search API). Walks `.well-known/rapp-network-seed.json` → each operator's `.well-known/rapp-network.json` beacon → `discovery.federation_hints[]` adds new nodes. Optional `--via topic` for periodic sweeps via `gh search repos topic:rapp-estate`. Returns `rapp-network-sniff/1.0`. | rapp-network-sniff/1.0 |
 | `.well-known/rapp-network-seed.json` (in species root kody-w/RAPP) | The DNS-root analog for the federation. Lists known operators as the BFS starting set. Convenient but not authoritative; anyone can fork the species root and host their own seed. | rapp-network-seed/1.0 |
 | `.well-known/rapp-network.json` (per published estate) | Per-operator beacon emitted by `estate publish`. Carries operator rappid, estate URL, protocol versions implemented, `discovery.indexable` consent flag (robots.txt-style; default true), `discovery.federation_hints[]`, AND (per Article XLVIII) REQUIRED `private_estate_pointer` + `private_estate_commitment` + `private_door_count`. | rapp-network-beacon/1.1 |
@@ -277,7 +299,7 @@ Every `rapp-*/N.M` and `brainstem-*/N.M-variant` currently emitted in the repo. 
 | `tools/import_peer_egg.py` | Article XLVII.5.3 sneakernet importer. Extracts a received .egg to ~/.brainstem/peers/<handle>/, synthesizes a beacon if missing, registers the peer in ~/.brainstem/network-seed.json with file:// URLs. Idempotent. | rapp-import-egg-result/1.0 |
 | `<handle>/rapp-estate-private` (PRIVATE repo per operator) | The private tier of every Article-XLVIII-compliant estate. Mandatory from first install. All paths opaque per §XLVIII.6. Access via GitHub collaborator perms. Content NEVER fetched by sniffers. | rapp-private-estate/1.0 |
 | `pages/docs/ESTATE_SPEC.md` | The canonical Estate Spec — formalizes rappid-as-global-address + Door URL Set + estate.json shape + discovery protocol. Constitutional (Article XLVI). | (the spec itself) |
-| `specs/SPEC.md` (god spec) + `specs/skill.md` (runbook) | Bundled into every planting (front_door_specs.py bundle 2.0.0). One spec replaces the prior 9-file bundle (HOLOCARD/RAPPID/ANTIPATTERNS/SOUL_IDENTITY/PARTICIPATION/AGENT/RAPPLICATION/SENSE/README). Skill is the universal "feed me to any AI" onboarding. | rapp-protocol/1.0 |
+| `specs/SPEC.md` + `specs/skill.md` | Superseded local spec and non-runtime host-onboarding history. Neither defines RAPP capabilities or current wire behavior. | retired `rapp-protocol/1.0`; migrate to the pinned rev-5 authority |
 | `rapp_brainstem/agents/estate_agent.py` | Local-first estate agent — show/export/import/publish/fetch/add/remove/scan. Uses `door_from_rappid` for all derivation; entries store ONLY `{rappid, added_at, via}`. | rapp-estate/1.1 |
 | `rapp_brainstem/utils/organs/neighborhood_organ.py` | `/api/peers`, peer view (legacy) | NEIGHBORHOOD_PROTOCOL §4 |
 | `rapp_brainstem/utils/organs/neighborhood_membership_organ.py` | `/api/neighborhoods/*` — join/sync/members/leave/contribute/estate/by-rappid | vault Decision 2026-05-08, NEIGHBORHOOD_PROTOCOL §2 |
@@ -331,7 +353,11 @@ Every `rapp-*/N.M` and `brainstem-*/N.M-variant` currently emitted in the repo. 
 
 ---
 
-## §7 — Channel × scope matrix
+## §7 — Application channel × scope matrix
+
+These channels are transports/adapters, not extra RAPP wire forms. At a
+protocol boundary each interaction must become either the exact synchronous
+RAPP/1 §8 `/chat` exchange or a verified asynchronous §7 frame.
 
 |              | Personal           | Neighborhood       | Public swarm       |
 |---           |---                 |---                 |---                 |
@@ -342,7 +368,12 @@ Every `rapp-*/N.M` and `brainstem-*/N.M-variant` currently emitted in the repo. 
 
 ---
 
-## §8 — Twin-chat message kinds (NEIGHBORHOOD_PROTOCOL §6b verbatim)
+## §8 — Historical twin-chat adapter messages
+
+The table inventories the retired/application `rapp-twin-chat/1.0` adapter. It
+does not define a third RAPP wire. Current implementations encode registered
+semantics in the exact RAPP/1 §8 wire forms and verify asynchronous frames per
+§7 before acting.
 
 | `kind` | Payload | Direction | Purpose |
 |---|---|---|---|
@@ -371,7 +402,8 @@ Knowledge-exchange primitives (NEIGHBORHOOD_PROTOCOL §8) compose these: pull-fa
                                │
         ┌──── Tier 1: Local (Flask :7071) ──────────────────────┐
         │  rapp_brainstem/brainstem.py                           │
-        │  POST /chat — { user_input, conversation_history? }    │
+        │  POST /chat — {user_input, session_id?,                │
+        │                 idempotency_key?} (RAPP/1 §8 target)   │
         │  GET  /api/identity, /api/lineage                      │
         │  GET/POST /api/estate/*, /api/neighborhoods/*          │
         └────────────────────────────────────────────────────────┘
@@ -379,30 +411,36 @@ Knowledge-exchange primitives (NEIGHBORHOOD_PROTOCOL §8) compose these: pull-fa
 
 | Capability | Tier 1 | Tier 2 | Tier 3 |
 |---|---|---|---|
-| `POST /chat` (canonical envelope) | ✓ | ✓ (path-prefixed under `/api/`) | ✓ (Studio orchestrator) |
-| `GET /api/identity`, `/api/lineage` | ✓ | n/a | n/a |
-| `/api/neighborhoods/*` federation | ✓ | n/a | n/a |
-| `/api/estate/*` | ✓ | n/a | n/a |
+| Exact RAPP/1 §8 `POST /chat` | target; see `RAPP1_STATUS.md` | adapter must expose exact boundary | adapter must expose exact boundary |
+| Application views: `GET /api/identity`, `/api/lineage` | ✓ | n/a | n/a |
+| Application adapter: `/api/neighborhoods/*` | ✓ | n/a | n/a |
+| Application view: `/api/estate/*` | ✓ | n/a | n/a |
 | Agent contract (`rapp-agent/1.0`) | ✓ | ✓ | ✓ (Studio plugin shell) |
 | Same `*_agent.py` files run unmodified | ✓ | ✓ | ✓ |
 
 Differs legitimately: storage backend (local JSON vs Azure Files), auth (Copilot device-code vs Azure RBAC vs M365), surface (local process vs Functions vs Power Platform).
 
+The exact success body is
+`{response:string, agent_logs:[string], session_id:string}` with no extra
+members. Malformed, refused, or unknown-session requests return HTTP 422
+`{error:{code:string, step:string|null}}`; see RAPP/1 §8 for the complete
+contract.
+
 ---
 
-## §10 — Sacred files (kernel articles)
+## §10 — Immutable grail and governed files
 
 | File / artifact | Why sacred | Article / source |
 |---|---|---|
-| `rapp_brainstem/brainstem.py` | Species DNA — drop-in replaceable | CONSTITUTION Art. XXXIII; ANTIPATTERNS §2 |
-| `rapp_brainstem/agents/basic_agent.py` | Base agent contract | CONSTITUTION Art. XXXIII |
-| `rapp_brainstem/agents/manage_memory_agent.py` | Doorman tier — public memory R/W | CONSTITUTION Art. XXXIII |
-| `rapp_brainstem/agents/context_memory_agent.py` | Doorman tier — conversation context | CONSTITUTION Art. XXXIII |
-| `rapp_brainstem/VERSION` | Kernel pin — never edit | ANTIPATTERNS §2 |
+| `rapp_brainstem/brainstem.py` | Pinned byte mirror; never edit locally | `kody-w/rapp-installer@brainstem-v0.6.9`; authority immutable-grail policy |
+| `rapp_brainstem/agents/basic_agent.py` | Pinned byte mirror; never edit locally | same immutable grail |
+| `rapp_brainstem/VERSION` | Pinned byte mirror; never edit locally | same immutable grail |
+| `rapp_brainstem/agents/manage_memory_agent.py` | Governed drop-in application agent, not a pinned grail byte | repository policy |
+| `rapp_brainstem/agents/context_memory_agent.py` | Governed drop-in application agent, not a pinned grail byte | repository policy |
 | `rapp_swarm/function_app.py` | Tier-2 kernel mirror | CONSTITUTION Art. XXXIII |
 | Install one-liner URL (`https://kody-w.github.io/RAPP/installer/install.sh`) | Sacred URL shape forever | CONSTITUTION Art. V |
 | `\|\|\|VOICE\|\|\|` / `\|\|\|TWIN\|\|\|` delimited slots | Fixed forever — never repurposed | CLAUDE.md sacred constraints §5 |
-| `parent_rappid` field in `rappid.json` | Variant lineage is single-parent only | CONSTITUTION Art. XXXIV |
+| `parent_rappid` in legacy `rappid.json` | Application provenance only; not RAPP identity or trust | historical lineage policy |
 
 **If something feels like it requires a kernel change → write an agent or organ instead.** If the agent contract genuinely can't express it, that's a CONSTITUTION-level conversation that touches every planted seed.
 
@@ -417,35 +455,35 @@ The most load-bearing section. Workflow trigger → pre-check (≤30s) → spec 
 | Starting a new session in this repo | §0–§3 (orient: how-to-read, authority, fractal, primitives); skim §11 + §13 | CLAUDE.md; MASTER_PLAN.md if scope unclear |
 | Add a new agent | §6 (does it already exist?), §15 (lexicon — it's an agent), `rapp-agent/1.0` in §5 | CLAUDE.md "Agent System"; pages/docs/SPEC.md |
 | Add a new organ | §6 (existing organ already covers this?), §9 (endpoint already on another tier?) | CLAUDE.md Architecture §Organ; CONSTITUTION Art. XXXIII |
-| Call /chat from new code | §11 row "tether"; use `rapp-twin-chat/1.0` envelope; §6 row twin_agent.py reference impl | NEIGHBORHOOD_PROTOCOL §6a |
-| Define a new schema | §5 — search first; if exists, use; if not, ANTIPATTERNS §3 (bump cleanly, no shims) | ANTIPATTERNS §3 |
+| Call `/chat` from new code | Use the exact RAPP/1 §8 request and exact 200/422 responses; do not wrap it in a legacy twin-chat envelope | pinned RAPP/1 §8 |
+| Change protocol structure | Follow Constitution Articles II–IV and §13 registration; do not mint a schema in an application doc | pinned RAPP/1 + Constitution |
 | Use an existing schema | §5 row → defining doc column → read that section | the doc the row points at |
 | Operate on the WHOLE ecosystem (drift / audit / propagation) — word-level, all-encompassing | Summon the **neuron swarm**: load the mesh (rapp-map/neurons.json), summon the relevant file-specialists (manifest summon_index), fan out against their live files + drift_watch, loop, synthesize with the authority order. Reusable: `.claude/workflows/neuron-swarm.js` | kody-w/rapp-map NEURON_SWARM.md; `@rapp/drift` is the resolver |
-| Plant a PRIVATE cubby neighborhood (collaborator-gated, no public front door) | §19 dark-door pattern: payphone discovery + collaborator-gated §8 key + kited host-relay lights + cubbies + super-RAR + stream-don't-commit; the pattern is generic (any crew can plant one) | NEIGHBORHOOD_PROTOCOL §19; PUBLIC_PRIVATE_BOUNDARY §1.8; `@rapp/rapp` |
+| Plant a PRIVATE cubby neighborhood (application collaborator gate) | Treat collaborator status as UI/content authorization only. Protocol interaction still uses exact §8 forms and §§10/13 trust; historical dark-door adapters do not replace either. | RAPP/1 §§8, 10, 13; product privacy docs |
 | Plant on GitHub (twin/neighborhood/etc.) | §14 (existing planted state), §3 primitives (rappid + door + card + tether + scope all present?), §5 `rapp-rar-index/1.0` (every plant auto-scaffolds rar/ via plant.sh::write_rar_index) | TEMPLATE.md, ECOSYSTEM §2 + §13; F7-rar-hotload.sh |
-| Hot-load a planted seed's required participation kit | §5 `rapp-rar-index/1.0` (sha256 verified) | rapp_brainstem/agents/rar_loader_agent.py; F7 |
+| Hot-load a planted seed's participation kit | Treat the application index as discovery; verify integrity plus applicable §§10/13 trust before install | RAPP/1 §§10/13; legacy rar_loader_agent.py |
 | Plant a neighborhood ON TOP of an existing public repo (or dock multiple within one repo) | bond technique additive overlay; multi-neighborhood mode emits `docking` block — same fractal step as Dream Catcher (ECOSYSTEM §10) at neighborhood scope vs frame scope | rapp_brainstem/agents/graft_neighborhood_agent.py; F8; vault note `pages/vault/Decisions/2026-05-09 — Dream Catcher and Docking are the same operation.md` |
 | Add an entry to ANY rar-shaped JSON registry without clobbering existing | universal additive-merge primitive — same dock property at the registry/list-of-dicts scope; supports `key_field` dedup; bond event log; works for `rar/index.json`, `_metropolis.json`, `members.json`, etc. | rapp_brainstem/agents/dock_agent.py; F9 |
 | Want to know if local + global ecosystem are still in sync (the FULL organism, not one half) | Run the Bond Pulse heartbeat — operator-mediated; pulses audit + classifies drift LOCAL→GLOBAL push (suggest Launch/Graft) vs GLOBAL→LOCAL pull (suggest RarLoader); records `kind="rhythm"` event; gracefully degrades when offline | rapp_brainstem/agents/bond_rhythm_agent.py; tools/ecosystem_audit.py; F10/F11/F12; vault note `pages/vault/Decisions/2026-05-09 — Bond Pulse — the on-going beat for the full organism.md` |
-| Want to discover any door (twin or gate) without auth/API | Parse the rappid: `<owner>/<repo>` is the GitHub origin. Fetch any of the 9 canonical files via `https://raw.githubusercontent.com/<owner>/<repo>/main/{rappid.json,card.json,holo.md,holo.svg,holo-qr.svg,members.json,facets.json}` — pure raw, no auth, no rate limit. The reference parser is `tools/door_address.py::door_from_rappid()` — per Article XLVI per-consumer parsers are forbidden. | pages/docs/ESTATE_SPEC.md §3–§5; CONSTITUTION Article XLVI; F13 |
-| Want to discover any user's full estate (door catalog) | One curl: `https://raw.githubusercontent.com/<github-handle>/rapp-estate/main/estate.json`. Each entry is `{rappid, added_at, via}`; expand each rappid through `door_from_rappid()` for the full URL set. | pages/docs/ESTATE_SPEC.md §4; specs/SPEC.md §4 |
-| Lost local estate (laptop dies, no backup) — how do I rebuild? | `python3 tools/rebuild_estate.py --handle <gh> --apply` walks public GitHub data and reconstructs `~/.brainstem/estate.json` from scratch. Needs operator's `gh` auth. The estate is a CACHE; the network is the source of truth. | pages/docs/ESTATE_SPEC.md §6; CONSTITUTION Article XLVI.6; F14 |
-| Drop in any rappid — whose estate owns this door? | `estate fetch rappid=<any-rappid>` — if it's an operator-kind rappid, fetches that handle's estate directly. If it's a door (twin/neighborhood), the agent traces `parent_rappid` to find the operator and fetches their estate. Pure raw fetches throughout. | pages/docs/ESTATE_SPEC.md §6.5; rapp_brainstem/agents/estate_agent.py `fetch` action |
+| Discover a door candidate | Validate the §6 rappid, parse its initial self-location, then resolve current anchors/keys through the signed §13 registry. Raw files are untrusted transport. | RAPP/1 §§6, 10, 13 |
+| Discover an application estate catalog | Fetching `estate.json` yields untrusted candidates; validate each §6 rappid and registry state before use. | RAPP/1 §§6/13; ESTATE_SPEC product convention |
+| Recover a lost local estate | Recovery tooling may rebuild an application cache from public candidates, but trusted state comes from verified artifacts and monotonic §13 state—not "the network." | RAPP/1 §§7, 10, 13 |
+| Resolve which estate anchors a rappid | Validate §6 and resolve the signed §13 registry. Legacy `parent_rappid` tracing is migration evidence only. | RAPP/1 §§6, 10, 13 |
 | Find every operator on the network without an API | `python3 tools/sniff_network.py` (default --via raw) — BFS from `.well-known/rapp-network-seed.json` across each operator's beacon's `federation_hints[]`. Pure raw URLs; no Search API; no rate limit. Use `--via topic` for the secondary `gh search repos topic:rapp-estate` sweep. | CONSTITUTION Article XLVII; specs/SPEC.md §4.6 |
 | Make my estate discoverable to other operators | `estate publish` — writes `estate.json` AND `.well-known/rapp-network.json` AND sets the `rapp-estate` topic on the repo. The next sniffer pass picks you up via raw + via topic. To opt out: `discovery.indexable: false` in your beacon (robots.txt-style; sniffers honor it). | CONSTITUTION Article XLVII.3; specs/SPEC.md §4.6 |
 | I need to store PII / sensitive content | `estate init_private` (one call, idempotent) — creates `<your-handle>/rapp-estate-private` as a PRIVATE GitHub repo + mints the HMAC secret + scaffolds opaque file set. Re-run `estate publish` to refresh the beacon with `private_estate_pointer` + commitment. Per Article XLVIII this is MANDATORY for compliance. | CONSTITUTION Article XLVIII; pages/docs/PUBLIC_PRIVATE_BOUNDARY.md |
 | Verify a peer hasn't substituted a different private estate behind my back | `estate verify_private` (operator-only) — recomputes the private state's commitment hash + compares to the published beacon. Drift = beacon stale or someone tampered. | CONSTITUTION Article XLVIII.2 (Bitcoin-commitment pattern) |
 | Two-tier compliance audit across the network | `python3 tools/sniff_network.py` — surfaces each operator's `compliance` flag (xlviii / partial / legacy). Operators without `private_estate_pointer` show as `legacy` (pre-XLVIII; need to run init_private). | CONSTITUTION Article XLVIII; F15 |
-| Author a new agent / consumer that needs to parse a rappid | **STOP** — import `door_from_rappid` from `tools/door_address.py`. Per Article XLVI.5 per-consumer rappid parsers are forbidden. Invalid rappids raise `InvalidRappidError`; reissue them rather than patching. | pages/docs/ESTATE_SPEC.md §5; CONSTITUTION Article XLVI.5 |
+| Author a consumer that needs a rappid | Implement/import the exact §6 grammar and preserve existing tails. Refuse invalid current input; never reissue it silently. Only a verified §6.3 re-anchor can mint a replacement. | pinned RAPP/1 §6 |
 | Federate two organisms | §7 channel matrix, §8 message kinds, §3 trust scope | NEIGHBORHOOD_PROTOCOL §5, §6, §7, §9 |
 | Touch the kernel (any file in §10) | **STOP** — write an agent/organ instead | MASTER_PLAN Part 1 §1; ANTIPATTERNS §2; CONSTITUTION Art. XXXIII |
 | Touch install one-liner | **STOP** — URL is sacred (Art. V) | CONSTITUTION Art. V; SURVIVAL §"RAPP itself goes down" |
 | Add a network call | §17 SURVIVAL pointer — local-first fallback REQUIRED | ANTIPATTERNS §5; SURVIVAL.md |
 | Write a doc | §4 — does an existing doc own this concept?; §15 — am I using the right words? | LEXICON.md; ANTIPATTERNS §1 |
-| Add a /api/* endpoint | §6 (existing organ has it?), §9 endpoint table | CLAUDE.md Architecture §Organ system |
-| Bump a schema version | §5 — every emitter + every consumer in same PR | ANTIPATTERNS §3 |
+| Add an application `/api/*` view | Confirm it is UI/adapter-only. Any RAPP capability belongs in an agent behind exact §8 `/chat`; never add a sibling protocol endpoint. | RAPP/1 §8; CLAUDE organ guidance |
+| Change protocol shape/version | Use Constitution Articles II–IV, total §12 migration, and signed §13 state; never bump locally | pinned RAPP/1 |
 | About to add "skill"/"plugin"/"routine" terminology | **STOP** — §15 — it's an agent | ANTIPATTERNS §1 |
-| About to add a feature flag or shim | **STOP** — §13 drift — bump schema cleanly, ship clean | ANTIPATTERNS §3 |
+| About to add a legacy protocol flag/shim | **STOP** — implement the bounded §12 migration and retire the branch | RAPP/1 §12 |
 | Brand fallback to "RAPP" / "AI assistant" | **STOP** — §10 sacred soul block | ANTIPATTERNS §4 |
 | Probe a private repo | **STOP** — ASK Kody | MEMORY `feedback_private_repos.md` |
 | Tell user to run a manual command | **STOP** — ship via install one-liner | MEMORY `feedback_oneliner_only.md` |
@@ -470,15 +508,23 @@ A single `*_agent.py` file is called an **agent**. Never a *skill*, *routine*, *
 
 ### 2. THE FROZEN KERNEL NEVER MOVES
 
-`rapp_brainstem/brainstem.py`, `rapp_brainstem/VERSION`, `rapp_brainstem/agents/basic_agent.py` (and the doorman-tier kernel agents) are frozen at the grail ([`kody-w/rapp-installer`](https://github.com/kody-w/rapp-installer)) — byte-identical to whatever the grail currently ships. Never edit them locally. Capabilities grow exclusively through new `*_agent.py` files in `agents/`.
+`rapp_brainstem/brainstem.py`, `rapp_brainstem/VERSION`, and
+`rapp_brainstem/agents/basic_agent.py` are frozen at the exact
+`kody-w/rapp-installer@brainstem-v0.6.9` grail. They do not follow a moving
+branch. Other agents are governed application files, not additional pinned
+grail bytes.
 
 When something feels like it requires a kernel change, write a new agent that solves it instead.
 
-### 3. NO BACKWARDS-COMPAT SHIMS FOR HALF-RELEASED FEATURES
+### 3. NO PERPETUAL LEGACY SHIMS
 
-When a schema changes, bump the version in the schema string and migrate cleanly. Don't add `if old_field exists, do A else do B` shims when nothing in the wild has the old field yet. The codebase is small enough to rip the band-aid off.
+RAPP/1 §12 requires a total migration: freeze producers, ingest legacy inputs
+once, canonicalize, emit current forms, publish signed re-genesis/registry
+state, switch readers atomically, and remove old branches.
 
-New schema → bump version → update every emitter → update every consumer → ship. If something downstream breaks and it's already in the wild, write a one-time migrator, not a forever shim.
+Do not invent a schema-version bump outside the constitutional process. A
+bounded one-time migrator may recognize retired forms; normal readers may not
+accept them forever.
 
 ### 4. NO SILENT FALLBACK TO "RAPP" / "AN AI ASSISTANT"
 
@@ -500,6 +546,11 @@ The hero use case is offline-first. An organism in airplane mode must keep rende
 
 Spec ↔ code divergences. Append-only — entries get added when found, removed only by reconciliation (a PR that makes spec and code agree).
 
+> **Historical closure log.** Dated `RESOLVED` rows below preserve what the
+> repository claimed at that time. They are superseded for current identity,
+> frame, wire, egg, registry, trust, and evolution guidance by the pinned
+> RAPP/1 rev-5 authority and must not be used as current instructions.
+
 Severity: **P0** wire-incompatible · **P1** schema/field mismatch · **P2** doc/naming drift · **P3** undocumented schema in code
 
 | Drift | Spec says | Code does | Spec citation | Code citation | Sev | Resolution |
@@ -519,16 +570,24 @@ Severity: **P0** wire-incompatible · **P1** schema/field mismatch · **P2** doc
 
 ## §14 — Live planted state (kody-w GitHub)
 
+> **External/application observation list.** These links and schema labels
+> report ecosystem state and require generator/owner follow-up; they do not
+> register RAPP structure, establish signatures, or replace the signed §13
+> registry. Treat twin-chat, static API, sealed-channel, MCP, cart, and other
+> profiles as adapters unless and until represented through current RAPP/1
+> forms.
+
 - **Ant Farm (autonomous swarm scale demo):** [`kody-w/ant-farm`](https://github.com/kody-w/ant-farm) — `kind: "ant-farm"` neighborhood; every participant runs their own brainstem (or just feeds [skill.md](https://raw.githubusercontent.com/kody-w/ant-farm/main/skill.md) to any AI); pheromones are `ant-pheromone`-labeled GitHub Issues; gate at <https://kody-w.github.io/ant-farm/>
-- **Twin (canonical example):** [`kody-w/heimdall`](https://github.com/kody-w/heimdall) — front door + doorman, planted, GitHub Pages live
+- **Twin (application example):** [`kody-w/heimdall`](https://github.com/kody-w/heimdall) — front door + doorman, planted, GitHub Pages live
 - **Neighborhood gate (private+public split):** [`kody-w/microsoft-se-team-neighborhood`](https://github.com/kody-w/microsoft-se-team-neighborhood) + companion `*-private`
 - **Neighborhood gate (public, autonomous):** [`kody-w/public-art-collective`](https://github.com/kody-w/public-art-collective)
 - **Templates:** [`kody-w/private-workspace-template`](https://github.com/kody-w/private-workspace-template), [`kody-w/braintrust-template`](https://github.com/kody-w/braintrust-template)
 - **Catalogs:** [`kody-w/RAPP_Store`](https://github.com/kody-w/RAPP_Store), [`kody-w/RAPP_Sense_Store`](https://github.com/kody-w/RAPP_Sense_Store), [`kody-w/rapp-egg-hub`](https://github.com/kody-w/rapp-egg-hub)
-- **Test peer:** [`kody-w/rapp-test-neighbor`](https://github.com/kody-w/rapp-test-neighbor) — NEIGHBORHOOD_PROTOCOL §4d canonical fixture
+- **Test peer:** [`kody-w/rapp-test-neighbor`](https://github.com/kody-w/rapp-test-neighbor) — legacy application fixture
 - **Species root (this repo):** [`kody-w/RAPP`](https://github.com/kody-w/RAPP) — kernel + spec only; per SURVIVAL.md, neighborhood seeds do NOT live here
 - **RAR (Pokédex / single-file agent registry):** [`kody-w/RAR`](https://github.com/kody-w/RAR)
-- **Front-door layer (NEIGHBORHOOD_PROTOCOL §18; canonical: [`kody-w/rapp-neighborhood-protocol`](https://github.com/kody-w/rapp-neighborhood-protocol)):**
+- **Front-door application layer** (external guide:
+  [`kody-w/rapp-neighborhood-protocol`](https://github.com/kody-w/rapp-neighborhood-protocol)):
   - **Front-door template:** [`kody-w/rapp-vneighborhood`](https://github.com/kody-w/rapp-vneighborhood) — a public repo *is* the front door (`rapp-vneighborhood/1.0`); interchangeable relay (local ≡ kited ≡ cloud); `v` = swarm-capable; egg/import/fork portability
   - **Example neighborhoods:** [`kody-w/vneighborhood-design-studio`](https://github.com/kody-w/vneighborhood-design-studio), [`kody-w/vneighborhood-research-lab`](https://github.com/kody-w/vneighborhood-research-lab)
 - **Live social layer (apps on twin-chat, signed `rapp-commons-event/1.0`):** [`kody-w/rapp-commons`](https://github.com/kody-w/rapp-commons) (the global commons) + the **rapp-god-forum** (threaded), both served cloud-first by the resident, kited fallback
@@ -538,7 +597,7 @@ Severity: **P0** wire-incompatible · **P1** schema/field mismatch · **P2** doc
 - **God's-eye — registry & static APIs:** [`kody-w/rapp-god`](https://github.com/kody-w/rapp-god) — registry of every part *and every version*, content-addressed (drift observatory) · [`kody-w/rapp-static-apis`](https://github.com/kody-w/rapp-static-apis) — `rapp-static-api/1.0` (APIs on GitHub raw, no server; also hosts the **RAPP Twin §-profile** — `rapp-twin.profile.md`, composing the twin/federation/sealed stack; a §-profile distinct from the `rapp-twin/1.0` client schema) · [`kody-w/rapp-map`](https://github.com/kody-w/rapp-map) — the ecosystem index (which repo houses which part)
 - **Run a brainstem:** [`kody-w/vbrainstem`](https://github.com/kody-w/vbrainstem) — browser-native runtime (Pyodide, no install) · [`kody-w/rapp-brainstem-sdk`](https://github.com/kody-w/rapp-brainstem-sdk) — headless SDK serving the `brainstem.py` `/chat` contract
 - **Operate & connect — the string + doorman:** [`kody-w/rapp-kite`](https://github.com/kody-w/rapp-kite) — the string (fly/operate kited twins) · [`kody-w/rapp-doorman`](https://github.com/kody-w/rapp-doorman) — the sealed-door skill · [`kody-w/rapp-claude-skills`](https://github.com/kody-w/rapp-claude-skills) — Claude Code skills for the RAPP pattern
-- **MCP — bring RAPP into any AI host:** [`kody-w/rapp-mcp`](https://github.com/kody-w/rapp-mcp) — the MCP gateway `rapp-mcp-spec/1.0` (+ a static profile `rapp-static-mcp/1.0`): serve drop-in `*_agent.py` as MCP tools and bridge a running brainstem over `/chat` to any MCP host. **Transport that realizes _Chat Is The Only Wire_ — not a new unit/taxonomy** (see ECOSYSTEM §12)
+- **MCP — application adapter:** [`kody-w/rapp-mcp`](https://github.com/kody-w/rapp-mcp) may bridge host tools, but its RAPP boundary must map to the exact §8 `/chat` contract; its own profiles do not expand the wire.
 - **RACon — cartridges & console:** [`kody-w/racon`](https://github.com/kody-w/racon) — the experience grail `racon/1.0` · [`kody-w/rapp-carts`](https://github.com/kody-w/rapp-carts) — the cartridge spec `rapp-cart/1.0` · [`kody-w/cowork-cookbook-rapp`](https://github.com/kody-w/cowork-cookbook-rapp) — the first RACon cartridge · [`kody-w/rio`](https://github.com/kody-w/rio) — RIO, the browser (OSI L7) · [`kody-w/ai-agent-templates-mirror`](https://github.com/kody-w/ai-agent-templates-mirror) — one-click MCS/Copilot Studio deploy mirror
 - **Demos & prototyping:** [`kody-w/rapp-demos`](https://github.com/kody-w/rapp-demos) — synced scan-to-watch demos (host drives, watchers see live, sealed)
 - **Registry & agents:** [`kody-w/rapp-agents`](https://github.com/kody-w/rapp-agents) — drop-in single-file agents · [`kody-w/aibast-agents-library`](https://github.com/kody-w/aibast-agents-library) — industry-vertical templates · [`kody-w/rapp-zoo`](https://github.com/kody-w/rapp-zoo) — local-first twin-estate keeper
@@ -605,7 +664,7 @@ Common-law trademark (not USPTO-registered). **Permitted without permission:** r
 | GitHub Pages down | Everything except gate UIs (agents via `raw.githubusercontent.com`) | manual |
 | `raw.githubusercontent.com` down | Cached state via `cachedGhJson` (📡 stale pill) | `cachedGhJson` test in tests/run-tests.mjs |
 | GitHub entirely offline | Live WebRTC tethers; cached subscriptions; file:// local subscriptions | tests/scenarios/13-charizard-in-the-woods.sh + 01 |
-| Operator's brainstem dies | Eggs hatch identically (same rappid) anywhere | tests/scenarios/13 + 15 |
+| Operator's brainstem dies | Recovery requires a valid §9 egg plus verified §§6/10/13 identity continuity; current blockers remain in `RAPP1_STATUS.md` | tests are product evidence only |
 | Internet entirely down | Local-only neighborhoods; cached state; Dream Catcher reconciles when back | tests/scenarios/01 + 15 |
 
 **The redundancy stack:** brainstem process memory → `~/.brainstem/neighborhoods/<slug>/` → git clone → exportable egg → GitHub canonical. Failure has to take out all five.
@@ -617,8 +676,10 @@ Common-law trademark (not USPTO-registered). **Permitted without permission:** r
 ## §18 — Updating this map
 
 - **Append-only.** Never repurpose a row; bump version on the row instead.
-- **Schema:** `rapp-ecosystem-map/1.0`. Bump on breaking changes.
-- **Derivative.** If this map disagrees with `MASTER_PLAN.md` / `CONSTITUTION.md` / spec docs, the spec wins and the map is wrong — fix the map.
+- **Application document metadata:** `rapp-ecosystem-map/1.0`; changes here do
+  not version or register the RAPP protocol.
+- **Derivative.** If this map disagrees with `RAPP1_AUTHORITY.json`,
+  `RAPP1_STATUS.md`, or Constitution Article LV, this map is wrong—fix it.
 - **§13 drift is the only mutable section** — entries get added when found, removed when reconciled (PR closes a row by making spec and code agree).
 - **Add a row to §11 the first time you see Claude (or yourself) drift on a given trigger.** The map's job is to catch the next miss.
 

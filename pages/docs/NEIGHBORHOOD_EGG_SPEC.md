@@ -1,6 +1,15 @@
 # NEIGHBORHOOD_EGG_SPEC — Wire format and behavior of `rapp-egg/2.0 scale=neighborhood`
 
-> **Schema:** `rapp-egg/2.0` with `scale: neighborhood` · **Status:** Shipping · **Authority:** this file · **First shipped:** 2026-05-18
+> **SUPERSEDED — historical migration reference, not current instructions.**
+> For canonicalization, identity, frames, wire, eggs, registry, trust, and
+> protocol evolution, the current authority is RAPP/1 rev-5 via
+> [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md). The schema and examples below
+> preserve the 2026-05-18 design verbatim for migration analysis; producers
+> MUST emit only RAPP/1 §9 `schema:"rapp/1-egg"` variants.
+>
+> **Historical schema:** `rapp-egg/2.0` with `scale: neighborhood` · **First
+> shipped:** 2026-05-18
 
 This is the wire-level spec for **the cartridge that snapshots a *neighborhood* into one file**.  A neighborhood is a group of organisms that recognize each other ([[NEIGHBORHOOD_PROTOCOL]] defines the recognition contract).  The members can live on any [[SUBSTRATE_FEDERATION|substrate]] — LAN, GitHub, Tailscale, HTTPS-with-auth — the egg's format does not care.  Only the *carrier* (the method used to move workspace bytes in and out of each member) varies by substrate; the format and dispatch rules are uniform.
 

@@ -7,6 +7,13 @@ hook: A planted RAPP mirror is its operator's AI's front door on the public inte
 
 # The Front Door
 
+> **Historical/superseded protocol narrative.** Preserve this founding account
+> below; do not use its identity examples as current instructions.
+> Canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+> evolution follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
 > **Hook.** A planted RAPP mirror is its operator's AI's front door on the public internet — claimed real estate, owned forever, customizable behind the threshold. "Mirror" is the technical contract; "Front Door" is what it means to the human who plants one. Both names live, used in different rooms.
 
 ## The decision

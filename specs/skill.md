@@ -1,5 +1,22 @@
 # skill — Become a 1st-class citizen of the RAPP network
 
+> **Current RAPP/1 authority (rev-5).** Despite its historical filename, this
+> is a non-runtime host onboarding/migration runbook, not a RAPP skill or
+> capability. For canonicalization, identity, frames, wire, eggs, registry,
+> trust, and protocol evolution, follow
+> [`RAPP1_AUTHORITY.json`](../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../RAPP1_STATUS.md). Do not execute identity instructions
+> below unless they conform to RAPP/1 §6 and authenticated §13 authority.
+
+> **Archived pre-RAPP/1 onboarding runbook — superseded.** The six steps below
+> are preserved for migration and audit context and must not be executed as
+> current participation instructions. In particular, do not derive identity
+> from a repository name, emit the retired local schemas, trust raw fetches, or
+> accept legacy forms perpetually. Current onboarding remains limited by the
+> owner actions in `RAPP1_STATUS.md`.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
+
 > **You are reading the network-participation runbook.** Feed me to any AI. After reading me they can participate in the global RAPP network as a 1st-class citizen.
 >
 > **Scope:** the **network layer** — federating, addressing, joining gates. **Not** the brainstem installer skill (that's [`skill.md`](../skill.md) at repo root) or the canonical agent skill manifest (that's [`pages/docs/skill.md`](../pages/docs/skill.md)). See [`specs/README.md`](./README.md) for the spec-directory map.
@@ -323,3 +340,5 @@ Welcome.
 ---
 
 *Authority: `specs/SPEC.md` (companion to this file). The protocol is the spec. The skill is what you do with the spec.*
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

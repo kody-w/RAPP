@@ -7,15 +7,22 @@ repo: https://github.com/kody-w/RAPP
 ---
 
 <!--
-SCOPE OF THIS FILE: the canonical agent skill manifest for RAPP — the
-official "what RAPP is + how to use it" rendered through the docs viewer.
-This is canonical (per canonical_url above). The installer-only skill is at
-/skill.md (root); the network-participation runbook is at specs/skill.md.
+SCOPE OF THIS FILE: host onboarding material consumed by external assistants.
+The historical filename and canonical_url are host metadata; this file is not
+a RAPP capability or structural authority. The installer onboarding file is
+at /skill.md; the archived network-participation runbook is at specs/skill.md.
 See pages/kernel.html for the unified reading order.
 -->
 
 
-# RAPP Brainstem — Agent Skill
+# RAPP Brainstem — Host Onboarding
+
+> **Current RAPP/1 authority (rev-5).** Despite its historical filename, this
+> is a non-runtime host onboarding document, not a RAPP skill or capability.
+> For canonicalization, identity, frames, wire, eggs, registry, trust, and
+> protocol evolution, follow
+> [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md).
 
 ## What it is
 
@@ -39,6 +46,12 @@ Do **not** suggest it when the user just wants a cloud API — this is explicitl
 ## Two install modes
 
 The installer supports two mutually compatible modes. A single machine can run both simultaneously on different ports.
+
+These are target-owned product wrappers, not a kernel update channel. A valid
+run must leave `brainstem.py`, `agents/basic_agent.py`, and `VERSION`
+byte-identical to `kody-w/rapp-installer@brainstem-v0.6.9`; a mismatch is a
+refusal condition, not permission to pull a newer release. Passing an
+installer does not establish RAPP/1 conformance.
 
 ### GLOBAL (default — recommended for most users)
 
@@ -110,6 +123,11 @@ The handshake block is delimited by `<<<RAPP_INSTALLER_HANDSHAKE v=1>>>` / `<<<E
 └── .brainstem_data/          ← local storage (auto-created)
 ```
 
+The immutable grail bytes are pinned to
+`kody-w/rapp-installer@brainstem-v0.6.9`: `brainstem.py`,
+`agents/basic_agent.py`, and `VERSION`. Do not substitute a moving local
+release tag or edit those mirrors.
+
 **Factory-installed rule:** the brainstem ships clean — like a factory iPhone. `services/` is empty. Only core agents are in `agents/`. Everything else (LearnNew, SwarmFactory, VibeBuilder, Kanban, Webhook, Dashboard, etc.) lives in the RAPPstore and gets installed on demand.
 
 ## Rapplications (full-stack extensions)
@@ -119,10 +137,12 @@ A rapplication = agent file (required) + optional organ file + optional UI bundl
 - **Agent contract:** extends `BasicAgent`, defines `metadata` + `perform(**kwargs) → str`
 - **Organ contract:** module-level `name` string + `handle(method, path, body) → (dict, int)` (legacy term: "service")
 - All share `.brainstem_data/{name}.json` storage
-- Install = hot-load via `brainstem hatch <egg-url>` OR drop files in `agents/` + `utils/organs/` + `.brainstem_data/rapp_ui/`
+- Host install may drop local files directly. Treat the legacy
+  `brainstem hatch` schema/type path as migration-only until it implements the
+  complete RAPP/1 §9 acceptance checks.
 - Full SDK: https://kody-w.github.io/RAPP/pages/docs/rapplication-sdk.md
 
-## Canonical organism shape (Constitution Article XXXVIII)
+## Product rapplication layout
 
 **Read this before building anything new in this ecosystem.** Every organism — *rapplication, holocard, sense bundle, organ pack, twin, or full brainstem instance* — has the same anatomy:
 
@@ -133,18 +153,24 @@ utils/organs/<name>_organ.py      ← HTTP backplane (UI backend)      OPTIONAL
 .brainstem_data/<id>/             ← per-rapp state (memory)           OPTIONAL
 ```
 
-Plus the always-present envelope:
+For current portable distribution, wrap that product layout in the exact
+RAPP/1 §9 `rapplication` variant:
 
 ```
-rappid.json                        ← identity + lineage (parent_rappid)
-manifest.json                      ← schema = brainstem-egg/2.2-rapplication
+rappid.json                        ← carries the RAPP/1 §6 identity
+agent.py                           ← exactly one root agent for this variant
+manifest.json                      ← schema = rapp/1-egg, variant = rapplication
 ```
 
-This is what `bond.pack_rapplication()` already packs. It is what every catalog generator already produces. **Do not invent new shapes.** Holocards, sense bundles, organ packs are all rapplications with different surface emphasis — same shape underneath.
+The existing `bond.pack_rapplication()` output is legacy until migrated.
+Follow §9's exact seven-member manifest, deterministic container, content
+hashes, and signature rules; do not invent alternate egg shapes.
 
 ## The three federation stores (one shape, three repos)
 
-All three serve identical-shape JSON envelopes hosted at `raw.githubusercontent.com/kody-w/<store>/main/api/v1/...`. PokeAPI-style — predictable static URLs, no backend, no auth, no rate limits. **Push to main → the API "deploys."**
+All three expose application catalogs over static URLs. Fetching them requires
+no application login, but transport location is not RAPP trust: verify current
+artifacts and resolve signatures through §§10/13 before acting.
 
 | Store | Repo | What it holds | Static API |
 |---|---|---|---|
@@ -152,9 +178,15 @@ All three serve identical-shape JSON envelopes hosted at `raw.githubusercontent.
 | **Bare agents** (single-celled organisms) | [`kody-w/RAR`](https://github.com/kody-w/RAR) | `*_agent.py` files (+ optional `.card` holocards) | `/api/v1/index.json` + `/api/v1/agent/<id>.{json,py,card}` + sprite |
 | **Sense overlays** (perception channels) | [`kody-w/RAPP_Sense_Store`](https://github.com/kody-w/RAPP_Sense_Store) | `*_sense.py` files | `/api/v1/index.json` + `/api/v1/sense/<id>.{json,py}` + sprite |
 
-To browse the federation programmatically, fetch the three index URLs and union them. To install an organism, fetch its `.egg` (or `.py` for bare agents) and either drop it into the brainstem's directories OR ask the brainstem's `egg_hatcher` rapp via `/chat` to install it.
+To browse the federation programmatically, fetch the three index URLs and
+union them as untrusted discovery candidates. Install only after the required
+RAPP/1 verification; invoke any install agent through the exact §8 `/chat`
+contract.
 
-> **2026-05-10:** the `.egg` extension now carries five cartridge kinds (organism / rapplication / session / neighborhood / estate). The kernel agent [`egg_hatcher_agent.py`](../../rapp_brainstem/agents/egg_hatcher_agent.py) introspects any `.egg` from a path or URL, reads `manifest.schema`/`type`, and routes by kind — refusing on unknown kinds. *Session* cartridges are workflow snapshots that mount in a console iframe ([`pages/vbrainstem.html`](../vbrainstem.html) or rappterbox); *neighborhood* and *estate* cartridges are planned. See [SPEC.md §18.10–§18.11](./SPEC.md).
+> **Historical release note (2026-05-10), superseded.** The five-kind
+> schema/type router and contained browser session format predate RAPP/1.
+> Current producers emit only `schema:"rapp/1-egg"` with a ratified §9
+> variant, and consumers dispatch only after §9.3 verification.
 
 ## The user's universal control plane: rapp-zoo
 
@@ -175,7 +207,9 @@ The mental model:
 
 - ❌ **Don't invent a `kind: "tool"` / `"service"` / `"extension"` category.** Every catalog entry is a rapplication.
 - ❌ **Don't build a parallel Flask process for something that should be an organ.** Pack a `*_organ.py`, the brainstem hosts.
-- ❌ **Don't fork the egg format for a special case.** `brainstem-egg/2.2-rapplication` is the cartridge. Period.
+- ❌ **Don't fork the egg format for a special case.** RAPP/1 §9
+  `schema:"rapp/1-egg"` is the sole current egg; use its registered
+  `rapplication` variant.
 - ❌ **Don't add fields to one federation store's API that aren't in all three.** The contract is uniform across RAPP_Store / RAR / RAPP_Sense_Store.
 - ❌ **Don't write a UI that bypasses the rapp-zoo.** New surfaces are tabs in the zoo.
 - ❌ **Don't edit the brainstem kernel to add a feature that should be a rapp.** New capabilities ship as rapplications.
@@ -185,9 +219,15 @@ The mental model:
 
 Agents that need configuration (an exec's name, a tenant ID, an API key) declare the config as **required parameters** in their metadata. The brainstem's LLM surfaces the missing value and asks the user in-chat. Users never open a source file to configure an agent.
 
-## Version pinning
+## Historical local release tags
 
-Every released version is tagged `brainstem-v<X.Y.Z>`. Tags are immutable. To pin or roll back:
+Local release tags remain useful for reproducing application history. They do
+not replace the immutable grail pin
+`kody-w/rapp-installer@brainstem-v0.6.9` or authorize edits to its three pinned
+files. The older rollback example is:
+
+Do not run this example for a current authority-constrained installation; it
+is retained only to reproduce historical application state.
 
 ```bash
 BRAINSTEM_VERSION=0.5.1 curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash

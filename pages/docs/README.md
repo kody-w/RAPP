@@ -1,5 +1,11 @@
 # `docs/` — Governance and reference
 
+> **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
+> wire, eggs, registry, trust, and protocol evolution, start with
+> [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md). The older local specs are either
+> product references or explicitly superseded history.
+
 > **Browsing for the right doc?** The [**Kernel hub**](../kernel.html) surfaces every spec here alongside the trilogy, the law, and the vault Reading Paths — useful when you don't yet know whether your question is a spec question, a vault question, or a governance question.
 
 Long-form, stable documents that aren't the catalog card (`README.md`)
@@ -14,7 +20,7 @@ contract, not the kind you grep daily.
 | [`ROADMAP.md`](./ROADMAP.md) | Post-v1 directions that must honor the v1 contract |
 | [`AGENTS.md`](./AGENTS.md) | Guidance to AI assistants editing this repo (Cursor, Codex, etc.) |
 | [`VERSIONS.md`](./VERSIONS.md) | Brainstem release tag history and rollback discipline |
-| [`skill.md`](./skill.md) | The canonical AI-readable skill manifest for RAPP |
+| [`skill.md`](./skill.md) | Historically named, non-runtime host-onboarding document; RAPP capabilities remain agents |
 | [`rapplication-sdk.md`](./rapplication-sdk.md) | SDK-shaped reference for building rapplications |
 
 > Note: [`CONSTITUTION.md`](../../CONSTITUTION.md) is at repo root, not here — it's a peer of `README.md` because governance is part of the catalog card. See Article XVI.

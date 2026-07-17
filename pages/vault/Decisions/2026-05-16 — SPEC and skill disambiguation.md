@@ -7,6 +7,13 @@ hook: Five files share two filenames (SPEC.md ×2, skill.md ×3) but cover three
 
 # 2026-05-16 — SPEC and skill disambiguation (3 layers, 2 filenames)
 
+> **Historical/superseded documentation decision.** Preserve the naming
+> decision below, but its former authority order is no longer current.
+> Canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+> evolution follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
 > **Hook.** Five files share two filenames (SPEC.md ×2, skill.md ×3) but cover three different layers of the platform. Resolved via scope markers + a `specs/README.md` directory map rather than renames — preserves git history and existing links.
 
 ## The collision

@@ -7,6 +7,13 @@ hook: One single-file hatcher hatches any RAPP twin into ~/.rapp/twins/<hash>/ f
 
 # The Federated Twin Egg Hatcher Pattern
 
+> **Historical/superseded protocol narrative.** Preserve this dated account as
+> history; do not use its egg formats as current instructions. Canonicalization,
+> identity, frames, wire, eggs, registry, trust, and protocol evolution follow
+> RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
 > **Hook.** One single-file hatcher (`twin_egg_hatcher_agent.py`) hatches any RAPP twin into `~/.rapp/twins/<hash>/` from cwd auto-detect, a public/private GitHub repo, or a local `.egg` zip. The global brainstem's built-in `Twin` agent then federates `list`, `boot`, and `chat` across every twin under that folder — no kernel patches, no second installer, no per-twin code duplication.
 
 [[The Distro Hatcher Agent Pattern]] describes how to *extend the kernel* with a distro via an in-process hatcher.  This doc describes the sibling pattern that *adds twins to the federation* without touching the kernel at all.  The distro hatcher writes into a target brainstem folder; the twin hatcher writes into `~/.rapp/twins/`, where the kernel's built-in [[The Twin Agent|Twin]] tool already knows to look.

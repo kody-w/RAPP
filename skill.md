@@ -7,16 +7,22 @@ metadata: {"emoji":"","category":"ai-agents","repo":"https://github.com/kody-w/r
 ---
 
 <!--
-SCOPE OF THIS FILE: the installer skill manifest. This is the skill an LLM
-(Claude / Copilot CLI / etc.) loads when asked to install RAPP Brainstem on
-the user's behalf. It's not the canonical agent skill (that's
-pages/docs/skill.md) and it's not the network-participation runbook (that's
-specs/skill.md). All three intentionally exist because they serve different
-audiences. See pages/kernel.html for the canonical reading order.
+SCOPE OF THIS FILE: a non-runtime host onboarding manifest consumed by an
+external assistant when asked to install RAPP Brainstem. It is not a RAPP
+agent or capability. pages/docs/skill.md is broader host onboarding and
+specs/skill.md is an archived pre-RAPP/1 network runbook.
 -->
 
 
 # RAPP Brainstem
+
+> **Current RAPP/1 authority (rev-5).** This file is a non-runtime host
+> onboarding runbook, not a RAPP agent or capability. For canonicalization,
+> identity, frames, wire, eggs, registry, trust, and protocol evolution, follow
+> [`RAPP1_AUTHORITY.json`](./RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](./RAPP1_STATUS.md). It installs the immutable
+> `kody-w/rapp-installer@brainstem-v0.6.9` grail; it does not make that grail
+> fully conformant.
 
 A local-first AI agent server. No API keys. No cloud setup. Just a GitHub account.
 
@@ -53,11 +59,12 @@ git --version 2>/dev/null
 gh --version 2>/dev/null
 ```
 
-**On Windows**, skip all manual prereq checks -- the PowerShell installer handles everything automatically:
+**On Windows**, install the prerequisites directly, then continue with the
+pinned checkout below. Do not pipe the moving `main/install.ps1` into
+PowerShell; that legacy path is not an authority-constrained grail pin.
 ```powershell
-irm https://raw.githubusercontent.com/kody-w/rapp-installer/main/install.ps1 | iex
+winget install Python.Python.3.11 Git.Git GitHub.cli
 ```
-It auto-installs Python 3.11, Git, and GitHub CLI via winget on a factory Windows 11 PC. If the user is on Windows and runs this, skip to Step 2 after it completes.
 
 **If Python 3.11+ is missing** (macOS/Linux):
 - macOS: `brew install python@3.11`
@@ -92,7 +99,13 @@ gh auth token >/dev/null 2>&1 && echo "yes authenticated" || echo "no not authen
 ### Step 3: Install the Brainstem
 
 ```bash
-git clone https://github.com/kody-w/rapp-installer.git ~/.brainstem/src 2>/dev/null || (cd ~/.brainstem/src && git pull)
+if [ -d ~/.brainstem/src/.git ]; then
+  git -C ~/.brainstem/src fetch --depth 1 origin tag brainstem-v0.6.9
+  git -C ~/.brainstem/src checkout --detach brainstem-v0.6.9
+else
+  git clone --branch brainstem-v0.6.9 --depth 1 \
+    https://github.com/kody-w/rapp-installer.git ~/.brainstem/src
+fi
 cd ~/.brainstem/src/rapp_brainstem
 pip3 install -r requirements.txt -q
 ```
@@ -302,8 +315,12 @@ FUNC_URL="https://${FUNC_NAME}.azurewebsites.net/api/businessinsightbot_function
 
 curl -s -X POST "${FUNC_URL}?code=${FUNC_KEY}" \
  -H "Content-Type: application/json" \
- -d '{"user_input": "Hello", "conversation_history": []}' | python3 -m json.tool
+ -d '{"user_input": "Hello"}' | python3 -m json.tool
 ```
+
+This Azure URL is a host adapter. A current RAPP boundary still uses the exact
+§8 request and response shapes; the legacy `conversation_history` member is
+not current wire.
 
 If the functions list is empty after deploy:
 ```bash

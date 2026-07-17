@@ -7,6 +7,13 @@ hook: A single `.egg` file captures the full state of a *neighborhood* — every
 
 # Neighborhood Egg — Snapshot and Hatch
 
+> **Historical/superseded protocol narrative.** Preserve this dated account as
+> history; do not use its schemas as current instructions. Canonicalization,
+> identity, frames, wire, eggs, registry, trust, and protocol evolution follow
+> RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
 > **Hook.** A single `.egg` file captures the full state of a *neighborhood*.  Hatching it restores the federation either *in place* (push peer assets back to where they came from) or as a *single-device replay* (extract peer assets into `~/.rapp/simulated/<peer>/twins/<hash>/`).  One egg, two targets, multiple carriers — full round-trip verified on LAN-SSH; the format itself is substrate-agnostic.
 
 [[The Federated Twin Egg Hatcher Pattern]] describes how to package and hatch *one* twin.  This doc describes the sibling pattern that packages and hatches *a whole neighborhood* — every twin on this Mac plus every twin on every reachable peer, wherever those peers happen to live — into one cartridge.  Same `.egg` extension, same `rapp-egg/2.0` family, `scale: neighborhood`.

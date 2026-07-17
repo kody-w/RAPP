@@ -1,5 +1,11 @@
 # `pages/` — Audience-facing HTML
 
+> **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
+> wire, eggs, registry, trust, and protocol evolution, follow
+> [`RAPP1_AUTHORITY.json`](../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../RAPP1_STATUS.md). Audience navigation must never
+> present retired protocol documents as current instructions.
+
 Static HTML pages for humans who landed on the project from outside —
 prospects, partners, executives, security reviewers, FAQ-skimmers.
 Served by GitHub Pages at `https://kody-w.github.io/RAPP/pages/<file>.html`.

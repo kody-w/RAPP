@@ -1,5 +1,12 @@
 # Twin Patterns — Global Parallel Omniscience
 
+> **Historical/superseded protocol narrative.** Preserve this dated account as
+> history; do not use its identity or egg examples as current instructions.
+> Canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+> evolution follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
 > *Vault note. The companion to `pages/docs/SPEC.md`'s constitutional articles. Explains how a digital twin lives across multiple devices simultaneously without any merge-back layer, and how it collaborates publicly when it wants to.*
 
 The brainstem is a runtime. The egg is the digital organism. The RAPPID is the soul. **A twin is not stuck on one machine.** This note explains the patterns that make a twin universally available — phone, laptop, edge device, friend's borrowed brainstem — without losing identity, without losing parallel autonomy, and without (yet) requiring the proprietary dreamcatcher merge engine.

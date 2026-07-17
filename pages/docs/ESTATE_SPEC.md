@@ -1,16 +1,34 @@
 # ESTATE_SPEC — The Rappid Is The Global Address
 
-> **Schema:** `rapp-estate/1.1` · **Status:** Constitutional (Article XLVI) · **Authority:** this file · **First shipped:** 2026-05-09
+> **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
+> wire, eggs, registry, trust, and protocol evolution, follow
+> [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md). This file remains product-level
+> estate context; its incompatible address and cartridge rules are legacy
+> migration material, not protocol authority.
+>
+> **Schema:** `rapp-estate/1.1` · **Status:** product architecture, subordinate
+> to RAPP/1 · **First shipped:** 2026-05-09
 
-This is the load-bearing spec for **how any door (twin or neighborhood) is discovered and addressed across the network**. It locks in a property the rappid format has always implied but the codebase had not enforced: from a single rappid string, with zero auth and zero API calls, you can compute every canonical URL the door has and fetch its full identity from `raw.githubusercontent.com`.
+This is an application architecture for estate views and conventional GitHub
+door URLs. It is **not** the load-bearing RAPP identity or discovery spec.
+Parsing a self-locating rappid can produce a candidate URL, but authenticated
+current anchors, lawful moves, keys, and re-genesis resolve through RAPP/1
+§13.
 
-If you are writing a planter, an estate agent, a federation walker, a holocard renderer, a discovery UI, or any code that maps from "I have a rappid" → "I want to read the door" — this spec is the contract. There are no fallbacks; the spec describes what is true.
+Use these URL conventions for product views only after validating the §6
+rappid and resolving current registry state. On conflict, the pinned RAPP/1
+authority wins.
 
-> **2026-05-10 — estate is portable:** the entire estate (every door, every rappid, the door catalog, the public/private/on-device tiers per [`PUBLIC_PRIVATE_BOUNDARY.md`](./PUBLIC_PRIVATE_BOUNDARY.md)) is a planned `brainstem-egg/2.3-estate` cartridge. Substrate-migrate the whole identity by exporting → AirDropping/sneakernetting → re-anchoring on the new substrate via [`egg_hatcher_agent.py`](../../rapp_brainstem/agents/egg_hatcher_agent.py). The estate cartridge is the missing identity-portability primitive — paired with the rappid-as-global-address property below, the operator's whole digital identity becomes substrate-agnostic. See [SPEC.md §18.10](./SPEC.md) family table.
+> **Historical proposal (2026-05-10), superseded.** The planned
+> `brainstem-egg/2.3-estate` cartridge and schema/type hatcher are retired
+> migration material. A current estate cartridge is the RAPP/1 §9 `estate`
+> variant; identity continuity additionally requires verified §§6, 10, and 13
+> state and never follows from transport alone.
 
 ---
 
-## 1. The rappid IS the URL
+## 1. The rappid is identity; location is registry-resolved
 
 The **consolidated** rappid format (locked 2026-06-03):
 
@@ -18,7 +36,10 @@ The **consolidated** rappid format (locked 2026-06-03):
 rappid:@<owner>/<slug>:<64hex>
 ```
 
-`@<owner>/<slug>` is the **location** — `github.com/<owner>/<slug>` is the door. From this string alone, by **string parsing** (not lookup, not config, not env), you derive every door URL in §2:
+The `@<owner>/<slug>` portion supplies the initial self-locating anchor. String
+parsing derives the application URL candidates in §2, but does not establish
+current authority after a lawful move, re-anchor, key rotation, or re-genesis.
+Resolve those through RAPP/1 §13.
 
 | Field | How |
 |---|---|
@@ -26,21 +47,28 @@ rappid:@<owner>/<slug>:<64hex>
 | `repo` (`slug`) | Everything after `/` and before the final `:` |
 | `hash` | The 64-hex after the final `:` — the 256-bit identity / join key |
 
-`kind` (→ `door_type`) is **no longer in the string** — it lives in the door's `rappid.json` record (fetch the `identity` URL in §2). The pure-string `door_from_rappid()` returns the URLs (location) for any door; `kind`/`door_type` come from the record (or, for a legacy v2 string, are read inline). Legacy forms — v2 `rappid:v2:<kind>:@<owner>/<repo>:<32hex>@github.com/<owner>/<repo>` and bare UUIDs — are read-compatible via `door_address.py` (`canonicalize_rappid`).
+`kind` is not part of the §6 rappid. Protocol kind/family bindings come from
+§13; application `door_type` may come from product metadata.
+`door_from_rappid()` returns candidate URLs only. Legacy v2 strings and bare
+UUIDs may be recognized inside bounded §12 migration, but provisional or
+legacy identifiers are never emitted or accepted as current.
 
-**Valid kinds** (frozen as of 2026-05-09; **amended 2026-06-02** per CONSTITUTION Art. XLVI.2 to ratify the single-presence kinds already shipped across the kernel, RAR, and RAPP-Network): single AI presences → `front_door`: `twin`, `operator`, `personal`, `project`, `memorial`, `pre-founder`, `mirror`, `experiment`, `custom`; community spaces you enter → `gate`: `neighborhood`, `ant-farm`, `braintrust`, `workspace`, `hatched`, `rapplication`, `prototype`, `place`. Adding a new kind requires a CONSTITUTION amendment because every consumer derives behavior from this token; the canonical machine-readable set is `VALID_KINDS` / `_FRONT_DOOR_KINDS` in `tools/door_address.py` (the one parser consumers MUST import).
+The dated application `door_type` list in `tools/door_address.py` remains a
+UI convention. It neither registers RAPP frame kinds nor replaces the signed
+§13 registry and constitutional registration process.
 
 ---
 
-## 2. The Canonical Door URL Set
+## 2. Application door URL convention
 
-Every planted door MUST be reachable at these URLs. The planter MUST emit each one as appropriate to the door's type. A consumer holding a rappid MUST be able to fetch any of these URLs without an API call:
+GitHub-hosted product doors conventionally publish these URLs. They are not
+RAPP protocol requirements or trust anchors:
 
 | # | Name | URL pattern | Required for |
 |---|---|---|---|
 | 1 | `repo` | `https://github.com/<owner>/<repo>` | all (the canonical browsing URL) |
 | 2 | `front` | `https://<owner>.github.io/<repo>/` | all (the heimdall snapshot — the operator-facing chat surface) |
-| 3 | `identity` | `https://raw.githubusercontent.com/<owner>/<repo>/main/rappid.json` | all (`rapp/1` — the sole identity standard, subsuming the former `rapp-eternity/1.0` content-addressing and the `rapp-rappid/2.0` record name) |
+| 3 | `identity` | `https://raw.githubusercontent.com/<owner>/<repo>/main/rappid.json` | application record carrying a RAPP/1 §6 rappid; `rapp/1` is the frame token, not an identity schema |
 | 4 | `holocard` | `https://raw.githubusercontent.com/<owner>/<repo>/main/card.json` | all (`rappcards/1.1.2`) |
 | 5 | `holo_md` | `https://raw.githubusercontent.com/<owner>/<repo>/main/holo.md` | all (the friendly entry doc) |
 | 6 | `avatar` | `https://raw.githubusercontent.com/<owner>/<repo>/main/holo.svg` | all (procedural sprite) |
@@ -50,7 +78,10 @@ Every planted door MUST be reachable at these URLs. The planter MUST emit each o
 
 **The .nojekyll + index.html invariant.** A planted door's index.html serves the heimdall front-door grail; for that to work over GitHub Pages, the repo MUST contain a `.nojekyll` file at root. The planter emits it. The backfill enforces it.
 
-**The specs/ invariant.** Per "specs travel with the planted repo" (CONSTITUTION Article XXIII; memory: `feedback_specs_travel_with_planting.md`), every planted door MUST also carry the `specs/` bundle (RAPPID_SPEC, HOLOCARD_SPEC, ANTIPATTERNS, SOUL_IDENTITY, PARTICIPATION, AGENT_SPEC, RAPPLICATION_SPEC, SENSE_SPEC, the kind-specific protocol, and **ESTATE_SPEC** as of bundle v1.1.0).
+**Current documentation invariant.** A planted repo may carry onboarding
+material, but any current teaching copy must link
+`RAPP1_AUTHORITY.json` and `RAPP1_STATUS.md`. Legacy `specs/` bundles are not
+structural authority.
 
 ---
 
@@ -58,7 +89,7 @@ Every planted door MUST be reachable at these URLs. The planter MUST emit each o
 
 The user's **estate** is the door catalog — every door they own (`created`) plus every door they're a contributor in (`member`). It lives in two places:
 
-- **Local source of truth:** `~/.brainstem/estate.json`
+- **Local application catalog:** `~/.brainstem/estate.json`
 - **Public mirror (optional):** `https://raw.githubusercontent.com/<github-handle>/rapp-estate/main/estate.json`
 
 Per Article XLVI.3, each entry stores **only**:
@@ -71,7 +102,10 @@ Per Article XLVI.3, each entry stores **only**:
 }
 ```
 
-Everything else (owner, repo, kind, door_type, name, summon_url, holocard URL, all 9 canonical URLs) is **DERIVED** at read time via `door_from_rappid(rappid)`. There are no stored fallback fields. There are no patched URLs. If the rappid changes, every derived field updates. If the rappid is invalid, the entry surfaces as an error — never silently fixed up.
+Application views may derive initial GitHub URL candidates via
+`door_from_rappid(rappid)`. Before use, resolve the rappid and current anchor
+through §13. Never silently patch, re-mint, or trust a location merely because
+it was string-derived.
 
 This is the constitutional answer to *"don't do all of these exception things."*
 
@@ -90,7 +124,10 @@ This is the constitutional answer to *"don't do all of these exception things."*
 }
 ```
 
-The `owner.rappid` is the operator's **personal** rappid — minted once at first install, lives at `~/.brainstem/rappid.json`. It is the universal anchor for both sides of the estate:
+The `owner.rappid` is intended to be the operator's personal §6 rappid. The
+local file is an application cache; the out-of-band estate-owner rappid and
+signed §13 registry form the trust root.
+The two relationships below are product-lineage/membership metadata only:
 
 - **As ancestor** of `created[]`: every door the operator planted has `parent_rappid = owner.rappid` in its own `rappid.json`.
 - **As member-proof** for `member[]`: every gate the operator joined lists `owner.rappid` in its own `members.json`.
@@ -99,9 +136,12 @@ The same identity, two roles. No additional ID system needed.
 
 ---
 
-## 4. Discovery Is Pure Raw Fetch
+## 4. Raw fetch is transport, not authoritative discovery
 
-A consumer MUST be able to discover any door, and any user's full estate, with `curl` alone. No `gh` CLI, no API token, no rate limit (for public repos), no auth.
+A public GitHub application view can fetch candidate door content with
+`curl`. That provides availability only. A conformant consumer validates the
+§6 identifier, resolves §13 state, and verifies any required §10 signature
+before accepting protocol data.
 
 ### 4.1 Discover one door from its rappid
 
@@ -119,17 +159,29 @@ curl -fsSL "https://raw.githubusercontent.com/${OWNER_REPO}/main/holo.md"
 ### 4.2 Discover a user's full estate from their GitHub handle
 
 ```bash
-# A single roundtrip, no auth, no API:
+# A single unauthenticated transport fetch (not trusted acceptance):
 curl -fsSL "https://raw.githubusercontent.com/<github-handle>/rapp-estate/main/estate.json"
 ```
 
-This returns the full door catalog. From there, every entry's rappid expands to the door's own URL set via `door_from_rappid()`.
+This returns an unverified application catalog. Validate identifiers and
+registry state before following it.
 
 ### 4.3 The chain rule
 
-To enumerate every door in a user's reach: fetch their estate → for each entry's rappid, fetch the door's `rappid.json` → if you want to walk into a gate's membership, fetch its `members.json` → each member's rappid expands to their estate URL. Federation is a graph walk over pure raw fetches.
+An application may graph-walk these raw resources for discovery candidates.
+Each candidate remains untrusted until the relevant RAPP/1 checks pass.
 
 ---
+
+## Historical pre-RAPP/1 implementation appendix (superseded)
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
+
+Everything below this marker preserves the former derivation, recovery,
+cartridge, and adoption contract for migration and audit context. Its
+present-tense `MUST` statements, legacy schema examples, hatcher instructions,
+and trust claims are **not current instructions**. Current implementations use
+RAPP/1 §§6–13 and total migration under §12.
 
 ## 5. The `door_from_rappid` Derivation Contract
 
@@ -397,3 +449,5 @@ Authority: [`pages/docs/PUBLIC_PRIVATE_BOUNDARY.md`](./PUBLIC_PRIVATE_BOUNDARY.m
 ---
 
 *The rappid encodes the address. The address encodes the door. The door encodes the contract. There is no other map.*
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

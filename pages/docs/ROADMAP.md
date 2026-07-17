@@ -1,12 +1,23 @@
 # RAPP Roadmap
 
-Post-v1 directions. The v1 contract ([SPEC.md](./SPEC.md)) is frozen. Every
-item here must honor it: **one file per agent**, data sloshing is the wire,
-no frameworks, no new primitives where an existing pattern will do.
+> **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
+> wire, eggs, registry, trust, and protocol evolution, follow
+> [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md). Roadmap work must migrate or
+> retire incompatible forms rather than preserve them indefinitely.
+
+Post-v1 product directions retain the single-file agent rule, but the former
+local v1 wire contract in [`SPEC.md`](./SPEC.md) is superseded for protocol
+matters by RAPP/1 rev-5.
 
 ---
 
 ## Recently shipped
+
+> **Historical release ledger.** Dated shipped sections preserve what the
+> repository released and called canonical at that time. Retired identity,
+> frame, wire, and egg forms in those records are superseded migration
+> evidence, not current implementation instructions.
 
 ### 2026-05-10 — `.egg` cartridge unification + tethered vBrainstem
 
@@ -15,7 +26,11 @@ no frameworks, no new primitives where an existing pattern will do.
 - **Egg-cartridge family.** Five variants under one `.egg` extension, one rappzoo Pokédex shelf, one introspection-routing kernel agent ([`egg_hatcher_agent.py`](../../rapp_brainstem/agents/egg_hatcher_agent.py)): `brainstem-egg/2.2-organism` (shipping), `2.2-rapplication` (shipping), `2.3-session` (shipping), `2.3-neighborhood` (planned), `2.3-estate` (planned).
 - **Tethered vBrainstem.** Public surface at [`pages/vbrainstem.html`](../vbrainstem.html). Multi-participant browser-tab brainstem with QR-pair WebRTC handshake (PeerJS broker + ECDSA P-256 keypair + 6-digit safety code), three exchangeable LLM backends (localhost default / `?brainstem=URL` / `?copilot=1` via Doorman + Pyodide-loaded Python agents), Coordinator-driven debate-demo workflow, transcript-as-cartridge round-trip.
 
-**Next on this thread:** automate `neighborhood` and `estate` hatch paths in `egg_hatcher_agent.py` (currently they return manual instructions). When those land, .egg = absolute parity across organism / rapplication / session / neighborhood / estate.
+> **Current supersession:** do not extend the legacy schema/type hatcher.
+> Replace that path with RAPP/1 §9 variant dispatch and complete §9.3
+> verification; identity continuity additionally requires §§6, 10, and 13.
+
+**Historical next step (superseded):** automate `neighborhood` and `estate` hatch paths in `egg_hatcher_agent.py` (currently they return manual instructions). When those land, .egg = absolute parity across organism / rapplication / session / neighborhood / estate.
 
 ### 2026-05-18 — Neighborhood-egg snapshot/hatch, multi-carrier
 
@@ -50,11 +65,12 @@ Three carriers left after LAN-SSH + GitHub + Tailscale.  Each enables a differen
 **Shape:**
 
 - Peer entry declares `auth_url: "https://peer.example.com/api"` and `auth_token_env: "PEER_TOKEN"` (env var name holding the token, not the token itself).
-- **Receiver side** (new): brainstem grows two opt-in endpoints, gated by `BRAINSTEM_ALLOW_REMOTE_TWIN_SNAPSHOT=true` + Bearer-token auth:
-  - `GET /api/twin/<hash>/workspace.tar.gz` → tarballed workspace
-  - `PUT /api/twin/<hash>/workspace.tar.gz` → restore from tarball (respects same `overwrite_*` semantics)
-  - `GET /api/twins` → list of twin hashes + metadata (mirrors `Twin.list` output shape)
-- **Carrier side** (in NeighborhoodSnapshot / NeighborhoodRun): HTTP GET/PUT, bearer-token auth.
+- **Receiver side:** add a `RemoteTwinSnapshot` agent behind the exact RAPP/1
+  §8 `POST /chat` boundary. Its registered actions cover list, snapshot, plan,
+  and restore; destructive restore remains opt-in and authenticated.
+- **Carrier side** (in NeighborhoodSnapshot / NeighborhoodRun): invoke the
+  agent through exact `/chat`; the HTTPS tunnel does not add sibling protocol
+  capability routes.
 - Bearer tokens live in operator env, **never in `peers.json`**.
 
 **Acceptance:**
@@ -227,9 +243,9 @@ sacred (§7). The twin's voice is just another paragraph in it.
 
 - **Honors §5 / §8.** The agent contract doesn't change. `/chat` request
   and response shapes don't change — the twin content lives *inside* the
-  existing `response` string. A v1 client that doesn't know about the
-  delimiter gets the main reply and the voice line; everything still
-  works. (Graceful degradation by construction.)
+  existing `response` string. This is an application rendering convention
+  inside the exact §8 string field, not permission for alternate protocol
+  response shapes or perpetual legacy readers.
 - **Honors `data_slush`.** The twin sees the whole turn because it *is*
   the turn. No separate context bus, no parallel agent reading the same
   state from a second place.

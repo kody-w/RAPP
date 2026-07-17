@@ -255,6 +255,13 @@
 
 <main>
 
+<aside role="note" style="margin:0 auto 24px;max-width:900px;padding:14px 18px;border:1px solid var(--border);border-radius:12px;line-height:1.55">
+  <strong>Current RAPP/1 authority (rev-5).</strong> Canonicalization, identity,
+  frames, wire, eggs, registry, trust, and protocol evolution follow
+  <a href="../../RAPP1_AUTHORITY.json">RAPP1_AUTHORITY.json</a> and
+  <a href="../../RAPP1_STATUS.md">RAPP1_STATUS.md</a>.
+</aside>
+
 <section class="anatomy-hero">
   <h1>Anatomy of a Digital Organism</h1>
   <p class="lede">
@@ -373,7 +380,7 @@
   <div class="legend-card" data-layer="dna">
     <h3>Kernel <span class="biology">↔ DNA</span></h3>
     <div class="where">brainstem.py</div>
-    <div class="blurb">The runtime that any organism's egg can hatch into. Drop-in replaceable per Constitution Article XXXIII. Never edited by AI assistants. The kernel evolves under the organism, not the other way around.</div>
+    <div class="blurb">The runtime target for a verified organism egg. Its three grail files are byte-pinned to <code>kody-w/rapp-installer@brainstem-v0.6.9</code> and never edited locally; RAPP/1 convergence happens in target-owned adapters.</div>
   </div>
 
   <div class="legend-card" data-layer="soul">
@@ -391,7 +398,7 @@
   <div class="legend-card" data-layer="sense">
     <h3>Senses <span class="biology">↔ Perception channels</span></h3>
     <div class="where">utils/senses/*_sense.py</div>
-    <div class="blurb">Per-channel output overlays (delimiter + response_key + wrapper_tag + system_prompt). How LLM output gets routed to chat / TTS / twin / future surfaces. <code>|||VOICE|||</code> and <code>|||TWIN|||</code> are kernel-shipped; more come from the sense store.</div>
+    <div class="blurb">Application output overlays for rendering. <code>|||VOICE|||</code> and <code>|||TWIN|||</code> are host conventions; overlays do not add RAPP wire fields or capability endpoints.</div>
   </div>
 
   <div class="legend-card" data-layer="cell">
@@ -403,7 +410,7 @@
   <div class="legend-card" data-layer="memory">
     <h3>Memory <span class="biology">↔ Lived experience</span></h3>
     <div class="where">.brainstem_data/</div>
-    <div class="blurb">Everything the organism has accumulated — chat tabs, frames, binder state, per-rapp cartridges, twin observations. Travels in the egg; survives every kernel bond.</div>
+    <div class="blurb">Application state accumulated by the organism. It travels only when explicitly listed in a valid §9 variant and remains independently subject to frame and trust verification.</div>
   </div>
 
   <div class="legend-card" data-layer="skin">
@@ -414,8 +421,8 @@
 
   <div class="legend-card" data-layer="egg">
     <h3>Egg <span class="biology">↔ Portable cartridge</span></h3>
-    <div class="where">brainstem-egg/2.2-organism (zip + manifest)</div>
-    <div class="blurb">The form an organism takes when it travels. Schemas at three scales: rapplication, twin, organism. Recovery checkpoints, AirDrop transports, catalog distribution units — same format, different scope.</div>
+    <div class="where">RAPP/1 §9 organism egg (schema: rapp/1-egg)</div>
+    <div class="blurb">One exact schema with six registered variants: organism, rapplication, session, invite, neighborhood, and estate. Carrier choice never changes the manifest or its verification.</div>
   </div>
 
   <div class="legend-card" data-layer="membrane">

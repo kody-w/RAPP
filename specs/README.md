@@ -1,20 +1,28 @@
 # `specs/` — Network protocol specs
 
-This directory holds **network-level protocol specs** — the canonical contracts for how RAPP organisms discover each other, address each other, and federate over the public web.
+> **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
+> wire, eggs, registry, trust, and protocol evolution, follow
+> [`RAPP1_AUTHORITY.json`](../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../RAPP1_STATUS.md). Files in this directory are either
+> product runbooks, generated mirrors, or superseded protocol history.
+
+This directory preserves network-level product documentation. It is not a
+second protocol authority.
 
 It is **not** a duplicate of `pages/docs/`. The two directories cover different layers of the platform:
 
 | Layer | Spec home | Question it answers |
 |---|---|---|
-| Agent contract | [`pages/docs/SPEC.md`](../pages/docs/SPEC.md) | How does a single-file agent work? What's the v1 contract? |
-| Network protocol | [`specs/SPEC.md`](./SPEC.md) | How do organisms find and talk to each other across the web? |
-| Agent skill (canonical manifest) | [`pages/docs/skill.md`](../pages/docs/skill.md) | The official rendered skill for running RAPP brainstem |
+| Historical agent contract | [`pages/docs/SPEC.md`](../pages/docs/SPEC.md) | What did the pre-RAPP/1 single-file-agent platform contract say? |
+| Historical network protocol | [`specs/SPEC.md`](./SPEC.md) | What did the retired network contract teach? |
+| Host onboarding document | [`pages/docs/skill.md`](../pages/docs/skill.md) | How can an AI host help run RAPP without becoming a RAPP capability? |
 | Network-participation runbook | [`specs/skill.md`](./skill.md) | How does an AI become a 1st-class citizen of the network? |
 | Installer skill | [`skill.md`](../skill.md) (root) | How does an LLM install the brainstem on a user's behalf? |
 
 ## What's here
 
-- **[`SPEC.md`](./SPEC.md)** — the network protocol spec. Federation, doors, gates, rappid addressing, the canonical raw.githubusercontent.com URL shapes. Schema: `rapp-protocol/1.0`.
+- **[`SPEC.md`](./SPEC.md)** — superseded `rapp-protocol/1.0` history for
+  migration analysis; it is not current protocol.
 - **[`skill.md`](./skill.md)** — the action-oriented companion to `SPEC.md`. Six steps from zero to network citizen.
 
 ## Why two directories

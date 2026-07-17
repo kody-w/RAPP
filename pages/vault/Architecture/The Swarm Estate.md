@@ -1,5 +1,12 @@
 # The Swarm Estate — Rappid-Indexed Identity Across Public + Private + Live + Frozen
 
+> **Historical/superseded protocol narrative.** Preserve this dated account as
+> history; do not use its identity or trust rules as current instructions.
+> Canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+> evolution follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
 > *Vault note. The full protocol for treating an AI organism as an estate — a rappid-indexed portfolio of brainstems, eggs, and broadcasts that operate as one identity in many places. Synthesizes the lessons from Signal, Matrix cross-signing, Keybase sigchains, and DID:web, applied to RAPP's single-file-everything ethos. **Constitutionally ratified as Article XXXVI** ([CONSTITUTION.md](../../../CONSTITUTION.md)).*
 
 > **Canonical rappid spec**: [[Rappid]]. There is one rappid format, ratified 2026-04-30. This protocol describes the cryptographic backing for organisms whose `<kind>` is `organism` / `twin` / `swarm` / `rapplication`. The format is shared with code variants (Article XXXIV) and the species root.

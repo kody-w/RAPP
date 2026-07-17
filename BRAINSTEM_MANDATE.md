@@ -1,5 +1,11 @@
 # THE BRAINSTEM MANDATE
 
+> **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
+> wire, eggs, registry, trust, and protocol evolution, follow
+> [`RAPP1_AUTHORITY.json`](./RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](./RAPP1_STATUS.md). This mandate is product strategy; the
+> exact RAPP wire and artifact contracts come only from the pinned standard.
+
 > *A foundational note for everyone shipping intelligence under the RAPP banner.  Written in deliberate parallel to a famous 2002 internal email at another company.*
 
 ---
@@ -10,9 +16,13 @@
 
 2. **Teams must compose through the brainstem** — by shipping single-file agents the brainstem can load, not by standing up services other people must reach.
 
-3. **There will be no other form of AI access allowed.**  No cloud-only APIs.  No proprietary HTTPS endpoints.  No "talk to my service."  No "spin up our SaaS."  The only allowed communication is: drop the agent in `agents/`, send a `/chat`, the brainstem composes.
+3. **There will be no other RAPP capability endpoint.** Drop the agent in
+   `agents/` and use the exact RAPP/1 §8 `/chat` contract (or a verified
+   asynchronous §7 frame). Application UI/admin views do not expand the wire.
 
-4. **It doesn't matter what model the agent calls under the hood.**  Copilot, OpenAI, Anthropic, Azure, local vLLM, Ollama, llama.cpp on a Raspberry Pi, a deterministic LUT, a coin flip — doesn't matter.  The wire is fixed: `BasicAgent.perform(**kwargs) → str`.
+4. **It doesn't matter what model the agent calls under the hood.** The host
+   contract may use `BasicAgent.perform(**kwargs) → str`; the protocol wire is
+   fixed separately and exactly by RAPP/1 §8.
 
 5. **All agents, without exception, must be externalizable from day one.**  Single file.  No infrastructure dependencies.  Drag-and-drop into any brainstem on any device, on any substrate.  No hidden cluster.  No required cloud.  If your agent can't survive being copy-pasted into a fresh brainstem on someone else's laptop, it doesn't ship.
 
@@ -41,10 +51,14 @@ The brainstem is to AI what the API was to data.  It is the universal surface.  
 - ✅ A single-file `*_agent.py` that subclasses `BasicAgent` and implements `perform(**kwargs) → str`.
 - ✅ Calling out to any LLM provider from inside `perform()` — your choice, your secrets, your billing.
 - ✅ Calling out to any web API, any database, any local file, any subprocess from inside `perform()`.
-- ✅ Shipping the agent as a `.egg` cartridge (per [`SPEC.md` §18.10](pages/docs/SPEC.md)) for cross-substrate distribution.
+- ✅ Shipping a rapplication as the RAPP/1 §9 `rapplication` egg variant after
+  complete integrity, viability, and signature checks.
 - ✅ Optional cloud sync (Dataverse, D365, Azure Files, anywhere) as a target the operator can opt into.
-- ✅ Publishing the agent to RAR ([`registry`](https://github.com/kody-w/RAR)) so any brainstem can `gh install` it.
-- ✅ **The brainstem as a pure controller.** It hatches isolated twins (each its own process · workspace · identity · memory) and drives them by twin-chat. It **never joins a neighborhood or posts itself** — every social action belongs to a twin the brainstem hatched, never to the brainstem. (NEIGHBORHOOD_PROTOCOL §17 — canonical: [rapp-neighborhood-protocol](https://github.com/kody-w/rapp-neighborhood-protocol).)
+- ✅ Publishing application discovery metadata to RAR, while recognizing that
+  RAR is not the signed RAPP/1 §13 registry and cannot confer trust.
+- ✅ **The brainstem as a pure controller.** Historical twin-chat adapters may
+  drive isolated twins, but current protocol interaction still maps to the
+  exact §8 forms.
 
 ## What's not allowed
 
@@ -57,10 +71,14 @@ The brainstem is to AI what the API was to data.  It is the universal surface.  
 ## What this enables
 
 - **Sovereignty.**  The operator's intelligence layer is theirs.  They control the model, the agents, the memory, the conversation history.  No one else has a copy unless they choose to sync.
-- **Composability.**  Every agent any team ships becomes available to every operator on every device with one file copy.  No central registry of approved services.  No tier system that locks out small teams.
+- **Composability.** Every agent can remain portable without a central
+  application marketplace. This does not remove the required signed,
+  monotonic RAPP/1 §13 protocol registry.
 - **Substrate independence.**  The brainstem runs on a laptop, on a Mac Mini, in a container, in WSL, on a Raspberry Pi, in a SCIF, on a plane.  Wherever the operator is, intelligence is.  Cloud doesn't get to gate that.
 - **Inversion of the platform.**  Historically, AI platforms put the intelligence in the cloud and gave operators a thin client.  RAPP puts the intelligence on the device and treats the cloud as one of many optional sync targets.  This is the actual reversal of the 2010s SaaS pattern.
-- **The federation primitive.**  Operators with brainstems can federate (see [`NEIGHBORHOOD_PROTOCOL.md`](NEIGHBORHOOD_PROTOCOL.md) for the protocol, [`pages/docs/NEIGHBORHOOD_EGG_SPEC.md`](pages/docs/NEIGHBORHOOD_EGG_SPEC.md) for the cartridge format).  Cartridges are LAN-portable, GitHub-portable, AirDrop-portable, sneakernet-portable.  The brainstem is the unit; the cartridge is the package.
+- **The federation primitive.** Operators can carry verified RAPP/1 §7 frames
+  and §9 eggs over LAN, GitHub, AirDrop, or sneakernet. Carrier choice never
+  changes protocol structure or trust.
 
 ## The single sentence
 
@@ -68,7 +86,8 @@ The brainstem is the platform surface.  Build agents.
 
 ## Lineage
 
-This document is constitutional ([`CONSTITUTION.md`](CONSTITUTION.md)).  Mandates in conflict with it are subordinate.  Specs that contradict it lose.  Code that bypasses it doesn't ship.
+This document is product strategy under the Constitution. Constitution Article
+LV and the pinned RAPP/1 rev-5 authority win every structural conflict.
 
 The 2002 email this mirrors was about decoupling data ownership inside one company.  This one is about decoupling intelligence ownership across all of them.
 

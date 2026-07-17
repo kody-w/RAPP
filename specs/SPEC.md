@@ -1,10 +1,19 @@
 # RAPP Protocol — The Network Spec
 
+> **SUPERSEDED — historical migration reference, not current instructions.**
+> For canonicalization, identity, frames, wire, eggs, registry, trust, and
+> protocol evolution, the current authority is RAPP/1 rev-5 via
+> [`RAPP1_AUTHORITY.json`](../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../RAPP1_STATUS.md). The retired forms and examples below
+> remain unchanged where useful as evidence, but MUST NOT be emitted or taught
+> as current.
+>
 > One file. Read this and you can participate in the global RAPP network. The only requirement is a GitHub account.
 >
 > **Scope:** the **network protocol** — federation, addressing, discovery across the public web. **Not** the single-file agent contract; for that read [`pages/docs/SPEC.md`](../pages/docs/SPEC.md). See [`specs/README.md`](./README.md) for the spec-directory map.
 >
-> **Authority:** this file. **Schema-of-record:** `rapp-protocol/1.0`. **Constitutional anchor:** Articles I–LI (see `CONSTITUTION.md` in the parent project for narrative; this document is the operational synthesis).
+> **Historical schema:** `rapp-protocol/1.0`. **Superseded by:** pinned RAPP/1
+> rev-5 and Constitution Article LV.
 
 ---
 

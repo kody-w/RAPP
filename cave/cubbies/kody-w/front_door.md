@@ -1,5 +1,11 @@
 # Kody — front door
 
+> **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
+> wire, eggs, registry, trust, and protocol evolution, follow
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md). The cave's old cartridges are
+> legacy migration inputs, not current RAPP/1 eggs.
+
 Founder cubby, public edition. This is the front door of **The RAPP Cave** — the
 public mirror of the operator's estate. Where the private batcave keeps the
 operator set OUT of the open grail repo behind a collaborator gate, the cave does
@@ -22,9 +28,11 @@ from https://raw.githubusercontent.com/kody-w/RAPP/main/cave .
 - `rapplications/` - whole rapplications, ONE FOLDER each: the agent, its
   CLI/tools, tests, README and specs together. Start here to understand or
   extend one.
-- `eggs/` - hatchable units (`cubby-<name>.egg`, brainstem-egg/2.3-cubby):
-  the portable one-file form of a whole cubby or rapplication. Hatch with
-  RappAgent — pull, hatch, run, no auth required.
+- `eggs/` - historical hatchable units (`cubby-<name>.egg`, legacy
+  `brainstem-egg/2.3-cubby`, retained only as migration input):
+  the former one-file form of a cubby or rapplication. Public fetch needs no
+  application login, but these eggs are not trusted/current and must not be
+  hatched as RAPP/1 without bounded migration plus full current verification.
 - `show-and-tell/` - dated posts and demos only; durable docs live with
   their rapplication.
 

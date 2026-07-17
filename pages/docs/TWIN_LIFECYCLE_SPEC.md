@@ -1,5 +1,11 @@
 # TWIN_LIFECYCLE_SPEC — Operator-level twin lifecycle (active / archived / purged)
 
+> **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
+> wire, eggs, registry, trust, and protocol evolution, follow
+> [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md). Filesystem housekeeping is not
+> the authenticated §13 registry and cannot authorize identity or re-genesis.
+
 > **Authority.** This spec defines the operator-facing housekeeping layer on top of Constitution Article XLIX.3 (twin lifecycle: mint → bond → fork → die). XLIX.3 establishes the philosophical states; this spec defines the disk layout, agent verbs, and JSON shapes that let an operator manage many twins cleanly. "Die" in XLIX.3 corresponds to `purge` here. `archive` is a new operator-housekeeping intermediate state — a twin set aside, body preserved, reversible — that XLIX.3 implicitly allows (a stopped on-disk twin) but doesn't formalize.
 
 **Audience.** Authors of `twin_agent.py`, `fleet_agent.py`, `neighborhood_snapshot_agent.py`, `neighborhood_run_agent.py`. Operators building tooling against the brainstem's HTTP surface.
@@ -23,7 +29,13 @@ A twin on a given brainstem is in exactly one of three states:
 | `archived` | `~/.rapp/twins/.archive/<hash>/` | no — only via `list_archived` | no — only with `include_archived=true` | yes (`unarchive`) |
 | `purged` | `~/.rapp/twins/.purged/<hash>.json` (ledger entry only; workspace removed) | no — only via `list_purged` | never | NO |
 
-State is determined by disk location. There is no separate registry. The filesystem is the source of truth.
+Application housekeeping state is determined by disk location; there is no
+separate local lifecycle index. This does not modify identity, keys, re-genesis,
+or the required RAPP/1 §13 registry.
+
+The v1 host actions below retain the legacy field name `rappid_uuid` as a local
+workspace selector. It is not a current rappid form and must never be emitted
+as protocol identity; new boundaries use the exact §6 rappid.
 
 **Transitions:**
 
@@ -305,7 +317,9 @@ No `Fleet.unarchive_estate` or `Fleet.purge_estate` in v1.0. Unarchive and purge
 
 ## 8. HTTP surface
 
-All lifecycle verbs flow through the brainstem's existing `/chat` envelope (per SPEC §8). No new endpoints. Operators address them in natural language; the LLM composes the agent call. There is no slash-command shortcut and no JSON-only endpoint. This is consistent with Article XLI (The Operator's Experience Is Conversation).
+All lifecycle verbs flow through the exact RAPP/1 §8 `/chat` request and
+response. No new protocol endpoints. Operators address them in natural
+language and the LLM composes the agent call.
 
 Examples of operator phrases that map to these verbs (illustrative — the LLM does the routing):
 
@@ -320,8 +334,8 @@ Examples of operator phrases that map to these verbs (illustrative — the LLM d
 
 | Aspect | Compatibility |
 |---|---|
-| Existing `Twin action=list` | Backwards-compatible — same shape, just no longer includes archived/purged twins (which it didn't represent meaningfully anyway). |
-| Existing eggs | Backwards-compatible — eggs taken before this spec lack the `lifecycle` field on `twins[]`; readers MUST treat missing field as `lifecycle: "active"`. |
+| Existing `Twin action=list` | Host-local behavior is preserved; this is not a RAPP protocol compatibility guarantee. |
+| Existing eggs | Legacy inputs require one bounded §12 migration into a registered RAPP/1 §9 variant; normal readers then retire the missing-field fallback. |
 | Existing `~/.rapp/twins/.trash/` stub (if present) | Deprecated. Implementations SHOULD migrate any extant `.trash/<hash>/` dirs into `.archive/<hash>/` and synthesize an `archived.json` with `archived_by: "migration"` and `archived_reason: "migrated from .trash convention"`. The empty `.trash/` itself can be removed. |
 | Constitutional Article XLIX.3 | Aligned. "Die" in XLIX = `purge` here; `archive` is the new operator-housekeeping intermediate state. |
 

@@ -1,5 +1,11 @@
 # RAPP Survival Contract
 
+> **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
+> wire, eggs, registry, trust, and protocol evolution, follow
+> [`RAPP1_AUTHORITY.json`](./RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](./RAPP1_STATUS.md). Survival scenarios do not waive
+> RAPP/1 integrity, signature, registry, or migration requirements.
+
 > *"This needs to survive nuclear blasts, not tip over in a second."*
 > — the operator, 2026-05-08
 
@@ -12,11 +18,11 @@ The platform's claim is local-first survival. This document **enumerates the fai
 | **One neighborhood repo deleted from GitHub** | ✓ all cached subscribers (read-only); ⚠ no new joins until a mirror appears | Brainstems hold local cache (`~/.brainstem/neighborhoods/<slug>/`). Reads continue against cache. | `tests/scenarios/15-offline-snapshot-dream-catcher.sh` |
 | **`kody-w/RAPP` repo deleted** | ✓ already-installed brainstems; ✓ all 5 planted neighborhoods (they live as their own repos); ⚠ install one-liner needs a mirror URL | Each neighborhood is self-contained: own `basic_agent.py`, own `neighborhood.json`, own agents. The platform's substrate is GitHub, not RAPP-the-repo. | scenario 17 (survival) |
 | **All `kody-w/*` repos deleted** | ✓ all cached + offline brainstems; ⚠ new operators need a mirror | Eggs are content-addressed and portable. Any operator can re-host. | scenario 17 (survival) |
-| **GitHub Pages goes down** | ✓ everything except the gate UIs | Gates are just HTML; agents are Python files served via `raw.githubusercontent.com` (different subsystem). | manual: brainstem `/api/neighborhoods/*` works without Pages |
+| **GitHub Pages goes down** | ✓ application operation except gate UIs; protocol still requires trusted local state | Gates are HTML and raw files remain a separate transport, but neither authenticates artifacts. | application `/api/neighborhoods/*` may work without Pages; RAPP interaction remains exact §8 |
 | **`raw.githubusercontent.com` goes down** | ✓ for cached state; ⚠ for fresh fetches | `cachedGhJson` returns last-cached value with a stale pill. | `cachedGhJson` test in `tests/run-tests.mjs` |
 | **GitHub APIs go down** | ✓ for read against cache; ⚠ for write (PRs/Issues queue locally) | Membership organ uses cached `members.json`; sync defers until APIs return. | manual: `_verify_membership` returns offline reason gracefully |
 | **GitHub entirely offline** | ✓ live WebRTC tethers; ✓ cached subscriptions; ✓ file:// local subscriptions | Tether bypasses GitHub once handshake done. file:// mode never touches GitHub. | scenario 13 (Charizard) + scenario 1 (local-on-device) |
-| **Operator's brainstem dies (hardware lost)** | ✓ as long as a recent egg exists somewhere | Eggs are SHA-256 sealed cartridges. Any other brainstem hatches → identical organism, same rappid. **2026-05-10 family expansion:** the same `.egg` extension now carries 5 cartridge kinds (organism / rapplication / session / neighborhood / estate). The kernel `egg_hatcher_agent.py` introspects + routes by kind. **The estate cartridge** (`brainstem-egg/2.3-estate`, planned) is the disaster-recovery primitive for the operator's *whole multi-tier identity* — public discovery + private bones + on-device PII pointer all in one re-anchorable egg. See [SPEC §18.10](./pages/docs/SPEC.md). | scenario 13 (Charizard) + scenario 15 (offline snapshot) |
+| **Operator's brainstem dies (hardware lost)** | ⚠ structurally recoverable; authenticated recovery still blocked | RAPP/1 §9 eggs can carry a registered `estate` variant, but identity continuity and acceptance also require §§6, 10, and 13. The legacy `brainstem-egg/2.3-estate` proposal is migration history, not a current recovery guarantee. | scenario 13 (Charizard) + scenario 15 (offline snapshot); RAPP1_STATUS owner blockers |
 | **Internet entirely down** | ✓ for local-only neighborhoods + cached state | file:// subscriptions work offline. Local frame logs continue accumulating. Dream Catcher reconciles when back online. | scenario 1 (local-on-device) + scenario 15 (offline snapshot) |
 | **Operator removed from a neighborhood** | ✓ network adapts (synthesis ships with what's home); past contributions remain | Synthesizer never blocks on absent contributors; removed-collaborator is identical to offline-now. | scenario 5 step 7 (adapt-to-whats-home) |
 | **Half a neighborhood offline** | ✓ remaining members federate normally | Quorum defaults to 1; absent contributors don't block. | scenario 5 step 8–9 |

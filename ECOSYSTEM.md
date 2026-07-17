@@ -1,12 +1,22 @@
 # RAPP Ecosystem — End-to-End Layout
 
+> **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
+> wire, eggs, registry, trust, and protocol evolution, follow
+> [`RAPP1_AUTHORITY.json`](./RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](./RAPP1_STATUS.md). This architecture map is subordinate
+> to that pin. Retired schema names below are migration inventory, never current
+> emission or acceptance instructions.
+
 > The complete picture of a planted RAPP organism: what it's made of, where it lives, how it moves, how it evolves, how it talks to the rest of the species. This document is the architecture-level companion to [`HERO_USECASE.md`](./HERO_USECASE.md). Read both before proposing structural changes.
 
 ---
 
 ## 0. The atom
 
-A RAPP **organism** is a public GitHub repository with a specific file layout. The repo IS the organism — its identity (`rappid`), its voice (`soul.md`), its memory (`.brainstem_data/`), its body (`agents/`), and its skin (`index.html`, `doorman/`) all live as committed files. There is no server. The repo is served via GitHub Pages; clients run the surfaces in their browser; the doorman authenticates against the visitor's own GitHub Copilot subscription.
+A RAPP **organism** may inhabit a GitHub repository with this implementation's
+file layout. The repository is a substrate, not the identity: RAPP/1 §6
+`rappid` survives lawful moves, while §13 binds current anchors and keys.
+Voice, memory, agents, and browser surfaces may live as committed files.
 
 ```
 github.com/<user>/<seed>     ← canonical lineage (the trunk)
@@ -67,7 +77,7 @@ What `installer/plant.sh` writes into a fresh seed:
 ├── installer/
 │   └── install.sh                  one-liner kernel installer (visitor flow)
 └── rapp_brainstem/
-    ├── brainstem.py                frozen kernel (tracks the grail, kody-w/rapp-installer)
+    ├── brainstem.py                frozen at rapp-installer@brainstem-v0.6.9
     ├── VERSION
     └── agents/basic_agent.py       reference copy
 ```
@@ -83,30 +93,31 @@ Per-user private memories live in **GitHub Issues** on the seed repo (label `pri
 
 ## 3. Identity stack — everything traces back to the rappid
 
-All visual and computed properties of an organism derive from a single `rappid` minted at first plant — the consolidated Eternity string `rappid:@<owner>/<slug>:<64hex>` (`rapp/1`; the 64-hex is the identity hash and sole join key, `kind` in the record). This is the species identity contract — the rappid IS the organism, every visual is a refraction of it.
+Current identity is the exact RAPP/1 §6
+`rappid:@<lowercase-owner>/<slug>:<64-lowercase-hex>`. The tail is minted once
+with the domain-separated §6.2 rule (UUIDv4 octets for keyless identity or
+SPKI DER for keyed identity), never from a name. Presentation may be seeded
+from the rappid, but presentation, repository location, and application
+lineage do not define or authenticate it.
 
 ```
-                              rappid (UUIDv4)
+                         RAPP/1 §6 rappid
                                     │
-       ┌──────────────┬─────────────┼─────────────┬──────────────┐
-       ↓              ↓             ↓             ↓              ↓
-     sigil        card visuals   stream_id    deep-verify    parent_rappid
-   (gradient +    (pip, P/T,    (frame log    anchor (with    chain back to
-    shape +       rarity —      partition     origin_commit   species root)
-    accents)      hash-derived) per dimension) _sha)
+       ┌──────────────┬─────────────┼─────────────┐
+       ↓              ↓             ↓             ↓
+  presentation   §7 stream_id   §10 key use   §13 current anchor
+  (application)  (bound form)    (verified)    and succession
 ```
 
 **Schemas** in this stack:
 
-### `rappid.json` (`rapp/1`)
-The organism's birth certificate. Written once at plant time, never regenerated.
-Per CONSTITUTION Article XXXIV.1 (2026-04-30 ratification) the schema is
-`rapp/1` and the `rappid` field carries the consolidated **Eternity**
-string `rappid:@<owner>/<slug>:<hash>` (`kind` lives in the record, not the
-string). Pre-ratification seeds on `rapp-rappid/1.1` with bare UUIDs are still
-valid (their UUID hex, dashes stripped, IS the hash field), and legacy
-`rappid:v2:…` strings are canonicalized on read (`tools/door_address.py`), never
-re-emitted.
+### Legacy application `rappid.json` record
+The example below documents the pre-RAPP/1 product record for bounded
+migration only. `rapp/1` is the current **frame** token, not an identity-record
+schema. Bare UUID, `rapp-rappid/1.1`, `rappid:v2:…`, and non-64-hex tails are
+not current identifiers: §6.3 canonicalization preserves an existing tail,
+provisional identities are never emitted, and only an authorized re-anchor
+can replace one.
 ```json
 {
   "schema": "rapp/1",
@@ -144,67 +155,44 @@ Customizes the trade-card copy. All fields optional; missing fields fall through
 }
 ```
 
-### Frame (`rapp-frame/1.0`)
-The unit of mutation. Every meaningful event becomes a frame.
+### Current frame (RAPP/1 §7)
+Every current frame has exactly the eleven keys below. Producers compute the
+domain-separated §7 particle/wave hashes and consumers perform the complete
+§7.5 verification order.
 ```json
 {
-  "stream_id": "<rappid-prefix>:<short-instance-id>",
-  "frame_n":   <integer, monotonic per stream>,
-  "utc":       "<iso8601 timestamp>",
-  "kind":      "memory_added" | "agent_loaded" | "soul_edited" | "commit" | ...,
-  "payload":   { "...kind-specific data..." },
-  "prev_hash": "<sha256 of previous frame in this stream>",
-  "hash":      "<sha256 of {prev_hash + utc + frame_n + kind + payload}>"
+  "spec": "rapp/1",
+  "kind": "<registered-kind>",
+  "stream_id": "<RAPP/1 stream_id>",
+  "seq": 0,
+  "utc": "YYYY-MM-DDTHH:MM:SS.mmmZ",
+  "payload": {},
+  "payload_hash": "<64hex>",
+  "frame_hash": "<64hex>",
+  "prev": null,
+  "prev_wave": null,
+  "sig": null
 }
 ```
 
-### Egg manifest (`brainstem-egg/2.2-organism`)
-A self-describing portable cartridge of an organism. Two tiers.
+### Current egg manifest (RAPP/1 §9)
+RAPP/1 has one egg schema and six registered variants: `organism`,
+`rapplication`, `session`, `invite`, `neighborhood`, and `estate`.
 ```json
 {
-  "schema": "brainstem-egg/2.2-organism",
-  "type":   "organism",
-  "tier":   "doorman" | "ascended",
-  "exported_at":   "<iso8601>",
-  "exported_from": "<seed URL>",
-  "rappid":        "<uuid>",
-  "parent_rappid": "<uuid>",
-  "parent_repo":   "<github URL>",
-  "kind":          "personal" | "place" | ...,
-  "display_name":  "<name>",
-  "incarnations_at_egg": <int>,
-  "counts": {
-    "agents": <n>, "organs": 0, "senses": 0, "services": 0,
-    "data": <n>, "soul": <n>, "env": 0, "rappid": 1, "card": <n>,
-    "private_files": <n>, "user_memories": <n>
-  },
-  "provenance": {
-    "schema": "rapp-egg-provenance/1.0",
-    "scheme": "sha256",
-    "file_hashes":     { "<path>": "<sha256>", ... },
-    "manifest_hash":   "<sha256 of canonical hash table>",
-    "origin_url":      "<seed URL at seal time>",
-    "origin_repo":     "<github URL>",
-    "origin_commit_sha": "<git sha at seal time>",
-    "origin_owner":    "<gh-user>",
-    "origin_repo_name": "<repo-slug>",
-    "sealed_at":       "<iso8601>",
-    "sealed_by_rappid": "<uuid>",
-    "state_at_seal": {
-      "schema":             "rapp-organism-state/1.0",
-      "mem_count":          <int>,
-      "mutation_count":     <int>,
-      "fork_count":         <int>,
-      "custom_agent_count": <int>,
-      "age_days":           <float>,
-      "last_commit_at":     "<iso8601>",
-      "activity_kind":      "active" | "slowing" | "dormant" | "stasis",
-      "mmr":                <int>,
-      "recent_mutations":   [{ "sha", "message", "date" }, ...]
-    }
-  }
+  "schema": "rapp/1-egg",
+  "variant": "<registered-variant>",
+  "rappid": "<RAPP/1 §6.1 rappid>",
+  "created_utc": "YYYY-MM-DDTHH:MM:SS.mmmZ",
+  "contents": [],
+  "payload": {},
+  "sig": "<jws|null>"
 }
 ```
+`contents` and deterministic ZIP/JSON serialization follow §9.1; signed eggs
+are verified against §13, and invite signatures are mandatory. The formerly
+documented `brainstem-egg/2.2-organism` and `rapp-egg-provenance/1.0`
+manifests are retired migration inputs.
 
 ### User memories (`rapp-user-memories/1.0`, ascended-tier only)
 Per-user private memories captured from GitHub Issues.
@@ -226,7 +214,8 @@ Per-user private memories captured from GitHub Issues.
 ## 4. The two surfaces
 
 ### 4a. Front door — `/index.html`
-Public profile. Anonymous-friendly. No auth required for any action on this page.
+Public application profile. Anonymous access is allowed; this does not
+authenticate any RAPP artifact or waive §§7/9/10/13 verification.
 
 | Element | Purpose | Driven by |
 |---|---|---|
@@ -237,12 +226,12 @@ Public profile. Anonymous-friendly. No auth required for any action on this page
 | **Agents** | What capabilities exist | `agents/` listing via Contents API (cached) |
 | **Achievements** | Milestones earned | Derived from mem count + age + mut count |
 | **Mutation log** | Live evolution feed | Last 5 commits via Commits API (cached) |
-| **Lineage** | Where this organism descends from | rappid.parent_repo + parent_rappid |
+| **Lineage** | Application provenance (not RAPP identity/trust) | legacy parent metadata; verify current anchor via §13 |
 | 🃏 Show my card | Trade card overlay | Auto-derived; tap to flip → QR back |
 | 📱 Pair with another device | WebRTC tether | PeerJS broker → DTLS, QR auto-renders |
 | 🌱 Propose an agent | The lineage-evolution path | Pre-fills GitHub create-file URL |
-| 🥚 Export .egg | Doorman-tier cartridge | Self-contained organism backup |
-| 🔬 Verify an .egg | Non-GMO check | sha256 against manifest + deep-verify against repo |
+| 🥚 Export .egg | Legacy exporter under migration | Current target is the RAPP/1 §9 `organism` variant |
+| 🔬 Verify an .egg | RAPP acceptance | complete §9.3 checks, then applicable §§10/13 signature verification |
 | 🕸️ Dream Catcher | Parallel-dimension reassimilation | Diff two eggs, surface candidate frames |
 | 🌐 Back up to Egg Hub | Public catalog submission | Pre-fills GitHub Issue at egg-hub |
 | 💻 Install kernel locally | Hatch into a local brainstem | Copy curl one-liner |
@@ -260,7 +249,7 @@ Chat surface. Auth via Copilot device-code flow. Pyodide loads agents in-browser
 | Memory pane (Save a memory) | Manual override; visitor can write public OR per-user-private memory |
 | Model selector | Pulls live Copilot catalog via `/api/copilot/models`, persists choice in localStorage |
 | Chat actions row | Save memory · Clear chat · Export ascended .egg (operator only) · Sign out |
-| 🥚 Export ascended .egg | Full organism + private layer + per-user issues — operators / private-companion access only |
+| 🥚 Export ascended .egg | Legacy tiered export; not a current §9 variant or trust claim |
 | Private indicator badge | ✓ ascended — full twin voice loaded · or · public · or · device-only |
 | Pyodide agent loader | Loads doorman + ascended agents from `kody-w/RAPP/main/rapp_brainstem/agents/` |
 
@@ -331,13 +320,20 @@ The doorman's system prompt assembles all three at chat time:
  6000+  Immortal (animated rainbow text)
 ```
 
-The formula is identical across all planted seeds, so a 3500 MMR Heimdall is comparable to a 3500 MMR Cloud Gate is comparable to any 3500 MMR organism on the species. No registry needed; each organism computes its own MMR live from its public state.
+The formula is identical across all planted seeds, so its application-level
+MMR needs no separate leaderboard registry. This does not replace the required
+RAPP/1 §13 protocol registry.
 
 ---
 
 ## 7. Evolution — PR-driven, frozen kernel never moves
 
-The kernel (`brainstem.py` + `VERSION` + `basic_agent.py`) is frozen at the grail ([`kody-w/rapp-installer`](https://github.com/kody-w/rapp-installer)) — RAPP mirrors it byte-identically and never edits it locally. The pin tracks the grail's current release rather than any hardcoded number. Capabilities grow exclusively through `agent.py` files merged into `/agents/`.
+The immutable grail is
+[`kody-w/rapp-installer@brainstem-v0.6.9`](https://github.com/kody-w/rapp-installer/tree/brainstem-v0.6.9).
+Pinned `brainstem.py`, `agents/basic_agent.py`, and `VERSION` bytes are mirrored
+without local edits. The pin does **not** track a moving latest release; a
+change requires an explicit authority event. Capabilities grow through
+drop-in RAPP agents outside those pinned bytes.
 
 ```
 visitor finds useful pattern        →  packages as <name>_agent.py
@@ -364,19 +360,27 @@ The 🌱 Propose-an-agent pane drafts a `BasicAgent` skeleton, accepts the visit
 
 ## 8. Egg cartridges — portable organisms (and other portable units)
 
-Eggs are zip archives matching the `brainstem-egg/2.2-organism` schema. Two tiers (front door exports doorman; doorman exports ascended).
+Current eggs follow the single RAPP/1 §9 manifest
+(`schema:"rapp/1-egg"`) and its ratified variants. ZIP variants use the exact
+deterministic container rules; JSON variants serialize the manifest
+canonically. Consumers verify integrity, viability, and any signature before
+hatching.
 
-> **Updated 2026-05-10:** the egg-cartridge family expanded. The `.egg` extension now carries five kinds. The kernel hatcher `egg_hatcher_agent.py` is the canonical `.egg` router (introspects `manifest.schema`/`type`, routes by **kind**, refuses on unknown) — per [`pages/docs/SPEC.md` §18.10.2](./pages/docs/SPEC.md). The `rapp-egg/2.0` **scale** dispatcher `twin_egg_hatcher_agent.py` (§15.5, [SPEC §18.10.5](./pages/docs/SPEC.md)) is an **additive superset** of that kind-router — every kind maps to a `scale` — not a competing hatcher. See [`pages/docs/SPEC.md` §18.10](./pages/docs/SPEC.md) for the canonical family table and [`kody-w/rappterbox/carts/SCHEMA.md`](https://github.com/kody-w/rappterbox/blob/main/carts/SCHEMA.md) for the session-variant spec.
+> **Historical migration inventory (2026-05-10).** The table records the
+> retired pre-RAPP/1 family and the implementation state it had at the time.
+> It is not an emission, acceptance, or canonical-hatcher table.
 >
 > | Schema | Kind | Container | Hatch destination | Status |
 > |---|---|---|---|---|
-> | `brainstem-egg/2.2-organism` | `organism` | ZIP | `~/.rapp/twins/<rappid>/` | shipping |
-> | `brainstem-egg/2.2-rapplication` | `rapplication` | ZIP | planted rapp under host | shipping |
-> | `brainstem-egg/2.3-session` | `session` | JSON | rappterbox console iframe / `pages/vbrainstem.html` | shipping |
-> | `brainstem-egg/2.3-neighborhood` | `neighborhood` | ZIP | mint new GitHub repo / local mirror | planned (public-substrate GitHub gate; the local-substrate LAN-snapshot form `rapp-egg/2.0 scale=neighborhood` ships — see §15.5 & SPEC §18.10.5) |
-> | `brainstem-egg/2.3-estate` | `estate` | ZIP | re-anchor whole identity on new substrate | planned |
+> | legacy `brainstem-egg/2.2-organism` | `organism` | ZIP | `~/.rapp/twins/<rappid>/` | retired; migrate via §12 |
+> | legacy `brainstem-egg/2.2-rapplication` | `rapplication` | ZIP | planted rapp under host | retired; migrate via §12 |
+> | legacy `brainstem-egg/2.3-session` | `session` | JSON | contained browser surfaces | retired; migrate via §12 |
+> | legacy `brainstem-egg/2.3-neighborhood` | `neighborhood` | ZIP | repo / local mirror | retired proposal |
+> | legacy `brainstem-egg/2.3-estate` | `estate` | ZIP | substrate move | retired proposal |
 
-### Doorman tier — anyone can export
+### Historical doorman-tier layout
+This legacy layout is retained to explain existing archives; current packers
+must instead satisfy RAPP/1 §9's registered variant and exact manifest.
 Layout:
 ```
 <egg>.zip
@@ -392,7 +396,7 @@ Layout:
     └── memory.json
 ```
 
-### Ascended tier — operators / private-companion access only
+### Historical ascended-tier layout
 Adds:
 ```
 ├── agents/
@@ -406,13 +410,16 @@ Adds:
     └── user_memories.json        all per-user issue memories
 ```
 
-Any kernel that supports `brainstem-egg/2.2-organism` can hatch either tier. The `tier` field in the manifest tells receivers which extras shipped.
+Legacy kernels used `brainstem-egg/2.2-organism` and a `tier` field. A current
+consumer does not infer either: it dispatches the RAPP/1 §9 `variant` and
+refuses malformed or unregistered inputs after any bounded §12 migration.
 
 ---
 
 ## 9. Integrity stack — non-GMO chain
 
-Every egg seals with a multi-layer integrity envelope:
+The following four checks describe the **legacy envelope** retained for
+migration diagnostics:
 
 1. **Per-file SHA-256** in `provenance.file_hashes` — catches edits to any file
 2. **Manifest hash** — `sha256(canonical-sorted file_hashes)` catches edits to the table itself
@@ -424,26 +431,34 @@ The 🔬 Verify pane on the front door recomputes everything client-side. Three 
 - ⚠ **partial** — missing or unexpected files
 - ✗ **tampered** — at least one file edited offline
 
-Plus 🌐 **Deep-verify against live repo** — re-fetches every file from `raw.githubusercontent.com/<owner>/<repo>/<sealed_sha>/<path>` and recomputes hashes. If matches: provably authentic, since only the seed's owner can push to the public repo. (GitHub push-permission + sha256 is the primary trust anchor here; ed25519 publisher signatures — shipped 2026-05-08 per CONSTITUTION Art. XXXIV.7 — stay scoped to the offline-only fallback tier and are optional, never mandatory. See §11 for the airplane-mode picture.)
+Plus 🌐 **legacy deep-verify against a live repo** re-fetches files and checks
+the historical hashes. That proves content equality, not RAPP authentication.
+Current trust comes from RAPP/1 §§10 and 13: verify JWS signatures against the
+signed, monotonic registry and anchored key succession. A repository's push
+permissions are not the protocol trust anchor.
 
 ---
 
 ## 10. Dream Catcher — parallel-dimension reassimilation
 
-Pattern from `kody-w/rappterbook` (`engine/merge/merge_frame.py`). Each hatched egg is a parallel dimension of the organism living its own offline life. Frames accumulate locally. When the dimension wants to bond back, the Dream Catcher folds its frame stream into the canonical lineage.
+Pattern from `kody-w/rappterbook` (`engine/merge/merge_frame.py`). Each hatched
+egg can be a parallel offline dimension. Current reassimilation must first
+verify RAPP/1 §7 frames and use the §7.4 total order; the older implementation
+is migration evidence only.
 
 The 🕸️ pane on the front door:
 1. Drop the **canonical** egg (left) and a **parallel-dimension** egg (right)
-2. Frame-set diff by hash:
+2. Frame-set diff by verified `frame_hash`:
    - **Shared frames** (in both): grey, already in canon
    - **Parallel-only frames**: highlighted green with 🌱
 3. Lineage check: rappids must match (cross-species reassimilation isn't supported)
 4. **Reassimilation action**: opens a pre-filled GitHub Issue listing every parallel-only frame as a candidate. Operator reviews on GitHub and cherry-picks what's worth bonding back.
 
-**Conflict-resolution doctrine** (per the operator's design conversation, partially implemented):
-- UTC-first canon: whichever frame hit the UTC first is canonical
-- Non-contradicting later frames layer on
-- Contradicting frames (same `(utc, frame_n)` PK, different content): preserved as alternate-dimension data, not lost
+**Current merge order (RAPP/1 §7.4):**
+- ascending fixed-form `utc`, with ties broken by ascending `frame_hash`
+- verify each stream's contiguous `seq`, `prev`, and applicable `prev_wave`
+- preserve rejected or fork evidence diagnostically; never silently repair,
+  reparent, or treat a legacy `(utc, frame_n)` pair as a current primary key
 
 ---
 
@@ -466,8 +481,8 @@ The 🕸️ pane on the front door:
                             ↓ never had network
               ┌────────────────────────────────┐
               │     MODE C: HATCHED OFFLINE     │
-              │   Egg's state_at_seal block is  │   self-describing snapshot
-              │   the source of truth           │   from the seal moment
+              │   Legacy state_at_seal block is │   application snapshot
+              │   available for migration       │   from the seal moment
               └────────────────────────────────┘
 ```
 
@@ -475,16 +490,19 @@ Every fetch the resume makes goes through `cachedGhJson` / `cachedGhText` wrappe
 - On success: cache to localStorage with timestamp
 - On failure or no-network: return last-cached value with a `stale: true` flag, render with a 📡 pill
 
-The egg's `state_at_seal` block is a third tier of fallback — for organisms that were hatched on a device that never had the network at all.
+The legacy `state_at_seal` block is an application rendering fallback, not
+RAPP identity, trust, or current egg structure. Current offline acceptance
+still performs the complete §9 checks with locally available trusted §13
+state.
 
-**Trust anchor matrix:**
+**Application availability matrix (not a RAPP trust-anchor matrix):**
 
-| Mode | Authoritative source | Why |
+| Mode | Data source | Limitation |
 |---|---|---|
-| Online | `raw.githubusercontent.com/<owner>/<repo>/main/...` | Only operator can push |
-| Airplane | localStorage cache stamped with last-sync date | Stale but real signature of last-known state |
-| Hatched offline | egg manifest `state_at_seal` + `provenance.file_hashes` | Self-describing; sha256 chain catches tampering |
-| Offline-only | ed25519 publisher signatures (shipped 2026-05-08, Art. XXXIV.7) | Optional fallback for chains where neither GitHub nor recent cache is available — never mandatory |
+| Online | `raw.githubusercontent.com/<owner>/<repo>/main/...` | Transport location alone does not authenticate RAPP data |
+| Airplane | localStorage cache stamped with last-sync date | Availability cache only; verify current forms normally |
+| Hatched offline | legacy `state_at_seal` + `provenance.file_hashes` | Migration evidence only, not RAPP/1 §9 |
+| Offline-only | historical publisher signatures | Retired trust model; RAPP/1 §§10/13 govern |
 
 ---
 
@@ -494,10 +512,14 @@ The egg's `state_at_seal` block is a third tier of fallback — for organisms th
 Serves every planted seed at `<user>.github.io/<repo>/`. The `.nojekyll` file ensures dot-prefixed paths (`.brainstem_data/`) are served. Pages auto-deploys on every commit to `main`.
 
 ### raw.githubusercontent.com
-The canonical content channel. The seed's files are fetchable at `raw.githubusercontent.com/<user>/<repo>/<branch>/<path>` — used by deep-verify, lineage gift, parent-MMR computation, and the doorman's Pyodide agent loader. Anonymous-friendly, no auth required.
+An application content channel. Seed files are anonymously fetchable at
+`raw.githubusercontent.com/<user>/<repo>/<branch>/<path>` for UI and migration
+work, but location and availability do not authenticate them; RAPP acceptance
+uses the pinned verification and registry rules.
 
 ### GitHub Copilot (via the auth worker)
-The doorman authenticates visitors via Copilot's device-code flow:
+The doorman's application proxy uses these support endpoints; they are not
+additional RAPP/1 wire capabilities:
 - `POST <auth-worker>/api/auth/device` — start device flow
 - `POST <auth-worker>/api/auth/device/poll` — poll for token
 - `POST <auth-worker>/api/copilot/token` — exchange ghu_* for copilot session
@@ -519,7 +541,13 @@ All wrapped through `cachedGhJson` for local-first rendering.
 Public catalog of digital-twin .egg cartridges. The `🌐 Back up to Egg Hub` button on the front door pre-fills a GitHub Issue with submission metadata. The hub maintainer commits the egg + sidecar to `eggs/<slug>.egg` and updates `index.json`.
 
 ### MCP (Model Context Protocol) — kody-w/rapp-mcp
-[`kody-w/rapp-mcp`](https://github.com/kody-w/rapp-mcp) (`rapp-mcp-spec/1.0`) is **transport, not a new unit.** It is the concrete realization of *Chat Is The Only Wire*: an MCP client over stdio is just another Layer-2 caller of `/chat`, sending the same envelope and getting the same envelope back — so it adds no new abstraction and no new taxonomy (precisely the agents/skills/plugins/MCP sprawl ANTIPATTERNS warns against). Two single-file, stdlib-only servers expose the ecosystem to any MCP host (Claude Desktop, the Copilot CLI, Cursor, …): `rapp_mcp.py` serves a folder of drop-in `*_agent.py` (the same `rapp-agent/1.0` unit) as MCP tools, and `rapp_brainstem_mcp.py` bridges a running brainstem — the whole organism over `/chat` as one tool, plus status + self-bootstrap. A **static profile** (`rapp-static-mcp/1.0`, built on `rapp-static-api/1.0`) publishes the catalog + content-addressed agent frames to `raw.githubusercontent.com`: pin a `sha8` and that exact agent runs forever, verified before exec — no server.
+[`kody-w/rapp-mcp`](https://github.com/kody-w/rapp-mcp) is an application
+adapter, not a new RAPP wire form. At the RAPP boundary it must map to the exact
+§8 `POST /chat` request (`user_input`, optional `session_id` and
+`idempotency_key`) and exact success/error responses. MCP tools, status calls,
+bootstrap operations, catalogs, and historical `rapp-mcp-spec/1.0` /
+`rapp-static-mcp/1.0` profiles remain adapter concerns and may not expand that
+wire contract.
 
 ### PeerJS public broker
 Used only for the WebRTC pairing handshake. Once two devices have exchanged peer IDs, the data channel is direct (DTLS encrypted) and the broker drops out.
@@ -545,11 +573,11 @@ Used only for the WebRTC pairing handshake. Once two devices have exchanged peer
 | `installer/install.sh` | one-liner kernel installer | `write_install_sh` |
 | `.gitignore` / `.nojekyll` | Pages + git config | `write_gitignore`, `write_nojekyll` |
 | `.brainstem_data/memory.json` | initial public memory file | `write_memory_json` |
-| `agents/manage_memory_agent.py` | doorman tier — public memory R/W | fetched from grail by `fetch_seed_agents` |
-| `agents/context_memory_agent.py` | doorman tier — conversation context | fetched from grail |
-| `rapp_brainstem/brainstem.py` | frozen kernel | fetched from grail by `fetch_kernel` |
-| `rapp_brainstem/VERSION` | kernel version pin | fetched from grail |
-| `rapp_brainstem/agents/basic_agent.py` | base class | fetched from grail |
+| `agents/manage_memory_agent.py` | application agent — public memory R/W | fetched by `fetch_seed_agents`; not a pinned grail byte |
+| `agents/context_memory_agent.py` | application agent — conversation context | fetched by `fetch_seed_agents`; not a pinned grail byte |
+| `rapp_brainstem/brainstem.py` | immutable kernel | exact `rapp-installer@brainstem-v0.6.9` byte |
+| `rapp_brainstem/VERSION` | immutable version pin | exact `rapp-installer@brainstem-v0.6.9` byte |
+| `rapp_brainstem/agents/basic_agent.py` | immutable base class | exact `rapp-installer@brainstem-v0.6.9` byte |
 
 Files added on demand:
 - `card.json` — operator commits to override card copy
@@ -566,7 +594,9 @@ Files added on demand:
 - 📱 Pair with another device → broker handshake → QR auto-renders → other device scans → DTLS channel
 - 🌱 Propose an agent → fill form → submits to GitHub create-file URL → PR auto-forks for non-collaborators
 - 🥚 Export .egg → JSZip pack → download
-- 🔬 Verify an .egg → drop in → recomputes sha256 → optional deep-verify against live repo
+- 🔬 Verify an .egg → perform all RAPP/1 §9.3 checks and required §§10/13
+  signature resolution; repository deep-fetch is optional transport evidence,
+  not trust
 - 🕸️ Dream Catcher → drop two eggs → frame diff → reassimilation issue
 - 🌐 Back up to Egg Hub → pre-filled GitHub Issue at `kody-w/rapp-egg-hub`
 - 💻 Install kernel locally → copy curl command
@@ -593,19 +623,21 @@ Files added on demand:
 
 ## 15. What's shipped vs what's pending
 
-✅ **Fully working today:**
+✅ **Application behavior observed today (not RAPP/1 conformance):**
 - Plant flow (one-liner)
 - Front door + Track Record + MMR
 - Trade card (4D — rappid-locked + state-aware)
 - Doorman with Copilot device-code auth
 - Operator-fallback ascension
-- Egg export (doorman + ascended tiers) with sha256 + state_at_seal
-- Verify + deep-verify against public repo
-- Dream Catcher diff (set-based by hash) + UTC-first canon resolution + contradictions-as-alternate-dimensions
+- Legacy tiered egg export with historical SHA/state metadata; §9 migration pending
+- Legacy deep-verify UI; complete §9/§10/§13 acceptance pending
+- Legacy Dream Catcher diff; migrate ordering and verification to §7.4/§7.5
 - Local-first rendering (cachedGhJson)
 - Propose-an-agent PR flow
 - Egg Hub backup (issue-based)
-- **Doorman-side `appendFrame()` writing content-addressed `rapp-frame/1.0` to localStorage `rapp_frames_v1`** (chat turn, tool call, memory save). Ascended egg packs `data/frames.json`. End-to-end conformance: `tests/osi/L6a-frame-chain-browser.sh` (drives `tests/doorman/dreamcatcher.mjs` — 17/17).
+- **Legacy doorman `appendFrame()` writing retired `rapp-frame/1.0` to
+  localStorage.** This test evidence describes the contained browser surface;
+  it is not RAPP/1 §7 conformance.
 
 ⚠ **Partial — works, can be tightened:**
 - Egg send over the tether channel (today: manual paste via tether chat; should be one-tap stream)
@@ -617,7 +649,9 @@ Files added on demand:
 - **Global leaderboard** (aggregate the species via fork-tree walking, Herald → Immortal tier ladder, 10-min cache). Agent: `rapp_brainstem/agents/species_leaderboard_agent.py` (`SpeciesLeaderboard` tool); test: `tests/features/F2-leaderboard.sh`.
 - **Location-aware proximity swarm** (Pizza Place / Pokémon-Go layer). Pure-stdlib geohash + match-by-prefix; `kind: "place"` seeds get `location_geohash` written by plant.sh when `MIRROR_LOCATION_LAT` + `MIRROR_LOCATION_LNG` set. Agent: `rapp_brainstem/agents/proximity_discovery_agent.py` (`Proximity` tool); test: `tests/features/F3-proximity.sh`.
 - **ed25519 publisher signatures** (offline-only verification chains per CONSTITUTION Art. XXXIV.7). Tool: `tools/sign_release.py` (keygen / sign / verify); manifest at `rapp_kernel/manifest.json` declares `signing.preferred_method = "ed25519"`. Test: `tests/features/F4-ed25519-sign.sh`.
-- **Stasis recovery / resurrection ceremony**. Agent: `rapp_brainstem/agents/resurrection_ceremony_agent.py` (`Resurrection` tool — assess + compose actions); emits a `kind: "resurrection"` `rapp-frame/1.0` frame; the fresh commit lifts the activity multiplier per ECOSYSTEM §6. Test: `tests/features/F5-resurrection.sh`.
+- **Historical stasis recovery / resurrection ceremony.** Its retired
+  `rapp-frame/1.0` output is migration input; a current implementation must
+  emit a registered kind in the exact RAPP/1 §7 envelope.
 
 ❌ **Not yet built (defined for parity):**
 - (none currently — the §15 backlog is empty as of 2026-05-08)
@@ -626,13 +660,17 @@ Files added on demand:
 
 ## 15.5 Multi-scale eggs and the federation lifecycle
 
-§8 covers organism-scale eggs (`brainstem-egg/2.2-organism`) — one twin in, one twin out. The egg family generalizes: the `rapp-egg/2.0` envelope declares a `scale` field that picks one of five hatch destinations. `twin_egg_hatcher_agent.py` (canonical `@kody/twin_egg_hatcher` v1.1.0, RAR PR #98) introspects `manifest.scale` and dispatches **per scale**; unknown scales are refused outright (no silent fallback). This scale dispatcher is the **`rapp-egg/2.0` additive superset** of the kernel's `.egg` **kind**-router `egg_hatcher_agent.py` (§8, [SPEC §18.10.2/§18.10.5](./pages/docs/SPEC.md)) — every kind has a corresponding scale, so the two are one layered system, not two competing hatchers.
+This section preserves the **historical pre-RAPP/1 implementation narrative**.
+Its `brainstem-egg/2.2-organism` and `rapp-egg/2.0` scale dispatch are retired
+migration inputs, not current schemas or hatch instructions. Current portable
+scales are represented by the registered variants of RAPP/1 §9; consumers
+dispatch `manifest.variant` only after the complete §9.3 checks.
 
 | Scale | What it carries | Where it hatches | Status |
 |---|---|---|---|
 | `twin` | One twin's identity + soul + agents + memories | `~/.rapp/twins/<hash>/` | shipping |
 | `brainstem` | A whole brainstem distro (kernel + agents + organs) | target brainstem folder | shipping ([[The Distro Hatcher Agent Pattern]]) |
-| `neighborhood` | N federated twins + roster + member memories | `~/.rapp/twins/<hash>/` per member + `~/.rapp/neighborhoods/<hash>/` for the roster | shipping (local-substrate LAN snapshot; the public-substrate GitHub-gate form `brainstem-egg/2.3-neighborhood` is planned — see §8 & SPEC §18.10.1) |
+| `neighborhood` | N federated twins + roster + member memories | `~/.rapp/twins/<hash>/` per member + `~/.rapp/neighborhoods/<hash>/` for the roster | historical legacy implementation; retired `brainstem-egg/2.3-neighborhood` proposal |
 | `swarm` / `factory` / `industry` | Container scales above neighborhood | `~/.rapp/<scale>s/<hash>/` as best-effort scaffolding | partial — scale-specific handlers TBD |
 | `estate` | Whole operator identity: catalog + every nested twin / neighborhood cartridge + memories | recursive dispatch, restores `~/.brainstem/estate.json` | planned ([[ESTATE_SPEC]] §7.6) |
 

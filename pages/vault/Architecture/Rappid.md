@@ -7,6 +7,13 @@ hook: Rappid is the public ID — one format, one concept — for every digital 
 
 # Rappid — The One Identifier
 
+> **Historical/superseded identity narrative.** Preserve this dated account as
+> history; do not use its grammar or minting rules as current instructions.
+> Canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+> evolution follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
 > **Hook.** Rappid is the public ID — one format, one concept — for every digital organism that descends from RAPP. The species' social-security number. The species tree's lingua franca. There is no other identifier system; there will never be a divergent format.
 
 This note is the canonical specification for the rappid identity system. It is intentionally short, intentionally singular, and intentionally final on the format question. Subsidiary notes elaborate on lineage, signing, and operational tooling — but every reference back to "what is a rappid" lands here.

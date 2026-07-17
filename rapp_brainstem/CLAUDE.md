@@ -2,6 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with the **brainstem component** in this repo.
 
+> **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
+> wire, eggs, registry, trust, and protocol evolution, follow
+> [`RAPP1_AUTHORITY.json`](../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../RAPP1_STATUS.md). The
+> `kody-w/rapp-installer@brainstem-v0.6.9` `brainstem.py`,
+> `agents/basic_agent.py`, and `VERSION` bytes are read-only; incompatible
+> behavior below is migration input, not current protocol.
+
 > **For repo-wide guidance** (canon, governance, reading order across the whole platform) start at the [**Kernel hub**](https://kody-w.github.io/RAPP/pages/kernel.html) or the root [`CLAUDE.md`](../CLAUDE.md). This file (`rapp_brainstem/CLAUDE.md`) is scoped to the Tier 1 Brainstem itself.
 
 ## Project Overview
@@ -34,11 +42,14 @@ No build step, linter, or type checker is configured.
 **Entry point:** `brainstem.py` — a single-file Flask server (~1100 lines) that handles auth, chat, agent orchestration, and the web UI.
 
 **Request flow (POST /chat):**
+The external contract is exactly RAPP/1 §8: required `user_input`, optional
+`session_id` and `idempotency_key`, exact HTTP 200/422 bodies.
+
 1. Load `soul.md` (system prompt) and fresh-discover agents from `agents/`
 2. Build OpenAI-format tool definitions from agent metadata
 3. Call GitHub Copilot API with system prompt + conversation history + tools
 4. If the LLM returns tool calls, execute agent `.perform()` methods and loop (up to 3 rounds)
-5. Return final response + `agent_logs`
+5. Return exactly `response`, `agent_logs` (array), and `session_id`
 
 **Agent system:**
 - Auto-discovered via glob `agents/*_agent.py` (flat directory only — `agents/experimental/` is intentionally excluded)
@@ -51,6 +62,9 @@ No build step, linter, or type checker is configured.
 
 **Auth chain:** `GITHUB_TOKEN` env var → `.copilot_token` file (device-code OAuth) → `gh auth token` CLI. The GitHub token is exchanged for a short-lived Copilot API token, cached in `.copilot_session` with auto-refresh.
 
+Provider auth is not RAPP protocol trust; §§10/13 govern artifact signatures,
+keys, revocation, and registry resolution.
+
 ## Key Files
 
 | File | Purpose |
@@ -62,7 +76,7 @@ No build step, linter, or type checker is configured.
 | `index.html` | Built-in web UI served at `/` |
 | `VERSION` | Semantic version string (currently 0.4.0) |
 | `CONSTITUTION.md` | Governance doc defining what belongs in this repo |
-| `utils/bond.py` | Master egg packer/unpacker for organism + rapplication ZIP cartridges. The cartridge family lives at `brainstem-egg/2.x` schemas. |
+| `utils/bond.py` | Legacy transitional egg packer/unpacker. Its retired `brainstem-egg/2.x` inputs are migration material only; current eggs are RAPP/1 §9 `rapp/1-egg` variants. |
 
 ## Kernel-shipped agents (the minimum, not the menu)
 

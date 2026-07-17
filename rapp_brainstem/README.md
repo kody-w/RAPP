@@ -1,5 +1,13 @@
 # RAPP Brainstem
 
+> **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
+> wire, eggs, registry, trust, and protocol evolution, follow
+> [`RAPP1_AUTHORITY.json`](../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../RAPP1_STATUS.md). This quickstart describes the
+> immutable `kody-w/rapp-installer@brainstem-v0.6.9` grail runtime; adapters
+> must converge outside its pinned `brainstem.py`, `agents/basic_agent.py`, and
+> `VERSION` bytes.
+
 A local-first AI agent server. One dependency: a GitHub account with Copilot access.
 
 The brainstem runs on your machine, uses GitHub Copilot as the LLM, auto-discovers agents from Python files, and exposes a chat API + web UI on `localhost:7071`. No API keys, no cloud setup, no config.
@@ -10,27 +18,26 @@ The brainstem runs on your machine, uses GitHub Copilot as the LLM, auto-discove
 
 ## Install
 
-### One-liner (recommended)
+### Pinned grail checkout
 
 **macOS / Linux:**
 ```bash
-curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash
+git clone --branch brainstem-v0.6.9 --depth 1 \
+  https://github.com/kody-w/rapp-installer.git ~/.brainstem/src
+cd ~/.brainstem/src/rapp_brainstem
+python3 -m pip install -r requirements.txt
 ```
 
 **Windows (PowerShell):**
 ```powershell
-irm https://raw.githubusercontent.com/kody-w/RAPP/main/installer/install.ps1 | iex
+git clone --branch brainstem-v0.6.9 --depth 1 https://github.com/kody-w/rapp-installer.git "$HOME\.brainstem\src"
+Set-Location "$HOME\.brainstem\src\rapp_brainstem"
+py -m pip install -r requirements.txt
 ```
 
-The installer handles Python 3.11, Git, cloning, pip deps, and the `brainstem` CLI command. Re-running the same one-liner auto-upgrades if a newer version is available.
-
-### Manual
-
-```bash
-git clone https://github.com/kody-w/RAPP.git ~/.brainstem/src
-cd ~/.brainstem/src/rapp_brainstem
-pip3 install -r requirements.txt
-```
+If the checkout already exists, fetch and detach at the same tag rather than
+pulling a moving branch. Target-owned installers may add wrappers and adapters,
+but they must preserve the three hashes in `KERNEL_PIN.json`.
 
 ---
 
@@ -41,7 +48,7 @@ pip3 install -r requirements.txt
 gh auth login
 
 # 2. Start the brainstem
-brainstem            # or: cd rapp_brainstem && ./start.sh
+cd ~/.brainstem/src/rapp_brainstem && python3 brainstem.py
 
 # 3. Open the UI
 open http://localhost:7071
@@ -57,12 +64,16 @@ If `gh` is not installed, the web UI at `localhost:7071` walks you through GitHu
 
 The main conversation endpoint. Sends user input through the LLM with tool-calling support. Up to 3 rounds of agent calls per request.
 
+The current target is the exact RAPP/1 §8 contract. See `RAPP1_STATUS.md` for
+the repository's implementation gap; do not treat legacy host extensions as
+wire fields.
+
 **Request:**
 ```json
 {
   "user_input": "What's on Hacker News today?",
-  "conversation_history": [],
-  "session_id": "optional-session-id"
+  "session_id": "optional-session-id",
+  "idempotency_key": "optional-deduplication-key"
 }
 ```
 
@@ -70,16 +81,20 @@ The main conversation endpoint. Sends user input through the LLM with tool-calli
 ```json
 {
   "response": "Here are today's top stories...",
-  "session_id": "abc-123",
-  "agent_logs": "[HackerNewsAgent] Fetched 10 stories"
+  "agent_logs": ["[HackerNewsAgent] Fetched 10 stories"],
+  "session_id": "abc-123"
 }
 ```
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `user_input` | string | **Required.** The user's message. |
-| `conversation_history` | array | Optional. Previous messages (`role` + `content`). |
 | `session_id` | string | Optional. Returned in every response for continuity. |
+| `idempotency_key` | string | Optional. Repeats return the original response without a duplicate turn. |
+
+Success is HTTP 200 with exactly `response`, `agent_logs`, and `session_id`.
+Malformed, refused, and unknown-session requests are HTTP 422 with exactly
+`{"error":{"code":"<registered-code>","step":null}}` (or a §7.5 step string).
 
 ### `GET /health`
 
@@ -305,13 +320,17 @@ python3 -m pytest test_local_agents.py::TestLocalStorage::test_write_and_read -v
 
 ---
 
-## Versioning & Updates
+## Immutable version pin
 
-The brainstem uses a plain `VERSION` file for version tracking. The install scripts compare local vs remote versions and auto-upgrade when a newer version is available.
+`VERSION` is one of the three grail bytes pinned to
+`kody-w/rapp-installer@brainstem-v0.6.9`. Do not edit it, compare it to a
+moving branch, or auto-upgrade it. A future grail change requires an explicit
+authority event; ordinary RAPP/1 convergence belongs in target-owned adapters,
+validators, migrations, and retirement policy.
 
-- **Check your version:** `curl -s localhost:7071/version`
-- **Upgrade:** Re-run the install one-liner — it skips if already up to date
-- **Bump (maintainers):** Edit `VERSION`, commit, push — that's the entire release process
+- **Inspect the runtime value:** `curl -s localhost:7071/version`
+- **Verify authority and hashes:** follow `RAPP1_AUTHORITY.json`,
+  `KERNEL_PIN.json`, and `RAPP1_STATUS.md`
 
 ---
 

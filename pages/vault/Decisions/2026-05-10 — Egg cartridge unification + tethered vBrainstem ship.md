@@ -1,5 +1,12 @@
 # 2026-05-10 — Egg cartridge unification + tethered vBrainstem ship
 
+> **Historical/superseded protocol decision.** Preserve this dated ship record
+> verbatim below; do not use its egg schemas as current instructions.
+> Canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+> evolution follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
 **Status:** Shipped. SPEC.md §18.10–§18.12 published. RAPP@~01fddd7+, rappterbox@~16f1f75+, RAPP-private repo created.
 
 ## What we shipped

@@ -8,6 +8,13 @@ session_date: 2026-05-02
 
 # Rapplications Are Organisms
 
+> **Historical/superseded protocol narrative.** Preserve this dated account as
+> history; do not use its schema examples as current instructions.
+> Canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+> evolution follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
 > **Hook.** The split between "rapplication" and "digital organism" is implementation accident, not architecture. Both have rappids, both ride in eggs, both bond, both evolve. The real distinction is *quality* — a rapplication is an organism that has graduated. Promote the recursion. The biological metaphor was right all along.
 
 This note records a foundational consolidation: **rapplications and organisms are the same kind of thing at different scopes**, and the constitutional / catalog vocabulary should reflect that. The decision is documented here before any code change because the change is mostly conceptual — the implementation work that follows is cleanup, not invention.

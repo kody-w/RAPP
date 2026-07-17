@@ -1,5 +1,12 @@
 # Dream Catcher and Docking are the same operation at different scopes
 
+> **Historical/superseded protocol decision.** Preserve this dated record
+> verbatim below; do not use its frame shapes as current instructions.
+> Canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+> evolution follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
 **Date:** 2026-05-09
 **Status:** Adopted as design-by-emergence framing
 

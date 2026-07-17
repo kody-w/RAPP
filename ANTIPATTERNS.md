@@ -1,5 +1,11 @@
 # Antipatterns — Things This Repo Will Never Do
 
+> **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
+> wire, eggs, registry, trust, and protocol evolution, follow
+> [`RAPP1_AUTHORITY.json`](./RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](./RAPP1_STATUS.md). This document governs product and
+> repository practice only; it cannot redefine the pinned protocol.
+
 > Rules locked in because they were almost done wrong, or because the rest of the industry is doing them wrong and we'd be following them off the cliff. Each entry is *load-bearing* — breaking it is a regression.
 
 ---
@@ -37,7 +43,12 @@ Hits from this grep that aren't inside an antipattern-guard comment block (comme
 
 ## 2. THE FROZEN KERNEL NEVER MOVES
 
-**The rule.** `rapp_brainstem/brainstem.py`, `rapp_brainstem/VERSION`, and `rapp_brainstem/agents/basic_agent.py` are frozen at the grail ([`kody-w/rapp-installer`](https://github.com/kody-w/rapp-installer)) — byte-identical to whatever the grail currently ships. Never edit them locally. Capabilities grow exclusively through new `*_agent.py` files in `agents/`.
+**The rule.** `rapp_brainstem/brainstem.py`, `rapp_brainstem/VERSION`, and
+`rapp_brainstem/agents/basic_agent.py` are frozen at the exact immutable grail
+pin
+[`kody-w/rapp-installer@brainstem-v0.6.9`](https://github.com/kody-w/rapp-installer/tree/brainstem-v0.6.9).
+They never follow a moving latest branch and are never edited locally.
+Capabilities grow through new agents outside those pinned bytes.
 
 **Why.** A frozen kernel + plug-in agents is what makes an organism portable across substrates and across time. Edit the kernel and you fork the species. The Constitution puts this as a sacred constraint; this file restates it because it's so often the first temptation.
 
@@ -47,11 +58,17 @@ Hits from this grep that aren't inside an antipattern-guard comment block (comme
 
 ## 3. NO BACKWARDS-COMPAT SHIMS FOR HALF-RELEASED FEATURES
 
-**The rule.** When a schema changes, bump the version in the schema string and migrate cleanly. Don't add `if old_field exists, do A else do B` shims when nothing in the wild has the old field yet.
+**The rule.** Protocol change follows Constitution Articles II–IV and RAPP/1
+§12 total migration. Do not invent a version string locally. Freeze old
+producers, migrate once, publish signed registry/re-genesis state, switch
+atomically, and remove legacy readers.
 
 **Why.** The codebase is small enough that we can rip the band-aid off. Shims accumulate forever and the next reader has to figure out which branch is real.
 
-**How to apply.** New schema → bump version → update every emitter → update every consumer → ship. If something downstream breaks and it's already in the wild, write a one-time migrator, not a forever shim.
+**How to apply.** For application-local metadata, update all producers and
+consumers together. For RAPP protocol structure, use the constitutional
+process and §12 sequence. A one-time migrator may ingest recognized legacy
+data; normal readers do not retain the branch.
 
 ---
 

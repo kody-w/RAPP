@@ -1,5 +1,11 @@
 # Definition of Done
 
+> **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
+> wire, eggs, registry, trust, and protocol evolution, follow
+> [`RAPP1_AUTHORITY.json`](./RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](./RAPP1_STATUS.md). A RAPP/1 claim is not done until both
+> structural conformance and authenticated acceptance are established.
+
 > A done thing is verified, not assumed. This file is the contract I commit to before declaring anything finished.
 
 ## For a planted neighborhood / repo to be "done"

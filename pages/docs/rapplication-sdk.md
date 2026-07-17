@@ -1,5 +1,11 @@
 # Rapplication SDK
 
+> **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
+> wire, eggs, registry, trust, and protocol evolution, follow
+> [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md). RAPP agents remain agents; their
+> wire and distribution must use RAPP/1 §§8–9.
+
 > Build apps that any AI can drive. Agent-first, single-file, zero-config.
 
 ## What is a rapplication?
@@ -7,17 +13,27 @@
 A rapplication is the installable unit in the RAPP ecosystem. It's one or two files:
 
 1. **Agent file** (required) — `*_agent.py`. The primary interface. Any LLM that speaks tool calls can drive it: brainstem chat, Copilot Studio, Claude, GPT, or anything that comes next.
-2. **Service file** (optional) — `*_service.py`. HTTP endpoints for web UIs, webhooks, or machine-to-machine integrations. Reads/writes the same data as the agent.
+2. **Service file** (optional) — `*_service.py`. Application-local HTTP views
+   or adapter ingress for a UI. It is not an additional RAPP capability
+   surface and must not bypass the agent, frames, or trust checks.
 
 Install = drop files in. Uninstall = delete them. Nothing else.
 
-> **2026-05-10 — distribution unit:** rapplications travel as `brainstem-egg/2.2-rapplication` cartridges in the `.egg` family (one of five kinds; see [SPEC §18.10](./SPEC.md)). Sneakernet portable per the kernel rule below: drag the `.egg` into a target brainstem, the universal [`egg_hatcher_agent.py`](../../rapp_brainstem/agents/egg_hatcher_agent.py) introspects + routes. A live multi-participant collaboration session captured during rapplication use is itself a `brainstem-egg/2.3-session` cartridge — the workflow becomes shareable as a file.
+> **Current distribution:** use the RAPP/1 §9 `rapplication` variant and its
+> exact manifest, deterministic ZIP, integrity/viability checks, and applicable
+> signature verification. The 2026-05-10 `brainstem-egg/2.2-rapplication` and
+> `brainstem-egg/2.3-session` forms are retired migration inputs; the existing
+> schema/type hatcher is not current acceptance authority.
 
 ## The agent-first rule
 
 > **The agent is the API. The service is a view.**
 
 Every rapplication MUST work fully through `perform()` alone. The service is always optional — if removing it breaks the agent, the design is wrong.
+
+At a RAPP protocol boundary, synchronous capability invocation is the exact
+§8 `POST /chat`; asynchronous work is a verified §7 frame. `/api/*` service
+routes are application views/adapters only and never expand that wire.
 
 ## Quick start: build a rapplication in 5 minutes
 
@@ -162,7 +178,9 @@ class MyThingAgent(BasicAgent):
 cp my_thing_agent.py ~/.brainstem/src/rapp_brainstem/agents/
 ```
 
-That's it. Next `/chat` request discovers it. No restart, no config, no registration.
+That's it for host discovery. Next `/chat` request discovers it without local
+plugin registration. This does not waive RAPP/1 §13 registration for any
+protocol kind, variant, or error code the agent emits.
 
 ### Step 3 (optional): Add an HTTP service
 
@@ -363,7 +381,12 @@ The agent's docstring MUST contain:
 
 1. **A human-readable section** at the top stating: "you received this file along with a `.egg`," followed by the literal two steps (drag this `.py` into your brainstem's `agents/` directory; send one chat command). The first thing a human opening the file in a text editor sees should be the entire setup procedure.
 
-2. **An LLM-readable section** giving the LLM the same procedure plus the boundary rules it must honor (sha256 verification, no `git commit` without consent, no shell commands suggested to the operator, no improvised extra steps). Any LLM (Claude, GPT, Copilot, Gemini, local Ollama) that is shown the agent.py file should be able to drive the setup correctly without any additional context.
+2. **An LLM-readable section** giving the LLM the same procedure plus the
+   boundary rules it must honor (complete RAPP/1 §9.3 and applicable §§10/13
+   verification—not SHA-256 alone—no `git commit` without consent, no shell
+   commands suggested to the operator, no improvised extra steps). Any LLM
+   shown the agent.py file should be able to drive setup without another
+   protocol source.
 
 3. **The complete mode reference** — every action argument the bootstrap agent accepts (`from_egg`, `from_repo`, `pack_egg`, `status`), with one-line descriptions of each.
 
@@ -396,9 +419,11 @@ The bootstrap agent is responsible for everything past the drag-and-drop:
 
 - Detecting the operator's handle (gh / env / arg)
 - Unpacking the .egg / cloning the repo / starting from a template
-- Sha256-verifying every file in the manifest
+- Verifying the complete RAPP/1 §9 manifest, contents, viability, and any
+  applicable signature
 - Installing all workflow agents into the brainstem
-- Minting the operator's rappid (idempotent)
+- Reusing the stored §6 rappid, or minting once per §6.2 only when identity is
+  genuinely absent; never derive it from a name or silently re-mint
 - Minting the operator's per-handle workspace (front door + local data dir)
 - Recording the subscription
 - Returning a single message that tells the operator the workflow is ready
@@ -418,7 +443,12 @@ The agent's docstring MUST contain:
 
 1. **A human-readable section** at the top stating: "you received this file along with a `.egg`," followed by the literal two steps (drag this `.py` into your brainstem's `agents/` directory; send one chat command). The first thing a human opening the file in a text editor sees should be the entire setup procedure.
 
-2. **An LLM-readable section** giving the LLM the same procedure plus the boundary rules it must honor (sha256 verification, no `git commit` without consent, no shell commands suggested to the operator, no improvised extra steps). Any LLM (Claude, GPT, Copilot, Gemini, local Ollama) that is shown the agent.py file should be able to drive the setup correctly without any additional context.
+2. **An LLM-readable section** giving the LLM the same procedure plus the
+   boundary rules it must honor (complete RAPP/1 §9.3 and applicable §§10/13
+   verification—not SHA-256 alone—no `git commit` without consent, no shell
+   commands suggested to the operator, no improvised extra steps). Any LLM
+   shown the agent.py file should be able to drive setup without another
+   protocol source.
 
 3. **The complete mode reference** — every action argument the bootstrap agent accepts (`from_egg`, `from_repo`, `pack_egg`, `status`), with one-line descriptions of each.
 

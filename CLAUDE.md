@@ -1,5 +1,12 @@
 # CLAUDE.md
 
+> **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
+> wire, eggs, registry, trust, and protocol evolution, follow
+> [`RAPP1_AUTHORITY.json`](./RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](./RAPP1_STATUS.md). Incompatible guidance below describes
+> legacy runtime behavior or migration inputs, not current protocol. The
+> `KERNEL_PIN.json` grail bytes remain read-only.
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 > **Where to start reading.** The unified human-facing entry point is **[`pages/kernel.html`](https://kody-w.github.io/RAPP/pages/kernel.html)** — it surfaces every canon doc in canonical reading order with audience-specific Reading Paths. When you need to direct a human to the docs, point there. When *you* need to read, start with [`MASTER_PLAN.md`](./MASTER_PLAN.md), [`HERO_USECASE.md`](./HERO_USECASE.md), [`ECOSYSTEM.md`](./ECOSYSTEM.md), [`CONSTITUTION.md`](./CONSTITUTION.md), [`ANTIPATTERNS.md`](./ANTIPATTERNS.md) in that order.
@@ -59,12 +66,18 @@ Suggest sparse-checkout only when explicitly asked or when the user names a sing
 
 ### Request Flow (POST /chat)
 
+At the protocol boundary, the request and response are exactly RAPP/1 §8:
+required `user_input`, optional `session_id`/`idempotency_key`; HTTP 200 has
+exactly `response`, `agent_logs`, `session_id`, and refusal is the exact 422
+error shape.
+
 1. Load `soul.md` (system prompt) + fresh-discover agents from `agents/`
 2. Build OpenAI-format tool definitions from agent metadata
 3. Call LLM via provider dispatch (GitHub Copilot API, Azure OpenAI, OpenAI, or Anthropic)
 4. If LLM returns tool_calls → execute agent `.perform()` methods → loop (max 3 rounds Tier 1, 4 rounds Tier 2)
 5. Split response on `|||VOICE|||` and `|||TWIN|||` delimiters
-6. Return response + `agent_logs` + telemetry
+6. Return exactly response + `agent_logs` + `session_id`; telemetry remains
+   internal and must not add a response member
 
 ### Agent System
 
@@ -90,47 +103,82 @@ Routes to GitHub Copilot API (default), Azure OpenAI, OpenAI, Anthropic, or a de
 
 `GITHUB_TOKEN` env → `.copilot_token` file (device-code OAuth) → `gh auth token` CLI. Token exchanged for short-lived Copilot API token cached in `.copilot_session`.
 
+This is provider/application authentication, not RAPP trust; authenticated
+artifact acceptance follows §§10/13.
+
 ## Sacred Constraints (`pages/docs/SPEC.md` & `CONSTITUTION.md`)
 
-These are inviolable — do not break backwards compatibility:
+These product-extension constraints remain inviolable where they do not
+conflict with RAPP/1. Protocol evolution follows RAPP/1 §12 total migration and
+retirement, not perpetual backwards compatibility:
 
 1. **Single-file agents are the unit of extension.** One file = one class = one `perform()` = one metadata dict. No build steps, no sibling imports, no frameworks. (We say "agent" — never "skill"/"plugin"/"routine"/"loop". See [`ANTIPATTERNS.md`](./ANTIPATTERNS.md) §1.)
-2. **Single-file organs are the HTTP extension system.** One file = `name` + `handle(method, path, body) → (dict, status)`. Dispatched via `/api/<name>/<path>`. Organs serve UIs; agents serve LLMs. They never overlap. (Constitution Article XXXIII canonical: `*_organ.py` under `utils/organs/`. Legacy `*_body_function.py` and `*_service.py` files in older installs continue to work via transitional discovery.)
+2. **Single-file organs are the application-view extension system.** One file
+   = `name` + `handle(method, path, body) → (dict, status)`, dispatched via
+   `/api/<name>/<path>`. These routes do not expand the RAPP wire. Legacy
+   filenames are recognized only during bounded host migration, then retired.
 3. **Agent-first rule.** Every rapplication MUST work fully through the agent alone. The organ is always optional — it's a view, not the application.
-4. **Brainstem stays light.** The kernel is `brainstem.py` + `basic_agent.py`. It is the **DNA** of the digital organism (Constitution Article XXXIII) — universal, drop-in replaceable, **never edited by AI assistants**. New features → new agents or new organs, never kernel changes.
+4. **Brainstem stays light.** The immutable grail is
+   `kody-w/rapp-installer@brainstem-v0.6.9`; pinned `brainstem.py`,
+   `agents/basic_agent.py`, and `VERSION` are never edited locally. New RAPP
+   capabilities are agents behind §8; organs may add application views only.
 5. **Delimited slots are fixed forever.** `|||VOICE|||` and `|||TWIN|||` never get repurposed or overloaded. New sub-capabilities use tags inside the slot.
 6. **Tier portability guarantee.** An agent that runs in Tier 1 must run unmodified in Tier 2 & 3.
 7. **Rapplications ARE organisms** ([Constitution Article XXXVII](./CONSTITUTION.md), shipped 2026-05-02). Same rappid format, same egg distribution, same bonding lifecycle, just different scope. "Rapplication" is a quality tier (graduated, has skin), not a structural type. All five catalog forms (organism / rapplication / variant / sense / bare agent) live on one address space.
 
 ## Identity & bonding (the organism layer)
 
-Every locally-installed brainstem is its own digital organism with persistent identity:
+Every locally-installed brainstem is intended to be its own digital organism.
+For current identity, minting, preservation, and re-anchor rules use RAPP/1 §6;
+the runtime paths below are implementation facts under migration and do not
+authorize provisional emission or silent re-minting:
 
-- `~/.brainstem/rappid.json` — organism identity (parent_rappid points at the species root, [`kody-w/RAPP`](https://github.com/kody-w/RAPP)). Minted ONCE per machine on first install. Survives every kernel upgrade.
+- `~/.brainstem/rappid.json` — legacy application identity record. Current
+  identity is the RAPP/1 §6 rappid, minted once per organism (not per machine),
+  reused on read, and changed only by a verifiable §6.3 re-anchor. Any
+  `parent_rappid` is product-lineage metadata, not the trust root.
 - `~/.brainstem/bonds.json` — append-only lineage log. Event kinds: `birth`, `bond` (kernel upgrade), `adoption` (legacy install retroactively given identity), `hatch` (egg arrived from elsewhere), `graft` (additive overlay onto an existing public repo via `graft_neighborhood_agent`), `launch` (LOCAL→GLOBAL push of the local brainstem to a target public repo via `launch_to_public_agent`), `rhythm` (Bond Pulse heartbeat — `bond_rhythm_agent` reconciling local + global on a beat).
 - `~/.brainstem/.bond/last-pre-bond.egg` — recovery checkpoint, snapshot of organism state right before the last kernel overlay.
-- **Bond cycle** runs every time the install one-liner detects a remote VERSION upgrade: 🥚 egg the organism → 🌐 overlay the new kernel → 🐣 hatch the egg back. rappid + soul + custom agents + memory + secrets all preserved. Implemented in `installer/install.sh` + `rapp_brainstem/utils/bond.py` (stdlib-only, runs before the venv exists).
-- **Egg formats** (all `brainstem-egg/*` schemas live in `utils/bond.py`):
+- **Historical bond cycle**: the legacy installer detected a remote `VERSION`
+  and overlaid a kernel between egg/hatch operations. It must not change the
+  three bytes pinned to `rapp-installer@brainstem-v0.6.9`; any future grail
+  change requires an explicit authority event, while ordinary convergence
+  belongs in target-owned adapters.
+- **Legacy egg formats** (retired `brainstem-egg/*` migration inputs in
+  `utils/bond.py`; current producers use RAPP/1 §9 `rapp/1-egg`):
   - `2.2-organism` — full instance cartridge (rappid + soul + .env + agents + organs + senses + services + .brainstem_data)
   - `2.2-rapplication` — single rapp cartridge (rappid + agent + UI + per-rapp state)
   - `2.1` — variant repo cartridge (templated brainstem clone)
 - **CLI**: `brainstem identity` / `brainstem egg [out]` / `brainstem hatch <egg>`
-- **API**: `GET /api/identity` returns rappid + bonds + kernel version. `GET /api/lineage` walks parent_rappid back to species root.
+- **Application views**: `GET /api/identity` and `/api/lineage` expose local
+  records; they are not RAPP wire forms or substitutes for signed §13
+  resolution.
 - **Bond Pulse** ([vault/Decisions/2026-05-09 — Bond Pulse](./pages/vault/Decisions/2026-05-09%20%E2%80%94%20Bond%20Pulse%20%E2%80%94%20the%20on-going%20beat%20for%20the%20full%20organism.md)) — the on-going local↔global heartbeat for the FULL organism (global body = offspring repos; local body = `~/.brainstem/`). One pulse: `tools/ecosystem_audit.py` detects drift → `bond_rhythm_agent` classifies as LOCAL→GLOBAL push (suggest `Launch`/`Graft`) vs GLOBAL→LOCAL pull (suggest `RarLoader`) vs informational → records `kind="rhythm"` event → returns `rapp-rhythm-pulse/1.0`. Operator-mediated: SUGGESTS but never auto-executes. Connection-aware: gracefully degrades to local-only when offline; next pulse with connection catches the body up.
 
 ## Visual anatomy + Pokédex (where to send users to learn)
 
 - [`pages/about/anatomy.html`](./pages/about/anatomy.html) — full visual diagram of an organism. DNA / soul / organs / senses / cells / memory / skin / egg with hover-to-highlight cards. Linked from the brainstem's settings panel as the canonical onboarding artifact.
 - [`rapp-zoo/`](https://github.com/kody-w/rappter-distro/tree/main/rapp-zoo) — the local-first Pokédex. Three tabs (My collection / Starters / Discover), drag-drop egg import, deterministic SVG sprites per organism, three bundled starters (workday/playtime/journal). Single-file static page; localStorage holds metadata, IndexedDB holds blobs, the whole collection round-trips through one JSON for backup. **Lives in [kody-w/rappter-distro](https://github.com/kody-w/rappter-distro) as of 2026-05-16** — moved out of the kernel mirror so RAPP can be a god SPEC repo. CONSTITUTION Article XXXVIII.4 was amended accordingly.
-- [`kody-w/RAPP_Store`](https://github.com/kody-w/RAPP_Store) `/api/v1/` — PokeAPI-style static catalog. Each cataloged rapplication has an entry JSON, a sprite SVG, and a downloadable `.egg`. Hosted via `raw.githubusercontent.com`.
+- [`kody-w/RAPP_Store`](https://github.com/kody-w/RAPP_Store) `/api/v1/` —
+  application discovery catalog. Entries and downloadable files are untrusted
+  candidates until current RAPP/1 egg and signature verification succeeds.
 
-## vBrainstem + the `.egg` cartridge family (the tethered surface)
+## Historical vBrainstem + legacy `.egg` cartridges
 
-Shipped 2026-05-10. See `pages/docs/SPEC.md` §18.10–§18.12 for the canonical spec.
+The following records what shipped on 2026-05-10. The cited local SPEC is
+superseded and these forms are migration inputs only; RAPP/1 §§8–9 govern
+current wire and eggs.
 
-- [`pages/vbrainstem.html`](./pages/vbrainstem.html) ([live at `kody-w.github.io/RAPP/pages/vbrainstem.html`](https://kody-w.github.io/RAPP/pages/vbrainstem.html)) — multi-participant browser-tab tether. Two devices pair via QR (PeerJS public broker → WebRTC data channel, ECDSA P-256 keypair + 6-digit safety code), both screens stay synced; an autonomous Coordinator twin drives a 4-step debate workflow (Reporter fetches HN top story → DebaterA → DebaterB → Editor newsletter). Three exchangeable LLM backends: localhost `:7071` (default), `?brainstem=URL`, `?copilot=1` (Pyodide-loaded Python agents + Copilot via Doorman). The session IS a `brainstem-egg/2.3-session` cartridge — exportable as `.egg`.
-- The `.egg` cartridge family (single sneakernet primitive across the ecosystem; same extension, same rappzoo Pokédex shelf): `brainstem-egg/2.2-organism`, `2.2-rapplication`, `2.3-session`, `2.3-neighborhood` (planned), `2.3-estate` (planned). Master spec: [`kody-w/rappterbox/carts/SCHEMA.md`](https://github.com/kody-w/rappterbox/blob/main/carts/SCHEMA.md). Master packers/unpackers (ZIP variants): [`rapp_brainstem/utils/bond.py`](./rapp_brainstem/utils/bond.py).
-- `@rapp/egg_hatcher` — **installable from RAR** ([`kody-w/RAR/agents/@rapp/egg_hatcher_agent.py`](https://github.com/kody-w/RAR/blob/main/agents/%40rapp/egg_hatcher_agent.py)), not kernel-shipped. Bundled with `@rapp/twin_agent` in the **Organism Lifecycle pack** (`binders/@rapp-organism-lifecycle.json`). Drop into a brainstem's `agents/`, restart, the LLM gets a `HatchEgg(egg_path=...)` tool. Reads any `.egg` from a local path or URL, **introspects** the manifest's schema/type, routes by kind. Never guesses; refuses on unknown kinds. Session cartridges return a mount URL (Python brainstem can't iframe — points at rappterbox console or vbrainstem.html).
+- [`pages/vbrainstem.html`](./pages/vbrainstem.html) is a contained legacy
+  browser surface. Its retired `brainstem-egg/2.3-session` export is not a
+  current RAPP/1 egg.
+- The legacy cartridge family (`brainstem-egg/2.2-organism`,
+  `2.2-rapplication`, `2.3-session`, `2.3-neighborhood`, `2.3-estate`) and its
+  external mirrors remain migration evidence, not authority.
+- **Historical hatcher implementation:** `@rapp/egg_hatcher` was distributed
+  through RAR and routed retired schema/type cartridges. Do not install or use
+  it as current acceptance; a replacement must perform all §9.3 checks and
+  dispatch only registered RAPP/1 `variant` values.
 - The Doorman pattern (Copilot via Cloudflare Worker — same flow `pages/sphere.html` uses): `RAPP.Doorman` namespace inside vbrainstem.html clones from sphere.html. Reads `localStorage.rapp_settings` (in-memory mirror fallback for Edge Tracking Prevention).
 
 ## Key Directories
@@ -164,21 +212,34 @@ Azure OpenAI (Tier 2): `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_O
 
 ## Distribution
 
-The platform's install path is one curl pipe: `curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash`. GitHub Pages serves the repo verbatim; `raw.githubusercontent.com` is the implicit content channel for everything the install script fetches afterward. The install one-liner's URL shape is sacred (Constitution Article V) — when relocating files, prefer keeping the URL stable over a marginally cleaner layout.
+The public product installer remains at
+`curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash`.
+GitHub Pages and raw URLs are transport, not structural authority. The
+installer must preserve and verify the three exact
+`rapp-installer@brainstem-v0.6.9` bytes; it may refresh target-owned adapters
+but may not select a moving grail release.
 
 ## Hero use case + ecosystem + antipatterns (READ FIRST)
 
-Three checked-in specs are the contract for this codebase. Read all three before proposing structural changes:
+These checked-in product documents provide implementation context. They remain
+subordinate to `RAPP1_AUTHORITY.json` and `RAPP1_STATUS.md`; read them before
+proposing product changes, never as alternate protocol contracts:
 
-- [`ECOSYSTEM_MAP.md`](./ECOSYSTEM_MAP.md) — *the index*. Single canonical synthesis: schemas, files, decision table, drift gaps. **Read this first; it points at the rest.**
+- [`ECOSYSTEM_MAP.md`](./ECOSYSTEM_MAP.md) — *the product index*. Synthesis of
+  declarations, files, decisions, and drift; never a protocol registry.
 - [`OSI.md`](./OSI.md) — *the 7-layer model*. Substrate / identity / discovery / channels / trust / envelope / application. Each layer has schemas, impl, tests. Use to figure out which layer a new feature belongs to. Test suite at `tests/osi/`.
 - [`HERO_USECASE.md`](./HERO_USECASE.md) — *what* this platform must do. Canonical scenarios this codebase must satisfy: Charizard-in-the-woods (offline-share over QR pair), Dream Catcher (parallel-dimension reassimilation), Mom's Mixtape (accessibility floor), Pizza Place (future location-aware layer). Every architectural decision is judged against whether these stories still work.
 - [`ECOSYSTEM.md`](./ECOSYSTEM.md) — *how* the pieces fit together. End-to-end layout of a planted organism: file structure, identity stack, the two surfaces, memory tiers, MMR system, evolution path, egg cartridges, integrity stack, Dream Catcher, network modes, external integrations, surface inventory, schema reference.
 - [`ANTIPATTERNS.md`](./ANTIPATTERNS.md) — *what we will never do*. Locked rules: ONE term for the plugin unit (always `agent`, never `skill`/`routine`/`loop`/`plugin`); frozen kernel never moves; no half-released-feature shims; no fallback to "RAPP"/"an AI assistant" branding; no network calls without local-first fallback. Append-only.
-- [`NEIGHBORHOOD_PROTOCOL.md`](./NEIGHBORHOOD_PROTOCOL.md) — *how organisms talk to each other*. Twin chat protocol, three concentric trust scopes (personal / neighborhood / public swarm), four channel types (WebRTC tether, Issues, PRs, raw-fetch), four exchange primitives, granular permissions via `public_facets`, adversarial-scenario walkthrough. Read before adding any cross-organism communication.
+- [`NEIGHBORHOOD_PROTOCOL.md`](./NEIGHBORHOOD_PROTOCOL.md) — historical and
+  application federation adapters. Current cross-organism interaction maps to
+  the exact RAPP/1 §8 forms and §§10/13 trust.
 - [`pages/onboarding.html`](./pages/onboarding.html) — visitor-facing onboarder. Trust-building tone for non-technical visitors who need to understand why this isn't sketchy. Link new visitors here, not directly to the spec docs.
 
-PRs that would degrade a ✅ row in `HERO_USECASE.md` must explain why. PRs that change schemas in `ECOSYSTEM.md` §3 or `NEIGHBORHOOD_PROTOCOL.md` must update the version string and document the migration. PRs that violate `ANTIPATTERNS.md` rules don't merge.
+PRs that would degrade a ✅ row in `HERO_USECASE.md` must explain why.
+Application metadata may evolve with its owning docs. Protocol structure
+changes only through the constitutional process, total §12 migration, and
+signed §13 state—never by bumping a local version string.
 
 ## Background context (the vault)
 

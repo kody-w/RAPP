@@ -1,6 +1,14 @@
 # PUBLIC_PRIVATE_BOUNDARY — The Three-Tier Estate (Mandatory)
 
-> **Schema:** `rapp-private-estate/1.1` · **Status:** Constitutional (Article XLVIII; XLVIII.9 added 2026-05-10) · **Authority:** this file · **First shipped:** 2026-05-09 (1.0) · **Tightened:** 2026-05-10 (1.1 — third tier added) · **Bumps:** `rapp-network-beacon/1.1` → `1.2`
+> **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
+> wire, eggs, registry, trust, and protocol evolution, follow
+> [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md). This privacy architecture cannot
+> replace RAPP/1 §9 eggs or §§10/13 authenticated trust.
+
+> **Application metadata:** `rapp-private-estate/1.1` · **Status:** repository
+> privacy policy under Article XLVIII, subordinate to Article LV and RAPP/1 ·
+> **First shipped:** 2026-05-09
 
 This is the spec for the platform's estate model. **Every Article-XLVIII-compliant operator has THREE tiers from first install:** the public estate (discovery), the private estate (the *bones* — workflow + sanitized structure), and the local-only on-device tier (the *substance* — PII, customer data, real content). All three are first-class infrastructure; none are opt-in.
 
@@ -30,7 +38,10 @@ But a **two-tier-with-PII-in-private** estate is also broken — see §1.5. The 
 
 ---
 
-> **2026-05-10 cartridge cross-reference:** the operator's whole multi-tier estate (this document's three tiers — public discovery + private bones + on-device PII) is itself portable as a planned `brainstem-egg/2.3-estate` cartridge. Substrate migration (GitHub → GitLab → Codeberg → LAN-mirror) lifts the entire estate via one egg, hatched on the new substrate by [`egg_hatcher_agent.py`](../rapp_brainstem/agents/egg_hatcher_agent.py). See [SPEC.md §18.10](./SPEC.md) family table.
+> **Historical 2026-05-10 cartridge proposal, superseded.** The retired
+> `brainstem-egg/2.3-estate` and schema/type hatcher are migration evidence.
+> Current portability uses the RAPP/1 §9 `estate` variant and requires
+> identity, signature, and registry verification under §§6, 10, and 13.
 
 ## §1.5 — Why the private repo doesn't hold PII by default (the 2026-05-10 tightening)
 
@@ -112,7 +123,10 @@ The operator's primary twin (rappid in `~/.brainstem/rappid.json`) implicitly ow
 
 Agents that need to read a workbench MUST go through `~/.brainstem/workbenches/` as the canonical entry point. Agents that need to write to a workbench MUST honor its `peers_visible` setting. Agents that create workbenches MUST set `meta.json` with at minimum `owner_rappid`, `created`, and `twin_rappids[]` (which can be `[<the-creating-twin's-rappid>]`).
 
-Workbench discovery is filesystem-native: `ls ~/.brainstem/workbenches/` returns the slugs; reading each `meta.json` returns the indexable metadata. No registry. No central index. The filesystem IS the index.
+Workbench discovery is filesystem-native: `ls ~/.brainstem/workbenches/`
+returns the slugs and each `meta.json` supplies application metadata. This
+needs no separate **application catalog**; it does not replace or bypass the
+RAPP/1 §13 protocol registry.
 
 ---
 
@@ -128,13 +142,15 @@ The private repo carries the COMPLETE shape of the organism, minus substance. Pe
 
 - **Identity** — `rappid.json`, `neighborhood.json`, `members.json`
 - **Soul** — `soul.md` (the voice anchor)
-- **Agents** — `agents/*_agent.py` (sha256-pinned per `rar/index.json`, the kernel-defined units of work — Article XXXIII)
+- **Agents** — `agents/*_agent.py`; `rar/index.json` SHA-256 values are
+  application integrity metadata, not RAPP trust
 - **Organs** — `utils/organs/*_organ.py` (HTTP extension surfaces — Article XXXIII)
 - **Senses** — modular per-channel output overlays (eli5, headlines, etc., from `kody-w/RAPP_Sense_Store`)
 - **Rapplications** — `rapplications/<name>/` (graduated workflows — Article XXXVII)
 - **Holocards** — `card.json`, `holo.svg`, `holo.md`, `holo-qr.svg`, `facets.json` (identity proof + summon QR — Article XLVI.2 door URL set)
 - **Specs bundle** — `specs/AGENT_CONTRACT.md`, `specs/NEIGHBORHOOD_PROTOCOL.md`, `specs/RAR_INDEX.md` (so the repo is self-documenting)
-- **Rar / participation kit** — `rar/index.json` (the sha256-pinned manifest)
+- **RAR / participation kit** — application discovery metadata whose hash is
+  an integrity hint only; RAPP trust still requires §§10/13
 - **Constitution + governance** — `CONSTITUTION.md`, `SKILL.md`, `SETUP.md`, `QUICK_START.md`, `onboarding.html`, `README.md`
 - **Per-contributor front doors** — `ses/<handle>/front_door.md`, `ses/<handle>/projects.json` (sanitized, slugs + status only)
 - **`.gitignore`** that excludes the local on-device PII path (`.brainstem/`)

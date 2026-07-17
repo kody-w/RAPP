@@ -1,5 +1,27 @@
 # RAPP Brainstem — Versions
 
+> **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
+> wire, eggs, registry, trust, and protocol evolution, follow
+> [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md). Release tags remain immutable
+> history; resolvability does not make a retired schema current or acceptable.
+
+## Current immutable grail policy
+
+The runtime grail is
+[`kody-w/rapp-installer@brainstem-v0.6.9`](https://github.com/kody-w/rapp-installer/tree/brainstem-v0.6.9).
+Its pinned `brainstem.py`, `agents/basic_agent.py`, and `VERSION` bytes are
+never edited locally and do not follow this repository's moving latest tag.
+The local tags below are release history, not structural authority.
+
+## Historical moving-release workflow (superseded)
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
+
+The remainder preserves the former local tagging, install, rollback, schema,
+and release procedures. Do not use them to replace the three immutable grail
+bytes or to claim current protocol conformance.
+
 Every `rapp_brainstem/VERSION` bump is tagged in this repo as
 `brainstem-vX.Y.Z`. A tagged commit is an **immutable reference** — git
 will give you the exact tree that was released under that version, and
@@ -51,11 +73,12 @@ exists.
 | `brainstem-v0.12.2` | Agent-first rapplication platform. Service discovery in kernel (`services/*_service.py` → `/api/<name>`). Factory-clean brainstem (4 core agents, empty `services/`). RAPPstore with 7 rapplications (kanban, webhook, dashboard, vibe_builder, learn_new, swarm_factory + binder/swarms services). VibeBuilder meta-agent generates rapplications from natural language. Twin mode restored with `|||TWIN|||` + action chips. Rapplication SDK (`rapplication-sdk.md`). Constitution Article XX (kernel/extensions/factory-installed rule). vBrainstem: standalone RAPPstore catalog, OS-aware install one-liner, tether default port fix. Login UI polished (green code box, animated dots, model catalog messaging). Windows installer fixes (dep-check SyntaxError, hidden background service, PYTHONIOENCODING, repo-switch detection). `build.sh` vendors services + rsync fallback for Windows. |
 | `brainstem-v0.15.x` | **Egg-cartridge unification + tethered vBrainstem (2026-05-10).** Five-variant `.egg` family: `brainstem-egg/2.3-session` (shipping), `brainstem-egg/2.3-neighborhood` + `brainstem-egg/2.3-estate` (planned), joining the existing `2.2-organism` and `2.2-rapplication`. New kernel agent `egg_hatcher_agent.py` introspects any egg's manifest schema/type and routes by kind (refuses on unknown). New public surface `pages/vbrainstem.html` — multi-participant browser-tab tether with QR-pair WebRTC handshake (PeerJS + ECDSA P-256 + 6-digit safety code), three exchangeable LLM backends (localhost default / `?brainstem=URL` / `?copilot=1` via Doorman + Pyodide), Coordinator-driven debate-demo workflow. Spec additions: SPEC.md §18.10–§18.12. |
 
-## Schema version registry
+## Historical schema declaration ledger
 
-This table tracks the wire-format schemas currently in use across the
-brainstem ecosystem. New schemas append; old schemas stay resolvable
-forever (same discipline as version tags).
+This table preserves schema names reported by past releases. It is not the
+RAPP/1 §13 registry and its `shipping` labels are historical. Retired forms
+may remain retrievable for audit, but RAPP/1 §12 migrates and retires their
+normal readers; retrievability never means current acceptance.
 
 | Schema | Status | Owner | Reference |
 |---|---|---|---|
@@ -80,3 +103,5 @@ forever (same discipline as version tags).
 3. Add the new row to the table above.
 
 Never delete a tag. A version that existed continues to exist.
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

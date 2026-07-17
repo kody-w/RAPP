@@ -1,5 +1,12 @@
 # GitHub-as-substrate is the unit-economics moat
 
+> **Historical/superseded protocol field note.** Preserve this dated narrative
+> below; do not use its protocol examples as current instructions.
+> Canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+> evolution follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
 **Date:** 2026-05-08
 **Tag:** field-notes, architecture, strategy
 

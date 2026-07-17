@@ -1,13 +1,23 @@
 # Using This Repo as a Template
 
+> **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
+> wire, eggs, registry, trust, and protocol evolution, follow
+> [`RAPP1_AUTHORITY.json`](./RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](./RAPP1_STATUS.md). A genuinely new organism may mint
+> once per RAPP/1 §6.2. Copying or moving an existing organism preserves its
+> tail; only a verifiable §6.3 re-anchor may replace it in an enumerated case.
+
 This is the RAPP species root. Variants spawned directly from here become **direct children of rapp** in the lineage tree — siblings of `wildhaven-ai-homes-twin` and any other top-level variant.
 
 ## When to template from RAPP (vs. a downstream variant)
 
 Template from RAPP when:
 - Your variant is structurally different from any existing variant pattern (not a Pre-Founder twin, not a memorial twin, etc.) — you want the full RAPP layout to remix from scratch.
-- Your variant is a *platform fork* — you intend to maintain a parallel evolution of the brainstem itself.
-- You want `parent_rappid` to point at rapp directly, with no intermediate ancestor.
+- Your variant is a product/documentation fork. The immutable grail bytes
+  remain pinned to `kody-w/rapp-installer@brainstem-v0.6.9`; protocol
+  evolution still follows constitutional authority.
+- You want legacy application `parent_rappid` provenance to name rapp directly
+  (this does not affect RAPP identity or trust).
 
 Template from a downstream (e.g., [wildhaven-ai-homes-twin](https://github.com/kody-w/wildhaven-ai-homes-twin)) when:
 - You want to inherit a specific pattern (Pre-Founder twin, etc.) — the downstream's installer scaffolds that pattern's content for you.
@@ -15,9 +25,25 @@ Template from a downstream (e.g., [wildhaven-ai-homes-twin](https://github.com/k
 
 ## Single-parent rule
 
-Per [Constitution Article XXXIV](./CONSTITUTION.md), every variant's `parent_rappid` declares the repo whose code it inherited at template time — no exceptions. There is no "claim a different ancestor" flag. If you template from RAPP, your parent is rapp; if you template from wildhaven, your parent is wildhaven.
+`parent_rappid` is legacy application provenance, not RAPP identity, trust, or
+key succession. A template may preserve accurate source provenance, but
+current acceptance validates the new §6 identity and resolves §13 state.
 
-This is enforced by `rapp_brainstem/utils/lineage_check.py`, which the brainstem boot guard (`rapp_brainstem/utils/boot.py`) calls before serving. An uninitialized template clone — one whose `rappid.json` still carries the parent's rappid but whose git remote points elsewhere — refuses to boot until `installer/initialize-variant.sh` regenerates the rappid.
+The existing lineage guard and initializer implement the legacy product
+record. They do not yet prove a conformant §6 mint or §13 registration.
+
+## Current RAPP/1 status
+
+Do not use the initializer below to claim a RAPP/1-conformant plant until its
+identity emitter is migrated and the owner actions in `RAPP1_STATUS.md` are
+complete. It currently documents a bare-UUID-era flow.
+
+## Historical template flow (superseded)
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
+
+The remaining commands and generated fields are preserved as migration
+history, not current identity instructions.
 
 ## The flow
 
@@ -63,3 +89,5 @@ Then add your rappid + canonical owner/repo to `KNOWN_TEMPLATE_REPOS` in `rapp_b
 - [`rapp_brainstem/utils/lineage_check.py`](./rapp_brainstem/utils/lineage_check.py) — the boot guard.
 - [`installer/initialize-variant.sh`](./installer/initialize-variant.sh) — this template's variant-init script.
 - [Constitution Article XXXIV](./CONSTITUTION.md) — variant lineage protocol.
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

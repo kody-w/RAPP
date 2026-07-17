@@ -1,9 +1,19 @@
 # RAPP v1 — Specification
 
+> **SUPERSEDED PROTOCOL DOCUMENT — historical product/agent contract only.**
+> For canonicalization, identity, frames, wire, eggs, registry, trust, and
+> protocol evolution, the current authority is RAPP/1 rev-5 via
+> [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md). Nothing below is current
+> instruction for emitting or accepting protocol artifacts. Preserve these
+> dated examples as migration history; RAPP/1 §12 requires total migration and
+> retirement rather than perpetual backwards compatibility.
+>
 > **Scope:** the **single-file agent contract**. What `perform()` takes, what it returns, how metadata travels, the delimited slots (`|||VOICE|||`, `|||TWIN|||`). The agent API. **Not** the network protocol — for that read [`specs/SPEC.md`](../../specs/SPEC.md). See [`specs/README.md`](../../specs/README.md) for the spec-directory map.
 >
 > **Memorialized:** 2026-04-17
-> **Status:** Frozen. v1 is the canonical reference. All future versions must remain backwards-compatible with the v1 agent contract.
+> **Historical status:** Frozen on 2026-04-17; superseded for protocol matters
+> by RAPP/1 rev-5.
 > **Companion doctrine:** [Single File Agents — rappterhub](https://kody-w.github.io/rappterhub/single-file-agents.html)
 > **Live at:** [kody-w.github.io/RAPP](https://kody-w.github.io/RAPP/)
 

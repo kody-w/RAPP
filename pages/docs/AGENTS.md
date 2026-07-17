@@ -1,10 +1,19 @@
 # AGENTS.md — RAPP Codebase Instructions
 
+> **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
+> wire, eggs, registry, trust, and protocol evolution, follow
+> [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md). The single-file agent contract is
+> a product extension rule; it does not override the pinned protocol.
+
 ## Project
 
 RAPP (Rapid Agent Prototype Platform) — a three-tier AI agent architecture built around **single-file agents**. Local Flask brainstem (Tier 1), Azure Functions cloud (Tier 2), Copilot Studio enterprise (Tier 3).
 
-Read [SPEC.md](./SPEC.md) before making any architectural changes — it is the frozen v1 contract. Read [CONSTITUTION.md](../CONSTITUTION.md) before modifying core files.
+Read the pinned authority and status above before architectural changes.
+[`SPEC.md`](./SPEC.md) is a superseded local v1 artifact, useful only for
+history and bounded migration. Read the root Constitution—especially Article
+LV—for repository governance.
 
 ## The Sacred Tenet
 
@@ -12,9 +21,15 @@ Read [SPEC.md](./SPEC.md) before making any architectural changes — it is the 
 
 Everything in this repo exists to serve the single-file agent. If a change breaks this contract, the change is wrong.
 
-**Notable kernel agents** (single-file, conform to the contract above): `basic_agent.py` (base class), `manage_memory_agent.py` + `context_memory_agent.py` (memory R/W via local-storage shim), `hacker_news_agent.py` (HN via Pyodide-friendly fetch), `egg_hatcher_agent.py` (universal `.egg` cartridge router — introspects `manifest.schema` / `manifest.type` and dispatches to the right hatch path; refuses on unknown kinds; per [SPEC §18.10](./SPEC.md)), `twin_agent.py` (federation primitive — `summon` / `hatch` / `boot` / `stop` / `list` / `chat` / `inspect` / `lay_egg` / `history` / `lineage` across every workspace under `~/.rapp/twins/<hash>/`).
+**Notable application agents:** `manage_memory_agent.py` +
+`context_memory_agent.py`, `hacker_news_agent.py`, `egg_hatcher_agent.py`, and
+`twin_agent.py`. The existing hatcher's schema/type routing is legacy
+migration behavior, not current egg acceptance. A conformant hatcher dispatches
+the registered RAPP/1 §9 `variant` only after all §9.3 checks.
 
-Under `rapp-egg/2.0` (SPEC §18.10.5), the hatcher is *multi-scale*: it reads `manifest.scale` and routes to the right destination — `agent` lands in `agents/`, `twin` lands in `~/.rapp/twins/<hash>/`, `brainstem` provisions a fresh `~/.brainstem/` install, `neighborhood` lands in `~/.rapp/neighborhoods/<hash>/`, and so on up through `swarm` / `factory` / `industry` / `estate`. Same single-file hatcher, one switch on `scale`. See [[The Federated Twin Egg Hatcher Pattern]] for the end-to-end pattern and the four-twin worked example.
+The retired `rapp-egg/2.0` scale switch is historical implementation
+inventory. Current portable units use the ratified RAPP/1 §9 variants; do not
+emit `manifest.scale` or treat an unknown scale as a current extension point.
 
 ## Commands
 
@@ -86,15 +101,23 @@ See [rapp_brainstem/agents/hacker_news_agent.py](rapp_brainstem/agents/hacker_ne
 
 ## Critical Rules
 
-- **Never modify `brainstem.py` or `function_app.py`** unless adding a new top-level `|||SLOT|||` delimiter. New capabilities = new `*_agent.py`, not new code in core. See [CONSTITUTION.md](../CONSTITUTION.md) Article I.
+- **Never modify the immutable grail bytes:** `brainstem.py`,
+  `agents/basic_agent.py`, and `VERSION`, pinned to
+  `kody-w/rapp-installer@brainstem-v0.6.9`. New capabilities are agents behind
+  the exact RAPP/1 §8 `/chat` boundary.
 - **Delimited slots are permanent.** `|||VOICE|||` = TTS line. `|||TWIN|||` = digital twin. New sub-capabilities go as tags inside existing slots, not new delimiters. See Article II.
 - **Portability guarantee:** an agent that runs in Tier 1 must run unmodified in Tier 2 and Tier 3. Shims go in the runtime, never in agent files.
 - **`agents/experimental/`** exists for agents excluded from auto-loading.
-- **SPEC.md is frozen.** v1 is the canonical reference. All changes must be backwards-compatible with the v1 agent contract.
+- **The local SPEC is superseded.** Protocol evolution follows RAPP/1 §12
+  total migration and retirement, not perpetual v1 compatibility.
 
 ## Auth Chain
 
 `GITHUB_TOKEN` env → `.copilot_token` file (device-code OAuth) → `gh auth token` CLI. The GitHub token is exchanged for a short-lived Copilot API token, cached with auto-refresh.
+
+This is application authentication to GitHub/Copilot, not RAPP protocol trust.
+RAPP artifacts use §§10/13 signatures, key succession, revocation, and the
+signed registry.
 
 ## Storage Shim
 
