@@ -12,7 +12,8 @@ installer/initialize-variant.sh.
 It does NOT modify the kernel; it execs brainstem.py verbatim. (Organ/sense/web
 mounting is an additive extension point — see pages/vault/Architecture/'Boot
 Sidecar — Integrating Utils Without Modifying the Kernel.md'. Absent those
-modules, the kernel runs unchanged.)
+modules, the kernel runs unchanged.) A missing or failed lineage guard refuses
+boot rather than silently skipping identity validation.
 """
 
 import os
@@ -30,9 +31,8 @@ def _guard():
         from lineage_check import check_lineage
         info = check_lineage()
     except Exception as e:
-        # Fail open — never block boot on a guard error; just warn.
-        print(f"[boot] lineage guard skipped: {e}", file=sys.stderr)
-        return
+        print(f"[boot] lineage guard failed; refusing boot: {e}", file=sys.stderr)
+        raise SystemExit(1)
     if info.get("status") == "variant_uninitialized":
         tmpl = info.get("template", "a template")
         remote = info.get("remote", "(unknown remote)")
@@ -48,6 +48,14 @@ def _guard():
             ])
         )
         sys.exit(1)
+    if info.get("status") not in ("self", "master", "variant_initialized"):
+        detail = info.get("detail", "identity record is unavailable")
+        print(
+            f"[boot] lineage guard refused status "
+            f"{info.get('status', 'unknown')}: {detail}",
+            file=sys.stderr,
+        )
+        raise SystemExit(1)
 
 
 def main():

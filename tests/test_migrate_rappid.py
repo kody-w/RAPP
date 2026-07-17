@@ -68,13 +68,35 @@ def test_exact_identity_needs_no_migration_and_is_not_rewritten():
     record = {"rappid": CANON, "kind": "twin", "name": "Echo"}
     plan = plan_record(record, "kody-w", "echo-brainstem")
     assert plan["status"] == "NO_ACTION"
+    assert plan["context-binding"] == "MATCH"
     assert plan["write-permitted"] is False
     assert plan["identity"]["rappid"] == CANON
     assert plan["proposed-rappid"] is None
 
 
+def test_exact_identity_requires_matching_owner_slug_context():
+    alice_identity = f"rappid:@alice/echo-brainstem:{H64}"
+    missing = plan_record({"rappid": CANON, "kind": "twin"})
+    mismatch = plan_record(
+        {"rappid": alice_identity, "kind": "twin"},
+        "bob",
+        "echo-brainstem",
+    )
+
+    assert missing["status"] == "OWNER_ACTION_REQUIRED"
+    assert mismatch["status"] == "OWNER_ACTION_REQUIRED"
+    assert missing["context-binding"] == "OWNER_SLUG_MISMATCH_OR_UNAVAILABLE"
+    assert mismatch["context-binding"] == "OWNER_SLUG_MISMATCH_OR_UNAVAILABLE"
+    assert missing["proposed-rappid"] is None
+    assert mismatch["proposed-rappid"] is None
+
+
 def test_legacy_parent_is_quarantined_without_rewrite():
-    plan = plan_record({"rappid": CANON, "parent_rappid": UUID})
+    plan = plan_record(
+        {"rappid": CANON, "parent_rappid": UUID},
+        "kody-w",
+        "echo-brainstem",
+    )
     assert plan["status"] == "OWNER_ACTION_REQUIRED"
     assert plan["parent-identity"]["classification"] == "legacy-quarantined"
     assert plan["proposed-rappid"] is None
@@ -82,7 +104,11 @@ def test_legacy_parent_is_quarantined_without_rewrite():
 
 @pytest.mark.parametrize("parent", ["", 7, {"rappid": CANON}])
 def test_malformed_present_parent_requires_owner_action(parent):
-    plan = plan_record({"rappid": CANON, "parent_rappid": parent})
+    plan = plan_record(
+        {"rappid": CANON, "parent_rappid": parent},
+        "kody-w",
+        "echo-brainstem",
+    )
     assert plan["status"] == "OWNER_ACTION_REQUIRED"
     assert plan["write-permitted"] is False
     assert plan["proposed-rappid"] is None

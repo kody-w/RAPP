@@ -16,7 +16,10 @@ from rapp1_core.canonical import MAX_JSON_DEPTH
 from rapp_brainstem.rapp1_facade import (
     DEFAULT_HOST,
     DEFAULT_PORT,
+    FINGERPRINT_VERSION_CANONICAL_SEMANTIC,
+    FINGERPRINT_VERSION_UNBOUND,
     GRAIL_PORT,
+    MAX_RAW_REQUEST_BYTES,
     PENDING_REGISTRY_ERROR_CODES,
     create_app,
     runtime_config,
@@ -167,6 +170,49 @@ def create_v1_completed_database(path: Path) -> bytes:
     return response_body
 
 
+def create_v2_completed_database(
+    path: Path, *, transitional: bool = False
+) -> tuple[bytes, bytes]:
+    response_body = create_v1_completed_database(path)
+    legacy_fingerprint = json.dumps(
+        {
+            "user_input": "legacy turn",
+            "session_id": "legacy-session",
+        },
+        ensure_ascii=False,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+    if transitional:
+        legacy_fingerprint = canonical_bytes(
+            {
+                "user_input": "legacy turn",
+                "session_id": "legacy-session",
+                "idempotency_key": "legacy-key",
+            }
+        )
+    connection = sqlite3.connect(path)
+    try:
+        connection.execute(
+            "ALTER TABLE idempotency ADD COLUMN request_canonical BLOB"
+        )
+        connection.execute(
+            """
+            UPDATE idempotency
+            SET scope_kind = 'session',
+                scope_session_id = 'legacy-session',
+                request_canonical = ?
+            WHERE idempotency_key = 'legacy-key'
+            """,
+            (sqlite3.Binary(legacy_fingerprint),),
+        )
+        connection.execute("PRAGMA user_version = 2")
+        connection.commit()
+    finally:
+        connection.close()
+    return response_body, legacy_fingerprint
+
+
 def nested_request(total_depth: int) -> bytes:
     nested_containers = total_depth - 1
     return (
@@ -287,16 +333,15 @@ def test_creation_idempotency_is_global_byte_equivalent_and_conflict_safe(
     assert_error(conflict, "idempotency-conflict")
     assert len(inference.calls) == 1
     with sqlite3.connect(database) as connection:
-        stored = connection.execute(
+        stored, fingerprint_version = connection.execute(
             """
-            SELECT request_canonical
+            SELECT request_canonical, request_fingerprint_version
             FROM idempotency
             WHERE scope_kind = 'create' AND idempotency_key = 'create-key'
             """
-        ).fetchone()[0]
-    assert stored == canonical_bytes(
-        {"user_input": "original", "idempotency_key": "create-key"}
-    )
+        ).fetchone()
+    assert stored == canonical_bytes({"user_input": "original"})
+    assert fingerprint_version == FINGERPRINT_VERSION_CANONICAL_SEMANTIC
 
 
 def test_existing_session_idempotency_is_scoped_by_session(test_dir):
@@ -535,6 +580,30 @@ def test_oversized_canonical_ignored_member_is_exact_422(test_dir):
                 + (b"x" * 1_048_576)
                 + b'"}'
             ),
+            content_type="application/json",
+        )
+
+    assert_error(response, "malformed-request")
+    assert inference.calls == []
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        (b" " * MAX_RAW_REQUEST_BYTES) + b'{"user_input":"ok"}',
+        b'{"user_input":"' + (b"x" * MAX_RAW_REQUEST_BYTES) + b'"}',
+    ],
+)
+def test_raw_transport_cap_refuses_oversized_whitespace_and_body(
+    test_dir, body
+):
+    inference = RecordingInference()
+    app = make_app(test_dir / "facade.sqlite3", inference)
+
+    with app.test_client() as client:
+        response = client.post(
+            "/chat",
+            data=body,
             content_type="application/json",
         )
 
@@ -794,17 +863,102 @@ def test_v1_completed_idempotency_replays_unbound_terminal_bytes(test_dir):
     connection = sqlite3.connect(database)
     try:
         version = connection.execute("PRAGMA user_version").fetchone()[0]
-        legacy_marker = connection.execute(
+        legacy_marker, fingerprint_version = connection.execute(
             """
-            SELECT request_canonical
+            SELECT request_canonical, request_fingerprint_version
             FROM idempotency
             WHERE idempotency_key = 'legacy-key'
             """
-        ).fetchone()[0]
+        ).fetchone()
     finally:
         connection.close()
-    assert version == 2
+    assert version == 3
     assert legacy_marker is None
+    assert fingerprint_version == FINGERPRINT_VERSION_UNBOUND
+
+
+@pytest.mark.parametrize("transitional", [False, True])
+def test_v2_fingerprint_replays_then_migrates_to_current(
+    test_dir, transitional
+):
+    database = test_dir / "facade-v2.sqlite3"
+    legacy_body, legacy_fingerprint = create_v2_completed_database(
+        database, transitional=transitional
+    )
+    inference = RecordingInference()
+    app = make_app(database, inference)
+
+    with app.test_client() as client:
+        replay = post_json(
+            client,
+            {
+                "user_input": "legacy turn",
+                "session_id": "legacy-session",
+                "idempotency_key": "legacy-key",
+            },
+        )
+        conflict = post_json(
+            client,
+            {
+                "user_input": "different turn",
+                "session_id": "legacy-session",
+                "idempotency_key": "legacy-key",
+            },
+        )
+
+    assert replay.status_code == 200
+    assert replay.data == legacy_body
+    assert_error(conflict, "idempotency-conflict")
+    assert inference.calls == []
+
+    with sqlite3.connect(database) as connection:
+        version = connection.execute("PRAGMA user_version").fetchone()[0]
+        migrated, fingerprint_version = connection.execute(
+            """
+            SELECT request_canonical, request_fingerprint_version
+            FROM idempotency
+            WHERE idempotency_key = 'legacy-key'
+            """
+        ).fetchone()
+    assert version == 3
+    assert migrated != legacy_fingerprint
+    assert migrated == canonical_bytes(
+        {
+            "session_id": "legacy-session",
+            "user_input": "legacy turn",
+        }
+    )
+    assert fingerprint_version == FINGERPRINT_VERSION_CANONICAL_SEMANTIC
+
+
+def test_v2_fingerprint_conflict_does_not_replay_or_migrate(test_dir):
+    database = test_dir / "facade-v2-conflict.sqlite3"
+    _, legacy_fingerprint = create_v2_completed_database(database)
+    inference = RecordingInference()
+    app = make_app(database, inference)
+
+    with app.test_client() as client:
+        conflict = post_json(
+            client,
+            {
+                "user_input": "not the legacy turn",
+                "session_id": "legacy-session",
+                "idempotency_key": "legacy-key",
+            },
+        )
+
+    assert_error(conflict, "idempotency-conflict")
+    assert inference.calls == []
+    with sqlite3.connect(database) as connection:
+        stored, fingerprint_version = connection.execute(
+            """
+            SELECT request_canonical, request_fingerprint_version
+            FROM idempotency
+            WHERE idempotency_key = 'legacy-key'
+            """
+        ).fetchone()
+    assert stored == legacy_fingerprint
+    assert fingerprint_version == 2
 
 
 def test_loopback_separate_port_and_external_default_store(test_dir):

@@ -76,18 +76,30 @@ def plan_record(
     parent = _classify(data.get("parent_rappid"))
     record_kind = data.get("kind") if type(data.get("kind")) is str else None
     exact = current["classification"] == "exact-rapp1"
+    requested_location = _location(owner, slug)
+    context_matches = (
+        exact
+        and requested_location is not None
+        and current["owner"] == requested_location["owner"]
+        and current["slug"] == requested_location["slug"]
+    )
     parent_requires_action = (
         data.get("parent_rappid") is not None
         and parent["classification"] != "exact-rapp1"
     )
-    owner_action = not exact or parent_requires_action
+    owner_action = not exact or not context_matches or parent_requires_action
 
     return {
         "schema": PLAN_SCHEMA,
         "status": "OWNER_ACTION_REQUIRED" if owner_action else "NO_ACTION",
         "write-permitted": False,
         "authorization-verifier": "UNAVAILABLE",
-        "requested-location": _location(owner, slug),
+        "requested-location": requested_location,
+        "context-binding": (
+            "MATCH"
+            if context_matches
+            else "OWNER_SLUG_MISMATCH_OR_UNAVAILABLE"
+        ),
         "identity": current,
         "parent-identity": parent,
         "record-kind": record_kind,
@@ -115,7 +127,7 @@ def plan_file(
     return plan_record(value, owner, slug)
 
 
-def _infer_owner(repo_dir: Path) -> str | None:
+def _infer_location(repo_dir: Path) -> tuple[str, str] | None:
     try:
         result = subprocess.run(
             ["git", "-C", str(repo_dir), "remote", "get-url", "origin"],
@@ -135,7 +147,12 @@ def _infer_owner(repo_dir: Path) -> str | None:
     ):
         if url.startswith(prefix):
             parts = url[len(prefix) :].split("/")
-            return parts[0] if len(parts) >= 2 else None
+            if len(parts) != 2:
+                return None
+            location = _location(parts[0].lower(), parts[1].lower())
+            if location is None:
+                return None
+            return location["owner"], location["slug"]
     return None
 
 
@@ -151,8 +168,9 @@ def main(argv: list[str] | None = None) -> int:
     if not path.is_file():
         print(f"no rappid.json in {repo}", file=sys.stderr)
         return 2
-    owner = args.owner or _infer_owner(repo)
-    slug = args.slug or repo.resolve().name
+    inferred = _infer_location(repo)
+    owner = args.owner or (inferred[0] if inferred is not None else None)
+    slug = args.slug or (inferred[1] if inferred is not None else None)
     try:
         plan = plan_file(path, owner, slug)
     except (OSError, TypeError, ValueError) as exc:

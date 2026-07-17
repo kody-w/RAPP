@@ -83,6 +83,10 @@ RAPP/1 replacement currently emits a strict machine-readable plant result.
 producer returns an exact §6.1 rappid and URL as structured data rather than a
 human log.
 
+Historical seed backfill is also plan-only. Strict identity failures,
+owner/slug source mismatches, and parent-pointer changes remain explicit owner
+actions; the retired tool cannot mint or PUT a replacement identity.
+
 ## Immutable grail boundary
 
 The files pinned by [`KERNEL_PIN.json`](./KERNEL_PIN.json) remain read-only and

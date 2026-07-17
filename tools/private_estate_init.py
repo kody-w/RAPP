@@ -156,12 +156,16 @@ def _build_readme(github_handle: str) -> bytes:
     ).encode()
 
 
-def _load_operator_identity(path: Path) -> tuple[str, str]:
+def _load_operator_identity(path: Path, expected_owner: str) -> tuple[str, str]:
     value = strict_loads(path.read_bytes())
     if type(value) is not dict:
         raise ValueError("operator identity record must be an object")
     rappid = value.get("rappid")
     parsed = parse_rappid(rappid)
+    if parsed.owner != expected_owner:
+        raise ValueError(
+            "operator identity owner does not match requested GitHub handle"
+        )
     kind = value.get("kind")
     if kind != "operator":
         raise ValueError("operator identity record kind must be 'operator'")
@@ -250,7 +254,9 @@ def init_private_estate(github_handle: str, dry_run: bool = False) -> dict:
 
     rappid_path = Path(os.path.expanduser("~/.brainstem/rappid.json"))
     try:
-        operator_rappid, operator_kind = _load_operator_identity(rappid_path)
+        operator_rappid, operator_kind = _load_operator_identity(
+            rappid_path, github_handle
+        )
     except (IdentityError, OSError, TypeError, ValueError) as exc:
         return {
             "ok": False,

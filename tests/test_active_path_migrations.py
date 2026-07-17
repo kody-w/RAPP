@@ -10,7 +10,9 @@ from unittest.mock import patch
 
 import pytest
 
-from rapp1_core import canonical_bytes, pack_egg
+from rapp1_core import canonical_bytes, pack_egg, parse_rappid
+from rapp1_core.errors import IdentityError
+from rapp_brainstem.utils import boot, lineage_check
 from rapp_brainstem.utils.lineage_check import check_lineage
 
 
@@ -136,21 +138,54 @@ def test_private_estate_identity_loader_is_strict_and_uses_record_kind(
     identity.write_bytes(
         canonical_bytes({"rappid": RAPPID, "kind": "operator"})
     )
-    assert private_estate_init._load_operator_identity(identity) == (
+    assert private_estate_init._load_operator_identity(identity, "kody-w") == (
         RAPPID,
         "operator",
     )
 
+    with pytest.raises(ValueError, match="does not match requested"):
+        private_estate_init._load_operator_identity(identity, "bob")
+
     identity.write_bytes(canonical_bytes({"rappid": RAPPID, "kind": "twin"}))
     with pytest.raises(ValueError, match="must be 'operator'"):
-        private_estate_init._load_operator_identity(identity)
+        private_estate_init._load_operator_identity(identity, "kody-w")
 
     identity.write_bytes(
         b'{"rappid":"rappid:@kody-w/offline-peer:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",'
         b'"kind":"operator"}'
     )
     with pytest.raises(ValueError):
-        private_estate_init._load_operator_identity(identity)
+        private_estate_init._load_operator_identity(identity, "kody-w")
+
+
+def test_private_estate_owner_mismatch_stops_before_side_effects(
+    migration_dir, monkeypatch
+):
+    identity = migration_dir / "rappid.json"
+    alice_rappid = f"rappid:@alice/offline-peer:{'a' * 64}"
+    identity.write_bytes(
+        canonical_bytes({"rappid": alice_rappid, "kind": "operator"})
+    )
+    original_expanduser = private_estate_init.os.path.expanduser
+
+    def expanduser(path):
+        if path == "~/.brainstem/rappid.json":
+            return str(identity)
+        return original_expanduser(path)
+
+    monkeypatch.setattr(private_estate_init.os.path, "expanduser", expanduser)
+    monkeypatch.setattr(
+        private_estate_init,
+        "_gh_repo_exists",
+        lambda *args: (_ for _ in ()).throw(
+            AssertionError("owner mismatch must stop before GitHub access")
+        ),
+    )
+
+    result = private_estate_init.init_private_estate("bob", dry_run=True)
+
+    assert result["ok"] is False
+    assert "does not match requested GitHub handle" in result["error"]
 
 
 def test_lineage_is_strict_and_reports_record_kind(migration_dir):
@@ -196,15 +231,108 @@ def test_lineage_is_strict_and_reports_record_kind(migration_dir):
     assert "unreadable rappid.json" in result["detail"]
 
 
+@pytest.mark.parametrize(
+    "value",
+    [
+        RAPPID,
+        f"rappid:@{'a' * 39}/{'b' * 100}:{'c' * 64}",
+        f"rappid:@{'a' * 40}/slug:{'c' * 64}",
+        f"rappid:@owner/{'b' * 101}:{'c' * 64}",
+        f"rappid:@Owner/slug:{'c' * 64}",
+        f"rappid:@owner/slug:{'C' * 64}",
+        f"rappid:@owner--bad/slug:{'c' * 64}",
+        "rappid:v2:twin:@owner/slug:deadbeef",
+        None,
+    ],
+)
+def test_self_contained_lineage_identity_parser_matches_core(value):
+    try:
+        parsed = parse_rappid(value)
+        expected = f"{parsed.owner}/{parsed.slug}"
+    except (IdentityError, TypeError):
+        expected = None
+    assert lineage_check._rappid_owner_slug(value) == expected
+
+
+def test_self_contained_lineage_location_parser_is_github_bound():
+    valid = types.SimpleNamespace(
+        returncode=0,
+        stdout="https://github.com/Alice/Example.git\n",
+    )
+    with patch.object(lineage_check.subprocess, "run", return_value=valid):
+        assert (
+            lineage_check._git_remote_owner_repo(".")
+            == "alice/example"
+        )
+
+    invalid = types.SimpleNamespace(
+        returncode=0,
+        stdout="https://example.invalid/alice/example.git\n",
+    )
+    with patch.object(lineage_check.subprocess, "run", return_value=invalid):
+        with pytest.raises(ValueError, match="exact GitHub"):
+            lineage_check._git_remote_owner_repo(".")
+
+
+def test_boot_guard_fails_closed_when_lineage_import_fails():
+    real_import = __import__
+
+    def guarded_import(name, *args, **kwargs):
+        if name == "lineage_check":
+            raise ImportError("simulated missing guard")
+        return real_import(name, *args, **kwargs)
+
+    with patch("builtins.__import__", side_effect=guarded_import):
+        with pytest.raises(SystemExit) as refusal:
+            boot._guard()
+    assert refusal.value.code == 1
+
+
+def test_boot_guard_fails_closed_on_invalid_lineage_status():
+    module = types.ModuleType("lineage_check")
+    module.check_lineage = lambda: {
+        "status": "lineage_mismatch",
+        "detail": "invalid identity",
+    }
+    with patch.dict(sys.modules, {"lineage_check": module}):
+        with pytest.raises(SystemExit) as refusal:
+            boot._guard()
+    assert refusal.value.code == 1
+
+
 def test_rebuild_never_derives_operator_identity_from_twin_kind(monkeypatch):
-    twin = {"rappid": RAPPID, "kind": "twin"}
+    candidate_rappid = f"rappid:@kody-w/kody-w-twin:{'d' * 64}"
+    twin = {"rappid": candidate_rappid, "kind": "twin"}
     monkeypatch.setattr(rebuild_estate, "_raw_fetch_json", lambda *args: twin)
     assert rebuild_estate._try_conventional_repos("kody-w") == ""
 
-    operator = {"rappid": RAPPID, "kind": "operator"}
+    wrong_source = {"rappid": RAPPID, "kind": "operator"}
+    monkeypatch.setattr(
+        rebuild_estate, "_raw_fetch_json", lambda *args: wrong_source
+    )
+    assert rebuild_estate._try_conventional_repos("kody-w") == ""
+
+    operator = {"rappid": candidate_rappid, "kind": "operator"}
     monkeypatch.setattr(
         rebuild_estate, "_raw_fetch_json", lambda *args: operator
     )
-    assert rebuild_estate._try_conventional_repos("kody-w") == RAPPID
+    assert (
+        rebuild_estate._try_conventional_repos("kody-w")
+        == candidate_rappid
+    )
     source = (ROOT / "tools" / "rebuild_estate.py").read_text(encoding="utf-8")
     assert 'replace(":twin:", ":operator:"' not in source
+
+
+def test_rebuild_operator_owner_mismatch_stops_before_discovery(monkeypatch):
+    alice_rappid = f"rappid:@alice/offline-peer:{'a' * 64}"
+    monkeypatch.setattr(
+        rebuild_estate,
+        "discover_created",
+        lambda *args: (_ for _ in ()).throw(
+            AssertionError("context mismatch must stop before discovery")
+        ),
+    )
+    result = rebuild_estate.rebuild("bob", alice_rappid)
+    assert result["ok"] is False
+    assert "does not match requested GitHub handle" in result["error"]

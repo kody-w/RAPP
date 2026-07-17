@@ -119,7 +119,7 @@ def _raw_fetch_json(owner: str, repo: str, path: str) -> dict | None:
 
 # ─── Operator-rappid discovery ────────────────────────────────────────────
 
-def _try_local_brainstem() -> str:
+def _try_local_brainstem(handle: str) -> str:
     """If running on the operator's machine, ~/.brainstem/rappid.json is the
     fastest path. Returns "" if not present or malformed."""
     p = Path(os.path.expanduser("~/.brainstem/rappid.json"))
@@ -131,7 +131,7 @@ def _try_local_brainstem() -> str:
             return ""
         rappid = d.get("rappid", "")
         door = door_from_rappid(rappid, identity_record=d)
-        if door["kind"] == "operator":
+        if door["kind"] == "operator" and door["owner"] == handle:
             return rappid
     except (InvalidRappidError, OSError, ValueError):
         pass
@@ -157,7 +157,11 @@ def _try_conventional_repos(handle: str) -> str:
             door = door_from_rappid(rappid, identity_record=d)
         except InvalidRappidError:
             continue
-        if door["kind"] == "operator":
+        if (
+            door["kind"] == "operator"
+            and door["owner"] == handle
+            and door["slug"] == repo.lower()
+        ):
             return rappid
     return ""
 
@@ -183,20 +187,26 @@ def _scan_handle_for_operator(handle: str) -> str:
             door = door_from_rappid(rappid, identity_record=d)
         except InvalidRappidError:
             continue
-        if door["kind"] == "operator":
+        if (
+            door["kind"] == "operator"
+            and door["owner"] == handle
+            and door["slug"] == name.lower()
+        ):
             return rappid
     return ""
 
 
 def discover_operator_rappid(handle: str) -> str:
     """Try every discovery path in order. Returns "" if none succeed."""
-    for fn in (_try_local_brainstem, lambda: _try_conventional_repos(handle),
+    for fn in (lambda: _try_local_brainstem(handle),
+               lambda: _try_conventional_repos(handle),
                lambda: _scan_handle_for_operator(handle)):
         rappid = fn()
         if rappid:
             try:
-                door_from_rappid(rappid)
-                return rappid
+                door = door_from_rappid(rappid)
+                if door["owner"] == handle:
+                    return rappid
             except InvalidRappidError:
                 continue
     return ""
@@ -266,9 +276,17 @@ def discover_created(handle: str, operator_rappid: str, on_progress=None) -> tup
             skipped.append({"repo": name, "reason": "rappid not a string"})
             continue
         try:
-            door_from_rappid(rappid, identity_record=d)
+            door = door_from_rappid(rappid, identity_record=d)
         except InvalidRappidError as e:
             skipped.append({"repo": name, "reason": f"invalid rappid: {str(e)[:80]}"})
+            continue
+        if door["owner"] != handle or door["slug"] != name.lower():
+            skipped.append(
+                {
+                    "repo": name,
+                    "reason": "rappid owner/slug does not match source repository",
+                }
+            )
             continue
         if d.get("parent_rappid") != operator_rappid:
             skipped.append({"repo": name, "reason": "parent_rappid does not match operator"})
@@ -334,9 +352,22 @@ def discover_memberships(operator_rappid: str, on_progress=None) -> tuple[list, 
         if not isinstance(gate_rappid, str):
             continue
         try:
-            door_from_rappid(gate_rappid, identity_record=gate_meta)
+            gate_door = door_from_rappid(
+                gate_rappid, identity_record=gate_meta
+            )
         except InvalidRappidError as e:
             skipped.append({"repo": full, "reason": f"gate rappid invalid: {str(e)[:60]}"})
+            continue
+        if (
+            gate_door["owner"] != owner.lower()
+            or gate_door["slug"] != repo.lower()
+        ):
+            skipped.append(
+                {
+                    "repo": full,
+                    "reason": "gate rappid does not match source repository",
+                }
+            )
             continue
         member.append({
             "rappid":   gate_rappid,
@@ -350,6 +381,14 @@ def discover_memberships(operator_rappid: str, on_progress=None) -> tuple[list, 
 
 def rebuild(handle: str, operator_rappid: str = "", on_progress=None) -> dict:
     """Top-level: discover operator, walk created/member, return spec-compliant estate."""
+    try:
+        estate_url(handle)
+    except InvalidRappidError as exc:
+        return {
+            "schema": _ESTATE_SCHEMA,
+            "ok": False,
+            "error": f"invalid exact handle: {exc}",
+        }
     if not operator_rappid:
         if on_progress:
             on_progress("discovering operator rappid…")
@@ -366,10 +405,18 @@ def rebuild(handle: str, operator_rappid: str = "", on_progress=None) -> dict:
             }
     # Validate one more time
     try:
-        door_from_rappid(operator_rappid)
+        operator_door = door_from_rappid(operator_rappid)
     except InvalidRappidError as e:
         return {"schema": _ESTATE_SCHEMA, "ok": False,
                 "error": f"operator rappid invalid: {e}"}
+    if operator_door["owner"] != handle:
+        return {
+            "schema": _ESTATE_SCHEMA,
+            "ok": False,
+            "error": (
+                "operator rappid owner does not match requested GitHub handle"
+            ),
+        }
 
     if on_progress:
         on_progress("walking handle's repos for created[]…")

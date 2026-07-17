@@ -6,7 +6,7 @@
 #
 #   1. tools/rebuild_estate.py exists + parses
 #   2. plant_seed_agent has the _read_operator_rappid helper
-#   3. backfill_seeds.py has --patch-parents mode
+#   3. backfill_seeds.py has plan-only --patch-parents mode
 #   4. estate_agent has 'rebuild' action + extends 'fetch' to accept rappid=
 #   5. A known-backfilled door has parent_rappid set (live raw fetch)
 #   6. door_from_rappid reads operator kind from the identity record
@@ -46,11 +46,12 @@ else
 fi
 
 # ─── Step 3 — backfill has --patch-parents ────────────────────────────────
-heading "Step 3 — backfill_seeds.py has --patch-parents mode"
-if grep -q '"--patch-parents"' "$BACKFILL" && grep -q "def patch_parents" "$BACKFILL"; then
-  step_pass "--patch-parents CLI flag + handler present"
+heading "Step 3 — backfill_seeds.py has plan-only --patch-parents mode"
+if grep -q '"--patch-parents"' "$BACKFILL" && grep -q "def patch_parents" "$BACKFILL" && \
+   grep -q '"write-permitted": False' "$BACKFILL" && ! grep -q "def _put_file" "$BACKFILL"; then
+  step_pass "--patch-parents is present and write paths are retired"
 else
-  step_fail "--patch-parents missing"
+  step_fail "--patch-parents is missing or still write-capable"
 fi
 
 # ─── Step 4 — estate_agent has rebuild + fetch_by_rappid ──────────────────

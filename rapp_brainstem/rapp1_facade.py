@@ -25,6 +25,10 @@ from werkzeug.exceptions import RequestEntityTooLarge
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 7073
 GRAIL_PORT = 7071
+MAX_RAW_REQUEST_BYTES = 2 * 1024 * 1024
+FINGERPRINT_VERSION_UNBOUND = 1
+FINGERPRINT_VERSION_LEGACY_JSON = 2
+FINGERPRINT_VERSION_CANONICAL_SEMANTIC = 3
 
 # These names are candidates awaiting the authenticated RAPP/1 section 13
 # owner registry. They are explicitly NOT registered error codes.
@@ -60,7 +64,7 @@ class Reservation:
     token: str
     messages: tuple[dict[str, str], ...]
     idempotency_scope: tuple[str, str, str] | None
-    request_canonical: bytes
+    request_fingerprint: bytes
 
 
 class FacadeRefusal(Exception):
@@ -130,7 +134,17 @@ def _error_response(code: str) -> Response:
 def _parse_request() -> tuple[str, str | None, str | None]:
     if request.mimetype != "application/json":
         raise FacadeRefusal("malformed-request")
-    raw = request.get_data(cache=False)
+    content_length = request.content_length
+    if content_length is not None and (
+        content_length < 0 or content_length > MAX_RAW_REQUEST_BYTES
+    ):
+        raise FacadeRefusal("malformed-request")
+    try:
+        raw = request.stream.read(MAX_RAW_REQUEST_BYTES + 1)
+    except RequestEntityTooLarge as exc:
+        raise FacadeRefusal("malformed-request") from exc
+    if len(raw) > MAX_RAW_REQUEST_BYTES:
+        raise FacadeRefusal("malformed-request")
     if not raw:
         raise FacadeRefusal("malformed-request")
     try:
@@ -163,8 +177,28 @@ def _parse_request() -> tuple[str, str | None, str | None]:
     return user_input, session_id, idempotency_key
 
 
+def _request_fingerprints(
+    user_input: str,
+    session_id: str | None,
+    idempotency_key: str | None,
+) -> tuple[bytes, tuple[bytes, ...]]:
+    semantic_request = {"user_input": user_input}
+    if session_id is not None:
+        semantic_request["session_id"] = session_id
+    current = canonical_bytes(semantic_request)
+
+    legacy = [_json_bytes(semantic_request)]
+    if idempotency_key is not None:
+        transitional_request = dict(semantic_request)
+        transitional_request["idempotency_key"] = idempotency_key
+        transitional = canonical_bytes(transitional_request)
+        if transitional not in legacy:
+            legacy.append(transitional)
+    return current, tuple(legacy)
+
+
 class FacadeStore:
-    _SCHEMA_VERSION = 2
+    _SCHEMA_VERSION = 3
 
     def __init__(self, database_path: Path | str) -> None:
         self.path = Path(database_path).expanduser()
@@ -207,7 +241,7 @@ class FacadeStore:
 
         with self._transaction() as connection:
             version = int(connection.execute("PRAGMA user_version").fetchone()[0])
-            if version not in (0, 1, self._SCHEMA_VERSION):
+            if version not in (0, 1, 2, self._SCHEMA_VERSION):
                 raise RuntimeError(
                     f"unsupported RAPP/1 facade database version: {version}"
                 )
@@ -253,6 +287,8 @@ class FacadeStore:
                     response_status INTEGER,
                     response_body BLOB,
                     request_canonical BLOB NOT NULL,
+                    request_fingerprint_version INTEGER NOT NULL
+                        CHECK (request_fingerprint_version IN (1, 2, 3)),
                     created_utc TEXT NOT NULL,
                     finished_utc TEXT,
                     PRIMARY KEY (
@@ -292,26 +328,76 @@ class FacadeStore:
                     ADD COLUMN request_canonical BLOB
                     """
                 )
-            if version in (0, 1):
+            if version in (1, 2):
+                connection.execute(
+                    """
+                    ALTER TABLE idempotency
+                    ADD COLUMN request_fingerprint_version INTEGER NOT NULL
+                        DEFAULT 2
+                        CHECK (request_fingerprint_version IN (1, 2, 3))
+                    """
+                )
+            if version == 1:
+                connection.execute(
+                    """
+                    UPDATE idempotency
+                    SET request_fingerprint_version = 1
+                    WHERE request_canonical IS NULL
+                    """
+                )
+            if version in (0, 1, 2):
                 connection.execute(
                     f"PRAGMA user_version = {self._SCHEMA_VERSION}"
                 )
 
     @staticmethod
     def _stored_response(
-        row: sqlite3.Row, request_canonical: bytes
+        connection: sqlite3.Connection,
+        scope: tuple[str, str, str],
+        row: sqlite3.Row,
+        request_fingerprint: bytes,
+        legacy_fingerprints: tuple[bytes, ...],
     ) -> StoredResponse:
         state = row["state"]
         stored_request = row["request_canonical"]
+        fingerprint_version = row["request_fingerprint_version"]
         if stored_request is None:
             # v1 had no request binding. Its migration deliberately leaves NULL
             # as a legacy-unbound marker: terminal bytes replay unconditionally,
             # while pending work remains pending, so neither path re-executes.
-            pass
+            if fingerprint_version != FINGERPRINT_VERSION_UNBOUND:
+                raise FacadeRefusal("facade-storage-refused")
         elif not isinstance(stored_request, (bytes, bytearray)):
             raise FacadeRefusal("facade-storage-refused")
-        elif bytes(stored_request) != request_canonical:
-            raise FacadeRefusal("idempotency-conflict")
+        elif fingerprint_version == FINGERPRINT_VERSION_CANONICAL_SEMANTIC:
+            if bytes(stored_request) != request_fingerprint:
+                raise FacadeRefusal("idempotency-conflict")
+        elif fingerprint_version == FINGERPRINT_VERSION_LEGACY_JSON:
+            if bytes(stored_request) not in legacy_fingerprints:
+                raise FacadeRefusal("idempotency-conflict")
+            migrated = connection.execute(
+                """
+                UPDATE idempotency
+                SET request_canonical = ?,
+                    request_fingerprint_version = ?
+                WHERE scope_kind = ?
+                  AND scope_session_id = ?
+                  AND idempotency_key = ?
+                  AND request_canonical = ?
+                  AND request_fingerprint_version = ?
+                """,
+                (
+                    sqlite3.Binary(request_fingerprint),
+                    FINGERPRINT_VERSION_CANONICAL_SEMANTIC,
+                    *scope,
+                    sqlite3.Binary(bytes(stored_request)),
+                    FINGERPRINT_VERSION_LEGACY_JSON,
+                ),
+            )
+            if migrated.rowcount != 1:
+                raise FacadeRefusal("facade-storage-refused")
+        else:
+            raise FacadeRefusal("facade-storage-refused")
         if state == "pending":
             raise FacadeRefusal("idempotency-in-progress")
         status = row["response_status"]
@@ -331,7 +417,8 @@ class FacadeStore:
     ) -> sqlite3.Row | None:
         return connection.execute(
             """
-            SELECT state, response_status, response_body, request_canonical
+            SELECT state, response_status, response_body, request_canonical,
+                   request_fingerprint_version
             FROM idempotency
             WHERE scope_kind = ?
               AND scope_session_id = ?
@@ -344,7 +431,8 @@ class FacadeStore:
         self,
         supplied_session_id: str | None,
         idempotency_key: str | None,
-        request_canonical: bytes,
+        request_fingerprint: bytes,
+        legacy_fingerprints: tuple[bytes, ...],
     ) -> Reservation | StoredResponse:
         with self._transaction() as connection:
             scope: tuple[str, str, str] | None = None
@@ -354,7 +442,11 @@ class FacadeStore:
                     existing = self._idempotency_row(connection, scope)
                     if existing is not None:
                         return self._stored_response(
-                            existing, request_canonical
+                            connection,
+                            scope,
+                            existing,
+                            request_fingerprint,
+                            legacy_fingerprints,
                         )
                 session_id = str(uuid.uuid4())
                 token = str(uuid.uuid4())
@@ -384,7 +476,11 @@ class FacadeStore:
                     existing = self._idempotency_row(connection, scope)
                     if existing is not None:
                         return self._stored_response(
-                            existing, request_canonical
+                            connection,
+                            scope,
+                            existing,
+                            request_fingerprint,
+                            legacy_fingerprints,
                         )
                 if session["pending_token"] is not None:
                     raise FacadeRefusal("session-in-progress")
@@ -406,13 +502,15 @@ class FacadeStore:
                     """
                     INSERT INTO idempotency (
                         scope_kind, scope_session_id, idempotency_key,
-                        session_id, state, request_canonical, created_utc
-                    ) VALUES (?, ?, ?, ?, 'pending', ?, ?)
+                        session_id, state, request_canonical,
+                        request_fingerprint_version, created_utc
+                    ) VALUES (?, ?, ?, ?, 'pending', ?, ?, ?)
                     """,
                     (
                         *scope,
                         session_id,
-                        sqlite3.Binary(request_canonical),
+                        sqlite3.Binary(request_fingerprint),
+                        FINGERPRINT_VERSION_CANONICAL_SEMANTIC,
                         _utc_now(),
                     ),
                 )
@@ -436,7 +534,7 @@ class FacadeStore:
                 token=token,
                 messages=tuple(messages),
                 idempotency_scope=scope,
-                request_canonical=request_canonical,
+                request_fingerprint=request_fingerprint,
             )
 
     @staticmethod
@@ -502,13 +600,15 @@ class FacadeStore:
                       AND session_id = ?
                       AND state = 'pending'
                       AND request_canonical = ?
+                      AND request_fingerprint_version = ?
                     """,
                     (
                         sqlite3.Binary(response_body),
                         now,
                         *reservation.idempotency_scope,
                         reservation.session_id,
-                        sqlite3.Binary(reservation.request_canonical),
+                        sqlite3.Binary(reservation.request_fingerprint),
+                        FINGERPRINT_VERSION_CANONICAL_SEMANTIC,
                     ),
                 )
                 if updated.rowcount != 1:
@@ -544,13 +644,15 @@ class FacadeStore:
                       AND session_id = ?
                       AND state = 'pending'
                       AND request_canonical = ?
+                      AND request_fingerprint_version = ?
                     """,
                     (
                         sqlite3.Binary(response_body),
                         now,
                         *reservation.idempotency_scope,
                         reservation.session_id,
-                        sqlite3.Binary(reservation.request_canonical),
+                        sqlite3.Binary(reservation.request_fingerprint),
+                        FINGERPRINT_VERSION_CANONICAL_SEMANTIC,
                     ),
                 )
                 if updated.rowcount != 1:
@@ -602,6 +704,7 @@ def create_app(
         database_path if database_path is not None else default_database_path()
     )
     app = Flask("rapp1_facade", static_folder=None)
+    app.config["MAX_CONTENT_LENGTH"] = MAX_RAW_REQUEST_BYTES
     app.extensions["rapp1_facade_store"] = store
 
     @app.post("/chat")
@@ -612,15 +715,16 @@ def create_app(
             return _error_response(refusal.code)
 
         try:
-            canonical_request = {"user_input": user_input}
-            if session_id is not None:
-                canonical_request["session_id"] = session_id
-            if idempotency_key is not None:
-                canonical_request["idempotency_key"] = idempotency_key
+            request_fingerprint, legacy_fingerprints = _request_fingerprints(
+                user_input,
+                session_id,
+                idempotency_key,
+            )
             reserved = store.reserve(
                 session_id,
                 idempotency_key,
-                canonical_bytes(canonical_request),
+                request_fingerprint,
+                legacy_fingerprints,
             )
         except FacadeRefusal as refusal:
             return _error_response(refusal.code)

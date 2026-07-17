@@ -45,7 +45,8 @@ PARENT_REPO="https://github.com/kody-w/RAPP.git"
 
 # ── Freshness check via lineage_check.py ─────────────────────────────────
 
-LINEAGE_STATUS="$(python3 - <<'PYEOF'
+lineage_status() {
+python3 - <<'PYEOF'
 import json, sys
 sys.path.insert(0, "rapp_brainstem/utils")
 try:
@@ -55,7 +56,21 @@ try:
 except Exception as e:
     print(f"error:{e}")
 PYEOF
+}
+
+reuse_existing() {
+    EXISTING_RAPPID="$(python3 - <<'PYEOF'
+import json
+
+with open("rappid.json", encoding="utf-8") as handle:
+    print(json.load(handle)["rappid"])
+PYEOF
 )"
+    echo "UNCHANGED: this variant is already initialized."
+    echo "           Reusing mint-once identity: $EXISTING_RAPPID"
+}
+
+LINEAGE_STATUS="$(lineage_status)"
 
 case "$LINEAGE_STATUS" in
     variant_uninitialized)
@@ -69,17 +84,7 @@ case "$LINEAGE_STATUS" in
         exit 1
         ;;
     variant_initialized)
-        EXISTING_RAPPID="$(python3 - <<'PYEOF'
-import json
-from rapp1_core import parse_rappid
-
-with open("rappid.json", encoding="utf-8") as handle:
-    value = json.load(handle)["rappid"]
-print(parse_rappid(value))
-PYEOF
-)"
-        echo "UNCHANGED: this variant is already initialized."
-        echo "           Reusing mint-once identity: $EXISTING_RAPPID"
+        reuse_existing
         exit 0
         ;;
     lineage_mismatch|no_rappid|error:*)
@@ -98,6 +103,48 @@ esac
 DEFAULT_NAME="$(basename "$(git rev-parse --show-toplevel)")"
 read -p "Variant name (default: $DEFAULT_NAME): " VARIANT_NAME
 VARIANT_NAME="${VARIANT_NAME:-$DEFAULT_NAME}"
+
+# ── Serialize initialization and recheck ─────────────────────────────────
+
+GIT_DIR="$(git rev-parse --absolute-git-dir 2>/dev/null)"
+LOCK_DIR="$GIT_DIR/rapp-initialize.lock"
+LOCK_HELD=0
+
+release_lock() {
+    if [ "$LOCK_HELD" -eq 1 ]; then
+        rmdir "$LOCK_DIR" 2>/dev/null || true
+        LOCK_HELD=0
+    fi
+}
+trap release_lock EXIT
+trap 'exit 130' HUP INT TERM
+
+LOCK_ATTEMPTS=0
+until mkdir "$LOCK_DIR" 2>/dev/null; do
+    LOCK_ATTEMPTS=$((LOCK_ATTEMPTS + 1))
+    if [ "$LOCK_ATTEMPTS" -ge 300 ]; then
+        echo "FAIL: timed out waiting for repository initialization lock."
+        exit 1
+    fi
+    sleep 0.1
+done
+LOCK_HELD=1
+
+LOCKED_LINEAGE_STATUS="$(lineage_status)"
+case "$LOCKED_LINEAGE_STATUS" in
+    variant_uninitialized)
+        : # This process owns the only permitted mint.
+        ;;
+    variant_initialized)
+        reuse_existing
+        exit 0
+        ;;
+    *)
+        echo "FAIL: lineage changed while waiting for the initialization lock:"
+        echo "      $LOCKED_LINEAGE_STATUS"
+        exit 1
+        ;;
+esac
 
 # ── Generate rappid ──────────────────────────────────────────────────────
 
@@ -138,11 +185,14 @@ PARENT_COMMIT="$(curl -fsSL "https://api.github.com/repos/kody-w/RAPP/commits/ma
 
 python3 - "$NEW_RAPPID" "$PARENT_RAPPID" "$PARENT_REPO" "$PARENT_COMMIT" "$NOW" "$VARIANT_NAME" <<'PYEOF'
 import json
+import os
 import sys
+from pathlib import Path
 
 (rappid, parent_rappid, parent_repo, parent_commit, born_at, name) = sys.argv[1:7]
 
-with open("rappid.json") as f:
+target = Path("rappid.json")
+with target.open(encoding="utf-8") as f:
     data = json.load(f)
 
 # Update ONLY lineage fields. Preserve description, kind, private_companion,
@@ -160,9 +210,33 @@ data["schema"] = "rapp/1"
 # attestation resets because the new rappid hasn't been attested yet.
 data["attestation"] = None
 
-with open("rappid.json", "w") as f:
-    json.dump(data, f, indent=2)
-    f.write("\n")
+encoded = (json.dumps(data, indent=2) + "\n").encode("utf-8")
+mode = target.stat().st_mode & 0o777
+temporary = target.with_name(f".{target.name}.initialize-{os.getpid()}")
+try:
+    descriptor = os.open(
+        temporary,
+        os.O_WRONLY | os.O_CREAT | os.O_EXCL,
+        mode,
+    )
+    with os.fdopen(descriptor, "wb") as handle:
+        handle.write(encoded)
+        handle.flush()
+        os.fsync(handle.fileno())
+    os.replace(temporary, target)
+    directory = os.open(".", os.O_RDONLY)
+    try:
+        try:
+            os.fsync(directory)
+        except OSError:
+            pass
+    finally:
+        os.close(directory)
+finally:
+    try:
+        temporary.unlink()
+    except FileNotFoundError:
+        pass
 PYEOF
 
 echo ""

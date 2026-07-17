@@ -282,7 +282,7 @@ The rebuild needs to know the operator's personal rappid before it can filter `p
 ### 6.4 The constitutional invariant
 
 Per Article XLVI.6:
-- Every planted door's `rappid.json` MUST set `parent_rappid` to the planter's personal rappid (NOT to None, NOT to the species root). The planter (`plant_seed_agent.py`) enforces this on every new plant; `tools/backfill_seeds.py --patch-parents <op-rappid>` brings older plantings into compliance.
+- Every planted door's `rappid.json` MUST set `parent_rappid` to the planter's personal rappid (NOT to None, NOT to the species root). Historical `tools/backfill_seeds.py --patch-parents <op-rappid>` now emits only an owner-action plan; it cannot write this edge without authenticated §13.3 authorization.
 - The rebuild tool is operator-tooling, but the **property** it proves is load-bearing: relationships are knowable from public data. Losing local state is recoverable.
 
 ### 6.5 What this enables
@@ -296,7 +296,7 @@ Per Article XLVI.6:
 ## 7. Adoption + Compliance
 
 - **All NEW plantings** (after this spec ships) emit the full Door URL Set. No exceptions.
-- **All EXISTING plantings** are backfilled by `tools/backfill_seeds.py` — runnable any time, idempotent. The script downloads each known seed's `rappid.json`, validates it against the spec, and PUTs the missing canonical files. It is the operator's responsibility to run it for plantings created before 2026-05-09.
+- **Existing plantings** may be inspected by `tools/backfill_seeds.py`. The tool is read-only and reports missing files or identity drift; it performs no PUT, remint, or re-anchor. Closing its `OWNER_ACTION_REQUIRED` findings requires authenticated owner action.
 - **Stale rappids** (where the `<owner>/<repo>` doesn't match the actual hosting URL) are rejected by `door_from_rappid()` and reissued by the backfill script (the historical `sim-art-collective` case is the canonical example).
 
 ---

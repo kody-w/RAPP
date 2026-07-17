@@ -36,8 +36,10 @@ string `session_id`, and optional string `idempotency_key`. Every other member,
 including client-supplied history, is ignored after the entire request passes
 the strict RAPP I-JSON profile. Duplicate members, invalid UTF-8, a BOM, lone
 surrogates, invalid binary64 numbers, excessive depth, or a canonical form over
-1 MiB are malformed even when they occur only in ignored members. Success has
-exactly:
+1 MiB are malformed even when they occur only in ignored members. A separate
+2 MiB raw transport cap bounds the request read before parsing, so oversized
+whitespace and bodies are also refused with the exact malformed-request
+envelope. Success has exactly:
 
 ```json
 {"response":"...","agent_logs":[],"session_id":"..."}
@@ -50,6 +52,10 @@ are scoped by `(session_id, key)`. Completion stores the turn and exact response
 bytes atomically. A completed duplicate of the same canonical request replays
 those bytes. Reusing a key for different recognized request content fails
 closed as an idempotency conflict; ignored members do not affect comparison.
+The version-3 fingerprint is canonical JSON over semantic `user_input` and
+optional `session_id` only; the idempotency key is the database scope key and
+is not self-referential fingerprint content. Bound version-2 rows are
+dual-recognized and lazily rewritten to version 3 after a matching retry.
 Migrated v1 terminal entries carry an explicit NULL legacy-binding marker and
 replay their stored bytes unconditionally because no safe conflict comparison
 is possible and re-execution is forbidden.

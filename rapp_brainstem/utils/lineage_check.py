@@ -21,22 +21,30 @@ These are exactly the statuses installer/initialize-variant.sh branches on.
 
 To make a NEW template repo's uninitialized clones detectable, append its
 (canonical rappid -> "owner/repo") pair to KNOWN_TEMPLATE_REPOS.
+
+This guard is deliberately standard-library-only because sparse and installed
+brainstems do not contain the repository-root strict core dependencies. Its
+section 6.1 parser is parity-tested against ``rapp1_core.parse_rappid``.
 """
 
 from __future__ import annotations
 
 import json
+import math
 import os
+import re
 import subprocess
-import sys
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-
-from rapp1_core import parse_rappid, strict_loads
-from rapp1_core.errors import IdentityError
+MAX_IDENTITY_RECORD_BYTES = 1024 * 1024
+MAX_JSON_DEPTH = 64
+_LABEL = r"[a-z0-9]+(?:-[a-z0-9]+)*"
+_RAPPID_RE = re.compile(
+    rf"^rappid:@(?P<owner>{_LABEL})/(?P<slug>{_LABEL}):"
+    r"(?P<tail>[0-9a-f]{64})$",
+    re.ASCII,
+)
 
 # canonical Eternity rappid  ->  the template repo's canonical "owner/repo".
 # Seeded with the rapp species root (the godfather).
@@ -46,17 +54,23 @@ KNOWN_TEMPLATE_REPOS = {
 
 
 def _repo_root(start: str | None = None) -> str:
+    requested = Path(start or os.getcwd()).resolve()
     try:
         out = subprocess.run(
             ["git", "rev-parse", "--show-toplevel"],
-            cwd=start or os.getcwd(),
+            cwd=requested,
             capture_output=True, text=True, timeout=5,
         )
         if out.returncode == 0 and out.stdout.strip():
             return out.stdout.strip()
     except Exception:
         pass
-    return start or os.getcwd()
+
+    candidates = (requested, *requested.parents[:2], Path(__file__).resolve().parents[2])
+    for candidate in candidates:
+        if (candidate / "rappid.json").is_file():
+            return str(candidate)
+    return str(requested)
 
 
 def _git_remote_owner_repo(root: str) -> str | None:
@@ -80,21 +94,94 @@ def _git_remote_owner_repo(root: str) -> str | None:
             url = url[len(p):]
             break
     else:
-        # unknown host form — fall back to the last two path segments
-        url = "/".join(url.split("/")[-2:])
+        raise ValueError("origin is not an exact GitHub repository URL")
     parts = [s for s in url.split("/") if s]
-    if len(parts) < 2:
-        return None
-    return f"{parts[-2]}/{parts[-1]}"
+    if len(parts) != 2:
+        raise ValueError("origin does not identify exactly one owner/repository")
+    owner, slug = (part.lower() for part in parts)
+    if (
+        len(owner) > 39
+        or len(slug) > 100
+        or re.fullmatch(_LABEL, owner, re.ASCII) is None
+        or re.fullmatch(_LABEL, slug, re.ASCII) is None
+    ):
+        raise ValueError("origin owner/repository is outside section 6.1 grammar")
+    return f"{owner}/{slug}"
 
 
 def _rappid_owner_slug(rappid: str) -> str | None:
     """Parse exact section 6.1 identity and return its owner/slug."""
-    try:
-        parsed = parse_rappid(rappid)
-    except (IdentityError, TypeError):
+    if type(rappid) is not str:
         return None
-    return f"{parsed.owner}/{parsed.slug}"
+    match = _RAPPID_RE.fullmatch(rappid)
+    if match is None:
+        return None
+    owner = match.group("owner")
+    slug = match.group("slug")
+    if len(owner) > 39 or len(slug) > 100:
+        return None
+    return f"{owner}/{slug}"
+
+
+def _number(token: str, *, integer: bool):
+    try:
+        binary64 = float(token)
+        if not math.isfinite(binary64):
+            raise ValueError("number is not finite")
+        if Decimal(token) != Decimal(repr(binary64)):
+            raise ValueError("number changes value through binary64")
+    except (InvalidOperation, OverflowError) as exc:
+        raise ValueError("number is outside the binary64 domain") from exc
+    return int(token) if integer else binary64
+
+
+def _object_from_pairs(pairs):
+    value = {}
+    for key, item in pairs:
+        if key in value:
+            raise ValueError(f"duplicate JSON member: {key}")
+        value[key] = item
+    return value
+
+
+def _validate_json_value(value, depth: int = 1) -> None:
+    if depth > MAX_JSON_DEPTH:
+        raise ValueError("identity record exceeds JSON depth limit")
+    if type(value) is str:
+        value.encode("utf-8")
+    elif type(value) is list:
+        for item in value:
+            _validate_json_value(
+                item, depth + 1 if type(item) in (list, dict) else depth
+            )
+    elif type(value) is dict:
+        for key, item in value.items():
+            key.encode("utf-8")
+            _validate_json_value(
+                item, depth + 1 if type(item) in (list, dict) else depth
+            )
+
+
+def _load_identity_record(path: Path) -> dict:
+    raw = path.read_bytes()
+    if len(raw) > MAX_IDENTITY_RECORD_BYTES:
+        raise ValueError("identity record exceeds 1 MiB")
+    if raw.startswith(b"\xef\xbb\xbf"):
+        raise ValueError("identity record has a UTF-8 BOM")
+    text = raw.decode("utf-8", errors="strict")
+    value = json.loads(
+        text,
+        object_pairs_hook=_object_from_pairs,
+        parse_int=lambda token: _number(token, integer=True),
+        parse_float=lambda token: _number(token, integer=False),
+        parse_constant=lambda token: (_ for _ in ()).throw(
+            ValueError(f"forbidden JSON number: {token}")
+        ),
+    )
+    if type(value) is not dict:
+        raise ValueError("identity record must be a JSON object")
+    _validate_json_value(value)
+    return value
 
 
 def check_lineage(repo_root: str | None = None) -> dict:
@@ -105,16 +192,24 @@ def check_lineage(repo_root: str | None = None) -> dict:
         return {"status": "no_rappid", "root": root}
 
     try:
-        data = strict_loads(Path(manifest).read_bytes())
-        if not isinstance(data, dict):
-            raise ValueError("identity record must be a JSON object")
+        data = _load_identity_record(Path(manifest))
     except Exception as e:
         return {"status": "lineage_mismatch", "root": root, "detail": f"unreadable rappid.json: {e}"}
 
     rappid = data.get("rappid") or ""
     parent_rappid = data.get("parent_rappid")
     record_kind = data.get("kind")
-    remote = _git_remote_owner_repo(root)
+    try:
+        remote = _git_remote_owner_repo(root)
+    except ValueError as exc:
+        return {
+            "status": "lineage_mismatch",
+            "root": root,
+            "rappid": rappid,
+            "parent_rappid": parent_rappid,
+            "kind": record_kind,
+            "detail": str(exc),
+        }
 
     info = {
         "root": root,
