@@ -25,6 +25,7 @@ DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 7073
 GRAIL_PORT = 7071
 MAX_REQUEST_BYTES = 1_048_576
+MAX_JSON_DEPTH = 64
 
 # These names are candidates awaiting the authenticated RAPP/1 section 13
 # owner registry. They are explicitly NOT registered error codes.
@@ -140,6 +141,22 @@ def _reject_non_json_constant(value: str) -> None:
     raise ValueError(f"non-JSON numeric constant: {value}")
 
 
+def _enforce_json_depth(value: Any) -> None:
+    stack = [(value, 0)]
+    while stack:
+        current, parent_depth = stack.pop()
+        if type(current) is dict:
+            depth = parent_depth + 1
+            if depth > MAX_JSON_DEPTH:
+                raise ValueError("JSON exceeds maximum depth")
+            stack.extend((member, depth) for member in current.values())
+        elif type(current) is list:
+            depth = parent_depth + 1
+            if depth > MAX_JSON_DEPTH:
+                raise ValueError("JSON exceeds maximum depth")
+            stack.extend((member, depth) for member in current)
+
+
 def _parse_request() -> tuple[str, str | None, str | None]:
     if request.mimetype != "application/json":
         raise FacadeRefusal("malformed-request")
@@ -153,7 +170,13 @@ def _parse_request() -> tuple[str, str | None, str | None]:
             object_pairs_hook=_reject_duplicate_members,
             parse_constant=_reject_non_json_constant,
         )
-    except (UnicodeDecodeError, ValueError, json.JSONDecodeError) as exc:
+        _enforce_json_depth(data)
+    except (
+        UnicodeDecodeError,
+        ValueError,
+        json.JSONDecodeError,
+        RecursionError,
+    ) as exc:
         raise FacadeRefusal("malformed-request") from exc
     if type(data) is not dict:
         raise FacadeRefusal("malformed-request")
@@ -319,12 +342,17 @@ class FacadeStore:
     def _stored_response(
         row: sqlite3.Row, request_canonical: bytes
     ) -> StoredResponse:
-        stored_request = row["request_canonical"]
-        if not isinstance(stored_request, (bytes, bytearray)):
-            raise FacadeRefusal("facade-storage-refused")
-        if bytes(stored_request) != request_canonical:
-            raise FacadeRefusal("idempotency-conflict")
         state = row["state"]
+        stored_request = row["request_canonical"]
+        if stored_request is None:
+            # v1 had no request binding. Its migration deliberately leaves NULL
+            # as a legacy-unbound marker: terminal bytes replay unconditionally,
+            # while pending work remains pending, so neither path re-executes.
+            pass
+        elif not isinstance(stored_request, (bytes, bytearray)):
+            raise FacadeRefusal("facade-storage-refused")
+        elif bytes(stored_request) != request_canonical:
+            raise FacadeRefusal("idempotency-conflict")
         if state == "pending":
             raise FacadeRefusal("idempotency-in-progress")
         status = row["response_status"]
@@ -651,7 +679,7 @@ def create_app(
             try:
                 store.refuse(reserved, response_body=refusal_body)
             except Exception:
-                pass
+                return _error_response("facade-storage-refused")
             return _http_response(refusal_body, 422)
 
         response_body = _json_bytes(

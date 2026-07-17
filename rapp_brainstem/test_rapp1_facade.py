@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import json
 import shutil
+import sqlite3
 import threading
 import uuid
 from pathlib import Path
@@ -14,6 +15,7 @@ from rapp_brainstem.rapp1_facade import (
     DEFAULT_HOST,
     DEFAULT_PORT,
     GRAIL_PORT,
+    MAX_JSON_DEPTH,
     PENDING_REGISTRY_ERROR_CODES,
     create_app,
     runtime_config,
@@ -82,6 +84,96 @@ def assert_error(response, code: str) -> None:
     assert response.get_json() == {"error": {"code": code, "step": None}}
     assert response.data == (
         f'{{"error":{{"code":"{code}","step":null}}}}'.encode()
+    )
+
+
+def create_v1_completed_database(path: Path) -> bytes:
+    response_body = (
+        b'{"response":"legacy","agent_logs":[],"session_id":"legacy-session"}'
+    )
+    connection = sqlite3.connect(path)
+    try:
+        connection.executescript(
+            """
+            CREATE TABLE sessions (
+                session_id TEXT PRIMARY KEY,
+                created_utc TEXT NOT NULL,
+                pending_token TEXT,
+                pending_since_utc TEXT,
+                CHECK (
+                    (pending_token IS NULL AND pending_since_utc IS NULL)
+                    OR
+                    (
+                        pending_token IS NOT NULL
+                        AND pending_since_utc IS NOT NULL
+                    )
+                )
+            );
+            CREATE TABLE turns (
+                session_id TEXT NOT NULL,
+                turn_index INTEGER NOT NULL CHECK (turn_index > 0),
+                user_input TEXT NOT NULL,
+                response TEXT NOT NULL,
+                agent_logs_json TEXT NOT NULL,
+                completed_utc TEXT NOT NULL,
+                PRIMARY KEY (session_id, turn_index),
+                FOREIGN KEY (session_id) REFERENCES sessions(session_id)
+            );
+            CREATE TABLE idempotency (
+                scope_kind TEXT NOT NULL
+                    CHECK (scope_kind IN ('create', 'session')),
+                scope_session_id TEXT NOT NULL,
+                idempotency_key TEXT NOT NULL,
+                session_id TEXT NOT NULL,
+                state TEXT NOT NULL
+                    CHECK (state IN ('pending', 'completed', 'refused')),
+                response_status INTEGER,
+                response_body BLOB,
+                created_utc TEXT NOT NULL,
+                finished_utc TEXT,
+                PRIMARY KEY (
+                    scope_kind, scope_session_id, idempotency_key
+                ),
+                FOREIGN KEY (session_id) REFERENCES sessions(session_id)
+            );
+            PRAGMA user_version = 1;
+            """
+        )
+        now = "2026-07-16T00:00:00+00:00"
+        connection.execute(
+            """
+            INSERT INTO sessions (session_id, created_utc)
+            VALUES ('legacy-session', ?)
+            """,
+            (now,),
+        )
+        connection.execute(
+            """
+            INSERT INTO idempotency (
+                scope_kind, scope_session_id, idempotency_key,
+                session_id, state, response_status, response_body,
+                created_utc, finished_utc
+            ) VALUES (
+                'create', '', 'legacy-key', 'legacy-session',
+                'completed', 200, ?, ?, ?
+            )
+            """,
+            (sqlite3.Binary(response_body), now, now),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+    return response_body
+
+
+def nested_request(total_depth: int) -> bytes:
+    nested_containers = total_depth - 1
+    return (
+        b'{"user_input":"depth","unknown":'
+        + (b"[" * nested_containers)
+        + b"0"
+        + (b"]" * nested_containers)
+        + b"}"
     )
 
 
@@ -398,6 +490,37 @@ def test_oversized_request_is_exact_422(test_dir):
     assert inference.calls == []
 
 
+@pytest.mark.parametrize("depth", [MAX_JSON_DEPTH + 1, 1100])
+def test_deep_json_is_exact_malformed_422_before_inference(test_dir, depth):
+    inference = RecordingInference()
+    app = make_app(test_dir / "facade.sqlite3", inference)
+
+    with app.test_client() as client:
+        response = client.post(
+            "/chat",
+            data=nested_request(depth),
+            content_type="application/json",
+        )
+
+    assert_error(response, "malformed-request")
+    assert inference.calls == []
+
+
+def test_json_at_maximum_depth_is_accepted(test_dir):
+    inference = RecordingInference()
+    app = make_app(test_dir / "facade.sqlite3", inference)
+
+    with app.test_client() as client:
+        response = client.post(
+            "/chat",
+            data=nested_request(MAX_JSON_DEPTH),
+            content_type="application/json",
+        )
+
+    assert response.status_code == 200
+    assert len(inference.calls) == 1
+
+
 def test_upstream_error_is_terminal_and_replayed_without_retry(test_dir):
     class FailingInference:
         def __init__(self) -> None:
@@ -419,6 +542,52 @@ def test_upstream_error_is_terminal_and_replayed_without_retry(test_dir):
     assert_error(first, "inference-refused")
     assert duplicate.data == first.data
     assert inference.calls == 1
+
+
+def test_refusal_transition_failure_reports_storage_and_stays_pending(
+    test_dir, monkeypatch
+):
+    database = test_dir / "facade.sqlite3"
+    calls = 0
+
+    def failing_inference(messages):
+        nonlocal calls
+        calls += 1
+        raise RuntimeError("upstream unavailable")
+
+    app = make_app(database, failing_inference)
+    store = app.extensions["rapp1_facade_store"]
+
+    def fail_refusal_transition(*args, **kwargs):
+        raise sqlite3.OperationalError("simulated durable transition failure")
+
+    monkeypatch.setattr(store, "refuse", fail_refusal_transition)
+    request_value = {
+        "user_input": "hello",
+        "idempotency_key": "failed-transition",
+    }
+    with app.test_client() as client:
+        first = post_json(client, request_value)
+        repeated = post_json(client, request_value)
+
+    assert_error(first, "facade-storage-refused")
+    assert_error(repeated, "idempotency-in-progress")
+    assert calls == 1
+
+    connection = sqlite3.connect(database)
+    try:
+        row = connection.execute(
+            """
+            SELECT state, response_status, response_body
+            FROM idempotency
+            WHERE scope_kind = 'create'
+              AND scope_session_id = ''
+              AND idempotency_key = 'failed-transition'
+            """
+        ).fetchone()
+    finally:
+        connection.close()
+    assert row == ("pending", None, None)
 
 
 def test_tool_bearing_or_non_strict_inference_is_refused_without_execution(
@@ -542,6 +711,48 @@ def test_sessions_and_completed_idempotency_survive_app_recreation(test_dir):
         {"role": "assistant", "content": "reply:persistent"},
         {"role": "user", "content": "after restart"},
     ]
+
+
+def test_v1_completed_idempotency_replays_unbound_terminal_bytes(test_dir):
+    database = test_dir / "facade.sqlite3"
+    legacy_body = create_v1_completed_database(database)
+    inference = RecordingInference()
+    app = make_app(database, inference)
+
+    with app.test_client() as client:
+        first = post_json(
+            client,
+            {
+                "user_input": "different legacy request",
+                "idempotency_key": "legacy-key",
+            },
+        )
+        repeated = post_json(
+            client,
+            {
+                "user_input": "another different request",
+                "idempotency_key": "legacy-key",
+            },
+        )
+
+    assert first.status_code == repeated.status_code == 200
+    assert first.data == repeated.data == legacy_body
+    assert inference.calls == []
+
+    connection = sqlite3.connect(database)
+    try:
+        version = connection.execute("PRAGMA user_version").fetchone()[0]
+        legacy_marker = connection.execute(
+            """
+            SELECT request_canonical
+            FROM idempotency
+            WHERE idempotency_key = 'legacy-key'
+            """
+        ).fetchone()[0]
+    finally:
+        connection.close()
+    assert version == 2
+    assert legacy_marker is None
 
 
 def test_loopback_separate_port_and_external_default_store(test_dir):

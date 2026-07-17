@@ -45,6 +45,9 @@ are scoped by `(session_id, key)`. Completion stores the turn and exact response
 bytes atomically. A completed duplicate of the same canonical request replays
 those bytes. Reusing a key for different recognized request content fails
 closed as an idempotency conflict; ignored members do not affect comparison.
+Migrated v1 terminal entries carry an explicit NULL legacy-binding marker and
+replay their stored bytes unconditionally because no safe conflict comparison
+is possible and re-execution is forbidden.
 
 Only one inference may be pending for a session. A concurrent duplicate is
 refused without inference. A process crash leaves the durable reservation
