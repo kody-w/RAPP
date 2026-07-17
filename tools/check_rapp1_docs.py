@@ -211,6 +211,32 @@ def audit_scope_failures(
                 failures.append(
                     f"scope: canon §7.1 path {relative} is not checked or excluded"
                 )
+
+    spec_matrix = audit_scope.get("spec_matrix")
+    if not isinstance(spec_matrix, dict):
+        failures.append("scope: audit_scope.spec_matrix must be an object")
+    else:
+        if not SHA256_PATTERN.fullmatch(str(spec_matrix.get("sha256", ""))):
+            failures.append("scope: spec-matrix source has no valid SHA-256")
+        if "pages/vault/** historical" not in str(
+            spec_matrix.get("scope_classification", "")
+        ):
+            failures.append(
+                "scope: spec-matrix pages/vault historical classification is missing"
+            )
+        if not str(spec_matrix.get("remediation_map", "")).strip():
+            failures.append("scope: spec-matrix remediation map is missing")
+
+    historical = set(scope.get("historical_documents", ()))
+    for relative in sorted(
+        path
+        for path in managed
+        if path.startswith("pages/vault/") and path not in historical
+    ):
+        failures.append(
+            f"scope: spec-matrix historical vault path {relative} "
+            "is classified as current or superseded"
+        )
     return failures
 
 

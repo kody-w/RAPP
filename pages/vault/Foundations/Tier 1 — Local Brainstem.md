@@ -7,8 +7,10 @@ hook: A Flask server on :7071. Edit an agent, save, run a chat. The development 
 
 # Tier 1 — Local Brainstem
 
-> **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
-> wire, eggs, registry, trust, and protocol evolution, follow
+> **Historical runtime note — superseded for current protocol.** Preserve the
+> dated inventory below as narrative, not runtime or installation instruction.
+> For canonicalization, identity, frames, wire, eggs, registry, trust, and
+> protocol evolution, follow RAPP/1 rev-5 through
 > [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
 > [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md). This runtime inventory includes
 > legacy implementation facts. The immutable grail pin is
@@ -49,7 +51,7 @@ rapp_brainstem/
     mobile/               # mobile UI
   start.sh, start.ps1     # launchers (one-liner-callable)
   requirements.txt
-  VERSION                 # immutable grail byte: 0.6.9
+  VERSION                 # currently 0.12.x
 ```
 
 ## What it can do
@@ -103,11 +105,7 @@ When the LLM returns a `tool_calls` field, `run_tool_calls()` (`brainstem.py:866
 
 ## How responses split
 
-The legacy host partitions delimiter content for its UI. At the RAPP boundary,
-HTTP 200 has exactly `response`, `agent_logs:[string]`, and `session_id`;
-application voice/twin rendering remains internal and cannot add response
-members. Malformed/refused/unknown-session requests use the exact §8 HTTP 422
-shape.
+The final assistant message is partitioned on `|||VOICE|||` and `|||TWIN|||` (`brainstem.py:984-998`). The HTTP response has three keys: `response`, `voice_response`, `twin_response`. The UI renders three regions. The slots are forever (see [[Voice and Twin Are Forever]]).
 
 ## How to start it
 
@@ -118,8 +116,7 @@ cd rapp_brainstem
 
 `start.sh` creates a venv if needed, installs dependencies, and runs `python brainstem.py`. The server logs its port and is reachable at `http://localhost:7071`.
 
-The product wrapper below may install target-owned adapters, but it is not a
-kernel update channel and must preserve the exact grail hashes:
+For a fresh install on a clean machine, the install one-liner does this end-to-end:
 
 ```bash
 curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash

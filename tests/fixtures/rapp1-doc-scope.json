@@ -120,6 +120,12 @@
         "tools/lan_advertise.py",
         "tools/sim/observe.py"
       ]
+    },
+    "spec_matrix": {
+      "source": "RAPP-spec-matrix-report.md",
+      "sha256": "e12f3a7a0a2ba15ef23b40421650d8551b7d4839781fb07a1b924783fedf6a78",
+      "scope_classification": "pages/vault/** historical and not scored live",
+      "remediation_map": "Target-only remediation map"
     }
   },
   "current_documents": [
@@ -159,9 +165,6 @@
     "pages/docs/rapplication-sdk.md",
     "pages/docs/skill.md",
     "pages/docs/viewer.html",
-    "pages/vault/Architecture/Boot Sidecar \u2014 Integrating Utils Without Modifying the Kernel.md",
-    "pages/vault/Architecture/Surfaces \u2014 Mobile, Watch, Voice.md",
-    "pages/vault/Foundations/Tier 1 \u2014 Local Brainstem.md",
     "specs/README.md",
     "specs/skill.md",
     "cave/cubbies/kody-w/front_door.md"
@@ -170,16 +173,17 @@
     "pages/docs/NEIGHBORHOOD_EGG_SPEC.md",
     "pages/docs/SPEC.md",
     "pages/tutorials/hatch-egg.html",
-    "pages/vault/Architecture/Layered Mirrors and the Public-Private Body Stack.md",
-    "pages/vault/Architecture/Signed Releases and Variant Attestation.md",
-    "pages/vault/Manifestos/Chat Is The Only Wire.md",
     "specs/SPEC.md"
   ],
   "historical_documents": [
     "pages/release/release-notes.html",
+    "pages/vault/Architecture/Boot Sidecar \u2014 Integrating Utils Without Modifying the Kernel.md",
+    "pages/vault/Architecture/Layered Mirrors and the Public-Private Body Stack.md",
     "pages/vault/Architecture/Neighborhood Egg \u2014 Snapshot and Hatch.md",
     "pages/vault/Architecture/Rappid.md",
     "pages/vault/Architecture/Rapplications Are Organisms.md",
+    "pages/vault/Architecture/Signed Releases and Variant Attestation.md",
+    "pages/vault/Architecture/Surfaces \u2014 Mobile, Watch, Voice.md",
     "pages/vault/Architecture/The Federated Twin Egg Hatcher Pattern.md",
     "pages/vault/Architecture/The Swarm Estate.md",
     "pages/vault/Architecture/Twin-Patterns.md",
@@ -189,7 +193,9 @@
     "pages/vault/Decisions/2026-05-10 \u2014 rappter1 first contact + Article XLVII.5 substrate-agnostic federation.md",
     "pages/vault/Decisions/2026-05-16 \u2014 SPEC and skill disambiguation.md",
     "pages/vault/Field Notes/2026-05-08 \u2014 GitHub-as-substrate is the unit-economics moat.md",
-    "pages/vault/Founding Decisions/The Front Door.md"
+    "pages/vault/Foundations/Tier 1 \u2014 Local Brainstem.md",
+    "pages/vault/Founding Decisions/The Front Door.md",
+    "pages/vault/Manifestos/Chat Is The Only Wire.md"
   ],
   "excluded_documents": {
     "CONSTITUTION.md": "authority-foundation branch and dated constitutional history",

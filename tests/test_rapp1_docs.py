@@ -36,6 +36,10 @@ class Rapp1DocumentationTests(unittest.TestCase):
         self.assertEqual(
             scope["audit_scope"]["canon_mirrors"]["live_path_count"], 45
         )
+        self.assertEqual(
+            scope["audit_scope"]["spec_matrix"]["sha256"],
+            "e12f3a7a0a2ba15ef23b40421650d8551b7d4839781fb07a1b924783fedf6a78",
+        )
 
     def test_every_audit_ledger_path_is_classified(self):
         scope = GATE.load_scope()
@@ -58,6 +62,10 @@ class Rapp1DocumentationTests(unittest.TestCase):
         self.assertEqual(canon_paths - checked_paths - excluded_paths, set())
         self.assertEqual(len(canon_paths & checked_paths), 33)
         self.assertEqual(len(canon_paths & excluded_paths), 12)
+        vault_paths = {
+            path for path in checked_paths if path.startswith("pages/vault/")
+        }
+        self.assertEqual(vault_paths - set(scope["historical_documents"]), set())
 
     def test_unclassified_audit_path_is_rejected(self):
         scope = copy.deepcopy(GATE.load_scope())
@@ -65,6 +73,21 @@ class Rapp1DocumentationTests(unittest.TestCase):
         failures = GATE.check_docs(scope)
         self.assertIn(
             "scope: R1-DOC-01 path cave/rappid.json is not checked or excluded",
+            failures,
+        )
+
+    def test_vault_document_cannot_be_classified_as_current(self):
+        scope = copy.deepcopy(GATE.load_scope())
+        relative = (
+            "pages/vault/Architecture/Boot Sidecar \u2014 "
+            "Integrating Utils Without Modifying the Kernel.md"
+        )
+        scope["historical_documents"].remove(relative)
+        scope["current_documents"].append(relative)
+        failures = GATE.check_docs(scope)
+        self.assertIn(
+            f"scope: spec-matrix historical vault path {relative} "
+            "is classified as current or superseded",
             failures,
         )
 
