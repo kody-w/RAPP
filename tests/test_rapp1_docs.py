@@ -48,6 +48,10 @@ class Rapp1DocumentationTests(unittest.TestCase):
             scope["audit_scope"]["canon_mirrors"]["live_path_count"], 45
         )
         self.assertEqual(
+            scope["audit_scope"]["canon_mirrors"]["mixed_current_paths"],
+            ["pages/vault/Architecture/Rappid.md"],
+        )
+        self.assertEqual(
             scope["audit_scope"]["spec_matrix"]["sha256"],
             "e12f3a7a0a2ba15ef23b40421650d8551b7d4839781fb07a1b924783fedf6a78",
         )
@@ -60,6 +64,7 @@ class Rapp1DocumentationTests(unittest.TestCase):
                 set(scope[group])
                 for group in (
                     "current_documents",
+                    "mixed_documents",
                     "superseded_documents",
                     "historical_documents",
                 )
@@ -76,7 +81,13 @@ class Rapp1DocumentationTests(unittest.TestCase):
         vault_paths = {
             path for path in checked_paths if path.startswith("pages/vault/")
         }
-        self.assertEqual(vault_paths - set(scope["historical_documents"]), set())
+        classified_vault = set(scope["historical_documents"]) | set(
+            scope["mixed_documents"]
+        )
+        self.assertEqual(vault_paths - classified_vault, set())
+        self.assertEqual(
+            scope["mixed_documents"], ["pages/vault/Architecture/Rappid.md"]
+        )
 
     def test_unclassified_audit_path_is_rejected(self):
         scope = copy.deepcopy(GATE.load_scope())

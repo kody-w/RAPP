@@ -2,21 +2,25 @@
 title: Rappid — The One Identifier
 status: published
 section: Architecture
-hook: Rappid is the public ID — one format, one concept — for every digital organism that descends from RAPP. The species' social-security number. The species tree's lingua franca. There is no other identifier system; there will never be a divergent format.
+hook: RAPP/1 §6 defines one current self-locating rappid grammar, mint-once tails, bounded legacy canonicalization, and owner-authorized re-anchor.
 ---
 
 # Rappid — The One Identifier
 
-> **Historical/superseded identity narrative.** Preserve this dated account as
-> history; do not use its grammar or minting rules as current instructions.
-> Canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
-> evolution follow RAPP/1 rev-5 through
+> **Mixed current policy and marked history.** Current sections of this note
+> are subordinate to RAPP/1 rev-5; explicitly bounded historical sections
+> preserve the former identity narrative verbatim. For canonicalization,
+> identity, frames, wire, eggs, registry, trust, and protocol evolution, follow
 > [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
 > [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
 
-> **Hook.** Rappid is the public ID — one format, one concept — for every digital organism that descends from RAPP. The species' social-security number. The species tree's lingua franca. There is no other identifier system; there will never be a divergent format.
+> **Hook.** A rappid is the exact RAPP/1 §6 self-locating identifier. Its tail
+> is domain-minted once from permitted entropy, while current authority and
+> lawful re-anchor resolve through the authenticated §13 registry.
 
-This note is the canonical specification for the rappid identity system. It is intentionally short, intentionally singular, and intentionally final on the format question. Subsidiary notes elaborate on lineage, signing, and operational tooling — but every reference back to "what is a rappid" lands here.
+This is a subordinate architecture guide. The pinned rev-5 specification is
+the only protocol authority; this page supplies product context and preserves
+the earlier design record where explicitly marked.
 
 ## What rappid is
 
@@ -25,38 +29,47 @@ A rappid is a public identifier assigned to every digital organism in the RAPP s
 Rappids:
 
 - Are **public**. Anyone can read them, share them, reference them.
-- Are **immutable**. Once minted at birth, the rappid never changes.
-- **Chain to a parent** via `parent_rappid`. Every rappid except the species root has exactly one parent. Walking `parent_rappid` always terminates at the godfather.
-- Are the **basis for ledger traceability**: lineage, attestation, kin-vouching, succession, perpetuity claims.
+- Have a tail minted exactly once under §6.2 and then preserved. The only
+  re-mint is a verifiably owner-authorized §6.3 re-anchor.
+- May carry application lineage such as `parent_rappid`, but that field does
+  not itself establish ancestry, authority, or trust.
+- Participate in traceability only through verified §§10/13 signatures,
+  succession, revocation, and registry records.
 
 Think of a rappid as the species' social-security number. Universal. Singular. The unit of accounting for digital biology.
 
-## The format (one format, forever)
+## The current format
 
 ```
 rappid:@<owner>/<slug>:<64hex>
 ```
 
-The **consolidated** rappid (locked 2026-06-03) — one string that is **both identity and self-locating**, unifying the three prior forms (v1 bare-UUID, v2-structured, bare-Eternity) into one:
+RAPP/1 §6.1 defines this case-sensitive self-locating grammar:
 
 | Field | Meaning |
 |---|---|
 | `rappid:` | Always literal. Identifies this string as a rappid. |
-| `@<owner>/<slug>` | The **location**: `github.com/<owner>/<slug>` is the door/repo. Every door URL derives from this by **string parsing — no lookup, no API** (CONSTITUTION Art. XLVI). `<slug>` is the immutable birth name (the gene name / routing hint). |
-| `<64hex>` | The full **256-bit SHA-256** identity hash — `sha256(master_pubkey_SPKI)`, **never truncated to 128**. The hash IS the identity and the **join key**: matching/dedup is always on the hash, never the slug. Keyless organisms (the species root, code variants) use a stable hash (UUID/commit-derived), re-anchored to 256-bit when minted fresh. |
+| `@<owner>/<slug>` | The initial self-locating anchor. Parsing yields a candidate GitHub door; current authority after succession or re-anchor still resolves through §13. |
+| `<64hex>` | The immutable mint-once tail: `Hb("rapp/1:rappid", uuid4_octets)` for keyless identity or `Hb("rapp/1:rappid", SPKI_DER)` for keyed identity. It is never name-, slug-, or commit-derived. |
 
-**`kind` and all other structure live in the `rappid.json` RECORD, not the string.** `kind` → `door_type` per CONSTITUTION Art. XLVI.2 (`VALID_KINDS` in `tools/door_address.py`); ownership keypair (`pubkey`/`sig_suite`), `birth_attestation`, `key_succession`, `registry_anchor` are additive, versionless record fields. **The string is never re-versioned** — new richness goes in the record (that was the v2/v3 mistake).
+`kind` is not part of the rappid. The authenticated §13 registry binds each
+registered kind to exactly one family; application records may add subordinate
+metadata but cannot redefine identity or trust.
 
-**Legacy forms — read forever, emit only the consolidated form.** v1 bare-UUID, v2 `rappid:v2:<kind>:@<owner>/<repo>:<32hex>@github.com/<owner>/<repo>`, and bare-Eternity `rappid:<slug>:<64hex>` are all READ and `canonicalize_rappid()`'d to the form above. `tools/door_address.py` is the one parser; consumers MUST import it.
+**Legacy forms are bounded migration input only.** §6.3 may restructure an old
+form while preserving its tail inside a one-time migrator. Provisional tails
+must never be emitted or persisted as current, normal readers do not retain
+legacy branches indefinitely, and a fresh tail requires a verifiable
+owner-signed re-anchor record.
 
 ### Concrete examples
 
 ```
-rappid:@kody-w/rapp:9a8f0a4b5a710e20f4d819a0f37d2a4c9f113b5e78fb3c29e70b54fff48a38f9
-                    └ legacy UUID with dashes stripped, preserved as the species root's stable identifier ┘
+rappid:@kody-w/rapp:<64-lowercase-hex-tail>
+                    └ exact §6.2 domain-separated tail; authority still requires §13 ┘
 
-rappid:@kody-w/kody-twin:91d006ca7bd052bfa5021d623122012f
-                         └ an organism at its own repo; the hash is its key-derived identity — sha256 of the master pubkey (256-bit; shown abbreviated) ┘
+rappid:@kody-w/kody-twin:<64-lowercase-hex-tail>
+                         └ keyed or keyless §6.2 mint, never an abbreviated current identity ┘
 
 rappid:@<publisher>/<twin-slug>:<64hex>
                     └ a twin under that organism — one repo = one slug = one self-locating address ┘
@@ -64,29 +77,34 @@ rappid:@<publisher>/<twin-slug>:<64hex>
 
 ### Hash extraction for the hatcher
 
-The generic twin egg hatcher (`twin_egg_hatcher_agent.py`, v1.1.0) needs a stable filesystem key from any rappid to land a twin workspace at `~/.rapp/twins/<extracted-key>/`. Two cases:
-
-- **Eternity (and legacy v2) rappids** — extract the `<hash>` segment (the part after the final `:`) from `rappid:@<owner>/<slug>:<hash>` (or a legacy `rappid:v2:<kind>:@<owner>/<slug>:<hash>@...`, canonicalized on read). Example: `rappid:@kody-w/kody-w-twin:5b8ba4796692197aa4ccde5dfa5beb51` → workspace `~/.rapp/twins/5b8ba4796692197aa4ccde5dfa5beb51/`.
-- **Legacy bare-UUID rappids** — use the rappid string verbatim. Example: Heimdall's `915f54e5-4c71-4de9-bba3-6604461d05e5` becomes `~/.rapp/twins/915f54e5-4c71-4de9-bba3-6604461d05e5/`.
-
-This convention keeps v1, v2, and Eternity organisms in one federated namespace on disk. See [[The Federated Twin Egg Hatcher Pattern]] for the full hatcher contract.
+After strict §6.1 validation, an application may use the complete 64-hex tail
+as a local storage key. A legacy identifier may reach that mapping only through
+the bounded §6.3 migration path; provisional or abbreviated values must not be
+placed in the current namespace. Storage convenience never proves egg
+acceptance, identity continuity, or registry authority.
 
 ### Why this format
 
-- **Structure beats opacity.** A bare UUID tells you nothing. The structured form tells you (at a glance): kind, publisher, where to look, and how to verify.
-- **Cryptographic when possible, conventional when necessary.** Most organisms have master keypairs and the hash is key-derived. The species root and code-only organisms don't yet need keypairs; their hash is conventional but stable. Verifiers can detect which mode applies (organism declares `master_pubkey` in `root.json` or doesn't).
+- **Self-location without inferred trust.** Owner and slug identify the initial
+  candidate door; §13 establishes which registry state is authoritative.
+- **Exact mint domains.** Keyless and keyed identities use the two §6.2
+  formulas. Neither an unsigned file nor a matching URL is a trust anchor.
 - **Trademark-safe.** "rappid" is claimed in `TRADEMARK.md`. The format is the trademark's canonical expression.
 
 ## The species tree
 
+The tree below is an application-lineage illustration, not a trust graph.
+Every current identifier must satisfy §6, and every accepted lineage,
+succession, or revocation claim must be authenticated through §§10/13.
+
 ```
-rappid:@kody-w/RAPP:0b6354...        ← godfather, parent_rappid: null
+rappid:@<owner>/<root>:<64hex>        ← application root
         │
         ├── (future) rappid:@<fork-publisher>/<name>:<hash>
-        │              parent_rappid: rappid:@kody-w/RAPP:0b6354...
+        │              parent_rappid: <application lineage claim>
         │
         └── rappid:@<publisher>/<organism-slug>:<hash>
-                  parent_rappid: rappid:@kody-w/RAPP:0b6354...
+                  parent_rappid: <application lineage claim>
                   │
                   └── rappid:@<publisher>/<twin-slug>:<hash>
                             parent_rappid: rappid:@<publisher>/<organism-slug>:<hash>
@@ -94,13 +112,19 @@ rappid:@kody-w/RAPP:0b6354...        ← godfather, parent_rappid: null
                             └── (future) customer organisms, partner AIs, employee twins, etc.
 ```
 
-There is one tree. Every rappid is a node. Every node except the root has exactly one parent. Walking parent_rappid from any node terminates at the godfather (`rappid:@kody-w/RAPP:0b6354...`).
+RAPP/1 does not infer this tree from unsigned `parent_rappid` fields. Product
+lineage may impose one-parent/acyclic rules, but a verifier accepts those
+claims only when the applicable signed registry records establish them.
 
 ## Digital mitosis — the rappid IS the identity
 
 **Same rappid = same organism. Different rappid = different organism.**
 
-This is the unbreakable rule of digital biology in the RAPP species. The rappid is not a label *attached to* an organism — the rappid IS the organism's identity. Memory is content; the rappid is identity. A complete copy of an organism's bytes, with the same rappid, is the *same organism* expressed in a new place. A complete copy with a *new* rappid is mitosis: a child organism has been born, the parent organism still exists (if its rappid is still alive elsewhere), and the parent_rappid chain records the birth.
+The rappid names identity; copied bytes, a matching URL, or an egg do not by
+themselves prove continuity. A verifier also requires applicable integrity,
+signature, tombstone, succession, and registry checks. A different valid
+mint-once tail is a different identity; any claimed parent/child relationship
+requires authenticated registry evidence rather than an unsigned field.
 
 ### When a rappid stays the same (same organism, multiple expressions)
 
@@ -108,55 +132,76 @@ These operations preserve the organism's identity. The rappid does not change. T
 
 | Operation | Why it preserves identity |
 |---|---|
-| **Backup and restore on the same machine** | Same memory, same keypair, same rappid → same organism |
-| **Twin egg summoned to a new device** (Twin-Patterns parallel-omniscience) | The home device's identity is *lifted* onto the new device; rappid travels intact |
-| **Hatching** (kernel update with state preservation) | The brainstem code changes, but the organism's rappid + memory + identity are continuous; same organism in new clothes |
-| **Signed `migration` to a new `home_vault_url`** | Hosting changes; the rappid's identity-hash and master keypair are unchanged |
-| **Multi-host mirroring of the home vault** | All hosts serve the same signed records under the same rappid; same organism, multiple availability paths |
+| **Verified backup and restore** | Reuses the stored tail and keys after integrity and applicable registry checks |
+| **Verified egg restored on another device** | The stored tail is reused only after complete §9 verification and applicable §§10/13 checks |
+| **Hatching with state preservation** | Target-owned adapters preserve the stored tail; hatching never silently re-mints |
+| **Move without identity change** | Reuses the exact stored rappid; current location/authority still resolves through §13 |
+| **Provenance-stamped mirroring** | Mirrors serve verified bytes; mirror location alone does not confer authority |
 
-### When a new rappid is minted (mitosis — a new organism is born)
+### When a different rappid is minted
 
-Any of these operations creates a child organism. The new rappid points at the parent via `parent_rappid`. Both organisms now exist independently from this point forward.
+A different valid tail is a different identifier. It represents either a new
+identity or an authorized continuity transition; an unsigned `parent_rappid`
+or `_migrated_from` field cannot decide which.
 
-| Operation | Why it constitutes mitosis |
+| Operation | Identity result |
 |---|---|
-| **Fork the code into a new repo with a new rappid** (Article XXXIV.3 — variant master) | New repo, new rappid → new organism. Original RAPP keeps living; the variant is a child. |
-| **Genesis ceremony on a fresh master keypair** | A new keypair → a new identity-hash → a new rappid → a new organism. Even if memory is copied from a parent, the new keypair makes it a child. |
-| **Customer takes a Wildhaven-templated AI and rebrands it under their own publisher** | New publisher/slug + new master keypair → new rappid → mitosis. The customer's organism is a child of Wildhaven's. |
-| **Re-genesis after master keypair loss** | A new master keypair (the only recovery from total custody failure) → new rappid → new organism. The lost organism is dead; the new organism is its child. |
+| **Fork plus a fresh §6.2 mint** | A distinct identity; the repository name does not create it |
+| **Genesis with a fresh master keypair** | A distinct keyed identity using domain-separated SPKI minting |
+| **Rebranding with a fresh permitted mint** | A distinct identity unless signed registry evidence establishes an allowed transition |
+| **Authorized §6.3 re-anchor** | A new rappid linked to the old only by the required owner-signed §13 record; compromise also requires a tombstone |
 
-### The mitosis ceremony
+### The identity-minting ceremony
 
-When you intentionally mint a new rappid (mitosis), you are deliberately birthing a new organism. The ceremony:
+When a product creates a distinct identity, the protocol steps are:
 
-1. **Generate the child's holocard incantation** (24-word BIP-39 phrase). Each child gets its own.
-2. **Derive the child's master / self-signing / user-signing keys** from the incantation.
-3. **Compute the child's identity-hash** = `sha256(child_master_pubkey_SPKI)` (full 256-bit hex).
-4. **Mint the child's rappid string** as the consolidated Eternity form `rappid:@<owner>/<slug>:<hash>`. The kind/publisher/slug and the child's `home_vault_url` live in the child's `rappid.json` / `root.json` RECORD, not the string.
-5. **Write the child's signed `root.json`** declaring the child's rappid AND `parent_rappid` pointing to the parent organism's rappid.
-6. **(Optional) Write a kin-vouch from the parent's user-signing key** acknowledging the child as kin.
-7. **OpenTimestamps the child's root.json** to anchor the birth moment in Bitcoin.
+1. Select exactly one permitted §6.2 source: UUIDv4 octets or master-key
+   `SPKI_DER`.
+2. Compute the full tail with `Hb("rapp/1:rappid", source_bytes)`.
+3. Validate the exact lowercase §6.1 owner, slug, and 64-hex grammar.
+4. Persist and reuse that tail; never derive it from names or silently re-mint.
+5. Publish any genesis, lineage, key, or continuity claims through the
+   applicable signed §§10/13 records.
+6. For re-anchor, follow only the enumerated §6.3 cases and refuse until the
+   required authorization verifies.
 
-The child organism is now alive and traceable to its parent. The parent organism is unchanged.
+The identifier is usable only after required registry and signature checks
+verify. No parent, continuity, or authority claim follows from minting alone.
 
 ### Why this rule matters
 
-- **Identity is durable, not portable as content.** You cannot duplicate an organism by copying its bytes if the rappid stays the same — that's a copy-of-the-same. You cannot transfer an organism to a new owner by changing its rappid — that creates a child, not a transfer. Identity is the rappid.
-- **Lineage is tamper-evident.** Every organism's parent_rappid chain is a public record of where it came from. You can't fake your ancestry; the parent's signature on a kin-vouch (or just the timestamped existence of the child's root.json) records the moment of mitosis.
-- **Inheritance is meaningful.** A child organism inherits *kind* (often), *behavioral templates* (often, through memory copy), and *trust* (sometimes, via parent's kin-vouch). It does NOT inherit the parent's identity. The parent and child are now independent.
-- **The species tree is biological, not bureaucratic.** No rebranding shortcut. No "rename and keep going." A new identity is a new organism, with a parent.
+- **Identity is not portable as content alone.** Copying bytes or changing an
+  identifier proves neither sameness nor transfer; validators require the
+  applicable §6, §10, and §13 evidence.
+- **Lineage is verifiable only when signed.** Public timestamps or fields alone
+  do not prevent forged ancestry; §§10/13 authorization does.
+- **Inheritance does not imply trust.** A child may copy application content,
+  but kind and trust bindings come from authenticated registry state.
+- **Names do not mint or authorize identity.** Rebranding cannot derive a tail
+  or create a trusted parent relationship.
 
-This rule is the foundation for evolutionary accounting: "what did `@rapp/origin` produce, in what generation, and how did each descendant evolve?" Walking the parent_rappid chain answers it. Every organism, ever, anywhere, is a unique node in the species tree, with one parent and zero or more children.
+Application lineage can support evolutionary accounting after every identity
+and relationship in the walk has been validated. Walking unsigned
+`parent_rappid` values is discovery evidence, not verification.
 
 ## `parent_rappid` rules
 
-1. **Every rappid except the prototype has exactly one parent.**
-2. **The chain is acyclic.** Walking `parent_rappid` from any node must reach the species root in finite steps without revisiting any node.
-3. **One parent only.** No multi-parent inheritance. If an organism is influenced by multiple precursors, the canonical parent is whichever it traces operational continuity from. Other influences are recorded via kin-vouches (different concept; see [[The Swarm Estate]]).
-4. **Parents may be in any kind.** A `twin` may be a child of an `organism`; an `organism` may be a child of a `prototype`; a `kernel-variant` may be a child of a `prototype`. The kind tells you what the organism IS, not what its parent must be.
-5. **Multiple children per parent are allowed.** The tree branches. RAPP can have many variants; Wildhaven can have many kin children.
+These are product lineage rules, not additions to the §6 grammar:
+
+1. A product may require one parent for every non-root record.
+2. It must reject cycles in any lineage it presents.
+3. It must not infer continuity, kind, or trust from the parent field.
+4. It validates every rappid independently and verifies relationship authority
+   through §§10/13.
+5. Multiple children may reference one parent only when each claim verifies.
 
 ## How a rappid is declared
+
+> **Historical declaration and cryptographic model (superseded).** The
+> following examples preserve the pre-rev-5 account. They are not current
+> identity records, signature policy, or trust instructions.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 ### For organisms with a code repo (kernel variants, code-only organisms)
 
@@ -221,6 +266,8 @@ Before 2026-04-30, two parallel systems briefly coexisted:
 
 These were merged on 2026-04-30 into a unified structured format, then **consolidated again on 2026-06-03 into the single Eternity form** `rappid:@<owner>/<slug>:<hash>` (CONSTITUTION Art. XXXIV.1) — `kind` and host moved into the `rappid.json` record, the string stripped to identity + self-locating address. Existing UUIDs (e.g., the species root's `0b635450-...`) are preserved in the hash field (dashes stripped). The schema migrated from `1.1` to `2.0`; legacy `rappid:v2:…` strings are read forever and canonicalized, never re-emitted. **No rappid was lost; every existing rappid has a unique Eternity string.**
 
+<!-- RAPP1-HISTORICAL-SECTION-END -->
+
 ## Why one format only
 
 - **No divergence.** Two formats meant tooling, docs, and users had to choose which to use. Choice = bugs. One format eliminates the choice.
@@ -230,15 +277,19 @@ These were merged on 2026-04-30 into a unified structured format, then **consoli
 
 ## Antipattern: do not split rappid
 
-Going forward — and forever — there is exactly one rappid format. If a future spec wants to add functionality, it does so by:
+There is exactly one current rappid grammar. Future protocol evolution follows
+RAPP/1 §12 total migration and retirement rather than parallel normal readers.
+It may:
 
-- Bumping the version (`v2` → `v3`) — clean migration, deprecation of older format with a defined window
-- Extending the existing format (new optional fields)
-- Adding new kinds (new `<kind>` values)
+- Publish a replacement through the constitutional/spec process.
+- Migrate all accepted state and emit only the replacement.
+- Register new kinds through the authenticated §13 registry.
 
-It does **not** introduce parallel formats. If you find documentation that implies two coexisting "kinds of rappids" or "two formats both valid," that documentation is wrong and should be corrected. The species tree is one tree.
+It does **not** retain parallel current formats indefinitely. If documentation
+teaches two simultaneously current grammars, correct it or label the older one
+as bounded migration/history.
 
-This antipattern protection is ratified in Constitution Article XXXIV and XXXVI explicitly: rappid is one concept, one format, never split.
+RAPP/1 §§6 and 12 govern this invariant.
 
 ## Related
 
@@ -254,6 +305,10 @@ This antipattern protection is ratified in Constitution Article XXXIV and XXXVI 
 
 ## Provenance
 
+<!-- RAPP1-HISTORICAL-SECTION-START -->
+
 Drafted briefly as a "bridge document" between two formats on 2026-04-30. Rewritten the same evening as the canonical singular spec after the operator clarified that divergence is an antipattern. The species root migrated from raw UUID to v2-format string the same date. Wildhaven AI Homes' parent_rappid updated to reference the v2-format prototype string. All cryptographic signatures re-issued; OpenTimestamps re-anchored.
 
 This is one of the **load-bearing decisions** of the digital-organism era. Once the floodgates open and external variants / customer organisms begin minting their own rappids, this format is what they conform to. Reverting becomes impossible. The decision is taken here, with one format.
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

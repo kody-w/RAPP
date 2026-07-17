@@ -82,6 +82,9 @@
       "live_declarations_section": "7.1",
       "historical_section": "7.4",
       "generated_section": "7.5",
+      "mixed_current_paths": [
+        "pages/vault/Architecture/Rappid.md"
+      ],
       "live_path_count": 45,
       "live_paths": [
         ".well-known/rapp-network-seed.json",
@@ -185,12 +188,14 @@
     "pages/tutorials/hatch-egg.html",
     "specs/SPEC.md"
   ],
+  "mixed_documents": [
+    "pages/vault/Architecture/Rappid.md"
+  ],
   "historical_documents": [
     "pages/release/release-notes.html",
     "pages/vault/Architecture/Boot Sidecar \u2014 Integrating Utils Without Modifying the Kernel.md",
     "pages/vault/Architecture/Layered Mirrors and the Public-Private Body Stack.md",
     "pages/vault/Architecture/Neighborhood Egg \u2014 Snapshot and Hatch.md",
-    "pages/vault/Architecture/Rappid.md",
     "pages/vault/Architecture/Rapplications Are Organisms.md",
     "pages/vault/Architecture/Signed Releases and Variant Attestation.md",
     "pages/vault/Architecture/Surfaces \u2014 Mobile, Watch, Voice.md",

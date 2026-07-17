@@ -246,6 +246,15 @@ def audit_scope_failures(
                 failures.append(
                     f"scope: canon §7.1 path {relative} is not checked or excluded"
                 )
+        mixed_current_paths = canon.get("mixed_current_paths")
+        if not isinstance(mixed_current_paths, list):
+            failures.append(
+                "scope: canon-mirrors mixed_current_paths must be a list"
+            )
+        elif set(mixed_current_paths) != set(scope.get("mixed_documents", ())):
+            failures.append(
+                "scope: canon mixed-current paths do not match mixed_documents"
+            )
 
     spec_matrix = audit_scope.get("spec_matrix")
     if not isinstance(spec_matrix, dict):
@@ -263,10 +272,13 @@ def audit_scope_failures(
             failures.append("scope: spec-matrix remediation map is missing")
 
     historical = set(scope.get("historical_documents", ()))
+    mixed = set(scope.get("mixed_documents", ()))
     for relative in sorted(
         path
         for path in managed
-        if path.startswith("pages/vault/") and path not in historical
+        if path.startswith("pages/vault/")
+        and path not in historical
+        and path not in mixed
     ):
         failures.append(
             f"scope: spec-matrix historical vault path {relative} "
@@ -280,6 +292,7 @@ def check_docs(scope: dict | None = None) -> list[str]:
     failures = []
     groups = (
         "current_documents",
+        "mixed_documents",
         "superseded_documents",
         "historical_documents",
     )
@@ -307,8 +320,10 @@ def check_docs(scope: dict | None = None) -> list[str]:
             failures.extend(authority_link_failures(relative, path, text))
             failures.extend(historical_marker_failures(relative, text))
             lowered = text.lower()
-            if group == "current_documents":
+            if group in ("current_documents", "mixed_documents"):
                 failures.extend(retired_token_failures(relative, text))
+            if group == "mixed_documents" and "mixed current" not in lowered:
+                failures.append(f"{relative}: missing mixed-current marker")
             elif group == "superseded_documents" and "superseded" not in lowered:
                 failures.append(f"{relative}: missing superseded-document marker")
             elif group == "historical_documents" and not (
@@ -352,6 +367,7 @@ def main() -> int:
         len(scope[group])
         for group in (
             "current_documents",
+            "mixed_documents",
             "superseded_documents",
             "historical_documents",
         )
@@ -362,6 +378,7 @@ def main() -> int:
             set(scope[group])
             for group in (
                 "current_documents",
+                "mixed_documents",
                 "superseded_documents",
                 "historical_documents",
             )
