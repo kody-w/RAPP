@@ -17,6 +17,9 @@ BRAINSTEM_DIR="${RAPP1_BRAINSTEM_BOOT_DIR:-$REPO_ROOT/rapp_brainstem}"
 BRAINSTEM_SCRIPT="$BRAINSTEM_DIR/brainstem.py"
 WORK_DIR="${TMPDIR:-$REPO_ROOT/tests/.rapp1-work}/organism-01-$$"
 mkdir -p "$WORK_DIR"
+TEST_HOME="$WORK_DIR/home"
+mkdir -p "$TEST_HOME"
+OFFLINE_GUARD="$REPO_ROOT/tests/offline_guard"
 LOG="$WORK_DIR/brainstem.log"
 PID_FILE="$WORK_DIR/brainstem.pid"
 PORT=""
@@ -104,7 +107,11 @@ PYTHON="${PYTHON:-$HOME/.brainstem/venv/bin/python}"
 [ -x "$PYTHON" ] || PYTHON="$(command -v python3)"
 
 echo "▶ testing immutable kernel evidence on an OS-assigned process-owned port (python: $PYTHON)"
-( cd "$BRAINSTEM_DIR" && exec env PORT=0 PYTHONUNBUFFERED=1 \
+( cd "$BRAINSTEM_DIR" && exec env -i \
+    PATH="$PATH" HOME="$TEST_HOME" USERPROFILE="$TEST_HOME" \
+    TMPDIR="$WORK_DIR" PYTHONPATH="$OFFLINE_GUARD" \
+    RAPP1_OFFLINE=1 RAPP1_EXTERNAL_NETWORK=deny \
+    PORT=0 PYTHONUNBUFFERED=1 \
     "$PYTHON" "$BRAINSTEM_SCRIPT" ) > "$LOG" 2>&1 &
 SERVER_PID=$!
 echo "$SERVER_PID" > "$PID_FILE"

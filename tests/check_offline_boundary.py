@@ -92,6 +92,12 @@ def _check_environment() -> None:
 
 
 def _check_python_sockets() -> None:
+    wildcard_listener = socket.socket()
+    wildcard_listener.bind(("0.0.0.0", 0))
+    if wildcard_listener.getsockname()[0] != "127.0.0.1":
+        raise AssertionError("wildcard Python bind was not rewritten to loopback")
+    wildcard_listener.close()
+
     listener = socket.socket()
     listener.bind(("127.0.0.1", 0))
     listener.listen(1)

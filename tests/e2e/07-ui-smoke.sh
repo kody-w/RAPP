@@ -12,6 +12,9 @@ BRAINSTEM_SCRIPT="$BRAINSTEM_DIR/brainstem.py"
 PORT=""
 WORK_DIR="${TMPDIR:-$(pwd)/tests/.rapp1-work}/ui-smoke-$$"
 mkdir -p "$WORK_DIR"
+TEST_HOME="$WORK_DIR/home"
+mkdir -p "$TEST_HOME"
+OFFLINE_GUARD="$(pwd)/tests/offline_guard"
 PID_FILE="$WORK_DIR/brainstem.pid"
 LOG="$WORK_DIR/brainstem.log"
 HTML="$WORK_DIR/index.html"
@@ -97,7 +100,11 @@ wait_for_health() {
 }
 
 echo "▶ Starting isolated immutable evidence on an OS-assigned process-owned port..."
-( cd "$BRAINSTEM_DIR" && exec env PORT=0 PYTHONUNBUFFERED=1 \
+( cd "$BRAINSTEM_DIR" && exec env -i \
+    PATH="$PATH" HOME="$TEST_HOME" USERPROFILE="$TEST_HOME" \
+    TMPDIR="$WORK_DIR" PYTHONPATH="$OFFLINE_GUARD" \
+    RAPP1_OFFLINE=1 RAPP1_EXTERNAL_NETWORK=deny \
+    PORT=0 PYTHONUNBUFFERED=1 \
     "$PYTHON" "$BRAINSTEM_SCRIPT" ) > "$LOG" 2>&1 &
 SERVER_PID=$!
 echo "$SERVER_PID" > "$PID_FILE"

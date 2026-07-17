@@ -21,6 +21,9 @@ PYTHON="${PYTHON:-$HOME/.brainstem/venv/bin/python}"
 
 WORK_DIR="${TMPDIR:-$(pwd)/tests/.rapp1-work}/organism-06-$$"
 mkdir -p "$WORK_DIR"
+TEST_HOME="$WORK_DIR/home"
+mkdir -p "$TEST_HOME"
+OFFLINE_GUARD="$(pwd)/tests/offline_guard"
 LOG="$WORK_DIR/brainstem.log"
 
 PORT=""
@@ -43,7 +46,10 @@ discover_bound_port() {
 
 echo "▶ testing immutable kernel evidence under LC_ALL=C PYTHONUTF8=0 on an OS-assigned port"
 ( cd "$BRAINSTEM_DIR" && \
-    exec env LC_ALL=C LANG=C PYTHONUTF8=0 PORT=0 "$PYTHON" brainstem.py ) > "$LOG" 2>&1 &
+    exec env -i PATH="$PATH" HOME="$TEST_HOME" USERPROFILE="$TEST_HOME" \
+    TMPDIR="$WORK_DIR" PYTHONPATH="$OFFLINE_GUARD" \
+    RAPP1_OFFLINE=1 RAPP1_EXTERNAL_NETWORK=deny \
+    LC_ALL=C LANG=C PYTHONUTF8=0 PORT=0 "$PYTHON" brainstem.py ) > "$LOG" 2>&1 &
 SERVER_PID=$!
 
 for i in $(seq 1 30); do

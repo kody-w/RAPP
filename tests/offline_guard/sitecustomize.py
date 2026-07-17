@@ -76,6 +76,21 @@ def _guarded_getnameinfo(sockaddr, *args, **kwargs):
 
 
 class _GuardedSocket(_original_socket):
+    def bind(self, address):
+        if self.family == socket.AF_INET:
+            host, port = address[:2]
+            if str(host).strip() in {"", "0.0.0.0"}:
+                address = ("127.0.0.1", port, *address[2:])
+            else:
+                _require_local(host)
+        elif self.family == socket.AF_INET6:
+            host, port = address[:2]
+            if str(host).strip().lower().strip("[]") in {"", "::"}:
+                address = ("::1", port, *address[2:])
+            else:
+                _require_local(host)
+        return super().bind(address)
+
     def connect(self, address):
         if self.family in {socket.AF_INET, socket.AF_INET6}:
             _require_local(address[0])
