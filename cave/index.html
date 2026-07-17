@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The RAPP Cave — public RAPP neighborhood</title>
+<title>The RAPP Cave — retired public-neighborhood archive</title>
 <style>
   :root { color-scheme: dark; }
   body { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -32,51 +32,52 @@
 </head>
 <body>
 <h1>🦇 The RAPP Cave</h1>
+<div class="card" style="border-color:#d29922">
+<strong>Historical/application surface — no installer is offered.</strong>
+Canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+evolution follow RAPP/1 rev-5 through
+<a href="../RAPP1_AUTHORITY.json">RAPP1_AUTHORITY.json</a> and
+<a href="../RAPP1_STATUS.md">RAPP1_STATUS.md</a>. The prepared cave installer
+subtree is inert history, not a bootstrap, catalog, download, or acceptance path.
+</div>
 <p><span class="pill pub">public</span><span class="pill">kind: workspace</span>
 <span class="pill">cubby neighborhood</span></p>
 <p><code>rappid:@kody-w/rapp-cave:ca72ca0a3cb90c357fb09e38b02f85f09935cacbf61e94740c57f1eb30a73e0a</code></p>
 
-<p><strong>The RAPP Cave is the public batcave</strong> — a cubby-neighborhood
-<em>anyone can pull from</em>. No collaborator gate, no <code>gh</code> auth, no
-dial tone. Every member gets a <strong>cubby</strong> — isolated housing for a
-full rapp estate. Browse the cubbies, learn from each organism, stream agents
-into your own brainstem, and hatch the rapplications straight off the open web.</p>
+<p><strong>This archive records the former public “RAPP Cave.”</strong> It was
+described as a cubby-neighborhood with no collaborator gate. Public files may
+be inspected as untrusted history; they are not offered as a pull source,
+catalog, installer, or accepted agent stream. Public reachability is not
+RAPP/1 trust.</p>
 
-<h2>⚡ Stand up the RAPP brainstem — one line, plain curl</h2>
-<p>This hatches the <strong>rapp-installer</strong> rapplication (the full
-repo-independent RAPP brainstem) from the cave. No GitHub login required — it's
-served openly on GitHub Pages.</p>
-<div class="card one-liner">
-<button onclick="navigator.clipboard&amp;&amp;navigator.clipboard.writeText('curl -fsSL https://kody-w.github.io/RAPP/cave/rapplications/rapp-installer/bootstrap.sh | bash').then(()=>{this.textContent='copied';setTimeout(()=>this.textContent='copy',1200);})">copy</button>
-<pre><code>curl -fsSL https://kody-w.github.io/RAPP/cave/rapplications/rapp-installer/bootstrap.sh | bash</code></pre>
-</div>
-<p class="muted">Browse all hatchable rapplications:
-<a href="rapplications/">rapplications/</a></p>
+<h2>Retired cave installer archive</h2>
+<p>The preserved <code>cave/rapplications/rapp-installer/</code> files are inert
+history. Do not run their bootstrap scripts or advertise the directory as a
+hatchable catalog.</p>
 
 <div class="card">
-  <strong>Join:</strong> just pull — it's public. Fork
-  <a href="https://github.com/kody-w/RAPP">kody-w/RAPP</a>, drop a cubby under
-  <code>cave/cubbies/&lt;your-login&gt;/</code>, and open a PR. Or simply
-  <code>curl</code> anything you see here into your own brainstem — no membership
-  needed. Front-door contract:
+  <strong>Historical application membership:</strong> dated instructions once
+  asked contributors to fork the repository, add a cubby under
+  <code>cave/cubbies/&lt;your-login&gt;/</code>, and open a PR. That sequence is
+  provenance, not current onboarding or an acceptance CTA. Do not stream cave
+  files into a brainstem as accepted artifacts. Front-door history:
   <a href="specs/CAVE_PROTOCOL.md">CAVE_PROTOCOL.md</a> ·
   contributing: <a href="CONTRIBUTING.md">CONTRIBUTING.md</a>
 </div>
 
-<h2>🗄️ Cubbies</h2>
-<div id="cubbies"><div class="card muted">Loading the live cubby gallery from
-<code>cubbies/index.json</code> … (served on GitHub Pages, this loads over plain
-HTTPS — no auth, no network gymnastics).</div>
+<h2>🗄️ Historical cubby ledger</h2>
+<div id="cubbies"><div class="card muted">The former live gallery is retired.
+<code>cubbies/index.json</code> is an untrusted historical observation, not a
+catalog or download source.</div>
 </div>
 
-<p class="muted">Discovery beacon:
-<a href=".well-known/rapp-cave.json">.well-known/rapp-cave.json</a> ·
-public raw base:
-<code>https://raw.githubusercontent.com/kody-w/RAPP/main/cave</code></p>
+<p class="muted">The historical discovery beacon
+<code>.well-known/rapp-cave.json</code> and moving raw branches are not
+authenticated download sources.</p>
 
-<script>
+<script type="application/rapp-history">
 /* Public-first: relative fetch against the cave served on GitHub Pages.
-   Anyone can pull — no auth. Offline / file:// keeps the static text. */
+   Preserved as inert implementation history; browsers do not execute it. */
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g,
   c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 fetch('cubbies/index.json').then(r => r.json()).then(idx => {

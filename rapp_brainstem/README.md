@@ -1,4 +1,4 @@
-# RAPP Brainstem
+# Historical RAPP Brainstem Quickstart
 
 > **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
 > wire, eggs, registry, trust, and protocol evolution, follow
@@ -7,6 +7,14 @@
 > immutable `kody-w/rapp-installer@brainstem-v0.6.9` grail runtime; adapters
 > must converge outside its pinned `brainstem.py`, `agents/basic_agent.py`, and
 > `VERSION` bytes.
+
+> **Whole-document disposition:** the install, quickstart, browser, API,
+> catalog, and runtime guidance below is preserved grail-era history. This
+> target does not ship or support it. The immutable tag is a byte pin, not an
+> installation promise; current target-owned protocol work is the separate
+> loopback pre-acceptance façade at `127.0.0.1:7073`.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 A local-first AI agent server. One dependency: a GitHub account with Copilot access.
 
@@ -383,3 +391,5 @@ validators, migrations, and retirement policy.
 ```bash
 curl -s localhost:7071/health | python3 -m json.tool
 ```
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

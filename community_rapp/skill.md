@@ -1,4 +1,4 @@
-# CommunityRAPP — Public Host Onboarding
+# Historical CommunityRAPP Host Onboarding
 
 > **Current RAPP/1 authority (rev-5).** Despite its historical filename, this
 > is non-runtime host onboarding, not a RAPP skill, agent, or capability. For
@@ -7,6 +7,14 @@
 > [`RAPP1_STATUS.md`](../RAPP1_STATUS.md). CommunityRAPP's Azure routes and
 > envelopes below are legacy host adapters; a current RAPP boundary exposes
 > the exact §8 `/chat` contract.
+
+> **Whole-document disposition:** do not execute the one-line installers,
+> moving-main downloads, Azure routes, or hatchery actions below. No
+> CommunityRAPP Tier 2 service or live install is shipped by this repository.
+> The external project is non-authoritative and has no verified immutable pin
+> in this document.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **CommunityRAPP (RAPP Hippocampus) is open source.**
 > Repo: [github.com/kody-w/CommunityRAPP](https://github.com/kody-w/CommunityRAPP)
@@ -80,7 +88,6 @@ RAPP interaction is instead `POST /chat` with required `user_input`, optional
 `{response,agent_logs:[string],session_id}` on HTTP 200, and the exact §8
 error object on HTTP 422. Application routes must translate at that boundary.
 
-<!-- RAPP1-HISTORICAL-SECTION-START -->
 ```json
 // Request
 POST /api/businessinsightbot_function
@@ -98,8 +105,6 @@ POST /api/businessinsightbot_function
   "user_guid": "the-user-guid"
 }
 ```
-<!-- RAPP1-HISTORICAL-SECTION-END -->
-
 ---
 
 ## Key Components
@@ -147,3 +152,5 @@ POST /api/businessinsightbot_function
 ```
 last_updated: 2026-03-25
 ```
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

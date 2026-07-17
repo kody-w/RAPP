@@ -1,48 +1,44 @@
 # The Cave super-RAR — the public super-store
 
-The RAPP Cave has the **same super-RAR capability as the private batcave**, just
-public (plain git/HTTPS, no auth, no collaborator gate).
+> **Retired catalog/download guidance.** For canonicalization, identity, frames,
+> wire, eggs, registry, trust, and protocol evolution, follow RAPP/1 rev-5
+> through [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md). The indexes are untrusted
+> historical/application observations, not an authenticated §13 registry.
 
-- **RAR** (`rar/index.json`) — the agent + rapplication registry, every entry
-  sha256-pinned. `cave load` verifies a streamed file against its pin and
-  **refuses drift** (a tampered cubby file never lands in your brainstem).
-- **super-RAR** (`super-rar/index.json`) — the *super-store*: **every kind across
-  every cubby** (agents · organs · senses · rapplications · neighborhoods · eggs),
-  one registry over the whole open neighborhood. Find what a neighbor already
-  built and stream it in.
+The cave preserves a historical super-RAR design. It is not a current
+capability, registry, or public loading service.
 
-## The capability (three parts)
+<!-- RAPP1-HISTORICAL-SECTION-START -->
+
+- **RAR** (`rar/index.json`) — generated historical observation, not a §13
+  registry or load source.
+- **super-RAR** (`super-rar/index.json`) — generated historical aggregate, not
+  a store or streamable catalog.
+
+## Historical implementation record (inert)
 
 | Part | File | What it does |
 |---|---|---|
-| **Builder** | `tools/build_super_rar.py` | (Re)builds both indexes from the cubbies on disk. The standalone, pure-stdlib equivalent of the batcave god agent's `super_rar rebuild`. `--check` mode is the CI gate. |
-| **Agent** | `agents/cave_agent.py` (`@kody-w/cave`) | Drop into any brainstem → a `Cave` tool: `list` cubbies · `super_rar` (search the super-store) · `load cubby=<login>` (stream that cubby's agents into your brainstem, **git-invisible** via `.git/info/exclude`, sha-verified — zero commit risk) · `sync`. |
-| **Steward** | `agents/rar_steward_agent.py` (`@rapp/rar_steward`) | Registry hygiene — dedup/assess agents in the RAR. |
+| **Builder** | `tools/build_super_rar.py` | Historical generator; output remains untrusted. |
+| **Agent** | `agents/cave_agent.py` (`@kody-w/cave`) | Retired loader; do not install or invoke it. |
+| **Steward** | `agents/rar_steward_agent.py` (`@rapp/rar_steward`) | Historical index-hygiene experiment. |
 
-## Get the capability into your brainstem (public, no auth)
+## Retired direct download
 
-```bash
-# drop the Cave agent (and the steward) into your brainstem, then just ask it
-curl -fsSL https://kody-w.github.io/RAPP/cave/agents/cave_agent.py    -o ~/.brainstem/src/rapp_brainstem/agents/cave_agent.py
-curl -fsSL https://kody-w.github.io/RAPP/cave/agents/rar_steward_agent.py -o ~/.brainstem/src/rapp_brainstem/agents/rar_steward_agent.py
-```
-Then in chat: *"list the cave cubbies"*, *"search the cave super-rar for X"*,
-*"load kody-w's agents from the cave"*.
+The former no-auth `curl` commands are removed. A hash in `rar/index.json` or
+`super-rar/index.json` does not supply an owner signature, trust anchor,
+revocation state, or registry freshness. Do not load these candidates into a
+brainstem without a future conformant acceptance path.
 
 ## Freshness
 
-The super-RAR is **living**, not hand-maintained: `tools/build_super_rar.py`
-regenerates it from the cubbies, and `.github/workflows/cave-super-rar.yml`
-**gates every PR** — if you change a cubby and don't rebuild, CI fails. Rebuild
-locally with:
-
-```bash
-python3 cave/tools/build_super_rar.py
-```
+The checked-in indexes are generated observations and must not be hand-edited
+or treated as fresh. This document provides no rebuild or execution CTA.
 
 ## Difference from the batcave
 
-Identical mechanism (build + sha-pin + stream + `.git/info/exclude` zero-commit-risk).
-The only delta is **trust/access**: the batcave streams from a private,
-collaborator-gated clone; the cave streams from the **public** `kody-w/RAPP`
-clone — anyone, no auth.
+The former design compared private and public streaming. Both descriptions are
+history, not a current trust or access mechanism.
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

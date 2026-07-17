@@ -1,4 +1,4 @@
-# NEIGHBORHOOD_PROTOCOL.md
+# Historical Neighborhood Protocol Pointer
 
 > **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
 > wire, eggs, registry, trust, and protocol evolution, follow
@@ -6,6 +6,14 @@
 > [`RAPP1_STATUS.md`](./RAPP1_STATUS.md). The external neighborhood document
 > may define application behavior only; any conflicting protocol primitive is
 > an external-mirror correction, not a second RAPP standard.
+
+> **Whole-document disposition:** no immutable, verified pin for the external
+> neighborhood application guide is recorded here. The moving-branch URL,
+> product adapters, front doors, relay, hatching, and cloud-neighborhood claims
+> below are historical pointers and must not be consumed as current guidance.
+> The external repository is non-authoritative and may diverge from RAPP/1.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **📍 The application-level neighborhood guide lives in its own repo:**
 > **https://github.com/kody-w/rapp-neighborhood-protocol** (`rapp-neighborhood-protocol/1.0`).
@@ -42,3 +50,5 @@ Its twin-chat controller must migrate to the exact current RAPP wire.
 *(An earlier, divergent “Twin Chat for Digital Organisms” draft once lived here under the same version
 string; it was superseded by the external application guide and remains in git
 history. Neither document overrides RAPP/1.)*
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

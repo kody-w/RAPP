@@ -1,4 +1,4 @@
-# RAPP Roadmap
+# Historical RAPP Product Roadmap
 
 > **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
 > wire, eggs, registry, trust, and protocol evolution, follow
@@ -6,11 +6,19 @@
 > [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md). Roadmap work must migrate or
 > retire incompatible forms rather than preserve them indefinitely.
 
-Post-v1 product directions retain the single-file agent rule, but the former
-local v1 wire contract in [`SPEC.md`](./SPEC.md) is superseded for protocol
-matters by RAPP/1 rev-5.
+> **Whole-document disposition:** all “shipped,” “production,” acceptance,
+> browser, cloud-tier, egg, and future-work labels below are dated planning
+> history, not current capabilities. There is no current browser/twin surface
+> or Tier 2/3 release. The only pre-acceptance façade wire is §8 `POST /chat`:
+> request required string `user_input` plus optional strings `session_id` and
+> `idempotency_key`; success exactly `response`, `agent_logs` (array), and
+> `session_id`; refusal HTTP 422 exactly
+> `{"error":{"code":"<code>","step":null}}`. Voice and Twin presentation, if
+> prototyped, derive locally from `response` and add no wire fields.
 
 ---
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 ## Recently shipped
 
@@ -413,3 +421,5 @@ the twin to adjust.
    confidence to neutral. Both are cleanly reversible.
 4. The user can read `.twin_calibration.jsonl` with `jq` and see
    what the twin thought and what happened.
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

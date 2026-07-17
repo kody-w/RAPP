@@ -1,10 +1,20 @@
-# Hero Use Case — Shareable Digital Organisms
+# Historical Hero Scenarios — Shareable Digital Organisms
 
 > **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
 > wire, eggs, registry, trust, and protocol evolution, follow
 > [`RAPP1_AUTHORITY.json`](./RAPP1_AUTHORITY.json) and
-> [`RAPP1_STATUS.md`](./RAPP1_STATUS.md). Scenario checks below are product
-> evidence, not proof of RAPP/1 conformance or authenticated acceptance.
+> [`RAPP1_STATUS.md`](./RAPP1_STATUS.md). **The scenarios and green checks
+> below are a superseded 2026-05 product record, not current product evidence.**
+
+## Current correction
+
+No public planter, browser brainstem, tether, legacy egg transfer, offline
+hatcher, cloud tier, or MMR front door is currently shipped. A future scenario
+may count only after exact RAPP/1 validation and authenticated acceptance; the
+canonical pre-acceptance runner does not convert these historical UX checks
+into release claims.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > *"Picture you have two phones and through a QR code where it's on your device because it's all local first... so if you have the Internet, if you have a local model, it will run just the same. It won't be as good. So it's like degrading... It's not like a constant cutoff. It's like, 'Hey, I lost access to the best model, but I'm still here for you where I can.'"*
 >
@@ -176,3 +186,5 @@ All four must be green before merging changes that touch the surfaces named in t
 ## Source
 
 Hero scenarios are extracted from a private design conversation on Agent Shareability (May 2026). The conversation document lives in the operator's records; the canonical scenarios are checked in here so they're part of the repo's permanent specification.
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

@@ -1,11 +1,24 @@
 ---
 title: Voice and Twin Are Forever
-status: published
+status: historical
 section: Founding Decisions
-hook: Two delimited slots in every response, fixed. New capabilities go inside an existing slot — never as a third one.
+hook: Historical origin of the VOICE/TWIN rendering markers; current RAPP/1 exposes only the exact §8 response object.
 ---
 
 # Voice and Twin Are Forever
+
+> **SUPERSEDED wire interpretation — historical record only.** For
+> canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+> evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md). The target façade request
+> allows exactly required string `user_input` and optional strings `session_id`
+> and `idempotency_key`. HTTP 200 has exactly `response`, `agent_logs` (array),
+> and `session_id`; HTTP 422 has exactly
+> `{"error":{"code":"...","step":null}}`. Voice and twin are derived locally
+> from optional delimiters inside `response`, never extra wire members.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** Two delimited slots in every response, fixed. New capabilities go inside an existing slot — never as a third one.
 
@@ -21,9 +34,12 @@ Every assistant response from the brainstem is a string with up to two literal d
 <digital twin's reaction, first-person as the user, to the user>
 ```
 
-The split happens once, at the bottom of `chat()` in `rapp_brainstem/brainstem.py:984-998`, with `str.partition()` — left to right, so the twin block can never bleed into voice and voice can never bleed into main. The downstream consumer (Tier 1 web UI, Tier 2 API caller, Tier 3 Copilot Studio adapter) gets three keys: `response`, `voice_response`, `twin_response`. Each key is allowed to be empty.
+The immutable application historically split these markers internally. A
+current target-owned façade does not expose that split: a downstream client
+receives one `response` string and may derive voice/twin presentation locally.
+Tier 2, browser, and Copilot Studio delivery claims are retired.
 
-That's the contract. It is **Sacred Constraint #3**. It does not change.
+The delimiter convention is application history, not a RAPP/1 contract change.
 
 ## Why exactly two
 
@@ -51,9 +67,8 @@ The forever-ness is not aesthetic dogma. It's a downstream-cost argument:
 
 - Every prompt template in `soul.md` references the slots.
 - The brainstem's parser hardcodes the delimiters (`brainstem.py:988-996`).
-- The Tier 1 web UI (`rapp_brainstem/web/index.html`) renders three regions.
-- The Tier 2 Azure Functions JSON shape exposes them as separate keys.
-- The Tier 3 Power Platform adapter splits them again at the connector boundary.
+- Historical application UIs rendered separate regions.
+- Retired Azure and Power Platform adapters exposed incompatible extra keys.
 - Every test fixture matches against `|||VOICE|||` / `|||TWIN|||` literals.
 - Every agent that wants to influence the slots writes a `system_context()` that respects them.
 
@@ -72,7 +87,8 @@ Each of those is a new capability that did *not* require a new slot. The pattern
 
 ## What this rules out
 
-- ❌ Adding `|||X|||` for any X. New X goes inside an existing slot or it is structured-data outside the response string.
+- ❌ Adding a top-level wire member for any delimiter. Application rendering
+  stays inside `response`; protocol evolution follows RAPP/1 §12.
 - ❌ Repurposing an existing slot. The voice slot will not become "voice or summary" depending on a flag — that's two slots wearing one name.
 - ❌ Letting a slot's vocabulary leak across slots. The TWIN slot uses tags; the VOICE slot is plain spoken text. Mixing them breaks the parser's left-to-right invariant.
 - ❌ "Soft" delimiters via formatting (e.g., `## VOICE`). The literal `|||VOICE|||` is what the parser depends on; soft alternatives invite false positives in user content.
@@ -100,3 +116,5 @@ If the answer to (1) or (2) is yes *and* (3) is no, then a new slot is on the ta
 - [[The Twin Offers, The User Accepts]]
 - [[Calibration Is Behavioral, Not Explicit]]
 - [[Every Twin Surface Is a Calibration Opportunity]]
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

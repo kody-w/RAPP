@@ -10,6 +10,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with th
 > `agents/basic_agent.py`, and `VERSION` bytes are read-only; incompatible
 > behavior below is migration input, not current protocol.
 
+## Current component instructions
+
+- Do not edit `brainstem.py`, `agents/basic_agent.py`, or `VERSION`; verify
+  them against `kody-w/rapp-installer@brainstem-v0.6.9`.
+- The port-7071 application is contained legacy source, not a shipped local
+  product, browser UI, installer, catalog, or hatcher.
+- Current target-owned synchronous work uses the loopback pre-acceptance
+  façade at `127.0.0.1:7073`: required string `user_input`; optional strings
+  `session_id` and `idempotency_key`; exact success members `response`,
+  `agent_logs` (array), and `session_id`; exact HTTP 422 nested
+  `error.code`/`error.step`.
+- Voice and Twin derive locally from `response` and add no fields.
+- Validate through `python3 tests/run_rapp1_conformance.py`; passing remains
+  structural/pre-acceptance only.
+
+## Historical component guide (superseded)
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
+
 > **For repo-wide guidance** (canon, governance, reading order across the whole platform) start at the [**Kernel hub**](https://kody-w.github.io/RAPP/pages/kernel.html) or the root [`CLAUDE.md`](../CLAUDE.md). This file (`rapp_brainstem/CLAUDE.md`) is scoped to the Tier 1 Brainstem itself.
 
 ## Project Overview
@@ -103,3 +122,5 @@ Configuration via `.env` (auto-created from `.env.example` by `start.sh`):
 - `GITHUB_TOKEN` — auto-detected from `gh` CLI if blank
 - `GITHUB_MODEL` — default `gpt-4o`, switchable at runtime via `/models/set`
 - `SOUL_PATH`, `AGENTS_PATH`, `PORT`, `VOICE_MODE`
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

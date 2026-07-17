@@ -1,10 +1,18 @@
-# TWIN_LIFECYCLE_SPEC — Operator-level twin lifecycle (active / archived / purged)
+# Historical Twin Lifecycle Proposal
 
 > **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
 > wire, eggs, registry, trust, and protocol evolution, follow
 > [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json) and
 > [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md). Filesystem housekeeping is not
 > the authenticated §13 registry and cannot authorize identity or re-genesis.
+
+> **Whole-document disposition:** the repository does not currently ship this
+> operator lifecycle API, fleet orchestration, egg snapshot flow, or GUI. The
+> actions and JSON below are dated design history. Any future synchronous
+> façade remains the exact §8 `POST /chat`; presentation derives locally from
+> its `response` string and cannot add Twin wire fields.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Authority.** This spec defines the operator-facing housekeeping layer on top of Constitution Article XLIX.3 (twin lifecycle: mint → bond → fork → die). XLIX.3 establishes the philosophical states; this spec defines the disk layout, agent verbs, and JSON shapes that let an operator manage many twins cleanly. "Die" in XLIX.3 corresponds to `purge` here. `archive` is a new operator-housekeeping intermediate state — a twin set aside, body preserved, reversible — that XLIX.3 implicitly allows (a stopped on-disk twin) but doesn't formalize.
 
@@ -351,3 +359,5 @@ Reserved for future revisions:
 - Per-twin retention policies set at archive time (only the policy *name* is recorded; no enforcement engine).
 - A GUI for browsing archives. (Operators use natural language via `/chat`.)
 - Purge bulk form. (Single-twin only in v1.0.)
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

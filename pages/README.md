@@ -6,9 +6,9 @@
 > [`RAPP1_STATUS.md`](../RAPP1_STATUS.md). Audience navigation must never
 > present retired protocol documents as current instructions.
 
-Static HTML pages for humans who landed on the project from outside —
-prospects, partners, executives, security reviewers, FAQ-skimmers.
-Served by GitHub Pages at `https://kody-w.github.io/RAPP/pages/<file>.html`.
+Static audience-page source retained for review and historical publication.
+Paths and canonical metadata do not guarantee that a page is deployed,
+current, or an operational product surface.
 
 ## What's here
 
@@ -26,10 +26,8 @@ Audience pages, one per audience or topic:
 
 Plus the static viewer for the long-term memory:
 
-- `vault/` — Obsidian vault (markdown notes) plus the static SPA
-  viewer (`vault/index.html`) that renders the same notes in the
-  browser. Wikilinks, backlinks, search, JSZip export/import. See
-  Article XXIII for the contract this implements.
+- `vault/` — Obsidian notes plus historical static-viewer source. Viewer,
+  search, graph, and export narratives are not current product claims.
 
 - `docs/` — Reference markdown (`SPEC.md`, `ROADMAP.md`, `AGENTS.md`,
   `VERSIONS.md`, `skill.md`, `rapplication-sdk.md`). See
@@ -40,10 +38,10 @@ Plus the static viewer for the long-term memory:
 A new HTML file belongs in `pages/` when:
 
 1. **It's audience-facing.** Designed to be read by a human visitor,
-   not by code or by an internal contributor. Marketing tone, not
-   reference tone.
+   not by code or by an internal contributor. Any marketing claim must match
+   `RAPP1_STATUS.md`.
 2. **It has its own URL.** Each page is a destination — linkable,
-   shareable, sometimes shared. (See the *one* root exception below.)
+   inspectable as source. A URL does not imply current publication.
 3. **It's standalone HTML.** No framework, no build step. Open in a
    browser, render. Same posture as `index.html` at repo root.
 
@@ -54,10 +52,8 @@ A new HTML file belongs in `pages/` when:
   also `docs/<FILE>.md`, not an HTML page.
 - ❌ **The repo landing page** (`index.html`) — must be at repo
   root because that's where GitHub Pages serves from. Not here.
-- ❌ **`pitch-playbook.html`** — must stay at repo root because its
-  URL is in active external circulation. New audience pages always
-  land in `pages/`; the playbook is the only grandfathered
-  exception (Article XVI).
+- ❌ **`pitch-playbook.html`** — retained historical marketing at repo root.
+  Do not use its old circulation as evidence of a current product.
 - ❌ **Anything that needs a build step or framework.** This is
   static-by-design. If you reach for React, Next.js, or a bundler,
   you've outgrown the `pages/` pattern; redesign before adding.

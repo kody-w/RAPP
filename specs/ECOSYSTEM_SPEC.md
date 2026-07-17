@@ -1,15 +1,32 @@
-# The RAPP Ecosystem — Full End-to-End Spec
+# Historical RAPP Ecosystem Mirror
 
-> **Schema:** `rapp-ecosystem-spec/1.0` · **Version:** `1.0.0` · **Canonical source:** `kody-w/RAPP`
+> **DIVERGENT, NON-AUTHORITATIVE MIRROR.** This historical ecosystem rendering
+> is not RAPP protocol, a §13 registry, or an acceptance source. For
+> canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+> evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../RAPP1_STATUS.md). The immutable standard pin is commit
+> `6723c7add2aed36bb68992fc71a56b0a4bd5ad81`; the immutable grail pin is
+> `kody-w/rapp-installer@brainstem-v0.6.9` in
+> [`KERNEL_PIN.json`](../KERNEL_PIN.json).
 >
-> **This document is the human render of a machine spec.** The source of truth is [`specs/ecosystem-spec.json`](./ecosystem-spec.json) (`rapp-ecosystem-spec/1.0`). This Markdown is published **byte-identical** to two independent grail repos —
-> [`kody-w/rapp-god`](https://raw.githubusercontent.com/kody-w/rapp-god/main/api/v1/ecosystem-spec.json) and
-> [`kody-w/rapp-map`](https://raw.githubusercontent.com/kody-w/rapp-map/main/ecosystem-spec.json) — and rendered for a non-technical reader at the [RAPP-Bible](https://kody-w.github.io/RAPP-Bible/#specs).
-> Divergence between the two mirrors **is** drift; the agent's `verify` action sha256-compares them. This doc is **version-pinned to the JSON** (`1.0.0`) — if the JSON bumps, this bumps with it, in the same commit.
+> **Mirror disposition.** `specs/ecosystem-spec.json`, `kody-w/rapp-god`,
+> `kody-w/rapp-map`, and RAPP-Bible are generated or external mirrors that were
+> not regenerated or edited here. No immutable verified pin is recorded for
+> those external copies, and observed divergence means `rapp-god` must be
+> treated as non-authoritative.
 >
-> **Authority order** (when docs disagree, the higher wins): `MASTER_PLAN.md` → `CONSTITUTION.md` → spec-docs (`SPEC`/`skill`/`ECOSYSTEM`/`NEIGHBORHOOD_PROTOCOL`/`OSI`/`ESTATE_SPEC`) → vault (`Decisions`/`Architecture`) → code. This document is a spec-doc; it does not outrank the plan or the law.
+> The former local “authority order” is retired. Local plans, constitutions,
+> specs, vault notes, code, and ecosystem mirrors are subordinate to the exact
+> authority pin above.
+
+> **Whole-document disposition:** all remaining sections are preserved mirror
+> history. Their actions, tiers, installers, eggs, registries, and “shipped”
+> labels are not current instructions or claims.
 
 ---
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 ## 1 — What RAPP is
 
@@ -100,7 +117,7 @@ A planted RAPP organism is a stack. Each layer abstracts the one below it and ha
 |---|---|---|
 | **1** | **Substrate** | The physical layer — GitHub Pages + `raw.githubusercontent.com`, LAN, `file://`, sneakernet eggs. "Can these bytes get from here to there?" No identity, no schemas, no trust. |
 | **2** | **Identity** | The rappid layer — Eternity address, minted once, read forever. The address only; what you do with it is upper-layer. |
-| **3** | **Discovery** | Lineage + catalog — `parent_rappid` chain, `estate.json`, RAR, rapp-god/rapp-map. "Who exists, and how do I reach them?" |
+| **3** | **Discovery** | Historical application catalogs, including `rapp-god`/`rapp-map`; none is an authenticated RAPP/1 §13 registry. |
 | **4** | **Channels** | Transport — WebRTC tether, Issues, PRs, raw fetch (`NEIGHBORHOOD_PROTOCOL` §5). |
 | **5** | **Trust scope** | Session/auth — personal/neighborhood/public, collaborator-gated private doors, sealed channel (§8 AES-256-GCM). |
 | **6** | **Envelope** | Presentation — the egg cartridge family, the twin-chat envelope, the `\|\|\|VOICE\|\|\|` / `\|\|\|TWIN\|\|\|` slots. |
@@ -227,8 +244,9 @@ The audit covers hero / MMR / track-record / trade-card / pairing / export-egg /
 - **To-close (native):** `metropolis_browse`/`metropolis_list`, per-entry inspection, `metropolis_federation` (walk `federated_trackers[]`).
 - **Specialist-owned:** town→city auto-nesting growth (graft adds to `_metropolis.json`).
 
-### Registry Observatory (Rapp-God & Rapp-Map)
-- **Native:** rapp-god specs (`spec`/`refresh`), partial neuron mesh + drift watch (`ecosystem`/`find`).
+### Historical Registry Observatory (Rapp-God & Rapp-Map)
+- **Disposition:** divergent, non-authoritative external observations. Do not
+  use `spec`/`refresh` results as registry resolution or acceptance.
 - **To-close (native):** complete `neurons` mesh view, dedicated `drift_check`.
 - **Specialist-owned:** the ecosystem-wide `verify`/audit action.
 
@@ -319,7 +337,7 @@ The ecosystem is split across many small public repos; each houses one part. `ko
 | Cluster | Repos |
 |---|---|
 | **Kernel & install** | `RAPP` (species root: kernel + specs + curl\|bash front door), `rapp_kernel` (frozen DNA), `rapp-installer` (installer; canonical front door now in RAPP), `RAPP_Desktop`, `rapp-vscode-extension` |
-| **Identity & registry** | `rapp-god` (registry of every part + version; drift observatory; hosts this spec), `rapp-map` (which repo houses which part; hosts this spec; the neuron mesh), `RAR` (single-file agent registry), `rapp-static-apis` |
+| **Identity & registry** | Historical application catalogs (`rapp-god`, `rapp-map`, RAR); none is the required authenticated §13 registry |
 | **Stores & catalogs** | `RAPP_Store` (rapplications), `RAPP_Sense_Store` (senses), `rapp-egg-hub` (eggs) |
 | **Run a brainstem** | `vbrainstem` (browser Pyodide runtime), `rapp-brainstem-sdk` (headless `/chat`) |
 | **Channels & trust** | `rapp-sealed` (§8 codec), `rapp-kite` (operate kited twins), `rapp-kited-twin`, `rapp-doorman` (sealed-door), `rapp-neighborhood-protocol` (wire spec) |
@@ -340,13 +358,14 @@ The ecosystem is split across many small public repos; each houses one part. `ko
 | Leg | Holds | Source |
 |---|---|---|
 | **`rapp_agent.py`** | The executable contract — its action enum **is** the capability surface | `@rapp/rapp` in `kody-w/RAR` + `rapp_brainstem/agents/` |
-| **`rapp-god`** | This `ecosystem-spec.json` (machine) + `ECOSYSTEM_SPEC.md` (human) | `kody-w/rapp-god/api/v1/ecosystem-spec.json` |
-| **`rapp-map`** | Byte-identical `ecosystem-spec.json` + `ECOSYSTEM_SPEC.md` | `kody-w/rapp-map/ecosystem-spec.json` |
+| **`rapp-god`** | Divergent, non-authoritative external mirror; no accepted immutable pin | external owner action |
+| **`rapp-map`** | Non-authoritative external mirror; no accepted immutable pin | external owner action |
 | **`RAPP-Bible`** | The human-facing rendering of this spec — the one-source share | `kody-w/RAPP-Bible` |
 
 **The checks:**
 
-1. `sha256(rapp-god/ecosystem-spec.json) == sha256(rapp-map/ecosystem-spec.json)` — the two independent mirrors must match.
+1. External mirror equality is not established. Even equal hashes would prove
+   byte agreement only, not authority, freshness, or §13 acceptance.
 2. `rapp_agent.py` action enum **⊇** `ecosystem-spec.json.required_actions` — the agent implements at least every required action.
 3. `RAPP-Bible spec_version == ecosystem-spec.json.version` — the Bible is pinned to the spec it renders.
 4. Every `capability_domain` capability tagged **native** maps to a live action in the agent's enum.
@@ -360,4 +379,9 @@ The discipline is the point: this document, the machine JSON, the two mirror rep
 
 ---
 
-*This document is the human render of `specs/ecosystem-spec.json` (`rapp-ecosystem-spec/1.0`, version `1.0.0`). Published byte-identical to `kody-w/rapp-god` and `kody-w/rapp-map`; rendered for humans at the RAPP-Bible. Generated from the swarm-verified coverage audit (`verify-god-agent-coverage`) + `ECOSYSTEM_MAP.md` + `ECOSYSTEM.md` + `OSI.md` + the agent's embedded `ECOSYSTEM_PARTS`. To regenerate, summon the `ecosystem-sync` swarm.*
+*Historical provenance: this document once rendered
+`specs/ecosystem-spec.json` and claimed byte agreement with `rapp-god` and
+`rapp-map`. That claim is not current or authoritative. Generated/external
+mirrors remain for their owners to regenerate from immutable, verified pins.*
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

@@ -1,11 +1,22 @@
 ---
 title: The Kernel-as-God-SPEC
-status: published
+status: historical
 section: Architecture
-hook: The kernel repo's purpose isn't to be a runtime; it's to be the canonical SPEC repo every distro reads from. Implementations can live anywhere; the kernel's job is unification.
+hook: Historical kernel-as-spec framing, superseded by the external immutable RAPP/1 rev-5 authority pin.
 ---
 
 # The Kernel-as-God-SPEC
+
+> **SUPERSEDED authority framing — historical record only.** This repository is
+> not the “god SPEC” and `rapp-god` is non-authoritative. For canonicalization,
+> identity, frames, wire, eggs, registry, trust, and protocol evolution, follow
+> RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md). The standard is pinned to
+> commit `6723c7add2aed36bb68992fc71a56b0a4bd5ad81`; the grail is pinned by
+> [`KERNEL_PIN.json`](../../../KERNEL_PIN.json), never a moving branch.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** The kernel repo's purpose isn't to be a runtime; it's to be the canonical SPEC repo every distro reads from. Implementations can live anywhere; the kernel's job is unification.
 
@@ -13,7 +24,8 @@ hook: The kernel repo's purpose isn't to be a runtime; it's to be the canonical 
 
 After the [[2026-05-16 — Kernel-Distro Split]], `kody-w/RAPP` is no longer trying to be "the place where everything lives." Its job is now narrower and more durable:
 
-> **RAPP is the god SPEC repo for the kernel. All distros point here for documentation on what the kernel is and how it must behave.**
+> **Historical claim (retired):** RAPP was described as the god SPEC repo.
+> Current protocol authority is the immutable external RAPP/1 pin above.
 
 Practically: every distro — Rappter, future-minimal, future-research, future-enterprise — reads its kernel-level reference material from this one repo. The Constitution, the trilogy (MASTER_PLAN / HERO_USECASE / ECOSYSTEM), the law (ANTIPATTERNS / DEFINITION_OF_DONE), the spec (`pages/docs/SPEC.md`), the network protocol spec (`specs/SPEC.md`), the lexicon, the survival matrix, the kernel tree map, the vault.
 
@@ -37,7 +49,8 @@ The SPEC must be:
 
 - **Implementation-agnostic where possible.** Article XXXVIII.4 describes what the control plane must do, not what library it's built with.
 - **Versioned + dated when amended.** The Constitution's article-numbered structure is intentional. New behavior gets a new article or a dated amendment note.
-- **Federable.** Distros need to be able to read the SPEC at well-known URLs without auth (`raw.githubusercontent.com/kody-w/RAPP/main/CONSTITUTION.md` etc.). No private content; no rate-limited paths.
+- **Historical federability idea.** Moving raw URLs were once proposed for
+  reading local docs. They are not authority or verification paths.
 - **Adoption-engine-friendly.** The pitch (`pitch-playbook.html`), onboarding, and audience-facing pages stay with the SPEC because they recruit the people who'll build against the SPEC.
 
 ## Anti-patterns this prevents
@@ -53,3 +66,5 @@ The SPEC must be:
 - [[Mirror Spec]] — the byte-identical-to-grail discipline that anchors the SPEC
 - [[Engine, Not Experience]] — the founding stance compatible with this frame
 - [`pages/kernel.html`](../../kernel.html) — the unified entry into the SPEC
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

@@ -1,11 +1,21 @@
 ---
 title: Verifying Mirror Compliance
-status: published
+status: historical
 section: Process
 hook: The one-liner that confirms this kernel mirror is byte-identical to grail. Run it after any kernel-touching PR. "DRIFT" means restore from grail, not edit in place.
 ---
 
 # Verifying Mirror Compliance
+
+> **SUPERSEDED runbook — historical record only.** For canonicalization,
+> identity, frames, wire, eggs, registry, trust, and protocol evolution, follow
+> RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md). Current mirror verification is
+> against [`KERNEL_PIN.json`](../../../KERNEL_PIN.json) and immutable
+> `kody-w/rapp-installer@brainstem-v0.6.9`, never moving `main` or `latest`.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** The one-liner that confirms this kernel mirror is byte-identical to grail. Run it after any kernel-touching PR. "DRIFT" means restore from grail, not edit in place.
 
@@ -16,7 +26,7 @@ hook: The one-liner that confirms this kernel mirror is byte-identical to grail.
 ```bash
 #!/usr/bin/env bash
 set -e
-GRAIL_RAW="https://raw.githubusercontent.com/kody-w/rapp-installer/main"
+GRAIL_RAW="https://raw.githubusercontent.com/kody-w/rapp-installer/brainstem-v0.6.9"
 
 for f in rapp_brainstem/brainstem.py \
          rapp_brainstem/VERSION \
@@ -41,8 +51,10 @@ Three `OK` lines = compliant mirror. Any `DRIFT` line = the mirror has diverged 
 A `DRIFT` line means *the mirror's file is no longer byte-identical to grail's file at this path*. Three possible causes:
 
 1. **The mirror's file was edited.** Restore from grail: `curl -fsSL "$GRAIL_RAW/$f" -o "$f"` and commit.
-2. **Grail's file was updated.** Same restore command — pull grail's new version into the mirror. The mirror is *supposed* to track grail; if grail moved, the mirror moves too.
-3. **Both moved differently.** Restore from grail. The grail version always wins.
+2. **The immutable pin and a claimed upstream branch disagree.** The pin wins.
+   Do not follow the branch or mutate the three local frozen bytes.
+3. **A new grail version is proposed.** That requires an explicit authority
+   event and a new immutable pin; ordinary drift remediation cannot advance it.
 
 The restore command is `cp` (or `curl`), never `git revert`. Drift is a structural fact about file contents, not a git history fact.
 
@@ -87,3 +99,5 @@ Everything else is the mirror's prerogative (per Mirror Spec). The kernel mirror
 - [[The Stale Local Clone Trap]] — why the script reads from GitHub, not a local clone
 - [[Grail is GitHub, not local]] — the same lesson, stated as the rule
 - [`tests/mirror-drift.sh`](../../../tests/mirror-drift.sh) — the script
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

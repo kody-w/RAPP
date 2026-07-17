@@ -1,4 +1,4 @@
-# RAPP Ecosystem Map
+# Historical RAPP Ecosystem Map
 
 > **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
 > wire, eggs, registry, trust, and protocol evolution, follow
@@ -6,13 +6,13 @@
 > [`RAPP1_STATUS.md`](./RAPP1_STATUS.md). This map inventories product concepts
 > and migration work; it does not register protocol schemas or establish trust.
 
-> Current product-map synthesis of the RAPP ecosystem. **Start every session
-> here, then follow the authority links above.** Its
-> `rapp-ecosystem-map/1.0` label is application metadata, not a protocol
-> schema. If this map disagrees with the pinned RAPP/1 rev-5 authority, this
-> map is wrong.
->
-> *Human-facing companion: the [**Kernel hub**](https://kody-w.github.io/RAPP/pages/kernel.html) surfaces this map alongside the trilogy, the law, the specs, and the vault Reading Paths in one rendered page.*
+> **Whole-document disposition:** this map is dated product and migration
+> history. Do not start work here or follow its action, planting, browser,
+> catalog, hatching, relay, or external “god” paths. It is not current
+> navigation and its `rapp-ecosystem-map/1.0` label is not a protocol schema.
+> Begin only with the authority and status links above.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 ## How to read this
 
@@ -176,7 +176,7 @@ defining document cannot register it; registration follows RAPP/1 §13.
 | `rapp-twin-chat/1.0` | Legacy/application inter-twin adapter; not a RAPP wire form | historical NEIGHBORHOOD_PROTOCOL §6a | migration-only twin_agent.py `_chat` |
 | `rapp-twin-chat-response/1.0` | Legacy twin-chat reply wrapper | historical NEIGHBORHOOD_PROTOCOL §6e | migration-only twin_agent.py `_chat` |
 | `rapp-public-facets/1.0` | Granular permission gate (name + scope + description) | NEIGHBORHOOD_PROTOCOL §7 | card.json (operator-set) |
-| `rapp-twin-spec/1.0` | Soul Identity block contract | ANTIPATTERNS §4 | installer/plant.sh `write_soul_md` |
+| `rapp-twin-spec/1.0` | Historical soul identity block | ANTIPATTERNS §4 | retired `installer/plant.sh`; not a current producer |
 | `rapp-lineage-rollup/1.0` | Lineage tree aggregation result (avg/median/min/max MMR) | ECOSYSTEM §15 | agents/lineage_rollup_agent.py |
 | `rapp-species-leaderboard/1.0` | Global Herald → Immortal ladder | ECOSYSTEM §15 | agents/species_leaderboard_agent.py |
 | `rapp-proximity-match/1.0` | Geohash-prefix match result (Pizza Place layer) | ECOSYSTEM §15, HERO_USECASE §4 | agents/proximity_discovery_agent.py |
@@ -243,14 +243,14 @@ defining document cannot register it; registration follows RAPP/1 §13.
 | `rapp-super-rar/1.0` | Application content catalog across cubbies; not the RAPP/1 §13 registry | historical NEIGHBORHOOD_PROTOCOL §19 | legacy `@rapp/rapp` super_rar |
 | `rapp-payphone-dial/1.0` | Dark-door dialer — reach a private door's rappid on the public web with your own auth (404 to outsiders) | NEIGHBORHOOD_PROTOCOL §19 | pages/payphone.html |
 | `brainstem-egg/2.3-cubby` | Legacy cubby-cartridge proposal; not a RAPP/1 §9 variant | historical NEIGHBORHOOD_PROTOCOL §19 | migration inventory only |
-| `rapp-ecosystem-graph/1.0` | Repo relationship graph (nodes + typed edges) for cross-repo blast-radius traversal | kody-w/rapp-map/graph.json | tools/build_graph.py; `@rapp/drift` blast_radius |
+| `rapp-ecosystem-graph/1.0` | Historical repo graph observation | divergent external `rapp-map`; non-authoritative | historical generator |
 | `rapp-canon/1.0` | Application drift index; not structural authority or the signed §13 registry | (defined-by-emitter) | `@rapp/drift` observation |
 | `rapp-drift-report/1.0` | Cross-repo drift observation; cannot resolve or create RAPP authority | (defined-by-emitter) | `@rapp/drift` scan |
 | `rapp-drift-issue/1.0` | Drift-issue machine block — the traceable chain (drift → GitHub issue → PR → operator merge → close) | (defined-by-emitter) | `@rapp/drift` + `@rapp/drift_watcher` |
 | `rapp-rar-steward/1.0` | RAR steward report — catalog health, same-but-different merge clusters, noise/junk | (defined-by-emitter) | `@rapp/rar_steward` |
-| `rapp-neuron/1.0` | One file-specialist card — a file understood word-level: schemas declared, contracts, version strings, cross-refs, canonical phrases, drift_watch | kody-w/rapp-map NEURON_SWARM.md | build-ecosystem-neuron-mesh workflow |
-| `rapp-neuron-mesh/1.0` | The neuron mesh — every card assembled; the ecosystem's word-level index + drift-sensor set | kody-w/rapp-map/neurons.json | build-ecosystem-neuron-mesh |
-| `rapp-neuron-mesh-manifest/1.0` | Summon index — `summon_index[schema] → [surfaces]`; scopes a swarm to the neurons that matter | kody-w/rapp-map/neurons-manifest.json | build-ecosystem-neuron-mesh |
+| `rapp-neuron/1.0` | Historical file-specialist metadata | divergent external `rapp-map`; non-authoritative | historical workflow |
+| `rapp-neuron-mesh/1.0` | Historical word-level index | divergent external `rapp-map`; non-authoritative | historical workflow |
+| `rapp-neuron-mesh-manifest/1.0` | Historical summon index | divergent external `rapp-map`; non-authoritative | historical workflow |
 
 ---
 
@@ -320,12 +320,12 @@ defining document cannot register it; registration follows RAPP/1 §13.
 | `rapp_swarm/build.sh` | Vendor brainstem into _vendored/ | CLAUDE.md vendoring |
 | `worker/worker.js` | Cloudflare auth/proxy worker (Copilot device-code, chat proxy) | ECOSYSTEM §12 (External integrations) |
 | `installer/install.sh` | Install one-liner (sacred URL — Art. V) | CONSTITUTION Art. V, ANTIPATTERNS §2 |
-| `installer/plant.sh` | `write_rappid_json`, `write_soul_md`, `fetch_kernel`, `fetch_seed_agents` | ECOSYSTEM §13 |
+| `installer/plant.sh` | Retired/contained producer; no current planting CTA | Historical ECOSYSTEM §13 |
 | `installer/install.ps1` / `install.cmd` | Windows installers | CONSTITUTION Art. V |
 | `installer/azuredeploy.json` | ARM template (Tier 2 deploy) | CLAUDE.md Tier 2 |
 | `installer/MSFTAIBASMultiAgentCopilot_*.zip` | Tier 3 Copilot Studio bundle | CLAUDE.md Tier 3 |
 | `installer/shortcuts/protocol.md` | iOS Shortcuts URL/POST contract | ECOSYSTEM §4 (chat surfaces) |
-| `rapp_kernel/latest/` + `rapp_kernel/v/<version>/` | Frozen kernel snapshots (DNA archive) | vault Architecture/Signed Releases |
+| `rapp_kernel/latest/` + `rapp_kernel/v/<version>/` | Historical archive; `latest` is moving/divergent and non-authoritative. Current immutable grail pin is `kody-w/rapp-installer@brainstem-v0.6.9`. | `KERNEL_PIN.json` |
 | `rapp_kernel/manifest.json` | Kernel version catalog | rapp-kernel/1.1 |
 | `pages/about/anatomy.html` | Visual organism diagram | CLAUDE.md visual anatomy |
 | `pages/onboarding.html` | Visitor-facing onboarder (trust-building) | CLAUDE.md hero use case section |
@@ -348,7 +348,7 @@ defining document cannot register it; registration follows RAPP/1 §13.
 | `tests/features/F5-resurrection.sh` | Historical/retired positive test; exact bytes are quarantined as migration evidence. | ECOSYSTEM §15, Art. XXXIV.5 |
 | `tests/features/run.sh` | Feature suite master runner | (this doc) |
 | `tools/test_brainstem_server.py` | Lightweight HTTP server for federation tests | (test infra) |
-| `.github/workflows/plant-approved-place.yml` | Auto-plant approved place submissions | (CI) |
+| `.github/workflows/plant-approved-place.yml` | Disabled historical workflow; no authenticated replacement producer | `RAPP1_STATUS.md` |
 | `.github/prompts/write-agent.prompt.md` | AI prompt to author an agent | ECOSYSTEM §7 |
 
 ---
@@ -458,11 +458,11 @@ The most load-bearing section. Workflow trigger → pre-check (≤30s) → spec 
 | Call `/chat` from new code | Use the exact RAPP/1 §8 request and exact 200/422 responses; do not wrap it in a legacy twin-chat envelope | pinned RAPP/1 §8 |
 | Change protocol structure | Follow Constitution Articles II–IV and §13 registration; do not mint a schema in an application doc | pinned RAPP/1 + Constitution |
 | Use an existing schema | §5 row → defining doc column → read that section | the doc the row points at |
-| Operate on the WHOLE ecosystem (drift / audit / propagation) — word-level, all-encompassing | Summon the **neuron swarm**: load the mesh (rapp-map/neurons.json), summon the relevant file-specialists (manifest summon_index), fan out against their live files + drift_watch, loop, synthesize with the authority order. Reusable: `.claude/workflows/neuron-swarm.js` | kody-w/rapp-map NEURON_SWARM.md; `@rapp/drift` is the resolver |
-| Plant a PRIVATE cubby neighborhood (application collaborator gate) | Treat collaborator status as UI/content authorization only. Protocol interaction still uses exact §8 forms and §§10/13 trust; historical dark-door adapters do not replace either. | RAPP/1 §§8, 10, 13; product privacy docs |
-| Plant on GitHub (twin/neighborhood/etc.) | §14 (existing planted state), §3 primitives (rappid + door + card + tether + scope all present?), §5 `rapp-rar-index/1.0` (every plant auto-scaffolds rar/ via plant.sh::write_rar_index) | TEMPLATE.md, ECOSYSTEM §2 + §13; F7-rar-hotload.sh |
-| Hot-load a planted seed's participation kit | Treat the application index as discovery; verify integrity plus applicable §§10/13 trust before install | RAPP/1 §§10/13; legacy rar_loader_agent.py |
-| Plant a neighborhood ON TOP of an existing public repo (or dock multiple within one repo) | bond technique additive overlay; multi-neighborhood mode emits `docking` block — same fractal step as Dream Catcher (ECOSYSTEM §10) at neighborhood scope vs frame scope | rapp_brainstem/agents/graft_neighborhood_agent.py; F8; vault note `pages/vault/Decisions/2026-05-09 — Dream Catcher and Docking are the same operation.md` |
+| Audit ecosystem mirrors | Use exact immutable local pins. `rapp-god`, `rapp-map`, moving-main files, and their neuron metadata are non-authoritative/divergent observations, never resolver authority. | `RAPP1_AUTHORITY.json`; `RAPP1_STATUS.md` |
+| Historical private-cubby planting | Retired; no current producer or CTA. Collaborator status would remain application authorization only. | RAPP/1 §§8, 10, 13 |
+| Historical GitHub planting | Retired; do not run `plant.sh` or treat an application index as acceptance. | `RAPP1_STATUS.md` |
+| Historical hot-load | Retired; no current participation-kit install path. | RAPP/1 §§10/13 |
+| Historical graft/docking | Retired product design; no current overlay producer. | Preserved vault history |
 | Add an entry to ANY rar-shaped JSON registry without clobbering existing | universal additive-merge primitive — same dock property at the registry/list-of-dicts scope; supports `key_field` dedup; bond event log; works for `rar/index.json`, `_metropolis.json`, `members.json`, etc. | rapp_brainstem/agents/dock_agent.py; F9 |
 | Want to know if local + global ecosystem are still in sync (the FULL organism, not one half) | Run the Bond Pulse heartbeat — operator-mediated; pulses audit + classifies drift LOCAL→GLOBAL push (suggest Launch/Graft) vs GLOBAL→LOCAL pull (suggest RarLoader); records `kind="rhythm"` event; gracefully degrades when offline | rapp_brainstem/agents/bond_rhythm_agent.py; tools/ecosystem_audit.py; F10/F11/F12; vault note `pages/vault/Decisions/2026-05-09 — Bond Pulse — the on-going beat for the full organism.md` |
 | Discover a door candidate | Validate the §6 rappid, parse its initial self-location, then resolve current anchors/keys through the signed §13 registry. Raw files are untrusted transport. | RAPP/1 §§6, 10, 13 |
@@ -530,7 +530,9 @@ accept them forever.
 
 A planted organism's `soul.md` MUST include the spec-compliant `## Identity — read this every turn` block (per `rapp-twin-spec/1.0`). The block forbids the LLM from introducing itself as "RAPP", "an AI assistant", "your AI helper", "the brainstem", or any default platform branding.
 
-`installer/plant.sh::write_soul_md` writes the block by default. If you ever rewrite the soul template or add a new kind, the Identity block is non-negotiable.
+The former `installer/plant.sh::write_soul_md` implementation is retired. Any
+future producer must use current RAPP/1 identity and §13 trust rather than this
+application block.
 
 ### 5. NETWORK CALLS WITHOUT A LOCAL-FIRST FALLBACK
 
@@ -568,7 +570,11 @@ Severity: **P0** wire-incompatible · **P1** schema/field mismatch · **P2** doc
 
 ---
 
-## §14 — Live planted state (kody-w GitHub)
+## §14 — Historical external planted-state observation
+
+This section is non-authoritative and may be divergent. External repositories,
+moving branches, and live Pages URLs are not current claims, immutable pins, or
+accepted RAPP/1 inputs.
 
 > **External/application observation list.** These links and schema labels
 > report ecosystem state and require generator/owner follow-up; they do not
@@ -578,7 +584,8 @@ Severity: **P0** wire-incompatible · **P1** schema/field mismatch · **P2** doc
 > forms.
 
 - **Ant Farm (autonomous swarm scale demo):** [`kody-w/ant-farm`](https://github.com/kody-w/ant-farm) — `kind: "ant-farm"` neighborhood; every participant runs their own brainstem (or just feeds [skill.md](https://raw.githubusercontent.com/kody-w/ant-farm/main/skill.md) to any AI); pheromones are `ant-pheromone`-labeled GitHub Issues; gate at <https://kody-w.github.io/ant-farm/>
-- **Twin (application example):** [`kody-w/heimdall`](https://github.com/kody-w/heimdall) — front door + doorman, planted, GitHub Pages live
+- **Twin (historical application example):** `kody-w/heimdall` — external,
+  unverified, and not advertised as a live front door
 - **Neighborhood gate (private+public split):** [`kody-w/microsoft-se-team-neighborhood`](https://github.com/kody-w/microsoft-se-team-neighborhood) + companion `*-private`
 - **Neighborhood gate (public, autonomous):** [`kody-w/public-art-collective`](https://github.com/kody-w/public-art-collective)
 - **Templates:** [`kody-w/private-workspace-template`](https://github.com/kody-w/private-workspace-template), [`kody-w/braintrust-template`](https://github.com/kody-w/braintrust-template)
@@ -590,11 +597,16 @@ Severity: **P0** wire-incompatible · **P1** schema/field mismatch · **P2** doc
   [`kody-w/rapp-neighborhood-protocol`](https://github.com/kody-w/rapp-neighborhood-protocol)):
   - **Front-door template:** [`kody-w/rapp-vneighborhood`](https://github.com/kody-w/rapp-vneighborhood) — a public repo *is* the front door (`rapp-vneighborhood/1.0`); interchangeable relay (local ≡ kited ≡ cloud); `v` = swarm-capable; egg/import/fork portability
   - **Example neighborhoods:** [`kody-w/vneighborhood-design-studio`](https://github.com/kody-w/vneighborhood-design-studio), [`kody-w/vneighborhood-research-lab`](https://github.com/kody-w/vneighborhood-research-lab)
-- **Live social layer (apps on twin-chat, signed `rapp-commons-event/1.0`):** [`kody-w/rapp-commons`](https://github.com/kody-w/rapp-commons) (the global commons) + the **rapp-god-forum** (threaded), both served cloud-first by the resident, kited fallback
-- **The resident (permanent cloud relay):** [`kody-w/rapp-resident`](https://github.com/kody-w/rapp-resident) — Azure Function serving signed event rooms; reference deploy `https://rapp-resident-kw165843.azurewebsites.net/api` holds up the `commons` + `rapp-god-forum` rooms
+- **Historical social-layer concept:** `kody-w/rapp-commons` and
+  `rapp-god-forum`; no live link, cloud relay, or accepted event stream is
+  advertised.
+- **Historical resident:** former Azure relay concept; no operational endpoint
+  is claimed.
 - **RIONet (agent-built web):** [`kody-w/rionet`](https://github.com/kody-w/rionet) — rapp.robots.txt → rappbot → rappPageRank → RIO (`search:` / `rpage:`, markdown only)
 - **The kited spec & codec:** [`kody-w/rapp-sealed`](https://github.com/kody-w/rapp-sealed) — the sealed channel: AES-256-GCM codec + conformance vectors (`rapp-sealed/1.0`) · [`kody-w/rapp-kited-twin`](https://github.com/kody-w/rapp-kited-twin) — kited-twin visual identity (a neutral kite)
-- **God's-eye — registry & static APIs:** [`kody-w/rapp-god`](https://github.com/kody-w/rapp-god) — registry of every part *and every version*, content-addressed (drift observatory) · [`kody-w/rapp-static-apis`](https://github.com/kody-w/rapp-static-apis) — `rapp-static-api/1.0` (APIs on GitHub raw, no server; also hosts the **RAPP Twin §-profile** — `rapp-twin.profile.md`, composing the twin/federation/sealed stack; a §-profile distinct from the `rapp-twin/1.0` client schema) · [`kody-w/rapp-map`](https://github.com/kody-w/rapp-map) — the ecosystem index (which repo houses which part)
+- **Historical God's-eye observations:** `rapp-god`, `rapp-static-apis`, and
+  `rapp-map` are external, divergent, and non-authoritative. They are not a
+  §13 registry and must not be read from moving branches as canon.
 - **Run a brainstem:** [`kody-w/vbrainstem`](https://github.com/kody-w/vbrainstem) — browser-native runtime (Pyodide, no install) · [`kody-w/rapp-brainstem-sdk`](https://github.com/kody-w/rapp-brainstem-sdk) — headless SDK serving the `brainstem.py` `/chat` contract
 - **Operate & connect — the string + doorman:** [`kody-w/rapp-kite`](https://github.com/kody-w/rapp-kite) — the string (fly/operate kited twins) · [`kody-w/rapp-doorman`](https://github.com/kody-w/rapp-doorman) — the sealed-door skill · [`kody-w/rapp-claude-skills`](https://github.com/kody-w/rapp-claude-skills) — Claude Code skills for the RAPP pattern
 - **MCP — application adapter:** [`kody-w/rapp-mcp`](https://github.com/kody-w/rapp-mcp) may bridge host tools, but its RAPP boundary must map to the exact §8 `/chat` contract; its own profiles do not expand the wire.
@@ -604,7 +616,7 @@ Severity: **P0** wire-incompatible · **P1** schema/field mismatch · **P2** doc
 - **Platform & clients:** [`kody-w/RAPP_Desktop`](https://github.com/kody-w/RAPP_Desktop) — native desktop app · [`kody-w/rapp-vscode-extension`](https://github.com/kody-w/rapp-vscode-extension) — VS Code extension · [`kody-w/rapp-installer`](https://github.com/kody-w/rapp-installer) — the `curl | bash` installer front-door
 - **Memory & social:** [`kody-w/CommunityRAPP`](https://github.com/kody-w/CommunityRAPP) — RAPP Hippocampus (persistent memory, local-first → Azure) · [`kody-w/rappterbook`](https://github.com/kody-w/rappterbook) · [`kody-w/rappterbook-commons`](https://github.com/kody-w/rappterbook-commons) — social network for AI agents (rebuilt on the signed commons)
 - **More neighborhood examples:** [`kody-w/neighborhood-example`](https://github.com/kody-w/neighborhood-example) · [`kody-w/RAPP-Network`](https://github.com/kody-w/RAPP-Network) — public neighborhood instances
-- **Metropolis tracker (live):** https://kody-w.github.io/RAPP/metropolis/
+- **Metropolis tracker:** retired historical application surface; no live CTA
 
 ---
 
@@ -663,7 +675,7 @@ Common-law trademark (not USPTO-registered). **Permitted without permission:** r
 | `kody-w/RAPP` repo deleted | Already-installed brainstems; all planted neighborhoods (own repos); install one-liner needs mirror | tests/scenarios/17-survival.sh |
 | GitHub Pages down | Everything except gate UIs (agents via `raw.githubusercontent.com`) | manual |
 | `raw.githubusercontent.com` down | Cached state via `cachedGhJson` (📡 stale pill) | `cachedGhJson` test in tests/run-tests.mjs |
-| GitHub entirely offline | Live WebRTC tethers; cached subscriptions; file:// local subscriptions | tests/scenarios/13-charizard-in-the-woods.sh + 01 |
+| GitHub entirely offline | Historical WebRTC/cache claim; no current survival guarantee | retired scenario evidence |
 | Operator's brainstem dies | Recovery requires a valid §9 egg plus verified §§6/10/13 identity continuity; current blockers remain in `RAPP1_STATUS.md` | tests are product evidence only |
 | Internet entirely down | Local-only neighborhoods; cached state; Dream Catcher reconciles when back | tests/scenarios/01 + 15 |
 
@@ -684,3 +696,5 @@ Common-law trademark (not USPTO-registered). **Permitted without permission:** r
 - **Add a row to §11 the first time you see Claude (or yourself) drift on a given trigger.** The map's job is to catch the next miss.
 
 *Map first published 2026-05-08. Maintained at repo root as a peer of `MASTER_PLAN.md`.*
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

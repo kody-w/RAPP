@@ -69,7 +69,14 @@ if (manifestPaths.size && [...manifestPaths].every((p) => filesystemPaths.has(p)
 
 // ── 2. Frontmatter sanity ───────────────────────────────────────────────────
 
-const VALID_STATUSES = new Set(['stub', 'published', 'living', 'draft', 'shipped']);
+const VALID_STATUSES = new Set([
+  'stub',
+  'published',
+  'living',
+  'draft',
+  'shipped',
+  'historical',
+]);
 const titleByPath = new Map();
 const bodyByPath = new Map();
 
@@ -82,7 +89,7 @@ for (const f of mdFiles) {
     warn(`${rel}: frontmatter has no title`);
   }
   if (fm.meta.status && !VALID_STATUSES.has(fm.meta.status)) {
-    fail(`${rel}: invalid status "${fm.meta.status}" (must be stub/published/living)`);
+    fail(`${rel}: invalid status "${fm.meta.status}"`);
   }
   // Optional: session pointer fields. We don't require them anywhere, but if a
   // note declares them they must be well-formed so future Claude / future

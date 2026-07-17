@@ -7,6 +7,27 @@
 > protocol. The `KERNEL_PIN.json` bytes from
 > `kody-w/rapp-installer@brainstem-v0.6.9` are read-only.
 
+## Current instructions
+
+- Treat this checkout as experimental source, not a shipped three-tier
+  platform. Azure, Copilot Studio, browser UI, installer, catalog, Shortcut,
+  planting, and legacy egg/hatch paths are retired or pre-acceptance.
+- Never edit the immutable grail bytes, prepared cave installer subtree,
+  archives, generated external mirrors, or owner-authorized identity/trust
+  records.
+- The target-owned loopback façade is `127.0.0.1:7073`. Its §8 request is
+  required string `user_input` plus optional strings `session_id` and
+  `idempotency_key`; success is exactly `response`, `agent_logs` (array), and
+  `session_id`; refusal is HTTP 422 with nested `error.code` and `error.step`.
+  Voice and Twin derive locally from `response` and add no wire fields.
+- Run `python3 tests/run_rapp1_conformance.py` for the authoritative
+  structural/pre-acceptance gate. A pass does not close the owner-action
+  blockers in `RAPP1_STATUS.md`.
+
+## Historical implementation guide (superseded)
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
+
 ## Architecture
 
 RAPP Brainstem is a progressive AI agent platform using a biological metaphor (see `CONSTITUTION.md` for architectural principles):
@@ -141,3 +162,5 @@ class MyAgent(BasicAgent):
   state saved to `~/.config/brainstem/state.json`. It is not a RAPP agent or
   protocol capability.
 - **Single-file server**: All server logic lives in `brainstem.py` — auth, routing, LLM calls, agent orchestration. Keep it that way.
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

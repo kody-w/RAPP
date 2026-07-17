@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RAPP — Roadmap</title>
-<meta name="description" content="What's next for RAPP. Near-term, mid-term, and the longer horizon.">
+<title>RAPP — Historical Roadmap</title>
+<meta name="description" content="Superseded 2026-05 planning record; no item is a current shipment or commitment.">
 <meta property="og:title" content="RAPP — Roadmap">
-<meta property="og:description" content="What's next for RAPP. Near-term, mid-term, and the longer horizon.">
+<meta property="og:description" content="Historical roadmap; not a current product or release commitment.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://kody-w.github.io/RAPP/pages/release/roadmap.html">
 <link rel="canonical" href="https://kody-w.github.io/RAPP/pages/release/roadmap.html">
@@ -97,6 +97,12 @@
 </style>
 </head>
 <body>
+<!-- RAPP1-HISTORICAL-SECTION-START -->
+<aside role="note" style="max-width:1100px;margin:16px auto;padding:12px 18px;border:1px solid currentColor">
+  <strong>Historical roadmap.</strong> Current RAPP/1 rev-5 claims follow
+  <a href="../../RAPP1_AUTHORITY.json">RAPP1_AUTHORITY.json</a> and
+  <a href="../../RAPP1_STATUS.md">RAPP1_STATUS.md</a>.
+</aside>
 <div id="site-header"></div>
 <header>
   <nav class="nav">
@@ -118,11 +124,10 @@
 <main>
   <h1>Roadmap</h1>
   <p class="subtitle">
-    Living document. <em>Now</em> is what's actively in flight; <em>Next</em>
-    is on deck for the coming weeks; <em>Later</em> is the platform's
-    longer horizon. Updated as user feedback lands —
-    <a href="https://github.com/kody-w/RAPP/issues">open an issue</a> to
-    push something into "Next."
+    <strong>Historical roadmap snapshot (superseded).</strong> “Now,” “Next,”
+    and “Later” below preserve a 2026-05-02 planning record. None is a current
+    shipment, operational claim, or commitment. Tier 2, browser, egg, and
+    installer items are retired or require new acceptance.
   </p>
 
   <div class="column">
@@ -230,8 +235,8 @@
         <h3>Tier 3: Copilot Studio bundle output <span class="chip plan">plan</span></h3>
         <p>Stabilize the Power-Automate-driven guid routing pattern.
           Consider a <code>swarm_factory --target=copilot_studio</code> mode
-          that emits a Power Platform solution bundle directly. Tier 3
-          install artifact already ships in <code>installer/</code>.</p>
+          that emits a Power Platform solution bundle directly. The artifact
+          mentioned by this historical plan no longer ships.</p>
       </div>
 
       <div class="item">
@@ -254,23 +259,24 @@
   <section class="principles">
     <h2>Principles the roadmap stays faithful to</h2>
     <ul>
-      <li><strong>The one-liner stays sacred.</strong> Any change must survive <code>curl … | bash</code> on a fresh machine (Article V). The 2,219 → 186 line cut respected this — same URL, smaller contents.</li>
+      <li><strong>Retired installer principle.</strong> The former one-liner is not a current distribution path.</li>
       <li><strong>brainstem.py stays sacred.</strong> Features go in <code>agents/</code> or <code>utils/reserved_agents/</code>, not in the engine (Article XXXIII).</li>
       <li><strong>Engine, not experience.</strong> The kernel is infrastructure; UI / workflows / opinions ship as agents and organs that any user can replace.</li>
-      <li><strong>Three tiers, one model.</strong> An agent written on a laptop runs unchanged in the cloud and in Copilot Studio (Article II / Article X).</li>
-      <li><strong>Versions are rollback points.</strong> Every release is tagged and immutable. <code>BRAINSTEM_VERSION=x.y.z curl … | bash</code> restores any past version byte-for-byte (Article VIII).</li>
-      <li><strong>Local installs are organisms.</strong> Every brainstem on every machine has a perpetual rappid; bonding cycle preserves identity through every kernel upgrade (Articles XXXIII, XXXVII).</li>
+      <li><strong>Retired tier principle.</strong> Cloud and Copilot Studio parity is not currently shipped.</li>
+      <li><strong>Historical tags remain evidence.</strong> No installer rollback command is current.</li>
+      <li><strong>Historical organism model.</strong> No current install or authenticated egg lifecycle is claimed.</li>
       <li><strong>Lifecycle is conversational.</strong> Snapshots, upgrades, and recovery are LLM-mediated through the lifecycle organ — not pre-flight bash, not memorized CLI commands.</li>
     </ul>
   </section>
 
   <footer>
-    Living document — last updated 2026-05-02. Have feedback?
+    Historical snapshot — last updated 2026-05-02. Have feedback?
     <a href="https://github.com/kody-w/RAPP/issues">Open an issue on GitHub.</a>
-    See <a href="./release-notes.html">what shipped recently</a>.
+    See <a href="./release-notes.html">the historical release record</a>.
   </footer>
 </main>
 <div id="site-footer"></div>
 <script src="../_site/js/site.js" defer></script>
+<!-- RAPP1-HISTORICAL-SECTION-END -->
 </body>
 </html>

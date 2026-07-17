@@ -1,10 +1,17 @@
-# RAPP OSI — the AI stack as 7 layers
+# Historical RAPP OSI Teaching Model
 
 > **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
 > wire, eggs, registry, trust, and protocol evolution, follow
 > [`RAPP1_AUTHORITY.json`](./RAPP1_AUTHORITY.json) and
 > [`RAPP1_STATUS.md`](./RAPP1_STATUS.md). RAPP/1's five normative layers
 > supersede incompatible schemas in this older seven-layer teaching model.
+
+> **Whole-document disposition:** the implementations, live catalogs,
+> browsers, WebRTC carrier, cloud tiers, installers, and test claims below are
+> dated architecture history. They do not describe shipped current surfaces.
+> Use only the five normative layers and exact contracts in RAPP/1 rev-5.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > A planted RAPP organism is a stack. Each layer abstracts the one below it. The agent at the top doesn't know whether the bytes it reads came from a local file or a peer's GitHub Pages — same way a browser doesn't know if its TCP segments rode Ethernet, Wi-Fi, or LTE. **This document maps the OSI model onto RAPP's primitives so every layer has a defining schema, an implementation, and a test.**
 >
@@ -348,3 +355,5 @@ The runner prints a green/red matrix: rows are layers, columns are scales (agent
 
 *Application document metadata: `rapp-osi/1.0`. This label may track revisions
 to the teaching model; it does not version or register RAPP protocol.*
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

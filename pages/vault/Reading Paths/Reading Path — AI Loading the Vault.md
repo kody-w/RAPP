@@ -1,11 +1,21 @@
 ---
 title: Reading Path — AI Loading the Vault
-status: published
+status: historical
 section: Reading Paths
 hook: For an AI that's been handed the exported vault and needs to understand the platform from scratch. ~45 minutes. Optimizes for grokking the kernel/distro split + the canonical SPEC + the operational discipline.
 ---
 
 # Reading Path — AI Loading the Vault
+
+> **Historical reading path.** Its mirror/god-spec sequence is retained to
+> explain prior architecture, not current authority. For canonicalization,
+> identity, frames, wire, eggs, registry, trust, and protocol evolution, follow
+> RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md). Read the immutable authority
+> and [`KERNEL_PIN.json`](../../../KERNEL_PIN.json) before any linked history.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** For an AI that's been handed the exported vault and needs to understand the platform from scratch. ~45 minutes. Optimizes for grokking the kernel/distro split + the canonical SPEC + the operational discipline.
 
@@ -23,11 +33,14 @@ Read in order. Each links to others; if you go down a tangent, return here when 
 
 ### 1. [[The Kernel-as-God-SPEC]]
 
-The framing that explains why this repo exists. The kernel is the canonical SPEC; distros are implementations that compose onto it. Everything else in the vault is in service of this distinction. *(~3 min)*
+Historical framing for why this repo once called itself the canonical SPEC.
+That claim is superseded by the external immutable RAPP/1 pin. *(~3 min)*
 
 ### 2. [[Mirror Spec]]
 
-The byte-identical-to-grail discipline. Three sacred files. The drift-check one-liner. This is the technical contract that makes "this repo is a mirror of grail" enforceable. *(~5 min)*
+Historical mirror rationale. For current verification, use the three exact
+hashes at `kody-w/rapp-installer@brainstem-v0.6.9` recorded in
+`KERNEL_PIN.json`, never a moving branch. *(~5 min)*
 
 ### 3. [[One Kernel, Many Distros]]
 
@@ -96,3 +109,5 @@ If a question would require you to:
 - [[The Kernel-as-God-SPEC]] — start of this path
 - [[Mirror Spec]] — the technical contract
 - [[One Kernel, Many Distros]] — the manifesto
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

@@ -6,7 +6,9 @@
 > [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md). The older local specs are either
 > product references or explicitly superseded history.
 
-> **Browsing for the right doc?** The [**Kernel hub**](../kernel.html) surfaces every spec here alongside the trilogy, the law, and the vault Reading Paths — useful when you don't yet know whether your question is a spec question, a vault question, or a governance question.
+> **Current navigation:** begin with the authority and status links above.
+> The Kernel hub, roadmaps, SDK, onboarding files, and reading paths are
+> historical product context, not operational guidance.
 
 Long-form, stable documents that aren't the catalog card (`README.md`)
 or running code. The kind of file you read once to understand a
@@ -17,11 +19,11 @@ contract, not the kind you grep daily.
 | File | What |
 |---|---|
 | [`SPEC.md`](./SPEC.md) | Superseded local v1 wire history; current protocol authority is pinned RAPP/1 rev-5 |
-| [`ROADMAP.md`](./ROADMAP.md) | Product roadmap and dated release history, subordinate to RAPP/1 |
+| [`ROADMAP.md`](./ROADMAP.md) | Historical product roadmap and release ledger |
 | [`AGENTS.md`](./AGENTS.md) | Guidance to AI assistants editing this repo (Cursor, Codex, etc.) |
-| [`VERSIONS.md`](./VERSIONS.md) | Brainstem release tag history and rollback discipline |
-| [`skill.md`](./skill.md) | Historically named, non-runtime host-onboarding document; RAPP capabilities remain agents |
-| [`rapplication-sdk.md`](./rapplication-sdk.md) | SDK-shaped reference for building rapplications |
+| [`VERSIONS.md`](./VERSIONS.md) | Historical tags; immutable grail pin policy |
+| [`skill.md`](./skill.md) | Retired host-onboarding record; do not execute |
+| [`rapplication-sdk.md`](./rapplication-sdk.md) | Historical SDK and distribution design |
 
 > Note: [`CONSTITUTION.md`](../../CONSTITUTION.md) is at repo root, not here — it's a peer of `README.md` because governance is part of the catalog card. See Article XVI.
 

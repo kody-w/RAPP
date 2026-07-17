@@ -1,4 +1,11 @@
-# Front Gate Trio — QR + Holocard + Incantation (Mandatory)
+# Historical Front Gate Trio — QR + Holocard + Incantation
+
+> **SUPERSEDED DOCUMENT — DO NOT DEPLOY THIS SNIPPET.** This page preserves a
+> pre-RAPP/1 product convention. No browser tether, public payphone, planted
+> neighborhood, Commons sample, or accepted invite is currently shipped.
+> A future QR surface may carry only a fully validated RAPP/1 §9 `invite`
+> accepted through an authenticated §13 registry. The source URL itself is not
+> identity, proof, or trust.
 
 > **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
 > wire, eggs, registry, trust, and protocol evolution, follow
@@ -6,14 +13,16 @@
 > [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md). A QR invite is current only when
 > it is the signed RAPP/1 §9 `invite` variant accepted through §13 trust.
 
-**Status:** product front-gate convention; protocol acceptance remains RAPP/1.
+**Status:** retired design history; protocol acceptance remains RAPP/1.
 **Application metadata:** `rapp-front-gate-qr/1.0` (QR) +
 `rapp-card/1.1.2` (holocard) +
 `rapp-front-gate-incantation/1.0` (incantation). These are not RAPP protocol
 schemas.
 **Spec layer:** ECOSYSTEM_MAP §6 (Implementation map) — bound under Article XLVII (substrate-agnostic federation) and Article LI (front-gate mandates).
 
-## Three summoning surfaces, one front gate
+<!-- RAPP1-HISTORICAL-SECTION-START -->
+
+## Historical design: three summoning surfaces, one front gate
 
 Every planted neighborhood (and operator twin) front gate surfaces THREE redundant ways to dial in:
 
@@ -137,15 +146,15 @@ A minimum-viable conforming neighborhood `index.html`:
   <script>(function(){ /* ... same as snippet above ... */ })();</script>
 
   <p>
-    Open any RAPP tether
-    (<a href="https://kody-w.github.io/RAPP/pages/tether.html">public payphone</a>)
-    and scan the QR, or paste the URL it encodes into the tether's Paste mode.
+    The retired design used pages/tether.html as a public payphone and asked
+    visitors to scan the QR or paste its URL. No such live CTA is current.
   </p>
 </body>
 </html>
 ```
 
-The richer commons example at `kody-w/rapp-commons/index.html` adds branding, step-by-step join flow, member counters, and a town-square coordinate explainer — but the *only* mandatory piece is the QR.
+The former Commons sample added branding, a join flow, member counters, and a
+town-square explainer. It is not a current sample or download target.
 
 ---
 
@@ -160,7 +169,8 @@ Any tether that claims to dial neighborhoods MUST handle a scanned QR whose payl
    as authenticated invite acceptance.
 3. **A bare URL with `?neighborhood=<URL>` or `?egg=<URL>` query params** — extract the param and resolve as above.
 
-The `tether.html` at `kody-w/RAPP/pages/tether.html` implements all three (see `setNeighborhoodUrl` and `resolveNeighborhoodUrl` in that file). Other tethers should match.
+The retired `pages/tether.html` experiment attempted all three. It is not a
+reference implementation and other clients must not copy its contract.
 
 ---
 
@@ -188,7 +198,7 @@ The federation roll-up's lint pass (planned) will flag non-conforming gates with
 
 ---
 
-## Migration for existing planted neighborhoods
+## Historical migration procedure (do not execute)
 
 If you planted a neighborhood before 2026-05-11 without a front-gate QR:
 
@@ -197,3 +207,5 @@ If you planted a neighborhood before 2026-05-11 without a front-gate QR:
 3. Wait for GitHub Pages to rebuild.
 
 Done. No other changes required — the snippet auto-detects your deploy URL.
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

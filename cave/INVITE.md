@@ -1,5 +1,14 @@
 # 🦇 Joining the RAPP Cave — the public way
 
+> **No cave bootstrap or installer download is current.** For
+> canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+> evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../RAPP1_STATUS.md). The prepared installer subtree is
+> inert history and is not an acceptance path.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
+
 No invitation, no token, no waiting. The cave is **public** — you can pull
 everything in it with plain `curl`, and you become a member by forking
 [`kody-w/RAPP`](https://github.com/kody-w/RAPP) and opening a PR. (Its private
@@ -7,22 +16,15 @@ sibling, the Batcave, hands you one secret file person-to-person; the cave hands
 you nothing — it's already open.)
 
 ## What you need
-1. A running brainstem — install with the one-liner if you don't have one:
-   ```bash
-   curl -fsSL https://kody-w.github.io/RAPP/cave/rapplications/rapp-installer/bootstrap.sh | bash
-   ```
-   (or the classic installer: `curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash`)
-2. The one agent — the **public, generic** participation agent. There is no
-   private "edition" and no hidden door; the door is just the public URL:
-   ```bash
-   curl -fsSL "https://raw.githubusercontent.com/kody-w/RAPP/main/cave/agents/rapp_agent.py" \
-     -o <your-brainstem>/agents/rapp_agent.py
-   ```
-   Drop it in your brainstem's `agents/` dir as `rapp_agent.py`. No restart
-   needed — agents reload every request.
+1. A separately obtained, explicitly evaluated host. This document does not
+   provide an installer; the former cave and classic one-liners are retired.
+2. A participation adapter accepted through current trust policy. The former
+   moving-branch `rapp_agent.py` download is removed; a public URL or hash in an
+   unsigned cave catalog is not sufficient acceptance.
 
    *(GitHub CLI signed in as you — `gh auth login` — is only needed to **push** a
-   PR, not to browse or pull. Consuming the cave needs no auth at all.)*
+   PR, not to browse historical public content. Public read access is not
+   protocol trust.)*
 
 ## Join (natural language — the agent guides you)
 Open your brainstem chat and say:
@@ -42,30 +44,33 @@ Just want to *browse*? Skip all of it:
 
 > **"Use the rapp agent to browse the cave at kody-w/RAPP — who's here and what are they cooking?"**
 
-## Once you're in — five moves
-| Say | What it does |
+## Retired command vocabulary
+The following phrases are historical UX notes. No current cave agent, loader,
+stashing, egg, or hatch action is offered.
+
+| Former phrase | Historical intent |
 |---|---|
-| "browse the cave — who's here and what are they cooking?" | lists every cubby |
-| "search the super-rar for X" | content-aware search across EVERYTHING in all cubbies |
-| "load <member>'s agents into my brainstem" | streams them in **git-invisibly** (never committable to your grail) |
-| "stash this file in my cubby" / "show and tell" | share your work (secrets auto-refused) |
-| "egg my cubby" / "hatch this egg into my cubby" | round-trip organisms local ↔ cave |
+| "browse the cave — who's here and what are they cooking?" | inspected static historical files |
+| "search the super-rar for X" | searched an unauthenticated generated index |
+| "load <member>'s agents into my brainstem" | retired direct loading |
+| "stash this file in my cubby" / "show and tell" | retired write workflow |
+| "egg my cubby" / "hatch this egg into my cubby" | retired legacy cartridge round trip |
 
 ## Inviting the next person
-There's nothing to hand over — **just share the link.** Anyone can browse and
-pull, no auth:
+The public link exposes static historical/application content only. It is not
+an invite, catalog, pull, install, or acceptance endpoint:
 
 > https://kody-w.github.io/RAPP/cave/
 
-To contribute, they fork `kody-w/RAPP` and open a PR (the rapp agent does it for
-them: *"join the cave at kody-w/RAPP and set up my cubby"*). The door is the
-public URL; there is no secret to leak, because the cave keeps none.
+Repository contributions use ordinary fork-and-PR review. No agent-driven join
+or cubby-creation action is currently offered.
 
 ---
 ### Browse without installing anything
 The cave is a normal GitHub Pages site. Hand anyone the URL —
 <https://kody-w.github.io/RAPP/cave/> — and they get the live cubby gallery in a
-browser, the hatch one-liner, and every rapplication, over plain HTTPS. For
-scripts, the public raw base is
-`https://raw.githubusercontent.com/kody-w/RAPP/main/cave`. No QR, no payphone, no
-dial tone — the address *is* the access, because the cave is open.
+browser as historical/application content over plain HTTPS. It does not expose
+a hatch one-liner or current rapplication download catalog. No QR, payphone, or
+raw moving-branch URL establishes RAPP/1 acceptance.
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

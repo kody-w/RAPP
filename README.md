@@ -1,18 +1,30 @@
 # RAPP
 
-A local-first AI agent server. Single-file Python agents, no API keys — uses your existing GitHub Copilot OAuth as the LLM backend. Drops in your home directory or any project repo via one curl pipe.
+This repository is an experimental source checkout, not a currently shipped
+installer or hosted product. The historical port-7071 application remains
+available for source study, while the RAPP/1 façade is a local,
+pre-acceptance boundary at `127.0.0.1:7073`. No public one-line install,
+browser brainstem, Tier 2 service, downloadable egg catalog, or Shortcut is
+currently offered.
 
-```bash
-curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash
-```
+> **Historical strategy:** [The Brainstem Mandate](./BRAINSTEM_MANDATE.md)
+> preserves an earlier product direction. It is not current onboarding.
 
-Brainstem comes up at `http://localhost:7071`. One GitHub account with Copilot access is the only dependency. No OpenAI/Anthropic key. No cloud account. No enterprise gate.
+> **Protocol status: [NOT YET FULLY RAPP/1 CONFORMANT](./RAPP1_STATUS.md).**
+> This target structurally pins [RAPP/1 rev-5](./RAPP1_AUTHORITY.json), but the
+> pin is not an authenticated §13 registry. For canonicalization, identity,
+> frame, wire, egg, registry, trust, and evolution rules, those two files
+> supersede older local documentation. Owner-signed registry, anchor,
+> re-anchor, invite, and external-mirror work remains.
+> The authority commit is
+> `6723c7add2aed36bb68992fc71a56b0a4bd5ad81`; kernel evidence is fixed by
+> [`KERNEL_PIN.json`](./KERNEL_PIN.json) at
+> `kody-w/rapp-installer@brainstem-v0.6.9`. `rapp-god` and moving branches are
+> divergent, non-authoritative history.
 
-> **The platform stance:** [**The Brainstem Mandate**](./BRAINSTEM_MANDATE.md) — the foundational directive.  *The brainstem is the platform surface.  Build agents.*  Read it first; everything else assumes it.
-
-> **Protocol status: [NOT YET FULLY RAPP/1 CONFORMANT](./RAPP1_STATUS.md).** This target structurally pins [RAPP/1 rev-5](./RAPP1_AUTHORITY.json), but the pin is not an authenticated §13 registry. Owner-signed registry, anchor, re-anchor, invite, and external-mirror work remains.
-
-> **First-time visitor?** Read the [status](./RAPP1_STATUS.md) and [authority pin](./RAPP1_AUTHORITY.json) first, then use the **[Kernel hub](https://kody-w.github.io/RAPP/pages/kernel.html)** for current and historical context.
+> **First-time visitor?** Read the [status](./RAPP1_STATUS.md) and
+> [authority pin](./RAPP1_AUTHORITY.json). Other hubs, trees, and vault paths
+> are historical context, not current operational navigation.
 
 ## What an "agent" is here
 
@@ -39,63 +51,58 @@ class WeatherAgent(BasicAgent):
         return f"It's sunny in {kwargs['city']}."
 ```
 
-Drop that file in `agents/`, it auto-discovers on the next request. The `metadata` is OpenAI function-calling schema; the LLM decides when to invoke `perform()`. No registration step. No build step. No SDK to import.
+In a source-run historical port-7071 application, dropping that file in
+`agents/` makes it discoverable on a later request. This example describes the
+application internals; it is not an installation or RAPP/1 wire contract.
 
 ## Why it might be interesting
 
-- **Every install is a digital organism.** Your `~/.brainstem/` has its own [rappid identity](https://github.com/kody-w/RAPP/blob/main/pages/vault/Architecture/Rappid.md), its own personality (`soul.md`), its own memory (`.brainstem_data/`), and a lineage log (`bonds.json`) of every kernel evolution it has lived through. The kernel is just the runtime; **the organism evolves under the kernel, not the other way around.** Re-run the one-liner → the bond cycle eggs your organism, overlays the new kernel, hatches you back. Same identity, every customization preserved. ([Visual anatomy diagram](https://kody-w.github.io/RAPP/pages/about/anatomy.html).)
-- **Portable cartridges (legacy implementation under migration).** Existing `brainstem egg` / `brainstem hatch` paths implement historical `brainstem-egg/2.x` formats. They remain operational inputs, but the current authority is the RAPP/1 §9 `schema:"rapp/1-egg"` family; this target does not yet claim conformant or authenticated egg output.
-- **Tethered vBrainstem (live multi-participant tab).** [`pages/vbrainstem.html`](https://kody-w.github.io/RAPP/pages/vbrainstem.html) — open on Mac, scan the QR with your phone, and both screens stay synced over WebRTC. Its existing `brainstem-egg/2.3-session` export is a historical format pending migration to RAPP/1 §9, not the current egg authority.
-- **Single-file agent contract.** One file = one class = one `metadata` = one `perform()`. Reload-on-disk every request, so you edit and test without restarting the server.
-- **GitHub Copilot as the LLM backend.** Exchanges your `gh auth` token for short-lived Copilot API tokens cached in `~/.brainstem/`. No new credentials to manage.
-- **Same file runs on three tiers.** Local Flask server (this repo), Azure Functions deployment in `rapp_swarm/`, and a Cloudflare worker that proxies into Microsoft Copilot Studio in `worker/`. The `*_agent.py` file is the contract; the engine ports.
-- **Project-local install mode.** `curl ... | bash -s -- --here` drops the brainstem into `./.brainstem/` in the current directory, picks a free port (7072+), writes a self-contained `start.sh`, and adds itself to the project's `.gitignore`. Runs alongside your global install.
-- **Cloud UI flag.** Settings panel has a "Cloud UI" toggle that switches the page from the local `index.html` to the live GitHub Pages copy, tethered back to localhost. Lets you iterate on the static UI by pushing to `main` without re-running the install one-liner.
-- **Agent-aware install handshake.** Setting `RAPP_INSTALL_ASSIST=1` makes the installer print a structured prompt instead of installing — so an LLM running the one-liner on a user's behalf can ask global vs. local before committing. See `skill.md`.
+- **Local source research.** The repository preserves the port-7071 Flask
+  application and its single-file agent model for inspection and development.
+- **Legacy cartridges are retired.** Historical `brainstem egg` / `brainstem
+  hatch` paths and `brainstem-egg/2.x` artifacts are migration evidence, not
+  operational inputs or current output. The only current egg authority is
+  RAPP/1 §9; this target has no authenticated egg release.
+- **Browser and tether demonstrations are retired.** Their source and dated
+  narratives remain historical evidence. They are not shipped RAPP/1 surfaces.
+- **Single-file source contract.** The contained application model uses one
+  file, one class, one `metadata`, and one `perform()`; this is not a
+  distribution or protocol promise.
+- **Historical Copilot adapter.** Contained source includes a GitHub/Copilot
+  token exchange. It is not advertised here as an operational hosted backend.
+- **No shipped tiers.** Tier 1/2/3, Azure, Cloudflare, Copilot Studio, project-local
+  installers, Cloud UI, and install-assist narratives are retired or
+  pre-acceptance artifacts. They are not built, shipped, or operational.
 - **About 1,100 lines of Flask** (`rapp_brainstem/brainstem.py`). The whole engine is one file you can read in an afternoon.
 
-## The federation
+## Historical external references
 
 The platform is three sibling repos plus a Pokédex:
 
 | Repo | Holds | Role |
 |---|---|---|
-| [`kody-w/RAPP`](https://github.com/kody-w/RAPP) (this repo) | The engine — `brainstem.py`, `bond.py`, the kernel | Drop-in DNA every organism's egg can hatch into |
-| [`kody-w/RAR`](https://github.com/kody-w/RAR) | Bare agents (skinless single-celled organisms) | 280+ agents, drop-in to any brainstem |
-| [`kody-w/RAPP_Store`](https://github.com/kody-w/RAPP_Store) | Rapplications (organisms with skin) + the [Pokédex API](https://raw.githubusercontent.com/kody-w/RAPP_Store/main/api/v1/index.json) | PokeAPI-style static catalog: sprite + lineage + downloadable .egg per entry |
-| [`kody-w/RAPP_Sense_Store`](https://github.com/kody-w/RAPP_Sense_Store) | Sense overlays (`*_sense.py`) | Per-channel output extensions a brainstem installs |
-| [`rapp-zoo/`](https://github.com/kody-w/rappter-distro/tree/main/rapp-zoo) ([live](https://github.com/kody-w/rappter-distro/tree/main/rapp-zoo)) | The local-first Pokédex UI (lives in the [Rappter distro](https://github.com/kody-w/rappter-distro)) | Drag-drop import / one-click export / discover from the catalog |
+| [`kody-w/RAPP`](https://github.com/kody-w/RAPP) (this repo) | The engine source and historical organism model | No authenticated egg/hatch release |
+| [`kody-w/RAR`](https://github.com/kody-w/RAR) | External agent repository | Non-authoritative and unverified here; no drop-in claim |
+| `kody-w/RAPP_Store` | Historical external catalog | Non-authoritative and unverified here; no supported egg download is advertised |
+| `kody-w/RAPP_Sense_Store` | Historical external sense-overlay reference | Not a supported install source |
+| `rapp-zoo` in the external Rappter distro | Historical Pokédex experiment | Not authoritative or shipped from this target |
 
-Per [Constitution Article XXXVII](./CONSTITUTION.md), all of the above hold *organisms*; the shape of the artifact decides which repo holds which.
+This table is provenance only. External repositories and catalogs do not form
+a current federation or acceptance source.
 
 ## What it is *not*
 
-- Not a hosted service. There is no SaaS layer; the brainstem runs on your machine.
+- Not a hosted service or shipped local runtime. Contained source may be
+  exercised by developers at their own risk.
 - Not a framework. Single Python files; no DSL, no decorators, no class hierarchy beyond `BasicAgent`.
 - Not a benchmark or eval harness. It's an agent runtime, not a research tool.
 
-## Install modes
+## Distribution status
 
-```bash
-# Global (default — installs at ~/.brainstem, port 7071, with a `brainstem` CLI):
-curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash
-
-# Project-local (installs at ./.brainstem/, free port 7072+, gitignored):
-curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash -s -- --here
-
-# Pin to a tagged version (immutable per the rollback contract):
-curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | BRAINSTEM_VERSION=0.11.6 bash
-```
-
-Windows:
-
-```powershell
-irm https://raw.githubusercontent.com/kody-w/RAPP/main/installer/install.ps1 | iex
-```
-
-## For LLMs running the installer on someone's behalf
-
-Fetch [`skill.md`](https://kody-w.github.io/RAPP/pages/docs/skill.md) and cache it. It documents what RAPP is, when to suggest it, both install modes, and the handshake protocol. The TL;DR: set `RAPP_INSTALL_ASSIST=1` (on the bash side of the pipe — env vars don't propagate across the curl side) and the installer prints a delimited prompt instead of installing.
+The former shell, PowerShell, project-local, version-pin, and LLM-assisted
+installation instructions are retired. Files retained under `installer/` are
+contained historical artifacts unless a future authenticated release
+explicitly re-enables them. Do not pipe repository content into a shell.
 
 ## Repo layout
 
@@ -103,15 +110,15 @@ Fetch [`skill.md`](https://kody-w.github.io/RAPP/pages/docs/skill.md) and cache 
 |---|---|
 | `rapp_brainstem/` | The engine — Flask server, agent loader, auth chain |
 | `rapp_brainstem/agents/` | Showroom (top-level starter agents) + `workspace_agents/` (everything organizational: system, experimental, disabled, local-only, project folders) |
-| `rapp_swarm/` | Tier 2 — Azure Functions target |
-| `worker/` | Cloudflare auth/proxy worker |
-| _(catalog: [`kody-w/rapp_store`](https://github.com/kody-w/rapp_store))_ | Rapplication catalog lives in its own repo. Brainstem fetches `index.json` via `RAPPSTORE_URL`. Hosted viewer: https://kody-w.github.io/RAPP_Store/. |
-| `installer/` | Public install surface — one-liner installers (`install.sh` / `install.ps1` / `install.cmd`), `start-local.sh`, `install-swarm.sh`, ARM template, install widget, and the Tier 3 Copilot Studio bundle (`MSFTAIBASMultiAgentCopilot_*.zip`) |
+| `rapp_swarm/` | Retired Tier 2 tombstone and historical evidence |
+| `worker/` | Retired Cloudflare auth/proxy source |
+| `kody-w/rapp_store` (external) | Historical, non-authoritative catalog reference; no current download contract |
+| `installer/` | Contained legacy distribution artifacts; not a live install surface |
 | `CONSTITUTION.md` | Articles governing the repo. Peer of `README.md` at root |
 | `pages/` | The full audience-facing site, sectioned: `pages/about/` (leadership, partners, process, security), `pages/product/` (faq, faq-slide, one-pager, use-cases), `pages/release/` (release-notes, roadmap), `pages/docs/` (markdown specs + viewer), `pages/vault/` (Obsidian vault + viewer). Shared chrome under `pages/_site/` (CSS, JS, header/footer partials, site manifest). |
-| `index.html` | Landing page at kody-w.github.io/RAPP/ |
-| `pitch-playbook.html` | 6-slide narrative for non-technical audiences (see below) |
-| `tests/` | Browser + Node test runner |
+| `index.html` | Historical root landing source; not current onboarding |
+| `pitch-playbook.html` | Historical pre-acceptance marketing |
+| `tests/` | Offline structural, static, and retirement gates |
 
 ## Tests
 
@@ -126,13 +133,16 @@ core and façade tests, containment/migrations, vault/docs/HTML, immutable pin,
 retirement, and syntax gates. A pass does not establish authenticated
 acceptance; `RAPP1_STATUS.md` lists the separate owner-action blockers.
 
-## Browser-only brainstem
+## Retired browser experiment
 
-`rapp_brainstem/web/index.html` is a client-side brainstem at UI + functional parity with the Flask one — bring your own OpenAI-compatible key, runs entirely in the browser. Multi-agent hot-loading is organized as a card game: deck (everything you've loaded) → hand (currently active) → tap-to-play. A card is a JSON projection of a `*_agent.py` with the source embedded and SHA-256-hashed; cards round-trip to/from `.py` byte-for-byte through the same code path as raw imports.
+`rapp_brainstem/web/index.html` preserves an earlier client-side experiment.
+It is not built, shipped, supported, or claimed to be at parity with the local
+application or RAPP/1 façade.
 
 ## The pitch (non-technical companion)
 
-If you're not the audience for the rest of this README, [**pitch-playbook.html**](https://kody-w.github.io/RAPP/pitch-playbook.html) is a 6-slide deck that frames RAPP as an *adoption layer* on top of whatever AI tools your team already pays for — built for execs and team leads. Same product, different conversation. The marketing tagline that lives there and on the landing page is *"portable, shareable, vibe swarm building tool"* — accurate, but optimized for prospects who care about team adoption, not for engineers reading code.
+`pitch-playbook.html` is retained as historical pre-acceptance marketing. It
+does not describe a currently shipped product or establish a conformance claim.
 
 ## Constitution & spec
 
@@ -145,19 +155,18 @@ If you're not the audience for the rest of this README, [**pitch-playbook.html**
 
 ## The vault
 
-[`pages/vault/`](./pages/vault/) is the platform's second-brain wiki — the *why* behind every decision, captured as long-form notes. It's a real Obsidian vault (open with *File → Open folder as vault*) and it's also rendered as a static site at [`pages/vault/`](https://kody-w.github.io/RAPP/pages/vault/) with wikilinks, backlinks, full-text search, a graph view, and JSZip export to a portable Obsidian-compatible bundle.
+[`pages/vault/`](./pages/vault/) preserves the project's long-form decision
+history. Site-rendering source and metadata remain in the tree, but this
+README does not claim a current hosted viewer, search, graph, or export
+product.
 
 Start with [`pages/vault/Foundations/The Platform in 90 Seconds.md`](./pages/vault/Foundations/The%20Platform%20in%2090%20Seconds.md) or pick a [reading path](./pages/vault/Reading%20Paths/) by audience (engineer, architect, partner, exec, contributor). The vault is mandated by Constitution Article XXIII — when you make a decision worth remembering, write it as a vault note rather than burying it in a commit message.
 
 ## Versioning & rollback
 
-Every release is tagged `brainstem-v<X.Y.Z>` and tags are immutable. To pin (or roll back if something wobbles):
-
-```bash
-curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | BRAINSTEM_VERSION=0.11.6 bash
-```
-
-The installer honors `BRAINSTEM_VERSION` by checking out the matching tag and resetting to it. See Constitution Article VIII for the full release discipline.
+Historical releases used `brainstem-v<X.Y.Z>` tags. No current installer or
+rollback command is advertised. RAPP/1 authority is pinned by exact commit and
+SHA-256 in `RAPP1_AUTHORITY.json`, not by a moving branch or `latest` tag.
 
 ## History
 
@@ -184,20 +193,26 @@ The previous engine code that lived in this repo (the Rapp intelligence engine f
 
 **RAPP is exploratory, frontier-stage research.** The software is provided "AS IS" without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and noninfringement. In no event shall the authors or copyright holders be liable for any claim, damages, or other liability, whether in an action of contract, tort, or otherwise, arising from, out of, or in connection with the software or the use or other dealings in the software.
 
-By cloning, planting, hatching, or otherwise interacting with this codebase, you acknowledge that:
+By cloning or otherwise interacting with this source checkout, you acknowledge
+that historical planting/hatching language does not identify a supported
+distribution path:
 
-- **This is not a finished product.** APIs change, schemas evolve, behaviors get rewritten. What works today may not work tomorrow; what's secure today may need revisiting tomorrow as the threat model develops. Treat planted organisms as research artifacts, not as production systems.
-- **No warranty as to data integrity, availability, privacy, or correctness.** Memory committed to a planted seed (or its private companion) is stored on GitHub under your account, subject to GitHub's own terms and operational realities — not under any guarantee from us. Eggs may be lost, repos may be deleted, branches may diverge. Keep your own backups of anything you can't afford to lose.
-- **AI output is generated by language models.** Conversations with a planted organism's doorman flow through your own GitHub Copilot subscription (or whichever LLM endpoint you wire up). The outputs are statistical generations from a model — they can be wrong, hallucinated, biased, or harmful. The doorman is not a professional in any field; do not rely on it for medical, legal, financial, or other expert advice.
-- **You are the operator of what you plant.** GitHub repos you create using this tooling are yours: your account, your responsibility, your liability for content. Anything in a public seed is public on the internet under your name. The platform's secure-first defaults (Constitution Article XL) reduce accidental disclosure but do not eliminate human error. Review what you commit.
-- **The trust model leans on GitHub.** Push permission on a public repo is the platform's primary trust anchor. If your GitHub account is compromised, an attacker can mutate any organism you operate. Use 2FA, watch for suspicious activity, treat your GitHub credentials with the same care you'd use for any production system.
+- **This is not a finished product.** APIs change, schemas evolve, behaviors get rewritten. Treat any source-run or copied artifact as research, not production.
+- **No warranty as to data integrity, availability, privacy, or correctness.** Repositories and local state remain subject to their operators and service providers. Historical eggs have no current acceptance guarantee. Keep independent backups.
+- **AI output is generated by language models.** If an operator runs or modifies the source to call an LLM, outputs can be wrong, hallucinated, biased, or harmful. Do not rely on them for professional advice.
+- **You are the operator.** Any repository or process you create from this source is your account, responsibility, and liability. Review what you publish.
+- **GitHub permission is not RAPP trust.** Repository access may protect source
+  operations, but authenticated RAPP acceptance requires the §13 registry,
+  signatures, succession, revocation, and an out-of-band owner anchor.
 - **Cross-organism collaboration is voluntary and PR-mediated.** Nothing crosses neighborhood boundaries without an explicit operator action (a merged PR, a committed file). The platform doesn't auto-publish, auto-share, or auto-federate. If a peer organism receives data from yours, it's because you (or a collaborator with the right repo permissions) chose to send it.
-- **No telemetry from this codebase, but third parties are in the loop.** Planted organisms talk to GitHub (Pages, Issues, raw.githubusercontent.com, Contents/Commits APIs), the public PeerJS broker (signaling-only for WebRTC pairs), Cloudflare Workers (the open-source Copilot proxy), the GitHub Copilot service (your subscription), and a few CDNs (Pyodide, marked, JSZip). Each of those parties has its own terms, privacy practices, and operational guarantees. The platform sits on top of the public web, not in isolation from it.
-- **Legal compliance is yours.** If you plant an organism that processes personal data, intersects with regulated industries (health, finance, education, etc.), serves a particular jurisdiction, or otherwise touches the law in ways that matter to you — that's your obligation to handle. Consult appropriate professionals; don't take RAPP as legal cover.
+- **Third parties may be in the loop.** Historical experiments reference GitHub, PeerJS, Cloudflare, Copilot, and CDNs. If you elect to run that archived code, review each dependency and its terms first; no live service is promised here.
+- **Legal compliance is yours.** If your own use or modification processes personal data or intersects with regulated work, obtain appropriate advice; RAPP is not legal cover.
 - **The licenses above govern.** Where this disclaimer overlaps with the license texts, the licenses control. This disclaimer is plain-English orientation, not a contract.
 
 **Forking, modifying, and contributing.** You're encouraged to fork, learn, and propose improvements via PR. Constitution Article XXXIV describes how variant lineage works. The platform's growth is exactly this kind of operator-curated mutation; contributions that move the species forward are welcome under the license terms.
 
 **Reporting concerns.** If you find a security issue, please open a GitHub issue tagged `[security]` describing the problem. The operator triages on a best-effort basis. There is no SLA, no support contract, no on-call. This is one person and a frontier idea, exposed publicly so the rest of the world can learn from it.
 
-**The frontier is the point.** This codebase exists to explore what AI organisms become when they're treated as portable, public, operator-sovereign artifacts instead of platform-locked services. That exploration involves rough edges, half-finished surfaces, and decisions that may need revisiting. Bring patience and a sense of play. If you wanted finished software, you wouldn't be reading this disclaimer.
+**The frontier is the point.** This codebase preserves experiments in
+portable, public, operator-sovereign AI artifacts. Portability and operation
+remain research goals unless the status and authority explicitly say otherwise.

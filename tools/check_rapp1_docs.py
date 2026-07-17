@@ -1,408 +1,495 @@
 #!/usr/bin/env python3
-"""Check the explicit current-document set for retired RAPP teachings."""
+"""Fail-closed documentation gate for the dated RAPP/1 post-audit ledger."""
 
 from __future__ import annotations
 
 import hashlib
 import json
 import re
+import subprocess
 import sys
-from pathlib import Path, PurePosixPath
-
+from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-SCOPE_PATH = ROOT / "tests/fixtures/rapp1-doc-scope.json"
-AUTHORITY_TOPICS = (
-    "canonicalization",
-    "identity",
-    "frame",
-    "wire",
-    "egg",
-    "registry",
-    "trust",
-    "evolution",
-)
-RETIRED_PATTERNS = (
-    re.compile(r"\brapp-frame/\d", re.IGNORECASE),
-    re.compile(r"\bbrainstem-egg/\d", re.IGNORECASE),
-    re.compile(r"\brapp-egg/\d", re.IGNORECASE),
-    re.compile(r"\brapp-rappid/\d", re.IGNORECASE),
-    re.compile(r"\brapp-eternity/1\.0\b", re.IGNORECASE),
-    re.compile(r"\brapp-protocol/1\.0\b", re.IGNORECASE),
-    re.compile(r"\brapp-chat-response/1\.0\b", re.IGNORECASE),
-    re.compile(r"\brappid:v2\b", re.IGNORECASE),
-    re.compile(r"\bread(?:\s+|-)?forever\b", re.IGNORECASE),
-    re.compile(r"\bread.compat(?:ibility|ible)\b", re.IGNORECASE),
-    re.compile(r"\bbackwards?-compat(?:ibility|ible)?\b", re.IGNORECASE),
-    re.compile(r"\bconversation_history\b", re.IGNORECASE),
-    re.compile(r"\buuidv?5\b", re.IGNORECASE),
-    re.compile(r"sha256\s*\(\s*[\"']?(?:owner|slug)", re.IGNORECASE),
-    re.compile(r"hashlib\.sha256\s*\(\s*owner_repo", re.IGNORECASE),
-)
-CONTEXT_MARKERS = (
-    "historical",
-    "legacy",
-    "migration",
-    "migrate",
-    "retired",
-    "superseded",
-    "non-rapp/1",
-    "not current",
-    "do not emit",
-    "must not emit",
-    "rapp1_authority.json",
-    "rapp/1 §",
-)
-HISTORICAL_SECTION_START = "<!-- RAPP1-HISTORICAL-SECTION-START -->"
-HISTORICAL_SECTION_END = "<!-- RAPP1-HISTORICAL-SECTION-END -->"
-SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
+FIXTURE = ROOT / "tests" / "fixtures" / "rapp1-doc-scope.json"
 
 
-def load_scope() -> dict:
-    with SCOPE_PATH.open(encoding="utf-8") as handle:
-        return json.load(handle)
+def _load_fixture() -> dict[str, Any]:
+    try:
+        return json.loads(FIXTURE.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"cannot load {FIXTURE.relative_to(ROOT)}: {exc}") from exc
 
 
-def safe_path(relative: str) -> Path:
-    posix_path = PurePosixPath(relative)
-    if posix_path.is_absolute() or ".." in posix_path.parts:
-        raise ValueError(f"unsafe documentation path: {relative}")
-    return ROOT.joinpath(*posix_path.parts)
+def _read(relative_path: str) -> str:
+    path = ROOT / relative_path
+    if not path.is_file():
+        raise ValueError(f"{relative_path}: required file is missing")
+    return path.read_text(encoding="utf-8")
 
 
-def authority_failures(relative: str, text: str) -> list[str]:
-    lowered = text.lower()
-    failures = []
-    for required in ("RAPP1_AUTHORITY.json", "RAPP1_STATUS.md", "rev-5"):
-        if required.lower() not in lowered:
-            failures.append(f"{relative}: missing {required} authority declaration")
-    missing_topics = [topic for topic in AUTHORITY_TOPICS if topic not in lowered]
-    if missing_topics:
-        failures.append(
-            f"{relative}: authority declaration omits {', '.join(missing_topics)}"
-        )
-    return failures
+def _path_set_digest(paths: list[str]) -> str:
+    payload = "".join(f"{path}\n" for path in sorted(paths))
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
-def authority_link_failures(relative: str, path: Path, text: str) -> list[str]:
-    failures = []
-    for name in ("RAPP1_AUTHORITY.json", "RAPP1_STATUS.md"):
-        candidates = re.findall(
-            rf"(?<![A-Za-z0-9_.-])((?:\.\.?/)*{re.escape(name)})", text
-        )
-        target = (ROOT / name).resolve()
-        if not any(
-            (path.parent / candidate).resolve() == target
-            and (path.parent / candidate).is_file()
-            for candidate in candidates
-        ):
-            failures.append(f"{relative}: no resolving local link to {name}")
-    return failures
+def _strip_historical_sections(
+    text: str, start_marker: str, end_marker: str
+) -> tuple[str, list[str]]:
+    """Return active text and marker-structure errors."""
 
-
-def historical_marker_failures(relative: str, text: str) -> list[str]:
-    failures = []
-    in_historical_section = False
+    active: list[str] = []
+    errors: list[str] = []
+    in_history = False
     for line_number, line in enumerate(text.splitlines(), start=1):
-        if HISTORICAL_SECTION_START in line:
-            if in_historical_section:
-                failures.append(
-                    f"{relative}:{line_number}: nested historical-section start"
-                )
-            in_historical_section = True
-        if HISTORICAL_SECTION_END in line:
-            if not in_historical_section:
-                failures.append(
-                    f"{relative}:{line_number}: historical-section end without start"
-                )
-            in_historical_section = False
-    if in_historical_section:
-        failures.append(f"{relative}: historical section has no end marker")
-    return failures
+        has_start = start_marker in line
+        has_end = end_marker in line
+        if has_start:
+            if in_history:
+                errors.append(f"nested historical start marker at line {line_number}")
+            in_history = True
+        if not in_history and not has_start and not has_end:
+            active.append(line)
+        if has_end:
+            if not in_history:
+                errors.append(f"historical end marker without start at line {line_number}")
+            in_history = False
+    if in_history:
+        errors.append("unclosed historical section")
+    return "\n".join(active), errors
 
 
-def retired_token_failures(relative: str, text: str) -> list[str]:
-    lines = text.splitlines()
-    failures = []
-    in_historical_section = False
-    for line_number, line in enumerate(lines, start=1):
-        if HISTORICAL_SECTION_START in line:
-            in_historical_section = True
-            continue
-        if HISTORICAL_SECTION_END in line:
-            in_historical_section = False
-            continue
-        for pattern in RETIRED_PATTERNS:
-            if not pattern.search(line):
-                continue
-            if in_historical_section:
-                continue
-            lowered_line = line.lower()
-            if "resolved" in lowered_line and "~~" in line:
-                continue
-            start = max(0, line_number - 7)
-            end = min(len(lines), line_number + 6)
-            context = "\n".join(lines[start:end]).lower()
-            if not any(marker in context for marker in CONTEXT_MARKERS):
-                failures.append(
-                    f"{relative}:{line_number}: retired teaching lacks a nearby "
-                    "history/migration marker or RAPP/1 authority reference"
-                )
-    return failures
+def _has_authority_link(text: str) -> bool:
+    return "RAPP1_AUTHORITY.json" in text or "/rapp-1/" in text
 
 
-def audit_scope_failures(
-    scope: dict, managed: set[str], excluded: set[str]
-) -> list[str]:
-    failures = []
-    audit_scope = scope.get("audit_scope")
-    if not isinstance(audit_scope, dict):
-        return ["scope: audit_scope must record audit provenance"]
-
-    ledger = audit_scope.get("r1_doc_01")
-    if not isinstance(ledger, dict):
-        failures.append("scope: audit_scope.r1_doc_01 must be an object")
-    else:
-        paths = ledger.get("paths")
-        expected_count = ledger.get("path_count")
-        if not isinstance(paths, list) or not paths:
-            failures.append("scope: R1-DOC-01 paths must be a non-empty list")
-        else:
-            unique_paths = set(paths)
-            if len(unique_paths) != len(paths):
-                failures.append("scope: R1-DOC-01 paths contain duplicates")
-            if expected_count != len(paths):
-                failures.append(
-                    "scope: R1-DOC-01 path_count does not match its path list"
-                )
-            path_set_sha256 = hashlib.sha256(
-                ("\n".join(sorted(unique_paths)) + "\n").encode("utf-8")
-            ).hexdigest()
-            if ledger.get("path_set_sha256") != path_set_sha256:
-                failures.append(
-                    "scope: R1-DOC-01 path set does not match its audited digest"
-                )
-            for relative in sorted(unique_paths - managed - excluded):
-                failures.append(
-                    f"scope: R1-DOC-01 path {relative} is not checked or excluded"
-                )
-            disposition_counts = ledger.get("disposition_counts")
-            mirror_paths = ledger.get("mirror_paths")
-            if not isinstance(disposition_counts, dict):
-                failures.append(
-                    "scope: R1-DOC-01 disposition_counts must be an object"
-                )
-            if not isinstance(mirror_paths, list):
-                failures.append("scope: R1-DOC-01 mirror_paths must be a list")
-            else:
-                unique_mirrors = set(mirror_paths)
-                if len(unique_mirrors) != len(mirror_paths):
-                    failures.append(
-                        "scope: R1-DOC-01 mirror_paths contain duplicates"
-                    )
-                if not unique_mirrors.issubset(unique_paths):
-                    failures.append(
-                        "scope: R1-DOC-01 mirror_paths are not all ledger paths"
-                    )
-                if unique_mirrors - excluded:
-                    failures.append(
-                        "scope: R1-DOC-01 mirror paths must be explicitly excluded"
-                    )
-                if isinstance(disposition_counts, dict) and (
-                    disposition_counts.get("mirror") != len(unique_mirrors)
-                    or disposition_counts.get("current-live")
-                    != len(unique_paths) - len(unique_mirrors)
-                    or set(disposition_counts) != {"current-live", "mirror"}
-                ):
-                    failures.append(
-                        "scope: R1-DOC-01 disposition counts do not match its paths"
-                    )
-            if not str(ledger.get("management_note", "")).strip():
-                failures.append(
-                    "scope: R1-DOC-01 disposition/remediation distinction is missing"
-                )
-        if not SHA256_PATTERN.fullmatch(str(ledger.get("sha256", ""))):
-            failures.append("scope: R1-DOC-01 source has no valid SHA-256")
-
-    canon = audit_scope.get("canon_mirrors")
-    if not isinstance(canon, dict):
-        failures.append("scope: audit_scope.canon_mirrors must be an object")
-    else:
-        if not SHA256_PATTERN.fullmatch(str(canon.get("sha256", ""))):
-            failures.append("scope: canon-mirrors source has no valid SHA-256")
-        for name in (
-            "live_declarations_section",
-            "historical_section",
-            "generated_section",
-        ):
-            if not str(canon.get(name, "")).strip():
-                failures.append(f"scope: canon-mirrors {name} is missing")
-        live_paths = canon.get("live_paths")
-        if not isinstance(live_paths, list) or not live_paths:
-            failures.append(
-                "scope: canon-mirrors live_paths must be a non-empty list"
-            )
-        else:
-            unique_live_paths = set(live_paths)
-            if len(unique_live_paths) != len(live_paths):
-                failures.append("scope: canon-mirrors live_paths contain duplicates")
-            if canon.get("live_path_count") != len(live_paths):
-                failures.append(
-                    "scope: canon-mirrors live_path_count does not match its path list"
-                )
-            for relative in sorted(unique_live_paths - managed - excluded):
-                failures.append(
-                    f"scope: canon §7.1 path {relative} is not checked or excluded"
-                )
-        mixed_current_paths = canon.get("mixed_current_paths")
-        if not isinstance(mixed_current_paths, list):
-            failures.append(
-                "scope: canon-mirrors mixed_current_paths must be a list"
-            )
-        elif set(mixed_current_paths) != set(scope.get("mixed_documents", ())):
-            failures.append(
-                "scope: canon mixed-current paths do not match mixed_documents"
-            )
-
-    spec_matrix = audit_scope.get("spec_matrix")
-    if not isinstance(spec_matrix, dict):
-        failures.append("scope: audit_scope.spec_matrix must be an object")
-    else:
-        if not SHA256_PATTERN.fullmatch(str(spec_matrix.get("sha256", ""))):
-            failures.append("scope: spec-matrix source has no valid SHA-256")
-        if "pages/vault/** historical" not in str(
-            spec_matrix.get("scope_classification", "")
-        ):
-            failures.append(
-                "scope: spec-matrix pages/vault historical classification is missing"
-            )
-        if not str(spec_matrix.get("remediation_map", "")).strip():
-            failures.append("scope: spec-matrix remediation map is missing")
-
-    historical = set(scope.get("historical_documents", ()))
-    mixed = set(scope.get("mixed_documents", ()))
-    for relative in sorted(
-        path
-        for path in managed
-        if path.startswith("pages/vault/")
-        and path not in historical
-        and path not in mixed
-    ):
-        failures.append(
-            f"scope: spec-matrix historical vault path {relative} "
-            "is classified as current or superseded"
-        )
-    return failures
+def _has_status_link(text: str) -> bool:
+    return "RAPP1_STATUS.md" in text
 
 
-def check_docs(scope: dict | None = None) -> list[str]:
-    scope = scope or load_scope()
-    failures = []
-    groups = (
-        "current_documents",
-        "mixed_documents",
-        "superseded_documents",
-        "historical_documents",
+def _has_authority_topics(text: str, topics: list[str]) -> bool:
+    lowered = text.lower()
+    variants = {
+        "canonicalization": ("canonicalization", "canonical"),
+        "identity": ("identity", "rappid"),
+        "frames": ("frames", "frame"),
+        "wire": ("wire", "chat"),
+        "eggs": ("eggs", "egg"),
+        "registry": ("registry",),
+        "trust": ("trust",),
+        "protocol evolution": ("protocol evolution", "evolution"),
+    }
+    return all(
+        any(token in lowered for token in variants.get(topic, (topic,)))
+        for topic in topics
     )
-    seen: set[str] = set()
-    for group in groups:
-        entries = scope.get(group)
-        if not isinstance(entries, list) or not entries:
-            failures.append(f"scope: {group} must be a non-empty list")
+
+
+def _is_negated_context(text: str, start: int, end: int) -> bool:
+    context = text[max(0, start - 100) : min(len(text), end + 100)]
+    return bool(
+        re.search(
+            r"\b(?:no|not|never|without|retired|historical|inert|do not|"
+            r"must not|isn't|aren't|wasn't|weren't)\b",
+            context,
+            flags=re.IGNORECASE,
+        )
+    )
+
+
+def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    if fixture.get("schema_version") != "rapp1-documentation-scope/2.0":
+        errors.append("fixture: unsupported schema_version")
+
+    audit = fixture.get("audit")
+    if not isinstance(audit, dict):
+        return errors + ["fixture: audit must be an object"]
+    if audit.get("source") != "verify-rapp-files":
+        errors.append("fixture: audit source must be verify-rapp-files")
+    if audit.get("baseline_tracked_paths") != 640:
+        errors.append("fixture: dated baseline must remain 640 paths")
+    if audit.get("post_audit_tracked_paths") != 691:
+        errors.append("fixture: post-audit inventory must be 691 paths")
+    tracked_paths = [
+        path
+        for path in subprocess.check_output(
+            ("git", "ls-files", "-z"), cwd=ROOT
+        ).decode("utf-8").split("\0")
+        if path
+    ]
+    if len(tracked_paths) != audit.get("post_audit_tracked_paths"):
+        errors.append(
+            "fixture: post-audit tracked-path count does not match git ls-files "
+            f"({len(tracked_paths)} != {audit.get('post_audit_tracked_paths')})"
+        )
+
+    categories = audit.get("categories")
+    required_categories = {
+        "POST-STALE-LIVE-DOC": 60,
+        "POST-MARKETING-LEGACY": 19,
+        "POST-SHORTCUT-LEGACY": 5,
+        "POST-CONTAIN-PLANT": 14,
+        "POST-CONTAIN-CAVE": 10,
+        "POST-CANON": 11,
+        "POST-CANON-05": 3,
+        "VOICE-TWIN-WIRE": 9,
+    }
+    if not isinstance(categories, dict):
+        return errors + ["fixture: audit.categories must be an object"]
+    for category_name, exact_count in required_categories.items():
+        category = categories.get(category_name)
+        if not isinstance(category, dict):
+            errors.append(f"fixture: missing {category_name}")
             continue
-        for relative in entries:
-            if relative in seen:
-                failures.append(f"scope: duplicate path {relative}")
-                continue
-            seen.add(relative)
-            try:
-                path = safe_path(relative)
-            except ValueError as error:
-                failures.append(str(error))
-                continue
-            if not path.is_file():
-                failures.append(f"{relative}: allowlisted document is missing")
-                continue
-            text = path.read_text(encoding="utf-8")
-            failures.extend(authority_failures(relative, text))
-            failures.extend(authority_link_failures(relative, path, text))
-            failures.extend(historical_marker_failures(relative, text))
-            lowered = text.lower()
-            if group in ("current_documents", "mixed_documents"):
-                failures.extend(retired_token_failures(relative, text))
-            if group == "mixed_documents" and "mixed current" not in lowered:
-                failures.append(f"{relative}: missing mixed-current marker")
-            elif group == "superseded_documents" and "superseded" not in lowered:
-                failures.append(f"{relative}: missing superseded-document marker")
-            elif group == "historical_documents" and not (
-                "historical" in lowered or "superseded" in lowered
+        paths = category.get("paths")
+        if not isinstance(paths, list) or not all(
+            isinstance(path, str) and path for path in paths
+        ):
+            errors.append(f"fixture: {category_name}.paths must be non-empty strings")
+            continue
+        if len(paths) != len(set(paths)):
+            errors.append(f"fixture: {category_name} contains duplicate paths")
+        if len(paths) != exact_count or category.get("expected_count") != exact_count:
+            errors.append(
+                f"fixture: {category_name} must contain exactly {exact_count} paths"
+            )
+        actual_digest = _path_set_digest(paths)
+        if category.get("path_set_sha256") != actual_digest:
+            errors.append(
+                f"fixture: {category_name} path digest mismatch "
+                f"(expected {category.get('path_set_sha256')}, got {actual_digest})"
+            )
+
+    classifications = fixture.get("classifications")
+    if not isinstance(classifications, dict):
+        return errors + ["fixture: classifications must be an object"]
+    expected_classes = {"current", "historical", "superseded", "excluded"}
+    if set(classifications) != expected_classes:
+        errors.append(
+            "fixture: classifications must be exactly current, historical, "
+            "superseded, and excluded"
+        )
+        return errors
+
+    seen: dict[str, str] = {}
+    for classification, paths in classifications.items():
+        if not isinstance(paths, list):
+            errors.append(f"fixture: classifications.{classification} must be a list")
+            continue
+        for path in paths:
+            if path in seen:
+                errors.append(
+                    f"fixture: {path} appears in both {seen[path]} and {classification}"
+                )
+            seen[path] = classification
+            if not (ROOT / path).is_file():
+                errors.append(f"fixture: classified path is missing: {path}")
+
+    reasons = fixture.get("exclusion_reasons", {})
+    if set(reasons) != set(classifications.get("excluded", [])):
+        errors.append("fixture: every excluded path must have exactly one reason")
+
+    for category_name, category in categories.items():
+        for path in category.get("paths", []):
+            if path not in seen:
+                errors.append(
+                    f"fixture: {category_name} path has no disposition: {path}"
+                )
+
+    for path in fixture.get("required_files", []):
+        if not (ROOT / path).is_file():
+            errors.append(f"fixture: required file is missing: {path}")
+    return errors
+
+
+def _validate_document(
+    relative_path: str,
+    classification: str,
+    fixture: dict[str, Any],
+) -> list[str]:
+    errors: list[str] = []
+    text = _read(relative_path)
+    markers = fixture["required_markers"]
+    active_text, marker_errors = _strip_historical_sections(
+        text, markers["historical_start"], markers["historical_end"]
+    )
+    errors.extend(f"{relative_path}: {error}" for error in marker_errors)
+
+    authority = fixture["canon_authority"]
+    authority_text = active_text if classification == "current" else text
+    if not _has_authority_link(authority_text):
+        errors.append(f"{relative_path}: missing RAPP/1 authority link")
+    if not _has_status_link(authority_text):
+        errors.append(f"{relative_path}: missing RAPP1_STATUS.md link")
+    if authority["required_revision"].lower() not in authority_text.lower():
+        errors.append(f"{relative_path}: missing rev-5 authority statement")
+
+    if classification == "current":
+        if not _has_authority_topics(authority_text, authority["authority_topics"]):
+            errors.append(
+                f"{relative_path}: current guidance does not defer all authority topics"
+            )
+        for pattern in fixture["retired_active_patterns"]:
+            match = re.search(pattern, authority_text, flags=re.IGNORECASE)
+            if match and not _is_negated_context(
+                authority_text, match.start(), match.end()
             ):
-                failures.append(f"{relative}: missing historical-document marker")
+                errors.append(
+                    f"{relative_path}: active text matches retired pattern {pattern!r}"
+                )
+    elif classification == "historical":
+        if (
+            markers["historical_start"] not in text
+            or markers["historical_end"] not in text
+        ):
+            errors.append(
+                f"{relative_path}: historical document must use bounded markers"
+            )
+    elif classification == "superseded":
+        if not re.search(
+            r"\b(?:superseded|historical|retired|not current|no longer current)\b",
+            text,
+            flags=re.IGNORECASE,
+        ):
+            errors.append(f"{relative_path}: missing supersession disposition")
 
-    excluded = scope.get("excluded_documents")
-    if not isinstance(excluded, dict) or not excluded:
-        failures.append("scope: excluded_documents must record explicit exclusions")
-        excluded_paths: set[str] = set()
-    else:
-        excluded_paths = set(excluded)
-        overlap = seen.intersection(excluded)
-        for relative in sorted(overlap):
-            failures.append(f"scope: {relative} is both checked and excluded")
-        for relative, reason in excluded.items():
-            if not isinstance(reason, str) or not reason.strip():
-                failures.append(f"scope: excluded path {relative} has no reason")
-            try:
-                path = safe_path(relative)
-            except ValueError as error:
-                failures.append(str(error))
-                continue
-            if not path.is_file():
-                failures.append(f"{relative}: excluded document is missing")
+    return errors
 
-    failures.extend(audit_scope_failures(scope, seen, excluded_paths))
-    return failures
+
+def _active_text(relative_path: str, fixture: dict[str, Any]) -> tuple[str, list[str]]:
+    text = _read(relative_path)
+    markers = fixture["required_markers"]
+    active, marker_errors = _strip_historical_sections(
+        text, markers["historical_start"], markers["historical_end"]
+    )
+    return active, [f"{relative_path}: {error}" for error in marker_errors]
+
+
+def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    categories = fixture["audit"]["categories"]
+    rules = fixture["category_rules"]
+    classifications = fixture["classifications"]
+    disposition = {
+        path: classification
+        for classification, paths in classifications.items()
+        for path in paths
+    }
+
+    for path in categories["POST-STALE-LIVE-DOC"]["paths"]:
+        classification = disposition[path]
+        if classification == "historical":
+            text = _read(path)
+            markers = fixture["required_markers"]
+            if (
+                markers["historical_start"] not in text
+                or markers["historical_end"] not in text
+            ):
+                errors.append(f"{path}: stale-live history is not bounded")
+        elif classification == "superseded":
+            text = _read(path)
+            if not re.search(
+                r"\b(?:superseded|historical|retired|pre-acceptance)\b",
+                text,
+                flags=re.IGNORECASE,
+            ):
+                errors.append(f"{path}: stale-live path lacks a disposition")
+        elif classification == "excluded" and path != "pages/_site/index.json":
+            errors.append(f"{path}: stale-live path cannot escape via exclusion")
+
+    marketing_rule = rules["POST-MARKETING-LEGACY"]
+    disposition_terms = marketing_rule["required_disposition_terms"]
+    for path in categories["POST-MARKETING-LEGACY"]["paths"]:
+        text = _read(path)
+        lowered = text.lower()
+        if not any(term in lowered for term in disposition_terms):
+            errors.append(f"{path}: legacy marketing claim has no current disposition")
+        active, marker_errors = _active_text(path, fixture)
+        errors.extend(marker_errors)
+        for pattern in fixture["retired_active_patterns"]:
+            if re.search(pattern, active, flags=re.IGNORECASE):
+                errors.append(
+                    f"{path}: active marketing matches retired pattern {pattern!r}"
+                )
+
+    shortcut_rule = rules["POST-SHORTCUT-LEGACY"]
+    for path in categories["POST-SHORTCUT-LEGACY"]["paths"]:
+        text = _read(path)
+        lowered = text.lower()
+        for token in shortcut_rule["required_wire_tokens"]:
+            if token.lower() not in lowered:
+                errors.append(f"{path}: missing exact façade token {token!r}")
+        if not re.search(r"\b(?:exactly|exact)\b", text, flags=re.IGNORECASE):
+            errors.append(f"{path}: façade shapes are not declared exact")
+        if not re.search(
+            r"\b(?:derived?|derive|speak|speech)\b[^.\n]*\b(?:locally|response)\b"
+            r"|\b(?:locally|response)\b[^.\n]*\b(?:derived?|derive|speak|speech)\b",
+            text,
+            flags=re.IGNORECASE,
+        ):
+            errors.append(f"{path}: voice is not derived locally from response")
+        lines = text.splitlines()
+        for token in shortcut_rule["forbidden_extra_members"]:
+            for line_number, line in enumerate(lines):
+                if token not in line:
+                    continue
+                context = " ".join(
+                    lines[max(0, line_number - 1) : min(len(lines), line_number + 2)]
+                )
+                if not re.search(
+                    r"\b(?:no|not|never|without|forbid|do not)\b",
+                    context,
+                    flags=re.IGNORECASE,
+                ):
+                    errors.append(
+                        f"{path}: {token!r} is not explicitly rejected as an extra member"
+                    )
+
+    plant_rule = rules["POST-CONTAIN-PLANT"]
+    for path in categories["POST-CONTAIN-PLANT"]["paths"]:
+        active, marker_errors = _active_text(path, fixture)
+        errors.extend(marker_errors)
+        for pattern in plant_rule["forbidden_live_patterns"]:
+            match = re.search(pattern, active, flags=re.IGNORECASE)
+            if match:
+                errors.append(f"{path}: live plant.sh CTA matches {pattern!r}")
+
+    cave_rule = rules["POST-CONTAIN-CAVE"]
+    for path in categories["POST-CONTAIN-CAVE"]["paths"]:
+        text = _read(path)
+        if not any(
+            term in text.lower() for term in cave_rule["required_disposition_terms"]
+        ):
+            errors.append(f"{path}: cave installer/catalog history is not tombstoned")
+        active, marker_errors = _active_text(path, fixture)
+        errors.extend(marker_errors)
+        for pattern in cave_rule["forbidden_live_patterns"]:
+            match = re.search(pattern, active, flags=re.IGNORECASE)
+            if match and not re.search(
+                r"\b(?:no|not|never|do not|retired|historical|inert)\b",
+                active[max(0, match.start() - 80) : match.end() + 80],
+                flags=re.IGNORECASE,
+            ):
+                errors.append(f"{path}: live cave CTA matches {pattern!r}")
+        for script_tag in re.findall(r"<script\b[^>]*>", active, flags=re.IGNORECASE):
+            if 'type="application/rapp-history"' not in script_tag.lower():
+                errors.append(f"{path}: cave script is executable rather than inert")
+
+    canon_rule = rules["POST-CANON"]
+    for path in categories["POST-CANON"]["paths"]:
+        text = _read(path)
+        if (
+            canon_rule["required_authority_commit"] not in text
+            and "RAPP1_AUTHORITY.json" not in text
+        ):
+            errors.append(f"{path}: missing immutable RAPP/1 authority pin")
+        if (
+            canon_rule["required_pin"] not in text
+            and "KERNEL_PIN.json" not in text
+        ):
+            errors.append(f"{path}: missing immutable grail pin")
+        active, marker_errors = _active_text(path, fixture)
+        errors.extend(marker_errors)
+        for pattern in canon_rule["forbidden_live_patterns"]:
+            if re.search(pattern, active, flags=re.IGNORECASE):
+                errors.append(f"{path}: active canon text matches {pattern!r}")
+    ecosystem_spec = _read("specs/ECOSYSTEM_SPEC.md").lower()
+    if "rapp-god" not in ecosystem_spec or not re.search(
+        r"\b(?:non-authoritative|divergent)\b", ecosystem_spec
+    ):
+        errors.append(
+            "specs/ECOSYSTEM_SPEC.md: rapp-god must be explicitly divergent "
+            "or non-authoritative"
+        )
+
+    tutorial_rule = rules["POST-CANON-05"]
+    navigation_text = _read(tutorial_rule["navigation_path"])
+    try:
+        json.loads(navigation_text)
+    except json.JSONDecodeError as exc:
+        errors.append(f"{tutorial_rule['navigation_path']}: invalid JSON: {exc}")
+    for retired_token in ("hatch-egg", "brainstem-egg", "sample-agent.egg"):
+        if retired_token in navigation_text.lower():
+            errors.append(
+                f"{tutorial_rule['navigation_path']}: advertises retired {retired_token}"
+            )
+    tutorial_text = _read(tutorial_rule["retired_tutorial_path"])
+    if not re.search(r"\bnoindex\b", tutorial_text, flags=re.IGNORECASE):
+        errors.append(
+            f"{tutorial_rule['retired_tutorial_path']}: missing noindex retirement"
+        )
+    markers = fixture["required_markers"]
+    if (
+        markers["historical_start"] not in tutorial_text
+        or markers["historical_end"] not in tutorial_text
+    ):
+        errors.append(
+            f"{tutorial_rule['retired_tutorial_path']}: history is not bounded"
+        )
+
+    voice_rule = rules["VOICE-TWIN-WIRE"]
+    for path in categories["VOICE-TWIN-WIRE"]["paths"]:
+        text = _read(path)
+        for token in voice_rule["required_tokens"]:
+            if token.lower() not in text.lower():
+                errors.append(f"{path}: missing Voice/Twin token {token!r}")
+        active, marker_errors = _active_text(path, fixture)
+        errors.extend(marker_errors)
+        for pattern in voice_rule["forbidden_positive_patterns"]:
+            if re.search(pattern, active, flags=re.IGNORECASE):
+                errors.append(f"{path}: advertises an extra Voice/Twin wire field")
+
+    status = _read("RAPP1_STATUS.md")
+    if "2026-07-16 baseline: 640/640 tracked paths" not in status:
+        errors.append("RAPP1_STATUS.md: missing dated 640-path baseline")
+    if not re.search(
+        r"2026-07-17[\s\S]{0,100}691/691 tracked\s+paths",
+        status,
+        flags=re.IGNORECASE,
+    ):
+        errors.append("RAPP1_STATUS.md: missing dated 691-path post-audit inventory")
+    for category in (
+        "Authenticated owner action",
+        "Generated target artifacts",
+        "Immutable history",
+        "External mirrors",
+    ):
+        if category not in status:
+            errors.append(f"RAPP1_STATUS.md: missing unresolved category {category!r}")
+    return errors
 
 
 def main() -> int:
-    failures = check_docs()
-    if failures:
+    try:
+        fixture = _load_fixture()
+        errors = _validate_fixture(fixture)
+        if not errors:
+            for classification in ("current", "historical", "superseded"):
+                for path in fixture["classifications"][classification]:
+                    errors.extend(_validate_document(path, classification, fixture))
+            errors.extend(_validate_post_categories(fixture))
+    except (KeyError, TypeError, ValueError) as exc:
+        errors = [str(exc)]
+
+    if errors:
         print("RAPP/1 documentation gate failed:", file=sys.stderr)
-        for failure in failures:
-            print(f"- {failure}", file=sys.stderr)
+        for error in errors:
+            print(f"  - {error}", file=sys.stderr)
         return 1
-    scope = load_scope()
-    count = sum(
-        len(scope[group])
-        for group in (
-            "current_documents",
-            "mixed_documents",
-            "superseded_documents",
-            "historical_documents",
-        )
+
+    managed_count = sum(
+        len(fixture["classifications"][classification])
+        for classification in ("current", "historical", "superseded")
     )
-    ledger_paths = set(scope["audit_scope"]["r1_doc_01"]["paths"])
-    managed = set().union(
-        *(
-            set(scope[group])
-            for group in (
-                "current_documents",
-                "mixed_documents",
-                "superseded_documents",
-                "historical_documents",
-            )
-        )
+    category_count = sum(
+        category["expected_count"]
+        for category in fixture["audit"]["categories"].values()
     )
-    managed_ledger = len(ledger_paths & managed)
-    excluded_ledger = len(ledger_paths - managed)
-    canon_paths = set(scope["audit_scope"]["canon_mirrors"]["live_paths"])
-    managed_canon = len(canon_paths & managed)
-    excluded_canon = len(canon_paths - managed)
     print(
         "RAPP/1 documentation gate passed "
-        f"({count} managed documents; R1-DOC-01 ledger: "
-        f"{managed_ledger} managed, {excluded_ledger} explicitly excluded; "
-        f"canon §7.1: {managed_canon} managed, "
-        f"{excluded_canon} explicitly excluded)"
+        f"({managed_count} managed documents; {category_count} ledger entries)."
     )
     return 0
 

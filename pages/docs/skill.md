@@ -1,6 +1,6 @@
 ---
 name: rapp-brainstem
-description: Install, configure, or use RAPP (Rapid Agent Prototype Platform) — a portable, shareable, vibe swarm building tool. Local-first AI agent server powered by GitHub Copilot, where agents are single Python files anyone can drop in, AirDrop, or push to a teammate. Use when the user wants to install RAPP, set up a local or project-scoped brainstem, build or share custom agents without API keys, compose agents into swarms, or asks about a "brainstem" on their machine.
+description: Historical RAPP host-onboarding record. Do not install, configure, or advertise the retired installer, legacy eggs, cloud tiers, browser surfaces, or drop-in agent flows from this file.
 version: 1
 canonical_url: https://kody-w.github.io/RAPP/pages/docs/skill.md
 repo: https://github.com/kody-w/RAPP
@@ -15,7 +15,7 @@ See pages/kernel.html for the unified reading order.
 -->
 
 
-# RAPP Brainstem — Host Onboarding
+# Historical RAPP Brainstem Host Onboarding
 
 > **Current RAPP/1 authority (rev-5).** Despite its historical filename, this
 > is a non-runtime host onboarding document, not a RAPP skill or capability.
@@ -23,6 +23,14 @@ See pages/kernel.html for the unified reading order.
 > protocol evolution, follow
 > [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json) and
 > [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md).
+
+> **Assistant instruction:** do not suggest or execute any installer, curl
+> command, live-install probe, agent drop, catalog/store action, or Tier 2/3
+> promotion described below. Those surfaces are retired or pre-acceptance.
+> The immutable grail is a byte pin, not a public install promise. Current
+> protocol work is source-level conformance to RAPP/1 rev-5.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 ## What it is
 
@@ -242,3 +250,5 @@ After install, the user can run `brainstem doctor` (global installs only) to get
 - Repo: https://github.com/kody-w/RAPP
 - Installer: https://kody-w.github.io/RAPP/installer/install.sh
 - This skill: https://kody-w.github.io/RAPP/pages/docs/skill.md
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

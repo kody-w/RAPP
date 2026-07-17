@@ -1,10 +1,17 @@
-# RAPP — Master Plan
+# Historical RAPP Master Plan
 
 > **Current RAPP/1 authority (rev-5).** This plan governs strategy, but
 > canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
 > evolution are governed by [`RAPP1_AUTHORITY.json`](./RAPP1_AUTHORITY.json)
 > and the claim limits in [`RAPP1_STATUS.md`](./RAPP1_STATUS.md). Strategic
 > intent never overrides the pinned byte-level standard.
+
+> **Whole-document disposition:** this 2026-05-08 strategy is retained as
+> history. Its planting, browser, Pages, offline sharing, hatching, network,
+> and end-to-end proof statements are ambitions or retired product claims, not
+> current operator instructions or shipped capabilities.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > *"The world hasn't been ready so I've just been waiting and planning."*
 > — the operator, 2026-05-08
@@ -145,3 +152,5 @@ Article LV.
 
 *Master Plan published 2026-05-08 by Kody Wildfeuer.*
 *Append-only — extensions are added; existing items are never repurposed. Breaking changes ship as Part Trois.*
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

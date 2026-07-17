@@ -1,11 +1,22 @@
 ---
 title: Mirror Spec
-status: published
+status: historical
 section: Architecture
-hook: The frozen-kernel pattern. Anyone can mirror RAPP, but every mirror's installer must re-fetch the grail's installer at runtime and every mirror's kernel files must be byte-identical to grail v0.6.0. Drift is forbidden, and the check is one shell command.
+hook: Historical frozen-kernel mirror design, superseded by the immutable KERNEL_PIN and RAPP/1 authority records.
 ---
 
 # Mirror Spec
+
+> **SUPERSEDED mirror design — historical record only.** Current
+> canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+> evolution follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md). Kernel bytes are fixed by
+> [`KERNEL_PIN.json`](../../../KERNEL_PIN.json) at
+> `kody-w/rapp-installer@brainstem-v0.6.9`. Moving `main`, `master`, or
+> `latest` references are never verification sources.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** The frozen-kernel pattern. Anyone can mirror RAPP, but every mirror's installer must re-fetch the grail's installer at runtime and every mirror's kernel files must be byte-identical to grail v0.6.0. Drift is forbidden, and the check is one shell command.
 
@@ -33,13 +44,15 @@ A mirror has two cooperating halves, and both must be present.
 
 **1. The installer is a sync wire, not an installer.**
 
-`installer/install.sh` is a thin shell wrapper that, on every run, `curl`s the grail's installer from `https://raw.githubusercontent.com/kody-w/rapp-installer/main/install.sh` and pipes it to `bash`. The mirror's installer cannot drift, because it does not *contain* the install logic — it only fetches it. The grail is the source of truth at install time. The wrapper is a few lines:
+Historically, `installer/install.sh` fetched a moving grail installer. That
+distribution pattern is retired and must not be used as current guidance. The
+only immutable reference for the frozen bytes is:
 
 ```bash
 #!/bin/bash
 set -e
-GRAIL_INSTALLER_URL="https://raw.githubusercontent.com/kody-w/rapp-installer/main/install.sh"
-curl -fsSL "$GRAIL_INSTALLER_URL" | bash -s -- "$@"
+GRAIL_TAG="brainstem-v0.6.9"
+GRAIL_RAW="https://raw.githubusercontent.com/kody-w/rapp-installer/$GRAIL_TAG"
 ```
 
 **2. The kernel files are a failover copy.**
@@ -80,7 +93,7 @@ The pattern is intentionally cheap to replicate. Any fork, clone, or fresh repo 
 This makes the network of mirrors arbitrarily large without needing a central registry. Mirrors do not need permission. Their alignment is verifiable in one command:
 
 ```bash
-diff <(curl -fsSL https://raw.githubusercontent.com/kody-w/rapp-installer/main/rapp_brainstem/brainstem.py) rapp_brainstem/brainstem.py
+diff <(curl -fsSL https://raw.githubusercontent.com/kody-w/rapp-installer/brainstem-v0.6.9/rapp_brainstem/brainstem.py) rapp_brainstem/brainstem.py
 ```
 
 Empty output = compliant. Anything else = the mirror has drifted and is no longer a mirror.
@@ -110,7 +123,7 @@ Anyone — a user, a CI job, an auditor — can check a mirror with:
 
 ```bash
 for f in rapp_brainstem/brainstem.py rapp_brainstem/VERSION rapp_brainstem/agents/basic_agent.py; do
-  diff <(curl -fsSL "https://raw.githubusercontent.com/kody-w/rapp-installer/main/$f") "$f" \
+  diff <(curl -fsSL "https://raw.githubusercontent.com/kody-w/rapp-installer/brainstem-v0.6.9/$f") "$f" \
     || echo "DRIFT: $f"
 done
 ```
@@ -137,3 +150,5 @@ None of this is implementable on a moving kernel. All of it falls out for free o
 - [[Vendoring, Not Symlinking]] — adjacent pattern for Tier 2 self-sufficiency.
 - [[Federation via RAR]] — how trust composes across mirrors.
 - [[The Sacred Constraints]] — Constraint #4 ("Brainstem stays light") is the one this spec operationalizes.
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

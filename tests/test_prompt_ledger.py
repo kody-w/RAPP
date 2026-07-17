@@ -87,9 +87,11 @@ def test_html_has_controls(html):
         assert f'id="{ctrl}"' in html, f"missing #{ctrl}"
 
 
-def test_html_has_copy_logic(html):
-    assert "navigator.clipboard" in html
-    assert "execCommand('copy')" in html, "missing fallback copy path"
+def test_html_is_read_only_history(html):
+    assert "Superseded, read-only design archive" in html
+    assert "navigator.clipboard" not in html
+    assert "execCommand('copy')" not in html
+    assert "copyPrompt(" not in html
 
 
 def test_html_exposes_data_on_window(html):
@@ -163,3 +165,10 @@ def test_listed_in_site_manifest():
     assert "about/prompts.html" in paths, (
         "prompts.html not registered in pages/_site/index.json"
     )
+    entry = next(
+        p
+        for section in manifest["sections"]
+        for p in section["pages"]
+        if p["path"] == "about/prompts.html"
+    )
+    assert entry["status"] == "historical"

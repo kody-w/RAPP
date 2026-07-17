@@ -3,13 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RAPP — Hatch your first .egg</title>
-<meta name="description" content="Step-by-step: install the egg_hatcher agent into your brainstem, then hatch a .egg cartridge. Works offline.">
-<meta property="og:title" content="RAPP — Hatch your first .egg">
-<meta property="og:description" content="Install the egg_hatcher agent, then hatch the sample cartridge. Routes by manifest.schema — organism / rapplication / session / neighborhood / estate.">
+<title>RAPP — Retired egg-hatcher tutorial</title>
+<meta name="description" content="Superseded historical record of the retired pre-RAPP/1 egg hatcher tutorial. Not installation or hatch guidance.">
+<meta property="og:title" content="RAPP — Retired egg-hatcher tutorial">
+<meta property="og:description" content="Historical migration record only. Bundled legacy eggs and hatcher are not current RAPP/1 acceptance paths.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://kody-w.github.io/RAPP/pages/tutorials/hatch-egg.html">
-<link rel="canonical" href="https://kody-w.github.io/RAPP/pages/tutorials/hatch-egg.html">
+<meta name="robots" content="noindex,nofollow">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E🥚%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="../_site/css/tokens.css">
 <link rel="stylesheet" href="../_site/css/base.css">
@@ -176,47 +175,44 @@ a.dl:hover { filter: brightness(1.08); }
   <code>schema:"rapp/1-egg"</code> variants under §9.
 </aside>
 
+<!-- RAPP1-HISTORICAL-SECTION-START -->
+
 <header class="tut-header">
-  <h1><span class="egg">🥚</span> Hatch your first <code>.egg</code></h1>
+  <h1><span class="egg">🥚</span> Retired egg-hatcher tutorial</h1>
   <p>
-    The <b>egg</b> is RAPP's universal sneakernet primitive — a single file that carries an
-    organism, a rapplication, a session, a neighborhood, or an estate. The <b>egg_hatcher</b>
-    agent introspects any <code>.egg</code> and routes it to the right destination based on
-    its manifest schema. It's not a kernel agent — you install it when you're ready to take
-    in eggs. This tutorial walks you through exactly that.
+    This dated page records how the retired <code>brainstem-egg/2.x</code>
+    hatcher demonstration once worked. It does not install, download, verify,
+    or accept a current RAPP/1 egg.
   </p>
   <p class="tut-meta">
-    <b>What you'll do:</b> install the agent, hatch the sample cartridge, see the routing run.
-    Time: ~5 minutes. Works offline.
+    <b>Disposition:</b> historical migration evidence. Do not execute the
+    commands or use the bundled artifacts as acceptance inputs.
   </p>
-  <p style="font-size:13px;color:#8b949e;margin-top:10px">↪ <a href="../kernel.html">Kernel hub</a> · the canonical reading order for the platform</p>
+  <p style="font-size:13px;color:#8b949e;margin-top:10px">No current tutorial
+  navigation or download is offered.</p>
 </header>
 
 <!-- ─────────────────────────── STEP 1 ─────────────────────────── -->
 <section class="tut-step">
-  <h2><span class="num">1</span> Install the <code>egg_hatcher</code> agent</h2>
+  <h2><span class="num">1</span> Historical hatcher acquisition</h2>
   <p>
-    Pick a path. Both end with the same file at <code>~/.brainstem/agents/egg_hatcher_agent.py</code>
-    (or wherever your brainstem's <code>agents/</code> directory lives — the install one-liner puts
-    it at <code>~/.brainstem/</code> by default).
+    The former tutorial offered online and offline copies of
+    <code>egg_hatcher_agent.py</code>. Both paths are retired; the file cannot
+    perform RAPP/1 §9.3 acceptance.
   </p>
 
   <div class="tut-paths">
     <div class="tut-path">
       <h3>Path A — From RAR <span class="pill">Online</span></h3>
-      <p>Install via the SDK (preferred when you have a network).</p>
-<pre><code>python rapp_sdk.py install @rapp/egg_hatcher \
-  --output-dir ~/.brainstem/agents</code></pre>
-      <p>Or grab the Organism Lifecycle pack (twin_agent + egg_hatcher together):</p>
-<pre><code>curl -fsSL https://raw.githubusercontent.com/kody-w/RAR/main/stacks/organism-lifecycle/pack.json</code></pre>
+      <p>The former moving-catalog install command is intentionally omitted.
+      RAR content is not authenticated RAPP/1 acceptance.</p>
     </div>
 
     <div class="tut-path">
       <h3>Path B — Offline drop-in <span class="pill">Sneakernet</span></h3>
-      <p>Download the file from this page, copy it next to your brainstem's other agents.</p>
-      <a class="dl" href="egg_hatcher_agent.py" download>⬇ Download <code>egg_hatcher_agent.py</code></a>
-<pre><code>mv ~/Downloads/egg_hatcher_agent.py ~/.brainstem/agents/</code></pre>
-      <p>The agent is one file, stdlib-only — no <code>pip install</code> step required.</p>
+      <p>The bundled agent remains repository history only. Its former download
+      link and copy command are removed so it cannot be mistaken for a current
+      acceptance path.</p>
     </div>
   </div>
 
@@ -229,25 +225,25 @@ a.dl:hover { filter: brightness(1.08); }
 
 <!-- ─────────────────────────── STEP 2 ─────────────────────────── -->
 <section class="tut-step">
-  <h2><span class="num">2</span> Download the sample <code>.egg</code></h2>
+  <h2><span class="num">2</span> Historical sample cartridge</h2>
   <p>
-    A 1 KB session cartridge that exists only to be hatched by this tutorial. Its manifest
-    declares <code>schema: brainstem-egg/2.3-session</code> so the hatcher knows to route it
-    as a session.
+    The retained sample declares retired
+    <code>schema: brainstem-egg/2.3-session</code>. It is not a
+    <code>schema:"rapp/1-egg"</code> manifest and must not be accepted.
   </p>
-  <a class="dl" href="sample-session.egg" download>⬇ Download <code>sample-session.egg</code></a>
-<pre><code>mv ~/Downloads/sample-session.egg ~/Desktop/</code></pre>
+  <p><code>sample-session.egg</code> remains inert history; the live download
+  and move instructions are removed.</p>
 </section>
 
 <!-- ─────────────────────────── STEP 3 ─────────────────────────── -->
 <section class="tut-step">
-  <h2><span class="num">3</span> Restart your brainstem and hatch it</h2>
+  <h2><span class="num">3</span> Historical routing behavior</h2>
   <p>
-    The brainstem auto-discovers <code>agents/*_agent.py</code> on every <code>/chat</code> request,
-    so technically you don't need a restart — but the LLM picks up new tools faster after a
-    fresh process. Then open the chat UI at <code>http://localhost:7071</code> and say:
+    The old demonstration asked an immutable application runtime to route the
+    sample by a retired schema label. That behavior is migration evidence, not
+    the target-owned façade or current RAPP/1 wire.
   </p>
-<pre><code>hatch ~/Desktop/sample-session.egg</code></pre>
+<pre><code>Historical hatch command removed — do not execute.</code></pre>
   <p>
     The LLM should tool-call <code>HatchEgg(egg_path="~/Desktop/sample-session.egg")</code>.
     For the session cartridge above, it returns a URL to mount in the rappterbox console —
@@ -263,14 +259,14 @@ a.dl:hover { filter: brightness(1.08); }
 
 <!-- ─────────────────────────── STEP 4 ─────────────────────────── -->
 <section class="tut-step">
-  <h2><span class="num">4</span> Hatch the <strong>commons</strong> egg — meet the network</h2>
+  <h2><span class="num">4</span> Historical Commons example</h2>
   <p>
-    The session cartridge above was inert — just enough to prove the routing works. The
-    real payoff is the <strong>neighborhood</strong> kind. Download the bundled invite egg
-    for the RAPP Commons (global public hangout for AIs):
+    The former tutorial linked a target-owned Commons invite using a retired
+    neighborhood schema. It is not a signed RAPP/1 §9 invite and is not offered
+    for download.
   </p>
-  <a class="dl" href="commons.egg" download>⬇ Download <code>commons.egg</code></a>
-<pre><code>hatch ~/Downloads/commons.egg</code></pre>
+  <p><code>commons.egg</code> remains inert history; its live link and hatch
+  command are removed.</p>
   <p>
     The hatcher reads <code>schema: brainstem-egg/2.3-neighborhood</code>, validates the
     embedded v2 rappid, and appends <code>{rappid, added_at, via: "egg"}</code> to your
@@ -294,10 +290,9 @@ a.dl:hover { filter: brightness(1.08); }
     floor: <em>scan, hatch, post a hello.</em>
   </div>
   <p>
-    Source-of-truth scaffold: <a href="../../examples/rapp-commons/">examples/rapp-commons/</a>
-    in this repo. Once planted at <code>kody-w/rapp-commons</code>, the canonical egg URL is
-    <code>https://kody-w.github.io/rapp-commons/.well-known/neighborhood.egg</code> and a
-    QR pointing at it is on the commons landing page.
+    The former target-owned Commons scaffold and moving deployment promise are
+    retired. An estate owner must issue and sign any replacement invite through
+    the owner-action process in <a href="../../RAPP1_STATUS.md">RAPP1_STATUS.md</a>.
   </p>
 </section>
 
@@ -344,7 +339,7 @@ a.dl:hover { filter: brightness(1.08); }
 
 <!-- ─────────────────────────── WHY THIS MATTERS ─────────────────────────── -->
 <section class="tut-step">
-  <h2><span class="num">★</span> Why the egg matters</h2>
+  <h2><span class="num">★</span> Historical design rationale</h2>
   <p>
     The egg is the only thing that has to be portable. Identity, configuration, organs,
     memory, sessions, neighborhoods, even your entire estate — all of it travels as the same
@@ -353,9 +348,8 @@ a.dl:hover { filter: brightness(1.08); }
     routes accordingly. <b>Same primitive, every substrate, no fallback to guessing.</b>
   </p>
   <p>
-    See <a href="../docs/SPEC.md">SPEC §18.10</a> for the full cartridge family, or the
-    <a href="../about/anatomy.html">organism anatomy</a> page for where eggs sit in the
-    broader picture.
+    The cited local SPEC is superseded. Current egg structure and acceptance are
+    exclusively RAPP/1 §9 through the authority and status links above.
   </p>
 </section>
 
@@ -366,5 +360,7 @@ a.dl:hover { filter: brightness(1.08); }
 </footer>
 
 </div>
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->
 </body>
 </html>

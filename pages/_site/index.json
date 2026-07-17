@@ -11,13 +11,13 @@
       "label": "About",
       "description": "Who RAPP is for, how it gets adopted, what it doesn't try to be.",
       "pages": [
-        { "path": "about/anatomy.html",    "title": "Anatomy of a digital organism", "audience": "Anyone curious", "description": "The full visual diagram: DNA, soul, organs, senses, cells, memory, skin, egg — every layer mapped from biology to code." },
-        { "path": "about/ecosystem.html",  "title": "Ecosystem map",                "audience": "Anyone curious", "description": "Force-directed map of every kody-w/* repo. Color = category, size = degree, edges = cross-repo references. See which repos cluster vs which drift isolated." },
-        { "path": "about/prompts.html",    "title": "Prompt ledger",                 "audience": "Operator",       "description": "Append-only menu of prompts that exercise RAPP primitives — federation, swarms, eggs, planting, twins. Click any to copy." },
-        { "path": "about/leadership.html", "title": "Leadership one-pager", "audience": "Executive sponsor", "description": "Workshops become production-bound agents. Same week. One file." },
-        { "path": "about/partners.html",    "title": "Partner one-pager",    "audience": "System integrator", "description": "What partners receive, what they build, what they own." },
-        { "path": "about/process.html",     "title": "How a session runs",   "audience": "Workshop lead",     "description": "60-minute customer session → working agent by week's end." },
-        { "path": "about/security.html",    "title": "Security & compliance","audience": "Security reviewer","description": "Local-first by design. What leaves the device, what doesn't." }
+        { "path": "about/anatomy.html",    "title": "Historical · organism anatomy", "audience": "Maintainer", "description": "Visual history of the organism metaphor; no current install or egg lifecycle." },
+        { "path": "about/ecosystem.html",  "title": "Generated · ecosystem observation", "audience": "Maintainer", "description": "Non-authoritative generated observation of external repositories; descriptions may be stale." },
+        { "path": "about/prompts.html",    "title": "Historical · prompt ledger", "audience": "Maintainer", "description": "Read-only speculative archive; planting, eggs, and copy/run CTAs are retired.", "status": "historical" },
+        { "path": "about/leadership.html", "title": "Pre-acceptance · leadership concept", "audience": "Executive sponsor", "description": "Historical workshop narrative; not a production or delivery commitment." },
+        { "path": "about/partners.html",    "title": "Historical · partner concept", "audience": "Maintainer", "description": "No current agent delivery, production, or cloud commitment.", "status": "historical" },
+        { "path": "about/process.html",     "title": "Historical · workshop process", "audience": "Maintainer", "description": "No one-week production or deployment promise.", "status": "historical" },
+        { "path": "about/security.html",    "title": "Pre-acceptance · security review","audience": "Security reviewer","description": "Source-review orientation, not a certification or cloud-residency promise." }
       ]
     },
     {
@@ -32,67 +32,59 @@
     },
     {
       "key": "product",
-      "label": "Product",
-      "description": "What the platform actually does, with examples.",
+      "label": "Pre-acceptance narratives",
+      "description": "Current limitations and retained historical marketing.",
       "pages": [
-        { "path": "product/faq.html",        "title": "FAQ",          "audience": "Engineer evaluating",   "description": "Straight answers — how is RAPP different from GPT, Copilot, Studio?" },
-        { "path": "product/faq-slide.html",  "title": "FAQ slide",     "audience": "Speaker companion",     "description": "Single-slide version of the FAQ for a presentation deck." },
-        { "path": "product/one-pager.html",  "title": "Platform one-pager","audience": "Reader in a hurry","description": "The whole product in one page." },
-        { "path": "product/use-cases.html",  "title": "Use cases",     "audience": "Buyer building scenarios","description": "What teams actually build with RAPP, by industry and shape." },
-        { "path": "product/vs.html",         "title": "RAPP vs Codex (and the rest)", "audience": "Skeptic asking 'why not just use Claude Code'", "description": "Feature-by-feature. The most-advanced AI coding agent of 2026 (OpenAI Codex / Claude Code / Cursor) writes code; RAPP networks the result. Sega-vs-Nintendo style receipt page for the skeptic who thinks they should just vibe-code their own." },
-        { "path": "product/unsolved.html",   "title": "20 problems they still need to solve", "audience": "Skeptic who needs the punchy version", "description": "Slide-by-slide deck enumerating the 20 substrate problems every other AI agent tool, framework, SDK, or platform still owes you. Scroll or arrow-key. RAPP shipped them all; competitors haven't started." }
+        { "path": "product/faq.html",        "title": "Historical · FAQ", "audience": "Maintainer", "description": "Pre-acceptance answers; not a current product claim.", "status": "historical" },
+        { "path": "product/faq-slide.html",  "title": "Historical · FAQ slide", "audience": "Maintainer", "description": "Pre-acceptance presentation history.", "status": "historical" },
+        { "path": "product/one-pager.html",  "title": "Historical · platform concept", "audience": "Maintainer", "description": "No current installer, browser, cloud tier, or production path.", "status": "historical" },
+        { "path": "product/use-cases.html",  "title": "Historical · use cases", "audience": "Maintainer", "description": "Illustrative scenarios, not shipped workflows.", "status": "historical" },
+        { "path": "product/vs.html",         "title": "Historical · comparison snapshot", "audience": "Maintainer", "description": "Superseded comparison; legacy feature claims and install CTA are retired.", "status": "historical" },
+        { "path": "product/unsolved.html",   "title": "Historical · unsolved concept deck", "audience": "Maintainer", "description": "Superseded design claims; not evidence of shipped capabilities.", "status": "historical" }
       ]
     },
     {
       "key": "release",
-      "label": "Release",
-      "description": "What's shipped, what's next.",
+      "label": "Historical release records",
+      "description": "Dated history; no current installer, roadmap commitment, or shipment claim.",
       "pages": [
-        { "path": "release/roadmap.html",       "title": "Roadmap",       "audience": "Architect", "description": "Post-v1 directions that must honor the v1 contract." },
-        { "path": "release/release-notes.html", "title": "Release notes", "audience": "Operator", "description": "Tagged releases, immutable per Article XIX." }
-      ]
-    },
-    {
-      "key": "tutorials",
-      "label": "Tutorials",
-      "description": "Hands-on walkthroughs. Bundle the agent, bundle the cartridge, run the routing.",
-      "pages": [
-        { "path": "tutorials/hatch-egg.html", "title": "Hatch your first .egg", "audience": "Operator new to eggs", "description": "Install the egg_hatcher agent (one file, no kernel changes), then hatch the bundled sample-session.egg to see manifest-schema routing run end-to-end. Works offline." }
+        { "path": "release/roadmap.html",       "title": "Historical · roadmap", "audience": "Maintainer", "description": "Superseded 2026-05-02 planning snapshot.", "status": "historical" },
+        { "path": "release/release-notes.html", "title": "Historical · release notes", "audience": "Maintainer", "description": "Dated release record; no current install or rollback instruction.", "status": "historical" }
       ]
     },
     {
       "key": "docs",
-      "label": "Docs",
-      "description": "The contract, the agent guide, the SDK reference.",
+      "label": "Authority and documentation history",
+      "description": "RAPP/1 authority links plus retired local specs, onboarding, SDK, and release history.",
       "pages": [
-        { "path": "docs/",                    "title": "Docs index",     "audience": "Engineer",   "description": "Cards for SPEC, AGENTS, ROADMAP, VERSIONS, skill, SDK." },
-        { "path": "docs/viewer.html?doc=SPEC",     "title": "SPEC",          "audience": "Engineer",   "description": "v1 wire contract for the single-file agent format. Frozen." },
-        { "path": "docs/viewer.html?doc=ROADMAP",  "title": "ROADMAP",       "audience": "Architect",  "description": "Post-v1 directions." },
+        { "path": "docs/",                    "title": "Docs index",     "audience": "Maintainer", "description": "Authority links and historical documentation cards." },
+        { "path": "docs/viewer.html?doc=SPEC",     "title": "Historical · SPEC", "audience": "Maintainer", "description": "Superseded local v1 contract.", "status": "historical" },
+        { "path": "docs/viewer.html?doc=ROADMAP",  "title": "Historical · ROADMAP", "audience": "Maintainer", "description": "Superseded product planning.", "status": "historical" },
         { "path": "docs/viewer.html?doc=AGENTS",   "title": "AGENTS",        "audience": "AI assistant","description": "Guidance to AI assistants editing this repo." },
-        { "path": "docs/viewer.html?doc=VERSIONS", "title": "VERSIONS",      "audience": "Operator",   "description": "Tag history and rollback discipline." },
-        { "path": "docs/viewer.html?doc=skill",    "title": "skill.md",      "audience": "AI assistant","description": "Canonical AI-readable skill manifest." },
-        { "path": "docs/viewer.html?doc=rapplication-sdk", "title": "Rapplication SDK", "audience": "Builder", "description": "SDK-shaped reference for building rapplications." },
-        { "path": "docs/viewer.html?doc=QR_FRONT_GATE", "title": "QR Front Gate (mandatory)", "audience": "Neighborhood planter", "description": "Every neighborhood's planted index.html MUST display a tether QR on first paint (Article LI). Spec + canonical drop-in snippet (QRious + auto-detect deploy URL + graceful degrade to plain-URL text when the CDN is unreachable). Conformance is binary; non-conforming gates flag a warning in the federation roll-up." }
+        { "path": "docs/viewer.html?doc=VERSIONS", "title": "Historical · VERSIONS", "audience": "Maintainer", "description": "Tag history; no installer or rollback action.", "status": "historical" },
+        { "path": "docs/viewer.html?doc=skill",    "title": "Historical · host onboarding", "audience": "Maintainer", "description": "Retired installer and tier commands; do not execute.", "status": "historical" },
+        { "path": "docs/viewer.html?doc=rapplication-sdk", "title": "Historical · Rapplication SDK", "audience": "Maintainer", "description": "Retired SDK and distribution design.", "status": "historical" },
+        { "path": "docs/viewer.html?doc=QR_FRONT_GATE", "title": "Historical · QR front gate", "audience": "Maintainer", "description": "Retired QR/tether design; not a planting or conformance requirement.", "status": "historical" }
       ]
     },
     {
       "key": "vault",
-      "label": "Vault",
-      "description": "Long-form decision narratives — why every non-trivial choice was made the way it was.",
+      "label": "Vault history",
+      "description": "Long-form decision history; narratives do not override the authority/status pair.",
       "pages": [
-        { "path": "vault/",                    "title": "Vault home",            "audience": "Curious contributor", "description": "Real Obsidian vault of founding decisions, removals, manifestos. Static SPA viewer." }
+        { "path": "vault/", "title": "Historical · vault viewer", "audience": "Maintainer", "description": "Preserved notes and viewer source; no hosted-product claim.", "status": "historical" }
       ]
     },
     {
       "key": "metropolis",
-      "label": "Metropolis",
-      "description": "Decentralized index of active RAPP neighborhoods. Kazaa-style tracker; anyone can fork + run their own.",
+      "label": "Historical Metropolis",
+      "description": "Retired neighborhood-directory concept; not a live catalog or discovery authority.",
       "pages": [
-        { "path": "metropolis/",               "title": "RAPP Metropolis",       "audience": "Anyone discovering neighborhoods", "description": "Live directory of planted neighborhoods. Brainstems are the seeders. Agents are the work. The protocol is the network." }
+        { "path": "metropolis/", "title": "Historical · RAPP Metropolis", "audience": "Maintainer", "description": "Retired planted-neighborhood directory; not a live catalog.", "status": "historical" }
       ]
     }
   ],
   "root_pinned": [
-    { "path": "../pitch-playbook.html", "title": "Pitch playbook", "description": "6-slide deck framing RAPP as an adoption layer. URL grandfathered at root." }
+    { "path": "../pitch-playbook.html", "title": "Historical · pitch playbook", "description": "Preserved pre-acceptance marketing; not current product evidence.", "status": "historical" }
   ]
 }

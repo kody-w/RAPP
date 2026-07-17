@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RAPP — Process One-Pager</title>
-<meta name="description" content="Customer conversation to production agent, in one week. The RAPP process from workshop to Copilot Studio.">
-<meta property="og:title" content="RAPP — Customer conversation to production agent, in one week.">
-<meta property="og:description" content="Customer conversation to production agent, in one week. The RAPP process from workshop to Copilot Studio.">
+<title>RAPP — Historical Workshop Process</title>
+<meta name="description" content="Historical workshop-to-prototype process; no one-week production promise.">
+<meta property="og:title" content="RAPP — Historical workshop process.">
+<meta property="og:description" content="Pre-acceptance workshop concept; no Copilot Studio deployment is shipped.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://kody-w.github.io/RAPP/pages/about/process.html">
 <link rel="canonical" href="https://kody-w.github.io/RAPP/pages/about/process.html">
@@ -177,10 +177,21 @@ h1 .grad{
 </style>
 </head>
 <body>
+<!-- RAPP1-HISTORICAL-SECTION-START -->
+<aside role="note" style="max-width:1100px;margin:16px auto;padding:12px 18px;border:1px solid currentColor">
+  <strong>Historical pre-acceptance page.</strong> Current RAPP/1 rev-5 claims follow
+  <a href="../../RAPP1_AUTHORITY.json">RAPP1_AUTHORITY.json</a> and
+  <a href="../../RAPP1_STATUS.md">RAPP1_STATUS.md</a>.
+</aside>
 <div id="site-header"></div>
 
 <main class="slide">
   <div class="slide-inner">
+
+    <aside role="note" style="margin:0 auto 18px;padding:10px 14px;border:1px solid #f59e0b;border-radius:8px;background:#f59e0b18;font-size:.82rem">
+      <strong>Historical process concept.</strong> “In one week” is not a
+      current delivery promise, and Copilot Studio deployment is retired.
+    </aside>
 
     <span class="kicker animate d1">The Process</span>
 
@@ -192,10 +203,9 @@ h1 .grad{
     </h1>
 
     <p class="sub animate d4">
-      A structured ideation workshop grounds the customer in their own
-      business problems. RAPP turns that transcript into a working agent
-      prototype — <strong>validated, demonstrable, and shareable as a single file</strong>
-      — ready for a partner to bolt to production on Copilot Studio.
+      This earlier workshop design aimed to turn a transcript into reviewable
+      local source. Any “working agent” is a pre-acceptance prototype; it is
+      not ready for production or Copilot Studio.
     </p>
 
     <section class="pipeline">
@@ -237,10 +247,9 @@ h1 .grad{
 
       <div class="step animate d6">
         <span class="n">5</span>
-        <h3>Deploy to Copilot Studio</h3>
-        <p>Partner connects real systems; the agent promotes to
-          <strong>Azure and Copilot Studio unchanged</strong>, landing
-          where the customer already works.</p>
+        <h3>Future adapter review</h3>
+        <p>Azure and Copilot Studio deployment are retired. A future adapter
+          would require separate design, security review, and acceptance.</p>
       </div>
     </section>
 
@@ -259,15 +268,16 @@ h1 .grad{
 
       <div class="value-cell animate d7">
         <span class="label">What partners pick up</span>
-        <h4>Self-documenting agent files, production-shaped</h4>
-        <p>Single-file hand-off. The partner bolts it to real data and lands it in Copilot Studio. No re-architecting. No re-specifying.</p>
+        <h4>Reviewable source, not production-shaped</h4>
+        <p>A single-file handoff can inform later work; it does not remove
+          architecture, security, or specification work.</p>
       </div>
     </section>
 
     <blockquote class="hinge animate d7">
       The <span class="accent">agent IS the spec.</span>
-      Customer → prototype → partner → production in a single handoff —
-      carried by one portable file.
+      Customer → prototype → reviewable source. Production is a separate,
+      unshipped path.
     </blockquote>
 
   </div>
@@ -291,5 +301,6 @@ h1 .grad{
 
 <div id="site-footer"></div>
 <script src="../_site/js/site.js" defer></script>
+<!-- RAPP1-HISTORICAL-SECTION-END -->
 </body>
 </html>

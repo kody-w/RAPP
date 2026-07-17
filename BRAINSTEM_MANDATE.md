@@ -1,10 +1,17 @@
-# THE BRAINSTEM MANDATE
+# Historical Brainstem Mandate
 
 > **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
 > wire, eggs, registry, trust, and protocol evolution, follow
 > [`RAPP1_AUTHORITY.json`](./RAPP1_AUTHORITY.json) and
 > [`RAPP1_STATUS.md`](./RAPP1_STATUS.md). This mandate is product strategy; the
 > exact RAPP wire and artifact contracts come only from the pinned standard.
+
+> **Whole-document disposition:** this essay records a product ambition. Its
+> “ship,” drag-and-drop, universal runtime, and carrier claims are not current
+> capabilities or instructions. Today this repository establishes source-level
+> RAPP/1 conformance and a loopback pre-acceptance façade only.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > *A foundational note for everyone shipping intelligence under the RAPP banner.  Written in deliberate parallel to a famous 2002 internal email at another company.*
 
@@ -92,3 +99,5 @@ LV and the pinned RAPP/1 rev-5 authority win every structural conflict.
 The 2002 email this mirrors was about decoupling data ownership inside one company.  This one is about decoupling intelligence ownership across all of them.
 
 Thank you; have a nice day.
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

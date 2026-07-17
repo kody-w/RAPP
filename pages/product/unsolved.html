@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>20 problems every other AI agent tool still has to solve</title>
-<meta name="description" content="A slide-by-slide enumeration of the substrate problems RAPP has solved that every other AI agent tool, framework, SDK, or platform still needs to solve to catch up. Scroll or arrow-key.">
+<title>Historical RAPP Comparison Concept</title>
+<meta name="description" content="Superseded comparison deck; its solved, shipped, tier, installer, egg, and planting claims are not current.">
 <meta property="og:title" content="20 problems every other AI agent tool still has to solve">
-<meta property="og:description" content="One slide, one problem. The list other vendors still owe you.">
+<meta property="og:description" content="Superseded comparison deck; not current product evidence.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://kody-w.github.io/RAPP/pages/product/unsolved.html">
 <link rel="canonical" href="https://kody-w.github.io/RAPP/pages/product/unsolved.html">
@@ -184,6 +184,12 @@ body {
 </style>
 </head>
 <body>
+<!-- RAPP1-HISTORICAL-SECTION-START -->
+<aside role="note" style="max-width:1100px;margin:16px auto;padding:12px 18px;border:1px solid currentColor">
+  <strong>Historical comparison page.</strong> Current RAPP/1 rev-5 claims follow
+  <a href="../../RAPP1_AUTHORITY.json">RAPP1_AUTHORITY.json</a> and
+  <a href="../../RAPP1_STATUS.md">RAPP1_STATUS.md</a>.
+</aside>
 
 <!-- nav dots -->
 <div class="dots" id="dots"></div>
@@ -191,9 +197,12 @@ body {
 
 <!-- ─── 0. TITLE ─── -->
 <section class="slide title" id="s0">
-  <h1>20 problems every other<br>AI agent tool <em>still</em><br>needs to solve.</h1>
+  <h1>Historical concept deck:<br>20 problems agent tools<br>might need to solve.</h1>
   <p class="lede">
-    Codex. Claude Code. Cursor. LangGraph. Microsoft Agent Framework. CrewAI. OpenAI Agents SDK. Anthropic Claude SDK. MCP. A2A. Pydantic AI. Google ADK. <b>None of them solve any of the next 20 slides.</b> RAPP solved them. They're constitutionally locked.
+    <b>Superseded pre-acceptance marketing.</b> Claims below preserve an
+    earlier design pitch; they are not current comparisons or shipped-feature
+    claims. In particular, Tier 2/3, installers, legacy eggs, and planting are
+    retired. See <a href="../../RAPP1_STATUS.md">RAPP1_STATUS.md</a>.
   </p>
   <div class="scroll-hint">scroll or arrow-key</div>
 </section>
@@ -218,7 +227,8 @@ body {
   <div class="section">Portability · 2 of 4</div>
   <h2>The same agent in <em>three</em> substrates, unmodified.</h2>
   <p class="body">
-    Tier 1 (your laptop). Tier 2 (Azure Functions). Tier 3 (Microsoft Copilot Studio). Same .py file. Zero changes. <span class="x">Every other tool requires you to pick a tier and lock in.</span> RAPP makes the same agent file run in all three because the contract is the contract regardless of where it executes.
+    Historical design only: Tier 2 (Azure Functions) and Tier 3 (Microsoft
+    Copilot Studio) are retired. No unchanged cross-tier execution is shipped.
   </p>
   <div class="footer">
     <span>kody-w/RAPP · CLAUDE.md "Sacred Constraints" §6</span>
@@ -231,7 +241,9 @@ body {
   <div class="section">Portability · 3 of 4</div>
   <h2>Two files. Sneakernet. <em>No shell commands.</em></h2>
   <p class="body">
-    USB stick. AirDrop. Postcard. The receiver does drag-and-drop + one chat. <span class="x">No other platform has a portable cartridge format that works without internet, account, or shell access.</span> RAPP's .egg + bootstrap agent is a constitutional invariant. The receiver's grandmother could do it.
+    The former USB/AirDrop `.egg` + bootstrap story is retired. No supported
+    no-shell cartridge, drag-and-drop hatch, or authenticated egg release is
+    currently offered.
   </p>
   <div class="footer">
     <span>pages/docs/rapplication-sdk.md · Sneakernet portability invariant</span>
@@ -244,7 +256,9 @@ body {
   <div class="section">Portability · 4 of 4</div>
   <h2>Sha256-pinned distribution. <em>The bytes you got are the bytes I sent.</em></h2>
   <p class="body">
-    Every workflow ships with a `rar/index.json` manifest listing each agent's sha256. The hatcher refuses to install on hash mismatch. <span class="x">Pip doesn't do this. npm doesn't. HuggingFace doesn't for agent code. Every SDK trusts the registry.</span> RAPP refuses without override.
+    Historical manifests and hatchers are not current distribution or trust
+    mechanisms. RAPP/1 acceptance instead requires the authenticated §13
+    registry and exact validation rules.
   </p>
   <div class="footer">
     <span>specs/RAR_INDEX.md · BWAT CONSTITUTION Article IV</span>
@@ -259,7 +273,8 @@ body {
   <div class="section">Identity · 1 of 4</div>
   <h2>The AI you talked to last month <em>is the same one today</em>.</h2>
   <p class="body">
-    Persistent organism identity that survives every kernel upgrade. <span class="x">Every other tool gives you sessions, conversations, threads — none of them durable identity.</span> RAPP mints a rappid at first install; it lives in `~/.brainstem/rappid.json` and never changes. The egg→overlay→hatch bond cycle preserves it across every version.
+    The former install-minted identity and egg→overlay→hatch bond cycle are
+    retired. Current identity is accepted only under RAPP/1 §§6 and 13.
   </p>
   <div class="footer">
     <span>CONSTITUTION.md Article XLVI · utils/bond.py mint_rappid</span>
@@ -339,7 +354,8 @@ body {
   <div class="section">Network · 3 of 4</div>
   <h2>Two-tier mandatory estate. <em>PII never leaks to public.</em></h2>
   <p class="body">
-    Every operator gets BOTH a public estate (discovery surface, ZERO PII) AND a private estate (real client/patient/partner correspondence) <b>from first install</b>. The boundary is constitutional: no opt-in to private (it's automatic), no cross-tier smuggling. <span class="x">Every other platform conflates these or makes private a paid add-on.</span>
+    The former first-install public/private estate promise is retired. No
+    installer or automatic estate creation is currently shipped.
   </p>
   <div class="footer">
     <span>CONSTITUTION.md Article XLVIII · pages/docs/PUBLIC_PRIVATE_BOUNDARY.md</span>
@@ -352,7 +368,8 @@ body {
   <div class="section">Network · 4 of 4</div>
   <h2>LAN federation. <em>Wifi off, agents still flow.</em></h2>
   <p class="body">
-    Two brainstems on the same LAN discover each other via zeroconf, exchange agents directly, and write a joint autobiography of the meeting. Sneakernet at the limit: AirDrop a .egg between two airgapped laptops. <span class="x">Every SaaS chatbot dies the moment wifi dies.</span> RAPP runs in customer basements with no cell signal.
+    LAN discovery, direct agent exchange, and AirDrop egg claims are historical
+    design ideas, not operational or accepted RAPP/1 paths.
   </p>
   <div class="footer">
     <span>CONSTITUTION.md Article XLVII.5 · tools/lan_advertise.py</span>
@@ -462,7 +479,8 @@ body {
   <div class="section">UI / Rapplications · 2 of 2</div>
   <h2>The docstring <em>IS</em> the readme. <em>Sacred.</em></h2>
   <p class="body">
-    A sneakernet payload is exactly two files: agent.py + .egg. Adding a third file (README.md / INSTRUCTIONS.txt / SETUP.md) breaks the invariant. <span class="x">Every other tool ships a wall of docs separate from the install artifact.</span> RAPP forces the readme to live in the bootstrap agent's docstring — humans read it; LLMs ingest it; both drive the same setup.
+    The two-file sneakernet payload and bootstrap setup are retired. No current
+    install artifact or cartridge invariant is advertised.
   </p>
   <div class="footer">
     <span>pages/docs/rapplication-sdk.md · "The docstring IS the readme (sacred)"</span>
@@ -538,5 +556,6 @@ body {
 })();
 </script>
 
+<!-- RAPP1-HISTORICAL-SECTION-END -->
 </body>
 </html>

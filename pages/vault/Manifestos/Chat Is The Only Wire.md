@@ -1,6 +1,6 @@
 ---
 title: Chat Is The Only Wire
-status: published
+status: historical
 section: Manifestos
 hook: Every brainstem ever shipped speaks the same `/chat`. That is the contract — and the acid test that proved it caught a real divergence we didn't know we had.
 ---
@@ -14,6 +14,13 @@ hook: Every brainstem ever shipped speaks the same `/chat`. That is the contract
 > through [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
 > [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md). Current wire is exactly the two
 > forms in RAPP/1 §8, and §12 requires total migration and retirement.
+> The target façade request allows exactly required string `user_input` and
+> optional strings `session_id` and `idempotency_key`; HTTP 200 is exactly
+> `response`, `agent_logs` (array), and `session_id`; HTTP 422 is exactly
+> `{"error":{"code":"<code>","step":null}}`. Voice/Twin rendering is derived
+> locally from `response`; it adds no voice, twin, mode, or history wire fields.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** Every brainstem ever shipped speaks the same `/chat`. That is the contract — and the acid test that proved it caught a real divergence we didn't know we had.
 
@@ -70,13 +77,21 @@ This is the POSIX moment. Linux distros agreed on a small surface and built a fe
 
 ## What we will never let break
 
-- The request envelope: `user_input`, `conversation_history`, `session_id`, `user_guid`. Never renamed. Never made required (except `user_input`). Never repurposed.
-- The response envelope: `response` AND `assistant_response` both present with identical values. Both forever. Same for `voice_response`, `twin_response`, `session_id`, `user_guid`, `agent_logs`.
-- The default GUID's exact string value. `c0p110t0-aaaa-bbbb-cccc-123456789abc`. One character off and a brainstem in the wild stops recognizing the default.
-- The schema-evolution rule: additive-only. Add fields. Never remove or rename.
+This historical list is superseded. The current invariant is the exact RAPP/1
+§8 boundary:
+
+- request: required `user_input`, optional `session_id` and
+  `idempotency_key`; no client history or identity member;
+- success: exactly `response`, `agent_logs` (array), and `session_id`;
+- refusal: HTTP 422 with exactly
+  `{"error":{"code":"...","step":null}}`; and
+- evolution: total migration and retirement under §12, never additive
+  read-forever aliases.
 
 ## What it costs
 
 LLM tokens on every cross-brainstem call. No bypass for handshake or capability discovery — the LLM is in every loop. That's the price for universality. The receiving brainstem has to actually read the question, decide what to say, and answer. We accept that cost because the alternative — a special endpoint, a special protocol, a special agent — would create a class of clients that can talk to *some* brainstems but not *all* of them. That's the federation killer.
 
 The wire is forever. Forever has a price.
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

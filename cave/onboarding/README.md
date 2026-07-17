@@ -1,26 +1,26 @@
 # Onboarding — start here
 
+> **Historical application onboarding only.** For canonicalization, identity,
+> frames, wire, eggs, registry, trust, and protocol evolution, follow RAPP/1
+> rev-5 through [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md). The cave installer and direct
+> agent-download instructions are retired.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
+
 Welcome to **The RAPP Cave**, the public sibling of the private
 [Batcave](https://github.com/kody-w/rapp-batcave). Three steps and you're
 browsing; one PR and you're a member. Everything here is reachable with plain
 `curl` — no GitHub auth required to look or to pull.
 
 ## 1. Get a brainstem
-```bash
-curl -fsSL https://kody-w.github.io/RAPP/cave/rapplications/rapp-installer/bootstrap.sh | bash
-```
-Plain curl, no GitHub login — it hatches the full, repo-independent RAPP
-brainstem off GitHub Pages.
+The cave no longer supplies a bootstrap. Its prepared installer subtree is
+inert history, not a live install or RAPP/1 acceptance path.
 
 ## 2. Get the participation agent
-```bash
-curl -fsSL "https://raw.githubusercontent.com/kody-w/RAPP/main/cave/agents/rapp_agent.py" \
-  -o <your-brainstem>/agents/rapp_agent.py
-```
-This is the **public, generic** rapp agent — the same one published in
-[RAR](https://github.com/kody-w/RAR). Unlike the private batcave, the cave ships
-**no secret "edition"** and points at no hidden door: the door is just the public
-URL. Drop it in `agents/`; no restart needed — agents reload every request.
+The former moving-branch direct download is removed. Any replacement must be a
+verified RAPP/1 artifact accepted through the estate owner's §13 state; public
+reachability alone is not trust.
 
 ## 3. Say hello
 In your brainstem chat:
@@ -47,4 +47,7 @@ pulling never do.)
 - [`../INVITE.md`](../INVITE.md) — share-the-link onboarding for the next person
 - [`../cubbies/_template/`](../cubbies/_template/) — copy this to join by hand
 - [`../specs/`](../specs/) — the cubby protocol and workspace spec
-- <https://kody-w.github.io/RAPP/cave/> — the live front door (browse, no install)
+- <https://kody-w.github.io/RAPP/cave/> — historical/application front door;
+  not an install or acceptance surface
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

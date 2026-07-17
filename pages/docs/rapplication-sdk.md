@@ -1,4 +1,4 @@
-# Rapplication SDK
+# Historical Rapplication SDK
 
 > **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
 > wire, eggs, registry, trust, and protocol evolution, follow
@@ -6,7 +6,13 @@
 > [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md). RAPP agents remain agents; their
 > wire and distribution must use RAPP/1 §§8–9.
 
-> Build apps that any AI can drive. Agent-first, single-file, zero-config.
+> **Whole-document disposition:** this SDK, its drop-to-install flow, service
+> routes, cross-tier portability, store catalog, legacy egg pairing, and
+> browser examples are not shipped current capabilities. They are preserved
+> for migration and design history only. A future accepted rapplication must
+> use the exact §8 façade and a verified §9 `rapplication` variant.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 ## What is a rapplication?
 
@@ -544,3 +550,5 @@ Both read/write the same .brainstem_data/ files.
 | Webhook | integration | Query/summarize ingested events | `POST /api/webhook/ingest` for external systems |
 | Dashboard | analytics | Log/query metrics via chat | `GET /api/dashboard/*` for charting UIs |
 | VibeBuilder | platform | Generate new rapplications from natural language | (agent-only) |
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

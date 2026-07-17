@@ -1,10 +1,20 @@
-# RAPP Survival Contract
+# Historical RAPP Survival Model
 
 > **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
 > wire, eggs, registry, trust, and protocol evolution, follow
 > [`RAPP1_AUTHORITY.json`](./RAPP1_AUTHORITY.json) and
 > [`RAPP1_STATUS.md`](./RAPP1_STATUS.md). Survival scenarios do not waive
 > RAPP/1 integrity, signature, registry, or migration requirements.
+
+## Current correction
+
+This dated stress model is superseded. The target makes no current survival,
+offline, installer, browser, tether, egg-recovery, or external-repository
+availability guarantee. Lawful recovery requires RAPP/1 identity continuity,
+registered variants, signatures, and authenticated §13 state; those owner
+actions remain open in `RAPP1_STATUS.md`.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > *"This needs to survive nuclear blasts, not tip over in a second."*
 > — the operator, 2026-05-08
@@ -92,3 +102,5 @@ This is what makes the repo survive nuclear blasts: zero single-point-of-failure
 - [`DEFINITION_OF_DONE.md`](./DEFINITION_OF_DONE.md) — verification discipline
 - [`HERO_USECASE.md`](./HERO_USECASE.md) — the canonical scenarios this contract serves
 - [`pages/vault/Field Notes/2026-05-08 — Adapt-to-whats-home is the only consensus protocol that scales off-grid.md`](./pages/vault/Field%20Notes/) — distributed-systems framing
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

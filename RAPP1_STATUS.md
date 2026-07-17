@@ -18,9 +18,9 @@ or freshness proof.
 
 ## Audit coverage and checker limitation
 
-The completed 2026-07-16 audit was a literal file-by-file review:
+The completed 2026-07-16 baseline audit was a literal file-by-file review:
 
-- **640/640 tracked paths** — every tracked file was individually reviewed and
+- **2026-07-16 baseline: 640/640 tracked paths** — every tracked file was individually reviewed and
   classified;
 - **5 ZIP-compatible archives**, including **450 recursively counted archive
   members**;
@@ -35,6 +35,12 @@ must not be substituted for the full file/archive review and contextual ledger.
 Complete review coverage and classification do not establish full RAPP/1
 conformance or authenticated acceptance. The migration and owner-action
 blockers below remain open.
+
+A fresh post-remediation audit on **2026-07-17** reviewed **691/691 tracked
+paths**. The increase is repository growth after the dated 640-path baseline,
+not a correction to that baseline. The post-audit inventory uses an explicit
+current-document ledger and separately classifies immutable history, generated
+artifacts, archives, and external mirrors.
 
 Maintainer evidence is retained in Copilot session
 `9ac7ec28-fb92-4452-a8c9-477a2363685d`; no machine-local audit path is part of
@@ -101,6 +107,17 @@ must happen in target-owned adapters, validators, migration tooling, and
 retirement policy. Historical `rapp-frame/*` and `brainstem-egg/*` paths may
 remain as dated evidence or implementation inputs, but they are not the current
 RAPP/1 frame or egg authority.
+
+## Current unresolved boundary categories
+
+- **Authenticated owner action:** registry, anchor, lawful re-anchor, and
+  replacement invite remain the four owner-action blockers above.
+- **Generated target artifacts:** identity and network declarations require
+  authorized regeneration; documentation changes cannot safely rewrite them.
+- **Immutable history:** the pinned grail, prepared cave installer subtree, and
+  archived payloads remain byte-preserved and inert.
+- **External mirrors:** divergent or generated copies outside this target
+  remain non-authoritative until their owners update and pin them.
 
 Until all owner-action blockers and implementation migrations are complete,
 this repository must continue to lead with **NOT YET FULLY RAPP/1 CONFORMANT**.

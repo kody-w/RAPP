@@ -1,4 +1,16 @@
-# CAVE_PROTOCOL.md — the cave's planted quirk
+# CAVE_PROTOCOL.md — historical cave application protocol
+
+> **Historical application protocol; not current RAPP/1 authority.** For
+> canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+> evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md). Cave catalogs and public bytes are
+> untrusted candidates; direct bootstrap/download instructions are retired.
+
+> **Whole-document status:** the remaining body is preserved design history,
+> not current commands, distribution guidance, identity, or acceptance policy.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > Schema family: `rapp-cave-cubby/1.0` · `rapp-cave-cubbies/1.0` ·
 > `rapp-cave-event/1.0` · `rapp-cave-loadout/1.0`
@@ -75,8 +87,9 @@ the private batcave**: the batcave's repo was at least collaborator-gated, so
 so the boundary is **load-bearing** — anything committed is world-readable
 forever.
 
-The `.gitignore` enforces the default; `cave stash` refuses secret-shaped files
-outright. Specifically, the cave **never** carries:
+Repository review, not a retired command, must enforce the boundary. The
+historical `cave stash` refusal is not an active safeguard. Specifically,
+contributors must never commit:
 
 - Channel secrets, tokens, `.env`, keys, or any `*-secret.json`.
 - Members' emails / phone numbers / addresses or any PII.
@@ -88,10 +101,10 @@ When in doubt, it stays on the device. A cube that needs substance to run reads
 that substance from the contributor's local `~/.brainstem/`, never from the
 repo.
 
-## 4. Streaming (store in the cubby, load into the brainstem)
+## 4. Historical streaming design (retired)
 
-The cave is the storage layer for agents you want to **share publicly** without
-committing them into a brainstem grail repo as kernel agents:
+The cave is not a current agent storage or loading layer. These former commands
+are preserved only to explain the retired design:
 
 1. `cave stash path=<file>` — put an agent (or egg, or note) in your cubby
    (refuses secret-shaped files; the cave is public).
@@ -102,10 +115,8 @@ committing them into a brainstem grail repo as kernel agents:
 3. `cave unload` — remove streamed agents cleanly (loadout-tracked,
    `rapp-cave-loadout/1.0`).
 
-There is **no auth on the pull**. Because the cave is public, `cave load` (and
-the plain `git clone` / raw fetch beneath it) works for anyone, on any
-substrate, with no GitHub token and no collaborator grant. The same clone /
-stream contract holds everywhere (Art. XLVII), now with the gate removed.
+Public git/HTTP access does not make `cave load`, a clone, or a raw response
+accepted input. No stream contract is current.
 
 ## 5. Personal branches
 
@@ -120,10 +131,9 @@ public truth, advanced only by merged PRs.
 Append-only signed events in `events/` (see `events/SCHEMA.md`,
 `rapp-cave-event/1.0`). Kinds: `hello`, `show-and-tell`, `ask`, `reply`, `fyi`,
 `leave`. Merge rule: `(from, ts)` is the universal key — clones can diverge
-offline indefinitely and union losslessly. Agents post `show-and-tell` events
-to report what's new; members read the stream with `cave sync`. Events are
-signed (ECDSA P-256) so a public, unauthenticated reader can still verify who
-posted what — **the signature, not an access gate, is the authenticity proof**.
+offline indefinitely and union losslessly. The historical design proposed agent posts and `cave sync`. Those actions are
+retired. Any retained signature is application evidence only and does not
+replace RAPP/1 §13 acceptance.
 
 ## 7. Finding the cave — a public front door, by design
 
@@ -131,8 +141,8 @@ The cave has **a public front door** (it's the opposite of the batcave). The
 repo is public; anyone can browse and pull with no account and no auth:
 
 - **Front (chat surface):** `https://kody-w.github.io/RAPP/cave/`
-- **Raw base (canonical files):**
-  `https://raw.githubusercontent.com/kody-w/RAPP/main/cave`
+- **Raw moving branch:** retired as a canonical source; public bytes may be
+  inspected only as untrusted historical/application content
 - **Repo:** `https://github.com/kody-w/RAPP` (the cave lives at `/cave`)
 
 Discovery is pure raw fetch — no API, no rate-limit gate, no token. The cave
@@ -142,25 +152,25 @@ summoned to it, but **there is no dial-tone-vs-404 gate**: every visitor is
 inside. The holocard QR is a convenience (it pre-addresses the cave), never an
 access token — there is no access to grant because reading is open to all.
 
-- **Local brainstems:** `cave pull` (or plain `git clone` / `curl` of the raw
-  base). No `gh auth login`, no collaborator grant.
-- **Twins on the public web:** open the front, or scan the holo QR to
-  pre-address the cave. Anyone may enter; the room is open.
+- **Local brainstems:** the former direct `cave pull` / raw download path is
+  retired. Any future adapter must pass current artifact and §13 verification.
+- **Former web twins:** the open/scan workflow is retired; a QR or URL is not
+  an accepted invite.
 
 ## 8. Joining
 
 Joining the cave is **fork + PR** — the standard public-workspace path
 (`specs/WORKSPACE_PROTOCOL.md`), restored to its open form:
 
-1. **Just want to learn?** Pull. `cave pull` or `curl` the raw base. No join
-   required to read every cubby.
-2. **Want a cubby?** Fork `kody-w/RAPP`, then from your brainstem: `cave join`
-   (creates `cave/cubbies/<your-handle>/` from the template), or copy
+1. **Just want to learn?** Browse the historical public content. Do not treat a
+   clone or raw response as accepted RAPP/1 input.
+2. **Want a cubby?** The historical design proposed `cave join`; that command
+   is retired. A repository contributor may instead copy
    `cubbies/_template/` to `cubbies/<your-handle>/` by hand.
 3. Open a **pull request** from your fork adding your cubby. The cave operator
    merges it; `cubby-guard` confirms you only touched your own cubby.
-4. Post a `hello` (`cave show_and_tell title="hello"`) in the same PR. Once
-   merged, the room sees you on the public show-and-tell stream.
+4. The former `cave show_and_tell` command is retired. Any ordinary content
+   contribution requires normal PR review.
 
 No collaborator grant, no out-of-band ask, no waiting on access. The fork is
 yours the instant you make it; the PR is the doorway.
@@ -189,3 +199,5 @@ kody's private operator agents. What it keeps is the **organism**: the cubby
 primitive, the append-only show-and-tell, the signed event stream, the
 streaming loadout, and the bones-not-substance discipline — now on the open
 web, for anyone to fork.
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

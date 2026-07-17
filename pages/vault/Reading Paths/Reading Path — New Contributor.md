@@ -1,11 +1,25 @@
 ---
 title: Reading Path — New Contributor
-status: published
+status: historical
 section: Reading Paths
 hook: 7 notes + the constitution. The onboarding read for someone about to contribute to the platform itself.
 ---
 
 # Reading Path — New Contributor
+
+> **Current authority first.** For canonicalization, identity, frames, wire,
+> eggs, registry, trust, and protocol evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md). Vault narratives and the local
+> Constitution preserve history; they do not outrank the immutable authority
+> commit or [`KERNEL_PIN.json`](../../../KERNEL_PIN.json) at
+> `kody-w/rapp-installer@brainstem-v0.6.9`.
+
+> **Disposition:** the onboarding sequence below is historical. It advertises
+> retired product, tier, store, and “god SPEC” paths; begin with the authority
+> and status records above instead.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** 7 notes + the constitution. The onboarding read for someone about to contribute to the platform itself.
 
@@ -120,7 +134,8 @@ After the foundation read:
 
 If you contribute knowledge — a new pattern, a removed antipattern, a workshop story — write it as a vault note. Use [[Vault Build-Out Plan]]'s template. Update the manifest. The vault is how the platform's *why* survives contributors.
 
-See [CONSTITUTION](https://github.com/kody-w/RAPP/blob/main/CONSTITUTION.md) Article XXIII (`CONSTITUTION.md`) for why this matters.
+See the local historical [CONSTITUTION](../../../CONSTITUTION.md) Article XXIII
+for why this matters; do not substitute a moving branch for the authority pin.
 
 ## Discipline
 
@@ -135,3 +150,5 @@ See [CONSTITUTION](https://github.com/kody-w/RAPP/blob/main/CONSTITUTION.md) Art
 - [[Constitution Reading Order]]
 - [[Vault Build-Out Plan]]
 - [[Reading Path — Engineer Evaluating RAPP]]
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

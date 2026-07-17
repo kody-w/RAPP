@@ -24,7 +24,7 @@ A new visitor cannot tell what's what. The complexity becomes the gatekeeper. Pe
 
 **How to apply.**
 
-- **In code:** identifiers use `agent` only. `customAgents`, `_customAgentCount`, `fillAgents`, `AGENT_FRIENDLY`, `tr-agents`, `agent-chip`. Never `skill`, `plugin`, `routine`, `loop` in identifiers, CSS classes, or DOM ids. Acceptable exceptions: comments that explicitly call out the antipattern (this file, plus a few guard comments in `installer/plant.sh`).
+- **In code:** identifiers use `agent` only. `customAgents`, `_customAgentCount`, `fillAgents`, `AGENT_FRIENDLY`, `tr-agents`, `agent-chip`. Never `skill`, `plugin`, `routine`, `loop` in identifiers, CSS classes, or DOM ids. Historical files and explicit antipattern guards are exceptions.
 - **In user-facing copy:** every label, button, error message, and status line says "agent" if it's referring to an `*_agent.py` file. The Track Record section is **Agents**, not Skills. The proposal flow is **Propose an agent**, not Propose a skill.
 - **In documentation:** when explaining how the platform grows, say "agents" — `HERO_USECASE.md`, `ECOSYSTEM.md`, `README.md`, `CLAUDE.md`. Cross-reference the Constitution: *"Single-file agents are the plugin system. One file = one class = one `perform()` = one metadata dict."*
 - **In commit messages and PR titles:** same.
@@ -50,9 +50,12 @@ pin
 They never follow a moving latest branch and are never edited locally.
 Capabilities grow through new agents outside those pinned bytes.
 
-**Why.** A frozen kernel + plug-in agents is what makes an organism portable across substrates and across time. Edit the kernel and you fork the species. The Constitution puts this as a sacred constraint; this file restates it because it's so often the first temptation.
+**Why.** The three bytes are an immutable compatibility baseline. This pin
+does not by itself prove portability, installation, or RAPP/1 conformance.
 
-**How to apply.** When something feels like it requires a kernel change, write a new agent that solves it instead. If the agent contract genuinely can't express the change, it's a CONSTITUTION-level conversation that touches every planted seed in existence. Don't shortcut.
+**How to apply.** Keep target-owned work outside the pinned bytes. If the host
+contract cannot express a change, record the incompatibility rather than
+editing the grail or claiming a deployed migration.
 
 ---
 
@@ -72,23 +75,32 @@ data; normal readers do not retain the branch.
 
 ---
 
-## 4. NO SILENT FALLBACK TO "RAPP" / "AN AI ASSISTANT"
+## 4. HISTORICAL PRODUCT-IDENTITY RULE
 
-**The rule.** A planted organism's `soul.md` MUST include the spec-compliant `## Identity — read this every turn` block (per `rapp-twin-spec/1.0`). The block forbids the LLM from introducing itself as "RAPP", "an AI assistant", "your AI helper", "the brainstem", or any default platform branding.
+The former `rapp-twin-spec/1.0` soul block was application guidance, not
+RAPP/1 identity or a current planting requirement.
 
 **Why.** Without this block, LLMs default to brand chrome. The visitor lands at heimdall.github.io expecting Heimdall and gets greeted by "RAPP". The identity collapses into the substrate.
 
-**How to apply.** `installer/plant.sh::write_soul_md` writes the block by default. If you ever rewrite the soul template or add a new kind, the Identity block is non-negotiable.
+**Current rule.** The former `installer/plant.sh::write_soul_md` producer is
+retired and must not be invoked. Any future producer must use RAPP/1 identity
+and authenticated registry state rather than relying on a prompt block.
 
 ---
 
-## 5. NETWORK CALLS WITHOUT A LOCAL-FIRST FALLBACK
+## 5. HISTORICAL BROWSER NETWORK RULE
+
+The browser front door is retired. The rule below preserves why its former
+implementation cached network responses; it is not a claim that a browser
+product or fallback is currently shipped.
 
 **The rule.** Any GitHub fetch the front door makes goes through `cachedGhJson` / `cachedGhText`. Direct `fetch(github.com/...)` is forbidden in resume-rendering paths.
 
 **Why.** The hero use case is offline-first. An organism in airplane mode must keep rendering its own resume from cached state. Bare fetches go blank when the network drops; that's a regression against `HERO_USECASE.md` §1.
 
-**How to apply.** When adding a new GitHub-derived signal, wrap the fetch and stamp the cache. Render with a `📡 stale` pill when reading cache. See `_handleVerifyFile` and `fillMutations` for canonical examples.
+**How to apply.** Do not add calls to the retired surface. A future accepted
+application would need explicit offline behavior and normal RAPP/1
+verification; cache presence alone never establishes trust.
 
 ---
 

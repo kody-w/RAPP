@@ -7,6 +7,35 @@
 > legacy runtime behavior or migration inputs, not current protocol. The
 > `KERNEL_PIN.json` grail bytes remain read-only.
 
+## Current repository instructions
+
+1. Read `RAPP1_AUTHORITY.json` and `RAPP1_STATUS.md` first. The repository is
+   structurally pinned to RAPP/1 rev-5 and is **not yet fully conformant**.
+2. Never edit the three immutable grail bytes pinned to
+   `kody-w/rapp-installer@brainstem-v0.6.9`, the prepared
+   `cave/rapplications/rapp-installer/**` subtree, archives, or generated
+   external mirrors.
+3. The only target-owned synchronous protocol adapter is the loopback,
+   pre-acceptance façade at `127.0.0.1:7073`. Its request contains required
+   string `user_input` and optional strings `session_id` and
+   `idempotency_key`; success contains exactly `response`, `agent_logs` (array),
+   and `session_id`; refusal is HTTP 422 with exactly nested `error.code` and
+   `error.step`.
+4. Voice and Twin presentation derive locally from `response`. They add no
+   request or response fields.
+5. Tier 1/2/3, public installers, browser brainstems, Shortcuts, planting,
+   catalogs, cave bootstraps, legacy egg hatching, and Commons samples are
+   retired or pre-acceptance. Do not advertise, deploy, download, or invoke
+   them from documentation.
+6. For structural/pre-acceptance validation run
+   `python3 tests/run_rapp1_conformance.py`. Documentation-only work may first
+   run `python3 tools/check_rapp1_docs.py`,
+   `bash tests/e2e/08-html-pages.sh`, and `node tests/vault-check.mjs`.
+
+## Historical repository guide (superseded)
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 > **Where to start reading.** The unified human-facing entry point is **[`pages/kernel.html`](https://kody-w.github.io/RAPP/pages/kernel.html)** — it surfaces every canon doc in canonical reading order with audience-specific Reading Paths. When you need to direct a human to the docs, point there. When *you* need to read, start with [`MASTER_PLAN.md`](./MASTER_PLAN.md), [`HERO_USECASE.md`](./HERO_USECASE.md), [`ECOSYSTEM.md`](./ECOSYSTEM.md), [`CONSTITUTION.md`](./CONSTITUTION.md), [`ANTIPATTERNS.md`](./ANTIPATTERNS.md) in that order.
@@ -197,8 +226,8 @@ current wire and eggs.
 | `CONSTITUTION.md` | Repo governance — at root as a peer of `README.md` |
 | `pages/` | The full audience-facing site (not a folder of orphan pages). Sectioned: `pages/about/`, `pages/product/`, `pages/release/`, `pages/docs/` (markdown viewer), `pages/vault/` (Obsidian vault + viewer). Shared chrome at `pages/_site/` (`css/`, `js/`, `partials/`, `index.json`). Specialty surfaces at `pages/` root: `pages/vbrainstem.html` (tethered multi-participant tab + QR pair, see SPEC §18.11), `pages/sphere.html` (3D doorman). New audience HTML drops into the matching section; the manifest at `pages/_site/index.json` is the canonical inventory. |
 | `pages/vault/` | Long-term memory: decision narratives, removal stories, manifestos. Real Obsidian vault — open `pages/vault/` directly in any Obsidian client. **When you learn *why* a decision was made, write it here as a stub or a published note — don't bury it in a commit message.** See `CONSTITUTION.md` Article XXIII. |
-| `pages/tutorials/` | Hands-on walkthroughs. Each tutorial bundles the agent file + sample cartridges next to the HTML so a fresh clone has everything to run the demo offline. First entry: `hatch-egg.html` (install `egg_hatcher` + hatch session + hatch the bundled `commons.egg` to join the Commons). |
-| `examples/rapp-commons/` | **The Commons** — source-of-truth scaffold for the global public hangout-for-AIs neighborhood, planted as its own repo at [`kody-w/rapp-commons`](https://github.com/kody-w/rapp-commons). Full front-door grail emission: `rappid.json`, `neighborhood.json` (with `coordinates.virtual` = town-square, no physical anchor — deliberately global), `soul.md`, `members.json`, `card.json`, `holo.md`, `index.html` with QR + step-by-step join, `.well-known/neighborhood.egg` (the QR-sized JSON invite), `events/SCHEMA.md` (the `rapp-commons-event/1.0` append-only signed protocol), `specs/SPEC.md` (planted-with bundle 2.0.0 per `tools/front_door_specs.py`). Cross-estate, event-stream-only, signed-by-rappid. The archetype neighborhood — lowest possible floor. Other neighborhoods plant their own quirks (physical lat/long anchoring, virtual environments, leaderboards, decks, wikis) — the commons is just "scan, hatch, post a hello." |
+| `pages/tutorials/` | Historical tutorial archive. The retired hatch page and bundled legacy artifacts are migration evidence only; they are not advertised, downloadable acceptance inputs, or current RAPP/1 §9 guidance. |
+| `examples/rapp-commons/` | Retired Commons scaffold history. Do not link, download, plant, or hatch its sample artifacts. The exact owner-only replacement and retirement work is recorded in `RAPP1_OWNER_ACTIONS.md` / `.json`. |
 
 ## Environment
 
@@ -247,3 +276,5 @@ signed §13 state—never by bumping a local version string.
 ## Background context (the vault)
 
 Every non-trivial architecture decision in this repo has a long-form essay in `pages/vault/` that explains the *why*. Before proposing a change to the brainstem, the slot delimiters, the agent contract, the vendoring discipline, or the tier model, read the relevant vault note — most "could we relax constraint X?" conversations are already settled there. The reading paths in `pages/vault/Reading Paths/` are tuned for different audiences (engineer, architect, partner, exec, contributor).
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

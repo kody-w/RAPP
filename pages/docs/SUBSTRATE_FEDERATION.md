@@ -1,4 +1,4 @@
-# SUBSTRATE_FEDERATION — The Four Substrates of the RAPP Network
+# Historical Substrate Federation Proposal
 
 > **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
 > wire, eggs, registry, trust, and protocol evolution, follow
@@ -6,8 +6,12 @@
 > [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md). Carrier choice never changes the
 > RAPP/1 §7/§8 envelope, §9 egg, or §13 trust requirements.
 
-> **Application metadata:** `rapp-network-beacon/1.1` · **Status:** carrier
-> architecture, subordinate to RAPP/1 · **First shipped:** 2026-05-09
+> **Disposition:** retired pre-RAPP/1 carrier architecture, dated 2026-05-09.
+> The repository does not currently ship an operational multi-substrate
+> federation, browser tether, or authenticated peer-import flow. Received
+> bytes remain untrusted until every applicable RAPP/1 check succeeds.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 This document describes application discovery across several media. It does
 not define RAPP protocol structure: every medium carries the same exact §7/§8
@@ -119,8 +123,6 @@ indexable    = "true" | "false"
 ```
 
 ## Historical pre-RAPP/1 carrier appendix (superseded)
-
-<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 The remaining carrier procedures record the shipped legacy implementation.
 Their old egg layouts, schema strings, synthesized beacons, and acceptance

@@ -8,7 +8,13 @@
 
 > A done thing is verified, not assumed. This file is the contract I commit to before declaring anything finished.
 
-## For a planted neighborhood / repo to be "done"
+## Historical planted-neighborhood definition (retired)
+
+The planting, metropolis, Pages, and live-gate workflow below is preserved
+only as dated process history. This repository no longer offers it as a
+current action or acceptance criterion.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 1. **The repo exists at the canonical URL.**
    `gh api repos/<owner>/<name>` returns metadata (not 404).
@@ -17,6 +23,8 @@
 3. **If the repo has `index.html` and is public:** GitHub Pages is enabled AND `https://<owner>.github.io/<name>/` returns **HTTP 200** AND the served body is the seed's actual page (verified by grepping for a known title string, not just a status code).
 4. **If the repo is in the metropolis index:** the entry's `gate_repo` and `gate_url` strings exactly match the actual planted URLs (no drift).
 5. **Links from the metropolis directory page resolve.** A scripted check fetches each entry's gate URL and confirms 200 (or auth-required for private).
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->
 
 ## For a code change to be "done"
 

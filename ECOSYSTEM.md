@@ -1,4 +1,4 @@
-# RAPP Ecosystem — End-to-End Layout
+# Historical RAPP Ecosystem Layout
 
 > **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
 > wire, eggs, registry, trust, and protocol evolution, follow
@@ -7,16 +7,22 @@
 > to that pin. Retired schema names below are migration inventory, never current
 > emission or acceptance instructions.
 
-> The complete picture of a planted RAPP organism: what it's made of, where it lives, how it moves, how it evolves, how it talks to the rest of the species. This document is the architecture-level companion to [`HERO_USECASE.md`](./HERO_USECASE.md). Read both before proposing structural changes.
+> **Whole-document disposition:** the layout, lifecycle, surfaces, catalogs,
+> tiers, eggs, and shipment ledgers below are dated product history. They are
+> not current instructions or capability evidence. Current claims are limited
+> to the pinned RAPP/1 authority and the unresolved status record above.
 
 ---
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 ## 0. The atom
 
 A RAPP **organism** may inhabit a GitHub repository with this implementation's
 file layout. The repository is a substrate, not the identity: RAPP/1 §6
 `rappid` survives lawful moves, while §13 binds current anchors and keys.
-Voice, memory, agents, and browser surfaces may live as committed files.
+Voice, memory, and agent source may live as committed application files.
+Browser surfaces shown below are retired history.
 
 ```
 github.com/<user>/<seed>     ← canonical lineage (the trunk)
@@ -25,11 +31,13 @@ github.com/<user>/<seed>     ← canonical lineage (the trunk)
                                        /doorman/      ← chat surface (Copilot device-code auth)
 ```
 
-Every operation in the ecosystem can be expressed in terms of this atom: planting clones the atom, eggs serialize it, hatching reconstitutes it elsewhere, the Dream Catcher merges divergent copies back into it.
+The diagram records the former repository-centered product model. Planting,
+hatching, browser chat, and Dream Catcher actions are retired; current RAPP/1
+identity and acceptance do not arise from this layout.
 
 ---
 
-## 1. The lifecycle
+## 1. Historical product lifecycle (retired)
 
 ```
   ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
@@ -47,15 +55,18 @@ Every operation in the ecosystem can be expressed in terms of this atom: plantin
                                                 preserved as artifact
 ```
 
-The lifecycle is non-linear: an organism can be hatched many times in parallel (each device = one parallel dimension), each accumulates its own mutations, and the Dream Catcher reassimilates them via PR.
+The diagram is preserved design history, not an available lifecycle.
 
-**Re-hatching is the cross-substrate migration step.** Mutate → reassimilate is the *content* lifecycle (frames bond back into the trunk via PR). Egg re-hatching is the *substrate* lifecycle: an `.egg` cartridge is the organism in suspended animation, and re-anchoring it on a new brainstem (a fresh laptop, an AirDropped peer, a sneakernet handoff) revives the organism in place without disturbing its rappid, its cross-signed device chain, or its frame log. The egg is how the organism crosses substrates; the PR loop is how it accumulates time. The two operate on orthogonal dimensions — see §16 (Multi-scale eggs) and [[The Federated Twin Egg Hatcher Pattern]] for the federation-scale extension.
+The former re-hatching narrative is not a lawful RAPP/1 re-anchor. Any future
+cross-substrate move must satisfy §§6, 9, 10, and 13 without identity
+reminting; no such public workflow is currently shipped.
 
 ---
 
-## 2. File layout of a planted organism
+## 2. Historical planter output (inert)
 
-What `installer/plant.sh` writes into a fresh seed:
+The following tree records what retired `installer/plant.sh` attempted to
+write. It is not a bootstrap, file checklist, or execution instruction:
 
 ```
 <seed>/
@@ -211,11 +222,15 @@ Per-user private memories captured from GitHub Issues.
 
 ---
 
-## 4. The two surfaces
+## 4. Historical browser surfaces (retired)
+
+Every row in this section records the former browser design. No front door,
+doorman, tether, egg, catalog, install, or browser-chat CTA is currently
+shipped.
 
 ### 4a. Front door — `/index.html`
-Public application profile. Anonymous access is allowed; this does not
-authenticate any RAPP artifact or waive §§7/9/10/13 verification.
+Former public application profile; retained source is not an authenticated
+artifact or active product.
 
 | Element | Purpose | Driven by |
 |---|---|---|
@@ -233,12 +248,13 @@ authenticate any RAPP artifact or waive §§7/9/10/13 verification.
 | 🥚 Export .egg | Legacy exporter under migration | Current target is the RAPP/1 §9 `organism` variant |
 | 🔬 Verify an .egg | RAPP acceptance | complete §9.3 checks, then applicable §§10/13 signature verification |
 | 🕸️ Dream Catcher | Parallel-dimension reassimilation | Diff two eggs, surface candidate frames |
-| 🌐 Back up to Egg Hub | Public catalog submission | Pre-fills GitHub Issue at egg-hub |
-| 💻 Install kernel locally | Hatch into a local brainstem | Copy curl one-liner |
+| 🌐 Back up to Egg Hub | Retired catalog CTA | No submission path |
+| 💻 Install kernel locally | Retired installer CTA | No command offered |
 | Front-door details (collapsed) | Engineering trivia | Slug, rappid, kernel, lineage HTML |
 
 ### 4b. Doorman — `/doorman/index.html`
-Chat surface. Auth via Copilot device-code flow. Pyodide loads agents in-browser.
+Former chat experiment. No browser authentication, inference, or agent loading
+service is currently offered.
 
 | Element | Purpose |
 |---|---|
@@ -506,10 +522,11 @@ state.
 
 ---
 
-## 12. External integrations
+## 12. Historical external integrations (inactive)
 
 ### GitHub Pages
-Serves every planted seed at `<user>.github.io/<repo>/`. The `.nojekyll` file ensures dot-prefixed paths (`.brainstem_data/`) are served. Pages auto-deploys on every commit to `main`.
+Historically served application files. A Pages URL or moving branch is not an
+authenticated source, installer, front door, or RAPP/1 acceptance path.
 
 ### raw.githubusercontent.com
 An application content channel. Seed files are anonymously fetchable at
@@ -518,8 +535,8 @@ work, but location and availability do not authenticate them; RAPP acceptance
 uses the pinned verification and registry rules.
 
 ### GitHub Copilot (via the auth worker)
-The doorman's application proxy uses these support endpoints; they are not
-additional RAPP/1 wire capabilities:
+The retired doorman experiment used these support endpoints. They are not a
+shipped browser service or additional RAPP/1 wire capabilities:
 - `POST <auth-worker>/api/auth/device` — start device flow
 - `POST <auth-worker>/api/auth/device/poll` — poll for token
 - `POST <auth-worker>/api/copilot/token` — exchange ghu_* for copilot session
@@ -529,7 +546,7 @@ additional RAPP/1 wire capabilities:
 The auth worker (Cloudflare Worker, `worker/`) is a thin proxy — it doesn't store visitor tokens; it forwards the device-code dance and chat traffic.
 
 ### GitHub Contents/Commits/Issues APIs
-Used by the front door's Track Record:
+The retired front door used these APIs:
 - `/repos/<owner>/<repo>/contents/agents` — list agents
 - `/repos/<owner>/<repo>/commits?per_page=N` — mutation log
 - `/repos/<owner>/<repo>` — fork count, repo metadata
@@ -538,7 +555,8 @@ Used by the front door's Track Record:
 All wrapped through `cachedGhJson` for local-first rendering.
 
 ### kody-w/rapp-egg-hub
-Public catalog of digital-twin .egg cartridges. The `🌐 Back up to Egg Hub` button on the front door pre-fills a GitHub Issue with submission metadata. The hub maintainer commits the egg + sidecar to `eggs/<slug>.egg` and updates `index.json`.
+Historical external catalog reference. No Egg Hub CTA, backup, submission, or
+download is current, and external catalog data is non-authoritative here.
 
 ### MCP (Model Context Protocol) — kody-w/rapp-mcp
 [`kody-w/rapp-mcp`](https://github.com/kody-w/rapp-mcp) is an application
@@ -550,9 +568,10 @@ bootstrap operations, catalogs, and historical `rapp-mcp-spec/1.0` /
 wire contract.
 
 ### PeerJS public broker
-Used only for the WebRTC pairing handshake. Once two devices have exchanged peer IDs, the data channel is direct (DTLS encrypted) and the broker drops out.
+Historical WebRTC dependency for a retired browser tether; no pairing service
+is currently offered.
 
-### CDNs
+### Historical CDN dependencies
 - `cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js` — Pyodide for in-browser agent execution
 - `cdn.jsdelivr.net/npm/marked/marked.min.js` — markdown rendering in chat
 - `cdn.jsdelivr.net/npm/jszip@3.10.1` — egg pack/unpack
@@ -561,7 +580,7 @@ Used only for the WebRTC pairing handshake. Once two devices have exchanged peer
 
 ---
 
-## 13. Component inventory — every file in `installer/plant.sh`'s output
+## 13. Historical component inventory from retired `installer/plant.sh`
 
 | Path | Role | Generated by |
 |---|---|---|
@@ -586,7 +605,7 @@ Files added on demand:
 
 ---
 
-## 14. Surface inventory — every visitor-facing affordance
+## 14. Historical surface inventory (all affordances retired)
 
 ### Front door (`/`)
 - Hero: tap `💬 Talk to <Name>` → `/doorman/`
@@ -621,7 +640,7 @@ Files added on demand:
 
 ---
 
-## 15. What's shipped vs what's pending
+## 15. Superseded 2026-05 shipment ledger
 
 ✅ **Application behavior observed today (not RAPP/1 conformance):**
 - Plant flow (one-liner)
@@ -658,7 +677,7 @@ Files added on demand:
 
 ---
 
-## 15.5 Multi-scale eggs and the federation lifecycle
+## 15.5 Historical multi-scale eggs and federation lifecycle
 
 This section preserves the **historical pre-RAPP/1 implementation narrative**.
 Its `brainstem-egg/2.2-organism` and `rapp-egg/2.0` scale dispatch are retired
@@ -668,26 +687,30 @@ dispatch `manifest.variant` only after the complete §9.3 checks.
 
 | Scale | What it carries | Where it hatches | Status |
 |---|---|---|---|
-| `twin` | One twin's identity + soul + agents + memories | `~/.rapp/twins/<hash>/` | shipping |
-| `brainstem` | A whole brainstem distro (kernel + agents + organs) | target brainstem folder | shipping ([[The Distro Hatcher Agent Pattern]]) |
+| `twin` | One twin's identity + soul + agents + memories | `~/.rapp/twins/<hash>/` | historical claim; retired |
+| `brainstem` | A whole brainstem distro (kernel + agents + organs) | target brainstem folder | historical claim; retired |
 | `neighborhood` | N federated twins + roster + member memories | `~/.rapp/twins/<hash>/` per member + `~/.rapp/neighborhoods/<hash>/` for the roster | historical legacy implementation; retired `brainstem-egg/2.3-neighborhood` proposal |
 | `swarm` / `factory` / `industry` | Container scales above neighborhood | `~/.rapp/<scale>s/<hash>/` as best-effort scaffolding | partial — scale-specific handlers TBD |
 | `estate` | Whole operator identity: catalog + every nested twin / neighborhood cartridge + memories | recursive dispatch, restores `~/.brainstem/estate.json` | planned ([[ESTATE_SPEC]] §7.6) |
 
 ### The four-twin AIBAST federation, in one file
 
-The first neighborhood-scale cartridge that shipped is `aibast-federation.egg` — **19,903 bytes** (about 20 KB) total. It bundles four twins:
+The historical design described `aibast-federation.egg` as a 19,903-byte
+cartridge. It is not a current shipment or accepted RAPP/1 egg. Its former
+contents were:
 
 - 🌈 **Heimdall** on port 7081 (`personal` rappid)
 - 🧬 **@kody-w** on port 7082 (`operator` rappid)
 - 🏭 **Bots in Blazers** on port 7083 (`project` rappid)
 - ⚡ **AIBAST** on port 7084 (`project` rappid)
 
-Each member's `rappid.json` + `soul.md` + `agents/*.py` + `.brainstem_data/` rides inside the cartridge. Hatching on a fresh laptop reproduces the entire four-twin conversation surface byte-for-byte — memories travel by design (`.brainstem_data/` is intentionally inside the egg per [[NEIGHBORHOOD_PROTOCOL]] §5e). A complete federation, suspended in 20 KB, AirDroppable, sneakernet-friendly, GitHub-optional.
+The claimed hatch, memory transfer, AirDrop, and four-twin reproduction are
+retired narrative, not current behavior.
 
 ### Why the scale matters for the lifecycle
 
-§1's lifecycle (PLANT → HATCH → LIVE → MUTATE → REASSIM.) was originally framed for a single organism. The multi-scale extension layers cleanly:
+The retired PLANT → HATCH → LIVE → MUTATE → REASSIM. model was framed for a
+single organism. The following bullets preserve that historical extension:
 
 - **Twin scale** — the lifecycle as written.
 - **Neighborhood scale** — the federation lifecycle. PLANT is collective (one cartridge plants N members); HATCH is one motion; LIVE is the four-channel grid in [[The Swarm Estate]]; MUTATE happens per-member but cross-twin handoff is a first-class chat verb (Fleet's `mesh_chat` action fans a single prompt across every twin on every peer); REASSIM. uses the same Dream Catcher pattern per member.
@@ -699,10 +722,12 @@ Cross-references: [[The Federated Twin Egg Hatcher Pattern]] for the kernel-side
 
 ## 16. Reading order for new contributors
 
-1. [`HERO_USECASE.md`](./HERO_USECASE.md) — *what* this platform must do
-2. This document — *how* the pieces fit together
-3. [`CLAUDE.md`](./CLAUDE.md) — daily-work instructions
-4. [`CONSTITUTION.md`](./CONSTITUTION.md) — governance + sacred constraints
-5. [`pages/vault/`](./pages/vault/) — long-form essays explaining *why* each major decision was made
+1. [`RAPP1_AUTHORITY.json`](./RAPP1_AUTHORITY.json) — exact structural pin
+2. [`RAPP1_STATUS.md`](./RAPP1_STATUS.md) — current limits and owner blockers
+3. [`CLAUDE.md`](./CLAUDE.md) — current target instructions
+4. This mixed-current map — RAPP/1 crosswalk plus historical product inventory
+5. [`HERO_USECASE.md`](./HERO_USECASE.md) and [`pages/vault/`](./pages/vault/) — preserved history
 
-The first three are the contract. The last two are the context.
+Only the authority/status pair governs current RAPP/1 claims.
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

@@ -1,5 +1,14 @@
 # 🦇 The RAPP Cave
 
+> **Cave installer artifacts are inert history.** For canonicalization,
+> identity, frames, wire, eggs, registry, trust, and protocol evolution, follow
+> RAPP/1 rev-5 through [`RAPP1_AUTHORITY.json`](../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../RAPP1_STATUS.md). Nothing under
+> `cave/rapplications/rapp-installer/` is a current catalog entry, bootstrap,
+> download, or acceptance path.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
+
 A **public RAPP neighborhood workspace** — the open sibling of the private
 [Batcave](https://github.com/kody-w/rapp-batcave). Every member gets a **cubby**
 — isolated housing for their entire rapp estate (agents, organs, senses,
@@ -31,33 +40,24 @@ mechanics as the batcave — just with the gate removed. Anyone *joins* with the
 own GitHub account by forking and opening a PR; anyone *consumes* with nothing
 but `curl`.
 
-## Stand up a brainstem — one line, plain curl (no gh)
+## Retired cave installer archive
 
-```bash
-curl -fsSL https://kody-w.github.io/RAPP/cave/rapplications/rapp-installer/bootstrap.sh | bash
-```
-
-Hatches the `rapp-installer` rapplication (the full, repo-independent RAPP
-brainstem) straight off GitHub Pages. No login, no token, no collaborator invite
-— it's the open web.
+The prepared `rapp-installer` subtree is preserved byte-for-byte as historical
+evidence. Its bootstrap files and package listings must not be run, linked as a
+download, or advertised as a catalog. There is no conformant cave bootstrap.
 
 ## Join (anyone)
 
 ```bash
-# 1. CONSUME — no membership needed, no auth:
-curl -fsSL "https://raw.githubusercontent.com/kody-w/RAPP/main/cave/agents/rapp_agent.py" \
-  -o <your-brainstem>/agents/rapp_agent.py   # the participation agent
-# then from your brainstem chat:
-#   "cave browse"                       → see everyone's cubbies
-#   "cave load cubby=kody-w"            → stream agents into your brainstem
-#   "cave show_and_tell title=hello"    → post to the room (once you're a member)
-
-# 2. BECOME A MEMBER — fork + PR:
+# Historical membership workflow — application governance, not RAPP acceptance:
 #   fork  https://github.com/kody-w/RAPP
 #   add   cave/cubbies/<your-login>/    (cp -r cave/cubbies/_template cave/cubbies/<you>)
 #   open  a PR → on merge, the cubby is yours and the world can already pull it
-# or just say it in chat — "cave join" forks, makes your cubby, and opens the PR.
 ```
+
+The former direct participation-agent download and “stream into your
+brainstem” commands are removed. A replacement must be accepted through current
+RAPP/1 artifact and registry verification.
 
 No invitation to wait for. The cave is open: read access is the default for the
 whole world, and write access to *your* cubby lands the moment your PR merges.
@@ -73,7 +73,7 @@ live cubby gallery loads over plain HTTPS, no install required.
 | `cubbies/index.json` | the live cubby gallery (the Pages front door reads this) |
 | `cubbies/<login>/show-and-tell/` | append-only show-and-tell stream |
 | `agents/rapp_agent.py` | the participation agent (public, generic) |
-| `rapplications/` | hatchable rapplications — `rapp-installer` lives here |
+| `rapplications/` | inert historical artifacts; no current hatchable catalog |
 | `rar/index.json` | sha256-pinned participation kit (`rapp-rar-index/1.1`) |
 | `specs/` | the god spec + workspace protocol + the cubby quirk |
 | `.well-known/rapp-cave.json` | public discovery beacon (pointers, not contents) |
@@ -81,3 +81,5 @@ live cubby gallery loads over plain HTTPS, no install required.
 Lives in [`kody-w/RAPP`](https://github.com/kody-w/RAPP) at `cave/` — the public
 sibling of the private [`kody-w/rapp-batcave`](https://github.com/kody-w/rapp-batcave).
 Identical anatomy; the gate is the only thing that changed.
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

@@ -1,4 +1,4 @@
-# ESTATE_SPEC — The Rappid Is The Global Address
+# Historical Estate Address Proposal
 
 > **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
 > wire, eggs, registry, trust, and protocol evolution, follow
@@ -25,6 +25,12 @@ authority wins.
 > migration material. A current estate cartridge is the RAPP/1 §9 `estate`
 > variant; identity continuity additionally requires verified §§6, 10, and 13
 > state and never follows from transport alone.
+
+> **Whole-document disposition:** the repository does not currently provision
+> estate repositories, doors, catalogs, or plant/hatch flows. The remaining
+> product rules and “shipped” labels are dated history, not operator actions.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 ---
 
@@ -174,8 +180,6 @@ Each candidate remains untrusted until the relevant RAPP/1 checks pass.
 ---
 
 ## Historical pre-RAPP/1 implementation appendix (superseded)
-
-<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 Everything below this marker preserves the former derivation, recovery,
 cartridge, and adoption contract for migration and audit context. Its

@@ -1,10 +1,19 @@
-# RAPP kernel tree
+# Historical RAPP Repository Inventory
 
 > **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
 > wire, eggs, registry, trust, and protocol evolution, follow
 > [`RAPP1_AUTHORITY.json`](./RAPP1_AUTHORITY.json) and
 > [`RAPP1_STATUS.md`](./RAPP1_STATUS.md). This inventory may describe legacy
 > files, but only the pinned standard defines current protocol artifacts.
+
+> **Whole-document disposition:** names in the tree below prove only that
+> source or an archive exists. They do not establish a live installer, Pages
+> product, browser UI, Tier 2/3 deployment, catalog, hatcher, or portable egg.
+> The only immutable runtime claim is the three-byte-set grail pin
+> `kody-w/rapp-installer@brainstem-v0.6.9`; all acceptance claims remain
+> limited by `RAPP1_STATUS.md`.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Looking for the human-facing entry point?** The [**Kernel hub**](https://kody-w.github.io/RAPP/pages/kernel.html) is the unified reading order for the whole canon — trilogy, law, reference, specs, vault Reading Paths. This page (KERNEL_TREE.md) is the file-by-file *inventory* of what's in this repo; the hub is the *narrative* that explains how it all fits.
 
@@ -162,3 +171,5 @@ bash tests/mirror-drift.sh
 The legacy script's three `OK` lines compare its configured source only.
 Authoritative equality means the three files match the exact
 `kody-w/rapp-installer@brainstem-v0.6.9` pin; never restore from moving main.
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

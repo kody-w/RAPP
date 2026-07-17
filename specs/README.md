@@ -15,15 +15,16 @@ It is **not** a duplicate of `pages/docs/`. The two directories cover different 
 |---|---|---|
 | Historical agent contract | [`pages/docs/SPEC.md`](../pages/docs/SPEC.md) | What did the pre-RAPP/1 single-file-agent platform contract say? |
 | Historical network protocol | [`specs/SPEC.md`](./SPEC.md) | What did the retired network contract teach? |
-| Host onboarding document | [`pages/docs/skill.md`](../pages/docs/skill.md) | How can an AI host help run RAPP without becoming a RAPP capability? |
-| Network-participation runbook | [`specs/skill.md`](./skill.md) | How does an AI become a 1st-class citizen of the network? |
-| Installer skill | [`skill.md`](../skill.md) (root) | How does an LLM install the brainstem on a user's behalf? |
+| Historical host onboarding | [`pages/docs/skill.md`](../pages/docs/skill.md) | What retired installer and host guidance was previously advertised? |
+| Historical network runbook | [`specs/skill.md`](./skill.md) | What pre-RAPP/1 participation flow was retired? |
+| Historical installer runbook | [`skill.md`](../skill.md) (root) | What Tier 1/2/3 onboarding commands must no longer be executed? |
 
 ## What's here
 
 - **[`SPEC.md`](./SPEC.md)** — superseded `rapp-protocol/1.0` history for
   migration analysis; it is not current protocol.
-- **[`skill.md`](./skill.md)** — the action-oriented companion to `SPEC.md`. Six steps from zero to network citizen.
+- **[`skill.md`](./skill.md)** — archived action-oriented companion. Its six
+  steps are not current instructions.
 
 ## Why two directories
 

@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RAPP — FAQ</title>
-<meta name="description" content="Straight answers to the questions people actually ask. How is RAPP different from GPTs, skills, Copilot, Claude, Copilot Studio?">
+<title>RAPP — Pre-Acceptance FAQ</title>
+<meta name="description" content="Pre-acceptance FAQ for experimental local source; no installer, browser product, cloud tier, or legacy egg is shipped.">
 <meta property="og:title" content="RAPP — FAQ">
-<meta property="og:description" content="Straight answers to the questions people actually ask.">
+<meta property="og:description" content="Pre-acceptance FAQ; not a current product or distribution claim.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://kody-w.github.io/RAPP/pages/product/faq.html">
 <link rel="canonical" href="https://kody-w.github.io/RAPP/pages/product/faq.html">
@@ -70,6 +70,12 @@
 </style>
 </head>
 <body>
+<!-- RAPP1-HISTORICAL-SECTION-START -->
+<aside role="note" style="max-width:1100px;margin:16px auto;padding:12px 18px;border:1px solid currentColor">
+  <strong>Historical pre-acceptance page.</strong> Current RAPP/1 rev-5 claims follow
+  <a href="../../RAPP1_AUTHORITY.json">RAPP1_AUTHORITY.json</a> and
+  <a href="../../RAPP1_STATUS.md">RAPP1_STATUS.md</a>.
+</aside>
 <div id="site-header"></div>
 <header>
   <nav class="nav">
@@ -89,6 +95,12 @@
 </header>
 
 <main>
+  <aside role="note" style="margin:0 0 24px;padding:14px 18px;border:1px solid var(--border2);border-radius:10px;background:var(--panel);line-height:1.55">
+    <strong>Pre-acceptance product FAQ.</strong> RAPP currently provides
+    experimental local source and a loopback-only RAPP/1 façade. Public
+    installers, browser products, Tier 2/Tier 3, and legacy eggs are retired.
+    See <a href="../../RAPP1_STATUS.md">RAPP1_STATUS.md</a>.
+  </aside>
   <h1>FAQ</h1>
   <p class="subtitle">Straight answers to the questions people actually ask.
     No marketing; just what the thing does and why it's different.</p>
@@ -124,8 +136,10 @@
   <section class="q" id="q2">
     <h2>Give me a real scenario I can do with RAPP that I can't do with the others.</h2>
     <div class="a">
-      <p>You're a forestry person monitoring IoT devices in the woods. The device has RAPP installed. It can do its job <strong>completely off-network</strong>. When someone with a different RAPP agent walks up, they can inject their agent into yours, on-device, and now your brainstem has new capabilities — no cloud round-trip, no vendor sync, no account.</p>
-      <p>You can't do that with a GPT, a skill, or a Copilot Studio agent. Those are all cloud-tethered, account-tethered, and vendor-specific. RAPP agents are physics: local files.</p>
+      <p>The forestry/off-network story is a historical design scenario, not a
+        shipped install or peer-injection capability. The retained local source
+        can be evaluated by an operator, but no authenticated exchange is
+        accepted until the RAPP/1 trust requirements are met.</p>
     </div>
   </section>
 
@@ -133,8 +147,9 @@
   <section class="q" id="q3">
     <h2>Can it really run offline?</h2>
     <div class="a">
-      <p>Yes. The brainstem is a tiny local Flask server. Point it at a local LLM (LLaMA, Ollama, whatever you have) and the whole thing runs on-device. No internet required after install.</p>
-      <p>The default install uses GitHub Copilot as the LLM because it's one-click to authenticate (<code>gh auth login</code>) and costs nothing beyond a GitHub account. But that's a dial you can turn. Provider is the cloud operator's choice, not the learner's.</p>
+      <p>The source includes a local Flask application. Offline behavior,
+        models, and dependencies are operator-evaluated; there is no supported
+        offline or default installation claim.</p>
     </div>
   </section>
 
@@ -143,7 +158,9 @@
     <h2>Why use this instead of Copilot Studio directly?</h2>
     <div class="a">
       <p>Copilot Studio is great for structured, bounded scenarios inside M365. It can only do what the product surface exposes.</p>
-      <p>RAPP can do anything Python can do. Python has the libraries; Copilot drives RAPP to generate agents that use them. And because every agent is a single file, there's no ecosystem lock-in — the same agent runs on a laptop, on Azure Functions, and inside a Copilot Studio solution. It extends Copilot Studio rather than replacing it.</p>
+      <p>RAPP explores a plain-Python local agent model. Azure Functions and
+        Copilot Studio adapters are retired design history, not current
+        promotion targets.</p>
     </div>
   </section>
 
@@ -161,7 +178,9 @@
     <h2>What does "portable" actually mean?</h2>
     <div class="a">
       <p>It means: <strong>one file</strong>. Copy it. AirDrop it. Paste its contents in a Teams chat. Email it. Attach it to a JIRA ticket. The file travels; the behavior travels with it unchanged.</p>
-      <p>There's no framework around the file. No YAML. No build step. No registry. The brainstem sees <code>*_agent.py</code> on disk and picks it up automatically — local, cloud, anywhere.</p>
+      <p>The historical port-7071 application can discover
+        <code>*_agent.py</code> locally. No cloud or anywhere-runtime parity is
+        claimed.</p>
     </div>
   </section>
 
@@ -169,13 +188,9 @@
   <section class="q" id="q7">
     <h2>How do I install it?</h2>
     <div class="a">
-      <p>One line on macOS / Linux / WSL:</p>
-      <pre>curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash</pre>
-      <p>Or project-local (doesn't touch your home dir; installs into <code>./.brainstem/</code>, gitignored):</p>
-      <pre>curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash -s -- --here</pre>
-      <p>Windows PowerShell:</p>
-      <pre>irm https://raw.githubusercontent.com/kody-w/RAPP/main/installer/install.ps1 | iex</pre>
-      <p>First chat walks you through GitHub sign-in. After that you're talking to your brainstem in a browser tab.</p>
+      <p>You do not: no public macOS, Linux, WSL, Windows, project-local, or
+        browser installation is currently shipped. Files retained under
+        <code>installer/</code> are contained legacy artifacts.</p>
     </div>
   </section>
 
@@ -201,13 +216,13 @@
   <section class="q" id="q10">
     <h2>How does it scale from my laptop to Teams?</h2>
     <div class="a">
-      <p>Three tiers, one model:</p>
+      <p>The former three-tier model is retired:</p>
       <ul>
-        <li><strong>Tier 1 — Local:</strong> <code>brainstem.py</code> on your laptop. GitHub Copilot drives the LLM. Single user.</li>
-        <li><strong>Tier 2 — Cloud:</strong> the same brainstem deployed to Azure Functions. One deployment serves many users; each user gets their own memory namespace via the <code>user_guid</code> they send in the request.</li>
-        <li><strong>Tier 3 — Copilot Studio:</strong> a Power Automate flow passes the signed-in user's AAD identity into Tier 2 as <code>user_guid</code>. One MCS connector serves N users. Zero per-user setup.</li>
+        <li><strong>Local:</strong> source application plus a separate loopback-only pre-acceptance façade.</li>
+        <li><strong>Tier 2 — Cloud:</strong> retired; no Azure service is shipped.</li>
+        <li><strong>Tier 3 — Copilot Studio:</strong> retired; no connector is shipped.</li>
       </ul>
-      <p>An agent written on your laptop runs unchanged in all three tiers. That's the whole platform promise.</p>
+      <p>There is no unchanged cross-tier or production promise.</p>
     </div>
   </section>
 
@@ -236,5 +251,6 @@
 </main>
 <div id="site-footer"></div>
 <script src="../_site/js/site.js" defer></script>
+<!-- RAPP1-HISTORICAL-SECTION-END -->
 </body>
 </html>

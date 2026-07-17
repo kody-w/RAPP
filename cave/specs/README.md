@@ -1,5 +1,13 @@
 # `cave/specs/` — the cave's protocol bundle
 
+> **Historical application bundle.** For canonicalization, identity, frames,
+> wire, eggs, registry, trust, and protocol evolution, follow RAPP/1 rev-5
+> through [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md). It does not define a current
+> bootstrap, downloadable catalog, or acceptance policy.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
+
 This directory holds the **cave's planted-quirk contract** — how the public RAPP
 Cave works: its primitive (the cubby), its anatomy, its append-only zones, the
 public join, and the bones-not-substance boundary.
@@ -12,7 +20,8 @@ fork + PR.
 
 > Cave: `rappid:@kody-w/rapp-cave:ca72ca0a3cb90c357fb09e38b02f85f09935cacbf61e94740c57f1eb30a73e0a`
 > Parent: `rappid:@kody-w/rapp:9a8f0a4b5a710e20f4d819a0f37d2a4c9f113b5e78fb3c29e70b54fff48a38f9` (the RAPP species root)
-> Front: https://kody-w.github.io/RAPP/cave/ · Raw base: https://raw.githubusercontent.com/kody-w/RAPP/main/cave
+> Historical front: https://kody-w.github.io/RAPP/cave/ · no moving raw branch
+> is canonical or authenticated
 
 ## What's here
 
@@ -48,3 +57,5 @@ on the device. See [`CAVE_PROTOCOL.md` §3](./CAVE_PROTOCOL.md).
 To read: pull (no account, no auth). To contribute: fork `kody-w/RAPP`, add your
 cubby under `cave/cubbies/<your-handle>/`, open a PR. See
 [`CAVE_PROTOCOL.md` §8](./CAVE_PROTOCOL.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

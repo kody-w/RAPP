@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RAPP — Prompt ledger</title>
-<meta name="description" content="A growing menu of prompts that show off what RAPP can actually do. Click any prompt to copy.">
+<title>RAPP — Historical Prompt Ledger</title>
+<meta name="description" content="Read-only historical prompt ledger; entries are not current RAPP capabilities.">
 <meta property="og:title" content="RAPP — Prompt ledger">
-<meta property="og:description" content="Append-only menu of prompts that exercise RAPP primitives — federation, swarms, eggs, planting, twins, dream catcher merges. Tap to copy.">
+<meta property="og:description" content="Read-only historical prompt ledger; retired planting and egg ideas are not executable.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://kody-w.github.io/RAPP/pages/about/prompts.html">
 <link rel="canonical" href="https://kody-w.github.io/RAPP/pages/about/prompts.html">
@@ -156,11 +156,20 @@ body { margin: 0; font-family: var(--font-sans, system-ui, sans-serif); }
 </style>
 </head>
 <body>
+<!-- RAPP1-HISTORICAL-SECTION-START -->
+<aside role="note" style="max-width:1100px;margin:16px auto;padding:12px 18px;border:1px solid currentColor">
+  <strong>Historical read-only ledger.</strong> Current RAPP/1 rev-5 claims follow
+  <a href="../../RAPP1_AUTHORITY.json">RAPP1_AUTHORITY.json</a> and
+  <a href="../../RAPP1_STATUS.md">RAPP1_STATUS.md</a>.
+</aside>
 
 <div class="pl-shell">
   <header class="pl-header">
-    <h1>📜 Prompt ledger</h1>
-    <p>A growing menu of prompts that exercise what RAPP actually does — federation, swarms, eggs, planting, twins, Dream Catcher merges. Click the prompt body or the <b>copy</b> button to grab it. Append-only: new prompts get added, old ones never get edited.</p>
+    <h1>📜 Historical prompt ledger</h1>
+    <p><strong>Superseded, read-only design archive.</strong> Entries preserve
+      speculative federation, swarm, egg, planting, twin, and Dream Catcher
+      ideas. They are not current capabilities or instructions; copy/run CTAs
+      are disabled. No replacement for retired <code>plant.sh</code> exists.</p>
     <p style="font-size:13px;color:#8b949e;margin-top:8px">↪ <a href="../kernel.html">Kernel hub</a> · the canonical reading order for the platform</p>
     <div class="pl-meta" id="pl-meta"></div>
   </header>
@@ -1211,29 +1220,6 @@ body { margin: 0; font-family: var(--font-sans, system-ui, sans-serif); }
     );
   }
 
-  async function copyPrompt(text, btn) {
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch(e) {
-      // Fallback for non-secure contexts
-      const ta = document.createElement('textarea');
-      ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
-      document.body.appendChild(ta); ta.select();
-      try { document.execCommand('copy'); } catch(_){}
-      ta.remove();
-    }
-    if (btn) {
-      const orig = btn.textContent;
-      btn.textContent = 'copied ✓';
-      btn.classList.add('copied');
-      setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 1400);
-    }
-    const toast = document.getElementById('pl-toast');
-    toast.classList.add('show');
-    clearTimeout(window.__plToast);
-    window.__plToast = setTimeout(() => toast.classList.remove('show'), 1400);
-  }
-
   function visiblePrompts() {
     const q = document.getElementById('pl-search').value.trim().toLowerCase();
     const sort = document.getElementById('pl-sort').value;
@@ -1266,8 +1252,8 @@ body { margin: 0; font-family: var(--font-sans, system-ui, sans-serif); }
           <h2><span class="num">#${String(p.id).padStart(2,'0')}</span>${escapeHtml(p.title)}</h2>
           <span class="added">${p.added || ''}</span>
         </div>
-        <div class="pl-prompt" data-prompt="${escapeHtml(p.prompt)}" title="click to copy">
-          <button class="pl-copy-btn" type="button">copy</button>${escapeHtml(p.prompt)}
+        <div class="pl-prompt" title="historical text; execution disabled">
+          <span class="pl-copy-btn" aria-label="historical">historical</span>${escapeHtml(p.prompt)}
         </div>
         ${p.shows ? `<div class="pl-shows">${escapeHtml(p.shows)}</div>` : ''}
         <div class="pl-card-tags">
@@ -1276,13 +1262,6 @@ body { margin: 0; font-family: var(--font-sans, system-ui, sans-serif); }
       </div>
     `).join('');
 
-    root.querySelectorAll('.pl-prompt').forEach(el => {
-      el.addEventListener('click', (ev) => {
-        // Don't double-fire when clicking the copy button
-        const btn = el.querySelector('.pl-copy-btn');
-        copyPrompt(el.dataset.prompt, btn);
-      });
-    });
     root.querySelectorAll('.pl-card-tags .pl-tag').forEach(el => {
       el.addEventListener('click', (ev) => {
         ev.stopPropagation();
@@ -1305,5 +1284,6 @@ body { margin: 0; font-family: var(--font-sans, system-ui, sans-serif); }
 })();
 </script>
 
+<!-- RAPP1-HISTORICAL-SECTION-END -->
 </body>
 </html>

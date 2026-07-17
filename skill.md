@@ -1,28 +1,33 @@
 ---
 name: rapp-brainstem
 version: 1.0.0
-description: Install and configure RAPP Brainstem -- a local-first AI agent server powered by GitHub Copilot.
-homepage: https://kody-w.github.io/rapp-installer/
-metadata: {"emoji":"","category":"ai-agents","repo":"https://github.com/kody-w/rapp-installer"}
+description: Historical RAPP Brainstem onboarding. Do not execute the retired installer or Tier 2/3 deployment steps in this file.
+metadata: {"emoji":"","category":"history","repo":"https://github.com/kody-w/RAPP"}
 ---
 
 <!--
-SCOPE OF THIS FILE: a non-runtime host onboarding manifest consumed by an
-external assistant when asked to install RAPP Brainstem. It is not a RAPP
-agent or capability. pages/docs/skill.md is broader host onboarding and
-specs/skill.md is an archived pre-RAPP/1 network runbook.
+SCOPE OF THIS FILE: archived host-onboarding history. External assistants must
+not treat its installation or deployment commands as available capabilities.
+It is not a RAPP agent, capability, or current runbook.
 -->
 
 
-# RAPP Brainstem
+# Historical RAPP Brainstem Onboarding
 
 > **Current RAPP/1 authority (rev-5).** This file is a non-runtime host
 > onboarding runbook, not a RAPP agent or capability. For canonicalization,
 > identity, frames, wire, eggs, registry, trust, and protocol evolution, follow
 > [`RAPP1_AUTHORITY.json`](./RAPP1_AUTHORITY.json) and
-> [`RAPP1_STATUS.md`](./RAPP1_STATUS.md). It installs the immutable
-> `kody-w/rapp-installer@brainstem-v0.6.9` grail; it does not make that grail
-> fully conformant.
+> [`RAPP1_STATUS.md`](./RAPP1_STATUS.md). The immutable
+> `kody-w/rapp-installer@brainstem-v0.6.9` grail is a byte pin, not an
+> installation or conformance promise.
+
+> **Assistant instruction:** do not run or recommend any prerequisite,
+> checkout, install, browser, Azure, Copilot Studio, or uninstall command
+> below. Tier 2/3 and public live-install onboarding are retired. Current work
+> is source-level RAPP/1 conformance and the loopback pre-acceptance façade.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 A local-first AI agent server. No API keys. No cloud setup. Just a GitHub account.
 
@@ -494,3 +499,5 @@ rm -rf ~/.brainstem ~/.local/bin/brainstem ~/.config/brainstem
 | OpenAI deploy fails | Try different region: `eastus2` or `swedencentral` |
 | Functions list empty after deploy | `az functionapp restart --name $FUNC_NAME -g $RESOURCE_GROUP` |
 | Copilot Studio connector fails | Verify function key and URL are correct |
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

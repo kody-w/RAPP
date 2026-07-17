@@ -1,10 +1,18 @@
-# THE LEXICON
+# Historical RAPP Product Lexicon
 
 > **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
 > wire, eggs, registry, trust, and protocol evolution, follow
 > [`RAPP1_AUTHORITY.json`](./RAPP1_AUTHORITY.json) and
 > [`RAPP1_STATUS.md`](./RAPP1_STATUS.md). Product vocabulary remains useful;
 > incompatible identity, frame, wire, or egg definitions are retired history.
+
+> **Whole-document disposition:** the vocabulary body is preserved as dated
+> product history. Its tier portability, catalogs, hatching, residents,
+> commons, and runtime-action descriptions are not current capability claims.
+> Exact RAPP/1 terms and schemas take precedence; no product nickname creates
+> a protocol primitive or acceptance path.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Canon.** This is the language of the RAPP organism, stripped to first principles.
 > Nine words, one operator, one membrane law, one wire, three shelves. A newcomer who
@@ -424,3 +432,5 @@ bind this text). Nothing in Parts I–III renames a file, breaks a URL, or edits
 code. A formerly proposed rapp-body genesis seal has not been authenticated
 and grants these bytes no authority. A future verified frame may attest a
 historical copy, but cannot displace the pinned RAPP/1 standard.
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

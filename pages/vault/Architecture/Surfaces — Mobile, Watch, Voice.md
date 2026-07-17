@@ -1,6 +1,6 @@
 ---
 title: Surfaces — Mobile, Watch, Voice
-status: published
+status: historical
 section: Architecture
 hook: Every form factor is a calibration opportunity. Ship them as web tech (PWAs + Apple Shortcuts) — not as native apps you have to maintain across three OSes.
 session_id: 63243848-caa9-483c-9a8e-9bb0ee9d2849
@@ -14,9 +14,14 @@ session_date: 2026-04-24
 > canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
 > evolution, follow RAPP/1 rev-5 through
 > [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
-> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md). Form-factor adapters use the
-> exact §8 `/chat` request and response; application `/api/*` routes and voice
-> rendering do not add protocol members or trust.
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md). The target façade request
+> allows exactly required string `user_input` and optional strings `session_id`
+> and `idempotency_key`; HTTP 200 is exactly `response`, `agent_logs` (array),
+> and `session_id`; HTTP 422 is exactly
+> `{"error":{"code":"<code>","step":null}}`. Voice/Twin rendering derives
+> locally from `response`; application `/api/*` routes add no wire members.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** Every form factor is a calibration opportunity. Ship them as web tech (PWAs + Apple Shortcuts) — not as native apps you have to maintain across three OSes.
 
@@ -81,9 +86,10 @@ Apple Shortcuts is Apple's first-party automation platform. It runs on iOS, iPad
 
 The implication: **the brainstem can have an Apple Watch surface and a Siri surface without any native code.** The watch becomes a thin client that POSTs to a configurable brainstem URL (Tier 1 over local network, or Tier 2 cloud over the internet) and speaks the `|||VOICE|||` portion of the response. The user installs the Shortcut once; "Hey Siri, ask Brainstem [thing]" then works on every Apple device they own.
 
-### The protocol a Shortcut needs
+### Historical Shortcut protocol (retired; do not execute)
 
-A brainstem-compatible Shortcut needs:
+The following bullets record the former incompatible design. They are not
+current authoring instructions:
 
 - A configurable **endpoint URL** — e.g. `http://192.168.1.42:7071/chat` for Tier 1 on the same Wi-Fi, or a Tier 2 Azure Functions URL for off-network.
 - Optional **auth header** — Bearer token for Tier 2; nothing for Tier 1 (which trusts the local network).
@@ -92,7 +98,13 @@ A brainstem-compatible Shortcut needs:
 
 The Shortcut does the voice capture (Siri dictation), the round-trip, and the speak-back. The brainstem doesn't change — it already emits a voice slot designed for TTS.
 
-### Distribution
+**Current correction.** A future private client uses only the loopback façade
+at `http://127.0.0.1:7073/chat`; sends required `user_input` and optional
+`session_id` / `idempotency_key`; reads exactly `response`, `agent_logs` (array),
+and `session_id`; handles the exact nested HTTP 422 error; and derives speech
+locally from `response`. It sends no history and receives no voice/twin fields.
+
+### Historical distribution (retired)
 
 `.shortcut` files can be hosted at GitHub Pages URLs and installed by tap. The platform's distribution path stays consistent with everything else:
 
@@ -102,7 +114,10 @@ The Shortcut does the voice capture (Siri dictation), the round-trip, and the sp
 
 This parallels the install one-liner discipline: one URL, one tap, no app store, no signing.
 
-### What this rules in / out
+**Current correction.** No `.shortcut`, iCloud link, hosted download, public
+facade, Tier 2 endpoint, or browser install is shipped.
+
+### What the historical design ruled in / out
 
 **Rules in.**
 - Apple Watch as a brainstem client (Siri or tap).
@@ -149,3 +164,5 @@ Android Chrome supports PWAs more fully than iOS Safari — push works, install 
 - [[The Twin Offers, The User Accepts]]
 - [[Why GitHub Pages Is the Distribution Channel]]
 - [[Three Tiers, One Model]]
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

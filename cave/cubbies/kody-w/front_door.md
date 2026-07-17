@@ -6,28 +6,29 @@
 > [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md). The cave's old cartridges are
 > legacy migration inputs, not current RAPP/1 eggs.
 
+<!-- RAPP1-HISTORICAL-SECTION-START -->
+
 Founder cubby, public edition. This is the front door of **The RAPP Cave** — the
 public mirror of the operator's estate. Where the private batcave keeps the
 operator set OUT of the open grail repo behind a collaborator gate, the cave does
 the opposite: it ships only the public-safe rapplication anyone can pull. No gh
 auth, no collaborator invite, no 404 for outsiders — the front door is open.
-Browse it at https://kody-w.github.io/RAPP/cave/ or pull the raw files straight
-from https://raw.githubusercontent.com/kody-w/RAPP/main/cave .
+Browse its historical/application content at
+https://kody-w.github.io/RAPP/cave/. A moving raw branch is not an authenticated
+download or acceptance source.
 
 ## What I'm cooking
 
-- the **rapp-installer** rapplication — the grail brainstem itself, egged &
-  self-bootstrapping, so a single public pull stands up a working local brainstem
+- the retired **rapp-installer** prepared subtree — inert history, not a
+  bootstrap, catalog entry, download, or current egg
 - the cave itself — this public neighborhood
 
 ## How this cubby is organized
 
-- `agents/` - standalone single-file agents, drop one into your brainstem's
-  agents dir and go. (Single-file rapplication agents live here too for
-  quick grabs.) Public-safe only — no operator/twin internals.
-- `rapplications/` - whole rapplications, ONE FOLDER each: the agent, its
-  CLI/tools, tests, README and specs together. Start here to understand or
-  extend one.
+- `agents/` - historical source examples for inspection. They are not a
+  drop-in install source or quick-grab catalog.
+- `rapplications/` - historical prepared folders. They may be inspected as
+  evidence but are not a current catalog or install surface.
 - `eggs/` - historical hatchable units (`cubby-<name>.egg`, legacy
   `brainstem-egg/2.3-cubby`, retained only as migration input):
   the former one-file form of a cubby or rapplication. Public fetch needs no
@@ -39,6 +40,8 @@ from https://raw.githubusercontent.com/kody-w/RAPP/main/cave .
 ## How to join
 
 This cave is PUBLIC, so joining is the inverse of a collaborator invite: fork the
-repo and open a PR adding your own cubby under `cubbies/<your-handle>/` (copy
-`cubbies/_template/`), or just pull what's here and run it locally. Anyone can
-walk in.
+repo and open a reviewed PR adding your own cubby under
+`cubbies/<your-handle>/` (copy `cubbies/_template/`). Static public access does
+not authorize loading or execution.
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

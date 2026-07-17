@@ -1,4 +1,4 @@
-# PUBLIC_PRIVATE_BOUNDARY — The Three-Tier Estate (Mandatory)
+# Historical Public/Private Estate Boundary
 
 > **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
 > wire, eggs, registry, trust, and protocol evolution, follow
@@ -6,9 +6,13 @@
 > [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md). This privacy architecture cannot
 > replace RAPP/1 §9 eggs or §§10/13 authenticated trust.
 
-> **Application metadata:** `rapp-private-estate/1.1` · **Status:** repository
-> privacy policy under Article XLVIII, subordinate to Article LV and RAPP/1 ·
-> **First shipped:** 2026-05-09
+> **Disposition:** retired product architecture dated 2026-05-09. No current
+> installer creates public/private estate repositories or a mandatory
+> three-tier operator estate. Do not follow the planter, bootstrap, publishing,
+> or discovery actions below. Current implementations still must minimize
+> disclosure and apply RAPP/1 §§9, 10, and 13 at every acceptance boundary.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 This is the spec for the platform's estate model. **Every Article-XLVIII-compliant operator has THREE tiers from first install:** the public estate (discovery), the private estate (the *bones* — workflow + sanitized structure), and the local-only on-device tier (the *substance* — PII, customer data, real content). All three are first-class infrastructure; none are opt-in.
 
@@ -431,3 +435,5 @@ A peer who receives your egg over AirDrop or sneakernet ALSO sees only your publ
 ---
 
 *The boundary is not optional. The URLs are not metadata. The private repo is not for advanced users. The operator's secret is not for the network. From day one — every operator, every estate, every URL — the substrate for real work is in place.*
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

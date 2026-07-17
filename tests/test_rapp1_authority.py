@@ -131,7 +131,9 @@ class Rapp1AuthorityTests(unittest.TestCase):
             status.startswith("# NOT YET FULLY RAPP/1 CONFORMANT\n")
         )
         for phrase in (
-            "640/640 tracked paths",
+            "2026-07-16 baseline: 640/640 tracked paths",
+            "2026-07-17",
+            "691/691 tracked\npaths",
             "every tracked file was individually reviewed and\n  classified",
             "5 ZIP-compatible archives",
             "450 recursively counted archive\n  members",

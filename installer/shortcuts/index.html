@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RAPP Shortcuts — Apple Watch, Siri, iPhone</title>
-<meta name="description" content="Brainstem-compatible Apple Shortcuts. Watch + Siri + iPhone + iPad + Mac surfaces with zero native code. The voice slot does the work; the Shortcut is the harness.">
+<meta name="description" content="Retired Apple Shortcut design notes for the pre-acceptance local RAPP/1 facade. No Shortcut or public install is shipped.">
 <meta property="og:title" content="RAPP Shortcuts">
-<meta property="og:description" content="Apple Shortcuts that turn the brainstem into a voice / wrist / Siri client. No native app, no App Store, no per-OS upkeep.">
+<meta property="og:description" content="Pre-acceptance local authoring reference. No Shortcut or public endpoint is shipped.">
 <meta property="og:url" content="https://kody-w.github.io/RAPP/installer/shortcuts/">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E⌚%3C/text%3E%3C/svg%3E">
 <style>
@@ -94,18 +94,27 @@
 
 <div class="hero">
   <div class="icon">⌚</div>
-  <h1>Brainstem on your <span class="grad">wrist, in Siri, in CarPlay</span>.</h1>
-  <p>Apple Shortcuts that turn the brainstem into a voice / wrist / Siri client — across iPhone, iPad, Mac, Apple Watch, HomePod, and CarPlay. <strong>Zero native code.</strong></p>
-  <span class="tag">No App Store. No code signing. No per-OS upkeep.</span>
+  <h1>Apple Shortcut <span class="grad">design history</span>.</h1>
+  <p><strong>No Shortcut or public install is shipped.</strong> These notes
+  describe a possible private client for the loopback pre-acceptance façade.</p>
+  <span class="tag">Local authoring reference · not a product surface</span>
 </div>
 
 <div class="why">
-  <h2>Why Shortcuts and not a native app</h2>
-  <p><span class="check">✓</span> One bundle covers six Apple surfaces (iPhone, iPad, Mac, Watch, HomePod, CarPlay).</p>
-  <p><span class="check">✓</span> No Apple Developer Program, no App Store review, no per-OS-version regression testing.</p>
-  <p><span class="check">✓</span> Distributable as iCloud share link OR a hosted <code>.shortcut</code> file — same shape as the install one-liner.</p>
-  <p><span class="check">✓</span> Audit-friendly: the user sees every action in Shortcuts.app before installing.</p>
-  <p style="margin-top:12px;color:var(--muted);font-size:13px">See the long-form reasoning in the <a href="../../pages/vault/Architecture/Surfaces%20%E2%80%94%20Mobile,%20Watch,%20Voice.md">Surfaces vault note</a>.</p>
+  <h2>Current boundary</h2>
+  <p>Canonicalization, identity, frames, wire, eggs, registry, trust, and
+  protocol evolution follow RAPP/1 rev-5 through
+  <a href="../../RAPP1_AUTHORITY.json">RAPP1_AUTHORITY.json</a> and
+  <a href="../../RAPP1_STATUS.md">RAPP1_STATUS.md</a>.</p>
+  <p><span class="check">✓</span> A future client sends only required string
+  <code>user_input</code> plus optional strings <code>session_id</code> and
+  <code>idempotency_key</code>.</p>
+  <p><span class="check">✓</span> Success has exactly
+  <code>response</code>, <code>agent_logs</code> (array), and
+  <code>session_id</code>; HTTP 422 is exactly
+  <code>{"error":{"code":"&lt;code&gt;","step":null}}</code>.</p>
+  <p><span class="check">✓</span> Speech is derived locally from
+  <code>response</code>. Voice and twin are not extra fields.</p>
 </div>
 
 <div class="grid">
@@ -114,11 +123,12 @@
       <span class="card-icon">🎙️</span>
       <div class="card-title">
         <h3>Brainstem Voice</h3>
-        <span class="meta">brainstem-voice/ · 5 actions · Siri-invocable</span>
+        <span class="meta">brainstem-voice/ · historical five-action sketch</span>
       </div>
-      <span class="card-status status-author">Author</span>
+      <span class="card-status status-soon">Retired</span>
     </div>
-    <p>Ask your brainstem questions via Siri or tap. Speaks the answer aloud. Works on every Apple surface from Watch to HomePod.</p>
+    <p>Unshipped design notes for speaking a local façade response. No iCloud
+    link, downloadable bundle, Tier 2 endpoint, or browser endpoint exists.</p>
     <div class="surfaces">
       <span class="surface">iPhone</span>
       <span class="surface">iPad</span>
@@ -128,8 +138,8 @@
       <span class="surface">CarPlay</span>
     </div>
     <div class="card-cta">
-      <a class="primary" href="brainstem-voice/">Build it →</a>
-      <a href="protocol.md">Protocol docs</a>
+      <a href="brainstem-voice/">Read the retired design</a>
+      <a class="primary" href="protocol.md">Exact local contract</a>
     </div>
   </div>
 
@@ -138,11 +148,12 @@
       <span class="card-icon">📓</span>
       <div class="card-title">
         <h3>Brainstem Capture</h3>
-        <span class="meta">capture/ · planned</span>
+        <span class="meta">capture/ · retired concept</span>
       </div>
-      <span class="card-status status-soon">Planned</span>
+      <span class="card-status status-soon">Retired</span>
     </div>
-    <p>Capture a thought via Siri or Watch dictation; the brainstem files it via <code>manage_memory</code>. No "where do I write this down" friction.</p>
+    <p>Historical idea for capturing dictated text. No action, Shortcut, or
+    memory integration is shipped.</p>
     <div class="surfaces">
       <span class="surface">iPhone</span>
       <span class="surface">Watch</span>
@@ -154,11 +165,12 @@
       <span class="card-icon">📋</span>
       <div class="card-title">
         <h3>Brainstem Brief</h3>
-        <span class="meta">brief/ · planned</span>
+        <span class="meta">brief/ · retired concept</span>
       </div>
-      <span class="card-status status-soon">Planned</span>
+      <span class="card-status status-soon">Retired</span>
     </div>
-    <p>Morning-routine Shortcut. Asks the brainstem for the day's brief; speaks it on the HomePod or via CarPlay on the way out.</p>
+    <p>Historical morning-brief idea. No Shortcut, HomePod, CarPlay, or brief
+    integration is shipped.</p>
     <div class="surfaces">
       <span class="surface">HomePod</span>
       <span class="surface">CarPlay</span>
@@ -168,14 +180,15 @@
 </div>
 
 <div class="author">
-  <h2>Author your own</h2>
-  <p>Every brainstem-compatible Shortcut implements the same 5-action core protocol — get input, POST to <code>/chat</code>, extract <code>voice_response</code>, speak it. Add nothing else and you have a working surface.</p>
+  <h2>Private local experiment only</h2>
+  <p>No Shortcut is offered for installation. If an operator deliberately
+  authors a private experiment, it must use
+  <code>http://127.0.0.1:7073/chat</code>, read <code>response</code>, and
+  derive speech locally without adding wire fields.</p>
   <ol>
-    <li>Read the <a href="protocol.md">protocol doc</a> — 5 actions, no surprises.</li>
-    <li>Build the Shortcut in <code>Shortcuts.app</code> on macOS or iOS.</li>
-    <li>Sign for public install: <code>bash installer/shortcuts/sign.sh your.shortcut</code></li>
-    <li>Drop the signed file into <code>installer/shortcuts/&lt;name&gt;/</code> with a <code>README.md</code> and an iCloud share link.</li>
-    <li>Add a card to this page so others can find it.</li>
+    <li>Read the <a href="protocol.md">exact request/response/error contract</a>.</li>
+    <li>Do not send history, mode flags, identity fields, or voice/twin fields.</li>
+    <li>Do not publish or advertise the experiment as RAPP/1 conformant.</li>
   </ol>
   <div class="links">
     <a href="protocol.md">Protocol →</a>
@@ -185,7 +198,7 @@
 </div>
 
 <footer>
-  Part of <a href="../../">RAPP</a> · The platform's voice surface ·
+  Part of <a href="../../">RAPP</a> · retired design reference ·
   <a href="https://github.com/kody-w/RAPP">GitHub</a>
 </footer>
 

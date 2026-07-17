@@ -1,11 +1,22 @@
 ---
 title: The Species DNA Archive — rapp_kernel
-status: published
+status: historical
 section: Architecture
-hook: rapp_kernel/ is the public, permanent, versioned source of truth for every kernel that has ever shipped. Four files per version, frozen URLs forever, drift-detected against the running brainstem. The species' fossil record.
+hook: Historical rapp_kernel archive design, superseded by the immutable three-file KERNEL_PIN grail record.
 ---
 
 # The Species DNA Archive — `rapp_kernel/`
+
+> **SUPERSEDED archive design — historical record only.** For
+> canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+> evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md). Current frozen kernel evidence
+> is exactly the three hashes in [`KERNEL_PIN.json`](../../../KERNEL_PIN.json)
+> for `kody-w/rapp-installer@brainstem-v0.6.9`. The local `rapp_kernel/`
+> archive and its former moving alias are non-authoritative history.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** `rapp_kernel/` is the public, permanent, versioned source of truth for every kernel that has ever shipped. Four files per version, frozen URLs forever, drift-detected against the running brainstem. The species' fossil record.
 
@@ -29,12 +40,6 @@ That promise can't live inside `rapp_brainstem/` alone, because `rapp_brainstem/
 rapp_kernel/
 ├── README.md
 ├── manifest.json
-├── latest/
-│   ├── brainstem.py
-│   ├── basic_agent.py
-│   ├── context_memory_agent.py
-│   ├── manage_memory_agent.py
-│   └── VERSION
 └── v/
     └── 0.12.2/
         ├── brainstem.py
@@ -45,7 +50,10 @@ rapp_kernel/
         └── checksums.txt
 ```
 
-Two locations per file. `latest/` is the always-current copy; `v/<version>/` is the frozen historical snapshot. `latest/<file>` and `v/<latest-version>/<file>` are byte-identical for the current version. Older `v/<n>/` directories carry the bytes of *that* release, regardless of what the current version is.
+The diagram originally included a moving alias. That alias is intentionally
+omitted here because it is not a current verification source. Versioned
+`v/<n>/` directories remain historical snapshots only; they do not supersede
+the immutable `KERNEL_PIN.json` grail tag and hashes.
 
 ## The four files
 
@@ -65,11 +73,12 @@ These four files are the species. Everything else — body functions, senses, ag
 Per **Constitution Article V**, URLs under this directory are **public infrastructure**. They cannot move, change shape, or be deleted. Examples:
 
 - `https://kody-w.github.io/RAPP/rapp_kernel/manifest.json`
-- `https://kody-w.github.io/RAPP/rapp_kernel/latest/brainstem.py`
 - `https://kody-w.github.io/RAPP/rapp_kernel/v/0.12.2/brainstem.py`
 - `https://kody-w.github.io/RAPP/rapp_kernel/v/0.12.2/checksums.txt`
 
-A user pinned to v0.12.2 in `BRAINSTEM_VERSION` env var, the install one-liner fetching `latest/`, a forensic analysis comparing what shipped a year ago to what shipped today — all of these depend on these URLs being there. The archive is a public commitment, not a convenience.
+These URLs record the historical design. They are not current installer,
+authority, or acceptance URLs. Current frozen-byte verification uses the
+immutable grail tag and hashes in `KERNEL_PIN.json`.
 
 ## Variant inheritance
 
@@ -77,7 +86,10 @@ When a user creates a variant master per **Article XXXIV.3** (laying an egg that
 
 ## Drift detection
 
-The fixture suite includes `tests/organism/09-rapp-kernel-archive.sh`. Every change to `rapp_brainstem/`'s kernel files must be mirrored into `rapp_kernel/latest/`, and the corresponding `v/<version>/` snapshot must validate against its `checksums.txt`. The test catches:
+The former fixture suite included
+`tests/organism/09-rapp-kernel-archive.sh`; it is retired migration evidence.
+Current verification checks the three pinned local bytes. The historical test
+was intended to catch:
 
 - Editing a kernel file in `rapp_brainstem/` without updating the archive
 - Editing files inside an existing `v/<version>/` directory (which is forbidden)
@@ -90,18 +102,21 @@ If any of those conditions hold, the test fails. The archive cannot quietly drif
 When the kernel is updated (rare — Article XXXIII §4 keeps the bar high):
 
 1. Bump `rapp_brainstem/VERSION` to the new number.
-2. Copy the four canonical files from `rapp_brainstem/` (and `rapp_brainstem/agents/` for the memory agents) into `rapp_kernel/latest/`.
+2. Historical step retired; do not update a moving alias.
 3. Create a new directory `rapp_kernel/v/<new>/` with the same four files plus a fresh `checksums.txt` (`shasum -a 256 *.py VERSION > checksums.txt`).
-4. Append the new entry to `manifest.json` and update its `latest` field.
+4. Historical step retired; current grail changes require an explicit authority
+   event and a new immutable pin.
 5. **Never** modify any existing `rapp_kernel/v/<old>/` directory. If 0.12.2 had a bug, the fix is 0.12.3. 0.12.2's bytes stay exactly as they were.
 
 The fixture suite passes only when steps 1–4 are all done in the same change.
 
 ## What this directory is not
 
-- **Not a runtime.** Nothing in `rapp_kernel/` is executed. `python rapp_kernel/latest/brainstem.py` would crash — the kernel-sibling shims and start scripts live in `rapp_brainstem/`. This is a reference archive.
+- **Not a runtime.** Nothing in `rapp_kernel/` is current executable or
+  acceptance guidance. It is a historical reference archive.
 - **Not exhaustive.** It contains four files. The wider rapp_brainstem ecosystem — body functions, senses, sense viewers, additional agents, the boot wrapper, the install scripts, the web UI — is not here. This directory is pure kernel DNA, not the whole organism.
-- **Not editable past the latest.** Once `v/<n>/` lands, it is locked. Future PRs that need to "fix something in 0.12.2" must add 0.12.3.
+- **Not authority.** A versioned historical snapshot does not override
+  `KERNEL_PIN.json` or RAPP/1.
 
 ## See also
 
@@ -110,3 +125,5 @@ The fixture suite passes only when steps 1–4 are all done in the same change.
 - [Constitution Article V](../../../CONSTITUTION.md) — Install one-liner and URL-stability promise.
 - [[Boot Sidecar — Integrating Utils Without Modifying the Kernel]] — how everything else gets wired in around this DNA.
 - [[Fixture 01 — Canonical Kernel local_storage Drop-In]] — what happens when the archive lacks a sibling the kernel needs.
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

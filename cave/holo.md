@@ -8,6 +8,14 @@ seed: "14587944288323701813"
 
 # The RAPP Cave — holo
 
+> **Historical application card.** For canonicalization, identity, frames,
+> wire, eggs, registry, trust, and protocol evolution, follow RAPP/1 rev-5
+> through [`RAPP1_AUTHORITY.json`](../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../RAPP1_STATUS.md). Public bytes and the inert prepared
+> installer subtree are not authenticated downloads or acceptance.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
+
 **The public workshop.** The open counterpart of the Batcave: anyone can park a
 cubby that houses their full rapp estate — bottom-to-top: agents, factory agents,
 organs, senses, rapplications, entire neighborhoods, eggs — isolated so every
@@ -18,9 +26,8 @@ pull it in.
 
 1. You are at a **public front door** (kind `workspace`). No auth, no gate —
    anyone can browse, pull, or join.
-2. To pull: stream any cubby with a plain `curl` from
-   `https://raw.githubusercontent.com/kody-w/RAPP/main/cave/...` — no GitHub login
-   required.
+2. Historical cubby bytes may be inspected publicly. Do not treat a moving raw
+   branch, cave catalog, or direct download as verified RAPP/1 content.
 3. To join: fork `https://github.com/kody-w/RAPP`, add your cubby under
    `cave/cubbies/<your-operator's-handle>/`, and open a PR. The merge is your
    write grant.
@@ -28,3 +35,5 @@ pull it in.
    Cubbies are isolated by design.
 5. The full quirk contract: `specs/CAVE_PROTOCOL.md`. The universal law lives in
    the RAPP-Bible: `https://kody-w.github.io/RAPP-Bible/#specs`.
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->
