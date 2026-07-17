@@ -1,0 +1,97 @@
+{
+  "schema": "rapp1-retired-test-inventory/1.0",
+  "authority": "RAPP1_AUTHORITY.json",
+  "status": "RAPP1_STATUS.md",
+  "quarantine": {
+    "root": "tests/fixtures/legacy-conformance",
+    "source_commit": "4c2b999",
+    "path_count": 31,
+    "path_set_sha256": "ba1997f3d3fbc85a13185c22b331a7e0ca28f44188ed3d1c13bcce969f113982",
+    "content_set_sha256": "2c09f966558cdfb228f58b15bb9a8d9fe8cfd36797c2a70f9d241329d11a75f2",
+    "mapping": "Each fixture path maps to its former tests/ path after removing the quarantine root and final .txt suffix.",
+    "policy": "These exact historical test bytes positively asserted retired identity, frame, egg, browser, Tier 2, or wire behavior. They are non-executable migration evidence and are never RAPP/1 conformance evidence."
+  },
+  "active_legacy_inputs": [
+    {
+      "path": "installer/test_plant.sh",
+      "forms": [
+        "brainstem-egg/"
+      ],
+      "disposition": "retirement-detector",
+      "reason": "The test rejects any reintroduction of a legacy egg producer in the target-owned planter."
+    },
+    {
+      "path": "rapp_brainstem/test_rapp1_facade.py",
+      "forms": [
+        "conversation_history"
+      ],
+      "disposition": "negative-ignored-member",
+      "reason": "The strict facade tests prove unrecognized legacy request members do not alter semantic request handling."
+    },
+    {
+      "path": "tests/test_active_path_migrations.py",
+      "forms": [
+        "brainstem-egg/",
+        "rappid:v2:"
+      ],
+      "disposition": "negative-migration-input",
+      "reason": "Exact legacy inputs are rejected or contained while target-owned migration paths remain fail-closed."
+    },
+    {
+      "path": "tests/test_door_address.py",
+      "forms": [
+        "rappid:v2:"
+      ],
+      "disposition": "negative-parser-input",
+      "reason": "Legacy identifiers are parser rejection and bounded migration fixtures, not accepted current identities."
+    },
+    {
+      "path": "tests/test_migrate_rappid.py",
+      "forms": [
+        "rappid:v2:"
+      ],
+      "disposition": "migration-input",
+      "reason": "Legacy identifiers exercise explicit migration planning without authorizing provisional persistence."
+    },
+    {
+      "path": "tests/test_rapp1_containment.py",
+      "forms": [
+        "brainstem-egg/",
+        "rapp-frame/1.0"
+      ],
+      "disposition": "retirement-detector",
+      "reason": "The strings are forbidden implementation markers that the containment test proves absent."
+    },
+    {
+      "path": "tests/test_rapp1_docs.py",
+      "forms": [
+        "rapp-frame/1.0"
+      ],
+      "disposition": "documentation-detector",
+      "reason": "The string distinguishes labeled historical examples from prohibited current claims."
+    },
+    {
+      "path": "tests/vault-check.mjs",
+      "forms": [
+        "rappid:v2:"
+      ],
+      "disposition": "negative-pii-context",
+      "reason": "The PII guard narrowly recognizes historical rappid tokens while continuing to reject ordinary email addresses."
+    },
+    {
+      "path": "tests/run-tests.mjs",
+      "forms": [
+        "brainstem-egg/",
+        "assistant_response"
+      ],
+      "disposition": "retirement-detector",
+      "reason": "The current static runner proves legacy producer and response-alias markers are absent from active implementations."
+    }
+  ],
+  "explicit_retirement_assertions": [
+    "installer/test_plant.sh",
+    "rapp_brainstem/test_reserved_agents.py",
+    "tests/test_neighborhood_membership_organ.py",
+    "tests/test-twin-egg.sh"
+  ]
+}

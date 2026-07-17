@@ -5,7 +5,7 @@
 //
 // Exits non-zero on any failure. Prints a summary either way.
 
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, relative, sep } from 'node:path';
 
@@ -102,29 +102,69 @@ ok(`frontmatter valid across ${mdFiles.length} notes`);
 // ── 3. Wikilinks resolve ────────────────────────────────────────────────────
 
 const titleToPath = new Map();
+const headingsByPath = new Map();
+const headingToPaths = new Map();
 for (const [path, title] of titleByPath) {
-  titleToPath.set(title.toLowerCase(), path);
+  titleToPath.set(normalizeWikiName(title), path);
   // Also map by stem so [[Foo]] resolves to "Foo.md".
   const stem = basename(path).replace(/\.md$/, '');
-  titleToPath.set(stem.toLowerCase(), path);
+  titleToPath.set(normalizeWikiName(stem), path);
+  const headings = new Set();
+  for (const line of bodyByPath.get(path).split(/\r?\n/)) {
+    const match = line.match(/^#{1,6}\s+(.+?)\s*#*\s*$/);
+    if (!match) continue;
+    const heading = normalizeWikiName(match[1]);
+    headings.add(heading);
+    if (!headingToPaths.has(heading)) headingToPaths.set(heading, new Set());
+    headingToPaths.get(heading).add(path);
+  }
+  headingsByPath.set(path, headings);
+}
+
+const aliasesPath = resolve(VAULT, '_wikilink_aliases.json');
+let aliases;
+try {
+  aliases = JSON.parse(readFileSync(aliasesPath, 'utf8'));
+} catch (e) {
+  fail(`could not parse _wikilink_aliases.json: ${e.message}`);
+  process.exit(1);
+}
+if (aliases.schema !== 'vault-wikilink-aliases/1.0' || !Array.isArray(aliases.aliases)) {
+  fail('_wikilink_aliases.json has an invalid schema or aliases list');
+  process.exit(1);
+}
+const aliasToTarget = new Map();
+for (const entry of aliases.aliases) {
+  const key = normalizeWikiName(entry.alias);
+  if (!key || aliasToTarget.has(key)) {
+    fail(`duplicate or empty wikilink alias: ${entry.alias}`);
+    continue;
+  }
+  const [targetPath] = entry.target.split('#', 1);
+  if (!existsSync(resolve(REPO, targetPath))) {
+    fail(`wikilink alias target does not exist: ${entry.alias} -> ${entry.target}`);
+    continue;
+  }
+  if (!entry.reason) {
+    fail(`wikilink alias has no documented reason: ${entry.alias}`);
+    continue;
+  }
+  aliasToTarget.set(key, entry.target);
+}
+if (aliasToTarget.size === aliases.aliases.length) {
+  ok(`${aliasToTarget.size} explicit root/cross-folder wikilink aliases resolve`);
 }
 
 let wikilinkTotal = 0;
 const broken = [];
 for (const [path, body] of bodyByPath) {
-  // Strip out content that should not be considered for wikilink resolution:
-  //   1. Fenced code blocks (``` ... ```)
-  //   2. Inline code spans (`...`)
-  // This makes literal references like `[[wikilinks]]` in prose safe.
-  const stripped = body
-    .replace(/```[\s\S]*?```/g, '')
-    .replace(/`[^`\n]*`/g, '');
+  const stripped = stripCodeOutsideWikilinks(body);
   const re = /\[\[([^\]|\n]+)(\|[^\]\n]+)?\]\]/g;
   let m;
   while ((m = re.exec(stripped))) {
     wikilinkTotal += 1;
     const title = m[1].trim();
-    if (!titleToPath.has(title.toLowerCase())) {
+    if (!wikiTargetResolves(title)) {
       broken.push({ from: path, target: title });
     }
   }
@@ -157,6 +197,29 @@ const PII_ALLOWLIST = [
   'raw.githubusercontent.com/kody-w',
 ];
 
+const historicalRappidSample = (
+  'rappid:v2:operator:@rappter1/rappter1-twin:'
+  + 'd4646c0187526bb14d2db5f49af91e0a'
+  + '@github.com/rappter1/rappter1-twin'
+);
+const historicalEmail = 'd4646c0187526bb14d2db5f49af91e0a@github.com';
+if (
+  !isRecognizedHistoricalRappidEmail(
+    historicalRappidSample,
+    historicalRappidSample.indexOf(historicalEmail),
+    historicalEmail.length,
+  )
+  || isRecognizedHistoricalRappidEmail(
+    `contact ${historicalEmail}`,
+    'contact '.length,
+    historicalEmail.length,
+  )
+) {
+  fail('historical rappid PII exclusion is broader or narrower than documented');
+} else {
+  ok('historical rappid PII exclusion remains context-bound');
+}
+
 const piiHits = [];
 for (const [path, body] of bodyByPath) {
   for (const { name, re } of PII_PATTERNS) {
@@ -167,6 +230,10 @@ for (const [path, body] of bodyByPath) {
       const end = Math.min(body.length, m.index + m[0].length + 20);
       const ctx = body.slice(start, end);
       if (PII_ALLOWLIST.some((al) => ctx.includes(al))) continue;
+      if (
+        name === 'email'
+        && isRecognizedHistoricalRappidEmail(body, m.index, m[0].length)
+      ) continue;
       piiHits.push({ path, name, match: m[0], context: ctx });
     }
   }
@@ -223,4 +290,78 @@ function basename(path) {
 
 function truncate(s, n) {
   return s.length > n ? s.slice(0, n).replace(/\s+/g, ' ') + '…' : s.replace(/\s+/g, ' ');
+}
+
+function normalizeWikiName(value) {
+  return value
+    .replace(/`/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+function stripCodeOutsideWikilinks(body) {
+  const source = body.replace(/```[\s\S]*?```/g, '');
+  let output = '';
+  let inCode = false;
+  let inWikilink = false;
+  for (let i = 0; i < source.length; i += 1) {
+    if (!inCode && source.startsWith('[[', i)) {
+      inWikilink = true;
+      output += '[[';
+      i += 1;
+      continue;
+    }
+    if (inWikilink && source.startsWith(']]', i)) {
+      inWikilink = false;
+      output += ']]';
+      i += 1;
+      continue;
+    }
+    if (source[i] === '`' && !inWikilink) {
+      inCode = !inCode;
+      continue;
+    }
+    if (!inCode) output += source[i];
+  }
+  return output;
+}
+
+function wikiTargetResolves(rawTarget) {
+  const hashIndex = rawTarget.indexOf('#');
+  const rawNote = hashIndex === -1 ? rawTarget : rawTarget.slice(0, hashIndex);
+  const rawHeading = hashIndex === -1 ? '' : rawTarget.slice(hashIndex + 1);
+  const note = normalizeWikiName(rawNote);
+  const heading = normalizeWikiName(rawHeading);
+
+  let vaultPath = titleToPath.get(note);
+  let requiredHeading = heading;
+  if (!vaultPath && aliasToTarget.has(note)) {
+    const target = aliasToTarget.get(note);
+    const targetHash = target.indexOf('#');
+    const targetPath = targetHash === -1 ? target : target.slice(0, targetHash);
+    const aliasHeading = targetHash === -1 ? '' : target.slice(targetHash + 1);
+    if (!targetPath.startsWith('pages/vault/')) return true;
+    vaultPath = targetPath.slice('pages/vault/'.length);
+    requiredHeading = heading || normalizeWikiName(aliasHeading);
+  }
+  if (vaultPath) {
+    return !requiredHeading || headingsByPath.get(vaultPath)?.has(requiredHeading);
+  }
+
+  if (!heading) {
+    const headingMatches = headingToPaths.get(note);
+    return headingMatches?.size === 1;
+  }
+  return false;
+}
+
+function isRecognizedHistoricalRappidEmail(body, index, length) {
+  const legacyRappid = /rappid:v2:[a-z][a-z0-9_-]*:@[a-z0-9_-]+\/[a-z0-9._-]+:[0-9a-f]{32}@github\.com\/[a-z0-9._-]+\/[a-z0-9._-]+/gi;
+  let match;
+  while ((match = legacyRappid.exec(body))) {
+    const end = match.index + match[0].length;
+    if (index >= match.index && index + length <= end) return true;
+  }
+  return false;
 }

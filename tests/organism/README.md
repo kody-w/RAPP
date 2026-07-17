@@ -9,6 +9,13 @@ Each test exercises the digital-organism architecture against a real or syntheti
 - Exercise additive-only fixes (no kernel edits).
 - Cover the canonical kernel and its sibling deps as a unit.
 
+This is a product fixture suite, not RAPP/1 conformance authority. Historical
+fixtures 13–20 positively asserted retired identity/trust/organ contracts and
+now live byte-for-byte under
+`../fixtures/legacy-conformance/organism/` as non-executable migration
+evidence. Use `python3.11 ../run_rapp1_conformance.py` for the authoritative
+offline structural/pre-acceptance gate.
+
 ## Running
 
 From the repo root:

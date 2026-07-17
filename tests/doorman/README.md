@@ -1,5 +1,11 @@
 # tests/doorman — headless-browser harness for the planted vbrainstems
 
+> **Legacy external harness; not RAPP/1 conformance evidence.** The target-owned
+> browser execution surfaces are HTTP 410 tombstones. Protocol-positive egg,
+> plant, and Dream Catcher tests were preserved under
+> `../fixtures/legacy-conformance/doorman/`. Remaining commands target external
+> historical deployments and are excluded from the canonical offline runner.
+
 A small Playwright wrapper that drives the doorman pages exactly the way a
 phone or laptop visitor's browser would — same OAuth flow (or pre-seeded
 token to skip it), same Pyodide load, same tool-calling, same memory

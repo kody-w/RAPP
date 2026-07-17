@@ -1,0 +1,40 @@
+{
+  "schema": "vault-wikilink-aliases/1.0",
+  "aliases": [
+    {
+      "alias": "NEIGHBORHOOD_PROTOCOL",
+      "target": "NEIGHBORHOOD_PROTOCOL.md",
+      "reason": "Historical vault shorthand for the repository-root protocol document."
+    },
+    {
+      "alias": "SUBSTRATE_FEDERATION",
+      "target": "pages/docs/SUBSTRATE_FEDERATION.md",
+      "reason": "Historical vault shorthand for the cross-folder documentation page."
+    },
+    {
+      "alias": "NEIGHBORHOOD_EGG_SPEC",
+      "target": "pages/docs/NEIGHBORHOOD_EGG_SPEC.md",
+      "reason": "Historical vault shorthand for the cross-folder documentation page."
+    },
+    {
+      "alias": "ESTATE_SPEC",
+      "target": "pages/docs/ESTATE_SPEC.md",
+      "reason": "Historical vault shorthand for the cross-folder documentation page."
+    },
+    {
+      "alias": "The Agent Contract",
+      "target": "pages/vault/Process/The Agent IS the Spec.md",
+      "reason": "Former title retained as an alias for the current agent-contract narrative."
+    },
+    {
+      "alias": "The Twin Agent",
+      "target": "pages/vault/Foundations/Glossary.md#Twin",
+      "reason": "The former standalone note is represented by the Twin glossary entry."
+    },
+    {
+      "alias": "Grail is GitHub, not local",
+      "target": "pages/vault/Architecture/The Kernel-as-God-SPEC.md",
+      "reason": "The missing former title maps to the retained authority-source narrative."
+    }
+  ]
+}

@@ -54,6 +54,27 @@ without being acceptable under RAPP/1 §§6–13. Authenticated acceptance requi
 a verified §13 registry rooted in an out-of-band estate-owner anchor and
 monotonic `registry_seq`.
 
+## Canonical local gate and supplemental lint
+
+After installing the documented Python dependencies, the one authoritative
+target-owned structural/pre-acceptance command is:
+
+```bash
+python3.11 tests/run_rapp1_conformance.py
+```
+
+It runs the offline core, façade, authority, containment, documentation,
+migration, worker, vault, HTML, retirement, pin, syntax, and strict-inspection
+gates. A pass is local pre-acceptance evidence only and does not close the
+owner-action blockers below. The external ecosystem inventory suite (which
+invokes authenticated `gh` and rewrites snapshots) and the moving-source agent
+integration test are intentionally excluded from this offline command.
+
+The external `rapp-drift-lint` reusable workflow is pinned to immutable commit
+`de1c664154d3456224bdf95e830736ffb5270c2b`. It is supplemental hygiene,
+not RAPP/1 authority, registry evidence, or authenticated acceptance. Its upstream
+commit is unsigned; pinning prevents mutable-ref drift but creates no trust claim.
+
 ## Owner-action blockers
 
 Only the estate owner can close these dependencies:

@@ -3,4 +3,5 @@ on: [push, pull_request]
 permissions: { contents: read }
 jobs:
   drift-lint:
-    uses: kody-w/rapp-drift-lint/.github/workflows/drift-lint-reusable.yml@main
+    # Supplemental lint only; this immutable snapshot is not RAPP/1 authority.
+    uses: kody-w/rapp-drift-lint/.github/workflows/drift-lint-reusable.yml@de1c664154d3456224bdf95e830736ffb5270c2b

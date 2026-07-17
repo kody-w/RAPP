@@ -116,11 +116,15 @@ Fetch [`skill.md`](https://kody-w.github.io/RAPP/pages/docs/skill.md) and cache 
 ## Tests
 
 ```bash
-python3 -m pytest rapp_brainstem/test_local_agents.py -v
-node tests/run-tests.mjs   # JS contract tests, no deps
+python3.11 -m pip install -r requirements-rapp1-core.txt -r rapp_brainstem/requirements.txt pytest
+python3.11 tests/run_rapp1_conformance.py
 ```
 
-Coverage: agent parsing, manifest extraction, byte-equal card↔agent.py round-trip, SHA-256 tamper detection, multi-agent `data_slush` propagation, binder JSON round-trip.
+This is the authoritative offline RAPP/1 structural/pre-acceptance runner. It
+includes the current self-contained `node tests/run-tests.mjs` checks, strict
+core and façade tests, containment/migrations, vault/docs/HTML, immutable pin,
+retirement, and syntax gates. A pass does not establish authenticated
+acceptance; `RAPP1_STATUS.md` lists the separate owner-action blockers.
 
 ## Browser-only brainstem
 
