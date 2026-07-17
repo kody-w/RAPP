@@ -74,6 +74,12 @@ Only the estate owner can close these dependencies:
 No contributor or automation may fabricate signatures, keys, registry
 authority, or a re-anchor to make these blockers appear closed.
 
+Execution-ready candidate instructions for these owner decisions, plus the
+dependent public-facade release gate, are in
+[`RAPP1_OWNER_ACTIONS.md`](./RAPP1_OWNER_ACTIONS.md); the machine-readable
+counterpart is [`RAPP1_OWNER_ACTIONS.json`](./RAPP1_OWNER_ACTIONS.json). Both
+remain `candidate` / `owner-action-required` and are not a §13 registry.
+
 ## Active-path residual
 
 Approved-place planting is fail-closed before repository creation. The retained
