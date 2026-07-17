@@ -344,6 +344,37 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
     if final_report.get("absent_ids") != ["POST-CANON", "POST-CANON-05"]:
         errors.append("fixture: final report absent-ID evidence drifted")
 
+    canon_scope = fixture.get("audit_scope", {}).get("canon_mirrors", {})
+    expected_canon_scope = {
+        "source": "RAPP-canon-mirrors-report.md",
+        "sha256": (
+            "188eef4a3d2f65b93a4e0832515e8fe8b7b8826e1163b683029ab1d14bc51f59"
+        ),
+        "canonical_source_section": "4.1",
+        "mirrors_immutable_vendoring_section": "5",
+        "live_path_count": 45,
+        "live_path_set_sha256": (
+            "86db4669742b43cee8c4f12cbff6de0e4e3f84411e0c7b101e788ee5ef936d92"
+        ),
+    }
+    for field, expected in expected_canon_scope.items():
+        if canon_scope.get(field) != expected:
+            errors.append(f"fixture: baseline canon scope {field} drifted")
+    canon_live_paths = canon_scope.get("live_paths", [])
+    if (
+        not isinstance(canon_live_paths, list)
+        or len(canon_live_paths) != 45
+        or len(set(canon_live_paths)) != 45
+        or _path_set_digest(canon_live_paths)
+        != expected_canon_scope["live_path_set_sha256"]
+    ):
+        errors.append("fixture: baseline canon 45-path declaration set drifted")
+    for path in canon_live_paths:
+        if not (ROOT / path).is_file():
+            errors.append(f"fixture: baseline canon path is missing: {path}")
+    if "not a final-ledger category" not in canon_scope.get("scope_note", ""):
+        errors.append("fixture: baseline canon scope is not bounded as provenance")
+
     categories = audit.get("categories")
     required_categories = {
         "POST-STALE-LIVE-DOC": 60,

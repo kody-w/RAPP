@@ -130,6 +130,26 @@ class Rapp1DocumentationTests(unittest.TestCase):
                 r1_doc[field], hashlib.sha256(payload.encode()).hexdigest()
             )
 
+    def test_baseline_canon_scope_remains_provenance_not_final_category(self) -> None:
+        canon = self.fixture["audit_scope"]["canon_mirrors"]
+        self.assertEqual(canon["source"], "RAPP-canon-mirrors-report.md")
+        self.assertEqual(
+            canon["sha256"],
+            "188eef4a3d2f65b93a4e0832515e8fe8b7b8826e1163b683029ab1d14bc51f59",
+        )
+        self.assertEqual(canon["canonical_source_section"], "4.1")
+        self.assertEqual(canon["mirrors_immutable_vendoring_section"], "5")
+        paths = canon["live_paths"]
+        self.assertEqual(len(paths), canon["live_path_count"])
+        self.assertEqual(len(set(paths)), 45)
+        payload = "".join(f"{path}\n" for path in sorted(paths))
+        self.assertEqual(
+            hashlib.sha256(payload.encode()).hexdigest(),
+            canon["live_path_set_sha256"],
+        )
+        self.assertNotIn("POST-CANON", self.fixture["audit"]["categories"])
+        self.assertNotIn("POST-CANON-05", self.fixture["audit"]["categories"])
+
     def test_every_actionable_post_path_has_one_disposition_or_owner(self) -> None:
         disposition = {}
         for classification, paths in self.fixture["classifications"].items():
