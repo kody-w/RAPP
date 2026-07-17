@@ -28,11 +28,18 @@
     "reports": [
       {
         "title": "RAPP-spec-matrix-report.md",
-        "repository_path": null
+        "repository_path": null,
+        "sha256": "e12f3a7a0a2ba15ef23b40421650d8551b7d4839781fb07a1b924783fedf6a78"
       },
       {
         "title": "RAPP-artifact-trust-report.md",
-        "repository_path": null
+        "repository_path": null,
+        "sha256": "7cf4506f38f7e23237292772068638387fca7832a0cbe240ff2d31db67574c75"
+      },
+      {
+        "title": "RAPP-canon-mirrors-report.md",
+        "repository_path": null,
+        "sha256": "188eef4a3d2f65b93a4e0832515e8fe8b7b8826e1163b683029ab1d14bc51f59"
       }
     ],
     "scope_note": "The reports are audit evidence, not protocol authority. Exact facts below were rechecked against the pinned standard, target files, git history, facade candidate, and read-only external sources."
@@ -47,6 +54,7 @@
       "current_stored_rappid": "rappid:@kody-w/rapp:9a8f0a4b5a710e20f4d819a0f37d2a4c9f113b5e78fb3c29e70b54fff48a38f9",
       "legacy_uuid": "0b635450-c042-49fb-b4b1-bdb571044dec",
       "migration_commit": "19ff7d9ff483c0eef258a3b2031da1fd74570854",
+      "migration_commit_authentication": "false/unsigned",
       "migration_parent_contains_historical_id": true,
       "tail_check": {
         "domain": "rapp/1:rappid",
@@ -58,10 +66,25 @@
     "commons_invite": {
       "retired_target_path": "pages/tutorials/commons.egg",
       "retired_target_sha256": "2731c02f187701c1d07b3a7f5eed5e2073c203ffb4f6c08d00292894e3319a5d",
+      "retired_target_size": 443,
+      "retired_egg_address": "a03fa90289eaefcf1a6521cdc10ee17bc706a0bb353e688ad84135d684380fb7",
       "retired_reason": "The value in the signature member is a non-JWS migration placeholder and the payload URL names the wrong Pages project.",
+      "retired_target_url": "https://kody-w.github.io/commons/",
+      "retired_target_url_status": 404,
       "required_target_rappid": "rappid:@kody-w/rapp-commons:fea3bd6e80bbac79efc22c4c1185c276d1833925a037ce120330be35e2afc3c7",
       "required_target_kind": "neighborhood",
       "required_target_url": "https://kody-w.github.io/rapp-commons/",
+      "required_target_url_status": 200,
+      "url_fixed_unsigned_candidate_address": "d15305a25cbe6c9aab51a4ed2ab5514345772023a95d658b37fc19303e5778bc",
+      "address_note": "The candidate address is exact only when the URL is the sole changed unsigned member. The signature member is excluded from the egg address, but any other unsigned-member change requires a new calculation.",
+      "target_identity_continuity": {
+        "historical_provisional_tail": "3929ce90ebe97fe2a95432e9f647f3a3",
+        "current_tail": "fea3bd6e80bbac79efc22c4c1185c276d1833925a037ce120330be35e2afc3c7",
+        "tagged_upgrade_result": "fea3bd6e80bbac79efc22c4c1185c276d1833925a037ce120330be35e2afc3c7",
+        "remote_identity_path": "kody-w/rapp-commons:rappid.json",
+        "remote_identity_sha256": "df7745a4a4e48aa6ff751c20faabe4ab8cf6f3bdeab2af7b22bc0b84dbfb1118",
+        "authorization_present": false
+      },
       "canonical_external_repository": "kody-w/rapp-commons",
       "canonical_external_path": ".well-known/neighborhood.egg",
       "canonical_external_url": "https://kody-w.github.io/rapp-commons/.well-known/neighborhood.egg",
@@ -70,6 +93,18 @@
       "observed_external_sha256": "e28b03d1ff925252f8bf41f5bd17ef000645fa5e2fc0a51c808e885a70f7f23e",
       "observed_external_state": "legacy brainstem-egg/2.3-neighborhood with the superseded 32-hex rappid; it is evidence, not the replacement"
     },
+    "required_registry_surface": {
+      "repository": "kody-w/rapp-map",
+      "branch": "main",
+      "path": "ecosystem-spec.json",
+      "audit_commit": "baded0098d8b97c2876c0b8af4475cf3061b7ad0",
+      "commit_authentication": "false/unsigned",
+      "git_blob": "d4021c6f7b916ede041ae9d3c0802977524d5189",
+      "byte_length": 60479,
+      "sha256": "0eb8146b62af8e8473d2ca8944ed8aff69e18e41a143eb1ef466f3c3fc153616",
+      "current_schema": "rapp-ecosystem-spec/1.0",
+      "current_state": "unsigned non-registry bytes; missing registry sequence, registry authentication, estate owner, append-only entries, SPKI, tombstone, re-anchor, and genesis records"
+    },
     "ecosystem_mirrors": {
       "canonical": {
         "repository": "kody-w/RAPP",
@@ -77,7 +112,9 @@
         "observed_commit": "f71810db3259fea533b4112c1df300d4b0dc781c",
         "git_blob": "d4021c6f7b916ede041ae9d3c0802977524d5189",
         "byte_length": 60479,
-        "sha256": "0eb8146b62af8e8473d2ca8944ed8aff69e18e41a143eb1ef466f3c3fc153616"
+        "sha256": "0eb8146b62af8e8473d2ca8944ed8aff69e18e41a143eb1ef466f3c3fc153616",
+        "current_schema": "rapp-ecosystem-spec/1.0",
+        "is_section_13_registry": false
       },
       "matching_rapp_map": {
         "repository": "kody-w/rapp-map",
@@ -85,12 +122,17 @@
         "observed_commit": "baded0098d8b97c2876c0b8af4475cf3061b7ad0",
         "git_blob": "d4021c6f7b916ede041ae9d3c0802977524d5189",
         "byte_length": 60479,
-        "sha256": "0eb8146b62af8e8473d2ca8944ed8aff69e18e41a143eb1ef466f3c3fc153616"
+        "sha256": "0eb8146b62af8e8473d2ca8944ed8aff69e18e41a143eb1ef466f3c3fc153616",
+        "commit_authentication": "false/unsigned",
+        "current_schema": "rapp-ecosystem-spec/1.0",
+        "is_section_13_registry": false
       },
       "divergent_rapp_god": {
         "repository": "kody-w/rapp-god",
         "path": "api/v1/ecosystem-spec.json",
-        "observed_commit": "94d0f49800fdd94b627f089c9cf3d07a7774b89b",
+        "observed_commit": "c6c0b3e2a68c96f8ed70005101f996ea91e4bd0e",
+        "commit_authentication": "false/unsigned",
+        "later_repository_head_observed": "94d0f49800fdd94b627f089c9cf3d07a7774b89b",
         "git_blob": "d5ea75e4dc2be8cfc5f2e694aa5ce8521033609e",
         "byte_length": 60471,
         "sha256": "f1ddcf7e1302a82195fa682ad94140d0d066bbe60647befc5030ec5b50507e9e",
@@ -98,6 +140,37 @@
           "$.primitives[0].schema is rapp-rappid/2.0 instead of rapp/1",
           "$.schemas_ref omits the canonical note that rapp-rappid/2.0 is former"
         ]
+      }
+    },
+    "canonical_doors": {
+      "root": {
+        "url": "https://raw.githubusercontent.com/kody-w/rapp/main/rappid.json",
+        "status": 200,
+        "target_path": "rappid.json",
+        "target_sha256": "8710b3c45fd660f96d159be41c861bf9fb9bb45acbc40888815d7942d342792e",
+        "byte_equal_to_target": true
+      },
+      "cave": {
+        "url": "https://raw.githubusercontent.com/kody-w/rapp-cave/main/rappid.json",
+        "status": 404,
+        "target_path": "cave/rappid.json",
+        "target_sha256": "2a74e9c677128208316a73e2ac3c8ac4da20e19363968b71c40fdee62ff47de6",
+        "kind": "workspace",
+        "rappid": "rappid:@kody-w/rapp-cave:ca72ca0a3cb90c357fb09e38b02f85f09935cacbf61e94740c57f1eb30a73e0a",
+        "claimed_name_hash": "4ce35281c0117a4bec93d7268536e8c6ff60c02171857aaacddb2332097a7739"
+      },
+      "installer": {
+        "url": "https://raw.githubusercontent.com/kody-w/rapp-installer/main/rappid.json",
+        "status": 404,
+        "target_path": "cave/rapplications/rapp-installer/rappid.json",
+        "target_sha256": "f2160814514b85d4ca9f34c45e41e99a7a3e34bb605fd5560ef468f3e1774144",
+        "kind": "rapplication",
+        "rappid": "rappid:@kody-w/rapp-installer:7d9a33a14ef9fbe2ec8d74aca65ba8de7536aaffe4ec1761ff5b1562f1b26d63",
+        "immutable_grail_boundary": true
+      },
+      "sample_session": {
+        "url": "https://raw.githubusercontent.com/kody-w/sample-session/main/rappid.json",
+        "status": 404
       }
     },
     "facade_candidate": {
@@ -180,34 +253,41 @@
       "issue_title": "[Owner action] Publish the authenticated RAPP/1 registry and out-of-band anchor",
       "status": "owner-action-required",
       "why": "RAPP1_AUTHORITY.json is a structural pin only. Without a separately distributed keyed estate-owner anchor, matching SPKI, authenticated monotonic registry, and freshness policy, no signature, egg, frame, re-anchor, tombstone, or owner-tenure decision can be accepted.",
-      "what": "The estate owner must approve the candidate namespaces, supply the keyed anchor and public SPKI, create the append-only rapp/1-registry with all required entry families, authenticate it, distribute the anchor out of band, and publish sequence and freshness policy.",
+      "what": "The estate owner must approve the candidate namespaces, supply the keyed anchor and public SPKI, authenticate an append-only rapp/1-registry with all required entry families, distribute the anchor out of band, and authorize a separate publisher to advance the required kody-w/rapp-map surface with the signed monotonic bytes and freshness policy.",
       "where": {
-        "canonical_source_repository": "kody-w/RAPP",
+        "candidate_preparation_repository": "kody-w/RAPP",
         "existing_non_registry_source": "specs/ecosystem-spec.json",
-        "publication_path": null,
+        "canonical_registry_repository": "kody-w/rapp-map",
+        "canonical_registry_branch": "main",
+        "canonical_registry_path": "ecosystem-spec.json",
+        "current_surface_commit": "baded0098d8b97c2876c0b8af4475cf3061b7ad0",
+        "current_surface_state": "unsigned rapp-ecosystem-spec/1.0 bytes, not a section 13 registry",
         "out_of_band_anchor_channel": null,
         "constraint": "Do not relabel specs/ecosystem-spec.json or RAPP1_AUTHORITY.json as the registry."
       },
       "when": "Complete as one coordinated owner ceremony after namespace review, stream inventory, root re-anchor evidence, and external publication locations are approved; complete before any public authenticated acceptance.",
       "how": [
         "Review every candidate protocol, egg-variant, error-code, kind, and family value in this ledger; enumerate any additional emitted kind explicitly because prefix inference and wildcards are forbidden.",
-        "Prepare a strict I-JSON document with schema rapp/1-registry, an owner-selected uint53 monotonic sequence, append-only entries, and exactly one current estate owner.",
+        "Prepare in kody-w/RAPP a strict I-JSON unsigned candidate with schema rapp/1-registry, an owner-selected uint53 monotonic sequence, append-only entries, and exactly one current estate owner; label the export non-authoritative and do not overwrite either current ecosystem document.",
         "Add SPKI binding, creation-genesis, re-genesis, tombstone, re-anchor, estate-owner, and master-plan state under the policies in this ledger.",
         "Have the estate owner authenticate the canonical registry outside automation and publish the matching public SPKI; do not place any private key in this repository.",
         "Distribute the self-certifying estate-owner rappid through an independently controlled out-of-band channel and record the approved channel in owner evidence.",
-        "Publish the registry at the approved target-owned path, persist the highest verified sequence in consumers, and enforce the owner-selected freshness window."
+        "Through a separately authorized external publication process, publish the authenticated bytes at kody-w/rapp-map main ecosystem-spec.json and record the immutable publication commit; target automation must not write that repository.",
+        "Persist the highest verified sequence in consumers and enforce the owner-selected freshness window."
       ],
       "prerequisites": [
         "Estate owner is available and controls an Ed25519 or P-256 master key outside the repository.",
         "The root-upgrade evidence for owner-authorize-root-upgrade-reanchor is complete and ready for the same ceremony.",
         "Every live stream and its sole intended current genesis is inventoried.",
-        "The candidate namespace lists have been reviewed against all deployed producers, including the facade candidate."
+        "The candidate namespace lists have been reviewed against all deployed producers, including the facade candidate.",
+        "The kody-w/rapp-map publisher separately authorizes the canonical-surface update."
       ],
       "owner_inputs": {
         "estate_owner_rappid": null,
         "estate_owner_spki_der_b64": null,
         "initial_registry_sequence": null,
-        "registry_publication_path": null,
+        "registry_publication_commit": null,
+        "registry_candidate_export_path": null,
         "out_of_band_anchor_channel": null,
         "freshness_policy_seconds": null,
         "registry_publish_utc": null,
@@ -216,8 +296,8 @@
       "acceptance_tests": [
         {
           "id": "registry-canonical-and-authenticated",
-          "procedure": "Parse the published bytes with rapp1_core.strict_loads, require byte equality with rapp1_core.canonical_bytes, require schema rapp/1-registry and a uint53 sequence, then verify the detached unencoded JWS against the supplied SPKI after checking Hb(rapp/1:rappid, SPKI_DER) equals the out-of-band anchor tail.",
-          "pass_condition": "Canonical parsing and cryptographic verification pass, the protected kid is the anchored estate owner, and no repository structural pin is used as a substitute."
+          "procedure": "Fetch kody-w/rapp-map ecosystem-spec.json through its immutable publication commit, parse with rapp1_core.strict_loads, require byte equality with rapp1_core.canonical_bytes, require schema rapp/1-registry and a uint53 sequence, then verify the detached unencoded JWS against the supplied SPKI after checking Hb(rapp/1:rappid, SPKI_DER) equals the out-of-band anchor tail.",
+          "pass_condition": "Canonical parsing and cryptographic verification pass at the required surface, the protected kid is the anchored estate owner, and neither the prior ecosystem document nor a repository structural pin is used as a substitute."
         },
         {
           "id": "registry-candidate-namespace-coverage",
@@ -236,7 +316,7 @@
         }
       ],
       "rollback_or_retirement": {
-        "on_failure": "Do not publish, increment, or claim authenticated acceptance. Keep all candidate namespaces unregistered and RAPP1_STATUS blocked.",
+        "on_failure": "Do not authorize external publication, increment, or claim authenticated acceptance. Keep the unsigned target export non-authoritative, all candidate namespaces unregistered, and RAPP1_STATUS blocked.",
         "retirement_outcome": "A published append is never edited or removed. Correct mistakes with a later authenticated append and explicit deprecation or tombstone; a compromised root requires a newly distributed out-of-band anchor."
       }
     },
@@ -245,11 +325,12 @@
       "title": "Authorize the historical root provisional-upgrade re-anchor",
       "issue_title": "[Owner action] Authorize the historical root provisional-upgrade re-anchor",
       "status": "owner-action-required",
-      "why": "The target changed the historical 32-hex species-root identity to the current 64-hex identity at commit 19ff7d9, but no owner-authenticated section 13 re-anchor record authorizes that migration. A self-asserted _migrated_from field and commit authorship are provenance, not authorization.",
+      "why": "The target changed the historical 32-hex species-root identity to the current 64-hex identity at unsigned commit 19ff7d9, but no owner-authenticated section 13 re-anchor record authorizes that migration. A self-asserted _migrated_from field and commit authorship are provenance, not authorization.",
       "what": "The estate owner must authorize exactly the provisional-upgrade mapping recorded below with case upgrade, supply case-specific evidence that the old provisional identity resolved to kody-w at read time, and include the immutable authorization in the authenticated registry without replacing migration provenance.",
       "where": {
         "identity_path": "rappid.json",
         "migration_commit": "19ff7d9ff483c0eef258a3b2031da1fd74570854",
+        "migration_commit_authentication": "false/unsigned",
         "historical_id": "rappid:@kody-w/RAPP:0b635450c04249fbb4b1bdb571044dec",
         "canonicalized_provisional_id": "rappid:@kody-w/rapp:0b635450c04249fbb4b1bdb571044dec",
         "current_id": "rappid:@kody-w/rapp:9a8f0a4b5a710e20f4d819a0f37d2a4c9f113b5e78fb3c29e70b54fff48a38f9",
@@ -257,7 +338,7 @@
       },
       "when": "Approve during the trust-genesis owner ceremony, before the current root identity is accepted as an authenticated estate root or used to authorize public artifacts.",
       "how": [
-        "Read rappid.json from the parent of commit 19ff7d9 and verify the exact historical stored ID, historical v2 provenance string, legacy UUID, repository owner, and commit lineage.",
+        "Read rappid.json from the parent of commit 19ff7d9 and verify the exact historical stored ID, historical v2 provenance string, legacy UUID, repository owner, unsigned commit state, and commit lineage.",
         "Canonicalize the historical ID on read to the lowercase provisional ID while preserving its 32-hex tail; do not emit that provisional ID.",
         "Recompute Hb(rapp/1:rappid, UUID_octets) from 0b635450-c042-49fb-b4b1-bdb571044dec and require the exact current 64-hex tail already stored; do not mint another identity.",
         "Assemble case upgrade evidence proving the old provisional ID resolved to kody-w at read time and bind that evidence to the exact old and current IDs.",
@@ -289,8 +370,8 @@
         },
         {
           "id": "root-provenance-preserved",
-          "procedure": "Compare current rappid.json and git history to ensure both _migrated_from strings, legacy UUID, migration commit, and historical tree remain recoverable after registry publication.",
-          "pass_condition": "No provenance string or historical object was rewritten, deleted, or presented as independent authorization."
+          "procedure": "Compare current rappid.json and git history to ensure both _migrated_from strings, legacy UUID, unsigned migration commit, and historical tree remain recoverable after registry publication.",
+          "pass_condition": "No provenance string or historical object was rewritten, deleted, or presented as independent authorization; the false/unsigned commit state is not upgraded into protocol authentication."
         },
         {
           "id": "root-no-self-authorization",
@@ -308,27 +389,31 @@
       "title": "Reissue and retire the Commons invite",
       "issue_title": "[Owner action] Reissue the signed RAPP/1 Commons invite and retire the placeholder",
       "status": "owner-action-required",
-      "why": "pages/tutorials/commons.egg is structurally shaped like a RAPP/1 invite but carries a non-JWS migration placeholder and the wrong Pages URL. The external .well-known invite is still a retired legacy schema with the superseded 32-hex identity. Neither can authenticate membership.",
-      "what": "The estate owner must issue a new canonical rapp/1-egg invite for the current Commons rappid and correct Pages URL, authenticate it under the owner tenure in effect at created_utc, publish it at the Commons well-known path and an approved target-owned path, then remove the placeholder artifact from all live use.",
+      "why": "pages/tutorials/commons.egg is a 443-byte RAPP/1 invite at address a03fa90289eaefcf1a6521cdc10ee17bc706a0bb353e688ad84135d684380fb7, but it carries a non-JWS migration placeholder and its Pages URL returns 404. The external .well-known invite is still a retired legacy schema with the superseded 32-hex identity. Neither can authenticate membership.",
+      "what": "The estate owner must authorize the Commons identity continuity, issue a new canonical rapp/1-egg invite for the current Commons rappid and live Pages URL, authenticate it under the owner tenure in effect at created_utc, record its new artifact path and address, publish it at the Commons well-known path and an approved target-owned path, then remove the placeholder artifact from all live use.",
       "where": {
         "retired_target_path": "pages/tutorials/commons.egg",
+        "retired_egg_address": "a03fa90289eaefcf1a6521cdc10ee17bc706a0bb353e688ad84135d684380fb7",
         "external_source_repository": "kody-w/rapp-commons",
         "external_replacement_path": ".well-known/neighborhood.egg",
         "external_replacement_url": "https://kody-w.github.io/rapp-commons/.well-known/neighborhood.egg",
         "candidate_target_owned_path": "pages/tutorials/artifacts/commons-invite.egg",
+        "url_fixed_unsigned_candidate_address": "d15305a25cbe6c9aab51a4ed2ab5514345772023a95d658b37fc19303e5778bc",
         "approved_target_owned_path": null
       },
-      "when": "Issue only after the authenticated owner succession is available; retire the placeholder and switch tutorial links atomically only after both published replacement copies pass every acceptance test.",
+      "when": "Issue only after the authenticated Commons upgrade re-anchor and owner succession are available; retire the placeholder and switch tutorial links atomically only after both published replacement copies pass every acceptance test.",
       "how": [
         "Build an exact seven-member rapp/1-egg manifest with variant invite, contents [], the current Commons rappid, owner-selected created_utc, and payload containing target_rappid, target_url, and target_kind only.",
         "Set payload.target_rappid to rappid:@kody-w/rapp-commons:fea3bd6e80bbac79efc22c4c1185c276d1833925a037ce120330be35e2afc3c7, target_url to https://kody-w.github.io/rapp-commons/, and target_kind to neighborhood.",
+        "Require an owner-authenticated case upgrade mapping from provisional tail 3929ce90ebe97fe2a95432e9f647f3a3 to the exact current Commons identity; the remote _migrated_from assertion and unsigned repack commit are provenance only.",
         "Have the estate owner in effect at created_utc authenticate canonical(manifest without the signature member) outside automation; verify through the fresh registry succession rather than repository authorship.",
-        "Publish canonical JSON bytes at kody-w/rapp-commons:.well-known/neighborhood.egg and the approved target-owned path; compute the section 9 egg address from the manifest without the signature member and record it in owner evidence.",
+        "Compute and record the section 9 egg address from the manifest without the signature member. If the URL is the only changed unsigned member, require d15305a25cbe6c9aab51a4ed2ab5514345772023a95d658b37fc19303e5778bc; signing alone cannot change the address.",
+        "Publish canonical JSON bytes at kody-w/rapp-commons:.well-known/neighborhood.egg and the approved target-owned path.",
         "Update the tutorial to the approved path or canonical well-known URL, remove pages/tutorials/commons.egg from live distribution, and preserve its path and SHA-256 only in this ledger and git history.",
         "Do not copy, normalize, or bless the currently observed external legacy invite as the replacement."
       ],
       "prerequisites": [
-        "The authenticated registry contains the owner succession needed for created_utc.",
+        "The authenticated registry contains both the lawful Commons case upgrade re-anchor and owner succession needed for created_utc.",
         "The current Commons rappid and correct GitHub Pages project URL are owner-confirmed.",
         "The kody-w/rapp-commons owner can publish the replacement at the well-known path.",
         "The target-owned replacement path and publication commit are owner-approved."
@@ -337,7 +422,7 @@
         "created_utc": null,
         "owner_key_kid": null,
         "approved_target_owned_artifact_path": null,
-        "new_egg_hash": null,
+        "new_egg_address": null,
         "external_publication_commit": null,
         "target_publication_commit": null
       },
@@ -348,6 +433,11 @@
           "pass_condition": "The manifest and payload are exact, the URL includes /rapp-commons/, and no legacy schema or 32-hex identity remains."
         },
         {
+          "id": "invite-target-continuity",
+          "procedure": "Verify the authenticated case upgrade entry maps the provisional Commons tail 3929ce90ebe97fe2a95432e9f647f3a3 to rappid:@kody-w/rapp-commons:fea3bd6e80bbac79efc22c4c1185c276d1833925a037ce120330be35e2afc3c7 and separately verify the owner tenure used for the invite.",
+          "pass_condition": "The exact re-anchor and owner succession both authenticate; the remote _migrated_from assertion and repository commit are not accepted as authorization."
+        },
+        {
           "id": "invite-owner-tenure",
           "procedure": "Resolve the protected kid through the fresh authenticated registry, verify the detached unencoded JWS over canonical(manifest without the signature member), and require that kid to be the estate owner in effect at created_utc.",
           "pass_condition": "Both cryptographic verification and time-scoped owner tenure pass; a merely registered non-owner key is refused."
@@ -355,7 +445,7 @@
         {
           "id": "invite-address-and-copy-equivalence",
           "procedure": "Recompute H(rapp/1:egg-manifest, manifest without the signature member), compare it to the owner-recorded egg address, and byte-compare the immutable external and target-owned publication URLs.",
-          "pass_condition": "The address matches and both approved locations serve identical canonical bytes from pinned publication commits."
+          "pass_condition": "The address matches and both approved locations serve identical canonical bytes from pinned publication commits; if only the URL changed among unsigned members, the address is exactly d15305a25cbe6c9aab51a4ed2ab5514345772023a95d658b37fc19303e5778bc."
         },
         {
           "id": "invite-placeholder-retired",
@@ -384,7 +474,7 @@
       },
       "when": "Resolve before the target uses any external mirror as provenance, authority evidence, or a public clean-status input; repeat verification whenever a pinned mirror is intentionally advanced.",
       "how": [
-        "Open an issue in kody-w/rapp-god with the observed commits, blob IDs, byte lengths, SHA-256 values, and two semantic differences recorded in this ledger.",
+        "Open an issue in kody-w/rapp-god with audit file commit c6c0b3e2a68c96f8ed70005101f996ea91e4bd0e, later observed repository head 94d0f49800fdd94b627f089c9cf3d07a7774b89b, blob IDs, byte lengths, SHA-256 values, and two semantic differences recorded in this ledger.",
         "If the external owner chooses correction, copy exact bytes from an owner-approved immutable kody-w/RAPP commit into api/v1/ecosystem-spec.json and publish a new immutable rapp-god commit.",
         "If the external owner declines or cannot guarantee byte identity, remove rapp-god from active target mirror and authority claims and label the observed object divergent evidence only.",
         "Regenerate target machine and human mirror declarations from their source; record repository, path, immutable commit, byte length, SHA-256, observation time, and verification result for every retained mirror.",
@@ -436,8 +526,8 @@
       "title": "Approve the public RAPP/1 facade switch",
       "issue_title": "[Owner action] Approve the public RAPP/1 facade switch after registry closure",
       "status": "owner-action-required",
-      "why": "The target-owned facade has an exact local candidate wire, but its seven error codes are unregistered and the repository still contains historical alternate capability routes. Publishing early would turn a pre-acceptance implementation into a false conformance claim and could route around the immutable-grail boundary.",
-      "what": "The owner must approve one public POST /chat route backed only by the target-owned facade after registry and migration closure, prove all candidate error codes are registered, ensure alternate capability routes are unavailable, and verify that requests cannot mutate, mount, or execute through pinned grail paths.",
+      "why": "The target-owned facade has an exact local candidate wire, but its seven error codes are unregistered, the repository still contains historical alternate capability routes, and three claimed canonical identity doors return 404. Publishing early would turn a pre-acceptance implementation into a false conformance claim and could route around the immutable-grail boundary.",
+      "what": "The owner must approve one public POST /chat route backed only by the target-owned facade after registry and migration closure, prove all candidate error codes are registered, close or explicitly retire missing canonical-door claims, ensure alternate capability routes are unavailable, and verify that requests cannot mutate, mount, deploy, or execute through pinned grail paths.",
       "where": {
         "candidate_source": "rapp_brainstem/rapp1_facade.py",
         "candidate_launcher": "rapp_brainstem/run_rapp1_facade.py",
@@ -445,13 +535,15 @@
         "public_origin": null,
         "allowed_protocol_route": "POST /chat",
         "allowed_control_route": "GET /health",
+        "canonical_door_evidence": "RAPP1_OWNER_ACTIONS.json#known_evidence.canonical_doors",
         "pinned_grail_record": "KERNEL_PIN.json"
       },
-      "when": "Switch public routing only after all four RAPP1_STATUS owner blockers, implementation migrations, exact facade tests, immutable pin gate, and owner deployment review pass on the same deployment commit.",
+      "when": "Switch public routing only after all four RAPP1_STATUS owner blockers, canonical-door dispositions, implementation migrations, exact facade tests, immutable pin gate, and owner deployment review pass on the same deployment commit.",
       "how": [
         "Integrate the reviewed facade candidate and keep its inference boundary private with tools disabled; never mount the pinned brainstem Flask application.",
         "Verify the fresh authenticated registry contains exact error-code entries for all seven facade codes before routing any public request.",
         "Inventory public routes and remove or make unreachable every direct-agent, alternate-chat, legacy business-function, browser-worker, and grail /chat route as a RAPP capability; retain only POST /chat plus control-plane GET /health.",
+        "Verify the root canonical door serves the exact target rappid.json bytes and either publish each missing RAPP-owned identity door through separate authorization or retire its claim. Never modify or deploy kody-w/rapp-installer, its clone, or pinned files to close a door.",
         "Deploy the facade on target-owned infrastructure with durable storage outside the grail paths and a rollback target that is unavailable or maintenance-only, never the legacy wire.",
         "Run exact request, response, idempotency, concurrency, route-isolation, and refusal tests against the deployment origin.",
         "Hash the three KERNEL_PIN.json frozen files before and after deployment and traffic tests, then run check_kernel_pin.py."
@@ -461,6 +553,7 @@
         "owner-authorize-root-upgrade-reanchor is accepted.",
         "owner-reissue-commons-invite is accepted and the placeholder is retired.",
         "owners-correct-or-retire-external-mirror is accepted.",
+        "The cave, installer, and sample-session 404 canonical-door claims have approved publish-or-retire dispositions that respect the immutable installer boundary.",
         "All implementation migrations and the facade candidate are merged into one reviewed deployment commit.",
         "The repository status claim remains blocked until every non-owner conformance gate also passes."
       ],
@@ -469,6 +562,7 @@
         "deployment_commit": null,
         "switch_utc": null,
         "registry_evidence_location": null,
+        "canonical_door_disposition_record": null,
         "rollback_owner": null
       },
       "acceptance_tests": [
@@ -486,6 +580,11 @@
           "id": "facade-no-alternate-routes",
           "procedure": "Enumerate the deployed router and probe /, /agents, /agents/invoke, /api/agent, /api/copilot/chat, /api/businessinsightbot_function, /api/trigger/copilot-studio, and the grail port from the public network.",
           "pass_condition": "Only POST /chat is a public RAPP capability; GET /health is control-plane only; every listed alternate route and the grail port are unreachable or return 404/410 without executing inference or an agent."
+        },
+        {
+          "id": "facade-canonical-door-claims",
+          "procedure": "Fetch the four canonical identity URLs in known_evidence.canonical_doors. Byte-compare the root response to rappid.json and inspect the approved publish-or-retire disposition for every 404 claim, including the installer immutability constraint.",
+          "pass_condition": "The root returns the exact SHA-256 8710b3c45fd660f96d159be41c861bf9fb9bb45acbc40888815d7942d342792e bytes; every other claim is served from an authorized pinned publication or retired; no installer repository, clone, or pinned byte was changed or deployed."
         },
         {
           "id": "facade-no-grail-side-effects",
