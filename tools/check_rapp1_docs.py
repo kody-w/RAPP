@@ -54,6 +54,7 @@ CONTEXT_MARKERS = (
 )
 HISTORICAL_SECTION_START = "<!-- RAPP1-HISTORICAL-SECTION-START -->"
 HISTORICAL_SECTION_END = "<!-- RAPP1-HISTORICAL-SECTION-END -->"
+SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 
 
 def load_scope() -> dict:
@@ -149,6 +150,70 @@ def retired_token_failures(relative: str, text: str) -> list[str]:
     return failures
 
 
+def audit_scope_failures(
+    scope: dict, managed: set[str], excluded: set[str]
+) -> list[str]:
+    failures = []
+    audit_scope = scope.get("audit_scope")
+    if not isinstance(audit_scope, dict):
+        return ["scope: audit_scope must record audit provenance"]
+
+    ledger = audit_scope.get("r1_doc_01")
+    if not isinstance(ledger, dict):
+        failures.append("scope: audit_scope.r1_doc_01 must be an object")
+    else:
+        paths = ledger.get("paths")
+        expected_count = ledger.get("path_count")
+        if not isinstance(paths, list) or not paths:
+            failures.append("scope: R1-DOC-01 paths must be a non-empty list")
+        else:
+            unique_paths = set(paths)
+            if len(unique_paths) != len(paths):
+                failures.append("scope: R1-DOC-01 paths contain duplicates")
+            if expected_count != len(paths):
+                failures.append(
+                    "scope: R1-DOC-01 path_count does not match its path list"
+                )
+            for relative in sorted(unique_paths - managed - excluded):
+                failures.append(
+                    f"scope: R1-DOC-01 path {relative} is not checked or excluded"
+                )
+        if not SHA256_PATTERN.fullmatch(str(ledger.get("sha256", ""))):
+            failures.append("scope: R1-DOC-01 source has no valid SHA-256")
+
+    canon = audit_scope.get("canon_mirrors")
+    if not isinstance(canon, dict):
+        failures.append("scope: audit_scope.canon_mirrors must be an object")
+    else:
+        if not SHA256_PATTERN.fullmatch(str(canon.get("sha256", ""))):
+            failures.append("scope: canon-mirrors source has no valid SHA-256")
+        for name in (
+            "live_declarations_section",
+            "historical_section",
+            "generated_section",
+        ):
+            if not str(canon.get(name, "")).strip():
+                failures.append(f"scope: canon-mirrors {name} is missing")
+        live_paths = canon.get("live_paths")
+        if not isinstance(live_paths, list) or not live_paths:
+            failures.append(
+                "scope: canon-mirrors live_paths must be a non-empty list"
+            )
+        else:
+            unique_live_paths = set(live_paths)
+            if len(unique_live_paths) != len(live_paths):
+                failures.append("scope: canon-mirrors live_paths contain duplicates")
+            if canon.get("live_path_count") != len(live_paths):
+                failures.append(
+                    "scope: canon-mirrors live_path_count does not match its path list"
+                )
+            for relative in sorted(unique_live_paths - managed - excluded):
+                failures.append(
+                    f"scope: canon §7.1 path {relative} is not checked or excluded"
+                )
+    return failures
+
+
 def check_docs(scope: dict | None = None) -> list[str]:
     scope = scope or load_scope()
     failures = []
@@ -193,7 +258,9 @@ def check_docs(scope: dict | None = None) -> list[str]:
     excluded = scope.get("excluded_documents")
     if not isinstance(excluded, dict) or not excluded:
         failures.append("scope: excluded_documents must record explicit exclusions")
+        excluded_paths: set[str] = set()
     else:
+        excluded_paths = set(excluded)
         overlap = seen.intersection(excluded)
         for relative in sorted(overlap):
             failures.append(f"scope: {relative} is both checked and excluded")
@@ -208,6 +275,7 @@ def check_docs(scope: dict | None = None) -> list[str]:
             if not path.is_file():
                 failures.append(f"{relative}: excluded document is missing")
 
+    failures.extend(audit_scope_failures(scope, seen, excluded_paths))
     return failures
 
 
@@ -227,7 +295,29 @@ def main() -> int:
             "historical_documents",
         )
     )
-    print(f"RAPP/1 documentation gate passed ({count} explicit documents)")
+    ledger_paths = set(scope["audit_scope"]["r1_doc_01"]["paths"])
+    managed = set().union(
+        *(
+            set(scope[group])
+            for group in (
+                "current_documents",
+                "superseded_documents",
+                "historical_documents",
+            )
+        )
+    )
+    managed_ledger = len(ledger_paths & managed)
+    excluded_ledger = len(ledger_paths - managed)
+    canon_paths = set(scope["audit_scope"]["canon_mirrors"]["live_paths"])
+    managed_canon = len(canon_paths & managed)
+    excluded_canon = len(canon_paths - managed)
+    print(
+        "RAPP/1 documentation gate passed "
+        f"({count} managed documents; R1-DOC-01 ledger: "
+        f"{managed_ledger} managed, {excluded_ledger} explicitly excluded; "
+        f"canon §7.1: {managed_canon} managed, "
+        f"{excluded_canon} explicitly excluded)"
+    )
     return 0
 
 

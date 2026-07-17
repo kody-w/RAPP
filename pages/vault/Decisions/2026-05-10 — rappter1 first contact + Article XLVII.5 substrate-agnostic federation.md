@@ -8,6 +8,13 @@ tags: [article-xlvii, lan-federation, censorship-resilience, first-contact, rapp
 
 # rappter1 first contact + Article XLVII.5 — substrate-agnostic federation
 
+> **Historical/superseded protocol decision.** Preserve this dated first-contact
+> record verbatim below; its identity and discovery examples are not current
+> instructions. Canonicalization, identity, frames, wire, eggs, registry,
+> trust, and protocol evolution follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
 ## What happened
 
 At 02:13 UTC on 2026-05-10, a GitHub account named `rappter1` (the canonical "second operator" name from MASTER_PLAN.md) **executed the platform's onboarding spec end-to-end** — for the first time, by an actor that was not kody-w.

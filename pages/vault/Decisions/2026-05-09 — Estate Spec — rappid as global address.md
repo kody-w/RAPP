@@ -8,6 +8,13 @@ tags: [estate, rappid, article-xlvi, address-space, no-fallbacks]
 
 # Estate Spec — rappid is the global address
 
+> **Historical/superseded protocol decision.** Preserve this dated ship record
+> verbatim below; do not use its identity, discovery, or trust rules as current
+> instructions. Canonicalization, identity, frames, wire, eggs, registry,
+> trust, and protocol evolution follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
 ## What we shipped
 
 A constitutional Article (XLVI) that locks in: the rappid IS the address. From any v2 rappid string, by string parsing alone, every canonical URL the door has is computable. Discovery happens through `raw.githubusercontent.com` — no auth, no API, no rate limit, no SDK. The estate is the door catalog. There are no fallbacks; the spec describes what is true.

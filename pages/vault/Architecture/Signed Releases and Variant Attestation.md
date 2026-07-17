@@ -7,6 +7,14 @@ hook: The data model for cryptographically anchored kernel releases and parent-a
 
 # Signed Releases and Variant Attestation
 
+> **SUPERSEDED trust design — historical migration reference only.** The
+> optional release-key and parent-attestation model below is not current RAPP
+> trust authority. For canonicalization, identity, frames, wire, eggs,
+> registry, trust, and protocol evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md). Current acceptance uses
+> RAPP/1 §§10/13; do not fabricate the signatures or authority described here.
+
 > **Hook.** The data model for cryptographically anchored kernel releases and parent-attested variant lineage. Schema is shipped today; signing infrastructure is opt-in and rolls in as variants adopt it.
 
 ## Why this exists

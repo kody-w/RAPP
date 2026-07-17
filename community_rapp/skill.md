@@ -1,4 +1,12 @@
-# CommunityRAPP — Public Skill Interface
+# CommunityRAPP — Public Host Onboarding
+
+> **Current RAPP/1 authority (rev-5).** Despite its historical filename, this
+> is non-runtime host onboarding, not a RAPP skill, agent, or capability. For
+> canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+> evolution, follow [`RAPP1_AUTHORITY.json`](../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../RAPP1_STATUS.md). CommunityRAPP's Azure routes and
+> envelopes below are legacy host adapters; a current RAPP boundary exposes
+> the exact §8 `/chat` contract.
 
 > **CommunityRAPP (RAPP Hippocampus) is open source.**
 > Repo: [github.com/kody-w/CommunityRAPP](https://github.com/kody-w/CommunityRAPP)
@@ -28,6 +36,10 @@ The **Azure Functions backend** for the RAPP ecosystem. It provides persistent m
 
 ## One-Liner Install
 
+The external installer is a legacy product wrapper, not a kernel update
+channel or RAPP conformance proof. It must preserve the immutable
+`kody-w/rapp-installer@brainstem-v0.6.9` grail bytes.
+
 **Mac / Linux:**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/kody-w/rapp-installer/main/community_rapp/install.sh | bash
@@ -52,7 +64,7 @@ User (Chat UI / Teams / M365 Copilot)
         -> Response with |||VOICE||| delimiter
 ```
 
-### HTTP Triggers
+### Legacy host triggers (migration inventory)
 
 | Endpoint | Purpose |
 |----------|---------|
@@ -60,8 +72,15 @@ User (Chat UI / Teams / M365 Copilot)
 | `POST /api/businessinsightbot_function` | Main conversation endpoint |
 | `POST /api/trigger/copilot-studio` | Direct agent invocation |
 
-### API Contract
+### Historical adapter contract (not RAPP wire)
 
+The JSON below records the deployed CommunityRAPP adapter. Current synchronous
+RAPP interaction is instead `POST /chat` with required `user_input`, optional
+`session_id`/`idempotency_key`, exactly
+`{response,agent_logs:[string],session_id}` on HTTP 200, and the exact §8
+error object on HTTP 422. Application routes must translate at that boundary.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 ```json
 // Request
 POST /api/businessinsightbot_function
@@ -79,6 +98,7 @@ POST /api/businessinsightbot_function
   "user_guid": "the-user-guid"
 }
 ```
+<!-- RAPP1-HISTORICAL-SECTION-END -->
 
 ---
 

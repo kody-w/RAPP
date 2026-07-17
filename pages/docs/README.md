@@ -16,8 +16,8 @@ contract, not the kind you grep daily.
 
 | File | What |
 |---|---|
-| [`SPEC.md`](./SPEC.md) | The frozen v1 wire contract for the single-file agent format. The API |
-| [`ROADMAP.md`](./ROADMAP.md) | Post-v1 directions that must honor the v1 contract |
+| [`SPEC.md`](./SPEC.md) | Superseded local v1 wire history; current protocol authority is pinned RAPP/1 rev-5 |
+| [`ROADMAP.md`](./ROADMAP.md) | Product roadmap and dated release history, subordinate to RAPP/1 |
 | [`AGENTS.md`](./AGENTS.md) | Guidance to AI assistants editing this repo (Cursor, Codex, etc.) |
 | [`VERSIONS.md`](./VERSIONS.md) | Brainstem release tag history and rollback discipline |
 | [`skill.md`](./skill.md) | Historically named, non-runtime host-onboarding document; RAPP capabilities remain agents |

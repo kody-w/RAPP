@@ -9,6 +9,13 @@ session_date: 2026-04-24
 
 # Surfaces — Mobile, Watch, Voice
 
+> **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
+> wire, eggs, registry, trust, and protocol evolution, follow
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md). Form-factor adapters use the
+> exact §8 `/chat` request and response; application `/api/*` routes and voice
+> rendering do not add protocol members or trust.
+
 > **Hook.** Every form factor is a calibration opportunity. Ship them as web tech (PWAs + Apple Shortcuts) — not as native apps you have to maintain across three OSes.
 
 ## The principle
@@ -78,8 +85,11 @@ A brainstem-compatible Shortcut needs:
 
 - A configurable **endpoint URL** — e.g. `http://192.168.1.42:7071/chat` for Tier 1 on the same Wi-Fi, or a Tier 2 Azure Functions URL for off-network.
 - Optional **auth header** — Bearer token for Tier 2; nothing for Tier 1 (which trusts the local network).
-- A **POST body** matching the `/chat` request shape: `{"user_input": "<text>", "conversation_history": []}`.
-- The **VOICE-aware response handling** — extract the `voice_response` field (or strip everything before `|||VOICE|||` from `response`) and feed it to the system "Speak" action.
+- A **POST body** matching the exact §8 request: required `user_input`, with
+  optional `session_id` and `idempotency_key`.
+- The exact HTTP 200 body: `response`, `agent_logs` array, and `session_id`.
+  Voice rendering is an application interpretation of `response`; it cannot
+  add `voice_response` to the RAPP boundary.
 
 The Shortcut does the voice capture (Siri dictation), the round-trip, and the speak-back. The brainstem doesn't change — it already emits a voice slot designed for TTS.
 
@@ -125,12 +135,16 @@ Android Chrome supports PWAs more fully than iOS Safari — push works, install 
 - ❌ A native cross-platform desktop app (Electron, Tauri-as-real-app). The PWA covers the use case.
 - ❌ A watchOS native app. The Shortcut covers it.
 - ❌ A platform-specific notification system. PWAs handle web push where it's available; Shortcuts handle iOS automations.
-- ❌ Surface-specific protocol shapes. Every surface POSTs to `/chat` and reads the same three-slot response. New surfaces conform; the surfaces don't fork the protocol.
+- ❌ Surface-specific protocol shapes. Every RAPP surface POSTs exact §8
+  `/chat` and reads its exact three-member response. Optional voice/twin views
+  are derived from the `response` string inside the application.
 
 ## Discipline
 
 - New form factor → reach for web tech + OS automation primitives first. Native is the last resort.
-- Every surface POSTs to the same `/chat` contract. The slot shape (`|||VOICE|||`, `|||TWIN|||`) is what makes voice surfaces possible without protocol changes.
+- Every RAPP surface POSTs to the exact §8 `/chat` contract. Application
+  delimiters such as `|||VOICE|||` and `|||TWIN|||` can drive local rendering
+  inside `response`; they are not extra response fields.
 - When tempted to ship a native app for *one* OS, ask whether a PWA + an Apple Shortcut + an Android automation covers 95% of it. Almost always, yes.
 
 ## Related

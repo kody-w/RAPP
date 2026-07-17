@@ -122,7 +122,10 @@ retirement, not perpetual backwards compatibility:
    `kody-w/rapp-installer@brainstem-v0.6.9`; pinned `brainstem.py`,
    `agents/basic_agent.py`, and `VERSION` are never edited locally. New RAPP
    capabilities are agents behind §8; organs may add application views only.
-5. **Delimited slots are fixed forever.** `|||VOICE|||` and `|||TWIN|||` never get repurposed or overloaded. New sub-capabilities use tags inside the slot.
+5. **Delimited slots are application rendering, not wire members.**
+   `|||VOICE|||` and `|||TWIN|||` may be interpreted inside the exact §8
+   `response` string. They never authorize extra protocol fields, and any
+   evolution remains subordinate to RAPP/1 §12.
 6. **Tier portability guarantee.** An agent that runs in Tier 1 must run unmodified in Tier 2 & 3.
 7. **Rapplications ARE organisms** ([Constitution Article XXXVII](./CONSTITUTION.md), shipped 2026-05-02). Same rappid format, same egg distribution, same bonding lifecycle, just different scope. "Rapplication" is a quality tier (graduated, has skin), not a structural type. All five catalog forms (organism / rapplication / variant / sense / bare agent) live on one address space.
 

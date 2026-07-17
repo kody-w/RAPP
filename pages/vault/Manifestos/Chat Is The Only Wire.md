@@ -7,6 +7,14 @@ hook: Every brainstem ever shipped speaks the same `/chat`. That is the contract
 
 # Chat Is The Only Wire
 
+> **SUPERSEDED wire manifesto — historical migration reference only.** Preserve
+> the body below as a record of the former additive/perpetual-envelope doctrine;
+> do not use it as current wire instruction. Canonicalization, identity, frames,
+> wire, eggs, registry, trust, and protocol evolution follow RAPP/1 rev-5
+> through [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md). Current wire is exactly the two
+> forms in RAPP/1 §8, and §12 requires total migration and retirement.
+
 > **Hook.** Every brainstem ever shipped speaks the same `/chat`. That is the contract — and the acid test that proved it caught a real divergence we didn't know we had.
 
 ## The claim

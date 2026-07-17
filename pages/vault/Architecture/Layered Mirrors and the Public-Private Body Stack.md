@@ -7,6 +7,15 @@ hook: One frozen kernel, an unbounded tree of mirrors, and a body stack with thr
 
 # Layered Mirrors and the Public/Private Body Stack
 
+> **SUPERSEDED architecture narrative — historical migration reference only.**
+> Preserve the body below as a record of the earlier v0.6.0, recursive-lineage,
+> and GitHub-authorization design; do not use it as current identity or trust
+> instruction. Canonicalization, identity, frames, wire, eggs, registry, trust,
+> and protocol evolution follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md). The immutable current grail pin
+> is `kody-w/rapp-installer@brainstem-v0.6.9`.
+
 > **Hook.** One frozen kernel, an unbounded tree of mirrors, and a body stack with three memory tiers and two agent tiers — the whole pattern resolves through one URL, one OAuth flow, and one rule (the kernel never changes). Silent escalation does the rest.
 
 ## Why this exists

@@ -7,6 +7,13 @@ hook: The kernel is sacred DNA. Organs, /web mount, and future utils/ integratio
 
 # Boot Sidecar — Integrating Utils Without Modifying the Kernel
 
+> **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
+> wire, eggs, registry, trust, and protocol evolution, follow
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md). The immutable grail is exactly
+> `kody-w/rapp-installer@brainstem-v0.6.9`. Sidecar `/api/*` and `/web/*`
+> routes are application views/adapters and never expand the exact §8 wire.
+
 > **Hook.** The kernel is sacred DNA. Organs, /web mount, and future utils/ integrations attach to its Flask app via boot.py — a kernel-sibling launcher that runs the kernel verbatim and monkey-patches Flask.run to inject additions just before serving.
 
 ## The constraint
@@ -16,7 +23,7 @@ Per **Constitution Article XXXIII §4**, AI assistants — and contributors gene
 The question this note answers: **how does the rest of the platform get wired in without ever touching brainstem.py?**
 
 > **Implementation status.** `rapp_brainstem/utils/boot.py` ships today and runs the
-> Article XXXIV **lineage guard** plus the canonical kernel **verbatim**. The organ
+> Article XXXIV **lineage guard** plus the pinned grail kernel **verbatim**. The organ
 > dispatch, `/web` mount, and sense composition described below are the **additive
 > extension point** this enables — `utils/organs/` and `utils/senses/` are scaffolded
 > (empty) and wire in as those modules land. The pattern below is the design they attach by.
@@ -47,7 +54,7 @@ That's the whole mechanism. The kernel never imports boot.py. The kernel never k
 
 | Capability | Where it lives | How the kernel knows |
 |---|---|---|
-| `/chat`, `/agents`, `/health`, `/version` | `brainstem.py` | Kernel ships these. |
+| Exact RAPP/1 §8 `/chat` target plus legacy host/admin routes | `brainstem.py` + target-owned facade | Pinned kernel behavior is translated outside the grail. |
 | Voice slot splitting (`|||VOICE|||`, when `VOICE_MODE=true`) | `brainstem.py` | Kernel ships this. |
 | Organ dispatch (`/api/<name>/<path>`) | `utils/organs/__init__.py` + `utils/organs/*_organ.py` | Doesn't. Boot sidecar attaches. |
 | Static `/web/<path>` mount | `boot.py` + `utils/web/*` | Doesn't. Boot sidecar attaches. |
@@ -63,7 +70,10 @@ The canonical kernel only knows `|||VOICE|||`, and only when `VOICE_MODE=true`. 
 
 1. **Discovery.** `senses_loader.discover()` globs `utils/senses/*_sense.py`. Each sense file declares `name`, `delimiter`, `response_key`, `wrapper_tag`, and `system_prompt`.
 2. **Soul augmentation.** Right before `Flask.run`, the sidecar calls `kernel.load_soul()` to populate `_soul_cache`, then concatenates each sense's `system_prompt` and writes the augmented prompt back into `_soul_cache`. The kernel's chat handler reads `_soul_cache` on every turn — so every turn now carries every sense's instruction.
-3. **Response splitting.** The sidecar registers a Flask `after_request` hook that scans `/chat` JSON responses for each sense's delimiter. When a delimiter appears, the trailing segment is peeled into the sense's `response_key` (e.g., `voice_response`, `twin_response`). Senses split in discovery order, so the order of `*_sense.py` files determines splitting precedence. The kernel's hardcoded VOICE block (when `VOICE_MODE=true`) handles voice early; the sidecar handles whatever the kernel left in place.
+3. **Historical response splitting.** The existing sidecar may peel delimiter
+   content into application response keys. A current RAPP facade must keep
+   those keys internal to rendering and emit externally only exact §8
+   `response`, `agent_logs`, and `session_id`.
 
 A new sense is one new file. The kernel never learns about it; the sidecar discovers it on next boot.
 
