@@ -7,7 +7,7 @@
     "post_audit_tracked_paths": 691,
     "integrated_main_commit": "d3d2623646a6111b4a7db9f1b960df233f8964c9",
     "integrated_tracked_paths": 694,
-    "integrated_tracked_bytes": 7958842,
+    "integrated_tracked_bytes": 7961057,
     "integration_note": "Current rebased tree count after post-code/post-dist/final-closure integration; the 691-row final verifier ledger remains a dated source report.",
     "status_boundary": "RAPP1_STATUS.md remains byte-identical to the code-owned owner-evidence hash; integrated counts are recorded here without rewriting owner hashes.",
     "path_set_digest": "sha256(sorted UTF-8 paths joined with newline, including final newline)",
@@ -499,6 +499,19 @@
         "cave/rar/index.json",
         "cave/super-rar/index.json"
       ]
+    },
+    "final_documentation_terminal_states": {
+      "provenance": "Final documentation blocker closure requested 2026-07-17; not a final-ledger ID.",
+      "expected_count": 2,
+      "path_set_sha256": "7423edeb7b7b24efda534a4ddf76d6483f10f16473eabd7dfb5ed640f314a27c",
+      "sha256": {
+        "pages/_site/partials/footer.html": "f4e27778f0d6b636e7cf50047229692d9790668eda5fa027837711852193347d",
+        "installer/README.md": "677adaf26e8d04da2f14ca30a818cb5190bbea5a7e2987c8c7c147379433074f"
+      },
+      "paths": [
+        "pages/_site/partials/footer.html",
+        "installer/README.md"
+      ]
     }
   },
   "ownership_exclusions": {
@@ -518,7 +531,6 @@
     "excluded_prefixes": {
       ".github/prompts/": "prompt fixtures, not published RAPP/1 contract guidance",
       "cave/rapplications/rapp-installer/": "immutable prepared-clone and mirror subtree",
-      "pages/_site/partials/": "generated static-site shell partials",
       "pages/vault/Blog Drafts/": "explicitly unpublished draft archive",
       "pages/vault/Decisions/": "dated decision records preserved as history",
       "pages/vault/Fixtures/": "documentation fixtures, not current guidance",
@@ -537,7 +549,6 @@
       "cave/cubbies/_template/front_door.md": "retired cubby template fixture",
       "community_rapp/agent-repo-skill.md": "agent-repository skill owned by the code/distribution closure",
       "index.html": "root landing page is distribution-branch-owned",
-      "installer/README.md": "installer documentation is distribution-branch-owned",
       "installer/index.html": "installer application shell is distribution-branch-owned",
       "pages/chat.html": "application surface owned by the product/code closure",
       "pages/grail-brainstem/index.html": "application surface owned by the product/code closure",
@@ -545,6 +556,7 @@
       "pages/lobby.html": "application surface owned by the product/code closure",
       "pages/metropolis/README.md": "metropolis application documentation owned by the product closure",
       "pages/payphone.html": "application surface owned by the product/code closure",
+      "pages/_site/partials/header.html": "shared navigation shell outside the final footer closure",
       "pages/sphere.html": "application surface owned by the product/code closure",
       "pages/summon.html": "owner-blocked re-anchor application surface",
       "pages/tether.html": "application surface owned by the product/code closure",
@@ -745,9 +757,11 @@
       "specs/skill.md"
     ],
     "contained": [
+      "installer/README.md",
       "installer/plant.html",
       "installer/plant_qr.html",
       "installer/seed.html",
+      "pages/_site/partials/footer.html",
       "pages/metropolis/index.html",
       "pages/metropolis/plant-from-discord.html",
       "pages/index.html"

@@ -323,13 +323,15 @@ class Rapp1DocumentationTests(unittest.TestCase):
             errors,
         )
 
-    def test_distribution_owned_plant_surfaces_are_contained(self) -> None:
+    def test_terminal_surfaces_are_contained(self) -> None:
         self.assertEqual(
             set(self.fixture["classifications"]["contained"]),
             {
+                "installer/README.md",
                 "installer/plant.html",
                 "installer/plant_qr.html",
                 "installer/seed.html",
+                "pages/_site/partials/footer.html",
                 "pages/metropolis/index.html",
                 "pages/metropolis/plant-from-discord.html",
                 "pages/index.html",
@@ -342,6 +344,18 @@ class Rapp1DocumentationTests(unittest.TestCase):
             elif path == "pages/index.html":
                 self.assertIn("Pre-acceptance", text)
                 self.assertIn("Installation is disabled", text)
+            elif path == "pages/_site/partials/footer.html":
+                self.assertIn("source-available", text)
+                self.assertIn("RAPP1_STATUS.md", text)
+                self.assertIn("RAPP1_AUTHORITY.json", text)
+                self.assertNotIn("install.sh", text)
+                self.assertNotIn("open source", text.lower())
+                self.assertNotIn("MIT", text)
+            elif path == "installer/README.md":
+                self.assertIn("HTTP 410 Gone", text)
+                self.assertIn("target-owned installer surface is retired", text)
+                self.assertIn("RAPP1_STATUS.md", text)
+                self.assertIn("RAPP1_AUTHORITY.json", text)
             else:
                 self.assertIn("HTTP 410", text)
                 self.assertIn("retired", text.lower())
@@ -358,6 +372,54 @@ class Rapp1DocumentationTests(unittest.TestCase):
             self.assertEqual(
                 hashlib.sha256((ROOT / path).read_bytes()).hexdigest(), expected
             )
+
+    def test_final_documentation_blockers_are_asserted_not_excluded(self) -> None:
+        scope = self.fixture["derived_document_scope"]
+        terminal = self.fixture["target_checks"][
+            "final_documentation_terminal_states"
+        ]
+        self.assertNotIn("installer/README.md", scope["excluded_paths"])
+        self.assertNotIn("pages/_site/partials/", scope["excluded_prefixes"])
+        self.assertEqual(
+            set(terminal["paths"]),
+            {"pages/_site/partials/footer.html", "installer/README.md"},
+        )
+        for path, expected in terminal["sha256"].items():
+            self.assertEqual(
+                hashlib.sha256((ROOT / path).read_bytes()).hexdigest(), expected
+            )
+
+    def test_footer_legacy_claim_mutations_are_rejected(self) -> None:
+        path = "pages/_site/partials/footer.html"
+        text = (ROOT / path).read_text(encoding="utf-8")
+        mutated = text.replace(
+            "source-available · PolyForm Small Business 1.0.0",
+            "open source · MIT",
+        )
+        errors = self._category_mutation_errors(path, mutated)
+        self.assertTrue(
+            any(path in error and "open-source/MIT" in error for error in errors),
+            errors,
+        )
+        mutated = text.replace(
+            "</footer>",
+            '<a href="/installer/install.sh">Install now</a></footer>',
+        )
+        errors = self._category_mutation_errors(path, mutated)
+        self.assertTrue(
+            any(path in error and "installer CTA" in error for error in errors),
+            errors,
+        )
+
+    def test_installer_readme_instruction_mutation_is_rejected(self) -> None:
+        path = "installer/README.md"
+        text = (ROOT / path).read_text(encoding="utf-8")
+        mutated = text + "\nRun `curl https://example.invalid/install.sh | bash`.\n"
+        errors = self._category_mutation_errors(path, mutated)
+        self.assertTrue(
+            any(path in error and "public install instructions" in error for error in errors),
+            errors,
+        )
 
     def test_cave_agent_side_effect_mutation_is_rejected(self) -> None:
         path = "cave/cubbies/kody-w/agents/rapp_installer_agent.py"

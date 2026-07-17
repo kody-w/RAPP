@@ -127,7 +127,6 @@ def _validate_derived_document_scope(
     expected_prefixes = {
         ".github/prompts/",
         "cave/rapplications/rapp-installer/",
-        "pages/_site/partials/",
         "pages/vault/Blog Drafts/",
         "pages/vault/Decisions/",
         "pages/vault/Fixtures/",
@@ -187,7 +186,7 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
     expected_integration = {
         "integrated_main_commit": "d3d2623646a6111b4a7db9f1b960df233f8964c9",
         "integrated_tracked_paths": 694,
-        "integrated_tracked_bytes": 7958842,
+        "integrated_tracked_bytes": 7961057,
     }
     for field, expected in expected_integration.items():
         if audit.get(field) != expected:
@@ -454,6 +453,10 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
             4,
             "7783c87857093fb556a08e951310c2effde6d72396433dc571d81fe4049664ed",
         ),
+        "final_documentation_terminal_states": (
+            2,
+            "7423edeb7b7b24efda534a4ddf76d6483f10f16473eabd7dfb5ed640f314a27c",
+        ),
     }
     if not isinstance(target_checks, dict) or set(target_checks) != set(
         expected_target_checks
@@ -496,6 +499,24 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
             (ROOT / path).read_bytes()
         ).hexdigest() != expected_hash:
             errors.append(f"{path}: integrated main terminal bytes drifted")
+    expected_documentation_hashes = {
+        "pages/_site/partials/footer.html": (
+            "f4e27778f0d6b636e7cf50047229692d9790668eda5fa027837711852193347d"
+        ),
+        "installer/README.md": (
+            "677adaf26e8d04da2f14ca30a818cb5190bbea5a7e2987c8c7c147379433074f"
+        ),
+    }
+    documentation_hashes = target_checks.get(
+        "final_documentation_terminal_states", {}
+    ).get("sha256", {})
+    if documentation_hashes != expected_documentation_hashes:
+        errors.append("fixture: final documentation terminal-state hashes drifted")
+    for path, expected_hash in expected_documentation_hashes.items():
+        if (ROOT / path).is_file() and hashlib.sha256(
+            (ROOT / path).read_bytes()
+        ).hexdigest() != expected_hash:
+            errors.append(f"{path}: final documentation terminal bytes drifted")
 
     classifications = fixture.get("classifications")
     if not isinstance(classifications, dict):
@@ -834,6 +855,60 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
             errors.append(f"{path}: cave agent streaming must remain false")
 
     target_checks = fixture["target_checks"]
+    footer = _read("pages/_site/partials/footer.html")
+    for token in (
+        'href="@/../LICENSE"',
+        "source-available",
+        "PolyForm Small Business 1.0.0",
+        'href="@/../RAPP1_STATUS.md"',
+        'href="@/../RAPP1_AUTHORITY.json"',
+        "rev-5 authority",
+    ):
+        if token not in footer:
+            errors.append(
+                f"pages/_site/partials/footer.html: missing terminal claim {token!r}"
+            )
+    if re.search(r"\bopen[\s-]+source\b|\bMIT\b", footer, flags=re.IGNORECASE):
+        errors.append(
+            "pages/_site/partials/footer.html: restores a false open-source/MIT claim"
+        )
+    if re.search(
+        r"install\.sh|(?:href|src)\s*=\s*[\"'][^\"']*installer",
+        footer,
+        flags=re.IGNORECASE,
+    ):
+        errors.append(
+            "pages/_site/partials/footer.html: restores a retired installer CTA"
+        )
+
+    installer_readme = _read("installer/README.md")
+    for token in (
+        "HTTP 410 Gone",
+        "target-owned installer surface is retired",
+        "No public installation is available",
+        "intentionally provides no installation commands",
+        "RAPP1_STATUS.md",
+        "RAPP1_AUTHORITY.json",
+        "RAPP/1 rev-5 authority",
+    ):
+        if token not in installer_readme:
+            errors.append(f"installer/README.md: missing terminal claim {token!r}")
+    if re.search(
+        r"\b(?:curl|wget|irm|iex)\b|install\.(?:sh|ps1|cmd)\b|"
+        r"\b(?:install now|one-liner|deploy to azure|download-and-import)\b|"
+        r"https?://[^\s)]*/installer(?:/|\b)",
+        installer_readme,
+        flags=re.IGNORECASE,
+    ):
+        errors.append("installer/README.md: restores public install instructions")
+    if re.search(
+        r"\b(?:installer|installation|distribution)\b[^.\n]{0,80}"
+        r"\b(?:is|are|remains?)\s+(?:current|active|supported|operational)\b",
+        installer_readme,
+        flags=re.IGNORECASE,
+    ):
+        errors.append("installer/README.md: restores a current installer claim")
+
     landing = _read("pages/index.html")
     for token in (
         "RAPP/1 rev-5",
