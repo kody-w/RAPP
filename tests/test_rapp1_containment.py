@@ -136,7 +136,7 @@ class ContainmentTests(unittest.TestCase):
                 text = (ROOT / relative).read_text(encoding="utf-8")
                 lowered = text.lower()
                 self.assertIn("http 410", lowered)
-                self.assertIn("rapp1_conformance.md", lowered)
+                self.assertIn("rapp1_status.md", lowered)
                 for marker in HTML_EXECUTION_MARKERS:
                     self.assertNotIn(marker, lowered)
 
@@ -200,6 +200,7 @@ class ContainmentTests(unittest.TestCase):
         self.assertEqual(guard["status"], "retired")
         self.assertIs(guard["rapp1_packaging_allowed"], False)
         self.assertIs(guard["rapp1_advertising_allowed"], False)
+        self.assertEqual(guard["guidance"], "../RAPP1_STATUS.md")
         ignored = (ROOT / "rapp_swarm/.funcignore").read_text().splitlines()
         self.assertIn("function_app.py", ignored)
 

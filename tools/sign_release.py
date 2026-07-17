@@ -9,7 +9,7 @@ def main() -> int:
         "sign_release.py: 410 Gone\n\n"
         "Legacy release signing is retired. This command will not create "
         "keys, signatures, attestations, or verification-shaped output.\n"
-        "Maintainers: see RAPP1_CONFORMANCE.md.",
+        "Maintainers: see RAPP1_STATUS.md.",
         file=sys.stderr,
     )
     return 78

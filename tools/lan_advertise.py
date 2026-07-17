@@ -9,7 +9,7 @@ def main() -> int:
         "lan_advertise.py: 410 Gone\n\n"
         "Legacy LAN advertisement is retired and will not publish a service "
         "or synthesize protocol records.\n"
-        "Maintainers: see RAPP1_CONFORMANCE.md.",
+        "Maintainers: see RAPP1_STATUS.md.",
         file=sys.stderr,
     )
     return 78

@@ -32,6 +32,7 @@ for (const [route, method] of [
   const body = await response.json();
   assert.equal(body.error, 'gone');
   assert.equal(body.code, 'capability-route-retired');
+  assert.equal(body.guidance, 'RAPP1_STATUS.md');
 }
 
 assert.equal(upstreamCalls.length, 0, 'retired routes must never proxy inference');

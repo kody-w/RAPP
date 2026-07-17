@@ -11,7 +11,7 @@ MESSAGE = """serve.py: 410 Gone
 The target-owned cave installer runtime is retired. It will not start a
 server, import a kernel, or expose direct agent execution.
 
-Maintainers: see RAPP1_CONFORMANCE.md before restoring a runtime.
+Maintainers: see RAPP1_STATUS.md before restoring a runtime.
 """
 
 

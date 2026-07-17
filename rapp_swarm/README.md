@@ -7,4 +7,4 @@ not a RAPP/1 deployment target. Packaging and provisioning fail closed; the
 `.funcignore` deployment manifest excludes the runtime entrypoint.
 
 See `RAPP1_DEPLOYMENT_GUARD.json` and, for restoration requirements,
-`../RAPP1_CONFORMANCE.md`.
+`../RAPP1_STATUS.md`.

@@ -5,7 +5,7 @@ from agents.basic_agent import BasicAgent
 
 REFUSAL = (
     "410 Gone: the target-owned Cave capability is retired and will not "
-    "clone, import, verify, or execute agents. See RAPP1_CONFORMANCE.md."
+    "clone, import, verify, or execute agents. See RAPP1_STATUS.md."
 )
 
 

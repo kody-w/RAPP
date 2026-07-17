@@ -98,7 +98,7 @@ export default {
         error: 'gone',
         code: 'capability-route-retired',
         route: p,
-        guidance: 'RAPP1_CONFORMANCE.md',
+        guidance: 'RAPP1_STATUS.md',
       }, {
         status: 410,
         headers: { 'Cache-Control': 'no-store' },

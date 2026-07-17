@@ -6,7 +6,7 @@ rapp_swarm/provision-twin-lite.sh: 410 Gone
 Legacy Tier-2 provisioning is blocked by RAPP1_DEPLOYMENT_GUARD.json.
 No cloud resources were created and no code was published.
 
-Maintainers: see RAPP1_CONFORMANCE.md.
+Maintainers: see RAPP1_STATUS.md.
 EOF
 
 exit 78
