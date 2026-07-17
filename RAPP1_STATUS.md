@@ -16,13 +16,25 @@ The pin is deliberately **not** an authenticated registry under RAPP/1 §13.
 It carries no owner signature, trust anchor, registry sequence, key succession,
 or freshness proof.
 
-## Audit coverage and limitation
+## Audit coverage and checker limitation
 
-The 2026-07-16 audit covered **640/640 inventory entries**. That number is
-coverage, not a conformance pass count. The audit's named limitation is its
-**shallow check**: every entry received an inventory/structural check, but not
-every file received exhaustive semantic, cryptographic, runtime, or
-cross-repository verification.
+The completed 2026-07-16 audit was a literal file-by-file review:
+
+- **640/640 tracked paths** — every tracked file was individually reviewed and
+  classified;
+- **5 ZIP-compatible archives**, including **450 recursively counted archive
+  members**;
+- **2 JSON eggs**; and
+- a contextual disposition per path recorded in the audit ledger.
+
+Semantic, runtime, and cryptographic depth was applied where relevant to each
+artifact's role. This full audit is separate from the named checker:
+`rapp_check.py` is a shallow checker and is insufficient by itself. Its output
+must not be substituted for the full file/archive review and contextual ledger.
+
+Complete review coverage and classification do not establish full RAPP/1
+conformance or authenticated acceptance. The migration and owner-action
+blockers below remain open.
 
 Maintainer evidence is retained in Copilot session
 `9ac7ec28-fb92-4452-a8c9-477a2363685d`; no machine-local audit path is part of

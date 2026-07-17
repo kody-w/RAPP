@@ -131,8 +131,16 @@ class Rapp1AuthorityTests(unittest.TestCase):
             status.startswith("# NOT YET FULLY RAPP/1 CONFORMANT\n")
         )
         for phrase in (
-            "640/640",
-            "shallow check",
+            "640/640 tracked paths",
+            "every tracked file was individually reviewed and\n  classified",
+            "5 ZIP-compatible archives",
+            "450 recursively counted archive\n  members",
+            "2 JSON eggs",
+            "contextual disposition per path",
+            "Semantic, runtime, and cryptographic depth was applied where relevant",
+            "`rapp_check.py` is a shallow checker and is insufficient by itself",
+            "This full audit is separate from the named checker",
+            "do not establish full RAPP/1\nconformance or authenticated acceptance",
             "Structural validation is not authenticated acceptance",
             "Signed monotonic registry and out-of-band anchor",
             "Lawful root re-anchor",
@@ -140,6 +148,9 @@ class Rapp1AuthorityTests(unittest.TestCase):
             "External mirror correction",
         ):
             self.assertIn(phrase, status)
+        self.assertNotIn(
+            "not every file received exhaustive semantic", status
+        )
 
         for relative_path in ("README.md", "pages/kernel.html"):
             text = (ROOT / relative_path).read_text(encoding="utf-8")
