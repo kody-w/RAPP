@@ -21,12 +21,16 @@ function normalizeHost(host) {
 
 function isLocalHost(host) {
   const value = normalizeHost(host);
+  const ipVersion = net.isIP(value);
+  const firstOctet = ipVersion === 4
+    ? Number.parseInt(value.split('.')[0], 10)
+    : null;
   return value === 'localhost'
     || value.endsWith('.localhost')
     || value === '::1'
     || value === '::'
     || value === '0.0.0.0'
-    || value.startsWith('127.');
+    || (ipVersion === 4 && firstOctet === 127);
 }
 
 function requireLocal(host) {

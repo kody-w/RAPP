@@ -27,6 +27,9 @@ function expectBlocked(label, operation) {
 expectBlocked('net.Socket.prototype.connect', () => {
   new net.Socket().connect({ host: '192.0.2.1', port: 80 });
 });
+expectBlocked('127-prefixed hostname', () => {
+  new net.Socket().connect({ host: '127.attacker.example', port: 80 });
+});
 expectBlocked('tls.connect', () => {
   tls.connect({ host: '192.0.2.1', port: 443 });
 });
