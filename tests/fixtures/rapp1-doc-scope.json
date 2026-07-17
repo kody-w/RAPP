@@ -5,10 +5,10 @@
     "report_date": "2026-07-17",
     "baseline_tracked_paths": 640,
     "post_audit_tracked_paths": 691,
-    "integrated_main_commit": "303c84f1b47dbb46ade7fccf7855dfed5d4fdf94",
+    "integrated_main_commit": "d3d2623646a6111b4a7db9f1b960df233f8964c9",
     "integrated_tracked_paths": 694,
-    "integrated_tracked_bytes": 7956714,
-    "integration_note": "Current rebased tree count after post-code/post-dist integration; the 691-row final verifier ledger remains a dated source report.",
+    "integrated_tracked_bytes": 7958842,
+    "integration_note": "Current rebased tree count after post-code/post-dist/final-closure integration; the 691-row final verifier ledger remains a dated source report.",
     "status_boundary": "RAPP1_STATUS.md remains byte-identical to the code-owned owner-evidence hash; integrated counts are recorded here without rewriting owner hashes.",
     "path_set_digest": "sha256(sorted UTF-8 paths joined with newline, including final newline)",
     "provenance": {
@@ -482,13 +482,28 @@
         "pages/vault/Founding Decisions/Voice and Twin Are Forever.md",
         "pages/vault/Manifestos/Chat Is The Only Wire.md"
       ]
+    },
+    "integrated_terminal_states": {
+      "provenance": "Terminal containment from integrated main d3d2623646a6111b4a7db9f1b960df233f8964c9; not a final-ledger ID.",
+      "expected_count": 4,
+      "path_set_sha256": "7783c87857093fb556a08e951310c2effde6d72396433dc571d81fe4049664ed",
+      "sha256": {
+        "pages/index.html": "48b874fff2da3e27c0e14ab33001b24e34b2dce60f3e6a9cc3db2a44b444f7d1",
+        "cave/cubbies/kody-w/agents/rapp_installer_agent.py": "cabfb8b9067dc1a5bff1f05a22f46e95b159913df5cd330fac5b6576f7d8f055",
+        "cave/rar/index.json": "483afa7685a14decac0b9b3a0ce2ac7cb841497568ad2520c22a81ddf43e1cae",
+        "cave/super-rar/index.json": "7e5f9a59f86d1db8ae29395c7fdbf5e95eead100c90443075fd7b25b38a4fd53"
+      },
+      "paths": [
+        "pages/index.html",
+        "cave/cubbies/kody-w/agents/rapp_installer_agent.py",
+        "cave/rar/index.json",
+        "cave/super-rar/index.json"
+      ]
     }
   },
   "ownership_exclusions": {
     "index.html": "root landing page is distribution-branch-owned",
-    "pages/index.html": "pages landing page is distribution-branch-owned",
     "installer/integration_plant.sh": "executable installer integration is distribution/code-owned",
-    "cave/cubbies/kody-w/agents/rapp_installer_agent.py": "executable agent containment is post-code-owned",
     "cave/rapplications/rapp-installer/HATCH.md": "immutable prepared-clone payload",
     "cave/rapplications/rapp-installer/README.md": "immutable prepared-clone payload",
     "cave/rapplications/rapp-installer/hatch.py": "immutable prepared-clone payload",
@@ -526,7 +541,6 @@
       "installer/index.html": "installer application shell is distribution-branch-owned",
       "pages/chat.html": "application surface owned by the product/code closure",
       "pages/grail-brainstem/index.html": "application surface owned by the product/code closure",
-      "pages/index.html": "pages landing page is distribution-branch-owned",
       "pages/kernel.html": "application surface validated by the authority gate",
       "pages/lobby.html": "application surface owned by the product/code closure",
       "pages/metropolis/README.md": "metropolis application documentation owned by the product closure",
@@ -735,7 +749,8 @@
       "installer/plant_qr.html",
       "installer/seed.html",
       "pages/metropolis/index.html",
-      "pages/metropolis/plant-from-discord.html"
+      "pages/metropolis/plant-from-discord.html",
+      "pages/index.html"
     ],
     "excluded": [
       "RAPP1_AUTHORITY.json",
@@ -765,7 +780,7 @@
     "cave/.well-known/rapp-cave.json": "retired structured beacon validated by cave category rules",
     "cave/cubbies/_template/cubby.json": "retired structured template validated by cave category rules",
     "cave/cubbies/index.json": "retired structured catalog validated by cave category rules",
-    "cave/cubbies/kody-w/agents/rapp_installer_agent.py": "executable containment remains post-code-owned and externally unadvertised",
+    "cave/cubbies/kody-w/agents/rapp_installer_agent.py": "runtime tombstone asserted directly by the integrated terminal-state gate",
     "cave/cubbies/kody-w/cubby.json": "retired structured cubby metadata validated by cave category rules",
     "cave/rappid.json": "generated identity declaration; owner-authorized regeneration required",
     "cave/rapplications/rapp-installer/HATCH.md": "immutable prepared-clone payload",

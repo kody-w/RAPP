@@ -185,9 +185,9 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
     if audit.get("post_audit_tracked_paths") != 691:
         errors.append("fixture: post-audit inventory must be 691 paths")
     expected_integration = {
-        "integrated_main_commit": "303c84f1b47dbb46ade7fccf7855dfed5d4fdf94",
+        "integrated_main_commit": "d3d2623646a6111b4a7db9f1b960df233f8964c9",
         "integrated_tracked_paths": 694,
-        "integrated_tracked_bytes": 7956714,
+        "integrated_tracked_bytes": 7958842,
     }
     for field, expected in expected_integration.items():
         if audit.get(field) != expected:
@@ -450,6 +450,10 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
             9,
             "dda129ecee5bbfbc28ae24b82448168f07907b4818a58f4c676d8c46ac46beb7",
         ),
+        "integrated_terminal_states": (
+            4,
+            "7783c87857093fb556a08e951310c2effde6d72396433dc571d81fe4049664ed",
+        ),
     }
     if not isinstance(target_checks, dict) or set(target_checks) != set(
         expected_target_checks
@@ -468,6 +472,30 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
             for path in paths:
                 if not (ROOT / path).is_file():
                     errors.append(f"fixture: {name} target-check path is missing: {path}")
+    expected_terminal_hashes = {
+        "pages/index.html": (
+            "48b874fff2da3e27c0e14ab33001b24e34b2dce60f3e6a9cc3db2a44b444f7d1"
+        ),
+        "cave/cubbies/kody-w/agents/rapp_installer_agent.py": (
+            "cabfb8b9067dc1a5bff1f05a22f46e95b159913df5cd330fac5b6576f7d8f055"
+        ),
+        "cave/rar/index.json": (
+            "483afa7685a14decac0b9b3a0ce2ac7cb841497568ad2520c22a81ddf43e1cae"
+        ),
+        "cave/super-rar/index.json": (
+            "7e5f9a59f86d1db8ae29395c7fdbf5e95eead100c90443075fd7b25b38a4fd53"
+        ),
+    }
+    terminal_hashes = target_checks.get("integrated_terminal_states", {}).get(
+        "sha256", {}
+    )
+    if terminal_hashes != expected_terminal_hashes:
+        errors.append("fixture: integrated terminal-state hashes drifted")
+    for path, expected_hash in expected_terminal_hashes.items():
+        if (ROOT / path).is_file() and hashlib.sha256(
+            (ROOT / path).read_bytes()
+        ).hexdigest() != expected_hash:
+            errors.append(f"{path}: integrated main terminal bytes drifted")
 
     classifications = fixture.get("classifications")
     if not isinstance(classifications, dict):
@@ -806,6 +834,96 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
             errors.append(f"{path}: cave agent streaming must remain false")
 
     target_checks = fixture["target_checks"]
+    landing = _read("pages/index.html")
+    for token in (
+        "RAPP/1 rev-5",
+        "Pre-acceptance",
+        "RAPP1_AUTHORITY.json",
+        "RAPP1_STATUS.md",
+        "Installation is disabled",
+        "Legacy installers",
+        "are retired",
+        "not current RAPP/1 distribution paths",
+    ):
+        if token not in landing:
+            errors.append(f"pages/index.html: missing terminal claim {token!r}")
+    if re.search(
+        r"(?:curl|install\.sh|install now|deploy now|launch now)",
+        landing,
+        flags=re.IGNORECASE,
+    ):
+        errors.append("pages/index.html: restores a live install/cloud CTA")
+
+    installer_agent = _read(
+        "cave/cubbies/kody-w/agents/rapp_installer_agent.py"
+    )
+    for token in (
+        "Fail-closed tombstone",
+        "410 Gone",
+        "additionalProperties",
+        "raise RuntimeError(REFUSAL)",
+    ):
+        if token not in installer_agent:
+            errors.append(
+                "cave/cubbies/kody-w/agents/rapp_installer_agent.py: "
+                f"missing tombstone token {token!r}"
+            )
+    if re.search(
+        r"\b(?:subprocess|requests|urllib|socket)\b", installer_agent
+    ):
+        errors.append(
+            "cave/cubbies/kody-w/agents/rapp_installer_agent.py: "
+            "restores side-effecting dependencies"
+        )
+
+    rar_index = json.loads(_read("cave/rar/index.json"))
+    rar_agent = next(
+        (
+            entry
+            for entry in rar_index.get("agents", [])
+            if entry.get("name") == "@kody-w/rapp_installer"
+        ),
+        {},
+    )
+    rar_rapp = next(
+        (
+            entry
+            for entry in rar_index.get("rapps", [])
+            if entry.get("name") == "@kody-w/rapp-installer"
+        ),
+        {},
+    )
+    if (
+        rar_agent.get("status") != "retired"
+        or rar_agent.get("active_distribution") is not False
+        or rar_agent.get("sha256")
+        != "cabfb8b9067dc1a5bff1f05a22f46e95b159913df5cd330fac5b6576f7d8f055"
+    ):
+        errors.append("cave/rar/index.json: installer agent is not retired")
+    if (
+        rar_rapp.get("status") != "retired"
+        or rar_rapp.get("active_distribution") is not False
+        or rar_rapp.get("immutable_prepared_snapshot") is not True
+    ):
+        errors.append("cave/rar/index.json: prepared installer remains distributable")
+
+    super_rar = json.loads(_read("cave/super-rar/index.json"))
+    super_entries = {
+        (entry.get("kind"), entry.get("name")): entry
+        for entry in super_rar.get("entries", [])
+    }
+    super_agent = super_entries.get(("agent", "rapp_installer_agent.py"), {})
+    super_egg = super_entries.get(("egg", "cubby-rapp-installer.egg"), {})
+    if (
+        super_agent.get("status") != "retired"
+        or super_agent.get("streamable") is not False
+        or super_agent.get("sha256")
+        != "cabfb8b9067dc1a5bff1f05a22f46e95b159913df5cd330fac5b6576f7d8f055"
+    ):
+        errors.append("cave/super-rar/index.json: installer agent remains streamable")
+    if super_egg.get("streamable") is not False:
+        errors.append("cave/super-rar/index.json: installer egg remains streamable")
+
     canon_rule = rules["canon_closure"]
     for path in target_checks["canon_closure"]["paths"]:
         text = _read(path)

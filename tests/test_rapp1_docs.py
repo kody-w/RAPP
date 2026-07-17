@@ -51,7 +51,7 @@ class Rapp1DocumentationTests(unittest.TestCase):
         self.assertEqual(audit["post_audit_tracked_paths"], 691)
         self.assertEqual(
             audit["integrated_main_commit"],
-            "303c84f1b47dbb46ade7fccf7855dfed5d4fdf94",
+            "d3d2623646a6111b4a7db9f1b960df233f8964c9",
         )
         tracked = [
             path
@@ -332,15 +332,60 @@ class Rapp1DocumentationTests(unittest.TestCase):
                 "installer/seed.html",
                 "pages/metropolis/index.html",
                 "pages/metropolis/plant-from-discord.html",
+                "pages/index.html",
             },
         )
         for path in self.fixture["classifications"]["contained"]:
             text = (ROOT / path).read_text(encoding="utf-8")
             if path == "pages/metropolis/index.html":
                 self.assertNotIn("plant-from-discord", text)
+            elif path == "pages/index.html":
+                self.assertIn("Pre-acceptance", text)
+                self.assertIn("Installation is disabled", text)
             else:
                 self.assertIn("HTTP 410", text)
                 self.assertIn("retired", text.lower())
+
+    def test_final_closure_paths_are_asserted_not_owner_excluded(self) -> None:
+        ownership = self.fixture["ownership_exclusions"]
+        terminal = self.fixture["target_checks"]["integrated_terminal_states"]
+        self.assertNotIn("pages/index.html", ownership)
+        self.assertNotIn(
+            "cave/cubbies/kody-w/agents/rapp_installer_agent.py", ownership
+        )
+        self.assertEqual(len(terminal["paths"]), terminal["expected_count"])
+        for path, expected in terminal["sha256"].items():
+            self.assertEqual(
+                hashlib.sha256((ROOT / path).read_bytes()).hexdigest(), expected
+            )
+
+    def test_cave_agent_side_effect_mutation_is_rejected(self) -> None:
+        path = "cave/cubbies/kody-w/agents/rapp_installer_agent.py"
+        text = (ROOT / path).read_text(encoding="utf-8")
+        errors = self._category_mutation_errors(path, "import requests\n" + text)
+        self.assertTrue(
+            any(path in error and "side-effecting dependencies" in error for error in errors),
+            errors,
+        )
+
+    def test_cave_index_streamability_mutation_is_rejected(self) -> None:
+        path = "cave/super-rar/index.json"
+        value = json.loads((ROOT / path).read_text(encoding="utf-8"))
+        value["entries"][0]["streamable"] = True
+        errors = self._category_mutation_errors(path, json.dumps(value))
+        self.assertTrue(
+            any(path in error and "remains streamable" in error for error in errors),
+            errors,
+        )
+
+    def test_pages_landing_install_claim_mutation_is_rejected(self) -> None:
+        path = "pages/index.html"
+        text = (ROOT / path).read_text(encoding="utf-8")
+        errors = self._category_mutation_errors(path, "Install now.\n" + text)
+        self.assertTrue(
+            any(path in error and "live install/cloud CTA" in error for error in errors),
+            errors,
+        )
 
     def test_live_cave_bootstrap_mutation_is_rejected(self) -> None:
         path = "cave/.well-known/rapp-cave.json"
