@@ -105,6 +105,10 @@ class Rapp1DocumentationTests(unittest.TestCase):
             "9ac01e164dc0eb820d5f53afed82f53c501059c18a8bf66b8b23c533af728ce7",
         )
         self.assertEqual(
+            report["canon_report_sha256"],
+            "188eef4a3d2f65b93a4e0832515e8fe8b7b8826e1163b683029ab1d14bc51f59",
+        )
+        self.assertEqual(
             report["scope_commit"], "f71810db3259fea533b4112c1df300d4b0dc781c"
         )
         self.assertEqual(report["tracked_path_count"], 640)
