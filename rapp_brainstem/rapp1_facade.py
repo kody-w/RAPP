@@ -333,17 +333,23 @@ class FacadeStore:
                     """
                     ALTER TABLE idempotency
                     ADD COLUMN request_fingerprint_version INTEGER NOT NULL
-                        DEFAULT 2
+                        DEFAULT 1
                         CHECK (request_fingerprint_version IN (1, 2, 3))
                     """
                 )
-            if version == 1:
                 connection.execute(
                     """
                     UPDATE idempotency
-                    SET request_fingerprint_version = 1
-                    WHERE request_canonical IS NULL
-                    """
+                    SET request_fingerprint_version =
+                        CASE
+                            WHEN request_canonical IS NULL THEN ?
+                            ELSE ?
+                        END
+                    """,
+                    (
+                        FINGERPRINT_VERSION_UNBOUND,
+                        FINGERPRINT_VERSION_LEGACY_JSON,
+                    ),
                 )
             if version in (0, 1, 2):
                 connection.execute(

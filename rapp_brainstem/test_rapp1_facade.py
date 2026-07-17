@@ -213,6 +213,20 @@ def create_v2_completed_database(
     return response_body, legacy_fingerprint
 
 
+def initialize_with_old_v2_logic(path: Path) -> None:
+    """Reproduce the deployed v1→v2 migration that left old rows unbound."""
+    connection = sqlite3.connect(path)
+    try:
+        assert connection.execute("PRAGMA user_version").fetchone()[0] == 1
+        connection.execute(
+            "ALTER TABLE idempotency ADD COLUMN request_canonical BLOB"
+        )
+        connection.execute("PRAGMA user_version = 2")
+        connection.commit()
+    finally:
+        connection.close()
+
+
 def nested_request(total_depth: int) -> bytes:
     nested_containers = total_depth - 1
     return (
@@ -875,6 +889,94 @@ def test_v1_completed_idempotency_replays_unbound_terminal_bytes(test_dir):
     assert version == 3
     assert legacy_marker is None
     assert fingerprint_version == FINGERPRINT_VERSION_UNBOUND
+
+
+def test_v1_through_old_v2_preserves_unbound_completed_and_pending_rows(
+    test_dir,
+):
+    database = test_dir / "facade-v1-v2-v3.sqlite3"
+    legacy_body = create_v1_completed_database(database)
+    now = "2026-07-16T00:00:00+00:00"
+    with sqlite3.connect(database) as connection:
+        connection.execute(
+            """
+            INSERT INTO sessions (session_id, created_utc)
+            VALUES ('legacy-pending-session', ?)
+            """,
+            (now,),
+        )
+        connection.execute(
+            """
+            INSERT INTO idempotency (
+                scope_kind, scope_session_id, idempotency_key,
+                session_id, state, response_status, response_body,
+                created_utc, finished_utc
+            ) VALUES (
+                'create', '', 'legacy-pending-key',
+                'legacy-pending-session', 'pending', NULL, NULL, ?, NULL
+            )
+            """,
+            (now,),
+        )
+
+    initialize_with_old_v2_logic(database)
+    with sqlite3.connect(database) as connection:
+        assert connection.execute("PRAGMA user_version").fetchone()[0] == 2
+        assert connection.execute(
+            """
+            SELECT COUNT(*)
+            FROM idempotency
+            WHERE request_canonical IS NULL
+            """
+        ).fetchone()[0] == 2
+
+    inference = RecordingInference()
+    app = make_app(database, inference)
+    with app.test_client() as client:
+        completed = post_json(
+            client,
+            {
+                "user_input": "different request still replays terminal bytes",
+                "idempotency_key": "legacy-key",
+            },
+        )
+        pending = post_json(
+            client,
+            {
+                "user_input": "pending request must not re-execute",
+                "idempotency_key": "legacy-pending-key",
+            },
+        )
+
+    assert completed.status_code == 200
+    assert completed.data == legacy_body
+    assert_error(pending, "idempotency-in-progress")
+    assert inference.calls == []
+
+    with sqlite3.connect(database) as connection:
+        assert connection.execute("PRAGMA user_version").fetchone()[0] == 3
+        rows = connection.execute(
+            """
+            SELECT idempotency_key, state, request_canonical,
+                   request_fingerprint_version
+            FROM idempotency
+            ORDER BY idempotency_key
+            """
+        ).fetchall()
+    assert rows == [
+        (
+            "legacy-key",
+            "completed",
+            None,
+            FINGERPRINT_VERSION_UNBOUND,
+        ),
+        (
+            "legacy-pending-key",
+            "pending",
+            None,
+            FINGERPRINT_VERSION_UNBOUND,
+        ),
+    ]
 
 
 @pytest.mark.parametrize("transitional", [False, True])
