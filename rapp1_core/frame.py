@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, replace
 from datetime import datetime
+from threading import RLock
 from typing import Any
 
 from .canonical import CanonicalizationError, canonical_bytes, strict_loads
@@ -13,6 +14,7 @@ from .hashing import PARTICLE_SPACE, WAVE_SPACE, hash_value
 from .identity import LOWER_HASH_RE, parse_stream_id, validate_kind
 from .jws import parse_detached_jws
 from .trust import (
+    AuthenticatedHeadProof,
     CheckResult,
     CheckStatus,
     HeadState,
@@ -301,6 +303,42 @@ def _validate_head_state(head: HeadState) -> None:
         )
 
 
+def _head_proof(head: HeadState) -> AuthenticatedHeadProof:
+    if head.genesis_hash is None or type(head.signature_present) is not bool:
+        raise FrameError(
+            "head-proof-unverified",
+            "head lacks genesis or signature-presence proof",
+            step="head",
+        )
+    return AuthenticatedHeadProof(
+        stream_id=head.stream_id,
+        seq=head.seq,
+        utc=head.utc,
+        payload_hash=head.payload_hash,
+        frame_hash=head.frame_hash,
+        genesis_hash=head.genesis_hash,
+        signature_present=head.signature_present,
+    )
+
+
+def _validate_head_proof(
+    head: HeadState, proof: AuthenticatedHeadProof
+) -> None:
+    if not isinstance(proof, AuthenticatedHeadProof):
+        raise FrameError(
+            "invalid-head-proof",
+            "head proof must be an AuthenticatedHeadProof",
+            step="head",
+        )
+    expected = _head_proof(head)
+    if proof != expected:
+        raise FrameError(
+            "head-proof-mismatch",
+            "authenticated head proof does not bind the supplied head exactly",
+            step="head",
+        )
+
+
 def _head_epoch_problem(
     head: HeadState, registry: RegistryEvidence | None
 ) -> tuple[TrustStatus, str, str] | None:
@@ -516,6 +554,7 @@ def accept_frame(
     *,
     declared_stream_id: str | None,
     head: HeadState | None = None,
+    head_proof: AuthenticatedHeadProof | None = None,
     registry: RegistryEvidence | None = None,
 ) -> FrameInspection:
     """Accept only unsigned memory/body frames with complete external trust evidence."""
@@ -606,17 +645,43 @@ def accept_frame(
             return replace(
                 inspected, trust_status=TrustStatus.DRIFT, checks=tuple(checks)
             )
-    elif head is None or not head.trusted:
+    elif head is None:
         checks.append(
             CheckResult(
                 "head",
                 CheckStatus.UNVERIFIED,
-                "predecessor head is not externally trusted",
+                "predecessor head is absent",
             )
         )
         return replace(
             inspected, trust_status=TrustStatus.UNVERIFIED, checks=tuple(checks)
         )
+    elif head_proof is None:
+        detail = "predecessor head lacks explicit authenticated caller proof"
+        checks.append(CheckResult("head", CheckStatus.UNVERIFIED, detail))
+        return replace(
+            inspected,
+            accepted=False,
+            trust_status=TrustStatus.UNVERIFIED,
+            checks=tuple(checks),
+            error_code="head-proof-unverified",
+            error_step="head",
+            error=detail,
+        )
+    else:
+        try:
+            _validate_head_proof(head, head_proof)
+        except FrameError as exc:
+            checks.append(CheckResult("head", CheckStatus.FAIL, str(exc)))
+            return replace(
+                inspected,
+                accepted=False,
+                trust_status=TrustStatus.DRIFT,
+                checks=tuple(checks),
+                error_code=exc.code,
+                error_step=exc.step,
+                error=str(exc),
+            )
     if head is not None:
         epoch_problem = _head_epoch_problem(head, registry)
         if epoch_problem is not None:
@@ -681,8 +746,18 @@ class AcceptedFrameSnapshot:
     signature_present: bool
     prev: str | None
     predecessor_known: bool
+    frame_bytes: bytes | None
 
     def as_dict(self) -> dict[str, Any]:
+        frame: dict[str, Any] | None = None
+        if self.frame_bytes is not None:
+            parsed = strict_loads(self.frame_bytes)
+            if type(parsed) is not dict:
+                raise FrameError(
+                    "invalid-acceptor-snapshot",
+                    "persisted full frame is not an object",
+                )
+            frame = parsed
         return {
             "stream_id": self.stream_id,
             "seq": self.seq,
@@ -693,6 +768,7 @@ class AcceptedFrameSnapshot:
             "signature_present": self.signature_present,
             "prev": self.prev,
             "predecessor_known": self.predecessor_known,
+            "frame": frame,
         }
 
     @classmethod
@@ -707,12 +783,29 @@ class AcceptedFrameSnapshot:
             "signature_present",
             "prev",
             "predecessor_known",
+            "frame",
         }
         if type(value) is not dict or set(value) != expected:
             raise FrameError(
                 "invalid-acceptor-snapshot",
                 "accepted frame snapshot has an invalid member set",
             )
+        if value["frame"] is not None and type(value["frame"]) is not dict:
+            raise FrameError(
+                "invalid-acceptor-snapshot",
+                "accepted frame snapshot full frame must be an object or null",
+            )
+        try:
+            frame_bytes = (
+                None
+                if value["frame"] is None
+                else canonical_bytes(value["frame"])
+            )
+        except CanonicalizationError as exc:
+            raise FrameError(
+                "invalid-acceptor-snapshot",
+                "accepted frame snapshot full frame is invalid",
+            ) from exc
         return cls(
             stream_id=value["stream_id"],
             seq=value["seq"],
@@ -723,6 +816,7 @@ class AcceptedFrameSnapshot:
             signature_present=value["signature_present"],
             prev=value["prev"],
             predecessor_known=value["predecessor_known"],
+            frame_bytes=frame_bytes,
         )
 
     def as_head(self) -> HeadState:
@@ -776,6 +870,33 @@ class FrameAcceptorSnapshot:
         return snapshot
 
 
+def _snapshot_frame_value(
+    frame: AcceptedFrameSnapshot,
+) -> dict[str, Any] | None:
+    if frame.frame_bytes is None:
+        return None
+    if type(frame.frame_bytes) is not bytes:
+        raise FrameError(
+            "invalid-acceptor-snapshot",
+            "persisted full frame must be immutable canonical bytes",
+        )
+    try:
+        value = strict_loads(frame.frame_bytes)
+        if type(value) is not dict or canonical_bytes(value) != frame.frame_bytes:
+            raise FrameError(
+                "invalid-acceptor-snapshot",
+                "persisted full frame is not a canonical frame object",
+            )
+    except (CanonicalizationError, FrameError) as exc:
+        if isinstance(exc, FrameError):
+            raise
+        raise FrameError(
+            "invalid-acceptor-snapshot",
+            "persisted full frame is invalid",
+        ) from exc
+    return value
+
+
 def _validate_acceptor_snapshot(snapshot: FrameAcceptorSnapshot) -> None:
     if not isinstance(snapshot, FrameAcceptorSnapshot):
         raise TypeError("snapshot must be FrameAcceptorSnapshot")
@@ -803,6 +924,36 @@ def _validate_acceptor_snapshot(snapshot: FrameAcceptorSnapshot) -> None:
                 "invalid-acceptor-snapshot",
                 "snapshot requires genesis and signature-presence proof",
             )
+        full_frame = _snapshot_frame_value(frame)
+        if full_frame is not None:
+            expected_metadata = (
+                full_frame.get("stream_id"),
+                full_frame.get("seq"),
+                full_frame.get("utc"),
+                full_frame.get("payload_hash"),
+                full_frame.get("frame_hash"),
+                full_frame.get("sig") is not None,
+                full_frame.get("prev"),
+            )
+            persisted_metadata = (
+                frame.stream_id,
+                frame.seq,
+                frame.utc,
+                frame.payload_hash,
+                frame.frame_hash,
+                frame.signature_present,
+                frame.prev,
+            )
+            if expected_metadata != persisted_metadata:
+                raise FrameError(
+                    "invalid-acceptor-snapshot",
+                    "persisted full frame conflicts with snapshot metadata",
+                )
+            if not frame.predecessor_known:
+                raise FrameError(
+                    "invalid-acceptor-snapshot",
+                    "persisted full frame must retain predecessor evidence",
+                )
         key = (frame.stream_id, frame.seq)
         if key in seen:
             raise FrameError(
@@ -835,6 +986,38 @@ def _validate_acceptor_snapshot(snapshot: FrameAcceptorSnapshot) -> None:
                 "invalid-acceptor-snapshot",
                 "snapshot stream spans more than one genesis epoch",
             )
+        full_count = sum(
+            frame.frame_bytes is not None for frame in stream_frames.values()
+        )
+        if full_count == len(stream_frames):
+            sequences = sorted(stream_frames)
+            if sequences != list(range(sequences[-1] + 1)):
+                raise FrameError(
+                    "invalid-acceptor-snapshot",
+                    "persisted full history must descend contiguously from seq 0",
+                )
+            root = stream_frames[0]
+            if root.frame_hash != root.genesis_hash:
+                raise FrameError(
+                    "invalid-acceptor-snapshot",
+                    "persisted seq-0 frame does not equal the claimed genesis",
+                )
+            predecessor: AcceptedFrameSnapshot | None = None
+            for seq in sequences:
+                persisted = stream_frames[seq]
+                value = _snapshot_frame_value(persisted)
+                assert value is not None
+                inspected = inspect_frame(
+                    value,
+                    declared_stream_id=persisted.stream_id,
+                    head=None if predecessor is None else predecessor.as_head(),
+                )
+                if not inspected.structurally_valid:
+                    raise FrameError(
+                        "invalid-acceptor-snapshot",
+                        "persisted full history fails structural verification",
+                    )
+                predecessor = persisted
         for seq, frame in stream_frames.items():
             if not frame.predecessor_known or seq == 0:
                 continue
@@ -875,8 +1058,75 @@ def _validate_acceptor_snapshot(snapshot: FrameAcceptorSnapshot) -> None:
             )
 
 
+def _validate_snapshot_roots(
+    snapshot: FrameAcceptorSnapshot, registry: RegistryEvidence
+) -> None:
+    if not registry.authenticated:
+        raise FrameError(
+            "snapshot-registry-unverified",
+            "snapshot restoration requires an authenticated registry",
+        )
+    if not registry.fresh:
+        raise FrameError(
+            "snapshot-registry-stale",
+            "snapshot restoration requires a fresh registry",
+        )
+    by_stream: dict[str, list[AcceptedFrameSnapshot]] = {}
+    for frame in snapshot.frames:
+        by_stream.setdefault(frame.stream_id, []).append(frame)
+    for stream_id, stream_frames in by_stream.items():
+        if any(frame.frame_bytes is None for frame in stream_frames):
+            raise FrameError(
+                "snapshot-root-unverified",
+                "rootless snapshot history requires separate caller authentication",
+            )
+        root = stream_frames[0]
+        current_genesis = registry.genesis_hashes.get(stream_id)
+        if (
+            root.seq != 0
+            or root.frame_hash != root.genesis_hash
+            or root.frame_hash != current_genesis
+        ):
+            raise FrameError(
+                "snapshot-genesis-mismatch",
+                "snapshot root is not the current authenticated registry genesis",
+            )
+        predecessor: AcceptedFrameSnapshot | None = None
+        for persisted in stream_frames:
+            value = _snapshot_frame_value(persisted)
+            assert value is not None
+            inspected = inspect_frame(
+                value,
+                declared_stream_id=stream_id,
+                head=None if predecessor is None else predecessor.as_head(),
+                registry=registry,
+            )
+            if (
+                not inspected.structurally_valid
+                or any(
+                    check.status is CheckStatus.UNVERIFIED
+                    for check in inspected.checks
+                )
+            ):
+                raise FrameError(
+                    "snapshot-history-invalid",
+                    "snapshot history does not verify under the current registry",
+                )
+            stream = parse_stream_id(stream_id)
+            if (
+                _is_regenesis(value)
+                or stream.family == "swarm"
+                or value["sig"] is not None
+            ):
+                raise FrameError(
+                    "snapshot-acceptance-unverified",
+                    "snapshot contains a frame this core cannot authenticate",
+                )
+            predecessor = persisted
+
+
 class FrameAcceptor:
-    """Stateful no-rollback acceptor with persistent fork quarantine."""
+    """Thread-safe no-rollback acceptor with persistent fork quarantine."""
 
     def __init__(
         self,
@@ -884,6 +1134,7 @@ class FrameAcceptor:
         *,
         snapshot: FrameAcceptorSnapshot | None = None,
     ) -> None:
+        self._lock = RLock()
         self._registry = registry
         self._heads: dict[str, HeadState] = {}
         self._history: dict[str, dict[int, AcceptedFrameSnapshot]] = {}
@@ -892,12 +1143,18 @@ class FrameAcceptor:
             self._restore(snapshot)
 
     def head(self, stream_id: str) -> HeadState | None:
-        return self._heads.get(stream_id)
+        with self._lock:
+            return self._heads.get(stream_id)
 
     def is_quarantined(self, stream_id: str) -> bool:
-        return stream_id in self._quarantined
+        with self._lock:
+            return stream_id in self._quarantined
 
     def snapshot(self) -> FrameAcceptorSnapshot:
+        with self._lock:
+            return self._snapshot_locked()
+
+    def _snapshot_locked(self) -> FrameAcceptorSnapshot:
         frames = tuple(
             sorted(
                 (
@@ -918,13 +1175,15 @@ class FrameAcceptor:
         return snapshot
 
     def _restore(self, snapshot: FrameAcceptorSnapshot) -> None:
-        _validate_acceptor_snapshot(snapshot)
-        for frame in snapshot.frames:
-            self._history.setdefault(frame.stream_id, {})[frame.seq] = frame
-            current = self._heads.get(frame.stream_id)
-            if current is None or frame.seq > current.seq:
-                self._heads[frame.stream_id] = frame.as_head()
-        self._quarantined.update(snapshot.quarantined_streams)
+        with self._lock:
+            _validate_acceptor_snapshot(snapshot)
+            _validate_snapshot_roots(snapshot, self._registry)
+            for frame in snapshot.frames:
+                self._history.setdefault(frame.stream_id, {})[frame.seq] = frame
+                current = self._heads.get(frame.stream_id)
+                if current is None or frame.seq > current.seq:
+                    self._heads[frame.stream_id] = frame.as_head()
+            self._quarantined.update(snapshot.quarantined_streams)
 
     @staticmethod
     def _state_failure(
@@ -986,7 +1245,15 @@ class FrameAcceptor:
             signature_present=frame["sig"] is not None,
         )
         self._heads[frame["stream_id"]] = head
-        self._history.setdefault(frame["stream_id"], {})[frame["seq"]] = (
+        stream_history = self._history.setdefault(frame["stream_id"], {})
+        retain_full_frame = frame["seq"] == 0 or (
+            0 in stream_history
+            and all(
+                persisted.frame_bytes is not None
+                for persisted in stream_history.values()
+            )
+        )
+        stream_history[frame["seq"]] = (
             AcceptedFrameSnapshot(
                 stream_id=head.stream_id,
                 seq=head.seq,
@@ -997,15 +1264,43 @@ class FrameAcceptor:
                 signature_present=head.signature_present,
                 prev=frame["prev"],
                 predecessor_known=True,
+                frame_bytes=canonical_bytes(frame) if retain_full_frame else None,
             )
         )
 
-    def seed_trusted_head(self, head: HeadState) -> None:
+    def seed_trusted_head(
+        self,
+        head: HeadState,
+        *,
+        proof: AuthenticatedHeadProof | None = None,
+    ) -> None:
+        with self._lock:
+            self._seed_trusted_head_locked(head, proof=proof)
+
+    def _seed_trusted_head_locked(
+        self,
+        head: HeadState,
+        *,
+        proof: AuthenticatedHeadProof | None,
+    ) -> None:
         _validate_head_state(head)
         if not head.trusted:
             raise FrameError(
                 "untrusted-head", "only an externally trusted head can seed state"
             )
+        current = self._heads.get(head.stream_id)
+        if current == head:
+            epoch_problem = _head_epoch_problem(head, self._registry)
+            if epoch_problem is not None:
+                _, code, detail = epoch_problem
+                raise FrameError(code, detail)
+            return
+        if proof is None:
+            raise FrameError(
+                "head-proof-unverified",
+                "rootless seed requires an explicit AuthenticatedHeadProof",
+            )
+        _validate_head_proof(head, proof)
         epoch_problem = _head_epoch_problem(head, self._registry)
         if epoch_problem is not None:
             _, code, detail = epoch_problem
@@ -1015,9 +1310,6 @@ class FrameAcceptor:
                 "head-signature-proof-missing",
                 "seed head requires signature-presence proof",
             )
-        current = self._heads.get(head.stream_id)
-        if current == head:
-            return
         if head.stream_id in self._quarantined:
             raise FrameError(
                 "stream-quarantined",
@@ -1051,6 +1343,7 @@ class FrameAcceptor:
                 signature_present=head.signature_present,
                 prev=None,
                 predecessor_known=False,
+                frame_bytes=None,
             )
         )
 
@@ -1263,12 +1556,21 @@ class FrameAcceptor:
     def accept(
         self, frame: dict[str, Any], *, declared_stream_id: str
     ) -> FrameInspection:
+        with self._lock:
+            return self._accept_locked(
+                frame, declared_stream_id=declared_stream_id
+            )
+
+    def _accept_locked(
+        self, frame: dict[str, Any], *, declared_stream_id: str
+    ) -> FrameInspection:
         current = self._heads.get(declared_stream_id)
         if _is_regenesis(frame):
             return accept_frame(
                 frame,
                 declared_stream_id=declared_stream_id,
                 head=current,
+                head_proof=None if current is None else _head_proof(current),
                 registry=self._registry,
             )
 
@@ -1361,6 +1663,7 @@ class FrameAcceptor:
             frame,
             declared_stream_id=declared_stream_id,
             head=current,
+            head_proof=None if current is None else _head_proof(current),
             registry=self._registry,
         )
         if inspected.accepted:

@@ -55,3 +55,21 @@ class HeadState:
     trusted: bool = False
     genesis_hash: str | None = None
     signature_present: bool | None = None
+
+
+@dataclass(frozen=True)
+class AuthenticatedHeadProof:
+    """Caller-authenticated proof binding a rootless head to a registry epoch.
+
+    This type deliberately has no JSON parser or serializer. Constructing it is
+    an explicit external trust-boundary operation; HeadState fields alone never
+    prove that a head was authenticated.
+    """
+
+    stream_id: str
+    seq: int
+    utc: str
+    payload_hash: str
+    frame_hash: str
+    genesis_hash: str
+    signature_present: bool

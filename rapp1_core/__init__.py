@@ -21,12 +21,13 @@ from .identity import (
     validate_kind,
 )
 from .jws import parse_detached_jws
-from .trust import HeadState, RegistryEvidence, TrustStatus
+from .trust import AuthenticatedHeadProof, HeadState, RegistryEvidence, TrustStatus
 
 __all__ = [
     "H",
     "Hb",
     "AcceptedFrameSnapshot",
+    "AuthenticatedHeadProof",
     "FrameAcceptor",
     "FrameAcceptorSnapshot",
     "HeadState",

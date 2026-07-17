@@ -1,15 +1,20 @@
 from __future__ import annotations
 
 import base64
+import threading
+from concurrent.futures import ThreadPoolExecutor
+from typing import Any
 
 import pytest
 
+import rapp1_core.frame as frame_module
 from rapp1_core.canonical import canonical_bytes, strict_loads
 from rapp1_core.frame import (
     FRAME_KEYS,
     FrameAcceptor,
     FrameAcceptorSnapshot,
     FrameError,
+    FrameInspection,
     accept_frame,
     build_frame,
     inspect_frame,
@@ -18,7 +23,12 @@ from rapp1_core.frame import (
 )
 from rapp1_core.jws import SignatureStructureError, parse_detached_jws
 from rapp1_core.hashing import PARTICLE_SPACE, WAVE_SPACE, hash_value
-from rapp1_core.trust import HeadState, RegistryEvidence, TrustStatus
+from rapp1_core.trust import (
+    AuthenticatedHeadProof,
+    HeadState,
+    RegistryEvidence,
+    TrustStatus,
+)
 
 RID1 = "rappid:@kody-w/one:" + "1" * 64
 RID2 = "rappid:@kody-w/two:" + "2" * 64
@@ -78,6 +88,20 @@ def _head(
         trusted=trusted,
         genesis_hash=genesis_hash,
         signature_present=frame["sig"] is not None,
+    )
+
+
+def _proof(head: HeadState) -> AuthenticatedHeadProof:
+    assert head.genesis_hash is not None
+    assert type(head.signature_present) is bool
+    return AuthenticatedHeadProof(
+        stream_id=head.stream_id,
+        seq=head.seq,
+        utc=head.utc,
+        payload_hash=head.payload_hash,
+        frame_hash=head.frame_hash,
+        genesis_hash=head.genesis_hash,
+        signature_present=head.signature_present,
     )
 
 
@@ -410,11 +434,8 @@ def test_re_genesis_exact_shape_and_no_state_reset_without_owner_verification() 
     )
     old_acceptor = FrameAcceptor(old_registry)
     assert old_acceptor.accept(old, declared_stream_id=RID1).accepted
-    acceptor = FrameAcceptor(registry, snapshot=old_acceptor.snapshot())
-    refused = acceptor.accept(frame, declared_stream_id=RID1)
-    assert not refused.accepted
-    assert refused.trust_status is TrustStatus.UNVERIFIED
-    assert acceptor.head(RID1).frame_hash == old["frame_hash"]
+    with pytest.raises(FrameError, match="current authenticated registry genesis"):
+        FrameAcceptor(registry, snapshot=old_acceptor.snapshot())
 
     invalid_cases = []
     unsigned = dict(frame, sig=None)
@@ -504,13 +525,32 @@ def test_non_genesis_requires_trusted_head_for_acceptance() -> None:
     )
     assert not untrusted.accepted
     assert untrusted.trust_status is TrustStatus.UNVERIFIED
-    accepted = accept_frame(
+    asserted_only = accept_frame(
         successor,
         declared_stream_id=RID1,
         head=_head(genesis, trusted=True),
         registry=registry,
     )
+    assert not asserted_only.accepted
+    assert asserted_only.error_code == "head-proof-unverified"
+
+    trusted_head = _head(genesis, trusted=True)
+    accepted = accept_frame(
+        successor,
+        declared_stream_id=RID1,
+        head=trusted_head,
+        head_proof=_proof(trusted_head),
+        registry=registry,
+    )
     assert accepted.accepted
+
+    seeded = FrameAcceptor(registry)
+    with pytest.raises(FrameError, match="AuthenticatedHeadProof"):
+        seeded.seed_trusted_head(trusted_head)
+    seeded.seed_trusted_head(trusted_head, proof=_proof(trusted_head))
+    assert seeded.accept(successor, declared_stream_id=RID1).accepted
+    with pytest.raises(FrameError, match="rootless snapshot"):
+        FrameAcceptor(registry, snapshot=seeded.snapshot())
 
 
 def test_swarm_is_never_accepted_without_real_signature_verification() -> None:
@@ -748,13 +788,15 @@ def test_fork_quarantine_survives_snapshot_and_restart() -> None:
     refused = restarted.accept(branch_a2, declared_stream_id=RID1)
     assert not refused.accepted
     assert refused.error_code == "stream-quarantined"
+    branch_head = _head(
+        branch_a2,
+        trusted=True,
+        genesis_hash=genesis["frame_hash"],
+    )
     with pytest.raises(FrameError, match="quarantine"):
         restarted.seed_trusted_head(
-            _head(
-                branch_a2,
-                trusted=True,
-                genesis_hash=genesis["frame_hash"],
-            )
+            branch_head,
+            proof=_proof(branch_head),
         )
 
 
@@ -785,21 +827,8 @@ def test_restored_head_cannot_extend_after_registry_genesis_epoch_changes() -> N
         authenticated=True,
         fresh=True,
     )
-    restarted = FrameAcceptor(changed_registry, snapshot=persisted)
-    branch_a2 = build_frame(
-        kind="body.pulse",
-        stream_id=RID1,
-        seq=2,
-        utc=UTC2,
-        payload={"branch": "A2"},
-        prev=branch_a["payload_hash"],
-        prev_wave=None,
-    )
-    frozen = restarted.accept(branch_a2, declared_stream_id=RID1)
-    assert not frozen.accepted
-    assert frozen.trust_status is TrustStatus.DRIFT
-    assert frozen.error_code == "retired-genesis-epoch"
-    assert restarted.head(RID1).frame_hash == branch_a["frame_hash"]
+    with pytest.raises(FrameError, match="current authenticated registry genesis"):
+        FrameAcceptor(changed_registry, snapshot=persisted)
 
     proofless = _head(genesis, trusted=True)
     proofless = HeadState(
@@ -820,7 +849,7 @@ def test_restored_head_cannot_extend_after_registry_genesis_epoch_changes() -> N
     )
     assert not direct.accepted
     assert direct.trust_status is TrustStatus.UNVERIFIED
-    assert direct.error_code == "head-epoch-unverified"
+    assert direct.error_code == "head-proof-unverified"
 
 
 def test_exact_reseed_preserves_fork_metadata_and_quarantines_b_then_a2() -> None:
@@ -847,6 +876,7 @@ def test_exact_reseed_preserves_fork_metadata_and_quarantines_b_then_a2() -> Non
     )
     assert acceptor.accept(branch_a, declared_stream_id=RID1).accepted
     known_head = acceptor.head(RID1)
+    assert known_head is not None
     acceptor.seed_trusted_head(known_head)
     fork = acceptor.accept(branch_b, declared_stream_id=RID1)
     assert not fork.accepted
@@ -893,7 +923,10 @@ def test_current_head_replay_enforces_swarm_and_signature_step_six() -> None:
         fresh=True,
     )
     unsigned_acceptor = FrameAcceptor(unsigned_registry)
-    unsigned_acceptor.seed_trusted_head(_head(unsigned, trusted=True))
+    unsigned_head = _head(unsigned, trusted=True)
+    unsigned_acceptor.seed_trusted_head(
+        unsigned_head, proof=_proof(unsigned_head)
+    )
     unsigned_replay = unsigned_acceptor.accept(
         unsigned, declared_stream_id="net:replay"
     )
@@ -918,7 +951,8 @@ def test_current_head_replay_enforces_swarm_and_signature_step_six() -> None:
         fresh=True,
     )
     signed_acceptor = FrameAcceptor(signed_registry)
-    signed_acceptor.seed_trusted_head(_head(signed, trusted=True))
+    signed_head = _head(signed, trusted=True)
+    signed_acceptor.seed_trusted_head(signed_head, proof=_proof(signed_head))
     signed_replay = signed_acceptor.accept(
         signed, declared_stream_id="net:signed-replay"
     )
@@ -983,3 +1017,108 @@ def test_deprecated_historical_competitor_still_quarantines_fork() -> None:
     refused = restarted.accept(branch_a2, declared_stream_id=RID1)
     assert not refused.accepted
     assert refused.error_code == "stream-quarantined"
+
+
+def test_synchronized_same_seq_race_accepts_one_and_quarantines(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    genesis = _body_genesis()
+    acceptor = FrameAcceptor(_registry(genesis))
+    assert acceptor.accept(genesis, declared_stream_id=RID1).accepted
+    branches = [
+        build_frame(
+            kind="body.pulse",
+            stream_id=RID1,
+            seq=1,
+            utc=UTC1,
+            payload={"branch": branch},
+            prev=genesis["payload_hash"],
+            prev_wave=None,
+        )
+        for branch in ("A", "B")
+    ]
+
+    real_accept_frame = frame_module.accept_frame
+    inspect_gate = threading.Barrier(2)
+
+    def gated_accept_frame(*args: Any, **kwargs: Any) -> FrameInspection:
+        try:
+            inspect_gate.wait(timeout=0.25)
+        except threading.BrokenBarrierError:
+            pass
+        return real_accept_frame(*args, **kwargs)
+
+    monkeypatch.setattr(frame_module, "accept_frame", gated_accept_frame)
+    start_gate = threading.Barrier(2)
+
+    def submit(frame: dict) -> FrameInspection:
+        start_gate.wait(timeout=2)
+        return acceptor.accept(frame, declared_stream_id=RID1)
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = [executor.submit(submit, frame) for frame in branches]
+        results = [future.result(timeout=3) for future in futures]
+
+    winners = [result for result in results if result.accepted]
+    losers = [result for result in results if not result.accepted]
+    assert len(winners) == 1
+    assert winners[0].trust_status is TrustStatus.VERIFIED
+    assert len(losers) == 1
+    assert losers[0].error_code == "fork-quarantined"
+    assert acceptor.is_quarantined(RID1)
+
+    for branch in branches:
+        descendant = build_frame(
+            kind="body.pulse",
+            stream_id=RID1,
+            seq=2,
+            utc=UTC2,
+            payload={"after": branch["payload"]["branch"]},
+            prev=branch["payload_hash"],
+            prev_wave=None,
+        )
+        refused = acceptor.accept(descendant, declared_stream_id=RID1)
+        assert not refused.accepted
+        assert refused.error_code == "stream-quarantined"
+
+
+def test_snapshot_cannot_label_rogue_root_as_registry_genesis() -> None:
+    rogue_root = _body_genesis()
+    rogue_registry = _registry(rogue_root)
+    rogue_acceptor = FrameAcceptor(rogue_registry)
+    assert rogue_acceptor.accept(rogue_root, declared_stream_id=RID1).accepted
+    rogue_child = build_frame(
+        kind="body.pulse",
+        stream_id=RID1,
+        seq=1,
+        utc=UTC1,
+        payload={"rogue": True},
+        prev=rogue_root["payload_hash"],
+        prev_wave=None,
+    )
+    assert rogue_acceptor.accept(rogue_child, declared_stream_id=RID1).accepted
+
+    registry_genesis = build_frame(
+        kind="body.pulse",
+        stream_id=RID1,
+        seq=0,
+        utc=UTC0,
+        payload={"authenticated": True},
+        prev=None,
+        prev_wave=None,
+    )
+    registry = _registry(registry_genesis)
+    relabeled = rogue_acceptor.snapshot().as_dict()
+    for persisted in relabeled["frames"]:
+        persisted["genesis_hash"] = registry_genesis["frame_hash"]
+    with pytest.raises(FrameError, match="claimed genesis"):
+        FrameAcceptorSnapshot.from_dict(relabeled)
+
+    with pytest.raises(FrameError, match="current authenticated registry genesis"):
+        FrameAcceptor(registry, snapshot=rogue_acceptor.snapshot())
+
+    clean = FrameAcceptor(registry)
+    refused = clean.accept(rogue_child, declared_stream_id=RID1)
+    assert not refused.accepted
+    assert refused.trust_status is TrustStatus.UNVERIFIED
+    assert clean.head(RID1) is None
