@@ -5,10 +5,10 @@
     "report_date": "2026-07-17",
     "baseline_tracked_paths": 640,
     "post_audit_tracked_paths": 691,
-    "integrated_main_commit": "d3d2623646a6111b4a7db9f1b960df233f8964c9",
-    "integrated_tracked_paths": 694,
-    "integrated_tracked_bytes": 7962379,
-    "integration_note": "Current rebased tree count after post-code/post-dist/final-closure integration; the 691-row final verifier ledger remains a dated source report.",
+    "integrated_main_commit": "bd122780ac90010e607ce9549e7c5ed18bee5d73",
+    "integrated_tracked_paths": 693,
+    "integrated_tracked_bytes": 7930980,
+    "integration_note": "Current closure tree after removing the last live Cave installer agent; the 691-row final verifier ledger remains a dated source report.",
     "status_boundary": "RAPP1_STATUS.md remains byte-identical to the code-owned owner-evidence hash; integrated counts are recorded here without rewriting owner hashes.",
     "path_set_digest": "sha256(sorted UTF-8 paths joined with newline, including final newline)",
     "provenance": {
@@ -262,8 +262,8 @@
         ]
       },
       "POST-CONTAIN-CAVE": {
-        "expected_count": 20,
-        "path_set_sha256": "9872aa4784ec83a3a82a9d7f972bfa44c8109e87225dbd463735dce5abe4f4e5",
+        "expected_count": 19,
+        "path_set_sha256": "35fdfc5ea271996788365b68359dc6404f544e1d2b10632c79c8992fe7ecdf81",
         "paths": [
           "cave/.well-known/rapp-cave.json",
           "cave/CONTRIBUTING.md",
@@ -271,7 +271,6 @@
           "cave/README.md",
           "cave/cubbies/_template/cubby.json",
           "cave/cubbies/index.json",
-          "cave/cubbies/kody-w/agents/rapp_installer_agent.py",
           "cave/cubbies/kody-w/cubby.json",
           "cave/cubbies/kody-w/front_door.md",
           "cave/holo.md",
@@ -484,18 +483,16 @@
       ]
     },
     "integrated_terminal_states": {
-      "provenance": "Terminal containment from integrated main d3d2623646a6111b4a7db9f1b960df233f8964c9; not a final-ledger ID.",
-      "expected_count": 4,
-      "path_set_sha256": "7783c87857093fb556a08e951310c2effde6d72396433dc571d81fe4049664ed",
+      "provenance": "Terminal containment after removing the final Cave installer agent; not a final-ledger ID.",
+      "expected_count": 3,
+      "path_set_sha256": "c9bba8f59689ee0df4c0df065404470df9a02c6872fbe80619b17b8c18ca8706",
       "sha256": {
         "pages/index.html": "48b874fff2da3e27c0e14ab33001b24e34b2dce60f3e6a9cc3db2a44b444f7d1",
-        "cave/cubbies/kody-w/agents/rapp_installer_agent.py": "cabfb8b9067dc1a5bff1f05a22f46e95b159913df5cd330fac5b6576f7d8f055",
-        "cave/rar/index.json": "483afa7685a14decac0b9b3a0ce2ac7cb841497568ad2520c22a81ddf43e1cae",
-        "cave/super-rar/index.json": "7e5f9a59f86d1db8ae29395c7fdbf5e95eead100c90443075fd7b25b38a4fd53"
+        "cave/rar/index.json": "c997c3ab2b58fb1eec081630a93ad8c3dc6750a6ce9017a07c38f973017461ba",
+        "cave/super-rar/index.json": "04f5f7282e71376081e180b0be5e7a04d2f1b2873a0998c2c4b66e6a8e13a4e3"
       },
       "paths": [
         "pages/index.html",
-        "cave/cubbies/kody-w/agents/rapp_installer_agent.py",
         "cave/rar/index.json",
         "cave/super-rar/index.json"
       ]
@@ -772,7 +769,6 @@
       "cave/.well-known/rapp-cave.json",
       "cave/cubbies/_template/cubby.json",
       "cave/cubbies/index.json",
-      "cave/cubbies/kody-w/agents/rapp_installer_agent.py",
       "cave/cubbies/kody-w/cubby.json",
       "cave/rappid.json",
       "cave/rapplications/rapp-installer/HATCH.md",
@@ -794,7 +790,6 @@
     "cave/.well-known/rapp-cave.json": "retired structured beacon validated by cave category rules",
     "cave/cubbies/_template/cubby.json": "retired structured template validated by cave category rules",
     "cave/cubbies/index.json": "retired structured catalog validated by cave category rules",
-    "cave/cubbies/kody-w/agents/rapp_installer_agent.py": "runtime tombstone asserted directly by the integrated terminal-state gate",
     "cave/cubbies/kody-w/cubby.json": "retired structured cubby metadata validated by cave category rules",
     "cave/rappid.json": "generated identity declaration; owner-authorized regeneration required",
     "cave/rapplications/rapp-installer/HATCH.md": "immutable prepared-clone payload",

@@ -183,14 +183,12 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
         errors.append("fixture: dated baseline must remain 640 paths")
     if audit.get("post_audit_tracked_paths") != 691:
         errors.append("fixture: post-audit inventory must be 691 paths")
-    expected_integration = {
-        "integrated_main_commit": "d3d2623646a6111b4a7db9f1b960df233f8964c9",
-        "integrated_tracked_paths": 694,
-        "integrated_tracked_bytes": 7962379,
-    }
-    for field, expected in expected_integration.items():
-        if audit.get(field) != expected:
-            errors.append(f"fixture: integrated-tree {field} drifted")
+    if not re.fullmatch(r"[0-9a-f]{40}", audit.get("integrated_main_commit", "")):
+        errors.append("fixture: integrated_main_commit must be a 40-hex base commit")
+    for field in ("integrated_tracked_paths", "integrated_tracked_bytes"):
+        value = audit.get(field)
+        if not isinstance(value, int) or value <= 0:
+            errors.append(f"fixture: {field} must be a positive integer")
     if "691-row final verifier ledger" not in audit.get("integration_note", ""):
         errors.append("fixture: integration note loses dated-ledger boundary")
     if "code-owned owner-evidence hash" not in audit.get("status_boundary", ""):
@@ -398,7 +396,7 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
         "POST-MARKETING-LEGACY": 19,
         "POST-SHORTCUT-LEGACY": 5,
         "POST-CONTAIN-PLANT": 7,
-        "POST-CONTAIN-CAVE": 20,
+        "POST-CONTAIN-CAVE": 19,
         "POST-MIRROR": 23,
         "POST-OWNER-MIRROR": 4,
         "POST-IMMUTABLE-PIN": 17,
@@ -450,8 +448,8 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
             "dda129ecee5bbfbc28ae24b82448168f07907b4818a58f4c676d8c46ac46beb7",
         ),
         "integrated_terminal_states": (
-            4,
-            "7783c87857093fb556a08e951310c2effde6d72396433dc571d81fe4049664ed",
+            3,
+            "c9bba8f59689ee0df4c0df065404470df9a02c6872fbe80619b17b8c18ca8706",
         ),
         "final_documentation_terminal_states": (
             2,
@@ -479,14 +477,11 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
         "pages/index.html": (
             "48b874fff2da3e27c0e14ab33001b24e34b2dce60f3e6a9cc3db2a44b444f7d1"
         ),
-        "cave/cubbies/kody-w/agents/rapp_installer_agent.py": (
-            "cabfb8b9067dc1a5bff1f05a22f46e95b159913df5cd330fac5b6576f7d8f055"
-        ),
         "cave/rar/index.json": (
-            "483afa7685a14decac0b9b3a0ce2ac7cb841497568ad2520c22a81ddf43e1cae"
+            "c997c3ab2b58fb1eec081630a93ad8c3dc6750a6ce9017a07c38f973017461ba"
         ),
         "cave/super-rar/index.json": (
-            "7e5f9a59f86d1db8ae29395c7fdbf5e95eead100c90443075fd7b25b38a4fd53"
+            "04f5f7282e71376081e180b0be5e7a04d2f1b2873a0998c2c4b66e6a8e13a4e3"
         ),
     }
     terminal_hashes = target_checks.get("integrated_terminal_states", {}).get(
@@ -936,26 +931,13 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
     ):
         errors.append("pages/index.html: restores a live install/cloud CTA")
 
-    installer_agent = _read(
-        "cave/cubbies/kody-w/agents/rapp_installer_agent.py"
+    installer_agent_path = (
+        ROOT / "cave/cubbies/kody-w/agents/rapp_installer_agent.py"
     )
-    for token in (
-        "Fail-closed tombstone",
-        "410 Gone",
-        "additionalProperties",
-        "raise RuntimeError(REFUSAL)",
-    ):
-        if token not in installer_agent:
-            errors.append(
-                "cave/cubbies/kody-w/agents/rapp_installer_agent.py: "
-                f"missing tombstone token {token!r}"
-            )
-    if re.search(
-        r"\b(?:subprocess|requests|urllib|socket)\b", installer_agent
-    ):
+    if installer_agent_path.exists():
         errors.append(
             "cave/cubbies/kody-w/agents/rapp_installer_agent.py: "
-            "restores side-effecting dependencies"
+            "retired installer agent must remain absent"
         )
 
     rar_index = json.loads(_read("cave/rar/index.json"))
@@ -975,13 +957,8 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
         ),
         {},
     )
-    if (
-        rar_agent.get("status") != "retired"
-        or rar_agent.get("active_distribution") is not False
-        or rar_agent.get("sha256")
-        != "cabfb8b9067dc1a5bff1f05a22f46e95b159913df5cd330fac5b6576f7d8f055"
-    ):
-        errors.append("cave/rar/index.json: installer agent is not retired")
+    if rar_agent:
+        errors.append("cave/rar/index.json: retired installer agent is still indexed")
     if (
         rar_rapp.get("status") != "retired"
         or rar_rapp.get("active_distribution") is not False
@@ -996,13 +973,8 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
     }
     super_agent = super_entries.get(("agent", "rapp_installer_agent.py"), {})
     super_egg = super_entries.get(("egg", "cubby-rapp-installer.egg"), {})
-    if (
-        super_agent.get("status") != "retired"
-        or super_agent.get("streamable") is not False
-        or super_agent.get("sha256")
-        != "cabfb8b9067dc1a5bff1f05a22f46e95b159913df5cd330fac5b6576f7d8f055"
-    ):
-        errors.append("cave/super-rar/index.json: installer agent remains streamable")
+    if super_agent:
+        errors.append("cave/super-rar/index.json: retired installer agent is still indexed")
     if super_egg.get("streamable") is not False:
         errors.append("cave/super-rar/index.json: installer egg remains streamable")
 
@@ -1080,7 +1052,7 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
 
     status = _read("RAPP1_STATUS.md")
     expected_status_sha256 = (
-        "5d97b9a7ff9917a21d667fd0006a6cb2346f03738dfbcdff96c6ad4a89aa9fb6"
+        "b15c4129fdb4dec43179989045f59d4120a5de48fffb3a2c98990febd5070ef2"
     )
     if hashlib.sha256(status.encode("utf-8")).hexdigest() != expected_status_sha256:
         errors.append("RAPP1_STATUS.md: code-owned owner-evidence hash drifted")

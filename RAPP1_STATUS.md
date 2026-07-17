@@ -18,14 +18,20 @@ or freshness proof.
 
 ## Audit coverage and checker limitation
 
-The completed 2026-07-16 audit was a literal file-by-file review:
+The convergence work used repeated literal file-by-file reviews. The counts
+are dated evidence, not interchangeable snapshots:
 
-- **640/640 tracked paths** — every tracked file was individually reviewed and
-  classified;
-- **5 ZIP-compatible archives**, including **450 recursively counted archive
-  members**;
-- **2 JSON eggs**; and
-- a contextual disposition per path recorded in the audit ledger.
+- **Baseline (2026-07-16, `f71810d`): 640/640 tracked paths**, 5
+  ZIP-compatible archives, 450 recursively counted archive members, and 2 JSON
+  eggs.
+- **Post-implementation review (`e1c2fbb`): 691/691 tracked paths**, the same
+  5 archives, 450 recursive members, and 2 JSON eggs.
+- **Integrated closure tree: 693/693 tracked paths** after removing the last
+  live Cave installer agent. The canonical gate derives current inventory from
+  `git ls-files`; it does not treat an older count as current.
+
+Every tracked file in each snapshot was individually reviewed and classified,
+with a contextual disposition per path in the corresponding audit ledger.
 
 Semantic, runtime, and cryptographic depth was applied where relevant to each
 artifact's role. This full audit is separate from the named checker:

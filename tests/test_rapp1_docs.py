@@ -51,7 +51,7 @@ class Rapp1DocumentationTests(unittest.TestCase):
         self.assertEqual(audit["post_audit_tracked_paths"], 691)
         self.assertEqual(
             audit["integrated_main_commit"],
-            "d3d2623646a6111b4a7db9f1b960df233f8964c9",
+            "bd122780ac90010e607ce9549e7c5ed18bee5d73",
         )
         tracked = [
             path
@@ -72,7 +72,7 @@ class Rapp1DocumentationTests(unittest.TestCase):
             "POST-MARKETING-LEGACY": 19,
             "POST-SHORTCUT-LEGACY": 5,
             "POST-CONTAIN-PLANT": 7,
-            "POST-CONTAIN-CAVE": 20,
+            "POST-CONTAIN-CAVE": 19,
             "POST-MIRROR": 23,
             "POST-OWNER-MIRROR": 4,
             "POST-IMMUTABLE-PIN": 17,
@@ -370,8 +370,11 @@ class Rapp1DocumentationTests(unittest.TestCase):
         ownership = self.fixture["ownership_exclusions"]
         terminal = self.fixture["target_checks"]["integrated_terminal_states"]
         self.assertNotIn("pages/index.html", ownership)
-        self.assertNotIn(
-            "cave/cubbies/kody-w/agents/rapp_installer_agent.py", ownership
+        self.assertFalse(
+            (
+                ROOT
+                / "cave/cubbies/kody-w/agents/rapp_installer_agent.py"
+            ).exists()
         )
         self.assertEqual(len(terminal["paths"]), terminal["expected_count"])
         for path, expected in terminal["sha256"].items():
@@ -437,13 +440,24 @@ class Rapp1DocumentationTests(unittest.TestCase):
             errors,
         )
 
-    def test_cave_agent_side_effect_mutation_is_rejected(self) -> None:
-        path = "cave/cubbies/kody-w/agents/rapp_installer_agent.py"
-        text = (ROOT / path).read_text(encoding="utf-8")
-        errors = self._category_mutation_errors(path, "import requests\n" + text)
-        self.assertTrue(
-            any(path in error and "side-effecting dependencies" in error for error in errors),
-            errors,
+    def test_cave_installer_agent_remains_absent_from_live_indexes(self) -> None:
+        path = ROOT / "cave/cubbies/kody-w/agents/rapp_installer_agent.py"
+        self.assertFalse(path.exists())
+        rar = json.loads((ROOT / "cave/rar/index.json").read_text())
+        self.assertFalse(
+            any(
+                entry.get("name") == "@kody-w/rapp_installer"
+                for entry in rar.get("agents", [])
+            )
+        )
+        super_rar = json.loads(
+            (ROOT / "cave/super-rar/index.json").read_text()
+        )
+        self.assertFalse(
+            any(
+                entry.get("name") == "rapp_installer_agent.py"
+                for entry in super_rar.get("entries", [])
+            )
         )
 
     def test_cave_index_streamability_mutation_is_rejected(self) -> None:
@@ -544,11 +558,11 @@ class Rapp1DocumentationTests(unittest.TestCase):
         status = (ROOT / "RAPP1_STATUS.md").read_bytes()
         self.assertEqual(
             hashlib.sha256(status).hexdigest(),
-            "5d97b9a7ff9917a21d667fd0006a6cb2346f03738dfbcdff96c6ad4a89aa9fb6",
+            "b15c4129fdb4dec43179989045f59d4120a5de48fffb3a2c98990febd5070ef2",
         )
         audit = self.fixture["audit"]
         self.assertEqual(audit["post_audit_tracked_paths"], 691)
-        self.assertEqual(audit["integrated_tracked_paths"], 694)
+        self.assertEqual(audit["integrated_tracked_paths"], 693)
         self.assertEqual(
             audit["provenance"]["final_report"]["report_sha256"],
             "f5ba5abbf21067dd644d70f9076201b7ca3bf8afd934edbb9f2b4614060ad50b",

@@ -66,7 +66,7 @@ Recomputed after rebasing onto target `main` at
 | Subject | Current verified fact |
 |---|---|
 | Migration commits | `2cee074d755fe1ca1e81f5fb0c2331cbc47f1537`, `803cc76294b8a89273470d3167dde6f01df41e7d`, `591e7aec3b2183e0d48a1d6dfb6ebc59f177daea`, `4c2b999f8c890b76d057241d29ecda29e0239d79` |
-| Status | `RAPP1_STATUS.md` SHA-256 `5d97b9a7ff9917a21d667fd0006a6cb2346f03738dfbcdff96c6ad4a89aa9fb6`; both owner-ledger links and `Active-path residual` are present |
+| Status | `RAPP1_STATUS.md` SHA-256 `b15c4129fdb4dec43179989045f59d4120a5de48fffb3a2c98990febd5070ef2`; both owner-ledger links, dated audit counts, and `Active-path residual` are present |
 | Current facade | `rapp_brainstem/rapp1_facade.py`; source commit intentionally null because these bytes and the ledger share a commit; blob `ae72da5676cc16d34aa9b6bb080e33cd4280c21b`; SHA-256 `def2d14a8e91637c881b965cfdb139b7b033cdf9f5065be9500bb46168528ac4`; tracked target-owned post-migration pre-acceptance candidate |
 | Facade support | launcher SHA-256 `81a7e508d6e582759d92974434b5a6dcf0fb8c59bbab861518d232b123652dc1`; contract SHA-256 `ee94d52267f61149d5e89fc4173ba8014a84458c2e0753d761576e12f6a4d3ed`; tests SHA-256 `b31f5e29e155d07ef4cf8704fc9884bca0b0304bcaea64a78715329ff21dd86e` |
 | Current facade migration state | SQLite schema version 3; canonical semantic request-fingerprint version 3; bound legacy version 2 and unbound legacy version 1 remain migration inputs |

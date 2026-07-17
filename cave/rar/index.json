@@ -5,7 +5,7 @@
   "kind": "workspace",
   "raw_url_prefix": "https://raw.githubusercontent.com/kody-w/RAPP/main/cave",
   "note": "Contained historical index. SHA-256 records identify retained bytes but do not authenticate them or authorize installation. Retired entries are not streamable.",
-  "updated_at": "2026-07-17T12:14:46Z",
+  "updated_at": "2026-07-17T13:03:41Z",
   "agents": [
     {
       "name": "@kody-w/cave",
@@ -24,17 +24,6 @@
       "purpose": "RarStewardAgent \u2014 the autonomous steward of the public RAR.",
       "required_by_tether": false,
       "schema": "rapp-agent/1.0"
-    },
-    {
-      "name": "@kody-w/rapp_installer",
-      "version": "0.0.0-cubby",
-      "path": "cubbies/kody-w/agents/rapp_installer_agent.py",
-      "sha256": "cabfb8b9067dc1a5bff1f05a22f46e95b159913df5cd330fac5b6576f7d8f055",
-      "purpose": "Fail-closed tombstone for the retired Cave RAPP Installer agent.",
-      "required_by_tether": false,
-      "schema": "rapp-agent/1.0",
-      "status": "retired",
-      "active_distribution": false
     }
   ],
   "rapps": [

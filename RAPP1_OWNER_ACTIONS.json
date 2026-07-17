@@ -57,7 +57,7 @@
       "4c2b999f8c890b76d057241d29ecda29e0239d79"
     ],
     "status_path": "RAPP1_STATUS.md",
-    "status_sha256": "5d97b9a7ff9917a21d667fd0006a6cb2346f03738dfbcdff96c6ad4a89aa9fb6",
+    "status_sha256": "b15c4129fdb4dec43179989045f59d4120a5de48fffb3a2c98990febd5070ef2",
     "status_state": "Owner-action ledger links and the post-migration Active-path residual are both present; the repository remains not fully conformant.",
     "current_path_hashes": {
       "rappid.json": "59dd3b53e2ed0c7594b3754425938b907600fdf5787b1cef912276aa9d3711b3",

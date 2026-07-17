@@ -3,23 +3,12 @@
   "neighborhood_rappid": "rappid:@kody-w/rapp-cave:ca72ca0a3cb90c357fb09e38b02f85f09935cacbf61e94740c57f1eb30a73e0a",
   "note": "Historical Cave inventory. Only entries explicitly marked streamable may be fetched, and fetched bytes remain untrusted until their owning protocol verifies them. Retired installer agents, eggs, and prepared rapplications are inert evidence, not distribution paths.",
   "raw_url_prefix": "https://raw.githubusercontent.com/kody-w/RAPP/main/cave",
-  "built_at": "2026-07-17T12:14:46Z",
-  "count": 2,
+  "built_at": "2026-07-17T13:03:41Z",
+  "count": 1,
   "by_kind": {
-    "agent": 1,
     "egg": 1
   },
   "entries": [
-    {
-      "kind": "agent",
-      "name": "rapp_installer_agent.py",
-      "cubby": "kody-w",
-      "path": "cubbies/kody-w/agents/rapp_installer_agent.py",
-      "streamable": false,
-      "status": "retired",
-      "sha256": "cabfb8b9067dc1a5bff1f05a22f46e95b159913df5cd330fac5b6576f7d8f055",
-      "purpose": "Fail-closed tombstone for the retired Cave RAPP Installer agent."
-    },
     {
       "kind": "egg",
       "name": "cubby-rapp-installer.egg",

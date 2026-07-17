@@ -148,6 +148,20 @@ RETIRED_SOURCE_MARKERS = {
         "curl ",
         "mktemp",
     ),
+    "installer/hatchling": (
+        "uuid.uuid4",
+        "git fetch",
+        "git merge",
+        "git reset",
+        "tarfile.open",
+    ),
+    "rapp_brainstem/tls_proxy.py": (
+        "ThreadingHTTPServer",
+        "0.0.0.0",
+        "urllib.request.urlopen",
+        "Access-Control-Allow-Origin",
+        "openssl",
+    ),
 }
 
 EXPECTED_GRAIL_PINS = {
@@ -214,6 +228,8 @@ class ContainmentTests(unittest.TestCase):
             ("bash", "installer/install-swarm.sh"),
             ("bash", "installer/start-local.sh"),
             ("bash", "installer/integration_plant.sh"),
+            (sys.executable, "installer/hatchling"),
+            (sys.executable, "rapp_brainstem/tls_proxy.py"),
         )
         for command in commands:
             with self.subTest(command=command):
@@ -226,6 +242,15 @@ class ContainmentTests(unittest.TestCase):
                 )
                 self.assertEqual(result.returncode, 78)
                 self.assertIn("410 Gone", result.stderr)
+
+    def test_retired_host_skill_is_not_a_rapp_capability(self):
+        source = (
+            ROOT / "community_rapp/agent-repo-skill.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("Retired — not a RAPP agent", source)
+        self.assertIn("kody-w/rapp-skills", source)
+        self.assertNotIn("Install an agent via chat", source)
+        self.assertNotIn("public_gateway:", source)
 
     def test_cave_agent_always_refuses(self):
         agents = types.ModuleType("agents")

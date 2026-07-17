@@ -1,6 +1,7 @@
 import hashlib
 import json
 import re
+import subprocess
 import unittest
 from pathlib import Path, PurePosixPath
 
@@ -127,14 +128,21 @@ class Rapp1AuthorityTests(unittest.TestCase):
 
     def test_status_and_entrypoints_expose_claim_limits(self):
         status = (ROOT / "RAPP1_STATUS.md").read_text(encoding="utf-8")
+        tracked_count = len(
+            subprocess.check_output(
+                ("git", "ls-files", "-z"), cwd=ROOT
+            ).split(b"\0")
+        ) - 1
         self.assertTrue(
             status.startswith("# NOT YET FULLY RAPP/1 CONFORMANT\n")
         )
         for phrase in (
-            "640/640 tracked paths",
-            "every tracked file was individually reviewed and\n  classified",
-            "5 ZIP-compatible archives",
-            "450 recursively counted archive\n  members",
+            "Baseline (2026-07-16, `f71810d`): 640/640 tracked paths",
+            "Post-implementation review (`e1c2fbb`): 691/691 tracked paths",
+            f"Integrated closure tree: {tracked_count}/{tracked_count} tracked paths",
+            "Every tracked file in each snapshot was individually reviewed and classified",
+            "ZIP-compatible archives",
+            "450 recursively counted archive members",
             "2 JSON eggs",
             "contextual disposition per path",
             "Semantic, runtime, and cryptographic depth was applied where relevant",
