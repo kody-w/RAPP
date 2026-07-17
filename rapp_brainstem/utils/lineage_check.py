@@ -38,7 +38,9 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 MAX_IDENTITY_RECORD_BYTES = 1024 * 1024
+MAX_CANONICAL_IDENTITY_RECORD_BYTES = 1024 * 1024
 MAX_JSON_DEPTH = 64
+_MAX_BINARY64_CANONICAL_BYTES = 32
 _LABEL = r"[a-z0-9]+(?:-[a-z0-9]+)*"
 _RAPPID_RE = re.compile(
     rf"^rappid:@(?P<owner>{_LABEL})/(?P<slug>{_LABEL}):"
@@ -162,6 +164,43 @@ def _validate_json_value(value, depth: int = 1) -> None:
             )
 
 
+def _canonical_size_upper_bound(value) -> int:
+    """Bound RFC 8785 output size without requiring its unavailable package.
+
+    JSON string encoding is measured directly. Every accepted number has
+    already round-tripped through finite IEEE-754 binary64; 32 bytes safely
+    bounds its shortest ECMAScript serialization (including fixed notation).
+    The deliberately conservative number bound may reject unusually numeric
+    records, which is appropriate for this small fail-closed identity record.
+    """
+    if value is None:
+        return 4
+    if type(value) is bool:
+        return 4 if value else 5
+    if type(value) in (int, float):
+        return _MAX_BINARY64_CANONICAL_BYTES
+    if type(value) is str:
+        return len(
+            json.dumps(value, ensure_ascii=False).encode("utf-8", errors="strict")
+        )
+    if type(value) is list:
+        size = 2 + max(0, len(value) - 1)
+        for item in value:
+            size += _canonical_size_upper_bound(item)
+            if size > MAX_CANONICAL_IDENTITY_RECORD_BYTES:
+                return size
+        return size
+    if type(value) is dict:
+        size = 2 + max(0, len(value) - 1)
+        for key, item in value.items():
+            size += _canonical_size_upper_bound(key) + 1
+            size += _canonical_size_upper_bound(item)
+            if size > MAX_CANONICAL_IDENTITY_RECORD_BYTES:
+                return size
+        return size
+    raise ValueError(f"unsupported JSON value: {type(value).__name__}")
+
+
 def _load_identity_record(path: Path) -> dict:
     raw = path.read_bytes()
     if len(raw) > MAX_IDENTITY_RECORD_BYTES:
@@ -181,6 +220,8 @@ def _load_identity_record(path: Path) -> dict:
     if type(value) is not dict:
         raise ValueError("identity record must be a JSON object")
     _validate_json_value(value)
+    if _canonical_size_upper_bound(value) > MAX_CANONICAL_IDENTITY_RECORD_BYTES:
+        raise ValueError("identity record canonical-size upper bound exceeds 1 MiB")
     return value
 
 

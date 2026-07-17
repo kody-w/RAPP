@@ -101,20 +101,44 @@ def _gh_get_json(path: str) -> dict | list | None:
         return None
 
 
-def _raw_fetch_json(owner: str, repo: str, path: str) -> dict | None:
-    """Fetch a JSON file via the GitHub API (no CDN cache)."""
-    d = _gh_get_json(f"/repos/{owner}/{repo}/contents/{path}")
-    if not d or not isinstance(d, dict):
-        return None
+def _raw_fetch_json_checked(
+    owner: str, repo: str, path: str
+) -> tuple[dict | None, str, str]:
+    """Fetch JSON while distinguishing absence/invalidity from API failure."""
+    rc, output, error = _gh(["api", f"/repos/{owner}/{repo}/contents/{path}"])
+    if rc != 0:
+        if "HTTP 404" in error or "not found" in error.lower():
+            return None, "missing", "file not found"
+        return None, "error", f"GitHub API fetch failed: {error.strip()[:160]}"
     try:
-        b64 = d.get("content", "").replace("\n", "")
-        if not b64:
-            return None
-        body = base64.b64decode(b64)
+        response = json.loads(output)
+        if type(response) is not dict:
+            raise TypeError("content response is not an object")
+        encoded = response.get("content")
+        if type(encoded) is not str:
+            raise ValueError("content response has no base64 text")
+        if not encoded and response.get("size") != 0:
+            raise ValueError("content response has no base64 text")
+        body = (
+            base64.b64decode(encoded.replace("\n", ""), validate=True)
+            if encoded
+            else b""
+        )
+    except (TypeError, ValueError) as exc:
+        return None, "error", f"GitHub content response invalid: {exc}"
+    try:
         value = strict_loads(body)
-        return value if type(value) is dict else None
-    except Exception:
-        return None
+        if type(value) is not dict:
+            return None, "invalid", "JSON file is not an object"
+        return value, "ok", ""
+    except (TypeError, ValueError) as exc:
+        return None, "invalid", f"invalid JSON file: {exc}"
+
+
+def _raw_fetch_json(owner: str, repo: str, path: str) -> dict | None:
+    """Compatibility wrapper for best-effort operator identity probes."""
+    value, status, _ = _raw_fetch_json_checked(owner, repo, path)
+    return value if status == "ok" else None
 
 
 # ─── Operator-rappid discovery ────────────────────────────────────────────
@@ -214,51 +238,64 @@ def discover_operator_rappid(handle: str) -> str:
 
 # ─── created[] discovery ──────────────────────────────────────────────────
 
-def _list_handle_repos(handle: str) -> list:
+def _list_handle_repos(handle: str) -> tuple[list, list[str]]:
     """List all repos owned by handle. If handle matches the gh-authenticated
     user, uses /user/repos to include private repos too (operator-self path).
-    Otherwise falls back to public-only /users/<handle>/repos."""
+    Otherwise falls back to public-only /users/<handle>/repos.
+
+    The second return value reports fatal/incomplete discovery. A valid empty
+    response is ``([], [])`` and must not be conflated with an API failure.
+    """
     auth_user = _gh_get_json("/user") or {}
     self_path = isinstance(auth_user, dict) and auth_user.get("login") == handle
     api_path = ("/user/repos?per_page=100&affiliation=owner"
                 if self_path else
                 f"/users/{handle}/repos?per_page=100&type=owner")
-    rc, out, _ = _gh(["api", "--paginate", api_path])
+    rc, out, err = _gh(["api", "--paginate", api_path])
     if rc != 0:
-        return []
+        return [], [f"repository listing failed: {err.strip()[:160]}"]
     # --paginate concatenates JSON arrays; parse them as a stream
     repos: list = []
     decoder = json.JSONDecoder()
     s = out.strip()
+    if not s:
+        return [], ["repository listing response was empty"]
     pos = 0
-    while pos < len(s):
-        s_remaining = s[pos:].lstrip()
-        if not s_remaining:
-            break
-        leading_ws = len(s) - pos - len(s_remaining)
-        try:
+    try:
+        while pos < len(s):
+            s_remaining = s[pos:].lstrip()
+            if not s_remaining:
+                break
+            leading_ws = len(s) - pos - len(s_remaining)
             obj, end = decoder.raw_decode(s_remaining)
-        except json.JSONDecodeError:
-            break
-        if isinstance(obj, list):
+            if type(obj) is not list:
+                raise ValueError("repository page is not a JSON array")
             # When using /user/repos, we may see repos owned by other accounts
             # the operator collaborates on — filter to only handle's repos.
             for r in obj:
-                if isinstance(r, dict):
-                    rowner = (r.get("owner") or {}).get("login", "")
-                    if rowner == handle:
-                        repos.append(r)
-        pos += leading_ws + end
-    return repos
+                if type(r) is not dict or type(r.get("owner")) is not dict:
+                    raise ValueError("repository entry is not an object with an owner")
+                rowner = r["owner"].get("login")
+                if type(rowner) is not str:
+                    raise ValueError("repository owner login is not a string")
+                if rowner.lower() == handle:
+                    repos.append(r)
+            pos += leading_ws + end
+    except (TypeError, ValueError, json.JSONDecodeError) as exc:
+        return [], [f"repository listing response invalid: {exc}"]
+    return repos, []
 
 
-def discover_created(handle: str, operator_rappid: str, on_progress=None) -> tuple[list, list]:
-    """Walk handle's repos (public + private when self-auth). Return (created_entries, skipped_repos)."""
-    repos = _list_handle_repos(handle)
-    if not repos:
-        return [], [{"reason": "no repos returned by gh"}]
+def discover_created(
+    handle: str, operator_rappid: str, on_progress=None
+) -> tuple[list, list, list[str]]:
+    """Walk handle's repos; return entries, ordinary skips, and fatal errors."""
+    repos, discovery_errors = _list_handle_repos(handle)
+    if discovery_errors:
+        return [], [], discovery_errors
     created = []
     skipped = []
+    fetch_errors = []
     for r in repos:
         if not isinstance(r, dict) or r.get("fork"):
             continue
@@ -267,9 +304,25 @@ def discover_created(handle: str, operator_rappid: str, on_progress=None) -> tup
             continue
         if on_progress:
             on_progress(f"checking {handle}/{name}")
-        d = _raw_fetch_json(handle, name, "rappid.json")
-        if not d:
-            skipped.append({"repo": name, "reason": "no rappid.json"})
+        d, fetch_status, fetch_detail = _raw_fetch_json_checked(
+            handle, name, "rappid.json"
+        )
+        if fetch_status == "error":
+            fetch_errors.append(
+                {"repo": name, "path": "rappid.json", "error": fetch_detail}
+            )
+            continue
+        if d is None:
+            skipped.append(
+                {
+                    "repo": name,
+                    "reason": (
+                        "no rappid.json"
+                        if fetch_status == "missing"
+                        else fetch_detail
+                    ),
+                }
+            )
             continue
         rappid = d.get("rappid", "")
         if not isinstance(rappid, str):
@@ -296,33 +349,58 @@ def discover_created(handle: str, operator_rappid: str, on_progress=None) -> tup
             "added_at": _now_iso(),
             "via":      "rebuild",
         })
-    return created, skipped
+    return (
+        created,
+        skipped,
+        [
+            "one or more repository identity fetches failed: "
+            + json.dumps(fetch_errors, sort_keys=True)
+        ]
+        if fetch_errors
+        else [],
+    )
 
 
 # ─── member[] discovery ───────────────────────────────────────────────────
 
-def discover_memberships(operator_rappid: str, on_progress=None) -> tuple[list, list]:
+def discover_memberships(
+    operator_rappid: str, on_progress=None
+) -> tuple[list, list, list[str]]:
     """Use gh search code to find every members.json containing the operator
     rappid. Each hit is a gate the operator is a member of."""
     rc, out, err = _gh(["search", "code", operator_rappid, "filename:members.json",
                         "--limit", "100", "--json", "repository,path"])
     if rc != 0:
-        return [], [{"reason": f"gh search code failed: {err.strip()[:200]}"}]
+        return [], [], [f"GitHub code search failed: {err.strip()[:200]}"]
     try:
-        hits = json.loads(out) if out.strip() else []
-    except Exception:
-        hits = []
-    if not isinstance(hits, list):
-        return [], [{"reason": f"unexpected gh search response shape: {type(hits).__name__}"}]
+        if not out.strip():
+            raise ValueError("response was empty")
+        hits = json.loads(out)
+    except (TypeError, ValueError, json.JSONDecodeError) as exc:
+        return [], [], [f"GitHub code search response invalid: {exc}"]
+    if type(hits) is not list:
+        return [], [], [
+            f"unexpected GitHub code search shape: {type(hits).__name__}"
+        ]
     member = []
     skipped = []
+    fetch_errors = []
     seen = set()
     for hit in hits:
         if not isinstance(hit, dict):
+            fetch_errors.append({"repo": None, "error": "invalid code-search hit"})
             continue
         repo_obj = hit.get("repository", {}) or {}
+        if type(repo_obj) is not dict:
+            fetch_errors.append(
+                {"repo": None, "error": "code-search repository is not an object"}
+            )
+            continue
         full = repo_obj.get("nameWithOwner") or repo_obj.get("name", "")
         if not full or "/" not in full:
+            fetch_errors.append(
+                {"repo": None, "error": "code-search hit has no repository"}
+            )
             continue
         if full in seen:
             continue
@@ -332,9 +410,25 @@ def discover_memberships(operator_rappid: str, on_progress=None) -> tuple[list, 
             on_progress(f"checking gate {owner}/{repo}")
         # Verify the operator is actually listed in members.json (not just
         # mentioned somewhere in the file body — code search matches anywhere)
-        members = _raw_fetch_json(owner, repo, "members.json")
+        members, members_status, members_detail = _raw_fetch_json_checked(
+            owner, repo, "members.json"
+        )
+        if members_status == "error":
+            fetch_errors.append(
+                {"repo": full, "path": "members.json", "error": members_detail}
+            )
+            continue
         if not isinstance(members, dict):
-            skipped.append({"repo": full, "reason": "couldn't fetch members.json"})
+            skipped.append(
+                {
+                    "repo": full,
+                    "reason": (
+                        "members.json disappeared after code search"
+                        if members_status == "missing"
+                        else members_detail
+                    ),
+                }
+            )
             continue
         listed = any(
             isinstance(m, dict) and m.get("rappid") == operator_rappid
@@ -344,9 +438,25 @@ def discover_memberships(operator_rappid: str, on_progress=None) -> tuple[list, 
             skipped.append({"repo": full, "reason": "operator not in members[] (substring match only)"})
             continue
         # Get the gate's own rappid
-        gate_meta = _raw_fetch_json(owner, repo, "rappid.json")
+        gate_meta, gate_status, gate_detail = _raw_fetch_json_checked(
+            owner, repo, "rappid.json"
+        )
+        if gate_status == "error":
+            fetch_errors.append(
+                {"repo": full, "path": "rappid.json", "error": gate_detail}
+            )
+            continue
         if not isinstance(gate_meta, dict):
-            skipped.append({"repo": full, "reason": "gate has no rappid.json"})
+            skipped.append(
+                {
+                    "repo": full,
+                    "reason": (
+                        "gate has no rappid.json"
+                        if gate_status == "missing"
+                        else gate_detail
+                    ),
+                }
+            )
             continue
         gate_rappid = gate_meta.get("rappid", "")
         if not isinstance(gate_rappid, str):
@@ -374,7 +484,16 @@ def discover_memberships(operator_rappid: str, on_progress=None) -> tuple[list, 
             "added_at": _now_iso(),
             "via":      "rebuild",
         })
-    return member, skipped
+    return (
+        member,
+        skipped,
+        [
+            "one or more code-search result fetches failed: "
+            + json.dumps(fetch_errors, sort_keys=True)
+        ]
+        if fetch_errors
+        else [],
+    )
 
 
 # ─── Estate assembly ──────────────────────────────────────────────────────
@@ -420,11 +539,47 @@ def rebuild(handle: str, operator_rappid: str = "", on_progress=None) -> dict:
 
     if on_progress:
         on_progress("walking handle's repos for created[]…")
-    created, created_skipped = discover_created(handle, operator_rappid, on_progress)
+    created, created_skipped, created_errors = discover_created(
+        handle, operator_rappid, on_progress
+    )
+    if created_errors:
+        return {
+            "schema": _ESTATE_SCHEMA,
+            "ok": False,
+            "status": "DISCOVERY_INCOMPLETE",
+            "phase": "repository-listing",
+            "error": "GitHub repository discovery was incomplete; refusing rebuild",
+            "discovery_errors": created_errors,
+            "apply_permitted": False,
+            "recovery": (
+                "Restore GitHub API access, rerun without --apply, and inspect "
+                "a complete plan before replacing any estate file."
+            ),
+        }
 
     if on_progress:
         on_progress("searching for memberships in members.json files…")
-    member, member_skipped = discover_memberships(operator_rappid, on_progress)
+    member, member_skipped, member_errors = discover_memberships(
+        operator_rappid, on_progress
+    )
+    if member_errors:
+        return {
+            "schema": _ESTATE_SCHEMA,
+            "ok": False,
+            "status": "DISCOVERY_INCOMPLETE",
+            "phase": "code-search",
+            "error": "GitHub membership discovery was incomplete; refusing rebuild",
+            "discovery_errors": member_errors,
+            "apply_permitted": False,
+            "partial_discovery": {
+                "created": created,
+                "created_skipped": created_skipped,
+            },
+            "recovery": (
+                "Restore GitHub code-search access, rerun without --apply, and "
+                "inspect a complete plan before replacing any estate file."
+            ),
+        }
 
     return {
         "schema": _ESTATE_SCHEMA,

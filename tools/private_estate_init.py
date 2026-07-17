@@ -226,17 +226,82 @@ def _gh_put_file(slug: str, path: str, content_bytes: bytes, message: str) -> tu
     return False, f"PUT failed: {err.strip()[:160]}"
 
 
+def _gh_read_file(slug: str, path: str) -> tuple[bool, bytes | None, str]:
+    rc, output, error = _gh(["api", f"/repos/{slug}/contents/{path}"])
+    if rc != 0:
+        return False, None, f"verification GET failed: {error.strip()[:160]}"
+    try:
+        response = json.loads(output)
+        if type(response) is not dict:
+            raise ValueError("content response is not an object")
+        encoded = response.get("content")
+        if type(encoded) is not str:
+            raise ValueError("content response does not contain base64 text")
+        encoded = encoded.replace("\n", "")
+        if not encoded and response.get("size") != 0:
+            raise ValueError("content response has no bytes")
+        content = base64.b64decode(encoded, validate=True) if encoded else b""
+    except (TypeError, ValueError) as exc:
+        return False, None, f"verification response invalid: {exc}"
+    return True, content, "verified"
+
+
+def _remote_failure(
+    *,
+    slug: str,
+    repo_created: bool,
+    results: list[dict],
+    status: str,
+    error: str,
+    verification_failures: list[dict] | None = None,
+) -> dict:
+    successful = [result for result in results if result.get("ok")]
+    failed = [result for result in results if not result.get("ok")]
+    return {
+        "ok": False,
+        "schema": "rapp-private-estate-init-failure/1.0",
+        "status": status,
+        "error": error,
+        "publish_permitted": False,
+        "repo_url": f"https://github.com/{slug}",
+        "repo_created": repo_created,
+        "partial_remote_writes": successful,
+        "files_failed": failed,
+        "verification_failures": verification_failures or [],
+        "recovery": (
+            "Inspect the private repository, repair or remove every reported "
+            "partial write, verify all scaffold bytes, then rerun initialization. "
+            "Do not publish a private-estate commitment or beacon pointer."
+        ),
+    }
+
+
+def _gh_list_tree_checked(slug: str) -> tuple[bool, list[str], str]:
+    rc, output, error = _gh(
+        ["api", f"/repos/{slug}/git/trees/main?recursive=1"]
+    )
+    if rc != 0:
+        return False, [], f"tree verification failed: {error.strip()[:160]}"
+    try:
+        response = json.loads(output)
+        if type(response) is not dict or type(response.get("tree")) is not list:
+            raise ValueError("tree response is not an object with a tree")
+        paths = [
+            item["path"]
+            for item in response["tree"]
+            if type(item) is dict
+            and item.get("type") == "blob"
+            and type(item.get("path")) is str
+        ]
+    except (TypeError, ValueError) as exc:
+        return False, [], f"tree verification response invalid: {exc}"
+    return True, paths, "verified"
+
+
 def _gh_list_tree(slug: str) -> list[str]:
     """Return the list of file paths in the repo's main branch tree."""
-    rc, out, _ = _gh(["api", f"/repos/{slug}/git/trees/main?recursive=1"])
-    if rc != 0:
-        return []
-    try:
-        d = json.loads(out)
-        return [item["path"] for item in d.get("tree", [])
-                 if isinstance(item, dict) and item.get("type") == "blob"]
-    except Exception:
-        return []
+    verified, paths, _ = _gh_list_tree_checked(slug)
+    return paths if verified else []
 
 
 # ─── Top-level init ──────────────────────────────────────────────────────
@@ -263,13 +328,7 @@ def init_private_estate(github_handle: str, dry_run: bool = False) -> dict:
             "error": f"exact operator identity required before initialization: {exc}",
         }
 
-    # 1. Ensure the operator has an HMAC secret
-    if not dry_run:
-        secret = _ensure_secret()
-        # We don't surface the secret in the return envelope — Article XLVIII.6
-        secret_present = True
-    else:
-        secret_present = _SECRET_PATH.exists()
+    secret_present = _SECRET_PATH.exists()
 
     # 3. Create the repo if missing
     repo_created = False
@@ -319,16 +378,73 @@ def init_private_estate(github_handle: str, dry_run: bool = False) -> dict:
         ok, msg = _gh_put_file(slug, path, body,
                                 f"private-estate-init: scaffold {path} (Article XLVIII)")
         results.append({"path": path, "ok": ok, "msg": msg})
+        if not ok:
+            return _remote_failure(
+                slug=slug,
+                repo_created=repo_created,
+                results=results,
+                status=(
+                    "PARTIAL_REMOTE_WRITE"
+                    if repo_created or any(row["ok"] for row in results)
+                    else "REMOTE_WRITE_FAILED"
+                ),
+                error=f"GitHub PUT failed for {path}: {msg}",
+            )
 
-    # 7. Initialize the local map (no actual entries yet — empty private estate)
-    local_map = _ensure_local_map()
-    _save_local_map(local_map)
+    verification_failures: list[dict] = []
+    for path, expected in files.items():
+        verified, remote_bytes, detail = _gh_read_file(slug, path)
+        if not verified or remote_bytes != expected:
+            verification_failures.append(
+                {
+                    "path": path,
+                    "error": (
+                        detail
+                        if not verified
+                        else "remote bytes do not match the requested write"
+                    ),
+                }
+            )
+    if verification_failures:
+        return _remote_failure(
+            slug=slug,
+            repo_created=repo_created,
+            results=results,
+            status="REMOTE_VERIFICATION_FAILED",
+            error="one or more GitHub PUTs could not be verified",
+            verification_failures=verification_failures,
+        )
 
-    # 8. Compute commitment hash for the public beacon
-    tree = _gh_list_tree(slug)
-    if not tree:
-        # First-commit case: gh tree may not be queryable instantly; use what we PUT
-        tree = list(files.keys())
+    tree_verified, tree, tree_detail = _gh_list_tree_checked(slug)
+    missing_paths = sorted(set(files) - set(tree))
+    if not tree_verified or missing_paths:
+        return _remote_failure(
+            slug=slug,
+            repo_created=repo_created,
+            results=results,
+            status="REMOTE_VERIFICATION_FAILED",
+            error=(
+                tree_detail
+                if not tree_verified
+                else f"verified tree is missing scaffold paths: {missing_paths}"
+            ),
+        )
+
+    # 7. Initialize local state only after every remote write verifies.
+    try:
+        _ensure_secret()
+        local_map = _ensure_local_map()
+        _save_local_map(local_map)
+    except OSError as exc:
+        return _remote_failure(
+            slug=slug,
+            repo_created=repo_created,
+            results=results,
+            status="LOCAL_STATE_FAILED",
+            error=f"remote scaffold verified but local state failed: {exc}",
+        )
+
+    # 8. Compute a commitment only after remote and local state are complete.
     commitment = _normalized_state_hash(meta_bytes, tree)
 
     return {
