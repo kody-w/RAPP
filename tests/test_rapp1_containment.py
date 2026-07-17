@@ -105,6 +105,21 @@ RETIRED_SOURCE_MARKERS = {
         "func azure functionapp publish",
         "azure deployment",
     ),
+    "tools/sim/loop_orchestrator.sh": (
+        "tick_twin.py",
+        "push_canvas.sh",
+        "PUSH_CANVAS",
+    ),
+    "tools/sim/tick_twin.py": (
+        "import subprocess",
+        "call_claude",
+        "execute_action",
+    ),
+    "tools/sim/push_canvas.sh": (
+        "git add",
+        "git commit",
+        "git push",
+    ),
 }
 
 EXPECTED_GRAIL_PINS = {
@@ -163,6 +178,9 @@ class ContainmentTests(unittest.TestCase):
             (sys.executable, "tools/front_door_specs.py"),
             (sys.executable, "tools/sim/plant_two_brainstems.py"),
             (sys.executable, "tools/sim/observe.py"),
+            ("bash", "tools/sim/loop_orchestrator.sh"),
+            (sys.executable, "tools/sim/tick_twin.py"),
+            ("bash", "tools/sim/push_canvas.sh"),
             ("bash", "rapp_swarm/twin-sim.sh"),
         )
         for command in commands:
@@ -212,8 +230,16 @@ class ContainmentTests(unittest.TestCase):
         for relative in (
             "rapp_swarm/function_app.py",
             "tools/test_brainstem_server.py",
+            "tools/sim/loop_orchestrator.sh",
+            "tools/sim/push_canvas.sh",
+            "tools/sim/tick_twin.py",
         ):
             self.assertFalse((ROOT / relative).stat().st_mode & stat.S_IXUSR)
+
+        readme = (ROOT / "tools/sim/README.md").read_text(encoding="utf-8")
+        self.assertIn("non-executable historical", readme)
+        self.assertNotIn("cron", readme.lower())
+        self.assertNotIn("python3 tools/sim", readme)
 
     def test_target_owned_legacy_emitters_are_inert(self):
         function_source = (
@@ -248,6 +274,52 @@ class ContainmentTests(unittest.TestCase):
         self.assertNotIn("conversation_" + "history", chat)
         self.assertNotIn("agent_logs_text", chat)
         self.assertNotIn("voice_response", chat)
+
+    def test_browser_accepts_exact_logs_and_error_steps_safely(self):
+        source = (ROOT / "rapp_brainstem/index.html").read_text(
+            encoding="utf-8"
+        )
+        start = source.index("function logsToText")
+        end = source.index("function appendMsg", start)
+        validators = source[start:end]
+        script = validators + r"""
+const ok = status => ({status});
+const success = logs => ({
+  response: "done", agent_logs: logs, session_id: "session"
+});
+const refusal = step => ({error: {code: "candidate", step}});
+if (validateFacadeEnvelope(ok(200), success([])) !== "success") process.exit(1);
+if (validateFacadeEnvelope(ok(200), success(["first", "<b>second</b>"])) !== "success") process.exit(2);
+if (logsToText(["first", "<b>second</b>"]) !== "first\n<b>second</b>") process.exit(3);
+for (const step of [null, "1", "1a", "2", "3", "4", "5", "6"]) {
+  if (validateFacadeEnvelope(ok(422), refusal(step)) !== "error") process.exit(4);
+}
+for (const invalid of [[{}], [1], ["ok", null]]) {
+  try { validateFacadeEnvelope(ok(200), success(invalid)); process.exit(5); }
+  catch (_) {}
+}
+for (const step of [1, "1A", "7", undefined]) {
+  try { validateFacadeEnvelope(ok(422), refusal(step)); process.exit(6); }
+  catch (_) {}
+}
+"""
+        result = subprocess.run(
+            ["node", "--input-type=module"],
+            cwd=ROOT,
+            input=script,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+        renderer = source[
+            source.index("function appendMsg"):
+            source.index("function appendTyping")
+        ]
+        self.assertIn("logBox.textContent = logs", renderer)
+        self.assertIn("nameSpan.textContent", renderer)
+        self.assertNotIn("label.innerHTML", renderer)
 
     def test_payphone_keeps_exact_rappid_parser_separate(self):
         source = (ROOT / "pages/payphone.html").read_text(encoding="utf-8")

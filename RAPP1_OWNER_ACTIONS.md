@@ -67,8 +67,8 @@ Recomputed after rebasing onto target `main` at
 |---|---|
 | Migration commits | `2cee074d755fe1ca1e81f5fb0c2331cbc47f1537`, `803cc76294b8a89273470d3167dde6f01df41e7d`, `591e7aec3b2183e0d48a1d6dfb6ebc59f177daea`, `4c2b999f8c890b76d057241d29ecda29e0239d79` |
 | Status | `RAPP1_STATUS.md` SHA-256 `5d97b9a7ff9917a21d667fd0006a6cb2346f03738dfbcdff96c6ad4a89aa9fb6`; both owner-ledger links and `Active-path residual` are present |
-| Current facade | `rapp_brainstem/rapp1_facade.py`; source commit intentionally null because these bytes and the ledger share a commit; blob `77ae265ab503243b0437bcff05ade9c9f30dbc3a`; SHA-256 `8194e858e6cc4e0cb71caa578316277762153af43dfd345f3b92ac5bf46c6e54`; tracked target-owned post-migration pre-acceptance candidate |
-| Facade support | launcher SHA-256 `81a7e508d6e582759d92974434b5a6dcf0fb8c59bbab861518d232b123652dc1`; contract SHA-256 `221e84fb902400f622f2f7f589e3522a28d8c7a2223432a99c5a8edec58b040f`; tests SHA-256 `b9fad1ce32b4c1ae2bd82c1d5cfc5d1313d80be01d47c3ea8266ab8158b92ad4` |
+| Current facade | `rapp_brainstem/rapp1_facade.py`; source commit intentionally null because these bytes and the ledger share a commit; blob `ae72da5676cc16d34aa9b6bb080e33cd4280c21b`; SHA-256 `def2d14a8e91637c881b965cfdb139b7b033cdf9f5065be9500bb46168528ac4`; tracked target-owned post-migration pre-acceptance candidate |
+| Facade support | launcher SHA-256 `81a7e508d6e582759d92974434b5a6dcf0fb8c59bbab861518d232b123652dc1`; contract SHA-256 `ee94d52267f61149d5e89fc4173ba8014a84458c2e0753d761576e12f6a4d3ed`; tests SHA-256 `b31f5e29e155d07ef4cf8704fc9884bca0b0304bcaea64a78715329ff21dd86e` |
 | Current facade migration state | SQLite schema version 3; canonical semantic request-fingerprint version 3; bound legacy version 2 and unbound legacy version 1 remain migration inputs |
 | Current pending errors | Exactly `malformed-request`, `unknown-session`, `idempotency-in-progress`, `session-in-progress`, `inference-refused`, `facade-storage-refused`; still candidate-unregistered |
 | Recomputed unchanged evidence | `rappid.json`, Commons invite, local ecosystem JSON, kernel archive/manifest, `KERNEL_PIN.json`, cave identity, and installer packaging identity retain the hashes in the machine ledger |
@@ -93,7 +93,7 @@ listed as unchanged above were recomputed on the rebased tree.
 | Required registry surface, currently not a registry | `kody-w/rapp-map:main/ecosystem-spec.json`; unsigned commit `baded0098d8b97c2876c0b8af4475cf3061b7ad0`; blob `d4021c6f7b916ede041ae9d3c0802977524d5189`; 60,479 bytes; SHA-256 `0eb8146b62af8e8473d2ca8944ed8aff69e18e41a143eb1ef466f3c3fc153616`; schema `rapp-ecosystem-spec/1.0`; no estate owner designated |
 | Divergent mirror | `kody-w/rapp-god:api/v1/ecosystem-spec.json`; audit file commit `c6c0b3e2a68c96f8ed70005101f996ea91e4bd0e`; blob `d5ea75e4dc2be8cfc5f2e694aa5ce8521033609e`; 60,471 bytes; SHA-256 `f1ddcf7e1302a82195fa682ad94140d0d066bbe60647befc5030ec5b50507e9e` |
 | Kernel `latest` alias | `rapp_kernel/manifest.json` declares unauthenticated `0.6.0`; `rapp_kernel/latest/brainstem.py` SHA-256 `f7fb359bbe8b6ba3db3665d81cb8e573a266c716278d8d21d8962ea40821e5aa`; active pin is distinct `brainstem-v0.6.9` |
-| Canonical doors | Root returns 200 and exact `rappid.json` bytes; `rapp-cave`, `rapp-installer`, and `sample-session` identity doors return 404 |
+| Canonical doors | Root returns 200, but remote bytes differ from target (`byte_equal_to_target: false`; target SHA-256 `59dd3b53e2ed0c7594b3754425938b907600fdf5787b1cef912276aa9d3711b3`; observed SHA-256 `8710b3c45fd660f96d159be41c861bf9fb9bb45acbc40888815d7942d342792e`); `rapp-cave`, `rapp-installer`, and `sample-session` identity doors return 404 |
 | Facade legacy-wire baseline | At `f71810…`, audited Tier 1/Tier 2 lacked `idempotency_key`, and Tether posted incompatible `{messages}`; current main now contains the separate migrated facade described above |
 
 The audit-baseline reports are retained with maintainer session
@@ -393,7 +393,7 @@ sidecar path are deliberately `null`. This ledger implementation performs
 - **Where:** Current candidate `rapp_brainstem/rapp1_facade.py` with source
   commit intentionally null because the bytes and ledger share a commit,
   SHA-256
-  `8194e858e6cc4e0cb71caa578316277762153af43dfd345f3b92ac5bf46c6e54`,
+  `def2d14a8e91637c881b965cfdb139b7b033cdf9f5065be9500bb46168528ac4`,
   plus `run_rapp1_facade.py`; owner-selected public origin; frozen paths in
   `KERNEL_PIN.json`; exact door evidence in the machine ledger.
 - **When:** Only after all four status blockers, the post-migration

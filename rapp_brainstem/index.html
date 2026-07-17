@@ -2830,13 +2830,9 @@
   // ── Chat rendering ──
   // Render only the exact §8 agent_logs array.
   function logsToText(logs) {
-    if (Array.isArray(logs)) {
-      return logs
-        .map(e => `[${e.name || '?'}] ${e.output != null ? e.output : (e.error || '')}`)
-        .join('\n')
-        .trim();
-    }
-    return '';
+    return Array.isArray(logs) && logs.every(log => typeof log === 'string')
+      ? logs.join('\n')
+      : '';
   }
 
   function validateFacadeEnvelope(httpResponse, value) {
@@ -2849,7 +2845,7 @@
         keys.join(',') !== 'agent_logs,response,session_id' ||
         typeof value.response !== 'string' ||
         !Array.isArray(value.agent_logs) ||
-        value.agent_logs.length !== 0 ||
+        !value.agent_logs.every(log => typeof log === 'string') ||
         typeof value.session_id !== 'string'
       ) {
         throw new Error('invalid RAPP/1 200 envelope');
@@ -2864,7 +2860,8 @@
       !Array.isArray(value.error) &&
       Object.keys(value.error).sort().join(',') === 'code,step' &&
       typeof value.error.code === 'string' &&
-      value.error.step === null
+      new Set([null, '1', '1a', '2', '3', '4', '5', '6'])
+        .has(value.error.step)
     ) {
       return 'error';
     }
@@ -2906,10 +2903,17 @@
       )];
       const label = document.createElement('div');
       label.className = 'logs-label';
-      const nameSpan = agentNames.length > 0
-        ? ' <span class="agent-name">' + agentNames.join(', ') + '</span>'
-        : '';
-      label.innerHTML = '<span class="arrow">\u25B6</span> agent called' + nameSpan;
+      const arrow = document.createElement('span');
+      arrow.className = 'arrow';
+      arrow.textContent = '\u25B6';
+      label.appendChild(arrow);
+      label.appendChild(document.createTextNode(' agent called'));
+      if (agentNames.length > 0) {
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'agent-name';
+        nameSpan.textContent = ' ' + agentNames.join(', ');
+        label.appendChild(nameSpan);
+      }
       const logBox = document.createElement('div');
       logBox.className = 'agent-logs collapsed';
       // Belt-and-suspenders: also set inline display:none so the collapsed
@@ -3694,8 +3698,7 @@
             appendMsg('user', content);
           } else if (role === 'assistant') {
             history.push({ role: 'assistant', content });
-            // Old transcripts stored agent_logs as a joined string; new
-            // ones store the structured array. logsToText handles both.
+            // Only current string-array agent logs are rendered.
             appendMsg('assistant', content, logsToText(turn.agent_logs) || null);
           }
           fullTranscript.push(turn);

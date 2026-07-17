@@ -51,6 +51,7 @@ class EggInspection:
     checks: tuple[CheckResult, ...]
     manifest: dict[str, Any] | None = None
     egg_hash: str | None = None
+    egg_variants: tuple[str, ...] = ()
     signature_kids: tuple[str, ...] = ()
     error_code: str | None = None
     error: str | None = None
@@ -67,6 +68,8 @@ class EggInspection:
             result["rappid"] = self.manifest["rappid"]
         if self.egg_hash is not None:
             result["egg-hash"] = self.egg_hash
+        if self.egg_variants:
+            result["egg-variants"] = list(self.egg_variants)
         if self.signature_kids:
             result["signature-kids"] = list(self.signature_kids)
         if self.error_code is not None:
@@ -666,6 +669,7 @@ def _inspect(data: bytes, *, nesting: int = 0) -> _InspectedEgg:
             )
 
         nested_signature_kids: list[str] = []
+        nested_variants: list[str] = []
         if parsed["variant"] in {"neighborhood", "estate"}:
             payload_key = (
                 "members" if parsed["variant"] == "neighborhood" else "neighborhoods"
@@ -694,6 +698,7 @@ def _inspect(data: bytes, *, nesting: int = 0) -> _InspectedEgg:
                         f"{member.name} variant/rappid does not match its parent",
                     )
                 nested_signature_kids.extend(child.report.signature_kids)
+                nested_variants.extend(child.report.egg_variants)
         checks.append(
             CheckResult(
                 "viability",
@@ -721,6 +726,7 @@ def _inspect(data: bytes, *, nesting: int = 0) -> _InspectedEgg:
             checks=tuple(checks),
             manifest=parsed,
             egg_hash=egg_hash,
+            egg_variants=(parsed["variant"], *nested_variants),
             signature_kids=signatures,
         )
         return _InspectedEgg(report=report, members=members)
@@ -753,13 +759,17 @@ def _accept_inspected_egg(
         )
         return replace(inspected, trust_status=TrustStatus.STALE, checks=checks)
     assert inspected.manifest is not None
-    variant = inspected.manifest["variant"]
-    if variant not in registry.registered_egg_variants:
+    missing_variants = sorted(
+        set(inspected.egg_variants)
+        - registry.registered_egg_variants
+    )
+    if missing_variants:
         checks = inspected.checks[:-1] + (
             CheckResult(
                 "trust",
                 CheckStatus.UNVERIFIED,
-                f"authenticated registry has no exact {variant!r} egg variant",
+                "authenticated registry has no exact registration for egg "
+                f"variant(s): {', '.join(missing_variants)}",
             ),
         )
         return replace(
@@ -771,8 +781,8 @@ def _accept_inspected_egg(
         CheckResult(
             "trust",
             CheckStatus.PASS,
-            "fresh authenticated registry exactly registers this unsigned "
-            "egg variant",
+            "fresh authenticated registry exactly registers every unsigned "
+            "egg variant in the recursive artifact",
         ),
     )
     return replace(

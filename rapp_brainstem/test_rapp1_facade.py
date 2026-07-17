@@ -13,6 +13,7 @@ import pytest
 from rapp1_core import canonical_bytes
 from rapp1_core.canonical import MAX_JSON_DEPTH
 
+import rapp_brainstem.rapp1_facade as facade_module
 from rapp_brainstem.rapp1_facade import (
     DEFAULT_HOST,
     DEFAULT_PORT,
@@ -86,6 +87,17 @@ def post_json(client, value: dict[str, Any]):
 def assert_error(response, code: str) -> None:
     assert response.status_code == 422
     assert response.get_json() == {"error": {"code": code, "step": None}}
+
+
+def mark_pending_orphaned(database: Path) -> None:
+    with sqlite3.connect(database) as connection:
+        connection.execute(
+            """
+            UPDATE sessions
+            SET pending_since_utc = '2000-01-01T00:00:00+00:00'
+            WHERE pending_token IS NOT NULL
+            """
+        )
 
 
 def create_v1_completed_database(path: Path) -> bytes:
@@ -406,7 +418,23 @@ def test_existing_session_idempotency_is_scoped_by_session(test_dir):
     assert inference.calls[-1][0][-1]["content"] == "turn-b"
 
 
-def test_concurrent_duplicate_runs_inference_once(test_dir):
+@pytest.mark.parametrize(
+    "isolate_waiter",
+    [False, True],
+    ids=["process-condition", "durable-db-poll"],
+)
+def test_concurrent_duplicate_waits_and_replays_once(
+    test_dir, isolate_waiter, monkeypatch
+):
+    monkeypatch.setattr(
+        facade_module, "IDEMPOTENCY_HEARTBEAT_SECONDS", 0.01
+    )
+    monkeypatch.setattr(
+        facade_module, "IDEMPOTENCY_ORPHAN_AFTER_SECONDS", 0.05
+    )
+    monkeypatch.setattr(
+        facade_module, "IDEMPOTENCY_POLL_SECONDS", 0.005
+    )
     database = test_dir / "facade.sqlite3"
     setup_inference = RecordingInference()
     setup_app = make_app(database, setup_inference)
@@ -429,11 +457,22 @@ def test_concurrent_duplicate_runs_inference_once(test_dir):
             return completion("one execution")
 
     inference = BlockingInference()
-    app = make_app(database, inference)
+    owner_app = make_app(database, inference)
+    duplicate_inference = RecordingInference()
+    duplicate_app = (
+        make_app(database, duplicate_inference)
+        if isolate_waiter
+        else owner_app
+    )
+    if isolate_waiter:
+        duplicate_store = duplicate_app.extensions["rapp1_facade_store"]
+        duplicate_store._coordinator = type(duplicate_store._coordinator)()
     first_result: dict[str, Any] = {}
+    duplicate_result: dict[str, Any] = {}
+    duplicate_started = threading.Event()
 
     def send_first() -> None:
-        with app.test_client() as client:
+        with owner_app.test_client() as client:
             first_result["response"] = post_json(
                 client,
                 {
@@ -443,12 +482,10 @@ def test_concurrent_duplicate_runs_inference_once(test_dir):
                 },
             )
 
-    thread = threading.Thread(target=send_first)
-    thread.start()
-    assert inference.started.wait(timeout=5)
-    try:
-        with app.test_client() as client:
-            duplicate = post_json(
+    def send_duplicate() -> None:
+        duplicate_started.set()
+        with duplicate_app.test_client() as client:
+            duplicate_result["response"] = post_json(
                 client,
                 {
                     "user_input": "different content while pending",
@@ -456,17 +493,40 @@ def test_concurrent_duplicate_runs_inference_once(test_dir):
                     "idempotency_key": "same",
                 },
             )
-        assert_error(duplicate, "idempotency-in-progress")
-    finally:
-        inference.release.set()
-        thread.join(timeout=5)
 
-    assert not thread.is_alive()
-    assert first_result["response"].status_code == 200
+    owner_thread = threading.Thread(target=send_first)
+    owner_thread.start()
+    assert inference.started.wait(timeout=5)
+    duplicate_thread = threading.Thread(target=send_duplicate)
+    duplicate_thread.start()
+    assert duplicate_started.wait(timeout=5)
+    duplicate_thread.join(timeout=0.15)
+    assert duplicate_thread.is_alive()
     assert inference.calls == 1
 
+    inference.release.set()
+    owner_thread.join(timeout=5)
+    duplicate_thread.join(timeout=5)
 
-def test_crash_leaves_pending_reservation_that_fails_closed(test_dir):
+    assert not owner_thread.is_alive()
+    assert not duplicate_thread.is_alive()
+    original = first_result["response"]
+    duplicate = duplicate_result["response"]
+    assert original.status_code == duplicate.status_code == 200
+    assert duplicate.data == original.data
+    assert inference.calls == 1
+    assert duplicate_inference.calls == []
+
+
+def test_crash_leaves_pending_reservation_that_fails_closed(
+    test_dir, monkeypatch
+):
+    monkeypatch.setattr(
+        facade_module, "IDEMPOTENCY_ORPHAN_AFTER_SECONDS", 0.05
+    )
+    monkeypatch.setattr(
+        facade_module, "IDEMPOTENCY_POLL_SECONDS", 0.005
+    )
     database = test_dir / "facade.sqlite3"
 
     class SimulatedCrash(BaseException):
@@ -758,6 +818,8 @@ def test_refusal_transition_failure_reports_storage_and_stays_pending(
     }
     with app.test_client() as client:
         first = post_json(client, request_value)
+    mark_pending_orphaned(database)
+    with app.test_client() as client:
         repeated = post_json(client, request_value)
 
     assert_error(first, "facade-storage-refused")

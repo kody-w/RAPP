@@ -204,6 +204,27 @@ def _owner_repo_from_entry(entry: dict) -> str | None:
     return None
 
 
+def _metropolis_rappid_drift(value) -> list[dict]:
+    invalid_detail = None
+    if not isinstance(value, str):
+        invalid_detail = "neighborhood_rappid is not a string"
+    else:
+        try:
+            parse_rappid(value)
+        except (InvalidRappidError, TypeError) as exc:
+            invalid_detail = str(exc)
+    if invalid_detail is None:
+        return []
+    return [{
+        "category": "rappid_drift",
+        "path": "pages/metropolis/index.json#neighborhood_rappid",
+        "detail": (
+            "metropolis neighborhood_rappid must be an exact RAPP/1 "
+            f"section 6.1 rappid; got {value!r}: {invalid_detail}"
+        ),
+    }]
+
+
 # ── per-offspring diff against contract ───────────────────────────────────
 
 def _diff_offspring(name: str, kind: str, contract: dict,
@@ -508,6 +529,8 @@ def audit_ecosystem(*, mode: str = "offline",
         kind = kind_for_entry(entry)
         contract = contract_for_kind(kind)
         owner_repo = _owner_repo_from_entry(entry)
+        entry_rappid = entry.get("neighborhood_rappid")
+        entry_identity_drift = _metropolis_rappid_drift(entry_rappid)
 
         if mode == "online":
             getter = _build_file_getter_online(owner_repo)
@@ -515,22 +538,60 @@ def audit_ecosystem(*, mode: str = "offline",
             fixture_dir = _find_fixture_dir(name, fixtures)
             getter = _build_file_getter_offline(fixture_dir)
             if fixture_dir is None:
-                # Skip — no fixture available, can't audit offline
-                offspring_results.append({
-                    "name": name, "kind": kind, "rappid": entry.get("neighborhood_rappid"),
-                    "ok": True, "skipped": True, "skip_reason": "no_fixture",
-                    "drift": [], "fetched_from": "none",
+                result = {
+                    "name": name,
+                    "kind": kind,
+                    "rappid": entry_rappid,
+                    "ok": not entry_identity_drift,
+                    "skipped": not entry_identity_drift,
+                    "drift": entry_identity_drift,
+                    "fetched_from": "none",
                     "fingerprint_sha256": None,
-                    "_note": f"--offline mode; no tests/fixtures/{name}/ or {name}-seed/ found.",
-                })
-                by_kind.setdefault(kind, {"ok": 0, "drift": 0, "skipped": 0})["skipped"] += 1
+                    "_note": (
+                        "--offline mode; no "
+                        f"tests/fixtures/{name}/ or {name}-seed/ found."
+                    ),
+                }
+                if result["skipped"]:
+                    result["skip_reason"] = "no_fixture"
+                offspring_results.append(result)
+                bucket = by_kind.setdefault(
+                    kind, {"ok": 0, "drift": 0, "skipped": 0}
+                )
+                if result["skipped"]:
+                    bucket["skipped"] += 1
+                else:
+                    bucket["drift"] += 1
+                    direction = _classify_drift(result, kind)
+                    action = _suggest_action(
+                        name, owner_repo, direction, kind
+                    )
+                    if action:
+                        next_actions.append(action)
                 continue
 
         result = _diff_offspring(name, kind, contract, getter, owner_repo)
+        result["drift"] = entry_identity_drift + result["drift"]
+        source_rappid = result.get("rappid")
+        if (
+            isinstance(source_rappid, str)
+            and isinstance(entry_rappid, str)
+            and source_rappid != entry_rappid
+        ):
+            result["drift"].append({
+                "category": "rappid_drift",
+                "path": "rappid.json",
+                "detail": (
+                    "fixture/source rappid does not exactly match metropolis "
+                    f"neighborhood_rappid: source={source_rappid!r}, "
+                    f"metropolis={entry_rappid!r}"
+                ),
+            })
+        result["ok"] = not result["drift"]
         result["name"] = name
         result["kind"] = kind
         result["kind_contract_version"] = "1.0"
-        result["entry_metropolis_rappid"] = entry.get("neighborhood_rappid")
+        result["entry_metropolis_rappid"] = entry_rappid
         offspring_results.append(result)
 
         bucket = by_kind.setdefault(kind, {"ok": 0, "drift": 0, "skipped": 0})

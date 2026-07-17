@@ -4,13 +4,14 @@
 # Verifies tools/ecosystem_audit.py + tools/ecosystem_contract.py:
 #   1. Both modules parse cleanly
 #   2. Contract self-check: 9 kinds, no internal issues
-#   3. Offline run reports the known invalid ant-farm placeholder rappid
+#   3. Offline run reports invalid metropolis and fixture rappids
 #   4. Synthetic drift detection — fake metropolis index with bare-UUID rappid
 #      flagged as rappid_drift
-#   5. Schema shape: rapp-ecosystem-audit/1.0 envelope has every required key
-#   6. --repo filter narrows scope to one offspring
-#   7. --no-write doesn't touch pages/_audit/
-#   8. Outputs land at pages/_audit/ when --out-dir is given
+#   5. Fixture/source identity must exactly match metropolis identity
+#   6. Schema shape: rapp-ecosystem-audit/1.0 envelope has every required key
+#   7. --repo filter narrows scope to one offspring
+#   8. --no-write doesn't touch pages/_audit/
+#   9. Outputs land at pages/_audit/ when --out-dir is given
 
 source "$(dirname "$0")/../osi/_lib.sh"
 
@@ -60,17 +61,24 @@ for key in ("audited_at", "mode", "metropolis_url", "offspring_count", "drift_co
 print("OK")
 PY
 
-heading "Step 4 — Offline run reports every invalid fixture rappid"
-python3 - "$AUDIT" <<'PY' && step_pass "known invalid ant-farm rappid is drift" || step_fail "invalid fixture rappid was not reported exactly"
+heading "Step 4 — Offline run reports every invalid metropolis/fixture rappid"
+python3 - "$AUDIT" <<'PY' && step_pass "invalid metropolis and fixture rappids are drift" || step_fail "invalid identity was hidden or skipped"
 import importlib.util, json, sys
 spec = importlib.util.spec_from_file_location("ecosystem_audit", sys.argv[1])
 m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
 audit = m.audit_ecosystem(mode="offline", write_outputs=False)
 drifted = [o for o in audit["offspring"] if not o.get("skipped") and not o["ok"]]
-assert audit["drift_count"] == 1, drifted
-assert [o["name"] for o in drifted] == ["ant-farm"], drifted
-assert [d["category"] for d in drifted[0]["drift"]] == ["rappid_drift"]
-assert "__MINTED_AT_PLANT__" in drifted[0]["drift"][0]["detail"]
+assert audit["drift_count"] == audit["offspring_count"], drifted
+assert all(
+    any(d["category"] == "rappid_drift" for d in o["drift"])
+    for o in drifted
+), drifted
+ant_farm = next(o for o in drifted if o["name"] == "ant-farm")
+assert any("__MINTED_AT_PLANT__" in d["detail"] for d in ant_farm["drift"])
+assert any(
+    d["path"] == "pages/metropolis/index.json#neighborhood_rappid"
+    for d in ant_farm["drift"]
+)
 print("OK")
 PY
 
@@ -83,7 +91,7 @@ cat > "$SANDBOX/synthetic-metropolis.json" <<'JSON'
 {
   "schema": "rapp-metropolis-index/1.0",
   "tracker_name": "synthetic-test",
-  "tracker_url": "file:///tmp/synthetic",
+  "tracker_url": "file:///offline/synthetic",
   "synced_at": "2026-05-09T00:00:00Z",
   "entries": [
     {"schema": "rapp-metropolis-entry/1.0", "name": "test-bad",
@@ -114,7 +122,45 @@ assert any(
 print("OK")
 PY
 
-heading "Step 6 — --repo filter narrows scope to one offspring"
+heading "Step 6 — Fixture/source identity must match metropolis identity"
+mkdir -p "$SANDBOX/mismatch-fixtures/mismatch-seed"
+cat > "$SANDBOX/mismatch-fixtures/mismatch-seed/rappid.json" <<'JSON'
+{"schema":"rapp/1","rappid":"rappid:@test/source:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","kind":"neighborhood"}
+JSON
+cat > "$SANDBOX/mismatch-metropolis.json" <<'JSON'
+{
+  "schema": "rapp-metropolis-index/1.0",
+  "tracker_name": "mismatch-test",
+  "tracker_url": "file:///offline/mismatch",
+  "entries": [
+    {"schema": "rapp-metropolis-entry/1.0", "name": "mismatch",
+     "kind": "neighborhood",
+     "neighborhood_rappid": "rappid:@test/metropolis:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "gate_repo": "test/mismatch", "visibility": "public"}
+  ]
+}
+JSON
+python3 - "$AUDIT" "$SANDBOX/mismatch-metropolis.json" "$SANDBOX/mismatch-fixtures" <<'PY' && step_pass "fixture/source mismatch is rappid drift" || step_fail "fixture/source mismatch was hidden"
+import importlib.util, sys
+spec = importlib.util.spec_from_file_location("ecosystem_audit", sys.argv[1])
+m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+audit = m.audit_ecosystem(
+    mode="offline",
+    metropolis_index_path=sys.argv[2],
+    fixtures_dir=sys.argv[3],
+    write_outputs=False,
+)
+item = audit["offspring"][0]
+assert not item["ok"]
+assert any(
+    d["category"] == "rappid_drift"
+    and "does not exactly match" in d["detail"]
+    for d in item["drift"]
+), item["drift"]
+print("OK")
+PY
+
+heading "Step 7 — --repo filter narrows scope to one offspring"
 python3 - "$AUDIT" <<'PY' && step_pass "--repo filter narrows to one offspring" || step_fail "filter broken"
 import importlib.util, json, sys
 spec = importlib.util.spec_from_file_location("ecosystem_audit", sys.argv[1])
@@ -125,7 +171,7 @@ assert audit["offspring"][0]["name"] == "ant-farm"
 print("OK")
 PY
 
-heading "Step 7 — write_outputs=True lands files at out_dir"
+heading "Step 8 — write_outputs=True lands files at out_dir"
 mkdir -p "$SANDBOX/audit-out"
 python3 - "$AUDIT" "$SANDBOX/audit-out" <<'PY' && step_pass "ecosystem-audit.{md,json} written to out_dir" || step_fail "outputs not written"
 import importlib.util, json, os, sys
@@ -140,7 +186,7 @@ assert "rapp-ecosystem-audit/1.0" in md
 print("OK")
 PY
 
-heading "Step 8 — CLI: --no-write prints JSON to stdout, doesn't touch pages/_audit/"
+heading "Step 9 — CLI: --no-write prints JSON to stdout, doesn't touch pages/_audit/"
 OUT=$(python3 "$AUDIT" --offline --no-write 2>/dev/null)
 if printf "%s" "$OUT" | python3 -c "import json, sys; d=json.loads(sys.stdin.read()); assert d['schema']=='rapp-ecosystem-audit/1.0'; assert isinstance(d['offspring'], list); print('OK')" 2>/dev/null | grep -q OK; then
   step_pass "--no-write prints valid JSON envelope on stdout"
@@ -148,12 +194,29 @@ else
   step_fail "--no-write output invalid"
 fi
 
-heading "Step 9 — CLI exits 1 on invalid rappid drift, 0 on a clean scope"
+heading "Step 10 — local-only identity drift is never hidden by fixtures"
+python3 - "$AUDIT" <<'PY' && step_pass "local-only mismatch is explicit drift" || step_fail "local-only mismatch was treated as clean"
+import importlib.util, sys
+spec = importlib.util.spec_from_file_location("ecosystem_audit", sys.argv[1])
+m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+audit = m.audit_ecosystem(
+    mode="offline", repo_filter="local-only-test", write_outputs=False
+)
+assert audit["offspring_count"] == audit["drift_count"] == 1
+item = audit["offspring"][0]
+assert not item["ok"] and not item.get("skipped")
+assert any(
+    d["path"] == "pages/metropolis/index.json#neighborhood_rappid"
+    for d in item["drift"]
+)
+assert any("does not exactly match" in d["detail"] for d in item["drift"])
+print("OK")
+PY
 python3 "$AUDIT" --offline --no-write --repo local-only-test >/dev/null 2>&1
-if [ $? -eq 0 ]; then
-  step_pass "clean scoped audit exits 0"
+if [ $? -ne 0 ]; then
+  step_pass "local-only invalid/mismatched identity exits non-zero"
 else
-  step_fail "clean scoped audit unexpectedly exited non-zero"
+  step_fail "local-only identity drift exited 0"
 fi
 python3 "$AUDIT" --offline --no-write >/dev/null 2>&1
 RC=$?

@@ -536,6 +536,49 @@ def test_unsigned_egg_needs_fresh_registry_evidence_for_acceptance() -> None:
     assert verified.checks[-1].status.value == "PASS"
 
 
+def test_nested_egg_requires_every_recursive_variant_registration() -> None:
+    neighborhood = _neighborhood()
+    structural = inspect_egg(neighborhood)
+    assert structural.egg_variants == (
+        "neighborhood",
+        "organism",
+        "organism",
+    )
+
+    incomplete_registry = RegistryEvidence(
+        authenticated=True,
+        fresh=True,
+        registered_egg_variants={"neighborhood"},
+    )
+    refused = accept_egg(neighborhood, registry=incomplete_registry)
+    assert not refused.accepted
+    assert refused.trust_status is TrustStatus.UNVERIFIED
+    assert "organism" in refused.checks[-1].detail
+
+    work = Path.cwd() / f".rapp1-nested-registry-{os.getpid()}"
+    shutil.rmtree(work, ignore_errors=True)
+    try:
+        with pytest.raises(EggError) as error:
+            extract_egg(
+                neighborhood,
+                work / "neighborhood",
+                registry=incomplete_registry,
+            )
+        assert error.value.code == "egg-not-accepted"
+        assert not work.exists()
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+
+    complete_registry = RegistryEvidence(
+        authenticated=True,
+        fresh=True,
+        registered_egg_variants={"neighborhood", "organism"},
+    )
+    verified = accept_egg(neighborhood, registry=complete_registry)
+    assert verified.accepted
+    assert verified.trust_status is TrustStatus.VERIFIED
+
+
 def test_registered_egg_variant_evidence_is_immutable() -> None:
     variants = {"organism"}
     registry = RegistryEvidence(

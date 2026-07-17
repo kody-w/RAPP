@@ -207,11 +207,11 @@ class Rapp1OwnerActionLedgerTests(unittest.TestCase):
         self.assertEqual(evidence["path"], "rapp_brainstem/rapp1_facade.py")
         self.assertEqual(
             evidence["path_sha256"],
-            "8194e858e6cc4e0cb71caa5783162777"
-            "62153af43dfd345f3b92ac5bf46c6e54",
+            "def2d14a8e91637c881b965cfdb139b7"
+            "b033cdf9f5065be9500bb46168528ac4",
         )
         self.assertEqual(
-            evidence["git_blob"], "77ae265ab503243b0437bcff05ade9c9f30dbc3a"
+            evidence["git_blob"], "ae72da5676cc16d34aa9b6bb080e33cd4280c21b"
         )
         self.assertIn("post-migration pre-acceptance", evidence["path_state"])
         self.assertEqual(evidence["candidate_error_codes"], EXPECTED_FACADE_CODES)
@@ -621,6 +621,18 @@ class Rapp1OwnerActionLedgerTests(unittest.TestCase):
             doors["root"]["observed_sha256"],
             "8710b3c45fd660f96d159be41c861bf9"
             "fb9bb45acbc40888815d7942d342792e",
+        )
+        root_claim = (
+            f"Root returns {doors['root']['status']}, but remote bytes differ "
+            "from target "
+            f"(`byte_equal_to_target: {str(doors['root']['byte_equal_to_target']).lower()}`; "
+            f"target SHA-256 `{doors['root']['target_sha256']}`; "
+            f"observed SHA-256 `{doors['root']['observed_sha256']}`)"
+        )
+        self.assertIn(root_claim, self.human)
+        self.assertNotIn(
+            "Root returns 200 and exact `rappid.json` bytes",
+            self.human,
         )
         self.assertEqual(
             [doors[name]["status"] for name in ("cave", "installer", "sample_session")],

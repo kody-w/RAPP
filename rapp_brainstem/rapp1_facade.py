@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import os
 import sqlite3
+import threading
 import unicodedata
 import uuid
 from contextlib import contextmanager
@@ -31,6 +32,9 @@ MAX_RAW_REQUEST_BYTES = 2 * 1024 * 1024
 FINGERPRINT_VERSION_UNBOUND = 1
 FINGERPRINT_VERSION_LEGACY_JSON = 2
 FINGERPRINT_VERSION_CANONICAL_SEMANTIC = 3
+IDEMPOTENCY_POLL_SECONDS = 0.05
+IDEMPOTENCY_HEARTBEAT_SECONDS = 0.25
+IDEMPOTENCY_ORPHAN_AFTER_SECONDS = 30.0
 
 # These names are candidates awaiting the authenticated RAPP/1 section 13
 # owner registry. They are explicitly NOT registered error codes.
@@ -60,12 +64,37 @@ class StoredResponse:
 
 
 @dataclass(frozen=True)
+class PendingIdempotency:
+    scope: tuple[str, str, str]
+
+
+@dataclass(frozen=True)
 class Reservation:
     session_id: str
     token: str
     messages: tuple[dict[str, str], ...]
     idempotency_scope: tuple[str, str, str] | None
     request_fingerprint: bytes
+
+
+class _ProcessCoordinator:
+    def __init__(self) -> None:
+        self.condition = threading.Condition()
+        self.active_scopes: set[tuple[str, str, str]] = set()
+
+
+_COORDINATORS_LOCK = threading.Lock()
+_COORDINATORS: dict[str, _ProcessCoordinator] = {}
+
+
+def _coordinator_for(database_path: Path) -> _ProcessCoordinator:
+    key = str(database_path.resolve())
+    with _COORDINATORS_LOCK:
+        coordinator = _COORDINATORS.get(key)
+        if coordinator is None:
+            coordinator = _ProcessCoordinator()
+            _COORDINATORS[key] = coordinator
+        return coordinator
 
 
 class FacadeRefusal(Exception):
@@ -193,6 +222,7 @@ class FacadeStore:
 
     def __init__(self, database_path: Path | str) -> None:
         self.path = Path(database_path).expanduser()
+        self._coordinator = _coordinator_for(self.path)
         self.path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
         self._initialize()
         try:
@@ -348,10 +378,13 @@ class FacadeStore:
                 )
 
     @staticmethod
-    def _stored_response(row: sqlite3.Row) -> StoredResponse:
+    def _stored_response(
+        row: sqlite3.Row,
+        scope: tuple[str, str, str],
+    ) -> StoredResponse | PendingIdempotency:
         state = row["state"]
         if state == "pending":
-            raise FacadeRefusal("idempotency-in-progress")
+            return PendingIdempotency(scope)
         stored_request = row["request_canonical"]
         fingerprint_version = row["request_fingerprint_version"]
         if stored_request is None:
@@ -384,22 +417,122 @@ class FacadeStore:
     ) -> sqlite3.Row | None:
         return connection.execute(
             """
-            SELECT state, response_status, response_body, request_canonical,
-                   request_fingerprint_version
-            FROM idempotency
-            WHERE scope_kind = ?
-              AND scope_session_id = ?
-              AND idempotency_key = ?
+            SELECT i.state, i.response_status, i.response_body,
+                   i.request_canonical, i.request_fingerprint_version,
+                   s.pending_token, s.pending_since_utc
+            FROM idempotency AS i
+            JOIN sessions AS s ON s.session_id = i.session_id
+            WHERE i.scope_kind = ?
+              AND i.scope_session_id = ?
+              AND i.idempotency_key = ?
             """,
             scope,
         ).fetchone()
+
+    def _read_idempotency_row(
+        self, scope: tuple[str, str, str]
+    ) -> sqlite3.Row | None:
+        connection = self._connect()
+        try:
+            return self._idempotency_row(connection, scope)
+        finally:
+            connection.close()
+
+    @staticmethod
+    def _heartbeat_age_seconds(value: Any) -> float:
+        if type(value) is not str:
+            raise FacadeRefusal("facade-storage-refused")
+        try:
+            heartbeat = datetime.fromisoformat(value)
+        except ValueError as exc:
+            raise FacadeRefusal("facade-storage-refused") from exc
+        if heartbeat.tzinfo is None or heartbeat.utcoffset() is None:
+            raise FacadeRefusal("facade-storage-refused")
+        return (datetime.now(timezone.utc) - heartbeat).total_seconds()
+
+    def wait_for_terminal(
+        self, pending: PendingIdempotency
+    ) -> StoredResponse:
+        scope = pending.scope
+        while True:
+            row = self._read_idempotency_row(scope)
+            if row is None:
+                raise FacadeRefusal("facade-storage-refused")
+            stored = self._stored_response(row, scope)
+            if isinstance(stored, StoredResponse):
+                return stored
+
+            with self._coordinator.condition:
+                active_here = scope in self._coordinator.active_scopes
+            if row["pending_token"] is None:
+                raise FacadeRefusal("idempotency-in-progress")
+            age = self._heartbeat_age_seconds(row["pending_since_utc"])
+            if (
+                not active_here
+                and age >= IDEMPOTENCY_ORPHAN_AFTER_SECONDS
+            ):
+                raise FacadeRefusal("idempotency-in-progress")
+
+            with self._coordinator.condition:
+                self._coordinator.condition.wait(
+                    timeout=IDEMPOTENCY_POLL_SECONDS
+                )
+
+    def _refresh_heartbeat(self, reservation: Reservation) -> bool:
+        with self._transaction() as connection:
+            updated = connection.execute(
+                """
+                UPDATE sessions
+                SET pending_since_utc = ?
+                WHERE session_id = ? AND pending_token = ?
+                """,
+                (_utc_now(), reservation.session_id, reservation.token),
+            )
+            return updated.rowcount == 1
+
+    @contextmanager
+    def pending_activity(
+        self, reservation: Reservation
+    ) -> Iterator[None]:
+        scope = reservation.idempotency_scope
+        if scope is None:
+            yield
+            return
+
+        stop = threading.Event()
+        with self._coordinator.condition:
+            self._coordinator.active_scopes.add(scope)
+            self._coordinator.condition.notify_all()
+
+        def heartbeat() -> None:
+            while not stop.wait(IDEMPOTENCY_HEARTBEAT_SECONDS):
+                try:
+                    if not self._refresh_heartbeat(reservation):
+                        return
+                except sqlite3.Error:
+                    continue
+
+        thread = threading.Thread(
+            target=heartbeat,
+            name="rapp1-idempotency-heartbeat",
+            daemon=True,
+        )
+        thread.start()
+        try:
+            yield
+        finally:
+            stop.set()
+            thread.join(timeout=IDEMPOTENCY_HEARTBEAT_SECONDS * 2)
+            with self._coordinator.condition:
+                self._coordinator.active_scopes.discard(scope)
+                self._coordinator.condition.notify_all()
 
     def reserve(
         self,
         supplied_session_id: str | None,
         idempotency_key: str | None,
         request_fingerprint: bytes,
-    ) -> Reservation | StoredResponse:
+    ) -> Reservation | StoredResponse | PendingIdempotency:
         with self._transaction() as connection:
             scope: tuple[str, str, str] | None = None
             if supplied_session_id is None:
@@ -407,7 +540,7 @@ class FacadeStore:
                     scope = ("create", "", idempotency_key)
                     existing = self._idempotency_row(connection, scope)
                     if existing is not None:
-                        return self._stored_response(existing)
+                        return self._stored_response(existing, scope)
                 session_id = str(uuid.uuid4())
                 token = str(uuid.uuid4())
                 now = _utc_now()
@@ -435,7 +568,7 @@ class FacadeStore:
                     scope = ("session", session_id, idempotency_key)
                     existing = self._idempotency_row(connection, scope)
                     if existing is not None:
-                        return self._stored_response(existing)
+                        return self._stored_response(existing, scope)
                 if session["pending_token"] is not None:
                     raise FacadeRefusal("session-in-progress")
                 token = str(uuid.uuid4())
@@ -577,6 +710,8 @@ class FacadeStore:
             )
             if updated.rowcount != 1:
                 raise RuntimeError("session reservation changed")
+        with self._coordinator.condition:
+            self._coordinator.condition.notify_all()
 
     def refuse(
         self, reservation: Reservation, *, response_body: bytes
@@ -621,6 +756,8 @@ class FacadeStore:
             )
             if updated.rowcount != 1:
                 raise RuntimeError("session reservation changed")
+        with self._coordinator.condition:
+            self._coordinator.condition.notify_all()
 
 
 def _strict_inference_text(result: Any) -> str:
@@ -728,6 +865,8 @@ def create_app(
                 idempotency_key,
                 request_fingerprint,
             )
+            if isinstance(reserved, PendingIdempotency):
+                reserved = store.wait_for_terminal(reserved)
         except FacadeRefusal as refusal:
             return _error_response(refusal.code)
         except Exception:
@@ -736,37 +875,41 @@ def create_app(
         if isinstance(reserved, StoredResponse):
             return _http_response(reserved.body, reserved.status)
 
-        messages = [*reserved.messages, {"role": "user", "content": user_input}]
-        try:
-            raw_result = inference(messages)
-            response_text = unicodedata.normalize(
-                "NFC", _strict_inference_text(raw_result)
-            )
-        except Exception:
-            refusal_body = _error_body("inference-refused")
+        with store.pending_activity(reserved):
+            messages = [
+                *reserved.messages,
+                {"role": "user", "content": user_input},
+            ]
             try:
-                store.refuse(reserved, response_body=refusal_body)
+                raw_result = inference(messages)
+                response_text = unicodedata.normalize(
+                    "NFC", _strict_inference_text(raw_result)
+                )
+            except Exception:
+                refusal_body = _error_body("inference-refused")
+                try:
+                    store.refuse(reserved, response_body=refusal_body)
+                except Exception:
+                    return _error_response("facade-storage-refused")
+                return _http_response(refusal_body, 422)
+
+            response_body = _json_bytes(
+                {
+                    "response": response_text,
+                    "agent_logs": [],
+                    "session_id": reserved.session_id,
+                }
+            )
+            try:
+                store.complete(
+                    reserved,
+                    user_input=user_input,
+                    response_text=response_text,
+                    response_body=response_body,
+                )
             except Exception:
                 return _error_response("facade-storage-refused")
-            return _http_response(refusal_body, 422)
-
-        response_body = _json_bytes(
-            {
-                "response": response_text,
-                "agent_logs": [],
-                "session_id": reserved.session_id,
-            }
-        )
-        try:
-            store.complete(
-                reserved,
-                user_input=user_input,
-                response_text=response_text,
-                response_body=response_body,
-            )
-        except Exception:
-            return _error_response("facade-storage-refused")
-        return _http_response(response_body, 200)
+            return _http_response(response_body, 200)
 
     @app.get("/health")
     def health() -> Response:
