@@ -1,9 +1,9 @@
 {
   "schema": "rapp-super-rar/1.0",
   "neighborhood_rappid": "rappid:@kody-w/rapp-cave:ca72ca0a3cb90c357fb09e38b02f85f09935cacbf61e94740c57f1eb30a73e0a",
-  "note": "The super-RAR \u2014 the cave's super-store. A standard RAR stocks agents; this carries the WHOLE RAPP stack (agents, organs, senses, rapplications, neighborhoods, eggs) across every cubby \u2014 one PUBLIC registry over the full ecosystem. Anyone can browse and stream every entry with plain curl off the public raw base (no auth, no collaborator gate, no clone). Find what a neighbor already built and stream it in. Rebuild with `cave super_rar rebuild=true`.",
+  "note": "Historical Cave inventory. Only entries explicitly marked streamable may be fetched, and fetched bytes remain untrusted until their owning protocol verifies them. Retired installer agents, eggs, and prepared rapplications are inert evidence, not distribution paths.",
   "raw_url_prefix": "https://raw.githubusercontent.com/kody-w/RAPP/main/cave",
-  "built_at": "2026-07-17T10:25:44Z",
+  "built_at": "2026-07-17T12:14:46Z",
   "count": 2,
   "by_kind": {
     "agent": 1,
@@ -15,8 +15,10 @@
       "name": "rapp_installer_agent.py",
       "cubby": "kody-w",
       "path": "cubbies/kody-w/agents/rapp_installer_agent.py",
-      "streamable": true,
-      "sha256": "acdccb947f9001bcff4f3e1b8bf84bb6b831522a2c7df0d6cffa3cbdae5bfc80"
+      "streamable": false,
+      "status": "retired",
+      "sha256": "cabfb8b9067dc1a5bff1f05a22f46e95b159913df5cd330fac5b6576f7d8f055",
+      "purpose": "Fail-closed tombstone for the retired Cave RAPP Installer agent."
     },
     {
       "kind": "egg",

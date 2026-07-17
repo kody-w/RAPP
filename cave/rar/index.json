@@ -4,8 +4,8 @@
   "rar_for": "kody-w/RAPP",
   "kind": "workspace",
   "raw_url_prefix": "https://raw.githubusercontent.com/kody-w/RAPP/main/cave",
-  "note": "Per-neighborhood registry. PUBLIC repo: raw URLs need NO auth \u2014 anyone can stream every pinned file directly with plain curl or off GitHub Pages (https://raw.githubusercontent.com/kody-w/RAPP/main/cave/... or https://kody-w.github.io/RAPP/cave/). No clone, no gh-auth, no collaborator gate \u2014 the public front door is open. Join = fork + PR (or just pull). sha256 pins let loaders verify streamed files against this manifest.",
-  "updated_at": "2026-07-17T10:25:44Z",
+  "note": "Contained historical index. SHA-256 records identify retained bytes but do not authenticate them or authorize installation. Retired entries are not streamable.",
+  "updated_at": "2026-07-17T12:14:46Z",
   "agents": [
     {
       "name": "@kody-w/cave",
@@ -29,10 +29,12 @@
       "name": "@kody-w/rapp_installer",
       "version": "0.0.0-cubby",
       "path": "cubbies/kody-w/agents/rapp_installer_agent.py",
-      "sha256": "acdccb947f9001bcff4f3e1b8bf84bb6b831522a2c7df0d6cffa3cbdae5bfc80",
-      "purpose": "Cubby agent from @kody-w \u2014 stream via `cave load cubby=kody-w`.",
+      "sha256": "cabfb8b9067dc1a5bff1f05a22f46e95b159913df5cd330fac5b6576f7d8f055",
+      "purpose": "Fail-closed tombstone for the retired Cave RAPP Installer agent.",
       "required_by_tether": false,
-      "schema": "rapp-agent/1.0"
+      "schema": "rapp-agent/1.0",
+      "status": "retired",
+      "active_distribution": false
     }
   ],
   "rapps": [

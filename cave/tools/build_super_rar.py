@@ -39,6 +39,7 @@ CAVE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))   # cave/tool
 CUBBIES = os.path.join(CAVE, "cubbies")
 RAW_PREFIX = "https://raw.githubusercontent.com/kody-w/RAPP/main/cave"
 RETIRED_PREPARED_RAPPLICATIONS = {"rapp-installer"}
+RETIRED_CUBBY_AGENTS = {"rapp_installer_agent.py"}
 NEIGHBORHOOD_RAPPID = (
     "rappid:@kody-w/rapp-cave:"
     "ca72ca0a3cb90c357fb09e38b02f85f09935cacbf61e94740c57f1eb30a73e0a"
@@ -47,13 +48,10 @@ SUPER_RAR_HEADER = {
     "schema": "rapp-super-rar/1.0",
     "neighborhood_rappid": NEIGHBORHOOD_RAPPID,
     "note": (
-        "The super-RAR — the cave's super-store. A standard RAR stocks agents; "
-        "this carries the WHOLE RAPP stack (agents, organs, senses, "
-        "rapplications, neighborhoods, eggs) across every cubby — one PUBLIC "
-        "registry over the full ecosystem. Anyone can browse and stream every "
-        "entry with plain curl off the public raw base (no auth, no "
-        "collaborator gate, no clone). Find what a neighbor already built and "
-        "stream it in. Rebuild with `cave super_rar rebuild=true`."
+        "Historical Cave inventory. Only entries explicitly marked streamable "
+        "may be fetched, and fetched bytes remain untrusted until their owning "
+        "protocol verifies them. Retired installer agents, eggs, and prepared "
+        "rapplications are inert evidence, not distribution paths."
     ),
     "raw_url_prefix": RAW_PREFIX,
 }
@@ -64,13 +62,9 @@ RAR_HEADER = {
     "kind": "workspace",
     "raw_url_prefix": RAW_PREFIX,
     "note": (
-        "Per-neighborhood registry. PUBLIC repo: raw URLs need NO auth — "
-        "anyone can stream every pinned file directly with plain curl or off "
-        "GitHub Pages (https://raw.githubusercontent.com/kody-w/RAPP/main/cave/..."
-        " or https://kody-w.github.io/RAPP/cave/). No clone, no gh-auth, no "
-        "collaborator gate — the public front door is open. Join = fork + PR "
-        "(or just pull). sha256 pins let loaders verify streamed files against "
-        "this manifest."
+        "Contained historical index. SHA-256 records identify retained bytes "
+        "but do not authenticate them or authorize installation. Retired "
+        "entries are not streamable."
     ),
 }
 
@@ -107,9 +101,12 @@ def build_super_rar() -> list[dict]:
                 name = os.path.basename(p)
                 if name.startswith(".") or name == "__pycache__":
                     continue
+                retired = kind == "agent" and name in RETIRED_CUBBY_AGENTS
                 e = {"kind": kind, "name": name, "cubby": handle,
                      "path": os.path.relpath(p, CAVE).replace(os.sep, "/"),
-                     "streamable": kind == "agent"}
+                     "streamable": kind == "agent" and not retired}
+                if retired:
+                    e["status"] = "retired"
                 if os.path.isfile(p):
                     e["sha256"] = _sha256_file(p)
                     if p.endswith(".py"):
@@ -166,12 +163,21 @@ def render_rar() -> dict:
                 continue
             for p in sorted(glob.glob(os.path.join(CUBBIES, handle, "agents", "*_agent.py"))):
                 rel = os.path.relpath(p, CAVE).replace(os.sep, "/")
-                agents.append({
+                name = os.path.basename(p)
+                retired = name in RETIRED_CUBBY_AGENTS
+                entry = {
                     "name": f"@{handle}/{os.path.basename(p)[:-len('_agent.py')]}",
                     "version": "0.0.0-cubby", "path": rel, "sha256": _sha256_file(p),
                     "purpose": _purpose(p) or f"Cubby agent from @{handle} — stream via `cave load cubby={handle}`.",
                     "required_by_tether": False, "schema": "rapp-agent/1.0",
-                })
+                }
+                if retired:
+                    entry.update({
+                        "status": "retired",
+                        "active_distribution": False,
+                        "purpose": _purpose(p),
+                    })
+                agents.append(entry)
             for d in sorted(glob.glob(os.path.join(CUBBIES, handle, "rapplications", "*"))):
                 if os.path.isdir(d):
                     rapps.append({
