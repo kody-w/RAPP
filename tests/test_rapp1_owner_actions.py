@@ -207,11 +207,11 @@ class Rapp1OwnerActionLedgerTests(unittest.TestCase):
         self.assertEqual(evidence["path"], "rapp_brainstem/rapp1_facade.py")
         self.assertEqual(
             evidence["path_sha256"],
-            "def2d14a8e91637c881b965cfdb139b7"
-            "b033cdf9f5065be9500bb46168528ac4",
+            "4bd8e1c51290295c5dfd6dec73a5f12"
+            "f3771ec674a5e856ab78edbfc61151a01",
         )
         self.assertEqual(
-            evidence["git_blob"], "ae72da5676cc16d34aa9b6bb080e33cd4280c21b"
+            evidence["git_blob"], "690226b2492d86cf089ed222cb7cefe38af8c1e5"
         )
         self.assertIn("post-migration pre-acceptance", evidence["path_state"])
         self.assertEqual(evidence["candidate_error_codes"], EXPECTED_FACADE_CODES)
@@ -224,6 +224,16 @@ class Rapp1OwnerActionLedgerTests(unittest.TestCase):
         self.assertEqual(
             evidence["migration_state"]["current_request_fingerprint_version"],
             3,
+        )
+        self.assertEqual(
+            evidence["migration_state"]["inference_boundary_state"],
+            (
+                "target-owned inference-refused default; adapter only through "
+                "explicit dependency injection"
+            ),
+        )
+        self.assertIs(
+            evidence["migration_state"]["grail_module_dependency"], False
         )
 
         baseline = self.ledger["known_evidence"]["facade_audit_baseline"]
@@ -508,6 +518,20 @@ class Rapp1OwnerActionLedgerTests(unittest.TestCase):
                     hashlib.sha256((ROOT / relative_path).read_bytes()).hexdigest(),
                     expected_hash,
                 )
+
+    def test_human_ledger_records_issue_ready_immutable_cave_residual(self):
+        human = HUMAN_PATH.read_text(encoding="utf-8")
+        for marker in (
+            "## Issue-ready immutable Cave residual (not a target action)",
+            "[Containment] Retire Cave hatch.py execution",
+            "cave/rapplications/rapp-installer/hatch.py",
+            "_extract_egg",
+            "os.execve",
+            "410/exit-78 tombstone",
+            "This target must not patch that prepared clone",
+            "immutable archives",
+        ):
+            self.assertIn(marker, human)
 
     def test_root_case_remains_an_explicit_owner_decision(self):
         action = next(

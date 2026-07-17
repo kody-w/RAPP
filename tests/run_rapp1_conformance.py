@@ -189,7 +189,7 @@ def gates() -> tuple[Gate, ...]:
         Gate(
             "ui-smoke",
             ("bash", "tests/e2e/07-ui-smoke.sh"),
-            "local brainstem boot and current served-UI contract",
+            "isolated immutable grail UI evidence on an OS-assigned port",
         ),
         Gate(
             "ecosystem-audit-offline",
@@ -199,7 +199,7 @@ def gates() -> tuple[Gate, ...]:
         Gate(
             "organism-offline",
             ("bash", "tests/organism/run-all.sh"),
-            "retained local kernel, encoding, storage, and concurrency fixtures",
+            "isolated immutable kernel, encoding, storage, and concurrency evidence",
         ),
         Gate(
             "metropolis-directory",

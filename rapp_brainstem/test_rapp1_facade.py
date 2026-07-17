@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import copy
 import json
 import shutil
@@ -1187,16 +1188,19 @@ def test_loopback_separate_port_and_external_default_store(test_dir):
 
     custom = runtime_config(
         {
-            "RAPP1_FACADE_HOST": "127.0.0.2",
+            "RAPP1_FACADE_HOST": DEFAULT_HOST,
             "RAPP1_FACADE_PORT": "9001",
             "RAPP1_FACADE_DB": str(test_dir / "custom.sqlite3"),
         }
     )
-    assert custom.host == "127.0.0.2"
+    assert custom.host == DEFAULT_HOST
     assert custom.port == 9001
     assert custom.database_path == test_dir / "custom.sqlite3"
     with pytest.raises(ValueError):
         runtime_config({"RAPP1_FACADE_PORT": str(GRAIL_PORT)})
+    for exposed_host in ("0.0.0.0", "127.0.0.2", "localhost", "::1", ""):
+        with pytest.raises(ValueError):
+            runtime_config({"RAPP1_FACADE_HOST": exposed_host})
 
     assert set(PENDING_REGISTRY_ERROR_CODES) == {
         "malformed-request",
@@ -1248,19 +1252,64 @@ def test_chat_cors_is_limited_to_loopback_ui_origins(test_dir):
     assert len(inference.calls) == 1
 
 
-def test_private_production_boundary_forces_tools_none(monkeypatch):
+def test_production_launcher_defaults_to_exact_inference_refusal(test_dir):
     from rapp_brainstem import run_rapp1_facade as launcher
 
-    calls = []
+    config = runtime_config(
+        {"RAPP1_FACADE_DB": str(test_dir / "refusing.sqlite3")}
+    )
+    app = launcher.create_production_app(config=config)
+    app.config["TESTING"] = True
+    with app.test_client() as client:
+        response = post_json(client, {"user_input": "must fail closed"})
+    assert_error(response, "inference-refused")
 
-    def pinned_call(messages, tools):
-        calls.append((messages, tools))
-        return completion("private"), "fake-model"
 
-    monkeypatch.setattr(launcher, "_grail_call", pinned_call)
-    messages = [{"role": "user", "content": "hello"}]
-    result = launcher._private_grail_inference(messages)
+def test_production_launcher_accepts_only_explicit_inference_injection(test_dir):
+    from rapp_brainstem import run_rapp1_facade as launcher
 
-    assert result == completion("private")
-    assert calls == [(messages, None)]
+    inference = RecordingInference()
+    config = runtime_config(
+        {"RAPP1_FACADE_DB": str(test_dir / "injected.sqlite3")}
+    )
+    app = launcher.create_production_app(
+        inference=inference,
+        config=config,
+    )
+    app.config["TESTING"] = True
+    with app.test_client() as client:
+        response = post_json(client, {"user_input": "explicit"})
+
+    assert response.status_code == 200
+    assert response.get_json()["response"] == "reply:explicit"
+    assert len(inference.calls) == 1
+
+
+def test_production_launcher_has_no_grail_or_side_effect_coupling():
+    from rapp_brainstem import run_rapp1_facade as launcher
+
+    source = Path(launcher.__file__).read_text(encoding="utf-8")
+    tree = ast.parse(source)
+    imported_modules = {
+        alias.name
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Import)
+        for alias in node.names
+    } | {
+        node.module
+        for node in ast.walk(tree)
+        if isinstance(node, ast.ImportFrom) and node.module is not None
+    }
+    assert "brainstem" not in imported_modules
+    assert "rapp_brainstem.brainstem" not in imported_modules
+    for marker in (
+        "call_copilot",
+        ".copilot_token",
+        ".copilot_session",
+        "telemetry",
+        "load_agents",
+        "run_tool_calls",
+        "subprocess",
+    ):
+        assert marker not in source
     assert not hasattr(launcher, "app")

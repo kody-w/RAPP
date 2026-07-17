@@ -311,8 +311,8 @@ defining document cannot register it; registration follows RAPP/1 §13.
 | `rapp_brainstem/utils/peer_registry.py` | Historical/retired peer cache; no current target implementation. | NEIGHBORHOOD_PROTOCOL §4 |
 | `rapp_brainstem/utils/llm.py` | Historical/retired split provider module; current pinned runtime logic remains in brainstem.py. | CLAUDE.md provider dispatch |
 | `rapp_brainstem/utils/local_storage.py` | Local JSON shim for AzureFileStorageManager | CLAUDE.md local storage shim |
-| `rapp_brainstem/utils/boot.py` | Bootstrapping, agent discovery | CLAUDE.md commands |
-| `rapp_brainstem/index.html` | Current self-contained Tier-1 brainstem UI. | ECOSYSTEM §4a |
+| `rapp_brainstem/utils/boot.py` | Target-owned HTTP-410 boot tombstone; never imports or starts the immutable server. | RAPP1_STATUS.md containment |
+| `rapp_brainstem/index.html` | Retained historical UI; exercised only as isolated immutable test evidence. | ECOSYSTEM §4a |
 | `rapp_brainstem/utils/web/onboard/` | Historical/retired onboarding directory; no current target implementation. | ECOSYSTEM §4 |
 | `rapp_brainstem/utils/web/mobile/` | Historical/retired mobile directory; no current target implementation. | rapp-vbrainstem-subscription/1.0 |
 | `rapp_swarm/function_app.py` | Tier-2 Azure Functions /chat | CLAUDE.md Tier 2 |

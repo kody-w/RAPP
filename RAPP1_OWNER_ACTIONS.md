@@ -66,10 +66,10 @@ Recomputed after rebasing onto target `main` at
 | Subject | Current verified fact |
 |---|---|
 | Migration commits | `2cee074d755fe1ca1e81f5fb0c2331cbc47f1537`, `803cc76294b8a89273470d3167dde6f01df41e7d`, `591e7aec3b2183e0d48a1d6dfb6ebc59f177daea`, `4c2b999f8c890b76d057241d29ecda29e0239d79` |
-| Status | `RAPP1_STATUS.md` SHA-256 `b15c4129fdb4dec43179989045f59d4120a5de48fffb3a2c98990febd5070ef2`; both owner-ledger links, dated audit counts, and `Active-path residual` are present |
-| Current facade | `rapp_brainstem/rapp1_facade.py`; source commit intentionally null because these bytes and the ledger share a commit; blob `ae72da5676cc16d34aa9b6bb080e33cd4280c21b`; SHA-256 `def2d14a8e91637c881b965cfdb139b7b033cdf9f5065be9500bb46168528ac4`; tracked target-owned post-migration pre-acceptance candidate |
-| Facade support | launcher SHA-256 `81a7e508d6e582759d92974434b5a6dcf0fb8c59bbab861518d232b123652dc1`; contract SHA-256 `ee94d52267f61149d5e89fc4173ba8014a84458c2e0753d761576e12f6a4d3ed`; tests SHA-256 `b31f5e29e155d07ef4cf8704fc9884bca0b0304bcaea64a78715329ff21dd86e` |
-| Current facade migration state | SQLite schema version 3; canonical semantic request-fingerprint version 3; bound legacy version 2 and unbound legacy version 1 remain migration inputs |
+| Status | `RAPP1_STATUS.md` SHA-256 `294d5f854c46e2c43ec039894a2b3779ec0060ebb69cf580c71e6114079187e4`; both owner-ledger links, dated audit counts, `Target-owned launch containment`, and `Active-path residual` are present |
+| Current facade | `rapp_brainstem/rapp1_facade.py`; source commit intentionally null because these bytes and the ledger share a commit; blob `690226b2492d86cf089ed222cb7cefe38af8c1e5`; SHA-256 `4bd8e1c51290295c5dfd6dec73a5f12f3771ec674a5e856ab78edbfc61151a01`; tracked target-owned loopback-only post-migration pre-acceptance candidate |
+| Facade support | launcher SHA-256 `4737fae8574e58177010653f8f83cf376b011add0c855e1c81a686ae4a74a9f9`; contract SHA-256 `0f970f3e43edc2f4c4c8803b5800115f7714bb3683bc5185569e122e77a98f77`; tests SHA-256 `92c46db51854fd988aea4dafacae184218a30f43a3dd77688b67c028901a8f54` |
+| Current facade migration state | SQLite schema version 3; canonical semantic request-fingerprint version 3; bound legacy version 2 and unbound legacy version 1 remain migration inputs; production inference defaults to target-owned refusal and has no grail module dependency |
 | Current pending errors | Exactly `malformed-request`, `unknown-session`, `idempotency-in-progress`, `session-in-progress`, `inference-refused`, `facade-storage-refused`; still candidate-unregistered |
 | Recomputed unchanged evidence | `rappid.json`, Commons invite, local ecosystem JSON, kernel archive/manifest, `KERNEL_PIN.json`, cave identity, and installer packaging identity retain the hashes in the machine ledger |
 
@@ -389,11 +389,13 @@ sidecar path are deliberately `null`. This ledger implementation performs
   and closure; constrain error steps to the exact allowed domain; route
   target-owned clients through it; close or retire missing canonical-door
   claims; retain `GET /health` as control plane; make all alternate capability
-  routes unreachable; prove no grail side effects.
+  routes unreachable; inject a separately reviewed inference adapter; prove
+  there is no grail import, token/cache access, telemetry write, agent/tool
+  execution, or other grail side effect.
 - **Where:** Current candidate `rapp_brainstem/rapp1_facade.py` with source
   commit intentionally null because the bytes and ledger share a commit,
   SHA-256
-  `def2d14a8e91637c881b965cfdb139b7b033cdf9f5065be9500bb46168528ac4`,
+  `4bd8e1c51290295c5dfd6dec73a5f12f3771ec674a5e856ab78edbfc61151a01`,
   plus `run_rapp1_facade.py`; owner-selected public origin; frozen paths in
   `KERNEL_PIN.json`; exact door evidence in the machine ledger.
 - **When:** Only after all four status blockers, the post-migration
@@ -401,9 +403,10 @@ sidecar path are deliberately `null`. This ledger implementation performs
   pin gate, and owner deployment review pass at one commit.
 - **How:**
   1. Use the recomputed current facade bytes above as the review baseline.
-     Deploy without mounting the pinned brainstem app; accept only the exact
-     request, persist session/idempotency state, translate privately to the
-     opaque grail, normalize the exact response, and keep tools disabled.
+     Keep the production launcher at its target-owned `inference-refused`
+     default until a separately reviewed, side-effect-free inference adapter
+     is supplied through explicit dependency injection. Never import or call
+     the pinned brainstem module.
   2. Exact-match the six emitted errors to fresh authenticated registry
      entries.
   3. Permit error `step` only as `"1"`, `"1a"`, `"2"`, `"3"`, `"4"`, `"5"`,
@@ -415,7 +418,9 @@ sidecar path are deliberately `null`. This ledger implementation performs
   6. Verify the root identity door serves the exact target bytes. Separately
      authorize publication or retire each 404 door claim. Never modify or
      deploy `kody-w/rapp-installer`, its clone, or pinned files.
-  7. Use durable target-owned storage outside grail paths.
+  7. Use durable target-owned storage outside grail paths. Review and record
+     the exact injected adapter bytes and prove it cannot access grail token
+     caches, telemetry, agents, tools, or persistence.
   8. Exercise exact wire, refusal, idempotency, concurrency, and route tests at
      the public origin.
   9. Hash all three frozen files before/after and run
@@ -424,7 +429,8 @@ sidecar path are deliberately `null`. This ledger implementation performs
   through `4c2b999…` present; every remaining `Active-path residual` closed or
   explicitly fail-closed; approved publish-or-retire disposition for the three
   404 identity doors; approved Tier 2/Tether/worker gateway or retirement
-  dispositions; all non-owner gates green.
+  dispositions; an owner-reviewed inference adapter supplied only through
+  explicit dependency injection; all non-owner gates green.
 - **Exact acceptance:**
   1. Deployment source, authenticated registry, and this ledger contain exactly
      the same six error codes.
@@ -446,7 +452,8 @@ sidecar path are deliberately `null`. This ledger implementation performs
      `701488bc00d536a7b23295e7da99c62f24e9b00f233daa325886430c736b78eb`,
      and
      `13eb74b44be6e3a85a0efa0dedf56aec05e9e50140e1c8bbc0d0fbd8097b0717`;
-     tools never run; pin gate passes.
+     the launcher imports no grail module, accesses no grail token/cache or
+     telemetry state, tools and agents never run, and the pin gate passes.
   7. Routing and claim/status changes switch atomically. Otherwise public
      health/docs remain pre-acceptance and not fully conformant.
 - **Rollback/retirement:** Withdraw to unavailable/maintenance-only, preserve
@@ -455,8 +462,37 @@ sidecar path are deliberately `null`. This ledger implementation performs
   reused or silently removed.
 
 Public origin, deployment commit, switch time, registry evidence location,
-canonical-door disposition record, and rollback owner are deliberately
-`null`.
+canonical-door disposition record, reviewed inference-adapter evidence, and
+rollback owner are deliberately `null`.
+
+## Issue-ready immutable Cave residual (not a target action)
+
+**Issue title:** `[Containment] Retire Cave hatch.py execution of extracted installer runtimes`
+
+- **Affected immutable path:**
+  `cave/rapplications/rapp-installer/hatch.py`, mirrored from the separately
+  owned installer payload. This target must not patch that prepared clone or
+  any egg/archive containing it.
+- **Observed behavior:** `_read_egg_bytes` accepts any local archive or HTTPS
+  response. `_extract_egg` checks the schema string and path containment, but
+  does not authenticate a signer, pin the archive, validate the manifest
+  `slug`, or verify member digests. `main` then advertises the extracted
+  `serve.py` and, with `--run`, executes it via `os.execve`. Thus an extracted
+  payload remains an equivalent public launcher and can execute attacker- or
+  stale-archive-controlled server code at user privilege. The checked-in
+  target tombstone at `serve.py` does not constrain a newly extracted
+  replacement.
+- **Required external-owner fix:** In the authoritative installer repository,
+  retire `hatch.py`, its `--run` option, and launch guidance with an explicit
+  410/exit-78 tombstone that performs no download, extraction, venv/pip work,
+  subprocess, import, execution, or network bind. Publish any replacement
+  payload only through the owner's authenticated artifact process; do not
+  patch this target's prepared clone or immutable archives.
+- **Acceptance:** Invoking the authoritative hatcher with no arguments, a
+  local egg, an HTTPS egg, `--run`, or `--no-venv --run` always returns the
+  documented 410/78 refusal and creates no files, child processes, or sockets.
+  The target's immutable copies remain byte-identical until an independently
+  authorized replacement artifact is adopted.
 
 ## Status-blocker closure map
 

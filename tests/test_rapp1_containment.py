@@ -162,6 +162,31 @@ RETIRED_SOURCE_MARKERS = {
         "Access-Control-Allow-Origin",
         "openssl",
     ),
+    "rapp_brainstem/start.sh": (
+        "brainstem.py",
+        "boot.py",
+        "python",
+        "pip",
+        "venv",
+        "exec ",
+    ),
+    "rapp_brainstem/start.ps1": (
+        "brainstem.py",
+        "boot.py",
+        "python",
+        "pip",
+        "Start-Process",
+    ),
+    "rapp_brainstem/utils/boot.py": (
+        "brainstem.py",
+        "lineage_check",
+        "import ",
+        "__import__",
+        "subprocess",
+        "os.",
+        "sys.",
+        "exec",
+    ),
 }
 
 EXPECTED_GRAIL_PINS = {
@@ -230,6 +255,8 @@ class ContainmentTests(unittest.TestCase):
             ("bash", "installer/integration_plant.sh"),
             (sys.executable, "installer/hatchling"),
             (sys.executable, "rapp_brainstem/tls_proxy.py"),
+            ("bash", "rapp_brainstem/start.sh"),
+            (sys.executable, "rapp_brainstem/utils/boot.py"),
         )
         for command in commands:
             with self.subTest(command=command):

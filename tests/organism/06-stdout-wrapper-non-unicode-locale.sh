@@ -5,7 +5,8 @@
 # (🧠) crashes on the print() with UnicodeEncodeError.
 #
 # Asserts:
-#   - kernel boots under LC_ALL=C PYTHONUTF8=0 (forces ASCII encoding)
+#   - immutable kernel evidence boots under LC_ALL=C PYTHONUTF8=0
+#   - PORT=0 gives the process an OS-assigned port
 #   - /health responds within the boot window
 #   - the startup banner's emoji is not what kills the process
 #
@@ -21,34 +22,43 @@ PYTHON="${PYTHON:-$HOME/.brainstem/venv/bin/python}"
 WORK_DIR="${TMPDIR:-$(pwd)/tests/.rapp1-work}/organism-06-$$"
 mkdir -p "$WORK_DIR"
 LOG="$WORK_DIR/brainstem.log"
-PID_FILE="$WORK_DIR/brainstem.pid"
 
 PORT=""
-for p in 7095 7096 7097 7098 7099; do
-    if ! lsof -i ":$p" -sTCP:LISTEN >/dev/null 2>&1; then
-        PORT="$p"; break
-    fi
-done
-[ -n "$PORT" ] || { echo "FAIL: no free port in 7095-7099"; exit 1; }
+SERVER_PID=""
 
 cleanup() {
-    if [ -f "$PID_FILE" ]; then
-        kill "$(cat "$PID_FILE")" 2>/dev/null || true
+    if [ -n "$SERVER_PID" ]; then
+        kill "$SERVER_PID" 2>/dev/null || true
+        wait "$SERVER_PID" 2>/dev/null || true
     fi
     rm -rf "$WORK_DIR"
 }
 trap cleanup EXIT
 
-echo "▶ booting canonical kernel under LC_ALL=C PYTHONUTF8=0 on :$PORT (forces ASCII stdout)"
+discover_bound_port() {
+    sed -nE \
+        's#^.*Running on http://127\.0\.0\.1:([0-9]+).*$#\1#p' \
+        "$LOG" 2>/dev/null | tail -n 1
+}
+
+echo "▶ testing immutable kernel evidence under LC_ALL=C PYTHONUTF8=0 on an OS-assigned port"
 ( cd "$BRAINSTEM_DIR" && \
-    exec env LC_ALL=C LANG=C PYTHONUTF8=0 PORT="$PORT" "$PYTHON" brainstem.py ) > "$LOG" 2>&1 &
-echo $! > "$PID_FILE"
+    exec env LC_ALL=C LANG=C PYTHONUTF8=0 PORT=0 "$PYTHON" brainstem.py ) > "$LOG" 2>&1 &
+SERVER_PID=$!
 
 for i in $(seq 1 30); do
-    if curl -sf "http://localhost:$PORT/health" >/dev/null 2>&1; then break; fi
+    if ! kill -0 "$SERVER_PID" 2>/dev/null; then
+        echo "FAIL: immutable kernel evidence exited before readiness"
+        tail -30 "$LOG"
+        exit 1
+    fi
+    PORT="$(discover_bound_port)"
+    if [ -n "$PORT" ] && curl -sf "http://127.0.0.1:$PORT/health" >/dev/null 2>&1; then
+        break
+    fi
     sleep 0.5
     if [ "$i" = "30" ]; then
-        echo "FAIL: kernel did not boot under ASCII locale in 15s"
+        echo "FAIL: immutable kernel evidence did not boot under ASCII locale in 15s"
         echo "--- log tail ---"
         tail -30 "$LOG"
         exit 1
@@ -64,7 +74,7 @@ grep -q "RAPP Brainstem v" "$LOG" || {
 }
 
 # /health must answer
-HEALTH="$(curl -s "http://localhost:$PORT/health")"
+HEALTH="$(curl -s "http://127.0.0.1:$PORT/health")"
 echo "$HEALTH" | grep -q '"status":"unauthenticated"' || {
     echo "FAIL: /health discovered ambient credentials"
     echo "  body: $HEALTH"

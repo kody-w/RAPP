@@ -6,11 +6,13 @@ remains blocked until the estate owner publishes the authenticated RAPP/1 §13
 registry and registers the error codes below. The structural authority pin in
 `RAPP1_AUTHORITY.json` is not that registry.
 
-The façade is separate from the immutable grail application. It does not mount
-or serve any route from `brainstem.py`; the private production boundary calls
-only the pinned `call_copilot(messages, tools=None)` function. Agents and tools
-are never loaded or run. A tool-bearing, ambiguous, empty, or failed assistant
-inference is refused.
+The façade is separate from the immutable grail application. It does not
+import `brainstem.py`, mount its Flask application, read its provider-token
+caches, write its telemetry, or load agents or tools. The production launcher
+uses a target-owned refusing inference boundary by default. Consequently, a
+new otherwise-valid request returns the exact candidate `inference-refused`
+response until a reviewed adapter is supplied by explicit dependency
+injection.
 
 ## Launch
 
@@ -19,17 +21,32 @@ python3.11 -m pip install -r requirements-rapp1-core.txt -r rapp_brainstem/requi
 python3.11 rapp_brainstem/run_rapp1_facade.py
 ```
 
+This starts the local façade in fail-closed mode; it does not enable
+inference. The launcher has no environment-variable or module-name escape
+hatch for loading an adapter.
+
 Defaults:
 
 - bind: `127.0.0.1:7073` (separate from grail port `7071`);
 - SQLite: `~/.brainstem/rapp1-facade.sqlite3`.
 
-Configuration is limited to `RAPP1_FACADE_HOST`, `RAPP1_FACADE_PORT`, and
-`RAPP1_FACADE_DB`. The launcher serves `POST /chat`, its loopback-only browser
+Configuration is limited to `RAPP1_FACADE_PORT` and `RAPP1_FACADE_DB`.
+`RAPP1_FACADE_HOST`, when present, must still equal `127.0.0.1`; every other
+value is rejected. The launcher serves `POST /chat`, its loopback-only browser
 preflight, and control-plane `GET /health`. Health explicitly reports
 `authenticated:false` and `fully_conformant:false`. The checked-in browser UI
 posts chat requests directly to `http://127.0.0.1:7073/chat`; CORS is granted
 only to loopback browser origins.
+
+## Inference dependency boundary
+
+An embedding that has a separately reviewed, side-effect-free adapter may
+call `create_production_app(inference=adapter)` or `main(inference=adapter)`.
+The adapter receives only the server-owned message sequence and must return
+the single-choice, text-only completion shape validated by
+`rapp1_facade.py`. It must not import the grail, use grail-local token or
+telemetry state, execute agents/tools, or mutate facade persistence. No such
+adapter is supplied or selected by this repository.
 
 ## Wire and durability
 

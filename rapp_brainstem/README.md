@@ -12,7 +12,10 @@
 > catalog, and runtime guidance below is preserved grail-era history. This
 > target does not ship or support it. The immutable tag is a byte pin, not an
 > installation promise; current target-owned protocol work is the separate
-> loopback pre-acceptance façade at `127.0.0.1:7073`.
+> loopback pre-acceptance façade at `127.0.0.1:7073`. Target-owned `start.sh`,
+> `start.ps1`, and `utils/boot.py` are HTTP-410 tombstones. Direct
+> `brainstem.py` execution is retained only inside isolated immutable-byte
+> tests, never as a public launch instruction.
 
 <!-- RAPP1-HISTORICAL-SECTION-START -->
 

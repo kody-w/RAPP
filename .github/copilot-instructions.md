@@ -19,7 +19,12 @@
   required string `user_input` plus optional strings `session_id` and
   `idempotency_key`; success is exactly `response`, `agent_logs` (array), and
   `session_id`; refusal is HTTP 422 with nested `error.code` and `error.step`.
-  Voice and Twin derive locally from `response` and add no wire fields.
+  Its launcher imports no grail module and defaults to `inference-refused`
+  until a reviewed adapter is explicitly injected. Voice and Twin derive
+  locally from `response` and add no wire fields.
+- `rapp_brainstem/start.sh`, `start.ps1`, and `utils/boot.py` are unconditional
+  410/exit-78 tombstones. Direct immutable `brainstem.py` execution is allowed
+  only inside the isolated canonical evidence fixtures.
 - Run `python3 tests/run_rapp1_conformance.py` for the authoritative
   structural/pre-acceptance gate. A pass does not close the owner-action
   blockers in `RAPP1_STATUS.md`.

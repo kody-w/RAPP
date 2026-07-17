@@ -558,7 +558,7 @@ class Rapp1DocumentationTests(unittest.TestCase):
         status = (ROOT / "RAPP1_STATUS.md").read_bytes()
         self.assertEqual(
             hashlib.sha256(status).hexdigest(),
-            "b15c4129fdb4dec43179989045f59d4120a5de48fffb3a2c98990febd5070ef2",
+            "294d5f854c46e2c43ec039894a2b3779ec0060ebb69cf580c71e6114079187e4",
         )
         audit = self.fixture["audit"]
         self.assertEqual(audit["post_audit_tracked_paths"], 691)

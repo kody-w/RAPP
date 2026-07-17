@@ -116,6 +116,62 @@ def test_fresh_template_mints_once_and_rerun_reuses_bytes(variant_repo):
     assert identity_path.read_bytes() == first_bytes
 
 
+def test_realistic_root_template_scrubs_only_root_identity_evidence(variant_repo):
+    template = json.loads((ROOT / "rappid.json").read_bytes())
+    template.update(
+        {
+            "attestation": {
+                "issuer": PARENT_RAPPID,
+                "note": "root-only fixture evidence",
+            },
+            "_migration_commit": "unsigned-root-migration",
+            "_reanchor_record": {"case": "upgrade"},
+            "_root_provenance": {"commit": "root-only"},
+            "_attestation_record": {"issuer": PARENT_RAPPID},
+            "_product_note": "preserve this product metadata",
+            "_product_provenance": "preserve product origin",
+            "private_companion": "rapp-private",
+            "product_metadata": {
+                "theme": "charizard",
+                "capabilities": ["local"],
+            },
+        }
+    )
+    (variant_repo / "rappid.json").write_text(
+        json.dumps(template, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    result = _run(variant_repo, "Root Template Child\n")
+    assert result.returncode == 0, result.stderr + result.stdout
+    child = json.loads((variant_repo / "rappid.json").read_bytes())
+
+    for key in (
+        "_migrated_from",
+        "_legacy_uuid",
+        "_legacy_uuid_note",
+        "_attestation_note",
+        "_migration_commit",
+        "_reanchor_record",
+        "_root_provenance",
+        "_attestation_record",
+    ):
+        assert key not in child
+    assert child["attestation"] is None
+    assert child["_product_note"] == "preserve this product metadata"
+    assert child["_product_provenance"] == "preserve product origin"
+    assert child["private_companion"] == "rapp-private"
+    assert child["product_metadata"] == {
+        "theme": "charizard",
+        "capabilities": ["local"],
+    }
+    assert child["kind"] == template["kind"]
+    assert child["description"] == template["description"]
+    assert child["rappid"] != PARENT_RAPPID
+    assert child["parent_rappid"] == PARENT_RAPPID
+    assert child["role"] == "variant"
+
+
 def test_sparse_lineage_guard_runs_without_core_or_site_packages(variant_repo):
     env = dict(os.environ)
     env.pop("PYTHONPATH", None)

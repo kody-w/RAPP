@@ -467,30 +467,26 @@ def test_self_contained_lineage_location_parser_is_github_bound():
             lineage_check._git_remote_owner_repo(".")
 
 
-def test_boot_guard_fails_closed_when_lineage_import_fails():
-    real_import = __import__
-
-    def guarded_import(name, *args, **kwargs):
-        if name == "lineage_check":
-            raise ImportError("simulated missing guard")
-        return real_import(name, *args, **kwargs)
-
-    with patch("builtins.__import__", side_effect=guarded_import):
-        with pytest.raises(SystemExit) as refusal:
-            boot._guard()
-    assert refusal.value.code == 1
+def test_boot_launcher_is_an_unconditional_410_tombstone(capfd):
+    assert not hasattr(boot, "_guard")
+    with pytest.raises(SystemExit) as refusal:
+        boot.main()
+    assert refusal.value.code == 78
+    assert "410 Gone" in capfd.readouterr().err
 
 
-def test_boot_guard_fails_closed_on_invalid_lineage_status():
-    module = types.ModuleType("lineage_check")
-    module.check_lineage = lambda: {
-        "status": "lineage_mismatch",
-        "detail": "invalid identity",
-    }
-    with patch.dict(sys.modules, {"lineage_check": module}):
-        with pytest.raises(SystemExit) as refusal:
-            boot._guard()
-    assert refusal.value.code == 1
+def test_boot_launcher_has_no_import_or_execution_path():
+    source = Path(boot.__file__).read_text(encoding="utf-8")
+    for marker in (
+        "import ",
+        "lineage_check",
+        "brainstem.py",
+        "subprocess",
+        "os.",
+        "sys.",
+        "exec",
+    ):
+        assert marker not in source
 
 
 def test_rebuild_never_derives_operator_identity_from_twin_kind(monkeypatch):

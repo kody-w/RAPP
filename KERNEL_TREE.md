@@ -46,7 +46,7 @@ recorded tag and digests.
 | `rapp_brainstem/local_storage.py` | Local JSON storage shim — drop-in for `utils.azure_file_storage`, lets agents written for Azure run unchanged on disk. |
 | `rapp_brainstem/soul.md` | Default system prompt. |
 | `rapp_brainstem/requirements.txt` | Python deps: flask, flask-cors, requests, python-dotenv, pyzipper. |
-| `rapp_brainstem/start.sh`, `start.ps1` | Venv bootstrap + run. |
+| `rapp_brainstem/start.sh`, `start.ps1`, `utils/boot.py` | Target-owned HTTP-410 launcher tombstones; no import, process, dependency, or network activity. |
 | `rapp_brainstem/index.html` | Browser-side chat UI bundled with the kernel. |
 | `rapp_brainstem/test_local_agents.py` | Kernel agent-contract test. |
 | `rapp_brainstem/.env.example`, `.gitignore` | Config template + git hygiene. |

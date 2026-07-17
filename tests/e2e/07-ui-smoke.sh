@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# UI smoke: brainstem serves /, HTML parses, and current UI handlers are present.
+# Immutable evidence: directly exercise the pinned UI only in this isolated test.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
@@ -96,7 +96,7 @@ wait_for_health() {
     return 1
 }
 
-echo "▶ Starting isolated brainstem on an OS-assigned process-owned port..."
+echo "▶ Starting isolated immutable evidence on an OS-assigned process-owned port..."
 ( cd "$BRAINSTEM_DIR" && exec env PORT=0 PYTHONUNBUFFERED=1 \
     "$PYTHON" "$BRAINSTEM_SCRIPT" ) > "$LOG" 2>&1 &
 SERVER_PID=$!
@@ -143,7 +143,7 @@ if p.err:
 EOF
 echo "PASS: HTML parses cleanly"
 
-# ── Current chrome markers ────────────────────────────────────────────
+# ── Retained historical chrome markers ───────────────────────────────
 
 check_marker() {
     local label="$1"; local pattern="$2"
@@ -156,7 +156,7 @@ check_marker() {
     fi
 }
 
-echo "▶ Checking current chrome markers..."
+echo "▶ Checking retained historical chrome markers..."
 check_marker "header RAPP Brainstem title"           'RAPP Brainstem'
 check_marker "status indicator element"              'id="status-text"|status-dot|class="status"'
 check_marker "model-select dropdown"                 'model-select'
@@ -167,9 +167,9 @@ check_marker "Clear toolbar link"                   'clearChat\(\)|Clear'
 check_marker "Get Help link (diagnostics report)"    'reportToAdmin\(\)|Get Help'
 check_marker "Send button"                           'id="send"|onclick="send\(\)"|Send'
 
-# ── Current feature wiring ────────────────────────────────────────────
+# ── Retained historical feature wiring ───────────────────────────────
 
-echo "▶ Checking current feature handlers are wired..."
+echo "▶ Checking retained historical feature handlers..."
 check_marker "voice toggle endpoint"                 '/voice/toggle'
 check_marker "voice config endpoint"                 '/voice/config'
 check_marker "models list endpoint"                  '/models'
@@ -177,4 +177,4 @@ check_marker "agents API endpoint"                   '/agents'
 check_marker "diagnostics export"                    '/diagnostics|exportBook'
 check_marker "starter prompts"                       'starter-btn'
 
-echo "✅ UI smoke test passed"
+echo "✅ Isolated immutable UI evidence passed"

@@ -1,8 +1,8 @@
 """Target-owned, pre-acceptance RAPP/1 ``/chat`` facade.
 
 This module is intentionally independent of the immutable brainstem Flask app.
-The injected inference boundary receives messages only; the production launcher
-privately calls the pinned grail with ``tools=None``.
+The injected inference boundary receives messages only. The production launcher
+defaults to refusal until a reviewed side-effect-free adapter is injected.
 """
 
 from __future__ import annotations
@@ -115,8 +115,8 @@ def runtime_config(
 ) -> RuntimeConfig:
     env = os.environ if environ is None else environ
     host = env.get("RAPP1_FACADE_HOST", DEFAULT_HOST)
-    if not host:
-        raise ValueError("RAPP1_FACADE_HOST must not be empty")
+    if host != DEFAULT_HOST:
+        raise ValueError("RAPP1_FACADE_HOST must equal 127.0.0.1")
 
     port_text = env.get("RAPP1_FACADE_PORT", str(DEFAULT_PORT))
     try:

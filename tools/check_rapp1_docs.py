@@ -499,7 +499,7 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
             "f4e27778f0d6b636e7cf50047229692d9790668eda5fa027837711852193347d"
         ),
         "installer/README.md": (
-            "93dc6f85e303cd045219b17a5be9315c88b8e6cc1449aae170e316a0bc72b790"
+            "2cdbeb34454c1dced1a2e6c5698b9256adac76d8a4ab355fda00687349a670fe"
         ),
     }
     documentation_hashes = target_checks.get(
@@ -1052,7 +1052,7 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
 
     status = _read("RAPP1_STATUS.md")
     expected_status_sha256 = (
-        "b15c4129fdb4dec43179989045f59d4120a5de48fffb3a2c98990febd5070ef2"
+        "294d5f854c46e2c43ec039894a2b3779ec0060ebb69cf580c71e6114079187e4"
     )
     if hashlib.sha256(status.encode("utf-8")).hexdigest() != expected_status_sha256:
         errors.append("RAPP1_STATUS.md: code-owned owner-evidence hash drifted")

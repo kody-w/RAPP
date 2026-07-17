@@ -57,8 +57,8 @@
       "4c2b999f8c890b76d057241d29ecda29e0239d79"
     ],
     "status_path": "RAPP1_STATUS.md",
-    "status_sha256": "b15c4129fdb4dec43179989045f59d4120a5de48fffb3a2c98990febd5070ef2",
-    "status_state": "Owner-action ledger links and the post-migration Active-path residual are both present; the repository remains not fully conformant.",
+    "status_sha256": "294d5f854c46e2c43ec039894a2b3779ec0060ebb69cf580c71e6114079187e4",
+    "status_state": "Owner-action ledger links, target-owned launch containment, and the post-migration Active-path residual are present; the repository remains not fully conformant.",
     "current_path_hashes": {
       "rappid.json": "59dd3b53e2ed0c7594b3754425938b907600fdf5787b1cef912276aa9d3711b3",
       "pages/tutorials/commons.egg": "2731c02f187701c1d07b3a7f5eed5e2073c203ffb4f6c08d00292894e3319a5d",
@@ -228,10 +228,10 @@
       "observed_against_main_commit": "4c2b999f8c890b76d057241d29ecda29e0239d79",
       "source_commit": null,
       "path": "rapp_brainstem/rapp1_facade.py",
-      "path_state": "tracked regular file mode 100644; target-owned post-migration pre-acceptance candidate corrected in this ledger's containing commit; not publicly approved",
+      "path_state": "tracked regular file mode 100644; target-owned loopback-only post-migration pre-acceptance candidate corrected in this ledger's containing commit; not publicly approved",
       "git_mode": "100644",
-      "git_blob": "ae72da5676cc16d34aa9b6bb080e33cd4280c21b",
-      "path_sha256": "def2d14a8e91637c881b965cfdb139b7b033cdf9f5065be9500bb46168528ac4",
+      "git_blob": "690226b2492d86cf089ed222cb7cefe38af8c1e5",
+      "path_sha256": "4bd8e1c51290295c5dfd6dec73a5f12f3771ec674a5e856ab78edbfc61151a01",
       "route_candidate": "POST /chat",
       "control_route": "GET /health",
       "candidate_error_codes": [
@@ -258,12 +258,14 @@
         "current_request_fingerprint_version": 3,
         "bound_legacy_fingerprint_version": 2,
         "unbound_legacy_fingerprint_version": 1,
-        "documentation_state": "pre-acceptance"
+        "documentation_state": "pre-acceptance",
+        "inference_boundary_state": "target-owned inference-refused default; adapter only through explicit dependency injection",
+        "grail_module_dependency": false
       },
       "supporting_paths": {
-        "rapp_brainstem/run_rapp1_facade.py": "81a7e508d6e582759d92974434b5a6dcf0fb8c59bbab861518d232b123652dc1",
-        "rapp_brainstem/RAPP1_FACADE.md": "ee94d52267f61149d5e89fc4173ba8014a84458c2e0753d761576e12f6a4d3ed",
-        "rapp_brainstem/test_rapp1_facade.py": "b31f5e29e155d07ef4cf8704fc9884bca0b0304bcaea64a78715329ff21dd86e"
+        "rapp_brainstem/run_rapp1_facade.py": "4737fae8574e58177010653f8f83cf376b011add0c855e1c81a686ae4a74a9f9",
+        "rapp_brainstem/RAPP1_FACADE.md": "0f970f3e43edc2f4c4c8803b5800115f7714bb3683bc5185569e122e77a98f77",
+        "rapp_brainstem/test_rapp1_facade.py": "92c46db51854fd988aea4dafacae184218a30f43a3dd77688b67c028901a8f54"
       },
       "publicly_approved": false
     },
@@ -698,13 +700,13 @@
       "title": "Approve the public RAPP/1 facade switch",
       "issue_title": "[Owner action] Approve the public RAPP/1 facade switch after registry closure",
       "status": "owner-action-required",
-      "why": "Current main contains the migrated stateful target-owned facade, but it remains pre-acceptance and its six candidate error codes are unregistered. The f71810 audit-baseline Tier 1 and Tier 2 handlers had no idempotency_key, Tether emitted an incompatible request, alternate capability routes could bypass the wire, and three claimed canonical identity doors returned 404. Publishing before the remaining gates close would turn a candidate into a false conformance claim and could route around the immutable-grail boundary.",
-      "what": "The owner must approve one public POST /chat route backed only by the target-owned stateful facade after registry and migration closure, prove all candidate error codes are registered, constrain error steps to the exact standard domain, route target-owned clients through the gateway, close or explicitly retire missing canonical-door claims, ensure alternate capability routes are unavailable, and verify that requests cannot mutate, mount, deploy, or execute through pinned grail paths.",
+      "why": "Current main contains the migrated stateful target-owned facade, but it remains pre-acceptance, its default inference boundary refuses closed, and its six candidate error codes are unregistered. The f71810 audit-baseline Tier 1 and Tier 2 handlers had no idempotency_key, Tether emitted an incompatible request, alternate capability routes could bypass the wire, and three claimed canonical identity doors returned 404. Publishing before the remaining gates close would turn a candidate into a false conformance claim and could route around the immutable-grail boundary.",
+      "what": "The owner must approve one public POST /chat route backed only by the target-owned stateful facade after registry and migration closure, supply a separately reviewed side-effect-free inference adapter through explicit dependency injection, prove all candidate error codes are registered, constrain error steps to the exact standard domain, route target-owned clients through the gateway, close or explicitly retire missing canonical-door claims, ensure alternate capability routes are unavailable, and verify that requests cannot import, mutate, mount, deploy, or execute through pinned grail paths.",
       "where": {
         "candidate_source": "rapp_brainstem/rapp1_facade.py",
         "current_source_commit": null,
-        "current_source_sha256": "def2d14a8e91637c881b965cfdb139b7b033cdf9f5065be9500bb46168528ac4",
-        "current_source_state": "tracked target-owned post-migration pre-acceptance candidate",
+        "current_source_sha256": "4bd8e1c51290295c5dfd6dec73a5f12f3771ec674a5e856ab78edbfc61151a01",
+        "current_source_state": "tracked target-owned loopback-only post-migration pre-acceptance candidate",
         "candidate_launcher": "rapp_brainstem/run_rapp1_facade.py",
         "candidate_contract": "rapp_brainstem/RAPP1_FACADE.md",
         "public_origin": null,
@@ -715,13 +717,13 @@
       },
       "when": "Switch public routing only after all four RAPP1_STATUS owner blockers, the post-migration Active-path residual, canonical-door dispositions, exact current-facade tests, immutable pin gate, and owner deployment review pass on the same deployment commit.",
       "how": [
-        "Use the current migrated facade bytes identified in known_evidence.facade_current as the review baseline, then deploy them as a stateful compatibility gateway in front of the opaque immutable grail: accept only the exact request, persist session and idempotency state, translate privately, normalize the exact response, keep tools disabled, and never mount or edit the pinned brainstem Flask application.",
+        "Use the current migrated facade bytes identified in known_evidence.facade_current as the review baseline. Keep its target-owned inference-refused default until a separately reviewed side-effect-free inference adapter is supplied through explicit dependency injection; never import, call, mount, or edit the pinned brainstem Flask module.",
         "Verify the fresh authenticated registry contains exact error-code entries for all six facade codes before routing any public request.",
         "Require every emitted error step to be one of 1, 1a, 2, 3, 4, 5, 6, or null; registration of an error code does not permit any other step.",
         "Inventory public routes and remove or make unreachable every direct-agent, alternate-chat, legacy business-function, browser-worker, and grail /chat route as a RAPP capability; retain only POST /chat plus control-plane GET /health.",
         "Route target-owned Tier 2 and Tether clients through the facade and retire their direct incompatible wire use; do not change the pinned Tier 1 handler.",
         "Verify the root canonical door serves the exact target rappid.json bytes and either publish each missing RAPP-owned identity door through separate authorization or retire its claim. Never modify or deploy kody-w/rapp-installer, its clone, or pinned files to close a door.",
-        "Deploy the facade on target-owned infrastructure with durable storage outside the grail paths and a rollback target that is unavailable or maintenance-only, never the legacy wire.",
+        "Deploy the facade on target-owned infrastructure with durable storage outside the grail paths and a rollback target that is unavailable or maintenance-only, never the legacy wire. Record the exact injected adapter bytes and prove the adapter cannot access grail token caches, telemetry, agents, tools, or facade persistence.",
         "Run exact request, response, idempotency, concurrency, route-isolation, and refusal tests against the deployment origin.",
         "Hash the three KERNEL_PIN.json frozen files before and after deployment and traffic tests, then run check_kernel_pin.py."
       ],
@@ -732,6 +734,7 @@
         "owners-correct-or-retire-external-mirror is accepted.",
         "The cave, installer, and sample-session 404 canonical-door claims have approved publish-or-retire dispositions that respect the immutable installer boundary.",
         "Target-owned Tier 2, Tether, and worker routes have approved gateway migration or retirement dispositions.",
+        "A side-effect-free inference adapter has been independently reviewed and is supplied only through explicit dependency injection; the default launcher remains inference-refused.",
         "Current main migration commits through 4c2b999f8c890b76d057241d29ecda29e0239d79 are present, and every remaining Active-path residual has a reviewed closure or explicit fail-closed disposition.",
         "The repository status claim remains blocked until every non-owner conformance gate also passes."
       ],
@@ -741,6 +744,7 @@
         "switch_utc": null,
         "registry_evidence_location": null,
         "canonical_door_disposition_record": null,
+        "inference_adapter_evidence": null,
         "rollback_owner": null
       },
       "acceptance_tests": [
@@ -771,8 +775,8 @@
         },
         {
           "id": "facade-no-grail-side-effects",
-          "procedure": "Record SHA-256 for rapp_brainstem/brainstem.py, rapp_brainstem/agents/basic_agent.py, and rapp_brainstem/VERSION; exercise all facade cases; verify tools is always disabled, no agent loader runs, no grail path changes, and rerun python3 check_kernel_pin.py.",
-          "pass_condition": "All three hashes remain the exact KERNEL_PIN.json values, the pin gate passes, and facade state is written only to the approved external store."
+          "procedure": "Record SHA-256 for rapp_brainstem/brainstem.py, rapp_brainstem/agents/basic_agent.py, and rapp_brainstem/VERSION; prove the default launcher returns inference-refused without importing brainstem; inspect the injected adapter and exercise all facade cases; verify no grail token/cache read, telemetry write, agent/tool load, or grail path change, then rerun python3 check_kernel_pin.py.",
+          "pass_condition": "All three hashes remain the exact KERNEL_PIN.json values, the default inference boundary refuses closed, the launcher and adapter have no grail dependency or side effect, the pin gate passes, and facade state is written only to the approved external store."
         },
         {
           "id": "facade-claim-switch",

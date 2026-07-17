@@ -86,6 +86,20 @@ dependent public-facade release gate, are in
 counterpart is [`RAPP1_OWNER_ACTIONS.json`](./RAPP1_OWNER_ACTIONS.json). Both
 remain `candidate` / `owner-action-required` and are not a §13 registry.
 
+## Target-owned launch containment
+
+`rapp_brainstem/start.sh`, `start.ps1`, and `utils/boot.py` are explicit
+HTTP-410 tombstones. They perform no dependency setup, imports, subprocess
+launch, or network bind. The immutable `brainstem.py` bytes are invoked
+directly only by credential-scrubbed, process-owned, OS-assigned-port test
+fixtures as historical evidence; this is not a public launcher or product
+surface.
+
+The target-owned façade launcher binds only `127.0.0.1`. It imports no grail
+module and defaults to the candidate `inference-refused` response until a
+reviewed side-effect-free inference adapter is supplied through explicit
+dependency injection.
+
 ## Active-path residual
 
 Approved-place planting is fail-closed before repository creation. The retained

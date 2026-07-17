@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fixture: the canonical kernel must boot from a fresh repo checkout.
+# Fixture: immutable kernel bytes remain directly testable in isolation.
 #
 # Asserts:
 #   - PORT=0 lets the spawned kernel own its bind before /health is accepted
@@ -103,7 +103,7 @@ wait_for_health() {
 PYTHON="${PYTHON:-$HOME/.brainstem/venv/bin/python}"
 [ -x "$PYTHON" ] || PYTHON="$(command -v python3)"
 
-echo "▶ booting canonical kernel on an OS-assigned process-owned port (python: $PYTHON)"
+echo "▶ testing immutable kernel evidence on an OS-assigned process-owned port (python: $PYTHON)"
 ( cd "$BRAINSTEM_DIR" && exec env PORT=0 PYTHONUNBUFFERED=1 \
     "$PYTHON" "$BRAINSTEM_SCRIPT" ) > "$LOG" 2>&1 &
 SERVER_PID=$!

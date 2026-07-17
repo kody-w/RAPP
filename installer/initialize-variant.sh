@@ -14,8 +14,8 @@
 # What it does:
 #   1. Verifies this is an uninitialized template clone (via lineage_check)
 #   2. Generates a fresh rappid (UUIDv4)
-#   3. Updates ONLY the lineage fields of rappid.json (rappid,
-#      parent_rappid, parent_repo, parent_commit, born_at, name, role)
+#   3. Updates the child lineage fields of rappid.json and removes inherited
+#      root-only migration/re-anchor evidence
 #   4. Prints next-step guidance
 #
 # What it does NOT do (rule: never overwrite local data):
@@ -23,8 +23,9 @@
 #     pages, rapp_brainstem internals, etc.). The variant inherits
 #     RAPP's content as a starting point; edit it manually as the
 #     variant takes its own shape.
-#   - Does not delete or rewrite kind/description/private_companion or
-#     any other rappid.json fields. Only lineage pointers are updated.
+#   - Does not delete or rewrite kind/description/private_companion or other
+#     product metadata. Only lineage pointers, unattested child state, and
+#     reserved root-only evidence fields are changed.
 
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel 2>/dev/null || echo .)"
@@ -181,7 +182,7 @@ NOW="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 PARENT_COMMIT="$(curl -fsSL "https://api.github.com/repos/kody-w/RAPP/commits/main" 2>/dev/null \
     | python3 -c "import json, sys; d=json.load(sys.stdin); print(d.get('sha',''))" 2>/dev/null || echo "")"
 
-# ── Update rappid.json (lineage fields only — preserve everything else) ──
+# ── Update child identity while preserving product metadata ─────────────
 
 python3 - "$NEW_RAPPID" "$PARENT_RAPPID" "$PARENT_REPO" "$PARENT_COMMIT" "$NOW" "$VARIANT_NAME" <<'PYEOF'
 import json
@@ -195,8 +196,43 @@ target = Path("rappid.json")
 with target.open(encoding="utf-8") as f:
     data = json.load(f)
 
-# Update ONLY lineage fields. Preserve description, kind, private_companion,
-# and any other content the user (or the parent) put there.
+# Preserve description, kind, private_companion, and arbitrary product
+# metadata. Reserved underscore-prefixed migration, legacy, re-anchor, and
+# attestation notes describe only the template root and must not follow a
+# freshly minted child.
+root_only_fields = {
+    "_migrated_from",
+    "_parent_migrated_from",
+    "_legacy_uuid",
+    "_legacy_uuid_note",
+    "_attestation_note",
+    "_attestation",
+    "_migration",
+    "_migrated",
+    "_legacy",
+    "_provenance",
+    "_root_provenance",
+    "_root_attestation",
+    "_attested_by",
+    "_reanchor",
+    "_re_anchor",
+}
+root_only_prefixes = (
+    "_migrated_",
+    "_migration_",
+    "_legacy_",
+    "_reanchor_",
+    "_re_anchor_",
+    "_attestation_",
+    "_provenance_",
+    "_root_provenance_",
+    "_root_attestation_",
+    "_attested_",
+)
+for key in tuple(data):
+    if key in root_only_fields or key.startswith(root_only_prefixes):
+        del data[key]
+
 data["rappid"] = rappid
 data["parent_rappid"] = parent_rappid
 data["parent_repo"] = parent_repo
@@ -207,7 +243,7 @@ data["role"] = "variant"
 # Eternity standard: `kind` lives in the record (not the rappid string).
 data.setdefault("kind", "variant")
 data["schema"] = "rapp/1"
-# attestation resets because the new rappid hasn't been attested yet.
+# The fresh child has no inherited or fabricated attestation/re-anchor.
 data["attestation"] = None
 
 encoded = (json.dumps(data, indent=2) + "\n").encode("utf-8")

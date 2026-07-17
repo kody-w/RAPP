@@ -15,12 +15,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with th
 - Do not edit `brainstem.py`, `agents/basic_agent.py`, or `VERSION`; verify
   them against `kody-w/rapp-installer@brainstem-v0.6.9`.
 - The port-7071 application is contained legacy source, not a shipped local
-  product, browser UI, installer, catalog, or hatcher.
+  product, browser UI, installer, catalog, or hatcher. `start.sh`, `start.ps1`,
+  and `utils/boot.py` are unconditional 410/exit-78 tombstones; direct
+  immutable execution is isolated canonical test evidence only.
 - Current target-owned synchronous work uses the loopback pre-acceptance
-  façade at `127.0.0.1:7073`: required string `user_input`; optional strings
-  `session_id` and `idempotency_key`; exact success members `response`,
-  `agent_logs` (array), and `session_id`; exact HTTP 422 nested
-  `error.code`/`error.step`.
+  façade at `127.0.0.1:7073`. Its launcher imports no grail module and defaults
+  to `inference-refused` until a reviewed adapter is explicitly injected:
+  required string `user_input`; optional strings `session_id` and
+  `idempotency_key`; exact success members `response`, `agent_logs` (array),
+  and `session_id`; exact HTTP 422 nested `error.code`/`error.step`.
 - Voice and Twin derive locally from `response` and add no fields.
 - Validate through `python3 tests/run_rapp1_conformance.py`; passing remains
   structural/pre-acceptance only.

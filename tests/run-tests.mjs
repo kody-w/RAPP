@@ -203,6 +203,24 @@ test('legacy plant producer is an explicit refusal only', () => {
   }
 });
 
+test('target-owned legacy launchers are explicit refusal only', () => {
+  const launchers = [
+    ['rapp_brainstem/start.sh', ['brainstem.py', 'boot.py', 'python', 'pip', 'exec ']],
+    ['rapp_brainstem/start.ps1', ['brainstem.py', 'boot.py', 'python', 'pip', 'Start-Process']],
+    ['rapp_brainstem/utils/boot.py', ['brainstem.py', 'lineage_check', 'import ', 'subprocess', 'exec']],
+  ];
+  for (const [relative, forbidden] of launchers) {
+    const source = read(relative);
+    assert(source.includes('410 Gone'), `${relative} retirement is missing`);
+    for (const marker of forbidden) {
+      assert(!source.includes(marker), `${relative} retains launch marker: ${marker}`);
+    }
+  }
+  assert(read('rapp_brainstem/start.sh').includes('exit 78'));
+  assert(read('rapp_brainstem/start.ps1').includes('exit 78'));
+  assert(read('rapp_brainstem/utils/boot.py').includes('SystemExit(78)'));
+});
+
 test('live distribution inventory uses dynamic category coverage', () => {
   const inventory = json('tests/rapp1-live-surface-inventory.json');
   equal(inventory.schema, 'rapp1-live-surface-inventory/1.0');

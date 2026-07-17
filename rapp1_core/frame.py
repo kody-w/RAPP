@@ -1572,6 +1572,25 @@ class FrameAcceptor:
                 trust_status=TrustStatus.UNVERIFIED,
                 checks=tuple(checks),
             )
+        if (
+            frame["seq"] == 0
+            and registry.genesis_hashes.get(frame["stream_id"])
+            != frame["frame_hash"]
+        ):
+            detail = (
+                "historical genesis is not the current authenticated "
+                "registry genesis"
+            )
+            checks.append(CheckResult("head", CheckStatus.FAIL, detail))
+            return replace(
+                inspected,
+                accepted=False,
+                trust_status=TrustStatus.DRIFT,
+                checks=tuple(checks),
+                error_code="unregistered-genesis",
+                error_step="head",
+                error=detail,
+            )
         if predecessor is not None:
             epoch_problem = _head_epoch_problem(predecessor, registry)
             if epoch_problem is not None:

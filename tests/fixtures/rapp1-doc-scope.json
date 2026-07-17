@@ -7,9 +7,9 @@
     "post_audit_tracked_paths": 691,
     "integrated_main_commit": "bd122780ac90010e607ce9549e7c5ed18bee5d73",
     "integrated_tracked_paths": 693,
-    "integrated_tracked_bytes": 7930980,
-    "integration_note": "Current closure tree after removing the last live Cave installer agent; the 691-row final verifier ledger remains a dated source report.",
-    "status_boundary": "RAPP1_STATUS.md remains byte-identical to the code-owned owner-evidence hash; integrated counts are recorded here without rewriting owner hashes.",
+    "integrated_tracked_bytes": 7941269,
+    "integration_note": "Current closure tree after target-owned legacy launchers were HTTP-410 contained; the 691-row final verifier ledger remains a dated source report.",
+    "status_boundary": "RAPP1_STATUS.md and its code-owned owner-evidence hash were refreshed together for launch containment; integrated counts are recorded here.",
     "path_set_digest": "sha256(sorted UTF-8 paths joined with newline, including final newline)",
     "provenance": {
       "existing_report": {
@@ -503,7 +503,7 @@
       "path_set_sha256": "7423edeb7b7b24efda534a4ddf76d6483f10f16473eabd7dfb5ed640f314a27c",
       "sha256": {
         "pages/_site/partials/footer.html": "f4e27778f0d6b636e7cf50047229692d9790668eda5fa027837711852193347d",
-        "installer/README.md": "93dc6f85e303cd045219b17a5be9315c88b8e6cc1449aae170e316a0bc72b790"
+        "installer/README.md": "2cdbeb34454c1dced1a2e6c5698b9256adac76d8a4ab355fda00687349a670fe"
       },
       "paths": [
         "pages/_site/partials/footer.html",

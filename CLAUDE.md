@@ -16,17 +16,20 @@
    `cave/rapplications/rapp-installer/**` subtree, archives, or generated
    external mirrors.
 3. The only target-owned synchronous protocol adapter is the loopback,
-   pre-acceptance façade at `127.0.0.1:7073`. Its request contains required
-   string `user_input` and optional strings `session_id` and
-   `idempotency_key`; success contains exactly `response`, `agent_logs` (array),
-   and `session_id`; refusal is HTTP 422 with exactly nested `error.code` and
-   `error.step`.
+   pre-acceptance façade at `127.0.0.1:7073`. It imports no grail module and
+   defaults to `inference-refused` until a reviewed adapter is explicitly
+   injected. Its request contains required string `user_input` and optional
+   strings `session_id` and `idempotency_key`; success contains exactly
+   `response`, `agent_logs` (array), and `session_id`; refusal is HTTP 422 with
+   exactly nested `error.code` and `error.step`.
 4. Voice and Twin presentation derive locally from `response`. They add no
    request or response fields.
 5. Tier 1/2/3, public installers, browser brainstems, Shortcuts, planting,
    catalogs, cave bootstraps, legacy egg hatching, and Commons samples are
    retired or pre-acceptance. Do not advertise, deploy, download, or invoke
-   them from documentation.
+   them from documentation. The target-owned legacy brainstem launchers are
+   unconditional 410/exit-78 tombstones; direct immutable execution is
+   isolated canonical test evidence only.
 6. For structural/pre-acceptance validation run
    `python3 tests/run_rapp1_conformance.py`. Documentation-only work may first
    run `python3 tools/check_rapp1_docs.py`,

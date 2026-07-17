@@ -51,7 +51,7 @@
     {
       "path": "tests/e2e/07-ui-smoke.sh",
       "disposition": "canonical-direct",
-      "reason": "Boots the local target and checks the current served UI without external services.",
+      "reason": "Directly invokes immutable brainstem.py only as isolated historical UI evidence on an OS-assigned port.",
       "gate": "ui-smoke"
     },
     {
@@ -97,7 +97,7 @@
     {
       "path": "tests/organism/01-canonical-kernel-boots.sh",
       "disposition": "canonical-child",
-      "reason": "Invoked by tests/organism/run-all.sh; uses repository-local scratch and no remote service.",
+      "reason": "Invoked by tests/organism/run-all.sh; directly exercises immutable brainstem.py only as isolated historical evidence.",
       "gate": "organism-offline"
     },
     {
@@ -115,7 +115,7 @@
     {
       "path": "tests/organism/06-stdout-wrapper-non-unicode-locale.sh",
       "disposition": "canonical-child",
-      "reason": "Invoked by tests/organism/run-all.sh; uses repository-local scratch and no remote service.",
+      "reason": "Invoked by tests/organism/run-all.sh; directly exercises immutable brainstem.py only as isolated historical evidence on an OS-assigned port.",
       "gate": "organism-offline"
     },
     {
@@ -127,7 +127,7 @@
     {
       "path": "tests/organism/run-all.sh",
       "disposition": "canonical-direct",
-      "reason": "Runs every retained offline organism fixture.",
+      "reason": "Runs retained offline evidence fixtures; any direct immutable brainstem.py execution is isolated test-only behavior.",
       "gate": "organism-offline"
     },
     {

@@ -37,11 +37,11 @@ emit `manifest.scale` or treat an unknown scale as a current extension point.
 ## Commands
 
 ```bash
-# Exercise the contained legacy source runtime (not a public install surface)
-cd rapp_brainstem && ./start.sh
+# Prove the target-owned legacy launcher is contained (expected: exit 78)
+bash rapp_brainstem/start.sh
 
-# Direct run (assumes deps installed)
-python rapp_brainstem/brainstem.py
+# Run the authoritative structural/pre-acceptance gate
+python3 tests/run_rapp1_conformance.py
 
 # Install dependencies
 pip3 install -r rapp_brainstem/requirements.txt
@@ -60,8 +60,10 @@ or build step is configured.
 ## Architecture
 
 ```
-rapp_brainstem/        Contained legacy local runtime source
-  brainstem.py         Entry point: all routes, agent loading, Copilot API, tool-calling loop
+rapp_brainstem/        Immutable historical source plus loopback refusal facade
+  brainstem.py         Immutable runtime evidence; directly invoked only by isolated tests
+  start.sh/.ps1        Target-owned HTTP-410 launcher tombstones
+  utils/boot.py        Target-owned HTTP-410 boot tombstone
   soul.md              System prompt loaded every request
   agents/              Auto-discovered *_agent.py files (flat only — experimental/ excluded)
   web/                 Retired browser-source artifact; not a live product
@@ -83,9 +85,12 @@ worker/                Retired browser-auth proxy source; not deployed here
 tests/                 Canonical RAPP/1 core/static gates + retired fixtures
 ```
 
-## Writing Agents
+## Historical Agent Shape
 
-Create `agents/<thing>_agent.py` — the brainstem auto-discovers it on every request (no restart needed).
+The immutable historical source auto-discovered
+`agents/<thing>_agent.py` on each request. The shape below is retained for
+source/test work; it does not authorize starting the retired server or adding
+an agent to the production facade.
 
 **Required contract:**
 1. Filename: `*_agent.py` in `agents/` (flat directory only)
@@ -116,9 +121,12 @@ See [rapp_brainstem/agents/hacker_news_agent.py](rapp_brainstem/agents/hacker_ne
 - **The local SPEC is superseded.** Protocol evolution follows RAPP/1 §12
   total migration and retirement, not perpetual v1 compatibility.
 
-## Auth Chain
+## Historical Auth Chain
 
-`GITHUB_TOKEN` env → `.copilot_token` file (device-code OAuth) → `gh auth token` CLI. The GitHub token is exchanged for a short-lived Copilot API token, cached with auto-refresh.
+The immutable historical source used `GITHUB_TOKEN` env → `.copilot_token`
+file (device-code OAuth) → `gh auth token` CLI, then cached a short-lived
+Copilot API token. The production facade launcher does not import or use that
+chain and defaults to `inference-refused`.
 
 This is application authentication to GitHub/Copilot, not RAPP protocol trust.
 RAPP artifacts use §§10/13 signatures, key succession, revocation, and the
@@ -133,7 +141,8 @@ migration or a shipped Tier 2.
 
 ## Environment
 
-Configuration via `.env` (auto-created by `start.sh`):
+The immutable historical source read `.env`, but the retired target-owned
+launchers neither create nor consume it:
 - `GITHUB_TOKEN` — auto-detected from `gh` CLI if blank
 - `GITHUB_MODEL` — default `gpt-4o`, switchable at runtime via `/models/set`
 - `SOUL_PATH`, `AGENTS_PATH`, `PORT`, `VOICE_MODE`, `TWIN_MODE`

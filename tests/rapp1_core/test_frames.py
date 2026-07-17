@@ -774,6 +774,49 @@ def test_late_competing_historical_frame_also_quarantines_stream() -> None:
     assert acceptor.is_quarantined(RID1)
 
 
+def test_unregistered_alternate_genesis_never_quarantines_or_persists() -> None:
+    genesis = _body_genesis()
+    registry = _registry(genesis)
+    acceptor = FrameAcceptor(registry)
+    assert acceptor.accept(genesis, declared_stream_id=RID1).accepted
+    before = canonical_bytes(acceptor.snapshot().as_dict())
+
+    alternate = build_frame(
+        kind="body.pulse",
+        stream_id=RID1,
+        seq=0,
+        utc=UTC0,
+        payload={"alternate": "unregistered"},
+        prev=None,
+        prev_wave=None,
+    )
+    refused = acceptor.accept(alternate, declared_stream_id=RID1)
+    assert not refused.accepted
+    assert refused.error_code == "unregistered-genesis"
+    assert refused.trust_status is TrustStatus.DRIFT
+    assert not acceptor.is_quarantined(RID1)
+    assert acceptor.head(RID1).frame_hash == genesis["frame_hash"]
+    assert canonical_bytes(acceptor.snapshot().as_dict()) == before
+
+    persisted = strict_loads(before)
+    assert type(persisted) is dict
+    restarted = FrameAcceptor(
+        registry,
+        snapshot=FrameAcceptorSnapshot.from_dict(persisted),
+    )
+    assert not restarted.is_quarantined(RID1)
+    successor = build_frame(
+        kind="body.pulse",
+        stream_id=RID1,
+        seq=1,
+        utc=UTC1,
+        payload={"after": "rejected alternate"},
+        prev=genesis["payload_hash"],
+        prev_wave=None,
+    )
+    assert restarted.accept(successor, declared_stream_id=RID1).accepted
+
+
 def test_fork_quarantine_survives_snapshot_and_restart() -> None:
     genesis = _body_genesis()
     registry = _registry(genesis)

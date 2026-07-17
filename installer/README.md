@@ -9,8 +9,11 @@ deployment, download, or import paths.
 
 The repository-local `initialize-variant.sh` lineage utility remains active
 only for fresh template clones. It is mint-once: it records lineage once and
-performs no runtime install or deploy. It is not a public distribution,
-deployment, or download entrypoint.
+performs no runtime install or deploy. A fresh child preserves template
+product metadata but drops root-only migration, legacy UUID, re-anchor, and
+attestation-note evidence; its unattested state remains `null` rather than
+fabricating a child re-anchor. It is not a public distribution, deployment, or
+download entrypoint.
 
 This README intentionally provides no public installation, deployment, or
 download commands. For the repository's current contained state, read

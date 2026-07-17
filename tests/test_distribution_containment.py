@@ -25,12 +25,14 @@ RETIRED_SHELL_ENTRYPOINTS = (
     "installer/install-swarm.sh",
     "installer/start-local.sh",
     "installer/integration_plant.sh",
+    "rapp_brainstem/start.sh",
 )
 RETIRED_POWERSHELL_ENTRYPOINTS = (
     "install.ps1",
     "community_rapp/install.ps1",
     "deploy.ps1",
     "installer/install.ps1",
+    "rapp_brainstem/start.ps1",
 )
 RETIRED_CMD_ENTRYPOINTS = (
     "install.cmd",

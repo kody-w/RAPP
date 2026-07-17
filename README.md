@@ -2,10 +2,12 @@
 
 This repository is an experimental source checkout, not a currently shipped
 installer or hosted product. The historical port-7071 application remains
-available for source study, while the RAPP/1 façade is a local,
-pre-acceptance boundary at `127.0.0.1:7073`. No public one-line install,
-browser brainstem, Tier 2 service, downloadable egg catalog, or Shortcut is
-currently offered.
+only as immutable, directly invoked test evidence; its target-owned launchers
+return HTTP 410 semantics without starting a process. The RAPP/1 façade is a
+local, pre-acceptance boundary at `127.0.0.1:7073` and defaults to
+`inference-refused` until a safe adapter is explicitly injected. No public
+one-line install, browser brainstem, Tier 2 service, downloadable egg catalog,
+or Shortcut is currently offered.
 
 > **Historical strategy:** [The Brainstem Mandate](./BRAINSTEM_MANDATE.md)
 > preserves an earlier product direction. It is not current onboarding.
@@ -51,14 +53,15 @@ class WeatherAgent(BasicAgent):
         return f"It's sunny in {kwargs['city']}."
 ```
 
-In a source-run historical port-7071 application, dropping that file in
-`agents/` makes it discoverable on a later request. This example describes the
-application internals; it is not an installation or RAPP/1 wire contract.
+In the immutable historical port-7071 source, that file would be discovered on
+a later request. This example describes retained application internals only;
+it is not an installation, launch instruction, or RAPP/1 wire contract.
 
 ## Why it might be interesting
 
-- **Local source research.** The repository preserves the port-7071 Flask
-  application and its single-file agent model for inspection and development.
+- **Immutable local evidence.** The repository preserves the port-7071 Flask
+  application and its single-file agent model for inspection. Direct execution
+  is confined to isolated canonical tests; it is not a public launch path.
 - **Legacy cartridges are retired.** Historical `brainstem egg` / `brainstem
   hatch` paths and `brainstem-egg/2.x` artifacts are migration evidence, not
   operational inputs or current output. The only current egg authority is
