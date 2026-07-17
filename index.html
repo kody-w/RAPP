@@ -152,23 +152,20 @@
 <div class="hero">
   <div class="logo">🧠</div>
   <h1>The <span class="grad">RAPP</span> Stack</h1>
-  <p>A pinned local Brainstem distribution. Legacy cloud provisioning and the unsigned enterprise archive are retired and are not published from this page.</p>
+  <p>No active installer is published. The legacy installers, cloud provisioning, and unsigned enterprise archive are retired.</p>
 </div>
 
 <div class="install" id="install">
   <div class="install-tabs">
     <div class="install-tabs-l">
       <div class="dots"><span></span><span></span><span></span></div>
-      <button class="install-tab active" data-os="mac">macOS</button>
-      <button class="install-tab" data-os="linux">Linux</button>
+      <span class="install-tab active">HTTP 410</span>
     </div>
   </div>
-  <div class="install-body" id="cmd-row">
-    <span class="dollar">$</span>
-    <span class="cmd" id="cmd-text">curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash</span>
-    <span class="copy">⧉</span>
+  <div class="install-body">
+    <span class="cmd">Installer retired — no complete executable-input lock exists.</span>
   </div>
-  <div class="install-hint">click anywhere on the line to copy</div>
+  <div class="install-hint">No tag-based or mutable-branch fallback is available.</div>
 </div>
 
 <div class="alt-cta">
@@ -194,7 +191,7 @@
 </div>
 
 <div class="tiers">
-  <div class="tiers-intro">Pinned local distribution</div>
+  <div class="tiers-intro">Retired local distribution</div>
 
   <article class="tier" data-tier="1" id="brainstem">
     <div class="tier-head" onclick="this.parentNode.classList.toggle('open')">
@@ -203,16 +200,15 @@
         <h2>Tier 1 — Brainstem</h2>
         <div class="sub">Local Python server · GitHub Copilot · port 7071</div>
       </div>
-      <span class="tier-badge start">Start here</span>
+      <span class="tier-badge adv">Retired</span>
       <span class="tier-arrow">›</span>
     </div>
     <div class="tier-body">
       <p>The minimum viable brain. Runs on your laptop. Only dependency: a GitHub account with Copilot access. No API keys, no cloud, no config files.</p>
       <p class="met"><em>Metaphor: the autonomic core. Beats without thinking.</em></p>
       <div class="step">
-        <h3>Install</h3>
-        <p>Puts the brainstem at <code>~/.brainstem/src/rapp_brainstem/</code>.</p>
-        <pre>curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash</pre>
+        <h3>Installer retired</h3>
+        <p>The installer returns HTTP 410 semantics because no complete target-owned lock covers every executable and dependency input.</p>
       </div>
       <div class="step">
         <h3>Run</h3>
@@ -258,36 +254,6 @@
 </footer>
 
 </main>
-
-<script>
-  const CMDS = {
-    mac:   'curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash',
-    linux: 'curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash'
-  };
-  const tabs = document.querySelectorAll('.install-tab');
-  const cmdText = document.getElementById('cmd-text');
-  const cmdRow  = document.getElementById('cmd-row');
-  tabs.forEach(t => t.addEventListener('click', () => {
-    tabs.forEach(x => x.classList.remove('active'));
-    t.classList.add('active');
-    cmdText.textContent = CMDS[t.dataset.os];
-  }));
-  // Auto-detect OS for the default tab.
-  (function(){
-    const ua = navigator.userAgent;
-    let os = 'mac';
-    if (/Linux/i.test(ua) && !/Android/i.test(ua)) os = 'linux';
-    document.querySelectorAll('.install-tab').forEach(t => {
-      if (t.dataset.os === os) t.click();
-    });
-  })();
-  cmdRow.addEventListener('click', () => {
-    navigator.clipboard.writeText(cmdText.textContent).then(() => {
-      cmdRow.classList.add('copied');
-      setTimeout(() => cmdRow.classList.remove('copied'), 1200);
-    });
-  });
-</script>
 
 </body>
 </html>

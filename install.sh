@@ -3,6 +3,6 @@ cat >&2 <<'EOF'
 install.sh: 410 Gone
 
 This legacy root passthrough is retired because it selected mutable upstream
-bytes. Use the target-owned pinned installer at installer/install.sh.
+bytes. No replacement installer is active without a complete input lock.
 EOF
 exit 78

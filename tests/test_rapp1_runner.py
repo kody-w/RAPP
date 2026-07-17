@@ -5,6 +5,7 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -264,8 +265,56 @@ def test_brainstem_boot_gates_poll_readiness_with_bounded_diagnostics():
         assert "RAPP1_BOOT_TIMEOUT_SECONDS" in source
         assert "boot_diagnostics" in source
         assert "kill -0" in source
+        assert "process_is_expected" in source
+        assert "ps -p" in source
+        assert "discover_bound_port" in source
+        assert "PORT=0" in source
+        assert "OS-assigned process-owned port" in source
         assert "--connect-timeout 1 --max-time 1" in source
+        assert "lsof -i" not in source
+        assert "sock.bind" not in source
         assert "seq 1 30" not in source
+
+
+def test_canonical_kernel_boots_concurrently_on_process_owned_ports(monkeypatch):
+    scratch = ROOT / f"tests/.rapp1-concurrent-boots-{os.getpid()}"
+    shutil.rmtree(scratch, ignore_errors=True)
+    monkeypatch.setattr(runner, "WORK_ROOT", scratch)
+    processes = []
+    try:
+        runner.prepare_isolated_brainstem()
+        environment = runner.gate_environment()
+        environment["RAPP1_BOOT_TIMEOUT_SECONDS"] = "20"
+        for _ in range(2):
+            processes.append(
+                subprocess.Popen(
+                    ("bash", "tests/organism/01-canonical-kernel-boots.sh"),
+                    cwd=ROOT,
+                    env=environment,
+                    text=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                )
+            )
+
+        outputs = []
+        for process in processes:
+            output, _ = process.communicate(timeout=40)
+            outputs.append(output)
+            assert process.returncode == 0, output
+        ports = []
+        for output in outputs:
+            match = re.search(r"ready: pid=\d+ port=(\d+)", output)
+            assert match, output
+            ports.append(int(match.group(1)))
+        assert all(port > 0 for port in ports)
+        assert len(set(ports)) == 2
+    finally:
+        for process in processes:
+            if process.poll() is None:
+                process.terminate()
+                process.wait(timeout=5)
+        shutil.rmtree(scratch, ignore_errors=True)
 
 
 def test_offline_boundary_harness_blocks_external_network(monkeypatch):

@@ -220,7 +220,7 @@ def gates() -> tuple[Gate, ...]:
                 "-q",
                 "tests/test_distribution_containment.py",
             ),
-            "pinned installer, retired provisioning, immutable archives, and caller containment",
+            "retired installer, retired provisioning, immutable archives, and caller containment",
         ),
         Gate(
             "plant-retirement",

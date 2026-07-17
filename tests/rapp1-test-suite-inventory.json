@@ -240,7 +240,7 @@
     {
       "path": "tests/test_distribution_containment.py",
       "disposition": "canonical-direct",
-      "reason": "Verifies pinned installer behavior, distribution retirement, immutable archives, and browser caller containment.",
+      "reason": "Verifies fail-closed installer behavior, distribution retirement, immutable archives, and browser caller containment.",
       "gate": "distribution-retirement"
     },
     {

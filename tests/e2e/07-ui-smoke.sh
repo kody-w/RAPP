@@ -8,41 +8,52 @@ PYTHON="${PYTHON:-python3}"
 if [ -x "$HOME/.brainstem/venv/bin/python" ]; then
     PYTHON="$HOME/.brainstem/venv/bin/python"
 fi
-PORT="${PORT:-$("$PYTHON" - <<'PY'
-import socket
-with socket.socket() as sock:
-    sock.bind(("127.0.0.1", 0))
-    print(sock.getsockname()[1])
-PY
-)}"
+BRAINSTEM_SCRIPT="$BRAINSTEM_DIR/brainstem.py"
+PORT=""
 WORK_DIR="${TMPDIR:-$(pwd)/tests/.rapp1-work}/ui-smoke-$$"
 mkdir -p "$WORK_DIR"
 PID_FILE="$WORK_DIR/brainstem.pid"
 LOG="$WORK_DIR/brainstem.log"
 HTML="$WORK_DIR/index.html"
+SERVER_PID=""
 
 cleanup() {
-    if [ -f "$PID_FILE" ]; then
-        kill "$(cat "$PID_FILE")" 2>/dev/null || true
+    if [ -n "$SERVER_PID" ]; then
+        kill "$SERVER_PID" 2>/dev/null || true
+        wait "$SERVER_PID" 2>/dev/null || true
         rm -f "$PID_FILE"
     fi
     rm -rf "$WORK_DIR"
 }
 trap cleanup EXIT
 
+process_is_expected() {
+    local command
+    [ -n "$SERVER_PID" ] && kill -0 "$SERVER_PID" 2>/dev/null || return 1
+    command="$(ps -p "$SERVER_PID" -o command= 2>/dev/null)" || return 1
+    case "$command" in
+        *"$BRAINSTEM_SCRIPT"*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+discover_bound_port() {
+    sed -nE \
+        's#^.*Running on http://127\.0\.0\.1:([0-9]+).*$#\1#p' \
+        "$LOG" 2>/dev/null | tail -n 1
+}
+
 boot_diagnostics() {
     local reason="$1"
     echo "FAIL: $reason" >&2
-    echo "  port: $PORT" >&2
+    echo "  bound port: ${PORT:-not discovered}" >&2
     echo "  python: $PYTHON" >&2
     echo "  brainstem: $BRAINSTEM_DIR" >&2
-    if [ -f "$PID_FILE" ]; then
-        local pid
-        pid="$(cat "$PID_FILE")"
-        if kill -0 "$pid" 2>/dev/null; then
-            echo "  process: $pid (running but not ready)" >&2
+    if [ -n "$SERVER_PID" ]; then
+        if kill -0 "$SERVER_PID" 2>/dev/null; then
+            echo "  process: $SERVER_PID ($(ps -p "$SERVER_PID" -o command= 2>/dev/null || echo unknown))" >&2
         else
-            echo "  process: $pid (exited before readiness)" >&2
+            echo "  process: $SERVER_PID (exited before readiness)" >&2
         fi
     fi
     echo "--- brainstem log tail ---" >&2
@@ -59,13 +70,25 @@ wait_for_health() {
     esac
     local started=$SECONDS
     while (( SECONDS - started < timeout )); do
-        if curl -fsS --connect-timeout 1 --max-time 1 \
-            "http://localhost:$PORT/health" >/dev/null 2>&1; then
-            return 0
-        fi
-        if ! kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
-            boot_diagnostics "brainstem exited before /health became ready"
+        if ! kill -0 "$SERVER_PID" 2>/dev/null; then
+            boot_diagnostics "spawned brainstem exited before readiness"
             return 1
+        fi
+        if [ -z "$PORT" ]; then
+            PORT="$(discover_bound_port)"
+        fi
+        if [ -n "$PORT" ] && ! process_is_expected; then
+            boot_diagnostics "spawned brainstem changed identity before readiness"
+            return 1
+        fi
+        if [ -n "$PORT" ] &&
+            curl -fsS --connect-timeout 1 --max-time 1 \
+                "http://127.0.0.1:$PORT/health" >/dev/null 2>&1; then
+            if ! process_is_expected; then
+                boot_diagnostics "spawned brainstem exited or changed identity after health response"
+                return 1
+            fi
+            return 0
         fi
         sleep 0.2
     done
@@ -73,16 +96,15 @@ wait_for_health() {
     return 1
 }
 
-if curl -sf "http://localhost:$PORT/health" >/dev/null 2>&1; then
-    echo "FAIL: refusing to reuse ambient server on :$PORT" >&2
-    exit 1
-fi
-echo "▶ Starting isolated brainstem on :$PORT..."
-( cd "$BRAINSTEM_DIR" && exec env PORT="$PORT" "$PYTHON" brainstem.py ) > "$LOG" 2>&1 &
-echo $! > "$PID_FILE"
+echo "▶ Starting isolated brainstem on an OS-assigned process-owned port..."
+( cd "$BRAINSTEM_DIR" && exec env PORT=0 PYTHONUNBUFFERED=1 \
+    "$PYTHON" "$BRAINSTEM_SCRIPT" ) > "$LOG" 2>&1 &
+SERVER_PID=$!
+echo "$SERVER_PID" > "$PID_FILE"
 wait_for_health
+echo "  ready: pid=$SERVER_PID port=$PORT"
 
-HEALTH="$(curl -sf "http://localhost:$PORT/health")" || {
+HEALTH="$(curl -sf "http://127.0.0.1:$PORT/health")" || {
     boot_diagnostics "/health failed after readiness"
     exit 1
 }
@@ -92,7 +114,7 @@ echo "$HEALTH" | grep -q '"status":"unauthenticated"' || {
 }
 
 echo "▶ GET / ..."
-HTTP=$(curl -s -o "$HTML" -w "%{http_code}" "http://localhost:$PORT/")
+HTTP=$(curl -s -o "$HTML" -w "%{http_code}" "http://127.0.0.1:$PORT/")
 if [ "$HTTP" != "200" ]; then
     echo "FAIL: / returned HTTP $HTTP"
     boot_diagnostics "GET / failed after readiness"

@@ -21,6 +21,7 @@ RETIRED_SHELL_ENTRYPOINTS = (
     "docs/install.command",
     "community_rapp/install.sh",
     "deploy.sh",
+    "installer/install.sh",
     "installer/install-swarm.sh",
     "installer/start-local.sh",
     "installer/integration_plant.sh",
@@ -65,80 +66,134 @@ def test_live_surface_inventory_uses_dynamic_counts_and_required_categories():
             assert (ROOT / relative).is_file(), f"stale {category} path: {relative}"
 
 
-def test_unix_installer_fetches_only_exact_tag_and_verifies_kernel_pin():
+def test_unix_installer_fails_closed_without_an_incomplete_lock_path():
     source = (ROOT / "installer/install.sh").read_text(encoding="utf-8")
-    pin = json.loads((ROOT / "KERNEL_PIN.json").read_text(encoding="utf-8"))
-    assert pin["kernel"]["tag"] == "brainstem-v0.6.9"
-    assert f'KERNEL_TAG="{pin["kernel"]["tag"]}"' in source
-    for relative, digest in pin["kernel"]["frozen"].items():
-        assert f"{digest} {relative}" in source
-    assert "--single-branch --branch \"$KERNEL_TAG\"" in source
-    assert "verify_kernel \"$STAGE_DIR\"" in source
-    assert "verify_kernel \"$SRC_DIR\"" in source
-    assert "origin/main" not in source
-    assert "/main/" not in source
-    assert "PIN_REF=\"main\"" not in source
-    assert "BRAINSTEM_FORCE_KERNEL_REFRESH" not in source
-    assert not re.search(r"\bcp\b[^\n]*(brainstem\.py|basic_agent\.py|VERSION)", source)
+    assert "410 Gone" in source
+    assert "No complete target-owned lock" in source
+    assert "exit 78" in source
+    for marker in (
+        "git ",
+        "pip ",
+        "venv",
+        "requirements.txt",
+        "KERNEL_TAG",
+        "sha256",
+        "curl ",
+    ):
+        assert marker not in source
 
 
-def _installed_kernel_fixture(name: str) -> tuple[Path, dict[str, bytes]]:
-    home = ROOT / f"tests/.rapp1-installer-{name}-{os.getpid()}"
-    shutil.rmtree(home, ignore_errors=True)
-    frozen = json.loads((ROOT / "KERNEL_PIN.json").read_text(encoding="utf-8"))[
-        "kernel"
-    ]["frozen"]
-    expected = {}
-    for relative in frozen:
-        data = (ROOT / relative).read_bytes()
-        destination = home / "src" / relative
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        destination.write_bytes(data)
-        expected[relative] = data
-    return home, expected
-
-
-def test_unix_installer_verify_only_preserves_existing_pinned_bytes():
-    home, expected = _installed_kernel_fixture("verify")
+def test_installer_rejects_moved_tag_changed_agent_and_requirements():
+    scratch = ROOT / f"tests/.rapp1-installer-attacks-{os.getpid()}"
+    shutil.rmtree(scratch, ignore_errors=True)
     try:
-        environment = os.environ.copy()
-        environment["BRAINSTEM_HOME"] = os.fspath(home)
-        result = subprocess.run(
-            ("bash", "installer/install.sh", "--verify-only"),
-            cwd=ROOT,
-            env=environment,
-            text=True,
-            capture_output=True,
-            check=False,
-        )
-        assert result.returncode == 0, result.stderr
-        assert "pinned bytes were not rewritten" in result.stdout
-        for relative, data in expected.items():
-            assert (home / "src" / relative).read_bytes() == data
-    finally:
-        shutil.rmtree(home, ignore_errors=True)
+        fake_bin = scratch / "bin"
+        fake_bin.mkdir(parents=True)
+        for name in (
+            "curl",
+            "git",
+            "pip",
+            "python3",
+            "python3.11",
+            "python3.12",
+            "python3.13",
+        ):
+            fake_tool = fake_bin / name
+            fake_tool.write_text(
+                (
+                    "#!/usr/bin/env bash\n"
+                    'printf "%s\\n" "${0##*/}" >> "$RAPP_TEST_SENTINEL"\n'
+                    "exit 99\n"
+                ),
+                encoding="utf-8",
+            )
+            fake_tool.chmod(0o755)
 
+        frozen = json.loads(
+            (ROOT / "KERNEL_PIN.json").read_text(encoding="utf-8")
+        )["kernel"]["frozen"]
+        for attack in ("moved-tag", "changed-agent", "changed-requirements"):
+            remote = scratch / attack
+            for relative in frozen:
+                destination = remote / relative
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_bytes((ROOT / relative).read_bytes())
+            (remote / "rapp_brainstem/requirements.txt").write_text(
+                "flask==3.1.0\n",
+                encoding="utf-8",
+            )
+            if attack == "moved-tag":
+                (remote / ".simulated-tag-target").write_text(
+                    "attacker-controlled-commit\n",
+                    encoding="utf-8",
+                )
+                (remote / "rapp_brainstem/agents/tag_payload_agent.py").write_text(
+                    "raise RuntimeError('moved tag payload executed')\n",
+                    encoding="utf-8",
+                )
+            elif attack == "changed-agent":
+                (remote / "rapp_brainstem/agents/unlocked_agent.py").write_text(
+                    "raise RuntimeError('unlocked agent executed')\n",
+                    encoding="utf-8",
+                )
+            else:
+                (remote / "rapp_brainstem/requirements.txt").write_text(
+                    "unlocked-package @ https://example.invalid/moved.whl\n",
+                    encoding="utf-8",
+                )
+            for relative, digest in frozen.items():
+                assert _sha256(remote / relative) == digest
 
-def test_unix_installer_verify_only_fails_closed_on_pin_drift():
-    home, _ = _installed_kernel_fixture("drift")
-    try:
-        version = home / "src/rapp_brainstem/VERSION"
-        version.write_bytes(version.read_bytes() + b"tamper")
-        environment = os.environ.copy()
-        environment["BRAINSTEM_HOME"] = os.fspath(home)
-        result = subprocess.run(
-            ("bash", "installer/install.sh", "--verify-only"),
-            cwd=ROOT,
-            env=environment,
-            text=True,
-            capture_output=True,
-            check=False,
-        )
-        assert result.returncode == 78
-        assert "Pinned file hash mismatch: rapp_brainstem/VERSION" in result.stderr
-        assert version.read_bytes().endswith(b"tamper")
+            home = scratch / f"home-{attack}"
+            if attack != "moved-tag":
+                shutil.copytree(remote, home / "src")
+            before = {
+                path.relative_to(remote): path.read_bytes()
+                for path in remote.rglob("*")
+                if path.is_file()
+            }
+            installed_before = {
+                path.relative_to(home): path.read_bytes()
+                for path in home.rglob("*")
+                if path.is_file()
+            }
+            sentinel = scratch / f"{attack}-tool-was-invoked"
+            environment = os.environ.copy()
+            environment.update(
+                {
+                    "BRAINSTEM_HOME": os.fspath(home),
+                    "PATH": os.pathsep.join(
+                        (os.fspath(fake_bin), environment.get("PATH", ""))
+                    ),
+                    "RAPP_TEST_REMOTE_TREE": os.fspath(remote),
+                    "RAPP_TEST_SENTINEL": os.fspath(sentinel),
+                }
+            )
+            result = subprocess.run(
+                ("bash", "installer/install.sh"),
+                cwd=ROOT,
+                env=environment,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            assert result.returncode == 78, attack
+            assert "410 Gone" in result.stderr, attack
+            assert not sentinel.exists(), f"{attack}: installer invoked a tool"
+            if attack == "moved-tag":
+                assert not home.exists(), attack
+            assert before == {
+                path.relative_to(remote): path.read_bytes()
+                for path in remote.rglob("*")
+                if path.is_file()
+            }, f"{attack}: simulated source bytes changed"
+            assert installed_before == {
+                path.relative_to(home): path.read_bytes()
+                for path in home.rglob("*")
+                if path.is_file()
+            }, f"{attack}: installed source bytes changed"
     finally:
-        shutil.rmtree(home, ignore_errors=True)
+        shutil.rmtree(scratch, ignore_errors=True)
 
 
 def test_retired_shell_entrypoints_are_side_effect_free_410s():
@@ -261,6 +316,8 @@ def test_owned_distribution_pages_publish_neither_tier2_nor_power_archive():
             source,
             flags=re.IGNORECASE,
         )
+        assert "RAPP/installer/install.sh" not in source
+        assert "No active installer" in source or "No installer command" in source
         assert "no active download link" in source
 
 
@@ -303,3 +360,62 @@ def test_cave_indexes_classify_prepared_installer_as_retired():
         check=False,
     )
     assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_cave_check_rejects_mutated_protected_headers():
+    scratch = ROOT / f"tests/.rapp1-cave-headers-{os.getpid()}"
+    shutil.rmtree(scratch, ignore_errors=True)
+    try:
+        cave = scratch / "cave"
+        (cave / "tools").mkdir(parents=True)
+        shutil.copy2(
+            ROOT / "cave/tools/build_super_rar.py",
+            cave / "tools/build_super_rar.py",
+        )
+        shutil.copytree(ROOT / "cave/agents", cave / "agents")
+        shutil.copytree(ROOT / "cave/cubbies", cave / "cubbies")
+        (cave / "rapplications/rapp-installer").mkdir(parents=True)
+        for directory in ("rar", "super-rar"):
+            (cave / directory).mkdir()
+            shutil.copy2(
+                ROOT / f"cave/{directory}/index.json",
+                cave / directory / "index.json",
+            )
+
+        command = (sys.executable, "cave/tools/build_super_rar.py", "--check")
+        baseline = subprocess.run(
+            command,
+            cwd=scratch,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        assert baseline.returncode == 0, baseline.stdout + baseline.stderr
+
+        mutations = (
+            ("super-rar", "schema"),
+            ("super-rar", "raw_url_prefix"),
+            ("rar", "kind"),
+            ("rar", "note"),
+        )
+        for directory, field in mutations:
+            index = cave / directory / "index.json"
+            original = index.read_bytes()
+            document = json.loads(original)
+            document[field] = f"mutated-{field}"
+            index.write_text(
+                json.dumps(document, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            result = subprocess.run(
+                command,
+                cwd=scratch,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            assert result.returncode == 1, (directory, field, result.stdout)
+            assert f"DRIFT: {directory}/index.json" in result.stdout
+            index.write_bytes(original)
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)

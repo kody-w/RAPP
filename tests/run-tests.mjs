@@ -246,6 +246,10 @@ test('owned pages do not publish retired distribution or plant callers', () => {
       assert(!source.includes(marker), `${relative} advertises ${marker}`);
     }
     assert(
+      !source.includes('RAPP/installer/install.sh'),
+      `${relative} advertises the retired installer`,
+    );
+    assert(
       !/<a\b[^>]*href=["'][^"']*MSFTAIBASMultiAgentCopilot/i.test(source),
       `${relative} publishes the unsigned Power archive`,
     );

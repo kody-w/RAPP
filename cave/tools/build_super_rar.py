@@ -39,6 +39,40 @@ CAVE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))   # cave/tool
 CUBBIES = os.path.join(CAVE, "cubbies")
 RAW_PREFIX = "https://raw.githubusercontent.com/kody-w/RAPP/main/cave"
 RETIRED_PREPARED_RAPPLICATIONS = {"rapp-installer"}
+NEIGHBORHOOD_RAPPID = (
+    "rappid:@kody-w/rapp-cave:"
+    "ca72ca0a3cb90c357fb09e38b02f85f09935cacbf61e94740c57f1eb30a73e0a"
+)
+SUPER_RAR_HEADER = {
+    "schema": "rapp-super-rar/1.0",
+    "neighborhood_rappid": NEIGHBORHOOD_RAPPID,
+    "note": (
+        "The super-RAR — the cave's super-store. A standard RAR stocks agents; "
+        "this carries the WHOLE RAPP stack (agents, organs, senses, "
+        "rapplications, neighborhoods, eggs) across every cubby — one PUBLIC "
+        "registry over the full ecosystem. Anyone can browse and stream every "
+        "entry with plain curl off the public raw base (no auth, no "
+        "collaborator gate, no clone). Find what a neighbor already built and "
+        "stream it in. Rebuild with `cave super_rar rebuild=true`."
+    ),
+    "raw_url_prefix": RAW_PREFIX,
+}
+RAR_HEADER = {
+    "schema": "rapp-rar-index/1.1",
+    "neighborhood_rappid": NEIGHBORHOOD_RAPPID,
+    "rar_for": "kody-w/RAPP",
+    "kind": "workspace",
+    "raw_url_prefix": RAW_PREFIX,
+    "note": (
+        "Per-neighborhood registry. PUBLIC repo: raw URLs need NO auth — "
+        "anyone can stream every pinned file directly with plain curl or off "
+        "GitHub Pages (https://raw.githubusercontent.com/kody-w/RAPP/main/cave/..."
+        " or https://kody-w.github.io/RAPP/cave/). No clone, no gh-auth, no "
+        "collaborator gate — the public front door is open. Join = fork + PR "
+        "(or just pull). sha256 pins let loaders verify streamed files against "
+        "this manifest."
+    ),
+}
 
 
 def _now() -> str:
@@ -86,32 +120,18 @@ def build_super_rar() -> list[dict]:
     return entries
 
 
-def _load_header(path: str, defaults: dict) -> dict:
-    """Preserve a registry's header fields (schema, rappid, prefixes, note)."""
-    cur = {}
-    if os.path.exists(path):
-        try:
-            cur = json.load(open(path))
-        except Exception:
-            cur = {}
-    return {k: cur.get(k, v) for k, v in defaults.items()}
-
-
 def render_super_rar() -> dict:
     entries = build_super_rar()
     by_kind: dict[str, int] = {}
     for e in entries:
         by_kind[e["kind"]] = by_kind.get(e["kind"], 0) + 1
-    hdr = _load_header(os.path.join(CAVE, "super-rar", "index.json"), {
-        "schema": "rapp-super-rar/1.0",
-        "neighborhood_rappid": "rappid:@kody-w/rapp-cave:ca72ca0a3cb90c357fb09e38b02f85f09935cacbf61e94740c57f1eb30a73e0a",
-        "note": ("The super-RAR — the public cave's super-store. A standard RAR stocks "
-                 "agents; this carries the WHOLE stack (agents, organs, senses, rapplications, "
-                 "neighborhoods, eggs) across every cubby. PUBLIC: raw URLs need NO auth. "
-                 "Rebuild with `python3 cave/tools/build_super_rar.py`."),
-        "raw_url_prefix": RAW_PREFIX,
-    })
-    return {**hdr, "built_at": _now(), "count": len(entries), "by_kind": by_kind, "entries": entries}
+    return {
+        **SUPER_RAR_HEADER,
+        "built_at": _now(),
+        "count": len(entries),
+        "by_kind": by_kind,
+        "entries": entries,
+    }
 
 
 def _manifest_name(py_path: str, default: str) -> tuple[str, bool]:
@@ -183,17 +203,20 @@ def render_rar() -> dict:
                     f"{RAW_PREFIX}/rapplications/{name}/bootstrap.sh | bash"
                 )
             rapps.append(entry)
-    hdr = _load_header(os.path.join(CAVE, "rar", "index.json"), {
-        "schema": "rapp-rar-index/1.1",
-        "neighborhood_rappid": "rappid:@kody-w/rapp-cave:ca72ca0a3cb90c357fb09e38b02f85f09935cacbf61e94740c57f1eb30a73e0a",
-        "rar_for": "kody-w/RAPP (cave)", "kind": "public-workspace",
-        "raw_url_prefix": RAW_PREFIX,
-        "note": ("Public per-neighborhood registry. raw URLs require NO auth — anyone can stream. "
-                 "sha256 pins let `cave load` verify streamed files against this manifest."),
-    })
-    return {**hdr, "updated_at": _now(), "agents": agents, "rapps": rapps,
-            "verification": {"schema": "rapp-rar-manifest/1.0", "scheme": "sha256",
-                             "_instructions": "Re-compute sha256(file) for anything you stream and compare before installing."}}
+    return {
+        **RAR_HEADER,
+        "updated_at": _now(),
+        "agents": agents,
+        "rapps": rapps,
+        "verification": {
+            "schema": "rapp-rar-manifest/1.0",
+            "scheme": "sha256",
+            "_instructions": (
+                "Re-compute sha256(file) for anything you stream and compare "
+                "before installing."
+            ),
+        },
+    }
 
 
 def _write(path: str, obj: dict) -> None:
