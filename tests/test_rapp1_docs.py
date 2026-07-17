@@ -21,6 +21,7 @@ class Rapp1DocumentationTests(unittest.TestCase):
         self.assertEqual(scope["authority"], "RAPP1_AUTHORITY.json")
         self.assertEqual(scope["status"], "RAPP1_STATUS.md")
         self.assertIn("pages/vbrainstem.html", scope["excluded_documents"])
+        self.assertIn("rapp_swarm/README.md", scope["excluded_documents"])
         self.assertIn("specs/ecosystem-spec.json", scope["excluded_documents"])
         ledger = scope["audit_scope"]["r1_doc_01"]
         self.assertEqual(ledger["path_count"], 56)
@@ -76,8 +77,8 @@ class Rapp1DocumentationTests(unittest.TestCase):
         )
         excluded_paths = set(scope["excluded_documents"])
         self.assertEqual(ledger_paths - checked_paths - excluded_paths, set())
-        self.assertEqual(len(ledger_paths & checked_paths), 44)
-        self.assertEqual(len(ledger_paths & excluded_paths), 12)
+        self.assertEqual(len(ledger_paths & checked_paths), 43)
+        self.assertEqual(len(ledger_paths & excluded_paths), 13)
         canon_paths = set(scope["audit_scope"]["canon_mirrors"]["live_paths"])
         self.assertEqual(canon_paths - checked_paths - excluded_paths, set())
         self.assertEqual(len(canon_paths & checked_paths), 33)
