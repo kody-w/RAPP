@@ -42,7 +42,9 @@ The server persists and supplies the transcript. SQLite `BEGIN IMMEDIATE`
 transactions validate an existing session, reserve its active turn, and reserve
 idempotency before inference. Creation keys are global; existing-session keys
 are scoped by `(session_id, key)`. Completion stores the turn and exact response
-bytes atomically. A completed duplicate replays those bytes.
+bytes atomically. A completed duplicate of the same canonical request replays
+those bytes. Reusing a key for different recognized request content fails
+closed as an idempotency conflict; ignored members do not affect comparison.
 
 Only one inference may be pending for a session. A concurrent duplicate is
 refused without inference. A process crash leaves the durable reservation
@@ -57,6 +59,7 @@ registration and are not registered codes**:
 
 - `malformed-request`
 - `unknown-session`
+- `idempotency-conflict`
 - `idempotency-in-progress`
 - `session-in-progress`
 - `inference-refused`

@@ -159,21 +159,38 @@ def test_server_owned_history_and_unknown_session(test_dir):
     assert len(inference.calls) == 2
 
 
-def test_creation_idempotency_is_global_and_byte_equivalent(test_dir):
+def test_creation_idempotency_is_global_byte_equivalent_and_conflict_safe(
+    test_dir,
+):
     inference = RecordingInference()
     app = make_app(test_dir / "facade.sqlite3", inference)
 
     with app.test_client() as client:
         first = post_json(
-            client, {"user_input": "original", "idempotency_key": "create-key"}
+            client,
+            {
+                "user_input": "original",
+                "idempotency_key": "create-key",
+                "ignored": "first",
+            },
         )
         duplicate = post_json(
-            client, {"user_input": "changed", "idempotency_key": "create-key"}
+            client,
+            {
+                "user_input": "original",
+                "idempotency_key": "create-key",
+                "ignored": "changed but irrelevant",
+            },
+        )
+        conflict = post_json(
+            client,
+            {"user_input": "changed", "idempotency_key": "create-key"},
         )
 
     assert first.status_code == duplicate.status_code == 200
     assert duplicate.data == first.data
     assert duplicate.get_json()["session_id"] == first.get_json()["session_id"]
+    assert_error(conflict, "idempotency-conflict")
     assert len(inference.calls) == 1
 
 
@@ -199,6 +216,14 @@ def test_existing_session_idempotency_is_scoped_by_session(test_dir):
         duplicate_a = post_json(
             client,
             {
+                "user_input": "turn-a",
+                "session_id": session_a,
+                "idempotency_key": "shared-key",
+            },
+        )
+        conflict_a = post_json(
+            client,
+            {
                 "user_input": "must-not-run",
                 "session_id": session_a,
                 "idempotency_key": "shared-key",
@@ -214,6 +239,7 @@ def test_existing_session_idempotency_is_scoped_by_session(test_dir):
         )
 
     assert duplicate_a.data == first_a.data
+    assert_error(conflict_a, "idempotency-conflict")
     assert first_b.status_code == 200
     assert len(inference.calls) == 4
     assert inference.calls[-1][0][-1]["content"] == "turn-b"
@@ -307,7 +333,7 @@ def test_crash_leaves_pending_reservation_that_fails_closed(test_dir):
     with recreated_app.test_client() as client:
         duplicate = post_json(
             client,
-            {"user_input": "retry", "idempotency_key": "crash-key"},
+            {"user_input": "crash", "idempotency_key": "crash-key"},
         )
 
     assert_error(duplicate, "idempotency-in-progress")
@@ -499,7 +525,10 @@ def test_sessions_and_completed_idempotency_survive_app_recreation(test_dir):
     with second_app.test_client() as client:
         duplicate = post_json(
             client,
-            {"user_input": "changed", "idempotency_key": "persistent-key"},
+            {
+                "user_input": "persistent",
+                "idempotency_key": "persistent-key",
+            },
         )
         next_turn = post_json(
             client, {"user_input": "after restart", "session_id": session_id}
@@ -540,6 +569,7 @@ def test_loopback_separate_port_and_external_default_store(test_dir):
     assert set(PENDING_REGISTRY_ERROR_CODES) == {
         "malformed-request",
         "unknown-session",
+        "idempotency-conflict",
         "idempotency-in-progress",
         "session-in-progress",
         "inference-refused",

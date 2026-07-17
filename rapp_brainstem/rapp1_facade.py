@@ -31,6 +31,7 @@ MAX_REQUEST_BYTES = 1_048_576
 PENDING_REGISTRY_ERROR_CODES = (
     "malformed-request",
     "unknown-session",
+    "idempotency-conflict",
     "idempotency-in-progress",
     "session-in-progress",
     "inference-refused",
@@ -59,6 +60,7 @@ class Reservation:
     token: str
     messages: tuple[dict[str, str], ...]
     idempotency_scope: tuple[str, str, str] | None
+    request_canonical: bytes
 
 
 class FacadeRefusal(Exception):
@@ -180,7 +182,7 @@ def _parse_request() -> tuple[str, str | None, str | None]:
 
 
 class FacadeStore:
-    _SCHEMA_VERSION = 1
+    _SCHEMA_VERSION = 2
 
     def __init__(self, database_path: Path | str) -> None:
         self.path = Path(database_path).expanduser()
@@ -223,7 +225,7 @@ class FacadeStore:
 
         with self._transaction() as connection:
             version = int(connection.execute("PRAGMA user_version").fetchone()[0])
-            if version not in (0, self._SCHEMA_VERSION):
+            if version not in (0, 1, self._SCHEMA_VERSION):
                 raise RuntimeError(
                     f"unsupported RAPP/1 facade database version: {version}"
                 )
@@ -268,6 +270,7 @@ class FacadeStore:
                         CHECK (state IN ('pending', 'completed', 'refused')),
                     response_status INTEGER,
                     response_body BLOB,
+                    request_canonical BLOB NOT NULL,
                     created_utc TEXT NOT NULL,
                     finished_utc TEXT,
                     PRIMARY KEY (
@@ -300,13 +303,27 @@ class FacadeStore:
                 )
                 """
             )
-            if version == 0:
+            if version == 1:
+                connection.execute(
+                    """
+                    ALTER TABLE idempotency
+                    ADD COLUMN request_canonical BLOB
+                    """
+                )
+            if version in (0, 1):
                 connection.execute(
                     f"PRAGMA user_version = {self._SCHEMA_VERSION}"
                 )
 
     @staticmethod
-    def _stored_response(row: sqlite3.Row) -> StoredResponse:
+    def _stored_response(
+        row: sqlite3.Row, request_canonical: bytes
+    ) -> StoredResponse:
+        stored_request = row["request_canonical"]
+        if not isinstance(stored_request, (bytes, bytearray)):
+            raise FacadeRefusal("facade-storage-refused")
+        if bytes(stored_request) != request_canonical:
+            raise FacadeRefusal("idempotency-conflict")
         state = row["state"]
         if state == "pending":
             raise FacadeRefusal("idempotency-in-progress")
@@ -327,7 +344,7 @@ class FacadeStore:
     ) -> sqlite3.Row | None:
         return connection.execute(
             """
-            SELECT state, response_status, response_body
+            SELECT state, response_status, response_body, request_canonical
             FROM idempotency
             WHERE scope_kind = ?
               AND scope_session_id = ?
@@ -340,6 +357,7 @@ class FacadeStore:
         self,
         supplied_session_id: str | None,
         idempotency_key: str | None,
+        request_canonical: bytes,
     ) -> Reservation | StoredResponse:
         with self._transaction() as connection:
             scope: tuple[str, str, str] | None = None
@@ -348,7 +366,9 @@ class FacadeStore:
                     scope = ("create", "", idempotency_key)
                     existing = self._idempotency_row(connection, scope)
                     if existing is not None:
-                        return self._stored_response(existing)
+                        return self._stored_response(
+                            existing, request_canonical
+                        )
                 session_id = str(uuid.uuid4())
                 token = str(uuid.uuid4())
                 now = _utc_now()
@@ -376,7 +396,9 @@ class FacadeStore:
                     scope = ("session", session_id, idempotency_key)
                     existing = self._idempotency_row(connection, scope)
                     if existing is not None:
-                        return self._stored_response(existing)
+                        return self._stored_response(
+                            existing, request_canonical
+                        )
                 if session["pending_token"] is not None:
                     raise FacadeRefusal("session-in-progress")
                 token = str(uuid.uuid4())
@@ -397,10 +419,15 @@ class FacadeStore:
                     """
                     INSERT INTO idempotency (
                         scope_kind, scope_session_id, idempotency_key,
-                        session_id, state, created_utc
-                    ) VALUES (?, ?, ?, ?, 'pending', ?)
+                        session_id, state, request_canonical, created_utc
+                    ) VALUES (?, ?, ?, ?, 'pending', ?, ?)
                     """,
-                    (*scope, session_id, _utc_now()),
+                    (
+                        *scope,
+                        session_id,
+                        sqlite3.Binary(request_canonical),
+                        _utc_now(),
+                    ),
                 )
 
             rows = connection.execute(
@@ -422,6 +449,7 @@ class FacadeStore:
                 token=token,
                 messages=tuple(messages),
                 idempotency_scope=scope,
+                request_canonical=request_canonical,
             )
 
     @staticmethod
@@ -486,12 +514,14 @@ class FacadeStore:
                       AND idempotency_key = ?
                       AND session_id = ?
                       AND state = 'pending'
+                      AND request_canonical = ?
                     """,
                     (
                         sqlite3.Binary(response_body),
                         now,
                         *reservation.idempotency_scope,
                         reservation.session_id,
+                        sqlite3.Binary(reservation.request_canonical),
                     ),
                 )
                 if updated.rowcount != 1:
@@ -526,12 +556,14 @@ class FacadeStore:
                       AND idempotency_key = ?
                       AND session_id = ?
                       AND state = 'pending'
+                      AND request_canonical = ?
                     """,
                     (
                         sqlite3.Binary(response_body),
                         now,
                         *reservation.idempotency_scope,
                         reservation.session_id,
+                        sqlite3.Binary(reservation.request_canonical),
                     ),
                 )
                 if updated.rowcount != 1:
@@ -594,7 +626,14 @@ def create_app(
             return _error_response(refusal.code)
 
         try:
-            reserved = store.reserve(session_id, idempotency_key)
+            canonical_request = {"user_input": user_input}
+            if session_id is not None:
+                canonical_request["session_id"] = session_id
+            reserved = store.reserve(
+                session_id,
+                idempotency_key,
+                _json_bytes(canonical_request),
+            )
         except FacadeRefusal as refusal:
             return _error_response(refusal.code)
         except Exception:
