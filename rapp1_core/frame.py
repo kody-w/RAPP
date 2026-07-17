@@ -291,8 +291,45 @@ def _validate_head_state(head: HeadState) -> None:
     try:
         _validate_hash(head.payload_hash, field="head.payload_hash")
         _validate_hash(head.frame_hash, field="head.frame_hash")
+        if head.genesis_hash is not None:
+            _validate_hash(head.genesis_hash, field="head.genesis_hash")
     except FrameError as exc:
         raise FrameError("invalid-head", "head has an invalid hash", step="4") from exc
+    if head.signature_present is not None and type(head.signature_present) is not bool:
+        raise FrameError(
+            "invalid-head", "head signature_present must be bool or null", step="4"
+        )
+
+
+def _head_epoch_problem(
+    head: HeadState, registry: RegistryEvidence | None
+) -> tuple[TrustStatus, str, str] | None:
+    if registry is None or not registry.authenticated:
+        return (
+            TrustStatus.UNVERIFIED,
+            "head-epoch-unverified",
+            "head epoch requires an authenticated registry",
+        )
+    if not registry.fresh:
+        return (
+            TrustStatus.STALE,
+            "head-epoch-stale",
+            "head epoch cannot be extended with a stale registry",
+        )
+    current_genesis = registry.genesis_hashes.get(head.stream_id)
+    if head.genesis_hash is None or current_genesis is None:
+        return (
+            TrustStatus.UNVERIFIED,
+            "head-epoch-unverified",
+            "head lacks current registry genesis proof",
+        )
+    if head.genesis_hash != current_genesis:
+        return (
+            TrustStatus.DRIFT,
+            "retired-genesis-epoch",
+            "head belongs to a retired registry genesis epoch",
+        )
+    return None
 
 
 def inspect_frame(
@@ -580,6 +617,28 @@ def accept_frame(
         return replace(
             inspected, trust_status=TrustStatus.UNVERIFIED, checks=tuple(checks)
         )
+    if head is not None:
+        epoch_problem = _head_epoch_problem(head, registry)
+        if epoch_problem is not None:
+            status, code, detail = epoch_problem
+            checks.append(
+                CheckResult(
+                    "head",
+                    CheckStatus.FAIL
+                    if status is TrustStatus.DRIFT
+                    else CheckStatus.UNVERIFIED,
+                    detail,
+                )
+            )
+            return replace(
+                inspected,
+                accepted=False,
+                trust_status=status,
+                checks=tuple(checks),
+                error_code=code,
+                error_step="head",
+                error=detail,
+            )
     if stream.family == "swarm" and inspected.frame["sig"] is None:
         checks.append(
             CheckResult("6", CheckStatus.FAIL, "swarm frame signature is required")
@@ -618,6 +677,8 @@ class AcceptedFrameSnapshot:
     utc: str
     payload_hash: str
     frame_hash: str
+    genesis_hash: str
+    signature_present: bool
     prev: str | None
     predecessor_known: bool
 
@@ -628,6 +689,8 @@ class AcceptedFrameSnapshot:
             "utc": self.utc,
             "payload_hash": self.payload_hash,
             "frame_hash": self.frame_hash,
+            "genesis_hash": self.genesis_hash,
+            "signature_present": self.signature_present,
             "prev": self.prev,
             "predecessor_known": self.predecessor_known,
         }
@@ -640,6 +703,8 @@ class AcceptedFrameSnapshot:
             "utc",
             "payload_hash",
             "frame_hash",
+            "genesis_hash",
+            "signature_present",
             "prev",
             "predecessor_known",
         }
@@ -654,6 +719,8 @@ class AcceptedFrameSnapshot:
             utc=value["utc"],
             payload_hash=value["payload_hash"],
             frame_hash=value["frame_hash"],
+            genesis_hash=value["genesis_hash"],
+            signature_present=value["signature_present"],
             prev=value["prev"],
             predecessor_known=value["predecessor_known"],
         )
@@ -666,6 +733,8 @@ class AcceptedFrameSnapshot:
             payload_hash=self.payload_hash,
             frame_hash=self.frame_hash,
             trusted=True,
+            genesis_hash=self.genesis_hash,
+            signature_present=self.signature_present,
         )
 
 
@@ -729,6 +798,11 @@ def _validate_acceptor_snapshot(snapshot: FrameAcceptorSnapshot) -> None:
                 "invalid-acceptor-snapshot",
                 "predecessor_known must be a boolean",
             )
+        if type(frame.signature_present) is not bool or frame.genesis_hash is None:
+            raise FrameError(
+                "invalid-acceptor-snapshot",
+                "snapshot requires genesis and signature-presence proof",
+            )
         key = (frame.stream_id, frame.seq)
         if key in seen:
             raise FrameError(
@@ -756,6 +830,11 @@ def _validate_acceptor_snapshot(snapshot: FrameAcceptorSnapshot) -> None:
             "invalid-acceptor-snapshot", "snapshot frames are not deterministically sorted"
         )
     for stream_frames in by_stream.values():
+        if len({frame.genesis_hash for frame in stream_frames.values()}) != 1:
+            raise FrameError(
+                "invalid-acceptor-snapshot",
+                "snapshot stream spans more than one genesis epoch",
+            )
         for seq, frame in stream_frames.items():
             if not frame.predecessor_known or seq == 0:
                 continue
@@ -864,7 +943,38 @@ class FrameAcceptor:
             error=detail,
         )
 
+    @staticmethod
+    def _epoch_failure(
+        inspected: FrameInspection,
+        problem: tuple[TrustStatus, str, str],
+    ) -> FrameInspection:
+        status, code, detail = problem
+        checks = inspected.checks + (
+            CheckResult(
+                "head",
+                CheckStatus.FAIL
+                if status is TrustStatus.DRIFT
+                else CheckStatus.UNVERIFIED,
+                detail,
+            ),
+        )
+        return replace(
+            inspected,
+            accepted=False,
+            trust_status=status,
+            checks=checks,
+            error_code=code,
+            error_step="head",
+            error=detail,
+        )
+
     def _record(self, frame: dict[str, Any]) -> None:
+        genesis_hash = self._registry.genesis_hashes.get(frame["stream_id"])
+        if genesis_hash is None:
+            raise FrameError(
+                "head-epoch-unverified",
+                "accepted frame lacks current registry genesis proof",
+            )
         head = HeadState(
             stream_id=frame["stream_id"],
             seq=frame["seq"],
@@ -872,6 +982,8 @@ class FrameAcceptor:
             payload_hash=frame["payload_hash"],
             frame_hash=frame["frame_hash"],
             trusted=True,
+            genesis_hash=genesis_hash,
+            signature_present=frame["sig"] is not None,
         )
         self._heads[frame["stream_id"]] = head
         self._history.setdefault(frame["stream_id"], {})[frame["seq"]] = (
@@ -881,6 +993,8 @@ class FrameAcceptor:
                 utc=head.utc,
                 payload_hash=head.payload_hash,
                 frame_hash=head.frame_hash,
+                genesis_hash=head.genesis_hash,
+                signature_present=head.signature_present,
                 prev=frame["prev"],
                 predecessor_known=True,
             )
@@ -892,18 +1006,38 @@ class FrameAcceptor:
             raise FrameError(
                 "untrusted-head", "only an externally trusted head can seed state"
             )
+        epoch_problem = _head_epoch_problem(head, self._registry)
+        if epoch_problem is not None:
+            _, code, detail = epoch_problem
+            raise FrameError(code, detail)
+        if type(head.signature_present) is not bool:
+            raise FrameError(
+                "head-signature-proof-missing",
+                "seed head requires signature-presence proof",
+            )
+        current = self._heads.get(head.stream_id)
+        if current == head:
+            return
         if head.stream_id in self._quarantined:
             raise FrameError(
                 "stream-quarantined",
                 "fork quarantine can end only through verified re-genesis",
             )
-        current = self._heads.get(head.stream_id)
         if current is not None and (
             head.seq < current.seq
             or (head.seq == current.seq and head.frame_hash != current.frame_hash)
         ):
             raise FrameError(
                 "head-rollback", "seed head would roll back or reorganize state"
+            )
+        if (
+            current is not None
+            and head.seq == current.seq
+            and head.frame_hash == current.frame_hash
+        ):
+            raise FrameError(
+                "head-state-mismatch",
+                "same frame hash cannot replace differing persisted head metadata",
             )
         self._heads[head.stream_id] = head
         self._history.setdefault(head.stream_id, {})[head.seq] = (
@@ -913,13 +1047,18 @@ class FrameAcceptor:
                 utc=head.utc,
                 payload_hash=head.payload_hash,
                 frame_hash=head.frame_hash,
+                genesis_hash=head.genesis_hash,
+                signature_present=head.signature_present,
                 prev=None,
                 predecessor_known=False,
             )
         )
 
     def _replay_current(
-        self, frame: dict[str, Any], standalone: FrameInspection
+        self,
+        frame: dict[str, Any],
+        current: HeadState,
+        standalone: FrameInspection,
     ) -> FrameInspection:
         if not self._registry.authenticated:
             return replace(standalone, trust_status=TrustStatus.UNVERIFIED)
@@ -930,7 +1069,7 @@ class FrameAcceptor:
             for check in standalone.checks
         ):
             return replace(standalone, trust_status=TrustStatus.UNVERIFIED)
-        checks = tuple(
+        checks = list(
             CheckResult(
                 check.step,
                 CheckStatus.PASS,
@@ -940,23 +1079,185 @@ class FrameAcceptor:
             and check.status is CheckStatus.UNVERIFIED
             else check
             for check in standalone.checks
-        ) + (
+        )
+        checks.append(
             CheckResult(
                 "head",
                 CheckStatus.PASS,
                 "frame hash matches the persisted accepted head",
-            ),
+            )
+        )
+        if current.signature_present is None:
+            checks.append(
+                CheckResult(
+                    "6",
+                    CheckStatus.UNVERIFIED,
+                    "persisted head lacks signature-presence proof",
+                )
+            )
+            return replace(
+                standalone,
+                accepted=False,
+                trust_status=TrustStatus.UNVERIFIED,
+                checks=tuple(checks),
+                error_code="replay-signature-unverified",
+                error_step="6",
+                error="persisted head lacks signature-presence proof",
+            )
+        presented_signature = frame["sig"] is not None
+        if current.signature_present and not presented_signature:
+            checks.append(
+                CheckResult(
+                    "6",
+                    CheckStatus.FAIL,
+                    "replay stripped the persisted head signature",
+                )
+            )
+            return replace(
+                standalone,
+                accepted=False,
+                trust_status=TrustStatus.DRIFT,
+                checks=tuple(checks),
+                error_code="replay-signature-mismatch",
+                error_step="6",
+                error="replay stripped the persisted head signature",
+            )
+        if presented_signature:
+            checks.append(
+                CheckResult(
+                    "6",
+                    CheckStatus.UNVERIFIED,
+                    "cryptographic JWS/registry verification is deliberately unsupported",
+                )
+            )
+            return replace(
+                standalone,
+                accepted=False,
+                trust_status=TrustStatus.UNVERIFIED,
+                checks=tuple(checks),
+                error_code="replay-signature-unverified",
+                error_step="6",
+                error="cryptographic signature verification is unsupported",
+            )
+        stream = parse_stream_id(frame["stream_id"])
+        if stream.family == "swarm":
+            checks.append(
+                CheckResult(
+                    "6", CheckStatus.FAIL, "swarm frame signature is required"
+                )
+            )
+            return replace(
+                standalone,
+                accepted=False,
+                trust_status=TrustStatus.DRIFT,
+                checks=tuple(checks),
+                error_code="unsigned-swarm-replay",
+                error_step="6",
+                error="swarm frame signature is required",
+            )
+        checks.append(
             CheckResult(
                 "6",
                 CheckStatus.PASS,
                 "signature is optional; acceptance makes no authorship claim",
-            ),
+            )
         )
         return replace(
             standalone,
             accepted=True,
             trust_status=TrustStatus.VERIFIED,
-            checks=checks,
+            checks=tuple(checks),
+        )
+
+    def _verify_historical_competitor(
+        self,
+        frame: dict[str, Any],
+        *,
+        declared_stream_id: str,
+        predecessor: HeadState | None,
+    ) -> FrameInspection:
+        inspected = inspect_frame(
+            frame,
+            declared_stream_id=declared_stream_id,
+            head=predecessor,
+            registry=self._registry,
+        )
+        if not inspected.structurally_valid:
+            return inspected
+        checks = list(inspected.checks)
+        if not self._registry.authenticated:
+            checks.append(
+                CheckResult("6", CheckStatus.UNVERIFIED, "registry is unauthenticated")
+            )
+            return replace(
+                inspected,
+                trust_status=TrustStatus.UNVERIFIED,
+                checks=tuple(checks),
+            )
+        if not self._registry.fresh:
+            checks.append(
+                CheckResult("6", CheckStatus.UNVERIFIED, "registry is stale")
+            )
+            return replace(
+                inspected, trust_status=TrustStatus.STALE, checks=tuple(checks)
+            )
+        if any(check.status is CheckStatus.UNVERIFIED for check in inspected.checks):
+            checks.append(
+                CheckResult(
+                    "6",
+                    CheckStatus.UNVERIFIED,
+                    "historical predecessor context is incomplete",
+                )
+            )
+            return replace(
+                inspected,
+                trust_status=TrustStatus.UNVERIFIED,
+                checks=tuple(checks),
+            )
+        if predecessor is not None:
+            epoch_problem = _head_epoch_problem(predecessor, self._registry)
+            if epoch_problem is not None:
+                return self._epoch_failure(inspected, epoch_problem)
+        stream = parse_stream_id(frame["stream_id"])
+        if stream.family == "swarm" and frame["sig"] is None:
+            checks.append(
+                CheckResult(
+                    "6", CheckStatus.FAIL, "swarm frame signature is required"
+                )
+            )
+            return replace(
+                inspected,
+                trust_status=TrustStatus.DRIFT,
+                checks=tuple(checks),
+                error_code="unsigned-swarm-fork",
+                error_step="6",
+                error="swarm frame signature is required",
+            )
+        if frame["sig"] is not None:
+            checks.append(
+                CheckResult(
+                    "6",
+                    CheckStatus.UNVERIFIED,
+                    "cryptographic JWS/registry verification is deliberately unsupported",
+                )
+            )
+            return replace(
+                inspected,
+                trust_status=TrustStatus.UNVERIFIED,
+                checks=tuple(checks),
+            )
+        checks.append(
+            CheckResult(
+                "6",
+                CheckStatus.PASS,
+                "historical unsigned frame passes without an authorship claim",
+            )
+        )
+        return replace(
+            inspected,
+            accepted=True,
+            trust_status=TrustStatus.VERIFIED,
+            checks=tuple(checks),
         )
 
     def accept(
@@ -970,6 +1271,18 @@ class FrameAcceptor:
                 head=current,
                 registry=self._registry,
             )
+
+        if current is not None:
+            epoch_problem = _head_epoch_problem(current, self._registry)
+            if epoch_problem is not None:
+                standalone = inspect_frame(
+                    frame,
+                    declared_stream_id=declared_stream_id,
+                    registry=self._registry,
+                )
+                if not standalone.structurally_valid:
+                    return standalone
+                return self._epoch_failure(standalone, epoch_problem)
 
         if declared_stream_id in self._quarantined:
             standalone = inspect_frame(
@@ -1002,9 +1315,8 @@ class FrameAcceptor:
             if (
                 frame["seq"] == current.seq
                 and frame["frame_hash"] == current.frame_hash
-                and frame["sig"] is None
             ):
-                return self._replay_current(frame, standalone)
+                return self._replay_current(frame, current, standalone)
 
             history = self._history.get(declared_stream_id, {})
             accepted_at_seq = history.get(frame["seq"])
@@ -1016,11 +1328,12 @@ class FrameAcceptor:
                 and accepted_at_seq.predecessor_known
                 and (frame["seq"] == 0 or predecessor is not None)
             ):
-                competing = accept_frame(
+                competing = self._verify_historical_competitor(
                     frame,
                     declared_stream_id=declared_stream_id,
-                    head=None if predecessor is None else predecessor.as_head(),
-                    registry=self._registry,
+                    predecessor=None
+                    if predecessor is None
+                    else predecessor.as_head(),
                 )
                 if (
                     competing.accepted

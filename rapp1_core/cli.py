@@ -40,6 +40,7 @@ def _head_from_path(path: str) -> HeadState:
         payload_hash=parsed["payload_hash"],
         frame_hash=parsed["frame_hash"],
         trusted=False,
+        signature_present=parsed["sig"] is not None,
     )
 
 

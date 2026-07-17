@@ -53,3 +53,5 @@ class HeadState:
     payload_hash: str
     frame_hash: str
     trusted: bool = False
+    genesis_hash: str | None = None
+    signature_present: bool | None = None
