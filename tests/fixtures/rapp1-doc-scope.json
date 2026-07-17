@@ -727,7 +727,6 @@
       "pages/vault/Architecture/The Swarm Estate.md",
       "pages/vault/Architecture/Twin-Patterns.md",
       "pages/vault/Foundations/Tier 1 — Local Brainstem.md",
-      "rapp_swarm/README.md",
       "specs/SPEC.md",
       "specs/skill.md"
     ],
@@ -748,6 +747,7 @@
       "pages/_site/index.json",
       "pages/about/ecosystem.html",
       "pages/about/prompts.json",
+      "rapp_swarm/README.md",
       "specs/ecosystem-spec.json",
       "tools/sim/observe.py"
     ]
@@ -769,6 +769,7 @@
     "pages/_site/index.json": "generated navigation metadata; category rules validate it directly",
     "pages/about/ecosystem.html": "generated visualization mirror",
     "pages/about/prompts.json": "structured historical prompt ledger; marketing rule validates its explicit disposition",
+    "rapp_swarm/README.md": "retired 410/deployment tombstone owned by the post-code containment closure",
     "specs/ecosystem-spec.json": "generated non-authoritative ecosystem observation",
     "tools/sim/observe.py": "code-owned simulation tool; documentation gate records but does not modify it"
   },
