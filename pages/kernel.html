@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RAPP — The Kernel · Read me first</title>
-<meta name="description" content="The canonical reading order for the RAPP kernel: the trilogy (Master Plan, Hero Use Case, Ecosystem), the law (Constitution, Antipatterns), the specs, the vault. One page to find anything.">
+<meta name="description" content="RAPP/1 authority and conformance status first, followed by the RAPP kernel's current and historical reading paths.">
 <meta property="og:title" content="RAPP — The Kernel">
-<meta property="og:description" content="The canonical reading order for everyone — operators, contributors, engineers, partners, AI assistants.">
+<meta property="og:description" content="RAPP/1 authority and conformance status first; implementation and historical reading paths follow.">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://kody-w.github.io/RAPP/pages/kernel.html">
 <link rel="canonical" href="https://kody-w.github.io/RAPP/pages/kernel.html">
@@ -119,8 +119,10 @@
   <div class="kernel-hero">
     <div class="eyebrow">Read me first</div>
     <h1>The <span class="grad">RAPP</span> Kernel</h1>
-    <p class="lede">One page. The canonical reading order for everyone — operators, contributors, engineers, partners, AI assistants. Every section points to the authoritative doc; nothing is duplicated. If you only read one page on this site, this is the one.</p>
+    <p class="lede"><strong>NOT YET FULLY RAPP/1 CONFORMANT.</strong> Start with the structural authority pin and status. The remaining sections provide current implementation context and dated historical records; they do not override RAPP/1 rev-5.</p>
     <div class="quickbar">
+      <a href="../RAPP1_STATUS.md">Conformance status</a>
+      <a href="../RAPP1_AUTHORITY.json">Authority pin</a>
       <a href="./">← Install &amp; pitch</a>
       <a href="./onboarding.html">Onboarding</a>
       <a href="https://github.com/kody-w/RAPP/blob/main/KERNEL_TREE.md">Kernel tree ↗</a>
@@ -176,7 +178,7 @@
       <a class="card" href="https://github.com/kody-w/RAPP/blob/main/CONSTITUTION.md">
         <span class="card-eyebrow">Governance</span>
         <h3>Constitution</h3>
-        <p>40+ articles governing the repo: kernel immutability, single-file agents, vault discipline, licensing, identity. When docs disagree, Master Plan wins; otherwise the Constitution does.</p>
+        <p>Append-only repository governance. Article LV makes the pinned RAPP/1 rev-5 source controlling for protocol matters while preserving earlier clauses as dated history.</p>
         <span class="card-meta">CONSTITUTION.md</span>
       </a>
       <a class="card" href="https://github.com/kody-w/RAPP/blob/main/ANTIPATTERNS.md">
@@ -192,9 +194,9 @@
         <span class="card-meta">DEFINITION_OF_DONE.md</span>
       </a>
       <a class="card" href="https://github.com/kody-w/RAPP/blob/main/ECOSYSTEM_MAP.md">
-        <span class="card-eyebrow">Index</span>
+        <span class="card-eyebrow">Historical implementation index</span>
         <h3>Ecosystem Map</h3>
-        <p>The authority order, decision table, schema registry, drift gaps — start every session here when in doubt about which doc owns a topic.</p>
+        <p>The prior authority order, decision table, schema inventory, and drift gaps. Useful for migration context, but Article LV and RAPP/1 govern conflicts.</p>
         <span class="card-meta">ECOSYSTEM_MAP.md</span>
       </a>
     </div>
@@ -248,25 +250,37 @@
   <section class="home-section" id="specs">
     <div class="section-head">
       <h2>The specs</h2>
-      <span class="section-sub">Wire contracts and the SDK</span>
+      <span class="section-sub">RAPP/1 authority first; older contracts are historical</span>
     </div>
     <div class="audience-grid">
+      <a class="card" href="../RAPP1_STATUS.md">
+        <span class="card-eyebrow">Current conformance status</span>
+        <h3>NOT YET FULLY RAPP/1 CONFORMANT</h3>
+        <p>Audit scope, shallow-check limitation, structural-versus-authenticated validation, immutable-grail boundary, and owner-action blockers.</p>
+        <span class="card-meta">RAPP1_STATUS.md</span>
+      </a>
+      <a class="card" href="../RAPP1_AUTHORITY.json">
+        <span class="card-eyebrow">Machine-readable structural pin</span>
+        <h3>RAPP/1 Authority</h3>
+        <p>Pins kody-w/rapp-1 rev-5 by repository, commit, path, exact-byte SHA-256, wire tag, and immutable URLs. This is not a §13 registry.</p>
+        <span class="card-meta">RAPP1_AUTHORITY.json</span>
+      </a>
       <a class="card" href="./docs/SPEC.md">
-        <span class="card-eyebrow">v1 wire contract</span>
-        <h3>SPEC</h3>
-        <p>The frozen v1 contract for single-file agents — what perform() takes, what it returns, how metadata travels, the delimited slots (|||VOICE|||, |||TWIN|||). The API.</p>
+        <span class="card-eyebrow">Historical agent contract</span>
+        <h3>Legacy SPEC</h3>
+        <p>The former single-file-agent and delimited-slot contract. Preserved for history and migration; it is not the current RAPP/1 wire, frame, identity, or egg authority.</p>
         <span class="card-meta">pages/docs/SPEC.md</span>
       </a>
       <a class="card" href="./docs/ROADMAP.md">
-        <span class="card-eyebrow">v2+ directions</span>
+        <span class="card-eyebrow">Historical directions</span>
         <h3>Roadmap</h3>
-        <p>Post-v1 directions that must honor the v1 contract. Where the platform is going, with hard constraints on backwards compatibility.</p>
+        <p>Prior roadmap context. Any incompatible wire, identity, frame, egg, or read-forever teaching is superseded by RAPP/1 rev-5 and Constitution Article LV.</p>
         <span class="card-meta">pages/docs/ROADMAP.md</span>
       </a>
       <a class="card" href="./docs/ESTATE_SPEC.md">
-        <span class="card-eyebrow">Multi-tier identity</span>
+        <span class="card-eyebrow">Legacy implementation reference</span>
         <h3>Estate Spec</h3>
-        <p>The whole-organism cartridge — how an operator's full identity stack (kernel + soul + agents + memory + lineage + bonds) packs into a portable artifact.</p>
+        <p>Historical estate and cartridge design context. RAPP/1 §6 governs identity and §9 is the current egg authority.</p>
         <span class="card-meta">pages/docs/ESTATE_SPEC.md</span>
       </a>
       <a class="card" href="./docs/rapplication-sdk.md">
@@ -276,27 +290,27 @@
         <span class="card-meta">pages/docs/rapplication-sdk.md</span>
       </a>
       <a class="card" href="https://github.com/kody-w/RAPP/blob/main/skill.md">
-        <span class="card-eyebrow">For LLMs</span>
-        <h3>Skill manifest</h3>
-        <p>Canonical AI-readable skill manifest. Feed this to any LLM (Claude, Copilot, GPT) and it can extend RAPP correctly without further prompting.</p>
+        <span class="card-eyebrow">Historical AI runbook</span>
+        <h3>Legacy manifest</h3>
+        <p>Prior AI-readable extension guidance. It remains implementation context and does not override the pinned RAPP/1 protocol.</p>
         <span class="card-meta">skill.md</span>
       </a>
       <a class="card" href="https://github.com/kody-w/RAPP/blob/main/specs/SPEC.md">
-        <span class="card-eyebrow">Network layer</span>
-        <h3>Network Protocol Spec</h3>
-        <p>The wire contract for the global RAPP network — federation, doors, gates, rappid addressing, the canonical raw.githubusercontent.com URL shapes. Distinct from the agent SPEC; this is how organisms find each other across the public web.</p>
+        <span class="card-eyebrow">Historical network contract</span>
+        <h3>Legacy Network Protocol Spec</h3>
+        <p>Prior federation, door, gate, and addressing guidance. It remains implementation history and does not override the pinned RAPP/1 wire or identity.</p>
         <span class="card-meta">specs/SPEC.md</span>
       </a>
       <a class="card" href="https://github.com/kody-w/RAPP/blob/main/specs/skill.md">
-        <span class="card-eyebrow">Network runbook</span>
-        <h3>Network-citizen skill</h3>
-        <p>The action-oriented companion to the Network Protocol Spec — six steps for an AI to become a 1st-class citizen of the RAPP network using only a GitHub account.</p>
+        <span class="card-eyebrow">Historical network runbook</span>
+        <h3>Legacy network guide</h3>
+        <p>The action-oriented companion to the historical Network Protocol Spec. Use only where it does not conflict with RAPP/1 rev-5.</p>
         <span class="card-meta">specs/skill.md</span>
       </a>
       <a class="card" href="./docs/">
-        <span class="card-eyebrow">Index</span>
-        <h3>All specs</h3>
-        <p>Browse every spec under pages/docs/ — SUBSTRATE_FEDERATION, PUBLIC_PRIVATE_BOUNDARY, QR_FRONT_GATE, VERSIONS, AGENTS, more.</p>
+        <span class="card-eyebrow">Historical and implementation index</span>
+        <h3>All local specs</h3>
+        <p>Browse local design records and implementation references. Where any conflicts with RAPP/1 rev-5, the pinned standard and Article LV govern.</p>
         <span class="card-meta">pages/docs/</span>
       </a>
     </div>

@@ -10,7 +10,9 @@ Brainstem comes up at `http://localhost:7071`. One GitHub account with Copilot a
 
 > **The platform stance:** [**The Brainstem Mandate**](./BRAINSTEM_MANDATE.md) — the foundational directive.  *The brainstem is the platform surface.  Build agents.*  Read it first; everything else assumes it.
 
-> **First-time visitor?** Start at the **[Kernel hub](https://kody-w.github.io/RAPP/pages/kernel.html)** — the unified entry point that surfaces every canon doc in canonical reading order. From there: the trilogy ([MASTER_PLAN](./MASTER_PLAN.md) → [HERO_USECASE](./HERO_USECASE.md) → [ECOSYSTEM](./ECOSYSTEM.md)), the law ([CONSTITUTION](./CONSTITUTION.md), [ANTIPATTERNS](./ANTIPATTERNS.md)), the [specs](./pages/docs/), and the [vault](./pages/vault/) with curated Reading Paths for every audience.
+> **Protocol status: [NOT YET FULLY RAPP/1 CONFORMANT](./RAPP1_STATUS.md).** This target structurally pins [RAPP/1 rev-5](./RAPP1_AUTHORITY.json), but the pin is not an authenticated §13 registry. Owner-signed registry, anchor, re-anchor, invite, and external-mirror work remains.
+
+> **First-time visitor?** Read the [status](./RAPP1_STATUS.md) and [authority pin](./RAPP1_AUTHORITY.json) first, then use the **[Kernel hub](https://kody-w.github.io/RAPP/pages/kernel.html)** for current and historical context.
 
 ## What an "agent" is here
 
@@ -42,8 +44,8 @@ Drop that file in `agents/`, it auto-discovers on the next request. The `metadat
 ## Why it might be interesting
 
 - **Every install is a digital organism.** Your `~/.brainstem/` has its own [rappid identity](https://github.com/kody-w/RAPP/blob/main/pages/vault/Architecture/Rappid.md), its own personality (`soul.md`), its own memory (`.brainstem_data/`), and a lineage log (`bonds.json`) of every kernel evolution it has lived through. The kernel is just the runtime; **the organism evolves under the kernel, not the other way around.** Re-run the one-liner → the bond cycle eggs your organism, overlays the new kernel, hatches you back. Same identity, every customization preserved. ([Visual anatomy diagram](https://kody-w.github.io/RAPP/pages/about/anatomy.html).)
-- **Portable cartridges.** Your organism packs into a `.egg` ([brainstem-egg/2.2-organism schema](./rapp_brainstem/utils/bond.py)). AirDrop it to your phone; the brainstem there hatches the same organism — same memory, same agents, continues elsewhere. `brainstem egg` and `brainstem hatch` are CLI commands, or use the [rapp-zoo Pokédex](https://github.com/kody-w/rappter-distro/tree/main/rapp-zoo) for drag-drop. **The `.egg` family unified 2026-05-10**: one extension, five kinds (organism / rapplication / session / neighborhood / estate), one universal hatcher ([`egg_hatcher_agent.py`](./rapp_brainstem/agents/egg_hatcher_agent.py)) that introspects the cartridge and routes by kind. See [`pages/docs/SPEC.md` §18.10](./pages/docs/SPEC.md).
-- **Tethered vBrainstem (live multi-participant tab).** [`pages/vbrainstem.html`](https://kody-w.github.io/RAPP/pages/vbrainstem.html) — open on Mac, scan the QR with your phone, both screens stay synced as the autonomous Coordinator twin runs a workflow on your behalf. WebRTC data channel after a PeerJS broker handshake (DTLS-SRTP encrypted, broker drops out). Three exchangeable LLM backends: localhost (default), `?brainstem=URL` override, `?copilot=1` for the Doorman + Pyodide-loaded Python agents path. The session itself exports as a `brainstem-egg/2.3-session` cartridge. Spec: [SPEC §18.11](./pages/docs/SPEC.md).
+- **Portable cartridges (legacy implementation under migration).** Existing `brainstem egg` / `brainstem hatch` paths implement historical `brainstem-egg/2.x` formats. They remain operational inputs, but the current authority is the RAPP/1 §9 `schema:"rapp/1-egg"` family; this target does not yet claim conformant or authenticated egg output.
+- **Tethered vBrainstem (live multi-participant tab).** [`pages/vbrainstem.html`](https://kody-w.github.io/RAPP/pages/vbrainstem.html) — open on Mac, scan the QR with your phone, and both screens stay synced over WebRTC. Its existing `brainstem-egg/2.3-session` export is a historical format pending migration to RAPP/1 §9, not the current egg authority.
 - **Single-file agent contract.** One file = one class = one `metadata` = one `perform()`. Reload-on-disk every request, so you edit and test without restarting the server.
 - **GitHub Copilot as the LLM backend.** Exchanges your `gh auth` token for short-lived Copilot API tokens cached in `~/.brainstem/`. No new credentials to manage.
 - **Same file runs on three tiers.** Local Flask server (this repo), Azure Functions deployment in `rapp_swarm/`, and a Cloudflare worker that proxies into Microsoft Copilot Studio in `worker/`. The `*_agent.py` file is the contract; the engine ports.
@@ -130,10 +132,12 @@ If you're not the audience for the rest of this README, [**pitch-playbook.html**
 
 ## Constitution & spec
 
-- [`CONSTITUTION.md`](./CONSTITUTION.md) — articles governing what belongs, what's sacred, what's ruled out. Worth a skim if you want to contribute.
-- [`pages/docs/SPEC.md`](./pages/docs/SPEC.md) — the v1 contract for the single-file agent format. Frozen on purpose; the agent contract is the API.
+- [`RAPP1_AUTHORITY.json`](./RAPP1_AUTHORITY.json) — machine-readable structural pin to the exact RAPP/1 rev-5 source bytes.
+- [`RAPP1_STATUS.md`](./RAPP1_STATUS.md) — conformance limits and unresolved owner actions.
+- [`CONSTITUTION.md`](./CONSTITUTION.md) — Article LV adopts the pin and preserves incompatible earlier articles as dated history.
+- [`pages/docs/SPEC.md`](./pages/docs/SPEC.md) and `specs/SPEC.md` — historical local contracts; neither is the current RAPP/1 authority.
 
-> **The wire is forever.** `/chat` is time-travel safe by construction (Constitution Article XXV, SPEC §0.1). A v0 brainstem from years ago will still talk to the latest brainstem without a single code change on either side — schema evolution is additive-only, both response keys are emitted forever, the default `user_guid` is the same string in every implementation. The long tail of brainstems in the wild is the customer.
+> **Current protocol:** RAPP/1 §7 defines the exact eleven-key frame and §8 defines the exact `/chat` shapes. Earlier `rapp-frame/*`, expanded response aliases, and additive/read-forever teachings are historical migration inputs, not current conformance rules. See [Article LV](./CONSTITUTION.md) and the [status](./RAPP1_STATUS.md).
 
 ## The vault
 

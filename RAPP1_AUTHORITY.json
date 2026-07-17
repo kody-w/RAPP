@@ -1,0 +1,42 @@
+{
+  "schema": "rapp-authority-pin/1.0",
+  "record_kind": "structural-authority-pin",
+  "target": {
+    "repository": "kody-w/RAPP",
+    "status": "not-yet-fully-rapp-1-conformant",
+    "status_path": "RAPP1_STATUS.md"
+  },
+  "standard": {
+    "repository": "kody-w/rapp-1",
+    "commit": "6723c7add2aed36bb68992fc71a56b0a4bd5ad81",
+    "path": "SPEC.md",
+    "sha256": "6d06daba65d7c045716f3d6e95db8401ab58e727820e4114466d847f62cae49b",
+    "byte_length": 41880,
+    "wire_tag": "rapp/1",
+    "revision": "rev-5",
+    "canonical_url": "https://github.com/kody-w/rapp-1/blob/6723c7add2aed36bb68992fc71a56b0a4bd5ad81/SPEC.md",
+    "retrieval_url": "https://raw.githubusercontent.com/kody-w/rapp-1/6723c7add2aed36bb68992fc71a56b0a4bd5ad81/SPEC.md"
+  },
+  "offline_verification": {
+    "strategy": "metadata-fixture",
+    "fixture": "tests/fixtures/rapp1-spec-rev5.json",
+    "vendored_spec_bytes": false,
+    "reason": "No whole-spec mirror is committed because the pinned source commit has no explicit license file. The fixture records provenance and exact-byte metadata without copying the normative work."
+  },
+  "authenticated_registry": {
+    "is_section_13_registry": false,
+    "statement": "This record is a structural authority pin only. It is not an authenticated RAPP/1 section 13 registry and must not be accepted as one."
+  },
+  "immutable_grail_boundary": {
+    "repository": "kody-w/rapp-installer",
+    "tag": "brainstem-v0.6.9",
+    "pin_record": "KERNEL_PIN.json",
+    "policy": "read-only",
+    "implementation_policy": "RAPP/1 convergence occurs in target-owned adapters, validators, migrations, and retirement markers; the pinned grail bytes are not modified.",
+    "frozen": {
+      "rapp_brainstem/brainstem.py": "a293dd9f11eef915bf15776f08c736faa60cb749820871b6753ea98233142a71",
+      "rapp_brainstem/agents/basic_agent.py": "701488bc00d536a7b23295e7da99c62f24e9b00f233daa325886430c736b78eb",
+      "rapp_brainstem/VERSION": "13eb74b44be6e3a85a0efa0dedf56aec05e9e50140e1c8bbc0d0fbd8097b0717"
+    }
+  }
+}

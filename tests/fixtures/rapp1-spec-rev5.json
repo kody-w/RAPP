@@ -1,0 +1,19 @@
+{
+  "schema": "rapp-authority-source-fixture/1.0",
+  "purpose": "Offline provenance fixture for the target-owned RAPP/1 structural authority pin; it contains no normative SPEC bytes.",
+  "source": {
+    "repository": "kody-w/rapp-1",
+    "commit": "6723c7add2aed36bb68992fc71a56b0a4bd5ad81",
+    "path": "SPEC.md",
+    "sha256": "6d06daba65d7c045716f3d6e95db8401ab58e727820e4114466d847f62cae49b",
+    "byte_length": 41880,
+    "line_count": 528,
+    "wire_tag": "rapp/1",
+    "revision": "rev-5",
+    "canonical_url": "https://github.com/kody-w/rapp-1/blob/6723c7add2aed36bb68992fc71a56b0a4bd5ad81/SPEC.md",
+    "retrieval_url": "https://raw.githubusercontent.com/kody-w/rapp-1/6723c7add2aed36bb68992fc71a56b0a4bd5ad81/SPEC.md"
+  },
+  "contains_spec_bytes": false,
+  "source_license_path": null,
+  "license_note": "No license file is present at the pinned source commit, so this target stages metadata only and does not vendor the normative document."
+}
