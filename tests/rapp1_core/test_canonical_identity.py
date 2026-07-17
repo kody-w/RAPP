@@ -207,3 +207,9 @@ def test_spki_bound_mint_vector_and_invalid_der() -> None:
             "keyed",
             bytes.fromhex("302e300906032b657005000500032100" + "11" * 32),
         )
+    with pytest.raises(IdentityError):
+        mint_spki_rappid(
+            "kody-w",
+            "keyed",
+            bytes.fromhex("302c300706032b65700000032100" + "11" * 32),
+        )

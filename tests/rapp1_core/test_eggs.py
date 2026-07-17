@@ -21,10 +21,12 @@ from rapp1_core.egg import (
     EggError,
     _decode_zip,
     _encode_zip,
+    _resolved_staging_path,
     accept_egg,
     extract_egg,
     inspect_egg,
     pack_egg,
+    validate_egg_path,
 )
 from rapp1_core.hashing import EGG_FILE_SPACE, hash_bytes
 from rapp1_core.trust import RegistryEvidence, TrustStatus
@@ -209,6 +211,31 @@ def test_wrong_method_epoch_and_entry_order_are_refused() -> None:
     manifest, files = _manifest_and_files(_organism())
     wrong_order = _encode_zip([files[0], ("manifest.json", canonical_bytes(manifest)), files[1]])
     assert inspect_egg(wrong_order).error_code == "manifest-not-first"
+
+
+@pytest.mark.parametrize(
+    ("location", "offset", "encoding"),
+    [
+        ("local", 4, "<H"),
+        ("central", 4, "<H"),
+        ("central", 6, "<H"),
+        ("central", 36, "<H"),
+        ("central", 38, "<I"),
+    ],
+)
+def test_mutated_zip_versions_and_attributes_are_refused(
+    location: str, offset: int, encoding: str
+) -> None:
+    egg = bytearray(_organism())
+    base = (
+        0
+        if location == "local"
+        else egg.index(struct.pack("<I", ZIP_CENTRAL_SIGNATURE))
+    )
+    struct.pack_into(encoding, egg, base + offset, 1)
+    report = inspect_egg(egg)
+    assert not report.structurally_valid
+    assert report.error_code == "invalid-zip-metadata"
 
 
 def test_archive_set_and_manifest_contents_order_are_exact() -> None:
@@ -421,6 +448,47 @@ def test_unsigned_egg_needs_fresh_registry_evidence_for_acceptance() -> None:
     assert verified.checks[-1].status.value == "PASS"
 
 
+@pytest.mark.parametrize(
+    "path",
+    [
+        "C:escape.txt",
+        "C:/escape.txt",
+        "//server/share/escape.txt",
+        "\\\\server\\share\\escape.txt",
+        "state/data:alternate",
+        "CON",
+        "state/trailing.",
+    ],
+)
+def test_windows_path_semantics_are_refused_on_every_platform(path: str) -> None:
+    with pytest.raises(EggError, match="Windows|drive"):
+        validate_egg_path(path)
+
+
+def test_resolved_staging_guard_contains_dotdot_and_symlinks() -> None:
+    work = Path.cwd() / f".rapp1-path-guard-{os.getpid()}"
+    shutil.rmtree(work, ignore_errors=True)
+    try:
+        stage = work / "stage"
+        outside = work / "outside"
+        stage.mkdir(parents=True)
+        outside.mkdir()
+        with pytest.raises(EggError, match="outside staging"):
+            _resolved_staging_path(stage, "../outside/escape")
+        assert not (outside / "escape").exists()
+
+        link = stage / "link"
+        try:
+            link.symlink_to(outside, target_is_directory=True)
+        except OSError:
+            pytest.skip("platform does not permit symlink creation")
+        with pytest.raises(EggError, match="outside staging"):
+            _resolved_staging_path(stage, "link/escape")
+        assert not (outside / "escape").exists()
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+
+
 def test_verify_before_extract_and_staged_success() -> None:
     work = Path.cwd() / f".rapp1-core-test-{os.getpid()}"
     shutil.rmtree(work, ignore_errors=True)
@@ -432,10 +500,67 @@ def test_verify_before_extract_and_staged_success() -> None:
 
         work.mkdir()
         target = work / "hatched"
-        extract_egg(_organism(), target)
+        with pytest.raises(EggError) as untrusted:
+            extract_egg(_organism(), target)
+        assert untrusted.value.code == "egg-not-accepted"
+        assert not target.exists()
+
+        with pytest.raises(EggError) as stale:
+            extract_egg(
+                _organism(),
+                target,
+                registry=RegistryEvidence(authenticated=True, fresh=False),
+            )
+        assert stale.value.code == "egg-not-accepted"
+        assert not target.exists()
+
+        registry = RegistryEvidence(authenticated=True, fresh=True)
+        extract_egg(_organism(), target, registry=registry)
         assert (target / "manifest.json").is_file()
         assert (target / "rappid.json").is_file()
         assert (target / "soul.md").read_bytes() == b"soul\n"
         assert not list(work.glob(".hatched.rapp1-stage-*"))
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+
+
+def test_signed_root_or_nested_egg_never_extracts_without_crypto_verification() -> None:
+    work = Path.cwd() / f".rapp1-signed-extract-{os.getpid()}"
+    shutil.rmtree(work, ignore_errors=True)
+    registry = RegistryEvidence(authenticated=True, fresh=True)
+    try:
+        work.mkdir()
+        signed_root = pack_egg(
+            variant="organism",
+            rappid=RID_ORG1,
+            created_utc=UTC,
+            payload={},
+            files={"rappid.json": b"{}", "soul.md": b"soul"},
+            sig=_jws(),
+        )
+        with pytest.raises(EggError) as root_error:
+            extract_egg(signed_root, work / "root", registry=registry)
+        assert root_error.value.code == "signed-egg-unverified"
+        assert not (work / "root").exists()
+
+        signed_child = pack_egg(
+            variant="organism",
+            rappid=RID_ORG1,
+            created_utc=UTC,
+            payload={},
+            files={"rappid.json": b"{}", "soul.md": b"soul"},
+            sig=_jws(),
+        )
+        nested = pack_egg(
+            variant="neighborhood",
+            rappid=RID_NEIGHBORHOOD,
+            created_utc=UTC,
+            payload={"members": [RID_ORG1]},
+            files={"kody-w--one.egg": signed_child},
+        )
+        with pytest.raises(EggError) as nested_error:
+            extract_egg(nested, work / "nested", registry=registry)
+        assert nested_error.value.code == "signed-egg-unverified"
+        assert not (work / "nested").exists()
     finally:
         shutil.rmtree(work, ignore_errors=True)

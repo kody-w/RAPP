@@ -9,7 +9,7 @@ import tempfile
 import unicodedata
 import zlib
 from dataclasses import dataclass, replace
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from typing import Any, Mapping
 
 from .canonical import CanonicalizationError, canonical_bytes, strict_loads
@@ -91,14 +91,32 @@ def validate_egg_path(value: str) -> str:
         raise EggError("invalid-egg-path", "egg path must be a non-empty string")
     if unicodedata.normalize("NFC", value) != value:
         raise EggError("invalid-egg-path", "egg path must be Unicode NFC")
-    if value.startswith("/") or "\\" in value or "\x00" in value:
+    windows_path = PureWindowsPath(value)
+    if (
+        value.startswith("/")
+        or "\\" in value
+        or "\x00" in value
+        or windows_path.drive
+        or windows_path.root
+        or windows_path.is_absolute()
+    ):
         raise EggError(
-            "invalid-egg-path", "egg path must be relative POSIX without backslash/NUL"
+            "invalid-egg-path",
+            "egg path must be relative POSIX without drive/UNC/backslash/NUL",
         )
     segments = value.split("/")
     if any(not segment or segment in {".", ".."} for segment in segments):
         raise EggError(
             "invalid-egg-path", "egg path contains an empty, dot, or dot-dot segment"
+        )
+    if any(
+        ":" in segment
+        or segment.endswith((" ", "."))
+        or PureWindowsPath(segment).is_reserved()
+        for segment in segments
+    ):
+        raise EggError(
+            "invalid-egg-path", "egg path has unsafe Windows filename semantics"
         )
     try:
         value.encode("utf-8", errors="strict")
@@ -513,6 +531,11 @@ def _decode_zip(data: bytes) -> tuple[_ZipMember, ...]:
         expected_local_offset = body_offset + compressed_size
     if expected_local_offset != central_offset:
         raise EggError("invalid-zip", "unexpected octets before central directory")
+    if _encode_zip([(member.name, member.data) for member in members]) != data:
+        raise EggError(
+            "invalid-zip-metadata",
+            "ZIP bytes differ from the deterministic RAPP encoding",
+        )
     return tuple(members)
 
 
@@ -660,12 +683,9 @@ def inspect_egg(data: bytes | bytearray | memoryview) -> EggInspection:
     return _inspect(bytes(data)).report
 
 
-def accept_egg(
-    data: bytes | bytearray | memoryview,
-    *,
-    registry: RegistryEvidence | None = None,
+def _accept_inspected_egg(
+    inspected: EggInspection, registry: RegistryEvidence | None
 ) -> EggInspection:
-    inspected = inspect_egg(data)
     if not inspected.structurally_valid:
         return inspected
     if registry is None or not registry.authenticated:
@@ -694,6 +714,14 @@ def accept_egg(
         trust_status=TrustStatus.VERIFIED,
         checks=checks,
     )
+
+
+def accept_egg(
+    data: bytes | bytearray | memoryview,
+    *,
+    registry: RegistryEvidence | None = None,
+) -> EggInspection:
+    return _accept_inspected_egg(inspect_egg(data), registry)
 
 
 def pack_egg(
@@ -757,10 +785,30 @@ def pack_egg(
     return packed
 
 
+def _resolved_staging_path(stage: Path, member_name: str) -> Path:
+    stage_root = stage.resolve(strict=True)
+    candidate = stage.joinpath(*member_name.split("/")).resolve(strict=False)
+    try:
+        candidate.relative_to(stage_root)
+    except ValueError as exc:
+        raise EggError(
+            "extraction-path-escape",
+            f"archive member resolves outside staging: {member_name}",
+        ) from exc
+    if candidate == stage_root:
+        raise EggError(
+            "extraction-path-escape", "archive member resolves to staging root"
+        )
+    return candidate
+
+
 def extract_egg(
-    data: bytes | bytearray | memoryview, destination: str | os.PathLike[str]
+    data: bytes | bytearray | memoryview,
+    destination: str | os.PathLike[str],
+    *,
+    registry: RegistryEvidence | None = None,
 ) -> Path:
-    """Verify the complete egg, then extract into a sibling staging directory."""
+    """Accept the complete egg, then extract into a sibling staging directory."""
 
     if not isinstance(data, (bytes, bytearray, memoryview)):
         raise TypeError("extract_egg requires bytes")
@@ -769,6 +817,18 @@ def extract_egg(
         raise EggError(
             inspected.report.error_code or "invalid-egg",
             inspected.report.error or "egg verification failed",
+        )
+    accepted = _accept_inspected_egg(inspected.report, registry)
+    if not accepted.accepted:
+        code = (
+            "signed-egg-unverified"
+            if inspected.report.signature_kids
+            else "egg-not-accepted"
+        )
+        raise EggError(
+            code,
+            "egg extraction requires fresh authenticated acceptance; "
+            "signature verification is unsupported",
         )
     assert inspected.report.manifest is not None
     if inspected.report.manifest["variant"] in JSON_VARIANTS:
@@ -784,7 +844,7 @@ def extract_egg(
     )
     try:
         for member in inspected.members:
-            output = stage.joinpath(*member.name.split("/"))
+            output = _resolved_staging_path(stage, member.name)
             output.parent.mkdir(parents=True, exist_ok=True)
             with output.open("xb") as handle:
                 handle.write(member.data)

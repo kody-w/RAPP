@@ -6,6 +6,13 @@ import re
 import uuid
 from dataclasses import dataclass
 
+from cryptography.exceptions import UnsupportedAlgorithm
+from cryptography.hazmat.primitives.serialization import (
+    Encoding,
+    PublicFormat,
+    load_der_public_key,
+)
+
 from .errors import IdentityError
 from .hashing import RAPPID_SPACE, hash_bytes
 
@@ -135,77 +142,26 @@ def mint_keyless_rappid(
     return _format_rappid(owner, slug, tail)
 
 
-def _read_der_length(data: bytes, offset: int) -> tuple[int, int]:
-    if offset >= len(data):
-        raise IdentityError("invalid-spki", "truncated DER length")
-    first = data[offset]
-    offset += 1
-    if first < 0x80:
-        return first, offset
-    count = first & 0x7F
-    if count == 0 or count > 4 or offset + count > len(data):
-        raise IdentityError("invalid-spki", "invalid DER length")
-    encoded = data[offset : offset + count]
-    if encoded[0] == 0:
-        raise IdentityError("invalid-spki", "non-minimal DER length")
-    length = int.from_bytes(encoded, "big")
-    if length < 0x80:
-        raise IdentityError("invalid-spki", "non-minimal DER long length")
-    return length, offset + count
-
-
-def _read_der_tlv(data: bytes, offset: int) -> tuple[int, bytes, int]:
-    if offset >= len(data):
-        raise IdentityError("invalid-spki", "truncated DER value")
-    tag = data[offset]
-    length, content_offset = _read_der_length(data, offset + 1)
-    end = content_offset + length
-    if end > len(data):
-        raise IdentityError("invalid-spki", "truncated DER content")
-    return tag, data[content_offset:end], end
-
-
 def validate_spki_der(spki_der: bytes | bytearray | memoryview) -> bytes:
-    """Validate the outer RFC 5280 SubjectPublicKeyInfo DER structure."""
+    """Load and exactly round-trip RFC 5280 SubjectPublicKeyInfo DER."""
 
     if not isinstance(spki_der, (bytes, bytearray, memoryview)):
         raise TypeError("SPKI must be DER bytes")
     data = bytes(spki_der)
-    tag, outer, end = _read_der_tlv(data, 0)
-    if tag != 0x30 or end != len(data):
-        raise IdentityError("invalid-spki", "SPKI must be one DER SEQUENCE")
-    algorithm_tag, algorithm, offset = _read_der_tlv(outer, 0)
-    bit_tag, bit_string, final = _read_der_tlv(outer, offset)
-    if algorithm_tag != 0x30 or bit_tag != 0x03 or final != len(outer):
-        raise IdentityError(
-            "invalid-spki", "SPKI must contain AlgorithmIdentifier and BIT STRING"
+    try:
+        public_key = load_der_public_key(data)
+        serialized = public_key.public_bytes(
+            encoding=Encoding.DER,
+            format=PublicFormat.SubjectPublicKeyInfo,
         )
-    oid_tag, oid, algorithm_offset = _read_der_tlv(algorithm, 0)
-    if oid_tag != 0x06 or not oid:
-        raise IdentityError("invalid-spki", "AlgorithmIdentifier must start with an OID")
-    oid_offset = 0
-    while oid_offset < len(oid):
-        if oid[oid_offset] == 0x80:
-            raise IdentityError("invalid-spki", "OID has a non-minimal subidentifier")
-        while oid_offset < len(oid) and oid[oid_offset] & 0x80:
-            oid_offset += 1
-        if oid_offset >= len(oid):
-            raise IdentityError("invalid-spki", "OID has an unterminated subidentifier")
-        oid_offset += 1
-    if algorithm_offset < len(algorithm):
-        _, _, algorithm_offset = _read_der_tlv(algorithm, algorithm_offset)
-    if algorithm_offset != len(algorithm):
+    except (TypeError, ValueError, UnsupportedAlgorithm) as exc:
         raise IdentityError(
-            "invalid-spki", "AlgorithmIdentifier has more than one parameters value"
+            "invalid-spki", "SPKI is not a supported standards-valid public key"
+        ) from exc
+    if serialized != data:
+        raise IdentityError(
+            "invalid-spki", "SPKI does not exactly reserialize to its input DER"
         )
-    if not bit_string or bit_string[0] > 7:
-        raise IdentityError("invalid-spki", "invalid subjectPublicKey BIT STRING")
-    if len(bit_string) == 1 and bit_string[0] != 0:
-        raise IdentityError("invalid-spki", "empty BIT STRING has unused bits")
-    if len(bit_string) > 1 and bit_string[0]:
-        mask = (1 << bit_string[0]) - 1
-        if bit_string[-1] & mask:
-            raise IdentityError("invalid-spki", "non-zero unused BIT STRING bits")
     return data
 
 

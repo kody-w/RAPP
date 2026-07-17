@@ -42,6 +42,11 @@ UTC_RE = re.compile(
     re.ASCII,
 )
 UINT53_MAX = (1 << 53) - 1
+REGENESIS_KINDS = {
+    "memory.re-genesis": "memory",
+    "swarm.re-genesis": "swarm",
+    "body.re-genesis": "body",
+}
 
 
 @dataclass(frozen=True)
@@ -109,6 +114,53 @@ def _validate_hash(value: Any, *, field: str, nullable: bool = False) -> None:
         )
 
 
+def _is_regenesis(frame: dict[str, Any]) -> bool:
+    return frame.get("kind") in REGENESIS_KINDS
+
+
+def _validate_regenesis_shape(frame: dict[str, Any]) -> None:
+    if frame["seq"] != 0:
+        raise FrameError(
+            "invalid-re-genesis-seq", "re-genesis must have seq 0", step="1"
+        )
+    if frame["sig"] is None:
+        raise FrameError(
+            "unsigned-re-genesis", "re-genesis requires a structural JWS", step="1"
+        )
+    payload = frame["payload"]
+    if set(payload) != {"migrated_from"} or type(payload["migrated_from"]) is not dict:
+        raise FrameError(
+            "invalid-re-genesis-payload",
+            "re-genesis payload must contain exactly migrated_from",
+            step="1",
+        )
+    migrated = payload["migrated_from"]
+    if set(migrated) != {"stream_id", "terminal_seal", "terminal_seq"}:
+        raise FrameError(
+            "invalid-re-genesis-payload",
+            "migrated_from must contain exactly stream_id, terminal_seal, terminal_seq",
+            step="1",
+        )
+    try:
+        parse_stream_id(migrated["stream_id"])
+    except IdentityError as exc:
+        raise FrameError(
+            "invalid-re-genesis-payload",
+            "migrated_from.stream_id is invalid",
+            step="1",
+        ) from exc
+    _validate_hash(migrated["terminal_seal"], field="terminal_seal")
+    if (
+        type(migrated["terminal_seq"]) is not int
+        or not 0 <= migrated["terminal_seq"] <= UINT53_MAX
+    ):
+        raise FrameError(
+            "invalid-re-genesis-payload",
+            "migrated_from.terminal_seq must be uint53",
+            step="1",
+        )
+
+
 def _shape_and_family(
     frame: dict[str, Any],
     registry: RegistryEvidence | None,
@@ -144,8 +196,17 @@ def _shape_and_family(
             parse_detached_jws(frame["sig"])
         except SignatureStructureError as exc:
             raise FrameError(exc.code, str(exc), step="1") from exc
+    regenesis = _is_regenesis(frame)
+    if regenesis:
+        _validate_regenesis_shape(frame)
 
     if registry is None or not registry.authenticated:
+        if regenesis:
+            raise FrameError(
+                "missing-re-genesis-context",
+                "re-genesis requires an authenticated registered reset",
+                step="1",
+            )
         return (
             stream.family,
             CheckStatus.UNVERIFIED,
@@ -153,7 +214,7 @@ def _shape_and_family(
         )
     registered_family = registry.kind_families.get(frame["kind"])
     if registered_family is None:
-        if registry.fresh:
+        if registry.fresh or regenesis:
             raise FrameError(
                 "unregistered-kind",
                 f"kind {frame['kind']!r} is absent from the authenticated registry",
@@ -164,8 +225,6 @@ def _shape_and_family(
             CheckStatus.UNVERIFIED,
             "shape passes; stale registry cannot decide whether kind is registered",
         )
-    if frame["kind"] in registry.deprecated_kinds:
-        raise FrameError("deprecated-kind", "registered kind is deprecated", step="1")
     if registered_family not in {"memory", "body", "swarm"}:
         raise FrameError(
             "invalid-kind-family", "registry contains an invalid family", step="1"
@@ -176,6 +235,20 @@ def _shape_and_family(
             f"kind family {registered_family!r} cannot use {stream.family!r} stream",
             step="1",
         )
+    if regenesis:
+        expected_family = REGENESIS_KINDS[frame["kind"]]
+        if expected_family != stream.family:
+            raise FrameError(
+                "re-genesis-family-mismatch",
+                "re-genesis kind does not match its stream family",
+                step="1",
+            )
+        if registry.genesis_hashes.get(frame["stream_id"]) != frame["frame_hash"]:
+            raise FrameError(
+                "unregistered-re-genesis",
+                "authenticated registry does not name this reset genesis",
+                step="1",
+            )
     return stream.family, CheckStatus.PASS, "shape, grammar, and registry family pass"
 
 
@@ -283,11 +356,16 @@ def inspect_frame(
                 raise FrameError(
                     "invalid-genesis-chain", "genesis prev must be null", step="4"
                 )
-            if head is not None:
+            if head is not None and not _is_regenesis(frame):
                 raise FrameError(
                     "unexpected-genesis", "genesis cannot extend an existing head", step="4"
                 )
-            checks.append(CheckResult("4", CheckStatus.PASS, "genesis chain is valid"))
+            detail = (
+                "authenticated registry authorizes structural re-genesis reset"
+                if _is_regenesis(frame)
+                else "genesis chain is valid"
+            )
+            checks.append(CheckResult("4", CheckStatus.PASS, detail))
         else:
             if frame["prev"] is None:
                 raise FrameError(
@@ -414,6 +492,20 @@ def accept_frame(
     if not inspected.structurally_valid:
         return inspected
     checks = list(inspected.checks)
+    if _is_regenesis(frame):
+        checks.append(
+            CheckResult(
+                "6",
+                CheckStatus.UNVERIFIED,
+                "owner-signature verification for re-genesis is unsupported",
+            )
+        )
+        return replace(
+            inspected,
+            accepted=False,
+            trust_status=TrustStatus.UNVERIFIED,
+            checks=tuple(checks),
+        )
     if registry is None or not registry.authenticated:
         checks.append(
             CheckResult(
@@ -434,6 +526,23 @@ def accept_frame(
             )
         )
         return replace(inspected, trust_status=TrustStatus.STALE, checks=tuple(checks))
+    if frame["kind"] in registry.deprecated_kinds:
+        checks.append(
+            CheckResult(
+                "append",
+                CheckStatus.FAIL,
+                "deprecated kind cannot be produced or appended",
+            )
+        )
+        return replace(
+            inspected,
+            accepted=False,
+            trust_status=TrustStatus.DRIFT,
+            checks=tuple(checks),
+            error_code="deprecated-kind-for-append",
+            error_step="append",
+            error="deprecated kind cannot be produced or appended",
+        )
     if any(check.status is CheckStatus.UNVERIFIED for check in inspected.checks):
         checks.append(
             CheckResult(
@@ -502,21 +611,71 @@ def accept_frame(
     )
 
 
+@dataclass(frozen=True)
+class _AcceptedFrameState:
+    head: HeadState
+    prev: str | None
+    predecessor_known: bool
+
+
 class FrameAcceptor:
-    """Stateful no-rollback acceptor for externally authenticated registry evidence."""
+    """Stateful no-rollback acceptor with persistent fork quarantine."""
 
     def __init__(self, registry: RegistryEvidence) -> None:
         self._registry = registry
         self._heads: dict[str, HeadState] = {}
+        self._history: dict[str, dict[int, _AcceptedFrameState]] = {}
+        self._quarantined: set[str] = set()
 
     def head(self, stream_id: str) -> HeadState | None:
         return self._heads.get(stream_id)
+
+    def is_quarantined(self, stream_id: str) -> bool:
+        return stream_id in self._quarantined
+
+    @staticmethod
+    def _state_failure(
+        inspected: FrameInspection, *, code: str, detail: str
+    ) -> FrameInspection:
+        checks = inspected.checks + (
+            CheckResult("head", CheckStatus.FAIL, detail),
+        )
+        return replace(
+            inspected,
+            accepted=False,
+            trust_status=TrustStatus.DRIFT,
+            checks=checks,
+            error_code=code,
+            error_step="head",
+            error=detail,
+        )
+
+    def _record(self, frame: dict[str, Any]) -> None:
+        head = HeadState(
+            stream_id=frame["stream_id"],
+            seq=frame["seq"],
+            utc=frame["utc"],
+            payload_hash=frame["payload_hash"],
+            frame_hash=frame["frame_hash"],
+            trusted=True,
+        )
+        self._heads[frame["stream_id"]] = head
+        self._history.setdefault(frame["stream_id"], {})[frame["seq"]] = (
+            _AcceptedFrameState(
+                head=head, prev=frame["prev"], predecessor_known=True
+            )
+        )
 
     def seed_trusted_head(self, head: HeadState) -> None:
         _validate_head_state(head)
         if not head.trusted:
             raise FrameError(
                 "untrusted-head", "only an externally trusted head can seed state"
+            )
+        if head.stream_id in self._quarantined:
+            raise FrameError(
+                "stream-quarantined",
+                "fork quarantine can end only through verified re-genesis",
             )
         current = self._heads.get(head.stream_id)
         if current is not None and (
@@ -527,11 +686,81 @@ class FrameAcceptor:
                 "head-rollback", "seed head would roll back or reorganize state"
             )
         self._heads[head.stream_id] = head
+        self._history.setdefault(head.stream_id, {})[head.seq] = (
+            _AcceptedFrameState(
+                head=head, prev=None, predecessor_known=False
+            )
+        )
+
+    def _replay_current(
+        self, frame: dict[str, Any], standalone: FrameInspection
+    ) -> FrameInspection:
+        if not self._registry.authenticated:
+            return replace(standalone, trust_status=TrustStatus.UNVERIFIED)
+        if not self._registry.fresh:
+            return replace(standalone, trust_status=TrustStatus.STALE)
+        if any(
+            check.status is CheckStatus.UNVERIFIED and check.step not in {"4", "5"}
+            for check in standalone.checks
+        ):
+            return replace(standalone, trust_status=TrustStatus.UNVERIFIED)
+        checks = tuple(
+            CheckResult(
+                check.step,
+                CheckStatus.PASS,
+                "frame matches the persisted accepted head",
+            )
+            if check.step in {"4", "5"}
+            and check.status is CheckStatus.UNVERIFIED
+            else check
+            for check in standalone.checks
+        ) + (
+            CheckResult(
+                "head",
+                CheckStatus.PASS,
+                "frame hash matches the persisted accepted head",
+            ),
+            CheckResult(
+                "6",
+                CheckStatus.PASS,
+                "signature is optional; acceptance makes no authorship claim",
+            ),
+        )
+        return replace(
+            standalone,
+            accepted=True,
+            trust_status=TrustStatus.VERIFIED,
+            checks=checks,
+        )
 
     def accept(
         self, frame: dict[str, Any], *, declared_stream_id: str
     ) -> FrameInspection:
         current = self._heads.get(declared_stream_id)
+        if _is_regenesis(frame):
+            return accept_frame(
+                frame,
+                declared_stream_id=declared_stream_id,
+                head=current,
+                registry=self._registry,
+            )
+
+        if declared_stream_id in self._quarantined:
+            standalone = inspect_frame(
+                frame,
+                declared_stream_id=declared_stream_id,
+                registry=self._registry,
+            )
+            if not standalone.structurally_valid:
+                return standalone
+            return self._state_failure(
+                standalone,
+                code="stream-quarantined",
+                detail=(
+                    "stream is fork-quarantined until authenticated verified re-genesis"
+                ),
+            )
+
         if (
             current is not None
             and type(frame.get("seq")) is int
@@ -549,64 +778,46 @@ class FrameAcceptor:
                 and frame["frame_hash"] == current.frame_hash
                 and frame["sig"] is None
             ):
-                if not self._registry.authenticated:
-                    return replace(
-                        standalone, trust_status=TrustStatus.UNVERIFIED
-                    )
-                if not self._registry.fresh:
-                    return replace(standalone, trust_status=TrustStatus.STALE)
-                if any(
-                    check.status is CheckStatus.UNVERIFIED
-                    and check.step not in {"4", "5"}
-                    for check in standalone.checks
+                return self._replay_current(frame, standalone)
+
+            history = self._history.get(declared_stream_id, {})
+            accepted_at_seq = history.get(frame["seq"])
+            predecessor = (
+                history.get(frame["seq"] - 1) if frame["seq"] > 0 else None
+            )
+            if (
+                accepted_at_seq is not None
+                and accepted_at_seq.predecessor_known
+                and (frame["seq"] == 0 or predecessor is not None)
+            ):
+                competing = accept_frame(
+                    frame,
+                    declared_stream_id=declared_stream_id,
+                    head=None if predecessor is None else predecessor.head,
+                    registry=self._registry,
+                )
+                if (
+                    competing.accepted
+                    and frame["prev"] == accepted_at_seq.prev
+                    and frame["frame_hash"] != accepted_at_seq.head.frame_hash
                 ):
-                    return replace(
-                        standalone, trust_status=TrustStatus.UNVERIFIED
+                    self._quarantined.add(declared_stream_id)
+                    return self._state_failure(
+                        competing,
+                        code="fork-quarantined",
+                        detail=(
+                            "competing same-seq/predecessor frame forked the stream"
+                        ),
                     )
-                checks = tuple(
-                    CheckResult(
-                        check.step,
-                        CheckStatus.PASS,
-                        "frame matches the persisted accepted head",
-                    )
-                    if check.step in {"4", "5"}
-                    and check.status is CheckStatus.UNVERIFIED
-                    else check
-                    for check in standalone.checks
-                ) + (
-                    CheckResult(
-                        "head",
-                        CheckStatus.PASS,
-                        "frame hash matches the persisted accepted head",
-                    ),
-                    CheckResult(
-                        "6",
-                        CheckStatus.PASS,
-                        "signature is optional; acceptance makes no authorship claim",
-                    ),
-                )
-                return replace(
-                    standalone,
-                    accepted=True,
-                    trust_status=TrustStatus.VERIFIED,
-                    checks=checks,
-                )
-            checks = standalone.checks + (
-                CheckResult(
-                    "head",
-                    CheckStatus.FAIL,
-                    "presented frame would roll back or reorganize accepted state",
-                ),
-            )
-            return replace(
+                if not competing.accepted:
+                    return competing
+
+            return self._state_failure(
                 standalone,
-                accepted=False,
-                trust_status=TrustStatus.DRIFT,
-                checks=checks,
-                error_code="head-rollback",
-                error_step="head",
-                error="presented frame would roll back or reorganize accepted state",
+                code="head-rollback",
+                detail="presented frame would roll back or reorganize accepted state",
             )
+
         inspected = accept_frame(
             frame,
             declared_stream_id=declared_stream_id,
@@ -614,14 +825,7 @@ class FrameAcceptor:
             registry=self._registry,
         )
         if inspected.accepted:
-            self._heads[declared_stream_id] = HeadState(
-                stream_id=frame["stream_id"],
-                seq=frame["seq"],
-                utc=frame["utc"],
-                payload_hash=frame["payload_hash"],
-                frame_hash=frame["frame_hash"],
-                trusted=True,
-            )
+            self._record(frame)
         return inspected
 
 
