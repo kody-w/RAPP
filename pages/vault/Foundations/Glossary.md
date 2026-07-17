@@ -1,11 +1,20 @@
 ---
 title: Glossary
-status: published
+status: historical
 section: Foundations
 hook: Every domain term, with one paragraph and a link to the deep post. The shortest path to fluent.
 ---
 
 # Glossary
+
+> **HISTORICAL GLOSSARY — superseded current vocabulary.** The bounded terms
+> preserve dated application language and are not protocol definitions. For
+> canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+> evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** Every domain term, with one paragraph and a link to the deep post. The shortest path to fluent.
 
@@ -193,3 +202,5 @@ A user-organized directory inside `agents/` for grouping related agents. CONSTIT
 - [[The Sacred Constraints]]
 - [[The Platform in 90 Seconds]]
 - [[Constitution Reading Order]]
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

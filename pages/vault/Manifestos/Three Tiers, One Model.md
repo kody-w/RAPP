@@ -1,11 +1,20 @@
 ---
 title: Three Tiers, One Model
-status: published
+status: historical
 section: Manifestos
 hook: The same agent file runs unmodified in Tier 1, Tier 2, and Tier 3. That portability is the platform's central claim.
 ---
 
 # Three Tiers, One Model
+
+> **RETIRED THREE-TIER MANIFESTO — historical record only.** No Tier 2 or
+> Tier 3 product is currently shipped or operational. The bounded body is not
+> deployment guidance. For canonicalization, identity, frames, wire, eggs,
+> registry, trust, and protocol evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** The same agent file runs unmodified in Tier 1, Tier 2, and Tier 3. That portability is the platform's central claim.
 
@@ -108,3 +117,5 @@ The most credible receipt for the claim is the file system itself. Open `rapp_br
 - [[Local Storage Shim via sys.modules]]
 - [[The Deterministic Fake LLM]]
 - [[The Engine Stays Small]]
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

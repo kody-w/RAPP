@@ -1,11 +1,21 @@
 ---
 title: Reading Path — Engineer Evaluating RAPP
-status: published
+status: historical
 section: Reading Paths
 hook: 8 notes, ~30 minutes. The path for a senior engineer deciding whether the platform is worth integrating.
 ---
 
 # Reading Path — Engineer Evaluating RAPP
+
+> **HISTORICAL READING PATH — retired current navigation.** The bounded
+> sequence includes superseded implementation and install claims. Begin instead
+> with RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md); those records govern
+> canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+> evolution.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** 8 notes, ~30 minutes. The path for a senior engineer deciding whether the platform is worth integrating.
 
@@ -88,3 +98,5 @@ For a *first-evaluation* read, skip:
 - [[The Sacred Constraints]]
 - [[How to Read This Vault]]
 - [[Constitution Reading Order]]
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

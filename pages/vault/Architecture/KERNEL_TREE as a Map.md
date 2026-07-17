@@ -1,11 +1,20 @@
 ---
 title: KERNEL_TREE as a Map
-status: published
+status: historical
 section: Architecture
 hook: KERNEL_TREE.md is the file-by-file inventory of what's in this repo; pages/kernel.html is the narrative reading order. Different jobs, different audiences. Keep both up to date when grail changes.
 ---
 
 # KERNEL_TREE as a Map
+
+> **HISTORICAL VAULT NOTE — superseded current guidance.** The bounded body is
+> a dated repository map, not a current authority or navigation source. For
+> canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+> evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** `KERNEL_TREE.md` is the file-by-file *inventory* of what's in this repo; `pages/kernel.html` is the narrative *reading order*. Different jobs, different audiences. Keep both up to date when grail changes.
 
@@ -69,3 +78,5 @@ If they ever drift, kernel.html (the narrative) wins for first-time readers; KER
 - [[2026-05-16 — pages-kernel-html as the canonical hub]] — the decision behind the hub
 - [`KERNEL_TREE.md`](../../../KERNEL_TREE.md)
 - [`pages/kernel.html`](../../kernel.html)
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

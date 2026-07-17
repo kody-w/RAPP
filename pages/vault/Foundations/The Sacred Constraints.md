@@ -1,11 +1,20 @@
 ---
 title: The Sacred Constraints
-status: published
+status: historical
 section: Foundations
 hook: Six inviolable rules. Single-file agents. Single-file services. Agent-first. Brainstem light. Slots forever. Tier portability.
 ---
 
 # The Sacred Constraints
+
+> **HISTORICAL CONSTRAINT SUMMARY — superseded current guidance.** The bounded
+> local doctrine is preserved for provenance and does not override RAPP/1. For
+> canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+> evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** Six inviolable rules. Single-file agents. Single-file services. Agent-first. Brainstem light. Slots forever. Tier portability.
 
@@ -134,3 +143,5 @@ In every case, the burden of proof is on the relaxer. The default is "no."
 - [[Three Tiers, One Model]]
 - [[Engine, Not Experience]]
 - [[The Engine Stays Small]]
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

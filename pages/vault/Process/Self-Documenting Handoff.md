@@ -1,11 +1,20 @@
 ---
 title: Self-Documenting Handoff
-status: published
+status: historical
 section: Process
 hook: A partner can take a *_agent.py file and price the work without a discovery call. That property is the platform's biggest delivery shortcut.
 ---
 
 # Self-Documenting Handoff
+
+> **HISTORICAL PROCESS NOTE — not a current delivery promise.** The bounded
+> body preserves dated handoff design and does not establish shipped tooling,
+> tiers, or acceptance. For canonicalization, identity, frames, wire, eggs,
+> registry, trust, and protocol evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** A partner can take a `*_agent.py` file and price the work without a discovery call. That property is the platform's biggest delivery shortcut.
 
@@ -121,3 +130,5 @@ The discipline: **don't hand off broken self-document checklists.** A file that 
 - [[60 Minutes to a Working Agent]]
 - [[Three Tiers, One Model]]
 - [[Why hatch_rapp Was Killed]]
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

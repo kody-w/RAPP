@@ -1,11 +1,20 @@
 ---
 title: Adding to the Kernel vs the Distro
-status: published
+status: historical
 section: Process
 hook: Decision framework for new contributions. Three tests — does grail ship it, does the SPEC reference it as load-bearing, would another distro need its own version? If any answer is yes, it belongs in the kernel. Otherwise it's distro.
 ---
 
 # Adding to the Kernel vs the Distro
+
+> **HISTORICAL CONTRIBUTION RUNBOOK — superseded current guidance.** The
+> bounded body preserves dated kernel/distro process and must not direct edits
+> to pinned bytes. For canonicalization, identity, frames, wire, eggs,
+> registry, trust, and protocol evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** Decision framework for new contributions. Three tests — does grail ship it, does the SPEC reference it as load-bearing, would another distro need its own version? If any answer is yes, it belongs in the kernel. Otherwise it's distro.
 
@@ -84,3 +93,5 @@ Distros should pre-declare which files they own. Today only `kody-w/rappter-dist
 - [[Distros as a Pattern]] — what a valid distro looks like
 - [[2026-05-16 — Why pitch-playbook stays in the kernel]] — the canonical exception
 - [[Grail is GitHub, not local]] — how to do Test 1 correctly
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

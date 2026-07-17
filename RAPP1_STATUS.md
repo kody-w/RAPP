@@ -47,6 +47,14 @@ the original report's totals are not used to reconcile the 691-path tree. The
 post-docs ledger separately records current documents, immutable prepared-clone
 history, generated observations, archives, and external mirrors.
 
+The subsequent authoritative read-only post ledger contains **691 data rows**,
+**8,298,082 tracked bytes**, and the same **450 recursively counted archive
+members**. Its SHA-256 is
+`f5ba5abbf21067dd644d70f9076201b7ca3bf8afd934edbb9f2b4614060ad50b`.
+It does not define categories named `POST-CANON` or `POST-CANON-05`; canon
+closure maps to its stale-live, mirror, owner-mirror, immutable, history,
+status, and documentation-QA dispositions.
+
 Maintainer evidence is retained in Copilot session
 `9ac7ec28-fb92-4452-a8c9-477a2363685d`; no machine-local audit path is part of
 this repository.

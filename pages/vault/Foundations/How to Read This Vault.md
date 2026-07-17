@@ -1,11 +1,20 @@
 ---
 title: How to Read This Vault
-status: published
+status: historical
 section: Foundations
 hook: A meta-note for first-time visitors. Where to start, what the markers mean, how to use the wiki vs the Obsidian vault.
 ---
 
 # How to Read This Vault
+
+> **HISTORICAL READING GUIDE — superseded current navigation.** The bounded
+> guide describes the dated vault, not the current authority order. For
+> canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+> evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** A meta-note for first-time visitors. Where to start, what the markers mean, how to use the wiki vs the Obsidian vault.
 
@@ -98,3 +107,5 @@ If you're adding a note:
 - [[The Sacred Constraints]]
 - [[Constitution Reading Order]]
 - [[Vault Build-Out Plan]]
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

@@ -1,11 +1,20 @@
 ---
 title: RAPP vs Copilot Studio
-status: published
+status: historical
 section: Positioning
 hook: Not competing. Accelerating. RAPP gets the working agent into hands in an hour; Copilot Studio operationalizes it inside the customer's tenant.
 ---
 
 # RAPP vs Copilot Studio
+
+> **HISTORICAL POSITIONING — not a current product comparison.** The bounded
+> body predates current acceptance and does not establish shipped tiers,
+> integration, or production capability. For canonicalization, identity,
+> frames, wire, eggs, registry, trust, and protocol evolution, follow RAPP/1
+> rev-5 through [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** Not competing. Accelerating. RAPP gets the working agent into hands in an hour; Copilot Studio operationalizes it inside the customer's tenant.
 
@@ -82,3 +91,5 @@ That is also fine. Most platforms can't say "this isn't for you" honestly. RAPP 
 - [[Why GitHub Pages Is the Distribution Channel]]
 - [[The Agent IS the Spec]]
 - [[60 Minutes to a Working Agent]]
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

@@ -1,11 +1,20 @@
 ---
 title: RAR — Trust Without Discrimination
-status: published
+status: historical
 section: Architecture
 hook: How this repo interacts with the RAR registry (which lives in its own repo). Defines only the integration surface — manifest fields binder reads, the env var that points at the registry, the behavior on verify, and the inviolable principle that an agent meeting the v0 contract loads forever, signed or not.
 ---
 
 # RAR — Trust Without Discrimination
+
+> **HISTORICAL VAULT NOTE — superseded current guidance.** The bounded body is
+> dated trust design, not an authenticated registry or acceptance source. For
+> canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+> evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** How this repo interacts with the RAR registry (which lives in its own repo). Defines only the integration surface — manifest fields binder reads, the env var that points at the registry, the behavior on verify, and the inviolable principle that an agent meeting the v0 contract loads forever, signed or not.
 
@@ -133,3 +142,5 @@ That's it. Everything else — keys, registry structure, publisher onboarding, s
 ## Status
 
 Integration surface defined. Binder implementation deferred. The principles in this note are inviolable; the implementation order is recommended but flexible. When in doubt: **we don't discriminate.**
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

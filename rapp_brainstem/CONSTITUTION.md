@@ -1,5 +1,14 @@
 # RAPP Brainstem — Constitution
 
+> **HISTORICAL APPLICATION CONSTITUTION — superseded current guidance.** The
+> bounded body preserves the port-7071, three-tier, additive-wire, and sense
+> design as dated implementation history. For canonicalization, identity,
+> frames, wire, eggs, registry, trust, and protocol evolution, follow RAPP/1
+> rev-5 through [`RAPP1_AUTHORITY.json`](../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
+
 > *The principles that govern this project. Read this before you contribute.*
 
 ---
@@ -1091,3 +1100,5 @@ blurs the line between engine and experience, it doesn't belong here.
 ---
 
 *Ratified for RAPP Brainstem. The engine that powers what others build.*
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

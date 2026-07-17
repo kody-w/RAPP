@@ -1,5 +1,14 @@
 # Decentralized by Design — Bitcoin-Grade Network Properties on Top of Git
 
+> **HISTORICAL VAULT NOTE — superseded current guidance.** The bounded body is
+> preserved as dated architecture, not actionable topology or trust guidance.
+> For canonicalization, identity, frames, wire, eggs, registry, trust, and
+> protocol evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
+
 > *Vault note. The full architecture for treating the swarm-estate network as Bitcoin-equivalent in survival properties — without inventing a new chain, without proof-of-work, and without a central server. Synthesizes Local-First-by-Design with the broader stack: OpenTimestamps anchoring, federated signaling, kin-graph discovery, content-addressed storage. The complete picture of how the Foundation outlives its founders and its hosts.*
 
 `The Swarm Estate.md` defined the cryptographic identity protocol. `Local-First-by-Design.md` committed to the local-first survival model. This note ties together the four operational layers that, taken as a system, give us Bitcoin-grade decentralization properties on top of Git.
@@ -180,3 +189,5 @@ The network is operational from this date forward. Block 0 (Wildhaven AI Homes) 
 - [[Local-First-by-Design]] — survival model commitment
 - [[Twin-Patterns]] — multi-device shape
 - [[RAR — Trust Without Discrimination]] — trust-without-CA principle
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

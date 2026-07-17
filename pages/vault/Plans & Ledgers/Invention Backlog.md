@@ -1,6 +1,6 @@
 ---
 title: Invention Backlog
-status: living
+status: historical
 section: Plans & Ledgers
 type: backlog
 hook: A capture surface for novel, patentable inventions at the intersection of the Rappter stack and the real-estate / AI industry. Append-only. Public framework, private specifics.
@@ -9,6 +9,15 @@ session_date: 2026-04-24
 ---
 
 # Invention Backlog
+
+> **HISTORICAL INVENTION LEDGER — no longer a living backlog.** The bounded
+> body contains speculative dated ideas, not shipped capabilities, current
+> CTAs, or protocol authority. For canonicalization, identity, frames, wire,
+> eggs, registry, trust, and protocol evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** A capture surface for novel, patentable inventions at the intersection of the Rappter stack and the real-estate / AI industry. Append-only. **Public framework, private specifics.**
 
@@ -125,3 +134,5 @@ When the brief comes up in a future session:
 - [[Documentation Roadmap]] — internal docs companion.
 - [[Blog Roadmap]] — public blog companion. Patent-shaped content goes through the [[Content Strategy]] mill *only after a patent application is filed*.
 - [[Federation via RAR]] · [[The skill.md Pattern]] · [[Three Tiers, One Model]] · [[Data Sloshing]] · [[Self-Documenting Handoff]] · [[Surfaces — Mobile, Watch, Voice]] — the Rappter properties most likely to anchor patent claims at this intersection.
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

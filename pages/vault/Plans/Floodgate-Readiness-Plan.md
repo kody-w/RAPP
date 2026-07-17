@@ -1,11 +1,20 @@
 ---
 title: Floodgate-Readiness Plan
-status: living
+status: historical
 section: Plans
 hook: The autonomous run that takes the unified rappid + swarm-estate work from "structurally ratified" to "operationally polished — open the floodgates" — applications built, tests passing, blog series published.
 ---
 
 # Floodgate-Readiness Plan
+
+> **HISTORICAL EXECUTION PLAN — no longer living guidance.** The bounded body
+> records the dated 2026-04-30 plan and must not be executed as current install,
+> release, or deployment work. For canonicalization, identity, frames, wire,
+> eggs, registry, trust, and protocol evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 Working document. The autonomous run that polishes the Foundation from "structurally complete" (commit `a4c4737` / `a4c27b2` on 2026-04-30) into a state where external customer estates and kin variants can begin minting against this protocol with no risk of structural reversal.
 
@@ -111,3 +120,5 @@ Each phase ships its own commit so progress is visible even mid-run.
 ## Provenance
 
 This plan is the autonomous-run guide for 2026-04-30 → 2026-05-01. Operator authorized maximum autonomy ("polish the river rock"). The plan is committed BEFORE execution as a forcing function — if I get lost mid-phase, I come back here.
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

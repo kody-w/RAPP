@@ -1,5 +1,14 @@
 # Local-First by Design — Why the Foundation Survives GitHub Going Away
 
+> **HISTORICAL VAULT NOTE — superseded current guidance.** The bounded body is
+> dated architecture, not current distribution, trust, or availability
+> guidance. For canonicalization, identity, frames, wire, eggs, registry,
+> trust, and protocol evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
+
 > *Vault note. The architectural commitment that makes the swarm-estate network truly Bitcoin-like in its survival properties: the network IS the set of local copies; hosts are transport, not authority; if anyone has a copy anywhere, the Foundation lives.*
 
 The original draft of `The Swarm Estate.md` framed multi-host mirroring as a defense against GitHub deplatforming: push to GitLab, Codeberg, IPFS in addition to GitHub, sign a `migration` record, accept that *some* host will always be reachable. That's the *pragmatic* answer.
@@ -169,3 +178,5 @@ The pivot is structural, not cosmetic. The Foundation is now committed to a surv
 - [[Twin-Patterns]] — the multi-device shape this principle generalizes
 - [[Decentralized-by-Design]] (forthcoming) — the full decentralization story including OpenTimestamps anchoring, federated signaling, etc.
 - The reduction-to-practice in `kody-w/wildhaven-ceo/` — Block 0 + Block 1 + signed release-triggers + signed CEO signoff, all verifiable from any local copy
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

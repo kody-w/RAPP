@@ -1,11 +1,20 @@
 ---
 title: The Platform in 90 Seconds
-status: published
+status: historical
 section: Foundations
 hook: The elevator pitch. Read aloud in 90 seconds. If this doesn't land, no other note will.
 ---
 
 # The Platform in 90 Seconds
+
+> **HISTORICAL PLATFORM SUMMARY — not a current capability claim.** The
+> bounded three-tier, installer, and product narrative is preserved as dated
+> marketing history. For canonicalization, identity, frames, wire, eggs,
+> registry, trust, and protocol evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** The elevator pitch. Read aloud in 90 seconds. If this doesn't land, no other note will.
 
@@ -70,3 +79,5 @@ The distribution channel is GitHub Pages and `raw.githubusercontent.com`. No pac
 - [[The Sacred Constraints]]
 - [[Three Tiers, One Model]]
 - [[Engine, Not Experience]]
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

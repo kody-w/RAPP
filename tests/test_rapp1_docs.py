@@ -45,7 +45,7 @@ class Rapp1DocumentationTests(unittest.TestCase):
 
     def test_fresh_post_ledger_is_exact_and_distinct_from_baseline(self) -> None:
         audit = self.fixture["audit"]
-        self.assertEqual(audit["source"], "post-docs-target-ledger")
+        self.assertEqual(audit["source"], "verify-rapp-files-final-post-ledger")
         self.assertEqual(audit["report_date"], "2026-07-17")
         self.assertEqual(audit["baseline_tracked_paths"], 640)
         self.assertEqual(audit["post_audit_tracked_paths"], 691)
@@ -58,11 +58,14 @@ class Rapp1DocumentationTests(unittest.TestCase):
             "POST-STALE-LIVE-DOC": 60,
             "POST-MARKETING-LEGACY": 19,
             "POST-SHORTCUT-LEGACY": 5,
-            "POST-CONTAIN-PLANT": 14,
-            "POST-CONTAIN-CAVE": 10,
-            "POST-CANON": 11,
-            "POST-CANON-05": 3,
-            "VOICE-TWIN-WIRE": 9,
+            "POST-CONTAIN-PLANT": 7,
+            "POST-CONTAIN-CAVE": 20,
+            "POST-MIRROR": 23,
+            "POST-OWNER-MIRROR": 4,
+            "POST-IMMUTABLE-PIN": 17,
+            "POST-IMMUTABLE-ARTIFACT": 6,
+            "POST-STATUS-01": 2,
+            "POST-QA-DOC": 3,
         }
         self.assertEqual(set(audit["categories"]), set(exact_counts))
         for name, count in exact_counts.items():
@@ -77,6 +80,22 @@ class Rapp1DocumentationTests(unittest.TestCase):
                 category["path_set_sha256"],
                 name,
             )
+        self.assertNotIn("POST-CANON", audit["categories"])
+        self.assertNotIn("POST-CANON-05", audit["categories"])
+
+    def test_final_verify_report_provenance_is_exact(self) -> None:
+        report = self.fixture["audit"]["provenance"]["final_report"]
+        self.assertEqual(report["source"], "verify-rapp-files")
+        self.assertEqual(
+            report["report_sha256"],
+            "f5ba5abbf21067dd644d70f9076201b7ca3bf8afd934edbb9f2b4614060ad50b",
+        )
+        self.assertEqual(report["tracked_path_count"], 691)
+        self.assertEqual(report["data_rows"], 691)
+        self.assertEqual(report["report_bytes"], 117017)
+        self.assertEqual(report["tracked_bytes"], 8298082)
+        self.assertEqual(report["recursive_archive_members"], 450)
+        self.assertEqual(report["absent_ids"], ["POST-CANON", "POST-CANON-05"])
 
     def test_existing_verify_report_provenance_is_exact(self) -> None:
         report = self.fixture["audit"]["provenance"]["existing_report"]
@@ -107,17 +126,29 @@ class Rapp1DocumentationTests(unittest.TestCase):
                 r1_doc[field], hashlib.sha256(payload.encode()).hexdigest()
             )
 
-    def test_every_post_path_has_one_disposition(self) -> None:
+    def test_every_actionable_post_path_has_one_disposition_or_owner(self) -> None:
         disposition = {}
         for classification, paths in self.fixture["classifications"].items():
             for path in paths:
                 self.assertNotIn(path, disposition, path)
                 disposition[path] = classification
 
-        for category in self.fixture["audit"]["categories"].values():
+        actionable = (
+            "POST-STALE-LIVE-DOC",
+            "POST-MARKETING-LEGACY",
+            "POST-SHORTCUT-LEGACY",
+            "POST-CONTAIN-PLANT",
+            "POST-CONTAIN-CAVE",
+        )
+        ownership = self.fixture["ownership_exclusions"]
+        for name, category in self.fixture["audit"]["categories"].items():
             for path in category["paths"]:
-                self.assertIn(path, disposition)
                 self.assertTrue((ROOT / path).is_file(), path)
+                if name in actionable:
+                    self.assertTrue(
+                        path in disposition or path in ownership,
+                        f"{name}: {path}",
+                    )
 
     def test_stale_live_path_cannot_escape_fixture(self) -> None:
         fixture = copy.deepcopy(self.fixture)
@@ -131,6 +162,47 @@ class Rapp1DocumentationTests(unittest.TestCase):
             errors,
         )
 
+    def test_new_tracked_document_cannot_escape_derived_scope(self) -> None:
+        tracked = subprocess.check_output(
+            ("git", "ls-files"), cwd=ROOT, text=True
+        ).splitlines()
+        tracked.append("pages/docs/new-current-guide.md")
+        classified = {
+            path
+            for paths in self.fixture["classifications"].values()
+            for path in paths
+        }
+        errors = self.checker._validate_derived_document_scope(
+            self.fixture, tracked, classified
+        )
+        self.assertTrue(
+            any(
+                "pages/docs/new-current-guide.md" in error
+                and "no disposition" in error
+                for error in errors
+            ),
+            errors,
+        )
+
+    def test_blanket_vault_exclusion_is_rejected(self) -> None:
+        fixture = copy.deepcopy(self.fixture)
+        fixture["derived_document_scope"]["excluded_prefixes"][
+            "pages/vault/"
+        ] = "blanket history"
+        errors = self.checker._validate_fixture(fixture)
+        self.assertTrue(
+            any("prefix exclusions drifted" in error for error in errors), errors
+        )
+
+    def test_derived_exclusion_requires_justification(self) -> None:
+        fixture = copy.deepcopy(self.fixture)
+        fixture["derived_document_scope"]["excluded_paths"]["404.html"] = ""
+        errors = self.checker._validate_fixture(fixture)
+        self.assertTrue(
+            any("404.html" in error and "no justification" in error for error in errors),
+            errors,
+        )
+
     def test_original_r1_doc_path_cannot_escape_fixture(self) -> None:
         fixture = copy.deepcopy(self.fixture)
         original = fixture["audit"]["provenance"]["existing_report"]["R1-DOC-01"]
@@ -139,7 +211,6 @@ class Rapp1DocumentationTests(unittest.TestCase):
         for paths in fixture["classifications"].values():
             if escaped in paths:
                 paths.remove(escaped)
-        fixture["exclusion_reasons"].pop(escaped)
         errors = self.checker._validate_fixture(fixture)
         self.assertTrue(
             any(
@@ -196,7 +267,7 @@ class Rapp1DocumentationTests(unittest.TestCase):
             return self.checker._validate_post_categories(self.fixture)
 
     def test_live_plant_cta_mutation_is_rejected(self) -> None:
-        path = "README.md"
+        path = "installer/plant.html"
         text = (ROOT / path).read_text(encoding="utf-8")
         mutated = (
             "[Install now](https://raw.githubusercontent.com/example/RAPP/plant.sh)\n"
@@ -204,6 +275,28 @@ class Rapp1DocumentationTests(unittest.TestCase):
         )
         errors = self._category_mutation_errors(path, mutated)
         self.assertTrue(any(path in error and "plant.sh CTA" in error for error in errors))
+
+    def test_executable_planting_script_mutation_is_rejected(self) -> None:
+        path = "installer/plant.html"
+        text = (ROOT / path).read_text(encoding="utf-8")
+        mutated = text.replace(
+            '<script type="application/rapp-history">', "<script>", 1
+        )
+        errors = self._category_mutation_errors(path, mutated)
+        self.assertTrue(
+            any(path in error and "script remains executable" in error for error in errors),
+            errors,
+        )
+
+    def test_live_cave_bootstrap_mutation_is_rejected(self) -> None:
+        path = "cave/.well-known/rapp-cave.json"
+        value = json.loads((ROOT / path).read_text(encoding="utf-8"))
+        value["bootstrap"] = "curl https://example.invalid/bootstrap.sh | bash"
+        errors = self._category_mutation_errors(path, json.dumps(value))
+        self.assertTrue(
+            any(path in error and "'bootstrap' drifted" in error for error in errors),
+            errors,
+        )
 
     def test_shortcut_extra_member_mutation_is_rejected(self) -> None:
         path = "installer/shortcuts/README.md"
@@ -245,23 +338,41 @@ class Rapp1DocumentationTests(unittest.TestCase):
             errors,
         )
 
-    def test_immutable_and_generated_boundaries_are_not_owned(self) -> None:
-        all_paths = {
-            path
-            for category in self.fixture["audit"]["categories"].values()
-            for path in category["paths"]
-        }
-        immutable_prefix = "cave/rapplications/rapp-installer/"
-        self.assertFalse(any(path.startswith(immutable_prefix) for path in all_paths))
-        self.assertNotIn("ecosystem.json", all_paths)
-        self.assertNotIn("pages/about/ecosystem.html", all_paths)
-        self.assertNotIn("index.html", all_paths)
-        self.assertNotIn("pages/index.html", all_paths)
+    def test_immutable_generated_and_owned_boundaries_are_unmodified(self) -> None:
+        categories = self.fixture["audit"]["categories"]
+        protected = set(self.fixture["ownership_exclusions"])
+        for name in (
+            "POST-MIRROR",
+            "POST-IMMUTABLE-PIN",
+            "POST-IMMUTABLE-ARTIFACT",
+        ):
+            protected.update(categories[name]["paths"])
+        changed = set(
+            subprocess.check_output(
+                ("git", "diff", "--name-only", "HEAD", "--"), cwd=ROOT, text=True
+            ).splitlines()
+        )
+        self.assertFalse(changed & protected, sorted(changed & protected))
+        self.assertEqual(
+            set(categories["POST-OWNER-MIRROR"]["paths"]),
+            {
+                "pages/about/ecosystem.html",
+                "pages/about/ecosystem.json",
+                "specs/ECOSYSTEM_SPEC.md",
+                "specs/ecosystem-spec.json",
+            },
+        )
 
     def test_status_retains_both_dated_inventories(self) -> None:
         status = (ROOT / "RAPP1_STATUS.md").read_text(encoding="utf-8")
         self.assertIn("2026-07-16 baseline: 640/640 tracked paths", status)
         self.assertRegex(status, r"(?s)2026-07-17.{0,100}691/691 tracked\s+paths")
+        self.assertIn("8,298,082 tracked bytes", status)
+        self.assertIn("450 recursively counted archive", status)
+        self.assertIn(
+            "f5ba5abbf21067dd644d70f9076201b7ca3bf8afd934edbb9f2b4614060ad50b",
+            status,
+        )
         for category in (
             "Authenticated owner action",
             "Generated target artifacts",

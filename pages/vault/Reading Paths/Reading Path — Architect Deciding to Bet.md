@@ -1,11 +1,21 @@
 ---
 title: Reading Path — Architect Deciding to Bet
-status: published
+status: historical
 section: Reading Paths
 hook: 6 notes, ~25 minutes. For the architect deciding whether to commit a team or a quarter.
 ---
 
 # Reading Path — Architect Deciding to Bet
+
+> **HISTORICAL READING PATH — retired current navigation.** The bounded
+> sequence includes superseded topology, tiers, and authority claims. Begin
+> instead with RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md); those records govern
+> canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+> evolution.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** 6 notes, ~25 minutes. For the architect deciding whether to commit a team or a quarter.
 
@@ -86,3 +96,5 @@ If you decide to bet (or want to be sure before deciding):
 - [[The Platform in 90 Seconds]]
 - [[The Sacred Constraints]]
 - [[Constitution Reading Order]]
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

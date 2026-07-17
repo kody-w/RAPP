@@ -1,6 +1,6 @@
 ---
 title: Vault Build-Out Plan
-status: living
+status: historical
 section: Plans & Ledgers
 type: plan
 hook: The full plan to take the vault from 26 stubs to a publishable second-brain wiki — phased, with checkpoints.
@@ -9,6 +9,15 @@ session_date: 2026-04-24
 ---
 
 # Vault Build-Out Plan
+
+> **HISTORICAL VAULT PLAN — no longer living guidance.** The bounded body
+> preserves a dated build-out sequence; it is not current documentation
+> navigation or authority. For canonicalization, identity, frames, wire, eggs,
+> registry, trust, and protocol evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** The full plan to take the vault from 26 stubs to a publishable second-brain wiki — phased, with checkpoints.
 
@@ -124,3 +133,5 @@ For each stub: hook → decision → alternatives rejected → mechanism (with f
 - [[Documentation Roadmap]]
 - [[Release Ledger]]
 - [CONSTITUTION](https://github.com/kody-w/RAPP/blob/main/CONSTITUTION.md) Article XXIII
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

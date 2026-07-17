@@ -1,5 +1,15 @@
 # Contributing to The RAPP Cave
 
+> **RETIRED CONTRIBUTION GUIDE — do not follow the bounded commands.** Cave
+> membership, cubby streaming, catalog, and installer workflows are historical
+> application design, not current acceptance paths. For canonicalization,
+> identity, frames, wire, eggs, registry, trust, and protocol evolution, follow
+> RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
+
 Membership is **open**. There's no collaborator grant and no operator approval —
 the cave lives in the public repo [`kody-w/RAPP`](https://github.com/kody-w/RAPP)
 under `cave/`. You join the same way you'd contribute to any open-source project:
@@ -48,3 +58,5 @@ AGENTS_PATH=cave/cubbies/<you>/agents SOUL_PATH=cave/cubbies/<you>/soul.md PORT=
 
 Or stream any cubby's agents into your existing brainstem without commit risk:
 `cave load` (registers them in `.git/info/exclude` — git never sees them).
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

@@ -1,11 +1,20 @@
 ---
 title: Why GitHub Pages Is the Distribution Channel
-status: published
+status: historical
 section: Positioning
 hook: The install one-liner is the deployment story. GitHub is the CDN. raw.githubusercontent.com is the implicit contract.
 ---
 
 # Why GitHub Pages Is the Distribution Channel
+
+> **HISTORICAL DISTRIBUTION POSITIONING — retired current guidance.** GitHub
+> Pages is not a current installer, trust, or acceptance channel. The bounded
+> body is dated rationale. For canonicalization, identity, frames, wire, eggs,
+> registry, trust, and protocol evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** The install one-liner is the deployment story. GitHub is the CDN. `raw.githubusercontent.com` is the implicit contract.
 
@@ -90,3 +99,5 @@ The model would change if any of these became true:
 - [[RAPP vs Copilot Studio]]
 - [[Three Tiers, One Model]]
 - [[Engine, Not Experience]]
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

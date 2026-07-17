@@ -134,6 +134,8 @@ class Rapp1AuthorityTests(unittest.TestCase):
             "2026-07-16 baseline: 640/640 tracked paths",
             "2026-07-17",
             "691/691 tracked paths",
+            "8,298,082 tracked bytes",
+            "f5ba5abbf21067dd644d70f9076201b7ca3bf8afd934edbb9f2b4614060ad50b",
             "This is not a rerun of `verify-rapp-files`",
             "every tracked file was individually reviewed and\n  classified",
             "5 ZIP-compatible archives",

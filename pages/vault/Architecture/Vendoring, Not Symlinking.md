@@ -1,11 +1,20 @@
 ---
 title: Vendoring, Not Symlinking
-status: published
+status: historical
 section: Architecture
 hook: rapp_swarm/build.sh copies brainstem code into _vendored/. Duplication is the receipt — every cross-tier change is an explicit, reviewable sync.
 ---
 
 # Vendoring, Not Symlinking
+
+> **HISTORICAL VAULT NOTE — superseded current guidance.** The bounded body is
+> dated distribution design, not current installer or mirror instruction. For
+> canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+> evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** `rapp_swarm/build.sh` copies brainstem code into `_vendored/`. Duplication is the receipt — every cross-tier change is an explicit, reviewable sync.
 
@@ -117,3 +126,5 @@ So far none of these has happened.
 - [[Why Three Tiers, Not One]]
 - [[The Single-File Agent Bet]]
 - [[Why GitHub Pages Is the Distribution Channel]]
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

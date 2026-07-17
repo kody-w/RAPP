@@ -1,6 +1,6 @@
 ---
 title: Blog Roadmap
-status: living
+status: historical
 section: Plans & Ledgers
 type: roadmap
 hook: 28 blog posts for the main blog (kody-w.github.io tagged "rapp"). Each mirrored to its vault source so writing is "externalize the essay," not "draft from scratch."
@@ -9,6 +9,15 @@ session_date: 2026-04-24
 ---
 
 # Blog Roadmap
+
+> **HISTORICAL CONTENT PLAN — no longer a living roadmap.** The bounded body
+> preserves dated publishing ideas and is not current product navigation or a
+> delivery commitment. For canonicalization, identity, frames, wire, eggs,
+> registry, trust, and protocol evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** 28 blog posts for the main blog (kody-w.github.io tagged "rapp"). Each mirrored to its vault source so writing is "externalize the essay," not "draft from scratch."
 
@@ -374,3 +383,5 @@ A single working session produced fifteen RAPP-tagged posts spanning decay-shape
 - [[Release Ledger]] — append-only record of what shipped, code/docs/governance.
 - [[Vault Build-Out Plan]] — the vault's own build plan, source for several Now-tier posts.
 - [[How to Read This Vault]] — meta-context for first-time vault readers.
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

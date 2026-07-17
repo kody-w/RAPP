@@ -1,9 +1,11 @@
 {
   "schema": "rapp-cave-cubby/1.0",
+  "status": "retired-template",
+  "disposition": "historical only; do not instantiate, publish, pull, or stream",
   "github_login": "<your-handle>",
   "rappid": "<your operator rappid — opaque string>",
   "display_name": "<Your Name>",
-  "what_im_cooking": "<one line — shows in the gallery + browse>",
+  "what_im_cooking": "<historical placeholder; gallery is retired>",
   "created_at": "<RFC3339 UTC>",
   "estate": {
     "note": "A cubby houses a FULL rapp estate, bottom to top: agents (incl. factory agents / industries), organs, senses, rapplications, whole neighborhoods, eggs. Isolated from every other cubby; grow it into its own organism.",
@@ -18,7 +20,7 @@
     ]
   },
   "streamable": {
-    "agents": true,
-    "note": "set false to ask peers not to pull/stream agents from here"
+    "agents": false,
+    "note": "streaming is retired; public reachability is not RAPP/1 trust"
   }
 }

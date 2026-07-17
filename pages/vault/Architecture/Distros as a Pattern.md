@@ -1,11 +1,20 @@
 ---
 title: Distros as a Pattern
-status: published
+status: historical
 section: Architecture
 hook: The Linux-distros analogy made explicit. Rappter is one distro; other distros (minimal, research, enterprise, embedded) can exist. The contract: never modify the three sacred kernel files; everything else is the distro's prerogative.
 ---
 
 # Distros as a Pattern
+
+> **HISTORICAL VAULT NOTE — superseded current guidance.** The bounded body is
+> dated distro design, not current installation or authority guidance. For
+> canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+> evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** The Linux-distros analogy made explicit. Rappter is one distro; other distros (minimal, research, enterprise, embedded) can exist. The contract: never modify the three sacred kernel files; everything else is the distro's prerogative.
 
@@ -93,3 +102,5 @@ See [[The Distro Hatcher Agent Pattern]] and [[The Federated Twin Egg Hatcher Pa
 - [[2026-05-16 — Kernel-Distro Split]] — the decision that made the distro pattern explicit
 - [[One Kernel, Many Distros]] — manifesto version of this idea
 - [[Signed Releases and Variant Attestation]] — open question about distro signing
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

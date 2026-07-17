@@ -1,11 +1,20 @@
 ---
 title: What You Give Up With RAPP
-status: published
+status: historical
 section: Positioning
 hook: The anti-pitch. Portability tax, no framework conveniences, single-file constraints. The honest tradeoffs.
 ---
 
 # What You Give Up With RAPP
+
+> **HISTORICAL POSITIONING — not current product guidance.** The bounded body
+> preserves a dated tradeoff narrative and does not establish shipped or
+> operational behavior. For canonicalization, identity, frames, wire, eggs,
+> registry, trust, and protocol evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** The anti-pitch. Portability tax, no framework conveniences, single-file constraints. The honest tradeoffs.
 
@@ -82,3 +91,5 @@ If those describe your project, the tradeoffs above are payments worth making. I
 - [[The Brainstem Tax]]
 - [[RAPP vs Copilot Studio]]
 - [[Engine, Not Experience]]
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

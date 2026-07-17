@@ -5,6 +5,17 @@ description: All notes in the vault, grouped by category. Stubs marked with ◯,
 
 # Vault Index
 
+> **HISTORICAL INDEX — retired current navigation.** The bounded status table
+> preserves the dated vault build state; “published” and “living” labels below
+> do not designate current RAPP authority or product guidance. Begin with
+> RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md). Those records govern
+> canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+> evolution.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
+
 ## Plans & Ledgers
 
 Living docs — the platform's working memory. Append, never delete.
@@ -106,3 +117,5 @@ These rot fastest — the code is already gone.
 ---
 
 *Legend: ◯ = stub (slot held, post not yet written) · ● = published · ◐ = living (append-only doc).*
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

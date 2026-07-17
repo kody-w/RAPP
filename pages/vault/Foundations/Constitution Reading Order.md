@@ -1,11 +1,20 @@
 ---
 title: Constitution Reading Order
-status: published
+status: historical
 section: Foundations
 hook: 24 articles. Annotated. Ordered for first-time readers, not for reference.
 ---
 
 # Constitution Reading Order
+
+> **HISTORICAL READING ORDER — superseded current navigation.** The bounded
+> sequence preserves dated local doctrine; it is not current protocol
+> authority. For canonicalization, identity, frames, wire, eggs, registry,
+> trust, and protocol evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** 24 articles. Annotated. Ordered for first-time readers, not for reference.
 
@@ -110,3 +119,5 @@ The constitution is rules. It is not:
 - [[How to Read This Vault]]
 - [[The Platform in 90 Seconds]]
 - [[The Engine Stays Small]]
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

@@ -1,6 +1,6 @@
 ---
 title: Documentation Roadmap
-status: living
+status: historical
 section: Plans & Ledgers
 type: roadmap
 hook: Three horizons — Now / Next / Later — for documentation across the platform. Append items as they emerge.
@@ -9,6 +9,15 @@ session_date: 2026-04-24
 ---
 
 # Documentation Roadmap
+
+> **HISTORICAL DOCUMENTATION PLAN — no longer a living roadmap.** The bounded
+> body preserves dated navigation and publishing work, not current authority.
+> For canonicalization, identity, frames, wire, eggs, registry, trust, and
+> protocol evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** Three horizons — Now / Next / Later — for documentation across the platform. Append items as they emerge.
 
@@ -185,3 +194,5 @@ Items that started in *Now* or *Next* and have been published. **Append-only —
 - [[Vault Build-Out Plan]]
 - [[Release Ledger]]
 - [CONSTITUTION](https://github.com/kody-w/RAPP/blob/main/CONSTITUTION.md) Article XXIII
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

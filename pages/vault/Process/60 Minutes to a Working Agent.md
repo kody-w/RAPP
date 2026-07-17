@@ -1,11 +1,20 @@
 ---
 title: 60 Minutes to a Working Agent
-status: published
+status: historical
 section: Process
 hook: 10 minutes goal-setting · 40 minutes agent emerging in front of the customer · 10 minutes validation. The hour that proves the platform.
 ---
 
 # 60 Minutes to a Working Agent
+
+> **HISTORICAL WORKSHOP RUNBOOK — do not execute as current onboarding.** The
+> bounded body preserves a dated delivery narrative; it is not an installer,
+> shipment, or production promise. For canonicalization, identity, frames,
+> wire, eggs, registry, trust, and protocol evolution, follow RAPP/1 rev-5
+> through [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** 10 minutes goal-setting · 40 minutes agent emerging in front of the customer · 10 minutes validation. The hour that proves the platform.
 
@@ -112,3 +121,5 @@ It fails when any of these is true:
 - [[Self-Documenting Handoff]]
 - [[The Single-File Agent Bet]]
 - [[Three Tiers, One Model]]
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

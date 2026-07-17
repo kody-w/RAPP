@@ -1,11 +1,21 @@
 ---
 title: Reading Path — Partner Pricing a Project
-status: published
+status: historical
 section: Reading Paths
 hook: 5 notes, ~15 minutes. The path for a partner / consultant about to estimate scope on a RAPP project.
 ---
 
 # Reading Path — Partner Pricing a Project
+
+> **HISTORICAL READING PATH — retired current navigation.** The bounded
+> sequence contains pre-acceptance delivery and production claims, not current
+> commitments. Begin instead with RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md); those records govern
+> canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+> evolution.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** 5 notes, ~15 minutes. The path for a partner / consultant about to estimate scope on a RAPP project.
 
@@ -85,3 +95,5 @@ If you decide to specialize in RAPP delivery:
 - [[60 Minutes to a Working Agent]]
 - [[RAPP vs Copilot Studio]]
 - [[Reading Path — Exec Asking What This Is]]
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

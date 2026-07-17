@@ -1,5 +1,14 @@
 # Twin Lifecycle — Active, Archived, Purged
 
+> **HISTORICAL VAULT NOTE — superseded current guidance.** The bounded body is
+> dated lifecycle design, not current identity, egg, or protocol instruction.
+> For canonicalization, identity, frames, wire, eggs, registry, trust, and
+> protocol evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
+
 > *Vault note. Twins die. They should die with dignity — reversibly first, then irreversibly only when the operator says so. Three states, two transitions, one ledger.*
 
 The brainstem's `Twin` agent has shipped `summon`, `hatch`, `boot`, `stop`, `lay_egg`, `update_soul`, `list`, and `chat`. What it has not shipped is a retirement path. Twins accumulate. Side-loop experiments, defunct test iterations, generations of haiku-composers — they all sit in `~/.rapp/twins/` indistinguishable from canonical personas. `Twin action=list` returns one undifferentiated wall. `NeighborhoodSnapshot` ingests everything and bloats eggs. There is no spec-grounded way to say "this twin is done."
@@ -160,3 +169,5 @@ After: `Twin action=list` returns 9 twins (the named personas + the one alive). 
 - See `pages/vault/Architecture/The Federated Twin Egg Hatcher Pattern.md` for how eggs interact with lifecycle.
 - See `pages/vault/Architecture/Neighborhood Egg — Snapshot and Hatch.md` for snapshot include/restore flags.
 - See `LEXICON.md` for the canonical terms (archive, purge, tombstone).
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

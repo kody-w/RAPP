@@ -1,5 +1,14 @@
 # RAPP — Constitution
 
+> **Current authority boundary.** For canonicalization, identity, frames, wire,
+> eggs, registry, trust, and protocol evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](./RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](./RAPP1_STATUS.md). The bounded Articles 0–LIV preserve
+> constitutional-era application history; Article LV below is the current
+> target-owned supersession and does not claim authenticated acceptance.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
+
 > The principles that govern this repo. Read this before you change code.
 
 [SPEC.md](./SPEC.md) is the wire contract. This is the authoring discipline
@@ -3998,6 +4007,8 @@ last split between the reference spec and the constitutional-era naming.
    they exist to exercise.
 
 ---
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->
 
 ## Article LV — RAPP/1 Rev-5 Is the Living Protocol Authority (2026-07-16)
 

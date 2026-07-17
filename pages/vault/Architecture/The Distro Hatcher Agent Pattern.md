@@ -1,11 +1,20 @@
 ---
 title: The Distro Hatcher Agent Pattern
-status: published
+status: historical
 section: Architecture
 hook: A single Python file you drop into ~/.brainstem/agents/ that, on its first tool-call, pulls a full distro down from raw.githubusercontent.com and hatches it into its own folder beside the grail kernel — no shell installer, no kernel modification, no second brainstem to manage.
 ---
 
 # The Distro Hatcher Agent Pattern
+
+> **HISTORICAL VAULT NOTE — superseded current guidance.** The bounded body
+> describes a retired hatcher pattern; it is not current egg or installer
+> instruction. For canonicalization, identity, frames, wire, eggs, registry,
+> trust, and protocol evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** A single Python file you drop into `~/.brainstem/agents/` that, on its first tool-call, pulls a full distro down from `raw.githubusercontent.com` and hatches it into its own folder beside the grail kernel — no shell installer, no kernel modification, no second brainstem to manage.
 
@@ -136,3 +145,5 @@ If you maintain a distro (or want to ship one), the recipe:
 - [[Mirror Spec]] — the byte-identical-to-grail discipline the hatcher enforces via sacred-path refusal
 - [[Federation via RAR]] — the registry the hatcher manifest doubles as a submission to
 - [[The Species DNA Archive — rapp_kernel]] — what the hatcher copies in phase 1 and never modifies
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

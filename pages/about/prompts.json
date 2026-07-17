@@ -1,6 +1,9 @@
 {
   "schema": "rapp-prompt-ledger/1.0",
-  "_comment": "Append-only ledger of prompts that show off what RAPP can actually do. To add a new one: bump `next_id`, append an object to `prompts`. Sort order in the UI is newest-first by default.",
+  "status": "historical",
+  "authority": "../../RAPP1_AUTHORITY.json",
+  "limitations": "../../RAPP1_STATUS.md",
+  "_comment": "Retired read-only prompt-design archive. Entries preserve dated speculation; they are not current capabilities, copy/run CTAs, planting instructions, or evidence of shipped behavior.",
   "next_id": 81,
   "prompts": [
     {

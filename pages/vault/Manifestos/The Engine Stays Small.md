@@ -1,11 +1,20 @@
 ---
 title: The Engine Stays Small
-status: published
+status: historical
 section: Manifestos
 hook: There is a fixed budget of complexity in any platform. RAPP spends it on agents, not on the engine.
 ---
 
 # The Engine Stays Small
+
+> **HISTORICAL MANIFESTO — superseded current guidance.** The bounded body is
+> dated local architecture doctrine, not current protocol authority. For
+> canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+> evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** There is a fixed budget of complexity in any platform. RAPP spends it on agents, not on the engine.
 
@@ -141,3 +150,5 @@ Every other principle in the constitution — every article, every sacred constr
 - [[The Single-File Agent Bet]]
 - [[Voice and Twin Are Forever]]
 - [[Three Tiers, One Model]]
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

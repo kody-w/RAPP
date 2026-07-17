@@ -1,6 +1,6 @@
 ---
 title: Federation via RAR
-status: published
+status: historical
 section: Architecture
 hook: A community-publishable agent registry that doesn't centralize. Every publisher hosts their own catalog; AI assistants and humans discover via stable raw URLs. There is no server to compromise.
 session_id: 63243848-caa9-483c-9a8e-9bb0ee9d2849
@@ -8,6 +8,15 @@ session_date: 2026-04-24
 ---
 
 # Federation via RAR
+
+> **HISTORICAL VAULT NOTE — superseded current guidance.** The bounded body is
+> dated federation design, not current registry, trust, or install guidance.
+> For canonicalization, identity, frames, wire, eggs, registry, trust, and
+> protocol evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** A community-publishable agent registry that doesn't centralize. Every publisher hosts their own catalog; AI assistants and humans discover via stable raw URLs. There is no server to compromise.
 
@@ -121,3 +130,5 @@ In each case, the protocol is the same: a `registry.json` + a `skill.md` + agent
 - [[The Single-File Agent Bet]]
 - [[Self-Documenting Handoff]]
 - [[The Agent IS the Spec]]
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

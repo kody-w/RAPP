@@ -1,11 +1,20 @@
 ---
 title: Roots Are Public Surfaces
-status: published
+status: historical
 section: Manifestos
 hook: Every root is a catalog card — repo root, brainstem root, vault root. Bloat at the root signals "unfinished." Cleanups are constitutional.
 ---
 
 # Roots Are Public Surfaces
+
+> **HISTORICAL MANIFESTO — superseded current guidance.** The bounded body is
+> dated publication doctrine, not a current public-surface or trust promise.
+> For canonicalization, identity, frames, wire, eggs, registry, trust, and
+> protocol evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** Every root is a catalog card — repo root, brainstem root, vault root. Bloat at the root signals "unfinished." Cleanups are constitutional.
 
@@ -135,3 +144,5 @@ The allowlist itself can grow — but only when a new top-level directory has ea
 - [[Why GitHub Pages Is the Distribution Channel]]
 - [[Documentation Roadmap]]
 - [[Release Ledger]]
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

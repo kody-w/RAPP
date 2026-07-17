@@ -1,11 +1,21 @@
 ---
 title: Reading Path — Exec Asking What This Is
-status: published
+status: historical
 section: Reading Paths
 hook: 3 notes, ~7 minutes. The shortest credible introduction to the platform.
 ---
 
 # Reading Path — Exec Asking What This Is
+
+> **HISTORICAL READING PATH — retired current navigation.** The bounded
+> sequence contains pre-acceptance product and tier positioning, not shipped
+> capability claims. Begin instead with RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md); those records govern
+> canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+> evolution.
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** 3 notes, ~7 minutes. The shortest credible introduction to the platform.
 
@@ -76,3 +86,5 @@ When you next talk to whoever recommended RAPP:
 - [[RAPP vs Copilot Studio]]
 - [[Reading Path — Architect Deciding to Bet]]
 - [[Reading Path — Partner Pricing a Project]]
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

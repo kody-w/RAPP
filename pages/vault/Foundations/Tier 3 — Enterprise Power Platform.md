@@ -1,11 +1,20 @@
 ---
 title: Tier 3 — Enterprise Power Platform
-status: published
+status: historical
 section: Foundations
 hook: A published Microsoft Power Platform solution. The agent file ships into the customer's Copilot Studio environment without rewriting.
 ---
 
 # Tier 3 — Enterprise Power Platform
+
+> **RETIRED TIER DESIGN — no enterprise tier is shipped.** The bounded body is
+> historical product and deployment narrative, not an operational Power
+> Platform path. For canonicalization, identity, frames, wire, eggs, registry,
+> trust, and protocol evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** A published Microsoft Power Platform solution. The agent file ships into the customer's Copilot Studio environment without rewriting.
 
@@ -131,3 +140,5 @@ At no point does the agent's source code change. The customer's validation in th
 - [[RAPP vs Copilot Studio]]
 - [[Why Three Tiers, Not One]]
 - [[Self-Documenting Handoff]]
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

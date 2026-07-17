@@ -1,11 +1,20 @@
 ---
 title: One Kernel, Many Distros
-status: published
+status: historical
 section: Manifestos
 hook: The federation principle made explicit. One kernel — universal, immutable, frozen at grail. Many distros — opt-in personalities, each layering different organisms on the same substrate. Everything composes; nothing forks.
 ---
 
 # One Kernel, Many Distros
+
+> **HISTORICAL MANIFESTO — superseded current guidance.** The bounded body is
+> dated kernel/distro doctrine, not authority or distribution instruction. For
+> canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+> evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** The federation principle made explicit. **One kernel** — universal, immutable, frozen at grail. **Many distros** — opt-in personalities, each layering different organisms on the same substrate. Everything composes; nothing forks.
 
@@ -82,3 +91,5 @@ In exchange, the distro gets:
 - [[Mirror Spec]] — the byte-identical-to-grail discipline that anchors the kernel
 - [[2026-05-16 — Kernel-Distro Split]] — the decision that adopted this model
 - [[Engine, Not Experience]] — the founding stance compatible with this manifesto
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

@@ -1,11 +1,20 @@
 ---
 title: The Agent IS the Spec
-status: published
+status: historical
 section: Process
 hook: One file. Four readers. No translation. PM reads metadata; dev reads perform(); partner reads inputs/outputs; customer reads the system prompt.
 ---
 
 # The Agent IS the Spec
+
+> **HISTORICAL PROCESS NOTE — not current protocol authority.** The bounded
+> body preserves a dated application-development metaphor; source code does not
+> replace RAPP/1. For canonicalization, identity, frames, wire, eggs, registry,
+> trust, and protocol evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** One file. Four readers. No translation. PM reads metadata; dev reads `perform()`; partner reads inputs/outputs; customer reads the system prompt.
 
@@ -139,3 +148,5 @@ The fix is never to add documentation; the fix is to **split or simplify the age
 - [[60 Minutes to a Working Agent]]
 - [[Why hatch_rapp Was Killed]]
 - [[Three Tiers, One Model]]
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

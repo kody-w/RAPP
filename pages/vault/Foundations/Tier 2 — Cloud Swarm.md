@@ -1,11 +1,20 @@
 ---
 title: Tier 2 — Cloud Swarm
-status: published
+status: historical
 section: Foundations
 hook: Azure Functions deploy of the same agents. Multi-tenant. Scheduled. Vendors brainstem code into _vendored/ to keep the contract honest.
 ---
 
 # Tier 2 — Cloud Swarm
+
+> **RETIRED TIER DESIGN — no cloud swarm is shipped.** The bounded body is
+> historical product and deployment narrative, not an operational service or
+> install path. For canonicalization, identity, frames, wire, eggs, registry,
+> trust, and protocol evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** Azure Functions deploy of the same agents. Multi-tenant. Scheduled. Vendors brainstem code into `_vendored/` to keep the contract honest.
 
@@ -120,3 +129,5 @@ The contract tests (`tests/run-tests.mjs`) run against both Tier 1's `rapp_brain
 - [[Vendoring, Not Symlinking]]
 - [[Local Storage Shim via sys.modules]]
 - [[Why Three Tiers, Not One]]
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

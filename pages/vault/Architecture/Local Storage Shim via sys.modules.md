@@ -1,11 +1,20 @@
 ---
 title: Local Storage Shim via sys.modules
-status: published
+status: historical
 section: Architecture
 hook: Agents import `from utils.azure_file_storage import AzureFileStorageManager`. The brainstem hijacks the import. The agent never knows.
 ---
 
 # Local Storage Shim via sys.modules
+
+> **HISTORICAL VAULT NOTE — superseded current guidance.** The bounded body is
+> dated implementation narrative, not current wire or deployment instruction.
+> For canonicalization, identity, frames, wire, eggs, registry, trust, and
+> protocol evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 > **Hook.** Agents import `from utils.azure_file_storage import AzureFileStorageManager`. The brainstem hijacks the import. The agent never knows.
 
@@ -103,3 +112,5 @@ If any of those is missing, the agent should access the underlying capability th
 - [[Three Tiers, One Model]]
 - [[The Deterministic Fake LLM]]
 - [[Why Three Tiers, Not One]]
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->
