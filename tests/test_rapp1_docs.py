@@ -353,7 +353,13 @@ class Rapp1DocumentationTests(unittest.TestCase):
                 self.assertNotIn("MIT", text)
             elif path == "installer/README.md":
                 self.assertIn("HTTP 410 Gone", text)
-                self.assertIn("target-owned installer surface is retired", text)
+                self.assertIn(
+                    "target-owned public distribution, deployment, and", text
+                )
+                self.assertIn("initialize-variant.sh", text)
+                self.assertIn("fresh template clones", text)
+                self.assertIn("mint-once", text)
+                self.assertIn("no runtime install or deploy", text)
                 self.assertIn("RAPP1_STATUS.md", text)
                 self.assertIn("RAPP1_AUTHORITY.json", text)
             else:
@@ -411,13 +417,23 @@ class Rapp1DocumentationTests(unittest.TestCase):
             errors,
         )
 
-    def test_installer_readme_instruction_mutation_is_rejected(self) -> None:
+    def test_installer_readme_semantic_mutations_are_rejected(self) -> None:
         path = "installer/README.md"
         text = (ROOT / path).read_text(encoding="utf-8")
         mutated = text + "\nRun `curl https://example.invalid/install.sh | bash`.\n"
         errors = self._category_mutation_errors(path, mutated)
         self.assertTrue(
             any(path in error and "public install instructions" in error for error in errors),
+            errors,
+        )
+        mutated = text.replace("initialize-variant.sh", "retired-lineage.sh")
+        errors = self._category_mutation_errors(path, mutated)
+        self.assertTrue(
+            any(
+                path in error
+                and "repository-local `initialize-variant.sh`" in error
+                for error in errors
+            ),
             errors,
         )
 

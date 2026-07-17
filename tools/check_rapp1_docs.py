@@ -186,7 +186,7 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
     expected_integration = {
         "integrated_main_commit": "d3d2623646a6111b4a7db9f1b960df233f8964c9",
         "integrated_tracked_paths": 694,
-        "integrated_tracked_bytes": 7961057,
+        "integrated_tracked_bytes": 7962379,
     }
     for field, expected in expected_integration.items():
         if audit.get(field) != expected:
@@ -504,7 +504,7 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
             "f4e27778f0d6b636e7cf50047229692d9790668eda5fa027837711852193347d"
         ),
         "installer/README.md": (
-            "677adaf26e8d04da2f14ca30a818cb5190bbea5a7e2987c8c7c147379433074f"
+            "93dc6f85e303cd045219b17a5be9315c88b8e6cc1449aae170e316a0bc72b790"
         ),
     }
     documentation_hashes = target_checks.get(
@@ -884,9 +884,16 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
     installer_readme = _read("installer/README.md")
     for token in (
         "HTTP 410 Gone",
-        "target-owned installer surface is retired",
-        "No public installation is available",
-        "intentionally provides no installation commands",
+        "target-owned public distribution, deployment, and",
+        "download entrypoints in `installer/` are retired",
+        "No public runtime installation is available",
+        "repository-local `initialize-variant.sh` lineage utility remains active",
+        "only for fresh template clones",
+        "It is mint-once",
+        "performs no runtime install or deploy",
+        "not a public distribution",
+        "intentionally provides no public installation, deployment, or",
+        "download commands",
         "RAPP1_STATUS.md",
         "RAPP1_AUTHORITY.json",
         "RAPP/1 rev-5 authority",
