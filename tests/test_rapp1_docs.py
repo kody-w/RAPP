@@ -26,6 +26,10 @@ class Rapp1DocumentationTests(unittest.TestCase):
         self.assertEqual(ledger["path_count"], 56)
         self.assertEqual(len(ledger["paths"]), 56)
         self.assertEqual(
+            ledger["path_set_sha256"],
+            "7b1c758ee0fc0cc89b6161821fce079cff9c083aa37c46991a0a6aee09bb87ed",
+        )
+        self.assertEqual(
             ledger["disposition_counts"], {"current-live": 53, "mirror": 3}
         )
         self.assertEqual(
@@ -95,6 +99,15 @@ class Rapp1DocumentationTests(unittest.TestCase):
         failures = GATE.check_docs(scope)
         self.assertIn(
             "scope: R1-DOC-01 path cave/rappid.json is not checked or excluded",
+            failures,
+        )
+
+    def test_count_preserving_ledger_substitution_is_rejected(self):
+        scope = copy.deepcopy(GATE.load_scope())
+        scope["audit_scope"]["r1_doc_01"]["paths"][0] = "not-a-ledger-path.md"
+        failures = GATE.check_docs(scope)
+        self.assertIn(
+            "scope: R1-DOC-01 path set does not match its audited digest",
             failures,
         )
 

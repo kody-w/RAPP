@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import sys
@@ -173,6 +174,13 @@ def audit_scope_failures(
             if expected_count != len(paths):
                 failures.append(
                     "scope: R1-DOC-01 path_count does not match its path list"
+                )
+            path_set_sha256 = hashlib.sha256(
+                ("\n".join(sorted(unique_paths)) + "\n").encode("utf-8")
+            ).hexdigest()
+            if ledger.get("path_set_sha256") != path_set_sha256:
+                failures.append(
+                    "scope: R1-DOC-01 path set does not match its audited digest"
                 )
             for relative in sorted(unique_paths - managed - excluded):
                 failures.append(

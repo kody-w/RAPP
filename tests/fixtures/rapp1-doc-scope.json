@@ -6,6 +6,7 @@
     "r1_doc_01": {
       "source": "RAPP-file-by-file-audit.tsv",
       "sha256": "9ac01e164dc0eb820d5f53afed82f53c501059c18a8bf66b8b23c533af728ce7",
+      "path_set_sha256": "7b1c758ee0fc0cc89b6161821fce079cff9c083aa37c46991a0a6aee09bb87ed",
       "path_count": 56,
       "disposition_counts": {
         "current-live": 53,
