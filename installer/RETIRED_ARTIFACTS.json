@@ -1,0 +1,56 @@
+{
+  "schema": "rapp-retired-artifacts/1.0",
+  "status": "retired",
+  "publication_allowed": false,
+  "repacking_allowed": false,
+  "power_archive": {
+    "signature_status": "unsigned",
+    "active_download_allowed": false,
+    "copies": [
+      {
+        "path": "MSFTAIBASMultiAgentCopilot_1_0_0_5.zip",
+        "sha256": "cba9b02020f622a45b710b30b614c900b4649de1ab6b7b15c5585a74d3981133",
+        "bytes": 81050
+      },
+      {
+        "path": "installer/MSFTAIBASMultiAgentCopilot_1_0_0_5.zip",
+        "sha256": "cba9b02020f622a45b710b30b614c900b4649de1ab6b7b15c5585a74d3981133",
+        "bytes": 81050
+      },
+      {
+        "path": "cave/rapplications/rapp-installer/installer/MSFTAIBASMultiAgentCopilot_1_0_0_5.zip",
+        "sha256": "cba9b02020f622a45b710b30b614c900b4649de1ab6b7b15c5585a74d3981133",
+        "bytes": 81050
+      }
+    ]
+  },
+  "immutable_eggs": [
+    {
+      "path": "pages/tutorials/sample-session.egg",
+      "sha256": "16f933063d7192ebd9817a567fa21f804d9afec62fd7012b6e7d3a258c99157d",
+      "bytes": 481
+    },
+    {
+      "path": "pages/tutorials/commons.egg",
+      "sha256": "2731c02f187701c1d07b3a7f5eed5e2073c203ffb4f6c08d00292894e3319a5d",
+      "bytes": 443
+    },
+    {
+      "path": "cave/rapplications/rapp-installer/cubby-rapp-installer.egg",
+      "sha256": "38ce5e8f1236b584eb3c6d4a6663ce46a0ff73c06599628d87fe610e035fb18b",
+      "bytes": 526007
+    },
+    {
+      "path": "cave/cubbies/kody-w/eggs/cubby-rapp-installer.egg",
+      "sha256": "38ce5e8f1236b584eb3c6d4a6663ce46a0ff73c06599628d87fe610e035fb18b",
+      "bytes": 526007
+    }
+  ],
+  "prepared_snapshot": {
+    "path": "cave/rapplications/rapp-installer",
+    "classification": "immutable-prepared-external-snapshot",
+    "active_distribution": false,
+    "modification_allowed": false
+  },
+  "guidance": "../RAPP1_STATUS.md"
+}

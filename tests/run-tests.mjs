@@ -203,6 +203,70 @@ test('legacy plant producer is an explicit refusal only', () => {
   }
 });
 
+test('live distribution inventory uses dynamic category coverage', () => {
+  const inventory = json('tests/rapp1-live-surface-inventory.json');
+  equal(inventory.schema, 'rapp1-live-surface-inventory/1.0');
+  equal(Object.keys(inventory.categories).sort(), [
+    'browser',
+    'containment',
+    'installer',
+    'marketing',
+    'wire',
+  ]);
+  assert(inventory.count_policy.includes('git ls-files'), 'count policy is not dynamic');
+  for (const [category, paths] of Object.entries(inventory.categories)) {
+    assert(paths.length > 0, `empty live category: ${category}`);
+    for (const relative of paths) {
+      assert(existsSync(join(ROOT, relative)), `stale ${category} path: ${relative}`);
+    }
+  }
+});
+
+test('retired archives remain exact bytes without publication', () => {
+  const manifest = json('installer/RETIRED_ARTIFACTS.json');
+  equal(manifest.publication_allowed, false);
+  equal(manifest.repacking_allowed, false);
+  equal(manifest.power_archive.signature_status, 'unsigned');
+  equal(manifest.power_archive.active_download_allowed, false);
+  const records = [
+    ...manifest.power_archive.copies,
+    ...manifest.immutable_eggs,
+  ];
+  equal(records.length, 7);
+  for (const record of records) {
+    equal(sha256(record.path), record.sha256, `archive drift: ${record.path}`);
+    equal(statSync(join(ROOT, record.path)).size, record.bytes, `size drift: ${record.path}`);
+  }
+});
+
+test('owned pages do not publish retired distribution or plant callers', () => {
+  for (const relative of ['index.html', 'installer/index.html']) {
+    const source = read(relative);
+    for (const marker of ['install-swarm.sh', 'azuredeploy.json', 'install.ps1']) {
+      assert(!source.includes(marker), `${relative} advertises ${marker}`);
+    }
+    assert(
+      !/<a\b[^>]*href=["'][^"']*MSFTAIBASMultiAgentCopilot/i.test(source),
+      `${relative} publishes the unsigned Power archive`,
+    );
+  }
+  for (const relative of [
+    'installer/plant.html',
+    'installer/plant_qr.html',
+    'installer/seed.html',
+    'pages/metropolis/plant-from-discord.html',
+  ]) {
+    const source = read(relative).toLowerCase();
+    assert(source.includes('http 410'), `${relative} lacks HTTP 410`);
+    assert(!source.includes('<script'), `${relative} still executes scripts`);
+    assert(!source.includes('plant.sh'), `${relative} still calls the planter`);
+  }
+  assert(
+    !read('pages/metropolis/index.html').includes('plant-from-discord'),
+    'metropolis still links the retired planter',
+  );
+});
+
 const agentsDir = join(ROOT, 'rapp_brainstem', 'agents');
 const agentFiles = readdirSync(agentsDir)
   .filter((name) => name.endsWith('_agent.py') && name !== 'basic_agent.py')

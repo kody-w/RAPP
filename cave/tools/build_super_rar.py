@@ -38,6 +38,7 @@ SUPER_RAR_KINDS = {
 CAVE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))   # cave/tools/.. -> cave/
 CUBBIES = os.path.join(CAVE, "cubbies")
 RAW_PREFIX = "https://raw.githubusercontent.com/kody-w/RAPP/main/cave"
+RETIRED_PREPARED_RAPPLICATIONS = {"rapp-installer"}
 
 
 def _now() -> str:
@@ -162,11 +163,26 @@ def render_rar() -> dict:
     for d in sorted(glob.glob(os.path.join(CAVE, "rapplications", "*"))):
         if os.path.isdir(d):
             name = os.path.basename(d)
-            rapps.append({
+            entry = {
                 "name": f"@kody-w/{name}", "version": "0.0.0", "schema": "rapp-rapplication/1.0",
                 "path": os.path.relpath(d, CAVE).replace(os.sep, "/") + "/",
-                "purpose": f"Cave flagship rapplication: {name}. Pull: curl -fsSL {RAW_PREFIX}/rapplications/{name}/bootstrap.sh | bash",
-            })
+            }
+            if name in RETIRED_PREPARED_RAPPLICATIONS:
+                entry.update({
+                    "status": "retired",
+                    "active_distribution": False,
+                    "immutable_prepared_snapshot": True,
+                    "purpose": (
+                        f"Retired prepared snapshot: {name}. No bootstrap, "
+                        "installation, or publication is authorized."
+                    ),
+                })
+            else:
+                entry["purpose"] = (
+                    f"Cave flagship rapplication: {name}. Pull: curl -fsSL "
+                    f"{RAW_PREFIX}/rapplications/{name}/bootstrap.sh | bash"
+                )
+            rapps.append(entry)
     hdr = _load_header(os.path.join(CAVE, "rar", "index.json"), {
         "schema": "rapp-rar-index/1.1",
         "neighborhood_rappid": "rappid:@kody-w/rapp-cave:ca72ca0a3cb90c357fb09e38b02f85f09935cacbf61e94740c57f1eb30a73e0a",

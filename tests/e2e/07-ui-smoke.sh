@@ -30,6 +30,49 @@ cleanup() {
 }
 trap cleanup EXIT
 
+boot_diagnostics() {
+    local reason="$1"
+    echo "FAIL: $reason" >&2
+    echo "  port: $PORT" >&2
+    echo "  python: $PYTHON" >&2
+    echo "  brainstem: $BRAINSTEM_DIR" >&2
+    if [ -f "$PID_FILE" ]; then
+        local pid
+        pid="$(cat "$PID_FILE")"
+        if kill -0 "$pid" 2>/dev/null; then
+            echo "  process: $pid (running but not ready)" >&2
+        else
+            echo "  process: $pid (exited before readiness)" >&2
+        fi
+    fi
+    echo "--- brainstem log tail ---" >&2
+    tail -80 "$LOG" >&2 2>/dev/null || echo "(no log output)" >&2
+}
+
+wait_for_health() {
+    local timeout="${RAPP1_BOOT_TIMEOUT_SECONDS:-30}"
+    case "$timeout" in
+        ''|*[!0-9]*|0)
+            boot_diagnostics "invalid RAPP1_BOOT_TIMEOUT_SECONDS=$timeout"
+            return 1
+            ;;
+    esac
+    local started=$SECONDS
+    while (( SECONDS - started < timeout )); do
+        if curl -fsS --connect-timeout 1 --max-time 1 \
+            "http://localhost:$PORT/health" >/dev/null 2>&1; then
+            return 0
+        fi
+        if ! kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
+            boot_diagnostics "brainstem exited before /health became ready"
+            return 1
+        fi
+        sleep 0.2
+    done
+    boot_diagnostics "/health was not ready within ${timeout}s"
+    return 1
+}
+
 if curl -sf "http://localhost:$PORT/health" >/dev/null 2>&1; then
     echo "FAIL: refusing to reuse ambient server on :$PORT" >&2
     exit 1
@@ -37,13 +80,10 @@ fi
 echo "▶ Starting isolated brainstem on :$PORT..."
 ( cd "$BRAINSTEM_DIR" && exec env PORT="$PORT" "$PYTHON" brainstem.py ) > "$LOG" 2>&1 &
 echo $! > "$PID_FILE"
-for i in $(seq 1 30); do
-    curl -sf "http://localhost:$PORT/health" >/dev/null 2>&1 && break
-    sleep 1
-done
+wait_for_health
 
 HEALTH="$(curl -sf "http://localhost:$PORT/health")" || {
-    cat "$LOG" >&2
+    boot_diagnostics "/health failed after readiness"
     exit 1
 }
 echo "$HEALTH" | grep -q '"status":"unauthenticated"' || {
@@ -55,7 +95,7 @@ echo "▶ GET / ..."
 HTTP=$(curl -s -o "$HTML" -w "%{http_code}" "http://localhost:$PORT/")
 if [ "$HTTP" != "200" ]; then
     echo "FAIL: / returned HTTP $HTTP"
-    cat "$LOG" >&2
+    boot_diagnostics "GET / failed after readiness"
     exit 1
 fi
 BYTES=$(wc -c < "$HTML")

@@ -22,6 +22,10 @@ RETIRED_HTML = (
     "pages/grail-brainstem/index.html",
     "pages/sphere.html",
     "rapp_swarm/index.html",
+    "installer/plant.html",
+    "installer/plant_qr.html",
+    "installer/seed.html",
+    "pages/metropolis/plant-from-discord.html",
 )
 
 HTML_EXECUTION_MARKERS = (
@@ -120,6 +124,30 @@ RETIRED_SOURCE_MARKERS = {
         "git commit",
         "git push",
     ),
+    "deploy.sh": (
+        "az login",
+        "az group create",
+        "az deployment",
+        "azuredeploy.json",
+    ),
+    "installer/install-swarm.sh": (
+        "git clone",
+        "origin/main",
+        "brainstem-swarm",
+        "exec ",
+    ),
+    "installer/start-local.sh": (
+        "http.server",
+        "/tmp/",
+        "rapp_brainstem/web/mobile",
+        "kill -9",
+    ),
+    "installer/integration_plant.sh": (
+        "gh repo",
+        "git push",
+        "curl ",
+        "mktemp",
+    ),
 }
 
 EXPECTED_GRAIL_PINS = {
@@ -182,6 +210,10 @@ class ContainmentTests(unittest.TestCase):
             (sys.executable, "tools/sim/tick_twin.py"),
             ("bash", "tools/sim/push_canvas.sh"),
             ("bash", "rapp_swarm/twin-sim.sh"),
+            ("bash", "deploy.sh"),
+            ("bash", "installer/install-swarm.sh"),
+            ("bash", "installer/start-local.sh"),
+            ("bash", "installer/integration_plant.sh"),
         )
         for command in commands:
             with self.subTest(command=command):
@@ -363,6 +395,10 @@ for (const step of [1, "1A", "7", undefined]) {
             "rapp_swarm/build.sh",
             "rapp_swarm/provision-twin.sh",
             "rapp_swarm/provision-twin-lite.sh",
+            "deploy.sh",
+            "installer/install-swarm.sh",
+            "installer/start-local.sh",
+            "installer/integration_plant.sh",
         ):
             with self.subTest(path=relative):
                 mode = (ROOT / relative).stat().st_mode

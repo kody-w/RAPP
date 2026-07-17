@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RAPP Installer — Digital Twin</title>
-<meta name="description" content="The digital twin of the RAPP installer. One curl, one brain, three tiers.">
+<meta name="description" content="Pinned local RAPP Brainstem installer and retired distribution status.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E📦%3C/text%3E%3C/svg%3E">
 <style>
   :root{
@@ -107,9 +107,9 @@
 <div class="hero">
   <div class="logo">📦</div>
   <h1>RAPP Installer</h1>
-  <p>Portable · Shareable · Vibe Swarm Building Tool.</p>
-  <p style="margin-top:6px;opacity:.75;font-size:.95em">One curl. One brain. Three tiers.</p>
-  <div class="tag">Digital twin · v1 frozen</div>
+  <p>Pinned local Brainstem distribution.</p>
+  <p style="margin-top:6px;opacity:.75;font-size:.95em">Exact grail tag · exact frozen hashes · fail closed on drift.</p>
+  <div class="tag">brainstem-v0.6.9</div>
 </div>
 
 <div class="install" id="install">
@@ -118,7 +118,6 @@
       <div class="dots"><span></span><span></span><span></span></div>
       <button class="install-tab active" data-os="mac">macOS</button>
       <button class="install-tab" data-os="linux">Linux</button>
-      <button class="install-tab" data-os="win">Windows</button>
     </div>
   </div>
   <div class="install-body" id="cmd-row">
@@ -156,71 +155,25 @@
         <pre>brainstem</pre>
       </div>
       <div class="step">
-        <h3>Project-local install (optional)</h3>
-        <p>Want a brainstem scoped to a single project instead of machine-wide? <code>cd</code> into the project, then run:</p>
-        <pre>curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash -s -- --here</pre>
-        <p style="font-size:.9em;opacity:.75;margin-top:8px">
-          Drops at <code>./.brainstem/</code>, picks a free port (7072+), runs alongside your global brainstem, auto-gitignored.
-          Each project gets its own <code>agents/</code> and its own catalog. Visit <code>http://localhost:&lt;port&gt;/web/neighborhood.html</code> on any running brainstem to see all installs on this machine.
-        </p>
-      </div>
-      <div class="step">
         <h3>Try it without installing</h3>
         <p>Open the <a href="../brainstem/">virtual brainstem</a> — same UI, in-browser, BYO API key.</p>
       </div>
     </div>
   </div>
 
-  <div class="tier" data-tier="2">
+  <div class="tier open">
     <div class="tier-head" onclick="this.parentNode.classList.toggle('open')">
-      <span class="tier-icon">☁️</span>
+      <span class="tier-icon">⛔</span>
       <div class="tier-title">
-        <h2>Tier 2 — Swarm</h2>
-        <div class="sub">Azure Functions · Azure OpenAI · managed identity</div>
+        <h2>Retired distribution surfaces</h2>
+        <div class="sub">HTTP 410 · no provisioning · no archive publication</div>
       </div>
-      <span class="tier-badge next">Next step</span>
+      <span class="tier-badge adv">Retired</span>
       <span class="tier-arrow">›</span>
     </div>
     <div class="tier-body">
-      <p>The same single-file agents your laptop runs, hosted on Azure. One ARM template,
-        one Deploy-to-Azure button. The HTTP surface is identical to Tier 1, so anything
-        that talks to <code>/chat</code> on your laptop can talk to <code>/chat</code> in the cloud.</p>
-      <p class="met"><em>Metaphor: long-term memory. Slow, durable, multi-tenant.</em></p>
-      <div class="step">
-        <h3>Deploy</h3>
-        <p>Click the button on the <a href="../rapp_swarm/">swarm page</a>, fill in the
-          resource group, wait ~3 minutes.</p>
-      </div>
-    </div>
-  </div>
-
-  <div class="tier" data-tier="3">
-    <div class="tier-head" onclick="this.parentNode.classList.toggle('open')">
-      <span class="tier-icon">🏢</span>
-      <div class="tier-title">
-        <h2>Tier 3 — Copilot Studio</h2>
-        <div class="sub">Power Platform solution · Teams · M365 Copilot</div>
-      </div>
-      <span class="tier-badge adv">Enterprise</span>
-      <span class="tier-arrow">›</span>
-    </div>
-    <div class="tier-body">
-      <p>Import the unmanaged solution zip into Copilot Studio. Wire the Function App URL
-        from Tier 2. Publish to Teams. The same agent file you wrote on day 1 is now
-        being called from M365 Copilot.</p>
-      <p class="met"><em>Metaphor: the cortex. Where the brain meets the world.</em></p>
-      <div class="step">
-        <h3>Bundle</h3>
-        <a href="MSFTAIBASMultiAgentCopilot_1_0_0_5.zip" download
-           style="display:flex;align-items:center;gap:10px;
-                  background:#04060c;border:1px solid var(--border);border-radius:6px;
-                  padding:10px 12px;color:var(--fg);text-decoration:none;transition:border-color .15s">
-          <span style="font-size:16px;color:var(--purple-2)">⬇</span>
-          <span style="flex:1;font-family:'SF Mono',ui-monospace,monospace;font-size:13px;word-break:break-all">MSFTAIBASMultiAgentCopilot_1_0_0_5.zip</span>
-          <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;white-space:nowrap">click to download</span>
-        </a>
-        <p>Download, import into Copilot Studio → set Function App URL → publish.</p>
-      </div>
+      <p>Tier 2 entrypoints and the Windows wrapper fail closed. The retained unsigned Power archive is immutable evidence only and has no active download link.</p>
+      <p>Exact hashes and byte sizes are recorded in <a href="RETIRED_ARTIFACTS.json">RETIRED_ARTIFACTS.json</a>.</p>
     </div>
   </div>
 
@@ -230,7 +183,6 @@
   <a href="../">Landing</a>
   <a href="../pages/docs/SPEC.md">SPEC.md</a>
   <a href="../rapp_brainstem/web/">Brainstem (virtual)</a>
-  <a href="../rapp_swarm/">Swarm</a>
   <a href="shortcuts/">Apple Shortcuts</a>
   <a href="https://github.com/kody-w/RAPP" target="_blank">Source</a>
 </div>
@@ -240,8 +192,7 @@
 <script>
   const CMDS = {
     mac:   'curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash',
-    linux: 'curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash',
-    win:   'iwr https://kody-w.github.io/RAPP/installer/install.ps1 -useb | iex'
+    linux: 'curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash'
   };
   const tabs = document.querySelectorAll('.install-tab');
   const cmdText = document.getElementById('cmd-text');
@@ -255,8 +206,7 @@
   (function(){
     const ua = navigator.userAgent;
     let os = 'mac';
-    if (/Windows/i.test(ua)) os = 'win';
-    else if (/Linux/i.test(ua) && !/Android/i.test(ua)) os = 'linux';
+    if (/Linux/i.test(ua) && !/Android/i.test(ua)) os = 'linux';
     document.querySelectorAll('.install-tab').forEach(t => {
       if (t.dataset.os === os) t.click();
     });

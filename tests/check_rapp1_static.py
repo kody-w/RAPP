@@ -17,6 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 INVENTORY_PATH = ROOT / "tests/fixtures/rapp1-retired-test-inventory.json"
 SUITE_INVENTORY_PATH = ROOT / "tests/rapp1-test-suite-inventory.json"
+LIVE_INVENTORY_PATH = ROOT / "tests/rapp1-live-surface-inventory.json"
 ECOSYSTEM_MAP_PATH = ROOT / "ECOSYSTEM_MAP.md"
 WORKFLOW_ROOT = ROOT / ".github/workflows"
 EXPECTED_WORKFLOW_USE_COUNTS = {
@@ -87,8 +88,24 @@ def _tracked(*patterns: str) -> list[Path]:
     ]
 
 
+def _cached_relative_paths() -> tuple[str, ...]:
+    raw = subprocess.check_output(
+        ("git", "ls-files", "--cached", "-z"),
+        cwd=ROOT,
+    )
+    return tuple(
+        item.decode("utf-8")
+        for item in raw.split(b"\0")
+        if item
+    )
+
+
 def check_json() -> int:
-    files = _tracked("*.json")
+    files = [
+        ROOT / relative
+        for relative in _cached_relative_paths()
+        if Path(relative).suffix.lower() == ".json"
+    ]
     for path in files:
         json.loads(
             path.read_text(encoding="utf-8"),
@@ -131,6 +148,112 @@ def check_shell() -> int:
 
 def check_javascript() -> int:
     return _check_commands("node", "--check", ("*.js", "*.mjs", "*.cjs"))
+
+
+def check_untracked_executables() -> int:
+    raw = subprocess.check_output(
+        (
+            "git",
+            "ls-files",
+            "--others",
+            "--exclude-standard",
+            "-z",
+        ),
+        cwd=ROOT,
+    )
+    untracked = [
+        ROOT / item.decode("utf-8")
+        for item in raw.split(b"\0")
+        if item
+        and not item.decode("utf-8").startswith("tests/.rapp1-work/")
+    ]
+    executable = sorted(
+        path.relative_to(ROOT).as_posix()
+        for path in untracked
+        if path.is_file()
+        and path.stat().st_mode & (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+    )
+    assert not executable, (
+        "untracked executable paths must be removed, staged, or explicitly "
+        f"quarantined as non-executable fixtures: {executable}"
+    )
+    return len(untracked)
+
+
+def check_live_surface_inventory() -> dict[str, int]:
+    inventory = json.loads(
+        LIVE_INVENTORY_PATH.read_text(encoding="utf-8"),
+        object_pairs_hook=_unique_object,
+    )
+    assert inventory["schema"] == "rapp1-live-surface-inventory/1.0"
+    assert set(inventory["categories"]) == {
+        "installer",
+        "marketing",
+        "containment",
+        "browser",
+        "wire",
+    }
+    assert "git ls-files" in inventory["count_policy"]
+    assert not {"path_count", "tracked_count", "total_count"} & set(inventory), (
+        "live inventory must derive repository counts instead of storing totals"
+    )
+
+    tracked = set(_cached_relative_paths())
+    counts = {"tracked": len(tracked)}
+    for category, paths in inventory["categories"].items():
+        assert paths, f"empty live inventory category: {category}"
+        assert len(paths) == len(set(paths)), (
+            f"duplicate path in live inventory category {category}"
+        )
+        for relative in paths:
+            path = Path(relative)
+            assert not path.is_absolute() and ".." not in path.parts, (
+                f"unsafe live inventory path: {relative}"
+            )
+            assert relative in tracked, (
+                f"untracked or stale {category} inventory path: {relative}"
+            )
+        counts[category] = len(paths)
+
+    declared_installers = set(inventory["categories"]["installer"])
+    installer_candidates = {
+        relative
+        for relative in tracked
+        if re.fullmatch(
+            r"(?:(?:docs|community_rapp|installer)/)?"
+            r"install(?:-swarm)?\.(?:sh|ps1|cmd|command)",
+            relative,
+        )
+        or relative
+        in {
+            "deploy.sh",
+            "deploy.ps1",
+            "azuredeploy.json",
+            "installer/azuredeploy.json",
+            "installer/start-local.sh",
+        }
+    }
+    assert installer_candidates == declared_installers, (
+        "live installer inventory drifted: "
+        f"missing={sorted(installer_candidates - declared_installers)}, "
+        f"stale={sorted(declared_installers - installer_candidates)}"
+    )
+
+    boundary = inventory["protected_boundaries"]
+    assert boundary["prepared_snapshot_prefix"] == (
+        "cave/rapplications/rapp-installer/"
+    )
+    assert any(
+        path.startswith(boundary["prepared_snapshot_prefix"])
+        for path in tracked
+    ), "prepared snapshot boundary no longer matches tracked paths"
+    assert set(boundary["immutable_grail_paths"]) == set(
+        json.loads((ROOT / "KERNEL_PIN.json").read_text(encoding="utf-8"))[
+            "kernel"
+        ]["frozen"]
+    )
+    assert boundary["archive_manifest"] in tracked
+    return counts
 
 
 def extract_workflow_uses(source: str) -> tuple[tuple[int, str], ...]:
@@ -349,7 +472,7 @@ def check_legacy_inventory() -> tuple[int, int]:
     assert len(fixture_paths) == quarantine["path_count"]
     assert len(file_entries) == len(fixture_paths)
     assert hashlib.sha256(encoded).hexdigest() == quarantine["path_set_sha256"]
-    for fixture, original in zip(fixture_paths, original_paths, strict=True):
+    for fixture, original in zip(fixture_paths, original_paths):
         relative_fixture = fixture.relative_to(ROOT).as_posix()
         entry = file_entries.get(relative_fixture)
         assert entry is not None, f"quarantine file has no rationale: {relative_fixture}"
@@ -405,6 +528,8 @@ def main() -> int:
         ("HTML parse", check_html),
         ("shell syntax", check_shell),
         ("JavaScript syntax", check_javascript),
+        ("untracked executable containment", check_untracked_executables),
+        ("live surface inventory", check_live_surface_inventory),
         ("immutable workflow actions", check_workflow_actions),
         ("ecosystem implementation map", check_ecosystem_map_paths),
         ("active test-suite inventory", check_test_suite_inventory),

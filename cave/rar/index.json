@@ -5,14 +5,14 @@
   "kind": "workspace",
   "raw_url_prefix": "https://raw.githubusercontent.com/kody-w/RAPP/main/cave",
   "note": "Per-neighborhood registry. PUBLIC repo: raw URLs need NO auth \u2014 anyone can stream every pinned file directly with plain curl or off GitHub Pages (https://raw.githubusercontent.com/kody-w/RAPP/main/cave/... or https://kody-w.github.io/RAPP/cave/). No clone, no gh-auth, no collaborator gate \u2014 the public front door is open. Join = fork + PR (or just pull). sha256 pins let loaders verify streamed files against this manifest.",
-  "updated_at": "2026-06-27T13:32:56Z",
+  "updated_at": "2026-07-17T10:25:44Z",
   "agents": [
     {
       "name": "@kody-w/cave",
       "version": "1.0.0",
       "path": "agents/cave_agent.py",
-      "sha256": "c8480ab51c661939d74b91e78f0c33c121034da114d5956494e3cf192db3c45b",
-      "purpose": "Cave participation agent: cave.",
+      "sha256": "e2c55368c735d56ad7faab9f14cde3eb78f11891cb509541075605bdc9cc8c3d",
+      "purpose": "Fail-closed tombstone for the retired public Cave agent.",
       "required_by_tether": false,
       "schema": "rapp-agent/1.0"
     },
@@ -41,7 +41,10 @@
       "version": "0.0.0",
       "schema": "rapp-rapplication/1.0",
       "path": "rapplications/rapp-installer/",
-      "purpose": "Cave flagship rapplication: rapp-installer. Pull: curl -fsSL https://raw.githubusercontent.com/kody-w/RAPP/main/cave/rapplications/rapp-installer/bootstrap.sh | bash"
+      "status": "retired",
+      "active_distribution": false,
+      "immutable_prepared_snapshot": true,
+      "purpose": "Retired prepared snapshot: rapp-installer. No bootstrap, installation, or publication is authorized."
     }
   ],
   "verification": {

@@ -5,9 +5,9 @@
   "quarantine": {
     "root": "tests/fixtures/legacy-conformance",
     "source_commit": "4c2b999",
-    "path_count": 81,
-    "path_set_sha256": "411493b71272de00b34e90692a46474bb6830fc17877960bd2130884d00ef3a9",
-    "content_set_sha256": "0bd17089f9562b3f3e07d30f2fbfac2970ff15fd82a3fdc3cc3453173ddffa8a",
+    "path_count": 83,
+    "path_set_sha256": "4b91bb2b975ca5c6f59be2f988cf8cea450ceb3146c2709c763960d4a85995a1",
+    "content_set_sha256": "00d6a4e220f4a4b71ac5b1f25286d81ed35b6e94a1ca791e700c251b086b5703",
     "mapping": "Each fixture path maps to its former tests/ path after removing the quarantine root and final .txt suffix.",
     "policy": "These exact historical test bytes positively asserted retired identity, frame, egg, browser, Tier 2, or wire behavior. They are non-executable migration evidence and are never RAPP/1 conformance evidence.",
     "files": [
@@ -94,6 +94,12 @@
         "source_path": "tests/e2e/12-legacy-wire-conformance.sh",
         "sha256": "da9cd1d0c12b17288f475fa04d4c1b31c43d334c26522176a02014955d4329fe",
         "rationale": "Positively asserts a retired tier, installer, binder, or pre-rev-5 wire contract."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/e2e/enable-mi-on-twin.sh.txt",
+        "source_path": "tests/e2e/enable-mi-on-twin.sh",
+        "sha256": "23ac649c2f28028c006c367d5aa65083cf5d37a6b8c0aefd84b43ea5487716c1",
+        "rationale": "Mutated Azure managed identity and restarted a live Function App; retained only as non-executable Tier 2 migration evidence."
       },
       {
         "fixture": "tests/fixtures/legacy-conformance/features/F1-lineage-rollup.sh.txt",
@@ -490,6 +496,12 @@
         "source_path": "tests/test-split-view-rapps.sh",
         "sha256": "65780c49c6a72abf261221b128118e9e116a4ed9288ee90b84f6fd841729b444",
         "rationale": "Positively asserts a removed legacy API, product integration, deploy, store, sealing, or split-view contract."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/test_installer.sh.txt",
+        "source_path": "tests/test_installer.sh",
+        "sha256": "ce86aec51957c20eb192ecaf52b08a37a8a7ad434ba16ad6292c4352c6cc4073",
+        "rationale": "Positively asserted mutable installer, three-tier marketing, and legacy agent behavior and is preserved only as non-executable migration evidence."
       },
       {
         "fixture": "tests/fixtures/legacy-conformance/vbrainstem-smoke.mjs.txt",

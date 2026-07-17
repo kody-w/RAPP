@@ -117,19 +117,6 @@
   .step pre{background:#04060c;border:1px solid var(--border);border-radius:6px;
     padding:10px 12px;overflow-x:auto;color:var(--fg)}
 
-  /* Direct download for the Copilot Studio solution zip — one click, no repo hop. */
-  .zip-dl{display:flex;align-items:center;gap:10px;
-    background:#04060c;border:1px solid var(--border);border-radius:6px;
-    padding:10px 12px;color:var(--fg)!important;text-decoration:none;
-    transition:border-color .15s,background .15s}
-  .zip-dl:hover{border-color:var(--purple-2);background:#0a0e17;text-decoration:none}
-  .zip-dl .zip-icon{font-size:16px;color:var(--purple-2)}
-  .zip-dl .zip-name{flex:1;font-family:"SF Mono",ui-monospace,monospace;font-size:13px;
-    word-break:break-all}
-  .zip-dl .zip-hint{font-size:10px;color:var(--muted);text-transform:uppercase;
-    letter-spacing:1px;white-space:nowrap}
-  .zip-dl:hover .zip-hint{color:var(--purple-2)}
-
   /* ── Footer ── */
   .links{margin-top:32px;text-align:center;font-size:13px;color:var(--muted);max-width:620px}
   .links a{margin:0 10px;color:var(--dim)}
@@ -148,8 +135,7 @@
     <div class="nav-links">
       <a href="pages/kernel.html" title="Unified entry — read me first">Kernel</a>
       <a href="#brainstem">Brainstem</a>
-      <a href="#swarm">Swarm</a>
-      <a href="#copilot-studio">Copilot Studio</a>
+      <a href="#retired-distribution">Retired distribution</a>
       <a href="https://github.com/kody-w/rappter-distro/tree/main/ui/web" title="Browser-only brainstem">Try it ↗</a>
       <a href="installer/">Installer</a>
       <a href="pages/" title="Audience site — about, product, release, docs, vault">Site</a>
@@ -166,7 +152,7 @@
 <div class="hero">
   <div class="logo">🧠</div>
   <h1>The <span class="grad">RAPP</span> Stack</h1>
-  <p>Local-first AI agents that grow into the Microsoft enterprise stack one tier at a time. <strong style="color:var(--fg)">Brainstem → Swarm → Copilot Studio.</strong> No API keys, no cloud setup — just your GitHub account.</p>
+  <p>A pinned local Brainstem distribution. Legacy cloud provisioning and the unsigned enterprise archive are retired and are not published from this page.</p>
 </div>
 
 <div class="install" id="install">
@@ -175,7 +161,6 @@
       <div class="dots"><span></span><span></span><span></span></div>
       <button class="install-tab active" data-os="mac">macOS</button>
       <button class="install-tab" data-os="linux">Linux</button>
-      <button class="install-tab" data-os="win">Windows</button>
     </div>
   </div>
   <div class="install-body" id="cmd-row">
@@ -209,7 +194,7 @@
 </div>
 
 <div class="tiers">
-  <div class="tiers-intro">Three tiers · one file</div>
+  <div class="tiers-intro">Pinned local distribution</div>
 
   <article class="tier" data-tier="1" id="brainstem">
     <div class="tier-head" onclick="this.parentNode.classList.toggle('open')">
@@ -241,52 +226,19 @@
     </div>
   </article>
 
-  <article class="tier" data-tier="2" id="swarm">
+  <article class="tier open" id="retired-distribution">
     <div class="tier-head" onclick="this.parentNode.classList.toggle('open')">
-      <span class="tier-icon">☁️</span>
+      <span class="tier-icon">⛔</span>
       <div class="tier-title">
-        <h2>Tier 2 — Swarm</h2>
-        <div class="sub">Azure Functions · Azure OpenAI · managed identity</div>
+        <h2>Retired distribution surfaces</h2>
+        <div class="sub">HTTP 410 · no provisioning · no archive publication</div>
       </div>
-      <span class="tier-badge next">Next step</span>
+      <span class="tier-badge adv">Retired</span>
       <span class="tier-arrow">›</span>
     </div>
     <div class="tier-body">
-      <p>The same single-file agents your laptop runs, hosted on Azure. One ARM template, one Deploy-to-Azure button. The HTTP surface is identical to Tier 1, so anything that talks to <code>/chat</code> on your laptop can talk to <code>/chat</code> in the cloud.</p>
-      <p class="met"><em>Metaphor: long-term memory. Slow, durable, multi-tenant.</em></p>
-      <div class="step">
-        <h3>Install the swarm runtime</h3>
-        <pre>curl -fsSL https://kody-w.github.io/RAPP/installer/install-swarm.sh | bash</pre>
-      </div>
-      <div class="step">
-        <h3>Deploy to Azure</h3>
-        <p>Click the button on the <a href="rapp_swarm/">swarm page</a>, fill in the resource group, wait ~3 minutes.</p>
-      </div>
-    </div>
-  </article>
-
-  <article class="tier" data-tier="3" id="copilot-studio">
-    <div class="tier-head" onclick="this.parentNode.classList.toggle('open')">
-      <span class="tier-icon">🏢</span>
-      <div class="tier-title">
-        <h2>Tier 3 — Copilot Studio</h2>
-        <div class="sub">Power Platform solution · Teams · M365 Copilot</div>
-      </div>
-      <span class="tier-badge adv">Enterprise</span>
-      <span class="tier-arrow">›</span>
-    </div>
-    <div class="tier-body">
-      <p>Import the unmanaged solution zip into Copilot Studio. Wire the Function App URL from Tier 2. Publish to Teams. The same agent file you wrote on day 1 is now being called from M365 Copilot.</p>
-      <p class="met"><em>Metaphor: the cortex. Where the brain meets the world.</em></p>
-      <div class="step">
-        <h3>Bundle</h3>
-        <a class="zip-dl" href="installer/MSFTAIBASMultiAgentCopilot_1_0_0_5.zip" download>
-          <span class="zip-icon">⬇</span>
-          <span class="zip-name">MSFTAIBASMultiAgentCopilot_1_0_0_5.zip</span>
-          <span class="zip-hint">click to download</span>
-        </a>
-        <p>Download, import into Copilot Studio → set Function App URL → publish.</p>
-      </div>
+      <p>Tier 2 deployment entrypoints fail closed. The retained unsigned Power archive is immutable evidence only and has no active download link.</p>
+      <p>Exact retained byte hashes are recorded in <a href="installer/RETIRED_ARTIFACTS.json">the retired-artifact manifest</a>.</p>
     </div>
   </article>
 </div>
@@ -310,8 +262,7 @@
 <script>
   const CMDS = {
     mac:   'curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash',
-    linux: 'curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash',
-    win:   'iwr https://kody-w.github.io/RAPP/installer/install.ps1 -useb | iex'
+    linux: 'curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash'
   };
   const tabs = document.querySelectorAll('.install-tab');
   const cmdText = document.getElementById('cmd-text');
@@ -325,8 +276,7 @@
   (function(){
     const ua = navigator.userAgent;
     let os = 'mac';
-    if (/Windows/i.test(ua)) os = 'win';
-    else if (/Linux/i.test(ua) && !/Android/i.test(ua)) os = 'linux';
+    if (/Linux/i.test(ua) && !/Android/i.test(ua)) os = 'linux';
     document.querySelectorAll('.install-tab').forEach(t => {
       if (t.dataset.os === os) t.click();
     });

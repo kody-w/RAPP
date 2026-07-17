@@ -36,8 +36,11 @@ def _require_local(host: object) -> None:
 
 
 _original_getaddrinfo = socket.getaddrinfo
+_original_getfqdn = socket.getfqdn
+_original_gethostbyaddr = socket.gethostbyaddr
 _original_gethostbyname = socket.gethostbyname
 _original_gethostbyname_ex = socket.gethostbyname_ex
+_original_getnameinfo = socket.getnameinfo
 _original_create_connection = socket.create_connection
 _original_socket = socket.socket
 
@@ -45,6 +48,16 @@ _original_socket = socket.socket
 def _guarded_getaddrinfo(host, *args, **kwargs):
     _require_local(host)
     return _original_getaddrinfo(host, *args, **kwargs)
+
+
+def _guarded_getfqdn(host=""):
+    _require_local(host)
+    return _original_getfqdn(host)
+
+
+def _guarded_gethostbyaddr(host):
+    _require_local(host)
+    return _original_gethostbyaddr(host)
 
 
 def _guarded_gethostbyname(host):
@@ -55,6 +68,11 @@ def _guarded_gethostbyname(host):
 def _guarded_gethostbyname_ex(host):
     _require_local(host)
     return _original_gethostbyname_ex(host)
+
+
+def _guarded_getnameinfo(sockaddr, *args, **kwargs):
+    _require_local(sockaddr[0])
+    return _original_getnameinfo(sockaddr, *args, **kwargs)
 
 
 class _GuardedSocket(_original_socket):
@@ -68,6 +86,23 @@ class _GuardedSocket(_original_socket):
             _require_local(address[0])
         return super().connect_ex(address)
 
+    def sendto(self, data, *args):
+        address = args[-1]
+        if self.family in {socket.AF_INET, socket.AF_INET6}:
+            _require_local(address[0])
+        return super().sendto(data, *args)
+
+    if hasattr(_original_socket, "sendmsg"):
+        def sendmsg(self, buffers, ancdata=(), flags=0, address=None):
+            if (
+                address is not None
+                and self.family in {socket.AF_INET, socket.AF_INET6}
+            ):
+                _require_local(address[0])
+            if address is None:
+                return super().sendmsg(buffers, ancdata, flags)
+            return super().sendmsg(buffers, ancdata, flags, address)
+
 
 def _guarded_create_connection(address, *args, **kwargs):
     _require_local(address[0])
@@ -75,8 +110,11 @@ def _guarded_create_connection(address, *args, **kwargs):
 
 
 socket.getaddrinfo = _guarded_getaddrinfo
+socket.getfqdn = _guarded_getfqdn
+socket.gethostbyaddr = _guarded_gethostbyaddr
 socket.gethostbyname = _guarded_gethostbyname
 socket.gethostbyname_ex = _guarded_gethostbyname_ex
+socket.getnameinfo = _guarded_getnameinfo
 socket.socket = _GuardedSocket
 socket.SocketType = _GuardedSocket
 socket.create_connection = _guarded_create_connection

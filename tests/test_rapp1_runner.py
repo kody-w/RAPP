@@ -47,6 +47,7 @@ def test_runner_has_one_explicit_authoritative_gate_set():
         "organism-offline",
         "metropolis-directory",
         "metropolis-federation",
+        "distribution-retirement",
         "plant-retirement",
         "twin-egg-retirement",
     ]
@@ -87,11 +88,8 @@ def test_python_gate_covers_target_owned_offline_pytests():
         "tests/doorman/chat.js",
         "tests/doorman/smoke.js",
         "tests/dreamcatcher-conformance/runner.py",
-        "tests/e2e/enable-mi-on-twin.sh",
         "tests/mirror-drift.sh",
         "tests/osi/L4a-tether-browser.sh",
-        "tests/test_installer.sh",
-        "tests/test-t2t-removal.sh",
     } <= set(runner.EXCLUDED_EXTERNAL_SUITES)
 
 
@@ -256,7 +254,21 @@ def test_brainstem_boot_gates_require_isolated_unauthenticated_runtime():
         assert '"status":"(ok|unauthenticated)"' not in source
 
 
-def test_offline_boundary_harness_blocks_external_http(monkeypatch):
+def test_brainstem_boot_gates_poll_readiness_with_bounded_diagnostics():
+    for relative in (
+        "tests/e2e/07-ui-smoke.sh",
+        "tests/organism/01-canonical-kernel-boots.sh",
+    ):
+        source = (ROOT / relative).read_text(encoding="utf-8")
+        assert "wait_for_health" in source
+        assert "RAPP1_BOOT_TIMEOUT_SECONDS" in source
+        assert "boot_diagnostics" in source
+        assert "kill -0" in source
+        assert "--connect-timeout 1 --max-time 1" in source
+        assert "seq 1 30" not in source
+
+
+def test_offline_boundary_harness_blocks_external_network(monkeypatch):
     scratch = ROOT / "tests/.rapp1-network-test"
     shutil.rmtree(scratch, ignore_errors=True)
     monkeypatch.setattr(runner, "WORK_ROOT", scratch)
@@ -273,6 +285,7 @@ def test_offline_boundary_harness_blocks_external_http(monkeypatch):
         )
         assert result.returncode == 0, result.stderr
         assert "external HTTP denied" in result.stdout
+        assert "external UDP and reverse DNS denied" in result.stdout
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
 
@@ -321,6 +334,23 @@ def test_every_workflow_dependency_ref_is_immutable():
         re.fullmatch(r"[0-9a-f]{40}", value.rsplit("@", 1)[1])
         for _, _, value in references
     )
+
+
+def test_static_gate_scans_every_tracked_json_and_dynamic_live_categories():
+    tracked = static_checks._cached_relative_paths()
+    json_count = sum(Path(relative).suffix.lower() == ".json" for relative in tracked)
+    assert static_checks.check_json() == json_count
+    counts = static_checks.check_live_surface_inventory()
+    assert counts["tracked"] == len(tracked)
+    assert set(counts) == {
+        "tracked",
+        "installer",
+        "marketing",
+        "containment",
+        "browser",
+        "wire",
+    }
+    assert all(counts[category] > 0 for category in counts)
 
 
 def test_workflow_action_parser_handles_step_and_job_uses_syntax():

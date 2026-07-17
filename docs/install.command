@@ -1,13 +1,8 @@
-#!/bin/bash
-# RAPP Brainstem Installer for macOS
-# Double-click this file in Finder to install.
+#!/usr/bin/env bash
+cat >&2 <<'EOF'
+docs/install.command: 410 Gone
 
-clear
-echo ""
-echo "  🧠 RAPP Brainstem Installer"
-echo "  ============================"
-echo ""
-echo "  Installing... (this window will become your brainstem server)"
-echo ""
-
-curl -fsSL https://kody-w.github.io/rapp-installer/install.sh | bash
+The legacy macOS network passthrough is retired. It will not fetch or execute
+mutable installer bytes.
+EOF
+exit 78

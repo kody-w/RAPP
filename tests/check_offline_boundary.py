@@ -109,6 +109,90 @@ def _check_python_sockets() -> None:
     else:
         raise AssertionError("external Python socket was not blocked")
 
+    udp_listener = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    udp_listener.bind(("127.0.0.1", 0))
+    udp_listener.settimeout(1)
+    udp_client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        udp_client.sendto(b"loopback-sendto", udp_listener.getsockname())
+        payload, _ = udp_listener.recvfrom(1024)
+        if payload != b"loopback-sendto":
+            raise AssertionError("loopback UDP sendto payload changed")
+        if hasattr(udp_client, "sendmsg"):
+            udp_client.sendmsg(
+                [b"loopback-", b"sendmsg"],
+                [],
+                0,
+                udp_listener.getsockname(),
+            )
+            payload, _ = udp_listener.recvfrom(1024)
+            if payload != b"loopback-sendmsg":
+                raise AssertionError("loopback UDP sendmsg payload changed")
+    finally:
+        udp_client.close()
+        udp_listener.close()
+
+    external_udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        for label, operation in (
+            (
+                "sendto",
+                lambda: external_udp.sendto(b"blocked", ("192.0.2.1", 9)),
+            ),
+            *(
+                (
+                    (
+                        "sendmsg",
+                        lambda: external_udp.sendmsg(
+                            [b"blocked"], [], 0, ("192.0.2.1", 9)
+                        ),
+                    ),
+                )
+                if hasattr(external_udp, "sendmsg")
+                else ()
+            ),
+        ):
+            try:
+                operation()
+            except OSError as error:
+                if "RAPP1 offline gate blocks" not in str(error):
+                    raise AssertionError(
+                        f"unexpected external UDP {label} failure: {error}"
+                    ) from error
+            else:
+                raise AssertionError(f"external UDP {label} was not blocked")
+    finally:
+        external_udp.close()
+
+    for label, operation in (
+        ("getfqdn", lambda: socket.getfqdn("192.0.2.1")),
+        ("gethostbyaddr", lambda: socket.gethostbyaddr("192.0.2.1")),
+        (
+            "getnameinfo",
+            lambda: socket.getnameinfo(("192.0.2.1", 80), 0),
+        ),
+    ):
+        try:
+            operation()
+        except OSError as error:
+            if "RAPP1 offline gate blocks" not in str(error):
+                raise AssertionError(
+                    f"unexpected external reverse-DNS {label} failure: {error}"
+                ) from error
+        else:
+            raise AssertionError(f"external reverse-DNS {label} was not blocked")
+
+    if not socket.getfqdn("127.0.0.1"):
+        raise AssertionError("loopback getfqdn was not preserved")
+    loopback_name, _, loopback_addresses = socket.gethostbyaddr("127.0.0.1")
+    if not loopback_name or "127.0.0.1" not in loopback_addresses:
+        raise AssertionError("loopback gethostbyaddr was not preserved")
+    if not socket.getnameinfo(
+        ("127.0.0.1", 0),
+        socket.NI_NUMERICHOST | socket.NI_NUMERICSERV,
+    )[0]:
+        raise AssertionError("loopback getnameinfo was not preserved")
+
     child_environment = os.environ.copy()
     child_environment["PYTHONPATH"] = os.environ["RAPP1_WORK_ROOT"]
     child = subprocess.run(
@@ -197,7 +281,10 @@ def main() -> int:
     _check_environment()
     _check_python_sockets()
     _check_http_clients()
-    print("Offline boundary verified: credentials scrubbed; loopback allowed; external HTTP denied")
+    print(
+        "Offline boundary verified: credentials scrubbed; loopback allowed; "
+        "external HTTP denied; external UDP and reverse DNS denied"
+    )
     return 0
 
 

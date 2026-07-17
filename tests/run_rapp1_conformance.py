@@ -70,9 +70,6 @@ EXCLUDED_EXTERNAL_SUITES = {
     "tests/dreamcatcher-conformance/runner.py": (
         "requires the external Dreamcatcher execution engine"
     ),
-    "tests/e2e/enable-mi-on-twin.sh": (
-        "mutates Azure managed identity and requires cloud credentials"
-    ),
     "tests/mirror-drift.sh": "queries external mirrors over the network",
     "tests/osi/L4a-tether-browser.sh": (
         "downloads/launches Playwright Chromium and uses an external PeerJS broker"
@@ -80,10 +77,6 @@ EXCLUDED_EXTERNAL_SUITES = {
     "tests/test_ecosystem_graph.py": (
         "invokes the authenticated gh CLI and rewrites external-inventory "
         "snapshots"
-    ),
-    "tests/test_installer.sh": "downloads and installs into user-owned locations",
-    "tests/test-t2t-removal.sh": (
-        "destructively rebuilds tracked vendor and removal artifacts"
     ),
     (
         "rapp_brainstem/test_local_agents.py::"
@@ -217,6 +210,17 @@ def gates() -> tuple[Gate, ...]:
             "metropolis-federation",
             ("bash", "tests/scenarios/20-cross-tracker-federation.sh"),
             "offline cross-tracker merge and deduplication checks",
+        ),
+        Gate(
+            "distribution-retirement",
+            (
+                sys.executable,
+                "-m",
+                "pytest",
+                "-q",
+                "tests/test_distribution_containment.py",
+            ),
+            "pinned installer, retired provisioning, immutable archives, and caller containment",
         ),
         Gate(
             "plant-retirement",

@@ -61,11 +61,6 @@
       "gate": "html-smoke"
     },
     {
-      "path": "tests/e2e/enable-mi-on-twin.sh",
-      "disposition": "credentialed-destructive",
-      "reason": "Changes Azure managed identity on a deployed twin and requires cloud credentials."
-    },
-    {
       "path": "tests/features/F10-ecosystem-audit.sh",
       "disposition": "canonical-direct",
       "reason": "Uses offline fixtures and no-write CLI modes for ecosystem drift checks.",
@@ -243,6 +238,12 @@
       "gate": "python-offline"
     },
     {
+      "path": "tests/test_distribution_containment.py",
+      "disposition": "canonical-direct",
+      "reason": "Verifies pinned installer behavior, distribution retirement, immutable archives, and browser caller containment.",
+      "gate": "distribution-retirement"
+    },
+    {
       "path": "tests/test_door_address.py",
       "disposition": "canonical-direct",
       "reason": "Collected explicitly by the offline pytest gate.",
@@ -258,11 +259,6 @@
       "disposition": "canonical-direct",
       "reason": "Collected explicitly by the offline pytest gate.",
       "gate": "python-offline"
-    },
-    {
-      "path": "tests/test_installer.sh",
-      "disposition": "destructive-network",
-      "reason": "Downloads installer inputs and writes user-owned installation locations."
     },
     {
       "path": "tests/test_kernel_pin_local.py",

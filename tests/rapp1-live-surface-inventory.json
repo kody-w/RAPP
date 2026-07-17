@@ -1,0 +1,60 @@
+{
+  "schema": "rapp1-live-surface-inventory/1.0",
+  "count_policy": "Counts are derived from git ls-files at gate time; no repository-wide total is stored.",
+  "categories": {
+    "installer": [
+      "install.sh",
+      "install.ps1",
+      "install.cmd",
+      "install.command",
+      "docs/install.sh",
+      "docs/install.cmd",
+      "docs/install.command",
+      "community_rapp/install.sh",
+      "community_rapp/install.ps1",
+      "installer/install.sh",
+      "installer/install.ps1",
+      "installer/install.cmd",
+      "installer/install-swarm.sh",
+      "installer/start-local.sh",
+      "deploy.sh",
+      "deploy.ps1",
+      "azuredeploy.json",
+      "installer/azuredeploy.json"
+    ],
+    "marketing": [
+      "index.html",
+      "installer/index.html"
+    ],
+    "containment": [
+      "installer/RETIRED_ARTIFACTS.json",
+      "installer/plant.sh",
+      "installer/integration_plant.sh",
+      "installer/test_plant.sh",
+      "rapp_swarm/RAPP1_DEPLOYMENT_GUARD.json",
+      "tests/test_distribution_containment.py",
+      "tests/test_rapp1_containment.py"
+    ],
+    "browser": [
+      "installer/plant.html",
+      "installer/plant_qr.html",
+      "installer/seed.html",
+      "pages/metropolis/plant-from-discord.html",
+      "pages/metropolis/index.html"
+    ],
+    "wire": [
+      "rapp_brainstem/rapp1_facade.py",
+      "rapp_brainstem/run_rapp1_facade.py",
+      "worker/worker.js"
+    ]
+  },
+  "protected_boundaries": {
+    "prepared_snapshot_prefix": "cave/rapplications/rapp-installer/",
+    "immutable_grail_paths": [
+      "rapp_brainstem/brainstem.py",
+      "rapp_brainstem/agents/basic_agent.py",
+      "rapp_brainstem/VERSION"
+    ],
+    "archive_manifest": "installer/RETIRED_ARTIFACTS.json"
+  }
+}
