@@ -18,9 +18,9 @@ or freshness proof.
 
 ## Audit coverage and checker limitation
 
-The completed 2026-07-16 baseline audit was a literal file-by-file review:
+The completed 2026-07-16 audit was a literal file-by-file review:
 
-- **2026-07-16 baseline: 640/640 tracked paths** — every tracked file was individually reviewed and
+- **640/640 tracked paths** — every tracked file was individually reviewed and
   classified;
 - **5 ZIP-compatible archives**, including **450 recursively counted archive
   members**;
@@ -31,29 +31,10 @@ Semantic, runtime, and cryptographic depth was applied where relevant to each
 artifact's role. This full audit is separate from the named checker:
 `rapp_check.py` is a shallow checker and is insufficient by itself. Its output
 must not be substituted for the full file/archive review and contextual ledger.
-The existing verifier report is scoped exactly to commit
-`f71810db3259fea533b4112c1df300d4b0dc781c` and has SHA-256
-`9ac01e164dc0eb820d5f53afed82f53c501059c18a8bf66b8b23c533af728ce7`.
 
 Complete review coverage and classification do not establish full RAPP/1
 conformance or authenticated acceptance. The migration and owner-action
 blockers below remain open.
-
-A fresh target-owned post-remediation inventory on **2026-07-17** counted
-**691/691 tracked paths** and reviewed the requested POST documentation scope.
-The increase is repository growth after the dated 640-path baseline, not a
-correction to that baseline. This is not a rerun of `verify-rapp-files`, and
-the original report's totals are not used to reconcile the 691-path tree. The
-post-docs ledger separately records current documents, immutable prepared-clone
-history, generated observations, archives, and external mirrors.
-
-The subsequent authoritative read-only post ledger contains **691 data rows**,
-**8,298,082 tracked bytes**, and the same **450 recursively counted archive
-members**. Its SHA-256 is
-`f5ba5abbf21067dd644d70f9076201b7ca3bf8afd934edbb9f2b4614060ad50b`.
-It does not define categories named `POST-CANON` or `POST-CANON-05`; canon
-closure maps to its stale-live, mirror, owner-mirror, immutable, history,
-status, and documentation-QA dispositions.
 
 Maintainer evidence is retained in Copilot session
 `9ac7ec28-fb92-4452-a8c9-477a2363685d`; no machine-local audit path is part of
@@ -120,17 +101,6 @@ must happen in target-owned adapters, validators, migration tooling, and
 retirement policy. Historical `rapp-frame/*` and `brainstem-egg/*` paths may
 remain as dated evidence or implementation inputs, but they are not the current
 RAPP/1 frame or egg authority.
-
-## Current unresolved boundary categories
-
-- **Authenticated owner action:** registry, anchor, lawful re-anchor, and
-  replacement invite remain the four owner-action blockers above.
-- **Generated target artifacts:** identity and network declarations require
-  authorized regeneration; documentation changes cannot safely rewrite them.
-- **Immutable history:** the pinned grail, prepared cave installer subtree, and
-  archived payloads remain byte-preserved and inert.
-- **External mirrors:** divergent or generated copies outside this target
-  remain non-authoritative until their owners update and pin them.
 
 Until all owner-action blockers and implementation migrations are complete,
 this repository must continue to lead with **NOT YET FULLY RAPP/1 CONFORMANT**.

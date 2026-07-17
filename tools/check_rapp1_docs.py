@@ -184,6 +184,18 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
         errors.append("fixture: dated baseline must remain 640 paths")
     if audit.get("post_audit_tracked_paths") != 691:
         errors.append("fixture: post-audit inventory must be 691 paths")
+    expected_integration = {
+        "integrated_main_commit": "303c84f1b47dbb46ade7fccf7855dfed5d4fdf94",
+        "integrated_tracked_paths": 694,
+        "integrated_tracked_bytes": 7956714,
+    }
+    for field, expected in expected_integration.items():
+        if audit.get(field) != expected:
+            errors.append(f"fixture: integrated-tree {field} drifted")
+    if "691-row final verifier ledger" not in audit.get("integration_note", ""):
+        errors.append("fixture: integration note loses dated-ledger boundary")
+    if "code-owned owner-evidence hash" not in audit.get("status_boundary", ""):
+        errors.append("fixture: status owner-hash boundary is missing")
     tracked_paths = [
         path
         for path in subprocess.check_output(
@@ -191,10 +203,16 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
         ).decode("utf-8").split("\0")
         if path
     ]
-    if len(tracked_paths) != audit.get("post_audit_tracked_paths"):
+    if len(tracked_paths) != audit.get("integrated_tracked_paths"):
         errors.append(
-            "fixture: post-audit tracked-path count does not match git ls-files "
-            f"({len(tracked_paths)} != {audit.get('post_audit_tracked_paths')})"
+            "fixture: integrated tracked-path count does not match git ls-files "
+            f"({len(tracked_paths)} != {audit.get('integrated_tracked_paths')})"
+        )
+    tracked_bytes = sum((ROOT / path).stat().st_size for path in tracked_paths)
+    if tracked_bytes != audit.get("integrated_tracked_bytes"):
+        errors.append(
+            "fixture: integrated tracked-byte count does not match working tree "
+            f"({tracked_bytes} != {audit.get('integrated_tracked_bytes')})"
         )
 
     provenance = audit.get("provenance", {})
@@ -454,11 +472,17 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
     classifications = fixture.get("classifications")
     if not isinstance(classifications, dict):
         return errors + ["fixture: classifications must be an object"]
-    expected_classes = {"current", "historical", "superseded", "excluded"}
+    expected_classes = {
+        "current",
+        "historical",
+        "superseded",
+        "contained",
+        "excluded",
+    }
     if set(classifications) != expected_classes:
         errors.append(
             "fixture: classifications must be exactly current, historical, "
-            "superseded, and excluded"
+            "superseded, contained, and excluded"
         )
         return errors
 
@@ -696,6 +720,25 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
         if path in ownership_exclusions:
             continue
         raw = _read(path)
+        classification = disposition[path]
+        if classification == "contained":
+            for pattern in plant_rule["forbidden_live_patterns"]:
+                if re.search(pattern, raw, flags=re.IGNORECASE):
+                    errors.append(f"{path}: live plant.sh CTA matches {pattern!r}")
+            if path == "pages/metropolis/index.html":
+                if re.search(
+                    r"(?:href|src)\s*=\s*[\"'][^\"']*plant|plant-from-discord|"
+                    r"plant\.sh",
+                    raw,
+                    flags=re.IGNORECASE,
+                ):
+                    errors.append(f"{path}: contained directory restores planting")
+            else:
+                if "HTTP 410" not in raw or "retired" not in raw.lower():
+                    errors.append(f"{path}: distribution tombstone lost HTTP 410")
+                if re.search(r"<script\b", raw, flags=re.IGNORECASE):
+                    errors.append(f"{path}: distribution tombstone executes script")
+            continue
         active, marker_errors = _active_text(path, fixture)
         errors.extend(marker_errors)
         for pattern in plant_rule["forbidden_live_patterns"]:
@@ -836,30 +879,21 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
                 errors.append(f"{path}: advertises an extra Voice/Twin wire field")
 
     status = _read("RAPP1_STATUS.md")
-    if "2026-07-16 baseline: 640/640 tracked paths" not in status:
-        errors.append("RAPP1_STATUS.md: missing dated 640-path baseline")
-    if not re.search(
-        r"2026-07-17[\s\S]{0,100}691/691 tracked\s+paths",
-        status,
-        flags=re.IGNORECASE,
+    expected_status_sha256 = (
+        "5d97b9a7ff9917a21d667fd0006a6cb2346f03738dfbcdff96c6ad4a89aa9fb6"
+    )
+    if hashlib.sha256(status.encode("utf-8")).hexdigest() != expected_status_sha256:
+        errors.append("RAPP1_STATUS.md: code-owned owner-evidence hash drifted")
+    if "640/640 tracked paths" not in status:
+        errors.append("RAPP1_STATUS.md: missing audited baseline")
+    for blocker in (
+        "Signed monotonic registry and out-of-band anchor",
+        "Lawful root re-anchor",
+        "Signed replacement invite",
+        "External mirror correction",
     ):
-        errors.append("RAPP1_STATUS.md: missing dated 691-path post-audit inventory")
-    for evidence in (
-        "8,298,082 tracked bytes",
-        "450 recursively counted archive",
-        "f5ba5abbf21067dd644d70f9076201b7ca3bf8afd934edbb9f2b4614060ad50b",
-        "does not define categories named `POST-CANON` or `POST-CANON-05`",
-    ):
-        if evidence not in status:
-            errors.append(f"RAPP1_STATUS.md: missing post-ledger evidence {evidence!r}")
-    for category in (
-        "Authenticated owner action",
-        "Generated target artifacts",
-        "Immutable history",
-        "External mirrors",
-    ):
-        if category not in status:
-            errors.append(f"RAPP1_STATUS.md: missing unresolved category {category!r}")
+        if blocker not in status:
+            errors.append(f"RAPP1_STATUS.md: missing owner blocker {blocker!r}")
     return errors
 
 
@@ -883,7 +917,7 @@ def main() -> int:
 
     managed_count = sum(
         len(fixture["classifications"][classification])
-        for classification in ("current", "historical", "superseded")
+        for classification in ("current", "historical", "superseded", "contained")
     )
     category_count = sum(
         category["expected_count"]

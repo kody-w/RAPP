@@ -5,6 +5,11 @@
     "report_date": "2026-07-17",
     "baseline_tracked_paths": 640,
     "post_audit_tracked_paths": 691,
+    "integrated_main_commit": "303c84f1b47dbb46ade7fccf7855dfed5d4fdf94",
+    "integrated_tracked_paths": 694,
+    "integrated_tracked_bytes": 7956714,
+    "integration_note": "Current rebased tree count after post-code/post-dist integration; the 691-row final verifier ledger remains a dated source report.",
+    "status_boundary": "RAPP1_STATUS.md remains byte-identical to the code-owned owner-evidence hash; integrated counts are recorded here without rewriting owner hashes.",
     "path_set_digest": "sha256(sorted UTF-8 paths joined with newline, including final newline)",
     "provenance": {
       "existing_report": {
@@ -619,9 +624,6 @@
       "community_rapp/skill.md",
       "docs/index.html",
       "docs/tutorial.html",
-      "installer/plant.html",
-      "installer/plant_qr.html",
-      "installer/seed.html",
       "rapp_brainstem/README.md",
       "skill.md",
       "cave/CONTRIBUTING.md",
@@ -657,8 +659,6 @@
       "pages/product/vs.html",
       "pages/release/release-notes.html",
       "pages/release/roadmap.html",
-      "pages/metropolis/index.html",
-      "pages/metropolis/plant-from-discord.html",
       "pages/onboarding.html",
       "pages/rappid-deck.html",
       "pages/rappid-onepager.html",
@@ -729,6 +729,13 @@
       "pages/vault/Foundations/Tier 1 — Local Brainstem.md",
       "specs/SPEC.md",
       "specs/skill.md"
+    ],
+    "contained": [
+      "installer/plant.html",
+      "installer/plant_qr.html",
+      "installer/seed.html",
+      "pages/metropolis/index.html",
+      "pages/metropolis/plant-from-discord.html"
     ],
     "excluded": [
       "RAPP1_AUTHORITY.json",

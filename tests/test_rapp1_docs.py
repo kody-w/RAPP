@@ -49,10 +49,23 @@ class Rapp1DocumentationTests(unittest.TestCase):
         self.assertEqual(audit["report_date"], "2026-07-17")
         self.assertEqual(audit["baseline_tracked_paths"], 640)
         self.assertEqual(audit["post_audit_tracked_paths"], 691)
-        tracked = subprocess.check_output(
-            ("git", "ls-files"), cwd=ROOT, text=True
-        ).splitlines()
-        self.assertEqual(len(tracked), audit["post_audit_tracked_paths"])
+        self.assertEqual(
+            audit["integrated_main_commit"],
+            "303c84f1b47dbb46ade7fccf7855dfed5d4fdf94",
+        )
+        tracked = [
+            path
+            for path in subprocess.check_output(
+                ("git", "ls-files", "-z"), cwd=ROOT
+            ).decode().split("\0")
+            if path
+        ]
+        self.assertEqual(len(tracked), audit["integrated_tracked_paths"])
+        self.assertEqual(
+            sum((ROOT / path).stat().st_size for path in tracked),
+            audit["integrated_tracked_bytes"],
+        )
+        self.assertIn("owner-evidence hash", audit["status_boundary"])
 
         exact_counts = {
             "POST-STALE-LIVE-DOC": 60,
@@ -303,14 +316,31 @@ class Rapp1DocumentationTests(unittest.TestCase):
     def test_executable_planting_script_mutation_is_rejected(self) -> None:
         path = "installer/plant.html"
         text = (ROOT / path).read_text(encoding="utf-8")
-        mutated = text.replace(
-            '<script type="application/rapp-history">', "<script>", 1
-        )
+        mutated = text.replace("</body>", "<script>alert(1)</script></body>", 1)
         errors = self._category_mutation_errors(path, mutated)
         self.assertTrue(
-            any(path in error and "script remains executable" in error for error in errors),
+            any(path in error and "tombstone executes script" in error for error in errors),
             errors,
         )
+
+    def test_distribution_owned_plant_surfaces_are_contained(self) -> None:
+        self.assertEqual(
+            set(self.fixture["classifications"]["contained"]),
+            {
+                "installer/plant.html",
+                "installer/plant_qr.html",
+                "installer/seed.html",
+                "pages/metropolis/index.html",
+                "pages/metropolis/plant-from-discord.html",
+            },
+        )
+        for path in self.fixture["classifications"]["contained"]:
+            text = (ROOT / path).read_text(encoding="utf-8")
+            if path == "pages/metropolis/index.html":
+                self.assertNotIn("plant-from-discord", text)
+            else:
+                self.assertIn("HTTP 410", text)
+                self.assertIn("retired", text.lower())
 
     def test_live_cave_bootstrap_mutation_is_rejected(self) -> None:
         path = "cave/.well-known/rapp-cave.json"
@@ -387,23 +417,19 @@ class Rapp1DocumentationTests(unittest.TestCase):
             },
         )
 
-    def test_status_retains_both_dated_inventories(self) -> None:
-        status = (ROOT / "RAPP1_STATUS.md").read_text(encoding="utf-8")
-        self.assertIn("2026-07-16 baseline: 640/640 tracked paths", status)
-        self.assertRegex(status, r"(?s)2026-07-17.{0,100}691/691 tracked\s+paths")
-        self.assertIn("8,298,082 tracked bytes", status)
-        self.assertIn("450 recursively counted archive", status)
-        self.assertIn(
-            "f5ba5abbf21067dd644d70f9076201b7ca3bf8afd934edbb9f2b4614060ad50b",
-            status,
+    def test_integrated_counts_preserve_code_owned_status_hash(self) -> None:
+        status = (ROOT / "RAPP1_STATUS.md").read_bytes()
+        self.assertEqual(
+            hashlib.sha256(status).hexdigest(),
+            "5d97b9a7ff9917a21d667fd0006a6cb2346f03738dfbcdff96c6ad4a89aa9fb6",
         )
-        for category in (
-            "Authenticated owner action",
-            "Generated target artifacts",
-            "Immutable history",
-            "External mirrors",
-        ):
-            self.assertIn(category, status)
+        audit = self.fixture["audit"]
+        self.assertEqual(audit["post_audit_tracked_paths"], 691)
+        self.assertEqual(audit["integrated_tracked_paths"], 694)
+        self.assertEqual(
+            audit["provenance"]["final_report"]["report_sha256"],
+            "f5ba5abbf21067dd644d70f9076201b7ca3bf8afd934edbb9f2b4614060ad50b",
+        )
 
 
 if __name__ == "__main__":
