@@ -84,10 +84,10 @@ echo "--- Section 2: swarm_server.py and chat.py entirely gone ---"
 assert_not_exists "rapp_brainstem/swarm_server.py removed"  rapp_brainstem/swarm_server.py
 assert_not_exists "rapp_brainstem/chat.py removed"          rapp_brainstem/chat.py
 
-# ── Section 3: function_app.py is clean ───────────────────────────────
+# ── Section 3: function_app.py is an inert tombstone ──────────────────
 
 echo ""
-echo "--- Section 3: function_app.py is clean ---"
+echo "--- Section 3: function_app.py is an inert tombstone ---"
 
 PARSE_OUT=$(python3 -c "
 import ast
@@ -97,12 +97,16 @@ print('ok')
 " 2>&1)
 assert_eq "function_app.py parses as valid Python"  "ok"  "$PARSE_OUT"
 
-assert_no_match "function_app.py has no t2t route handlers" \
-    'route="t2t/'  rapp_swarm/function_app.py
-assert_no_match "function_app.py has no 'from t2t import' statements" \
-    'from t2t import'  rapp_swarm/function_app.py
-assert_no_match "function_app.py has no get_t2t_manager imports" \
-    'get_t2t_manager'  rapp_swarm/function_app.py
+set +e
+TOMBSTONE_OUT=$(python3 rapp_swarm/function_app.py 2>&1)
+TOMBSTONE_RC=$?
+set -e
+assert_eq "function_app.py refuses execution" "78" "$TOMBSTONE_RC"
+case "$TOMBSTONE_OUT" in
+    *"410 Gone"*) echo "  ✓ function_app.py reports 410 Gone"; PASS=$((PASS + 1)) ;;
+    *) echo "  ✗ function_app.py does not report 410 Gone"
+       FAIL=$((FAIL + 1)); FAIL_NAMES+=("function_app.py 410 tombstone") ;;
+esac
 
 # ── Section 4: build.sh produces a clean vendored bundle ──────────────
 

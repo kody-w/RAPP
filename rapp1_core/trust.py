@@ -45,6 +45,7 @@ class RegistryEvidence:
     genesis_hashes: Mapping[str, str] = field(default_factory=dict)
     authenticated: bool = False
     fresh: bool = False
+    registered_egg_variants: AbstractSet[str] = field(default_factory=frozenset)
 
     def __post_init__(self) -> None:
         if type(self.authenticated) is not bool or type(self.fresh) is not bool:
@@ -52,6 +53,9 @@ class RegistryEvidence:
         kind_families = deepcopy(dict(self.kind_families))
         deprecated_kinds = deepcopy(tuple(self.deprecated_kinds))
         genesis_hashes = deepcopy(dict(self.genesis_hashes))
+        registered_egg_variants = deepcopy(
+            tuple(self.registered_egg_variants)
+        )
         if (
             any(
                 type(key) is not str or type(value) is not str
@@ -62,6 +66,10 @@ class RegistryEvidence:
                 for key, value in genesis_hashes.items()
             )
             or any(type(kind) is not str for kind in deprecated_kinds)
+            or any(
+                type(variant) is not str
+                for variant in registered_egg_variants
+            )
         ):
             raise TypeError("registry mappings and sets must contain only strings")
         object.__setattr__(
@@ -78,6 +86,11 @@ class RegistryEvidence:
             self,
             "genesis_hashes",
             MappingProxyType(genesis_hashes),
+        )
+        object.__setattr__(
+            self,
+            "registered_egg_variants",
+            frozenset(registered_egg_variants),
         )
 
 

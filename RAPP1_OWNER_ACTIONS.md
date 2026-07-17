@@ -30,8 +30,8 @@ These are owner review inputs, not §13 entries:
   `kody-w/rapp-1:SPEC.md` at the commit and SHA-256 above.
 - **Egg variants (all six):** `organism`, `rapplication`, `session`, `invite`,
   `neighborhood`, `estate`.
-- **Facade error codes (exactly seven):** `malformed-request`,
-  `unknown-session`, `idempotency-conflict`, `idempotency-in-progress`,
+- **Facade error codes (exactly six):** `malformed-request`,
+  `unknown-session`, `idempotency-in-progress`,
   `session-in-progress`, `inference-refused`, `facade-storage-refused`.
   Zero error codes are currently registered; even `unknown-session` is only a
   specification example until the owner ratifies this actual candidate set.
@@ -67,10 +67,10 @@ Recomputed after rebasing onto target `main` at
 |---|---|
 | Migration commits | `2cee074d755fe1ca1e81f5fb0c2331cbc47f1537`, `803cc76294b8a89273470d3167dde6f01df41e7d`, `591e7aec3b2183e0d48a1d6dfb6ebc59f177daea`, `4c2b999f8c890b76d057241d29ecda29e0239d79` |
 | Status | `RAPP1_STATUS.md` SHA-256 `5d97b9a7ff9917a21d667fd0006a6cb2346f03738dfbcdff96c6ad4a89aa9fb6`; both owner-ledger links and `Active-path residual` are present |
-| Current facade | `rapp_brainstem/rapp1_facade.py`; source commit `4c2b999f8c890b76d057241d29ecda29e0239d79`; blob `d663613d05b5a6512b05fa977012ef272495174e`; SHA-256 `48285bcdc0bba86a01124b8aefee55fdb1e18d4951f4735f775e071324923c43`; tracked target-owned post-migration pre-acceptance candidate |
-| Facade support | launcher SHA-256 `81a7e508d6e582759d92974434b5a6dcf0fb8c59bbab861518d232b123652dc1`; contract SHA-256 `a06b55626ab6ff7b30da92dc00670567254265ef12ec7762f00bb659e21dcab0`; tests SHA-256 `b78dc9128685d34e1d8c7e9d36624cf96feeb9ff4e2eb40fa6e9ea0c70fadebf` |
+| Current facade | `rapp_brainstem/rapp1_facade.py`; source commit intentionally null because these bytes and the ledger share a commit; blob `77ae265ab503243b0437bcff05ade9c9f30dbc3a`; SHA-256 `8194e858e6cc4e0cb71caa578316277762153af43dfd345f3b92ac5bf46c6e54`; tracked target-owned post-migration pre-acceptance candidate |
+| Facade support | launcher SHA-256 `81a7e508d6e582759d92974434b5a6dcf0fb8c59bbab861518d232b123652dc1`; contract SHA-256 `221e84fb902400f622f2f7f589e3522a28d8c7a2223432a99c5a8edec58b040f`; tests SHA-256 `b9fad1ce32b4c1ae2bd82c1d5cfc5d1313d80be01d47c3ea8266ab8158b92ad4` |
 | Current facade migration state | SQLite schema version 3; canonical semantic request-fingerprint version 3; bound legacy version 2 and unbound legacy version 1 remain migration inputs |
-| Current pending errors | Exactly `malformed-request`, `unknown-session`, `idempotency-conflict`, `idempotency-in-progress`, `session-in-progress`, `inference-refused`, `facade-storage-refused`; still candidate-unregistered |
+| Current pending errors | Exactly `malformed-request`, `unknown-session`, `idempotency-in-progress`, `session-in-progress`, `inference-refused`, `facade-storage-refused`; still candidate-unregistered |
 | Recomputed unchanged evidence | `rappid.json`, Commons invite, local ecosystem JSON, kernel archive/manifest, `KERNEL_PIN.json`, cave identity, and installer packaging identity retain the hashes in the machine ledger |
 
 ### Audit baseline and unchanged trust evidence
@@ -85,7 +85,7 @@ listed as unchanged above were recomputed on the rebased tree.
 | Historical root | `rappid:@kody-w/RAPP:0b635450c04249fbb4b1bdb571044dec` |
 | Canonicalized provisional root | `rappid:@kody-w/rapp:0b635450c04249fbb4b1bdb571044dec` |
 | Current stored root | `rappid:@kody-w/rapp:9a8f0a4b5a710e20f4d819a0f37d2a4c9f113b5e78fb3c29e70b54fff48a38f9` |
-| Root migration | unsigned commit `19ff7d9ff483c0eef258a3b2031da1fd74570854`; `rappid.json` SHA-256 `8710b3c45fd660f96d159be41c861bf9fb9bb45acbc40888815d7942d342792e`; `attestation:null`; `upgrade` is a candidate case, not an inferred decision |
+| Root migration | unsigned commit `19ff7d9ff483c0eef258a3b2031da1fd74570854`; current `rappid.json` SHA-256 `59dd3b53e2ed0c7594b3754425938b907600fdf5787b1cef912276aa9d3711b3` after correcting its migration note to tagged-hash truth; `attestation:null`; `upgrade` is a candidate case, not an inferred decision |
 | Retired invite | `pages/tutorials/commons.egg`; 443 bytes; SHA-256 `2731c02f187701c1d07b3a7f5eed5e2073c203ffb4f6c08d00292894e3319a5d`; egg address `a03fa90289eaefcf1a6521cdc10ee17bc706a0bb353e688ad84135d684380fb7` |
 | URL-fixed invite candidate | If the URL is the sole changed unsigned member: `d15305a25cbe6c9aab51a4ed2ab5514345772023a95d658b37fc19303e5778bc`; signing does not change this address |
 | Required Commons target | `rappid:@kody-w/rapp-commons:fea3bd6e80bbac79efc22c4c1185c276d1833925a037ce120330be35e2afc3c7`; `https://kody-w.github.io/rapp-commons/` |
@@ -161,7 +161,7 @@ They are evidence, not authority.
   2. Registry schema and sequence are exact; detached unencoded JWS
      verification passes against an SPKI whose tagged hash equals the
      out-of-band anchor tail.
-  3. Authenticated entries exact-match the protocol pin, six variants, seven
+  3. Authenticated entries exact-match the protocol pin, six variants, six
      error codes, three families, and three re-genesis kinds.
   4. The estate owner matches the independently distributed anchor, not an
      inferred root identity; the three invalid legacy kinds remain
@@ -380,7 +380,7 @@ sidecar path are deliberately `null`. This ledger implementation performs
 **Issue title:** `[Owner action] Approve the public RAPP/1 facade switch after registry closure`
 
 - **Why:** Current main contains the migrated stateful target-owned facade, but
-  it remains pre-acceptance and its seven unchanged candidate errors are
+  it remains pre-acceptance and its six candidate errors are
   unregistered. At the `f71810…` audit baseline, Tier 1/Tier 2 lacked
   `idempotency_key`, Tether sent incompatible `{messages}`, alternate routes
   could bypass the wire or touch the immutable grail, and the `rapp-cave`,
@@ -390,9 +390,10 @@ sidecar path are deliberately `null`. This ledger implementation performs
   target-owned clients through it; close or retire missing canonical-door
   claims; retain `GET /health` as control plane; make all alternate capability
   routes unreachable; prove no grail side effects.
-- **Where:** Current candidate `rapp_brainstem/rapp1_facade.py` at source
-  commit `4c2b999f8c890b76d057241d29ecda29e0239d79`, SHA-256
-  `48285bcdc0bba86a01124b8aefee55fdb1e18d4951f4735f775e071324923c43`,
+- **Where:** Current candidate `rapp_brainstem/rapp1_facade.py` with source
+  commit intentionally null because the bytes and ledger share a commit,
+  SHA-256
+  `8194e858e6cc4e0cb71caa578316277762153af43dfd345f3b92ac5bf46c6e54`,
   plus `run_rapp1_facade.py`; owner-selected public origin; frozen paths in
   `KERNEL_PIN.json`; exact door evidence in the machine ledger.
 - **When:** Only after all four status blockers, the post-migration
@@ -403,7 +404,7 @@ sidecar path are deliberately `null`. This ledger implementation performs
      Deploy without mounting the pinned brainstem app; accept only the exact
      request, persist session/idempotency state, translate privately to the
      opaque grail, normalize the exact response, and keep tools disabled.
-  2. Exact-match the seven emitted errors to fresh authenticated registry
+  2. Exact-match the six emitted errors to fresh authenticated registry
      entries.
   3. Permit error `step` only as `"1"`, `"1a"`, `"2"`, `"3"`, `"4"`, `"5"`,
      `"6"`, or `null`.
@@ -426,7 +427,7 @@ sidecar path are deliberately `null`. This ledger implementation performs
   dispositions; all non-owner gates green.
 - **Exact acceptance:**
   1. Deployment source, authenticated registry, and this ledger contain exactly
-     the same seven error codes.
+     the same six error codes.
   2. `python3 -m pytest rapp_brainstem/test_rapp1_facade.py -q` passes and the
      same cases pass against the public origin.
   3. Every emitted step exact-matches `"1"`, `"1a"`, `"2"`, `"3"`, `"4"`,
@@ -437,7 +438,7 @@ sidecar path are deliberately `null`. This ledger implementation performs
      worker/grail routes are unreachable or return 404/410 without execution;
      target-owned clients do not bypass the facade.
   5. The root door serves exact target bytes with SHA-256
-     `8710b3c45fd660f96d159be41c861bf9fb9bb45acbc40888815d7942d342792e`;
+     `59dd3b53e2ed0c7594b3754425938b907600fdf5787b1cef912276aa9d3711b3`;
      every 404 claim is served from an authorized pinned publication or
      retired, with no installer deployment or byte change.
   6. Frozen hashes remain

@@ -86,9 +86,6 @@ def post_json(client, value: dict[str, Any]):
 def assert_error(response, code: str) -> None:
     assert response.status_code == 422
     assert response.get_json() == {"error": {"code": code, "step": None}}
-    assert response.data == (
-        f'{{"error":{{"code":"{code}","step":null}}}}'.encode()
-    )
 
 
 def create_v1_completed_database(path: Path) -> bytes:
@@ -312,7 +309,7 @@ def test_server_owned_history_and_unknown_session(test_dir):
     assert len(inference.calls) == 2
 
 
-def test_creation_idempotency_is_global_byte_equivalent_and_conflict_safe(
+def test_creation_idempotency_is_global_and_replays_original_terminal_bytes(
     test_dir,
 ):
     inference = RecordingInference()
@@ -336,15 +333,15 @@ def test_creation_idempotency_is_global_byte_equivalent_and_conflict_safe(
                 "ignored": "changed but irrelevant",
             },
         )
-        conflict = post_json(
+        changed_retry = post_json(
             client,
             {"user_input": "changed", "idempotency_key": "create-key"},
         )
 
-    assert first.status_code == duplicate.status_code == 200
+    assert first.status_code == duplicate.status_code == changed_retry.status_code == 200
     assert duplicate.data == first.data
+    assert changed_retry.data == first.data
     assert duplicate.get_json()["session_id"] == first.get_json()["session_id"]
-    assert_error(conflict, "idempotency-conflict")
     assert len(inference.calls) == 1
     with sqlite3.connect(database) as connection:
         stored, fingerprint_version = connection.execute(
@@ -385,7 +382,7 @@ def test_existing_session_idempotency_is_scoped_by_session(test_dir):
                 "idempotency_key": "shared-key",
             },
         )
-        conflict_a = post_json(
+        changed_retry_a = post_json(
             client,
             {
                 "user_input": "must-not-run",
@@ -403,7 +400,7 @@ def test_existing_session_idempotency_is_scoped_by_session(test_dir):
         )
 
     assert duplicate_a.data == first_a.data
-    assert_error(conflict_a, "idempotency-conflict")
+    assert changed_retry_a.data == first_a.data
     assert first_b.status_code == 200
     assert len(inference.calls) == 4
     assert inference.calls[-1][0][-1]["content"] == "turn-b"
@@ -454,7 +451,7 @@ def test_concurrent_duplicate_runs_inference_once(test_dir):
             duplicate = post_json(
                 client,
                 {
-                    "user_input": "concurrent",
+                    "user_input": "different content while pending",
                     "session_id": session_id,
                     "idempotency_key": "same",
                 },
@@ -514,7 +511,6 @@ def test_crash_leaves_pending_reservation_that_fails_closed(test_dir):
         (b"{}", "application/json"),
         (b'{"user_input":null}', "application/json"),
         (b'{"user_input":3}', "application/json"),
-        (b'{"user_input":"  "}', "application/json"),
         (
             b'{"user_input":"ok","session_id":null}',
             "application/json",
@@ -554,7 +550,7 @@ def test_crash_leaves_pending_reservation_that_fails_closed(test_dir):
         (b'{"user_input":"ok"}', "text/plain"),
     ],
 )
-def test_malformed_and_empty_requests_are_exact_422(
+def test_malformed_requests_are_exact_422(
     test_dir, body, content_type
 ):
     inference = RecordingInference()
@@ -565,6 +561,65 @@ def test_malformed_and_empty_requests_are_exact_422(
 
     assert_error(response, "malformed-request")
     assert inference.calls == []
+
+
+@pytest.mark.parametrize("user_input", ["", " ", "\n\t"])
+def test_empty_and_whitespace_user_input_is_preserved(test_dir, user_input):
+    inference = RecordingInference()
+    app = make_app(test_dir / "facade.sqlite3", inference)
+
+    with app.test_client() as client:
+        response = post_json(client, {"user_input": user_input})
+
+    assert response.status_code == 200
+    assert inference.calls == [
+        ([{"role": "user", "content": user_input}], None)
+    ]
+    assert response.get_json()["response"] == f"reply:{user_input}"
+
+
+def test_user_input_is_not_normalized_and_new_assistant_text_is_nfc(test_dir):
+    decomposed = "Cafe\u0301"
+
+    class DecomposedInference:
+        def __init__(self):
+            self.calls = []
+
+        def __call__(self, messages):
+            self.calls.append(copy.deepcopy(list(messages)))
+            return completion(decomposed)
+
+    inference = DecomposedInference()
+    app = make_app(test_dir / "facade.sqlite3", inference)
+
+    with app.test_client() as client:
+        first = post_json(
+            client,
+            {
+                "user_input": decomposed,
+                "idempotency_key": "nfc-response",
+            },
+        )
+        replay = post_json(
+            client,
+            {
+                "user_input": "different retry content",
+                "idempotency_key": "nfc-response",
+            },
+        )
+        second = post_json(
+            client,
+            {
+                "user_input": "next",
+                "session_id": first.get_json()["session_id"],
+            },
+        )
+
+    assert inference.calls[0][-1]["content"] == decomposed
+    assert first.get_json()["response"] == "Café"
+    assert replay.data == first.data
+    assert inference.calls[1][1] == {"role": "assistant", "content": "Café"}
+    assert second.status_code == 200
 
 
 def test_oversized_request_is_exact_422(test_dir):
@@ -980,7 +1035,7 @@ def test_v1_through_old_v2_preserves_unbound_completed_and_pending_rows(
 
 
 @pytest.mark.parametrize("transitional", [False, True])
-def test_v2_fingerprint_replays_then_migrates_to_current(
+def test_v2_fingerprint_replays_for_changed_content_without_rewriting(
     test_dir, transitional
 ):
     database = test_dir / "facade-v2.sqlite3"
@@ -999,7 +1054,7 @@ def test_v2_fingerprint_replays_then_migrates_to_current(
                 "idempotency_key": "legacy-key",
             },
         )
-        conflict = post_json(
+        changed_retry = post_json(
             client,
             {
                 "user_input": "different turn",
@@ -1010,12 +1065,13 @@ def test_v2_fingerprint_replays_then_migrates_to_current(
 
     assert replay.status_code == 200
     assert replay.data == legacy_body
-    assert_error(conflict, "idempotency-conflict")
+    assert changed_retry.status_code == 200
+    assert changed_retry.data == legacy_body
     assert inference.calls == []
 
     with sqlite3.connect(database) as connection:
         version = connection.execute("PRAGMA user_version").fetchone()[0]
-        migrated, fingerprint_version = connection.execute(
+        stored, fingerprint_version = connection.execute(
             """
             SELECT request_canonical, request_fingerprint_version
             FROM idempotency
@@ -1023,24 +1079,18 @@ def test_v2_fingerprint_replays_then_migrates_to_current(
             """
         ).fetchone()
     assert version == 3
-    assert migrated != legacy_fingerprint
-    assert migrated == canonical_bytes(
-        {
-            "session_id": "legacy-session",
-            "user_input": "legacy turn",
-        }
-    )
-    assert fingerprint_version == FINGERPRINT_VERSION_CANONICAL_SEMANTIC
+    assert stored == legacy_fingerprint
+    assert fingerprint_version == 2
 
 
-def test_v2_fingerprint_conflict_does_not_replay_or_migrate(test_dir):
+def test_v2_fingerprint_mismatch_still_replays_terminal_bytes(test_dir):
     database = test_dir / "facade-v2-conflict.sqlite3"
-    _, legacy_fingerprint = create_v2_completed_database(database)
+    legacy_body, legacy_fingerprint = create_v2_completed_database(database)
     inference = RecordingInference()
     app = make_app(database, inference)
 
     with app.test_client() as client:
-        conflict = post_json(
+        replay = post_json(
             client,
             {
                 "user_input": "not the legacy turn",
@@ -1049,7 +1099,8 @@ def test_v2_fingerprint_conflict_does_not_replay_or_migrate(test_dir):
             },
         )
 
-    assert_error(conflict, "idempotency-conflict")
+    assert replay.status_code == 200
+    assert replay.data == legacy_body
     assert inference.calls == []
     with sqlite3.connect(database) as connection:
         stored, fingerprint_version = connection.execute(
@@ -1088,12 +1139,51 @@ def test_loopback_separate_port_and_external_default_store(test_dir):
     assert set(PENDING_REGISTRY_ERROR_CODES) == {
         "malformed-request",
         "unknown-session",
-        "idempotency-conflict",
         "idempotency-in-progress",
         "session-in-progress",
         "inference-refused",
         "facade-storage-refused",
     }
+
+
+def test_chat_cors_is_limited_to_loopback_ui_origins(test_dir):
+    inference = RecordingInference()
+    app = make_app(test_dir / "facade.sqlite3", inference)
+
+    with app.test_client() as client:
+        preflight = client.options(
+            "/chat",
+            headers={
+                "Origin": "http://127.0.0.1:7071",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "Content-Type",
+            },
+        )
+        allowed = client.post(
+            "/chat",
+            data='{"user_input":""}',
+            content_type="application/json",
+            headers={"Origin": "http://127.0.0.1:7071"},
+        )
+        denied = client.post(
+            "/chat",
+            data='{"user_input":"must not run"}',
+            content_type="application/json",
+            headers={"Origin": "https://example.test"},
+        )
+
+    assert preflight.status_code == 204
+    assert preflight.headers["Access-Control-Allow-Origin"] == (
+        "http://127.0.0.1:7071"
+    )
+    assert preflight.headers["Access-Control-Allow-Methods"] == "POST"
+    assert allowed.status_code == 200
+    assert allowed.headers["Access-Control-Allow-Origin"] == (
+        "http://127.0.0.1:7071"
+    )
+    assert_error(denied, "malformed-request")
+    assert "Access-Control-Allow-Origin" not in denied.headers
+    assert len(inference.calls) == 1
 
 
 def test_private_production_boundary_forces_tools_none(monkeypatch):

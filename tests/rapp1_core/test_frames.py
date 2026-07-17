@@ -198,6 +198,29 @@ def test_duplicate_frame_key_and_exponent_seq_are_refused() -> None:
     assert report.error_code == "invalid-seq"
 
 
+def test_build_frame_requires_nfc_payload_keys_without_normalizing_artifacts() -> None:
+    with pytest.raises(FrameError) as error:
+        build_frame(
+            kind="body.pulse",
+            stream_id=RID1,
+            seq=0,
+            utc=UTC0,
+            payload={"nested": [{"Cafe\u0301": True}]},
+            prev=None,
+            prev_wave=None,
+        )
+    assert error.value.code == "invalid-payload"
+
+    existing = _body_genesis()
+    existing["payload"] = {"Cafe\u0301": True}
+    _rehash(existing)
+    inspected = inspect_frame(existing, declared_stream_id=RID1)
+    assert inspected.structurally_valid
+    assert inspected.frame is not None
+    assert "Cafe\u0301" in inspected.frame["payload"]
+    assert "Café" not in inspected.frame["payload"]
+
+
 def test_particle_then_wave_fail_in_order() -> None:
     frame = _body_genesis()
     frame["payload"]["tampered"] = True

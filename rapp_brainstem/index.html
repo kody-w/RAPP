@@ -1819,6 +1819,7 @@
   // talk to themselves, regardless of any stale tether in localStorage.
   const _isCloudHost = /github\.io$/i.test(window.location.hostname) || /github\.com$/i.test(window.location.hostname);
   const API = (_isCloudHost && (_tetherParam || _persistedTether)) || '';
+  const RAPP1_FACADE_CHAT = 'http://127.0.0.1:7073/chat';
   let sessionId = null;
   let history = [];
   let fullTranscript = [];
@@ -2827,16 +2828,8 @@
   });
 
   // ── Chat rendering ──
-  // Coerce brainstem agent_logs into the joined "[name] output" string
-  // the chat bubble's logs box expects. Accepts:
-  //   - null/undefined → ''
-  //   - string         → trimmed as-is (back-compat for /chat's
-  //                      agent_logs_text field and old transcripts)
-  //   - array          → flattened from {name, args, output} entries
-  //                      (the canonical /chat agent_logs shape)
+  // Render only the exact §8 agent_logs array.
   function logsToText(logs) {
-    if (!logs) return '';
-    if (typeof logs === 'string') return logs.trim();
     if (Array.isArray(logs)) {
       return logs
         .map(e => `[${e.name || '?'}] ${e.output != null ? e.output : (e.error || '')}`)
@@ -2844,6 +2837,38 @@
         .trim();
     }
     return '';
+  }
+
+  function validateFacadeEnvelope(httpResponse, value) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      throw new Error('invalid RAPP/1 facade envelope');
+    }
+    const keys = Object.keys(value).sort();
+    if (httpResponse.status === 200) {
+      if (
+        keys.join(',') !== 'agent_logs,response,session_id' ||
+        typeof value.response !== 'string' ||
+        !Array.isArray(value.agent_logs) ||
+        value.agent_logs.length !== 0 ||
+        typeof value.session_id !== 'string'
+      ) {
+        throw new Error('invalid RAPP/1 200 envelope');
+      }
+      return 'success';
+    }
+    if (
+      httpResponse.status === 422 &&
+      keys.join(',') === 'error' &&
+      value.error &&
+      typeof value.error === 'object' &&
+      !Array.isArray(value.error) &&
+      Object.keys(value.error).sort().join(',') === 'code,step' &&
+      typeof value.error.code === 'string' &&
+      value.error.step === null
+    ) {
+      return 'error';
+    }
+    throw new Error(`invalid RAPP/1 facade status/envelope (${httpResponse.status})`);
   }
 
   function appendMsg(role, text, logs) {
@@ -2940,8 +2965,7 @@
 
   // ── Send ──
   async function sendMessage() {
-    const text = input.value.trim();
-    if (!text) return;
+    const text = input.value;
 
     clog('chat.send', { input_len: text.length, history_len: history.length });
 
@@ -2959,10 +2983,10 @@
     appendTyping();
 
     try {
-      const body = { user_input: text, conversation_history: history };
+      const body = { user_input: text };
       if (sessionId) body.session_id = sessionId;
 
-      const r = await fetch(`${API}/chat`, {
+      const r = await fetch(RAPP1_FACADE_CHAT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
@@ -2970,38 +2994,13 @@
 
       const d = await r.json();
       removeTyping();
-      // brainstem ships agent_logs as a structured array of
-      // {name, args, output, error?} entries, with a joined-string
-      // back-compat at agent_logs_text. The chat bubble's logs box
-      // expects the joined "[name] output" form, so flatten here.
-      const logsText = logsToText(d.agent_logs_text || d.agent_logs);
-      if (logsText) console.log('[brainstem] agent_logs:', logsText.slice(0, 200));
+      const envelopeKind = validateFacadeEnvelope(r, d);
 
-      if (d.error) {
-        clog('chat.error_response', { error: d.error.slice(0, 200) });
-        if (d.error.startsWith('NO_COPILOT_ACCESS:')) {
-          const username = d.error.split(':')[1] || 'this account';
-          const wrap = appendMsg('system', '');
-          wrap.querySelector('.bubble').innerHTML =
-            `<strong>${username}</strong> doesn't have GitHub Copilot access. ` +
-            `<a href="#" onclick="switchAccount(); return false;" style="color:#58a6ff">Switch account</a> ` +
-            `or <a href="https://github.com/github-copilot/signup" target="_blank" style="color:#58a6ff">sign up for Copilot</a>.`;
-          localStorage.removeItem('brainstem_auth');
-        } else if (d.error.includes('usage limit') || d.error.includes('quota')) {
-          const wrap = appendMsg('system', '');
-          wrap.querySelector('.bubble').innerHTML =
-            `${d.error}<br>` +
-            `<a href="#" onclick="switchAccount(); return false;" style="color:#58a6ff;font-size:12px">🔄 Switch to a different account</a>`;
-        } else if (d.error.includes('Not authenticated') || d.error.includes('Copilot') || d.error.includes('Sign in')) {
-          const wrap = appendMsg('system', '');
-          wrap.querySelector('.bubble').innerHTML =
-            'Not signed in. <a href="#" onclick="showLoginOverlay(); return false;" style="color:#58a6ff">Sign in with GitHub</a> to use Copilot AI.';
-        } else {
-          const wrap = appendMsg('system', '');
-          wrap.querySelector('.bubble').innerHTML =
-            `Error: ${d.error}<br><a href="#" onclick="shareWithAdmin(); return false;" style="color:#f0883e;font-size:12px">🆘 Share with admin for help</a>`;
-        }
+      if (envelopeKind === 'error') {
+        clog('chat.error_response', { code: d.error.code, step: d.error.step });
+        appendMsg('system', `Error: ${d.error.code}`);
       } else {
+        const logsText = logsToText(d.agent_logs);
         clog('chat.response', { response_len: d.response?.length, has_agents: !!d.agent_logs });
         // A successful chat round-trip is the strongest possible health
         // signal — kernel up, Copilot auth working, agents loadable.
@@ -3023,23 +3022,17 @@
         fullTranscript.push({
           role: 'assistant',
           content: d.response,
-          agent_logs: d.agent_logs || null,
-          voice_response: d.voice_response || null,
+          agent_logs: d.agent_logs,
           model: document.getElementById('model-select')?.value || null,
           session_id: d.session_id,
           timestamp: new Date().toISOString()
         });
         appendMsg('assistant', d.response, logsText || null);
-        // Voice playback contract.
-        // Prefer |||VOICE||| block (server pre-extracts to d.voice_response);
-        // fall back to a stripped, capped slice of the main reply when the
-        // model forgot the voice slot AND voice mode is on. RAPP.Voice is
-        // defined by the self-contained contract above.
-        const resp = { voice: d.voice_response || '', text: d.response || '' };
+        const resp = { voice: '', text: d.response };
         const voiceText = (window.RAPP && window.RAPP.Voice && window.RAPP.Voice.pickVoiceText)
           ? RAPP.Voice.pickVoiceText(resp)
-          : (resp.voice || (voiceMode ? resp.text : ''));
-        if (voiceText && (d.voice_response || voiceMode)) {
+          : (voiceMode ? resp.text : '');
+        if (voiceText && voiceMode) {
           speakText(voiceText);
         }
       }

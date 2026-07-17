@@ -16,7 +16,6 @@ COMMONS_PATH = ROOT / "pages/tutorials/commons.egg"
 EXPECTED_FACADE_CODES = [
     "malformed-request",
     "unknown-session",
-    "idempotency-conflict",
     "idempotency-in-progress",
     "session-in-progress",
     "inference-refused",
@@ -204,18 +203,15 @@ class Rapp1OwnerActionLedgerTests(unittest.TestCase):
 
         evidence = self.ledger["known_evidence"]["facade_current"]
         self.assertEqual(evidence["evidence_state"], "current-post-migration")
-        self.assertEqual(
-            evidence["source_commit"],
-            "4c2b999f8c890b76d057241d29ecda29e0239d79",
-        )
+        self.assertIsNone(evidence["source_commit"])
         self.assertEqual(evidence["path"], "rapp_brainstem/rapp1_facade.py")
         self.assertEqual(
             evidence["path_sha256"],
-            "48285bcdc0bba86a01124b8aefee55fd"
-            "b1e18d4951f4735f775e071324923c43",
+            "8194e858e6cc4e0cb71caa5783162777"
+            "62153af43dfd345f3b92ac5bf46c6e54",
         )
         self.assertEqual(
-            evidence["git_blob"], "d663613d05b5a6512b05fa977012ef272495174e"
+            evidence["git_blob"], "77ae265ab503243b0437bcff05ade9c9f30dbc3a"
         )
         self.assertIn("post-migration pre-acceptance", evidence["path_state"])
         self.assertEqual(evidence["candidate_error_codes"], EXPECTED_FACADE_CODES)
@@ -506,9 +502,7 @@ class Rapp1OwnerActionLedgerTests(unittest.TestCase):
             "[`RAPP1_OWNER_ACTIONS.json`](./RAPP1_OWNER_ACTIONS.json)", status
         )
 
-        for relative_path, expected_hash in current[
-            "unchanged_path_hashes"
-        ].items():
+        for relative_path, expected_hash in current["current_path_hashes"].items():
             with self.subTest(path=relative_path):
                 self.assertEqual(
                     hashlib.sha256((ROOT / relative_path).read_bytes()).hexdigest(),
@@ -617,9 +611,14 @@ class Rapp1OwnerActionLedgerTests(unittest.TestCase):
     def test_canonical_door_blockers_are_covered_by_facade_gate(self):
         doors = self.ledger["known_evidence"]["canonical_doors"]
         self.assertEqual(doors["root"]["status"], 200)
-        self.assertIs(doors["root"]["byte_equal_to_target"], True)
+        self.assertIs(doors["root"]["byte_equal_to_target"], False)
         self.assertEqual(
             doors["root"]["target_sha256"],
+            "59dd3b53e2ed0c7594b3754425938b90"
+            "7600fdf5787b1cef912276aa9d3711b3",
+        )
+        self.assertEqual(
+            doors["root"]["observed_sha256"],
             "8710b3c45fd660f96d159be41c861bf9"
             "fb9bb45acbc40888815d7942d342792e",
         )

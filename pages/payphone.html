@@ -185,16 +185,22 @@ brainstems and kited vTwins alike (Art. XLVII).</p>
   }
   document.getElementById('signin').addEventListener('click', signIn);
 
-  // Browser mirror of the documented derivation (ESTATE_SPEC §5).
-  // Canonical form only (the retired v2 form is refused, as on the live path);
-  // also accepts the bare owner/slug shorthand as a convenience input.
-  function parseNumber(s) {
-    s = (s || '').trim();
-    let m = s.match(/^rappid:@([A-Za-z0-9][A-Za-z0-9._-]*)\/([A-Za-z0-9][A-Za-z0-9._-]*):([a-f0-9]{32,64})$/);
-    if (m) return { owner: m[1], slug: m[2] };
-    m = s.match(/^([A-Za-z0-9][A-Za-z0-9._-]*)\/([A-Za-z0-9][A-Za-z0-9._-]*)$/);
+  // Exact RAPP/1 §6.1 parser. Repository-locator convenience is deliberately
+  // separate and is never treated as an identity parser.
+  function parseRappid(s) {
+    if (typeof s !== 'string') return null;
+    const m = s.match(/^rappid:@([a-z0-9]+(?:-[a-z0-9]+)*)\/([a-z0-9]+(?:-[a-z0-9]+)*):([0-9a-f]{64})$/);
+    if (!m || m[1].length > 39 || m[2].length > 100) return null;
+    return { owner: m[1], slug: m[2], tail: m[3], form: 'rappid' };
+  }
+  function parseRepoLocator(s) {
+    if (typeof s !== 'string') return null;
+    const m = s.trim().match(/^([A-Za-z0-9][A-Za-z0-9._-]*)\/([A-Za-z0-9][A-Za-z0-9._-]*)$/);
     if (m) return { owner: m[1], slug: m[2] };
     return null;
+  }
+  function parseNumber(s) {
+    return parseRappid(s) || parseRepoLocator(s);
   }
 
   async function gh(path, token) {
@@ -336,7 +342,7 @@ brainstems and kited vTwins alike (Art. XLVII).</p>
   }
 
   document.getElementById('shareBtn').addEventListener('click', () => {
-    const raw = document.getElementById('rappid').value.trim();
+    const raw = document.getElementById('rappid').value;
     if (!parseNumber(raw)) {
       document.getElementById('share').innerHTML =
         '<div class="card dead">Type a door number (rappid or owner/repo) first, then share it.</div>';

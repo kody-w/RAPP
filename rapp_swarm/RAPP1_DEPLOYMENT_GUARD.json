@@ -4,6 +4,6 @@
   "rapp1_packaging_allowed": false,
   "rapp1_advertising_allowed": false,
   "blocked_entrypoint": "function_app.py",
-  "reason": "The retained legacy Tier-2 runtime does not implement the RAPP/1 wire contract.",
+  "reason": "The legacy Tier-2 entrypoint is now a non-executable historical tombstone and does not implement the RAPP/1 wire contract.",
   "guidance": "../RAPP1_STATUS.md"
 }

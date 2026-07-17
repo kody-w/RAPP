@@ -91,38 +91,70 @@ def validate_egg_path(value: str) -> str:
         raise EggError("invalid-egg-path", "egg path must be a non-empty string")
     if unicodedata.normalize("NFC", value) != value:
         raise EggError("invalid-egg-path", "egg path must be Unicode NFC")
-    windows_path = PureWindowsPath(value)
     if (
         value.startswith("/")
         or "\\" in value
         or "\x00" in value
-        or windows_path.drive
-        or windows_path.root
-        or windows_path.is_absolute()
     ):
         raise EggError(
             "invalid-egg-path",
-            "egg path must be relative POSIX without drive/UNC/backslash/NUL",
+            "egg path must be relative POSIX without leading slash/backslash/NUL",
         )
     segments = value.split("/")
     if any(not segment or segment in {".", ".."} for segment in segments):
         raise EggError(
             "invalid-egg-path", "egg path contains an empty, dot, or dot-dot segment"
         )
-    if any(
-        ":" in segment
-        or segment.endswith((" ", "."))
-        or PureWindowsPath(segment).is_reserved()
-        for segment in segments
-    ):
-        raise EggError(
-            "invalid-egg-path", "egg path has unsafe Windows filename semantics"
-        )
     try:
         value.encode("utf-8", errors="strict")
     except UnicodeEncodeError as exc:
         raise EggError("invalid-egg-path", "egg path is not strict UTF-8") from exc
     return value
+
+
+def _validate_extraction_path(
+    value: str, *, platform: str | None = None
+) -> str:
+    target_platform = os.name if platform is None else platform
+    if target_platform == "posix":
+        return value
+    if target_platform != "nt":
+        raise EggError(
+            "unsafe-extraction-path",
+            f"unsupported extraction platform: {target_platform!r}",
+        )
+    windows_path = PureWindowsPath(value)
+    segments = value.split("/")
+    if (
+        windows_path.drive
+        or windows_path.root
+        or windows_path.is_absolute()
+        or any(
+            ":" in segment
+            or segment.endswith((" ", "."))
+            or PureWindowsPath(segment).is_reserved()
+            for segment in segments
+        )
+    ):
+        raise EggError(
+            "unsafe-extraction-path",
+            f"egg path cannot be represented safely on Windows: {value!r}",
+        )
+    return value
+
+
+def _require_nfc_payload_keys(value: Any) -> None:
+    if type(value) is dict:
+        for key, child in value.items():
+            if type(key) is str and unicodedata.normalize("NFC", key) != key:
+                raise EggError(
+                    "invalid-egg-payload",
+                    "producer payload object keys must be Unicode NFC",
+                )
+            _require_nfc_payload_keys(child)
+    elif type(value) is list:
+        for child in value:
+            _require_nfc_payload_keys(child)
 
 
 def _member_filename(rappid: Rappid) -> str:
@@ -707,6 +739,8 @@ def _accept_inspected_egg(
 ) -> EggInspection:
     if not inspected.structurally_valid:
         return inspected
+    if inspected.signature_kids:
+        return replace(inspected, trust_status=TrustStatus.UNVERIFIED)
     if registry is None or not registry.authenticated:
         return inspected
     if not registry.fresh:
@@ -718,13 +752,27 @@ def _accept_inspected_egg(
             ),
         )
         return replace(inspected, trust_status=TrustStatus.STALE, checks=checks)
-    if inspected.signature_kids:
-        return replace(inspected, trust_status=TrustStatus.UNVERIFIED)
+    assert inspected.manifest is not None
+    variant = inspected.manifest["variant"]
+    if variant not in registry.registered_egg_variants:
+        checks = inspected.checks[:-1] + (
+            CheckResult(
+                "trust",
+                CheckStatus.UNVERIFIED,
+                f"authenticated registry has no exact {variant!r} egg variant",
+            ),
+        )
+        return replace(
+            inspected,
+            trust_status=TrustStatus.UNVERIFIED,
+            checks=checks,
+        )
     checks = inspected.checks[:-1] + (
         CheckResult(
             "trust",
             CheckStatus.PASS,
-            "fresh authenticated registry evidence supplied; egg is unsigned",
+            "fresh authenticated registry exactly registers this unsigned "
+            "egg variant",
         ),
     )
     return replace(
@@ -756,6 +804,17 @@ def pack_egg(
 
     if variant not in VARIANTS:
         raise EggError("invalid-egg-variant", "variant is not one of the six variants")
+    _require_nfc_payload_keys(payload)
+    if (
+        variant == "session"
+        and type(payload) is dict
+        and type(payload.get("runtime")) is str
+        and unicodedata.normalize("NFC", payload["runtime"]) != payload["runtime"]
+    ):
+        raise EggError(
+            "invalid-session-payload",
+            "producer session runtime identifier must be Unicode NFC",
+        )
     supplied_files = {} if files is None else dict(files)
     normalized_files: dict[str, bytes] = {}
     for path, content in supplied_files.items():
@@ -852,6 +911,8 @@ def extract_egg(
     assert inspected.report.manifest is not None
     if inspected.report.manifest["variant"] in JSON_VARIANTS:
         raise EggError("json-egg-not-extractable", "JSON variants have no file tree")
+    for member in inspected.members:
+        _validate_extraction_path(member.name)
 
     target = Path(destination)
     if target.exists():

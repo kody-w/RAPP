@@ -59,8 +59,8 @@
     "status_path": "RAPP1_STATUS.md",
     "status_sha256": "5d97b9a7ff9917a21d667fd0006a6cb2346f03738dfbcdff96c6ad4a89aa9fb6",
     "status_state": "Owner-action ledger links and the post-migration Active-path residual are both present; the repository remains not fully conformant.",
-    "unchanged_path_hashes": {
-      "rappid.json": "8710b3c45fd660f96d159be41c861bf9fb9bb45acbc40888815d7942d342792e",
+    "current_path_hashes": {
+      "rappid.json": "59dd3b53e2ed0c7594b3754425938b907600fdf5787b1cef912276aa9d3711b3",
       "pages/tutorials/commons.egg": "2731c02f187701c1d07b3a7f5eed5e2073c203ffb4f6c08d00292894e3319a5d",
       "specs/ecosystem-spec.json": "0eb8146b62af8e8473d2ca8944ed8aff69e18e41a143eb1ef466f3c3fc153616",
       "rapp_kernel/manifest.json": "a2826eb8820f4487948bfdb1bf3f80b4ca8ccdf902553d5d109cb8de3bb85889",
@@ -73,7 +73,7 @@
   "known_evidence": {
     "root_identity": {
       "path": "rappid.json",
-      "path_sha256": "8710b3c45fd660f96d159be41c861bf9fb9bb45acbc40888815d7942d342792e",
+      "path_sha256": "59dd3b53e2ed0c7594b3754425938b907600fdf5787b1cef912276aa9d3711b3",
       "historical_stored_rappid": "rappid:@kody-w/RAPP:0b635450c04249fbb4b1bdb571044dec",
       "canonicalized_provisional_rappid": "rappid:@kody-w/rapp:0b635450c04249fbb4b1bdb571044dec",
       "historical_v2_rappid": "rappid:v2:prototype:@rapp/origin:0b635450c04249fbb4b1bdb571044dec@github.com/kody-w/RAPP",
@@ -81,6 +81,7 @@
       "legacy_uuid": "0b635450-c042-49fb-b4b1-bdb571044dec",
       "migration_commit": "19ff7d9ff483c0eef258a3b2031da1fd74570854",
       "migration_commit_authentication": "false/unsigned",
+      "migration_note_corrected_to_tagged_hash_truth": true,
       "attestation": null,
       "candidate_reanchor_case": "upgrade",
       "owner_selected_reanchor_case": null,
@@ -180,8 +181,9 @@
         "url": "https://raw.githubusercontent.com/kody-w/rapp/main/rappid.json",
         "status": 200,
         "target_path": "rappid.json",
-        "target_sha256": "8710b3c45fd660f96d159be41c861bf9fb9bb45acbc40888815d7942d342792e",
-        "byte_equal_to_target": true
+        "target_sha256": "59dd3b53e2ed0c7594b3754425938b907600fdf5787b1cef912276aa9d3711b3",
+        "observed_sha256": "8710b3c45fd660f96d159be41c861bf9fb9bb45acbc40888815d7942d342792e",
+        "byte_equal_to_target": false
       },
       "cave": {
         "url": "https://raw.githubusercontent.com/kody-w/rapp-cave/main/rappid.json",
@@ -224,18 +226,17 @@
     "facade_current": {
       "evidence_state": "current-post-migration",
       "observed_against_main_commit": "4c2b999f8c890b76d057241d29ecda29e0239d79",
-      "source_commit": "4c2b999f8c890b76d057241d29ecda29e0239d79",
+      "source_commit": null,
       "path": "rapp_brainstem/rapp1_facade.py",
-      "path_state": "tracked regular file mode 100644; bytes match target main; target-owned post-migration pre-acceptance candidate; not publicly approved",
+      "path_state": "tracked regular file mode 100644; target-owned post-migration pre-acceptance candidate corrected in this ledger's containing commit; not publicly approved",
       "git_mode": "100644",
-      "git_blob": "d663613d05b5a6512b05fa977012ef272495174e",
-      "path_sha256": "48285bcdc0bba86a01124b8aefee55fdb1e18d4951f4735f775e071324923c43",
+      "git_blob": "77ae265ab503243b0437bcff05ade9c9f30dbc3a",
+      "path_sha256": "8194e858e6cc4e0cb71caa578316277762153af43dfd345f3b92ac5bf46c6e54",
       "route_candidate": "POST /chat",
       "control_route": "GET /health",
       "candidate_error_codes": [
         "malformed-request",
         "unknown-session",
-        "idempotency-conflict",
         "idempotency-in-progress",
         "session-in-progress",
         "inference-refused",
@@ -261,8 +262,8 @@
       },
       "supporting_paths": {
         "rapp_brainstem/run_rapp1_facade.py": "81a7e508d6e582759d92974434b5a6dcf0fb8c59bbab861518d232b123652dc1",
-        "rapp_brainstem/RAPP1_FACADE.md": "a06b55626ab6ff7b30da92dc00670567254265ef12ec7762f00bb659e21dcab0",
-        "rapp_brainstem/test_rapp1_facade.py": "b78dc9128685d34e1d8c7e9d36624cf96feeb9ff4e2eb40fa6e9ea0c70fadebf"
+        "rapp_brainstem/RAPP1_FACADE.md": "221e84fb902400f622f2f7f589e3522a28d8c7a2223432a99c5a8edec58b040f",
+        "rapp_brainstem/test_rapp1_facade.py": "b9fad1ce32b4c1ae2bd82c1d5cfc5d1313d80be01d47c3ea8266ab8158b92ad4"
       },
       "publicly_approved": false
     },
@@ -309,7 +310,6 @@
     "facade_error_codes": [
       "malformed-request",
       "unknown-session",
-      "idempotency-conflict",
       "idempotency-in-progress",
       "session-in-progress",
       "inference-refused",
@@ -449,7 +449,7 @@
         },
         {
           "id": "registry-candidate-namespace-coverage",
-          "procedure": "Exact-match the authenticated entries against the approved protocol pin, all six egg variants, all seven facade error codes, the memory/body/swarm families, and the three family-specific re-genesis kinds in this ledger.",
+          "procedure": "Exact-match the authenticated entries against the approved protocol pin, all six egg variants, all six facade error codes, the memory/body/swarm families, and the three family-specific re-genesis kinds in this ledger.",
           "pass_condition": "Every approved value has one live entry, no omitted value is accepted, and any additional kind has an explicit reviewed family."
         },
         {
@@ -698,12 +698,12 @@
       "title": "Approve the public RAPP/1 facade switch",
       "issue_title": "[Owner action] Approve the public RAPP/1 facade switch after registry closure",
       "status": "owner-action-required",
-      "why": "Current main contains the migrated stateful target-owned facade, but it remains pre-acceptance and its seven unchanged candidate error codes are unregistered. The f71810 audit-baseline Tier 1 and Tier 2 handlers had no idempotency_key, Tether emitted an incompatible request, alternate capability routes could bypass the wire, and three claimed canonical identity doors returned 404. Publishing before the remaining gates close would turn a candidate into a false conformance claim and could route around the immutable-grail boundary.",
+      "why": "Current main contains the migrated stateful target-owned facade, but it remains pre-acceptance and its six candidate error codes are unregistered. The f71810 audit-baseline Tier 1 and Tier 2 handlers had no idempotency_key, Tether emitted an incompatible request, alternate capability routes could bypass the wire, and three claimed canonical identity doors returned 404. Publishing before the remaining gates close would turn a candidate into a false conformance claim and could route around the immutable-grail boundary.",
       "what": "The owner must approve one public POST /chat route backed only by the target-owned stateful facade after registry and migration closure, prove all candidate error codes are registered, constrain error steps to the exact standard domain, route target-owned clients through the gateway, close or explicitly retire missing canonical-door claims, ensure alternate capability routes are unavailable, and verify that requests cannot mutate, mount, deploy, or execute through pinned grail paths.",
       "where": {
         "candidate_source": "rapp_brainstem/rapp1_facade.py",
-        "current_source_commit": "4c2b999f8c890b76d057241d29ecda29e0239d79",
-        "current_source_sha256": "48285bcdc0bba86a01124b8aefee55fdb1e18d4951f4735f775e071324923c43",
+        "current_source_commit": null,
+        "current_source_sha256": "8194e858e6cc4e0cb71caa578316277762153af43dfd345f3b92ac5bf46c6e54",
         "current_source_state": "tracked target-owned post-migration pre-acceptance candidate",
         "candidate_launcher": "rapp_brainstem/run_rapp1_facade.py",
         "candidate_contract": "rapp_brainstem/RAPP1_FACADE.md",
@@ -716,7 +716,7 @@
       "when": "Switch public routing only after all four RAPP1_STATUS owner blockers, the post-migration Active-path residual, canonical-door dispositions, exact current-facade tests, immutable pin gate, and owner deployment review pass on the same deployment commit.",
       "how": [
         "Use the current migrated facade bytes identified in known_evidence.facade_current as the review baseline, then deploy them as a stateful compatibility gateway in front of the opaque immutable grail: accept only the exact request, persist session and idempotency state, translate privately, normalize the exact response, keep tools disabled, and never mount or edit the pinned brainstem Flask application.",
-        "Verify the fresh authenticated registry contains exact error-code entries for all seven facade codes before routing any public request.",
+        "Verify the fresh authenticated registry contains exact error-code entries for all six facade codes before routing any public request.",
         "Require every emitted error step to be one of 1, 1a, 2, 3, 4, 5, 6, or null; registration of an error code does not permit any other step.",
         "Inventory public routes and remove or make unreachable every direct-agent, alternate-chat, legacy business-function, browser-worker, and grail /chat route as a RAPP capability; retain only POST /chat plus control-plane GET /health.",
         "Route target-owned Tier 2 and Tether clients through the facade and retire their direct incompatible wire use; do not change the pinned Tier 1 handler.",
@@ -746,13 +746,13 @@
       "acceptance_tests": [
         {
           "id": "facade-exact-code-registration",
-          "procedure": "Extract PENDING_REGISTRY_ERROR_CODES from the deployment source and exact-match it to authenticated error-code entries and this ledger's seven candidate values.",
+          "procedure": "Extract PENDING_REGISTRY_ERROR_CODES from the deployment source and exact-match it to authenticated error-code entries and this ledger's six candidate values.",
           "pass_condition": "The three sets are equal with no missing, extra, aliased, or wildcard code."
         },
         {
           "id": "facade-exact-wire",
-          "procedure": "Run python3 -m pytest rapp_brainstem/test_rapp1_facade.py -q, then repeat its success, malformed request, unknown session, idempotency conflict/replay, in-progress, inference refusal, and storage refusal cases against the deployment origin.",
-          "pass_condition": "Success has exactly response, agent_logs, session_id; every contract refusal is exact HTTP 422 with error.code and step null; ignored request members do not alter recognized request identity."
+          "procedure": "Run python3 -m pytest rapp_brainstem/test_rapp1_facade.py -q, then repeat its success, malformed request, unknown session, unconditional terminal replay, in-progress, inference refusal, and storage refusal cases against the deployment origin.",
+          "pass_condition": "Success has exactly response, agent_logs, session_id; every contract refusal is exact HTTP 422 with error.code and step null; every repeated same-scope idempotency key returns its original terminal bytes."
         },
         {
           "id": "facade-error-step-domain",
@@ -767,7 +767,7 @@
         {
           "id": "facade-canonical-door-claims",
           "procedure": "Fetch the four canonical identity URLs in known_evidence.canonical_doors. Byte-compare the root response to rappid.json and inspect the approved publish-or-retire disposition for every 404 claim, including the installer immutability constraint.",
-          "pass_condition": "The root returns the exact SHA-256 8710b3c45fd660f96d159be41c861bf9fb9bb45acbc40888815d7942d342792e bytes; every other claim is served from an authorized pinned publication or retired; no installer repository, clone, or pinned byte was changed or deployed."
+          "pass_condition": "The root returns the exact SHA-256 59dd3b53e2ed0c7594b3754425938b907600fdf5787b1cef912276aa9d3711b3 bytes; every other claim is served from an authorized pinned publication or retired; no installer repository, clone, or pinned byte was changed or deployed."
         },
         {
           "id": "facade-no-grail-side-effects",

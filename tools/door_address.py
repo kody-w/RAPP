@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import re
 import sys
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -20,7 +20,7 @@ if str(ROOT) not in sys.path:
 
 from rapp1_core import parse_rappid as _core_parse_rappid  # noqa: E402
 from rapp1_core.errors import IdentityError  # noqa: E402
-from rapp1_core.identity import validate_owner  # noqa: E402
+from rapp1_core.identity import validate_owner, validate_slug  # noqa: E402
 
 
 _LEGACY_NAME = r"[A-Za-z0-9][A-Za-z0-9._-]*"
@@ -84,6 +84,12 @@ class LegacyRappidObservation:
     tail_bits: int
     string_kind: str | None = None
     location_match: bool | None = None
+    restructured_rappid: str | None = None
+    identity_state: str = "provisional"
+    provisional: bool = True
+    resolvable: bool = False
+    protocol_emission_allowed: bool = False
+    tail_preserved: bool = True
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -166,6 +172,34 @@ def parse_legacy_for_migration(rappid: str) -> LegacyRappidObservation:
         )
 
     raise InvalidRappidError("identity is neither exact RAPP/1 nor known migration input")
+
+
+def canonicalize_on_read(rappid: str) -> LegacyRappidObservation:
+    """Restructure a located legacy form without promoting its identity."""
+
+    observation = parse_legacy_for_migration(rappid)
+    if observation.owner is None or observation.slug is None:
+        raise InvalidRappidError(
+            "legacy identity has no self-location and cannot be restructured"
+        )
+    if observation.location_match is False:
+        raise InvalidRappidError(
+            "legacy v2 identity and repository locator do not match"
+        )
+    try:
+        owner = validate_owner(observation.owner.lower())
+        slug = validate_slug(observation.slug.lower())
+    except (IdentityError, TypeError) as exc:
+        raise InvalidRappidError(
+            "legacy location cannot be represented by section 6.1 labels"
+        ) from exc
+    restructured = f"rappid:@{owner}/{slug}:{observation.tail}"
+    return replace(
+        observation,
+        owner=owner,
+        slug=slug,
+        restructured_rappid=restructured,
+    )
 
 
 def _core_parse(rappid: str):

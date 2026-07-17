@@ -158,6 +158,12 @@ class ContainmentTests(unittest.TestCase):
             ("bash", "rapp_swarm/build.sh"),
             ("bash", "rapp_swarm/provision-twin.sh"),
             ("bash", "rapp_swarm/provision-twin-lite.sh"),
+            (sys.executable, "rapp_swarm/function_app.py"),
+            (sys.executable, "tools/test_brainstem_server.py"),
+            (sys.executable, "tools/front_door_specs.py"),
+            (sys.executable, "tools/sim/plant_two_brainstems.py"),
+            (sys.executable, "tools/sim/observe.py"),
+            ("bash", "rapp_swarm/twin-sim.sh"),
         )
         for command in commands:
             with self.subTest(command=command):
@@ -203,6 +209,56 @@ class ContainmentTests(unittest.TestCase):
         self.assertEqual(guard["guidance"], "../RAPP1_STATUS.md")
         ignored = (ROOT / "rapp_swarm/.funcignore").read_text().splitlines()
         self.assertIn("function_app.py", ignored)
+        for relative in (
+            "rapp_swarm/function_app.py",
+            "tools/test_brainstem_server.py",
+        ):
+            self.assertFalse((ROOT / relative).stat().st_mode & stat.S_IXUSR)
+
+    def test_target_owned_legacy_emitters_are_inert(self):
+        function_source = (
+            ROOT / "rapp_swarm/function_app.py"
+        ).read_text(encoding="utf-8")
+        server_source = (
+            ROOT / "tools/test_brainstem_server.py"
+        ).read_text(encoding="utf-8")
+        template = (
+            ROOT / "tools/templates/rapp_estate_grail.html"
+        ).read_text(encoding="utf-8")
+        self.assertNotIn("azure.functions", function_source)
+        self.assertNotIn("assistant_" + "response", function_source)
+        self.assertNotIn("HTTPServer", server_source)
+        self.assertNotIn("rapp-chat-response", server_source)
+        self.assertIn("410 Gone", template)
+        self.assertNotIn("conversation_" + "history", template)
+
+    def test_browser_chat_uses_only_exact_facade_envelopes(self):
+        source = (ROOT / "rapp_brainstem/index.html").read_text(
+            encoding="utf-8"
+        )
+        chat = source.split("async function sendMessage()", 1)[1]
+        chat = chat.split("// ── Voice", 1)[0]
+        self.assertIn(
+            "const RAPP1_FACADE_CHAT = 'http://127.0.0.1:7073/chat'",
+            source,
+        )
+        self.assertIn("const body = { user_input: text }", chat)
+        self.assertIn("validateFacadeEnvelope(r, d)", chat)
+        self.assertIn("d.error.code", chat)
+        self.assertNotIn("conversation_" + "history", chat)
+        self.assertNotIn("agent_logs_text", chat)
+        self.assertNotIn("voice_response", chat)
+
+    def test_payphone_keeps_exact_rappid_parser_separate(self):
+        source = (ROOT / "pages/payphone.html").read_text(encoding="utf-8")
+        parser = source.split("function parseRappid", 1)[1]
+        parser = parser.split("async function gh", 1)[0]
+        self.assertIn("[0-9a-f]{64}", parser)
+        self.assertIn("m[1].length > 39", parser)
+        self.assertIn("m[2].length > 100", parser)
+        self.assertIn("function parseRepoLocator", parser)
+        self.assertIn("return parseRappid(s) || parseRepoLocator(s)", parser)
+        self.assertNotIn("[a-f0-9]{32,64}", parser)
 
     def test_site_inventory_does_not_present_live_surfaces(self):
         manifest = json.loads((ROOT / "pages/_site/index.json").read_text())

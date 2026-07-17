@@ -1,16 +1,15 @@
-"""ecosystem_contract — per-kind contract every offspring repo is judged against.
+"""Product-local checks for the legacy ecosystem offspring inventory.
 
-Pure data. Zero behavior. Reading this module IS reading the canonical
-expectation set for each kind in the offspring registry. Imported by
-`tools/ecosystem_audit.py`; no other dependencies.
+This module is not RAPP/1 protocol authority. It is imported by
+`tools/ecosystem_audit.py` to compare repository-product conventions.
 
 Stdlib-only. Safe to read from the audit script which itself runs before
 any venv exists.
 
 The Bond Pulse audit walks every offspring listed in
 `pages/metropolis/index.json`, looks up the offspring's `kind`, fetches
-the canonical contract here, and reports drift. The contract is data,
-not code — a future fix-bot can read this same dict and propose
+the product-local expectations here, and reports drift. These checks are data,
+not protocol law — a future fix-bot can read this same dict and propose
 corrections per the same rules.
 """
 
@@ -41,14 +40,14 @@ SEED_REQUIRED_AGENTS = (
 # Each KindContract dict carries:
 #   required_files          paths that MUST exist at offspring root
 #                           (or in the named subdir for path-prefixed entries)
-#   expected_schemas        path → canonical schema string the file MUST declare
+#   expected_product_schemas path → product-local schema string to compare
 #   rappid_kind             the `kind` the offspring's rappid.json RECORD must
 #                           declare. Per the consolidated rappid form
 #                           (rappid:@<owner>/<slug>:<64hex>), kind lives in the
 #                           rappid.json record FIELD, never as a string prefix —
 #                           so the audit reads d["kind"], not a "rappid:v2:<kind>:"
-#                           string prefix. The rappid STRING is validated by shape
-#                           (consolidated or legacy v2, both accepted) separately.
+#                           string prefix. The rappid STRING must match exact
+#                           RAPP/1 section 6.1; legacy forms are always drift.
 #                           (None = kind not enforced, e.g. catalog/template/twin)
 #   identity_block_required soul.md must contain the spec-compliant Identity sentinel
 #   rar_required            rar/index.json must exist + sha256-validate against agents/
@@ -69,7 +68,7 @@ CONTRACTS: dict = {
             "rar/index.json",
             ".nojekyll",
         ],
-        "expected_schemas": {
+        "expected_product_schemas": {
             "rappid.json":       "rapp/1",
             "neighborhood.json": "rapp-neighborhood/1.0",
             "card.json":         "rapp-card/1.0",
@@ -96,7 +95,7 @@ CONTRACTS: dict = {
             "holo.md",
             ".nojekyll",
         ],
-        "expected_schemas": {
+        "expected_product_schemas": {
             "rappid.json":       "rapp/1",
             "neighborhood.json": "rapp-neighborhood/1.0",
             "card.json":         "rapp-card/1.0",
@@ -119,7 +118,7 @@ CONTRACTS: dict = {
             "card.json",
             "index.html",  # the gate / front door
         ],
-        "expected_schemas": {
+        "expected_product_schemas": {
             "rappid.json": "rapp/1",
             "card.json":   "rapp-card/1.0",
         },
@@ -139,7 +138,7 @@ CONTRACTS: dict = {
             "neighborhood.json",
             "members.json",
         ],
-        "expected_schemas": {
+        "expected_product_schemas": {
             "rappid.json":       "rapp/1",
             "neighborhood.json": "rapp-neighborhood/1.0",
             "members.json":      "rapp-neighborhood-members/1.0",
@@ -160,7 +159,7 @@ CONTRACTS: dict = {
             "card.json",
             "rar/index.json",
         ],
-        "expected_schemas": {
+        "expected_product_schemas": {
             "rappid.json":       "rapp/1",
             "neighborhood.json": "rapp-neighborhood/1.0",
             "card.json":         "rapp-card/1.0",
@@ -179,7 +178,7 @@ CONTRACTS: dict = {
         "required_files": [
             "index.html",  # the only required surface
         ],
-        "expected_schemas": {},  # catalogs publish their own catalog schema; not enforced here
+        "expected_product_schemas": {},
         "rappid_kind":             None,
         "identity_block_required": False,
         "rar_required":            False,
@@ -193,7 +192,7 @@ CONTRACTS: dict = {
         "required_files": [
             "rappid.json",
         ],
-        "expected_schemas": {
+        "expected_product_schemas": {
             "rappid.json": "rapp/1",
         },
         "rappid_kind":             None,  # templates may carry the kind they spawn (workspace/braintrust)
@@ -210,7 +209,7 @@ CONTRACTS: dict = {
         "required_files": [
             "install.sh",
         ],
-        "expected_schemas": {},
+        "expected_product_schemas": {},
         "rappid_kind":             None,
         "identity_block_required": False,
         "rar_required":            False,
@@ -224,7 +223,7 @@ CONTRACTS: dict = {
         "required_files": [
             "index.json",
         ],
-        "expected_schemas": {},  # entries follow rapp-egg-hub-entry/1.0; index shape is a list
+        "expected_product_schemas": {},
         "rappid_kind":             None,
         "identity_block_required": False,
         "rar_required":            False,
@@ -302,21 +301,26 @@ def _self_check() -> dict:
     """Verify the contract is internally consistent. Useful for tests."""
     issues = []
     for kind, c in CONTRACTS.items():
-        for required_field in ("required_files", "expected_schemas", "rappid_kind",
+        for required_field in ("required_files", "expected_product_schemas", "rappid_kind",
                                "identity_block_required", "rar_required", "kernel_base_check",
                                "optional_files", "notes"):
             if required_field not in c:
                 issues.append(f"{kind}: missing field {required_field}")
-        # Every expected_schemas key must be in required_files OR optional_files
+        # Every product schema key must name a required or optional file.
         all_paths = set(c.get("required_files", [])) | set(c.get("optional_files", []))
-        for sch_path in (c.get("expected_schemas") or {}):
+        for sch_path in (c.get("expected_product_schemas") or {}):
             if sch_path not in all_paths:
-                issues.append(f"{kind}: expected_schemas references {sch_path} but it's not in required/optional files")
+                issues.append(
+                    f"{kind}: expected_product_schemas references {sch_path} "
+                    "but it is not in required/optional files"
+                )
     return {
         "kinds": all_kinds(),
         "kind_count": len(CONTRACTS),
         "issues": issues,
         "ok": not issues,
+        "authority_state": "product-local-observation",
+        "rapp_protocol_authority": False,
     }
 
 

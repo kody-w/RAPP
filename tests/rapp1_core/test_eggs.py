@@ -21,6 +21,7 @@ from rapp1_core.egg import (
     EggError,
     _decode_zip,
     _encode_zip,
+    _validate_extraction_path,
     _resolved_staging_path,
     accept_egg,
     extract_egg,
@@ -455,10 +456,24 @@ def test_signed_egg_remains_unverified_without_authenticated_key_verification() 
     assert structural.structurally_valid
     assert not structural.accepted
     assert structural.trust_status is TrustStatus.UNVERIFIED
-    claimed_registry = RegistryEvidence(authenticated=True, fresh=True)
+    claimed_registry = RegistryEvidence(
+        authenticated=True,
+        fresh=True,
+        registered_egg_variants={"invite"},
+    )
     accepted = accept_egg(invite, registry=claimed_registry)
     assert not accepted.accepted
     assert accepted.trust_status is TrustStatus.UNVERIFIED
+    stale_claim = accept_egg(
+        invite,
+        registry=RegistryEvidence(
+            authenticated=True,
+            fresh=False,
+            registered_egg_variants={"invite"},
+        ),
+    )
+    assert not stale_claim.accepted
+    assert stale_claim.trust_status is TrustStatus.UNVERIFIED
 
 
 def test_resigning_does_not_change_egg_hash() -> None:
@@ -494,11 +509,45 @@ def test_unsigned_egg_needs_fresh_registry_evidence_for_acceptance() -> None:
         egg, registry=RegistryEvidence(authenticated=True, fresh=False)
     )
     assert not stale.accepted and stale.trust_status is TrustStatus.STALE
+    empty_registry = accept_egg(
+        egg,
+        registry=RegistryEvidence(authenticated=True, fresh=True),
+    )
+    assert not empty_registry.accepted
+    assert empty_registry.trust_status is TrustStatus.UNVERIFIED
+    wrong_variant = accept_egg(
+        egg,
+        registry=RegistryEvidence(
+            authenticated=True,
+            fresh=True,
+            registered_egg_variants={"invite"},
+        ),
+    )
+    assert not wrong_variant.accepted
     verified = accept_egg(
-        egg, registry=RegistryEvidence(authenticated=True, fresh=True)
+        egg,
+        registry=RegistryEvidence(
+            authenticated=True,
+            fresh=True,
+            registered_egg_variants={"organism"},
+        ),
     )
     assert verified.accepted and verified.trust_status is TrustStatus.VERIFIED
     assert verified.checks[-1].status.value == "PASS"
+
+
+def test_registered_egg_variant_evidence_is_immutable() -> None:
+    variants = {"organism"}
+    registry = RegistryEvidence(
+        authenticated=True,
+        fresh=True,
+        registered_egg_variants=variants,
+    )
+    variants.clear()
+
+    assert registry.registered_egg_variants == frozenset({"organism"})
+    with pytest.raises(AttributeError):
+        registry.registered_egg_variants.add("invite")
 
 
 @pytest.mark.parametrize(
@@ -506,16 +555,132 @@ def test_unsigned_egg_needs_fresh_registry_evidence_for_acceptance() -> None:
     [
         "C:escape.txt",
         "C:/escape.txt",
-        "//server/share/escape.txt",
-        "\\\\server\\share\\escape.txt",
         "state/data:alternate",
         "CON",
         "state/trailing.",
+        "state/trailing ",
     ],
 )
-def test_windows_path_semantics_are_refused_on_every_platform(path: str) -> None:
-    with pytest.raises(EggError, match="Windows|drive"):
-        validate_egg_path(path)
+def test_structural_egg_paths_accept_all_relative_nfc_posix_names(
+    path: str,
+) -> None:
+    assert validate_egg_path(path) == path
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "C:escape.txt",
+        "C:/escape.txt",
+        "state/data:alternate",
+        "CON",
+        "state/trailing.",
+        "state/trailing ",
+    ],
+)
+def test_windows_extraction_refuses_unrepresentable_structural_paths(
+    path: str,
+) -> None:
+    with pytest.raises(EggError) as error:
+        _validate_extraction_path(path, platform="nt")
+    assert error.value.code == "unsafe-extraction-path"
+
+
+def test_unknown_extraction_platform_fails_closed() -> None:
+    with pytest.raises(EggError) as error:
+        _validate_extraction_path("safe.txt", platform="unknown")
+    assert error.value.code == "unsafe-extraction-path"
+
+
+def test_posix_extraction_preserves_structurally_valid_special_names() -> None:
+    if os.name != "posix":
+        pytest.skip("special-name extraction is a POSIX-platform check")
+    work = Path.cwd() / f".rapp1-posix-path-test-{os.getpid()}"
+    shutil.rmtree(work, ignore_errors=True)
+    try:
+        egg = pack_egg(
+            variant="organism",
+            rappid=RID_ORG1,
+            created_utc=UTC,
+            payload={},
+            files={
+                "rappid.json": b"{}",
+                "soul.md": b"soul",
+                "state/data:alternate": b"colon",
+                "CON": b"reserved elsewhere",
+                "trailing.": b"dot",
+                "trailing ": b"space",
+            },
+        )
+        report = inspect_egg(egg)
+        assert report.structurally_valid
+        target = work / "hatched"
+        extract_egg(
+            egg,
+            target,
+            registry=RegistryEvidence(
+                authenticated=True,
+                fresh=True,
+                registered_egg_variants={"organism"},
+            ),
+        )
+        assert (target / "state/data:alternate").read_bytes() == b"colon"
+        assert (target / "CON").read_bytes() == b"reserved elsewhere"
+        assert (target / "trailing.").read_bytes() == b"dot"
+        assert (target / "trailing ").read_bytes() == b"space"
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+
+
+def test_pack_egg_requires_nfc_producer_payload_keys_and_identifiers() -> None:
+    with pytest.raises(EggError) as key_error:
+        pack_egg(
+            variant="organism",
+            rappid=RID_ORG1,
+            created_utc=UTC,
+            payload={"nested": [{"Cafe\u0301": True}]},
+            files={"rappid.json": b"{}", "soul.md": b"soul"},
+        )
+    assert key_error.value.code == "invalid-egg-payload"
+
+    with pytest.raises(EggError) as identifier_error:
+        pack_egg(
+            variant="session",
+            rappid=RID_SESSION,
+            created_utc=UTC,
+            payload={"runtime": "Cafe\u0301", "transcript": []},
+        )
+    assert identifier_error.value.code == "invalid-session-payload"
+
+
+def test_egg_inspection_never_normalizes_existing_payload_keys() -> None:
+    files = {"rappid.json": b"{}", "soul.md": b"soul"}
+    manifest = {
+        "schema": "rapp/1-egg",
+        "variant": "organism",
+        "rappid": RID_ORG1,
+        "created_utc": UTC,
+        "contents": [
+            {"path": path, "hash": hash_bytes(EGG_FILE_SPACE, files[path])}
+            for path in sorted(files, key=lambda value: value.encode("utf-8"))
+        ],
+        "payload": {"Cafe\u0301": True},
+        "sig": None,
+    }
+    raw = _encode_zip(
+        [("manifest.json", canonical_bytes(manifest))]
+        + [
+            (path, files[path])
+            for path in sorted(files, key=lambda value: value.encode("utf-8"))
+        ]
+    )
+
+    inspected = inspect_egg(raw)
+
+    assert inspected.structurally_valid
+    assert inspected.manifest is not None
+    assert "Cafe\u0301" in inspected.manifest["payload"]
+    assert "Café" not in inspected.manifest["payload"]
 
 
 def test_resolved_staging_guard_contains_dotdot_and_symlinks() -> None:
@@ -567,7 +732,11 @@ def test_verify_before_extract_and_staged_success() -> None:
         assert stale.value.code == "egg-not-accepted"
         assert not target.exists()
 
-        registry = RegistryEvidence(authenticated=True, fresh=True)
+        registry = RegistryEvidence(
+            authenticated=True,
+            fresh=True,
+            registered_egg_variants={"organism"},
+        )
         extract_egg(_organism(), target, registry=registry)
         assert (target / "manifest.json").is_file()
         assert (target / "rappid.json").is_file()
@@ -580,7 +749,11 @@ def test_verify_before_extract_and_staged_success() -> None:
 def test_signed_root_or_nested_egg_never_extracts_without_crypto_verification() -> None:
     work = Path.cwd() / f".rapp1-signed-extract-{os.getpid()}"
     shutil.rmtree(work, ignore_errors=True)
-    registry = RegistryEvidence(authenticated=True, fresh=True)
+    registry = RegistryEvidence(
+        authenticated=True,
+        fresh=True,
+        registered_egg_variants={"organism", "neighborhood"},
+    )
     try:
         work.mkdir()
         signed_root = pack_egg(

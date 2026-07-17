@@ -10,12 +10,14 @@ from __future__ import annotations
 import json
 import os
 import sqlite3
+import unicodedata
 import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Iterator, Mapping, Sequence
+from urllib.parse import urlsplit
 
 from flask import Flask, Response, request
 from rapp1_core import canonical_bytes, strict_loads
@@ -35,7 +37,6 @@ FINGERPRINT_VERSION_CANONICAL_SEMANTIC = 3
 PENDING_REGISTRY_ERROR_CODES = (
     "malformed-request",
     "unknown-session",
-    "idempotency-conflict",
     "idempotency-in-progress",
     "session-in-progress",
     "inference-refused",
@@ -155,7 +156,7 @@ def _parse_request() -> tuple[str, str | None, str | None]:
         raise FacadeRefusal("malformed-request")
 
     user_input = data.get("user_input")
-    if type(user_input) is not str or not user_input.strip():
+    if type(user_input) is not str:
         raise FacadeRefusal("malformed-request")
 
     if "session_id" in data and type(data["session_id"]) is not str:
@@ -177,24 +178,14 @@ def _parse_request() -> tuple[str, str | None, str | None]:
     return user_input, session_id, idempotency_key
 
 
-def _request_fingerprints(
+def _request_fingerprint(
     user_input: str,
     session_id: str | None,
-    idempotency_key: str | None,
-) -> tuple[bytes, tuple[bytes, ...]]:
+) -> bytes:
     semantic_request = {"user_input": user_input}
     if session_id is not None:
         semantic_request["session_id"] = session_id
-    current = canonical_bytes(semantic_request)
-
-    legacy = [_json_bytes(semantic_request)]
-    if idempotency_key is not None:
-        transitional_request = dict(semantic_request)
-        transitional_request["idempotency_key"] = idempotency_key
-        transitional = canonical_bytes(transitional_request)
-        if transitional not in legacy:
-            legacy.append(transitional)
-    return current, tuple(legacy)
+    return canonical_bytes(semantic_request)
 
 
 class FacadeStore:
@@ -357,14 +348,10 @@ class FacadeStore:
                 )
 
     @staticmethod
-    def _stored_response(
-        connection: sqlite3.Connection,
-        scope: tuple[str, str, str],
-        row: sqlite3.Row,
-        request_fingerprint: bytes,
-        legacy_fingerprints: tuple[bytes, ...],
-    ) -> StoredResponse:
+    def _stored_response(row: sqlite3.Row) -> StoredResponse:
         state = row["state"]
+        if state == "pending":
+            raise FacadeRefusal("idempotency-in-progress")
         stored_request = row["request_canonical"]
         fingerprint_version = row["request_fingerprint_version"]
         if stored_request is None:
@@ -375,37 +362,11 @@ class FacadeStore:
                 raise FacadeRefusal("facade-storage-refused")
         elif not isinstance(stored_request, (bytes, bytearray)):
             raise FacadeRefusal("facade-storage-refused")
-        elif fingerprint_version == FINGERPRINT_VERSION_CANONICAL_SEMANTIC:
-            if bytes(stored_request) != request_fingerprint:
-                raise FacadeRefusal("idempotency-conflict")
-        elif fingerprint_version == FINGERPRINT_VERSION_LEGACY_JSON:
-            if bytes(stored_request) not in legacy_fingerprints:
-                raise FacadeRefusal("idempotency-conflict")
-            migrated = connection.execute(
-                """
-                UPDATE idempotency
-                SET request_canonical = ?,
-                    request_fingerprint_version = ?
-                WHERE scope_kind = ?
-                  AND scope_session_id = ?
-                  AND idempotency_key = ?
-                  AND request_canonical = ?
-                  AND request_fingerprint_version = ?
-                """,
-                (
-                    sqlite3.Binary(request_fingerprint),
-                    FINGERPRINT_VERSION_CANONICAL_SEMANTIC,
-                    *scope,
-                    sqlite3.Binary(bytes(stored_request)),
-                    FINGERPRINT_VERSION_LEGACY_JSON,
-                ),
-            )
-            if migrated.rowcount != 1:
-                raise FacadeRefusal("facade-storage-refused")
-        else:
+        elif fingerprint_version not in (
+            FINGERPRINT_VERSION_LEGACY_JSON,
+            FINGERPRINT_VERSION_CANONICAL_SEMANTIC,
+        ):
             raise FacadeRefusal("facade-storage-refused")
-        if state == "pending":
-            raise FacadeRefusal("idempotency-in-progress")
         status = row["response_status"]
         body = row["response_body"]
         if (
@@ -438,7 +399,6 @@ class FacadeStore:
         supplied_session_id: str | None,
         idempotency_key: str | None,
         request_fingerprint: bytes,
-        legacy_fingerprints: tuple[bytes, ...],
     ) -> Reservation | StoredResponse:
         with self._transaction() as connection:
             scope: tuple[str, str, str] | None = None
@@ -447,13 +407,7 @@ class FacadeStore:
                     scope = ("create", "", idempotency_key)
                     existing = self._idempotency_row(connection, scope)
                     if existing is not None:
-                        return self._stored_response(
-                            connection,
-                            scope,
-                            existing,
-                            request_fingerprint,
-                            legacy_fingerprints,
-                        )
+                        return self._stored_response(existing)
                 session_id = str(uuid.uuid4())
                 token = str(uuid.uuid4())
                 now = _utc_now()
@@ -481,13 +435,7 @@ class FacadeStore:
                     scope = ("session", session_id, idempotency_key)
                     existing = self._idempotency_row(connection, scope)
                     if existing is not None:
-                        return self._stored_response(
-                            connection,
-                            scope,
-                            existing,
-                            request_fingerprint,
-                            legacy_fingerprints,
-                        )
+                        return self._stored_response(existing)
                 if session["pending_token"] is not None:
                     raise FacadeRefusal("session-in-progress")
                 token = str(uuid.uuid4())
@@ -699,6 +647,23 @@ def _strict_inference_text(result: Any) -> str:
     return content
 
 
+def _is_allowed_browser_origin(origin: str) -> bool:
+    try:
+        parsed = urlsplit(origin)
+        _ = parsed.port
+    except ValueError:
+        return False
+    return (
+        parsed.scheme in {"http", "https"}
+        and parsed.hostname in {"127.0.0.1", "localhost", "::1"}
+        and parsed.username is None
+        and parsed.password is None
+        and parsed.path in {"", "/"}
+        and not parsed.query
+        and not parsed.fragment
+    )
+
+
 def create_app(
     *,
     inference: Inference,
@@ -713,24 +678,55 @@ def create_app(
     app.config["MAX_CONTENT_LENGTH"] = MAX_RAW_REQUEST_BYTES
     app.extensions["rapp1_facade_store"] = store
 
+    @app.after_request
+    def allow_loopback_ui(response: Response) -> Response:
+        origin = request.headers.get("Origin")
+        if request.path == "/chat" and origin and _is_allowed_browser_origin(origin):
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers.add("Vary", "Origin")
+        return response
+
+    @app.route("/chat", methods=["OPTIONS"])
+    def chat_preflight() -> Response:
+        origin = request.headers.get("Origin", "")
+        if (
+            not _is_allowed_browser_origin(origin)
+            or request.headers.get("Access-Control-Request-Method") != "POST"
+        ):
+            return Response(status=403)
+        requested_headers = {
+            value.strip().lower()
+            for value in request.headers.get(
+                "Access-Control-Request-Headers", ""
+            ).split(",")
+            if value.strip()
+        }
+        if not requested_headers.issubset({"content-type"}):
+            return Response(status=403)
+        response = Response(status=204)
+        response.headers["Access-Control-Allow-Methods"] = "POST"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        return response
+
     @app.post("/chat")
     def chat() -> Response:
+        origin = request.headers.get("Origin")
+        if origin and not _is_allowed_browser_origin(origin):
+            return _error_response("malformed-request")
         try:
             user_input, session_id, idempotency_key = _parse_request()
         except FacadeRefusal as refusal:
             return _error_response(refusal.code)
 
         try:
-            request_fingerprint, legacy_fingerprints = _request_fingerprints(
+            request_fingerprint = _request_fingerprint(
                 user_input,
                 session_id,
-                idempotency_key,
             )
             reserved = store.reserve(
                 session_id,
                 idempotency_key,
                 request_fingerprint,
-                legacy_fingerprints,
             )
         except FacadeRefusal as refusal:
             return _error_response(refusal.code)
@@ -743,7 +739,9 @@ def create_app(
         messages = [*reserved.messages, {"role": "user", "content": user_input}]
         try:
             raw_result = inference(messages)
-            response_text = _strict_inference_text(raw_result)
+            response_text = unicodedata.normalize(
+                "NFC", _strict_inference_text(raw_result)
+            )
         except Exception:
             refusal_body = _error_body("inference-refused")
             try:

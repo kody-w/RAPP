@@ -7,6 +7,8 @@ its canonical files (via fixture in --offline or via `gh api` →
 contract in `tools/ecosystem_contract.py`, and emits both a human report
 (`pages/_audit/ecosystem-audit.md`) and a machine envelope
 (`pages/_audit/ecosystem-audit.json`, schema `rapp-ecosystem-audit/1.0`).
+That envelope and its checked product schemas are local observations, not
+RAPP/1 protocol authority.
 
 Stdlib-only — runs from a fresh `git clone` with no pip install. Mirrors
 `bond.py`'s discipline: the substrate health check can't depend on its
@@ -216,6 +218,7 @@ def _diff_offspring(name: str, kind: str, contract: dict,
     sources_seen = set()
     fingerprint_sha256 = None
     rappid = None
+    rappid_record_seen = False
     record_kind = None  # the `kind` FIELD from the rappid.json record (consolidated form)
 
     # 1. required_files presence
@@ -227,8 +230,10 @@ def _diff_offspring(name: str, kind: str, contract: dict,
             drift.append({"category": "missing_files", "path": path,
                           "detail": f"required file '{path}' not found"})
 
-    # 2. expected_schemas — for each expected file, check the file's "schema" field
-    for path, expected_schema in (contract.get("expected_schemas") or {}).items():
+    # 2. Product-local schemas do not establish RAPP/1 conformance.
+    for path, expected_schema in (
+        contract.get("expected_product_schemas") or {}
+    ).items():
         body, source = file_getter(path)
         if source != "missing":
             sources_seen.add(source)
@@ -238,14 +243,15 @@ def _diff_offspring(name: str, kind: str, contract: dict,
         try:
             d = json.loads(body)
         except (ValueError, json.JSONDecodeError):
-            drift.append({"category": "schema_drift", "path": path,
+            drift.append({"category": "product_schema_drift", "path": path,
                           "detail": "file is not valid JSON"})
             continue
         actual_schema = d.get("schema") if isinstance(d, dict) else None
         if actual_schema != expected_schema:
-            drift.append({"category": "schema_drift", "path": path,
+            drift.append({"category": "product_schema_drift", "path": path,
                           "detail": f"expected schema={expected_schema!r}, got {actual_schema!r}"})
         if path == "rappid.json" and isinstance(d, dict):
+            rappid_record_seen = True
             rappid = d.get("rappid")
             record_kind = d.get("kind")  # kind lives in the RECORD, not the string
             try:
@@ -253,21 +259,49 @@ def _diff_offspring(name: str, kind: str, contract: dict,
             except Exception:
                 pass
 
-    # 3. rappid_kind check.
-    #    The consolidated rappid (rappid:@<owner>/<slug>:<64hex>) carries kind in
-    #    the rappid.json RECORD, never in the string. The retired v2 form (which
-    #    once carried a legacy inline "rappid:v2:<kind>:" prefix) is no longer read by the
-    #    live parser, so kind now comes exclusively from the record's `kind` field.
-    #    The rappid STRING is validated with the canonical parser (consolidated +
-    #    non-v2 legacy forms); an unparseable string just leaves kind to the record
-    #    and never spuriously flags a placeholder/local-origin fixture.
-    expected_kind = contract.get("rappid_kind")
-    if expected_kind is not None and rappid is not None:
-        if isinstance(rappid, str):
+    # 3. Every encountered rappid is exact, regardless of whether kind is enforced.
+    if not rappid_record_seen:
+        body, source = file_getter("rappid.json")
+        if source != "missing":
+            sources_seen.add(source)
+        if body is not None:
             try:
-                parse_rappid(rappid)  # validate form; kind is never taken from the string
-            except InvalidRappidError:
-                pass
+                identity = json.loads(body)
+            except (ValueError, json.JSONDecodeError):
+                identity = None
+            if isinstance(identity, dict):
+                rappid_record_seen = True
+                rappid = identity.get("rappid")
+                record_kind = identity.get("kind")
+                fingerprint_sha256 = _sha256_bytes(body)
+            else:
+                drift.append({
+                    "category": "rappid_drift",
+                    "path": "rappid.json",
+                    "detail": "rappid.json is not a JSON identity object",
+                })
+
+    if rappid_record_seen:
+        invalid_detail = None
+        if not isinstance(rappid, str):
+            invalid_detail = "rappid member is not a string"
+        else:
+            try:
+                parse_rappid(rappid)
+            except (InvalidRappidError, TypeError) as exc:
+                invalid_detail = str(exc)
+        if invalid_detail is not None:
+            drift.append({
+                "category": "rappid_drift",
+                "path": "rappid.json",
+                "detail": (
+                    "expected exact RAPP/1 section 6.1 rappid; "
+                    f"got {rappid!r}: {invalid_detail}"
+                ),
+            })
+
+    expected_kind = contract.get("rappid_kind")
+    if expected_kind is not None and rappid_record_seen:
         actual_kind = record_kind
         if actual_kind != expected_kind:
             drift.append({"category": "rappid_drift",
@@ -307,7 +341,7 @@ def _diff_offspring(name: str, kind: str, contract: dict,
             except (ValueError, json.JSONDecodeError):
                 rar_index = None
             if not isinstance(rar_index, dict) or rar_index.get("schema") != "rapp-rar-index/1.0":
-                drift.append({"category": "schema_drift", "path": "rar/index.json",
+                drift.append({"category": "product_schema_drift", "path": "rar/index.json",
                               "detail": "rar/index.json schema invalid or missing"})
             else:
                 # Recompute sha256 of every required_for_participation + kernel_base_included entry
@@ -326,7 +360,7 @@ def _diff_offspring(name: str, kind: str, contract: dict,
                     actual_sha = _sha256_bytes(file_body)
                     if actual_sha != expected_sha:
                         drift.append({"category": "kernel_drift" if rel.endswith("basic_agent.py")
-                                      else "schema_drift",
+                                      else "product_schema_drift",
                                       "path": rel,
                                       "detail": f"sha256 mismatch — manifest={expected_sha[:12]}…, actual={actual_sha[:12]}…"})
 
@@ -365,7 +399,10 @@ def _classify_drift(offspring_result: dict, kind: str) -> str:
         return "ALIGNED"
     # Anything missing on the offspring side that we have locally → push direction
     has_missing = any(d.get("category") == "missing_files" for d in drift)
-    has_schema = any(d.get("category") in ("schema_drift", "rappid_drift") for d in drift)
+    has_schema = any(
+        d.get("category") in ("product_schema_drift", "rappid_drift")
+        for d in drift
+    )
     has_kernel = any(d.get("category") == "kernel_drift" for d in drift)
     if has_kernel:
         return "GLOBAL_TO_LOCAL"  # offspring has a kernel snapshot we should refresh from
@@ -517,6 +554,8 @@ def audit_ecosystem(*, mode: str = "offline",
 
     audit = {
         "schema": AUDIT_SCHEMA,
+        "authority_state": "product-local-observation",
+        "rapp_protocol_authority": False,
         "audited_at": _now_iso(),
         "mode": mode,
         "metropolis_url": metropolis_url,

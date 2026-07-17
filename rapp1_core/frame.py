@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from dataclasses import dataclass, replace
 from datetime import datetime
 from threading import RLock
@@ -49,6 +50,21 @@ REGENESIS_KINDS = {
     "swarm.re-genesis": "swarm",
     "body.re-genesis": "body",
 }
+
+
+def _require_nfc_payload_keys(value: Any) -> None:
+    if type(value) is dict:
+        for key, child in value.items():
+            if type(key) is str and unicodedata.normalize("NFC", key) != key:
+                raise FrameError(
+                    "invalid-payload",
+                    "producer payload object keys must be Unicode NFC",
+                    step="1",
+                )
+            _require_nfc_payload_keys(child)
+    elif type(value) is list:
+        for child in value:
+            _require_nfc_payload_keys(child)
 
 
 @dataclass(frozen=True)
@@ -346,6 +362,7 @@ def _registry_snapshot(registry: RegistryEvidence) -> RegistryEvidence:
         kind_families=registry.kind_families,
         deprecated_kinds=registry.deprecated_kinds,
         genesis_hashes=registry.genesis_hashes,
+        registered_egg_variants=registry.registered_egg_variants,
         authenticated=registry.authenticated,
         fresh=registry.fresh,
     )
@@ -1758,6 +1775,7 @@ def build_frame(
 ) -> dict[str, Any]:
     """Build an eleven-key frame and compute particle then wave addresses."""
 
+    _require_nfc_payload_keys(payload)
     frame: dict[str, Any] = {
         "spec": "rapp/1",
         "kind": kind,

@@ -72,15 +72,60 @@ def test_explicit_migration_api_preserves_but_never_resolves(legacy, form, bits)
     assert report["original"] == legacy
     assert report["form"] == form
     assert report["tail_bits"] == bits
+    assert report["identity_state"] == "provisional"
+    assert report["provisional"] is True
+    assert report["resolvable"] is False
+    assert report["protocol_emission_allowed"] is False
+    assert report["tail_preserved"] is True
     assert "canonical" not in report
     assert "urls" not in report
     with pytest.raises(da.InvalidRappidError):
         da.door_from_rappid(legacy)
 
 
+@pytest.mark.parametrize(
+    "legacy",
+    [
+        V2,
+        f"rappid:@kody-w/echo-brainstem:{H32}",
+    ],
+)
+def test_canonicalize_on_read_restructures_and_preserves_provisional_tail(
+    legacy,
+):
+    migrated = da.canonicalize_on_read(legacy)
+
+    assert migrated.restructured_rappid == (
+        f"rappid:@kody-w/echo-brainstem:{H32}"
+    )
+    assert migrated.tail == H32
+    assert migrated.tail_bits == 128
+    assert migrated.provisional is True
+    assert migrated.resolvable is False
+    assert migrated.protocol_emission_allowed is False
+    with pytest.raises(da.InvalidRappidError):
+        da.parse_rappid(migrated.restructured_rappid)
+    with pytest.raises(da.InvalidRappidError):
+        da.door_from_rappid(migrated.restructured_rappid)
+
+
+def test_canonicalize_on_read_refuses_unlocated_or_ambiguous_legacy_forms():
+    with pytest.raises(da.InvalidRappidError, match="no self-location"):
+        da.canonicalize_on_read(UUID)
+
+    mismatch = (
+        f"rappid:v2:twin:@kody-w/echo-brainstem:{H32}"
+        "@github.com/kody-w/other"
+    )
+    with pytest.raises(da.InvalidRappidError, match="do not match"):
+        da.canonicalize_on_read(mismatch)
+
+
 def test_migration_api_is_not_a_second_exact_parser():
     with pytest.raises(da.InvalidRappidError):
         da.parse_legacy_for_migration(CANON)
+    with pytest.raises(da.InvalidRappidError):
+        da.canonicalize_on_read(CANON)
 
 
 def test_door_urls_resolve_only_exact_identity():

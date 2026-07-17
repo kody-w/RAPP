@@ -4,7 +4,7 @@
 # Verifies tools/ecosystem_audit.py + tools/ecosystem_contract.py:
 #   1. Both modules parse cleanly
 #   2. Contract self-check: 9 kinds, no internal issues
-#   3. Offline run on the real metropolis index → drift_count=0
+#   3. Offline run reports the known invalid ant-farm placeholder rappid
 #   4. Synthetic drift detection — fake metropolis index with bare-UUID rappid
 #      flagged as rappid_drift
 #   5. Schema shape: rapp-ecosystem-audit/1.0 envelope has every required key
@@ -37,6 +37,8 @@ spec = importlib.util.spec_from_file_location("ecosystem_contract", sys.argv[1])
 m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
 chk = m._self_check()
 assert chk["ok"], f"issues: {chk['issues']}"
+assert chk["authority_state"] == "product-local-observation"
+assert chk["rapp_protocol_authority"] is False
 assert chk["kind_count"] >= 7, f"too few kinds: {chk['kind_count']}"
 for required in ("neighborhood", "ant-farm", "twin", "workspace", "braintrust", "catalog", "template"):
     assert required in chk["kinds"], f"missing kind: {required}"
@@ -50,32 +52,32 @@ spec = importlib.util.spec_from_file_location("ecosystem_audit", sys.argv[1])
 m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
 audit = m.audit_ecosystem(mode="offline", write_outputs=False)
 assert audit["schema"] == "rapp-ecosystem-audit/1.0"
+assert audit["authority_state"] == "product-local-observation"
+assert audit["rapp_protocol_authority"] is False
 for key in ("audited_at", "mode", "metropolis_url", "offspring_count", "drift_count",
             "by_kind", "offspring", "summary", "next_actions", "ok"):
     assert key in audit, f"missing key: {key}"
 print("OK")
 PY
 
-heading "Step 4 — Offline run on the real metropolis index → drift_count=0"
-python3 - "$AUDIT" <<'PY' && step_pass "real metropolis index is aligned (drift_count=0)" || step_fail "drift detected — fixtures + contract not in sync"
+heading "Step 4 — Offline run reports every invalid fixture rappid"
+python3 - "$AUDIT" <<'PY' && step_pass "known invalid ant-farm rappid is drift" || step_fail "invalid fixture rappid was not reported exactly"
 import importlib.util, json, sys
 spec = importlib.util.spec_from_file_location("ecosystem_audit", sys.argv[1])
 m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
 audit = m.audit_ecosystem(mode="offline", write_outputs=False)
-if audit["drift_count"] != 0:
-    print("DRIFT FOUND:")
-    for o in audit["offspring"]:
-        if o.get("skipped") or o.get("ok"):
-            continue
-        print(f"  {o['name']}: {[d['category']+':'+d['path'] for d in o.get('drift',[])]}")
-    sys.exit(1)
+drifted = [o for o in audit["offspring"] if not o.get("skipped") and not o["ok"]]
+assert audit["drift_count"] == 1, drifted
+assert [o["name"] for o in drifted] == ["ant-farm"], drifted
+assert [d["category"] for d in drifted[0]["drift"]] == ["rappid_drift"]
+assert "__MINTED_AT_PLANT__" in drifted[0]["drift"][0]["detail"]
 print("OK")
 PY
 
 heading "Step 5 — Synthetic drift detection: bare-UUID rappid → rappid_drift"
 mkdir -p "$SANDBOX/synthetic-fixtures/test-bad-seed"
 cat > "$SANDBOX/synthetic-fixtures/test-bad-seed/rappid.json" <<'JSON'
-{"schema": "rapp/1", "rappid": "869ea057-4755-47ec-80df-54551ecf8581"}
+{"schema": "rapp/1", "rappid": "869ea057-4755-47ec-80df-54551ecf8581", "kind": "neighborhood"}
 JSON
 cat > "$SANDBOX/synthetic-metropolis.json" <<'JSON'
 {
@@ -104,6 +106,11 @@ assert audit["drift_count"] >= 1, f"expected drift; got {audit['drift_count']}"
 test_bad = next(o for o in audit["offspring"] if o["name"] == "test-bad")
 categories = {d["category"] for d in test_bad.get("drift", [])}
 assert "rappid_drift" in categories, f"expected rappid_drift in {categories}"
+assert any(
+    "section 6.1" in d["detail"]
+    for d in test_bad["drift"]
+    if d["category"] == "rappid_drift"
+), test_bad["drift"]
 print("OK")
 PY
 
@@ -141,21 +148,19 @@ else
   step_fail "--no-write output invalid"
 fi
 
-heading "Step 9 — CLI exits 1 on drift (--strict default), 0 when clean"
-python3 "$AUDIT" --offline --no-write >/dev/null 2>&1
+heading "Step 9 — CLI exits 1 on invalid rappid drift, 0 on a clean scope"
+python3 "$AUDIT" --offline --no-write --repo local-only-test >/dev/null 2>&1
 if [ $? -eq 0 ]; then
-  step_pass "clean audit exits 0 (no drift in offline-mode fixtures)"
+  step_pass "clean scoped audit exits 0"
 else
-  step_fail "clean audit unexpectedly exited non-zero"
+  step_fail "clean scoped audit unexpectedly exited non-zero"
 fi
-python3 "$AUDIT" --offline --no-write \
-  --metropolis "$SANDBOX/synthetic-metropolis.json" \
-  --fixtures-dir "$SANDBOX/synthetic-fixtures" >/dev/null 2>&1
+python3 "$AUDIT" --offline --no-write >/dev/null 2>&1
 RC=$?
 if [ "$RC" -ne 0 ]; then
-  step_pass "synthetic drift correctly exits non-zero (rc=$RC)"
+  step_pass "known invalid fixture rappid exits non-zero (rc=$RC)"
 else
-  step_fail "synthetic drift but exit was 0"
+  step_fail "invalid fixture rappid drift but exit was 0"
 fi
 
 scenario_summary
