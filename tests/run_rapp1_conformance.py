@@ -223,6 +223,11 @@ def gates() -> tuple[Gate, ...]:
             "retired installer, retired provisioning, immutable archives, and caller containment",
         ),
         Gate(
+            "t2t-removal",
+            ("bash", "tests/test-t2t-removal.sh"),
+            "removed T2T surfaces and immutable retired vendored evidence",
+        ),
+        Gate(
             "plant-retirement",
             ("bash", "installer/test_plant.sh"),
             "target-owned planter returns 410 without side effects",

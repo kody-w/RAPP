@@ -210,8 +210,9 @@
     },
     {
       "path": "tests/test-t2t-removal.sh",
-      "disposition": "destructive-network",
-      "reason": "Rebuilds tracked vendor/removal artifacts and exercises deployment-oriented teardown."
+      "disposition": "canonical-direct",
+      "reason": "Checks removed T2T sources, inert Tier 2 entrypoints, and unchanged vendored evidence without network or tracked writes.",
+      "gate": "t2t-removal"
     },
     {
       "path": "tests/test-twin-egg.sh",

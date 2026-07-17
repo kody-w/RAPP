@@ -33,6 +33,7 @@
       "installer/test_plant.sh",
       "rapp_swarm/RAPP1_DEPLOYMENT_GUARD.json",
       "tests/test_distribution_containment.py",
+      "tests/test-t2t-removal.sh",
       "tests/test_rapp1_containment.py"
     ],
     "browser": [

@@ -49,6 +49,7 @@ def test_runner_has_one_explicit_authoritative_gate_set():
         "metropolis-directory",
         "metropolis-federation",
         "distribution-retirement",
+        "t2t-removal",
         "plant-retirement",
         "twin-egg-retirement",
     ]

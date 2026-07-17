@@ -274,6 +274,12 @@ def test_tier2_deployment_descriptors_and_callers_create_nothing():
     callers.update(inventory["categories"]["containment"])
     for relative in callers:
         path = ROOT / relative
+        if relative == "tests/test-t2t-removal.sh":
+            source = path.read_text(encoding="utf-8")
+            assert 'function_app.py refuses execution" "78"' in source
+            assert "function_app.py reports 410 Gone" in source
+            assert not re.search(r"(?m)^\s*(?:az|func)\b", source)
+            continue
         if relative == "rapp_swarm/RAPP1_DEPLOYMENT_GUARD.json":
             guard = json.loads(path.read_text(encoding="utf-8"))
             assert guard["status"] == "retired"

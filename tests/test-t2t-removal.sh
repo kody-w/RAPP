@@ -3,33 +3,21 @@
 # fully excised from the repo (per CONSTITUTION.md Article XIV and the
 # "focus is adoption, not federation" policy).
 #
-# Structural checks (no server): files absent, imports clean, vendored
-# bundle clean, source free of stale T2T route handlers.
-#
-# Runtime checks (swarm_server on a test port): T2T routes 404, core
-# non-T2T surface (healthz, deploy, agent, seal, snapshot) still 200s.
+# Structural checks: removed files stay absent, the retained vendored evidence
+# stays free of T2T modules, and retired Tier 2 entrypoints refuse execution.
 #
 #     bash tests/test-t2t-removal.sh
 #
 # Exits 0 on success, non-zero with diagnostics on failure.
 
-set -e
-set -o pipefail
+set -euo pipefail
 
-PORT=7190
-ROOT=/tmp/rapp-swarm-test-t2t-removal
-SERVER_PID=""
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO_ROOT"
+
 PASS=0
 FAIL=0
 FAIL_NAMES=()
-
-cleanup() {
-    if [ -n "$SERVER_PID" ]; then
-        kill "$SERVER_PID" 2>/dev/null || true
-        wait "$SERVER_PID" 2>/dev/null || true
-    fi
-}
-trap cleanup EXIT
 
 assert_eq() {
     local name="$1" expected="$2" actual="$3"
@@ -67,6 +55,23 @@ assert_no_match() {
     else
         echo "  ✓ $name"; PASS=$((PASS + 1))
     fi
+}
+
+tree_hash() {
+    python3 - "$1" <<'PY'
+import hashlib
+import pathlib
+import sys
+
+root = pathlib.Path(sys.argv[1])
+digest = hashlib.sha256()
+for path in sorted(item for item in root.rglob("*") if item.is_file()):
+    digest.update(path.relative_to(root).as_posix().encode())
+    digest.update(bytes([0]))
+    digest.update(path.read_bytes())
+    digest.update(bytes([0]))
+print(digest.hexdigest())
+PY
 }
 
 # ── Section 1: Source files absent ─────────────────────────────────────
@@ -108,7 +113,7 @@ case "$TOMBSTONE_OUT" in
        FAIL=$((FAIL + 1)); FAIL_NAMES+=("function_app.py 410 tombstone") ;;
 esac
 
-# ── Section 4: build.sh produces a clean vendored bundle ──────────────
+# ── Section 4: build.sh is inert and vendored evidence stays clean ────
 
 echo ""
 echo "--- Section 4: build.sh is clean ---"
@@ -118,9 +123,20 @@ assert_no_match "build.sh vendor list does not include t2t.py" \
 assert_no_match "build.sh vendor list does not include workspace.py" \
     'workspace\.py'  rapp_swarm/build.sh
 
-# Run build.sh fresh and inspect the output
-rm -rf rapp_swarm/_vendored
-bash rapp_swarm/build.sh >/dev/null 2>&1
+VENDORED_BEFORE="$(tree_hash rapp_swarm/_vendored)"
+set +e
+BUILD_OUT="$(bash rapp_swarm/build.sh 2>&1)"
+BUILD_RC=$?
+set -e
+assert_eq "build.sh refuses execution" "78" "$BUILD_RC"
+case "$BUILD_OUT" in
+    *"410 Gone"*) echo "  ✓ build.sh reports 410 Gone"; PASS=$((PASS + 1)) ;;
+    *) echo "  ✗ build.sh does not report 410 Gone"
+       FAIL=$((FAIL + 1)); FAIL_NAMES+=("build.sh 410 tombstone") ;;
+esac
+assert_eq "build.sh leaves vendored evidence unchanged" \
+    "$VENDORED_BEFORE" "$(tree_hash rapp_swarm/_vendored)"
+
 assert_not_exists "vendored bundle has no t2t.py"         rapp_swarm/_vendored/t2t.py
 assert_not_exists "vendored bundle has no workspace.py"   rapp_swarm/_vendored/workspace.py
 assert_not_exists "vendored bundle has no server.py"      rapp_swarm/_vendored/server.py
