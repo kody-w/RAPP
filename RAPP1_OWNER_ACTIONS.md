@@ -40,11 +40,14 @@ These are owner review inputs, not §13 entries:
 - **Kind families:** `memory`, `body`, `swarm`.
 - **Required re-genesis kinds:** `memory.re-genesis` → `memory`,
   `body.re-genesis` → `body`, and `swarm.re-genesis` → `swarm`.
-- **Invalid legacy frame kinds requiring owner replacement/retirement:**
+- **Audit-baseline invalid legacy frame kinds requiring
+  replacement/retirement if reintroduced:**
   `memory_added` (`installer/plant.sh:6308`), `conversation`
   (`installer/plant.sh:7624`), and `tool_call`
   (`installer/plant.sh:7733`). None satisfies current `label.label` grammar;
-  none may be registered as written.
+  none may be registered as written. Current main retains the legacy planter
+  only behind HTTP 410 containment; that implementation state is not registry
+  authority.
 - **Other kinds:** undecided. Every emitted kind must be separately enumerated
   and assigned exactly one family; prefixes and wildcards grant no authority.
 
@@ -53,7 +56,29 @@ append-only tombstone, time-scoped succession, root-compromise recovery,
 no-rollback, and freshness policies. The exact policy requirements are in the
 machine ledger.
 
-## Verified evidence snapshot
+## Evidence snapshots
+
+### Current post-migration evidence
+
+Recomputed after rebasing onto target `main` at
+`4c2b999f8c890b76d057241d29ecda29e0239d79`:
+
+| Subject | Current verified fact |
+|---|---|
+| Migration commits | `2cee074d755fe1ca1e81f5fb0c2331cbc47f1537`, `803cc76294b8a89273470d3167dde6f01df41e7d`, `591e7aec3b2183e0d48a1d6dfb6ebc59f177daea`, `4c2b999f8c890b76d057241d29ecda29e0239d79` |
+| Status | `RAPP1_STATUS.md` SHA-256 `5d97b9a7ff9917a21d667fd0006a6cb2346f03738dfbcdff96c6ad4a89aa9fb6`; both owner-ledger links and `Active-path residual` are present |
+| Current facade | `rapp_brainstem/rapp1_facade.py`; source commit `4c2b999f8c890b76d057241d29ecda29e0239d79`; blob `d663613d05b5a6512b05fa977012ef272495174e`; SHA-256 `48285bcdc0bba86a01124b8aefee55fdb1e18d4951f4735f775e071324923c43`; tracked target-owned post-migration pre-acceptance candidate |
+| Facade support | launcher SHA-256 `81a7e508d6e582759d92974434b5a6dcf0fb8c59bbab861518d232b123652dc1`; contract SHA-256 `a06b55626ab6ff7b30da92dc00670567254265ef12ec7762f00bb659e21dcab0`; tests SHA-256 `b78dc9128685d34e1d8c7e9d36624cf96feeb9ff4e2eb40fa6e9ea0c70fadebf` |
+| Current facade migration state | SQLite schema version 3; canonical semantic request-fingerprint version 3; bound legacy version 2 and unbound legacy version 1 remain migration inputs |
+| Current pending errors | Exactly `malformed-request`, `unknown-session`, `idempotency-conflict`, `idempotency-in-progress`, `session-in-progress`, `inference-refused`, `facade-storage-refused`; still candidate-unregistered |
+| Recomputed unchanged evidence | `rappid.json`, Commons invite, local ecosystem JSON, kernel archive/manifest, `KERNEL_PIN.json`, cave identity, and installer packaging identity retain the hashes in the machine ledger |
+
+### Audit baseline and unchanged trust evidence
+
+The reports below describe target commit
+`f71810db3259fea533b4112c1df300d4b0dc781c`. They remain baseline evidence,
+not claims about post-migration active-path state. Local hash-bearing paths
+listed as unchanged above were recomputed on the rebased tree.
 
 | Subject | Verified fact |
 |---|---|
@@ -69,9 +94,9 @@ machine ledger.
 | Divergent mirror | `kody-w/rapp-god:api/v1/ecosystem-spec.json`; audit file commit `c6c0b3e2a68c96f8ed70005101f996ea91e4bd0e`; blob `d5ea75e4dc2be8cfc5f2e694aa5ce8521033609e`; 60,471 bytes; SHA-256 `f1ddcf7e1302a82195fa682ad94140d0d066bbe60647befc5030ec5b50507e9e` |
 | Kernel `latest` alias | `rapp_kernel/manifest.json` declares unauthenticated `0.6.0`; `rapp_kernel/latest/brainstem.py` SHA-256 `f7fb359bbe8b6ba3db3665d81cb8e573a266c716278d8d21d8962ea40821e5aa`; active pin is distinct `brainstem-v0.6.9` |
 | Canonical doors | Root returns 200 and exact `rappid.json` bytes; `rapp-cave`, `rapp-installer`, and `sample-session` identity doors return 404 |
-| Facade candidate | commit `7f84d84b28bf7b570787af16b0008cec96704f53`; `rapp_brainstem/rapp1_facade.py` SHA-256 `6eca226e5ebc1a41f7eacac9cc98e19d20e5705750b6cd0166d8a0809d19a5da`; audited Tier 1/Tier 2 lack `idempotency_key`, and Tether posts incompatible `{messages}` |
+| Facade legacy-wire baseline | At `f71810…`, audited Tier 1/Tier 2 lacked `idempotency_key`, and Tether posted incompatible `{messages}`; current main now contains the separate migrated facade described above |
 
-The audit reports are retained with maintainer session
+The audit-baseline reports are retained with maintainer session
 `9ac7ec28-fb92-4452-a8c9-477a2363685d`. Their SHA-256 values are:
 
 - `RAPP-spec-matrix-report.md`:
@@ -354,27 +379,30 @@ sidecar path are deliberately `null`. This ledger implementation performs
 
 **Issue title:** `[Owner action] Approve the public RAPP/1 facade switch after registry closure`
 
-- **Why:** The local facade is a pre-acceptance candidate. Its seven errors are
-  unregistered; audited Tier 1/Tier 2 handlers lack `idempotency_key`; Tether
-  sends incompatible `{messages}`; alternate routes could bypass the only wire
-  or touch the immutable grail; and the `rapp-cave`, `rapp-installer`, and
-  `sample-session` identity doors return 404.
+- **Why:** Current main contains the migrated stateful target-owned facade, but
+  it remains pre-acceptance and its seven unchanged candidate errors are
+  unregistered. At the `f71810…` audit baseline, Tier 1/Tier 2 lacked
+  `idempotency_key`, Tether sent incompatible `{messages}`, alternate routes
+  could bypass the wire or touch the immutable grail, and the `rapp-cave`,
+  `rapp-installer`, and `sample-session` identity doors returned 404.
 - **What:** Publish one stateful `POST /chat` gateway only after registration
   and closure; constrain error steps to the exact allowed domain; route
   target-owned clients through it; close or retire missing canonical-door
   claims; retain `GET /health` as control plane; make all alternate capability
   routes unreachable; prove no grail side effects.
-- **Where:** Candidate `rapp_brainstem/rapp1_facade.py` and
-  `run_rapp1_facade.py`; owner-selected public origin; frozen paths in
+- **Where:** Current candidate `rapp_brainstem/rapp1_facade.py` at source
+  commit `4c2b999f8c890b76d057241d29ecda29e0239d79`, SHA-256
+  `48285bcdc0bba86a01124b8aefee55fdb1e18d4951f4735f775e071324923c43`,
+  plus `run_rapp1_facade.py`; owner-selected public origin; frozen paths in
   `KERNEL_PIN.json`; exact door evidence in the machine ledger.
-- **When:** Only after all four status blockers, implementation migrations,
-  canonical-door dispositions, facade tests, pin gate, and owner deployment
-  review pass at one commit.
+- **When:** Only after all four status blockers, the post-migration
+  `Active-path residual`, canonical-door dispositions, current facade tests,
+  pin gate, and owner deployment review pass at one commit.
 - **How:**
-  1. Integrate the reviewed facade without mounting the pinned brainstem app;
-     accept only the exact request, persist session/idempotency state,
-     translate privately to the opaque grail, normalize the exact response,
-     and keep tools disabled.
+  1. Use the recomputed current facade bytes above as the review baseline.
+     Deploy without mounting the pinned brainstem app; accept only the exact
+     request, persist session/idempotency state, translate privately to the
+     opaque grail, normalize the exact response, and keep tools disabled.
   2. Exact-match the seven emitted errors to fresh authenticated registry
      entries.
   3. Permit error `step` only as `"1"`, `"1a"`, `"2"`, `"3"`, `"4"`, `"5"`,
@@ -391,10 +419,11 @@ sidecar path are deliberately `null`. This ledger implementation performs
      the public origin.
   9. Hash all three frozen files before/after and run
      `python3 check_kernel_pin.py`.
-- **Prerequisites:** The four actions above accepted; migrations and facade
-  merged into one reviewed deployment; approved publish-or-retire disposition
-  for the three 404 identity doors; approved Tier 2/Tether/worker gateway or
-  retirement dispositions; all non-owner gates green.
+- **Prerequisites:** The four actions above accepted; target-main migrations
+  through `4c2b999…` present; every remaining `Active-path residual` closed or
+  explicitly fail-closed; approved publish-or-retire disposition for the three
+  404 identity doors; approved Tier 2/Tether/worker gateway or retirement
+  dispositions; all non-owner gates green.
 - **Exact acceptance:**
   1. Deployment source, authenticated registry, and this ledger contain exactly
      the same seven error codes.

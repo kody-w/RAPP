@@ -202,14 +202,41 @@ class Rapp1OwnerActionLedgerTests(unittest.TestCase):
             ),
         )
 
-        evidence = self.ledger["known_evidence"]["facade_candidate"]
+        evidence = self.ledger["known_evidence"]["facade_current"]
+        self.assertEqual(evidence["evidence_state"], "current-post-migration")
         self.assertEqual(
             evidence["source_commit"],
-            "7f84d84b28bf7b570787af16b0008cec96704f53",
+            "4c2b999f8c890b76d057241d29ecda29e0239d79",
         )
         self.assertEqual(evidence["path"], "rapp_brainstem/rapp1_facade.py")
+        self.assertEqual(
+            evidence["path_sha256"],
+            "48285bcdc0bba86a01124b8aefee55fd"
+            "b1e18d4951f4735f775e071324923c43",
+        )
+        self.assertEqual(
+            evidence["git_blob"], "d663613d05b5a6512b05fa977012ef272495174e"
+        )
+        self.assertIn("post-migration pre-acceptance", evidence["path_state"])
+        self.assertEqual(evidence["candidate_error_codes"], EXPECTED_FACADE_CODES)
+        self.assertEqual(
+            evidence["error_code_registration_state"],
+            "candidate-unregistered",
+        )
         self.assertEqual(evidence["allowed_error_steps"], EXPECTED_FACADE_STEPS)
-        legacy_wire = evidence["audited_legacy_wire"]
+        self.assertEqual(evidence["migration_state"]["database_schema_version"], 3)
+        self.assertEqual(
+            evidence["migration_state"]["current_request_fingerprint_version"],
+            3,
+        )
+
+        baseline = self.ledger["known_evidence"]["facade_audit_baseline"]
+        self.assertEqual(baseline["evidence_state"], "audit-baseline")
+        self.assertEqual(
+            baseline["audit_target_commit"],
+            "f71810db3259fea533b4112c1df300d4b0dc781c",
+        )
+        legacy_wire = baseline["legacy_wire"]
         self.assertEqual(
             legacy_wire["tier_1_handler"],
             "rapp_brainstem/brainstem.py:1441-1559",
@@ -220,10 +247,33 @@ class Rapp1OwnerActionLedgerTests(unittest.TestCase):
         )
         self.assertEqual(legacy_wire["tether_request_shape"], "{messages}")
         if FACADE_PATH.exists():
+            facade_bytes = FACADE_PATH.read_bytes()
+            self.assertEqual(
+                hashlib.sha256(facade_bytes).hexdigest(),
+                evidence["path_sha256"],
+            )
+            git_blob = hashlib.sha1(
+                f"blob {len(facade_bytes)}\0".encode("ascii") + facade_bytes
+            ).hexdigest()
+            self.assertEqual(git_blob, evidence["git_blob"])
             emitted = list(
                 assigned_literal(FACADE_PATH, "PENDING_REGISTRY_ERROR_CODES")
             )
             self.assertEqual(emitted, EXPECTED_FACADE_CODES)
+            for relative_path, expected_hash in evidence[
+                "supporting_paths"
+            ].items():
+                self.assertEqual(
+                    hashlib.sha256((ROOT / relative_path).read_bytes()).hexdigest(),
+                    expected_hash,
+                )
+
+        combined = self.ledger_text + self.human
+        self.assertNotIn("7f84d84b28bf7b570787af16b0008cec96704f53", combined)
+        self.assertNotIn(
+            "6eca226e5ebc1a41f7eacac9cc98e19d20e5705750b6cd0166d8a0809d19a5da",
+            combined,
+        )
 
     def test_candidate_protocol_variants_and_kind_families_are_exact(self):
         candidates = self.ledger["candidate_namespaces"]
@@ -245,6 +295,8 @@ class Rapp1OwnerActionLedgerTests(unittest.TestCase):
             EXPECTED_INVALID_LEGACY_KINDS,
         )
         for entry in legacy_kinds:
+            self.assertEqual(entry["evidence_state"], "audit-baseline")
+            self.assertIn("HTTP 410-contained", entry["current_migration_state"])
             self.assertIs(entry["valid_current_kind_grammar"], False)
             self.assertIs(entry["registered"], False)
             self.assertIsNone(entry["replacement_kind"])
@@ -352,6 +404,10 @@ class Rapp1OwnerActionLedgerTests(unittest.TestCase):
         )
 
     def test_report_hashes_and_required_registry_surface_are_pinned(self):
+        self.assertEqual(
+            self.ledger["audit_evidence"]["evidence_state"],
+            "audit-baseline",
+        )
         reports = {
             report["title"]: report
             for report in self.ledger["audit_evidence"]["reports"]
@@ -417,6 +473,47 @@ class Rapp1OwnerActionLedgerTests(unittest.TestCase):
         self.assertIn(
             "registry-owner-and-legacy-kind-decisions", registry_test_ids
         )
+
+    def test_current_migration_evidence_is_recomputed(self):
+        current = self.ledger["current_evidence"]
+        self.assertEqual(current["evidence_state"], "current-post-migration")
+        self.assertEqual(current["target_branch"], "main")
+        self.assertEqual(
+            current["target_commit"],
+            "4c2b999f8c890b76d057241d29ecda29e0239d79",
+        )
+        self.assertEqual(
+            current["migration_commits"],
+            [
+                "2cee074d755fe1ca1e81f5fb0c2331cbc47f1537",
+                "803cc76294b8a89273470d3167dde6f01df41e7d",
+                "591e7aec3b2183e0d48a1d6dfb6ebc59f177daea",
+                "4c2b999f8c890b76d057241d29ecda29e0239d79",
+            ],
+        )
+
+        status_bytes = STATUS_PATH.read_bytes()
+        self.assertEqual(
+            hashlib.sha256(status_bytes).hexdigest(),
+            current["status_sha256"],
+        )
+        status = status_bytes.decode("utf-8")
+        self.assertIn("## Active-path residual", status)
+        self.assertIn(
+            "[`RAPP1_OWNER_ACTIONS.md`](./RAPP1_OWNER_ACTIONS.md)", status
+        )
+        self.assertIn(
+            "[`RAPP1_OWNER_ACTIONS.json`](./RAPP1_OWNER_ACTIONS.json)", status
+        )
+
+        for relative_path, expected_hash in current[
+            "unchanged_path_hashes"
+        ].items():
+            with self.subTest(path=relative_path):
+                self.assertEqual(
+                    hashlib.sha256((ROOT / relative_path).read_bytes()).hexdigest(),
+                    expected_hash,
+                )
 
     def test_root_case_remains_an_explicit_owner_decision(self):
         action = next(

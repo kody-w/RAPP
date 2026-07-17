@@ -22,6 +22,7 @@
     ]
   },
   "audit_evidence": {
+    "evidence_state": "audit-baseline",
     "observed_utc": "2026-07-17T01:09:44.438-04:00",
     "audit_target_commit": "f71810db3259fea533b4112c1df300d4b0dc781c",
     "maintainer_session": "9ac7ec28-fb92-4452-a8c9-477a2363685d",
@@ -42,7 +43,32 @@
         "sha256": "188eef4a3d2f65b93a4e0832515e8fe8b7b8826e1163b683029ab1d14bc51f59"
       }
     ],
-    "scope_note": "The reports are audit evidence, not protocol authority. Exact facts below were rechecked against the pinned standard, target files, git history, facade candidate, and read-only external sources."
+    "scope_note": "These reports describe the f71810 audit baseline and are evidence, not protocol authority or a claim about post-migration path state. Current facts recomputed after rebasing onto main are recorded separately in current_evidence."
+  },
+  "current_evidence": {
+    "evidence_state": "current-post-migration",
+    "observed_utc": "2026-07-17T02:49:19.344-04:00",
+    "target_branch": "main",
+    "target_commit": "4c2b999f8c890b76d057241d29ecda29e0239d79",
+    "migration_commits": [
+      "2cee074d755fe1ca1e81f5fb0c2331cbc47f1537",
+      "803cc76294b8a89273470d3167dde6f01df41e7d",
+      "591e7aec3b2183e0d48a1d6dfb6ebc59f177daea",
+      "4c2b999f8c890b76d057241d29ecda29e0239d79"
+    ],
+    "status_path": "RAPP1_STATUS.md",
+    "status_sha256": "5d97b9a7ff9917a21d667fd0006a6cb2346f03738dfbcdff96c6ad4a89aa9fb6",
+    "status_state": "Owner-action ledger links and the post-migration Active-path residual are both present; the repository remains not fully conformant.",
+    "unchanged_path_hashes": {
+      "rappid.json": "8710b3c45fd660f96d159be41c861bf9fb9bb45acbc40888815d7942d342792e",
+      "pages/tutorials/commons.egg": "2731c02f187701c1d07b3a7f5eed5e2073c203ffb4f6c08d00292894e3319a5d",
+      "specs/ecosystem-spec.json": "0eb8146b62af8e8473d2ca8944ed8aff69e18e41a143eb1ef466f3c3fc153616",
+      "rapp_kernel/manifest.json": "a2826eb8820f4487948bfdb1bf3f80b4ca8ccdf902553d5d109cb8de3bb85889",
+      "rapp_kernel/latest/brainstem.py": "f7fb359bbe8b6ba3db3665d81cb8e573a266c716278d8d21d8962ea40821e5aa",
+      "KERNEL_PIN.json": "427a37cc914a279b9c32a2ab85be9a19a0046f10f9f503c088a2670b6646e21c",
+      "cave/rappid.json": "2a74e9c677128208316a73e2ac3c8ac4da20e19363968b71c40fdee62ff47de6",
+      "cave/rapplications/rapp-installer/rappid.json": "f2160814514b85d4ca9f34c45e41e99a7a3e34bb605fd5560ef468f3e1774144"
+    }
   },
   "known_evidence": {
     "root_identity": {
@@ -195,12 +221,27 @@
       "active_pin_tag": "brainstem-v0.6.9",
       "payload_edit_allowed": false
     },
-    "facade_candidate": {
-      "source_commit": "7f84d84b28bf7b570787af16b0008cec96704f53",
+    "facade_current": {
+      "evidence_state": "current-post-migration",
+      "observed_against_main_commit": "4c2b999f8c890b76d057241d29ecda29e0239d79",
+      "source_commit": "4c2b999f8c890b76d057241d29ecda29e0239d79",
       "path": "rapp_brainstem/rapp1_facade.py",
-      "path_sha256": "6eca226e5ebc1a41f7eacac9cc98e19d20e5705750b6cd0166d8a0809d19a5da",
+      "path_state": "tracked regular file mode 100644; bytes match target main; target-owned post-migration pre-acceptance candidate; not publicly approved",
+      "git_mode": "100644",
+      "git_blob": "d663613d05b5a6512b05fa977012ef272495174e",
+      "path_sha256": "48285bcdc0bba86a01124b8aefee55fdb1e18d4951f4735f775e071324923c43",
       "route_candidate": "POST /chat",
       "control_route": "GET /health",
+      "candidate_error_codes": [
+        "malformed-request",
+        "unknown-session",
+        "idempotency-conflict",
+        "idempotency-in-progress",
+        "session-in-progress",
+        "inference-refused",
+        "facade-storage-refused"
+      ],
+      "error_code_registration_state": "candidate-unregistered",
       "allowed_error_steps": [
         "1",
         "1a",
@@ -211,7 +252,25 @@
         "6",
         null
       ],
-      "audited_legacy_wire": {
+      "migration_state": {
+        "database_schema_version": 3,
+        "current_request_fingerprint_version": 3,
+        "bound_legacy_fingerprint_version": 2,
+        "unbound_legacy_fingerprint_version": 1,
+        "documentation_state": "pre-acceptance"
+      },
+      "supporting_paths": {
+        "rapp_brainstem/run_rapp1_facade.py": "81a7e508d6e582759d92974434b5a6dcf0fb8c59bbab861518d232b123652dc1",
+        "rapp_brainstem/RAPP1_FACADE.md": "a06b55626ab6ff7b30da92dc00670567254265ef12ec7762f00bb659e21dcab0",
+        "rapp_brainstem/test_rapp1_facade.py": "b78dc9128685d34e1d8c7e9d36624cf96feeb9ff4e2eb40fa6e9ea0c70fadebf"
+      },
+      "publicly_approved": false
+    },
+    "facade_audit_baseline": {
+      "evidence_state": "audit-baseline",
+      "audit_target_commit": "f71810db3259fea533b4112c1df300d4b0dc781c",
+      "report_section": "RAPP-spec-matrix-report.md#F8",
+      "legacy_wire": {
         "tier_1_handler": "rapp_brainstem/brainstem.py:1441-1559",
         "tier_1_is_pinned_grail": true,
         "tier_2_handler": "rapp_swarm/function_app.py:1103-1199",
@@ -224,7 +283,7 @@
           "worker/worker.js:106-277"
         ]
       },
-      "publicly_approved": false
+      "current_interpretation": "Historical audit baseline only. Current main contains the separate stateful target-owned facade, while these legacy routes remain immutable input or migration/containment evidence and do not become the public RAPP/1 wire."
     }
   },
   "candidate_namespaces": {
@@ -290,6 +349,8 @@
       {
         "legacy_kind": "memory_added",
         "audit_source": "installer/plant.sh:6308",
+        "evidence_state": "audit-baseline",
+        "current_migration_state": "retained legacy planter is HTTP 410-contained; no current registration",
         "valid_current_kind_grammar": false,
         "registered": false,
         "replacement_kind": null
@@ -297,6 +358,8 @@
       {
         "legacy_kind": "conversation",
         "audit_source": "installer/plant.sh:7624",
+        "evidence_state": "audit-baseline",
+        "current_migration_state": "retained legacy planter is HTTP 410-contained; no current registration",
         "valid_current_kind_grammar": false,
         "registered": false,
         "replacement_kind": null
@@ -304,6 +367,8 @@
       {
         "legacy_kind": "tool_call",
         "audit_source": "installer/plant.sh:7733",
+        "evidence_state": "audit-baseline",
+        "current_migration_state": "retained legacy planter is HTTP 410-contained; no current registration",
         "valid_current_kind_grammar": false,
         "registered": false,
         "replacement_kind": null
@@ -633,10 +698,13 @@
       "title": "Approve the public RAPP/1 facade switch",
       "issue_title": "[Owner action] Approve the public RAPP/1 facade switch after registry closure",
       "status": "owner-action-required",
-      "why": "The target-owned facade has an exact local candidate wire, but its seven error codes are unregistered, audited Tier 1 and Tier 2 handlers have no idempotency_key, Tether emits an incompatible request, the repository contains alternate capability routes, and three claimed canonical identity doors return 404. Publishing early would turn a pre-acceptance implementation into a false conformance claim and could route around the immutable-grail boundary.",
+      "why": "Current main contains the migrated stateful target-owned facade, but it remains pre-acceptance and its seven unchanged candidate error codes are unregistered. The f71810 audit-baseline Tier 1 and Tier 2 handlers had no idempotency_key, Tether emitted an incompatible request, alternate capability routes could bypass the wire, and three claimed canonical identity doors returned 404. Publishing before the remaining gates close would turn a candidate into a false conformance claim and could route around the immutable-grail boundary.",
       "what": "The owner must approve one public POST /chat route backed only by the target-owned stateful facade after registry and migration closure, prove all candidate error codes are registered, constrain error steps to the exact standard domain, route target-owned clients through the gateway, close or explicitly retire missing canonical-door claims, ensure alternate capability routes are unavailable, and verify that requests cannot mutate, mount, deploy, or execute through pinned grail paths.",
       "where": {
         "candidate_source": "rapp_brainstem/rapp1_facade.py",
+        "current_source_commit": "4c2b999f8c890b76d057241d29ecda29e0239d79",
+        "current_source_sha256": "48285bcdc0bba86a01124b8aefee55fdb1e18d4951f4735f775e071324923c43",
+        "current_source_state": "tracked target-owned post-migration pre-acceptance candidate",
         "candidate_launcher": "rapp_brainstem/run_rapp1_facade.py",
         "candidate_contract": "rapp_brainstem/RAPP1_FACADE.md",
         "public_origin": null,
@@ -645,9 +713,9 @@
         "canonical_door_evidence": "RAPP1_OWNER_ACTIONS.json#known_evidence.canonical_doors",
         "pinned_grail_record": "KERNEL_PIN.json"
       },
-      "when": "Switch public routing only after all four RAPP1_STATUS owner blockers, canonical-door dispositions, implementation migrations, exact facade tests, immutable pin gate, and owner deployment review pass on the same deployment commit.",
+      "when": "Switch public routing only after all four RAPP1_STATUS owner blockers, the post-migration Active-path residual, canonical-door dispositions, exact current-facade tests, immutable pin gate, and owner deployment review pass on the same deployment commit.",
       "how": [
-        "Integrate the reviewed facade candidate as a stateful compatibility gateway in front of the opaque immutable grail: accept only the exact request, persist session and idempotency state, translate privately, normalize the exact response, keep tools disabled, and never mount or edit the pinned brainstem Flask application.",
+        "Use the current migrated facade bytes identified in known_evidence.facade_current as the review baseline, then deploy them as a stateful compatibility gateway in front of the opaque immutable grail: accept only the exact request, persist session and idempotency state, translate privately, normalize the exact response, keep tools disabled, and never mount or edit the pinned brainstem Flask application.",
         "Verify the fresh authenticated registry contains exact error-code entries for all seven facade codes before routing any public request.",
         "Require every emitted error step to be one of 1, 1a, 2, 3, 4, 5, 6, or null; registration of an error code does not permit any other step.",
         "Inventory public routes and remove or make unreachable every direct-agent, alternate-chat, legacy business-function, browser-worker, and grail /chat route as a RAPP capability; retain only POST /chat plus control-plane GET /health.",
@@ -664,7 +732,7 @@
         "owners-correct-or-retire-external-mirror is accepted.",
         "The cave, installer, and sample-session 404 canonical-door claims have approved publish-or-retire dispositions that respect the immutable installer boundary.",
         "Target-owned Tier 2, Tether, and worker routes have approved gateway migration or retirement dispositions.",
-        "All implementation migrations and the facade candidate are merged into one reviewed deployment commit.",
+        "Current main migration commits through 4c2b999f8c890b76d057241d29ecda29e0239d79 are present, and every remaining Active-path residual has a reviewed closure or explicit fail-closed disposition.",
         "The repository status claim remains blocked until every non-owner conformance gate also passes."
       ],
       "owner_inputs": {
