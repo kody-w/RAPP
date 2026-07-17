@@ -1,54 +1,31 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#000" />
-  <title>vbrainstem → grail (heimdall)</title>
-  <link rel="canonical" href="https://kody-w.github.io/heimdall/" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>410 Gone — vBrainstem</title>
   <style>
-    body { background: #000; color: #fff; font: 15px/1.55 -apple-system, system-ui, sans-serif;
-      margin: 0; padding: 60px 20px; text-align: center; }
+    :root { color-scheme: dark; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center;
+      background: #0d1117; color: #e6edf3; font: 16px/1.6 system-ui, sans-serif; }
+    main { width: min(42rem, calc(100% - 3rem)); padding: 2rem;
+      border: 1px solid #30363d; border-radius: 12px; background: #161b22; }
+    .status { color: #f85149; font: 700 .8rem/1.2 ui-monospace, monospace;
+      letter-spacing: .12em; text-transform: uppercase; }
+    h1 { margin: .5rem 0 1rem; font-size: clamp(1.6rem, 5vw, 2.4rem); }
+    p { color: #b1bac4; }
+    code { color: #e6edf3; }
     a { color: #58a6ff; }
-    h1 { font-weight: 600; font-size: 18px; }
-    code { background: #161b22; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
   </style>
 </head>
 <body>
-  <h1>vbrainstem IS heimdall's index.html now (the grail)</h1>
-  <p>Per the operator: stop rebuilding this thing — heimdall is the canonical browser brainstem.</p>
-  <p>Redirecting to <span id="dest">…</span></p>
-  <p style="margin-top: 30px;"><a id="manual" href="/RAPP/pages/summon.html">Tap a twin in the summon portal →</a></p>
-
-  <script>
-    // The grail browser brainstem is heimdall's index.html. It supports
-    // embodying ANY planted twin via ?seed=<owner>/<repo>. We point all
-    // canonical vbrainstem URLs at it instead of duplicating the file.
-    //
-    // Behavior:
-    //   - If localStorage.vbs_rappid is a v2 rappid: extract owner/repo,
-    //     redirect to heimdall/?seed=owner/repo (auto-embody)
-    //   - Otherwise: redirect to summon portal so the user picks a twin
-    const GRAIL = "https://kody-w.github.io/heimdall/";
-    const rappid = localStorage.getItem("vbs_rappid") || "";
-    // Eternity rappid:@<owner>/<slug>:<hash> (legacy v2 prefix optional, read-compat)
-    const m = /^rappid:(?:v2:[^:]+:)?@([^/]+)\/([^:]+):/.exec(rappid);
-    if (m) {
-      const dest = `${GRAIL}?seed=${encodeURIComponent(m[1] + "/" + m[2])}`;
-      document.getElementById("dest").innerHTML = `<a href="${dest}">${dest}</a>`;
-      setTimeout(() => location.replace(dest), 700);
-    } else {
-      // Allow direct heimdall (no embodied seed) for the operator's own brainstem
-      const params = new URLSearchParams(location.search);
-      if (params.get("seed")) {
-        const dest = GRAIL + "?seed=" + encodeURIComponent(params.get("seed"));
-        document.getElementById("dest").innerHTML = `<a href="${dest}">${dest}</a>`;
-        setTimeout(() => location.replace(dest), 600);
-      } else {
-        document.getElementById("dest").innerHTML = `<a href="/RAPP/pages/summon.html">summon portal</a>`;
-        setTimeout(() => location.replace("/RAPP/pages/summon.html"), 1500);
-      }
-    }
-  </script>
+  <main>
+    <p class="status">HTTP 410 · Gone</p>
+    <h1>vBrainstem has been retired</h1>
+    <p>The target-owned legacy surface at <code>pages/vbrainstem/</code> is permanently unavailable.</p>
+    <p>It does not execute agents, mint identities, emit frames or eggs, import artifacts, or proxy model inference. There is no fallback capability route.</p>
+    <p>Maintainers: read <a href="../../RAPP1_CONFORMANCE.md">RAPP1_CONFORMANCE.md</a> before introducing a conformant replacement.</p>
+  </main>
 </body>
 </html>

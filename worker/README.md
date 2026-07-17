@@ -12,6 +12,7 @@ Tier 1 (local Python brainstem) and Tier 2 (Azure Functions swarm) talk to GitHu
 | `POST /api/auth/device` | Start device-code flow | Body: `{ client_id?, scope? }`. Defaults to the Copilot client id used by `brainstem.py`. |
 | `POST /api/auth/device/poll` | Poll device-code completion | Body: `{ device_code, client_id? }`. Returns `access_token` or `{ error: 'authorization_pending' }`. |
 | `GET /api/copilot/token` | Exchange `ghu_` for Copilot session bearer + endpoint | Sends the same `Editor-Version` + `Copilot-Integration-Id` headers `brainstem.py` does. |
+| `ANY /api/copilot/chat[/…]` | Retired capability route | Always returns HTTP 410 and never proxies inference. |
 | `GET /api/models` | GitHub Models catalog proxy with CORS | Public, no auth needed. 5-min edge cache. |
 | `GET /api/user` | `api.github.com/user` proxy | Convenience — browser can also call upstream directly. |
 | `GET /healthz` | Liveness | Returns `ok`. |

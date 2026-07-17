@@ -1,1 +1,10 @@
+# RAPP/1 containment: the legacy Tier-2 runtime is not deployable.
 .venv
+function_app.py
+agents/
+services/
+_vendored/
+utils/
+index.html
+*.sh
+README.md

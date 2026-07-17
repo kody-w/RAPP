@@ -1,19 +1,13 @@
 /* =====================================================================
- * rapp-auth — Cloudflare Worker for the entire RAPP stack.
+ * rapp-auth — Cloudflare Worker for RAPP auth and model control-plane calls.
  *
- * The single auth + proxy surface used by any RAPP consumer that runs
- * outside a server (the virtual brainstem today; future PWAs, Copilot
- * Studio embeds, browser extensions tomorrow). Tier-1 (local brainstem)
- * and Tier-2 (Azure Functions) talk to GitHub directly from server-side
- * code and don't need this worker — but they can use it interchangeably
- * if they want one consistent auth surface across all tiers.
+ * This worker holds browser-incompatible OAuth secrets and proxies model
+ * metadata. It is not a capability or inference surface.
  *
  * What it does:
  *   - Holds the OAuth App client_secret so the browser doesn't have to.
  *   - Proxies the GitHub Models catalog (CORS-blocked upstream).
- *   - Proxies the GitHub Copilot device-code + token-exchange APIs
- *     (also CORS-blocked from kody-w.github.io). This unlocks the
- *     same Copilot flow the local brainstem.py uses.
+ *   - Proxies the GitHub Copilot device-code + token-exchange APIs.
  *
  * What it does NOT do:
  *   - Store tokens. Stateless. No KV, no D1, no logs.
@@ -33,8 +27,7 @@
  *                                ?endpoint=https://api.individual.githubcopilot.com
  *                                → proxy {endpoint}/models with Editor headers + CORS
  *   POST /api/copilot/chat       Authorization: Bearer <copilot-token>
- *                                ?endpoint=https://api.individual.githubcopilot.com
- *                                → proxy {endpoint}/chat/completions
+ *                                → HTTP 410; capability route retired
  *   GET  /api/models             → public catalog proxy (no auth required, 5-min edge cache)
  *   GET  /api/user               Authorization: Bearer …
  *                                → api.github.com/user proxy
@@ -98,6 +91,19 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const p = url.pathname;
+
+    // ── Retired capability surface ──────────────────────────────────
+    if (p === '/api/copilot/chat' || p.startsWith('/api/copilot/chat/')) {
+      return json({
+        error: 'gone',
+        code: 'capability-route-retired',
+        route: p,
+        guidance: 'RAPP1_CONFORMANCE.md',
+      }, {
+        status: 410,
+        headers: { 'Cache-Control': 'no-store' },
+      }, request);
+    }
 
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: corsHeaders(request) });
@@ -201,31 +207,6 @@ export default {
           'Copilot-Integration-Id': 'vscode-chat',
           'User-Agent': 'GitHubCopilotChat/0.22.2024',
         },
-      });
-      return passthroughText(upstream, request);
-    }
-
-    // ── Copilot chat completions proxy ─────────────────────────────
-    if (p === '/api/copilot/chat' && request.method === 'POST') {
-      const auth = request.headers.get('Authorization');
-      if (!auth) return json({ error: 'missing Authorization' }, { status: 401 }, request);
-      const endpoint = url.searchParams.get('endpoint') || 'https://api.individual.githubcopilot.com';
-      if (!/^https:\/\/[a-z0-9.-]*githubcopilot\.com\/?$/i.test(endpoint)) {
-        return json({ error: 'invalid endpoint' }, { status: 400 }, request);
-      }
-      const body = await request.text();
-      const upstream = await fetch(endpoint.replace(/\/$/, '') + '/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': auth,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Editor-Version': 'vscode/1.95.0',
-          'Editor-Plugin-Version': 'copilot/1.0.0',
-          'Copilot-Integration-Id': 'vscode-chat',
-          'User-Agent': 'GitHubCopilotChat/0.22.2024',
-        },
-        body,
       });
       return passthroughText(upstream, request);
     }
