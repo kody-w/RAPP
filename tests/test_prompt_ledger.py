@@ -2,8 +2,11 @@
 from __future__ import annotations
 
 import json
+import importlib.util
 import re
+import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -99,15 +102,16 @@ def test_html_escapes_user_content(html):
 
 # ---------------------------------------------------------------- embedder
 
-def test_embedder_runs():
+def test_embedded_prompts_are_current_without_writeback():
+    before = HTML.read_bytes()
     result = subprocess.run(
-        ["python3", str(EMBED)],
+        ["python3", str(EMBED), "--check"],
         capture_output=True, text=True, timeout=15, cwd=str(ROOT),
     )
     assert result.returncode == 0, (
         f"embedder failed:\nstdout={result.stdout}\nstderr={result.stderr}"
     )
-    # Confirm the embedded block now matches sidecar.
+    assert HTML.read_bytes() == before
     html = HTML.read_text()
     m = re.search(
         r'<script id="prompts-data" type="application/json">(.*?)</script>',
@@ -117,6 +121,36 @@ def test_embedder_runs():
     payload = json.loads(m.group(1).strip())
     sidecar = json.loads(DATA.read_text())
     assert payload == sidecar
+
+
+def test_embedder_check_mode_detects_drift_without_repair():
+    scratch = ROOT / "tests/.rapp1-prompt-ledger-test"
+    shutil.rmtree(scratch, ignore_errors=True)
+    try:
+        scratch.mkdir(parents=True)
+        data_path = scratch / "prompts.json"
+        html_path = scratch / "prompts.html"
+        payload = {"prompts": [{"id": 1}]}
+        stale = (
+            '<script id="prompts-data" type="application/json">\n'
+            '{"prompts":[]}\n'
+            "</script>\n"
+        )
+        data_path.write_text(json.dumps(payload), encoding="utf-8")
+        html_path.write_text(stale, encoding="utf-8")
+
+        spec = importlib.util.spec_from_file_location("embed_prompts_test", EMBED)
+        embedder = importlib.util.module_from_spec(spec)
+        assert spec.loader is not None
+        sys.modules[spec.name] = embedder
+        spec.loader.exec_module(embedder)
+        embedder.DATA = data_path
+        embedder.HTML = html_path
+
+        assert embedder.main(["--check"]) == 1
+        assert html_path.read_text(encoding="utf-8") == stale
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
 
 
 # ---------------------------------------------------------------- manifest

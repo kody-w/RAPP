@@ -23,7 +23,7 @@
 1. **All automated tests pass after the change.**
    Not "the new tests pass" — *all* tests, including pre-existing ones. Ran and observed.
    For RAPP/1 structural/pre-acceptance work, the authoritative local command is
-   `python3.11 tests/run_rapp1_conformance.py`; its owner-action blocker report
+   `python3 tests/run_rapp1_conformance.py`; its owner-action blocker report
    remains separate from target-owned test failures.
 2. **All affected scenarios pass with the intended outcome.**
    Exit code 0 is necessary but not sufficient — the scenario's `step_pass` count must match the expected count, and the `step_fail` count must be zero.

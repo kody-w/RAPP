@@ -17,8 +17,10 @@ cd "$(dirname "$0")/../.."
 PYTHON="${PYTHON:-$HOME/.brainstem/venv/bin/python}"
 [ -x "$PYTHON" ] || PYTHON="$(command -v python3)"
 
-LOG="/tmp/rapp-organism-06.log"
-PID_FILE="/tmp/rapp-organism-06.pid"
+WORK_DIR="${TMPDIR:-$(pwd)/tests/.rapp1-work}/organism-06-$$"
+mkdir -p "$WORK_DIR"
+LOG="$WORK_DIR/brainstem.log"
+PID_FILE="$WORK_DIR/brainstem.pid"
 
 PORT=""
 for p in 7095 7096 7097 7098 7099; do
@@ -31,8 +33,8 @@ done
 cleanup() {
     if [ -f "$PID_FILE" ]; then
         kill "$(cat "$PID_FILE")" 2>/dev/null || true
-        rm -f "$PID_FILE"
     fi
+    rm -rf "$WORK_DIR"
 }
 trap cleanup EXIT
 

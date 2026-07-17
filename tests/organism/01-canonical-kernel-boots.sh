@@ -13,8 +13,10 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 
 REPO_ROOT="$(pwd)"
-LOG="/tmp/rapp-organism-01.log"
-PID_FILE="/tmp/rapp-organism-01.pid"
+WORK_DIR="${TMPDIR:-$REPO_ROOT/tests/.rapp1-work}/organism-01-$$"
+mkdir -p "$WORK_DIR"
+LOG="$WORK_DIR/brainstem.log"
+PID_FILE="$WORK_DIR/brainstem.pid"
 
 # Pick a free port
 PORT=""
@@ -28,8 +30,8 @@ done
 cleanup() {
     if [ -f "$PID_FILE" ]; then
         kill "$(cat "$PID_FILE")" 2>/dev/null || true
-        rm -f "$PID_FILE"
     fi
+    rm -rf "$WORK_DIR"
 }
 trap cleanup EXIT
 

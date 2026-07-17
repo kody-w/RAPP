@@ -116,8 +116,8 @@ Fetch [`skill.md`](https://kody-w.github.io/RAPP/pages/docs/skill.md) and cache 
 ## Tests
 
 ```bash
-python3.11 -m pip install -r requirements-rapp1-core.txt -r rapp_brainstem/requirements.txt pytest
-python3.11 tests/run_rapp1_conformance.py
+python3 -m pip install -r requirements-rapp1-core.txt -r rapp_brainstem/requirements.txt pytest
+python3 tests/run_rapp1_conformance.py
 ```
 
 This is the authoritative offline RAPP/1 structural/pre-acceptance runner. It

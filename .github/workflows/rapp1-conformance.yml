@@ -32,10 +32,10 @@ jobs:
 
       - name: Install target-owned test dependencies
         run: >-
-          python3.11 -m pip install
+          python3 -m pip install
           -r requirements-rapp1-core.txt
           -r rapp_brainstem/requirements.txt
           pytest
 
       - name: Run canonical structural pre-acceptance gate
-        run: python3.11 tests/run_rapp1_conformance.py
+        run: python3 tests/run_rapp1_conformance.py

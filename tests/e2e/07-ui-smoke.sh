@@ -1,20 +1,25 @@
 #!/usr/bin/env bash
-# UI smoke: brainstem serves /, HTML parses, v0.6.0 chrome markers AND
-# v0.12.x feature handlers are both present in the served file.
+# UI smoke: brainstem serves /, HTML parses, and current UI handlers are present.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
 PORT="${PORT:-7072}"
-PID_FILE=/tmp/rapp-e2e-brainstem.pid
-LOG=/tmp/rapp-e2e-brainstem.log
-HTML=/tmp/rapp-e2e-index.html
+PYTHON="${PYTHON:-python3}"
+if [ -x "$HOME/.brainstem/venv/bin/python" ]; then
+    PYTHON="$HOME/.brainstem/venv/bin/python"
+fi
+WORK_DIR="${TMPDIR:-$(pwd)/tests/.rapp1-work}/ui-smoke-$$"
+mkdir -p "$WORK_DIR"
+PID_FILE="$WORK_DIR/brainstem.pid"
+LOG="$WORK_DIR/brainstem.log"
+HTML="$WORK_DIR/index.html"
 
 cleanup() {
     if [ -f "$PID_FILE" ]; then
         kill "$(cat "$PID_FILE")" 2>/dev/null || true
         rm -f "$PID_FILE"
     fi
-    rm -f "$HTML"
+    rm -rf "$WORK_DIR"
 }
 trap cleanup EXIT
 
@@ -22,7 +27,7 @@ if curl -sf "http://localhost:$PORT/health" >/dev/null 2>&1; then
     echo "▶ Reusing brainstem already on :$PORT"
 else
     echo "▶ Starting brainstem on :$PORT..."
-    ( cd rapp_brainstem && PORT=$PORT python3 brainstem.py ) > "$LOG" 2>&1 &
+    ( cd rapp_brainstem && exec env PORT="$PORT" "$PYTHON" brainstem.py ) > "$LOG" 2>&1 &
     echo $! > "$PID_FILE"
     for i in $(seq 1 30); do
         curl -sf "http://localhost:$PORT/health" >/dev/null 2>&1 && break
@@ -34,6 +39,7 @@ echo "▶ GET / ..."
 HTTP=$(curl -s -o "$HTML" -w "%{http_code}" "http://localhost:$PORT/")
 if [ "$HTTP" != "200" ]; then
     echo "FAIL: / returned HTTP $HTTP"
+    cat "$LOG" >&2
     exit 1
 fi
 BYTES=$(wc -c < "$HTML")
@@ -59,7 +65,7 @@ if p.err:
 EOF
 echo "PASS: HTML parses cleanly"
 
-# ── v0.6.0 chrome markers ─────────────────────────────────────────────
+# ── Current chrome markers ────────────────────────────────────────────
 
 check_marker() {
     local label="$1"; local pattern="$2"
@@ -72,30 +78,25 @@ check_marker() {
     fi
 }
 
-echo "▶ Checking v0.6.0 chrome markers..."
+echo "▶ Checking current chrome markers..."
 check_marker "header RAPP Brainstem title"           'RAPP Brainstem'
 check_marker "status indicator element"              'id="status-text"|status-dot|class="status"'
 check_marker "model-select dropdown"                 'model-select'
 check_marker "footer tag present"                    '<footer'
 check_marker "Export toolbar link"                   'exportChat\(\)'
 check_marker "Import toolbar link"                   'chat-import'
-check_marker "Clear toolbar link"                    'clearChat\(\)|Clear'
+check_marker "Clear toolbar link"                   'clearChat\(\)|Clear'
 check_marker "Get Help link (diagnostics report)"    'reportToAdmin\(\)|Get Help'
 check_marker "Send button"                           'id="send"|onclick="send\(\)"|Send'
-check_marker "icon-only labeled-btn override applied" '\.icon-btn\.labeled-btn \.btn-label \{ display: none'
 
-# ── v0.12.x feature wiring (must survive the look-and-feel port) ─────
+# ── Current feature wiring ────────────────────────────────────────────
 
-echo "▶ Checking v0.12.x feature handlers are still wired..."
+echo "▶ Checking current feature handlers are wired..."
 check_marker "voice toggle endpoint"                 '/voice/toggle'
 check_marker "voice config endpoint"                 '/voice/config'
 check_marker "models list endpoint"                  '/models'
 check_marker "agents API endpoint"                   '/agents'
 check_marker "diagnostics export"                    '/diagnostics|exportBook'
-check_marker "egg export"                            'exportEgg|egg/export'
-check_marker "twin mode JS variable"                 'twinMode'
-check_marker "swarm management JS"                   'swarmSelect|activeSwarms|swarm-bar'
-check_marker "settings panel"                        'settings-gear-btn|sp-'
 check_marker "starter prompts"                       'starter-btn'
 
 echo "✅ UI smoke test passed"

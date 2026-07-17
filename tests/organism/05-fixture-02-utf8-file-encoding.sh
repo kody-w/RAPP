@@ -45,7 +45,9 @@ fi
 PYTHON="${PYTHON:-$HOME/.brainstem/venv/bin/python}"
 [ -x "$PYTHON" ] || PYTHON="$(command -v python3)"
 
-TMP_ORG="$(mktemp -d /tmp/rapp-organism-05.XXXXXX)"
+WORK_BASE="${TMPDIR:-$(pwd)/tests/.rapp1-work}"
+mkdir -p "$WORK_BASE"
+TMP_ORG="$(mktemp -d "$WORK_BASE/rapp-organism-05.XXXXXX")"
 trap 'rm -rf "$TMP_ORG"' EXIT
 
 # Write a soul.md with UTF-8 multibyte content (smart quotes, emoji, CJK).

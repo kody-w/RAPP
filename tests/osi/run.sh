@@ -11,14 +11,14 @@ for arg in "$@"; do
             # The canonical runner is always offline.
             ;;
         --help|-h)
-            exec python3.11 "$ROOT/tests/run_rapp1_conformance.py" --help
+            exec python3 "$ROOT/tests/run_rapp1_conformance.py" --help
             ;;
         *)
             echo "Unsupported legacy OSI selector: $arg" >&2
-            echo "Use python3.11 tests/run_rapp1_conformance.py --list" >&2
+            echo "Use python3 tests/run_rapp1_conformance.py --list" >&2
             exit 2
             ;;
     esac
 done
 
-exec python3.11 "$ROOT/tests/run_rapp1_conformance.py" "${ARGS[@]}"
+exec python3 "$ROOT/tests/run_rapp1_conformance.py" "${ARGS[@]}"

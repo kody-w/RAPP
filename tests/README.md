@@ -3,14 +3,14 @@
 The authoritative target-owned offline command is:
 
 ```bash
-python3.11 -m pip install \
+python3 -m pip install \
   -r requirements-rapp1-core.txt \
   -r rapp_brainstem/requirements.txt \
   pytest
-python3.11 tests/run_rapp1_conformance.py
+python3 tests/run_rapp1_conformance.py
 ```
 
-Use `python3.11 tests/run_rapp1_conformance.py --list` to see every gate and
+Use `python3 tests/run_rapp1_conformance.py --list` to see every gate and
 the separately reported owner-action blockers. A green run proves local
 structural/pre-acceptance behavior only; it does not establish authenticated
 RAPP/1 acceptance.
@@ -28,15 +28,23 @@ RAPP/1 acceptance.
 | `test_active_path_migrations.py` and other top-level Python tests | Owner-independent migration and planning behavior. |
 | `run-tests.mjs` | Dependency-free current JS/static contract checks. |
 | `vault-check.mjs` | Vault links/aliases, metadata, and PII posture. |
-| `check_rapp1_static.py` | Strict JSON, HTML parse, shell/JS syntax, and retired-test inventory. |
-| `e2e/08-html-pages.sh` | Target-owned HTML smoke checks. |
+| `check_rapp1_static.py` | Strict syntax, immutable workflow refs, retired fixtures, and exhaustive active-suite inventory. |
+| `e2e/07-ui-smoke.sh` + `e2e/08-html-pages.sh` | Local served-UI and target-owned HTML smoke checks. |
+| `features/F10-ecosystem-audit.sh` | Offline ecosystem contract and drift fixtures. |
+| `organism/run-all.sh` | Retained local kernel, encoding, storage, and concurrency fixtures. |
+| `scenarios/16-metropolis-tracker.sh` + `scenarios/20-cross-tracker-federation.sh` | Offline tracker and federation fixtures. |
 | `../installer/test_plant.sh` | Side-effect-free target-owned planter retirement. |
 
-The one ambient-network pytest,
-`TestMemoryAgentIntegration.test_manage_then_recall_memory`, is deliberately
-deselected because it downloads moving agent sources. Cloud/provider,
-credentialed deployment, destructive planting, and Playwright suites are not
-part of the authoritative offline gate.
+Every tracked test candidate is classified in
+`rapp1-test-suite-inventory.json`. Ambient-network, authenticated `gh`,
+cloud/provider, credentialed deployment, destructive install/removal,
+Dreamcatcher, doorman, mirror, and Playwright/PeerJS suites are not part of the
+authoritative offline gate; canonical static inspection still checks their
+applicable syntax.
+
+The supplemental `rapp-drift-lint` workflow is pinned to immutable commit
+`de1c664154d3456224bdf95e830736ffb5270c2b`; it is hygiene only, not RAPP/1
+authority or authenticated acceptance evidence.
 
 ## Retired tests
 

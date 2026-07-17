@@ -1,0 +1,314 @@
+{
+  "schema": "rapp1-test-suite-inventory/1.0",
+  "scope": "Every tracked .py/.sh/.js/.mjs/.html candidate below tests/, excluding non-executable tests/fixtures migration evidence.",
+  "candidate_suffixes": [
+    ".html",
+    ".js",
+    ".mjs",
+    ".py",
+    ".sh"
+  ],
+  "excluded_prefixes": [
+    "tests/fixtures/"
+  ],
+  "policy": "Every active candidate is either reached by the canonical offline runner, a documented non-recursive entrypoint/support file, or explicitly external, credentialed, destructive, or network-dependent.",
+  "entries": [
+    {
+      "path": "tests/check_kernel_pin_local.py",
+      "disposition": "canonical-direct",
+      "reason": "Compares KERNEL_PIN hashes only with repository-local frozen bytes.",
+      "gate": "kernel-pin-local"
+    },
+    {
+      "path": "tests/check_rapp1_static.py",
+      "disposition": "canonical-direct",
+      "reason": "Runs strict syntax, immutable-action, quarantine, and suite-inventory inspections.",
+      "gate": "static-inspection"
+    },
+    {
+      "path": "tests/doorman/chat.js",
+      "disposition": "external",
+      "reason": "Requires a live authenticated doorman/chat deployment; canonical static inspection still checks JavaScript syntax."
+    },
+    {
+      "path": "tests/doorman/smoke.js",
+      "disposition": "external",
+      "reason": "Requires a live authenticated doorman/chat deployment; canonical static inspection still checks JavaScript syntax."
+    },
+    {
+      "path": "tests/dreamcatcher-conformance/runner.py",
+      "disposition": "external",
+      "reason": "Requires the separately supplied Dreamcatcher execution engine and fixtures."
+    },
+    {
+      "path": "tests/e2e/07-ui-smoke.sh",
+      "disposition": "canonical-direct",
+      "reason": "Boots the local target and checks the current served UI without external services.",
+      "gate": "ui-smoke"
+    },
+    {
+      "path": "tests/e2e/08-html-pages.sh",
+      "disposition": "canonical-direct",
+      "reason": "Checks target-owned HTML pages entirely from local bytes.",
+      "gate": "html-smoke"
+    },
+    {
+      "path": "tests/e2e/enable-mi-on-twin.sh",
+      "disposition": "credentialed-destructive",
+      "reason": "Changes Azure managed identity on a deployed twin and requires cloud credentials."
+    },
+    {
+      "path": "tests/features/F10-ecosystem-audit.sh",
+      "disposition": "canonical-direct",
+      "reason": "Uses offline fixtures and no-write CLI modes for ecosystem drift checks.",
+      "gate": "ecosystem-audit-offline"
+    },
+    {
+      "path": "tests/features/run.sh",
+      "disposition": "canonical-entrypoint",
+      "reason": "Compatibility alias that execs the authoritative runner; it is not recursively invoked by that runner."
+    },
+    {
+      "path": "tests/index.html",
+      "disposition": "support",
+      "reason": "Human test index; parsed by static-inspection but not an independent executable suite.",
+      "gate": "static-inspection"
+    },
+    {
+      "path": "tests/mirror-drift.sh",
+      "disposition": "external",
+      "reason": "Fetches remote mirror state; it is supplemental online evidence, not an offline authority gate."
+    },
+    {
+      "path": "tests/organism/01-canonical-kernel-boots.sh",
+      "disposition": "canonical-child",
+      "reason": "Invoked by tests/organism/run-all.sh; uses repository-local scratch and no remote service.",
+      "gate": "organism-offline"
+    },
+    {
+      "path": "tests/organism/02-fixture-01-local-storage.sh",
+      "disposition": "canonical-child",
+      "reason": "Invoked by tests/organism/run-all.sh; uses repository-local scratch and no remote service.",
+      "gate": "organism-offline"
+    },
+    {
+      "path": "tests/organism/05-fixture-02-utf8-file-encoding.sh",
+      "disposition": "canonical-child",
+      "reason": "Invoked by tests/organism/run-all.sh; uses repository-local scratch and no remote service.",
+      "gate": "organism-offline"
+    },
+    {
+      "path": "tests/organism/06-stdout-wrapper-non-unicode-locale.sh",
+      "disposition": "canonical-child",
+      "reason": "Invoked by tests/organism/run-all.sh; uses repository-local scratch and no remote service.",
+      "gate": "organism-offline"
+    },
+    {
+      "path": "tests/organism/12-local-storage-concurrency.sh",
+      "disposition": "canonical-child",
+      "reason": "Invoked by tests/organism/run-all.sh; uses repository-local scratch and no remote service.",
+      "gate": "organism-offline"
+    },
+    {
+      "path": "tests/organism/run-all.sh",
+      "disposition": "canonical-direct",
+      "reason": "Runs every retained offline organism fixture.",
+      "gate": "organism-offline"
+    },
+    {
+      "path": "tests/osi/L4a-tether-browser.sh",
+      "disposition": "external",
+      "reason": "Installs/launches Playwright Chromium and contacts the public PeerJS broker."
+    },
+    {
+      "path": "tests/osi/_lib.sh",
+      "disposition": "external",
+      "reason": "Helper for the external OSI selector/browser suite; shell syntax remains statically checked."
+    },
+    {
+      "path": "tests/osi/browser/L4a-tether.spec.mjs",
+      "disposition": "external",
+      "reason": "Behavioral child of the external Playwright/PeerJS suite; syntax remains statically checked."
+    },
+    {
+      "path": "tests/osi/browser/fixture.html",
+      "disposition": "external",
+      "reason": "Browser fixture for the external Playwright/PeerJS suite; HTML still receives static parse coverage."
+    },
+    {
+      "path": "tests/osi/run.sh",
+      "disposition": "canonical-entrypoint",
+      "reason": "Compatibility alias that execs the authoritative runner; external OSI browser behavior remains separate."
+    },
+    {
+      "path": "tests/rapp1_core/test_canonical_identity.py",
+      "disposition": "canonical-direct",
+      "reason": "Collected by the explicit offline pytest gate as current rev-5 or negative migration coverage.",
+      "gate": "python-offline"
+    },
+    {
+      "path": "tests/rapp1_core/test_cli.py",
+      "disposition": "canonical-direct",
+      "reason": "Collected by the explicit offline pytest gate as current rev-5 or negative migration coverage.",
+      "gate": "python-offline"
+    },
+    {
+      "path": "tests/rapp1_core/test_eggs.py",
+      "disposition": "canonical-direct",
+      "reason": "Collected by the explicit offline pytest gate as current rev-5 or negative migration coverage.",
+      "gate": "python-offline"
+    },
+    {
+      "path": "tests/rapp1_core/test_frames.py",
+      "disposition": "canonical-direct",
+      "reason": "Collected by the explicit offline pytest gate as current rev-5 or negative migration coverage.",
+      "gate": "python-offline"
+    },
+    {
+      "path": "tests/run-tests.mjs",
+      "disposition": "canonical-direct",
+      "reason": "Runs current self-contained JavaScript and static contracts.",
+      "gate": "node-contract"
+    },
+    {
+      "path": "tests/run_rapp1_conformance.py",
+      "disposition": "canonical-entrypoint",
+      "reason": "This is the authoritative runner itself; invoking it from one of its own gates would recurse."
+    },
+    {
+      "path": "tests/scenarios/16-metropolis-tracker.sh",
+      "disposition": "canonical-direct",
+      "reason": "Checks the local metropolis index and renderer without network access.",
+      "gate": "metropolis-directory"
+    },
+    {
+      "path": "tests/scenarios/20-cross-tracker-federation.sh",
+      "disposition": "canonical-direct",
+      "reason": "Checks local cross-tracker merge and deduplication fixtures.",
+      "gate": "metropolis-federation"
+    },
+    {
+      "path": "tests/scenarios/_lib.sh",
+      "disposition": "canonical-helper",
+      "reason": "Sourced by both canonical offline metropolis scenario scripts.",
+      "gate": "metropolis-directory"
+    },
+    {
+      "path": "tests/test-t2t-removal.sh",
+      "disposition": "destructive-network",
+      "reason": "Rebuilds tracked vendor/removal artifacts and exercises deployment-oriented teardown."
+    },
+    {
+      "path": "tests/test-twin-egg.sh",
+      "disposition": "canonical-direct",
+      "reason": "Asserts the retired egg executable fails closed and creates no artifact.",
+      "gate": "twin-egg-retirement"
+    },
+    {
+      "path": "tests/test-worker-containment.mjs",
+      "disposition": "canonical-direct",
+      "reason": "Asserts worker inference-proxy retirement and control-plane containment.",
+      "gate": "worker-containment"
+    },
+    {
+      "path": "tests/test_active_path_migrations.py",
+      "disposition": "canonical-direct",
+      "reason": "Collected explicitly by the offline pytest gate.",
+      "gate": "python-offline"
+    },
+    {
+      "path": "tests/test_backfill_seeds.py",
+      "disposition": "canonical-direct",
+      "reason": "Collected explicitly by the offline pytest gate.",
+      "gate": "python-offline"
+    },
+    {
+      "path": "tests/test_door_address.py",
+      "disposition": "canonical-direct",
+      "reason": "Collected explicitly by the offline pytest gate.",
+      "gate": "python-offline"
+    },
+    {
+      "path": "tests/test_ecosystem_graph.py",
+      "disposition": "external",
+      "reason": "Uses authenticated gh queries and intentionally rewrites ecosystem snapshots."
+    },
+    {
+      "path": "tests/test_initialize_variant.py",
+      "disposition": "canonical-direct",
+      "reason": "Collected explicitly by the offline pytest gate.",
+      "gate": "python-offline"
+    },
+    {
+      "path": "tests/test_installer.sh",
+      "disposition": "destructive-network",
+      "reason": "Downloads installer inputs and writes user-owned installation locations."
+    },
+    {
+      "path": "tests/test_kernel_pin_local.py",
+      "disposition": "canonical-direct",
+      "reason": "Exercises local pin success, tamper rejection, and absence of network clients.",
+      "gate": "python-offline"
+    },
+    {
+      "path": "tests/test_migrate_rappid.py",
+      "disposition": "canonical-direct",
+      "reason": "Collected explicitly by the offline pytest gate.",
+      "gate": "python-offline"
+    },
+    {
+      "path": "tests/test_neighborhood_membership_organ.py",
+      "disposition": "canonical-direct",
+      "reason": "Collected explicitly by the offline pytest gate.",
+      "gate": "python-offline"
+    },
+    {
+      "path": "tests/test_parse_place_issue.py",
+      "disposition": "canonical-direct",
+      "reason": "Collected explicitly by the offline pytest gate.",
+      "gate": "python-offline"
+    },
+    {
+      "path": "tests/test_prompt_ledger.py",
+      "disposition": "canonical-direct",
+      "reason": "Collected explicitly by the offline pytest gate.",
+      "gate": "python-offline"
+    },
+    {
+      "path": "tests/test_rapp1_authority.py",
+      "disposition": "canonical-direct",
+      "reason": "Collected explicitly by the offline pytest gate.",
+      "gate": "python-offline"
+    },
+    {
+      "path": "tests/test_rapp1_containment.py",
+      "disposition": "canonical-direct",
+      "reason": "Collected explicitly by the offline pytest gate.",
+      "gate": "python-offline"
+    },
+    {
+      "path": "tests/test_rapp1_docs.py",
+      "disposition": "canonical-direct",
+      "reason": "Collected explicitly by the offline pytest gate.",
+      "gate": "python-offline"
+    },
+    {
+      "path": "tests/test_rapp1_owner_actions.py",
+      "disposition": "canonical-direct",
+      "reason": "Preserves the owner-action ledger schema, evidence hashes, and owner-only boundaries.",
+      "gate": "python-offline"
+    },
+    {
+      "path": "tests/test_rapp1_runner.py",
+      "disposition": "canonical-direct",
+      "reason": "Collected explicitly by the offline pytest gate.",
+      "gate": "python-offline"
+    },
+    {
+      "path": "tests/vault-check.mjs",
+      "disposition": "canonical-direct",
+      "reason": "Runs the local vault link, alias, manifest, and PII guard.",
+      "gate": "vault"
+    }
+  ]
+}

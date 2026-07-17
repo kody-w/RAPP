@@ -6,13 +6,13 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 case "${1:-}" in
     "")
-        exec python3.11 "$ROOT/tests/run_rapp1_conformance.py"
+        exec python3 "$ROOT/tests/run_rapp1_conformance.py"
         ;;
     --offline)
-        exec python3.11 "$ROOT/tests/run_rapp1_conformance.py"
+        exec python3 "$ROOT/tests/run_rapp1_conformance.py"
         ;;
     --help|-h)
-        exec python3.11 "$ROOT/tests/run_rapp1_conformance.py" --help
+        exec python3 "$ROOT/tests/run_rapp1_conformance.py" --help
         ;;
     *)
         echo "Unsupported legacy feature-suite option: $1" >&2

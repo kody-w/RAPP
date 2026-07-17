@@ -246,7 +246,13 @@ test('removed reserved and neighborhood capability trees stay absent', () => {
 test('legacy-positive tests are data fixtures, not executable tests', () => {
   const inventory = json('tests/fixtures/rapp1-retired-test-inventory.json');
   equal(inventory.schema, 'rapp1-retired-test-inventory/1.0');
-  equal(inventory.quarantine.path_count, 31);
+  equal(inventory.quarantine.path_count, inventory.quarantine.files.length);
+  assert(
+    inventory.quarantine.files.every(
+      (entry) => entry.rationale && /^[0-9a-f]{64}$/.test(entry.sha256),
+    ),
+    'every quarantined test needs a rationale and byte hash',
+  );
   assert(
     existsSync(join(ROOT, inventory.quarantine.root)),
     'legacy quarantine root missing',

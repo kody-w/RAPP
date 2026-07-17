@@ -63,8 +63,10 @@ osi_net() {
 # Create a per-test tmpdir; remove on EXIT.
 osi_sandbox() {
   local prefix="${1:-rapp-osi}"
+  local base="${TMPDIR:-$REPO_ROOT/tests/.rapp1-work}"
   local dir
-  dir=$(mktemp -d -t "${prefix}.XXXXXX")
+  mkdir -p "$base"
+  dir=$(mktemp -d "$base/${prefix}.XXXXXX")
   echo "$dir"
 }
 

@@ -1,13 +1,14 @@
-name: kernel-freeze
-# rapp-distro/1.0 — prove the distro ships an UNMODIFIED kernel (pin, don't fork).
+name: kernel-freeze-online-external
+# Supplemental online comparison with the remote grail. This is not part of
+# the authoritative offline RAPP/1 gate in rapp1-conformance.yml.
 on: [push, pull_request, workflow_dispatch]
 jobs:
-  freeze:
+  remote-grail-comparison:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.11"
-      - name: Verify the frozen kernel set == grail @ pinned tag
+      - name: Online/external — compare frozen kernel set with remote grail
         run: python3 check_kernel_pin.py

@@ -14,7 +14,9 @@ cd "$(dirname "$0")/../.."
 PYTHON="${PYTHON:-$HOME/.brainstem/venv/bin/python}"
 [ -x "$PYTHON" ] || PYTHON="$(command -v python3)"
 
-TMP_DIR="$(mktemp -d /tmp/rapp-organism-12.XXXXXX)"
+WORK_BASE="${TMPDIR:-$(pwd)/tests/.rapp1-work}"
+mkdir -p "$WORK_BASE"
+TMP_DIR="$(mktemp -d "$WORK_BASE/rapp-organism-12.XXXXXX")"
 HARNESS="$TMP_DIR/harness.py"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
@@ -32,9 +34,9 @@ spec = importlib.util.spec_from_file_location(
 )
 mod = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mod)
-LSM = mod.AzureFileStorageManager
-
 tmp_dir = sys.argv[1]
+mod._DATA_DIR = tmp_dir
+LSM = mod.AzureFileStorageManager
 target = os.path.join(tmp_dir, "concurrent.json")
 
 # ── Test 1: torn-write resistance via write_json ───────────────────────
@@ -107,7 +109,7 @@ def hammer_file_writer(thread_id):
     for i in range(10):
         mgr.write_file(file_target, f"thread={thread_id} iter={i}\n")
 
-data_dir = os.path.dirname(os.path.abspath(mod.__file__)) + "/.brainstem_data"
+data_dir = tmp_dir
 file_threads = [threading.Thread(target=hammer_file_writer, args=(i,)) for i in range(8)]
 for t in file_threads:
     t.start()

@@ -5,11 +5,493 @@
   "quarantine": {
     "root": "tests/fixtures/legacy-conformance",
     "source_commit": "4c2b999",
-    "path_count": 31,
-    "path_set_sha256": "ba1997f3d3fbc85a13185c22b331a7e0ca28f44188ed3d1c13bcce969f113982",
-    "content_set_sha256": "2c09f966558cdfb228f58b15bb9a8d9fe8cfd36797c2a70f9d241329d11a75f2",
+    "path_count": 80,
+    "path_set_sha256": "5e3005d1558efa1d0cf860036c8f66895765cf325626084bf234842433c479a9",
+    "content_set_sha256": "e396e7c03f9e9385186c3754b423290b9e02f143677bf79ae9de5140992fe535",
     "mapping": "Each fixture path maps to its former tests/ path after removing the quarantine root and final .txt suffix.",
-    "policy": "These exact historical test bytes positively asserted retired identity, frame, egg, browser, Tier 2, or wire behavior. They are non-executable migration evidence and are never RAPP/1 conformance evidence."
+    "policy": "These exact historical test bytes positively asserted retired identity, frame, egg, browser, Tier 2, or wire behavior. They are non-executable migration evidence and are never RAPP/1 conformance evidence.",
+    "files": [
+      {
+        "fixture": "tests/fixtures/legacy-conformance/doorman/dreamcatcher.mjs.txt",
+        "source_path": "tests/doorman/dreamcatcher.mjs",
+        "sha256": "fe98c1c3d7d76836c766c3ee565a2a125e168994e96279b9e0dc77698e8dfec2",
+        "rationale": "Positively asserts a removed doorman lineage, egg, tether, or neighborhood product contract."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/doorman/lineage-snapshot.mjs.txt",
+        "source_path": "tests/doorman/lineage-snapshot.mjs",
+        "sha256": "bde0512904ccc0e427beab1dcec07575639216d4496e5654a5af9c93168e6a17",
+        "rationale": "Positively asserts a removed doorman lineage, egg, tether, or neighborhood product contract."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/doorman/neighborhood.mjs.txt",
+        "source_path": "tests/doorman/neighborhood.mjs",
+        "sha256": "ed4fc7a3c2128329eeb80e1d65ca4b9e09b1f09cf38a7c6d07adfca174a75778",
+        "rationale": "Positively asserts a removed doorman lineage, egg, tether, or neighborhood product contract."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/doorman/plant-from-egg.mjs.txt",
+        "source_path": "tests/doorman/plant-from-egg.mjs",
+        "sha256": "c80d606052ee67f03309c41ae263f586650e8e29041ddb077d2dda4aeb88468f",
+        "rationale": "Positively asserts a removed doorman lineage, egg, tether, or neighborhood product contract."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/doorman/tether-egg.mjs.txt",
+        "source_path": "tests/doorman/tether-egg.mjs",
+        "sha256": "18b92cc8305d04cb491dff050c2b9636c2ac618718d73e624608eb19550bca0c",
+        "rationale": "Positively asserts a removed doorman lineage, egg, tether, or neighborhood product contract."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/e2e/01-tier1-smoke.sh.txt",
+        "source_path": "tests/e2e/01-tier1-smoke.sh",
+        "sha256": "6c4370cf1eaa574042eb991e3f3f2471c6cb4048fcdcd6438504e07cef0273a8",
+        "rationale": "Positively asserts a retired tier, installer, binder, or pre-rev-5 wire contract."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/e2e/02-tier1-memory-factory.sh.txt",
+        "source_path": "tests/e2e/02-tier1-memory-factory.sh",
+        "sha256": "4bc5f41c8939934358775d24c878968a2af0ee28cc681b1a95def61b3f35273c",
+        "rationale": "Positively asserts a retired tier, installer, binder, or pre-rev-5 wire contract."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/e2e/04-tier2-local.sh.txt",
+        "source_path": "tests/e2e/04-tier2-local.sh",
+        "sha256": "74f224fae51639fc10fcbe06d6dcc4159d78cbdd61818f49bbcf89e1acc20d62",
+        "rationale": "Positively asserts a retired tier, installer, binder, or pre-rev-5 wire contract."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/e2e/05-tier2-cloud.sh.txt",
+        "source_path": "tests/e2e/05-tier2-cloud.sh",
+        "sha256": "dbd6e384badefb5f21621d1339738fbce0f38bce7f4bf0db9a55075e99fbd378",
+        "rationale": "Positively asserts a retired tier, installer, binder, or pre-rev-5 wire contract."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/e2e/06-oneliner-install.sh.txt",
+        "source_path": "tests/e2e/06-oneliner-install.sh",
+        "sha256": "409cadbf863679d5fffd1ca4a1c8ad48f703a4c18fd67ddd2466109aa179d384",
+        "rationale": "Positively asserts a retired tier, installer, binder, or pre-rev-5 wire contract."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/e2e/09-wire-envelope.sh.txt",
+        "source_path": "tests/e2e/09-wire-envelope.sh",
+        "sha256": "571f06d7b58f5425aa5d7cf865a61155c0000e7f24a8b9e01b2ebad29e63e5fb",
+        "rationale": "Positively asserts a retired tier, installer, binder, or pre-rev-5 wire contract."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/e2e/10-cross-version-wire.sh.txt",
+        "source_path": "tests/e2e/10-cross-version-wire.sh",
+        "sha256": "4626072868254fb82d3049ef1eec8e17d25c14fa5b5efb865b143f8f93cbf310",
+        "rationale": "Positively asserts a retired tier, installer, binder, or pre-rev-5 wire contract."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/e2e/11-binder-bootstrap.sh.txt",
+        "source_path": "tests/e2e/11-binder-bootstrap.sh",
+        "sha256": "681e8b077f1b676ed239285b18305b3d343a55b6e2ea0d4ac205263b6d64cea0",
+        "rationale": "Positively asserts a retired tier, installer, binder, or pre-rev-5 wire contract."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/e2e/12-legacy-wire-conformance.sh.txt",
+        "source_path": "tests/e2e/12-legacy-wire-conformance.sh",
+        "sha256": "da9cd1d0c12b17288f475fa04d4c1b31c43d334c26522176a02014955d4329fe",
+        "rationale": "Positively asserts a retired tier, installer, binder, or pre-rev-5 wire contract."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/features/F1-lineage-rollup.sh.txt",
+        "source_path": "tests/features/F1-lineage-rollup.sh",
+        "sha256": "1e8f5d22cf65053d7d157f85bea20a51293590d67b32ca9b6d5d464c37325c26",
+        "rationale": "Positively asserts a removed legacy product feature rather than current RAPP/1 rev-5 conformance."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/features/F11-launch-to-public.sh.txt",
+        "source_path": "tests/features/F11-launch-to-public.sh",
+        "sha256": "512ef4d3a1b6c42e037b763d68e1b35cc3c1dac9d7ae0d046cb57a59985cf19b",
+        "rationale": "Positively asserts a removed legacy product feature rather than current RAPP/1 rev-5 conformance."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/features/F12-bond-rhythm.sh.txt",
+        "source_path": "tests/features/F12-bond-rhythm.sh",
+        "sha256": "f420be3bdde766933aec237dd8eae10267bf3e40da2c75013942661ad1b4077e",
+        "rationale": "Positively asserts a removed legacy product feature rather than current RAPP/1 rev-5 conformance."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/features/F13-estate-spec.sh.txt",
+        "source_path": "tests/features/F13-estate-spec.sh",
+        "sha256": "f259d47b9fb22b7276350da4382a103be29b0882f03954543576cfdc75efff60",
+        "rationale": "Positively asserts a removed legacy product feature rather than current RAPP/1 rev-5 conformance."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/features/F14-estate-rebuild.sh.txt",
+        "source_path": "tests/features/F14-estate-rebuild.sh",
+        "sha256": "1312aca750bbad23138c50034fbad04937952b5e43d9bd5cee0c99309dcc412e",
+        "rationale": "Positively asserts a removed legacy product feature rather than current RAPP/1 rev-5 conformance."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/features/F15-private-estate.sh.txt",
+        "source_path": "tests/features/F15-private-estate.sh",
+        "sha256": "d7e9f44e9b2b8a1c7e88a9b620bf85ce0f3ba14c5979b0e831affdb0834d50a9",
+        "rationale": "Positively asserts a removed legacy product feature rather than current RAPP/1 rev-5 conformance."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/features/F2-leaderboard.sh.txt",
+        "source_path": "tests/features/F2-leaderboard.sh",
+        "sha256": "1b455e7c20e0038f5e3c74201ae5837319c788eaf6309dcfef8d2de63fb5d4f8",
+        "rationale": "Positively asserts a removed legacy product feature rather than current RAPP/1 rev-5 conformance."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/features/F3-proximity.sh.txt",
+        "source_path": "tests/features/F3-proximity.sh",
+        "sha256": "f5812808b195eae84047ede71e091964eca94d3969fbf41a5a626d24f1442c27",
+        "rationale": "Positively asserts a removed legacy product feature rather than current RAPP/1 rev-5 conformance."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/features/F4-ed25519-sign.sh.txt",
+        "source_path": "tests/features/F4-ed25519-sign.sh",
+        "sha256": "d66c94622adc22c7e3518e1d1088cd7e5db2a624d49e518dcd276ebff21594d3",
+        "rationale": "Positively asserts a removed legacy product feature rather than current RAPP/1 rev-5 conformance."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/features/F5-resurrection.sh.txt",
+        "source_path": "tests/features/F5-resurrection.sh",
+        "sha256": "cf838a481f33cc65203d9c1fadef30e6f92803580c9287b5403473e2494c181e",
+        "rationale": "Positively asserts a removed legacy product feature rather than current RAPP/1 rev-5 conformance."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/features/F6-ant-farm.sh.txt",
+        "source_path": "tests/features/F6-ant-farm.sh",
+        "sha256": "8262048cf19488d500a1e4683d43f0bc086652e1dac9f8d3adcfa83c9e74ac99",
+        "rationale": "Positively asserts a removed legacy product feature rather than current RAPP/1 rev-5 conformance."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/features/F7-rar-hotload.sh.txt",
+        "source_path": "tests/features/F7-rar-hotload.sh",
+        "sha256": "af91dfff9ddcea687d6f99bdae5ca3ea331d1fb6c5195eff8f378a47322ceeea",
+        "rationale": "Positively asserts a removed legacy product feature rather than current RAPP/1 rev-5 conformance."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/features/F8-graft.sh.txt",
+        "source_path": "tests/features/F8-graft.sh",
+        "sha256": "cd3e00e424a02b8275f7b2bc2cdbbd93576adc283212293b7acd1da1f8b169b9",
+        "rationale": "Positively asserts a removed legacy product feature rather than current RAPP/1 rev-5 conformance."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/features/F9-universal-docking.sh.txt",
+        "source_path": "tests/features/F9-universal-docking.sh",
+        "sha256": "6614570add07017fa1d7e5e253b817e0c880f279468f8c6d7fbb22234a6906e9",
+        "rationale": "Positively asserts a removed legacy product feature rather than current RAPP/1 rev-5 conformance."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/organism/03-rappid-birth.sh.txt",
+        "source_path": "tests/organism/03-rappid-birth.sh",
+        "sha256": "26e85eb853e5c3e4e4ca8f9af2f7d1205081e540cdd54dc70d6bf869e59d9a2c",
+        "rationale": "Positively asserts retired identity, lineage, archive, estate, or installer-release behavior."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/organism/04-generation-hatch-revert.sh.txt",
+        "source_path": "tests/organism/04-generation-hatch-revert.sh",
+        "sha256": "3a6528cd544077e0be03167ada64db726a60ee1b1418ef556f121f6d19807255",
+        "rationale": "Positively asserts retired identity, lineage, archive, estate, or installer-release behavior."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/organism/07-boot-sidecar-organs.sh.txt",
+        "source_path": "tests/organism/07-boot-sidecar-organs.sh",
+        "sha256": "e19748a2cbf72c74e0e87a20ba55b8dfd9f8f88b08f9c11e1aeb55f20bbe3b18",
+        "rationale": "Positively asserts retired identity, lineage, archive, estate, or installer-release behavior."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/organism/08-senses-and-vbrainstem.sh.txt",
+        "source_path": "tests/organism/08-senses-and-vbrainstem.sh",
+        "sha256": "223840c7f208440b28838ca4262946d560c773483d80894381645ff134b3761b",
+        "rationale": "Positively asserts retired identity, lineage, archive, estate, or installer-release behavior."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/organism/09-rapp-kernel-archive.sh.txt",
+        "source_path": "tests/organism/09-rapp-kernel-archive.sh",
+        "sha256": "d26e8b40a9c49c08dc837f0ad4d8a442701cbaf362250fdb64e9e1d096970999",
+        "rationale": "Positively asserts retired identity, lineage, archive, estate, or installer-release behavior."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/organism/10-generation-state-snapshot.sh.txt",
+        "source_path": "tests/organism/10-generation-state-snapshot.sh",
+        "sha256": "19972cfda3d7206ef12b3646ed74348a2dbfdc33c2627ce60e6974d0fbebbdf5",
+        "rationale": "Positively asserts retired identity, lineage, archive, estate, or installer-release behavior."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/organism/11-install-defaults-to-tagged-release.sh.txt",
+        "source_path": "tests/organism/11-install-defaults-to-tagged-release.sh",
+        "sha256": "66a7450ca709bb059b43b960b874500d024e9c22f6ced1759a64d7266fd76f2d",
+        "rationale": "Positively asserts retired identity, lineage, archive, estate, or installer-release behavior."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/organism/13-rappid-format.sh.txt",
+        "source_path": "tests/organism/13-rappid-format.sh",
+        "sha256": "99f16aac73f84e74c2aa0993cb7fbbe6a65a85b70db4bac000c23373979907b0",
+        "rationale": "Positively asserts retired identity, lineage, archive, estate, or installer-release behavior."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/organism/14-lineage-walk.sh.txt",
+        "source_path": "tests/organism/14-lineage-walk.sh",
+        "sha256": "6d3d85f702f65907e1f8d3b4b2b9a06945805aae978e3057673c2cb0935c36f5",
+        "rationale": "Positively asserts retired identity, lineage, archive, estate, or installer-release behavior."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/organism/15-vault-state-proof.sh.txt",
+        "source_path": "tests/organism/15-vault-state-proof.sh",
+        "sha256": "20a98122d469a183db4ed627de662460b4f5993c2e3932f8c62a15b25357e453",
+        "rationale": "Positively asserts retired identity, lineage, archive, estate, or installer-release behavior."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/organism/16-derivation-determinism.sh.txt",
+        "source_path": "tests/organism/16-derivation-determinism.sh",
+        "sha256": "b7945506f938959a3c90709f92ee00f1a21eb68a7b24edcfb88a4db25d55d1a9",
+        "rationale": "Positively asserts retired identity, lineage, archive, estate, or installer-release behavior."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/organism/17-cross-signing-hierarchy.sh.txt",
+        "source_path": "tests/organism/17-cross-signing-hierarchy.sh",
+        "sha256": "de7770b64cc0b59bcc36aa71b0aae7c4d3ed3596746b3edd183457c29c80ef05",
+        "rationale": "Positively asserts retired identity, lineage, archive, estate, or installer-release behavior."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/organism/18-mitosis-ceremony.sh.txt",
+        "source_path": "tests/organism/18-mitosis-ceremony.sh",
+        "sha256": "a0bc3993332e9099ff168ec1c16e661d91b144e852fe9dee2d91613a17de1a92",
+        "rationale": "Positively asserts retired identity, lineage, archive, estate, or installer-release behavior."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/organism/19-swarm-estate-organ.sh.txt",
+        "source_path": "tests/organism/19-swarm-estate-organ.sh",
+        "sha256": "8025ef3ca2701c363d8f84da0276821ae276b91960cee2b705d124e216d23694",
+        "rationale": "Positively asserts retired identity, lineage, archive, estate, or installer-release behavior."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/organism/20-rappid-spec-fixtures.sh.txt",
+        "source_path": "tests/organism/20-rappid-spec-fixtures.sh",
+        "sha256": "1fd46b872a4ffc49d45a51f7a9bfc364f04937d6ce5e3e1394c9511ac8c59657",
+        "rationale": "Positively asserts retired identity, lineage, archive, estate, or installer-release behavior."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/osi/L1-substrate.sh.txt",
+        "source_path": "tests/osi/L1-substrate.sh",
+        "sha256": "fb67da96b1626ffbba2477cfd012021a35494be79e3e669344dee69a73b71319",
+        "rationale": "Positively asserts the retired OSI identity/frame/egg/federation model or its browser behavior."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/osi/L2-identity.sh.txt",
+        "source_path": "tests/osi/L2-identity.sh",
+        "sha256": "4b18fa084c0adf173c82c8d4b12457400ff207afc868377b3aefc53737fc6f5a",
+        "rationale": "Positively asserts the retired OSI identity/frame/egg/federation model or its browser behavior."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/osi/L3-discovery.sh.txt",
+        "source_path": "tests/osi/L3-discovery.sh",
+        "sha256": "ed16f2348697212a9878a11eafdc79a04d0b7fbfc912c3aeca7a8cd418b9e0e4",
+        "rationale": "Positively asserts the retired OSI identity/frame/egg/federation model or its browser behavior."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/osi/L4-channels.sh.txt",
+        "source_path": "tests/osi/L4-channels.sh",
+        "sha256": "cc9ea638df9e9a1023b98561769fbcec021a7444b0eebf1aca319ada606a34f9",
+        "rationale": "Positively asserts the retired OSI identity/frame/egg/federation model or its browser behavior."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/osi/L5-trust-scope.sh.txt",
+        "source_path": "tests/osi/L5-trust-scope.sh",
+        "sha256": "9b5c2e2fb72421ee6b019f806baf53874764b5eaad1c10f3e5428864bc0234ad",
+        "rationale": "Positively asserts the retired OSI identity/frame/egg/federation model or its browser behavior."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/osi/L6-envelope.sh.txt",
+        "source_path": "tests/osi/L6-envelope.sh",
+        "sha256": "647e123dd24fc219c76918274918680cb50b11317d28bdeb79a7889ba83a2976",
+        "rationale": "Positively asserts the retired OSI identity/frame/egg/federation model or its browser behavior."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/osi/L6a-frame-chain-browser.sh.txt",
+        "source_path": "tests/osi/L6a-frame-chain-browser.sh",
+        "sha256": "fca63b145b0171190d500abd1fd093c5c1d7d8e0752d4e2be4aad896ea6a73d6",
+        "rationale": "Positively asserts the retired OSI identity/frame/egg/federation model or its browser behavior."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/osi/L7-application.sh.txt",
+        "source_path": "tests/osi/L7-application.sh",
+        "sha256": "745b8ce243e425d2d9d6a8d4f0d78ea8ab77ef568e357ce1129d44f1b0a9fbf3",
+        "rationale": "Positively asserts the retired OSI identity/frame/egg/federation model or its browser behavior."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/osi/L7a-vbrainstem-collaborator.sh.txt",
+        "source_path": "tests/osi/L7a-vbrainstem-collaborator.sh",
+        "sha256": "df7f0984c66dcd05689201e9621709879e79af03c528726c1ce413b22e2d0763",
+        "rationale": "Positively asserts the retired OSI identity/frame/egg/federation model or its browser behavior."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/osi/L7b-cross-device.sh.txt",
+        "source_path": "tests/osi/L7b-cross-device.sh",
+        "sha256": "e2897289cd980c39bb22ab7cecbcb9d550c71d73f1c8bd5818483af58f21d1d6",
+        "rationale": "Positively asserts the retired OSI identity/frame/egg/federation model or its browser behavior."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/osi/X1-tier-portability.sh.txt",
+        "source_path": "tests/osi/X1-tier-portability.sh",
+        "sha256": "72fefdead51cc8b27f5c910c18b05984d05d0a735aeb4adb49fc7da98fbce003",
+        "rationale": "Positively asserts the retired OSI identity/frame/egg/federation model or its browser behavior."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/osi/X2-survival.sh.txt",
+        "source_path": "tests/osi/X2-survival.sh",
+        "sha256": "cc428d0f5de275dd8f53b988f28187bb9c7a3fa28f691378dedd5dda9b463d7a",
+        "rationale": "Positively asserts the retired OSI identity/frame/egg/federation model or its browser behavior."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/osi/X3-egg-lifecycle.sh.txt",
+        "source_path": "tests/osi/X3-egg-lifecycle.sh",
+        "sha256": "4761efdf05dc57621ebac166af49be325076543d915f3d5ccc12868d8436e847",
+        "rationale": "Positively asserts the retired OSI identity/frame/egg/federation model or its browser behavior."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/osi/X4-federation.sh.txt",
+        "source_path": "tests/osi/X4-federation.sh",
+        "sha256": "1b8741479bbe4a3ecf9b790656905eb47b9e121936eaaece9a3a27c192b0537c",
+        "rationale": "Positively asserts the retired OSI identity/frame/egg/federation model or its browser behavior."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/osi/browser/cross-device.spec.mjs.txt",
+        "source_path": "tests/osi/browser/cross-device.spec.mjs",
+        "sha256": "d8c6d5b8c02d2bfc2a5e2031f15331fe459b57fbcf6a4abb99d915d4d359ee0a",
+        "rationale": "Positively asserts the retired OSI identity/frame/egg/federation model or its browser behavior."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/osi/browser/vbrainstem-join.spec.mjs.txt",
+        "source_path": "tests/osi/browser/vbrainstem-join.spec.mjs",
+        "sha256": "2b86ddf3ceba933ff801d3fd2ea7fccbfcb02f8526d25adeba8566bf29d708e5",
+        "rationale": "Positively asserts the retired OSI identity/frame/egg/federation model or its browser behavior."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/scenarios/01-local-on-device.sh.txt",
+        "source_path": "tests/scenarios/01-local-on-device.sh",
+        "sha256": "bfc2f0f0dd1ff5495726f0358f46dd152a1b36a42a44d916d8101b43a5d08b6e",
+        "rationale": "Positively asserts a removed local, federation, plant, vbrainstem, or neighborhood scenario."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/scenarios/13-charizard-in-the-woods.sh.txt",
+        "source_path": "tests/scenarios/13-charizard-in-the-woods.sh",
+        "sha256": "4d46ebba1227359ecd5c33e9185790ba47ec884e69ffb000a98f30ef253a328c",
+        "rationale": "Positively asserts a removed local, federation, plant, vbrainstem, or neighborhood scenario."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/scenarios/18-real-federation.sh.txt",
+        "source_path": "tests/scenarios/18-real-federation.sh",
+        "sha256": "a0ebe45d8eda8e2c3fb841726a774e44d29f77b7356aca9755c2054e778f9d63",
+        "rationale": "Positively asserts a removed local, federation, plant, vbrainstem, or neighborhood scenario."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/scenarios/22-discord-plant.sh.txt",
+        "source_path": "tests/scenarios/22-discord-plant.sh",
+        "sha256": "28889cfe88db1388aef1ae12e44457b4f17735e22638d5fcfa599915a18941e3",
+        "rationale": "Positively asserts a removed local, federation, plant, vbrainstem, or neighborhood scenario."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/scenarios/23-mobile-plant-guide.sh.txt",
+        "source_path": "tests/scenarios/23-mobile-plant-guide.sh",
+        "sha256": "82cecb57da8295181df2a1dfdc04e89be8494c347bbc02a63d1a68cb1fb70e5a",
+        "rationale": "Positively asserts a removed local, federation, plant, vbrainstem, or neighborhood scenario."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/scenarios/24-vbrainstem.sh.txt",
+        "source_path": "tests/scenarios/24-vbrainstem.sh",
+        "sha256": "54a74c74767e6c016658e91359b3886e3df2de1c4a70fc1d14e177b01ca5671f",
+        "rationale": "Positively asserts a removed local, federation, plant, vbrainstem, or neighborhood scenario."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/scenarios/25-local-neighborhood-simulation.sh.txt",
+        "source_path": "tests/scenarios/25-local-neighborhood-simulation.sh",
+        "sha256": "1d45816e5df6b696dfedfceb9985af56b45a61ae72fdfa40110af317c13026c8",
+        "rationale": "Positively asserts a removed local, federation, plant, vbrainstem, or neighborhood scenario."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/test-agents-api.sh.txt",
+        "source_path": "tests/test-agents-api.sh",
+        "sha256": "0379ddd5fda6b65df4c6614ca57bd77a0feca7ba0c6e73c7f7c2bfcc2f62a58d",
+        "rationale": "Positively asserts a removed legacy API, product integration, deploy, store, sealing, or split-view contract."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/test-binder.sh.txt",
+        "source_path": "tests/test-binder.sh",
+        "sha256": "bb9ba485418b55cb73116204a451ce39bcf1f6facec313f18c563e603ec7e0f0",
+        "rationale": "Positively asserts a removed legacy API, product integration, deploy, store, sealing, or split-view contract."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/test-bookfactory-v2.sh.txt",
+        "source_path": "tests/test-bookfactory-v2.sh",
+        "sha256": "08328ef8ff5a4f69388810145c5fa532c26b4806062a24fc6d32b87f08e73eba",
+        "rationale": "Positively asserts a removed legacy API, product integration, deploy, store, sealing, or split-view contract."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/test-chat-binder.sh.txt",
+        "source_path": "tests/test-chat-binder.sh",
+        "sha256": "484ea2cb5fb88a60c910a8c8ea90f78aafc6511a811b1fd94f6172294a67f9c3",
+        "rationale": "Positively asserts a removed legacy API, product integration, deploy, store, sealing, or split-view contract."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/test-egg-2.0.sh.txt",
+        "source_path": "tests/test-egg-2.0.sh",
+        "sha256": "3a7ebe5b4d057d6e59537dc5b63f31bda70df1028b92c874ac600a196770b147",
+        "rationale": "Positively asserts a removed legacy API, product integration, deploy, store, sealing, or split-view contract."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/test-function-app-chat.sh.txt",
+        "source_path": "tests/test-function-app-chat.sh",
+        "sha256": "f1aea2d543d6878d589c8e0f1677576884cac38fba7b71bdfbf29bbab5a99a8e",
+        "rationale": "Positively asserts a removed legacy API, product integration, deploy, store, sealing, or split-view contract."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/test-hero-deploy.sh.txt",
+        "source_path": "tests/test-hero-deploy.sh",
+        "sha256": "e6733dc0c4f9fdbed885975ff3e257bef56e4af99a6b844bd1e49a1bbbff1a34",
+        "rationale": "Positively asserts a removed legacy API, product integration, deploy, store, sealing, or split-view contract."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/test-llm-chat.sh.txt",
+        "source_path": "tests/test-llm-chat.sh",
+        "sha256": "4a5c641839805c19448b7e3a86a256253d3d6a9dc3ee705d86396c7f57fabc8b",
+        "rationale": "Positively asserts a removed legacy API, product integration, deploy, store, sealing, or split-view contract."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/test-momentfactory.sh.txt",
+        "source_path": "tests/test-momentfactory.sh",
+        "sha256": "d348e67d0cd4d0e5d7c8ccb585768580f9ec6009fe2937c102282cfde118b4c8",
+        "rationale": "Positively asserts a removed legacy API, product integration, deploy, store, sealing, or split-view contract."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/test-rapplication-store.sh.txt",
+        "source_path": "tests/test-rapplication-store.sh",
+        "sha256": "7c391fa030e166fa06646a9ae30dd135fdf2cfe413ddcb141e9ceb35b85f81cf",
+        "rationale": "Positively asserts a removed legacy API, product integration, deploy, store, sealing, or split-view contract."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/test-rarbookworld-publish.sh.txt",
+        "source_path": "tests/test-rarbookworld-publish.sh",
+        "sha256": "4b6215d493de2e457dff6d777b7b72526c351d340f89babfb75193c9dd83b979",
+        "rationale": "Positively asserts a removed legacy API, product integration, deploy, store, sealing, or split-view contract."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/test-sealing-snapshot.sh.txt",
+        "source_path": "tests/test-sealing-snapshot.sh",
+        "sha256": "8a71762481c9a4046a06aa98d576f562cd273e524d333997fd1b2093cbe8d422",
+        "rationale": "Positively asserts a removed legacy API, product integration, deploy, store, sealing, or split-view contract."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/test-split-view-rapps.sh.txt",
+        "source_path": "tests/test-split-view-rapps.sh",
+        "sha256": "65780c49c6a72abf261221b128118e9e116a4ed9288ee90b84f6fd841729b444",
+        "rationale": "Positively asserts a removed legacy API, product integration, deploy, store, sealing, or split-view contract."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/vbrainstem-smoke.mjs.txt",
+        "source_path": "tests/vbrainstem-smoke.mjs",
+        "sha256": "84837baa0fa2f892392c022aeb4f42bcdd4f7223c715402a2bbc5e883dce2990",
+        "rationale": "Positively asserts a removed legacy API, product integration, deploy, store, sealing, or split-view contract."
+      }
+    ]
   },
   "active_legacy_inputs": [
     {

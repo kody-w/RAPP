@@ -6,6 +6,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import stat
 import subprocess
 import sys
@@ -15,6 +16,26 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 INVENTORY_PATH = ROOT / "tests/fixtures/rapp1-retired-test-inventory.json"
+SUITE_INVENTORY_PATH = ROOT / "tests/rapp1-test-suite-inventory.json"
+WORKFLOW_ROOT = ROOT / ".github/workflows"
+EXPECTED_WORKFLOW_USE_COUNTS = {
+    "cave-super-rar.yml": 2,
+    "drift-lint.yml": 1,
+    "kernel-freeze.yml": 2,
+    "plant-approved-place.yml": 2,
+    "rapp1-conformance.yml": 3,
+}
+WORKFLOW_USES_RE = re.compile(
+    r"""^\s*(?:-\s*)?uses\s*:\s*
+        (?:
+            "(?P<double>[^"]+)"
+          | '(?P<single>[^']+)'
+          | (?P<bare>[^\s#]+)
+        )
+        \s*(?:\#.*)?$
+    """,
+    re.VERBOSE,
+)
 LEGACY_FORMS = (
     "brainstem-egg/",
     "rapp-frame/1.0",
@@ -103,6 +124,108 @@ def check_javascript() -> int:
     return _check_commands("node", "--check", ("*.js", "*.mjs"))
 
 
+def extract_workflow_uses(source: str) -> tuple[tuple[int, str], ...]:
+    references = []
+    for line_number, line in enumerate(source.splitlines(), 1):
+        if not re.match(r"^\s*(?:-\s*)?uses\s*:", line):
+            continue
+        match = WORKFLOW_USES_RE.fullmatch(line)
+        assert match, f"unparsed workflow uses at line {line_number}: {line!r}"
+        value = next(
+            group for group in match.group("double", "single", "bare") if group
+        )
+        references.append((line_number, value))
+    return tuple(references)
+
+
+def workflow_action_references() -> tuple[tuple[str, int, str], ...]:
+    references = []
+    workflows = sorted((*WORKFLOW_ROOT.glob("*.yml"), *WORKFLOW_ROOT.glob("*.yaml")))
+    for path in workflows:
+        for line_number, value in extract_workflow_uses(
+            path.read_text(encoding="utf-8")
+        ):
+            references.append((path.name, line_number, value))
+    return tuple(references)
+
+
+def check_workflow_actions() -> int:
+    references = workflow_action_references()
+    counts = {
+        name: sum(1 for path, _, _ in references if path == name)
+        for name in EXPECTED_WORKFLOW_USE_COUNTS
+    }
+    assert counts == EXPECTED_WORKFLOW_USE_COUNTS, (
+        f"workflow action-reference counts drifted: {counts!r}"
+    )
+    assert len(references) == sum(EXPECTED_WORKFLOW_USE_COUNTS.values())
+    for path, line_number, value in references:
+        if value.startswith("./"):
+            continue
+        assert "@" in value, f"{path}:{line_number}: action ref has no pin: {value}"
+        _, ref = value.rsplit("@", 1)
+        assert re.fullmatch(r"[0-9a-f]{40}", ref), (
+            f"{path}:{line_number}: action ref is not an immutable commit: {value}"
+        )
+    return len(references)
+
+
+def discovered_test_candidates(inventory: dict) -> set[str]:
+    raw = subprocess.check_output(
+        ("git", "ls-files", "--cached", "-z", "--", "tests"),
+        cwd=ROOT,
+    )
+    suffixes = set(inventory["candidate_suffixes"])
+    excluded = tuple(inventory["excluded_prefixes"])
+    return {
+        item.decode("utf-8")
+        for item in raw.split(b"\0")
+        if item
+        and Path(item.decode("utf-8")).suffix in suffixes
+        and not item.decode("utf-8").startswith(excluded)
+    }
+
+
+def validate_test_suite_inventory(
+    inventory: dict,
+    discovered: set[str],
+) -> int:
+    entries = inventory["entries"]
+    paths = [entry["path"] for entry in entries]
+    assert len(paths) == len(set(paths)), "duplicate active-suite inventory path"
+    for entry in entries:
+        assert entry["reason"].strip(), f"missing rationale: {entry['path']}"
+        assert entry["disposition"] in {
+            "canonical-direct",
+            "canonical-child",
+            "canonical-helper",
+            "canonical-entrypoint",
+            "support",
+            "external",
+            "credentialed-destructive",
+            "destructive-network",
+        }, f"invalid disposition: {entry!r}"
+        if entry["disposition"] in {
+            "canonical-direct",
+            "canonical-child",
+            "canonical-helper",
+        }:
+            assert entry.get("gate"), f"canonical path has no gate: {entry['path']}"
+    missing = sorted(discovered - set(paths))
+    stale = sorted(set(paths) - discovered)
+    assert not missing, f"unclassified executable test candidates: {missing}"
+    assert not stale, f"stale active-suite inventory paths: {stale}"
+    return len(paths)
+
+
+def check_test_suite_inventory() -> int:
+    inventory = json.loads(SUITE_INVENTORY_PATH.read_text(encoding="utf-8"))
+    return validate_test_suite_inventory(
+        inventory,
+        discovered_test_candidates(inventory),
+    )
+
+
 def check_legacy_inventory() -> tuple[int, int]:
     inventory = json.loads(INVENTORY_PATH.read_text(encoding="utf-8"))
     quarantine = inventory["quarantine"]
@@ -114,10 +237,20 @@ def check_legacy_inventory() -> tuple[int, int]:
     ]
     encoded = ("\n".join(original_paths) + "\n").encode("utf-8")
     content_set = hashlib.sha256()
+    file_entries = {
+        entry["fixture"]: entry for entry in quarantine["files"]
+    }
 
     assert len(fixture_paths) == quarantine["path_count"]
+    assert len(file_entries) == len(fixture_paths)
     assert hashlib.sha256(encoded).hexdigest() == quarantine["path_set_sha256"]
     for fixture, original in zip(fixture_paths, original_paths, strict=True):
+        relative_fixture = fixture.relative_to(ROOT).as_posix()
+        entry = file_entries.get(relative_fixture)
+        assert entry is not None, f"quarantine file has no rationale: {relative_fixture}"
+        assert entry["source_path"] == original
+        assert entry["rationale"].strip()
+        assert entry["sha256"] == hashlib.sha256(fixture.read_bytes()).hexdigest()
         content_set.update(original.encode("utf-8"))
         content_set.update(b"\0")
         content_set.update(fixture.read_bytes())
@@ -167,6 +300,8 @@ def main() -> int:
         ("HTML parse", check_html),
         ("shell syntax", check_shell),
         ("JavaScript syntax", check_javascript),
+        ("immutable workflow actions", check_workflow_actions),
+        ("active test-suite inventory", check_test_suite_inventory),
         ("legacy test inventory", check_legacy_inventory),
     )
     failures = []

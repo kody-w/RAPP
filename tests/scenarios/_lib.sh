@@ -18,7 +18,6 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # Planted neighborhoods live as their own GitHub repos (e.g. kody-w/microsoft-se-team-neighborhood)
 # — this repo holds the spec + kernel only, never the seeds themselves.
 FIXTURES_DIR="$REPO_ROOT/tests/fixtures"
-ORGAN_PATH="$REPO_ROOT/rapp_brainstem/utils/organs/neighborhood_membership_organ.py"
 
 DRY_RUN=0
 BRAINSTEM_URL="${BRAINSTEM_URL:-http://localhost:7071}"
@@ -96,33 +95,6 @@ if isinstance(out, (dict, list)):
     print(json.dumps(out, indent=2))
 else:
     print(out)
-PY
-}
-
-# --- organ-direct invocation ------------------------------------------------
-# Call the membership organ's handle() directly. Args:
-#   $1 — method (GET / POST / etc.)
-#   $2 — path (e.g. "join", "kody-w/foo/sync")
-#   $3 — body JSON or empty
-# Echoes the JSON response; sets EXIT to the status code in $? on caller side.
-
-run_organ_direct() {
-  local method="$1" path="$2" body="${3:-}"
-  python3 - "$method" "$path" "$body" "$ORGAN_PATH" <<'PY'
-import importlib.util, json, os, sys, tempfile
-method, path, body, organ_path = sys.argv[1:5]
-spec = importlib.util.spec_from_file_location("organ", organ_path)
-mod = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(mod)
-# Sandbox the subscription cache to a tmpdir so scenario tests don't mutate real state.
-tmp = tempfile.mkdtemp(prefix="rapp-scenario-")
-mod.HOME_BRAINSTEM = tmp
-mod.SUBS_FILE = os.path.join(tmp, "neighborhoods.json")
-mod.CACHE_DIR = os.path.join(tmp, "neighborhoods")
-b = json.loads(body) if body else None
-out, status = mod.handle(method, path, b)
-print(json.dumps({"status": status, "body": out}, indent=2))
-sys.exit(0 if 200 <= status < 300 else 1)
 PY
 }
 
