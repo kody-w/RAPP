@@ -88,6 +88,12 @@
       "gate": "offline-boundary"
     },
     {
+      "path": "tests/offline_guard/node-network-probe.cjs",
+      "disposition": "canonical-child",
+      "reason": "Proves raw net/tls/dgram/DNS/fetch egress is synchronously blocked while loopback sockets remain usable.",
+      "gate": "offline-boundary"
+    },
+    {
       "path": "tests/offline_guard/sitecustomize.py",
       "disposition": "canonical-helper",
       "reason": "Auto-loaded into canonical Python subprocesses to reject non-loopback sockets and DNS.",

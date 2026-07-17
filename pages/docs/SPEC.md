@@ -1111,7 +1111,7 @@ SPEC.md was frozen 2026-04-17. The Constitution kept moving. Articles XL–XLIX 
 |---|---|---|
 | XL | Secure-First Plant, Operator-Curated Promotion Later | Plant defaults to private; operator promotes to public via deliberate action. |
 | XLI | The Operator's Experience Is Conversation | Never a token, never a terminal. The brainstem speaks plain English. |
-| XLII | The Virtual Brainstem Is For Mobile Users | Doorman page (`rapp_brainstem/utils/web/index.html`) carries Tier 1 to mobile via GitHub Raw + Issues + PeerJS, no install. |
+| XLII | The Virtual Brainstem Is For Mobile Users | Historical doorman design; the former `rapp_brainstem/utils/web/` implementation is retired and is not a current path. |
 | XLIII | Voice In, Voice Out | TTS+STT is a hard requirement at Tier 1, not a feature. The `\|\|\|VOICE\|\|\|` slot is sacred. |
 | XLIV | Neighborhood Collaboration Is Local-First, Cross-Device-Transparent | The "Doorbell" pattern — one operator's organism notifies another's without a server in between. |
 | XLV | The Sphere Is The Front Door | `pages/sphere.html` — implicit doorman summon via 3D sphere tap. Voice-first. |

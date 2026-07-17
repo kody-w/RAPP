@@ -19,7 +19,7 @@ Wildfeuer:
 | **RAPP** | The platform — Rapid Agent Prototype Platform — at https://github.com/kody-w/RAPP. |
 | **rappid** | The lineage-identity protocol described in CONSTITUTION.md Article XXXIV. |
 | **hatchling** | The lifecycle CLI for the digital-organism hatching cycle. |
-| **vBrainstem** | The browser-side simulator (utils/web/index.html in this repo). |
+| **vBrainstem** | The historical browser-side simulator; its former `utils/web/` implementation is retired and absent from this repository. |
 | **rapplication** | The single-file rapp pattern. |
 | **rapp_kernel** | The species DNA archive at `rapp_kernel/`. |
 | **brainstem** (when used in conjunction with any of the above) | The local-first AI agent server pattern of this project. |

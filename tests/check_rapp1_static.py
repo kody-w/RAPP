@@ -17,6 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 INVENTORY_PATH = ROOT / "tests/fixtures/rapp1-retired-test-inventory.json"
 SUITE_INVENTORY_PATH = ROOT / "tests/rapp1-test-suite-inventory.json"
+ECOSYSTEM_MAP_PATH = ROOT / "ECOSYSTEM_MAP.md"
 WORKFLOW_ROOT = ROOT / ".github/workflows"
 EXPECTED_WORKFLOW_USE_COUNTS = {
     "cave-super-rar.yml": 2,
@@ -43,6 +44,14 @@ LEGACY_FORMS = (
     "rappid:v2:",
     "conversation_history",
     "assistant_response",
+)
+NONCURRENT_MAP_MARKERS = (
+    "external template",
+    "historical",
+    "migration-only",
+    "not a repository-local implementation path",
+    "retired",
+    "superseded",
 )
 
 
@@ -168,6 +177,70 @@ def check_workflow_actions() -> int:
             f"{path}:{line_number}: action ref is not an immutable commit: {value}"
         )
     return len(references)
+
+
+def validate_ecosystem_map_paths(
+    source: str,
+    root: Path = ROOT,
+) -> int:
+    match = re.search(
+        r"^## §6 — Implementation map.*?$\n([\s\S]*?)(?=^## §7 )",
+        source,
+        flags=re.MULTILINE,
+    )
+    assert match, "ECOSYSTEM_MAP.md has no bounded §6 implementation map"
+    section_start = source[: match.start(1)].count("\n") + 1
+    section_lines = match.group(1).splitlines()
+    stale_web = [
+        f"line {line_number}: {line.strip()}"
+        for line_number, line in enumerate(source.splitlines(), 1)
+        if "utils/web/" in line
+        and not any(marker in line.lower() for marker in NONCURRENT_MAP_MARKERS)
+    ]
+    assert not stale_web, (
+        "ECOSYSTEM_MAP has unretired references to the removed utils/web tree: "
+        f"{stale_web}"
+    )
+
+    declarations = 0
+    missing = []
+    for line_number, line in enumerate(section_lines, section_start):
+        if not line.startswith("|"):
+            continue
+        cells = line.split("|")
+        first_cell = cells[1].strip()
+        if first_cell.startswith("RAR:"):
+            continue
+        tokens = re.findall(r"`([^`]+)`", first_cell)
+        previous_parent = None
+        for token in tokens:
+            if "<" in token or ">" in token:
+                continue
+            candidate = token
+            if "/" not in candidate and previous_parent is not None:
+                candidate = (previous_parent / candidate).as_posix()
+            declared = Path(candidate.rstrip("/"))
+            previous_parent = declared.parent
+            declarations += 1
+            if any(marker in line.lower() for marker in NONCURRENT_MAP_MARKERS):
+                continue
+            if any(character in candidate for character in "*?["):
+                exists = any(root.glob(candidate))
+            else:
+                exists = (root / declared).exists()
+            if not exists:
+                missing.append(f"line {line_number}: {candidate}")
+    assert not missing, (
+        "current ECOSYSTEM_MAP implementation paths are missing without an "
+        f"explicit retirement marker: {missing}"
+    )
+    return declarations
+
+
+def check_ecosystem_map_paths() -> int:
+    return validate_ecosystem_map_paths(
+        ECOSYSTEM_MAP_PATH.read_text(encoding="utf-8")
+    )
 
 
 def discovered_test_candidates(inventory: dict) -> set[str]:
@@ -333,6 +406,7 @@ def main() -> int:
         ("shell syntax", check_shell),
         ("JavaScript syntax", check_javascript),
         ("immutable workflow actions", check_workflow_actions),
+        ("ecosystem implementation map", check_ecosystem_map_paths),
         ("active test-suite inventory", check_test_suite_inventory),
         ("legacy test inventory", check_legacy_inventory),
     )

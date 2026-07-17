@@ -36,13 +36,17 @@ STATUS_PATH = ROOT / "RAPP1_STATUS.md"
 WORK_ROOT = ROOT / "tests/.rapp1-work"
 OFFLINE_GUARD_ROOT = ROOT / "tests/offline_guard"
 OFFLINE_PROXY = "http://127.0.0.1:1"
-EMPTY_CREDENTIAL_ENV = (
-    "GITHUB_TOKEN",
-    "GH_TOKEN",
-    "COPILOT_TOKEN",
-    "COPILOT_GITHUB_TOKEN",
-    "GITHUB_COPILOT_TOKEN",
-    "COPILOT_API_TOKEN",
+PASSTHROUGH_ENV_NAMES = (
+    "COLORTERM",
+    "COMSPEC",
+    "LANG",
+    "LC_ALL",
+    "LC_CTYPE",
+    "PATHEXT",
+    "SYSTEMROOT",
+    "TERM",
+    "TZ",
+    "WINDIR",
 )
 RUNTIME_CREDENTIAL_FILES = {
     Path(".env"),
@@ -182,7 +186,7 @@ def gates() -> tuple[Gate, ...]:
         Gate(
             "static-inspection",
             (sys.executable, "tests/check_rapp1_static.py"),
-            "strict JSON, HTML parse, shell/JS syntax, and legacy-test inventory",
+            "strict syntax, ecosystem paths, workflow pins, and test inventories",
         ),
         Gate(
             "html-smoke",
@@ -241,20 +245,6 @@ def owner_blockers(text: str | None = None) -> tuple[str, ...]:
     )
 
 
-def _is_credential_environment_name(name: str) -> bool:
-    upper = name.upper()
-    if upper in EMPTY_CREDENTIAL_ENV:
-        return True
-    credential_marker = any(
-        marker in upper for marker in ("TOKEN", "PAT", "SECRET", "API_KEY", "AUTH")
-    )
-    credential_scope = (
-        upper.startswith(("GITHUB_", "GH_", "COPILOT_", "ACTIONS_"))
-        or "COPILOT" in upper
-    )
-    return credential_marker and credential_scope
-
-
 def _tracked_brainstem_files() -> tuple[Path, ...]:
     raw = subprocess.check_output(
         ("git", "ls-files", "--cached", "-z", "--", "rapp_brainstem"),
@@ -305,10 +295,12 @@ def _prepare_python_wrappers() -> Path:
 
 
 def gate_environment() -> dict[str, str]:
-    environment = os.environ.copy()
-    for name in tuple(environment):
-        if _is_credential_environment_name(name):
-            environment.pop(name)
+    environment = {
+        name: os.environ[name]
+        for name in PASSTHROUGH_ENV_NAMES
+        if name in os.environ
+    }
+    inherited_path = os.environ.get("PATH") or os.environ.get("Path") or os.defpath
     home = WORK_ROOT / "home"
     config = home / ".config"
     gh_config = config / "gh"
@@ -317,7 +309,6 @@ def gate_environment() -> dict[str, str]:
     bin_dir = _prepare_python_wrappers()
     environment.update(
         {
-            **{name: "" for name in EMPTY_CREDENTIAL_ENV},
             "ALL_PROXY": OFFLINE_PROXY,
             "CURL_HOME": os.fspath(home),
             "GH_CONFIG_DIR": os.fspath(gh_config),
@@ -334,7 +325,7 @@ def gate_environment() -> dict[str, str]:
             ),
             "NO_PROXY": "localhost,127.0.0.1,::1",
             "PIP_DISABLE_PIP_VERSION_CHECK": "1",
-            "PATH": os.pathsep.join((os.fspath(bin_dir), environment["PATH"])),
+            "PATH": os.pathsep.join((os.fspath(bin_dir), inherited_path)),
             "PYTHON": sys.executable,
             "PYTHON_DOTENV_DISABLED": "1",
             "PYTHONDONTWRITEBYTECODE": "1",
@@ -346,6 +337,8 @@ def gate_environment() -> dict[str, str]:
             ),
             "RAPP1_EXTERNAL_NETWORK": "deny",
             "TMPDIR": os.fspath(WORK_ROOT),
+            "TEMP": os.fspath(WORK_ROOT),
+            "TMP": os.fspath(WORK_ROOT),
             "RAPP1_OFFLINE": "1",
             "RAPP1_WORK_ROOT": os.fspath(WORK_ROOT),
             "USERPROFILE": os.fspath(home),

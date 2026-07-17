@@ -161,18 +161,53 @@ def test_gate_environment_scrubs_credentials_and_isolates_config(monkeypatch):
     scratch = ROOT / "tests/.rapp1-environment-test"
     shutil.rmtree(scratch, ignore_errors=True)
     monkeypatch.setattr(runner, "WORK_ROOT", scratch)
-    monkeypatch.setenv("GITHUB_TOKEN", "github-secret")
-    monkeypatch.setenv("GH_TOKEN", "gh-secret")
-    monkeypatch.setenv("COPILOT_SESSION_TOKEN", "copilot-secret")
-    monkeypatch.setenv("ACTIONS_RUNTIME_TOKEN", "actions-secret")
+    sentinels = {
+        "ACTIONS_RUNTIME_TOKEN": "actions-secret",
+        "ANTHROPIC_API_KEY": "anthropic-key",
+        "AWS_ACCESS_KEY_ID": "aws-key-id",
+        "AWS_SECRET_ACCESS_KEY": "aws-secret",
+        "AWS_SHARED_CREDENTIALS_FILE": "/ambient/aws",
+        "AZURE_CLIENT_SECRET": "azure-secret",
+        "COPILOT_SESSION_TOKEN": "copilot-secret",
+        "COPILOT_TOKEN": "copilot-token",
+        "DOCKER_CONFIG": "/ambient/docker",
+        "GITHUB_APP_PRIVATE_KEY": "private-key",
+        "GITHUB_PASSWORD": "github-password",
+        "GITHUB_TOKEN": "github-secret",
+        "GH_TOKEN": "gh-secret",
+        "GOOGLE_APPLICATION_CREDENTIALS": "/ambient/google.json",
+        "KUBECONFIG": "/ambient/kubeconfig",
+        "NPM_CONFIG_USERCONFIG": "/ambient/npmrc",
+        "OPENAI_API_KEY": "openai-key",
+        "RAPP_SENTINEL_KEY": "arbitrary-key",
+        "RAPP_SENTINEL_SECRET": "arbitrary-secret",
+        "RAPP_SENTINEL_TOKEN": "arbitrary-token",
+        "SSH_AUTH_SOCK": "/ambient/ssh-agent.sock",
+    }
+    for name, value in sentinels.items():
+        monkeypatch.setenv(name, value)
+    ambient_handles = {
+        "CURL_HOME": "/ambient/curl",
+        "GH_CONFIG_DIR": "/ambient/gh",
+        "GIT_CONFIG_GLOBAL": "/ambient/gitconfig",
+        "HOME": "/ambient/home",
+        "NETRC": "/ambient/netrc",
+        "XDG_CONFIG_HOME": "/ambient/xdg",
+    }
+    for name, value in ambient_handles.items():
+        monkeypatch.setenv(name, value)
     try:
         environment = runner.gate_environment()
-        assert environment["GITHUB_TOKEN"] == ""
-        assert environment["GH_TOKEN"] == ""
-        assert "COPILOT_SESSION_TOKEN" not in environment
-        assert "ACTIONS_RUNTIME_TOKEN" not in environment
+        assert set(sentinels).isdisjoint(environment)
+        assert set(ambient_handles.values()).isdisjoint(environment.values())
+        assert not any(
+            name.endswith(("_KEY", "_PASSWORD", "_SECRET", "_TOKEN"))
+            for name in environment
+        )
         assert environment["HOME"] == os.fspath(scratch / "home")
         assert environment["GH_CONFIG_DIR"].startswith(environment["HOME"])
+        assert environment["GIT_CONFIG_GLOBAL"] == os.devnull
+        assert environment["NETRC"] == os.devnull
         assert environment["PYTHON_DOTENV_DISABLED"] == "1"
         assert environment["HTTP_PROXY"] == runner.OFFLINE_PROXY
         assert environment["http_proxy"] == runner.OFFLINE_PROXY
@@ -305,6 +340,35 @@ jobs:
         (7, f"actions/checkout@{sha}"),
         (9, f"actions/setup-python@{sha}"),
     )
+
+
+def test_ecosystem_map_requires_current_paths_or_explicit_retirement():
+    assert static_checks.check_ecosystem_map_paths() > 50
+    valid = """\
+## §6 — Implementation map (file → spec section)
+| File | Owns | Spec section |
+|---|---|---|
+| `tests/run-tests.mjs` | Current checks | current |
+| `missing/old.py` | Historical/retired path | history |
+| `README.md` | Current root file | current |
+## §7 — Next
+"""
+    assert static_checks.validate_ecosystem_map_paths(valid) == 3
+
+    missing = valid.replace("Historical/retired path", "Current implementation")
+    with pytest.raises(AssertionError, match="missing without an explicit"):
+        static_checks.validate_ecosystem_map_paths(missing)
+
+    missing_root = valid.replace("`README.md`", "`MISSING_ROOT_DECLARATION.md`")
+    with pytest.raises(AssertionError, match="MISSING_ROOT_DECLARATION.md"):
+        static_checks.validate_ecosystem_map_paths(missing_root)
+
+    stale_web = valid.replace(
+        "`missing/old.py` | Historical/retired path",
+        "`rapp_brainstem/utils/web/index.html` | Current implementation",
+    )
+    with pytest.raises(AssertionError, match="removed utils/web tree"):
+        static_checks.validate_ecosystem_map_paths(stale_web)
 
 
 def test_active_suite_inventory_has_no_orphan_executable():

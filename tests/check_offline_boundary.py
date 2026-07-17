@@ -12,13 +12,32 @@ import threading
 from pathlib import Path
 
 
-EMPTY_CREDENTIALS = (
+FORBIDDEN_AMBIENT_ENV = (
+    "ANTHROPIC_API_KEY",
+    "AWS_ACCESS_KEY_ID",
+    "AWS_SECRET_ACCESS_KEY",
+    "AWS_SHARED_CREDENTIALS_FILE",
+    "AZURE_CLIENT_SECRET",
+    "AZURE_CONFIG_DIR",
+    "COPILOT_API_TOKEN",
+    "COPILOT_GITHUB_TOKEN",
+    "DOCKER_CONFIG",
     "GITHUB_TOKEN",
+    "GITHUB_APP_PRIVATE_KEY",
+    "GITHUB_COPILOT_TOKEN",
+    "GITHUB_PASSWORD",
     "GH_TOKEN",
     "COPILOT_TOKEN",
-    "COPILOT_GITHUB_TOKEN",
-    "GITHUB_COPILOT_TOKEN",
-    "COPILOT_API_TOKEN",
+    "GIT_ASKPASS",
+    "GOOGLE_APPLICATION_CREDENTIALS",
+    "KUBECONFIG",
+    "NPM_CONFIG_USERCONFIG",
+    "OPENAI_API_KEY",
+    "RAPP_SENTINEL_KEY",
+    "RAPP_SENTINEL_SECRET",
+    "RAPP_SENTINEL_TOKEN",
+    "SSH_ASKPASS",
+    "SSH_AUTH_SOCK",
 )
 PROXY = "http://127.0.0.1:1"
 
@@ -34,12 +53,25 @@ class _Handler(http.server.BaseHTTPRequestHandler):
 
 
 def _check_environment() -> None:
-    for name in EMPTY_CREDENTIALS:
-        if os.environ.get(name):
-            raise AssertionError(f"credential was not scrubbed: {name}")
+    leaked = [
+        name
+        for name in FORBIDDEN_AMBIENT_ENV
+        if name in os.environ
+    ]
+    leaked.extend(
+        name
+        for name in os.environ
+        if name.upper().endswith(("_KEY", "_PASSWORD", "_SECRET", "_TOKEN"))
+    )
+    if leaked:
+        raise AssertionError(f"ambient credentials were passed: {sorted(set(leaked))}")
     root = Path(os.environ["RAPP1_WORK_ROOT"]).resolve()
-    for name in ("HOME", "GH_CONFIG_DIR", "XDG_CONFIG_HOME"):
+    for name in ("CURL_HOME", "HOME", "GH_CONFIG_DIR", "XDG_CONFIG_HOME"):
         Path(os.environ[name]).resolve().relative_to(root)
+    if os.environ["GIT_CONFIG_GLOBAL"] != os.devnull:
+        raise AssertionError("ambient global Git config was not disabled")
+    if os.environ["NETRC"] != os.devnull:
+        raise AssertionError("ambient netrc handle was not disabled")
     for name in (
         "HTTP_PROXY",
         "HTTPS_PROXY",
@@ -146,16 +178,7 @@ def _check_http_clients() -> None:
     node = subprocess.run(
         [
             "node",
-            "-e",
-            (
-                "if (process.env.RAPP1_NODE_NETWORK_GUARD !== '1') process.exit(3);"
-                "try { require('node:https').get('https://example.com/'); }"
-                "catch (e) {"
-                " if (/RAPP1 offline gate blocks/.test(String(e))) process.exit(0);"
-                " throw e;"
-                "}"
-                "process.exit(4);"
-            ),
+            "tests/offline_guard/node-network-probe.cjs",
         ],
         check=False,
         capture_output=True,
@@ -166,6 +189,8 @@ def _check_http_clients() -> None:
         raise AssertionError(
             f"Node external HTTP guard failed ({node.returncode}): {node.stderr}"
         )
+    if "permits loopback" not in node.stdout:
+        raise AssertionError(f"Node loopback probe did not complete: {node.stdout}")
 
 
 def main() -> int:

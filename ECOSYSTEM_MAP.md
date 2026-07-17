@@ -197,8 +197,8 @@ defining document cannot register it; registration follows RAPP/1 §13.
 | `rapp-ecosystem-audit/1.0` | Drift detector envelope — per-offspring drift entries + by-kind counts + suggested next-actions classified as LOCAL_TO_GLOBAL / GLOBAL_TO_LOCAL / INFORMATIONAL | (defined-by-emitter; written to `pages/_audit/ecosystem-audit.{md,json}`) | tools/ecosystem_audit.py |
 | `rapp-rhythm-pulse/1.0` | Bond Pulse heartbeat envelope — pulse_at + audit_summary + suggested_actions[] + by_direction counts + degraded flag + bond_event reference. Operator-mediated; never auto-executes. | (defined-by-emitter; companion to bond.py kind="rhythm") | rapp_brainstem/agents/bond_rhythm_agent.py |
 | `rapp-dock-result/1.0` | Universal additive-merge result envelope (added/skipped + pre/post sha256 + parallel-to-other-dock-scopes mapping + optional bond event) | (defined-by-emitter; companion to bond.py kind="dock") | rapp_brainstem/agents/dock_agent.py |
-| `rapp-twin/1.0` | Legacy mobile-side bundle; not a RAPP/1 egg schema | utils/web/mobile/rapp-mobile.js:194 (defined-by-emitter) | migration-only mobile client |
-| `rapp-twin-identity/1.0` | Twin identity envelope (onboard surface) | utils/web/onboard/index.html:459 (defined-by-emitter) | utils/web/onboard/index.html |
+| `rapp-twin/1.0` | Legacy mobile-side bundle; not a RAPP/1 egg schema | historical/retired mobile emitter | migration-only mobile client; no current target implementation |
+| `rapp-twin-identity/1.0` | Historical/retired onboard identity envelope | former onboard emitter (removed) | no current target implementation |
 | `rapp-neighborhood/1.0` | Neighborhood metadata | gate repo `neighborhood.json` | plant_discord_neighborhood_agent.py, fixtures |
 | `rapp-neighborhood-protocol/1.0` | Application federation metadata; not a RAPP wire | NEIGHBORHOOD_PROTOCOL header | historical/external guide |
 | `rapp-neighborhood-members/1.0` | Roster | gate repo `members.json` | neighborhood_membership_organ.py |
@@ -223,7 +223,7 @@ defining document cannot register it; registration follows RAPP/1 §13.
 | `rapp-lifecycle-catalog/1.0` | Lifecycle catalog (kernel versions + incarnations) | (organ-defined) | lifecycle_organ.py |
 | `rapp-store/1.0` | Store catalog meta | kody-w/RAPP_Store | (external) |
 | `rapp-registry/1.0` | RAR registry | vault/Architecture/RAR | (external) |
-| `rapp-cloud-registry/1.0` | Cloud registry (onboard catalog) | utils/web/onboard/registry.json:2 (defined-by-emitter) | utils/web/onboard/index.html, function_app.py |
+| `rapp-cloud-registry/1.0` | Historical/retired onboard catalog schema | former onboard registry emitter (removed) | no current target implementation; not a RAPP/1 §13 registry |
 | `rapp-version/1.0` | Kernel version pin | rapp_kernel/manifest | rapp_kernel/manifest.json |
 | `rapp-version/1.1` | Kernel version pin (signed) | vault/Architecture/Signed Releases | rapp_kernel/manifest.json |
 | `rapp-kernel/1.1` | Kernel release manifest | vault/Architecture/Signed Releases | rapp_kernel/manifest.json |
@@ -237,7 +237,7 @@ defining document cannot register it; registration follows RAPP/1 §13.
 | `rapp-metropolis-entry/1.0` | One neighborhood entry in tracker | pages/metropolis/README.md | pages/metropolis/index.json |
 | `rapp-vbrainstem-subscription/1.0` | vbrainstem subscription record (LEGACY surface — the **older** mobile vbrainstem at `pages/vbrainstem/index.html`, distinct from the new `pages/vbrainstem.html` tethered surface added 2026-05-10) | pages/vbrainstem/index.html:355 (defined-by-emitter) | pages/vbrainstem/index.html |
 | `rapp-zoo-collection/1.0` | rapp-zoo localStorage cartridge | rapp-zoo/index.html:481 (defined-by-emitter) | rapp-zoo/index.html |
-| `rapp-swarm/1.0` | Mobile swarm bundle | utils/web/mobile/rapp-mobile.js:165 (defined-by-emitter) | utils/web/mobile/rapp-mobile.js |
+| `rapp-swarm/1.0` | Historical/retired mobile swarm bundle | former mobile emitter (removed) | no current target implementation |
 | `rapp-brainstem-backup/1.0` | Local brainstem backup snapshot | rapp_brainstem/index.html:1966 (defined-by-emitter) | rapp_brainstem/index.html |
 | `rapp-cubby/1.0` | Universal cubby — per-member estate housing; same anatomy as a brainstem; works on-device AND in a neighborhood (egg-roundtrips) | NEIGHBORHOOD_PROTOCOL §19; PUBLIC_PRIVATE_BOUNDARY §1.8 | `@rapp/rapp` (rapp_agent.py); private cubby neighborhoods |
 | `rapp-super-rar/1.0` | Application content catalog across cubbies; not the RAPP/1 §13 registry | historical NEIGHBORHOOD_PROTOCOL §19 | legacy `@rapp/rapp` super_rar |
@@ -263,25 +263,25 @@ defining document cannot register it; registration follows RAPP/1 §13.
 | `rapp_brainstem/agents/manage_memory_agent.py` | Memory R/W | KERNEL — ECOSYSTEM §5 |
 | `rapp_brainstem/agents/context_memory_agent.py` | Conversation context | KERNEL — ECOSYSTEM §5 |
 | RAR: `agents/@rapp/twin_agent.py` *(legacy; not kernel-shipped)* | Historical twin-chat and egg adapter. It is not current §8 wire or §9 acceptance. | historical NEIGHBORHOOD_PROTOCOL §6, §7 |
-| `rapp_brainstem/agents/learn_new_agent.py` | Author new agents at runtime | ECOSYSTEM §7 (Evolution) |
-| `rapp_brainstem/agents/swarm_factory_agent.py` | Tier-2 deploy factory | rapp_swarm/ |
-| `rapp_brainstem/agents/perpetual_loop_factory_agent.py` | Background-loop factory | (no spec section yet — see §13) |
+| `rapp_brainstem/agents/learn_new_agent.py` | Historical/retired local agent path; no current target implementation. | ECOSYSTEM §7 (Evolution) |
+| `rapp_brainstem/agents/swarm_factory_agent.py` | Historical/retired Tier-2 factory path; no current target implementation. | rapp_swarm/ |
+| `rapp_brainstem/agents/perpetual_loop_factory_agent.py` | Historical/retired background-loop proposal; no current target implementation. | (no spec section yet — see §13) |
 | `rapp_brainstem/agents/hacker_news_agent.py` | Demo HN agent | (example) |
 | RAR: `agents/@rapp/egg_hatcher_agent.py` *(installable; not kernel-shipped)* | Legacy hatcher inventory. Its schema/type router is not current §9 dispatch; a conformant replacement dispatches registered `variant` only after all §9.3 checks. | retired `brainstem-egg/2.x` family |
 | `pages/vbrainstem.html` | Contained legacy browser surface whose retired `brainstem-egg/2.3-session` export is migration evidence, not a current RAPP egg. | superseded local SPEC history |
 | RAR: `agents/@kody/workiq_agent.py` *(installable; not kernel-shipped)* | Microsoft 365 access (email/calendar/Teams/SharePoint/OneDrive) via the workiq CLI + Entra ID. Solo install from RAR; no pack. | (example) |
-| `rapp_brainstem/agents/plant_discord_neighborhood_agent.py` | Discord-driven neighborhood planting | NEIGHBORHOOD_PROTOCOL §4 (discovery) |
-| `rapp_brainstem/agents/lineage_rollup_agent.py` | Lineage-tree aggregation (avg/median MMR) | ECOSYSTEM §15 (shipped 2026-05-08) |
-| `rapp_brainstem/agents/species_leaderboard_agent.py` | Global Herald → Immortal ladder | ECOSYSTEM §15 (shipped 2026-05-08) |
-| `rapp_brainstem/agents/proximity_discovery_agent.py` | Pizza Place / Pokémon-Go geohash discovery | ECOSYSTEM §15, HERO_USECASE §4 |
-| `rapp_brainstem/agents/resurrection_ceremony_agent.py` | Stasis recovery ceremony | ECOSYSTEM §15, Art. XXXIV.5 |
-| `rapp_brainstem/agents/ant_agent.py` | Ant Farm participant — drops `rapp-pheromone/1.0` envelopes via labeled Issues | kody-w/ant-farm/skill.md, NEIGHBORHOOD_PROTOCOL §5b |
-| `rapp_brainstem/agents/colony_observer_agent.py` | Ant Farm aggregator — synthesizes swarm state | (companion to ant_agent) |
-| `rapp_brainstem/agents/rar_loader_agent.py` | Legacy/application RAR loader. Its SHA-256 check establishes integrity only; current installation must also verify applicable §§10/13 trust before acting. | rapp-rar-index/1.0 + rapp-rar-loadout/1.0 |
-| `rapp_brainstem/agents/graft_neighborhood_agent.py` | Bond-technique graft. Forks an existing public repo; overlays RAPP scaffolding additively (upstream files preserved per the bond cycle); auto-detects existing neighborhood at root and routes new grafts into `neighborhoods/<name>/` (town → city → metropolis growth pattern); maintains a repo-local `_metropolis.json` (`rapp-metropolis-index/1.0`) roll-up; records `kind="graft"` event in `bonds.json`. Default dry_run; supports `_workspace_dir` + `_local_upstream_dir` for offline test fixtures. | rapp-graft-result/1.0 + rapp-metropolis-index/1.0 + bond.py event "graft" |
-| `rapp_brainstem/agents/dock_agent.py` | Universal additive-merge primitive — the dock-without-destruction property at the entry/registry scope. Works on ANY rar-shaped JSON: rar/index.json, _metropolis.json, members.json, neighborhood entries. `key_field` dedup (default 'name'; supports nested dotted paths); top-level lists or nested entries paths. Optional `log_path` writes a bond event kind="dock". Default dry_run. | rapp-dock-result/1.0 + bond.py event "dock" |
-| `rapp_brainstem/agents/launch_to_public_agent.py` | LOCAL→GLOBAL actuator. Snapshots local brainstem state via `bond.py::pack_organism`; emits `rapp-launch-continuation/1.0` manifest; plants/grafts to a target public repo (forks if needed); preserves any pre-existing upstream files (bond technique). Records `kind="launch"` event in `bonds.json`. Default dry_run; supports `_local_brainstem_dir`/`_local_target_dir`/`_workspace_dir`/`_skip_push` test hooks. | rapp-launch-result/1.0 + rapp-launch-continuation/1.0 + rapp-launch-fingerprint/1.0 + bond.py event "launch" |
-| `rapp_brainstem/agents/bond_rhythm_agent.py` | The Bond Pulse heartbeat. Calls `tools/ecosystem_audit.py` subprocess; classifies drift LOCAL→GLOBAL push (suggest Launch/Graft) vs GLOBAL→LOCAL pull (suggest RarLoader) vs informational; SUGGESTS but never auto-executes (operator-mediated). Connection-aware: gracefully degrades when audit subprocess fails (sets `degraded=True` + valid envelope). Records `kind="rhythm"` event in `bonds.json`. Always returns `dry_run=True` (rhythm never actuates). | rapp-rhythm-pulse/1.0 + bond.py event "rhythm" |
+| `rapp_brainstem/agents/plant_discord_neighborhood_agent.py` | Historical/retired Discord planting agent; no current target implementation. | NEIGHBORHOOD_PROTOCOL §4 (discovery) |
+| `rapp_brainstem/agents/lineage_rollup_agent.py` | Historical/retired feature agent; no current target implementation. | ECOSYSTEM §15 (shipped 2026-05-08) |
+| `rapp_brainstem/agents/species_leaderboard_agent.py` | Historical/retired feature agent; no current target implementation. | ECOSYSTEM §15 (shipped 2026-05-08) |
+| `rapp_brainstem/agents/proximity_discovery_agent.py` | Historical/retired feature agent; no current target implementation. | ECOSYSTEM §15, HERO_USECASE §4 |
+| `rapp_brainstem/agents/resurrection_ceremony_agent.py` | Historical/retired feature agent; no current target implementation. | ECOSYSTEM §15, Art. XXXIV.5 |
+| `rapp_brainstem/agents/ant_agent.py` | Historical/retired Ant Farm agent; no current target implementation. | kody-w/ant-farm/skill.md, NEIGHBORHOOD_PROTOCOL §5b |
+| `rapp_brainstem/agents/colony_observer_agent.py` | Historical/retired Ant Farm observer; no current target implementation. | (companion to ant_agent) |
+| `rapp_brainstem/agents/rar_loader_agent.py` | Historical/retired local RAR loader; not a current §§10/13 acceptance path. | rapp-rar-index/1.0 + rapp-rar-loadout/1.0 |
+| `rapp_brainstem/agents/graft_neighborhood_agent.py` | Historical/retired graft agent; no current target implementation. | rapp-graft-result/1.0 + rapp-metropolis-index/1.0 + bond.py event "graft" |
+| `rapp_brainstem/agents/dock_agent.py` | Historical/retired dock agent; no current target implementation. | rapp-dock-result/1.0 + bond.py event "dock" |
+| `rapp_brainstem/agents/launch_to_public_agent.py` | Historical/retired launch agent; no current target implementation. | rapp-launch-result/1.0 + rapp-launch-continuation/1.0 + rapp-launch-fingerprint/1.0 + bond.py event "launch" |
+| `rapp_brainstem/agents/bond_rhythm_agent.py` | Historical/retired Bond Pulse agent; offline audit tooling remains separate. | rapp-rhythm-pulse/1.0 + bond.py event "rhythm" |
 | `tools/ecosystem_contract.py` | Pure-data per-kind contract. Defines what files MUST exist for each of the 9 offspring kinds (neighborhood, ant-farm, twin, workspace, braintrust, catalog, template, installer, egg-hub). Zero behavior; imported by ecosystem_audit. Includes `KERNEL_BASE_FILES` (full kernel) AND `SEED_REQUIRED_AGENTS = ("basic_agent.py",)` (minimum agents that ship in planted seeds). | (no schema; pure data) |
 | `tools/ecosystem_audit.py` | Stdlib-only drift detector. Reads `pages/metropolis/index.json` → diffs each offspring against `ecosystem_contract` → classifies drift (missing_files / schema_drift / rappid_drift / kernel_drift / identity_block_missing) → emits `pages/_audit/ecosystem-audit.{md,json}`. CLI: `--offline` (default; uses fixtures), `--online`, `--repo`, `--metropolis`, `--fixtures-dir`, `--out-dir`, `--no-write`, `--strict/--lenient`. Exit 1 on drift (default strict). | rapp-ecosystem-audit/1.0 |
 | `tools/sign_release.py` | ed25519 keygen / sign / verify for `rapp_kernel/manifest.json` | CONSTITUTION Art. XXXIV.7 |
@@ -290,7 +290,7 @@ defining document cannot register it; registration follows RAPP/1 §13.
 | `tools/rebuild_estate.py` | Application catalog recovery from untrusted GitHub candidates. Handle/repo and `parent_rappid` fallbacks do not establish identity; preserve §6 tails and verify §13 state. | product recovery, subordinate to RAPP/1 |
 | `tools/sniff_network.py` | Article XLVII decentralized discovery. Default mode: BFS-from-seed via raw URLs only (no GitHub Search API). Walks `.well-known/rapp-network-seed.json` → each operator's `.well-known/rapp-network.json` beacon → `discovery.federation_hints[]` adds new nodes. Optional `--via topic` for periodic sweeps via `gh search repos topic:rapp-estate`. Returns `rapp-network-sniff/1.0`. | rapp-network-sniff/1.0 |
 | `.well-known/rapp-network-seed.json` (in species root kody-w/RAPP) | The DNS-root analog for the federation. Lists known operators as the BFS starting set. Convenient but not authoritative; anyone can fork the species root and host their own seed. | rapp-network-seed/1.0 |
-| `.well-known/rapp-network.json` (per published estate) | Per-operator beacon emitted by `estate publish`. Carries operator rappid, estate URL, protocol versions implemented, `discovery.indexable` consent flag (robots.txt-style; default true), `discovery.federation_hints[]`, AND (per Article XLVIII) REQUIRED `private_estate_pointer` + `private_estate_commitment` + `private_door_count`. | rapp-network-beacon/1.1 |
+| `.well-known/rapp-network.json` (per published estate) | External template, not a repository-local implementation path. Per-operator beacon emitted by a published estate. | rapp-network-beacon/1.1 |
 | `tools/path_opacity.py` | Article XLVIII.6 URL opacity helpers. `opaque_path(secret, kind, id)` → `kinds/<HMAC>/<HMAC>.json`; `decode_local(secret, opaque, …)` (operator-only); `audit_paths(file_paths)` for publish-time enforcement; `OPACITY_REGEX` for downstream consumers. Pure stdlib. | (no schema; pure helper) |
 | `tools/private_estate_init.py` | Bootstraps `<handle>/rapp-estate-private` (PRIVATE GitHub repo). Mints the per-operator HMAC secret to `~/.brainstem/private-estate-secret` (mode 0600). Scaffolds the opaque file set (meta.json, README, objects/.gitkeep, kinds/.gitkeep). Returns commitment hash for the public beacon. Idempotent. | rapp-private-estate/1.0 |
 | `pages/docs/PUBLIC_PRIVATE_BOUNDARY.md` | Canonical Article XLVIII spec — the two-tier estate, audience field, commitment pattern, URL opacity contract, access semantics (GitHub collab perms + CODEOWNERS), receiver-controls discipline. | rapp-private-estate/1.0 |
@@ -300,21 +300,21 @@ defining document cannot register it; registration follows RAPP/1 §13.
 | `<handle>/rapp-estate-private` (PRIVATE repo per operator) | The private tier of every Article-XLVIII-compliant estate. Mandatory from first install. All paths opaque per §XLVIII.6. Access via GitHub collaborator perms. Content NEVER fetched by sniffers. | rapp-private-estate/1.0 |
 | `pages/docs/ESTATE_SPEC.md` | The canonical Estate Spec — formalizes rappid-as-global-address + Door URL Set + estate.json shape + discovery protocol. Constitutional (Article XLVI). | (the spec itself) |
 | `specs/SPEC.md` + `specs/skill.md` | Superseded local spec and non-runtime host-onboarding history. Neither defines RAPP capabilities or current wire behavior. | retired `rapp-protocol/1.0`; migrate to the pinned rev-5 authority |
-| `rapp_brainstem/agents/estate_agent.py` | Local-first estate agent — show/export/import/publish/fetch/add/remove/scan. Uses `door_from_rappid` for all derivation; entries store ONLY `{rappid, added_at, via}`. | rapp-estate/1.1 |
-| `rapp_brainstem/utils/organs/neighborhood_organ.py` | `/api/peers`, peer view (legacy) | NEIGHBORHOOD_PROTOCOL §4 |
-| `rapp_brainstem/utils/organs/neighborhood_membership_organ.py` | `/api/neighborhoods/*` — join/sync/members/leave/contribute/estate/by-rappid | vault Decision 2026-05-08, NEIGHBORHOOD_PROTOCOL §2 |
-| `rapp_brainstem/utils/organs/estate_organ.py` | `/api/estate/*` — twins, eggs, lay-egg, summon, hatch | vault Decision 2026-05-08 |
-| `rapp_brainstem/utils/organs/swarm_estate_organ.py` | Swarm-level estate | (impl) |
-| `rapp_brainstem/utils/organs/lifecycle_organ.py` | Lifecycle catalog + kernel upgrade | ECOSYSTEM §1 |
-| `rapp_brainstem/utils/bond.py` | Egg/hatch lifecycle, rappid mint, `rapp/1` | CLAUDE.md identity & bonding |
-| `rapp_brainstem/utils/egg.py` | Legacy egg utilities | ECOSYSTEM §8 |
-| `rapp_brainstem/utils/peer_registry.py` | Peer cache | NEIGHBORHOOD_PROTOCOL §4 |
-| `rapp_brainstem/utils/llm.py` | Provider dispatch (Copilot / Azure / OpenAI / Anthropic / fake) | CLAUDE.md provider dispatch |
+| `rapp_brainstem/agents/estate_agent.py` | Historical/retired estate agent; no current target implementation. | rapp-estate/1.1 |
+| `rapp_brainstem/utils/organs/neighborhood_organ.py` | Historical/retired peer-view organ; no current target implementation. | NEIGHBORHOOD_PROTOCOL §4 |
+| `rapp_brainstem/utils/organs/neighborhood_membership_organ.py` | Historical/retired membership organ; explicit retirement tests prevent restoration. | vault Decision 2026-05-08, NEIGHBORHOOD_PROTOCOL §2 |
+| `rapp_brainstem/utils/organs/estate_organ.py` | Historical/retired estate organ; no current target implementation. | vault Decision 2026-05-08 |
+| `rapp_brainstem/utils/organs/swarm_estate_organ.py` | Historical/retired swarm-estate organ; no current target implementation. | (impl) |
+| `rapp_brainstem/utils/organs/lifecycle_organ.py` | Historical/retired lifecycle organ; no current target implementation. | ECOSYSTEM §1 |
+| `rapp_brainstem/utils/bond.py` | Historical/retired egg and lineage utility; legacy inputs are migration evidence only. | CLAUDE.md identity & bonding |
+| `rapp_brainstem/utils/egg.py` | Historical/retired egg utility; current egg handling is governed by RAPP/1 §9. | ECOSYSTEM §8 |
+| `rapp_brainstem/utils/peer_registry.py` | Historical/retired peer cache; no current target implementation. | NEIGHBORHOOD_PROTOCOL §4 |
+| `rapp_brainstem/utils/llm.py` | Historical/retired split provider module; current pinned runtime logic remains in brainstem.py. | CLAUDE.md provider dispatch |
 | `rapp_brainstem/utils/local_storage.py` | Local JSON shim for AzureFileStorageManager | CLAUDE.md local storage shim |
 | `rapp_brainstem/utils/boot.py` | Bootstrapping, agent discovery | CLAUDE.md commands |
-| `rapp_brainstem/utils/web/index.html` | Front door (planted seed UI) | ECOSYSTEM §4a |
-| `rapp_brainstem/utils/web/onboard/` | Onboarding surface | ECOSYSTEM §4 |
-| `rapp_brainstem/utils/web/mobile/` | (vbrainstem variant) | rapp-vbrainstem-subscription/1.0 |
+| `rapp_brainstem/index.html` | Current self-contained Tier-1 brainstem UI. | ECOSYSTEM §4a |
+| `rapp_brainstem/utils/web/onboard/` | Historical/retired onboarding directory; no current target implementation. | ECOSYSTEM §4 |
+| `rapp_brainstem/utils/web/mobile/` | Historical/retired mobile directory; no current target implementation. | rapp-vbrainstem-subscription/1.0 |
 | `rapp_swarm/function_app.py` | Tier-2 Azure Functions /chat | CLAUDE.md Tier 2 |
 | `rapp_swarm/_vendored/` | Vendored brainstem core | CLAUDE.md vendoring |
 | `rapp_swarm/build.sh` | Vendor brainstem into _vendored/ | CLAUDE.md vendoring |
@@ -335,17 +335,17 @@ defining document cannot register it; registration follows RAPP/1 §13.
 | `pages/vbrainstem/index.html` | Browser-based brainstem | (mobile/auth-worker dependent) |
 | `pages/_site/index.json` | Site manifest (canonical inventory) | CLAUDE.md key directories |
 | `pages/vault/` | Obsidian vault — decision narratives | CONSTITUTION Art. XXIII |
-| `rapp-zoo/` | Local-first Pokédex (3 starter organisms) | CLAUDE.md visual anatomy |
-| `tests/run-tests.mjs` | JS contract tests (agent parsing, cards, binder, sealing) | DEFINITION_OF_DONE |
+| `rapp-zoo/` | Historical/external Pokédex path; moved out of this repository. | CLAUDE.md visual anatomy |
+| `tests/run-tests.mjs` | Current dependency-free RAPP/1 core/static contract checks | DEFINITION_OF_DONE |
 | `tests/vault-check.mjs` | Vault link/PII guardrail | DEFINITION_OF_DONE |
 | `tests/scenarios/*.sh` | E2E scenarios (incl. survival) | SURVIVAL "How to test" |
 | `tests/doorman/` | Tether + Dream Catcher conformance | HERO_USECASE.md §1, §2 |
 | `tests/dreamcatcher-conformance/` | Dream Catcher protocol conformance | HERO_USECASE.md §2 |
-| `tests/features/F1-lineage-rollup.sh` | Lineage rollup conformance | ECOSYSTEM §15 |
-| `tests/features/F2-leaderboard.sh` | Species leaderboard conformance | ECOSYSTEM §15 |
-| `tests/features/F3-proximity.sh` | Proximity discovery conformance | ECOSYSTEM §15, HERO_USECASE §4 |
-| `tests/features/F4-ed25519-sign.sh` | ed25519 signing conformance | CONSTITUTION Art. XXXIV.7 |
-| `tests/features/F5-resurrection.sh` | Resurrection ceremony conformance | ECOSYSTEM §15, Art. XXXIV.5 |
+| `tests/features/F1-lineage-rollup.sh` | Historical/retired positive test; exact bytes are quarantined as migration evidence. | ECOSYSTEM §15 |
+| `tests/features/F2-leaderboard.sh` | Historical/retired positive test; exact bytes are quarantined as migration evidence. | ECOSYSTEM §15 |
+| `tests/features/F3-proximity.sh` | Historical/retired positive test; exact bytes are quarantined as migration evidence. | ECOSYSTEM §15, HERO_USECASE §4 |
+| `tests/features/F4-ed25519-sign.sh` | Historical/retired positive test; exact bytes are quarantined as migration evidence. | CONSTITUTION Art. XXXIV.7 |
+| `tests/features/F5-resurrection.sh` | Historical/retired positive test; exact bytes are quarantined as migration evidence. | ECOSYSTEM §15, Art. XXXIV.5 |
 | `tests/features/run.sh` | Feature suite master runner | (this doc) |
 | `tools/test_brainstem_server.py` | Lightweight HTTP server for federation tests | (test infra) |
 | `.github/workflows/plant-approved-place.yml` | Auto-plant approved place submissions | (CI) |

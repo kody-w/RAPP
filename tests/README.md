@@ -20,7 +20,7 @@ RAPP/1 acceptance.
 | Path | Coverage |
 |---|---|
 | `run_rapp1_conformance.py` | Runs every canonical offline gate and propagates any failure. |
-| `check_offline_boundary.py` + `offline_guard/` | Scrubs ambient credentials, isolates user/config state, permits loopback, and denies external HTTP for canonical subprocesses. |
+| `check_offline_boundary.py` + `offline_guard/` | Builds a minimal allowlisted environment, isolates user/config state, permits loopback, and denies external Python/Node/HTTP egress. |
 | `rapp1_core/` | Strict JSON/JCS, identity, frames, eggs, JWS/trust, and CLI behavior. |
 | `../rapp_brainstem/test_rapp1_facade.py` | Exact pre-acceptance `/chat`, sessions, idempotency, durability, and refusals. |
 | `test_rapp1_authority.py` | Structural authority pin, provenance fixture, status, and immutable boundary. |
@@ -29,7 +29,7 @@ RAPP/1 acceptance.
 | `test_active_path_migrations.py` and other top-level Python tests | Owner-independent migration and planning behavior. |
 | `run-tests.mjs` | Dependency-free current JS/static contract checks. |
 | `vault-check.mjs` | Vault links/aliases, metadata, and PII posture. |
-| `check_rapp1_static.py` | Strict syntax, immutable workflow refs, retired fixtures, and exhaustive active-suite inventory. |
+| `check_rapp1_static.py` | Strict syntax, immutable workflow refs, ECOSYSTEM_MAP implementation paths, retired fixtures, and exhaustive active-suite inventory. |
 | `e2e/07-ui-smoke.sh` + `e2e/08-html-pages.sh` | Local served-UI and target-owned HTML smoke checks. |
 | `features/F10-ecosystem-audit.sh` | Offline ecosystem contract and drift fixtures. |
 | `organism/run-all.sh` | Retained local kernel, encoding, storage, and concurrency fixtures. |
@@ -48,6 +48,11 @@ directory, so checkout-local `.env`, Copilot sessions, and token files cannot
 be discovered. The former executable browser parity suite is quarantined
 because its `rapp.js` dependency no longer exists; `run-tests.mjs` is the
 current core/static replacement.
+
+Canonical subprocesses inherit only `PATH` plus necessary locale/platform
+variables; credential, agent-socket, and config-file handles are not copied.
+Python sockets and Node net/tls/dgram/DNS/fetch APIs reject non-loopback
+destinations, while proxy settings cover external HTTP clients such as curl.
 
 The supplemental `rapp-drift-lint` workflow is pinned to immutable commit
 `de1c664154d3456224bdf95e830736ffb5270c2b`; it is hygiene only, not RAPP/1

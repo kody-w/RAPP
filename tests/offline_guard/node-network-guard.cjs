@@ -2,6 +2,8 @@
 
 const net = require('node:net');
 const tls = require('node:tls');
+const dgram = require('node:dgram');
+const dns = require('node:dns');
 const http = require('node:http');
 const https = require('node:https');
 
@@ -39,6 +41,7 @@ function requireLocal(host) {
 
 function connectHost(args) {
   const first = args[0];
+  if (Array.isArray(first)) return connectHost(first);
   if (first && typeof first === 'object') {
     if (first.path) return null;
     return first.hostname || first.host || 'localhost';
@@ -57,9 +60,103 @@ function guardConnect(original) {
   };
 }
 
+net.Socket.prototype.connect = guardConnect(net.Socket.prototype.connect);
 net.connect = guardConnect(net.connect);
 net.createConnection = guardConnect(net.createConnection);
 tls.connect = guardConnect(tls.connect);
+
+if (
+  tls.TLSSocket
+  && Object.prototype.hasOwnProperty.call(tls.TLSSocket.prototype, 'connect')
+) {
+  tls.TLSSocket.prototype.connect = guardConnect(tls.TLSSocket.prototype.connect);
+}
+
+const originalDgramConnect = dgram.Socket.prototype.connect;
+dgram.Socket.prototype.connect = function guardedDgramConnect(...args) {
+  const host = typeof args[1] === 'string' ? args[1] : 'localhost';
+  requireLocal(host);
+  return originalDgramConnect.apply(this, args);
+};
+
+const originalDgramSend = dgram.Socket.prototype.send;
+dgram.Socket.prototype.send = function guardedDgramSend(...args) {
+  let host = null;
+  for (let index = args.length - 1; index > 0; index -= 1) {
+    if (typeof args[index] === 'string') {
+      host = args[index];
+      break;
+    }
+  }
+  if (host !== null) requireLocal(host);
+  return originalDgramSend.apply(this, args);
+};
+
+function guardDnsCall(original) {
+  return function guardedDnsCall(host, ...args) {
+    requireLocal(host);
+    return original.call(this, host, ...args);
+  };
+}
+
+for (const name of [
+  'lookup',
+  'lookupService',
+  'resolve',
+  'resolve4',
+  'resolve6',
+  'resolveAny',
+  'resolveCaa',
+  'resolveCname',
+  'resolveMx',
+  'resolveNaptr',
+  'resolveNs',
+  'resolvePtr',
+  'resolveSoa',
+  'resolveSrv',
+  'resolveTxt',
+  'reverse',
+]) {
+  if (typeof dns[name] === 'function') dns[name] = guardDnsCall(dns[name]);
+  if (dns.Resolver && typeof dns.Resolver.prototype[name] === 'function') {
+    dns.Resolver.prototype[name] = guardDnsCall(dns.Resolver.prototype[name]);
+  }
+  if (dns.promises && typeof dns.promises[name] === 'function') {
+    dns.promises[name] = guardDnsCall(dns.promises[name]);
+  }
+  if (
+    dns.promises
+    && dns.promises.Resolver
+    && typeof dns.promises.Resolver.prototype[name] === 'function'
+  ) {
+    dns.promises.Resolver.prototype[name] = guardDnsCall(
+      dns.promises.Resolver.prototype[name],
+    );
+  }
+}
+
+function guardSetServers(original) {
+  return function guardedSetServers(servers) {
+    for (const server of servers) requireLocal(server);
+    return original.call(this, servers);
+  };
+}
+
+dns.setServers = guardSetServers(dns.setServers);
+if (dns.Resolver && typeof dns.Resolver.prototype.setServers === 'function') {
+  dns.Resolver.prototype.setServers = guardSetServers(
+    dns.Resolver.prototype.setServers,
+  );
+}
+if (
+  dns.promises
+  && dns.promises.Resolver
+  && typeof dns.promises.Resolver.prototype.setServers === 'function'
+) {
+  dns.promises.Resolver.prototype.setServers = guardSetServers(
+    dns.promises.Resolver.prototype.setServers,
+  );
+}
 
 function requestHost(input, options) {
   if (options && (options.hostname || options.host)) {

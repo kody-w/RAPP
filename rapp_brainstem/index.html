@@ -1762,10 +1762,8 @@
 </footer>
 
 <script>
-  // RAPP.Voice — inlined contract for the brainstem UI so it stays
-  // self-contained (no extra script load, no fetch). Mirror of the
-  // canonical implementation in utils/web/rapp.js — keep in sync.
-  // Tested against tests/run-tests.mjs §9b.
+  // RAPP.Voice — the self-contained brainstem UI contract. The former
+  // external browser helper is retired; no extra script load or fetch occurs.
   (function (root) {
     const RAPP = root.RAPP = root.RAPP || {};
     const VOICE_FALLBACK_MAX = 280;
@@ -3032,12 +3030,11 @@
           timestamp: new Date().toISOString()
         });
         appendMsg('assistant', d.response, logsText || null);
-        // Voice playback contract (Path B — see tests/run-tests.mjs §9b).
+        // Voice playback contract.
         // Prefer |||VOICE||| block (server pre-extracts to d.voice_response);
         // fall back to a stripped, capped slice of the main reply when the
         // model forgot the voice slot AND voice mode is on. RAPP.Voice is
-        // sourced from utils/web/rapp.js (loaded above) so the contract
-        // stays test-locked + DRY.
+        // defined by the self-contained contract above.
         const resp = { voice: d.voice_response || '', text: d.response || '' };
         const voiceText = (window.RAPP && window.RAPP.Voice && window.RAPP.Voice.pickVoiceText)
           ? RAPP.Voice.pickVoiceText(resp)
