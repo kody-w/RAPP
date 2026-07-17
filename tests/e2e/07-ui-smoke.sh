@@ -3,11 +3,18 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
-PORT="${PORT:-7072}"
+BRAINSTEM_DIR="${RAPP1_BRAINSTEM_BOOT_DIR:-$(pwd)/rapp_brainstem}"
 PYTHON="${PYTHON:-python3}"
 if [ -x "$HOME/.brainstem/venv/bin/python" ]; then
     PYTHON="$HOME/.brainstem/venv/bin/python"
 fi
+PORT="${PORT:-$("$PYTHON" - <<'PY'
+import socket
+with socket.socket() as sock:
+    sock.bind(("127.0.0.1", 0))
+    print(sock.getsockname()[1])
+PY
+)}"
 WORK_DIR="${TMPDIR:-$(pwd)/tests/.rapp1-work}/ui-smoke-$$"
 mkdir -p "$WORK_DIR"
 PID_FILE="$WORK_DIR/brainstem.pid"
@@ -24,16 +31,25 @@ cleanup() {
 trap cleanup EXIT
 
 if curl -sf "http://localhost:$PORT/health" >/dev/null 2>&1; then
-    echo "▶ Reusing brainstem already on :$PORT"
-else
-    echo "▶ Starting brainstem on :$PORT..."
-    ( cd rapp_brainstem && exec env PORT="$PORT" "$PYTHON" brainstem.py ) > "$LOG" 2>&1 &
-    echo $! > "$PID_FILE"
-    for i in $(seq 1 30); do
-        curl -sf "http://localhost:$PORT/health" >/dev/null 2>&1 && break
-        sleep 1
-    done
+    echo "FAIL: refusing to reuse ambient server on :$PORT" >&2
+    exit 1
 fi
+echo "▶ Starting isolated brainstem on :$PORT..."
+( cd "$BRAINSTEM_DIR" && exec env PORT="$PORT" "$PYTHON" brainstem.py ) > "$LOG" 2>&1 &
+echo $! > "$PID_FILE"
+for i in $(seq 1 30); do
+    curl -sf "http://localhost:$PORT/health" >/dev/null 2>&1 && break
+    sleep 1
+done
+
+HEALTH="$(curl -sf "http://localhost:$PORT/health")" || {
+    cat "$LOG" >&2
+    exit 1
+}
+echo "$HEALTH" | grep -q '"status":"unauthenticated"' || {
+    echo "FAIL: isolated brainstem discovered ambient credentials: $HEALTH" >&2
+    exit 1
+}
 
 echo "▶ GET / ..."
 HTTP=$(curl -s -o "$HTML" -w "%{http_code}" "http://localhost:$PORT/")

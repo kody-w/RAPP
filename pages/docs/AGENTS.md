@@ -78,7 +78,7 @@ rapp_store/            Rapplication catalog + source agents + singleton artifact
   <name>/eggs/         Stateful snapshots (.egg files)
 
 worker/                Cloudflare Worker — stateless auth proxy for browser clients
-tests/                 Node + browser test suite for the v1 contract
+tests/                 Canonical RAPP/1 core/static gates + retired fixtures
 ```
 
 ## Writing Agents
@@ -136,4 +136,7 @@ A rapplication collapses multiple cooperating agents into a single deployable fi
 
 ## Tests
 
-Tests verify: agent parsing, manifest extraction, seed/mnemonic round-trips, card↔agent.py byte equality, SHA-256 tamper detection, binder JSON round-trip, multi-agent chain via `data_slush`, and digital-twin file presence. Run with `node tests/run-tests.mjs` or open `tests/index.html` in a browser.
+The current dependency-free core/static checks run with
+`node tests/run-tests.mjs`. The former browser parity suite depended on a
+removed `rapp.js` implementation and is retained only as non-executable
+migration evidence under `tests/fixtures/legacy-conformance/`.

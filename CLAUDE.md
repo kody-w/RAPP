@@ -32,7 +32,7 @@ pip3 install -r requirements.txt        # Install dependencies
 # Tests (run from repo root unless noted)
 python3 -m pytest rapp_brainstem/test_local_agents.py -v           # Python agent tests
 python3 -m pytest rapp_brainstem/test_local_agents.py::TestLocalStorage::test_write_and_read -v  # Single test
-node tests/run-tests.mjs                                           # JS contract tests (agent parsing, cards, binder, sealing)
+node tests/run-tests.mjs                                           # Current RAPP/1 core/static contract checks
 node tests/vault-check.mjs                                         # Vault link/PII guardrail
 bash tests/e2e/08-html-pages.sh                                    # Marketing pages content checks
 

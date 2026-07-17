@@ -5,9 +5,9 @@
   "quarantine": {
     "root": "tests/fixtures/legacy-conformance",
     "source_commit": "4c2b999",
-    "path_count": 80,
-    "path_set_sha256": "5e3005d1558efa1d0cf860036c8f66895765cf325626084bf234842433c479a9",
-    "content_set_sha256": "e396e7c03f9e9385186c3754b423290b9e02f143677bf79ae9de5140992fe535",
+    "path_count": 81,
+    "path_set_sha256": "411493b71272de00b34e90692a46474bb6830fc17877960bd2130884d00ef3a9",
+    "content_set_sha256": "0bd17089f9562b3f3e07d30f2fbfac2970ff15fd82a3fdc3cc3453173ddffa8a",
     "mapping": "Each fixture path maps to its former tests/ path after removing the quarantine root and final .txt suffix.",
     "policy": "These exact historical test bytes positively asserted retired identity, frame, egg, browser, Tier 2, or wire behavior. They are non-executable migration evidence and are never RAPP/1 conformance evidence.",
     "files": [
@@ -178,6 +178,12 @@
         "source_path": "tests/features/F9-universal-docking.sh",
         "sha256": "6614570add07017fa1d7e5e253b817e0c880f279468f8c6d7fbb22234a6906e9",
         "rationale": "Positively asserts a removed legacy product feature rather than current RAPP/1 rev-5 conformance."
+      },
+      {
+        "fixture": "tests/fixtures/legacy-conformance/index.html.txt",
+        "source_path": "tests/index.html",
+        "sha256": "a64557fbbe37f6ac8b708b5c3d2cd12384f287de9969f4533c83eba087f52f1b",
+        "rationale": "Loaded the removed browser rapp.js implementation and falsely claimed parity with the current Node core/static checks."
       },
       {
         "fixture": "tests/fixtures/legacy-conformance/organism/03-rappid-birth.sh.txt",

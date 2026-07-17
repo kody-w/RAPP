@@ -67,7 +67,7 @@ function test(name, check) {
   }
 }
 
-console.log('\n\x1b[1mRAPP/1 rev-5 JS/static contract checks\x1b[0m\n');
+console.log('\n\x1b[1mRAPP/1 rev-5 core/static contract checks\x1b[0m\n');
 
 const authority = json('RAPP1_AUTHORITY.json');
 const fixture = json('tests/fixtures/rapp1-spec-rev5.json');
@@ -259,8 +259,19 @@ test('legacy-positive tests are data fixtures, not executable tests', () => {
   );
 });
 
+test('retired browser parity suite is quarantined, not executable', () => {
+  assert(!existsSync(join(ROOT, 'tests', 'index.html')));
+  assert(
+    existsSync(join(ROOT, 'tests', 'fixtures', 'legacy-conformance', 'index.html.txt')),
+    'retired browser suite fixture missing',
+  );
+});
+
 test('canonical runner and pinned workflow are present', () => {
   for (const relative of [
+    'tests/check_offline_boundary.py',
+    'tests/offline_guard/sitecustomize.py',
+    'tests/offline_guard/node-network-guard.cjs',
     'tests/run_rapp1_conformance.py',
     'tests/test_rapp1_runner.py',
     '.github/workflows/rapp1-conformance.yml',

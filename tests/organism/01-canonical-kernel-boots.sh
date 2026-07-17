@@ -3,7 +3,7 @@
 #
 # Asserts:
 #   - PORT=<free> python brainstem.py exits cleanly to /health
-#   - /health returns status:ok with the soul path resolved
+#   - /health returns unauthenticated with no ambient credentials
 #   - /agents lists at least one *_agent.py file
 #   - /version matches the VERSION file
 #
@@ -13,6 +13,7 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 
 REPO_ROOT="$(pwd)"
+BRAINSTEM_DIR="${RAPP1_BRAINSTEM_BOOT_DIR:-$REPO_ROOT/rapp_brainstem}"
 WORK_DIR="${TMPDIR:-$REPO_ROOT/tests/.rapp1-work}/organism-01-$$"
 mkdir -p "$WORK_DIR"
 LOG="$WORK_DIR/brainstem.log"
@@ -39,7 +40,7 @@ PYTHON="${PYTHON:-$HOME/.brainstem/venv/bin/python}"
 [ -x "$PYTHON" ] || PYTHON="$(command -v python3)"
 
 echo "▶ booting canonical kernel on :$PORT (python: $PYTHON)"
-( cd rapp_brainstem && exec env PORT="$PORT" "$PYTHON" brainstem.py ) > "$LOG" 2>&1 &
+( cd "$BRAINSTEM_DIR" && exec env PORT="$PORT" "$PYTHON" brainstem.py ) > "$LOG" 2>&1 &
 echo $! > "$PID_FILE"
 
 # Wait for /health
@@ -57,9 +58,9 @@ done
 HEALTH="$(curl -s "http://localhost:$PORT/health")"
 echo "  /health: $HEALTH"
 
-# /health must include status (ok or unauthenticated — both are valid boot states)
-echo "$HEALTH" | grep -qE '"status":"(ok|unauthenticated)"' || {
-    echo "FAIL: /health missing status:ok|unauthenticated"
+# The canonical offline runner must never discover developer credentials.
+echo "$HEALTH" | grep -q '"status":"unauthenticated"' || {
+    echo "FAIL: /health discovered ambient credentials"
     exit 1
 }
 
@@ -74,7 +75,7 @@ echo "$HEALTH" | grep -qE '"agents":\[\]' && {
 }
 
 # /version must match VERSION file
-VERSION_FILE="$(cat rapp_brainstem/VERSION | tr -d '[:space:]')"
+VERSION_FILE="$(cat "$BRAINSTEM_DIR/VERSION" | tr -d '[:space:]')"
 VERSION_API="$(curl -s "http://localhost:$PORT/version" | sed -n 's/.*"version":"\([^"]*\)".*/\1/p')"
 [ "$VERSION_FILE" = "$VERSION_API" ] || {
     echo "FAIL: /version mismatch (file=$VERSION_FILE api=$VERSION_API)"

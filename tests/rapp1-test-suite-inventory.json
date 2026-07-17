@@ -1,7 +1,8 @@
 {
   "schema": "rapp1-test-suite-inventory/1.0",
-  "scope": "Every tracked .py/.sh/.js/.mjs/.html candidate below tests/, excluding non-executable tests/fixtures migration evidence.",
+  "scope": "Every .py/.sh/.js/.mjs/.cjs/.html candidate below tests/, excluding non-executable tests/fixtures migration evidence.",
   "candidate_suffixes": [
+    ".cjs",
     ".html",
     ".js",
     ".mjs",
@@ -9,6 +10,7 @@
     ".sh"
   ],
   "excluded_prefixes": [
+    "tests/.rapp1-work/",
     "tests/fixtures/"
   ],
   "policy": "Every active candidate is either reached by the canonical offline runner, a documented non-recursive entrypoint/support file, or explicitly external, credentialed, destructive, or network-dependent.",
@@ -18,6 +20,12 @@
       "disposition": "canonical-direct",
       "reason": "Compares KERNEL_PIN hashes only with repository-local frozen bytes.",
       "gate": "kernel-pin-local"
+    },
+    {
+      "path": "tests/check_offline_boundary.py",
+      "disposition": "canonical-direct",
+      "reason": "Actively proves credential scrubbing, config isolation, loopback access, and external HTTP denial.",
+      "gate": "offline-boundary"
     },
     {
       "path": "tests/check_rapp1_static.py",
@@ -69,15 +77,21 @@
       "reason": "Compatibility alias that execs the authoritative runner; it is not recursively invoked by that runner."
     },
     {
-      "path": "tests/index.html",
-      "disposition": "support",
-      "reason": "Human test index; parsed by static-inspection but not an independent executable suite.",
-      "gate": "static-inspection"
-    },
-    {
       "path": "tests/mirror-drift.sh",
       "disposition": "external",
       "reason": "Fetches remote mirror state; it is supplemental online evidence, not an offline authority gate."
+    },
+    {
+      "path": "tests/offline_guard/node-network-guard.cjs",
+      "disposition": "canonical-helper",
+      "reason": "Preloaded into canonical Node subprocesses to reject non-loopback HTTP and sockets.",
+      "gate": "offline-boundary"
+    },
+    {
+      "path": "tests/offline_guard/sitecustomize.py",
+      "disposition": "canonical-helper",
+      "reason": "Auto-loaded into canonical Python subprocesses to reject non-loopback sockets and DNS.",
+      "gate": "offline-boundary"
     },
     {
       "path": "tests/organism/01-canonical-kernel-boots.sh",
@@ -310,5 +324,8 @@
       "reason": "Runs the local vault link, alias, manifest, and PII guard.",
       "gate": "vault"
     }
+  ],
+  "forbidden_executable_references": [
+    "brainstem/rapp.js"
   ]
 }

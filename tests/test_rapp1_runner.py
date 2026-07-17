@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import re
+import shutil
 import sys
 from pathlib import Path
 
@@ -31,6 +33,7 @@ static_spec.loader.exec_module(static_checks)
 def test_runner_has_one_explicit_authoritative_gate_set():
     names = [gate.name for gate in runner.gates()]
     assert names == [
+        "offline-boundary",
         "python-offline",
         "node-contract",
         "vault",
@@ -51,7 +54,9 @@ def test_runner_has_one_explicit_authoritative_gate_set():
 
 
 def test_python_gate_covers_target_owned_offline_pytests():
-    command = runner.gates()[0].command
+    command = next(
+        gate.command for gate in runner.gates() if gate.name == "python-offline"
+    )
     expected = {
         "rapp_brainstem/test_local_agents.py",
         "rapp_brainstem/test_rapp1_facade.py",
@@ -119,6 +124,7 @@ def test_main_returns_failure_when_any_gate_fails(monkeypatch):
     work_root = ROOT / "tests/.rapp1-runner-test"
 
     monkeypatch.setattr(runner, "_preflight", lambda: [])
+    monkeypatch.setattr(runner, "prepare_isolated_brainstem", lambda: None)
     monkeypatch.setattr(runner, "gates", lambda: selected)
     monkeypatch.setattr(runner, "run_gates", lambda _gates: (result,))
     monkeypatch.setattr(runner, "WORK_ROOT", work_root)
@@ -149,6 +155,91 @@ def test_successful_gate_fails_if_it_repairs_a_tracked_file(monkeypatch):
     assert result.returncode == 0
     assert result.tracked_mutation == ("tracked.html",)
     assert not result.passed
+
+
+def test_gate_environment_scrubs_credentials_and_isolates_config(monkeypatch):
+    scratch = ROOT / "tests/.rapp1-environment-test"
+    shutil.rmtree(scratch, ignore_errors=True)
+    monkeypatch.setattr(runner, "WORK_ROOT", scratch)
+    monkeypatch.setenv("GITHUB_TOKEN", "github-secret")
+    monkeypatch.setenv("GH_TOKEN", "gh-secret")
+    monkeypatch.setenv("COPILOT_SESSION_TOKEN", "copilot-secret")
+    monkeypatch.setenv("ACTIONS_RUNTIME_TOKEN", "actions-secret")
+    try:
+        environment = runner.gate_environment()
+        assert environment["GITHUB_TOKEN"] == ""
+        assert environment["GH_TOKEN"] == ""
+        assert "COPILOT_SESSION_TOKEN" not in environment
+        assert "ACTIONS_RUNTIME_TOKEN" not in environment
+        assert environment["HOME"] == os.fspath(scratch / "home")
+        assert environment["GH_CONFIG_DIR"].startswith(environment["HOME"])
+        assert environment["PYTHON_DOTENV_DISABLED"] == "1"
+        assert environment["HTTP_PROXY"] == runner.OFFLINE_PROXY
+        assert environment["http_proxy"] == runner.OFFLINE_PROXY
+        assert set(environment["NO_PROXY"].split(",")) >= {
+            "localhost",
+            "127.0.0.1",
+            "::1",
+        }
+        assert "node-network-guard.cjs" in environment["NODE_OPTIONS"]
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
+
+
+def test_isolated_brainstem_contains_only_tracked_files(monkeypatch):
+    scratch = ROOT / "tests/.rapp1-runtime-copy-test"
+    shutil.rmtree(scratch, ignore_errors=True)
+    monkeypatch.setattr(runner, "WORK_ROOT", scratch)
+    try:
+        destination = runner.prepare_isolated_brainstem()
+        source_root = ROOT / "rapp_brainstem"
+        expected = {
+            path.relative_to(source_root)
+            for path in runner._tracked_brainstem_files()
+            if path.is_file() or path.is_symlink()
+        }
+        actual = {
+            path.relative_to(destination)
+            for path in destination.rglob("*")
+            if path.is_file() or path.is_symlink()
+        }
+        assert actual == expected
+        assert not runner.RUNTIME_CREDENTIAL_FILES & actual
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
+
+
+def test_brainstem_boot_gates_require_isolated_unauthenticated_runtime():
+    for relative in (
+        "tests/e2e/07-ui-smoke.sh",
+        "tests/organism/01-canonical-kernel-boots.sh",
+        "tests/organism/06-stdout-wrapper-non-unicode-locale.sh",
+    ):
+        source = (ROOT / relative).read_text(encoding="utf-8")
+        assert "RAPP1_BRAINSTEM_BOOT_DIR" in source
+        assert '"status":"unauthenticated"' in source
+        assert '"status":"(ok|unauthenticated)"' not in source
+
+
+def test_offline_boundary_harness_blocks_external_http(monkeypatch):
+    scratch = ROOT / "tests/.rapp1-network-test"
+    shutil.rmtree(scratch, ignore_errors=True)
+    monkeypatch.setattr(runner, "WORK_ROOT", scratch)
+    try:
+        environment = runner.gate_environment()
+        result = runner.subprocess.run(
+            [sys.executable, "tests/check_offline_boundary.py"],
+            cwd=ROOT,
+            env=environment,
+            capture_output=True,
+            text=True,
+            timeout=15,
+            check=False,
+        )
+        assert result.returncode == 0, result.stderr
+        assert "external HTTP denied" in result.stdout
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
 
 
 def test_owner_blockers_are_separate_and_exact():
@@ -229,6 +320,20 @@ def test_active_suite_inventory_has_no_orphan_executable():
         static_checks.validate_test_suite_inventory(
             inventory,
             discovered | {"tests/orphan-test.sh"},
+        )
+    sources = {
+        path: (ROOT / path).read_text(encoding="utf-8")
+        for path in discovered
+    }
+    assert static_checks.validate_test_executable_references(
+        inventory,
+        sources,
+    ) == len(sources)
+    missing_reference = "/".join(("brainstem", "rapp.js"))
+    with pytest.raises(AssertionError, match="missing retired files"):
+        static_checks.validate_test_executable_references(
+            inventory,
+            {"tests/stale-browser.html": f'<script src="../{missing_reference}">'},
         )
 
 

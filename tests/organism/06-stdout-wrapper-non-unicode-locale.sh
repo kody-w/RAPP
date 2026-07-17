@@ -14,6 +14,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
+BRAINSTEM_DIR="${RAPP1_BRAINSTEM_BOOT_DIR:-$(pwd)/rapp_brainstem}"
 PYTHON="${PYTHON:-$HOME/.brainstem/venv/bin/python}"
 [ -x "$PYTHON" ] || PYTHON="$(command -v python3)"
 
@@ -39,7 +40,7 @@ cleanup() {
 trap cleanup EXIT
 
 echo "▶ booting canonical kernel under LC_ALL=C PYTHONUTF8=0 on :$PORT (forces ASCII stdout)"
-( cd rapp_brainstem && \
+( cd "$BRAINSTEM_DIR" && \
     exec env LC_ALL=C LANG=C PYTHONUTF8=0 PORT="$PORT" "$PYTHON" brainstem.py ) > "$LOG" 2>&1 &
 echo $! > "$PID_FILE"
 
@@ -64,8 +65,8 @@ grep -q "RAPP Brainstem v" "$LOG" || {
 
 # /health must answer
 HEALTH="$(curl -s "http://localhost:$PORT/health")"
-echo "$HEALTH" | grep -qE '"status":"(ok|unauthenticated)"' || {
-    echo "FAIL: /health did not return status:ok|unauthenticated"
+echo "$HEALTH" | grep -q '"status":"unauthenticated"' || {
+    echo "FAIL: /health discovered ambient credentials"
     echo "  body: $HEALTH"
     exit 1
 }

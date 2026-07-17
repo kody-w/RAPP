@@ -74,7 +74,7 @@ def _tracked(*patterns: str) -> list[Path]:
     return [
         ROOT / item.decode("utf-8")
         for item in raw.split(b"\0")
-        if item
+        if item and not item.decode("utf-8").startswith("tests/.rapp1-work/")
     ]
 
 
@@ -121,7 +121,7 @@ def check_shell() -> int:
 
 
 def check_javascript() -> int:
-    return _check_commands("node", "--check", ("*.js", "*.mjs"))
+    return _check_commands("node", "--check", ("*.js", "*.mjs", "*.cjs"))
 
 
 def extract_workflow_uses(source: str) -> tuple[tuple[int, str], ...]:
@@ -172,7 +172,16 @@ def check_workflow_actions() -> int:
 
 def discovered_test_candidates(inventory: dict) -> set[str]:
     raw = subprocess.check_output(
-        ("git", "ls-files", "--cached", "-z", "--", "tests"),
+        (
+            "git",
+            "ls-files",
+            "--cached",
+            "--others",
+            "--exclude-standard",
+            "-z",
+            "--",
+            "tests",
+        ),
         cwd=ROOT,
     )
     suffixes = set(inventory["candidate_suffixes"])
@@ -218,12 +227,35 @@ def validate_test_suite_inventory(
     return len(paths)
 
 
+def validate_test_executable_references(
+    inventory: dict,
+    sources: dict[str, str],
+) -> int:
+    forbidden = tuple(inventory["forbidden_executable_references"])
+    offenders = sorted(
+        (path, marker)
+        for path, source in sources.items()
+        for marker in forbidden
+        if marker in source
+    )
+    assert not offenders, (
+        f"executable tests reference missing retired files: {offenders}"
+    )
+    return len(sources)
+
+
 def check_test_suite_inventory() -> int:
     inventory = json.loads(SUITE_INVENTORY_PATH.read_text(encoding="utf-8"))
-    return validate_test_suite_inventory(
+    discovered = discovered_test_candidates(inventory)
+    count = validate_test_suite_inventory(inventory, discovered)
+    validate_test_executable_references(
         inventory,
-        discovered_test_candidates(inventory),
+        {
+            path: (ROOT / path).read_text(encoding="utf-8")
+            for path in discovered
+        },
     )
+    return count
 
 
 def check_legacy_inventory() -> tuple[int, int]:

@@ -22,6 +22,7 @@ import argparse
 import hashlib
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -33,6 +34,22 @@ from typing import Mapping, Sequence
 ROOT = Path(__file__).resolve().parents[1]
 STATUS_PATH = ROOT / "RAPP1_STATUS.md"
 WORK_ROOT = ROOT / "tests/.rapp1-work"
+OFFLINE_GUARD_ROOT = ROOT / "tests/offline_guard"
+OFFLINE_PROXY = "http://127.0.0.1:1"
+EMPTY_CREDENTIAL_ENV = (
+    "GITHUB_TOKEN",
+    "GH_TOKEN",
+    "COPILOT_TOKEN",
+    "COPILOT_GITHUB_TOKEN",
+    "GITHUB_COPILOT_TOKEN",
+    "COPILOT_API_TOKEN",
+)
+RUNTIME_CREDENTIAL_FILES = {
+    Path(".env"),
+    Path(".copilot_token"),
+    Path(".copilot_session"),
+    Path(".brainstem_model"),
+}
 INSTALL_COMMAND = (
     "python3 -m pip install -r requirements-rapp1-core.txt "
     "-r rapp_brainstem/requirements.txt pytest"
@@ -128,6 +145,11 @@ def _pytest_command() -> tuple[str, ...]:
 def gates() -> tuple[Gate, ...]:
     return (
         Gate(
+            "offline-boundary",
+            (sys.executable, "tests/check_offline_boundary.py"),
+            "credential scrubbing, isolated config, loopback access, and external HTTP denial",
+        ),
+        Gate(
             "python-offline",
             _pytest_command(),
             "core, facade, authority, containment, docs, migrations, and runner tests",
@@ -219,14 +241,119 @@ def owner_blockers(text: str | None = None) -> tuple[str, ...]:
     )
 
 
+def _is_credential_environment_name(name: str) -> bool:
+    upper = name.upper()
+    if upper in EMPTY_CREDENTIAL_ENV:
+        return True
+    credential_marker = any(
+        marker in upper for marker in ("TOKEN", "PAT", "SECRET", "API_KEY", "AUTH")
+    )
+    credential_scope = (
+        upper.startswith(("GITHUB_", "GH_", "COPILOT_", "ACTIONS_"))
+        or "COPILOT" in upper
+    )
+    return credential_marker and credential_scope
+
+
+def _tracked_brainstem_files() -> tuple[Path, ...]:
+    raw = subprocess.check_output(
+        ("git", "ls-files", "--cached", "-z", "--", "rapp_brainstem"),
+        cwd=ROOT,
+    )
+    return tuple(
+        ROOT / item.decode("utf-8")
+        for item in raw.split(b"\0")
+        if item
+    )
+
+
+def prepare_isolated_brainstem() -> Path:
+    """Copy only tracked runtime files, excluding checkout-local credentials."""
+    destination = WORK_ROOT / "runtime/rapp_brainstem"
+    shutil.rmtree(destination, ignore_errors=True)
+    for source in _tracked_brainstem_files():
+        relative = source.relative_to(ROOT / "rapp_brainstem")
+        if relative in RUNTIME_CREDENTIAL_FILES:
+            raise ValueError(f"tracked runtime credential file is forbidden: {source}")
+        target = destination / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if source.is_symlink():
+            target.symlink_to(os.readlink(source))
+        elif source.is_file():
+            shutil.copy2(source, target)
+        else:
+            raise FileNotFoundError(f"tracked brainstem path is missing: {source}")
+    return destination
+
+
+def _prepare_python_wrappers() -> Path:
+    bin_dir = WORK_ROOT / "bin"
+    bin_dir.mkdir(parents=True, exist_ok=True)
+    guard = shlex.quote(os.fspath(OFFLINE_GUARD_ROOT))
+    executable = shlex.quote(sys.executable)
+    launcher = (
+        "#!/bin/sh\n"
+        f"export PYTHONPATH={guard}"
+        f"\"${{PYTHONPATH:+{os.pathsep}$PYTHONPATH}}\"\n"
+        f"exec {executable} \"$@\"\n"
+    )
+    for name in ("python", "python3", "python3.11"):
+        path = bin_dir / name
+        path.write_text(launcher, encoding="utf-8")
+        path.chmod(0o755)
+    return bin_dir
+
+
 def gate_environment() -> dict[str, str]:
     environment = os.environ.copy()
+    for name in tuple(environment):
+        if _is_credential_environment_name(name):
+            environment.pop(name)
+    home = WORK_ROOT / "home"
+    config = home / ".config"
+    gh_config = config / "gh"
+    for directory in (home, config, gh_config):
+        directory.mkdir(parents=True, exist_ok=True)
+    bin_dir = _prepare_python_wrappers()
     environment.update(
         {
+            **{name: "" for name in EMPTY_CREDENTIAL_ENV},
+            "ALL_PROXY": OFFLINE_PROXY,
+            "CURL_HOME": os.fspath(home),
+            "GH_CONFIG_DIR": os.fspath(gh_config),
+            "GH_PROMPT_DISABLED": "1",
+            "GIT_CONFIG_GLOBAL": os.devnull,
+            "GIT_CONFIG_NOSYSTEM": "1",
+            "GIT_TERMINAL_PROMPT": "0",
+            "HOME": os.fspath(home),
+            "HTTP_PROXY": OFFLINE_PROXY,
+            "HTTPS_PROXY": OFFLINE_PROXY,
+            "NETRC": os.devnull,
+            "NODE_OPTIONS": (
+                f"--require={OFFLINE_GUARD_ROOT / 'node-network-guard.cjs'}"
+            ),
+            "NO_PROXY": "localhost,127.0.0.1,::1",
+            "PIP_DISABLE_PIP_VERSION_CHECK": "1",
+            "PATH": os.pathsep.join((os.fspath(bin_dir), environment["PATH"])),
+            "PYTHON": sys.executable,
+            "PYTHON_DOTENV_DISABLED": "1",
             "PYTHONDONTWRITEBYTECODE": "1",
-            "PYTHONPATH": os.fspath(ROOT),
+            "PYTHONPATH": os.pathsep.join(
+                (os.fspath(OFFLINE_GUARD_ROOT), os.fspath(ROOT))
+            ),
+            "RAPP1_BRAINSTEM_BOOT_DIR": os.fspath(
+                WORK_ROOT / "runtime/rapp_brainstem"
+            ),
+            "RAPP1_EXTERNAL_NETWORK": "deny",
             "TMPDIR": os.fspath(WORK_ROOT),
             "RAPP1_OFFLINE": "1",
+            "RAPP1_WORK_ROOT": os.fspath(WORK_ROOT),
+            "USERPROFILE": os.fspath(home),
+            "XDG_CONFIG_HOME": os.fspath(config),
+            "all_proxy": OFFLINE_PROXY,
+            "http_proxy": OFFLINE_PROXY,
+            "https_proxy": OFFLINE_PROXY,
+            "no_proxy": "localhost,127.0.0.1,::1",
         }
     )
     return environment
@@ -319,7 +446,7 @@ def _preflight() -> list[str]:
         failures.append(
             f"Python 3.11+ required; running {sys.version.split()[0]}"
         )
-    for executable in ("bash", "git", "node"):
+    for executable in ("bash", "curl", "git", "node"):
         if shutil.which(executable) is None:
             failures.append(f"required executable not found: {executable}")
     try:
@@ -387,6 +514,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     WORK_ROOT.mkdir(parents=True, exist_ok=True)
     try:
+        prepare_isolated_brainstem()
         results = run_gates(gates())
     finally:
         shutil.rmtree(WORK_ROOT, ignore_errors=True)

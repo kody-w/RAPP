@@ -227,7 +227,7 @@ defining document cannot register it; registration follows RAPP/1 §13.
 | `rapp-version/1.0` | Kernel version pin | rapp_kernel/manifest | rapp_kernel/manifest.json |
 | `rapp-version/1.1` | Kernel version pin (signed) | vault/Architecture/Signed Releases | rapp_kernel/manifest.json |
 | `rapp-kernel/1.1` | Kernel release manifest | vault/Architecture/Signed Releases | rapp_kernel/manifest.json |
-| `rapp-binder/1.0` | Onboarding binder (saved JSON of starter cards) | utils/web/rapp.js:546 (defined-by-emitter) | utils/web/rapp.js, utils/web/index.html, tests/run-tests.mjs |
+| `rapp-binder/1.0` | Legacy onboarding binder (saved JSON of starter cards; not RAPP/1) | historical `utils/web/rapp.js` emitter (retired) | no active implementation; exact browser suite retained under `tests/fixtures/legacy-conformance/` |
 | `rapp-memory/1.0` | Memory record | manage_memory_agent.py | manage_memory_agent.py |
 | `rapp-application/1.0` | Rapplication manifest | pages/docs/rapplication-sdk.md | RAPP_Store entries |
 | `rapp-chat-response/1.0` | Legacy/application-local chat wrapper | tools/test_brainstem_server.py | migrate boundary to exact RAPP/1 §8 response |
