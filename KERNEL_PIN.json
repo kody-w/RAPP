@@ -2,14 +2,14 @@
   "spec": "rapp-distro/1.0",
   "distro": "RAPP (the reference distro)",
   "kernel": {
-    "grail": "kody-w/rapp-installer",
-    "tag": "brainstem-v0.6.9",
+    "grail": "kody-w/rapp-beta",
+    "commit": "11a9aeb2cdcda431b0d1f956a9bbf5411ac404e2",
     "frozen": {
-      "rapp_brainstem/brainstem.py": "a293dd9f11eef915bf15776f08c736faa60cb749820871b6753ea98233142a71",
+      "rapp_brainstem/brainstem.py": "f9155a073024b2389cc779f334e62fd8dff43537990163d8c31fef1117119460",
       "rapp_brainstem/agents/basic_agent.py": "701488bc00d536a7b23295e7da99c62f24e9b00f233daa325886430c736b78eb",
-      "rapp_brainstem/VERSION": "13eb74b44be6e3a85a0efa0dedf56aec05e9e50140e1c8bbc0d0fbd8097b0717"
+      "rapp_brainstem/VERSION": "e94a7f87af28a51ae948939b0fc6f3d7b9853add0d06a4ffb6df7c67c68ffcc5"
     }
   },
-  "channel": "lts",
-  "note": "RAPP tracks the grail (kody-w/rapp-installer). Pinned at brainstem-v0.6.9, the grail's current kernel release — a deliberate distro bump from v0.6.0 ordered in kody-w/RAPP#83 (the grail feeds RAPP; RAPP's vendored copy tracks it). Verified byte-identical to the grail tag."
+  "channel": "next",
+  "note": "NEXT channel (shape/next branch only \u2014 main stays lts on the tagged grail pin). This siding mirrors the QUALIFIED Beta ring of the pre-grail release train (kody-w/rapp-beta@11a9aeb2cdcd) so the distro SHAPE is tested in the wild before the payload ever reaches the grail. Per the Mirror Spec only the three frozen files are byte-identical obligations. See kody-w.github.io/rapp-train/ and the hub RUNBOOK."
 }
