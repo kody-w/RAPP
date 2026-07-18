@@ -3,7 +3,7 @@
   "distro": "RAPP (the reference distro)",
   "kernel": {
     "grail": "kody-w/rapp-beta",
-    "commit": "11a9aeb2cdcda431b0d1f956a9bbf5411ac404e2",
+    "commit": "6d7604a1349d8e8272f9193b266cff43d8918a36",
     "frozen": {
       "rapp_brainstem/brainstem.py": "f9155a073024b2389cc779f334e62fd8dff43537990163d8c31fef1117119460",
       "rapp_brainstem/agents/basic_agent.py": "701488bc00d536a7b23295e7da99c62f24e9b00f233daa325886430c736b78eb",
@@ -11,5 +11,5 @@
     }
   },
   "channel": "next",
-  "note": "NEXT channel (shape/next branch only \u2014 main stays lts on the tagged grail pin). This siding mirrors the QUALIFIED Beta ring of the pre-grail release train (kody-w/rapp-beta@11a9aeb2cdcd) so the distro SHAPE is tested in the wild before the payload ever reaches the grail. Per the Mirror Spec only the three frozen files are byte-identical obligations. See kody-w.github.io/rapp-train/ and the hub RUNBOOK."
+  "note": "NEXT channel (shape/next branch only \u2014 main stays lts on the tagged grail pin). This siding mirrors the QUALIFIED Beta ring of the pre-grail release train (kody-w/rapp-beta@6d7604a1349d) so the distro SHAPE is tested in the wild before the payload ever reaches the grail. Per the Mirror Spec only the three frozen files are byte-identical obligations. See kody-w.github.io/rapp-train/ and the hub RUNBOOK."
 }
