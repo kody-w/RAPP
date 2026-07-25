@@ -4105,3 +4105,83 @@ out-of-band anchor, lawful root re-anchor, signed replacement invite, or
 external mirror correction. Audit coverage and structural gates are evidence
 of work performed; neither substitutes for those authenticated governance
 actions.
+
+## Article LVI — Enforcement of Article I: Where Capabilities Go, and Who Must Prove It (2026-07-25)
+
+> **This Article adds no new prohibition.** Article I already confines the
+> kernel to "a loader + an LLM loop + a response splitter". Article XXVI already
+> rejects any change that loads responsibility into `brainstem.py` which a
+> `*_agent.py` could serve. Both stand unamended and remain the governing law.
+> This Article supplies the three things they lack: the destination, the burden
+> of proof, and a worked precedent.
+
+### LVI.1 — Why enforcement was needed
+
+On 2026-07-25 a three-format skill hot-loader was written as **183 lines inside
+`brainstem.py`**, merged to canary main, and reverted the same day. The
+capability could be served by a `*_agent.py` — it now is — so the change was
+already rejected by Article XXVI at the moment it was typed.
+
+Nothing stopped it. Preflight went green; every oracle was about correctness,
+not about placement. The author was the reviewer.
+
+**A law that binds only those who remember to read it is a convention.** The
+defect was never in the rule. It was that nothing forced the question to be
+asked, and that the answer had nowhere written down to point.
+
+### LVI.2 — The extension points, enumerated
+
+Article XXVI's test — *could this be served by a `*_agent.py`?* — is answerable
+only if the alternatives are known. They are, and they are already in the grail:
+
+1. **`agents/*_agent.py` is the injection point.** `load_agents()` runs on
+   **every `/chat`**, and every agent's `__init__` runs with it. That is already
+   a per-turn hook: an agent may materialise files, register shims, or reconcile
+   state at load time without the kernel knowing it exists.
+2. **`BasicAgent.system_context()` is the prompt hook.** An agent may inject
+   text into the system prompt every turn with no kernel change.
+3. **`perform()` is the capability surface.** New verbs are new agents, never
+   new routes — Article XXV and RAPP/1 §8 leave exactly one wire.
+4. **The `.egg` is the delivery mechanism** (Article L). Extensions travel as
+   cartridges, not as kernel diffs.
+
+An extension built on these ships by dropping a file: no ring promotion, no
+qualification, no grail gate, no human merge. That asymmetry is deliberate.
+**The kernel's release process is expensive precisely so that extending the
+kernel is unattractive.**
+
+### LVI.3 — The burden of proof is on the change
+
+A change to `brainstem.py` / `function_app.py` MUST state, in its work record,
+why **each** point in LVI.2 is insufficient. Two arguments are named here as
+insufficient, because they are the two that are always reached for:
+
+- *"It was simpler there."* Simplicity for one author is a cost transferred onto
+  every future reader of the kernel, permanently.
+- *"It belongs conceptually."* That is taste, and taste is what accretion is
+  made of.
+
+Sufficient grounds are limited to what no agent can reach because the kernel
+does not expose it: the shape of the `/chat` wire, agent discovery, validation
+or quarantine, the anchoring of state, identity or trust, or a defect in
+existing kernel behaviour.
+
+### LVI.4 — One runtime form
+
+Formats are how a capability **arrives**. `agent.py` is what it **is**.
+
+A fed `SKILL.md` — raw or toasted — MUST materialise into an `agent.py` and be
+loaded by the ordinary path. It does not remain resident in `agents/` in its own
+shape. A second resident shape is a second loader, a second lifecycle, and a
+second thing to reason about when something misbehaves — which is exactly the
+accretion Article I exists to prevent, relocated one level outward.
+
+Materialising is not mutation: the fed file is left exactly as it was, and a new
+`agent.py` is produced beside it.
+
+### LVI.5 — This does not freeze the kernel
+
+The kernel may still change. This Article raises the price and requires that the
+price be paid in writing. A kernel that cannot change is as dead as one that
+changes carelessly. The discipline is that kernel change is argued, recorded,
+and rare.
