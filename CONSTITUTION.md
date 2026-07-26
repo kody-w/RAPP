@@ -4105,3 +4105,181 @@ out-of-band anchor, lawful root re-anchor, signed replacement invite, or
 external mirror correction. Audit coverage and structural gates are evidence
 of work performed; neither substitutes for those authenticated governance
 actions.
+
+## Article LVI — Enforcement of Article I: Where Capabilities Go, and Who Must Prove It (2026-07-25)
+
+> **This Article adds no new prohibition.** Article I already confines the
+> kernel to "a loader + an LLM loop + a response splitter". Article XXVI already
+> rejects any change that loads responsibility into `brainstem.py` which a
+> `*_agent.py` could serve. Both stand unamended and remain the governing law.
+> This Article supplies the three things they lack: the destination, the burden
+> of proof, and a worked precedent.
+
+### LVI.1 — Why enforcement was needed
+
+On 2026-07-25 a three-format skill hot-loader was written as **183 lines inside
+`brainstem.py`**, merged to canary main, and reverted the same day. The
+capability could be served by a `*_agent.py` — it now is — so the change was
+already rejected by Article XXVI at the moment it was typed.
+
+Nothing stopped it. Preflight went green; every oracle was about correctness,
+not about placement. The author was the reviewer.
+
+**A law that binds only those who remember to read it is a convention.** The
+defect was never in the rule. It was that nothing forced the question to be
+asked, and that the answer had nowhere written down to point.
+
+### LVI.2 — The extension points, enumerated
+
+Article XXVI's test — *could this be served by a `*_agent.py`?* — is answerable
+only if the alternatives are known. They are, and they are already in the grail:
+
+1. **`agents/*_agent.py` is the injection point.** `load_agents()` runs on
+   **every `/chat`**, and every agent's `__init__` runs with it. That is already
+   a per-turn hook: an agent may materialise files, register shims, or reconcile
+   state at load time without the kernel knowing it exists.
+2. **`BasicAgent.system_context()` is the prompt hook.** An agent may inject
+   text into the system prompt every turn with no kernel change.
+3. **`perform()` is the capability surface.** New verbs are new agents, never
+   new routes — Article XXV and RAPP/1 §8 leave exactly one wire.
+4. **The `.egg` is the delivery mechanism** (Article L). Extensions travel as
+   cartridges, not as kernel diffs.
+
+An extension built on these ships by dropping a file: no ring promotion, no
+qualification, no grail gate, no human merge. That asymmetry is deliberate.
+**The kernel's release process is expensive precisely so that extending the
+kernel is unattractive.**
+
+### LVI.3 — The burden of proof is on the change
+
+A change to `brainstem.py` / `function_app.py` MUST state, in its work record,
+why **each** point in LVI.2 is insufficient. Two arguments are named here as
+insufficient, because they are the two that are always reached for:
+
+- *"It was simpler there."* Simplicity for one author is a cost transferred onto
+  every future reader of the kernel, permanently.
+- *"It belongs conceptually."* That is taste, and taste is what accretion is
+  made of.
+
+Sufficient grounds are limited to what no agent can reach because the kernel
+does not expose it: the shape of the `/chat` wire, agent discovery, validation
+or quarantine, the anchoring of state, identity or trust, or a defect in
+existing kernel behaviour.
+
+### LVI.4 — One runtime form
+
+Formats are how a capability **arrives**. `agent.py` is what it **is**.
+
+A fed `SKILL.md` — raw or toasted — MUST materialise into an `agent.py` and be
+loaded by the ordinary path. It does not remain resident in `agents/` in its own
+shape. A second resident shape is a second loader, a second lifecycle, and a
+second thing to reason about when something misbehaves — which is exactly the
+accretion Article I exists to prevent, relocated one level outward.
+
+Materialising is not mutation: the fed file is left exactly as it was, and a new
+`agent.py` is produced beside it.
+
+### LVI.5 — This does not freeze the kernel
+
+The kernel may still change. This Article raises the price and requires that the
+price be paid in writing. A kernel that cannot change is as dead as one that
+changes carelessly. The discipline is that kernel change is argued, recorded,
+and rare.
+
+## Article LVII — The Mono Repo Is A Comprehension Organ (2026-07-26)
+
+> The mono repo exists so that **one mind can hold the whole of RAPP at once**,
+> instead of three repositories at a time. That is its entire purpose. It is not
+> a build target, not a mirror, not a convenience, and not a place anyone works.
+
+### LVII.1 — The constraint it answers
+
+The estate is **522 repositories and 191,447 files**. No human and no agent can
+reason across that by opening repositories one at a time. Working three repos at
+a time is not a slower version of understanding the estate — it is a *different
+and worse* activity, because every conclusion is drawn from a sample the author
+cannot see the edges of.
+
+That is precisely how the estate acquired **22 divergent copies of
+CONSTITUTION.md** and **12 of `basic_agent.py`**, its own declared universal
+DNA: every individual edit was locally reasonable, and nobody was ever holding
+enough of the picture at once to see the divergence.
+
+**Context is the binding constraint on estate-wide correctness.** The mono repo
+is the organ that relieves it.
+
+### LVII.1a — It is also the seed
+
+The same artifact answers a second question: **if everything else were lost,
+what would we need to come back?**
+
+The mono repo is therefore packaged as one `.egg`, cubbied in the private
+batcave. Pull that one cartridge down, hatch it, and RAPP exists again.
+
+This is not in tension with LVII.2 below, because the two uses need different
+things and one container can carry both layers:
+
+| layer | for | contains |
+|---|---|---|
+| `mind/` | comprehension | the distillation — loadable in one context |
+| `seed/` | reconstitution | canon and kernel in full, plus manifests, remotes, commits and digests for everything else |
+
+**What it honestly restores, and what it does not.** From the egg alone you
+recover the constitution, RAPP/1, the kernel, every interface, the topology,
+and the exact identity (repo, commit, digest) of all 522 members. You do NOT
+recover the full source of the long tail — that stays fetchable while the
+network exists, and identifiable forever after.
+
+Claiming a complete rebuild would be a lie, and a disaster-recovery artifact
+that lies is worse than none, because it is trusted exactly once.
+
+### LVII.2 — Therefore it is a distillation, never a mirror
+
+A complete copy would defeat the only reason it exists. 191,447 files cannot be
+held at once, so a mono repo that faithfully mirrors the estate is exactly as
+useless as the estate.
+
+It MUST be curated toward loadability, in this order of priority:
+
+1. **Canon** — the constitution, RAPP/1, `basic_agent.py`, the schema family
+   table. The things that must be identical everywhere.
+2. **Interfaces** — every agent's `__manifest__`, every egg schema, every
+   published URL shape. What things promise, not how they do it.
+3. **Topology** — which repo plays which role, what depends on what, the rings.
+4. **Divergence** — where canon is NOT aligned, stated as fact.
+
+Implementation bodies are the first thing excluded. An agent that needs one can
+fetch it; an agent that needs the *shape of everything* cannot fetch 522 repos.
+
+### LVII.3 — Its success test is a question, not a diff
+
+The mono repo is working if an agent, given only the mono repo, can correctly
+answer:
+
+- *Where else does this file live, and is it the same everywhere?*
+- *What breaks if I change this interface?*
+- *Which repos implement this schema version?*
+- *What is load-bearing, and what is abandoned?*
+
+If any of those requires cloning something else, the distillation is wrong and
+must be re-cut. **Size it against the question, not against the estate.** When
+it stops fitting, cut deeper — never let it grow into the mirror it must not be.
+
+### LVII.4 — Derived, one-way, never authored
+
+It is generated from the spine's observations. **Nothing is authored in it and
+nothing flows out of it.** A mono repo anyone can edit becomes an additional
+source of truth, which multiplies the divergence it was built to reveal —
+turning the cure into a carrier. CI MUST reject a hand-edit.
+
+Corrections go to the sources, or to the curated overlay, and reappear on the
+next generation.
+
+### LVII.5 — Relationship to the spine
+
+The spine (`kody-w/rapp-map`) records **what is true**: per-repo digests,
+canon divergence, and a chain of dated vertebrae. The mono repo renders that
+into **something a mind can hold**. Same observations, two audiences — one for
+machines to diff, one for a reader to comprehend.
+
+Neither replaces the other, and neither may be maintained by hand.
