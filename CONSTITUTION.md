@@ -4185,3 +4185,101 @@ The kernel may still change. This Article raises the price and requires that the
 price be paid in writing. A kernel that cannot change is as dead as one that
 changes carelessly. The discipline is that kernel change is argued, recorded,
 and rare.
+
+## Article LVII — The Mono Repo Is A Comprehension Organ (2026-07-26)
+
+> The mono repo exists so that **one mind can hold the whole of RAPP at once**,
+> instead of three repositories at a time. That is its entire purpose. It is not
+> a build target, not a mirror, not a convenience, and not a place anyone works.
+
+### LVII.1 — The constraint it answers
+
+The estate is **522 repositories and 191,447 files**. No human and no agent can
+reason across that by opening repositories one at a time. Working three repos at
+a time is not a slower version of understanding the estate — it is a *different
+and worse* activity, because every conclusion is drawn from a sample the author
+cannot see the edges of.
+
+That is precisely how the estate acquired **22 divergent copies of
+CONSTITUTION.md** and **12 of `basic_agent.py`**, its own declared universal
+DNA: every individual edit was locally reasonable, and nobody was ever holding
+enough of the picture at once to see the divergence.
+
+**Context is the binding constraint on estate-wide correctness.** The mono repo
+is the organ that relieves it.
+
+### LVII.1a — It is also the seed
+
+The same artifact answers a second question: **if everything else were lost,
+what would we need to come back?**
+
+The mono repo is therefore packaged as one `.egg`, cubbied in the private
+batcave. Pull that one cartridge down, hatch it, and RAPP exists again.
+
+This is not in tension with LVII.2 below, because the two uses need different
+things and one container can carry both layers:
+
+| layer | for | contains |
+|---|---|---|
+| `mind/` | comprehension | the distillation — loadable in one context |
+| `seed/` | reconstitution | canon and kernel in full, plus manifests, remotes, commits and digests for everything else |
+
+**What it honestly restores, and what it does not.** From the egg alone you
+recover the constitution, RAPP/1, the kernel, every interface, the topology,
+and the exact identity (repo, commit, digest) of all 522 members. You do NOT
+recover the full source of the long tail — that stays fetchable while the
+network exists, and identifiable forever after.
+
+Claiming a complete rebuild would be a lie, and a disaster-recovery artifact
+that lies is worse than none, because it is trusted exactly once.
+
+### LVII.2 — Therefore it is a distillation, never a mirror
+
+A complete copy would defeat the only reason it exists. 191,447 files cannot be
+held at once, so a mono repo that faithfully mirrors the estate is exactly as
+useless as the estate.
+
+It MUST be curated toward loadability, in this order of priority:
+
+1. **Canon** — the constitution, RAPP/1, `basic_agent.py`, the schema family
+   table. The things that must be identical everywhere.
+2. **Interfaces** — every agent's `__manifest__`, every egg schema, every
+   published URL shape. What things promise, not how they do it.
+3. **Topology** — which repo plays which role, what depends on what, the rings.
+4. **Divergence** — where canon is NOT aligned, stated as fact.
+
+Implementation bodies are the first thing excluded. An agent that needs one can
+fetch it; an agent that needs the *shape of everything* cannot fetch 522 repos.
+
+### LVII.3 — Its success test is a question, not a diff
+
+The mono repo is working if an agent, given only the mono repo, can correctly
+answer:
+
+- *Where else does this file live, and is it the same everywhere?*
+- *What breaks if I change this interface?*
+- *Which repos implement this schema version?*
+- *What is load-bearing, and what is abandoned?*
+
+If any of those requires cloning something else, the distillation is wrong and
+must be re-cut. **Size it against the question, not against the estate.** When
+it stops fitting, cut deeper — never let it grow into the mirror it must not be.
+
+### LVII.4 — Derived, one-way, never authored
+
+It is generated from the spine's observations. **Nothing is authored in it and
+nothing flows out of it.** A mono repo anyone can edit becomes an additional
+source of truth, which multiplies the divergence it was built to reveal —
+turning the cure into a carrier. CI MUST reject a hand-edit.
+
+Corrections go to the sources, or to the curated overlay, and reappear on the
+next generation.
+
+### LVII.5 — Relationship to the spine
+
+The spine (`kody-w/rapp-map`) records **what is true**: per-repo digests,
+canon divergence, and a chain of dated vertebrae. The mono repo renders that
+into **something a mind can hold**. Same observations, two audiences — one for
+machines to diff, one for a reader to comprehend.
+
+Neither replaces the other, and neither may be maintained by hand.
