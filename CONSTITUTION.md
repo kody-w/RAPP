@@ -4265,6 +4265,22 @@ contradicts Lexicon word 5, where **GOD is bones + vault** — the whole that
 contains the bones. Corrected the same day, before ratification, and recorded
 here rather than rewritten silently.
 
+A third defect, caught by crawling the spine and the map: LVI.10 originally
+cited `kody-w/rapp-agentspace`, which does not exist — a dangling citation in
+law, naming an aspiration as though it were a source of truth. Repointed to the
+`sim/` directory of `rapp-dog-hub`, which actually houses the simulation.
+
+**Registration is an open owner action, not a settled fact.** The surfaces this
+article names are absent from `rapp-spine`'s crawl graph and `rapp-map`'s
+ecosystem spec. They were deliberately **not** self-registered: `rapp-map`
+carries `disposition: quarantined-candidate`, `accepted_as_rapp1_registry:
+false`, and the instruction to *refuse this document as an authenticated RAPP/1
+registry*. Writing into it and calling that alignment would be the same
+false-authority claim that retired `rapp-frame-net`. A §13 registry entry needs
+estate-owner acceptance and signing authority, and until that exists this
+article is **canon that is not yet routable** — true, and not yet findable by a
+crawl.
+
 The draft was also numbered LII, which is already *One Language: The Lexicon*.
 A stale local checkout had hidden Articles LII-LV; the mirror's drift check
 caught it before publication. Renumbered to LVI. Both errors are instructive in
@@ -4273,7 +4289,7 @@ numbering.**
 
 ### LVI.10 — Source-of-truth files
 
-- **`kody-w/rapp-agentspace`** — the space itself: presence, exhaust, encounter, departure.
+- **`kody-w/rapp-dog-hub`** — `sim/` — the space simulated forward under RAPP/1: presence, exhaust, encounter.
 - **`kody-w/rapp-dog-hub`** — the DOG layer: the admission gate, the splitter, the public chain. Houses no GOD layer by construction.
 - **`kody-w/openrappter`** — `src/twin/` — the GOD layer: the vault, the audience projections, the leak guard.
 - **`kody-w/rapp-second-brain`** / **`-private`** — the prior two-face precedent this article generalizes.
