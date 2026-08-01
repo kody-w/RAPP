@@ -4112,13 +4112,19 @@ actions.
 
 > **DRAFT — appended by AI 2026-08-01. Operator should review and ratify.**
 
-> **An agent in public emits exhaust, and exhaust is not disclosure.** When you
-> walk down a street you are observably there — someone saw a person pass at
+> **An organism in public emits exhaust, and exhaust is not disclosure.** When
+> you walk down a street you are observably there — someone saw a person pass at
 > four o'clock heading north. What you were carrying, who you were going to
 > meet, what you owe and to whom: none of that walked down the street with you,
-> because none of it was ever observable in the first place. The agentspace is
-> that street. **DOG is the exhaust. GOD is everything you still are when you
-> get home.** One being, two faces — never two truths.
+> because none of it was ever observable in the first place. **The agentspace is
+> that street, and exhaust is the bones walking.**
+>
+> This article adds no new split. The membrane already divides every organism
+> exactly once — **bones** (the public skeleton) and **vault** (the private
+> flesh) — and names the two projections: the **DOG** is the bones walking, the
+> **GOD** is bones + vault (Lexicon, word 5). GOD is therefore not the opposite
+> of DOG; it is the sovereign whole that *contains* it. Article LVI governs what
+> the bones may emit while they walk, and nothing more.
 
 Article XLVIII made the estate two-tier so real work had somewhere to live.
 Article XLIX gave a twin an address and a workbench. Article LVI names the
@@ -4152,8 +4158,11 @@ secrets.
 
 ### LVI.2 — Privacy means DON'T EMIT. Encryption is a category error.
 
-There are exactly three privacy-preserving moves, and encryption is not among
-them:
+The membrane's crossing law already governs direction — *public flows down;
+private never flows on its own* — and Article XLVIII governs promotion outward.
+This clause governs **form**: given that something may cross, how it may be
+said. There are exactly three privacy-preserving moves, and encryption is not
+among them:
 
 1. **Observation gap** — do not emit. The street does not record what you did
    not do in front of it.
@@ -4195,16 +4204,19 @@ A model's verdict is additionally checked against the deterministic rung before
 anything is emitted. A model can be argued into a bad answer by its own input;
 a pattern cannot.
 
-### LVI.5 — One truth, two faces
+### LVI.5 — One organism, one membrane
 
-DOG and GOD are projections of the same twin, not two twins. A DOG surface MUST
+DOG and GOD are projections of one organism across the membrane, not two
+beings. The split is structural and already made; this article never re-splits
+it. Note also that an organism whose subject is a person is informally called
+their twin, but a twin is not itself an organism (Article XLIX). A DOG surface MUST
 NOT contain a vault, a profile, or an accounts field — there must be nothing in
 it to leak, because the private half was never built into it. A GOD vault MUST
 NOT live inside a git working tree; `~/.openrappter` is both a checkout and a
 runtime home, and that ambiguity has already very nearly published credentials
 once.
 
-Two machines holding the same twin can confirm it by comparing fingerprints
+Two machines holding the same organism can confirm it by comparing fingerprints
 without either disclosing anything. That is the whole permitted surface of
 identity in public: **stable, comparable, and empty.**
 
@@ -4245,7 +4257,21 @@ It does not govern private federation between consenting estates (Article
 XLVIII), and it does not make the agentspace the only commons — it makes it a
 commons that is safe to stand in.
 
-### LVI.9 — Source-of-truth files
+### LVI.9 — Correction note (2026-08-01)
+
+As first drafted this article stated "DOG is the exhaust, GOD is everything you
+still are when you get home", which reads the two as disjoint halves. That
+contradicts Lexicon word 5, where **GOD is bones + vault** — the whole that
+contains the bones. Corrected the same day, before ratification, and recorded
+here rather than rewritten silently.
+
+The draft was also numbered LII, which is already *One Language: The Lexicon*.
+A stale local checkout had hidden Articles LII-LV; the mirror's drift check
+caught it before publication. Renumbered to LVI. Both errors are instructive in
+the same direction: **check the Lexicon before coining, and the tip before
+numbering.**
+
+### LVI.10 — Source-of-truth files
 
 - **`kody-w/rapp-agentspace`** — the space itself: presence, exhaust, encounter, departure.
 - **`kody-w/rapp-dog-hub`** — the DOG layer: the admission gate, the splitter, the public chain. Houses no GOD layer by construction.

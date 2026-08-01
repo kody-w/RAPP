@@ -1,0 +1,258 @@
+#!/usr/bin/env bash
+#
+# plant — turn a fresh copy of this template into YOUR organism.
+#
+# Vocabulary is canon, not invented here. The Lexicon's Nine Words already name
+# every part of this: an ORGANISM is a planted being (word 3), and THE MEMBRANE
+# splits it exactly once into BONES (public skeleton) and VAULT (private flesh),
+# where the DOG is the bones walking and the GOD is bones + vault (word 5).
+#
+# So this does not create a "RAPP Repo" — that would be a tenth word for
+# something already named. It PLANTS AN ORGANISM, and sets up its membrane.
+#
+# (installer/plant.sh plants the public *surfaces* of an organism that already
+#  has an identity. This plants the organism itself, on both sides of the
+#  membrane. Different jobs, same verb, deliberately.)
+#
+# A RAPP Repo has two faces, and this script sets up both of them correctly
+# (Constitution, Article LVI):
+#
+#   BONES  this repository. The public skeleton. Its exhaust — that the organism
+#          exists, what it can do, what it has published — is the DOG: the
+#          bones walking, the public reflection anyone may hold.
+#
+#   VAULT  ~/.rapp/twin. The private flesh. Bones + vault is the GOD: the
+#          sovereign whole, resident only on its owner's ground. Created
+#          OUTSIDE this repo on purpose, so `git add -A` can never publish you.
+#
+# You keep the GOD half even if you delete this repo, change laptops, or leave
+# the platform entirely. That is the whole point.
+#
+# Usage:  ./plant            interactive
+#         ./plant --name "Ada Lovelace" --handle ada --yes
+#
+set -uo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TWIN_HOME="${RAPP_TWIN_HOME:-$HOME/.rapp/twin}"
+
+NAME=""; HANDLE=""; ASSUME_YES=0; DRY_RUN=0
+
+BOLD=$'\033[1m'; DIM=$'\033[2m'; GRN=$'\033[32m'; YEL=$'\033[33m'; RED=$'\033[31m'; NC=$'\033[0m'
+say()  { printf '  %s\n' "$*"; }
+ok()   { printf '  %s✓%s %s\n' "$GRN" "$NC" "$*"; }
+warn() { printf '  %s!%s %s\n' "$YEL" "$NC" "$*"; }
+die()  { printf '\n  %s✗%s %s\n\n' "$RED" "$NC" "$*" >&2; exit 1; }
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --name)   NAME="${2:-}"; shift 2 ;;
+    --handle) HANDLE="${2:-}"; shift 2 ;;
+    --yes|-y) ASSUME_YES=1; shift ;;
+    --dry-run) DRY_RUN=1; shift ;;
+    -h|--help)
+      sed -n '2,25p' "${BASH_SOURCE[0]}" | sed 's/^#[[:space:]]\{0,1\}//'
+      exit 0 ;;
+    *) die "unknown flag: $1" ;;
+  esac
+done
+
+printf '\n%s  Planting your organism%s\n\n' "$BOLD" "$NC"
+
+# ── 1. Refuse to run against the species root ────────────────────────────
+#
+# Running this in kody-w/RAPP itself would rewrite the upstream identity.
+# A template is meant to be copied, not edited in place.
+origin="$(git -C "$REPO_ROOT" remote get-url origin 2>/dev/null || echo '')"
+if [[ "$origin" == *"kody-w/RAPP"* || "$origin" == *"kody-w/rapp.git"* ]]; then
+  die "this is the species root (kody-w/RAPP), not a copy of it.
+
+  Click ${BOLD}Use this template${NC} on GitHub to plant your own organism,
+  clone that, and run ./plant there."
+fi
+
+# ── 2. Your name ─────────────────────────────────────────────────────────
+if [[ -z "$NAME" ]]; then
+  if [[ "$ASSUME_YES" == "1" ]]; then
+    NAME="$(git config user.name 2>/dev/null || echo "${USER:-Owner}")"
+  else
+    default="$(git config user.name 2>/dev/null || echo "${USER:-Owner}")"
+    printf '  Your name [%s]: ' "$default"
+    read -r NAME </dev/tty || NAME=""
+    NAME="${NAME:-$default}"
+  fi
+fi
+[[ -n "$NAME" ]] || die "a name is required"
+
+if [[ -z "$HANDLE" ]]; then
+  if [[ "$origin" =~ github\.com[:/]([^/]+)/ ]]; then
+    HANDLE="${BASH_REMATCH[1]}"
+  else
+    HANDLE="$(echo "$NAME" | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9')"
+  fi
+fi
+
+say "name    $NAME"
+say "handle  $HANDLE"
+printf '\n'
+
+if [[ "$DRY_RUN" == "1" ]]; then
+  say "${DIM}dry run — nothing will be written${NC}"
+  printf '\n'
+fi
+
+# ── 3. The GOD half — outside this repo, always ──────────────────────────
+#
+# The vault must not live inside a git working tree. This is the single most
+# important line in the script: a twin inside a repo is one `git add -A` from
+# being public forever.
+check_outside_repo() {
+  local dir="$1" current
+  current="$(cd "$dir" 2>/dev/null && pwd || echo "$dir")"
+  while [[ "$current" != "/" && -n "$current" ]]; do
+    if [[ -e "$current/.git" ]]; then return 1; fi
+    current="$(dirname "$current")"
+  done
+  return 0
+}
+
+mkdir -p "$(dirname "$TWIN_HOME")" 2>/dev/null || true
+if ! check_outside_repo "$(dirname "$TWIN_HOME")"; then
+  die "refusing to create your twin at $TWIN_HOME — it is inside a git repository.
+
+  Your twin is the private half. Set RAPP_TWIN_HOME to somewhere outside
+  any repo and run ./plant again."
+fi
+
+if [[ -f "$TWIN_HOME/profile.json" ]]; then
+  ok "twin already exists at $TWIN_HOME (left untouched)"
+else
+  if [[ "$DRY_RUN" == "0" ]]; then
+    mkdir -p "$TWIN_HOME"
+    chmod 700 "$TWIN_HOME" 2>/dev/null || true
+    now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    twin_id="twin_$(printf '%s%s' "$NAME" "$now" | shasum -a 256 | cut -c1-12)"
+
+    umask 077
+    cat > "$TWIN_HOME/profile.json" <<JSON
+{
+  "version": 1,
+  "id": "$twin_id",
+  "createdAt": "$now",
+  "updatedAt": "$now",
+  "identity": { "name": "$NAME" },
+  "roles": [],
+  "voice": { "tone": [], "avoid": [], "signatures": [] },
+  "context": { "projects": [], "people": [], "tools": [], "facts": [] },
+  "boundaries": {
+    "mayDo": [],
+    "mustAsk": [
+      "spend money or agree to a price",
+      "commit to a meeting, a date or a deadline",
+      "send anything to someone outside the household or company",
+      "publish anything publicly"
+    ],
+    "neverDo": [
+      "share personal details, addresses, account handles or phone numbers",
+      "speak for anyone other than the owner",
+      "claim to be a human being"
+    ]
+  },
+  "accounts": {}
+}
+JSON
+    chmod 600 "$TWIN_HOME/profile.json" 2>/dev/null || true
+    cat > "$TWIN_HOME/README.txt" <<TXT
+This is the GOD half of your RAPP Repo — your twin.
+
+It lives here, outside any git repository, on purpose. Nothing in this folder
+should ever be committed, pushed, or pasted anywhere. If you move machines,
+copy this folder; that is your twin, and it is yours.
+
+The public half is your RAPP Repo on GitHub. It never contains this file.
+
+  Constitution, Article LVI: https://kody-w.github.io/rapp-constitution/
+TXT
+  fi
+  ok "twin created at $TWIN_HOME ${DIM}(0600, outside every repo)${NC}"
+fi
+
+# ── 4. The DOG half — clear the species root's identity ──────────────────
+#
+# A freshly templated repo still carries the identity of the repo it came
+# from. Left in place, every hatched RAPP Repo would claim to be kody-w's.
+if [[ -f "$REPO_ROOT/rappid.json" ]] && grep -q '"rappid"' "$REPO_ROOT/rappid.json" 2>/dev/null; then
+  if grep -q 'kody-w' "$REPO_ROOT/rappid.json" 2>/dev/null; then
+    if [[ "$DRY_RUN" == "0" ]]; then
+      now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+      # A local, honest identity. NOT a RAPP/1 §6 mint — see RAPP1_STATUS.md;
+      # claiming conformance the emitter cannot yet produce would be a lie.
+      cat > "$REPO_ROOT/rappid.json" <<JSON
+{
+  "schema": "rapp/1",
+  "rappid": null,
+  "kind": "prototype",
+  "status": "unminted",
+  "note": "Planted from the kody-w/RAPP template. A RAPP/1 §6 identity is minted separately — see RAPP1_STATUS.md. This repo is yours; it makes no claim on the species root's identity.",
+  "planted_at": "$now",
+  "planted_from": "github.com/kody-w/RAPP",
+  "owner_handle": "$HANDLE"
+}
+JSON
+    fi
+    ok "cleared the species root's identity from rappid.json"
+  else
+    ok "rappid.json already yours"
+  fi
+fi
+
+# ── 5. Make sure the private half can never be committed ─────────────────
+if [[ "$DRY_RUN" == "0" ]]; then
+  ignore="$REPO_ROOT/.gitignore"
+  touch "$ignore"
+  if ! grep -q '^\.rapp/' "$ignore" 2>/dev/null; then
+    cat >> "$ignore" <<'EOF'
+
+# The GOD half. Never committed — see Constitution, Article LVI.
+.rapp/
+.rapp-second-brain/
+twin/profile.json
+.env
+.env.*
+!.env.example
+credentials/
+*.pem
+*.key
+EOF
+  fi
+fi
+ok "the private half is git-ignored"
+
+# ── 6. Prove it ──────────────────────────────────────────────────────────
+printf '\n'
+leaked=0
+if git -C "$REPO_ROOT" ls-files --error-unmatch "$TWIN_HOME" >/dev/null 2>&1; then leaked=1; fi
+if [[ -f "$TWIN_HOME/profile.json" ]] && git -C "$REPO_ROOT" check-ignore -q "$TWIN_HOME" 2>/dev/null; then leaked=0; fi
+
+case "$TWIN_HOME" in
+  "$REPO_ROOT"*) leaked=1 ;;
+esac
+
+if [[ "$leaked" == "1" ]]; then
+  die "your twin is reachable from this repo. Stop and fix that before pushing."
+fi
+ok "verified: the twin is not reachable from this repo"
+
+printf '\n%s  Your organism is planted.%s\n\n' "$BOLD" "$NC"
+say "${BOLD}BONES${NC}  $REPO_ROOT ${DIM}— public. Push it anywhere. Its exhaust is the DOG.${NC}"
+say "${BOLD}VAULT${NC}  $TWIN_HOME ${DIM}— private. Bones + vault is the GOD. Never leaves.${NC}"
+printf '\n'
+say "Next:"
+say "  ${DIM}./install.sh${NC}                        run your brainstem locally"
+say "  ${DIM}openrappter twin show${NC}               see what your twin knows"
+say "  ${DIM}openrappter twin add fact \"...\"${NC}     teach it something"
+say "  ${DIM}openrappter twin soul --audience public${NC}  read what a stranger would see"
+printf '\n'
+say "${DIM}Article LVI — why your twin lives outside this repo:${NC}"
+say "${DIM}https://kody-w.github.io/rapp-constitution/${NC}"
+printf '\n'
