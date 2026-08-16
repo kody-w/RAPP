@@ -79,21 +79,12 @@ The page surfaces a yellow warning when storage-blocked is detected — clear pa
 
 `pages/vbrainstem.html` is the *public* canonical implementation (under github.io, no install required). Different audience, different concerns. They share the crypto/handshake patterns (vbrainstem.html copied them verbatim) but live separately. The pair.html docstring's reference to "the main vbrainstem" now points at the wrong file — that comment is stale and should be updated next release.
 
-## What the patent context is (private)
-
-`WH-2026-002` (drafted in `kody-w/wildhaven-ceo/legal/patent/`, collaborator-gated) covers three claim families:
-- §7.21 — cart-as-workflow-session-with-embedded-runtime (the format)
-- §7.22 — recursive iframe sub-tether (planned, not yet shipped)
-- §7.23 — multi-participant browser-tab with operator-mic priority intervention (the tether)
-
-Filing posture: NOT Alleman Hall LLP (conflicted — they represent both MS on RAPP patent 506590-US01 AND Wildhaven on WH-2026-001). Need a non-conflicted IP boutique. Phase 1 cost estimate: $11K–18K to lock priority date before public launch.
-
 ## What we explicitly deferred
 
 - **CONSTITUTION Article L** for the vBrainstem-tether-as-multi-participant-session-primitive — needs the operator's voice; AI shouldn't author constitutional articles.
 - **Auto-hatch for `neighborhood` and `estate` cartridges** — `egg_hatcher_agent.py` returns manual instructions for these kinds. Auto-mint via `gh repo create` + scaffold is the next iteration.
-- **Recursive sub-tether (§7.22)** — defer to v0.4 alongside the auto-hatch work above.
-- **Sealed manifest signature using the operator's Binder ECDSA key** (per WH-2026-001 Claim 4) — defer to v0.4.
+- **Recursive sub-tether** — defer to v0.4 alongside the auto-hatch work above.
+- **Sealed manifest signature using the operator's Binder ECDSA key** — defer to v0.4.
 - **Old `vbrainstem.cart.json` redirect shim** — kept for one release as a polite bookmark redirect; delete on next major.
 - **Edits to §0–§17 of SPEC.md** — frozen v1; addenda only in §18.
 
@@ -101,7 +92,6 @@ Filing posture: NOT Alleman Hall LLP (conflicted — they represent both MS on R
 
 - **RAPP repo:** `pages/vbrainstem.html` (new, ~1,700 lines), `tests/vbrainstem-smoke.mjs` (new), `rapp_brainstem/agents/egg_hatcher_agent.py` (new), `pages/docs/SPEC.md` (+§18.10–§18.12), `pages/docs/PUBLIC_PRIVATE_BOUNDARY.md` (§1.5–§1.8 added earlier in session, then cartridge cross-ref added), `CLAUDE.md` + `CONSTITUTION.md` (XLIX added earlier) + `ECOSYSTEM.md` + `ECOSYSTEM_MAP.md` + `HERO_USECASE.md` + `OSI.md` + `NEIGHBORHOOD_PROTOCOL.md` + `SURVIVAL.md` + `MASTER_PLAN.md` + `README.md` + `pages/docs/VERSIONS.md` + `pages/docs/AGENTS.md` + `pages/docs/skill.md` + `pages/docs/ROADMAP.md` + `pages/docs/SUBSTRATE_FEDERATION.md` + `pages/docs/ESTATE_SPEC.md` + `pages/docs/rapplication-sdk.md` + `pages/_site/index.json` + `rapp_brainstem/CLAUDE.md` (cross-references)
 - **rappterbox repo:** `carts/SCHEMA.md` (rewritten as egg-family doc), `carts/vbrainstem.egg` (new), `carts/vbrainstem.cart.json` (deprecated redirect-shim), `console.html` (accept new schema + corr-id echo)
-- **wildhaven-ceo repo:** `legal/patent/WH-2026-002-rappterbox-claim-cluster.md` (private, collaborator-gated)
 - **RAR-private repo:** created; `agents/lawyer_agent.py` + README + .gitignore
 
 ## Reading order for archaeology

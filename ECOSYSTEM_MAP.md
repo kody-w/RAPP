@@ -134,7 +134,7 @@ Same primitives at every scale: **rappid + door + card + tether + trust scope.**
 | `ANTIPATTERNS.md` | 5 locked rules — things never to do | Every commit |
 | `SURVIVAL.md` | Failure-mode contract — what survives what | Adding a network call |
 | `LEXICON.md` | The official human + developer vocabulary | Naming anything |
-| `TRADEMARK.md` | Wordmark scope (RAPP, rappid, hatchling, vBrainstem, rapplication, rapp_kernel, brainstem) | Anything user-facing |
+| `TRADEMARK.md` | Naming reservation — the licenses grant no rights in names | Anything user-facing |
 | `COMMERCIAL.md` | Open / commercial boundary | Anything that ships |
 | `DEFINITION_OF_DONE.md` | Test discipline | Before saying "done" |
 | `TEMPLATE.md` | What planted seeds look like | Plant flow |
@@ -653,17 +653,10 @@ Pick ONE vocabulary per doc and stay consistent (LEXICON.md). Customer-facing �
 
 ## §16 — Trademark scope (TRADEMARK.md)
 
-| Mark | What it identifies |
-|---|---|
-| **RAPP** | The platform (https://github.com/kody-w/RAPP) |
-| **rappid** | Lineage-identity protocol (CONSTITUTION Art. XXXIV) |
-| **hatchling** | Lifecycle CLI |
-| **vBrainstem** | Browser-side simulator |
-| **rapplication** | Single-file rapp pattern |
-| **rapp_kernel** | Species DNA archive |
-| **brainstem** (in conjunction with above) | Local-first AI agent server pattern |
-
-Common-law trademark (not USPTO-registered). **Permitted without permission:** refer-by-name, link, quote per CC BY-NC 4.0, identify a fork as "based on RAPP" with a distinct name, nominative fair use. **Requires permission:** naming a product/service/domain after a mark, operating a managed service branded as RAPP, selling software named after marks, suggesting endorsement, registering marks elsewhere.
+The licenses cover code and documentation only; names and other identifiers
+are reserved. Nominative reference ("based on RAPP", "compatible with RAPP")
+is fine; naming your own product or service as if it were this project is
+not. See TRADEMARK.md.
 
 ---
 

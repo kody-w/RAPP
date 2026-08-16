@@ -638,7 +638,6 @@ Post-v1 direction lives in [`ROADMAP.md`](./ROADMAP.md). Roadmap items MUST hono
 
 > Not to be confused with the **digital twin companion** feature in `ROADMAP.md` — that is an in-product surface. This section is about the spec itself as a static twin of the v1 system.
 
-
 This specification, the landing page at [kody-w.github.io/RAPP](https://kody-w.github.io/RAPP/), the [`archive/engine`](https://github.com/kody-w/RAPP/tree/archive/engine) branch of this repo, and the canonical [Single File Agents doctrine page](https://kody-w.github.io/rappterhub/single-file-agents.html) together form the **digital twin** of RAPP v1.
 
 The twin is intentionally static. It is not a running system; it is a memorial of a running system, captured at the moment v1 was declared frozen. Its job is to outlive the running system — so any future runtime, in any future language, on any future cloud, can be checked against this document and judged compliant or not.
@@ -948,7 +947,7 @@ that exists today and every one that will exist tomorrow.
 | Version | Tag | Summary |
 |---------|-----|---------|
 | 0.12.2 | `brainstem-v0.12.2` | Agent-first rapplication platform: service discovery in kernel, factory-clean brainstem, 7 RAPPstore rapplications, VibeBuilder, twin mode, rapplication SDK, Constitution Article XX, vBrainstem standalone catalog, installer fixes. |
-| 0.15.x | `brainstem-v0.15.x` | Egg-cartridge unification (§18.10) + vBrainstem tether (§18.11): five-variant `.egg` family (organism / rapplication / session / neighborhood / estate), kernel `egg_hatcher_agent.py` with introspection-based routing, public tethered surface at `pages/vbrainstem.html` (QR pair → WebRTC data channel → multi-participant transcript with Coordinator-twin-driven workflow demo). Session cartridges round-trip through the rappterbox console iframe. Patent: WH-2026-002 §7.21 (private). |
+| 0.15.x | `brainstem-v0.15.x` | Egg-cartridge unification (§18.10) + vBrainstem tether (§18.11): five-variant `.egg` family (organism / rapplication / session / neighborhood / estate), kernel `egg_hatcher_agent.py` with introspection-based routing, public tethered surface at `pages/vbrainstem.html` (QR pair → WebRTC data channel → multi-participant transcript with Coordinator-twin-driven workflow demo). Session cartridges round-trip through the rappterbox console iframe. |
 
 ---
 
@@ -1061,8 +1060,6 @@ Edge with Tracking Prevention enabled silently blocks `localStorage` on origins 
 - **§14 (Versioning):** New optional URL params (`?pair`, `?fp`, `?brainstem`, `?copilot`) per "new optional configuration variables." No breaking changes.
 
 #### 18.11.7 Cross-reference
-
-Patent context (private, not for public spec): WH-2026-002 §7.21 covers the cartridge-as-workflow-session-with-embedded-runtime; §7.22 covers recursive iframe sub-tether (planned); §7.23 covers multi-participant browser-tab with operator-mic priority intervention. See [`kody-w/wildhaven-ceo/legal/patent/WH-2026-002-rappterbox-claim-cluster.md`](https://github.com/kody-w/wildhaven-ceo/blob/main/legal/patent/WH-2026-002-rappterbox-claim-cluster.md) (collaborator-gated).
 
 ---
 

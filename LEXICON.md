@@ -402,10 +402,6 @@ Both paragraphs describe the same system. Different vocabularies for different a
   Retired `rappid:v2:…` forms may be recognized only during bounded
   canonicalization/migration; normal readers do not retain them forever.
 
-### Trademark interaction
-
-`TRADEMARK.md` claims **rappid** as a trademark. The developer term and the customer term are both legitimate uses of the mark — "rappid" used in technical documentation referring to the protocol, "soul" used metaphorically in marketing copy. Both protect the mark's distinctiveness.
-
 ### Adoption sequence
 
 1. **All new customer-facing documents** (blog posts, marketing pages, pitch decks) use the Human vocabulary.
