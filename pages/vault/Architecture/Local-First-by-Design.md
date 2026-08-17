@@ -98,7 +98,7 @@ No transport is privileged. The vault arrives via *any* of them; verification is
 
 - **The cryptographic identity model** — rappid, three-role cross-signing, canonical JSON, signed records — unchanged.
 - **The Dreamcatcher semantics** — divergent local copies merge via the same assimilation pattern as divergent twin streams. Local-first makes divergence the *expected* steady state, not an exception.
-- **The patent positioning** — the perpetuity claim covers any vendor whose multi-device deployment must reconcile divergent state. Local-first design doesn't change the claim; it strengthens the operational truth that customers will inevitably need this reconciliation.
+- **The reconciliation reality** — any multi-device deployment eventually has to reconcile divergent state. Local-first design doesn't change that; it strengthens the operational truth that customers will inevitably need this reconciliation.
 
 ---
 

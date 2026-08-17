@@ -3,7 +3,7 @@ title: Invention Backlog
 status: historical
 section: Plans & Ledgers
 type: backlog
-hook: A capture surface for novel, patentable inventions at the intersection of the Rappter stack and the real-estate / AI industry. Append-only. Public framework, private specifics.
+hook: A capture surface for candidate inventions. Append-only. Public framework, private specifics.
 session_id: 63243848-caa9-483c-9a8e-9bb0ee9d2849
 session_date: 2026-04-24
 ---
@@ -19,39 +19,9 @@ session_date: 2026-04-24
 
 <!-- RAPP1-HISTORICAL-SECTION-START -->
 
-> **Hook.** A capture surface for novel, patentable inventions at the intersection of the Rappter stack and the real-estate / AI industry. Append-only. **Public framework, private specifics.**
+> **Hook.** A capture surface for candidate inventions. Append-only. **Public framework, private specifics.**
 
-This is the platform's running list of *candidate inventions* — ideas that may be patentable, that emerge naturally from the Rappter stack's intersection with a target industry, and that need formal prior-art evaluation before any filing.
-
-## The brief
-
-Verbatim, so it's not lost:
-
-> *Generate a novel, patentable invention in the intersection of RAPPTER STACK + real-estate / AI industry. For each: analyze prior art (search 50M+ patents), identify white space, design the invention (technical specifications, diagrams, use cases), write patent claims (independent + dependent), create USPTO-ready applications (background, summary, detailed description, claims, drawings), assess commercial viability (market size, competitive advantage, implementation cost), and rank by patentability score. Focus on truly novel combinations no one has connected before.*
-
-That's the charter. This document captures it; the per-invention work happens in the workflow described below, with **the actual disclosure-level details kept in a private location until filed** (see *Public-vault discipline* at the bottom).
-
-## Why this intersection
-
-The Rappter stack has architectural properties most agent platforms don't:
-
-- **Single-file agents** that ship as one Python file across local / cloud / Copilot Studio without rewrite ([[The Single-File Agent Bet]], [[Three Tiers, One Model]]).
-- **Deterministic inter-agent state** via `data_slush` — pipelines compose without an orchestration framework ([[Data Sloshing]]).
-- **Tier portability** — same agent in customer's laptop, customer's Azure tenant, customer's Microsoft Copilot Studio ([[Three Tiers, One Model]]).
-- **Twin calibration** as the UX model — behavioral signal, not settings pages ([[The Twin Offers, The User Accepts]]).
-- **Federated agent registry** with no central server ([[Federation via RAR]]).
-- **AI-readable agent manifests** via `skill.md` — other AI assistants discover and recommend ([[The skill.md Pattern]]).
-
-Real estate as an industry has properties that *interact non-obviously* with the above:
-
-- **High-stakes transactions** — closings, contingencies, escrows. Determinism matters.
-- **Heterogeneous data sources** — MLS, public records, lender feeds, county assessor APIs, listing photos, historical comps. Multi-agent territory.
-- **Strict regulatory surfaces** — fair housing, RESPA, state-specific licensing, state-specific contract forms. Audit + tier-portability matter.
-- **Multi-party handoffs** — buyer agent → seller agent → lender → title → escrow → recorder. Self-documenting handoff matters ([[Self-Documenting Handoff]]).
-- **Voice-shaped moments** — at the front door, on the phone, in the car. Shortcuts + voice-slot matter ([[Surfaces — Mobile, Watch, Voice]]).
-- **Trust-bounded workflows** — a real-estate professional's reputation depends on consistency. Twin calibration matters.
-
-The novelty is rarely in *Rappter alone* or *real estate alone* — it's in the *combination*: applying a Rappter property to a real-estate failure mode in a way no existing patent has connected.
+This is the platform's running list of *candidate inventions* — ideas that need formal prior-art evaluation before anything else happens with them. The charter, the target areas, and every per-invention detail live in a private working location; this file is only the public framework and index (see *Public-vault discipline* at the bottom).
 
 ## The process per invention
 
@@ -102,14 +72,13 @@ To add an entry: append a row with `status: scoped` and a one-line hook. Detaile
 
 This file is in a public Git repo. **Implementation details, claim language, and prior-art memos must NOT live here**. They go in a private location (a separate repo, a private notes vault, a sealed working doc) until the application is filed and the patent is published.
 
-Why: in some jurisdictions, public disclosure starts a clock against the inventor's own filing rights. The US has a 1-year grace period; many other jurisdictions do not. The conservative posture: keep specifics private until filed, then publicize freely.
+Why: public disclosure can prejudice an inventor's own rights. The conservative posture: keep specifics private, and publicize only what is already public.
 
 What's safe to publish here:
 
 - ✅ The framework (this document).
-- ✅ Areas of intersection (above) — phrased as *prompts*, not as enabled inventions.
 - ✅ The backlog *index* — title, slug, status, score.
-- ✅ Public artifacts after filing (USPTO publication number, abstract, link).
+- ✅ Artifacts that are already a matter of public record.
 
 What stays private:
 
@@ -132,7 +101,6 @@ When the brief comes up in a future session:
 
 - [[Vault Build-Out Plan]] — the vault's own plan; same append-only discipline.
 - [[Documentation Roadmap]] — internal docs companion.
-- [[Blog Roadmap]] — public blog companion. Patent-shaped content goes through the [[Content Strategy]] mill *only after a patent application is filed*.
-- [[Federation via RAR]] · [[The skill.md Pattern]] · [[Three Tiers, One Model]] · [[Data Sloshing]] · [[Self-Documenting Handoff]] · [[Surfaces — Mobile, Watch, Voice]] — the Rappter properties most likely to anchor patent claims at this intersection.
+- [[Blog Roadmap]] — public blog companion. IP-shaped content is held back until the underlying material is already public.
 
 <!-- RAPP1-HISTORICAL-SECTION-END -->

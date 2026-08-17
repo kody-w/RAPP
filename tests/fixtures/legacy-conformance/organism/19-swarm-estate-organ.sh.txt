@@ -17,7 +17,7 @@ PID_FILE="/tmp/rapp-organism-19.pid"
 SYNTH_VAULT=$(mktemp -d)
 trap "rm -rf $SYNTH_VAULT; if [ -f $PID_FILE ]; then kill \$(cat $PID_FILE) 2>/dev/null || true; rm -f $PID_FILE; fi" EXIT
 
-# Build a synthetic vault with Wildhaven + Molly fakes (same shape as test 14)
+# Build a synthetic vault with Wildhaven + CEO-twin fakes (same shape as test 14)
 mkdir -p "$SYNTH_VAULT/blessings/144d673475618dfbc9710e999e7d2907"
 cat > "$SYNTH_VAULT/blessings/144d673475618dfbc9710e999e7d2907/root.json" <<EOF
 {

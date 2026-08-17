@@ -7,7 +7,7 @@
     "source_commit": "4c2b999",
     "path_count": 83,
     "path_set_sha256": "4b91bb2b975ca5c6f59be2f988cf8cea450ceb3146c2709c763960d4a85995a1",
-    "content_set_sha256": "00d6a4e220f4a4b71ac5b1f25286d81ed35b6e94a1ca791e700c251b086b5703",
+    "content_set_sha256": "f75f2d4a3b093b07d4fe863e13505c344af4797554e8c67676ef63494d139bc6",
     "mapping": "Each fixture path maps to its former tests/ path after removing the quarantine root and final .txt suffix.",
     "policy": "These exact historical test bytes positively asserted retired identity, frame, egg, browser, Tier 2, or wire behavior. They are non-executable migration evidence and are never RAPP/1 conformance evidence.",
     "files": [
@@ -236,13 +236,13 @@
       {
         "fixture": "tests/fixtures/legacy-conformance/organism/13-rappid-format.sh.txt",
         "source_path": "tests/organism/13-rappid-format.sh",
-        "sha256": "99f16aac73f84e74c2aa0993cb7fbbe6a65a85b70db4bac000c23373979907b0",
+        "sha256": "d41b291d33b6e65a468c088e889bf79efaf009d03e494b6ef9597cd601c38b03",
         "rationale": "Positively asserts retired identity, lineage, archive, estate, or installer-release behavior."
       },
       {
         "fixture": "tests/fixtures/legacy-conformance/organism/14-lineage-walk.sh.txt",
         "source_path": "tests/organism/14-lineage-walk.sh",
-        "sha256": "6d3d85f702f65907e1f8d3b4b2b9a06945805aae978e3057673c2cb0935c36f5",
+        "sha256": "4b7b3946a2496aaf066059027218b0e6ba7dfb7c89f33e0e8619c9ee75bd2453",
         "rationale": "Positively asserts retired identity, lineage, archive, estate, or installer-release behavior."
       },
       {
@@ -254,7 +254,7 @@
       {
         "fixture": "tests/fixtures/legacy-conformance/organism/16-derivation-determinism.sh.txt",
         "source_path": "tests/organism/16-derivation-determinism.sh",
-        "sha256": "b7945506f938959a3c90709f92ee00f1a21eb68a7b24edcfb88a4db25d55d1a9",
+        "sha256": "321a2c62faee5529dd6b8ccf298ac3efa679218fe6c95b7c52901d51b2d505c2",
         "rationale": "Positively asserts retired identity, lineage, archive, estate, or installer-release behavior."
       },
       {
@@ -272,7 +272,7 @@
       {
         "fixture": "tests/fixtures/legacy-conformance/organism/19-swarm-estate-organ.sh.txt",
         "source_path": "tests/organism/19-swarm-estate-organ.sh",
-        "sha256": "8025ef3ca2701c363d8f84da0276821ae276b91960cee2b705d124e216d23694",
+        "sha256": "5ec31ce72064fc0703b72e8c5e7f8a47e58575a67e5a0bd05de12d9e036b41e0",
         "rationale": "Positively asserts retired identity, lineage, archive, estate, or installer-release behavior."
       },
       {
@@ -458,7 +458,7 @@
       {
         "fixture": "tests/fixtures/legacy-conformance/test-hero-deploy.sh.txt",
         "source_path": "tests/test-hero-deploy.sh",
-        "sha256": "e6733dc0c4f9fdbed885975ff3e257bef56e4af99a6b844bd1e49a1bbbff1a34",
+        "sha256": "b5f701cf29570e27d9cc936182d5e8ecad82ad73d43e12e40691e431801397d0",
         "rationale": "Positively asserts a removed legacy API, product integration, deploy, store, sealing, or split-view contract."
       },
       {

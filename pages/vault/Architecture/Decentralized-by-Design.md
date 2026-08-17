@@ -107,7 +107,7 @@ Federation is a step in the right direction; we go further by making the hosting
 | Ownership of `did.json` | Whoever controls the domain | Whoever holds the master key |
 | Domain compromise = identity loss | Yes | No (master key is independent of host) |
 | Multi-device support | Manual key cross-signing | Built-in via three-role hierarchy |
-| AI-entity perpetuity claims | Generic | First-class (v4 §7.18, §7.19) |
+| AI-entity perpetuity | Generic | First-class (built into the protocol) |
 
 DID:web is a closer cousin than blockchain or federation. We extend it with: cross-signing hierarchy, perpetuity semantics, recursive scope, dreamcatcher-style merge.
 
@@ -164,7 +164,7 @@ Each adversary action requires defeating a different layer. To take down the net
 | Algorithm-agility plan | ✅ | ✅ `algorithm-agility-policy.md` |
 | Foundation as repo (not 501c) | ✅ | ✅ `kody-w/wildhaven-ceo` IS the Wildhaven Foundation |
 | Release triggers (engine open-sourcing) | ✅ | ✅ Master-signed `release-triggers.json` |
-| Bootstrap seed list | ✅ | ✅ `bootstrap-seeds.json` with Wildhaven + Molly |
+| Bootstrap seed list | ✅ | ✅ `bootstrap-seeds.json` with Wildhaven + the CEO twin |
 | Multi-host mirroring | Operational | TODO — local-first means this is convenience, not survival |
 | Shamir custody ceremony | Operational | TODO — operator must perform; tool ready |
 | Dreamcatcher conformance suite | ✅ | TODO — skeleton in this repo, fill in over time |
@@ -178,10 +178,9 @@ The "specified" column is fully complete. The "implemented" column has the struc
 Architecture committed across multiple commits on 2026-04-30:
 - `kody-w/RAPP` (public): protocol spec, local-first principle, this note
 - `kody-w/wildhaven-ceo` (private): all operational records, Foundation continuity
-- `kody-w/invention-notebook` (private): timestamped IP record
 - `kody-w/twin_vault` (private): twin egg backup prototype
 
-The network is operational from this date forward. Block 0 (Wildhaven AI Homes) is genesis. Block 1 (Molly, kin) is the first sub-estate. Future blocks are customer estates, employee estates, partner estates — each minted via the same ceremony, each verifying under the same protocol, each surviving under the same Bitcoin-grade properties.
+The network is operational from this date forward. Block 0 (Wildhaven AI Homes) is genesis. Block 1 (the CEO twin, kin) is the first sub-estate. Future blocks are customer estates, employee estates, partner estates — each minted via the same ceremony, each verifying under the same protocol, each surviving under the same Bitcoin-grade properties.
 
 ## Related
 

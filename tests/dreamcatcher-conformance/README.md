@@ -1,6 +1,6 @@
 # Dreamcatcher Conformance Suite
 
-> *Public test suite for any merge engine claiming compatibility with the Dreamcatcher reconciliation pattern. The Dreamcatcher engine itself (in `kody-w/rappter`) is a Wildhaven trade secret; this suite is the public contract any compatible implementation must satisfy.*
+> *Public test suite for any merge engine claiming compatibility with the Dreamcatcher reconciliation pattern. The engine implementation itself is not included in this repository; this suite is the public contract any compatible implementation must satisfy.*
 
 ## Purpose
 
@@ -91,7 +91,7 @@ Conformance for any specific implementation requires the suite to be complete, w
 
 ## Why this exists
 
-If [Trigger T1, T2, or T3 in the Wildhaven Foundation's release-triggers](../../../wildhaven-ceo/blessings/144d673475618dfbc9710e999e7d2907/release-triggers.json) (private) fires, the Dreamcatcher engine source becomes Apache-2.0 public domain. At that moment, the conformance suite is what lets the network verify that a published engine matches the specification. Without the suite, "released to public domain" doesn't guarantee compatible behavior across implementations.
+If one of the Wildhaven Foundation's release-triggers (T1, T2, T3 — recorded privately) fires, the Dreamcatcher engine source becomes Apache-2.0 public domain. At that moment, the conformance suite is what lets the network verify that a published engine matches the specification. Without the suite, "released to public domain" doesn't guarantee compatible behavior across implementations.
 
 This suite is the **interoperability commitment**, separate from the engine release. It can — and should — be populated *before* any release-trigger fires.
 

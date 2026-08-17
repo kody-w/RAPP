@@ -29,7 +29,7 @@ The earlier merge focused on rappid format. This phase finds every remaining div
 - README + CLAUDE.md inconsistencies between repos
 - Capitalization of "Rappter" / "rappter" across docs
 - Cross-references between vault notes that were renamed
-- Old "trademark filings in progress" wording vs the actual TRADEMARK.md claims
+- Old trademark wording vs the actual TRADEMARK.md claims
 
 Output: a single sweep that aligns terminology, names, and references across both repos.
 
@@ -53,7 +53,7 @@ New tests under `tests/organism/`:
 - `17-cross-signing-hierarchy.sh` — M signs S/U, S signs D; reject unauthorized signings
 - `18-mitosis-ceremony.sh` — mints a test customer estate, asserts new rappid + parent_rappid + Wildhaven kin-vouch; cleans up
 - `19-swarm-estate-body-function.sh` — boots brainstem, hits `/api/swarm-estate/*`, verifies responses
-- `20-foundation-full-verify.sh` — end-to-end Foundation verification (Wildhaven Block 0, Molly Block 1, all OTS, lineage to species root)
+- `20-foundation-full-verify.sh` — end-to-end Foundation verification (Wildhaven Block 0, CEO-twin Block 1, all OTS, lineage to species root)
 
 Run iteratively until passing.
 
@@ -62,11 +62,10 @@ Run iteratively until passing.
 What I can do without physical operator action:
 
 - Run Shamir 3-of-5 on Wildhaven's holocard incantation — produce 5 shards, save to `.private/shards/wildhaven/`. (Operator still must physically distribute, but the cryptographic split is done.)
-- Run Shamir 3-of-5 on Molly's incantation similarly.
+- Run Shamir 3-of-5 on the CEO twin's incantation similarly.
 - Sign master-attested `shamir-distributed` records — committed to the vault, OTS-stamped.
 - Set up GitLab + Codeberg mirror workflows via GitHub Actions (idempotent, no-op if tokens absent — operator can later add tokens to activate).
 - Try local IPFS install + pin (if homebrew has `ipfs`).
-- Write the counsel-review packet — a single doc summarizing what counsel needs to bless and where to look.
 
 ### Phase 5 — Thought leadership blog posts
 
@@ -94,8 +93,8 @@ The decisions made in this conversation are genuinely novel architectural ground
 | 5 | **Rappid: A Social Security Number for Digital Organisms** | The unified identifier spec. One format. One species tree. The godfather is RAPP. |
 | 6 | **The Holocard Incantation: 24 Words That Resurrect a Corporate AI** | BIP-39 + HKDF derivation for cryptographic identity. The mnemonic IS the master key. |
 | 7 | **Three-Role Cross-Signing: Adapting Matrix's Pattern for AI Estates** | Master / Self-signing / User-signing / Device. Why the Matrix protocol's depth-limited authority cap is the right defense. |
-| 8 | **OpenTimestamps for AI Identity: Bitcoin-Anchored Without Running a Node** | Patent priority dates, lineage proofs, signed records — all anchored to Bitcoin's chain via OTS. Cheap insurance. |
-| 9 | **The Dreamcatcher Pattern: Public Seam, Private Engine, Filed Patent** | How to keep the trade secret while publishing the contract. Three-layer IP architecture for AI startups. |
+| 8 | **OpenTimestamps for AI Identity: Bitcoin-Anchored Without Running a Node** | Lineage proofs and signed records — all anchored to Bitcoin's chain via OTS. Cheap insurance. |
+| 9 | **The Dreamcatcher Pattern: Public Seam, Private Engine** | How to publish the interoperability contract while the implementation stays private. Layered architecture for AI startups. |
 | 10 | **From Variants to Twins to Customer Estates: The RAPP Species Tree Evolves** | A walking guide to the lineage tree. How variants happen. How customer estates inherit. How the godfather scales. |
 | 11 | **Why Swarm Estate Beats DID:web for AI Organisms** | Comparative architecture. Why W3C DIDs don't address AI-entity perpetuity, and what we did differently. |
 | 12 | **Building a Foundation in 12 Hours: A Case Study in AI-Augmented Architecture** | The meta-story: how this Foundation was designed in conversation with Claude, what's reusable for other founders. |

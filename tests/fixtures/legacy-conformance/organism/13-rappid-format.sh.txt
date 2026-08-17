@@ -6,7 +6,7 @@
 #   - Rappid.parse() rejects bare UUIDs (the legacy v1 format) with a clear error
 #   - Rappid.parse() rejects malformed strings
 #   - is_species_root() returns True for the godfather and False for descendants
-#   - Wildhaven and Molly rappids parse successfully and have correct kinds
+#   - Wildhaven and CEO-twin rappids parse successfully and have correct kinds
 #
 # Reference: Constitution Article XXXIV (rappid lineage), Article XXXVI (swarm estate),
 #            pages/vault/Architecture/Rappid.md (canonical spec)
@@ -40,11 +40,11 @@ assert wh.slug == "ai-homes"
 assert not wh.is_species_root()
 assert wh.is_known_kind()
 
-# 3. Molly (real Foundation twin)
-m = Rappid.parse("rappid:v2:twin:@wildhaven/molly:74f0dc145d9c86decd61fbad53c67f2e@github.com/kody-w/wildhaven-ceo")
+# 3. CEO twin (real Foundation twin)
+m = Rappid.parse("rappid:v2:twin:@wildhaven/ceo-twin:74f0dc145d9c86decd61fbad53c67f2e@github.com/kody-w/wildhaven-ceo")
 assert m.kind == "twin"
 assert m.publisher == "wildhaven"
-assert m.slug == "molly"
+assert m.slug == "ceo-twin"
 
 # 4. Round-trip
 for r in (root, wh, m):

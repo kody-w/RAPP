@@ -1128,7 +1128,6 @@ The god spec stays narrow on purpose. Each of these is real platform surface, fu
 - The OSI 7-layer mapping (→ `OSI.md`)
 - Holocard schema, RAR sealing, Binder ECDSA wallet (→ `pages/vault/Architecture/`)
 - Rappterbox console (the iframe-mount surface for session cartridges) (→ `kody-w/rappterbox/`)
-- Patent claim language (→ `kody-w/wildhaven-ceo/legal/patent/`, collaborator-gated)
 
 Reading order if you're new and just landed on SPEC.md: SPEC § 0–5 (the contract) → `HERO_USECASE.md` (what must work) → `ECOSYSTEM_MAP.md` (the index) → `OSI.md` (the layer model) → drill into specific specs as needed.
 

@@ -7,8 +7,7 @@
 #   - Different incantations → different keys
 #   - Identity hash = sha256(master_pubkey_SPKI)[:32] is reproducible
 #
-# Reference: pages/vault/Architecture/Rappid.md (derivation spec),
-#            wildhaven-ceo/legal/swarm-estate/birth-record.md (canonical recipe)
+# Reference: pages/vault/Architecture/Rappid.md (derivation spec)
 
 set -euo pipefail
 cd "$(dirname "$0")/../.."
