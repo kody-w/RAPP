@@ -14,9 +14,9 @@ Authority remains:
 - [`RAPP1_STATUS.md`](./RAPP1_STATUS.md), which remains **NOT YET FULLY
   RAPP/1 CONFORMANT**;
 - Constitution Article LV; and
-- `kody-w/rapp-1@6723c7add2aed36bb68992fc71a56b0a4bd5ad81`,
+- `kody-w/rapp-1@d2cd5abed48d3f52b86bbb975ac3558286d1db41`,
   `SPEC.md` SHA-256
-  `6d06daba65d7c045716f3d6e95db8401ab58e727820e4114466d847f62cae49b`.
+  `cea7847f98f9751734995f46fd4e1bde211c8eb9d03dbbb477934213865bb91a`.
 
 No contributor or automation may generate or sign an owner key, invent an
 anchor or SPKI, approve a re-anchor, create registry authority, fabricate a
@@ -313,21 +313,35 @@ target path, final egg address, and publication commits are deliberately
 ## 4. Correct or retire the divergent `rapp-god` mirror
 
 **Issue title:** `[External owner action] Correct or remove the divergent rapp-god ecosystem mirror`
+**Machine action:** `owners-correct-or-retire-external-mirror`
 
-- **Why:** The target and `rapp-map` match at 60,479 bytes and SHA-256
+**Target-side remediation completed 2026-08-23.** The live
+`specs/ecosystem-spec.json` path is now a fail-closed mirror-contract status
+record with `active_byte_identical_mirrors: []`. The former v1.2.0 source bytes
+remain pinned in Git history at commit
+`789e6c5245f18e9685450fd6105dc26867837895`. The public `rapp-map` path now
+serves a quarantine status document. The `kody-w/rapp-god` repository is owned
+by `kody-w` but is private; an unauthenticated fetch of the claimed raw path
+returns HTTP 404 with the exact 14-byte `404: Not Found` sentinel. No private
+content was copied or inferred. External owner action is required only to
+publish and then reinstate a future public mirror; it is not required to keep
+the retired claim fail-closed.
+
+- **Why:** At the audit baseline, the target and `rapp-map` matched at 60,479 bytes and SHA-256
   `0eb814…3616`; `rapp-god` is 60,471 bytes and SHA-256 `f1ddcf…e9e`.
   It still names `rapp-rappid/2.0` where canonical names `rapp/1`. Moving
   `main` URLs are not immutable provenance. Separately, `rapp_kernel/latest`
   is an unauthenticated v0.6.0 archive alias while the active pin is
   `brainstem-v0.6.9`.
-- **What:** The target immediately marks/removes `rapp-god` as
-  non-authoritative while the external owner chooses correction or continued
-  removal. The target records immutable provenance for every retained mirror
+- **What:** The target has removed `rapp-god` from active mirror claims while
+  the external owner chooses future correction or continued removal. Any
+  reinstatement records immutable provenance for every retained mirror
   and either retires the kernel `latest` claim or adds a target-owned sidecar
   pinning its unchanged bytes as historical v0.6.0, never current 0.6.9.
-- **Where:** Canonical `kody-w/RAPP:specs/ecosystem-spec.json`; matching
-  `kody-w/rapp-map:ecosystem-spec.json`; divergent
-  `kody-w/rapp-god:api/v1/ecosystem-spec.json`; target claims in
+- **Where:** Historical source
+  `kody-w/RAPP@789e6c5245f18e9685450fd6105dc26867837895:specs/ecosystem-spec.json`;
+  retired public surfaces `kody-w/rapp-map:ecosystem-spec.json` and
+  `kody-w/rapp-god:api/v1/ecosystem-spec.json`; target disposition in
   `specs/ecosystem-spec.json` and `specs/ECOSYSTEM_SPEC.md`; kernel alias
   `rapp_kernel/manifest.json` and `rapp_kernel/latest/brainstem.py`.
 - **When:** Before any mirror supplies authority, provenance, or clean status;
@@ -371,9 +385,10 @@ target path, final egg address, and publication commits are deliberately
   payload byte-identical. Retain observed commit/hashes as history.
   Reinstatement requires a new exact-byte proof and immutable provenance.
 
-The decision, all publication commits/times, kernel alias disposition, and
-sidecar path are deliberately `null`. This ledger implementation performs
-**no external write or payload edit**.
+Any future publication decision, publication commits, kernel alias
+disposition, and sidecar path remain deliberately `null`. This target
+retirement performs **no private-repository write and invents no mirror
+content**.
 
 ## 5. Approve the public RAPP/1 facade switch
 
@@ -501,7 +516,8 @@ rollback owner are deliberately `null`.
 | Signed monotonic registry and out-of-band anchor | `owner-publish-authenticated-registry` |
 | Lawful root re-anchor | `owner-authorize-root-upgrade-reanchor` |
 | Signed replacement invite | `owner-reissue-commons-invite` |
-| External mirror correction | `owners-correct-or-retire-external-mirror` |
 
-The fifth action, `owner-enable-public-rapp1-facade`, is a dependent release
-gate and closes no blocker by itself.
+The external-mirror action records a completed target retirement plus an
+optional owner-only reinstatement path; it is no longer a status blocker. The
+fifth action, `owner-enable-public-rapp1-facade`, is a dependent release gate
+and closes no blocker by itself.

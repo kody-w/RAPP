@@ -11,9 +11,9 @@
     "status": "RAPP1_STATUS.md",
     "constitution": "CONSTITUTION.md#article-lv--rapp1-rev-5-is-the-living-protocol-authority-2026-07-16",
     "standard_repository": "kody-w/rapp-1",
-    "standard_commit": "6723c7add2aed36bb68992fc71a56b0a4bd5ad81",
+    "standard_commit": "d2cd5abed48d3f52b86bbb975ac3558286d1db41",
     "standard_path": "SPEC.md",
-    "standard_sha256": "6d06daba65d7c045716f3d6e95db8401ab58e727820e4114466d847f62cae49b",
+    "standard_sha256": "cea7847f98f9751734995f46fd4e1bde211c8eb9d03dbbb477934213865bb91a",
     "standard_sections": [
       "6",
       "9",
@@ -57,12 +57,12 @@
       "4c2b999f8c890b76d057241d29ecda29e0239d79"
     ],
     "status_path": "RAPP1_STATUS.md",
-    "status_sha256": "294d5f854c46e2c43ec039894a2b3779ec0060ebb69cf580c71e6114079187e4",
+    "status_sha256": "922d28a0055e7676513e21d0cfc195665624523e5cd19e1777013125d5cdd538",
     "status_state": "Owner-action ledger links, target-owned launch containment, and the post-migration Active-path residual are present; the repository remains not fully conformant.",
     "current_path_hashes": {
       "rappid.json": "59dd3b53e2ed0c7594b3754425938b907600fdf5787b1cef912276aa9d3711b3",
       "pages/tutorials/commons.egg": "2731c02f187701c1d07b3a7f5eed5e2073c203ffb4f6c08d00292894e3319a5d",
-      "specs/ecosystem-spec.json": "0eb8146b62af8e8473d2ca8944ed8aff69e18e41a143eb1ef466f3c3fc153616",
+      "specs/ecosystem-spec.json": "147179baae2021272c5dce6f426eaf6d168df20f863027ca9e8ab51e64d87e5d",
       "rapp_kernel/manifest.json": "a2826eb8820f4487948bfdb1bf3f80b4ca8ccdf902553d5d109cb8de3bb85889",
       "rapp_kernel/latest/brainstem.py": "f7fb359bbe8b6ba3db3665d81cb8e573a266c716278d8d21d8962ea40821e5aa",
       "KERNEL_PIN.json": "427a37cc914a279b9c32a2ab85be9a19a0046f10f9f503c088a2670b6646e21c",
@@ -297,7 +297,7 @@
         "name": "rapp/1",
         "spec_repo": "kody-w/rapp-1",
         "spec_path": "SPEC.md",
-        "spec_hash": "6d06daba65d7c045716f3d6e95db8401ab58e727820e4114466d847f62cae49b",
+        "spec_hash": "cea7847f98f9751734995f46fd4e1bde211c8eb9d03dbbb477934213865bb91a",
         "deprecated": false
       }
     ],
@@ -389,8 +389,7 @@
   "status_blocker_map": {
     "Signed monotonic registry and out-of-band anchor": "owner-publish-authenticated-registry",
     "Lawful root re-anchor": "owner-authorize-root-upgrade-reanchor",
-    "Signed replacement invite": "owner-reissue-commons-invite",
-    "External mirror correction": "owners-correct-or-retire-external-mirror"
+    "Signed replacement invite": "owner-reissue-commons-invite"
   },
   "actions": [
     {
@@ -625,17 +624,34 @@
       "title": "Correct or retire the divergent rapp-god mirror",
       "issue_title": "[External owner action] Correct or remove the divergent rapp-god ecosystem mirror",
       "status": "owner-action-required",
-      "why": "The target claims byte-identical ecosystem mirrors, but the observed rapp-god object differs in bytes and still names rapp-rappid/2.0 where the canonical source names rapp/1. Moving main URLs provide no immutable provenance. Separately, rapp_kernel/latest is an unauthenticated v0.6.0 archive alias while the active immutable pin is brainstem-v0.6.9. Neither surface can support authority, current-release, or clean drift claims.",
-      "what": "The target must immediately mark or remove rapp-god as non-authoritative while the external owner decides whether to republish exact canonical bytes. The target must then pin immutable provenance for every retained ecosystem mirror and either retire the rapp_kernel/latest alias or add a target-owned provenance sidecar that identifies its unchanged bytes as the historical v0.6.0 archive, never the active pin.",
+      "why": "At the audit baseline the target claimed byte-identical ecosystem mirrors, but the observed rapp-god object differed in bytes and still named rapp-rappid/2.0 where the historical source named rapp/1. The target claim is now retired. Moving main URLs still provide no immutable provenance for any future reinstatement. Separately, rapp_kernel/latest is an unauthenticated v0.6.0 archive alias while the active immutable pin is brainstem-v0.6.9. Neither surface can support authority, current-release, or clean drift claims.",
+      "what": "The target has removed rapp-god from active mirror claims. The external owner may leave it retired or later republish approved exact bytes with immutable provenance. Any future reinstatement must pin every retained ecosystem mirror. Separately, retire the rapp_kernel/latest alias or add a target-owned provenance sidecar that identifies its unchanged bytes as the historical v0.6.0 archive, never the active pin.",
       "where": {
-        "canonical_source": "kody-w/RAPP:specs/ecosystem-spec.json",
-        "matching_external_mirror": "kody-w/rapp-map:ecosystem-spec.json",
-        "divergent_external_mirror": "kody-w/rapp-god:api/v1/ecosystem-spec.json",
-        "target_machine_claims": "specs/ecosystem-spec.json",
-        "target_human_claims": "specs/ECOSYSTEM_SPEC.md",
+        "historical_source": "kody-w/RAPP@789e6c5245f18e9685450fd6105dc26867837895:specs/ecosystem-spec.json",
+        "retired_rapp_map_surface": "kody-w/rapp-map:ecosystem-spec.json",
+        "retired_rapp_god_surface": "kody-w/rapp-god:api/v1/ecosystem-spec.json",
+        "target_machine_disposition": "specs/ecosystem-spec.json",
+        "target_human_disposition": "specs/ECOSYSTEM_SPEC.md",
         "kernel_alias_manifest": "rapp_kernel/manifest.json",
         "kernel_alias_payload": "rapp_kernel/latest/brainstem.py",
-        "active_kernel_pin": "KERNEL_PIN.json"
+        "active_kernel_pin": "KERNEL_PIN.json",
+        "target_disposition": {
+          "state": "retired-from-active-claims",
+          "record": "specs/ecosystem-spec.json",
+          "active_byte_identical_mirrors": [],
+          "historical_source_commit": "789e6c5245f18e9685450fd6105dc26867837895",
+          "historical_source_sha256": "0eb8146b62af8e8473d2ca8944ed8aff69e18e41a143eb1ef466f3c3fc153616",
+          "rapp_map_disposition": "quarantined-candidate",
+          "rapp_god_owner": "kody-w",
+          "rapp_god_visibility": "private",
+          "rapp_god_public_reachable": false,
+          "rapp_god_public_http_status": 404,
+          "rapp_god_public_body_bytes": 14,
+          "rapp_god_public_body_sha256": "d5558cd419c8d46bdc958064cb97f963d1ea793866414c025906ec15033512ed",
+          "observed_at": "2026-08-23T22:08:24Z",
+          "private_content_copied_or_inferred": false,
+          "owner_action_required_for": "future public republication and reinstatement only"
+        }
       },
       "when": "Resolve before the target uses any external mirror as provenance, authority evidence, or a public clean-status input; repeat verification whenever a pinned mirror is intentionally advanced.",
       "how": [

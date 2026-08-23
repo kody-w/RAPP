@@ -8,8 +8,8 @@ required for a full conformance claim.
 
 [`RAPP1_AUTHORITY.json`](./RAPP1_AUTHORITY.json) pins the exact `SPEC.md` bytes
 from `kody-w/rapp-1` at commit
-`6723c7add2aed36bb68992fc71a56b0a4bd5ad81`, SHA-256
-`6d06daba65d7c045716f3d6e95db8401ab58e727820e4114466d847f62cae49b`,
+`d2cd5abed48d3f52b86bbb975ac3558286d1db41`, SHA-256
+`cea7847f98f9751734995f46fd4e1bde211c8eb9d03dbbb477934213865bb91a`,
 wire tag `rapp/1`, revision `rev-5`.
 
 The pin is deliberately **not** an authenticated registry under RAPP/1 §13.
@@ -26,7 +26,7 @@ are dated evidence, not interchangeable snapshots:
   eggs.
 - **Post-implementation review (`e1c2fbb`): 691/691 tracked paths**, the same
   5 archives, 450 recursive members, and 2 JSON eggs.
-- **Integrated closure tree: 693/693 tracked paths** after removing the last
+- **Integrated closure tree: 694/694 tracked paths** after removing the last
   live Cave installer agent. The canonical gate derives current inventory from
   `git ls-files`; it does not treat an older count as current.
 
@@ -73,9 +73,6 @@ Only the estate owner can close these dependencies:
 3. **Signed replacement invite** — replace the legacy/invalid invite with a
    `rapp/1-egg` `invite` whose signature verifies under the estate-owner
    succession.
-4. **External mirror correction** — update affected mirrors outside this target
-   from their owners' sources of record, preserving exact bytes, hashes, and
-   provenance.
 
 No contributor or automation may fabricate signatures, keys, registry
 authority, or a re-anchor to make these blockers appear closed.
@@ -85,6 +82,16 @@ dependent public-facade release gate, are in
 [`RAPP1_OWNER_ACTIONS.md`](./RAPP1_OWNER_ACTIONS.md); the machine-readable
 counterpart is [`RAPP1_OWNER_ACTIONS.json`](./RAPP1_OWNER_ACTIONS.json). Both
 remain `candidate` / `owner-action-required` and are not a §13 registry.
+
+## Retired external mirror contract
+
+The former byte-identical ecosystem mirror claim is no longer a target
+blocker. [`specs/ecosystem-spec.json`](specs/ecosystem-spec.json) has
+`active_byte_identical_mirrors: []` and records the exact historical source,
+the public `rapp-map` quarantine document, and the unauthenticated 14-byte 404
+sentinel returned by the private `kody-w/rapp-god` path. Reinstating a public
+mirror would require a new owner-approved publication and immutable
+byte-identity proof; no such publication is inferred here.
 
 ## Target-owned launch containment
 

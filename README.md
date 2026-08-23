@@ -17,9 +17,10 @@ or Shortcut is currently offered.
 > pin is not an authenticated §13 registry. For canonicalization, identity,
 > frame, wire, egg, registry, trust, and evolution rules, those two files
 > supersede older local documentation. Owner-signed registry, anchor,
-> re-anchor, invite, and external-mirror work remains.
+> re-anchor, and invite work remains. The former external mirror contract is
+> retired and has no active mirrors.
 > The authority commit is
-> `6723c7add2aed36bb68992fc71a56b0a4bd5ad81`; kernel evidence is fixed by
+> `d2cd5abed48d3f52b86bbb975ac3558286d1db41`; kernel evidence is fixed by
 > [`KERNEL_PIN.json`](./KERNEL_PIN.json) at
 > `kody-w/rapp-installer@brainstem-v0.6.9`. `rapp-god` and moving branches are
 > divergent, non-authoritative history.

@@ -9,22 +9,23 @@ from pathlib import Path, PurePosixPath
 ROOT = Path(__file__).resolve().parents[1]
 AUTHORITY_PATH = ROOT / "RAPP1_AUTHORITY.json"
 FIXTURE_PATH = ROOT / "tests/fixtures/rapp1-spec-rev5.json"
+ECOSYSTEM_STATUS_PATH = ROOT / "specs/ecosystem-spec.json"
 
 EXPECTED_STANDARD = {
     "repository": "kody-w/rapp-1",
-    "commit": "6723c7add2aed36bb68992fc71a56b0a4bd5ad81",
+    "commit": "d2cd5abed48d3f52b86bbb975ac3558286d1db41",
     "path": "SPEC.md",
-    "sha256": "6d06daba65d7c045716f3d6e95db8401ab58e727820e4114466d847f62cae49b",
-    "byte_length": 41880,
+    "sha256": "cea7847f98f9751734995f46fd4e1bde211c8eb9d03dbbb477934213865bb91a",
+    "byte_length": 41952,
     "wire_tag": "rapp/1",
     "revision": "rev-5",
     "canonical_url": (
         "https://github.com/kody-w/rapp-1/blob/"
-        "6723c7add2aed36bb68992fc71a56b0a4bd5ad81/SPEC.md"
+        "d2cd5abed48d3f52b86bbb975ac3558286d1db41/SPEC.md"
     ),
     "retrieval_url": (
         "https://raw.githubusercontent.com/kody-w/rapp-1/"
-        "6723c7add2aed36bb68992fc71a56b0a4bd5ad81/SPEC.md"
+        "d2cd5abed48d3f52b86bbb975ac3558286d1db41/SPEC.md"
     ),
 }
 
@@ -83,7 +84,7 @@ class Rapp1AuthorityTests(unittest.TestCase):
 
     def test_staged_fixture_matches_without_vendoring_spec_bytes(self):
         fixture_source = dict(self.fixture["source"])
-        self.assertEqual(fixture_source.pop("line_count"), 528)
+        self.assertEqual(fixture_source.pop("line_count"), 529)
         self.assertEqual(fixture_source, EXPECTED_STANDARD)
         self.assertEqual(
             self.fixture["schema"], "rapp-authority-source-fixture/1.0"
@@ -106,6 +107,55 @@ class Rapp1AuthorityTests(unittest.TestCase):
         serialized = json.dumps(self.authority, sort_keys=True)
         self.assertNotIn('"registry_seq"', serialized)
         self.assertIsNone(re.search(r'"sig"\s*:', serialized))
+
+    def test_ecosystem_mirror_contract_is_retired_fail_closed(self):
+        status = load_json(ECOSYSTEM_STATUS_PATH)
+        self.assertEqual(
+            status["document_type"], "ecosystem-mirror-contract-status"
+        )
+        self.assertEqual(status["status"], "retired")
+        self.assertIs(status["authoritative"], False)
+        self.assertIs(status["accepted_as_rapp1_registry"], False)
+        self.assertEqual(status["active_byte_identical_mirrors"], [])
+        self.assertEqual(
+            status["protocol_authority"],
+            {
+                "repository": "kody-w/rapp-1",
+                "commit": EXPECTED_STANDARD["commit"],
+                "path": "SPEC.md",
+                "bytes": EXPECTED_STANDARD["byte_length"],
+                "sha256": EXPECTED_STANDARD["sha256"],
+                "pin_file": "../RAPP1_AUTHORITY.json",
+            },
+        )
+
+        history = status["historical_snapshot"]
+        self.assertEqual(
+            history["commit"], "789e6c5245f18e9685450fd6105dc26867837895"
+        )
+        self.assertEqual(history["git_blob"], "d4021c6f7b916ede041ae9d3c0802977524d5189")
+        self.assertEqual(history["bytes"], 60479)
+        self.assertEqual(
+            history["sha256"],
+            "0eb8146b62af8e8473d2ca8944ed8aff69e18e41a143eb1ef466f3c3fc153616",
+        )
+        self.assertIs(history["authoritative"], False)
+        self.assertEqual(history["availability"], "git-history-only")
+
+        surfaces = {
+            item["repository"]: item for item in status["former_surfaces"]
+        }
+        self.assertEqual(surfaces["kody-w/rapp-map"]["byte_identical_mirror"], False)
+        rapp_god = surfaces["kody-w/rapp-god"]
+        self.assertEqual(rapp_god["owner"], "kody-w")
+        self.assertEqual(rapp_god["visibility"], "private")
+        self.assertIs(rapp_god["public_reachable"], False)
+        self.assertEqual(rapp_god["public_http_status"], 404)
+        self.assertEqual(rapp_god["public_body_bytes"], 14)
+        self.assertEqual(
+            rapp_god["public_body_sha256"],
+            "d5558cd419c8d46bdc958064cb97f963d1ea793866414c025906ec15033512ed",
+        )
 
     def test_immutable_grail_pin_and_local_bytes_are_unchanged(self):
         kernel_pin = load_json(ROOT / "KERNEL_PIN.json")
@@ -153,7 +203,7 @@ class Rapp1AuthorityTests(unittest.TestCase):
             "Signed monotonic registry and out-of-band anchor",
             "Lawful root re-anchor",
             "Signed replacement invite",
-            "External mirror correction",
+            "Retired external mirror contract",
         ):
             self.assertIn(phrase, status)
         self.assertNotIn(

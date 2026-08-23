@@ -3,15 +3,15 @@
   "purpose": "Offline provenance fixture for the target-owned RAPP/1 structural authority pin; it contains no normative SPEC bytes.",
   "source": {
     "repository": "kody-w/rapp-1",
-    "commit": "6723c7add2aed36bb68992fc71a56b0a4bd5ad81",
+    "commit": "d2cd5abed48d3f52b86bbb975ac3558286d1db41",
     "path": "SPEC.md",
-    "sha256": "6d06daba65d7c045716f3d6e95db8401ab58e727820e4114466d847f62cae49b",
-    "byte_length": 41880,
-    "line_count": 528,
+    "sha256": "cea7847f98f9751734995f46fd4e1bde211c8eb9d03dbbb477934213865bb91a",
+    "byte_length": 41952,
+    "line_count": 529,
     "wire_tag": "rapp/1",
     "revision": "rev-5",
-    "canonical_url": "https://github.com/kody-w/rapp-1/blob/6723c7add2aed36bb68992fc71a56b0a4bd5ad81/SPEC.md",
-    "retrieval_url": "https://raw.githubusercontent.com/kody-w/rapp-1/6723c7add2aed36bb68992fc71a56b0a4bd5ad81/SPEC.md"
+    "canonical_url": "https://github.com/kody-w/rapp-1/blob/d2cd5abed48d3f52b86bbb975ac3558286d1db41/SPEC.md",
+    "retrieval_url": "https://raw.githubusercontent.com/kody-w/rapp-1/d2cd5abed48d3f52b86bbb975ac3558286d1db41/SPEC.md"
   },
   "contains_spec_bytes": false,
   "source_license_path": null,
