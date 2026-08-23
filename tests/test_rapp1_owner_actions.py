@@ -44,7 +44,6 @@ EXPECTED_STATUS_BLOCKERS = [
     "Signed monotonic registry and out-of-band anchor",
     "Lawful root re-anchor",
     "Signed replacement invite",
-    "External mirror correction",
 ]
 REQUIRED_ACTION_FIELDS = {
     "id",
@@ -315,8 +314,8 @@ class Rapp1OwnerActionLedgerTests(unittest.TestCase):
                     "spec_repo": "kody-w/rapp-1",
                     "spec_path": "SPEC.md",
                     "spec_hash": (
-                        "6d06daba65d7c045716f3d6e95db8401"
-                        "ab58e727820e4114466d847f62cae49b"
+                        "cea7847f98f9751734995f46fd4e1bde"
+                        "211c8eb9d03dbbb477934213865bb91a"
                     ),
                     "deprecated": False,
                 }
@@ -594,6 +593,15 @@ class Rapp1OwnerActionLedgerTests(unittest.TestCase):
             for action in self.ledger["actions"]
             if action["id"] == "owners-correct-or-retire-external-mirror"
         )
+        disposition = mirror_action["where"]["target_disposition"]
+        self.assertEqual(disposition["state"], "retired-from-active-claims")
+        self.assertEqual(disposition["active_byte_identical_mirrors"], [])
+        self.assertEqual(disposition["rapp_god_owner"], "kody-w")
+        self.assertEqual(disposition["rapp_god_visibility"], "private")
+        self.assertIs(disposition["rapp_god_public_reachable"], False)
+        self.assertEqual(disposition["rapp_god_public_http_status"], 404)
+        self.assertEqual(disposition["rapp_god_public_body_bytes"], 14)
+        self.assertIs(disposition["private_content_copied_or_inferred"], False)
         test_ids = {
             check["id"] for check in mirror_action["acceptance_tests"]
         }

@@ -62,7 +62,6 @@ EXPECTED_OWNER_BLOCKERS = (
     "Signed monotonic registry and out-of-band anchor",
     "Lawful root re-anchor",
     "Signed replacement invite",
-    "External mirror correction",
 )
 EXCLUDED_EXTERNAL_SUITES = {
     "tests/doorman/chat.js": "requires a live authenticated doorman/chat service",

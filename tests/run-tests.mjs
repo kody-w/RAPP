@@ -16,14 +16,13 @@ import { fileURLToPath } from 'node:url';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '..');
 const EXPECTED_AUTHORITY_COMMIT =
-  '6723c7add2aed36bb68992fc71a56b0a4bd5ad81';
+  'd2cd5abed48d3f52b86bbb975ac3558286d1db41';
 const EXPECTED_SPEC_SHA =
-  '6d06daba65d7c045716f3d6e95db8401ab58e727820e4114466d847f62cae49b';
+  'cea7847f98f9751734995f46fd4e1bde211c8eb9d03dbbb477934213865bb91a';
 const OWNER_BLOCKERS = [
   'Signed monotonic registry and out-of-band anchor',
   'Lawful root re-anchor',
   'Signed replacement invite',
-  'External mirror correction',
 ];
 
 let passed = 0;

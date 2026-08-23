@@ -63,7 +63,7 @@ OUT="$(LC_ALL=C LANG=C PYTHONUTF8=0 "$PYTHON" -c "
 with open('$TMP_ORG/soul.md', 'r', encoding='utf-8') as f:
     soul = f.read().strip()
 assert len(soul) > 0
-assert '“' in soul, 'expected smart quote character in decoded soul'
+assert '\u201c' in soul, 'expected smart quote character in decoded soul'
 print('OK', len(soul), 'chars')
 " 2>&1)"
 

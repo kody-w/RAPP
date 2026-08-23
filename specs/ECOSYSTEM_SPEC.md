@@ -6,15 +6,18 @@
 > evolution, follow RAPP/1 rev-5 through
 > [`RAPP1_AUTHORITY.json`](../RAPP1_AUTHORITY.json) and
 > [`RAPP1_STATUS.md`](../RAPP1_STATUS.md). The immutable standard pin is commit
-> `6723c7add2aed36bb68992fc71a56b0a4bd5ad81`; the immutable grail pin is
+> `d2cd5abed48d3f52b86bbb975ac3558286d1db41`; the immutable grail pin is
 > `kody-w/rapp-installer@brainstem-v0.6.9` in
 > [`KERNEL_PIN.json`](../KERNEL_PIN.json).
 >
-> **Mirror disposition.** `specs/ecosystem-spec.json`, `kody-w/rapp-god`,
-> `kody-w/rapp-map`, and RAPP-Bible are generated or external mirrors that were
-> not regenerated or edited here. No immutable verified pin is recorded for
-> those external copies, and observed divergence means `rapp-god` must be
-> treated as non-authoritative.
+> **Mirror contract retired.** [`specs/ecosystem-spec.json`](ecosystem-spec.json)
+> is now a fail-closed status record with no active byte-identical mirrors.
+> The former v1.2.0 JSON remains immutable in Git history at commit
+> `789e6c5245f18e9685450fd6105dc26867837895` (60,479 bytes; SHA-256
+> `0eb8146b62af8e8473d2ca8944ed8aff69e18e41a143eb1ef466f3c3fc153616`).
+> `rapp-map` serves its own quarantine status, while the `kody-w/rapp-god`
+> path is private and returns a 14-byte HTTP 404 sentinel without
+> authentication. Neither is an active mirror or authority surface.
 >
 > The former local “authority order” is retired. Local plans, constitutions,
 > specs, vault notes, code, and ecosystem mirrors are subordinate to the exact

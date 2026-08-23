@@ -677,7 +677,10 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
     } | set(ownership_exclusions)
     for path in sorted(changed_paths & protected_paths):
         errors.append(f"{path}: protected mirror/immutable/owned path was modified")
-    allowed_owner_mirror_edit = {"specs/ECOSYSTEM_SPEC.md"}
+    allowed_owner_mirror_edit = {
+        "specs/ECOSYSTEM_SPEC.md",
+        "specs/ecosystem-spec.json",
+    }
     for path in sorted(
         changed_paths
         & (set(categories["POST-OWNER-MIRROR"]["paths"]) - allowed_owner_mirror_edit)
@@ -1004,6 +1007,23 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
             "specs/ECOSYSTEM_SPEC.md: rapp-god must be explicitly divergent "
             "or non-authoritative"
         )
+    try:
+        ecosystem_status = json.loads(_read("specs/ecosystem-spec.json"))
+    except json.JSONDecodeError as exc:
+        errors.append(f"specs/ecosystem-spec.json: invalid status JSON: {exc}")
+    else:
+        if (
+            ecosystem_status.get("document_type")
+            != "ecosystem-mirror-contract-status"
+            or ecosystem_status.get("status") != "retired"
+            or ecosystem_status.get("active_byte_identical_mirrors") != []
+            or ecosystem_status.get("authoritative") is not False
+            or ecosystem_status.get("accepted_as_rapp1_registry") is not False
+        ):
+            errors.append(
+                "specs/ecosystem-spec.json: mirror contract must remain "
+                "retired, empty, non-authoritative, and non-registry"
+            )
 
     tutorial_rule = rules["retired_tutorial"]
     navigation_text = _read(tutorial_rule["navigation_path"])
@@ -1052,7 +1072,7 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
 
     status = _read("RAPP1_STATUS.md")
     expected_status_sha256 = (
-        "294d5f854c46e2c43ec039894a2b3779ec0060ebb69cf580c71e6114079187e4"
+        "922d28a0055e7676513e21d0cfc195665624523e5cd19e1777013125d5cdd538"
     )
     if hashlib.sha256(status.encode("utf-8")).hexdigest() != expected_status_sha256:
         errors.append("RAPP1_STATUS.md: code-owned owner-evidence hash drifted")
@@ -1062,7 +1082,6 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
         "Signed monotonic registry and out-of-band anchor",
         "Lawful root re-anchor",
         "Signed replacement invite",
-        "External mirror correction",
     ):
         if blocker not in status:
             errors.append(f"RAPP1_STATUS.md: missing owner blocker {blocker!r}")

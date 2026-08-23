@@ -4020,8 +4020,8 @@ last split between the reference spec and the constitutional-era naming.
 
 The target-owned machine record [`RAPP1_AUTHORITY.json`](./RAPP1_AUTHORITY.json)
 pins `kody-w/rapp-1` commit
-`6723c7add2aed36bb68992fc71a56b0a4bd5ad81`, path `SPEC.md`, SHA-256
-`6d06daba65d7c045716f3d6e95db8401ab58e727820e4114466d847f62cae49b`,
+`d2cd5abed48d3f52b86bbb975ac3558286d1db41`, path `SPEC.md`, SHA-256
+`cea7847f98f9751734995f46fd4e1bde211c8eb9d03dbbb477934213865bb91a`,
 wire tag `rapp/1`, revision `rev-5`. The immutable canonical and retrieval URLs
 in that record name the same commit and path. A mismatch fails closed.
 
