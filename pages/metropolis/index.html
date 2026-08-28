@@ -201,10 +201,22 @@
   }
 
   // Live presence per entry: count unique actors active in the last 15 min on
-  // each repo's GitHub events stream. Anonymous API; one fetch per public entry.
-  // Graceful fail (— displayed) when rate-limited or offline.
+  // each repo's GitHub events stream. Static Data Covenant (RAR CONSTITUTION.md
+  // Article XXIV): the browser never calls api.github.com. CI harvests these
+  // events into activity-snapshot.json (scripts/harvest-metropolis-activity.py)
+  // and this page just reads that committed snapshot.
+  // Graceful fail (— displayed) when the snapshot is missing an entry.
   async function probeActiveCounts() {
     const cutoff = Date.now() - 15 * 60 * 1000;
+    let activity = {};
+    try {
+      const r = await fetch("./activity-snapshot.json", { cache: "no-store" });
+      if (r.ok) {
+        const snapshot = await r.json();
+        activity = snapshot.activity || {};
+      }
+    } catch { /* fall through with empty activity; cells show — below */ }
+
     for (const e of entries) {
       const slug = (e.gate_repo || "").replace(/^https?:\/\/github\.com\//, "").replace(/\/$/, "");
       const cellId = "active-" + (e.neighborhood_rappid || e.name).replace(/[^a-z0-9]/gi, "-");
@@ -214,28 +226,20 @@
         cell.textContent = "—";
         continue;
       }
-      try {
-        const r = await fetch(
-          "https://api.github.com/repos/" + slug + "/events?per_page=50",
-          { headers: { "Accept": "application/vnd.github+json" } }
-        );
-        if (!r.ok) { cell.textContent = "—"; continue; }
-        const events = await r.json();
-        const actors = new Set();
-        for (const ev of events) {
-          if (new Date(ev.created_at).getTime() >= cutoff && ev.actor && ev.actor.login) {
-            actors.add(ev.actor.login);
-          }
+      const events = activity[slug];
+      if (!events) { cell.textContent = "—"; continue; }
+      const actors = new Set();
+      for (const ev of events) {
+        if (new Date(ev.created_at).getTime() >= cutoff && ev.actor && ev.actor.login) {
+          actors.add(ev.actor.login);
         }
-        if (actors.size > 0) {
-          cell.innerHTML = '<span style="color:var(--green); font-weight:600;">🟢 ' + actors.size + '</span>';
-          e.active_count = actors.size;
-        } else {
-          cell.innerHTML = '<span class="muted">○ 0</span>';
-          e.active_count = 0;
-        }
-      } catch {
-        cell.textContent = "—";
+      }
+      if (actors.size > 0) {
+        cell.innerHTML = '<span style="color:var(--green); font-weight:600;">🟢 ' + actors.size + '</span>';
+        e.active_count = actors.size;
+      } else {
+        cell.innerHTML = '<span class="muted">○ 0</span>';
+        e.active_count = 0;
       }
     }
   }
