@@ -1,0 +1,30 @@
+name: regression-tests
+
+# Block PRs that reintroduce known-bad shapes in the brainstem package.
+#
+# Currently guards:
+#   - kody-w/RAPP#29  hardcoded :7071 in the chat UI's API constant
+#   - kody-w/RAPP#30  text-mode open() without encoding="utf-8"
+#
+# Source of truth lives at rapp_brainstem/test_regressions.py — when
+# adding a new pinned regression, extend that file and the workflow
+# picks it up automatically.
+
+on:
+  pull_request:
+    paths:
+      - 'rapp_brainstem/**'
+      - '.github/workflows/regression-tests.yml'
+  push:
+    branches: [main]
+
+jobs:
+  regressions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: rapp_brainstem regression tests
+        run: python3 rapp_brainstem/test_regressions.py
