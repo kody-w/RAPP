@@ -1840,6 +1840,91 @@ def agents_delete(filename):
         return jsonify({"status": "ok", "message": f"Agent {safe_name} deleted."})
     return jsonify({"error": "Agent not found"}), 404
 
+# ── rapplication skins ───────────────────────────────────────────────────────
+# Every rapplication ships a custom UI (its skin). Eggs land it at
+# .brainstem_data/rapp_ui/<rapp_id>/ (utils.bond); these routes serve it and
+# the default chat page injects it on top of itself. Only this one directory
+# is ever served — the no-static-route posture above still holds.
+
+def _rapp_ui_root():
+    return os.path.realpath(os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), ".brainstem_data", "rapp_ui"))
+
+@app.route("/rapp_ui", methods=["GET"])
+@_require_secret
+def rapp_ui_list():
+    """Installed rapplication skins, with the agent class each one invokes."""
+    root = _rapp_ui_root()
+    skins = []
+    if os.path.isdir(root):
+        agents = load_agents()
+        # loader modules are named agent_<file>_py_<id>_<n> — match on the stem
+        by_module = {n: a.__class__.__module__ for n, a in agents.items()}
+        for rid in sorted(os.listdir(root)):
+            if not os.path.isfile(os.path.join(root, rid, "index.html")):
+                continue
+            meta = {}
+            try:
+                with open(os.path.join(root, rid, ".manifest.json")) as f:
+                    meta = json.load(f)
+            except Exception:
+                meta = {}
+            stem = str(meta.get("agent_filename") or "").rsplit(".", 1)[0]
+            agent_name = next((n for n, m in by_module.items()
+                               if stem and stem in m), None)
+            skins.append({
+                "id": rid,
+                "name": meta.get("name") or rid,
+                "rappid": meta.get("rappid"),
+                "agent": agent_name,
+                "entry": f"/rapp_ui/{rid}/",
+            })
+    return jsonify({"skins": skins})
+
+@app.route("/rapp_ui/<rapp_id>/", methods=["GET"])
+@app.route("/rapp_ui/<rapp_id>/<path:asset>", methods=["GET"])
+@_require_secret
+def rapp_ui_serve(rapp_id, asset="index.html"):
+    root = _rapp_ui_root()
+    skin_dir = os.path.realpath(os.path.join(root, rapp_id))
+    target = os.path.realpath(os.path.join(skin_dir, asset or "index.html"))
+    inside = skin_dir.startswith(root + os.sep) and (
+        target == skin_dir or target.startswith(skin_dir + os.sep))
+    if not inside:
+        return jsonify({"error": "not a skin path"}), 404
+    if os.path.isdir(target):
+        target = os.path.join(target, "index.html")
+    if not os.path.isfile(target):
+        return jsonify({"error": "no such skin asset"}), 404
+    return send_from_directory(os.path.dirname(target), os.path.basename(target))
+
+@app.route("/agents/invoke", methods=["POST"])
+@_require_secret
+def agents_invoke():
+    """The cartridge protocol's server half: a skin invokes its own agent
+    DIRECTLY — {agent: "BookFactory", args: {...}} → agent.perform(**args).
+    Deterministic: no LLM routing decides whether the call happens; the skin
+    already knows its agent. A model runs only if the agent itself calls one."""
+    data = request.get_json(force=True, silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Request body must be a JSON object"}), 400
+    name = str(data.get("agent") or "").strip()
+    args = data.get("args") or {}
+    if not name or not isinstance(args, dict):
+        return jsonify({"error": "agent (string) and args (object) are required"}), 400
+    agents = load_agents()
+    agent = agents.get(name)
+    if agent is None:
+        return jsonify({"error": f"no agent named {name!r}", "known": sorted(agents)}), 404
+    try:
+        result = agent.perform(**args)
+    except TypeError as e:
+        return jsonify({"error": f"agent refused the arguments: {e}"}), 422
+    except Exception as e:
+        return jsonify({"error": f"agent raised: {e}"}), 500
+    return jsonify({"agent": name, "result": result})
+
+
 @app.route("/agents/import", methods=["POST"])
 def agents_import():
     """Import an agent .py file via drag & drop."""
