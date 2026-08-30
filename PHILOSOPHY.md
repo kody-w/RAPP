@@ -35,9 +35,11 @@ authority for RAPP.
 
 ## Current protocol status
 
-This repository's current implementation pin is the structural RAPP/1 rev-5
-record in [`RAPP1_AUTHORITY.json`](./RAPP1_AUTHORITY.json), and its limitations
-remain explicit in [`RAPP1_STATUS.md`](./RAPP1_STATUS.md).
+The main `kody-w/RAPP` repository's current implementation pin is the
+structural RAPP/1 rev-5 record in
+[`RAPP1_AUTHORITY.json`](https://github.com/kody-w/RAPP/blob/main/RAPP1_AUTHORITY.json),
+and its limitations remain explicit in
+[`RAPP1_STATUS.md`](https://github.com/kody-w/RAPP/blob/main/RAPP1_STATUS.md).
 
 Canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
 evolution defer to that pinned authority until an authorized migration advances
@@ -49,7 +51,8 @@ RAPP is the public foundation and is intended for open-source stewardship.
 The repository's currently published PolyForm and documentation licenses remain
 legally operative until the contributor/rights inventory and authorized license
 migration are complete. Repository administration does not itself establish
-ownership allocation; see [`RIGHTS-NOTICE.md`](./RIGHTS-NOTICE.md).
+ownership allocation; see
+[`RIGHTS-NOTICE.md`](https://github.com/kody-w/RAPP/blob/main/RIGHTS-NOTICE.md).
 
 The survival rule is simple:
 
