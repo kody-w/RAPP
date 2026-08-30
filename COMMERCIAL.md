@@ -10,48 +10,29 @@ than $1,000,000 USD prior-year revenue, inflation-adjusted from the
 
 If your use of RAPP **does not** fall within the Small Business
 threshold and is commercial, you need a separate commercial license.
-This file describes how to get one.
+The repository does not currently make a binding offer for a new bespoke
+commercial license. Any grant requires documented authority from the applicable
+rights holders.
 
 ────────────────────────────────────────────────────────────────────────
 
-## Use cases that need a commercial license
+## Scope
 
-You need a commercial license if **any** of the following are true:
+This page adds no permissions or exceptions to `LICENSE`.
 
-- Your organization has 100 or more total employees and contractors.
-- Your organization had $1,000,000 USD or more in revenue last year
-  (inflation-adjusted from 2019; check the BLS CPI calculator for
-  the current threshold).
-- You want to operate RAPP as a managed hosting service that you
-  charge customers for.
-- You want to use RAPP as a building block in a commercial product
-  outside the small-business threshold.
-- You want to use RAPP at a non-profit with an annual operating
-  budget at the same scale (the spirit of the threshold applies).
+The published PolyForm text controls. In particular, use for the benefit of a
+company is a permitted purpose only when the company satisfies both Small
+Business thresholds stated in that license. Any fair-use rights arise from
+applicable law, not this page.
 
-## Use cases that do NOT need a commercial license
+Do not infer a categorical nonprofit, university, research, personal,
+evaluation, hosting, or proof-of-concept exception from this summary.
 
-You **don't** need a commercial license if:
+## Rights and licensing inquiries
 
-- You are an individual using RAPP for personal projects, hobby
-  builds, learning, or research.
-- You are a small business under the size threshold using RAPP
-  internally or to power a product you sell.
-- You are at a non-profit, university, or research institution using
-  RAPP for non-commercial research, teaching, or internal operations.
-- You are evaluating RAPP for possible commercial use. Evaluation —
-  including running it in a sandbox, building a prototype, doing a
-  proof-of-concept — is permitted before you decide whether you need
-  a license.
-- You are creating a variant repository per Constitution Article
-  XXXIV that is itself non-commercial (a personal twin, a memorial
-  twin, a research twin).
-
-## How to request a commercial license
-
-The author is open to commercial licensing at fair, transparent
-terms. The author is one human, not a sales team — expect a real
-conversation, not a procurement process.
+An inquiry may ask whether an authorized commercial-licensing mechanism exists.
+Opening an issue, receiving a response, or discussing terms does not itself
+grant rights.
 
 **To start:**
 
@@ -63,17 +44,18 @@ conversation, not a procurement process.
      product, hosting it as a service, something else)?
    - What scale do you anticipate (number of users, instances, etc.)?
    - What's your timeline?
-3. The author will respond within a few business days with either
-   licensing terms, a request for more information, or a referral
-   to an updated public mechanism (if one exists by then).
+3. A maintainer may provide current public status or refer the request to an
+   authorized rights holder. No response should be treated as a license offer
+   unless the responder's authority and the written grant are explicit.
 
 **If you'd prefer not to do this in public**, send the same
 information via the contact mechanism listed at
 <https://github.com/kody-w>.
 
-## What commercial licenses look like
+## Historical intended license shape
 
-A typical commercial license for RAPP grants:
+The following describes the project's previously stated intent, not a current
+offer or promise. An authorized future agreement may grant:
 
 - The right to use RAPP at the licensed organization without the
   small-business size restriction.
@@ -94,11 +76,10 @@ What a commercial license **does not** grant:
 - Any rights to the trademarks beyond what is specifically granted.
   See [TRADEMARK.md](./TRADEMARK.md).
 
-## Pricing
+## Pricing status
 
-The author has not set published pricing. Pricing is set per
-agreement, scaled to the size of the licensed organization and the
-nature of the use. Expect:
+There is no current public pricing or binding commercial-license offer. The
+historical model contemplated:
 
 - Small companies (over the threshold but under e.g. $10M revenue):
   modest annual fee, roughly comparable to a domain registrar or a
@@ -112,9 +93,14 @@ factored into licensing terms.
 
 ## Why a commercial layer exists
 
-RAPP is a personal project of Kody Wildfeuer, not currently affiliated
-with any company. The PolyForm Small Business + commercial-license
-shape lets the project:
+Repository administration and public commit history do not by themselves
+establish the complete ownership or commercial-licensing authority for the
+RAPP foundation. Applicable agreements govern that allocation; see
+[`RIGHTS-NOTICE.md`](./RIGHTS-NOTICE.md). No contributor should promise a
+commercial license beyond authority they can document.
+
+The existing PolyForm Small Business + commercial-license shape was intended
+to:
 
 - Be used freely by individuals, hobbyists, students, researchers,
   and small businesses (the people most likely to discover, extend,
@@ -122,38 +108,23 @@ shape lets the project:
 - Capture value from larger commercial use that benefits from RAPP's
   existence — value that supports continued development and one-day
   full-time work on the project.
-- Preserve the option to incorporate a future entity (Wildhaven AI
-  Homes Inc. or otherwise) and assign IP cleanly when that happens.
+- Preserve a clear path for authorized rights holders to document commercial
+  grants without rewriting technical history.
 
-This is the same shape that has supported many indie / small-team
-software projects through their growth phases (e.g., early
-HashiCorp, early MariaDB, early Sentry). The author's intent is to
-keep it gentle and low-friction; the goal of the commercial license
-is sustainability, not extraction.
+This is the same shape that has supported many indie / small-team software
+projects through their growth phases. Any future commercial mechanism must be
+authorized, explicit, and consistent with the permanent grants already
+attached to published versions.
 
 ## Frequently asked
 
-**Q: I'm an individual at a large company using RAPP for a side
-project on my own time. Do I need a license?**
-A: No. The license is about the organization that benefits from the
-software, not about who happens to be running it. Personal-time use
-on your own gear is yours.
-
-**Q: Our company is over the threshold but we just want to evaluate
-RAPP. Can we?**
-A: Yes — evaluation is fine without a license. When you're ready to
-move beyond evaluation into actual deployment, that's the moment to
-license.
-
-**Q: We're an open-source project ourselves. Do we need a license?**
-A: Open-source projects under the small-business threshold (in
-revenue, organizational size) don't need one. Larger OSS foundations
-should reach out — terms will likely be friendly.
+**Q: Does this page grant a personal, nonprofit, university, research, or
+evaluation exception?**
+A: No. Read `LICENSE` and obtain independent advice where necessary.
 
 **Q: Can I get a perpetual license?**
-A: License terms are negotiated per agreement; perpetual licenses
-are possible but typically priced higher than annual renewals.
-Discuss in the issue.
+A: No current perpetual-license offer is made by this page. Only an explicit
+written agreement from a documented authorized rights holder can grant one.
 
 **Q: What if you stop maintaining RAPP?**
 A: Per Constitution Article XXXV (License Stability), licenses can
@@ -163,5 +134,6 @@ remain at least as permissive as today's.
 
 ────────────────────────────────────────────────────────────────────────
 
-When in doubt: open the issue. Worst case, the answer is "you don't
-need a license, carry on." Best case, we work out something that fits.
+When in doubt, rely on the published license and use an issue only to request
+current non-binding status. Do not assume that a discussion or repository
+response grants additional rights.

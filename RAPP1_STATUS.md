@@ -26,7 +26,7 @@ are dated evidence, not interchangeable snapshots:
   eggs.
 - **Post-implementation review (`e1c2fbb`): 691/691 tracked paths**, the same
   5 archives, 450 recursive members, and 2 JSON eggs.
-- **Integrated closure tree: 694/694 tracked paths** after removing the last
+- **Integrated closure tree: 699/699 tracked paths** after removing the last
   live Cave installer agent. The canonical gate derives current inventory from
   `git ls-files`; it does not treat an older count as current.
 

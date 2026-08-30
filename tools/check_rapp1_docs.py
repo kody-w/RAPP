@@ -1072,7 +1072,7 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
 
     status = _read("RAPP1_STATUS.md")
     expected_status_sha256 = (
-        "922d28a0055e7676513e21d0cfc195665624523e5cd19e1777013125d5cdd538"
+        "2eac582c61170044011bfaf174bf89ea05421b598ce36d49660019e1f8f6c112"
     )
     if hashlib.sha256(status.encode("utf-8")).hexdigest() != expected_status_sha256:
         errors.append("RAPP1_STATUS.md: code-owned owner-evidence hash drifted")

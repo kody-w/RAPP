@@ -6,8 +6,8 @@
     "baseline_tracked_paths": 640,
     "post_audit_tracked_paths": 691,
     "integrated_main_commit": "bd122780ac90010e607ce9549e7c5ed18bee5d73",
-    "integrated_tracked_paths": 694,
-    "integrated_tracked_bytes": 7900106,
+    "integrated_tracked_paths": 699,
+    "integrated_tracked_bytes": 7922464,
     "integration_note": "Current closure tree after target-owned legacy launchers were HTTP-410 contained; the 691-row final verifier ledger remains a dated source report.",
     "status_boundary": "RAPP1_STATUS.md and its code-owned owner-evidence hash were refreshed together for launch containment; integrated counts are recorded here.",
     "path_set_digest": "sha256(sorted UTF-8 paths joined with newline, including final newline)",
@@ -524,7 +524,7 @@
       ".md",
       ".html"
     ],
-    "expected_tracked_document_count": 282,
+    "expected_tracked_document_count": 284,
     "excluded_prefixes": {
       ".github/prompts/": "prompt fixtures, not published RAPP/1 contract guidance",
       "cave/rapplications/rapp-installer/": "immutable prepared-clone and mirror subtree",
@@ -539,6 +539,7 @@
     "excluded_paths": {
       "404.html": "static not-found shell",
       "COMMERCIAL.md": "commercial terms, not protocol guidance",
+      "RIGHTS-NOTICE.md": "rights and repository-scope notice, not protocol guidance",
       "RAPP1_OWNER_ACTIONS.md": "owner-action ledger validated by its dedicated gate",
       "RESPONSIBLE_AI.md": "responsible-AI governance index outside the protocol audit",
       "TRADEMARK.md": "trademark policy, not protocol guidance",
@@ -616,6 +617,7 @@
       "CLAUDE.md",
       "CONSTITUTION.md",
       "DEFINITION_OF_DONE.md",
+      "PHILOSOPHY.md",
       "README.md",
       "TEMPLATE.md",
       "cave/index.html",
