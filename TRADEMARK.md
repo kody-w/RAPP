@@ -1,5 +1,9 @@
 # RAPP — Trademark Notice
 
+This notice does not determine ownership allocation among contributors or
+organizations. See [`RIGHTS-NOTICE.md`](./RIGHTS-NOTICE.md). Existing notices
+are preserved until changed through an authorized process.
+
 Copyright (c) 2026 Kody Wildfeuer.
 
 The project's licenses cover code and documentation only. PolyForm Small

@@ -4293,3 +4293,45 @@ numbering.**
 - **`kody-w/rapp-dog-hub`** — the DOG layer: the admission gate, the splitter, the public chain. Houses no GOD layer by construction.
 - **`kody-w/openrappter`** — `src/twin/` — the GOD layer: the vault, the audience projections, the leak guard.
 - **`kody-w/rapp-second-brain`** / **`-private`** — the prior two-face precedent this article generalizes.
+
+---
+
+## Article LVII — RAPP Lives Here; RAPP/1 Is the Protocol (2026-08-30)
+
+The main **`kody-w/RAPP`** repository remains the canonical home of the public
+RAPP foundation, product authority, organism model, public reference
+implementation, philosophy, and product constitution. It is the tree that
+grows around the Grail.
+
+**`kody-w/rapp-1`** is the canonical home of the interoperable protocol:
+canonical bytes, addresses, identity, frames, wire, eggs, trust, registries,
+and protocol-level operational profiles. RAPP/1 governs RAPP's wire; it does
+not absorb or replace the RAPP foundation.
+
+### LVII.1 — Scope is explicit
+
+- Foundation architecture, organism anatomy, reference interfaces, public
+  reference components, and public philosophy belong here.
+- Protocol bytes and cross-implementation conformance belong in `rapp-1`.
+- A protocol profile may be specified in `rapp-1`; a downstream product remains
+  in its own distinctly identified repository.
+- Rappter is the singular LLC brand. RapterBox is the company name and a
+  separate sub-product. Their private doctrine and product code do not become
+  RAPP foundation IP merely because they use RAPP.
+- Downstream implementations such as Rappter distribution surfaces may remain
+  in their own repositories. They consume and extend the RAPP foundation; they
+  do not become a competing canonical home for RAPP.
+- A mirror or explanatory copy never silently becomes the authority.
+
+Moving a document does not move the thing it describes. Any future scope change
+must amend this article explicitly.
+
+### LVII.2 — Rights are not inferred from repository topology
+
+Repository ownership, administration, commits, and technical authority do not
+by themselves determine legal ownership allocation. Applicable agreements
+govern those rights. [`RIGHTS-NOTICE.md`](./RIGHTS-NOTICE.md) states the public
+boundary without inventing a percentage or assignment.
+
+This article resolves technical scope only. It grants, assigns, and waives no
+legal right.

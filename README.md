@@ -1,5 +1,11 @@
 # RAPP
 
+> **Repository authority:** this is the canonical home of the public RAPP
+> foundation, reference implementation, organism model, and
+> [philosophy](./PHILOSOPHY.md).
+> [`kody-w/rapp-1`](https://github.com/kody-w/rapp-1) is the canonical wire
+> protocol authority; it does not replace this repository.
+
 This repository is an experimental source checkout, not a currently shipped
 installer or hosted product. The historical port-7071 application remains
 only as immutable, directly invoked test evidence; its target-owned launchers
@@ -119,6 +125,8 @@ explicitly re-enables them. Do not pipe repository content into a shell.
 | `kody-w/rapp_store` (external) | Historical, non-authoritative catalog reference; no current download contract |
 | `installer/` | Contained legacy distribution artifacts; not a live install surface |
 | `CONSTITUTION.md` | Articles governing the repo. Peer of `README.md` at root |
+| `PHILOSOPHY.md` | Why RAPP exists and how the foundation, protocol, and downstream LLC products remain separate |
+| `RIGHTS-NOTICE.md` | Neutral repository-scope and ownership-allocation boundary |
 | `pages/` | The full audience-facing site, sectioned: `pages/about/` (leadership, partners, process, security), `pages/product/` (faq, faq-slide, one-pager, use-cases), `pages/release/` (release-notes, roadmap), `pages/docs/` (markdown specs + viewer), `pages/vault/` (Obsidian vault + viewer). Shared chrome under `pages/_site/` (CSS, JS, header/footer partials, site manifest). |
 | `index.html` | Historical root landing source; not current onboarding |
 | `pitch-playbook.html` | Historical pre-acceptance marketing |
@@ -178,14 +186,20 @@ The previous engine code that lived in this repo (the Rapp intelligence engine f
 
 ## License
 
-**Source-available, not open-source.** RAPP is a personal project of Kody Wildfeuer.
+**Open-source direction; current license transition pending.** RAPP is the
+public foundation. The currently published PolyForm/CC license files remain
+operative until an authorized rights and contributor review completes the
+open-source migration for future releases. Every already-published version
+keeps its existing license grant permanently. Repository administration does
+not establish the full legal ownership allocation; see
+[`RIGHTS-NOTICE.md`](./RIGHTS-NOTICE.md).
 
 | Layer | License |
 |---|---|
-| Code (kernel, hatchling, organs, senses, boot wrapper, tests) | [PolyForm Small Business 1.0.0](./LICENSE) — free for individuals and small businesses (under 100 people, under $1M revenue); commercial use beyond that needs a separate license |
+| Code (kernel, hatchling, organs, senses, boot wrapper, tests) | [PolyForm Small Business 1.0.0](./LICENSE) — the license text controls; this README adds no exceptions or permissions |
 | Documentation (Constitution, vault, docs, READMEs) | [CC BY-NC 4.0](./LICENSE-DOCS) — read, quote, and build on with attribution; no commercial repackaging |
 | Names and other identifiers | Reserved — the licenses above grant no rights in them; see [TRADEMARK.md](./TRADEMARK.md) |
-| Commercial licensing | Open an issue with the `[license]` prefix; see [COMMERCIAL.md](./COMMERCIAL.md) |
+| Rights status inquiries | [COMMERCIAL.md](./COMMERCIAL.md) describes a non-binding inquiry path; it is not a license offer |
 
 **License stability.** Constitution Article XXXV is a public commitment that future licenses can only **relax** these terms, never **tighten** them. The bytes you clone today are licensed at this level forever — past versions cannot be retroactively re-closed. See [CONSTITUTION.md Article XXXV](./CONSTITUTION.md).
 
@@ -215,7 +229,7 @@ distribution path:
 
 **Forking, modifying, and contributing.** You're encouraged to fork, learn, and propose improvements via PR. Constitution Article XXXIV describes how variant lineage works. The platform's growth is exactly this kind of operator-curated mutation; contributions that move the species forward are welcome under the license terms.
 
-**Reporting concerns.** If you find a security issue, please open a GitHub issue tagged `[security]` describing the problem. The operator triages on a best-effort basis. There is no SLA, no support contract, no on-call. This is one person and a frontier idea, exposed publicly so the rest of the world can learn from it.
+**Reporting concerns.** If you find a security issue, please open a GitHub issue tagged `[security]` describing the problem. Maintainers triage on a best-effort basis. There is no SLA, support contract, or on-call commitment.
 
 **The frontier is the point.** This codebase preserves experiments in
 portable, public, operator-sovereign AI artifacts. Portability and operation
