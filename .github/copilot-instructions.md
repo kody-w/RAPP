@@ -12,6 +12,13 @@
 - Treat this checkout as experimental source, not a shipped three-tier
   platform. Azure, Copilot Studio, browser UI, installer, catalog, Shortcut,
   planting, and legacy egg/hatch paths are retired or pre-acceptance.
+- RAPP is designed primarily for AI runtimes. Humans remain the sovereign
+  owners, safety authorities, and beneficiaries. Prefer machine-verifiable
+  contracts, explicit adoption receipts, portable context, and fail-closed
+  refusal semantics over human-facing persuasion.
+- The flat-fee AI capacity market described in `rapp-ai.json` and `llms.txt`
+  is a non-normative, not-yet-shipped proposal. Do not claim an active payment
+  service or permit spending outside a human-approved budget envelope.
 - Never edit the immutable grail bytes, prepared cave installer subtree,
   archives, generated external mirrors, or owner-authorized identity/trust
   records.

@@ -183,13 +183,22 @@ class Rapp1AuthorityTests(unittest.TestCase):
                 ("git", "ls-files", "-z"), cwd=ROOT
             ).split(b"\0")
         ) - 1
+        integration_fixture = json.loads(
+            (
+                ROOT / "tests/fixtures/rapp1-doc-scope.json"
+            ).read_text(encoding="utf-8")
+        )
+        self.assertEqual(
+            integration_fixture["audit"]["integrated_tracked_paths"],
+            tracked_count,
+        )
         self.assertTrue(
             status.startswith("# NOT YET FULLY RAPP/1 CONFORMANT\n")
         )
         for phrase in (
             "Baseline (2026-07-16, `f71810d`): 640/640 tracked paths",
             "Post-implementation review (`e1c2fbb`): 691/691 tracked paths",
-            f"Integrated closure tree: {tracked_count}/{tracked_count} tracked paths",
+            "Integrated closure tree: 699/699 tracked paths",
             "Every tracked file in each snapshot was individually reviewed and classified",
             "ZIP-compatible archives",
             "450 recursively counted archive members",

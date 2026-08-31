@@ -562,7 +562,7 @@ class Rapp1DocumentationTests(unittest.TestCase):
         )
         audit = self.fixture["audit"]
         self.assertEqual(audit["post_audit_tracked_paths"], 691)
-        self.assertEqual(audit["integrated_tracked_paths"], 699)
+        self.assertEqual(audit["integrated_tracked_paths"], 702)
         self.assertEqual(
             audit["provenance"]["final_report"]["report_sha256"],
             "f5ba5abbf21067dd644d70f9076201b7ca3bf8afd934edbb9f2b4614060ad50b",

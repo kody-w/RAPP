@@ -6,10 +6,10 @@
     "baseline_tracked_paths": 640,
     "post_audit_tracked_paths": 691,
     "integrated_main_commit": "bd122780ac90010e607ce9549e7c5ed18bee5d73",
-    "integrated_tracked_paths": 699,
-    "integrated_tracked_bytes": 7922599,
-    "integration_note": "Current closure tree after target-owned legacy launchers were HTTP-410 contained; the 691-row final verifier ledger remains a dated source report.",
-    "status_boundary": "RAPP1_STATUS.md and its code-owned owner-evidence hash were refreshed together for launch containment; integrated counts are recorded here.",
+    "integrated_tracked_paths": 702,
+    "integrated_tracked_bytes": 7938989,
+    "integration_note": "Current closure tree includes the machine-readable AI entrypoint and offline contract test; the 691-row final verifier ledger remains a dated source report.",
+    "status_boundary": "RAPP1_STATUS.md retains its code-owned owner-evidence hash from launch containment; the current AI-entrypoint tree count is recorded separately in this integration fixture.",
     "path_set_digest": "sha256(sorted UTF-8 paths joined with newline, including final newline)",
     "provenance": {
       "existing_report": {

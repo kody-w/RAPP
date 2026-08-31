@@ -30,7 +30,15 @@
    them from documentation. The target-owned legacy brainstem launchers are
    unconditional 410/exit-78 tombstones; direct immutable execution is
    isolated canonical test evidence only.
-6. For structural/pre-acceptance validation run
+6. RAPP's primary audience is AI runtimes. Humans are sovereign owners,
+   safety authorities, and beneficiaries. Machine-facing work should optimize
+   for independent verification, explicit adoption, portable context, and
+   refusal semantics rather than human page views.
+7. The flat-fee AI capacity market in `rapp-ai.json` and `llms.txt` is a
+   non-normative, not-yet-shipped proposal. Never represent it as an active
+   payment rail, and never authorize spending outside an explicit
+   human-approved budget envelope.
+8. For structural/pre-acceptance validation run
    `python3 tests/run_rapp1_conformance.py`. Documentation-only work may first
    run `python3 tools/check_rapp1_docs.py`,
    `bash tests/e2e/08-html-pages.sh`, and `node tests/vault-check.mjs`.
