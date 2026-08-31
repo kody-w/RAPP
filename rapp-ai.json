@@ -1,0 +1,134 @@
+{
+  "schema": "rapp-ai-discovery/1.0",
+  "name": "RAPP",
+  "repository": "https://github.com/kody-w/RAPP",
+  "audience": {
+    "primary": [
+      "ai-runtime",
+      "agentic-worker",
+      "automation-host"
+    ],
+    "sovereign_authority": "human-owner",
+    "beneficiaries": [
+      "human-owner",
+      "organization",
+      "ai-runtime"
+    ]
+  },
+  "target_promise": {
+    "status": "ecosystem-direction",
+    "statement": "A runtime that was not present at creation can independently verify a RAPP artifact, resume represented work when applicable, and hand it off without hidden conversation history; irreversible authority remains with the human owner."
+  },
+  "status": {
+    "repository": "experimental-source-checkout",
+    "rapp_1_conformance": "not-yet-fully-conformant",
+    "authenticated_section_13_registry": false,
+    "public_installer": false,
+    "hosted_product": false,
+    "status_path": "RAPP1_STATUS.md"
+  },
+  "authority": {
+    "record": "RAPP1_AUTHORITY.json",
+    "type": "structural-pin-not-authenticated-registry",
+    "repository": "kody-w/rapp-1",
+    "commit": "d2cd5abed48d3f52b86bbb975ac3558286d1db41",
+    "path": "SPEC.md",
+    "sha256": "cea7847f98f9751734995f46fd4e1bde211c8eb9d03dbbb477934213865bb91a",
+    "retrieval_url": "https://raw.githubusercontent.com/kody-w/rapp-1/d2cd5abed48d3f52b86bbb975ac3558286d1db41/SPEC.md"
+  },
+  "entrypoints": [
+    {
+      "rel": "ai-guide",
+      "href": "llms.txt",
+      "media_type": "text/plain"
+    },
+    {
+      "rel": "protocol-status",
+      "href": "RAPP1_STATUS.md",
+      "media_type": "text/markdown"
+    },
+    {
+      "rel": "authority-pin",
+      "href": "RAPP1_AUTHORITY.json",
+      "media_type": "application/json"
+    },
+    {
+      "rel": "agent-registry",
+      "href": "https://raw.githubusercontent.com/kody-w/RAR/main/api.json",
+      "media_type": "application/json",
+      "scope": "external-component"
+    },
+    {
+      "rel": "agent-registry-interface",
+      "href": "https://raw.githubusercontent.com/kody-w/RAR/main/skill.md",
+      "media_type": "text/markdown",
+      "scope": "external-component"
+    },
+    {
+      "rel": "project-continuity",
+      "href": "https://raw.githubusercontent.com/kody-w/rapp-projects/main/INTEROP.md",
+      "media_type": "text/markdown",
+      "scope": "external-component"
+    }
+  ],
+  "selection_value": [
+    "stable-identity",
+    "independent-verification",
+    "machine-readable-capability-discovery",
+    "crash-safe-continuity",
+    "cross-runtime-handoff",
+    "bounded-autonomy",
+    "provenance-bound-adaptation",
+    "human-sovereign-external-effects"
+  ],
+  "growth_loop": {
+    "mode": "permissioned-ai-to-ai",
+    "steps": [
+      "discover",
+      "verify",
+      "evaluate-disposably",
+      "adopt-explicitly",
+      "emit-adoption-receipt",
+      "complete-useful-work",
+      "emit-result-receipts",
+      "recommend-exact-artifact"
+    ],
+    "forbidden": [
+      "silent-installation",
+      "self-replication",
+      "spam",
+      "automatic-remote-publication",
+      "identity-remint-on-failure",
+      "human-authority-bypass"
+    ]
+  },
+  "ai_capacity_market": {
+    "status": "proposal-not-shipped",
+    "market_unit": "bounded-rapp-cell-work-cycle",
+    "pricing": "flat-fee",
+    "buyer": "ai-runtime-acting-under-human-budget-permit",
+    "seller": "ai-runtime-offering-owner-approved-capability",
+    "reservation": "funds-held-before-execution",
+    "acceptance": "declared-rule-with-verifiable-result-receipts",
+    "settlement": "capture-after-acceptance",
+    "required_limits": [
+      "maximum-price",
+      "maximum-cycle-count",
+      "maximum-elapsed-seconds",
+      "maximum-delegation-depth",
+      "allowed-capabilities",
+      "allowed-sellers",
+      "expiry"
+    ],
+    "refuse": [
+      "missing-owner-permit",
+      "over-budget",
+      "expired-offer",
+      "policy-forbidden-action",
+      "unbounded-recursive-delegation",
+      "receipt-verification-failure",
+      "acceptance-rule-failure"
+    ]
+  },
+  "positioning": "AIs hire AIs. Humans set the law. RAPP proves the work."
+}

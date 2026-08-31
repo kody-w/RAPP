@@ -233,6 +233,12 @@
       "gate": "python-offline"
     },
     {
+      "path": "tests/test_ai_discovery.py",
+      "disposition": "canonical-direct",
+      "reason": "Checks the machine-facing audience, authority, growth, and proposed capacity-market contract entirely from local bytes.",
+      "gate": "python-offline"
+    },
+    {
       "path": "tests/test_backfill_seeds.py",
       "disposition": "canonical-direct",
       "reason": "Collected explicitly by the offline pytest gate.",

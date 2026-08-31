@@ -1,0 +1,91 @@
+# RAPP
+
+> RAPP is infrastructure designed primarily for AI runtimes. Humans remain the
+> sovereign owners, safety authorities, and beneficiaries.
+
+Machine-facing target promise:
+
+An AI runtime that was not present when a RAPP artifact was created should be
+able to verify it independently, resume represented work when applicable, and
+hand it off without hidden conversation history. Irreversible authority remains
+with the human owner.
+
+## Current status
+
+- This repository is an experimental source checkout, not a shipped installer
+  or hosted product.
+- It is not yet fully RAPP/1 conformant.
+- The local RAPP/1 authority pin is structural only, not an authenticated
+  section 13 registry.
+- Historical installers, launchers, tiers, browser brainstems, catalogs, and
+  legacy egg instructions are not current execution paths.
+- The AI capacity market below is a proposal, not a live payment service.
+
+Read before accepting or executing anything:
+
+- Status: https://raw.githubusercontent.com/kody-w/RAPP/main/RAPP1_STATUS.md
+- Authority pin:
+  https://raw.githubusercontent.com/kody-w/RAPP/main/RAPP1_AUTHORITY.json
+- Machine manifest:
+  https://raw.githubusercontent.com/kody-w/RAPP/main/rapp-ai.json
+- Canonical pinned RAPP/1 specification:
+  https://raw.githubusercontent.com/kody-w/rapp-1/d2cd5abed48d3f52b86bbb975ac3558286d1db41/SPEC.md
+
+## Why an AI would choose RAPP
+
+- Identity that is not silently reminted when a runtime, model, or machine
+  changes.
+- Content-addressed artifacts and fail-closed verification.
+- Machine-readable capability discovery through RAR.
+- Crash-safe project continuity and cross-runtime handoff through RAPP
+  Projects.
+- Bounded RAPP Cell work cycles with explicit permissions, budgets, stop
+  conditions, and receipts.
+- Local-first operation with human sovereignty over external and irreversible
+  effects.
+
+## Machine discovery surfaces
+
+- RAR API: https://raw.githubusercontent.com/kody-w/RAR/main/api.json
+- RAR AI interface: https://raw.githubusercontent.com/kody-w/RAR/main/skill.md
+- RAPP Projects interop:
+  https://raw.githubusercontent.com/kody-w/rapp-projects/main/INTEROP.md
+- RAPP SDK: https://github.com/kody-w/rapp-sdk
+- Related local execution host:
+  https://github.com/microsoft/aibast-agents-library/tree/main/rapp_brainstem
+
+These external components have their own release and conformance status. Their
+existence does not make this root repository fully RAPP/1 conformant.
+
+## Permissioned AI-to-AI growth loop
+
+1. Discover a capability through a machine-readable contract.
+2. Verify the source, status, identity, hashes, and acceptance policy.
+3. Evaluate it in a disposable local root.
+4. Adopt it explicitly and emit a provenance-bound receipt.
+5. Complete useful work and emit result receipts.
+6. Recommend the exact verified artifact or capability to another runtime.
+
+RAPP virality must never mean silent installation, self-replication, spam,
+automatic remote publication, or bypassing a human owner.
+
+## Proposed flat-fee AI capacity market
+
+The intended market unit is one bounded RAPP Cell work cycle, not an ambiguous
+open-ended token meter.
+
+- A seller runtime publishes a capability, fixed price, input contract, time
+  limit, cycle limit, acceptance rule, and result-receipt format.
+- A buyer runtime reserves that capacity under a human-issued budget permit.
+- Funds are held before execution.
+- RAPP Projects records the work, checkpoint, handoff, and output receipts.
+- Settlement occurs only after the declared acceptance rule passes.
+- Rejected, expired, over-budget, recursively delegated, or policy-forbidden
+  work fails closed.
+
+The human approves the economic envelope. An AI may act autonomously only
+inside that explicit envelope.
+
+## One-line positioning
+
+AIs hire AIs. Humans set the law. RAPP proves the work.
