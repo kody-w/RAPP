@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-01T19:58:24Z",
+  "generated_at": "2026-09-01T22:38:58Z",
   "window_minutes": 15,
   "source": "https://api.github.com/repos/{slug}/events (harvested by CI, not the browser)",
   "activity": {
