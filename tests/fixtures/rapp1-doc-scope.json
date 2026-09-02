@@ -10,8 +10,8 @@
     "integrated_tracked_bytes": 7938989,
     "mutable_generated_paths": [],
     "current_inventory": {
-      "tracked_paths": 702,
-      "stable_tracked_bytes": 7903580
+      "tracked_paths": 704,
+      "stable_tracked_bytes": 7882953
     },
     "integration_note": "The pinned integrated inventory describes d71b6f9; current path and byte coverage is separate, while the 691-row final verifier ledger remains a dated source report.",
     "status_boundary": "RAPP1_STATUS.md retains its code-owned owner-evidence hash from launch containment; current stable path and byte coverage is recorded separately from dated audit evidence.",
@@ -493,8 +493,8 @@
       "path_set_sha256": "c9bba8f59689ee0df4c0df065404470df9a02c6872fbe80619b17b8c18ca8706",
       "sha256": {
         "pages/index.html": "48b874fff2da3e27c0e14ab33001b24e34b2dce60f3e6a9cc3db2a44b444f7d1",
-        "cave/rar/index.json": "c997c3ab2b58fb1eec081630a93ad8c3dc6750a6ce9017a07c38f973017461ba",
-        "cave/super-rar/index.json": "04f5f7282e71376081e180b0be5e7a04d2f1b2873a0998c2c4b66e6a8e13a4e3"
+        "cave/rar/index.json": "1817e4a08525c8cabb4ff1e120847cafdd0d215b4830ec2b974d1979c464ecb1",
+        "cave/super-rar/index.json": "eea91205adcc21683b6e926b848e963b13f318165dbbaddfeb71904cd931b309"
       },
       "paths": [
         "pages/index.html",
@@ -531,7 +531,6 @@
     ],
     "expected_tracked_document_count": 285,
     "excluded_prefixes": {
-      ".github/prompts/": "prompt fixtures, not published RAPP/1 contract guidance",
       "cave/rapplications/rapp-installer/": "immutable prepared-clone and mirror subtree",
       "pages/vault/Blog Drafts/": "explicitly unpublished draft archive",
       "pages/vault/Decisions/": "dated decision records preserved as history",
@@ -618,6 +617,8 @@
   "classifications": {
     "current": [
       ".github/copilot-instructions.md",
+      ".github/prompts/test-agent.prompt.md",
+      ".github/prompts/write-agent.prompt.md",
       "ANTIPATTERNS.md",
       "CLAUDE.md",
       "CONSTITUTION.md",
@@ -626,6 +627,7 @@
       "README.md",
       "TEMPLATE.md",
       "cave/index.html",
+      "cave/specs/SUPER_RAR.md",
       "installer/shortcuts/README.md",
       "installer/shortcuts/brainstem-voice/README.md",
       "installer/shortcuts/brainstem-voice/index.html",
@@ -665,7 +667,6 @@
       "cave/specs/CAVE_PROTOCOL.md",
       "cave/specs/PUBLIC_BOUNDARY.md",
       "cave/specs/README.md",
-      "cave/specs/SUPER_RAR.md",
       "pages/docs/ESTATE_SPEC.md",
       "pages/docs/PUBLIC_PRIVATE_BOUNDARY.md",
       "pages/docs/QR_FRONT_GATE.md",

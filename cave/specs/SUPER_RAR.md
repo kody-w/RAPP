@@ -3,7 +3,8 @@
 Read [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json) and
 [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md) first. The Cave RAR and super-RAR are
 not RAPP/1 registries, catalogs, stores, download indexes, or acceptance
-sources.
+sources. Canonicalization, identity, frames, wire, eggs, registry, trust, and
+protocol evolution follow RAPP/1 rev-5 through those records.
 
 ## Current disposition
 

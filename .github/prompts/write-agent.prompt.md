@@ -2,7 +2,9 @@
 
 Read [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json) and
 [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md) first. This repository is not yet
-fully RAPP/1 conformant. Its only target-owned synchronous protocol surface is
+fully RAPP/1 conformant. Canonicalization, identity, frames, wire, eggs,
+registry, trust, and protocol evolution follow RAPP/1 rev-5 through those
+records. Its only target-owned synchronous protocol surface is
 the loopback pre-acceptance façade at `127.0.0.1:7073`; it imports no grail
 module and defaults to the exact `inference-refused` response until a reviewed,
 side-effect-free adapter is explicitly injected. Its request is required string

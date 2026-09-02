@@ -125,7 +125,6 @@ def _validate_derived_document_scope(
 
     prefixes = scope.get("excluded_prefixes", {})
     expected_prefixes = {
-        ".github/prompts/",
         "cave/rapplications/rapp-installer/",
         "pages/vault/Blog Drafts/",
         "pages/vault/Decisions/",
@@ -498,10 +497,10 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
             "48b874fff2da3e27c0e14ab33001b24e34b2dce60f3e6a9cc3db2a44b444f7d1"
         ),
         "cave/rar/index.json": (
-            "c997c3ab2b58fb1eec081630a93ad8c3dc6750a6ce9017a07c38f973017461ba"
+            "1817e4a08525c8cabb4ff1e120847cafdd0d215b4830ec2b974d1979c464ecb1"
         ),
         "cave/super-rar/index.json": (
-            "04f5f7282e71376081e180b0be5e7a04d2f1b2873a0998c2c4b66e6a8e13a4e3"
+            "eea91205adcc21683b6e926b848e963b13f318165dbbaddfeb71904cd931b309"
         ),
     }
     terminal_hashes = target_checks.get("integrated_terminal_states", {}).get(
