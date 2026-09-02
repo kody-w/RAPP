@@ -206,11 +206,11 @@ class Rapp1OwnerActionLedgerTests(unittest.TestCase):
         self.assertEqual(evidence["path"], "rapp_brainstem/rapp1_facade.py")
         self.assertEqual(
             evidence["path_sha256"],
-            "4bd8e1c51290295c5dfd6dec73a5f12"
-            "f3771ec674a5e856ab78edbfc61151a01",
+            "34e08be4c47e9437729160335f9555c5"
+            "ffb25395b0070c38eeba31e70686d4b0",
         )
         self.assertEqual(
-            evidence["git_blob"], "690226b2492d86cf089ed222cb7cefe38af8c1e5"
+            evidence["git_blob"], "745a0ec50c91a79c5e83306b0d4a0f7e155c2946"
         )
         self.assertIn("post-migration pre-acceptance", evidence["path_state"])
         self.assertEqual(evidence["candidate_error_codes"], EXPECTED_FACADE_CODES)

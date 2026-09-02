@@ -30,10 +30,11 @@ Defaults:
 - bind: `127.0.0.1:7073` (separate from grail port `7071`);
 - SQLite: `~/.brainstem/rapp1-facade.sqlite3`.
 
-Configuration is limited to `RAPP1_FACADE_PORT` and `RAPP1_FACADE_DB`.
-`RAPP1_FACADE_HOST`, when present, must still equal `127.0.0.1`; every other
-value is rejected. The launcher serves `POST /chat`, its loopback-only browser
-preflight, and control-plane `GET /health`. Health explicitly reports
+Configuration is limited to the SQLite location in `RAPP1_FACADE_DB`.
+`RAPP1_FACADE_HOST` and `RAPP1_FACADE_PORT`, when present, must equal
+`127.0.0.1` and `7073`; every other value is rejected. The launcher serves
+`POST /chat`, its loopback-only browser preflight, and control-plane
+`GET /health`. Health explicitly reports
 `authenticated:false` and `fully_conformant:false`. The checked-in browser UI
 posts chat requests directly to `http://127.0.0.1:7073/chat`; CORS is granted
 only to loopback browser origins.
