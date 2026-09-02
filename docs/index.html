@@ -209,14 +209,16 @@
 <body>
 
 <aside role="note" style="max-width:720px;margin:24px auto;padding:16px 20px;border:1px solid currentColor;border-radius:10px">
-  <strong>Retired installation page — historical source only.</strong> No
+  <strong>Retired installation page — visible, inert historical source only.</strong> No
   one-command install, Tier 2 service, browser product, or downloadable egg is
-  currently shipped. Follow RAPP/1 rev-5 through
+  currently shipped. The snapshot below is non-interactive: its controls,
+  downloads, deployment links, clipboard actions, and localhost probe do not
+  run. Follow RAPP/1 rev-5 through
   <a href="../RAPP1_AUTHORITY.json">RAPP1_AUTHORITY.json</a> and
   <a href="../RAPP1_STATUS.md">RAPP1_STATUS.md</a>.
 </aside>
 <!-- RAPP1-HISTORICAL-SECTION-START -->
-<div hidden aria-hidden="true">
+<div class="historical-snapshot" data-status="historical" inert>
 <div class="hero">
   <div class="logo">🧠</div>
   <h1>RAPP Brainstem</h1>
@@ -274,7 +276,7 @@
         </div>
       </div>
       <div class="install-download" id="install-download" style="margin-top:12px">
-        <a id="download-link" href="install.command" download>⬇ Download installer</a>
+        <a id="download-link" href="../RAPP1_STATUS.md">Installer unavailable — read current status</a>
       </div>
       <details style="margin-top:16px">
         <summary style="color:#8b949e;font-size:13px;cursor:pointer;user-select:none">Advanced — manual steps</summary>
@@ -341,7 +343,7 @@
               <p>Edit <code>local.settings.json</code> with your Azure OpenAI credentials, then publish.</p>
               <div class="cmd" onclick="copyCmd(event, this)">func azure functionapp publish YOUR_APP_NAME --build remote</div>
               <p style="margin-top:8px">Or deploy from the Azure Portal:</p>
-              <p style="margin-top:4px"><a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fkody-w%2Frapp-installer%2Fmain%2Fazuredeploy.json" target="_blank"><img src="https://aka.ms/deploytoazurebutton" alt="Deploy to Azure" style="height:32px"></a></p>
+              <p style="margin-top:4px"><span aria-label="Historical deployment control disabled">Historical “Deploy to Azure” button — disabled</span></p>
             </div>
             <div class="step">
               <h3>Test the cloud deployment</h3>
@@ -402,11 +404,11 @@
   <a href="https://github.com/kody-w/rapp-installer">GitHub</a>
   <a href="https://github.com/kody-w/CommunityRAPP">Hippocampus Repo</a>
   <a href="https://kody-w.github.io/CommunityRAPP/onboard.html">Hippocampus Guide</a>
-  <a href="rapp_brainstem/README.md">Brainstem Docs</a>
+  <a href="https://github.com/kody-w/RAPP/blob/main/rapp_brainstem/README.md">Historical Brainstem source notes</a>
   <a href="https://github.com/marketplace/models">GitHub Models</a>
 </div>
 
-<script>
+<script type="application/rapp-history">
   // ── Install widget ──
   const installs = {
     'macOS/Linux': {

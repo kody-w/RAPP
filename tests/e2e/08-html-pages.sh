@@ -5,6 +5,8 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
+python3 tests/check_pages.py
+
 PAGES=(pages/product/one-pager.html pages/about/leadership.html pages/about/process.html pages/product/faq-slide.html pages/about/partners.html pages/product/use-cases.html pages/about/security.html pages/release/release-notes.html pages/release/roadmap.html pages/product/faq.html)
 
 for f in "${PAGES[@]}"; do

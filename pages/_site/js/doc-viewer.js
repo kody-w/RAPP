@@ -9,7 +9,7 @@
  * Allowed doc set is whitelisted to prevent open-redirect-style abuse.
  */
 (function(){
-  var ALLOWED = ['SPEC','ROADMAP','AGENTS','VERSIONS','skill','rapplication-sdk','README'];
+  var ALLOWED = ['SPEC','ROADMAP','AGENTS','VERSIONS','skill','rapplication-sdk','README','QR_FRONT_GATE'];
 
   function $(s, r){ return (r || document).querySelector(s); }
   function param(k){

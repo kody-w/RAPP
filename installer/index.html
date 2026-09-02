@@ -3,214 +3,74 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RAPP Installer — Digital Twin</title>
-<meta name="description" content="Pinned local RAPP Brainstem installer and retired distribution status.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E📦%3C/text%3E%3C/svg%3E">
+<title>RAPP installer status — retired distribution</title>
+<meta name="description" content="Current notice for the retired RAPP installer and preserved distribution evidence.">
+<meta name="robots" content="noindex,follow">
+<link rel="canonical" href="https://kody-w.github.io/RAPP/installer/">
+<link rel="stylesheet" href="../pages/_site/css/tokens.css">
+<link rel="stylesheet" href="../pages/_site/css/base.css">
 <style>
-  :root{
-    --bg:#0d1117; --panel:#161b22; --border:#21262d; --border2:#30363d;
-    --fg:#e6edf3; --dim:#8b949e; --muted:#484f58;
-    --green:#238636; --green-2:#2ea043; --green-3:#3fb950;
-    --blue:#1f6feb; --blue-2:#58a6ff;
-    --purple:#8b5cf6; --purple-2:#a78bfa;
-    --red:#f85149; --warn:#d29922;
-    --code-bg:#0d1117;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-    background:var(--bg);color:var(--fg);min-height:100vh;line-height:1.55;
-    padding:48px 24px;display:flex;flex-direction:column;align-items:center}
-  a{color:var(--blue-2);text-decoration:none}a:hover{text-decoration:underline}
-  code,kbd,pre{font-family:"SF Mono","Fira Code",ui-monospace,monospace;font-size:13px}
-  code{background:var(--panel);padding:2px 6px;border-radius:4px}
-  .breadcrumb{font-size:12px;color:var(--muted);margin-bottom:24px}
-  .breadcrumb a{color:var(--dim)}
-  .hero{text-align:center;max-width:680px;margin-bottom:36px}
-  .hero .logo{font-size:64px;margin-bottom:16px;filter:drop-shadow(0 0 12px rgba(63,185,80,.25))}
-  .hero h1{font-size:36px;font-weight:700;margin-bottom:8px}
-  .hero p{color:var(--dim);font-size:16px}
-  .hero .tag{display:inline-block;margin-top:14px;color:var(--green-3);font-weight:600;font-size:13px;
-    text-transform:uppercase;letter-spacing:1px}
-
-  /* Install widget — pixel-similar to the RAPP install widget */
-  .install{max-width:620px;width:100%;margin:0 0 36px;
-    background:var(--panel);border:2px solid var(--green);border-radius:12px;overflow:hidden}
-  .install:hover{border-color:var(--green-2)}
-  .install-tabs{display:flex;align-items:center;justify-content:space-between;
-    padding:0 16px;border-bottom:1px solid var(--border);height:40px}
-  .install-tabs-l{display:flex;align-items:center;gap:2px}
-  .dots{display:flex;gap:5px;margin-right:14px}
-  .dots span{width:10px;height:10px;border-radius:50%}
-  .dots span:nth-child(1){background:var(--red)}
-  .dots span:nth-child(2){background:var(--warn)}
-  .dots span:nth-child(3){background:var(--green-3)}
-  .install-tab{background:none;border:none;color:var(--muted);font-size:12px;
-    padding:8px 14px;cursor:pointer;font-family:"SF Mono",monospace;
-    border-bottom:2px solid transparent;margin-bottom:-1px;
-    transition:color .15s,border-color .15s}
-  .install-tab:hover{color:var(--dim)}
-  .install-tab.active{color:var(--fg);border-bottom-color:var(--green)}
-  .install-body{padding:20px 24px;cursor:pointer;display:flex;align-items:center;gap:8px}
-  .install-body .dollar{color:var(--dim);user-select:none}
-  .install-body .cmd{font-family:"SF Mono",monospace;font-size:14px;color:var(--fg);flex:1;word-break:break-all}
-  .install-body .copy{font-size:16px;opacity:.4;flex-shrink:0;transition:opacity .15s}
-  .install-body:hover .copy{opacity:1}
-  .install-body.copied .copy{opacity:1;color:var(--green-3)}
-  .install-hint{padding:0 24px 14px;font-size:11px;color:var(--muted);text-align:center}
-
-  .tiers{max-width:620px;width:100%}
-  .tier{background:var(--panel);border:1px solid var(--border);border-radius:12px;
-    margin-bottom:20px;overflow:hidden;transition:border-color .15s}
-  .tier:hover{border-color:var(--border2)}
-  .tier-head{padding:18px 22px;display:flex;align-items:center;gap:14px;cursor:pointer;user-select:none}
-  .tier-icon{font-size:28px}
-  .tier-title h2{font-size:17px;font-weight:600;margin-bottom:2px}
-  .tier-title .sub{font-size:13px;color:var(--dim)}
-  .tier-badge{margin-left:auto;font-size:10px;font-weight:700;padding:4px 10px;border-radius:12px;
-    text-transform:uppercase;letter-spacing:.5px}
-  .tier-badge.start{background:var(--green);color:#fff}
-  .tier-badge.next{background:rgba(31,111,235,.2);color:var(--blue-2);border:1px solid var(--blue)}
-  .tier-badge.adv{background:rgba(139,92,246,.2);color:var(--purple-2);border:1px solid var(--purple)}
-  .tier-arrow{color:var(--muted);font-size:16px;transition:transform .2s}
-  .tier.open .tier-arrow{transform:rotate(90deg)}
-  .tier-body{display:none;padding:0 22px 22px;border-top:1px solid var(--border)}
-  .tier.open .tier-body{display:block}
-  .tier-body p{color:var(--dim);font-size:14px;margin-top:14px}
-  .tier-body .met{color:var(--purple-2);font-style:italic;font-size:13px;margin-top:10px}
-  .step{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;
-    padding:14px;margin-top:12px}
-  .step h3{font-size:14px;font-weight:600;margin-bottom:6px}
-  .step p{margin:0 0 8px;font-size:13px;color:var(--dim)}
-  .step pre{background:#04060c;border:1px solid var(--border);border-radius:6px;
-    padding:10px 12px;overflow-x:auto;color:var(--fg);margin:0}
-  .copy-block{position:relative}
-  .copy-block pre{padding-right:64px}
-  .copy-block .copy-btn{
-    position:absolute;top:6px;right:6px;
-    background:rgba(255,255,255,0.05);border:1px solid var(--border);
-    color:var(--muted);border-radius:4px;padding:3px 8px;
-    font:inherit;font-size:11px;cursor:pointer;
-    transition:background .15s,color .15s,border-color .15s
-  }
-  .copy-block .copy-btn:hover{background:rgba(255,255,255,0.12);color:var(--fg)}
-  .copy-block .copy-btn.copied{background:var(--green-3,#3fb950);color:#04060c;border-color:transparent}
-
-  .links{margin-top:32px;text-align:center;font-size:13px;color:var(--muted);max-width:620px}
-  .links a{margin:0 10px}
-  footer{margin-top:48px;color:var(--muted);font-size:12px;text-align:center}
+  body{min-height:100vh}
+  main{max-width:820px;margin:0 auto;padding:64px 24px}
+  .crumb{font-size:.85rem;color:var(--text-dim);margin-bottom:36px}
+  .eyebrow{font:700 12px/1.4 var(--font-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--warn)}
+  h1{font-size:clamp(2.2rem,7vw,4rem);line-height:1.05;margin:12px 0 18px}
+  .lede{color:var(--text-dim);font-size:1.08rem;max-width:66ch}
+  .notice{margin:30px 0;padding:20px;border:1px solid var(--warn);border-radius:var(--radius-lg);background:var(--surface)}
+  .notice strong{display:block;margin-bottom:6px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:20px}
+  .card{padding:18px;border:1px solid var(--border2);border-radius:10px;background:var(--surface)}
+  .card h2{font-size:1rem;margin-bottom:7px}
+  .card p{color:var(--text-dim);font-size:.9rem}
+  nav{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
+  nav a{padding:8px 12px;border:1px solid var(--border2);border-radius:8px}
 </style>
 </head>
 <body>
+<main>
+  <p class="crumb"><a href="../">RAPP</a> / installer status</p>
+  <span class="eyebrow">Retired distribution · semantic status page</span>
+  <h1>No public installer is available.</h1>
+  <p class="lede">The earlier local, cloud, Copilot Studio, Shortcut, and
+    browser-install paths are preserved only as historical source evidence.
+    They are not current RAPP/1 acceptance or distribution mechanisms.</p>
 
-<div class="breadcrumb"><a href="../">RAPP</a> &nbsp;›&nbsp; installer</div>
+  <aside class="notice" role="note">
+    <strong>No installer command, browser launch link, provisioning action, or
+      archive download is published.</strong>
+    Retained archives have no active download link. A future distribution
+    surface requires an owner-approved authority event, a complete
+    executable-input lock, and the applicable RAPP/1 acceptance checks.
+  </aside>
 
-<div class="hero">
-  <div class="logo">📦</div>
-  <h1>RAPP Installer</h1>
-  <p>Installer retired with HTTP 410 semantics.</p>
-  <p style="margin-top:6px;opacity:.75;font-size:.95em">No complete lock covers every executable and dependency input.</p>
-  <div class="tag">No active distribution</div>
-</div>
-
-<div class="install" id="install">
-  <div class="install-tabs">
-    <div class="install-tabs-l">
-      <div class="dots"><span></span><span></span><span></span></div>
-      <span class="install-tab active">HTTP 410</span>
-    </div>
-  </div>
-  <div class="install-body">
-    <span class="cmd">No installer command is published.</span>
-  </div>
-  <div class="install-hint">There is no tag-based or mutable-branch fallback.</div>
-</div>
-
-<div class="tiers">
-
-  <div class="tier" data-tier="1">
-    <div class="tier-head" onclick="this.parentNode.classList.toggle('open')">
-      <span class="tier-icon">🧠</span>
-      <div class="tier-title">
-        <h2>Tier 1 — Brainstem</h2>
-        <div class="sub">Local Python server · GitHub Copilot · port 7071</div>
+  <section>
+    <h2>What remains</h2>
+    <div class="grid">
+      <div class="card">
+        <h2>Immutable grail evidence</h2>
+        <p>The bytes named by <a href="../KERNEL_PIN.json">KERNEL_PIN.json</a>
+          remain read-only. This page does not execute or repackage them.</p>
       </div>
-      <span class="tier-badge adv">Retired</span>
-      <span class="tier-arrow">›</span>
-    </div>
-    <div class="tier-body">
-      <p>The minimum viable brain. Runs on your laptop. Only dependency: a GitHub account
-        with Copilot access. No API keys, no cloud, no config files.</p>
-      <p class="met"><em>Metaphor: the autonomic core. Beats without thinking.</em></p>
-      <div class="step">
-        <h3>Installer retired</h3>
-        <p>The installer refuses all releases until a target-owned lock verifies the full source tree and every executable and dependency input.</p>
+      <div class="card">
+        <h2>Retired-artifact ledger</h2>
+        <p><a href="./RETIRED_ARTIFACTS.json">RETIRED_ARTIFACTS.json</a>
+          records hashes and publication limits without exposing a download
+          call to action.</p>
       </div>
-      <div class="step">
-        <h3>Run</h3>
-        <p>Starts a Flask server on port 7071. Opens the chat UI in your browser.</p>
-        <pre>brainstem</pre>
-      </div>
-      <div class="step">
-        <h3>Try it without installing</h3>
-        <p>Open the <a href="../brainstem/">virtual brainstem</a> — same UI, in-browser, BYO API key.</p>
+      <div class="card">
+        <h2>Historical browser routes</h2>
+        <p>Old planter, seed, and Shortcut URLs remain as inert semantic
+          tombstones so external links fail visibly instead of redirecting.</p>
       </div>
     </div>
-  </div>
+  </section>
 
-  <div class="tier open">
-    <div class="tier-head" onclick="this.parentNode.classList.toggle('open')">
-      <span class="tier-icon">⛔</span>
-      <div class="tier-title">
-        <h2>Retired distribution surfaces</h2>
-        <div class="sub">HTTP 410 · no provisioning · no archive publication</div>
-      </div>
-      <span class="tier-badge adv">Retired</span>
-      <span class="tier-arrow">›</span>
-    </div>
-    <div class="tier-body">
-      <p>Tier 2 entrypoints and the Windows wrapper fail closed. The retained unsigned Power archive is immutable evidence only and has no active download link.</p>
-      <p>Exact hashes and byte sizes are recorded in <a href="RETIRED_ARTIFACTS.json">RETIRED_ARTIFACTS.json</a>.</p>
-    </div>
-  </div>
-
-</div>
-
-<div class="links">
-  <a href="../">Landing</a>
-  <a href="../pages/docs/SPEC.md">SPEC.md</a>
-  <a href="../rapp_brainstem/web/">Brainstem (virtual)</a>
-  <a href="shortcuts/">Apple Shortcuts</a>
-  <a href="https://github.com/kody-w/RAPP" target="_blank">Source</a>
-</div>
-
-<footer>RAPP v1 — frozen 2026-04-17 · digital twin</footer>
-
-<script>
-  // Auto-augment every <pre> inside a tier step with a copy button so users
-  // don't have to scroll back to the hero to grab a command. Picks up any
-  // future <pre> block automatically — no per-block markup needed.
-  document.querySelectorAll('.step pre').forEach(pre => {
-    const wrap = document.createElement('div');
-    wrap.className = 'copy-block';
-    pre.parentNode.insertBefore(wrap, pre);
-    wrap.appendChild(pre);
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'copy-btn';
-    btn.textContent = 'copy';
-    btn.addEventListener('click', () => {
-      navigator.clipboard.writeText(pre.textContent.trim()).then(() => {
-        btn.textContent = '✓ copied';
-        btn.classList.add('copied');
-        setTimeout(() => {
-          btn.textContent = 'copy';
-          btn.classList.remove('copied');
-        }, 1500);
-      });
-    });
-    wrap.appendChild(btn);
-  });
-</script>
-
+  <nav aria-label="Current references">
+    <a href="../RAPP1_STATUS.md">Current RAPP/1 status</a>
+    <a href="../RAPP1_AUTHORITY.json">Authority pin</a>
+    <a href="../pages/docs/">Documentation index</a>
+    <a href="https://github.com/kody-w/RAPP" rel="noopener">Repository source</a>
+  </nav>
+</main>
 </body>
 </html>

@@ -1,0 +1,25 @@
+User-agent: *
+Allow: /RAPP/
+
+Disallow: /RAPP/tests/
+Disallow: /RAPP/tools/
+Disallow: /RAPP/scripts/
+Disallow: /RAPP/worker/
+Disallow: /RAPP/rapp_brainstem/
+Disallow: /RAPP/rapp_swarm/
+Disallow: /RAPP/cave/rapplications/
+Disallow: /RAPP/pages/_lib/
+Disallow: /RAPP/pages/chat.html
+Disallow: /RAPP/pages/lobby.html
+Disallow: /RAPP/pages/payphone.html
+Disallow: /RAPP/pages/summon.html
+Disallow: /RAPP/pages/metropolis/
+Disallow: /RAPP/pages/vbrainstem
+Disallow: /RAPP/pages/vneighborhood.html
+Disallow: /RAPP/pages/sphere.html
+Disallow: /RAPP/pages/tether.html
+Disallow: /RAPP/installer/plant
+Disallow: /RAPP/installer/seed.html
+Disallow: /RAPP/installer/shortcuts/
+
+Sitemap: https://kody-w.github.io/RAPP/sitemap.xml

@@ -1,90 +1,473 @@
 {
-  "_comment": "Site manifest — every public page in pages/ listed once with title, section, description. Used by site.js for nav highlighting and (future) search.",
+  "_comment": "Canonical public pages inventory. Every full HTML document under pages/ is classified exactly once; partials are publication assets, not routes. Normal navigation is limited to entries with navigation=true.",
+  "schema": "rapp-pages-manifest/2.0",
   "site": {
     "name": "RAPP",
-    "tagline": "Single-file AI agents. Engine, not experience.",
+    "tagline": "RAPP/1 structural status and preserved source history.",
     "url": "https://kody-w.github.io/RAPP/"
+  },
+  "classifications": {
+    "current_entrypoint": "Current status, authority, or documentation entrypoint.",
+    "historical_page": "Visible dated history that does not establish current capability.",
+    "retired_alias": "Inert semantic tombstone retained at a historical URL."
   },
   "sections": [
     {
-      "key": "about",
-      "label": "About",
-      "description": "Who RAPP is for, how it gets adopted, what it doesn't try to be.",
+      "key": "entrypoints",
+      "label": "Current entrypoints",
+      "description": "Current status-led public navigation.",
       "pages": [
-        { "path": "about/anatomy.html",    "title": "Historical · organism anatomy", "audience": "Maintainer", "description": "Visual history of the organism metaphor; no current install or egg lifecycle." },
-        { "path": "about/ecosystem.html",  "title": "Generated · ecosystem observation", "audience": "Maintainer", "description": "Non-authoritative generated observation of external repositories; descriptions may be stale." },
-        { "path": "about/prompts.html",    "title": "Historical · prompt ledger", "audience": "Maintainer", "description": "Read-only speculative archive; planting, eggs, and copy/run CTAs are retired.", "status": "historical" },
-        { "path": "about/leadership.html", "title": "Pre-acceptance · leadership concept", "audience": "Executive sponsor", "description": "Historical workshop narrative; not a production or delivery commitment." },
-        { "path": "about/partners.html",    "title": "Historical · partner concept", "audience": "Maintainer", "description": "No current agent delivery, production, or cloud commitment.", "status": "historical" },
-        { "path": "about/process.html",     "title": "Historical · workshop process", "audience": "Maintainer", "description": "No one-week production or deployment promise.", "status": "historical" },
-        { "path": "about/security.html",    "title": "Pre-acceptance · security review","audience": "Security reviewer","description": "Source-review orientation, not a certification or cloud-residency promise." }
+        {
+          "path": "index.html",
+          "title": "RAPP public Pages index",
+          "audience": "Maintainer",
+          "description": "Current authority, status, documentation, and labeled history.",
+          "classification": "current_entrypoint",
+          "status": "current",
+          "navigation": true
+        },
+        {
+          "path": "kernel.html",
+          "title": "Kernel reading hub",
+          "audience": "Maintainer",
+          "description": "RAPP/1 authority and limits first; historical reading paths second.",
+          "classification": "current_entrypoint",
+          "status": "current",
+          "navigation": true
+        }
       ]
     },
     {
-      "key": "surface",
-      "label": "Retired surfaces",
-      "description": "Static HTTP 410 tombstones retained at their historical URLs. These entries do not run capabilities.",
+      "key": "about",
+      "label": "Historical audience narratives",
+      "description": "Preserved context, not delivery or production commitments.",
       "pages": [
-        { "path": "vbrainstem.html", "title": "Retired · vBrainstem", "audience": "Maintainer", "description": "HTTP 410 tombstone. The former browser capability runtime is unavailable pending a conformant replacement." },
-        { "path": "tether.html",     "title": "Retired · Tether",     "audience": "Maintainer", "description": "HTTP 410 tombstone. The former browser tether and artifact producer are unavailable." },
-        { "path": "sphere.html",     "title": "Retired · Sphere",     "audience": "Maintainer", "description": "HTTP 410 tombstone. The former doorman and browser inference surface are unavailable." }
+        {
+          "path": "about/anatomy.html",
+          "title": "Historical · organism anatomy",
+          "audience": "Maintainer",
+          "description": "Visual history of the organism metaphor; no current install or egg lifecycle.",
+          "classification": "historical_page",
+          "status": "historical",
+          "navigation": false
+        },
+        {
+          "path": "about/ecosystem.html",
+          "title": "Historical · generated ecosystem observation",
+          "audience": "Maintainer",
+          "description": "Dated generated repository metadata; not a registry, catalog, deployment map, or product inventory.",
+          "classification": "historical_page",
+          "status": "historical",
+          "navigation": false
+        },
+        {
+          "path": "about/leadership.html",
+          "title": "Historical · leadership concept",
+          "audience": "Maintainer",
+          "description": "Past workshop narrative; not a production or delivery commitment.",
+          "classification": "historical_page",
+          "status": "historical",
+          "navigation": false
+        },
+        {
+          "path": "about/partners.html",
+          "title": "Historical · partner concept",
+          "audience": "Maintainer",
+          "description": "No current agent delivery, production, or cloud commitment.",
+          "classification": "historical_page",
+          "status": "historical",
+          "navigation": false
+        },
+        {
+          "path": "about/process.html",
+          "title": "Historical · workshop process",
+          "audience": "Maintainer",
+          "description": "No one-week production or deployment promise.",
+          "classification": "historical_page",
+          "status": "historical",
+          "navigation": false
+        },
+        {
+          "path": "about/prompts.html",
+          "title": "Historical · prompt ledger",
+          "audience": "Maintainer",
+          "description": "Read-only speculative archive; planting, eggs, and run actions are retired.",
+          "classification": "historical_page",
+          "status": "historical",
+          "navigation": false
+        },
+        {
+          "path": "about/security.html",
+          "title": "Historical · pre-acceptance security notes",
+          "audience": "Security reviewer",
+          "description": "Source-review orientation, not certification or cloud-residency evidence.",
+          "classification": "historical_page",
+          "status": "historical",
+          "navigation": false
+        }
       ]
     },
     {
       "key": "product",
-      "label": "Pre-acceptance narratives",
-      "description": "Current limitations and retained historical marketing.",
+      "label": "Historical product narratives",
+      "description": "Illustrative records, not shipped capability.",
       "pages": [
-        { "path": "product/faq.html",        "title": "Historical · FAQ", "audience": "Maintainer", "description": "Pre-acceptance answers; not a current product claim.", "status": "historical" },
-        { "path": "product/faq-slide.html",  "title": "Historical · FAQ slide", "audience": "Maintainer", "description": "Pre-acceptance presentation history.", "status": "historical" },
-        { "path": "product/one-pager.html",  "title": "Historical · platform concept", "audience": "Maintainer", "description": "No current installer, browser, cloud tier, or production path.", "status": "historical" },
-        { "path": "product/use-cases.html",  "title": "Historical · use cases", "audience": "Maintainer", "description": "Illustrative scenarios, not shipped workflows.", "status": "historical" },
-        { "path": "product/vs.html",         "title": "Historical · comparison snapshot", "audience": "Maintainer", "description": "Superseded comparison; legacy feature claims and install CTA are retired.", "status": "historical" },
-        { "path": "product/unsolved.html",   "title": "Historical · unsolved concept deck", "audience": "Maintainer", "description": "Superseded design claims; not evidence of shipped capabilities.", "status": "historical" }
+        {
+          "path": "product/faq.html",
+          "title": "Historical · FAQ",
+          "audience": "Maintainer",
+          "description": "Pre-acceptance answers with current limitations.",
+          "classification": "historical_page",
+          "status": "historical",
+          "navigation": false
+        },
+        {
+          "path": "product/faq-slide.html",
+          "title": "Historical · FAQ slide",
+          "audience": "Maintainer",
+          "description": "Pre-acceptance presentation history.",
+          "classification": "historical_page",
+          "status": "historical",
+          "navigation": false
+        },
+        {
+          "path": "product/one-pager.html",
+          "title": "Historical · platform concept",
+          "audience": "Maintainer",
+          "description": "No current installer, browser, cloud tier, or production path.",
+          "classification": "historical_page",
+          "status": "historical",
+          "navigation": false
+        },
+        {
+          "path": "product/use-cases.html",
+          "title": "Historical · use cases",
+          "audience": "Maintainer",
+          "description": "Illustrative scenarios, not shipped workflows.",
+          "classification": "historical_page",
+          "status": "historical",
+          "navigation": false
+        },
+        {
+          "path": "product/vs.html",
+          "title": "Historical · comparison snapshot",
+          "audience": "Maintainer",
+          "description": "Superseded comparison; legacy feature and install claims are retired.",
+          "classification": "historical_page",
+          "status": "historical",
+          "navigation": false
+        },
+        {
+          "path": "product/unsolved.html",
+          "title": "Historical · unsolved concept deck",
+          "audience": "Maintainer",
+          "description": "Superseded design claims; not evidence of shipped capability.",
+          "classification": "historical_page",
+          "status": "historical",
+          "navigation": false
+        }
       ]
     },
     {
       "key": "release",
       "label": "Historical release records",
-      "description": "Dated history; no current installer, roadmap commitment, or shipment claim.",
+      "description": "Dated history with no current installer, roadmap commitment, or shipment claim.",
       "pages": [
-        { "path": "release/roadmap.html",       "title": "Historical · roadmap", "audience": "Maintainer", "description": "Superseded 2026-05-02 planning snapshot.", "status": "historical" },
-        { "path": "release/release-notes.html", "title": "Historical · release notes", "audience": "Maintainer", "description": "Dated release record; no current install or rollback instruction.", "status": "historical" }
+        {
+          "path": "release/roadmap.html",
+          "title": "Historical · roadmap",
+          "audience": "Maintainer",
+          "description": "Superseded planning snapshot.",
+          "classification": "historical_page",
+          "status": "historical",
+          "navigation": false
+        },
+        {
+          "path": "release/release-notes.html",
+          "title": "Historical · release notes",
+          "audience": "Maintainer",
+          "description": "Dated release record; no current install or rollback instruction.",
+          "classification": "historical_page",
+          "status": "historical",
+          "navigation": false
+        }
       ]
     },
     {
       "key": "docs",
-      "label": "Authority and documentation history",
-      "description": "RAPP/1 authority links plus retired local specs, onboarding, SDK, and release history.",
+      "label": "Documentation",
+      "description": "Current authority links and a bounded viewer for checked-in documents.",
       "pages": [
-        { "path": "docs/",                    "title": "Docs index",     "audience": "Maintainer", "description": "Authority links and historical documentation cards." },
-        { "path": "docs/viewer.html?doc=SPEC",     "title": "Historical · SPEC", "audience": "Maintainer", "description": "Superseded local v1 contract.", "status": "historical" },
-        { "path": "docs/viewer.html?doc=ROADMAP",  "title": "Historical · ROADMAP", "audience": "Maintainer", "description": "Superseded product planning.", "status": "historical" },
-        { "path": "docs/viewer.html?doc=AGENTS",   "title": "AGENTS",        "audience": "AI assistant","description": "Guidance to AI assistants editing this repo." },
-        { "path": "docs/viewer.html?doc=VERSIONS", "title": "Historical · VERSIONS", "audience": "Maintainer", "description": "Tag history; no installer or rollback action.", "status": "historical" },
-        { "path": "docs/viewer.html?doc=skill",    "title": "Historical · host onboarding", "audience": "Maintainer", "description": "Retired installer and tier commands; do not execute.", "status": "historical" },
-        { "path": "docs/viewer.html?doc=rapplication-sdk", "title": "Historical · Rapplication SDK", "audience": "Maintainer", "description": "Retired SDK and distribution design.", "status": "historical" },
-        { "path": "docs/viewer.html?doc=QR_FRONT_GATE", "title": "Historical · QR front gate", "audience": "Maintainer", "description": "Retired QR/tether design; not a planting or conformance requirement.", "status": "historical" }
+        {
+          "path": "docs/index.html",
+          "title": "Documentation index",
+          "audience": "Maintainer",
+          "description": "Authority links and explicitly classified document cards.",
+          "classification": "current_entrypoint",
+          "status": "current",
+          "navigation": true
+        },
+        {
+          "path": "docs/viewer.html",
+          "title": "Documentation viewer",
+          "audience": "Maintainer",
+          "description": "Allowlisted viewer for current editing guidance and superseded local documents.",
+          "classification": "current_entrypoint",
+          "status": "current",
+          "navigation": false
+        }
       ]
     },
     {
       "key": "vault",
-      "label": "Vault history",
-      "description": "Long-form decision history; narratives do not override the authority/status pair.",
+      "label": "Historical note archive",
+      "description": "Long-form decision history; notes do not override current authority or status.",
       "pages": [
-        { "path": "vault/", "title": "Historical · vault viewer", "audience": "Maintainer", "description": "Preserved notes and viewer source; no hosted-product claim.", "status": "historical" }
+        {
+          "path": "vault/index.html",
+          "title": "Historical · vault viewer",
+          "audience": "Maintainer",
+          "description": "Read-only archive viewer with install and mutation controls disabled.",
+          "classification": "historical_page",
+          "status": "historical",
+          "navigation": false
+        }
       ]
     },
     {
-      "key": "metropolis",
-      "label": "Historical Metropolis",
-      "description": "Retired neighborhood-directory concept; not a live catalog or discovery authority.",
+      "key": "historical",
+      "label": "Additional historical pages",
+      "description": "Dated pages kept visible without entering normal navigation.",
       "pages": [
-        { "path": "metropolis/", "title": "Historical · RAPP Metropolis", "audience": "Maintainer", "description": "Retired planted-neighborhood directory; not a live catalog.", "status": "historical" }
+        {
+          "path": "onboarding.html",
+          "title": "Historical · planting onboarding",
+          "audience": "Maintainer",
+          "description": "Visible inert planting narrative; not a launch or join path.",
+          "classification": "historical_page",
+          "status": "historical",
+          "navigation": false
+        },
+        {
+          "path": "rappid-deck.html",
+          "title": "Historical · rappid concept deck",
+          "audience": "Maintainer",
+          "description": "Visible inert pre-acceptance deck.",
+          "classification": "historical_page",
+          "status": "historical",
+          "navigation": false
+        },
+        {
+          "path": "rappid-onepager.html",
+          "title": "Historical · rappid one-page concept",
+          "audience": "Maintainer",
+          "description": "Visible inert pre-acceptance page.",
+          "classification": "historical_page",
+          "status": "historical",
+          "navigation": false
+        },
+        {
+          "path": "share/invention-backlog/index.html",
+          "title": "Historical · invention backlog presentation",
+          "audience": "Maintainer",
+          "description": "Visible inert shell with a direct link to the checked-in note.",
+          "classification": "historical_page",
+          "status": "historical",
+          "navigation": false
+        },
+        {
+          "path": "tutorials/hatch-egg.html",
+          "title": "Historical · retired egg tutorial",
+          "audience": "Maintainer",
+          "description": "Superseded migration evidence; no download or hatch action.",
+          "classification": "historical_page",
+          "status": "historical",
+          "navigation": false
+        }
+      ]
+    },
+    {
+      "key": "surface",
+      "label": "Retired surfaces",
+      "description": "Inert semantic tombstones retained at historical URLs and omitted from normal navigation.",
+      "pages": [
+        {
+          "path": "chat.html",
+          "title": "Retired · chat bridge",
+          "audience": "Maintainer",
+          "description": "No redirect, storage lookup, worker request, or browser runtime.",
+          "classification": "retired_alias",
+          "status": "retired",
+          "navigation": false
+        },
+        {
+          "path": "grail-brainstem/index.html",
+          "title": "Retired · grail browser route",
+          "audience": "Maintainer",
+          "description": "Immutable source evidence, not a hosted runtime.",
+          "classification": "retired_alias",
+          "status": "retired",
+          "navigation": false
+        },
+        {
+          "path": "lobby.html",
+          "title": "Retired · peer lobby",
+          "audience": "Maintainer",
+          "description": "No peer session, room join, socket, or state exchange.",
+          "classification": "retired_alias",
+          "status": "retired",
+          "navigation": false
+        },
+        {
+          "path": "metropolis/index.html",
+          "title": "Retired · Metropolis directory",
+          "audience": "Maintainer",
+          "description": "No roster, catalog, repository probe, registration, or join action.",
+          "classification": "retired_alias",
+          "status": "retired",
+          "navigation": false
+        },
+        {
+          "path": "metropolis/plant-from-discord.html",
+          "title": "Retired · Discord planter",
+          "audience": "Maintainer",
+          "description": "No bot, repository creation, registration, or identity emission.",
+          "classification": "retired_alias",
+          "status": "retired",
+          "navigation": false
+        },
+        {
+          "path": "payphone.html",
+          "title": "Retired · payphone",
+          "audience": "Maintainer",
+          "description": "No identifier input, token storage, API lookup, or session.",
+          "classification": "retired_alias",
+          "status": "retired",
+          "navigation": false
+        },
+        {
+          "path": "sphere.html",
+          "title": "Retired · Sphere",
+          "audience": "Maintainer",
+          "description": "No doorman, authentication, worker, token, or inference behavior.",
+          "classification": "retired_alias",
+          "status": "retired",
+          "navigation": false
+        },
+        {
+          "path": "summon.html",
+          "title": "Retired · summon portal",
+          "audience": "Maintainer",
+          "description": "No twin discovery, storage handoff, or browser embodiment.",
+          "classification": "retired_alias",
+          "status": "retired",
+          "navigation": false
+        },
+        {
+          "path": "tether.html",
+          "title": "Retired · Tether",
+          "audience": "Maintainer",
+          "description": "No local connection, QR scan, token storage, or artifact export.",
+          "classification": "retired_alias",
+          "status": "retired",
+          "navigation": false
+        },
+        {
+          "path": "vbrainstem.html",
+          "title": "Retired · vBrainstem",
+          "audience": "Maintainer",
+          "description": "No hosted browser capability or legacy cartridge export.",
+          "classification": "retired_alias",
+          "status": "retired",
+          "navigation": false
+        },
+        {
+          "path": "vbrainstem/index.html",
+          "title": "Retired · vBrainstem directory alias",
+          "audience": "Maintainer",
+          "description": "Alternate inert alias retained without redirecting.",
+          "classification": "retired_alias",
+          "status": "retired",
+          "navigation": false
+        },
+        {
+          "path": "vneighborhood.html",
+          "title": "Retired · vNeighborhood",
+          "audience": "Maintainer",
+          "description": "No peer discovery, room join, worker, or state exchange.",
+          "classification": "retired_alias",
+          "status": "retired",
+          "navigation": false
+        }
       ]
     }
   ],
+  "virtual_routes": [
+    {
+      "path": "docs/viewer.html?doc=README",
+      "document": "README.md",
+      "title": "pages/docs README",
+      "classification": "current_entrypoint",
+      "status": "current"
+    },
+    {
+      "path": "docs/viewer.html?doc=AGENTS",
+      "document": "AGENTS.md",
+      "title": "Editing guidance",
+      "classification": "current_entrypoint",
+      "status": "current"
+    },
+    {
+      "path": "docs/viewer.html?doc=SPEC",
+      "document": "SPEC.md",
+      "title": "Historical · local SPEC",
+      "classification": "historical_page",
+      "status": "historical"
+    },
+    {
+      "path": "docs/viewer.html?doc=ROADMAP",
+      "document": "ROADMAP.md",
+      "title": "Historical · roadmap",
+      "classification": "historical_page",
+      "status": "historical"
+    },
+    {
+      "path": "docs/viewer.html?doc=VERSIONS",
+      "document": "VERSIONS.md",
+      "title": "Historical · versions",
+      "classification": "historical_page",
+      "status": "historical"
+    },
+    {
+      "path": "docs/viewer.html?doc=skill",
+      "document": "skill.md",
+      "title": "Historical · host onboarding",
+      "classification": "historical_page",
+      "status": "historical"
+    },
+    {
+      "path": "docs/viewer.html?doc=rapplication-sdk",
+      "document": "rapplication-sdk.md",
+      "title": "Historical · rapplication SDK",
+      "classification": "historical_page",
+      "status": "historical"
+    },
+    {
+      "path": "docs/viewer.html?doc=QR_FRONT_GATE",
+      "document": "QR_FRONT_GATE.md",
+      "title": "Historical · QR front gate",
+      "classification": "historical_page",
+      "status": "historical"
+    }
+  ],
   "root_pinned": [
-    { "path": "../pitch-playbook.html", "title": "Historical · pitch playbook", "description": "Preserved pre-acceptance marketing; not current product evidence.", "status": "historical" }
+    {
+      "path": "../pitch-playbook.html",
+      "title": "Historical · pitch playbook",
+      "description": "Preserved pre-acceptance marketing; not current product evidence.",
+      "classification": "historical_page",
+      "status": "historical",
+      "navigation": false
+    }
   ]
 }

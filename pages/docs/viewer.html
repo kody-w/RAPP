@@ -64,7 +64,7 @@
   (function(){
     var m = location.search.match(/[?&]doc=([^&]*)/);
     var doc = m ? decodeURIComponent(m[1]) : 'README';
-    var allowed = ['SPEC','ROADMAP','AGENTS','VERSIONS','skill','rapplication-sdk','README'];
+    var allowed = ['SPEC','ROADMAP','AGENTS','VERSIONS','skill','rapplication-sdk','README','QR_FRONT_GATE'];
     if(allowed.indexOf(doc) === -1) doc = 'README';
     document.addEventListener('DOMContentLoaded', function(){
       var link = document.getElementById('source-link');

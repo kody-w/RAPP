@@ -1247,14 +1247,15 @@ ul.clean li strong{ color:var(--text); font-weight:700; }
 <body>
 
 <aside role="note" style="max-width:900px;margin:24px auto;padding:16px 20px;border:1px solid currentColor;border-radius:10px">
-  <strong>Historical concept deck — not a current product claim.</strong>
-  Three-tier, installer, browser, and Copilot Studio claims in the bounded deck
-  are retired. Follow RAPP/1 rev-5 through
+  <strong>Historical concept deck — visible, inert, and not a current product
+  claim.</strong> Three-tier, installer, browser, and Copilot Studio claims in
+  the bounded deck are retired. Controls, downloads, storage, and network
+  actions do not run. Follow RAPP/1 rev-5 through
   <a href="../RAPP1_AUTHORITY.json">RAPP1_AUTHORITY.json</a> and
   <a href="../RAPP1_STATUS.md">RAPP1_STATUS.md</a>.
 </aside>
 <!-- RAPP1-HISTORICAL-SECTION-START -->
-<div hidden aria-hidden="true">
+<div class="historical-snapshot" data-status="historical" inert>
 <div class="rotate-hint">
   <div class="rot-icon">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
@@ -1797,7 +1798,7 @@ ul.clean li strong{ color:var(--text); font-weight:700; }
 
 <div class="kbd-hint">← → SPACE · F fullscreen · P print · T theme</div>
 
-<script>
+<script type="application/rapp-history">
 (function(){
   const slides = Array.from(document.querySelectorAll('.slide'));
   const cur = document.getElementById('cur');
