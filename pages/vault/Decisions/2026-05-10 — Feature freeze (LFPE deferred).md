@@ -1,3 +1,8 @@
+---
+title: "Feature freeze — Local-First Private Estate (LFPE) deferred"
+status: historical
+---
+
 # Feature freeze — Local-First Private Estate (LFPE) deferred
 
 **Date:** 2026-05-10

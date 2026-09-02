@@ -1,3 +1,8 @@
+---
+title: "Bond Pulse — the on-going beat for the full organism"
+status: historical
+---
+
 # Bond Pulse — the on-going beat for the full organism
 
 **Date:** 2026-05-09

@@ -5,11 +5,16 @@
     "report_date": "2026-07-17",
     "baseline_tracked_paths": 640,
     "post_audit_tracked_paths": 691,
-    "integrated_main_commit": "bd122780ac90010e607ce9549e7c5ed18bee5d73",
+    "integrated_main_commit": "d71b6f9fbf6c2f9e790b358e67e17fe83baae4dd",
     "integrated_tracked_paths": 702,
     "integrated_tracked_bytes": 7938989,
-    "integration_note": "Current closure tree includes the machine-readable AI entrypoint and offline contract test; the 691-row final verifier ledger remains a dated source report.",
-    "status_boundary": "RAPP1_STATUS.md retains its code-owned owner-evidence hash from launch containment; the current AI-entrypoint tree count is recorded separately in this integration fixture.",
+    "mutable_generated_paths": [],
+    "current_inventory": {
+      "tracked_paths": 702,
+      "stable_tracked_bytes": 7944969
+    },
+    "integration_note": "The pinned integrated inventory describes d71b6f9; current path and byte coverage is separate, while the 691-row final verifier ledger remains a dated source report.",
+    "status_boundary": "RAPP1_STATUS.md retains its code-owned owner-evidence hash from launch containment; current stable path and byte coverage is recorded separately from dated audit evidence.",
     "path_set_digest": "sha256(sorted UTF-8 paths joined with newline, including final newline)",
     "provenance": {
       "existing_report": {
@@ -524,7 +529,7 @@
       ".md",
       ".html"
     ],
-    "expected_tracked_document_count": 284,
+    "expected_tracked_document_count": 285,
     "excluded_prefixes": {
       ".github/prompts/": "prompt fixtures, not published RAPP/1 contract guidance",
       "cave/rapplications/rapp-installer/": "immutable prepared-clone and mirror subtree",

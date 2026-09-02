@@ -1,3 +1,8 @@
+---
+title: "The Swarm Estate — Rappid-Indexed Identity Across Public + Private + Live + Frozen"
+status: historical
+---
+
 # The Swarm Estate — Rappid-Indexed Identity Across Public + Private + Live + Frozen
 
 > **Historical/superseded protocol narrative.** Preserve this dated account as

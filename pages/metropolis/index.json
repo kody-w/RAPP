@@ -1,9 +1,13 @@
 {
   "schema": "rapp-metropolis-index/1.0",
-  "tracker_name": "RAPP Metropolis (canonical)",
-  "tracker_url": "https://kody-w.github.io/RAPP/metropolis/",
+  "status": "historical-retired",
+  "accepted": false,
+  "rapp_protocol_authority": false,
+  "warning": "Preserved pre-acceptance directory data with legacy identities. It is not a live catalog, registry, membership list, or trust source.",
+  "tracker_name": "Historical RAPP Metropolis snapshot",
+  "tracker_url": "https://kody-w.github.io/RAPP/pages/metropolis/",
   "tracker_operator": "kody-w",
-  "purpose": "Kazaa-style decentralized index of active RAPP neighborhoods. Each entry points at a planted neighborhood seed; brainstems are the seeders; agents are the work. Anyone can fork this index and run their own tracker — the protocol is the network, not this URL.",
+  "purpose": "Dated evidence of the retired Metropolis directory experiment. Entries and legacy identities are preserved for review only and must not be used for discovery, joining, trust, or protocol acceptance.",
   "synced_at": "2026-05-09T02:00:00Z",
   "federated_trackers": [
     "https://kody-w.github.io/RAPP/pages/metropolis/federated-demo.json"
@@ -166,9 +170,10 @@
     }
   ],
   "protocol": {
-    "registration": "Open a PR to this index. Maintainer reviews + merges.",
-    "federation": "Other trackers can link to this one via federated_trackers; this one can list theirs. The metropolis is the union of all trackers — no single canonical authority.",
-    "live_status": "Each entry's seeders + recent activity is fetched live by the directory page. Cached locally per browser session.",
-    "decentralization": "Anyone can fork + curate. The protocol is the network, not this URL."
+    "status": "retired",
+    "registration": "Closed. Do not submit or join through this historical index.",
+    "federation": "Historical demonstration only; no tracker is fetched or accepted.",
+    "live_status": "Disabled. Preserved status fields are dated evidence, not live verification.",
+    "decentralization": "This local product experiment is not RAPP/1 protocol authority."
   }
 }

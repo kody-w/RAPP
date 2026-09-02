@@ -200,16 +200,36 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
         ).decode("utf-8").split("\0")
         if path
     ]
-    if len(tracked_paths) != audit.get("integrated_tracked_paths"):
+    mutable_generated_paths = audit.get("mutable_generated_paths")
+    expected_mutable_paths: list[str] = []
+    if mutable_generated_paths != expected_mutable_paths:
         errors.append(
-            "fixture: integrated tracked-path count does not match git ls-files "
-            f"({len(tracked_paths)} != {audit.get('integrated_tracked_paths')})"
+            "fixture: mutable generated paths must be empty"
         )
-    tracked_bytes = sum((ROOT / path).stat().st_size for path in tracked_paths)
-    if tracked_bytes != audit.get("integrated_tracked_bytes"):
+        mutable_generated_paths = expected_mutable_paths
+    for path in mutable_generated_paths:
+        if path not in tracked_paths:
+            errors.append(f"fixture: mutable generated path is not tracked: {path}")
+
+    current_inventory = audit.get("current_inventory")
+    if not isinstance(current_inventory, dict):
+        errors.append("fixture: current_inventory must be an object")
+        current_inventory = {}
+    if len(tracked_paths) != current_inventory.get("tracked_paths"):
         errors.append(
-            "fixture: integrated tracked-byte count does not match working tree "
-            f"({tracked_bytes} != {audit.get('integrated_tracked_bytes')})"
+            "fixture: current tracked-path count does not match git ls-files "
+            f"({len(tracked_paths)} != {current_inventory.get('tracked_paths')})"
+        )
+    stable_tracked_bytes = sum(
+        (ROOT / path).stat().st_size
+        for path in tracked_paths
+        if path not in mutable_generated_paths
+    )
+    if stable_tracked_bytes != current_inventory.get("stable_tracked_bytes"):
+        errors.append(
+            "fixture: stable tracked-byte count does not match working tree "
+            f"({stable_tracked_bytes} != "
+            f"{current_inventory.get('stable_tracked_bytes')})"
         )
 
     provenance = audit.get("provenance", {})

@@ -51,7 +51,7 @@ class Rapp1DocumentationTests(unittest.TestCase):
         self.assertEqual(audit["post_audit_tracked_paths"], 691)
         self.assertEqual(
             audit["integrated_main_commit"],
-            "bd122780ac90010e607ce9549e7c5ed18bee5d73",
+            "d71b6f9fbf6c2f9e790b358e67e17fe83baae4dd",
         )
         tracked = [
             path
@@ -60,10 +60,20 @@ class Rapp1DocumentationTests(unittest.TestCase):
             ).decode().split("\0")
             if path
         ]
-        self.assertEqual(len(tracked), audit["integrated_tracked_paths"])
+        current = audit["current_inventory"]
+        mutable = set(audit["mutable_generated_paths"])
+        self.assertEqual(len(tracked), current["tracked_paths"])
         self.assertEqual(
-            sum((ROOT / path).stat().st_size for path in tracked),
-            audit["integrated_tracked_bytes"],
+            sum(
+                (ROOT / path).stat().st_size
+                for path in tracked
+                if path not in mutable
+            ),
+            current["stable_tracked_bytes"],
+        )
+        self.assertEqual(
+            audit["mutable_generated_paths"],
+            [],
         )
         self.assertIn("owner-evidence hash", audit["status_boundary"])
 
@@ -282,6 +292,14 @@ class Rapp1DocumentationTests(unittest.TestCase):
                 path, "historical", self.fixture
             )
         self.assertTrue(any("bounded markers" in error for error in errors), errors)
+
+    def test_load_bearing_pitch_history_remains_renderable(self) -> None:
+        text = (ROOT / "pitch-playbook.html").read_text(encoding="utf-8")
+        self.assertNotIn('<div hidden aria-hidden="true">', text)
+        self.assertIn('class="historical-snapshot"', text)
+        self.assertIn("Your AI stack is", text)
+        self.assertIn("RAPP1_AUTHORITY.json", text)
+        self.assertIn("RAPP1_STATUS.md", text)
 
     def test_legacy_frame_marker_is_not_current_guidance(self) -> None:
         legacy_form = "rapp-frame/1.0"

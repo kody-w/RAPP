@@ -1,3 +1,8 @@
+---
+title: "GitHub-as-substrate is the unit-economics moat"
+status: historical
+---
+
 # GitHub-as-substrate is the unit-economics moat
 
 > **Historical/superseded protocol field note.** Preserve this dated narrative

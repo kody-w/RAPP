@@ -1,6 +1,7 @@
 ---
 title: Welcome
 description: Entry point for the RAPP Vault — the second-brain wiki for the platform.
+status: published
 ---
 
 # RAPP Vault

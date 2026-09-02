@@ -1,3 +1,8 @@
+---
+title: "Local-First by Design — Why the Foundation Survives GitHub Going Away"
+status: historical
+---
+
 # Local-First by Design — Why the Foundation Survives GitHub Going Away
 
 > **HISTORICAL VAULT NOTE — superseded current guidance.** The bounded body is

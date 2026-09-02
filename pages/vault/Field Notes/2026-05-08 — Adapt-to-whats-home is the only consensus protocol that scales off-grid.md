@@ -1,3 +1,8 @@
+---
+title: "Adapt-to-what's-home is the only consensus protocol that scales off-grid"
+status: historical
+---
+
 # Adapt-to-what's-home is the only consensus protocol that scales off-grid
 
 **Date:** 2026-05-08

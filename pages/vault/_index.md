@@ -1,6 +1,7 @@
 ---
 title: Index
 description: All notes in the vault, grouped by category. Stubs marked with ◯, published notes with ●.
+status: historical
 ---
 
 # Vault Index

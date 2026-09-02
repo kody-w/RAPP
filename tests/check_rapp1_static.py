@@ -23,7 +23,6 @@ WORKFLOW_ROOT = ROOT / ".github/workflows"
 EXPECTED_WORKFLOW_USE_COUNTS = {
     "cave-super-rar.yml": 2,
     "drift-lint.yml": 1,
-    "harvest-metropolis-activity.yml": 2,
     "kernel-freeze.yml": 2,
     "plant-approved-place.yml": 2,
     "rapp1-conformance.yml": 3,

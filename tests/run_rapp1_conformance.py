@@ -201,14 +201,14 @@ def gates() -> tuple[Gate, ...]:
             "isolated immutable kernel, encoding, storage, and concurrency evidence",
         ),
         Gate(
-            "metropolis-directory",
+            "metropolis-retirement",
             ("bash", "tests/scenarios/16-metropolis-tracker.sh"),
-            "offline decentralized tracker schema and directory checks",
+            "retired directory data, scheduled-writer, and harvester containment",
         ),
         Gate(
-            "metropolis-federation",
+            "metropolis-federation-retirement",
             ("bash", "tests/scenarios/20-cross-tracker-federation.sh"),
-            "offline cross-tracker merge and deduplication checks",
+            "retired cross-tracker records remain non-authoritative evidence",
         ),
         Gate(
             "distribution-retirement",

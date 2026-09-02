@@ -1,3 +1,15 @@
+# Historical RAPP Metropolis snapshot
+
+> **Retired pre-acceptance experiment.** The directory, registration,
+> federation, joining, live-presence, and trust behaviors described below are
+> disabled. The JSON files preserve legacy identities as invalid migration
+> evidence; they are not a RAPP/1 registry, catalog, membership list, or
+> acceptance source. Follow
+> [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md).
+
+<!-- RAPP1-HISTORICAL-SECTION-START -->
+
 # RAPP Metropolis — Protocol
 
 > *A Kazaa/torrent-style index of active RAPP neighborhoods. Brainstems are the seeders. Agents are the work. The protocol is the network.*
@@ -83,3 +95,5 @@ For now, `seeders_min` is the manually-known minimum; `seeders_live` is filled i
 - [`MASTER_PLAN.md`](../../MASTER_PLAN.md) — first-principles north star
 - The seeds the index points at live as their own GitHub repos (e.g. [`kody-w/microsoft-se-team-neighborhood`](https://github.com/kody-w/microsoft-se-team-neighborhood), [`kody-w/braintrust-template`](https://github.com/kody-w/braintrust-template)). Each is a planted organism — same pattern as a planted twin (e.g. [`kody-w/heimdall`](https://github.com/kody-w/heimdall)). The metropolis directory is the **card catalog** that points at all of them.
 - [`pages/vault/Field Notes/`](../vault/Field%20Notes/) — engineering essays, including the bibliography-as-protocol field note
+
+<!-- RAPP1-HISTORICAL-SECTION-END -->

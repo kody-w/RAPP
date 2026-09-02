@@ -3,15 +3,24 @@
 // completeness, and PII posture. Run from the repo root or anywhere; paths
 // resolve relative to the script's location.
 //
+// Pass --write-manifest to reconcile manifest metadata from tracked notes.
+//
 // Exits non-zero on any failure. Prints a summary either way.
 
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import {
+  existsSync,
+  readFileSync,
+  readdirSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, relative, sep } from 'node:path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(__dirname, '..');
 const VAULT = resolve(REPO, 'pages', 'vault');
+const writeManifest = process.argv.includes('--write-manifest');
 
 let failures = 0;
 let warnings = 0;
@@ -50,8 +59,34 @@ try {
   process.exit(1);
 }
 
-const manifestPaths = new Set(manifest.notes.map((n) => n.path));
+let manifestPaths = new Set(manifest.notes.map((n) => n.path));
 const filesystemPaths = new Set(mdRel);
+
+if (writeManifest) {
+  const existingOrder = manifest.notes
+    .map((note) => note.path)
+    .filter((path, index, paths) => (
+      filesystemPaths.has(path) && paths.indexOf(path) === index
+    ));
+  const existingPaths = new Set(existingOrder);
+  const missingPaths = mdRel
+    .filter((path) => !existingPaths.has(path))
+    .sort((left, right) => left.localeCompare(right));
+  manifest.notes = [...existingOrder, ...missingPaths].map((path) => {
+    const raw = readFileSync(resolve(VAULT, path), 'utf8');
+    const frontmatter = parseFrontmatter(raw).meta;
+    const segments = path.split('/');
+    return {
+      path,
+      title: frontmatter.title || basename(path).replace(/\.md$/, ''),
+      section: segments.length > 1 ? segments[0] : null,
+      status: frontmatter.status || 'stub',
+    };
+  });
+  writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  manifestPaths = new Set(manifest.notes.map((note) => note.path));
+  console.log(`Updated manifest with ${manifest.notes.length} notes.`);
+}
 
 for (const p of manifestPaths) {
   if (!filesystemPaths.has(p)) {
@@ -60,7 +95,7 @@ for (const p of manifestPaths) {
 }
 for (const p of filesystemPaths) {
   if (!manifestPaths.has(p)) {
-    warn(`filesystem has note not in manifest: ${p}`);
+    fail(`filesystem has note not in manifest: ${p}`);
   }
 }
 if (manifestPaths.size && [...manifestPaths].every((p) => filesystemPaths.has(p))) {
