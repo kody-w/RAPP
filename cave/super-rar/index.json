@@ -1,9 +1,12 @@
 {
   "schema": "rapp-super-rar/1.0",
+  "status": "retired",
+  "active_distribution": false,
+  "streamable": false,
   "neighborhood_rappid": "rappid:@kody-w/rapp-cave:ca72ca0a3cb90c357fb09e38b02f85f09935cacbf61e94740c57f1eb30a73e0a",
-  "note": "Historical Cave inventory. Only entries explicitly marked streamable may be fetched, and fetched bytes remain untrusted until their owning protocol verifies them. Retired installer agents, eggs, and prepared rapplications are inert evidence, not distribution paths.",
-  "raw_url_prefix": "https://raw.githubusercontent.com/kody-w/RAPP/main/cave",
-  "built_at": "2026-07-17T13:03:41Z",
+  "note": "Inert historical Cave inventory. Every entry is retired, non-streamable, and non-distributable. No entry may be fetched, installed, or executed from this ledger.",
+  "raw_url_prefix": null,
+  "historical_snapshot_at": "2026-07-17T13:03:41Z",
   "count": 1,
   "by_kind": {
     "egg": 1
@@ -14,8 +17,11 @@
       "name": "cubby-rapp-installer.egg",
       "cubby": "kody-w",
       "path": "cubbies/kody-w/eggs/cubby-rapp-installer.egg",
+      "status": "retired",
+      "active_distribution": false,
       "streamable": false,
-      "sha256": "38ce5e8f1236b584eb3c6d4a6663ce46a0ff73c06599628d87fe610e035fb18b"
+      "sha256": "38ce5e8f1236b584eb3c6d4a6663ce46a0ff73c06599628d87fe610e035fb18b",
+      "purpose": "Immutable legacy egg bytes retained as historical evidence only; never hatch, install, or execute."
     }
   ]
 }

@@ -25,6 +25,7 @@
     "authenticated_section_13_registry": false,
     "public_installer": false,
     "hosted_product": false,
+    "moving_external_catalogs": "quarantined",
     "status_path": "RAPP1_STATUS.md"
   },
   "authority": {
@@ -53,28 +54,58 @@
       "media_type": "application/json"
     },
     {
-      "rel": "agent-registry",
-      "href": "https://raw.githubusercontent.com/kody-w/RAR/main/api.json",
-      "media_type": "application/json",
-      "scope": "external-component"
+      "rel": "kernel-archive-status",
+      "href": "RAPP_KERNEL_ARCHIVE_STATUS.json",
+      "media_type": "application/json"
+    }
+  ],
+  "external_candidates": [
+    {
+      "id": "rar",
+      "repository": "https://github.com/kody-w/RAR",
+      "status": "untrusted-external-candidate",
+      "authoritative": false,
+      "authenticated_registry": false,
+      "installation_authorized": false,
+      "execution_authorized": false,
+      "moving_catalog_entrypoints_exposed": false,
+      "note": "RAR moving-branch API and prompt URLs are intentionally not advertised as current RAPP capabilities. A listing or hash cannot authorize fetch, installation, execution, identity, trust, or RAPP/1 acceptance."
     },
     {
-      "rel": "agent-registry-interface",
-      "href": "https://raw.githubusercontent.com/kody-w/RAR/main/skill.md",
-      "media_type": "text/markdown",
-      "scope": "external-component"
+      "id": "rapp-projects",
+      "repository": "https://github.com/kody-w/rapp-projects",
+      "status": "untrusted-external-candidate",
+      "authoritative": false,
+      "authenticated_registry": false,
+      "installation_authorized": false,
+      "execution_authorized": false,
+      "note": "Project continuity material is external candidate input only and must be evaluated independently."
     },
     {
-      "rel": "project-continuity",
-      "href": "https://raw.githubusercontent.com/kody-w/rapp-projects/main/INTEROP.md",
-      "media_type": "text/markdown",
-      "scope": "external-component"
+      "id": "rapp-sdk",
+      "repository": "https://github.com/kody-w/rapp-sdk",
+      "status": "untrusted-external-candidate",
+      "authoritative": false,
+      "authenticated_registry": false,
+      "installation_authorized": false,
+      "execution_authorized": false,
+      "note": "SDK availability does not establish protocol authority, compatibility, installation permission, or accepted code."
+    },
+    {
+      "id": "aibast-rapp-brainstem",
+      "repository": "https://github.com/microsoft/aibast-agents-library/tree/main/rapp_brainstem",
+      "status": "untrusted-external-candidate",
+      "authoritative": false,
+      "authenticated_registry": false,
+      "installation_authorized": false,
+      "execution_authorized": false,
+      "note": "The related execution host is outside this target and is not a current RAPP capability, installer, or trust source."
     }
   ],
   "selection_value": [
     "stable-identity",
     "independent-verification",
-    "machine-readable-capability-discovery",
+    "explicit-candidate-evaluation",
     "crash-safe-continuity",
     "cross-runtime-handoff",
     "bounded-autonomy",
@@ -84,7 +115,7 @@
   "growth_loop": {
     "mode": "permissioned-ai-to-ai",
     "steps": [
-      "discover",
+      "receive-untrusted-candidate-reference",
       "verify",
       "evaluate-disposably",
       "adopt-explicitly",

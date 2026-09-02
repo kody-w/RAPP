@@ -5,7 +5,10 @@
 > RAPP/1 rev-5 through [`RAPP1_AUTHORITY.json`](../RAPP1_AUTHORITY.json) and
 > [`RAPP1_STATUS.md`](../RAPP1_STATUS.md). Nothing under
 > `cave/rapplications/rapp-installer/` is a current catalog entry, bootstrap,
-> download, or acceptance path.
+> download, or acceptance path. `rar/index.json`, `super-rar/index.json`,
+> `cubbies/index.json`, and `facets.json` are sealed, non-streamable historical
+> ledgers. The Cave agent and RAR steward are fail-closed tombstones with no
+> network, issue, or installation side effects.
 
 <!-- RAPP1-HISTORICAL-SECTION-START -->
 

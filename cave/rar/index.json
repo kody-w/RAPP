@@ -1,11 +1,14 @@
 {
   "schema": "rapp-rar-index/1.1",
+  "status": "retired",
+  "active_distribution": false,
+  "streamable": false,
   "neighborhood_rappid": "rappid:@kody-w/rapp-cave:ca72ca0a3cb90c357fb09e38b02f85f09935cacbf61e94740c57f1eb30a73e0a",
   "rar_for": "kody-w/RAPP",
   "kind": "workspace",
-  "raw_url_prefix": "https://raw.githubusercontent.com/kody-w/RAPP/main/cave",
-  "note": "Contained historical index. SHA-256 records identify retained bytes but do not authenticate them or authorize installation. Retired entries are not streamable.",
-  "updated_at": "2026-07-17T13:03:41Z",
+  "raw_url_prefix": null,
+  "note": "Inert historical ledger. Every entry is retired, non-streamable, and non-distributable. Paths and hashes are evidence only; this file is not a registry, download index, installation source, or acceptance record.",
+  "historical_snapshot_at": "2026-07-17T13:03:41Z",
   "agents": [
     {
       "name": "@kody-w/cave",
@@ -14,16 +17,22 @@
       "sha256": "e2c55368c735d56ad7faab9f14cde3eb78f11891cb509541075605bdc9cc8c3d",
       "purpose": "Fail-closed tombstone for the retired public Cave agent.",
       "required_by_tether": false,
-      "schema": "rapp-agent/1.0"
+      "schema": "rapp-agent/1.0",
+      "status": "retired",
+      "active_distribution": false,
+      "streamable": false
     },
     {
       "name": "@rapp/rar_steward",
       "version": "1.0.0",
       "path": "agents/rar_steward_agent.py",
-      "sha256": "fa38826bf176d010c6c329b330ec93e0e6ed7b6459cabfd1455bbe4ae39bc14c",
-      "purpose": "RarStewardAgent \u2014 the autonomous steward of the public RAR.",
+      "sha256": "32be91d208d763a389d16eb6438f7ff574d78b5eace587f2d1f5bc1091433b56",
+      "purpose": "Fail-closed tombstone for the retired Cave RAR steward.",
       "required_by_tether": false,
-      "schema": "rapp-agent/1.0"
+      "schema": "rapp-agent/1.0",
+      "status": "retired",
+      "active_distribution": false,
+      "streamable": false
     }
   ],
   "rapps": [
@@ -34,13 +43,18 @@
       "path": "rapplications/rapp-installer/",
       "status": "retired",
       "active_distribution": false,
+      "streamable": false,
       "immutable_prepared_snapshot": true,
-      "purpose": "Retired prepared snapshot: rapp-installer. No bootstrap, installation, or publication is authorized."
+      "purpose": "Retired prepared snapshot: rapp-installer. No bootstrap, installation, execution, or publication is authorized."
     }
   ],
   "verification": {
     "schema": "rapp-rar-manifest/1.0",
     "scheme": "sha256",
-    "_instructions": "Re-compute sha256(file) for anything you stream and compare before installing."
+    "mode": "historical-integrity-evidence-only",
+    "authorizes_fetch": false,
+    "authorizes_installation": false,
+    "authorizes_execution": false,
+    "note": "A matching hash records retained bytes only; it supplies no identity, trust, freshness, authority, or acceptance."
   }
 }

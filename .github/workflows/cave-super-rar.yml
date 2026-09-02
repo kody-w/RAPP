@@ -1,31 +1,41 @@
-name: cave super-RAR freshness
+name: cave historical-ledger containment
 
-# Keep the public RAPP Cave's super-store honest: whenever a cubby's contents or
-# the cave's participation agents change, the committed super-RAR/RAR indexes
-# must have been rebuilt. This is the CI half of the batcave god agent's
-# `super_rar rebuild` — a gate, not a write-back (no loops, no extra perms).
+# This workflow validates committed tombstones only. It never rebuilds a
+# catalog, discovers entries, writes back, packages code, or uploads an
+# executable distribution.
 on:
   pull_request:
     paths:
-      - 'cave/cubbies/**'
       - 'cave/agents/**'
-      - 'cave/rapplications/**'
+      - 'cave/cubbies/index.json'
+      - 'cave/facets.json'
+      - 'cave/rar/index.json'
+      - 'cave/super-rar/index.json'
       - 'cave/tools/build_super_rar.py'
+      - '.github/workflows/cave-super-rar.yml'
   push:
     branches: [main]
     paths:
-      - 'cave/cubbies/**'
       - 'cave/agents/**'
-      - 'cave/rapplications/**'
+      - 'cave/cubbies/index.json'
+      - 'cave/facets.json'
+      - 'cave/rar/index.json'
+      - 'cave/super-rar/index.json'
+      - 'cave/tools/build_super_rar.py'
+      - '.github/workflows/cave-super-rar.yml'
+
+permissions:
+  contents: read
 
 jobs:
-  check:
+  validate-inert-ledger:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.11'
-      - name: Verify the super-RAR indexes are current
-        run: |
-          python3 cave/tools/build_super_rar.py --check
+      - name: Validate sealed historical Cave ledgers
+        run: python3 cave/tools/build_super_rar.py --check
+      - name: Run Cave containment regressions
+        run: python3 cave/tests/test_catalog_containment.py
