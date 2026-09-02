@@ -296,10 +296,17 @@ class ContainmentTests(unittest.TestCase):
 
     def test_worker_inference_proxy_is_absent(self):
         source = (ROOT / "worker/worker.js").read_text(encoding="utf-8")
-        self.assertIn("p === '/api/copilot/chat'", source)
+        self.assertIn("fetch()", source)
         self.assertIn("status: 410", source)
-        self.assertIn("capability-route-retired", source)
-        self.assertNotIn("/chat/completions", source)
+        self.assertIn("runtime-retired", source)
+        for forbidden in (
+            "/api/copilot/chat",
+            "/chat/completions",
+            "async ",
+            "await ",
+            "https://",
+        ):
+            self.assertNotIn(forbidden, source)
 
     def test_tier2_deployment_guard_blocks_packaging(self):
         guard = json.loads(

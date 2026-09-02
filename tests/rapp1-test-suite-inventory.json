@@ -35,13 +35,15 @@
     },
     {
       "path": "tests/doorman/chat.js",
-      "disposition": "external",
-      "reason": "Requires a live authenticated doorman/chat deployment; canonical static inspection still checks JavaScript syntax."
+      "disposition": "canonical-child",
+      "reason": "Retired credential-safe tombstone exercised by the browser containment gate.",
+      "gate": "worker-containment"
     },
     {
       "path": "tests/doorman/smoke.js",
-      "disposition": "external",
-      "reason": "Requires a live authenticated doorman/chat deployment; canonical static inspection still checks JavaScript syntax."
+      "disposition": "canonical-child",
+      "reason": "Retired no-network tombstone exercised by the browser containment gate.",
+      "gate": "worker-containment"
     },
     {
       "path": "tests/dreamcatcher-conformance/runner.py",
@@ -132,28 +134,32 @@
     },
     {
       "path": "tests/osi/L4a-tether-browser.sh",
-      "disposition": "external",
-      "reason": "Installs/launches Playwright Chromium and contacts the public PeerJS broker."
+      "disposition": "canonical-child",
+      "reason": "Retired browser-suite tombstone exercised by the browser containment gate.",
+      "gate": "worker-containment"
     },
     {
       "path": "tests/osi/_lib.sh",
-      "disposition": "external",
-      "reason": "Helper for the external OSI selector/browser suite; shell syntax remains statically checked."
+      "disposition": "canonical-helper",
+      "reason": "Shared offline helper for canonical ecosystem and Metropolis retirement scenarios.",
+      "gate": "ecosystem-audit-offline"
     },
     {
       "path": "tests/osi/browser/L4a-tether.spec.mjs",
-      "disposition": "external",
-      "reason": "Behavioral child of the external Playwright/PeerJS suite; syntax remains statically checked."
+      "disposition": "canonical-child",
+      "reason": "Retired no-network JavaScript tombstone exercised by the browser containment gate.",
+      "gate": "worker-containment"
     },
     {
       "path": "tests/osi/browser/fixture.html",
-      "disposition": "external",
-      "reason": "Browser fixture for the external Playwright/PeerJS suite; HTML still receives static parse coverage."
+      "disposition": "canonical-child",
+      "reason": "Inert CSP-locked historical fixture exercised by the browser containment gate.",
+      "gate": "worker-containment"
     },
     {
       "path": "tests/osi/run.sh",
       "disposition": "canonical-entrypoint",
-      "reason": "Compatibility alias that execs the authoritative runner; external OSI browser behavior remains separate."
+      "reason": "Compatibility alias that execs the authoritative runner; retired browser evidence is contained by the worker gate."
     },
     {
       "path": "tests/rapp1_core/test_canonical_identity.py",

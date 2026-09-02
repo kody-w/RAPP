@@ -87,11 +87,8 @@ def test_python_gate_covers_target_owned_offline_pytests():
         ),
     } <= set(runner.EXCLUDED_EXTERNAL_SUITES)
     assert {
-        "tests/doorman/chat.js",
-        "tests/doorman/smoke.js",
         "tests/dreamcatcher-conformance/runner.py",
         "tests/mirror-drift.sh",
-        "tests/osi/L4a-tether-browser.sh",
     } <= set(runner.EXCLUDED_EXTERNAL_SUITES)
 
 

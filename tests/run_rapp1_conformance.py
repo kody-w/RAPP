@@ -64,15 +64,10 @@ EXPECTED_OWNER_BLOCKERS = (
     "Signed replacement invite",
 )
 EXCLUDED_EXTERNAL_SUITES = {
-    "tests/doorman/chat.js": "requires a live authenticated doorman/chat service",
-    "tests/doorman/smoke.js": "requires a live authenticated doorman service",
     "tests/dreamcatcher-conformance/runner.py": (
         "requires the external Dreamcatcher execution engine"
     ),
     "tests/mirror-drift.sh": "queries external mirrors over the network",
-    "tests/osi/L4a-tether-browser.sh": (
-        "downloads/launches Playwright Chromium and uses an external PeerJS broker"
-    ),
     "tests/test_ecosystem_graph.py": (
         "invokes the authenticated gh CLI and rewrites external-inventory "
         "snapshots"
