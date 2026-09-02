@@ -1177,10 +1177,10 @@ def test_v2_fingerprint_mismatch_still_replays_terminal_bytes(test_dir):
     assert fingerprint_version == 2
 
 
-def test_loopback_separate_port_and_external_default_store(test_dir):
+def test_loopback_has_one_fixed_address_and_external_default_store(test_dir):
     config = runtime_config({}, home=test_dir / "home")
     assert config.host == DEFAULT_HOST == "127.0.0.1"
-    assert config.port == DEFAULT_PORT
+    assert config.port == DEFAULT_PORT == 7073
     assert config.port != GRAIL_PORT
     assert config.database_path == (
         test_dir / "home" / ".brainstem" / "rapp1-facade.sqlite3"
@@ -1189,15 +1189,18 @@ def test_loopback_separate_port_and_external_default_store(test_dir):
     custom = runtime_config(
         {
             "RAPP1_FACADE_HOST": DEFAULT_HOST,
-            "RAPP1_FACADE_PORT": "9001",
+            "RAPP1_FACADE_PORT": str(DEFAULT_PORT),
             "RAPP1_FACADE_DB": str(test_dir / "custom.sqlite3"),
         }
     )
     assert custom.host == DEFAULT_HOST
-    assert custom.port == 9001
+    assert custom.port == DEFAULT_PORT
     assert custom.database_path == test_dir / "custom.sqlite3"
-    with pytest.raises(ValueError):
-        runtime_config({"RAPP1_FACADE_PORT": str(GRAIL_PORT)})
+    for rejected_port in (GRAIL_PORT, 9001, 1, 65535):
+        with pytest.raises(ValueError, match="must equal 7073"):
+            runtime_config({"RAPP1_FACADE_PORT": str(rejected_port)})
+    with pytest.raises(ValueError, match="must be an integer"):
+        runtime_config({"RAPP1_FACADE_PORT": "not-a-port"})
     for exposed_host in ("0.0.0.0", "127.0.0.2", "localhost", "::1", ""):
         with pytest.raises(ValueError):
             runtime_config({"RAPP1_FACADE_HOST": exposed_host})
