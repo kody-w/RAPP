@@ -431,7 +431,7 @@ def test_concurrent_duplicate_waits_and_replays_once(
         facade_module, "IDEMPOTENCY_HEARTBEAT_SECONDS", 0.01
     )
     monkeypatch.setattr(
-        facade_module, "IDEMPOTENCY_ORPHAN_AFTER_SECONDS", 0.05
+        facade_module, "IDEMPOTENCY_ORPHAN_AFTER_SECONDS", 1.0
     )
     monkeypatch.setattr(
         facade_module, "IDEMPOTENCY_POLL_SECONDS", 0.005
@@ -465,12 +465,23 @@ def test_concurrent_duplicate_waits_and_replays_once(
         if isolate_waiter
         else owner_app
     )
+    duplicate_store = duplicate_app.extensions["rapp1_facade_store"]
     if isolate_waiter:
-        duplicate_store = duplicate_app.extensions["rapp1_facade_store"]
         duplicate_store._coordinator = type(duplicate_store._coordinator)()
+    waiter_entered = threading.Event()
+    original_wait_for_terminal = duplicate_store.wait_for_terminal
+
+    def observed_wait_for_terminal(pending):
+        waiter_entered.set()
+        return original_wait_for_terminal(pending)
+
+    monkeypatch.setattr(
+        duplicate_store,
+        "wait_for_terminal",
+        observed_wait_for_terminal,
+    )
     first_result: dict[str, Any] = {}
     duplicate_result: dict[str, Any] = {}
-    duplicate_started = threading.Event()
 
     def send_first() -> None:
         with owner_app.test_client() as client:
@@ -484,7 +495,6 @@ def test_concurrent_duplicate_waits_and_replays_once(
             )
 
     def send_duplicate() -> None:
-        duplicate_started.set()
         with duplicate_app.test_client() as client:
             duplicate_result["response"] = post_json(
                 client,
@@ -500,8 +510,8 @@ def test_concurrent_duplicate_waits_and_replays_once(
     assert inference.started.wait(timeout=5)
     duplicate_thread = threading.Thread(target=send_duplicate)
     duplicate_thread.start()
-    assert duplicate_started.wait(timeout=5)
-    duplicate_thread.join(timeout=0.15)
+    assert waiter_entered.wait(timeout=5)
+    assert "response" not in duplicate_result
     assert duplicate_thread.is_alive()
     assert inference.calls == 1
 
