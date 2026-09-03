@@ -61,7 +61,8 @@ exclude:
   - pages/tutorials/commons.egg
   - pages/tutorials/egg_hatcher_agent.py
   - pages/tutorials/sample-session.egg
-  - pages/vault
+  - "pages/vault/*.md"
+  - "pages/vault/**/*.md"
   - pages/vault/manifest.webmanifest
   - docs/install.cmd
   - docs/install.command
