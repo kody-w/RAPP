@@ -46,6 +46,58 @@ REQUIRED_SURFACE_IDS = {
     "TEST-001",
     "MIRROR-001",
 }
+REQUIRED_RESTORED_SOURCE_PATHS = {
+    "azuredeploy.json",
+    "cave/.well-known/rapp-cave.json",
+    "cave/agents/cave_agent.py",
+    "community_rapp/agent-repo-skill.md",
+    "community_rapp/install.ps1",
+    "community_rapp/install.sh",
+    "deploy.ps1",
+    "deploy.sh",
+    "docs/install.cmd",
+    "docs/install.command",
+    "docs/install.sh",
+    "install.cmd",
+    "install.command",
+    "install.ps1",
+    "install.sh",
+    "installer/README.md",
+    "installer/azuredeploy.json",
+    "installer/hatchling",
+    "installer/install-swarm.sh",
+    "installer/install.cmd",
+    "installer/install.ps1",
+    "installer/install.sh",
+    "installer/integration_plant.sh",
+    "installer/plant.sh",
+    "installer/start-local.sh",
+    "pages/tutorials/egg_hatcher_agent.py",
+    "rapp_brainstem/start.ps1",
+    "rapp_brainstem/start.sh",
+    "rapp_brainstem/tls_proxy.py",
+    "rapp_brainstem/utils/boot.py",
+    "rapp_swarm/README.md",
+    "rapp_swarm/build.sh",
+    "rapp_swarm/function_app.py",
+    "rapp_swarm/index.html",
+    "rapp_swarm/provision-twin-lite.sh",
+    "rapp_swarm/provision-twin.sh",
+    "rapp_swarm/twin-egg.sh",
+    "rapp_swarm/twin-sim.sh",
+    "tools/front_door_specs.py",
+    "tools/lan_advertise.py",
+    "tools/sign_release.py",
+    "tools/sim/README.md",
+    "tools/sim/loop_orchestrator.sh",
+    "tools/sim/observe.py",
+    "tools/sim/plant_two_brainstems.py",
+    "tools/sim/push_canvas.sh",
+    "tools/sim/tick_twin.py",
+    "tools/templates/rapp_estate_grail.html",
+    "tools/test_brainstem_server.py",
+    "worker/README.md",
+}
 
 
 def _load(path: Path) -> dict:
@@ -376,6 +428,7 @@ def test_historical_source_ledger_verifies_old_and_restored_bytes():
             assert "retired semantic tombstone" not in text
             assert source["commit"] in text
             assert source["sha256"] in text
+    assert REQUIRED_RESTORED_SOURCE_PATHS <= current_paths
 
 
 def test_every_adapted_page_is_in_the_source_ledger_and_pages_manifest():

@@ -24,7 +24,7 @@
   "historical_observation": {
     "source": {
       "repository": "kody-w/RAPP",
-      "commit": "19ff7d9ff483c0eef2582e71a6d2ad75f60a54",
+      "commit": "19ff7d9ff483c0eef258a3b2031da1fd74570854",
       "path": "cave/.well-known/rapp-cave.json",
       "blob": "97a2158f773b302e9d5482722918af1bf15122b5",
       "sha256": "8657f29dc78939333f2d8987eccfa7c39548de183e8ea567e5862cb87b82ddc0",

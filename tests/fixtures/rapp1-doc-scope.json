@@ -10,8 +10,8 @@
     "integrated_tracked_bytes": 7938989,
     "mutable_generated_paths": [],
     "current_inventory": {
-      "tracked_paths": 715,
-      "stable_tracked_bytes": 9658534
+      "tracked_paths": 722,
+      "stable_tracked_bytes": 13565339
     },
     "integration_note": "The pinned integrated inventory describes d71b6f9; current path and byte coverage is separate, while the 691-row final verifier ledger remains a dated source report.",
     "status_boundary": "RAPP1_STATUS.md retains its code-owned owner-evidence hash from launch containment; current stable path and byte coverage is recorded separately from dated audit evidence.",
@@ -491,8 +491,8 @@
       "path_set_sha256": "c9bba8f59689ee0df4c0df065404470df9a02c6872fbe80619b17b8c18ca8706",
       "sha256": {
         "pages/index.html": "64609f746cd216a22bf023d3ca943644a01c2394fb7f29c3778a3ba013caf289",
-        "cave/rar/index.json": "43a1a3b537fdd2e5644c0f0aa1fbbdcb9232a4dbf8b5384665161421f939e8e0",
-        "cave/super-rar/index.json": "70e57b6f3d54443a75d835899b2fb6cbd8fdd1f9edcbd6b729e7164e30618656"
+        "cave/rar/index.json": "0243ca6318e4ca6176326ee9d1eee70cba4bfb2cf737f329c0525ad309c3eb04",
+        "cave/super-rar/index.json": "929bd95215e8346f8c29aa6aa76c91302b142382f472065507761344437f7071"
       },
       "paths": [
         "pages/index.html",
@@ -506,7 +506,7 @@
       "path_set_sha256": "7423edeb7b7b24efda534a4ddf76d6483f10f16473eabd7dfb5ed640f314a27c",
       "sha256": {
         "pages/_site/partials/footer.html": "d66b6fcb348238eb6db435c50a66cbc88c9800cca0c6d89db32bfa73799875a5",
-        "installer/README.md": "2cdbeb34454c1dced1a2e6c5698b9256adac76d8a4ab355fda00687349a670fe"
+        "installer/README.md": "85d0913c7f2486158820f228004abe5245558c3d9ec6b39ab4c36edb6eb575fc"
       },
       "paths": [
         "pages/_site/partials/footer.html",
@@ -547,7 +547,7 @@
       "TRADEMARK.md": "trademark policy, not protocol guidance",
       "blog.html": "static blog shell outside the final stale-live finding",
       "cave/cubbies/_template/front_door.md": "retired cubby template fixture",
-      "community_rapp/agent-repo-skill.md": "agent-repository skill owned by the code/distribution closure",
+      "community_rapp/agent-repo-skill.md": "current migration note plus bounded verbatim historical agent-library interface",
       "index.html": "root landing page is distribution-branch-owned",
       "installer/index.html": "installer application shell is distribution-branch-owned",
       "pages/chat.html": "application surface owned by the product/code closure",
@@ -590,9 +590,9 @@
       "rapp_brainstem/RAPP1_FACADE.md": "facade contract owned and validated by the code closure",
       "rapp_brainstem/index.html": "brainstem application surface owned by the code closure",
       "rapp_brainstem/soul.md": "runtime agent soul owned by the code closure",
-      "rapp_swarm/index.html": "retired swarm application tombstone owned by distribution",
+      "rapp_swarm/index.html": "adapted historical Swarm architecture page with inert controls",
       "release-notes.html": "dated release archive",
-      "worker/README.md": "worker runtime documentation outside the protocol audit"
+      "worker/README.md": "current Worker safety contract plus bounded verbatim historical guide"
     }
   },
   "canon_authority": {
@@ -808,7 +808,7 @@
     "pages/_site/index.json": "generated navigation metadata; category rules validate it directly",
     "pages/about/ecosystem.html": "generated visualization mirror",
     "pages/about/prompts.json": "structured historical prompt ledger; marketing rule validates its explicit disposition",
-    "rapp_swarm/README.md": "retired 410/deployment tombstone owned by the post-code containment closure",
+    "rapp_swarm/README.md": "current pre-acceptance safety boundary plus bounded verbatim historical Tier-2 guide",
     "specs/ecosystem-spec.json": "generated non-authoritative ecosystem observation",
     "tools/sim/observe.py": "code-owned simulation tool; documentation gate records but does not modify it"
   },

@@ -497,10 +497,10 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
             "64609f746cd216a22bf023d3ca943644a01c2394fb7f29c3778a3ba013caf289"
         ),
         "cave/rar/index.json": (
-            "43a1a3b537fdd2e5644c0f0aa1fbbdcb9232a4dbf8b5384665161421f939e8e0"
+            "0243ca6318e4ca6176326ee9d1eee70cba4bfb2cf737f329c0525ad309c3eb04"
         ),
         "cave/super-rar/index.json": (
-            "70e57b6f3d54443a75d835899b2fb6cbd8fdd1f9edcbd6b729e7164e30618656"
+            "929bd95215e8346f8c29aa6aa76c91302b142382f472065507761344437f7071"
         ),
     }
     terminal_hashes = target_checks.get("integrated_terminal_states", {}).get(
@@ -518,7 +518,7 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
             "d66b6fcb348238eb6db435c50a66cbc88c9800cca0c6d89db32bfa73799875a5"
         ),
         "installer/README.md": (
-            "2cdbeb34454c1dced1a2e6c5698b9256adac76d8a4ab355fda00687349a670fe"
+            "85d0913c7f2486158820f228004abe5245558c3d9ec6b39ab4c36edb6eb575fc"
         ),
     }
     documentation_hashes = target_checks.get(
@@ -990,36 +990,46 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
         )
 
     installer_readme = _read("installer/README.md")
+    installer_active, installer_marker_errors = _active_text(
+        "installer/README.md",
+        fixture,
+    )
+    errors.extend(installer_marker_errors)
     for token in (
-        "HTTP 410 Gone",
-        "target-owned public distribution, deployment, and",
-        "download entrypoints in `installer/` are retired",
-        "No public runtime installation is available",
-        "repository-local `initialize-variant.sh` lineage utility remains active",
-        "only for fresh template clones",
-        "It is mint-once",
-        "performs no runtime install or deploy",
-        "not a public distribution",
-        "intentionally provides no public installation, deployment, or",
-        "download commands",
+        "Current delivery boundary",
+        "stable filenames",
+        "historical surface",
+        "default to local provenance",
+        "zero effects",
+        "KERNEL_PIN.json",
+        "reviewed dependency",
+        "authenticated fresh section-13",
+        "evidence is unavailable",
+        "kody-w/rapp-installer@brainstem-v0.6.9",
         "RAPP1_STATUS.md",
-        "RAPP1_AUTHORITY.json",
-        "RAPP/1 rev-5 authority",
+    ):
+        if token not in installer_active:
+            errors.append(f"installer/README.md: missing terminal claim {token!r}")
+    for token in (
+        "# `installer/` — Public install surface",
+        "**Stable filenames.**",
+        "**Versioned bundles append, not replace.**",
+        "## Scale rule",
     ):
         if token not in installer_readme:
-            errors.append(f"installer/README.md: missing terminal claim {token!r}")
+            errors.append(f"installer/README.md: historical contract lost {token!r}")
     if re.search(
         r"\b(?:curl|wget|irm|iex)\b|install\.(?:sh|ps1|cmd)\b|"
         r"\b(?:install now|one-liner|deploy to azure|download-and-import)\b|"
         r"https?://[^\s)]*/installer(?:/|\b)",
-        installer_readme,
+        installer_active,
         flags=re.IGNORECASE,
     ):
         errors.append("installer/README.md: restores public install instructions")
     if re.search(
         r"\b(?:installer|installation|distribution)\b[^.\n]{0,80}"
         r"\b(?:is|are|remains?)\s+(?:current|active|supported|operational)\b",
-        installer_readme,
+        installer_active,
         flags=re.IGNORECASE,
     ):
         errors.append("installer/README.md: restores a current installer claim")
@@ -1249,7 +1259,7 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
 
     status = _read("RAPP1_STATUS.md")
     expected_status_sha256 = (
-        "2eac582c61170044011bfaf174bf89ea05421b598ce36d49660019e1f8f6c112"
+        "7153ecdc6a855a9399625f441c0b99e543e4444ef792c5cb53173d3b0d65bd7f"
     )
     if hashlib.sha256(status.encode("utf-8")).hexdigest() != expected_status_sha256:
         errors.append("RAPP1_STATUS.md: code-owned owner-evidence hash drifted")

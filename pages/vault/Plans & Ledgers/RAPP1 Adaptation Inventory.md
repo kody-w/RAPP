@@ -65,18 +65,18 @@ are not accepted protocol objects.
 | EGG-001 | Eggs and archives | Structural/pre-acceptance | Verify signers and variants, emit acceptance receipts, stage without execution | Registry, invite |
 | TRUST-001 | Registry and key trust | Owner-blocked | Implement public-key verification and durable monotonic registry state | Registry |
 | WIRE-001 | Exact `POST /chat` facade | Loopback candidate | Complete public-origin, adapter-receipt, replay, and concurrency gates | Registry |
-| GRAIL-001 | Installer/Grail | Immutable pin plus historical UI | Resolve only through the pin; keep apply paths explicit and approved | None for read-only |
-| WORKER-001 | Worker, Doorman, browser tether | Full source, capabilities default-off | Add binding receipts and fully local positive browser fixtures | Registry for trust |
+| GRAIL-001 | Installer/Grail | Immutable pin plus full historical source and plan adapters | Keep apply paths bound to the exact pin, reviewed injection, owner approval, and fresh section-13 evidence | None for read-only |
+| WORKER-001 | Worker, Doorman, browser tether | Full source, capabilities default-off, exact host allowlist | Add versioned binding receipts and fully local positive browser fixtures | Registry for trust |
 | BROWSER-001 | Restored browser pages | Full historical UI with unsafe edges disabled | Add reviewed adapters only after exact validators exist | Registry, root, invite |
 | PAGES-001 | GitHub Pages | Curated public history and status | Keep publication inventory, links, snapshots, and source records exact | None |
 | METRO-001 | Metropolis | Full local explorer and collector source | Optional reviewed online observation binding with freshness labels | Registry for acceptance |
 | CAVE-001 | Cave catalog and steward | Full read-only catalog algorithms | Inject identity/frame/egg/registry validators without erasing rejected records | Registry, root, invite |
 | ESTATE-001 | Estate recovery/bootstrap | Full write algorithms behind refusal gates | Verify owner tenure, target approval, and adoption receipts before mutation | Registry, root |
 | NETWORK-001 | Network/audit tools | Offline/read-only by default | Add optional authenticated acceptance pass while retaining raw observations | Registry, root |
-| SWARM-001 | Tier 2, simulations, host tools | Several refusal shells remain | Restore algorithms into bounded loopback sandboxes and explicit deploy receipts | Registry for release |
+| SWARM-001 | Tier 2, simulations, host tools | Full source with inspect/plan/sandbox defaults | Keep source receipts, local replay, exact loopback chat, and effect gates synchronized | Registry for release |
 | GENERATED-001 | Generated manifests and snapshots | Mixed generator contracts | Standardize pinned inputs, check mode, output hash, and provenance | None |
 | HISTORY-001 | Source/archive/test corpus | Preserved evidence | Index every source and port useful behavior into safe replay tests | None |
-| TEST-001 | Canonical gate | Structural and safety coverage | Replace tombstone assertions with preservation and unsafe-edge tests | Owner fixtures remain external |
+| TEST-001 | Canonical gate | Structural, preservation, mutation, and safety coverage | Maintain source-retention and pre-effect authorization tests as adapters evolve | Owner fixtures remain external |
 | MIRROR-001 | External mirrors | Historical observations | Require immutable provenance and byte identity for any republication | Optional owner publication |
 
 The exact paths, gap matrix, and acceptance tests are machine-readable in the
@@ -97,8 +97,9 @@ visuals, copy, examples, and local interactions. Their shared safety target is:
 
 The source records are in
 [`HISTORICAL_SOURCE_LEDGER.json`](../../../HISTORICAL_SOURCE_LEDGER.json).
-That ledger currently verifies 66 restoration records: 50 page or partial
-artifacts and 16 executable/code artifacts.
+That ledger currently verifies 117 restoration records: 50 page or partial
+artifacts, 59 executable/code artifacts, and 8 structured documents, templates,
+or historical records.
 
 ## Executable adaptation examples
 
@@ -106,9 +107,21 @@ artifacts and 16 executable/code artifacts.
 
 The Worker keeps the historical route implementation while every capability is
 false by default. Activation requires both an explicit runtime flag and a
-reviewed binding. Doorman and tether tests use synthetic credentials,
-allowlisted origins, and dependency-supplied browsers; they do not auto-install
-or discover tokens.
+reviewed binding. Copilot forwarding is limited to four exact historical hosts;
+suffix confusion, userinfo, alternate schemes, ports, IPs, Unicode, punycode,
+encoded hosts, and unapproved redirects fail before credentials or transport.
+Doorman and tether tests use synthetic credentials, allowlisted origins, and
+dependency-supplied browsers; they do not auto-install or discover tokens.
+
+### Distribution and Grail adapters
+
+Root, docs, community, installer, deployment, signing, LAN, and Brainstem
+launcher sources are restored at their stable paths. Default invocations emit
+local provenance plans with no effects. The two complete ARM templates are
+retained byte-for-byte as inert data. Apply paths require the exact immutable
+Grail pin, reviewed dependency injection, target-specific owner approval, and
+authenticated fresh section-13 evidence; unavailable evidence refuses before
+transport or mutation.
 
 ### Cave
 
@@ -116,8 +129,8 @@ The RAR steward again performs health, duplicate, junk, agent, and issue-plan
 analysis. The Super RAR builder again discovers and renders catalog entries.
 Both default to local read-only modes. Moving refs, missing hashes,
 installation, streaming, execution, publication, and acceptance are refused.
-Historical installer observations remain present even when their executable
-source is absent.
+The full Cave agent and public beacon observation are retained while active
+clone, copy, bootstrap, streaming, and acceptance edges remain disabled.
 
 ### Estate and network tools
 
@@ -126,6 +139,16 @@ audit, product contracts, and holocard generation retain their full
 algorithms. Their default modes inspect, compare, or plan. Mutation requires an
 exact target-specific approval and authenticated fresh registry evidence,
 which this repository cannot currently supply.
+
+### Swarm and simulations
+
+Tier 2 provisioning, Azure function, Twin egg, local simulation, front-door,
+test-server, Cave-host, and tutorial hatcher implementations are restored with
+exact source provenance. Defaults inspect, plan, or replay only in memory or
+bounded local fixtures. RAPP chat routes solely through
+`http://127.0.0.1:7073/chat`; deployment, packaging, extraction, process,
+filesystem, model, credential, and repository effects stop before their
+executors unless every receipt and owner-evidence gate passes.
 
 ### Metropolis
 

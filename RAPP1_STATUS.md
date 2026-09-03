@@ -26,9 +26,13 @@ are dated evidence, not interchangeable snapshots:
   eggs.
 - **Post-implementation review (`e1c2fbb`): 691/691 tracked paths**, the same
   5 archives, 450 recursive members, and 2 JSON eggs.
-- **Integrated closure tree: 699/699 tracked paths** after removing the last
-  live Cave installer agent. The canonical gate derives current inventory from
-  `git ls-files`; it does not treat an older count as current.
+- **Integrated closure tree: 699/699 tracked paths (dated pre-restoration
+  snapshot)** after removing the last live Cave installer agent.
+- **Current restoration inventory (2026-09-03): 722 tracked paths**, pinned by
+  path-set digest in `RAPP1_ADAPTATION_INVENTORY.json`, with 117 exact
+  restoration records in `HISTORICAL_SOURCE_LEDGER.json`. The canonical gate
+  derives current inventory from `git ls-files`; it does not treat an older
+  count as current.
 
 Every tracked file in each snapshot was individually reviewed and classified,
 with a contextual disposition per path in the corresponding audit ledger.
@@ -95,12 +99,23 @@ byte-identity proof; no such publication is inferred here.
 
 ## Target-owned launch containment
 
-`rapp_brainstem/start.sh`, `start.ps1`, and `utils/boot.py` are explicit
-HTTP-410 tombstones. They perform no dependency setup, imports, subprocess
-launch, or network bind. The immutable `brainstem.py` bytes are invoked
-directly only by credential-scrubbed, process-owned, OS-assigned-port test
-fixtures as historical evidence; this is not a public launcher or product
-surface.
+`rapp_brainstem/start.sh`, `start.ps1`, and `utils/boot.py` retain their
+complete historical implementations after an unconditional public-launch
+refusal boundary. Their reachable entrypoints perform no dependency setup,
+imports, subprocess launch, or network bind. This target-owned boundary cannot
+technically prevent an operator from invoking the immutable `brainstem.py`
+directly with Python; those frozen Grail bytes are outside mutable launcher
+containment. Repository tests invoke them only inside credential-scrubbed,
+process-owned, OS-assigned-port fixtures as historical evidence, not as a
+public launcher or product surface.
+
+The other restored root, docs, community, installer, deployment, signing, LAN,
+Swarm, simulation, Cave, and hatcher entrypoints default to deterministic
+inspect, plan, or sandbox output. Active effects require exact Grail binding,
+reviewed dependency injection, target-specific receipts, owner approval, and
+authenticated fresh section-13 evidence. The repository supplies no such
+evidence, so rejected paths stop before transport, process creation, or
+mutation.
 
 The target-owned façade launcher binds only `127.0.0.1`. It imports no grail
 module and defaults to the candidate `inference-refused` response until a
@@ -109,12 +124,14 @@ dependency injection.
 
 ## Active-path residual
 
-Approved-place planting is fail-closed before repository creation. The retained
-legacy planter is contained with HTTP 410 semantics, and no authenticated
-RAPP/1 replacement currently emits a strict machine-readable plant result.
-`.github/workflows/plant-approved-place.yml` may be re-enabled only after such a
-producer returns an exact §6.1 rappid and URL as structured data rather than a
-human log.
+Approved-place planting is fail-closed before repository creation. The complete
+legacy planter source is retained and its default invocation emits an
+effect-free provenance plan; apply requests refuse before external tools
+without authenticated owner evidence. No authenticated RAPP/1 producer
+currently emits a strict machine-readable plant result.
+`.github/workflows/plant-approved-place.yml` may proceed beyond validation only
+after such a producer returns an exact §6.1 rappid and URL as structured data
+rather than a human log.
 
 Historical seed backfill is also plan-only. Strict identity failures,
 owner/slug source mismatches, and parent-pointer changes remain explicit owner

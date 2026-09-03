@@ -384,16 +384,24 @@ class Rapp1DocumentationTests(unittest.TestCase):
                 self.assertNotIn("open source", text.lower())
                 self.assertNotIn("MIT", text)
             elif path == "installer/README.md":
-                self.assertIn("HTTP 410 Gone", text)
-                self.assertIn(
-                    "target-owned public distribution, deployment, and", text
+                active, historical = text.split(
+                    "<!-- RAPP1-HISTORICAL-SECTION-START -->",
+                    1,
                 )
-                self.assertIn("initialize-variant.sh", text)
-                self.assertIn("fresh template clones", text)
-                self.assertIn("mint-once", text)
-                self.assertIn("no runtime install or deploy", text)
-                self.assertIn("RAPP1_STATUS.md", text)
-                self.assertIn("RAPP1_AUTHORITY.json", text)
+                self.assertIn("Current delivery boundary", active)
+                self.assertIn("local provenance", active)
+                self.assertIn("zero effects", active)
+                self.assertIn("KERNEL_PIN.json", active)
+                self.assertIn("reviewed dependency", active)
+                self.assertIn("authenticated fresh section-13", active)
+                self.assertIn("RAPP1_STATUS.md", active)
+                self.assertIn("# `installer/` — Public install surface", historical)
+                self.assertIn("**Stable filenames.**", historical)
+                self.assertIn(
+                    "**Versioned bundles append, not replace.**",
+                    historical,
+                )
+                self.assertIn("## Scale rule", historical)
             else:
                 self.assertIn("rapp-history-source", text)
                 self.assertIn("KERNEL_PIN.json", text)
@@ -624,7 +632,7 @@ class Rapp1DocumentationTests(unittest.TestCase):
         status = (ROOT / "RAPP1_STATUS.md").read_bytes()
         self.assertEqual(
             hashlib.sha256(status).hexdigest(),
-            "2eac582c61170044011bfaf174bf89ea05421b598ce36d49660019e1f8f6c112",
+            "7153ecdc6a855a9399625f441c0b99e543e4444ef792c5cb53173d3b0d65bd7f",
         )
         audit = self.fixture["audit"]
         self.assertEqual(audit["post_audit_tracked_paths"], 691)

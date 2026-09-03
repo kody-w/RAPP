@@ -16,8 +16,8 @@
   "snapshot": {
     "basis": "tracked-path-set-after-restoration",
     "generated_at": "2026-09-03",
-    "tracked_path_count": 715,
-    "tracked_path_set_sha256": "1e09c2b70913ead64bc715c6926b5eca50dd6159061efad3d1af2be67d846186",
+    "tracked_path_count": 722,
+    "tracked_path_set_sha256": "99763d11906cc21cdd6d62e568cf6c6b2e5b62f7eddbefd39058c065f9e5076e",
     "path_digest_profile": "sorted UTF-8 repository paths, each terminated by LF"
   },
   "policies": {
@@ -61,8 +61,8 @@
         "type": "git-prefix",
         "prefix": ""
       },
-      "expected_count": 715,
-      "path_set_sha256": "1e09c2b70913ead64bc715c6926b5eca50dd6159061efad3d1af2be67d846186"
+      "expected_count": 722,
+      "path_set_sha256": "99763d11906cc21cdd6d62e568cf6c6b2e5b62f7eddbefd39058c065f9e5076e"
     },
     {
       "id": "PS-CORE",
@@ -124,8 +124,8 @@
         "type": "git-prefix",
         "prefix": "tools/"
       },
-      "expected_count": 27,
-      "path_set_sha256": "eb1e440d61e3f264b48815650cdd3a177c810f6f85da6a4b96687c4f663e65d4"
+      "expected_count": 28,
+      "path_set_sha256": "207c2256bb83ed3c001a655967e49bd7684c3e2949f8d1cfc35efab847597114"
     },
     {
       "id": "PS-PAGES",
@@ -133,8 +133,8 @@
         "type": "git-prefix",
         "prefix": "pages/"
       },
-      "expected_count": 209,
-      "path_set_sha256": "0ed29e915f017abc2619b5395a19454c941457ce10de346a7e7710418a0989c3"
+      "expected_count": 212,
+      "path_set_sha256": "1811cdae52865c1afa5dd18fc743c4d5cf566146d43ead20c59cf01cd10c6689"
     },
     {
       "id": "PS-ADAPTED-PAGES",
@@ -938,7 +938,7 @@
         "grail_installer_pin": "Canonical read-only source is KERNEL_PIN.json and kody-w/rapp-installer@brainstem-v0.6.9.",
         "side_effects": "Historical installer UI is preserved; install, deployment, download, and mutation require explicit reviewed bindings and owner approval."
       },
-      "next_local_adaptation": "Provide a read-only Grail resolver and deterministic inspect/plan paths; any apply path must consume exact pinned bytes plus a target-specific owner receipt.",
+      "next_local_adaptation": "Keep the restored inspect/plan adapters and exact historical source synchronized; any future apply path must additionally validate authenticated fresh section-13 owner evidence.",
       "data_exhaust": {
         "preserve": true,
         "fidelity": "exact-immutable-bytes-and-full-historical-ui"
@@ -1352,7 +1352,7 @@
         "8",
         "13"
       ],
-      "observed_state": "tombstone-shell",
+      "observed_state": "adapted-preacceptance",
       "desired_state": "adapted-safe",
       "path_set_refs": [
         "PS-SWARM",
@@ -1360,6 +1360,15 @@
         "PS-TOOLS"
       ],
       "paths": [
+        "cave/agents/cave_agent.py",
+        "pages/tutorials/egg_hatcher_agent.py",
+        "rapp_swarm/build.sh",
+        "rapp_swarm/function_app.py",
+        "rapp_swarm/index.html",
+        "rapp_swarm/provision-twin-lite.sh",
+        "rapp_swarm/provision-twin.sh",
+        "rapp_swarm/twin-egg.sh",
+        "rapp_swarm/twin-sim.sh",
         "tools/sim/README.md",
         "tools/sim/loop_orchestrator.sh",
         "tools/sim/observe.py",
@@ -1376,9 +1385,9 @@
         "eggs": "Tier 2 packaging remains historical and unaccepted.",
         "registry_trust_freshness": "No deployment or agent source is accepted from catalog presence alone.",
         "grail_installer_pin": "Immutable basic_agent.py remains unchanged.",
-        "side_effects": "Many launchers remain refusal shells; target state is restored sandbox simulation with injected storage/inference and no cloud, credentials, or repository mutation by default."
+        "side_effects": "Restored launchers default to deterministic inspect, plan, or sandbox modes. Cloud, credential, filesystem, process, packaging, and repository effects require exact receipts, reviewed injection, and unavailable authenticated fresh owner evidence."
       },
-      "next_local_adaptation": "Restore full simulation, packaging, provisioning, and host algorithms into process-owned loopback sandboxes with explicit deployment and publication receipts.",
+      "next_local_adaptation": "Keep the restored algorithms, source ledger, local replay fixtures, exact loopback facade, and effect-gate tests synchronized; authenticated deployment remains owner-blocked.",
       "data_exhaust": {
         "preserve": true,
         "fidelity": "fullest-source-required"
@@ -1541,7 +1550,7 @@
         "grail_installer_pin": "Local Grail bytes are hash-verified.",
         "side_effects": "Offline guards, sentinels, clean-tree checks, browser CSP, and explicit capability tests enforce safe defaults."
       },
-      "next_local_adaptation": "Replace every tombstone-era positive assertion with preservation, provenance, no-default-egress, no-false-acceptance, and exact unsafe-edge refusal checks.",
+      "next_local_adaptation": "Maintain mutation-tested preservation, provenance, no-default-egress, no-false-acceptance, and exact unsafe-edge refusal checks as restored sources evolve.",
       "data_exhaust": {
         "preserve": true,
         "fidelity": "full-test-history"
