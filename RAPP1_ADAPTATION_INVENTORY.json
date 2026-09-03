@@ -16,8 +16,8 @@
   "snapshot": {
     "basis": "tracked-path-set-after-restoration",
     "generated_at": "2026-09-03",
-    "tracked_path_count": null,
-    "tracked_path_set_sha256": null,
+    "tracked_path_count": 715,
+    "tracked_path_set_sha256": "1e09c2b70913ead64bc715c6926b5eca50dd6159061efad3d1af2be67d846186",
     "path_digest_profile": "sorted UTF-8 repository paths, each terminated by LF"
   },
   "policies": {
@@ -61,8 +61,8 @@
         "type": "git-prefix",
         "prefix": ""
       },
-      "expected_count": null,
-      "path_set_sha256": null
+      "expected_count": 715,
+      "path_set_sha256": "1e09c2b70913ead64bc715c6926b5eca50dd6159061efad3d1af2be67d846186"
     },
     {
       "id": "PS-CORE",
@@ -70,8 +70,8 @@
         "type": "git-prefix",
         "prefix": "rapp1_core/"
       },
-      "expected_count": null,
-      "path_set_sha256": null
+      "expected_count": 11,
+      "path_set_sha256": "fdc48003f0173a9484df51391793b8b7e61699fd9793ba10266ee6667f380856"
     },
     {
       "id": "PS-BRAINSTEM",
@@ -79,8 +79,8 @@
         "type": "git-prefix",
         "prefix": "rapp_brainstem/"
       },
-      "expected_count": null,
-      "path_set_sha256": null
+      "expected_count": 29,
+      "path_set_sha256": "f1e192db3f0887f5b99d1834bf0d2244d05b4da171a8e7cd9369ef98e90ad343"
     },
     {
       "id": "PS-SWARM",
@@ -88,8 +88,8 @@
         "type": "git-prefix",
         "prefix": "rapp_swarm/"
       },
-      "expected_count": null,
-      "path_set_sha256": null
+      "expected_count": 36,
+      "path_set_sha256": "adf0b382bbb859249bc5ae43f7a2f25c064ef80980403b22a47023ce88368562"
     },
     {
       "id": "PS-CAVE",
@@ -97,8 +97,8 @@
         "type": "git-prefix",
         "prefix": "cave/"
       },
-      "expected_count": null,
-      "path_set_sha256": null
+      "expected_count": 79,
+      "path_set_sha256": "7e227f065810e1f72b132c08f9ee6415a335943e57adda9cfaac9a2c0ce88793"
     },
     {
       "id": "PS-INSTALLER",
@@ -106,8 +106,8 @@
         "type": "git-prefix",
         "prefix": "installer/"
       },
-      "expected_count": null,
-      "path_set_sha256": null
+      "expected_count": 24,
+      "path_set_sha256": "4acdfb1745b1d50cc4d0f196c85801b335a574fb97585ea4135ad9a70019ae3b"
     },
     {
       "id": "PS-WORKER",
@@ -115,8 +115,8 @@
         "type": "git-prefix",
         "prefix": "worker/"
       },
-      "expected_count": null,
-      "path_set_sha256": null
+      "expected_count": 4,
+      "path_set_sha256": "b849f91bfdd24c98b61248d2ecf0478ba4a403708d13103dc5f2f59d9273225b"
     },
     {
       "id": "PS-TOOLS",
@@ -124,8 +124,8 @@
         "type": "git-prefix",
         "prefix": "tools/"
       },
-      "expected_count": null,
-      "path_set_sha256": null
+      "expected_count": 27,
+      "path_set_sha256": "eb1e440d61e3f264b48815650cdd3a177c810f6f85da6a4b96687c4f663e65d4"
     },
     {
       "id": "PS-PAGES",
@@ -133,8 +133,8 @@
         "type": "git-prefix",
         "prefix": "pages/"
       },
-      "expected_count": null,
-      "path_set_sha256": null
+      "expected_count": 209,
+      "path_set_sha256": "0ed29e915f017abc2619b5395a19454c941457ce10de346a7e7710418a0989c3"
     },
     {
       "id": "PS-ADAPTED-PAGES",
@@ -161,7 +161,7 @@
         ]
       },
       "expected_count": 17,
-      "path_set_sha256": null
+      "path_set_sha256": "c821bea0342749dc66c39a06e05ba37ae2bdb752bede243517c4ecf2ce8e29b7"
     },
     {
       "id": "PS-IMMUTABLE-GRAIL",
@@ -174,7 +174,7 @@
         ]
       },
       "expected_count": 3,
-      "path_set_sha256": null
+      "path_set_sha256": "4cb40388b3c76ac84064e3000ba70ddf71bf4ec9408bbba7075928127445c3b8"
     }
   ],
   "surfaces": [
@@ -1120,6 +1120,7 @@
       "path_set_refs": [],
       "paths": [
         "HISTORICAL_SOURCE_LEDGER.json",
+        "tools/build_historical_source_ledger.py",
         "tests/fixtures/rapp1-retired-test-inventory.json",
         "tests/fixtures/legacy-conformance/README.md",
         "RAPP_KERNEL_ARCHIVE_STATUS.json",
@@ -1175,6 +1176,8 @@
       "path_set_refs": [],
       "paths": [
         "tests/run_rapp1_conformance.py",
+        "tests/run_restoration_acceptance.py",
+        "tests/test_adaptation_inventory.py",
         "tests/rapp1-test-suite-inventory.json",
         "tests/rapp1-live-surface-inventory.json",
         ".github/workflows/rapp1-conformance.yml",

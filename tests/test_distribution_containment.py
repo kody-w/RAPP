@@ -39,7 +39,7 @@ RETIRED_CMD_ENTRYPOINTS = (
     "docs/install.cmd",
     "installer/install.cmd",
 )
-RETIRED_BROWSER_ROUTES = (
+ADAPTED_BROWSER_ROUTES = (
     "installer/plant.html",
     "installer/plant_qr.html",
     "installer/seed.html",
@@ -316,6 +316,7 @@ def test_retired_archive_manifest_pins_bytes_without_active_publication():
 def test_owned_distribution_pages_publish_neither_tier2_nor_power_archive():
     for relative in ("index.html", "installer/index.html"):
         source = (ROOT / relative).read_text(encoding="utf-8")
+        lowered = source.lower()
         assert "install-swarm.sh" not in source
         assert "azuredeploy.json" not in source
         assert "install.ps1" not in source
@@ -325,29 +326,24 @@ def test_owned_distribution_pages_publish_neither_tier2_nor_power_archive():
             flags=re.IGNORECASE,
         )
         assert "RAPP/installer/install.sh" not in source
-        assert "No active installer" in source or "No installer command" in source
-        assert "no active download link" in source
+        assert "rapp-current-status" in lowered
+        assert "no active installer" in lowered
+        assert "kernel_pin.json" in lowered
+        assert 'class="current-note"' not in lowered
 
 
-def test_plant_browser_callers_are_inert_semantic_tombstones():
-    forbidden = (
-        "<script",
-        "<iframe",
-        "<form",
-        "<button",
-        "fetch(",
-        "localstorage",
-        "github.com",
-        "plant.sh",
-    )
-    for relative in RETIRED_BROWSER_ROUTES:
+def test_plant_browser_callers_preserve_source_with_safe_local_controls():
+    for relative in ADAPTED_BROWSER_ROUTES:
         source = (ROOT / relative).read_text(encoding="utf-8").lower()
-        assert "retired semantic tombstone" in source
+        assert "retired semantic tombstone" not in source
+        assert "rapp-history-source" in source
         assert "rapp1_status.md" in source
-        for marker in forbidden:
-            assert marker not in source, f"{relative} retains caller marker: {marker}"
+        assert "kernel_pin.json" in source
+        assert "content-security-policy" in source
+        assert "connect-src 'none'" in source
+        assert "form-action 'none'" in source
     metropolis = (ROOT / "pages/metropolis/index.html").read_text(encoding="utf-8")
-    assert "plant-from-discord" not in metropolis
+    assert "plant-from-discord" in metropolis
 
 
 def test_cave_indexes_classify_prepared_installer_as_retired():

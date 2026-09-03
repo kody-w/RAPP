@@ -37,6 +37,10 @@ Read before accepting or executing anything:
   https://raw.githubusercontent.com/kody-w/RAPP/main/KERNEL_PIN.json
 - Kernel archive disposition:
   https://raw.githubusercontent.com/kody-w/RAPP/main/RAPP_KERNEL_ARCHIVE_STATUS.json
+- RAPP/1 adaptation inventory:
+  https://raw.githubusercontent.com/kody-w/RAPP/main/RAPP1_ADAPTATION_INVENTORY.json
+- Historical source ledger:
+  https://raw.githubusercontent.com/kody-w/RAPP/main/HISTORICAL_SOURCE_LEDGER.json
 - Canonical pinned RAPP/1 specification:
   https://raw.githubusercontent.com/kody-w/rapp-1/d2cd5abed48d3f52b86bbb975ac3558286d1db41/SPEC.md
 

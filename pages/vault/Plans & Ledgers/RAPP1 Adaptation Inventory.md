@@ -97,6 +97,8 @@ visuals, copy, examples, and local interactions. Their shared safety target is:
 
 The source records are in
 [`HISTORICAL_SOURCE_LEDGER.json`](../../../HISTORICAL_SOURCE_LEDGER.json).
+That ledger currently verifies 66 restoration records: 50 page or partial
+artifacts and 16 executable/code artifacts.
 
 ## Executable adaptation examples
 

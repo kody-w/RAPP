@@ -19,14 +19,36 @@ MANIFEST_PATH = ROOT / "pages/_site/index.json"
 RESTORED_HISTORY = {
     "docs/index.html",
     "docs/tutorial.html",
-    "pages/onboarding.html",
     "pages/rappid-deck.html",
     "pages/rappid-onepager.html",
     "pages/share/invention-backlog/index.html",
 }
 SAFE_INTERACTIVE_HISTORY = {
+    "docs/index.html",
+    "docs/tutorial.html",
+    "pages/onboarding.html",
     "pages/rappid-deck.html",
     "pages/rappid-onepager.html",
+    "pages/share/invention-backlog/index.html",
+}
+ADAPTED_HISTORY = {
+    "installer/plant.html",
+    "installer/plant_qr.html",
+    "installer/seed.html",
+    "installer/shortcuts/brainstem-voice/index.html",
+    "installer/shortcuts/index.html",
+    "pages/chat.html",
+    "pages/grail-brainstem/index.html",
+    "pages/lobby.html",
+    "pages/metropolis/index.html",
+    "pages/metropolis/plant-from-discord.html",
+    "pages/payphone.html",
+    "pages/sphere.html",
+    "pages/summon.html",
+    "pages/tether.html",
+    "pages/vbrainstem.html",
+    "pages/vbrainstem/index.html",
+    "pages/vneighborhood.html",
 }
 
 
@@ -40,10 +62,14 @@ class DocumentParser(HTMLParser):
         self.html_seen = False
         self.meta_robots = ""
         self.meta_refresh = ""
+        self.meta_csp = ""
+        self.meta_history_source = ""
+        self.meta_history_boundary = ""
         self.forms = 0
         self.buttons = 0
         self.iframes = 0
         self.scripts: list[dict[str, str]] = []
+        self.linked_resources: list[str] = []
         self._script_index: int | None = None
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
@@ -61,12 +87,25 @@ class DocumentParser(HTMLParser):
                 self.meta_robots = data.get("content", "").lower()
             if equiv == "refresh":
                 self.meta_refresh = data.get("content", "")
+            if equiv == "content-security-policy":
+                self.meta_csp = data.get("content", "").lower()
+            if name == "rapp-history-source":
+                self.meta_history_source = data.get("content", "")
+            if name in {"rapp-history-boundary", "rapp-historical-boundary"}:
+                self.meta_history_boundary = data.get("content", "")
         elif tag == "form":
             self.forms += 1
         elif tag == "button":
             self.buttons += 1
         elif tag == "iframe":
             self.iframes += 1
+        elif tag == "link" and data.get("rel", "").lower() in {
+            "stylesheet",
+            "preload",
+            "modulepreload",
+        }:
+            if data.get("href"):
+                self.linked_resources.append(data["href"])
 
         if data.get("id"):
             self.ids.add(data["id"])
@@ -251,7 +290,6 @@ def main() -> int:
         "cave/rappid.json",
         "cave/tests",
         "pages/_lib",
-        "pages/metropolis/index.json",
         "pages/tutorials/egg_hatcher_agent.py",
         "pages/vault/*.md",
         "pages/vault/**/*.md",
@@ -271,6 +309,9 @@ def main() -> int:
         "pages/vault/manifest.json",
         "pages/vault/sw.js",
         ".well-known/rapp-network-seed.json",
+        "pages/metropolis/index.json",
+        "pages/metropolis/federated-demo.json",
+        "pages/metropolis/activity-snapshot.json",
         "cave/index.html",
         "sitemap.xml",
         "robots.txt",
@@ -289,7 +330,6 @@ def main() -> int:
         "cave/rappid.json",
         "cave/tests/test_catalog_containment.py",
         "pages/_lib/rapp-sealed.js",
-        "pages/metropolis/index.json",
         "pages/tutorials/egg_hatcher_agent.py",
         "pages/vault/Architecture/Rappid.md",
         "installer/install.sh",
@@ -315,6 +355,12 @@ def main() -> int:
 
     html_paths = sorted(path for path in published if path.endswith(".html"))
     parsers: dict[str, DocumentParser] = {}
+    vault_route_paths = {
+        note["path"]
+        for note in json.loads(
+            (ROOT / "pages/vault/manifest.json").read_text(encoding="utf-8")
+        )["notes"]
+    }
     for relative in html_paths:
         parser = parse_document(ROOT / relative)
         parsers[relative] = parser
@@ -347,12 +393,18 @@ def main() -> int:
                 continue
             require(target in published, f"{source}: {attr}={value!r} targets excluded {target}")
             if parts.fragment and target.endswith(".html"):
-                target_parser = parsers.get(target)
-                if target_parser is not None:
+                if target == "pages/vault/index.html":
                     require(
-                        parts.fragment in target_parser.ids,
-                        f"{source}: {value!r} targets missing fragment #{parts.fragment}",
+                        unquote(parts.fragment) in vault_route_paths,
+                        f"{source}: {value!r} targets an unknown vault note",
                     )
+                else:
+                    target_parser = parsers.get(target)
+                    if target_parser is not None:
+                        require(
+                            parts.fragment in target_parser.ids,
+                            f"{source}: {value!r} targets missing fragment #{parts.fragment}",
+                        )
 
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     valid_classes = set(manifest["classifications"])
@@ -416,11 +468,19 @@ def main() -> int:
         )
         if relative in SAFE_INTERACTIVE_HISTORY:
             require(
-                re.search(r"class=[\"']historical-snapshot[\"']", text) is not None
-                and re.search(
+                re.search(
                     r"class=[\"']historical-snapshot[\"'][^>]*\binert\b",
                     text,
-                ) is None,
+                )
+                is None
+                and (
+                    parser.buttons > 0
+                    or any(
+                        script["type"]
+                        in {"", "text/javascript", "module", "application/javascript"}
+                        for script in parser.scripts
+                    )
+                ),
                 f"{relative}: safe local presentation controls must remain enabled",
             )
         else:
@@ -428,8 +488,8 @@ def main() -> int:
                 re.search(
                     r"class=[\"']historical-snapshot[\"'][^>]*\binert\b",
                     text,
-                ) is not None,
-                f"{relative}: restored snapshot must be visibly inert",
+                ) is None,
+                f"{relative}: restored snapshot must remain visible",
             )
         for script in parser.scripts:
             body = script["content"]
@@ -445,45 +505,73 @@ def main() -> int:
                     f"{relative}: restored snapshot auto-loads remote {tag} {attr}={value!r}",
                 )
 
+    for relative in sorted(ADAPTED_HISTORY):
+        text = (ROOT / relative).read_text(encoding="utf-8", errors="replace")
+        parser = parsers[relative]
+        lowered = text.lower()
+        require("noindex" in parser.meta_robots, f"{relative}: adapted history must remain noindex")
+        require(
+            "retired semantic tombstone" not in lowered,
+            f"{relative}: full historical body was replaced by a semantic tombstone",
+        )
+        require(
+            bool(parser.meta_history_source)
+            or "rapp-source-commit" in lowered
+            or "fullest_source_commit" in lowered,
+            f"{relative}: missing historical source provenance",
+        )
+        require(
+            bool(parser.meta_history_boundary)
+            or "rapp-record-kind" in lowered
+            or "rapp-history-boundary" in lowered,
+            f"{relative}: missing current historical/adaptation boundary",
+        )
+        require(bool(parser.meta_csp), f"{relative}: missing browser containment policy")
+        for directive in ("object-src 'none'", "base-uri 'none'", "form-action 'none'"):
+            require(
+                directive in parser.meta_csp,
+                f"{relative}: CSP must include {directive}",
+            )
+        connect_match = re.search(r"(?:^|;)\s*connect-src\s+([^;]+)", parser.meta_csp)
+        require(connect_match is not None, f"{relative}: CSP must declare connect-src")
+        if connect_match is not None:
+            connect_policy = connect_match.group(1)
+            require(
+                "http:" not in connect_policy
+                and "https:" not in connect_policy
+                and "*" not in connect_policy,
+                f"{relative}: CSP permits external connections",
+            )
+        require(not parser.meta_refresh, f"{relative}: adapted history must not redirect")
+        for tag, attr, value in parser.refs:
+            if tag in {"img", "iframe", "script", "audio", "video", "source"}:
+                require(
+                    urlsplit(value).scheme not in {"http", "https"},
+                    f"{relative}: adapted history auto-loads remote {tag} {attr}={value!r}",
+                )
+        require(
+            all(
+                urlsplit(value).scheme not in {"http", "https"}
+                for value in parser.linked_resources
+            ),
+            f"{relative}: adapted history auto-loads a remote linked resource",
+        )
+
     manifest_by_path = {page["path"]: page for page in entries}
-    probe_pattern = re.compile(
-        r"localhost|127\.0\.0\.1|peerjs|\bnew\s+Peer\b|workers?\.dev|"
-        r"serviceWorker\.register|(?:local|session)Storage[^\n;]{0,100}token|"
-        r"fetch\s*\([^)]*(?:worker|token)",
-        flags=re.IGNORECASE,
-    )
-    retired_paths = {
-        path
-        for path, page in manifest_by_path.items()
-        if page["classification"] == "retired_alias"
-    }
     for path, page in manifest_by_path.items():
         if page["classification"] == "current_entrypoint":
             continue
-        relative = f"pages/{path}"
-        parser = parsers[relative]
-        for script in parser.scripts:
-            executable = script["type"] in {"", "text/javascript", "module", "application/javascript"}
-            if executable:
-                require(
-                    not probe_pattern.search(script["src"] + "\n" + script["content"]),
-                    f"{relative}: active localhost/peer/worker/token probe",
-                )
-        if path in retired_paths:
-            text = (ROOT / relative).read_text(encoding="utf-8", errors="replace")
-            require("retired semantic tombstone" in text.lower(), f"{relative}: missing semantic tombstone label")
-            require(not parser.scripts, f"{relative}: retired alias must contain no scripts")
-            require(parser.forms == 0, f"{relative}: retired alias must contain no form")
-            require(parser.buttons == 0, f"{relative}: retired alias must contain no button")
-            require(parser.iframes == 0, f"{relative}: retired alias must contain no iframe")
-            require(not parser.meta_refresh, f"{relative}: retired alias must not redirect")
-            require("rappid:@" not in text.lower(), f"{relative}: retired alias retains a hard-coded twin")
+        if page["classification"] == "adapted_historical_page":
+            require(
+                f"pages/{path}" in ADAPTED_HISTORY,
+                f"manifest {path}: adapted page is absent from the safety contract",
+            )
 
     copy_requirements = {
         "index.html": ("not yet fully rapp/1 conformant", "no active installer"),
-        "pages/index.html": ("historical audience narratives", "historical product narratives"),
-        "pages/kernel.html": ("not yet fully rapp/1 conformant", "no current installer"),
-        "installer/index.html": ("no public installer is available", "no active download link"),
+        "pages/index.html": ("rapp-current-status", "kernel_pin.json"),
+        "pages/kernel.html": ("not yet fully rapp/1 conformant", "kernel_pin.json"),
+        "installer/index.html": ("rapp-current-status", "kernel_pin.json"),
         "blog.html": ("superseded historical record", "no current installer"),
         "release-notes.html": ("superseded historical record", "no current installer"),
         "pages/about/ecosystem.html": ("generated historical observation", "not an active catalog"),

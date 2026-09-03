@@ -5,6 +5,8 @@ Read [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json),
 [`KERNEL_PIN.json`](../../KERNEL_PIN.json) first. The immutable grail is
 `kody-w/rapp-installer@brainstem-v0.6.9`; its pinned bytes and the prepared
 `cave/rapplications/rapp-installer/**` snapshot are read-only.
+Canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+evolution all follow RAPP/1 rev-5 through those authority and status records.
 
 Ask what the agent should do and where the caller-owned adapter belongs. If no
 safe target-owned path is identified, return an implementation plan instead of

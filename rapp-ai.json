@@ -71,6 +71,22 @@
       "media_type": "application/json"
     },
     {
+      "rel": "adaptation-inventory",
+      "href": "RAPP1_ADAPTATION_INVENTORY.json",
+      "media_type": "application/json",
+      "verified": false,
+      "accepted": false,
+      "scope": "candidate-migration-evidence"
+    },
+    {
+      "rel": "historical-source-ledger",
+      "href": "HISTORICAL_SOURCE_LEDGER.json",
+      "media_type": "application/json",
+      "verified": false,
+      "accepted": false,
+      "scope": "restoration-provenance"
+    },
+    {
       "rel": "cave-rar-observation",
       "href": "cave/rar/index.json",
       "media_type": "application/json",

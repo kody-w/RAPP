@@ -45,19 +45,27 @@ for route in \
     installer/seed.html \
     pages/metropolis/plant-from-discord.html
 do
-    grep -qi "retired semantic tombstone" "$ROOT/$route" || {
-        echo "FAIL: $route is not a semantic tombstone" >&2
+    grep -qi "rapp-history-source" "$ROOT/$route" || {
+        echo "FAIL: $route has no historical source provenance" >&2
         exit 1
     }
-    if grep -Eqi '<script|<iframe|<form|fetch\(|plant\.sh' "$ROOT/$route"; then
-        echo "FAIL: $route retains an executable caller" >&2
+    grep -qi "KERNEL_PIN.json" "$ROOT/$route" || {
+        echo "FAIL: $route does not route installer context to the Grail pin" >&2
+        exit 1
+    }
+    grep -qi "Content-Security-Policy" "$ROOT/$route" || {
+        echo "FAIL: $route has no browser containment policy" >&2
+        exit 1
+    }
+    if grep -qi "retired semantic tombstone" "$ROOT/$route"; then
+        echo "FAIL: $route lost its historical body to a semantic tombstone" >&2
         exit 1
     fi
 done
 
-if grep -q 'plant-from-discord' "$ROOT/pages/metropolis/index.html"; then
-    echo "FAIL: metropolis still links the retired caller" >&2
+if ! grep -q 'plant-from-discord' "$ROOT/pages/metropolis/index.html"; then
+    echo "FAIL: metropolis lost the restored mobile planning guide" >&2
     exit 1
 fi
 
-echo "plant retirement: shell callers return 410; browser routes are inert semantic tombstones"
+echo "plant compatibility: shell callers return 410; browser routes preserve full local planning artifacts"

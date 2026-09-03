@@ -14,7 +14,7 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 
-RETIRED_HTML = (
+ADAPTED_HTML = (
     "pages/chat.html",
     "pages/lobby.html",
     "pages/payphone.html",
@@ -26,28 +26,12 @@ RETIRED_HTML = (
     "pages/vneighborhood.html",
     "pages/grail-brainstem/index.html",
     "pages/sphere.html",
-    "rapp_swarm/index.html",
     "installer/plant.html",
     "installer/plant_qr.html",
     "installer/seed.html",
+    "installer/shortcuts/index.html",
+    "installer/shortcuts/brainstem-voice/index.html",
     "pages/metropolis/plant-from-discord.html",
-)
-
-HTML_EXECUTION_MARKERS = (
-    "<script",
-    "<iframe",
-    "fetch(",
-    "localstorage",
-    "sessionstorage",
-    "crypto.subtle",
-    "new peer",
-    "websocket",
-    "/api/copilot/chat",
-    "/chat/completions",
-    "brainstem-egg/",
-    "rapp-frame/",
-    "http://",
-    "https://",
 )
 
 RETIRED_SOURCE_MARKERS = {
@@ -217,18 +201,29 @@ def sha256(path: Path) -> str:
 
 
 class ContainmentTests(unittest.TestCase):
-    def test_browser_surfaces_are_inert_tombstones(self):
-        for relative in RETIRED_HTML:
+    def test_browser_surfaces_preserve_source_with_safe_defaults(self):
+        for relative in ADAPTED_HTML:
             with self.subTest(path=relative):
                 text = (ROOT / relative).read_text(encoding="utf-8")
                 lowered = text.lower()
+                self.assertNotIn("retired semantic tombstone", lowered)
                 self.assertTrue(
-                    "retired semantic tombstone" in lowered
-                    or "http 410" in lowered
+                    "rapp-history-source" in lowered
+                    or "rapp-source-commit" in lowered
                 )
                 self.assertIn("rapp1_status.md", lowered)
-                for marker in HTML_EXECUTION_MARKERS:
-                    self.assertNotIn(marker, lowered)
+                self.assertIn("content-security-policy", lowered)
+                self.assertIn(
+                    (
+                        "connect-src 'self'"
+                        if relative == "pages/metropolis/index.html"
+                        else "connect-src 'none'"
+                    ),
+                    lowered,
+                )
+                self.assertIn("object-src 'none'", lowered)
+                self.assertIn("form-action 'none'", lowered)
+                self.assertGreater((ROOT / relative).stat().st_size, 3_000)
 
     def test_retired_sources_contain_no_legacy_execution_markers(self):
         for relative, markers in RETIRED_SOURCE_MARKERS.items():
@@ -421,31 +416,33 @@ for (const step of [1, "1A", "7", undefined]) {
         self.assertIn("nameSpan.textContent", renderer)
         self.assertNotIn("label.innerHTML", renderer)
 
-    def test_payphone_no_longer_parses_identity_or_handles_tokens(self):
+    def test_payphone_preserves_dialer_source_but_uses_local_state_only(self):
         source = (ROOT / "pages/payphone.html").read_text(encoding="utf-8")
-        self.assertIn("Retired semantic tombstone", source)
-        for forbidden in (
-            "function parseRappid",
-            "localStorage",
-            "sessionStorage",
-            "workers.dev",
-            "github_token",
-        ):
-            self.assertNotIn(forbidden, source)
+        self.assertIn("function parseRappid", source)
+        self.assertIn("rapp-history-runtime-source", source)
+        self.assertIn("connect-src 'none'", source)
+        self.assertIn("local preview", source)
+        self.assertNotIn("Retired semantic tombstone", source)
 
     def test_site_inventory_does_not_present_live_surfaces(self):
         manifest = json.loads((ROOT / "pages/_site/index.json").read_text())
         surface = next(s for s in manifest["sections"] if s["key"] == "surface")
-        self.assertEqual(surface["label"], "Retired surfaces")
-        self.assertTrue(all(p["title"].startswith("Retired ·") for p in surface["pages"]))
+        self.assertEqual(surface["label"], "Restored historical experiences")
+        self.assertTrue(
+            all(
+                p["classification"] == "adapted_historical_page"
+                and p["status"] == "adapted-historical"
+                and p["navigation"] is False
+                for p in surface["pages"]
+            )
+        )
         for relative in (
             "pages/metropolis/index.html",
             "pages/metropolis/plant-from-discord.html",
         ):
             text = (ROOT / relative).read_text()
-            self.assertNotIn('href="../vbrainstem/"', text)
-            self.assertNotIn("/RAPP/pages/vbrainstem/", text)
-            self.assertNotIn("/RAPP/pages/sphere.html", text)
+            self.assertIn("accepted", text)
+            self.assertNotIn("Retired semantic tombstone", text)
 
     def test_pinned_grail_and_cave_kernel_bytes_are_unchanged(self):
         pin = json.loads((ROOT / "KERNEL_PIN.json").read_text())

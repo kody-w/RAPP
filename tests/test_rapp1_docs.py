@@ -336,13 +336,16 @@ class Rapp1DocumentationTests(unittest.TestCase):
         errors = self._category_mutation_errors(path, mutated)
         self.assertTrue(any(path in error and "plant.sh CTA" in error for error in errors))
 
-    def test_executable_planting_script_mutation_is_rejected(self) -> None:
+    def test_network_enabled_planting_page_mutation_is_rejected(self) -> None:
         path = "installer/plant.html"
         text = (ROOT / path).read_text(encoding="utf-8")
-        mutated = text.replace("</body>", "<script>alert(1)</script></body>", 1)
+        mutated = text.replace("connect-src 'none'", "connect-src *", 1)
         errors = self._category_mutation_errors(path, mutated)
         self.assertTrue(
-            any(path in error and "tombstone executes script" in error for error in errors),
+            any(
+                path in error and "adapted page permits network access" in error
+                for error in errors
+            ),
             errors,
         )
 
@@ -365,10 +368,14 @@ class Rapp1DocumentationTests(unittest.TestCase):
         for path in self.fixture["classifications"]["contained"]:
             text = (ROOT / path).read_text(encoding="utf-8")
             if path == "pages/metropolis/index.html":
-                self.assertNotIn("plant-from-discord", text)
+                self.assertIn("plant-from-discord", text)
+                self.assertIn("rapp-source-commit", text)
+                self.assertIn("KERNEL_PIN.json", text)
+                self.assertIn("Content-Security-Policy", text)
             elif path == "pages/index.html":
-                self.assertIn("Pre-acceptance", text)
-                self.assertIn("Installation is disabled", text)
+                self.assertIn("rapp-current-status", text)
+                self.assertIn("KERNEL_PIN.json", text)
+                self.assertNotIn('class="current-note"', text)
             elif path == "pages/_site/partials/footer.html":
                 self.assertIn("source-available", text)
                 self.assertIn("RAPP1_STATUS.md", text)
@@ -388,8 +395,10 @@ class Rapp1DocumentationTests(unittest.TestCase):
                 self.assertIn("RAPP1_STATUS.md", text)
                 self.assertIn("RAPP1_AUTHORITY.json", text)
             else:
-                self.assertIn("Retired semantic tombstone", text)
-                self.assertIn("retired", text.lower())
+                self.assertIn("rapp-history-source", text)
+                self.assertIn("KERNEL_PIN.json", text)
+                self.assertIn("Content-Security-Policy", text)
+                self.assertNotIn("Retired semantic tombstone", text)
 
     def test_final_closure_paths_are_asserted_not_owner_excluded(self) -> None:
         ownership = self.fixture["ownership_exclusions"]

@@ -203,6 +203,11 @@
       "reason": "This is the authoritative runner itself; invoking it from one of its own gates would recurse."
     },
     {
+      "path": "tests/run_restoration_acceptance.py",
+      "disposition": "canonical-entrypoint",
+      "reason": "Runs the provenance-preserving restoration buzzsaw and then delegates to the canonical conformance runner."
+    },
+    {
       "path": "tests/scenarios/16-metropolis-tracker.sh",
       "disposition": "canonical-direct",
       "reason": "Checks restored Metropolis data, documentation, local snapshots, and safe harvester modes.",
@@ -245,6 +250,12 @@
       "gate": "python-offline"
     },
     {
+      "path": "tests/test_adaptation_inventory.py",
+      "disposition": "canonical-direct",
+      "reason": "Verifies complete RAPP/1 gap coverage, owner blockers, path sets, and source-preserving restoration provenance.",
+      "gate": "python-offline"
+    },
+    {
       "path": "tests/test_ai_discovery.py",
       "disposition": "canonical-direct",
       "reason": "Checks the machine-facing audience, authority, growth, and proposed capacity-market contract entirely from local bytes.",
@@ -259,8 +270,8 @@
     {
       "path": "tests/test_distribution_containment.py",
       "disposition": "canonical-direct",
-      "reason": "Verifies fail-closed installer behavior, distribution retirement, immutable archives, and browser caller containment.",
-      "gate": "distribution-retirement"
+      "reason": "Verifies fail-closed launcher behavior, immutable archives, and restored browser planning surfaces.",
+      "gate": "distribution-adaptation"
     },
     {
       "path": "tests/test_door_address.py",
@@ -288,7 +299,7 @@
     {
       "path": "tests/test_metropolis_activity_harvester.py",
       "disposition": "canonical-direct",
-      "reason": "Verifies the retired activity harvester has no schedule, network client, or repository write path.",
+      "reason": "Verifies local snapshot check/plan modes and refusal before any online write side effect.",
       "gate": "python-offline"
     },
     {

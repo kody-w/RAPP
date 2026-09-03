@@ -179,19 +179,39 @@ test('contained Tier 2 deployment cannot advertise RAPP/1', () => {
   equal(guard.rapp1_advertising_allowed, false);
 });
 
-test('legacy browser execution surfaces are inert semantic tombstones', () => {
+test('historical browser execution surfaces are restored with safe defaults', () => {
   for (const relative of [
+    'pages/chat.html',
+    'pages/lobby.html',
+    'pages/payphone.html',
+    'pages/summon.html',
+    'pages/metropolis/index.html',
     'pages/vbrainstem.html',
+    'pages/vbrainstem/index.html',
     'pages/tether.html',
     'pages/sphere.html',
+    'pages/vneighborhood.html',
+    'pages/grail-brainstem/index.html',
+    'installer/plant.html',
+    'installer/plant_qr.html',
+    'installer/seed.html',
+    'installer/shortcuts/index.html',
+    'installer/shortcuts/brainstem-voice/index.html',
+    'pages/metropolis/plant-from-discord.html',
   ]) {
     const source = read(relative).toLowerCase();
     assert(
-      source.includes('retired semantic tombstone'),
-      `${relative} lacks a semantic tombstone label`,
+      source.includes('rapp-history-source')
+        || source.includes('rapp-source-commit'),
+      `${relative} lacks historical source provenance`,
     );
-    assert(!source.includes('<script'), `${relative} still executes scripts`);
-    assert(!source.includes('fetch('), `${relative} still performs fetch`);
+    assert(
+      !source.includes('retired semantic tombstone'),
+      `${relative} lost its full body to a semantic tombstone`,
+    );
+    assert(source.includes('content-security-policy'), `${relative} lacks CSP`);
+    assert(source.includes("object-src 'none'"), `${relative} permits objects`);
+    assert(source.includes("form-action 'none'"), `${relative} permits forms`);
   }
 });
 
@@ -258,7 +278,7 @@ test('retired archives remain exact bytes without publication', () => {
   }
 });
 
-test('owned pages do not publish retired distribution or plant callers', () => {
+test('owned pages preserve distribution context without executable installers', () => {
   for (const relative of ['index.html', 'installer/index.html']) {
     const source = read(relative);
     for (const marker of ['install-swarm.sh', 'azuredeploy.json', 'install.ps1']) {
@@ -281,15 +301,19 @@ test('owned pages do not publish retired distribution or plant callers', () => {
   ]) {
     const source = read(relative).toLowerCase();
     assert(
-      source.includes('retired semantic tombstone'),
-      `${relative} lacks a semantic tombstone label`,
+      source.includes('rapp-history-source'),
+      `${relative} lacks source provenance`,
     );
-    assert(!source.includes('<script'), `${relative} still executes scripts`);
-    assert(!source.includes('plant.sh'), `${relative} still calls the planter`);
+    assert(
+      !source.includes('retired semantic tombstone'),
+      `${relative} is still a semantic tombstone`,
+    );
+    assert(source.includes('kernel_pin.json'), `${relative} lacks Grail evidence`);
+    assert(source.includes("connect-src 'none'"), `${relative} permits network`);
   }
   assert(
-    !read('pages/metropolis/index.html').includes('plant-from-discord'),
-    'metropolis still links the retired planter',
+    read('pages/metropolis/index.html').includes('plant-from-discord'),
+    'metropolis lost the restored mobile planting guide',
   );
 });
 

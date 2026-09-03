@@ -6,6 +6,8 @@ Read [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json),
 conformant. The immutable grail remains
 `kody-w/rapp-installer@brainstem-v0.6.9`; never edit its pinned bytes or the
 prepared `cave/rapplications/rapp-installer/**` snapshot.
+Canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+evolution all follow RAPP/1 rev-5 through those authority and status records.
 
 Treat the code under test as a safe adapter: useful behavior stays intact, but
 its default effects remain bounded and independently verifiable.

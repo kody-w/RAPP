@@ -206,7 +206,7 @@ def gates() -> tuple[Gate, ...]:
             "historical cross-tracker records remain non-authoritative evidence",
         ),
         Gate(
-            "distribution-retirement",
+            "distribution-adaptation",
             (
                 sys.executable,
                 "-m",
@@ -214,7 +214,7 @@ def gates() -> tuple[Gate, ...]:
                 "-q",
                 "tests/test_distribution_containment.py",
             ),
-            "retired installer, retired provisioning, immutable archives, and caller containment",
+            "immutable archives, refusal launchers, and restored browser planning surfaces",
         ),
         Gate(
             "t2t-removal",
@@ -222,9 +222,9 @@ def gates() -> tuple[Gate, ...]:
             "removed T2T surfaces and immutable retired vendored evidence",
         ),
         Gate(
-            "plant-retirement",
+            "plant-compatibility",
             ("bash", "installer/test_plant.sh"),
-            "target-owned planter returns 410 without side effects",
+            "legacy shell callers refuse while full browser planning artifacts remain safe",
         ),
         Gate(
             "twin-egg-retirement",

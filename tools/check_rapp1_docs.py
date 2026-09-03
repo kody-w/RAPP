@@ -494,13 +494,13 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
                     errors.append(f"fixture: {name} target-check path is missing: {path}")
     expected_terminal_hashes = {
         "pages/index.html": (
-            "676d567739ff70ef7753798bd1b41c8691aefb4d0e47911169663a8dc4f224e7"
+            "64609f746cd216a22bf023d3ca943644a01c2394fb7f29c3778a3ba013caf289"
         ),
         "cave/rar/index.json": (
-            "1817e4a08525c8cabb4ff1e120847cafdd0d215b4830ec2b974d1979c464ecb1"
+            "43a1a3b537fdd2e5644c0f0aa1fbbdcb9232a4dbf8b5384665161421f939e8e0"
         ),
         "cave/super-rar/index.json": (
-            "eea91205adcc21683b6e926b848e963b13f318165dbbaddfeb71904cd931b309"
+            "70e57b6f3d54443a75d835899b2fb6cbd8fdd1f9edcbd6b729e7164e30618656"
         ),
     }
     terminal_hashes = target_checks.get("integrated_terminal_states", {}).get(
@@ -515,7 +515,7 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
             errors.append(f"{path}: integrated main terminal bytes drifted")
     expected_documentation_hashes = {
         "pages/_site/partials/footer.html": (
-            "c23caaccb2f0cf93cf760c89f482b009f283ef4b2037ea8b18106de47856d1de"
+            "d66b6fcb348238eb6db435c50a66cbc88c9800cca0c6d89db32bfa73799875a5"
         ),
         "installer/README.md": (
             "2cdbeb34454c1dced1a2e6c5698b9256adac76d8a4ab355fda00687349a670fe"
@@ -752,11 +752,21 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
     for path in categories["POST-SHORTCUT-LEGACY"]["paths"]:
         text = _read(path)
         lowered = text.lower()
-        if "retired semantic tombstone" in lowered:
-            if "rapp1_status.md" not in lowered:
-                errors.append(f"{path}: shortcut tombstone lacks current status")
-            if re.search(r"<script\b", text, flags=re.IGNORECASE):
-                errors.append(f"{path}: shortcut tombstone executes script")
+        if path.endswith(".html"):
+            for token in (
+                "rapp-history-source",
+                "rapp1_status.md",
+                "kernel_pin.json",
+                "content-security-policy",
+                "connect-src 'none'",
+                "form-action 'none'",
+            ):
+                if token not in lowered:
+                    errors.append(
+                        f"{path}: restored Shortcut page lacks {token!r}"
+                    )
+            if "retired semantic tombstone" in lowered:
+                errors.append(f"{path}: Shortcut page is still a semantic tombstone")
             continue
         for token in shortcut_rule["required_wire_tokens"]:
             if token.lower() not in lowered:
@@ -794,27 +804,37 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
         raw = _read(path)
         classification = disposition[path]
         if classification == "contained":
-            for pattern in plant_rule["forbidden_live_patterns"]:
-                if re.search(pattern, raw, flags=re.IGNORECASE):
-                    errors.append(f"{path}: live plant.sh CTA matches {pattern!r}")
+            lowered = raw.lower()
+            for token in (
+                "rapp1_status.md",
+                "kernel_pin.json",
+                "content-security-policy",
+                "form-action 'none'",
+            ):
+                if token not in lowered:
+                    errors.append(f"{path}: adapted page lacks {token!r}")
+            if (
+                "rapp-history-source" not in lowered
+                and "rapp-source-commit" not in lowered
+            ):
+                errors.append(f"{path}: adapted page lacks source provenance")
+            if "retired semantic tombstone" in lowered:
+                errors.append(f"{path}: adapted page is still a semantic tombstone")
+            if re.search(
+                r"\[Install now\]\([^)\n]*plant\.sh"
+                r"|<a\b[^>]*\bhref=[\"'][^\"']*plant\.sh",
+                raw,
+                flags=re.IGNORECASE,
+            ):
+                errors.append(f"{path}: live plant.sh CTA is active")
             if path == "pages/metropolis/index.html":
-                if re.search(
-                    r"(?:href|src)\s*=\s*[\"'][^\"']*plant|plant-from-discord|"
-                    r"plant\.sh",
-                    raw,
-                    flags=re.IGNORECASE,
-                ):
-                    errors.append(f"{path}: contained directory restores planting")
+                if "plant-from-discord" not in raw:
+                    errors.append(f"{path}: restored directory lost its mobile guide")
+                if "connect-src 'self'" not in lowered:
+                    errors.append(f"{path}: local snapshot fetch is not CSP-bounded")
             else:
-                if (
-                    "retired semantic tombstone" not in raw.lower()
-                    or "retired" not in raw.lower()
-                ):
-                    errors.append(
-                        f"{path}: distribution semantic tombstone is missing"
-                    )
-                if re.search(r"<script\b", raw, flags=re.IGNORECASE):
-                    errors.append(f"{path}: distribution tombstone executes script")
+                if "connect-src 'none'" not in lowered:
+                    errors.append(f"{path}: adapted page permits network access")
             continue
         active, marker_errors = _active_text(path, fixture)
         errors.extend(marker_errors)
@@ -831,6 +851,26 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
         if path in ownership_exclusions:
             continue
         text = _read(path)
+        if path == "cave/index.html":
+            lowered = text.lower()
+            for token in (
+                "rapp-history-source",
+                "rapp1-historical-section-start",
+                "rapp1-historical-section-end",
+                "kernel_pin.json",
+                "cubbies/index.json",
+            ):
+                if token not in lowered:
+                    errors.append(f"{path}: restored Cave page lacks {token!r}")
+            if re.search(
+                r"fetch\s*\(\s*[\"']https?://",
+                text,
+                flags=re.IGNORECASE,
+            ):
+                errors.append(f"{path}: restored Cave page performs remote fetch")
+            if "retired semantic tombstone" in lowered:
+                errors.append(f"{path}: Cave page is still a semantic tombstone")
+            continue
         if not any(
             term in text.lower() for term in cave_rule["required_disposition_terms"]
         ):

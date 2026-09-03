@@ -663,6 +663,12 @@
       "title": "RAPP Restoration and Adaptation Ledger",
       "section": "Plans & Ledgers",
       "status": "living"
+    },
+    {
+      "path": "Plans & Ledgers/RAPP1 Adaptation Inventory.md",
+      "title": "RAPP1 Adaptation Inventory",
+      "section": "Plans & Ledgers",
+      "status": "living"
     }
   ],
   "excluded_notes": [

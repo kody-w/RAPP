@@ -10,12 +10,12 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ENTRY_PAGES = (
-    "index.html",
-    "pages/index.html",
-    "pages/kernel.html",
-    "installer/index.html",
-    "cave/index.html",
+BANNER_MARKERS = (
+    'class="current-note"',
+    'class="section-note"',
+    'class="history-context"',
+    'class="rapp-2026-note"',
+    'class="rapp-local-boundary"',
 )
 
 
@@ -55,13 +55,7 @@ def preflight() -> list[str]:
         text = path.read_text(encoding="utf-8", errors="replace")
         if "Retired semantic tombstone" in text:
             errors.append(f"{relative}: semantic tombstone remains")
-    for relative in ENTRY_PAGES:
-        text = (ROOT / relative).read_text(encoding="utf-8", errors="replace")
-        for marker in (
-            'class="current-note"',
-            'class="section-note"',
-            'class="history-context"',
-        ):
+        for marker in BANNER_MARKERS:
             if marker in text:
                 errors.append(f"{relative}: intrusive restoration banner {marker}")
     diff = subprocess.run(

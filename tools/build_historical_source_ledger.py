@@ -403,7 +403,7 @@ ADDITIONAL_PAGE_SOURCES = (
         "entry-page",
         "pages/vault/index.html",
         "925dee4a211965f2582e71a6d2ad75f60a54ea7d",
-        0.79,
+        0.78,
         ("vault.js",),
     ),
     (

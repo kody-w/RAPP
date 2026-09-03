@@ -186,8 +186,8 @@ def test_historical_source_ledger_verifies_old_and_restored_bytes():
 
         restored = record["restored"]
         current_bytes = current.read_bytes()
-        assert hashlib.sha256(current_bytes).hexdigest() == restored["sha256"]
-        assert len(current_bytes) == restored["bytes"]
+        assert hashlib.sha256(current_bytes).hexdigest() == restored["sha256"], relative
+        assert len(current_bytes) == restored["bytes"], relative
         assert re.fullmatch(r"[0-9a-f]{40}", restored["commit"])
 
         check = record["preservation_check"]
