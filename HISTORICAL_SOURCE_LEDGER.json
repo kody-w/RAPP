@@ -1,0 +1,2169 @@
+{
+  "schema": "rapp-historical-source-ledger/1.0",
+  "record_kind": "candidate-restoration-provenance",
+  "status": "candidate",
+  "is_section_13_registry": false,
+  "authenticated_acceptance_allowed": false,
+  "authority": "RAPP1_AUTHORITY.json",
+  "conformance_status": "RAPP1_STATUS.md",
+  "policy": {
+    "restore_fullest_artifact_first": true,
+    "preserve_data_exhaust": true,
+    "disable_only_exact_unsafe_edges": true,
+    "installer_reference": "KERNEL_PIN.json",
+    "grail": "kody-w/rapp-installer@brainstem-v0.6.9"
+  },
+  "generation_basis": "Each source is pinned by commit/blob/SHA-256/byte count; each restored path is pinned by its most recent path commit and current SHA-256/byte count.",
+  "artifacts": [
+    {
+      "id": "page-installer-plant",
+      "category": "browser-page",
+      "current_path": "installer/plant.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "92221bd9f56d638418472e1b38f1b92aeaefc276",
+        "path": "installer/plant.html",
+        "blob": "1e5289daf5aad31d7bf6fbd7f1f0a21601247bc4",
+        "sha256": "25ffa55ecbe80cd21d1101c578aa0e281d455d771824d35711bd6e3ad7203c05",
+        "bytes": 10945
+      },
+      "restored": {
+        "commit": "ab387457b6f40a41e041abeafd3a32324c926c1e",
+        "sha256": "ea3a4d37543852c755229236f01e72cac03c796c479366eebafa021df3d1aa26",
+        "bytes": 14895
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.98,
+        "markers": []
+      },
+      "safety_adaptation": "Keep the complete planter UI; replace repository creation and install execution with local preview and immutable Grail evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-installer-plant-qr",
+      "category": "browser-page",
+      "current_path": "installer/plant_qr.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "821375ea6afe32c63cb1838cd8e64122cd3628ac",
+        "path": "installer/plant_qr.html",
+        "blob": "400c9a890137f4e871fa224ffa66228bd78bdfe9",
+        "sha256": "a2c1a0a6a33c72715fff7037058539a1ee4f9333f992f8a0db37ba5634b6cbed",
+        "bytes": 8355
+      },
+      "restored": {
+        "commit": "ab387457b6f40a41e041abeafd3a32324c926c1e",
+        "sha256": "f7b8de98988dd7ab63c5df5f4825f52b4e34430651a5a4e0183d6f8cf56fefe7",
+        "bytes": 16887
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.99,
+        "markers": [
+          "QR"
+        ]
+      },
+      "safety_adaptation": "Keep QR and mobile guidance while preventing install, token, redirect, and repository side effects.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-installer-seed",
+      "category": "browser-page",
+      "current_path": "installer/seed.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "92221bd9f56d638418472e1b38f1b92aeaefc276",
+        "path": "installer/seed.html",
+        "blob": "2dd81e5b6f8b00d08f1f9a27399e9553533c5e6e",
+        "sha256": "4db807bf56808775eb657721cc3a5d6832949bb9545f5c5e1c618ad0da897bdb",
+        "bytes": 16710
+      },
+      "restored": {
+        "commit": "ab387457b6f40a41e041abeafd3a32324c926c1e",
+        "sha256": "2099d8bd9b21419526c51e12298164d1ee1fda4aa5a080a98b76b79be82d42cf",
+        "bytes": 23004
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.99,
+        "markers": [
+          "Seed"
+        ]
+      },
+      "safety_adaptation": "Keep seed generation and explanatory UI as local preview; no planting, download, or identity acceptance.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-shortcuts-voice",
+      "category": "browser-page",
+      "current_path": "installer/shortcuts/brainstem-voice/index.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "b4d94199b4d7d6952f513697ed47a3e323e231d6",
+        "path": "installer/shortcuts/brainstem-voice/index.html",
+        "blob": "50f7203999aab645182f0207ed2cf8f835dc6d7c",
+        "sha256": "57d419fe1cfd87619f8ef67d62a4034f8b247fbcb616fe416b9c83d09498ca73",
+        "bytes": 9832
+      },
+      "restored": {
+        "commit": "ab387457b6f40a41e041abeafd3a32324c926c1e",
+        "sha256": "67d5680e30bba418a8fb70345e1a244a87a6a1446b9d87b7118d661a25fd191f",
+        "bytes": 18043
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.96,
+        "markers": [
+          "Brainstem",
+          "Voice"
+        ]
+      },
+      "safety_adaptation": "Keep the voice Shortcut walkthrough while deriving presentation locally and removing install or credential effects.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-shortcuts-index",
+      "category": "browser-page",
+      "current_path": "installer/shortcuts/index.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "b4d94199b4d7d6952f513697ed47a3e323e231d6",
+        "path": "installer/shortcuts/index.html",
+        "blob": "cdfa28cfa60c4acd3ccd2743b6b35add6c43f88f",
+        "sha256": "62efba307f666f928d7ae08539c2af33aceb2a1f2691e411cc189a703e4aa9cf",
+        "bytes": 10115
+      },
+      "restored": {
+        "commit": "ab387457b6f40a41e041abeafd3a32324c926c1e",
+        "sha256": "e238c314fb1ed4f9a8e4cf96aebbddd38238df4c38794f73c0acb7591fc5d947",
+        "bytes": 13888
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.94,
+        "markers": [
+          "Shortcut"
+        ]
+      },
+      "safety_adaptation": "Keep the complete Shortcut catalog and copy while making distribution and deep-link actions evidence-only.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-chat",
+      "category": "browser-page",
+      "current_path": "pages/chat.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "1db25e90f9f22821875e2f01bfb58c7f77243c4d",
+        "path": "pages/chat.html",
+        "blob": "395bd60b598a88342cb063dcd821e0dd32911598",
+        "sha256": "a6f7d786070c46d0c3e10d5822f3739bea7fbd3790afd47e9efd559e619800c9",
+        "bytes": 26363
+      },
+      "restored": {
+        "commit": "ab387457b6f40a41e041abeafd3a32324c926c1e",
+        "sha256": "09d87aabf03e3300f236618f91dc57542fd12851e1526fef87f0445b1f3a0a72",
+        "bytes": 35757
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.99,
+        "markers": [
+          "chat"
+        ]
+      },
+      "safety_adaptation": "Keep the historical bridge source and state logic while preventing redirects, token reads, and worker requests.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-grail-brainstem",
+      "category": "browser-page",
+      "current_path": "pages/grail-brainstem/index.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "871cd3283b7ecc2088f5acba9b79048b79bd30cf",
+        "path": "pages/grail-brainstem/index.html",
+        "blob": "5db541530b758c04c33c52e5df6d27f3537a757a",
+        "sha256": "fcbceb43f991876deb0ab6e80fbfc2b6d136e2428b174916cf171c6c0fef47f8",
+        "bytes": 286287
+      },
+      "restored": {
+        "commit": "0e22ad3bd32e92915d2db8bbfed9aa0aa57762b2",
+        "sha256": "c2c9f2a0975b73e32b029be9c7d1bf331db6bb30b1655aeb9f9eb11e6c0b360a",
+        "bytes": 308594
+      },
+      "preservation_check": {
+        "type": "line-subsequence"
+      },
+      "safety_adaptation": "Keep the full browser runtime snapshot and controls as local replay; Grail execution and external effects remain disabled.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-lobby",
+      "category": "browser-page",
+      "current_path": "pages/lobby.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "0248ad70a80624032f65dcdee1da98de0dc70ecb",
+        "path": "pages/lobby.html",
+        "blob": "71cd298e0f53486f4a286792da532f250205cd5a",
+        "sha256": "8376afff6fb7964be62d9a64d9c4340b697875d94b83f14354ce0bae37f2188f",
+        "bytes": 16595
+      },
+      "restored": {
+        "commit": "ab387457b6f40a41e041abeafd3a32324c926c1e",
+        "sha256": "b45f481e820669183f8583abe597f74f7007d0fe4085badf49ac552136c1aff9",
+        "bytes": 24293
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.99,
+        "markers": [
+          "lobby"
+        ]
+      },
+      "safety_adaptation": "Keep room and peer UI while replacing sockets and state exchange with deterministic local demonstration data.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-metropolis",
+      "category": "browser-page",
+      "current_path": "pages/metropolis/index.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "1d4141f32a0b90c8de24be136478cc583bed6474",
+        "path": "pages/metropolis/index.html",
+        "blob": "96bb6399db2f43bc70f02af9871b69b81f506db3",
+        "sha256": "5ab10b8b53f0f4959ec4eb1e7b661a9536f7453f5ff9f7d4f5f3915cc8acf268",
+        "bytes": 17367
+      },
+      "restored": {
+        "commit": "ab387457b6f40a41e041abeafd3a32324c926c1e",
+        "sha256": "a493f6667b130f878a95d400e1cde8a403d521c4bd4513e432b4597b8ba44055",
+        "bytes": 28711
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.93,
+        "markers": [
+          "Metropolis",
+          "federated_trackers",
+          "activity-snapshot.json",
+          "function render",
+          "async function fetchTracker"
+        ]
+      },
+      "safety_adaptation": "Restore cards, filters, local federation, and activity over checked-in snapshots; live probes and remote trackers stay disabled.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-metropolis-discord",
+      "category": "browser-page",
+      "current_path": "pages/metropolis/plant-from-discord.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "1f211283250234b8df406d3f5ba445c2d52c9864",
+        "path": "pages/metropolis/plant-from-discord.html",
+        "blob": "2a4092e3561038298591a160d6d804e70a72f28b",
+        "sha256": "a7abb12652da336f6e38783d98addd3ee8d7718cb37a5b53d0bf59fd76a5a331",
+        "bytes": 15960
+      },
+      "restored": {
+        "commit": "ab387457b6f40a41e041abeafd3a32324c926c1e",
+        "sha256": "c567d9f88ef1b971080f0a4e83ae191e03d9f27e2204fda335c00f8ff658679b",
+        "bytes": 21764
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.99,
+        "markers": [
+          "Discord"
+        ]
+      },
+      "safety_adaptation": "Keep the complete Discord planting guide and form behavior as local review output; no bot or repository action.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-payphone",
+      "category": "browser-page",
+      "current_path": "pages/payphone.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "9ad5c6b466ceb511b32630755c3114bad269f518",
+        "path": "pages/payphone.html",
+        "blob": "cf91c4aec3ac5b5c5f753f7aaf6c92e96f523eff",
+        "sha256": "d1537e45462cb995c59cafe5766ae2a9d32278d17212bbb2076ce0dc43671d0c",
+        "bytes": 19190
+      },
+      "restored": {
+        "commit": "ab387457b6f40a41e041abeafd3a32324c926c1e",
+        "sha256": "23ff20d46ee34e29bf369a9c669fb749d72a86e583e6253d5e34089d462435a9",
+        "bytes": 28333
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.98,
+        "markers": [
+          "payphone"
+        ]
+      },
+      "safety_adaptation": "Keep the payphone UI and parser context while disabling tokens, API lookup, storage, and remote sessions.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-sphere",
+      "category": "browser-page",
+      "current_path": "pages/sphere.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "d6e814d9a0ed151cbb3a08b146919491c924d368",
+        "path": "pages/sphere.html",
+        "blob": "633c5dd1c1a9a2b21227cba4e89d0f9f3a410d7a",
+        "sha256": "64ca3f1c2b1a1e9d1cdbc9624abff70917fadb3156b419b6414854870ba96113",
+        "bytes": 266505
+      },
+      "restored": {
+        "commit": "0e22ad3bd32e92915d2db8bbfed9aa0aa57762b2",
+        "sha256": "107efa9e2d59f039827fefc8f6adeec6ac2f8b6cb47d5b78cf3a61091ced26ae",
+        "bytes": 289806
+      },
+      "preservation_check": {
+        "type": "line-subsequence"
+      },
+      "safety_adaptation": "Keep the complete sphere interface and local visual behavior; authentication, providers, microphone, iframe, and inference stay disabled.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-summon",
+      "category": "browser-page",
+      "current_path": "pages/summon.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "7b2390499ee9b238902db1470ccdfae89c1f0cbc",
+        "path": "pages/summon.html",
+        "blob": "e26e19be4efbe24c36804e347a604fa17c0894dc",
+        "sha256": "e788838f8f48af43c728e7377903fdb1d85158a775a0564422acc37b28e40bd0",
+        "bytes": 9230
+      },
+      "restored": {
+        "commit": "ab387457b6f40a41e041abeafd3a32324c926c1e",
+        "sha256": "aeb88f0b97e1ab64aaa0de197c9a948766547fc680315a168eaf22cc4e1ed652",
+        "bytes": 20405
+      },
+      "preservation_check": {
+        "type": "line-subsequence"
+      },
+      "safety_adaptation": "Keep the summon experience and historical handoff logic while preventing discovery, storage handoff, and embodiment.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-tether",
+      "category": "browser-page",
+      "current_path": "pages/tether.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "78fb94dfe765110503cafdbb2d4f82e8922989a9",
+        "path": "pages/tether.html",
+        "blob": "e1a49799153bcb55440c1b0681ac96aab846931f",
+        "sha256": "a6074a4478024110781b31dbb100a8bfc9723d9a51145b873d22fade21ed4b54",
+        "bytes": 213976
+      },
+      "restored": {
+        "commit": "0c9929e06f39512d5424d0eef6a6aff67e0f6253",
+        "sha256": "82c4072098582e542c7834457b2e59c69b973c88e3127986bcdac1690273faee",
+        "bytes": 236807
+      },
+      "preservation_check": {
+        "type": "line-subsequence"
+      },
+      "safety_adaptation": "Keep the launch sequence, lobby, town square, discovery, and call UI with local shims; plant controls open Grail evidence only.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-vbrainstem",
+      "category": "browser-page",
+      "current_path": "pages/vbrainstem.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "19ff7d9ff483c0eef258a3b2031da1fd74570854",
+        "path": "pages/vbrainstem.html",
+        "blob": "5738652ad18f7ca0717983f5dbd3c7729835f69a",
+        "sha256": "5c4786375dd2e4bdc8a33c90fa9af61d142a1fd65bed9fde084f38a15317c0eb",
+        "bytes": 93381
+      },
+      "restored": {
+        "commit": "0c9929e06f39512d5424d0eef6a6aff67e0f6253",
+        "sha256": "94de55febcbb86404f6fea089893d99be3715a44327132629b7cd4f21e402d1c",
+        "bytes": 104180
+      },
+      "preservation_check": {
+        "type": "line-subsequence"
+      },
+      "safety_adaptation": "Keep the complete browser brainstem UI and source while disabling credential, persistence, network, and artifact-export effects.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-vbrainstem-index",
+      "category": "browser-page",
+      "current_path": "pages/vbrainstem/index.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "ca9b8b71c98a330ff3413313f717b7b62f3e2402",
+        "path": "pages/vbrainstem/index.html",
+        "blob": "b6d5618e2a7ab3b8ab52a86e9dc35ab6105b3ad6",
+        "sha256": "440df108c0077b8707e3b1e00af0f13d06abc0f2affa67259fccd90e0cc6d8f3",
+        "bytes": 44118
+      },
+      "restored": {
+        "commit": "0c9929e06f39512d5424d0eef6a6aff67e0f6253",
+        "sha256": "aa1acb26c3927aa5be23bc9fab30ef8d638e1078afdb2372909130b0f1397673",
+        "bytes": 55704
+      },
+      "preservation_check": {
+        "type": "line-subsequence"
+      },
+      "safety_adaptation": "Keep the directory alias interface and cards over in-memory fixtures; no auth, storage, federation, or model calls.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-vneighborhood",
+      "category": "browser-page",
+      "current_path": "pages/vneighborhood.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "1ccd4bdfe513b0fdaa91e9f6bc73e93be59253de",
+        "path": "pages/vneighborhood.html",
+        "blob": "1c1d3e80eef0468309fdffe4087c8f737afc1332",
+        "sha256": "707db883ffb637e3546d1649a676f35fede1a6ac79f363e79083e7d668131692",
+        "bytes": 28948
+      },
+      "restored": {
+        "commit": "ab387457b6f40a41e041abeafd3a32324c926c1e",
+        "sha256": "c5d4438d699cea335d571d9a25e420c8d2ad5fe02ca4a6e0806ae40d206e7f98",
+        "bytes": 38112
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.99,
+        "markers": [
+          "vNeighborhood"
+        ]
+      },
+      "safety_adaptation": "Keep the neighborhood UI and state model while disabling peer discovery, room join, worker, and remote state exchange.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "runtime-worker",
+      "category": "browser-runtime",
+      "current_path": "worker/worker.js",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "4f6c14bbdf5b2d43887a9c7ab9cbda8c075f0dd6",
+        "path": "worker/worker.js",
+        "blob": "030437b4fd79cb4bf833a4c14a204f4c05ec2bd5",
+        "sha256": "ea95e2481bf00a80a15a45a9207af300b9924b0045f08465ef81aa22d2ecfc05",
+        "bytes": 13493
+      },
+      "restored": {
+        "commit": "0dc4e5bad24d28e005478671fc9eb839c91da5f2",
+        "sha256": "b0788d4dd833bb477a7592e60f6575355731145c24effddf58f5bfc7a4e66d91",
+        "bytes": 16556
+      },
+      "preservation_check": {
+        "type": "marker-set",
+        "markers": [
+          "export const HISTORICAL_SOURCE",
+          "DEFAULT_CAPABILITIES",
+          "RAPP_BROWSER_RUNTIME_ENABLED",
+          "explicit-reviewed-runtime-binding-required",
+          "/api/copilot/chat"
+        ]
+      },
+      "safety_adaptation": "Retain every route behind explicit runtime, reviewed binding, origin, and per-capability gates with no ambient fetch fallback.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "runtime-doorman-chat",
+      "category": "browser-runtime",
+      "current_path": "tests/doorman/chat.js",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "6bd45f00981959a3fdfcc64fb32608533aae5021",
+        "path": "tests/doorman/chat.js",
+        "blob": "6562be9e8948d11fffbe2937897314f024e63038",
+        "sha256": "24f3e9fbf4f57098d8de9a6dc4167befa7abbf121aec9a6947bf2d505361685e",
+        "bytes": 8226
+      },
+      "restored": {
+        "commit": "0dc4e5bad24d28e005478671fc9eb839c91da5f2",
+        "sha256": "2f9e6041bb70a98b6db627f39745c73733db1e6f833dc74049345c1a18b1c504",
+        "bytes": 8148
+      },
+      "preservation_check": {
+        "type": "marker-set",
+        "markers": [
+          "HISTORICAL_SOURCE",
+          "RAPP_DOORMAN_FIXTURE_ORIGINS",
+          "requireAllowedFixtureUrl",
+          "requireSyntheticToken",
+          "playwright"
+        ]
+      },
+      "safety_adaptation": "Retain browser chat automation with synthetic credentials and exact loopback or allowlisted origins.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "runtime-doorman-smoke",
+      "category": "browser-runtime",
+      "current_path": "tests/doorman/smoke.js",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "6bd45f00981959a3fdfcc64fb32608533aae5021",
+        "path": "tests/doorman/smoke.js",
+        "blob": "56e95e0cd380f7fad7f9d53aa59df5909ae621e5",
+        "sha256": "f3952f591d62d0e00d848509d0e8e8e9482ae51072c8ac947239b2bead3062f2",
+        "bytes": 5861
+      },
+      "restored": {
+        "commit": "0dc4e5bad24d28e005478671fc9eb839c91da5f2",
+        "sha256": "dfece8af440e630ec7efd373eb90f5a1b88631c44569cf1ecef8a66d416362fd",
+        "bytes": 9119
+      },
+      "preservation_check": {
+        "type": "marker-set",
+        "markers": [
+          "HISTORICAL_SOURCE",
+          "RAPP_DOORMAN_FIXTURE_ORIGINS",
+          "requireAllowedFixtureUrl",
+          "requireSyntheticToken",
+          "fleet"
+        ]
+      },
+      "safety_adaptation": "Retain the full browser smoke fleet behind explicit dependency, credential, and final-origin checks.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "runtime-tether-browser-runner",
+      "category": "browser-runtime",
+      "current_path": "tests/osi/L4a-tether-browser.sh",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "6bd45f00981959a3fdfcc64fb32608533aae5021",
+        "path": "tests/osi/L4a-tether-browser.sh",
+        "blob": "7de9e16faf90e0601c66b1091a73cffa907c56f7",
+        "sha256": "47a97f131ff8a6ec895eeef76a218039bd0166b3e782c0454babcbe616a7675d",
+        "bytes": 1847
+      },
+      "restored": {
+        "commit": "0dc4e5bad24d28e005478671fc9eb839c91da5f2",
+        "sha256": "8c3d18a9479a511c92673b7b60715d9e40bc96987c9d2a470ed96883d4f598b8",
+        "bytes": 1822
+      },
+      "preservation_check": {
+        "type": "marker-set",
+        "markers": [
+          "RAPP_OSI_BROWSER_EXTERNAL",
+          "RAPP_CHROMIUM_EXECUTABLE",
+          "RAPP_PEERJS_BUNDLE"
+        ]
+      },
+      "safety_adaptation": "Retain the browser transport runner while defaulting to an offline-safe skip and requiring supplied dependencies.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "runtime-tether-browser-spec",
+      "category": "browser-runtime",
+      "current_path": "tests/osi/browser/L4a-tether.spec.mjs",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "6bd45f00981959a3fdfcc64fb32608533aae5021",
+        "path": "tests/osi/browser/L4a-tether.spec.mjs",
+        "blob": "f416135f7ea8e95254668a4e046b539bad78870c",
+        "sha256": "0453bf026b3876ff3d864ebea2af76fb932f984f5933ec3e3b7c59448e0e5596",
+        "bytes": 8459
+      },
+      "restored": {
+        "commit": "0dc4e5bad24d28e005478671fc9eb839c91da5f2",
+        "sha256": "15d24d90d15521543f0422edce12875c1a4a9ba3f0c8d8914ff2f6b67734953a",
+        "bytes": 11136
+      },
+      "preservation_check": {
+        "type": "marker-set",
+        "markers": [
+          "HISTORICAL_SOURCE",
+          "RAPP_OSI_BROWSER_EXTERNAL",
+          "rapp-tether/1.0",
+          "chromium"
+        ]
+      },
+      "safety_adaptation": "Retain two-browser transport behavior while requiring explicit external execution and supplied broker/browser modules.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "runtime-tether-fixture",
+      "category": "browser-runtime",
+      "current_path": "tests/osi/browser/fixture.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "6bd45f00981959a3fdfcc64fb32608533aae5021",
+        "path": "tests/osi/browser/fixture.html",
+        "blob": "a0ca7b2708bb540b1660ae39701a31d259eaeacd",
+        "sha256": "77a718d4aecf030c32ea5567065cbf66518f657ca89685ad650a9c9c2af47b4d",
+        "bytes": 5447
+      },
+      "restored": {
+        "commit": "0dc4e5bad24d28e005478671fc9eb839c91da5f2",
+        "sha256": "69f1755babc1c7eba3e1ad78bae345a1e589c3e137fc759b520f287c98d7b493",
+        "bytes": 6729
+      },
+      "preservation_check": {
+        "type": "marker-set",
+        "markers": [
+          "rapp-tether/1.0",
+          "connect",
+          "send",
+          "peer"
+        ]
+      },
+      "safety_adaptation": "Retain the complete fixture UI and transport source for explicit local test use.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "cave-rar-steward",
+      "category": "catalog-code",
+      "current_path": "cave/agents/rar_steward_agent.py",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "6bd45f00981959a3fdfcc64fb32608533aae5021",
+        "path": "cave/agents/rar_steward_agent.py",
+        "blob": "addc7eb1e14a8b2143bdb94f47c975bc353d9ae3",
+        "sha256": "fa38826bf176d010c6c329b330ec93e0e6ed7b6459cabfd1455bbe4ae39bc14c",
+        "bytes": 24130
+      },
+      "restored": {
+        "commit": "e9a84ea93d18c2dd264f0013a811926a92651d55",
+        "sha256": "4a4a6c58504a95ced5a20fb5032a933ea3ad425aa9544886e461df8825b5b4d6",
+        "bytes": 35454
+      },
+      "preservation_check": {
+        "type": "marker-set",
+        "markers": [
+          "class RarStewardAgent",
+          "def _clusters",
+          "def _junk",
+          "def _file_issues",
+          "def perform"
+        ]
+      },
+      "safety_adaptation": "Retain health, duplicate, junk, agent, and issue-plan analysis with local catalogs by default and immutable checked network inputs only.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "cave-super-rar-builder",
+      "category": "catalog-code",
+      "current_path": "cave/tools/build_super_rar.py",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "6bd45f00981959a3fdfcc64fb32608533aae5021",
+        "path": "cave/tools/build_super_rar.py",
+        "blob": "3a94c9eba5641f4213130b5843c83fac240d3bb8",
+        "sha256": "72b9c88a12a1037b1a37d85e32a36a02e4b052877bd9740bed6f82566694480c",
+        "bytes": 10667
+      },
+      "restored": {
+        "commit": "e9a84ea93d18c2dd264f0013a811926a92651d55",
+        "sha256": "ec692c9eb2d7d12b530e90d18953da17a86aa55f975e33eb65edffdad57d2e7a",
+        "bytes": 30012
+      },
+      "preservation_check": {
+        "type": "marker-set",
+        "markers": [
+          "SUPER_RAR_KINDS",
+          "RETAINED_RAR_AGENT_EXHAUST",
+          "def build_super_rar",
+          "def render_rar",
+          "--render"
+        ]
+      },
+      "safety_adaptation": "Retain discovery, hashing, rendering, and absent-entry history in read-only check, plan, and render modes.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "estate-private-init",
+      "category": "estate-code",
+      "current_path": "tools/private_estate_init.py",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "591e7aec3b2183e0d48a1d6dfb6ebc59f177daea",
+        "path": "tools/private_estate_init.py",
+        "blob": "ccee84c3b09dcc2ee09b09ebf020a4173909abed",
+        "sha256": "3c0c04c1b529da016612d67839dd79b352281c86325ba805c8d63bd506cf0ca0",
+        "bytes": 21179
+      },
+      "restored": {
+        "commit": "7c325e15dece502ae26a2e15037d50ce3bb6766e",
+        "sha256": "ad43cf16a7ff6bb70f0e859d771303c887e0c5801c20146f4c66f6ad0b4c2605",
+        "bytes": 34285
+      },
+      "preservation_check": {
+        "type": "python-symbol-superset"
+      },
+      "safety_adaptation": "Retain the complete private-estate bootstrap behind explicit apply, exact target approval, and unavailable authenticated authority.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "estate-rebuild",
+      "category": "estate-code",
+      "current_path": "tools/rebuild_estate.py",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "591e7aec3b2183e0d48a1d6dfb6ebc59f177daea",
+        "path": "tools/rebuild_estate.py",
+        "blob": "c1c2817cf801f96c7088f3d34e61c308a9130447",
+        "sha256": "22504394bd86d553ba5c030a5f5d402260ab29b3499862ccef95b39ac83147e4",
+        "bytes": 24113
+      },
+      "restored": {
+        "commit": "7c325e15dece502ae26a2e15037d50ce3bb6766e",
+        "sha256": "da5efbcd724f958c72f9f7c49889d82ca56b464a94618183d5d2ffe5b25de37b",
+        "bytes": 36486
+      },
+      "preservation_check": {
+        "type": "python-symbol-superset"
+      },
+      "safety_adaptation": "Retain complete public-data reconstruction and deterministic candidate output while separating observation from authenticated adoption.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "network-sniffer",
+      "category": "estate-code",
+      "current_path": "tools/sniff_network.py",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "4f6c14bbdf5b2d43887a9c7ab9cbda8c075f0dd6",
+        "path": "tools/sniff_network.py",
+        "blob": "6898dd64c4342b07ca288b0e61b6970c92c29b96",
+        "sha256": "31ff803ef4729ab50ecc88b99ba37004a8bfcde4680cb94df5953148416944fe",
+        "bytes": 29240
+      },
+      "restored": {
+        "commit": "7c325e15dece502ae26a2e15037d50ce3bb6766e",
+        "sha256": "7f62bafddacf6c0829aa68b9ff3b5c81e0727a53251ae16fbbdbcd58b60f99b7",
+        "bytes": 46791
+      },
+      "preservation_check": {
+        "type": "python-symbol-superset"
+      },
+      "safety_adaptation": "Retain BFS, topic, beacon, estate, and skipped-record observations with no acceptance and gated output writes.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "ecosystem-audit",
+      "category": "estate-code",
+      "current_path": "tools/ecosystem_audit.py",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "a2c7358a236852586b3c1e430b044703b947aab8",
+        "path": "tools/ecosystem_audit.py",
+        "blob": "503ae2ac9c995b8d60a13cb6612244a105e59846",
+        "sha256": "0ac3b0fdb04bc248e185e2722c8d0583bc94d39d6169fd246dce4ee310219b03",
+        "bytes": 31709
+      },
+      "restored": {
+        "commit": "7c325e15dece502ae26a2e15037d50ce3bb6766e",
+        "sha256": "97bbb28684391d62fc7f06da511c993d1bb893d2d7b3f37ec4b3a03b3dc112ba",
+        "bytes": 48737
+      },
+      "preservation_check": {
+        "type": "python-symbol-superset"
+      },
+      "safety_adaptation": "Retain the complete Bond Pulse drift detector with offline fixtures by default and explicit write/online gates.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "ecosystem-contract",
+      "category": "estate-code",
+      "current_path": "tools/ecosystem_contract.py",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "9ad5c6b466ceb511b32630755c3114bad269f518",
+        "path": "tools/ecosystem_contract.py",
+        "blob": "00570a6ab4b9460bbfed214e28fc168bf7a8356e",
+        "sha256": "d1d1e3626beecf78ee23aea5e6cd3b51ac52544d2b866005b65bedabd9f043f8",
+        "bytes": 14471
+      },
+      "restored": {
+        "commit": "7c325e15dece502ae26a2e15037d50ce3bb6766e",
+        "sha256": "5e4de5e460a7abb65cda6fec49e9369b987c6297099c63c0b92258c4a74b9077",
+        "bytes": 16082
+      },
+      "preservation_check": {
+        "type": "python-symbol-superset"
+      },
+      "safety_adaptation": "Retain historical product kind contracts while keeping them separate from RAPP/1 authority.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "holo-card-generator",
+      "category": "estate-code",
+      "current_path": "tools/holo_card_generator.py",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "7b2390499ee9b238902db1470ccdfae89c1f0cbc",
+        "path": "tools/holo_card_generator.py",
+        "blob": "62efb8683afa5993bcd1dc860aa6291714a42d58",
+        "sha256": "8381412ebae67ad73861e464a090cb6acee834a42b7ba2c37c7d5e3f830a9ff2",
+        "bytes": 21927
+      },
+      "restored": {
+        "commit": "7c325e15dece502ae26a2e15037d50ce3bb6766e",
+        "sha256": "ddc60efcb894aba0d8ad440af52b617a07050cfb8f352f80c55e24ac55b6c300",
+        "bytes": 29538
+      },
+      "preservation_check": {
+        "type": "python-symbol-superset"
+      },
+      "safety_adaptation": "Retain deterministic profile, ability, mnemonic, avatar, and summon output while labelling historical and pinned modes unaccepted.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "mirror-drift-check",
+      "category": "estate-code",
+      "current_path": "tests/mirror-drift.sh",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "b4f3e31c1c30cfaf798728cec2de45dbfcfb3e25",
+        "path": "tests/mirror-drift.sh",
+        "blob": "a40126271fa6d28ffb25d68b791eaf67129f2d20",
+        "sha256": "0272ef916bf19dbac326e3462a198fad838b29afb27fcc36a467d3c45af28a7a",
+        "bytes": 1149
+      },
+      "restored": {
+        "commit": "7c325e15dece502ae26a2e15037d50ce3bb6766e",
+        "sha256": "6b04b0f2b4b889569a7ffc59fceff060763d723e2f368ce8f94fe0fc6c58df8c",
+        "bytes": 2655
+      },
+      "preservation_check": {
+        "type": "marker-set",
+        "markers": [
+          "KERNEL_PIN.json",
+          "brainstem-v0.6.9",
+          "expected_sha"
+        ]
+      },
+      "safety_adaptation": "Retain exact local and immutable-tag hash verification without overwrite or moving-main behavior.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "metropolis-collector",
+      "category": "metropolis-code",
+      "current_path": "scripts/harvest-metropolis-activity.py",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "1d4141f32a0b90c8de24be136478cc583bed6474",
+        "path": "scripts/harvest-metropolis-activity.py",
+        "blob": "1629e896160200a6ce7b08dc1c188908df236060",
+        "sha256": "34d4bc0e1b70f8cd903dc4bfcda62a0ec56cf846204166a09bd555700fdda124",
+        "bytes": 3158
+      },
+      "restored": {
+        "commit": "26b88e8931eb69ddd8bd9bddda4186c2eeb89038",
+        "sha256": "a205d87e3157e352e0d3daa32e14e4c449b1ccce2cce290ced9e31044fb29b4f",
+        "bytes": 7821
+      },
+      "preservation_check": {
+        "type": "python-symbol-superset"
+      },
+      "safety_adaptation": "Retain the complete collector; default to local snapshot validation, expose a no-write plan, and refuse online writes before mutation.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-root-index",
+      "category": "entry-page",
+      "current_path": "index.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "32db6f894e4224e2b0b2944b1d6ac1188ec37b61",
+        "path": "index.html",
+        "blob": "12ee13d7e7085a226d3198066c429a2cfd67696a",
+        "sha256": "7428b725f3d70b147dd1dc015d4e5c33feaede4b9f8e019321eb444c895b29ef",
+        "bytes": 25999
+      },
+      "restored": {
+        "commit": "ecdc2119d7fb5e7b6a766d719c0eaaffde8d9a4b",
+        "sha256": "9d96ad404a119f91f492fbbcb94d3d87a274431eb437826fe845094cc8dd4d8b",
+        "bytes": 27129
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.92,
+        "markers": [
+          "RAPP Stack"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-pages-index",
+      "category": "entry-page",
+      "current_path": "pages/index.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "f9a190003429e46ef406efd618120f287e3f3878",
+        "path": "pages/index.html",
+        "blob": "0878f62bc8d995159450fc4af315400ae708ef0c",
+        "sha256": "4836e288dd5b2425e4d016d93f0c6c30630c00c748474310297c7e21689f211e",
+        "bytes": 10408
+      },
+      "restored": {
+        "commit": "ecdc2119d7fb5e7b6a766d719c0eaaffde8d9a4b",
+        "sha256": "1f8f0733fb6ee550a37b585bd7c86e26cc330bcec221a8f670bc61dd1353c730",
+        "bytes": 11228
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.98,
+        "markers": [
+          "Single-file AI agents"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-kernel",
+      "category": "entry-page",
+      "current_path": "pages/kernel.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "4352699694151816a8ec69199c34a68d7ae1c051",
+        "path": "pages/kernel.html",
+        "blob": "9ff7cb7687459c345d9c3b22f9c779b0eb40179f",
+        "sha256": "1d79969f3fc80f8aefe4f48b41e18f76b94cd5df77653d21607cad9fefde3847",
+        "bytes": 22391
+      },
+      "restored": {
+        "commit": "ab387457b6f40a41e041abeafd3a32324c926c1e",
+        "sha256": "cb2b56cf559bb363b16a81189547c06572792d617c130c0cd501fa607772ebef",
+        "bytes": 23422
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.96,
+        "markers": [
+          "RAPP"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-installer-index",
+      "category": "entry-page",
+      "current_path": "installer/index.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "55b91b9ecd182a3ce2057787f07c60e9aa3ca128",
+        "path": "installer/index.html",
+        "blob": "6b4a294da41057b1376d5f8014ad2a28a77e72c8",
+        "sha256": "41a7f41524b27508d10b438262fa26d784c1b932f52dd4af1342827f46120eac",
+        "bytes": 14301
+      },
+      "restored": {
+        "commit": "ab387457b6f40a41e041abeafd3a32324c926c1e",
+        "sha256": "1115efdb6a0a64129e26a39aa7fa603e3da0898ef0cd597825f9490342c6cb27",
+        "bytes": 15862
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.92,
+        "markers": [
+          "RAPP Installer"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-cave-index",
+      "category": "entry-page",
+      "current_path": "cave/index.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "f6bf5ed2c8571fc213c7554a430d3d9c7716a231",
+        "path": "cave/index.html",
+        "blob": "d8a9352aaeecb85032b2a9151b347f09999218a1",
+        "sha256": "4579005597c578165148dbee43806f15833c21904826a563bd61708c89191695",
+        "bytes": 5071
+      },
+      "restored": {
+        "commit": "ab387457b6f40a41e041abeafd3a32324c926c1e",
+        "sha256": "77fd4a5a1a46f24f124e7f5a91c28aca580190112db70506b2ccb540dc096011",
+        "bytes": 6163
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.94,
+        "markers": [
+          "The RAPP Cave"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-vault-index",
+      "category": "entry-page",
+      "current_path": "pages/vault/index.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "925dee4a211965f2582e71a6d2ad75f60a54ea7d",
+        "path": "pages/vault/index.html",
+        "blob": "3c27d7ab9ab9d4153bbec420ddbadb806148585d",
+        "sha256": "1d7f44c2dfbeaba7cbc71e6931cf6845a23e700ee2b08b67597be9cba2c068ed",
+        "bytes": 4150
+      },
+      "restored": {
+        "commit": "2b89a7b7576498e5ceb15bb1fa8c54f0b1b1cd6c",
+        "sha256": "855096d34cba8f61b558111bde8561e74adde251f4d68c483a78f4652fb8a877",
+        "bytes": 4913
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.79,
+        "markers": [
+          "vault.js"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "partial-site-header",
+      "category": "entry-page",
+      "current_path": "pages/_site/partials/header.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "f9a190003429e46ef406efd618120f287e3f3878",
+        "path": "pages/_site/partials/header.html",
+        "blob": "ea7650b0634a9f75e5b99253123d0a970a87b5f2",
+        "sha256": "f37ca9ce8e661caf9ba78d4694264082e832b97d468c99e6e5d37bee1bc2db1d",
+        "bytes": 1195
+      },
+      "restored": {
+        "commit": "2b89a7b7576498e5ceb15bb1fa8c54f0b1b1cd6c",
+        "sha256": "b2ddf8b244cf2ae3fce024ee87e7bcace687f48dacfd6d7031ee0d8648b62567",
+        "bytes": 1559
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.94,
+        "markers": [
+          "site-header"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "partial-site-footer",
+      "category": "entry-page",
+      "current_path": "pages/_site/partials/footer.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "8383dc24a47bf0e310f20b3ecb7c7675dcaabb81",
+        "path": "pages/_site/partials/footer.html",
+        "blob": "c44991f80720c9a452583dd1f0096e0e388455be",
+        "sha256": "f4e27778f0d6b636e7cf50047229692d9790668eda5fa027837711852193347d",
+        "bytes": 1660
+      },
+      "restored": {
+        "commit": "2b89a7b7576498e5ceb15bb1fa8c54f0b1b1cd6c",
+        "sha256": "d66b6fcb348238eb6db435c50a66cbc88c9800cca0c6d89db32bfa73799875a5",
+        "bytes": 1945
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.96,
+        "markers": [
+          "site-footer"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-pitch-playbook",
+      "category": "historical-page",
+      "current_path": "pitch-playbook.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "4f6c14bbdf5b2d43887a9c7ab9cbda8c075f0dd6",
+        "path": "pitch-playbook.html",
+        "blob": "205c09e012a27cb2c54a81f562ab23a620205c0b",
+        "sha256": "315529c6da98be2a5e00bf50a17658757d53e4af5458e5a86d478f2713bc8e1a",
+        "bytes": 34628
+      },
+      "restored": {
+        "commit": "50aca4bd85a12ac21377f24e365dff1891680249",
+        "sha256": "58de16b09a1a9d0e370ab9084cf7f681cde66997f3196ce84652ce179eb58193",
+        "bytes": 34998
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.99,
+        "markers": [
+          "the acceleration layer"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-blog",
+      "category": "historical-page",
+      "current_path": "blog.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "2526f40730ff0ce40a3385b6daa211aa2f817911",
+        "path": "blog.html",
+        "blob": "ff9b71f4f58e36791c2ecb8edd411731398f5b4f",
+        "sha256": "358d01dde07a5e87ebe8cf526db6acb0f4c2038b605ca7555afd2910801b624c",
+        "bytes": 16543
+      },
+      "restored": {
+        "commit": "3ed9a2b2f2e54355af854d01c6248622b69ae55b",
+        "sha256": "ec8ef574f8aaa70b0afcc4a77ca35f7d2fc99239548ddceb6dbbd86ef2a2c6ec",
+        "bytes": 17324
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.99,
+        "markers": [
+          "RAPP"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-root-release-notes",
+      "category": "historical-page",
+      "current_path": "release-notes.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "2526f40730ff0ce40a3385b6daa211aa2f817911",
+        "path": "release-notes.html",
+        "blob": "688a3f247c02d403d325800fbf972f8641b81d36",
+        "sha256": "5c44305609f88046abd205a081b8089d40d344ae0ee3023fe112983a347fa9e5",
+        "bytes": 8646
+      },
+      "restored": {
+        "commit": "3ed9a2b2f2e54355af854d01c6248622b69ae55b",
+        "sha256": "d439fc2b0ea9fc597ed23d1c803b4ba720a3c6c2be14d8e51bc25bd4a64bcfc4",
+        "bytes": 9436
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.99,
+        "markers": [
+          "Release"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-about-ecosystem",
+      "category": "historical-page",
+      "current_path": "pages/about/ecosystem.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "2526f40730ff0ce40a3385b6daa211aa2f817911",
+        "path": "pages/about/ecosystem.html",
+        "blob": "aa1411e7b1a8716a4d7d1cac9f07a212f428e849",
+        "sha256": "4338ee1cb9880bc56205b15c71f856fda131d27f618bf07e4d8ab2d04987337b",
+        "bytes": 140036
+      },
+      "restored": {
+        "commit": "3ed9a2b2f2e54355af854d01c6248622b69ae55b",
+        "sha256": "ea3dbf314051dceb87e0fd861daa332b271f09d107bb00fc8e82d9f43125892c",
+        "bytes": 156054
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.99,
+        "markers": [
+          "ecosystem"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-docs-index",
+      "category": "historical-page",
+      "current_path": "docs/index.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "8c5555be80357e795090d79c4fb5a33beb0eaab8",
+        "path": "docs/index.html",
+        "blob": "683364c6b8817cd98e5ff5ab4b95ec087640b7d1",
+        "sha256": "6b507dcab2cac70d9c4e3f03244029320faff0452fdac74a1ff68df844c91cfa",
+        "bytes": 24876
+      },
+      "restored": {
+        "commit": "3ed9a2b2f2e54355af854d01c6248622b69ae55b",
+        "sha256": "55c14c33baefac0b6c730b4ab0419e4c990321f44c9cf800cfdd6f12f299cedb",
+        "bytes": 27234
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.97,
+        "markers": [
+          "RAPP"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-docs-tutorial",
+      "category": "historical-page",
+      "current_path": "docs/tutorial.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "8c5555be80357e795090d79c4fb5a33beb0eaab8",
+        "path": "docs/tutorial.html",
+        "blob": "6a2ba1e1d8f2066f0aa84737eca261147beb8791",
+        "sha256": "aae2f7c59e8cdb8c1724a2c0e5678c6826a4ce6d97d63f4e1a9b3506636662ad",
+        "bytes": 10524
+      },
+      "restored": {
+        "commit": "3ed9a2b2f2e54355af854d01c6248622b69ae55b",
+        "sha256": "def0eeb0b87c45a800b4af6733d403cfe08ddf9a72c6e43d65a3b6ce6f79a044",
+        "bytes": 12046
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.95,
+        "markers": [
+          "tutorial"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-onboarding",
+      "category": "historical-page",
+      "current_path": "pages/onboarding.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "8c5555be80357e795090d79c4fb5a33beb0eaab8",
+        "path": "pages/onboarding.html",
+        "blob": "dbd5bb180889e7224f88e909a74a074f98f0b119",
+        "sha256": "6efaa43958bcc9936de86f82e85eb70048a54bfd5ed8a078613ad681efc10c34",
+        "bytes": 31694
+      },
+      "restored": {
+        "commit": "3ed9a2b2f2e54355af854d01c6248622b69ae55b",
+        "sha256": "41c593eeb9b89769d1f13ea5c3774aa3d092000138f54c33ef880153986f4850",
+        "bytes": 32349
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 1.0,
+        "markers": [
+          "onboarding"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-rappid-deck",
+      "category": "historical-page",
+      "current_path": "pages/rappid-deck.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "8c5555be80357e795090d79c4fb5a33beb0eaab8",
+        "path": "pages/rappid-deck.html",
+        "blob": "727a60e8922d224e202295321bf0e18d7b6aca76",
+        "sha256": "a2c6d814688e64989b6786ff4f4e41e21e714d9d0b23e18f008a277a970c5789",
+        "bytes": 68515
+      },
+      "restored": {
+        "commit": "3ed9a2b2f2e54355af854d01c6248622b69ae55b",
+        "sha256": "bd72b292674065c266f806d9846c33bcf76ca81f874b12585bf97c869c7efeb1",
+        "bytes": 69382
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.99,
+        "markers": [
+          "rappid"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-rappid-onepager",
+      "category": "historical-page",
+      "current_path": "pages/rappid-onepager.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "8c5555be80357e795090d79c4fb5a33beb0eaab8",
+        "path": "pages/rappid-onepager.html",
+        "blob": "1335e7dc816377964c0bd653307bfbefd64072df",
+        "sha256": "9862454b16c095fbbbd506c0e9e8326f860900f7d56e4ed8a5f1920a8d47b40a",
+        "bytes": 24434
+      },
+      "restored": {
+        "commit": "3ed9a2b2f2e54355af854d01c6248622b69ae55b",
+        "sha256": "0a395549adee46c977a41ac4e93c9f003eb2036dae2624679c07821697341953",
+        "bytes": 25371
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.99,
+        "markers": [
+          "rappid"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-invention-backlog",
+      "category": "historical-page",
+      "current_path": "pages/share/invention-backlog/index.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "8c5555be80357e795090d79c4fb5a33beb0eaab8",
+        "path": "pages/share/invention-backlog/index.html",
+        "blob": "18f33e92db504a8bd34081cef2fc74f58841f37e",
+        "sha256": "aa888420674502d80cc4938daed307eba224661807fbb654bada8bbe7dd12721",
+        "bytes": 10863
+      },
+      "restored": {
+        "commit": "3ed9a2b2f2e54355af854d01c6248622b69ae55b",
+        "sha256": "92a0d4d568464b29661110b81f71e43fe7179e07842f2c79e2781a989013a95a",
+        "bytes": 22634
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.98,
+        "markers": [
+          "invention"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-about-leadership",
+      "category": "historical-page",
+      "current_path": "pages/about/leadership.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "d3d2623646a6111b4a7db9f1b960df233f8964c9",
+        "path": "pages/about/leadership.html",
+        "blob": "be1ecc92a15243c80a457f0fc0734404294af979",
+        "sha256": "1bd093bd2d1aa6c9bfc57967740ca2010b1acf7de3fa53da4c4c2d9742c4da2b",
+        "bytes": 10336
+      },
+      "restored": {
+        "commit": "3ed9a2b2f2e54355af854d01c6248622b69ae55b",
+        "sha256": "0adbad2d867f7d03a6fe9f453559cda22aff77d3d97437f9d013be9c9c6f85ef",
+        "bytes": 11337
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.95,
+        "markers": [
+          "Leadership"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-about-partners",
+      "category": "historical-page",
+      "current_path": "pages/about/partners.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "d3d2623646a6111b4a7db9f1b960df233f8964c9",
+        "path": "pages/about/partners.html",
+        "blob": "55d6b5d4895a57e3ef8ffd2a20c09846861ac6ec",
+        "sha256": "7d3f540cc05589d3103c1ad28906ade28c14ff37acc4bb6e9438cb10301fc800",
+        "bytes": 10961
+      },
+      "restored": {
+        "commit": "3ed9a2b2f2e54355af854d01c6248622b69ae55b",
+        "sha256": "7da22b372b9ff142627bcd001186cced62fbe759183560697bf539feb2703aae",
+        "bytes": 11862
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.95,
+        "markers": [
+          "Partners"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-about-process",
+      "category": "historical-page",
+      "current_path": "pages/about/process.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "d3d2623646a6111b4a7db9f1b960df233f8964c9",
+        "path": "pages/about/process.html",
+        "blob": "efc7bb4c67e13f7bc0795de034b0de3456528474",
+        "sha256": "fbce18196a519893ed09655a11881fc646dda1a97752b08b7110d43f8dcc70f4",
+        "bytes": 11354
+      },
+      "restored": {
+        "commit": "3ed9a2b2f2e54355af854d01c6248622b69ae55b",
+        "sha256": "0165ab352575353e93fb9bf081449a685112f1e072e7395eb4987a5034bdb190",
+        "bytes": 12344
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.95,
+        "markers": [
+          "Process"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-about-prompts",
+      "category": "historical-page",
+      "current_path": "pages/about/prompts.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "d3d2623646a6111b4a7db9f1b960df233f8964c9",
+        "path": "pages/about/prompts.html",
+        "blob": "6a54e48d270ed774efc2f0d3533eb7e7300994f3",
+        "sha256": "807d8324af70edea0cd161b7b7e1ddae996d733228870d9d584adf842bf471a2",
+        "bytes": 72262
+      },
+      "restored": {
+        "commit": "3ed9a2b2f2e54355af854d01c6248622b69ae55b",
+        "sha256": "ad3795c00987b23194f9f0796b3d0fb03a60b57eeb9b8b0c09155384d51b6f34",
+        "bytes": 72745
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.99,
+        "markers": [
+          "prompts"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-about-security",
+      "category": "historical-page",
+      "current_path": "pages/about/security.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "d3d2623646a6111b4a7db9f1b960df233f8964c9",
+        "path": "pages/about/security.html",
+        "blob": "06173fb4f32d296a9296850560b834a51323578c",
+        "sha256": "35f4ff0bd11db3991bedd9143d8b5f615fa6800a4efff81cc8a0e430957e34c1",
+        "bytes": 11602
+      },
+      "restored": {
+        "commit": "3ed9a2b2f2e54355af854d01c6248622b69ae55b",
+        "sha256": "96a0d65f84f64bc7e99aa38e7a505221ac63fb72a0d8f2313f3518ebf5ff1fd6",
+        "bytes": 12503
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.95,
+        "markers": [
+          "Security"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-product-faq-slide",
+      "category": "historical-page",
+      "current_path": "pages/product/faq-slide.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "d3d2623646a6111b4a7db9f1b960df233f8964c9",
+        "path": "pages/product/faq-slide.html",
+        "blob": "bc41af9d69adc9e500bce78f2a78892ba7f4ccc6",
+        "sha256": "c91575b3d1af939b1bcaf94f8b178f59efd0b8deb44aeed81f9e74bc84c30d7a",
+        "bytes": 9623
+      },
+      "restored": {
+        "commit": "3ed9a2b2f2e54355af854d01c6248622b69ae55b",
+        "sha256": "3fd795d44afab5294c8d901acba945749180a10e4891b32afbf6be6a2cff48de",
+        "bytes": 10616
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.94,
+        "markers": [
+          "Four questions"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-product-faq",
+      "category": "historical-page",
+      "current_path": "pages/product/faq.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "d3d2623646a6111b4a7db9f1b960df233f8964c9",
+        "path": "pages/product/faq.html",
+        "blob": "16d725b82c655104c02c249b87314bbfbca5bf87",
+        "sha256": "016899c8e045ca26abaa12cc5553e085858947bc5c058d7cac2b97770878d3e0",
+        "bytes": 13651
+      },
+      "restored": {
+        "commit": "3ed9a2b2f2e54355af854d01c6248622b69ae55b",
+        "sha256": "8235c125e33134b51b1aebbc33e27eaa4920e0361a37b6d9915c6dfbb57ea56d",
+        "bytes": 14566
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.97,
+        "markers": [
+          "FAQ"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-product-one-pager",
+      "category": "historical-page",
+      "current_path": "pages/product/one-pager.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "d3d2623646a6111b4a7db9f1b960df233f8964c9",
+        "path": "pages/product/one-pager.html",
+        "blob": "3d4ad51e686000435adce39ad7624c52ed9d76c2",
+        "sha256": "1570d7a592c76b2ab032a51b2298b39d11c50fa33d2534ff1bdc95b2f54483c7",
+        "bytes": 9115
+      },
+      "restored": {
+        "commit": "3ed9a2b2f2e54355af854d01c6248622b69ae55b",
+        "sha256": "64f1c9a36986754456af565258a912f3e00c594b22a269b8a51f8f48b59e68c2",
+        "bytes": 10092
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.94,
+        "markers": [
+          "swarm"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-product-unsolved",
+      "category": "historical-page",
+      "current_path": "pages/product/unsolved.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "d3d2623646a6111b4a7db9f1b960df233f8964c9",
+        "path": "pages/product/unsolved.html",
+        "blob": "c17326da4ea15794865efb5bcdf0e4a247a00175",
+        "sha256": "5e7e5827c146522a904d4774fa3b5f6681148a73a3119b7606b856d8ccccaa51",
+        "bytes": 25295
+      },
+      "restored": {
+        "commit": "3ed9a2b2f2e54355af854d01c6248622b69ae55b",
+        "sha256": "0aee0e3b1c2c09f0b63a7908d3bed5a4a3fbfe15b8b7854f1368f8b006543d14",
+        "bytes": 25799
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 1.0,
+        "markers": [
+          "unsolved"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-product-use-cases",
+      "category": "historical-page",
+      "current_path": "pages/product/use-cases.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "d3d2623646a6111b4a7db9f1b960df233f8964c9",
+        "path": "pages/product/use-cases.html",
+        "blob": "56bb0bac597fa72c801153b1c9dc3954676fcabb",
+        "sha256": "02cdb0b2cb35406c898e589ea18ff53ef3f1f426983ab2ef81456b4fa834b089",
+        "bytes": 11661
+      },
+      "restored": {
+        "commit": "3ed9a2b2f2e54355af854d01c6248622b69ae55b",
+        "sha256": "00583afaddededcd88697d62ef81967dc1e8f6b3817a327866c172481d61de45",
+        "bytes": 12560
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.95,
+        "markers": [
+          "Lead prioritization"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-product-vs",
+      "category": "historical-page",
+      "current_path": "pages/product/vs.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "d3d2623646a6111b4a7db9f1b960df233f8964c9",
+        "path": "pages/product/vs.html",
+        "blob": "c37b44712f4e7ed32c91b63a2532fec9b37c5c7e",
+        "sha256": "a7517aa97b4f750bc8fa351050da7b4c9e3d0dcdb24ebd5b31a5a184773c459a",
+        "bytes": 43868
+      },
+      "restored": {
+        "commit": "3ed9a2b2f2e54355af854d01c6248622b69ae55b",
+        "sha256": "9f23f09f84c3a7607980a27754cdf7269f014f384f49664199d62cf3cc2036dd",
+        "bytes": 44523
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 1.0,
+        "markers": [
+          "RAPP"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-release-roadmap",
+      "category": "historical-page",
+      "current_path": "pages/release/roadmap.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "d3d2623646a6111b4a7db9f1b960df233f8964c9",
+        "path": "pages/release/roadmap.html",
+        "blob": "2292e70559cf09cf5ba1d6ac5ad3de8d79598c70",
+        "sha256": "c9a37ae75809c5982571edb17f4800209441954cecb92e3300db89212ece008f",
+        "bytes": 13506
+      },
+      "restored": {
+        "commit": "3ed9a2b2f2e54355af854d01c6248622b69ae55b",
+        "sha256": "66a76a8c8eeeb78a18b54476cac3394feba10cc662e2b54c8c3fbc6d4b90edca",
+        "bytes": 14295
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.99,
+        "markers": [
+          "Roadmap"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-about-anatomy",
+      "category": "historical-page",
+      "current_path": "pages/about/anatomy.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "d1c5903c3927478033df1520046ba5297abdbbf8",
+        "path": "pages/about/anatomy.html",
+        "blob": "c412cdaa883dcbe2828d8a08269d0341056792fc",
+        "sha256": "1aacf031305d673e1a3091a5c8ad9dce4ccd4847d72f14f398bd7ff6b3bf5c06",
+        "bytes": 25670
+      },
+      "restored": {
+        "commit": "3ed9a2b2f2e54355af854d01c6248622b69ae55b",
+        "sha256": "fd6f58f6aa2d7f1b29ffb82a729845061edebbe6436b474b4febaefe5afb081d",
+        "bytes": 26631
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.99,
+        "markers": [
+          "anatomy"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-release-notes",
+      "category": "historical-page",
+      "current_path": "pages/release/release-notes.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "d1c5903c3927478033df1520046ba5297abdbbf8",
+        "path": "pages/release/release-notes.html",
+        "blob": "7dd1bffb11e06b73558648df76b97642de8ecb88",
+        "sha256": "c3b15878d59b4387bca7e42715d26e568829ea3029d7eff7d0e675d9949f6228",
+        "bytes": 19536
+      },
+      "restored": {
+        "commit": "3ed9a2b2f2e54355af854d01c6248622b69ae55b",
+        "sha256": "e7d60bde938b5cfedc0a9c9f9df53588d0aa01189e7993dbd0a3a95f99db4703",
+        "bytes": 20278
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.99,
+        "markers": [
+          "Release"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    },
+    {
+      "id": "page-hatch-egg",
+      "category": "historical-page",
+      "current_path": "pages/tutorials/hatch-egg.html",
+      "source": {
+        "repository": "kody-w/RAPP",
+        "commit": "d1c5903c3927478033df1520046ba5297abdbbf8",
+        "path": "pages/tutorials/hatch-egg.html",
+        "blob": "daf44f824ea8edb87ae80e56d89039dab114698e",
+        "sha256": "decfa62c8e5b6912da2188009eb025842963b062b607d87e92414a74084ff6c8",
+        "bytes": 15669
+      },
+      "restored": {
+        "commit": "3ed9a2b2f2e54355af854d01c6248622b69ae55b",
+        "sha256": "accafbf045993a818f468bad8a1c81751faf323532563f6e269c01c106cdc837",
+        "bytes": 16848
+      },
+      "preservation_check": {
+        "type": "normalized-line-coverage",
+        "minimum": 0.98,
+        "markers": [
+          "egg"
+        ]
+      },
+      "safety_adaptation": "Retain the complete historical presentation and local controls; remove intrusive adaptation banners and redirect only unsafe execution, installer, download, deployment, or publication edges to current evidence.",
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      }
+    }
+  ]
+}
