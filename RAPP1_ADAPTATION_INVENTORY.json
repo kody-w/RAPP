@@ -405,6 +405,7 @@
           ],
           "prefixes": [
             "rapp_swarm/",
+            "rapp_brainstem/",
             "tools/sim/"
           ]
         }
@@ -418,6 +419,7 @@
             ".github/workflows/rapp1-conformance.yml"
           ],
           "prefixes": [
+            ".github/workflows/",
             "tests/"
           ]
         }
@@ -486,7 +488,8 @@
           ],
           "prefixes": [
             "rapp_kernel/",
-            "responsible-ai/"
+            "responsible-ai/",
+            "tools/"
           ]
         }
       },
@@ -494,7 +497,7 @@
         "id": "primary-governance",
         "surface_id": "GOV-001",
         "selector": {
-          "type": "explicit",
+          "type": "explicit-and-prefix",
           "paths": [
             ".github/copilot-instructions.md",
             "CLAUDE.md",
@@ -505,7 +508,17 @@
             "RAPP1_OWNER_ACTIONS.md",
             "RAPP1_STATUS.md",
             "README.md"
+          ],
+          "prefixes": [
+            ".github/"
           ]
+        }
+      },
+      {
+        "id": "primary-root-files",
+        "surface_id": "GOV-001",
+        "selector": {
+          "type": "root-files"
         }
       }
     ],

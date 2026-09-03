@@ -203,8 +203,9 @@
   </div>
   <div class="card-cta" style="margin-top:16px">
     <button class="primary" id="copy-checklist">Copy local checklist</button>
-    <button id="export-checklist">Export checklist JSON</button>
+    <button id="export-checklist">Show checklist JSON</button>
   </div>
+  <pre id="checklist-preview" hidden></pre>
 </div>
 
 <footer>
@@ -255,13 +256,10 @@ document.getElementById("copy-checklist").onclick = async event => {
 };
 
 document.getElementById("export-checklist").onclick = () => {
-  const blob = new Blob([checklistText + "\n"], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "rapp-shortcuts-planning-checklist.json";
-  link.click();
-  URL.revokeObjectURL(url);
+  const preview = document.getElementById("checklist-preview");
+  preview.textContent = checklistText;
+  preview.hidden = false;
+  preview.scrollIntoView({ behavior: "smooth", block: "center" });
 };
 </script>
 

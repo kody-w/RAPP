@@ -246,9 +246,10 @@
 
 <div class="copy-bar">
   <button id="copy-cmd" disabled data-original-label="Copy command">Copy local planning brief</button>
-  <button class="secondary" id="export-plan" disabled>Export JSON</button>
+  <button class="secondary" id="export-plan" disabled>Show plan JSON</button>
   <a class="secondary" href="./" style="display: inline-flex; align-items: center; text-decoration: none;">← Metropolis</a>
 </div>
+<pre id="plan-json-preview" class="cmd placeholder" hidden></pre>
 
 <script type="application/x-rapp-history" id="rapp-history-disabled-source">
 /* Exact historical credential/copy path, bounded as inert source.
@@ -453,13 +454,10 @@ elCopy.textContent = "Long-press the command to copy";
 
   elExport.addEventListener("click", () => {
     if (!currentPlan) return;
-    const blob = new Blob([currentPlanText + "\n"], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${currentPlan.neighborhood.repository_slug}-discord-plan.json`;
-    link.click();
-    URL.revokeObjectURL(url);
+    const preview = document.getElementById("plan-json-preview");
+    preview.textContent = currentPlanText;
+    preview.hidden = false;
+    preview.scrollIntoView({ behavior: "smooth", block: "center" });
   });
 
   renderTemplates();

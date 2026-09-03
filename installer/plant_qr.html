@@ -206,10 +206,11 @@
     <h2>Scan this</h2>
     <div class="qr-img"><img id="qr-img" alt="QR code"></div>
     <div class="qr-target" id="qr-target"></div>
+    <pre class="qr-target" id="qr-svg-source" hidden></pre>
     <div class="options">
-      <button id="btn-print">Print</button>
+      <button id="btn-print">Preview print layout</button>
       <button class="secondary" id="btn-copy-link">Copy link</button>
-      <button class="secondary" id="btn-export-svg">Export SVG</button>
+      <button class="secondary" id="btn-export-svg">Show SVG source</button>
     </div>
   </div>
 
@@ -488,16 +489,20 @@ document.getElementById("btn-clear").onclick = () => {
   document.getElementById("from-handle").value = "";
   document.getElementById("qr-pane").hidden = true;
 };
-document.getElementById("btn-print").onclick = () => window.print();
+document.getElementById("btn-print").onclick = () => {
+  document.getElementById("qr-status-message").textContent =
+    "Print layout previewed on this page; no native print dialog was opened.";
+  document.getElementById("qr-pane").scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+  });
+};
 document.getElementById("btn-export-svg").onclick = () => {
   if (!latestSvg) return;
-  const blob = new Blob([latestSvg], { type: "image/svg+xml" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "rapp-front-door-qr.svg";
-  link.click();
-  URL.revokeObjectURL(url);
+  const preview = document.getElementById("qr-svg-source");
+  preview.textContent = latestSvg;
+  preview.hidden = false;
+  preview.scrollIntoView({ behavior: "smooth", block: "center" });
 };
 document.getElementById("btn-copy-link").onclick = async () => {
   const target = document.getElementById("qr-target").textContent;

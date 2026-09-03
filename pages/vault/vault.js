@@ -1,7 +1,6 @@
 // RAPP Vault — static viewer.
-// Loads hash-pinned Markdown from the checked-in content bundle (or
-// localStorage when in local mode), renders with marked.js, resolves
-// [[wikilinks]], builds a
+// Loads hash-pinned Markdown from the checked-in content bundle, renders with
+// marked.js, resolves [[wikilinks]], builds a
 // backlinks index, supports search and Obsidian-compatible zip export/import.
 
 const VAULT = {
@@ -24,6 +23,7 @@ const $$ = (sel) => document.querySelectorAll(sel);
 
 window.addEventListener('DOMContentLoaded', async () => {
   marked.setOptions({ gfm: true, breaks: false, headerIds: true, mangle: false });
+  discardLegacyLocalOverride();
   wireUI();
   try {
     await loadManifest();
@@ -44,19 +44,12 @@ window.addEventListener('hashchange', handleHashChange);
 // ── Manifest + fetch ─────────────────────────────────────────────────────────
 
 async function loadManifest() {
-  const local = readLocal();
-  if (local && local.manifest) {
-    VAULT.manifest = local.manifest;
-    VAULT.mode = 'local';
-    await loadAliases();
-    showModeBanner();
-    return;
-  }
   // The manifest sits next to the viewer in pages/vault/. Same-origin relative
   // fetch works on GitHub Pages and on any local static server.
   const res = await fetch('./manifest.json', { cache: 'no-cache' });
   if (!res.ok) throw new Error(`manifest fetch failed: ${res.status}`);
   VAULT.manifest = await res.json();
+  VAULT.mode = 'bundle';
   await loadAliases();
   await loadContentBundle();
   $('#subtitle').textContent = VAULT.manifest.subtitle || 'Second-brain wiki';
@@ -115,12 +108,6 @@ async function sha256Hex(text) {
 }
 
 async function fetchNote(path) {
-  if (VAULT.mode === 'local') {
-    const local = readLocal();
-    const body = local && local.notes && local.notes[path];
-    if (body == null) throw new Error(`local note missing: ${path}`);
-    return body;
-  }
   const record = VAULT.bundle && VAULT.bundle.notes[path];
   const manifestEntry = VAULT.manifest.notes.find((note) => note.path === path);
   if (!record || !manifestEntry) throw new Error(`bundled note missing: ${path}`);
@@ -135,6 +122,14 @@ async function fetchNote(path) {
     throw new Error(`bundled note hash mismatch: ${path}`);
   }
   return record.content;
+}
+
+function discardLegacyLocalOverride() {
+  try {
+    localStorage.removeItem(LS_KEY);
+  } catch (_) {
+    // Storage denial is already the safe read-only state.
+  }
 }
 
 async function prefetchAll() {

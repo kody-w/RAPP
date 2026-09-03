@@ -546,6 +546,26 @@ def main() -> int:
                 f"{relative}: CSP permits external connections",
             )
         require(not parser.meta_refresh, f"{relative}: adapted history must not redirect")
+        executable_script = "\n".join(
+            script["content"]
+            for script in parser.scripts
+            if script["type"]
+            in {"", "text/javascript", "module", "application/javascript"}
+        )
+        for marker in (
+            "navigator.geolocation",
+            "navigator.mediaDevices",
+            "navigator.share",
+            "speechSynthesis",
+            "URL.createObjectURL",
+            "window.print(",
+            "showSaveFilePicker",
+            "PaymentRequest",
+        ):
+            require(
+                marker not in executable_script,
+                f"{relative}: active local replay invokes sensitive browser API {marker}",
+            )
         for tag, attr, value in parser.refs:
             if tag in {"img", "iframe", "script", "audio", "video", "source"}:
                 require(

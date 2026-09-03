@@ -270,7 +270,7 @@
       authenticating to GitHub, or emitting identity or trust.</p>
     <pre class="cmd" id="plan-preview"></pre>
     <div class="btn-row">
-      <button class="secondary" id="btn-export-plan">Export plan JSON</button>
+      <button class="secondary" id="btn-export-plan">Show plan JSON</button>
     </div>
   </section>
 
@@ -394,33 +394,23 @@ document.getElementById("btn-copy").onclick        = e => copyCommand(e.target);
 document.getElementById("btn-copy-mobile").onclick = e => copyCommand(e.target);
 
 document.getElementById("btn-export-plan").onclick = () => {
-  const blob = new Blob([planText + "\n"], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "rapp-front-door-plan.json";
-  link.click();
-  URL.revokeObjectURL(url);
+  document.getElementById("plan-preview").scrollIntoView({
+    behavior: "smooth",
+    block: "center",
+  });
+  document.getElementById("btn-export-plan").textContent = "Plan shown above";
 };
 
 // Share button (mobile)
 document.getElementById("btn-share").onclick = async () => {
   const url = location.href;
-  if (navigator.share) {
-    try {
-      await navigator.share({
-        title: "Plant your AI's front door",
-        text:  "Review this historical planner on your computer:",
-        url:   url,
-      });
-    } catch (_) { /* user cancelled */ }
-  } else {
-    // Fallback: copy URL to clipboard
-    try {
-      await navigator.clipboard.writeText(url);
-      const btn = document.getElementById("btn-share");
-      btn.textContent = "URL copied — send to your computer";
-    } catch (_) { /* silent */ }
+  try {
+    await navigator.clipboard.writeText(url);
+    const btn = document.getElementById("btn-share");
+    btn.textContent = "URL copied — send to your computer";
+  } catch (_) {
+    document.getElementById("btn-share").textContent =
+      "Copy unavailable — select the address bar";
   }
 };
 </script>

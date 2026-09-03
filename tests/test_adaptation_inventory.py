@@ -124,6 +124,8 @@ def _selector_matches(
         )
     if kind == "path-set-ref":
         return relative in path_sets[selector["path_set_ref"]]
+    if kind == "root-files":
+        return "/" not in relative
     raise AssertionError(f"unsupported primary selector: {selector}")
 
 
@@ -218,19 +220,24 @@ def test_primary_classification_covers_every_tracked_path_once():
     assert len(rule_ids) == len(set(rule_ids))
     counts = {surface_id: 0 for surface_id in REQUIRED_SURFACE_IDS}
     assigned: dict[str, str] = {}
+    fallback_paths: list[str] = []
     for relative in tracked:
-        surface_id = next(
+        matched = next(
             (
                 rule["surface_id"]
                 for rule in classification["rules"]
                 if _selector_matches(rule["selector"], relative, path_sets)
             ),
-            classification["fallback_surface_id"],
+            None,
         )
+        surface_id = matched or classification["fallback_surface_id"]
+        if matched is None:
+            fallback_paths.append(relative)
         assert surface_id in REQUIRED_SURFACE_IDS
         assigned[relative] = surface_id
         counts[surface_id] += 1
     assert set(assigned) == set(tracked)
+    assert fallback_paths == []
     assert all(count > 0 for count in counts.values()), counts
 
 

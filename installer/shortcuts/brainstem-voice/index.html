@@ -221,9 +221,9 @@
   </div>
   <div class="controls">
     <button id="build-preview">Build local preview</button>
-    <button class="secondary" id="speak-preview">Speak sample locally</button>
+    <button class="secondary" id="speak-preview">Preview speech text</button>
     <button class="secondary" id="copy-preview">Copy plan</button>
-    <button class="secondary" id="export-preview">Export JSON</button>
+    <button class="secondary" id="export-preview">Show plan JSON</button>
   </div>
   <h3>Request preview</h3>
   <pre id="request-preview"></pre>
@@ -310,16 +310,11 @@ document.getElementById("build-preview").onclick = buildPlan;
 document.getElementById("speak-preview").onclick = () => {
   const plan = buildPlan();
   if (!plan.derived_speech) {
-    plannerStatus.textContent = "Add sample response text before speaking.";
+    plannerStatus.textContent = "Add sample response text before previewing.";
     return;
   }
-  if (!("speechSynthesis" in window)) {
-    plannerStatus.textContent = "Local speech synthesis is unavailable in this browser.";
-    return;
-  }
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(new SpeechSynthesisUtterance(plan.derived_speech));
-  plannerStatus.textContent = "Speaking the local sample only; no network request was made.";
+  speechPreview.scrollIntoView({ behavior: "smooth", block: "center" });
+  plannerStatus.textContent = "Speech text is shown above; no audio device was used.";
 };
 
 document.getElementById("copy-preview").onclick = async event => {
@@ -334,13 +329,9 @@ document.getElementById("copy-preview").onclick = async event => {
 };
 
 document.getElementById("export-preview").onclick = () => {
-  const blob = new Blob([planText() + "\n"], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "brainstem-voice-preview.json";
-  link.click();
-  URL.revokeObjectURL(url);
+  requestPreview.textContent = planText();
+  requestPreview.scrollIntoView({ behavior: "smooth", block: "center" });
+  plannerStatus.textContent = "Plan JSON is shown above; no file was created.";
 };
 
 buildPlan();
