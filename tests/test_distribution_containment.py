@@ -329,7 +329,7 @@ def test_owned_distribution_pages_publish_neither_tier2_nor_power_archive():
         assert "no active download link" in source
 
 
-def test_plant_browser_callers_are_static_410s():
+def test_plant_browser_callers_are_inert_semantic_tombstones():
     forbidden = (
         "<script",
         "<iframe",
@@ -342,7 +342,7 @@ def test_plant_browser_callers_are_static_410s():
     )
     for relative in RETIRED_BROWSER_ROUTES:
         source = (ROOT / relative).read_text(encoding="utf-8").lower()
-        assert "http 410" in source
+        assert "retired semantic tombstone" in source
         assert "rapp1_status.md" in source
         for marker in forbidden:
             assert marker not in source, f"{relative} retains caller marker: {marker}"

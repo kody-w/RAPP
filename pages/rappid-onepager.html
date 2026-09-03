@@ -62,6 +62,20 @@ html, body{
   overscroll-behavior:none;
   -webkit-tap-highlight-color:transparent;
 }
+.historical-banner{
+  position:fixed; z-index:150; top:10px; left:50%;
+  transform:translateX(-50%);
+  width:min(860px, calc(100vw - 180px));
+  margin:0; padding:8px 12px;
+  border:1px solid var(--border2); border-radius:9px;
+  background:color-mix(in srgb, var(--surface) 92%, transparent);
+  box-shadow:0 8px 24px rgba(0,0,0,.12);
+  font-size:11px; line-height:1.35; text-align:center;
+  backdrop-filter:blur(10px);
+}
+@media(max-width:700px){
+  .historical-banner{top:6px;width:calc(100vw - 24px);font-size:9px}
+}
 
 .stage{
   position:fixed; inset:0;
@@ -513,16 +527,14 @@ html, body{
 </head>
 <body>
 
-<aside role="note" style="max-width:900px;margin:24px auto;padding:16px 20px;border:1px solid currentColor;border-radius:10px">
-  <strong>Historical one-page concept — visible, inert, and not a current
-  product claim.</strong> Three-tier, installer, browser, and Copilot Studio
-  claims in the bounded page are retired. Download, storage, fullscreen, and
-  network actions do not run. Follow RAPP/1 rev-5 through
+<aside class="historical-banner" role="note">
+  <strong>Historical one-page concept.</strong> Local presentation controls
+  only; downloads and network actions are disabled. RAPP/1 rev-5:
   <a href="../RAPP1_AUTHORITY.json">RAPP1_AUTHORITY.json</a> and
   <a href="../RAPP1_STATUS.md">RAPP1_STATUS.md</a>.
 </aside>
 <!-- RAPP1-HISTORICAL-SECTION-START -->
-<div class="historical-snapshot" data-status="historical" inert>
+<div class="historical-snapshot" data-status="historical">
 <div class="rotate-hint">
   <div class="rot-icon">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
@@ -626,19 +638,19 @@ html, body{
           </div>
         </div>
 
-        <a class="download-card" href="https://raw.githubusercontent.com/kody-w/RAR/main/agents/@howardh/chief_of_staff_agent.py" download="chief_of_staff_agent.py" id="downloadChiefOfStaff">
+        <div class="download-card" aria-disabled="true">
           <div class="file-icon">{ }</div>
           <div class="file-info">
             <div class="file-name">chief_of_staff_agent.py</div>
-            <div class="file-sub">try it on your laptop · live from RAR registry</div>
+            <div class="file-sub">historical RAR example · no active download</div>
           </div>
           <div class="cta-btn">
             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 3v12M6 11l6 6 6-6M5 21h14"/>
             </svg>
-            <span>Download</span>
+            <span>Retired</span>
           </div>
-        </a>
+        </div>
       </div>
     </div>
   </div>
@@ -696,7 +708,7 @@ html, body{
   </div>
 </div>
 
-<script type="application/rapp-history">
+<script>
 // Scale the slide to fit the viewport — aggressive on mobile, fill on desktop
 (function(){
   const slide = document.getElementById('slide');
@@ -757,39 +769,6 @@ html, body{
   document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
 })();
 
-// Live download from the public RAR registry — Blob, so the browser
-// won't open the .py file as plain text inline.
-(function(){
-  const URL_PY = "https://raw.githubusercontent.com/kody-w/RAR/main/agents/@howardh/chief_of_staff_agent.py";
-  const FILENAME = "chief_of_staff_agent.py";
-  const card = document.getElementById('downloadChiefOfStaff');
-  if (!card) return;
-  card.addEventListener('click', async (e) => {
-    e.preventDefault();
-    const cta = card.querySelector('.cta-btn span');
-    const original = cta ? cta.textContent : null;
-    if (cta) cta.textContent = 'Fetching…';
-    try {
-      const resp = await fetch(URL_PY, { cache: 'no-store' });
-      if (!resp.ok) throw new Error('fetch failed: ' + resp.status);
-      const blob = await resp.blob();
-      const objectUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = objectUrl;
-      a.download = FILENAME;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => {
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(objectUrl);
-        if (cta) cta.textContent = original;
-      }, 100);
-    } catch (err) {
-      if (cta) cta.textContent = original;
-      window.location.href = URL_PY;
-    }
-  });
-})();
 </script>
 
 </div>

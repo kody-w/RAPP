@@ -349,6 +349,8 @@ class Rapp1DocumentationTests(unittest.TestCase):
                 "installer/plant.html",
                 "installer/plant_qr.html",
                 "installer/seed.html",
+                "installer/shortcuts/brainstem-voice/index.html",
+                "installer/shortcuts/index.html",
                 "pages/_site/partials/footer.html",
                 "pages/metropolis/index.html",
                 "pages/metropolis/plant-from-discord.html",
@@ -381,7 +383,7 @@ class Rapp1DocumentationTests(unittest.TestCase):
                 self.assertIn("RAPP1_STATUS.md", text)
                 self.assertIn("RAPP1_AUTHORITY.json", text)
             else:
-                self.assertIn("HTTP 410", text)
+                self.assertIn("Retired semantic tombstone", text)
                 self.assertIn("retired", text.lower())
 
     def test_final_closure_paths_are_asserted_not_owner_excluded(self) -> None:
@@ -529,11 +531,22 @@ class Rapp1DocumentationTests(unittest.TestCase):
 
     def test_tutorial_navigation_mutation_is_rejected(self) -> None:
         path = "pages/_site/index.json"
-        text = (ROOT / path).read_text(encoding="utf-8")
-        mutated = text + '\n"pages/tutorials/hatch-egg.html"\n'
+        manifest = json.loads((ROOT / path).read_text(encoding="utf-8"))
+        tutorial = next(
+            page
+            for section in manifest["sections"]
+            for page in section["pages"]
+            if page["path"] == "tutorials/hatch-egg.html"
+        )
+        tutorial["navigation"] = True
+        mutated = json.dumps(manifest)
         errors = self._category_mutation_errors(path, mutated)
         self.assertTrue(
-            any(path in error and "advertises retired hatch-egg" in error for error in errors),
+            any(
+                path in error
+                and "retired hatch tutorial" in error
+                for error in errors
+            ),
             errors,
         )
 

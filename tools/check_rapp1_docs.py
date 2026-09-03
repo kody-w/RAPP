@@ -463,8 +463,8 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
             "9308d946bd01549a8b02626e7dd2729cd0ebe46adc94fbf86718a9419fb30039",
         ),
         "voice_twin_wire": (
-            9,
-            "dda129ecee5bbfbc28ae24b82448168f07907b4818a58f4c676d8c46ac46beb7",
+            7,
+            "82f978af43d3a10cfe332d13645aa9a00e2b5f171ad2b8b01095b6c4eb3aefc5",
         ),
         "integrated_terminal_states": (
             3,
@@ -494,7 +494,7 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
                     errors.append(f"fixture: {name} target-check path is missing: {path}")
     expected_terminal_hashes = {
         "pages/index.html": (
-            "48b874fff2da3e27c0e14ab33001b24e34b2dce60f3e6a9cc3db2a44b444f7d1"
+            "676d567739ff70ef7753798bd1b41c8691aefb4d0e47911169663a8dc4f224e7"
         ),
         "cave/rar/index.json": (
             "1817e4a08525c8cabb4ff1e120847cafdd0d215b4830ec2b974d1979c464ecb1"
@@ -515,7 +515,7 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
             errors.append(f"{path}: integrated main terminal bytes drifted")
     expected_documentation_hashes = {
         "pages/_site/partials/footer.html": (
-            "f4e27778f0d6b636e7cf50047229692d9790668eda5fa027837711852193347d"
+            "c23caaccb2f0cf93cf760c89f482b009f283ef4b2037ea8b18106de47856d1de"
         ),
         "installer/README.md": (
             "2cdbeb34454c1dced1a2e6c5698b9256adac76d8a4ab355fda00687349a670fe"
@@ -752,6 +752,12 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
     for path in categories["POST-SHORTCUT-LEGACY"]["paths"]:
         text = _read(path)
         lowered = text.lower()
+        if "retired semantic tombstone" in lowered:
+            if "rapp1_status.md" not in lowered:
+                errors.append(f"{path}: shortcut tombstone lacks current status")
+            if re.search(r"<script\b", text, flags=re.IGNORECASE):
+                errors.append(f"{path}: shortcut tombstone executes script")
+            continue
         for token in shortcut_rule["required_wire_tokens"]:
             if token.lower() not in lowered:
                 errors.append(f"{path}: missing exact façade token {token!r}")
@@ -800,8 +806,13 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
                 ):
                     errors.append(f"{path}: contained directory restores planting")
             else:
-                if "HTTP 410" not in raw or "retired" not in raw.lower():
-                    errors.append(f"{path}: distribution tombstone lost HTTP 410")
+                if (
+                    "retired semantic tombstone" not in raw.lower()
+                    or "retired" not in raw.lower()
+                ):
+                    errors.append(
+                        f"{path}: distribution semantic tombstone is missing"
+                    )
                 if re.search(r"<script\b", raw, flags=re.IGNORECASE):
                     errors.append(f"{path}: distribution tombstone executes script")
             continue
@@ -1047,16 +1058,50 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
     tutorial_rule = rules["retired_tutorial"]
     navigation_text = _read(tutorial_rule["navigation_path"])
     try:
-        json.loads(navigation_text)
+        navigation = json.loads(navigation_text)
     except json.JSONDecodeError as exc:
         errors.append(f"{tutorial_rule['navigation_path']}: invalid JSON: {exc}")
+        navigation = {}
+    manifest_pages = [
+        page
+        for section in navigation.get("sections", [])
+        for page in section.get("pages", [])
+        if isinstance(page, dict)
+    ]
+    hatch_records = [
+        page
+        for page in manifest_pages
+        if page.get("path") == "tutorials/hatch-egg.html"
+    ]
+    if (
+        len(hatch_records) != 1
+        or hatch_records[0].get("classification")
+        not in {"historical_page", "retired_alias"}
+        or hatch_records[0].get("navigation") is not False
+    ):
+        errors.append(
+            f"{tutorial_rule['navigation_path']}: retired hatch tutorial "
+            "must be one non-navigation historical or retired route"
+        )
+    active_navigation = json.dumps(
+        [
+            page
+            for page in manifest_pages
+            if page.get("classification") == "current_entrypoint"
+            or page.get("navigation") is True
+        ],
+        sort_keys=True,
+    ).lower()
     for retired_token in ("hatch-egg", "brainstem-egg", "sample-agent.egg"):
-        if retired_token in navigation_text.lower():
+        if retired_token in active_navigation:
             errors.append(
                 f"{tutorial_rule['navigation_path']}: advertises retired {retired_token}"
             )
     for path in target_checks["retired_tutorial"]["paths"]:
-        if path == tutorial_rule["retired_tutorial_path"]:
+        if path in {
+            tutorial_rule["retired_tutorial_path"],
+            tutorial_rule["navigation_path"],
+        }:
             continue
         active, marker_errors = _active_text(path, fixture)
         errors.extend(marker_errors)

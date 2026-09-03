@@ -15,6 +15,11 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 
 RETIRED_HTML = (
+    "pages/chat.html",
+    "pages/lobby.html",
+    "pages/payphone.html",
+    "pages/summon.html",
+    "pages/metropolis/index.html",
     "pages/vbrainstem.html",
     "pages/vbrainstem/index.html",
     "pages/tether.html",
@@ -212,12 +217,15 @@ def sha256(path: Path) -> str:
 
 
 class ContainmentTests(unittest.TestCase):
-    def test_browser_surfaces_are_static_tombstones(self):
+    def test_browser_surfaces_are_inert_tombstones(self):
         for relative in RETIRED_HTML:
             with self.subTest(path=relative):
                 text = (ROOT / relative).read_text(encoding="utf-8")
                 lowered = text.lower()
-                self.assertIn("http 410", lowered)
+                self.assertTrue(
+                    "retired semantic tombstone" in lowered
+                    or "http 410" in lowered
+                )
                 self.assertIn("rapp1_status.md", lowered)
                 for marker in HTML_EXECUTION_MARKERS:
                     self.assertNotIn(marker, lowered)
@@ -412,16 +420,17 @@ for (const step of [1, "1A", "7", undefined]) {
         self.assertIn("nameSpan.textContent", renderer)
         self.assertNotIn("label.innerHTML", renderer)
 
-    def test_payphone_keeps_exact_rappid_parser_separate(self):
+    def test_payphone_no_longer_parses_identity_or_handles_tokens(self):
         source = (ROOT / "pages/payphone.html").read_text(encoding="utf-8")
-        parser = source.split("function parseRappid", 1)[1]
-        parser = parser.split("async function gh", 1)[0]
-        self.assertIn("[0-9a-f]{64}", parser)
-        self.assertIn("m[1].length > 39", parser)
-        self.assertIn("m[2].length > 100", parser)
-        self.assertIn("function parseRepoLocator", parser)
-        self.assertIn("return parseRappid(s) || parseRepoLocator(s)", parser)
-        self.assertNotIn("[a-f0-9]{32,64}", parser)
+        self.assertIn("Retired semantic tombstone", source)
+        for forbidden in (
+            "function parseRappid",
+            "localStorage",
+            "sessionStorage",
+            "workers.dev",
+            "github_token",
+        ):
+            self.assertNotIn(forbidden, source)
 
     def test_site_inventory_does_not_present_live_surfaces(self):
         manifest = json.loads((ROOT / "pages/_site/index.json").read_text())

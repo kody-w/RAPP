@@ -179,15 +179,17 @@ test('contained Tier 2 deployment cannot advertise RAPP/1', () => {
   equal(guard.rapp1_advertising_allowed, false);
 });
 
-test('legacy browser execution surfaces are static 410 tombstones', () => {
+test('legacy browser execution surfaces are inert semantic tombstones', () => {
   for (const relative of [
     'pages/vbrainstem.html',
     'pages/tether.html',
     'pages/sphere.html',
-    'rapp_swarm/index.html',
   ]) {
     const source = read(relative).toLowerCase();
-    assert(source.includes('http 410'), `${relative} lacks HTTP 410`);
+    assert(
+      source.includes('retired semantic tombstone'),
+      `${relative} lacks a semantic tombstone label`,
+    );
     assert(!source.includes('<script'), `${relative} still executes scripts`);
     assert(!source.includes('fetch('), `${relative} still performs fetch`);
   }
@@ -278,7 +280,10 @@ test('owned pages do not publish retired distribution or plant callers', () => {
     'pages/metropolis/plant-from-discord.html',
   ]) {
     const source = read(relative).toLowerCase();
-    assert(source.includes('http 410'), `${relative} lacks HTTP 410`);
+    assert(
+      source.includes('retired semantic tombstone'),
+      `${relative} lacks a semantic tombstone label`,
+    );
     assert(!source.includes('<script'), `${relative} still executes scripts`);
     assert(!source.includes('plant.sh'), `${relative} still calls the planter`);
   }

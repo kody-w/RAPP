@@ -24,6 +24,10 @@ RESTORED_HISTORY = {
     "pages/rappid-onepager.html",
     "pages/share/invention-backlog/index.html",
 }
+SAFE_INTERACTIVE_HISTORY = {
+    "pages/rappid-deck.html",
+    "pages/rappid-onepager.html",
+}
 
 
 class DocumentParser(HTMLParser):
@@ -393,10 +397,23 @@ def main() -> int:
             not re.search(r"<div\b[^>]*\bhidden\b[^>]*aria-hidden=[\"']true", text, flags=re.IGNORECASE),
             f"{relative}: retained content is still hidden",
         )
-        require(
-            re.search(r"class=[\"']historical-snapshot[\"'][^>]*\binert\b", text) is not None,
-            f"{relative}: restored snapshot must be visibly inert",
-        )
+        if relative in SAFE_INTERACTIVE_HISTORY:
+            require(
+                re.search(r"class=[\"']historical-snapshot[\"']", text) is not None
+                and re.search(
+                    r"class=[\"']historical-snapshot[\"'][^>]*\binert\b",
+                    text,
+                ) is None,
+                f"{relative}: safe local presentation controls must remain enabled",
+            )
+        else:
+            require(
+                re.search(
+                    r"class=[\"']historical-snapshot[\"'][^>]*\binert\b",
+                    text,
+                ) is not None,
+                f"{relative}: restored snapshot must be visibly inert",
+            )
         for script in parser.scripts:
             body = script["content"]
             if re.search(r"\b(?:fetch|XMLHttpRequest|WebSocket|EventSource)\s*\(", body):

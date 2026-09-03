@@ -28,6 +28,12 @@
       "gate": "offline-boundary"
     },
     {
+      "path": "tests/check_pages.py",
+      "disposition": "canonical-child",
+      "reason": "Exhaustively validates the published Pages graph, manifest, inert history, and crawl boundary.",
+      "gate": "html-smoke"
+    },
+    {
       "path": "tests/check_rapp1_static.py",
       "disposition": "canonical-direct",
       "reason": "Runs strict syntax, immutable-action, quarantine, and suite-inventory inspections.",
