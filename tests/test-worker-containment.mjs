@@ -235,6 +235,7 @@ try {
         method: init.method || "GET",
         headers: new Headers(init.headers),
         body: init.body,
+        redirect: init.redirect,
       });
       return new Response(JSON.stringify({ ok: true }), {
         status: 200,
@@ -242,6 +243,94 @@ try {
       });
     },
   };
+
+  const rejectedEndpointCalls = [];
+  const rejectedEndpointBinding = {
+    async fetch(input, init = {}) {
+      rejectedEndpointCalls.push({
+        input: String(input),
+        headers: new Headers(init.headers),
+      });
+      return new Response(JSON.stringify({ leaked: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    },
+  };
+  const rejectedEndpoints = [
+    ["suffix without label boundary", "https://notgithubcopilot.com"],
+    ["approved suffix followed by attacker domain", "https://githubcopilot.com.evil.invalid"],
+    ["userinfo", "https://user@api.individual.githubcopilot.com"],
+    ["empty userinfo", "https://@api.individual.githubcopilot.com"],
+    ["non-HTTPS", "http://api.individual.githubcopilot.com"],
+    ["unexpected scheme", "ftp://api.individual.githubcopilot.com"],
+    ["unexpected port", "https://api.individual.githubcopilot.com:444"],
+    ["Unicode lookalike", "https://api.individual.gіthubcopilot.com"],
+    ["Unicode hostname separator", "https://api.individual.githubcopilot。com"],
+    ["punycode lookalike", "https://api.individual.xn--gthubcopilot-1ok.com"],
+    ["percent-encoded hostname", "https://%61pi.individual.githubcopilot.com"],
+    ["IPv4 literal", "https://127.0.0.1"],
+    ["IPv6 literal", "https://[::1]"],
+  ];
+  const protectedCopilotRoutes = [
+    {
+      capability: "copilotModels",
+      method: "GET",
+      path: "/api/copilot/models",
+    },
+    {
+      capability: "copilotChat",
+      method: "POST",
+      path: "/api/copilot/chat",
+      body: JSON.stringify({ messages: [] }),
+    },
+  ];
+
+  for (const route of protectedCopilotRoutes) {
+    for (const [label, endpoint] of rejectedEndpoints) {
+      const target = new URL(`https://worker.example${route.path}`);
+      target.searchParams.set("endpoint", endpoint);
+      const authorization = `Bearer rejected-endpoint-${route.capability}`;
+      const init = {
+        method: route.method,
+        headers: {
+          Authorization: authorization,
+          "Content-Type": "application/json",
+        },
+      };
+      if (route.body) init.body = route.body;
+
+      const response = await worker.fetch(
+        new Request(target, init),
+        {
+          RAPP_BROWSER_RUNTIME_ENABLED: true,
+          RAPP_REVIEWED_BROWSER_RUNTIME: rejectedEndpointBinding,
+          RAPP_BROWSER_RUNTIME_CAPABILITIES: {
+            [route.capability]: true,
+          },
+        },
+        {},
+      );
+      assert.equal(
+        response.status,
+        400,
+        `${route.path} must reject ${label}`,
+      );
+      assert.equal((await response.json()).error, "invalid endpoint");
+      assert.equal(
+        rejectedEndpointCalls.length,
+        0,
+        `${route.path} must not call the binding for ${label}`,
+      );
+      assert.equal(
+        rejectedEndpointCalls.some(
+          (call) => call.headers.get("Authorization") === authorization,
+        ),
+        false,
+        `${route.path} must not forward Authorization for ${label}`,
+      );
+    }
+  }
 
   const catalog = await worker.fetch(
     new Request("https://worker.example/api/models", {
@@ -286,10 +375,151 @@ try {
   );
   assert.equal(upstreamCalls[1].method, "POST");
   assert.equal(upstreamCalls[1].body, chatBody);
+  assert.equal(upstreamCalls[1].redirect, "manual");
   assert.equal(
     upstreamCalls[1].headers.get("Authorization"),
     "Bearer synthetic-worker-token",
   );
+
+  const businessModelsUrl = new URL(
+    "https://worker.example/api/copilot/models",
+  );
+  businessModelsUrl.searchParams.set(
+    "endpoint",
+    "https://api.business.githubcopilot.com",
+  );
+  const businessModels = await worker.fetch(
+    new Request(businessModelsUrl, {
+      headers: { Authorization: "Bearer approved-business-fixture" },
+    }),
+    {
+      RAPP_BROWSER_RUNTIME_ENABLED: true,
+      RAPP_REVIEWED_BROWSER_RUNTIME: syntheticUpstream,
+      RAPP_BROWSER_RUNTIME_CAPABILITIES: { copilotModels: true },
+    },
+    {},
+  );
+  assert.equal(businessModels.status, 200);
+  const businessModelsCall = upstreamCalls.at(-1);
+  assert.equal(
+    businessModelsCall.input,
+    "https://api.business.githubcopilot.com/models",
+  );
+  assert.equal(businessModelsCall.redirect, "manual");
+  assert.equal(
+    businessModelsCall.headers.get("Authorization"),
+    "Bearer approved-business-fixture",
+  );
+
+  const redirectCalls = [];
+  const redirectingBinding = {
+    async fetch(input, init = {}) {
+      redirectCalls.push({
+        input: String(input),
+        headers: new Headers(init.headers),
+        redirect: init.redirect,
+      });
+      return new Response(null, {
+        status: 302,
+        headers: {
+          Location: "https://notgithubcopilot.com/credential-capture",
+        },
+      });
+    },
+  };
+  const redirectAuthorization = "Bearer redirect-secret-fixture";
+  const redirectedModels = await worker.fetch(
+    new Request("https://worker.example/api/copilot/models", {
+      headers: { Authorization: redirectAuthorization },
+    }),
+    {
+      RAPP_BROWSER_RUNTIME_ENABLED: true,
+      RAPP_REVIEWED_BROWSER_RUNTIME: redirectingBinding,
+      RAPP_BROWSER_RUNTIME_CAPABILITIES: { copilotModels: true },
+    },
+    {},
+  );
+  assert.equal(redirectedModels.status, 502);
+  assert.equal(
+    (await redirectedModels.json()).code,
+    "approved-copilot-redirect-required",
+  );
+  assert.equal(
+    redirectCalls.length,
+    1,
+    "an unapproved redirect target must never reach the binding",
+  );
+  assert.equal(
+    redirectCalls[0].input,
+    "https://api.individual.githubcopilot.com/models",
+  );
+  assert.equal(redirectCalls[0].redirect, "manual");
+  assert.equal(
+    redirectCalls.some(
+      (call) => new URL(call.input).hostname === "notgithubcopilot.com",
+    ),
+    false,
+    "the binding must never receive the unapproved redirect target",
+  );
+  assert.equal(
+    redirectCalls.some(
+      (call) => new URL(call.input).hostname === "notgithubcopilot.com"
+        && call.headers.get("Authorization") === redirectAuthorization,
+    ),
+    false,
+    "Authorization must never be forwarded to the unapproved redirect target",
+  );
+
+  const approvedRedirectCalls = [];
+  const approvedRedirectBinding = {
+    async fetch(input, init = {}) {
+      approvedRedirectCalls.push({
+        input: String(input),
+        headers: new Headers(init.headers),
+        redirect: init.redirect,
+      });
+      if (approvedRedirectCalls.length === 1) {
+        return new Response(null, {
+          status: 307,
+          headers: {
+            Location: "https://api.enterprise.githubcopilot.com/models",
+          },
+        });
+      }
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    },
+  };
+  const approvedRedirect = await worker.fetch(
+    new Request("https://worker.example/api/copilot/models", {
+      headers: { Authorization: "Bearer approved-redirect-fixture" },
+    }),
+    {
+      RAPP_BROWSER_RUNTIME_ENABLED: true,
+      RAPP_REVIEWED_BROWSER_RUNTIME: approvedRedirectBinding,
+      RAPP_BROWSER_RUNTIME_CAPABILITIES: { copilotModels: true },
+    },
+    {},
+  );
+  assert.equal(approvedRedirect.status, 200);
+  assert.deepEqual(
+    approvedRedirectCalls.map((call) => call.input),
+    [
+      "https://api.individual.githubcopilot.com/models",
+      "https://api.enterprise.githubcopilot.com/models",
+    ],
+  );
+  assert.equal(
+    approvedRedirectCalls.every(
+      (call) => call.redirect === "manual"
+        && call.headers.get("Authorization") === "Bearer approved-redirect-fixture",
+    ),
+    true,
+    "approved redirects must be revalidated before credential forwarding",
+  );
+
   assert.equal(globalFetchCalls, 0, "enabled tests must use only the reviewed binding");
 } finally {
   globalThis.fetch = originalFetch;

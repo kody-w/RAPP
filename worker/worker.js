@@ -50,6 +50,15 @@ const UPSTREAMS = Object.freeze({
   user: 'https://api.github.com/user',
 });
 
+const APPROVED_COPILOT_HOSTS = Object.freeze([
+  'api.githubcopilot.com',
+  'api.individual.githubcopilot.com',
+  'api.business.githubcopilot.com',
+  'api.enterprise.githubcopilot.com',
+]);
+
+const COPILOT_REDIRECT_LIMIT = 3;
+
 const ROUTES = Object.freeze([
   { method: 'POST', path: '/api/auth/token', capability: 'oauthExchange', handler: handleOAuthToken },
   { method: 'POST', path: '/api/auth/device', capability: 'deviceFlow', handler: handleDeviceStart },
@@ -223,6 +232,169 @@ function upstreamFetch(runtime, input, init) {
   return runtime.binding.fetch(input, init);
 }
 
+function explicitUrlAuthority(raw) {
+  const match = /^(?:[a-z][a-z0-9+.-]*:)?\/\/([^/?#]*)/i.exec(raw);
+  return match ? match[1] : null;
+}
+
+function hasUnsafeExplicitAuthority(raw) {
+  const authority = explicitUrlAuthority(raw);
+  return authority !== null && (
+    authority === ''
+    || !/^[\x21-\x7e]+$/.test(authority)
+    || authority.includes('@')
+    || authority.includes('%')
+  );
+}
+
+function parseApprovedCopilotUrl(raw, endpointOnly = false) {
+  if (
+    typeof raw !== 'string'
+    || raw === ''
+    || !/^[\x21-\x7e]+$/.test(raw)
+  ) {
+    return null;
+  }
+
+  const authority = explicitUrlAuthority(raw);
+  if (!authority || hasUnsafeExplicitAuthority(raw)) {
+    return null;
+  }
+
+  let parsed;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    return null;
+  }
+
+  if (
+    parsed.protocol !== 'https:'
+    || parsed.username !== ''
+    || parsed.password !== ''
+    || parsed.port !== ''
+    || parsed.hash !== ''
+    || !APPROVED_COPILOT_HOSTS.includes(parsed.hostname)
+  ) {
+    return null;
+  }
+
+  if (endpointOnly && (parsed.pathname !== '/' || parsed.search !== '')) {
+    return null;
+  }
+
+  return parsed;
+}
+
+function copilotRedirectInit(status, init) {
+  const next = {
+    ...init,
+    redirect: 'manual',
+  };
+  const method = String(next.method || 'GET').toUpperCase();
+
+  if (status === 303 || ([301, 302].includes(status) && method === 'POST')) {
+    const headers = new Headers(next.headers);
+    headers.delete('Content-Length');
+    headers.delete('Content-Type');
+    next.method = 'GET';
+    next.headers = headers;
+    delete next.body;
+  }
+
+  return next;
+}
+
+function copilotRedirectRefusal(request, runtime, code) {
+  return json(
+    { error: 'copilot redirect refused', code },
+    { status: 502 },
+    request,
+    runtime,
+  );
+}
+
+async function copilotUpstreamFetch(runtime, input, init, request) {
+  let target = parseApprovedCopilotUrl(input);
+  if (!target) {
+    return {
+      response: copilotRedirectRefusal(
+        request,
+        runtime,
+        'approved-copilot-host-required',
+      ),
+    };
+  }
+
+  let nextInit = {
+    ...init,
+    redirect: 'manual',
+  };
+
+  for (let redirects = 0; ; redirects += 1) {
+    const upstream = await upstreamFetch(runtime, target.href, nextInit);
+    const redirectStatus = [301, 302, 303, 307, 308].includes(upstream.status);
+
+    if (upstream.redirected || upstream.type === 'opaqueredirect') {
+      return {
+        response: copilotRedirectRefusal(
+          request,
+          runtime,
+          'reviewed-binding-must-not-follow-redirects',
+        ),
+      };
+    }
+    if (!redirectStatus) return { upstream };
+    if (redirects >= COPILOT_REDIRECT_LIMIT) {
+      return {
+        response: copilotRedirectRefusal(
+          request,
+          runtime,
+          'copilot-redirect-limit-exceeded',
+        ),
+      };
+    }
+
+    const location = upstream.headers.get('Location');
+    if (!location || hasUnsafeExplicitAuthority(location)) {
+      return {
+        response: copilotRedirectRefusal(
+          request,
+          runtime,
+          'copilot-redirect-location-required',
+        ),
+      };
+    }
+
+    let redirectTarget;
+    try {
+      redirectTarget = new URL(location, target);
+    } catch {
+      return {
+        response: copilotRedirectRefusal(
+          request,
+          runtime,
+          'approved-copilot-redirect-required',
+        ),
+      };
+    }
+
+    const approvedTarget = parseApprovedCopilotUrl(redirectTarget.href);
+    if (!approvedTarget) {
+      return {
+        response: copilotRedirectRefusal(
+          request,
+          runtime,
+          'approved-copilot-redirect-required',
+        ),
+      };
+    }
+
+    target = approvedTarget;
+    nextInit = copilotRedirectInit(upstream.status, nextInit);
+  }
+}
+
 function requireAuthorization(request, runtime) {
   const authorization = request.headers.get('Authorization');
   if (!authorization) {
@@ -240,7 +412,8 @@ function requireAuthorization(request, runtime) {
 
 function copilotEndpoint(url, request, runtime) {
   const raw = url.searchParams.get('endpoint') || UPSTREAMS.copilotDefault;
-  if (!/^https:\/\/[a-z0-9.-]*githubcopilot\.com\/?$/i.test(raw)) {
+  const endpoint = parseApprovedCopilotUrl(raw, true);
+  if (!endpoint) {
     return {
       response: json(
         { error: 'invalid endpoint' },
@@ -250,7 +423,7 @@ function copilotEndpoint(url, request, runtime) {
       ),
     };
   }
-  return { endpoint: raw.replace(/\/$/, '') };
+  return { endpoint: endpoint.origin };
 }
 
 async function handleOAuthToken({ request, env, runtime }) {
@@ -376,7 +549,7 @@ async function handleCopilotModels({ request, runtime, url }) {
   const endpoint = copilotEndpoint(url, request, runtime);
   if (endpoint.response) return endpoint.response;
 
-  const upstream = await upstreamFetch(runtime, `${endpoint.endpoint}/models`, {
+  const result = await copilotUpstreamFetch(runtime, `${endpoint.endpoint}/models`, {
     method: 'GET',
     headers: {
       'Authorization': auth.authorization,
@@ -386,8 +559,9 @@ async function handleCopilotModels({ request, runtime, url }) {
       'Copilot-Integration-Id': 'vscode-chat',
       'User-Agent': 'GitHubCopilotChat/0.22.2024',
     },
-  });
-  return passthroughText(upstream, request, runtime);
+  }, request);
+  if (result.response) return result.response;
+  return passthroughText(result.upstream, request, runtime);
 }
 
 async function handleCopilotChat({ request, runtime, url }) {
@@ -397,7 +571,7 @@ async function handleCopilotChat({ request, runtime, url }) {
   if (endpoint.response) return endpoint.response;
 
   const body = await request.text();
-  const upstream = await upstreamFetch(
+  const result = await copilotUpstreamFetch(
     runtime,
     `${endpoint.endpoint}/chat/completions`,
     {
@@ -413,8 +587,10 @@ async function handleCopilotChat({ request, runtime, url }) {
       },
       body,
     },
+    request,
   );
-  return passthroughText(upstream, request, runtime);
+  if (result.response) return result.response;
+  return passthroughText(result.upstream, request, runtime);
 }
 
 async function handleModelCatalog({ request, runtime, context }) {
