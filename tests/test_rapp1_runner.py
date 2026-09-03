@@ -46,11 +46,11 @@ def test_runner_has_one_explicit_authoritative_gate_set():
         "ui-smoke",
         "ecosystem-audit-offline",
         "organism-offline",
-        "metropolis-retirement",
-        "metropolis-federation-retirement",
-        "distribution-retirement",
+        "metropolis-adaptation",
+        "metropolis-federation-history",
+        "distribution-adaptation",
         "t2t-removal",
-        "plant-retirement",
+        "plant-compatibility",
         "twin-egg-retirement",
     ]
     assert len(names) == len(set(names))
