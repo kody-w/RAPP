@@ -42,13 +42,13 @@
     {
       "path": "tests/doorman/chat.js",
       "disposition": "canonical-child",
-      "reason": "Retired credential-safe tombstone exercised by the browser containment gate.",
+      "reason": "Full browser harness retained with explicit synthetic credentials, origin gates, and default-off execution.",
       "gate": "worker-containment"
     },
     {
       "path": "tests/doorman/smoke.js",
       "disposition": "canonical-child",
-      "reason": "Retired no-network tombstone exercised by the browser containment gate.",
+      "reason": "Full smoke harness retained with explicit fixture origins and default-off browser execution.",
       "gate": "worker-containment"
     },
     {
@@ -141,7 +141,7 @@
     {
       "path": "tests/osi/L4a-tether-browser.sh",
       "disposition": "canonical-child",
-      "reason": "Retired browser-suite tombstone exercised by the browser containment gate.",
+      "reason": "Full tether suite retained; default path is offline-safe and external execution requires supplied dependencies.",
       "gate": "worker-containment"
     },
     {
@@ -153,13 +153,13 @@
     {
       "path": "tests/osi/browser/L4a-tether.spec.mjs",
       "disposition": "canonical-child",
-      "reason": "Retired no-network JavaScript tombstone exercised by the browser containment gate.",
+      "reason": "Full browser tether test retained behind explicit external execution and local dependency gates.",
       "gate": "worker-containment"
     },
     {
       "path": "tests/osi/browser/fixture.html",
       "disposition": "canonical-child",
-      "reason": "Inert CSP-locked historical fixture exercised by the browser containment gate.",
+      "reason": "Historical tether fixture restored with explicit local bundle and broker configuration.",
       "gate": "worker-containment"
     },
     {

@@ -651,6 +651,18 @@
       "title": "Historical URLs remain visible and inert",
       "section": "Decisions",
       "status": "living"
+    },
+    {
+      "path": "Decisions/2026-09-03 — Adapt, Don't Kill — preserve data exhaust.md",
+      "title": "Adapt, Don't Kill — preserve data exhaust",
+      "section": "Decisions",
+      "status": "living"
+    },
+    {
+      "path": "Plans & Ledgers/RAPP Restoration and Adaptation Ledger.md",
+      "title": "RAPP Restoration and Adaptation Ledger",
+      "section": "Plans & Ledgers",
+      "status": "living"
     }
   ],
   "excluded_notes": [

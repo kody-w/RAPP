@@ -302,19 +302,20 @@ class ContainmentTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "410 Gone"):
             module.CaveAgent().perform(action="load", verify=False)
 
-    def test_worker_inference_proxy_is_absent(self):
+    def test_worker_runtime_is_preserved_and_default_off(self):
         source = (ROOT / "worker/worker.js").read_text(encoding="utf-8")
-        self.assertIn("fetch()", source)
-        self.assertIn("status: 410", source)
-        self.assertIn("runtime-retired", source)
-        for forbidden in (
-            "/api/copilot/chat",
-            "/chat/completions",
-            "async ",
-            "await ",
-            "https://",
-        ):
-            self.assertNotIn(forbidden, source)
+        self.assertIn("HISTORICAL_SOURCE", source)
+        self.assertIn("4f6c14bbdf5b2d43887a9c7ab9cbda8c075f0dd6", source)
+        self.assertIn("DEFAULT_CAPABILITIES", source)
+        self.assertIn("oauthExchange: false", source)
+        self.assertIn("copilotChat: false", source)
+        self.assertIn("RAPP_BROWSER_RUNTIME_ENABLED", source)
+        self.assertIn("RAPP_REVIEWED_BROWSER_RUNTIME", source)
+        self.assertIn("/api/copilot/chat", source)
+        self.assertIn("/chat/completions", source)
+        self.assertIn("explicit-reviewed-runtime-binding-required", source)
+        self.assertIn("kody-w/rapp-installer@brainstem-v0.6.9", source)
+        self.assertNotIn("globalThis.fetch", source)
 
     def test_tier2_deployment_guard_blocks_packaging(self):
         guard = json.loads(
