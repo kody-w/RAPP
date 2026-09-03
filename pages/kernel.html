@@ -111,17 +111,6 @@
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 14px;
   }
-  .current-note {
-    max-width: 820px;
-    margin: 18px auto 0;
-    padding: 12px 16px;
-    border-left: 3px solid #3fb950;
-    background: var(--surface-elevated, #161b22);
-    color: var(--text-muted, #8b949e);
-    font-size: 13px;
-    line-height: 1.55;
-  }
-  .current-note strong { color: var(--text-default, #e6edf3); }
 </style>
 </head>
 <body>
@@ -142,12 +131,6 @@
       <a href="https://github.com/kody-w/RAPP/blob/main/KERNEL_TREE.md">Kernel tree ↗</a>
       <a href="https://github.com/kody-w/rappter-distro">Rappter distro ↗</a>
     </div>
-    <p class="current-note"><strong>2026 reading rule:</strong> the full hub
-      below is preserved as authored. There is no current installer.
-      Repository and document links are for
-      source inspection; they do not authorize installation, download,
-      deployment, catalog acceptance, or execution. Current protocol claims
-      remain bounded by the authority and status links above.</p>
   </div>
 
   <div class="toc">
@@ -439,36 +422,24 @@
         <span class="card-eyebrow">The grail</span>
         <h3>kody-w/rapp-installer</h3>
         <p>The frozen kernel. The source of truth this repo mirrors. Never modified by AI — only Kody updates grail. Read-only for everyone else.</p>
-        <p class="current-note">Current correction: only the three bytes named
-          by <code>KERNEL_PIN.json</code> are immutable evidence from this exact
-          tag; the repository is not a moving installer channel.</p>
         <span class="card-meta">github.com/kody-w/rapp-installer ↗</span>
       </a>
       <a class="card" href="https://github.com/kody-w/rappter-distro">
         <span class="card-eyebrow">The distro</span>
         <h3>kody-w/rappter-distro</h3>
         <p>The Rappter organism layer — organs, senses, lineage / bonding lib, rich UI, post-kernel agents. Opt-in. Install with <code>--rappter</code> on the kernel one-liner.</p>
-        <p class="current-note">Historical instruction retained verbatim.
-          Rappter is a downstream product boundary, not a current installer or
-          accepted source from this repository.</p>
         <span class="card-meta">github.com/kody-w/rappter-distro ↗</span>
       </a>
       <a class="card" href="https://github.com/kody-w/RAR">
         <span class="card-eyebrow">Trust layer</span>
         <h3>kody-w/RAR</h3>
         <p>The bare-agent registry — signing, identity, provenance. Where individual single-file agents are published and discovered.</p>
-        <p class="current-note">Current correction: RAR is an untrusted
-          external candidate here, not an authenticated RAPP/1 §13 registry.</p>
         <span class="card-meta">github.com/kody-w/RAR ↗</span>
       </a>
       <a class="card" href="../rapp-ai.json" title="Historical catalog edge; opens current external-candidate policy">
         <span class="card-eyebrow">Catalog</span>
         <h3>kody-w/rapp_store</h3>
         <p>The rapplication catalog — graduated, certified agents with their own UI and per-rapp state. Browse at kody-w.github.io/RAPP_Store/.</p>
-        <p class="current-note">Historical catalog copy retained verbatim; the
-          obsolete catalog edge now opens the current machine-readable
-          candidate policy because moving external listings are not accepted
-          distribution or trust sources.</p>
         <span class="card-meta">github.com/kody-w/rapp_store ↗</span>
       </a>
     </div>

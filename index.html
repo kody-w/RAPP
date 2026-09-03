@@ -162,10 +162,6 @@
     0%,100%{filter:drop-shadow(0 0 4px currentColor)}
     50%{filter:drop-shadow(0 0 16px currentColor)}
   }
-  .current-note{max-width:900px;margin:18px auto 0;padding:13px 16px;
-    border-left:3px solid var(--t1);background:var(--panel);color:var(--dim);
-    font-size:13px;line-height:1.6;text-align:left}
-  .current-note strong{color:var(--fg)}
 </style>
 </head>
 <body>
@@ -201,14 +197,6 @@
     <span>0 vendor lock-in</span>
     <span>Open source</span>
   </div>
-  <p class="current-note"><strong>2026 correction:</strong> this is the fullest
-    original flagship artifact, preserved in place as provenance and learning
-    corpus. The tier claims, “Open source” pill, and delivery language are
-    historical. The repository is not yet fully RAPP/1 conformant; its current
-    code license is source-available while an authorized license migration is
-    pending. No active installer is published, and retained archives have no active download link.
-    Read <a href="RAPP1_STATUS.md">status</a> and
-    <a href="RAPP1_AUTHORITY.json">authority</a>.</p>
   <div class="cta-row">
     <a class="cta primary" href="#brainstem">Start with the Brainstem ↓</a>
     <a class="cta ghost" href="RAPP1_AUTHORITY.json">Read the v1 spec</a>
@@ -289,10 +277,6 @@
       <div class="tier-desc">
         <p>The brainstem runs the core agent loop — <strong>soul</strong> (system prompt), <strong>tool-calling</strong>, conversation history. Drop any <code>*_agent.py</code> file into the agents directory and it gets auto-discovered and registered as a callable tool.</p>
         <p>Connect remote agent repos through the chat UI's Sources panel — paste any GitHub URL with an <code>agents/</code> folder and the brainstem hot-loads them. Missing pip dependencies are auto-installed.</p>
-        <p class="current-note">Original Tier 1 copy retained verbatim. The
-          port-7071 application is immutable test evidence, not a shipped
-          runtime; remote loading, dependency installation, authentication,
-          and launch actions are not active from this page.</p>
         <div class="code">
           <span class="lbl">macOS / Linux</span>
           <pre id="c1m"><a href="KERNEL_PIN.json">KERNEL_PIN.json</a> →
@@ -355,9 +339,6 @@ historical Windows edge · source inspection only</pre>
       <div class="tier-desc">
         <p>The Hippocampus is the same brainstem agent loop, but living on <strong>Azure Functions</strong> with <strong>Azure OpenAI (GPT-4o)</strong>, a <strong>Storage Account</strong> for memory, and <strong>Application Insights</strong> for monitoring. All Entra ID auth — no API keys anywhere.</p>
         <p>Each project is isolated: <code>~/rapp-projects/my-project/</code> with its own venv, agents, and local storage that mirror up to the cloud. Auth happens through the chat UI via GitHub device-code flow.</p>
-        <p class="current-note">Original Tier 2 copy retained verbatim. This
-          target has no current cloud service, provisioning path, token flow,
-          or deployment action; the material is implementation history.</p>
         <div class="code">
           <span class="lbl">macOS / Linux</span>
           <pre id="c2m">Historical cloud installer context →
@@ -418,9 +399,6 @@ historical Windows edge · source inspection only</pre>
       <div class="tier-desc">
         <p>The included <strong>Power Platform solution .zip</strong> wires your Hippocampus Function App into Microsoft Copilot Studio. Import the solution, point it at your Function App URL, and publish.</p>
         <p>The same agent logic you tested locally now answers in <strong>Microsoft Teams</strong> and <strong>M365 Copilot</strong> — declaratively, with org-wide governance, and with the full Copilot extensibility surface.</p>
-        <p class="current-note">Original Tier 3 copy retained verbatim. The
-          unsigned Power Platform archive is evidence only; package download,
-          import, configuration, and publication actions are disabled.</p>
         <div class="code">
           <span class="lbl">Download the solution .zip</span>
           <pre id="c3z"><a href="installer/RETIRED_ARTIFACTS.json">installer/RETIRED_ARTIFACTS.json</a>
@@ -496,10 +474,6 @@ Review <a href="KERNEL_PIN.json">Grail pin</a> and <a href="RAPP1_STATUS.md">pre
       <p>Every layer is open. Read the source, fork it, deploy your own. The brainstem repo is the ground truth.</p>
     </div>
   </div>
-  <p class="current-note">All six architecture cards above are retained
-    verbatim. They document the original thesis, not current operational
-    guarantees. Exact protocol authority now lives in the pinned RAPP/1
-    standard; external sources remain untrusted until independently verified.</p>
 </section>
 
 <footer>
@@ -515,6 +489,8 @@ Review <a href="KERNEL_PIN.json">Grail pin</a> and <a href="RAPP1_STATUS.md">pre
     <a href="#hippocampus">Tier 2</a>
     <a href="#copilot-studio">Tier 3</a>
     <a href="RAPP1_AUTHORITY.json">v1 SPEC</a>
+    <a href="RAPP1_STATUS.md">Status</a>
+    <a href="KERNEL_PIN.json">Grail pin</a>
     <a href="https://github.com/kody-w" target="_blank" rel="noopener">@kody-w</a>
   </div>
 </footer>

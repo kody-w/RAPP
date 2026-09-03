@@ -96,11 +96,6 @@
   }
   .copy-block .copy-btn:hover{background:rgba(255,255,255,0.12);color:var(--fg)}
   .copy-block .copy-btn.copied{background:var(--green-3,#3fb950);color:#04060c;border-color:transparent}
-  .current-note{max-width:620px;width:100%;margin:0 0 24px;padding:12px 15px;
-    border-left:3px solid var(--green-3);background:var(--panel);color:var(--dim);
-    font-size:13px;line-height:1.55}
-  .current-note strong{color:var(--fg)}
-
   .links{margin-top:32px;text-align:center;font-size:13px;color:var(--muted);max-width:620px}
   .links a{margin:0 10px}
   footer{margin-top:48px;color:var(--muted);font-size:12px;text-align:center}
@@ -117,13 +112,6 @@
   <p style="margin-top:6px;opacity:.75;font-size:.95em">One curl. One brain. Three tiers.</p>
   <div class="tag">Digital twin · v1 frozen</div>
 </div>
-
-<div class="current-note"><strong>2026 disposition:</strong> the complete
-original installer presentation below is preserved as historical product
-source. No public installer is available. No active installer or installer
-command is published, and retained archives have no active download link.
-Current limits are in <a href="../RAPP1_STATUS.md">RAPP1_STATUS.md</a> and
-<a href="../RAPP1_AUTHORITY.json">RAPP1_AUTHORITY.json</a>.</div>
 
 <div class="install" id="install">
   <div class="install-tabs">
@@ -161,9 +149,6 @@ Current limits are in <a href="../RAPP1_STATUS.md">RAPP1_STATUS.md</a> and
       <p>The minimum viable brain. Runs on your laptop. Only dependency: a GitHub account
         with Copilot access. No API keys, no cloud, no config files.</p>
       <p class="met"><em>Metaphor: the autonomic core. Beats without thinking.</em></p>
-      <p class="current-note">Original Tier 1 copy retained verbatim. The
-        immutable port-7071 application is test evidence, not a shipped local
-        runtime, and its public launch path is retired.</p>
       <div class="step">
         <h3>Install</h3>
         <p>Install puts the brainstem at <code>~/.brainstem/src/rapp_brainstem/</code>.</p>
@@ -209,8 +194,6 @@ immutable source inspection only</pre>
         one Deploy-to-Azure button. The HTTP surface is identical to Tier 1, so anything
         that talks to <code>/chat</code> on your laptop can talk to <code>/chat</code> in the cloud.</p>
       <p class="met"><em>Metaphor: long-term memory. Slow, durable, multi-tenant.</em></p>
-      <p class="current-note">Original Tier 2 copy retained verbatim. No cloud
-        tier is currently built, provisioned, or supported from this target.</p>
       <div class="step">
         <h3>Deploy</h3>
         <p>Click the button on the <a href="../KERNEL_PIN.json" title="Historical swarm edge; opens immutable Grail evidence">swarm page</a>, fill in the
@@ -234,9 +217,6 @@ immutable source inspection only</pre>
         from Tier 2. Publish to Teams. The same agent file you wrote on day 1 is now
         being called from M365 Copilot.</p>
       <p class="met"><em>Metaphor: the cortex. Where the brain meets the world.</em></p>
-      <p class="current-note">Original Tier 3 copy retained verbatim. The
-        unsigned archive is immutable evidence only, not an accepted package
-        or current enterprise release.</p>
       <div class="step">
         <h3>Bundle</h3>
         <a href="RETIRED_ARTIFACTS.json"
@@ -247,7 +227,7 @@ immutable source inspection only</pre>
                   padding:10px 12px;color:var(--fg);text-decoration:none;transition:border-color .15s">
           <span style="font-size:16px;color:var(--purple-2)">⬇</span>
           <span style="flex:1;font-family:'SF Mono',ui-monospace,monospace;font-size:13px;word-break:break-all">MSFTAIBASMultiAgentCopilot_1_0_0_5.zip</span>
-          <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;white-space:nowrap">click to download</span>
+          <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;white-space:nowrap">inspect archive</span>
         </a>
         <p>Download, import into Copilot Studio → set Function App URL → publish.</p>
       </div>
@@ -265,7 +245,10 @@ immutable source inspection only</pre>
   <a href="https://github.com/kody-w/RAPP" target="_blank">Source</a>
 </div>
 
-<footer>RAPP v1 — frozen 2026-04-17 · digital twin</footer>
+<footer>RAPP v1 — frozen 2026-04-17 · digital twin ·
+  <a href="../KERNEL_PIN.json">Grail pin</a> ·
+  <a href="../RAPP1_STATUS.md">status</a>
+</footer>
 
 <script>
   const CMDS = {
