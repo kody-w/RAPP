@@ -25,9 +25,14 @@ If a thought belongs in a commit message, write a commit message. If it belongs 
 
 ## How to use it
 
-- **As a wiki**: open [`pages/vault/index.html`](../pages/vault/index.html) on GitHub Pages — it pulls the markdown live from this folder and renders backlinks, wikilinks, and full-text search.
+- **As a wiki**: open [`pages/vault/index.html`](../pages/vault/index.html) on GitHub Pages. The viewer reads the checked-in, per-note-hashed `content-bundle.json` with the local pinned Markdown renderer; it makes no moving-branch content request.
 - **As an Obsidian vault**: clone the repo, point Obsidian at this folder, edit normally. The viewer respects whatever you write.
-- **Offline**: the viewer caches everything to `localStorage` on first load and supports zip export/import so you can take the whole vault home and bring it back.
+- **Offline**: serve the checked-in repository or built Pages tree from a local HTTP server. The bundle, renderer, search, backlinks, graph, and notes are all local.
+
+> **Historical viewer notes, preserved as data exhaust:** “it pulls the
+> markdown live from this folder” and “the viewer caches everything to
+> `localStorage` on first load and supports zip export/import.” Those describe
+> the earlier viewer, not the current self-contained read-only publication.
 
 ## Stub vs. published
 
