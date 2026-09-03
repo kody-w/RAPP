@@ -266,6 +266,9 @@ IMPORT_SEALED = {
         "main",
     ),
 }
+POWERSHELL_RUNTIME_VOLATILE_PATHS = {
+    "home/.cache/powershell/StartupProfileData-NonInteractive",
+}
 
 
 def _git(*args: str, stdin: bytes | None = None) -> bytes:
@@ -373,6 +376,10 @@ def _snapshot(path: Path) -> dict[str, tuple[str, int, str]]:
     snapshot = {}
     for item in sorted(path.rglob("*")):
         relative = item.relative_to(path).as_posix()
+        # A no-op pwsh control process rewrites this profiling cache on every
+        # launch; it is runtime noise, not a path touched by the tested script.
+        if relative in POWERSHELL_RUNTIME_VOLATILE_PATHS:
+            continue
         if item.is_dir():
             snapshot[relative] = ("dir", stat.S_IMODE(item.stat().st_mode), "")
         elif item.is_file():
