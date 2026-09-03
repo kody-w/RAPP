@@ -1,10 +1,45 @@
 {
   "schema": "rapp-cave-cubbies/1.0",
-  "status": "retired",
+  "status": "historical-observation",
+  "verified": false,
+  "accepted": false,
   "active_distribution": false,
   "streamable": false,
-  "disposition": "inert historical observation; not a catalog, discovery, pull, or download source",
+  "distribution": {
+    "state": "disabled",
+    "fetch": false,
+    "install": false,
+    "execute": false,
+    "stream": false,
+    "publish": false
+  },
+  "disposition": "Preserved cubby roster data exhaust. Entries are unverified observations, not membership, identity, trust, discovery, pull, or download acceptance.",
   "neighborhood_rappid": "rappid:@kody-w/rapp-cave:ca72ca0a3cb90c357fb09e38b02f85f09935cacbf61e94740c57f1eb30a73e0a",
   "updated_at": "2026-06-27T02:40:04Z",
-  "cubbies": []
+  "provenance": {
+    "entry_restored_from": "19ff7d9ff483c0eef258a3b2031da1fd74570854",
+    "original_entry_created_in": "f6bf5ed2c8571fc213c7554a430d3d9c7716a231"
+  },
+  "cubbies": [
+    {
+      "github_login": "kody-w",
+      "what_im_cooking": "the rapp-installer rapplication (the grail brainstem, egged & self-bootstrapping) — pull it down publicly",
+      "rappid": "rappid:@kody-w/rapp:9a8f0a4b5a710e20f4d819a0f37d2a4c9f113b5e78fb3c29e70b54fff48a38f9",
+      "verified": false,
+      "accepted": false,
+      "membership": "not-established",
+      "trust": "not-established",
+      "active_distribution": false,
+      "streamable": false,
+      "distribution": {
+        "state": "disabled",
+        "fetch": false,
+        "install": false,
+        "execute": false,
+        "stream": false,
+        "publish": false
+      },
+      "observation_note": "The historical what_im_cooking text is retained verbatim as data exhaust. It is not a current installer or pull instruction. Use KERNEL_PIN.json and kody-w/rapp-installer@brainstem-v0.6.9 only as the read-only immutable grail reference."
+    }
+  ]
 }

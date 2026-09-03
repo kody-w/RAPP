@@ -1,0 +1,76 @@
+{
+  "schema": "rapp-historical-source-archive/1.0",
+  "record_kind": "inert-exact-source-archive",
+  "status": "historical-observation",
+  "executable": false,
+  "importable": false,
+  "published_by_pages": false,
+  "accepted": false,
+  "reason": "Exact target-owned source retained as non-executable .txt data exhaust after removal from active runtime paths.",
+  "records": [
+    {
+      "source_path": "rapp_brainstem/t2t.py",
+      "archive_path": "historical/source-archive/rapp_brainstem/t2t.py.txt",
+      "commit": "743f189e6a9b56359b9d65b185b05b759db51b2e",
+      "blob": "24eaf6ce0df0d74d886437b3727830aa9b5c2983",
+      "sha256": "e3b2c1065fb49c15b59b7968a1d4e9597ac1b04ff721aa602ff1cdc0bcd31f09",
+      "bytes": 12982
+    },
+    {
+      "source_path": "rapp_brainstem/workspace.py",
+      "archive_path": "historical/source-archive/rapp_brainstem/workspace.py.txt",
+      "commit": "743f189e6a9b56359b9d65b185b05b759db51b2e",
+      "blob": "6d800101629806fccfa40cf741606e7256249c54",
+      "sha256": "707c359b2748c0a3e31b8f70cfca5ce40bb6c608a6e1b3cbcef05642824f948e",
+      "bytes": 5899
+    },
+    {
+      "source_path": "rapp_brainstem/swarm_server.py",
+      "archive_path": "historical/source-archive/rapp_brainstem/swarm_server.py.txt",
+      "commit": "28ef6641af7c6036e6ae0dfb7fc481075f683744",
+      "blob": "40740308f382039ae36e5fc344fd64ce72f10e2b",
+      "sha256": "835d18cb81351da11b80079f1ba97611640f0467fb828301cfabaa1de789b648",
+      "bytes": 78398
+    },
+    {
+      "source_path": "rapp_brainstem/chat.py",
+      "archive_path": "historical/source-archive/rapp_brainstem/chat.py.txt",
+      "commit": "b1db594cf477b10f3297980e65307ed989bf82f9",
+      "blob": "69a5c0504996cbc75e8d72f9276e51f6709c2f3c",
+      "sha256": "023f9da61158b3dc7d310fd64f762208a1abd667c357eb49981badffb9af4b4c",
+      "bytes": 13277
+    },
+    {
+      "source_path": "rapp_brainstem/utils/organs/lifecycle_organ.py",
+      "archive_path": "historical/source-archive/rapp_brainstem/utils/organs/lifecycle_organ.py.txt",
+      "commit": "2692f73b19dcdc856e184044a3f178f5a50c486d",
+      "blob": "f4e1da4b502635dc5e87b0e6a9c3ebad981739f9",
+      "sha256": "5fff54c8ec2520d815618bf4551778d2d7cf98d8a624205dc7aebe9e0b932c6e",
+      "bytes": 7624
+    },
+    {
+      "source_path": "rapp_brainstem/utils/organs/neighborhood_membership_organ.py",
+      "archive_path": "historical/source-archive/rapp_brainstem/utils/organs/neighborhood_membership_organ.py.txt",
+      "commit": "ab1946036b2a6d594f6799d86f288175cf5fe551",
+      "blob": "9e4f6b25152955816c017c9c9aad85c4654403f8",
+      "sha256": "58eaf8752b9351cd0f30674f2b57b24867ba71bbfdce183c116b7f2d8c3b3bd9",
+      "bytes": 31720
+    },
+    {
+      "source_path": "rapp_brainstem/utils/reserved_agents/__init__.py",
+      "archive_path": "historical/source-archive/rapp_brainstem/utils/reserved_agents/__init__.py.txt",
+      "commit": "2692f73b19dcdc856e184044a3f178f5a50c486d",
+      "blob": "eee42897d53d998dd592f7803ead89ad883e2272",
+      "sha256": "a866363f21d0e977b10414763d85b676adeab3b78c63464bfe72fec2e0f3e9f7",
+      "bytes": 1948
+    },
+    {
+      "source_path": "rapp_brainstem/utils/reserved_agents/upgrade_agent.py",
+      "archive_path": "historical/source-archive/rapp_brainstem/utils/reserved_agents/upgrade_agent.py.txt",
+      "commit": "2692f73b19dcdc856e184044a3f178f5a50c486d",
+      "blob": "4fe48fd74d1c0e6a7dc3d58eaff29e2242ff8f57",
+      "sha256": "12918cdbd136a493f310dc85be3eadc83cf4fb4541b7c8e4b5d4e841d3547b36",
+      "bytes": 10089
+    }
+  ]
+}

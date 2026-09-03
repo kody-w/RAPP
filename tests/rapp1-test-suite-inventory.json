@@ -42,13 +42,13 @@
     {
       "path": "tests/doorman/chat.js",
       "disposition": "canonical-child",
-      "reason": "Retired credential-safe tombstone exercised by the browser containment gate.",
+      "reason": "Full browser harness retained with explicit synthetic credentials, origin gates, and default-off execution.",
       "gate": "worker-containment"
     },
     {
       "path": "tests/doorman/smoke.js",
       "disposition": "canonical-child",
-      "reason": "Retired no-network tombstone exercised by the browser containment gate.",
+      "reason": "Full smoke harness retained with explicit fixture origins and default-off browser execution.",
       "gate": "worker-containment"
     },
     {
@@ -141,7 +141,7 @@
     {
       "path": "tests/osi/L4a-tether-browser.sh",
       "disposition": "canonical-child",
-      "reason": "Retired browser-suite tombstone exercised by the browser containment gate.",
+      "reason": "Full tether suite retained; default path is offline-safe and external execution requires supplied dependencies.",
       "gate": "worker-containment"
     },
     {
@@ -153,13 +153,13 @@
     {
       "path": "tests/osi/browser/L4a-tether.spec.mjs",
       "disposition": "canonical-child",
-      "reason": "Retired no-network JavaScript tombstone exercised by the browser containment gate.",
+      "reason": "Full browser tether test retained behind explicit external execution and local dependency gates.",
       "gate": "worker-containment"
     },
     {
       "path": "tests/osi/browser/fixture.html",
       "disposition": "canonical-child",
-      "reason": "Inert CSP-locked historical fixture exercised by the browser containment gate.",
+      "reason": "Historical tether fixture restored with explicit local bundle and broker configuration.",
       "gate": "worker-containment"
     },
     {
@@ -203,22 +203,27 @@
       "reason": "This is the authoritative runner itself; invoking it from one of its own gates would recurse."
     },
     {
+      "path": "tests/run_restoration_acceptance.py",
+      "disposition": "canonical-entrypoint",
+      "reason": "Runs the provenance-preserving restoration buzzsaw and then delegates to the canonical conformance runner."
+    },
+    {
       "path": "tests/scenarios/16-metropolis-tracker.sh",
       "disposition": "canonical-direct",
-      "reason": "Checks retired Metropolis data, documentation, schedule, and harvester containment.",
-      "gate": "metropolis-retirement"
+      "reason": "Checks restored Metropolis data, documentation, local snapshots, and safe harvester modes.",
+      "gate": "metropolis-adaptation"
     },
     {
       "path": "tests/scenarios/20-cross-tracker-federation.sh",
       "disposition": "canonical-direct",
       "reason": "Checks that retained federation fixtures are historical and non-authoritative.",
-      "gate": "metropolis-federation-retirement"
+      "gate": "metropolis-federation-history"
     },
     {
       "path": "tests/scenarios/_lib.sh",
       "disposition": "canonical-helper",
-      "reason": "Sourced by both canonical offline Metropolis retirement scenarios.",
-      "gate": "metropolis-retirement"
+      "reason": "Sourced by both canonical offline Metropolis history/adaptation scenarios.",
+      "gate": "metropolis-adaptation"
     },
     {
       "path": "tests/test-t2t-removal.sh",
@@ -245,6 +250,12 @@
       "gate": "python-offline"
     },
     {
+      "path": "tests/test_adaptation_inventory.py",
+      "disposition": "canonical-direct",
+      "reason": "Verifies complete RAPP/1 gap coverage, owner blockers, path sets, and source-preserving restoration provenance.",
+      "gate": "python-offline"
+    },
+    {
       "path": "tests/test_ai_discovery.py",
       "disposition": "canonical-direct",
       "reason": "Checks the machine-facing audience, authority, growth, and proposed capacity-market contract entirely from local bytes.",
@@ -259,8 +270,8 @@
     {
       "path": "tests/test_distribution_containment.py",
       "disposition": "canonical-direct",
-      "reason": "Verifies fail-closed installer behavior, distribution retirement, immutable archives, and browser caller containment.",
-      "gate": "distribution-retirement"
+      "reason": "Verifies restored launcher plan defaults, pre-effect refusal, immutable archives, deployment templates, and browser planning surfaces.",
+      "gate": "distribution-adaptation"
     },
     {
       "path": "tests/test_door_address.py",
@@ -288,7 +299,7 @@
     {
       "path": "tests/test_metropolis_activity_harvester.py",
       "disposition": "canonical-direct",
-      "reason": "Verifies the retired activity harvester has no schedule, network client, or repository write path.",
+      "reason": "Verifies local snapshot check/plan modes and refusal before any online write side effect.",
       "gate": "python-offline"
     },
     {
@@ -334,6 +345,18 @@
       "gate": "python-offline"
     },
     {
+      "path": "tests/test_restored_distribution_sources.py",
+      "disposition": "canonical-direct",
+      "reason": "Verifies exact distribution source recovery, immutable Grail binding, and zero-effect default and rejected paths.",
+      "gate": "python-offline"
+    },
+    {
+      "path": "tests/test_restored_swarm_sim_sources.py",
+      "disposition": "canonical-direct",
+      "reason": "Verifies exact Swarm, simulation, Cave, tutorial, and public-page recovery plus receipt-bound effect ordering.",
+      "gate": "python-offline"
+    },
+    {
       "path": "tests/test_rapp1_owner_actions.py",
       "disposition": "canonical-direct",
       "reason": "Preserves the owner-action ledger schema, evidence hashes, and owner-only boundaries.",
@@ -343,6 +366,12 @@
       "path": "tests/test_rapp1_runner.py",
       "disposition": "canonical-direct",
       "reason": "Collected explicitly by the offline pytest gate.",
+      "gate": "python-offline"
+    },
+    {
+      "path": "tests/test_vault_bundle.py",
+      "disposition": "canonical-direct",
+      "reason": "Verifies the byte-exact local vault bundle, local renderer, CSP, and absence of moving runtime dependencies.",
       "gate": "python-offline"
     },
     {

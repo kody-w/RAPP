@@ -4,7 +4,12 @@
 > wire, eggs, registry, trust, and protocol evolution, follow RAPP/1 rev-5
 > through [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json) and
 > [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md). It does not define a current
-> bootstrap, downloadable catalog, or acceptance policy.
+> bootstrap, downloadable catalog, or acceptance policy. The retained catalog
+> files are full read-only observations rather than tombstones: adapters may
+> analyze, render, check, and plan, but may not install, stream, write, publish,
+> or accept an entry. Prepared installer facts point to
+> [`KERNEL_PIN.json`](../../KERNEL_PIN.json) and
+> `kody-w/rapp-installer@brainstem-v0.6.9`.
 
 <!-- RAPP1-HISTORICAL-SECTION-START -->
 
@@ -31,10 +36,10 @@ fork + PR.
   `curl` / `git clone`, no auth), personal branches, the signed `rapp-cave-event/1.0`
   show-and-tell stream, the public front door, and **fork + PR** joining. Section
   §9 is the side-by-side of how the public cave differs from the private batcave.
-- **[`SUPER_RAR.md`](./SUPER_RAR.md)** — the retired RAR/super-RAR ledger
-  disposition: all entries are non-streamable, both agents are fail-closed
-  tombstones, `build_super_rar.py --check` is read-only validation, and CI
-  produces no catalog or executable distribution.
+- **[`SUPER_RAR.md`](./SUPER_RAR.md)** — the restored RAR/super-RAR observation
+  model: full metadata retention, separate verification/acceptance/distribution
+  state, the read-only builder, the analytical steward, explicit source pins,
+  and CI checks that produce no executable distribution.
 
 ## How this relates to the wider RAPP specs
 

@@ -44,6 +44,7 @@ PY
 )"
 
 GRAIL_RAW="https://raw.githubusercontent.com/$GRAIL_REPO/$GRAIL_TAG"
+GRAIL_PAGE="https://github.com/$GRAIL_REPO/tree/$GRAIL_TAG"
 failed=0
 
 while IFS=$'\t' read -r path expected_sha; do
@@ -80,9 +81,12 @@ done <<<"$pin_files"
 if [[ "$failed" -ne 0 ]]; then
     echo
     echo "Read-only grail verification failed."
-    echo "Do not overwrite immutable bytes; investigate KERNEL_PIN authority or source availability."
+    echo "Do not overwrite or remove immutable bytes."
+    echo "Inspect the pinned Grail: $GRAIL_PAGE"
+    echo "Then investigate KERNEL_PIN authority or source availability."
     exit 1
 fi
 
 echo
 echo "Pinned grail bytes match KERNEL_PIN.json and $GRAIL_REPO@$GRAIL_TAG."
+echo "Grail: $GRAIL_PAGE"

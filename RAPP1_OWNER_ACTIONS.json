@@ -57,8 +57,8 @@
       "4c2b999f8c890b76d057241d29ecda29e0239d79"
     ],
     "status_path": "RAPP1_STATUS.md",
-    "status_sha256": "2eac582c61170044011bfaf174bf89ea05421b598ce36d49660019e1f8f6c112",
-    "status_state": "Owner-action ledger links, target-owned launch containment, and the post-migration Active-path residual are present; the repository remains not fully conformant.",
+    "status_sha256": "bce9a915822cad10a7fe80c4e8c4965c2ce0dd8e292a633c8d41d7ec33c3cfd3",
+    "status_state": "Owner-action ledger links, dated and current path counts, restored target-owned launch boundaries, exact inert copies of removed runtimes, the direct immutable brainstem.py limitation, and the post-migration Active-path residual are present; the repository remains not fully conformant.",
     "current_path_hashes": {
       "rappid.json": "59dd3b53e2ed0c7594b3754425938b907600fdf5787b1cef912276aa9d3711b3",
       "pages/tutorials/commons.egg": "2731c02f187701c1d07b3a7f5eed5e2073c203ffb4f6c08d00292894e3319a5d",
@@ -265,7 +265,7 @@
       "supporting_paths": {
         "rapp_brainstem/run_rapp1_facade.py": "4737fae8574e58177010653f8f83cf376b011add0c855e1c81a686ae4a74a9f9",
         "rapp_brainstem/RAPP1_FACADE.md": "bbfb683f63e01a370bff38a1f5f0178f4a32c0a907f376f26a37a362f2247176",
-        "rapp_brainstem/test_rapp1_facade.py": "5ead3754f93b5419c72ae6455441a5ca7090b7c279c7ea7367847db276d99801"
+        "rapp_brainstem/test_rapp1_facade.py": "dd1bdb4032285ac1175988477b2e86d267f0643158dc75ac0b4116999e8fd042"
       },
       "publicly_approved": false
     },

@@ -3,9 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Historical RAPP Brainstem install page</title>
-<meta name="description" content="Retired pre-acceptance installation history. No installer or hosted product is currently shipped.">
+<title>RAPP Brainstem</title>
+<meta name="description" content="RAPP Brainstem — local-first AI agent server. One dependency: a GitHub account.">
 <meta name="robots" content="noindex,nofollow">
+<meta name="rapp-history-source" content="kody-w/RAPP@8c5555be80357e795090d79c4fb5a33beb0eaab8:docs/index.html#blob=683364c6b8817cd98e5ff5ab4b95ec087640b7d1">
+<meta name="rapp-historical-boundary" content="Canonicalization, identity, frames, wire, eggs, registry, trust, and protocol evolution follow RAPP/1 rev-5 through RAPP1_AUTHORITY.json and RAPP1_STATUS.md.">
+<meta name="rapp-grail-source" content="KERNEL_PIN.json; kody-w/rapp-installer@brainstem-v0.6.9; immutable Grail evidence, not an executable install path.">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -207,18 +210,8 @@
 </style>
 </head>
 <body>
-
-<aside role="note" style="max-width:720px;margin:24px auto;padding:16px 20px;border:1px solid currentColor;border-radius:10px">
-  <strong>Retired installation page — visible, inert historical source only.</strong> No
-  one-command install, Tier 2 service, browser product, or downloadable egg is
-  currently shipped. The snapshot below is non-interactive: its controls,
-  downloads, deployment links, clipboard actions, and localhost probe do not
-  run. Follow RAPP/1 rev-5 through
-  <a href="../RAPP1_AUTHORITY.json">RAPP1_AUTHORITY.json</a> and
-  <a href="../RAPP1_STATUS.md">RAPP1_STATUS.md</a>.
-</aside>
 <!-- RAPP1-HISTORICAL-SECTION-START -->
-<div class="historical-snapshot" data-status="historical" inert>
+
 <div class="hero">
   <div class="logo">🧠</div>
   <h1>RAPP Brainstem</h1>
@@ -276,7 +269,7 @@
         </div>
       </div>
       <div class="install-download" id="install-download" style="margin-top:12px">
-        <a id="download-link" href="../RAPP1_STATUS.md">Installer unavailable — read current status</a>
+        <a id="download-link" href="../KERNEL_PIN.json" data-historical-href="install.command" data-grail-source="kody-w/rapp-installer@brainstem-v0.6.9" title="Open immutable Grail pin evidence">⬇ Download installer</a>
       </div>
       <details style="margin-top:16px">
         <summary style="color:#8b949e;font-size:13px;cursor:pointer;user-select:none">Advanced — manual steps</summary>
@@ -343,7 +336,7 @@
               <p>Edit <code>local.settings.json</code> with your Azure OpenAI credentials, then publish.</p>
               <div class="cmd" onclick="copyCmd(event, this)">func azure functionapp publish YOUR_APP_NAME --build remote</div>
               <p style="margin-top:8px">Or deploy from the Azure Portal:</p>
-              <p style="margin-top:4px"><span aria-label="Historical deployment control disabled">Historical “Deploy to Azure” button — disabled</span></p>
+              <p style="margin-top:4px"><a href="../KERNEL_PIN.json" data-historical-href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fkody-w%2Frapp-installer%2Fmain%2Fazuredeploy.json" data-grail-source="kody-w/rapp-installer@brainstem-v0.6.9" title="Open immutable Grail pin evidence"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='32' viewBox='0 0 150 32'%3E%3Crect width='150' height='32' rx='2' fill='%230078d4'/%3E%3Ctext x='75' y='21' text-anchor='middle' font-family='Arial' font-size='14' fill='white'%3EDeploy to Azure%3C/text%3E%3C/svg%3E" data-historical-src="https://aka.ms/deploytoazurebutton" alt="Deploy to Azure — opens immutable Grail pin evidence" style="height:32px"></a></p>
             </div>
             <div class="step">
               <h3>Test the cloud deployment</h3>
@@ -397,18 +390,18 @@
   <span class="dot checking" id="dot"></span>
   <span class="status-label" id="status-label">Checking brainstem...</span>
   <br>
-  <button class="open-btn" id="open-btn" disabled onclick="window.open('http://localhost:7071','_blank')">Open Chat UI</button>
+  <button class="open-btn" id="open-btn" onclick="window.location.href='../KERNEL_PIN.json'" data-historical-onclick="window.open('http://localhost:7071','_blank')" data-grail-source="kody-w/rapp-installer@brainstem-v0.6.9" title="Open immutable Grail pin evidence">Open Chat UI</button>
 </div>
 
 <div class="links">
-  <a href="https://github.com/kody-w/rapp-installer">GitHub</a>
+  <a href="https://github.com/kody-w/rapp-installer/tree/brainstem-v0.6.9" data-historical-href="https://github.com/kody-w/rapp-installer">GitHub</a>
   <a href="https://github.com/kody-w/CommunityRAPP">Hippocampus Repo</a>
   <a href="https://kody-w.github.io/CommunityRAPP/onboard.html">Hippocampus Guide</a>
-  <a href="https://github.com/kody-w/RAPP/blob/main/rapp_brainstem/README.md">Historical Brainstem source notes</a>
+  <a href="https://github.com/kody-w/RAPP/blob/main/rapp_brainstem/README.md" data-historical-href="rapp_brainstem/README.md">Brainstem Docs</a>
   <a href="https://github.com/marketplace/models">GitHub Models</a>
 </div>
 
-<script type="application/rapp-history">
+<script>
   // ── Install widget ──
   const installs = {
     'macOS/Linux': {
@@ -444,6 +437,11 @@
     'macOS/Linux': { href: 'install.command', label: '⬇ Download installer (.command)' },
     'Windows':     { href: 'install.cmd',     label: '⬇ Download installer (.cmd)' }
   };
+  const GRAIL_EVIDENCE = [
+    'KERNEL_PIN.json',
+    'kody-w/rapp-installer@brainstem-v0.6.9',
+    'https://github.com/kody-w/rapp-installer/tree/brainstem-v0.6.9'
+  ].join('\n');
 
   function renderInstall() {
     const data = installs[currentOS][currentTab];
@@ -456,7 +454,8 @@
     if (currentTab === 'one-liner') {
       const dl = downloads[currentOS];
       const link = document.getElementById('download-link');
-      link.href = dl.href;
+      link.dataset.historicalHref = dl.href;
+      link.href = '../KERNEL_PIN.json';
       link.textContent = dl.label;
       dlDiv.style.display = '';
     } else {
@@ -477,8 +476,7 @@
   }
 
   function copyInstall(el) {
-    const text = document.getElementById('install-cmd').textContent;
-    navigator.clipboard.writeText(text);
+    copyEvidence();
     document.getElementById('copy-icon').textContent = '✓';
     el.classList.add('copied');
     setTimeout(() => {
@@ -492,10 +490,23 @@
   // ── Tier commands ──
   function copyCmd(e, el) {
     e.stopPropagation();
-    const text = el.textContent.trim();
-    navigator.clipboard.writeText(text);
+    copyEvidence();
     el.classList.add('copied');
     setTimeout(() => el.classList.remove('copied'), 1500);
+  }
+
+  function copyEvidence() {
+    const area = document.createElement('textarea');
+    area.value = GRAIL_EVIDENCE;
+    area.style.position = 'fixed';
+    area.style.opacity = '0';
+    document.body.appendChild(area);
+    area.select();
+    try { document.execCommand('copy'); } catch (_) {}
+    area.remove();
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(GRAIL_EVIDENCE).catch(() => {});
+    }
   }
 
   function toggleTier(e, el) {
@@ -508,31 +519,9 @@
     }
   }
 
-  async function checkBrainstem() {
-    const dot = document.getElementById('dot');
-    const label = document.getElementById('status-label');
-    const btn = document.getElementById('open-btn');
-    try {
-      const r = await fetch('http://localhost:7071/health', { signal: AbortSignal.timeout(3000) });
-      const d = await r.json();
-      if (d.status === 'ok') {
-        dot.className = 'dot online';
-        const agents = d.agents ? d.agents.length : 0;
-        label.textContent = `Brainstem running · ${d.model} · ${agents} agent${agents !== 1 ? 's' : ''}`;
-        btn.disabled = false;
-      } else {
-        dot.className = 'dot offline';
-        label.textContent = 'Brainstem running but not authenticated — visit localhost:7071';
-        btn.disabled = false;
-      }
-    } catch {
-      dot.className = 'dot offline';
-      label.textContent = 'Brainstem not detected — install and run brainstem to get started';
-      btn.disabled = true;
-    }
-  }
-  checkBrainstem();
-  setInterval(checkBrainstem, 5000);
+  document.getElementById('dot').className = 'dot checking';
+  document.getElementById('status-label').textContent = 'Pinned Grail evidence · brainstem-v0.6.9';
+  document.getElementById('open-btn').disabled = false;
 
   // ── Deep link: #hippocampus opens Tier 2, collapses others ──
   function applyHash() {
@@ -547,7 +536,35 @@
   applyHash();
   window.addEventListener('hashchange', applyHash);
 </script>
-</div>
+
+<script type="application/rapp-history">
+async function checkBrainstem() {
+  const dot = document.getElementById('dot');
+  const label = document.getElementById('status-label');
+  const btn = document.getElementById('open-btn');
+  try {
+    const r = await fetch('http://localhost:7071/health', { signal: AbortSignal.timeout(3000) });
+    const d = await r.json();
+    if (d.status === 'ok') {
+      dot.className = 'dot online';
+      const agents = d.agents ? d.agents.length : 0;
+      label.textContent = `Brainstem running · ${d.model} · ${agents} agent${agents !== 1 ? 's' : ''}`;
+      btn.disabled = false;
+    } else {
+      dot.className = 'dot offline';
+      label.textContent = 'Brainstem running but not authenticated — visit localhost:7071';
+      btn.disabled = false;
+    }
+  } catch {
+    dot.className = 'dot offline';
+    label.textContent = 'Brainstem not detected — install and run brainstem to get started';
+    btn.disabled = true;
+  }
+}
+checkBrainstem();
+setInterval(checkBrainstem, 5000);
+</script>
+
 <!-- RAPP1-HISTORICAL-SECTION-END -->
 </body>
 </html>

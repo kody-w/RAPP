@@ -10,8 +10,8 @@
 #   5. Fixture/source identity must exactly match metropolis identity
 #   6. Schema shape: rapp-ecosystem-audit/1.0 envelope has every required key
 #   7. --repo filter narrows scope to one offspring
-#   8. --no-write doesn't touch pages/_audit/
-#   9. Outputs land at pages/_audit/ when --out-dir is given
+#   8. Output writes require explicit owner approval + authenticated authority
+#   9. Default/--no-write mode prints JSON and doesn't touch pages/_audit/
 
 source "$(dirname "$0")/../osi/_lib.sh"
 
@@ -20,7 +20,8 @@ osi_layer_intro "F10 — Ecosystem audit (Bond Pulse drift detector)" \
 
 CONTRACT="$REPO_ROOT/tools/ecosystem_contract.py"
 AUDIT="$REPO_ROOT/tools/ecosystem_audit.py"
-SANDBOX=$(osi_sandbox "rapp-feature-F10")
+SANDBOX="$REPO_ROOT/tests/.rapp1-work/rapp-feature-F10-$$"
+mkdir -p "$SANDBOX"
 trap "osi_cleanup_dir '$SANDBOX'" EXIT
 
 heading "Step 1 — Contract + audit modules present and parse"
@@ -171,27 +172,26 @@ assert audit["offspring"][0]["name"] == "ant-farm"
 print("OK")
 PY
 
-heading "Step 8 — write_outputs=True lands files at out_dir"
+heading "Step 8 — write_outputs=True remains gated and non-mutating"
 mkdir -p "$SANDBOX/audit-out"
-python3 - "$AUDIT" "$SANDBOX/audit-out" <<'PY' && step_pass "ecosystem-audit.{md,json} written to out_dir" || step_fail "outputs not written"
+python3 - "$AUDIT" "$SANDBOX/audit-out" <<'PY' && step_pass "output write refused before mutation" || step_fail "output gate failed"
 import importlib.util, json, os, sys
 spec = importlib.util.spec_from_file_location("ecosystem_audit", sys.argv[1])
 m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
-m.audit_ecosystem(mode="offline", out_dir=sys.argv[2], write_outputs=True)
-assert os.path.exists(os.path.join(sys.argv[2], "ecosystem-audit.json"))
-assert os.path.exists(os.path.join(sys.argv[2], "ecosystem-audit.md"))
-md = open(os.path.join(sys.argv[2], "ecosystem-audit.md")).read()
-assert "Bond Pulse" in md, "markdown report missing Bond Pulse header"
-assert "rapp-ecosystem-audit/1.0" in md
+audit = m.audit_ecosystem(mode="offline", out_dir=sys.argv[2], write_outputs=True)
+assert audit["output_write"]["written"] is False
+assert audit["output_write"]["code"] == "owner-approval-artifact-required"
+assert not os.path.exists(os.path.join(sys.argv[2], "ecosystem-audit.json"))
+assert not os.path.exists(os.path.join(sys.argv[2], "ecosystem-audit.md"))
 print("OK")
 PY
 
-heading "Step 9 — CLI: --no-write prints JSON to stdout, doesn't touch pages/_audit/"
-OUT=$(python3 "$AUDIT" --offline --no-write 2>/dev/null)
+heading "Step 9 — CLI default prints JSON to stdout, doesn't touch pages/_audit/"
+OUT=$(python3 "$AUDIT" --offline 2>/dev/null)
 if printf "%s" "$OUT" | python3 -c "import json, sys; d=json.loads(sys.stdin.read()); assert d['schema']=='rapp-ecosystem-audit/1.0'; assert isinstance(d['offspring'], list); print('OK')" 2>/dev/null | grep -q OK; then
-  step_pass "--no-write prints valid JSON envelope on stdout"
+  step_pass "default mode prints valid JSON envelope on stdout"
 else
-  step_fail "--no-write output invalid"
+  step_fail "default read-only output invalid"
 fi
 
 heading "Step 10 — local-only identity drift is never hidden by fixtures"

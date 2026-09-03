@@ -4,7 +4,8 @@
   "github": {
     "owner": "kody-w",
     "repo": "RAPP",
-    "branch": "main",
+    "navigation_ref": "main",
+    "reference_kind": "repository-navigation-only-not-runtime-content",
     "vault_path": "pages/vault"
   },
   "entry": "README.md",
@@ -14,643 +15,881 @@
       "path": "README.md",
       "title": "Welcome",
       "section": null,
-      "status": "published"
+      "status": "published",
+      "bytes": 2643,
+      "sha256": "7bca19bc8e53983b66a15759c97294ae0b74fee6a953b8e51c92851eec9c4af9"
     },
     {
       "path": "_index.md",
       "title": "Index",
       "section": null,
-      "status": "historical"
+      "status": "historical",
+      "bytes": 4014,
+      "sha256": "c64de6ecf34782bf8403e46a3c46ace7df656195d385a39c996b488dcc0befa6"
     },
     {
       "path": "Plans & Ledgers/Vault Build-Out Plan.md",
       "title": "Vault Build-Out Plan",
       "section": "Plans & Ledgers",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 10773,
+      "sha256": "5d38e349fdd0e0d9094436cf60e83f58cfe504d228371c9020bf478c27d0b464"
     },
     {
       "path": "Plans & Ledgers/Documentation Roadmap.md",
       "title": "Documentation Roadmap",
       "section": "Plans & Ledgers",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 17655,
+      "sha256": "19e2e1143f54a689f36d05841f9c01ff8a4579c806b878094fe72b9aa1bc18ac"
     },
     {
       "path": "Plans & Ledgers/Release Ledger.md",
       "title": "Release Ledger",
       "section": "Plans & Ledgers",
-      "status": "living"
+      "status": "living",
+      "bytes": 20226,
+      "sha256": "0c047cd6ef6dba0209497406a54c2053e5a3b8e0ab7af87f4a74438b41c28a5d"
     },
     {
       "path": "Plans & Ledgers/Platform Backlog.md",
       "title": "Platform Backlog",
       "section": "Plans & Ledgers",
-      "status": "living"
+      "status": "living",
+      "bytes": 14060,
+      "sha256": "9cb62b7e3273ab1c56807be2ed155b048c769ad24f4d2dbb444d479ea4a6716d"
     },
     {
       "path": "Plans & Ledgers/Blog Roadmap.md",
       "title": "Blog Roadmap",
       "section": "Plans & Ledgers",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 21840,
+      "sha256": "495fdd39812d76f178a6a5fc3acb3f653fb76ae66ab8d5e2e41112d08be288e0"
     },
     {
       "path": "Plans & Ledgers/Content Strategy.md",
       "title": "Content Strategy",
       "section": "Plans & Ledgers",
-      "status": "living"
+      "status": "living",
+      "bytes": 16906,
+      "sha256": "b9eb4d34e6dd2d055c8e1c2202cc5230cefc8822bccab2dc8d0c348978511389"
     },
     {
       "path": "Plans & Ledgers/Invention Backlog.md",
       "title": "Invention Backlog",
       "section": "Plans & Ledgers",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 6613,
+      "sha256": "4854d45ee98347ebcad047cfb6da7e88847204bd7b1088b9c2a19ab6d438ac39"
     },
     {
       "path": "Foundations/How to Read This Vault.md",
       "title": "How to Read This Vault",
       "section": "Foundations",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 6818,
+      "sha256": "faf1a0dba407973cf10c3b6b9cdcaeb42c52c6942955a81299402ec97f51910c"
     },
     {
       "path": "Foundations/The Platform in 90 Seconds.md",
       "title": "The Platform in 90 Seconds",
       "section": "Foundations",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 4384,
+      "sha256": "47b8a76f86d2af0e398a44a119fd9e6d0a7962cc21cb76b4dbb26fc3ceacf4a3"
     },
     {
       "path": "Foundations/The Sacred Constraints.md",
       "title": "The Sacred Constraints",
       "section": "Foundations",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 9836,
+      "sha256": "ce73fd9cc47dbf4b197f0f341f95245c7e1400680b34b8084cf4cffea4754964"
     },
     {
       "path": "Foundations/Glossary.md",
       "title": "Glossary",
       "section": "Foundations",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 13799,
+      "sha256": "231da36759f6f32f576141a5768fbd4d6127c6b9dfeee933087dbcbc29ec42d8"
     },
     {
       "path": "Foundations/Tier 1 — Local Brainstem.md",
       "title": "Tier 1 — Local Brainstem",
       "section": "Foundations",
-      "status": "published"
+      "status": "published",
+      "bytes": 7214,
+      "sha256": "2ca76ffb31d3d7d7e000e6710c799bb45238fdb038aac7a2ebc3fd1c22f103b1"
     },
     {
       "path": "Foundations/Tier 2 — Cloud Swarm.md",
       "title": "Tier 2 — Cloud Swarm",
       "section": "Foundations",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 7283,
+      "sha256": "4c5bb7e06de2f43e6b1452e85c02de32bcf0edbd2dfaf54671c66ad156f50e1f"
     },
     {
       "path": "Foundations/Tier 3 — Enterprise Power Platform.md",
       "title": "Tier 3 — Enterprise Power Platform",
       "section": "Foundations",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 7830,
+      "sha256": "6dfc4289367567603ab454ecb2e8ffc025747515142e551dcac6feb3d0515e72"
     },
     {
       "path": "Foundations/Constitution Reading Order.md",
       "title": "Constitution Reading Order",
       "section": "Foundations",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 7562,
+      "sha256": "a11c3e37cdb2cf6d81064eb9c7bbd74c7bd7e56bd3a3a6846665f3a01805507a"
     },
     {
       "path": "Foundations/Major Moments.md",
       "title": "Major Moments",
       "section": "Foundations",
-      "status": "published"
+      "status": "published",
+      "bytes": 7308,
+      "sha256": "95b0e4d0df8299a5f8b05237f21e48c8aa5aca5a4269cbfee2c8950d1d9c618b"
     },
     {
       "path": "Reading Paths/Reading Path — Engineer Evaluating RAPP.md",
       "title": "Reading Path — Engineer Evaluating RAPP",
       "section": "Reading Paths",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 4831,
+      "sha256": "9a25c9c55d13e1050871110b0dc8dd5160a7e402b2d24399b7a34501b8790eff"
     },
     {
       "path": "Reading Paths/Reading Path — Architect Deciding to Bet.md",
       "title": "Reading Path — Architect Deciding to Bet",
       "section": "Reading Paths",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 5258,
+      "sha256": "abc4c8c17cb5c87045a5b963627e462462207b357d08d9b4bcc47bd168ddb1ae"
     },
     {
       "path": "Reading Paths/Reading Path — Partner Pricing a Project.md",
       "title": "Reading Path — Partner Pricing a Project",
       "section": "Reading Paths",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 5367,
+      "sha256": "8707c70d4408125c414cc398a4b7dc0a6025ea3903441ccf89fdb6631b5cf64f"
     },
     {
       "path": "Reading Paths/Reading Path — Exec Asking What This Is.md",
       "title": "Reading Path — Exec Asking What This Is",
       "section": "Reading Paths",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 4573,
+      "sha256": "c9605b1bdc2b5968d964ae3464de64de30fa4fb6ed440ceb803a8bc8ad0d990c"
     },
     {
       "path": "Reading Paths/Reading Path — New Contributor.md",
       "title": "Reading Path — New Contributor",
       "section": "Reading Paths",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 6378,
+      "sha256": "b37356bc3a9025698862d1a8e084c04c2a1596f362d8852e81972908f154fd5d"
     },
     {
       "path": "Founding Decisions/Engine, Not Experience.md",
       "title": "Engine, Not Experience",
       "section": "Founding Decisions",
-      "status": "published"
+      "status": "published",
+      "bytes": 5629,
+      "sha256": "2a6ada0e5958702fe3f46503319ed6f36a0b14ab02247eaaa355f1bd9d4a7097"
     },
     {
       "path": "Founding Decisions/Why Three Tiers, Not One.md",
       "title": "Why Three Tiers, Not One",
       "section": "Founding Decisions",
-      "status": "published"
+      "status": "published",
+      "bytes": 5997,
+      "sha256": "254ca525a8d1b9ba3b53613b9205a521c3a4a7c704e84b7a104bf2285f60e882"
     },
     {
       "path": "Founding Decisions/The Single-File Agent Bet.md",
       "title": "The Single-File Agent Bet",
       "section": "Founding Decisions",
-      "status": "published"
+      "status": "published",
+      "bytes": 6486,
+      "sha256": "55a2502c83f77f73a4bba448a4bd6429036bf02b16f353001b6e7beb40236412"
     },
     {
       "path": "Founding Decisions/Voice and Twin Are Forever.md",
       "title": "Voice and Twin Are Forever",
       "section": "Founding Decisions",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 7061,
+      "sha256": "1aada45b44eb0d66c56c481fd5f71b70dae95454e0eae72666ab448d37036bc8"
     },
     {
       "path": "Founding Decisions/Data Sloshing.md",
       "title": "Data Sloshing",
       "section": "Founding Decisions",
-      "status": "published"
+      "status": "published",
+      "bytes": 6320,
+      "sha256": "9e0b755d96a833cbe180a87c34b2ddfc4ed30038f462e7e5811c91ffecd76783"
     },
     {
       "path": "Founding Decisions/The Brainstem Tax.md",
       "title": "The Brainstem Tax",
       "section": "Founding Decisions",
-      "status": "published"
+      "status": "published",
+      "bytes": 5723,
+      "sha256": "a3683805652965db3dc706de887eed54f4016b62ab34906a8d0027a0969dcd4c"
     },
     {
       "path": "Founding Decisions/The Front Door.md",
       "title": "The Front Door",
       "section": "Founding Decisions",
-      "status": "published"
+      "status": "published",
+      "bytes": 13291,
+      "sha256": "c50f8f9a8a6cd38b28e62743b121c7a9fad9921b14c358c01fbf4fc5298ebcf2"
     },
     {
       "path": "Removals/Why hatch_rapp Was Killed.md",
       "title": "Why hatch_rapp Was Killed",
       "section": "Removals",
-      "status": "published"
+      "status": "published",
+      "bytes": 5930,
+      "sha256": "38f365e343cb03470dbc263858e2a421e3d4de9a9dc150b9a5ac13b87a090d53"
     },
     {
       "path": "Removals/From save_recall to manage_memory.md",
       "title": "From save_recall to manage_memory",
       "section": "Removals",
-      "status": "published"
+      "status": "published",
+      "bytes": 5785,
+      "sha256": "29018f3d9b46f08e6eb5429ee73bb143a65b19de1fe9ea76a50c43363c2b757b"
     },
     {
       "path": "Removals/Why t2t and swarm_server Are Gone.md",
       "title": "Why t2t and swarm_server Are Gone",
       "section": "Removals",
-      "status": "published"
+      "status": "published",
+      "bytes": 6206,
+      "sha256": "2194abde921a4321d5690ad02ea3ebd395b3093611f5c86c29423978fa567b84"
     },
     {
       "path": "Removals/The experimental Graveyard.md",
       "title": "The experimental Graveyard",
       "section": "Removals",
-      "status": "published"
+      "status": "published",
+      "bytes": 6883,
+      "sha256": "7fddc56a419800bed29d1119f4dec1c41faadef01191f989d8e284a044e2ae32"
     },
     {
       "path": "Architecture/Local Storage Shim via sys.modules.md",
       "title": "Local Storage Shim via sys.modules",
       "section": "Architecture",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 8135,
+      "sha256": "39358929b7fc57605320567e3d62ed1e273b9a296824d935667c9b62a9f73ef4"
     },
     {
       "path": "Architecture/The Deterministic Fake LLM.md",
       "title": "The Deterministic Fake LLM",
       "section": "Architecture",
-      "status": "published"
+      "status": "published",
+      "bytes": 6679,
+      "sha256": "0f272f8cfc260055ae294483e35e0444196add39bc2d4a14c26d96de3c3408b7"
     },
     {
       "path": "Architecture/Vendoring, Not Symlinking.md",
       "title": "Vendoring, Not Symlinking",
       "section": "Architecture",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 7549,
+      "sha256": "44fb8f2972436cf7ff7c3d61108b2073111844a93f79db4413479f488b9483f5"
     },
     {
       "path": "Architecture/RAR — Trust Without Discrimination.md",
       "title": "RAR — Trust Without Discrimination",
       "section": "Architecture",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 8731,
+      "sha256": "fb4c30abfddf9e923353f4c96a21e681af64c2b36326b53c34c0b571fafe85f4"
     },
     {
       "path": "Architecture/The Auth Cascade.md",
       "title": "The Auth Cascade",
       "section": "Architecture",
-      "status": "published"
+      "status": "published",
+      "bytes": 6907,
+      "sha256": "118a09c2323942426af9484cc3d043f849fc86a16f13e87043552e1b81662577"
     },
     {
       "path": "Architecture/Repo Root Reorganization 2026-04-24.md",
       "title": "Repo Root Reorganization 2026-04-24",
       "section": "Architecture",
-      "status": "published"
+      "status": "published",
+      "bytes": 10209,
+      "sha256": "f12e5b7f8f75fe0bff40477f271acc1ee36820d6536e267917278f959c7cc006"
     },
     {
       "path": "Architecture/Surfaces — Mobile, Watch, Voice.md",
       "title": "Surfaces — Mobile, Watch, Voice",
       "section": "Architecture",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 10882,
+      "sha256": "e52be428f54ec08c554404ddedbe17be2d7f67d6dfb797ef8e60613c21a1cad2"
     },
     {
       "path": "Architecture/The skill.md Pattern.md",
       "title": "The skill.md Pattern",
       "section": "Architecture",
-      "status": "published"
+      "status": "published",
+      "bytes": 6388,
+      "sha256": "4c65023bbdbd7df5cb75713aa86702f4966b136a88268089ba1052809efee4b3"
     },
     {
       "path": "Architecture/Federation via RAR.md",
       "title": "Federation via RAR",
       "section": "Architecture",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 9080,
+      "sha256": "77ab35f9f2a73a10f346297e5e7a0df953e93a16444b21ab87ba98dd4667f5e7"
     },
     {
       "path": "Architecture/The Federated Twin Egg Hatcher Pattern.md",
       "title": "The Federated Twin Egg Hatcher Pattern",
       "section": "Architecture",
-      "status": "published"
+      "status": "published",
+      "bytes": 10049,
+      "sha256": "7e13bc357bf1f89d841d74642c6e1f06aaf033c0eee6612c03cbb2f44ddc0490"
     },
     {
       "path": "Architecture/Boot Sidecar — Integrating Utils Without Modifying the Kernel.md",
       "title": "Boot Sidecar — Integrating Utils Without Modifying the Kernel",
       "section": "Architecture",
-      "status": "published"
+      "status": "published",
+      "bytes": 10698,
+      "sha256": "cbb0e44e0e5f1a8de1af206f06584227f4cfba7786a70bf17d8d5abb6a173449"
     },
     {
       "path": "Architecture/The Species DNA Archive — rapp_kernel.md",
       "title": "The Species DNA Archive — rapp_kernel",
       "section": "Architecture",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 6973,
+      "sha256": "0f8b72f339a8a047ab8cd85a220fd49975dd62774e9e5fd323ca23fd8c4a277b"
     },
     {
       "path": "Architecture/Signed Releases and Variant Attestation.md",
       "title": "Signed Releases and Variant Attestation",
       "section": "Architecture",
-      "status": "living"
+      "status": "living",
+      "bytes": 8055,
+      "sha256": "b896eccb5304035ee60e26a8d275ee372aafc2840f7ddfd95a11c9a6da84fc7a"
     },
     {
       "path": "Fixtures/Fixture 01 — Canonical Kernel local_storage Drop-In.md",
       "title": "Fixture 01 — Canonical Kernel local_storage Drop-In",
       "section": "Fixtures",
-      "status": "published"
+      "status": "published",
+      "bytes": 7286,
+      "sha256": "5d3acd173870601c8d9e41cd687a9b535216135bcad9153133ebb09d10a48061"
     },
     {
       "path": "Fixtures/Fixture 02 — Soul Read on Non-UTF-8 Windows Locale.md",
       "title": "Fixture 02 — Soul Read on Non-UTF-8 Windows Locale",
       "section": "Fixtures",
-      "status": "published"
+      "status": "published",
+      "bytes": 5934,
+      "sha256": "b4b4cda191c86a606c055df8d374c8ba1a42ed66313afb9a86b6fd51bbb90e31"
     },
     {
       "path": "Positioning/RAPP vs Copilot Studio.md",
       "title": "RAPP vs Copilot Studio",
       "section": "Positioning",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 7556,
+      "sha256": "69d167b267386f3b4fb0f9259f4867ccb3a7f8ccbe4a9e78b00226a9a1dad79e"
     },
     {
       "path": "Positioning/What You Give Up With RAPP.md",
       "title": "What You Give Up With RAPP",
       "section": "Positioning",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 7811,
+      "sha256": "56ad5cfef882b45d07ebcbe65edac6464408fd68c54d5c866b1fd029b18d26bd"
     },
     {
       "path": "Positioning/Why GitHub Pages Is the Distribution Channel.md",
       "title": "Why GitHub Pages Is the Distribution Channel",
       "section": "Positioning",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 7627,
+      "sha256": "ed278abc7970c8eabd2bd420597e32659c653b2b67ce159a51bfa155e59f8aa5"
     },
     {
       "path": "Twin and UX/The Twin Offers, The User Accepts.md",
       "title": "The Twin Offers, The User Accepts",
       "section": "Twin and UX",
-      "status": "published"
+      "status": "published",
+      "bytes": 6998,
+      "sha256": "d7b6817bbc6516f8e78beb26bbb9e3dee7b6e071983bffd1a106d40c4f4634c8"
     },
     {
       "path": "Twin and UX/Calibration Is Behavioral, Not Explicit.md",
       "title": "Calibration Is Behavioral, Not Explicit",
       "section": "Twin and UX",
-      "status": "published"
+      "status": "published",
+      "bytes": 7251,
+      "sha256": "d7a63f65236d79e965aa77cc0d186d31d3a7e31617faa96062dee41e129c11e7"
     },
     {
       "path": "Twin and UX/Every Twin Surface Is a Calibration Opportunity.md",
       "title": "Every Twin Surface Is a Calibration Opportunity",
       "section": "Twin and UX",
-      "status": "published"
+      "status": "published",
+      "bytes": 7387,
+      "sha256": "91168aabb2bf27870ab8752ea988b546fb3cff8c907e67c694e55377a3912afc"
     },
     {
       "path": "Process/60 Minutes to a Working Agent.md",
       "title": "60 Minutes to a Working Agent",
       "section": "Process",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 8456,
+      "sha256": "1efdb8a4fb5cdb746e97e8d3ceacd7ded67d1578679c75c066212c31f578d1f9"
     },
     {
       "path": "Process/The Agent IS the Spec.md",
       "title": "The Agent IS the Spec",
       "section": "Process",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 8760,
+      "sha256": "42743962f6e1ab00ee3448c317a860405a15bef79fae3d4331355db29a57de46"
     },
     {
       "path": "Process/Self-Documenting Handoff.md",
       "title": "Self-Documenting Handoff",
       "section": "Process",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 8179,
+      "sha256": "7531ab9a59f68d8edcd717a261e3e0850886e6232df450763914163502d92f57"
     },
     {
       "path": "Manifestos/The Engine Stays Small.md",
       "title": "The Engine Stays Small",
       "section": "Manifestos",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 8265,
+      "sha256": "e98601a5e09cb30071a4ee246e63310abe83437fe18762b8c01bc8ffc64acf59"
     },
     {
       "path": "Manifestos/Three Tiers, One Model.md",
       "title": "Three Tiers, One Model",
       "section": "Manifestos",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 8378,
+      "sha256": "653a6280b191ca5d2e2e3e1a359937fe43a88098e3ab4ffa396e989894c10547"
     },
     {
       "path": "Manifestos/Roots Are Public Surfaces.md",
       "title": "Roots Are Public Surfaces",
       "section": "Manifestos",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 8109,
+      "sha256": "9131e654872788777350d94c2e366daf98f318b8951013e43e964b22cfba20e8"
     },
     {
       "path": "Manifestos/Chat Is The Only Wire.md",
       "title": "Chat Is The Only Wire",
       "section": "Manifestos",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 7571,
+      "sha256": "f3e11fadadfb51dd9f671e365c1be57ecd887b41d5aa07557c53e8c31e51d94a"
     },
     {
       "path": "Architecture/Rappid.md",
       "title": "Rappid — The One Identifier",
       "section": "Architecture",
-      "status": "published"
+      "status": "published",
+      "bytes": 16762,
+      "sha256": "260884fd21cfab25e278d8815d886cae8571a434daf9d8974d69a5f9d91f62bc"
     },
     {
       "path": "Architecture/The Swarm Estate.md",
       "title": "The Swarm Estate — Rappid-Indexed Identity Across Public + Private + Live + Frozen",
       "section": "Architecture",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 33216,
+      "sha256": "2851aefa046f9c4223a35c5056db9ebeb3601c6e2d157f7994a097b3d78f0352"
     },
     {
       "path": "Architecture/Local-First-by-Design.md",
       "title": "Local-First by Design — Why the Foundation Survives GitHub Going Away",
       "section": "Architecture",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 10881,
+      "sha256": "e0e6a853c425029199730eb3b71f278187035dcc24e95a588eac47037ad0ba16"
     },
     {
       "path": "Architecture/Decentralized-by-Design.md",
       "title": "Decentralized by Design — Bitcoin-Grade Network Properties on Top of Git",
       "section": "Architecture",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 13271,
+      "sha256": "d058343b87b82a4694550cba5cab08f62b2a12616afaaf623f279df001c8c682"
     },
     {
       "path": "Architecture/Rapplications Are Organisms.md",
       "title": "Rapplications Are Organisms — collapsing a false distinction",
       "section": "Architecture",
-      "status": "published"
+      "status": "published",
+      "bytes": 15983,
+      "sha256": "4a3701466e56b93731d9cfc7d2f3d3dcd1595d1c23de4ab3c486aeb9859bc4dd"
     },
     {
       "path": "Architecture/Mirror Spec.md",
       "title": "Mirror Spec",
       "section": "Architecture",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 9674,
+      "sha256": "657428891966b36685925c017fb08ff8af2b2460bc1752327a3bd26a2631156b"
     },
     {
       "path": "Architecture/Layered Mirrors and the Public-Private Body Stack.md",
       "title": "Layered Mirrors and the Public/Private Body Stack",
       "section": "Architecture",
-      "status": "published"
+      "status": "published",
+      "bytes": 17471,
+      "sha256": "f236f387810af6590de8a4c30ef38f10828d34494d732edd6566f2b2b6956fbb"
     },
     {
       "path": "Plans/Floodgate-Readiness-Plan.md",
       "title": "Floodgate-Readiness Plan",
       "section": "Plans",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 8827,
+      "sha256": "139f2ca7458dc5b3e8ce6a730d08bc50c4942eacb37d339f7ce6d0ee57b0e337"
     },
     {
       "path": "Architecture/Distros as a Pattern.md",
       "title": "Distros as a Pattern",
       "section": "Architecture",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 7326,
+      "sha256": "fb2c304728ee444727f7e91a8f0f27fede226a490c8e8e502ed5f24e22742712"
     },
     {
       "path": "Architecture/KERNEL_TREE as a Map.md",
       "title": "KERNEL_TREE as a Map",
       "section": "Architecture",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 5187,
+      "sha256": "43ee5340b6adb12727601bc6896ebb42db3df2a15064dae895184d94102a804e"
     },
     {
       "path": "Architecture/Neighborhood Egg — Snapshot and Hatch.md",
       "title": "Neighborhood Egg — Snapshot and Hatch",
       "section": "Architecture",
-      "status": "published"
+      "status": "published",
+      "bytes": 14306,
+      "sha256": "774744ba8c0cfa8c90d9852df9255418912ba5f6b24acd01f028714149901efd"
     },
     {
       "path": "Architecture/The Distro Hatcher Agent Pattern.md",
       "title": "The Distro Hatcher Agent Pattern",
       "section": "Architecture",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 10763,
+      "sha256": "814a4d8a60c75330e302d38fac8d474724450a496ceae0702aa4d0d60b4ca7da"
     },
     {
       "path": "Architecture/The Kernel-as-God-SPEC.md",
       "title": "The Kernel-as-God-SPEC",
       "section": "Architecture",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 4987,
+      "sha256": "ad59757351bff98daced1fea5ffcbd1b6f492a4d807ac82491dedf43bbe2192c"
     },
     {
       "path": "Architecture/Twin Lifecycle — Active, Archived, Purged.md",
       "title": "Twin Lifecycle — Active, Archived, Purged",
       "section": "Architecture",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 10004,
+      "sha256": "1007efdcd20dacb8951e77e9baabdb16844f95f101e7986322e06d0b246a9396"
     },
     {
       "path": "Architecture/Twin-Patterns.md",
       "title": "Twin Patterns — Global Parallel Omniscience",
       "section": "Architecture",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 12629,
+      "sha256": "73524e7cfca5b391297875b720ad018fa9a4abccbad8954b446f52c08ae50791"
     },
     {
       "path": "Decisions/2026-05-08 — Estate is the operator's union of neighborhoods.md",
       "title": "Estate is the operator's union of neighborhoods (the metropolis model)",
       "section": "Decisions",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 7502,
+      "sha256": "e14c246d64d4a9c7a4e065c36d4444b0f0179eff5d92f3965735b306d6798106"
     },
     {
       "path": "Decisions/2026-05-09 — Bond Pulse — the on-going beat for the full organism.md",
       "title": "Bond Pulse — the on-going beat for the full organism",
       "section": "Decisions",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 9158,
+      "sha256": "69547e7137a51fc71cf48d4fe0d999bbd7f6872df5b68fee1af815b1efa1e93b"
     },
     {
       "path": "Decisions/2026-05-09 — Dream Catcher and Docking are the same operation.md",
       "title": "Dream Catcher and Docking are the same operation at different scopes",
       "section": "Decisions",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 8462,
+      "sha256": "00198ddfe17fd7e83dfae082d99cbce5a30def9cfb70fc8ea359b46d0b955d5e"
     },
     {
       "path": "Decisions/2026-05-09 — Estate Spec — rappid as global address.md",
       "title": "Estate Spec — rappid as the global address",
       "section": "Decisions",
-      "status": "shipped"
+      "status": "shipped",
+      "bytes": 11806,
+      "sha256": "3a894ecdf8fec404dcaf962c9fe879bfbeeda9b75084602ea0995a61d3a7131b"
     },
     {
       "path": "Decisions/2026-05-09 — Lessons from decentralized giants (public-private boundary).md",
       "title": "Lessons from decentralized giants — the public/private boundary (Article XLVIII)",
       "section": "Decisions",
-      "status": "shipped"
+      "status": "shipped",
+      "bytes": 10693,
+      "sha256": "a28aeff69a531a8f4b69c0cbbd193f0eb18e7f49584d97d45fac5842383612fa"
     },
     {
       "path": "Decisions/2026-05-10 — Egg cartridge unification + tethered vBrainstem ship.md",
       "title": "Egg cartridge unification + tethered vBrainstem ship",
       "section": "Decisions",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 9868,
+      "sha256": "10a929c7d001001b036b9e843647df6c350cac04e49f703ff5db25f23575dee8"
     },
     {
       "path": "Decisions/2026-05-10 — Feature freeze (LFPE deferred).md",
       "title": "Feature freeze — Local-First Private Estate (LFPE) deferred",
       "section": "Decisions",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 27128,
+      "sha256": "a29384c81cf2d3183bde8358f74f07a3444938321e966b238f40e48d20062977"
     },
     {
       "path": "Decisions/2026-05-10 — rappter1 first contact + Article XLVII.5 substrate-agnostic federation.md",
       "title": "rappter1 first contact + Article XLVII.5 (substrate-agnostic federation)",
       "section": "Decisions",
-      "status": "shipped"
+      "status": "shipped",
+      "bytes": 6933,
+      "sha256": "a6b5cfa3eb52b5e4b3343c582debe5aa26d077e3017395f078167a697ae1b36c"
     },
     {
       "path": "Decisions/2026-05-11 — The Commons.md",
       "title": "The Commons",
       "section": "Decisions",
-      "status": "shipped"
+      "status": "shipped",
+      "bytes": 11713,
+      "sha256": "3452f8ea3060769c8110a1eed1600fca3e252a9175f39b8e8f42d8403be4ae75"
     },
     {
       "path": "Decisions/2026-05-16 — community_rapp is grail.md",
       "title": "2026-05-16 — community_rapp is grail",
       "section": "Decisions",
-      "status": "published"
+      "status": "published",
+      "bytes": 3553,
+      "sha256": "a9defdd3ad7d0a2765e991c2d98c3e354a3bf320140a45b403ef987df5f325e2"
     },
     {
       "path": "Decisions/2026-05-16 — Kernel-Distro Split.md",
       "title": "2026-05-16 — Kernel-Distro Split",
       "section": "Decisions",
-      "status": "published"
+      "status": "published",
+      "bytes": 5234,
+      "sha256": "408e82dc11c6986121ee1906cdaf04f8a21d9c5460f615d679a8ca5abecb7ba6"
     },
     {
       "path": "Decisions/2026-05-16 — Marie Kondo Audit.md",
       "title": "2026-05-16 — Marie Kondo Audit",
       "section": "Decisions",
-      "status": "published"
+      "status": "published",
+      "bytes": 4797,
+      "sha256": "26236bed8a078e6b4a71de9a1d08173f8c198ca932184588770c004fde8cde9a"
     },
     {
       "path": "Decisions/2026-05-16 — pages-kernel-html as the canonical hub.md",
       "title": "2026-05-16 — pages/kernel.html as the canonical hub",
       "section": "Decisions",
-      "status": "published"
+      "status": "published",
+      "bytes": 4683,
+      "sha256": "f558f75eb0c9a004c398723602088b7a002233265512ef1a319b4b39a31d9309"
     },
     {
       "path": "Decisions/2026-05-16 — rapp-zoo moves to distro + Article XXXVIII.4 amendment.md",
       "title": "2026-05-16 — rapp-zoo moves to distro + Article XXXVIII.4 amendment",
       "section": "Decisions",
-      "status": "published"
+      "status": "published",
+      "bytes": 4610,
+      "sha256": "00a354de36fde784139626f128796bb91274772079c749b7e96781970c515d9e"
     },
     {
       "path": "Decisions/2026-05-16 — Restoring narrative docs to the kernel.md",
       "title": "2026-05-16 — Restoring narrative docs to the kernel",
       "section": "Decisions",
-      "status": "published"
+      "status": "published",
+      "bytes": 3543,
+      "sha256": "c9df8ab93709e78b0f6b0b378127937ced4d5aa82015a7d456b9bb634fd5dcaa"
     },
     {
       "path": "Decisions/2026-05-16 — SPEC and skill disambiguation.md",
       "title": "2026-05-16 — SPEC and skill disambiguation (3 layers, 2 filenames)",
       "section": "Decisions",
-      "status": "published"
+      "status": "published",
+      "bytes": 4115,
+      "sha256": "578f4339dfc13784892349b1d303cb035befcb9ec03a5032ee5fef3b103a0dd4"
     },
     {
       "path": "Decisions/2026-05-16 — T2 and T3 belong in the kernel.md",
       "title": "2026-05-16 — T2 and T3 belong in the kernel",
       "section": "Decisions",
-      "status": "published"
+      "status": "published",
+      "bytes": 3494,
+      "sha256": "f7db3e6325ac26fe101cddfa54502a8834b8381eb2a85403e6b7f93a1d215d9b"
     },
     {
       "path": "Decisions/2026-05-16 — Why pitch-playbook stays in the kernel.md",
       "title": "2026-05-16 — Why pitch-playbook stays in the kernel",
       "section": "Decisions",
-      "status": "published"
+      "status": "published",
+      "bytes": 4270,
+      "sha256": "fce02e03f708c228460539be9ab2b2320a032aa5a2c33d15d55cc80467e76947"
     },
     {
       "path": "Field Notes/2026-05-08 — Adapt-to-whats-home is the only consensus protocol that scales off-grid.md",
       "title": "Adapt-to-what's-home is the only consensus protocol that scales off-grid",
       "section": "Field Notes",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 6294,
+      "sha256": "0513b6c4415a8daa2f04269eeae650a9ca86e17b0b14d4cee650933f0e560259"
     },
     {
       "path": "Field Notes/2026-05-08 — Bibliography-as-protocol — provenance is the new caching layer.md",
       "title": "Bibliography is the braintrust primitive — each pattern has its own shape",
       "section": "Field Notes",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 6934,
+      "sha256": "0e8f601f1ce9226d29ca545ea5e5265689fd921d0e56b803fe3c7399800e26f2"
     },
     {
       "path": "Field Notes/2026-05-08 — GitHub-as-substrate is the unit-economics moat.md",
       "title": "GitHub-as-substrate is the unit-economics moat",
       "section": "Field Notes",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 7289,
+      "sha256": "cc7d482b49c8bf88b0889c7de9580fb185abc21db20812c2b800b7e9c98f0782"
     },
     {
       "path": "Field Notes/git-add-A is a footgun.md",
       "title": "git-add-A is a footgun",
       "section": "Field Notes",
-      "status": "published"
+      "status": "published",
+      "bytes": 4725,
+      "sha256": "e44e7d1a8686e1ebd21695b9730c1986be20068bca2c411a7d5cbba65a10031c"
     },
     {
       "path": "Field Notes/rappter-distro Pages enabled 2026-05-16.md",
       "title": "rappter-distro Pages enabled 2026-05-16",
       "section": "Field Notes",
-      "status": "published"
+      "status": "published",
+      "bytes": 3784,
+      "sha256": "b9b737445a46113e78c34bb60c5019efc4b5577f78695416e7baf10cca6e34e1"
     },
     {
       "path": "Manifestos/One Kernel, Many Distros.md",
       "title": "One Kernel, Many Distros",
       "section": "Manifestos",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 7011,
+      "sha256": "59d1297815c8d178aab766983672c4ba0df566c5e7f0520f6d35e3acaf6e4505"
     },
     {
       "path": "Process/Adding to the Kernel vs the Distro.md",
       "title": "Adding to the Kernel vs the Distro",
       "section": "Process",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 5270,
+      "sha256": "a09ba10fc74e477776e6ce9584c240202124371125440647ef00144b8e408596"
     },
     {
       "path": "Process/Verifying Mirror Compliance.md",
       "title": "Verifying Mirror Compliance",
       "section": "Process",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 4803,
+      "sha256": "e10c35f0b8929de21d44fda6d9637ca376f486c166f1a4b021c3aa9cf8ec333c"
     },
     {
       "path": "Reading Paths/Reading Path — AI Loading the Vault.md",
       "title": "Reading Path — AI Loading the Vault",
       "section": "Reading Paths",
-      "status": "historical"
+      "status": "historical",
+      "bytes": 5916,
+      "sha256": "d41a1165d4db860920f01baa1c812f84645a86e5db33bde20b4a66b41832ec9c"
     },
     {
       "path": "Removals/The 426-line False Drift.md",
       "title": "The 426-line False Drift",
       "section": "Removals",
-      "status": "published"
+      "status": "published",
+      "bytes": 4157,
+      "sha256": "291bb7487fb9d42992a816a6ee21c954676a6b1dc2f3f5efcf026d3d8b08414f"
     },
     {
       "path": "Removals/The Stale Local Clone Trap.md",
       "title": "The Stale Local Clone Trap",
       "section": "Removals",
-      "status": "published"
+      "status": "published",
+      "bytes": 4128,
+      "sha256": "276f3103148c8fd49527005db31676804586e2520afa282a1686cef62408d3b5"
     },
     {
       "path": "Decisions/2026-09-02 — Historical URLs remain visible and inert.md",
       "title": "Historical URLs remain visible and inert",
       "section": "Decisions",
-      "status": "living"
+      "status": "living",
+      "bytes": 2209,
+      "sha256": "55941b7a610602a09831e09b4c1cc91ec607aff372ddd53f30cb9a152dbd99a8"
+    },
+    {
+      "path": "Decisions/2026-09-03 — Adapt, Don't Kill — preserve data exhaust.md",
+      "title": "Adapt, Don't Kill — preserve data exhaust",
+      "section": "Decisions",
+      "status": "living",
+      "bytes": 2806,
+      "sha256": "33c880a96fada65464af5b6e1cfce8c74da49a613c09a83da63ea80f8def800f"
+    },
+    {
+      "path": "Plans & Ledgers/RAPP Restoration and Adaptation Ledger.md",
+      "title": "RAPP Restoration and Adaptation Ledger",
+      "section": "Plans & Ledgers",
+      "status": "living",
+      "bytes": 5974,
+      "sha256": "cf7b0b9bf23f444f7d7900a6317b0a61d8a0a9a26297b395a0f3d67addbeadf2"
+    },
+    {
+      "path": "Plans & Ledgers/RAPP1 Adaptation Inventory.md",
+      "title": "RAPP1 Adaptation Inventory",
+      "section": "Plans & Ledgers",
+      "status": "living",
+      "bytes": 11565,
+      "sha256": "722a0886114fcfc51783b6b5428510c261f493e7093faad1aa6313136aa28c34"
     }
   ],
   "excluded_notes": [
@@ -738,5 +977,14 @@
       "path": "Blog Drafts/writing-for-the-ai-reader.md",
       "reason": "Explicitly unpublished draft archive."
     }
-  ]
+  ],
+  "runtime_content": {
+    "bundle": "content-bundle.json",
+    "renderer": "marked.min.js",
+    "renderer_package": "marked@12.0.2",
+    "renderer_sha256": "15fabce5b65898b32b03f5ed25e9f891a729ad4c0d6d877110a7744aa847a894",
+    "renderer_license": "vendor/marked-LICENSE.txt",
+    "network_fallback": false,
+    "hash_required": true
+  }
 }

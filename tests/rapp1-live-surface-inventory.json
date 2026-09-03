@@ -46,8 +46,20 @@
       "installer/plant.html",
       "installer/plant_qr.html",
       "installer/seed.html",
+      "installer/shortcuts/brainstem-voice/index.html",
+      "installer/shortcuts/index.html",
+      "pages/chat.html",
+      "pages/grail-brainstem/index.html",
+      "pages/lobby.html",
       "pages/metropolis/plant-from-discord.html",
-      "pages/metropolis/index.html"
+      "pages/metropolis/index.html",
+      "pages/payphone.html",
+      "pages/sphere.html",
+      "pages/summon.html",
+      "pages/tether.html",
+      "pages/vbrainstem.html",
+      "pages/vbrainstem/index.html",
+      "pages/vneighborhood.html"
     ],
     "wire": [
       "rapp_brainstem/rapp1_facade.py",

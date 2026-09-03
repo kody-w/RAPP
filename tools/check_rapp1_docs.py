@@ -494,13 +494,13 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
                     errors.append(f"fixture: {name} target-check path is missing: {path}")
     expected_terminal_hashes = {
         "pages/index.html": (
-            "676d567739ff70ef7753798bd1b41c8691aefb4d0e47911169663a8dc4f224e7"
+            "64609f746cd216a22bf023d3ca943644a01c2394fb7f29c3778a3ba013caf289"
         ),
         "cave/rar/index.json": (
-            "1817e4a08525c8cabb4ff1e120847cafdd0d215b4830ec2b974d1979c464ecb1"
+            "0243ca6318e4ca6176326ee9d1eee70cba4bfb2cf737f329c0525ad309c3eb04"
         ),
         "cave/super-rar/index.json": (
-            "eea91205adcc21683b6e926b848e963b13f318165dbbaddfeb71904cd931b309"
+            "929bd95215e8346f8c29aa6aa76c91302b142382f472065507761344437f7071"
         ),
     }
     terminal_hashes = target_checks.get("integrated_terminal_states", {}).get(
@@ -515,10 +515,10 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
             errors.append(f"{path}: integrated main terminal bytes drifted")
     expected_documentation_hashes = {
         "pages/_site/partials/footer.html": (
-            "c23caaccb2f0cf93cf760c89f482b009f283ef4b2037ea8b18106de47856d1de"
+            "d66b6fcb348238eb6db435c50a66cbc88c9800cca0c6d89db32bfa73799875a5"
         ),
         "installer/README.md": (
-            "2cdbeb34454c1dced1a2e6c5698b9256adac76d8a4ab355fda00687349a670fe"
+            "85d0913c7f2486158820f228004abe5245558c3d9ec6b39ab4c36edb6eb575fc"
         ),
     }
     documentation_hashes = target_checks.get(
@@ -752,11 +752,21 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
     for path in categories["POST-SHORTCUT-LEGACY"]["paths"]:
         text = _read(path)
         lowered = text.lower()
-        if "retired semantic tombstone" in lowered:
-            if "rapp1_status.md" not in lowered:
-                errors.append(f"{path}: shortcut tombstone lacks current status")
-            if re.search(r"<script\b", text, flags=re.IGNORECASE):
-                errors.append(f"{path}: shortcut tombstone executes script")
+        if path.endswith(".html"):
+            for token in (
+                "rapp-history-source",
+                "rapp1_status.md",
+                "kernel_pin.json",
+                "content-security-policy",
+                "connect-src 'none'",
+                "form-action 'none'",
+            ):
+                if token not in lowered:
+                    errors.append(
+                        f"{path}: restored Shortcut page lacks {token!r}"
+                    )
+            if "retired semantic tombstone" in lowered:
+                errors.append(f"{path}: Shortcut page is still a semantic tombstone")
             continue
         for token in shortcut_rule["required_wire_tokens"]:
             if token.lower() not in lowered:
@@ -794,27 +804,37 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
         raw = _read(path)
         classification = disposition[path]
         if classification == "contained":
-            for pattern in plant_rule["forbidden_live_patterns"]:
-                if re.search(pattern, raw, flags=re.IGNORECASE):
-                    errors.append(f"{path}: live plant.sh CTA matches {pattern!r}")
+            lowered = raw.lower()
+            for token in (
+                "rapp1_status.md",
+                "kernel_pin.json",
+                "content-security-policy",
+                "form-action 'none'",
+            ):
+                if token not in lowered:
+                    errors.append(f"{path}: adapted page lacks {token!r}")
+            if (
+                "rapp-history-source" not in lowered
+                and "rapp-source-commit" not in lowered
+            ):
+                errors.append(f"{path}: adapted page lacks source provenance")
+            if "retired semantic tombstone" in lowered:
+                errors.append(f"{path}: adapted page is still a semantic tombstone")
+            if re.search(
+                r"\[Install now\]\([^)\n]*plant\.sh"
+                r"|<a\b[^>]*\bhref=[\"'][^\"']*plant\.sh",
+                raw,
+                flags=re.IGNORECASE,
+            ):
+                errors.append(f"{path}: live plant.sh CTA is active")
             if path == "pages/metropolis/index.html":
-                if re.search(
-                    r"(?:href|src)\s*=\s*[\"'][^\"']*plant|plant-from-discord|"
-                    r"plant\.sh",
-                    raw,
-                    flags=re.IGNORECASE,
-                ):
-                    errors.append(f"{path}: contained directory restores planting")
+                if "plant-from-discord" not in raw:
+                    errors.append(f"{path}: restored directory lost its mobile guide")
+                if "connect-src 'self'" not in lowered:
+                    errors.append(f"{path}: local snapshot fetch is not CSP-bounded")
             else:
-                if (
-                    "retired semantic tombstone" not in raw.lower()
-                    or "retired" not in raw.lower()
-                ):
-                    errors.append(
-                        f"{path}: distribution semantic tombstone is missing"
-                    )
-                if re.search(r"<script\b", raw, flags=re.IGNORECASE):
-                    errors.append(f"{path}: distribution tombstone executes script")
+                if "connect-src 'none'" not in lowered:
+                    errors.append(f"{path}: adapted page permits network access")
             continue
         active, marker_errors = _active_text(path, fixture)
         errors.extend(marker_errors)
@@ -831,12 +851,40 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
         if path in ownership_exclusions:
             continue
         text = _read(path)
+        if path == "cave/index.html":
+            lowered = text.lower()
+            for token in (
+                "rapp-history-source",
+                "rapp1-historical-section-start",
+                "rapp1-historical-section-end",
+                "kernel_pin.json",
+                "cubbies/index.json",
+            ):
+                if token not in lowered:
+                    errors.append(f"{path}: restored Cave page lacks {token!r}")
+            if re.search(
+                r"fetch\s*\(\s*[\"']https?://",
+                text,
+                flags=re.IGNORECASE,
+            ):
+                errors.append(f"{path}: restored Cave page performs remote fetch")
+            if "retired semantic tombstone" in lowered:
+                errors.append(f"{path}: Cave page is still a semantic tombstone")
+            continue
         if not any(
             term in text.lower() for term in cave_rule["required_disposition_terms"]
         ):
-            errors.append(f"{path}: cave installer/catalog history is not tombstoned")
+            errors.append(f"{path}: cave installer/catalog history lacks a disposition")
         active, marker_errors = _active_text(path, fixture)
         errors.extend(marker_errors)
+        if path == "cave/.well-known/rapp-cave.json":
+            try:
+                active_value = json.loads(text)
+            except json.JSONDecodeError:
+                active_value = None
+            if isinstance(active_value, dict):
+                active_value.pop("historical_observation", None)
+                active = json.dumps(active_value, sort_keys=True)
         for pattern in cave_rule["forbidden_live_patterns"]:
             match = re.search(pattern, active, flags=re.IGNORECASE)
             if match and not re.search(
@@ -850,7 +898,7 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
                 errors.append(f"{path}: cave script is executable rather than inert")
     structured_cave = {
         "cave/.well-known/rapp-cave.json": {
-            "status": "retired",
+            "status": "adapted-historical",
             "public": False,
             "raw_base": None,
             "cubbies_index": None,
@@ -862,8 +910,10 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
             "status": "retired-template",
         },
         "cave/cubbies/index.json": {
-            "status": "retired",
-            "cubbies": [],
+            "status": "historical-observation",
+            "accepted": False,
+            "active_distribution": False,
+            "streamable": False,
         },
         "cave/cubbies/kody-w/cubby.json": {
             "status": "retired",
@@ -881,6 +931,36 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
         streamable = value.get("streamable")
         if isinstance(streamable, dict) and streamable.get("agents") is not False:
             errors.append(f"{path}: cave agent streaming must remain false")
+        if path == "cave/.well-known/rapp-cave.json":
+            historical = value.get("historical_observation", {})
+            source = historical.get("source", {})
+            commit = "19ff7d9ff483c0eef258a3b2031da1fd74570854"
+            try:
+                expected_bytes = subprocess.check_output(
+                    ("git", "show", f"{commit}:{path}"),
+                    cwd=ROOT,
+                )
+                expected_record = json.loads(expected_bytes)
+                expected_blob = subprocess.check_output(
+                    ("git", "rev-parse", f"{commit}:{path}"),
+                    cwd=ROOT,
+                    text=True,
+                ).strip()
+            except (subprocess.CalledProcessError, json.JSONDecodeError) as exc:
+                errors.append(f"{path}: cannot verify historical observation: {exc}")
+                continue
+            if historical.get("record") != expected_record:
+                errors.append(f"{path}: historical observation bytes drifted")
+            expected_source = {
+                "repository": "kody-w/RAPP",
+                "commit": commit,
+                "path": path,
+                "blob": expected_blob,
+                "sha256": hashlib.sha256(expected_bytes).hexdigest(),
+                "bytes": len(expected_bytes),
+            }
+            if source != expected_source:
+                errors.append(f"{path}: historical observation provenance drifted")
 
     target_checks = fixture["target_checks"]
     footer = _read("pages/_site/partials/footer.html")
@@ -910,36 +990,46 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
         )
 
     installer_readme = _read("installer/README.md")
+    installer_active, installer_marker_errors = _active_text(
+        "installer/README.md",
+        fixture,
+    )
+    errors.extend(installer_marker_errors)
     for token in (
-        "HTTP 410 Gone",
-        "target-owned public distribution, deployment, and",
-        "download entrypoints in `installer/` are retired",
-        "No public runtime installation is available",
-        "repository-local `initialize-variant.sh` lineage utility remains active",
-        "only for fresh template clones",
-        "It is mint-once",
-        "performs no runtime install or deploy",
-        "not a public distribution",
-        "intentionally provides no public installation, deployment, or",
-        "download commands",
+        "Current delivery boundary",
+        "stable filenames",
+        "historical surface",
+        "default to local provenance",
+        "zero effects",
+        "KERNEL_PIN.json",
+        "reviewed dependency",
+        "authenticated fresh section-13",
+        "evidence is unavailable",
+        "kody-w/rapp-installer@brainstem-v0.6.9",
         "RAPP1_STATUS.md",
-        "RAPP1_AUTHORITY.json",
-        "RAPP/1 rev-5 authority",
+    ):
+        if token not in installer_active:
+            errors.append(f"installer/README.md: missing terminal claim {token!r}")
+    for token in (
+        "# `installer/` — Public install surface",
+        "**Stable filenames.**",
+        "**Versioned bundles append, not replace.**",
+        "## Scale rule",
     ):
         if token not in installer_readme:
-            errors.append(f"installer/README.md: missing terminal claim {token!r}")
+            errors.append(f"installer/README.md: historical contract lost {token!r}")
     if re.search(
         r"\b(?:curl|wget|irm|iex)\b|install\.(?:sh|ps1|cmd)\b|"
         r"\b(?:install now|one-liner|deploy to azure|download-and-import)\b|"
         r"https?://[^\s)]*/installer(?:/|\b)",
-        installer_readme,
+        installer_active,
         flags=re.IGNORECASE,
     ):
         errors.append("installer/README.md: restores public install instructions")
     if re.search(
         r"\b(?:installer|installation|distribution)\b[^.\n]{0,80}"
         r"\b(?:is|are|remains?)\s+(?:current|active|supported|operational)\b",
-        installer_readme,
+        installer_active,
         flags=re.IGNORECASE,
     ):
         errors.append("installer/README.md: restores a current installer claim")
@@ -990,8 +1080,20 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
         ),
         {},
     )
-    if rar_agent:
-        errors.append("cave/rar/index.json: retired installer agent is still indexed")
+    if (
+        not rar_agent
+        or rar_agent.get("status") != "historical-observation"
+        or rar_agent.get("accepted") is not False
+        or rar_agent.get("active_distribution") is not False
+        or rar_agent.get("streamable") is not False
+        or rar_agent.get("source", {}).get("present") is not False
+        or rar_agent.get("kernel_pin", {}).get("record") != "KERNEL_PIN.json"
+        or rar_agent.get("kernel_pin", {}).get("tag") != "brainstem-v0.6.9"
+    ):
+        errors.append(
+            "cave/rar/index.json: historical installer-agent observation is "
+            "missing or executable"
+        )
     if (
         rar_rapp.get("status") != "retired"
         or rar_rapp.get("active_distribution") is not False
@@ -1006,10 +1108,31 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
     }
     super_agent = super_entries.get(("agent", "rapp_installer_agent.py"), {})
     super_egg = super_entries.get(("egg", "cubby-rapp-installer.egg"), {})
-    if super_agent:
-        errors.append("cave/super-rar/index.json: retired installer agent is still indexed")
-    if super_egg.get("streamable") is not False:
-        errors.append("cave/super-rar/index.json: installer egg remains streamable")
+    if (
+        not super_agent
+        or super_agent.get("status") != "historical-observation"
+        or super_agent.get("accepted") is not False
+        or super_agent.get("active_distribution") is not False
+        or super_agent.get("streamable") is not False
+        or super_agent.get("source", {}).get("present") is not False
+        or super_agent.get("kernel_pin", {}).get("record") != "KERNEL_PIN.json"
+        or super_agent.get("kernel_pin", {}).get("tag") != "brainstem-v0.6.9"
+    ):
+        errors.append(
+            "cave/super-rar/index.json: historical installer-agent observation "
+            "is missing or executable"
+        )
+    if (
+        not super_egg
+        or super_egg.get("accepted") is not False
+        or super_egg.get("active_distribution") is not False
+        or super_egg.get("streamable") is not False
+        or super_egg.get("distribution", {}).get("execute") is not False
+    ):
+        errors.append(
+            "cave/super-rar/index.json: installer egg observation is missing "
+            "or executable"
+        )
 
     canon_rule = rules["canon_closure"]
     for path in target_checks["canon_closure"]["paths"]:
@@ -1136,7 +1259,7 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
 
     status = _read("RAPP1_STATUS.md")
     expected_status_sha256 = (
-        "2eac582c61170044011bfaf174bf89ea05421b598ce36d49660019e1f8f6c112"
+        "bce9a915822cad10a7fe80c4e8c4965c2ce0dd8e292a633c8d41d7ec33c3cfd3"
     )
     if hashlib.sha256(status.encode("utf-8")).hexdigest() != expected_status_sha256:
         errors.append("RAPP1_STATUS.md: code-owned owner-evidence hash drifted")

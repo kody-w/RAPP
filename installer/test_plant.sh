@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Assert the target-owned planter is a side-effect-free retirement.
+# Assert the target-owned planter preserves source behind safe defaults.
 
 set -euo pipefail
 
@@ -13,31 +13,39 @@ for executable in "$PLANT" "$ROOT/installer/integration_plant.sh"; do
     OUTPUT="$(cd "$ROOT" && bash "$executable" 2>&1)"
     STATUS=$?
     set -e
-    if [ "$STATUS" -ne 78 ]; then
-        echo "FAIL: $(basename "$executable") returned $STATUS; expected 78" >&2
+    if [ "$STATUS" -ne 0 ]; then
+        echo "FAIL: $(basename "$executable") returned $STATUS; expected plan exit 0" >&2
         exit 1
     fi
     case "$OUTPUT" in
-        *"410 Gone"*) ;;
+        *'"mode":"plan"'*'"apply_permitted":false'*) ;;
         *)
-            echo "FAIL: $(basename "$executable") has no 410 notice" >&2
+            echo "FAIL: $(basename "$executable") has no effect-free plan" >&2
             printf '%s\n' "$OUTPUT" >&2
             exit 1
             ;;
     esac
+    grep -q 'RAPP_RESTORED_SOURCE_COMMIT=' "$executable"
+    grep -q 'RAPP_RESTORED_HISTORICAL_SOURCE_BEGIN' "$executable"
+
+    set +e
+    REFUSAL="$(cd "$ROOT" && bash "$executable" --apply 2>&1)"
+    REFUSAL_STATUS=$?
+    set -e
+    if [ "$REFUSAL_STATUS" -ne 78 ]; then
+        echo "FAIL: $(basename "$executable") apply returned $REFUSAL_STATUS; expected 78" >&2
+        exit 1
+    fi
+    case "$REFUSAL" in
+        *"410 Gone"*RAPP1_STATUS.md*) ;;
+        *) echo "FAIL: $(basename "$executable") apply refusal is incomplete" >&2; exit 1 ;;
+    esac
 done
 
-case "$(bash "$PLANT" 2>&1 || true)" in
-    *RAPP1_STATUS.md*) ;;
-    *) echo "FAIL: planter retirement notice has no status guidance" >&2; exit 1 ;;
-esac
-
-if grep -Eq \
-    'GRAIL_RAW=|write_index_html|rapp-frame/|brainstem-egg/|gh repo create|git push|curl |Invoke-WebRequest' \
-    "$PLANT" "$ROOT/installer/integration_plant.sh"; then
-    echo "FAIL: retired planter still contains a producer or side-effect path" >&2
-    exit 1
-fi
+grep -q 'write_index_html()' "$PLANT"
+grep -q 'gh repo create' "$PLANT"
+grep -q 'git push' "$PLANT"
+grep -q 'brainstem-egg/' "$PLANT"
 
 for route in \
     installer/plant.html \
@@ -45,19 +53,27 @@ for route in \
     installer/seed.html \
     pages/metropolis/plant-from-discord.html
 do
-    grep -qi "retired semantic tombstone" "$ROOT/$route" || {
-        echo "FAIL: $route is not a semantic tombstone" >&2
+    grep -qi "rapp-history-source" "$ROOT/$route" || {
+        echo "FAIL: $route has no historical source provenance" >&2
         exit 1
     }
-    if grep -Eqi '<script|<iframe|<form|fetch\(|plant\.sh' "$ROOT/$route"; then
-        echo "FAIL: $route retains an executable caller" >&2
+    grep -qi "KERNEL_PIN.json" "$ROOT/$route" || {
+        echo "FAIL: $route does not route installer context to the Grail pin" >&2
+        exit 1
+    }
+    grep -qi "Content-Security-Policy" "$ROOT/$route" || {
+        echo "FAIL: $route has no browser containment policy" >&2
+        exit 1
+    }
+    if grep -qi "retired semantic tombstone" "$ROOT/$route"; then
+        echo "FAIL: $route lost its historical body to a semantic tombstone" >&2
         exit 1
     fi
 done
 
-if grep -q 'plant-from-discord' "$ROOT/pages/metropolis/index.html"; then
-    echo "FAIL: metropolis still links the retired caller" >&2
+if ! grep -q 'plant-from-discord' "$ROOT/pages/metropolis/index.html"; then
+    echo "FAIL: metropolis lost the restored mobile planning guide" >&2
     exit 1
 fi
 
-echo "plant retirement: shell callers return 410; browser routes are inert semantic tombstones"
+echo "plant compatibility: shell callers preserve source with safe plans; browser routes preserve full local planning artifacts"

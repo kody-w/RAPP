@@ -1,26 +1,496 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Retired semantic tombstone — RAPP Metropolis</title>
-<meta name="description" content="The former neighborhood directory is retired and inert.">
-<meta name="robots" content="noindex,nofollow">
-<link rel="stylesheet" href="/RAPP/pages/_site/css/tokens.css">
-<link rel="stylesheet" href="/RAPP/pages/_site/css/base.css">
-<style>main{max-width:720px;margin:0 auto;padding:72px 24px}.status{color:var(--warn);font:700 12px var(--font-mono);text-transform:uppercase;letter-spacing:.1em}h1{font-size:clamp(2rem,7vw,3.5rem);margin:12px 0 18px}.box{margin:28px 0;padding:18px;border:1px solid var(--border2);border-radius:12px;background:var(--surface)}nav{display:flex;gap:12px;flex-wrap:wrap}</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RAPP Metropolis — decentralized neighborhood directory</title>
+  <meta name="description" content="A Kazaa/torrent-style index of active RAPP neighborhoods. Brainstems are the seeders. Agents are the work. The protocol is the network." />
+  <meta property="og:title" content="RAPP Metropolis" />
+  <meta property="og:description" content="Decentralized index of active RAPP neighborhoods. Brainstems are the seeders. Agents are the work." />
+  <meta name="robots" content="noindex,nofollow,noarchive" />
+  <meta name="rapp-record-kind" content="historical-directory-explorer" />
+  <meta name="rapp-accepted" content="false" />
+  <meta name="rapp-protocol-authority" content="false" />
+  <meta name="rapp-source-commit" content="1d4141f32a0b90c8de24be136478cc583bed6474" />
+  <meta name="rapp-source-blob" content="96bb6399db2f43bc70f02af9871b69b81f506db3" />
+  <meta name="rapp-source-sha256" content="5ab10b8b53f0f4959ec4eb1e7b661a9536f7453f5ff9f7d4f5f3915cc8acf268" />
+  <meta name="rapp-local-data" content="./index.json,./federated-demo.json,./activity-snapshot.json" />
+  <meta name="rapp-grail-pin" content="kody-w/rapp-installer@brainstem-v0.6.9" />
+  <meta name="rapp-grail-pin-record" content="../../KERNEL_PIN.json" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <script type="application/json" id="metropolis-provenance">
+    {
+      "record_kind": "historical-directory-explorer",
+      "accepted": false,
+      "rapp_protocol_authority": false,
+      "fullest_source_commit": "1d4141f32a0b90c8de24be136478cc583bed6474",
+      "fullest_source_blob": "96bb6399db2f43bc70f02af9871b69b81f506db3",
+      "local_snapshots": ["./index.json", "./federated-demo.json", "./activity-snapshot.json"],
+      "immutable_grail_evidence": {
+        "pin_record": "../../KERNEL_PIN.json",
+        "repository": "kody-w/rapp-installer",
+        "tag": "brainstem-v0.6.9",
+        "install_action": false
+      },
+      "remote_tracker_fetch": false,
+      "live_probe": false,
+      "join_or_registration_action": false
+    }
+  </script>
+  <style>
+    :root {
+      --bg: #0a0e14;
+      --bg-card: #0d1117;
+      --fg: #e6edf3;
+      --muted: #8b949e;
+      --accent: #58a6ff;
+      --gate: #db61a2;
+      --green: #3fb950;
+      --orange: #f0883e;
+      --border: #30363d;
+      --row-hover: #161b22;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg);
+                  font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code { font: 12px/1.4 ui-monospace, "SF Mono", Menlo, monospace;
+           background: var(--row-hover); padding: 1px 5px; border-radius: 3px; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 28px 20px 80px; }
+
+    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; }
+    h1 { margin: 0; font-size: 26px; letter-spacing: -0.01em; }
+    .subtitle { color: var(--muted); font-size: 14px; margin: 4px 0 24px; }
+
+    .pill { display: inline-block; background: rgba(63,185,80,0.15); color: var(--green);
+            font-size: 11px; padding: 3px 9px; border-radius: 999px; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; }
+    .pill.warn { background: rgba(240,136,62,0.15); color: var(--orange); }
+    .pill.gate { background: rgba(219,97,162,0.15); color: var(--gate); }
+    .pill.template { background: rgba(88,166,255,0.15); color: var(--accent); }
+
+    .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+    .search { flex: 1; min-width: 260px; padding: 8px 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; color: var(--fg); font: inherit; }
+    .filter-btn { background: var(--bg-card); border: 1px solid var(--border); color: var(--fg); padding: 6px 11px; border-radius: 6px; cursor: pointer; font: inherit; font-size: 13px; }
+    .filter-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+    .stats { display: flex; gap: 24px; flex-wrap: wrap; padding: 14px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 18px; font-size: 13px; }
+    .stat-num { font-size: 22px; font-weight: 700; color: var(--accent); }
+    .stat-label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+    table { width: 100%; border-collapse: collapse; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+    tr:last-child td { border-bottom: none; }
+    tr.entry { cursor: pointer; }
+    tr.entry:hover { background: var(--row-hover); }
+    .seed-bar { display: inline-block; width: 60px; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; vertical-align: middle; margin-right: 6px; }
+    .seed-bar > span { display: block; height: 100%; background: var(--green); width: 0%; transition: width 0.4s ease; }
+
+    .tags { display: flex; gap: 4px; flex-wrap: wrap; }
+    .tag { background: var(--row-hover); color: var(--muted); padding: 1px 7px; border-radius: 3px; font-size: 11px; }
+
+    footer { margin-top: 36px; padding-top: 24px; border-top: 1px solid var(--border);
+             color: var(--muted); font-size: 12px; }
+
+    .empty { padding: 40px; text-align: center; color: var(--muted); }
+    .loading { padding: 30px; text-align: center; color: var(--muted); font-style: italic; }
+    .source-note { display: block; color: var(--orange); font: 10px/1.35 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: 0.03em; text-transform: none; }
+    .identity-note { display: block; margin-top: 5px; color: var(--orange); font: 10px/1.35 ui-monospace, "SF Mono", Menlo, monospace; }
+    .identity-note code { display: inline; color: #f3c969; overflow-wrap: anywhere; }
+    .recorded-link { color: var(--accent); }
+    .recorded-link code { display: block; margin-top: 3px; color: var(--muted); overflow-wrap: anywhere; }
+    .snapshot-detail { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; white-space: nowrap; }
+    .tracker-source { display: inline-block; margin-top: 5px; color: var(--muted); font-size: 10px; }
+    .federation-map { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; align-items: center;
+                      margin: 0 0 18px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-card); }
+    .federation-node { min-width: 0; padding: 10px 12px; border: 1px solid rgba(88,166,255,0.45); border-radius: 7px; background: var(--row-hover); }
+    .federation-node.peer { border-color: rgba(219,97,162,0.5); }
+    .federation-node strong, .federation-node code { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .federation-node code { margin-top: 4px; color: var(--muted); background: transparent; padding: 0; }
+    .federation-arrow { color: var(--accent); font-size: 22px; text-align: center; }
+    .federation-arrow small { display: block; color: var(--muted); font: 9px/1.3 ui-monospace, "SF Mono", Menlo, monospace; }
+    .historical-instruction { text-decoration: line-through; text-decoration-color: var(--orange); }
+
+    @media (max-width: 760px) {
+      .federation-map { grid-template-columns: 1fr; }
+      .federation-arrow { transform: rotate(90deg); }
+      table, thead, tbody, th, td, tr { display: block; }
+      thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+      table { border: 0; background: transparent; }
+      tr.entry { margin-bottom: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-card); overflow: hidden; }
+      tr.entry:hover { background: var(--bg-card); }
+      td { display: grid; grid-template-columns: minmax(95px, 0.35fr) minmax(0, 1fr); gap: 10px; border-bottom: 1px solid var(--border); }
+      td::before { content: attr(data-label); color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+      td:last-child { border-bottom: 0; }
+    }
+  </style>
 </head>
 <body>
-<main>
-  <p class="status">Retired semantic tombstone · 2026-09-02</p>
-  <h1>RAPP Metropolis is retired.</h1>
-  <p>The former decentralized-neighborhood directory is preserved only as a
-    dated URL. It does not load a roster, probe repositories, advertise an
-    active catalog, register a place, or offer a join action.</p>
-  <div class="box"><strong>Historical observations are not registry truth.</strong>
-    Current acceptance requires a signed, monotonic RAPP/1 §13 registry rooted
-    in an out-of-band owner anchor.</div>
-  <nav><a href="/RAPP/pages/">Public site index</a><a href="/RAPP/RAPP1_STATUS.md">RAPP/1 status</a></nav>
-</main>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>🏙 RAPP Metropolis</h1>
+      <div class="subtitle">Decentralized index of active RAPP neighborhoods. Brainstems are the seeders. Agents are the work. <em>The protocol is the network.</em></div>
+    </div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <a href="../kernel.html" class="pill" style="background: rgba(125,240,200,0.16); color: #7df0c8;">📖 Kernel hub</a>
+      <a href="./plant-from-discord.html" class="pill">📱 Plant from Discord</a>
+      <a href="../../RAPP1_STATUS.md" class="pill" style="background: rgba(248,81,73,0.16); color: #f85149;">RAPP/1 conformance status</a>
+      <a href="https://github.com/kody-w/RAPP/blob/main/MASTER_PLAN.md" class="pill">⭐ Master Plan</a>
+    </div>
+  </header>
+
+  <div class="stats" id="stats">
+    <div><div class="stat-num" id="stat-total">—</div><div class="stat-label">Listed</div></div>
+    <div><div class="stat-num" id="stat-public">—</div><div class="stat-label">Live<span class="source-note">historical label · non-template</span></div></div>
+    <div><div class="stat-num" id="stat-gated">—</div><div class="stat-label">Templates</div></div>
+    <div><div class="stat-num" id="stat-private">—</div><div class="stat-label">Private</div></div>
+    <div><div class="stat-num" id="stat-live">—</div><div class="stat-label">Verified 200<span class="source-note">recorded snapshot field</span></div></div>
+    <div><div class="stat-num" id="trackers-count">1</div><div class="stat-label">Trackers federated<span class="source-note">local files visualized</span></div></div>
+  </div>
+
+  <div class="federation-map" aria-label="Historical federation visualization">
+    <div class="federation-node">
+      <strong id="canonical-tracker-name">RAPP Metropolis (canonical)</strong>
+      <code>./index.json · <span id="canonical-entry-count">—</span> entries</code>
+    </div>
+    <div class="federation-arrow" aria-hidden="true">⇄<small>recorded references<br>local files only</small></div>
+    <div class="federation-node peer">
+      <strong id="peer-tracker-name">RAPP Metropolis — federated demo tracker</strong>
+      <code>./federated-demo.json · <span id="peer-entry-count">—</span> entries</code>
+    </div>
+  </div>
+
+  <div class="controls">
+    <input class="search" id="q" placeholder="search by name, kind, or tag…" autocomplete="off" />
+    <button class="filter-btn active" data-filter="all">all</button>
+    <button class="filter-btn" data-filter="live" title="Historical label: non-template entries">live</button>
+    <button class="filter-btn" data-filter="templates">templates</button>
+    <button class="filter-btn" data-filter="public">public</button>
+    <button class="filter-btn" data-filter="gated">gated</button>
+    <button class="filter-btn" data-filter="private">private</button>
+    <button class="filter-btn" data-filter="braintrust">braintrust</button>
+    <button class="filter-btn" data-filter="workspace">workspace</button>
+  </div>
+
+  <table id="grid">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Kind</th>
+        <th>Visibility</th>
+        <th>Tags</th>
+        <th>Active 15m<span class="source-note">at frozen capture</span></th>
+        <th>Seeders</th>
+        <th>Join<span class="source-note">inactive recorded field</span></th>
+      </tr>
+    </thead>
+    <tbody id="rows"><tr><td colspan="7" class="loading">Loading the metropolis…</td></tr></tbody>
+  </table>
+
+  <footer>
+    <p><span class="source-note">Preserved 2026 source copy · descriptive history, not current protocol authority.</span>This is a Kazaa/torrent-style index. Each entry points at a real GitHub repo (the seed). When a brainstem joins a neighborhood, that brainstem becomes a seeder. The metropolis itself is just a directory — there is no central server, no platform-operated database, no admission ceremony. <strong>Anyone can fork this index and run their own tracker.</strong> The protocol is the network, not this URL.</p>
+    <p>Schema: <code>rapp-metropolis-index/1.0</code> · Tracker: <code>kody-w</code> · Source: <a href="https://github.com/kody-w/RAPP/blob/main/pages/metropolis/index.json">index.json</a> · <a href="https://github.com/kody-w/RAPP/blob/main/pages/metropolis/README.md">protocol README</a></p>
+    <p><span class="source-note">Inactive historical instruction retained verbatim.</span><span class="historical-instruction">To register your own neighborhood: open a PR adding an entry to <code>pages/metropolis/index.json</code>, OR run your own tracker by forking this directory.</span></p>
+    <p><span class="source-note">Immutable Grail implementation evidence · not an install or download action.</span>Historical brainstem and installer context resolves to the checked-in <a href="../../KERNEL_PIN.json"><code>KERNEL_PIN.json</code></a> and the pinned source <a href="https://github.com/kody-w/rapp-installer/tree/brainstem-v0.6.9"><code>kody-w/rapp-installer@brainstem-v0.6.9</code></a>. The three frozen kernel bytes remain read-only.</p>
+  </footer>
+</div>
+
+<script>
+(async function () {
+  const rows = document.getElementById("rows");
+  const LOCAL_TRACKER_REDIRECTS = new Map([
+    ["./index.json", "./index.json"],
+    ["./federated-demo.json", "./federated-demo.json"],
+    ["https://kody-w.github.io/RAPP/pages/metropolis/index.json", "./index.json"],
+    ["https://kody-w.github.io/RAPP/pages/metropolis/federated-demo.json", "./federated-demo.json"]
+  ]);
+  let entries = [];
+  let activeFilter = "all";
+  let activeQuery = "";
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function pillFor(entry) {
+    const v = entry.visibility;
+    let pills = "";
+    if (v === "public") pills += '<span class="pill">public</span> ';
+    else if (v === "public-gate") pills += '<span class="pill gate">gated</span> ';
+    else if (v === "private" || v === "private-workspace") pills += '<span class="pill warn">private</span> ';
+    else pills += '<span class="pill warn">' + (v || "?") + '</span> ';
+    if (entry.is_template || entry.entry_role === "template") {
+      pills += '<span class="pill template">template</span>';
+    }
+    return pills;
+  }
+
+  function joinHint(e) {
+    // Inert historical source retained at the exact adaptation point:
+    // if (e.gate_url) return '<a href="' + e.gate_url + '">visit gate →</a>';
+    // if (e.gate_repo) return '<a href="' + e.gate_repo + '">visit repo →</a>';
+    // return '<span style="color: var(--muted)">' + (e.join_via || "—") + '</span>';
+    if (e.gate_url) return '<span class="recorded-link">visit gate →<code>' + escapeHtml(e.gate_url) + '</code><span class="source-note">inactive historical field</span></span>';
+    if (e.gate_repo) return '<span class="recorded-link">visit repo →<code>' + escapeHtml(e.gate_repo) + '</code><span class="source-note">inactive historical field</span></span>';
+    return '<span style="color: var(--muted)">' + escapeHtml(e.join_via || "—") + '<span class="source-note">inactive historical field</span></span>';
+  }
+
+  function isTemplate(e) { return !!(e.is_template || e.entry_role === "template"); }
+  function matchesFilter(e) {
+    if (activeFilter === "all") return true;
+    if (activeFilter === "live") return !isTemplate(e);
+    if (activeFilter === "templates") return isTemplate(e);
+    if (activeFilter === "public") return e.visibility === "public" && !isTemplate(e);
+    if (activeFilter === "gated") return e.visibility === "public-gate";
+    if (activeFilter === "private") return e.visibility === "private" || e.visibility === "private-workspace";
+    if (activeFilter === "braintrust") return e.kind === "braintrust";
+    if (activeFilter === "workspace") return e.kind === "workspace";
+    return true;
+  }
+
+  function matchesQuery(e) {
+    if (!activeQuery) return true;
+    const q = activeQuery.toLowerCase();
+    return (e.name || "").toLowerCase().includes(q)
+        || (e.display_name || "").toLowerCase().includes(q)
+        || (e.kind || "").toLowerCase().includes(q)
+        || (e.neighborhood_rappid || "").toLowerCase().includes(q)
+        || (e._from_tracker || "").toLowerCase().includes(q)
+        || (e.tags || []).some(t => t.toLowerCase().includes(q));
+  }
+
+  function render() {
+    const filtered = entries.filter(e => matchesFilter(e) && matchesQuery(e));
+    if (filtered.length === 0) {
+      rows.innerHTML = '<tr><td colspan="7" class="empty">No matches.</td></tr>';
+      return;
+    }
+    rows.innerHTML = filtered.map(e => {
+      const seedW = Math.min(100, ((e.seeders_live ?? e.seeders_min ?? 0) / 5) * 100);
+      const seedCount = e.seeders_live != null ? e.seeders_live : (e.seeders_min || 0);
+      // Inert historical source retained at the exact adaptation point:
+      // const tags = (e.tags || []).map(t => '<span class="tag">' + t + '</span>').join("");
+      // const repoLink = e.gate_repo ? '<a href="' + e.gate_repo + '">' + (e.display_name || e.name) + '</a>' : (e.display_name || e.name);
+      // const reachable = e.live_status === "reachable" ? " 🟢" : (e.live_status === "unreachable" ? " ⚫" : "");
+      const tags = (e.tags || []).map(t => '<span class="tag">' + escapeHtml(t) + '</span>').join("");
+      const repoLink = '<span class="recorded-link">' + escapeHtml(e.display_name || e.name) + '</span>';
+      const reachable = e.live_status === "reachable"
+        ? " 🟢"
+        : (e.live_status === "unreachable"
+          ? " ⚫"
+          : (e.live_status === "verified_200" ? ' <span title="Recorded historical status">◌</span>' : ""));
+      const activeId = "active-" + (e.neighborhood_rappid || e.name).replace(/[^a-z0-9]/gi, "-");
+      // Historical source: const activeCell = '<span id="' + activeId + '" class="muted">…</span>';
+      const retained = e._retained_event_count != null
+        ? '<span class="snapshot-detail">' + e._retained_event_count + ' retained events · ' + e._retained_actor_count + ' actors'
+          + (e._activity_captured_at ? ' · captured ' + escapeHtml(e._activity_captured_at.slice(0, 10)) : "") + '</span>'
+        : "";
+      const activeValue = e._activity_unavailable
+        ? "—"
+        : (e.active_count == null
+          ? "…"
+          : (e.active_count > 0
+            ? '<span style="color:var(--green); font-weight:600;">🟢 ' + e.active_count + '</span>'
+            : '<span class="muted">○ 0</span>'));
+      const activeCell = '<span id="' + activeId + '" class="muted">' + activeValue + retained + '</span>';
+      const identity = e.neighborhood_rappid
+        ? '<span class="identity-note">historical ID · unaccepted <code>' + escapeHtml(e.neighborhood_rappid) + '</code></span>'
+        : '<span class="identity-note">historical ID · none recorded</span>';
+      const tracker = '<span class="tracker-source">source: ' + escapeHtml(e._from_tracker || "canonical snapshot") + '</span>';
+      return `
+        <tr class="entry" data-rappid="${e.neighborhood_rappid || ''}" data-slug="${(e.gate_repo || '').replace(/^https?:\/\/github\.com\//, '').replace(/\/$/, '')}">
+          <td data-label="Name"><strong>${repoLink}</strong>${reachable}<br><code>${escapeHtml(e.name)}</code>${identity}${tracker}</td>
+          <td data-label="Kind">${escapeHtml(e.kind || "—")}</td>
+          <td data-label="Visibility">${pillFor(e)}</td>
+          <td data-label="Tags"><div class="tags">${tags}</div></td>
+          <td data-label="Active 15m">${activeCell}</td>
+          <td data-label="Seeders"><span class="seed-bar"><span style="width:${seedW}%"></span></span>${seedCount}</td>
+          <td data-label="Join">${joinHint(e)}</td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  // Live presence per entry: count unique actors active in the last 15 min on
+  // each repo's GitHub events stream. Static Data Covenant (RAR CONSTITUTION.md
+  // Article XXIV): the browser never calls api.github.com. CI harvests these
+  // events into activity-snapshot.json (scripts/harvest-metropolis-activity.py)
+  // and this page just reads that committed snapshot.
+  // Graceful fail (— displayed) when the snapshot is missing an entry.
+  async function probeActiveCounts() {
+    // Historical source line: const cutoff = Date.now() - 15 * 60 * 1000;
+    let cutoff = 0;
+    let capturedAt = "";
+    let activity = {};
+    try {
+      const r = await fetch("./activity-snapshot.json", { cache: "no-store" });
+      if (r.ok) {
+        const snapshot = await r.json();
+        activity = snapshot.activity || {};
+        const generatedAt = new Date(snapshot.generated_at || 0).getTime();
+        const windowMinutes = Number(snapshot.window_minutes || 15);
+        cutoff = generatedAt - windowMinutes * 60 * 1000;
+        capturedAt = snapshot.generated_at || "";
+      }
+    } catch { /* fall through with empty activity; cells show — below */ }
+
+    for (const e of entries) {
+      const slug = (e.gate_repo || "").replace(/^https?:\/\/github\.com\//, "").replace(/\/$/, "");
+      const cellId = "active-" + (e.neighborhood_rappid || e.name).replace(/[^a-z0-9]/gi, "-");
+      const cell = document.getElementById(cellId);
+      if (!cell) continue;
+      if (!slug || (e.visibility || "").startsWith("private")) {
+        e._activity_unavailable = true;
+        cell.textContent = "—";
+        continue;
+      }
+      const events = activity[slug];
+      if (!events) {
+        e._activity_unavailable = true;
+        cell.textContent = "—";
+        continue;
+      }
+      const actors = new Set();
+      const retainedActors = new Set();
+      for (const ev of events) {
+        if (ev.actor && ev.actor.login) retainedActors.add(ev.actor.login);
+        if (new Date(ev.created_at).getTime() >= cutoff && ev.actor && ev.actor.login) {
+          actors.add(ev.actor.login);
+        }
+      }
+      e._retained_event_count = events.length;
+      e._retained_actor_count = retainedActors.size;
+      e._activity_captured_at = capturedAt;
+      const retained = '<span class="snapshot-detail">' + events.length + ' retained events · ' + retainedActors.size + ' actors'
+        + (capturedAt ? ' · captured ' + escapeHtml(capturedAt.slice(0, 10)) : "") + '</span>';
+      if (actors.size > 0) {
+        // Historical source: cell.innerHTML = '<span style="color:var(--green); font-weight:600;">🟢 ' + actors.size + '</span>';
+        cell.innerHTML = '<span style="color:var(--green); font-weight:600;">🟢 ' + actors.size + '</span>' + retained;
+        e.active_count = actors.size;
+      } else {
+        // Historical source: cell.innerHTML = '<span class="muted">○ 0</span>';
+        cell.innerHTML = '<span class="muted">○ 0</span>' + retained;
+        e.active_count = 0;
+      }
+    }
+  }
+
+  function updateStats() {
+    const T = entries.length;
+    const live = entries.filter(e => !isTemplate(e)).length;
+    const tpl = entries.filter(e => isTemplate(e)).length;
+    const G = entries.filter(e => e.visibility === "public-gate").length;
+    const Pr = entries.filter(e => (e.visibility || "").startsWith("private")).length;
+    const L = entries.filter(e => e.live_status === "reachable" || e.live_status === "verified_200").length;
+    document.getElementById("stat-total").textContent = T;
+    document.getElementById("stat-public").textContent = live;
+    document.getElementById("stat-gated").textContent = tpl;
+    document.getElementById("stat-private").textContent = Pr;
+    document.getElementById("stat-live").textContent = L;
+  }
+
+  // Live-probe: fetch each entry's gate URL with a HEAD; mark reachable / unreachable.
+  // Done after the initial render so the page paints fast.
+  async function probeLive() {
+    // Runtime containment: preserve the original probe source below, but never
+    // execute it. Recorded live_status values remain dated snapshot fields.
+    return;
+
+    const probes = entries.map(async (e) => {
+      const url = e.gate_url || e.gate_repo;
+      if (!url) { e.live_status = "unknown"; return; }
+      try {
+        const r = await fetch(url, { method: "HEAD", mode: "no-cors", cache: "no-store" });
+        e.live_status = "reachable";
+      } catch {
+        e.live_status = "unreachable";
+      }
+    });
+    await Promise.allSettled(probes);
+    render(); updateStats();
+  }
+
+  // Real cross-tracker federation: fetch the canonical index, then walk
+  // federated_trackers and merge their entries (deduped by neighborhood_rappid).
+  // Annotates each entry with the source tracker so the UI can show which
+  // entries came from peers vs. the canonical tracker.
+  async function fetchTracker(url, fetched) {
+    if (fetched.has(url)) return null;
+    fetched.add(url);
+    const localUrl = LOCAL_TRACKER_REDIRECTS.get(url);
+    if (!localUrl) return null;
+    try {
+      // Historical source line retained for provenance:
+      // const r = await fetch(url, { cache: "no-store" });
+      const r = await fetch(localUrl, { cache: "no-store" });
+      if (!r.ok) return null;
+      return await r.json();
+    } catch { return null; }
+  }
+
+  try {
+    const fetched = new Set();
+    const canonical = await fetchTracker("./index.json", fetched);
+    if (!canonical) throw new Error("canonical index unreachable");
+
+    // Index by neighborhood_rappid; canonical wins on collision.
+    const byRappid = new Map();
+    const byName = new Map();
+    const trackerSources = new Set([canonical.tracker_url || "canonical"]);
+    document.getElementById("canonical-tracker-name").textContent = canonical.tracker_name || "RAPP Metropolis (canonical)";
+    document.getElementById("canonical-entry-count").textContent = String((canonical.entries || []).length);
+    for (const e of canonical.entries || []) {
+      e._from_tracker = canonical.tracker_url || "canonical";
+      if (e.neighborhood_rappid) byRappid.set(e.neighborhood_rappid, e);
+      else byName.set(e.name, e);
+    }
+
+    // Walk federated_trackers and merge — entries unique to peers materialize
+    // here; conflicts (same rappid) defer to the canonical version.
+    for (const peerUrl of (canonical.federated_trackers || [])) {
+      const peer = await fetchTracker(peerUrl, fetched);
+      if (!peer) continue;
+      trackerSources.add(peer.tracker_url || peerUrl);
+      document.getElementById("peer-tracker-name").textContent = peer.tracker_name || "RAPP Metropolis — federated demo tracker";
+      document.getElementById("peer-entry-count").textContent = String((peer.entries || []).length);
+      for (const e of peer.entries || []) {
+        e._from_tracker = peer.tracker_url || peerUrl;
+        if (e.neighborhood_rappid && !byRappid.has(e.neighborhood_rappid)) {
+          byRappid.set(e.neighborhood_rappid, e);
+        } else if (!e.neighborhood_rappid && !byName.has(e.name)) {
+          byName.set(e.name, e);
+        }
+        // (collision = canonical wins; we do nothing.)
+      }
+    }
+
+    entries = [...byRappid.values(), ...byName.values()];
+    document.getElementById("trackers-count")?.textContent &&
+      (document.getElementById("trackers-count").textContent = String(trackerSources.size));
+    render(); updateStats();
+    probeLive();
+    probeActiveCounts();
+  } catch (e) {
+    rows.innerHTML = '<tr><td colspan="7" class="empty">Could not load metropolis index. ' + (e.message || "") + '</td></tr>';
+  }
+
+  document.getElementById("q").addEventListener("input", (e) => { activeQuery = e.target.value; render(); });
+  for (const btn of document.querySelectorAll(".filter-btn")) {
+    btn.addEventListener("click", () => {
+      for (const b of document.querySelectorAll(".filter-btn")) b.classList.remove("active");
+      btn.classList.add("active");
+      activeFilter = btn.dataset.filter;
+      render();
+    });
+  }
+})();
+</script>
 </body>
 </html>

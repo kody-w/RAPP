@@ -1,7 +1,27 @@
 {
   "name": "rapp-osi-browser",
   "version": "1.0.0",
-  "description": "Retired historical OSI tether browser suite; no runnable package scripts or dependencies remain.",
+  "description": "Explicit-opt-in Playwright and PeerJS L4a tether suite; defaults to an offline-safe skip and never installs or downloads dependencies.",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "scripts": {
+    "test": "node L4a-tether.spec.mjs"
+  },
+  "dependencies": {
+    "playwright": "^1.49.0"
+  },
+  "rappHistoricalSource": {
+    "commit": "6bd45f00981959a3fdfcc64fb32608533aae5021",
+    "blobs": {
+      "L4a-tether.spec.mjs": "f416135f7ea8e95254668a4e046b539bad78870c",
+      "fixture.html": "a0ca7b2708bb540b1660ae39701a31d259eaeacd",
+      "package.json": "6efa882ae68eaddf82b864702e82975a9adfa87c"
+    }
+  },
+  "rappSafetyDefaults": {
+    "externalExecutionEnabled": false,
+    "automaticInstall": false,
+    "automaticDownload": false,
+    "credentialUse": false
+  }
 }

@@ -1,25 +1,523 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Retired semantic tombstone — QR planter</title>
-<meta name="description" content="The former QR planter is retired and inert.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0d1117">
+<title>Share via QR — RAPP front door</title>
+<meta name="description" content="Generate a QR code that points at any RAPP front door. Print it, share it, stick it on a wall.">
 <meta name="robots" content="noindex,nofollow">
-<link rel="stylesheet" href="/RAPP/pages/_site/css/tokens.css">
-<link rel="stylesheet" href="/RAPP/pages/_site/css/base.css">
-<style>main{max-width:720px;margin:0 auto;padding:72px 24px}.status{color:var(--warn);font:700 12px var(--font-mono);text-transform:uppercase;letter-spacing:.1em}h1{font-size:clamp(2rem,7vw,3.5rem);margin:12px 0 18px}.box{margin:28px 0;padding:18px;border:1px solid var(--border2);border-radius:12px;background:var(--surface)}nav{display:flex;gap:12px;flex-wrap:wrap}</style>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="rapp-history-source" content="commit=821375ea6afe32c63cb1838cd8e64122cd3628ac; blob=400c9a890137f4e871fa224ffa66228bd78bdfe9; sha256=a2c1a0a6a33c72715fff7037058539a1ee4f9333f992f8a0db37ba5634b6cbed">
+<meta name="rapp-historical-boundary" content="Canonicalization, identity, frames, wire, eggs, registry, trust, and protocol evolution follow RAPP/1 rev-5 through RAPP1_AUTHORITY.json and RAPP1_STATUS.md.">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #0d1117;
+    color: #e6edf3;
+    min-height: 100vh;
+    min-height: 100dvh;
+    -webkit-text-size-adjust: 100%;
+  }
+  .wrap {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 24px;
+    padding-top: max(24px, env(safe-area-inset-top, 24px));
+  }
+  header { text-align: center; margin-bottom: 24px; }
+  h1 {
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin-bottom: 6px;
+  }
+  .sub { color: #8b949e; font-size: 14px; }
+  .pane {
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .pane h2 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #c9d1d9;
+  }
+  label {
+    display: block;
+    font-size: 12px;
+    color: #8b949e;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+  }
+  input[type="text"] {
+    width: 100%;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: #e6edf3;
+    font-size: 14px;
+    font-family: "SF Mono", Menlo, monospace;
+  }
+  input[type="text"]:focus { outline: none; border-color: #1f6feb; }
+  .options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  @media (max-width: 480px) { .options { grid-template-columns: 1fr; } }
+  button {
+    background: #1f6feb;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    -webkit-appearance: none;
+    font-family: inherit;
+  }
+  button.secondary {
+    background: #21262d;
+    color: #c9d1d9;
+    border: 1px solid #30363d;
+  }
+  button:hover { background: #2477f3; }
+  button.secondary:hover { background: #2d333b; }
+  .qr-display {
+    text-align: center;
+    margin-top: 16px;
+  }
+  .qr-img {
+    display: inline-block;
+    background: white;
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    max-width: 100%;
+  }
+  .qr-img img { display: block; width: min(400px, 100%); max-width: 100%; height: auto; }
+  .qr-target {
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 12px;
+    color: #8b949e;
+    word-break: break-all;
+    margin-bottom: 12px;
+  }
+  .preset-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+  .preset {
+    background: #21262d;
+    color: #c9d1d9;
+    border: 1px solid #30363d;
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .preset:hover { background: #2d333b; }
+  footer {
+    text-align: center;
+    margin-top: 24px;
+    color: #6e7681;
+    font-size: 12px;
+  }
+  footer a { color: #58a6ff; text-decoration: none; }
+  .info-box {
+    background: #161b22;
+    border: 1px dashed #30363d;
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 12px;
+    color: #8b949e;
+    line-height: 1.6;
+    margin-top: 12px;
+  }
+  .rapp-safety-note {
+    color: #d29922;
+    border-color: #d29922;
+  }
+</style>
 </head>
 <body>
-<main>
-  <p class="status">Retired semantic tombstone · 2026-09-02</p>
-  <h1>The QR planter is retired.</h1>
-  <p>The former camera and QR registration route is no longer an active
-    surface. This static record opens no camera, stores no token, and performs
-    no join, plant, or network action.</p>
-  <div class="box"><strong>Historical URL only.</strong> QR front-gate notes
-    remain design history, not an acceptance or identity mechanism.</div>
-  <nav><a href="/RAPP/installer/">Installer status</a><a href="/RAPP/RAPP1_STATUS.md">RAPP/1 status</a><a href="/RAPP/pages/docs/viewer.html?doc=QR_FRONT_GATE">Historical QR notes</a></nav>
-</main>
+
+<div class="wrap">
+  <header>
+    <h1>📷 Share via QR</h1>
+    <div class="sub">Generate a QR pointing at any RAPP front door.</div>
+  </header>
+
+  <div class="pane">
+    <h2>What should the QR point to?</h2>
+
+    <div class="preset-row">
+      <button class="preset" data-preset="plant">The planter (anyone scans → can plant their own)</button>
+      <button class="preset" data-preset="custom">A specific front door</button>
+    </div>
+
+    <div style="margin-top:14px;">
+      <label for="target-url">Target URL</label>
+      <input type="text" id="target-url" placeholder="https://kody-w.github.io/RAPP/installer/plant.html">
+    </div>
+
+    <details style="margin-top:14px;">
+      <summary style="cursor:pointer;color:#58a6ff;font-size:13px;">Optional: tag with your handle</summary>
+      <div style="margin-top:10px;">
+        <label for="from-handle">Your mirror (optional, for lineage)</label>
+        <input type="text" id="from-handle" placeholder="your-handle/your-mirror">
+        <div class="info-box">When someone plants from this QR, their new mirror's <code>rappid.json</code> records you as the planted_from. Lineage walks back through the network. No registry needed.</div>
+        <div class="info-box rapp-safety-note">Historical design context:
+          this page only appends the note to the QR target. It does not write
+          <code>rappid.json</code>, establish lineage, or update a registry.</div>
+      </div>
+    </details>
+
+    <div class="options">
+      <button id="btn-generate">Generate QR</button>
+      <button class="secondary" id="btn-clear">Clear</button>
+    </div>
+    <div class="info-box rapp-safety-note" id="qr-status"><span id="qr-status-message">QR generation is
+      local. No QR service, installer, camera, or network request is used.</span>
+      Installer context resolves to <a href="../KERNEL_PIN.json">KERNEL_PIN.json</a>
+      and the pinned
+      <a href="https://github.com/kody-w/rapp-installer/tree/brainstem-v0.6.9" rel="noopener">kody-w/rapp-installer@brainstem-v0.6.9</a>
+      source tag,
+      not an executable download.</div>
+  </div>
+
+  <div class="pane qr-display" id="qr-pane" hidden>
+    <h2>Scan this</h2>
+    <div class="qr-img"><img id="qr-img" alt="QR code"></div>
+    <div class="qr-target" id="qr-target"></div>
+    <pre class="qr-target" id="qr-svg-source" hidden></pre>
+    <div class="options">
+      <button id="btn-print">Preview print layout</button>
+      <button class="secondary" id="btn-copy-link">Copy link</button>
+      <button class="secondary" id="btn-export-svg">Show SVG source</button>
+    </div>
+  </div>
+
+  <footer>
+    <a href="./plant.html">Plant your own front door</a> ·
+    <a href="./seed.html">🌱 Nominate a place</a> ·
+    <a href="https://kody-w.github.io/RAPP/">RAPP</a>
+  </footer>
+</div>
+
+<script type="application/x-rapp-history" id="rapp-history-disabled-source">
+/* Exact historical network-backed QR path, bounded as inert source.
+   Source: 821375ea6afe32c63cb1838cd8e64122cd3628ac */
+const qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=2&data=" + encodeURIComponent(target);
+document.getElementById("qr-img").src = qrUrl;
+document.getElementById("qr-target").textContent = target;
+document.getElementById("qr-pane").hidden = false;
+document.getElementById("qr-pane").scrollIntoView({ behavior: "smooth", block: "start" });
+</script>
+
+<script>
+"use strict";
+
+const PLANT_URL = "https://kody-w.github.io/RAPP/installer/plant.html";
+
+const params = new URLSearchParams(location.search);
+const initialTarget = params.get("to");
+const initialFrom   = params.get("from");
+
+if (initialTarget) document.getElementById("target-url").value = initialTarget;
+else                document.getElementById("target-url").value = PLANT_URL;
+if (initialFrom)   document.getElementById("from-handle").value = initialFrom;
+
+document.querySelectorAll(".preset").forEach(btn => {
+  btn.onclick = () => {
+    const kind = btn.dataset.preset;
+    if (kind === "plant") {
+      document.getElementById("target-url").value = PLANT_URL;
+    } else if (kind === "custom") {
+      document.getElementById("target-url").value = "";
+      document.getElementById("target-url").focus();
+    }
+  };
+});
+
+function buildTargetUrl() {
+  let url = document.getElementById("target-url").value.trim();
+  if (!url) return "";
+  // If it's plant.html and we have a from-handle, append ?from=<handle>
+  const from = document.getElementById("from-handle").value.trim();
+  if (from && url.includes("plant.html")) {
+    const sep = url.includes("?") ? "&" : "?";
+    url = url + sep + "from=" + encodeURIComponent(from);
+  }
+  return url;
+}
+
+function appendBits(bits, value, length) {
+  for (let shift = length - 1; shift >= 0; shift--) {
+    bits.push((value >>> shift) & 1);
+  }
+}
+
+function makeCodewords(text) {
+  const bytes = Array.from(new TextEncoder().encode(text));
+  if (bytes.length > 106) {
+    throw new Error("Target is too long for the local QR preview.");
+  }
+
+  const bits = [];
+  appendBits(bits, 0b0100, 4);
+  appendBits(bits, bytes.length, 8);
+  bytes.forEach(byte => appendBits(bits, byte, 8));
+  const capacity = 108 * 8;
+  for (let i = 0; i < Math.min(4, capacity - bits.length); i++) bits.push(0);
+  while (bits.length % 8) bits.push(0);
+
+  const data = [];
+  for (let i = 0; i < bits.length; i += 8) {
+    let byte = 0;
+    for (let j = 0; j < 8; j++) byte = (byte << 1) | bits[i + j];
+    data.push(byte);
+  }
+  let useFirstPad = true;
+  while (data.length < 108) {
+    data.push(useFirstPad ? 0xec : 0x11);
+    useFirstPad = !useFirstPad;
+  }
+
+  const exp = new Array(512);
+  const log = new Array(256).fill(0);
+  let value = 1;
+  for (let i = 0; i < 255; i++) {
+    exp[i] = value;
+    log[value] = i;
+    value <<= 1;
+    if (value & 0x100) value ^= 0x11d;
+  }
+  for (let i = 255; i < exp.length; i++) exp[i] = exp[i - 255];
+  const multiply = (a, b) => (a && b ? exp[log[a] + log[b]] : 0);
+
+  let generator = [1];
+  for (let i = 0; i < 26; i++) {
+    const next = new Array(generator.length + 1).fill(0);
+    generator.forEach((coefficient, index) => {
+      next[index] ^= coefficient;
+      next[index + 1] ^= multiply(coefficient, exp[i]);
+    });
+    generator = next;
+  }
+
+  const message = data.concat(new Array(26).fill(0));
+  for (let i = 0; i < data.length; i++) {
+    const factor = message[i];
+    if (!factor) continue;
+    generator.forEach((coefficient, index) => {
+      message[i + index] ^= multiply(coefficient, factor);
+    });
+  }
+  return data.concat(message.slice(data.length));
+}
+
+function bitLength(value) {
+  let length = 0;
+  while (value) {
+    length++;
+    value >>>= 1;
+  }
+  return length;
+}
+
+function formatBits(data) {
+  let value = data << 10;
+  const generator = 0x537;
+  while (bitLength(value) >= bitLength(generator)) {
+    value ^= generator << (bitLength(value) - bitLength(generator));
+  }
+  return ((data << 10) | value) ^ 0x5412;
+}
+
+function makeQrMatrix(text) {
+  const size = 37;
+  const modules = Array.from({ length: size }, () => new Array(size).fill(null));
+  const set = (row, col, dark) => {
+    if (row >= 0 && row < size && col >= 0 && col < size) modules[row][col] = !!dark;
+  };
+
+  function finder(row, col) {
+    for (let dr = -1; dr <= 7; dr++) {
+      for (let dc = -1; dc <= 7; dc++) {
+        const inside = dr >= 0 && dr <= 6 && dc >= 0 && dc <= 6;
+        const dark = inside && (
+          dr === 0 || dr === 6 || dc === 0 || dc === 6 ||
+          (dr >= 2 && dr <= 4 && dc >= 2 && dc <= 4)
+        );
+        set(row + dr, col + dc, dark);
+      }
+    }
+  }
+
+  function alignment(row, col) {
+    for (let dr = -2; dr <= 2; dr++) {
+      for (let dc = -2; dc <= 2; dc++) {
+        set(row + dr, col + dc,
+          Math.max(Math.abs(dr), Math.abs(dc)) === 2 || (dr === 0 && dc === 0));
+      }
+    }
+  }
+
+  finder(0, 0);
+  finder(0, size - 7);
+  finder(size - 7, 0);
+  for (let i = 8; i <= size - 9; i++) {
+    if (modules[6][i] === null) set(6, i, i % 2 === 0);
+    if (modules[i][6] === null) set(i, 6, i % 2 === 0);
+  }
+  alignment(30, 30);
+
+  function placeFormat(bits) {
+    for (let i = 0; i < 15; i++) {
+      const dark = ((bits >>> i) & 1) === 1;
+      if (i < 6) set(i, 8, dark);
+      else if (i < 8) set(i + 1, 8, dark);
+      else set(size - 15 + i, 8, dark);
+
+      if (i < 8) set(8, size - i - 1, dark);
+      else if (i < 9) set(8, 15 - i, dark);
+      else set(8, 15 - i - 1, dark);
+    }
+    set(size - 8, 8, true);
+  }
+
+  placeFormat(0);
+  const dataBits = [];
+  makeCodewords(text).forEach(byte => appendBits(dataBits, byte, 8));
+  let index = 0;
+  let row = size - 1;
+  let direction = -1;
+
+  for (let col = size - 1; col > 0; col -= 2) {
+    if (col === 6) col--;
+    while (true) {
+      for (let offset = 0; offset < 2; offset++) {
+        const x = col - offset;
+        if (modules[row][x] !== null) continue;
+        let dark = index < dataBits.length ? dataBits[index] === 1 : false;
+        if ((row + x) % 2 === 0) dark = !dark;
+        modules[row][x] = dark;
+        index++;
+      }
+      row += direction;
+      if (row < 0 || row >= size) {
+        row -= direction;
+        direction = -direction;
+        break;
+      }
+    }
+  }
+
+  placeFormat(formatBits(0b01000));
+  return modules;
+}
+
+function matrixToSvg(matrix) {
+  const quiet = 4;
+  const size = matrix.length + quiet * 2;
+  const path = [];
+  matrix.forEach((row, y) => row.forEach((dark, x) => {
+    if (dark) path.push(`M${x + quiet} ${y + quiet}h1v1h-1z`);
+  }));
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="#fff"/><path d="${path.join("")}" fill="#000"/></svg>`;
+}
+
+function isUnsafeInstallTarget(target) {
+  try {
+    const url = new URL(target);
+    if (!["http:", "https:"].includes(url.protocol)) return true;
+    const path = url.pathname.toLowerCase();
+    return (url.hostname === "www.icloud.com" && path.startsWith("/shortcuts/")) ||
+      /\.(?:shortcut|sh|ps1|cmd|command|zip)$/i.test(path);
+  } catch (_) {
+    return true;
+  }
+}
+
+let latestSvg = "";
+
+function generateQR() {
+  const target = buildTargetUrl();
+  if (!target) {
+    alert("Please enter a target URL.");
+    return;
+  }
+  if (isUnsafeInstallTarget(target)) {
+    document.getElementById("qr-status-message").textContent =
+      "Installer, archive, Shortcut, and non-HTTP deep links are disabled. Enter a front-door page URL.";
+    return;
+  }
+  try {
+    latestSvg = matrixToSvg(makeQrMatrix(target));
+    document.getElementById("qr-img").src =
+      "data:image/svg+xml;charset=utf-8," + encodeURIComponent(latestSvg);
+    document.getElementById("qr-target").textContent = target;
+    document.getElementById("qr-pane").hidden = false;
+    document.getElementById("qr-status-message").textContent =
+      "Generated locally. No external QR service or network request was used.";
+    document.getElementById("qr-pane").scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (error) {
+    document.getElementById("qr-status-message").textContent = error.message;
+  }
+}
+
+document.getElementById("btn-generate").onclick = generateQR;
+document.getElementById("btn-clear").onclick = () => {
+  document.getElementById("target-url").value = "";
+  document.getElementById("from-handle").value = "";
+  document.getElementById("qr-pane").hidden = true;
+};
+document.getElementById("btn-print").onclick = () => {
+  document.getElementById("qr-status-message").textContent =
+    "Print layout previewed on this page; no native print dialog was opened.";
+  document.getElementById("qr-pane").scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+  });
+};
+document.getElementById("btn-export-svg").onclick = () => {
+  if (!latestSvg) return;
+  const preview = document.getElementById("qr-svg-source");
+  preview.textContent = latestSvg;
+  preview.hidden = false;
+  preview.scrollIntoView({ behavior: "smooth", block: "center" });
+};
+document.getElementById("btn-copy-link").onclick = async () => {
+  const target = document.getElementById("qr-target").textContent;
+  try {
+    await navigator.clipboard.writeText(target);
+    const btn = document.getElementById("btn-copy-link");
+    const orig = btn.textContent;
+    btn.textContent = "Copied ✓";
+    setTimeout(() => { btn.textContent = orig; }, 1500);
+  } catch (_) { /* silent */ }
+};
+
+// Auto-generate if target was supplied via URL param
+if (initialTarget) generateQR();
+</script>
+
 </body>
 </html>

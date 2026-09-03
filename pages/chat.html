@@ -1,25 +1,764 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Retired semantic tombstone — chat bridge</title>
-<meta name="description" content="The former chat redirect bridge is retired and inert.">
-<meta name="robots" content="noindex,nofollow">
-<link rel="stylesheet" href="/RAPP/pages/_site/css/tokens.css">
-<link rel="stylesheet" href="/RAPP/pages/_site/css/base.css">
-<style>main{max-width:720px;margin:0 auto;padding:72px 24px}.status{color:var(--warn);font:700 12px var(--font-mono);text-transform:uppercase;letter-spacing:.1em}h1{font-size:clamp(2rem,7vw,3.5rem);margin:12px 0 18px}.box{margin:28px 0;padding:18px;border:1px solid var(--border2);border-radius:12px;background:var(--surface)}nav{display:flex;gap:12px;flex-wrap:wrap}</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0e14" />
+  <meta name="robots" content="noindex,nofollow" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; base-uri 'none'; form-action 'none'" />
+  <meta name="rapp-history-source" content="path=pages/chat.html; commit=1db25e90f9f22821875e2f01bfb58c7f77243c4d; sha256=a6f7d786070c46d0c3e10d5822f3739bea7fbd3790afd47e9efd559e619800c9" />
+  <meta name="rapp-historical-boundary" content="Canonicalization, identity, frames, wire, eggs, registry, trust, and protocol evolution defer to RAPP/1 rev-5 through RAPP1_AUTHORITY.json and RAPP1_STATUS.md." />
+  <title>Chat — embodied twin</title>
+  <meta name="description" content="Chat with the planted twin currently embodied in vbrainstem (uses your GitHub Copilot quota via the rapp-auth worker)." />
+  <style>
+    :root {
+      --bg: #0a0e14; --bg-card: #0d1117; --fg: #e6edf3; --muted: #8b949e;
+      --accent: #58a6ff; --green: #3fb950; --orange: #f0883e; --gate: #db61a2;
+      --user-bubble: #1f6feb; --twin-bubble: #21262d; --border: #30363d;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg);
+      font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      -webkit-text-size-adjust: 100%; height: 100%; }
+    body { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+    a { color: var(--accent); }
+    code, pre { font: 12px/1.4 ui-monospace, "SF Mono", Menlo, monospace; background: #161b22; border-radius: 4px; }
+    code { padding: 1px 5px; }
+    pre { padding: 10px; overflow-x: auto; }
+
+    header { padding: 12px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .avatar { width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--gate), var(--accent), var(--green));
+      display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; font-size: 16px; }
+    .who { flex: 1; min-width: 0; }
+    .who .name { font-weight: 600; font-size: 15px; }
+    .who .rappid { font: 10px ui-monospace, Menlo, monospace; color: var(--muted); word-break: break-all; }
+    .gear { background: none; border: 1px solid var(--border); color: var(--muted); padding: 6px 10px; border-radius: 8px; font-size: 12px; cursor: pointer; }
+
+    #setup { padding: 14px; flex: 1; overflow-y: auto; display: none; }
+    #setup.show { display: block; }
+    #setup h2 { font-size: 15px; margin: 8px 0; color: var(--accent); }
+    #setup .step { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin: 10px 0; font-size: 13px; }
+    #setup label { display: block; font-size: 12px; color: var(--muted); margin: 8px 0 4px; }
+    #setup input { width: 100%; padding: 10px 12px; background: #0a0e14; color: var(--fg); border: 1px solid var(--border); border-radius: 8px; font: inherit; }
+    #setup button { width: 100%; padding: 10px; margin-top: 12px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font: 14px/1 inherit; cursor: pointer; }
+
+    #log { flex: 1; overflow-y: auto; padding: 14px; }
+    .msg { margin: 10px 0; max-width: 86%; padding: 10px 14px; border-radius: 14px; word-wrap: break-word; }
+    .msg.user { background: var(--user-bubble); margin-left: auto; color: #fff; border-bottom-right-radius: 4px; }
+    .msg.twin { background: var(--twin-bubble); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+    .msg.note { background: transparent; border: 1px dashed var(--border); color: var(--muted); font-size: 12px; max-width: 100%; text-align: center; }
+    .msg .pre-name { font-weight: 600; font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+
+    #compose { padding: 10px 12px; border-top: 1px solid var(--border); flex-shrink: 0;
+      display: flex; gap: 8px; align-items: flex-end; background: var(--bg); }
+    #compose textarea { flex: 1; padding: 10px 12px; min-height: 42px; max-height: 140px;
+      background: #0d1117; color: var(--fg); border: 1px solid var(--border); border-radius: 12px;
+      font: inherit; resize: none; }
+    #compose button { padding: 10px 14px; background: var(--accent); color: #fff; border: none;
+      border-radius: 12px; font: 14px/1 inherit; cursor: pointer; flex-shrink: 0; min-width: 60px; }
+    #compose button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    #toolbar { padding: 8px 14px; border-top: 1px solid var(--border); font-size: 11px; color: var(--muted);
+      display: flex; gap: 12px; flex-wrap: wrap; align-items: center; flex-shrink: 0; background: var(--bg); }
+    #toolbar label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+    #toolbar input[type="checkbox"] { margin: 0; }
+    #toolbar select { background: #0d1117; color: var(--fg); border: 1px solid var(--border); border-radius: 6px; padding: 3px 6px; font: inherit; font-size: 11px; }
+    #toolbar .right { margin-left: auto; }
+  </style>
 </head>
 <body>
-<main>
-  <p class="status">Retired semantic tombstone · 2026-09-02</p>
-  <h1>The chat bridge is retired.</h1>
-  <p>The former route redirected visitors according to browser state. This
-    replacement does not redirect, read storage, select a twin, contact a
-    worker, or launch a browser runtime.</p>
-  <div class="box"><strong>Historical alias only.</strong> No current chat
-    product is hosted on GitHub Pages.</div>
-  <nav><a href="/RAPP/pages/">Public site index</a><a href="/RAPP/RAPP1_STATUS.md">RAPP/1 status</a></nav>
-</main>
+
+<header>
+  <div class="avatar" id="avatar">?</div>
+  <div class="who">
+    <div class="name" id="display-name">— no twin embodied —</div>
+    <div class="rappid" id="rappid-line">paste a rappid below to start</div>
+  </div>
+  <button class="gear" onclick="toggleSetup()">⚙︎</button>
+</header>
+
+<div id="setup">
+  <!-- ─── Step 1: SIGN IN (the big friction; one-button device flow) ──── -->
+  <div id="signin-block" class="step">
+    <strong>Sign in to chat</strong>
+    <p style="color: var(--muted); font-size: 13px; margin: 6px 0 12px;">One-tap GitHub sign-in. Your token gives chat access via your existing Copilot subscription. Stored in this browser only — sign out wipes it.</p>
+    <button id="btn-signin" onclick="signInDevice()" style="background: var(--accent); color: #fff; font-size: 16px; padding: 14px;">
+      Sign in with GitHub
+    </button>
+
+    <div id="device-state" style="display:none; margin-top: 16px; padding: 14px; background: #0a0e14; border: 1px solid var(--accent); border-radius: 10px;">
+      <div style="font-size: 13px; color: var(--muted); margin-bottom: 8px;">1. Tap <strong>Open GitHub</strong> below (opens in a new tab)</div>
+      <a id="device-uri" href="#local-device-preview" data-rapp-history-href="https://github.com/login/device"
+         style="display:block; padding: 10px; background: var(--accent); color: #fff; text-align: center; text-decoration: none; border-radius: 8px; font-weight: 600; margin-bottom: 12px;">
+        Open GitHub → enter code
+      </a>
+      <div style="font-size: 13px; color: var(--muted); margin-bottom: 8px;">2. Enter this code:</div>
+      <div id="device-code" style="font: 600 28px/1 ui-monospace, Menlo, monospace; letter-spacing: 4px; text-align: center; padding: 14px; background: #161b22; border-radius: 8px; user-select: all; -webkit-user-select: all;"></div>
+      <button onclick="copyCode()" style="background: #21262d; border: 1px solid var(--border); color: var(--fg); margin-top: 10px; padding: 8px; font-size: 12px;">Copy code</button>
+      <div id="device-poll-status" style="margin-top: 12px; font-size: 12px; color: var(--muted); text-align: center;">Waiting for you to authorize on GitHub…</div>
+    </div>
+  </div>
+
+  <div id="signed-in-block" class="step" style="display:none;">
+    <strong>Signed in as <span id="signed-in-as">…</span></strong>
+    <p style="color: var(--muted); font-size: 12px; margin: 4px 0 8px;">Token cached in localStorage. Sign-out wipes it.</p>
+    <button onclick="signOut()" style="background: rgba(255,123,114,0.15); color: #ff7b72; border: 1px solid rgba(255,123,114,0.4); padding: 8px 12px; font-size: 13px;">Sign out + wipe</button>
+  </div>
+
+  <!-- ─── Step 2: which twin (auto-loaded from summon portal) ─────────── -->
+  <div class="step">
+    <strong>Twin</strong>
+    <p style="color: var(--muted); font-size: 12px; margin: 4px 0;">
+      <span id="twin-status">No twin embodied yet.</span>
+      <a href="/RAPP/pages/summon.html">Pick one in the summon portal →</a>
+    </p>
+    <details style="margin-top: 8px;">
+      <summary style="font-size: 12px; color: var(--muted); cursor: pointer;">Or paste a rappid manually</summary>
+      <input id="setup-rappid" type="text" placeholder="rappid:v2:twin:@kody-w/echo-brainstem:..." style="margin-top: 8px;" />
+      <button onclick="saveRappid()" style="margin-top: 8px; background: var(--accent); color: #fff; padding: 8px 12px; font-size: 13px;">Embody this twin</button>
+    </details>
+  </div>
+
+  <!-- ─── Step 3: optional neighborhood post-target ───────────────────── -->
+  <div class="step">
+    <strong>Post chats to a neighborhood</strong> <span style="color: var(--muted); font-size: 12px;">(optional)</span>
+    <p style="color: var(--muted); font-size: 12px; margin: 4px 0 8px;">When the "post to neighborhood" toggle is on (bottom toolbar), every exchange becomes a public Issue.</p>
+    <input id="setup-nb" type="url" placeholder="https://github.com/kody-w/sim-art-collective" value="https://github.com/kody-w/sim-art-collective" />
+    <button onclick="saveNb()" style="margin-top: 8px; background: var(--accent); color: #fff; padding: 8px 12px; font-size: 13px;">Save</button>
+  </div>
+
+  <button onclick="closeSetup()" style="margin-top: 16px;">Done</button>
+</div>
+
+<div id="log"></div>
+
+<div id="toolbar">
+  <label><input type="checkbox" id="post-to-nb" /> post to neighborhood</label>
+  <select id="model-pick">
+    <option value="claude-sonnet-4">claude-sonnet-4</option>
+    <option value="claude-3.5-sonnet">claude-3.5-sonnet</option>
+    <option value="gpt-5">gpt-5</option>
+    <option value="gpt-4o">gpt-4o</option>
+  </select>
+  <span class="right" id="status">—</span>
+</div>
+
+<div id="compose">
+  <textarea id="input" placeholder="Talk to the embodied twin…" rows="1"></textarea>
+  <button id="send" onclick="send()">Send</button>
+</div>
+
+<script type="text/plain" id="rapp-history-runtime-source">
+  const LS = {
+    rappid: "vbs_rappid", token: "vbs_token", login: "vbs_login",
+    chat_history: "vbs_chat_history",
+    chat_nb: "vbs_chat_nb",
+    chat_model: "vbs_chat_model",
+    soul_cache: "vbs_soul_cache",
+  };
+  const AUTH_WORKER_URL = "https://rapp-auth.kwildfeuer.workers.dev";
+  const COPILOT_CLIENT_ID = "Iv1.b507a08c87ecfe98"; // GitHub Copilot Chat OAuth app
+  const GH_API = "https://api.github.com";
+  // The Copilot endpoint is per-user — extracted from the token-exchange response.
+  // Different accounts (individual / business / enterprise) get different endpoints.
+  // Fallback only if the response doesn't include one.
+  const COPILOT_ENDPOINT_FALLBACK = "https://api.individual.githubcopilot.com";
+  const $ = id => document.getElementById(id);
+
+  let twin = { rappid: null, owner: null, repo: null, display_name: null, soul: null, voice: null };
+  let copilotToken = null; // exchanged from gh oauth token; cached in memory; includes per-user endpoint
+  let history = [];
+
+  function setStatus(s, kind) {
+    const el = $("status");
+    el.textContent = s;
+    el.style.color = kind === "err" ? "#ff7b72" : kind === "ok" ? "var(--green)" : "var(--muted)";
+  }
+
+  function toggleSetup() { $("setup").classList.toggle("show"); refreshSetupUI(); }
+  function closeSetup() { $("setup").classList.remove("show"); init(); }
+
+  function saveRappid() {
+    const r = $("setup-rappid").value.trim();
+    if (r) { localStorage.setItem(LS.rappid, r); init(); }
+  }
+  function saveNb() {
+    const nb = $("setup-nb").value.trim();
+    if (nb) localStorage.setItem(LS.chat_nb, nb);
+    setStatus("neighborhood saved", "ok");
+  }
+
+  function copyCode() {
+    const code = $("device-code").textContent;
+    navigator.clipboard.writeText(code).then(() => setStatus("code copied", "ok"));
+  }
+
+  // ─── Inline GitHub device-code flow (no bouncing to vbrainstem) ──────
+  let deviceFlowState = null;
+  let deviceFlowTimer = null;
+
+  async function signInDevice() {
+    const btn = $("btn-signin");
+    btn.disabled = true;
+    btn.textContent = "Starting…";
+    try {
+      const r = await fetch(`${AUTH_WORKER_URL}/api/auth/device`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ client_id: COPILOT_CLIENT_ID, scope: "repo read:user user:email" }),
+      });
+      if (!r.ok) throw new Error("device flow start failed: " + r.status);
+      const data = await r.json();
+      deviceFlowState = data;
+      $("device-uri").href = data.verification_uri || "https://github.com/login/device";
+      $("device-code").textContent = data.user_code || "—";
+      $("device-state").style.display = "block";
+      btn.style.display = "none";
+      const intervalMs = (data.interval || 5) * 1000;
+      deviceFlowTimer = setInterval(() => pollDevice(intervalMs), intervalMs);
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = "Sign in with GitHub";
+      setStatus("sign-in failed: " + e.message, "err");
+    }
+  }
+
+  async function pollDevice(intervalMs) {
+    if (!deviceFlowState) return;
+    try {
+      const r = await fetch(`${AUTH_WORKER_URL}/api/auth/device/poll`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ client_id: COPILOT_CLIENT_ID, device_code: deviceFlowState.device_code }),
+      });
+      const j = await r.json();
+      if (j.access_token) {
+        clearInterval(deviceFlowTimer);
+        localStorage.setItem(LS.token, j.access_token);
+        // Try to fetch the user's login + cache it
+        const u = await fetch(`${GH_API}/user`, {
+          headers: { "Authorization": "Bearer " + j.access_token, "Accept": "application/vnd.github+json" },
+        });
+        if (u.ok) {
+          const uj = await u.json();
+          if (uj.login) localStorage.setItem(LS.login, uj.login);
+        }
+        $("device-state").style.display = "none";
+        $("device-poll-status").textContent = "✓ Signed in!";
+        refreshSetupUI();
+        setStatus("signed in", "ok");
+        // Auto-close setup if both rappid + token are now present
+        setTimeout(() => {
+          if (localStorage.getItem(LS.rappid) && localStorage.getItem(LS.token)) {
+            $("setup").classList.remove("show");
+            init();
+          }
+        }, 800);
+      } else if (j.error === "authorization_pending") {
+        $("device-poll-status").textContent = "Waiting for you to authorize on GitHub… (the page polls every " + (intervalMs / 1000) + "s)";
+      } else if (j.error === "slow_down") {
+        // Intentionally do nothing; the next interval will be slower
+      } else if (j.error === "expired_token" || j.error === "access_denied") {
+        clearInterval(deviceFlowTimer);
+        $("device-state").style.display = "none";
+        $("btn-signin").style.display = "block";
+        $("btn-signin").disabled = false;
+        $("btn-signin").textContent = "Sign in with GitHub";
+        setStatus("device flow " + j.error, "err");
+      }
+    } catch (e) {
+      $("device-poll-status").textContent = "Network error: " + e.message;
+    }
+  }
+
+  function signOut() {
+    localStorage.removeItem(LS.token);
+    localStorage.removeItem(LS.login);
+    copilotToken = null;
+    refreshSetupUI();
+    setStatus("signed out");
+  }
+
+  function refreshSetupUI() {
+    const token = localStorage.getItem(LS.token);
+    const login = localStorage.getItem(LS.login);
+    const rappid = localStorage.getItem(LS.rappid);
+    if (token) {
+      $("signin-block").style.display = "none";
+      $("signed-in-block").style.display = "block";
+      $("signed-in-as").textContent = login || "(unknown)";
+    } else {
+      $("signin-block").style.display = "block";
+      $("signed-in-block").style.display = "none";
+      $("btn-signin").style.display = "block";
+      $("btn-signin").disabled = false;
+      $("btn-signin").textContent = "Sign in with GitHub";
+    }
+    if (rappid) {
+      const parsed = parseRappid(rappid);
+      $("twin-status").textContent = parsed
+        ? `Embodying: ${parsed.owner}/${parsed.repo}.`
+        : `Embodied (legacy rappid: ${rappid.slice(0, 24)}…).`;
+      $("setup-rappid").value = rappid;
+    } else {
+      $("twin-status").textContent = "No twin embodied yet.";
+    }
+    const nb = localStorage.getItem(LS.chat_nb);
+    if (nb) $("setup-nb").value = nb;
+  }
+
+  function parseRappid(rappid) {
+    // rappid:v2:<kind>:@<owner>/<repo>:<hex>@github.com/<owner>/<repo>
+    const m = /^rappid:v2:([^:]+):@([^/]+)\/([^:]+):/.exec(rappid || "");
+    if (m) return { kind: m[1], owner: m[2], repo: m[3] };
+    // legacy bare-UUID rappid (heimdall) — caller must provide owner/repo separately
+    return null;
+  }
+
+  async function fetchSoul(owner, repo) {
+    const cacheKey = `${LS.soul_cache}:${owner}/${repo}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) return cached;
+    const r = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/main/soul.md`);
+    if (!r.ok) return null;
+    const text = await r.text();
+    localStorage.setItem(cacheKey, text);
+    return text;
+  }
+
+  async function fetchTwinDisplayName(owner, repo) {
+    const r = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/main/rappid.json`);
+    if (!r.ok) return repo;
+    try { const j = await r.json(); return j.display_name || repo; } catch { return repo; }
+  }
+
+  function renderHistory() {
+    const log = $("log");
+    log.innerHTML = "";
+    if (!history.length && twin.soul) {
+      const note = document.createElement("div");
+      note.className = "msg note";
+      note.innerHTML = `Chatting AS <strong>${twin.display_name}</strong>. Voice from <a href="https://github.com/${twin.owner}/${twin.repo}/blob/main/soul.md" target="_blank">soul.md</a>.`;
+      log.appendChild(note);
+    }
+    for (const m of history) {
+      const el = document.createElement("div");
+      el.className = "msg " + (m.role === "user" ? "user" : "twin");
+      const name = document.createElement("div");
+      name.className = "pre-name";
+      name.textContent = m.role === "user" ? "you" : (twin.display_name || "twin");
+      el.appendChild(name);
+      const body = document.createElement("div");
+      body.textContent = m.content;
+      el.appendChild(body);
+      log.appendChild(el);
+    }
+    log.scrollTop = log.scrollHeight;
+  }
+
+  async function getCopilotToken() {
+    if (copilotToken && copilotToken.expires_at > Date.now() / 1000 + 60) return copilotToken;
+    const ghToken = localStorage.getItem(LS.token);
+    if (!ghToken) throw new Error("no GitHub OAuth token in localStorage (vbs_token). Sign in via vbrainstem first.");
+    const r = await fetch(`${AUTH_WORKER_URL}/api/copilot/token`, {
+      headers: { "Authorization": "Bearer " + ghToken },
+    });
+    if (!r.ok) {
+      const txt = await r.text();
+      throw new Error(`copilot token exchange failed (${r.status}): ${txt.slice(0, 200)}. Your GH token may be a PAT — Copilot requires an OAuth ghu_… token from the device-code flow.`);
+    }
+    const j = await r.json();
+    if (!j.token) {
+      throw new Error(`copilot token exchange returned no token. Response: ${JSON.stringify(j).slice(0, 300)}. Your account may not have Copilot enabled, or the token lacks copilot scope.`);
+    }
+    // Per-user endpoint extraction (matches brainstem.py canonical):
+    // data.get("endpoints", {}).get("api", "https://api.individual.githubcopilot.com")
+    const endpoint = (j.endpoints && j.endpoints.api) || COPILOT_ENDPOINT_FALLBACK;
+    copilotToken = {
+      token: j.token,
+      endpoint,
+      expires_at: j.expires_at || (Date.now() / 1000 + 1500),
+    };
+    return copilotToken;
+  }
+
+  async function callLLM(model, systemPrompt, messages) {
+    const tk = await getCopilotToken();
+    const body = {
+      model,
+      messages: [{ role: "system", content: systemPrompt }, ...messages],
+      temperature: 0.7,
+      max_tokens: 1500,
+    };
+    const r = await fetch(`${AUTH_WORKER_URL}/api/copilot/chat?endpoint=${encodeURIComponent(tk.endpoint)}`, {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + tk.token, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!r.ok) {
+      const txt = await r.text();
+      // 421 Misdirected Request → endpoint mismatch. Try the other known endpoints.
+      if (r.status === 421) {
+        const alts = [
+          "https://api.individual.githubcopilot.com",
+          "https://api.business.githubcopilot.com",
+          "https://api.enterprise.githubcopilot.com",
+        ].filter(e => e !== tk.endpoint);
+        for (const alt of alts) {
+          const r2 = await fetch(`${AUTH_WORKER_URL}/api/copilot/chat?endpoint=${encodeURIComponent(alt)}`, {
+            method: "POST",
+            headers: { "Authorization": "Bearer " + tk.token, "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          if (r2.ok) {
+            // Cache the working endpoint for next time
+            copilotToken.endpoint = alt;
+            const j2 = await r2.json();
+            return (j2.choices && j2.choices[0] && j2.choices[0].message && j2.choices[0].message.content) || "(empty)";
+          }
+        }
+        throw new Error(`copilot chat failed (421 Misdirected Request) on all endpoints — your account may need to be on a different Copilot tier. Original endpoint tried: ${tk.endpoint}. Body: ${txt.slice(0, 200)}`);
+      }
+      throw new Error(`copilot chat failed (${r.status}): ${txt.slice(0, 300)}`);
+    }
+    const j = await r.json();
+    return (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || "(empty)";
+  }
+
+  async function postToNeighborhood(userMsg, twinReply) {
+    const nbUrl = $("setup-nb").value.trim() || localStorage.getItem(LS.chat_nb);
+    if (!nbUrl) return null;
+    const m = /github\.com\/([^/]+)\/([^/?#]+)/.exec(nbUrl);
+    if (!m) return null;
+    const repo = `${m[1]}/${m[2].replace(/\.git$/, "")}`;
+    const ghToken = localStorage.getItem(LS.token);
+    const body = `**${twin.display_name}** (embodied via vbrainstem) chatting as the twin to a guest:\n\n` +
+                 `> ${userMsg}\n\n${twinReply}\n\n` +
+                 `\`\`\`json\n{"schema":"rapp-twin-chat-public/1.0","embodied_rappid":"${twin.rappid}","at":"${new Date().toISOString()}"}\n\`\`\``;
+    const r = await fetch(`https://api.github.com/repos/${repo}/issues`, {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + ghToken, "Accept": "application/vnd.github+json", "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: `chat: ${twin.display_name} ↔ guest @ ${new Date().toISOString().slice(0,16)}`,
+        body, labels: ["twin-chat", "vbrainstem-collaborator"],
+      }),
+    });
+    if (r.ok) { const j = await r.json(); return j.html_url; }
+    return null;
+  }
+
+  async function send() {
+    const inp = $("input");
+    const text = inp.value.trim();
+    if (!text) return;
+    if (!twin.rappid) { setStatus("paste a rappid in setup first", "err"); $("setup").classList.add("show"); return; }
+    if (!localStorage.getItem(LS.token)) { setStatus("sign in to GitHub first", "err"); $("setup").classList.add("show"); return; }
+
+    history.push({ role: "user", content: text });
+    inp.value = "";
+    inp.style.height = "42px";
+    renderHistory();
+    setStatus("thinking…");
+    $("send").disabled = true;
+
+    try {
+      const model = $("model-pick").value;
+      localStorage.setItem(LS.chat_model, model);
+      const systemPrompt =
+        (twin.soul || `You are ${twin.display_name}, a planted RAPP twin.`) +
+        `\n\n--- chat-mode rules ---\n` +
+        `You are speaking AS ${twin.display_name}, embodied in a browser via vbrainstem. ` +
+        `Stay in voice. Reference your soul block above as your identity floor. ` +
+        `Never break character to "I am Claude" / "I am an AI assistant" / "I am RAPP". ` +
+        `Reply in 1-3 short paragraphs unless asked for length.`;
+
+      const reply = await callLLM(model, systemPrompt, history);
+      history.push({ role: "assistant", content: reply });
+      localStorage.setItem(LS.chat_history, JSON.stringify(history.slice(-30)));
+      renderHistory();
+
+      if ($("post-to-nb").checked) {
+        setStatus("posting to neighborhood…");
+        const url = await postToNeighborhood(text, reply);
+        if (url) {
+          history.push({ role: "assistant", content: `_(posted to neighborhood: ${url})_` });
+          renderHistory();
+        }
+      }
+      setStatus("ok", "ok");
+    } catch (e) {
+      console.error(e);
+      history.push({ role: "assistant", content: `⚠️ ${e.message}` });
+      renderHistory();
+      setStatus(e.message.slice(0, 80), "err");
+    } finally {
+      $("send").disabled = false;
+    }
+  }
+
+  // Auto-grow textarea
+  $("input").addEventListener("input", e => {
+    e.target.style.height = "42px";
+    e.target.style.height = Math.min(140, e.target.scrollHeight) + "px";
+  });
+  $("input").addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
+  });
+
+  async function init() {
+    const rappid = localStorage.getItem(LS.rappid);
+    const token = localStorage.getItem(LS.token);
+    const nb = localStorage.getItem(LS.chat_nb);
+    const model = localStorage.getItem(LS.chat_model);
+    const histRaw = localStorage.getItem(LS.chat_history);
+
+    if (model) $("model-pick").value = model;
+    if (nb) $("setup-nb").value = nb;
+    if (histRaw) try { history = JSON.parse(histRaw); } catch {}
+
+    refreshSetupUI();
+
+    // Show setup if either is missing
+    if (!rappid || !token) {
+      $("setup").classList.add("show");
+      setStatus(!token ? "sign in to begin" : "embody a twin", "err");
+      return;
+    }
+
+    const parsed = parseRappid(rappid);
+    if (!parsed) {
+      setStatus("rappid format unrecognized (need v2 string)", "err");
+      $("setup").classList.add("show"); return;
+    }
+    twin.rappid = rappid;
+    twin.owner = parsed.owner;
+    twin.repo = parsed.repo;
+    setStatus("loading twin…");
+    twin.display_name = await fetchTwinDisplayName(parsed.owner, parsed.repo);
+    twin.soul = await fetchSoul(parsed.owner, parsed.repo);
+    $("display-name").textContent = twin.display_name;
+    $("rappid-line").textContent = rappid.slice(0, 90) + (rappid.length > 90 ? "…" : "");
+    $("avatar").textContent = (twin.display_name || "?")[0].toUpperCase();
+    setStatus("ready", "ok");
+    renderHistory();
+    // Hide setup if everything is good
+    $("setup").classList.remove("show");
+  }
+
+  init();
+</script>
+<script>
+(() => {
+  'use strict';
+
+  const $ = id => document.getElementById(id);
+  const state = {
+    rappid: '',
+    displayName: '',
+    boardLabel: 'https://github.com/kody-w/sim-art-collective',
+    history: []
+  };
+
+  function setStatus(text, kind) {
+    const status = $('status');
+    status.textContent = text;
+    status.style.color = kind === 'ok' ? 'var(--green)' :
+      kind === 'note' ? 'var(--orange)' : 'var(--muted)';
+  }
+
+  function shortText(text, limit = 110) {
+    const clean = String(text || '').replace(/\s+/g, ' ').trim();
+    const clipped = clean.length > limit ? clean.slice(0, limit - 1) + '…' : clean;
+    return clipped.replace(/[.!?]+$/, '');
+  }
+
+  function anchorWords(text) {
+    const ignored = new Set(['about', 'after', 'could', 'from', 'have', 'into',
+      'that', 'their', 'there', 'these', 'they', 'this', 'what', 'when', 'where',
+      'which', 'with', 'would', 'your']);
+    const words = String(text).toLowerCase().match(/[a-z0-9][a-z0-9'-]{2,}/g) || [];
+    const anchors = [];
+    for (const word of words) {
+      if (!ignored.has(word) && !anchors.includes(word)) anchors.push(word);
+      if (anchors.length === 3) break;
+    }
+    return anchors.length ? anchors : ['intent', 'constraint', 'next step'];
+  }
+
+  function localReply(text, model) {
+    const excerpt = shortText(text);
+    const anchors = anchorWords(text);
+    if (model === 'gpt-5') {
+      return `Local map: ${anchors.join(' · ')}. Keep the observable outcome in the center, ` +
+        'then connect each constraint to one reversible move.';
+    }
+    if (model === 'claude-3.5-sonnet') {
+      return `What would make “${excerpt}” visibly true? Which constraint is load-bearing, ` +
+        'and what small local experiment could test it without claiming more than it proves?';
+    }
+    if (model === 'gpt-4o') {
+      return `Local sketch: ${excerpt}. Next move: name one constraint, one reversible action, ` +
+        'and one result you can inspect.';
+    }
+    return `I hear a thread in “${excerpt}.” Hold the intent steady, separate evidence from ` +
+      'assumption, and let the next small move reveal the shape underneath.';
+  }
+
+  function renderHistory() {
+    const log = $('log');
+    log.replaceChildren();
+    for (const item of state.history) {
+      const message = document.createElement('div');
+      message.className = `msg ${item.kind || (item.role === 'user' ? 'user' : 'twin')}`;
+      const label = document.createElement('div');
+      label.className = 'pre-name';
+      label.textContent = item.role === 'user' ? 'you' :
+        item.kind === 'note' ? 'local board preview' : (state.displayName || 'local twin preview');
+      const body = document.createElement('div');
+      body.textContent = item.content;
+      message.append(label, body);
+      log.appendChild(message);
+    }
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function deriveDisplayName(label) {
+    const tail = String(label || '').split(/[/:]/).filter(Boolean).pop() || 'Pattern Weaver';
+    return tail.split(/[-_]/).filter(Boolean)
+      .map(part => part.slice(0, 1).toUpperCase() + part.slice(1)).join(' ') || 'Pattern Weaver';
+  }
+
+  function refreshSetupUI() {
+    $('signin-block').style.display = 'block';
+    $('signed-in-block').style.display = 'none';
+    $('btn-signin').style.display = 'block';
+    $('btn-signin').disabled = false;
+    $('btn-signin').textContent = 'Sign in with GitHub · local rehearsal';
+    $('device-uri').textContent = 'Open GitHub → enter code · source-era label; stays here';
+    $('twin-status').textContent = state.rappid ?
+      `Local voice card: ${state.displayName}.` : 'No twin embodied yet.';
+    if (state.rappid) $('setup-rappid').value = state.rappid;
+    $('setup-nb').value = state.boardLabel;
+  }
+
+  function applyLocalCard() {
+    const label = $('setup-rappid').value.trim();
+    if (!label) {
+      setStatus('enter a local voice-card label first', 'note');
+      return;
+    }
+    state.rappid = label;
+    state.displayName = deriveDisplayName(state.rappid);
+    $('display-name').textContent = state.displayName;
+    $('rappid-line').textContent = `${state.rappid} · local label only`;
+    $('avatar').textContent = state.displayName.slice(0, 1).toUpperCase() || '?';
+    refreshSetupUI();
+    renderHistory();
+  }
+
+  window.toggleSetup = () => {
+    $('setup').classList.toggle('show');
+    refreshSetupUI();
+  };
+  window.closeSetup = () => {
+    state.boardLabel = $('setup-nb').value.trim() || 'Neighborhood preview';
+    $('setup').classList.remove('show');
+    setStatus('local setup applied', 'ok');
+  };
+  window.saveRappid = () => {
+    applyLocalCard();
+    setStatus('local voice card applied', 'ok');
+  };
+  window.saveNb = () => {
+    state.boardLabel = $('setup-nb').value.trim() || 'Neighborhood preview';
+    setStatus('local board label saved', 'ok');
+  };
+  window.copyCode = () => {
+    setStatus('local preview code selected; nothing copied or authorized', 'note');
+  };
+  window.signOut = () => {
+    $('device-state').style.display = 'none';
+    setStatus('local sign-in preview reset');
+  };
+  window.signInDevice = () => {
+    $('device-state').style.display = 'block';
+    $('device-code').textContent = 'LOCAL-ONLY';
+    $('device-poll-status').textContent =
+      'No authorization request was made. This panel now demonstrates the source-era step locally.';
+    $('btn-signin').textContent = 'Sign in with GitHub · local rehearsal open';
+    setStatus('local sign-in preview', 'note');
+  };
+
+  window.send = () => {
+    const input = $('input');
+    const text = input.value.trim();
+    if (!text) {
+      setStatus('write a rehearsal line first', 'note');
+      return;
+    }
+    if (!state.rappid) {
+      $('setup').classList.add('show');
+      setStatus('choose a local voice card first', 'note');
+      return;
+    }
+    const model = $('model-pick').value;
+    state.history.push({ role: 'user', content: text });
+    state.history.push({ role: 'assistant', content: localReply(text, model) });
+    if ($('post-to-nb').checked) {
+      state.history.push({
+        role: 'assistant',
+        kind: 'note',
+        content: `Draft mirrored locally for “${state.boardLabel}.” Nothing was published.`
+      });
+    }
+    input.value = '';
+    input.style.height = '42px';
+    renderHistory();
+    setStatus('local draft ready', 'ok');
+  };
+
+  $('input').addEventListener('input', event => {
+    event.target.style.height = '42px';
+    event.target.style.height = Math.min(140, event.target.scrollHeight) + 'px';
+  });
+  $('input').addEventListener('keydown', event => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      window.send();
+    }
+  });
+
+  function verifyPage() {
+    const source = $('rapp-history-runtime-source');
+    const history = document.querySelector('meta[name="rapp-history-source"]');
+    const boundary = document.querySelector('meta[name="rapp-historical-boundary"]');
+    const robots = document.querySelector('meta[name="robots"]');
+    const activeExternal = [...document.scripts].some(script =>
+      script.type !== 'text/plain' && /^https?:/.test(script.src));
+    return {
+      page: 'chat',
+      mode: 'historical-interface-local-runtime',
+      sourcePreserved: Boolean(source && source.textContent.includes('async function callLLM')),
+      pass: Boolean(
+        history &&
+        history.content.includes('1db25e90f9f22821875e2f01bfb58c7f77243c4d') &&
+        boundary &&
+        robots &&
+        robots.content.replace(/\s/g, '') === 'noindex,nofollow' &&
+        !activeExternal
+      )
+    };
+  }
+
+  window.__RAPP_PAGE_VERIFY__ = verifyPage;
+  document.documentElement.dataset.rappSelfCheck = verifyPage().pass ? 'pass' : 'fail';
+  refreshSetupUI();
+  renderHistory();
+  $('setup').classList.add('show');
+  setStatus('choose a local voice card', 'note');
+})();
+</script>
+
 </body>
 </html>

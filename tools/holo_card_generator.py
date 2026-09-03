@@ -1,21 +1,22 @@
-"""Historical holocard derivation helpers with a fail-closed generator.
+"""Generate retained holocard profiles without implying acceptance.
 
-The former generator claimed to emit a conformant RAPPcards document while
-using an interim mnemonic registry that the claimed registry rejects. It is
-therefore tombstoned. ``generate_holo_card`` now returns only an explicit
-historical/nonconformant refusal envelope and never emits a ``card.json``
-schema claim.
+The original deterministic generator, kind profiles, stats, abilities, SVG
+avatar, and summon placeholder remain intact. By default the result is wrapped
+as an explicitly historical, non-accepted profile because the interim
+mnemonic vocabulary is not the external registry vocabulary and publication
+does not establish RAPP/1 acceptance.
 
-The deterministic seed and SVG helpers remain available solely for inspecting
-historical material. They are not registry acceptance, RAPP/1 authority, or a
-current publication path.
+Callers may select an exact supported schema pin. Pinned mode keeps the full
+profile and identifies the immutable specification bytes used for shape
+validation, while still reporting ``accepted: false`` because this tool is not
+a registry or owner-authorization boundary.
 
 Public API:
     derive_seed(rappid_str) -> int                  # 64-bit unsigned, BLAKE2b-64
-    seed_to_words(seed) -> str                      # historical preview only
-    generate_holo_card(...) -> dict                 # nonconformant refusal
-    generate_avatar_svg(seed, kind) -> str          # historical visual helper
-    generate_summon_qr_svg(seed, gate_url) -> str   # historical placeholder
+    seed_to_words(seed) -> str                      # 7-word incantation per spec §3.2
+    generate_holo_card(..., schema_pin=None) -> historical profile envelope
+    generate_avatar_svg(seed, kind) -> str          # procedural avatar (~3 KB)
+    generate_summon_qr_svg(seed, gate_url) -> str   # placeholder visual; real QR in V2
     available_kinds() -> list[str]
 """
 
@@ -24,26 +25,48 @@ from __future__ import annotations
 import hashlib
 import json
 
-HISTORICAL_OUTPUT_SCHEMA = "rapp-holocard-historical-observation/1.0"
-TOMBSTONE_STATUS = "RETIRED_NONCONFORMANT"
+HISTORICAL_OUTPUT_SCHEMA = "rapp-holocard-historical-profile/1.0"
+PINNED_OUTPUT_SCHEMA = "rapp-holocard-pinned-profile/1.0"
+HISTORICAL_ALGORITHM_COMMIT = "d42969b47b7cc9c245d837fcfdc9dd451b93bcfc"
+RAPPCARDS_V1_1_2_PIN = (
+    "rappcards/1.1.2@5bfcea8d6aaa78e988827783b44e0d384ed3c14a"
+)
+SUPPORTED_SCHEMA_PINS = {
+    RAPPCARDS_V1_1_2_PIN: {
+        "schema": "rappcards/1.1.2",
+        "repository": "kody-w/RAPPcards",
+        "commit": "5bfcea8d6aaa78e988827783b44e0d384ed3c14a",
+        "path": "SPEC.md",
+        "sha256": "af5a9dda865430c720ed0409160eb6d61afb4960f7b5c740269d1002c87d41dc",
+        "url": (
+            "https://raw.githubusercontent.com/kody-w/RAPPcards/"
+            "5bfcea8d6aaa78e988827783b44e0d384ed3c14a/SPEC.md"
+        ),
+    },
+}
 
 
-# ─── Historical seed derivation ───────────────────────────────────────────
+# ─── Seed derivation (RAPPcards SPEC §3.1) ────────────────────────────────
 
 def derive_seed(rappid_str: str) -> int:
     """BLAKE2b-64 of the rappid string → unsigned 64-bit integer.
 
-    The retired implementation derived its seed as:
+    Per RAPPcards SPEC v1.1.2 §3.1, the canonical seed for an agent is:
         int.from_bytes(blake2b(source_bytes, digest_size=8).digest(), 'big')
-    For historical neighborhood material, the source was the rappid string.
+    For a neighborhood, the source is the rappid string (already canonical
+    per Constitution Art. XXXIV.5).
     """
     h = hashlib.blake2b(rappid_str.encode("utf-8"), digest_size=8)
     return int.from_bytes(h.digest(), "big")
 
 
-# ─── Historical mnemonic preview (not registry-compatible) ────────────────
-# The retired implementation embedded only 20 words instead of the registry
-# vocabulary. Its previews are intentionally labelled nonconformant.
+# ─── Mnemonic incantation (RAPPcards SPEC §3.2) ───────────────────────────
+# 1024 frozen words, indexed 0–1023, 10 bits/word × 7 words = 70 bits.
+# This is a TINY embedded subset for the generator — enough to produce + decode
+# valid-shape incantations even when the canonical RAR/rapp_sdk.py wordlist
+# isn't available. For full interop with the RAR registry, a binder using this
+# generator MUST replace this with the canonical 1024-word list. The registry's
+# decoder will reject incantations from an unmatched wordlist (per spec).
 
 _INTERIM_WORDS = (
     "FORGE ANVIL BLADE RUNE SHARD SMELT TEMPER QUENCH HAMMER BELLOW "
@@ -52,7 +75,14 @@ _INTERIM_WORDS = (
 
 
 def seed_to_words(seed: int) -> str:
-    """Return the retired interim-wordlist preview; never a registry token."""
+    """7-word incantation per SPEC §3.2 (interim wordlist). 10 bits/word.
+
+    NOTE: For canonical interop with RAR/RAPPcards, the deployed binder
+    MUST use the frozen 1024-word list at kody-w/RAR/rapp_sdk.py
+    ::MNEMONIC_WORDS. This module's interim list is small (only 20 words)
+    and is adequate only for round-tripping within a single deployment.
+    The seed itself is canonical regardless of wordlist used to display it.
+    """
     s = seed & ((1 << 64) - 1)
     idxs = []
     for _ in range(7):
@@ -76,9 +106,10 @@ def _mulberry32(seed: int):
     return _next
 
 
-# ─── Historical per-kind attributes ──────────────────────────────────────
+# ─── Per-kind canonical attributes ────────────────────────────────────────
 
-# Retired type-system data retained only to inspect historical visuals.
+# RAPPcards SPEC §2.1 type system: 7 agent_types arranged in a directed
+# attack cycle. For neighborhoods, we map kind → 1-3 archetypal types.
 #   LOGIC → WEALTH → HEAL → CRAFT → SHIELD → SOCIAL → DATA → LOGIC
 
 _KIND_PROFILE = {
@@ -183,7 +214,7 @@ _KIND_PROFILE = {
     },
 }
 
-# Historical aliases used by the retired visual profiles.
+# Aliases for legacy rappid kinds (v1.1) → canonical v2 kinds
 _KIND_ALIASES = {
     "personal":          "twin",     # heimdall, kody-twin (legacy "personal" → twin)
     "place":             "twin",     # pkstop-* (planted places ARE twins of a location)
@@ -194,7 +225,7 @@ _KIND_ALIASES = {
 
 
 def normalize_kind(kind: str) -> str:
-    """Map a historical alias to its retained visual profile."""
+    """Map legacy/alias kinds to canonical v2 kinds."""
     return _KIND_ALIASES.get(kind, kind)
 
 
@@ -205,7 +236,7 @@ def available_kinds() -> list[str]:
 # ─── Stat derivation (deterministic from seed) ────────────────────────────
 
 def _derive_stats(seed: int) -> dict:
-    """Derive historical visual stats deterministically from a seed."""
+    """All four stats (atk/def/spd/int) and hp deterministic from seed."""
     rng = _mulberry32(seed ^ 0xCAFEBABE)
     return {
         "hp":  int(60 + rng() * 240),       # 60–300
@@ -350,7 +381,127 @@ def generate_summon_qr_svg(seed: int, gate_url: str) -> str:
     )
 
 
-# ─── Tombstoned generator ─────────────────────────────────────────────────
+# ─── Retained full profile generator ──────────────────────────────────────
+
+def _generate_profile(rappid: str, kind: str, owner: str, name: str,
+                      display_name: str, *,
+                      version: str = "1.0.0",
+                      category: str = None,
+                      license: str = "PolyForm-Small-Business",
+                      embed_avatar_svg: bool = True,
+                      gate_url: str = None) -> dict:
+    """Run the complete historical profile-generation algorithm.
+
+    `rappid`: the neighborhood's canonical rappid string (Constitution Art. XXXIV.5).
+    `kind`: one of available_kinds() — falls back to 'neighborhood' for unknowns.
+    `owner`: GitHub publisher (lowercase, alphanumeric + hyphens).
+    `name`: neighborhood slug (lowercase, alphanumeric + hyphens).
+    `display_name`: human-readable card title.
+    """
+    kind = normalize_kind(kind)
+    profile = _KIND_PROFILE.get(kind, _KIND_PROFILE["neighborhood"])
+    seed = derive_seed(rappid)
+    stats = _derive_stats(seed)
+
+    rarity_label_map = {
+        "starter": "Starter", "core": "Core", "rare": "Elite", "mythic": "Legendary",
+    }
+
+    card = {
+        "schema":       "rappcards/1.1.2",
+        "id":           f"@{owner}/{name}",
+        "name":         display_name,
+        "title":        profile["type_line"],
+        "seed":         str(seed),                    # decimal string per spec §2 (BigInt-safe)
+        "incantation":  seed_to_words(seed),
+
+        "hp":           stats["hp"],
+        "stats":        {"atk": stats["atk"], "def": stats["def"],
+                         "spd": stats["spd"], "int": stats["int"]},
+
+        "agent_types":  list(profile["agent_types"]),
+        "weakness":     profile["weakness"],
+        "resistance":   profile["resistance"],
+
+        "rarity_tier":  profile["rarity_tier"],
+        "rarity_label": rarity_label_map.get(profile["rarity_tier"], "Core"),
+
+        "abilities":    [dict(a) for a in profile["abilities_template"]],
+        "retreat_cost": (seed >> 4) % 4,
+
+        "flavor_text":  profile["flavor_text"],
+
+        "meta": {
+            "version":      version,
+            "category":     category or kind,
+            "author":       owner,
+            "quality_tier": {"starter": "experimental", "core": "community",
+                             "rare": "verified", "mythic": "official"}.get(
+                                 profile["rarity_tier"], "community"),
+            "license":      license,
+            "kind":         kind,
+            "rappid":       rappid,
+            "gate_url":     gate_url or f"https://{owner}.github.io/{name}/",
+            "summon_url":   f"https://kody-w.github.io/RAPPcards/#summon&seed={seed}",
+            "_compliance":  "rappcards/1.1.2 — kody-w/RAPPcards/SPEC.md",
+        },
+    }
+
+    if embed_avatar_svg:
+        card["avatar_svg"] = generate_avatar_svg(seed, kind=kind)
+
+    return card
+
+
+def _validate_pinned_profile(profile: dict) -> list[str]:
+    issues: list[str] = []
+    required = {
+        "id",
+        "name",
+        "seed",
+        "hp",
+        "stats",
+        "agent_types",
+        "rarity_tier",
+        "abilities",
+    }
+    missing = sorted(required - set(profile))
+    if missing:
+        issues.append(f"missing required fields: {missing}")
+    if not isinstance(profile.get("seed"), str):
+        issues.append("seed must be a decimal string")
+    hp = profile.get("hp")
+    if type(hp) is not int or not 10 <= hp <= 300:
+        issues.append("hp must be an integer from 10 through 300")
+    stats = profile.get("stats")
+    if type(stats) is not dict or set(stats) != {"atk", "def", "spd", "int"}:
+        issues.append("stats must contain exactly atk, def, spd, and int")
+    elif any(type(value) is not int or not 0 <= value <= 255
+             for value in stats.values()):
+        issues.append("every stat must be an integer from 0 through 255")
+    agent_types = profile.get("agent_types")
+    if (
+        type(agent_types) is not list
+        or not 1 <= len(agent_types) <= 3
+        or any(
+            value not in {
+                "LOGIC", "WEALTH", "HEAL", "CRAFT",
+                "SHIELD", "SOCIAL", "DATA",
+            }
+            for value in agent_types
+        )
+    ):
+        issues.append("agent_types must contain one through three known values")
+    abilities = profile.get("abilities")
+    if type(abilities) is not list or not 1 <= len(abilities) <= 4:
+        issues.append("abilities must contain one through four entries")
+    avatar = profile.get("avatar_svg")
+    if avatar is not None and (
+        type(avatar) is not str or len(avatar.encode("utf-8")) > 64 * 1024
+    ):
+        issues.append("avatar_svg must be UTF-8 text no larger than 64 KiB")
+    return issues
+
 
 def generate_holo_card(rappid: str, kind: str, owner: str, name: str,
                        display_name: str, *,
@@ -358,45 +509,113 @@ def generate_holo_card(rappid: str, kind: str, owner: str, name: str,
                        category: str = None,
                        license: str = "PolyForm-Small-Business",
                        embed_avatar_svg: bool = True,
-                       gate_url: str = None) -> dict:
-    """Return an explicit historical/nonconformant refusal envelope."""
-    kind = normalize_kind(kind)
-    seed = derive_seed(rappid)
+                       gate_url: str = None,
+                       schema_pin: str | None = None) -> dict:
+    """Generate a full profile under historical or exact pinned semantics."""
+    generated = _generate_profile(
+        rappid,
+        kind,
+        owner,
+        name,
+        display_name,
+        version=version,
+        category=category,
+        license=license,
+        embed_avatar_svg=embed_avatar_svg,
+        gate_url=gate_url,
+    )
+    historical_schema = generated.pop("schema")
+    historical_compliance = generated["meta"].pop("_compliance", None)
+    provenance = {
+        "algorithm_source": {
+            "repository": "kody-w/RAPP",
+            "commit": HISTORICAL_ALGORITHM_COMMIT,
+            "path": "tools/holo_card_generator.py",
+        },
+        "historical_claimed_schema": historical_schema,
+        "historical_compliance_claim": historical_compliance,
+        "seed_source": "rappid UTF-8 bytes",
+        "seed_algorithm": "BLAKE2b-64 big-endian unsigned integer",
+        "mnemonic_vocabulary": {
+            "status": "historical-interim",
+            "word_count": len(_INTERIM_WORDS),
+            "registry_compatible": False,
+        },
+    }
+
+    if schema_pin is None:
+        return {
+            "schema": HISTORICAL_OUTPUT_SCHEMA,
+            "ok": True,
+            "generation_complete": True,
+            "accepted": False,
+            "conformant": False,
+            "status": "HISTORICAL_NON_ACCEPTED",
+            "publication_permitted": False,
+            "profile": generated,
+            "provenance": provenance,
+            "acceptance": {
+                "accepted": False,
+                "reason": (
+                    "No supported schema pin was selected, and publication "
+                    "does not establish RAPP/1 acceptance."
+                ),
+            },
+            "supported_schema_pins": sorted(SUPPORTED_SCHEMA_PINS),
+        }
+
+    pin = SUPPORTED_SCHEMA_PINS.get(schema_pin)
+    if pin is None:
+        return {
+            "schema": HISTORICAL_OUTPUT_SCHEMA,
+            "ok": False,
+            "generation_complete": True,
+            "accepted": False,
+            "conformant": False,
+            "status": "UNSUPPORTED_SCHEMA_PIN",
+            "publication_permitted": False,
+            "profile": generated,
+            "provenance": provenance,
+            "requested_schema_pin": schema_pin,
+            "supported_schema_pins": sorted(SUPPORTED_SCHEMA_PINS),
+            "error": {
+                "code": "unsupported-schema-pin",
+                "detail": "select one exact supported immutable schema pin",
+            },
+        }
+
+    pinned_profile = dict(generated)
+    pinned_profile["meta"] = dict(generated["meta"])
+    pinned_profile["schema"] = pin["schema"]
+    pinned_profile["meta"]["schema_pin"] = schema_pin
+    pinned_profile["meta"]["historical_incantation_preview"] = (
+        pinned_profile.pop("incantation")
+    )
+    validation_issues = _validate_pinned_profile(pinned_profile)
     return {
-        "schema": HISTORICAL_OUTPUT_SCHEMA,
-        "ok": False,
+        "schema": PINNED_OUTPUT_SCHEMA,
+        "ok": not validation_issues,
+        "generation_complete": True,
         "accepted": False,
-        "conformant": False,
-        "status": TOMBSTONE_STATUS,
-        "output_permitted": False,
-        "error": {
-            "code": "generator-retired",
-            "detail": (
-                "The historical generator cannot emit a registry-acceptable "
-                "holocard. Its interim mnemonic vocabulary is not the claimed "
-                "registry vocabulary."
+        "conformant": not validation_issues,
+        "status": (
+            "PINNED_SCHEMA_PROFILE"
+            if not validation_issues
+            else "PINNED_SCHEMA_VALIDATION_FAILED"
+        ),
+        "publication_permitted": False,
+        "selected_schema_pin": schema_pin,
+        "selected_schema": dict(pin),
+        "profile": pinned_profile,
+        "validation_issues": validation_issues,
+        "provenance": provenance,
+        "acceptance": {
+            "accepted": False,
+            "reason": (
+                "Pinned shape validation is not authenticated registry or "
+                "estate-owner acceptance."
             ),
         },
-        "historical_observation": {
-            "rappid": rappid,
-            "kind": kind,
-            "owner": owner,
-            "name": name,
-            "display_name": display_name,
-            "derived_seed": str(seed),
-            "interim_mnemonic_preview": seed_to_words(seed),
-            "requested_version": version,
-            "requested_category": category,
-            "requested_license": license,
-            "requested_embed_avatar_svg": bool(embed_avatar_svg),
-            "requested_gate_url": gate_url,
-        },
-        "owner_review_required": True,
-        "replacement_requirement": (
-            "Use a separately reviewed generator whose exact schema and "
-            "registry vocabulary are authenticated and whose output validates "
-            "before publication."
-        ),
     }
 
 
@@ -412,15 +631,38 @@ def _self_check() -> dict:
     if not (0 <= seed_a < (1 << 64)):
         issues.append("seed out of unsigned-64 range")
 
-    refusal = generate_holo_card(
-        test_rappid, "neighborhood", "test", "example", "Example"
+    for kind in available_kinds():
+        historical = generate_holo_card(
+            test_rappid, kind, "test", "example", "Example"
+        )
+        if historical.get("schema") != HISTORICAL_OUTPUT_SCHEMA:
+            issues.append(f"kind={kind}: wrong historical envelope")
+        if historical.get("accepted") is not False:
+            issues.append(f"kind={kind}: historical profile was accepted")
+        profile = historical.get("profile") or {}
+        for required in (
+            "id", "name", "seed", "hp", "stats", "agent_types",
+            "rarity_tier", "abilities", "flavor_text", "meta", "avatar_svg",
+        ):
+            if required not in profile:
+                issues.append(f"kind={kind}: missing retained {required!r}")
+        if not isinstance(profile.get("seed"), str):
+            issues.append(f"kind={kind}: seed must remain a string")
+
+    pinned = generate_holo_card(
+        test_rappid,
+        "neighborhood",
+        "test",
+        "example",
+        "Example",
+        schema_pin=RAPPCARDS_V1_1_2_PIN,
     )
-    if refusal.get("schema") != HISTORICAL_OUTPUT_SCHEMA:
-        issues.append("tombstone emitted the wrong historical schema")
-    if refusal.get("ok") is not False or refusal.get("accepted") is not False:
-        issues.append("tombstone became success-shaped")
-    if refusal.get("conformant") is not False:
-        issues.append("tombstone claimed conformance")
+    if pinned.get("schema") != PINNED_OUTPUT_SCHEMA or not pinned.get("ok"):
+        issues.append("supported schema pin failed shape validation")
+    if pinned.get("accepted") is not False:
+        issues.append("pinned shape was treated as accepted")
+    if pinned.get("profile", {}).get("schema") != "rappcards/1.1.2":
+        issues.append("pinned profile omitted its selected schema")
 
     # Avatar bounds
     avatar = generate_avatar_svg(seed_a, "neighborhood")
@@ -432,13 +674,11 @@ def _self_check() -> dict:
         issues.append("summon QR missing summon URL reference")
 
     return {
-        "ok": False,
+        "ok":     len(issues) == 0,
         "accepted": False,
-        "conformant": False,
-        "status": TOMBSTONE_STATUS,
-        "self_check_passed": len(issues) == 0,
         "issues": issues,
         "kinds":  available_kinds(),
+        "supported_schema_pins": sorted(SUPPORTED_SCHEMA_PINS),
         "sample_seed":        seed_a,
         "sample_incantation": seed_to_words(seed_a),
     }
@@ -448,4 +688,4 @@ if __name__ == "__main__":
     import sys
     chk = _self_check()
     print(json.dumps(chk, indent=2))
-    sys.exit(1)
+    sys.exit(0 if chk["ok"] else 1)

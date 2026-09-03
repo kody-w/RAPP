@@ -4,7 +4,8 @@
 # "focus is adoption, not federation" policy).
 #
 # Structural checks: removed files stay absent, the retained vendored evidence
-# stays free of T2T modules, and retired Tier 2 entrypoints refuse execution.
+# stays free of T2T modules, and restored Tier 2 entrypoints default to
+# deterministic inspection or plan output without effects.
 #
 #     bash tests/test-t2t-removal.sh
 #
@@ -88,11 +89,47 @@ echo "--- Section 2: swarm_server.py and chat.py entirely gone ---"
 
 assert_not_exists "rapp_brainstem/swarm_server.py removed"  rapp_brainstem/swarm_server.py
 assert_not_exists "rapp_brainstem/chat.py removed"          rapp_brainstem/chat.py
+assert_not_exists "lifecycle organ removed from active runtime" \
+    rapp_brainstem/utils/organs/lifecycle_organ.py
+assert_not_exists "neighborhood membership organ removed from active runtime" \
+    rapp_brainstem/utils/organs/neighborhood_membership_organ.py
+assert_not_exists "reserved agents removed from active runtime" \
+    rapp_brainstem/utils/reserved_agents
 
-# ── Section 3: function_app.py is an inert tombstone ──────────────────
+ARCHIVE_COUNT="$(python3 - <<'PY'
+import hashlib
+import json
+import pathlib
+import stat
+import subprocess
+
+root = pathlib.Path.cwd()
+manifest = json.loads(
+    (root / "historical/source-archive/manifest.json").read_text()
+)
+assert manifest["executable"] is False
+assert manifest["importable"] is False
+assert manifest["published_by_pages"] is False
+for record in manifest["records"]:
+    source = subprocess.check_output(
+        ("git", "show", f"{record['commit']}:{record['source_path']}"),
+        cwd=root,
+    )
+    archive = root / record["archive_path"]
+    assert not (root / record["source_path"]).exists()
+    assert archive.read_bytes() == source
+    assert not (archive.stat().st_mode & stat.S_IXUSR)
+    assert hashlib.sha256(source).hexdigest() == record["sha256"]
+    assert len(source) == record["bytes"]
+print(len(manifest["records"]))
+PY
+)"
+assert_eq "removed source families have exact inert archives" "8" "$ARCHIVE_COUNT"
+
+# ── Section 3: function_app.py is inspect-only by default ─────────────
 
 echo ""
-echo "--- Section 3: function_app.py is an inert tombstone ---"
+echo "--- Section 3: function_app.py defaults to inspection ---"
 
 PARSE_OUT=$(python3 -c "
 import ast
@@ -103,14 +140,15 @@ print('ok')
 assert_eq "function_app.py parses as valid Python"  "ok"  "$PARSE_OUT"
 
 set +e
-TOMBSTONE_OUT=$(python3 rapp_swarm/function_app.py 2>&1)
-TOMBSTONE_RC=$?
+INSPECT_OUT=$(python3 rapp_swarm/function_app.py 2>&1)
+INSPECT_RC=$?
 set -e
-assert_eq "function_app.py refuses execution" "78" "$TOMBSTONE_RC"
-case "$TOMBSTONE_OUT" in
-    *"410 Gone"*) echo "  ✓ function_app.py reports 410 Gone"; PASS=$((PASS + 1)) ;;
-    *) echo "  ✗ function_app.py does not report 410 Gone"
-       FAIL=$((FAIL + 1)); FAIL_NAMES+=("function_app.py 410 tombstone") ;;
+assert_eq "function_app.py inspection succeeds" "0" "$INSPECT_RC"
+case "$INSPECT_OUT" in
+    *'"default_effects": []'*'"mode": "inspect"'*)
+       echo "  ✓ function_app.py reports effect-free inspection"; PASS=$((PASS + 1)) ;;
+    *) echo "  ✗ function_app.py inspection contract is incomplete"
+       FAIL=$((FAIL + 1)); FAIL_NAMES+=("function_app.py inspection") ;;
 esac
 
 # ── Section 4: build.sh is inert and vendored evidence stays clean ────
@@ -128,11 +166,12 @@ set +e
 BUILD_OUT="$(bash rapp_swarm/build.sh 2>&1)"
 BUILD_RC=$?
 set -e
-assert_eq "build.sh refuses execution" "78" "$BUILD_RC"
+assert_eq "build.sh plan succeeds" "0" "$BUILD_RC"
 case "$BUILD_OUT" in
-    *"410 Gone"*) echo "  ✓ build.sh reports 410 Gone"; PASS=$((PASS + 1)) ;;
-    *) echo "  ✗ build.sh does not report 410 Gone"
-       FAIL=$((FAIL + 1)); FAIL_NAMES+=("build.sh 410 tombstone") ;;
+    *'"schema":"rapp-swarm-build-plan/1.0"'*'"effects":[]'*)
+       echo "  ✓ build.sh reports an effect-free plan"; PASS=$((PASS + 1)) ;;
+    *) echo "  ✗ build.sh plan contract is incomplete"
+       FAIL=$((FAIL + 1)); FAIL_NAMES+=("build.sh plan") ;;
 esac
 assert_eq "build.sh leaves vendored evidence unchanged" \
     "$VENDORED_BEFORE" "$(tree_hash rapp_swarm/_vendored)"

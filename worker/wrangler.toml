@@ -1,10 +1,17 @@
-# Historical metadata for the retired RAPP browser worker.
-# Do not deploy this artifact as a current service. worker.js is an
-# unconditional HTTP 410 tombstone with no secrets or upstream access.
+# Historical source: commit 4f6c14bbdf5b2d43887a9c7ab9cbda8c075f0dd6,
+# git blob b354cbb6759952105263b862d7ba18c185daa591.
+#
+# Metadata only. No reviewed upstream fetch binding is declared here, and the
+# capability flag is deliberately false. See worker.js and KERNEL_PIN.json.
 
 name = "rapp-auth"
 main = "worker.js"
 compatibility_date = "2025-01-01"
+
+[vars]
+RAPP_BROWSER_RUNTIME_ENABLED = "false"
+RAPP_BROWSER_RUNTIME_CAPABILITIES = ""
+RAPP_BROWSER_ALLOWED_ORIGINS = "http://localhost,http://127.0.0.1"
 
 [observability]
 enabled = false

@@ -1,25 +1,341 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Retired semantic tombstone — Brainstem Voice Shortcut</title>
-<meta name="description" content="The former Brainstem Voice Shortcut page is retired and inert.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brainstem Voice — Apple Shortcut</title>
+<meta name="description" content="The 5-action Apple Shortcut that turns Siri into a brainstem client. Watch, iPhone, Mac, HomePod, CarPlay — every Apple voice surface, one bundle.">
 <meta name="robots" content="noindex,nofollow">
-<link rel="stylesheet" href="/RAPP/pages/_site/css/tokens.css">
-<link rel="stylesheet" href="/RAPP/pages/_site/css/base.css">
-<style>main{max-width:720px;margin:0 auto;padding:72px 24px}.status{color:var(--warn);font:700 12px var(--font-mono);text-transform:uppercase;letter-spacing:.1em}h1{font-size:clamp(2rem,7vw,3.5rem);margin:12px 0 18px}.box{margin:28px 0;padding:18px;border:1px solid var(--border2);border-radius:12px;background:var(--surface)}nav{display:flex;gap:12px;flex-wrap:wrap}</style>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="rapp-history-source" content="commit=b4d94199b4d7d6952f513697ed47a3e323e231d6; blob=50f7203999aab645182f0207ed2cf8f835dc6d7c; sha256=57d419fe1cfd87619f8ef67d62a4034f8b247fbcb616fe416b9c83d09498ca73">
+<meta name="rapp-historical-boundary" content="Canonicalization, identity, frames, wire, eggs, registry, trust, and protocol evolution follow RAPP/1 rev-5 through RAPP1_AUTHORITY.json and RAPP1_STATUS.md.">
+<meta property="og:title" content="Brainstem Voice — Apple Shortcut">
+<meta property="og:description" content="Ask your brainstem via Siri on any Apple device. Zero native code.">
+<meta property="og:url" content="https://kody-w.github.io/RAPP/installer/shortcuts/brainstem-voice/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E🎙️%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --border:#21262d; --border2:#30363d;
+    --fg:#e6edf3; --dim:#8b949e; --muted:#484f58;
+    --green:#238636; --green-2:#2ea043; --green-3:#3fb950;
+    --blue:#1f6feb; --blue-2:#58a6ff;
+    --purple:#8b5cf6; --purple-2:#a78bfa;
+    --pink:#f778ba;
+    --warn:#d29922;
+    --code-bg:#0d1117;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:var(--bg);color:var(--fg);min-height:100vh;line-height:1.65;
+    padding:48px 24px;display:flex;flex-direction:column;align-items:center}
+  a{color:var(--blue-2);text-decoration:none}a:hover{text-decoration:underline}
+  code,kbd,pre{font-family:"SF Mono","Fira Code",ui-monospace,monospace;font-size:13px}
+  code{background:var(--panel);padding:2px 6px;border-radius:4px;color:var(--purple-2)}
+  pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;
+    padding:14px 16px;overflow-x:auto;margin:8px 0}
+  pre code{background:transparent;padding:0;color:var(--fg)}
+
+  .breadcrumb{font-size:12px;color:var(--muted);margin-bottom:24px;text-align:center}
+  .breadcrumb a{color:var(--dim)}
+
+  .hero{text-align:center;max-width:680px;margin-bottom:24px}
+  .hero .icon{font-size:64px;margin-bottom:16px;filter:drop-shadow(0 0 12px rgba(247,120,186,.25))}
+  .hero h1{font-size:36px;font-weight:700;margin-bottom:8px;letter-spacing:-.5px}
+  .hero h1 .grad{background:linear-gradient(90deg,#f778ba,#a78bfa,#58a6ff);
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p{color:var(--dim);font-size:16px}
+
+  .status-banner{max-width:680px;width:100%;margin-bottom:32px;
+    background:rgba(210,153,34,.08);border:1px solid var(--warn);border-radius:8px;
+    padding:14px 18px;color:var(--fg);font-size:14px;display:flex;gap:12px;align-items:flex-start}
+  .status-banner .dot{font-size:14px;line-height:1.4;flex-shrink:0}
+  .status-banner strong{color:var(--warn)}
+
+  .section{max-width:680px;width:100%;margin:0 0 32px;
+    background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:24px 28px}
+  .section h2{font-size:20px;font-weight:700;margin-bottom:14px}
+  .section h3{font-size:15px;color:var(--purple-2);text-transform:uppercase;letter-spacing:1px;margin:20px 0 8px;font-weight:700}
+  .section p{color:var(--dim);font-size:14.5px;margin-bottom:10px}
+  .section ol, .section ul{margin-left:24px;color:var(--dim);font-size:14.5px;margin-bottom:10px}
+  .section ol li, .section ul li{margin-bottom:6px}
+  .section ol li strong, .section ul li strong{color:var(--fg)}
+
+  .actions-list{counter-reset:action;list-style:none;margin-left:0!important;padding:0}
+  .actions-list li{counter-increment:action;background:var(--code-bg);border:1px solid var(--border);
+    border-radius:8px;padding:12px 16px 12px 48px;margin-bottom:10px;position:relative}
+  .actions-list li::before{content:counter(action);position:absolute;left:14px;top:11px;
+    width:24px;height:24px;background:var(--purple);border-radius:50%;color:#fff;
+    font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .actions-list li strong{color:var(--purple-2);display:block;margin-bottom:4px;font-family:"SF Mono",monospace;font-size:13px}
+  .actions-list li span{color:var(--dim);font-size:13px}
+  .actions-list li code{font-size:11.5px}
+
+  .surfaces{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .surface{padding:6px 12px;background:var(--code-bg);border:1px solid var(--border);
+    border-radius:6px;font-size:12px;color:var(--dim);font-weight:500}
+
+  table{width:100%;border-collapse:collapse;font-size:14px;margin:8px 0}
+  th, td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--border)}
+  th{color:var(--purple-2);text-transform:uppercase;letter-spacing:.5px;font-size:11px;font-weight:700}
+  td{color:var(--dim)}
+  .rapp-safety-note{display:block;color:var(--warn)!important;font-size:12px!important;margin-top:8px}
+  [data-rapp-inert-source="true"]{border-left:3px solid var(--warn)!important}
+  .planner-grid{display:grid;gap:12px}
+  .planner-grid label{color:var(--dim);font-size:12px;font-weight:600}
+  .planner-grid input,.planner-grid textarea{
+    width:100%;margin-top:5px;padding:10px 12px;border:1px solid var(--border2);
+    border-radius:7px;background:var(--code-bg);color:var(--fg);font:13px/1.5 "SF Mono",monospace}
+  .planner-grid textarea{min-height:96px;resize:vertical}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+  .controls button{padding:9px 13px;border:1px solid var(--border2);border-radius:7px;
+    background:var(--purple);color:#fff;font:600 13px inherit;cursor:pointer}
+  .controls button.secondary{background:transparent;color:var(--fg)}
+
+  footer{max-width:680px;width:100%;text-align:center;color:var(--muted);font-size:12px;
+    border-top:1px solid var(--border);padding-top:18px}
+</style>
 </head>
 <body>
-<main>
-  <p class="status">Retired semantic tombstone · 2026-09-02</p>
-  <h1>The Brainstem Voice Shortcut is retired.</h1>
-  <p>This preserved URL does not install a Shortcut, contact a local server,
-    collect credentials, or invoke a voice endpoint.</p>
-  <div class="box"><strong>No shipped browser or mobile runtime.</strong>
-    Historical voice presentation does not change the exact RAPP/1 response
-    contract.</div>
-  <nav><a href="/RAPP/installer/shortcuts/">Shortcut retirement notice</a><a href="/RAPP/RAPP1_STATUS.md">RAPP/1 status</a></nav>
-</main>
+
+<div class="breadcrumb">
+  <a href="../../../">RAPP</a> &nbsp;/&nbsp; <a href="../../">installer</a> &nbsp;/&nbsp; <a href="../">shortcuts</a> &nbsp;/&nbsp; brainstem-voice
+</div>
+
+<div class="hero">
+  <div class="icon">🎙️</div>
+  <h1>Brainstem <span class="grad">Voice</span></h1>
+  <p>The 5-action Apple Shortcut that turns Siri into a brainstem client. <em>"Hey Siri, ask Brainstem…"</em></p>
+</div>
+
+<div class="status-banner">
+  <span class="dot">🟡</span>
+  <span><strong>Author phase.</strong> The protocol is locked and the infrastructure is in place. The signed <code>.shortcut</code> file lands here once authored on a Mac with Shortcuts.app. Until then, follow the build steps below — it takes 5 minutes.
+    <span class="rapp-safety-note">Historical status copy is preserved. No
+      signed file, install link, endpoint call, or credential flow is active;
+      use the local planner below. Installer evidence points to
+      <a href="../../../KERNEL_PIN.json">KERNEL_PIN.json</a> and the immutable
+      <a href="https://github.com/kody-w/rapp-installer/tree/brainstem-v0.6.9" rel="noopener">kody-w/rapp-installer@brainstem-v0.6.9</a>
+      source tag.</span></span>
+</div>
+
+<div class="section">
+  <h2>What it does</h2>
+  <p>You say <em>"Hey Siri, ask Brainstem [thing]"</em> (or tap the Shortcut). Siri dictates → POSTs to your brainstem's <code>/chat</code> endpoint → extracts the <code>voice_response</code> field → speaks it aloud. The brainstem already emits a TTS-shaped voice slot for exactly this; the Shortcut is just the harness.</p>
+
+  <h3>Surfaces it covers</h3>
+  <div class="surfaces">
+    <span class="surface">📱 iPhone</span>
+    <span class="surface">📱 iPad</span>
+    <span class="surface">💻 Mac</span>
+    <span class="surface">⌚ Apple Watch</span>
+    <span class="surface">🔊 HomePod</span>
+    <span class="surface">🚗 CarPlay</span>
+  </div>
+  <p>One bundle. Six surfaces. <strong>Zero native code.</strong></p>
+</div>
+
+<div class="section">
+  <h2>Build it (5 minutes)</h2>
+
+  <p>Open <strong>Shortcuts.app</strong> on macOS or iOS. <strong>File → New Shortcut.</strong> Name it <code>Brainstem Voice</code>. Add these 5 actions in order:</p>
+
+  <ol class="actions-list">
+    <li>
+      <strong>Ask for Input</strong>
+      <span>Prompt: <em>"What do you want to ask?"</em>. Input Type: Text. (When triggered from Siri or Watch, this becomes the dictation prompt automatically.)</span>
+    </li>
+    <li data-rapp-inert-source="true">
+      <strong>Get Contents of URL</strong>
+      <span>URL: <code>{your_brainstem_url}/chat</code>. Method: <code>POST</code>. Headers: <code>Content-Type: application/json</code>. Request Body: JSON with <code>user_input</code> = <em>Provided Input</em> and <code>conversation_history</code> = empty list.</span>
+      <span class="rapp-safety-note">Inert historical action. Do not add or run
+        this network step from the restored page; the local planner builds an
+        exact rev-5 request preview instead.</span>
+    </li>
+    <li data-rapp-inert-source="true">
+      <strong>Get Dictionary Value</strong>
+      <span>Get: Value. Key: <code>voice_response</code>. From: <em>Contents of URL</em>.</span>
+      <span class="rapp-safety-note">Historical field context only. Current
+        speech derives locally from the exact <code>response</code> string.</span>
+    </li>
+    <li data-rapp-inert-source="true">
+      <strong>If</strong> (optional fallback)
+      <span>If <em>Dictionary Value</em> is empty, fetch <code>response</code> instead. (Used when voice mode is off.)</span>
+      <span class="rapp-safety-note">No fetch occurs here. The preview below
+        operates only on sample text already in the page.</span>
+    </li>
+    <li>
+      <strong>Speak Text</strong>
+      <span>Text: <em>Dictionary Value</em>. Voice: system default. <em>Wait Until Finished</em>: on.</span>
+    </li>
+  </ol>
+
+  <p>Tap the play button to test. Type or speak something. Confirm the brainstem's voice response is spoken back.</p>
+
+  <h3>Then sign + ship</h3>
+  <span class="rapp-safety-note">The original distribution sequence remains
+    visible as inert source. This page performs none of these actions.</span>
+  <ol>
+    <li data-rapp-inert-source="true"><strong>File → Export…</strong> → save as <code>brainstem-voice.shortcut</code>.</li>
+    <li data-rapp-inert-source="true">Sign for public install: <code>bash installer/shortcuts/sign.sh brainstem-voice.shortcut</code></li>
+    <li data-rapp-inert-source="true"><strong>Share → Copy iCloud Link</strong> → paste it in this directory's <code>README.md</code>.</li>
+  </ol>
+</div>
+
+<div class="section">
+  <h2>Configure on first run</h2>
+  <p>The Shortcut prompts once and stores the answers as Shortcut variables:</p>
+  <table>
+    <thead>
+      <tr><th>Variable</th><th>What</th><th>Example</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>brainstem_url</code></td><td>HTTP root of your brainstem</td><td><code>http://192.168.1.42:7071</code></td></tr>
+      <tr><td><code>auth_token</code></td><td>Bearer token (Tier 2 only)</td><td>empty for Tier 1</td></tr>
+      <tr><td><code>voice_mode</code></td><td>Whether to expect a voice slot</td><td>default <code>true</code></td></tr>
+    </tbody>
+  </table>
+  <span class="rapp-safety-note">The table is preserved as historical design
+    input. This page does not request, store, or transmit an endpoint URL,
+    OAuth grant, or token.</span>
+  <p>To change later, edit the Shortcut's variables in Shortcuts.app — no need to rebuild.</p>
+</div>
+
+<div class="section" id="local-planner">
+  <h2>Local request + speech planner</h2>
+  <p>This additive planner keeps the original five-action source above intact
+    while replacing its active network, token, and install paths with local
+    preview and export behavior.</p>
+  <div class="planner-grid">
+    <label>Sample question
+      <input id="sample-question" value="What is next?" autocomplete="off">
+    </label>
+    <label>Optional session ID
+      <input id="sample-session" placeholder="omit when unused" autocomplete="off">
+    </label>
+    <label>Optional idempotency key
+      <input id="sample-idempotency" placeholder="omit when unused" autocomplete="off">
+    </label>
+    <label>Sample response
+      <textarea id="sample-response">A local planning answer. |||VOICE||| This is the locally derived speech preview. |||TWIN||| No twin data leaves the page.</textarea>
+    </label>
+  </div>
+  <div class="controls">
+    <button id="build-preview">Build local preview</button>
+    <button class="secondary" id="speak-preview">Preview speech text</button>
+    <button class="secondary" id="copy-preview">Copy plan</button>
+    <button class="secondary" id="export-preview">Show plan JSON</button>
+  </div>
+  <h3>Request preview</h3>
+  <pre id="request-preview"></pre>
+  <h3>Derived speech</h3>
+  <pre id="speech-preview"></pre>
+  <span class="rapp-safety-note" id="planner-status">Nothing has been sent or installed.</span>
+</div>
+
+<div class="section">
+  <h2>Why this and not a native app</h2>
+  <p>A native watchOS / iOS app would need an Apple Developer Program enrollment ($99/yr), App Store review per release, watchOS-specific code, per-OS-version regression testing. This Shortcut needs <strong>none of it</strong>. The brainstem already emits the voice slot. The Shortcut is harness, not product.</p>
+  <p>The constitutional posture is captured in   <a href="../../../pages/vault/#Architecture%2FSurfaces%20%E2%80%94%20Mobile%2C%20Watch%2C%20Voice.md">the Surfaces vault note</a>: reach new form factors with web tech and OS-native primitives, not native code.</p>
+</div>
+
+<footer>
+  Part of <a href="../../../">RAPP</a> · <a href="../">other shortcuts</a> ·
+  <a href="../protocol.md">protocol</a> · <a href="https://github.com/kody-w/RAPP">GitHub</a>
+</footer>
+
+<script>
+"use strict";
+
+const question = document.getElementById("sample-question");
+const sessionId = document.getElementById("sample-session");
+const idempotencyKey = document.getElementById("sample-idempotency");
+const sampleResponse = document.getElementById("sample-response");
+const requestPreview = document.getElementById("request-preview");
+const speechPreview = document.getElementById("speech-preview");
+const plannerStatus = document.getElementById("planner-status");
+
+function deriveSpeech(response) {
+  const marker = "|||VOICE|||";
+  if (!response.includes(marker)) return response.trim();
+  const afterVoice = response.split(marker).slice(1).join(marker);
+  return afterVoice.split("|||TWIN|||")[0].trim();
+}
+
+function buildPlan() {
+  const request = { user_input: question.value.trim() || "What is next?" };
+  if (sessionId.value.trim()) request.session_id = sessionId.value.trim();
+  if (idempotencyKey.value.trim()) request.idempotency_key = idempotencyKey.value.trim();
+  const speech = deriveSpeech(sampleResponse.value);
+  const plan = {
+    schema: "rapp-shortcut-voice-preview/1.0",
+    status: "preview-only",
+    request,
+    sample_success_shape: {
+      response: sampleResponse.value,
+      agent_logs: [],
+      session_id: request.session_id || "<server-issued>",
+    },
+    sample_refusal_shape: {
+      error: { code: "<pending-owner-registration>", step: null },
+    },
+    derived_speech: speech,
+    disabled_side_effects: [
+      "Get Contents of URL network request",
+      "OAuth or token handling",
+      "Shortcut signing or shell execution",
+      "Shortcut download or iCloud deep-link install",
+      "server session creation",
+    ],
+    authority: {
+      revision: "rev-5",
+      record: "../../../RAPP1_AUTHORITY.json",
+      status: "../../../RAPP1_STATUS.md",
+    },
+    grail_evidence: {
+      pin: "../../../KERNEL_PIN.json",
+      source: "https://github.com/kody-w/rapp-installer/tree/brainstem-v0.6.9",
+    },
+  };
+  requestPreview.textContent = JSON.stringify(request, null, 2);
+  speechPreview.textContent = speech || "(empty sample)";
+  plannerStatus.textContent = "Preview refreshed locally. Nothing was sent or installed.";
+  return plan;
+}
+
+function planText() {
+  return JSON.stringify(buildPlan(), null, 2);
+}
+
+document.getElementById("build-preview").onclick = buildPlan;
+document.getElementById("speak-preview").onclick = () => {
+  const plan = buildPlan();
+  if (!plan.derived_speech) {
+    plannerStatus.textContent = "Add sample response text before previewing.";
+    return;
+  }
+  speechPreview.scrollIntoView({ behavior: "smooth", block: "center" });
+  plannerStatus.textContent = "Speech text is shown above; no audio device was used.";
+};
+
+document.getElementById("copy-preview").onclick = async event => {
+  const button = event.currentTarget;
+  try {
+    await navigator.clipboard.writeText(planText());
+    button.textContent = "Copied ✓";
+    setTimeout(() => { button.textContent = "Copy plan"; }, 1500);
+  } catch (_) {
+    button.textContent = "Copy unavailable";
+  }
+};
+
+document.getElementById("export-preview").onclick = () => {
+  requestPreview.textContent = planText();
+  requestPreview.scrollIntoView({ behavior: "smooth", block: "center" });
+  plannerStatus.textContent = "Plan JSON is shown above; no file was created.";
+};
+
+buildPlan();
+</script>
+
 </body>
 </html>

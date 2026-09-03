@@ -336,13 +336,16 @@ class Rapp1DocumentationTests(unittest.TestCase):
         errors = self._category_mutation_errors(path, mutated)
         self.assertTrue(any(path in error and "plant.sh CTA" in error for error in errors))
 
-    def test_executable_planting_script_mutation_is_rejected(self) -> None:
+    def test_network_enabled_planting_page_mutation_is_rejected(self) -> None:
         path = "installer/plant.html"
         text = (ROOT / path).read_text(encoding="utf-8")
-        mutated = text.replace("</body>", "<script>alert(1)</script></body>", 1)
+        mutated = text.replace("connect-src 'none'", "connect-src *", 1)
         errors = self._category_mutation_errors(path, mutated)
         self.assertTrue(
-            any(path in error and "tombstone executes script" in error for error in errors),
+            any(
+                path in error and "adapted page permits network access" in error
+                for error in errors
+            ),
             errors,
         )
 
@@ -365,10 +368,14 @@ class Rapp1DocumentationTests(unittest.TestCase):
         for path in self.fixture["classifications"]["contained"]:
             text = (ROOT / path).read_text(encoding="utf-8")
             if path == "pages/metropolis/index.html":
-                self.assertNotIn("plant-from-discord", text)
+                self.assertIn("plant-from-discord", text)
+                self.assertIn("rapp-source-commit", text)
+                self.assertIn("KERNEL_PIN.json", text)
+                self.assertIn("Content-Security-Policy", text)
             elif path == "pages/index.html":
-                self.assertIn("Pre-acceptance", text)
-                self.assertIn("Installation is disabled", text)
+                self.assertIn("rapp-current-status", text)
+                self.assertIn("KERNEL_PIN.json", text)
+                self.assertNotIn('class="current-note"', text)
             elif path == "pages/_site/partials/footer.html":
                 self.assertIn("source-available", text)
                 self.assertIn("RAPP1_STATUS.md", text)
@@ -377,19 +384,29 @@ class Rapp1DocumentationTests(unittest.TestCase):
                 self.assertNotIn("open source", text.lower())
                 self.assertNotIn("MIT", text)
             elif path == "installer/README.md":
-                self.assertIn("HTTP 410 Gone", text)
-                self.assertIn(
-                    "target-owned public distribution, deployment, and", text
+                active, historical = text.split(
+                    "<!-- RAPP1-HISTORICAL-SECTION-START -->",
+                    1,
                 )
-                self.assertIn("initialize-variant.sh", text)
-                self.assertIn("fresh template clones", text)
-                self.assertIn("mint-once", text)
-                self.assertIn("no runtime install or deploy", text)
-                self.assertIn("RAPP1_STATUS.md", text)
-                self.assertIn("RAPP1_AUTHORITY.json", text)
+                self.assertIn("Current delivery boundary", active)
+                self.assertIn("local provenance", active)
+                self.assertIn("zero effects", active)
+                self.assertIn("KERNEL_PIN.json", active)
+                self.assertIn("reviewed dependency", active)
+                self.assertIn("authenticated fresh section-13", active)
+                self.assertIn("RAPP1_STATUS.md", active)
+                self.assertIn("# `installer/` — Public install surface", historical)
+                self.assertIn("**Stable filenames.**", historical)
+                self.assertIn(
+                    "**Versioned bundles append, not replace.**",
+                    historical,
+                )
+                self.assertIn("## Scale rule", historical)
             else:
-                self.assertIn("Retired semantic tombstone", text)
-                self.assertIn("retired", text.lower())
+                self.assertIn("rapp-history-source", text)
+                self.assertIn("KERNEL_PIN.json", text)
+                self.assertIn("Content-Security-Policy", text)
+                self.assertNotIn("Retired semantic tombstone", text)
 
     def test_final_closure_paths_are_asserted_not_owner_excluded(self) -> None:
         ownership = self.fixture["ownership_exclusions"]
@@ -454,44 +471,74 @@ class Rapp1DocumentationTests(unittest.TestCase):
             any(path in error and "public install instructions" in error for error in errors),
             errors,
         )
-        mutated = text.replace("initialize-variant.sh", "retired-lineage.sh")
+        mutated = text.replace(
+            "default to local provenance",
+            "offer live installation",
+        )
         errors = self._category_mutation_errors(path, mutated)
         self.assertTrue(
             any(
                 path in error
-                and "repository-local `initialize-variant.sh`" in error
+                and "default to local provenance" in error
                 for error in errors
             ),
             errors,
         )
+        mutated = text.replace("**Stable filenames.**", "**Moving filenames.**")
+        errors = self._category_mutation_errors(path, mutated)
+        self.assertTrue(
+            any(path in error and "historical contract lost" in error for error in errors),
+            errors,
+        )
 
-    def test_cave_installer_agent_remains_absent_from_live_indexes(self) -> None:
+    def test_cave_installer_agent_remains_historical_and_unreachable(self) -> None:
         path = ROOT / "cave/cubbies/kody-w/agents/rapp_installer_agent.py"
         self.assertFalse(path.exists())
         rar = json.loads((ROOT / "cave/rar/index.json").read_text())
-        self.assertFalse(
-            any(
-                entry.get("name") == "@kody-w/rapp_installer"
-                for entry in rar.get("agents", [])
-            )
+        rar_entry = next(
+            entry
+            for entry in rar.get("agents", [])
+            if entry.get("name") == "@kody-w/rapp_installer"
         )
+        self.assertEqual(rar_entry["status"], "historical-observation")
+        self.assertFalse(rar_entry["source"]["present"])
+        self.assertFalse(rar_entry["accepted"])
+        self.assertFalse(rar_entry["active_distribution"])
+        self.assertFalse(rar_entry["streamable"])
+        self.assertEqual(rar_entry["kernel_pin"]["record"], "KERNEL_PIN.json")
+        self.assertEqual(rar_entry["kernel_pin"]["tag"], "brainstem-v0.6.9")
         super_rar = json.loads(
             (ROOT / "cave/super-rar/index.json").read_text()
         )
-        self.assertFalse(
-            any(
-                entry.get("name") == "rapp_installer_agent.py"
-                for entry in super_rar.get("entries", [])
-            )
+        super_entry = next(
+            entry
+            for entry in super_rar.get("entries", [])
+            if entry.get("kind") == "agent"
+            and entry.get("name") == "rapp_installer_agent.py"
         )
+        self.assertEqual(super_entry["status"], "historical-observation")
+        self.assertFalse(super_entry["source"]["present"])
+        self.assertFalse(super_entry["accepted"])
+        self.assertFalse(super_entry["active_distribution"])
+        self.assertFalse(super_entry["streamable"])
 
     def test_cave_index_streamability_mutation_is_rejected(self) -> None:
         path = "cave/super-rar/index.json"
         value = json.loads((ROOT / path).read_text(encoding="utf-8"))
-        value["entries"][0]["streamable"] = True
+        entry = next(
+            item
+            for item in value["entries"]
+            if item.get("kind") == "egg"
+            and item.get("name") == "cubby-rapp-installer.egg"
+        )
+        entry["streamable"] = True
         errors = self._category_mutation_errors(path, json.dumps(value))
         self.assertTrue(
-            any(path in error and "remains streamable" in error for error in errors),
+            any(
+                path in error
+                and "installer egg observation is missing or executable" in error
+                for error in errors
+            ),
             errors,
         )
 
@@ -594,7 +641,7 @@ class Rapp1DocumentationTests(unittest.TestCase):
         status = (ROOT / "RAPP1_STATUS.md").read_bytes()
         self.assertEqual(
             hashlib.sha256(status).hexdigest(),
-            "2eac582c61170044011bfaf174bf89ea05421b598ce36d49660019e1f8f6c112",
+            "bce9a915822cad10a7fe80c4e8c4965c2ce0dd8e292a633c8d41d7ec33c3cfd3",
         )
         audit = self.fixture["audit"]
         self.assertEqual(audit["post_audit_tracked_paths"], 691)

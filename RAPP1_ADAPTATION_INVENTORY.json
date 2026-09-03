@@ -1,0 +1,1692 @@
+{
+  "schema": "rapp1-adaptation-inventory/1.0",
+  "record_kind": "candidate-compliance-adaptation-inventory",
+  "status": "candidate",
+  "is_section_13_registry": false,
+  "authenticated_acceptance_allowed": false,
+  "repository": {
+    "slug": "kody-w/RAPP",
+    "authority": "RAPP1_AUTHORITY.json",
+    "status": "RAPP1_STATUS.md",
+    "owner_actions": "RAPP1_OWNER_ACTIONS.json",
+    "historical_source_ledger": "HISTORICAL_SOURCE_LEDGER.json",
+    "human_report": "pages/vault/Plans & Ledgers/RAPP1 Adaptation Inventory.md",
+    "conformance": "not-yet-fully-rapp-1-conformant"
+  },
+  "snapshot": {
+    "basis": "tracked-path-set-after-restoration",
+    "generated_at": "2026-09-03",
+    "tracked_path_count": 731,
+    "tracked_path_set_sha256": "3f088647ac4e7c192fb31f7bda02c29c34ffcb605289352fc8a423977ef72cb2",
+    "path_digest_profile": "sorted UTF-8 repository paths, each terminated by LF"
+  },
+  "policies": {
+    "adapt_dont_kill": {
+      "preserve_data_exhaust": true,
+      "restore_fullest_artifact_first": true,
+      "blank_refusals_allowed_as_target_state": false,
+      "semantic_tombstones_allowed_as_target_state": false,
+      "disable_only_exact_unsafe_edges": true
+    },
+    "grail_resolution": {
+      "record": "KERNEL_PIN.json",
+      "repository": "kody-w/rapp-installer",
+      "tag": "brainstem-v0.6.9",
+      "policy": "read-only",
+      "moving_installer_refs_accepted": false
+    },
+    "trust_state_dimensions": [
+      "observed",
+      "structurally_valid",
+      "cryptographically_verified",
+      "fresh",
+      "accepted"
+    ],
+    "capability_defaults": {
+      "network": false,
+      "credential_read": false,
+      "filesystem_write": false,
+      "repository_write": false,
+      "process_spawn": false,
+      "artifact_install": false,
+      "deployment": false,
+      "publication": false,
+      "payment": false
+    }
+  },
+  "path_sets": [
+    {
+      "id": "PS-ALL",
+      "selector": {
+        "type": "git-prefix",
+        "prefix": ""
+      },
+      "expected_count": 731,
+      "path_set_sha256": "3f088647ac4e7c192fb31f7bda02c29c34ffcb605289352fc8a423977ef72cb2"
+    },
+    {
+      "id": "PS-HISTORICAL-SOURCE-ARCHIVE",
+      "selector": {
+        "type": "git-prefix",
+        "prefix": "historical/source-archive/"
+      },
+      "expected_count": 9,
+      "path_set_sha256": "af218be9d2dfd273cd67b4ee8db68c171ee01c6d4723b705193a0e175e330f41"
+    },
+    {
+      "id": "PS-CORE",
+      "selector": {
+        "type": "git-prefix",
+        "prefix": "rapp1_core/"
+      },
+      "expected_count": 11,
+      "path_set_sha256": "fdc48003f0173a9484df51391793b8b7e61699fd9793ba10266ee6667f380856"
+    },
+    {
+      "id": "PS-BRAINSTEM",
+      "selector": {
+        "type": "git-prefix",
+        "prefix": "rapp_brainstem/"
+      },
+      "expected_count": 29,
+      "path_set_sha256": "f1e192db3f0887f5b99d1834bf0d2244d05b4da171a8e7cd9369ef98e90ad343"
+    },
+    {
+      "id": "PS-SWARM",
+      "selector": {
+        "type": "git-prefix",
+        "prefix": "rapp_swarm/"
+      },
+      "expected_count": 36,
+      "path_set_sha256": "adf0b382bbb859249bc5ae43f7a2f25c064ef80980403b22a47023ce88368562"
+    },
+    {
+      "id": "PS-CAVE",
+      "selector": {
+        "type": "git-prefix",
+        "prefix": "cave/"
+      },
+      "expected_count": 79,
+      "path_set_sha256": "7e227f065810e1f72b132c08f9ee6415a335943e57adda9cfaac9a2c0ce88793"
+    },
+    {
+      "id": "PS-INSTALLER",
+      "selector": {
+        "type": "git-prefix",
+        "prefix": "installer/"
+      },
+      "expected_count": 24,
+      "path_set_sha256": "4acdfb1745b1d50cc4d0f196c85801b335a574fb97585ea4135ad9a70019ae3b"
+    },
+    {
+      "id": "PS-WORKER",
+      "selector": {
+        "type": "git-prefix",
+        "prefix": "worker/"
+      },
+      "expected_count": 4,
+      "path_set_sha256": "b849f91bfdd24c98b61248d2ecf0478ba4a403708d13103dc5f2f59d9273225b"
+    },
+    {
+      "id": "PS-TOOLS",
+      "selector": {
+        "type": "git-prefix",
+        "prefix": "tools/"
+      },
+      "expected_count": 28,
+      "path_set_sha256": "207c2256bb83ed3c001a655967e49bd7684c3e2949f8d1cfc35efab847597114"
+    },
+    {
+      "id": "PS-PAGES",
+      "selector": {
+        "type": "git-prefix",
+        "prefix": "pages/"
+      },
+      "expected_count": 212,
+      "path_set_sha256": "1811cdae52865c1afa5dd18fc743c4d5cf566146d43ead20c59cf01cd10c6689"
+    },
+    {
+      "id": "PS-ADAPTED-PAGES",
+      "selector": {
+        "type": "explicit",
+        "paths": [
+          "installer/plant.html",
+          "installer/plant_qr.html",
+          "installer/seed.html",
+          "installer/shortcuts/brainstem-voice/index.html",
+          "installer/shortcuts/index.html",
+          "pages/chat.html",
+          "pages/grail-brainstem/index.html",
+          "pages/lobby.html",
+          "pages/metropolis/index.html",
+          "pages/metropolis/plant-from-discord.html",
+          "pages/payphone.html",
+          "pages/sphere.html",
+          "pages/summon.html",
+          "pages/tether.html",
+          "pages/vbrainstem.html",
+          "pages/vbrainstem/index.html",
+          "pages/vneighborhood.html"
+        ]
+      },
+      "expected_count": 17,
+      "path_set_sha256": "c821bea0342749dc66c39a06e05ba37ae2bdb752bede243517c4ecf2ce8e29b7"
+    },
+    {
+      "id": "PS-IMMUTABLE-GRAIL",
+      "selector": {
+        "type": "explicit",
+        "paths": [
+          "rapp_brainstem/VERSION",
+          "rapp_brainstem/agents/basic_agent.py",
+          "rapp_brainstem/brainstem.py"
+        ]
+      },
+      "expected_count": 3,
+      "path_set_sha256": "4cb40388b3c76ac84064e3000ba70ddf71bf4ec9408bbba7075928127445c3b8"
+    }
+  ],
+  "primary_classification": {
+    "semantics": "ordered-first-match-with-explicit-fallback",
+    "secondary_relationships": "Surface paths and path_set_refs are typed secondary relationships and do not replace the primary classification.",
+    "required_surface_ids": [
+      "GOV-001",
+      "CORE-001",
+      "IDENT-001",
+      "FRAME-001",
+      "EGG-001",
+      "TRUST-001",
+      "WIRE-001",
+      "GRAIL-001",
+      "WORKER-001",
+      "BROWSER-001",
+      "PAGES-001",
+      "METRO-001",
+      "CAVE-001",
+      "ESTATE-001",
+      "NETWORK-001",
+      "SWARM-001",
+      "GENERATED-001",
+      "HISTORY-001",
+      "TEST-001",
+      "MIRROR-001"
+    ],
+    "rules": [
+      {
+        "id": "primary-immutable-grail",
+        "surface_id": "GRAIL-001",
+        "selector": {
+          "type": "explicit",
+          "paths": [
+            "KERNEL_PIN.json",
+            "check_kernel_pin.py",
+            "rapp_brainstem/VERSION",
+            "rapp_brainstem/agents/basic_agent.py",
+            "rapp_brainstem/brainstem.py"
+          ]
+        }
+      },
+      {
+        "id": "primary-wire",
+        "surface_id": "WIRE-001",
+        "selector": {
+          "type": "prefix",
+          "prefixes": [
+            "rapp_brainstem/rapp1_facade",
+            "rapp_brainstem/run_rapp1_facade"
+          ]
+        }
+      },
+      {
+        "id": "primary-frames",
+        "surface_id": "FRAME-001",
+        "selector": {
+          "type": "explicit-and-prefix",
+          "paths": [
+            "rapp1_core/frame.py",
+            "tests/rapp1_core/test_frames.py"
+          ],
+          "prefixes": [
+            "tests/fixtures/moments/"
+          ]
+        }
+      },
+      {
+        "id": "primary-eggs",
+        "surface_id": "EGG-001",
+        "selector": {
+          "type": "explicit",
+          "paths": [
+            "rapp1_core/egg.py",
+            "tests/rapp1_core/test_eggs.py",
+            "tools/import_peer_egg.py",
+            "pages/tutorials/commons.egg",
+            "pages/tutorials/sample-session.egg",
+            "installer/hatchling",
+            "rapp_swarm/twin-egg.sh",
+            "installer/RETIRED_ARTIFACTS.json"
+          ]
+        }
+      },
+      {
+        "id": "primary-trust",
+        "surface_id": "TRUST-001",
+        "selector": {
+          "type": "explicit",
+          "paths": [
+            "rapp1_core/jws.py",
+            "rapp1_core/trust.py",
+            "tools/sign_release.py",
+            "installer/shortcuts/sign.sh"
+          ]
+        }
+      },
+      {
+        "id": "primary-identity",
+        "surface_id": "IDENT-001",
+        "selector": {
+          "type": "explicit",
+          "paths": [
+            "rappid.json",
+            "cave/rappid.json",
+            "cave/rapplications/rapp-installer/rappid.json",
+            "rapp1_core/identity.py",
+            "tools/door_address.py",
+            "tools/migrate_rappid.py",
+            "tools/backfill_seeds.py"
+          ]
+        }
+      },
+      {
+        "id": "primary-core",
+        "surface_id": "CORE-001",
+        "selector": {
+          "type": "prefix",
+          "prefixes": [
+            "rapp1_core/"
+          ]
+        }
+      },
+      {
+        "id": "primary-worker",
+        "surface_id": "WORKER-001",
+        "selector": {
+          "type": "prefix",
+          "prefixes": [
+            "worker/",
+            "tests/doorman/",
+            "tests/osi/"
+          ]
+        }
+      },
+      {
+        "id": "primary-metropolis",
+        "surface_id": "METRO-001",
+        "selector": {
+          "type": "explicit-and-prefix",
+          "paths": [
+            "scripts/harvest-metropolis-activity.py"
+          ],
+          "prefixes": [
+            "pages/metropolis/"
+          ]
+        }
+      },
+      {
+        "id": "primary-browser-history",
+        "surface_id": "BROWSER-001",
+        "selector": {
+          "type": "path-set-ref",
+          "path_set_ref": "PS-ADAPTED-PAGES"
+        }
+      },
+      {
+        "id": "primary-generated",
+        "surface_id": "GENERATED-001",
+        "selector": {
+          "type": "explicit",
+          "paths": [
+            "pages/_site/index.json",
+            "pages/about/ecosystem.json",
+            "pages/about/prompts.json",
+            "pages/vault/manifest.json",
+            "pages/vault/content-bundle.json",
+            "cave/cubbies/index.json",
+            "cave/rar/index.json",
+            "cave/super-rar/index.json",
+            "sitemap.xml"
+          ]
+        }
+      },
+      {
+        "id": "primary-cave",
+        "surface_id": "CAVE-001",
+        "selector": {
+          "type": "prefix",
+          "prefixes": [
+            "cave/"
+          ]
+        }
+      },
+      {
+        "id": "primary-estate",
+        "surface_id": "ESTATE-001",
+        "selector": {
+          "type": "explicit",
+          "paths": [
+            "plant",
+            "tools/private_estate_init.py",
+            "tools/rebuild_estate.py",
+            "tools/door_address.py",
+            "tools/migrate_rappid.py",
+            "tools/backfill_seeds.py",
+            ".github/ISSUE_TEMPLATE/place-submission.yml",
+            ".github/scripts/parse_place_issue.py",
+            ".github/workflows/plant-approved-place.yml"
+          ]
+        }
+      },
+      {
+        "id": "primary-network",
+        "surface_id": "NETWORK-001",
+        "selector": {
+          "type": "explicit",
+          "paths": [
+            ".well-known/rapp-network-seed.json",
+            "tools/sniff_network.py",
+            "tools/lan_advertise.py",
+            "tools/ecosystem_audit.py",
+            "tools/ecosystem_contract.py",
+            "tools/ecosystem_graph.py",
+            "tools/holo_card_generator.py",
+            "tests/mirror-drift.sh"
+          ]
+        }
+      },
+      {
+        "id": "primary-swarm",
+        "surface_id": "SWARM-001",
+        "selector": {
+          "type": "explicit-and-prefix",
+          "paths": [
+            "tools/test_brainstem_server.py",
+            "tools/front_door_specs.py"
+          ],
+          "prefixes": [
+            "rapp_swarm/",
+            "rapp_brainstem/",
+            "tools/sim/"
+          ]
+        }
+      },
+      {
+        "id": "primary-tests",
+        "surface_id": "TEST-001",
+        "selector": {
+          "type": "explicit-and-prefix",
+          "paths": [
+            ".github/workflows/rapp1-conformance.yml"
+          ],
+          "prefixes": [
+            ".github/workflows/",
+            "tests/"
+          ]
+        }
+      },
+      {
+        "id": "primary-mirrors",
+        "surface_id": "MIRROR-001",
+        "selector": {
+          "type": "prefix",
+          "prefixes": [
+            "specs/"
+          ]
+        }
+      },
+      {
+        "id": "primary-pages",
+        "surface_id": "PAGES-001",
+        "selector": {
+          "type": "explicit-and-prefix",
+          "paths": [
+            "_config.yml",
+            "404.html",
+            "blog.html",
+            "index.html",
+            "pitch-playbook.html",
+            "release-notes.html",
+            "robots.txt",
+            "rapp-ai.json",
+            "llms.txt"
+          ],
+          "prefixes": [
+            "docs/",
+            "pages/"
+          ]
+        }
+      },
+      {
+        "id": "primary-distribution",
+        "surface_id": "GRAIL-001",
+        "selector": {
+          "type": "explicit-and-prefix",
+          "paths": [
+            "install.sh",
+            "install.ps1",
+            "install.cmd",
+            "install.command",
+            "deploy.sh",
+            "deploy.ps1",
+            "azuredeploy.json",
+            "MSFTAIBASMultiAgentCopilot_1_0_0_5.zip"
+          ],
+          "prefixes": [
+            "installer/",
+            "community_rapp/"
+          ]
+        }
+      },
+      {
+        "id": "primary-history",
+        "surface_id": "HISTORY-001",
+        "selector": {
+          "type": "explicit-and-prefix",
+          "paths": [
+            "HISTORICAL_SOURCE_LEDGER.json",
+            "RAPP_KERNEL_ARCHIVE_STATUS.json"
+          ],
+          "prefixes": [
+            "rapp_kernel/",
+            "responsible-ai/",
+            "historical/source-archive/",
+            "tools/"
+          ]
+        }
+      },
+      {
+        "id": "primary-governance",
+        "surface_id": "GOV-001",
+        "selector": {
+          "type": "explicit-and-prefix",
+          "paths": [
+            ".github/copilot-instructions.md",
+            "CLAUDE.md",
+            "CONSTITUTION.md",
+            "RAPP1_ADAPTATION_INVENTORY.json",
+            "RAPP1_AUTHORITY.json",
+            "RAPP1_OWNER_ACTIONS.json",
+            "RAPP1_OWNER_ACTIONS.md",
+            "RAPP1_STATUS.md",
+            "README.md"
+          ],
+          "prefixes": [
+            ".github/"
+          ]
+        }
+      },
+      {
+        "id": "primary-root-files",
+        "surface_id": "GOV-001",
+        "selector": {
+          "type": "root-files"
+        }
+      }
+    ],
+    "fallback_surface_id": "HISTORY-001"
+  },
+  "surfaces": [
+    {
+      "id": "GOV-001",
+      "title": "Authority, status, and migration governance",
+      "planes": [
+        "protocol-conformance",
+        "governance"
+      ],
+      "domains": [
+        "authority",
+        "status",
+        "owner-actions"
+      ],
+      "protocol_sections": [
+        "6",
+        "7",
+        "8",
+        "9",
+        "13"
+      ],
+      "observed_state": "adapted-preacceptance",
+      "desired_state": "owner-blocked-explicit",
+      "path_set_refs": [],
+      "paths": [
+        "RAPP1_AUTHORITY.json",
+        "RAPP1_STATUS.md",
+        "RAPP1_OWNER_ACTIONS.json",
+        "RAPP1_OWNER_ACTIONS.md",
+        "CLAUDE.md",
+        ".github/copilot-instructions.md"
+      ],
+      "gap_matrix": {
+        "canonicalization_addressing": "Structurally pinned to rev-5; the pin is not authenticated registry evidence.",
+        "identity_rappid": "Root continuity still requires a lawful owner-authorized re-anchor.",
+        "exact_chat_wire": "The loopback facade is candidate-only and public activation is unapproved.",
+        "frames": "Governance records do not supply signed stream genesis or owner re-genesis.",
+        "eggs": "The replacement invite is not signed.",
+        "registry_trust_freshness": "No signed monotonic registry or out-of-band owner anchor exists.",
+        "grail_installer_pin": "Exact immutable pin exists and remains read-only.",
+        "side_effects": "Planning records authorize no signing, publication, deployment, or mutation."
+      },
+      "next_local_adaptation": "Keep structural status, adaptation policy, source ledgers, and negative tests synchronized without changing owner evidence.",
+      "data_exhaust": {
+        "preserve": true,
+        "fidelity": "exact-bytes-for-owner-evidence"
+      },
+      "owner_dependencies": [
+        "OA-REG",
+        "OA-ROOT",
+        "OA-INVITE"
+      ],
+      "acceptance_tests": [
+        "Authority and status remain explicit and non-contradictory.",
+        "No local change claims authenticated acceptance or edits owner signatures.",
+        "Desired states contain no deletion or tombstone target."
+      ],
+      "blocks_full_conformance": true
+    },
+    {
+      "id": "CORE-001",
+      "title": "Strict RAPP/1 structural core",
+      "planes": [
+        "protocol-conformance"
+      ],
+      "domains": [
+        "canonicalization",
+        "hashing",
+        "grammar",
+        "inspection"
+      ],
+      "protocol_sections": [
+        "5",
+        "6",
+        "7",
+        "9"
+      ],
+      "observed_state": "active",
+      "desired_state": "current-conformant",
+      "path_set_refs": [
+        "PS-CORE"
+      ],
+      "paths": [
+        "requirements-rapp1-core.txt"
+      ],
+      "gap_matrix": {
+        "canonicalization_addressing": "Strict I-JSON, canonicalization, domain-separated hashing, and addressing exist.",
+        "identity_rappid": "Structural identity validation exists; owner tenure and succession require authenticated evidence.",
+        "exact_chat_wire": "Not a wire implementation.",
+        "frames": "Structural frame inspection exists but accepted signatures and registry freshness remain external.",
+        "eggs": "Structural egg inspection exists but accepted signatures remain external.",
+        "registry_trust_freshness": "No authenticated registry provider is implemented in the core.",
+        "grail_installer_pin": "Independent of Grail execution.",
+        "side_effects": "Inspection APIs are local and deterministic."
+      },
+      "next_local_adaptation": "Add separately typed signature, key-tenure, registry-sequence, revocation, and freshness providers; never infer trust from structural booleans.",
+      "data_exhaust": {
+        "preserve": true,
+        "fidelity": "substantive"
+      },
+      "owner_dependencies": [
+        "OA-REG"
+      ],
+      "acceptance_tests": [
+        "Malformed I-JSON, RFC 8785, and tagged-hash vectors fail deterministically.",
+        "No accepted result can be produced from unverified registry evidence."
+      ],
+      "blocks_full_conformance": true
+    },
+    {
+      "id": "IDENT-001",
+      "title": "Identity and door publications",
+      "planes": [
+        "protocol-conformance",
+        "historical-evidence"
+      ],
+      "domains": [
+        "identity",
+        "rappid",
+        "reanchor"
+      ],
+      "protocol_sections": [
+        "6",
+        "13"
+      ],
+      "observed_state": "owner-blocked",
+      "desired_state": "owner-blocked-explicit",
+      "path_set_refs": [],
+      "paths": [
+        "rappid.json",
+        "cave/rappid.json",
+        "cave/rapplications/rapp-installer/rappid.json",
+        "tools/door_address.py",
+        "tools/migrate_rappid.py",
+        "tools/backfill_seeds.py"
+      ],
+      "gap_matrix": {
+        "canonicalization_addressing": "Tagged-hash mapping is reproducible.",
+        "identity_rappid": "Historical IDs are preserved; the root re-anchor remains unsigned.",
+        "exact_chat_wire": "Not applicable.",
+        "frames": "No authenticated continuity frame is available.",
+        "eggs": "Identity publications alone cannot accept an egg.",
+        "registry_trust_freshness": "Door publications are observations until resolved through authenticated fresh registry evidence.",
+        "grail_installer_pin": "Installer identity does not modify or authorize Grail bytes.",
+        "side_effects": "Inspection must never remint identity; backfill remains plan-only."
+      },
+      "next_local_adaptation": "Resolve succession, revocation, door publication, and re-anchor records through an injected authenticated registry while preserving every predecessor ID.",
+      "data_exhaust": {
+        "preserve": true,
+        "fidelity": "exact-identity-history"
+      },
+      "owner_dependencies": [
+        "OA-REG",
+        "OA-ROOT"
+      ],
+      "acceptance_tests": [
+        "Inspection never mints or rewrites an identity.",
+        "Every active door is authenticated or explicitly historical.",
+        "Wrong-owner, stale, revoked, and lower-sequence evidence is rejected."
+      ],
+      "blocks_full_conformance": true
+    },
+    {
+      "id": "FRAME-001",
+      "title": "Frame validation and stream continuity",
+      "planes": [
+        "protocol-conformance"
+      ],
+      "domains": [
+        "frames",
+        "streams",
+        "signatures"
+      ],
+      "protocol_sections": [
+        "7",
+        "10",
+        "13"
+      ],
+      "observed_state": "adapted-preacceptance",
+      "desired_state": "current-conformant",
+      "path_set_refs": [
+        "PS-CORE"
+      ],
+      "paths": [
+        "tests/fixtures/moments/01-code-commit.json",
+        "tests/fixtures/moments/02-voice-memo.json",
+        "tests/fixtures/moments/03-web-bookmark.json",
+        "tests/fixtures/moments/04-agent-run.json",
+        "tests/fixtures/moments/05-location.json",
+        "tests/fixtures/moments/06-conversation.json",
+        "tests/fixtures/moments/07-decision.json",
+        "tests/fixtures/moments/08-reading-note.json"
+      ],
+      "gap_matrix": {
+        "canonicalization_addressing": "Frame and payload hashes are structurally checked.",
+        "identity_rappid": "Signer identity and tenure are not authenticated.",
+        "exact_chat_wire": "Not applicable.",
+        "frames": "JWS verification, durable sequence/freshness state, fork handling, and owner re-genesis remain incomplete.",
+        "eggs": "Not applicable.",
+        "registry_trust_freshness": "Caller-supplied registry facts cannot establish acceptance.",
+        "grail_installer_pin": "Independent of Grail execution.",
+        "side_effects": "Validation is read-only."
+      },
+      "next_local_adaptation": "Implement EdDSA/ES256 verification, signer tenure, monotonic sequence persistence, rollback refusal, and owner-authorized re-genesis.",
+      "data_exhaust": {
+        "preserve": true,
+        "fidelity": "full-fixtures"
+      },
+      "owner_dependencies": [
+        "OA-REG"
+      ],
+      "acceptance_tests": [
+        "Tamper, wrong-key, stale-registry, rollback, replay, fork, duplicate-genesis, and invalid-re-genesis vectors fail.",
+        "accepted=true is impossible until every verification stage succeeds."
+      ],
+      "blocks_full_conformance": true
+    },
+    {
+      "id": "EGG-001",
+      "title": "Egg inspection, staging, and historical egg corpus",
+      "planes": [
+        "protocol-conformance",
+        "historical-evidence"
+      ],
+      "domains": [
+        "eggs",
+        "archives",
+        "invites"
+      ],
+      "protocol_sections": [
+        "9",
+        "13"
+      ],
+      "observed_state": "adapted-preacceptance",
+      "desired_state": "current-conformant",
+      "path_set_refs": [],
+      "paths": [
+        "rapp1_core/egg.py",
+        "tools/import_peer_egg.py",
+        "pages/tutorials/commons.egg",
+        "pages/tutorials/sample-session.egg",
+        "installer/hatchling",
+        "rapp_swarm/twin-egg.sh",
+        "installer/RETIRED_ARTIFACTS.json"
+      ],
+      "gap_matrix": {
+        "canonicalization_addressing": "Archive paths, ordering, member hashes, and addresses are structurally checked.",
+        "identity_rappid": "Signer and variant identity are not authenticated.",
+        "exact_chat_wire": "Not applicable.",
+        "frames": "No accepted frame is implied by an egg.",
+        "eggs": "Actual JWS verification and acceptance receipts remain incomplete; the Commons invite is invalid legacy evidence.",
+        "registry_trust_freshness": "Variant registration, signer tenure, revocation, and freshness require the authenticated registry.",
+        "grail_installer_pin": "Historical installer eggs cannot override KERNEL_PIN.json.",
+        "side_effects": "Inspection is read-only; accepted extraction must stage bytes and never execute them."
+      },
+      "next_local_adaptation": "Add signer verification, tenure and variant resolution, acceptance receipts, atomic staging, and rollback-safe extraction while retaining every predecessor byte.",
+      "data_exhaust": {
+        "preserve": true,
+        "fidelity": "exact-bytes"
+      },
+      "owner_dependencies": [
+        "OA-REG",
+        "OA-INVITE"
+      ],
+      "acceptance_tests": [
+        "All six variants, nested eggs, path safety, order, member hashes, revoked signers, and wrong variants are covered.",
+        "Legacy eggs remain visible and accepted=false.",
+        "No inspection path executes extracted content."
+      ],
+      "blocks_full_conformance": true
+    },
+    {
+      "id": "TRUST-001",
+      "title": "Signature, key-tenure, registry, and freshness boundary",
+      "planes": [
+        "protocol-conformance"
+      ],
+      "domains": [
+        "jws",
+        "registry",
+        "trust",
+        "freshness"
+      ],
+      "protocol_sections": [
+        "10",
+        "13"
+      ],
+      "observed_state": "owner-blocked",
+      "desired_state": "owner-blocked-explicit",
+      "path_set_refs": [
+        "PS-CORE"
+      ],
+      "paths": [
+        "tools/sign_release.py",
+        "installer/shortcuts/sign.sh"
+      ],
+      "gap_matrix": {
+        "canonicalization_addressing": "Signing inputs can be parsed structurally.",
+        "identity_rappid": "SPKI-to-rappid binding and succession are not authenticated.",
+        "exact_chat_wire": "Not applicable.",
+        "frames": "Frame signatures cannot be accepted.",
+        "eggs": "Egg signatures cannot be accepted.",
+        "registry_trust_freshness": "No authenticator, revocation resolver, tenure resolver, sequence store, or out-of-band anchor is present.",
+        "grail_installer_pin": "Product release signatures do not convert the Grail pin into registry authority.",
+        "side_effects": "No private key or signing seed belongs in this repository."
+      },
+      "next_local_adaptation": "Implement public-key verification and monotonic registry-state persistence as dependency-injected readers; keep signing authority external.",
+      "data_exhaust": {
+        "preserve": true,
+        "fidelity": "full-algorithms-and-evidence"
+      },
+      "owner_dependencies": [
+        "OA-REG"
+      ],
+      "acceptance_tests": [
+        "Ed25519 and P-256 positive and negative vectors pass.",
+        "RFC 7797 signing input, tenure, revocation, freshness, and rollback are verified.",
+        "No private material is present."
+      ],
+      "blocks_full_conformance": true
+    },
+    {
+      "id": "WIRE-001",
+      "title": "Exact synchronous facade and route boundary",
+      "planes": [
+        "protocol-conformance",
+        "product-behavior"
+      ],
+      "domains": [
+        "synchronous-wire",
+        "facade-routes",
+        "browser-clients"
+      ],
+      "protocol_sections": [
+        "8",
+        "13"
+      ],
+      "observed_state": "adapted-preacceptance",
+      "desired_state": "current-conformant",
+      "path_set_refs": [
+        "PS-BRAINSTEM",
+        "PS-WORKER",
+        "PS-ADAPTED-PAGES"
+      ],
+      "paths": [
+        "rapp_brainstem/rapp1_facade.py",
+        "rapp_brainstem/run_rapp1_facade.py",
+        "rapp_brainstem/RAPP1_FACADE.md",
+        "rapp_brainstem/test_rapp1_facade.py"
+      ],
+      "gap_matrix": {
+        "canonicalization_addressing": "Strict request parsing and durable idempotency exist.",
+        "identity_rappid": "Session identity is local and not registry-authenticated.",
+        "exact_chat_wire": "Loopback POST /chat has exact candidate shapes; public origin, registered errors, adapter, and deployment are unapproved.",
+        "frames": "Facade responses do not imply frame acceptance.",
+        "eggs": "Facade does not inspect or accept eggs.",
+        "registry_trust_freshness": "Public activation depends on fresh authenticated registry evidence.",
+        "grail_installer_pin": "Facade imports no Grail module.",
+        "side_effects": "Inference defaults to refusal; a reviewed side-effect-free adapter and approved store must be injected."
+      },
+      "next_local_adaptation": "Complete public-origin replay/concurrency tests and a versioned reviewed adapter receipt while routing every candidate RAPP chat through this facade only.",
+      "data_exhaust": {
+        "preserve": true,
+        "fidelity": "substantive"
+      },
+      "owner_dependencies": [
+        "OA-REG"
+      ],
+      "acceptance_tests": [
+        "Exactly one public POST /chat exists.",
+        "Success and refusal bodies have exact registered shapes.",
+        "No Grail import, token discovery, agent execution, or alternate RAPP wire occurs."
+      ],
+      "blocks_full_conformance": true
+    },
+    {
+      "id": "GRAIL-001",
+      "title": "Immutable Grail and installer resolution",
+      "planes": [
+        "protocol-conformance",
+        "product-behavior",
+        "historical-evidence"
+      ],
+      "domains": [
+        "grail",
+        "installer",
+        "distribution"
+      ],
+      "protocol_sections": [],
+      "observed_state": "immutable-grail",
+      "desired_state": "immutable-preserved",
+      "path_set_refs": [
+        "PS-IMMUTABLE-GRAIL",
+        "PS-INSTALLER"
+      ],
+      "paths": [
+        "KERNEL_PIN.json",
+        "check_kernel_pin.py",
+        "install.sh",
+        "install.ps1",
+        "install.cmd",
+        "install.command",
+        "deploy.sh",
+        "deploy.ps1"
+      ],
+      "gap_matrix": {
+        "canonicalization_addressing": "Three frozen file hashes and the exact tag are pinned.",
+        "identity_rappid": "The pin is not identity or owner authentication.",
+        "exact_chat_wire": "Not applicable.",
+        "frames": "No frame acceptance is implied.",
+        "eggs": "Historical installer archives and eggs remain unaccepted evidence.",
+        "registry_trust_freshness": "The pin is structural, not a section 13 registry.",
+        "grail_installer_pin": "Canonical read-only source is KERNEL_PIN.json and kody-w/rapp-installer@brainstem-v0.6.9.",
+        "side_effects": "Historical installer UI is preserved; install, deployment, download, and mutation require explicit reviewed bindings and owner approval."
+      },
+      "next_local_adaptation": "Keep the restored inspect/plan adapters and exact historical source synchronized; any future apply path must additionally validate authenticated fresh section-13 owner evidence.",
+      "data_exhaust": {
+        "preserve": true,
+        "fidelity": "exact-immutable-bytes-and-full-historical-ui"
+      },
+      "owner_dependencies": [],
+      "acceptance_tests": [
+        "All frozen hashes match.",
+        "No moving-ref fallback exists.",
+        "Default invocations perform no network, write, install, process, deployment, or publication.",
+        "Historical installer controls open only pinned evidence unless an approved adapter is supplied."
+      ],
+      "blocks_full_conformance": false
+    },
+    {
+      "id": "WORKER-001",
+      "title": "Worker, Doorman, and browser tether runtime",
+      "planes": [
+        "product-behavior",
+        "historical-evidence"
+      ],
+      "domains": [
+        "worker",
+        "browser-auth",
+        "browser-transport"
+      ],
+      "protocol_sections": [
+        "8",
+        "13"
+      ],
+      "observed_state": "adapted-preacceptance",
+      "desired_state": "adapted-safe",
+      "path_set_refs": [
+        "PS-WORKER"
+      ],
+      "paths": [
+        "tests/doorman/chat.js",
+        "tests/doorman/smoke.js",
+        "tests/osi/L4a-tether-browser.sh",
+        "tests/osi/browser/L4a-tether.spec.mjs",
+        "tests/osi/browser/fixture.html",
+        "tests/test-worker-containment.mjs"
+      ],
+      "gap_matrix": {
+        "canonicalization_addressing": "Not a protocol addressing boundary.",
+        "identity_rappid": "GitHub OAuth, fixture personas, and Peer IDs are not RAPPIDs.",
+        "exact_chat_wire": "Historical Copilot routes are product behavior; live RAPP chat must delegate to the exact facade.",
+        "frames": "System traces and transport messages are not frames.",
+        "eggs": "No egg acceptance occurs.",
+        "registry_trust_freshness": "Reviewed bindings and synthetic credentials establish isolation, not registry trust.",
+        "grail_installer_pin": "Worker references the pin and never imports or modifies Grail bytes.",
+        "side_effects": "Capabilities are false by default; reviewed fetch/origin bindings and explicit opt-in are mandatory."
+      },
+      "next_local_adaptation": "Add versioned binding receipts, full positive synthetic handler coverage, and a process-owned loopback browser/PeerJS fixture.",
+      "data_exhaust": {
+        "preserve": true,
+        "fidelity": "full-source"
+      },
+      "owner_dependencies": [
+        "OA-REG"
+      ],
+      "acceptance_tests": [
+        "All worker routes refuse before binding calls when disabled.",
+        "Synthetic browser runs use only approved loopback or fixture origins.",
+        "No ambient fetch, credential discovery, dependency download, or non-loopback request occurs."
+      ],
+      "blocks_full_conformance": false
+    },
+    {
+      "id": "BROWSER-001",
+      "title": "Restored historical browser experiences",
+      "planes": [
+        "product-behavior",
+        "historical-evidence"
+      ],
+      "domains": [
+        "pages",
+        "browser-ui",
+        "historical-replay"
+      ],
+      "protocol_sections": [
+        "6",
+        "8",
+        "9",
+        "13"
+      ],
+      "observed_state": "adapted-preacceptance",
+      "desired_state": "historical-preserved",
+      "path_set_refs": [
+        "PS-ADAPTED-PAGES"
+      ],
+      "paths": [],
+      "gap_matrix": {
+        "canonicalization_addressing": "Historical IDs and routes remain visible without becoming current addresses.",
+        "identity_rappid": "Browser personas, stored IDs, and route-derived IDs remain unverified.",
+        "exact_chat_wire": "Historical wire code is local replay only; any live request must use the facade.",
+        "frames": "Displayed events and traces are not accepted frames.",
+        "eggs": "Plant, hatch, and cartridge controls are previews or evidence only.",
+        "registry_trust_freshness": "No page establishes identity, membership, trust, or freshness.",
+        "grail_installer_pin": "Installer context points to KERNEL_PIN.json and brainstem-v0.6.9.",
+        "side_effects": "Network, credentials, persistence, media, peer transport, redirects, downloads, and repository mutation are disabled or replaced with local deterministic shims."
+      },
+      "next_local_adaptation": "Keep every original section and interaction visible; add only reviewed dependency-injected adapters after exact identity, wire, egg, and registry validators exist.",
+      "data_exhaust": {
+        "preserve": true,
+        "fidelity": "fullest-substantive-artifact",
+        "source_ledger": "HISTORICAL_SOURCE_LEDGER.json"
+      },
+      "owner_dependencies": [
+        "OA-REG",
+        "OA-ROOT",
+        "OA-INVITE"
+      ],
+      "acceptance_tests": [
+        "Every source commit, blob, SHA-256, and byte count verifies.",
+        "No page is a blank refusal or semantic tombstone.",
+        "Desktop and mobile replay preserve useful local controls with zero default external effects.",
+        "Every installer edge resolves only to immutable Grail evidence."
+      ],
+      "blocks_full_conformance": false
+    },
+    {
+      "id": "PAGES-001",
+      "title": "GitHub Pages publication and machine discovery",
+      "planes": [
+        "product-behavior",
+        "governance"
+      ],
+      "domains": [
+        "pages-publication",
+        "navigation",
+        "machine-discovery"
+      ],
+      "protocol_sections": [],
+      "observed_state": "adapted-preacceptance",
+      "desired_state": "adapted-safe",
+      "path_set_refs": [
+        "PS-PAGES"
+      ],
+      "paths": [
+        "_config.yml",
+        "index.html",
+        "404.html",
+        "pages/_site/index.json",
+        "sitemap.xml",
+        "robots.txt",
+        "rapp-ai.json",
+        "llms.txt"
+      ],
+      "gap_matrix": {
+        "canonicalization_addressing": "Stable URLs are preserved; historical routes are classified separately from current authority.",
+        "identity_rappid": "Publication is not identity proof.",
+        "exact_chat_wire": "GitHub Pages hosts no accepted RAPP wire.",
+        "frames": "Publication does not create frames.",
+        "eggs": "No published page may imply egg acceptance.",
+        "registry_trust_freshness": "Pages manifests and JSON observations are not registries.",
+        "grail_installer_pin": "Public installer context uses immutable pin evidence.",
+        "side_effects": "Jekyll publishes curated assets; runtime, test, secret, and prepared installer paths remain excluded."
+      },
+      "next_local_adaptation": "Keep the manifest, sitemap, robots policy, JSON snapshots, source ledger, and adaptation inventory synchronized with actual published files.",
+      "data_exhaust": {
+        "preserve": true,
+        "fidelity": "substantive"
+      },
+      "owner_dependencies": [],
+      "acceptance_tests": [
+        "Every HTML route is classified exactly once.",
+        "All internal links and fragments resolve.",
+        "Restored pages and required local snapshots publish.",
+        "No excluded runtime, test, archive, or prepared installer path publishes."
+      ],
+      "blocks_full_conformance": false
+    },
+    {
+      "id": "METRO-001",
+      "title": "Metropolis directory, federation replay, and collector",
+      "planes": [
+        "product-behavior",
+        "historical-evidence"
+      ],
+      "domains": [
+        "directory",
+        "federation",
+        "activity-observation"
+      ],
+      "protocol_sections": [
+        "6",
+        "13"
+      ],
+      "observed_state": "adapted-preacceptance",
+      "desired_state": "historical-preserved",
+      "path_set_refs": [],
+      "paths": [
+        "pages/metropolis/index.html",
+        "pages/metropolis/index.json",
+        "pages/metropolis/federated-demo.json",
+        "pages/metropolis/activity-snapshot.json",
+        "pages/metropolis/README.md",
+        "scripts/harvest-metropolis-activity.py",
+        "tests/scenarios/16-metropolis-tracker.sh",
+        "tests/scenarios/20-cross-tracker-federation.sh"
+      ],
+      "gap_matrix": {
+        "canonicalization_addressing": "Legacy IDs remain visible and unreminted.",
+        "identity_rappid": "Entries are observations, not authenticated identities or membership.",
+        "exact_chat_wire": "Not applicable.",
+        "frames": "Activity records are dated observations, not frames.",
+        "eggs": "No egg acceptance occurs.",
+        "registry_trust_freshness": "Local federation replay cannot establish current authority or freshness.",
+        "grail_installer_pin": "Any installer context is read-only Grail evidence.",
+        "side_effects": "Explorer reads local snapshots; live probes and remote federation are disabled. Collector defaults to check/plan and refuses online writes before mutation."
+      },
+      "next_local_adaptation": "Add an optional reviewed read-only online observation binding that labels source, time, freshness, and acceptance independently.",
+      "data_exhaust": {
+        "preserve": true,
+        "fidelity": "full-ui-and-snapshots",
+        "source_ledger": "HISTORICAL_SOURCE_LEDGER.json"
+      },
+      "owner_dependencies": [
+        "OA-REG"
+      ],
+      "acceptance_tests": [
+        "Offline explorer is deterministic and includes every historical entry.",
+        "Default collector makes no network request or write.",
+        "Online/write requests refuse without exact reviewed bindings and owner evidence.",
+        "No observation becomes membership, identity, availability, or trust."
+      ],
+      "blocks_full_conformance": false
+    },
+    {
+      "id": "CAVE-001",
+      "title": "Cave catalogs, steward, builder, and intake",
+      "planes": [
+        "product-behavior",
+        "historical-evidence"
+      ],
+      "domains": [
+        "catalog",
+        "stewardship",
+        "artifact-observation"
+      ],
+      "protocol_sections": [
+        "6",
+        "7",
+        "9",
+        "13"
+      ],
+      "observed_state": "adapted-preacceptance",
+      "desired_state": "adapted-safe",
+      "path_set_refs": [
+        "PS-CAVE"
+      ],
+      "paths": [
+        ".well-known/rapp-network-seed.json",
+        ".github/ISSUE_TEMPLATE/place-submission.yml",
+        ".github/workflows/cave-super-rar.yml"
+      ],
+      "gap_matrix": {
+        "canonicalization_addressing": "Catalog file hashes are integrity observations only.",
+        "identity_rappid": "Publishers, entries, and neighborhood IDs are not authenticated.",
+        "exact_chat_wire": "Agents must be exposed through the exact facade, not new routes.",
+        "frames": "Catalog provenance is not a signed frame.",
+        "eggs": "Legacy eggs are retained but not accepted.",
+        "registry_trust_freshness": "No catalog, GitHub listing, URL, or hash establishes registry acceptance.",
+        "grail_installer_pin": "Installer context points to KERNEL_PIN.json; the prepared Cave snapshot remains immutable and non-distributable.",
+        "side_effects": "Steward and builder default to local read-only analyze/check/plan/render. Moving refs, install, stream, execute, publish, and issue filing are disabled."
+      },
+      "next_local_adaptation": "Inject identity, frame, egg, and registry verifiers; read the Grail pin directly; preserve every rejected and absent historical record.",
+      "data_exhaust": {
+        "preserve": true,
+        "fidelity": "full-catalogs-algorithms-and-prompts",
+        "source_ledger": "HISTORICAL_SOURCE_LEDGER.json"
+      },
+      "owner_dependencies": [
+        "OA-REG",
+        "OA-ROOT",
+        "OA-INVITE"
+      ],
+      "acceptance_tests": [
+        "Default commands perform zero network, write, install, stream, execute, or publish calls.",
+        "Moving refs and mismatched SHA-256 values fail.",
+        "Historical installer agent and egg observations remain present, source-unreachable, and accepted=false.",
+        "All Grail hashes remain unchanged."
+      ],
+      "blocks_full_conformance": false
+    },
+    {
+      "id": "ESTATE-001",
+      "title": "Estate reconstruction, private bootstrap, and identity migrations",
+      "planes": [
+        "product-behavior",
+        "historical-evidence"
+      ],
+      "domains": [
+        "estate",
+        "recovery",
+        "identity-migration"
+      ],
+      "protocol_sections": [
+        "6",
+        "7",
+        "13"
+      ],
+      "observed_state": "adapted-preacceptance",
+      "desired_state": "adapted-safe",
+      "path_set_refs": [
+        "PS-TOOLS"
+      ],
+      "paths": [
+        "plant",
+        ".github/workflows/plant-approved-place.yml"
+      ],
+      "gap_matrix": {
+        "canonicalization_addressing": "Candidate estate shapes and paths are deterministic.",
+        "identity_rappid": "Discovered and local identities are structural observations until authenticated.",
+        "exact_chat_wire": "CLI output is not the synchronous wire.",
+        "frames": "Relationship and adoption evidence is not yet emitted as authenticated frames.",
+        "eggs": "Not applicable.",
+        "registry_trust_freshness": "Publication and approval files cannot prove owner tenure, succession, membership, or freshness.",
+        "grail_installer_pin": "Estate tools must not modify Grail bytes or infer installation authority.",
+        "side_effects": "Full write algorithms are preserved behind explicit apply, exact target approval, and unavailable authenticated section 13 evidence; current apply paths refuse before mutation."
+      },
+      "next_local_adaptation": "Inject registry, owner-tenure, revocation, relationship, and target-approval verifiers; emit an adoption receipt before any repository or local-state write.",
+      "data_exhaust": {
+        "preserve": true,
+        "fidelity": "full-algorithms-and-observations",
+        "source_ledger": "HISTORICAL_SOURCE_LEDGER.json"
+      },
+      "owner_dependencies": [
+        "OA-REG",
+        "OA-ROOT"
+      ],
+      "acceptance_tests": [
+        "Default modes perform zero network and zero writes.",
+        "Stale, revoked, wrong-owner, wrong-target, lower-sequence, or missing evidence causes no mutation.",
+        "Repeated initialization never remints identity.",
+        "Authorized future adoption writes only deterministic approved bytes and leaves Grail hashes unchanged."
+      ],
+      "blocks_full_conformance": false
+    },
+    {
+      "id": "NETWORK-001",
+      "title": "Network discovery and ecosystem audit",
+      "planes": [
+        "product-behavior",
+        "historical-evidence"
+      ],
+      "domains": [
+        "network-observation",
+        "drift-audit",
+        "generated-evidence"
+      ],
+      "protocol_sections": [
+        "6",
+        "7",
+        "13"
+      ],
+      "observed_state": "adapted-preacceptance",
+      "desired_state": "adapted-safe",
+      "path_set_refs": [
+        "PS-TOOLS"
+      ],
+      "paths": [
+        "tools/sniff_network.py",
+        "tools/ecosystem_audit.py",
+        "tools/ecosystem_contract.py",
+        "tools/holo_card_generator.py",
+        "tests/mirror-drift.sh",
+        ".well-known/rapp-network-seed.json"
+      ],
+      "gap_matrix": {
+        "canonicalization_addressing": "Observed payloads and generated profiles have explicit source labels.",
+        "identity_rappid": "Parsed RAPPIDs and GitHub handles are not authenticated.",
+        "exact_chat_wire": "Not applicable.",
+        "frames": "Audit and discovery records are not authenticated frames.",
+        "eggs": "Historical egg shapes remain product evidence only.",
+        "registry_trust_freshness": "Online observations require independent pinning, freshness labels, and registry resolution.",
+        "grail_installer_pin": "Kernel comparisons must distinguish product history from KERNEL_PIN.json.",
+        "side_effects": "Offline/local input is the default; output writes, cache writes, and online transport require explicit requests and current authority refuses before mutation."
+      },
+      "next_local_adaptation": "Add an optional read-only authenticated acceptance pass while retaining raw, parsed, rejected, stale, and skipped observations separately.",
+      "data_exhaust": {
+        "preserve": true,
+        "fidelity": "full-algorithms-and-observations",
+        "source_ledger": "HISTORICAL_SOURCE_LEDGER.json"
+      },
+      "owner_dependencies": [
+        "OA-REG",
+        "OA-ROOT"
+      ],
+      "acceptance_tests": [
+        "No publication, listing, topic, beacon, or hash implies membership or trust.",
+        "Offline mode makes no network or output write.",
+        "Stale cache is always incomplete.",
+        "Unknown kinds and invalid identities remain visible and unaccepted."
+      ],
+      "blocks_full_conformance": false
+    },
+    {
+      "id": "SWARM-001",
+      "title": "Tier 2, simulations, and agent host surfaces",
+      "planes": [
+        "product-behavior",
+        "historical-evidence"
+      ],
+      "domains": [
+        "swarm",
+        "simulation",
+        "agents"
+      ],
+      "protocol_sections": [
+        "8",
+        "13"
+      ],
+      "observed_state": "adapted-preacceptance",
+      "desired_state": "adapted-safe",
+      "path_set_refs": [
+        "PS-SWARM",
+        "PS-BRAINSTEM",
+        "PS-TOOLS"
+      ],
+      "paths": [
+        "cave/agents/cave_agent.py",
+        "pages/tutorials/egg_hatcher_agent.py",
+        "rapp_swarm/build.sh",
+        "rapp_swarm/function_app.py",
+        "rapp_swarm/index.html",
+        "rapp_swarm/provision-twin-lite.sh",
+        "rapp_swarm/provision-twin.sh",
+        "rapp_swarm/twin-egg.sh",
+        "rapp_swarm/twin-sim.sh",
+        "tools/sim/README.md",
+        "tools/sim/loop_orchestrator.sh",
+        "tools/sim/observe.py",
+        "tools/sim/plant_two_brainstems.py",
+        "tools/sim/push_canvas.sh",
+        "tools/sim/tick_twin.py",
+        "tools/test_brainstem_server.py"
+      ],
+      "gap_matrix": {
+        "canonicalization_addressing": "Vendored and historical source sets require explicit provenance.",
+        "identity_rappid": "Fixture and provider identities are not authenticated.",
+        "exact_chat_wire": "Historical Tier 2 wire is incompatible; any RAPP chat must route through the facade.",
+        "frames": "Simulation ticks and logs are not accepted frames.",
+        "eggs": "Tier 2 packaging remains historical and unaccepted.",
+        "registry_trust_freshness": "No deployment or agent source is accepted from catalog presence alone.",
+        "grail_installer_pin": "Immutable basic_agent.py remains unchanged.",
+        "side_effects": "Restored launchers default to deterministic inspect, plan, or sandbox modes. Cloud, credential, filesystem, process, packaging, and repository effects require exact receipts, reviewed injection, and unavailable authenticated fresh owner evidence."
+      },
+      "next_local_adaptation": "Keep the restored algorithms, source ledger, local replay fixtures, exact loopback facade, and effect-gate tests synchronized; authenticated deployment remains owner-blocked.",
+      "data_exhaust": {
+        "preserve": true,
+        "fidelity": "fullest-source-required"
+      },
+      "owner_dependencies": [
+        "OA-REG"
+      ],
+      "acceptance_tests": [
+        "Deterministic sandbox replay uses only supplied fixtures, scratch directories, and loopback ports.",
+        "No Azure, model, credential, dependency install, or repository mutation occurs by default.",
+        "Vendored source is reproducible and all RAPP chat uses the exact facade."
+      ],
+      "blocks_full_conformance": false
+    },
+    {
+      "id": "GENERATED-001",
+      "title": "Generated manifests, snapshots, indexes, and mirrors",
+      "planes": [
+        "historical-evidence",
+        "governance"
+      ],
+      "domains": [
+        "generated-output",
+        "reproducibility",
+        "provenance"
+      ],
+      "protocol_sections": [
+        "13"
+      ],
+      "observed_state": "generated",
+      "desired_state": "generated-reproducible",
+      "path_set_refs": [
+        "PS-PAGES",
+        "PS-CAVE"
+      ],
+      "paths": [
+        "pages/_site/index.json",
+        "pages/about/ecosystem.json",
+        "pages/about/prompts.json",
+        "pages/vault/manifest.json",
+        "pages/metropolis/index.json",
+        "pages/metropolis/activity-snapshot.json",
+        "pages/metropolis/federated-demo.json",
+        "cave/cubbies/index.json",
+        "cave/rar/index.json",
+        "cave/super-rar/index.json",
+        "sitemap.xml"
+      ],
+      "gap_matrix": {
+        "canonicalization_addressing": "Outputs use mixed generator contracts.",
+        "identity_rappid": "Generated identity fields remain observations.",
+        "exact_chat_wire": "Not applicable.",
+        "frames": "Generated timestamps and records are not frames.",
+        "eggs": "Generated catalog rows cannot accept eggs.",
+        "registry_trust_freshness": "Generated content is never registry authority.",
+        "grail_installer_pin": "Generated installer references must resolve directly to the pin.",
+        "side_effects": "Generators must default to check/render and require explicit online/write modes."
+      },
+      "next_local_adaptation": "Standardize generator name, pinned inputs, generated time, output hash, observation status, and no-write check mode.",
+      "data_exhaust": {
+        "preserve": true,
+        "fidelity": "reproducible-plus-snapshot"
+      },
+      "owner_dependencies": [],
+      "acceptance_tests": [
+        "Frozen inputs reproduce exact bytes.",
+        "Check mode writes nothing.",
+        "Network-derived data requires explicit online mode and remains source/freshness labelled."
+      ],
+      "blocks_full_conformance": false
+    },
+    {
+      "id": "HISTORY-001",
+      "title": "Historical source, archives, tests, and predecessor behavior",
+      "planes": [
+        "historical-evidence"
+      ],
+      "domains": [
+        "source-history",
+        "archives",
+        "legacy-tests"
+      ],
+      "protocol_sections": [],
+      "observed_state": "historical",
+      "desired_state": "historical-preserved",
+      "path_set_refs": [
+        "PS-HISTORICAL-SOURCE-ARCHIVE"
+      ],
+      "paths": [
+        "HISTORICAL_SOURCE_LEDGER.json",
+        "historical/source-archive/manifest.json",
+        "tools/build_historical_source_ledger.py",
+        "tests/fixtures/rapp1-retired-test-inventory.json",
+        "tests/fixtures/legacy-conformance/README.md",
+        "RAPP_KERNEL_ARCHIVE_STATUS.json",
+        "installer/RETIRED_ARTIFACTS.json",
+        "rapp_kernel/manifest.json"
+      ],
+      "gap_matrix": {
+        "canonicalization_addressing": "Historical selectors and byte hashes must remain resolvable.",
+        "identity_rappid": "Predecessor identities remain evidence, never silently upgraded.",
+        "exact_chat_wire": "Legacy wire tests remain quarantined or adapted into negative/safe replay tests.",
+        "frames": "Legacy frame kinds remain historical.",
+        "eggs": "Legacy archives and eggs remain exact and unaccepted.",
+        "registry_trust_freshness": "Historical results cannot become current authority.",
+        "grail_installer_pin": "The v0.6.0 latest alias remains archive history, not the v0.6.9 pin.",
+        "side_effects": "Historical fixtures and removed runtime sources are retained as non-executable, non-importable bytes and never published as active Pages content."
+      },
+      "next_local_adaptation": "Keep every removed or adapted source pinned by commit/blob/hash/byte count and port useful predecessor behavior into safe negative or local replay tests without altering archived bytes.",
+      "data_exhaust": {
+        "preserve": true,
+        "fidelity": "exact-bytes"
+      },
+      "owner_dependencies": [],
+      "acceptance_tests": [
+        "Every historical selector resolves and hashes match.",
+        "All archive and retired-test bytes remain exact.",
+        "Removed runtime sources remain present under non-executable Pages-excluded archive paths.",
+        "Historical fixtures cannot be returned as current authority or executed as live tests."
+      ],
+      "blocks_full_conformance": false
+    },
+    {
+      "id": "TEST-001",
+      "title": "Structural, adaptation, publication, and preservation gates",
+      "planes": [
+        "protocol-conformance",
+        "product-behavior",
+        "governance"
+      ],
+      "domains": [
+        "tests",
+        "ci",
+        "acceptance-gates"
+      ],
+      "protocol_sections": [
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "13"
+      ],
+      "observed_state": "adapted-preacceptance",
+      "desired_state": "adapted-safe",
+      "path_set_refs": [],
+      "paths": [
+        "tests/run_rapp1_conformance.py",
+        "tests/run_restoration_acceptance.py",
+        "tests/test_adaptation_inventory.py",
+        "tests/rapp1-test-suite-inventory.json",
+        "tests/rapp1-live-surface-inventory.json",
+        ".github/workflows/rapp1-conformance.yml",
+        "tests/check_pages.py",
+        "tools/check_rapp1_docs.py"
+      ],
+      "gap_matrix": {
+        "canonicalization_addressing": "Core vectors are covered.",
+        "identity_rappid": "Authenticated owner fixtures cannot be fabricated.",
+        "exact_chat_wire": "Loopback facade shapes and idempotency are covered.",
+        "frames": "Negative structural vectors exist; authenticated positive vectors remain owner-dependent.",
+        "eggs": "Structural and negative vectors exist; authenticated positive invite remains owner-dependent.",
+        "registry_trust_freshness": "Green structural tests must continue to report owner blockers.",
+        "grail_installer_pin": "Local Grail bytes are hash-verified.",
+        "side_effects": "Offline guards, sentinels, clean-tree checks, browser CSP, and explicit capability tests enforce safe defaults."
+      },
+      "next_local_adaptation": "Maintain mutation-tested preservation, provenance, no-default-egress, no-false-acceptance, and exact unsafe-edge refusal checks as restored sources evolve.",
+      "data_exhaust": {
+        "preserve": true,
+        "fidelity": "full-test-history"
+      },
+      "owner_dependencies": [
+        "OA-REG",
+        "OA-ROOT",
+        "OA-INVITE"
+      ],
+      "acceptance_tests": [
+        "The canonical gate passes with a clean tracked tree.",
+        "A green run still reports exactly three owner blockers.",
+        "Restored content loss, source-hash drift, unsafe activation, and false acceptance all fail."
+      ],
+      "blocks_full_conformance": false
+    },
+    {
+      "id": "MIRROR-001",
+      "title": "External mirrors and optional republication",
+      "planes": [
+        "historical-evidence",
+        "governance"
+      ],
+      "domains": [
+        "mirrors",
+        "external-publication"
+      ],
+      "protocol_sections": [
+        "13"
+      ],
+      "observed_state": "external",
+      "desired_state": "historical-preserved",
+      "path_set_refs": [],
+      "paths": [
+        "specs/ecosystem-spec.json",
+        "specs/ECOSYSTEM_SPEC.md",
+        "RAPP_KERNEL_ARCHIVE_STATUS.json"
+      ],
+      "external_locators": [
+        "kody-w/rapp-map:ecosystem-spec.json",
+        "kody-w/rapp-god:api/v1/ecosystem-spec.json"
+      ],
+      "gap_matrix": {
+        "canonicalization_addressing": "Historical mirror hashes and divergence are recorded.",
+        "identity_rappid": "Mirror ownership is not inferred.",
+        "exact_chat_wire": "Not applicable.",
+        "frames": "No mirror publication is a frame.",
+        "eggs": "Not applicable.",
+        "registry_trust_freshness": "A mirror can never become a registry by implication.",
+        "grail_installer_pin": "Mirror state cannot override the Grail pin.",
+        "side_effects": "Target keeps read-only evidence; external republication is owner-controlled."
+      },
+      "next_local_adaptation": "For any future mirror, require immutable publication provenance and exact byte identity while retaining every prior divergent observation.",
+      "data_exhaust": {
+        "preserve": true,
+        "fidelity": "exact-observed-metadata"
+      },
+      "owner_dependencies": [],
+      "acceptance_tests": [
+        "Every active mirror is byte-identical to an approved immutable source or has no active claim.",
+        "No mirror or alias is called a registry or trust anchor."
+      ],
+      "blocks_full_conformance": false
+    }
+  ],
+  "owner_dependencies": [
+    {
+      "id": "OA-REG",
+      "title": "Signed monotonic registry and out-of-band anchor",
+      "status": "owner-action-required",
+      "local_work_allowed": [
+        "candidate registry export",
+        "signature and rollback verifier",
+        "freshness tests",
+        "stream and genesis inventory"
+      ],
+      "owner_only_closure": "Select the estate owner, key/SPKI, sequence, namespaces, legacy dispositions, authenticate and publish the section 13 registry, and distribute the anchor independently.",
+      "acceptance": "Canonical signed registry verifies, exact namespaces and key bindings resolve, one live genesis exists per stream, lower sequence is refused, and stale evidence reports STALE."
+    },
+    {
+      "id": "OA-ROOT",
+      "title": "Lawful root re-anchor",
+      "status": "owner-action-required",
+      "local_work_allowed": [
+        "preserve exact historical mapping",
+        "recompute tagged-hash evidence",
+        "prepare unsigned candidate"
+      ],
+      "owner_only_closure": "Select and authenticate the applicable section 6.3 continuity, tombstone, or recovery case under valid owner tenure.",
+      "acceptance": "Exact old/current IDs and UUID mapping verify; no code-inferred case, self-authorization, or remint occurs; all predecessor evidence remains."
+    },
+    {
+      "id": "OA-INVITE",
+      "title": "Signed replacement invite",
+      "status": "owner-action-required",
+      "local_work_allowed": [
+        "prepare unsigned seven-member manifest",
+        "preserve invalid predecessor",
+        "build deterministic verification tests"
+      ],
+      "owner_only_closure": "Select Commons continuity, sign the replacement rapp/1-egg invite under valid owner tenure, and publish byte-identical canonical copies.",
+      "acceptance": "Payload URL is /rapp-commons/, detached JWS verifies, address is correct, publications are byte-identical, and the predecessor remains visible but never accepted."
+    }
+  ],
+  "completeness": {
+    "required_gap_fields": [
+      "canonicalization_addressing",
+      "identity_rappid",
+      "exact_chat_wire",
+      "frames",
+      "eggs",
+      "registry_trust_freshness",
+      "grail_installer_pin",
+      "side_effects"
+    ],
+    "required_owner_blockers": [
+      "OA-REG",
+      "OA-ROOT",
+      "OA-INVITE"
+    ],
+    "restored_page_count": 17,
+    "surface_count": 20,
+    "validation": "tests/run_restoration_acceptance.py"
+  }
+}

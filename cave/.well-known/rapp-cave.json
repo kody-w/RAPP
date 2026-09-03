@@ -1,6 +1,6 @@
 {
   "schema": "rapp-cave-beacon/1.0",
-  "status": "retired",
+  "status": "adapted-historical",
   "disposition": "historical observation; not a registry, catalog, bootstrap, download, or acceptance source",
   "type": "neighborhood-beacon",
   "version": "1.0",
@@ -12,7 +12,7 @@
   "kind": "workspace",
   "public": false,
   "visibility": "historical-only",
-  "soul_summary": "Retired Cave application history. No cubby, agent, egg, or installer is offered for pull or acceptance.",
+  "soul_summary": "Historical Cave application observation preserved in full; no cubby, agent, egg, or installer is offered for current pull or acceptance.",
   "owner": "kody-w",
   "operator": "kody-w",
   "url": "https://kody-w.github.io/RAPP/cave/",
@@ -21,7 +21,49 @@
   "rapplications": null,
   "bootstrap": null,
   "join_via": null,
+  "historical_observation": {
+    "source": {
+      "repository": "kody-w/RAPP",
+      "commit": "19ff7d9ff483c0eef258a3b2031da1fd74570854",
+      "path": "cave/.well-known/rapp-cave.json",
+      "blob": "97a2158f773b302e9d5482722918af1bf15122b5",
+      "sha256": "8657f29dc78939333f2d8987eccfa7c39548de183e8ea567e5862cb87b82ddc0",
+      "bytes": 1609
+    },
+    "record": {
+      "schema": "rapp-cave-beacon/1.0",
+      "type": "neighborhood-beacon",
+      "version": "1.0",
+      "rappid": "rappid:@kody-w/rapp-cave:ca72ca0a3cb90c357fb09e38b02f85f09935cacbf61e94740c57f1eb30a73e0a",
+      "parent_rappid": "rappid:@kody-w/rapp:9a8f0a4b5a710e20f4d819a0f37d2a4c9f113b5e78fb3c29e70b54fff48a38f9",
+      "slug": "rapp-cave",
+      "name": "The RAPP Cave",
+      "display_name": "The RAPP Cave",
+      "kind": "workspace",
+      "public": true,
+      "visibility": "public-workspace",
+      "soul_summary": "The public batcave — a cubby neighborhood anyone can pull from. Each member's cubby houses their full rapp estate, isolated. No collaborator gate, no gh auth: plain curl / fork + PR.",
+      "owner": "kody-w",
+      "operator": "kody-w",
+      "url": "https://kody-w.github.io/RAPP/cave/",
+      "raw_base": "https://raw.githubusercontent.com/kody-w/RAPP/main/cave",
+      "cubbies_index": "https://kody-w.github.io/RAPP/cave/cubbies/index.json",
+      "rapplications": "https://kody-w.github.io/RAPP/cave/rapplications/",
+      "bootstrap": "curl -fsSL https://kody-w.github.io/RAPP/cave/rapplications/rapp-installer/bootstrap.sh | bash",
+      "join_via": "Public front door — anyone can browse and pull. Join = fork kody-w/RAPP, add a cubby under cave/cubbies/<login>/, open a PR. No collaborator access or GitHub auth required to consume.",
+      "created_at": "2026-06-27T02:40:04Z",
+      "updated_at": "2026-06-27T02:40:04Z",
+      "notes": "Public discovery beacon for the RAPP Cave. Distribution is plain curl / GitHub Pages — no gh auth, no collaborator gate. Faithful public mirror of the private rapp-batcave cubby-neighborhood, flipped to public."
+    },
+    "trust_state": {
+      "observed": true,
+      "structurally_valid": true,
+      "cryptographically_verified": false,
+      "fresh": false,
+      "accepted": false
+    }
+  },
   "created_at": "2026-06-27T02:40:04Z",
   "updated_at": "2026-06-27T02:40:04Z",
-  "notes": "Retired beacon retained as an inert tombstone. See ../../RAPP1_AUTHORITY.json and ../../RAPP1_STATUS.md."
+  "notes": "The complete historical beacon is retained above as an observation. Active discovery, bootstrap, distribution, and acceptance remain disabled; see ../../RAPP1_AUTHORITY.json and ../../RAPP1_STATUS.md."
 }

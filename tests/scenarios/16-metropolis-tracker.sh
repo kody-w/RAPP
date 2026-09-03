@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Scenario 16 — retired Metropolis directory containment.
+# Scenario 16 — safely adapted historical Metropolis directory.
 
 source "$(dirname "$0")/_lib.sh"
 scenario_parse_args "$@"
 
-heading "Scenario 16 — Historical Metropolis containment"
-note "Preserves legacy directory evidence without publishing a live catalog"
+heading "Scenario 16 — Historical Metropolis adaptation"
+note "Preserves the full directory and collector while defaulting to local evidence"
 
 METRO_DIR="$REPO_ROOT/pages/metropolis"
 INDEX="$METRO_DIR/index.json"
@@ -57,7 +57,7 @@ heading "Step 3 — Human documentation is bounded history"
 if grep -q "RAPP1-HISTORICAL-SECTION-START" "$README" \
   && grep -q "RAPP1_AUTHORITY.json" "$README" \
   && grep -q "RAPP1_STATUS.md" "$README"; then
-  step_pass "README preserves the old protocol inside a current retirement boundary"
+  step_pass "README preserves the old protocol inside a current historical boundary"
 else
   step_fail "README lacks historical or authority boundaries"
 fi
@@ -69,23 +69,45 @@ else
   step_fail "scheduled Metropolis writer still exists"
 fi
 
-heading "Step 5 — Known harvester path is an inert tombstone"
+heading "Step 5 — Harvester defaults to useful local inspection"
 set +e
 HARVEST_OUTPUT="$(python3 "$HARVESTER" 2>&1)"
 HARVEST_RC=$?
+PLAN_OUTPUT="$(python3 "$HARVESTER" --plan 2>&1)"
+PLAN_RC=$?
+BEFORE_HASH="$(python3 - "$SNAPSHOT" <<'PY'
+import hashlib
+import sys
+print(hashlib.sha256(open(sys.argv[1], "rb").read()).hexdigest())
+PY
+)"
+ONLINE_OUTPUT="$(python3 "$HARVESTER" --online --write 2>&1)"
+ONLINE_RC=$?
+AFTER_HASH="$(python3 - "$SNAPSHOT" <<'PY'
+import hashlib
+import sys
+print(hashlib.sha256(open(sys.argv[1], "rb").read()).hexdigest())
+PY
+)"
 set -e
-if [ "$HARVEST_RC" -eq 78 ] \
-  && echo "$HARVEST_OUTPUT" | grep -q "metropolis-activity-harvester-retired"; then
-  step_pass "harvester refuses with exit 78 and a machine-readable reason"
+if [ "$HARVEST_RC" -eq 0 ] \
+  && echo "$HARVEST_OUTPUT" | grep -q "frozen-snapshots-valid" \
+  && [ "$PLAN_RC" -eq 0 ] \
+  && echo "$PLAN_OUTPUT" | grep -q '"status": "plan-only"' \
+  && [ "$ONLINE_RC" -eq 78 ] \
+  && echo "$ONLINE_OUTPUT" | grep -q "authenticated-collection-binding-required" \
+  && [ "$BEFORE_HASH" = "$AFTER_HASH" ]; then
+  step_pass "local check and plan work; online write refuses before mutation"
 else
-  step_fail "harvester did not refuse safely (rc=$HARVEST_RC)"
+  step_fail "harvester adaptation violated its safe-default contract"
 fi
 
 heading "Why this matters"
 cat <<'EOF'
-  The legacy directory and its invalid identities remain inspectable, but no
-  schedule, registration path, live-presence writer, or trust claim can turn
-  the snapshot back into a current catalog.
+  The full directory, collector algorithm, and invalid historical identities
+  remain inspectable. Local check/plan modes stay useful while no schedule,
+  registration path, live writer, or trust claim can turn the snapshots into
+  a current catalog.
 EOF
 
 scenario_summary

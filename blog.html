@@ -3,9 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Historical Engineering Blog — RAPP</title>
-<meta name="description" content="Dated RAPP implementation articles preserved as superseded engineering history.">
-<meta name="robots" content="noindex,follow">
+<title>Engineering Blog — RAPP Brainstem</title>
+<meta name="description" content="Engineering deep-dives on RAPP Brainstem design decisions and architecture.">
+<meta name="robots" content="noindex,nofollow">
+<meta name="rapp-history-source" content="kody-w/RAPP@2526f40730ff0ce40a3385b6daa211aa2f817911:blog.html#blob=ff9b71f4f58e36791c2ecb8edd411731398f5b4f">
+<meta name="rapp-historical-boundary" content="Superseded historical record; no current installer. Canonicalization, identity, frames, wire, eggs, registry, trust, and protocol evolution follow RAPP/1 rev-5 through RAPP1_AUTHORITY.json and RAPP1_STATUS.md.">
+<meta name="rapp-grail-source" content="KERNEL_PIN.json; kody-w/rapp-installer@brainstem-v0.6.9; immutable Grail evidence, not an executable install path.">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -90,6 +93,7 @@
 </style>
 </head>
 <body>
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 
 <div class="container">
 
@@ -104,20 +108,10 @@
   </div>
 
   <div class="page-header">
-    <h1>⚙️ Historical Engineering Blog</h1>
-    <p>Dated implementation history, not current runtime or deployment guidance.</p>
+    <h1>⚙️ Engineering Blog</h1>
+    <p>Design decisions, architecture deep-dives, and lessons from building the brainstem.</p>
   </div>
 
-  <aside class="callout" role="note" style="margin-bottom:32px">
-    <strong>Superseded historical record.</strong> Articles below describe
-    earlier local server, installer, Azure, authentication, and release
-    behavior. No current installer, production service, cloud tier, catalog,
-    deployment path, or shipped browser runtime is offered. Follow
-    <a href="RAPP1_STATUS.md">RAPP1_STATUS.md</a> and
-    <a href="RAPP1_AUTHORITY.json">RAPP1_AUTHORITY.json</a>.
-  </aside>
-
-  <!-- RAPP1-HISTORICAL-SECTION-START -->
   <!-- ── Post: Fixing the Device Code Auth Race ── -->
   <div class="post">
     <div class="post-header">
@@ -381,14 +375,14 @@ def login_poll():
     </div>
   </div>
 
-  <!-- RAPP1-HISTORICAL-SECTION-END -->
 </div>
 
 <div class="links">
   <a href="index.html">Home</a>
   <a href="release-notes.html">Release Notes</a>
-  <a href="https://github.com/kody-w/RAPP">Repository source</a>
+  <a href="https://github.com/kody-w/rapp-installer/tree/brainstem-v0.6.9" data-historical-href="https://github.com/kody-w/rapp-installer">GitHub</a>
 </div>
 
+<!-- RAPP1-HISTORICAL-SECTION-END -->
 </body>
 </html>

@@ -172,49 +172,83 @@ test('pre-acceptance facade uses strict parsing and exact refusal status', () =>
   assert(!source.includes('"voice_response"'), 'application field leaked into wire');
 });
 
-test('contained Tier 2 deployment cannot advertise RAPP/1', () => {
+test('adapted Tier 2 deployment remains pre-acceptance', () => {
   const guard = json('rapp_swarm/RAPP1_DEPLOYMENT_GUARD.json');
-  equal(guard.status, 'retired');
+  equal(guard.status, 'adapted-preacceptance');
+  equal(guard.default_mode, 'inspect-plan-sandbox');
+  equal(JSON.stringify(guard.default_effects), '[]');
   equal(guard.rapp1_packaging_allowed, false);
   equal(guard.rapp1_advertising_allowed, false);
+  equal(guard.active_chat_facade, 'http://127.0.0.1:7073/chat');
 });
 
-test('legacy browser execution surfaces are inert semantic tombstones', () => {
+test('historical browser execution surfaces are restored with safe defaults', () => {
   for (const relative of [
+    'pages/chat.html',
+    'pages/lobby.html',
+    'pages/payphone.html',
+    'pages/summon.html',
+    'pages/metropolis/index.html',
     'pages/vbrainstem.html',
+    'pages/vbrainstem/index.html',
     'pages/tether.html',
     'pages/sphere.html',
+    'pages/vneighborhood.html',
+    'pages/grail-brainstem/index.html',
+    'installer/plant.html',
+    'installer/plant_qr.html',
+    'installer/seed.html',
+    'installer/shortcuts/index.html',
+    'installer/shortcuts/brainstem-voice/index.html',
+    'pages/metropolis/plant-from-discord.html',
   ]) {
     const source = read(relative).toLowerCase();
     assert(
-      source.includes('retired semantic tombstone'),
-      `${relative} lacks a semantic tombstone label`,
+      source.includes('rapp-history-source')
+        || source.includes('rapp-source-commit'),
+      `${relative} lacks historical source provenance`,
     );
-    assert(!source.includes('<script'), `${relative} still executes scripts`);
-    assert(!source.includes('fetch('), `${relative} still performs fetch`);
+    assert(
+      !source.includes('retired semantic tombstone'),
+      `${relative} lost its full body to a semantic tombstone`,
+    );
+    assert(source.includes('content-security-policy'), `${relative} lacks CSP`);
+    assert(source.includes("object-src 'none'"), `${relative} permits objects`);
+    assert(source.includes("form-action 'none'"), `${relative} permits forms`);
   }
 });
 
-test('legacy plant producer is an explicit refusal only', () => {
+test('legacy plant producer preserves source behind an explicit gate', () => {
   const source = read('installer/plant.sh');
-  assert(source.includes('410 Gone'), 'plant retirement is missing');
-  assert(source.includes('exit 78'), 'plant retirement exit is missing');
+  assert(source.includes('RAPP_RESTORED_SOURCE_COMMIT='), 'plant provenance is missing');
+  assert(source.includes('RAPP_RESTORED_GATE_BEGIN'), 'plant gate is missing');
+  assert(
+    source.includes('RAPP_RESTORED_HISTORICAL_SOURCE_BEGIN'),
+    'plant historical source boundary is missing',
+  );
+  assert(source.includes('"mode":"plan"'), 'plant plan output is missing');
+  assert(
+    source.includes('authenticated fresh section-13 evidence is unavailable'),
+    'plant authority refusal is missing',
+  );
   for (const marker of ['gh repo create', 'git push', 'rapp-frame/', 'brainstem-egg/']) {
-    assert(!source.includes(marker), `retired plant marker remains: ${marker}`);
+    assert(source.includes(marker), `historical plant marker was lost: ${marker}`);
   }
 });
 
-test('target-owned legacy launchers are explicit refusal only', () => {
+test('target-owned launchers retain source after unreachable refusal gates', () => {
   const launchers = [
-    ['rapp_brainstem/start.sh', ['brainstem.py', 'boot.py', 'python', 'pip', 'exec ']],
-    ['rapp_brainstem/start.ps1', ['brainstem.py', 'boot.py', 'python', 'pip', 'Start-Process']],
-    ['rapp_brainstem/utils/boot.py', ['brainstem.py', 'lineage_check', 'import ', 'subprocess', 'exec']],
+    ['rapp_brainstem/start.sh', ['brainstem.py', 'write_bootstrap()', 'exec ']],
+    ['rapp_brainstem/start.ps1', ['utils/boot.py', 'python -m pip install', 'Get-Command python']],
+    ['rapp_brainstem/utils/boot.py', ['brainstem.py', 'lineage_check', 'runpy.run_path']],
   ];
-  for (const [relative, forbidden] of launchers) {
+  for (const [relative, retained] of launchers) {
     const source = read(relative);
-    assert(source.includes('410 Gone'), `${relative} retirement is missing`);
-    for (const marker of forbidden) {
-      assert(!source.includes(marker), `${relative} retains launch marker: ${marker}`);
+    assert(source.includes('RAPP_RESTORED_SOURCE_COMMIT='), `${relative} provenance is missing`);
+    assert(source.includes('RAPP_RESTORED_GATE_END'), `${relative} gate boundary is missing`);
+    assert(source.includes('410 Gone'), `${relative} public refusal is missing`);
+    for (const marker of retained) {
+      assert(source.includes(marker), `${relative} lost historical launch marker: ${marker}`);
     }
   }
   assert(read('rapp_brainstem/start.sh').includes('exit 78'));
@@ -258,7 +292,7 @@ test('retired archives remain exact bytes without publication', () => {
   }
 });
 
-test('owned pages do not publish retired distribution or plant callers', () => {
+test('owned pages preserve distribution context without executable installers', () => {
   for (const relative of ['index.html', 'installer/index.html']) {
     const source = read(relative);
     for (const marker of ['install-swarm.sh', 'azuredeploy.json', 'install.ps1']) {
@@ -281,15 +315,19 @@ test('owned pages do not publish retired distribution or plant callers', () => {
   ]) {
     const source = read(relative).toLowerCase();
     assert(
-      source.includes('retired semantic tombstone'),
-      `${relative} lacks a semantic tombstone label`,
+      source.includes('rapp-history-source'),
+      `${relative} lacks source provenance`,
     );
-    assert(!source.includes('<script'), `${relative} still executes scripts`);
-    assert(!source.includes('plant.sh'), `${relative} still calls the planter`);
+    assert(
+      !source.includes('retired semantic tombstone'),
+      `${relative} is still a semantic tombstone`,
+    );
+    assert(source.includes('kernel_pin.json'), `${relative} lacks Grail evidence`);
+    assert(source.includes("connect-src 'none'"), `${relative} permits network`);
   }
   assert(
-    !read('pages/metropolis/index.html').includes('plant-from-discord'),
-    'metropolis still links the retired planter',
+    read('pages/metropolis/index.html').includes('plant-from-discord'),
+    'metropolis lost the restored mobile planting guide',
   );
 });
 
@@ -323,13 +361,31 @@ for (const filename of agentFiles) {
   });
 }
 
-test('removed reserved and neighborhood capability trees stay absent', () => {
-  for (const relative of [
+test('removed capability trees stay inactive with exact source archived', () => {
+  const removed = [
+    'rapp_brainstem/t2t.py',
+    'rapp_brainstem/workspace.py',
+    'rapp_brainstem/swarm_server.py',
+    'rapp_brainstem/chat.py',
     'rapp_brainstem/utils/reserved_agents',
     'rapp_brainstem/utils/organs/lifecycle_organ.py',
     'rapp_brainstem/utils/organs/neighborhood_membership_organ.py',
-  ]) {
-    assert(!existsSync(join(ROOT, relative)), `retired capability returned: ${relative}`);
+  ];
+  for (const relative of removed) {
+    assert(!existsSync(join(ROOT, relative)), `removed capability became active: ${relative}`);
+  }
+  const archive = json('historical/source-archive/manifest.json');
+  equal(archive.record_kind, 'inert-exact-source-archive');
+  equal(archive.executable, false);
+  equal(archive.importable, false);
+  equal(archive.published_by_pages, false);
+  equal(archive.records.length, 8);
+  for (const record of archive.records) {
+    assert(record.archive_path.endsWith('.txt'), `archive is not inert text: ${record.archive_path}`);
+    const archived = join(ROOT, record.archive_path);
+    assert(existsSync(archived), `archived source is missing: ${record.archive_path}`);
+    assert((statSync(archived).mode & 0o111) === 0, `archive is executable: ${record.archive_path}`);
+    equal(sha256(record.archive_path), record.sha256);
   }
 });
 

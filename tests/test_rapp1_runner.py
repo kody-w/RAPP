@@ -46,11 +46,11 @@ def test_runner_has_one_explicit_authoritative_gate_set():
         "ui-smoke",
         "ecosystem-audit-offline",
         "organism-offline",
-        "metropolis-retirement",
-        "metropolis-federation-retirement",
-        "distribution-retirement",
+        "metropolis-adaptation",
+        "metropolis-federation-history",
+        "distribution-adaptation",
         "t2t-removal",
-        "plant-retirement",
+        "plant-compatibility",
         "twin-egg-retirement",
     ]
     assert len(names) == len(set(names))
@@ -373,7 +373,11 @@ def test_conformance_workflow_is_immutable_and_runs_canonical_runner():
     assert "node-version: '20'" in workflow
     assert "-r requirements-rapp1-core.txt" in workflow
     assert "-r rapp_brainstem/requirements.txt" in workflow
-    assert "python3 tests/run_rapp1_conformance.py" in workflow
+    assert "python3 tests/run_restoration_acceptance.py" in workflow
+    restoration_runner = (
+        ROOT / "tests/run_restoration_acceptance.py"
+    ).read_text(encoding="utf-8")
+    assert "tests/run_rapp1_conformance.py" in restoration_runner
 
 
 def test_every_workflow_dependency_ref_is_immutable():

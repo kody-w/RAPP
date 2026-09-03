@@ -13,6 +13,11 @@
 > before accepting any artifact. The AI capacity market described there is a
 > proposal, not a shipped payment service.
 
+The current migration map is
+[`RAPP1_ADAPTATION_INVENTORY.json`](./RAPP1_ADAPTATION_INVENTORY.json);
+exact restored-source provenance is in
+[`HISTORICAL_SOURCE_LEDGER.json`](./HISTORICAL_SOURCE_LEDGER.json).
+
 This repository is an experimental source checkout, not a currently shipped
 installer or hosted product. The historical port-7071 application remains
 only as immutable, directly invoked test evidence; its target-owned launchers

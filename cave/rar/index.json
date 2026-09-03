@@ -1,38 +1,171 @@
 {
   "schema": "rapp-rar-index/1.1",
-  "status": "retired",
+  "status": "historical-observation",
+  "verified": true,
+  "accepted": false,
   "active_distribution": false,
   "streamable": false,
+  "distribution": {
+    "state": "disabled",
+    "fetch": false,
+    "install": false,
+    "execute": false,
+    "stream": false,
+    "publish": false
+  },
   "neighborhood_rappid": "rappid:@kody-w/rapp-cave:ca72ca0a3cb90c357fb09e38b02f85f09935cacbf61e94740c57f1eb30a73e0a",
   "rar_for": "kody-w/RAPP",
   "kind": "workspace",
-  "raw_url_prefix": null,
-  "note": "Inert historical ledger. Every entry is retired, non-streamable, and non-distributable. Paths and hashes are evidence only; this file is not a registry, download index, installation source, or acceptance record.",
-  "historical_snapshot_at": "2026-07-17T13:03:41Z",
+  "raw_url_prefix": "https://raw.githubusercontent.com/kody-w/RAPP/{commit}/cave",
+  "source_policy": {
+    "repository": "kody-w/RAPP",
+    "url_template": "https://raw.githubusercontent.com/kody-w/RAPP/{commit}/cave",
+    "required_ref": "full 40-character commit SHA",
+    "moving_refs_accepted": false,
+    "sha256_required_for_files": true,
+    "network_fetch_default": false
+  },
+  "note": "Read-only historical catalog observation. Full entry metadata is retained separately from verification, acceptance, and distribution state. A path or SHA-256 does not authorize fetch, installation, execution, streaming, identity, trust, or RAPP/1 acceptance.",
+  "provenance": {
+    "builder_restored_from": "6bd45f00981959a3fdfcc64fb32608533aae5021",
+    "catalog_exhaust_restored_from": "d3d2623646a6111b4a7db9f1b960df233f8964c9",
+    "initial_super_rar_design": "cdf1aba25ba39c373ba4c738e7c6d421fff0cf86"
+  },
+  "updated_at": "2026-09-03T16:45:04Z",
   "agents": [
     {
       "name": "@kody-w/cave",
       "version": "1.0.0",
       "path": "agents/cave_agent.py",
-      "sha256": "e2c55368c735d56ad7faab9f14cde3eb78f11891cb509541075605bdc9cc8c3d",
-      "purpose": "Fail-closed tombstone for the retired public Cave agent.",
+      "purpose": "Cave participation agent: cave.",
       "required_by_tether": false,
       "schema": "rapp-agent/1.0",
-      "status": "retired",
+      "sha256": "f31a7944d1871f9c857bc08b1696b46661911217678ac7805d88fd6866d97122",
+      "verified": true,
+      "verification": {
+        "state": "verified-local-sha256",
+        "method": "sha256",
+        "sha256": "f31a7944d1871f9c857bc08b1696b46661911217678ac7805d88fd6866d97122",
+        "scope": "local-bytes-only"
+      },
+      "accepted": false,
+      "acceptance": {
+        "state": "not-accepted",
+        "authenticated_registry": false
+      },
       "active_distribution": false,
-      "streamable": false
+      "streamable": false,
+      "distribution": {
+        "state": "disabled",
+        "fetch": false,
+        "install": false,
+        "execute": false,
+        "stream": false,
+        "publish": false
+      },
+      "source": {
+        "path": "agents/cave_agent.py",
+        "present": true,
+        "kind": "file"
+      }
     },
     {
       "name": "@rapp/rar_steward",
       "version": "1.0.0",
       "path": "agents/rar_steward_agent.py",
-      "sha256": "32be91d208d763a389d16eb6438f7ff574d78b5eace587f2d1f5bc1091433b56",
-      "purpose": "Fail-closed tombstone for the retired Cave RAR steward.",
+      "purpose": "RarStewardAgent — read-only steward of an explicitly sourced RAR catalog.",
       "required_by_tether": false,
       "schema": "rapp-agent/1.0",
-      "status": "retired",
+      "sha256": "4a4a6c58504a95ced5a20fb5032a933ea3ad425aa9544886e461df8825b5b4d6",
+      "verified": true,
+      "verification": {
+        "state": "verified-local-sha256",
+        "method": "sha256",
+        "sha256": "4a4a6c58504a95ced5a20fb5032a933ea3ad425aa9544886e461df8825b5b4d6",
+        "scope": "local-bytes-only"
+      },
+      "accepted": false,
+      "acceptance": {
+        "state": "not-accepted",
+        "authenticated_registry": false
+      },
       "active_distribution": false,
-      "streamable": false
+      "streamable": false,
+      "distribution": {
+        "state": "disabled",
+        "fetch": false,
+        "install": false,
+        "execute": false,
+        "stream": false,
+        "publish": false
+      },
+      "source": {
+        "path": "agents/rar_steward_agent.py",
+        "present": true,
+        "kind": "file"
+      }
+    },
+    {
+      "name": "@kody-w/rapp_installer",
+      "version": "0.6.1-cubby",
+      "path": "cubbies/kody-w/agents/rapp_installer_agent.py",
+      "sha256": "acdccb947f9001bcff4f3e1b8bf84bb6b831522a2c7df0d6cffa3cbdae5bfc80",
+      "purpose": "Drive the self-contained, repo-independent RAPP Installer rapplication (status / bootstrap one-liner / health) from any brainstem — the grail ported out of its repo. Stream via `cave load cubby=kody-w` or plain public curl.",
+      "required_by_tether": false,
+      "schema": "rapp-agent/1.0",
+      "status": "historical-observation",
+      "historical_observation_at": "2026-07-17T12:14:46Z",
+      "kernel_pin": {
+        "record": "KERNEL_PIN.json",
+        "grail": "kody-w/rapp-installer",
+        "tag": "brainstem-v0.6.9",
+        "policy": "read-only"
+      },
+      "historical_metadata": [
+        {
+          "commit": "f6bf5ed2c8571fc213c7554a430d3d9c7716a231",
+          "version": "0.6.1-cubby",
+          "sha256": "acdccb947f9001bcff4f3e1b8bf84bb6b831522a2c7df0d6cffa3cbdae5bfc80",
+          "purpose": "Drive the self-contained, repo-independent RAPP Installer rapplication (status / bootstrap one-liner / health) from any brainstem — the grail ported out of its repo. Stream via `cave load cubby=kody-w` or plain public curl.",
+          "observed_streamable": true,
+          "accepted": false
+        },
+        {
+          "commit": "d3d2623646a6111b4a7db9f1b960df233f8964c9",
+          "version": "0.0.0-cubby",
+          "sha256": "cabfb8b9067dc1a5bff1f05a22f46e95b159913df5cd330fac5b6576f7d8f055",
+          "purpose": "Fail-closed tombstone for the retired Cave RAPP Installer agent.",
+          "observed_streamable": false,
+          "accepted": false
+        }
+      ],
+      "verified": false,
+      "verification": {
+        "state": "unverified-historical-bytes-absent",
+        "method": "sha256",
+        "historical_sha256": "acdccb947f9001bcff4f3e1b8bf84bb6b831522a2c7df0d6cffa3cbdae5bfc80",
+        "scope": "historical-observation-only"
+      },
+      "accepted": false,
+      "acceptance": {
+        "state": "not-accepted",
+        "authenticated_registry": false
+      },
+      "active_distribution": false,
+      "streamable": false,
+      "distribution": {
+        "state": "disabled",
+        "fetch": false,
+        "install": false,
+        "execute": false,
+        "stream": false,
+        "publish": false
+      },
+      "source": {
+        "path": "cubbies/kody-w/agents/rapp_installer_agent.py",
+        "present": false,
+        "kind": "file"
+      }
     }
   ],
   "rapps": [
@@ -42,19 +175,71 @@
       "schema": "rapp-rapplication/1.0",
       "path": "rapplications/rapp-installer/",
       "status": "retired",
+      "immutable_prepared_snapshot": true,
+      "purpose": "Retained prepared snapshot: rapp-installer. The current immutable grail reference is KERNEL_PIN.json and kody-w/rapp-installer@brainstem-v0.6.9; this Cave path authorizes no bootstrap or installation.",
+      "kernel_pin": {
+        "record": "KERNEL_PIN.json",
+        "grail": "kody-w/rapp-installer",
+        "tag": "brainstem-v0.6.9",
+        "policy": "read-only"
+      },
+      "historical_metadata": [
+        {
+          "commit": "f6bf5ed2c8571fc213c7554a430d3d9c7716a231",
+          "version": "0.6.1",
+          "agent_sha256": "eae07bfd67b5e5f1b21fc62c7d3d33e1c2bd414ff74be04746f21c700ff789a9",
+          "purpose": "The rapp-installer grail brainstem, carved out of its git repo into a self-contained, egged rapplication — full installer parity (T1/T2/T3), self-bootstrapping (hatch.py/bootstrap.sh), zero grail-commit risk. PUBLIC pull (no auth): curl -fsSL https://raw.githubusercontent.com/kody-w/RAPP/main/cave/rapplications/rapp-installer/bootstrap.sh | bash",
+          "accepted": false,
+          "distribution": "historical-only"
+        },
+        {
+          "commit": "b67627d450e309ae8d0d78b9289d01f6acec8022",
+          "version": "0.0.0",
+          "purpose": "Retired prepared snapshot: rapp-installer. No bootstrap, installation, or publication is authorized.",
+          "accepted": false,
+          "distribution": "disabled"
+        }
+      ],
+      "verified": false,
+      "verification": {
+        "state": "unverified-directory-observation",
+        "method": null,
+        "scope": "metadata-only"
+      },
+      "accepted": false,
+      "acceptance": {
+        "state": "not-accepted",
+        "authenticated_registry": false
+      },
       "active_distribution": false,
       "streamable": false,
-      "immutable_prepared_snapshot": true,
-      "purpose": "Retired prepared snapshot: rapp-installer. No bootstrap, installation, execution, or publication is authorized."
+      "distribution": {
+        "state": "disabled",
+        "fetch": false,
+        "install": false,
+        "execute": false,
+        "stream": false,
+        "publish": false
+      },
+      "source": {
+        "path": "rapplications/rapp-installer/",
+        "present": true,
+        "kind": "directory"
+      }
     }
   ],
   "verification": {
     "schema": "rapp-rar-manifest/1.0",
     "scheme": "sha256",
-    "mode": "historical-integrity-evidence-only",
+    "mode": "read-only-local-check",
+    "scope": "integrity-only-not-trust",
+    "catalog_verified": true,
+    "accepted": false,
+    "moving_refs_accepted": false,
+    "required_ref": "full 40-character commit SHA",
     "authorizes_fetch": false,
     "authorizes_installation": false,
     "authorizes_execution": false,
-    "note": "A matching hash records retained bytes only; it supplies no identity, trust, freshness, authority, or acceptance."
+    "authorizes_streaming": false
   }
 }

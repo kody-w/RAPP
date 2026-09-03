@@ -8,7 +8,7 @@ tags: [article-xlvii, lan-federation, censorship-resilience, first-contact, rapp
 
 # rappter1 first contact + Article XLVII.5 — substrate-agnostic federation
 
-> **Historical/superseded protocol decision.** Preserve this dated first-contact
+> **Legacy historical/superseded protocol decision.** Preserve this dated first-contact
 > record verbatim below; its identity and discovery examples are not current
 > instructions. Canonicalization, identity, frames, wire, eggs, registry,
 > trust, and protocol evolution follow RAPP/1 rev-5 through

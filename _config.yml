@@ -10,7 +10,10 @@ include:
   - pages/vault/index.html
   - pages/vault/icon-192.svg
   - pages/vault/icon-512.svg
+  - pages/vault/content-bundle.json
   - pages/vault/manifest.json
+  - pages/vault/marked.min.js
+  - pages/vault/vendor/marked-LICENSE.txt
   - pages/vault/wikilink-aliases.json
   - pages/vault/vault.css
   - pages/vault/vault.js
@@ -29,6 +32,7 @@ exclude:
   - scripts
   - worker
   - community_rapp
+  - historical/source-archive
   - plant
   - rapp1_core
   - rapp_brainstem
@@ -55,9 +59,6 @@ exclude:
   - cave/tools
   - pages/_lib
   - pages/metropolis/README.md
-  - pages/metropolis/activity-snapshot.json
-  - pages/metropolis/federated-demo.json
-  - pages/metropolis/index.json
   - pages/tutorials/commons.egg
   - pages/tutorials/egg_hatcher_agent.py
   - pages/tutorials/sample-session.egg
@@ -78,10 +79,6 @@ exclude:
   - installer/integration_plant.sh
   - installer/MSFTAIBASMultiAgentCopilot_1_0_0_5.zip
   - installer/plant.sh
-  - installer/shortcuts/README.md
-  - installer/shortcuts/brainstem-voice/README.md
-  - installer/shortcuts/brainstem-voice/protocol.md
-  - installer/shortcuts/protocol.md
   - installer/shortcuts/sign.sh
   - installer/start-local.sh
   - installer/test_plant.sh

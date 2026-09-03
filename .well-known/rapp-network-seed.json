@@ -1,13 +1,57 @@
 {
   "schema": "rapp-network-seed/1.0",
-  "status": "retired",
+  "status": "observation-only",
   "verified": false,
+  "accepted": false,
   "authoritative": false,
   "discovery_enabled": false,
   "joining_enabled": false,
-  "operators": [],
+  "_note": "The well-known DNS-root analog for the RAPP network. Pure-raw discoverable at https://raw.githubusercontent.com/kody-w/RAPP/main/.well-known/rapp-network-seed.json. Sniffers BFS from this seed across operators' beacons (each beacon's federation_hints[] adds new nodes). No Search API required; no rate limits for public raw URLs.",
+  "observation_note": "The original network description and operator references are retained verbatim as historical data exhaust. Moving-branch URLs are unverified observations only and must never establish membership, identity, trust, freshness, or RAPP/1 acceptance.",
+  "spec_version": "rapp-protocol/1.0",
+  "constitutional_anchor": "https://raw.githubusercontent.com/kody-w/RAPP/main/CONSTITUTION.md",
+  "constitutional_article": "Article XLVII — Discoverability Without A Central Registry",
+  "source_policy": {
+    "network_fetch_default": false,
+    "full_commit_pin_required": true,
+    "sha256_required": true,
+    "moving_refs_accepted": false,
+    "accepted_registry_required_for_trust": true
+  },
+  "operators": [
+    {
+      "github": "kody-w",
+      "estate_url": "https://raw.githubusercontent.com/kody-w/rapp-estate/main/estate.json",
+      "beacon_url": "https://raw.githubusercontent.com/kody-w/rapp-estate/main/.well-known/rapp-network.json",
+      "grail_url": "https://kody-w.github.io/rapp-estate/",
+      "role": "species-root-operator",
+      "added_at": "2026-05-09T00:00:00Z",
+      "verified": false,
+      "accepted": false,
+      "membership": "not-established",
+      "trust": "not-established",
+      "reference_state": {
+        "estate_url": "moving-branch-observation",
+        "beacon_url": "moving-branch-observation",
+        "grail_url": "unverified-public-observation",
+        "commit_pin": null,
+        "sha256": null,
+        "usable_for_acceptance": false
+      }
+    }
+  ],
   "federation_hints": [],
-  "disposition": "Historical tombstone only. This document is not a RAPP/1 registry, trust anchor, discovery root, membership source, or conformance record.",
+  "federation_context": {
+    "historical_behavior": "Operator beacons could publish federation_hints[] for breadth-first observation.",
+    "verified": false,
+    "accepted": false,
+    "membership_effect": "none",
+    "trust_effect": "none",
+    "empty_reason": "No concrete federation hint values were recorded in this seed revision."
+  },
+  "self_replication_note": "Anyone can fork kody-w/RAPP and host their own seed at <handle>/RAPP/main/.well-known/rapp-network-seed.json. Sniffers can start from any seed; the network is a graph, not a tree.",
+  "how_to_add_yourself": "Open a PR against kody-w/RAPP modifying this file. Include your github handle, estate_url, beacon_url, and (optionally) grail_url. Or — preferred — get listed in some other operator's beacon's federation_hints[] and the next sniff pass will pick you up transitively.",
+  "submission_effect": "A PR or federation hint is a reviewable observation draft only. It does not create network membership, operator identity, trust, registry acceptance, or replication authority.",
   "not_evidence_for": [
     "network-membership",
     "operator-identity",
@@ -18,7 +62,11 @@
   ],
   "current_authority": {
     "record": "RAPP1_AUTHORITY.json",
-    "status": "RAPP1_STATUS.md"
+    "status": "RAPP1_STATUS.md",
+    "authenticated_section_13_registry": false
   },
-  "retired_at": "2026-09-02T23:39:41Z"
+  "provenance": {
+    "operator_context_restored_from": "27aaf55dbb5ad1d940c701a7b0796ec52d603897"
+  },
+  "updated_at": "2026-05-09T00:00:00Z"
 }

@@ -8,6 +8,7 @@ status: historical
 **Date:** 2026-05-10
 **Status:** Deferred under feature freeze
 **Authority:** operator decision (`feedback_feature_freeze.md` in auto-memory)
+**Disposition:** Legacy, read-forever design record; not current minting guidance.
 
 ## What happened
 

@@ -2,16 +2,1123 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="robots" content="noindex">
-  <title>410 Gone — retired RAPP estate template</title>
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  >
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#000000">
+  <meta name="rapp-accepted" content="false">
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'none'; connect-src 'none'; img-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; font-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action 'none'; base-uri 'none'"
+  >
+  <title>{HANDLE}'s RAPP Estate - restored offline template</title>
+  <meta
+    name="description"
+    content="Restored historical RAPP estate template. Local supplied-data inspection only; active external and mutation edges are retired."
+  >
+
+  <script
+    id="rapp-estate-supplied-data"
+    type="application/octet-stream"
+    data-encoding="base64"
+  >eyJzY2hlbWEiOiJyYXBwLWVzdGF0ZS10ZW1wbGF0ZS1pbnB1dC8xLjAiLCJzb3VyY2UiOnsibW9kZSI6ImxvY2FsLWVtYmVkZGVkIiwib2JzZXJ2ZWQiOmZhbHNlLCJzdHJ1Y3R1cmFsbHlfdmFsaWQiOmZhbHNlLCJjcnlwdG9ncmFwaGljYWxseV92ZXJpZmllZCI6ZmFsc2UsImZyZXNoIjpmYWxzZSwiYWNjZXB0ZWQiOmZhbHNlfSwiZXN0YXRlIjp7InNjaGVtYSI6InJhcHAtZXN0YXRlLzEuMSIsIm93bmVyIjp7ImdpdGh1YiI6IntIQU5ETEV9IiwicmFwcGlkIjoiIn0sImNyZWF0ZWQiOltdLCJtZW1iZXIiOltdLCJ1cGRhdGVkX2F0IjoiIn0sImlkZW50aXR5X3JlY29yZHMiOnt9fQ==</script>
+
+  <script id="rapp-estate-historical-source" type="application/json">
+{
+  "schema": "rapp-historical-source/1.0",
+  "repository": "kody-w/RAPP",
+  "commit": "7b2390499ee9b238902db1470ccdfae89c1f0cbc",
+  "path": "tools/templates/rapp_estate_grail.html",
+  "active_edges": "410 Gone",
+  "historical_references": {
+    "estate": "./estate.json",
+    "spec": "https://raw.githubusercontent.com/kody-w/RAPP/main/specs/SPEC.md",
+    "runbook": "https://raw.githubusercontent.com/kody-w/RAPP/main/specs/skill.md",
+    "parent_repository": "https://github.com/kody-w/RAPP",
+    "moving_installer": "curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash"
+  }
+}
+  </script>
+
+  <style>
+    :root {
+      --bg: #000;
+      --fg: #e7e9ee;
+      --dim: #8b91a0;
+      --accent: #58a6ff;
+      --green: #3fb950;
+      --gold: #d2a8ff;
+      --red: #ff7b72;
+      --card: #0d1117;
+      --panel: #111722;
+      --border: #21262d;
+      --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI",
+        system-ui, sans-serif;
+      min-height: 100vh;
+      padding: 28px 18px 80px;
+    }
+
+    code,
+    pre {
+      font: 13px/1.5 var(--mono);
+    }
+
+    code {
+      background: #161b22;
+      border-radius: 4px;
+      padding: 1px 6px;
+    }
+
+    pre {
+      background: #161b22;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow-x: auto;
+      padding: 12px 14px;
+      white-space: pre-wrap;
+    }
+
+    button {
+      background: #161b22;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--accent);
+      cursor: pointer;
+      font: 12px var(--mono);
+      padding: 6px 14px;
+    }
+
+    button:hover {
+      background: #1f242c;
+    }
+
+    button:focus-visible,
+    code:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .wrap {
+      margin: 0 auto;
+      max-width: 920px;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin: 0 0 6px;
+    }
+
+    h2 {
+      border-top: 1px solid var(--border);
+      font-size: 18px;
+      font-weight: 600;
+      margin: 36px 0 14px;
+      padding-top: 14px;
+    }
+
+    h3 {
+      color: var(--gold);
+      font-size: 15px;
+      font-weight: 600;
+      margin: 18px 0 8px;
+    }
+
+    .lede {
+      color: var(--dim);
+      font-size: 15px;
+      margin: 0 0 18px;
+      max-width: 720px;
+    }
+
+    .containment {
+      background: linear-gradient(135deg, #2a0f12 0%, #111 100%);
+      border: 1px solid #6e2830;
+      border-radius: 10px;
+      margin: 0 0 22px;
+      padding: 16px 18px;
+    }
+
+    .containment strong {
+      color: var(--red);
+    }
+
+    .pill {
+      background: #1f242c;
+      border-radius: 999px;
+      color: var(--dim);
+      display: inline-block;
+      font-size: 11px;
+      margin: 2px 6px 2px 0;
+      padding: 2px 8px;
+      vertical-align: middle;
+    }
+
+    .pill.local {
+      background: #06161f;
+      color: var(--accent);
+    }
+
+    .pill.valid {
+      background: #033a16;
+      color: #4ac26b;
+    }
+
+    .pill.refused {
+      background: #2a0f12;
+      color: var(--red);
+    }
+
+    .pill.gate {
+      background: #1f1408;
+      color: #d29922;
+    }
+
+    .pill.twin {
+      background: #06161f;
+      color: var(--accent);
+    }
+
+    .pill.unknown {
+      background: #1d1729;
+      color: var(--gold);
+    }
+
+    .totals {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      margin: 12px 0 18px;
+    }
+
+    .totals span {
+      color: var(--dim);
+      font-size: 12px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .totals strong {
+      color: var(--fg);
+      font-size: 18px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin: 14px 0 24px;
+      padding: 18px;
+    }
+
+    .for-ai {
+      background: linear-gradient(135deg, #1a0f33 0%, #0d1117 100%);
+      border-color: #3d2c66;
+    }
+
+    .summon-block {
+      background: linear-gradient(135deg, #06161f 0%, #0d1117 100%);
+      border-color: #1f3a52;
+    }
+
+    .for-humans {
+      background: #06160c;
+      border-color: #033a16;
+    }
+
+    .copy-row {
+      align-items: stretch;
+      display: flex;
+      gap: 8px;
+      margin: 8px 0;
+    }
+
+    .copy-row code {
+      flex: 1;
+      padding: 8px 12px;
+      word-break: break-word;
+    }
+
+    .grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      margin: 14px 0 24px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      min-width: 0;
+      padding: 14px;
+    }
+
+    .card .name {
+      font-size: 14px;
+      font-weight: 600;
+      margin: 0 0 4px;
+      word-break: break-word;
+    }
+
+    .card .meta {
+      color: var(--dim);
+      font: 11px/1.5 var(--mono);
+      overflow-wrap: anywhere;
+    }
+
+    .card .actions {
+      display: flex;
+      flex-wrap: wrap;
+      font-size: 11px;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .historical-ref {
+      background: #161b22;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--accent);
+      display: inline-block;
+      padding: 3px 7px;
+      user-select: text;
+    }
+
+    .historical-ref::after {
+      color: var(--dim);
+      content: " [inert]";
+    }
+
+    .holo-placeholder {
+      align-items: center;
+      background: #161b22;
+      border-radius: 6px;
+      color: var(--dim);
+      display: flex;
+      float: right;
+      font: 10px var(--mono);
+      height: 56px;
+      justify-content: center;
+      margin: -2px 0 0 8px;
+      text-align: center;
+      width: 56px;
+    }
+
+    .small {
+      color: var(--dim);
+      font-size: 12px;
+    }
+
+    .step {
+      align-items: flex-start;
+      display: flex;
+      gap: 14px;
+      margin: 12px 0;
+    }
+
+    .step-num {
+      background: #033a16;
+      border-radius: 999px;
+      color: var(--green);
+      flex-shrink: 0;
+      font: 600 12px var(--mono);
+      min-width: 24px;
+      padding: 2px 8px;
+      text-align: center;
+    }
+
+    .state-grid {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      margin-top: 12px;
+    }
+
+    .state {
+      background: #0a0a14;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px;
+    }
+
+    .state span {
+      color: var(--dim);
+      display: block;
+      font: 11px var(--mono);
+    }
+
+    .state strong {
+      font: 600 13px var(--mono);
+    }
+
+    .err {
+      color: var(--red);
+      font-size: 12px;
+    }
+
+    .footer {
+      border-top: 1px solid var(--border);
+      color: var(--dim);
+      font-size: 12px;
+      margin: 60px 0 0;
+      padding-top: 20px;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 18px 14px 60px;
+      }
+
+      h1 {
+        font-size: 22px;
+      }
+
+      .copy-row {
+        flex-direction: column;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 <body>
-  <main>
-    <h1>410 Gone</h1>
-    <p>
-      This legacy estate template is retired. It cannot emit a RAPP/1 wire
-      envelope or claim trust without authenticated registry evidence.
-    </p>
-  </main>
+  <div class="wrap">
+    <section class="containment" aria-labelledby="containment-title">
+      <strong id="containment-title">410 Gone for active edges.</strong>
+      This is the restored historical estate template, not a live RAPP/1
+      emitter, resolver, installer, or trust surface. It reads only the local
+      JSON block embedded in this file. Network fetch, navigation, clipboard,
+      storage, form, and repository mutation paths are disabled.
+    </section>
+
+    <header>
+      <h1 id="hero-title">{HANDLE}'s RAPP Estate</h1>
+      <p class="lede">
+        The full historical dashboard is retained as inspectable data exhaust.
+        Published claims may be displayed, but publication does not establish
+        identity, membership, freshness, cryptographic verification, or
+        acceptance.
+      </p>
+      <p>
+        <span class="pill local">local supplied data</span>
+        <span class="pill">rapp-estate/1.1 history</span>
+        <span class="pill refused">accepted=false</span>
+      </p>
+
+      <div class="totals" id="totals">
+        <span><strong id="total-doors">0</strong><br>created claims</span>
+        <span><strong id="total-gates">0</strong><br>gate claims</span>
+        <span><strong id="total-fronts">0</strong><br>front claims</span>
+        <span><strong id="total-memberships">0</strong><br>member claims</span>
+      </div>
+    </header>
+
+    <section class="panel for-ai">
+      <h3>Historical AI handoff</h3>
+      <p class="small">
+        The original template offered a one-prompt onboarding handoff. Its
+        substantive prompt and source locations remain visible, but every
+        reference is inert and no clipboard write occurs.
+      </p>
+      <div class="copy-row">
+        <code id="ai-prompt" tabindex="0">Read the historical RAPP runbook and inspect the six-step estate workflow as migration evidence. Do not install, publish, join, summon, or claim RAPP/1 acceptance without current owner authority.</code>
+        <button id="select-prompt" type="button">select text</button>
+      </div>
+      <p class="small" id="selection-status" aria-live="polite"></p>
+      <div class="actions">
+        <span
+          class="historical-ref"
+          data-historical-href="https://raw.githubusercontent.com/kody-w/RAPP/main/specs/SPEC.md"
+        >historical SPEC.md</span>
+        <span
+          class="historical-ref"
+          data-historical-href="https://raw.githubusercontent.com/kody-w/RAPP/main/specs/skill.md"
+        >historical skill.md</span>
+        <span
+          class="historical-ref"
+          data-historical-href="https://github.com/kody-w/RAPP"
+        >historical parent repo</span>
+      </div>
+    </section>
+
+    <section class="panel summon-block">
+      <h3>Historical summon surface</h3>
+      <p class="small">
+        The original page linked each card to a browser-hosted twin or gate.
+        Restored cards now show those computed locations only as inert
+        observations. No image, page, raw file, or chat endpoint is requested.
+      </p>
+      <p class="small" id="summon-personal-link">
+        No local front-door claim is supplied.
+      </p>
+    </section>
+
+    <h2>
+      Doors I own
+      <span class="small">(rendered only from embedded supplied data)</span>
+    </h2>
+
+    <h3>
+      Front-door claims
+      <span class="small" id="fronts-count">(0)</span>
+    </h3>
+    <div class="grid" id="fronts"></div>
+
+    <h3>
+      Gate claims
+      <span class="small" id="gates-count">(0)</span>
+    </h3>
+    <div class="grid" id="gates"></div>
+
+    <h3>
+      Unclassified published claims
+      <span class="small" id="unknown-count">(0)</span>
+    </h3>
+    <div class="grid" id="unknown"></div>
+
+    <h2>
+      Membership claims
+      <span class="small" id="members-count">(0)</span>
+    </h2>
+    <div class="grid" id="members"></div>
+
+    <section class="panel for-humans">
+      <h3>Historical six-step runway</h3>
+      <p class="small">
+        These steps preserve the original product narrative. They are
+        non-executable migration evidence, not current instructions.
+      </p>
+
+      <div class="step">
+        <span class="step-num">1</span>
+        <div>
+          <strong>Mint a personal rappid.</strong>
+          The original template advertised a moving curl-to-shell installer.
+          That command is retained only in the historical-source JSON block
+          and is not rendered as executable guidance.
+        </div>
+      </div>
+
+      <div class="step">
+        <span class="step-num">2</span>
+        <div>
+          <strong>Plant a front door.</strong>
+          The original conversation prompt was
+          <code data-historical-command="Plant a personal twin door for me.">historical planting prompt [inert]</code>.
+        </div>
+      </div>
+
+      <div class="step">
+        <span class="step-num">3</span>
+        <div>
+          <strong>Emit an estate.</strong>
+          The original publish prompt is preserved as
+          <code data-historical-command="Show my estate. Then publish it.">historical publish prompt [inert]</code>.
+        </div>
+      </div>
+
+      <div class="step">
+        <span class="step-num">4</span>
+        <div>
+          <strong>Summon a door.</strong>
+          The historical resolver derived raw GitHub and Pages URLs from a
+          rappid. This restoration computes the same strings but never opens
+          or fetches them.
+        </div>
+      </div>
+
+      <div class="step">
+        <span class="step-num">5</span>
+        <div>
+          <strong>Join a gate.</strong>
+          The historical flow proposed changing a gate's
+          <code>members.json</code>. This template performs no form,
+          repository, pull-request, or membership mutation.
+        </div>
+      </div>
+
+      <div class="step">
+        <span class="step-num">6</span>
+        <div>
+          <strong>Publish network reachability.</strong>
+          The old page treated public raw URLs as a walkable backup. Here they
+          remain source-labelled publication claims with
+          <code>accepted=false</code>.
+        </div>
+      </div>
+    </section>
+
+    <h2>Operator identity</h2>
+    <div class="card">
+      <div class="meta" id="owner-rappid">operator rappid: (not supplied)</div>
+      <div class="meta" id="owner-github">github: {HANDLE}</div>
+      <div class="meta">
+        historical parent:
+        <span
+          class="historical-ref"
+          data-historical-href="https://github.com/kody-w/RAPP"
+        >kody-w/RAPP</span>
+      </div>
+    </div>
+
+    <h2>Evidence states</h2>
+    <div class="state-grid">
+      <div class="state">
+        <span>observed</span>
+        <strong id="state-observed">false</strong>
+      </div>
+      <div class="state">
+        <span>structurally valid</span>
+        <strong id="state-structural">false</strong>
+      </div>
+      <div class="state">
+        <span>cryptographically verified</span>
+        <strong id="state-crypto">false</strong>
+      </div>
+      <div class="state">
+        <span>fresh</span>
+        <strong id="state-fresh">false</strong>
+      </div>
+      <div class="state">
+        <span>accepted</span>
+        <strong id="state-accepted">false</strong>
+      </div>
+    </div>
+    <p class="err" id="render-error" role="status"></p>
+
+    <footer class="footer">
+      <p>
+        Historical source:
+        <code>kody-w/RAPP@7b2390499ee9b238902db1470ccdfae89c1f0cbc</code>.
+        The estate dashboard, door parser, card renderer, onboarding runway,
+        operator identity, and rebuild narrative are restored. Active
+        observation and mutation edges remain 410 Gone.
+      </p>
+      <p>
+        Historical estate location:
+        <span
+          class="historical-ref"
+          data-historical-href="./estate.json"
+        >estate.json</span>
+        Historical repository:
+        <span
+          class="historical-ref"
+          data-historical-href="https://github.com/{HANDLE}/rapp-estate"
+        >{HANDLE}/rapp-estate</span>
+      </p>
+    </footer>
+  </div>
+
+  <script>
+  "use strict";
+
+  const TEMPLATE_INPUT_SCHEMA = "rapp-estate-template-input/1.0";
+  const ESTATE_SCHEMA = "rapp-estate/1.1";
+  const LABEL = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+  const CANONICAL_RAPPID =
+    /^rappid:@([a-z0-9]+(?:-[a-z0-9]+)*)\/([a-z0-9]+(?:-[a-z0-9]+)*):[a-f0-9]{64}$/;
+  const LEGACY_V2_RAPPID =
+    /^rappid:v2:([a-z][a-z0-9-]*):@([A-Za-z0-9][A-Za-z0-9._-]*)\/([A-Za-z0-9][A-Za-z0-9._-]*):([a-f0-9]{32})@github\.com\/([A-Za-z0-9][A-Za-z0-9._-]*)\/([A-Za-z0-9][A-Za-z0-9._-]*)$/;
+
+  function evidenceStates(overrides) {
+    return Object.assign(
+      {
+        observed: true,
+        structurally_valid: false,
+        cryptographically_verified: false,
+        fresh: false,
+        accepted: false
+      },
+      overrides || {}
+    );
+  }
+
+  function isPlainObject(value) {
+    return Boolean(
+      value &&
+      typeof value === "object" &&
+      !Array.isArray(value)
+    );
+  }
+
+  function hasExactKeys(value, expected) {
+    if (!isPlainObject(value)) {
+      return false;
+    }
+    const actual = Object.keys(value).sort();
+    const wanted = expected.slice().sort();
+    return (
+      actual.length === wanted.length &&
+      actual.every(function(key, index) {
+        return key === wanted[index];
+      })
+    );
+  }
+
+  function validEstateEntry(entry) {
+    return Boolean(
+      hasExactKeys(entry, ["rappid", "added_at", "via"]) &&
+      typeof entry.rappid === "string" &&
+      typeof entry.added_at === "string" &&
+      entry.added_at.length > 0 &&
+      typeof entry.via === "string" &&
+      entry.via.length > 0
+    );
+  }
+
+  function estateShapeErrors(estate) {
+    const errors = [];
+    if (
+      !hasExactKeys(
+        estate,
+        ["schema", "owner", "created", "member", "updated_at"]
+      )
+    ) {
+      errors.push("estate keys do not match rapp-estate/1.1");
+    }
+    if (
+      !hasExactKeys(estate.owner, ["rappid", "github"])
+    ) {
+      errors.push("estate owner keys are invalid");
+    }
+    if (
+      typeof estate.updated_at !== "string" ||
+      estate.updated_at.length === 0
+    ) {
+      errors.push("estate updated_at is missing");
+    }
+    estate.created.forEach(function(entry, index) {
+      if (!validEstateEntry(entry)) {
+        errors.push("created[" + index + "] has an invalid entry shape");
+      }
+    });
+    estate.member.forEach(function(entry, index) {
+      if (!validEstateEntry(entry)) {
+        errors.push("member[" + index + "] has an invalid entry shape");
+      }
+    });
+    return errors;
+  }
+
+  function historicalUrls(owner, repo) {
+    const rawBase =
+      "https://raw.githubusercontent.com/" + owner + "/" + repo + "/main";
+    return {
+      repo: "https://github.com/" + owner + "/" + repo,
+      front: "https://" + owner + ".github.io/" + repo + "/",
+      identity: rawBase + "/rappid.json",
+      holocard: rawBase + "/card.json",
+      holo_md: rawBase + "/holo.md",
+      avatar: rawBase + "/holo.svg",
+      summon_qr: rawBase + "/holo-qr.svg",
+      members: rawBase + "/members.json",
+      facets: rawBase + "/facets.json"
+    };
+  }
+
+  // Retains both historical observation paths. Only the exact canonical form
+  // is structurally valid; legacy v2 remains visible as rejected evidence.
+  function parseRappid(value, identityRecord) {
+    if (typeof value !== "string") {
+      return null;
+    }
+
+    const canonical = CANONICAL_RAPPID.exec(value);
+    if (canonical) {
+      const owner = canonical[1];
+      const repo = canonical[2];
+      if (owner.length > 39 || repo.length > 100) {
+        return null;
+      }
+      const identityRecordValid = Boolean(
+        isPlainObject(identityRecord) &&
+        identityRecord.schema === "rapp/1" &&
+        identityRecord.rappid === value &&
+        typeof identityRecord.kind === "string" &&
+        LABEL.test(identityRecord.kind)
+      );
+      const kind = identityRecordValid
+        ? identityRecord.kind
+        : "unknown";
+      return {
+        rappid: value,
+        kind,
+        owner,
+        repo,
+        legacy: false,
+        classification: classifyKind(kind),
+        urls: historicalUrls(owner, repo),
+        evidence_states: evidenceStates({structurally_valid: true})
+      };
+    }
+
+    const legacy = LEGACY_V2_RAPPID.exec(value);
+    if (!legacy || legacy[2] !== legacy[5] || legacy[3] !== legacy[6]) {
+      return null;
+    }
+    return {
+      rappid: value,
+      kind: legacy[1],
+      owner: legacy[2],
+      repo: legacy[3],
+      legacy: true,
+      classification: classifyKind(legacy[1]),
+      urls: historicalUrls(legacy[2], legacy[3]),
+      evidence_states: evidenceStates({structurally_valid: false})
+    };
+  }
+
+  function classifyKind(kind) {
+    if (kind === "operator" || kind === "twin") {
+      return "front";
+    }
+    if (
+      kind === "gate" ||
+      kind === "neighborhood" ||
+      kind === "place"
+    ) {
+      return "gate";
+    }
+    return "unknown";
+  }
+
+  function historicalReference(label, url) {
+    const reference = document.createElement("span");
+    reference.className = "historical-ref";
+    reference.dataset.historicalHref = url;
+    reference.textContent = label;
+    return reference;
+  }
+
+  function doorCard(door, relationship) {
+    const card = document.createElement("article");
+    card.className = "card";
+
+    const holo = document.createElement("div");
+    holo.className = "holo-placeholder";
+    holo.textContent = "image fetch disabled";
+    holo.dataset.historicalSrc = door.urls.avatar;
+    card.appendChild(holo);
+
+    const name = document.createElement("div");
+    name.className = "name";
+    name.textContent = door.repo;
+    card.appendChild(name);
+
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    const kind = document.createElement("span");
+    kind.className =
+      "pill " +
+      (door.classification === "front"
+        ? "twin"
+        : door.classification === "gate"
+          ? "gate"
+          : "unknown");
+    kind.textContent = door.kind;
+    meta.appendChild(kind);
+    meta.appendChild(
+      document.createTextNode(
+        relationship +
+          " | observed=true | structural=" +
+          String(door.evidence_states.structurally_valid) +
+          " | crypto=false | fresh=false | accepted=false"
+      )
+    );
+    card.appendChild(meta);
+
+    const identity = document.createElement("div");
+    identity.className = "meta";
+    identity.textContent = door.rappid;
+    card.appendChild(identity);
+
+    const actions = document.createElement("div");
+    actions.className = "actions";
+    actions.appendChild(
+      historicalReference("summon location", door.urls.front)
+    );
+    actions.appendChild(
+      historicalReference("repository", door.urls.repo)
+    );
+    actions.appendChild(
+      historicalReference("holo.md", door.urls.holo_md)
+    );
+    card.appendChild(actions);
+
+    return card;
+  }
+
+  function readSuppliedData() {
+    const node = document.getElementById("rapp-estate-supplied-data");
+    if (!node) {
+      return {error: "local supplied-data block is missing"};
+    }
+    if (node.dataset.encoding !== "base64") {
+      return {error: "local supplied-data block encoding is not reviewed"};
+    }
+
+    let input;
+    try {
+      const encoded = node.textContent.replace(/\s+/g, "");
+      const binary = atob(encoded);
+      const bytes = Uint8Array.from(binary, function(character) {
+        return character.charCodeAt(0);
+      });
+      input = JSON.parse(new TextDecoder("utf-8", {fatal: true}).decode(bytes));
+    } catch (error) {
+      return {
+        error: "local supplied-data block is invalid base64 or JSON"
+      };
+    }
+
+    if (
+      !input ||
+      input.schema !== TEMPLATE_INPUT_SCHEMA ||
+      !input.source ||
+      !input.estate ||
+      !isPlainObject(input.identity_records) ||
+      input.estate.schema !== ESTATE_SCHEMA ||
+      !input.estate.owner ||
+      typeof input.estate.owner !== "object" ||
+      !Array.isArray(input.estate.created) ||
+      !Array.isArray(input.estate.member)
+    ) {
+      return {error: "local supplied-data block has an invalid structure"};
+    }
+    return {input};
+  }
+
+  function renderCards(targetId, doors, relationship) {
+    const target = document.getElementById(targetId);
+    target.replaceChildren();
+    if (doors.length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "small";
+      empty.textContent = "(no supplied claims)";
+      target.appendChild(empty);
+      return;
+    }
+    for (const door of doors) {
+      target.appendChild(doorCard(door, relationship));
+    }
+  }
+
+  function updateEvidenceStates(source, structurallyValid) {
+    const states = {
+      observed: source.observed === true,
+      structurally_valid:
+        structurallyValid && source.structurally_valid === true,
+      cryptographically_verified: false,
+      fresh: false,
+      accepted: false
+    };
+    document.getElementById("state-observed").textContent =
+      String(states.observed);
+    document.getElementById("state-structural").textContent =
+      String(states.structurally_valid);
+    document.getElementById("state-crypto").textContent = "false";
+    document.getElementById("state-fresh").textContent = "false";
+    document.getElementById("state-accepted").textContent = "false";
+  }
+
+  function render() {
+    const supplied = readSuppliedData();
+    const errorNode = document.getElementById("render-error");
+    if (supplied.error) {
+      errorNode.textContent = supplied.error;
+      updateEvidenceStates({}, false);
+      return;
+    }
+
+    const input = supplied.input;
+    const estate = input.estate;
+    const identityRecords = input.identity_records;
+    const shapeErrors = estateShapeErrors(estate);
+    const owner = estate.owner || {};
+    const ownerName =
+      typeof owner.github === "string" && owner.github
+        ? owner.github
+        : "(unknown owner)";
+
+    document.getElementById("hero-title").textContent =
+      ownerName + "'s RAPP Estate";
+    document.title = ownerName + "'s RAPP Estate - restored offline template";
+    document.getElementById("owner-rappid").textContent =
+      "operator rappid: " +
+      (typeof owner.rappid === "string" && owner.rappid
+        ? owner.rappid
+        : "(not supplied)");
+    document.getElementById("owner-github").textContent =
+      "github: " + ownerName + " [observation only]";
+
+    const createdParsed = estate.created
+      .map(function(entry) {
+        return validEstateEntry(entry)
+          ? parseRappid(entry.rappid, identityRecords[entry.rappid])
+          : null;
+      });
+    const membersParsed = estate.member
+      .map(function(entry) {
+        return validEstateEntry(entry)
+          ? parseRappid(entry.rappid, identityRecords[entry.rappid])
+          : null;
+      });
+    const created = createdParsed.filter(Boolean);
+    const members = membersParsed.filter(Boolean);
+    const invalidClaimCount =
+      createdParsed.filter(function(door) {
+        return !door;
+      }).length +
+      membersParsed.filter(function(door) {
+        return !door;
+      }).length;
+
+    const fronts = created.filter(function(door) {
+      return door.classification === "front";
+    });
+    const gates = created.filter(function(door) {
+      return door.classification === "gate";
+    });
+    const unknown = created.filter(function(door) {
+      return door.classification === "unknown";
+    });
+
+    fronts.sort(function(a, b) {
+      return a.repo.localeCompare(b.repo);
+    });
+    gates.sort(function(a, b) {
+      return a.repo.localeCompare(b.repo);
+    });
+    unknown.sort(function(a, b) {
+      return a.repo.localeCompare(b.repo);
+    });
+    members.sort(function(a, b) {
+      return a.repo.localeCompare(b.repo);
+    });
+
+    document.getElementById("total-doors").textContent =
+      String(created.length);
+    document.getElementById("total-gates").textContent =
+      String(gates.length);
+    document.getElementById("total-fronts").textContent =
+      String(fronts.length);
+    document.getElementById("total-memberships").textContent =
+      String(members.length);
+    document.getElementById("fronts-count").textContent =
+      "(" + fronts.length + ")";
+    document.getElementById("gates-count").textContent =
+      "(" + gates.length + ")";
+    document.getElementById("unknown-count").textContent =
+      "(" + unknown.length + ")";
+    document.getElementById("members-count").textContent =
+      "(" + members.length + ")";
+
+    renderCards("fronts", fronts, "published-created-claim");
+    renderCards("gates", gates, "published-created-claim");
+    renderCards("unknown", unknown, "published-created-claim");
+    renderCards("members", members, "published-membership-claim");
+
+    const personalTwin =
+      fronts.find(function(door) {
+        return (
+          door.repo.toLowerCase().includes("-twin") ||
+          door.repo.toLowerCase() === ownerName.toLowerCase() + "-twin"
+        );
+      }) || fronts[0];
+    const summon = document.getElementById("summon-personal-link");
+    summon.replaceChildren();
+    if (personalTwin) {
+      summon.appendChild(
+        document.createTextNode("Historical direct line: ")
+      );
+      summon.appendChild(
+        historicalReference(
+          personalTwin.repo,
+          personalTwin.urls.front
+        )
+      );
+    } else {
+      summon.textContent = "No local front-door claim is supplied.";
+    }
+
+    const operatorIdentity = owner.rappid
+      ? parseRappid(owner.rappid, identityRecords[owner.rappid])
+      : null;
+    const ownerGitHubValid =
+      typeof owner.github === "string" &&
+      owner.github.length <= 39 &&
+      LABEL.test(owner.github);
+    const operatorIdentityValid = Boolean(
+      operatorIdentity &&
+      operatorIdentity.evidence_states.structurally_valid &&
+      operatorIdentity.owner === owner.github
+    );
+    const allStructurallyValid =
+      shapeErrors.length === 0 &&
+      invalidClaimCount === 0 &&
+      ownerGitHubValid &&
+      operatorIdentityValid &&
+      created
+        .concat(members)
+        .every(function(door) {
+          return door.evidence_states.structurally_valid;
+        });
+    updateEvidenceStates(input.source, allStructurallyValid);
+    errorNode.textContent = shapeErrors.length
+      ? shapeErrors.join("; ") + ". accepted=false."
+      : invalidClaimCount
+      ? (
+          invalidClaimCount +
+          " supplied claim(s) were structurally invalid. accepted=false."
+        )
+      : (
+          "Authenticated section-13 authority is unavailable; " +
+          "accepted=false."
+        );
+  }
+
+  function copy(elementId, button) {
+    const prompt = document.getElementById(elementId);
+    const selection = document.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(prompt);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    document.getElementById("selection-status").textContent =
+      "Text selected locally by the retired copy alias. Clipboard write " +
+      "remains disabled.";
+    button.textContent = "selected";
+  }
+
+  document
+    .getElementById("select-prompt")
+    .addEventListener("click", function(event) {
+      copy("ai-prompt", event.currentTarget);
+    });
+  render();
+  </script>
 </body>
 </html>

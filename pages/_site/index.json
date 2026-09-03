@@ -9,7 +9,7 @@
   "classifications": {
     "current_entrypoint": "Current status, authority, or documentation entrypoint.",
     "historical_page": "Visible dated history that does not establish current capability.",
-    "retired_alias": "Inert semantic tombstone retained at a historical URL."
+    "adapted_historical_page": "Full historical interface restored with unsafe external effects disabled by default."
   },
   "sections": [
     {
@@ -288,115 +288,115 @@
     },
     {
       "key": "surface",
-      "label": "Retired surfaces",
-      "description": "Inert semantic tombstones retained at historical URLs and omitted from normal navigation.",
+      "label": "Restored historical experiences",
+      "description": "Full historical interfaces at stable URLs, adapted for deterministic local replay and omitted from normal navigation.",
       "pages": [
         {
           "path": "chat.html",
-          "title": "Retired · chat bridge",
+          "title": "Historical · chat bridge",
           "audience": "Maintainer",
-          "description": "No redirect, storage lookup, worker request, or browser runtime.",
-          "classification": "retired_alias",
-          "status": "retired",
+          "description": "Original chat and state interface preserved as a deterministic local demonstration.",
+          "classification": "adapted_historical_page",
+          "status": "adapted-historical",
           "navigation": false
         },
         {
           "path": "grail-brainstem/index.html",
-          "title": "Retired · grail browser route",
+          "title": "Historical · grail browser experience",
           "audience": "Maintainer",
-          "description": "Immutable source evidence, not a hosted runtime.",
-          "classification": "retired_alias",
-          "status": "retired",
+          "description": "Complete browser runtime snapshot preserved with local shims and read-only Grail evidence.",
+          "classification": "adapted_historical_page",
+          "status": "adapted-historical",
           "navigation": false
         },
         {
           "path": "lobby.html",
-          "title": "Retired · peer lobby",
+          "title": "Historical · peer lobby",
           "audience": "Maintainer",
-          "description": "No peer session, room join, socket, or state exchange.",
-          "classification": "retired_alias",
-          "status": "retired",
+          "description": "Original room and peer interface preserved over deterministic local participants.",
+          "classification": "adapted_historical_page",
+          "status": "adapted-historical",
           "navigation": false
         },
         {
           "path": "metropolis/index.html",
-          "title": "Retired · Metropolis directory",
+          "title": "Historical · Metropolis directory",
           "audience": "Maintainer",
-          "description": "No roster, catalog, repository probe, registration, or join action.",
-          "classification": "retired_alias",
-          "status": "retired",
+          "description": "Full directory, filters, local federation, and activity explorer over frozen snapshots.",
+          "classification": "adapted_historical_page",
+          "status": "adapted-historical",
           "navigation": false
         },
         {
           "path": "metropolis/plant-from-discord.html",
-          "title": "Retired · Discord planter",
+          "title": "Historical · Discord planting guide",
           "audience": "Maintainer",
-          "description": "No bot, repository creation, registration, or identity emission.",
-          "classification": "retired_alias",
-          "status": "retired",
+          "description": "Complete mobile planning interface preserved as local preview and export.",
+          "classification": "adapted_historical_page",
+          "status": "adapted-historical",
           "navigation": false
         },
         {
           "path": "payphone.html",
-          "title": "Retired · payphone",
+          "title": "Historical · payphone",
           "audience": "Maintainer",
-          "description": "No identifier input, token storage, API lookup, or session.",
-          "classification": "retired_alias",
-          "status": "retired",
+          "description": "Original dialer interface preserved with local-only reachability and trust states.",
+          "classification": "adapted_historical_page",
+          "status": "adapted-historical",
           "navigation": false
         },
         {
           "path": "sphere.html",
-          "title": "Retired · Sphere",
+          "title": "Historical · Sphere",
           "audience": "Maintainer",
-          "description": "No doorman, authentication, worker, token, or inference behavior.",
-          "classification": "retired_alias",
-          "status": "retired",
+          "description": "Complete visual and conversational interface preserved with fixed local responses.",
+          "classification": "adapted_historical_page",
+          "status": "adapted-historical",
           "navigation": false
         },
         {
           "path": "summon.html",
-          "title": "Retired · summon portal",
+          "title": "Historical · summon portal",
           "audience": "Maintainer",
-          "description": "No twin discovery, storage handoff, or browser embodiment.",
-          "classification": "retired_alias",
-          "status": "retired",
+          "description": "Original roster and selection interface preserved as local presentation state.",
+          "classification": "adapted_historical_page",
+          "status": "adapted-historical",
           "navigation": false
         },
         {
           "path": "tether.html",
-          "title": "Retired · Tether",
+          "title": "Historical · Tether",
           "audience": "Maintainer",
-          "description": "No local connection, QR scan, token storage, or artifact export.",
-          "classification": "retired_alias",
-          "status": "retired",
+          "description": "Complete phone, pairing, lobby, town-square, and call experience with local safety shims.",
+          "classification": "adapted_historical_page",
+          "status": "adapted-historical",
           "navigation": false
         },
         {
           "path": "vbrainstem.html",
-          "title": "Retired · vBrainstem",
+          "title": "Historical · vBrainstem",
           "audience": "Maintainer",
-          "description": "No hosted browser capability or legacy cartridge export.",
-          "classification": "retired_alias",
-          "status": "retired",
+          "description": "Full browser brainstem interface preserved as a deterministic local exhibit.",
+          "classification": "adapted_historical_page",
+          "status": "adapted-historical",
           "navigation": false
         },
         {
           "path": "vbrainstem/index.html",
-          "title": "Retired · vBrainstem directory alias",
+          "title": "Historical · vBrainstem directory experience",
           "audience": "Maintainer",
-          "description": "Alternate inert alias retained without redirecting.",
-          "classification": "retired_alias",
-          "status": "retired",
+          "description": "Alternate stable URL with the complete local profile, chat, subscription, and estate interface.",
+          "classification": "adapted_historical_page",
+          "status": "adapted-historical",
           "navigation": false
         },
         {
           "path": "vneighborhood.html",
-          "title": "Retired · vNeighborhood",
+          "title": "Historical · vNeighborhood",
           "audience": "Maintainer",
-          "description": "No peer discovery, room join, worker, or state exchange.",
-          "classification": "retired_alias",
-          "status": "retired",
+          "description": "Original lights, presence, cubbies, and board interface preserved with local state only.",
+          "classification": "adapted_historical_page",
+          "status": "adapted-historical",
           "navigation": false
         }
       ]

@@ -26,10 +26,16 @@
    request or response fields.
 5. Tier 1/2/3, public installers, browser brainstems, Shortcuts, planting,
    catalogs, cave bootstraps, legacy egg hatching, and Commons samples are
-   retired or pre-acceptance. Do not advertise, deploy, download, or invoke
-   them from documentation. The target-owned legacy brainstem launchers are
-   unconditional 410/exit-78 tombstones; direct immutable execution is
-   isolated canonical test evidence only.
+   historical or pre-acceptance, not current protocol or product authority.
+   Preserve their complete source, interfaces, schemas, examples, algorithms,
+   and observations as data exhaust. Restore the fullest artifact first, then
+   disable only the exact unsafe edge with local fixtures, default-off
+   capabilities, reviewed bindings, or explicit owner-approved apply modes.
+   Do not replace useful content with blank refusals or semantic tombstones.
+   Installer context must resolve read-only through `KERNEL_PIN.json` and
+   `kody-w/rapp-installer@brainstem-v0.6.9`; it must not advertise or execute a
+   moving installer. Existing target-owned launcher refusals remain
+   containment evidence until they receive an equally complete safe adapter.
 6. RAPP's primary audience is AI runtimes. Humans are sovereign owners,
    safety authorities, and beneficiaries. Machine-facing work should optimize
    for independent verification, explicit adoption, portable context, and

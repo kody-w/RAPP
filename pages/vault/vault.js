@@ -1,10 +1,11 @@
 // RAPP Vault — static viewer.
-// Loads markdown live from raw.githubusercontent.com (or localStorage when in
-// local mode), renders with marked.js, resolves [[wikilinks]], builds a
+// Loads hash-pinned Markdown from the checked-in content bundle, renders with
+// marked.js, resolves [[wikilinks]], builds a
 // backlinks index, supports search and Obsidian-compatible zip export/import.
 
 const VAULT = {
   manifest: null,
+  bundle: null,
   aliases: new Map(),       // lowercased historical alias -> repository target
   notes: new Map(),         // path -> { meta, body, html, title, section, status }
   byTitle: new Map(),       // lowercased title -> path
@@ -42,20 +43,14 @@ window.addEventListener('hashchange', handleHashChange);
 // ── Manifest + fetch ─────────────────────────────────────────────────────────
 
 async function loadManifest() {
-  const local = readLocal();
-  if (local && local.manifest) {
-    VAULT.manifest = local.manifest;
-    VAULT.mode = 'local';
-    await loadAliases();
-    showModeBanner();
-    return;
-  }
   // The manifest sits next to the viewer in pages/vault/. Same-origin relative
   // fetch works on GitHub Pages and on any local static server.
   const res = await fetch('./manifest.json', { cache: 'no-cache' });
   if (!res.ok) throw new Error(`manifest fetch failed: ${res.status}`);
   VAULT.manifest = await res.json();
+  VAULT.mode = 'bundle';
   await loadAliases();
+  await loadContentBundle();
   $('#subtitle').textContent = VAULT.manifest.subtitle || 'Second-brain wiki';
 }
 
@@ -77,35 +72,55 @@ async function loadAliases() {
   );
 }
 
-function rawUrlFor(path) {
-  const g = VAULT.manifest.github;
-  const vp = VAULT.manifest.github.vault_path || 'vault';
-  return `https://raw.githubusercontent.com/${g.owner}/${g.repo}/${g.branch}/${vp}/${encodeVaultPath(path)}`;
+async function loadContentBundle() {
+  const runtime = VAULT.manifest.runtime_content || {};
+  if (
+    runtime.network_fallback !== false
+    || runtime.hash_required !== true
+    || runtime.bundle !== 'content-bundle.json'
+  ) {
+    throw new Error('manifest does not require the checked-in vault bundle');
+  }
+  const res = await fetch('./content-bundle.json', { cache: 'no-cache' });
+  if (!res.ok) throw new Error(`content bundle fetch failed: ${res.status}`);
+  const bundle = await res.json();
+  if (
+    bundle.schema !== 'rapp-vault-content-bundle/1.0'
+    || bundle.network_fallback !== false
+    || !bundle.notes
+    || bundle.note_count !== VAULT.manifest.notes.length
+  ) {
+    throw new Error('content bundle has an invalid shape');
+  }
+  VAULT.bundle = bundle;
 }
 
-function encodeVaultPath(path) {
-  return path.split('/').map(encodeURIComponent).join('/');
+async function sha256Hex(text) {
+  if (!globalThis.crypto || !crypto.subtle) {
+    throw new Error('Web Crypto is required to verify vault note bytes');
+  }
+  const bytes = new TextEncoder().encode(text);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return [...new Uint8Array(digest)]
+    .map((value) => value.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 async function fetchNote(path) {
-  if (VAULT.mode === 'local') {
-    const local = readLocal();
-    const body = local && local.notes && local.notes[path];
-    if (body == null) throw new Error(`local note missing: ${path}`);
-    return body;
+  const record = VAULT.bundle && VAULT.bundle.notes[path];
+  const manifestEntry = VAULT.manifest.notes.find((note) => note.path === path);
+  if (!record || !manifestEntry) throw new Error(`bundled note missing: ${path}`);
+  const bytes = new TextEncoder().encode(record.content);
+  const digest = await sha256Hex(record.content);
+  if (
+    record.bytes !== bytes.length
+    || record.sha256 !== digest
+    || manifestEntry.bytes !== record.bytes
+    || manifestEntry.sha256 !== record.sha256
+  ) {
+    throw new Error(`bundled note hash mismatch: ${path}`);
   }
-  // Try the same-origin relative path first (works on GitHub Pages and on a
-  // local static server before the change is pushed). Fall back to
-  // raw.githubusercontent.com so the viewer keeps working when embedded
-  // off-domain or when the local copy isn't served alongside the viewer.
-  const relUrl = `./${encodeVaultPath(path)}`;
-  try {
-    const res = await fetch(relUrl, { cache: 'no-cache' });
-    if (res.ok) return res.text();
-  } catch (_) { /* fall through to raw */ }
-  const res = await fetch(rawUrlFor(path), { cache: 'no-cache' });
-  if (!res.ok) throw new Error(`fetch failed for ${path}: ${res.status}`);
-  return res.text();
+  return record.content;
 }
 
 async function prefetchAll() {
@@ -193,7 +208,7 @@ function repositoryUrlFor(target) {
   const anchor = heading
     ? '#' + heading.toLowerCase().replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-')
     : '';
-  return `https://github.com/${github.owner}/${github.repo}/blob/${github.branch}/${encodedPath}${anchor}`;
+  return `https://github.com/${github.owner}/${github.repo}/blob/${github.navigation_ref}/${encodedPath}${anchor}`;
 }
 
 // ── Backlinks ────────────────────────────────────────────────────────────────
@@ -279,7 +294,7 @@ function renderNote(path) {
   const chip = status ? `<div class="frontmatter-chip"><span class="pill ${status}">${status}</span><span>${escapeHtml(note.section || 'Vault')}</span></div>` : '';
 
   const linked = rewriteWikilinks(note.body);
-  let html = marked.parse(linked);
+  let html = sanitizeHtml(marked.parse(linked));
   // Tag wiki anchors so CSS can style broken vs. resolved.
   html = html.replace(/<a href="#__broken__"([^>]*)>/g, '<a href="#" class="wikilink broken" title="No vault note matches this wikilink"$1>');
   html = html.replace(/<a href="#([^"]+)" title="wikilink">/g, (_, hash) => `<a href="#${hash}" class="wikilink">`);
@@ -306,6 +321,28 @@ function renderNote(path) {
     blEl.hidden = false;
   } else {
     blEl.hidden = true;
+  }
+
+  function sanitizeHtml(html) {
+    const template = document.createElement('template');
+    template.innerHTML = html;
+    template.content
+      .querySelectorAll('script,iframe,object,embed,link,meta,base,form')
+      .forEach((node) => node.remove());
+    template.content.querySelectorAll('*').forEach((node) => {
+      for (const attr of [...node.attributes]) {
+        const name = attr.name.toLowerCase();
+        const value = attr.value.trim().toLowerCase();
+        if (
+          name.startsWith('on')
+          || ((name === 'href' || name === 'src')
+            && (value.startsWith('javascript:') || value.startsWith('data:text/html')))
+        ) {
+          node.removeAttribute(attr.name);
+        }
+      }
+    });
+    return template.innerHTML;
   }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -379,12 +416,6 @@ function wireUI() {
   $('#importFile').addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (file) importZip(file);
-  });
-  $('#resetBtn').addEventListener('click', () => {
-    if (confirm('Clear local vault cache and re-fetch from GitHub?')) {
-      localStorage.removeItem(LS_KEY);
-      location.reload();
-    }
   });
   $('#randomBtn').addEventListener('click', openRandom);
   $('#readingBtn').addEventListener('click', toggleReadingMode);

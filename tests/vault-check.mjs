@@ -16,12 +16,15 @@ import {
 } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, relative, sep } from 'node:path';
+import { createHash } from 'node:crypto';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(__dirname, '..');
 const VAULT = resolve(REPO, 'pages', 'vault');
 const writeManifest = process.argv.includes('--write-manifest');
 const UNPUBLISHED_PREFIXES = ['Blog Drafts/'];
+const CONTENT_BUNDLE = 'content-bundle.json';
+const RENDERER = 'marked.min.js';
 
 let failures = 0;
 let warnings = 0;
@@ -78,7 +81,8 @@ if (writeManifest) {
     .filter((path) => !existingPaths.has(path))
     .sort((left, right) => left.localeCompare(right));
   manifest.notes = [...existingOrder, ...missingPaths].map((path) => {
-    const raw = readFileSync(resolve(VAULT, path), 'utf8');
+    const bytes = readFileSync(resolve(VAULT, path));
+    const raw = bytes.toString('utf8');
     const frontmatter = parseFrontmatter(raw).meta;
     const segments = path.split('/');
     return {
@@ -86,8 +90,19 @@ if (writeManifest) {
       title: frontmatter.title || basename(path).replace(/\.md$/, ''),
       section: segments.length > 1 ? segments[0] : null,
       status: frontmatter.status || 'stub',
+      bytes: bytes.length,
+      sha256: createHash('sha256').update(bytes).digest('hex'),
     };
   });
+  manifest.runtime_content = {
+    bundle: CONTENT_BUNDLE,
+    renderer: RENDERER,
+    renderer_package: 'marked@12.0.2',
+    renderer_sha256: '15fabce5b65898b32b03f5ed25e9f891a729ad4c0d6d877110a7744aa847a894',
+    renderer_license: 'vendor/marked-LICENSE.txt',
+    network_fallback: false,
+    hash_required: true,
+  };
   manifest.excluded_notes = mdRel
     .filter(isUnpublished)
     .sort((left, right) => left.localeCompare(right))
@@ -107,6 +122,71 @@ if (writeManifest) {
 for (const p of manifestPaths) {
   if (!filesystemPaths.has(p)) {
     fail(`manifest references missing file: ${p}`);
+  }
+  if (
+    !manifest.runtime_content
+    || manifest.runtime_content.bundle !== CONTENT_BUNDLE
+    || manifest.runtime_content.renderer !== RENDERER
+    || manifest.runtime_content.renderer_package !== 'marked@12.0.2'
+    || manifest.runtime_content.renderer_sha256 !== '15fabce5b65898b32b03f5ed25e9f891a729ad4c0d6d877110a7744aa847a894'
+    || manifest.runtime_content.renderer_license !== 'vendor/marked-LICENSE.txt'
+    || manifest.runtime_content.network_fallback !== false
+    || manifest.runtime_content.hash_required !== true
+  ) {
+    fail('manifest runtime_content must require the local bundle and renderer');
+  }
+  for (const note of manifest.notes) {
+    const bytes = readFileSync(resolve(VAULT, note.path));
+    const digest = createHash('sha256').update(bytes).digest('hex');
+    if (note.bytes !== bytes.length || note.sha256 !== digest) {
+      fail(`manifest content hash drift: ${note.path}`);
+    }
+  }
+  if (!writeManifest) {
+    const bundlePath = resolve(VAULT, CONTENT_BUNDLE);
+    let bundle;
+    try {
+      bundle = JSON.parse(readFileSync(bundlePath, 'utf8'));
+    } catch (e) {
+      fail(`could not parse ${CONTENT_BUNDLE}: ${e.message}`);
+      bundle = { notes: {} };
+    }
+    if (
+      bundle.schema !== 'rapp-vault-content-bundle/1.0'
+      || bundle.network_fallback !== false
+      || bundle.note_count !== manifest.notes.length
+    ) {
+      fail('content bundle has an invalid schema, fallback, or note count');
+    }
+    const bundlePaths = new Set(Object.keys(bundle.notes || {}));
+    if (
+      bundlePaths.size !== manifestPaths.size
+      || [...manifestPaths].some((path) => !bundlePaths.has(path))
+    ) {
+      fail('content bundle paths do not match the public manifest');
+    }
+    for (const note of manifest.notes) {
+      const record = bundle.notes && bundle.notes[note.path];
+      const content = readFileSync(resolve(VAULT, note.path), 'utf8');
+      if (
+        !record
+        || record.content !== content
+        || record.bytes !== note.bytes
+        || record.sha256 !== note.sha256
+      ) {
+        fail(`content bundle drift: ${note.path}`);
+      }
+    }
+    const markedPath = resolve(VAULT, RENDERER);
+    const markedDigest = existsSync(markedPath)
+      ? createHash('sha256').update(readFileSync(markedPath)).digest('hex')
+      : '';
+    if (markedDigest !== '15fabce5b65898b32b03f5ed25e9f891a729ad4c0d6d877110a7744aa847a894') {
+      fail('local Marked 12.0.2 renderer is missing or changed');
+    }
+    if (!existsSync(resolve(VAULT, 'vendor', 'marked-LICENSE.txt'))) {
+      fail('local Marked license is missing');
+    }
   }
   if (isUnpublished(p)) {
     fail(`manifest publishes explicitly unpublished note: ${p}`);

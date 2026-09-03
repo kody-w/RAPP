@@ -7,9 +7,12 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="rappid">
-<title>Historical rappid concept deck</title>
-<meta name="description" content="Retired pre-acceptance concept deck. No three-runtime or Copilot Studio product is currently shipped.">
+<title>rappid — the fastest path from idea to Copilot Studio agent</title>
+<meta name="description" content="rappid: the fastest path from idea to Copilot Studio agent. One file. Three runtimes. Zero ceremony.">
 <meta name="robots" content="noindex,nofollow">
+<meta name="rapp-history-source" content="kody-w/RAPP@8c5555be80357e795090d79c4fb5a33beb0eaab8:pages/rappid-deck.html#blob=727a60e8922d224e202295321bf0e18d7b6aca76">
+<meta name="rapp-historical-boundary" content="Canonicalization, identity, frames, wire, eggs, registry, trust, and protocol evolution follow RAPP/1 rev-5 through RAPP1_AUTHORITY.json and RAPP1_STATUS.md.">
+<meta name="rapp-grail-source" content="KERNEL_PIN.json; kody-w/rapp-installer@brainstem-v0.6.9; immutable Grail evidence, not an executable install path.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E🚀%3C/text%3E%3C/svg%3E">
 <style>
 :root{
@@ -109,20 +112,6 @@ html, body{
   overscroll-behavior:none;
   -webkit-tap-highlight-color:transparent;
   transition:background-color .25s ease;
-}
-.historical-banner{
-  position:fixed; z-index:150; top:10px; left:50%;
-  transform:translateX(-50%);
-  width:min(860px, calc(100vw - 180px));
-  margin:0; padding:8px 12px;
-  border:1px solid var(--border2); border-radius:9px;
-  background:color-mix(in srgb, var(--surface) 92%, transparent);
-  box-shadow:0 8px 24px rgba(0,0,0,.12);
-  font-size:11px; line-height:1.35; text-align:center;
-  backdrop-filter:blur(10px);
-}
-@media(max-width:700px){
-  .historical-banner{top:6px;width:calc(100vw - 24px);font-size:9px}
 }
 
 /* Stage = the viewport area where the current slide lives */
@@ -1259,15 +1248,9 @@ ul.clean li strong{ color:var(--text); font-weight:700; }
 </style>
 </head>
 <body>
-
-<aside class="historical-banner" role="note">
-  <strong>Historical concept deck.</strong> Local presentation controls only;
-  downloads and network actions are disabled. RAPP/1 rev-5:
-  <a href="../RAPP1_AUTHORITY.json">RAPP1_AUTHORITY.json</a> and
-  <a href="../RAPP1_STATUS.md">RAPP1_STATUS.md</a>.
-</aside>
 <!-- RAPP1-HISTORICAL-SECTION-START -->
 <div class="historical-snapshot" data-status="historical">
+
 <div class="rotate-hint">
   <div class="rot-icon">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
@@ -1607,19 +1590,19 @@ ul.clean li strong{ color:var(--text); font-weight:700; }
   <p class="lede" style="font-size:18px; max-width:920px;">Cowork can produce a brief. Copilot can produce a brief. Neither can be in your teammate's hands in eight seconds — running, against their data, with no signup, no SaaS, no docs to read.</p>
 
   <div class="share-stage">
-    <div class="download-card stream-in" aria-disabled="true" style="--d:0s">
+    <a class="download-card stream-in" href="../KERNEL_PIN.json" data-historical-href="https://raw.githubusercontent.com/kody-w/RAR/main/agents/@howardh/chief_of_staff_agent.py" data-historical-download="chief_of_staff_agent.py" data-grail-source="kody-w/rapp-installer@brainstem-v0.6.9" title="Open immutable Grail pin evidence" style="--d:0s">
       <div class="file-icon">{ }</div>
       <div class="file-info">
         <div class="file-name">chief_of_staff_agent.py</div>
-        <div class="file-sub">historical RAR example · no active download</div>
+        <div class="file-sub">live from the RAR registry · one file · zero infra</div>
       </div>
       <div class="cta-btn">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 3v12M6 11l6 6 6-6M5 21h14"/>
         </svg>
-        <span>Retired</span>
+        <span>Download</span>
       </div>
-    </div>
+    </a>
 
     <div class="share-methods">
       <div class="method stream-in" style="--d:0.25s">
@@ -2007,6 +1990,42 @@ ul.clean li strong{ color:var(--text); font-weight:700; }
   else show(0);
 
 })();
+</script>
+
+<script type="application/rapp-history">
+// ── Agent file download — fetched live from the public RAR registry ─
+const AGENT_PY_URL = "https://raw.githubusercontent.com/kody-w/RAR/main/agents/@howardh/chief_of_staff_agent.py";
+const AGENT_PY_FILENAME = "chief_of_staff_agent.py";
+async function downloadAgentPy(e){
+  e.preventDefault();
+  const card = e.currentTarget;
+  const cta = card.querySelector('.cta-btn span');
+  const original = cta ? cta.textContent : null;
+  if (cta) cta.textContent = 'Fetching…';
+  try{
+    const resp = await fetch(AGENT_PY_URL, { cache: 'no-store' });
+    if (!resp.ok) throw new Error('fetch failed: ' + resp.status);
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = AGENT_PY_FILENAME;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      if (cta) cta.textContent = original;
+    }, 100);
+  } catch (err){
+    // Fallback: open the raw URL directly
+    if (cta) cta.textContent = original;
+    window.location.href = AGENT_PY_URL;
+  }
+}
+document.querySelectorAll('a.download-card').forEach(a => {
+  a.addEventListener('click', downloadAgentPy);
+});
 </script>
 
 </div>

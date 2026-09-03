@@ -87,11 +87,13 @@ def test_html_has_controls(html):
         assert f'id="{ctrl}"' in html, f"missing #{ctrl}"
 
 
-def test_html_is_read_only_history(html):
-    assert "Superseded, read-only design archive" in html
-    assert "navigator.clipboard" not in html
-    assert "execCommand('copy')" not in html
-    assert "copyPrompt(" not in html
+def test_html_preserves_local_search_and_copy_without_restoration_banners(html):
+    assert "rapp-history-source" in html
+    assert 'class="current-note"' not in html
+    assert 'class="rapp-2026-note"' not in html
+    assert "function copyPrompt" in html
+    assert "ta.value = text" in html
+    assert "navigator.clipboard.writeText(text)" in html
 
 
 def test_html_exposes_data_on_window(html):
