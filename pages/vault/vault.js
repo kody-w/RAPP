@@ -52,7 +52,7 @@ async function loadManifest() {
   }
   // The manifest sits next to the viewer in pages/vault/. Same-origin relative
   // fetch works on GitHub Pages and on any local static server.
-  const res = await fetch('./_manifest.json', { cache: 'no-cache' });
+  const res = await fetch('./manifest.json', { cache: 'no-cache' });
   if (!res.ok) throw new Error(`manifest fetch failed: ${res.status}`);
   VAULT.manifest = await res.json();
   await loadAliases();
@@ -60,7 +60,7 @@ async function loadManifest() {
 }
 
 async function loadAliases() {
-  const res = await fetch('./_wikilink_aliases.json', { cache: 'no-cache' });
+  const res = await fetch('./wikilink-aliases.json', { cache: 'no-cache' });
   if (!res.ok) throw new Error(`alias fetch failed: ${res.status}`);
   const payload = await res.json();
   if (
@@ -525,7 +525,7 @@ async function exportZip() {
   }, null, 2));
 
   // Manifest comes along for the ride so re-imports round-trip cleanly.
-  root.file('_manifest.json', JSON.stringify(VAULT.manifest, null, 2));
+  root.file('manifest.json', JSON.stringify(VAULT.manifest, null, 2));
 
   // README at the top so opening the zip is self-explanatory.
   root.file('HOW TO OPEN.md',
@@ -569,14 +569,14 @@ async function importZip(file) {
       if (entry.dir) return;
       // Strip the top-level "RAPP Vault/" folder if present.
       const stripped = relPath.replace(/^RAPP Vault\//, '');
-      if (stripped === '_manifest.json') {
+      if (stripped === 'manifest.json') {
         promises.push(entry.async('string').then((s) => { manifest = JSON.parse(s); }));
       } else if (stripped.endsWith('.md') && !stripped.startsWith('.obsidian/')) {
         promises.push(entry.async('string').then((s) => { notes[stripped] = s; }));
       }
     });
     await Promise.all(promises);
-    if (!manifest) throw new Error('no _manifest.json in zip');
+    if (!manifest) throw new Error('no manifest.json in zip');
 
     localStorage.setItem(LS_KEY, JSON.stringify({ manifest, notes }));
     alert(`Imported ${Object.keys(notes).length} notes. Reloading in local mode.`);

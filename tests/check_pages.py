@@ -229,7 +229,7 @@ def main() -> int:
         "_site",
         "pages/_site",
         "pages/vault/index.html",
-        "pages/vault/_manifest.json",
+        "pages/vault/manifest.json",
         "pages/vault/sw.js",
     }:
         require(required in includes, f"_config.yml must include {required}")
@@ -268,7 +268,7 @@ def main() -> int:
         "pages/kernel.html",
         "pages/_site/index.json",
         "pages/_site/partials/header.html",
-        "pages/vault/_manifest.json",
+        "pages/vault/manifest.json",
         "pages/vault/sw.js",
         ".well-known/rapp-network-seed.json",
         "cave/index.html",
@@ -501,13 +501,13 @@ def main() -> int:
     require("openInObsidian" not in vault_js, "vault viewer still exposes Obsidian launch code")
     require("obsidian://" not in vault_js, "vault viewer still contains an external application URI")
     require(
-        "_wikilink_aliases.json" in vault_js
+        "wikilink-aliases.json" in vault_js
         and "repositoryUrlFor" in vault_js
         and "VAULT.aliases" in vault_js,
         "vault viewer does not load and resolve the checked alias table",
     )
     vault_manifest = json.loads(
-        (ROOT / "pages/vault/_manifest.json").read_text(encoding="utf-8")
+        (ROOT / "pages/vault/manifest.json").read_text(encoding="utf-8")
     )
     public_vault_paths = {note["path"] for note in vault_manifest["notes"]}
     excluded_vault_paths = {
