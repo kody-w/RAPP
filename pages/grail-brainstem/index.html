@@ -1813,7 +1813,7 @@
     <div class="settings-panel" id="settings-panel">
         <button class="close-settings" id="close-settings">&times;</button>
         <h2>AI Companion Settings</h2>
-        
+
         <div class="settings-tabs">
             <button class="settings-tab active" data-tab="general">General</button>
             <button class="settings-tab" data-tab="voice">Voice</button>
@@ -1959,7 +1959,7 @@
                         <input type="range" id="camera-fov" min="30" max="120" value="75" step="1">
                     </div>
                 </div>
-                
+
                 <h4 style="margin-top: 20px; margin-bottom: 10px; color: #8a2be2;">Presets</h4>
                 <div class="perspective-preset">
                     <button class="preset-btn" onclick="window.worldNavigator.perspectiveManager.applyPreset('default')">Default</button>
@@ -2208,7 +2208,7 @@
     <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js" defer></script>
     -->
     <script type="application/x-rapp-history" data-historical-src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js" data-historical-defer="true"></script>
-    
+
     <!-- ─────────── RAPP.Doorman — Copilot auth + chat dispatch ───────────
          Replaces the legacy Azure Function backend. Same device-code flow,
          same auth worker, same chat call shape as the canonical doorman in
@@ -2774,12 +2774,12 @@ _r if isinstance(_r, str) else json.dumps(_r)
             const completed = Object.values(window.AICompanion.modules).filter(v => v).length;
             const total = Object.keys(window.AICompanion.modules).length;
             const progress = (completed / total) * 100;
-            
+
             const progressBar = document.getElementById('loading-progress');
             if (progressBar) {
                 progressBar.style.width = progress + '%';
             }
-            
+
             if (progress === 100) {
                 setTimeout(() => {
                     const loading = document.getElementById('loading');
@@ -2789,7 +2789,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                             loading.style.display = 'none';
                         }, 500);
                     }
-                    
+
                     const container = document.getElementById('three-container');
                     if (container) {
                         container.classList.add('visible');
@@ -2836,7 +2836,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
             cameraPositionZ: 8
         };
 
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
                         (window.matchMedia && window.matchMedia('(max-width: 768px)').matches) ||
                         (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
 
@@ -2845,7 +2845,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
         // Initialize app when DOM is ready
         document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('loading-status').textContent = 'Loading resources...';
-            
+
             // Load PeerJS asynchronously
             const peerJsScript = document.createElement('script');
             peerJsScript.src = 'https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js';
@@ -2861,11 +2861,11 @@ _r if isinstance(_r, str) else json.dumps(_r)
 
             // Load main application code
             document.getElementById('loading-status').textContent = 'Initializing world...';
-            
+
             // Mark UI as loaded
             window.AICompanion.modules.ui = true;
             updateLoadingProgress();
-            
+
             // Initialize after a small delay to ensure everything is ready
             setTimeout(initializeApplication, 100);
         });
@@ -2881,35 +2881,35 @@ _r if isinstance(_r, str) else json.dumps(_r)
                     h4: /^#### (.+)$/gm,
                     h5: /^##### (.+)$/gm,
                     h6: /^###### (.+)$/gm,
-                    
+
                     // Bold and italic
                     boldItalic: /\*\*\*(.+?)\*\*\*/g,
                     bold: /\*\*(.+?)\*\*/g,
                     italic: /\*(.+?)\*/g,
-                    
+
                     // Links
                     link: /\[([^\]]+)\]\(([^)]+)\)/g,
-                    
+
                     // Images
                     image: /!\[([^\]]*)\]\(([^)]+)\)/g,
-                    
+
                     // Code
                     codeBlock: /```([\s\S]*?)```/g,
                     inlineCode: /`([^`]+)`/g,
-                    
+
                     // Blockquote
                     blockquote: /^> (.+)$/gm,
-                    
+
                     // Lists
                     unorderedList: /^[*\-+] (.+)$/gm,
                     orderedList: /^\d+\. (.+)$/gm,
-                    
+
                     // Horizontal rule
                     hr: /^(---|\*\*\*|___)$/gm,
-                    
+
                     // Line breaks
                     lineBreak: /  $/gm,
-                    
+
                     // Tables (simplified)
                     table: /\|(.+)\|/g
                 };
@@ -2917,19 +2917,19 @@ _r if isinstance(_r, str) else json.dumps(_r)
 
             parse(text) {
                 if (!text) return '';
-                
+
                 // Escape HTML
                 text = this.escapeHtml(text);
-                
+
                 // Process block elements first
                 text = this.processBlockElements(text);
-                
+
                 // Process inline elements
                 text = this.processInlineElements(text);
-                
+
                 // Convert line breaks
                 text = text.replace(/\n/g, '<br>');
-                
+
                 return text;
             }
 
@@ -2942,7 +2942,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
             processBlockElements(text) {
                 // Code blocks (process first to avoid other parsing inside)
                 text = text.replace(this.rules.codeBlock, '<pre><code>$1</code></pre>');
-                
+
                 // Headers
                 text = text.replace(this.rules.h6, '<h6>$1</h6>');
                 text = text.replace(this.rules.h5, '<h5>$1</h5>');
@@ -2950,41 +2950,41 @@ _r if isinstance(_r, str) else json.dumps(_r)
                 text = text.replace(this.rules.h3, '<h3>$1</h3>');
                 text = text.replace(this.rules.h2, '<h2>$1</h2>');
                 text = text.replace(this.rules.h1, '<h1>$1</h1>');
-                
+
                 // Blockquotes
                 text = text.replace(this.rules.blockquote, '<blockquote>$1</blockquote>');
-                
+
                 // Horizontal rules
                 text = text.replace(this.rules.hr, '<hr>');
-                
+
                 // Lists
                 text = this.processList(text);
-                
+
                 return text;
             }
 
             processInlineElements(text) {
                 // Bold italic (process before individual bold/italic)
                 text = text.replace(this.rules.boldItalic, '<strong><em>$1</em></strong>');
-                
+
                 // Bold
                 text = text.replace(this.rules.bold, '<strong>$1</strong>');
-                
+
                 // Italic
                 text = text.replace(this.rules.italic, '<em>$1</em>');
-                
+
                 // Links
                 text = text.replace(this.rules.link, '<a href="../../$2" target="_blank" rel="noopener noreferrer">$1</a>');
-                
+
                 // Images
                 text = text.replace(this.rules.image, '<img src="../../$2" alt="$1">');
-                
+
                 // Inline code
                 text = text.replace(this.rules.inlineCode, '<code>$1</code>');
-                
+
                 // Line breaks
                 text = text.replace(this.rules.lineBreak, '<br>');
-                
+
                 return text;
             }
 
@@ -2993,7 +2993,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                 let inUl = false;
                 let inOl = false;
                 let result = [];
-                
+
                 for (let line of lines) {
                     if (line.match(/^[*\-+] /)) {
                         if (!inUl) {
@@ -3027,10 +3027,10 @@ _r if isinstance(_r, str) else json.dumps(_r)
                         result.push(line);
                     }
                 }
-                
+
                 if (inUl) result.push('</ul>');
                 if (inOl) result.push('</ol>');
-                
+
                 return result.join('\n');
             }
         }
@@ -3066,21 +3066,21 @@ _r if isinstance(_r, str) else json.dumps(_r)
                         this.peer.on('open', (id) => {
                             console.log('Viewer peer ID:', id);
                             console.log('Attempting to join show:', this.roomId);
-                            
+
                             // Set viewer mode UI
                             this.setupViewerMode();
-                            
+
                             setTimeout(() => {
                                 this.connectToHost(this.roomId);
                             }, 1000);
-                            
+
                             this.updateStatus('Connecting to presenter...', false);
                             document.getElementById('following-indicator').classList.add('active');
                         });
                     } else {
                         // Not in show mode initially
                         this.peer = new Peer();
-                        
+
                         this.peer.on('open', (id) => {
                             console.log('Peer ID:', id);
                         });
@@ -3095,7 +3095,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                     // Handle errors
                     this.peer.on('error', (err) => {
                         console.error('Peer error:', err);
-                        
+
                         if (err.type === 'peer-unavailable') {
                             this.showError('Presenter not found. Make sure they are online.');
                         } else if (err.type === 'network') {
@@ -3103,7 +3103,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                         } else {
                             this.showError('Connection error: ' + err.message);
                         }
-                        
+
                         this.updateStatus('Error', false);
                     });
 
@@ -3111,7 +3111,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                     this.peer.on('disconnected', () => {
                         console.log('Disconnected from peer server');
                         this.updateStatus('Disconnected', false);
-                        
+
                         setTimeout(() => {
                             if (!this.peer.destroyed) {
                                 console.log('Attempting to reconnect...');
@@ -3129,25 +3129,25 @@ _r if isinstance(_r, str) else json.dumps(_r)
             setupViewerMode() {
                 // Show viewer mode indicator
                 document.getElementById('viewer-mode-indicator').classList.add('active');
-                
+
                 // Update chat interface for viewer mode
                 const chatInterface = document.getElementById('ai-chat-interface');
                 chatInterface.classList.add('viewer-mode');
-                
+
                 // Show viewer label in chat
                 document.getElementById('viewer-chat-label').style.display = 'inline-block';
-                
+
                 // Hide show mode button for viewers
                 document.getElementById('show-mode-button').style.display = 'none';
-                
+
                 // Keep voice pause button visible but disabled for viewers
                 const voicePauseBtn = document.getElementById('voice-pause-button');
                 voicePauseBtn.style.opacity = '0.5';
                 voicePauseBtn.style.pointerEvents = 'none';
-                
+
                 // Hide companion tooltip since viewers can't interact with the 3D companion
                 document.getElementById('companion-tooltip').style.display = 'none';
-                
+
                 // Adjust camera for third person view
                 if (this.world.camera) {
                     // Move camera back and up for better third person perspective
@@ -3180,7 +3180,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                         const btn = document.getElementById('copy-url-btn');
                         btn.textContent = 'Copied!';
                         btn.classList.add('copied');
-                        
+
                         setTimeout(() => {
                             btn.textContent = 'Copy URL';
                             btn.classList.remove('copied');
@@ -3201,31 +3201,31 @@ _r if isinstance(_r, str) else json.dumps(_r)
             startHosting() {
                 this.isHost = true;
                 this.roomId = this.peer.id;
-                
+
                 document.getElementById('show-mode-button').classList.add('active');
                 document.getElementById('show-mode-modal').classList.add('show');
                 document.getElementById('show-mode-status').classList.add('visible');
-                
+
                 this.updateStatus('Hosting Show', true);
                 this.updateShareUrl();
-                
+
                 this.showNotification('Show Mode activated! Share the QR code for others to follow your view.');
             }
 
             stopHosting() {
                 this.isHost = false;
-                
+
                 // Disconnect all viewers
                 this.connections.forEach((conn) => {
                     conn.close();
                 });
                 this.connections.clear();
                 this.viewerNames.clear();
-                
+
                 document.getElementById('show-mode-button').classList.remove('active');
                 document.getElementById('show-mode-modal').classList.remove('show');
                 document.getElementById('show-mode-status').classList.remove('visible');
-                
+
                 this.showNotification('Show Mode deactivated');
                 this.updateViewerCount();
             }
@@ -3233,9 +3233,9 @@ _r if isinstance(_r, str) else json.dumps(_r)
             connectToHost(hostId) {
                 try {
                     console.log('Connecting to host:', hostId);
-                    
+
                     const viewerUsername = this.generateUsername();
-                    
+
                     const conn = this.peer.connect(hostId, {
                         reliable: true,
                         serialization: 'json',
@@ -3260,10 +3260,10 @@ _r if isinstance(_r, str) else json.dumps(_r)
                         console.log('Connected to presenter successfully');
                         this.updateStatus('Following presenter', true);
                         this.showNotification('Connected to presenter! You are now following their view.');
-                        
+
                         // Store our username for later use
                         this.myUsername = viewerUsername;
-                        
+
                         // Request initial state
                         conn.send({ type: 'requestState' });
                     });
@@ -3287,11 +3287,11 @@ _r if isinstance(_r, str) else json.dumps(_r)
                         // Store viewer name
                         const viewerName = conn.metadata?.username || 'Anonymous';
                         this.viewerNames.set(peerId, viewerName);
-                        
+
                         // Show notification for new viewer
                         this.showNotification(`New viewer joined: ${viewerName}`);
                         this.updateViewerCount();
-                        
+
                         // Send current state to new viewer
                         this.sendCurrentState(conn);
                     }
@@ -3307,15 +3307,15 @@ _r if isinstance(_r, str) else json.dumps(_r)
 
                 conn.on('close', () => {
                     console.log('Peer disconnected:', peerId);
-                    
+
                     if (this.isHost) {
                         const viewerName = this.viewerNames.get(peerId) || 'Anonymous';
                         this.showNotification(`${viewerName} left the show`);
                         this.viewerNames.delete(peerId);
                     }
-                    
+
                     this.connections.delete(peerId);
-                    
+
                     if (this.isHost) {
                         this.updateViewerCount();
                     } else if (this.isFollowing) {
@@ -3337,37 +3337,37 @@ _r if isinstance(_r, str) else json.dumps(_r)
                             this.updateCameraFromHost(data);
                         }
                         break;
-                    
+
                     case 'chatMessage':
                         // Handle chat messages from both viewers and presenter
                         this.showChatMessage(data);
                         break;
-                    
+
                     case 'viewerMessage':
                         // Host receives viewer messages
                         if (this.isHost) {
                             this.handleViewerMessage(peerId, data);
                         }
                         break;
-                    
+
                     case 'aiInteraction':
                         if (this.isFollowing) {
                             this.showAIInteraction(data);
                         }
                         break;
-                    
+
                     case 'voiceActivity':
                         if (this.isFollowing) {
                             this.showVoiceActivity(data);
                         }
                         break;
-                    
+
                     case 'typingIndicator':
                         if (this.isFollowing) {
                             this.showTypingIndicator(data.isTyping);
                         }
                         break;
-                    
+
                     case 'requestState':
                         if (this.isHost) {
                             const conn = this.connections.get(peerId);
@@ -3376,7 +3376,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                             }
                         }
                         break;
-                    
+
                     case 'currentState':
                         if (this.isFollowing) {
                             this.applyHostState(data.state);
@@ -3387,17 +3387,17 @@ _r if isinstance(_r, str) else json.dumps(_r)
 
             handleViewerMessage(peerId, data) {
                 const viewerName = this.viewerNames.get(peerId) || 'Anonymous Viewer';
-                
+
                 // Add the message to the chat
                 const chatMessages = document.getElementById('ai-chat-messages');
                 const messageDiv = document.createElement('div');
                 messageDiv.className = 'ai-message user viewer-message';
                 messageDiv.setAttribute('data-viewer-name', viewerName);
                 messageDiv.textContent = data.message;
-                
+
                 chatMessages.appendChild(messageDiv);
                 chatMessages.scrollTop = chatMessages.scrollHeight;
-                
+
                 // Broadcast to all other viewers
                 this.connections.forEach((conn, connPeerId) => {
                     if (conn && conn.open && connPeerId !== peerId) {
@@ -3411,12 +3411,12 @@ _r if isinstance(_r, str) else json.dumps(_r)
                         });
                     }
                 });
-                
+
                 // If AI is active and it's a message for the AI, process it
                 if (this.world.aiManager && this.world.aiManager.isActive) {
                     // Show notification that viewer sent a message
                     this.showNotification(`${viewerName} sent a message`);
-                    
+
                     // Optionally, you could process viewer messages through AI here
                     // this.world.aiManager.processViewerMessage(data.message, viewerName);
                 }
@@ -3426,7 +3426,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                 // Send all current chat messages
                 const chatMessages = document.getElementById('ai-chat-messages');
                 const messages = [];
-                
+
                 chatMessages.querySelectorAll('.ai-message').forEach(msg => {
                     const isViewer = msg.classList.contains('viewer-message');
                     messages.push({
@@ -3436,7 +3436,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                         viewerName: isViewer ? msg.getAttribute('data-viewer-name') : null
                     });
                 });
-                
+
                 const state = {
                     type: 'currentState',
                     state: {
@@ -3456,24 +3456,24 @@ _r if isinstance(_r, str) else json.dumps(_r)
                         aiActive: this.world.aiManager.isActive
                     }
                 };
-                
+
                 conn.send(state);
             }
 
             applyHostState(state) {
                 // Apply camera state
                 if (state.camera) {
-                    this.updateCameraFromHost({ 
-                        position: state.camera.position, 
-                        rotation: state.camera.rotation 
+                    this.updateCameraFromHost({
+                        position: state.camera.position,
+                        rotation: state.camera.rotation
                     });
                 }
-                
+
                 // Apply chat messages
                 if (state.chatMessages) {
                     const chatMessages = document.getElementById('ai-chat-messages');
                     chatMessages.innerHTML = '';
-                    
+
                     state.chatMessages.forEach(msg => {
                         this.showChatMessage({
                             sender: msg.type,
@@ -3483,7 +3483,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                         });
                     });
                 }
-                
+
                 // Show chat if AI is active
                 if (state.aiActive) {
                     document.getElementById('ai-chat-interface').classList.add('active');
@@ -3507,7 +3507,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                 }
 
                 this.world.camera.position.lerp(targetPos, 0.3);
-                
+
                 // Update camera rotation
                 this.world.camera.rotation.x = data.rotation.x;
                 this.world.camera.rotation.y = data.rotation.y;
@@ -3518,29 +3518,29 @@ _r if isinstance(_r, str) else json.dumps(_r)
                 const chatMessages = document.getElementById('ai-chat-messages');
                 const messageDiv = document.createElement('div');
                 messageDiv.className = `ai-message ${data.sender}`;
-                
+
                 if (data.isPresenter && this.isFollowing) {
                     messageDiv.classList.add('presenter-message');
                 } else if (!data.isPresenter && data.viewerName) {
                     messageDiv.classList.add('viewer-message');
                     messageDiv.setAttribute('data-viewer-name', data.viewerName);
                 }
-                
+
                 // Use innerHTML to preserve formatting
                 messageDiv.innerHTML = data.content;
-                
+
                 chatMessages.appendChild(messageDiv);
                 chatMessages.scrollTop = chatMessages.scrollHeight;
-                
+
                 // Ensure chat is visible
                 if (!document.getElementById('ai-chat-interface').classList.contains('active')) {
                     document.getElementById('ai-chat-interface').classList.add('active');
                 }
-                
+
                 // Animate companion if AI message
                 if (data.sender === 'ai' && this.world.aiManager) {
                     this.world.aiManager.animateCompanionSpeaking();
-                    
+
                     // Show 3D text if available
                     if (data.voiceResponse) {
                         this.world.aiManager.animateTextResponse(data.voiceResponse);
@@ -3635,7 +3635,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
             // New method for viewers to send messages
             sendViewerMessage(message) {
                 if (!this.isFollowing) return;
-                
+
                 // Find the host connection
                 const hostConn = Array.from(this.connections.values())[0];
                 if (hostConn && hostConn.open) {
@@ -3895,7 +3895,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                     tab.addEventListener('click', (e) => {
                         document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
                         document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
-                        
+
                         e.target.classList.add('active');
                         const tabName = e.target.dataset.tab;
                         document.getElementById(`${tabName}-settings`).classList.add('active');
@@ -4095,7 +4095,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                 const preview = document.getElementById('json-preview');
                 if (preview) {
                     const displaySettings = JSON.parse(JSON.stringify(this.settings));
-                    
+
                     // Mask sensitive data for display
                     if (displaySettings.api.key) {
                         displaySettings.api.key = displaySettings.api.key.substring(0, 8) + '...';
@@ -4103,7 +4103,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                     if (displaySettings.voice.output.azureTTSKey) {
                         displaySettings.voice.output.azureTTSKey = displaySettings.voice.output.azureTTSKey.substring(0, 8) + '...';
                     }
-                    
+
                     preview.textContent = JSON.stringify(displaySettings, null, 2);
                 }
             }
@@ -4111,13 +4111,13 @@ _r if isinstance(_r, str) else json.dumps(_r)
             saveSettings() {
                 this.settings.timestamp = new Date().toISOString();
                 localStorage.setItem('aiCompanionAllSettings', JSON.stringify(this.settings));
-                
+
                 // Apply settings to various components
                 if (this.world.aiManager) {
                     this.world.aiManager.apiKey = this.settings.api.key;
                     this.world.aiManager.endpoint = this.settings.api.endpoint;
                     this.world.aiManager.applySettingsFromManager();
-                    
+
                     // If API key is set and AI isn't active, try to activate it
                     if (this.settings.api.key && !this.world.aiManager.isActive) {
                         this.world.aiManager.checkCachedApiKey();
@@ -4139,14 +4139,14 @@ _r if isinstance(_r, str) else json.dumps(_r)
             exportSettings() {
                 const dataStr = JSON.stringify(this.settings, null, 2);
                 const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-                
+
                 const exportFileDefaultName = `ai-companion-settings-${new Date().toISOString().split('T')[0]}.json`;
-                
+
                 const linkElement = document.createElement('a');
                 linkElement.setAttribute('href', dataUri);
                 linkElement.setAttribute('download', exportFileDefaultName);
                 linkElement.click();
-                
+
                 this.world.showNotification('Settings exported successfully!');
             }
 
@@ -4157,16 +4157,16 @@ _r if isinstance(_r, str) else json.dumps(_r)
                 try {
                     const text = await file.text();
                     const imported = JSON.parse(text);
-                    
+
                     // Validate imported settings
                     if (!imported.version || !imported.api || !imported.voice || !imported.perspective) {
                         throw new Error('Invalid settings file format');
                     }
-                    
+
                     // Merge with current settings
                     this.settings = { ...this.settings, ...imported };
                     this.settings.timestamp = new Date().toISOString();
-                    
+
                     // Save and apply
                     this.saveSettings();
                     this.loadSettingsToUI();
@@ -4176,7 +4176,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                     console.error('Error importing settings:', error);
                     this.world.showNotification('Failed to import settings. Please check the file format.');
                 }
-                
+
                 event.target.value = '';
             }
 
@@ -4185,11 +4185,11 @@ _r if isinstance(_r, str) else json.dumps(_r)
                     localStorage.removeItem('aiCompanionAllSettings');
                     localStorage.removeItem('nexus_ai_api_key');
                     localStorage.removeItem('nexusAISettings');
-                    
+
                     this.settings = this.loadAllSettings();
                     this.loadSettingsToUI();
                     this.updatePreview();
-                    
+
                     this.world.showNotification('All settings have been reset to defaults.');
                 }
             }
@@ -4256,7 +4256,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
             setupRangeControl(inputId, displayId, onChange) {
                 const input = document.getElementById(inputId);
                 const display = document.getElementById(displayId);
-                
+
                 if (input && display) {
                     input.addEventListener('input', (e) => {
                         display.textContent = e.target.value;
@@ -4269,18 +4269,18 @@ _r if isinstance(_r, str) else json.dumps(_r)
             updateSettingsFromUI() {
                 if (this.world.settingsManager) {
                     const settings = this.world.settingsManager.settings;
-                    
+
                     settings.perspective.camera.position.x = parseFloat(document.getElementById('camera-pos-x').value);
                     settings.perspective.camera.position.y = parseFloat(document.getElementById('camera-pos-y').value);
                     settings.perspective.camera.position.z = parseFloat(document.getElementById('camera-pos-z').value);
-                    
+
                     settings.perspective.camera.rotation.x = parseFloat(document.getElementById('camera-rot-x').value);
                     settings.perspective.camera.rotation.y = parseFloat(document.getElementById('camera-rot-y').value);
-                    
+
                     settings.perspective.camera.fov = parseFloat(document.getElementById('camera-fov').value);
                     settings.perspective.visual.fogDensity = parseFloat(document.getElementById('fog-density').value);
                     settings.perspective.visual.particleCount = parseInt(document.getElementById('particle-count').value);
-                    
+
                     this.world.settingsManager.updatePreview();
                 }
             }
@@ -4301,19 +4301,19 @@ _r if isinstance(_r, str) else json.dumps(_r)
                 // Update UI controls
                 document.getElementById('camera-pos-x').value = preset.position.x;
                 document.getElementById('pos-x-value').textContent = preset.position.x;
-                
+
                 document.getElementById('camera-pos-y').value = preset.position.y;
                 document.getElementById('pos-y-value').textContent = preset.position.y;
-                
+
                 document.getElementById('camera-pos-z').value = preset.position.z;
                 document.getElementById('pos-z-value').textContent = preset.position.z;
-                
+
                 document.getElementById('camera-rot-x').value = preset.rotation.x;
                 document.getElementById('rot-x-value').textContent = preset.rotation.x;
-                
+
                 document.getElementById('camera-rot-y').value = preset.rotation.y;
                 document.getElementById('rot-y-value').textContent = preset.rotation.y;
-                
+
                 document.getElementById('camera-fov').value = preset.fov;
                 document.getElementById('fov-value').textContent = preset.fov;
 
@@ -4392,18 +4392,18 @@ _r if isinstance(_r, str) else json.dumps(_r)
                 this.whisperRecording = false;
                 this.mediaRecorder = null;
                 this.recordedChunks = [];
-                
+
                 this.initializeSpeechRecognition();
-                
+
                 this.voiceInputBtn = document.getElementById('voice-input-btn');
                 this.listeningIndicator = document.getElementById('listening-indicator');
-                
+
                 this.setupEventListeners();
             }
 
             initializeSpeechRecognition() {
                 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                
+
                 if (!SpeechRecognition) {
                     console.error('Speech recognition not supported');
                     this.showNotification('Speech recognition not supported in this browser');
@@ -4420,7 +4420,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                     this.isListening = true;
                     this.voiceInputBtn.classList.add('recording');
                     this.listeningIndicator.classList.add('active');
-                    
+
                     // Broadcast voice activity
                     if (this.aiManager.world.showModeManager && this.aiManager.world.showModeManager.isHost) {
                         this.aiManager.world.showModeManager.broadcastVoiceActivity('listening');
@@ -4432,12 +4432,12 @@ _r if isinstance(_r, str) else json.dumps(_r)
                     this.isListening = false;
                     this.voiceInputBtn.classList.remove('recording');
                     this.listeningIndicator.classList.remove('active');
-                    
+
                     // Broadcast voice activity
                     if (this.aiManager.world.showModeManager && this.aiManager.world.showModeManager.isHost) {
                         this.aiManager.world.showModeManager.broadcastVoiceActivity('idle');
                     }
-                    
+
                     // Only restart if continuous mode is enabled, not paused, AND we
                     // haven't given up after consecutive hard errors.
                     if (this.giveUpRetries) {
@@ -4476,7 +4476,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                         // Successful result — reset hard-error counter
                         this.hardFailedCount = 0;
                         this.giveUpRetries = false;
-                        
+
                         if (!this.continuousMode) {
                             this.stopListening();
                         }
@@ -4488,7 +4488,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                     this.isListening = false;
                     this.voiceInputBtn.classList.remove('recording');
                     this.listeningIndicator.classList.remove('active');
-                    
+
                     // Ignore aborted (pause) + no-speech (just silence)
                     if (event.error === 'aborted') {
                         console.log('Speech recognition aborted (pause)');
@@ -4497,7 +4497,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                     if (event.error === 'no-speech') {
                         return;
                     }
-                    
+
                     // CAP retries on hard errors (network, audio-capture, service-not-allowed).
                     // Edge / aggressive tracking prevention often blocks the free speech endpoint;
                     // looping forever burns battery + floods console. After 3 consecutive hard
@@ -4534,7 +4534,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                             return;
                         }
                     }
-                    
+
                     this.showNotification(`Speech recognition error: ${event.error}`);
                 };
             }
@@ -4904,11 +4904,11 @@ _r if isinstance(_r, str) else json.dumps(_r)
 
             setPaused(paused) {
                 this.isPaused = paused;
-                
+
                 if (paused) {
                     // Remember if we were listening before pause
                     this.wasListeningBeforePause = this.isListening;
-                    
+
                     // Stop listening gracefully
                     if (this.isListening) {
                         try {
@@ -4929,7 +4929,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                     }
                     this.wasListeningBeforePause = false;
                 }
-                
+
                 this.updateButtonState();
             }
 
@@ -4968,7 +4968,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                 this.speechSynthesizer = null;
                 this.maxCharacters = 5000;
                 this.isPaused = false;
-                
+
                 this.loadSpeechSdk();
             }
 
@@ -5030,14 +5030,14 @@ _r if isinstance(_r, str) else json.dumps(_r)
                 if (!this.enabled || !text || this.isSpeaking || this.isPaused) return;
 
                 this.stopSpeaking();
-                
+
                 const cleanText = this.cleanTextForSpeech(text);
-                
+
                 // Broadcast voice activity
                 if (aiManager && aiManager.world.showModeManager && aiManager.world.showModeManager.isHost) {
                     aiManager.world.showModeManager.broadcastVoiceActivity('speaking');
                 }
-                
+
                 // Dispatch order: ElevenLabs (if key) → Azure (if key + SDK) → Browser.
                 // ElevenLabs first because operators who set both clearly
                 // prefer it; Azure next because the SDK is heavier to spin
@@ -5050,7 +5050,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                 } else {
                     await this.speakWithBrowser(cleanText, aiManager);
                 }
-                
+
                 // Broadcast voice activity end
                 if (aiManager && aiManager.world.showModeManager && aiManager.world.showModeManager.isHost) {
                     aiManager.world.showModeManager.broadcastVoiceActivity('idle');
@@ -5104,7 +5104,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
 
             async speakWithAzure(text, aiManager = null) {
                 if (this.isPaused) return;
-                
+
                 try {
                     const truncatedText = text.length > this.maxCharacters
                         ? text.substring(0, this.maxCharacters) + "... (text truncated for speech)"
@@ -5136,7 +5136,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                                     console.log("Azure TTS synthesis completed");
                                     this.isSpeaking = false;
                                     document.getElementById('voice-indicator').classList.remove('active');
-                                    
+
                                     if (this.speechSynthesizer) {
                                         this.speechSynthesizer.close();
                                         this.speechSynthesizer = null;
@@ -5146,7 +5146,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                                     console.error(
                                         `Speech synthesis canceled, reason: ${result.reason}`
                                     );
-                                    
+
                                     if (this.speechSynthesizer) {
                                         this.speechSynthesizer.close();
                                         this.speechSynthesizer = null;
@@ -5181,42 +5181,42 @@ _r if isinstance(_r, str) else json.dumps(_r)
 
             async speakWithBrowser(text, aiManager = null) {
                 if (this.isPaused) return;
-                
+
                 return new Promise((resolve, reject) => {
                     try {
                         const utterance = new SpeechSynthesisUtterance(text);
                         utterance.rate = 1.0;
                         utterance.pitch = 1.0;
                         utterance.volume = 1.0;
-                        
+
                         const voices = this.synthesis.getVoices();
-                        const preferredVoice = voices.find(voice => 
-                            voice.name.includes('Microsoft') || 
+                        const preferredVoice = voices.find(voice =>
+                            voice.name.includes('Microsoft') ||
                             voice.name.includes('Google') ||
                             voice.name.includes('Natural')
                         ) || voices[0];
-                        
+
                         if (preferredVoice) {
                             utterance.voice = preferredVoice;
                         }
-                        
+
                         utterance.onstart = () => {
                             this.isSpeaking = true;
                             document.getElementById('voice-indicator').classList.add('active');
                         };
-                        
+
                         utterance.onend = () => {
                             this.isSpeaking = false;
                             document.getElementById('voice-indicator').classList.remove('active');
                             resolve();
                         };
-                        
+
                         utterance.onerror = (error) => {
                             this.isSpeaking = false;
                             document.getElementById('voice-indicator').classList.remove('active');
                             reject(error);
                         };
-                        
+
                         this.synthesis.speak(utterance);
                     } catch (error) {
                         this.isSpeaking = false;
@@ -5308,11 +5308,11 @@ _r if isinstance(_r, str) else json.dumps(_r)
                 this.conversations.forEach((conversation, conversationId) => {
                     const taskEl = document.createElement('div');
                     taskEl.className = 'task-item';
-                    
+
                     const messageCount = conversation.conversation ? conversation.conversation.length : 0;
                     const timestamp = conversation.timestamp ? new Date(conversation.timestamp).toLocaleString() : 'Unknown';
                     const appName = conversation.appName || 'Unnamed Conversation';
-                    
+
                     taskEl.innerHTML = `<strong>${appName}</strong>
                         <small>Saved: ${timestamp}</small>
                         <div style="font-size: 0.85em; color: rgba(255, 255, 255, 0.7); margin-top: 8px;">
@@ -5337,7 +5337,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                     }
 
                     const conversationId = `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-                    
+
                     this.conversations.set(conversationId, conversationData);
 
                     this.updateTaskList();
@@ -5380,19 +5380,19 @@ _r if isinstance(_r, str) else json.dumps(_r)
             async processMessage(message) {
                 if (message.role === 'user') {
                     this.addReplayMessage(message.content, 'user');
-                    
+
                 } else if (message.role === 'assistant') {
                     this.world.aiManager.showTypingIndicator();
-                    
+
                     await this.delay(1500);
-                    
+
                     this.world.aiManager.hideTypingIndicator();
                     this.addReplayMessage(message.content, 'ai');
-                    
+
                     if (this.world.aiManager && this.world.aiManager.isActive) {
                         this.world.aiManager.animateTextResponse(message.content);
                     }
-                    
+
                 } else if (message.role === 'system') {
                     this.addReplayMessage(message.content, 'system');
                 }
@@ -5402,7 +5402,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                 const chatMessages = document.getElementById('ai-chat-messages');
                 const messageDiv = document.createElement('div');
                 messageDiv.className = `ai-message ${sender} task-replay`;
-                
+
                 if (sender === 'ai') {
                     // Parse markdown for AI messages
                     const parser = new MarkdownParser();
@@ -5463,7 +5463,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                 this.setupEventListeners();
                 this.checkCachedApiKey();
                 this.applySettings();
-                
+
                 this.voiceInputManager = new VoiceInputManager(this);
 
                 this.setupVoicePauseButton();
@@ -5528,7 +5528,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                 if (this.world.settingsManager) {
                     this.settings = this.loadSettings();
                 }
-                
+
                 this.voiceManager.setEnabled(this.settings.voiceEnabled);
                 this.voiceManager.setAutoSpeak(this.settings.autoSpeak);
                 this.voiceManager.setAzureKey(this.settings.azureTTSKey);
@@ -5554,22 +5554,22 @@ _r if isinstance(_r, str) else json.dumps(_r)
                     if (this.voicePaused) {
                         this.voiceManager.setPaused(true);
                         this.voiceInputManager.setPaused(true);
-                        
+
                         pauseButton.classList.add('paused');
                         pauseIndicator.classList.add('active');
                         pauseText.textContent = 'Resume Voice';
-                        
+
                         this.showNotification('Voice activity paused for Teams call');
                     } else {
                         this.voiceManager.setPaused(false);
                         this.voiceInputManager.setPaused(false);
-                        
+
                         pauseButton.classList.remove('paused');
                         pauseIndicator.classList.remove('active');
                         pauseText.textContent = 'Pause Voice';
-                        
+
                         this.showNotification('Voice activity resumed');
-                        
+
                         if (this.settings.continuousConversation && this.voiceInputManager) {
                             setTimeout(() => {
                                 this.voiceInputManager.startListening();
@@ -5916,7 +5916,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                 // Add inactive text if not active
                 if (!isActive) {
                     const loader = new THREE.FontLoader();
-                    
+
                     // Use cached font data if available
                     if (window.AICompanion && window.AICompanion.fontData) {
                         const font = loader.parse(window.AICompanion.fontData);
@@ -5930,10 +5930,10 @@ _r if isinstance(_r, str) else json.dumps(_r)
 
                 // Position companion in scene
                 companionGroup.position.set(0, 0, -WORLD_ATTRIBUTES.companionDistance);
-                
+
                 // Rotate the companion to show higher
                 companionGroup.rotation.x = THREE.MathUtils.degToRad(-20);
-                
+
                 this.world.scene.add(companionGroup);
 
                 this.companion = {
@@ -5977,7 +5977,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
 
             loadFont() {
                 const loader = new THREE.FontLoader();
-                
+
                 // Use cached font data if available
                 if (window.AICompanion && window.AICompanion.fontData) {
                     this.font = loader.parse(window.AICompanion.fontData);
@@ -6007,7 +6007,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                     if (this.textContainer) {
                         this.textContainer.lookAt(this.world.camera.position);
                     }
-                    
+
                     if (this.persistentTextGroup) {
                         this.persistentTextGroup.lookAt(this.world.camera.position);
                     }
@@ -6179,7 +6179,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
 
                     const textMesh = new THREE.Mesh(textGeometry, textMaterial.clone());
                     textMesh.position.y = -index * lineHeight;
-                    
+
                     this.textGroup.add(textMesh);
                     this.textMeshes.push(textMesh);
                 });
@@ -6209,7 +6209,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
 
                     this.textMeshes.forEach((mesh, index) => {
                         const meshWorldY = currentY - index * 0.8;
-                        
+
                         if (meshWorldY < -1.5) {
                             mesh.material.opacity = Math.max(0, 1 + meshWorldY / 1.5);
                         }
@@ -6240,7 +6240,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                 // Create a condensed version of the text for persistent display
                 const maxLength = 100;
                 const displayText = text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
-                
+
                 const lines = [];
                 const maxCharsPerLine = 35;
                 const words = displayText.split(' ');
@@ -6292,7 +6292,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
 
                     const textMesh = new THREE.Mesh(textGeometry, persistentMaterial);
                     textMesh.position.y = -index * lineHeight;
-                    
+
                     this.persistentTextGroup.add(textMesh);
                 });
 
@@ -6305,7 +6305,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                 const fadeSpeed = 0.02;
                 const fade = () => {
                     opacity -= fadeSpeed;
-                    
+
                     if (opacity <= 0) {
                         this.textMeshes.forEach(mesh => {
                             if (mesh.geometry) mesh.geometry.dispose();
@@ -6358,7 +6358,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                 `;
                 this.chatMessages.appendChild(typingDiv);
                 this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
-                
+
                 // Broadcast typing indicator
                 if (this.world.showModeManager && this.world.showModeManager.isHost) {
                     this.world.showModeManager.broadcastTypingIndicator(true);
@@ -6370,7 +6370,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                 if (typingIndicator) {
                     typingIndicator.remove();
                 }
-                
+
                 // Broadcast typing indicator off
                 if (this.world.showModeManager && this.world.showModeManager.isHost) {
                     this.world.showModeManager.broadcastTypingIndicator(false);
@@ -6380,7 +6380,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
             addMessage(text, sender, voiceResponse = null) {
                 const messageDiv = document.createElement('div');
                 messageDiv.className = `ai-message ${sender}`;
-                
+
                 if (sender === 'ai') {
                     // Parse markdown for AI messages
                     messageDiv.innerHTML = this.markdownParser.parse(text);
@@ -6390,7 +6390,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
 
                 this.chatMessages.appendChild(messageDiv);
                 this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
-                
+
                 // Broadcast chat message in show mode (only if we're the host)
                 if (this.world.showModeManager && this.world.showModeManager.isHost) {
                     this.world.showModeManager.broadcastChatMessage(sender, messageDiv.innerHTML, voiceResponse);
@@ -6419,14 +6419,14 @@ _r if isinstance(_r, str) else json.dumps(_r)
 
             load(url, onLoad, onProgress, onError) {
                 const scope = this;
-                
+
                 // Check if we already have the font data cached
                 if (window.AICompanion && window.AICompanion.fontData) {
                     const font = scope.parse(window.AICompanion.fontData);
                     if (onLoad) onLoad(font);
                     return;
                 }
-                
+
                 const loader = new THREE.FileLoader(this.manager);
                 loader.setPath(this.path);
                 loader.setRequestHeader(this.requestHeader);
@@ -6641,8 +6641,8 @@ _r if isinstance(_r, str) else json.dumps(_r)
                 this.camera.position.set(0, WORLD_ATTRIBUTES.cameraPositionY, WORLD_ATTRIBUTES.cameraPositionZ);
                 this.camera.lookAt(0, 3, 0);
 
-                this.renderer = new THREE.WebGLRenderer({ 
-                    antialias: true, 
+                this.renderer = new THREE.WebGLRenderer({
+                    antialias: true,
                     alpha: true,
                     powerPreference: "high-performance"
                 });
@@ -6752,7 +6752,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                 window.addEventListener('mousemove', (event) => {
                     this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
                     this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-                    
+
                     this.checkHover();
                 });
 
@@ -6760,7 +6760,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                 this.renderer.domElement.addEventListener('click', (event) => {
                     this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
                     this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-                    
+
                     this.checkClick();
                 });
 
@@ -6770,7 +6770,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                         const touch = event.touches[0];
                         this.mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
                         this.mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
-                        
+
                         this.checkClick();
                     });
                 }
@@ -6781,7 +6781,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                 if (this.showModeManager && this.showModeManager.isFollowing) {
                     return;
                 }
-                
+
                 this.raycaster.setFromCamera(this.mouse, this.camera);
                 const intersects = this.raycaster.intersectObjects(this.scene.children, true);
 
@@ -6791,19 +6791,19 @@ _r if isinstance(_r, str) else json.dumps(_r)
                     if (intersect.object.userData.isCompanion) {
                         foundCompanion = true;
                         this.renderer.domElement.style.cursor = 'pointer';
-                        
+
                         // Show tooltip
                         const vector = new THREE.Vector3();
                         intersect.object.getWorldPosition(vector);
                         vector.project(this.camera);
-                        
+
                         const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
                         const y = (-(vector.y * 0.5) + 0.5) * window.innerHeight;
-                        
+
                         this.tooltip.style.left = x + 'px';
                         this.tooltip.style.top = (y - 40) + 'px';
                         this.tooltip.classList.add('visible');
-                        
+
                         break;
                     }
                 }
@@ -6819,7 +6819,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
                 if (this.showModeManager && this.showModeManager.isFollowing) {
                     return;
                 }
-                
+
                 this.raycaster.setFromCamera(this.mouse, this.camera);
                 const intersects = this.raycaster.intersectObjects(this.scene.children, true);
 
