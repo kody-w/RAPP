@@ -34,6 +34,26 @@ RAPPID = f"rappid:@kody-w/offline-peer:{'a' * 64}"
 UTC = "2026-07-16T22:41:23.842Z"
 
 
+def _reviewed_source_binding(target: dict) -> dict:
+    artifact = {
+        "schema": "rapp-reviewed-source-binding/1.0",
+        "binding": target,
+        "review": {
+            "transport": True,
+            "source": True,
+        },
+    }
+    if target.get("tool") == "tools/sniff_network.py":
+        artifact["transport_policy"] = sniff_network._default_transport_policy(
+            target["via"],
+            seed_url=target.get("source", {}).get(
+                "seed_url",
+                sniff_network._DEFAULT_SEED_URL,
+            ),
+        )
+    return artifact
+
+
 @pytest.fixture
 def migration_dir():
     root = ROOT / "tests" / ".active-path-migration-test-data"
@@ -150,11 +170,9 @@ def test_private_estate_retains_full_plan_and_defaults_read_only(
     monkeypatch.setattr(
         private_estate_init,
         "_gh_repo_observation",
-        lambda slug: {
-            "status": "missing",
-            "source": "test",
-            "repository": slug,
-        },
+        lambda _slug: (_ for _ in ()).throw(
+            AssertionError("default plan attempted GitHub observation")
+        ),
     )
     monkeypatch.setattr(
         private_estate_init,
@@ -182,12 +200,19 @@ def test_private_estate_retains_full_plan_and_defaults_read_only(
     assert result["ok"] is True
     assert result["accepted"] is False
     assert result["status"] == "PLAN_READY"
-    assert result["mode"] == "inspect-plan"
+    assert result["mode"] == "offline-inspect-plan"
     assert result["plan_only"] is True
     assert result["apply_permitted"] is False
     assert result["repository_mutation_permitted"] is False
     assert result["local_state_mutation_permitted"] is False
-    assert result["repository_observation"]["status"] == "missing"
+    assert result["repository_observation"]["status"] == "not-observed"
+    assert result["repository_observation"]["evidence_states"] == {
+        "observed": False,
+        "structurally_valid": True,
+        "cryptographically_verified": False,
+        "fresh": False,
+        "accepted": False,
+    }
     assert result["scaffold"]["schema"] == "rapp-private-estate/1.0"
     assert {
         row["path"] for row in result["scaffold"]["files"]
@@ -213,6 +238,47 @@ def test_private_estate_invalid_owner_is_non_success_refusal():
     assert result["error"]["code"] == "invalid-owner"
 
 
+def test_private_estate_inspects_supplied_repository_source_offline(
+    migration_dir, monkeypatch
+):
+    monkeypatch.setattr(
+        private_estate_init,
+        "_load_operator_identity",
+        lambda _path, _owner: (RAPPID, "operator"),
+    )
+    monkeypatch.setattr(
+        private_estate_init,
+        "_gh_repo_observation",
+        lambda _slug: (_ for _ in ()).throw(
+            AssertionError("offline source inspection reached GitHub")
+        ),
+    )
+    source = migration_dir / "private-repository-source.json"
+    source.write_bytes(
+        canonical_bytes(
+            {
+                "schema": "rapp-private-estate-repository-source/1.0",
+                "repository": "kody-w/rapp-estate-private",
+                "status": "missing",
+            }
+        )
+    )
+
+    result = private_estate_init.init_private_estate(
+        "kody-w",
+        source_data_path=str(source),
+    )
+
+    assert result["ok"] is True
+    assert result["accepted"] is False
+    assert result["source_mode"] == "supplied-offline"
+    assert result["repository_observation"]["status"] == "missing"
+    assert result["repository_observation"]["evidence_states"][
+        "structurally_valid"
+    ] is True
+    assert result["repository_observation"]["evidence_states"]["fresh"] is False
+
+
 def test_private_estate_apply_requires_artifact_and_authenticated_authority(
     migration_dir, monkeypatch
 ):
@@ -227,11 +293,9 @@ def test_private_estate_apply_requires_artifact_and_authenticated_authority(
     monkeypatch.setattr(
         private_estate_init,
         "_gh_repo_observation",
-        lambda slug: {
-            "status": "missing",
-            "source": "test",
-            "repository": slug,
-        },
+        lambda _slug: (_ for _ in ()).throw(
+            AssertionError("authority-blocked request observed GitHub")
+        ),
     )
     monkeypatch.setattr(
         private_estate_init,
@@ -293,7 +357,7 @@ def test_network_sniff_is_unverified_publication_observation(monkeypatch):
     monkeypatch.setattr(
         sniff_network,
         "fetch_seed",
-        lambda _url: {
+        lambda _url, **_kwargs: {
             "schema": "rapp-network-seed/1.0",
             "operators": ["kody-w"],
         },
@@ -301,7 +365,7 @@ def test_network_sniff_is_unverified_publication_observation(monkeypatch):
     monkeypatch.setattr(
         sniff_network,
         "fetch_beacon_at_url",
-        lambda _url: {
+        lambda _url, **_kwargs: {
             "schema": "rapp-network-beacon/1.1",
             "operator_rappid": RAPPID,
             "estate_url": "https://example.invalid/estate.json",
@@ -317,13 +381,22 @@ def test_network_sniff_is_unverified_publication_observation(monkeypatch):
     monkeypatch.setattr(
         sniff_network,
         "fetch_estate_at_url",
-        lambda _url: {
+        lambda _url, **_kwargs: {
             "created": [{"rappid": "published"}],
             "member": [{"rappid": "published"}, {"rappid": "published"}],
         },
     )
 
-    result = sniff_network.sniff_via_raw()
+    binding = _reviewed_source_binding(
+        sniff_network._source_binding_target("raw")
+    )
+    binding["transport_policy"]["allowed_origins"].append(
+        "https://example.invalid"
+    )
+    result = sniff_network.sniff_via_raw(
+        online=True,
+        source_binding=binding,
+    )
 
     assert result["ok"] is True
     assert result["accepted"] is False
@@ -382,19 +455,25 @@ def test_network_sniff_retains_breadth_first_federation_walk(monkeypatch):
     monkeypatch.setattr(
         sniff_network,
         "fetch_seed",
-        lambda _url: {
+        lambda _url, **_kwargs: {
             "schema": "rapp-network-seed/1.0",
             "operators": ["kody-w"],
         },
     )
 
-    def fetch(url):
+    def fetch(url, **_kwargs):
         handle = "peer" if "/peer/" in url else "kody-w"
         return beacons[handle]
 
     monkeypatch.setattr(sniff_network, "fetch_beacon_at_url", fetch)
 
-    result = sniff_network.sniff_via_raw(fetch_estates=False)
+    result = sniff_network.sniff_via_raw(
+        fetch_estates=False,
+        online=True,
+        source_binding=_reviewed_source_binding(
+            sniff_network._source_binding_target("raw")
+        ),
+    )
 
     assert result["observations_count"] == 2
     assert [
@@ -405,16 +484,184 @@ def test_network_sniff_retains_breadth_first_federation_walk(monkeypatch):
     assert result["observations"][1]["observed"]["beacon"] == beacons["peer"]
 
 
-def test_network_sniff_write_requires_approval_and_still_refuses_authority(
-    migration_dir, monkeypatch
+def test_network_sniff_reviewed_binding_constrains_derived_urls(monkeypatch):
+    fetched: list[str] = []
+    monkeypatch.setattr(
+        sniff_network,
+        "fetch_seed",
+        lambda _url, **_kwargs: {
+            "schema": "rapp-network-seed/1.0",
+            "operators": ["kody-w"],
+        },
+    )
+
+    def fetch_beacon(url, **_kwargs):
+        fetched.append(url)
+        return {
+            "schema": "rapp-network-beacon/1.1",
+            "operator_rappid": RAPPID,
+            "estate_url": "http://127.0.0.1:9/private-estate.json",
+            "discovery": {
+                "indexable": True,
+                "federation_hints": [
+                    {
+                        "github": "unreviewed",
+                        "beacon_url": "http://127.0.0.1:9/beacon.json",
+                    }
+                ],
+            },
+        }
+
+    monkeypatch.setattr(
+        sniff_network,
+        "fetch_beacon_at_url",
+        fetch_beacon,
+    )
+    monkeypatch.setattr(
+        sniff_network,
+        "fetch_estate_at_url",
+        lambda url, **_kwargs: (_ for _ in ()).throw(
+            AssertionError(f"unreviewed estate URL fetched: {url}")
+        ),
+    )
+
+    result = sniff_network.sniff_via_raw(
+        online=True,
+        source_binding=_reviewed_source_binding(
+            sniff_network._source_binding_target("raw")
+        ),
+    )
+
+    assert fetched == [sniff_network.github_beacon_url("kody-w")]
+    assert result["accepted"] is False
+    assert result["observations"][0]["provenance"]["estate"]["status"] == (
+        "outside-reviewed-binding"
+    )
+    assert result["skipped"][0]["provenance"]["status"] == (
+        "outside-reviewed-binding"
+    )
+
+
+def test_network_fetch_primitives_require_reviewed_transport_policy(
+    monkeypatch
 ):
-    result = sniff_network._unverified_envelope("raw", [], [])
-    monkeypatch.setattr(sniff_network, "sniff_via_raw", lambda **_kwargs: result)
+    calls: list[str] = []
+
+    def forbidden(*_args, **_kwargs):
+        calls.append("urlopen")
+        raise AssertionError("fetch primitive reached HTTP without policy")
+
+    monkeypatch.setattr(
+        sniff_network,
+        "_open_reviewed_request",
+        forbidden,
+    )
+
+    assert sniff_network.fetch_seed(sniff_network._DEFAULT_SEED_URL) is None
+    assert sniff_network.fetch_beacon_at_url(
+        sniff_network.github_beacon_url("kody-w")
+    ) is None
+    assert sniff_network.fetch_estate_at_url(
+        sniff_network.github_estate_url("kody-w")
+    ) is None
+    assert calls == []
+
+
+def test_network_sniff_inspects_supplied_observations_offline(
+    migration_dir, monkeypatch, capsys
+):
+    monkeypatch.setattr(
+        sniff_network,
+        "_sniff_via_raw_historical",
+        lambda **_kwargs: (_ for _ in ()).throw(
+            AssertionError("offline source inspection reached raw discovery")
+        ),
+    )
+    source = migration_dir / "network-source.json"
+    source.write_bytes(
+        canonical_bytes(
+            {
+                "schema": "rapp-network-offline-source/1.0",
+                "via": "raw",
+                "observations": [
+                    {
+                        "published_github": "kody-w",
+                        "published_created_claim_count": 1,
+                        "published_member_claim_count": 2,
+                        "observed": {
+                            "beacon": {
+                                "schema": "rapp-network-beacon/1.1",
+                                "operator_rappid": RAPPID,
+                            }
+                        },
+                    }
+                ],
+                "skipped": [],
+            }
+        )
+    )
+
+    result = sniff_network.inspect_offline_source(str(source), "raw")
+
+    assert result["ok"] is True
+    assert result["accepted"] is False
+    assert result["source_mode"] == "supplied-offline"
+    assert result["published_door_claim_count"] == 3
+    assert result["observations"][0]["evidence_states"][
+        "structurally_valid"
+    ] is True
+    assert result["observations"][0]["evidence_states"]["fresh"] is False
+    assert sniff_network.main(["--source-data", str(source)]) == 0
+    assert "supplied source:" in capsys.readouterr().out
+
+
+def test_network_sniff_rejects_malformed_offline_claim_counts(migration_dir):
+    source = migration_dir / "malformed-network-source.json"
+    source.write_bytes(
+        canonical_bytes(
+            {
+                "schema": "rapp-network-offline-source/1.0",
+                "via": "raw",
+                "observations": [
+                    {
+                        "published_created_claim_count": "one",
+                        "observed": {
+                            "beacon": {
+                                "schema": "rapp-network-beacon/1.1",
+                                "operator_rappid": RAPPID,
+                            }
+                        },
+                    }
+                ],
+                "skipped": [],
+            }
+        )
+    )
+
+    result = sniff_network.inspect_offline_source(str(source), "raw")
+
+    assert result["ok"] is False
+    assert result["status"] == "OFFLINE_SOURCE_INVALID"
+    assert result["evidence_states"]["structurally_valid"] is False
+    assert "non-negative integer" in result["error"]["detail"]
+
+
+def test_network_sniff_write_requires_approval_and_still_refuses_authority(
+    migration_dir, monkeypatch, capsys
+):
+    monkeypatch.setattr(
+        sniff_network,
+        "sniff_via_raw",
+        lambda **_kwargs: (_ for _ in ()).throw(
+            AssertionError("write request observed before authority")
+        ),
+    )
     output = migration_dir / "network-sniff.json"
 
     assert sniff_network.main(
         ["--via", "raw", "--out", str(output), "--json"]
     ) == 2
+    result = json.loads(capsys.readouterr().out)
     assert result["write_gate"]["code"] == "owner-approval-artifact-required"
     assert not output.exists()
 
@@ -428,8 +675,6 @@ def test_network_sniff_write_requires_approval_and_still_refuses_authority(
             }
         )
     )
-    result = sniff_network._unverified_envelope("raw", [], [])
-    monkeypatch.setattr(sniff_network, "sniff_via_raw", lambda **_kwargs: result)
     assert sniff_network.main(
         [
             "--via",
@@ -441,6 +686,7 @@ def test_network_sniff_write_requires_approval_and_still_refuses_authority(
             "--json",
         ]
     ) == 2
+    result = json.loads(capsys.readouterr().out)
     assert result["write_gate"]["code"] == (
         "authenticated-registry-unavailable"
     )
@@ -463,6 +709,408 @@ def test_network_sniff_source_has_no_acceptance_or_compliance_inference():
         "parsed_payload_sha256",
     ):
         assert retained in source
+
+
+@pytest.mark.parametrize("mode_args", [[], ["--plan"]])
+def test_default_and_plan_modes_make_zero_network_or_subprocess_calls(
+    mode_args, monkeypatch, capsys
+):
+    calls: list[str] = []
+
+    def forbidden(name):
+        def call(*_args, **_kwargs):
+            calls.append(name)
+            raise AssertionError(f"offline mode reached {name}")
+
+        return call
+
+    monkeypatch.setattr(
+        private_estate_init,
+        "_load_operator_identity",
+        lambda _path, _owner: (RAPPID, "operator"),
+    )
+    monkeypatch.setattr(
+        sniff_network,
+        "_sniff_via_raw_historical",
+        forbidden("sniff-raw-history"),
+    )
+    monkeypatch.setattr(
+        private_estate_init,
+        "_gh_repo_observation",
+        forbidden("private-estate-gh"),
+    )
+    monkeypatch.setattr(
+        rebuild_estate,
+        "_discover_created_historical",
+        forbidden("rebuild-created"),
+    )
+    monkeypatch.setattr(
+        rebuild_estate,
+        "_discover_memberships_historical",
+        forbidden("rebuild-memberships"),
+    )
+    monkeypatch.setattr(subprocess, "run", forbidden("subprocess.run"))
+    monkeypatch.setattr(subprocess, "Popen", forbidden("subprocess.Popen"))
+    monkeypatch.setattr(
+        sniff_network.urllib.request,
+        "urlopen",
+        forbidden("urllib.request.urlopen"),
+    )
+    monkeypatch.setattr(
+        sniff_network,
+        "_open_reviewed_request",
+        forbidden("reviewed-http-open"),
+    )
+    monkeypatch.setattr(
+        private_estate_init,
+        "_open_without_redirects",
+        forbidden("private-http-open"),
+    )
+
+    assert sniff_network.main([*mode_args, "--json"]) == 0
+    capsys.readouterr()
+    assert private_estate_init.main(
+        ["--handle", "kody-w", *mode_args]
+    ) == 0
+    capsys.readouterr()
+    assert rebuild_estate.main(
+        [
+            "--handle",
+            "kody-w",
+            "--operator-rappid",
+            RAPPID,
+            *mode_args,
+        ]
+    ) == 0
+    capsys.readouterr()
+    assert calls == []
+
+
+def test_blocked_writes_gate_authority_before_any_transport(
+    migration_dir, monkeypatch, capsys
+):
+    events: list[str] = []
+    private_approval = migration_dir / "private-approval.json"
+    private_approval.write_bytes(
+        canonical_bytes(
+            {
+                "schema": "rapp-tool-owner-approval/1.0",
+                "operation": "private-estate-initialize",
+                "target": private_estate_init._approval_target("kody-w"),
+            }
+        )
+    )
+    sniff_out = migration_dir / "network.json"
+    sniff_approval = migration_dir / "sniff-approval.json"
+    sniff_approval.write_bytes(
+        canonical_bytes(
+            {
+                "schema": "rapp-tool-owner-approval/1.0",
+                "operation": "network-sniff-write",
+                "target": sniff_network._write_target(str(sniff_out), "raw"),
+            }
+        )
+    )
+    rebuild_out = migration_dir / "estate.json"
+    rebuild_approval = migration_dir / "rebuild-approval.json"
+    rebuild_approval.write_bytes(
+        canonical_bytes(
+            {
+                "schema": "rapp-tool-owner-approval/1.0",
+                "operation": "estate-rebuild-adopt",
+                "target": rebuild_estate._write_target(
+                    "kody-w",
+                    str(rebuild_out),
+                    False,
+                ),
+            }
+        )
+    )
+
+    original_private_gate = private_estate_init._apply_gate
+    original_sniff_gate = sniff_network._write_gate
+    original_rebuild_gate = rebuild_estate._write_gate
+
+    def private_gate(*args, **kwargs):
+        events.append("private-authority")
+        return original_private_gate(*args, **kwargs)
+
+    def sniff_gate(*args, **kwargs):
+        events.append("sniff-authority")
+        return original_sniff_gate(*args, **kwargs)
+
+    def rebuild_gate(*args, **kwargs):
+        events.append("rebuild-authority")
+        return original_rebuild_gate(*args, **kwargs)
+
+    def transport(*_args, **_kwargs):
+        events.append("transport")
+        raise AssertionError("transport constructed before authority refusal")
+
+    monkeypatch.setattr(private_estate_init, "_apply_gate", private_gate)
+    monkeypatch.setattr(sniff_network, "_write_gate", sniff_gate)
+    monkeypatch.setattr(rebuild_estate, "_write_gate", rebuild_gate)
+    monkeypatch.setattr(
+        private_estate_init,
+        "_gh_repo_observation",
+        transport,
+    )
+    monkeypatch.setattr(sniff_network, "sniff_via_raw", transport)
+    monkeypatch.setattr(
+        rebuild_estate,
+        "_discover_operator_rappid_historical",
+        transport,
+    )
+    monkeypatch.setattr(
+        rebuild_estate,
+        "_discover_created_historical",
+        transport,
+    )
+    monkeypatch.setattr(
+        rebuild_estate,
+        "_discover_memberships_historical",
+        transport,
+    )
+    monkeypatch.setattr(subprocess, "run", transport)
+    monkeypatch.setattr(subprocess, "Popen", transport)
+    monkeypatch.setattr(
+        sniff_network.urllib.request,
+        "urlopen",
+        transport,
+    )
+    monkeypatch.setattr(sniff_network, "_open_reviewed_request", transport)
+    monkeypatch.setattr(
+        private_estate_init,
+        "_open_without_redirects",
+        transport,
+    )
+
+    assert private_estate_init.main(
+        [
+            "--handle",
+            "kody-w",
+            "--apply",
+            "--owner-approval",
+            str(private_approval),
+        ]
+    ) == 2
+    capsys.readouterr()
+    assert sniff_network.main(
+        [
+            "--out",
+            str(sniff_out),
+            "--owner-approval",
+            str(sniff_approval),
+            "--json",
+        ]
+    ) == 2
+    capsys.readouterr()
+    assert rebuild_estate.main(
+        [
+            "--handle",
+            "kody-w",
+            "--out",
+            str(rebuild_out),
+            "--owner-approval",
+            str(rebuild_approval),
+        ]
+    ) == 2
+    capsys.readouterr()
+
+    assert events == [
+        "private-authority",
+        "sniff-authority",
+        "rebuild-authority",
+    ]
+    assert not sniff_out.exists()
+    assert not rebuild_out.exists()
+
+
+def test_online_without_reviewed_binding_refuses_before_transport(
+    monkeypatch, capsys
+):
+    calls: list[str] = []
+
+    def forbidden(name):
+        def call(*_args, **_kwargs):
+            calls.append(name)
+            raise AssertionError(f"missing binding reached {name}")
+
+        return call
+
+    monkeypatch.setattr(
+        private_estate_init,
+        "_load_operator_identity",
+        lambda _path, _owner: (RAPPID, "operator"),
+    )
+    monkeypatch.setattr(
+        sniff_network,
+        "_sniff_via_raw_historical",
+        forbidden("sniff-raw-history"),
+    )
+    monkeypatch.setattr(
+        private_estate_init,
+        "_gh_repo_observation",
+        forbidden("private-estate-gh"),
+    )
+    monkeypatch.setattr(
+        rebuild_estate,
+        "_discover_created_historical",
+        forbidden("rebuild-created"),
+    )
+    monkeypatch.setattr(
+        rebuild_estate,
+        "_discover_memberships_historical",
+        forbidden("rebuild-memberships"),
+    )
+    monkeypatch.setattr(subprocess, "run", forbidden("subprocess.run"))
+    monkeypatch.setattr(subprocess, "Popen", forbidden("subprocess.Popen"))
+    monkeypatch.setattr(
+        sniff_network.urllib.request,
+        "urlopen",
+        forbidden("urllib.request.urlopen"),
+    )
+    monkeypatch.setattr(
+        sniff_network,
+        "_open_reviewed_request",
+        forbidden("reviewed-http-open"),
+    )
+    monkeypatch.setattr(
+        private_estate_init,
+        "_open_without_redirects",
+        forbidden("private-http-open"),
+    )
+
+    assert sniff_network.main(["--online", "--json"]) == 2
+    sniff_result = json.loads(capsys.readouterr().out)
+    assert sniff_result["status"] == "SOURCE_BINDING_REQUIRED"
+    assert private_estate_init.main(
+        ["--handle", "kody-w", "--online"]
+    ) == 2
+    private_result = json.loads(capsys.readouterr().out)
+    assert private_result["status"] == "SOURCE_BINDING_REQUIRED"
+    assert private_estate_init.main(
+        ["--handle", "kody-w", "--verify-commitment", "--online"]
+    ) == 2
+    commitment_result = json.loads(capsys.readouterr().out)
+    assert commitment_result["status"] == "SOURCE_BINDING_REQUIRED"
+    assert rebuild_estate.main(
+        [
+            "--handle",
+            "kody-w",
+            "--operator-rappid",
+            RAPPID,
+            "--online",
+        ]
+    ) == 2
+    rebuild_result = json.loads(capsys.readouterr().out)
+    assert rebuild_result["status"] == "SOURCE_BINDING_REQUIRED"
+    assert calls == []
+
+
+def test_only_explicit_online_reviewed_binding_reaches_historical_algorithms(
+    monkeypatch
+):
+    calls: list[str] = []
+    sniff_binding = _reviewed_source_binding(
+        sniff_network._source_binding_target("raw")
+    )
+    private_binding = _reviewed_source_binding(
+        private_estate_init._repository_binding_target("kody-w")
+    )
+    rebuild_binding = _reviewed_source_binding(
+        rebuild_estate._source_binding_target("kody-w")
+    )
+
+    monkeypatch.setattr(
+        private_estate_init,
+        "_load_operator_identity",
+        lambda _path, _owner: (RAPPID, "operator"),
+    )
+
+    def sniff_history(**_kwargs):
+        calls.append("sniff-history")
+        return sniff_network._unverified_envelope("raw", [], [])
+
+    def repository_observation(slug):
+        calls.append("private-history")
+        return {
+            "status": "missing",
+            "source": "injected-history",
+            "repository": slug,
+        }
+
+    def created(*_args, **_kwargs):
+        calls.append("rebuild-created")
+        return [], [], []
+
+    def memberships(*_args, **_kwargs):
+        calls.append("rebuild-memberships")
+        return [], [], []
+
+    monkeypatch.setattr(
+        sniff_network,
+        "_sniff_via_raw_historical",
+        sniff_history,
+    )
+    monkeypatch.setattr(
+        private_estate_init,
+        "_gh_repo_observation",
+        repository_observation,
+    )
+    monkeypatch.setattr(
+        rebuild_estate,
+        "_discover_created_historical",
+        created,
+    )
+    monkeypatch.setattr(
+        rebuild_estate,
+        "_discover_memberships_historical",
+        memberships,
+    )
+
+    assert sniff_network.sniff_via_raw(
+        source_binding=sniff_binding
+    )["status"] == "OFFLINE_PLAN_READY"
+    assert private_estate_init.init_private_estate(
+        "kody-w",
+        source_binding=private_binding,
+    )["repository_observation"]["status"] == "not-observed"
+    assert rebuild_estate.rebuild(
+        "kody-w",
+        RAPPID,
+        source_binding=rebuild_binding,
+    )["status"] == "OFFLINE_PLAN_READY"
+    assert calls == []
+
+    sniff_result = sniff_network.sniff_via_raw(
+        online=True,
+        source_binding=sniff_binding,
+    )
+    private_result = private_estate_init.init_private_estate(
+        "kody-w",
+        online=True,
+        source_binding=private_binding,
+    )
+    rebuild_result = rebuild_estate.rebuild(
+        "kody-w",
+        RAPPID,
+        online=True,
+        source_binding=rebuild_binding,
+    )
+
+    assert calls == [
+        "sniff-history",
+        "private-history",
+        "rebuild-created",
+        "rebuild-memberships",
+    ]
+    for result in (sniff_result, private_result, rebuild_result):
+        assert result["accepted"] is False
+        assert result["evidence_states"]["accepted"] is False
+        assert result["evidence_states"]["cryptographically_verified"] is False
+        assert result["evidence_states"]["fresh"] is False
+        assert result["transport_binding"]["permitted"] is True
 
 
 def test_ecosystem_cache_fallback_is_explicitly_stale(
@@ -1029,6 +1677,40 @@ def test_rebuild_operator_owner_mismatch_is_invalid_refusal():
     assert "does not match requested" in result["error"]["detail"]
 
 
+def test_rebuild_direct_discovery_apis_require_online_reviewed_binding(
+    monkeypatch
+):
+    calls: list[str] = []
+
+    def forbidden(name):
+        def call(*_args, **_kwargs):
+            calls.append(name)
+            raise AssertionError(f"direct discovery reached {name}")
+
+        return call
+
+    monkeypatch.setattr(
+        rebuild_estate,
+        "_discover_operator_rappid_historical",
+        forbidden("operator-history"),
+    )
+    monkeypatch.setattr(
+        rebuild_estate,
+        "_discover_created_historical",
+        forbidden("created-history"),
+    )
+    monkeypatch.setattr(
+        rebuild_estate,
+        "_discover_memberships_historical",
+        forbidden("membership-history"),
+    )
+
+    assert rebuild_estate.discover_operator_rappid("kody-w") == ""
+    assert rebuild_estate.discover_created("kody-w", RAPPID)[2]
+    assert rebuild_estate.discover_memberships(RAPPID)[2]
+    assert calls == []
+
+
 def test_rebuild_created_discovery_retains_filtering_and_source_records(
     monkeypatch,
 ):
@@ -1064,7 +1746,12 @@ def test_rebuild_created_discovery_retains_filtering_and_source_records(
     )
 
     created, skipped, errors = rebuild_estate.discover_created(
-        "kody-w", RAPPID
+        "kody-w",
+        RAPPID,
+        online=True,
+        source_binding=_reviewed_source_binding(
+            rebuild_estate._source_binding_target("kody-w")
+        ),
     )
 
     assert errors == []
@@ -1107,7 +1794,13 @@ def test_rebuild_membership_discovery_retains_exact_verification_records(
 
     monkeypatch.setattr(rebuild_estate, "_raw_fetch_json_checked", fetch)
 
-    member, skipped, errors = rebuild_estate.discover_memberships(RAPPID)
+    member, skipped, errors = rebuild_estate.discover_memberships(
+        RAPPID,
+        online=True,
+        source_binding=_reviewed_source_binding(
+            rebuild_estate._source_binding_target("kody-w")
+        ),
+    )
 
     assert errors == []
     assert skipped == []
@@ -1148,21 +1841,28 @@ def test_rebuild_retains_discovery_and_returns_unaccepted_candidate(
     ]
     monkeypatch.setattr(
         rebuild_estate,
-        "discover_created",
+        "_discover_created_historical",
         lambda *_args, **_kwargs: (created, [{"repo": "skipped"}], []),
     )
     monkeypatch.setattr(
         rebuild_estate,
-        "discover_memberships",
+        "_discover_memberships_historical",
         lambda *_args, **_kwargs: (member, [], []),
     )
 
-    result = rebuild_estate.rebuild("kody-w", RAPPID)
+    result = rebuild_estate.rebuild(
+        "kody-w",
+        RAPPID,
+        online=True,
+        source_binding=_reviewed_source_binding(
+            rebuild_estate._source_binding_target("kody-w")
+        ),
+    )
 
     assert result["ok"] is True
     assert result["accepted"] is False
     assert result["status"] == "OBSERVED_UNVERIFIED"
-    assert result["mode"] == "inspect-plan"
+    assert result["mode"] == "reviewed-online-inspect-plan"
     assert result["plan_only"] is True
     assert result["apply_permitted"] is False
     assert result["local_state_mutation_permitted"] is False
@@ -1181,6 +1881,104 @@ def test_rebuild_retains_discovery_and_returns_unaccepted_candidate(
     assert result["acceptance"]["accepted"] is False
 
 
+def test_rebuild_inspects_supplied_observations_offline(
+    migration_dir, monkeypatch
+):
+    monkeypatch.setattr(
+        rebuild_estate,
+        "_discover_created_historical",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("offline source inspection reached repository discovery")
+        ),
+    )
+    monkeypatch.setattr(
+        rebuild_estate,
+        "_discover_memberships_historical",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("offline source inspection reached code search")
+        ),
+    )
+    source = migration_dir / "rebuild-source.json"
+    source.write_bytes(
+        canonical_bytes(
+            {
+                "schema": "rapp-estate-rebuild-source/1.0",
+                "owner": {
+                    "github": "kody-w",
+                    "rappid": RAPPID,
+                },
+                "observations": {
+                    "published_created_claims": [],
+                    "published_membership_claims": [],
+                    "created_skipped": [],
+                    "member_skipped": [],
+                },
+            }
+        )
+    )
+
+    result = rebuild_estate.rebuild(
+        "kody-w",
+        source_data_path=str(source),
+    )
+
+    assert result["ok"] is True
+    assert result["accepted"] is False
+    assert result["status"] == "SUPPLIED_OBSERVATIONS_UNVERIFIED"
+    assert result["source_mode"] == "supplied-offline"
+    assert result["candidate_estate"]["created"] == []
+    assert result["candidate_estate"]["member"] == []
+    assert result["evidence_states"]["structurally_valid"] is True
+    assert result["evidence_states"]["cryptographically_verified"] is False
+    assert result["evidence_states"]["fresh"] is False
+
+
+def test_rebuild_rejects_incomplete_supplied_candidate_rows(migration_dir):
+    child = f"rappid:@kody-w/child:{'b' * 64}"
+    source = migration_dir / "incomplete-rebuild-source.json"
+    source.write_bytes(
+        canonical_bytes(
+            {
+                "schema": "rapp-estate-rebuild-source/1.0",
+                "owner": {
+                    "github": "kody-w",
+                    "rappid": RAPPID,
+                },
+                "observations": {
+                    "published_created_claims": [
+                        {
+                            "rappid": child,
+                            "via": "rebuild",
+                            "_observation": {
+                                "source_repository": "kody-w/child",
+                                "identity_record": {
+                                    "schema": "rapp/1",
+                                    "kind": "twin",
+                                    "rappid": child,
+                                    "parent_rappid": RAPPID,
+                                },
+                            },
+                        }
+                    ],
+                    "published_membership_claims": [],
+                    "created_skipped": [],
+                    "member_skipped": [],
+                },
+            }
+        )
+    )
+
+    result = rebuild_estate.rebuild(
+        "kody-w",
+        source_data_path=str(source),
+    )
+
+    assert result["ok"] is False
+    assert result["status"] == "OFFLINE_SOURCE_INVALID"
+    assert result["error"]["code"] == "offline-created-observations-invalid"
+    assert result["evidence_states"]["structurally_valid"] is False
+
+
 def test_rebuild_write_requires_artifact_and_still_refuses_authority(
     migration_dir, monkeypatch
 ):
@@ -1189,12 +1987,12 @@ def test_rebuild_write_requires_artifact_and_still_refuses_authority(
     existing.write_bytes(original)
     monkeypatch.setattr(
         rebuild_estate,
-        "discover_created",
+        "_discover_created_historical",
         lambda *_args, **_kwargs: ([], [], []),
     )
     monkeypatch.setattr(
         rebuild_estate,
-        "discover_memberships",
+        "_discover_memberships_historical",
         lambda *_args, **_kwargs: ([], [], []),
     )
 

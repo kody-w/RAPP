@@ -14,8 +14,12 @@ file set:
     objects/.gitkeep  ← content-addressed storage placeholder
     kinds/.gitkeep    ← HMAC'd kind/id storage placeholder
 
-Default operation is read-only inspection and plan generation. Repository
-creation, GitHub PUTs, and local state writes require all of:
+Default operation is local/offline inspection and plan generation. It reads no
+GitHub state unless ``--online`` and a reviewed ``--source-binding`` are both
+supplied. A captured repository observation may instead be supplied through
+``--source-data`` / ``--fixture``.
+
+Repository creation, GitHub PUTs, and local state writes require all of:
 
 * the explicit ``--apply`` flag;
 * a supplied ``--owner-approval`` artifact matching the operation and target;
@@ -28,7 +32,13 @@ place behind that exact gate rather than being replaced by a refusal shell.
 
 USAGE:
     python3 tools/private_estate_init.py --handle <gh>              # plan
-    python3 tools/private_estate_init.py --handle <gh> --verify-commitment
+    python3 tools/private_estate_init.py --handle <gh> \
+        --source-data repository-observation.json
+    python3 tools/private_estate_init.py --handle <gh> --online \
+        --source-binding reviewed-binding.json
+    python3 tools/private_estate_init.py --handle <gh> \
+        --verify-commitment --online \
+        --source-binding reviewed-binding.json
     python3 tools/private_estate_init.py --handle <gh> --apply \
         --owner-approval /path/to/approval.json
 
@@ -47,6 +57,7 @@ import secrets
 import subprocess
 import sys
 import time
+import urllib.request
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -62,12 +73,162 @@ from rapp1_core.identity import validate_owner  # noqa: E402
 _SCHEMA = "rapp-private-estate/1.0"
 _PLAN_SCHEMA = "rapp-private-estate-init-plan/1.0"
 _APPROVAL_SCHEMA = "rapp-tool-owner-approval/1.0"
+_REPOSITORY_SOURCE_SCHEMA = "rapp-private-estate-repository-source/1.0"
+_COMMITMENT_SOURCE_SCHEMA = "rapp-private-estate-commitment-source/1.0"
+_REVIEWED_SOURCE_BINDING_SCHEMA = "rapp-reviewed-source-binding/1.0"
 _SECRET_PATH = Path(os.path.expanduser("~/.brainstem/private-estate-secret"))
 _LOCAL_MAP_PATH = Path(os.path.expanduser("~/.brainstem/private-estate-map.json"))
 _AUTHORITY_REASON = (
     "No authenticated, fresh RAPP/1 section-13 registry rooted in an "
     "out-of-band estate-owner anchor is available to this tool."
 )
+
+
+def _evidence_states(
+    *,
+    observed: bool,
+    structurally_valid: bool,
+    cryptographically_verified: bool = False,
+    fresh: bool = False,
+    accepted: bool = False,
+) -> dict[str, bool]:
+    return {
+        "observed": observed,
+        "structurally_valid": structurally_valid,
+        "cryptographically_verified": cryptographically_verified,
+        "fresh": fresh,
+        "accepted": accepted,
+    }
+
+
+def _repository_binding_target(owner: str) -> dict:
+    return {
+        "tool": "tools/private_estate_init.py",
+        "operation": "private-estate-repository-observation",
+        "transport": "gh-cli",
+        "source": {
+            "repository": f"{owner}/rapp-estate-private",
+        },
+    }
+
+
+def _commitment_binding_target(owner: str) -> dict:
+    return {
+        "tool": "tools/private_estate_init.py",
+        "operation": "private-estate-commitment-observation",
+        "transport": "gh-cli+https",
+        "source": {
+            "repository": f"{owner}/rapp-estate-private",
+            "beacon_url": (
+                "https://raw.githubusercontent.com/"
+                f"{owner}/rapp-estate/main/.well-known/rapp-network.json"
+            ),
+        },
+    }
+
+
+def _inspect_reviewed_source_binding(
+    binding_path: str = "",
+    *,
+    binding: dict | None = None,
+    expected: dict,
+) -> dict:
+    if binding is not None and binding_path:
+        return {
+            "supplied": True,
+            "permitted": False,
+            "status": "AMBIGUOUS",
+            "detail": (
+                "supply exactly one reviewed binding: an injected value or "
+                "--source-binding"
+            ),
+            "expected": expected,
+            "evidence_states": _evidence_states(
+                observed=True,
+                structurally_valid=False,
+            ),
+        }
+    if binding is None and not binding_path:
+        return {
+            "supplied": False,
+            "permitted": False,
+            "status": "MISSING",
+            "detail": (
+                "explicit online observation requires a locally reviewed "
+                "transport/source binding"
+            ),
+            "expected": expected,
+            "evidence_states": _evidence_states(
+                observed=False,
+                structurally_valid=False,
+            ),
+        }
+    if binding is not None:
+        value = binding
+        raw = json.dumps(
+            binding,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        ).encode("utf-8")
+        origin = "injected"
+        path = None
+    else:
+        path = Path(os.path.expanduser(binding_path))
+        try:
+            raw = path.read_bytes()
+            value = strict_loads(raw)
+        except (OSError, TypeError, ValueError) as exc:
+            return {
+                "supplied": True,
+                "path": str(path),
+                "permitted": False,
+                "status": "INVALID",
+                "detail": f"reviewed source binding could not be inspected: {exc}",
+                "expected": expected,
+                "evidence_states": _evidence_states(
+                    observed=True,
+                    structurally_valid=False,
+                ),
+            }
+        origin = "file"
+
+    review = value.get("review") if type(value) is dict else None
+    structurally_matching = (
+        type(value) is dict
+        and value.get("schema") == _REVIEWED_SOURCE_BINDING_SCHEMA
+        and value.get("binding") == expected
+        and type(review) is dict
+        and review.get("transport") is True
+        and review.get("source") is True
+    )
+    return {
+        "supplied": True,
+        "origin": origin,
+        **({"path": str(path)} if path is not None else {}),
+        "sha256": hashlib.sha256(raw).hexdigest(),
+        "byte_length": len(raw),
+        "schema": (
+            value.get("schema") if type(value) is dict else None
+        ),
+        "binding": (
+            value.get("binding") if type(value) is dict else None
+        ),
+        "review": review,
+        "structurally_matching": structurally_matching,
+        "permitted": structurally_matching,
+        "status": "REVIEWED" if structurally_matching else "MISMATCH",
+        "detail": (
+            "transport and source are explicitly reviewed for observation"
+            if structurally_matching
+            else "binding schema, transport, source, or review does not match"
+        ),
+        "expected": expected,
+        "evidence_states": _evidence_states(
+            observed=True,
+            structurally_valid=structurally_matching,
+        ),
+    }
 
 
 def _now_iso() -> str:
@@ -96,6 +257,10 @@ def _inspect_owner_approval(
             "fresh": False,
             "status": "MISSING",
             "detail": "an explicit owner-approval artifact is required for apply",
+            "evidence_states": _evidence_states(
+                observed=False,
+                structurally_valid=False,
+            ),
         }
 
     path = Path(os.path.expanduser(approval_path))
@@ -111,6 +276,10 @@ def _inspect_owner_approval(
             "fresh": False,
             "status": "INVALID",
             "detail": f"owner-approval artifact could not be inspected: {exc}",
+            "evidence_states": _evidence_states(
+                observed=True,
+                structurally_valid=False,
+            ),
         }
 
     expected = {
@@ -140,6 +309,10 @@ def _inspect_owner_approval(
             _AUTHORITY_REASON
             if structurally_matching
             else "artifact schema, operation, or target does not exactly match"
+        ),
+        "evidence_states": _evidence_states(
+            observed=True,
+            structurally_valid=structurally_matching,
         ),
     }
 
@@ -182,6 +355,16 @@ def _gh(args: list[str]) -> tuple[int, str, str]:
     except FileNotFoundError:
         return 127, "", "gh CLI is not installed"
     return p.returncode, p.stdout, p.stderr
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *_args, **_kwargs):
+        return None
+
+
+def _open_without_redirects(url: str, *, timeout: int):
+    opener = urllib.request.build_opener(_NoRedirect())
+    return opener.open(url, timeout=timeout)
 
 
 def _ensure_secret() -> bytes:
@@ -459,6 +642,116 @@ def _gh_list_tree(slug: str) -> list[str]:
     return paths if verified else []
 
 
+def _binding_refusal(
+    *,
+    schema: str,
+    operation: str,
+    binding: dict,
+    target: dict,
+) -> dict:
+    missing = not binding.get("supplied")
+    return {
+        "schema": schema,
+        "operation": operation,
+        "ok": False,
+        "accepted": False,
+        "status": (
+            "SOURCE_BINDING_REQUIRED"
+            if missing
+            else "SOURCE_BINDING_INVALID"
+        ),
+        "mode": "online-observation-refused",
+        "plan_only": True,
+        "online_requested": True,
+        "apply_permitted": False,
+        "target": target,
+        "transport_binding": binding,
+        "evidence_states": _evidence_states(
+            observed=False,
+            structurally_valid=False,
+        ),
+        "error": {
+            "code": (
+                "explicit-reviewed-source-binding-required"
+                if missing
+                else "reviewed-source-binding-mismatch"
+            ),
+            "detail": binding["detail"],
+        },
+    }
+
+
+def _inspect_repository_source(path_text: str, slug: str) -> dict:
+    if not path_text:
+        return {
+            "status": "not-observed",
+            "source": "offline-default",
+            "repository": slug,
+            "accepted": False,
+            "detail": (
+                "no repository source was supplied; live GitHub observation "
+                "requires --online plus --source-binding"
+            ),
+            "evidence_states": _evidence_states(
+                observed=False,
+                structurally_valid=True,
+            ),
+        }
+    path = Path(os.path.expanduser(path_text))
+    try:
+        raw = path.read_bytes()
+        value = strict_loads(raw)
+    except (OSError, TypeError, ValueError) as exc:
+        return {
+            "status": "invalid-source",
+            "source": "supplied-offline",
+            "repository": slug,
+            "accepted": False,
+            "detail": f"repository source could not be inspected: {exc}",
+            "path": str(path),
+            "evidence_states": _evidence_states(
+                observed=True,
+                structurally_valid=False,
+            ),
+        }
+    valid_statuses = {"present", "missing", "unavailable"}
+    structurally_valid = (
+        type(value) is dict
+        and value.get("schema") == _REPOSITORY_SOURCE_SCHEMA
+        and value.get("repository") == slug
+        and value.get("status") in valid_statuses
+    )
+    if not structurally_valid:
+        return {
+            "status": "invalid-source",
+            "source": "supplied-offline",
+            "repository": slug,
+            "accepted": False,
+            "detail": (
+                "repository source schema, repository, or status does not "
+                "match the requested target"
+            ),
+            "path": str(path),
+            "sha256": hashlib.sha256(raw).hexdigest(),
+            "evidence_states": _evidence_states(
+                observed=True,
+                structurally_valid=False,
+            ),
+        }
+    return {
+        **value,
+        "source": "supplied-offline",
+        "path": str(path),
+        "sha256": hashlib.sha256(raw).hexdigest(),
+        "byte_length": len(raw),
+        "accepted": False,
+        "evidence_states": _evidence_states(
+            observed=value["status"] in {"present", "missing"},
+            structurally_valid=True,
+        ),
+    }
+
+
 # ─── Top-level init ───────────────────────────────────────────────────────
 
 def init_private_estate(
@@ -467,6 +760,11 @@ def init_private_estate(
     *,
     apply: bool = False,
     owner_approval_path: str = "",
+    online: bool = False,
+    source_binding_path: str = "",
+    source_binding: dict | None = None,
+    source_data_path: str = "",
+    operator_identity_path: str = "",
 ) -> dict:
     """Inspect the target and build the exact retained initialization plan.
 
@@ -486,6 +784,10 @@ def init_private_estate(
             "plan_only": True,
             "apply_requested": bool(apply),
             "apply_permitted": False,
+            "evidence_states": _evidence_states(
+                observed=False,
+                structurally_valid=False,
+            ),
             "error": {
                 "code": "invalid-owner",
                 "detail": f"invalid exact owner: {exc}",
@@ -493,7 +795,54 @@ def init_private_estate(
         }
     slug = f"{github_handle}/rapp-estate-private"
 
-    rappid_path = Path(os.path.expanduser("~/.brainstem/rappid.json"))
+    gate = None
+    if apply:
+        gate = _apply_gate(github_handle, owner_approval_path)
+        if not gate["permitted"]:
+            return {
+                "schema": _PLAN_SCHEMA,
+                "operation": "private-estate-initialize",
+                "ok": False,
+                "accepted": False,
+                "status": "OWNER_AUTHORITY_REQUIRED",
+                "mode": "write-refused-before-observation",
+                "plan_only": True,
+                "online_requested": bool(online),
+                "apply_requested": True,
+                "apply_permitted": False,
+                "repository_mutation_permitted": False,
+                "local_state_mutation_permitted": False,
+                "target": _approval_target(github_handle),
+                "write_gate": gate,
+                "evidence_states": _evidence_states(
+                    observed=gate["approval"]["supplied"],
+                    structurally_valid=gate["approval"][
+                        "structurally_matching"
+                    ],
+                ),
+                "error": {
+                    "code": gate["code"],
+                    "detail": gate["detail"],
+                },
+            }
+        if not online:
+            refusal = _binding_refusal(
+                schema=_PLAN_SCHEMA,
+                operation="private-estate-initialize",
+                binding=_inspect_reviewed_source_binding(
+                    expected=_repository_binding_target(github_handle),
+                ),
+                target=_approval_target(github_handle),
+            )
+            refusal["write_gate"] = gate
+            refusal["apply_requested"] = True
+            return refusal
+
+    rappid_path = Path(
+        os.path.expanduser(
+            operator_identity_path or "~/.brainstem/rappid.json"
+        )
+    )
     try:
         operator_rappid, operator_kind = _load_operator_identity(
             rappid_path, github_handle
@@ -510,11 +859,19 @@ def init_private_estate(
             "apply_requested": bool(apply),
             "apply_permitted": False,
             "target": _approval_target(github_handle),
+            "evidence_states": _evidence_states(
+                observed=False,
+                structurally_valid=False,
+            ),
             "operator_identity_observation": {
                 "path": str(rappid_path),
                 "status": "unavailable-or-invalid",
                 "detail": str(exc),
                 "accepted": False,
+                "evidence_states": _evidence_states(
+                    observed=False,
+                    structurally_valid=False,
+                ),
             },
             "error": {
                 "code": "exact-operator-identity-required",
@@ -526,7 +883,59 @@ def init_private_estate(
         }
 
     secret_present = _SECRET_PATH.exists()
-    repository_observation = _gh_repo_observation(slug)
+    binding = None
+    if online:
+        binding = _inspect_reviewed_source_binding(
+            source_binding_path,
+            binding=source_binding,
+            expected=_repository_binding_target(github_handle),
+        )
+        if not binding["permitted"]:
+            return _binding_refusal(
+                schema=_PLAN_SCHEMA,
+                operation="private-estate-initialize",
+                binding=binding,
+                target=_approval_target(github_handle),
+            )
+        repository_observation = _gh_repo_observation(slug)
+        repository_observation = {
+            **repository_observation,
+            "accepted": False,
+            "evidence_states": _evidence_states(
+                observed=repository_observation.get("status")
+                in {"present", "missing"},
+                structurally_valid=repository_observation.get("status")
+                in {"present", "missing"},
+            ),
+        }
+    else:
+        repository_observation = _inspect_repository_source(
+            source_data_path,
+            slug,
+        )
+        if repository_observation["status"] == "invalid-source":
+            return {
+                "schema": _PLAN_SCHEMA,
+                "operation": "private-estate-initialize",
+                "ok": False,
+                "accepted": False,
+                "status": "OFFLINE_SOURCE_INVALID",
+                "mode": "offline-inspection",
+                "plan_only": True,
+                "online_requested": False,
+                "apply_requested": bool(apply),
+                "apply_permitted": False,
+                "target": _approval_target(github_handle),
+                "repository_observation": repository_observation,
+                "evidence_states": _evidence_states(
+                    observed=True,
+                    structurally_valid=False,
+                ),
+                "error": {
+                    "code": "offline-source-invalid",
+                    "detail": repository_observation["detail"],
+                },
+            }
 
     # Build the same scaffold bytes used by the retained apply implementation.
     meta_bytes = _build_meta_json(operator_rappid, github_handle)
@@ -574,14 +983,32 @@ def init_private_estate(
         "ok": True,
         "accepted": False,
         "status": "PLAN_READY",
-        "mode": "inspect-plan",
+        "mode": (
+            "reviewed-online-inspect-plan"
+            if online
+            else "offline-inspect-plan"
+        ),
         "plan_only": True,
         "legacy_dry_run_argument": bool(dry_run),
+        "online_requested": bool(online),
+        "source_mode": (
+            "reviewed-online"
+            if online
+            else (
+                "supplied-offline"
+                if source_data_path
+                else "local-only"
+            )
+        ),
         "apply_requested": bool(apply),
         "apply_permitted": False,
         "repository_mutation_permitted": False,
         "local_state_mutation_permitted": False,
         "target": _approval_target(github_handle),
+        "evidence_states": _evidence_states(
+            observed=True,
+            structurally_valid=True,
+        ),
         "repository_observation": repository_observation,
         "operator_identity_observation": {
             "path": str(rappid_path),
@@ -589,6 +1016,10 @@ def init_private_estate(
             "kind": operator_kind,
             "owner_matches": True,
             "accepted": False,
+            "evidence_states": _evidence_states(
+                observed=True,
+                structurally_valid=True,
+            ),
             "note": (
                 "local identity is planning input, not section-13 owner "
                 "authority"
@@ -630,11 +1061,13 @@ def init_private_estate(
             ),
         },
     }
+    if binding is not None:
+        plan["transport_binding"] = binding
 
     if not apply:
         return plan
 
-    gate = _apply_gate(github_handle, owner_approval_path)
+    assert gate is not None
     plan["write_gate"] = gate
     if not gate["permitted"]:
         plan.update(
@@ -779,10 +1212,8 @@ def init_private_estate(
     }
 
 
-def verify_commitment(github_handle: str) -> dict:
+def _verify_commitment_online(github_handle: str) -> dict:
     """Observe commitment equality without treating publication as authority."""
-    import urllib.request
-
     try:
         github_handle = validate_owner(github_handle)
     except (IdentityError, TypeError) as exc:
@@ -851,7 +1282,7 @@ def verify_commitment(github_handle: str) -> dict:
 
     beacon_url = f"https://raw.githubusercontent.com/{github_handle}/rapp-estate/main/.well-known/rapp-network.json"
     try:
-        with urllib.request.urlopen(beacon_url, timeout=8) as r:
+        with _open_without_redirects(beacon_url, timeout=8) as r:
             beacon = json.loads(r.read())
         published = beacon.get("private_estate_commitment", "")
     except Exception as e:
@@ -897,15 +1328,234 @@ def verify_commitment(github_handle: str) -> dict:
     }
 
 
+def _verify_commitment_from_source(
+    github_handle: str,
+    source_data_path: str,
+) -> dict:
+    schema = "rapp-private-estate-commitment-observation/1.0"
+    slug = f"{github_handle}/rapp-estate-private"
+    path = Path(os.path.expanduser(source_data_path))
+    try:
+        raw = path.read_bytes()
+        value = strict_loads(raw)
+    except (OSError, TypeError, ValueError) as exc:
+        return {
+            "schema": schema,
+            "ok": False,
+            "accepted": False,
+            "status": "OFFLINE_SOURCE_INVALID",
+            "mode": "offline-inspection",
+            "plan_only": True,
+            "evidence_states": _evidence_states(
+                observed=True,
+                structurally_valid=False,
+            ),
+            "error": {
+                "code": "offline-source-invalid",
+                "detail": f"commitment source could not be inspected: {exc}",
+            },
+        }
+    structurally_valid = (
+        type(value) is dict
+        and value.get("schema") == _COMMITMENT_SOURCE_SCHEMA
+        and value.get("repository") == slug
+        and type(value.get("meta_base64")) is str
+        and type(value.get("tree")) is list
+        and all(type(item) is str for item in value.get("tree", []))
+        and type(value.get("published_commitment")) is str
+    )
+    if not structurally_valid:
+        return {
+            "schema": schema,
+            "ok": False,
+            "accepted": False,
+            "status": "OFFLINE_SOURCE_INVALID",
+            "mode": "offline-inspection",
+            "plan_only": True,
+            "evidence_states": _evidence_states(
+                observed=True,
+                structurally_valid=False,
+            ),
+            "error": {
+                "code": "offline-source-invalid",
+                "detail": (
+                    "commitment source schema, repository, meta bytes, tree, "
+                    "or published commitment is invalid"
+                ),
+            },
+        }
+    try:
+        meta_bytes = base64.b64decode(
+            value["meta_base64"],
+            validate=True,
+        )
+    except (TypeError, ValueError) as exc:
+        return {
+            "schema": schema,
+            "ok": False,
+            "accepted": False,
+            "status": "OFFLINE_SOURCE_INVALID",
+            "mode": "offline-inspection",
+            "plan_only": True,
+            "evidence_states": _evidence_states(
+                observed=True,
+                structurally_valid=False,
+            ),
+            "error": {
+                "code": "offline-source-invalid",
+                "detail": f"commitment meta_base64 is invalid: {exc}",
+            },
+        }
+
+    computed = _normalized_state_hash(meta_bytes, value["tree"])
+    published = value["published_commitment"]
+    matches = published == computed
+    return {
+        "schema": schema,
+        "ok": True,
+        "accepted": False,
+        "status": "OBSERVED_MATCH" if matches else "OBSERVED_DRIFT",
+        "mode": "offline-inspection",
+        "plan_only": False,
+        "observation_complete": True,
+        "authority_state": "publication-observation-only",
+        "computed_commitment": computed,
+        "published_commitment": published,
+        "matches": matches,
+        "source_data": {
+            "path": str(path),
+            "sha256": hashlib.sha256(raw).hexdigest(),
+            "byte_length": len(raw),
+            "schema": value["schema"],
+        },
+        "evidence_states": _evidence_states(
+            observed=True,
+            structurally_valid=True,
+        ),
+        "acceptance": {
+            "accepted": False,
+            "reason": _AUTHORITY_REASON,
+        },
+    }
+
+
+def verify_commitment(
+    github_handle: str,
+    *,
+    online: bool = False,
+    source_binding_path: str = "",
+    source_binding: dict | None = None,
+    source_data_path: str = "",
+) -> dict:
+    schema = "rapp-private-estate-commitment-observation/1.0"
+    try:
+        github_handle = validate_owner(github_handle)
+    except (IdentityError, TypeError) as exc:
+        return {
+            "schema": schema,
+            "ok": False,
+            "accepted": False,
+            "status": "INVALID_REQUEST",
+            "evidence_states": _evidence_states(
+                observed=False,
+                structurally_valid=False,
+            ),
+            "error": {"code": "invalid-owner", "detail": str(exc)},
+        }
+
+    if not online:
+        if source_data_path:
+            return _verify_commitment_from_source(
+                github_handle,
+                source_data_path,
+            )
+        return {
+            "schema": schema,
+            "ok": True,
+            "accepted": False,
+            "status": "OFFLINE_PLAN_READY",
+            "mode": "offline-inspect-plan",
+            "plan_only": True,
+            "online_requested": False,
+            "observation_complete": False,
+            "evidence_states": _evidence_states(
+                observed=False,
+                structurally_valid=True,
+            ),
+            "source_data": {
+                "supplied": False,
+                "detail": (
+                    "supply --source-data/--fixture for local comparison, or "
+                    "--online plus --source-binding for live observation"
+                ),
+            },
+            "acceptance": {
+                "accepted": False,
+                "reason": _AUTHORITY_REASON,
+            },
+        }
+
+    binding = _inspect_reviewed_source_binding(
+        source_binding_path,
+        binding=source_binding,
+        expected=_commitment_binding_target(github_handle),
+    )
+    if not binding["permitted"]:
+        return _binding_refusal(
+            schema=schema,
+            operation="private-estate-commitment-observation",
+            binding=binding,
+            target={"repository": f"{github_handle}/rapp-estate-private"},
+        )
+
+    result = _verify_commitment_online(github_handle)
+    result["online_requested"] = True
+    result["source_mode"] = "reviewed-online"
+    result["transport_binding"] = binding
+    result["accepted"] = False
+    result["evidence_states"] = _evidence_states(
+        observed=bool(result.get("observation_complete")),
+        structurally_valid=bool(result.get("observation_complete")),
+    )
+    return result
+
+
 # ─── CLI ──────────────────────────────────────────────────────────────────
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--handle", required=True, help="GitHub handle to bootstrap private estate for")
     ap.add_argument(
+        "--plan",
+        action="store_true",
+        help="explicit alias for the default offline inspect/plan mode",
+    )
+    ap.add_argument(
         "--dry-run",
         action="store_true",
-        help="legacy alias for the default inspect/plan mode",
+        help="deprecated alias for --plan",
+    )
+    ap.add_argument(
+        "--online",
+        action="store_true",
+        help="request live observation; also requires --source-binding",
+    )
+    ap.add_argument(
+        "--source-binding",
+        default="",
+        help="reviewed transport/source binding required with --online",
+    )
+    ap.add_argument(
+        "--source-data",
+        "--fixture",
+        dest="source_data",
+        default="",
+        help="inspect captured repository or commitment evidence locally",
+    )
+    ap.add_argument(
+        "--operator-identity",
+        default="",
+        help="local operator rappid.json path (default ~/.brainstem/rappid.json)",
     )
     ap.add_argument(
         "--apply",
@@ -921,18 +1571,84 @@ def main(argv: list[str] | None = None) -> int:
                     help="recompute commitment hash + compare to published beacon")
     args = ap.parse_args(argv)
 
-    if args.verify_commitment:
-        out = verify_commitment(args.handle)
+    if args.dry_run:
+        print(
+            "DEPRECATED: --dry-run is an alias for the default --plan mode",
+            file=sys.stderr,
+        )
+
+    if args.apply:
+        out = init_private_estate(
+            args.handle,
+            dry_run=True,
+            apply=True,
+            owner_approval_path=args.owner_approval,
+            online=args.online,
+            source_binding_path=args.source_binding,
+            source_data_path=args.source_data,
+            operator_identity_path=args.operator_identity,
+        )
+    elif args.online and (args.plan or args.dry_run):
+        out = {
+            "schema": _PLAN_SCHEMA,
+            "operation": "private-estate-initialize",
+            "ok": False,
+            "accepted": False,
+            "status": "INVALID_REQUEST",
+            "mode": "offline-inspect-plan",
+            "plan_only": True,
+            "apply_permitted": False,
+            "evidence_states": _evidence_states(
+                observed=False,
+                structurally_valid=False,
+            ),
+            "error": {
+                "code": "online-plan-conflict",
+                "detail": "--plan/--dry-run cannot be combined with --online",
+            },
+        }
+    elif args.online and args.source_data:
+        out = {
+            "schema": _PLAN_SCHEMA,
+            "operation": "private-estate-initialize",
+            "ok": False,
+            "accepted": False,
+            "status": "INVALID_REQUEST",
+            "mode": "online-observation-refused",
+            "plan_only": True,
+            "apply_permitted": False,
+            "evidence_states": _evidence_states(
+                observed=False,
+                structurally_valid=False,
+            ),
+            "error": {
+                "code": "online-source-data-conflict",
+                "detail": "--source-data/--fixture cannot be combined with --online",
+            },
+        }
+    elif args.verify_commitment:
+        out = verify_commitment(
+            args.handle,
+            online=args.online,
+            source_binding_path=args.source_binding,
+            source_data_path=args.source_data,
+        )
     else:
         out = init_private_estate(
             args.handle,
             dry_run=True,
             apply=args.apply,
             owner_approval_path=args.owner_approval,
+            online=args.online,
+            source_binding_path=args.source_binding,
+            source_data_path=args.source_data,
+            operator_identity_path=args.operator_identity,
         )
 
     print(json.dumps(out, indent=2))
     if args.apply and not out.get("apply_permitted"):
+        return 2
+    if args.online and not out.get("ok"):
         return 2
     return 0 if out.get("ok") else 1
 
