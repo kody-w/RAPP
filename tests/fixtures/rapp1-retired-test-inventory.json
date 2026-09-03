@@ -517,8 +517,8 @@
       "forms": [
         "brainstem-egg/"
       ],
-      "disposition": "retirement-detector",
-      "reason": "The test rejects any reintroduction of a legacy egg producer in the target-owned planter."
+      "disposition": "preservation-and-effect-gate",
+      "reason": "The test requires the historical egg producer marker to remain while proving default plan and rejected apply paths start no effects."
     },
     {
       "path": "rapp_brainstem/test_rapp1_facade.py",
@@ -559,8 +559,8 @@
         "brainstem-egg/",
         "rapp-frame/1.0"
       ],
-      "disposition": "retirement-detector",
-      "reason": "The strings are forbidden implementation markers that the containment test proves absent."
+      "disposition": "preservation-detector",
+      "reason": "The strings prove historical implementations remain present while separate tests verify their reachable defaults are contained."
     },
     {
       "path": "tests/test_rapp1_docs.py",
@@ -569,6 +569,23 @@
       ],
       "disposition": "documentation-detector",
       "reason": "The string distinguishes labeled historical examples from prohibited current claims."
+    },
+    {
+      "path": "tests/test_restored_distribution_sources.py",
+      "forms": [
+        "brainstem-egg/"
+      ],
+      "disposition": "preservation-and-effect-gate",
+      "reason": "The exact historical source marker is required while sentinels prove plan and rejected activation paths invoke no external effect."
+    },
+    {
+      "path": "tests/test_restored_swarm_sim_sources.py",
+      "forms": [
+        "brainstem-egg/",
+        "conversation_history"
+      ],
+      "disposition": "preservation-and-negative-wire-detector",
+      "reason": "Historical egg and request forms are retained as provenance or ignored-member fixtures while exact facade and effect-order tests reject them as current authority."
     },
     {
       "path": "tests/vault-check.mjs",
@@ -584,8 +601,8 @@
         "brainstem-egg/",
         "assistant_response"
       ],
-      "disposition": "retirement-detector",
-      "reason": "The current static runner proves legacy producer and response-alias markers are absent from active implementations."
+      "disposition": "preservation-and-wire-detector",
+      "reason": "The static runner requires historical producer markers to remain while continuing to reject response aliases from the current wire."
     }
   ],
   "explicit_retirement_assertions": [

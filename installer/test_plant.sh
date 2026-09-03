@@ -45,6 +45,7 @@ done
 grep -q 'write_index_html()' "$PLANT"
 grep -q 'gh repo create' "$PLANT"
 grep -q 'git push' "$PLANT"
+grep -q 'brainstem-egg/' "$PLANT"
 
 for route in \
     installer/plant.html \

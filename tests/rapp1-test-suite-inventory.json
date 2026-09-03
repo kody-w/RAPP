@@ -270,7 +270,7 @@
     {
       "path": "tests/test_distribution_containment.py",
       "disposition": "canonical-direct",
-      "reason": "Verifies fail-closed launcher behavior, immutable archives, and restored browser planning surfaces.",
+      "reason": "Verifies restored launcher plan defaults, pre-effect refusal, immutable archives, deployment templates, and browser planning surfaces.",
       "gate": "distribution-adaptation"
     },
     {
@@ -342,6 +342,18 @@
       "path": "tests/test_rapp1_docs.py",
       "disposition": "canonical-direct",
       "reason": "Collected explicitly by the offline pytest gate.",
+      "gate": "python-offline"
+    },
+    {
+      "path": "tests/test_restored_distribution_sources.py",
+      "disposition": "canonical-direct",
+      "reason": "Verifies exact distribution source recovery, immutable Grail binding, and zero-effect default and rejected paths.",
+      "gate": "python-offline"
+    },
+    {
+      "path": "tests/test_restored_swarm_sim_sources.py",
+      "disposition": "canonical-direct",
+      "reason": "Verifies exact Swarm, simulation, Cave, tutorial, and public-page recovery plus receipt-bound effect ordering.",
       "gate": "python-offline"
     },
     {

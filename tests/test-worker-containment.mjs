@@ -526,14 +526,20 @@ try {
 }
 
 const workerReadme = read("worker/README.md");
+const [workerReadmeCurrent, workerReadmeHistory = ""] = workerReadme.split(
+  "<!-- RAPP1-HISTORICAL-SECTION-START -->",
+  2,
+);
 assert.match(workerReadme, new RegExp(WORKER_COMMIT));
-assert.match(workerReadme, /false by default/i);
-assert.match(workerReadme, /KERNEL_PIN\.json/);
-assert.match(workerReadme, /rapp-installer@brainstem-v0\.6\.9/);
-assertNoMatches(workerReadme, [
+assert.match(workerReadmeCurrent, /false by default/i);
+assert.match(workerReadmeCurrent, /KERNEL_PIN\.json/);
+assert.match(workerReadmeCurrent, /rapp-installer@brainstem-v0\.6\.9/);
+assertNoMatches(workerReadmeCurrent, [
   /\bwrangler\s+(?:deploy|dev|login|secret|tail)\b/i,
   /\bnpx\s+wrangler\b/i,
-], "worker README");
+], "current worker README");
+assert.match(workerReadmeHistory, /\bnpx\s+wrangler\s+deploy\b/i);
+assert.match(workerReadmeHistory, /RAPP1-HISTORICAL-SECTION-END/);
 
 const wranglerConfig = read("worker/wrangler.toml");
 assert.match(wranglerConfig, /RAPP_BROWSER_RUNTIME_ENABLED = "false"/);

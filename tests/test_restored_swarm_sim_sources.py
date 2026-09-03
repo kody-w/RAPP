@@ -9,6 +9,7 @@ import os
 import re
 import subprocess
 import sys
+import types
 import zipfile
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -446,7 +447,14 @@ def test_python_no_flag_modes_are_deterministic_and_effect_free(tmp_path):
     assert list(home.iterdir()) == []
 
 
-def test_function_app_uses_exact_facade_and_refuses_before_transport():
+def test_function_app_uses_exact_facade_and_refuses_before_transport(
+    monkeypatch,
+    tmp_path,
+):
+    foreign_utils = types.ModuleType("utils")
+    foreign_utils.__path__ = [str(tmp_path / "foreign-utils")]
+    monkeypatch.setitem(sys.modules, "utils", foreign_utils)
+    monkeypatch.delitem(sys.modules, "utils.result", raising=False)
     module = _load_module("rapp_swarm/function_app.py")
 
     class Request:

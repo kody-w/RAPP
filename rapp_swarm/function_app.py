@@ -203,7 +203,30 @@ except (ImportError, ModuleNotFoundError):
             "historical storage is unavailable without reviewed injection"
         )
 
-from utils.result import Result, Success, Failure, AgentLoadError, APIError
+try:
+    from utils.result import Result, Success, Failure, AgentLoadError, APIError
+except (ImportError, ModuleNotFoundError):
+    _result_path = next(
+        path
+        for path in (
+            _HERE / "utils" / "result.py",
+            _HERE / "_vendored" / "utils" / "result.py",
+        )
+        if path.is_file()
+    )
+    _result_spec = importlib.util.spec_from_file_location(
+        "_rapp_swarm_local_result",
+        _result_path,
+    )
+    if _result_spec is None or _result_spec.loader is None:
+        raise ImportError(f"cannot load local result module: {_result_path}")
+    _result_module = importlib.util.module_from_spec(_result_spec)
+    _result_spec.loader.exec_module(_result_module)
+    Result = _result_module.Result
+    Success = _result_module.Success
+    Failure = _result_module.Failure
+    AgentLoadError = _result_module.AgentLoadError
+    APIError = _result_module.APIError
 
 
 # =============================================================================
