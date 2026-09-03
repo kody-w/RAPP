@@ -298,6 +298,11 @@ class Rapp1DocumentationTests(unittest.TestCase):
         self.assertNotIn('<div hidden aria-hidden="true">', text)
         self.assertIn('class="historical-snapshot"', text)
         self.assertIn("Your AI stack is", text)
+        self.assertNotIn("<aside", text)
+        self.assertNotIn(
+            "Historical pitch playbook — not current sales evidence.",
+            text,
+        )
         self.assertIn("RAPP1_AUTHORITY.json", text)
         self.assertIn("RAPP1_STATUS.md", text)
 
