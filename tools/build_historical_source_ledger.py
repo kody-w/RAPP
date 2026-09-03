@@ -194,7 +194,7 @@ SOURCE_RECORDS = (
         "path": "worker/worker.js",
         "commit": "4f6c14bbdf5b2d43887a9c7ab9cbda8c075f0dd6",
         "check": marker_set(
-            0.30,
+            0.335,
             "export const HISTORICAL_SOURCE",
             "DEFAULT_CAPABILITIES",
             "RAPP_BROWSER_RUNTIME_ENABLED",
@@ -209,7 +209,7 @@ SOURCE_RECORDS = (
         "path": "tests/doorman/chat.js",
         "commit": "6bd45f00981959a3fdfcc64fb32608533aae5021",
         "check": marker_set(
-            0.20,
+            0.225,
             "HISTORICAL_SOURCE",
             "RAPP_DOORMAN_FIXTURE_ORIGINS",
             "requireAllowedFixtureUrl",
@@ -224,7 +224,7 @@ SOURCE_RECORDS = (
         "path": "tests/doorman/smoke.js",
         "commit": "6bd45f00981959a3fdfcc64fb32608533aae5021",
         "check": marker_set(
-            0.40,
+            0.425,
             "HISTORICAL_SOURCE",
             "RAPP_DOORMAN_FIXTURE_ORIGINS",
             "requireAllowedFixtureUrl",
@@ -239,7 +239,7 @@ SOURCE_RECORDS = (
         "path": "tests/osi/L4a-tether-browser.sh",
         "commit": "6bd45f00981959a3fdfcc64fb32608533aae5021",
         "check": marker_set(
-            0.18,
+            0.210,
             "RAPP_OSI_BROWSER_EXTERNAL",
             "RAPP_CHROMIUM_EXECUTABLE",
             "RAPP_PEERJS_BUNDLE",
@@ -252,7 +252,7 @@ SOURCE_RECORDS = (
         "path": "tests/osi/browser/L4a-tether.spec.mjs",
         "commit": "6bd45f00981959a3fdfcc64fb32608533aae5021",
         "check": marker_set(
-            0.27,
+            0.295,
             "HISTORICAL_SOURCE",
             "RAPP_OSI_BROWSER_EXTERNAL",
             "rapp-tether/1.0",
@@ -266,7 +266,7 @@ SOURCE_RECORDS = (
         "path": "tests/osi/browser/fixture.html",
         "commit": "6bd45f00981959a3fdfcc64fb32608533aae5021",
         "check": marker_set(
-            0.45,
+            0.485,
             "rapp-tether/1.0",
             "connect",
             "send",
@@ -293,7 +293,7 @@ SOURCE_RECORDS = (
         "path": "cave/agents/rar_steward_agent.py",
         "commit": "6bd45f00981959a3fdfcc64fb32608533aae5021",
         "check": marker_set(
-            0.22,
+            0.245,
             "class RarStewardAgent",
             "def _clusters",
             "def _junk",
@@ -308,7 +308,7 @@ SOURCE_RECORDS = (
         "path": "cave/tools/build_super_rar.py",
         "commit": "6bd45f00981959a3fdfcc64fb32608533aae5021",
         "check": marker_set(
-            0.30,
+            0.328,
             "SUPER_RAR_KINDS",
             "RETAINED_RAR_AGENT_EXHAUST",
             "def build_super_rar",
@@ -322,7 +322,7 @@ SOURCE_RECORDS = (
         "category": "estate-code",
         "path": "tools/private_estate_init.py",
         "commit": "591e7aec3b2183e0d48a1d6dfb6ebc59f177daea",
-        "check": python_symbols(0.85),
+        "check": python_symbols(0.875),
         "adaptation": "Retain the complete private-estate bootstrap behind explicit apply, exact target approval, and unavailable authenticated authority.",
     },
     {
@@ -330,7 +330,7 @@ SOURCE_RECORDS = (
         "category": "estate-code",
         "path": "tools/rebuild_estate.py",
         "commit": "591e7aec3b2183e0d48a1d6dfb6ebc59f177daea",
-        "check": python_symbols(0.85),
+        "check": python_symbols(0.867),
         "adaptation": "Retain complete public-data reconstruction and deterministic candidate output while separating observation from authenticated adoption.",
     },
     {
@@ -338,7 +338,7 @@ SOURCE_RECORDS = (
         "category": "estate-code",
         "path": "tools/sniff_network.py",
         "commit": "4f6c14bbdf5b2d43887a9c7ab9cbda8c075f0dd6",
-        "check": python_symbols(0.70),
+        "check": python_symbols(0.725),
         "adaptation": "Retain BFS, topic, beacon, estate, and skipped-record observations with no acceptance and gated output writes.",
     },
     {
@@ -346,7 +346,7 @@ SOURCE_RECORDS = (
         "category": "estate-code",
         "path": "tools/ecosystem_audit.py",
         "commit": "a2c7358a236852586b3c1e430b044703b947aab8",
-        "check": python_symbols(0.83),
+        "check": python_symbols(0.846),
         "adaptation": "Retain the complete Bond Pulse drift detector with offline fixtures by default and explicit write/online gates.",
     },
     {
@@ -354,7 +354,7 @@ SOURCE_RECORDS = (
         "category": "estate-code",
         "path": "tools/ecosystem_contract.py",
         "commit": "9ad5c6b466ceb511b32630755c3114bad269f518",
-        "check": python_symbols(0.96),
+        "check": python_symbols(0.976),
         "adaptation": "Retain historical product kind contracts while keeping them separate from RAPP/1 authority.",
     },
     {
@@ -362,7 +362,7 @@ SOURCE_RECORDS = (
         "category": "estate-code",
         "path": "tools/holo_card_generator.py",
         "commit": "7b2390499ee9b238902db1470ccdfae89c1f0cbc",
-        "check": python_symbols(0.91),
+        "check": python_symbols(0.933),
         "adaptation": "Retain deterministic profile, ability, mnemonic, avatar, and summon output while labelling historical and pinned modes unaccepted.",
     },
     {
@@ -371,7 +371,7 @@ SOURCE_RECORDS = (
         "path": "tests/mirror-drift.sh",
         "commit": "b4f3e31c1c30cfaf798728cec2de45dbfcfb3e25",
         "check": marker_set(
-            0.15,
+            0.177,
             "KERNEL_PIN.json",
             "brainstem-v0.6.9",
             "expected_sha",
@@ -383,7 +383,7 @@ SOURCE_RECORDS = (
         "category": "metropolis-code",
         "path": "scripts/harvest-metropolis-activity.py",
         "commit": "1d4141f32a0b90c8de24be136478cc583bed6474",
-        "check": python_symbols(0.96),
+        "check": python_symbols(0.982),
         "adaptation": "Retain the complete collector; default to local snapshot validation, expose a no-write plan, and refuse online writes before mutation.",
     },
 )
