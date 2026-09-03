@@ -1,17 +1,114 @@
 {
   "schema": "rapp-public-facets/1.0",
-  "status": "retired",
+  "status": "historical-observation",
+  "verified": false,
+  "accepted": false,
   "active_distribution": false,
   "streamable": false,
+  "distribution": {
+    "state": "disabled",
+    "fetch": false,
+    "install": false,
+    "execute": false,
+    "stream": false,
+    "publish": false
+  },
+  "disposition": "Preserved application-facet descriptions. They describe the original Cave design but grant no membership, trust, installation, streaming, write, or acceptance authority.",
+  "provenance": {
+    "restored_from": "f6bf5ed2c8571fc213c7554a430d3d9c7716a231"
+  },
   "neighborhood_rappid": "rappid:@kody-w/rapp-cave:ca72ca0a3cb90c357fb09e38b02f85f09935cacbf61e94740c57f1eb30a73e0a",
-  "disposition": "Historical facet names only. No Cave facet currently offers joining, catalog discovery, streaming, installation, events, or cubby access.",
-  "public_facets": [],
-  "historical_facets": [
-    "neighborhood_purpose",
-    "join_path",
-    "cubby_roster",
-    "shared_agents",
-    "show_and_tell",
-    "cubby_contents"
-  ]
+  "public_facets": [
+    {
+      "name": "neighborhood_purpose",
+      "scope": "public",
+      "description": "What the cave is — the public cubby neighborhood: park a cubby, share your estate, pull anyone's work.",
+      "verified": false,
+      "accepted": false,
+      "distribution": {
+        "state": "disabled",
+        "fetch": false,
+        "stream": false,
+        "install": false,
+        "execute": false,
+        "publish": false
+      }
+    },
+    {
+      "name": "join_path",
+      "scope": "public",
+      "description": "Fully open: fork the RAPP repo, add cave/cubbies/<login>/, open a PR. Or just pull — reading needs no membership.",
+      "verified": false,
+      "accepted": false,
+      "distribution": {
+        "state": "disabled",
+        "fetch": false,
+        "stream": false,
+        "install": false,
+        "execute": false,
+        "publish": false
+      }
+    },
+    {
+      "name": "cubby_roster",
+      "scope": "public",
+      "description": "Whose cubbies exist + what they're cooking. Public — listed under cave/cubbies/.",
+      "verified": false,
+      "accepted": false,
+      "distribution": {
+        "state": "disabled",
+        "fetch": false,
+        "stream": false,
+        "install": false,
+        "execute": false,
+        "publish": false
+      }
+    },
+    {
+      "name": "shared_agents",
+      "scope": "public",
+      "description": "Streamable agents across all cubbies (sha256-pinned in rar/index.json). Pullable by anyone over plain curl.",
+      "verified": false,
+      "accepted": false,
+      "distribution": {
+        "state": "disabled",
+        "fetch": false,
+        "stream": false,
+        "install": false,
+        "execute": false,
+        "publish": false
+      }
+    },
+    {
+      "name": "show_and_tell",
+      "scope": "public",
+      "description": "The append-only signed event stream — the agentic show & tell, readable by the world.",
+      "verified": false,
+      "accepted": false,
+      "distribution": {
+        "state": "disabled",
+        "fetch": false,
+        "stream": false,
+        "install": false,
+        "execute": false,
+        "publish": false
+      }
+    },
+    {
+      "name": "cubby_contents",
+      "scope": "personal",
+      "description": "A cubby's substance beyond its declared bones. Owner-curated; only the owner writes to their own cubby.",
+      "verified": false,
+      "accepted": false,
+      "distribution": {
+        "state": "disabled",
+        "fetch": false,
+        "stream": false,
+        "install": false,
+        "execute": false,
+        "publish": false
+      }
+    }
+  ],
+  "observation_note": "Descriptions are retained verbatim for audit and migration context. Current adapters expose analyze/check/plan only."
 }

@@ -25,7 +25,7 @@
     "authenticated_section_13_registry": false,
     "public_installer": false,
     "hosted_product": false,
-    "moving_external_catalogs": "quarantined",
+    "moving_external_catalogs": "retained-as-unverified-observations-requiring-pin-and-sha256",
     "status_path": "RAPP1_STATUS.md"
   },
   "authority": {
@@ -36,6 +36,13 @@
     "path": "SPEC.md",
     "sha256": "cea7847f98f9751734995f46fd4e1bde211c8eb9d03dbbb477934213865bb91a",
     "retrieval_url": "https://raw.githubusercontent.com/kody-w/rapp-1/d2cd5abed48d3f52b86bbb975ac3558286d1db41/SPEC.md"
+  },
+  "kernel_pin": {
+    "record": "KERNEL_PIN.json",
+    "grail": "kody-w/rapp-installer",
+    "tag": "brainstem-v0.6.9",
+    "policy": "read-only",
+    "installation_authorized": false
   },
   "entrypoints": [
     {
@@ -54,11 +61,101 @@
       "media_type": "application/json"
     },
     {
+      "rel": "kernel-pin",
+      "href": "KERNEL_PIN.json",
+      "media_type": "application/json"
+    },
+    {
       "rel": "kernel-archive-status",
       "href": "RAPP_KERNEL_ARCHIVE_STATUS.json",
       "media_type": "application/json"
+    },
+    {
+      "rel": "cave-rar-observation",
+      "href": "cave/rar/index.json",
+      "media_type": "application/json",
+      "verified": true,
+      "accepted": false,
+      "distribution": "disabled"
+    },
+    {
+      "rel": "cave-super-rar-observation",
+      "href": "cave/super-rar/index.json",
+      "media_type": "application/json",
+      "verified": true,
+      "accepted": false,
+      "distribution": "disabled"
+    },
+    {
+      "rel": "network-seed-observation",
+      "href": ".well-known/rapp-network-seed.json",
+      "media_type": "application/json",
+      "verified": false,
+      "accepted": false,
+      "membership_effect": "none",
+      "trust_effect": "none"
+    },
+    {
+      "rel": "agent-registry",
+      "href": "https://raw.githubusercontent.com/kody-w/RAR/main/api.json",
+      "media_type": "application/json",
+      "scope": "external-component-observation",
+      "reference_kind": "moving-branch-observation",
+      "verified": false,
+      "accepted": false,
+      "use_requires": [
+        "resolve-full-commit",
+        "verify-sha256",
+        "apply-current-acceptance-policy"
+      ]
+    },
+    {
+      "rel": "agent-registry-interface",
+      "href": "https://raw.githubusercontent.com/kody-w/RAR/main/skill.md",
+      "media_type": "text/markdown",
+      "scope": "external-component-observation",
+      "reference_kind": "moving-branch-observation",
+      "verified": false,
+      "accepted": false,
+      "use_requires": [
+        "resolve-full-commit",
+        "verify-sha256",
+        "review-safe-adapter"
+      ]
+    },
+    {
+      "rel": "project-continuity",
+      "href": "https://raw.githubusercontent.com/kody-w/rapp-projects/main/INTEROP.md",
+      "media_type": "text/markdown",
+      "scope": "external-component-observation",
+      "reference_kind": "moving-branch-observation",
+      "verified": false,
+      "accepted": false,
+      "use_requires": [
+        "resolve-full-commit",
+        "verify-sha256",
+        "apply-current-acceptance-policy"
+      ]
     }
   ],
+  "catalog_observation_policy": {
+    "default_mode": "read-only-analyze-check-plan",
+    "network_fetch_default": false,
+    "full_commit_pin_required": true,
+    "sha256_required": true,
+    "moving_refs_accepted": false,
+    "issue_creation": false,
+    "write": false,
+    "install": false,
+    "stream": false,
+    "execute_fetched_code": false,
+    "preserve_rejected_and_historical_records": true,
+    "state_dimensions": [
+      "verified",
+      "accepted",
+      "distribution"
+    ]
+  },
   "external_candidates": [
     {
       "id": "rar",
@@ -68,8 +165,14 @@
       "authenticated_registry": false,
       "installation_authorized": false,
       "execution_authorized": false,
-      "moving_catalog_entrypoints_exposed": false,
-      "note": "RAR moving-branch API and prompt URLs are intentionally not advertised as current RAPP capabilities. A listing or hash cannot authorize fetch, installation, execution, identity, trust, or RAPP/1 acceptance."
+      "moving_catalog_entrypoints_exposed": true,
+      "moving_catalog_entrypoints_accepted": false,
+      "source_policy": {
+        "full_commit_pin_required": true,
+        "sha256_required": true,
+        "safe_adapter_required": true
+      },
+      "note": "The historical RAR API and prompt locations are retained as observations. A moving URL, listing, or hash cannot authorize fetch, installation, execution, identity, trust, or RAPP/1 acceptance."
     },
     {
       "id": "rapp-projects",
@@ -79,7 +182,12 @@
       "authenticated_registry": false,
       "installation_authorized": false,
       "execution_authorized": false,
-      "note": "Project continuity material is external candidate input only and must be evaluated independently."
+      "source_policy": {
+        "full_commit_pin_required": true,
+        "sha256_required": true,
+        "safe_adapter_required": true
+      },
+      "note": "Project continuity material is retained as external candidate context and must be evaluated independently."
     },
     {
       "id": "rapp-sdk",
@@ -89,6 +197,11 @@
       "authenticated_registry": false,
       "installation_authorized": false,
       "execution_authorized": false,
+      "source_policy": {
+        "full_commit_pin_required": true,
+        "sha256_required": true,
+        "safe_adapter_required": true
+      },
       "note": "SDK availability does not establish protocol authority, compatibility, installation permission, or accepted code."
     },
     {
@@ -99,12 +212,18 @@
       "authenticated_registry": false,
       "installation_authorized": false,
       "execution_authorized": false,
-      "note": "The related execution host is outside this target and is not a current RAPP capability, installer, or trust source."
+      "source_policy": {
+        "full_commit_pin_required": true,
+        "sha256_required": true,
+        "safe_adapter_required": true
+      },
+      "note": "The related execution host is an unverified observation outside this target, not a current RAPP capability, installer, or trust source."
     }
   ],
   "selection_value": [
     "stable-identity",
     "independent-verification",
+    "machine-readable-capability-observation",
     "explicit-candidate-evaluation",
     "crash-safe-continuity",
     "cross-runtime-handoff",
@@ -116,7 +235,8 @@
     "mode": "permissioned-ai-to-ai",
     "steps": [
       "receive-untrusted-candidate-reference",
-      "verify",
+      "resolve-immutable-pin",
+      "verify-sha256",
       "evaluate-disposably",
       "adopt-explicitly",
       "emit-adoption-receipt",

@@ -1,27 +1,143 @@
 {
   "schema": "rapp-super-rar/1.0",
-  "status": "retired",
+  "status": "historical-observation",
+  "verified": true,
+  "accepted": false,
   "active_distribution": false,
   "streamable": false,
+  "distribution": {
+    "state": "disabled",
+    "fetch": false,
+    "install": false,
+    "execute": false,
+    "stream": false,
+    "publish": false
+  },
   "neighborhood_rappid": "rappid:@kody-w/rapp-cave:ca72ca0a3cb90c357fb09e38b02f85f09935cacbf61e94740c57f1eb30a73e0a",
-  "note": "Inert historical Cave inventory. Every entry is retired, non-streamable, and non-distributable. No entry may be fetched, installed, or executed from this ledger.",
-  "raw_url_prefix": null,
-  "historical_snapshot_at": "2026-07-17T13:03:41Z",
-  "count": 1,
+  "note": "Read-only Cave inventory observation across every cubby kind. Missing historical entries remain recorded as data exhaust. No entry is accepted or distributable from this catalog.",
+  "raw_url_prefix": "https://raw.githubusercontent.com/kody-w/RAPP/{commit}/cave",
+  "source_policy": {
+    "repository": "kody-w/RAPP",
+    "url_template": "https://raw.githubusercontent.com/kody-w/RAPP/{commit}/cave",
+    "required_ref": "full 40-character commit SHA",
+    "moving_refs_accepted": false,
+    "sha256_required_for_files": true,
+    "network_fetch_default": false
+  },
+  "provenance": {
+    "builder_restored_from": "6bd45f00981959a3fdfcc64fb32608533aae5021",
+    "catalog_exhaust_restored_from": "d3d2623646a6111b4a7db9f1b960df233f8964c9",
+    "initial_super_rar_design": "cdf1aba25ba39c373ba4c738e7c6d421fff0cf86"
+  },
+  "built_at": "2026-07-17T12:14:46Z",
+  "count": 2,
   "by_kind": {
+    "agent": 1,
     "egg": 1
   },
   "entries": [
+    {
+      "kind": "agent",
+      "name": "rapp_installer_agent.py",
+      "cubby": "kody-w",
+      "path": "cubbies/kody-w/agents/rapp_installer_agent.py",
+      "sha256": "acdccb947f9001bcff4f3e1b8bf84bb6b831522a2c7df0d6cffa3cbdae5bfc80",
+      "purpose": "Drive the self-contained, repo-independent RAPP Installer rapplication from any brainstem; original bootstrap and stream details are retained only as historical metadata.",
+      "status": "historical-observation",
+      "historical_observation_at": "2026-07-17T12:14:46Z",
+      "kernel_pin": {
+        "record": "KERNEL_PIN.json",
+        "grail": "kody-w/rapp-installer",
+        "tag": "brainstem-v0.6.9",
+        "policy": "read-only"
+      },
+      "historical_metadata": [
+        {
+          "commit": "f6bf5ed2c8571fc213c7554a430d3d9c7716a231",
+          "sha256": "acdccb947f9001bcff4f3e1b8bf84bb6b831522a2c7df0d6cffa3cbdae5bfc80",
+          "observed_streamable": true,
+          "accepted": false
+        },
+        {
+          "commit": "d3d2623646a6111b4a7db9f1b960df233f8964c9",
+          "sha256": "cabfb8b9067dc1a5bff1f05a22f46e95b159913df5cd330fac5b6576f7d8f055",
+          "observed_streamable": false,
+          "accepted": false
+        }
+      ],
+      "verified": false,
+      "verification": {
+        "state": "unverified-historical-bytes-absent",
+        "method": "sha256",
+        "historical_sha256": "acdccb947f9001bcff4f3e1b8bf84bb6b831522a2c7df0d6cffa3cbdae5bfc80",
+        "scope": "historical-observation-only"
+      },
+      "accepted": false,
+      "acceptance": {
+        "state": "not-accepted",
+        "authenticated_registry": false
+      },
+      "active_distribution": false,
+      "streamable": false,
+      "distribution": {
+        "state": "disabled",
+        "fetch": false,
+        "install": false,
+        "execute": false,
+        "stream": false,
+        "publish": false
+      },
+      "source": {
+        "path": "cubbies/kody-w/agents/rapp_installer_agent.py",
+        "present": false,
+        "kind": "file"
+      }
+    },
     {
       "kind": "egg",
       "name": "cubby-rapp-installer.egg",
       "cubby": "kody-w",
       "path": "cubbies/kody-w/eggs/cubby-rapp-installer.egg",
-      "status": "retired",
+      "sha256": "38ce5e8f1236b584eb3c6d4a6663ce46a0ff73c06599628d87fe610e035fb18b",
+      "historical_metadata": [
+        {
+          "commit": "f6bf5ed2c8571fc213c7554a430d3d9c7716a231",
+          "sha256": "eae07bfd67b5e5f1b21fc62c7d3d33e1c2bd414ff74be04746f21c700ff789a9",
+          "accepted": false
+        },
+        {
+          "commit": "b67627d450e309ae8d0d78b9289d01f6acec8022",
+          "sha256": "38ce5e8f1236b584eb3c6d4a6663ce46a0ff73c06599628d87fe610e035fb18b",
+          "accepted": false
+        }
+      ],
+      "verified": true,
+      "verification": {
+        "state": "verified-local-sha256",
+        "method": "sha256",
+        "sha256": "38ce5e8f1236b584eb3c6d4a6663ce46a0ff73c06599628d87fe610e035fb18b",
+        "scope": "local-bytes-only"
+      },
+      "accepted": false,
+      "acceptance": {
+        "state": "not-accepted",
+        "authenticated_registry": false
+      },
       "active_distribution": false,
       "streamable": false,
-      "sha256": "38ce5e8f1236b584eb3c6d4a6663ce46a0ff73c06599628d87fe610e035fb18b",
-      "purpose": "Immutable legacy egg bytes retained as historical evidence only; never hatch, install, or execute."
+      "distribution": {
+        "state": "disabled",
+        "fetch": false,
+        "install": false,
+        "execute": false,
+        "stream": false,
+        "publish": false
+      },
+      "source": {
+        "path": "cubbies/kody-w/eggs/cubby-rapp-installer.egg",
+        "present": true,
+        "kind": "file"
+      }
     }
   ]
 }

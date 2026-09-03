@@ -3,8 +3,13 @@
 > **Historical cave runbook.** For canonicalization, identity, frames, wire,
 > eggs, registry, trust, and protocol evolution, follow RAPP/1 rev-5 through
 > [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json) and
-> [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md). The prepared cave installer,
-> moving-branch downloads, and unsigned catalogs are inert/untrusted history.
+> [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md). The prepared Cave payload is
+> untrusted history. Mutable retrieval references and unsigned catalog records
+> grant no authority.
+> Preserve their contextual records, but keep verification, acceptance, and
+> distribution state separate. The immutable grail reference is
+> [`KERNEL_PIN.json`](../../KERNEL_PIN.json) at
+> `kody-w/rapp-installer@brainstem-v0.6.9`; no Cave record overrides it.
 
 <!-- RAPP1-HISTORICAL-SECTION-START -->
 

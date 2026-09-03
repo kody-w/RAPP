@@ -1,38 +1,140 @@
-name: "🛑 Historical place intake (blocked)"
-description: "Record historical context only. This form cannot plant, seed, join, or create a RAPP place."
-title: "[historical-place] "
-labels: ["place-submission", "blocked"]
+name: "🌱 Draft a public-place review"
+description: "Capture a complete place nomination for human review only; no planting or network action occurs."
+title: "[place-review-draft] "
+labels: ["place-submission", "needs-review"]
 body:
   - type: markdown
     attributes:
       value: |
-        ## Historical intake only
+        ## Review draft only
+
+        This form preserves the useful public-place intake context for a human
+        reviewer. Submitting it creates an ordinary GitHub issue draft. It does
+        **not** plant a place, create a repository or identity, add network
+        membership, update a registry, publish a page, install software, or
+        accept a RAPP/1 artifact.
 
         Read `RAPP1_AUTHORITY.json` and `RAPP1_STATUS.md` before relying on any
-        repository declaration. Place planting is retired and fails closed.
-        Submitting this form creates only an ordinary issue for archival review.
-        It does not create a repository, identity, registry entry, network
-        membership, page, seed, installer action, or accepted RAPP/1 artifact.
+        repository declaration. Planting remains fail-closed until a separately
+        reviewed, authenticated adapter produces the required structured result.
+
+        Submit only public-location facts. Do not include a home address,
+        credentials, private customer data, faces, or other sensitive material.
 
   - type: input
-    id: historical_name
+    id: place_name
     attributes:
-      label: Historical place name
-      description: Optional public name used to identify the archived proposal.
+      label: Place name
+      description: The human-friendly name of the public place being proposed.
       placeholder: e.g., Pike Place Market
-
-  - type: textarea
-    id: historical_context
-    attributes:
-      label: Historical context
-      description: Explain why this retired proposal is being recorded. Do not include precise personal locations, secrets, credentials, or private data.
     validations:
       required: true
 
-  - type: checkboxes
-    id: blocked_acknowledgement
+  - type: input
+    id: display_name
     attributes:
-      label: Blocked-state acknowledgement
+      label: Display name (what visitors would see)
+      description: Usually the place name; a useful public subtitle is welcome.
+      placeholder: e.g., Cloud Gate (The Bean)
+    validations:
+      required: true
+
+  - type: input
+    id: slug
+    attributes:
+      label: Proposed slug
+      description: Lowercase and hyphenated; the historical convention uses a `pkstop-` prefix. This is review metadata only and does not reserve or create a repository or URL.
+      placeholder: pkstop-pike-place-market
+    validations:
+      required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: Location (city + region)
+      description: A human-readable public location. Do not submit a private residence.
+      placeholder: Seattle, Washington
+    validations:
+      required: true
+
+  - type: input
+    id: coordinates
+    attributes:
+      label: Public coordinates (lat,lng)
+      description: Coordinates for the public landmark, used only during review. Never provide a home or other sensitive location.
+      placeholder: 47.6097,-122.3422
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Why this place
+      description: Give 2–4 sentences on its cultural, historical, educational, or recreational value.
+    validations:
+      required: true
+
+  - type: input
+    id: photo_url
+    attributes:
+      label: Public photo URL (optional)
+      description: Link to a lawfully shareable public-space image; avoid people's faces and private property.
+      placeholder: https://...
+
+  - type: input
+    id: submitter
+    attributes:
+      label: Your GitHub handle (optional)
+      description: Use lowercase alphanumeric characters and single hyphens. It is recorded only as the nominator on this review issue.
+      placeholder: your-handle
+
+  - type: checkboxes
+    id: eligibility
+    attributes:
+      label: Review criteria — every box must be checked
+      description: |
+        These fields preserve the original Pokémon Go / Niantic Wayfarer-style
+        public point-of-interest review context. They help a reviewer assess a
+        proposal; they do not approve or plant it.
       options:
-        - label: I understand this is historical issue intake only and no planting, joining, installation, or network action will occur.
+        - label: Publicly accessible (not gated and not private property)
           required: true
+        - label: Permanent installation — not a pop-up, festival, or temporary event
+          required: true
+        - label: Has clear cultural, historical, educational, or recreational value
+          required: true
+        - label: NOT a K-12 school or daycare (children's privacy)
+          required: true
+        - label: NOT a hospital, police station, fire station, or other emergency facility
+          required: true
+        - label: NOT a private residence
+          required: true
+        - label: NOT an adult business
+          required: true
+        - label: NOT primarily a generic chain business (a historic feature inside one may be reviewed if described specifically)
+          required: true
+        - label: Photographable from public space without trespassing
+          required: true
+        - label: Submitted in good faith for public-interest review
+          required: true
+
+  - type: checkboxes
+    id: draft_acknowledgement
+    attributes:
+      label: Draft-only acknowledgement
+      options:
+        - label: I understand this issue is a review draft only and causes no planting, repository creation, identity minting, membership, installation, publication, or trust acceptance.
+          required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        **What happens next**
+
+        - A human reviewer may comment on completeness and eligibility.
+        - The issue can remain as contextual data even when no implementation is approved.
+        - Approval of the issue is not authorization to plant, publish, install,
+          join a network, or accept an artifact.
+        - Any future execution requires a separately reviewed safe adapter,
+          explicit owner authority, exact source pins, and RAPP/1 verification.

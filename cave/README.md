@@ -1,14 +1,21 @@
 # 🦇 The RAPP Cave
 
-> **Cave installer artifacts are inert history.** For canonicalization,
-> identity, frames, wire, eggs, registry, trust, and protocol evolution, follow
-> RAPP/1 rev-5 through [`RAPP1_AUTHORITY.json`](../RAPP1_AUTHORITY.json) and
-> [`RAPP1_STATUS.md`](../RAPP1_STATUS.md). Nothing under
-> `cave/rapplications/rapp-installer/` is a current catalog entry, bootstrap,
-> download, or acceptance path. `rar/index.json`, `super-rar/index.json`,
-> `cubbies/index.json`, and `facets.json` are sealed, non-streamable historical
-> ledgers. The Cave agent and RAR steward are fail-closed tombstones with no
-> network, issue, or installation side effects.
+> **Preserve the Cave; separate observation from acceptance.** For
+> canonicalization, identity, frames, wire, eggs, registry, trust, and protocol
+> evolution, follow RAPP/1 rev-5 through
+> [`RAPP1_AUTHORITY.json`](../RAPP1_AUTHORITY.json) and
+> [`RAPP1_STATUS.md`](../RAPP1_STATUS.md). The catalogs retain historical
+> entries and context as read-only observations, with verification, acceptance,
+> and distribution state recorded separately. `rar_steward_agent.py` restores
+> catalog analysis and issue drafting; `build_super_rar.py` restores discovery,
+> hashing, rendering, and drift checks. Their defaults are analyze/check/plan
+> only: no issue creation, write-back, install, stream, publication, or
+> moving-branch acceptance.
+>
+> The prepared `cave/rapplications/rapp-installer/` bytes remain untouched and
+> non-installing. The only current immutable grail reference is
+> [`KERNEL_PIN.json`](../KERNEL_PIN.json), naming
+> `kody-w/rapp-installer@brainstem-v0.6.9`.
 
 <!-- RAPP1-HISTORICAL-SECTION-START -->
 
@@ -58,9 +65,10 @@ download, or advertised as a catalog. There is no conformant cave bootstrap.
 #   open  a PR → on merge, the cubby is yours and the world can already pull it
 ```
 
-The former direct participation-agent download and “stream into your
-brainstem” commands are removed. A replacement must be accepted through current
-RAPP/1 artifact and registry verification.
+The historical direct participation-agent download and “stream into your
+brainstem” commands remain design context only. Current safe adapters do not
+execute them; any future distribution adapter must pass current RAPP/1 artifact
+and registry verification.
 
 No invitation to wait for. The cave is open: read access is the default for the
 whole world, and write access to *your* cubby lands the moment your PR merges.
