@@ -65,8 +65,6 @@
     #toolbar input[type="checkbox"] { margin: 0; }
     #toolbar select { background: #0d1117; color: var(--fg); border: 1px solid var(--border); border-radius: 6px; padding: 3px 6px; font: inherit; font-size: 11px; }
     #toolbar .right { margin-left: auto; }
-    .rapp-2026-note { color: var(--muted); font-size: 12px; margin: 8px 0 0; }
-    .rapp-2026-note strong { color: var(--green); }
   </style>
 </head>
 <body>
@@ -85,10 +83,6 @@
   <div id="signin-block" class="step">
     <strong>Sign in to chat</strong>
     <p style="color: var(--muted); font-size: 13px; margin: 6px 0 12px;">One-tap GitHub sign-in. Your token gives chat access via your existing Copilot subscription. Stored in this browser only — sign out wipes it.</p>
-    <p class="rapp-2026-note"><strong>2026 local mode:</strong> the source-era sign-in,
-      token, model, repository, and posting controls remain visible for provenance.
-      They now drive only a deterministic in-page rehearsal.</p>
-
     <button id="btn-signin" onclick="signInDevice()" style="background: var(--accent); color: #fff; font-size: 16px; padding: 14px;">
       Sign in with GitHub
     </button>
@@ -614,13 +608,6 @@
   function renderHistory() {
     const log = $('log');
     log.replaceChildren();
-    if (!state.history.length) {
-      const note = document.createElement('div');
-      note.className = 'msg note';
-      note.textContent =
-        '2026 local rehearsal — the complete source-era interface remains visible; no remote execution occurs.';
-      log.appendChild(note);
-    }
     for (const item of state.history) {
       const message = document.createElement('div');
       message.className = `msg ${item.kind || (item.role === 'user' ? 'user' : 'twin')}`;

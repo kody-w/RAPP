@@ -45,8 +45,6 @@
     .summon-banner.warn { background: rgba(240,136,62,0.1); border-color: rgba(240,136,62,0.3); }
     .step { margin: 10px 0; font-size: 13px; color: var(--muted); }
     .step strong { color: var(--fg); }
-    .rapp-2026-note { color: var(--muted); font-size: 13px; border-left: 2px solid var(--green); padding-left: 10px; }
-    .rapp-2026-note strong { color: var(--green); }
     .voice-preview { padding: 14px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; margin: 14px 0; }
     .voice-preview textarea { width: 100%; min-height: 72px; margin: 8px 0; padding: 10px; background: var(--bg); color: var(--fg); border: 1px solid var(--border); border-radius: 8px; font: inherit; }
     .voice-preview button { padding: 8px 12px; background: var(--accent); color: #fff; border: 0; border-radius: 8px; cursor: pointer; }
@@ -78,10 +76,6 @@
     <div id="voice-sample" class="voice-sample"></div>
   </div>
 
-  <p class="rapp-2026-note"><strong>2026 local mode:</strong> the source-era
-    roster, rappid strings, explanatory sections, and visual cards are preserved
-    in place. Tapping a card now opens only the local voice rehearsal above.</p>
-
   <h2>What happens when you tap</h2>
   <div class="step"><strong>1.</strong> Your browser opens the grail brainstem at <code>kody-w.github.io/heimdall/?seed=&lt;owner&gt;/&lt;repo&gt;</code>.</div>
   <div class="step"><strong>2.</strong> The grail loads that twin's <code>rappid.json</code> + <code>soul.md</code> + memory directly from the planted public repo — no install, no setup.</div>
@@ -90,17 +84,11 @@
 
   <h2>Why one grail</h2>
   <p style="font-size: 13px; color: var(--muted);">Identity is portable per Constitution Art. XXXIV.5. Heimdall's <code>index.html</code> IS the canonical grail brainstem — it already supports embodying any planted twin via <code>?seed=&lt;owner&gt;/&lt;repo&gt;</code>. One file, every twin. We stop rebuilding the same UI in different places.</p>
-  <p class="rapp-2026-note"><strong>Pinned Grail evidence:</strong>
-    <a href="/RAPP/KERNEL_PIN.json" data-rapp-evidence="read-only">KERNEL_PIN.json</a>
-    records the immutable kernel bytes from
+  <p class="step"><a href="/RAPP/KERNEL_PIN.json" data-rapp-evidence="read-only">Grail pin</a> ·
     <a href="https://github.com/kody-w/rapp-installer/tree/brainstem-v0.6.9"
-       target="_blank" rel="noopener noreferrer" data-rapp-evidence="read-only">kody-w/rapp-installer@brainstem-v0.6.9</a>.
-    These are source/evidence links, not install or download actions.</p>
+       target="_blank" rel="noopener noreferrer" data-rapp-evidence="read-only">brainstem-v0.6.9 source</a></p>
 
   <p style="font-size: 13px; color: var(--muted);">Substrate is GitHub. Embodiment is wherever — a phone, a laptop, a kiosk. You can summon the same twin from two devices simultaneously and they're the same twin.</p>
-  <p class="rapp-2026-note"><strong>Current execution:</strong> no identity is
-    selected, stored, resolved, or handed to another page; no repository or
-    external browser surface is opened.</p>
 
   <div class="footer">
     Schema: <code>rapp-summon-portal/1.0</code> — Parent: <a href="/RAPP/">kody-w/RAPP</a>

@@ -278,7 +278,6 @@ header h1 .icon { font-size: 1.25em; }
 .banner.warn { background: rgba(210,153,34,0.08); border-color: var(--org); color: var(--org); }
 .banner.err  { background: rgba(248,81,73,0.08); border-color: var(--red); color: var(--red); }
 .banner code { font-family: ui-monospace,"SF Mono",Menlo,monospace; background: rgba(0,0,0,0.25); padding: 1px 5px; border-radius: 4px; }
-.rapp-local-boundary { margin: 10px 0; padding: 9px 11px; border-left: 2px solid var(--acc); background: rgba(88,166,255,.06); color: var(--dim); font-size: 0.72rem; line-height: 1.5; }
 .rapp-local-call-stage { position:absolute; inset:0; display:grid; place-items:center; overflow:hidden; background:radial-gradient(circle at 50% 45%,rgba(88,166,255,.16),transparent 34%),linear-gradient(160deg,#071019,#000); z-index:1; }
 .rapp-local-call-orb { width:min(48vw,280px); aspect-ratio:1; border-radius:50%; background:radial-gradient(circle at 35% 30%,#fff 0 2%,#58a6ff 8%,#8338ec 42%,#071019 70%); box-shadow:0 0 80px rgba(88,166,255,.55),inset -24px -30px 60px rgba(0,0,0,.65); animation:rappLocalDoormanPulse 3.4s ease-in-out infinite; }
 .rapp-local-call-copy { position:absolute; bottom:12%; max-width:520px; padding:0 24px; text-align:center; color:rgba(255,255,255,.72); font-size:.82rem; }
@@ -303,8 +302,6 @@ header h1 .icon { font-size: 1.25em; }
         <h1>tPhone</h1>
         <div class="sub">scan a QR, dial words, or paste a URL</div>
       </div>
-      <p class="rapp-local-boundary">Historical phone, pairing, auth, and dialing copy is retained. Controls in this exhibit operate on deterministic local diagrams and sample records only; no camera, account, peer, repository, model, runtime, or artifact path is used.</p>
-
       <!-- ╭─── Sign-in banner (always visible above tabs) ───╮
            Anon state: "Sign in with GitHub →" — kicks off device-code OAuth.
            After auth + auto-twin-resolve, this swaps to a small identity chip
@@ -412,8 +409,6 @@ header h1 .icon { font-size: 1.25em; }
   &nbsp;·&nbsp;
   rappid: <span id="identity-rappid">(not bound)</span>
 </div>
-<p class="rapp-local-boundary">The launch sequence, lobby, event stream, town square, discovery panels, installer/plant controls, and doorman call remain in their original interface context. Runtime status fields below are driven by the local safety shim and do not assert a live connection. Obsolete installer edges open read-only <a href="/RAPP/KERNEL_PIN.json">Grail pin evidence</a> and the <a href="https://github.com/kody-w/rapp-installer/tree/brainstem-v0.6.9" target="_blank" rel="noopener noreferrer">pinned brainstem-v0.6.9 source</a>; they never install, download, plant, or boot.</p>
-
 <div id="banner-area"></div>
 
 <div class="grid">

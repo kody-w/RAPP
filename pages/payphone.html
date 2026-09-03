@@ -57,9 +57,6 @@
           padding:12px; border-radius:10px; }
   .row { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; }
   .ghost { background:transparent; border-color:#30363d; color:#79c0ff; }
-  .rapp-2026-note { color:#8b949e; font-size:.85rem; border-left:2px solid #3fb950;
-          padding-left:.75rem; }
-  .rapp-2026-note strong { color:#3fb950; }
   .dial-grid { display:grid; grid-template-columns:repeat(21,7px);
           grid-template-rows:repeat(21,7px); gap:1px; justify-content:center;
           width:max-content; margin:1rem auto; padding:12px; border-radius:10px;
@@ -86,11 +83,6 @@ verifies you can read the door, then hands you into the live room, which runs
 <strong>end-to-end encrypted over WebRTC</strong> (DTLS peer-to-peer + the §8
 sealed channel keyed by a collaborator-gated secret). Nothing of the live
 session passes through us or the broker — only ciphertext.</p>
-<p class="rapp-2026-note"><strong>2026 local mode:</strong> the complete
-source-era dialer, authentication copy, and room handoff remain visible below
-as provenance. Dial, sign-in, QR, repository, and room actions now stay inside
-this page and make no access or trust claim.</p>
-
 <!-- Shown when arriving via a scanned invite QR (?dial=) or a share request
      (?share=). Populated by the script; hidden otherwise. -->
 <div id="invite" class="card" style="display:none"></div>
@@ -125,10 +117,6 @@ to <code>api.github.com</code> and nowhere else. Spec: the rappid IS the
 address (CONSTITUTION Art. XLVI; ESTATE_SPEC §5 — canonical parser
 <code>tools/door_address.py</code>). Substrate-agnostic access for local
 brainstems and kited vTwins alike (Art. XLVII).</p>
-<p class="rapp-2026-note"><strong>Current execution:</strong> no token is read
-or stored, no repository is queried, no QR navigation is emitted, and no room
-is opened. Results are labeled local previews.</p>
-
 <script type="text/plain" id="rapp-history-runtime-source">
 (function () {
   // Doorman convention — a signed-in vBrainstem already holds a token here.

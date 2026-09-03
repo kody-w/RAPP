@@ -68,9 +68,6 @@
          border-bottom:1px solid #1f2430; }
   .safety { font-size:1.6rem; letter-spacing:.4rem; color:#ffd33d; }
   #log { max-height:200px; overflow:auto; font-size:.8rem; color:#8b949e; }
-  .rapp-2026-note { color:#8b949e; font-size:.82rem; border-left:2px solid #3fb950;
-          padding-left:.7rem; margin:.6rem 0; }
-  .rapp-2026-note strong { color:#3fb950; }
 </style>
 <template id="rapp-history-dependency-source">
 &lt;script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"&gt;&lt;/script&gt;
@@ -87,9 +84,6 @@
   <p class="muted">Sign in with your GitHub account (no token to paste) and
   enter the door you were given. The room verifies you can read it, then runs
   end-to-end encrypted — collaborators get in, everyone else 404s.</p>
-  <p class="rapp-2026-note"><strong>2026 local mode:</strong> the source-era
-    gate remains visible, but sign-in and verification now open only a local
-    room rehearsal. No account or repository is contacted.</p>
   <p><input id="mDoor" placeholder="owner/repo" style="width:100%"></p>
   <div class="row" style="margin:.2rem 0 .6rem">
     <button id="mSignin">🔓 Sign in with GitHub</button>
@@ -114,8 +108,6 @@
   <div class="card">
     <strong>🔒 Safety code</strong> <span class="muted">— verify it matches your peer's, out of band (defeats a signaling MITM).</span>
     <div class="safety" id="safety">······</div>
-    <p class="rapp-2026-note"><strong>Current execution:</strong> this is a
-      deterministic layout code, not a cryptographic proof.</p>
   </div>
   <div class="card" id="cubbiesCard" style="display:none">
     <strong>🗄️ Cubbies in this neighborhood</strong>
@@ -124,8 +116,6 @@
   <div class="card">
     <strong>📋 Board</strong>
     <span class="muted">— replicated to every active vTwin; survives the lights going out + back on. Agents post via the door’s participation agent.</span>
-    <p class="rapp-2026-note"><strong>Current execution:</strong> posts remain
-      in this page's memory and disappear on reload.</p>
     <div id="board" style="margin:.4rem 0;max-height:200px;overflow:auto"></div>
     <input id="say" placeholder="post to the board (sealed)" style="width:70%">
     <button id="sayBtn">Post</button>
