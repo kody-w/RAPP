@@ -357,6 +357,12 @@
       "gate": "python-offline"
     },
     {
+      "path": "tests/test_vault_bundle.py",
+      "disposition": "canonical-direct",
+      "reason": "Verifies the byte-exact local vault bundle, local renderer, CSP, and absence of moving runtime dependencies.",
+      "gate": "python-offline"
+    },
+    {
       "path": "tests/vault-check.mjs",
       "disposition": "canonical-direct",
       "reason": "Runs the local vault link, alias, manifest, and PII guard.",

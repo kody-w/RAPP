@@ -30,6 +30,10 @@ GATES = (
         "source-ledger",
         (sys.executable, "tools/build_historical_source_ledger.py", "--check"),
     ),
+    Gate(
+        "vault-bundle",
+        (sys.executable, "tools/build_vault_bundle.py", "--check"),
+    ),
     Gate("pages", (sys.executable, "tests/check_pages.py")),
     Gate("node-contract", ("node", "tests/run-tests.mjs")),
     Gate("vault", ("node", "tests/vault-check.mjs")),

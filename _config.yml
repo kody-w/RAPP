@@ -10,7 +10,10 @@ include:
   - pages/vault/index.html
   - pages/vault/icon-192.svg
   - pages/vault/icon-512.svg
+  - pages/vault/content-bundle.json
   - pages/vault/manifest.json
+  - pages/vault/marked.min.js
+  - pages/vault/vendor/marked-LICENSE.txt
   - pages/vault/wikilink-aliases.json
   - pages/vault/vault.css
   - pages/vault/vault.js

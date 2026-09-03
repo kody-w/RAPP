@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import ast
+import base64
+import gzip
 import hashlib
 import json
 import re
@@ -22,6 +24,28 @@ REQUIRED_GAPS = {
     "side_effects",
 }
 OWNER_DEPENDENCIES = {"OA-REG", "OA-ROOT", "OA-INVITE"}
+REQUIRED_SURFACE_IDS = {
+    "GOV-001",
+    "CORE-001",
+    "IDENT-001",
+    "FRAME-001",
+    "EGG-001",
+    "TRUST-001",
+    "WIRE-001",
+    "GRAIL-001",
+    "WORKER-001",
+    "BROWSER-001",
+    "PAGES-001",
+    "METRO-001",
+    "CAVE-001",
+    "ESTATE-001",
+    "NETWORK-001",
+    "SWARM-001",
+    "GENERATED-001",
+    "HISTORY-001",
+    "TEST-001",
+    "MIRROR-001",
+}
 
 
 def _load(path: Path) -> dict:
@@ -74,6 +98,35 @@ def _normalized_line_coverage(source: bytes, restored: bytes) -> float:
     return sum(line in restored_text for line in source_lines) / len(source_lines)
 
 
+def _walk(value, path: str = "$"):
+    yield path, value
+    if isinstance(value, dict):
+        for key, child in value.items():
+            yield from _walk(child, f"{path}.{key}")
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            yield from _walk(child, f"{path}[{index}]")
+
+
+def _selector_matches(
+    selector: dict,
+    relative: str,
+    path_sets: dict[str, set[str]],
+) -> bool:
+    kind = selector["type"]
+    if kind == "explicit":
+        return relative in selector["paths"]
+    if kind == "prefix":
+        return any(relative.startswith(prefix) for prefix in selector["prefixes"])
+    if kind == "explicit-and-prefix":
+        return relative in selector["paths"] or any(
+            relative.startswith(prefix) for prefix in selector["prefixes"]
+        )
+    if kind == "path-set-ref":
+        return relative in path_sets[selector["path_set_ref"]]
+    raise AssertionError(f"unsupported primary selector: {selector}")
+
+
 def test_adaptation_inventory_is_candidate_evidence_not_authority():
     inventory = _load(INVENTORY_PATH)
     assert inventory["schema"] == "rapp1-adaptation-inventory/1.0"
@@ -123,6 +176,7 @@ def test_every_surface_has_the_complete_gap_and_acceptance_contract():
     path_set_ids = {record["id"] for record in inventory["path_sets"]}
     surface_ids = [record["id"] for record in inventory["surfaces"]]
     assert len(surface_ids) == len(set(surface_ids))
+    assert set(surface_ids) == REQUIRED_SURFACE_IDS
     assert inventory["completeness"]["surface_count"] == len(surface_ids)
     assert set(inventory["completeness"]["required_gap_fields"]) == REQUIRED_GAPS
 
@@ -141,6 +195,66 @@ def test_every_surface_has_the_complete_gap_and_acceptance_contract():
         assert set(surface["owner_dependencies"]) <= OWNER_DEPENDENCIES
         for relative in surface.get("paths", []):
             assert (ROOT / relative).exists(), (surface["id"], relative)
+
+
+def test_primary_classification_covers_every_tracked_path_once():
+    inventory = _load(INVENTORY_PATH)
+    tracked = _tracked_paths()
+    path_sets: dict[str, set[str]] = {}
+    for record in inventory["path_sets"]:
+        selector = record["selector"]
+        if selector["type"] == "git-prefix":
+            selected = {
+                path for path in tracked if path.startswith(selector["prefix"])
+            }
+        else:
+            selected = set(selector["paths"])
+        path_sets[record["id"]] = selected
+
+    classification = inventory["primary_classification"]
+    assert set(classification["required_surface_ids"]) == REQUIRED_SURFACE_IDS
+    assert classification["fallback_surface_id"] in REQUIRED_SURFACE_IDS
+    rule_ids = [rule["id"] for rule in classification["rules"]]
+    assert len(rule_ids) == len(set(rule_ids))
+    counts = {surface_id: 0 for surface_id in REQUIRED_SURFACE_IDS}
+    assigned: dict[str, str] = {}
+    for relative in tracked:
+        surface_id = next(
+            (
+                rule["surface_id"]
+                for rule in classification["rules"]
+                if _selector_matches(rule["selector"], relative, path_sets)
+            ),
+            classification["fallback_surface_id"],
+        )
+        assert surface_id in REQUIRED_SURFACE_IDS
+        assigned[relative] = surface_id
+        counts[surface_id] += 1
+    assert set(assigned) == set(tracked)
+    assert all(count > 0 for count in counts.values()), counts
+
+
+def test_candidate_evidence_cannot_claim_authenticated_acceptance():
+    inventory = _load(INVENTORY_PATH)
+    forbidden_true = {
+        "accepted",
+        "fresh",
+        "cryptographically_verified",
+        "authenticated_acceptance_allowed",
+    }
+    for path, value in _walk(inventory):
+        key = path.rsplit(".", 1)[-1]
+        if key in forbidden_true:
+            assert value is False, path
+        if key == "verified":
+            assert value is not True, path
+    discovery = _load(ROOT / "rapp-ai.json")
+    for path, value in _walk(discovery):
+        key = path.rsplit(".", 1)[-1]
+        if key in {"accepted", "fresh", "cryptographically_verified"}:
+            assert value is not True, path
+        if key == "verified":
+            assert value is not True, path
 
 
 def test_owner_dependencies_match_the_status_blockers():
@@ -163,6 +277,7 @@ def test_historical_source_ledger_verifies_old_and_restored_bytes():
     assert ledger["record_kind"] == "candidate-restoration-provenance"
     assert ledger["status"] == "candidate"
     assert ledger["is_section_13_registry"] is False
+    assert ledger["authenticated_acceptance_allowed"] is False
 
     record_ids: set[str] = set()
     current_paths: set[str] = set()
@@ -183,12 +298,29 @@ def test_historical_source_ledger_verifies_old_and_restored_bytes():
         assert _source_blob(source["commit"], source["path"]) == source["blob"]
         assert hashlib.sha256(old_bytes).hexdigest() == source["sha256"]
         assert len(old_bytes) == source["bytes"]
+        capsule = source["capsule"]
+        assert capsule["encoding"] == "gzip+base64"
+        assert (
+            gzip.decompress(base64.b64decode(capsule["payload"]))
+            == old_bytes
+        )
 
         restored = record["restored"]
         current_bytes = current.read_bytes()
         assert hashlib.sha256(current_bytes).hexdigest() == restored["sha256"], relative
         assert len(current_bytes) == restored["bytes"], relative
         assert re.fullmatch(r"[0-9a-f]{40}", restored["commit"])
+        committed_bytes = _source_bytes(restored["commit"], relative)
+        assert hashlib.sha256(committed_bytes).hexdigest() == restored["sha256"], relative
+        assert len(committed_bytes) == restored["bytes"], relative
+        assert len(current_bytes) >= source["bytes"] * 0.9, relative
+        assert record["trust_state"] == {
+            "observed": True,
+            "structurally_valid": True,
+            "cryptographically_verified": False,
+            "fresh": False,
+            "accepted": False,
+        }
 
         check = record["preservation_check"]
         if check["type"] == "line-subsequence":
@@ -208,6 +340,10 @@ def test_historical_source_ledger_verifies_old_and_restored_bytes():
             assert offset == len(source_lines), relative
         elif check["type"] == "python-symbol-superset":
             assert _python_symbols(old_bytes) <= _python_symbols(current_bytes), relative
+            assert (
+                _normalized_line_coverage(old_bytes, current_bytes)
+                >= check["minimum_line_coverage"]
+            ), relative
         elif check["type"] == "normalized-line-coverage":
             coverage = _normalized_line_coverage(old_bytes, current_bytes)
             assert coverage >= check["minimum"], (
@@ -221,6 +357,10 @@ def test_historical_source_ledger_verifies_old_and_restored_bytes():
             text = current_bytes.decode("utf-8")
             for marker in check["markers"]:
                 assert marker in text, (relative, marker)
+            assert (
+                _normalized_line_coverage(old_bytes, current_bytes)
+                >= check["minimum_line_coverage"]
+            ), relative
         else:
             raise AssertionError(f"unsupported preservation check: {check}")
 
@@ -288,3 +428,34 @@ def test_preservation_metric_detects_a_removed_historical_line():
     )
     mutated = restored_text.replace(unique_line, "", 1).encode("utf-8")
     assert _normalized_line_coverage(source, mutated) < 1.0
+
+
+def test_marker_mode_rejects_a_padded_marker_only_stub():
+    source = _source_bytes(
+        "4f6c14bbdf5b2d43887a9c7ab9cbda8c075f0dd6",
+        "worker/worker.js",
+    )
+    markers = (
+        "export const HISTORICAL_SOURCE",
+        "DEFAULT_CAPABILITIES",
+        "RAPP_BROWSER_RUNTIME_ENABLED",
+        "explicit-reviewed-runtime-binding-required",
+        "/api/copilot/chat",
+    )
+    stub = ("\n".join(f"// {marker}" for marker in markers)).encode("utf-8")
+    stub += b"\n" + b"x" * len(source)
+    assert len(stub) >= len(source) * 0.9
+    assert _normalized_line_coverage(source, stub) < 0.30
+
+
+def test_symbol_mode_rejects_a_padded_symbol_only_stub():
+    source = _source_bytes(
+        "591e7aec3b2183e0d48a1d6dfb6ebc59f177daea",
+        "tools/private_estate_init.py",
+    )
+    names = sorted(_python_symbols(source))
+    stub_text = "\n".join(f"def {name}(*args, **kwargs):\n    pass" for name in names)
+    stub = stub_text.encode("utf-8") + b"\n#" + b"x" * len(source)
+    assert _python_symbols(source) <= _python_symbols(stub)
+    assert len(stub) >= len(source) * 0.9
+    assert _normalized_line_coverage(source, stub) < 0.85

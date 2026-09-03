@@ -39,5 +39,5 @@ jobs:
           -r rapp_brainstem/requirements.txt
           pytest
 
-      - name: Run canonical structural pre-acceptance gate
-        run: python3 tests/run_rapp1_conformance.py
+      - name: Run restoration and canonical pre-acceptance gates
+        run: python3 tests/run_restoration_acceptance.py

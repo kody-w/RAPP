@@ -269,6 +269,9 @@ def main() -> int:
         "pages/_site",
         "pages/vault/index.html",
         "pages/vault/manifest.json",
+        "pages/vault/content-bundle.json",
+        "pages/vault/marked.min.js",
+        "pages/vault/vendor/marked-LICENSE.txt",
         "pages/vault/sw.js",
     }:
         require(required in includes, f"_config.yml must include {required}")
@@ -590,9 +593,32 @@ def main() -> int:
     require("obsidian://" not in vault_js, "vault viewer still contains an external application URI")
     require(
         "wikilink-aliases.json" in vault_js
+        and "content-bundle.json" in vault_js
         and "repositoryUrlFor" in vault_js
         and "VAULT.aliases" in vault_js,
         "vault viewer does not load and resolve the checked alias table",
+    )
+    require(
+        "raw.githubusercontent.com" not in vault_js
+        and "rawUrlFor" not in vault_js,
+        "vault viewer retains a moving remote content fallback",
+    )
+    require(
+        './marked.min.js' in vault_html
+        and all(
+            urlsplit(script["src"]).scheme not in {"http", "https"}
+            for script in parsers["pages/vault/index.html"].scripts
+        ),
+        "vault viewer does not use the local pinned Markdown renderer",
+    )
+    docs_runtime = (ROOT / "pages/_site/js/doc-viewer.js").read_text(
+        encoding="utf-8"
+    )
+    require(
+        "../vault/marked.min.js" in docs_runtime
+        and "cdn.jsdelivr.net" not in docs_runtime
+        and "sanitizeHtml" in docs_runtime,
+        "docs viewer does not use the local sanitized Markdown renderer",
     )
     vault_manifest = json.loads(
         (ROOT / "pages/vault/manifest.json").read_text(encoding="utf-8")

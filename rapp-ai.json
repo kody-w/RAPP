@@ -74,40 +74,65 @@
       "rel": "adaptation-inventory",
       "href": "RAPP1_ADAPTATION_INVENTORY.json",
       "media_type": "application/json",
-      "verified": false,
-      "accepted": false,
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      },
       "scope": "candidate-migration-evidence"
     },
     {
       "rel": "historical-source-ledger",
       "href": "HISTORICAL_SOURCE_LEDGER.json",
       "media_type": "application/json",
-      "verified": false,
-      "accepted": false,
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      },
       "scope": "restoration-provenance"
     },
     {
       "rel": "cave-rar-observation",
       "href": "cave/rar/index.json",
       "media_type": "application/json",
-      "verified": true,
-      "accepted": false,
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      },
       "distribution": "disabled"
     },
     {
       "rel": "cave-super-rar-observation",
       "href": "cave/super-rar/index.json",
       "media_type": "application/json",
-      "verified": true,
-      "accepted": false,
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      },
       "distribution": "disabled"
     },
     {
       "rel": "network-seed-observation",
       "href": ".well-known/rapp-network-seed.json",
       "media_type": "application/json",
-      "verified": false,
-      "accepted": false,
+      "trust_state": {
+        "observed": true,
+        "structurally_valid": true,
+        "cryptographically_verified": false,
+        "fresh": false,
+        "accepted": false
+      },
       "membership_effect": "none",
       "trust_effect": "none"
     },

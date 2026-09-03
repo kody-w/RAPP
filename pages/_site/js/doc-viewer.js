@@ -74,7 +74,7 @@
     return new Promise(function(resolve, reject){
       if(window.marked) return resolve(window.marked);
       var s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js';
+      s.src = '../vault/marked.min.js';
       s.onload = function(){ resolve(window.marked); };
       s.onerror = function(){ reject(new Error('marked load failed')); };
       document.head.appendChild(s);
@@ -96,7 +96,7 @@
       var marked = out[0], md = out[1];
       // Default marked options — GFM, breaks off (markdown semantics).
       marked.setOptions({ gfm:true, breaks:false });
-      var html = marked.parse(md);
+      var html = sanitizeHtml(marked.parse(md));
       bodyEl.innerHTML = html;
 
       // Pull first H1 into the doc header; remove duplicate inside body.
@@ -105,6 +105,29 @@
         if(headerEl) headerEl.textContent = firstH1.textContent;
         document.title = 'RAPP docs — ' + firstH1.textContent;
         firstH1.remove();
+      }
+
+      function sanitizeHtml(html){
+        var template = document.createElement('template');
+        template.innerHTML = html;
+        template.content
+          .querySelectorAll('script,iframe,object,embed,link,meta,base,form')
+          .forEach(function(node){ node.remove(); });
+        template.content.querySelectorAll('*').forEach(function(node){
+          Array.from(node.attributes).forEach(function(attr){
+            var name = attr.name.toLowerCase();
+            var value = attr.value.trim().toLowerCase();
+            if(
+              name.indexOf('on') === 0
+              || ((name === 'href' || name === 'src')
+                && (value.indexOf('javascript:') === 0
+                  || value.indexOf('data:text/html') === 0))
+            ){
+              node.removeAttribute(attr.name);
+            }
+          });
+        });
+        return template.innerHTML;
       }
 
       // Pull first paragraph (often a tagline) into the doc-sub if present.

@@ -177,6 +177,340 @@
       "path_set_sha256": "4cb40388b3c76ac84064e3000ba70ddf71bf4ec9408bbba7075928127445c3b8"
     }
   ],
+  "primary_classification": {
+    "semantics": "ordered-first-match-with-explicit-fallback",
+    "secondary_relationships": "Surface paths and path_set_refs are typed secondary relationships and do not replace the primary classification.",
+    "required_surface_ids": [
+      "GOV-001",
+      "CORE-001",
+      "IDENT-001",
+      "FRAME-001",
+      "EGG-001",
+      "TRUST-001",
+      "WIRE-001",
+      "GRAIL-001",
+      "WORKER-001",
+      "BROWSER-001",
+      "PAGES-001",
+      "METRO-001",
+      "CAVE-001",
+      "ESTATE-001",
+      "NETWORK-001",
+      "SWARM-001",
+      "GENERATED-001",
+      "HISTORY-001",
+      "TEST-001",
+      "MIRROR-001"
+    ],
+    "rules": [
+      {
+        "id": "primary-immutable-grail",
+        "surface_id": "GRAIL-001",
+        "selector": {
+          "type": "explicit",
+          "paths": [
+            "KERNEL_PIN.json",
+            "check_kernel_pin.py",
+            "rapp_brainstem/VERSION",
+            "rapp_brainstem/agents/basic_agent.py",
+            "rapp_brainstem/brainstem.py"
+          ]
+        }
+      },
+      {
+        "id": "primary-wire",
+        "surface_id": "WIRE-001",
+        "selector": {
+          "type": "prefix",
+          "prefixes": [
+            "rapp_brainstem/rapp1_facade",
+            "rapp_brainstem/run_rapp1_facade"
+          ]
+        }
+      },
+      {
+        "id": "primary-frames",
+        "surface_id": "FRAME-001",
+        "selector": {
+          "type": "explicit-and-prefix",
+          "paths": [
+            "rapp1_core/frame.py",
+            "tests/rapp1_core/test_frames.py"
+          ],
+          "prefixes": [
+            "tests/fixtures/moments/"
+          ]
+        }
+      },
+      {
+        "id": "primary-eggs",
+        "surface_id": "EGG-001",
+        "selector": {
+          "type": "explicit",
+          "paths": [
+            "rapp1_core/egg.py",
+            "tests/rapp1_core/test_eggs.py",
+            "tools/import_peer_egg.py",
+            "pages/tutorials/commons.egg",
+            "pages/tutorials/sample-session.egg",
+            "installer/hatchling",
+            "rapp_swarm/twin-egg.sh",
+            "installer/RETIRED_ARTIFACTS.json"
+          ]
+        }
+      },
+      {
+        "id": "primary-trust",
+        "surface_id": "TRUST-001",
+        "selector": {
+          "type": "explicit",
+          "paths": [
+            "rapp1_core/jws.py",
+            "rapp1_core/trust.py",
+            "tools/sign_release.py",
+            "installer/shortcuts/sign.sh"
+          ]
+        }
+      },
+      {
+        "id": "primary-identity",
+        "surface_id": "IDENT-001",
+        "selector": {
+          "type": "explicit",
+          "paths": [
+            "rappid.json",
+            "cave/rappid.json",
+            "cave/rapplications/rapp-installer/rappid.json",
+            "rapp1_core/identity.py",
+            "tools/door_address.py",
+            "tools/migrate_rappid.py",
+            "tools/backfill_seeds.py"
+          ]
+        }
+      },
+      {
+        "id": "primary-core",
+        "surface_id": "CORE-001",
+        "selector": {
+          "type": "prefix",
+          "prefixes": [
+            "rapp1_core/"
+          ]
+        }
+      },
+      {
+        "id": "primary-worker",
+        "surface_id": "WORKER-001",
+        "selector": {
+          "type": "prefix",
+          "prefixes": [
+            "worker/",
+            "tests/doorman/",
+            "tests/osi/"
+          ]
+        }
+      },
+      {
+        "id": "primary-metropolis",
+        "surface_id": "METRO-001",
+        "selector": {
+          "type": "explicit-and-prefix",
+          "paths": [
+            "scripts/harvest-metropolis-activity.py"
+          ],
+          "prefixes": [
+            "pages/metropolis/"
+          ]
+        }
+      },
+      {
+        "id": "primary-browser-history",
+        "surface_id": "BROWSER-001",
+        "selector": {
+          "type": "path-set-ref",
+          "path_set_ref": "PS-ADAPTED-PAGES"
+        }
+      },
+      {
+        "id": "primary-generated",
+        "surface_id": "GENERATED-001",
+        "selector": {
+          "type": "explicit",
+          "paths": [
+            "pages/_site/index.json",
+            "pages/about/ecosystem.json",
+            "pages/about/prompts.json",
+            "pages/vault/manifest.json",
+            "pages/vault/content-bundle.json",
+            "cave/cubbies/index.json",
+            "cave/rar/index.json",
+            "cave/super-rar/index.json",
+            "sitemap.xml"
+          ]
+        }
+      },
+      {
+        "id": "primary-cave",
+        "surface_id": "CAVE-001",
+        "selector": {
+          "type": "prefix",
+          "prefixes": [
+            "cave/"
+          ]
+        }
+      },
+      {
+        "id": "primary-estate",
+        "surface_id": "ESTATE-001",
+        "selector": {
+          "type": "explicit",
+          "paths": [
+            "plant",
+            "tools/private_estate_init.py",
+            "tools/rebuild_estate.py",
+            "tools/door_address.py",
+            "tools/migrate_rappid.py",
+            "tools/backfill_seeds.py",
+            ".github/ISSUE_TEMPLATE/place-submission.yml",
+            ".github/scripts/parse_place_issue.py",
+            ".github/workflows/plant-approved-place.yml"
+          ]
+        }
+      },
+      {
+        "id": "primary-network",
+        "surface_id": "NETWORK-001",
+        "selector": {
+          "type": "explicit",
+          "paths": [
+            ".well-known/rapp-network-seed.json",
+            "tools/sniff_network.py",
+            "tools/lan_advertise.py",
+            "tools/ecosystem_audit.py",
+            "tools/ecosystem_contract.py",
+            "tools/ecosystem_graph.py",
+            "tools/holo_card_generator.py",
+            "tests/mirror-drift.sh"
+          ]
+        }
+      },
+      {
+        "id": "primary-swarm",
+        "surface_id": "SWARM-001",
+        "selector": {
+          "type": "explicit-and-prefix",
+          "paths": [
+            "tools/test_brainstem_server.py",
+            "tools/front_door_specs.py"
+          ],
+          "prefixes": [
+            "rapp_swarm/",
+            "tools/sim/"
+          ]
+        }
+      },
+      {
+        "id": "primary-tests",
+        "surface_id": "TEST-001",
+        "selector": {
+          "type": "explicit-and-prefix",
+          "paths": [
+            ".github/workflows/rapp1-conformance.yml"
+          ],
+          "prefixes": [
+            "tests/"
+          ]
+        }
+      },
+      {
+        "id": "primary-mirrors",
+        "surface_id": "MIRROR-001",
+        "selector": {
+          "type": "prefix",
+          "prefixes": [
+            "specs/"
+          ]
+        }
+      },
+      {
+        "id": "primary-pages",
+        "surface_id": "PAGES-001",
+        "selector": {
+          "type": "explicit-and-prefix",
+          "paths": [
+            "_config.yml",
+            "404.html",
+            "blog.html",
+            "index.html",
+            "pitch-playbook.html",
+            "release-notes.html",
+            "robots.txt",
+            "rapp-ai.json",
+            "llms.txt"
+          ],
+          "prefixes": [
+            "docs/",
+            "pages/"
+          ]
+        }
+      },
+      {
+        "id": "primary-distribution",
+        "surface_id": "GRAIL-001",
+        "selector": {
+          "type": "explicit-and-prefix",
+          "paths": [
+            "install.sh",
+            "install.ps1",
+            "install.cmd",
+            "install.command",
+            "deploy.sh",
+            "deploy.ps1",
+            "azuredeploy.json",
+            "MSFTAIBASMultiAgentCopilot_1_0_0_5.zip"
+          ],
+          "prefixes": [
+            "installer/",
+            "community_rapp/"
+          ]
+        }
+      },
+      {
+        "id": "primary-history",
+        "surface_id": "HISTORY-001",
+        "selector": {
+          "type": "explicit-and-prefix",
+          "paths": [
+            "HISTORICAL_SOURCE_LEDGER.json",
+            "RAPP_KERNEL_ARCHIVE_STATUS.json"
+          ],
+          "prefixes": [
+            "rapp_kernel/",
+            "responsible-ai/"
+          ]
+        }
+      },
+      {
+        "id": "primary-governance",
+        "surface_id": "GOV-001",
+        "selector": {
+          "type": "explicit",
+          "paths": [
+            ".github/copilot-instructions.md",
+            "CLAUDE.md",
+            "CONSTITUTION.md",
+            "RAPP1_ADAPTATION_INVENTORY.json",
+            "RAPP1_AUTHORITY.json",
+            "RAPP1_OWNER_ACTIONS.json",
+            "RAPP1_OWNER_ACTIONS.md",
+            "RAPP1_STATUS.md",
+            "README.md"
+          ]
+        }
+      }
+    ],
+    "fallback_surface_id": "HISTORY-001"
+  },
   "surfaces": [
     {
       "id": "GOV-001",
