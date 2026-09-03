@@ -4,9 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RAPP — Single-file AI agents. Engine, not experience.</title>
-<meta name="description" content="RAPP/1 convergence status, structural tooling, and historical platform documentation.">
+<meta name="description" content="RAPP is a portable, three-tier AI agent platform. Single-file Python agents that travel from a laptop to Azure Functions to Microsoft Copilot Studio without rewriting.">
+<meta name="rapp-history-source" content="path=pages/index.html; commit=f9a190003429e46ef406efd618120f287e3f3878; blob=0878f62bc8d995159450fc4af315400ae708ef0c">
+<meta name="rapp-current-status" content="Pre-acceptance; historical three-tier presentation; current authority is RAPP1_AUTHORITY.json and RAPP1_STATUS.md">
 <meta property="og:title" content="RAPP — Single-file AI agents.">
-<meta property="og:description" content="Current RAPP/1 status and clearly classified historical repository documentation.">
+<meta property="og:description" content="Portable, shareable, vibe swarm building tool. Engine, not experience.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://kody-w.github.io/RAPP/pages/">
 <link rel="canonical" href="https://kody-w.github.io/RAPP/pages/">
@@ -96,6 +98,13 @@
   .pinned h2{ font-size:18px; margin-bottom:8px; }
   .pinned p{ color:var(--text-dim); font-size:14px; line-height:1.55; max-width:60ch; }
   .pinned a.btn{ margin-top:12px; }
+  .current-note{
+    max-width:760px; margin:18px auto 0; padding:12px 15px;
+    border-left:3px solid var(--green-3); background:var(--surface);
+    color:var(--text-dim); font-size:13px; line-height:1.55; text-align:left;
+  }
+  .current-note strong{ color:var(--text); }
+  .section-note{ margin:-4px 0 18px; color:var(--text-dim); font-size:13px; }
 </style>
 </head>
 <body>
@@ -104,65 +113,73 @@
 
 <main class="site-main">
 
-  <aside role="note" style="margin:0 auto 24px;max-width:920px;padding:14px 18px;border:1px solid var(--border);border-radius:12px;background:var(--surface);line-height:1.55">
-    <strong>Current RAPP/1 authority (rev-5).</strong> Canonicalization,
-    identity, frames, wire, eggs, registry, trust, and protocol evolution are
-    governed by <a href="../RAPP1_AUTHORITY.json">RAPP1_AUTHORITY.json</a> and
-    the claim limits in <a href="../RAPP1_STATUS.md">RAPP1_STATUS.md</a>.
-  </aside>
-
   <header class="home-hero animate d1">
     <div class="logo" aria-hidden="true">🧠</div>
-    <span class="kicker">RAPP/1 rev-5 · Pre-acceptance · Engine, not experience</span>
-    <h1>RAPP/1 convergence.<br><span class="grad">Structural gates are live; authenticated acceptance is pending.</span></h1>
+    <span class="kicker">Open source · MIT · Engine, not experience</span>
+    <h1>Single-file AI agents.<br><span class="grad">From a laptop to Copilot Studio</span> — without rewriting.</h1>
     <p class="lede">
-      The target-owned strict core, exact <code>/chat</code> facade, and
-      compliance gates are available for review. Legacy installers, Azure
-      deployment, browser runtimes, and Copilot Studio bundles are retired and
-      are not current RAPP/1 distribution paths.
+      RAPP is a portable three-tier agent platform. One Python file is the agent.
+      The same file runs on a local Flask brainstem, an Azure Functions deployment,
+      and a Microsoft Copilot Studio harness. No build step. No framework. No SDK.
     </p>
+    <p class="current-note"><strong>2026 correction:</strong> the presentation
+      above is preserved verbatim as product history. The repository is an
+      experimental public foundation, the three tiers are not operational
+      delivery paths, and the current code license remains source-available
+      while an authorized license migration is pending.</p>
 
     <div class="actions">
-      <a class="btn btn-primary" href="../RAPP1_STATUS.md">Read conformance status</a>
+      <a class="btn btn-primary" href="../RAPP1_STATUS.md" aria-label="Historical Install call to action — opens current status">Install ↗ (historical)</a>
       <a class="btn" href="./kernel.html">Kernel — read me first</a>
       <a class="btn" href="./product/faq.html">Read the FAQ</a>
-      <a class="btn" href="./docs/">Documentation index</a>
+      <a class="btn" href="./docs/">Spec &amp; SDK</a>
     </div>
 
-    <div class="install-block animate d2" aria-label="Pre-acceptance status">
-      <span class="prompt">!</span>
-      <code>Installation is disabled until the owner-action gates in RAPP1_STATUS.md close.</code>
+    <div class="install-block animate d2" aria-label="Install one-liner">
+      <span class="prompt">$</span>
+      <code id="install-cmd"><a href="../KERNEL_PIN.json">KERNEL_PIN.json</a> →
+        <a href="https://github.com/kody-w/rapp-installer/tree/brainstem-v0.6.9">kody-w/rapp-installer@brainstem-v0.6.9</a>
+        · source evidence only</code>
+      <button type="button" onclick="(function(b){var t=document.getElementById('install-cmd').textContent;navigator.clipboard&amp;&amp;navigator.clipboard.writeText(t);b.textContent='Copied';setTimeout(function(){b.textContent='Copy'},1400)})(this)">Copy</button>
     </div>
+    <p class="current-note"><strong>Pre-acceptance:</strong> Installation is disabled.
+      Legacy installers and cloud launch paths are retired and are
+      not current RAPP/1 distribution paths. See
+      <a href="../RAPP1_AUTHORITY.json">RAPP1_AUTHORITY.json</a> and
+      <a href="../RAPP1_STATUS.md">RAPP1_STATUS.md</a>.</p>
   </header>
 
   <section class="home-section animate d3">
     <div class="section-head">
-      <h2>Historical audience narratives</h2>
-      <span class="section-sub">Preserved context · not delivery commitments</span>
+      <h2>About</h2>
+      <span class="section-sub">Who it's for · how it gets adopted</span>
     </div>
+    <p class="section-note"><strong>Historical audience narratives:</strong>
+      the original teaser copy below is retained in place as learning corpus;
+      linked pages carry current limitations alongside the original pitch.</p>
     <div class="audience-grid">
       <a class="card" href="./about/leadership.html">
-        <span class="card-eyebrow">Historical · executive concept</span>
+        <span class="card-eyebrow">Executive sponsor</span>
         <h3>Leadership one-pager</h3>
-        <p>Preserved workshop narrative; no production or same-week delivery promise.</p>
+        <p>Workshops become production-bound agents. Same week. One file.</p>
         <span class="card-meta">about/leadership.html</span>
       </a>
       <a class="card" href="./about/partners.html">
-        <span class="card-eyebrow">Historical · partner concept</span>
+        <span class="card-eyebrow">System integrator</span>
         <h3>Partner one-pager</h3>
-        <p>Past partner framing; not a current handoff, cloud, or implementation offer.</p>
+        <p>What partners receive, what they build, what they own — and why this is easier than a 20-page spec.</p>
         <span class="card-meta">about/partners.html</span>
       </a>
       <a class="card" href="./about/process.html">
-        <span class="card-eyebrow">Historical · workshop concept</span>
+        <span class="card-eyebrow">Workshop lead</span>
         <h3>How a session runs</h3>
-        <p>Dated process narrative; no working-agent or production timeline is promised.</p>
+        <p>60-minute customer session → working agent by week's end. The motion in detail.</p>
         <span class="card-meta">about/process.html</span>
       </a>
       <a class="card" href="./about/security.html">
-        <span class="card-eyebrow">Pre-acceptance · security review</span>
+        <span class="card-eyebrow">Security reviewer</span>
         <h3>Security &amp; compliance</h3>
-        <p>Source-review notes, not certification, residency, or deployment evidence.</p>
+        <p>Local-first by design. What leaves the device, what doesn't.</p>
         <span class="card-meta">about/security.html</span>
       </a>
     </div>
@@ -170,30 +187,32 @@
 
   <section class="home-section animate d4">
     <div class="section-head">
-      <h2>Historical product narratives</h2>
-      <span class="section-sub">Illustrative records · not shipped capability</span>
+      <h2>Product</h2>
+      <span class="section-sub">What it actually does</span>
     </div>
+    <p class="section-note"><strong>Historical product narratives:</strong>
+      the original positioning is preserved, not promoted as shipped capability.</p>
     <div class="audience-grid">
       <a class="card" href="./product/faq.html">
-        <span class="card-eyebrow">Historical · FAQ</span>
+        <span class="card-eyebrow">Engineer evaluating</span>
         <h3>FAQ</h3>
-        <p>Pre-acceptance answers with current limitations called out explicitly.</p>
+        <p>Straight answers. How is RAPP different from GPT, Copilot, Studio? Why this instead of skills?</p>
         <span class="card-meta">product/faq.html</span>
       </a>
       <a class="card" href="./product/one-pager.html">
-        <span class="card-eyebrow">Historical · one-page concept</span>
+        <span class="card-eyebrow">Reader in a hurry</span>
         <h3>Platform one-pager</h3>
-        <p>A dated platform concept, not a current installer or product specification.</p>
+        <p>The whole product in one page. Read in 90 seconds.</p>
         <span class="card-meta">product/one-pager.html</span>
       </a>
       <a class="card" href="./product/use-cases.html">
-        <span class="card-eyebrow">Historical · illustrative scenarios</span>
+        <span class="card-eyebrow">Buyer building scenarios</span>
         <h3>Use cases</h3>
-        <p>Examples retained as ideas, not shipped workflows or customer outcomes.</p>
+        <p>What teams actually build with RAPP, by industry and shape.</p>
         <span class="card-meta">product/use-cases.html</span>
       </a>
       <a class="card" href="./product/faq-slide.html">
-        <span class="card-eyebrow">Historical · speaker companion</span>
+        <span class="card-eyebrow">Speaker companion</span>
         <h3>FAQ slide</h3>
         <p>Single-slide version of the FAQ for a presentation deck.</p>
         <span class="card-meta">product/faq-slide.html</span>
@@ -203,20 +222,20 @@
 
   <section class="home-section animate d5">
     <div class="section-head">
-      <h2>Historical release records</h2>
-      <span class="section-sub">Dated changes and plans · no current shipment</span>
+      <h2>Release</h2>
+      <span class="section-sub">What's shipped, what's next</span>
     </div>
     <div class="audience-grid">
       <a class="card" href="./release/roadmap.html">
-        <span class="card-eyebrow">Historical · planning snapshot</span>
+        <span class="card-eyebrow">Architect</span>
         <h3>Roadmap</h3>
-        <p>Superseded directions; none is a current commitment or deployment plan.</p>
+        <p>Post-v1 directions that must honor the v1 contract.</p>
         <span class="card-meta">release/roadmap.html</span>
       </a>
       <a class="card" href="./release/release-notes.html">
-        <span class="card-eyebrow">Historical · release record</span>
+        <span class="card-eyebrow">Operator</span>
         <h3>Release notes</h3>
-        <p>Dated tags and behavior notes without install or rollback instructions.</p>
+        <p>Tagged releases, immutable per Article XIX. What changed, when.</p>
         <span class="card-meta">release/release-notes.html</span>
       </a>
     </div>
@@ -231,32 +250,38 @@
       <a class="card" href="./docs/">
         <span class="card-eyebrow">Engineer</span>
         <h3>Docs</h3>
-        <p>RAPP/1 authority and status, current guides, and clearly marked historical specs and host-onboarding files.</p>
+        <p>SPEC (frozen v1 wire contract), AGENTS, ROADMAP, VERSIONS, the SDK and AI-readable skill manifest.</p>
         <span class="card-meta">docs/</span>
       </a>
       <a class="card" href="./vault/">
-        <span class="card-eyebrow">Historical note archive</span>
+        <span class="card-eyebrow">Curious contributor</span>
         <h3>Vault</h3>
-        <p>Long-form decision history. Notes and viewer behavior do not establish current product capability.</p>
+        <p>Long-form decision narratives — why every non-trivial choice was made the way it was. Real Obsidian vault, static SPA viewer.</p>
         <span class="card-meta">vault/</span>
       </a>
       <a class="card" href="https://github.com/kody-w/RAPP" rel="noopener">
         <span class="card-eyebrow">Source</span>
         <h3>GitHub repository</h3>
-        <p>Structural core, pre-acceptance facade, retired legacy surfaces, and the auditable vault.</p>
+        <p>The whole monorepo: brainstem, swarm, store, installer, vault.</p>
         <span class="card-meta">kody-w/RAPP ↗</span>
       </a>
     </div>
+    <p class="section-note">The original repository inventory language above
+      is preserved. In 2026, retained swarm, store, installer, and browser
+      material is historical or pre-acceptance source rather than an active
+      distribution or catalog.</p>
   </section>
 
   <section class="pinned animate d6">
-    <h2>Historical pitch playbook</h2>
+    <h2>Pitch playbook</h2>
     <p>
-      A preserved pre-acceptance deck. Its adoption and product framing is
-      historical narrative, not evidence of an installer, production path,
-      cloud tier, catalog, or shipped browser runtime.
+      A 6-slide deck that frames RAPP as an <em>adoption layer</em> on top of whatever AI tools your team already pays for.
+      Built for execs and team leads. Same product, different conversation.
     </p>
-    <a class="btn" href="../pitch-playbook.html">Open the historical pitch ↗</a>
+    <p class="current-note">This original pitch copy remains visible as
+      provenance. Current protocol, trust, licensing, and release claims are
+      bounded by the authority and status records linked above.</p>
+    <a class="btn" href="../pitch-playbook.html">Open the pitch ↗</a>
   </section>
 
 </main>

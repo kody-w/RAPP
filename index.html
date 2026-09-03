@@ -1,125 +1,538 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RAPP — RAPP/1 pre-acceptance status</title>
-<meta name="description" content="Current RAPP/1 authority, pre-acceptance status, and clearly labeled historical documentation.">
-<meta property="og:title" content="RAPP — RAPP/1 pre-acceptance status">
-<meta property="og:description" content="Structural authority and validation are available; authenticated acceptance and public distribution remain pending.">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RAPP — The AI Agent Stack</title>
+<meta name="description" content="The full RAPP stack: local Brainstem → cloud Hippocampus (CommunityRAPP) → Copilot Studio. Local-first AI agents that grow into the Microsoft enterprise stack one tier at a time.">
+<meta name="rapp-history-source" content="path=index.html; commit=32db6f894e4224e2b0b2944b1d6ac1188ec37b61; blob=12ee13d7e7085a226d3198066c429a2cfd67696a">
+<meta name="rapp-current-status" content="Full historical flagship artifact; not yet fully RAPP/1 conformant; no active installer or download">
+<meta property="og:title" content="RAPP — The AI Agent Stack">
+<meta property="og:description" content="Brainstem → Hippocampus → Copilot Studio. Three tiers. One agent. Your own.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://kody-w.github.io/RAPP/">
-<link rel="canonical" href="https://kody-w.github.io/RAPP/">
-<link rel="stylesheet" href="pages/_site/css/tokens.css">
-<link rel="stylesheet" href="pages/_site/css/base.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E🧠%3C/text%3E%3C/svg%3E">
 <style>
-  body{min-height:100vh}
-  header,main,footer{max-width:960px;margin:0 auto;padding-left:24px;padding-right:24px}
-  header{padding-top:72px;padding-bottom:32px}
-  .eyebrow{font:700 12px/1.4 var(--font-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--green)}
-  h1{font-size:clamp(2.3rem,7vw,4.6rem);line-height:1.02;letter-spacing:-.04em;margin:14px 0 20px}
-  .lede{max-width:720px;color:var(--text-dim);font-size:1.1rem}
-  .status{margin-top:28px;padding:18px 20px;border:1px solid var(--warn);border-radius:var(--radius-lg);background:var(--surface)}
-  .status strong{display:block;margin-bottom:6px;color:var(--text)}
-  .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
-  .actions a,.card{border:1px solid var(--border2);border-radius:10px;background:var(--surface)}
-  .actions a{padding:9px 14px;font-weight:650}
-  section{padding:28px 0}
-  section h2{font-size:1.4rem;margin-bottom:6px}
-  section>p{color:var(--text-dim);max-width:70ch}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:18px}
-  .card{display:block;padding:20px;color:var(--text)}
-  .card:hover{text-decoration:none;border-color:var(--accent)}
-  .card .kind{display:block;color:var(--text-dim);font:700 11px/1.4 var(--font-mono);letter-spacing:.08em;text-transform:uppercase}
-  .card h3{font-size:1rem;margin:8px 0 6px}
-  .card p{color:var(--text-dim);font-size:.9rem}
-  footer{margin-top:28px;padding-top:24px;padding-bottom:48px;border-top:1px solid var(--border);color:var(--text-dim);font-size:.85rem}
+  :root{
+    --bg:#06080f; --panel:#0d1320; --panel2:#151c2e; --border:#1f2a44;
+    --fg:#e8ecf4; --dim:#8ea0b8; --muted:#6b7a93;
+    --t1:#7df0c8;   /* brainstem - mint */
+    --t2:#58a6ff;   /* hippocampus - blue */
+    --t3:#bc8cff;   /* copilot studio - purple */
+    --hot:#ff6b9d;
+    --code-bg:#04060c;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;
+    background:
+      radial-gradient(1400px 700px at 75% -10%, rgba(188,140,255,.07), transparent 60%),
+      radial-gradient(1100px 600px at 15% 30%, rgba(88,166,255,.06), transparent 60%),
+      radial-gradient(900px 500px at 50% 110%, rgba(125,240,200,.06), transparent 60%),
+      var(--bg);
+    color:var(--fg);
+    font-family:ui-sans-serif,-apple-system,'Segoe UI',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;line-height:1.55;min-height:100vh}
+  a{color:var(--t1);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  /* Header */
+  header{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);
+    background:rgba(6,8,15,.78);border-bottom:1px solid var(--border)}
+  .hdr{max-width:1200px;margin:0 auto;padding:14px 24px;
+    display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .brand{font-weight:800;font-size:18px;letter-spacing:.3px;display:flex;gap:8px;align-items:center}
+  .brand .logo{font-size:24px;filter:drop-shadow(0 0 8px rgba(125,240,200,.4))}
+  .brand .name{background:linear-gradient(90deg,var(--t1),var(--t2),var(--t3));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .navlinks{margin-left:auto;display:flex;gap:18px;font-size:14px;flex-wrap:wrap}
+  .navlinks a{color:var(--dim)}
+  .navlinks a:hover{color:var(--fg)}
+  .gh-btn{padding:6px 14px;border:1px solid var(--border);border-radius:999px;
+    background:var(--panel);color:var(--fg);font-size:13px;font-weight:600}
+  .gh-btn:hover{border-color:var(--t1);text-decoration:none}
+
+  /* Hero */
+  .hero{max-width:1200px;margin:0 auto;padding:80px 24px 40px;text-align:center}
+  .hero h1{margin:0;font-size:clamp(40px,7vw,76px);font-weight:800;letter-spacing:-1px;
+    line-height:1.05}
+  .hero h1 .grad{background:linear-gradient(90deg,var(--t1),var(--t2),var(--t3));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    background-size:200% 100%;animation:shimmer 8s linear infinite}
+  @keyframes shimmer{to{background-position:200% 0}}
+  .hero .tagline{margin:18px auto 0;color:var(--dim);font-size:clamp(16px,2vw,20px);
+    max-width:700px;line-height:1.5}
+  .hero .meta{margin:24px 0 0;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;
+    color:var(--muted);font-size:13px}
+  .hero .meta span{padding:6px 12px;border:1px solid var(--border);border-radius:999px;
+    background:var(--panel)}
+  .cta-row{margin:36px 0 0;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .cta{padding:14px 28px;border-radius:12px;font-weight:600;font-size:15px;
+    border:1px solid transparent;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+  .cta.primary{background:linear-gradient(135deg,var(--t1),var(--t2));color:#04060c}
+  .cta.primary:hover{transform:translateY(-1px);text-decoration:none;
+    box-shadow:0 10px 30px rgba(125,240,200,.25)}
+  .cta.ghost{background:var(--panel);color:var(--fg);border-color:var(--border)}
+  .cta.ghost:hover{border-color:var(--t1);text-decoration:none}
+
+  /* Stack diagram */
+  .stack{max-width:1200px;margin:60px auto;padding:0 24px}
+  .stack-svg{width:100%;height:auto;max-width:900px;margin:0 auto;display:block}
+
+  /* Tier sections */
+  .tiers{max-width:1200px;margin:0 auto;padding:60px 24px;
+    display:grid;gap:24px;grid-template-columns:1fr}
+  .tier{background:var(--panel);border:1px solid var(--border);border-radius:20px;
+    padding:32px;position:relative;overflow:hidden}
+  .tier::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;
+    background:var(--tier-color)}
+  .tier[data-tier="1"]{--tier-color:var(--t1)}
+  .tier[data-tier="2"]{--tier-color:var(--t2)}
+  .tier[data-tier="3"]{--tier-color:var(--t3)}
+  .tier-head{display:flex;align-items:flex-start;gap:18px;flex-wrap:wrap;margin-bottom:18px}
+  .tier-num{font-family:'Courier New',monospace;font-size:48px;font-weight:800;
+    color:var(--tier-color);opacity:.4;line-height:1;letter-spacing:-2px}
+  .tier-title-wrap{flex:1;min-width:200px}
+  .tier-organ{font-family:'Courier New',monospace;font-size:11px;letter-spacing:2px;
+    color:var(--tier-color);text-transform:uppercase;margin-bottom:4px}
+  .tier-title{font-size:28px;font-weight:700;margin:0 0 4px;line-height:1.2}
+  .tier-sub{color:var(--dim);font-size:14px;margin:0}
+  .tier-body{display:grid;gap:24px;grid-template-columns:1fr;margin-top:8px}
+  @media(min-width:780px){.tier-body{grid-template-columns:1.4fr 1fr}}
+  .tier-desc p{margin:0 0 14px;color:#cdd6e3;font-size:15px}
+  .tier-desc p:last-child{margin-bottom:0}
+  .tier-desc strong{color:var(--fg)}
+  .tier-aside h4{margin:0 0 8px;font-size:11px;letter-spacing:1.5px;
+    text-transform:uppercase;color:var(--muted)}
+  .tier-aside ul{margin:0 0 18px;padding-left:18px;color:var(--dim);font-size:13px}
+  .tier-aside li{margin-bottom:4px}
+  .tier-aside li b{color:var(--fg)}
+
+  /* Code block with copy */
+  .code{position:relative;margin:0 0 14px}
+  .code pre{margin:0;padding:14px 60px 14px 16px;background:var(--code-bg);
+    border:1px solid var(--border);border-radius:10px;
+    font-family:'SF Mono','Monaco','Courier New',monospace;font-size:12.5px;
+    color:#cdd6e3;overflow-x:auto;line-height:1.6}
+  .code .lbl{display:block;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
+    color:var(--muted);margin-bottom:6px;font-weight:600}
+  .copy{position:absolute;top:24px;right:8px;padding:4px 10px;
+    background:var(--panel2);border:1px solid var(--border);border-radius:6px;
+    color:var(--dim);cursor:pointer;font-size:11px;font-family:inherit;transition:all .15s}
+  .copy:hover{border-color:var(--tier-color);color:var(--fg)}
+  .copy.ok{color:var(--t1);border-color:var(--t1)}
+
+  /* Tier links */
+  .tier-links{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .tier-links a{font-size:12px;padding:6px 12px;border:1px solid var(--border);
+    border-radius:8px;background:var(--panel2);color:var(--dim)}
+  .tier-links a:hover{border-color:var(--tier-color);color:var(--fg);text-decoration:none}
+
+  /* Flow arrows between tiers */
+  .flow{display:flex;justify-content:center;align-items:center;color:var(--muted);
+    font-family:'Courier New',monospace;font-size:11px;letter-spacing:2px;
+    padding:6px 0}
+  .flow::before,.flow::after{content:"";flex:0 0 60px;height:1px;
+    background:linear-gradient(90deg,transparent,var(--border),transparent);margin:0 12px}
+
+  /* Architecture row */
+  .arch{max-width:1200px;margin:80px auto;padding:0 24px;text-align:center}
+  .arch h2{font-size:32px;margin:0 0 8px;font-weight:700}
+  .arch p{color:var(--dim);margin:0 auto 36px;max-width:600px}
+  .arch-grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    text-align:left}
+  .arch-card{background:var(--panel);border:1px solid var(--border);border-radius:14px;
+    padding:20px}
+  .arch-card .icon{font-size:24px;margin-bottom:8px;display:block}
+  .arch-card h3{margin:0 0 6px;font-size:15px}
+  .arch-card p{margin:0;color:var(--dim);font-size:13px}
+
+  /* Footer */
+  footer{max-width:1200px;margin:80px auto 40px;padding:40px 24px 0;
+    border-top:1px solid var(--border);
+    display:flex;gap:24px;justify-content:space-between;flex-wrap:wrap;
+    color:var(--muted);font-size:13px}
+  footer a{color:var(--dim)}
+  footer a:hover{color:var(--fg)}
+  .foot-links{display:flex;gap:18px;flex-wrap:wrap}
+
+  /* Animation: pulse on stack nodes */
+  .pulse{animation:pulse 3s ease-in-out infinite}
+  @keyframes pulse{
+    0%,100%{filter:drop-shadow(0 0 4px currentColor)}
+    50%{filter:drop-shadow(0 0 16px currentColor)}
+  }
+  .current-note{max-width:900px;margin:18px auto 0;padding:13px 16px;
+    border-left:3px solid var(--t1);background:var(--panel);color:var(--dim);
+    font-size:13px;line-height:1.6;text-align:left}
+  .current-note strong{color:var(--fg)}
 </style>
 </head>
 <body>
+
 <header>
-  <div class="eyebrow">RAPP/1 rev-5 · structural pin · pre-acceptance</div>
-  <h1>Verify the authority.<br>Keep the claims bounded.</h1>
-  <p class="lede">This repository contains a target-owned RAPP/1 structural
-    core, validation evidence, and preserved implementation history. It is
-    <strong>not yet fully RAPP/1 conformant</strong>: authenticated registry,
-    re-anchor, and replacement-invite decisions remain owner actions.</p>
-  <div class="status" role="note">
-    <strong>No active installer, production service, cloud tier, catalog,
-      deployment path, or shipped browser runtime is offered here.</strong>
-    No installer command is published. Retained archives have no active download link.
-    Historical pages are labeled and must not be treated as
-    current operating instructions.
+  <div class="hdr">
+    <div class="brand">
+      <span class="logo">🧠</span>
+      <span class="name">RAPP</span>
+    </div>
+    <div class="navlinks">
+      <a href="#brainstem">Brainstem</a>
+      <a href="#hippocampus">Hippocampus</a>
+      <a href="#copilot-studio">Copilot Studio</a>
+      <a href="https://github.com/kody-w/rapp-installer/blob/brainstem-v0.6.9/rapp_brainstem/index.html" title="Historical browser source at the immutable Grail pin">Try it ↗</a>
+      <a href="installer/">Installer</a>
+      <a href="RAPP1_AUTHORITY.json">SPEC</a>
+      <a class="gh-btn" href="https://github.com/kody-w/rapp-installer/tree/brainstem-v0.6.9" target="_blank" rel="noopener">GitHub →</a>
+    </div>
   </div>
-  <nav class="actions" aria-label="Current entrypoints">
-    <a href="RAPP1_STATUS.md">Read current status</a>
-    <a href="RAPP1_AUTHORITY.json">Inspect authority pin</a>
-    <a href="pages/kernel.html">Open the public kernel hub</a>
-    <a href="https://github.com/kody-w/RAPP" rel="noopener">View source on GitHub</a>
-  </nav>
 </header>
 
-<main>
-  <section>
-    <h2>Current public entrypoints</h2>
-    <p>These pages lead with current limitations and route older material as
-      historical evidence rather than product capability.</p>
-    <div class="grid">
-      <a class="card" href="pages/">
-        <span class="kind">Current site index</span>
-        <h3>Public Pages map</h3>
-        <p>Authority, status, documentation, and labeled historical records.</p>
-      </a>
-      <a class="card" href="pages/docs/">
-        <span class="kind">Current documentation index</span>
-        <h3>Docs</h3>
-        <p>RAPP/1 links plus a bounded viewer for superseded local documents.</p>
-      </a>
-      <a class="card" href="installer/">
-        <span class="kind">Distribution status</span>
-        <h3>Installer retirement notice</h3>
-        <p>Explains why no public installer or archive download is available.</p>
-      </a>
-    </div>
-  </section>
+<section class="hero">
+  <h1>The <span class="grad">RAPP Stack</span></h1>
+  <p class="tagline">
+    Local-first AI agents that grow into the Microsoft enterprise stack
+    one tier at a time. <strong style="color:var(--fg)">Brainstem → Hippocampus → Copilot Studio.</strong>
+    No API keys. No cloud setup. Just your GitHub account.
+  </p>
+  <div class="meta">
+    <span>3 tiers</span>
+    <span>1 agent</span>
+    <span>0 vendor lock-in</span>
+    <span>Open source</span>
+  </div>
+  <p class="current-note"><strong>2026 correction:</strong> this is the fullest
+    original flagship artifact, preserved in place as provenance and learning
+    corpus. The tier claims, “Open source” pill, and delivery language are
+    historical. The repository is not yet fully RAPP/1 conformant; its current
+    code license is source-available while an authorized license migration is
+    pending. No active installer is published, and retained archives have no active download link.
+    Read <a href="RAPP1_STATUS.md">status</a> and
+    <a href="RAPP1_AUTHORITY.json">authority</a>.</p>
+  <div class="cta-row">
+    <a class="cta primary" href="#brainstem">Start with the Brainstem ↓</a>
+    <a class="cta ghost" href="RAPP1_AUTHORITY.json">Read the v1 spec</a>
+    <a class="cta ghost" href="https://github.com/kody-w/rapp-installer/tree/brainstem-v0.6.9" target="_blank" rel="noopener">View on GitHub</a>
+  </div>
+</section>
 
-  <section>
-    <h2>Preserved historical records</h2>
-    <p>The following routes are visible for provenance. Their dated claims do
-      not describe a current release, service, runtime, or commitment.</p>
-    <div class="grid">
-      <a class="card" href="blog.html">
-        <span class="kind">Historical · noindex</span>
-        <h3>Engineering blog archive</h3>
-        <p>Past implementation decisions, retained with a supersession notice.</p>
-      </a>
-      <a class="card" href="release-notes.html">
-        <span class="kind">Historical · noindex</span>
-        <h3>Early release notes</h3>
-        <p>Dated behavior records, not a current “latest release” declaration.</p>
-      </a>
-      <a class="card" href="docs/index.html">
-        <span class="kind">Historical · inert</span>
-        <h3>Legacy install presentation</h3>
-        <p>Visible source history with all controls and probes disabled.</p>
-      </a>
-      <a class="card" href="pitch-playbook.html">
-        <span class="kind">Historical · pre-acceptance</span>
-        <h3>Pitch playbook</h3>
-        <p>Retained narrative context; not evidence of shipped capability.</p>
-      </a>
-      <a class="card" href="cave/index.html">
-        <span class="kind">Historical archive</span>
-        <h3>The Cave</h3>
-        <p>Preserved public-neighborhood history with no installer or catalog.</p>
-      </a>
+<!-- Animated stack diagram -->
+<section class="stack" aria-label="RAPP stack diagram">
+  <svg class="stack-svg" viewBox="0 0 900 480" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="g1" x1="0" x2="1"><stop offset="0" stop-color="#7df0c8" stop-opacity=".25"/><stop offset="1" stop-color="#7df0c8" stop-opacity=".05"/></linearGradient>
+      <linearGradient id="g2" x1="0" x2="1"><stop offset="0" stop-color="#58a6ff" stop-opacity=".25"/><stop offset="1" stop-color="#58a6ff" stop-opacity=".05"/></linearGradient>
+      <linearGradient id="g3" x1="0" x2="1"><stop offset="0" stop-color="#bc8cff" stop-opacity=".25"/><stop offset="1" stop-color="#bc8cff" stop-opacity=".05"/></linearGradient>
+      <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+        <path d="M0,0 L10,3 L0,6 z" fill="#8ea0b8"/>
+      </marker>
+    </defs>
+
+    <!-- Tier 1: Brainstem (local) -->
+    <g transform="translate(50,40)">
+      <rect width="800" height="100" rx="14" fill="url(#g1)" stroke="#7df0c8" stroke-width="1.5" stroke-opacity=".5"/>
+      <text x="20" y="32" fill="#7df0c8" font-family="Courier New" font-size="11" letter-spacing="2">TIER 1 · LOCAL</text>
+      <text x="20" y="60" fill="#e8ecf4" font-size="22" font-weight="700">🧠 RAPP Brainstem</text>
+      <text x="20" y="84" fill="#8ea0b8" font-size="13">Flask server · GitHub Copilot LLM · auto-discover agents · local-first</text>
+      <g class="pulse" style="color:#7df0c8" transform="translate(720,50)">
+        <circle r="20" fill="none" stroke="#7df0c8" stroke-width="1.5"/>
+        <text y="6" text-anchor="middle" fill="#7df0c8" font-size="20">⚡</text>
+      </g>
+    </g>
+
+    <!-- Arrow 1→2 -->
+    <line x1="450" y1="150" x2="450" y2="180" stroke="#8ea0b8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+    <text x="460" y="170" fill="#8ea0b8" font-size="11" font-family="Courier New">deploy ↗</text>
+
+    <!-- Tier 2: Hippocampus (cloud) -->
+    <g transform="translate(50,190)">
+      <rect width="800" height="100" rx="14" fill="url(#g2)" stroke="#58a6ff" stroke-width="1.5" stroke-opacity=".5"/>
+      <text x="20" y="32" fill="#58a6ff" font-family="Courier New" font-size="11" letter-spacing="2">TIER 2 · CLOUD (CommunityRAPP)</text>
+      <text x="20" y="60" fill="#e8ecf4" font-size="22" font-weight="700">☁️ RAPP Hippocampus</text>
+      <text x="20" y="84" fill="#8ea0b8" font-size="13">Azure Functions · Azure OpenAI · Storage · Application Insights · Entra ID</text>
+      <g class="pulse" style="color:#58a6ff;animation-delay:.5s" transform="translate(720,50)">
+        <circle r="20" fill="none" stroke="#58a6ff" stroke-width="1.5"/>
+        <text y="6" text-anchor="middle" fill="#58a6ff" font-size="20">☁</text>
+      </g>
+    </g>
+
+    <!-- Arrow 2→3 -->
+    <line x1="450" y1="300" x2="450" y2="330" stroke="#8ea0b8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+    <text x="460" y="320" fill="#8ea0b8" font-size="11" font-family="Courier New">import ↗</text>
+
+    <!-- Tier 3: Copilot Studio -->
+    <g transform="translate(50,340)">
+      <rect width="800" height="100" rx="14" fill="url(#g3)" stroke="#bc8cff" stroke-width="1.5" stroke-opacity=".5"/>
+      <text x="20" y="32" fill="#bc8cff" font-family="Courier New" font-size="11" letter-spacing="2">TIER 3 · ENTERPRISE</text>
+      <text x="20" y="60" fill="#e8ecf4" font-size="22" font-weight="700">🤖 Copilot Studio Harness</text>
+      <text x="20" y="84" fill="#8ea0b8" font-size="13">Power Platform .zip · Teams + M365 Copilot · declarative agents · org-wide deploy</text>
+      <g class="pulse" style="color:#bc8cff;animation-delay:1s" transform="translate(720,50)">
+        <circle r="20" fill="none" stroke="#bc8cff" stroke-width="1.5"/>
+        <text y="6" text-anchor="middle" fill="#bc8cff" font-size="20">▶</text>
+      </g>
+    </g>
+  </svg>
+</section>
+
+<!-- Tier 1: BRAINSTEM -->
+<section class="tiers">
+  <article class="tier" data-tier="1" id="brainstem">
+    <header class="tier-head">
+      <div class="tier-num">01</div>
+      <div class="tier-title-wrap">
+        <div class="tier-organ">Local · The survival basics</div>
+        <h2 class="tier-title">🧠 The Brainstem</h2>
+        <p class="tier-sub">A local Flask server. Your GitHub Copilot subscription is the AI engine. No cloud. No API keys.</p>
+      </div>
+    </header>
+    <div class="tier-body">
+      <div class="tier-desc">
+        <p>The brainstem runs the core agent loop — <strong>soul</strong> (system prompt), <strong>tool-calling</strong>, conversation history. Drop any <code>*_agent.py</code> file into the agents directory and it gets auto-discovered and registered as a callable tool.</p>
+        <p>Connect remote agent repos through the chat UI's Sources panel — paste any GitHub URL with an <code>agents/</code> folder and the brainstem hot-loads them. Missing pip dependencies are auto-installed.</p>
+        <p class="current-note">Original Tier 1 copy retained verbatim. The
+          port-7071 application is immutable test evidence, not a shipped
+          runtime; remote loading, dependency installation, authentication,
+          and launch actions are not active from this page.</p>
+        <div class="code">
+          <span class="lbl">macOS / Linux</span>
+          <pre id="c1m"><a href="KERNEL_PIN.json">KERNEL_PIN.json</a> →
+<a href="https://github.com/kody-w/rapp-installer/tree/brainstem-v0.6.9">kody-w/rapp-installer@brainstem-v0.6.9</a>
+source evidence only · no executable command</pre>
+          <button class="copy" data-target="c1m">Copy</button>
+        </div>
+        <div class="code">
+          <span class="lbl">Windows (PowerShell)</span>
+          <pre id="c1w"><a href="KERNEL_PIN.json">KERNEL_PIN.json</a> →
+<a href="https://github.com/kody-w/rapp-installer/tree/brainstem-v0.6.9">immutable Grail source</a>
+historical Windows edge · source inspection only</pre>
+          <button class="copy" data-target="c1w">Copy</button>
+        </div>
+        <div class="code">
+          <span class="lbl">Then</span>
+          <pre id="c1r"><a href="https://github.com/kody-w/rapp-installer/blob/brainstem-v0.6.9/rapp_brainstem/brainstem.py">rapp_brainstem/brainstem.py</a>
+<a href="https://github.com/kody-w/rapp-installer/blob/brainstem-v0.6.9/rapp_brainstem/agents/basic_agent.py">rapp_brainstem/agents/basic_agent.py</a>
+<a href="https://github.com/kody-w/rapp-installer/blob/brainstem-v0.6.9/rapp_brainstem/VERSION">rapp_brainstem/VERSION</a></pre>
+          <button class="copy" data-target="c1r">Copy</button>
+        </div>
+      </div>
+      <aside class="tier-aside">
+        <h4>What you get</h4>
+        <ul>
+          <li><b>Soul file</b> — system prompt as markdown</li>
+          <li><b>Auto-loaded agents</b> — Python tool calling</li>
+          <li><b>Local storage</b> — JSON shim, no DB</li>
+          <li><b>Hot-reload from GitHub</b> — paste URL, agents appear</li>
+          <li><b>GPT-4o by default</b> — via GitHub Models</li>
+        </ul>
+        <h4>What you learn</h4>
+        <ul>
+          <li>Python agents</li>
+          <li>OpenAI-style function calling</li>
+          <li>Prompt engineering</li>
+          <li>Local-first development</li>
+        </ul>
+        <div class="tier-links">
+          <a href="https://github.com/kody-w/rapp-installer/tree/brainstem-v0.6.9" target="_blank" rel="noopener">Source ↗</a>
+          <a href="https://github.com/kody-w/rapp-installer/tree/brainstem-v0.6.9/rapp_brainstem" target="_blank" rel="noopener">rapp_brainstem/ ↗</a>
+        </div>
+      </aside>
     </div>
-  </section>
-</main>
+  </article>
+
+  <div class="flow">deploy to cloud</div>
+
+  <!-- Tier 2: HIPPOCAMPUS -->
+  <article class="tier" data-tier="2" id="hippocampus">
+    <header class="tier-head">
+      <div class="tier-num">02</div>
+      <div class="tier-title-wrap">
+        <div class="tier-organ">Cloud · The spinal cord (CommunityRAPP)</div>
+        <h2 class="tier-title">☁️ The Hippocampus</h2>
+        <p class="tier-sub">Give your brainstem a cloud body. Persistent memory, always-on, Azure OpenAI behind it.</p>
+      </div>
+    </header>
+    <div class="tier-body">
+      <div class="tier-desc">
+        <p>The Hippocampus is the same brainstem agent loop, but living on <strong>Azure Functions</strong> with <strong>Azure OpenAI (GPT-4o)</strong>, a <strong>Storage Account</strong> for memory, and <strong>Application Insights</strong> for monitoring. All Entra ID auth — no API keys anywhere.</p>
+        <p>Each project is isolated: <code>~/rapp-projects/my-project/</code> with its own venv, agents, and local storage that mirror up to the cloud. Auth happens through the chat UI via GitHub device-code flow.</p>
+        <p class="current-note">Original Tier 2 copy retained verbatim. This
+          target has no current cloud service, provisioning path, token flow,
+          or deployment action; the material is implementation history.</p>
+        <div class="code">
+          <span class="lbl">macOS / Linux</span>
+          <pre id="c2m">Historical cloud installer context →
+<a href="KERNEL_PIN.json">immutable Grail boundary</a> · <a href="RAPP1_STATUS.md">current status</a></pre>
+          <button class="copy" data-target="c2m">Copy</button>
+        </div>
+        <div class="code">
+          <span class="lbl">Windows (PowerShell)</span>
+          <pre id="c2w">Historical cloud Windows context →
+<a href="https://github.com/kody-w/rapp-installer/tree/brainstem-v0.6.9">pinned Grail source</a></pre>
+          <button class="copy" data-target="c2w">Copy</button>
+        </div>
+        <div class="code">
+          <span class="lbl">Or one-click ARM template</span>
+          <pre id="c2a">Historical ARM edge →
+<a href="KERNEL_PIN.json">KERNEL_PIN.json</a> · no provisioning action</pre>
+          <button class="copy" data-target="c2a">Copy</button>
+        </div>
+      </div>
+      <aside class="tier-aside">
+        <h4>What gets created</h4>
+        <ul>
+          <li><b>Function App</b> (Python 3.11)</li>
+          <li><b>Azure OpenAI</b> — GPT-4o</li>
+          <li><b>Storage Account</b> — persistent memory</li>
+          <li><b>Application Insights</b> — telemetry</li>
+          <li><b>Managed identity</b> + RBAC, no secrets</li>
+        </ul>
+        <h4>What you learn</h4>
+        <ul>
+          <li>ARM templates</li>
+          <li>Azure Functions</li>
+          <li>Managed identity &amp; RBAC</li>
+          <li>Azure OpenAI deployment</li>
+        </ul>
+        <div class="tier-links">
+          <a href="KERNEL_PIN.json" title="Historical deployment edge; opens immutable Grail evidence">Deploy to Azure ↗</a>
+          <a href="https://github.com/kody-w/CommunityRAPP" target="_blank" rel="noopener">CommunityRAPP repo ↗</a>
+          <a href="RAPP1_STATUS.md" title="Historical onboarding edge; opens current status">Onboarding ↗</a>
+        </div>
+      </aside>
+    </div>
+  </article>
+
+  <div class="flow">import to copilot studio</div>
+
+  <!-- Tier 3: COPILOT STUDIO -->
+  <article class="tier" data-tier="3" id="copilot-studio">
+    <header class="tier-head">
+      <div class="tier-num">03</div>
+      <div class="tier-title-wrap">
+        <div class="tier-organ">Enterprise · The nervous system</div>
+        <h2 class="tier-title">🤖 Copilot Studio Harness</h2>
+        <p class="tier-sub">The same agent answers in Microsoft Teams and M365 Copilot across your whole org.</p>
+      </div>
+    </header>
+    <div class="tier-body">
+      <div class="tier-desc">
+        <p>The included <strong>Power Platform solution .zip</strong> wires your Hippocampus Function App into Microsoft Copilot Studio. Import the solution, point it at your Function App URL, and publish.</p>
+        <p>The same agent logic you tested locally now answers in <strong>Microsoft Teams</strong> and <strong>M365 Copilot</strong> — declaratively, with org-wide governance, and with the full Copilot extensibility surface.</p>
+        <p class="current-note">Original Tier 3 copy retained verbatim. The
+          unsigned Power Platform archive is evidence only; package download,
+          import, configuration, and publication actions are disabled.</p>
+        <div class="code">
+          <span class="lbl">Download the solution .zip</span>
+          <pre id="c3z"><a href="installer/RETIRED_ARTIFACTS.json">installer/RETIRED_ARTIFACTS.json</a>
+unsigned archive evidence · no archive download</pre>
+          <button class="copy" data-target="c3z">Copy</button>
+        </div>
+        <div class="code">
+          <span class="lbl">Steps</span>
+          <pre id="c3s">Historical import sequence retained in the surrounding copy.
+Review <a href="KERNEL_PIN.json">Grail pin</a> and <a href="RAPP1_STATUS.md">pre-acceptance status</a>.</pre>
+          <button class="copy" data-target="c3s">Copy</button>
+        </div>
+      </div>
+      <aside class="tier-aside">
+        <h4>What ships in the .zip</h4>
+        <ul>
+          <li><b>Declarative copilot</b> — schema-bound</li>
+          <li><b>Topics</b> — wired to your Function App</li>
+          <li><b>Variables</b> — endpoint config</li>
+          <li><b>Connection references</b> — managed identity</li>
+        </ul>
+        <h4>What you learn</h4>
+        <ul>
+          <li>Copilot Studio</li>
+          <li>Declarative agents</li>
+          <li>Power Platform solutions</li>
+          <li>Teams &amp; M365 integration</li>
+          <li>Enterprise governance</li>
+        </ul>
+        <div class="tier-links">
+          <a href="installer/RETIRED_ARTIFACTS.json" title="Inspect retained archive evidence">Download .zip ↓</a>
+          <a href="KERNEL_PIN.json" title="Historical Power Platform edge; opens immutable Grail evidence">Power Platform ↗</a>
+          <a href="RAPP1_STATUS.md" title="Historical Copilot Studio edge; opens current status">Copilot Studio ↗</a>
+        </div>
+      </aside>
+    </div>
+  </article>
+</section>
+
+<!-- Architecture grid -->
+<section class="arch">
+  <h2>One agent. Three lives.</h2>
+  <p>Same code. Same tools. Same soul. Test it on your laptop, deploy it to Azure, ship it to your org.</p>
+  <div class="arch-grid">
+    <div class="arch-card">
+      <span class="icon">🧬</span>
+      <h3>One soul, three bodies</h3>
+      <p>The same <code>soul.md</code> + <code>agents/*.py</code> works across all three tiers. Move up the stack as you outgrow the previous one.</p>
+    </div>
+    <div class="arch-card">
+      <span class="icon">🔓</span>
+      <h3>No vendor lock-in</h3>
+      <p>Brainstem runs anywhere Python runs. Hippocampus is a vanilla ARM template. Copilot Studio harness is a portable solution .zip.</p>
+    </div>
+    <div class="arch-card">
+      <span class="icon">🪪</span>
+      <h3>Auth that just works</h3>
+      <p>GitHub OAuth at Tier 1. Entra ID + managed identity at Tier 2. Power Platform connection refs at Tier 3. Zero API keys end-to-end.</p>
+    </div>
+    <div class="arch-card">
+      <span class="icon">📦</span>
+      <h3>Hot-reload from any repo</h3>
+      <p>Paste a GitHub URL with an <code>agents/</code> folder into the Sources panel. Brainstem clones, installs deps, registers tools. Live.</p>
+    </div>
+    <div class="arch-card">
+      <span class="icon">🧪</span>
+      <h3>Test locally, ship globally</h3>
+      <p>Iterate on agents at <code>localhost:7071</code>. When ready, the same agents run as Azure Functions and Copilot Studio actions.</p>
+    </div>
+    <div class="arch-card">
+      <span class="icon">🦴</span>
+      <h3>Open-source skeleton</h3>
+      <p>Every layer is open. Read the source, fork it, deploy your own. The brainstem repo is the ground truth.</p>
+    </div>
+  </div>
+  <p class="current-note">All six architecture cards above are retained
+    verbatim. They document the original thesis, not current operational
+    guarantees. Exact protocol authority now lives in the pinned RAPP/1
+    standard; external sources remain untrusted until independently verified.</p>
+</section>
 
 <footer>
-  RAPP/1 status is bounded by <a href="RAPP1_STATUS.md">RAPP1_STATUS.md</a>.
-  The structural pin is not an authenticated §13 registry.
+  <div>
+    <strong style="color:var(--fg)">RAPP</strong> — A digital twin of the RAPP stack.<br>
+    Source: <a href="https://github.com/kody-w/rapp-installer/tree/brainstem-v0.6.9" target="_blank" rel="noopener">rapp-installer</a>
+    · <a href="https://github.com/kody-w/CommunityRAPP" target="_blank" rel="noopener">CommunityRAPP</a>
+    · <a href="llms.txt" title="Historical registry edge; opens current candidate quarantine guidance">RAR (Agent Registry)</a>
+    · <a href="https://github.com/kody-w/RAPP" target="_blank" rel="noopener">RAPP</a>
+  </div>
+  <div class="foot-links">
+    <a href="#brainstem">Tier 1</a>
+    <a href="#hippocampus">Tier 2</a>
+    <a href="#copilot-studio">Tier 3</a>
+    <a href="RAPP1_AUTHORITY.json">v1 SPEC</a>
+    <a href="https://github.com/kody-w" target="_blank" rel="noopener">@kody-w</a>
+  </div>
 </footer>
+
+<script>
+// Copy buttons
+document.querySelectorAll('.copy').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const id = btn.dataset.target;
+    const txt = document.getElementById(id).textContent.trim();
+    navigator.clipboard.writeText(txt).then(() => {
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copied';
+      btn.classList.add('ok');
+      setTimeout(() => { btn.textContent = orig; btn.classList.remove('ok'); }, 1500);
+    });
+  });
+});
+</script>
 </body>
 </html>
