@@ -280,6 +280,7 @@ def main() -> int:
         "tools",
         "scripts",
         "worker",
+        "historical/source-archive",
         "rapp_brainstem",
         "rapp_swarm",
         "cave/rapplications/rapp-installer",

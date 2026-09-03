@@ -23,7 +23,6 @@ const $$ = (sel) => document.querySelectorAll(sel);
 
 window.addEventListener('DOMContentLoaded', async () => {
   marked.setOptions({ gfm: true, breaks: false, headerIds: true, mangle: false });
-  discardLegacyLocalOverride();
   wireUI();
   try {
     await loadManifest();
@@ -122,14 +121,6 @@ async function fetchNote(path) {
     throw new Error(`bundled note hash mismatch: ${path}`);
   }
   return record.content;
-}
-
-function discardLegacyLocalOverride() {
-  try {
-    localStorage.removeItem(LS_KEY);
-  } catch (_) {
-    // Storage denial is already the safe read-only state.
-  }
 }
 
 async function prefetchAll() {
@@ -425,12 +416,6 @@ function wireUI() {
   $('#importFile').addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (file) importZip(file);
-  });
-  $('#resetBtn').addEventListener('click', () => {
-    if (confirm('Clear local vault cache and re-fetch from GitHub?')) {
-      localStorage.removeItem(LS_KEY);
-      location.reload();
-    }
   });
   $('#randomBtn').addEventListener('click', openRandom);
   $('#readingBtn').addEventListener('click', toggleReadingMode);

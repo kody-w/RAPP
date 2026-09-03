@@ -17,6 +17,12 @@ ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "HISTORICAL_SOURCE_LEDGER.json"
 
 
+def deterministic_gzip(source: bytes) -> bytes:
+    payload = bytearray(gzip.compress(source, mtime=0))
+    payload[9] = 255
+    return bytes(payload)
+
+
 def line_subsequence() -> dict:
     return {"type": "line-subsequence"}
 
@@ -697,6 +703,74 @@ SOURCE_RECORDS += (
     },
 )
 
+ARCHIVED_SOURCE_RECORDS = (
+    (
+        "archive-t2t",
+        "historical/source-archive/rapp_brainstem/t2t.py.txt",
+        "rapp_brainstem/t2t.py",
+        "743f189e6a9b56359b9d65b185b05b759db51b2e",
+    ),
+    (
+        "archive-workspace",
+        "historical/source-archive/rapp_brainstem/workspace.py.txt",
+        "rapp_brainstem/workspace.py",
+        "743f189e6a9b56359b9d65b185b05b759db51b2e",
+    ),
+    (
+        "archive-swarm-server",
+        "historical/source-archive/rapp_brainstem/swarm_server.py.txt",
+        "rapp_brainstem/swarm_server.py",
+        "28ef6641af7c6036e6ae0dfb7fc481075f683744",
+    ),
+    (
+        "archive-chat",
+        "historical/source-archive/rapp_brainstem/chat.py.txt",
+        "rapp_brainstem/chat.py",
+        "b1db594cf477b10f3297980e65307ed989bf82f9",
+    ),
+    (
+        "archive-lifecycle-organ",
+        "historical/source-archive/rapp_brainstem/utils/organs/lifecycle_organ.py.txt",
+        "rapp_brainstem/utils/organs/lifecycle_organ.py",
+        "2692f73b19dcdc856e184044a3f178f5a50c486d",
+    ),
+    (
+        "archive-neighborhood-membership-organ",
+        "historical/source-archive/rapp_brainstem/utils/organs/neighborhood_membership_organ.py.txt",
+        "rapp_brainstem/utils/organs/neighborhood_membership_organ.py",
+        "ab1946036b2a6d594f6799d86f288175cf5fe551",
+    ),
+    (
+        "archive-reserved-agents-init",
+        "historical/source-archive/rapp_brainstem/utils/reserved_agents/__init__.py.txt",
+        "rapp_brainstem/utils/reserved_agents/__init__.py",
+        "2692f73b19dcdc856e184044a3f178f5a50c486d",
+    ),
+    (
+        "archive-upgrade-agent",
+        "historical/source-archive/rapp_brainstem/utils/reserved_agents/upgrade_agent.py.txt",
+        "rapp_brainstem/utils/reserved_agents/upgrade_agent.py",
+        "2692f73b19dcdc856e184044a3f178f5a50c486d",
+    ),
+)
+
+SOURCE_RECORDS += tuple(
+    {
+        "id": record_id,
+        "category": "inert-source-archive",
+        "path": archive_path,
+        "source_path": source_path,
+        "commit": commit,
+        "check": line_subsequence(),
+        "adaptation": (
+            "Retain the exact removed target-owned source as a non-executable "
+            ".txt archive. The original runtime path stays absent, and the "
+            "archive is excluded from GitHub Pages publication."
+        ),
+    }
+    for record_id, archive_path, source_path, commit in ARCHIVED_SOURCE_RECORDS
+)
+
 ADDITIONAL_PAGE_SOURCES = (
     (
         "page-root-index",
@@ -1012,7 +1086,7 @@ def source_record(record: dict) -> dict:
             "capsule": {
                 "encoding": "gzip+base64",
                 "payload": base64.b64encode(
-                    gzip.compress(source, mtime=0)
+                    deterministic_gzip(source)
                 ).decode("ascii"),
             },
         },

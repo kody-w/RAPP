@@ -361,13 +361,31 @@ for (const filename of agentFiles) {
   });
 }
 
-test('removed reserved and neighborhood capability trees stay absent', () => {
-  for (const relative of [
+test('removed capability trees stay inactive with exact source archived', () => {
+  const removed = [
+    'rapp_brainstem/t2t.py',
+    'rapp_brainstem/workspace.py',
+    'rapp_brainstem/swarm_server.py',
+    'rapp_brainstem/chat.py',
     'rapp_brainstem/utils/reserved_agents',
     'rapp_brainstem/utils/organs/lifecycle_organ.py',
     'rapp_brainstem/utils/organs/neighborhood_membership_organ.py',
-  ]) {
-    assert(!existsSync(join(ROOT, relative)), `retired capability returned: ${relative}`);
+  ];
+  for (const relative of removed) {
+    assert(!existsSync(join(ROOT, relative)), `removed capability became active: ${relative}`);
+  }
+  const archive = json('historical/source-archive/manifest.json');
+  equal(archive.record_kind, 'inert-exact-source-archive');
+  equal(archive.executable, false);
+  equal(archive.importable, false);
+  equal(archive.published_by_pages, false);
+  equal(archive.records.length, 8);
+  for (const record of archive.records) {
+    assert(record.archive_path.endsWith('.txt'), `archive is not inert text: ${record.archive_path}`);
+    const archived = join(ROOT, record.archive_path);
+    assert(existsSync(archived), `archived source is missing: ${record.archive_path}`);
+    assert((statSync(archived).mode & 0o111) === 0, `archive is executable: ${record.archive_path}`);
+    equal(sha256(record.archive_path), record.sha256);
   }
 });
 

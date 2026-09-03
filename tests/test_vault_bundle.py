@@ -73,7 +73,8 @@ def test_vault_and_docs_render_without_remote_runtime_dependencies():
     assert "./content-bundle.json" in vault_runtime
     assert "sanitizeHtml" in vault_runtime
     assert "sanitizeHtml" in docs_runtime
-    assert "localStorage.removeItem(LS_KEY)" in vault_runtime
+    assert "localStorage.removeItem(LS_KEY)" not in vault_runtime
+    assert "discardLegacyLocalOverride" not in vault_runtime
     assert "if (local && local.manifest)" not in vault_runtime
     assert "connect-src 'self'" in vault_index
     assert "connect-src 'self'" in docs_viewer

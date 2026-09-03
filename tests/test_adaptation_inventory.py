@@ -6,6 +6,7 @@ import gzip
 import hashlib
 import json
 import re
+import stat
 import subprocess
 from pathlib import Path
 
@@ -58,6 +59,14 @@ REQUIRED_RESTORED_SOURCE_PATHS = {
     "docs/install.cmd",
     "docs/install.command",
     "docs/install.sh",
+    "historical/source-archive/rapp_brainstem/chat.py.txt",
+    "historical/source-archive/rapp_brainstem/swarm_server.py.txt",
+    "historical/source-archive/rapp_brainstem/t2t.py.txt",
+    "historical/source-archive/rapp_brainstem/utils/organs/lifecycle_organ.py.txt",
+    "historical/source-archive/rapp_brainstem/utils/organs/neighborhood_membership_organ.py.txt",
+    "historical/source-archive/rapp_brainstem/utils/reserved_agents/__init__.py.txt",
+    "historical/source-archive/rapp_brainstem/utils/reserved_agents/upgrade_agent.py.txt",
+    "historical/source-archive/rapp_brainstem/workspace.py.txt",
     "install.cmd",
     "install.command",
     "install.ps1",
@@ -359,10 +368,10 @@ def test_historical_source_ledger_verifies_old_and_restored_bytes():
         assert len(old_bytes) == source["bytes"]
         capsule = source["capsule"]
         assert capsule["encoding"] == "gzip+base64"
-        assert (
-            gzip.decompress(base64.b64decode(capsule["payload"]))
-            == old_bytes
-        )
+        compressed = base64.b64decode(capsule["payload"])
+        assert compressed[:3] == b"\x1f\x8b\x08"
+        assert compressed[9] == 255
+        assert gzip.decompress(compressed) == old_bytes
 
         restored = record["restored"]
         current_bytes = current.read_bytes()
@@ -429,6 +438,46 @@ def test_historical_source_ledger_verifies_old_and_restored_bytes():
             assert source["commit"] in text
             assert source["sha256"] in text
     assert REQUIRED_RESTORED_SOURCE_PATHS <= current_paths
+
+
+def test_removed_runtime_sources_survive_as_exact_inert_archives():
+    archive_manifest = _load(
+        ROOT / "historical/source-archive/manifest.json"
+    )
+    assert archive_manifest["schema"] == "rapp-historical-source-archive/1.0"
+    assert archive_manifest["record_kind"] == "inert-exact-source-archive"
+    assert archive_manifest["status"] == "historical-observation"
+    assert archive_manifest["executable"] is False
+    assert archive_manifest["importable"] is False
+    assert archive_manifest["published_by_pages"] is False
+    assert archive_manifest["accepted"] is False
+
+    ledger = _load(LEDGER_PATH)
+    ledger_by_path = {
+        record["current_path"]: record
+        for record in ledger["artifacts"]
+    }
+    records = archive_manifest["records"]
+    assert len(records) == 8
+    for record in records:
+        source_path = record["source_path"]
+        archive_path = record["archive_path"]
+        archived = ROOT / archive_path
+        assert not (ROOT / source_path).exists(), source_path
+        assert archived.is_file(), archive_path
+        assert archived.suffix == ".txt"
+        assert not (archived.stat().st_mode & stat.S_IXUSR)
+
+        source_bytes = _source_bytes(record["commit"], source_path)
+        assert _source_blob(record["commit"], source_path) == record["blob"]
+        assert archived.read_bytes() == source_bytes
+        assert hashlib.sha256(source_bytes).hexdigest() == record["sha256"]
+        assert len(source_bytes) == record["bytes"]
+
+        ledger_record = ledger_by_path[archive_path]
+        assert ledger_record["source"]["path"] == source_path
+        assert ledger_record["source"]["commit"] == record["commit"]
+        assert ledger_record["source"]["blob"] == record["blob"]
 
 
 def test_every_adapted_page_is_in_the_source_ledger_and_pages_manifest():

@@ -89,6 +89,42 @@ echo "--- Section 2: swarm_server.py and chat.py entirely gone ---"
 
 assert_not_exists "rapp_brainstem/swarm_server.py removed"  rapp_brainstem/swarm_server.py
 assert_not_exists "rapp_brainstem/chat.py removed"          rapp_brainstem/chat.py
+assert_not_exists "lifecycle organ removed from active runtime" \
+    rapp_brainstem/utils/organs/lifecycle_organ.py
+assert_not_exists "neighborhood membership organ removed from active runtime" \
+    rapp_brainstem/utils/organs/neighborhood_membership_organ.py
+assert_not_exists "reserved agents removed from active runtime" \
+    rapp_brainstem/utils/reserved_agents
+
+ARCHIVE_COUNT="$(python3 - <<'PY'
+import hashlib
+import json
+import pathlib
+import stat
+import subprocess
+
+root = pathlib.Path.cwd()
+manifest = json.loads(
+    (root / "historical/source-archive/manifest.json").read_text()
+)
+assert manifest["executable"] is False
+assert manifest["importable"] is False
+assert manifest["published_by_pages"] is False
+for record in manifest["records"]:
+    source = subprocess.check_output(
+        ("git", "show", f"{record['commit']}:{record['source_path']}"),
+        cwd=root,
+    )
+    archive = root / record["archive_path"]
+    assert not (root / record["source_path"]).exists()
+    assert archive.read_bytes() == source
+    assert not (archive.stat().st_mode & stat.S_IXUSR)
+    assert hashlib.sha256(source).hexdigest() == record["sha256"]
+    assert len(source) == record["bytes"]
+print(len(manifest["records"]))
+PY
+)"
+assert_eq "removed source families have exact inert archives" "8" "$ARCHIVE_COUNT"
 
 # ── Section 3: function_app.py is inspect-only by default ─────────────
 
