@@ -471,14 +471,23 @@ class Rapp1DocumentationTests(unittest.TestCase):
             any(path in error and "public install instructions" in error for error in errors),
             errors,
         )
-        mutated = text.replace("initialize-variant.sh", "retired-lineage.sh")
+        mutated = text.replace(
+            "default to local provenance",
+            "offer live installation",
+        )
         errors = self._category_mutation_errors(path, mutated)
         self.assertTrue(
             any(
                 path in error
-                and "repository-local `initialize-variant.sh`" in error
+                and "default to local provenance" in error
                 for error in errors
             ),
+            errors,
+        )
+        mutated = text.replace("**Stable filenames.**", "**Moving filenames.**")
+        errors = self._category_mutation_errors(path, mutated)
+        self.assertTrue(
+            any(path in error and "historical contract lost" in error for error in errors),
             errors,
         )
 
