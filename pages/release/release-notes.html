@@ -4,9 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RAPP — Release Notes</title>
-<meta name="description" content="Historical brainstem release record; no current install or pin command.">
+<meta name="description" content="What changed in each tagged brainstem release. Pin to any version with BRAINSTEM_VERSION=x.y.z curl … | bash.">
+<meta name="robots" content="noindex,nofollow">
+<meta name="rapp-history-source" content="kody-w/RAPP@d1c5903c3927478033df1520046ba5297abdbbf8:pages/release/release-notes.html#blob=7dd1bffb11e06b73558648df76b97642de8ecb88">
+<meta name="rapp-historical-boundary" content="Historical release record. Distribution retired. Canonicalization, identity, frames, wire, eggs, registry, trust, and protocol evolution follow RAPP/1 rev-5 through RAPP1_AUTHORITY.json and RAPP1_STATUS.md.">
+<meta name="rapp-grail-source" content="KERNEL_PIN.json; kody-w/rapp-installer@brainstem-v0.6.9; immutable Grail evidence, not an executable install path.">
 <meta property="og:title" content="RAPP — Release Notes">
-<meta property="og:description" content="Historical brainstem release record; no current install or pin command.">
+<meta property="og:description" content="What changed in each tagged brainstem release. Pin to any version with BRAINSTEM_VERSION=x.y.z.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://kody-w.github.io/RAPP/pages/release/release-notes.html">
 <link rel="canonical" href="https://kody-w.github.io/RAPP/pages/release/release-notes.html">
@@ -89,7 +93,7 @@
 <div id="site-header"></div>
 <header>
   <nav class="nav">
-    <a href="../" class="brand">
+    <a href="../" class="brand" data-historical-href="./">
       <span class="logo">🧠</span>
       <span>RAPP</span>
       <span class="version">Release Notes</span>
@@ -105,22 +109,14 @@
 </header>
 
 <main>
-  <aside role="note" style="margin:0 0 24px;padding:14px 18px;border:1px solid var(--border2);border-radius:10px;background:var(--panel);line-height:1.55">
-    <strong>Historical release record.</strong> Dated schema and behavior
-    descriptions below remain verbatim and are not current instructions.
-    Canonicalization, identity, frames, wire, eggs, registry, trust, and
-    protocol evolution now follow RAPP/1 rev-5 via
-    <a href="../../RAPP1_AUTHORITY.json">RAPP1_AUTHORITY.json</a> and
-    <a href="../../RAPP1_STATUS.md">RAPP1_STATUS.md</a>.
-  </aside>
   <h1>Release Notes</h1>
-  <p class="subtitle">Dated release history, newest first. It does not provide
-    a current install, rollback, or operational-surface promise.</p>
+  <p class="subtitle">Every tagged brainstem release, newest first. Tags are
+    immutable — you can pin and roll back to any past version.</p>
 
   <div class="install">
-    <h3>Distribution retired</h3>
-    <p>Historical installer commands are intentionally omitted. Use this page
-      only as a dated change record.</p>
+    <h3>Install or pin to a version</h3>
+    <pre>curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash
+BRAINSTEM_VERSION=0.12.0 curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash</pre>
   </div>
 
   <!-- v0.16.0 (unreleased) ──────────────────────────────────────── -->

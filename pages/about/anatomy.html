@@ -3,10 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RAPP — Historical Digital-Organism Anatomy</title>
-<meta name="description" content="Historical product metaphor; not a shipped organism, installer, hatcher, or egg capability.">
+<title>RAPP — Anatomy of a Digital Organism</title>
+<meta name="description" content="The full visual anatomy of a RAPP digital organism. DNA, soul, organs, senses, cells, memory, skin, egg — every layer mapped from biology to code. Click to inspect.">
+<meta name="robots" content="noindex,nofollow">
+<meta name="rapp-history-source" content="kody-w/RAPP@d1c5903c3927478033df1520046ba5297abdbbf8:pages/about/anatomy.html#blob=c412cdaa883dcbe2828d8a08269d0341056792fc">
+<meta name="rapp-historical-boundary" content="Canonicalization, identity, frames, wire, eggs, registry, trust, and protocol evolution follow RAPP/1 rev-5 through RAPP1_AUTHORITY.json and RAPP1_STATUS.md.">
 <meta property="og:title" content="RAPP — Anatomy of a Digital Organism">
-<meta property="og:description" content="Historical product metaphor; not a current capability or distribution claim.">
+<meta property="og:description" content="Every layer of a RAPP organism mapped to biology. Kernel = DNA. Soul = mind. Organs = musculature. Senses = perception. Cells = sub-organisms. Memory = .brainstem_data. Skin = UI. Egg = portable cartridge.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://kody-w.github.io/RAPP/pages/about/anatomy.html">
 <link rel="canonical" href="https://kody-w.github.io/RAPP/pages/about/anatomy.html">
@@ -256,23 +259,16 @@
 
 <main>
 
-<aside role="note" style="margin:0 auto 24px;max-width:900px;padding:14px 18px;border:1px solid var(--border);border-radius:12px;line-height:1.55">
-  <strong>Current RAPP/1 authority (rev-5).</strong> Canonicalization, identity,
-  frames, wire, eggs, registry, trust, and protocol evolution follow
-  <a href="../../RAPP1_AUTHORITY.json">RAPP1_AUTHORITY.json</a> and
-  <a href="../../RAPP1_STATUS.md">RAPP1_STATUS.md</a>.
-</aside>
-
 <section class="anatomy-hero">
   <h1>Anatomy of a Digital Organism</h1>
   <p class="lede">
-    This diagram preserves the historical “living thing” metaphor. It is not
-    an install, hatch, or shipped egg claim. Click a layer to inspect the
-    source file associated with the former model.
+    Every RAPP install is a living thing. It has DNA, a soul, organs, senses, memory, and — when it
+    grows up — skin. This page maps the biology onto the code. Click any layer in the diagram to
+    inspect its definition.
   </p>
   <p class="meta">
     Companion to the vault note
-    <a href="https://github.com/kody-w/RAPP/blob/main/pages/vault/Architecture/Rapplications%20Are%20Organisms.md">Rapplications Are Organisms — collapsing a false distinction</a>.
+    <a href="https://github.com/kody-w/RAPP/blob/main/pages/vault/Architecture/Rapplications%20Are%20Organisms.md" data-historical-href="../vault/Architecture/Rapplications%20Are%20Organisms.md">Rapplications Are Organisms — collapsing a false distinction</a>.
   </p>
 </section>
 
@@ -288,7 +284,7 @@
     <g class="layer" data-layer-key="egg">
       <ellipse cx="460" cy="360" rx="430" ry="328" class="layer-egg-shell" />
       <rect x="270" y="6" width="380" height="38" rx="6" fill="var(--bg)" />
-      <text x="460" y="20" class="layer-label" text-anchor="middle" fill="var(--layer-egg)" stroke="none">legacy .egg (retired)</text>
+      <text x="460" y="20" class="layer-label" text-anchor="middle" fill="var(--layer-egg)" stroke="none">.egg cartridge</text>
       <text x="460" y="36" class="layer-label tiny body" text-anchor="middle" stroke="none">portable form — travels via AirDrop, catalog, USB</text>
     </g>
 
@@ -354,7 +350,7 @@
       <ellipse cx="460" cy="495" rx="190" ry="65" class="layer-bg" />
       <text x="460" y="492" class="layer-label" text-anchor="middle" fill="var(--layer-dna)">DNA — the kernel</text>
       <text x="460" y="510" class="layer-label tiny body" text-anchor="middle">brainstem.py  ·  drop-in replaceable</text>
-      <text x="460" y="526" class="layer-label tiny body" text-anchor="middle">immutable runtime history; no current hatch path</text>
+      <text x="460" y="526" class="layer-label tiny body" text-anchor="middle">the runtime any organism's egg can hatch into</text>
     </g>
 
     <!-- Identity strip at bottom — solid fill so the dashed egg doesn't
@@ -381,7 +377,7 @@
   <div class="legend-card" data-layer="dna">
     <h3>Kernel <span class="biology">↔ DNA</span></h3>
     <div class="where">brainstem.py</div>
-    <div class="blurb">The immutable historical runtime. Its three grail files are byte-pinned to <code>kody-w/rapp-installer@brainstem-v0.6.9</code> and never edited locally; no current egg is accepted or hatched, and RAPP/1 convergence happens in target-owned adapters.</div>
+    <div class="blurb">The runtime that any organism's egg can hatch into. Drop-in replaceable per Constitution Article XXXIII. Never edited by AI assistants. The kernel evolves under the organism, not the other way around.</div>
   </div>
 
   <div class="legend-card" data-layer="soul">
@@ -399,19 +395,19 @@
   <div class="legend-card" data-layer="sense">
     <h3>Senses <span class="biology">↔ Perception channels</span></h3>
     <div class="where">utils/senses/*_sense.py</div>
-    <div class="blurb">Application output overlays for rendering. <code>|||VOICE|||</code> and <code>|||TWIN|||</code> are host conventions; overlays do not add RAPP wire fields or capability endpoints.</div>
+    <div class="blurb">Per-channel output overlays (delimiter + response_key + wrapper_tag + system_prompt). How LLM output gets routed to chat / TTS / twin / future surfaces. <code>|||VOICE|||</code> and <code>|||TWIN|||</code> are kernel-shipped; more come from the sense store.</div>
   </div>
 
   <div class="legend-card" data-layer="cell">
     <h3>Cells <span class="biology">↔ Sub-organisms</span></h3>
     <div class="where">agents/*_agent.py + hosted rapplications</div>
-    <div class="blurb">Historical nested-organism concept. Eggification and transplantation are retired; any future identity or exchange must satisfy RAPP/1.</div>
+    <div class="blurb">Smaller organisms living inside the body. Each carries its own rappid, can be eggified, can be transplanted. The recursion lives here — an organism contains organisms, all the way down to bare single-celled agents.</div>
   </div>
 
   <div class="legend-card" data-layer="memory">
     <h3>Memory <span class="biology">↔ Lived experience</span></h3>
     <div class="where">.brainstem_data/</div>
-    <div class="blurb">Application state accumulated by the organism. It travels only when explicitly listed in a valid §9 variant and remains independently subject to frame and trust verification.</div>
+    <div class="blurb">Everything the organism has accumulated — chat tabs, frames, binder state, per-rapp cartridges, twin observations. Travels in the egg; survives every kernel bond.</div>
   </div>
 
   <div class="legend-card" data-layer="skin">
@@ -422,8 +418,8 @@
 
   <div class="legend-card" data-layer="egg">
     <h3>Egg <span class="biology">↔ Portable cartridge</span></h3>
-    <div class="where">RAPP/1 §9 organism egg (schema: rapp/1-egg)</div>
-    <div class="blurb">One exact schema with six registered variants: organism, rapplication, session, invite, neighborhood, and estate. Carrier choice never changes the manifest or its verification.</div>
+    <div class="where">brainstem-egg/2.2-organism (zip + manifest)</div>
+    <div class="blurb">The form an organism takes when it travels. Schemas at three scales: rapplication, twin, organism. Recovery checkpoints, AirDrop transports, catalog distribution units — same format, different scope.</div>
   </div>
 
   <div class="legend-card" data-layer="membrane">
@@ -501,11 +497,11 @@
   </blockquote>
   <p class="links">
     Read the full decision narrative:
-    <a href="https://github.com/kody-w/RAPP/blob/main/pages/vault/Architecture/Rapplications%20Are%20Organisms.md">Rapplications Are Organisms</a>
+    <a href="https://github.com/kody-w/RAPP/blob/main/pages/vault/Architecture/Rapplications%20Are%20Organisms.md" data-historical-href="../vault/Architecture/Rapplications%20Are%20Organisms.md">Rapplications Are Organisms</a>
     ·
-    <a href="https://github.com/kody-w/RAPP/blob/main/pages/vault/Architecture/Rappid.md">Rappid — The One Identifier</a>
+    <a href="https://github.com/kody-w/RAPP/blob/main/pages/vault/Architecture/Rappid.md" data-historical-href="../vault/Architecture/Rappid.md">Rappid — The One Identifier</a>
     ·
-    <a href="https://github.com/kody-w/RAPP/blob/main/pages/vault/Architecture/The%20Swarm%20Estate.md">The Swarm Estate</a>
+    <a href="https://github.com/kody-w/RAPP/blob/main/pages/vault/Architecture/The%20Swarm%20Estate.md" data-historical-href="../vault/Architecture/The%20Swarm%20Estate.md">The Swarm Estate</a>
   </p>
 </section>
 
