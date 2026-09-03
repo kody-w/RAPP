@@ -1,9 +1,11 @@
 {
-  "status": "retired",
-  "http_status": 410,
+  "status": "adapted-preacceptance",
+  "default_mode": "inspect-plan-sandbox",
+  "default_effects": [],
   "rapp1_packaging_allowed": false,
   "rapp1_advertising_allowed": false,
-  "blocked_entrypoint": "function_app.py",
-  "reason": "The legacy Tier-2 entrypoint is now a non-executable historical tombstone and does not implement the RAPP/1 wire contract.",
+  "protected_entrypoint": "function_app.py",
+  "active_chat_facade": "http://127.0.0.1:7073/chat",
+  "reason": "Full historical source is preserved. Active effects require reviewed dependency injection, exact target receipts, and authenticated fresh section-13 owner evidence that is unavailable in this repository.",
   "guidance": "../RAPP1_STATUS.md"
 }

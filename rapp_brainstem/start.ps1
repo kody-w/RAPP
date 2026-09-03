@@ -12,8 +12,8 @@
     '"apply_permitted":false}'
 )
 [Console]::Error.WriteLine(
-    "410 Gone: rapp_brainstem/start.ps1 remains an unconditional launcher " +
-    "tombstone; historical source follows an unreachable boundary " +
+    "410 Gone: rapp_brainstem/start.ps1 remains an unconditional public " +
+    "launcher refusal; historical source follows an unreachable boundary " +
     "(RAPP1_STATUS.md)."
 )
 $RappStandaloneProcess = $false

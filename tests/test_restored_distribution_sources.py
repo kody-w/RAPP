@@ -637,7 +637,7 @@ def test_apply_rejects_non_exact_pin_and_directory_evidence(
     ("relative", "kind"),
     (("rapp_brainstem/start.sh", "shell"), ("rapp_brainstem/utils/boot.py", "python")),
 )
-def test_unconditional_launcher_tombstones_retain_history_without_effects(
+def test_unconditional_launcher_refusals_retain_history_without_effects(
     relative, kind, tmp_path
 ):
     environment, effects, sentinel, *_ = _sentinel_environment(tmp_path)

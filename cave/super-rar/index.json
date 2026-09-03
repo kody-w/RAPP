@@ -29,7 +29,7 @@
     "catalog_exhaust_restored_from": "d3d2623646a6111b4a7db9f1b960df233f8964c9",
     "initial_super_rar_design": "cdf1aba25ba39c373ba4c738e7c6d421fff0cf86"
   },
-  "built_at": "2026-07-17T12:14:46Z",
+  "built_at": "2026-09-03T16:45:04Z",
   "count": 2,
   "by_kind": {
     "agent": 1,
@@ -98,7 +98,6 @@
       "name": "cubby-rapp-installer.egg",
       "cubby": "kody-w",
       "path": "cubbies/kody-w/eggs/cubby-rapp-installer.egg",
-      "sha256": "38ce5e8f1236b584eb3c6d4a6663ce46a0ff73c06599628d87fe610e035fb18b",
       "historical_metadata": [
         {
           "commit": "f6bf5ed2c8571fc213c7554a430d3d9c7716a231",
@@ -111,6 +110,7 @@
           "accepted": false
         }
       ],
+      "sha256": "38ce5e8f1236b584eb3c6d4a6663ce46a0ff73c06599628d87fe610e035fb18b",
       "verified": true,
       "verification": {
         "state": "verified-local-sha256",

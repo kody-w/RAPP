@@ -44,7 +44,7 @@ def _rapp_restored_refuse():
     )
     print(
         "410 Gone: rapp_brainstem/utils/boot.py remains an unconditional "
-        "launcher tombstone; historical source follows an unreachable "
+        "public launcher refusal; historical source follows an unreachable "
         "boundary (RAPP1_STATUS.md).",
         file=stderr,
     )

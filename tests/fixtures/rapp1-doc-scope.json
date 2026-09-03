@@ -795,7 +795,7 @@
   "exclusion_reasons": {
     "RAPP1_AUTHORITY.json": "machine-readable authority source",
     "RAPP1_STATUS.md": "authority/status record checked by dedicated tests",
-    "cave/.well-known/rapp-cave.json": "retired structured beacon validated by cave category rules",
+    "cave/.well-known/rapp-cave.json": "adapted historical beacon with disabled active pointers and exact nested source observation",
     "cave/cubbies/_template/cubby.json": "retired structured template validated by cave category rules",
     "cave/cubbies/index.json": "retired structured catalog validated by cave category rules",
     "cave/cubbies/kody-w/cubby.json": "retired structured cubby metadata validated by cave category rules",

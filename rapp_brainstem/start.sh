@@ -4,7 +4,7 @@
 # RAPP_RESTORED_TARGET=rapp_brainstem/start.sh
 # RAPP_RESTORED_GATE_BEGIN
 printf '%s\n' '{"schema":"rapp-restored-distribution-source/1.0","target":"rapp_brainstem/start.sh","mode":"inspect","source_commit":"01c11f52f1edb7d3e337e4f223aa8d514f622ebb","source_blob":"3fe7ce7bf7198fa4fb155e380fb1525a9eed2a4b","kernel":"kody-w/rapp-installer@brainstem-v0.6.9","apply_permitted":false}' >&2
-printf '%s\n' '410 Gone: rapp_brainstem/start.sh remains an unconditional launcher tombstone; historical source follows an unreachable boundary (RAPP1_STATUS.md).' >&2
+printf '%s\n' '410 Gone: rapp_brainstem/start.sh remains an unconditional public launcher refusal; historical source follows an unreachable boundary (RAPP1_STATUS.md).' >&2
 exit 78
 # RAPP_RESTORED_GATE_END
 # RAPP_RESTORED_HISTORICAL_SOURCE_BEGIN

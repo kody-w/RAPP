@@ -874,9 +874,17 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
         if not any(
             term in text.lower() for term in cave_rule["required_disposition_terms"]
         ):
-            errors.append(f"{path}: cave installer/catalog history is not tombstoned")
+            errors.append(f"{path}: cave installer/catalog history lacks a disposition")
         active, marker_errors = _active_text(path, fixture)
         errors.extend(marker_errors)
+        if path == "cave/.well-known/rapp-cave.json":
+            try:
+                active_value = json.loads(text)
+            except json.JSONDecodeError:
+                active_value = None
+            if isinstance(active_value, dict):
+                active_value.pop("historical_observation", None)
+                active = json.dumps(active_value, sort_keys=True)
         for pattern in cave_rule["forbidden_live_patterns"]:
             match = re.search(pattern, active, flags=re.IGNORECASE)
             if match and not re.search(
@@ -890,7 +898,7 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
                 errors.append(f"{path}: cave script is executable rather than inert")
     structured_cave = {
         "cave/.well-known/rapp-cave.json": {
-            "status": "retired",
+            "status": "adapted-historical",
             "public": False,
             "raw_base": None,
             "cubbies_index": None,
@@ -923,6 +931,36 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
         streamable = value.get("streamable")
         if isinstance(streamable, dict) and streamable.get("agents") is not False:
             errors.append(f"{path}: cave agent streaming must remain false")
+        if path == "cave/.well-known/rapp-cave.json":
+            historical = value.get("historical_observation", {})
+            source = historical.get("source", {})
+            commit = "19ff7d9ff483c0eef258a3b2031da1fd74570854"
+            try:
+                expected_bytes = subprocess.check_output(
+                    ("git", "show", f"{commit}:{path}"),
+                    cwd=ROOT,
+                )
+                expected_record = json.loads(expected_bytes)
+                expected_blob = subprocess.check_output(
+                    ("git", "rev-parse", f"{commit}:{path}"),
+                    cwd=ROOT,
+                    text=True,
+                ).strip()
+            except (subprocess.CalledProcessError, json.JSONDecodeError) as exc:
+                errors.append(f"{path}: cannot verify historical observation: {exc}")
+                continue
+            if historical.get("record") != expected_record:
+                errors.append(f"{path}: historical observation bytes drifted")
+            expected_source = {
+                "repository": "kody-w/RAPP",
+                "commit": commit,
+                "path": path,
+                "blob": expected_blob,
+                "sha256": hashlib.sha256(expected_bytes).hexdigest(),
+                "bytes": len(expected_bytes),
+            }
+            if source != expected_source:
+                errors.append(f"{path}: historical observation provenance drifted")
 
     target_checks = fixture["target_checks"]
     footer = _read("pages/_site/partials/footer.html")

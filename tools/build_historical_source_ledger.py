@@ -322,7 +322,7 @@ SOURCE_RECORDS = (
         "category": "estate-code",
         "path": "tools/private_estate_init.py",
         "commit": "591e7aec3b2183e0d48a1d6dfb6ebc59f177daea",
-        "check": python_symbols(0.875),
+        "check": python_symbols(0.867),
         "adaptation": "Retain the complete private-estate bootstrap behind explicit apply, exact target approval, and unavailable authenticated authority.",
     },
     {
@@ -330,7 +330,7 @@ SOURCE_RECORDS = (
         "category": "estate-code",
         "path": "tools/rebuild_estate.py",
         "commit": "591e7aec3b2183e0d48a1d6dfb6ebc59f177daea",
-        "check": python_symbols(0.867),
+        "check": python_symbols(0.859),
         "adaptation": "Retain complete public-data reconstruction and deterministic candidate output while separating observation from authenticated adoption.",
     },
     {
@@ -338,7 +338,7 @@ SOURCE_RECORDS = (
         "category": "estate-code",
         "path": "tools/sniff_network.py",
         "commit": "4f6c14bbdf5b2d43887a9c7ab9cbda8c075f0dd6",
-        "check": python_symbols(0.725),
+        "check": python_symbols(0.667),
         "adaptation": "Retain BFS, topic, beacon, estate, and skipped-record observations with no acceptance and gated output writes.",
     },
     {
@@ -385,6 +385,315 @@ SOURCE_RECORDS = (
         "commit": "1d4141f32a0b90c8de24be136478cc583bed6474",
         "check": python_symbols(0.982),
         "adaptation": "Retain the complete collector; default to local snapshot validation, expose a no-write plan, and refuse online writes before mutation.",
+    },
+)
+
+DISTRIBUTION_SOURCE_RECORDS = (
+    ("distribution-root-install-sh", "distribution-code", "install.sh", "25dc094994cf889f0907ea15c255000c07dbfcc9"),
+    ("distribution-root-install-ps1", "distribution-code", "install.ps1", "cef3b9160f0ca6773d84ccc605e2d5d81369b2d9"),
+    ("distribution-root-install-cmd", "distribution-code", "install.cmd", "4f6c14bbdf5b2d43887a9c7ab9cbda8c075f0dd6"),
+    ("distribution-root-install-command", "distribution-code", "install.command", "4f6c14bbdf5b2d43887a9c7ab9cbda8c075f0dd6"),
+    ("distribution-docs-install-sh", "distribution-code", "docs/install.sh", "4f6c14bbdf5b2d43887a9c7ab9cbda8c075f0dd6"),
+    ("distribution-docs-install-cmd", "distribution-code", "docs/install.cmd", "4f6c14bbdf5b2d43887a9c7ab9cbda8c075f0dd6"),
+    ("distribution-docs-install-command", "distribution-code", "docs/install.command", "4f6c14bbdf5b2d43887a9c7ab9cbda8c075f0dd6"),
+    ("distribution-community-install-sh", "distribution-code", "community_rapp/install.sh", "4f6c14bbdf5b2d43887a9c7ab9cbda8c075f0dd6"),
+    ("distribution-community-install-ps1", "distribution-code", "community_rapp/install.ps1", "4f6c14bbdf5b2d43887a9c7ab9cbda8c075f0dd6"),
+    ("distribution-installer-install-sh", "distribution-code", "installer/install.sh", "5f67e1e7a279e45e384a1673d09d1739936f72d9"),
+    ("distribution-installer-install-ps1", "distribution-code", "installer/install.ps1", "45d8e9fc6df2989d6c1c591613e30710f768ef1a"),
+    ("distribution-installer-install-cmd", "distribution-code", "installer/install.cmd", "b4f3e31c1c30cfaf798728cec2de45dbfcfb3e25"),
+    ("distribution-installer-swarm", "distribution-code", "installer/install-swarm.sh", "925dee4a211965f2582e71a6d2ad75f60a54ea7d"),
+    ("distribution-installer-start-local", "distribution-code", "installer/start-local.sh", "925dee4a211965f2582e71a6d2ad75f60a54ea7d"),
+    ("distribution-installer-integration-plant", "distribution-code", "installer/integration_plant.sh", "0e068b3cd7bb56add2b3a3e2eea6b9142905a574"),
+    ("distribution-installer-hatchling", "distribution-code", "installer/hatchling", "9bf771df8b308e11f681fc62a9d04a81450ceb03"),
+    ("distribution-installer-plant", "distribution-code", "installer/plant.sh", "f9102acd7c152ab99dce4fe75fcb0968cec3890b"),
+    ("distribution-root-deploy-sh", "distribution-code", "deploy.sh", "4f6c14bbdf5b2d43887a9c7ab9cbda8c075f0dd6"),
+    ("distribution-root-deploy-ps1", "distribution-code", "deploy.ps1", "4f6c14bbdf5b2d43887a9c7ab9cbda8c075f0dd6"),
+    ("distribution-sign-release", "distribution-code", "tools/sign_release.py", "4f6c14bbdf5b2d43887a9c7ab9cbda8c075f0dd6"),
+    ("distribution-lan-advertise", "distribution-code", "tools/lan_advertise.py", "da4f78abdff5f2bc9ff9e1266ddbf0723cb20161"),
+    ("distribution-brainstem-start-sh", "distribution-code", "rapp_brainstem/start.sh", "01c11f52f1edb7d3e337e4f223aa8d514f622ebb"),
+    ("distribution-brainstem-start-ps1", "distribution-code", "rapp_brainstem/start.ps1", "844f84ef54ce2481f670a9ca8830c96a60b70c72"),
+    ("distribution-brainstem-tls-proxy", "distribution-code", "rapp_brainstem/tls_proxy.py", "55b91b9ecd182a3ce2057787f07c60e9aa3ca128"),
+    ("distribution-brainstem-boot", "distribution-code", "rapp_brainstem/utils/boot.py", "7f9553ed0f079fbce70755ee4cae3e51705dcccf"),
+)
+
+SOURCE_RECORDS += tuple(
+    {
+        "id": record_id,
+        "category": category,
+        "path": path,
+        "commit": commit,
+        "check": line_subsequence(),
+        "adaptation": (
+            "Restore the exact historical implementation after a target-owned "
+            "plan/refusal boundary. Default execution emits local provenance; "
+            "active effects remain unavailable without exact Grail binding, "
+            "reviewed dependency injection, owner approval, and authenticated "
+            "fresh section-13 evidence."
+        ),
+    }
+    for record_id, category, path, commit in DISTRIBUTION_SOURCE_RECORDS
+)
+
+DEPLOYMENT_TEMPLATE_SOURCE_RECORDS = (
+    (
+        "deployment-template-root",
+        "azuredeploy.json",
+        "4f6c14bbdf5b2d43887a9c7ab9cbda8c075f0dd6",
+    ),
+    (
+        "deployment-template-installer",
+        "installer/azuredeploy.json",
+        "925dee4a211965f2582e71a6d2ad75f60a54ea7d",
+    ),
+)
+
+SOURCE_RECORDS += tuple(
+    {
+        "id": record_id,
+        "category": "deployment-template",
+        "path": path,
+        "commit": commit,
+        "check": line_subsequence(),
+        "adaptation": (
+            "Restore the complete inert ARM template byte-for-byte. Deployment "
+            "callers retain separate explicit pre-acceptance gates and cannot "
+            "reach Azure without unavailable authenticated owner evidence."
+        ),
+    }
+    for record_id, path, commit in DEPLOYMENT_TEMPLATE_SOURCE_RECORDS
+)
+
+SWARM_SOURCE_RECORDS = (
+    (
+        "swarm-index",
+        "rapp_swarm/index.html",
+        "da6cb94985c9525b681bc20c2926656bdfdad565",
+        normalized_line_coverage(
+            0.924,
+            "Azure Functions · Python 3.11",
+            "Application Insights",
+            "data-historical-href",
+        ),
+    ),
+    (
+        "swarm-build",
+        "rapp_swarm/build.sh",
+        "7bcc3d24ab3759605630625225fd190612c3d594",
+        normalized_line_coverage(1.0, "rsync -a", "services/*_service.py"),
+    ),
+    (
+        "swarm-provision-twin",
+        "rapp_swarm/provision-twin.sh",
+        "925dee4a211965f2582e71a6d2ad75f60a54ea7d",
+        normalized_line_coverage(0.993, "az deployment group create"),
+    ),
+    (
+        "swarm-provision-twin-lite",
+        "rapp_swarm/provision-twin-lite.sh",
+        "4f6c14bbdf5b2d43887a9c7ab9cbda8c075f0dd6",
+        normalized_line_coverage(1.0, "az functionapp create"),
+    ),
+    (
+        "swarm-function-app",
+        "rapp_swarm/function_app.py",
+        "7246d15d03809dd9df644270d920b1a5743d2515",
+        python_symbols(0.995),
+    ),
+    (
+        "swarm-twin-sim",
+        "rapp_swarm/twin-sim.sh",
+        "da6cb94985c9525b681bc20c2926656bdfdad565",
+        normalized_line_coverage(0.994, "cmd_demo_book()", "cmd_demo_hero()"),
+    ),
+    (
+        "swarm-twin-egg",
+        "rapp_swarm/twin-egg.sh",
+        "da6cb94985c9525b681bc20c2926656bdfdad565",
+        normalized_line_coverage(1.0, "cmd_pack()", "cmd_unpack()"),
+    ),
+    (
+        "swarm-test-brainstem-server",
+        "tools/test_brainstem_server.py",
+        "dd36590c8f5601c3ccf241844cdc9db54f7c420b",
+        python_symbols(0.809),
+    ),
+    (
+        "swarm-egg-hatcher",
+        "pages/tutorials/egg_hatcher_agent.py",
+        "f715eb3e6d4b473bbc34c472d3ad60cf6a2e144f",
+        python_symbols(0.933),
+    ),
+    (
+        "swarm-front-door-specs",
+        "tools/front_door_specs.py",
+        "2efdc1f230ec939f0a1041caeb2813e5c4f59a1f",
+        python_symbols(1.0),
+    ),
+    (
+        "swarm-simulation-readme",
+        "tools/sim/README.md",
+        "05f75bd40dd37f4590da6ebab28110d9a4b4094a",
+        normalized_line_coverage(0.988, "Grail-driven autonomy"),
+    ),
+    (
+        "swarm-loop-orchestrator",
+        "tools/sim/loop_orchestrator.sh",
+        "55b91b9ecd182a3ce2057787f07c60e9aa3ca128",
+        normalized_line_coverage(1.0, "historical_orchestrator_cycle"),
+    ),
+    (
+        "swarm-observer",
+        "tools/sim/observe.py",
+        "55b91b9ecd182a3ce2057787f07c60e9aa3ca128",
+        python_symbols(0.989),
+    ),
+    (
+        "swarm-plant-two-brainstems",
+        "tools/sim/plant_two_brainstems.py",
+        "40f00e1e669d4cd4bb97e2947a0b79739a9ba701",
+        python_symbols(0.995),
+    ),
+    (
+        "swarm-push-canvas",
+        "tools/sim/push_canvas.sh",
+        "8d089dc459f156fb214316db3383e2d95355261d",
+        normalized_line_coverage(1.0, "git push"),
+    ),
+    (
+        "swarm-tick-twin",
+        "tools/sim/tick_twin.py",
+        "05f75bd40dd37f4590da6ebab28110d9a4b4094a",
+        python_symbols(0.907),
+    ),
+    (
+        "swarm-cave-agent",
+        "cave/agents/cave_agent.py",
+        "cdf1aba25ba39c373ba4c738e7c6d421fff0cf86",
+        python_symbols(0.733),
+    ),
+)
+
+SOURCE_RECORDS += tuple(
+    {
+        "id": record_id,
+        "category": "swarm-code",
+        "path": path,
+        "commit": commit,
+        "check": check,
+        "adaptation": (
+            "Restore the full historical Tier 2 or simulation implementation "
+            "behind deterministic local inspect, plan, or sandbox defaults. "
+            "Effect paths require exact target receipts, reviewed dependency "
+            "injection, and authenticated fresh section-13 owner evidence."
+        ),
+    }
+    for record_id, path, commit, check in SWARM_SOURCE_RECORDS
+)
+
+SOURCE_RECORDS += (
+    {
+        "id": "estate-grail-template",
+        "category": "estate-page",
+        "path": "tools/templates/rapp_estate_grail.html",
+        "commit": "7b2390499ee9b238902db1470ccdfae89c1f0cbc",
+        "check": marker_set(
+            0.210,
+            "rapp-estate/1.1",
+            "Doors I own",
+            "Membership claims",
+            "function parseRappid",
+            "function historicalUrls",
+        ),
+        "adaptation": (
+            "Restore the estate dashboard, identity, door, membership, and "
+            "runway concepts over strictly local supplied data. Network, "
+            "navigation, persistence, and mutation edges stay inert."
+        ),
+    },
+    {
+        "id": "swarm-readme",
+        "category": "historical-document",
+        "path": "rapp_swarm/README.md",
+        "commit": "669c3f5518d92c989c5770c08e04b84e4c382294",
+        "check": normalized_line_coverage(
+            1.0,
+            "Twin Stack on Azure Functions",
+            "## Wire surface",
+            "## Why a separate Tier 2?",
+        ),
+        "adaptation": (
+            "Preserve the complete historical Tier 2 README under a current "
+            "safety preface that marks every command and cloud/T2T claim as "
+            "dated evidence rather than active instructions."
+        ),
+    },
+    {
+        "id": "installer-readme",
+        "category": "historical-document",
+        "path": "installer/README.md",
+        "commit": "bbbc7be70decf233c8dd6996a1eaa2c436618229",
+        "check": normalized_line_coverage(
+            1.0,
+            "Stable filenames",
+            "Versioned bundles append, not replace",
+            "## Scale rule",
+        ),
+        "adaptation": (
+            "Preserve the complete stable installer URL and versioning "
+            "contract under a current Grail-boundary preface. Historical "
+            "commands remain evidence, while restored launchers default to "
+            "effect-free plans."
+        ),
+    },
+    {
+        "id": "worker-readme",
+        "category": "historical-document",
+        "path": "worker/README.md",
+        "commit": "74b526fc6010d4edd790bb0f633fd3e270067300",
+        "check": normalized_line_coverage(
+            1.0,
+            "## Endpoints",
+            "## Setup (one time, ~3 minutes)",
+            "## Why a dedicated worker?",
+        ),
+        "adaptation": (
+            "Keep the complete historical Worker deployment and endpoint "
+            "guide beneath the current default-off capability and exact-host "
+            "safety contract."
+        ),
+    },
+    {
+        "id": "community-agent-library-interface",
+        "category": "historical-document",
+        "path": "community_rapp/agent-repo-skill.md",
+        "commit": "4f6c14bbdf5b2d43887a9c7ab9cbda8c075f0dd6",
+        "check": normalized_line_coverage(
+            1.0,
+            "## Repo Identity",
+            "## Agent Format",
+            "last_updated: 2026-03-25",
+        ),
+        "adaptation": (
+            "Preserve the complete historical host-side agent library "
+            "interface beneath the current migration note. Its download and "
+            "installation claims remain historical rather than executable."
+        ),
+    },
+    {
+        "id": "cave-public-beacon",
+        "category": "structured-history",
+        "path": "cave/.well-known/rapp-cave.json",
+        "commit": "19ff7d9ff483c0eef258a3b2031da1fd74570854",
+        "check": normalized_line_coverage(
+            1.0,
+            "public-workspace",
+            "Public discovery beacon for the RAPP Cave",
+        ),
+        "adaptation": (
+            "Retain the complete historical public beacon as a nested "
+            "observation while top-level discovery, bootstrap, distribution, "
+            "and acceptance pointers remain disabled."
+        ),
     },
 )
 

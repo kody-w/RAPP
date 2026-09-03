@@ -188,8 +188,8 @@ def test_windows_installers_preserve_source_behind_static_gates():
         assert "apply_permitted" in gate
         if relative == "rapp_brainstem/start.ps1":
             assert '"mode":"inspect"' in gate
-            assert "unconditional launcher " in gate
-            assert '"tombstone;' in gate
+            assert "unconditional public " in gate
+            assert '"launcher refusal;' in gate
         else:
             assert "authenticated fresh section-13 evidence is unavailable" in gate
         assert "410 Gone" in source

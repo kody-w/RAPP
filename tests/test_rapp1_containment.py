@@ -6,10 +6,8 @@ import json
 import stat
 import subprocess
 import sys
-import types
 import unittest
 from pathlib import Path
-from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -34,7 +32,7 @@ ADAPTED_HTML = (
     "pages/metropolis/plant-from-discord.html",
 )
 
-RETIRED_SOURCE_MARKERS = {
+RESTORED_SOURCE_MARKERS = {
     "installer/plant.sh": (
         "GRAIL_RAW=",
         "write_index_html()",
@@ -63,10 +61,9 @@ RETIRED_SOURCE_MARKERS = {
     ),
     "cave/agents/cave_agent.py": (
         "CAVE_REPO",
-        "subprocess",
-        "git clone",
-        "shutil.copy2",
-        ".git/info/exclude",
+        "class CaveAgent",
+        "def _historical_cave_root",
+        "def _historical_load",
     ),
     "tools/lan_advertise.py": (
         "_rapp-estate._tcp",
@@ -91,12 +88,12 @@ RETIRED_SOURCE_MARKERS = {
     "rapp_swarm/provision-twin.sh": (
         "az group create",
         "func azure functionapp publish",
-        "azure deployment",
+        "AZURE_OPENAI_API_KEY",
     ),
     "rapp_swarm/provision-twin-lite.sh": (
-        "az group create",
+        "az storage account create",
+        "az functionapp create",
         "func azure functionapp publish",
-        "azure deployment",
     ),
     "tools/sim/loop_orchestrator.sh": (
         "tick_twin.py",
@@ -110,7 +107,7 @@ RETIRED_SOURCE_MARKERS = {
     ),
     "tools/sim/push_canvas.sh": (
         "git add",
-        "git commit",
+        "commit -q -m",
         "git push",
     ),
     "deploy.sh": (
@@ -132,16 +129,15 @@ RETIRED_SOURCE_MARKERS = {
         "kill -9",
     ),
     "installer/integration_plant.sh": (
-        "gh repo",
-        "git push",
-        "curl ",
-        "mktemp",
+        "plant.sh",
+        "gh api",
+        "curl -fsS",
+        "Pages",
     ),
     "installer/hatchling": (
-        "uuid.uuid4",
-        "git fetch",
-        "git merge",
-        "git reset",
+        "def cmd_stamp",
+        "def cmd_hatch",
+        "def cmd_reset",
         "tarfile.open",
     ),
     "rapp_brainstem/tls_proxy.py": (
@@ -152,19 +148,15 @@ RETIRED_SOURCE_MARKERS = {
         "openssl",
     ),
     "rapp_brainstem/start.sh": (
+        "write_bootstrap()",
+        "requirements.txt",
         "brainstem.py",
-        "boot.py",
-        "python",
-        "pip",
-        "venv",
         "exec ",
     ),
     "rapp_brainstem/start.ps1": (
-        "brainstem.py",
+        "python -m pip install",
         "boot.py",
-        "python",
-        "pip",
-        "Start-Process",
+        "Get-Command python",
     ),
     "rapp_brainstem/utils/boot.py": (
         "brainstem.py",
@@ -176,6 +168,19 @@ RETIRED_SOURCE_MARKERS = {
         "sys.",
         "exec",
     ),
+    "tools/templates/rapp_estate_grail.html": (
+        "rapp-estate/1.1",
+        "Doors I own",
+        "Membership claims",
+        "function parseRappid",
+        "function historicalUrls",
+    ),
+}
+
+IMMUTABLE_PREPARED_TOMBSTONES = {
+    "cave/rapplications/rapp-installer/serve.py",
+    "cave/rapplications/rapp-installer/bootstrap.sh",
+    "cave/rapplications/rapp-installer/bootstrap.ps1",
 }
 
 EXPECTED_GRAIL_PINS = {
@@ -225,43 +230,63 @@ class ContainmentTests(unittest.TestCase):
                 self.assertIn("form-action 'none'", lowered)
                 self.assertGreater((ROOT / relative).stat().st_size, 3_000)
 
-    def test_retired_sources_contain_no_legacy_execution_markers(self):
-        for relative, markers in RETIRED_SOURCE_MARKERS.items():
+    def test_restored_sources_retain_legacy_algorithms_behind_safe_edges(self):
+        for relative, markers in RESTORED_SOURCE_MARKERS.items():
             with self.subTest(path=relative):
                 text = (ROOT / relative).read_text(encoding="utf-8")
-                self.assertIn("410 Gone", text)
+                if relative in IMMUTABLE_PREPARED_TOMBSTONES:
+                    self.assertIn("410 Gone", text)
+                    for marker in markers:
+                        self.assertNotIn(marker, text)
+                    continue
+                self.assertNotIn("Retired semantic tombstone", text)
+                self.assertGreater(len(text), 1_000)
                 for marker in markers:
-                    self.assertNotIn(marker, text)
+                    self.assertIn(marker, text)
 
-    def test_cli_tombstones_fail_explicitly(self):
-        commands = (
-            ("bash", "installer/plant.sh"),
+    def test_restored_cli_defaults_and_prepared_snapshot_refusals(self):
+        prepared_commands = (
             (sys.executable, "cave/rapplications/rapp-installer/serve.py"),
             ("bash", "cave/rapplications/rapp-installer/bootstrap.sh"),
+        )
+        for command in prepared_commands:
+            with self.subTest(command=command):
+                result = subprocess.run(
+                    command,
+                    cwd=ROOT,
+                    text=True,
+                    capture_output=True,
+                    check=False,
+                )
+                self.assertEqual(result.returncode, 78)
+                self.assertIn("410 Gone", result.stderr)
+
+        plan_commands = (
+            ("bash", "installer/plant.sh"),
             (sys.executable, "tools/lan_advertise.py"),
-            (sys.executable, "tools/sign_release.py", "sign"),
             ("bash", "rapp_swarm/build.sh"),
-            ("bash", "rapp_swarm/provision-twin.sh"),
-            ("bash", "rapp_swarm/provision-twin-lite.sh"),
             (sys.executable, "rapp_swarm/function_app.py"),
-            (sys.executable, "tools/test_brainstem_server.py"),
-            (sys.executable, "tools/front_door_specs.py"),
-            (sys.executable, "tools/sim/plant_two_brainstems.py"),
-            (sys.executable, "tools/sim/observe.py"),
-            ("bash", "tools/sim/loop_orchestrator.sh"),
-            (sys.executable, "tools/sim/tick_twin.py"),
-            ("bash", "tools/sim/push_canvas.sh"),
-            ("bash", "rapp_swarm/twin-sim.sh"),
-            ("bash", "deploy.sh"),
-            ("bash", "installer/install-swarm.sh"),
-            ("bash", "installer/start-local.sh"),
-            ("bash", "installer/integration_plant.sh"),
-            (sys.executable, "installer/hatchling"),
-            (sys.executable, "rapp_brainstem/tls_proxy.py"),
+        )
+        for command in plan_commands:
+            with self.subTest(command=command):
+                result = subprocess.run(
+                    command,
+                    cwd=ROOT,
+                    text=True,
+                    capture_output=True,
+                    check=False,
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertRegex(
+                    result.stdout,
+                    r'"(?:mode|effects)"\s*:\s*(?:"(?:plan|inspect)"|\[\])',
+                )
+
+        unconditional_refusals = (
             ("bash", "rapp_brainstem/start.sh"),
             (sys.executable, "rapp_brainstem/utils/boot.py"),
         )
-        for command in commands:
+        for command in unconditional_refusals:
             with self.subTest(command=command):
                 result = subprocess.run(
                     command,
@@ -277,25 +302,32 @@ class ContainmentTests(unittest.TestCase):
         source = (
             ROOT / "community_rapp/agent-repo-skill.md"
         ).read_text(encoding="utf-8")
-        self.assertIn("Retired — not a RAPP agent", source)
-        self.assertIn("kody-w/rapp-skills", source)
-        self.assertNotIn("Install an agent via chat", source)
-        self.assertNotIn("public_gateway:", source)
+        current, historical = source.split(
+            "## Historical host interface (verbatim)",
+            1,
+        )
+        self.assertIn("Retired — not a RAPP agent", current)
+        self.assertIn("kody-w/rapp-skills", current)
+        self.assertNotIn("Install an agent via chat", current)
+        self.assertNotIn("public_gateway:", current)
+        self.assertIn("Install an agent via chat", historical)
+        self.assertIn("public_gateway:", historical)
+        self.assertIn("## Agent Format", historical)
 
-    def test_cave_agent_always_refuses(self):
-        agents = types.ModuleType("agents")
-        basic_agent = types.ModuleType("agents.basic_agent")
-        basic_agent.BasicAgent = object
+    def test_cave_agent_defaults_to_effect_free_local_inspection(self):
         path = ROOT / "cave/agents/cave_agent.py"
         spec = importlib.util.spec_from_file_location("contained_cave_agent", path)
         module = importlib.util.module_from_spec(spec)
-        with patch.dict(
-            sys.modules,
-            {"agents": agents, "agents.basic_agent": basic_agent},
-        ):
-            spec.loader.exec_module(module)
-        with self.assertRaisesRegex(RuntimeError, "410 Gone"):
+        spec.loader.exec_module(module)
+        result = json.loads(
             module.CaveAgent().perform(action="load", verify=False)
+        )
+        self.assertFalse(result["ok"])
+        self.assertFalse(result["effects_started"])
+        self.assertEqual(
+            result["error"]["code"],
+            "local-cave-snapshot-required",
+        )
 
     def test_worker_runtime_is_preserved_and_default_off(self):
         source = (ROOT / "worker/worker.js").read_text(encoding="utf-8")
@@ -316,27 +348,24 @@ class ContainmentTests(unittest.TestCase):
         guard = json.loads(
             (ROOT / "rapp_swarm/RAPP1_DEPLOYMENT_GUARD.json").read_text()
         )
-        self.assertEqual(guard["status"], "retired")
+        self.assertEqual(guard["status"], "adapted-preacceptance")
+        self.assertEqual(guard["default_mode"], "inspect-plan-sandbox")
+        self.assertEqual(guard["default_effects"], [])
         self.assertIs(guard["rapp1_packaging_allowed"], False)
         self.assertIs(guard["rapp1_advertising_allowed"], False)
+        self.assertEqual(
+            guard["active_chat_facade"],
+            "http://127.0.0.1:7073/chat",
+        )
         self.assertEqual(guard["guidance"], "../RAPP1_STATUS.md")
         ignored = (ROOT / "rapp_swarm/.funcignore").read_text().splitlines()
         self.assertIn("function_app.py", ignored)
-        for relative in (
-            "rapp_swarm/function_app.py",
-            "tools/test_brainstem_server.py",
-            "tools/sim/loop_orchestrator.sh",
-            "tools/sim/push_canvas.sh",
-            "tools/sim/tick_twin.py",
-        ):
-            self.assertFalse((ROOT / relative).stat().st_mode & stat.S_IXUSR)
-
         readme = (ROOT / "tools/sim/README.md").read_text(encoding="utf-8")
-        self.assertIn("non-executable historical", readme)
-        self.assertNotIn("cron", readme.lower())
-        self.assertNotIn("python3 tools/sim", readme)
+        self.assertIn("Exact source provenance", readme)
+        self.assertIn("inspect, plan, or replay in memory", readme)
+        self.assertIn("python3 tools/sim", readme)
 
-    def test_target_owned_legacy_emitters_are_inert(self):
+    def test_target_owned_legacy_emitters_preserve_source_with_safe_defaults(self):
         function_source = (
             ROOT / "rapp_swarm/function_app.py"
         ).read_text(encoding="utf-8")
@@ -346,12 +375,14 @@ class ContainmentTests(unittest.TestCase):
         template = (
             ROOT / "tools/templates/rapp_estate_grail.html"
         ).read_text(encoding="utf-8")
-        self.assertNotIn("azure.functions", function_source)
-        self.assertNotIn("assistant_" + "response", function_source)
-        self.assertNotIn("HTTPServer", server_source)
-        self.assertNotIn("rapp-chat-response", server_source)
-        self.assertIn("410 Gone", template)
-        self.assertNotIn("conversation_" + "history", template)
+        self.assertIn("azure.functions", function_source)
+        self.assertIn("http://127.0.0.1:7073/chat", function_source)
+        self.assertIn("default_effects", function_source)
+        self.assertIn("class _ThreadingServer", server_source)
+        self.assertIn("http://127.0.0.1:7073/chat", server_source)
+        self.assertIn("rapp-estate/1.1", template)
+        self.assertIn("connect-src 'none'", template)
+        self.assertNotIn("fetch(", template)
 
     def test_browser_chat_uses_only_exact_facade_envelopes(self):
         source = (ROOT / "rapp_brainstem/index.html").read_text(

@@ -129,7 +129,7 @@ def test_legacy_peer_egg_is_invalid_without_writes(migration_dir):
     assert list(migration_dir.iterdir()) == [egg]
 
 
-def test_tutorial_hatcher_always_refuses_without_reading(migration_dir):
+def test_tutorial_hatcher_inspects_local_bytes_without_mutation(migration_dir):
     sentinel = migration_dir / "must-not-be-read.egg"
     sentinel.write_bytes(b"not an egg")
     agents = types.ModuleType("agents")
@@ -151,13 +151,20 @@ def test_tutorial_hatcher_always_refuses_without_reading(migration_dir):
         spec.loader.exec_module(module)
 
     before = sentinel.read_bytes()
-    result = module.EggHatcherAgent().perform(egg_path=str(sentinel))
+    result = json.loads(
+        module.EggHatcherAgent().perform(egg_path=str(sentinel))
+    )
 
-    assert "410 Gone" in result
-    assert "RAPP1_STATUS.md" in result
+    assert result["ok"] is False
+    assert result["read"] is True
+    assert result["effects_started"] is False
+    assert result["error"]["code"] == "egg-introspection-failed"
     assert sentinel.read_bytes() == before
     assert list(migration_dir.iterdir()) == [sentinel]
-    assert "skill" not in path.read_text(encoding="utf-8").lower()
+    source = path.read_text(encoding="utf-8")
+    assert "f715eb3e6d4b473bbc34c472d3ad60cf6a2e144f" in source
+    assert "class EggHatcherAgent" in source
+    assert "def apply_hatch" in source
 
 
 @pytest.mark.parametrize("dry_run", [False, True])
