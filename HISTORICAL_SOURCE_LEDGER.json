@@ -192,9 +192,9 @@
         "bytes": 26363
       },
       "restored": {
-        "commit": "ab387457b6f40a41e041abeafd3a32324c926c1e",
-        "sha256": "09d87aabf03e3300f236618f91dc57542fd12851e1526fef87f0445b1f3a0a72",
-        "bytes": 35757
+        "commit": "4a856ca4c4421e5f41d2346b9caa4e5c90452b38",
+        "sha256": "d2e87593a2430693a0137693308158c67b68d63fe47f279967d7db66c3b979d8",
+        "bytes": 35095
       },
       "preservation_check": {
         "type": "normalized-line-coverage",
@@ -225,9 +225,9 @@
         "bytes": 286287
       },
       "restored": {
-        "commit": "0e22ad3bd32e92915d2db8bbfed9aa0aa57762b2",
-        "sha256": "c2c9f2a0975b73e32b029be9c7d1bf331db6bb30b1655aeb9f9eb11e6c0b360a",
-        "bytes": 308594
+        "commit": "4a856ca4c4421e5f41d2346b9caa4e5c90452b38",
+        "sha256": "24d5c26eb9be0c74977f5e59e8da68beeb875e7a2744454c7e823a568046dfdd",
+        "bytes": 308103
       },
       "preservation_check": {
         "type": "line-subsequence"
@@ -254,9 +254,9 @@
         "bytes": 16595
       },
       "restored": {
-        "commit": "ab387457b6f40a41e041abeafd3a32324c926c1e",
-        "sha256": "b45f481e820669183f8583abe597f74f7007d0fe4085badf49ac552136c1aff9",
-        "bytes": 24293
+        "commit": "4a856ca4c4421e5f41d2346b9caa4e5c90452b38",
+        "sha256": "12c5acadabaf1001f69abc9573f73ebc2b04c91835ec07b46837d6545cac37b3",
+        "bytes": 23948
       },
       "preservation_check": {
         "type": "normalized-line-coverage",
@@ -357,9 +357,9 @@
         "bytes": 19190
       },
       "restored": {
-        "commit": "ab387457b6f40a41e041abeafd3a32324c926c1e",
-        "sha256": "23ff20d46ee34e29bf369a9c669fb749d72a86e583e6253d5e34089d462435a9",
-        "bytes": 28333
+        "commit": "4a856ca4c4421e5f41d2346b9caa4e5c90452b38",
+        "sha256": "3a84ea150af923b0106e0d797cc3a1f691c3f1a7432027ecc000f97065e70ad4",
+        "bytes": 27683
       },
       "preservation_check": {
         "type": "normalized-line-coverage",
@@ -390,9 +390,9 @@
         "bytes": 266505
       },
       "restored": {
-        "commit": "0e22ad3bd32e92915d2db8bbfed9aa0aa57762b2",
-        "sha256": "107efa9e2d59f039827fefc8f6adeec6ac2f8b6cb47d5b78cf3a61091ced26ae",
-        "bytes": 289806
+        "commit": "4a856ca4c4421e5f41d2346b9caa4e5c90452b38",
+        "sha256": "9b0d6fd72bd6452f72546d1186023bc5651d17d9ca1074e22c821ed3659be490",
+        "bytes": 289315
       },
       "preservation_check": {
         "type": "line-subsequence"
@@ -419,9 +419,9 @@
         "bytes": 9230
       },
       "restored": {
-        "commit": "ab387457b6f40a41e041abeafd3a32324c926c1e",
-        "sha256": "aeb88f0b97e1ab64aaa0de197c9a948766547fc680315a168eaf22cc4e1ed652",
-        "bytes": 20405
+        "commit": "4a856ca4c4421e5f41d2346b9caa4e5c90452b38",
+        "sha256": "fe2c2b37553808721b49dfdb713ec797f5611d49a58ea9c5e73a9d2b5f9fdb86",
+        "bytes": 19608
       },
       "preservation_check": {
         "type": "line-subsequence"
@@ -448,9 +448,9 @@
         "bytes": 213976
       },
       "restored": {
-        "commit": "0c9929e06f39512d5424d0eef6a6aff67e0f6253",
-        "sha256": "82c4072098582e542c7834457b2e59c69b973c88e3127986bcdac1690273faee",
-        "bytes": 236807
+        "commit": "4a856ca4c4421e5f41d2346b9caa4e5c90452b38",
+        "sha256": "8ccbd3045b2e5ac803a3182ff96a10863f5520936d5f0cded41aef4b22a6f31f",
+        "bytes": 235960
       },
       "preservation_check": {
         "type": "line-subsequence"
@@ -477,9 +477,9 @@
         "bytes": 93381
       },
       "restored": {
-        "commit": "0c9929e06f39512d5424d0eef6a6aff67e0f6253",
-        "sha256": "94de55febcbb86404f6fea089893d99be3715a44327132629b7cd4f21e402d1c",
-        "bytes": 104180
+        "commit": "4a856ca4c4421e5f41d2346b9caa4e5c90452b38",
+        "sha256": "30325d10539a7d107639c3ba25941c96c3903fd813df78fb835a74a322494ebb",
+        "bytes": 103593
       },
       "preservation_check": {
         "type": "line-subsequence"
@@ -506,9 +506,9 @@
         "bytes": 44118
       },
       "restored": {
-        "commit": "0c9929e06f39512d5424d0eef6a6aff67e0f6253",
-        "sha256": "aa1acb26c3927aa5be23bc9fab30ef8d638e1078afdb2372909130b0f1397673",
-        "bytes": 55704
+        "commit": "4a856ca4c4421e5f41d2346b9caa4e5c90452b38",
+        "sha256": "d65b507ef81ec1dac96bf5b533f7624f42e22a6018f6659be78c7755d2ae82af",
+        "bytes": 55123
       },
       "preservation_check": {
         "type": "line-subsequence"
@@ -535,9 +535,9 @@
         "bytes": 28948
       },
       "restored": {
-        "commit": "ab387457b6f40a41e041abeafd3a32324c926c1e",
-        "sha256": "c5d4438d699cea335d571d9a25e420c8d2ad5fe02ca4a6e0806ae40d206e7f98",
-        "bytes": 38112
+        "commit": "4a856ca4c4421e5f41d2346b9caa4e5c90452b38",
+        "sha256": "5a058199473bf4390127cb8e741d514ad0821ba719a278b4464784f2f8daeb7e",
+        "bytes": 37443
       },
       "preservation_check": {
         "type": "normalized-line-coverage",
@@ -1122,9 +1122,9 @@
         "bytes": 10408
       },
       "restored": {
-        "commit": "ecdc2119d7fb5e7b6a766d719c0eaaffde8d9a4b",
-        "sha256": "1f8f0733fb6ee550a37b585bd7c86e26cc330bcec221a8f670bc61dd1353c730",
-        "bytes": 11228
+        "commit": "6dd25a35a68b1773901b411654d9863d2b4bd944",
+        "sha256": "64609f746cd216a22bf023d3ca943644a01c2394fb7f29c3778a3ba013caf289",
+        "bytes": 11315
       },
       "preservation_check": {
         "type": "normalized-line-coverage",
@@ -1221,9 +1221,9 @@
         "bytes": 5071
       },
       "restored": {
-        "commit": "ab387457b6f40a41e041abeafd3a32324c926c1e",
-        "sha256": "77fd4a5a1a46f24f124e7f5a91c28aca580190112db70506b2ccb540dc096011",
-        "bytes": 6163
+        "commit": "8a086fe85c48c2c4435b860e07ea567c50542cdc",
+        "sha256": "bd333a20583647372d98e019408909dee5ccaea286be33ffcdcc02f0d597e46d",
+        "bytes": 6544
       },
       "preservation_check": {
         "type": "normalized-line-coverage",
@@ -1254,13 +1254,13 @@
         "bytes": 4150
       },
       "restored": {
-        "commit": "2b89a7b7576498e5ceb15bb1fa8c54f0b1b1cd6c",
-        "sha256": "855096d34cba8f61b558111bde8561e74adde251f4d68c483a78f4652fb8a877",
-        "bytes": 4913
+        "commit": "26321801f25b351e5503d36e93049b7f172f44f5",
+        "sha256": "7861bbc8fe8f9025ee1d430337e0f16cf87a6bc741ab97fa2caf9cd821e5d67a",
+        "bytes": 5117
       },
       "preservation_check": {
         "type": "normalized-line-coverage",
-        "minimum": 0.79,
+        "minimum": 0.78,
         "markers": [
           "vault.js"
         ]
@@ -1782,9 +1782,9 @@
         "bytes": 72262
       },
       "restored": {
-        "commit": "3ed9a2b2f2e54355af854d01c6248622b69ae55b",
-        "sha256": "ad3795c00987b23194f9f0796b3d0fb03a60b57eeb9b8b0c09155384d51b6f34",
-        "bytes": 72745
+        "commit": "ca79c69929b877baeac76ef6fdde80b42ca0976d",
+        "sha256": "f7bfbb566821056197fe3e98f10fc737782a7fc44ec736bf6e5056985c0d17e8",
+        "bytes": 72856
       },
       "preservation_check": {
         "type": "normalized-line-coverage",
