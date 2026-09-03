@@ -172,11 +172,14 @@ test('pre-acceptance facade uses strict parsing and exact refusal status', () =>
   assert(!source.includes('"voice_response"'), 'application field leaked into wire');
 });
 
-test('contained Tier 2 deployment cannot advertise RAPP/1', () => {
+test('adapted Tier 2 deployment remains pre-acceptance', () => {
   const guard = json('rapp_swarm/RAPP1_DEPLOYMENT_GUARD.json');
-  equal(guard.status, 'retired');
+  equal(guard.status, 'adapted-preacceptance');
+  equal(guard.default_mode, 'inspect-plan-sandbox');
+  equal(JSON.stringify(guard.default_effects), '[]');
   equal(guard.rapp1_packaging_allowed, false);
   equal(guard.rapp1_advertising_allowed, false);
+  equal(guard.active_chat_facade, 'http://127.0.0.1:7073/chat');
 });
 
 test('historical browser execution surfaces are restored with safe defaults', () => {
@@ -215,26 +218,37 @@ test('historical browser execution surfaces are restored with safe defaults', ()
   }
 });
 
-test('legacy plant producer is an explicit refusal only', () => {
+test('legacy plant producer preserves source behind an explicit gate', () => {
   const source = read('installer/plant.sh');
-  assert(source.includes('410 Gone'), 'plant retirement is missing');
-  assert(source.includes('exit 78'), 'plant retirement exit is missing');
+  assert(source.includes('RAPP_RESTORED_SOURCE_COMMIT='), 'plant provenance is missing');
+  assert(source.includes('RAPP_RESTORED_GATE_BEGIN'), 'plant gate is missing');
+  assert(
+    source.includes('RAPP_RESTORED_HISTORICAL_SOURCE_BEGIN'),
+    'plant historical source boundary is missing',
+  );
+  assert(source.includes('"mode":"plan"'), 'plant plan output is missing');
+  assert(
+    source.includes('authenticated fresh section-13 evidence is unavailable'),
+    'plant authority refusal is missing',
+  );
   for (const marker of ['gh repo create', 'git push', 'rapp-frame/', 'brainstem-egg/']) {
-    assert(!source.includes(marker), `retired plant marker remains: ${marker}`);
+    assert(source.includes(marker), `historical plant marker was lost: ${marker}`);
   }
 });
 
-test('target-owned legacy launchers are explicit refusal only', () => {
+test('target-owned launchers retain source after unreachable refusal gates', () => {
   const launchers = [
-    ['rapp_brainstem/start.sh', ['brainstem.py', 'boot.py', 'python', 'pip', 'exec ']],
-    ['rapp_brainstem/start.ps1', ['brainstem.py', 'boot.py', 'python', 'pip', 'Start-Process']],
-    ['rapp_brainstem/utils/boot.py', ['brainstem.py', 'lineage_check', 'import ', 'subprocess', 'exec']],
+    ['rapp_brainstem/start.sh', ['brainstem.py', 'write_bootstrap()', 'exec ']],
+    ['rapp_brainstem/start.ps1', ['utils/boot.py', 'python -m pip install', 'Get-Command python']],
+    ['rapp_brainstem/utils/boot.py', ['brainstem.py', 'lineage_check', 'runpy.run_path']],
   ];
-  for (const [relative, forbidden] of launchers) {
+  for (const [relative, retained] of launchers) {
     const source = read(relative);
-    assert(source.includes('410 Gone'), `${relative} retirement is missing`);
-    for (const marker of forbidden) {
-      assert(!source.includes(marker), `${relative} retains launch marker: ${marker}`);
+    assert(source.includes('RAPP_RESTORED_SOURCE_COMMIT='), `${relative} provenance is missing`);
+    assert(source.includes('RAPP_RESTORED_GATE_END'), `${relative} gate boundary is missing`);
+    assert(source.includes('410 Gone'), `${relative} public refusal is missing`);
+    for (const marker of retained) {
+      assert(source.includes(marker), `${relative} lost historical launch marker: ${marker}`);
     }
   }
   assert(read('rapp_brainstem/start.sh').includes('exit 78'));
