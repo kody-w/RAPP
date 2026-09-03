@@ -189,6 +189,17 @@ SOURCES = {
     ),
 }
 
+DESCRIPTOR_SOURCES = {
+    "azuredeploy.json": (
+        "4f6c14bbdf5b2d43887a9c7ab9cbda8c075f0dd6",
+        "ccd35c4b93ab787379662bb9e97f3ec8be363758",
+    ),
+    "installer/azuredeploy.json": (
+        "925dee4a211965f2582e71a6d2ad75f60a54ea7d",
+        "f39891606d0fe96dba3456128cb7db2a893bc8b4",
+    ),
+}
+
 SHELL_PLAN = (
     "install.sh",
     "install.command",
@@ -276,6 +287,23 @@ def test_recovered_source_matches_recorded_commit_and_blob(relative):
     historical_text = recovered.decode("utf-8")
     for marker in markers:
         assert marker in historical_text, f"{relative} lost substantive marker {marker!r}"
+
+
+@pytest.mark.parametrize("relative", tuple(DESCRIPTOR_SOURCES))
+def test_inert_deployment_descriptor_matches_recorded_history(relative):
+    commit, blob = DESCRIPTOR_SOURCES[relative]
+    current = (ROOT / relative).read_bytes()
+    assert current == _git("show", f"{commit}:{relative}")
+    assert _git("rev-parse", f"{commit}:{relative}").decode().strip() == blob
+    assert _git("hash-object", "--stdin", stdin=current).decode().strip() == blob
+
+    descriptor = json.loads(current)
+    assert descriptor["$schema"].endswith("/deploymentTemplate.json#")
+    assert descriptor["contentVersion"] == "1.0.0.0"
+    assert len(descriptor["parameters"]) == 14
+    assert len(descriptor["variables"]) == 14
+    assert len(descriptor["resources"]) == 16
+    assert len(descriptor["outputs"]) == 15
 
 
 def test_kernel_pin_and_frozen_grail_bytes_remain_exact():
