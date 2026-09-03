@@ -332,12 +332,24 @@ def test_recovered_source_matches_recorded_commit_and_blob(relative):
 @pytest.mark.parametrize("relative", tuple(DESCRIPTOR_SOURCES))
 def test_inert_deployment_descriptor_matches_recorded_history(relative):
     commit, blob = DESCRIPTOR_SOURCES[relative]
-    current = (ROOT / relative).read_bytes()
-    assert current == _git("show", f"{commit}:{relative}")
+    historical = _git("show", f"{commit}:{relative}")
     assert _git("rev-parse", f"{commit}:{relative}").decode().strip() == blob
-    assert _git("hash-object", "--stdin", stdin=current).decode().strip() == blob
+    assert _git("hash-object", "--stdin", stdin=historical).decode().strip() == blob
 
-    descriptor = json.loads(current)
+    source_descriptor = json.loads(historical)
+    descriptor = json.loads((ROOT / relative).read_bytes())
+    historical_description = (
+        "Rapid Agent "
+        "Prototyping"
+        " Platform assistant"
+    )
+    assert source_descriptor["parameters"]["characteristicDescription"][
+        "defaultValue"
+    ] == historical_description
+    source_descriptor["parameters"]["characteristicDescription"][
+        "defaultValue"
+    ] = "Rapid Agent Prototype Platform assistant"
+    assert descriptor == source_descriptor
     assert descriptor["$schema"].endswith("/deploymentTemplate.json#")
     assert descriptor["contentVersion"] == "1.0.0.0"
     assert len(descriptor["parameters"]) == 14
@@ -495,6 +507,9 @@ sys.addaudithook(_deny_effect)
         "PYTHONPATH": os.fspath(python_guard),
         "PYTHONDONTWRITEBYTECODE": "1",
         "PYTHONNOUSERSITE": "1",
+        "POWERSHELL_TELEMETRY_OPTOUT": "1",
+        "POWERSHELL_UPDATECHECK": "Off",
+        "DOTNET_CLI_TELEMETRY_OPTOUT": "1",
         "RAPP_TEST_SENTINEL": os.fspath(sentinel),
         "BRAINSTEM_HOME": os.fspath(effects / "brainstem"),
         "SWARM_HOME": os.fspath(effects / "swarm"),
@@ -813,6 +828,27 @@ def test_non_native_launchers_gate_before_historical_commands():
     assert "$global:LASTEXITCODE = 78" in gate
 
 
+def _warm_powershell(executable: str, environment: dict[str, str]) -> None:
+    for _ in range(2):
+        result = subprocess.run(
+            [
+                executable,
+                "-NoLogo",
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                "exit 0",
+            ],
+            cwd=ROOT,
+            env=environment,
+            text=True,
+            capture_output=True,
+            timeout=15,
+            check=False,
+        )
+        assert result.returncode == 0, result.stdout + result.stderr
+
+
 @pytest.mark.parametrize(
     ("relative", "tombstone"),
     tuple((path, False) for path in POWERSHELL_PLAN)
@@ -827,6 +863,7 @@ def test_powershell_defaults_and_refusals_are_effect_free_when_available(
     environment, effects, sentinel, dependency, approval, section13 = (
         _sentinel_environment(tmp_path)
     )
+    _warm_powershell(executable, environment)
     before = _snapshot(effects)
     base = [executable, "-NoLogo", "-NoProfile", "-NonInteractive", "-File", os.fspath(ROOT / relative)]
     default = subprocess.run(
@@ -883,6 +920,7 @@ def test_powershell_iex_returns_without_closing_host_when_available(
     if executable is None:
         return
     environment, effects, sentinel, *_ = _sentinel_environment(tmp_path)
+    _warm_powershell(executable, environment)
     before = _snapshot(effects)
     path = os.fspath(ROOT / relative).replace("'", "''")
     command = (

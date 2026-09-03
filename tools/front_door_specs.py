@@ -538,7 +538,7 @@ rappid:v2:<kind>:@{c['owner']}/{c['name']}:<32-hex>@github.com/{c['owner']}/{c['
 
 | Part | Rule |
 |---|---|
-| Prefix `rappid:v2:` | Literal. Tells parsers this is a v2 rappid. |
+| Legacy prefix `rappid:v2:` | Literal. Tells parsers this is a legacy v2 rappid. |
 | `<kind>` | One of: `neighborhood`, `ant-farm`, `braintrust`, `workspace`, `twin`, `prototype`. |
 | `@<owner>/<repo>` | The GitHub composite identity. The `@` prefix is literal and required. |
 | `<32-hex-no-dashes>` | A UUID4 with dashes stripped — 32 lowercase hex characters. Minted ONCE at planting; permanent thereafter. |

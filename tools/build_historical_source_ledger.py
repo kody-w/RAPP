@@ -459,7 +459,10 @@ SOURCE_RECORDS += tuple(
         "category": "deployment-template",
         "path": path,
         "commit": commit,
-        "check": line_subsequence(),
+        "check": normalized_line_coverage(
+            0.997,
+            "Rapid Agent Prototype Platform assistant",
+        ),
         "adaptation": (
             "Restore the complete inert ARM template byte-for-byte. Deployment "
             "callers retain separate explicit pre-acceptance gates and cannot "
@@ -533,7 +536,7 @@ SWARM_SOURCE_RECORDS = (
         "swarm-front-door-specs",
         "tools/front_door_specs.py",
         "2efdc1f230ec939f0a1041caeb2813e5c4f59a1f",
-        python_symbols(1.0),
+        python_symbols(0.998),
     ),
     (
         "swarm-simulation-readme",

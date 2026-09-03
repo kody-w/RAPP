@@ -680,16 +680,16 @@
       "title": "Feature freeze — Local-First Private Estate (LFPE) deferred",
       "section": "Decisions",
       "status": "historical",
-      "bytes": 27045,
-      "sha256": "7c9d540ee85077912aa60a4d35363676a4fe8981605503ae3733173795e837a1"
+      "bytes": 27128,
+      "sha256": "a29384c81cf2d3183bde8358f74f07a3444938321e966b238f40e48d20062977"
     },
     {
       "path": "Decisions/2026-05-10 — rappter1 first contact + Article XLVII.5 substrate-agnostic federation.md",
       "title": "rappter1 first contact + Article XLVII.5 (substrate-agnostic federation)",
       "section": "Decisions",
       "status": "shipped",
-      "bytes": 6926,
-      "sha256": "4cfe3b35332a13036321c29149cbabb4586c85f60fb34311d9fb3a9c083445db"
+      "bytes": 6933,
+      "sha256": "a6b5cfa3eb52b5e4b3343c582debe5aa26d077e3017395f078167a697ae1b36c"
     },
     {
       "path": "Decisions/2026-05-11 — The Commons.md",

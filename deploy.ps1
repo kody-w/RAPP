@@ -127,7 +127,7 @@ function Test-RappRestoredStandaloneProcess {
     }
     return $false
 }
-$RappGateCode = Invoke-RappRestoredGate
+$RappGateCode = Invoke-RappRestoredGate @args
 if (Test-RappRestoredStandaloneProcess) {
     exit $RappGateCode
 }
