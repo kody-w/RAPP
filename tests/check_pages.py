@@ -253,7 +253,8 @@ def main() -> int:
         "pages/_lib",
         "pages/metropolis/index.json",
         "pages/tutorials/egg_hatcher_agent.py",
-        "pages/vault",
+        "pages/vault/*.md",
+        "pages/vault/**/*.md",
     }:
         require(required in excludes, f"_config.yml must exclude {required}")
 
