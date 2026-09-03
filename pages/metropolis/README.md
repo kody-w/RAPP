@@ -8,6 +8,64 @@
 > [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json) and
 > [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md).
 
+The substantive directory artifact is restored as a historical explorer while
+the behavior boundary above remains in force.
+
+## Restoration provenance and safety boundary
+
+The fullest substantive historical artifacts were located directly in git:
+
+| Artifact | Exact source |
+|---|---|
+| `index.html` | commit `1d4141f32a0b90c8de24be136478cc583bed6474`, blob `96bb6399db2f43bc70f02af9871b69b81f506db3`, 17,367 bytes |
+| `README.md` bounded full record | commit `7422762badde25a34f514a686d8b919a513ab1e5`, blob `33fc70c8d91a78cfc056ac392b0f2535ed1c890c`, 5,736 bytes |
+| `scripts/harvest-metropolis-activity.py` | commit `1d4141f32a0b90c8de24be136478cc583bed6474`, blob `1629e896160200a6ce7b08dc1c188908df236060`, 3,158 bytes |
+| Last pre-replacement tree carrying the full UI blob | `2526f40730ff0ce40a3385b6daa211aa2f817911` |
+
+The HTML was restored from that exact source before adaptation. Original
+sections, copy, filters, table/card presentation, federation logic, and
+historical comments remain in place. Current changes are additive or limited
+to the exact side-effect boundary:
+
+- `index.json`, `federated-demo.json`, and `activity-snapshot.json` are the only
+  runtime data inputs;
+- historical tracker URLs are redirected to their checked-in local snapshots;
+- the original live `HEAD` probe remains visible in source after an
+  unconditional return and cannot execute;
+- gate/repository destinations are rendered as recorded text rather than join
+  links;
+- the original registration instruction remains visible but struck through
+  and labeled inactive;
+- legacy identities are unchanged and visibly labeled historical/unaccepted;
+- the activity view uses the frozen snapshot timestamp and shows retained
+  event context; and
+- the harvester preserves its original source while its executable entry path
+  refuses collection and performs no network or write.
+
+No scheduled activity workflow exists. No token, repository creation,
+registration, join, live probe, remote tracker request, or network-derived
+trust path is enabled.
+
+## Immutable Grail context
+
+The original directory's brainstem and installer-era language remains part of
+the historical record. Its obsolete execution edge is not deleted or replaced
+with a blank refusal; it resolves to immutable implementation evidence:
+
+- checked-in pin record: [`KERNEL_PIN.json`](../../KERNEL_PIN.json);
+- pinned source: [`kody-w/rapp-installer@brainstem-v0.6.9`](https://github.com/kody-w/rapp-installer/tree/brainstem-v0.6.9);
+- frozen files: `rapp_brainstem/brainstem.py`,
+  `rapp_brainstem/agents/basic_agent.py`, and `rapp_brainstem/VERSION`.
+
+These are source/evidence links only. This directory adds no executable install
+or download command, and it does not alter the pinned Grail bytes.
+
+At restoration base `c83b1feba0155618f0d50b4cf48ba15dd42b0b89`,
+`_config.yml` still excludes the local JSON files from the generated Pages
+artifact. That central publication setting is intentionally untouched because
+it is outside this directory's owned scope. A publication owner must include
+the same checked-in snapshots rather than substitute remote URLs.
+
 <!-- RAPP1-HISTORICAL-SECTION-START -->
 
 # RAPP Metropolis — Protocol

@@ -2,9 +2,32 @@
   "generated_at": "2026-09-02T22:41:58Z",
   "status": "historical-retired",
   "accepted": false,
+  "rapp_protocol_authority": false,
   "warning": "Frozen output from the retired Metropolis activity harvester. This is not live presence or trust evidence.",
+  "snapshot_kind": "historical-activity-observation",
+  "local_snapshot_path": "./activity-snapshot.json",
+  "provenance": {
+    "collector_source_commit": "1d4141f32a0b90c8de24be136478cc583bed6474",
+    "snapshot_data_commit": "6bd45f00981959a3fdfcc64fb32608533aae5021",
+    "interpretation": "Recorded repository-event observations only; never identity, membership, availability, or trust evidence."
+  },
+  "historical_source_metadata": {
+    "generated_at": "2026-09-02T22:41:58Z",
+    "window_minutes": 15,
+    "source": "https://api.github.com/repos/{slug}/events (harvested by CI, not the browser)",
+    "collector_behavior": "The source collector fetched up to 50 recent repository events per public entry and wrote this checked-in snapshot."
+  },
+  "runtime_policy": {
+    "local_json_only": true,
+    "network_collection": false,
+    "scheduled_writer": false,
+    "token_use": false,
+    "repository_writes": false,
+    "trust_derivation": false
+  },
   "window_minutes": 15,
-  "source": "https://api.github.com/repos/{slug}/events (harvested by CI, not the browser)",
+  "source": "Frozen checked-in output from the historical collector; the explorer performs no network request.",
+  "historical_collection_source": "GitHub repository events API, captured before retirement and retained only as dated observation data.",
   "activity": {
     "kody-w/ant-farm": [
       {

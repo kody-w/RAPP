@@ -4,13 +4,54 @@
   "accepted": false,
   "rapp_protocol_authority": false,
   "warning": "Preserved pre-acceptance directory data with legacy identities. It is not a live catalog, registry, membership list, or trust source.",
+  "snapshot_kind": "historical-directory-root",
+  "local_snapshot_path": "./index.json",
+  "provenance": {
+    "implementation_source_commit": "1d4141f32a0b90c8de24be136478cc583bed6474",
+    "implementation_source_blob": "96bb6399db2f43bc70f02af9871b69b81f506db3",
+    "last_full_ui_tree": "2526f40730ff0ce40a3385b6daa211aa2f817911",
+    "entry_snapshot_time": "2026-05-09T02:00:00Z"
+  },
+  "historical_source_metadata": {
+    "tracker_name": "RAPP Metropolis (canonical)",
+    "tracker_url": "https://kody-w.github.io/RAPP/metropolis/",
+    "tracker_operator": "kody-w",
+    "purpose": "Kazaa-style decentralized index of active RAPP neighborhoods. Each entry points at a planted neighborhood seed; brainstems are the seeders; agents are the work. Anyone can fork this index and run their own tracker — the protocol is the network, not this URL.",
+    "synced_at": "2026-05-09T02:00:00Z",
+    "federated_trackers": [
+      "https://kody-w.github.io/RAPP/pages/metropolis/federated-demo.json"
+    ],
+    "protocol": {
+      "registration": "Open a PR to this index. Maintainer reviews + merges.",
+      "federation": "Other trackers can link to this one via federated_trackers; this one can list theirs. The metropolis is the union of all trackers — no single canonical authority.",
+      "live_status": "Each entry's seeders + recent activity is fetched live by the directory page. Cached locally per browser session.",
+      "decentralization": "Anyone can fork + curate. The protocol is the network, not this URL."
+    }
+  },
+  "runtime_policy": {
+    "local_json_only": true,
+    "remote_tracker_fetch": false,
+    "live_probe": false,
+    "registration": false,
+    "joining": false,
+    "executable_install_or_download": false,
+    "identity_acceptance": false,
+    "trust_derivation": false
+  },
+  "immutable_grail_evidence": {
+    "pin_record": "../../KERNEL_PIN.json",
+    "repository": "kody-w/rapp-installer",
+    "tag": "brainstem-v0.6.9",
+    "policy": "read-only evidence; no executable install or download action"
+  },
+  "legacy_identity_policy": "Preserve every recorded value byte-for-byte and present it only as a historical, unaccepted identifier.",
   "tracker_name": "Historical RAPP Metropolis snapshot",
   "tracker_url": "https://kody-w.github.io/RAPP/pages/metropolis/",
   "tracker_operator": "kody-w",
-  "purpose": "Dated evidence of the retired Metropolis directory experiment. Entries and legacy identities are preserved for review only and must not be used for discovery, joining, trust, or protocol acceptance.",
+  "purpose": "Frozen source data for the historical Metropolis directory explorer. Entries and legacy identities are preserved for review only and must not be used for discovery, joining, trust, or protocol acceptance.",
   "synced_at": "2026-05-09T02:00:00Z",
   "federated_trackers": [
-    "https://kody-w.github.io/RAPP/pages/metropolis/federated-demo.json"
+    "./federated-demo.json"
   ],
   "entries": [
     {
@@ -172,8 +213,8 @@
   "protocol": {
     "status": "retired",
     "registration": "Closed. Do not submit or join through this historical index.",
-    "federation": "Historical demonstration only; no tracker is fetched or accepted.",
-    "live_status": "Disabled. Preserved status fields are dated evidence, not live verification.",
+    "federation": "Historical visualization only. The explorer reads the checked-in ./federated-demo.json file directly and never follows remote tracker URLs.",
+    "live_status": "Disabled. Preserved status and activity fields come only from checked-in snapshots and remain dated observations, not live verification.",
     "decentralization": "This local product experiment is not RAPP/1 protocol authority."
   }
 }
