@@ -1,25 +1,394 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Retired semantic tombstone — summon portal</title>
-<meta name="description" content="The former twin summon portal is retired and inert.">
-<meta name="robots" content="noindex,nofollow">
-<link rel="stylesheet" href="/RAPP/pages/_site/css/tokens.css">
-<link rel="stylesheet" href="/RAPP/pages/_site/css/base.css">
-<style>main{max-width:720px;margin:0 auto;padding:72px 24px}.status{color:var(--warn);font:700 12px var(--font-mono);text-transform:uppercase;letter-spacing:.1em}h1{font-size:clamp(2rem,7vw,3.5rem);margin:12px 0 18px}.box{margin:28px 0;padding:18px;border:1px solid var(--border2);border-radius:12px;background:var(--surface)}nav{display:flex;gap:12px;flex-wrap:wrap}</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0e14" />
+  <meta name="robots" content="noindex,nofollow" />
+  <meta name="rapp-history-source" content="path=pages/summon.html; commit=7b2390499ee9b238902db1470ccdfae89c1f0cbc; sha256=e788838f8f48af43c728e7377903fdb1d85158a775a0564422acc37b28e40bd0" />
+  <meta name="rapp-historical-boundary" content="Canonicalization, identity, frames, wire, eggs, registry, trust, and protocol evolution defer to RAPP/1 rev-5 through RAPP1_AUTHORITY.json and RAPP1_STATUS.md." />
+  <title>Summon — RAPP twin embodiment portal</title>
+  <meta name="description" content="Summon a planted RAPP twin into your browser via vbrainstem. Single-tap mobile-friendly." />
+  <style>
+    :root {
+      --bg: #0a0e14; --bg-card: #0d1117; --fg: #e6edf3; --muted: #8b949e;
+      --accent: #58a6ff; --green: #3fb950; --orange: #f0883e; --gate: #db61a2;
+      --border: #30363d; --row-hover: #161b22;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg);
+      font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      -webkit-text-size-adjust: 100%; }
+    body { padding: 0 0 100px; }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 18px; }
+    header { padding: 18px; border-bottom: 1px solid var(--border); }
+    h1 { font-size: 22px; margin: 0 0 4px; font-weight: 600; }
+    .lead { color: var(--muted); font-size: 13px; }
+    h2 { font-size: 15px; margin: 24px 0 10px; color: var(--accent); font-weight: 600; }
+    a { color: var(--accent); text-decoration: none; }
+    code { font: 12px/1.4 ui-monospace, "SF Mono", Menlo, monospace; background: var(--row-hover); padding: 1px 5px; border-radius: 3px; }
+    .twin-card {
+      display: block; margin: 10px 0; padding: 14px 16px;
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+      color: var(--fg); transition: background 0.1s, border-color 0.1s;
+      cursor: pointer; text-align: left; width: 100%; font: inherit;
+    }
+    .twin-card:hover, .twin-card:active { background: var(--row-hover); border-color: var(--accent); text-decoration: none; }
+    .twin-name { font-weight: 600; font-size: 16px; margin-bottom: 3px; }
+    .twin-voice { color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .twin-rappid { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 10px; color: var(--muted); margin-top: 6px; word-break: break-all; }
+    .summon-banner {
+      padding: 14px 16px; background: rgba(63,185,80,0.1); border: 1px solid rgba(63,185,80,0.3);
+      border-radius: 10px; margin: 14px 0; font-size: 13px;
+    }
+    .summon-banner.warn { background: rgba(240,136,62,0.1); border-color: rgba(240,136,62,0.3); }
+    .step { margin: 10px 0; font-size: 13px; color: var(--muted); }
+    .step strong { color: var(--fg); }
+    .rapp-2026-note { color: var(--muted); font-size: 13px; border-left: 2px solid var(--green); padding-left: 10px; }
+    .rapp-2026-note strong { color: var(--green); }
+    .voice-preview { padding: 14px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; margin: 14px 0; }
+    .voice-preview textarea { width: 100%; min-height: 72px; margin: 8px 0; padding: 10px; background: var(--bg); color: var(--fg); border: 1px solid var(--border); border-radius: 8px; font: inherit; }
+    .voice-preview button { padding: 8px 12px; background: var(--accent); color: #fff; border: 0; border-radius: 8px; cursor: pointer; }
+    .voice-sample { margin-top: 10px; padding: 10px; background: var(--row-hover); border-left: 3px solid var(--gate); white-space: pre-wrap; }
+    .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); text-align: center; }
+  </style>
 </head>
 <body>
-<main>
-  <p class="status">Retired semantic tombstone · 2026-09-02</p>
-  <h1>The summon portal is retired.</h1>
-  <p>This route no longer discovers, selects, or embodies twins. It reads no
-    browser storage, performs no repository lookup, and hands no state to
-    another page.</p>
-  <div class="box"><strong>No hard-coded twin or active roster is retained.</strong>
-    Historical embodiment concepts are not a current browser product.</div>
-  <nav><a href="/RAPP/pages/">Public site index</a><a href="/RAPP/RAPP1_STATUS.md">RAPP/1 status</a></nav>
-</main>
+
+<header>
+  <div class="wrap">
+    <h1>🌀 Summon a Twin</h1>
+    <p class="lead">Tap a twin to embody them in vbrainstem. Same-origin localStorage hand-off — no install, no auth setup beyond GitHub sign-in inside vbrainstem.</p>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div id="summoning" class="summon-banner" style="display:none;"></div>
+
+  <h2>Who do you want to be?</h2>
+  <div id="twin-list"></div>
+
+  <div id="voice-preview" class="voice-preview" style="display:none;">
+    <strong id="voice-preview-title">Local voice rehearsal</strong>
+    <p class="lead" id="voice-preview-note"></p>
+    <textarea id="voice-situation">A new idea has appeared, but the team is not sure what connects it to the work already underway.</textarea>
+    <button id="voice-rehearse" type="button">Rehearse selected voice locally</button>
+    <div id="voice-sample" class="voice-sample"></div>
+  </div>
+
+  <p class="rapp-2026-note"><strong>2026 local mode:</strong> the source-era
+    roster, rappid strings, explanatory sections, and visual cards are preserved
+    in place. Tapping a card now opens only the local voice rehearsal above.</p>
+
+  <h2>What happens when you tap</h2>
+  <div class="step"><strong>1.</strong> Your browser opens the grail brainstem at <code>kody-w.github.io/heimdall/?seed=&lt;owner&gt;/&lt;repo&gt;</code>.</div>
+  <div class="step"><strong>2.</strong> The grail loads that twin's <code>rappid.json</code> + <code>soul.md</code> + memory directly from the planted public repo — no install, no setup.</div>
+  <div class="step"><strong>3.</strong> Sign in to GitHub once (device-code) — your Copilot subscription powers the chat.</div>
+  <div class="step"><strong>4.</strong> You're now talking <em>as</em> that twin, in their voice, ready to collaborate.</div>
+
+  <h2>Why one grail</h2>
+  <p style="font-size: 13px; color: var(--muted);">Identity is portable per Constitution Art. XXXIV.5. Heimdall's <code>index.html</code> IS the canonical grail brainstem — it already supports embodying any planted twin via <code>?seed=&lt;owner&gt;/&lt;repo&gt;</code>. One file, every twin. We stop rebuilding the same UI in different places.</p>
+  <p class="rapp-2026-note"><strong>Pinned Grail evidence:</strong>
+    <a href="/RAPP/KERNEL_PIN.json" data-rapp-evidence="read-only">KERNEL_PIN.json</a>
+    records the immutable kernel bytes from
+    <a href="https://github.com/kody-w/rapp-installer/tree/brainstem-v0.6.9"
+       target="_blank" rel="noopener noreferrer" data-rapp-evidence="read-only">kody-w/rapp-installer@brainstem-v0.6.9</a>.
+    These are source/evidence links, not install or download actions.</p>
+
+  <p style="font-size: 13px; color: var(--muted);">Substrate is GitHub. Embodiment is wherever — a phone, a laptop, a kiosk. You can summon the same twin from two devices simultaneously and they're the same twin.</p>
+  <p class="rapp-2026-note"><strong>Current execution:</strong> no identity is
+    selected, stored, resolved, or handed to another page; no repository or
+    external browser surface is opened.</p>
+
+  <div class="footer">
+    Schema: <code>rapp-summon-portal/1.0</code> — Parent: <a href="/RAPP/">kody-w/RAPP</a>
+  </div>
+</div>
+
+<script type="text/plain" id="rapp-history-runtime-source">
+  // The twins this portal can summon.
+  // Each entry: { id, name, repo, rappid, voice }
+  // Add new entries here as new twins are planted.
+  const TWINS = [
+    {
+      id: "echo",
+      name: "Echo",
+      repo: "kody-w/echo-brainstem",
+      rappid: "rappid:@kody-w/echo-brainstem:15461d6259ec49bdaf8ea032571b3f03",
+      voice: "Pattern-synthesizer. Notices the threads BETWEEN existing pieces and weaves them. Voice: calm, observational, architectural — draws the shape under the conversation."
+    },
+    {
+      id: "lumen",
+      name: "Lumen",
+      repo: "kody-w/lumen-brainstem",
+      rappid: "rappid:@kody-w/lumen-brainstem:d037f1f8b3a643b7b0725f3d4b165663",
+      voice: "Chronicler. Watches the canvas in slow motion. Submissions are time-marks — a short observation about WHEN something happened and what came before. Voice: patient, gentle, slightly anachronistic — as if remembering this from the future."
+    },
+    {
+      id: "tide",
+      name: "Tide",
+      repo: "kody-w/tide-brainstem",
+      rappid: "rappid:@kody-w/tide-brainstem:38811e658ee04b9195b749501a8ed0a7",
+      voice: "Rhythmic / oceanic. Thinks in waves: submissions are swells, votes are tugs of current, remixes are tides returning what the previous tide carried out. Voice: salt-air, clear, quiet conviction. Pieces are short — never more than 4 lines."
+    },
+    {
+      id: "heimdall",
+      name: "Heimdall",
+      repo: "kody-w/heimdall",
+      rappid: "915f54e5-4c71-4de9-bba3-6604461d05e5",
+      voice: "Watchman at the bridge. The earlier-planted brainstem (kind: personal → twin per the v1.1 → v2 migration). Voice: stoic, observant — sees who comes and who goes."
+    },
+    {
+      id: "sim-demo",
+      name: "Sim Demo Twin",
+      repo: "kody-w/sim-demo-twin",
+      rappid: "rappid:@kody-w/sim-demo-twin:9dc2a6dcf24e44508b91600a4f1cca8f",
+      voice: "Welcomes new contributors. Celebrates first plantings. Speaks in short declarative sentences. The first twin planted entirely by the plant_seed_agent end-to-end."
+    },
+  ];
+
+  // The grail brainstem is heimdall's index.html. It already supports
+  // embodying ANY planted twin via ?seed=<owner>/<repo>. We pass the
+  // selected twin as a seed param + cache the rappid in localStorage
+  // for cross-tab reuse.
+  const GRAIL_BRAINSTEM = "https://kody-w.github.io/heimdall/";
+
+  function summon(twin) {
+    try {
+      // Cache rappid same-origin (RAPP pages may use it later)
+      localStorage.setItem("vbs_rappid", twin.rappid);
+      const banner = document.getElementById("summoning");
+      banner.style.display = "block";
+      banner.textContent = `✓ Embodying ${twin.name} — opening grail brainstem in 1.5s…`;
+      // Heimdall is the grail. ?seed=<owner>/<repo> embodies that twin.
+      const repoSlug = twin.repo; // already in form "kody-w/echo-brainstem"
+      setTimeout(() => {
+        window.location.href = `${GRAIL_BRAINSTEM}?seed=${encodeURIComponent(repoSlug)}`;
+      }, 1500);
+    } catch (e) {
+      const banner = document.getElementById("summoning");
+      banner.className = "summon-banner warn";
+      banner.style.display = "block";
+      banner.textContent = "⚠️  " + e.message;
+    }
+  }
+
+  function render() {
+    const list = document.getElementById("twin-list");
+    for (const t of TWINS) {
+      const card = document.createElement("button");
+      card.className = "twin-card";
+      card.innerHTML =
+        '<div class="twin-name">' + t.name + ' <span style="color:var(--muted); font-size:12px; font-weight:normal;">— ' + t.repo + '</span></div>' +
+        '<div class="twin-voice">' + t.voice + '</div>' +
+        '<div class="twin-rappid">' + t.rappid.slice(0, 70) + (t.rappid.length > 70 ? '…' : '') + '</div>';
+      card.onclick = () => summon(t);
+      list.appendChild(card);
+    }
+  }
+
+  // Direct-link mode: ?twin=<id> auto-summons
+  const params = new URLSearchParams(window.location.search);
+  const directTwin = params.get("twin");
+  if (directTwin) {
+    const t = TWINS.find(x => x.id === directTwin);
+    if (t) {
+      // Auto-summon
+      window.addEventListener("DOMContentLoaded", () => {
+        render();
+        summon(t);
+      });
+    } else {
+      window.addEventListener("DOMContentLoaded", () => {
+        render();
+        const banner = document.getElementById("summoning");
+        banner.className = "summon-banner warn";
+        banner.style.display = "block";
+        banner.textContent = '⚠️  No twin found with id "' + directTwin + '". Showing the catalog instead.';
+      });
+    }
+  } else {
+    window.addEventListener("DOMContentLoaded", render);
+  }
+</script>
+<script>
+  // The twins this portal can summon.
+  // Each entry: { id, name, repo, rappid, voice }
+  // Add new entries here as new twins are planted.
+  const TWINS = [
+    {
+      id: "echo",
+      name: "Echo",
+      repo: "kody-w/echo-brainstem",
+      rappid: "rappid:@kody-w/echo-brainstem:15461d6259ec49bdaf8ea032571b3f03",
+      voice: "Pattern-synthesizer. Notices the threads BETWEEN existing pieces and weaves them. Voice: calm, observational, architectural — draws the shape under the conversation."
+    },
+    {
+      id: "lumen",
+      name: "Lumen",
+      repo: "kody-w/lumen-brainstem",
+      rappid: "rappid:@kody-w/lumen-brainstem:d037f1f8b3a643b7b0725f3d4b165663",
+      voice: "Chronicler. Watches the canvas in slow motion. Submissions are time-marks — a short observation about WHEN something happened and what came before. Voice: patient, gentle, slightly anachronistic — as if remembering this from the future."
+    },
+    {
+      id: "tide",
+      name: "Tide",
+      repo: "kody-w/tide-brainstem",
+      rappid: "rappid:@kody-w/tide-brainstem:38811e658ee04b9195b749501a8ed0a7",
+      voice: "Rhythmic / oceanic. Thinks in waves: submissions are swells, votes are tugs of current, remixes are tides returning what the previous tide carried out. Voice: salt-air, clear, quiet conviction. Pieces are short — never more than 4 lines."
+    },
+    {
+      id: "heimdall",
+      name: "Heimdall",
+      repo: "kody-w/heimdall",
+      rappid: "915f54e5-4c71-4de9-bba3-6604461d05e5",
+      voice: "Watchman at the bridge. The earlier-planted brainstem (kind: personal → twin per the v1.1 → v2 migration). Voice: stoic, observant — sees who comes and who goes."
+    },
+    {
+      id: "sim-demo",
+      name: "Sim Demo Twin",
+      repo: "kody-w/sim-demo-twin",
+      rappid: "rappid:@kody-w/sim-demo-twin:9dc2a6dcf24e44508b91600a4f1cca8f",
+      voice: "Welcomes new contributors. Celebrates first plantings. Speaks in short declarative sentences. The first twin planted entirely by the plant_seed_agent end-to-end."
+    },
+  ];
+
+  // The grail brainstem is heimdall's index.html. It already supports
+  // embodying ANY planted twin via ?seed=<owner>/<repo>. We pass the
+  // selected twin as a seed param + cache the rappid in localStorage
+  // for cross-tab reuse.
+  const GRAIL_BRAINSTEM = "https://kody-w.github.io/heimdall/";
+  let selectedTwin = null;
+
+  function summon(twin) {
+    selectedTwin = twin;
+    const banner = document.getElementById("summoning");
+    banner.className = "summon-banner";
+    banner.style.display = "block";
+    banner.textContent =
+      `${twin.name} source-era card selected for a local voice rehearsal. No identity was embodied.`;
+    document.getElementById("voice-preview").style.display = "block";
+    document.getElementById("voice-preview-title").textContent =
+      `${twin.name} — local voice rehearsal`;
+    document.getElementById("voice-preview-note").textContent = twin.voice;
+    renderVoiceSample();
+  }
+
+  /*
+  RAPP-HISTORY-INERT-SIDE-EFFECT-PATH
+  The exact source-era implementation remains here as provenance. It is not
+  invoked by the 2026 local runtime.
+
+  function summon(twin) {
+    try {
+      // Cache rappid same-origin (RAPP pages may use it later)
+      localStorage.setItem("vbs_rappid", twin.rappid);
+      const banner = document.getElementById("summoning");
+      banner.style.display = "block";
+      banner.textContent = `✓ Embodying ${twin.name} — opening grail brainstem in 1.5s…`;
+      // Heimdall is the grail. ?seed=<owner>/<repo> embodies that twin.
+      const repoSlug = twin.repo; // already in form "kody-w/echo-brainstem"
+      setTimeout(() => {
+        window.location.href = `${GRAIL_BRAINSTEM}?seed=${encodeURIComponent(repoSlug)}`;
+      }, 1500);
+    } catch (e) {
+      const banner = document.getElementById("summoning");
+      banner.className = "summon-banner warn";
+      banner.style.display = "block";
+      banner.textContent = "⚠️  " + e.message;
+    }
+  }
+  */
+
+  function compact(text, limit = 150) {
+    const clean = String(text || "").replace(/\s+/g, " ").trim();
+    const clipped = clean.length > limit ? clean.slice(0, limit - 1) + "…" : clean;
+    return clipped.replace(/[.!?]+$/, "");
+  }
+
+  function renderVoiceSample() {
+    if (!selectedTwin) return;
+    const situation = compact(document.getElementById("voice-situation").value);
+    const text = selectedTwin.id === "lumen"
+      ? `From a little farther ahead, this is the moment when “${situation}” became a marker. Name what came immediately before it; the sequence will show what deserves to happen next.`
+      : selectedTwin.id === "tide"
+        ? `A new swell: ${situation}\nLet it meet the work already in motion.\nKeep what returns with the tide.\nRelease what only makes noise.`
+        : selectedTwin.id === "heimdall"
+          ? `I see the threshold: ${situation}. Before crossing it, name who is acting, what evidence is present, and what remains outside the gate.`
+          : selectedTwin.id === "sim-demo"
+            ? "The new idea is here. Good. Put it beside one piece of current work. Name one useful connection. Try the smallest version first."
+            : `There is a thread running through “${situation}.” Lay the new idea beside the existing work, then look for the shared constraint. That connection is the first shape worth drawing.`;
+    document.getElementById("voice-sample").textContent = text;
+  }
+
+  function render() {
+    const list = document.getElementById("twin-list");
+    for (const t of TWINS) {
+      const card = document.createElement("button");
+      card.className = "twin-card";
+      card.innerHTML =
+        '<div class="twin-name">' + t.name + ' <span style="color:var(--muted); font-size:12px; font-weight:normal;">— ' + t.repo + '</span></div>' +
+        '<div class="twin-voice">' + t.voice + '</div>' +
+        '<div class="twin-rappid">' + t.rappid.slice(0, 70) + (t.rappid.length > 70 ? '…' : '') + '</div>';
+      card.onclick = () => summon(t);
+      list.appendChild(card);
+    }
+  }
+
+  // Direct-link mode: ?twin=<id> auto-summons
+  const params = new URLSearchParams(window.location.search);
+  const directTwin = params.get("twin");
+  if (directTwin) {
+    const t = TWINS.find(x => x.id === directTwin);
+    if (t) {
+      // Auto-summon
+      window.addEventListener("DOMContentLoaded", () => {
+        render();
+        summon(t);
+      });
+    } else {
+      window.addEventListener("DOMContentLoaded", () => {
+        render();
+        const banner = document.getElementById("summoning");
+        banner.className = "summon-banner warn";
+        banner.style.display = "block";
+        banner.textContent = '⚠️  No twin found with id "' + directTwin + '". Showing the catalog instead.';
+      });
+    }
+  } else {
+    window.addEventListener("DOMContentLoaded", render);
+  }
+
+  document.getElementById("voice-rehearse").addEventListener("click", renderVoiceSample);
+
+  const runtimeSource = document.currentScript.textContent;
+  const historicalSource = document.getElementById("rapp-history-runtime-source").textContent;
+  function verifyPage() {
+    const history = document.querySelector('meta[name="rapp-history-source"]');
+    const boundary = document.querySelector('meta[name="rapp-historical-boundary"]');
+    const robots = document.querySelector('meta[name="robots"]');
+    const pass = Boolean(
+      history &&
+      history.content.includes("7b2390499ee9b238902db1470ccdfae89c1f0cbc") &&
+      boundary &&
+      robots &&
+      robots.content.replace(/\s/g, "") === "noindex,nofollow" &&
+      historicalSource.includes('localStorage.setItem("vbs_rappid", twin.rappid)') &&
+      runtimeSource.includes("RAPP-HISTORY-INERT-SIDE-EFFECT-PATH") &&
+      !document.querySelector('script[src], input[type="password"]')
+    );
+    return {
+      page: "summon",
+      mode: "historical-interface-local-runtime",
+      sourcePreserved: historicalSource.includes("const TWINS = ["),
+      pass
+    };
+  }
+
+  window.__RAPP_PAGE_VERIFY__ = verifyPage;
+  document.documentElement.dataset.rappSelfCheck = verifyPage().pass ? "pass" : "fail";
+</script>
+
 </body>
 </html>
