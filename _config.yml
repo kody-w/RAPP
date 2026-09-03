@@ -14,6 +14,7 @@ include:
   - pages/vault/_wikilink_aliases.json
   - pages/vault/vault.css
   - pages/vault/vault.js
+  - pages/vault/sw.js
 
 defaults:
   - scope:
@@ -36,12 +37,21 @@ exclude:
   - responsible-ai
   - specs
   - cave/agents
+  - cave/card.json
   - cave/cubbies
+  - cave/facets.json
   - cave/holo.md
+  - cave/holo.svg
+  - cave/INVITE.md
+  - cave/members.json
+  - cave/neighborhood.json
   - cave/onboarding
   - cave/rar
+  - cave/rappid.json
   - cave/rapplications/rapp-installer
+  - cave/README.md
   - cave/super-rar
+  - cave/tests
   - cave/tools
   - pages/_lib
   - pages/metropolis/README.md
@@ -53,7 +63,6 @@ exclude:
   - pages/tutorials/sample-session.egg
   - pages/vault
   - pages/vault/manifest.webmanifest
-  - pages/vault/sw.js
   - docs/install.cmd
   - docs/install.command
   - docs/install.sh

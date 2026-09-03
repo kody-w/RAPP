@@ -5,6 +5,7 @@
 
 const VAULT = {
   manifest: null,
+  aliases: new Map(),       // lowercased historical alias -> repository target
   notes: new Map(),         // path -> { meta, body, html, title, section, status }
   byTitle: new Map(),       // lowercased title -> path
   backlinks: new Map(),     // path -> [{from, anchor}]
@@ -45,6 +46,7 @@ async function loadManifest() {
   if (local && local.manifest) {
     VAULT.manifest = local.manifest;
     VAULT.mode = 'local';
+    await loadAliases();
     showModeBanner();
     return;
   }
@@ -53,7 +55,26 @@ async function loadManifest() {
   const res = await fetch('./_manifest.json', { cache: 'no-cache' });
   if (!res.ok) throw new Error(`manifest fetch failed: ${res.status}`);
   VAULT.manifest = await res.json();
+  await loadAliases();
   $('#subtitle').textContent = VAULT.manifest.subtitle || 'Second-brain wiki';
+}
+
+async function loadAliases() {
+  const res = await fetch('./_wikilink_aliases.json', { cache: 'no-cache' });
+  if (!res.ok) throw new Error(`alias fetch failed: ${res.status}`);
+  const payload = await res.json();
+  if (
+    payload.schema !== 'vault-wikilink-aliases/1.0'
+    || !Array.isArray(payload.aliases)
+  ) {
+    throw new Error('alias table has an invalid schema');
+  }
+  VAULT.aliases = new Map(
+    payload.aliases.map((entry) => [
+      String(entry.alias || '').trim().toLowerCase(),
+      String(entry.target || '').trim(),
+    ]),
+  );
 }
 
 function rawUrlFor(path) {
@@ -144,12 +165,35 @@ function rewriteWikilinks(md) {
     if (target) {
       return `[${display}](#${encodeURIComponent(target)} "wikilink")`;
     }
+    const aliasTarget = VAULT.aliases.get(title.trim().toLowerCase());
+    if (aliasTarget) {
+      return `[${display}](${repositoryUrlFor(aliasTarget)} "wikilink alias")`;
+    }
     return `[${display}](#__broken__ "broken wikilink")`;
   });
 }
 
 function resolveTitle(title) {
-  return VAULT.byTitle.get(title.toLowerCase()) || null;
+  const key = title.toLowerCase();
+  const direct = VAULT.byTitle.get(key);
+  if (direct) return direct;
+
+  const aliasTarget = VAULT.aliases.get(key);
+  if (!aliasTarget || aliasTarget.includes('#')) return null;
+  const vaultPrefix = `${VAULT.manifest.github.vault_path || 'pages/vault'}/`;
+  if (!aliasTarget.startsWith(vaultPrefix)) return null;
+  const relative = aliasTarget.slice(vaultPrefix.length);
+  return VAULT.notes.has(relative) ? relative : null;
+}
+
+function repositoryUrlFor(target) {
+  const [path, heading = ''] = target.split('#', 2);
+  const github = VAULT.manifest.github;
+  const encodedPath = path.split('/').map(encodeURIComponent).join('/');
+  const anchor = heading
+    ? '#' + heading.toLowerCase().replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-')
+    : '';
+  return `https://github.com/${github.owner}/${github.repo}/blob/${github.branch}/${encodedPath}${anchor}`;
 }
 
 // ── Backlinks ────────────────────────────────────────────────────────────────
@@ -345,7 +389,6 @@ function wireUI() {
   $('#randomBtn').addEventListener('click', openRandom);
   $('#readingBtn').addEventListener('click', toggleReadingMode);
   $('#graphBtn').addEventListener('click', toggleGraph);
-  $('#obsidianBtn').addEventListener('click', openInObsidian);
   $('#navToggle')?.addEventListener('click', () => {
     document.body.classList.toggle('nav-open');
   });
@@ -392,10 +435,6 @@ function wireUI() {
       case 'm':
         e.preventDefault();
         toggleReadingMode();
-        break;
-      case 'o':
-        e.preventDefault();
-        openInObsidian();
         break;
       case 'g':
         chord = 'g';
@@ -459,19 +498,6 @@ function navigateRelative(delta) {
   if (ordered[next] !== VAULT.current) {
     location.hash = '#' + encodeURIComponent(ordered[next]);
   }
-}
-
-// ── Open in Obsidian ─────────────────────────────────────────────────────────
-
-function openInObsidian() {
-  if (!VAULT.current) return;
-  // Best-effort URI — assumes the user has a local vault named "RAPP Vault" or
-  // similar. Obsidian falls back to a vault picker if the named vault isn't
-  // found; a fully-portable variant would let the user configure the vault name.
-  const vaultName = (VAULT.manifest.title || 'RAPP Vault').replace(/\s+/g, '%20');
-  const file = encodeURIComponent(VAULT.current);
-  const url = `obsidian://open?vault=${vaultName}&file=${file}`;
-  window.location.href = url;
 }
 
 // ── Export ───────────────────────────────────────────────────────────────────

@@ -230,6 +230,7 @@ def main() -> int:
         "pages/_site",
         "pages/vault/index.html",
         "pages/vault/_manifest.json",
+        "pages/vault/sw.js",
     }:
         require(required in includes, f"_config.yml must include {required}")
     for required in {
@@ -240,7 +241,15 @@ def main() -> int:
         "rapp_brainstem",
         "rapp_swarm",
         "cave/rapplications/rapp-installer",
+        "cave/card.json",
+        "cave/facets.json",
         "cave/holo.md",
+        "cave/holo.svg",
+        "cave/INVITE.md",
+        "cave/members.json",
+        "cave/neighborhood.json",
+        "cave/rappid.json",
+        "cave/tests",
         "pages/_lib",
         "pages/metropolis/index.json",
         "pages/tutorials/egg_hatcher_agent.py",
@@ -259,6 +268,7 @@ def main() -> int:
         "pages/_site/index.json",
         "pages/_site/partials/header.html",
         "pages/vault/_manifest.json",
+        "pages/vault/sw.js",
         ".well-known/rapp-network-seed.json",
         "cave/index.html",
         "sitemap.xml",
@@ -271,6 +281,12 @@ def main() -> int:
         "rapp_swarm/index.html",
         "cave/rapplications/rapp-installer/kernel/index.html",
         "cave/rapplications/rapp-installer/web/index.html",
+        "cave/card.json",
+        "cave/facets.json",
+        "cave/members.json",
+        "cave/neighborhood.json",
+        "cave/rappid.json",
+        "cave/tests/test_catalog_containment.py",
         "pages/_lib/rapp-sealed.js",
         "pages/metropolis/index.json",
         "pages/tutorials/egg_hatcher_agent.py",
@@ -479,6 +495,54 @@ def main() -> int:
     vault_html = (ROOT / "pages/vault/index.html").read_text(encoding="utf-8")
     require("serviceWorker.register" not in vault_html, "vault viewer must not register a service worker")
     require('rel="manifest"' not in vault_html, "vault viewer must not claim installable PWA status")
+    require("<kbd>o</kbd>" not in vault_html, "vault viewer still advertises the Obsidian shortcut")
+    vault_js = (ROOT / "pages/vault/vault.js").read_text(encoding="utf-8")
+    require("openInObsidian" not in vault_js, "vault viewer still exposes Obsidian launch code")
+    require("obsidian://" not in vault_js, "vault viewer still contains an external application URI")
+    require(
+        "_wikilink_aliases.json" in vault_js
+        and "repositoryUrlFor" in vault_js
+        and "VAULT.aliases" in vault_js,
+        "vault viewer does not load and resolve the checked alias table",
+    )
+    vault_manifest = json.loads(
+        (ROOT / "pages/vault/_manifest.json").read_text(encoding="utf-8")
+    )
+    public_vault_paths = {note["path"] for note in vault_manifest["notes"]}
+    excluded_vault_paths = {
+        note["path"] for note in vault_manifest.get("excluded_notes", [])
+    }
+    draft_paths = {
+        path.relative_to(ROOT / "pages/vault").as_posix()
+        for path in (ROOT / "pages/vault/Blog Drafts").rglob("*.md")
+    }
+    require(
+        not (public_vault_paths & draft_paths),
+        "vault manifest publishes explicitly unpublished Blog Drafts",
+    )
+    require(
+        excluded_vault_paths == draft_paths,
+        "vault manifest does not explicitly account for every unpublished Blog Draft",
+    )
+    retirement_worker = (ROOT / "pages/vault/sw.js").read_text(encoding="utf-8")
+    require(
+        "caches.delete" in retirement_worker
+        and "registration.unregister" in retirement_worker
+        and "client.navigate" in retirement_worker,
+        "vault retirement worker does not clear, unregister, and reload",
+    )
+    require(
+        "addEventListener('fetch'" not in retirement_worker
+        and "cache.add" not in retirement_worker,
+        "vault retirement worker still intercepts or precaches requests",
+    )
+    historical_spec = (ROOT / "pages/docs/SPEC.md").read_text(encoding="utf-8")
+    require(
+        "](../../specs/" not in historical_spec
+        and "https://github.com/kody-w/RAPP/blob/main/specs/SPEC.md" in historical_spec
+        and "https://github.com/kody-w/RAPP/blob/main/specs/README.md" in historical_spec,
+        "published historical SPEC links to excluded specs/ paths",
+    )
     ecosystem_html = (ROOT / "pages/about/ecosystem.html").read_text(encoding="utf-8")
     require("repo.id === 'rapp-zoo'" in ecosystem_html, "ecosystem must retire the rapp-zoo link")
     require("retired link" in ecosystem_html, "ecosystem must label the retired rapp-zoo reference")

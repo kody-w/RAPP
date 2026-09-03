@@ -9,7 +9,7 @@
 > dated examples as migration history; RAPP/1 §12 requires total migration and
 > retirement rather than perpetual backwards compatibility.
 >
-> **Scope:** the **single-file agent contract**. What `perform()` takes, what it returns, how metadata travels, the delimited slots (`|||VOICE|||`, `|||TWIN|||`). The agent API. **Not** the network protocol — for that read [`specs/SPEC.md`](../../specs/SPEC.md). See [`specs/README.md`](../../specs/README.md) for the spec-directory map.
+> **Scope:** the **single-file agent contract**. What `perform()` takes, what it returns, how metadata travels, the delimited slots (`|||VOICE|||`, `|||TWIN|||`). The agent API. **Not** the network protocol — the superseded network source remains in [`specs/SPEC.md`](https://github.com/kody-w/RAPP/blob/main/specs/SPEC.md). See the historical [`specs/README.md`](https://github.com/kody-w/RAPP/blob/main/specs/README.md) for that excluded source directory's map.
 >
 > **Memorialized:** 2026-04-17
 > **Historical status:** Frozen on 2026-04-17; superseded for protocol matters
